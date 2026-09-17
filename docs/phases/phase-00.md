@@ -36,7 +36,7 @@ Nothing.
   A GitHub Actions workflow running `make check` on push. Both must pass on an
   empty project.
 
-- [ ] **Task 5 — Folder skeleton.**
+- [x] **Task 5 — Folder skeleton.**
   Create the directory tree from `docs/01-architecture.md` with a `doc.go` in
   each Go package stating its one-line responsibility and its import rules.
   Add `internal/domain/imports_test.go` — a test that walks `internal/domain`

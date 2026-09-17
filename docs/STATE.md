@@ -6,47 +6,48 @@
 
 ## Current phase
 
-**Phase 00 — Repo skeleton, docs bootstrap, design archive**
-File: `docs/phases/phase-00.md`
+**Phase 01 - Go server skeleton, config, logging, embed, cross-compile**
+File: `docs/phases/phase-01.md`
 
 ## Last completed task
 
-**Phase 00, Task 4 - Makefile and CI.** `Makefile` with build, test, check,
-run, generate, migrate, clean, dist, help. `make check` passes on the empty
-module: it guards vet and test behind `go list ./...`, which exits 0 where vet
-and test exit 1 (ADR-015). `dist` cross-compiles windows/amd64, linux/amd64 and
-darwin/arm64, `CGO_ENABLED=0` Makefile-wide. `.github/workflows/ci.yml` runs
-`make check` on push and PR, taking its Go version from `go.mod`.
+**Phase 00, Task 5 - Folder skeleton. Phase 00 is complete.** Created the tree
+from `docs/01-architecture.md`: `cmd/{nofiltr,relay}`, eight `internal/*`
+packages each with a `doc.go` stating its responsibility and import rules, plus
+`web/` and `build/`. Added `internal/domain/imports_test.go` (ADR-016), which
+walks the domain subtree and fails on `internal/db`, `internal/api`, `net/http`
+and `database/sql`. It was verified by making it fail, not just pass: probes at
+the top level and nested in a subpackage were both caught, and it refuses to
+pass if it parses zero files.
 
-Also settled the three token conflicts ADR-013 left open, see ADR-014.
+`make check` now does real work instead of skipping. `make dist` produces
+verified PE32+, static ELF and Mach-O arm64 binaries, `CGO_ENABLED=0` confirmed
+in the build info.
 
 ## Next task
 
-**Phase 00, Task 5 - Folder skeleton.** The last task in Phase 00. Create the
-tree from `docs/01-architecture.md` with a `doc.go` per package, plus
-`internal/domain/imports_test.go`, a test that walks `internal/domain` and
-fails if it imports `internal/db` or `internal/api`. Once packages exist,
-`make check` stops skipping vet and test, so expect it to do real work.
+**Phase 01, Task 1.** See `docs/phases/phase-01.md`. `cmd/nofiltr/main.go` and
+`cmd/relay/main.go` currently hold placeholder `main` functions that log a
+version and exit; Phase 01 replaces the first one.
 
 ## Known broken / in progress
 
 - `make` needs `sh` on PATH, so run it from Git Bash or WSL, not cmd.exe or
-  PowerShell. The installed GnuWin32 make 3.81 works from Git Bash; ezwinports
-  ships 4.x if it ever chokes.
-- `make check` currently prints "skipped (no packages yet)" for vet, test and
-  build. That is expected and disappears when Task 5 adds the first package.
-- `make run`, `make dist` and `make migrate` fail by design until Phase 01 and
-  Phase 02 create `cmd/nofiltr` and the migrations.
+  PowerShell. GnuWin32 make 3.81 works from Git Bash; ezwinports ships 4.x.
+- `make run`, `make migrate` still fail by design until Phase 01 and Phase 02
+  create the real entrypoint and the migrations.
+- The domain import test checks direct imports only. See the cost note on
+  ADR-016.
 
 ## Open questions for the human
 
-None. Name, module path and licence were settled in ADR-010.
+None.
 
 ---
 
 ## Phase progress
 
-- [ ] 00 — Repo skeleton, docs bootstrap, design tokens
+- [x] 00 — Repo skeleton, docs bootstrap, design tokens
 - [ ] 01 — Go server skeleton, config, logging, embed, cross-compile
 - [ ] 02 — SQLite, migrations, sqlc, money type, IDs
 - [ ] 03 — Domain core: order events, projections, invoice series, tax

@@ -188,3 +188,23 @@ so it is not a permanent exception, and the skip is printed rather than silent.
 Cost: a typo that removes every package from the module would make `check` pass
 loudly-but-vacuously. Acceptable while the tree is empty; the printed "skipped"
 lines are the tell.
+
+## ADR-016 - The domain boundary is a test, not a note
+2026-09 · Status: accepted
+Decision: `internal/domain/imports_test.go` walks the whole `internal/domain`
+subtree, parses imports only, and fails on `internal/db`, `internal/api`,
+`net/http` and `database/sql`. It reads the module path out of `go.mod` rather
+than hardcoding it, includes `_test.go` files, and fails outright if it parsed
+zero files. The `cmd/*` packages ship a placeholder `main` that logs its
+version and exits.
+Because: architecture rules written only in prose decay. This one is the reason
+the money logic can be reviewed on its own, so it fails loudly in CI instead.
+`net/http` and `database/sql` are banned alongside the two internal packages
+because the architecture doc says the domain is "PURE GO, no http, no sql", and
+the stdlib is the likelier way that leaks. The zero-files guard exists because a
+broken walk would otherwise report success forever, which is worse than having
+no test. `cmd/*` needs a real `main` because Go will not build a main package
+without one, and `make build` compiles `./cmd/nofiltr` as soon as it exists.
+Cost: the test sees direct imports only. A domain file importing some future
+`internal/x` that itself imports `internal/db` would pass. Revisit if a third
+internal package ever becomes importable from the domain; today none is.
