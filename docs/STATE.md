@@ -18,17 +18,18 @@ corrected `--paper`, radius and hairline, and added what the doc lacked
 (surface ladders, per-surface text ladders, a second vermilion for paper,
 `--slate`, paper status chip triads). All 41 hexes verified against source.
 
-**Three conflicts are left open for you**, in `tokens.md` under "Unresolved
-conflicts": the 4px spacing scale, the 13-15px body minimum, and the guest 16px
-minimum. The design contradicts all three. ADR-013 says why they were flagged
-rather than overwritten. Phase 05 cannot generate `tokens.css` until settled.
+**The three conflicts are now settled** (ADR-014), so nothing in `tokens.md`
+is open. Spacing moved to a 2px base scale (the doc was wrong, the 4px grid
+could not express the design's 10px gap). Type gained an 11px floor for
+uppercase metadata, 13px sentence-case minimum and 15px interactive labels (the
+design moves here: an 11px "Void" beside "Modify" is a hazard). The guest 16px
+rule was rescoped to form controls, where the Safari zoom actually applies.
 
 ## Next task
 
 **Phase 00, Task 4 - Makefile and CI.** `make` 3.81 is installed via winget
 under "C:/Program Files (x86)/GnuWin32/bin" but is not on PATH in an
-already-running shell, so use a fresh terminal. 3.81 is old; ezwinports ships
-4.x if it chokes.
+already-running shell. 3.81 is old; ezwinports ships 4.x if it chokes.
 
 ## Known broken / in progress
 

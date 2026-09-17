@@ -155,3 +155,21 @@ on a 12-inch tablet under glare. CLAUDE.md says to write the case and stop
 rather than switch unilaterally.
 Cost: `tokens.md` now carries three open conflicts that Phase 05 must settle
 before it can generate `tokens.css`.
+
+## ADR-014 - The three token rule conflicts, settled
+2026-09 · Status: accepted (settles the open items left by ADR-013)
+Decision: (1) Spacing becomes a 2px base scale, 2/4/6/8/10/12/14/16/20/24/32/
+48/64, replacing the old 4px grid. (2) Type gets a role-named scale with an
+11px floor reserved for uppercase letter-spaced metadata, 13px minimum for
+sentence-case, and 15px for every interactive label. (3) The guest 16px rule is
+rescoped from body text to form controls, on all surfaces.
+Because: a measurement is evidence about a fact, not about a constraint. The
+4px grid could not express the 10px gap the design uses 67 times, and every
+value in the new scale is a native Tailwind class, so the doc was wrong and it
+moved. The type floor is the opposite case: the design sets "Void" at 11px
+sentence-case beside "Modify", and a misread there destroys a line on a live
+ticket, so the design moves. The 16px conflict was never real, because Safari's
+zoom-on-focus applies to input/select/textarea and the mock has none.
+Cost: Phase 06 must re-check the terminal's 392px right rail, whose line
+lengths assume the smaller type. Widen the rail rather than dropping under the
+floor. Four spacing values (7, 9, 11, 18) need snapping when screens are built.

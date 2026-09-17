@@ -7,8 +7,9 @@ first, then use it.
 
 Every value below was read out of the archived design files in Phase 00 Task 3
 and counted by frequency. Where the design and this doc disagreed on a fact,
-the design won and the old value is noted. Where they disagree on a *rule*,
-nothing was changed: see "Unresolved conflicts" at the end.
+the design won and the old value is noted. Where they disagreed on a *rule*,
+each case was argued on its merits and settled; see "Where this doc overrules
+the design" at the end. Nothing here is left open.
 
 ## Ink and paper
 
@@ -151,16 +152,58 @@ steam, and some of them are colour-blind.
 | **Archivo** | All interface text |
 | **JetBrains Mono** | Every number, tabular figures |
 
-Rules:
+### Type scale
+
+Sizes are named by role, not by number. A component picks the role; it does not
+pick a pixel value.
+
+| Token | Size | Role |
+|---|---|---|
+| `--text-meta` | `11px` | Uppercase letter-spaced `.12em` metadata only. The floor. |
+| `--text-sm` | `13px` | Secondary text, table cells, dense back office rows |
+| `--text-base` | `15px` | Body, item names, every interactive label |
+| `--text-lg` | `17px` | Sub-headings, emphasised rows |
+| `--text-xl` | `21px` | Section titles |
+| `--text-total` | `32px` | Instrument Serif, the one total on a screen |
+
+### The 11px floor
+
+**Nothing renders below 11px, and 11px is only available to uppercase,
+letter-spaced metadata.** All sentence-case text is 13px or larger.
+
+The archived design does not honour this. It sets invoice column headers at
+9px, and the split-bill controls ("Evenly", "By item", "By seat") at 10px, and
+the ticket-rail actions ("Modify", "Void", "Discount", "Note") at 11px
+sentence-case. Uppercase at 9px is defensible because cap-height and tracking
+carry it; an 11px sentence-case **Void** button sitting next to **Modify**, read
+at arm's length through glare by someone wearing gloves, is not. The cost of
+misreading it is a destroyed line on a live ticket.
+
+So: metadata rises 9px to `--text-meta`, and every interactive label rises to
+`--text-base`. This is a deliberate, recorded deviation from the mock, not an
+oversight. See ADR-014.
+
+**Consequence for Phase 06:** the terminal's right rail is 392px in the design
+and its line lengths assume the smaller text. At `--text-base` some labels will
+wrap. Re-check rail width and truncation when building the register, and widen
+the rail rather than dropping back below the floor.
+
+### Rules
 
 - **Every number is monospaced and right-aligned**, with `font-variant-numeric:
   tabular-nums`, so a column of rupees reads down and decimal points align.
   Prices, quantities, totals, times, table numbers, invoice numbers. The design
   sets `font-feature-settings:'tnum' 1` on the root of all three surfaces.
 - The small-caps metadata trail under list items (`TERMINAL · REGISTER`) is
-  Archivo, uppercase, letter-spaced `.12em`, faint text colour, 9 to 11px.
+  Archivo, uppercase, letter-spaced `.12em`, faint text colour, `--text-meta`.
 - Instrument Serif is for the total on a screen, not for every heading in a
   form. Back office uses it sparingly.
+- **Form controls are 16px minimum on every surface**, no exceptions. Mobile
+  Safari zooms the viewport when an `input`, `select` or `textarea` below 16px
+  takes focus, and on the guest surface that zoom strands the guest mid-order
+  with no way back. This is a rule about controls, not about body text. The
+  archived design contains no real form elements, so it neither confirms nor
+  contradicts it.
 
 ## Touch sizing, hard constraints
 
@@ -175,6 +218,36 @@ nothing interactive in the terminal is below 44px. The charge button is 58px.
 
 A 12-inch tablet, gloves, glare, a queue. No hover-only affordances. No
 right-click. No drag as the only path to an action.
+
+## Spacing scale
+
+**2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 48, 64. Nothing else.**
+
+This doc previously said "4 / 8 / 12 / 16 / 24 / 32 / 48 / 64. Nothing else."
+The design does not obey that and never did: its most common gap is 10px, used
+67 times, which a 4px grid cannot express.
+
+The scale above is a 2px base through 16px, then 4px and wider. Two properties
+make it the right answer rather than a capitulation:
+
+- It already covers 71% of the design's spacing untouched, including the 10px
+  gap that carries the terminal's density. Forcing 10px to 8px or 12px would
+  restyle every dense list in the app to fix a rule, which is backwards.
+- Every value is a **native Tailwind class**, so nothing needs an arbitrary
+  value: 2px is `gap-0.5`, 6px is `gap-1.5`, 10px is `gap-2.5`, 14px is
+  `gap-3.5`. Tailwind's `--spacing` is `0.25rem` and numeric utilities multiply
+  it, and the 0.5/1.5/2.5/3.5 micro-steps have shipped by default since v2. The
+  "no arbitrary values" rule survives intact.
+
+The remaining 29% snaps to the nearest step: 7 and 9 go to 8, 11 goes to 12,
+18 goes to 16 or 20 by eye. Those four account for 73 uses across 35 screens
+and none of them is load-bearing.
+
+Be clear about who is imposing this. Tailwind v4 resolves *any* multiple of
+`--spacing`, so `gap-4.5` would render 18px perfectly well. The scale is not a
+limit the framework sets; it is a limit we set, so that 35 screens built in 12
+phases by different sessions land on the same rhythm. A reviewer should be able
+to read a diff and see a step, not a pixel someone liked.
 
 ## Radius
 
@@ -205,29 +278,25 @@ pretending to be paper on a desk.
 **Guest**: paper background, generous spacing, and a hard 60 KB gzipped bundle
 budget.
 
-## Unresolved conflicts
+## Where this doc overrules the design
 
-Three rules in this doc are contradicted by the design. They are **not**
-resolved here, because each is a deliberate constraint that the prototype may
-simply not be honouring, and overwriting a touch-ergonomics rule with a mock's
-values would be a real regression. A human decides these.
+Three rules here are contradicted by the archived design. All three are settled
+(ADR-014); none is open. The principle used to settle them:
 
-1. **Spacing scale.** This doc said "4 / 8 / 12 / 16 / 24 / 32 / 48 / 64.
-   Nothing else." The design's most common gap is `10px` (67 uses), then `8px`
-   (35), `9px` (33), `12px` (33), and it freely uses 6, 7, 11, 14 and 18. The
-   design is not on a 4px grid. Either the scale is wrong, or the design needs
-   snapping to it during Phase 05.
-2. **Body font size.** This doc said Archivo at "13 to 15px on touch". The
-   design's dominant sizes are 12px (128), 11px (115), 13px (90), 10px (88) and
-   9px (49). Terminal text is smaller than the stated rule allows.
-3. **Guest 16px minimum.** This doc said 16px minimum body, because iOS zooms
-   on focus of an input below 16px. The guest design's dominant sizes are 11,
-   13 and 15px. Note the iOS behaviour applies to real `<input>` elements, and
-   the prototype has none, so the design may simply not exercise the rule. The
-   rule is kept as written.
+> A measurement is evidence about a fact. It is not evidence about a
+> constraint. Where the design and a constraint disagree, the constraint has to
+> justify itself on its own merits, and then one of the two changes.
 
-Until these are settled, prefer this doc's rule over the design's measurement,
-and raise it in the phase that builds the screen.
+| Conflict | Settled as | Who moved |
+|---|---|---|
+| Spacing scale | 2px base: 2/4/6/8/10/12/14/16/20/24/32/48/64 | **The doc moved.** The old 4px grid could not express the 10px gap the design leans on 67 times, and the new scale is entirely native Tailwind. |
+| Body font size | 11px floor, metadata only; 13px sentence-case minimum; 15px for every interactive label | **The design moves.** 9px uppercase is defensible; an 11px sentence-case "Void" next to "Modify" under glare is not. |
+| Guest 16px minimum | Scoped to form controls on every surface, not body text | **Neither.** The conflict was not real. The Safari zoom-on-focus behaviour applies to `input`, `select` and `textarea`, and the mock contains none. |
+
+Two of the three moved the doc, not the design, which is the honest outcome: the
+old spacing scale and the old flat "13 to 15px body" rule were both written
+before anyone measured anything. The one place the design gives way is the one
+place a human can be hurt by it.
 
 ## Implementation
 
