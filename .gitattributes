@@ -1,0 +1,18 @@
+# Normalise line endings. The build cross-compiles to linux and darwin, and a
+# Makefile or shell script checked out with CRLF breaks there. Everything is
+# LF in the repo; Windows tooling handles LF fine.
+* text=auto eol=lf
+
+# Windows-only scripts genuinely need CRLF.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# Binary — never touch.
+*.webp  binary
+*.png   binary
+*.jpg   binary
+*.ico   binary
+*.pdf   binary
+*.db    binary
+docs/design/reference/.thumbnail binary

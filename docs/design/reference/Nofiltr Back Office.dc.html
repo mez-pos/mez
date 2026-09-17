@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #F4F1E9; -webkit-font-smoothing: antialiased; }
+  a { color: #C24D22; text-decoration: none; }
+  a:hover { color: #9E3C17; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(26,23,18,.18); border-radius: 8px; }
+  @keyframes nf-rise { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+</style>
+</helmet>
+<div style="display:flex; min-height:100vh; background:#F4F1E9; color:#1A1712; font-family:Archivo,'Helvetica Neue',sans-serif; font-feature-settings:'tnum' 1;">
+
+  <aside style="width:236px; flex:0 0 236px; background:#FFFDF8; border-right:1px solid #E3DED2; display:flex; flex-direction:column; padding:20px 0;">
+    <div style="padding:0 20px; display:flex; align-items:center; gap:11px;">
+      <div style="width:38px; height:38px; border:1px solid #C24D22; display:flex; align-items:center; justify-content:center; color:#C24D22; font-family:'Instrument Serif',serif; font-size:22px;">n</div>
+      <div>
+        <div style="font-family:'Instrument Serif',serif; font-size:17px; line-height:1.1;">nofiltr</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:.14em; color:#9A9384;">BACK OFFICE</div>
+      </div>
+    </div>
+
+    <div style="margin-top:22px; padding:0 12px; display:flex; flex-direction:column; gap:2px;">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="14">
+        <div>
+          <sc-if value="{{ n.isGroup }}">
+            <div style="padding:16px 8px 7px; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:#A8A192;">{{ n.label }}</div>
+          </sc-if>
+          <sc-if value="{{ n.isItem }}">
+            <button type="button" onClick="{{ n.go }}" style="width:100%; text-align:left; height:40px; padding:0 12px; display:flex; align-items:center; gap:10px; border:0; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; font-size:13.5px; background:{{ n.bg }}; color:{{ n.fg }}; font-weight:{{ n.weight }};" style-hover="background:#F2EEE4">
+              <span style="width:3px; height:16px; background:{{ n.bar }}; border-radius:2px;"></span>
+              <span style="flex:1; min-width:0;">{{ n.label }}</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#B5AE9E;">{{ n.badge }}</span>
+            </button>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:auto; padding:16px 20px 0; border-top:1px solid #EFEAE0;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:32px; height:32px; border-radius:50%; background:#EDE7DA; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">RM</div>
+        <div style="min-width:0;">
+          <div style="font-size:12.5px; font-weight:500;">Ravi Menon</div>
+          <div style="font-size:10px; color:#9A9384;">Floor manager</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+    <header style="height:72px; flex:0 0 72px; background:#FFFDF8; border-bottom:1px solid #E3DED2; display:flex; align-items:center; gap:18px; padding:0 26px;">
+      <div style="min-width:0;">
+        <div style="font-family:'Instrument Serif',serif; font-size:24px; line-height:1.1;">{{ title }}</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em; color:#9A9384; margin-top:3px;">{{ subtitle }}</div>
+      </div>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+        <div style="display:flex; flex:0 0 auto; min-height:38px; border:1px solid #E3DED2; border-radius:3px; overflow:hidden;">
+          <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="4">
+            <button type="button" onClick="{{ r.go }}" style="height:100%; padding:0 14px; border:0; border-right:1px solid #E3DED2; cursor:pointer; font-family:Archivo,sans-serif; font-size:12px; background:{{ r.bg }}; color:{{ r.fg }};">{{ r.name }}</button>
+          </sc-for>
+        </div>
+        <button type="button" style="height:38px; padding:0 14px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; font-size:12px; font-family:Archivo,sans-serif; color:#4A4438; cursor:pointer;">Koramangala ⌄</button>
+        <button type="button" style="height:38px; padding:0 16px; background:#1A1712; border:0; border-radius:3px; font-size:12px; font-weight:600; letter-spacing:.04em; color:#FFFDF8; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="background:#C24D22">Export</button>
+      </div>
+    </header>
+
+    <main style="flex:1; min-width:0; overflow-y:auto; padding:24px 26px 34px;">
+
+      <sc-if value="{{ s_dash }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:flex; gap:14px; flex-wrap:wrap;">
+            <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="5">
+              <div style="flex:1; min-width:186px; background:#FFFDF8; border:1px solid #E3DED2; border-top:2px solid {{ k.accent }}; border-radius:3px; padding:17px 18px;">
+                <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">{{ k.label }}</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:27px; margin-top:9px; line-height:1;">{{ k.value }}</div>
+                <div style="font-size:11.5px; color:{{ k.fg }}; margin-top:7px;">{{ k.delta }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:18px; margin-top:18px; align-items:start;">
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                <span style="font-family:'Instrument Serif',serif; font-size:21px;">Revenue by hour</span>
+                <div style="display:flex; gap:14px;">
+                  <span style="display:flex; align-items:center; gap:6px; font-size:11px; color:#6E685C;"><span style="width:9px; height:9px; background:#C24D22;"></span>Today</span>
+                  <span style="display:flex; align-items:center; gap:6px; font-size:11px; color:#6E685C;"><span style="width:9px; height:9px; background:#DED7C7;"></span>Last Tuesday</span>
+                </div>
+              </div>
+              <div style="margin-top:22px; display:flex; align-items:flex-end; gap:8px; height:210px;">
+                <sc-for list="{{ hours }}" as="h" hint-placeholder-count="12">
+                  <div style="flex:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:7px;">
+                    <div style="width:100%; display:flex; align-items:flex-end; gap:3px; height:100%;">
+                      <div style="flex:1; height:{{ h.a }}; background:#C24D22; border-radius:1px;"></div>
+                      <div style="flex:1; height:{{ h.b }}; background:#DED7C7; border-radius:1px;"></div>
+                    </div>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:9.5px; color:#9A9384;">{{ h.hr }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Needs you now</div>
+              <div style="margin-top:14px; display:flex; flex-direction:column; gap:9px;">
+                <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="5">
+                  <div style="padding:13px 14px; background:{{ a.bg }}; border:1px solid {{ a.bd }}; border-radius:3px;">
+                    <div style="display:flex; align-items:baseline; gap:9px;">
+                      <span style="font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:{{ a.fg }};">{{ a.kind }}</span>
+                      <span style="margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:10px; color:#9A9384;">{{ a.when }}</span>
+                    </div>
+                    <div style="font-size:13.5px; margin-top:6px; line-height:1.45;">{{ a.text }}</div>
+                    <div style="font-size:11.5px; color:#8A8274; margin-top:5px;">{{ a.action }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:18px; margin-top:18px; align-items:start;">
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Top sellers today</div>
+              <div style="margin-top:14px;">
+                <sc-for list="{{ topItems }}" as="t" hint-placeholder-count="6">
+                  <div style="display:grid; grid-template-columns:20px 1fr 64px 84px; gap:11px; padding:11px 0; border-bottom:1px solid #EFEAE0; align-items:center;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#B5AE9E;">{{ t.rank }}</span>
+                    <span style="min-width:0;"><span style="display:block; font-size:13.5px;">{{ t.name }}</span><span style="display:block; font-size:10.5px; color:#9A9384; margin-top:2px;">{{ t.cat }}</span></span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ t.n }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:13px; text-align:right;">{{ t.amt }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Channel mix</div>
+              <div style="margin-top:16px; display:flex; height:12px; border-radius:2px; overflow:hidden;">
+                <sc-for list="{{ mix }}" as="m" hint-placeholder-count="5">
+                  <div style="width:{{ m.w }}; background:{{ m.bg }};"></div>
+                </sc-for>
+              </div>
+              <div style="margin-top:16px; display:flex; flex-direction:column; gap:11px;">
+                <sc-for list="{{ mix }}" as="m" hint-placeholder-count="5">
+                  <div style="display:flex; align-items:center; gap:10px; font-size:13px;">
+                    <span style="width:9px; height:9px; background:{{ m.bg }};"></span>
+                    <span style="flex:1; min-width:0;">{{ m.name }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#9A9384;">{{ m.pct }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:13px; min-width:74px; text-align:right;">{{ m.amt }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Live floor</div>
+              <div style="margin-top:14px; display:flex; flex-direction:column; gap:11px;">
+                <sc-for list="{{ live }}" as="l" hint-placeholder-count="5">
+                  <div style="display:flex; align-items:baseline; gap:10px; padding-bottom:11px; border-bottom:1px solid #EFEAE0;">
+                    <span style="width:7px; height:7px; border-radius:50%; background:{{ l.dot }};"></span>
+                    <span style="flex:1; min-width:0; font-size:13px;">{{ l.what }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#9A9384;">{{ l.value }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top:14px; padding:14px; background:#F8F5EE; border:1px dashed #DCD5C5; border-radius:3px;">
+                <div style="font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#9A9384;">Art wall</div>
+                <div style="font-size:13px; margin-top:6px; line-height:1.5;">3 pieces sold this month · ₹64,000 · 20% artist share paid out weekly.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_sales }}">
+        <div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px;">
+            <sc-for list="{{ salesCards }}" as="s" hint-placeholder-count="4">
+              <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:18px 20px;">
+                <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">{{ s.label }}</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:24px; margin-top:8px;">{{ s.value }}</div>
+                <div style="margin-top:12px; height:5px; background:#F1ECE2; border-radius:1px; overflow:hidden;"><div style="height:100%; width:{{ s.w }}; background:{{ s.bg }};"></div></div>
+                <div style="font-size:11px; color:#8A8274; margin-top:8px;">{{ s.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; margin-top:18px; overflow:hidden;">
+            <div style="padding:18px 22px; border-bottom:1px solid #E3DED2; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+              <span style="font-family:'Instrument Serif',serif; font-size:21px;">Daily sales register</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#9A9384;">1 – 16 SEP 2026</span>
+              <div style="margin-left:auto; display:flex; gap:8px;">
+                <button type="button" style="height:34px; padding:0 13px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">Tally CSV</button>
+                <button type="button" style="height:34px; padding:0 13px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">GSTR-1 JSON</button>
+                <button type="button" style="height:34px; padding:0 13px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">PDF</button>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:96px minmax(140px,1.2fr) 88px 96px 96px 96px 104px; min-width:840px; gap:12px; padding:11px 22px; border-bottom:1px solid #E3DED2; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">
+              <span>Date</span><span>Day</span><span>Orders</span><span>Gross</span><span>Discount</span><span>GST</span><span style="text-align:right;">Net</span>
+            </div>
+            <sc-for list="{{ salesRows }}" as="r" hint-placeholder-count="8">
+              <div style="display:grid; grid-template-columns:96px minmax(140px,1.2fr) 88px 96px 96px 96px 104px; min-width:840px; gap:12px; padding:13px 22px; border-bottom:1px solid #EFEAE0; align-items:center; background:{{ r.bg }};">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px;">{{ r.date }}</span>
+                <span style="font-size:13px; color:#4A4438;">{{ r.day }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ r.orders }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px;">{{ r.gross }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#B4522F;">{{ r.disc }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ r.gst }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:13px; text-align:right; font-weight:500;">{{ r.net }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:18px; margin-top:18px; align-items:start;">
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Hourly heat · this week</div>
+              <div style="margin-top:16px; display:flex; flex-direction:column; gap:4px;">
+                <sc-for list="{{ heat }}" as="h" hint-placeholder-count="7">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="width:32px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#9A9384;">{{ h.day }}</span>
+                    <sc-for list="{{ h.cells }}" as="c" hint-placeholder-count="14">
+                      <span style="flex:1; height:22px; background:{{ c.bg }}; border-radius:1px;"></span>
+                    </sc-for>
+                  </div>
+                </sc-for>
+                <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+                  <span style="width:32px;"></span>
+                  <sc-for list="{{ heatHours }}" as="hh" hint-placeholder-count="14">
+                    <span style="flex:1; text-align:center; font-family:'JetBrains Mono',monospace; font-size:8.5px; color:#B5AE9E;">{{ hh.label }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Category contribution</div>
+              <div style="margin-top:16px; display:flex; flex-direction:column; gap:13px;">
+                <sc-for list="{{ catContrib }}" as="c" hint-placeholder-count="7">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+                      <span>{{ c.name }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace; color:#6E685C;">{{ c.amt }} · {{ c.margin }} margin</span>
+                    </div>
+                    <div style="height:6px; background:#F1ECE2; border-radius:1px; overflow:hidden;"><div style="height:100%; width:{{ c.w }}; background:{{ c.bg }};"></div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_mix }}">
+        <div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
+            <sc-for list="{{ mixQuad }}" as="q" hint-placeholder-count="4">
+              <div style="flex:1; min-width:200px; background:#FFFDF8; border:1px solid #E3DED2; border-left:3px solid {{ q.bg }}; border-radius:3px; padding:16px 18px;">
+                <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:{{ q.bg }};">{{ q.label }}</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:22px; margin-top:7px;">{{ q.n }}</div>
+                <div style="font-size:11.5px; color:#8A8274; margin-top:5px; line-height:1.5;">{{ q.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; overflow:auto;">
+            <div style="display:grid; grid-template-columns:minmax(180px,1.3fr) 92px 96px 92px 88px 108px 120px; min-width:900px; gap:12px; padding:12px 22px; border-bottom:1px solid #E3DED2; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">
+              <span>Item</span><span>Sold</span><span>Revenue</span><span>Cost</span><span>Margin</span><span>Attach rate</span><span>Classification</span>
+            </div>
+            <sc-for list="{{ mixRows }}" as="m" hint-placeholder-count="10">
+              <div style="display:grid; grid-template-columns:minmax(180px,1.3fr) 92px 96px 92px 88px 108px 120px; min-width:900px; gap:12px; padding:14px 22px; border-bottom:1px solid #EFEAE0; align-items:center;">
+                <span style="min-width:0;"><span style="display:block; font-size:13.5px; font-weight:500;">{{ m.name }}</span><span style="display:block; font-size:10.5px; color:#9A9384; margin-top:2px;">{{ m.cat }}</span></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ m.sold }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px;">{{ m.rev }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ m.cost }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#5E7A4E;">{{ m.margin }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ m.attach }}</span>
+                <span style="font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:5px 9px; border:1px solid {{ m.mark }}; color:{{ m.mark }}; border-radius:2px; justify-self:start;">{{ m.klass }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_menu }}">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:18px; align-items:start;">
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:14px;">
+            <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384; padding:0 6px 10px;">Categories</div>
+            <div style="display:flex; flex-direction:column; gap:3px;">
+              <sc-for list="{{ menuCats }}" as="c" hint-placeholder-count="7">
+                <button type="button" onClick="{{ c.go }}" style="width:100%; text-align:left; height:40px; padding:0 11px; border:0; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; font-size:13px; display:flex; align-items:center; gap:9px; background:{{ c.bg }}; color:{{ c.fg }}; font-weight:{{ c.weight }};">
+                  <span style="flex:1;">{{ c.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#B5AE9E;">{{ c.n }}</span>
+                </button>
+              </sc-for>
+            </div>
+            <button type="button" style="margin-top:12px; width:100%; height:38px; background:#F2EDE1; border:1px dashed #D5CDBC; border-radius:3px; font-size:12px; color:#6E685C; cursor:pointer; font-family:Archivo,sans-serif;">+ New category</button>
+            <div style="margin-top:18px; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384; padding:0 6px 8px;">Menus</div>
+            <div style="display:flex; flex-direction:column; gap:7px; padding:0 4px;">
+              <sc-for list="{{ menuSets }}" as="ms" hint-placeholder-count="4">
+                <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#4A4438;">
+                  <span style="width:7px; height:7px; border-radius:50%; background:{{ ms.dot }};"></span>
+                  <span style="flex:1;">{{ ms.name }}</span>
+                  <span style="font-size:10px; color:#9A9384;">{{ ms.hours }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; overflow:auto;">
+            <div style="padding:16px 20px; border-bottom:1px solid #E3DED2; display:flex; align-items:center; gap:12px;">
+              <span style="font-family:'Instrument Serif',serif; font-size:20px;">{{ menuCatName }}</span>
+              <button type="button" style="margin-left:auto; height:36px; padding:0 15px; background:#1A1712; border:0; border-radius:3px; color:#FFFDF8; font-size:12px; font-weight:600; cursor:pointer; font-family:Archivo,sans-serif;">+ Add item</button>
+            </div>
+            <div style="display:grid; grid-template-columns:minmax(160px,1.4fr) 92px 90px 96px 104px; min-width:560px; gap:10px; padding:11px 20px; border-bottom:1px solid #E3DED2; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">
+              <span>Item</span><span>Price</span><span>Cost</span><span>Station</span><span>Channels</span>
+            </div>
+            <sc-for list="{{ menuItems }}" as="m" hint-placeholder-count="9">
+              <button type="button" onClick="{{ m.go }}" style="width:100%; text-align:left; display:grid; grid-template-columns:minmax(160px,1.4fr) 92px 90px 96px 104px; min-width:560px; gap:10px; padding:14px 20px; border:0; border-bottom:1px solid #EFEAE0; align-items:center; cursor:pointer; font-family:Archivo,sans-serif; background:{{ m.bg }};" style-hover="background:#F8F5EE">
+                <span style="min-width:0;">
+                  <span style="display:flex; align-items:center; gap:9px;">
+                    <span style="width:7px; height:7px; border-radius:50%; background:{{ m.dot }};"></span>
+                    <span style="font-size:13.5px; font-weight:500;">{{ m.name }}</span>
+                  </span>
+                  <span style="display:block; font-size:10.5px; color:#9A9384; margin-top:3px; padding-left:16px;">{{ m.note }}</span>
+                </span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px;">{{ m.price }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ m.cost }}</span>
+                <span style="font-size:11.5px; color:#6E685C;">{{ m.station }}</span>
+                <span style="font-size:11px; color:#9A9384;">{{ m.channels }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px;">
+            <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Item editor</div>
+            <div style="font-family:'Instrument Serif',serif; font-size:26px; margin-top:8px; line-height:1.15;">{{ itemSel }}</div>
+            <div style="margin-top:16px; height:118px; background:repeating-linear-gradient(135deg,#F3EFE5 0 9px,#EDE8DC 9px 18px); border:1px solid #E3DED2; border-radius:3px; display:flex; align-items:center; justify-content:center;">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.14em; color:#A8A192; text-align:center; line-height:1.8;">MENU PHOTOGRAPH<br>[ drop image · 1200×800 ]</span>
+            </div>
+            <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <sc-for list="{{ itemFields }}" as="f" hint-placeholder-count="6">
+                <div>
+                  <div style="font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#9A9384;">{{ f.label }}</div>
+                  <div style="margin-top:5px; height:38px; background:#FBF9F3; border:1px solid #E3DED2; border-radius:2px; display:flex; align-items:center; padding:0 11px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:#1A1712;">{{ f.value }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:18px; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Recipe · yields 1</div>
+            <div style="margin-top:9px;">
+              <sc-for list="{{ recipe }}" as="r" hint-placeholder-count="4">
+                <div style="display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid #EFEAE0; font-size:12.5px;">
+                  <span style="color:#4A4438;">{{ r.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; color:#9A9384;">{{ r.qty }}</span>
+                </div>
+              </sc-for>
+              <div style="display:flex; justify-content:space-between; padding:11px 0 0; font-size:12.5px;">
+                <span style="color:#6E685C;">Plate cost · margin</span>
+                <span style="font-family:'JetBrains Mono',monospace; color:#5E7A4E;">₹61 · 74.6%</span>
+              </div>
+            </div>
+            <div style="margin-top:18px; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Modifier groups</div>
+            <div style="margin-top:9px; display:flex; flex-wrap:wrap; gap:7px;">
+              <sc-for list="{{ modGroups }}" as="g" hint-placeholder-count="4">
+                <span style="padding:7px 11px; background:#F2EDE1; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438;">{{ g.name }}</span>
+              </sc-for>
+            </div>
+            <div style="margin-top:20px; display:flex; gap:9px;">
+              <button type="button" style="flex:1; height:44px; background:#1A1712; border:0; border-radius:3px; color:#FFFDF8; font-size:12px; font-weight:600; letter-spacing:.04em; cursor:pointer; font-family:Archivo,sans-serif;">Save changes</button>
+              <button type="button" style="height:44px; padding:0 14px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; color:#6E685C; font-size:12px; cursor:pointer; font-family:Archivo,sans-serif;">86 item</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_inventory }}">
+        <div>
+          <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px;">
+            <sc-for list="{{ invStats }}" as="i" hint-placeholder-count="4">
+              <div style="flex:1; min-width:180px; background:#FFFDF8; border:1px solid #E3DED2; border-top:2px solid {{ i.bg }}; border-radius:3px; padding:16px 18px;">
+                <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">{{ i.label }}</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:24px; margin-top:8px;">{{ i.value }}</div>
+                <div style="font-size:11px; color:#8A8274; margin-top:5px;">{{ i.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:18px; align-items:start;">
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; overflow:auto;">
+              <div style="padding:14px 20px; border-bottom:1px solid #E3DED2; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                <sc-for list="{{ invTabs }}" as="t" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ t.go }}" style="height:34px; padding:0 13px; border-radius:2px; cursor:pointer; font-size:11.5px; font-family:Archivo,sans-serif; background:{{ t.bg }}; color:{{ t.fg }}; border:1px solid {{ t.bd }};">{{ t.name }}</button>
+                </sc-for>
+                <button type="button" style="margin-left:auto; height:34px; padding:0 13px; background:#1A1712; border:0; border-radius:2px; color:#FFFDF8; font-size:11.5px; font-weight:600; cursor:pointer; font-family:Archivo,sans-serif;">Start stock count</button>
+              </div>
+              <div style="display:grid; grid-template-columns:minmax(170px,1.3fr) 96px 96px 88px 104px 92px; min-width:740px; gap:10px; padding:11px 20px; border-bottom:1px solid #E3DED2; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">
+                <span>Ingredient</span><span>On hand</span><span>Par level</span><span>Cover</span><span>Last count</span><span>Status</span>
+              </div>
+              <sc-for list="{{ invRows }}" as="r" hint-placeholder-count="10">
+                <div style="display:grid; grid-template-columns:minmax(170px,1.3fr) 96px 96px 88px 104px 92px; min-width:740px; gap:10px; padding:13px 20px; border-bottom:1px solid #EFEAE0; align-items:center; background:{{ r.bg }};">
+                  <span style="min-width:0;"><span style="display:block; font-size:13.5px;">{{ r.name }}</span><span style="display:block; font-size:10.5px; color:#9A9384; margin-top:2px;">{{ r.supplier }}</span></span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px;">{{ r.onHand }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#9A9384;">{{ r.par }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:{{ r.mark }};">{{ r.cover }}</span>
+                  <span style="font-size:11.5px; color:#6E685C;">{{ r.counted }}</span>
+                  <span style="font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:{{ r.mark }}; border:1px solid {{ r.mark }}; border-radius:2px; padding:4px 8px; justify-self:start;">{{ r.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px;">
+                <div style="font-family:'Instrument Serif',serif; font-size:20px;">Wastage log</div>
+                <div style="margin-top:12px;">
+                  <sc-for list="{{ wastage }}" as="w" hint-placeholder-count="5">
+                    <div style="display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid #EFEAE0;">
+                      <span style="min-width:0;"><span style="display:block; font-size:12.5px;">{{ w.name }}</span><span style="display:block; font-size:10px; color:#9A9384; margin-top:2px;">{{ w.reason }}</span></span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#B4522F;">{{ w.cost }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <button type="button" style="margin-top:14px; width:100%; height:40px; background:#F2EDE1; border:1px dashed #D5CDBC; border-radius:3px; font-size:12px; color:#6E685C; cursor:pointer; font-family:Archivo,sans-serif;">+ Log wastage</button>
+              </div>
+              <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px;">
+                <div style="font-family:'Instrument Serif',serif; font-size:20px;">Auto-86 rules</div>
+                <div style="font-size:12px; color:#8A8274; margin-top:8px; line-height:1.6;">When an ingredient hits zero, these items come off every channel automatically and the KDS shows a strike.</div>
+                <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+                  <sc-for list="{{ autoRules }}" as="a" hint-placeholder-count="3">
+                    <div style="padding:11px 12px; background:#FBF9F3; border:1px solid #E3DED2; border-radius:3px; font-size:12.5px; line-height:1.5;">{{ a.text }}</div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_purchasing }}">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(330px,1fr)); gap:18px; align-items:start;">
+          <div>
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; overflow:auto;">
+              <div style="padding:16px 20px; border-bottom:1px solid #E3DED2; display:flex; align-items:center; gap:12px;">
+                <span style="font-family:'Instrument Serif',serif; font-size:21px;">Purchase orders</span>
+                <button type="button" style="margin-left:auto; height:36px; padding:0 15px; background:#1A1712; border:0; border-radius:3px; color:#FFFDF8; font-size:12px; font-weight:600; cursor:pointer; font-family:Archivo,sans-serif;">+ Raise PO</button>
+              </div>
+              <div style="display:grid; grid-template-columns:104px minmax(150px,1.2fr) 96px 104px 100px 96px; min-width:760px; gap:10px; padding:11px 20px; border-bottom:1px solid #E3DED2; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">
+                <span>PO</span><span>Supplier</span><span>Items</span><span>Expected</span><span>Status</span><span style="text-align:right;">Value</span>
+              </div>
+              <sc-for list="{{ poRows }}" as="p" hint-placeholder-count="6">
+                <div style="display:grid; grid-template-columns:104px minmax(150px,1.2fr) 96px 104px 100px 96px; min-width:760px; gap:10px; padding:14px 20px; border-bottom:1px solid #EFEAE0; align-items:center;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#C24D22;">{{ p.id }}</span>
+                  <span style="min-width:0;"><span style="display:block; font-size:13.5px;">{{ p.supplier }}</span><span style="display:block; font-size:10.5px; color:#9A9384; margin-top:2px;">{{ p.contact }}</span></span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ p.items }}</span>
+                  <span style="font-size:12px; color:#4A4438;">{{ p.eta }}</span>
+                  <span style="font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:{{ p.mark }}; border:1px solid {{ p.mark }}; border-radius:2px; padding:4px 8px; justify-self:start;">{{ p.status }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:13px; text-align:right;">{{ p.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; margin-top:18px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Suppliers</div>
+              <div style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px;">
+                <sc-for list="{{ suppliers }}" as="s" hint-placeholder-count="6">
+                  <div style="padding:14px; background:#FBF9F3; border:1px solid #E3DED2; border-radius:3px;">
+                    <div style="font-size:13.5px; font-weight:500;">{{ s.name }}</div>
+                    <div style="font-size:11px; color:#9A9384; margin-top:4px; line-height:1.6;">{{ s.cat }} · {{ s.terms }}<br>{{ s.phone }}</div>
+                    <div style="display:flex; justify-content:space-between; margin-top:10px; font-family:'JetBrains Mono',monospace; font-size:11px;">
+                      <span style="color:#6E685C;">{{ s.spend }} MTD</span>
+                      <span style="color:{{ s.mark }};">{{ s.rating }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px;">
+            <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Suggested order</div>
+            <div style="font-family:'Instrument Serif',serif; font-size:22px; margin-top:8px; line-height:1.2;">Akshaya Dairy · Wed 07:00</div>
+            <div style="font-size:12px; color:#8A8274; margin-top:8px; line-height:1.6;">Built from 14-day consumption, par levels and Saturday's residency event.</div>
+            <div style="margin-top:14px;">
+              <sc-for list="{{ suggested }}" as="s" hint-placeholder-count="5">
+                <div style="display:grid; grid-template-columns:1fr 72px 72px; gap:8px; padding:11px 0; border-bottom:1px solid #EFEAE0; align-items:baseline;">
+                  <span style="font-size:12.5px;">{{ s.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#9A9384;">{{ s.qty }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; text-align:right;">{{ s.cost }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid #E3DED2;">
+              <span style="font-size:13px; color:#6E685C;">Order total</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:18px;">₹14,280</span>
+            </div>
+            <button type="button" style="margin-top:14px; width:100%; height:46px; background:#C24D22; border:0; border-radius:3px; color:#FFFDF8; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; font-family:Archivo,sans-serif;">Send PO on WhatsApp</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_staff }}">
+        <div>
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; overflow:auto;">
+            <div style="padding:16px 20px; border-bottom:1px solid #E3DED2; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <span style="font-family:'Instrument Serif',serif; font-size:21px;">Week 38 rota</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#9A9384;">14 – 20 SEP · 312 SCHEDULED HOURS · ₹1,04,800 LABOUR</span>
+              <button type="button" style="margin-left:auto; height:36px; padding:0 15px; background:#1A1712; border:0; border-radius:3px; color:#FFFDF8; font-size:12px; font-weight:600; cursor:pointer; font-family:Archivo,sans-serif;">Publish rota</button>
+            </div>
+            <div style="display:grid; grid-template-columns:184px repeat(7, minmax(78px,1fr)); min-width:900px; gap:1px; background:#EFEAE0;">
+              <div style="background:#FBF9F3; padding:11px 14px; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Person</div>
+              <sc-for list="{{ rotaDays }}" as="d" hint-placeholder-count="7">
+                <div style="background:#FBF9F3; padding:11px 10px; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384; text-align:center;">{{ d.label }}</div>
+              </sc-for>
+              <sc-for list="{{ rota }}" as="p" hint-placeholder-count="6">
+                <div style="display:grid; grid-template-columns:subgrid; grid-column:1 / -1; gap:1px;">
+                  <div style="background:#FFFDF8; padding:12px 14px;">
+                    <div style="font-size:13px; font-weight:500;">{{ p.name }}</div>
+                    <div style="font-size:10.5px; color:#9A9384; margin-top:2px;">{{ p.role }} · {{ p.hours }}</div>
+                  </div>
+                  <sc-for list="{{ p.shifts }}" as="sh" hint-placeholder-count="7">
+                    <div style="background:{{ sh.bg }}; padding:10px 8px; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:{{ sh.fg }};">{{ sh.time }}</span>
+                      <span style="font-size:9.5px; color:{{ sh.fg }}; opacity:.75;">{{ sh.tag }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:18px; margin-top:18px; align-items:start;">
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Team & access</div>
+              <div style="margin-top:14px;">
+                <sc-for list="{{ team }}" as="t" hint-placeholder-count="6">
+                  <div style="display:grid; grid-template-columns:34px 1fr 120px 90px; gap:11px; padding:12px 0; border-bottom:1px solid #EFEAE0; align-items:center;">
+                    <span style="width:34px; height:34px; border-radius:50%; background:#EDE7DA; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">{{ t.ini }}</span>
+                    <span style="min-width:0;"><span style="display:block; font-size:13.5px;">{{ t.name }}</span><span style="display:block; font-size:10.5px; color:#9A9384; margin-top:2px;">{{ t.role }}</span></span>
+                    <span style="font-size:11px; color:#6E685C;">{{ t.perms }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:11.5px; text-align:right; color:{{ t.mark }};">{{ t.state }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Timesheet · today</div>
+              <div style="margin-top:14px;">
+                <sc-for list="{{ timesheet }}" as="t" hint-placeholder-count="6">
+                  <div style="padding:12px 0; border-bottom:1px solid #EFEAE0;">
+                    <div style="display:flex; justify-content:space-between; font-size:13px;">
+                      <span>{{ t.name }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace; color:#6E685C;">{{ t.in }} → {{ t.out }}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#9A9384; margin-top:4px;">
+                      <span>{{ t.note }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;">{{ t.total }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_customers }}">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(330px,1fr)); gap:18px; align-items:start;">
+          <div>
+            <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px;">
+              <sc-for list="{{ crmStats }}" as="c" hint-placeholder-count="4">
+                <div style="flex:1; min-width:170px; background:#FFFDF8; border:1px solid #E3DED2; border-top:2px solid {{ c.bg }}; border-radius:3px; padding:16px 18px;">
+                  <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">{{ c.label }}</div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:24px; margin-top:8px;">{{ c.value }}</div>
+                  <div style="font-size:11px; color:#8A8274; margin-top:5px;">{{ c.note }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; overflow:auto;">
+              <div style="display:grid; grid-template-columns:minmax(170px,1.3fr) 100px 92px 108px 96px 92px; min-width:760px; gap:10px; padding:11px 20px; border-bottom:1px solid #E3DED2; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">
+                <span>Guest</span><span>Tier</span><span>Visits</span><span>Lifetime</span><span>Last seen</span><span>Points</span>
+              </div>
+              <sc-for list="{{ customers }}" as="c" hint-placeholder-count="9">
+                <button type="button" onClick="{{ c.go }}" style="width:100%; text-align:left; display:grid; grid-template-columns:minmax(170px,1.3fr) 100px 92px 108px 96px 92px; min-width:760px; gap:10px; padding:14px 20px; border:0; border-bottom:1px solid #EFEAE0; align-items:center; cursor:pointer; font-family:Archivo,sans-serif; background:{{ c.bg }};" style-hover="background:#F8F5EE">
+                  <span style="min-width:0;"><span style="display:block; font-size:13.5px; font-weight:500;">{{ c.name }}</span><span style="display:block; font-size:10.5px; color:#9A9384; margin-top:2px;">{{ c.contact }}</span></span>
+                  <span style="font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:{{ c.mark }}; border:1px solid {{ c.mark }}; border-radius:2px; padding:4px 8px; justify-self:start;">{{ c.tier }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ c.visits }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px;">{{ c.ltv }}</span>
+                  <span style="font-size:11.5px; color:#6E685C;">{{ c.last }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#C24D22;">{{ c.points }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:22px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="width:46px; height:46px; border-radius:50%; background:#EDE7DA; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:600;">MS</span>
+              <div style="min-width:0;">
+                <div style="font-family:'Instrument Serif',serif; font-size:23px; line-height:1.1;">{{ custSel }}</div>
+                <div style="font-size:11.5px; color:#9A9384; margin-top:3px;">Gold since Feb 2024 · +91 98450 11223</div>
+              </div>
+            </div>
+            <div style="margin-top:18px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <sc-for list="{{ custStats }}" as="c" hint-placeholder-count="4">
+                <div style="padding:13px; background:#FBF9F3; border:1px solid #E3DED2; border-radius:3px;">
+                  <div style="font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#9A9384;">{{ c.label }}</div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:17px; margin-top:6px;">{{ c.value }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:18px; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Usual order</div>
+            <div style="margin-top:9px; display:flex; flex-wrap:wrap; gap:7px;">
+              <sc-for list="{{ usual }}" as="u" hint-placeholder-count="4">
+                <span style="padding:7px 11px; background:#F2EDE1; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px;">{{ u.name }}</span>
+              </sc-for>
+            </div>
+            <div style="margin-top:18px; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Recent visits</div>
+            <div style="margin-top:9px;">
+              <sc-for list="{{ visits }}" as="v" hint-placeholder-count="5">
+                <div style="display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid #EFEAE0;">
+                  <span style="min-width:0;"><span style="display:block; font-size:12.5px;">{{ v.what }}</span><span style="display:block; font-size:10px; color:#9A9384; margin-top:2px;">{{ v.when }}</span></span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px;">{{ v.amt }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:18px; padding:14px; background:#FBF1E8; border:1px solid #EDD6BF; border-radius:3px;">
+              <div style="font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#B4522F;">Note for staff</div>
+              <div style="font-size:12.5px; margin-top:6px; line-height:1.6;">Allergic to walnuts. Prefers the Mezzanine window seat. Buys prints — tell her when a new residency opens.</div>
+            </div>
+            <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:9px;">
+              <button type="button" style="height:42px; background:#1A1712; border:0; border-radius:3px; color:#FFFDF8; font-size:12px; font-weight:600; cursor:pointer; font-family:Archivo,sans-serif;">Send offer</button>
+              <button type="button" style="height:42px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; color:#4A4438; font-size:12px; cursor:pointer; font-family:Archivo,sans-serif;">Add points</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_promos }}">
+        <div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px;">
+            <sc-for list="{{ promos }}" as="p" hint-placeholder-count="6">
+              <div style="background:#FFFDF8; border:1px solid #E3DED2; border-top:2px solid {{ p.mark }}; border-radius:3px; padding:18px 20px; display:flex; flex-direction:column;">
+                <div style="display:flex; align-items:baseline; gap:9px;">
+                  <span style="font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:{{ p.mark }};">{{ p.state }}</span>
+                  <span style="margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:10px; color:#9A9384;">{{ p.code }}</span>
+                </div>
+                <div style="font-family:'Instrument Serif',serif; font-size:22px; margin-top:10px; line-height:1.2;">{{ p.name }}</div>
+                <div style="font-size:12.5px; color:#6E685C; margin-top:8px; line-height:1.55;">{{ p.rule }}</div>
+                <div style="margin-top:14px; display:flex; gap:18px;">
+                  <div><div style="font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:#9A9384;">Used</div><div style="font-family:'JetBrains Mono',monospace; font-size:15px; margin-top:3px;">{{ p.used }}</div></div>
+                  <div><div style="font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:#9A9384;">Cost</div><div style="font-family:'JetBrains Mono',monospace; font-size:15px; margin-top:3px;">{{ p.cost }}</div></div>
+                  <div><div style="font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:#9A9384;">Uplift</div><div style="font-family:'JetBrains Mono',monospace; font-size:15px; margin-top:3px; color:#5E7A4E;">{{ p.uplift }}</div></div>
+                </div>
+                <div style="margin-top:14px; display:flex; gap:8px;">
+                  <button type="button" style="flex:1; height:38px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">Edit</button>
+                  <button type="button" style="flex:1; height:38px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">{{ p.action }}</button>
+                </div>
+              </div>
+            </sc-for>
+            <button type="button" style="min-height:200px; background:#F8F5EE; border:1px dashed #D5CDBC; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;">
+              <span style="font-family:'Instrument Serif',serif; font-size:30px; color:#B5AE9E;">+</span>
+              <span style="font-size:12.5px; color:#6E685C;">New promotion</span>
+              <span style="font-size:10.5px; color:#A8A192;">happy hour · combo · BOGO · code</span>
+            </button>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:18px; margin-top:18px; align-items:start;">
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Loyalty programme</div>
+              <div style="margin-top:14px;">
+                <sc-for list="{{ tiers }}" as="t" hint-placeholder-count="4">
+                  <div style="display:grid; grid-template-columns:96px 1fr 84px; gap:11px; padding:13px 0; border-bottom:1px solid #EFEAE0; align-items:center;">
+                    <span style="font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:{{ t.mark }}; border:1px solid {{ t.mark }}; border-radius:2px; padding:5px 8px; text-align:center;">{{ t.name }}</span>
+                    <span style="font-size:12.5px; color:#4A4438; line-height:1.5;">{{ t.rule }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px; text-align:right;">{{ t.members }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px 22px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Gift cards</div>
+              <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <sc-for list="{{ giftStats }}" as="g" hint-placeholder-count="4">
+                  <div style="padding:13px; background:#FBF9F3; border:1px solid #E3DED2; border-radius:3px;">
+                    <div style="font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#9A9384;">{{ g.label }}</div>
+                    <div style="font-family:'JetBrains Mono',monospace; font-size:17px; margin-top:6px;">{{ g.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top:14px;">
+                <sc-for list="{{ giftRows }}" as="g" hint-placeholder-count="4">
+                  <div style="display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid #EFEAE0;">
+                    <span style="min-width:0;"><span style="display:block; font-family:'JetBrains Mono',monospace; font-size:12px;">{{ g.code }}</span><span style="display:block; font-size:10.5px; color:#9A9384; margin-top:2px;">{{ g.note }}</span></span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px;">{{ g.bal }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_invoices }}">
+        <div>
+          <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px;">
+            <sc-for list="{{ taxStats }}" as="t" hint-placeholder-count="4">
+              <div style="flex:1; min-width:180px; background:#FFFDF8; border:1px solid #E3DED2; border-top:2px solid {{ t.bg }}; border-radius:3px; padding:16px 18px;">
+                <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">{{ t.label }}</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:23px; margin-top:8px;">{{ t.value }}</div>
+                <div style="font-size:11px; color:#8A8274; margin-top:5px;">{{ t.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; overflow:auto;">
+            <div style="padding:16px 20px; border-bottom:1px solid #E3DED2; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <span style="font-family:'Instrument Serif',serif; font-size:21px;">Invoice ledger</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#9A9384;">SEPTEMBER 2026 · 2,214 DOCUMENTS</span>
+              <div style="margin-left:auto; display:flex; gap:8px;">
+                <button type="button" style="height:34px; padding:0 13px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">GSTR-1</button>
+                <button type="button" style="height:34px; padding:0 13px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">GSTR-3B</button>
+                <button type="button" style="height:34px; padding:0 13px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">E-invoice IRN log</button>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:132px minmax(160px,1.3fr) 96px 92px 88px 96px 100px; min-width:880px; gap:10px; padding:11px 20px; border-bottom:1px solid #E3DED2; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">
+              <span>Invoice no</span><span>Party</span><span>Taxable</span><span>CGST</span><span>SGST</span><span>Total</span><span>Status</span>
+            </div>
+            <sc-for list="{{ invoiceRows }}" as="i" hint-placeholder-count="9">
+              <div style="display:grid; grid-template-columns:132px minmax(160px,1.3fr) 96px 92px 88px 96px 100px; min-width:880px; gap:10px; padding:13px 20px; border-bottom:1px solid #EFEAE0; align-items:center;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#C24D22;">{{ i.no }}</span>
+                <span style="min-width:0;"><span style="display:block; font-size:13px;">{{ i.party }}</span><span style="display:block; font-size:10.5px; color:#9A9384; margin-top:2px;">{{ i.meta }}</span></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px;">{{ i.taxable }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ i.cgst }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#6E685C;">{{ i.sgst }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:500;">{{ i.total }}</span>
+                <span style="font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:{{ i.mark }}; border:1px solid {{ i.mark }}; border-radius:2px; padding:4px 8px; justify-self:start;">{{ i.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_payouts }}">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(330px,1fr)); gap:18px; align-items:start;">
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; overflow:auto;">
+            <div style="padding:16px 20px; border-bottom:1px solid #E3DED2; font-family:'Instrument Serif',serif; font-size:21px;">Settlements</div>
+            <div style="display:grid; grid-template-columns:104px minmax(150px,1.2fr) 96px 96px 96px 104px; min-width:760px; gap:10px; padding:11px 20px; border-bottom:1px solid #E3DED2; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">
+              <span>Date</span><span>Source</span><span>Gross</span><span>Fees</span><span>Refunds</span><span style="text-align:right;">Net payout</span>
+            </div>
+            <sc-for list="{{ payoutRows }}" as="p" hint-placeholder-count="7">
+              <div style="display:grid; grid-template-columns:104px minmax(150px,1.2fr) 96px 96px 96px 104px; min-width:760px; gap:10px; padding:13px 20px; border-bottom:1px solid #EFEAE0; align-items:center;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px;">{{ p.date }}</span>
+                <span style="min-width:0;"><span style="display:block; font-size:13px;">{{ p.src }}</span><span style="display:block; font-size:10.5px; color:#9A9384; margin-top:2px;">{{ p.utr }}</span></span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px;">{{ p.gross }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#B4522F;">{{ p.fees }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#B4522F;">{{ p.refunds }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px; text-align:right; font-weight:500;">{{ p.net }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px;">
+              <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Next payout</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:30px; margin-top:8px;">₹1,18,420</div>
+              <div style="font-size:12px; color:#8A8274; margin-top:6px;">Tomorrow 11:00 · HDFC ••4471 · T+1</div>
+              <div style="margin-top:16px; display:flex; flex-direction:column; gap:9px;">
+                <sc-for list="{{ payoutBits }}" as="b" hint-placeholder-count="4">
+                  <div style="display:flex; justify-content:space-between; font-size:12.5px;">
+                    <span style="color:#6E685C;">{{ b.label }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; color:{{ b.fg }};">{{ b.value }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:20px;">Tip distribution</div>
+              <div style="font-size:12px; color:#8A8274; margin-top:8px; line-height:1.6;">Pooled tips split by hours worked, paid with weekly wages. Kitchen share 35%.</div>
+              <div style="margin-top:12px;">
+                <sc-for list="{{ tipSplit }}" as="t" hint-placeholder-count="4">
+                  <div style="display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid #EFEAE0; font-size:12.5px;">
+                    <span>{{ t.name }}</span><span style="font-family:'JetBrains Mono',monospace;">{{ t.amt }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:20px;">Artist payouts</div>
+              <div style="margin-top:12px;">
+                <sc-for list="{{ artistPay }}" as="a" hint-placeholder-count="3">
+                  <div style="display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid #EFEAE0;">
+                    <span style="min-width:0;"><span style="display:block; font-size:12.5px;">{{ a.name }}</span><span style="display:block; font-size:10px; color:#9A9384; margin-top:2px;">{{ a.note }}</span></span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px;">{{ a.amt }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_devices }}">
+        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;">
+          <sc-for list="{{ devices }}" as="d" hint-placeholder-count="7">
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:18px 20px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="width:8px; height:8px; border-radius:50%; background:{{ d.mark }};"></span>
+                <span style="font-size:14px; font-weight:600;">{{ d.name }}</span>
+                <span style="margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:10px; color:#9A9384;">{{ d.id }}</span>
+              </div>
+              <div style="font-size:12px; color:#6E685C; margin-top:9px; line-height:1.6;">{{ d.kind }}<br>{{ d.detail }}</div>
+              <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:{{ d.mark }};">{{ d.state }}</span>
+                <button type="button" style="height:32px; padding:0 12px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">{{ d.action }}</button>
+              </div>
+            </div>
+          </sc-for>
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:20px; grid-column:1 / -1;">
+            <div style="font-family:'Instrument Serif',serif; font-size:21px;">Print routing</div>
+            <div style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px;">
+              <sc-for list="{{ routes }}" as="r" hint-placeholder-count="5">
+                <div style="padding:14px; background:#FBF9F3; border:1px solid #E3DED2; border-radius:3px;">
+                  <div style="font-size:12.5px; font-weight:500;">{{ r.what }}</div>
+                  <div style="font-size:11.5px; color:#6E685C; margin-top:5px; line-height:1.5;">{{ r.where }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_channels }}">
+        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px;">
+          <sc-for list="{{ channels }}" as="c" hint-placeholder-count="6">
+            <div style="background:#FFFDF8; border:1px solid #E3DED2; border-top:2px solid {{ c.mark }}; border-radius:3px; padding:20px;">
+              <div style="display:flex; align-items:baseline; gap:10px;">
+                <span style="font-family:'Instrument Serif',serif; font-size:22px;">{{ c.name }}</span>
+                <span style="margin-left:auto; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:{{ c.mark }};">{{ c.state }}</span>
+              </div>
+              <div style="font-size:12.5px; color:#6E685C; margin-top:9px; line-height:1.6;">{{ c.note }}</div>
+              <div style="margin-top:14px; display:flex; gap:20px;">
+                <div><div style="font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:#9A9384;">Orders MTD</div><div style="font-family:'JetBrains Mono',monospace; font-size:16px; margin-top:4px;">{{ c.orders }}</div></div>
+                <div><div style="font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:#9A9384;">Revenue</div><div style="font-family:'JetBrains Mono',monospace; font-size:16px; margin-top:4px;">{{ c.rev }}</div></div>
+                <div><div style="font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:#9A9384;">Commission</div><div style="font-family:'JetBrains Mono',monospace; font-size:16px; margin-top:4px;">{{ c.fee }}</div></div>
+              </div>
+              <div style="margin-top:14px; display:flex; gap:8px;">
+                <button type="button" style="flex:1; height:38px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">Menu mapping</button>
+                <button type="button" style="flex:1; height:38px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:2px; font-size:11.5px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">{{ c.action }}</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_settings }}">
+        <div style="display:grid; grid-template-columns:200px minmax(0,1fr); gap:18px; align-items:start;">
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:12px;">
+            <sc-for list="{{ setTabs }}" as="t" hint-placeholder-count="7">
+              <button type="button" onClick="{{ t.go }}" style="width:100%; text-align:left; height:40px; padding:0 12px; border:0; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; font-size:13px; background:{{ t.bg }}; color:{{ t.fg }}; font-weight:{{ t.weight }};">{{ t.name }}</button>
+            </sc-for>
+          </div>
+          <div style="background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:24px 26px;">
+            <div style="font-family:'Instrument Serif',serif; font-size:23px;">{{ setTitle }}</div>
+            <div style="font-size:12.5px; color:#8A8274; margin-top:7px; line-height:1.6; max-width:560px;">{{ setBlurb }}</div>
+            <div style="margin-top:22px; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px;">
+              <sc-for list="{{ setFields }}" as="f" hint-placeholder-count="8">
+                <div>
+                  <div style="font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#9A9384;">{{ f.label }}</div>
+                  <div style="margin-top:6px; min-height:42px; background:#FBF9F3; border:1px solid #E3DED2; border-radius:2px; display:flex; align-items:center; padding:0 12px; font-size:13px;">{{ f.value }}</div>
+                  <div style="font-size:10.5px; color:#A8A192; margin-top:5px;">{{ f.hint }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:24px; padding-top:20px; border-top:1px solid #EFEAE0; display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ setToggles }}" as="t" hint-placeholder-count="5">
+                <div style="display:flex; align-items:center; gap:14px; padding:13px 15px; background:#FBF9F3; border:1px solid #E3DED2; border-radius:3px;">
+                  <div style="min-width:0; flex:1;">
+                    <div style="font-size:13px; font-weight:500;">{{ t.name }}</div>
+                    <div style="font-size:11.5px; color:#8A8274; margin-top:3px; line-height:1.5;">{{ t.note }}</div>
+                  </div>
+                  <div style="width:42px; height:24px; border-radius:12px; background:{{ t.bg }}; position:relative; flex:0 0 42px;">
+                    <span style="position:absolute; top:3px; left:{{ t.x }}; width:18px; height:18px; border-radius:50%; background:#FFFDF8;"></span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:22px; display:flex; gap:10px;">
+              <button type="button" style="height:46px; padding:0 22px; background:#1A1712; border:0; border-radius:3px; color:#FFFDF8; font-size:12px; font-weight:600; letter-spacing:.04em; cursor:pointer; font-family:Archivo,sans-serif;">Save settings</button>
+              <button type="button" style="height:46px; padding:0 18px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; color:#6E685C; font-size:12px; cursor:pointer; font-family:Archivo,sans-serif;">Discard</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { screen: 'dash', range: 'Today', menuCat: 'Coffee', itemSel: 'Flat White', invFilter: 'All', custSel: 'Meera Sundaram', settingsTab: 'Store' };
+
+  money(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
+  set(k, v) { this.setState({ [k]: v }); }
+
+  navDef() {
+    return [
+      ['g', 'Analytics'], ['dash', 'Dashboard', ''], ['sales', 'Sales reports', ''], ['mix', 'Product mix', ''],
+      ['g', 'Operations'], ['menu', 'Menu & recipes', '214'], ['inventory', 'Inventory', '6'], ['purchasing', 'Purchasing', '3'],
+      ['g', 'People'], ['staff', 'Staff & rota', ''], ['customers', 'Customers', '4.2k'], ['promos', 'Promotions', '5'],
+      ['g', 'Money'], ['invoices', 'Invoices & tax', ''], ['payouts', 'Payouts', ''],
+      ['g', 'System'], ['devices', 'Devices', '7'], ['channels', 'Channels', ''], ['settings', 'Settings', '']
+    ];
+  }
+
+  titles() {
+    return {
+      dash: ['Dashboard', 'TUE 16 SEP 2026 · 14:38 · TRADING'],
+      sales: ['Sales reports', 'PERIOD COMPARISON · GST INCLUSIVE'],
+      mix: ['Product mix', 'ITEM PERFORMANCE · 214 SKUS'],
+      menu: ['Menu & recipes', '7 CATEGORIES · 214 ITEMS · 38 MODIFIERS'],
+      inventory: ['Inventory', '182 INGREDIENTS · 6 BELOW PAR'],
+      purchasing: ['Purchasing', '3 OPEN ORDERS · 11 SUPPLIERS'],
+      staff: ['Staff & rota', '18 EMPLOYEES · WEEK 38'],
+      customers: ['Customers', '4,214 PROFILES · 1,088 LOYALTY MEMBERS'],
+      promos: ['Promotions', '5 LIVE · 2 SCHEDULED'],
+      invoices: ['Invoices & tax', 'FY 2026-27 · GSTIN 29ABCDE1234F1Z5'],
+      payouts: ['Payouts', 'RAZORPAY · SETTLEMENT T+1'],
+      devices: ['Devices', '7 PAIRED · 1 NEEDS ATTENTION'],
+      channels: ['Sales channels', 'WEB · QR · KIOSK · AGGREGATORS'],
+      settings: ['Settings', 'STORE · TAX · RECEIPTS · ACCESS']
+    };
+  }
+
+  renderVals() {
+    const st = this.state, T = this.titles()[st.screen] || ['', ''];
+    const nav = this.navDef().map(n => {
+      if (n[0] === 'g') return { isGroup: true, isItem: false, label: n[1] };
+      const on = st.screen === n[0];
+      return {
+        isGroup: false, isItem: true, label: n[1], badge: n[2],
+        bg: on ? '#F2EDE1' : 'transparent', fg: on ? '#1A1712' : '#5C564A',
+        weight: on ? '600' : '400', bar: on ? '#C24D22' : 'transparent',
+        go: () => this.set('screen', n[0])
+      };
+    });
+
+    return {
+      nav, title: T[0], subtitle: T[1],
+      ranges: ['Today', 'Week', 'Month', 'Year'].map(r => ({
+        name: r, bg: st.range === r ? '#1A1712' : '#FFFDF8', fg: st.range === r ? '#FFFDF8' : '#6E685C',
+        go: () => this.set('range', r)
+      })),
+      s_dash: st.screen === 'dash', s_sales: st.screen === 'sales', s_mix: st.screen === 'mix',
+      s_menu: st.screen === 'menu', s_inventory: st.screen === 'inventory', s_purchasing: st.screen === 'purchasing',
+      s_staff: st.screen === 'staff', s_customers: st.screen === 'customers', s_promos: st.screen === 'promos',
+      s_invoices: st.screen === 'invoices', s_payouts: st.screen === 'payouts', s_devices: st.screen === 'devices',
+      s_channels: st.screen === 'channels', s_settings: st.screen === 'settings',
+      kpis: [
+        { label: 'Net sales', value: '₹84,620', delta: '+12.4% vs last Tue', accent: '#C24D22', fg: '#5E7A4E' },
+        { label: 'Orders', value: '138', delta: '+9 orders', accent: '#5E7A4E', fg: '#5E7A4E' },
+        { label: 'Avg ticket', value: '₹613', delta: '+₹22', accent: '#7E86A8', fg: '#5E7A4E' },
+        { label: 'Labour cost', value: '21.4%', delta: '+1.2pt over target', accent: '#C79A3C', fg: '#B4522F' },
+        { label: 'Food cost', value: '28.9%', delta: '−0.6pt improving', accent: '#5E7A4E', fg: '#5E7A4E' }
+      ],
+      hours: [['08', 30, 24], ['09', 48, 40], ['10', 62, 55], ['11', 54, 60], ['12', 82, 74], ['13', 100, 88], ['14', 76, 70], ['15', 48, 52], ['16', 40, 44], ['17', 58, 50], ['18', 88, 72], ['19', 94, 80], ['20', 70, 66], ['21', 44, 48]].map(h => ({
+        hr: h[0], a: h[1] + '%', b: h[2] + '%'
+      })),
+      alerts: [
+        { kind: 'Stock', text: 'Oat milk at 4 litres — 1.5 days of cover at current pace.', action: 'Raise PO to Akshaya Dairy →', when: '10m ago', bg: '#FBF1E8', bd: '#EDD6BF', fg: '#B4522F' },
+        { kind: 'Kitchen', text: 'Two tickets over 12 minutes on the Mezzanine.', action: 'Open kitchen display →', when: 'now', bg: '#FCECEA', bd: '#EFCFCA', fg: '#B23A2C' },
+        { kind: 'Review', text: '1-star Google review mentions slow QR table service.', action: 'Reply and comp →', when: '1h ago', bg: '#FFFDF8', bd: '#E3DED2', fg: '#6E685C' },
+        { kind: 'Rota', text: 'Sunday brunch is short one barista from 09:00.', action: 'Offer shift →', when: '3h ago', bg: '#FFFDF8', bd: '#E3DED2', fg: '#6E685C' },
+        { kind: 'Art', text: '“Monsoon, unfiltered” reserved by a guest on table G5.', action: 'Hold and invoice →', when: '4h ago', bg: '#F2F5EF', bd: '#D6DFCE', fg: '#5E7A4E' }
+      ],
+      topItems: [
+        ['Flat White', 'Coffee', 62, 14880], ['Truffle Mushroom Toast', 'Plates', 28, 11760],
+        ['Cold Brew', 'Coffee', 34, 9520], ['The Big Canvas', 'Plates', 17, 8840],
+        ['Almond Croissant', 'Bakery', 31, 6820], ['Espresso Martini', 'Bar', 11, 6820]
+      ].map((t, i) => ({ rank: (i + 1).toString().padStart(2, '0'), name: t[0], cat: t[1], n: t[2] + ' sold', amt: this.money(t[3]) })),
+      mix: [['Dine-in', 50, 42600, '#C24D22'], ['QR table', 18, 14800, '#D98B5F'], ['Takeaway', 11, 9400, '#C79A3C'], ['Web & delivery', 16, 13200, '#7E86A8'], ['Retail & art', 5, 4620, '#5E7A4E']].map(m => ({
+        name: m[0], pct: m[1] + '%', w: m[1] + '%', amt: this.money(m[2]), bg: m[3]
+      })),
+      salesCards: [
+        { label: 'Gross sales', value: '₹9,42,180', w: '100%', bg: '#C24D22', note: '16 trading days · 2,214 orders' },
+        { label: 'Discounts & comps', value: '₹46,320', w: '38%', bg: '#C79A3C', note: '4.9% of gross · 312 orders' },
+        { label: 'GST collected', value: '₹44,860', w: '52%', bg: '#7E86A8', note: 'CGST ₹22,430 · SGST ₹22,430' },
+        { label: 'Net revenue', value: '₹8,51,000', w: '92%', bg: '#5E7A4E', note: 'after discount and tax' }
+      ],
+      salesRows: [
+        ['16 Sep', 'Tuesday', 138, 88800, 4180, 4230, 84620, true],
+        ['15 Sep', 'Monday', 112, 71400, 3020, 3410, 68380, false],
+        ['14 Sep', 'Sunday', 196, 142600, 8640, 6700, 133960, false],
+        ['13 Sep', 'Saturday', 214, 158200, 9120, 7460, 149080, false],
+        ['12 Sep', 'Friday', 178, 121400, 6180, 5760, 115220, false],
+        ['11 Sep', 'Thursday', 141, 89600, 4260, 4270, 85340, false],
+        ['10 Sep', 'Wednesday', 133, 84200, 3980, 4010, 80220, false],
+        ['09 Sep', 'Tuesday', 126, 79400, 3640, 3790, 75760, false]
+      ].map(r => ({
+        date: r[0], day: r[1], orders: r[2], gross: this.money(r[3]), disc: '−' + this.money(r[4]),
+        gst: this.money(r[5]), net: this.money(r[6]), bg: r[7] ? '#FBF6EE' : 'transparent'
+      })),
+      heat: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((d, di) => ({
+        day: d,
+        cells: Array.from({ length: 14 }, (_, i) => {
+          const load = [22, 34, 48, 44, 62, 78, 58, 40, 36, 48, 72, 88, 66, 38][i] * (di >= 5 ? 1.25 : 1) * (di === 1 ? 1.05 : 1);
+          const bg = load > 80 ? '#C24D22' : load > 60 ? '#D98B5F' : load > 40 ? '#E5C6A8' : load > 25 ? '#F0E4D4' : '#F6F1E7';
+          return { bg };
+        })
+      })),
+      heatHours: ['8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21'].map(h => ({ label: h })),
+      catContrib: [['Coffee', 246800, 100, '78%', '#C24D22'], ['Plates', 198400, 80, '68%', '#D98B5F'], ['Bakery', 121600, 49, '64%', '#C79A3C'], ['Bar', 142200, 58, '72%', '#7E86A8'], ['Tea', 68400, 28, '81%', '#5E7A4E'], ['Desserts', 74200, 30, '70%', '#9A8FB0'], ['Retail & art', 90600, 37, '42%', '#8A8274']].map(c => ({
+        name: c[0], amt: this.money(c[1]), w: c[2] + '%', margin: c[3], bg: c[4]
+      })),
+      mixQuad: [
+        { label: 'Stars', n: '14 items', note: 'High margin, high volume — protect and feature', bg: '#5E7A4E' },
+        { label: 'Plough horses', n: '22 items', note: 'Popular but thin margin — re-cost or re-price', bg: '#C79A3C' },
+        { label: 'Puzzles', n: '9 items', note: 'Good margin, low sales — reposition on the menu', bg: '#7E86A8' },
+        { label: 'Dogs', n: '6 items', note: 'Low on both — candidates to retire this quarter', bg: '#B23A2C' }
+      ],
+      mixRows: [
+        ['Flat White', 'Coffee', 1284, 308160, 61632, '80%', '38%', 'Star'],
+        ['Truffle Mushroom Toast', 'Plates', 412, 173040, 62294, '64%', '22%', 'Star'],
+        ['Cold Brew', 'Coffee', 622, 174160, 41798, '76%', '19%', 'Star'],
+        ['The Big Canvas', 'Plates', 208, 108160, 47590, '56%', '12%', 'Plough horse'],
+        ['Almond Croissant', 'Bakery', 548, 120560, 48224, '60%', '41%', 'Plough horse'],
+        ['Espresso Martini', 'Bar', 176, 109120, 32736, '70%', '9%', 'Puzzle'],
+        ['Kashmiri Kahwa', 'Tea', 94, 16920, 3384, '80%', '4%', 'Puzzle'],
+        ['Lemon Posset', 'Desserts', 61, 15860, 6344, '60%', '3%', 'Dog'],
+        ['Hibiscus Cooler', 'Tea', 48, 9120, 2736, '70%', '2%', 'Dog'],
+        ['Art Print A3', 'Retail', 12, 18000, 10440, '42%', '1%', 'Puzzle']
+      ].map(m => ({
+        name: m[0], cat: m[1], sold: m[2], rev: this.money(m[3]), cost: this.money(m[4]), margin: m[5], attach: m[6], klass: m[7],
+        mark: m[7] === 'Star' ? '#5E7A4E' : m[7] === 'Plough horse' ? '#C79A3C' : m[7] === 'Puzzle' ? '#7E86A8' : '#B23A2C'
+      })),
+      menuCats: ['Coffee', 'Tea', 'Bakery', 'Plates', 'Bar', 'Desserts', 'Retail & art'].map(c => {
+        const on = st.menuCat === c;
+        return { name: c, n: ({ Coffee: 24, Tea: 16, Bakery: 18, Plates: 22, Bar: 31, Desserts: 12, 'Retail & art': 41 })[c],
+          bg: on ? '#F2EDE1' : 'transparent', fg: on ? '#1A1712' : '#5C564A', weight: on ? '600' : '400',
+          go: () => this.set('menuCat', c) };
+      }),
+      menuCatName: st.menuCat,
+      menuSets: [
+        { name: 'All day', hours: '08:00 – 22:00', dot: '#5E7A4E' },
+        { name: 'Breakfast', hours: '08:00 – 11:30', dot: '#C79A3C' },
+        { name: 'Bar & late', hours: '17:00 – 23:30', dot: '#7E86A8' },
+        { name: 'Residency set menu', hours: 'event only', dot: '#C24D22' }
+      ],
+      menuItems: [
+        ['Espresso', 'Single origin · 28g dose', 160, 22, 'Bar', 'All channels', '#5E7A4E'],
+        ['Americano', 'Long black · 240ml', 190, 24, 'Bar', 'All channels', '#5E7A4E'],
+        ['Flat White', 'House blend · signature', 240, 48, 'Bar', 'All channels', '#5E7A4E'],
+        ['Cappuccino', 'Dusted cocoa', 220, 44, 'Bar', 'All channels', '#5E7A4E'],
+        ['Cortado', '2:1 ratio', 210, 40, 'Bar', 'Dine-in · QR', '#5E7A4E'],
+        ['Mocha', '64% Mysore chocolate', 260, 62, 'Bar', 'All channels', '#5E7A4E'],
+        ['Cold Brew', '18h steep · on tap', 280, 58, 'Bar', 'All channels', '#5E7A4E'],
+        ['Iced Latte', 'Over clear ice', 250, 52, 'Bar', 'All channels', '#5E7A4E'],
+        ['Filter Coffee', 'Chicory 20%', 140, 18, 'Bar', 'Dine-in only', '#C79A3C'],
+        ['Affogato Shot', 'Vanilla bean gelato', 210, 74, 'Bar', 'Dine-in · QR', '#5E7A4E']
+      ].map(m => {
+        const on = st.itemSel === m[0];
+        return { name: m[0], note: m[1], price: this.money(m[2]), cost: this.money(m[3]), station: m[4], channels: m[5],
+          dot: m[6], bg: on ? '#FBF6EE' : 'transparent', go: () => this.set('itemSel', m[0]) };
+      }),
+      itemSel: st.itemSel,
+      itemFields: [
+        { label: 'Price (incl GST)', value: '₹240' }, { label: 'Item code', value: 'CF-0003' },
+        { label: 'Plate cost', value: '₹61' }, { label: 'HSN', value: '996331' },
+        { label: 'Prep station', value: 'Bar' }, { label: 'Prep time', value: '3 min' }
+      ],
+      recipe: [
+        { name: 'House espresso blend', qty: '18 g' },
+        { name: 'Whole milk', qty: '150 ml' },
+        { name: 'Ceramic cup · wash cycle', qty: '1 use' },
+        { name: 'Barista labour', qty: '2.5 min' }
+      ],
+      modGroups: [{ name: 'Milk choice' }, { name: 'Size' }, { name: 'Extras' }, { name: 'Temperature' }, { name: 'Cup type' }],
+      invStats: [
+        { label: 'Stock value', value: '₹3,84,200', note: '182 ingredients tracked', bg: '#C24D22' },
+        { label: 'Below par', value: '6', note: 'raise 2 POs today', bg: '#B23A2C' },
+        { label: 'Wastage MTD', value: '₹18,640', note: '2.1% of food cost', bg: '#C79A3C' },
+        { label: 'Variance', value: '−1.4%', note: 'last count 14 Sep', bg: '#5E7A4E' }
+      ],
+      invTabs: ['All', 'Below par', 'Dairy', 'Coffee', 'Bar', 'Packaging'].map(t => {
+        const on = st.invFilter === t;
+        return { name: t, bg: on ? '#1A1712' : '#FFFDF8', fg: on ? '#FFFDF8' : '#6E685C', bd: on ? '#1A1712' : '#E3DED2', go: () => this.set('invFilter', t) };
+      }),
+      invRows: [
+        ['Oat milk (1L)', 'Akshaya Dairy', '4 L', '24 L', '1.5 days', '14 Sep', 'Critical', '#B23A2C', true],
+        ['Whole milk (1L)', 'Akshaya Dairy', '38 L', '60 L', '3 days', '14 Sep', 'Low', '#C79A3C', true],
+        ['House blend beans', 'Naivedyam Roasters', '9.2 kg', '12 kg', '5 days', '15 Sep', 'Low', '#C79A3C', false],
+        ['Sourdough loaf', 'In-house bakery', '14 ea', '20 ea', '1 day', '16 Sep', 'Low', '#C79A3C', false],
+        ['Truffle paste', 'Gourmet Supply Co', '1.4 kg', '1 kg', '12 days', '12 Sep', 'Healthy', '#5E7A4E', false],
+        ['Free range eggs', 'Happy Hens Farm', '210 ea', '180 ea', '6 days', '16 Sep', 'Healthy', '#5E7A4E', false],
+        ['Campari', 'Metro Wines', '2.1 L', '2 L', '9 days', '10 Sep', 'Healthy', '#5E7A4E', false],
+        ['Ceremonial matcha', 'Uji Direct', '380 g', '500 g', '4 days', '13 Sep', 'Low', '#C79A3C', false],
+        ['Takeaway cups 12oz', 'EcoPack', '1,240 ea', '1,000 ea', '11 days', '11 Sep', 'Healthy', '#5E7A4E', false],
+        ['Vanilla syrup', 'Gourmet Supply Co', '0.4 L', '2 L', '0.6 days', '15 Sep', 'Critical', '#B23A2C', true]
+      ].map(r => ({
+        name: r[0], supplier: r[1], onHand: r[2], par: r[3], cover: r[4], counted: r[5], status: r[6], mark: r[7],
+        bg: r[8] ? '#FDF6F4' : 'transparent'
+      })),
+      wastage: [
+        { name: '4 × Butter croissant', reason: 'End of day · unsold', cost: '₹196' },
+        { name: '1.2 L whole milk', reason: 'Steamed, not served', cost: '₹78' },
+        { name: '1 × Shakshuka', reason: 'Remake · wrong spice', cost: '₹142' },
+        { name: '6 × Sourdough slice', reason: 'Dropped in pass', cost: '₹64' },
+        { name: '0.3 kg mushroom', reason: 'Spoilage', cost: '₹112' }
+      ],
+      autoRules: [
+        { text: 'Truffle paste → 86 Truffle Mushroom Toast on web, QR and kiosk' },
+        { text: 'Oat milk → hide oat option in guest ordering, keep at counter' },
+        { text: 'Sourdough → swap to focaccia on all toast items with a note' }
+      ],
+      poRows: [
+        ['PO-1184', 'Akshaya Dairy', 'Milk, curd, butter', '8 lines', 'Wed 17 Sep 07:00', 'Sent', '#7E86A8', 14280],
+        ['PO-1183', 'Naivedyam Roasters', 'Rahul · 98861 22114', '3 lines', 'Thu 18 Sep 10:00', 'Confirmed', '#5E7A4E', 28600],
+        ['PO-1182', 'EcoPack', 'Cups, lids, bags', '6 lines', 'Fri 19 Sep', 'Draft', '#C79A3C', 9840],
+        ['PO-1181', 'Happy Hens Farm', 'Eggs weekly', '1 line', 'Delivered 15 Sep', 'Received', '#5E7A4E', 6300],
+        ['PO-1180', 'Metro Wines', 'Bar restock', '14 lines', 'Delivered 12 Sep', 'Received', '#5E7A4E', 41200],
+        ['PO-1179', 'Gourmet Supply Co', 'Truffle, syrups', '5 lines', 'Part received', 'Discrepancy', '#B23A2C', 12640]
+      ].map(p => ({
+        id: p[0], supplier: p[1], contact: p[2], items: p[3], eta: p[4], status: p[5], mark: p[6], value: this.money(p[7])
+      })),
+      suppliers: [
+        ['Akshaya Dairy', 'Dairy', 'Net 7', '+91 98860 11223', 62400, '4.8 ★', '#5E7A4E'],
+        ['Naivedyam Roasters', 'Coffee', 'Net 15', '+91 98861 22114', 84600, '5.0 ★', '#5E7A4E'],
+        ['Happy Hens Farm', 'Eggs & produce', 'Net 7', '+91 90080 44112', 26800, '4.6 ★', '#5E7A4E'],
+        ['Metro Wines', 'Bar', 'Advance', '+91 80 4114 9900', 118400, '4.2 ★', '#C79A3C'],
+        ['EcoPack', 'Packaging', 'Net 30', '+91 99001 33445', 21600, '4.4 ★', '#5E7A4E'],
+        ['Gourmet Supply Co', 'Specialty', 'Net 15', '+91 98450 77889', 38200, '3.6 ★', '#B23A2C']
+      ].map(s => ({ name: s[0], cat: s[1], terms: s[2], phone: s[3], spend: this.money(s[4]), rating: s[5], mark: s[6] })),
+      suggested: [
+        { name: 'Oat milk 1L', qty: '24 ea', cost: '₹3,120' },
+        { name: 'Whole milk 1L', qty: '60 ea', cost: '₹3,600' },
+        { name: 'Curd 5kg', qty: '2 ea', cost: '₹1,180' },
+        { name: 'Butter 500g', qty: '8 ea', cost: '₹4,240' },
+        { name: 'Paneer 1kg', qty: '4 ea', cost: '₹2,140' }
+      ],
+      rotaDays: ['Mon 14', 'Tue 15', 'Wed 16', 'Thu 17', 'Fri 18', 'Sat 19', 'Sun 20'].map(d => ({ label: d })),
+      rota: [
+        ['Amrita Kulkarni', 'Cashier', '38h', ['07:00–15:00', 'Off', '12:00–20:00', '12:00–20:00', '07:00–15:00', '07:00–15:00', 'Off']],
+        ['Ravi Menon', 'Floor manager', '45h', ['07:00–16:00', '07:00–16:00', '12:00–22:00', 'Off', '12:00–22:00', '12:00–23:00', '09:00–18:00']],
+        ['Neha Dsouza', 'Barista', '36h', ['08:00–14:00', '08:00–14:00', 'Off', '08:00–16:00', '08:00–16:00', '08:00–16:00', 'Off']],
+        ['Suhas Bhat', 'Head chef', '48h', ['07:30–16:30', '07:30–16:30', '07:30–16:30', '07:30–16:30', 'Off', '10:00–22:00', '08:00–18:00']],
+        ['Imran Shaikh', 'Bar', '32h', ['Off', '16:00–23:00', '16:00–23:00', '16:00–23:00', '16:00–00:00', '16:00–00:00', 'Off']],
+        ['Priya Nair', 'Server', '30h', ['Open', '10:00–18:00', '10:00–18:00', 'Off', '10:00–18:00', '10:00–20:00', '10:00–18:00']]
+      ].map(p => ({
+        name: p[0], role: p[1], hours: p[2],
+        shifts: p[3].map(s => ({
+          time: s === 'Off' ? '—' : (s === 'Open' ? 'OPEN' : s.split('–')[0]),
+          tag: s === 'Off' ? 'off' : (s === 'Open' ? 'unfilled' : 'to ' + s.split('–')[1]),
+          bg: s === 'Off' ? '#FBF9F3' : (s === 'Open' ? '#FBF1E8' : '#FFFDF8'),
+          fg: s === 'Off' ? '#B5AE9E' : (s === 'Open' ? '#B4522F' : '#1A1712')
+        }))
+      })),
+      team: [
+        ['AK', 'Amrita Kulkarni', 'Cashier · Term 01', 'Register, refunds ≤ ₹500', 'On shift', '#5E7A4E'],
+        ['RM', 'Ravi Menon', 'Floor manager', 'All except settings', 'On shift', '#5E7A4E'],
+        ['SB', 'Suhas Bhat', 'Head chef', 'KDS, inventory, POs', 'On shift', '#5E7A4E'],
+        ['ND', 'Neha Dsouza', 'Barista', 'Register, KDS', 'On shift', '#5E7A4E'],
+        ['IS', 'Imran Shaikh', 'Bar', 'Register, bar KDS', 'Starts 16:00', '#C79A3C'],
+        ['PN', 'Priya Nair', 'Server', 'QR orders, table transfer', 'Off today', '#9A9384']
+      ].map(t => ({ ini: t[0], name: t[1], role: t[2], perms: t[3], state: t[4], mark: t[5] })),
+      timesheet: [
+        { name: 'Amrita Kulkarni', in: '06:58', out: '—', note: 'Break 11:20 · 28m', total: '7h 40m' },
+        { name: 'Ravi Menon', in: '06:52', out: '—', note: 'No break logged', total: '7h 46m' },
+        { name: 'Suhas Bhat', in: '07:26', out: '—', note: 'Break 10:40 · 30m', total: '6h 42m' },
+        { name: 'Neha Dsouza', in: '08:04', out: '14:06', note: 'Clocked out', total: '6h 02m' },
+        { name: 'Imran Shaikh', in: '—', out: '—', note: 'Scheduled 16:00', total: '—' },
+        { name: 'Deepa R', in: '09:02', out: '13:58', note: 'Kitchen assist', total: '4h 56m' }
+      ],
+      crmStats: [
+        { label: 'Profiles', value: '4,214', note: '+186 this month', bg: '#C24D22' },
+        { label: 'Loyalty members', value: '1,088', note: '26% of guests', bg: '#5E7A4E' },
+        { label: 'Repeat rate', value: '43%', note: 'visited twice in 60d', bg: '#7E86A8' },
+        { label: 'Avg member spend', value: '₹742', note: '+21% vs walk-in', bg: '#C79A3C' }
+      ],
+      customers: [
+        ['Meera Sundaram', '+91 98450 11223 · meera@…', 'Gold', 64, 47600, '2m ago', 1240, '#C79A3C'],
+        ['Arjun Rao', '+91 99000 55441 · arjun@…', 'Silver', 28, 19800, 'Today', 620, '#7E86A8'],
+        ['Zeba Khan', '+91 98801 22118 · zeba@…', 'Gold', 51, 38400, 'Today', 980, '#C79A3C'],
+        ['Nikhil Prasad', '+91 90192 44553 · nikhil@…', 'Silver', 22, 26100, 'Today', 540, '#7E86A8'],
+        ['Anaya Raghavan', '+91 91080 99112 · anaya@…', 'Platinum', 112, 96400, 'Yesterday', 2460, '#C24D22'],
+        ['Dev Menon', '+91 98192 33447 · dev@…', 'Gold', 44, 52200, '3d ago', 1120, '#C79A3C'],
+        ['Sana Iqbal', '+91 97400 11228 · sana@…', 'Member', 9, 6200, '4d ago', 180, '#8A8274'],
+        ['Ford Studio (corp)', 'accounts@fordstudio.in', 'Corporate', 38, 184600, '1w ago', 0, '#5E7A4E'],
+        ['Tanvi Shah', '+91 90360 88114 · tanvi@…', 'Member', 6, 4100, '2w ago', 90, '#8A8274']
+      ].map(c => {
+        const on = st.custSel === c[0];
+        return { name: c[0], contact: c[1], tier: c[2], visits: c[3], ltv: this.money(c[4]), last: c[5],
+          points: c[6] ? c[6].toLocaleString('en-IN') : '—', mark: c[7], bg: on ? '#FBF6EE' : 'transparent',
+          go: () => this.set('custSel', c[0]) };
+      }),
+      custSel: st.custSel,
+      custStats: [
+        { label: 'Visits', value: '64' }, { label: 'Lifetime', value: '₹47,600' },
+        { label: 'Avg ticket', value: '₹744' }, { label: 'Points', value: '1,240' }
+      ],
+      usual: [{ name: 'Flat White · oat' }, { name: 'Almond Croissant' }, { name: 'Truffle Toast' }, { name: 'No walnuts' }],
+      visits: [
+        { what: 'Dine-in · Table G4', when: 'Today 14:06 · Amrita', amt: '₹1,237' },
+        { what: 'QR table · Gallery', when: '11 Sep · self-order', amt: '₹880' },
+        { what: 'Web pickup', when: '6 Sep · 09:40', amt: '₹560' },
+        { what: 'Art print purchase', when: '2 Sep · invoice', amt: '₹1,500' },
+        { what: 'Dine-in · Courtyard', when: '28 Aug · Ravi', amt: '₹2,140' }
+      ],
+      promos: [
+        ['Live', 'Morning ritual', 'Any coffee + bakery before 11:00 at ₹299', 'NF-MORNING', '412 orders', '₹38,200', '+₹1,12,000', 'Pause', '#5E7A4E'],
+        ['Live', 'Gold member 8%', 'Automatic for gold and platinum tiers', 'AUTO-GOLD', '1,204 orders', '₹64,800', '+₹4,80,000', 'Pause', '#5E7A4E'],
+        ['Live', 'Happy hour bar', '17:00–19:00 · 25% off cocktails, weekdays', 'NF-HH', '188 orders', '₹31,400', '+₹86,000', 'Pause', '#5E7A4E'],
+        ['Live', 'Laptop lunch', 'Mezzanine only · bowl + filter coffee ₹449', 'NF-DESK', '96 orders', '₹9,600', '+₹41,000', 'Pause', '#5E7A4E'],
+        ['Scheduled', 'Residency opening', 'Set menu ₹1,200 · Sat 19 Sep only', 'NF-ART19', '—', '—', 'forecast +₹90,000', 'Preview', '#7E86A8'],
+        ['Ended', 'Monsoon two-for-one', 'Cold brew BOGO · Jul 2026', 'NF-MONSOON', '622 orders', '₹86,400', '+₹1,92,000', 'Duplicate', '#9A9384']
+      ].map(p => ({ state: p[0], name: p[1], rule: p[2], code: p[3], used: p[4], cost: p[5], uplift: p[6], action: p[7], mark: p[8] })),
+      tiers: [
+        { name: 'Member', rule: 'Free on signup · 1 point per ₹10 spent', members: '1,088', mark: '#8A8274' },
+        { name: 'Silver', rule: '10 visits · 5% off, birthday dessert', members: '412', mark: '#7E86A8' },
+        { name: 'Gold', rule: '25 visits · 8% off, priority waitlist', members: '186', mark: '#C79A3C' },
+        { name: 'Platinum', rule: '₹75k lifetime · 12% off, art preview invites', members: '24', mark: '#C24D22' }
+      ],
+      giftStats: [
+        { label: 'Active cards', value: '164' }, { label: 'Outstanding', value: '₹1,84,600' },
+        { label: 'Sold MTD', value: '₹62,000' }, { label: 'Redeemed MTD', value: '₹38,400' }
+      ],
+      giftRows: [
+        { code: 'NF-GC-8841', note: 'Corporate · Ford Studio · 20 cards', bal: '₹1,000' },
+        { code: 'NF-GC-8776', note: 'Gifted 4 Sep · expires Sep 2027', bal: '₹2,400' },
+        { code: 'NF-GC-8712', note: 'Guest recovery credit', bal: '₹620' },
+        { code: 'NF-GC-8690', note: 'Art print promo', bal: '₹0' }
+      ],
+      taxStats: [
+        { label: 'Output GST · Sep', value: '₹44,860', note: 'filed by 11 Oct', bg: '#C24D22' },
+        { label: 'Input credit', value: '₹18,240', note: '38 supplier invoices', bg: '#7E86A8' },
+        { label: 'Net payable', value: '₹26,620', note: 'GSTR-3B draft ready', bg: '#B23A2C' },
+        { label: 'TCS on aggregators', value: '₹1,840', note: 'auto reconciled', bg: '#5E7A4E' }
+      ],
+      invoiceRows: [
+        ['NF/26-27/2294', 'Meera Sundaram', 'Dine-in · card', 1178, 29, 30, 1237, 'Issued', '#5E7A4E'],
+        ['NF/26-27/2293', 'Walk-in', 'Takeaway · UPI', 440, 11, 11, 462, 'Issued', '#5E7A4E'],
+        ['NF/26-27/2292', 'Arjun Rao', 'Web pickup · prepaid', 700, 17, 18, 735, 'Issued', '#5E7A4E'],
+        ['NF/26-27/2291', 'Anaya Raghavan', 'QR table · card', 2038, 51, 51, 2140, 'Issued', '#5E7A4E'],
+        ['NF/26-27/2290', 'Ford Studio', 'Corporate · B2B with GSTIN', 8400, 210, 210, 8820, 'IRN generated', '#7E86A8'],
+        ['NF/26-27/2289', 'Zeba Khan', 'Delivery · wallet', 787, 19, 20, 826, 'Issued', '#5E7A4E'],
+        ['NF/26-27/2288', 'Kiosk 02', 'Self order · card', 420, 10, 11, 441, 'Issued', '#5E7A4E'],
+        ['NF/26-27/2287', 'Dev Menon', 'Retail art · 12% slab', 2110, 126, 126, 2362, 'Issued', '#5E7A4E'],
+        ['NF/26-27/2274', 'Walk-in', 'Credit note · refund', -591, -15, -14, -620, 'Credit note', '#B23A2C']
+      ].map(i => ({
+        no: i[0], party: i[1], meta: i[2], taxable: this.money(i[3]), cgst: this.money(i[4]), sgst: this.money(i[5]),
+        total: this.money(i[6]), status: i[7], mark: i[8]
+      })),
+      payoutRows: [
+        ['16 Sep', 'Razorpay POS', 'pending batch', 41200, 824, 0, 40376],
+        ['15 Sep', 'Razorpay POS', 'UTR 8841002214', 38600, 772, 620, 37208],
+        ['15 Sep', 'UPI · PhonePe', 'UTR 7712004418', 28600, 0, 0, 28600],
+        ['14 Sep', 'Razorpay POS', 'UTR 8840998812', 62400, 1248, 0, 61152],
+        ['14 Sep', 'Swiggy', 'UTR SW-221004', 18400, 4048, 320, 14032],
+        ['13 Sep', 'Zomato', 'UTR ZM-118842', 22600, 5198, 0, 17402],
+        ['13 Sep', 'Razorpay POS', 'UTR 8840991120', 58200, 1164, 1240, 55796]
+      ].map(p => ({
+        date: p[0], src: p[1], utr: p[2], gross: this.money(p[3]), fees: '−' + this.money(p[4]),
+        refunds: p[5] ? '−' + this.money(p[5]) : '—', net: this.money(p[6])
+      })),
+      payoutBits: [
+        { label: 'Card sales', value: '₹41,200', fg: '#1A1712' },
+        { label: 'Platform fees 2%', value: '−₹824', fg: '#B4522F' },
+        { label: 'UPI direct', value: '₹28,600', fg: '#1A1712' },
+        { label: 'Aggregator net', value: '₹48,600', fg: '#1A1712' }
+      ],
+      tipSplit: [
+        { name: 'Floor (65%)', amt: '₹4,290' }, { name: 'Kitchen (35%)', amt: '₹2,310' },
+        { name: 'Pooled this week', amt: '₹18,640' }, { name: 'Paid last week', amt: '₹16,200' }
+      ],
+      artistPay: [
+        { name: 'Aditi Ranganathan', note: '2 prints · 20% share', amt: '₹6,000' },
+        { name: 'Kabir Sen', note: '1 canvas · 25% share', amt: '₹9,500' },
+        { name: 'Studio Karavali', note: 'Postcard series', amt: '₹2,100' }
+      ],
+      devices: [
+        ['Terminal 01 · counter', 'TRM-01', 'iPad Pro 12.9 · POS app 4.2', 'Register, payments, invoices', 'Online', 'Restart', '#5E7A4E'],
+        ['Terminal 02 · bar', 'TRM-02', 'iPad 10.9 · POS app 4.2', 'Bar register, tabs', 'Online', 'Restart', '#5E7A4E'],
+        ['Kitchen display', 'KDS-01', 'Android 14 · 21" wall mount', 'Kitchen + expo station', 'Online', 'Settings', '#5E7A4E'],
+        ['Bar display', 'KDS-02', 'Android 14 · 15" under-counter', 'Bar station only', 'Online', 'Settings', '#5E7A4E'],
+        ['Receipt printer', 'PRN-01', 'Epson TM-m30III · 80mm', 'Bills, invoices, Z-report', 'Online', 'Test print', '#5E7A4E'],
+        ['Kitchen printer', 'PRN-02', 'Epson TM-U220 · impact', 'KOT · kitchen', 'Paper low', 'Test print', '#C79A3C'],
+        ['Guest display', 'CFD-01', '10" customer facing screen', 'Mirrors Terminal 01', 'Offline 6m', 'Reconnect', '#B23A2C']
+      ].map(d => ({ name: d[0], id: d[1], kind: d[2], detail: d[3], state: d[4], action: d[5], mark: d[6] })),
+      routes: [
+        { what: 'Food items', where: 'Kitchen printer PRN-02 + KDS-01' },
+        { what: 'Bar & cocktails', where: 'KDS-02 only · no paper' },
+        { what: 'Bakery & counter', where: 'Counter label printer' },
+        { what: 'Bills & invoices', where: 'PRN-01 · duplicate to email' },
+        { what: 'Retail & art sales', where: 'PRN-01 with artist copy' }
+      ],
+      channels: [
+        ['Dine-in POS', 'Live', 'Counter and bar terminals with table service and tabs.', '1,284', '₹8,42,000', '—', 'Configure', '#5E7A4E'],
+        ['QR at table', 'Live', 'Guests scan, order and pay from the table. Auto-fires to KDS.', '412', '₹2,86,400', '0%', 'QR codes', '#5E7A4E'],
+        ['Web ordering', 'Live', 'nofiltr.cafe — pickup and own-fleet delivery inside 4km.', '286', '₹1,92,600', '2% gateway', 'Storefront', '#5E7A4E'],
+        ['Self-order kiosk', 'Live', 'Two 22" kiosks at the entrance for the morning rush.', '198', '₹94,200', '—', 'Screen layout', '#5E7A4E'],
+        ['Swiggy', 'Live', 'Menu mapped, 6 items hidden. Prep buffer 12 min.', '164', '₹1,18,400', '22%', 'Sync menu', '#C79A3C'],
+        ['Zomato', 'Paused', 'Paused during the residency week to protect kitchen times.', '142', '₹1,04,600', '24%', 'Resume', '#9A9384']
+      ].map(c => ({ name: c[0], state: c[1], note: c[2], orders: c[3], rev: c[4], fee: c[5], action: c[6], mark: c[7] })),
+      setTabs: ['Store', 'Tax & billing', 'Receipts', 'Payments', 'Access & roles', 'Notifications', 'Data & backup'].map(t => {
+        const on = st.settingsTab === t;
+        return { name: t, bg: on ? '#F2EDE1' : 'transparent', fg: on ? '#1A1712' : '#5C564A', weight: on ? '600' : '400', go: () => this.set('settingsTab', t) };
+      }),
+      setTitle: st.settingsTab,
+      setBlurb: ({
+        'Store': 'Identity, address and trading hours. These appear on every invoice, receipt and guest-facing screen.',
+        'Tax & billing': 'GST registration, HSN defaults and invoice numbering series for the financial year.',
+        'Receipts': 'What prints on the 80mm slip, what the guest gets by email or WhatsApp, and the footer message.',
+        'Payments': 'Tender types enabled on each terminal, rounding rules, tip prompts and settlement accounts.',
+        'Access & roles': 'Who can void, refund, discount, edit menu or see reports. Every override is logged.',
+        'Notifications': 'Where alerts land — low stock, late tickets, bad reviews, shift gaps.',
+        'Data & backup': 'Offline mode, local cache window, nightly backup and export destinations.'
+      })[st.settingsTab],
+      setFields: ({
+        'Store': [
+          { label: 'Legal name', value: 'Nofiltr Hospitality LLP', hint: 'on invoices' },
+          { label: 'Trading name', value: 'nofiltr art cafe', hint: 'guest facing' },
+          { label: 'Address', value: '71 Wood Street, Koramangala 5th Block', hint: 'Bengaluru 560095' },
+          { label: 'Phone', value: '+91 80 4114 2200', hint: 'printed on receipts' },
+          { label: 'Trading hours', value: '08:00 – 22:00 · bar to 23:30', hint: 'Mon–Sun' },
+          { label: 'FSSAI licence', value: '11223344556677', hint: 'expires Mar 2028' }
+        ],
+        'Tax & billing': [
+          { label: 'GSTIN', value: '29ABCDE1234F1Z5', hint: 'Karnataka' },
+          { label: 'Default slab', value: '5% (2.5 + 2.5)', hint: 'food & beverage' },
+          { label: 'Retail slab', value: '12%', hint: 'art, merchandise' },
+          { label: 'Invoice series', value: 'NF/26-27/####', hint: 'resets 1 April' },
+          { label: 'Pricing mode', value: 'Tax inclusive', hint: 'menu shows final price' },
+          { label: 'E-invoicing', value: 'On for B2B with GSTIN', hint: 'IRN auto generated' }
+        ],
+        'Receipts': [
+          { label: 'Header', value: 'nofiltr art cafe', hint: 'serif logotype' },
+          { label: 'Footer line', value: 'Thank you · come back soon', hint: '2 lines max' },
+          { label: 'QR on slip', value: 'Rate & tip link', hint: 'nofiltr.cafe/r/####' },
+          { label: 'Paper width', value: '80mm', hint: 'PRN-01' },
+          { label: 'Email copy', value: 'PDF invoice', hint: 'sent on settle' },
+          { label: 'Art credit', value: 'Show current residency', hint: 'guest facing' }
+        ],
+        'Payments': [
+          { label: 'Enabled tenders', value: 'Cash, card, UPI, wallet, gift, tab', hint: 'per terminal' },
+          { label: 'Rounding', value: 'Nearest ₹1', hint: 'cash only' },
+          { label: 'Tip prompt', value: '0 / 5 / 10 / 15 / 20%', hint: 'dine-in and QR' },
+          { label: 'Settlement account', value: 'HDFC ••4471', hint: 'T+1 payout' },
+          { label: 'Card terminal', value: 'Razorpay POS RZP-8841', hint: 'tap to pay' },
+          { label: 'House tabs', value: 'Members and corporates only', hint: 'limit ₹10,000' }
+        ],
+        'Access & roles': [
+          { label: 'Void without approval', value: 'Manager and above', hint: '' },
+          { label: 'Refund limit · cashier', value: '₹500', hint: 'above needs manager PIN' },
+          { label: 'Discount limit · server', value: '10%', hint: '' },
+          { label: 'Menu editing', value: 'Head chef, owner', hint: '' },
+          { label: 'Reports visibility', value: 'Manager and owner', hint: '' },
+          { label: 'PIN rotation', value: 'Every 90 days', hint: 'enforced' }
+        ],
+        'Notifications': [
+          { label: 'Low stock', value: 'WhatsApp · chef + owner', hint: 'at 1.5 days cover' },
+          { label: 'Late ticket', value: 'KDS chime at 10 min', hint: 'plus manager push' },
+          { label: 'Reviews', value: 'Email digest 09:00', hint: 'Google + Zomato' },
+          { label: 'Shift gaps', value: 'Push to all eligible staff', hint: '' },
+          { label: 'Cash variance', value: 'Owner email above ₹200', hint: '' },
+          { label: 'Daily summary', value: '22:30 WhatsApp', hint: 'after Z-report' }
+        ],
+        'Data & backup': [
+          { label: 'Offline mode', value: 'On · 72 hours of orders', hint: 'syncs on reconnect' },
+          { label: 'Local cache', value: '90 days on device', hint: '' },
+          { label: 'Nightly backup', value: '02:00 to cloud', hint: 'encrypted' },
+          { label: 'Accounting export', value: 'Tally · weekly', hint: 'Monday 07:00' },
+          { label: 'Data retention', value: '7 years', hint: 'statutory' },
+          { label: 'Audit log', value: 'All overrides, 2 years', hint: 'exportable' }
+        ]
+      })[st.settingsTab],
+      setToggles: [
+        { name: 'Offline-first register', note: 'Keep taking orders and printing bills when the internet drops.', on: true },
+        { name: 'Auto-86 from inventory', note: 'Hide items on guest channels the moment an ingredient runs out.', on: true },
+        { name: 'Ask for guest phone at counter', note: 'Only for dine-in over ₹1,000 — keeps the queue moving.', on: false },
+        { name: 'Round cash to the nearest rupee', note: 'Card and UPI stay exact.', on: true },
+        { name: 'Show art credit on the guest screen', note: 'Current residency artist, title and price.', on: true }
+      ].map(t => ({ name: t.name, note: t.note, bg: t.on ? '#5E7A4E' : '#DCD5C5', x: t.on ? '21px' : '3px' })),
+      live: [
+        { what: 'Open tickets', value: '11', dot: '#C24D22' },
+        { what: 'Covers seated', value: '26 / 62', dot: '#C79A3C' },
+        { what: 'Kitchen avg', value: '8m 40s', dot: '#5E7A4E' },
+        { what: 'Waitlist', value: '3 parties', dot: '#7E86A8' },
+        { what: 'Staff clocked in', value: '7', dot: '#5E7A4E' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

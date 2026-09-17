@@ -1,0 +1,32 @@
+# Go
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+
+# Data
+/data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+
+# Node
+node_modules/
+web/*/dist/
+.vite/
+
+# Env & local config
+.env
+.env.local
+config.toml
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# The design source — archived into docs/design/reference/ in Phase 00 Task 2
+/claude-design/

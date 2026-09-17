@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #14110D; -webkit-font-smoothing: antialiased; }
+  a { color: #DD5A2A; text-decoration: none; }
+  a:hover { color: #F07440; }
+</style>
+</helmet>
+<div style="min-height:100vh; background:#14110D; color:#F3EFE6; font-family:Archivo,'Helvetica Neue',sans-serif; font-feature-settings:'tnum' 1;">
+
+  <div style="max-width:1180px; margin:0 auto; padding:54px 28px 70px;">
+
+    <div style="display:flex; align-items:flex-start; gap:20px; flex-wrap:wrap;">
+      <div style="width:64px; height:64px; border:1px solid #DD5A2A; display:flex; align-items:center; justify-content:center; color:#DD5A2A; font-family:'Instrument Serif',serif; font-size:37px;">n</div>
+      <div style="flex:1; min-width:260px;">
+        <div style="font-family:'Instrument Serif',serif; font-size:52px; line-height:1.02; letter-spacing:-.01em;">nofiltr art cafe</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.2em; color:#7E7768; margin-top:10px;">POINT OF SALE · OPERATING SYSTEM FOR THE CAFE, BAR AND GALLERY</div>
+      </div>
+      <div style="display:flex; gap:26px; padding-top:6px;">
+        <div><div style="font-family:'JetBrains Mono',monospace; font-size:24px;">3</div><div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7E7768; margin-top:4px;">Surfaces</div></div>
+        <div><div style="font-family:'JetBrains Mono',monospace; font-size:24px;">35</div><div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7E7768; margin-top:4px;">Screens</div></div>
+        <div><div style="font-family:'JetBrains Mono',monospace; font-size:24px;">6</div><div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7E7768; margin-top:4px;">Channels</div></div>
+      </div>
+    </div>
+
+    <div style="font-size:16px; color:#A39C8C; margin-top:30px; max-width:680px; line-height:1.7; text-wrap:pretty;">One ticket, wherever it starts. A guest can order at the counter, from the table QR, on the web, on a kiosk or through an aggregator — it becomes the same ticket, routes to the same kitchen display, settles to the same invoice series and lands in the same night's Z-report.</div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:16px; margin-top:38px;">
+      <sc-for list="{{ surfaces }}" as="s" hint-placeholder-count="3">
+        <a href="{{ s.href }}" style="display:block; text-decoration:none; background:#1A1712; border:1px solid rgba(255,255,255,.08); border-top:2px solid {{ s.accent }}; border-radius:3px; padding:24px; color:inherit;" style-hover="background:#221E17">
+          <div style="font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:{{ s.accent }};">{{ s.kind }}</div>
+          <div style="font-family:'Instrument Serif',serif; font-size:29px; margin-top:12px; line-height:1.1;">{{ s.name }}</div>
+          <div style="font-size:13px; color:#A39C8C; margin-top:10px; line-height:1.65;">{{ s.blurb }}</div>
+          <div style="margin-top:18px; display:flex; flex-wrap:wrap; gap:6px;">
+            <sc-for list="{{ s.screens }}" as="sc" hint-placeholder-count="8">
+              <span style="padding:5px 9px; background:#221E17; border:1px solid rgba(255,255,255,.07); border-radius:2px; font-size:10.5px; color:#C9C2B2;">{{ sc.name }}</span>
+            </sc-for>
+          </div>
+          <div style="margin-top:20px; display:flex; align-items:center; gap:9px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:{{ s.accent }};">
+            <span>Open {{ s.short }}</span><span>→</span>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:46px; display:grid; grid-template-columns:repeat(auto-fit, minmax(270px,1fr)); gap:16px;">
+      <sc-for list="{{ flows }}" as="f" hint-placeholder-count="4">
+        <div style="background:#1A1712; border:1px solid rgba(255,255,255,.08); border-radius:3px; padding:22px;">
+          <div style="font-family:'Instrument Serif',serif; font-size:21px; line-height:1.2;">{{ f.name }}</div>
+          <div style="margin-top:14px; display:flex; flex-direction:column; gap:0;">
+            <sc-for list="{{ f.steps }}" as="st" hint-placeholder-count="5">
+              <div style="display:grid; grid-template-columns:14px 1fr; gap:12px;">
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                  <span style="width:7px; height:7px; border-radius:50%; background:#DD5A2A; margin-top:6px;"></span>
+                  <span style="flex:1; width:1px; background:rgba(255,255,255,.12);"></span>
+                </div>
+                <div style="padding-bottom:13px;">
+                  <div style="font-size:13px; color:#E8E2D4; line-height:1.45;">{{ st.what }}</div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.1em; color:#6E685C; margin-top:3px;">{{ st.where }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:46px; padding-top:34px; border-top:1px solid rgba(255,255,255,.1);">
+      <div style="font-family:'Instrument Serif',serif; font-size:27px;">The house style</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:16px; margin-top:20px;">
+        <div style="background:#1A1712; border:1px solid rgba(255,255,255,.08); border-radius:3px; padding:20px;">
+          <div style="font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:#7E7768;">Ink & paper</div>
+          <div style="display:flex; gap:7px; margin-top:14px;">
+            <sc-for list="{{ swatches }}" as="w" hint-placeholder-count="6">
+              <div style="flex:1;">
+                <div style="height:52px; background:{{ w.hex }}; border:1px solid rgba(255,255,255,.1); border-radius:2px;"></div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:8px; color:#6E685C; margin-top:6px;">{{ w.name }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:12px; color:#A39C8C; margin-top:14px; line-height:1.6;">Terminal runs on warm ink for ten-hour shifts. Back office and guest surfaces run on paper. One vermilion carries the brand across all three.</div>
+        </div>
+        <div style="background:#1A1712; border:1px solid rgba(255,255,255,.08); border-radius:3px; padding:20px;">
+          <div style="font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:#7E7768;">Typography</div>
+          <div style="font-family:'Instrument Serif',serif; font-size:32px; margin-top:12px; line-height:1.1;">Instrument Serif</div>
+          <div style="font-size:11px; color:#6E685C; margin-top:3px;">Titles, totals, guest greetings</div>
+          <div style="font-size:19px; font-weight:600; margin-top:16px;">Archivo</div>
+          <div style="font-size:11px; color:#6E685C; margin-top:3px;">All interface text, 13–15px on touch</div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:18px; margin-top:16px;">₹1,237.00</div>
+          <div style="font-size:11px; color:#6E685C; margin-top:3px;">JetBrains Mono for every number, tabular</div>
+        </div>
+        <div style="background:#1A1712; border:1px solid rgba(255,255,255,.08); border-radius:3px; padding:20px;">
+          <div style="font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:#7E7768;">Rules we kept</div>
+          <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+            <sc-for list="{{ rules }}" as="r" hint-placeholder-count="5">
+              <div style="font-size:12.5px; color:#C9C2B2; line-height:1.55; padding-left:13px; border-left:1px solid #DD5A2A;">{{ r.text }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:40px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em; color:#4F4A40;">NOFILTR ART CAFE · KORAMANGALA 5TH BLOCK, BENGALURU · GSTIN 29ABCDE1234F1Z5</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:1000}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      surfaces: [
+        {
+          kind: 'Staff · terminal & kitchen', name: 'Terminal', short: 'the terminal', accent: '#DD5A2A',
+          href: 'Nofiltr%20Terminal.dc.html',
+          blurb: 'The counter, the floor and the pass. Built for speed on a 12-inch tablet with gloves, glare and a queue.',
+          screens: ['Staff lock & PIN', 'Register', 'Modifiers', 'Payment & split', 'Tax invoice', 'Thermal print', 'Floor plan', 'Orders', 'Order timeline', 'Kitchen display', 'Reservations', 'Waitlist', 'Cash drawer', 'Shift & Z-report', 'Refund & void', 'Guest display'].map(n => ({ name: n }))
+        },
+        {
+          kind: 'Owner · back office', name: 'Back office', short: 'the back office', accent: '#C79A3C',
+          href: 'Nofiltr%20Back%20Office.dc.html',
+          blurb: 'Where the café is actually run. Costs, menus, stock, people, tax and the art wall in one place.',
+          screens: ['Dashboard', 'Sales reports', 'Product mix', 'Menu & recipes', 'Item editor', 'Inventory', 'Wastage', 'Purchasing', 'Suppliers', 'Staff & rota', 'Timesheets', 'Customers', 'Promotions', 'Loyalty tiers', 'Gift cards', 'Invoices & tax', 'Payouts', 'Devices', 'Channels', 'Settings'].map(n => ({ name: n }))
+        },
+        {
+          kind: 'Guest · web, QR & kiosk', name: 'Guest ordering', short: 'guest ordering', accent: '#7E86A8',
+          href: 'Nofiltr%20Guest%20Ordering.dc.html',
+          blurb: 'Everything a guest touches. Same menu, same modifiers, same invoice series as the counter.',
+          screens: ['Web menu', 'Item sheet', 'Cart', 'Checkout', 'Order tracking', 'E-receipt', 'QR pay at table', 'Bill splitting', 'Membership', 'Self-order kiosk'].map(n => ({ name: n }))
+        }
+      ],
+      flows: [
+        { name: 'Dine-in, from seat to settled', steps: [
+          { what: 'Host seats a party and opens the table', where: 'TERMINAL · FLOOR PLAN' },
+          { what: 'Server fires drinks first, food on course two', where: 'TERMINAL · REGISTER' },
+          { what: 'Bar and kitchen each get only their lines', where: 'KDS · STATION ROUTING' },
+          { what: 'Bill split three ways, one card, two UPI', where: 'TERMINAL · PAYMENT' },
+          { what: 'Invoice numbered, table flipped to clean', where: 'INVOICE · FLOOR PLAN' }
+        ] },
+        { name: 'QR at the table', steps: [
+          { what: 'Guest scans the table code, sees the live menu', where: 'GUEST · QR TABLE' },
+          { what: 'Order fires straight to the pass, no server relay', where: 'KDS' },
+          { what: 'More rounds added to the same open ticket', where: 'TERMINAL · ORDERS' },
+          { what: 'Each guest pays their own share', where: 'GUEST · SPLIT' },
+          { what: 'Floor sees what is still outstanding', where: 'TERMINAL · FLOOR PLAN' }
+        ] },
+        { name: 'Web pickup', steps: [
+          { what: 'Order placed and prepaid on the web menu', where: 'GUEST · CHECKOUT' },
+          { what: 'Kitchen accepts, pickup code issued', where: 'KDS · TRACKING' },
+          { what: 'Guest watches real kitchen events, not a timer', where: 'GUEST · TRACKING' },
+          { what: 'Counter bumps the ticket, code is called', where: 'TERMINAL · ORDERS' },
+          { what: 'GST e-receipt with a one-tap re-order', where: 'GUEST · E-RECEIPT' }
+        ] },
+        { name: 'Close of day', steps: [
+          { what: 'Blind drawer count against expected cash', where: 'TERMINAL · TILL' },
+          { what: 'Card batch settled, tenders reconciled', where: 'TERMINAL · SHIFT' },
+          { what: 'Wastage and closing stock posted', where: 'BACK OFFICE · INVENTORY' },
+          { what: 'Z-report prints, tips pooled and split', where: 'TERMINAL · SHIFT' },
+          { what: 'GST register and Tally export queued', where: 'BACK OFFICE · TAX' }
+        ] }
+      ],
+      swatches: [
+        { name: '#0E0C09', hex: '#0E0C09' }, { name: '#1A1712', hex: '#1A1712' },
+        { name: '#DD5A2A', hex: '#DD5A2A' }, { name: '#C79A3C', hex: '#C79A3C' },
+        { name: '#7FA06B', hex: '#7FA06B' }, { name: '#FBF7EF', hex: '#FBF7EF' }
+      ],
+      rules: [
+        { text: 'Nothing under 44px is tappable on a terminal. Charge buttons are 58px.' },
+        { text: 'Every number is monospaced and right-aligned, so a column of rupees reads down.' },
+        { text: 'Status is colour plus a word — never colour alone.' },
+        { text: 'One accent. Vermilion means money, action or now; nothing else.' },
+        { text: 'The guest never sees a screen the staff cannot explain.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #0E0C09; -webkit-font-smoothing: antialiased; }
+  a { color: #DD5A2A; text-decoration: none; }
+  a:hover { color: #F07440; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 8px; }
+  @keyframes nf-pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+  @keyframes nf-rise { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+</style>
+</helmet>
+<div style="display:flex; min-height:100vh; background:#0E0C09; color:#F3EFE6; font-family:Archivo, 'Helvetica Neue', sans-serif; font-feature-settings:'tnum' 1;">
+
+  <aside style="width:92px; flex:0 0 92px; background:#14110D; border-right:1px solid rgba(255,255,255,.07); display:flex; flex-direction:column; align-items:center; padding:18px 0 14px;">
+    <div style="width:46px; height:46px; border:1px solid #DD5A2A; display:flex; align-items:center; justify-content:center; color:#DD5A2A; font-family:'Instrument Serif',serif; font-size:26px; line-height:1;">n</div>
+    <div style="margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:.16em; color:#6E685C;">NOFILTR</div>
+
+    <nav style="margin-top:26px; display:flex; flex-direction:column; gap:4px; width:100%; padding:0 10px;">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="9">
+        <button type="button" onClick="{{ n.go }}" style="width:100%; height:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; border:1px solid transparent; border-radius:3px; cursor:pointer; background:transparent; font-family:Archivo,sans-serif; transition:background .15s, color .15s;" style-hover="background:rgba(255,255,255,.05)">
+          <span style="font-family:'Instrument Serif',serif; font-size:19px; line-height:1; color:{{ n.fg }}">{{ n.mark }}</span>
+          <span style="font-size:9px; letter-spacing:.09em; text-transform:uppercase; color:{{ n.fg }}">{{ n.label }}</span>
+          <span style="display:block; width:16px; height:1.5px; background:{{ n.bar }}"></span>
+        </button>
+      </sc-for>
+    </nav>
+
+    <div style="margin-top:auto; display:flex; flex-direction:column; align-items:center; gap:10px;">
+      <div style="width:34px; height:34px; border-radius:50%; background:#2A261E; border:1px solid rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#E8E2D4;">AK</div>
+      <button type="button" onClick="{{ goLock }}" style="font-size:9px; letter-spacing:.09em; text-transform:uppercase; color:#6E685C; background:transparent; border:0; cursor:pointer; font-family:Archivo,sans-serif;" style-hover="color:#DD5A2A">Lock</button>
+    </div>
+  </aside>
+
+  <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+
+    <header style="height:70px; flex:0 0 70px; border-bottom:1px solid rgba(255,255,255,.07); background:#14110D; display:flex; align-items:center; gap:22px; padding:0 24px;">
+      <div style="min-width:0;">
+        <div style="font-family:'Instrument Serif',serif; font-size:23px; line-height:1.1; letter-spacing:.01em;">{{ title }}</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#6E685C; letter-spacing:.08em; margin-top:3px;">{{ subtitle }}</div>
+      </div>
+
+      <div style="flex:1; min-width:0; max-width:340px; margin-left:auto; display:flex; align-items:center; gap:10px; height:40px; padding:0 14px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:3px;">
+        <span style="color:#6E685C; font-size:13px;">⌕</span>
+        <span style="font-size:13px; color:#6E685C; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Search orders or items</span>
+        <span style="margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:10px; color:#4F4A40; border:1px solid rgba(255,255,255,.1); padding:2px 5px; border-radius:2px;">⌘K</span>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:18px; flex:0 0 auto;">
+        <div style="text-align:right;">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#E8E2D4;">{{ clock }}</div>
+          <div style="font-size:10px; color:#6E685C; letter-spacing:.06em;">SHIFT 2 · 4h 12m</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:7px; padding:7px 11px; background:rgba(127,160,107,.1); border:1px solid rgba(127,160,107,.28); border-radius:3px;">
+          <span style="width:6px; height:6px; border-radius:50%; background:#7FA06B; animation:nf-pulse 2.4s infinite;"></span>
+          <span style="font-size:10px; letter-spacing:.09em; color:#9DBA88;">TERM-01 ONLINE</span>
+        </div>
+      </div>
+    </header>
+
+    <main style="flex:1; min-width:0; overflow:hidden; display:flex;">
+
+      <sc-if value="{{ s_register }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1; min-width:0; display:flex;">
+
+          <section style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden;">
+            <div style="padding:16px 24px 0; display:flex; gap:8px; flex-wrap:wrap;">
+              <sc-for list="{{ cats }}" as="c" hint-placeholder-count="7">
+                <button type="button" onClick="{{ c.go }}" style="height:44px; padding:0 18px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; font-size:13px; font-weight:500; letter-spacing:.02em; display:flex; align-items:center; gap:9px; background:{{ c.bg }}; color:{{ c.fg }}; border:1px solid {{ c.bd }};">
+                  <span>{{ c.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; opacity:.6;">{{ c.count }}</span>
+                </button>
+              </sc-for>
+              <div style="margin-left:auto; display:flex; gap:8px;">
+                <button type="button" style="height:44px; padding:0 16px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:3px; color:#A39C8C; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="color:#F3EFE6; border-color:rgba(255,255,255,.2)">Open items</button>
+                <button type="button" style="height:44px; padding:0 16px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:3px; color:#A39C8C; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="color:#F3EFE6; border-color:rgba(255,255,255,.2)">Favourites</button>
+              </div>
+            </div>
+
+            <div style="flex:1; overflow-y:auto; padding:18px 24px 24px;">
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(168px, 1fr)); gap:10px;">
+                <sc-for list="{{ items }}" as="it" hint-placeholder-count="12">
+                  <button type="button" onClick="{{ it.go }}" style="text-align:left; min-height:118px; padding:14px; background:#1A1712; border:1px solid rgba(255,255,255,.07); border-top:2px solid {{ it.accent }}; border-radius:3px; cursor:pointer; display:flex; flex-direction:column; gap:6px; font-family:Archivo,sans-serif; transition:background .14s, transform .14s;" style-hover="background:#221E17; transform:translateY(-2px)">
+                    <span style="font-size:14px; font-weight:600; color:#F3EFE6; line-height:1.3; text-wrap:pretty;">{{ it.name }}</span>
+                    <span style="font-size:11px; color:#7E7768; line-height:1.4;">{{ it.note }}</span>
+                    <span style="margin-top:auto; display:flex; align-items:baseline; justify-content:space-between; width:100%;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:14px; color:#E8E2D4;">{{ it.price }}</span>
+                      <span style="font-size:9px; letter-spacing:.09em; text-transform:uppercase; color:{{ it.accent }};">{{ it.tag }}</span>
+                    </span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+
+          <section style="width:392px; flex:0 0 392px; background:#14110D; border-left:1px solid rgba(255,255,255,.07); display:flex; flex-direction:column; overflow:hidden;">
+            <div style="padding:18px 20px; border-bottom:1px solid rgba(255,255,255,.07);">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#DD5A2A; letter-spacing:.08em;">#{{ ticket }}</div>
+                <div style="display:flex; gap:6px;">
+                  <sc-for list="{{ modes }}" as="m" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ m.go }}" style="height:30px; padding:0 11px; border-radius:2px; font-size:11px; font-family:Archivo,sans-serif; cursor:pointer; background:{{ m.bg }}; color:{{ m.fg }}; border:1px solid {{ m.bd }};">{{ m.name }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="margin-top:12px; display:flex; align-items:center; gap:10px;">
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:15px; font-weight:600;">{{ orderWho }}</div>
+                  <div style="font-size:11px; color:#7E7768; margin-top:2px;">{{ orderWhere }}</div>
+                </div>
+                <button type="button" style="height:36px; padding:0 12px; background:#221E17; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#C9C2B2; font-size:11px; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="border-color:#DD5A2A; color:#F3EFE6">Guest ⌄</button>
+              </div>
+            </div>
+
+            <div style="flex:1; overflow-y:auto; padding:6px 20px;">
+              <sc-for list="{{ cart }}" as="l" hint-placeholder-count="3">
+                <div style="display:grid; grid-template-columns:1fr auto; gap:12px; padding:14px 0; border-bottom:1px solid rgba(255,255,255,.06); animation:nf-rise .18s ease-out;">
+                  <div style="min-width:0;">
+                    <div style="display:flex; gap:9px; align-items:baseline;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#DD5A2A;">{{ l.qty }}×</span>
+                      <span style="font-size:14px; font-weight:500; line-height:1.3;">{{ l.name }}</span>
+                    </div>
+                    <div style="font-size:11px; color:#7E7768; margin-top:4px; line-height:1.5;">{{ l.mods }}</div>
+                    <div style="display:flex; gap:6px; margin-top:10px;">
+                      <button type="button" onClick="{{ l.dec }}" style="width:34px; height:34px; background:#221E17; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#E8E2D4; font-size:15px; cursor:pointer; font-family:Archivo,sans-serif;" style-hover="border-color:#DD5A2A">−</button>
+                      <button type="button" onClick="{{ l.inc }}" style="width:34px; height:34px; background:#221E17; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#E8E2D4; font-size:15px; cursor:pointer; font-family:Archivo,sans-serif;" style-hover="border-color:#DD5A2A">+</button>
+                      <button type="button" onClick="{{ l.edit }}" style="height:34px; padding:0 10px; background:transparent; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#A39C8C; font-size:11px; cursor:pointer; font-family:Archivo,sans-serif;" style-hover="color:#F3EFE6">Modify</button>
+                      <button type="button" onClick="{{ l.del }}" style="height:34px; padding:0 10px; background:transparent; border:1px solid rgba(212,90,78,.3); border-radius:2px; color:#D45A4E; font-size:11px; cursor:pointer; font-family:Archivo,sans-serif;" style-hover="background:rgba(212,90,78,.12)">Void</button>
+                    </div>
+                  </div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:14px; color:#E8E2D4;">{{ l.amt }}</div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ cartEmpty }}">
+                <div style="padding:60px 0; text-align:center;">
+                  <div style="font-family:'Instrument Serif',serif; font-style:italic; font-size:20px; color:#4F4A40;">No items yet</div>
+                  <div style="font-size:11px; color:#4F4A40; margin-top:6px; letter-spacing:.04em;">Tap the menu to start a ticket</div>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="border-top:1px solid rgba(255,255,255,.07); padding:16px 20px 18px;">
+              <div style="display:flex; gap:8px; margin-bottom:14px;">
+                <button type="button" style="flex:1; height:38px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:2px; color:#A39C8C; font-size:11px; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="color:#F3EFE6">Discount</button>
+                <button type="button" style="flex:1; height:38px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:2px; color:#A39C8C; font-size:11px; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="color:#F3EFE6">Note</button>
+                <button type="button" style="flex:1; height:38px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:2px; color:#A39C8C; font-size:11px; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="color:#F3EFE6">Hold</button>
+                <button type="button" onClick="{{ sendKitchen }}" style="flex:1; height:38px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:2px; color:#A39C8C; font-size:11px; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="color:#F3EFE6">Fire</button>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:#8C8474; padding:3px 0;">
+                <span>Subtotal</span><span style="font-family:'JetBrains Mono',monospace; color:#C9C2B2;">{{ sub }}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:#8C8474; padding:3px 0;">
+                <span>Loyalty · gold 8%</span><span style="font-family:'JetBrains Mono',monospace; color:#7FA06B;">{{ disc }}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:#8C8474; padding:3px 0;">
+                <span>CGST 2.5% + SGST 2.5%</span><span style="font-family:'JetBrains Mono',monospace; color:#C9C2B2;">{{ tax }}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.1);">
+                <span style="font-family:'Instrument Serif',serif; font-size:19px;">Total</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:26px; color:#F3EFE6;">{{ total }}</span>
+              </div>
+              <button type="button" onClick="{{ goPay }}" style="margin-top:14px; width:100%; height:58px; background:#DD5A2A; border:0; border-radius:3px; color:#150E09; font-family:Archivo,sans-serif; font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:12px;" style-hover="background:#F07440">
+                <span>Charge</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-weight:500;">{{ total }}</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_pay }}">
+        <div style="flex:1; min-width:0; display:flex; overflow:hidden;">
+          <section style="flex:1; min-width:0; overflow-y:auto; padding:24px 26px;">
+            <div style="display:flex; gap:10px; margin-bottom:22px;">
+              <sc-for list="{{ payMethods }}" as="p" hint-placeholder-count="6">
+                <button type="button" onClick="{{ p.go }}" style="flex:1; min-width:120px; height:92px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between; padding:14px; background:{{ p.bg }}; border:1px solid {{ p.bd }}; color:{{ p.fg }};">
+                  <span style="font-family:'Instrument Serif',serif; font-size:22px; line-height:1;">{{ p.mark }}</span>
+                  <span style="font-size:12px; font-weight:600; letter-spacing:.03em;">{{ p.name }}</span>
+                  <span style="font-size:10px; opacity:.6; letter-spacing:.05em;">{{ p.hint }}</span>
+                </button>
+              </sc-for>
+            </div>
+
+            <div style="display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); gap:18px;">
+              <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px;">
+                <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Amount tendered</div>
+                <div style="margin-top:12px; background:#0E0C09; border:1px solid rgba(255,255,255,.08); border-radius:3px; padding:16px 18px; display:flex; align-items:baseline; justify-content:space-between;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:34px; color:#F3EFE6;">{{ tendered }}</span>
+                  <span style="font-size:11px; color:#7E7768; letter-spacing:.08em;">{{ payMethod }}</span>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                  <sc-for list="{{ quickCash }}" as="q" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ q.go }}" style="flex:1; height:40px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:2px; color:#C9C2B2; font-family:'JetBrains Mono',monospace; font-size:12px; cursor:pointer;" style-hover="border-color:#DD5A2A">{{ q.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px;">
+                  <sc-for list="{{ keys }}" as="k" hint-placeholder-count="12">
+                    <button type="button" onClick="{{ k.go }}" style="height:60px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:2px; color:#F3EFE6; font-family:'JetBrains Mono',monospace; font-size:19px; cursor:pointer;" style-hover="background:#221E17; border-color:rgba(255,255,255,.2)">{{ k.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:18px;">
+                <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px;">
+                  <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Tip for the floor</div>
+                  <div style="display:flex; gap:8px; margin-top:12px;">
+                    <sc-for list="{{ tips }}" as="tp" hint-placeholder-count="5">
+                      <button type="button" onClick="{{ tp.go }}" style="flex:1; height:62px; border-radius:2px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-family:Archivo,sans-serif; background:{{ tp.bg }}; border:1px solid {{ tp.bd }}; color:{{ tp.fg }};">
+                        <span style="font-size:15px; font-weight:600;">{{ tp.pct }}</span>
+                        <span style="font-family:'JetBrains Mono',monospace; font-size:10px; opacity:.7;">{{ tp.amt }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+
+                <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Split the bill</div>
+                    <div style="display:flex; gap:6px;">
+                      <button type="button" style="height:30px; padding:0 10px; background:rgba(221,90,42,.14); border:1px solid rgba(221,90,42,.4); color:#DD5A2A; border-radius:2px; font-size:10px; cursor:pointer; font-family:Archivo,sans-serif;">Evenly</button>
+                      <button type="button" style="height:30px; padding:0 10px; background:transparent; border:1px solid rgba(255,255,255,.1); color:#8C8474; border-radius:2px; font-size:10px; cursor:pointer; font-family:Archivo,sans-serif;">By item</button>
+                      <button type="button" style="height:30px; padding:0 10px; background:transparent; border:1px solid rgba(255,255,255,.1); color:#8C8474; border-radius:2px; font-size:10px; cursor:pointer; font-family:Archivo,sans-serif;">By seat</button>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+                    <button type="button" onClick="{{ splitDec }}" style="width:44px; height:44px; background:#221E17; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#E8E2D4; font-size:17px; cursor:pointer;">−</button>
+                    <div style="flex:1; text-align:center;">
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:22px;">{{ splitN }} ways</div>
+                      <div style="font-size:11px; color:#7E7768; margin-top:2px;">{{ splitEach }} each</div>
+                    </div>
+                    <button type="button" onClick="{{ splitInc }}" style="width:44px; height:44px; background:#221E17; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#E8E2D4; font-size:17px; cursor:pointer;">+</button>
+                  </div>
+                </div>
+
+                <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px; display:flex; flex-direction:column; gap:10px;">
+                  <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Receipt</div>
+                  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <span style="height:36px; display:flex; align-items:center; padding:0 12px; background:rgba(221,90,42,.14); border:1px solid rgba(221,90,42,.4); color:#DD5A2A; border-radius:2px; font-size:11px;">Print 80mm</span>
+                    <span style="height:36px; display:flex; align-items:center; padding:0 12px; background:#1C1913; border:1px solid rgba(255,255,255,.08); color:#A39C8C; border-radius:2px; font-size:11px;">WhatsApp</span>
+                    <span style="height:36px; display:flex; align-items:center; padding:0 12px; background:#1C1913; border:1px solid rgba(255,255,255,.08); color:#A39C8C; border-radius:2px; font-size:11px;">Email</span>
+                    <span style="height:36px; display:flex; align-items:center; padding:0 12px; background:#1C1913; border:1px solid rgba(255,255,255,.08); color:#A39C8C; border-radius:2px; font-size:11px;">No receipt</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section style="width:392px; flex:0 0 392px; background:#14110D; border-left:1px solid rgba(255,255,255,.07); display:flex; flex-direction:column; padding:22px 20px;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#DD5A2A; letter-spacing:.08em;">#{{ ticket }} · {{ payMethod }}</div>
+            <div style="margin-top:20px; display:flex; flex-direction:column; gap:9px;">
+              <div style="display:flex; justify-content:space-between; font-size:13px; color:#8C8474;"><span>Subtotal</span><span style="font-family:'JetBrains Mono',monospace; color:#C9C2B2;">{{ sub }}</span></div>
+              <div style="display:flex; justify-content:space-between; font-size:13px; color:#8C8474;"><span>Loyalty gold 8%</span><span style="font-family:'JetBrains Mono',monospace; color:#7FA06B;">{{ disc }}</span></div>
+              <div style="display:flex; justify-content:space-between; font-size:13px; color:#8C8474;"><span>GST 5%</span><span style="font-family:'JetBrains Mono',monospace; color:#C9C2B2;">{{ tax }}</span></div>
+              <div style="display:flex; justify-content:space-between; font-size:13px; color:#8C8474;"><span>Tip {{ tipPct }}</span><span style="font-family:'JetBrains Mono',monospace; color:#C9C2B2;">{{ tipAmt }}</span></div>
+            </div>
+            <div style="margin-top:18px; padding-top:18px; border-top:1px solid rgba(255,255,255,.1); display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-family:'Instrument Serif',serif; font-size:20px;">Due</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:30px;">{{ grand }}</span>
+            </div>
+            <div style="margin-top:14px; background:#0E0C09; border:1px dashed rgba(255,255,255,.14); border-radius:3px; padding:14px; display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-size:12px; color:#8C8474;">Change due</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:20px; color:#7FA06B;">{{ change }}</span>
+            </div>
+            <div style="margin-top:auto; display:flex; flex-direction:column; gap:10px;">
+              <button type="button" onClick="{{ goInvoice }}" style="width:100%; height:62px; background:#DD5A2A; border:0; border-radius:3px; color:#150E09; font-family:Archivo,sans-serif; font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;" style-hover="background:#F07440">Settle & print</button>
+              <div style="display:flex; gap:10px;">
+                <button type="button" onClick="{{ goRegister }}" style="flex:1; height:46px; background:transparent; border:1px solid rgba(255,255,255,.14); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Back to ticket</button>
+                <button type="button" onClick="{{ goRefund }}" style="flex:1; height:46px; background:transparent; border:1px solid rgba(212,90,78,.3); border-radius:3px; color:#D45A4E; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Void bill</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_invoice }}">
+        <div style="flex:1; min-width:0; overflow-y:auto; padding:26px; display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:22px; align-items:start;">
+          <div style="background:#FDFBF6; color:#1A1712; border-radius:3px; padding:44px 48px; box-shadow:0 30px 70px rgba(0,0,0,.45);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:24px; padding-bottom:22px; border-bottom:2px solid #1A1712;">
+              <div>
+                <div style="font-family:'Instrument Serif',serif; font-size:32px; line-height:1;">nofiltr art cafe</div>
+                <div style="font-size:11px; color:#6E685C; line-height:1.7; margin-top:8px;">71 Wood Street, Koramangala 5th Block, Bengaluru 560095<br>hello@nofiltr.cafe · +91 80 4114 2200<br>GSTIN 29ABCDE1234F1Z5 · FSSAI 11223344556677</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#C24D22;">Tax invoice</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:17px; margin-top:6px;">NF/26-27/2294</div>
+                <div style="font-size:11px; color:#6E685C; margin-top:8px; line-height:1.7;">16 Sep 2026 · 14:38<br>Dine-in · Table G4 · 2 covers<br>Server Amrita K · Term 01</div>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px; padding:20px 0; border-bottom:1px solid #E3DED2;">
+              <div>
+                <div style="font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#9A9384;">Billed to</div>
+                <div style="font-size:13px; margin-top:6px; line-height:1.6;">Meera Sundaram<br>+91 98450 11223<br>Gold member · 1,240 pts</div>
+              </div>
+              <div>
+                <div style="font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#9A9384;">Place of supply</div>
+                <div style="font-size:13px; margin-top:6px; line-height:1.6;">Karnataka (29)<br>Intra-state supply<br>HSN 996331</div>
+              </div>
+              <div>
+                <div style="font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#9A9384;">Payment</div>
+                <div style="font-size:13px; margin-top:6px; line-height:1.6;">Card · VISA ••4417<br>Auth 118342 · Approved<br>Razorpay POS RZP-8841</div>
+              </div>
+            </div>
+
+            <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#9A9384; font-weight:600; padding:14px 0 10px;">Item</th>
+                  <th style="text-align:right; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#9A9384; font-weight:600; padding:14px 0 10px;">Qty</th>
+                  <th style="text-align:right; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#9A9384; font-weight:600; padding:14px 0 10px;">Rate</th>
+                  <th style="text-align:right; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#9A9384; font-weight:600; padding:14px 0 10px;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ invoiceLines }}" as="r" hint-placeholder-count="3">
+                  <tr>
+                    <td style="padding:12px 0; border-top:1px solid #EFEAE0; font-size:14px;">
+                      <div style="font-weight:600;">{{ r.name }}</div>
+                      <div style="font-size:11px; color:#8A8274; margin-top:3px;">{{ r.mods }}</div>
+                    </td>
+                    <td style="padding:12px 0; border-top:1px solid #EFEAE0; text-align:right; font-family:'JetBrains Mono',monospace; font-size:13px;">{{ r.qty }}</td>
+                    <td style="padding:12px 0; border-top:1px solid #EFEAE0; text-align:right; font-family:'JetBrains Mono',monospace; font-size:13px;">{{ r.rate }}</td>
+                    <td style="padding:12px 0; border-top:1px solid #EFEAE0; text-align:right; font-family:'JetBrains Mono',monospace; font-size:13px;">{{ r.amt }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+
+            <div style="display:flex; justify-content:space-between; gap:40px; margin-top:26px; padding-top:20px; border-top:2px solid #1A1712;">
+              <div style="max-width:300px;">
+                <div style="font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#9A9384;">Amount in words</div>
+                <div style="font-family:'Instrument Serif',serif; font-style:italic; font-size:15px; margin-top:6px; line-height:1.5;">{{ words }}</div>
+                <div style="font-size:10px; color:#9A9384; margin-top:16px; line-height:1.7;">Tip is distributed in full to floor and kitchen staff. Goods once sold are not returnable. Subject to Bengaluru jurisdiction.</div>
+              </div>
+              <div style="min-width:240px;">
+                <div style="display:flex; justify-content:space-between; font-size:13px; padding:5px 0; color:#4A4438;"><span>Subtotal</span><span style="font-family:'JetBrains Mono',monospace;">{{ sub }}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; padding:5px 0; color:#4A4438;"><span>Loyalty discount</span><span style="font-family:'JetBrains Mono',monospace; color:#5E7A4E;">{{ disc }}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; padding:5px 0; color:#4A4438;"><span>CGST 2.5%</span><span style="font-family:'JetBrains Mono',monospace;">{{ cgst }}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; padding:5px 0; color:#4A4438;"><span>SGST 2.5%</span><span style="font-family:'JetBrains Mono',monospace;">{{ cgst }}</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; padding:5px 0; color:#4A4438;"><span>Tip</span><span style="font-family:'JetBrains Mono',monospace;">{{ tipAmt }}</span></div>
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:12px; padding-top:12px; border-top:1px solid #1A1712;">
+                  <span style="font-family:'Instrument Serif',serif; font-size:20px;">Total paid</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:24px;">{{ grand }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:18px;">
+              <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C; margin-bottom:12px;">Thermal preview · 80mm</div>
+              <div style="background:#FDFBF6; color:#1A1712; padding:18px 16px; font-family:'JetBrains Mono',monospace; font-size:10px; line-height:1.85;">
+                <div style="text-align:center; font-family:'Instrument Serif',serif; font-size:17px; letter-spacing:.02em;">nofiltr art cafe</div>
+                <div style="text-align:center; font-size:9px; margin-top:2px;">KORAMANGALA · 080 4114 2200</div>
+                <div style="border-top:1px dashed #B9B2A4; margin:10px 0;"></div>
+                <div>BILL NF/26-27/2294</div>
+                <div>16-09-26 14:38 · T-G4 · AK</div>
+                <div style="border-top:1px dashed #B9B2A4; margin:10px 0;"></div>
+                <div style="display:flex; justify-content:space-between;"><span>2 FLAT WHITE</span><span>640</span></div>
+                <div style="padding-left:10px; color:#6E685C;">+OAT +SHOT</div>
+                <div style="display:flex; justify-content:space-between;"><span>1 ALMOND CROISSANT</span><span>220</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>1 TRUFFLE TOAST</span><span>420</span></div>
+                <div style="border-top:1px dashed #B9B2A4; margin:10px 0;"></div>
+                <div style="display:flex; justify-content:space-between;"><span>SUBTOTAL</span><span>1,280</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>DISCOUNT</span><span>-102</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>GST 5%</span><span>59</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:6px;"><span>TOTAL</span><span>1,237</span></div>
+                <div style="border-top:1px dashed #B9B2A4; margin:10px 0;"></div>
+                <div style="text-align:center; font-size:9px; line-height:1.7;">SCAN TO RATE & TIP<br>nofiltr.cafe/r/2294</div>
+                <div style="width:62px; height:62px; margin:8px auto 0; background:repeating-conic-gradient(#1A1712 0% 25%, #FDFBF6 0% 50%) 0 0/9px 9px; border:3px solid #FDFBF6; outline:1px solid #1A1712;"></div>
+                <div style="text-align:center; font-size:9px; margin-top:10px;">THANK YOU · COME BACK SOON</div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:9px;">
+              <button type="button" style="height:52px; background:#DD5A2A; border:0; border-radius:3px; color:#150E09; font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="background:#F07440">Print invoice</button>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px;">
+                <button type="button" style="height:46px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Email PDF</button>
+                <button type="button" style="height:46px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">WhatsApp</button>
+                <button type="button" style="height:46px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">E-invoice IRN</button>
+                <button type="button" style="height:46px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Duplicate</button>
+              </div>
+              <button type="button" onClick="{{ newTicket }}" style="height:52px; background:transparent; border:1px solid rgba(255,255,255,.14); border-radius:3px; color:#F3EFE6; font-size:13px; letter-spacing:.04em; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="border-color:#DD5A2A">Start next ticket</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_tables }}">
+        <div style="flex:1; min-width:0; display:flex; overflow:hidden;">
+          <section style="flex:1; min-width:0; overflow-y:auto; padding:22px 26px 30px;">
+            <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:22px;">
+              <sc-for list="{{ floorStats }}" as="f" hint-placeholder-count="4">
+                <div style="flex:1; min-width:150px; background:#14110D; border:1px solid rgba(255,255,255,.07); border-left:2px solid {{ f.accent }}; border-radius:3px; padding:14px 16px;">
+                  <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7E7768;">{{ f.label }}</div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:22px; margin-top:7px; color:#F3EFE6;">{{ f.value }}</div>
+                  <div style="font-size:10px; color:#6E685C; margin-top:3px;">{{ f.sub }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <sc-for list="{{ zones }}" as="z" hint-placeholder-count="3">
+              <div style="margin-bottom:26px;">
+                <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:12px;">
+                  <span style="font-family:'Instrument Serif',serif; font-size:21px;">{{ z.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#6E685C; letter-spacing:.08em;">{{ z.meta }}</span>
+                  <span style="flex:1; height:1px; background:rgba(255,255,255,.07);"></span>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(146px, 1fr)); gap:10px;">
+                  <sc-for list="{{ z.tables }}" as="tb" hint-placeholder-count="6">
+                    <button type="button" onClick="{{ tb.go }}" style="text-align:left; min-height:112px; padding:13px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; display:flex; flex-direction:column; gap:5px; background:{{ tb.bg }}; border:1px solid {{ tb.bd }};" style-hover="transform:translateY(-2px)">
+                      <span style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                        <span style="font-family:'JetBrains Mono',monospace; font-size:16px; color:{{ tb.fg }};">{{ tb.id }}</span>
+                        <span style="width:7px; height:7px; border-radius:50%; background:{{ tb.dot }};"></span>
+                      </span>
+                      <span style="font-size:11px; color:#8C8474;">{{ tb.seats }}</span>
+                      <span style="margin-top:auto; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:{{ tb.dot }};">{{ tb.status }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#C9C2B2;">{{ tb.amount }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </section>
+
+          <section style="width:360px; flex:0 0 360px; background:#14110D; border-left:1px solid rgba(255,255,255,.07); display:flex; flex-direction:column; padding:22px 20px; overflow-y:auto;">
+            <div style="display:flex; align-items:baseline; gap:10px;">
+              <span style="font-family:'Instrument Serif',serif; font-size:30px;">{{ tSel.id }}</span>
+              <span style="font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:{{ tSel.dot }};">{{ tSel.status }}</span>
+            </div>
+            <div style="font-size:12px; color:#7E7768; margin-top:4px;">{{ tSel.zone }} · {{ tSel.seats }} · seated {{ tSel.since }}</div>
+
+            <div style="margin-top:18px; display:grid; grid-template-columns:1fr 1fr; gap:9px;">
+              <div style="background:#1A1712; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:12px;">
+                <div style="font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#7E7768;">Running</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:18px; margin-top:5px;">{{ tSel.amount }}</div>
+              </div>
+              <div style="background:#1A1712; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:12px;">
+                <div style="font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#7E7768;">Course</div>
+                <div style="font-size:14px; margin-top:6px;">{{ tSel.course }}</div>
+              </div>
+            </div>
+
+            <div style="margin-top:18px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Open ticket</div>
+            <div style="margin-top:10px;">
+              <sc-for list="{{ tSel.lines }}" as="tl" hint-placeholder-count="3">
+                <div style="display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.06); font-size:13px;">
+                  <span style="color:#C9C2B2;">{{ tl.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; color:#8C8474;">{{ tl.amt }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="margin-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:9px;">
+              <button type="button" onClick="{{ goRegister }}" style="height:46px; background:#DD5A2A; border:0; border-radius:3px; color:#150E09; font-size:12px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;">Open ticket</button>
+              <button type="button" onClick="{{ goPay }}" style="height:46px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Print bill</button>
+              <button type="button" style="height:46px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Transfer</button>
+              <button type="button" style="height:46px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Merge</button>
+              <button type="button" style="height:46px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Split seats</button>
+              <button type="button" style="height:46px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Mark clean</button>
+            </div>
+
+            <div style="margin-top:20px; padding-top:18px; border-top:1px solid rgba(255,255,255,.07);">
+              <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C; margin-bottom:10px;">Legend</div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <sc-for list="{{ legend }}" as="lg" hint-placeholder-count="5">
+                  <div style="display:flex; align-items:center; gap:9px; font-size:12px; color:#8C8474;">
+                    <span style="width:7px; height:7px; border-radius:50%; background:{{ lg.dot }};"></span>
+                    <span>{{ lg.name }}</span>
+                    <span style="margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:11px;">{{ lg.n }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_orders }}">
+        <div style="flex:1; min-width:0; display:flex; overflow:hidden;">
+          <section style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden;">
+            <div style="padding:18px 26px; border-bottom:1px solid rgba(255,255,255,.07); display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <sc-for list="{{ chFilters }}" as="cf" hint-placeholder-count="6">
+                <button type="button" onClick="{{ cf.go }}" style="height:38px; padding:0 14px; border-radius:2px; cursor:pointer; font-family:Archivo,sans-serif; font-size:12px; display:flex; align-items:center; gap:8px; background:{{ cf.bg }}; color:{{ cf.fg }}; border:1px solid {{ cf.bd }};">
+                  <span>{{ cf.name }}</span><span style="font-family:'JetBrains Mono',monospace; font-size:10px; opacity:.6;">{{ cf.n }}</span>
+                </button>
+              </sc-for>
+              <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                <span style="font-size:11px; color:#6E685C; letter-spacing:.08em;">TODAY · 16 SEP</span>
+                <button type="button" style="height:38px; padding:0 14px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:2px; color:#A39C8C; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Export</button>
+              </div>
+            </div>
+
+            <div style="flex:1; overflow:auto;">
+              <div style="display:grid; grid-template-columns:96px minmax(180px,1.4fr) 110px 120px 92px 108px 96px; min-width:900px; gap:12px; padding:12px 26px; border-bottom:1px solid rgba(255,255,255,.07); font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#6E685C; position:sticky; top:0; background:#0E0C09;">
+                <span>Order</span><span>Guest / items</span><span>Channel</span><span>Where</span><span>Time</span><span>Status</span><span style="text-align:right;">Total</span>
+              </div>
+              <sc-for list="{{ orders }}" as="o" hint-placeholder-count="9">
+                <button type="button" onClick="{{ o.go }}" style="width:100%; text-align:left; display:grid; grid-template-columns:96px minmax(180px,1.4fr) 110px 120px 92px 108px 96px; min-width:900px; gap:12px; padding:15px 26px; border:0; border-bottom:1px solid rgba(255,255,255,.05); border-left:2px solid {{ o.mark }}; background:{{ o.bg }}; cursor:pointer; font-family:Archivo,sans-serif; align-items:center;" style-hover="background:#1A1712">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#DD5A2A;">{{ o.id }}</span>
+                  <span style="min-width:0;">
+                    <span style="display:block; font-size:14px; color:#F3EFE6; font-weight:500;">{{ o.who }}</span>
+                    <span style="display:block; font-size:11px; color:#7E7768; margin-top:3px;">{{ o.items }}</span>
+                  </span>
+                  <span style="font-size:12px; color:#C9C2B2;">{{ o.channel }}</span>
+                  <span style="font-size:12px; color:#8C8474;">{{ o.where }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#8C8474;">{{ o.time }}</span>
+                  <span style="font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:5px 9px; border-radius:2px; color:{{ o.mark }}; border:1px solid {{ o.mark }}; justify-self:start;">{{ o.status }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:13px; text-align:right; color:#F3EFE6;">{{ o.total }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </section>
+
+          <section style="width:372px; flex:0 0 372px; background:#14110D; border-left:1px solid rgba(255,255,255,.07); overflow-y:auto; padding:22px 20px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between;">
+              <span style="font-family:'JetBrains Mono',monospace; font-size:15px; color:#DD5A2A;">{{ oSel.id }}</span>
+              <span style="font-size:10px; letter-spacing:.09em; text-transform:uppercase; padding:5px 9px; border:1px solid {{ oSel.mark }}; color:{{ oSel.mark }}; border-radius:2px;">{{ oSel.status }}</span>
+            </div>
+            <div style="font-family:'Instrument Serif',serif; font-size:26px; margin-top:12px;">{{ oSel.who }}</div>
+            <div style="font-size:12px; color:#7E7768; margin-top:4px;">{{ oSel.channel }} · {{ oSel.where }} · {{ oSel.time }}</div>
+
+            <div style="margin-top:20px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Items</div>
+            <div style="margin-top:8px;">
+              <sc-for list="{{ oSel.lines }}" as="ol" hint-placeholder-count="3">
+                <div style="display:grid; grid-template-columns:22px 1fr auto; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.06);">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#DD5A2A;">{{ ol.qty }}</span>
+                  <span style="min-width:0;">
+                    <span style="display:block; font-size:13px;">{{ ol.name }}</span>
+                    <span style="display:block; font-size:11px; color:#7E7768; margin-top:2px;">{{ ol.mods }}</span>
+                  </span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#C9C2B2;">{{ ol.amt }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="margin-top:20px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Timeline</div>
+            <div style="margin-top:12px; display:flex; flex-direction:column; gap:0;">
+              <sc-for list="{{ oSel.timeline }}" as="tv" hint-placeholder-count="4">
+                <div style="display:grid; grid-template-columns:16px 1fr; gap:12px;">
+                  <div style="display:flex; flex-direction:column; align-items:center;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:{{ tv.dot }}; margin-top:5px;"></span>
+                    <span style="flex:1; width:1px; background:rgba(255,255,255,.1);"></span>
+                  </div>
+                  <div style="padding-bottom:16px;">
+                    <div style="font-size:13px; color:#E8E2D4;">{{ tv.what }}</div>
+                    <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#6E685C; margin-top:3px;">{{ tv.when }} · {{ tv.who }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="margin-top:6px; display:flex; flex-direction:column; gap:9px;">
+              <button type="button" onClick="{{ goPay }}" style="height:50px; background:#DD5A2A; border:0; border-radius:3px; color:#150E09; font-size:13px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;">Settle order</button>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px;">
+                <button type="button" onClick="{{ goInvoice }}" style="height:44px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Invoice</button>
+                <button type="button" onClick="{{ goKitchen }}" style="height:44px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Kitchen</button>
+                <button type="button" style="height:44px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Reprint KOT</button>
+                <button type="button" onClick="{{ goRefund }}" style="height:44px; background:transparent; border:1px solid rgba(212,90,78,.3); border-radius:3px; color:#D45A4E; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Refund</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_kitchen }}">
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden;">
+          <div style="padding:16px 26px; border-bottom:1px solid rgba(255,255,255,.07); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <sc-for list="{{ stations }}" as="s" hint-placeholder-count="5">
+              <button type="button" onClick="{{ s.go }}" style="height:44px; padding:0 18px; border-radius:2px; cursor:pointer; font-family:Archivo,sans-serif; font-size:13px; font-weight:500; display:flex; align-items:center; gap:9px; background:{{ s.bg }}; color:{{ s.fg }}; border:1px solid {{ s.bd }};">
+                <span>{{ s.name }}</span><span style="font-family:'JetBrains Mono',monospace; font-size:11px; opacity:.65;">{{ s.n }}</span>
+              </button>
+            </sc-for>
+            <div style="margin-left:auto; display:flex; gap:22px; align-items:center;">
+              <div style="text-align:right;"><div style="font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#6E685C;">Avg ticket</div><div style="font-family:'JetBrains Mono',monospace; font-size:16px; color:#7FA06B;">8m 40s</div></div>
+              <div style="text-align:right;"><div style="font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#6E685C;">Late</div><div style="font-family:'JetBrains Mono',monospace; font-size:16px; color:#D45A4E;">2</div></div>
+              <div style="text-align:right;"><div style="font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#6E685C;">In queue</div><div style="font-family:'JetBrains Mono',monospace; font-size:16px; color:#E8E2D4;">7</div></div>
+              <button type="button" style="height:44px; padding:0 16px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Recall last</button>
+            </div>
+          </div>
+
+          <div style="flex:1; overflow-y:auto; padding:20px 26px 30px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(278px, 1fr)); gap:14px; align-items:start;">
+              <sc-for list="{{ tickets }}" as="k" hint-placeholder-count="6">
+                <div style="background:#16130E; border:1px solid {{ k.edge }}; border-top:3px solid {{ k.edge }}; border-radius:3px; display:flex; flex-direction:column; overflow:hidden;">
+                  <div style="padding:13px 15px; background:{{ k.head }}; display:flex; align-items:flex-start; gap:10px;">
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:14px; color:#F3EFE6;">{{ k.id }}</div>
+                      <div style="font-size:11px; color:#A39C8C; margin-top:3px;">{{ k.where }}</div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:19px; color:{{ k.edge }};">{{ k.elapsed }}</div>
+                      <div style="font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#8C8474; margin-top:2px;">{{ k.state }}</div>
+                    </div>
+                  </div>
+                  <div style="padding:6px 15px 12px;">
+                    <sc-for list="{{ k.lines }}" as="kl" hint-placeholder-count="3">
+                      <div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05);">
+                        <div style="display:flex; gap:10px; align-items:baseline;">
+                          <span style="font-family:'JetBrains Mono',monospace; font-size:15px; color:#DD5A2A; min-width:22px;">{{ kl.qty }}</span>
+                          <span style="font-size:15px; font-weight:500; line-height:1.3; color:#F3EFE6;">{{ kl.name }}</span>
+                        </div>
+                        <div style="font-size:12px; color:#E0A33C; margin-top:4px; padding-left:32px; line-height:1.5;">{{ kl.mods }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="margin-top:auto; padding:11px 15px 13px; display:flex; gap:8px;">
+                    <button type="button" onClick="{{ k.bump }}" style="flex:1; height:46px; background:{{ k.btnBg }}; border:1px solid {{ k.btnBd }}; border-radius:2px; color:{{ k.btnFg }}; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;">{{ k.btn }}</button>
+                    <button type="button" style="width:46px; height:46px; background:transparent; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#8C8474; font-size:14px; cursor:pointer;">⏸</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_reserve }}">
+        <div style="flex:1; min-width:0; display:flex; overflow:hidden;">
+          <section style="flex:1; min-width:0; overflow-y:auto; padding:22px 26px 30px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+              <sc-for list="{{ resDays }}" as="d" hint-placeholder-count="5">
+                <button type="button" onClick="{{ d.go }}" style="height:56px; min-width:72px; padding:0 14px; border-radius:2px; cursor:pointer; font-family:Archivo,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:{{ d.bg }}; border:1px solid {{ d.bd }}; color:{{ d.fg }};">
+                  <span style="font-size:10px; letter-spacing:.1em; text-transform:uppercase; opacity:.7;">{{ d.dow }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:16px;">{{ d.date }}</span>
+                </button>
+              </sc-for>
+              <button type="button" style="margin-left:auto; height:48px; padding:0 20px; background:#DD5A2A; border:0; border-radius:3px; color:#150E09; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;">New booking</button>
+            </div>
+
+            <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; overflow:auto;">
+              <div style="display:grid; grid-template-columns:78px minmax(160px,1.3fr) 90px 110px 118px 96px; min-width:780px; gap:12px; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,.07); font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#6E685C;">
+                <span>Time</span><span>Guest</span><span>Covers</span><span>Table</span><span>Status</span><span>Source</span>
+              </div>
+              <sc-for list="{{ bookings }}" as="b" hint-placeholder-count="8">
+                <div style="display:grid; grid-template-columns:78px minmax(160px,1.3fr) 90px 110px 118px 96px; min-width:780px; gap:12px; padding:14px 18px; border-bottom:1px solid rgba(255,255,255,.05); align-items:center;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#F3EFE6;">{{ b.time }}</span>
+                  <span style="min-width:0;">
+                    <span style="display:block; font-size:14px; font-weight:500;">{{ b.name }}</span>
+                    <span style="display:block; font-size:11px; color:#7E7768; margin-top:3px;">{{ b.note }}</span>
+                  </span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#C9C2B2;">{{ b.covers }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#C9C2B2;">{{ b.table }}</span>
+                  <span style="font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:5px 9px; border:1px solid {{ b.mark }}; color:{{ b.mark }}; border-radius:2px; justify-self:start;">{{ b.status }}</span>
+                  <span style="font-size:11px; color:#8C8474;">{{ b.src }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </section>
+
+          <section style="width:340px; flex:0 0 340px; background:#14110D; border-left:1px solid rgba(255,255,255,.07); overflow-y:auto; padding:22px 20px;">
+            <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Waitlist</div>
+            <div style="margin-top:12px; display:flex; flex-direction:column; gap:9px;">
+              <sc-for list="{{ waitlist }}" as="w" hint-placeholder-count="3">
+                <div style="background:#1A1712; border:1px solid rgba(255,255,255,.07); border-left:2px solid #E0A33C; border-radius:3px; padding:13px 14px;">
+                  <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                    <span style="font-size:14px; font-weight:500;">{{ w.name }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#E0A33C;">{{ w.wait }}</span>
+                  </div>
+                  <div style="font-size:11px; color:#7E7768; margin-top:4px;">{{ w.covers }} · quoted {{ w.quote }} · {{ w.phone }}</div>
+                  <div style="display:flex; gap:7px; margin-top:11px;">
+                    <button type="button" style="flex:1; height:36px; background:rgba(221,90,42,.14); border:1px solid rgba(221,90,42,.4); border-radius:2px; color:#DD5A2A; font-size:11px; font-family:Archivo,sans-serif; cursor:pointer;">Seat now</button>
+                    <button type="button" style="flex:1; height:36px; background:transparent; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#A39C8C; font-size:11px; font-family:Archivo,sans-serif; cursor:pointer;">Notify</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="margin-top:24px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Cover forecast</div>
+            <div style="margin-top:14px; display:flex; align-items:flex-end; gap:5px; height:110px;">
+              <sc-for list="{{ forecast }}" as="fc" hint-placeholder-count="8">
+                <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end;">
+                  <div style="width:100%; height:{{ fc.h }}; background:{{ fc.bg }}; border-radius:1px;"></div>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:9px; color:#6E685C;">{{ fc.hr }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:20px; padding:14px; background:#1A1712; border:1px solid rgba(255,255,255,.07); border-radius:3px;">
+              <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Tonight</div>
+              <div style="font-family:'Instrument Serif',serif; font-size:19px; margin-top:8px; line-height:1.35;">Artist residency opening · 19:00</div>
+              <div style="font-size:11px; color:#7E7768; margin-top:6px; line-height:1.6;">Gallery zone held from 18:30. Set menu only, bar open late until 23:30.</div>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_till }}">
+        <div style="flex:1; min-width:0; overflow-y:auto; padding:24px 26px 32px;">
+          <div style="display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr); gap:20px; align-items:start;">
+            <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:22px;">
+              <div style="display:flex; align-items:baseline; justify-content:space-between;">
+                <span style="font-family:'Instrument Serif',serif; font-size:24px;">Count the drawer</span>
+                <span style="font-size:11px; color:#7E7768; letter-spacing:.06em;">BLIND COUNT · EXPECTED HIDDEN</span>
+              </div>
+              <div style="margin-top:18px; display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px;">
+                <sc-for list="{{ denoms }}" as="d" hint-placeholder-count="8">
+                  <div style="background:#1A1712; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:12px 13px;">
+                    <div style="display:flex; align-items:baseline; justify-content:space-between;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:14px; color:#E8E2D4;">{{ d.note }}</span>
+                      <span style="font-size:10px; color:#6E685C;">{{ d.kind }}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+                      <div style="flex:1; height:38px; background:#0E0C09; border:1px solid rgba(255,255,255,.08); border-radius:2px; display:flex; align-items:center; justify-content:flex-end; padding:0 10px; font-family:'JetBrains Mono',monospace; font-size:15px; color:#F3EFE6;">{{ d.count }}</div>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#7E7768; min-width:56px; text-align:right;">{{ d.total }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="button" style="height:50px; padding:0 22px; background:#DD5A2A; border:0; border-radius:3px; color:#150E09; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;">Submit count</button>
+                <button type="button" style="height:50px; padding:0 18px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Open drawer</button>
+                <button type="button" style="height:50px; padding:0 18px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Cash drop to safe</button>
+                <button type="button" style="height:50px; padding:0 18px; background:#1C1913; border:1px solid rgba(255,255,255,.1); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Paid out</button>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px;">
+                <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Drawer 01</div>
+                <div style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
+                  <sc-for list="{{ drawerRows }}" as="r" hint-placeholder-count="6">
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:13px;">
+                      <span style="color:#8C8474;">{{ r.label }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace; color:{{ r.fg }};">{{ r.value }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="margin-top:16px; padding:14px; background:rgba(127,160,107,.08); border:1px solid rgba(127,160,107,.24); border-radius:3px; display:flex; justify-content:space-between; align-items:baseline;">
+                  <span style="font-size:12px; color:#9DBA88; letter-spacing:.06em;">VARIANCE</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:18px; color:#7FA06B;">−₹40</span>
+                </div>
+              </div>
+
+              <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px;">
+                <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Drawer log</div>
+                <div style="margin-top:12px;">
+                  <sc-for list="{{ drawerLog }}" as="l" hint-placeholder-count="5">
+                    <div style="display:grid; grid-template-columns:52px 1fr auto; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.06); align-items:baseline;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#6E685C;">{{ l.time }}</span>
+                      <span style="min-width:0;"><span style="display:block; font-size:13px; color:#E8E2D4;">{{ l.what }}</span><span style="display:block; font-size:10px; color:#6E685C; margin-top:2px;">{{ l.who }}</span></span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:{{ l.fg }};">{{ l.amt }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_shift }}">
+        <div style="flex:1; min-width:0; overflow-y:auto; padding:24px 26px 32px;">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:20px;">
+            <sc-for list="{{ shiftKpis }}" as="k" hint-placeholder-count="5">
+              <div style="flex:1; min-width:170px; background:#14110D; border:1px solid rgba(255,255,255,.07); border-top:2px solid {{ k.accent }}; border-radius:3px; padding:16px 18px;">
+                <div style="font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7E7768;">{{ k.label }}</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:25px; margin-top:8px;">{{ k.value }}</div>
+                <div style="font-size:11px; color:{{ k.accent }}; margin-top:4px;">{{ k.delta }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:18px; align-items:start;">
+            <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Sales by channel</div>
+              <div style="margin-top:16px; display:flex; flex-direction:column; gap:13px;">
+                <sc-for list="{{ byChannel }}" as="c" hint-placeholder-count="6">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+                      <span style="color:#C9C2B2;">{{ c.name }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace; color:#E8E2D4;">{{ c.amt }}</span>
+                    </div>
+                    <div style="height:6px; background:#1F1C16; border-radius:1px; overflow:hidden;">
+                      <div style="height:100%; width:{{ c.w }}; background:{{ c.bg }};"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Tenders</div>
+              <div style="margin-top:16px;">
+                <sc-for list="{{ tenders }}" as="t" hint-placeholder-count="5">
+                  <div style="display:grid; grid-template-columns:1fr 70px 96px; gap:10px; padding:11px 0; border-bottom:1px solid rgba(255,255,255,.06); align-items:baseline;">
+                    <span style="font-size:13px; color:#C9C2B2;">{{ t.name }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#7E7768;">{{ t.n }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:13px; text-align:right;">{{ t.amt }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top:16px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Exceptions</div>
+              <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                <sc-for list="{{ exceptions }}" as="e" hint-placeholder-count="4">
+                  <div style="display:flex; justify-content:space-between; font-size:12px; color:#8C8474;">
+                    <span>{{ e.name }}</span><span style="font-family:'JetBrains Mono',monospace; color:{{ e.fg }};">{{ e.value }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Staff & tips</div>
+              <div style="margin-top:14px;">
+                <sc-for list="{{ staffRows }}" as="s" hint-placeholder-count="5">
+                  <div style="display:grid; grid-template-columns:1fr 78px 86px; gap:10px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.06); align-items:center;">
+                    <span style="min-width:0;"><span style="display:block; font-size:13px; color:#E8E2D4;">{{ s.name }}</span><span style="display:block; font-size:10px; color:#6E685C; margin-top:2px;">{{ s.role }}</span></span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#7E7768;">{{ s.hours }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:13px; text-align:right; color:#7FA06B;">{{ s.tips }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px; display:flex; flex-direction:column;">
+              <div style="font-family:'Instrument Serif',serif; font-size:21px;">Close out</div>
+              <div style="font-size:12px; color:#7E7768; margin-top:8px; line-height:1.6;">Z-report locks the shift, prints the summary, mails the GST register to accounts and posts inventory depletion.</div>
+              <div style="margin-top:16px; display:flex; flex-direction:column; gap:9px;">
+                <sc-for list="{{ closeChecks }}" as="c" hint-placeholder-count="5">
+                  <div style="display:flex; align-items:center; gap:11px; padding:11px 13px; background:#1A1712; border:1px solid rgba(255,255,255,.07); border-radius:3px;">
+                    <span style="width:18px; height:18px; border-radius:2px; border:1px solid {{ c.mark }}; color:{{ c.mark }}; font-size:11px; display:flex; align-items:center; justify-content:center;">{{ c.tick }}</span>
+                    <span style="font-size:13px; color:#C9C2B2;">{{ c.name }}</span>
+                    <span style="margin-left:auto; font-size:11px; color:#6E685C;">{{ c.meta }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top:18px; display:flex; gap:10px;">
+                <button type="button" style="flex:1; height:52px; background:#1C1913; border:1px solid rgba(255,255,255,.12); border-radius:3px; color:#C9C2B2; font-size:12px; letter-spacing:.05em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;">Print X-report</button>
+                <button type="button" style="flex:1; height:52px; background:#DD5A2A; border:0; border-radius:3px; color:#150E09; font-size:12px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;">Run Z-report</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_refund }}">
+        <div style="flex:1; min-width:0; overflow-y:auto; padding:24px 26px 32px; display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:20px; align-items:start;">
+          <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:22px;">
+            <div style="display:flex; align-items:baseline; gap:12px;">
+              <span style="font-family:'Instrument Serif',serif; font-size:24px;">Refund NF-2291</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#6E685C;">SETTLED 14:02 · CARD ••4417</span>
+            </div>
+            <div style="margin-top:18px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Select items to return</div>
+            <div style="margin-top:12px;">
+              <sc-for list="{{ refundLines }}" as="r" hint-placeholder-count="4">
+                <button type="button" onClick="{{ r.go }}" style="width:100%; text-align:left; display:grid; grid-template-columns:22px 1fr 100px 96px; gap:12px; align-items:center; padding:14px 12px; margin-bottom:8px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; background:{{ r.bg }}; border:1px solid {{ r.bd }};">
+                  <span style="width:18px; height:18px; border-radius:2px; border:1px solid {{ r.mark }}; color:{{ r.mark }}; font-size:11px; display:flex; align-items:center; justify-content:center;">{{ r.tick }}</span>
+                  <span style="min-width:0;"><span style="display:block; font-size:14px; color:#F3EFE6;">{{ r.name }}</span><span style="display:block; font-size:11px; color:#7E7768; margin-top:3px;">{{ r.mods }}</span></span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#8C8474;">{{ r.qty }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:13px; text-align:right; color:#E8E2D4;">{{ r.amt }}</span>
+                </button>
+              </sc-for>
+            </div>
+            <div style="margin-top:18px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Reason</div>
+            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+              <sc-for list="{{ reasons }}" as="rs" hint-placeholder-count="6">
+                <button type="button" onClick="{{ rs.go }}" style="height:44px; padding:0 16px; border-radius:2px; cursor:pointer; font-family:Archivo,sans-serif; font-size:12px; background:{{ rs.bg }}; color:{{ rs.fg }}; border:1px solid {{ rs.bd }};">{{ rs.name }}</button>
+              </sc-for>
+            </div>
+            <div style="margin-top:18px; min-height:80px; background:#110F0B; border:1px solid rgba(255,255,255,.08); border-radius:2px; padding:14px; font-size:13px; color:#6E685C;">Manager note — what happened, who was told, any comp offered…</div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px;">
+              <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Refund to</div>
+              <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+                <sc-for list="{{ refundTo }}" as="rt" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ rt.go }}" style="height:48px; padding:0 14px; border-radius:2px; cursor:pointer; font-family:Archivo,sans-serif; font-size:13px; text-align:left; display:flex; align-items:center; gap:10px; background:{{ rt.bg }}; color:{{ rt.fg }}; border:1px solid {{ rt.bd }};">
+                    <span style="flex:1;">{{ rt.name }}</span><span style="font-size:11px; opacity:.6;">{{ rt.hint }}</span>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="margin-top:18px; padding-top:16px; border-top:1px solid rgba(255,255,255,.1); display:flex; justify-content:space-between; align-items:baseline;">
+                <span style="font-family:'Instrument Serif',serif; font-size:19px;">Refund total</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:26px; color:#D45A4E;">{{ refundTotal }}</span>
+              </div>
+            </div>
+
+            <div style="background:#14110D; border:1px solid rgba(255,255,255,.07); border-radius:3px; padding:20px;">
+              <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">Manager approval</div>
+              <div style="margin-top:12px; display:flex; gap:9px;">
+                <sc-for list="{{ pinDots }}" as="p" hint-placeholder-count="4">
+                  <div style="flex:1; height:52px; background:#0E0C09; border:1px solid rgba(255,255,255,.1); border-radius:2px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:20px; color:#DD5A2A;">{{ p.ch }}</div>
+                </sc-for>
+              </div>
+              <div style="font-size:11px; color:#6E685C; margin-top:10px; line-height:1.6;">Ravi M · Floor manager. Every refund is logged with terminal, reason, items and approver.</div>
+              <button type="button" onClick="{{ goOrders }}" style="margin-top:16px; width:100%; height:54px; background:#D45A4E; border:0; border-radius:3px; color:#1A0E0C; font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;">Approve refund</button>
+              <button type="button" onClick="{{ goOrders }}" style="margin-top:9px; width:100%; height:46px; background:transparent; border:1px solid rgba(255,255,255,.14); border-radius:3px; color:#C9C2B2; font-size:12px; font-family:Archivo,sans-serif; cursor:pointer;">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_display }}">
+        <div style="flex:1; min-width:0; overflow-y:auto; padding:26px; display:flex; flex-direction:column; align-items:center; gap:16px;">
+          <div style="width:100%; max-width:1020px; aspect-ratio:16/10; background:#0B0A07; border:1px solid rgba(255,255,255,.1); border-radius:4px; overflow:hidden; display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); box-shadow:0 30px 70px rgba(0,0,0,.5);">
+            <div style="padding:34px 36px; display:flex; flex-direction:column; background:linear-gradient(180deg,#14110D,#0B0A07);">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:34px; height:34px; border:1px solid #DD5A2A; display:flex; align-items:center; justify-content:center; color:#DD5A2A; font-family:'Instrument Serif',serif; font-size:19px;">n</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.2em; color:#6E685C;">NOFILTR ART CAFE · KORAMANGALA</div>
+              </div>
+              <div style="font-family:'Instrument Serif',serif; font-size:40px; margin-top:26px; line-height:1.1;">Good afternoon, Meera.</div>
+              <div style="font-size:13px; color:#8C8474; margin-top:8px;">Table G4 · your order so far</div>
+              <div style="margin-top:22px; flex:1; overflow:hidden;">
+                <sc-for list="{{ cart }}" as="dl" hint-placeholder-count="3">
+                  <div style="display:flex; justify-content:space-between; gap:14px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.07);">
+                    <span style="font-size:16px;"><span style="font-family:'JetBrains Mono',monospace; color:#DD5A2A; margin-right:9px;">{{ dl.qty }}×</span>{{ dl.name }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:15px; color:#C9C2B2;">{{ dl.amt }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:baseline; padding-top:16px; border-top:1px solid rgba(255,255,255,.14);">
+                <span style="font-family:'Instrument Serif',serif; font-size:24px;">Total</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:34px;">{{ total }}</span>
+              </div>
+            </div>
+            <div style="background:#1A1712; padding:30px; display:flex; flex-direction:column; justify-content:space-between; border-left:1px solid rgba(255,255,255,.07);">
+              <div style="flex:1; background:repeating-linear-gradient(135deg,#221E17 0 9px,#1D1A14 9px 18px); border:1px solid rgba(255,255,255,.07); display:flex; align-items:center; justify-content:center;">
+                <span style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em; color:#6E685C; text-align:center; line-height:1.8;">RESIDENT ARTWORK<br>OF THE WEEK<br>[ image slot ]</span>
+              </div>
+              <div style="margin-top:22px;">
+                <div style="font-family:'Instrument Serif',serif; font-size:21px; line-height:1.3;">“Monsoon, unfiltered”</div>
+                <div style="font-size:12px; color:#8C8474; margin-top:6px; line-height:1.6;">Aditi Ranganathan · acrylic on canvas · available ₹28,000 · ask any barista</div>
+              </div>
+              <div style="margin-top:20px; padding:16px; background:rgba(221,90,42,.1); border:1px solid rgba(221,90,42,.3); border-radius:3px;">
+                <div style="font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#DD5A2A;">Gold member</div>
+                <div style="font-size:13px; color:#C9C2B2; margin-top:6px; line-height:1.6;">1,240 points · 8% off applied today · next reward at 1,500</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em; color:#4F4A40;">GUEST-FACING SECOND SCREEN · 1280×800 · MIRRORS THE OPEN TICKET IN REAL TIME</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ s_lock }}">
+        <div style="flex:1; min-width:0; display:flex; align-items:center; justify-content:center; padding:30px;">
+          <div style="width:100%; max-width:860px; display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:26px; align-items:center;">
+            <div>
+              <div style="width:58px; height:58px; border:1px solid #DD5A2A; display:flex; align-items:center; justify-content:center; color:#DD5A2A; font-family:'Instrument Serif',serif; font-size:33px;">n</div>
+              <div style="font-family:'Instrument Serif',serif; font-size:46px; margin-top:24px; line-height:1.05;">nofiltr art cafe</div>
+              <div style="font-size:13px; color:#8C8474; margin-top:10px; line-height:1.7; max-width:420px;">Terminal 01 · Koramangala 5th Block. Tap your name and enter your four digit code to open a shift.</div>
+              <div style="margin-top:26px; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; max-width:480px;">
+                <sc-for list="{{ staffPins }}" as="sp" hint-placeholder-count="6">
+                  <button type="button" onClick="{{ sp.go }}" style="text-align:left; padding:13px 14px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; display:flex; align-items:center; gap:11px; background:{{ sp.bg }}; border:1px solid {{ sp.bd }};">
+                    <span style="width:34px; height:34px; border-radius:50%; background:#2A261E; border:1px solid rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#E8E2D4;">{{ sp.ini }}</span>
+                    <span style="min-width:0;"><span style="display:block; font-size:13px; color:#F3EFE6;">{{ sp.name }}</span><span style="display:block; font-size:10px; color:#7E7768; margin-top:2px;">{{ sp.role }}</span></span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#14110D; border:1px solid rgba(255,255,255,.08); border-radius:3px; padding:22px;">
+              <div style="display:flex; gap:9px;">
+                <sc-for list="{{ pinDots }}" as="p" hint-placeholder-count="4">
+                  <div style="flex:1; height:50px; background:#0E0C09; border:1px solid rgba(255,255,255,.1); border-radius:2px; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:20px; color:#DD5A2A;">{{ p.ch }}</div>
+                </sc-for>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:16px;">
+                <sc-for list="{{ pinKeys }}" as="pk" hint-placeholder-count="12">
+                  <button type="button" onClick="{{ pk.go }}" style="height:62px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-radius:2px; color:#F3EFE6; font-family:'JetBrains Mono',monospace; font-size:20px; cursor:pointer;" style-hover="background:#221E17">{{ pk.label }}</button>
+                </sc-for>
+              </div>
+              <button type="button" onClick="{{ goRegister }}" style="margin-top:14px; width:100%; height:56px; background:#DD5A2A; border:0; border-radius:3px; color:#150E09; font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="background:#F07440">Open shift</button>
+              <div style="font-size:11px; color:#6E685C; margin-top:12px; text-align:center;">Forgot code? Ask a manager for a reset.</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+
+  <sc-if value="{{ modOpen }}">
+    <div style="position:fixed; inset:0; background:rgba(8,7,5,.72); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:32px; z-index:60;">
+      <div style="width:100%; max-width:720px; background:#17140F; border:1px solid rgba(255,255,255,.1); border-radius:4px; box-shadow:0 40px 90px rgba(0,0,0,.6); animation:nf-rise .2s ease-out; max-height:88vh; display:flex; flex-direction:column;">
+        <div style="padding:22px 26px; border-bottom:1px solid rgba(255,255,255,.07); display:flex; align-items:flex-start; gap:16px;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-family:'Instrument Serif',serif; font-size:27px; line-height:1.15;">{{ modName }}</div>
+            <div style="font-size:12px; color:#7E7768; margin-top:4px;">{{ modNote }}</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:20px; color:#DD5A2A;">{{ modPrice }}</div>
+          <button type="button" onClick="{{ closeMod }}" style="width:36px; height:36px; background:#221E17; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#C9C2B2; font-size:15px; cursor:pointer;" style-hover="border-color:#DD5A2A">✕</button>
+        </div>
+        <div style="padding:22px 26px; overflow-y:auto; display:flex; flex-direction:column; gap:22px;">
+          <sc-for list="{{ modGroups }}" as="g" hint-placeholder-count="3">
+            <div>
+              <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:10px;">
+                <span style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C;">{{ g.name }}</span>
+                <span style="font-size:10px; color:#6E685C;">{{ g.rule }}</span>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <sc-for list="{{ g.opts }}" as="o" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ o.go }}" style="min-height:46px; padding:0 15px; border-radius:2px; cursor:pointer; font-family:Archivo,sans-serif; font-size:13px; display:flex; align-items:center; gap:10px; background:{{ o.bg }}; color:{{ o.fg }}; border:1px solid {{ o.bd }};">
+                    <span>{{ o.name }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:11px; opacity:.65;">{{ o.up }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <div>
+            <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#A39C8C; margin-bottom:10px;">Kitchen note</div>
+            <div style="min-height:64px; background:#110F0B; border:1px solid rgba(255,255,255,.08); border-radius:2px; padding:12px 14px; font-size:13px; color:#6E685C;">Allergy, plating or timing instruction…</div>
+          </div>
+        </div>
+        <div style="padding:18px 26px; border-top:1px solid rgba(255,255,255,.07); display:flex; align-items:center; gap:12px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-right:auto;">
+            <button type="button" onClick="{{ modDec }}" style="width:44px; height:44px; background:#221E17; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#E8E2D4; font-size:17px; cursor:pointer;">−</button>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:18px; min-width:26px; text-align:center;">{{ modQty }}</span>
+            <button type="button" onClick="{{ modInc }}" style="width:44px; height:44px; background:#221E17; border:1px solid rgba(255,255,255,.1); border-radius:2px; color:#E8E2D4; font-size:17px; cursor:pointer;">+</button>
+          </div>
+          <button type="button" onClick="{{ closeMod }}" style="height:50px; padding:0 22px; background:transparent; border:1px solid rgba(255,255,255,.14); border-radius:3px; color:#C9C2B2; font-size:13px; font-family:Archivo,sans-serif; cursor:pointer;">Cancel</button>
+          <button type="button" onClick="{{ modAdd }}" style="height:50px; padding:0 30px; background:#DD5A2A; border:0; border-radius:3px; color:#150E09; font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-family:Archivo,sans-serif; cursor:pointer;" style-hover="background:#F07440">Add {{ modTotal }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'register',
+    cat: 'Coffee',
+    mode: 'Dine-in',
+    cart: [
+      { id: 'c3', name: 'Flat White', price: 240, qty: 2, mods: ['Oat milk +₹30', 'Extra shot +₹50'] },
+      { id: 'b2', name: 'Almond Croissant', price: 220, qty: 1, mods: ['Warmed'] },
+      { id: 'p1', name: 'Truffle Mushroom Toast', price: 420, qty: 1, mods: ['No chilli oil'] }
+    ],
+    modItem: null,
+    modQty: 1,
+    modSel: { Milk: 'Whole', Size: 'Regular', Extras: [] },
+    payMethod: 'Card',
+    tender: '',
+    tip: 10,
+    split: 1,
+    tableSel: 'G4',
+    orderSel: 'NF-2291',
+    station: 'All',
+    bumped: []
+  };
+
+  money(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
+
+  menu() {
+    return [
+      ['c1', 'Espresso', 'Coffee', 160, 'Single origin, 28g', 'Bar'],
+      ['c2', 'Americano', 'Coffee', 190, 'Long black, 240ml', 'Bar'],
+      ['c3', 'Flat White', 'Coffee', 240, 'House blend', 'Signature'],
+      ['c4', 'Cappuccino', 'Coffee', 220, 'Dusted cocoa', 'Bar'],
+      ['c5', 'Cortado', 'Coffee', 210, '2:1 ratio', 'Bar'],
+      ['c6', 'Mocha', 'Coffee', 260, '64% Mysore choc', 'Bar'],
+      ['c7', 'Cold Brew', 'Coffee', 280, '18h steep, on tap', 'Signature'],
+      ['c8', 'Iced Latte', 'Coffee', 250, 'Over clear ice', 'Bar'],
+      ['c9', 'Filter Coffee', 'Coffee', 140, 'Chicory 20%', 'Bar'],
+      ['c10', 'Affogato Shot', 'Coffee', 210, 'Vanilla bean', 'Bar'],
+      ['t1', 'Masala Chai', 'Tea', 120, 'Cutting, boiled', 'Bar'],
+      ['t2', 'Earl Grey', 'Tea', 150, 'Bergamot, pot', 'Bar'],
+      ['t3', 'Jasmine Green', 'Tea', 160, 'Second flush', 'Bar'],
+      ['t4', 'Kashmiri Kahwa', 'Tea', 180, 'Saffron, almond', 'Signature'],
+      ['t5', 'Matcha Latte', 'Tea', 280, 'Ceremonial, Uji', 'Bar'],
+      ['t6', 'Hibiscus Cooler', 'Tea', 190, 'Iced, house syrup', 'Bar'],
+      ['b1', 'Butter Croissant', 'Bakery', 180, '72h laminated', 'Counter'],
+      ['b2', 'Almond Croissant', 'Bakery', 220, 'Frangipane', 'Counter'],
+      ['b3', 'Chocolate Babka', 'Bakery', 240, 'Twice baked', 'Counter'],
+      ['b4', 'Banana Bread', 'Bakery', 160, 'Walnut, tahini', 'Counter'],
+      ['b5', 'Cinnamon Roll', 'Bakery', 200, 'Cream cheese', 'Counter'],
+      ['b6', 'Focaccia Slice', 'Bakery', 150, 'Rosemary, olive', 'Counter'],
+      ['p1', 'Truffle Mushroom Toast', 'Plates', 420, 'Sourdough, egg', 'Signature'],
+      ['p2', 'Shakshuka', 'Plates', 460, 'Two eggs, feta', 'Kitchen'],
+      ['p3', 'The Big Canvas', 'Plates', 520, 'Full breakfast', 'Kitchen'],
+      ['p4', 'Avocado Smash', 'Plates', 390, 'Dukkah, lime', 'Kitchen'],
+      ['p5', 'Pesto Grilled Cheese', 'Plates', 350, 'Three cheese', 'Kitchen'],
+      ['p6', 'Buddha Bowl', 'Plates', 440, 'Millet, tahini', 'Kitchen'],
+      ['p7', 'Chilli Cheese Toastie', 'Plates', 320, 'Amul, green chilli', 'Kitchen'],
+      ['r1', 'Negroni', 'Bar', 550, 'Stirred, orange', 'Bar'],
+      ['r2', 'Espresso Martini', 'Bar', 620, 'House cold brew', 'Signature'],
+      ['r3', 'Aperol Spritz', 'Bar', 580, 'Prosecco, soda', 'Bar'],
+      ['r4', 'House Red 150ml', 'Bar', 450, 'Nashik shiraz', 'Bar'],
+      ['r5', 'Craft Lager', 'Bar', 380, 'Pint, on tap', 'Bar'],
+      ['r6', 'Kombucha Mule', 'Bar', 340, 'Zero proof', 'Bar'],
+      ['d1', 'Basque Cheesecake', 'Desserts', 320, 'Burnt top', 'Signature'],
+      ['d2', 'Tiramisu Jar', 'Desserts', 300, 'Mascarpone', 'Counter'],
+      ['d3', 'Dark Choc Tart', 'Desserts', 280, 'Sea salt', 'Counter'],
+      ['d4', 'Lemon Posset', 'Desserts', 260, 'Shortbread', 'Counter'],
+      ['m1', 'Beans · House 250g', 'Retail', 750, 'Whole bean', 'Retail'],
+      ['m2', 'Merch Tote', 'Retail', 890, 'Canvas, screen print', 'Retail'],
+      ['m3', 'Postcard Set', 'Retail', 350, 'Six artists', 'Retail'],
+      ['m4', 'Art Print A3', 'Retail', 1500, 'Resident series', 'Retail']
+    ].map(a => ({ id: a[0], name: a[1], cat: a[2], price: a[3], note: a[4], tag: a[5] }));
+  }
+
+  navDef() {
+    return [
+      ['register', 'R', 'Register'], ['tables', 'T', 'Floor'], ['orders', 'O', 'Orders'],
+      ['kitchen', 'K', 'Kitchen'], ['reserve', 'V', 'Reserve'], ['till', 'C', 'Till'],
+      ['shift', 'S', 'Shift'], ['display', 'D', 'Display'], ['lock', 'L', 'Lock']
+    ];
+  }
+
+  titles() {
+    return {
+      register: ['Register', 'TERMINAL 01 · COUNTER · CASHIER AMRITA K'],
+      tables: ['Floor plan', '4 ZONES · 26 COVERS SEATED · 3 WAITING'],
+      orders: ['Orders', 'ALL CHANNELS · 38 TODAY · 4 OPEN'],
+      kitchen: ['Kitchen display', 'STATION VIEW · AVG TICKET 8M 40S'],
+      reserve: ['Reservations', 'TUE 16 SEP · 11 BOOKINGS · 2 WAITLIST'],
+      till: ['Cash drawer', 'DRAWER 01 · OPENED 07:02 BY RAVI M'],
+      shift: ['Shift & end of day', 'SHIFT 2 · 12:00 – 20:00'],
+      display: ['Guest display', 'SECOND SCREEN · MIRRORING TERM-01'],
+      lock: ['Locked', 'NOFILTR ART CAFE · KORAMANGALA 5TH BLOCK'],
+      pay: ['Payment', 'TICKET NF-2294 · DINE-IN · TABLE G4'],
+      invoice: ['Tax invoice', 'NF/26-27/2294 · GSTIN 29ABCDE1234F1Z5'],
+      refund: ['Refund & void', 'MANAGER APPROVAL REQUIRED']
+    };
+  }
+
+  set(k, v) { this.setState({ [k]: v }); }
+
+  add(it, mods, qty) {
+    const cart = this.state.cart.slice();
+    const key = it.id + '|' + (mods || []).join(',');
+    const ex = cart.find(l => l.id + '|' + (l.mods || []).join(',') === key);
+    if (ex) ex.qty += (qty || 1);
+    else cart.push({ id: it.id, name: it.name, price: it.price, qty: qty || 1, mods: mods || [] });
+    this.setState({ cart });
+  }
+
+  modsUp() {
+    const s = this.state.modSel;
+    let up = 0;
+    if (s.Milk === 'Oat' || s.Milk === 'Almond') up += 30;
+    if (s.Size === 'Large') up += 60;
+    up += (s.Extras || []).length * 50;
+    return up;
+  }
+
+  modLabels() {
+    const s = this.state.modSel, out = [];
+    if (s.Size && s.Size !== 'Regular') out.push(s.Size);
+    if (s.Milk && s.Milk !== 'Whole') out.push(s.Milk + ' milk +₹30');
+    (s.Extras || []).forEach(e => out.push(e + ' +₹50'));
+    return out;
+  }
+
+  totals() {
+    const sub = this.state.cart.reduce((n, l) => {
+      let up = 0;
+      (l.mods || []).forEach(m => { const x = /₹(\d+)/.exec(m); if (x) up += +x[1]; });
+      return n + (l.price + up) * l.qty;
+    }, 0);
+    const disc = Math.round(sub * 0.08);
+    const net = sub - disc;
+    const tax = Math.round(net * 0.05);
+    return { sub, disc, net, tax, total: net + tax };
+  }
+
+  statusColor(s) {
+    return ({
+      'Open': '#6E685C', 'Seated': '#E0A33C', 'Ordered': '#7FA06B', 'Bill printed': '#DD5A2A',
+      'Needs clean': '#D45A4E', 'Reserved': '#7E86A8', 'New': '#DD5A2A', 'Preparing': '#E0A33C',
+      'Ready': '#7FA06B', 'Served': '#8C8474', 'Paid': '#7E86A8', 'Cancelled': '#D45A4E'
+    })[s] || '#8C8474';
+  }
+
+  tableDef() {
+    const T = (id, zone, seats, status, amt, since, course) => ({ id, zone, seats: seats + ' seats', status, amt, since, course });
+    return [
+      { name: 'Courtyard', meta: '6 TABLES · SMOKING · OPEN AIR', tables: [
+        T('C1', 'Courtyard', 2, 'Seated', 640, '14:02', 'Drinks'), T('C2', 'Courtyard', 2, 'Open', 0, '—', '—'),
+        T('C3', 'Courtyard', 4, 'Ordered', 1860, '13:40', 'Mains'), T('C4', 'Courtyard', 4, 'Needs clean', 0, '—', '—'),
+        T('C5', 'Courtyard', 6, 'Reserved', 0, '15:30', 'Booking'), T('C6', 'Courtyard', 2, 'Open', 0, '—', '—')
+      ] },
+      { name: 'Gallery', meta: '8 TABLES · RESIDENT ARTIST WALL', tables: [
+        T('G1', 'Gallery', 2, 'Bill printed', 980, '13:15', 'Closing'), T('G2', 'Gallery', 2, 'Seated', 420, '14:20', 'Drinks'),
+        T('G3', 'Gallery', 4, 'Open', 0, '—', '—'), T('G4', 'Gallery', 2, 'Ordered', 1237, '14:06', 'Mains'),
+        T('G5', 'Gallery', 4, 'Ordered', 2140, '13:05', 'Dessert'), T('G6', 'Gallery', 4, 'Open', 0, '—', '—'),
+        T('G7', 'Gallery', 6, 'Seated', 300, '14:28', 'Drinks'), T('G8', 'Gallery', 2, 'Needs clean', 0, '—', '—')
+      ] },
+      { name: 'Mezzanine', meta: '6 TABLES · QUIET · LAPTOP FRIENDLY', tables: [
+        T('M1', 'Mezzanine', 1, 'Ordered', 480, '11:50', 'Refills'), T('M2', 'Mezzanine', 1, 'Ordered', 390, '12:20', 'Refills'),
+        T('M3', 'Mezzanine', 2, 'Open', 0, '—', '—'), T('M4', 'Mezzanine', 2, 'Seated', 520, '14:10', 'Drinks'),
+        T('M5', 'Mezzanine', 4, 'Open', 0, '—', '—'), T('M6', 'Mezzanine', 4, 'Reserved', 0, '16:00', 'Booking')
+      ] },
+      { name: 'Bar counter', meta: '6 STOOLS · FULL BAR · LATE MENU', tables: [
+        T('B1', 'Bar counter', 1, 'Ordered', 620, '14:18', 'Drinks'), T('B2', 'Bar counter', 1, 'Ordered', 550, '14:22', 'Drinks'),
+        T('B3', 'Bar counter', 1, 'Open', 0, '—', '—'), T('B4', 'Bar counter', 1, 'Open', 0, '—', '—'),
+        T('B5', 'Bar counter', 2, 'Seated', 0, '14:34', 'Menu'), T('B6', 'Bar counter', 2, 'Open', 0, '—', '—')
+      ] }
+    ];
+  }
+
+  orderDef() {
+    return [
+      { id: 'NF-2294', who: 'Meera Sundaram', items: 'Flat White ×2 · Almond Croissant · Truffle Toast', channel: 'Dine-in', where: 'Table G4', time: '14:06', status: 'Preparing', total: 1237 },
+      { id: 'NF-2293', who: 'Walk-in', items: 'Cold Brew · Banana Bread', channel: 'Takeaway', where: 'Counter', time: '14:04', status: 'Ready', total: 462 },
+      { id: 'NF-2292', who: 'Arjun Rao', items: 'Shakshuka · Masala Chai ×2', channel: 'Web pickup', where: 'Pickup 14:45', time: '13:58', status: 'New', total: 735 },
+      { id: 'NF-2291', who: 'Table G5 · 4 covers', items: 'Big Canvas ×2 · Negroni · Basque Cheesecake', channel: 'QR table', where: 'Table G5', time: '13:05', status: 'Served', total: 2140 },
+      { id: 'NF-2290', who: 'Nikhil P', items: 'Espresso Martini ×2 · Focaccia', channel: 'Dine-in', where: 'Bar B1', time: '14:18', status: 'Preparing', total: 1390 },
+      { id: 'NF-2289', who: 'Zeba K', items: 'Buddha Bowl · Kombucha Mule', channel: 'Delivery', where: 'Own fleet · 2.1km', time: '13:44', status: 'Ready', total: 826 },
+      { id: 'NF-2288', who: 'Kiosk 02', items: 'Cappuccino · Cinnamon Roll', channel: 'Kiosk', where: 'Counter', time: '13:36', status: 'Paid', total: 441 },
+      { id: 'NF-2287', who: 'Dev Menon', items: 'Art Print A3 · Beans 250g', channel: 'Retail', where: 'Counter', time: '13:20', status: 'Paid', total: 2362 },
+      { id: 'NF-2286', who: 'Table C4 · 4 covers', items: 'Pesto Grilled Cheese ×2 · Matcha ×2', channel: 'Dine-in', where: 'Table C4', time: '12:52', status: 'Paid', total: 1386 },
+      { id: 'NF-2285', who: 'Sana Iqbal', items: 'Avocado Smash · Hibiscus Cooler', channel: 'Web pickup', where: 'Picked up', time: '12:31', status: 'Paid', total: 609 },
+      { id: 'NF-2284', who: 'Walk-in', items: 'Filter Coffee ×3', channel: 'Takeaway', where: 'Counter', time: '12:18', status: 'Cancelled', total: 420 }
+    ];
+  }
+
+  renderVals() {
+    const st = this.state, t = this.totals(), T = this.titles()[st.screen] || ['', ''];
+    const menu = this.menu();
+    const accents = { Signature: '#DD5A2A', Bar: '#8C8474', Kitchen: '#7FA06B', Counter: '#C79A3C', Retail: '#7E86A8' };
+
+    const nav = this.navDef().map(n => ({
+      mark: n[1], label: n[2],
+      fg: st.screen === n[0] ? '#DD5A2A' : '#8C8474',
+      bar: st.screen === n[0] ? '#DD5A2A' : 'transparent',
+      go: () => this.set('screen', n[0])
+    }));
+
+    const cats = ['Coffee', 'Tea', 'Bakery', 'Plates', 'Bar', 'Desserts', 'Retail'].map(c => ({
+      name: c, count: menu.filter(m => m.cat === c).length,
+      bg: st.cat === c ? '#DD5A2A' : '#1C1913',
+      fg: st.cat === c ? '#150E09' : '#C9C2B2',
+      bd: st.cat === c ? '#DD5A2A' : 'rgba(255,255,255,.08)',
+      go: () => this.set('cat', c)
+    }));
+
+    const items = menu.filter(m => m.cat === st.cat).map(m => ({
+      name: m.name, note: m.note, tag: m.tag, price: this.money(m.price),
+      accent: accents[m.tag] || '#8C8474',
+      go: () => this.setState({ modItem: m, modQty: 1, modSel: { Milk: 'Whole', Size: 'Regular', Extras: [] } })
+    }));
+
+    const modes = ['Dine-in', 'Takeaway', 'Delivery'].map(m => ({
+      name: m,
+      bg: st.mode === m ? 'rgba(221,90,42,.16)' : 'transparent',
+      fg: st.mode === m ? '#DD5A2A' : '#8C8474',
+      bd: st.mode === m ? 'rgba(221,90,42,.45)' : 'rgba(255,255,255,.1)',
+      go: () => this.set('mode', m)
+    }));
+
+    const cart = st.cart.map((l, i) => {
+      let up = 0;
+      (l.mods || []).forEach(m => { const x = /₹(\d+)/.exec(m); if (x) up += +x[1]; });
+      return {
+        name: l.name, qty: l.qty, mods: (l.mods || []).join(' · ') || 'No modifiers',
+        amt: this.money((l.price + up) * l.qty),
+        inc: () => { const c = st.cart.slice(); c[i] = { ...c[i], qty: c[i].qty + 1 }; this.setState({ cart: c }); },
+        dec: () => { const c = st.cart.slice(); if (c[i].qty > 1) { c[i] = { ...c[i], qty: c[i].qty - 1 }; } else { c.splice(i, 1); } this.setState({ cart: c }); },
+        del: () => { const c = st.cart.slice(); c.splice(i, 1); this.setState({ cart: c }); },
+        edit: () => { const m = menu.find(x => x.id === l.id); if (m) this.setState({ modItem: m, modQty: l.qty, modSel: { Milk: 'Whole', Size: 'Regular', Extras: [] } }); }
+      };
+    });
+
+    const mi = st.modItem;
+    const groups = mi ? [
+      { name: 'Size', rule: 'Choose one', opts: ['Regular', 'Large'].map(o => ({ n: o, up: o === 'Large' ? '+₹60' : '—', k: 'Size' })) },
+      { name: 'Milk', rule: 'Choose one', opts: ['Whole', 'Skim', 'Oat', 'Almond'].map(o => ({ n: o, up: (o === 'Oat' || o === 'Almond') ? '+₹30' : '—', k: 'Milk' })) },
+      { name: 'Extras', rule: 'Any number', opts: ['Extra shot', 'Decaf', 'Vanilla', 'Cinnamon', 'Honey'].map(o => ({ n: o, up: '+₹50', k: 'Extras' })) }
+    ].map(g => ({
+      name: g.name, rule: g.rule,
+      opts: g.opts.map(o => {
+        const on = o.k === 'Extras' ? (st.modSel.Extras || []).includes(o.n) : st.modSel[o.k] === o.n;
+        return {
+          name: o.n, up: o.up,
+          bg: on ? 'rgba(221,90,42,.16)' : '#1C1913',
+          fg: on ? '#F3EFE6' : '#A39C8C',
+          bd: on ? '#DD5A2A' : 'rgba(255,255,255,.08)',
+          go: () => {
+            const sel = { ...st.modSel };
+            if (o.k === 'Extras') {
+              const arr = (sel.Extras || []).slice();
+              const ix = arr.indexOf(o.n);
+              if (ix > -1) arr.splice(ix, 1); else arr.push(o.n);
+              sel.Extras = arr;
+            } else sel[o.k] = o.n;
+            this.setState({ modSel: sel });
+          }
+        };
+      })
+    })) : [];
+
+    const zdef = this.tableDef();
+    const allT = zdef.reduce((a, z) => a.concat(z.tables), []);
+    const zones = zdef.map(z => ({
+      name: z.name, meta: z.meta,
+      tables: z.tables.map(tb => {
+        const on = st.tableSel === tb.id, dot = this.statusColor(tb.status);
+        return {
+          id: tb.id, seats: tb.seats, status: tb.status, dot,
+          amount: tb.amt ? this.money(tb.amt) : '—',
+          bg: on ? 'rgba(221,90,42,.12)' : '#1A1712',
+          bd: on ? '#DD5A2A' : 'rgba(255,255,255,.07)',
+          fg: on ? '#F3EFE6' : '#E8E2D4',
+          go: () => this.set('tableSel', tb.id)
+        };
+      })
+    }));
+    const sel = allT.find(tb => tb.id === st.tableSel) || allT[0];
+    const statusCount = s => allT.filter(tb => tb.status === s).length;
+
+    const odef = this.orderDef();
+    const chan = st.chan || 'All';
+    const shown = chan === 'All' ? odef : odef.filter(o => o.channel === chan);
+    const osel = odef.find(o => o.id === st.orderSel) || odef[0];
+
+    return {
+      nav, cats, items, modes, cart,
+      zones,
+      floorStats: [
+        { label: 'Covers seated', value: '26', sub: 'of 62 capacity', accent: '#DD5A2A' },
+        { label: 'Open tickets', value: '11', sub: '₹9,240 running', accent: '#E0A33C' },
+        { label: 'Avg dwell', value: '48m', sub: '6m over target', accent: '#7FA06B' },
+        { label: 'Waitlist', value: '3', sub: 'quoted 15m', accent: '#7E86A8' }
+      ],
+      legend: ['Open', 'Seated', 'Ordered', 'Bill printed', 'Needs clean', 'Reserved'].map(s => ({ name: s, dot: this.statusColor(s), n: statusCount(s) })),
+      tSel: {
+        id: sel.id, zone: sel.zone, seats: sel.seats, status: sel.status, since: sel.since,
+        course: sel.course, dot: this.statusColor(sel.status),
+        amount: sel.amt ? this.money(sel.amt) : '—',
+        lines: sel.amt ? [
+          { name: '2 × Flat White', amt: this.money(640) },
+          { name: '1 × Almond Croissant', amt: this.money(220) },
+          { name: '1 × Truffle Mushroom Toast', amt: this.money(420) },
+          { name: 'GST 5% · loyalty −8%', amt: this.money(-43) }
+        ] : [{ name: 'No open ticket on this table', amt: '—' }]
+      },
+      chFilters: ['All', 'Dine-in', 'Takeaway', 'Web pickup', 'QR table', 'Delivery', 'Kiosk', 'Retail'].map(c => ({
+        name: c, n: c === 'All' ? odef.length : odef.filter(o => o.channel === c).length,
+        bg: chan === c ? '#DD5A2A' : '#1C1913',
+        fg: chan === c ? '#150E09' : '#C9C2B2',
+        bd: chan === c ? '#DD5A2A' : 'rgba(255,255,255,.08)',
+        go: () => this.set('chan', c)
+      })),
+      orders: shown.map(o => ({
+        id: o.id, who: o.who, items: o.items, channel: o.channel, where: o.where, time: o.time,
+        status: o.status, total: this.money(o.total), mark: this.statusColor(o.status),
+        bg: st.orderSel === o.id ? '#1A1712' : 'transparent',
+        go: () => this.set('orderSel', o.id)
+      })),
+      oSel: {
+        id: osel.id, who: osel.who, channel: osel.channel, where: osel.where, time: osel.time,
+        status: osel.status, mark: this.statusColor(osel.status),
+        lines: [
+          { qty: '2', name: 'Big Canvas breakfast', mods: 'Eggs poached · sourdough', amt: this.money(1040) },
+          { qty: '1', name: 'Negroni', mods: 'Extra orange peel', amt: this.money(550) },
+          { qty: '1', name: 'Basque Cheesecake', mods: 'Two spoons', amt: this.money(320) },
+          { qty: '2', name: 'Filter Coffee', mods: 'Less sugar', amt: this.money(280) }
+        ],
+        timeline: [
+          { what: 'Placed from QR at table', when: '13:05', who: 'Guest · Anaya R', dot: '#DD5A2A' },
+          { what: 'KOT printed · kitchen + bar', when: '13:06', who: 'Auto route', dot: '#E0A33C' },
+          { what: 'Bar items served', when: '13:11', who: 'Ravi M', dot: '#7FA06B' },
+          { what: 'Kitchen items served', when: '13:24', who: 'Suhas B', dot: '#7FA06B' },
+          { what: 'Bill requested from table', when: '14:02', who: 'Guest', dot: '#7E86A8' }
+        ]
+      },
+      stations: [['All', 7], ['Kitchen', 4], ['Bar', 2], ['Bakery', 1], ['Expo', 3]].map(s => ({
+        name: s[0], n: s[1],
+        bg: st.station === s[0] ? '#DD5A2A' : '#1C1913',
+        fg: st.station === s[0] ? '#150E09' : '#C9C2B2',
+        bd: st.station === s[0] ? '#DD5A2A' : 'rgba(255,255,255,.08)',
+        go: () => this.set('station', s[0])
+      })),
+      tickets: [
+        { id: 'NF-2294', where: 'Dine-in · Table G4 · Amrita', mins: 4, state: 'Cooking', lines: [
+          { qty: '2', name: 'Flat White', mods: 'Oat milk · extra shot' },
+          { qty: '1', name: 'Almond Croissant', mods: 'Warmed' },
+          { qty: '1', name: 'Truffle Mushroom Toast', mods: 'No chilli oil · egg over easy' }] },
+        { id: 'NF-2292', where: 'Web pickup · 14:45 · Arjun', mins: 2, state: 'New', lines: [
+          { qty: '1', name: 'Shakshuka', mods: 'Extra bread · medium spice' },
+          { qty: '2', name: 'Masala Chai', mods: 'Less sugar' }] },
+        { id: 'NF-2290', where: 'Dine-in · Bar B1 · Ravi', mins: 6, state: 'Cooking', lines: [
+          { qty: '2', name: 'Espresso Martini', mods: 'Double cold brew' },
+          { qty: '1', name: 'Focaccia Slice', mods: 'Grilled' }] },
+        { id: 'NF-2289', where: 'Delivery · own fleet · 2.1km', mins: 12, state: 'Late', lines: [
+          { qty: '1', name: 'Buddha Bowl', mods: 'No tahini · add egg' },
+          { qty: '1', name: 'Kombucha Mule', mods: 'Sealed cup' }] },
+        { id: 'NF-2295', where: 'QR table · Table G7 · 6 covers', mins: 1, state: 'New', lines: [
+          { qty: '3', name: 'Cold Brew', mods: 'One decaf' },
+          { qty: '2', name: 'Pesto Grilled Cheese', mods: 'Cut in half' },
+          { qty: '1', name: 'Basque Cheesecake', mods: 'Birthday candle' }] },
+        { id: 'NF-2287', where: 'Dine-in · Mezzanine M1', mins: 14, state: 'Late', lines: [
+          { qty: '1', name: 'The Big Canvas', mods: 'Scrambled · sourdough · no beans' }] },
+        { id: 'NF-2296', where: 'Takeaway · counter', mins: 0, state: 'New', lines: [
+          { qty: '1', name: 'Cortado', mods: 'To stay' },
+          { qty: '1', name: 'Cinnamon Roll', mods: 'Boxed' }] }
+      ].filter(k => !(st.bumped || []).includes(k.id)).map(k => {
+        const edge = k.mins >= 10 ? '#D45A4E' : (k.mins >= 5 ? '#E0A33C' : '#7FA06B');
+        return {
+          id: k.id, where: k.where, lines: k.lines, state: k.state, edge,
+          elapsed: k.mins + 'm ' + ((k.mins * 17) % 60) + 's',
+          head: k.mins >= 10 ? 'rgba(212,90,78,.12)' : '#1A1712',
+          btn: k.state === 'New' ? 'Start' : 'Bump ready',
+          btnBg: k.state === 'New' ? '#1C1913' : '#DD5A2A',
+          btnBd: k.state === 'New' ? 'rgba(255,255,255,.14)' : '#DD5A2A',
+          btnFg: k.state === 'New' ? '#C9C2B2' : '#150E09',
+          bump: () => this.setState({ bumped: (st.bumped || []).concat(k.id) })
+        };
+      }),
+      resDays: [['Mon', '15'], ['Tue', '16'], ['Wed', '17'], ['Thu', '18'], ['Fri', '19'], ['Sat', '20']].map(d => ({
+        dow: d[0], date: d[1],
+        bg: (st.day || '16') === d[1] ? '#DD5A2A' : '#1A1712',
+        fg: (st.day || '16') === d[1] ? '#150E09' : '#C9C2B2',
+        bd: (st.day || '16') === d[1] ? '#DD5A2A' : 'rgba(255,255,255,.07)',
+        go: () => this.set('day', d[1])
+      })),
+      bookings: [
+        ['12:30', 'Rhea Kapoor', 'Window seat if free', 2, 'G2', 'Seated', 'Web'],
+        ['13:00', 'Ford Studio', 'Client lunch · invoice to company', 6, 'C5', 'Seated', 'Phone'],
+        ['14:30', 'Ishaan Verma', 'Anniversary · cake at end', 2, 'G4', 'Confirmed', 'Web'],
+        ['15:30', 'Maya & friends', 'Birthday · 1 high chair', 6, 'C5', 'Confirmed', 'Instagram'],
+        ['16:00', 'Book club', 'Quiet corner requested', 4, 'M6', 'Confirmed', 'Web'],
+        ['18:30', 'Residency opening', 'Gallery zone held · set menu', 18, 'Gallery', 'Held', 'Internal'],
+        ['19:00', 'Tanvi Shah', 'Gluten free', 2, 'M4', 'Confirmed', 'Web'],
+        ['20:00', 'Dilip Nair', 'Late bar seating', 3, 'B4', 'Waitlist', 'Walk-in'],
+        ['20:30', 'Aarav Joshi', 'No-show last visit', 4, '—', 'No-show risk', 'Web']
+      ].map(b => ({
+        time: b[0], name: b[1], note: b[2], covers: b[3] + ' pax', table: b[4], status: b[5], src: b[6],
+        mark: b[5] === 'Seated' ? '#7FA06B' : (b[5] === 'Confirmed' ? '#7E86A8' : (b[5] === 'Held' ? '#DD5A2A' : '#E0A33C'))
+      })),
+      waitlist: [
+        { name: 'Kabir M', covers: '2 pax', wait: '14m', quote: '15m', phone: '•••• 4417' },
+        { name: 'Sneha R', covers: '4 pax', wait: '9m', quote: '25m', phone: '•••• 9021' },
+        { name: 'Walk-in couple', covers: '2 pax', wait: '3m', quote: '10m', phone: 'no phone' }
+      ],
+      forecast: [['11', 22], ['12', 48], ['13', 76], ['14', 62], ['15', 40], ['16', 34], ['17', 52], ['18', 88], ['19', 100], ['20', 72]].map(f => ({
+        hr: f[0], h: f[1] + '%',
+        bg: f[1] > 80 ? '#DD5A2A' : (f[1] > 50 ? 'rgba(221,90,42,.5)' : 'rgba(255,255,255,.14)')
+      })),
+      denoms: [[2000, 2, 'note'], [500, 14, 'note'], [200, 9, 'note'], [100, 23, 'note'], [50, 11, 'note'], [20, 16, 'note'], [10, 24, 'coin'], [5, 18, 'coin']].map(d => ({
+        note: this.money(d[0]), kind: d[2], count: d[1], total: this.money(d[0] * d[1])
+      })),
+      drawerRows: [
+        { label: 'Opening float', value: this.money(3000), fg: '#C9C2B2' },
+        { label: 'Cash sales', value: this.money(18460), fg: '#C9C2B2' },
+        { label: 'Cash refunds', value: '−' + this.money(620), fg: '#D45A4E' },
+        { label: 'Paid out (milk run)', value: '−' + this.money(1240), fg: '#D45A4E' },
+        { label: 'Cash drops to safe', value: '−' + this.money(8000), fg: '#C9C2B2' },
+        { label: 'Expected in drawer', value: this.money(11600), fg: '#F3EFE6' },
+        { label: 'Counted', value: this.money(11560), fg: '#F3EFE6' }
+      ],
+      drawerLog: [
+        { time: '07:02', what: 'Drawer opened · float verified', who: 'Ravi M', amt: '+' + this.money(3000), fg: '#7FA06B' },
+        { time: '09:40', what: 'Paid out · Akshaya Dairy', who: 'Ravi M', amt: '−' + this.money(1240), fg: '#D45A4E' },
+        { time: '11:15', what: 'Cash drop to safe', who: 'Amrita K', amt: '−' + this.money(5000), fg: '#C9C2B2' },
+        { time: '12:58', what: 'Refund NF-2274 · wrong item', who: 'Ravi M', amt: '−' + this.money(620), fg: '#D45A4E' },
+        { time: '13:44', what: 'Cash drop to safe', who: 'Amrita K', amt: '−' + this.money(3000), fg: '#C9C2B2' },
+        { time: '14:20', what: 'No-sale · change for guest', who: 'Amrita K', amt: '₹0', fg: '#6E685C' }
+      ],
+      shiftKpis: [
+        { label: 'Net sales', value: '₹84,620', delta: '+12% vs last Tue', accent: '#DD5A2A' },
+        { label: 'Orders', value: '138', delta: 'avg ₹613 per ticket', accent: '#7FA06B' },
+        { label: 'Covers', value: '196', delta: '2.1 items per cover', accent: '#7E86A8' },
+        { label: 'Discounts', value: '₹4,180', delta: '4.9% of gross', accent: '#E0A33C' },
+        { label: 'Voids', value: '₹1,240', delta: '6 items · 2 approvers', accent: '#D45A4E' }
+      ],
+      byChannel: [['Dine-in', 42600, 100], ['QR table', 14800, 35], ['Takeaway', 9400, 22], ['Web pickup', 7300, 17], ['Delivery', 5900, 14], ['Retail & art', 4620, 11]].map(c => ({
+        name: c[0], amt: this.money(c[1]), w: c[2] + '%',
+        bg: c[2] > 50 ? '#DD5A2A' : (c[2] > 20 ? 'rgba(221,90,42,.6)' : 'rgba(255,255,255,.2)')
+      })),
+      tenders: [['Card · Razorpay', 62, 41200], ['UPI', 48, 28600], ['Cash', 21, 11400], ['Wallet', 5, 2180], ['Gift card', 2, 1240]].map(t => ({
+        name: t[0], n: t[1] + ' txn', amt: this.money(t[2])
+      })),
+      exceptions: [
+        { name: 'Voids after fire', value: '4', fg: '#D45A4E' },
+        { name: 'Manager overrides', value: '3', fg: '#E0A33C' },
+        { name: 'No-sale drawer opens', value: '7', fg: '#8C8474' },
+        { name: 'Comps (guest recovery)', value: this.money(860), fg: '#E0A33C' },
+        { name: 'Wastage logged', value: this.money(1120), fg: '#8C8474' }
+      ],
+      staffRows: [
+        { name: 'Amrita Kulkarni', role: 'Cashier · Term 01', hours: '7h 58m', tips: '₹1,420' },
+        { name: 'Ravi Menon', role: 'Floor manager', hours: '9h 02m', tips: '₹1,180' },
+        { name: 'Suhas Bhat', role: 'Head chef', hours: '8h 30m', tips: '₹960' },
+        { name: 'Neha Dsouza', role: 'Barista', hours: '6h 15m', tips: '₹1,340' },
+        { name: 'Imran Shaikh', role: 'Bar', hours: '5h 45m', tips: '₹1,510' }
+      ],
+      closeChecks: [
+        { name: 'All tickets settled', meta: '0 open', tick: '✓', mark: '#7FA06B' },
+        { name: 'Drawer counted', meta: '−₹40 variance', tick: '✓', mark: '#7FA06B' },
+        { name: 'Card batch settled', meta: 'Razorpay 14:35', tick: '✓', mark: '#7FA06B' },
+        { name: 'Wastage log filed', meta: '3 entries', tick: '✓', mark: '#7FA06B' },
+        { name: 'Closing stock count', meta: 'pending · 6 items', tick: '!', mark: '#E0A33C' }
+      ],
+      refundLines: [
+        { key: 'r1', name: 'Big Canvas breakfast', mods: 'Eggs poached', qty: '2 of 2', amt: this.money(1040) },
+        { key: 'r2', name: 'Negroni', mods: 'Sent back · too bitter', qty: '1 of 1', amt: this.money(550) },
+        { key: 'r3', name: 'Basque Cheesecake', mods: 'Enjoyed', qty: '0 of 1', amt: this.money(320) },
+        { key: 'r4', name: 'Filter Coffee', mods: 'Enjoyed', qty: '0 of 2', amt: this.money(280) }
+      ].map(r => {
+        const on = (st.refSel || ['r2']).includes(r.key);
+        return { ...r, tick: on ? '✓' : '', mark: on ? '#D45A4E' : 'rgba(255,255,255,.2)',
+          bg: on ? 'rgba(212,90,78,.09)' : '#1A1712', bd: on ? 'rgba(212,90,78,.4)' : 'rgba(255,255,255,.07)',
+          go: () => {
+            const cur = (st.refSel || ['r2']).slice(), i = cur.indexOf(r.key);
+            if (i > -1) cur.splice(i, 1); else cur.push(r.key);
+            this.set('refSel', cur);
+          } };
+      }),
+      reasons: ['Quality issue', 'Wrong item', 'Guest changed mind', 'Long wait', 'Duplicate charge', 'Staff error'].map(r => {
+        const on = (st.reason || 'Quality issue') === r;
+        return { name: r, bg: on ? 'rgba(221,90,42,.14)' : '#1A1712', fg: on ? '#F3EFE6' : '#A39C8C', bd: on ? '#DD5A2A' : 'rgba(255,255,255,.07)', go: () => this.set('reason', r) };
+      }),
+      refundTo: [['Original card ••4417', 'instant'], ['Cash from drawer', 'drawer 01'], ['Store credit', 'to wallet'], ['Gift card', 'new card']].map((r, i) => {
+        const on = (st.refTo || 0) === i;
+        return { name: r[0], hint: r[1], bg: on ? 'rgba(221,90,42,.14)' : '#1A1712', fg: on ? '#F3EFE6' : '#A39C8C', bd: on ? '#DD5A2A' : 'rgba(255,255,255,.07)', go: () => this.set('refTo', i) };
+      }),
+      refundTotal: this.money((st.refSel || ['r2']).reduce((n, k) => n + ({ r1: 1040, r2: 550, r3: 320, r4: 280 })[k], 0)),
+      pinDots: [0, 1, 2, 3].map(i => ({ ch: (st.pin || '').length > i ? '•' : '' })),
+      pinKeys: ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map(k => ({
+        label: k,
+        go: () => {
+          if (k === 'C') this.set('pin', '');
+          else if (k === '⌫') this.set('pin', (st.pin || '').slice(0, -1));
+          else this.set('pin', ((st.pin || '') + k).slice(0, 4));
+        }
+      })),
+      staffPins: [['Amrita K', 'Cashier', 'AK'], ['Ravi M', 'Floor manager', 'RM'], ['Neha D', 'Barista', 'ND'], ['Suhas B', 'Head chef', 'SB'], ['Imran S', 'Bar', 'IS'], ['Owner', 'Admin', 'OW']].map(s => {
+        const on = (st.who || 'Amrita K') === s[0];
+        return { name: s[0], role: s[1], ini: s[2], bg: on ? 'rgba(221,90,42,.12)' : '#1A1712', bd: on ? '#DD5A2A' : 'rgba(255,255,255,.07)', go: () => this.set('who', s[0]) };
+      }),
+      goOrders: () => this.set('screen', 'orders'),
+      goKitchen: () => this.set('screen', 'kitchen'),
+      title: T[0], subtitle: T[1], clock: '14:38',
+      s_register: st.screen === 'register',
+      s_tables: st.screen === 'tables', s_orders: st.screen === 'orders',
+      s_kitchen: st.screen === 'kitchen', s_reserve: st.screen === 'reserve',
+      s_till: st.screen === 'till', s_shift: st.screen === 'shift',
+      s_display: st.screen === 'display', s_lock: st.screen === 'lock',
+      s_pay: st.screen === 'pay', s_invoice: st.screen === 'invoice', s_refund: st.screen === 'refund',
+      cartEmpty: st.cart.length === 0,
+      ticket: 'NF-2294', orderWho: st.mode === 'Dine-in' ? 'Table G4 · 2 covers' : (st.mode === 'Takeaway' ? 'Walk-in · counter pickup' : 'Delivery · own fleet'),
+      orderWhere: 'Meera S · Gold member · 1,240 pts',
+      sub: this.money(t.sub), disc: '−' + this.money(t.disc), tax: this.money(t.tax), total: this.money(t.total),
+      payMethod: st.payMethod,
+      payMethods: [['Cash', '₹', 'Drawer 01'], ['Card', '▭', 'Razorpay tap'], ['UPI', '◈', 'QR / intent'], ['Wallet', '◐', 'Paytm · Amazon'], ['Gift card', '✦', 'Balance check'], ['House tab', '⌸', 'Member charge']].map(p => ({
+        name: p[0], mark: p[1], hint: p[2],
+        bg: st.payMethod === p[0] ? 'rgba(221,90,42,.14)' : '#1A1712',
+        bd: st.payMethod === p[0] ? '#DD5A2A' : 'rgba(255,255,255,.07)',
+        fg: st.payMethod === p[0] ? '#F3EFE6' : '#A39C8C',
+        go: () => this.set('payMethod', p[0])
+      })),
+      tendered: st.tender ? this.money(+st.tender) : this.money(t.total + Math.round(t.net * st.tip / 100)),
+      quickCash: [500, 1000, 1500, 2000].map(v => ({ label: this.money(v), go: () => this.set('tender', String(v)) })),
+      keys: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫'].map(k => ({
+        label: k,
+        go: () => {
+          if (k === '⌫') this.set('tender', st.tender.slice(0, -1));
+          else this.set('tender', (st.tender + k).slice(0, 7));
+        }
+      })),
+      tips: [0, 5, 10, 15, 20].map(p => ({
+        pct: p === 0 ? 'None' : p + '%',
+        amt: p === 0 ? '—' : this.money(Math.round(t.net * p / 100)),
+        bg: st.tip === p ? 'rgba(221,90,42,.14)' : '#1A1712',
+        bd: st.tip === p ? '#DD5A2A' : 'rgba(255,255,255,.07)',
+        fg: st.tip === p ? '#F3EFE6' : '#A39C8C',
+        go: () => this.set('tip', p)
+      })),
+      tipPct: st.tip + '%',
+      tipAmt: this.money(Math.round(t.net * st.tip / 100)),
+      grand: this.money(t.total + Math.round(t.net * st.tip / 100)),
+      change: this.money(Math.max(0, (st.tender ? +st.tender : t.total + Math.round(t.net * st.tip / 100)) - (t.total + Math.round(t.net * st.tip / 100)))),
+      splitN: st.split,
+      splitEach: this.money(Math.round((t.total + Math.round(t.net * st.tip / 100)) / st.split)),
+      splitInc: () => this.set('split', Math.min(12, st.split + 1)),
+      splitDec: () => this.set('split', Math.max(1, st.split - 1)),
+      cgst: this.money(Math.round(t.tax / 2)),
+      words: 'One thousand two hundred thirty seven rupees only',
+      invoiceLines: st.cart.map(l => {
+        let up = 0;
+        (l.mods || []).forEach(m => { const x = /₹(\d+)/.exec(m); if (x) up += +x[1]; });
+        return { name: l.name, mods: (l.mods || []).join(' · ') || '—', qty: l.qty, rate: this.money(l.price + up), amt: this.money((l.price + up) * l.qty) };
+      }),
+      goInvoice: () => this.set('screen', 'invoice'),
+      goRegister: () => this.set('screen', 'register'),
+      goRefund: () => this.set('screen', 'refund'),
+      newTicket: () => this.setState({ screen: 'register', cart: [], tender: '', tip: 10, split: 1 }),
+      goPay: () => this.set('screen', 'pay'),
+      goLock: () => this.set('screen', 'lock'),
+      sendKitchen: () => this.set('screen', 'kitchen'),
+      modOpen: !!mi,
+      modName: mi ? mi.name : '', modNote: mi ? mi.note + ' · ' + mi.tag : '',
+      modPrice: mi ? this.money(mi.price) : '', modGroups: groups, modQty: st.modQty,
+      modTotal: mi ? this.money((mi.price + this.modsUp()) * st.modQty) : '',
+      modInc: () => this.set('modQty', st.modQty + 1),
+      modDec: () => this.set('modQty', Math.max(1, st.modQty - 1)),
+      closeMod: () => this.set('modItem', null),
+      modAdd: () => { if (mi) this.add(mi, this.modLabels(), st.modQty); this.set('modItem', null); }
+    };
+  }
+}
+</script>
+</body>
+</html>

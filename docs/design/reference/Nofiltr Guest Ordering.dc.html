@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #141109; -webkit-font-smoothing: antialiased; }
+  a { color: #C24D22; text-decoration: none; }
+  a:hover { color: #9E3C17; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  * { scrollbar-width: none; }
+  @keyframes nf-rise { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+  @keyframes nf-pulse { 0%,100% { opacity: 1 } 50% { opacity: .4 } }
+</style>
+</helmet>
+<div style="min-height:100vh; background:#141109; color:#F3EFE6; font-family:Archivo,'Helvetica Neue',sans-serif; font-feature-settings:'tnum' 1; padding:26px;">
+
+  <div style="display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,.1);">
+    <div>
+      <div style="font-family:'Instrument Serif',serif; font-size:30px; line-height:1.1;">Guest ordering</div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em; color:#7E7768; margin-top:5px;">NOFILTR ART CAFE · WEB · QR TABLE · KIOSK · LOYALTY</div>
+    </div>
+    <div style="margin-left:auto; display:flex; gap:7px; flex-wrap:wrap;">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="9">
+        <button type="button" onClick="{{ t.go }}" style="height:40px; padding:0 15px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; font-size:12px; letter-spacing:.02em; background:{{ t.bg }}; color:{{ t.fg }}; border:1px solid {{ t.bd }};">{{ t.name }}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:32px; align-items:flex-start; padding-top:26px; flex-wrap:wrap;">
+
+    <sc-if value="{{ isPhone }}" hint-placeholder-val="{{ true }}">
+      <div style="width:392px; flex:0 0 392px; height:812px; background:#0B0A07; border:9px solid #241F18; border-radius:46px; padding:0; overflow:hidden; position:relative; box-shadow:0 36px 80px rgba(0,0,0,.55);">
+        <div style="height:100%; background:#FBF7EF; color:#1A1712; display:flex; flex-direction:column; border-radius:38px; overflow:hidden;">
+          <div style="height:46px; flex:0 0 46px; display:flex; align-items:center; justify-content:space-between; padding:0 26px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#1A1712;">
+            <span>9:41</span>
+            <span style="display:flex; gap:6px; align-items:center;"><span>●●●</span><span>WiFi</span><span>88%</span></span>
+          </div>
+
+          <div style="flex:1; min-height:0; overflow-y:auto;">
+
+            <sc-if value="{{ s_menu }}">
+              <div>
+                <div style="padding:8px 22px 18px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div style="width:38px; height:38px; border:1px solid #C24D22; display:flex; align-items:center; justify-content:center; color:#C24D22; font-family:'Instrument Serif',serif; font-size:21px;">n</div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                      <span style="width:38px; height:38px; border:1px solid #E3DED2; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; color:#6E685C;">⌕</span>
+                      <span style="width:38px; height:38px; border-radius:50%; background:#EDE7DA; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;">MS</span>
+                    </div>
+                  </div>
+                  <div style="font-family:'Instrument Serif',serif; font-size:33px; line-height:1.12; margin-top:20px;">Order ahead,<br>skip the queue.</div>
+                  <div style="font-size:13px; color:#6E685C; margin-top:9px; line-height:1.55;">Koramangala 5th Block · open till 22:00 · pickup in about 12 minutes</div>
+                  <div style="display:flex; gap:7px; margin-top:16px;">
+                    <sc-for list="{{ fulfil }}" as="f" hint-placeholder-count="3">
+                      <button type="button" onClick="{{ f.go }}" style="flex:1; height:52px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:{{ f.bg }}; color:{{ f.fg }}; border:1px solid {{ f.bd }};">
+                        <span style="font-size:12.5px; font-weight:600;">{{ f.name }}</span>
+                        <span style="font-size:10px; opacity:.7;">{{ f.hint }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+
+                <div style="padding:0 22px 14px; display:flex; gap:7px; overflow-x:auto;">
+                  <sc-for list="{{ gcats }}" as="c" hint-placeholder-count="6">
+                    <button type="button" onClick="{{ c.go }}" style="height:36px; padding:0 14px; white-space:nowrap; border-radius:18px; cursor:pointer; font-family:Archivo,sans-serif; font-size:12px; background:{{ c.bg }}; color:{{ c.fg }}; border:1px solid {{ c.bd }};">{{ c.name }}</button>
+                  </sc-for>
+                </div>
+
+                <div style="padding:0 22px 22px;">
+                  <div style="background:#1A1712; border-radius:4px; padding:18px; color:#F3EFE6; display:flex; gap:14px; align-items:center;">
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#DD5A2A;">Morning ritual · till 11:00</div>
+                      <div style="font-family:'Instrument Serif',serif; font-size:21px; margin-top:7px; line-height:1.2;">Any coffee + a bake for ₹299</div>
+                    </div>
+                    <div style="width:64px; height:64px; flex:0 0 64px; background:repeating-linear-gradient(135deg,#2A261E 0 8px,#221E17 8px 16px); border:1px solid rgba(255,255,255,.08); display:flex; align-items:center; justify-content:center;">
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:7px; color:#6E685C; text-align:center; line-height:1.6;">OFFER<br>IMAGE</span>
+                    </div>
+                  </div>
+
+                  <div style="font-family:'Instrument Serif',serif; font-size:23px; margin-top:24px;">{{ gcatName }}</div>
+                  <div style="margin-top:12px; display:flex; flex-direction:column; gap:12px;">
+                    <sc-for list="{{ gitems }}" as="it" hint-placeholder-count="5">
+                      <button type="button" onClick="{{ it.go }}" style="width:100%; text-align:left; display:flex; gap:14px; padding:0; background:transparent; border:0; border-bottom:1px solid #EFEAE0; padding-bottom:12px; cursor:pointer; font-family:Archivo,sans-serif; align-items:flex-start;">
+                        <span style="flex:1; min-width:0;">
+                          <span style="display:block; font-size:15.5px; font-weight:600; color:#1A1712;">{{ it.name }}</span>
+                          <span style="display:block; font-size:12px; color:#8A8274; margin-top:4px; line-height:1.5;">{{ it.note }}</span>
+                          <span style="display:flex; align-items:center; gap:9px; margin-top:8px;">
+                            <span style="font-family:'JetBrains Mono',monospace; font-size:13.5px; color:#1A1712;">{{ it.price }}</span>
+                            <span style="font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:{{ it.tagFg }};">{{ it.tag }}</span>
+                          </span>
+                        </span>
+                        <span style="width:78px; height:78px; flex:0 0 78px; background:repeating-linear-gradient(135deg,#F3EFE5 0 8px,#EBE5D8 8px 16px); border:1px solid #E3DED2; border-radius:3px; display:flex; align-items:center; justify-content:center;">
+                          <span style="font-family:'JetBrains Mono',monospace; font-size:7px; letter-spacing:.1em; color:#A8A192; text-align:center; line-height:1.7;">ITEM<br>PHOTO</span>
+                        </span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ s_item }}">
+              <div>
+                <div style="height:230px; background:repeating-linear-gradient(135deg,#F0EBDF 0 10px,#E8E2D3 10px 20px); border-bottom:1px solid #E3DED2; position:relative; display:flex; align-items:center; justify-content:center;">
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.14em; color:#A8A192; text-align:center; line-height:1.8;">HERO PHOTOGRAPH<br>[ 1200 × 800 ]</span>
+                  <button type="button" onClick="{{ goMenu }}" style="position:absolute; top:14px; left:16px; width:38px; height:38px; border-radius:50%; background:#FBF7EF; border:1px solid #E3DED2; font-size:15px; color:#1A1712; cursor:pointer;">←</button>
+                </div>
+                <div style="padding:20px 22px 26px;">
+                  <div style="display:flex; align-items:flex-start; gap:12px;">
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-family:'Instrument Serif',serif; font-size:29px; line-height:1.12;">Truffle Mushroom Toast</div>
+                      <div style="font-size:12.5px; color:#8A8274; margin-top:7px; line-height:1.6;">Sourdough, wild mushroom ragout, black truffle paste, soft egg, parmesan snow. Vegetarian.</div>
+                    </div>
+                    <div style="font-family:'JetBrains Mono',monospace; font-size:19px;">₹420</div>
+                  </div>
+                  <div style="display:flex; gap:7px; margin-top:14px; flex-wrap:wrap;">
+                    <span style="padding:6px 10px; background:#F2EDE1; border:1px solid #E3DED2; border-radius:2px; font-size:10.5px; color:#4A4438;">Contains dairy</span>
+                    <span style="padding:6px 10px; background:#F2EDE1; border:1px solid #E3DED2; border-radius:2px; font-size:10.5px; color:#4A4438;">Gluten</span>
+                    <span style="padding:6px 10px; background:#F2F5EF; border:1px solid #D6DFCE; border-radius:2px; font-size:10.5px; color:#5E7A4E;">Most loved</span>
+                  </div>
+
+                  <sc-for list="{{ sheetGroups }}" as="g" hint-placeholder-count="3">
+                    <div style="margin-top:22px;">
+                      <div style="display:flex; align-items:baseline; gap:9px;">
+                        <span style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">{{ g.name }}</span>
+                        <span style="font-size:10.5px; color:#B5AE9E;">{{ g.rule }}</span>
+                      </div>
+                      <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                        <sc-for list="{{ g.opts }}" as="o" hint-placeholder-count="3">
+                          <button type="button" onClick="{{ o.go }}" style="width:100%; min-height:48px; padding:0 14px; display:flex; align-items:center; gap:12px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; text-align:left; background:{{ o.bg }}; border:1px solid {{ o.bd }};">
+                            <span style="width:18px; height:18px; border-radius:{{ o.shape }}; border:1px solid {{ o.mark }}; color:{{ o.mark }}; font-size:11px; display:flex; align-items:center; justify-content:center; flex:0 0 18px;">{{ o.tick }}</span>
+                            <span style="flex:1; min-width:0; font-size:13.5px; color:#1A1712;">{{ o.name }}</span>
+                            <span style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#8A8274;">{{ o.up }}</span>
+                          </button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+
+                  <div style="margin-top:22px;">
+                    <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Anything else?</div>
+                    <div style="margin-top:9px; min-height:70px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; padding:13px; font-size:13px; color:#B5AE9E;">No walnuts please — allergy.</div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ s_cart }}">
+              <div style="padding:8px 22px 26px;">
+                <button type="button" onClick="{{ goMenu }}" style="width:38px; height:38px; border-radius:50%; background:#FFFDF8; border:1px solid #E3DED2; font-size:15px; color:#1A1712; cursor:pointer;">←</button>
+                <div style="font-family:'Instrument Serif',serif; font-size:29px; margin-top:16px;">Your order</div>
+                <div style="font-size:12.5px; color:#8A8274; margin-top:6px;">Pickup at Koramangala · ready in about 12 minutes</div>
+
+                <div style="margin-top:20px;">
+                  <sc-for list="{{ gcart }}" as="l" hint-placeholder-count="3">
+                    <div style="display:flex; gap:12px; padding:14px 0; border-bottom:1px solid #EFEAE0; align-items:flex-start;">
+                      <div style="flex:1; min-width:0;">
+                        <div style="font-size:14.5px; font-weight:600;">{{ l.name }}</div>
+                        <div style="font-size:11.5px; color:#8A8274; margin-top:4px; line-height:1.5;">{{ l.mods }}</div>
+                        <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+                          <button type="button" onClick="{{ l.dec }}" style="width:34px; height:34px; border:1px solid #E3DED2; background:#FFFDF8; border-radius:2px; font-size:15px; cursor:pointer; color:#1A1712;">−</button>
+                          <span style="font-family:'JetBrains Mono',monospace; font-size:14px; min-width:20px; text-align:center;">{{ l.qty }}</span>
+                          <button type="button" onClick="{{ l.inc }}" style="width:34px; height:34px; border:1px solid #E3DED2; background:#FFFDF8; border-radius:2px; font-size:15px; cursor:pointer; color:#1A1712;">+</button>
+                        </div>
+                      </div>
+                      <div style="font-family:'JetBrains Mono',monospace; font-size:14px;">{{ l.amt }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="margin-top:18px; padding:16px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px;">
+                  <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Goes well with</div>
+                  <div style="margin-top:10px; display:flex; gap:9px; overflow-x:auto;">
+                    <sc-for list="{{ upsell }}" as="u" hint-placeholder-count="3">
+                      <div style="width:104px; flex:0 0 104px;">
+                        <div style="height:66px; background:repeating-linear-gradient(135deg,#F3EFE5 0 8px,#EBE5D8 8px 16px); border:1px solid #E3DED2; border-radius:3px;"></div>
+                        <div style="font-size:11.5px; margin-top:6px; line-height:1.3;">{{ u.name }}</div>
+                        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8A8274; margin-top:2px;">{{ u.price }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+
+                <div style="margin-top:18px; display:flex; flex-direction:column; gap:9px;">
+                  <div style="display:flex; justify-content:space-between; font-size:13px; color:#6E685C;"><span>Subtotal</span><span style="font-family:'JetBrains Mono',monospace; color:#1A1712;">{{ gSub }}</span></div>
+                  <div style="display:flex; justify-content:space-between; font-size:13px; color:#6E685C;"><span>Gold member 8%</span><span style="font-family:'JetBrains Mono',monospace; color:#5E7A4E;">{{ gDisc }}</span></div>
+                  <div style="display:flex; justify-content:space-between; font-size:13px; color:#6E685C;"><span>GST 5%</span><span style="font-family:'JetBrains Mono',monospace; color:#1A1712;">{{ gTax }}</span></div>
+                  <div style="display:flex; justify-content:space-between; font-size:13px; color:#6E685C;"><span>Packaging</span><span style="font-family:'JetBrains Mono',monospace; color:#1A1712;">₹20</span></div>
+                </div>
+                <div style="margin-top:14px; padding:14px; background:#F2F5EF; border:1px solid #D6DFCE; border-radius:3px; display:flex; align-items:center; gap:11px;">
+                  <span style="font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#5E7A4E;">Code NF-MORNING applied</span>
+                  <span style="margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:12px; color:#5E7A4E;">−₹80</span>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ s_pay }}">
+              <div style="padding:8px 22px 26px;">
+                <button type="button" onClick="{{ goCart }}" style="width:38px; height:38px; border-radius:50%; background:#FFFDF8; border:1px solid #E3DED2; font-size:15px; color:#1A1712; cursor:pointer;">←</button>
+                <div style="font-family:'Instrument Serif',serif; font-size:29px; margin-top:16px;">How would you like to pay?</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#9A9384; margin-top:8px; letter-spacing:.06em;">PICKUP · READY 09:53 · NF-2297</div>
+
+                <div style="margin-top:18px; display:flex; flex-direction:column; gap:8px;">
+                  <sc-for list="{{ gPayMethods }}" as="p" hint-placeholder-count="5">
+                    <button type="button" onClick="{{ p.go }}" style="width:100%; min-height:62px; padding:0 15px; display:flex; align-items:center; gap:13px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; text-align:left; background:{{ p.bg }}; border:1px solid {{ p.bd }};">
+                      <span style="width:20px; height:20px; border-radius:50%; border:1px solid {{ p.mark }}; color:{{ p.mark }}; font-size:11px; display:flex; align-items:center; justify-content:center; flex:0 0 20px;">{{ p.tick }}</span>
+                      <span style="flex:1; min-width:0;">
+                        <span style="display:block; font-size:14px; font-weight:500; color:#1A1712;">{{ p.name }}</span>
+                        <span style="display:block; font-size:11.5px; color:#8A8274; margin-top:3px;">{{ p.hint }}</span>
+                      </span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#B5AE9E;">{{ p.badge }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+
+                <div style="margin-top:20px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Add a tip for the team</div>
+                <div style="display:flex; gap:7px; margin-top:10px;">
+                  <sc-for list="{{ gTips }}" as="tp" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ tp.go }}" style="flex:1; height:54px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:{{ tp.bg }}; border:1px solid {{ tp.bd }}; color:{{ tp.fg }};">
+                      <span style="font-size:13.5px; font-weight:600;">{{ tp.pct }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:10px; opacity:.7;">{{ tp.amt }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+
+                <div style="margin-top:18px; padding:15px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px;">
+                  <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:13px; font-weight:500;">Need a GST invoice?</div>
+                      <div style="font-size:11.5px; color:#8A8274; margin-top:3px; line-height:1.5;">Add your GSTIN and we will issue a B2B invoice with an IRN.</div>
+                    </div>
+                    <div style="width:42px; height:24px; border-radius:12px; background:#DCD5C5; position:relative; flex:0 0 42px;"><span style="position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#FFFDF8;"></span></div>
+                  </div>
+                </div>
+
+                <div style="margin-top:18px; display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:flex; justify-content:space-between; font-size:13px; color:#6E685C;"><span>Order</span><span style="font-family:'JetBrains Mono',monospace; color:#1A1712;">{{ gTotal }}</span></div>
+                  <div style="display:flex; justify-content:space-between; font-size:13px; color:#6E685C;"><span>Tip</span><span style="font-family:'JetBrains Mono',monospace; color:#1A1712;">{{ gTipAmt }}</span></div>
+                  <div style="display:flex; justify-content:space-between; align-items:baseline; padding-top:12px; border-top:1px solid #E3DED2;">
+                    <span style="font-family:'Instrument Serif',serif; font-size:19px;">To pay</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:23px;">{{ gGrand }}</span>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ s_track }}">
+              <div style="padding:8px 22px 26px;">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                  <div style="width:38px; height:38px; border:1px solid #C24D22; display:flex; align-items:center; justify-content:center; color:#C24D22; font-family:'Instrument Serif',serif; font-size:21px;">n</div>
+                  <span style="font-size:11px; color:#8A8274; letter-spacing:.06em;">Help ⌄</span>
+                </div>
+                <div style="margin-top:20px; padding:20px; background:#1A1712; border-radius:4px; color:#F3EFE6;">
+                  <div style="font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#DD5A2A;">Pickup code</div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:44px; letter-spacing:.08em; margin-top:8px; line-height:1;">B4-17</div>
+                  <div style="font-size:12.5px; color:#A39C8C; margin-top:10px; line-height:1.55;">Show this at the counter. We will call the code when your tray is up.</div>
+                </div>
+                <div style="margin-top:20px; display:flex; align-items:baseline; justify-content:space-between;">
+                  <span style="font-family:'Instrument Serif',serif; font-size:25px;">On the bar now</span>
+                  <span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#C24D22;">ETA 09:53</span>
+                </div>
+                <div style="margin-top:16px;">
+                  <sc-for list="{{ trackSteps }}" as="s" hint-placeholder-count="5">
+                    <div style="display:grid; grid-template-columns:18px 1fr; gap:14px;">
+                      <div style="display:flex; flex-direction:column; align-items:center;">
+                        <span style="width:12px; height:12px; border-radius:50%; background:{{ s.dot }}; border:2px solid {{ s.ring }};"></span>
+                        <span style="flex:1; width:2px; background:{{ s.line }};"></span>
+                      </div>
+                      <div style="padding-bottom:20px;">
+                        <div style="font-size:14.5px; font-weight:{{ s.weight }}; color:{{ s.fg }};">{{ s.name }}</div>
+                        <div style="font-size:11.5px; color:#9A9384; margin-top:4px; line-height:1.5;">{{ s.note }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="padding:16px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px;">
+                  <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Your order</div>
+                  <div style="margin-top:10px;">
+                    <sc-for list="{{ gcart }}" as="l" hint-placeholder-count="3">
+                      <div style="display:flex; justify-content:space-between; gap:10px; padding:8px 0; font-size:13px;">
+                        <span><span style="font-family:'JetBrains Mono',monospace; color:#C24D22; margin-right:8px;">{{ l.qty }}×</span>{{ l.name }}</span>
+                        <span style="font-family:'JetBrains Mono',monospace; color:#8A8274;">{{ l.amt }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ s_receipt }}">
+              <div style="padding:8px 22px 26px;">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                  <button type="button" onClick="{{ goMenu }}" style="width:38px; height:38px; border-radius:50%; background:#FFFDF8; border:1px solid #E3DED2; font-size:15px; color:#1A1712; cursor:pointer;">←</button>
+                  <span style="font-size:11px; color:#8A8274;">Share ⌄</span>
+                </div>
+                <div style="margin-top:18px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:4px; padding:22px;">
+                  <div style="text-align:center; padding-bottom:16px; border-bottom:1px solid #EFEAE0;">
+                    <div style="font-family:'Instrument Serif',serif; font-size:24px;">nofiltr art cafe</div>
+                    <div style="font-size:10.5px; color:#9A9384; margin-top:5px; line-height:1.6;">71 Wood Street, Koramangala 5th Block<br>GSTIN 29ABCDE1234F1Z5</div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#6E685C; padding:12px 0; border-bottom:1px solid #EFEAE0;">
+                    <span>NF/26-27/2297</span><span>16 SEP 09:41</span>
+                  </div>
+                  <div style="padding:12px 0;">
+                    <sc-for list="{{ gcart }}" as="l" hint-placeholder-count="3">
+                      <div style="padding:9px 0; border-bottom:1px solid #F5F1E7;">
+                        <div style="display:flex; justify-content:space-between; font-size:13px;">
+                          <span>{{ l.qty }} × {{ l.name }}</span>
+                          <span style="font-family:'JetBrains Mono',monospace;">{{ l.amt }}</span>
+                        </div>
+                        <div style="font-size:10.5px; color:#9A9384; margin-top:3px;">{{ l.mods }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:6px; padding-top:6px;">
+                    <div style="display:flex; justify-content:space-between; font-size:12.5px; color:#6E685C;"><span>Subtotal</span><span style="font-family:'JetBrains Mono',monospace;">{{ gSub }}</span></div>
+                    <div style="display:flex; justify-content:space-between; font-size:12.5px; color:#6E685C;"><span>Discounts</span><span style="font-family:'JetBrains Mono',monospace; color:#5E7A4E;">{{ gDisc }}</span></div>
+                    <div style="display:flex; justify-content:space-between; font-size:12.5px; color:#6E685C;"><span>CGST 2.5% + SGST 2.5%</span><span style="font-family:'JetBrains Mono',monospace;">{{ gTax }}</span></div>
+                    <div style="display:flex; justify-content:space-between; font-size:12.5px; color:#6E685C;"><span>Packaging</span><span style="font-family:'JetBrains Mono',monospace;">₹20</span></div>
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:10px; padding-top:12px; border-top:1px solid #1A1712;">
+                      <span style="font-family:'Instrument Serif',serif; font-size:18px;">Paid · UPI</span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:21px;">{{ gGrand }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:9px;">
+                  <button type="button" style="height:44px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; font-size:12px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">Download PDF</button>
+                  <button type="button" style="height:44px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; font-size:12px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">Email copy</button>
+                </div>
+                <div style="margin-top:16px; padding:16px; background:#1A1712; border-radius:4px; color:#F3EFE6; display:flex; gap:13px; align-items:center;">
+                  <div style="width:58px; height:58px; flex:0 0 58px; background:repeating-linear-gradient(135deg,#2A261E 0 8px,#221E17 8px 16px); border:1px solid rgba(255,255,255,.08);"></div>
+                  <div style="min-width:0;">
+                    <div style="font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#DD5A2A;">On the wall this month</div>
+                    <div style="font-family:'Instrument Serif',serif; font-size:17px; margin-top:5px; line-height:1.25;">“Monsoon, unfiltered” · Aditi Ranganathan</div>
+                    <div style="font-size:11px; color:#A39C8C; margin-top:4px;">Available · ₹28,000</div>
+                  </div>
+                </div>
+                <div style="margin-top:16px; text-align:center;">
+                  <div style="font-size:12.5px; color:#6E685C;">How was it?</div>
+                  <div style="display:flex; justify-content:center; gap:9px; margin-top:10px;">
+                    <sc-for list="{{ stars }}" as="s" hint-placeholder-count="5">
+                      <span style="width:42px; height:42px; border:1px solid #E3DED2; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; color:{{ s.fg }}; background:{{ s.bg }};">★</span>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ s_qr }}">
+              <div style="padding:8px 22px 26px;">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                  <div style="width:38px; height:38px; border:1px solid #C24D22; display:flex; align-items:center; justify-content:center; color:#C24D22; font-family:'Instrument Serif',serif; font-size:21px;">n</div>
+                  <span style="display:flex; align-items:center; gap:7px; padding:7px 11px; background:#F2F5EF; border:1px solid #D6DFCE; border-radius:16px; font-size:10.5px; color:#5E7A4E;"><span style="width:6px; height:6px; border-radius:50%; background:#5E7A4E; animation:nf-pulse 2s infinite;"></span>Live bill</span>
+                </div>
+                <div style="font-family:'Instrument Serif',serif; font-size:29px; margin-top:18px; line-height:1.15;">Table G5 · Gallery</div>
+                <div style="font-size:12.5px; color:#8A8274; margin-top:6px;">4 covers · opened 13:05 · served by Ravi</div>
+
+                <div style="margin-top:18px; display:flex; gap:7px;">
+                  <sc-for list="{{ splitModes }}" as="s" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ s.go }}" style="flex:1; height:44px; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; font-size:12.5px; background:{{ s.bg }}; color:{{ s.fg }}; border:1px solid {{ s.bd }};">{{ s.name }}</button>
+                  </sc-for>
+                </div>
+
+                <div style="margin-top:16px;">
+                  <sc-for list="{{ tableLines }}" as="l" hint-placeholder-count="4">
+                    <div style="display:flex; gap:12px; padding:13px 0; border-bottom:1px solid #EFEAE0; align-items:center;">
+                      <span style="width:20px; height:20px; border-radius:2px; border:1px solid {{ l.mark }}; color:{{ l.mark }}; font-size:11px; display:flex; align-items:center; justify-content:center; flex:0 0 20px;">{{ l.tick }}</span>
+                      <span style="flex:1; min-width:0;">
+                        <span style="display:block; font-size:13.5px;">{{ l.name }}</span>
+                        <span style="display:block; font-size:11px; color:#9A9384; margin-top:3px;">{{ l.who }}</span>
+                      </span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:13px;">{{ l.amt }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="margin-top:16px; padding:16px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:flex; justify-content:space-between; font-size:13px; color:#6E685C;"><span>Table total</span><span style="font-family:'JetBrains Mono',monospace; color:#1A1712;">₹4,280</span></div>
+                  <div style="display:flex; justify-content:space-between; font-size:13px; color:#6E685C;"><span>Already paid by others</span><span style="font-family:'JetBrains Mono',monospace; color:#5E7A4E;">−₹2,140</span></div>
+                  <div style="display:flex; justify-content:space-between; font-size:13px; color:#6E685C;"><span>Your share · {{ splitWay }}</span><span style="font-family:'JetBrains Mono',monospace; color:#1A1712;">₹1,070</span></div>
+                </div>
+                <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:9px;">
+                  <button type="button" style="height:44px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; font-size:12px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">Add to order</button>
+                  <button type="button" style="height:44px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; font-size:12px; color:#4A4438; cursor:pointer; font-family:Archivo,sans-serif;">Call for service</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ s_loyalty }}">
+              <div style="padding:8px 22px 26px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <span style="width:46px; height:46px; border-radius:50%; background:#EDE7DA; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:600;">MS</span>
+                  <div style="min-width:0;">
+                    <div style="font-family:'Instrument Serif',serif; font-size:24px; line-height:1.1;">Meera Sundaram</div>
+                    <div style="font-size:11.5px; color:#9A9384; margin-top:3px;">Gold member since Feb 2024</div>
+                  </div>
+                </div>
+
+                <div style="margin-top:18px; padding:20px; background:#1A1712; border-radius:4px; color:#F3EFE6;">
+                  <div style="display:flex; align-items:baseline; justify-content:space-between;">
+                    <span style="font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#DD5A2A;">Points balance</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#A39C8C;">GOLD · 8% OFF</span>
+                  </div>
+                  <div style="font-family:'JetBrains Mono',monospace; font-size:40px; margin-top:8px; line-height:1;">1,240</div>
+                  <div style="margin-top:14px; height:5px; background:rgba(255,255,255,.14); border-radius:3px; overflow:hidden;"><div style="height:100%; width:82%; background:#DD5A2A;"></div></div>
+                  <div style="font-size:11.5px; color:#A39C8C; margin-top:8px;">260 points to platinum · art previews and 12% off</div>
+                </div>
+
+                <div style="margin-top:20px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Your usual</div>
+                <div style="margin-top:10px; padding:15px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px;">
+                  <div style="font-size:14px; font-weight:600;">Flat White · oat, extra shot</div>
+                  <div style="font-size:12px; color:#8A8274; margin-top:4px;">with an Almond Croissant, warmed</div>
+                  <div style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:14px;">₹510</span>
+                    <span style="font-size:11px; color:#9A9384;">ordered 38 times</span>
+                  </div>
+                </div>
+
+                <div style="margin-top:20px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Rewards waiting</div>
+                <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                  <sc-for list="{{ rewards }}" as="r" hint-placeholder-count="3">
+                    <div style="padding:14px; background:#FBF1E8; border:1px solid #EDD6BF; border-radius:3px; display:flex; align-items:center; gap:12px;">
+                      <div style="min-width:0; flex:1;">
+                        <div style="font-size:13.5px; font-weight:500;">{{ r.name }}</div>
+                        <div style="font-size:11.5px; color:#8A8274; margin-top:3px;">{{ r.note }}</div>
+                      </div>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#B4522F;">{{ r.cost }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="margin-top:20px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Recent</div>
+                <div style="margin-top:8px;">
+                  <sc-for list="{{ pastOrders }}" as="p" hint-placeholder-count="4">
+                    <div style="display:flex; justify-content:space-between; gap:10px; padding:11px 0; border-bottom:1px solid #EFEAE0;">
+                      <span style="min-width:0;"><span style="display:block; font-size:13px;">{{ p.what }}</span><span style="display:block; font-size:10.5px; color:#9A9384; margin-top:2px;">{{ p.when }}</span></span>
+                      <span style="font-family:'JetBrains Mono',monospace; font-size:12.5px;">{{ p.amt }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+          </div>
+
+          <sc-if value="{{ showBar }}">
+            <div style="flex:0 0 auto; border-top:1px solid #E3DED2; background:#FFFDF8; padding:14px 22px 18px;">
+              <button type="button" onClick="{{ barGo }}" style="width:100%; height:54px; background:#1A1712; border:0; border-radius:3px; color:#FBF7EF; font-family:Archivo,sans-serif; font-size:14px; font-weight:600; letter-spacing:.04em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:12px;" style-hover="background:#C24D22">
+                <span>{{ barLabel }}</span>
+                <span style="font-family:'JetBrains Mono',monospace; font-weight:500;">{{ barValue }}</span>
+              </button>
+              <div style="height:4px; width:120px; background:#DCD5C5; border-radius:2px; margin:14px auto 0;"></div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ s_kiosk }}">
+      <div style="flex:1; min-width:0; max-width:900px;">
+        <div style="background:#0B0A07; border:10px solid #241F18; border-radius:16px; overflow:hidden; box-shadow:0 36px 80px rgba(0,0,0,.55);">
+          <div style="background:#FBF7EF; color:#1A1712; display:flex; flex-direction:column; height:660px;">
+            <div style="padding:20px 26px; border-bottom:1px solid #E3DED2; display:flex; align-items:center; gap:16px;">
+              <div style="width:46px; height:46px; border:1px solid #C24D22; display:flex; align-items:center; justify-content:center; color:#C24D22; font-family:'Instrument Serif',serif; font-size:26px;">n</div>
+              <div>
+                <div style="font-family:'Instrument Serif',serif; font-size:24px; line-height:1.1;">Order here</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em; color:#9A9384; margin-top:3px;">KIOSK 02 · TAP TO BEGIN · ENGLISH / ಕನ್ನಡ / हिन्दी</div>
+              </div>
+              <div style="margin-left:auto; display:flex; gap:9px;">
+                <span style="height:44px; padding:0 16px; display:flex; align-items:center; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; font-size:12.5px; color:#4A4438;">Eat in</span>
+                <span style="height:44px; padding:0 16px; display:flex; align-items:center; background:#1A1712; border:1px solid #1A1712; border-radius:3px; font-size:12.5px; color:#FBF7EF;">Take away</span>
+              </div>
+            </div>
+
+            <div style="flex:1; min-height:0; display:flex;">
+              <div style="width:172px; flex:0 0 172px; border-right:1px solid #E3DED2; padding:14px 12px; display:flex; flex-direction:column; gap:5px;">
+                <sc-for list="{{ gcats }}" as="c" hint-placeholder-count="6">
+                  <button type="button" onClick="{{ c.go }}" style="width:100%; min-height:64px; padding:0 14px; text-align:left; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; font-size:14.5px; background:{{ c.bg }}; color:{{ c.fg }}; border:1px solid {{ c.bd }};">{{ c.name }}</button>
+                </sc-for>
+              </div>
+
+              <div style="flex:1; min-width:0; padding:16px 20px; overflow-y:auto;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(196px,1fr)); gap:12px;">
+                  <sc-for list="{{ gitems }}" as="it" hint-placeholder-count="6">
+                    <button type="button" onClick="{{ it.go }}" style="text-align:left; padding:0; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; cursor:pointer; font-family:Archivo,sans-serif; overflow:hidden; display:flex; flex-direction:column;">
+                      <span style="height:104px; background:repeating-linear-gradient(135deg,#F3EFE5 0 9px,#EBE5D8 9px 18px); border-bottom:1px solid #E3DED2; display:flex; align-items:center; justify-content:center;">
+                        <span style="font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:.12em; color:#A8A192;">ITEM PHOTO</span>
+                      </span>
+                      <span style="padding:13px 14px 15px; display:flex; flex-direction:column; gap:5px;">
+                        <span style="font-size:15px; font-weight:600; line-height:1.3;">{{ it.name }}</span>
+                        <span style="font-size:11.5px; color:#8A8274; line-height:1.45;">{{ it.note }}</span>
+                        <span style="font-family:'JetBrains Mono',monospace; font-size:15px; margin-top:4px;">{{ it.price }}</span>
+                      </span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="width:250px; flex:0 0 250px; border-left:1px solid #E3DED2; background:#FFFDF8; display:flex; flex-direction:column; padding:18px;">
+                <div style="font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#9A9384;">Your tray</div>
+                <div style="margin-top:12px; flex:1; min-height:0; overflow-y:auto;">
+                  <sc-for list="{{ gcart }}" as="l" hint-placeholder-count="3">
+                    <div style="padding:11px 0; border-bottom:1px solid #EFEAE0;">
+                      <div style="display:flex; justify-content:space-between; gap:9px; font-size:13px;">
+                        <span><span style="font-family:'JetBrains Mono',monospace; color:#C24D22; margin-right:7px;">{{ l.qty }}×</span>{{ l.name }}</span>
+                        <span style="font-family:'JetBrains Mono',monospace;">{{ l.amt }}</span>
+                      </div>
+                      <div style="font-size:10.5px; color:#9A9384; margin-top:3px;">{{ l.mods }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="padding-top:14px; border-top:1px solid #E3DED2;">
+                  <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                    <span style="font-family:'Instrument Serif',serif; font-size:18px;">Total</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:22px;">{{ gTotal }}</span>
+                  </div>
+                  <button type="button" style="margin-top:12px; width:100%; height:64px; background:#C24D22; border:0; border-radius:3px; color:#FFFDF8; font-size:15px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; font-family:Archivo,sans-serif;">Pay now</button>
+                  <button type="button" style="margin-top:9px; width:100%; height:48px; background:#FFFDF8; border:1px solid #E3DED2; border-radius:3px; color:#6E685C; font-size:12.5px; cursor:pointer; font-family:Archivo,sans-serif;">Start over</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em; color:#4F4A40; margin-top:12px; text-align:center;">22" PORTRAIT-MOUNTED KIOSK SHOWN LANDSCAPE · 64PX TARGETS · FOUR TAPS TO PAY</div>
+      </div>
+    </sc-if>
+
+    <div style="flex:1; min-width:280px; max-width:520px;">
+      <div style="font-family:'Instrument Serif',serif; font-size:27px; line-height:1.15;">{{ noteTitle }}</div>
+      <div style="font-size:13.5px; color:#A39C8C; margin-top:10px; line-height:1.7;">{{ noteBody }}</div>
+      <div style="margin-top:22px; display:flex; flex-direction:column; gap:10px;">
+        <sc-for list="{{ notePoints }}" as="p" hint-placeholder-count="4">
+          <div style="padding:14px 16px; background:#1C1913; border:1px solid rgba(255,255,255,.08); border-left:2px solid #DD5A2A; border-radius:3px;">
+            <div style="font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#DD5A2A;">{{ p.label }}</div>
+            <div style="font-size:13px; color:#C9C2B2; margin-top:6px; line-height:1.6;">{{ p.text }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:960}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'menu', cat: 'Coffee', fulfilment: 'Pickup',
+    size: 'Regular', egg: 'Soft poached', extras: ['Extra bread'],
+    cart: [
+      { name: 'Truffle Mushroom Toast', mods: 'Soft poached egg · extra bread · no walnuts', price: 460, qty: 1 },
+      { name: 'Flat White', mods: 'Oat milk · regular', price: 270, qty: 2 },
+      { name: 'Basque Cheesecake', mods: 'To share', price: 320, qty: 1 }
+    ],
+    payMethod: 'UPI', splitWay: 'Even', tip: 10
+  };
+
+  money(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
+  set(k, v) { this.setState({ [k]: v }); }
+
+  tabDef() {
+    return [
+      ['menu', 'Web menu'], ['item', 'Item sheet'], ['cart', 'Cart'], ['pay', 'Checkout'],
+      ['track', 'Tracking'], ['receipt', 'E-receipt'], ['qr', 'QR table'], ['loyalty', 'Account'], ['kiosk', 'Kiosk']
+    ];
+  }
+
+  gmenu() {
+    return {
+      Coffee: [
+        ['Flat White', 'House blend, 150ml milk', 240, 'Most loved'],
+        ['Cold Brew', '18 hour steep, on tap', 280, ''],
+        ['Cortado', 'Two parts espresso, one milk', 210, ''],
+        ['Mocha', '64% Mysore chocolate', 260, ''],
+        ['Filter Coffee', 'Chicory 20%, steel tumbler', 140, 'Dine-in only']
+      ],
+      Plates: [
+        ['Truffle Mushroom Toast', 'Sourdough, soft egg, truffle', 420, 'Most loved'],
+        ['Shakshuka', 'Two eggs, feta, warm bread', 460, ''],
+        ['The Big Canvas', 'Full breakfast for one', 520, ''],
+        ['Buddha Bowl', 'Millet, greens, tahini', 440, 'Vegan'],
+        ['Pesto Grilled Cheese', 'Three cheese, basil pesto', 350, '']
+      ],
+      Bakery: [
+        ['Almond Croissant', 'Frangipane, twice baked', 220, ''],
+        ['Butter Croissant', '72 hour lamination', 180, ''],
+        ['Chocolate Babka', 'Dark chocolate swirl', 240, ''],
+        ['Cinnamon Roll', 'Cream cheese glaze', 200, 'Fresh at 09:00'],
+        ['Banana Bread', 'Walnut, tahini', 160, '']
+      ],
+      Tea: [
+        ['Masala Chai', 'Boiled, cutting style', 120, ''],
+        ['Matcha Latte', 'Ceremonial grade, Uji', 280, ''],
+        ['Kashmiri Kahwa', 'Saffron, almond', 180, ''],
+        ['Jasmine Green', 'Second flush', 160, '']
+      ],
+      Desserts: [
+        ['Basque Cheesecake', 'Burnt top, jammy centre', 320, 'Most loved'],
+        ['Tiramisu Jar', 'Mascarpone, espresso', 300, ''],
+        ['Dark Choc Tart', 'Sea salt, olive oil', 280, '']
+      ],
+      'Art & retail': [
+        ['Beans · House 250g', 'Roasted Monday, whole bean', 750, ''],
+        ['Art Print A3', 'Resident artist series', 1500, ''],
+        ['Postcard Set', 'Six artists, six cards', 350, ''],
+        ['Merch Tote', 'Screen printed canvas', 890, '']
+      ]
+    };
+  }
+
+  totals() {
+    const sub = this.state.cart.reduce((n, l) => n + l.price * l.qty, 0);
+    const disc = Math.round(sub * 0.08) + 80;
+    const net = sub - disc;
+    const tax = Math.round(net * 0.05);
+    return { sub, disc, net, tax, total: net + tax + 20 };
+  }
+
+  notes() {
+    return {
+      menu: ['Ordering that feels like the room', 'The web menu carries the same serif, the same paper and the same vermilion as the café wall. Pickup, delivery and dine-in are chosen first, so pricing, prep time and packaging are right from the first tap.', [
+        ['Fulfilment first', 'Pickup, delivery or dine-in changes the fee, the ETA and which items show — filter coffee is dine-in only.'],
+        ['Live availability', 'Anything 86’d in the back office disappears here within seconds, no phantom orders.'],
+        ['One promo slot', 'A single house offer, never a carousel of banners.'],
+        ['Known guests', 'Signed-in members see their tier discount on the menu, not as a surprise at checkout.']
+      ]],
+      item: ['Modifiers without the maze', 'The item sheet mirrors the terminal’s modifier logic exactly, so a guest order and a counter order produce the same kitchen ticket. Allergy notes travel to the KDS in amber.', [
+        ['Same modifier groups', 'Size, egg, extras — one source of truth shared with the POS.'],
+        ['Honest prices', 'Upcharges are shown inline, and the button total updates as options change.'],
+        ['Allergy note', 'Free text lands on the kitchen ticket highlighted, not buried.'],
+        ['Photography slots', 'Real dish photography drops into the hero and thumbnails.']
+      ]],
+      cart: ['A cart that does the maths out loud', 'Discounts, GST, packaging and the applied promo code are itemised before payment, which is what stops support calls later.', [
+        ['Attach rate', 'One upsell rail, driven by the product-mix report — not random suggestions.'],
+        ['Tier discount', 'Loyalty is applied automatically and visibly.'],
+        ['Editable lines', 'Quantity and modifiers stay editable up to payment.'],
+        ['Packaging fee', 'Shown separately so pickup guests understand it.']
+      ]],
+      pay: ['Indian payment reality', 'UPI intent first, cards second, wallets and gift cards after. Tips are optional and go to the pooled distribution shown in the back office.', [
+        ['UPI intent', 'Deep links to any UPI app, with a QR fallback on desktop.'],
+        ['Saved cards', 'Tokenised, RBI compliant, with a one-tap repeat order.'],
+        ['Tip choice', 'Same tiers as the terminal so reporting stays clean.'],
+        ['Invoice choice', 'Business guests can add a GSTIN before paying.']
+      ]],
+      track: ['Status the kitchen actually sets', 'Every step here is a real KDS event — accepted, on the bar, ready — not a timer pretending to be progress.', [
+        ['Real events', 'Driven by the same bump actions the kitchen display uses.'],
+        ['Pickup code', 'A short code the counter can read out loud across a busy room.'],
+        ['Runner view', 'Delivery orders switch to a rider card with live ETA.'],
+        ['Rate at the end', 'Feedback lands in the back office review feed.']
+      ]],
+      receipt: ['The receipt as a keepsake', 'The digital invoice is GST-valid, downloadable and carries the current residency credit — a small piece of the café that leaves with the guest.', [
+        ['GST compliant', 'HSN, place of supply, CGST and SGST split out.'],
+        ['One tap re-order', 'Repeats the exact ticket including modifiers.'],
+        ['Art credit', 'Artist, title and price, with a link to buy.'],
+        ['Shareable', 'PDF, WhatsApp or email, no login needed.']
+      ]],
+      qr: ['Pay at the table, split without arguments', 'Scanning the table QR opens the live bill. Guests can split evenly, by item or by seat — the terminal sees each part-payment as it lands.', [
+        ['Live bill', 'Mirrors the open ticket on the floor in real time.'],
+        ['Three split modes', 'Even, by item or by seat — the maths is handled.'],
+        ['Part payments', 'The terminal shows what is still outstanding.'],
+        ['Call for service', 'A gentle nudge to the floor instead of raising a hand.']
+      ]],
+      loyalty: ['Membership that earns its place', 'Points, tier, saved usuals and residency invitations in one card. The same profile the counter sees when a guest walks in.', [
+        ['Shared profile', 'Identical to the customer record in the back office.'],
+        ['Usual order', 'Re-orders the exact ticket, modifiers included.'],
+        ['Tier progress', 'Honest maths — what is left to the next tier.'],
+        ['Art invites', 'Platinum guests get residency previews before the public.']
+      ]],
+      kiosk: ['The morning rush, absorbed', 'Two 22-inch kiosks at the entrance take the 8 to 10 am queue. Large targets, four taps to pay, receipt by QR.', [
+        ['Four taps', 'Category, item, size, pay — everything else has a default.'],
+        ['Accessible', '64px targets, high contrast, reachable bottom rail.'],
+        ['Same kitchen route', 'Kiosk tickets print and bump exactly like counter tickets.'],
+        ['Attract loop', 'Idles into the residency artwork between guests.']
+      ]]
+    };
+  }
+
+  renderVals() {
+    const st = this.state, t = this.totals(), menu = this.gmenu();
+    const N = this.notes()[st.screen] || ['', '', []];
+    const phoneScreens = ['menu', 'item', 'cart', 'pay', 'track', 'receipt', 'qr', 'loyalty'];
+
+    const sheet = [
+      { name: 'Size', rule: 'Choose one', kind: 'one', key: 'size', opts: [['Regular', '—'], ['Large · extra toast', '+₹90']] },
+      { name: 'Your egg', rule: 'Choose one', kind: 'one', key: 'egg', opts: [['Soft poached', '—'], ['Fried, runny', '—'], ['Scrambled', '—'], ['No egg', '−₹40']] },
+      { name: 'Add to it', rule: 'Any number', kind: 'many', key: 'extras', opts: [['Extra bread', '+₹60'], ['Avocado', '+₹120'], ['Parmesan snow', '+₹70'], ['Chilli oil', '+₹0']] }
+    ].map(g => ({
+      name: g.name, rule: g.rule,
+      opts: g.opts.map(o => {
+        const on = g.kind === 'one' ? st[g.key] === o[0] : (st[g.key] || []).includes(o[0]);
+        return {
+          name: o[0], up: o[1], tick: on ? '✓' : '',
+          shape: g.kind === 'one' ? '50%' : '2px',
+          mark: on ? '#C24D22' : '#CFC7B6',
+          bg: on ? '#FBF1E8' : '#FFFDF8',
+          bd: on ? '#E0B695' : '#E3DED2',
+          go: () => {
+            if (g.kind === 'one') this.set(g.key, o[0]);
+            else {
+              const arr = (st[g.key] || []).slice(), i = arr.indexOf(o[0]);
+              if (i > -1) arr.splice(i, 1); else arr.push(o[0]);
+              this.set(g.key, arr);
+            }
+          }
+        };
+      })
+    }));
+
+    const bar = {
+      menu: ['View order', this.money(t.total), () => this.set('screen', 'cart')],
+      item: ['Add to order', '₹540', () => this.set('screen', 'cart')],
+      cart: ['Pay now', this.money(t.total), () => this.set('screen', 'pay')],
+      pay: ['Pay with UPI', this.money(t.total), () => this.set('screen', 'track')],
+      track: ['Add something else', '', () => this.set('screen', 'menu')],
+      receipt: ['Order this again', '', () => this.set('screen', 'menu')],
+      qr: ['Pay my share', '₹1,070', () => this.set('screen', 'receipt')],
+      loyalty: ['Order my usual', '₹510', () => this.set('screen', 'cart')]
+    }[st.screen];
+
+    return {
+      tabs: this.tabDef().map(t2 => ({
+        name: t2[1],
+        bg: st.screen === t2[0] ? '#DD5A2A' : '#1C1913',
+        fg: st.screen === t2[0] ? '#150E09' : '#C9C2B2',
+        bd: st.screen === t2[0] ? '#DD5A2A' : 'rgba(255,255,255,.1)',
+        go: () => this.set('screen', t2[0])
+      })),
+      isPhone: phoneScreens.includes(st.screen),
+      s_menu: st.screen === 'menu', s_item: st.screen === 'item', s_cart: st.screen === 'cart',
+      s_pay: st.screen === 'pay', s_track: st.screen === 'track', s_receipt: st.screen === 'receipt',
+      s_qr: st.screen === 'qr', s_loyalty: st.screen === 'loyalty', s_kiosk: st.screen === 'kiosk',
+      fulfil: [['Pickup', '12 min'], ['Delivery', '4 km · ₹40'], ['Dine-in', 'scan at table']].map(f => {
+        const on = st.fulfilment === f[0];
+        return { name: f[0], hint: f[1], bg: on ? '#1A1712' : '#FFFDF8', fg: on ? '#FBF7EF' : '#4A4438', bd: on ? '#1A1712' : '#E3DED2', go: () => this.set('fulfilment', f[0]) };
+      }),
+      gcats: Object.keys(menu).map(c => {
+        const on = st.cat === c;
+        return { name: c, bg: on ? '#C24D22' : '#FFFDF8', fg: on ? '#FFFDF8' : '#4A4438', bd: on ? '#C24D22' : '#E3DED2', go: () => this.set('cat', c) };
+      }),
+      gcatName: st.cat,
+      gitems: (menu[st.cat] || []).map(i => ({
+        name: i[0], note: i[1], price: this.money(i[2]), tag: i[3],
+        tagFg: i[3] === 'Most loved' ? '#5E7A4E' : (i[3] === 'Vegan' ? '#5E7A4E' : '#B4522F'),
+        go: () => this.set('screen', 'item')
+      })),
+      sheetGroups: sheet,
+      gcart: st.cart.map((l, i) => ({
+        name: l.name, mods: l.mods, qty: l.qty, amt: this.money(l.price * l.qty),
+        inc: () => { const c = st.cart.slice(); c[i] = { ...c[i], qty: c[i].qty + 1 }; this.setState({ cart: c }); },
+        dec: () => { const c = st.cart.slice(); if (c[i].qty > 1) c[i] = { ...c[i], qty: c[i].qty - 1 }; else c.splice(i, 1); this.setState({ cart: c }); }
+      })),
+      upsell: [{ name: 'Almond Croissant', price: '₹220' }, { name: 'Cold Brew', price: '₹280' }, { name: 'Beans 250g', price: '₹750' }],
+      gSub: this.money(t.sub), gDisc: '−' + this.money(t.disc), gTax: this.money(t.tax), gTotal: this.money(t.total),
+      goMenu: () => this.set('screen', 'menu'),
+      goCart: () => this.set('screen', 'cart'),
+      gPayMethods: [
+        ['UPI', 'GPay · PhonePe · Paytm · any app', 'instant'],
+        ['Card ••4417', 'Visa, saved and tokenised', '1 tap'],
+        ['New card', 'Debit, credit or international', ''],
+        ['Gift card', 'Balance ₹2,400 available', ''],
+        ['Pay at counter', 'Hold the order for 15 minutes', '']
+      ].map(p => {
+        const on = st.payMethod === p[0];
+        return { name: p[0], hint: p[1], badge: p[2], tick: on ? '✓' : '',
+          mark: on ? '#C24D22' : '#CFC7B6', bg: on ? '#FBF1E8' : '#FFFDF8', bd: on ? '#E0B695' : '#E3DED2',
+          go: () => this.set('payMethod', p[0]) };
+      }),
+      gTips: [0, 5, 10, 15].map(p => {
+        const on = st.tip === p;
+        return { pct: p === 0 ? 'None' : p + '%', amt: p === 0 ? '—' : this.money(Math.round(t.net * p / 100)),
+          bg: on ? '#1A1712' : '#FFFDF8', fg: on ? '#FBF7EF' : '#4A4438', bd: on ? '#1A1712' : '#E3DED2',
+          go: () => this.set('tip', p) };
+      }),
+      gTipAmt: this.money(Math.round(t.net * st.tip / 100)),
+      gGrand: this.money(t.total + Math.round(t.net * st.tip / 100)),
+      trackSteps: [
+        ['Order placed', '09:41 · paid by UPI', 'done'],
+        ['Accepted by the kitchen', '09:42 · Suhas is on it', 'done'],
+        ['On the bar', 'Flat whites being poured', 'live'],
+        ['Ready for pickup', 'We will call B4-17', 'next'],
+        ['Collected', '', 'next']
+      ].map(s => ({
+        name: s[0], note: s[1],
+        dot: s[2] === 'next' ? '#FBF7EF' : (s[2] === 'live' ? '#C24D22' : '#5E7A4E'),
+        ring: s[2] === 'next' ? '#DCD5C5' : (s[2] === 'live' ? '#E0B695' : '#5E7A4E'),
+        line: s[2] === 'next' ? '#EFEAE0' : '#D6DFCE',
+        fg: s[2] === 'next' ? '#B5AE9E' : '#1A1712',
+        weight: s[2] === 'live' ? '600' : '500'
+      })),
+      stars: [1, 2, 3, 4, 5].map(i => ({ fg: i <= 4 ? '#FFFDF8' : '#CFC7B6', bg: i <= 4 ? '#C24D22' : '#FFFDF8' })),
+      splitModes: ['Even', 'By item', 'By seat'].map(s => {
+        const on = st.splitWay === s;
+        return { name: s, bg: on ? '#1A1712' : '#FFFDF8', fg: on ? '#FBF7EF' : '#4A4438', bd: on ? '#1A1712' : '#E3DED2', go: () => this.set('splitWay', s) };
+      }),
+      splitWay: st.splitWay.toLowerCase(),
+      tableLines: [
+        ['2 × The Big Canvas', 'Anaya, Kabir', 1040, true],
+        ['1 × Negroni', 'yours', 550, true],
+        ['1 × Basque Cheesecake', 'shared', 320, true],
+        ['2 × Filter Coffee', 'Sneha, Dev', 280, false],
+        ['2 × Cold Brew', 'Anaya', 560, false]
+      ].map(l => ({
+        name: l[0], who: l[1], amt: this.money(l[2]), tick: l[3] ? '✓' : '',
+        mark: l[3] ? '#C24D22' : '#CFC7B6'
+      })),
+      rewards: [
+        { name: 'Free filter coffee', note: 'Any day before 11:00', cost: '200 pts' },
+        { name: 'Basque cheesecake slice', note: 'Dine-in only', cost: '400 pts' },
+        { name: 'Beans 250g, house blend', note: 'Roasted Monday', cost: '900 pts' }
+      ],
+      pastOrders: [
+        { what: 'Dine-in · Table G4', when: 'Today 14:06', amt: '₹1,237' },
+        { what: 'QR table · Gallery', when: '11 Sep', amt: '₹880' },
+        { what: 'Web pickup', when: '6 Sep', amt: '₹560' },
+        { what: 'Art print · A3', when: '2 Sep', amt: '₹1,500' }
+      ],
+      showBar: !!bar,
+      barLabel: bar ? bar[0] : '', barValue: bar ? bar[1] : '', barGo: bar ? bar[2] : (() => {}),
+      noteTitle: N[0], noteBody: N[1],
+      notePoints: (N[2] || []).map(p => ({ label: p[0], text: p[1] }))
+    };
+  }
+}
+</script>
+</body>
+</html>
