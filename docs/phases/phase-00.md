@@ -9,14 +9,14 @@ Nothing.
 
 ## Tasks
 
-- [ ] **Task 1 — Initialise the repo.**
+- [x] **Task 1 — Initialise the repo.**
   Confirm the product name and GitHub owner with the human if `STATE.md` still
   lists it as open. Then: `go mod init <module path>`, Go 1.23+. Create
   `.gitignore` (Go, Node, `*.db`, `*.db-wal`, `*.db-shm`, `dist/`, `/data/`),
   `LICENSE` (per `docs/00-product.md`), and a placeholder `README.md`.
   `git init`, first commit.
 
-- [ ] **Task 2 — Archive the design reference.**
+- [x] **Task 2 — Archive the design reference.**
   Copy everything from `claude-design/` into `docs/design/reference/`, preserving
   structure. Write `docs/design/reference/INDEX.md`: one line per file naming
   which surface and screen it shows, so later phases can find a screen without

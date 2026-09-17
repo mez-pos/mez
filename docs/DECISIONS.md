@@ -123,3 +123,16 @@ this before the first commit keeps the entire history clean and avoids a later
 `git add --renormalize` churn commit.
 Cost: Windows editors that cannot handle LF will show single-line files. All
 current tooling handles LF.
+
+## ADR-012 — INDEX.md indexes screens, not just files
+2026-09 · Status: accepted
+Decision: `docs/design/reference/INDEX.md` carries one row per screen (35 of
+them), keyed by the `sc-if` state token and its line number, rather than the
+one line per file that Phase 00 Task 2 literally asked for.
+Because: the stated purpose was "find a screen without opening every file", and
+three of the five files hold 9, 12 and 14 screens each. Five rows would have
+sent every later phase back into a 131 KB file to hunt. The design files turned
+out to be single-page prototypes where each screen is a `<sc-if value="{{ s_x
+}}">` block, which gives a stable identifier to index on.
+Cost: Line numbers drift if the archive is ever re-exported. INDEX.md says so
+and gives the grep that recovers them.

@@ -11,32 +11,29 @@ File: `docs/phases/phase-00.md`
 
 ## Last completed task
 
-**Phase 00, Task 1 — Initialise the repo.** Go module
-`github.com/byjoellobo/nofiltr-pos` (go 1.23), AGPL-3.0 `LICENSE`, `.gitignore`,
-`.gitattributes`, README. Product renamed `OpenPOS` -> `Nofiltr POS` and binary
-`openpos` -> `nofiltr` across all docs. `git init`, first commit, pushed to
-https://github.com/byjoellobo/nofiltr-pos (public).
+**Phase 00, Task 2 — Archive the design reference.** The copy step was already
+done before this session. Wrote `docs/design/reference/INDEX.md`: 35 screens
+across three surfaces, each keyed by its `sc-if` state token and line number,
+all verified against source. Ticked Tasks 1 and 2 in `phase-00.md`.
+
+**`claude-design/` is fully archived and already gone. Safe to delete.**
 
 ## Next task
 
-**Phase 00, Task 2 — Archive the design reference.**
-See `docs/phases/phase-00.md`. Note: the four `.dc.html` files plus `support.js`
-are already present in `docs/design/reference/`. What Task 2 still owes is
-`docs/design/reference/INDEX.md` (one line per file naming which surface and
-screen it shows), and confirming nothing in `claude-design/` was missed.
+**Phase 00, Task 3 — Verify and complete the tokens.** Check every value in
+`docs/design/tokens.md` against the reference and fill what it marks "to be
+defined" (derived text colours, hairline, danger). Use `INDEX.md` to open only
+the screens needed; never read the reference folder wholesale.
 
 ## Known broken / in progress
 
-- No `Makefile` yet (Phase 00 Task 4), so `make check` cannot run. Task 1 was
-  verified with `gofmt -l`, `go vet ./...` and `go build ./...` instead; all
-  clean, with no Go packages to compile yet.
-- No CI workflow yet (Phase 00 Task 4).
 - **`make` is not installed on this dev machine** (no `make`, `mingw32-make` or
-  `nmake` on PATH). Phase 00 Task 4 is blocked until one is installed —
-  `winget install GnuWin32.Make`, or ezwinports. CI on Linux is unaffected.
+  `nmake`). Phase 00 Task 4 is blocked until one is: `winget install
+  GnuWin32.Make`, or ezwinports. Linux CI is unaffected.
+- No `Makefile` or CI workflow yet (both Task 4), so `make check` cannot run.
+  Work so far is verified with `gofmt -l`, `go vet ./...`, `go build ./...`.
 - `go vet ./...` exits 1 on an empty module ("matched no packages"). Task 4's
-  `check` target must tolerate that, or land Task 5 (which creates the
-  packages) first.
+  `check` target must tolerate that, or Task 5 must land first.
 
 ## Open questions for the human
 
