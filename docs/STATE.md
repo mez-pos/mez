@@ -22,8 +22,8 @@ https://github.com/byjoellobo/nofiltr-pos (public).
 **Phase 00, Task 2 — Archive the design reference.**
 See `docs/phases/phase-00.md`. Note: the four `.dc.html` files plus `support.js`
 are already present in `docs/design/reference/`. What Task 2 still owes is
-`docs/design/reference/INDEX.md` — one line per file naming which surface and
-screen it shows — and confirming nothing in `claude-design/` was missed.
+`docs/design/reference/INDEX.md` (one line per file naming which surface and
+screen it shows), and confirming nothing in `claude-design/` was missed.
 
 ## Known broken / in progress
 

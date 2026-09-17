@@ -104,8 +104,8 @@ Decision: Product is **Nofiltr POS**. Binary and command package are `nofiltr`
 `github.com/byjoellobo/nofiltr-pos`. Server is AGPL-3.0 at the repo root; the
 guest ordering app will carry its own MIT `LICENSE` when `web/guest/` is
 created in Phase 11.
-Because: The module path is effectively one-way — it appears in every internal
-import — so it was settled before the first line of Go. The licence split is
+Because: The module path is effectively one-way (it appears in every internal
+import), so it was settled before the first line of Go. The licence split is
 the one `docs/00-product.md` already specifies: copyleft protects the hosted
 relay, MIT keeps the embeddable guest bundle frictionless.
 Cost: A repo named `nofiltr-pos` publishing a binary called `nofiltr` is a

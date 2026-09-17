@@ -27,7 +27,7 @@ Status: pre-alpha. Nothing is built yet.
 
 ## Licence
 
-The server and terminal are licensed under **AGPL-3.0** — see [LICENSE](LICENSE).
+The server and terminal are licensed under **AGPL-3.0**. See [LICENSE](LICENSE).
 
 The guest ordering app (`web/guest/`, arriving in Phase 11) will be **MIT**: it
 is embedded in other people's pages and should be frictionless. It will carry
