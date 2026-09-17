@@ -6,42 +6,43 @@
 
 ## Current phase
 
-**Phase 01 - Go server skeleton, config, logging, embed, cross-compile**
-File: `docs/phases/phase-01.md`
+**Phase 02 - SQLite, migrations, sqlc, money type, IDs**
+File: `docs/phases/phase-02.md`. Phase 01 is complete.
 
 ## Last completed task
 
-**Phase 01, Task 4 - Embedded static serving.** New `package web` at `web/`
-(go:embed cannot reach outside its package dir). Placeholder bundles by default,
-`web/*/dist` with `-tags frontend`, because dist is gitignored and would break
-a fresh clone: ADR-025. `internal/api/static.go` mounts terminal `/`, back
-office `/backoffice/`, guest `/order/`. Fallback stops at the first dot and
-`/api/` is claimed before the mounts: ADR-026.
+**Phase 01, Task 5 - Cross-compile and prove it. Phase 01 is complete.** The
+Makefile stamps version, commit and commit date; all three show at
+`/api/v1/health`, with a fallback to the Go toolchain's own VCS stamps so
+`go run` still reports a commit (ADR-027). `docs/running.md` written for
+operators. `build_date` is the commit date, so two builds of a commit are
+byte-identical: verified by hashing two `make dist` runs, and by swapping in
+`date -u` and watching them diverge. Done-when checked on the cross-compiled
+PE32+ binary: health with real stamps, placeholder page, `CGO_ENABLED=0`.
 
-Four probes, all caught: dropping the `/api/` claim, falling back for every
-missing file, caching `index.html` forever, two mounts on one bundle. Ran live:
-three distinct bundles, deep routes, `/order` redirecting, a missing asset
-404ing, and the placeholder warning at startup.
+Writing `running.md` found a real bug: `./nofiltr -h` printed nothing, because
+`parseFlags` captures flag's output and nothing printed it. Fixed with
+`config.Usage()` (ADR-028) and a test that fails if it is empty or incomplete.
 
 ## Next task
 
-**Phase 01, Task 5 - Cross-compile and prove it.** See `docs/phases/phase-01.md`.
-`make dist` already cross-compiles; this adds commit and build date via ldflags
-into `api.BuildInfo`, whose fields already exist and are omitted while empty.
-Then `docs/running.md`. Do **not** add `-tags frontend` to `make dist` yet:
-`web/*/dist` does not exist and the build would fail. Every binary until Phase
-05 ships placeholders.
+**Phase 02, Task 1.** Read `docs/phases/phase-02.md`; this session did not.
+Nothing in Phase 01 blocks it. Two things it inherits: `Config.DataDir` is
+absolute and already created at startup, and `/api/v1/health` has a `checks.db`
+field stubbed to `unknown` that Phase 02 should make real.
 
 ## Known broken / in progress
 
 - `make` needs `sh` on PATH, so run it from Git Bash or WSL, not cmd.exe or
   PowerShell. GnuWin32 make 3.81 works from Git Bash; ezwinports ships 4.x.
-- `make run` now starts the real server on `:7777` and writes to the default
-  `data_dir`, which on Windows is `%PROGRAMDATA%\Nofiltr POS`. Override with
-  `NOFILTR_DATA_DIR`. `make migrate` fails by design until Phase 02.
-- `go test -race` needs cgo, which is banned here, so `make check` runs without
-  it. There is now concurrency to race: the serve goroutine and the log
-  writer's mutex. If CI ever gets a cgo-enabled job, this is what it is for.
+- `make run` starts the real server on `:7777`, writing to the default
+  `data_dir`. See `docs/running.md`. `make migrate` fails until Phase 02.
+- `go test -race` needs cgo, which is banned, so `make check` runs without it.
+  There is concurrency to race now: the serve goroutine and the log mutex.
+- Every binary ships placeholder frontends. Phase 05 must add `-tags frontend`
+  to `make dist`; it fails today because `web/*/dist` does not exist.
+- `make build` writes `bin/nofiltr` with no `.exe`, so a stray server on Windows
+  is killed with `taskkill /F /IM nofiltr`, without the extension.
 - The domain import test checks direct imports only. See the cost note on
   ADR-016.
 
@@ -54,7 +55,7 @@ None.
 ## Phase progress
 
 - [x] 00 — Repo skeleton, docs bootstrap, design tokens
-- [ ] 01 — Go server skeleton, config, logging, embed, cross-compile
+- [x] 01 — Go server skeleton, config, logging, embed, cross-compile
 - [ ] 02 — SQLite, migrations, sqlc, money type, IDs
 - [ ] 03 — Domain core: order events, projections, invoice series, tax
 - [ ] 04 — HTTP API, WebSocket hub, TypeScript type codegen

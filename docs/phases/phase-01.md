@@ -35,7 +35,7 @@ Phase 00.
   A build tag or empty-dir fallback so `go build` works before the frontends
   exist. Drop a placeholder `index.html` in each so the routing is testable.
 
-- [ ] **Task 5 — Cross-compile and prove it.**
+- [x] **Task 5 — Cross-compile and prove it.**
   `make dist` produces `nofiltr.exe` (windows/amd64), plus linux/amd64 and
   darwin/arm64, all `CGO_ENABLED=0`. Embed version, commit and build date via
   ldflags, exposed at `/api/v1/health`. Write `docs/running.md`: how to start it,

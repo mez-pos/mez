@@ -429,3 +429,44 @@ Cost: an extensionless asset, which some fonts and source maps manage to be,
 would be answered with the app instead of a 404. Nothing Vite emits today is
 extensionless. If that changes, test for the mount's asset directory as well as
 the extension.
+
+## ADR-027 - build_date is the commit date, not the wall clock
+2026-09 · Status: accepted
+Decision: the Makefile stamps `main.version` from `git describe --tags --always
+--dirty`, `main.commit` from `git rev-parse HEAD`, and `main.buildDate` from
+`git show -s --format=%cI HEAD`, the committer date. All three appear at
+`/api/v1/health`. When the ldflags are absent, `cmd/nofiltr/version.go` falls
+back to the VCS stamps the Go toolchain embeds by itself.
+Because: a wall-clock build date makes every build of the same commit a
+different binary, which throws away what `-trimpath` was bought for. With the
+commit date, two builds of one commit are byte-identical, so a release can be
+checked against its tag by anyone who can run the build. Verified rather than
+assumed: two consecutive `make dist` runs produced the same SHA-256, and
+swapping the commit date for `date -u` produced different ones.
+The `debug.ReadBuildInfo` fallback exists because the Makefile is not the only
+way this gets built. `go run ./cmd/nofiltr` would otherwise report version
+"dev" and no commit at all, which is the state a developer is in when they most
+need health to say what is running. It also marks a build from a dirty tree as
+"dev-dirty", the same honesty `git describe --dirty` gives the Makefile path.
+Cost: `build_date` answers "what was this built from", not "when was this built".
+For a binary a venue will run for a year, the first question is the useful one,
+but anyone debugging a stale deploy should read it as a commit date. Named as
+such in `docs/running.md`.
+
+## ADR-028 - Capturing flag output means printing the usage ourselves
+2026-09 · Status: accepted
+Decision: `config.Usage()` returns the flag documentation, and `cmd/nofiltr`
+prints it to stdout on `flag.ErrHelp` and exits 0. One `newFlagSet` builds the
+flags for both parsing and usage.
+Because: `parseFlags` sends the flag package's output to a buffer so that an
+unknown flag comes back as a wrapped error instead of being printed from inside
+a library. That capture also swallowed the usage text, so `./nofiltr -h`
+printed nothing at all and exited 0, and a code comment claimed the opposite.
+It was found by checking a line of `docs/running.md` against the binary rather
+than by a test, which is the argument for writing the operator documentation in
+the same task as the feature. `Usage()` shares `newFlagSet` with `parseFlags`
+so the two cannot end up describing different programs.
+Cost: this is the one place the server writes to stdout without going through
+slog. That is correct, since an answer to an operator who typed -h is not a log
+line, but it is an exception to the rule in `03-conventions.md` and is commented
+as one where it happens.

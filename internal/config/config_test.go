@@ -513,3 +513,29 @@ func mustAbs(t *testing.T, path string) string {
 }
 
 func quote(s string) string { return `"` + strings.ReplaceAll(s, `\`, `\\`) + `"` }
+
+// TestUsageDocumentsEverySetting guards the answer to -h.
+//
+// The flag package's output is captured so an unknown flag becomes an error
+// rather than a print from inside a library, and that capture once swallowed
+// the usage text entirely: -h printed nothing at all and exited 0. This is the
+// test that keeps it printed, and keeps it complete when a setting is added.
+func TestUsageDocumentsEverySetting(t *testing.T) {
+	text := Usage()
+
+	if text == "" {
+		t.Fatal("Usage is empty: -h would print nothing")
+	}
+	for _, key := range keys {
+		flag := "-" + flagName(key)
+		if !strings.Contains(text, flag) {
+			t.Errorf("usage does not mention %s:\n%s", flag, text)
+		}
+		if !strings.Contains(text, usage[key]) {
+			t.Errorf("usage does not describe %s", flag)
+		}
+	}
+	if !strings.Contains(text, "-config") {
+		t.Error("usage does not mention -config, the flag that points at the file")
+	}
+}

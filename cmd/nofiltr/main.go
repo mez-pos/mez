@@ -25,10 +25,6 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/web"
 )
 
-// version is stamped at build time with -ldflags "-X main.version=...".
-// See the Makefile. Phase 01 Task 5 adds the commit and the build date.
-var version = "dev"
-
 // shutdownTimeout bounds the whole shutdown, not one subsystem of it. Ten
 // seconds is long enough to finish a card payment that is already talking to a
 // terminal, and short enough that a Windows Service restart does not look hung.
@@ -41,8 +37,14 @@ const readHeaderTimeout = 10 * time.Second
 
 func main() {
 	if err := run(); err != nil {
-		// -h is a question, not a failure. flag has already printed the usage.
+		// -h is a question, not a failure. The flag package's own output is
+		// captured so that a bad flag comes back as an error rather than being
+		// printed from inside a library, which means the usage text has to be
+		// asked for and printed here. This is the one place the server writes
+		// to stdout without going through slog: it is an answer to the
+		// operator, not a log line.
 		if errors.Is(err, flag.ErrHelp) {
+			fmt.Fprintf(os.Stdout, "nofiltr %s\n\nUsage:\n%s", buildInfo().Version, config.Usage())
 			return
 		}
 		logging.Bootstrap().Error("startup failed", "error", err)
@@ -81,8 +83,12 @@ func run() (err error) {
 		err = errors.Join(err, running.shutdown(ctx, log))
 	}()
 
+	build := buildInfo()
+
 	log.Info("starting",
-		"version", version,
+		"version", build.Version,
+		"commit", build.Commit,
+		"build_date", build.BuildDate,
 		"listen_addr", cfg.ListenAddr,
 		"data_dir", cfg.DataDir,
 		"log_level", cfg.LogLevel.String(),
@@ -114,7 +120,7 @@ func run() (err error) {
 			"hint", "rebuild with -tags frontend once web/*/dist exists")
 	}
 
-	srv := api.New(cfg, log, api.BuildInfo{Version: version}, api.WithStatic(bundles))
+	srv := api.New(cfg, log, build, api.WithStatic(bundles))
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
 }

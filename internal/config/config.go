@@ -140,6 +140,19 @@ func Load() (Config, error) {
 	return load(os.Args[1:], os.LookupEnv, exeDir(), runtime.GOOS)
 }
 
+// Usage returns the flag documentation, the text -h asks for.
+//
+// It exists because parseFlags sends the flag package's own output to a buffer,
+// so that an unknown flag comes back as an error instead of being printed from
+// inside a library. That capture also swallows the usage text on -h, so the
+// entrypoint asks for it here and prints it.
+func Usage() string {
+	var out strings.Builder
+	set, _, _ := newFlagSet(&out)
+	set.PrintDefaults()
+	return out.String()
+}
+
 // load is the testable core of Load. Nothing below it reads process state, so
 // precedence can be exercised without mutating the environment.
 func load(args []string, lookup func(string) (string, bool), exeDir, goos string) (Config, error) {
@@ -251,15 +264,8 @@ func fromEnv(lookup func(string) (string, bool)) map[string]string {
 // actually passed. An unset flag must not overwrite the file or the environment
 // with its zero value, which is what fs.Visit buys over reading the pointers.
 func parseFlags(args []string) (map[string]string, string, error) {
-	set := flag.NewFlagSet("nofiltr", flag.ContinueOnError)
 	var out strings.Builder
-	set.SetOutput(&out)
-
-	dest := make(map[string]*string, len(keys))
-	for _, k := range keys {
-		dest[k] = set.String(flagName(k), "", usage[k])
-	}
-	path := set.String("config", "", "path to "+FileName+" (default: beside the binary)")
+	set, dest, path := newFlagSet(&out)
 
 	if err := set.Parse(args); err != nil {
 		if msg := strings.TrimSpace(out.String()); msg != "" {
@@ -278,6 +284,22 @@ func parseFlags(args []string) (map[string]string, string, error) {
 		}
 	})
 	return values, *path, nil
+}
+
+// newFlagSet registers every setting as a flag, writing into dest. One
+// definition serves both parsing and Usage, so the two cannot describe
+// different programs.
+func newFlagSet(out *strings.Builder) (*flag.FlagSet, map[string]*string, *string) {
+	set := flag.NewFlagSet("nofiltr", flag.ContinueOnError)
+	set.SetOutput(out)
+
+	dest := make(map[string]*string, len(keys))
+	for _, k := range keys {
+		dest[k] = set.String(flagName(k), "", usage[k])
+	}
+	path := set.String("config", "", "path to "+FileName+" (default: beside the binary)")
+
+	return set, dest, path
 }
 
 // flagName maps a config key to its flag: data_dir becomes -data-dir.

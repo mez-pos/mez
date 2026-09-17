@@ -9,7 +9,17 @@
 BIN     := nofiltr
 CMD     := ./cmd/$(BIN)
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-LDFLAGS := -s -w -X main.version=$(VERSION)
+COMMIT  := $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
+
+# The commit date, not the wall clock. Two builds of the same commit then
+# produce identical binaries, which is what makes -trimpath worth having and
+# what lets someone check that a release matches its tag. See ADR-027.
+DATE    := $(shell git show -s --format=%cI HEAD 2>/dev/null || echo unknown)
+
+LDFLAGS := -s -w \
+	-X main.version=$(VERSION) \
+	-X main.commit=$(COMMIT) \
+	-X main.buildDate=$(DATE)
 
 # Empty until Phase 00 Task 5 creates the tree. `go list` exits 0 and prints
 # nothing on an empty module, unlike `go vet` and `go test`, which exit 1. Every
