@@ -8,6 +8,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/byjoellobo/nofiltr-pos/internal/api"
+	"github.com/byjoellobo/nofiltr-pos/internal/config"
 )
 
 // TestServeFinishesInFlightRequests is the test this task exists for. Cancelling
@@ -69,7 +72,7 @@ func TestServeStopsAcceptingAfterCancel(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	served := make(chan error, 1)
-	go func() { served <- serve(ctx, quietLogger(), listener, handler(), time.Second) }()
+	go func() { served <- serve(ctx, quietLogger(), listener, apiHandler(), time.Second) }()
 
 	// Prove it is up before proving it goes down.
 	if _, err := http.Get("http://" + addr + "/"); err != nil {
@@ -123,7 +126,7 @@ func TestServeReportsALostListener(t *testing.T) {
 	listener := listen(t)
 	listener.Close()
 
-	err := serve(context.Background(), quietLogger(), listener, handler(), time.Second)
+	err := serve(context.Background(), quietLogger(), listener, apiHandler(), time.Second)
 	if err == nil {
 		t.Fatal("serve returned nil on a dead listener, want an error")
 	}
@@ -132,16 +135,18 @@ func TestServeReportsALostListener(t *testing.T) {
 	}
 }
 
-// TestHandlerIsEmptyForNow pins the seam Task 3 fills in. A route appearing here
-// by accident before internal/api exists is worth noticing.
-func TestHandlerIsEmptyForNow(t *testing.T) {
+// TestTheWiredHandlerServesHealth is the seam that used to assert a 404. It
+// exists to catch main and internal/api drifting apart: serve owns the
+// lifecycle, api owns the routes, and nothing else checks that they are
+// actually joined.
+func TestTheWiredHandlerServesHealth(t *testing.T) {
 	listener := listen(t)
 	addr := listener.Addr().String()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	served := make(chan error, 1)
-	go func() { served <- serve(ctx, quietLogger(), listener, handler(), time.Second) }()
+	go func() { served <- serve(ctx, quietLogger(), listener, apiHandler(), time.Second) }()
 
 	resp, err := http.Get("http://" + addr + "/api/v1/health")
 	if err != nil {
@@ -149,12 +154,22 @@ func TestHandlerIsEmptyForNow(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusNotFound {
-		t.Errorf("status = %d, want %d: health arrives in Task 3", resp.StatusCode, http.StatusNotFound)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want %d: the API is not wired into serve", resp.StatusCode, http.StatusOK)
+	}
+	if got := resp.Header.Get("Content-Type"); !strings.Contains(got, "application/json") {
+		t.Errorf("content-type = %q, want JSON", got)
 	}
 
 	cancel()
 	<-served
+}
+
+// apiHandler builds the same tree run() does, so these tests exercise what
+// ships rather than a stand-in.
+func apiHandler() http.Handler {
+	cfg := config.Config{ListenAddr: "127.0.0.1:0", DataDir: ".", Timezone: time.UTC}
+	return api.New(cfg, quietLogger(), api.BuildInfo{Version: version}).Handler()
 }
 
 func listen(t *testing.T) net.Listener {

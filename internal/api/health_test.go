@@ -1,0 +1,121 @@
+package api
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+)
+
+func TestHealthReportsIdentityAndUptime(t *testing.T) {
+	start := time.Date(2026, 9, 17, 9, 0, 0, 0, time.UTC)
+	clock := &stoppedClock{at: start}
+
+	s := newTestServer(t, testConfig(), WithClock(clock.now))
+	clock.advance(90 * time.Second)
+
+	resp := get(t, s, "/api/v1/health")
+
+	if resp.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.Code, http.StatusOK)
+	}
+	if got := resp.Header().Get("Content-Type"); got != "application/json; charset=utf-8" {
+		t.Errorf("content-type = %q, want JSON", got)
+	}
+
+	var body healthResponse
+	decode(t, resp, &body)
+
+	equal(t, "status", body.Status, "ok")
+	equal(t, "version", body.Version, "1.2.3")
+	equal(t, "commit", body.Commit, "abc123")
+	if !body.StartedAt.Equal(start) {
+		t.Errorf("started_at = %v, want %v", body.StartedAt, start)
+	}
+	if body.UptimeSeconds != 90 {
+		t.Errorf("uptime_seconds = %d, want 90", body.UptimeSeconds)
+	}
+}
+
+// TestHealthChecksAreUnknownForNow pins the contract the dashboard is written
+// against. Phase 02 makes db and disk real; until then they must say they do
+// not know rather than claim to be fine.
+func TestHealthChecksAreUnknownForNow(t *testing.T) {
+	resp := get(t, newTestServer(t, testConfig()), "/api/v1/health")
+
+	var body healthResponse
+	decode(t, resp, &body)
+
+	for _, tt := range []struct {
+		name string
+		got  string
+	}{
+		{"db", body.Checks.DB},
+		{"disk", body.Checks.Disk},
+		{"printer", body.Checks.Printer},
+		{"tunnel", body.Checks.Tunnel},
+	} {
+		if tt.got != CheckUnknown {
+			t.Errorf("checks.%s = %q, want %q", tt.name, tt.got, CheckUnknown)
+		}
+	}
+}
+
+// TestHealthFieldsAreSnakeCase: 03-conventions.md fixes the wire format, and
+// the frontend types are generated from these structs. Asserting the decoded Go
+// struct would pass whatever the tags said, so this reads the raw keys.
+func TestHealthFieldsAreSnakeCase(t *testing.T) {
+	resp := get(t, newTestServer(t, testConfig()), "/api/v1/health")
+
+	var raw map[string]json.RawMessage
+	decode(t, resp, &raw)
+
+	for _, key := range []string{"status", "version", "started_at", "uptime_seconds", "checks"} {
+		if _, ok := raw[key]; !ok {
+			t.Errorf("response has no %q: keys are %v", key, keysOf(raw))
+		}
+	}
+}
+
+// TestHealthOmitsUnstampedBuildInfo keeps commit:"" and build_date:"" off the
+// wire until Task 5 stamps them, so a client can tell "not built with it" from
+// "built with an empty value".
+func TestHealthOmitsUnstampedBuildInfo(t *testing.T) {
+	s := New(testConfig(), quietLogger(), BuildInfo{Version: "dev"})
+	resp := get(t, s, "/api/v1/health")
+
+	var raw map[string]json.RawMessage
+	decode(t, resp, &raw)
+
+	for _, key := range []string{"commit", "build_date"} {
+		if _, ok := raw[key]; ok {
+			t.Errorf("response carries %q, want it omitted while unstamped", key)
+		}
+	}
+}
+
+// TestHealthDoesNotTouchSubsystems is a design assertion in test form: health is
+// asked precisely when something is already hanging, so it must answer from
+// memory. The proof here is that it answers with no dependencies wired at all.
+func TestHealthAnswersWithNothingWired(t *testing.T) {
+	resp := get(t, newTestServer(t, testConfig()), "/api/v1/health")
+	if resp.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.Code, http.StatusOK)
+	}
+}
+
+func decode(t *testing.T, resp *httptest.ResponseRecorder, into any) {
+	t.Helper()
+	if err := json.Unmarshal(resp.Body.Bytes(), into); err != nil {
+		t.Fatalf("decoding %q: %v", resp.Body.String(), err)
+	}
+}
+
+func keysOf(m map[string]json.RawMessage) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}

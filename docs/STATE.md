@@ -11,28 +11,29 @@ File: `docs/phases/phase-01.md`
 
 ## Last completed task
 
-**Phase 01, Task 2 - Logging and lifecycle.** New `internal/logging` (ADR-020,
-a ninth package because Phase 12's Windows Service cannot import `cmd/`; the
-tree in `01-architecture.md` was updated). One handler over stdout and a
-hand-written rotating file log, 8 MB and five kept (ADR-021). Timestamps are
-UTC. A seventh config key, `log_format` = auto|json|text, decides the handler;
-auto is text on a terminal, JSON otherwise.
+**Phase 01, Task 3 - HTTP server and health.** `internal/api`: `ServeMux` with
+Go 1.22 method patterns, `GET /api/v1/health` returning version, uptime and four
+`unknown` checks. Middleware, outermost first: requestID, accessLog,
+recoverPanic, cors. 404 and 405 are routed deliberately so every response is the
+`{"error":{...}}` envelope (ADR-024). An eighth config key, `dev_origin`,
+gates CORS; empty means no CORS headers at all, so a shipped binary has none
+(ADR-023). `main` wires it; `serve` is unchanged.
 
-`cmd/nofiltr/main.go` is now real: load, `MkdirAll`, logger, bind, serve,
-SIGINT/SIGTERM, drain, then close everything in reverse under one 10s deadline
-(ADR-022). `handler()` returns an empty mux, the seam Task 3 fills. Ran for real
-on Windows: binds, logs to both sinks, 404s, and a second instance on the same
-port exits 1 naming the address; that run also caught a duplicated `venue_id` on
-the startup line, now fixed. Three failure probes, all caught: forward shutdown
-order, draining with the cancelled context, a reopened log forgetting its size.
+Four failure probes. Three caught their bug: reflecting any Origin, trusting an
+inbound `X-Request-Id`, dropping the 405 route. The fourth, swapping accessLog
+and recoverPanic, **passed** - the ordering was undertested, so `middleware()`
+was extracted and a test now wraps a panicking handler in the production order.
+Ran live: health, 405, 404, preflight from the dev origin, nothing from any
+other, request ids matching between header and log.
 
 ## Next task
 
-**Phase 01, Task 3 - HTTP server and health.** See `docs/phases/phase-01.md`.
-`internal/api` is still only a `doc.go`. Replace `handler()` in
-`cmd/nofiltr/main.go` with the real chain; `TestHandlerIsEmptyForNow` asserts
-the 404 and is meant to be rewritten, not deleted quietly. `serve` already owns
-the lifecycle, so the task is routing and middleware only.
+**Phase 01, Task 4 - Embedded static serving.** See `docs/phases/phase-01.md`.
+Two things it inherits: the `/` catch-all in `internal/api/routes` answers 404
+for everything unmatched, and Task 4 must take that over for the static mounts
+without swallowing unknown `/api/v1/...` paths, which keep the JSON envelope.
+`web/*/dist` does not exist yet, so the empty-dir fallback is the first thing
+to settle or `go build` breaks.
 
 ## Known broken / in progress
 

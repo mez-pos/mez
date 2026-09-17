@@ -334,3 +334,51 @@ an exit-1 with a message instead of an error racing out of a goroutine.
 Cost: a subsystem that ignores its context can still consume the whole budget and
 leave the ones below it unclosed. That is a bug in the subsystem, and the shared
 deadline is what makes it visible rather than merely slow.
+
+## ADR-023 - CORS is opt-in through dev_origin, not a hardcoded localhost
+2026-09 · Status: accepted
+Decision: an eighth config key, `dev_origin`, names the one browser origin
+allowed to call the API cross-site. Empty is the default and means no CORS
+headers at all. The value is validated as an origin: http or https, a host, and
+no path, query or fragment. A developer running Vite sets
+`NOFILTR_DEV_ORIGIN=http://localhost:5173`.
+Because: Phase 01 Task 3 asks for "CORS for the dev Vite origin only", and
+nothing at runtime can tell a development machine from a venue's counter. The
+alternatives were both worse. Hardcoding `http://localhost:5173` ships a
+permanent hole: any page served from that port on the cashier's machine could
+read the till, and the terminal has no auth until Phase 05. Inferring dev from
+`log_level = debug` conflates two unrelated settings, so turning on debug
+logging during a support call would quietly widen the API's exposure. The path
+check exists because browsers compare origins by scheme, host and port exactly,
+so `http://localhost:5173/` with its trailing slash is a rule that silently
+never matches, and a rule that never matches is worse than no rule.
+Cost: a developer who forgets the variable gets a CORS error in the browser
+rather than a working dev server, which is a one-line fix but an unfamiliar one.
+Documented in `docs/running.md` when Task 5 writes it.
+
+## ADR-024 - Every response is the envelope, and the chain has one order
+2026-09 · Status: accepted
+Decision: `/api/v1/health` is registered twice, as `GET /api/v1/health` and as
+`/api/v1/health`, and there is a `/` catch-all. The second and third exist so a
+405 and a 404 answer in the `{"error": {...}}` shape rather than net/http's
+plain text. The middleware chain is fixed, outermost first: requestID,
+accessLog, recoverPanic, cors. An inbound `X-Request-Id` is honoured only if it
+is printable ASCII no longer than 64 bytes. `recorder` implements `Unwrap`,
+`Flush` and `Hijack`.
+Because: `03-conventions.md` fixes one error shape for the whole API, and a
+client that parses JSON on every path except the two most common failures is a
+client with a bug waiting. Go 1.22 pattern precedence makes the double
+registration the cheapest way to control 405 without a router dependency.
+The chain order is the part worth recording: accessLog must sit outside
+recoverPanic, because a panic unwinds past its deferred line before recovery
+writes the 500, and the log then claims 200 for a request that failed. That was
+verified by swapping the two and watching the assertion turn into
+"status = 200, want 500". Request ids are validated because they land in a log
+file a human reads, and an unchecked header containing a newline lets a caller
+forge a log line. `recorder` implements the three optional interfaces because a
+ResponseWriter wrapper that hides the underlying writer is exactly how the
+Phase 04 WebSocket upgrade breaks, quietly, three phases from now.
+Cost: two registrations per path that needs a controlled 405, which is
+repetitive once there are twenty endpoints. Revisit with a small helper then,
+not with a router. The 64-byte id limit rejects a few legitimate formats, such
+as a W3C traceparent with baggage appended; nothing we run emits one today.

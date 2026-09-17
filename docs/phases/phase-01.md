@@ -23,7 +23,7 @@ Phase 00.
   SIGINT/SIGTERM, graceful shutdown with a timeout. Every subsystem gets a
   `Close()` and is shut down in reverse order.
 
-- [ ] **Task 3 — HTTP server and health.**
+- [x] **Task 3 — HTTP server and health.**
   `internal/api`. stdlib `ServeMux` with Go 1.22 method routing. Middleware
   chain: request ID, structured access log, panic recovery, CORS for the dev
   Vite origin only. `GET /api/v1/health` returning version, uptime, and a

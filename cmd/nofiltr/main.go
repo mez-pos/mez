@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/byjoellobo/nofiltr-pos/internal/api"
 	"github.com/byjoellobo/nofiltr-pos/internal/config"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
 )
@@ -99,16 +100,9 @@ func run() (err error) {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	return serve(ctx, log, listener, handler(), shutdownTimeout)
-}
+	srv := api.New(cfg, log, api.BuildInfo{Version: version})
 
-// handler is the routing tree. It is empty in Task 2: Task 3 builds
-// internal/api and this becomes the middleware chain and /api/v1/health.
-//
-// An empty mux answers 404 to everything, which is the honest answer for a
-// server that has no routes yet and is enough to prove the socket is live.
-func handler() http.Handler {
-	return http.NewServeMux()
+	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
 }
 
 // serve runs the HTTP server until ctx is cancelled, then stops accepting and

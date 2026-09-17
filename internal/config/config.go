@@ -42,6 +42,7 @@ const (
 	keyVenueID    = "venue_id"
 	keyRelayURL   = "relay_url"
 	keyTimezone   = "timezone"
+	keyDevOrigin  = "dev_origin"
 )
 
 // Log formats. Auto is text when stdout is a terminal and JSON otherwise, which
@@ -63,6 +64,7 @@ var keys = []string{
 	keyVenueID,
 	keyRelayURL,
 	keyTimezone,
+	keyDevOrigin,
 }
 
 var usage = map[string]string{
@@ -73,6 +75,7 @@ var usage = map[string]string{
 	keyVenueID:    "identifier for this venue, used in logs and on the relay",
 	keyRelayURL:   "outbound relay endpoint; empty disables the relay",
 	keyTimezone:   "IANA timezone for rendering, for example Asia/Kolkata",
+	keyDevOrigin:  "browser origin allowed to call the API cross-site; empty disables CORS",
 }
 
 // Config is the resolved, validated server configuration.
@@ -108,7 +111,16 @@ type Config struct {
 	// Timezone is the venue's local time, used to render timestamps and to
 	// decide which business day a shift belongs to. Stored times stay UTC.
 	Timezone *time.Location
+
+	// DevOrigin is the one browser origin allowed to call this API cross-site,
+	// which in practice means the Vite dev server. Empty, the default, means no
+	// CORS headers at all: a shipped binary should not be reachable from a page
+	// the venue did not open. See ADR-023.
+	DevOrigin string
 }
+
+// CORSEnabled reports whether a development origin is configured.
+func (c Config) CORSEnabled() bool { return c.DevOrigin != "" }
 
 // LogDir is where the rotating file log lives.
 func (c Config) LogDir() string { return filepath.Join(c.DataDir, "logs") }
@@ -173,6 +185,7 @@ func defaults(lookup func(string) (string, bool), goos string) map[string]string
 		keyVenueID:    "",
 		keyRelayURL:   "",
 		keyTimezone:   "Local",
+		keyDevOrigin:  "",
 	}
 }
 
@@ -303,6 +316,9 @@ func build(raw map[string]string) (Config, error) {
 	if cfg.Timezone, err = validTimezone(raw[keyTimezone]); err != nil {
 		return Config{}, err
 	}
+	if cfg.DevOrigin, err = validOrigin(raw[keyDevOrigin]); err != nil {
+		return Config{}, err
+	}
 	return cfg, nil
 }
 
@@ -376,6 +392,29 @@ func validRelayURL(v string) error {
 		return fmt.Errorf("%s %q: missing host", keyRelayURL, v)
 	}
 	return nil
+}
+
+// validOrigin checks that dev_origin is an origin and not a URL. Browsers
+// compare the Origin header by scheme, host and port exactly, so a trailing
+// slash or a path is a rule that silently never matches.
+func validOrigin(v string) (string, error) {
+	origin := strings.TrimSpace(v)
+	if origin == "" {
+		return "", nil
+	}
+	u, err := url.Parse(origin)
+	if err != nil {
+		return "", fmt.Errorf("%s %q: %w", keyDevOrigin, v, err)
+	}
+	switch {
+	case u.Scheme != "http" && u.Scheme != "https":
+		return "", fmt.Errorf("%s %q: scheme must be http or https", keyDevOrigin, v)
+	case u.Host == "":
+		return "", fmt.Errorf("%s %q: missing host", keyDevOrigin, v)
+	case u.Path != "" || u.RawQuery != "" || u.Fragment != "":
+		return "", fmt.Errorf("%s %q: want an origin with no path, for example http://localhost:5173", keyDevOrigin, v)
+	}
+	return u.Scheme + "://" + u.Host, nil
 }
 
 func validTimezone(v string) (*time.Location, error) {

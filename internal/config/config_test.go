@@ -36,6 +36,8 @@ func TestLoadPrecedence(t *testing.T) {
 				equal(t, "venue_id", c.VenueID, "")
 				equal(t, "relay_url", c.RelayURL, "")
 				equal(t, "relay_enabled", c.RelayEnabled(), false)
+				equal(t, "dev_origin", c.DevOrigin, "")
+				equal(t, "cors_enabled", c.CORSEnabled(), false)
 				equal(t, "timezone", c.Timezone, time.Local)
 				equal(t, "log_dir", c.LogDir(), filepath.Join(c.DataDir, "logs"))
 			},
@@ -241,6 +243,21 @@ func TestLoadRejects(t *testing.T) {
 			want: "missing host",
 		},
 		{
+			name: "dev origin with a path",
+			env:  map[string]string{"NOFILTR_DEV_ORIGIN": "http://localhost:5173/app"},
+			want: "want an origin with no path",
+		},
+		{
+			name: "dev origin with a trailing slash never matches a browser",
+			env:  map[string]string{"NOFILTR_DEV_ORIGIN": "http://localhost:5173/"},
+			want: "want an origin with no path",
+		},
+		{
+			name: "dev origin with a scheme a browser will not send",
+			env:  map[string]string{"NOFILTR_DEV_ORIGIN": "ws://localhost:5173"},
+			want: "scheme must be http or https",
+		},
+		{
 			name: "unknown timezone",
 			env:  map[string]string{"NOFILTR_TIMEZONE": "Mars/Olympus"},
 			want: "unknown timezone",
@@ -409,6 +426,7 @@ func TestEveryKeyIsReachable(t *testing.T) {
 		keyVenueID:    "blr-01",
 		keyRelayURL:   "wss://relay.example.com/v1",
 		keyTimezone:   "Asia/Kolkata",
+		keyDevOrigin:  "http://localhost:5173",
 	}
 	if len(sample) != len(keys) {
 		t.Fatalf("sample covers %d keys, the package has %d: add the new one here", len(sample), len(keys))
@@ -457,6 +475,8 @@ func assertKey(t *testing.T, key, want string, cfg Config, err error) {
 		equal(t, key, cfg.RelayURL, want)
 	case keyTimezone:
 		equal(t, key, cfg.Timezone.String(), want)
+	case keyDevOrigin:
+		equal(t, key, cfg.DevOrigin, want)
 	default:
 		t.Fatalf("key %q has no assertion: add one", key)
 	}
