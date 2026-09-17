@@ -60,11 +60,11 @@ ifeq ($(strip $(PKGS)),)
 	@echo "  build skipped (no packages yet)"
 else
 	@if [ -d "$(CMD)" ]; then \
-		mkdir -p bin; \
-		go build -trimpath -ldflags "$(LDFLAGS)" -o bin/$(BIN) $(CMD); \
+		mkdir -p bin && \
+		go build -trimpath -ldflags "$(LDFLAGS)" -o bin/$(BIN) $(CMD) && \
 		echo "  build bin/$(BIN)"; \
 	else \
-		go build ./...; \
+		go build ./... && \
 		echo "  build ok (no $(CMD) yet)"; \
 	fi
 endif
