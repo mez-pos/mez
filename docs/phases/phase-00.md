@@ -23,7 +23,7 @@ Nothing.
   opening every file. Do not transcribe the designs into prose — the files are
   the record. Commit.
 
-- [ ] **Task 3 — Verify and complete the tokens.**
+- [x] **Task 3 — Verify and complete the tokens.**
   Open the design reference. Check every value in `docs/design/tokens.md` against
   it. Fill in anything the doc marks as "to be defined" — derived text colours,
   hairline, danger. Add any token the designs use that the doc is missing.

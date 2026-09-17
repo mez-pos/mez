@@ -136,3 +136,22 @@ out to be single-page prototypes where each screen is a `<sc-if value="{{ s_x
 }}">` block, which gives a stable identifier to index on.
 Cost: Line numbers drift if the archive is ever re-exported. INDEX.md says so
 and gives the grep that recovers them.
+
+## ADR-013 - Tokens corrected from the design, rules left alone
+2026-09 · Status: accepted
+Decision: Phase 00 Task 3 corrected three factual token values against the
+archived design (`--paper` `#FBF7EF` to `#F4F1E9`; radius 0/4/8/12 to 3px and
+2px; hairline "12% of primary" to 7% on ink) and added the tokens the design
+uses that the doc lacked: ink and paper surface ladders, five-step text ladders
+per surface, a second vermilion for paper, per-surface sage/gold/danger,
+`--slate` `#7E86A8`, and the four paper status chip triads. Three *rules* the
+design contradicts were left unchanged and recorded under "Unresolved
+conflicts" instead: the 4px spacing scale, the 13-15px body minimum, and the
+guest 16px minimum.
+Because: a wrong hex is a fact and the design settles it. A spacing scale or a
+touch-size floor is a deliberate constraint, and a prototype rendered for a
+desktop browser is weak evidence against an ergonomics rule for a gloved hand
+on a 12-inch tablet under glare. CLAUDE.md says to write the case and stop
+rather than switch unilaterally.
+Cost: `tokens.md` now carries three open conflicts that Phase 05 must settle
+before it can generate `tokens.css`.

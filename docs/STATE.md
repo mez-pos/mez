@@ -11,27 +11,29 @@ File: `docs/phases/phase-00.md`
 
 ## Last completed task
 
-**Phase 00, Task 2 — Archive the design reference.** The copy step was already
-done before this session. Wrote `docs/design/reference/INDEX.md`: 35 screens
-across three surfaces, each keyed by its `sc-if` state token and line number,
-all verified against source. Ticked Tasks 1 and 2 in `phase-00.md`.
+**Phase 00, Task 3 - Verify and complete the tokens.** Measured every colour,
+size, radius and gap in the design archive by frequency and rewrote
+`docs/design/tokens.md` against it. Filled all five "to be defined" tokens,
+corrected `--paper`, radius and hairline, and added what the doc lacked
+(surface ladders, per-surface text ladders, a second vermilion for paper,
+`--slate`, paper status chip triads). All 41 hexes verified against source.
 
-**`claude-design/` is fully archived and already gone. Safe to delete.**
+**Three conflicts are left open for you**, in `tokens.md` under "Unresolved
+conflicts": the 4px spacing scale, the 13-15px body minimum, and the guest 16px
+minimum. The design contradicts all three. ADR-013 says why they were flagged
+rather than overwritten. Phase 05 cannot generate `tokens.css` until settled.
 
 ## Next task
 
-**Phase 00, Task 3 — Verify and complete the tokens.** Check every value in
-`docs/design/tokens.md` against the reference and fill what it marks "to be
-defined" (derived text colours, hairline, danger). Use `INDEX.md` to open only
-the screens needed; never read the reference folder wholesale.
+**Phase 00, Task 4 - Makefile and CI.** `make` 3.81 is installed via winget
+under "C:/Program Files (x86)/GnuWin32/bin" but is not on PATH in an
+already-running shell, so use a fresh terminal. 3.81 is old; ezwinports ships
+4.x if it chokes.
 
 ## Known broken / in progress
 
-- **`make` is not installed on this dev machine** (no `make`, `mingw32-make` or
-  `nmake`). Phase 00 Task 4 is blocked until one is: `winget install
-  GnuWin32.Make`, or ezwinports. Linux CI is unaffected.
-- No `Makefile` or CI workflow yet (both Task 4), so `make check` cannot run.
-  Work so far is verified with `gofmt -l`, `go vet ./...`, `go build ./...`.
+- No `Makefile` or CI workflow yet (both Task 4), so `make check` still cannot
+  run. Work so far is verified with `gofmt -l`, `go vet ./...`, `go build ./...`.
 - `go vet ./...` exits 1 on an empty module ("matched no packages"). Task 4's
   `check` target must tolerate that, or Task 5 must land first.
 
