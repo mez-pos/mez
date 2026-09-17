@@ -263,3 +263,74 @@ Cost: a config file carrying a key for a future version fails the whole load
 rather than being ignored, so adding a setting means shipping the code before
 the file. Correct for a single self-hosted binary; revisit only if configs ever
 have to be forward-compatible across versions.
+
+## ADR-020 - internal/logging is a ninth package, and log_format a seventh key
+2026-09 · Status: accepted
+Decision: logging setup lives in `internal/logging`, not in `cmd/nofiltr`. The
+repository layout in `01-architecture.md` named eight internal packages; this
+adds one, and the tree in that document has been updated to match. A seventh
+config key, `log_format` (`auto`, `json`, `text`), decides the handler, with
+`auto` meaning text when stdout is a character device and JSON otherwise. Log
+timestamps are written in UTC regardless of the venue's timezone.
+Because: Phase 12 wraps this binary as a Windows Service in `internal/service`,
+and a Go main package cannot be imported, so leaving the setup in `cmd/nofiltr`
+guarantees a move later. Doing it now costs one directory; doing it in Phase 12
+costs a move plus whatever has accumulated on top. `log_format` exists because
+Phase 01 Task 2 asks for "JSON in production, text in dev" and nothing in the
+configuration could tell those apart. Terminal detection is a guess, so it is
+only ever the default and an operator can override it. UTC because log lines are
+read next to database rows, which `03-conventions.md` stores in UTC, and a venue
+trading through a daylight-saving change would otherwise produce an hour of
+ambiguous timestamps.
+Cost: one more package in the graph, and `internal/logging` imports
+`internal/config`, which makes the logger specific to this application rather
+than reusable. Acceptable: it is `internal/`, and the alternative was two enums
+for one setting. The rotation policy is constants, not configuration, so a venue
+that wants different retention needs a code change until the Phase 10 scheduler
+takes it over.
+
+## ADR-021 - The rotating log is written, not depended on
+2026-09 · Status: accepted
+Decision: `internal/logging/rotate.go` is a size-based rotating `io.WriteCloser`:
+at 8 MB the live log becomes `nofiltr.log.1`, the previous `.1` becomes `.2`, and
+anything past five is deleted. It closes the file before renaming, appends on
+restart rather than truncating, and reopens after a failed rotation instead of
+giving up. No `lumberjack` or equivalent.
+Because: it is about eighty lines of standard library, and `03-conventions.md`
+sets the dependency bar at an ADR plus a maintenance commitment. Numbered
+suffixes rather than timestamps because the question a support call asks is
+"what happened just before this", and `.1` answers it without anyone parsing a
+filename. Closing before renaming is the Windows detail that matters: a rotation
+that works on Linux and fails on the machine under a counter is exactly the
+failure this project keeps trying to avoid. Appending on restart keeps the lines
+written just before a crash, which are the ones worth having. A failed rotation
+reopens and keeps writing because the venue is mid-service and an oversized log
+is better than no log.
+Cost: no compression and no age-based expiry, so a quiet venue keeps six files
+that may be months old, and a busy one loses history faster than a time-based
+policy would. `01-architecture.md` gives log rotation to the scheduler; when
+that lands it should drive this writer rather than replace it.
+
+## ADR-022 - Shutdown is a stack, and it does not stop at the first failure
+2026-09 · Status: accepted
+Decision: `cmd/nofiltr` keeps a stack of started subsystems and closes them in
+reverse order under one 10-second deadline shared by all of them. A close that
+fails is logged and joined into the returned error, and the ones below it still
+run. The HTTP drain gets a fresh context, never the cancelled one that triggered
+the shutdown. The listener is bound in `run`, before anything is announced.
+Because: the logger is opened first and has to close last, since everything above
+it needs somewhere to report what went wrong on the way down. One failure must
+not strand the subsystems below, because the next thing that happens on that
+machine is the operator starting the binary again and finding the port or the
+database still held. The deadline is shared rather than per-subsystem so that one
+hung close cannot turn shutdown into subsystems times the timeout, which on a
+venue PC is the difference between a slow restart and one that looks hung. The
+fresh drain context is the subtle one: passing the cancelled context makes
+`Shutdown` return immediately and kills in-flight requests, which is the opposite
+of graceful, and a cashier who pressed Charge mid-restart must see that payment
+finish or fail rather than vanish. Binding early turns "port already in use",
+the likeliest startup failure on a machine still running the old version, into
+an exit-1 with a message instead of an error racing out of a goroutine.
+Cost: a subsystem that ignores its context can still consume the whole budget and
+leave the ones below it unclosed. That is a bug in the subsystem, and the shared
+deadline is what makes it visible rather than merely slow.

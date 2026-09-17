@@ -69,6 +69,7 @@ scale, and every extra service is a support ticket from a cafe owner.
   relay/            the optional cloud relay
 /internal
   config/           env + file config, sane defaults
+  logging/          slog setup, rotating file log        (added: ADR-020)
   db/               sqlc output, migrations, connection setup
   domain/           PURE GO. no http, no sql. events, projections, money, tax
   api/              http handlers, request/response types

@@ -38,9 +38,19 @@ const (
 	keyListenAddr = "listen_addr"
 	keyDataDir    = "data_dir"
 	keyLogLevel   = "log_level"
+	keyLogFormat  = "log_format"
 	keyVenueID    = "venue_id"
 	keyRelayURL   = "relay_url"
 	keyTimezone   = "timezone"
+)
+
+// Log formats. Auto is text when stdout is a terminal and JSON otherwise, which
+// is the difference between a developer reading lines and a support engineer
+// grepping a file. internal/logging is what acts on these.
+const (
+	LogFormatAuto = "auto"
+	LogFormatJSON = "json"
+	LogFormatText = "text"
 )
 
 // keys is every setting this program understands. A key outside it is a typo,
@@ -49,6 +59,7 @@ var keys = []string{
 	keyListenAddr,
 	keyDataDir,
 	keyLogLevel,
+	keyLogFormat,
 	keyVenueID,
 	keyRelayURL,
 	keyTimezone,
@@ -58,6 +69,7 @@ var usage = map[string]string{
 	keyListenAddr: "address to listen on, host:port with a numeric port",
 	keyDataDir:    "directory holding the database, logs and backups",
 	keyLogLevel:   "debug, info, warn or error",
+	keyLogFormat:  "auto, json or text; auto is text on a terminal, json otherwise",
 	keyVenueID:    "identifier for this venue, used in logs and on the relay",
 	keyRelayURL:   "outbound relay endpoint; empty disables the relay",
 	keyTimezone:   "IANA timezone for rendering, for example Asia/Kolkata",
@@ -79,6 +91,11 @@ type Config struct {
 
 	// LogLevel is the minimum level written to stdout and the file log.
 	LogLevel slog.Level
+
+	// LogFormat is auto, json or text. It is a string rather than a type
+	// because this package is a leaf and the handler that acts on it lives in
+	// internal/logging.
+	LogFormat string
 
 	// VenueID identifies this venue in logs and to the relay. May be empty
 	// until Phase 02 provisions one.
@@ -152,6 +169,7 @@ func defaults(lookup func(string) (string, bool), goos string) map[string]string
 		keyListenAddr: ":7777",
 		keyDataDir:    defaultDataDir(lookup, goos),
 		keyLogLevel:   "info",
+		keyLogFormat:  LogFormatAuto,
 		keyVenueID:    "",
 		keyRelayURL:   "",
 		keyTimezone:   "Local",
@@ -276,6 +294,9 @@ func build(raw map[string]string) (Config, error) {
 	if cfg.LogLevel, err = validLevel(raw[keyLogLevel]); err != nil {
 		return Config{}, err
 	}
+	if cfg.LogFormat, err = validFormat(raw[keyLogFormat]); err != nil {
+		return Config{}, err
+	}
 	if err = validRelayURL(cfg.RelayURL); err != nil {
 		return Config{}, err
 	}
@@ -325,6 +346,17 @@ func validLevel(v string) (slog.Level, error) {
 		return level, fmt.Errorf("%s %q: want debug, info, warn or error", keyLogLevel, v)
 	}
 	return level, nil
+}
+
+func validFormat(v string) (string, error) {
+	format := strings.ToLower(strings.TrimSpace(v))
+	switch format {
+	case LogFormatAuto, LogFormatJSON, LogFormatText:
+		return format, nil
+	default:
+		return "", fmt.Errorf("%s %q: want %s, %s or %s",
+			keyLogFormat, v, LogFormatAuto, LogFormatJSON, LogFormatText)
+	}
 }
 
 func validRelayURL(v string) error {

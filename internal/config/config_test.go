@@ -32,6 +32,7 @@ func TestLoadPrecedence(t *testing.T) {
 				equal(t, "listen_addr", c.ListenAddr, ":7777")
 				equal(t, "data_dir", c.DataDir, mustAbs(t, filepath.Join(".", "data")))
 				equal(t, "log_level", c.LogLevel, slog.LevelInfo)
+				equal(t, "log_format", c.LogFormat, LogFormatAuto)
 				equal(t, "venue_id", c.VenueID, "")
 				equal(t, "relay_url", c.RelayURL, "")
 				equal(t, "relay_enabled", c.RelayEnabled(), false)
@@ -220,6 +221,11 @@ func TestLoadRejects(t *testing.T) {
 			want: "must not be empty",
 		},
 		{
+			name: "unknown log format",
+			env:  map[string]string{"NOFILTR_LOG_FORMAT": "xml"},
+			want: "want auto, json or text",
+		},
+		{
 			name: "unknown log level",
 			env:  map[string]string{"NOFILTR_LOG_LEVEL": "chatty"},
 			want: "want debug, info, warn or error",
@@ -399,6 +405,7 @@ func TestEveryKeyIsReachable(t *testing.T) {
 		keyListenAddr: ":7001",
 		keyDataDir:    filepath.Join("tmp", "nofiltr"),
 		keyLogLevel:   "warn",
+		keyLogFormat:  "text",
 		keyVenueID:    "blr-01",
 		keyRelayURL:   "wss://relay.example.com/v1",
 		keyTimezone:   "Asia/Kolkata",
@@ -442,6 +449,8 @@ func assertKey(t *testing.T, key, want string, cfg Config, err error) {
 		equal(t, key, cfg.DataDir, mustAbs(t, want))
 	case keyLogLevel:
 		equal(t, key, cfg.LogLevel, slog.LevelWarn)
+	case keyLogFormat:
+		equal(t, key, cfg.LogFormat, want)
 	case keyVenueID:
 		equal(t, key, cfg.VenueID, want)
 	case keyRelayURL:

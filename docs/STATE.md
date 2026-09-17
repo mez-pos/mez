@@ -11,34 +11,39 @@ File: `docs/phases/phase-01.md`
 
 ## Last completed task
 
-**Phase 01, Task 1 - Config.** `internal/config`: `config.go` plus `toml.go`, a
-flat-subset TOML reader written rather than depended on (ADR-018). Precedence is
-defaults → `config.toml` beside the binary → `NOFILTR_*` → flags; all six fields
-reach through every layer, and it boots with no file. `Config` carries parsed
-values, not strings: `slog.Level`, `*time.Location`, an absolute `DataDir`. Bad
-input stops the binary at startup (ADR-019), and `time/tzdata` is embedded so
-named zones resolve on a machine with no Go install (ADR-017).
-`load(args, lookupEnv, exeDir, goos)` is the testable core, so precedence and
-both platform defaults run without touching process state. 92.7% coverage, and
-both claims above were proved by making the tests fail: swapping two merge
-lines, and dropping the tzdata import under a bogus `GOROOT`.
+**Phase 01, Task 2 - Logging and lifecycle.** New `internal/logging` (ADR-020,
+a ninth package because Phase 12's Windows Service cannot import `cmd/`; the
+tree in `01-architecture.md` was updated). One handler over stdout and a
+hand-written rotating file log, 8 MB and five kept (ADR-021). Timestamps are
+UTC. A seventh config key, `log_format` = auto|json|text, decides the handler;
+auto is text on a terminal, JSON otherwise.
+
+`cmd/nofiltr/main.go` is now real: load, `MkdirAll`, logger, bind, serve,
+SIGINT/SIGTERM, drain, then close everything in reverse under one 10s deadline
+(ADR-022). `handler()` returns an empty mux, the seam Task 3 fills. Ran for real
+on Windows: binds, logs to both sinks, 404s, and a second instance on the same
+port exits 1 naming the address; that run also caught a duplicated `venue_id` on
+the startup line, now fixed. Three failure probes, all caught: forward shutdown
+order, draining with the cancelled context, a reopened log forgetting its size.
 
 ## Next task
 
-**Phase 01, Task 2 - Logging and lifecycle.** See `docs/phases/phase-01.md`. It
-replaces the placeholder `cmd/nofiltr/main.go`, the first consumer of
-`config.Load`. Two inherited details: `Config.LogDir()` returns `data_dir/logs`
-and nothing creates it yet, and `Load` wraps `flag.ErrHelp` on `-h`, so main
-should `errors.Is` it and exit 0 rather than report a failure.
+**Phase 01, Task 3 - HTTP server and health.** See `docs/phases/phase-01.md`.
+`internal/api` is still only a `doc.go`. Replace `handler()` in
+`cmd/nofiltr/main.go` with the real chain; `TestHandlerIsEmptyForNow` asserts
+the 404 and is meant to be rewritten, not deleted quietly. `serve` already owns
+the lifecycle, so the task is routing and middleware only.
 
 ## Known broken / in progress
 
 - `make` needs `sh` on PATH, so run it from Git Bash or WSL, not cmd.exe or
   PowerShell. GnuWin32 make 3.81 works from Git Bash; ezwinports ships 4.x.
-- `make run` starts the placeholder `main`: it logs a version and exits, and
-  reads no config until Task 2. `make migrate` fails by design until Phase 02.
+- `make run` now starts the real server on `:7777` and writes to the default
+  `data_dir`, which on Windows is `%PROGRAMDATA%\Nofiltr POS`. Override with
+  `NOFILTR_DATA_DIR`. `make migrate` fails by design until Phase 02.
 - `go test -race` needs cgo, which is banned here, so `make check` runs without
-  it. Nothing is concurrent yet; revisit at the hub in Phase 04.
+  it. There is now concurrency to race: the serve goroutine and the log
+  writer's mutex. If CI ever gets a cgo-enabled job, this is what it is for.
 - The domain import test checks direct imports only. See the cost note on
   ADR-016.
 

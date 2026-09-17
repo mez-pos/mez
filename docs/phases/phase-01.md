@@ -17,7 +17,7 @@ Phase 00.
   `log_level`, `venue_id`, `relay_url` (optional, empty = disabled),
   `timezone`. Must work with **no config file present**. Tests for precedence.
 
-- [ ] **Task 2 — Logging and lifecycle.**
+- [x] **Task 2 — Logging and lifecycle.**
   `log/slog` to stdout, JSON in production, text in dev. A rotating file log in
   `data_dir/logs`. `cmd/nofiltr/main.go`: build the server, listen, handle
   SIGINT/SIGTERM, graceful shutdown with a timeout. Every subsystem gets a
