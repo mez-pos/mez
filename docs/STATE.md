@@ -11,31 +11,34 @@ File: `docs/phases/phase-01.md`
 
 ## Last completed task
 
-**Phase 00, Task 5 - Folder skeleton. Phase 00 is complete.** Created the tree
-from `docs/01-architecture.md`: `cmd/{nofiltr,relay}`, eight `internal/*`
-packages each with a `doc.go` stating its responsibility and import rules, plus
-`web/` and `build/`. Added `internal/domain/imports_test.go` (ADR-016), which
-walks the domain subtree and fails on `internal/db`, `internal/api`, `net/http`
-and `database/sql`. It was verified by making it fail, not just pass: probes at
-the top level and nested in a subpackage were both caught, and it refuses to
-pass if it parses zero files.
-
-`make check` now does real work instead of skipping. `make dist` produces
-verified PE32+, static ELF and Mach-O arm64 binaries, `CGO_ENABLED=0` confirmed
-in the build info.
+**Phase 01, Task 1 - Config.** `internal/config`: `config.go` plus `toml.go`, a
+flat-subset TOML reader written rather than depended on (ADR-018). Precedence is
+defaults → `config.toml` beside the binary → `NOFILTR_*` → flags; all six fields
+reach through every layer, and it boots with no file. `Config` carries parsed
+values, not strings: `slog.Level`, `*time.Location`, an absolute `DataDir`. Bad
+input stops the binary at startup (ADR-019), and `time/tzdata` is embedded so
+named zones resolve on a machine with no Go install (ADR-017).
+`load(args, lookupEnv, exeDir, goos)` is the testable core, so precedence and
+both platform defaults run without touching process state. 92.7% coverage, and
+both claims above were proved by making the tests fail: swapping two merge
+lines, and dropping the tzdata import under a bogus `GOROOT`.
 
 ## Next task
 
-**Phase 01, Task 1.** See `docs/phases/phase-01.md`. `cmd/nofiltr/main.go` and
-`cmd/relay/main.go` currently hold placeholder `main` functions that log a
-version and exit; Phase 01 replaces the first one.
+**Phase 01, Task 2 - Logging and lifecycle.** See `docs/phases/phase-01.md`. It
+replaces the placeholder `cmd/nofiltr/main.go`, the first consumer of
+`config.Load`. Two inherited details: `Config.LogDir()` returns `data_dir/logs`
+and nothing creates it yet, and `Load` wraps `flag.ErrHelp` on `-h`, so main
+should `errors.Is` it and exit 0 rather than report a failure.
 
 ## Known broken / in progress
 
 - `make` needs `sh` on PATH, so run it from Git Bash or WSL, not cmd.exe or
   PowerShell. GnuWin32 make 3.81 works from Git Bash; ezwinports ships 4.x.
-- `make run`, `make migrate` still fail by design until Phase 01 and Phase 02
-  create the real entrypoint and the migrations.
+- `make run` starts the placeholder `main`: it logs a version and exits, and
+  reads no config until Task 2. `make migrate` fails by design until Phase 02.
+- `go test -race` needs cgo, which is banned here, so `make check` runs without
+  it. Nothing is concurrent yet; revisit at the hub in Phase 04.
 - The domain import test checks direct imports only. See the cost note on
   ADR-016.
 

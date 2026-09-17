@@ -208,3 +208,58 @@ without one, and `make build` compiles `./cmd/nofiltr` as soon as it exists.
 Cost: the test sees direct imports only. A domain file importing some future
 `internal/x` that itself imports `internal/db` would pass. Revisit if a third
 internal package ever becomes importable from the domain; today none is.
+
+## ADR-017 - The timezone database ships inside the binary
+2026-09 · Status: accepted
+Decision: `internal/config` blank-imports `time/tzdata`, so every named IANA
+zone resolves from the binary itself. `Config.Timezone` is a parsed
+`*time.Location`, validated at startup, not a string carried around.
+Because: Go finds zone data in the system zoneinfo directories on Unix and, on
+every platform, in `$GOROOT/lib/time/zoneinfo.zip`. A venue's Windows machine
+has neither. `time.LoadLocation("Asia/Kolkata")` therefore succeeds on the
+machine this was written on and fails on the machine it is sold to, which is
+the worst place to discover it. Verified, not assumed: the test binary run with
+`GOROOT` pointed at a path that does not exist passes with the import and fails
+with `unknown time zone Asia/Kolkata` without it.
+Cost: about 450 KB in every binary, and zone data frozen at the Go version the
+release was built with. A country changing its offset needs a rebuild rather
+than an OS update. For a POS that must work with no internet, a rebuild is the
+honest channel anyway.
+
+## ADR-018 - A hand-written TOML reader, not a dependency
+2026-09 · Status: accepted
+Decision: `internal/config/toml.go` parses the flat subset the config actually
+uses: top-level `key = value`, `#` comments, double-quoted strings and bare
+words. Tables, arrays, inline tables, single-quoted strings and duplicate keys
+are refused with a line number. No TOML library is added.
+Because: the configuration is six scalar settings. `03-conventions.md` puts the
+bar for a dependency at an ADR plus a maintenance commitment, and a parser for
+a format we use 5% of is the clearest case of paying that price for nothing.
+The subset is about 120 lines and the part that matters is ordering: the
+closing quote is found before the `#` scan, so `venue_id = "cafe #2"` keeps its
+hash instead of silently becoming `cafe`.
+Cost: a file that is valid TOML but outside the subset is rejected rather than
+read. That is deliberate, but it means the reader has to be revisited, not just
+extended, if configuration ever grows nested sections. Switch to a library at
+that point rather than growing this one.
+
+## ADR-019 - Configuration refuses what it cannot honour
+2026-09 · Status: accepted
+Decision: `config.Load` is strict. An unknown key in `config.toml` is an error
+naming the known keys. A `-config` path that does not exist is an error, while a
+missing file at the default location is not. `listen_addr` requires a numeric
+port, so `:http` is rejected. `data_dir` is resolved to an absolute path.
+Precedence is defaults, then file, then environment, then flags, and an
+environment variable set to empty counts as a setting, which is how a relay
+switched on by a file is switched off again.
+Because: every one of these is a silent failure otherwise, and the operator is a
+cafe owner who changed a setting and believes it took. A typo'd `listen_add` is
+a port change that never happened. A `-config` path with a typo starts a server
+configured by a file nobody read. A named port resolves differently per machine,
+and a register nobody can reach is a register that cannot sell. `data_dir` is
+absolute because a Windows Service starts in `system32`, so a relative default
+would put a venue's sales somewhere nobody would think to back up.
+Cost: a config file carrying a key for a future version fails the whole load
+rather than being ignored, so adding a setting means shipping the code before
+the file. Correct for a single self-hosted binary; revisit only if configs ever
+have to be forward-compatible across versions.

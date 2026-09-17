@@ -10,7 +10,7 @@ Phase 00.
 
 ## Tasks
 
-- [ ] **Task 1 — Config.**
+- [x] **Task 1 — Config.**
   `internal/config`. Layered: defaults → `config.toml` next to the binary →
   environment → flags. Fields: `listen_addr` (default `:7777`), `data_dir`
   (platform-appropriate: `%PROGRAMDATA%/Nofiltr POS` on Windows, `./data` elsewhere),
