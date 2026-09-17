@@ -77,7 +77,7 @@ scale, and every extra service is a support ticket from a cafe owner.
   device/           escpos, drawer, printer discovery
   tunnel/           relay client
   service/          windows service wrapper
-/web
+/web                embed.go + placeholder bundles     (ADR-025)
   terminal/         staff SPA        (React, Tailwind, shadcn ok)
   backoffice/       owner SPA        (React, Tailwind, shadcn ok)
   guest/            guest SPA        (React, Tailwind, NO shadcn, <60KB gz)

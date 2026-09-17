@@ -382,3 +382,50 @@ Cost: two registrations per path that needs a controlled 405, which is
 repetitive once there are twenty endpoints. Revisit with a small helper then,
 not with a router. The 64-byte id limit rejects a few legitimate formats, such
 as a W3C traceparent with baggage appended; nothing we run emits one today.
+
+## ADR-025 - The frontends embed behind a build tag, with committed placeholders
+2026-09 · Status: accepted
+Decision: `package web` lives at `web/` and owns the embedding. By default it
+embeds `web/placeholder/{terminal,backoffice,guest}`, three committed
+`index.html` files. Built with `-tags frontend` it embeds `web/*/dist` instead.
+`web.Placeholder()` reports which, and the server logs a warning at startup when
+it is serving the stand-ins. `web.Bundles()` fails if a bundle has no
+`index.html`.
+Because: `web/*/dist` is build output and is gitignored, so an unconditional
+`//go:embed web/terminal/dist` breaks `go build` on a fresh clone and in CI,
+which is every build until Phase 05. The phase file allows a build tag or an
+empty-dir fallback, and the tag is the honest one: the alternative, committing
+placeholders inside `dist/`, means rewriting the ignore rules to
+`web/*/dist/*` plus a negation, after which every real Vite build shows up as a
+modified tracked file. The package sits at `web/` because a `go:embed` pattern
+cannot reach outside its own package directory; the split is a good one anyway,
+since `web` knows where the bundles are and `internal/api` knows how to serve
+them, and they share a `map[string]fs.FS` rather than a type.
+Cost: `go build -tags frontend` fails today with "pattern all:backoffice/dist:
+no matching files found", which is correct but only obvious if you know why.
+Phase 05 must add the tag to the release build and to `make dist`; until then
+every binary, including the one Task 5 cross-compiles, ships placeholders.
+
+## ADR-026 - The SPA fallback stops at the first dot
+2026-09 · Status: accepted
+Decision: within a mount, a request for a path that does not exist falls back to
+`index.html` only when the path has no file extension. A missing `.js`, `.css`
+or `.png` gets a 404 in the JSON error envelope. `/api/` is claimed before the
+mounts so an unknown endpoint keeps the envelope instead of reaching the
+terminal bundle. `index.html` is served `Cache-Control: no-cache`; anything
+under `assets/` gets a year and `immutable`.
+Because: "serve index.html for anything missing" is the usual shorthand and it
+is wrong. A missing script then arrives as HTML with a 200, the browser reports
+a MIME type error, and it reads like a bundler problem rather than a missing
+file. The extension test is a heuristic, but it is the one that matches how
+these apps are actually built: client-side routes are words, assets are names
+with a dot in them. The `/api/` claim matters more than it looks: with a bundle
+mounted at `/`, a typo in an endpoint would answer a terminal parsing JSON with
+a page of HTML. Caching is split because `index.html` is what names the hashed
+assets, so a cached copy pins a tablet to the build it was opened on and the
+kitchen display keeps loading yesterday's bundle until someone hard-refreshes
+it; the hashed files cannot go stale, by construction.
+Cost: an extensionless asset, which some fonts and source maps manage to be,
+would be answered with the app instead of a 404. Nothing Vite emits today is
+extensionless. If that changes, test for the mount's asset directory as well as
+the extension.

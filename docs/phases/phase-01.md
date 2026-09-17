@@ -29,7 +29,7 @@ Phase 00.
   Vite origin only. `GET /api/v1/health` returning version, uptime, and a
   `checks` object (db, disk, printer, tunnel) — all stubbed to `unknown` for now.
 
-- [ ] **Task 4 — Embedded static serving.**
+- [x] **Task 4 — Embedded static serving.**
   `embed.FS` serving three SPA bundles from `web/*/dist` at `/`, `/backoffice`
   and `/order`. SPA fallback to `index.html` on unknown paths within each mount.
   A build tag or empty-dir fallback so `go build` works before the frontends

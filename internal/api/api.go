@@ -1,6 +1,7 @@
 package api
 
 import (
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"time"
@@ -15,6 +16,7 @@ type Server struct {
 	build   BuildInfo
 	now     func() time.Time
 	started time.Time
+	bundles map[string]fs.FS
 	handler http.Handler
 }
 
@@ -25,6 +27,13 @@ type Option func(*Server)
 // own, and a test that cannot control it can only assert that it is a number.
 func WithClock(now func() time.Time) Option {
 	return func(s *Server) { s.now = now }
+}
+
+// WithStatic mounts built SPA bundles, keyed by the path each is served at.
+// The server is usable without them: an API-only process answers the documented
+// 404 everywhere else, which is what the tests in this package run against.
+func WithStatic(bundles map[string]fs.FS) Option {
+	return func(s *Server) { s.bundles = bundles }
 }
 
 // New builds the server. It does no IO: the caller owns the listener, so the
@@ -69,9 +78,18 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("GET /api/v1/health", s.health)
 	mux.HandleFunc("/api/v1/health", s.methodNotAllowed)
 
-	// The catch-all exists for the same reason: an unknown path should answer
-	// in the documented envelope, not "404 page not found".
-	mux.HandleFunc("/", s.notFound)
+	// Anything else under /api keeps the JSON envelope. Without this, an
+	// unknown endpoint would fall through to the terminal bundle mounted at /
+	// and answer a client expecting JSON with a page of HTML and a 200.
+	mux.HandleFunc("/api/", s.notFound)
+
+	s.mountStatic(mux)
+
+	// With no bundle at the root, an unknown path still answers in the
+	// documented envelope rather than net/http's plain text.
+	if _, mounted := s.bundles["/"]; !mounted {
+		mux.HandleFunc("/", s.notFound)
+	}
 
 	return chain(mux, s.middleware()...)
 }

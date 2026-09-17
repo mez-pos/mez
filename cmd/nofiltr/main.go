@@ -22,6 +22,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/api"
 	"github.com/byjoellobo/nofiltr-pos/internal/config"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
+	"github.com/byjoellobo/nofiltr-pos/web"
 )
 
 // version is stamped at build time with -ldflags "-X main.version=...".
@@ -100,7 +101,20 @@ func run() (err error) {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	srv := api.New(cfg, log, api.BuildInfo{Version: version})
+	bundles, err := web.Bundles()
+	if err != nil {
+		return err
+	}
+	if web.Placeholder() {
+		// Worth saying out loud. A venue machine showing a paragraph of text
+		// instead of a register is a binary built without the frontends, and
+		// this line is the difference between a five-minute diagnosis and an
+		// afternoon.
+		log.Warn("serving placeholder frontends",
+			"hint", "rebuild with -tags frontend once web/*/dist exists")
+	}
+
+	srv := api.New(cfg, log, api.BuildInfo{Version: version}, api.WithStatic(bundles))
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
 }

@@ -11,29 +11,26 @@ File: `docs/phases/phase-01.md`
 
 ## Last completed task
 
-**Phase 01, Task 3 - HTTP server and health.** `internal/api`: `ServeMux` with
-Go 1.22 method patterns, `GET /api/v1/health` returning version, uptime and four
-`unknown` checks. Middleware, outermost first: requestID, accessLog,
-recoverPanic, cors. 404 and 405 are routed deliberately so every response is the
-`{"error":{...}}` envelope (ADR-024). An eighth config key, `dev_origin`,
-gates CORS; empty means no CORS headers at all, so a shipped binary has none
-(ADR-023). `main` wires it; `serve` is unchanged.
+**Phase 01, Task 4 - Embedded static serving.** New `package web` at `web/`
+(go:embed cannot reach outside its package dir). Placeholder bundles by default,
+`web/*/dist` with `-tags frontend`, because dist is gitignored and would break
+a fresh clone: ADR-025. `internal/api/static.go` mounts terminal `/`, back
+office `/backoffice/`, guest `/order/`. Fallback stops at the first dot and
+`/api/` is claimed before the mounts: ADR-026.
 
-Four failure probes. Three caught their bug: reflecting any Origin, trusting an
-inbound `X-Request-Id`, dropping the 405 route. The fourth, swapping accessLog
-and recoverPanic, **passed** - the ordering was undertested, so `middleware()`
-was extracted and a test now wraps a panicking handler in the production order.
-Ran live: health, 405, 404, preflight from the dev origin, nothing from any
-other, request ids matching between header and log.
+Four probes, all caught: dropping the `/api/` claim, falling back for every
+missing file, caching `index.html` forever, two mounts on one bundle. Ran live:
+three distinct bundles, deep routes, `/order` redirecting, a missing asset
+404ing, and the placeholder warning at startup.
 
 ## Next task
 
-**Phase 01, Task 4 - Embedded static serving.** See `docs/phases/phase-01.md`.
-Two things it inherits: the `/` catch-all in `internal/api/routes` answers 404
-for everything unmatched, and Task 4 must take that over for the static mounts
-without swallowing unknown `/api/v1/...` paths, which keep the JSON envelope.
-`web/*/dist` does not exist yet, so the empty-dir fallback is the first thing
-to settle or `go build` breaks.
+**Phase 01, Task 5 - Cross-compile and prove it.** See `docs/phases/phase-01.md`.
+`make dist` already cross-compiles; this adds commit and build date via ldflags
+into `api.BuildInfo`, whose fields already exist and are omitted while empty.
+Then `docs/running.md`. Do **not** add `-tags frontend` to `make dist` yet:
+`web/*/dist` does not exist and the build would fail. Every binary until Phase
+05 ships placeholders.
 
 ## Known broken / in progress
 
