@@ -29,7 +29,7 @@ Nothing.
   hairline, danger. Add any token the designs use that the doc is missing.
   Commit the updated `tokens.md`. Still no code.
 
-- [ ] **Task 4 — Makefile and CI.**
+- [x] **Task 4 — Makefile and CI.**
   `Makefile` with: `build`, `test`, `check` (gofmt -l, go vet, go test ./...,
   go build), `run`, `generate`, `migrate`, `clean`, `dist` (cross-compile
   windows/amd64, linux/amd64, darwin/arm64 with CGO_ENABLED=0).

@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A public repo builds forks' pull requests. Give the token nothing it does not
+# need.
+permissions:
+  contents: read
+
+# A second push to the same branch makes the first run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: make check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # `make check` stamps the version from `git describe`, which needs
+          # tags and history. Without this it is a shallow clone with neither.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          # Read the version from go.mod so CI and the module can never drift.
+          go-version-file: go.mod
+          check-latest: true
+
+      - run: make check

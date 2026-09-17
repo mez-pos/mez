@@ -173,3 +173,18 @@ zoom-on-focus applies to input/select/textarea and the mock has none.
 Cost: Phase 06 must re-check the terminal's 392px right rail, whose line
 lengths assume the smaller type. Widen the rail rather than dropping under the
 floor. Four spacing values (7, 9, 11, 18) need snapping when screens are built.
+
+## ADR-015 - `make check` skips vet and test on an empty module
+2026-09 · Status: accepted
+Decision: The Makefile computes `PKGS := $(shell go list ./...)` and skips
+`go vet` and `go test` when it is empty, rather than running them
+unconditionally. `make` recipes are POSIX and require `sh` on PATH, so on
+Windows it runs from Git Bash or WSL, not cmd.exe or PowerShell.
+Because: Phase 00 Task 4 requires `make check` to pass on an empty project, but
+`go vet ./...` and `go test ./...` both exit 1 with "matched no packages" when
+there are none. `go list` exits 0 and prints nothing, which makes it the honest
+probe. The guard disappears by itself the moment Task 5 adds the first package,
+so it is not a permanent exception, and the skip is printed rather than silent.
+Cost: a typo that removes every package from the module would make `check` pass
+loudly-but-vacuously. Acceptable while the tree is empty; the printed "skipped"
+lines are the tell.

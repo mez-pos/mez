@@ -11,32 +11,32 @@ File: `docs/phases/phase-00.md`
 
 ## Last completed task
 
-**Phase 00, Task 3 - Verify and complete the tokens.** Measured every colour,
-size, radius and gap in the design archive by frequency and rewrote
-`docs/design/tokens.md` against it. Filled all five "to be defined" tokens,
-corrected `--paper`, radius and hairline, and added what the doc lacked
-(surface ladders, per-surface text ladders, a second vermilion for paper,
-`--slate`, paper status chip triads). All 41 hexes verified against source.
+**Phase 00, Task 4 - Makefile and CI.** `Makefile` with build, test, check,
+run, generate, migrate, clean, dist, help. `make check` passes on the empty
+module: it guards vet and test behind `go list ./...`, which exits 0 where vet
+and test exit 1 (ADR-015). `dist` cross-compiles windows/amd64, linux/amd64 and
+darwin/arm64, `CGO_ENABLED=0` Makefile-wide. `.github/workflows/ci.yml` runs
+`make check` on push and PR, taking its Go version from `go.mod`.
 
-**The three conflicts are now settled** (ADR-014), so nothing in `tokens.md`
-is open. Spacing moved to a 2px base scale (the doc was wrong, the 4px grid
-could not express the design's 10px gap). Type gained an 11px floor for
-uppercase metadata, 13px sentence-case minimum and 15px interactive labels (the
-design moves here: an 11px "Void" beside "Modify" is a hazard). The guest 16px
-rule was rescoped to form controls, where the Safari zoom actually applies.
+Also settled the three token conflicts ADR-013 left open, see ADR-014.
 
 ## Next task
 
-**Phase 00, Task 4 - Makefile and CI.** `make` 3.81 is installed via winget
-under "C:/Program Files (x86)/GnuWin32/bin" but is not on PATH in an
-already-running shell. 3.81 is old; ezwinports ships 4.x if it chokes.
+**Phase 00, Task 5 - Folder skeleton.** The last task in Phase 00. Create the
+tree from `docs/01-architecture.md` with a `doc.go` per package, plus
+`internal/domain/imports_test.go`, a test that walks `internal/domain` and
+fails if it imports `internal/db` or `internal/api`. Once packages exist,
+`make check` stops skipping vet and test, so expect it to do real work.
 
 ## Known broken / in progress
 
-- No `Makefile` or CI workflow yet (both Task 4), so `make check` still cannot
-  run. Work so far is verified with `gofmt -l`, `go vet ./...`, `go build ./...`.
-- `go vet ./...` exits 1 on an empty module ("matched no packages"). Task 4's
-  `check` target must tolerate that, or Task 5 must land first.
+- `make` needs `sh` on PATH, so run it from Git Bash or WSL, not cmd.exe or
+  PowerShell. The installed GnuWin32 make 3.81 works from Git Bash; ezwinports
+  ships 4.x if it ever chokes.
+- `make check` currently prints "skipped (no packages yet)" for vet, test and
+  build. That is expected and disappears when Task 5 adds the first package.
+- `make run`, `make dist` and `make migrate` fail by design until Phase 01 and
+  Phase 02 create `cmd/nofiltr` and the migrations.
 
 ## Open questions for the human
 
