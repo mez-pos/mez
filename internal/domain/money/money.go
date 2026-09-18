@@ -111,6 +111,22 @@ func (a Amount) Mul(basisPoints int32) (Amount, error) {
 	return Amount{Minor: minor, Currency: a.Currency}, nil
 }
 
+// Scale returns a × num / den, rounded once, half to even. It is Mul for
+// fractions basis points cannot hold: backing tax out of an inclusive price
+// is price × 100000 / 105000, and US rates such as 8.875% need a finer unit.
+// den must be positive.
+func (a Amount) Scale(num, den int64) (Amount, error) {
+	product, ok := mul64(a.Minor, num)
+	if !ok {
+		return Amount{}, fmt.Errorf("money: %d minor units times %d: %w", a.Minor, num, ErrOverflow)
+	}
+	minor, err := divRoundHalfEven(product, den)
+	if err != nil {
+		return Amount{}, err
+	}
+	return Amount{Minor: minor, Currency: a.Currency}, nil
+}
+
 // Times returns the amount multiplied by a whole count: a unit price times a
 // line's quantity. No rounding is involved, so none happens; a result that
 // does not fit in an int64 is ErrOverflow.

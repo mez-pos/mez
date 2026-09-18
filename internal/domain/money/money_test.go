@@ -408,3 +408,36 @@ func TestTimes(t *testing.T) {
 		})
 	}
 }
+
+func TestScale(t *testing.T) {
+	tests := []struct {
+		name     string
+		in       int64
+		num, den int64
+		want     int64
+		wantErr  error
+	}{
+		{name: "back out 5% from 100.00", in: 10000, num: 100000, den: 105000, want: 9524}, // 9523.81
+		{name: "back out 5% from 99.00", in: 9900, num: 100000, den: 105000, want: 9429},   // 9428.57
+		{name: "back out 20% from 3.40", in: 340, num: 100000, den: 120000, want: 283},     // 283.33
+		{name: "an odd divisor", in: 10000, num: 100000, den: 108875, want: 9185},          // 9184.845
+		{name: "exactly half rounds to even, down", in: 25, num: 1, den: 10, want: 2},      // 2.5
+		{name: "exactly half rounds to even, up", in: 35, num: 1, den: 10, want: 4},        // 3.5
+		{name: "0.375% of 10.75", in: 1075, num: 375, den: 100000, want: 4},                // 4.03125
+		{name: "negative is symmetric", in: -25, num: 1, den: 10, want: -2},
+		{name: "overflow", in: math.MaxInt64 / 2, num: 3, den: 1, wantErr: ErrOverflow},
+		{name: "zero denominator", in: 100, num: 1, den: 0, wantErr: ErrInvalidStep},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Amount{Minor: tt.in, Currency: "INR"}.Scale(tt.num, tt.den)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("err = %v, want %v", err, tt.wantErr)
+			}
+			if tt.wantErr == nil && (got.Minor != tt.want || got.Currency != "INR") {
+				t.Errorf("Scale = %+v, want %d INR", got, tt.want)
+			}
+		})
+	}
+}

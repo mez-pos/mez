@@ -37,13 +37,21 @@ Phase 02. **Read `docs/02-domain.md` in full before every task in this phase.**
   India 1-April case and a calendar-year case. Tests for year rollover,
   format templating, and the gapless guarantee expressed as a property.
 
-- [ ] **Task 5 — Tax profiles.**
+- [x] **Task 5 — Tax profiles.**
   `internal/domain/tax`. The `TaxProfile` interface from `docs/02-domain.md`.
   Implement **GST (India)**: CGST/SGST vs IGST, HSN per item, inclusive and
   exclusive pricing, line-level rounding then order-level reconciliation.
   Implement **VAT** and **US sales tax** as thinner profiles. Tests with real
   worked examples for each, including an inclusive-pricing GST case where the
   back-calculation must round to the paise.
+
+- [ ] **Task 5b - Tax in the projection.** (Split from Task 5, which built the
+  tax package alone.) Snapshot each line's tax facts on `line.added` (rate,
+  HSN, exempt), allocate order discounts across lines by largest remainder so
+  each line's taxable amount is known, and fill `Totals.Tax` in
+  `order.Project` through a `TaxProfile` and `VenueContext` passed in, keeping
+  it pure. Inclusive pricing must leave `Total` equal to the menu prices.
+  Update the scenarios with real tax.
 
 - [ ] **Task 6 — Split payment.**
   `internal/domain/payment`. Split by amount, by item, by guest, and evenly.

@@ -892,3 +892,43 @@ years, which GST permits (uniqueness is per financial year) but which the DB
 layer must allow for: a unique index on the invoice number alone would be
 wrong, it must include the year. The conformance suite needs an adapter from
 the DB write transaction to `invoicetest.Tx`.
+
+## ADR-049 - Tax: rates in thousandths of a percent, one engine, line rounding reconciled per rate
+2026-09 · Status: accepted
+Decision: `internal/domain/tax` implements the `TaxProfile` interface from
+`docs/02-domain.md` with three profiles (GST, VAT, US sales tax) on one
+shared engine.
+- **Rates are `tax.Rate`, thousandths of a percent** (100000 = 100%), not
+  basis points. This departs from "percentages are basis points" in
+  `02-domain.md` for tax rates only. `money.Amount.Scale(num, den)` was added
+  for the arithmetic; `tax.RateFromBP` converts.
+- The engine: each line's base is its amount (exclusive) or its amount with
+  tax backed out and rounded half to even (inclusive). Each component on each
+  line is base x rate, rounded half to even. Then, per group of lines sharing
+  the same components, each component total must equal the summed base x
+  rate rounded once; the difference is settled one minor unit at a time on
+  the lines rounded closest to the other way, earliest first on a tie.
+  Inclusive lines then let the taxable value absorb the remainder, so
+  taxable + tax is the menu price exactly.
+- GST: CGST + SGST (UTGST in the five UTs without a legislature) within the
+  state, IGST across. An odd rate cannot split and is refused intra-state.
+  HSN/SAC of 4, 6 or 8 digits required per line. GSTIN shape and state
+  prefix checked. Rates are not checked against a slab list.
+- VAT: one rate per line, either pricing. US sales tax: exclusive only, the
+  jurisdiction's named parts each computed and reported, line rates ignored,
+  exempt lines skipped.
+- `TaxResult` carries JSON tags: it is the `tax_snapshot` an issued invoice
+  stores.
+Because: US rates need three decimals (New York City is 8.875%, including a
+0.375% transit district), and 0.25% GST must halve into CGST and SGST
+exactly; basis points can do neither. Reconciling per rate means an
+invoice's lines always add up to its rate-wise summary and to the tax
+register, which is what an audit compares, while no line moves more than a
+paisa from its own rounding. CGST and SGST see identical inputs and so come
+out equal on every line, as the law requires. A slab list would refuse a
+legal sale the day the slabs change, as they did in 2025.
+Cost: the GSTIN check digit is not verified; a typo that keeps the shape
+passes. US tax is rounded per jurisdiction part, which can differ by a cent
+from rounding the combined rate once; states differ on which they want, so
+this may need a per-venue switch. Wiring tax into the order projection is
+split out as Task 5b.

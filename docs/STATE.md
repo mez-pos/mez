@@ -11,28 +11,23 @@ File: `docs/phases/phase-03.md`. Phase 02 is complete.
 
 ## Last completed task
 
-**Phase 03, Task 4 - invoice series.** `internal/domain/invoice`: financial
-years judged in the venue's time zone (`IndiaFY`, `CalendarFY`), parsed
-number templates, `Series` with a length cap, the `Allocator` contract,
-`Issue`, and `Audit` (the gapless check). `invoicetest` holds a reference
-allocator and `Conformance`, the contract as a suite. 100% coverage. ADR-048.
+**Phase 03, Task 5 - tax profiles.** `internal/domain/tax`: the `TaxProfile`
+interface, a shared engine (line rounding, then reconciliation per rate), and
+GST, VAT and US sales tax profiles with hand-worked examples (Bengaluru cafe,
+99.00 inclusive back-calculation, London cafe, NYC 8.875%). 500-bill property
+test on the engine's invariants. 95% coverage. ADR-049. Task 5 was split:
+this session built the package; Task 5b wires it into the projection.
 
-What later tasks must know: the DB allocator (phase 07) must pass
-`invoicetest.Conformance` through an adapter to `invoicetest.Tx`, and any
-error from `invoice.Issue` means roll back. The documented default template
-is 17 characters, one over GST's 16: GST venues need `{fy:short}`. Invoice
-numbers can repeat across years, so a DB uniqueness index must include the
-year.
+What later tasks must know: tax rates are `tax.Rate`, thousandths of a
+percent, not basis points (ADR-049). `money.Amount.Scale(num, den)` exists
+for fractional arithmetic. `tax.TaxResult` is the invoice's `tax_snapshot`.
 
 ## Next task
 
-**Phase 03, Task 5 - tax profiles.** `internal/domain/tax`: the `TaxProfile`
-interface, GST (CGST/SGST vs IGST, HSN per item, inclusive and exclusive,
-line rounding then order reconciliation), and thinner VAT and US sales tax
-profiles, with real worked examples. It must also settle the tax snapshot on
-`line.added` and fill `Totals.Tax` in the order projection. Read
-`docs/02-domain.md` in full first. If that is too much for one session, split
-it in the phase file.
+**Phase 03, Task 5b - tax in the projection.** Snapshot tax facts on
+`line.added`, allocate order discounts across lines, and fill `Totals.Tax`
+through a `TaxProfile` passed into the projection, keeping it pure. Read
+`docs/02-domain.md` in full first. The task text is in the phase file.
 
 ## Known broken / in progress
 
@@ -55,9 +50,9 @@ it in the phase file.
   so only someone editing SQL needs it.
 - `docs/02-domain.md` asks for a lint rule that fails the build on `float64` in
   `internal/domain`. No phase task owns it and it does not exist yet.
-- `line.added` has no tax snapshot yet, so `Totals.Tax` is always zero. Task 5
-  decides its shape; until then `invoice.issued.tax_snapshot` is raw JSON. No
-  events are persisted, so adding it then is free.
+- `line.added` has no tax snapshot yet, so `Totals.Tax` is always zero until
+  Task 5b. `invoice.issued.tax_snapshot` is raw JSON; `tax.TaxResult` is the
+  shape to store in it. No events are persisted, so changing them is free.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no invoice number. Phase 07 must work that way or revisit it.
 
