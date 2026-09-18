@@ -650,3 +650,58 @@ mapping in `cmd/nofiltr` means the two packages do not agree by coincidence
 because their constants happen to spell the same three words.
 Cost: a status up to fifteen seconds stale, and one more goroutine to stop on
 shutdown.
+
+## ADR-040 - goose as a library, migrations embedded, applied on every startup
+2026-09 · Status: accepted
+Decision: `github.com/pressly/goose/v3` v3.26.0, pinned like the driver to a
+release that still declares go 1.23. Migrations live in
+`internal/db/migrations/*.sql`, are embedded with `go:embed`, and `Migrate`
+runs on every startup before the listener serves anything. A failure to
+migrate is a failure to start. goose's own logging is routed into slog, and
+its `Fatalf` is implemented as a log line, not an exit.
+Because: a venue machine restarts several times a day and nobody is going to
+run a migration tool by hand at six in the morning, so applying on startup is
+the only thing that works; that makes idempotence a requirement, not a nicety,
+and it is tested. Embedding means the binary carries its own schema and a
+restore is one file to copy. Failing loudly is the point of the exercise: a
+server running against a half-migrated database writes rows the next version
+cannot read. `Fatalf` is overridden because a library calling `os.Exit` inside
+a server is how a machine stops mid service with nothing in the log.
+Cost: four more dependencies for something a few hundred lines could do, and
+the migration runs on the single writer connection, so a very long migration
+blocks startup rather than running in the background. Both are the right way
+round for a till.
+
+## ADR-041 - The schema enforces the money and time invariants itself
+2026-09 · Status: accepted
+Decision: every monetary column carries `CHECK (typeof(x) = 'integer')`.
+Timestamps are `TEXT`, ISO 8601, UTC, with a `GLOB` check, and no SQL default.
+Booleans are `INTEGER` 0 or 1 with a check. Every public ID column has a
+unique index.
+Because: SQLite's INTEGER affinity is not a type. Given 12.5 it neither
+refuses nor truncates: it stores a REAL, and the column holds half a paisa
+forever. `typeof` is the only reliable guard, and it is worth having because
+the first invariant in CLAUDE.md should not depend on every future caller
+remembering it. The same reasoning covers the rest: SQLite will store the text
+`'false'` in a boolean column, which every truthiness test then reads as set,
+and it will store a local timestamp that reads as UTC three hours later. No
+default on the timestamps because the clock is injected in Go, and a column
+defaulting to `now()` silently goes around that. The unique indexes are
+ADR-034 landing: a forty bit public ID needs a constraint to collide against.
+Cost: a wordy schema, and a check per column that every later migration has to
+remember. `docs/03-conventions.md` now lists them so it is a rule to follow
+rather than a pattern to notice.
+
+## ADR-042 - Migrations are numbered sequentially, not by timestamp
+2026-09 · Status: accepted
+Decision: `00001_venues_staff_devices.sql`, and `make migrate-new NAME=x`
+computes the next number in plain shell rather than shelling out to goose.
+Because: goose defaults to timestamps, which exist to stop two branches
+picking the same number. This project has one line of history, so the number
+is more useful as the order things ran in, and a gap or a repeat is then
+visible on sight; a test asserts the sequence is 1..N with no gaps. Plain
+shell means adding a migration needs no tool installed, which matters because
+the server applies migrations itself and nothing else requires the goose CLI.
+Cost: two people writing migrations at once would collide on a number, and
+would have to renumber before merging. If that ever becomes real, timestamps
+are the answer and this decision should be superseded.

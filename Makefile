@@ -31,7 +31,7 @@ PKGS := $(shell go list ./... 2>/dev/null)
 export CGO_ENABLED = 0
 
 .DEFAULT_GOAL := check
-.PHONY: check fmt vet test build run generate migrate clean dist help
+.PHONY: check fmt vet test build run generate migrate migrate-new clean dist help
 
 ## check: fmt, vet, test and build. The gate. CI runs this.
 check: fmt vet test build
@@ -98,14 +98,34 @@ ifneq ($(strip $(PKGS)),)
 endif
 
 ## migrate: apply database migrations
+##          The server does this on every startup, so this target is only for
+##          migrating a database without starting one.
 migrate:
 	@if ! command -v goose >/dev/null 2>&1; then \
-		echo "goose not installed (needed from Phase 02)"; exit 1; \
-	fi
-	@if [ ! -d internal/db/migrations ]; then \
-		echo "no migrations yet: they arrive in Phase 02"; exit 1; \
+		echo "goose not installed: go install github.com/pressly/goose/v3/cmd/goose@v3.26.0"; \
+		echo "or just run the server, which migrates on startup"; \
+		exit 1; \
 	fi
 	@goose -dir internal/db/migrations sqlite3 "$${NOFILTR_DB:-./data/nofiltr.db}" up
+
+## migrate-new: scaffold the next migration, NAME=add_orders
+##              Numbered sequentially, not by timestamp: one line of history,
+##              so the number is also the order it ran in. Deliberately plain
+##              shell, so adding a migration needs no tool installed.
+migrate-new:
+	@if [ -z "$(NAME)" ]; then \
+		echo "usage: make migrate-new NAME=add_orders"; exit 1; \
+	fi
+	@case "$(NAME)" in \
+		*[!a-z0-9_]*) echo "NAME must be lower_snake_case: $(NAME)"; exit 1 ;; \
+	esac
+	@dir=internal/db/migrations; mkdir -p $$dir; \
+	last=$$(ls $$dir 2>/dev/null | sed -n 's/^\([0-9][0-9][0-9][0-9][0-9]\)_.*\.sql$$/\1/p' | sort -n | tail -1); \
+	next=$$(printf '%05d' $$(( 10#$${last:-0} + 1 ))); \
+	file="$$dir/$${next}_$(NAME).sql"; \
+	if [ -e "$$file" ]; then echo "$$file already exists"; exit 1; fi; \
+	printf -- '-- +goose Up\n\n\n-- +goose Down\n\n' > "$$file"; \
+	echo "  $$file"
 
 ## clean: remove build output
 clean:

@@ -38,6 +38,19 @@ Test files are table-driven with a `tests := []struct{ name string; ... }`.
 - WAL mode, `busy_timeout=5000`, `synchronous=NORMAL`.
 - Migrations are goose, numbered, forward-only in practice. Never edit a
   migration that has shipped — add a new one.
+- `make migrate-new NAME=add_orders` scaffolds the next file. Numbering is
+  sequential, not timestamped: one line of history, so the number is also the
+  order it ran in. They are embedded, and the server applies them on every
+  startup; `make migrate` is only for migrating a database without starting one.
+- Timestamps are `TEXT`, ISO 8601, UTC, ending in `Z`, with a `GLOB` check.
+  No SQL defaults on them: the clock is injected in Go, and a column defaulting
+  to `now()` goes around it.
+- Money columns carry `CHECK (typeof(x) = 'integer')`. INTEGER affinity is not
+  a type — SQLite stores `12.5` in an INTEGER column as a REAL rather than
+  refusing it, and the column then holds half a paisa forever.
+- Booleans are `INTEGER` 0 or 1 with a check. SQLite will store the text
+  `'false'`, which every truthiness test then reads as set.
+- Anything with a public ID gets a unique index on it. See ADR-034.
 
 ## HTTP API
 

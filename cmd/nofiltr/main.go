@@ -121,6 +121,13 @@ func run() (err error) {
 	}
 	running.push("database", database.Close)
 
+	// Migrate before serving, never alongside it. A half-migrated database
+	// serving requests writes rows the next version cannot read, and this is
+	// the one moment where failing to start is the correct outcome.
+	if err := database.Migrate(ctx); err != nil {
+		return err
+	}
+
 	bundles, err := web.Bundles()
 	if err != nil {
 		return err

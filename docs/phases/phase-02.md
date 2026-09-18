@@ -31,7 +31,7 @@ Phase 01. Read `docs/02-domain.md` before starting.
   read pool. `Tx(ctx, fn)` helper with deferred rollback and the correct error
   wrapping. Health check that reports db status into `/api/v1/health`.
 
-- [ ] **Task 4 — Migrations.**
+- [x] **Task 4 — Migrations.**
   goose, migrations in `internal/db/migrations/*.sql`, embedded. Run
   automatically on startup, logged, and fail loudly on error. First migration:
   `venues`, `settings`, `devices`, `staff`, `roles`. Use the money convention:
