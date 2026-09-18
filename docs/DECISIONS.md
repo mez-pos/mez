@@ -849,3 +849,46 @@ Cost: two copies of every table, one in code and one in its test, by design.
 The ticket table has no recall or cancel move; phase 08 adds what the kitchen
 display turns out to need. A machine built with `fsm.Must` panics at startup
 on a malformed table, which each package's tests catch first.
+
+## ADR-048 - The invoice series: local-time years, a transactional allocator contract, and Audit
+2026-09 · Status: accepted
+Decision: `internal/domain/invoice` owns the format and the contract; the
+database owns the counter.
+- A financial year is judged in the venue's time zone, passed in
+  (`FYRule.YearOf(at, loc)`), never UTC and never a clock. `IndiaFY` starts 1
+  April, `CalendarFY` 1 January. Start days are 1 to 28 so the boundary
+  exists every year.
+- A number format is a parsed `Template` with `{prefix}`, `{fy}` (2026-27),
+  `{fy:short}` (26-27), `{seq}` and `{seq:0Nd}`. Exactly one `{seq}` is
+  required. A number wider than its padding is written in full, never
+  truncated.
+- `Series.MaxLength` caps a number (16 for GST). `NewSeries` formats a first
+  number at setup, so a series that cannot issue anything fails there. The
+  documented default `{prefix}/{fy}/{seq:06d}` is 17 characters with a
+  two-letter prefix, one over GST's cap: a GST series should use
+  `{prefix}/{fy:short}/{seq:06d}`.
+- `Allocator.Next(ctx, key)` is the contract the DB layer implements: first
+  number 1, then last committed plus one, keys independent, bound to the
+  sale's transaction so a rollback returns the number, serialised per key.
+  `invoicetest.Conformance` is that contract as a runnable suite; the DB
+  allocator must pass it. `invoicetest.Memory` is a reference allocator that
+  models SQLite's single writer.
+- `invoice.Issue` is the one path from a sale to a number. Any error from it
+  means roll back.
+- `invoice.Audit` states the gapless guarantee: per key, the numbers are
+  exactly 1..n. The property test runs 300 random scripts of committed and
+  rolled-back sales across two venues, two series and a year end. The
+  reference allocator passes all of them; an autoincrement-style allocator
+  that ignores rollback fails most of them with `ErrGap`, which proves the
+  property is testing what it claims.
+Because: the year boundary is a legal fact about the venue's clock on the
+wall, and a sale at 00:30 on 1 April in India is 31 March in UTC. Putting the
+contract in the domain with a conformance suite means the rule is written
+once and the DB layer is held to it by a test, not by a comment. Audit is
+reusable beyond tests: a Z-report or tax export can refuse to proceed on a
+gap.
+Cost: `{fy}` is optional in a template. Without it numbers repeat across
+years, which GST permits (uniqueness is per financial year) but which the DB
+layer must allow for: a unique index on the invoice number alone would be
+wrong, it must include the year. The conformance suite needs an adapter from
+the DB write transaction to `invoicetest.Tx`.

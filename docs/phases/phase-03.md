@@ -30,7 +30,7 @@ Phase 02. **Read `docs/02-domain.md` in full before every task in this phase.**
   as explicit transition functions returning `ErrInvalidTransition`. Exhaustive
   tests: every legal transition passes, a sample of illegal ones fails.
 
-- [ ] **Task 4 — Invoice series.**
+- [x] **Task 4 — Invoice series.**
   `internal/domain/invoice`. Series config (prefix, financial-year rule, format
   template). Allocation is an interface the DB layer implements; the domain
   defines the contract and the format. Financial-year boundary logic with the

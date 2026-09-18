@@ -11,26 +11,28 @@ File: `docs/phases/phase-03.md`. Phase 02 is complete.
 
 ## Last completed task
 
-**Phase 03, Task 3 - state machines.** `internal/domain/fsm` is a generic,
-stateless transition table (`fsm.ErrInvalidTransition`, `*TransitionError`).
-Order and payment tables in `order/transitions.go`, table lifecycle in
-`internal/domain/table`, station ticket in `internal/domain/kitchen`. Every
-table is tested exhaustively (all pairs of states) against a hand restatement
-via `fsmtest.Exhaustive`. ADR-047 lists the four moves added beyond the
-domain doc.
+**Phase 03, Task 4 - invoice series.** `internal/domain/invoice`: financial
+years judged in the venue's time zone (`IndiaFY`, `CalendarFY`), parsed
+number templates, `Series` with a length cap, the `Allocator` contract,
+`Issue`, and `Audit` (the gapless check). `invoicetest` holds a reference
+allocator and `Conformance`, the contract as a suite. 100% coverage. ADR-048.
 
-What later tasks must know: `order.Project` now checks every derived status
-change against the order machine, and payment voids and full refunds against
-the payment machine. `StatusHeld` and `PaymentStatusPending` exist in the
-tables but no event produces them yet. The ticket table has no recall or
-cancel; phase 08 adds what the kitchen display needs.
+What later tasks must know: the DB allocator (phase 07) must pass
+`invoicetest.Conformance` through an adapter to `invoicetest.Tx`, and any
+error from `invoice.Issue` means roll back. The documented default template
+is 17 characters, one over GST's 16: GST venues need `{fy:short}`. Invoice
+numbers can repeat across years, so a DB uniqueness index must include the
+year.
 
 ## Next task
 
-**Phase 03, Task 4 - invoice series.** `internal/domain/invoice`: series
-config, the allocation interface the DB layer implements, financial-year
-boundaries (India 1 April, and calendar year), format templating, and the
-gapless guarantee as a property test. Read `docs/02-domain.md` in full first.
+**Phase 03, Task 5 - tax profiles.** `internal/domain/tax`: the `TaxProfile`
+interface, GST (CGST/SGST vs IGST, HSN per item, inclusive and exclusive,
+line rounding then order reconciliation), and thinner VAT and US sales tax
+profiles, with real worked examples. It must also settle the tax snapshot on
+`line.added` and fill `Totals.Tax` in the order projection. Read
+`docs/02-domain.md` in full first. If that is too much for one session, split
+it in the phase file.
 
 ## Known broken / in progress
 
