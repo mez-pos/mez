@@ -526,3 +526,55 @@ numbers it did the first time. Rotating or randomising who carries the paisa
 would be fairer across many bills and unreproducible on any one of them.
 Cost: over a long run the first payer carries every extra paisa. At one paisa a
 split that is noise, and it is the price of a deterministic projection.
+
+## ADR-033 - The pickup code filter matches readings, not characters
+2026-09 · Status: accepted
+Decision: `Blocklist.Blocks` expands a code into every way it can be read
+aloud, mapping each digit to the letters it resembles (0 to O, 1 to I or L, 5
+to S, and so on), and blocks the code if any reading contains a blocked word
+anywhere. The built-in list is English; `NewBlocklist(extra ...string)` takes
+the venue's own language. Words longer than a pickup code, and words that are
+not plain letters, are dropped when the list is built.
+Because: the Crockford alphabet has no I, L, O or U, so a literal match would
+find nothing, while `5H1T` and `C0CK` are both four-character codes a plain
+generator hands out perfectly happily. Matching anywhere in the code rather
+than only the whole of it is for the same reason: a code is heard as one
+sound, and nobody hears where the word stops. A rejected draw costs one
+redraw, so false positives are free and false negatives get called across a
+counter.
+Cost: the list is a judgement call that lives in the repository, and a word
+written in leetspeak by whoever extends it will be silently dropped rather
+than blocked. Tested and documented, not obvious.
+
+## ADR-034 - Public IDs are forty bits and the unique index is what enforces
+2026-09 · Status: accepted
+Decision: `NewPublic` draws eight Crockford symbols, forty bits, after a
+prefix: `ord_7K3M9QX2`, the format the phase file specifies. The package does
+not claim they are unique. Every column holding one needs a unique index, and
+the insert redraws on conflict.
+Because: forty bits is roughly one expected repeat per one and a half million
+draws, by the birthday bound. That is far beyond one venue's lifetime and well
+inside the reach of a fleet, so a guarantee the generator cannot make belongs
+in the database, where it is one index and a retry. The collision test asserts
+a bound rather than zero repeats for the same reason: demanding zero would
+fail about a third of the time for a perfectly good generator, and what it is
+really looking for is a broken one, which produces thousands.
+Cost: every table with a public ID column carries a constraint the schema must
+not forget, and Phase 02 Task 4 is where that starts. If a longer code is ever
+wanted, the format is public by then and changing it is a migration.
+
+## ADR-035 - Randomness is injected the way the clock is
+2026-09 · Status: accepted
+Decision: `Generator` holds an `io.Reader`. `NewGenerator(nil)` means
+`crypto/rand`. The package-level `NewPublic` and `NewPickupCode` are thin
+wrappers over it, so the common call stays one argument.
+Because: `docs/03-conventions.md` injects the clock into domain code for a
+reason that applies unchanged to randomness. A package that reaches for its
+own entropy can be tested for the shape of what it returns and nothing else:
+not that the high three bits of each byte are discarded, not that a blocked
+pickup code is redrawn rather than returned, not that a stuck source fails
+instead of looping. All three are tested here because the source is a
+parameter. `crypto/rand` rather than `math/rand` because a guessable public ID
+is a way to read somebody else's order.
+Cost: a second way to call everything, and a nil argument that means
+"production" rather than "nothing".

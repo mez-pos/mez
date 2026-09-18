@@ -18,7 +18,7 @@ Phase 01. Read `docs/02-domain.md` before starting.
   Adversarial tests: zero, negative, mismatch, rounding boundaries, a
   three-way split of a prime number of paise.
 
-- [ ] **Task 2 — The ID package.**
+- [x] **Task 2 — The ID package.**
   `internal/domain/id`. `int64` internal keys are just the DB's. Public IDs:
   Crockford base-32 without I, L, O, U. `NewPublic(prefix)` →`ord_7K3M9QX2`.
   `NewPickupCode()` → 4 chars, filtered against a profanity list (English +

@@ -11,25 +11,24 @@ File: `docs/phases/phase-02.md`. Phase 01 is complete.
 
 ## Last completed task
 
-**Phase 02, Task 1 - The money package.** `internal/domain/money`: Add, Sub,
-Mul by basis points, Neg, IsZero, Compare, Sum, RoundToNearest, SplitEvenly,
-Parse, String. 96% statement coverage. Nothing imports it yet.
+**Phase 02, Task 2 - The ID package.** `internal/domain/id`: `NewPublic`,
+`ParsePublic`, `Normalize`, `NewPickupCode`, `NewBlocklist`, `Generator`.
+98.9% coverage. ADR-033 to ADR-035. Nothing imports it or money yet.
 
-Four things to know before using it (ADR-029 to ADR-032). Every operation
-returns an error, `Neg` included. `Amount{}` is not a universal zero, so start
-a total with `Sum(currency)`, not `var total Amount`. `math.MinInt64` is
-refused as an input *and* as a result, which is what makes "anything this
-package returns can be negated for a refund" true. `SplitEvenly` gives the
-leftover paise to the earliest parts, so a replayed split lands on the same
-numbers. Rounding is half to even, integer arithmetic throughout; the per-venue
-rounding setting is not read here, a later phase decides when to call it.
+**Task 4 must act on ADR-034:** a public ID is forty bits and is not unique on
+its own, so every column holding one needs a unique index and a redraw on
+conflict. Also unwired: `NewBlocklist(extra...)` takes the venue's language
+but nothing reads it from config; whichever phase builds venue settings owns
+that. Two gotchas for later callers: `NewGenerator(nil)` means crypto/rand
+(entropy is injected like the clock), and in money, `Amount{}` is not a
+universal zero, so a running total starts at `Sum(currency)`.
 
 ## Next task
 
-**Phase 02, Task 2 - the ID package.** Nothing blocks it. Still open from
-Phase 01: `/api/v1/health` has a `checks.db` field stubbed to `unknown` that
-Task 3 should make real, and `Config.DataDir` is absolute and already created
-at startup.
+**Phase 02, Task 3 - the database connection.** Nothing blocks it. It inherits
+two things from Phase 01: `/api/v1/health` has a `checks.db` field stubbed to
+`unknown` that this task should make real, and `Config.DataDir` is absolute and
+already created at startup, so the file can go straight in it.
 
 ## Known broken / in progress
 
