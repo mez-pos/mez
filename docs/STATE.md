@@ -11,33 +11,36 @@ File: `docs/phases/phase-02.md`. Phase 01 is complete.
 
 ## Last completed task
 
-**Phase 02, Task 2 - The ID package.** `internal/domain/id`: `NewPublic`,
-`ParsePublic`, `Normalize`, `NewPickupCode`, `NewBlocklist`, `Generator`.
-98.9% coverage. ADR-033 to ADR-035. Nothing imports it or money yet.
+**Phase 02, Task 3 - The database connection.** `internal/db`: `Open`, `Tx`,
+`Writer`, `Reader`, `Health`, `Close`. 87% coverage, ADR-036 to ADR-039.
+`/api/v1/health` reports `checks.db` for real, verified live.
 
-**Task 4 must act on ADR-034:** a public ID is forty bits and is not unique on
-its own, so every column holding one needs a unique index and a redraw on
-conflict. Also unwired: `NewBlocklist(extra...)` takes the venue's language
-but nothing reads it from config; whichever phase builds venue settings owns
-that. Two gotchas for later callers: `NewGenerator(nil)` means crypto/rand
-(entropy is injected like the clock), and in money, `Amount{}` is not a
-universal zero, so a running total starts at `Sum(currency)`.
+**The first dependency moved the Go floor.** `go get modernc.org/sqlite@latest`
+takes v1.59.0, which needs Go 1.25 and silently rewrote `go.mod` from 1.23. It
+is pinned to v1.39.0, the newest release still on 1.23 (ADR-036). CI reads its
+toolchain from `go.mod`, so check that line after any `go get`.
+
+For Tasks 4 and 5: write through `d.Tx`, read through `d.Reader()`, which is
+`mode=ro` and refuses writes. Per-connection pragmas live in the DSN, so a
+`PRAGMA` run after Open protects one connection and nothing else (ADR-038).
+Tasks 1 and 2 shipped money and id, ADR-029 to ADR-035, both still unimported.
 
 ## Next task
 
-**Phase 02, Task 3 - the database connection.** Nothing blocks it. It inherits
-two things from Phase 01: `/api/v1/health` has a `checks.db` field stubbed to
-`unknown` that this task should make real, and `Config.DataDir` is absolute and
-already created at startup, so the file can go straight in it.
+**Phase 02, Task 4 - migrations.** goose, embedded, run on startup from
+`internal/db/migrations/*.sql`, plus a `make migrate-new NAME=x` target. The
+connection it runs on exists: use `d.Writer()` or `d.Tx`. First migration is
+`venues`, `settings`, `devices`, `staff`, `roles`; give every public ID column
+a unique index, per ADR-034.
 
 ## Known broken / in progress
 
 - `make` needs `sh` on PATH, so run it from Git Bash or WSL, not cmd.exe or
   PowerShell. GnuWin32 make 3.81 works from Git Bash; ezwinports ships 4.x.
 - `make run` starts the real server on `:7777`, writing to the default
-  `data_dir`. See `docs/running.md`. `make migrate` fails until Phase 02.
+  `data_dir`. See `docs/running.md`. `make migrate` fails until Task 4.
 - `go test -race` needs cgo, which is banned, so `make check` runs without it.
-  There is concurrency to race now: the serve goroutine and the log mutex.
+  Now racing untested: the serve goroutine, the log mutex, the health prober.
 - Every binary ships placeholder frontends. Phase 05 must add `-tags frontend`
   to `make dist`; it fails today because `web/*/dist` does not exist.
 - `make build` writes `bin/nofiltr` with no `.exe`, so a stray server on Windows

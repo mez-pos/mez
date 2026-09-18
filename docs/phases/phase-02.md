@@ -25,7 +25,7 @@ Phase 01. Read `docs/02-domain.md` before starting.
   a configurable extra list). Decoding tolerates case and the common
   substitutions (0/O, 1/I/L). Tests including collision sanity over 1e6 draws.
 
-- [ ] **Task 3 — Database connection.**
+- [x] **Task 3 — Database connection.**
   `internal/db`. Open with `modernc.org/sqlite`. Set WAL, `foreign_keys=ON`,
   `busy_timeout=5000`, `synchronous=NORMAL`. A single writer connection and a
   read pool. `Tx(ctx, fn)` helper with deferred rollback and the correct error

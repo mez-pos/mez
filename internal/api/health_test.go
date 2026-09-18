@@ -38,9 +38,47 @@ func TestHealthReportsIdentityAndUptime(t *testing.T) {
 	}
 }
 
+// TestHealthReportsTheDatabaseCheck covers the check Phase 02 made real. The
+// server is given a function rather than a database so that this package keeps
+// knowing nothing about storage, and so that a hung database cannot be
+// something this endpoint waits on.
+func TestHealthReportsTheDatabaseCheck(t *testing.T) {
+	tests := []struct {
+		name  string
+		check func() string
+		want  string
+	}{
+		{name: "healthy", check: func() string { return CheckOK }, want: CheckOK},
+		{name: "failing", check: func() string { return CheckFailing }, want: CheckFailing},
+		{name: "not wired up", check: nil, want: CheckUnknown},
+
+		// A check that answers with something outside the vocabulary is a bug
+		// in the caller. The endpoint publishes a fixed set of words, and
+		// leaking an unknown one would break a dashboard that switches on it.
+		{name: "nonsense", check: func() string { return "probably fine" }, want: CheckUnknown},
+		{name: "empty", check: func() string { return "" }, want: CheckUnknown},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := []Option{}
+			if tt.check != nil {
+				opts = append(opts, WithDBCheck(tt.check))
+			}
+
+			resp := get(t, newTestServer(t, testConfig(), opts...), "/api/v1/health")
+
+			var body healthResponse
+			decode(t, resp, &body)
+
+			equal(t, "checks.db", body.Checks.DB, tt.want)
+		})
+	}
+}
+
 // TestHealthChecksAreUnknownForNow pins the contract the dashboard is written
-// against. Phase 02 makes db and disk real; until then they must say they do
-// not know rather than claim to be fine.
+// against. Phase 02 makes db real; disk, printer and tunnel wait for their
+// phases and must say they do not know rather than claim to be fine.
 func TestHealthChecksAreUnknownForNow(t *testing.T) {
 	resp := get(t, newTestServer(t, testConfig()), "/api/v1/health")
 

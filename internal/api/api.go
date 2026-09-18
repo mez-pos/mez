@@ -17,6 +17,7 @@ type Server struct {
 	now     func() time.Time
 	started time.Time
 	bundles map[string]fs.FS
+	dbCheck func() string
 	handler http.Handler
 }
 
@@ -27,6 +28,16 @@ type Option func(*Server)
 // own, and a test that cannot control it can only assert that it is a number.
 func WithClock(now func() time.Time) Option {
 	return func(s *Server) { s.now = now }
+}
+
+// WithDBCheck supplies the database's status for the health endpoint.
+//
+// It is a function returning one of the Check constants rather than a database
+// handle, so this package still knows nothing about storage, and so that what
+// is behind it is obliged to be a cached read. The handler must be able to
+// answer while the database is hung.
+func WithDBCheck(check func() string) Option {
+	return func(s *Server) { s.dbCheck = check }
 }
 
 // WithStatic mounts built SPA bundles, keyed by the path each is served at.

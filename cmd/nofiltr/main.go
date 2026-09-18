@@ -16,11 +16,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/api"
 	"github.com/byjoellobo/nofiltr-pos/internal/config"
+	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
 	"github.com/byjoellobo/nofiltr-pos/web"
 )
@@ -107,6 +109,18 @@ func run() (err error) {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// The database opens before anything is served. A file that cannot be
+	// opened is a startup failure with a human watching, which is a far better
+	// place to find out than the first sale of the day.
+	database, err := db.Open(ctx, db.Options{
+		Path: filepath.Join(cfg.DataDir, db.FileName),
+		Log:  log,
+	})
+	if err != nil {
+		return err
+	}
+	running.push("database", database.Close)
+
 	bundles, err := web.Bundles()
 	if err != nil {
 		return err
@@ -120,9 +134,36 @@ func run() (err error) {
 			"hint", "rebuild with -tags frontend once web/*/dist exists")
 	}
 
-	srv := api.New(cfg, log, build, api.WithStatic(bundles))
+	srv := api.New(cfg, log, build,
+		api.WithStatic(bundles),
+		api.WithDBCheck(dbCheck(database)),
+	)
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
+}
+
+// dbCheck adapts the database's health to the vocabulary /api/v1/health
+// publishes.
+//
+// The two packages use the same three words, and this is the one place allowed
+// to know both, so the mapping is written out rather than left to the strings
+// happening to match. internal/db must not import internal/api, and
+// internal/api must not import internal/db.
+func dbCheck(database *db.DB) func() string {
+	return func() string { return translateDBStatus(database.Health().Status) }
+}
+
+// translateDBStatus is the mapping itself, split out so it can be tested
+// against every status without a database to produce them.
+func translateDBStatus(status string) string {
+	switch status {
+	case db.StatusOK:
+		return api.CheckOK
+	case db.StatusFailing:
+		return api.CheckFailing
+	default:
+		return api.CheckUnknown
+	}
 }
 
 // serve runs the HTTP server until ctx is cancelled, then stops accepting and

@@ -64,10 +64,30 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 		UptimeSeconds: int64(s.now().Sub(s.started).Seconds()),
 
 		Checks: healthChecks{
-			DB:      CheckUnknown,
+			DB:      check(s.dbCheck),
 			Disk:    CheckUnknown,
 			Printer: CheckUnknown,
 			Tunnel:  CheckUnknown,
 		},
 	})
+}
+
+// check reads one subsystem's status, treating an absent check and an answer
+// outside the vocabulary the same way: unknown.
+//
+// The three Check constants are the whole published vocabulary, and a
+// dashboard switches on them. Letting an unexpected word through would be a
+// silent change to the API contract, so it is clamped here rather than trusted
+// from whatever wired the check up.
+func check(status func() string) string {
+	if status == nil {
+		return CheckUnknown
+	}
+
+	switch got := status(); got {
+	case CheckOK, CheckFailing, CheckUnknown:
+		return got
+	default:
+		return CheckUnknown
+	}
 }

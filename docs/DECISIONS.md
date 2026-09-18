@@ -578,3 +578,75 @@ parameter. `crypto/rand` rather than `math/rand` because a guessable public ID
 is a way to read somebody else's order.
 Cost: a second way to call everything, and a nil argument that means
 "production" rather than "nothing".
+
+## ADR-036 - modernc.org/sqlite pinned to v1.39.0 to keep the Go 1.23 floor
+2026-09 · Status: accepted
+Decision: the first dependency in the tree is `modernc.org/sqlite`, pinned to
+v1.39.0. It brings `modernc.org/libc`, `mathutil`, `memory`, `go-strftime`,
+`go-isatty`, `go-humanize`, `bigfft`, `google/uuid`, `golang.org/x/exp` and
+`golang.org/x/sys` with it.
+Because: `go get modernc.org/sqlite@latest` takes v1.59.0, which declares
+`go 1.25.0` and silently rewrote the module's own directive from 1.23 to 1.25.
+The stack in CLAUDE.md says Go 1.23, and CI reads its toolchain from
+`go.mod`, so that one line would have raised the floor for every contributor
+as a side effect of adding a driver. v1.39.0 is the newest release that still
+declares 1.23. The driver is pure Go, which is the point: no cgo, so the
+binary cross-compiles with `CGO_ENABLED=0` and a venue machine needs no
+toolchain.
+Cost: the SQLite engine is a year behind upstream, on a project that handles
+money. Moving to v1.59 is `go get` plus a one-line floor change, and should be
+a deliberate decision rather than a side effect of the next `go get`.
+
+## ADR-037 - One writer connection, a read-only read pool
+2026-09 · Status: accepted
+Decision: `db.Open` returns two `*sql.DB` over the same file. The writer is
+capped at `SetMaxOpenConns(1)` and opened with `_txlock=immediate`; the read
+pool is sized from the machine and opened `mode=ro`. `Close` runs
+`PRAGMA wal_checkpoint(TRUNCATE)` before closing either.
+Because: SQLite has one writer. Capping the writer at one connection moves the
+queue into Go, where waiting is orderly, instead of into SQLite, where it
+surfaces as a busy error in the middle of a sale; a test with twenty
+concurrent read-modify-write transactions lands on twenty. `_txlock=immediate`
+takes the write lock as a transaction begins rather than discovering half way
+through that somebody else holds it. `mode=ro` turns "do not write through the
+reader" from a convention everyone has to remember into an error SQLite
+raises, which a test confirms by trying. The checkpoint on close matters
+because a venue machine is switched off at the wall most nights, and a
+database with a full write-ahead log is not one a backup can copy on its own.
+Cost: two handles to pass around, and a caller who takes `Writer()` for a read
+gets no parallelism.
+
+## ADR-038 - Connection settings live in the DSN, not in a PRAGMA after Open
+2026-09 · Status: accepted
+Decision: `journal_mode`, `foreign_keys`, `busy_timeout` and `synchronous` are
+set as `_pragma=` parameters in the connection string.
+Because: only `journal_mode` is stored in the file. The other three are per
+connection, and `database/sql` opens connections whenever the pool decides to,
+so the obvious `db.Exec("PRAGMA foreign_keys = ON")` after `sql.Open` protects
+exactly the first connection and leaves every later one unguarded. Nothing
+about that failure is visible until a foreign key silently does not fire on a
+busy till. Putting the settings in the DSN makes the driver reapply them on
+every new connection, and the test holds four connections open at once to see
+the difference, because a test that takes one connection passes either way.
+Cost: the settings are inside a string the compiler does not check, so the
+tests assert the values back out of live connections rather than trusting it.
+
+## ADR-039 - The health check is a cached background probe
+2026-09 · Status: accepted
+Decision: `DB` owns a goroutine that probes every fifteen seconds and caches
+the answer; `Health()` returns it with no IO. `Open` probes once before
+returning. `internal/api` takes `WithDBCheck(func() string)` rather than a
+database handle, and `cmd/nofiltr` maps between the two vocabularies
+explicitly.
+Because: the health handler's own comment already said it: whatever is calling
+`/api/v1/health` is usually calling it because something has hung, so an
+endpoint that queries the database is one more thing that can hang exactly
+when it is needed. A cached answer is also a better signal, since a
+`CheckedAt` that stops moving is itself a symptom. The probe reads
+`sqlite_schema` rather than `SELECT 1`, which is answered from memory and
+would keep reporting ok with the file deleted underneath it. The function
+argument keeps `internal/api` free of a storage import, and the explicit
+mapping in `cmd/nofiltr` means the two packages do not agree by coincidence
+because their constants happen to spell the same three words.
+Cost: a status up to fifteen seconds stale, and one more goroutine to stop on
+shutdown.
