@@ -11,26 +11,26 @@ File: `docs/phases/phase-03.md`. Phase 02 is complete.
 
 ## Last completed task
 
-**Phase 03, Task 2 - the projection.** `order.Project(events) (State, error)`
-in `project.go` (fold and line handlers), `settle.go` (money handlers and
-shared checks) and `totals.go` (recompute after every event). 12 full-order
-scenarios, 70+ illegal-sequence cases, 97.8% coverage. ADR-046 has every rule.
+**Phase 03, Task 3 - state machines.** `internal/domain/fsm` is a generic,
+stateless transition table (`fsm.ErrInvalidTransition`, `*TransitionError`).
+Order and payment tables in `order/transitions.go`, table lifecycle in
+`internal/domain/table`, station ticket in `internal/domain/kitchen`. Every
+table is tested exhaustively (all pairs of states) against a hand restatement
+via `fsmtest.Exhaustive`. ADR-047 lists the four moves added beyond the
+domain doc.
 
-What later tasks must know: the first impossible event fails as a
-`*ProjectionError` with its seq, so a service validates an append by
-projecting with the candidate on the end. Refunds need a negative balance:
-refunding a closed order means reopening it and recording the correction.
-`order.opened` now carries `currency`. `money.Amount.Times` was added for
-qty × price. Line status constants are `LineStatus*`, payment ones
-`PaymentStatus*`, to stay clear of the payload type names.
+What later tasks must know: `order.Project` now checks every derived status
+change against the order machine, and payment voids and full refunds against
+the payment machine. `StatusHeld` and `PaymentStatusPending` exist in the
+tables but no event produces them yet. The ticket table has no recall or
+cancel; phase 08 adds what the kitchen display needs.
 
 ## Next task
 
-**Phase 03, Task 3 - state machines.** Read `docs/02-domain.md` in full first.
-The phase notes ask the human to review the event list and the projection
-before this task starts. The projection derives order status (`open`,
-`settling`, `closed`, `reopened`) itself; Task 3 can move those checks into
-explicit transition functions and add `held`, which has no event yet.
+**Phase 03, Task 4 - invoice series.** `internal/domain/invoice`: series
+config, the allocation interface the DB layer implements, financial-year
+boundaries (India 1 April, and calendar year), format templating, and the
+gapless guarantee as a property test. Read `docs/02-domain.md` in full first.
 
 ## Known broken / in progress
 

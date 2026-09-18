@@ -25,7 +25,7 @@ Phase 02. **Read `docs/02-domain.md` in full before every task in this phase.**
   and at least ten realistic full-order sequences including a void after
   payment, a comp, a reopen and a partial refund.
 
-- [ ] **Task 3 — State machines.**
+- [x] **Task 3 — State machines.**
   Order, table, station-ticket and payment transitions from `docs/02-domain.md`,
   as explicit transition functions returning `ErrInvalidTransition`. Exhaustive
   tests: every legal transition passes, a sample of illegal ones fails.

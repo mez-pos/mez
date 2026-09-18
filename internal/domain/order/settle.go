@@ -45,13 +45,17 @@ func (p *projector) voidPayment(pl PaymentVoided) error {
 	if err != nil {
 		return err
 	}
-	if t.Status != PaymentStatusCaptured || !t.Refunded.IsZero() {
-		return fmt.Errorf("%w: payment %d is %s with %d refunded", ErrPaymentNotCaptured, t.ID, t.Status, t.Refunded.Minor)
+	if !t.Refunded.IsZero() {
+		return fmt.Errorf("%w: payment %d has %d refunded", ErrPaymentNotCaptured, t.ID, t.Refunded.Minor)
+	}
+	status, err := TransitionPayment(t.Status, PaymentStatusVoided)
+	if err != nil {
+		return fmt.Errorf("%w: payment %d: %w", ErrPaymentNotCaptured, t.ID, err)
 	}
 	if err := needReason(pl.Reason, pl.AuthorisedBy); err != nil {
 		return err
 	}
-	t.Status = PaymentStatusVoided
+	t.Status = status
 	t.VoidReason = pl.Reason
 	return nil
 }
@@ -103,7 +107,9 @@ func (p *projector) refund(e Event, pl RefundIssued) error {
 	}
 	t.Refunded = refunded
 	if refunded == t.Amount {
-		t.Status = PaymentStatusRefunded
+		if t.Status, err = TransitionPayment(t.Status, PaymentStatusRefunded); err != nil {
+			return err
+		}
 	}
 	p.s.Refunds = append(p.s.Refunds, Refund{
 		Seq: e.Seq, Amount: pl.Amount, AgainstPaymentID: pl.AgainstPaymentID, Reason: pl.Reason,

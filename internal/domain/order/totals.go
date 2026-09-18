@@ -7,8 +7,9 @@ import (
 )
 
 // recompute derives every figure in State from the lines, discounts and
-// tenders, then derives the status. It runs after every event, so a figure is
-// never stale and an event that breaks an invariant fails at its own seq.
+// tenders, then derives the status and checks the move against the order
+// machine. It runs after every event, so a figure is never stale and an event
+// that breaks an invariant fails at its own seq.
 //
 // The order of operations is the rule: line gross, then line discounts off
 // each line, then order discounts off what is left. Each percentage is
@@ -22,7 +23,20 @@ func (p *projector) recompute() error {
 		return err
 	}
 	p.s.Totals = t
-	p.s.Status = p.status()
+	return p.moveTo(p.status())
+}
+
+// moveTo sets the derived status, checking the change against the order
+// machine. A legal stream never fails here; if one does, the projection and
+// the machine disagree, and refusing the event is safer than guessing which
+// is right.
+func (p *projector) moveTo(next Status) error {
+	if p.s.Status != "" && next != p.s.Status {
+		if _, err := TransitionOrder(p.s.Status, next); err != nil {
+			return err
+		}
+	}
+	p.s.Status = next
 	return nil
 }
 

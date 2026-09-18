@@ -9,10 +9,12 @@ import (
 // Status is where an order is in its life, derived from its events.
 type Status string
 
-// The order statuses Project can produce. "held" from docs/02-domain.md has no
-// event yet; it arrives with the state machines in phase 03, task 3.
+// The order statuses of docs/02-domain.md. Project produces every one but
+// StatusHeld, which has no event yet; the order machine in transitions.go
+// already allows it, so adding the event is all it will take.
 const (
 	StatusOpen     Status = "open"     // taking lines, nothing tendered
+	StatusHeld     Status = "held"     // parked: kept aside, not being worked
 	StatusSettling Status = "settling" // at least one live tender
 	StatusClosed   Status = "closed"   // settled at a zero balance
 	StatusReopened Status = "reopened" // closed once, open again for a correction
@@ -29,12 +31,13 @@ const (
 )
 
 // PaymentStatus is where a tender is. A payment.tendered is captured when it
-// is recorded; the "pending" of docs/02-domain.md belongs to the card
-// terminal, before any event exists.
+// is recorded, so Project never produces PaymentStatusPending: pending is the
+// card terminal's state before any event exists, and belongs to phase 07.
 type PaymentStatus string
 
 // A tender is captured until it is voided or refunded in full.
 const (
+	PaymentStatusPending  PaymentStatus = "pending"
 	PaymentStatusCaptured PaymentStatus = "captured"
 	PaymentStatusVoided   PaymentStatus = "voided"
 	PaymentStatusRefunded PaymentStatus = "refunded"

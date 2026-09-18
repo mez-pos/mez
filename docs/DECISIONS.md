@@ -816,3 +816,36 @@ correction). Requiring a zero balance before `invoice.issued` means a bill
 presented before payment is a pro-forma with no number; phase 07 must honour
 that or revisit this rule. Recomputing is O(n²) in events, which is fine to
 hundreds of events and would need a snapshot well before it hurt.
+
+## ADR-047 - Lifecycles are fsm transition tables, and the projection is checked against them
+2026-09 · Status: accepted
+Decision: `internal/domain/fsm` holds a generic `Machine[S ~string]`: a fixed
+list of states and the moves out of each, with no current state of its own.
+An illegal move is a `*fsm.TransitionError` unwrapping to
+`fsm.ErrInvalidTransition`; staying in the same state is not a move. The four
+lifecycles are tables built on it: order and payment in
+`order/transitions.go`, table in `internal/domain/table`, station ticket in
+`internal/domain/kitchen`. `order.Project` checks every status change it
+derives against the order machine, and voids and full refunds of payments
+against the payment machine, so a void of a voided payment matches both
+`ErrPaymentNotCaptured` and `fsm.ErrInvalidTransition`. The tests restate
+each table by hand from `docs/02-domain.md` and walk every pair of states
+through `fsmtest.Exhaustive`, not a sample. Moves added beyond the domain
+lines:
+- order `settling -> open`: the only live tender was voided or refunded.
+- order `open -> closed`: settled at zero with no tender (comped in full).
+- table `seated -> free`: guests left before ordering.
+- table `settling -> ordered`: another round after asking for the bill.
+`held` (order) and `pending` (payment) exist in the tables but no event
+produces them yet.
+Because: one table per lifecycle is one place to read the rules, and a
+machine with no state is a pure function the projection can call. The
+projection derives status from its events, so without the check the derived
+status and the documented lifecycle could drift apart unnoticed. Restating
+the tables in the tests means a slip has to be made twice, the same way, to
+pass. Table and ticket live in their own packages because they are not
+orders: phase 08 builds on them without importing the order package.
+Cost: two copies of every table, one in code and one in its test, by design.
+The ticket table has no recall or cancel move; phase 08 adds what the kitchen
+display turns out to need. A machine built with `fsm.Must` panics at startup
+on a malformed table, which each package's tests catch first.
