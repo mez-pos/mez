@@ -17,7 +17,7 @@ Phase 02. **Read `docs/02-domain.md` in full before every task in this phase.**
   An unknown event type on read returns a typed error rather than silently
   dropping — a forward-compatibility guard.
 
-- [ ] **Task 2 — The projection.**
+- [x] **Task 2 — The projection.**
   `Project(events []Event) (State, error)`. Pure: no clock, no DB. `State` holds
   lines with their price snapshots, modifiers, discounts, voids, course and
   station, subtotals, tax, tenders, balance due and order status. Illegal

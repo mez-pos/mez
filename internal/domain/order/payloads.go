@@ -50,8 +50,13 @@ const (
 )
 
 // OrderOpened starts an order. It is always the event at seq 1.
+//
+// Currency fixes the currency of everything that follows: every price,
+// discount, tender and refund on the order must be in it. It is set at open,
+// from the venue, so that an order with no lines still has totals.
 type OrderOpened struct {
 	Channel  Channel `json:"channel"`
+	Currency string  `json:"currency"`
 	TableID  int64   `json:"table_id,omitempty"` // 0 for an order with no table
 	Covers   int64   `json:"covers"`
 	OpenedBy int64   `json:"opened_by"`

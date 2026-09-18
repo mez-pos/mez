@@ -775,3 +775,44 @@ Cost: the leniency only holds under one rule, which code cannot enforce:
 **anything that changes what an order is worth must be a new event type, not
 a new field on an existing one.** A reviewer has to hold that line. The tax
 snapshot on `invoice.issued` is raw JSON until task 5 defines its shape.
+
+## ADR-046 - The projection's money rules
+2026-09 · Status: accepted
+Decision: `order.Project` is strict. It checks each event against the state
+before it and recomputes every total after it, so the first impossible event
+fails with a `*ProjectionError` naming its seq. The rules:
+- Currency is fixed by `order.opened`, which gained a `currency` field. Every
+  later amount must be in it.
+- A line is worth `qty × (unit_price + Σ modifier prices)`, via the new
+  `money.Amount.Times`. Voided and comped lines leave the total; their gross
+  is kept as `Voided` and `Comped` for reporting.
+- Line discounts come off each line's gross, then order discounts come off
+  what is left. Each percentage is rounded once, half to even. Percentages
+  track their base, so a quantity change after 10% off is still 10% off.
+  Discounts that exceed what they apply to are an error, never clamped.
+- `BalanceDue = Total - (Paid - Refunded)`. A tender may not exceed the
+  balance due; change for cash is not part of the order. Tips are summed
+  apart and never touch the balance.
+- A refund needs a negative balance (the venue owes the guest), no more than
+  that, and no more than the payment has left. A closed order accepts only
+  `order.reopened` and `note.added`, so refunding a settled bill means
+  reopening it and recording why (a void, a comp, a quantity cut).
+- Close and invoice both need a balance of exactly zero. One invoice per
+  settlement; a reopen allows the next.
+- Voids, comps, payment voids and reopens need a reason and a non-zero
+  authoriser. A comped line can still go to a station; a voided one cannot.
+- Tax is zero until phase 03, task 5 puts a tax snapshot on `line.added`.
+Because: a service appends an event by projecting the stream with it on the
+end, so the projection is the one place these rules can live. Recomputing
+after every event keeps percentages honest when quantities change, and costs
+nothing at the size of a real order. The refund rule replaced an earlier plan
+in which refunds sat outside the balance. That plan let a closed order be
+refunded with nothing in the stream saying why, and it could not express
+"voided after payment, refund the difference" without a balance that
+disagreed with the money. Tying refunds to a negative balance makes every
+refund explain itself in the events before it.
+Cost: refunding a closed order takes two extra events (reopen, then the
+correction). Requiring a zero balance before `invoice.issued` means a bill
+presented before payment is a pro-forma with no number; phase 07 must honour
+that or revisit this rule. Recomputing is O(n²) in events, which is fine to
+hundreds of events and would need a snapshot well before it hurt.

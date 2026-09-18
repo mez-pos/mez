@@ -379,3 +379,32 @@ func TestMul(t *testing.T) {
 		})
 	}
 }
+
+func TestTimes(t *testing.T) {
+	tests := []struct {
+		name    string
+		in      Amount
+		n       int64
+		want    Amount
+		wantErr error
+	}{
+		{name: "a line of three", in: Amount{Minor: 22000, Currency: "INR"}, n: 3, want: Amount{Minor: 66000, Currency: "INR"}},
+		{name: "times one", in: Amount{Minor: 22000, Currency: "INR"}, n: 1, want: Amount{Minor: 22000, Currency: "INR"}},
+		{name: "times zero", in: Amount{Minor: 22000, Currency: "INR"}, n: 0, want: Amount{Minor: 0, Currency: "INR"}},
+		{name: "negative", in: Amount{Minor: -5, Currency: "INR"}, n: 4, want: Amount{Minor: -20, Currency: "INR"}},
+		{name: "overflow", in: Amount{Minor: math.MaxInt64 / 2, Currency: "INR"}, n: 3, wantErr: ErrOverflow},
+		{name: "min int is refused", in: Amount{Minor: math.MinInt64 / 2, Currency: "INR"}, n: 2, wantErr: ErrOverflow},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.in.Times(tt.n)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("Times(%d) err = %v, want %v", tt.n, err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Errorf("Times(%d) = %+v, want %+v", tt.n, got, tt.want)
+			}
+		})
+	}
+}

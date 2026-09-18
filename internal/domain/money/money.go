@@ -111,6 +111,17 @@ func (a Amount) Mul(basisPoints int32) (Amount, error) {
 	return Amount{Minor: minor, Currency: a.Currency}, nil
 }
 
+// Times returns the amount multiplied by a whole count: a unit price times a
+// line's quantity. No rounding is involved, so none happens; a result that
+// does not fit in an int64 is ErrOverflow.
+func (a Amount) Times(n int64) (Amount, error) {
+	product, ok := mul64(a.Minor, n)
+	if !ok {
+		return Amount{}, fmt.Errorf("money: %d minor units times %d: %w", a.Minor, n, ErrOverflow)
+	}
+	return Amount{Minor: product, Currency: a.Currency}, nil
+}
+
 // Sum adds amounts that must all be in the named currency. An empty list sums
 // to zero in that currency, which is the answer an order with no lines needs.
 //

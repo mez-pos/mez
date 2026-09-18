@@ -20,7 +20,7 @@ var testAt = time.Date(2026, 9, 18, 13, 45, 7, 123456789, time.UTC)
 func samplePayloads() []Payload {
 	fiftyOff := inr(5000)
 	return []Payload{
-		OrderOpened{Channel: ChannelQRTable, TableID: 4, Covers: 3, OpenedBy: 11},
+		OrderOpened{Channel: ChannelQRTable, Currency: "INR", TableID: 4, Covers: 3, OpenedBy: 11},
 		LineAdded{
 			ItemID: 42, Name: "Cold brew", Qty: 2, UnitPrice: inr(22000),
 			Modifiers: []Modifier{

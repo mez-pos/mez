@@ -5,9 +5,12 @@
 // taken. The current state is computed from that list. docs/02-domain.md is
 // the rule; this package is the implementation of it.
 //
-// This file set defines the events themselves: the Event envelope every event
-// shares, one payload type per row of the domain table, and their JSON form,
-// which is what order_events.payload_json stores.
+// The package has two halves. event.go and payloads.go define the events: the
+// Event envelope every event shares, one payload type per row of the domain
+// table, and their JSON form, which is what order_events.payload_json stores.
+// project.go, settle.go and totals.go fold a stream of them into a State with
+// Project, refusing any stream that could not have happened. ADR-046 has the
+// money rules the fold enforces.
 //
 // # Reading is strict about types, lenient about fields
 //

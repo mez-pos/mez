@@ -11,23 +11,26 @@ File: `docs/phases/phase-03.md`. Phase 02 is complete.
 
 ## Last completed task
 
-**Phase 03, Task 1 - event types.** `internal/domain/order` has all 15 events
-from `docs/02-domain.md` as payload types, an `Event` envelope (`Seq`, `Type`,
-`At`, `ActorID`, `DeviceID`, `Payload`) and its JSON form. `NewEvent` takes the
-type from the payload and normalises `At` to UTC. 100% coverage. ADR-045.
+**Phase 03, Task 2 - the projection.** `order.Project(events) (State, error)`
+in `project.go` (fold and line handlers), `settle.go` (money handlers and
+shared checks) and `totals.go` (recompute after every event). 12 full-order
+scenarios, 70+ illegal-sequence cases, 97.8% coverage. ADR-046 has every rule.
 
-What Task 2 must know: a line's ID and a payment's ID are the `Seq` of the
-event that created them. An unknown event type fails decoding with
-`*UnknownEventTypeError`, and a stream with one fails whole. Unknown fields
-are ignored, so anything that changes a total must be a new event type.
-Payloads are values; no validation beyond shape happens here (qty > 0, a void
-of a missing line, and so on belong to the projection).
+What later tasks must know: the first impossible event fails as a
+`*ProjectionError` with its seq, so a service validates an append by
+projecting with the candidate on the end. Refunds need a negative balance:
+refunding a closed order means reopening it and recording the correction.
+`order.opened` now carries `currency`. `money.Amount.Times` was added for
+qty × price. Line status constants are `LineStatus*`, payment ones
+`PaymentStatus*`, to stay clear of the payload type names.
 
 ## Next task
 
-**Phase 03, Task 2 - the projection.** `Project(events []Event) (State,
-error)`, pure. Read `docs/02-domain.md` in full first. The phase notes ask the
-human to review the event list and projection before Task 3.
+**Phase 03, Task 3 - state machines.** Read `docs/02-domain.md` in full first.
+The phase notes ask the human to review the event list and the projection
+before this task starts. The projection derives order status (`open`,
+`settling`, `closed`, `reopened`) itself; Task 3 can move those checks into
+explicit transition functions and add `held`, which has no event yet.
 
 ## Known broken / in progress
 
@@ -50,9 +53,11 @@ human to review the event list and projection before Task 3.
   so only someone editing SQL needs it.
 - `docs/02-domain.md` asks for a lint rule that fails the build on `float64` in
   `internal/domain`. No phase task owns it and it does not exist yet.
-- `line.added` has no tax snapshot yet. Task 5 decides its shape; until then
-  `invoice.issued.tax_snapshot` is raw JSON. No events are persisted, so
-  adding it then is free.
+- `line.added` has no tax snapshot yet, so `Totals.Tax` is always zero. Task 5
+  decides its shape; until then `invoice.issued.tax_snapshot` is raw JSON. No
+  events are persisted, so adding it then is free.
+- `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
+  payment has no invoice number. Phase 07 must work that way or revisit it.
 
 ## Open questions for the human
 
