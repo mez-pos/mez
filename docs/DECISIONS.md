@@ -750,3 +750,28 @@ the default path and a write has to say so.
 Cost: generated code in review diffs, and a second thing to run after editing
 SQL. `make generate` finds sqlc in GOPATH/bin as well as on PATH, because
 `go install` puts it somewhere Windows does not search by default.
+
+## ADR-045 - Event IDs come from seq, and decoding is strict on types, lenient on fields
+2026-09 · Status: accepted
+Decision: an event that creates something identifies it by its own `seq`. The
+line a `line.added` adds is line `seq`, and the payment a `payment.tendered`
+records is payment `seq`. `line.added` and `payment.tendered` carry no ID
+field of their own. On read, an unknown event type is an
+`*UnknownEventTypeError` (wraps `ErrUnknownEventType`) and fails the whole
+stream. An unknown field inside a known payload is ignored. Three payload
+additions to the table in `docs/02-domain.md`: `line.added` carries `name`
+(the snapshot rule asks for item names), and `discount.applied` and
+`note.added` carry `line_id` when their scope is `line`. A percentage discount
+is `basis_points`, an amount discount is `amount`, and `kind` says which.
+Because: `seq` is already dense and unique per order, so it is a stable ID
+that needs no generator and cannot collide, and a `line.voided{line_id: 3}`
+reads as "the line event 3 added", so the timeline explains itself. Skipping
+an unknown type would drop a payment or a void and produce a balance that
+looks right and is not, so an old build must refuse the order rather than
+guess. Unknown fields go the other way. The event log is permanent, and a
+reader that rejected a newer optional field would make old orders
+unreadable to it after a partial upgrade.
+Cost: the leniency only holds under one rule, which code cannot enforce:
+**anything that changes what an order is worth must be a new event type, not
+a new field on an existing one.** A reviewer has to hold that line. The tax
+snapshot on `invoice.issued` is raw JSON until task 5 defines its shape.

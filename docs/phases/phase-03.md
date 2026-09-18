@@ -10,7 +10,7 @@ Phase 02. **Read `docs/02-domain.md` in full before every task in this phase.**
 
 ## Tasks
 
-- [ ] **Task 1 — Event types.**
+- [x] **Task 1 — Event types.**
   `internal/domain/order`. Every event from the table in `docs/02-domain.md` as
   a Go type, plus an `Event` envelope (`Seq`, `Type`, `At`, `ActorID`,
   `DeviceID`, payload). JSON marshal/unmarshal round-trip tests for every type.

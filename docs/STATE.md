@@ -11,31 +11,23 @@ File: `docs/phases/phase-03.md`. Phase 02 is complete.
 
 ## Last completed task
 
-**Phase 02, Task 5 - sqlc wired. Phase 02 is complete.** `sqlc.yaml` generates
-`internal/db/gen` from the migrations themselves, so a query naming a missing
-column fails `make generate`, not a request. Queries for venues, settings,
-staff and roles. The generated code is committed, so a clone builds without
-sqlc. 84.2% coverage in `internal/db`. ADR-043, ADR-044.
+**Phase 03, Task 1 - event types.** `internal/domain/order` has all 15 events
+from `docs/02-domain.md` as payload types, an `Event` envelope (`Seq`, `Type`,
+`At`, `ActorID`, `DeviceID`, `Payload`) and its JSON form. `NewEvent` takes the
+type from the payload and normalises `At` to UTC. 100% coverage. ADR-045.
 
-Reads go through `database.Queries()` (read-only pool), writes through
-`database.WriteTx`. The add-a-query loop is in `docs/03-conventions.md`, along
-with the rule ADR-043 settles: **the declared column type is the contract**.
-`TIMESTAMP` gives `time.Time`, `BOOLEAN` gives `bool`, no sqlc overrides. Call
-`.UTC()` before rendering a time or it serialises `+00:00` where the API says
-`Z`.
-
-Earlier in the phase: money and id (ADR-029 to 035), the connection (036 to
-039), migrations (040 to 042). Both dependencies are pinned to hold the Go
-1.23 floor; `@latest` on either raises `go.mod` to 1.25, and CI takes its
-toolchain from that line.
+What Task 2 must know: a line's ID and a payment's ID are the `Seq` of the
+event that created them. An unknown event type fails decoding with
+`*UnknownEventTypeError`, and a stream with one fails whole. Unknown fields
+are ignored, so anything that changes a total must be a new event type.
+Payloads are values; no validation beyond shape happens here (qty > 0, a void
+of a missing line, and so on belong to the projection).
 
 ## Next task
 
-**Phase 03, Task 1.** Read `docs/phases/phase-03.md`; this session did not.
-Phase 02 leaves it `money`, `id`, a migrated database and a typed query layer,
-none of which the domain may import: `internal/domain` stays pure, and
-`TestDomainImportsStayPure` fails loudly if that slips. Order events and
-projections are the heaviest-tested code in the repo, per `docs/02-domain.md`.
+**Phase 03, Task 2 - the projection.** `Project(events []Event) (State,
+error)`, pure. Read `docs/02-domain.md` in full first. The phase notes ask the
+human to review the event list and projection before Task 3.
 
 ## Known broken / in progress
 
@@ -58,6 +50,9 @@ projections are the heaviest-tested code in the repo, per `docs/02-domain.md`.
   so only someone editing SQL needs it.
 - `docs/02-domain.md` asks for a lint rule that fails the build on `float64` in
   `internal/domain`. No phase task owns it and it does not exist yet.
+- `line.added` has no tax snapshot yet. Task 5 decides its shape; until then
+  `invoice.issued.tax_snapshot` is raw JSON. No events are persisted, so
+  adding it then is free.
 
 ## Open questions for the human
 
