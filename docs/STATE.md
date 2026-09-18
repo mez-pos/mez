@@ -6,37 +6,36 @@
 
 ## Current phase
 
-**Phase 02 - SQLite, migrations, sqlc, money type, IDs**
-File: `docs/phases/phase-02.md`. Phase 01 is complete.
+**Phase 03 - Domain core: order events, projections, invoice series, tax**
+File: `docs/phases/phase-03.md`. Phase 02 is complete.
 
 ## Last completed task
 
-**Phase 02, Task 4 - Migrations.** goose as a library, embedded from
-`internal/db/migrations`, applied on every startup before the listener serves.
-`00001` creates `venues`, `settings`, `roles`, `staff`, `devices`. 83.9%
-coverage, ADR-040 to ADR-042. Both startup paths verified live: a fresh data
-directory logs the migration, a second start logs "schema is current".
+**Phase 02, Task 5 - sqlc wired. Phase 02 is complete.** `sqlc.yaml` generates
+`internal/db/gen` from the migrations themselves, so a query naming a missing
+column fails `make generate`, not a request. Queries for venues, settings,
+staff and roles. The generated code is committed, so a clone builds without
+sqlc. 84.2% coverage in `internal/db`. ADR-043, ADR-044.
 
-`make migrate-new NAME=add_orders` scaffolds the next file. The schema carries
-the invariants itself, and every later migration must keep doing so:
-`typeof(x) = 'integer'` on money columns, a `GLOB` check and no SQL default on
-timestamps, `0/1` checks on booleans, a unique index on every public ID.
-`docs/03-conventions.md` lists the rules; ADR-041 says why each exists.
+Reads go through `database.Queries()` (read-only pool), writes through
+`database.WriteTx`. The add-a-query loop is in `docs/03-conventions.md`, along
+with the rule ADR-043 settles: **the declared column type is the contract**.
+`TIMESTAMP` gives `time.Time`, `BOOLEAN` gives `bool`, no sqlc overrides. Call
+`.UTC()` before rendering a time or it serialises `+00:00` where the API says
+`Z`.
 
-**Both dependencies are pinned to keep the Go 1.23 floor** (ADR-036, ADR-040):
-`modernc.org/sqlite` v1.39.0 and `goose` v3.26.0. `@latest` on either raises
-`go.mod` to 1.25, and CI reads its toolchain from that line. Check it after
-any `go get`.
+Earlier in the phase: money and id (ADR-029 to 035), the connection (036 to
+039), migrations (040 to 042). Both dependencies are pinned to hold the Go
+1.23 floor; `@latest` on either raises `go.mod` to 1.25, and CI takes its
+toolchain from that line.
 
 ## Next task
 
-**Phase 02, Task 5 - sqlc.** `sqlc.yaml` generating into `internal/db/gen`,
-first queries for venues, settings and staff, `make generate` regenerating, and
-an integration test that migrates a temp DB and round-trips a venue. Two things
-to settle there: timestamps are `TEXT` so sqlc will give `string` unless an
-override maps them to `time.Time`, and reads go through `d.Reader()`, writes
-through `d.Tx`, so the generated code needs both. This is the last task in
-Phase 02.
+**Phase 03, Task 1.** Read `docs/phases/phase-03.md`; this session did not.
+Phase 02 leaves it `money`, `id`, a migrated database and a typed query layer,
+none of which the domain may import: `internal/domain` stays pure, and
+`TestDomainImportsStayPure` fails loudly if that slips. Order events and
+projections are the heaviest-tested code in the repo, per `docs/02-domain.md`.
 
 ## Known broken / in progress
 
@@ -54,6 +53,9 @@ Phase 02.
   is killed with `taskkill /F /IM nofiltr`, without the extension.
 - The domain import test checks direct imports only. See the cost note on
   ADR-016.
+- `make generate` needs sqlc installed: `go install
+  github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1`. The generated code is committed,
+  so only someone editing SQL needs it.
 - `docs/02-domain.md` asks for a lint rule that fails the build on `float64` in
   `internal/domain`. No phase task owns it and it does not exist yet.
 
@@ -67,7 +69,7 @@ None.
 
 - [x] 00 — Repo skeleton, docs bootstrap, design tokens
 - [x] 01 — Go server skeleton, config, logging, embed, cross-compile
-- [ ] 02 — SQLite, migrations, sqlc, money type, IDs
+- [x] 02 — SQLite, migrations, sqlc, money type, IDs
 - [ ] 03 — Domain core: order events, projections, invoice series, tax
 - [ ] 04 — HTTP API, WebSocket hub, TypeScript type codegen
 - [ ] 05 — Frontend shell: Vite, Tailwind tokens, router, primitives, auth

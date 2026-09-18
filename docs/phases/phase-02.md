@@ -38,7 +38,7 @@ Phase 01. Read `docs/02-domain.md` before starting.
   every monetary column is `INTEGER` minor units with a sibling currency column
   or a venue-level currency. A `make migrate-new NAME=x` target.
 
-- [ ] **Task 5 — sqlc wired.**
+- [x] **Task 5 — sqlc wired.**
   `sqlc.yaml` generating into `internal/db/gen`. Write the first queries for
   venues, settings and staff. `make generate` regenerates. An integration test
   against a temp file DB that migrates up, inserts a venue and reads it back.

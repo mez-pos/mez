@@ -10,8 +10,10 @@
 --              That is the invariant in CLAUDE.md, enforced by the database
 --              rather than only by the code above it.
 --
---   Time       TEXT, ISO 8601, UTC, ending in Z. The GLOB check refuses a
---              local time or a bare epoch. There are no SQL defaults on these:
+--   Time       Declared TIMESTAMP, stored as ISO 8601 text, UTC, ending in Z.
+--              The declared type is what makes the driver hand Go a time.Time
+--              rather than a string; the GLOB check refuses a local time or a
+--              bare epoch. There are no SQL defaults on these:
 --              docs/03-conventions.md injects a clock into the code, and a
 --              column defaulting to now() would quietly go around it.
 --
@@ -55,8 +57,8 @@ CREATE TABLE venues (
     -- applies it, once, at the end.
     cash_rounding_step_minor   INTEGER NOT NULL DEFAULT 1,
 
-    created_at                 TEXT    NOT NULL,
-    updated_at                 TEXT    NOT NULL,
+    created_at                 TIMESTAMP NOT NULL,
+    updated_at                 TIMESTAMP NOT NULL,
 
     CHECK (length(name) > 0),
     CHECK (length(currency) = 3 AND currency = upper(currency)),
@@ -64,8 +66,8 @@ CREATE TABLE venues (
     CHECK (financial_year_start_month BETWEEN 1 AND 12),
     CHECK (tax_profile IN ('none', 'gst_in', 'vat_uk', 'sales_tax_us')),
     CHECK (typeof(cash_rounding_step_minor) = 'integer' AND cash_rounding_step_minor > 0),
-    CHECK (created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z'),
-    CHECK (updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z')
+    CHECK (created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]*+00:00'),
+    CHECK (updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]*+00:00')
 );
 
 CREATE UNIQUE INDEX venues_public_id ON venues (public_id);
@@ -78,12 +80,12 @@ CREATE TABLE settings (
     venue_id   INTEGER NOT NULL REFERENCES venues (id) ON DELETE CASCADE,
     key        TEXT    NOT NULL,
     value      TEXT    NOT NULL,
-    updated_at TEXT    NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
 
     PRIMARY KEY (venue_id, key),
 
     CHECK (length(key) > 0),
-    CHECK (updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z')
+    CHECK (updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]*+00:00')
 ) WITHOUT ROWID;
 
 -- What a staff member is allowed to do. Per venue, so one venue renaming
@@ -97,11 +99,11 @@ CREATE TABLE roles (
     -- can be exhaustive; the database only insists this is valid JSON.
     permissions TEXT    NOT NULL DEFAULT '[]',
 
-    created_at  TEXT    NOT NULL,
+    created_at  TIMESTAMP NOT NULL,
 
     CHECK (length(name) > 0),
     CHECK (json_valid(permissions)),
-    CHECK (created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z')
+    CHECK (created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]*+00:00')
 );
 
 CREATE UNIQUE INDEX roles_venue_name ON roles (venue_id, name);
@@ -123,15 +125,15 @@ CREATE TABLE staff (
     -- being a list of everyone's PIN.
     pin_hash   TEXT    NOT NULL,
 
-    active     INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT    NOT NULL,
-    updated_at TEXT    NOT NULL,
+    active     BOOLEAN NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
 
     CHECK (length(name) > 0),
     CHECK (length(pin_hash) > 0),
     CHECK (active IN (0, 1)),
-    CHECK (created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z'),
-    CHECK (updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z')
+    CHECK (created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]*+00:00'),
+    CHECK (updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]*+00:00')
 );
 
 CREATE UNIQUE INDEX staff_public_id ON staff (public_id);
@@ -150,21 +152,21 @@ CREATE TABLE devices (
     -- row only proves one was issued.
     token_hash   TEXT    NOT NULL DEFAULT '',
 
-    paired_at    TEXT,
-    last_seen_at TEXT,
+    paired_at    TIMESTAMP,
+    last_seen_at TIMESTAMP,
 
     -- Set rather than deleted, so a device that walked out of the building
     -- leaves a record that it was here.
-    revoked_at   TEXT,
+    revoked_at   TIMESTAMP,
 
-    created_at   TEXT    NOT NULL,
+    created_at   TIMESTAMP NOT NULL,
 
     CHECK (length(name) > 0),
     CHECK (kind IN ('terminal', 'kitchen', 'back_office', 'guest')),
-    CHECK (paired_at    IS NULL OR paired_at    GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z'),
-    CHECK (last_seen_at IS NULL OR last_seen_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z'),
-    CHECK (revoked_at   IS NULL OR revoked_at   GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z'),
-    CHECK (created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z')
+    CHECK (paired_at    IS NULL OR paired_at    GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]*+00:00'),
+    CHECK (last_seen_at IS NULL OR last_seen_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]*+00:00'),
+    CHECK (revoked_at   IS NULL OR revoked_at   GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]*+00:00'),
+    CHECK (created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]*+00:00')
 );
 
 CREATE UNIQUE INDEX devices_public_id ON devices (public_id);

@@ -182,19 +182,19 @@ func TestPublicIDColumnsAreUnique(t *testing.T) {
 		{
 			table: "venues",
 			insert: `INSERT INTO venues (public_id, name, currency, timezone, created_at, updated_at)
-			         VALUES (?, 'Second', 'INR', 'Asia/Kolkata', '2026-09-18T00:00:00Z', '2026-09-18T00:00:00Z')`,
+			         VALUES (?, 'Second', 'INR', 'Asia/Kolkata', '2026-09-18 00:00:00+00:00', '2026-09-18 00:00:00+00:00')`,
 			args: []any{"ven_7K3M9QX2"},
 		},
 		{
 			table: "staff",
 			insert: `INSERT INTO staff (public_id, venue_id, role_id, name, pin_hash, created_at, updated_at)
-			         VALUES (?, 1, 1, 'Second', 'hash', '2026-09-18T00:00:00Z', '2026-09-18T00:00:00Z')`,
+			         VALUES (?, 1, 1, 'Second', 'hash', '2026-09-18 00:00:00+00:00', '2026-09-18 00:00:00+00:00')`,
 			args: []any{"stf_A1B2C3D4"},
 		},
 		{
 			table: "devices",
 			insert: `INSERT INTO devices (public_id, venue_id, name, kind, created_at)
-			         VALUES (?, 1, 'Second', 'terminal', '2026-09-18T00:00:00Z')`,
+			         VALUES (?, 1, 'Second', 'terminal', '2026-09-18 00:00:00+00:00')`,
 			args: []any{"dev_Z9Y8X7W6"},
 		},
 	}
@@ -221,7 +221,7 @@ func seedVenue(t *testing.T, d *DB) {
 	ctx := context.Background()
 
 	err := d.Tx(ctx, func(tx *sql.Tx) error {
-		const at = "2026-09-18T00:00:00Z"
+		const at = "2026-09-18 00:00:00+00:00"
 
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO venues (id, public_id, name, currency, timezone, created_at, updated_at)

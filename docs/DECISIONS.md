@@ -705,3 +705,48 @@ the server applies migrations itself and nothing else requires the goose CLI.
 Cost: two people writing migrations at once would collide on a number, and
 would have to renumber before merging. If that ever becomes real, timestamps
 are the answer and this decision should be superseded.
+
+## ADR-043 - The declared column type is the contract with Go
+2026-09 · Status: accepted, amends ADR-041
+Decision: timestamp columns are declared `TIMESTAMP` and boolean columns
+`BOOLEAN`, not `TEXT` and `INTEGER`. The writer DSN sets
+`_time_format=sqlite`, so a `time.Time` is stored as
+`2026-09-18 04:05:06+00:00`, and the `GLOB` checks from ADR-041 match that
+form and require the `+00:00`. Migration 00001 was edited rather than amended,
+since nothing is deployed and SQLite cannot change a column type in place.
+Because: SQLite ignores the declared type beyond affinity, but sqlc and the
+driver both read it, which makes it the contract. Declared `TEXT`, a timestamp
+generates a `string` and will not scan into a `time.Time` at all; declared
+`TIMESTAMP` it generates `time.Time` with no sqlc override at all, and
+`BOOLEAN` generates `bool` instead of an `int64` every caller compares against
+1. One character of schema replaces a growing list of per-column overrides
+that somebody would eventually forget to add.
+The `_time_format` is not cosmetic. Without it the driver writes Go's
+`time.Time.String`, `2026-09-18 04:05:06 +0000 UTC`, which SQLite's date
+functions cannot read and which the `GLOB` check rejects, so the first write
+through the generated code failed. RFC 3339 with a `Z` is not on offer: the
+driver supports exactly one write format.
+Cost: stored times are SQLite's form rather than RFC 3339, and a value read
+back carries a zero offset with no zone name rather than `time.UTC`, so
+anything rendering one calls `.UTC()` first or it serialises as `+00:00` where
+the rest of the API says `Z`. Both are in `docs/03-conventions.md`.
+
+## ADR-044 - sqlc generates from the migrations, and the output is committed
+2026-09 · Status: accepted
+Decision: sqlc v1.31.1, `sqlc.yaml` at the root, schema read from
+`internal/db/migrations`, queries from `internal/db/queries`, output committed
+to `internal/db/gen`. `emit_interface` and `emit_empty_slices` are on.
+`database.Queries()` returns the query set on the read-only pool and
+`database.WriteTx` runs one inside a transaction.
+Because: pointing sqlc at the migrations rather than at a separate schema file
+means the generated code and the database cannot disagree, and a query naming
+a column that does not exist fails `make generate` rather than a request
+during service. Committing the output means a clone builds without sqlc
+installed, which matters for a project whose whole promise is that it runs on
+a bare machine. `emit_empty_slices` because a `:many` that matches nothing
+should reach a terminal as `[]`, not `null`, and a client handling both is a
+client with a bug in it. The two accessors exist so that the read-only pool is
+the default path and a write has to say so.
+Cost: generated code in review diffs, and a second thing to run after editing
+SQL. `make generate` finds sqlc in GOPATH/bin as well as on PATH, because
+`go install` puts it somewhere Windows does not search by default.

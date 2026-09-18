@@ -1,0 +1,29 @@
+# sqlc turns the SQL in internal/db/queries into typed Go in internal/db/gen.
+#
+# The schema it reads is the migrations themselves, so the generated code and
+# the database cannot disagree: a column added in a migration is a field in Go
+# the moment `make generate` runs, and a query naming a column that does not
+# exist fails generation rather than a request in service.
+#
+# Regenerate with `make generate`. The output is committed, so a clone builds
+# without sqlc installed.
+version: "2"
+
+sql:
+  - engine: "sqlite"
+    schema: "internal/db/migrations"
+    queries: "internal/db/queries"
+    gen:
+      go:
+        package: "gen"
+        out: "internal/db/gen"
+
+        # Queries take a DBTX, which *sql.DB, *sql.Tx and *sql.Conn all
+        # satisfy. That is what lets a read run on the read pool and a write
+        # run inside db.Tx without two sets of generated code.
+        emit_interface: true
+
+        # A :many that matches nothing returns an empty slice, not nil. The
+        # difference shows up as `null` instead of `[]` in a JSON response, and
+        # a terminal that has to handle both is a terminal with a bug in it.
+        emit_empty_slices: true

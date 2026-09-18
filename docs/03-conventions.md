@@ -31,7 +31,23 @@ Test files are table-driven with a `tests := []struct{ name string; ... }`.
 ## SQL
 
 - Queries live in `internal/db/queries/*.sql` with sqlc annotations.
-- Explicit columns. `SELECT *` is banned.
+- Explicit columns. `SELECT *` is banned, and so is `RETURNING *`: both change
+  shape silently the next time a migration adds a column.
+
+**Adding a query.** Write it in `internal/db/queries/<table>.sql` with a
+`-- name: XByY :one|:many|:exec` annotation, run `make generate`, and commit
+the regenerated `internal/db/gen`. The output is committed so that a clone
+builds without sqlc installed. Then:
+
+- Reads go through `database.Queries()`, which is bound to the read-only pool.
+- Writes go through `database.WriteTx(ctx, func(q *gen.Queries) error {...})`,
+  which runs them in one transaction.
+- `database.Tx` and `database.Writer()` are for SQL sqlc cannot generate.
+- Query names follow the Go rule: no `GetX`. `VenueByID`, `ListVenues`,
+  `CreateStaff`, `ActiveStaffForVenue`.
+
+A query naming a column that does not exist fails `make generate`, not a
+request during service, because sqlc reads the migrations as its schema.
 - Every multi-statement write is in an explicit transaction with a deferred
   rollback.
 - Foreign keys on, `PRAGMA foreign_keys = ON` at connection setup.
@@ -42,9 +58,19 @@ Test files are table-driven with a `tests := []struct{ name string; ... }`.
   sequential, not timestamped: one line of history, so the number is also the
   order it ran in. They are embedded, and the server applies them on every
   startup; `make migrate` is only for migrating a database without starting one.
-- Timestamps are `TEXT`, ISO 8601, UTC, ending in `Z`, with a `GLOB` check.
-  No SQL defaults on them: the clock is injected in Go, and a column defaulting
-  to `now()` goes around it.
+- **Declare the type you want in Go.** SQLite ignores the declared type beyond
+  affinity, but sqlc and the driver both read it, so it is the contract:
+  `TIMESTAMP` gives `time.Time`, `BOOLEAN` gives `bool`, `INTEGER` gives
+  `int64`, `TEXT` gives `string`. A timestamp declared `TEXT` cannot scan into
+  a `time.Time` at all. See ADR-043.
+- Timestamps are UTC, stored as `2026-09-18 04:05:06+00:00`, which is what the
+  driver writes and what SQLite's `date()` and `datetime()` read. A `GLOB`
+  check refuses anything else, a local offset included. No SQL defaults on
+  them: the clock is injected in Go, and a column defaulting to `now()` goes
+  around it.
+- A time read back has a zero offset but no zone name, not `time.UTC`. Call
+  `.UTC()` before rendering one, or it serialises as `+00:00` where the rest
+  of the API says `Z`.
 - Money columns carry `CHECK (typeof(x) = 'integer')`. INTEGER affinity is not
   a type — SQLite stores `12.5` in an INTEGER column as a REAL rather than
   refusing it, and the column then holds half a paisa forever.

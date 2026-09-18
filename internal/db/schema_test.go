@@ -18,7 +18,7 @@ func TestMoneyColumnsRefuseAFloat(t *testing.T) {
 	ctx := context.Background()
 
 	const insert = `INSERT INTO venues (public_id, name, currency, timezone, cash_rounding_step_minor, created_at, updated_at)
-	                VALUES (?, 'Test', 'INR', 'Asia/Kolkata', ?, '2026-09-18T00:00:00Z', '2026-09-18T00:00:00Z')`
+	                VALUES (?, 'Test', 'INR', 'Asia/Kolkata', ?, '2026-09-18 00:00:00+00:00', '2026-09-18 00:00:00+00:00')`
 
 	tests := []struct {
 		name  string
@@ -69,7 +69,7 @@ func TestMoneyColumnsRefuseAFloatEvenWhenItLooksWhole(t *testing.T) {
 
 	_, err := d.Writer().ExecContext(ctx,
 		`INSERT INTO venues (public_id, name, currency, timezone, cash_rounding_step_minor, created_at, updated_at)
-		 VALUES ('ven_WHOLE01', 'Test', 'INR', 'Asia/Kolkata', 50.0, '2026-09-18T00:00:00Z', '2026-09-18T00:00:00Z')`)
+		 VALUES ('ven_WHOLE01', 'Test', 'INR', 'Asia/Kolkata', 50.0, '2026-09-18 00:00:00+00:00', '2026-09-18 00:00:00+00:00')`)
 	if err != nil {
 		t.Fatalf("50.0 was refused: %v", err)
 	}
@@ -91,7 +91,7 @@ func TestVenueColumnsAreConstrained(t *testing.T) {
 	const insert = `INSERT INTO venues (public_id, name, currency, timezone, financial_year_start_month, tax_profile, created_at, updated_at)
 	                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 
-	valid := []any{"ven_VALID001", "Filter Coffee House", "INR", "Asia/Kolkata", 4, "gst_in", "2026-09-18T00:00:00Z", "2026-09-18T00:00:00Z"}
+	valid := []any{"ven_VALID001", "Filter Coffee House", "INR", "Asia/Kolkata", 4, "gst_in", "2026-09-18 00:00:00+00:00", "2026-09-18 00:00:00+00:00"}
 
 	tests := []struct {
 		name  string
@@ -107,9 +107,11 @@ func TestVenueColumnsAreConstrained(t *testing.T) {
 		{name: "month thirteen", index: 4, value: 13, why: "a financial year cannot start in month thirteen"},
 		{name: "month zero", index: 4, value: 0, why: "months are one based"},
 		{name: "an unknown tax profile", index: 5, value: "gst_uk", why: "a profile with no implementation computes no tax"},
-		{name: "a local timestamp", index: 6, value: "2026-09-18T05:30:00+05:30", why: "stored times are UTC"},
+		{name: "a local timestamp", index: 6, value: "2026-09-18 05:30:00+05:30", why: "stored times are UTC"},
+		{name: "an RFC 3339 timestamp", index: 6, value: "2026-09-18T00:00:00Z", why: "the driver writes SQLite's own format, so hand written SQL must match it"},
 		{name: "a unix timestamp", index: 6, value: "1789689600", why: "stored times are ISO 8601"},
 		{name: "a date with no time", index: 6, value: "2026-09-18", why: "stored times carry a time"},
+		{name: "no zone at all", index: 6, value: "2026-09-18 00:00:00", why: "a time with no zone is a time somebody has to guess about"},
 	}
 
 	for _, tt := range tests {
@@ -143,43 +145,43 @@ func TestStaffAndDeviceConstraints(t *testing.T) {
 		{
 			name: "staff without a venue",
 			query: `INSERT INTO staff (public_id, venue_id, role_id, name, pin_hash, created_at, updated_at)
-			        VALUES ('stf_NOVENUE1', 999, 1, 'Ghost', 'hash', '2026-09-18T00:00:00Z', '2026-09-18T00:00:00Z')`,
+			        VALUES ('stf_NOVENUE1', 999, 1, 'Ghost', 'hash', '2026-09-18 00:00:00+00:00', '2026-09-18 00:00:00+00:00')`,
 			why: "a staff member belongs to a venue that exists",
 		},
 		{
 			name: "staff without a role",
 			query: `INSERT INTO staff (public_id, venue_id, role_id, name, pin_hash, created_at, updated_at)
-			        VALUES ('stf_NOROLE01', 1, 999, 'Ghost', 'hash', '2026-09-18T00:00:00Z', '2026-09-18T00:00:00Z')`,
+			        VALUES ('stf_NOROLE01', 1, 999, 'Ghost', 'hash', '2026-09-18 00:00:00+00:00', '2026-09-18 00:00:00+00:00')`,
 			why: "an unassigned cashier can do everything or nothing depending on how the code reads it",
 		},
 		{
 			name: "staff with no pin hash",
 			query: `INSERT INTO staff (public_id, venue_id, role_id, name, pin_hash, created_at, updated_at)
-			        VALUES ('stf_NOPIN001', 1, 1, 'Ghost', '', '2026-09-18T00:00:00Z', '2026-09-18T00:00:00Z')`,
+			        VALUES ('stf_NOPIN001', 1, 1, 'Ghost', '', '2026-09-18 00:00:00+00:00', '2026-09-18 00:00:00+00:00')`,
 			why: "an empty hash is an account anybody can be",
 		},
 		{
 			name: "active as text",
 			query: `INSERT INTO staff (public_id, venue_id, role_id, name, pin_hash, active, created_at, updated_at)
-			        VALUES ('stf_BOOL0001', 1, 1, 'Ghost', 'hash', 'false', '2026-09-18T00:00:00Z', '2026-09-18T00:00:00Z')`,
+			        VALUES ('stf_BOOL0001', 1, 1, 'Ghost', 'hash', 'false', '2026-09-18 00:00:00+00:00', '2026-09-18 00:00:00+00:00')`,
 			why: "SQLite stores the text 'false', and every truthiness test in Go then reads it as set",
 		},
 		{
 			name: "a device of an unknown kind",
 			query: `INSERT INTO devices (public_id, venue_id, name, kind, created_at)
-			        VALUES ('dev_UNKNOWN1', 1, 'Mystery', 'fax', '2026-09-18T00:00:00Z')`,
+			        VALUES ('dev_UNKNOWN1', 1, 'Mystery', 'fax', '2026-09-18 00:00:00+00:00')`,
 			why: "nothing routes a ticket to a kind that does not exist",
 		},
 		{
 			name: "a role with permissions that are not JSON",
 			query: `INSERT INTO roles (venue_id, name, permissions, created_at)
-			        VALUES (1, 'broken', 'order.create', '2026-09-18T00:00:00Z')`,
+			        VALUES (1, 'broken', 'order.create', '2026-09-18 00:00:00+00:00')`,
 			why: "permissions are read as JSON, and a bare string parses as nothing",
 		},
 		{
 			name: "two roles with the same name in one venue",
 			query: `INSERT INTO roles (venue_id, name, permissions, created_at)
-			        VALUES (1, 'cashier', '[]', '2026-09-18T00:00:00Z')`,
+			        VALUES (1, 'cashier', '[]', '2026-09-18 00:00:00+00:00')`,
 			why: "a role is chosen by name on the terminal",
 		},
 	}

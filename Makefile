@@ -87,11 +87,18 @@ run:
 	@go run -ldflags "$(LDFLAGS)" $(CMD)
 
 ## generate: sqlc, go generate, TypeScript types
+##           sqlc output is committed, so a clone builds without it installed.
+##           Install with: go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
 generate:
-	@if command -v sqlc >/dev/null 2>&1; then \
-		sqlc generate; echo "  sqlc  ok"; \
+	@sqlc=$$(command -v sqlc 2>/dev/null); \
+	if [ -z "$$sqlc" ] && [ -x "$$(go env GOPATH)/bin/sqlc" ]; then \
+		sqlc="$$(go env GOPATH)/bin/sqlc"; \
+	fi; \
+	if [ -n "$$sqlc" ]; then \
+		"$$sqlc" generate && echo "  sqlc  ok"; \
 	else \
-		echo "  sqlc  not installed (needed from Phase 02)"; \
+		echo "  sqlc  not installed: go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1"; \
+		exit 1; \
 	fi
 ifneq ($(strip $(PKGS)),)
 	@go generate ./...

@@ -38,6 +38,15 @@ const (
 	synchronous = "NORMAL"
 )
 
+// timeFormat is how the driver writes a time.Time.
+//
+// Without it the driver uses Go's own time.Time.String, which produces
+// "2026-09-18 04:05:06 +0000 UTC": not a format SQLite's date functions
+// understand, and not one anything else reads either. "sqlite" writes
+// "2026-09-18 04:05:06+00:00", which date(), datetime() and julianday() all
+// take, and which the GLOB checks in the schema insist on. See ADR-043.
+const timeFormat = "sqlite"
+
 // defaultProbeInterval is how often the background health check runs. Fifteen
 // seconds is often enough that an operator watching /api/v1/health sees a
 // failure while it is still the thing they are looking at, and rare enough to
@@ -264,6 +273,7 @@ func writeDSN(path string) string {
 		"&_pragma=foreign_keys(1)" +
 		"&_pragma=busy_timeout(" + fmt.Sprint(busyTimeout) + ")" +
 		"&_pragma=synchronous(" + synchronous + ")" +
+		"&_time_format=" + timeFormat +
 		"&_txlock=immediate"
 }
 
@@ -278,7 +288,8 @@ func readDSN(path string) string {
 		"?mode=ro" +
 		"&_pragma=foreign_keys(1)" +
 		"&_pragma=busy_timeout(" + fmt.Sprint(busyTimeout) + ")" +
-		"&_pragma=synchronous(" + synchronous + ")"
+		"&_pragma=synchronous(" + synchronous + ")" +
+		"&_time_format=" + timeFormat
 }
 
 // defaultReadPoolSize picks a pool from the machine. A venue PC has two or
