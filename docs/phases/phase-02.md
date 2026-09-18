@@ -9,7 +9,7 @@ Phase 01. Read `docs/02-domain.md` before starting.
 
 ## Tasks
 
-- [ ] **Task 1 — The money package.**
+- [x] **Task 1 — The money package.**
   `internal/domain/money`. `Amount{Minor int64; Currency string}`. Add, Sub,
   Mul by basis points, Neg, IsZero, Compare, Parse, String. Currency mismatch
   returns a typed error. Banker's rounding helper. `SplitEvenly(total, n)`

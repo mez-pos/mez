@@ -470,3 +470,59 @@ Cost: this is the one place the server writes to stdout without going through
 slog. That is correct, since an answer to an operator who typed -h is not a log
 line, but it is an exception to the rule in `03-conventions.md` and is commented
 as one where it happens.
+
+## ADR-029 - Every money operation returns an error, and the zero Amount is not an identity
+2026-09 · Status: accepted
+Decision: `Add`, `Sub`, `Mul`, `Neg` and `Compare` on `money.Amount` all return
+an error. Currencies must match exactly, `Amount{}` with its empty currency
+matches nothing, and no operation may produce or accept `math.MinInt64`.
+Because: the alternative reads better and hides the two bugs that actually
+happen. A zero-value identity turns a field nobody filled in into a silent
+"zero of whatever you like", which is how a dollar line joins a rupee total; a
+wrapping int64 turns a refused total into a plausible one. `MinInt64` is banned
+because it has no positive counterpart, so an amount holding it could not be
+negated for a refund: barring it as a *result*, not just as an input, is what
+makes that guarantee true. `Sum(currency, ...)` exists so that a running total
+still starts from something usable and an empty order still totals zero.
+Cost: `a.Neg()` is two lines instead of one, everywhere, forever.
+
+## ADR-030 - Currencies are checked for shape, not against a list
+2026-09 · Status: accepted
+Decision: a currency is three uppercase ASCII letters. Lowercase is rejected,
+not folded. No list of real currency codes is kept. A short table in
+`currency.go` records only the currencies whose minor unit is not one
+hundredth, and an unknown code is assumed to have two decimal places.
+Because: a full ISO 4217 list is a standing maintenance chore that buys almost
+nothing, and it rejects a currency on the day it is introduced. Exponents are
+different: they change how an amount is *printed*, and a yen rendered as 12.34
+when it means 1234 is a hundredfold error on a real bill. Folding "inr" to
+"INR" would be friendlier, but a silent transform in a money path can hide a
+broken import file for a month.
+Cost: `Amount{Minor: 1, Currency: "ZZZ"}` is accepted, and an unknown
+three-decimal currency would print wrong until its row is added.
+
+## ADR-031 - One canonical text form, and excess precision is refused
+2026-09 · Status: accepted
+Decision: `String` writes "1234.00 INR" and `Parse` reads that back, plus the
+code-first order and grouped digits. Fewer decimals than the currency has are
+padded; more are an error, never rounded. The domain knows no currency symbols.
+Because: `String` is for logs, tests and files, where round-tripping matters
+more than looking like a receipt; symbols, grouping and placement are locale
+questions the UI answers. Rounding at the parsing boundary would be rounding at
+the wrong moment, against the once-at-the-end rule in `docs/02-domain.md`, and
+quietly dropping a digit from a file a venue imported is how money disappears.
+Cost: an import that legitimately carries sub-paisa precision must decide what
+to do about it at the call site rather than being handled here.
+
+## ADR-032 - SplitEvenly breaks ties by position
+2026-09 · Status: accepted
+Decision: `SplitEvenly` gives the leftover minor units to the earliest parts,
+so a thousand rupees three ways is 333.34 / 333.33 / 333.33 in that order. A
+negative total splits symmetrically.
+Because: largest remainder with equal weights leaves every remainder equal, so
+something has to break the tie, and it has to be the same something every time:
+a split payment is replayed from the event stream and must land on the same
+numbers it did the first time. Rotating or randomising who carries the paisa
+would be fairer across many bills and unreproducible on any one of them.
+Cost: over a long run the first payer carries every extra paisa. At one paisa a
+split that is noise, and it is the price of a deterministic projection.
