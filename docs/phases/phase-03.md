@@ -53,7 +53,7 @@ Phase 02. **Read `docs/02-domain.md` in full before every task in this phase.**
   it pure. Inclusive pricing must leave `Total` equal to the menu prices.
   Update the scenarios with real tax.
 
-- [ ] **Task 6 — Split payment.**
+- [x] **Task 6 — Split payment.**
   `internal/domain/payment`. Split by amount, by item, by guest, and evenly.
   Every strategy asserts that tenders sum exactly to the total. Tips handled as
   a separate field, never folded into the tendered amount. Property test: for

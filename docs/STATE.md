@@ -6,30 +6,29 @@
 
 ## Current phase
 
-**Phase 03 - Domain core: order events, projections, invoice series, tax**
-File: `docs/phases/phase-03.md`. Phase 02 is complete.
+**Phase 04 - HTTP API, WebSocket hub, TypeScript type codegen**
+File: `docs/phases/phase-04.md`. Phase 03 is complete.
 
 ## Last completed task
 
-**Phase 03, Task 5b - tax in the projection.** `order.Project(events,
-taxes)` now takes the venue's `Taxes` (profile and context; `Taxes{}` is
-untaxed). `line.added` snapshots `tax_rate`, `hsn` and `tax_exempt`. Order
-discounts are spread over lines with the new `money.Allocate` before tax.
-`Totals.Taxable` and `Totals.Tax` are real; `State.TaxDetail` is the invoice
-snapshot. Taxed scenarios for GST (both pricing modes, a void after payment,
-a mid-evening rate change), VAT and NYC sales tax. 97% coverage. ADR-050.
+**Phase 03, Task 6 - split payment. Phase 03 is complete.**
+`internal/domain/payment`: `Evenly`, `ByAmount`, `ByItem`, `ByGuest`, each
+returning a `Split` checked to sum to the bill exactly; tips on
+`Share.Tip`, never in `Amount`. 2000-bill property test, 96.4% coverage.
+`order.Line.Due` added so a bill can be split by item: the active lines' Due
+sums to `Totals.Total`, checked after every event. ADR-051.
 
-What later tasks must know: every caller passes `Taxes`, built from venue
-settings; `invoice.issued.tax_snapshot` should be `State.TaxDetail` as JSON.
-`Total = Taxable + Tax` always; under inclusive pricing it equals Subtotal.
+Phase 03 leaves the domain whole and pure: `order` (events, projection with
+tax, state machines), `invoice` (series, allocator contract, Audit), `tax`
+(GST, VAT, US sales tax), `payment`, `fsm`, `table`, `kitchen`. Every
+package is 95 to 100% covered, with no HTTP or SQL import. ADR-045 to 051.
 
 ## Next task
 
-**Phase 03, Task 6 - split payment.** `internal/domain/payment`: split by
-amount, by item, by guest and evenly; tenders must sum exactly to the total;
-tips a separate field; a property test over random totals and 2 to 8 ways.
-`money.SplitEvenly` and `money.Allocate` already exist. Read
-`docs/02-domain.md` in full first.
+**Phase 04, Task 1.** Read `docs/phases/phase-04.md`; this session did not.
+The API must build `order.Taxes` from venue settings for every projection,
+store `State.TaxDetail` as `invoice.issued.tax_snapshot`, and hold the DB
+allocator to `invoicetest.Conformance` (ADR-048, ADR-050).
 
 ## Known broken / in progress
 
@@ -66,7 +65,7 @@ None.
 - [x] 00 — Repo skeleton, docs bootstrap, design tokens
 - [x] 01 — Go server skeleton, config, logging, embed, cross-compile
 - [x] 02 — SQLite, migrations, sqlc, money type, IDs
-- [ ] 03 — Domain core: order events, projections, invoice series, tax
+- [x] 03 — Domain core: order events, projections, invoice series, tax
 - [ ] 04 — HTTP API, WebSocket hub, TypeScript type codegen
 - [ ] 05 — Frontend shell: Vite, Tailwind tokens, router, primitives, auth
 - [ ] 06 — Terminal: register, modifiers, cart, open tickets

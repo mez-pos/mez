@@ -112,6 +112,10 @@ type Line struct {
 	// Tax is the tax on the line, from the venue's tax profile. Zero when
 	// the venue is untaxed or the line is not active.
 	Tax money.Amount
+	// Due is what the guest pays for the line: Net less OrderDiscount, plus
+	// Tax when the venue prices exclusive. The Due of the active lines sums
+	// to Totals.Total exactly, which is what splitting a bill by item needs.
+	Due money.Amount
 }
 
 // Discount is a discount as applied, with the value it currently takes off.

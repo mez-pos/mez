@@ -960,3 +960,33 @@ Cost: every projection runs the tax engine, O(lines) per event, fine at the
 size of a bill. `money.Allocate` works in 128-bit arithmetic to rule out
 overflow. Comps carry no tax here; if a regime wants tax on a free supply,
 that is a profile rule to add later.
+
+## ADR-051 - Split payment: four strategies, one checked invariant, Line.Due
+2026-09 · Status: accepted
+Decision: `internal/domain/payment` splits a bill with `Evenly`, `ByAmount`,
+`ByItem` and `ByGuest`. Each returns a `Split` whose `Check` (shares in
+payer order, nothing negative, one currency, amounts summing to the total
+exactly) runs before it is returned. The rules:
+- Evenly: `money.SplitEvenly`, the earliest payers carrying the odd paisa.
+- ByAmount: each fixed amount must be positive; if they fall short, one more
+  payer is added for the rest; if they exceed the bill, `ErrOverAllocated`.
+- ByItem: every item needs one or more distinct payers, and the items must
+  sum to the bill exactly, so a line left out or counted twice is
+  `ErrMismatch`. A shared item splits evenly, the earlier-listed payers
+  carrying the odd paisa.
+- ByGuest: seat numbers are 1-based as staff say them; `SharedByTable` (0)
+  splits a line across every guest. It is ByItem underneath.
+- Tips are `Share.Tip`, set with `WithTips`, never part of `Amount`.
+The package imports only `money`. To split by item, `order.Line` gained `Due`:
+Net less the line's share of order discounts, plus tax under exclusive
+pricing. The projection checks that the active lines' Due sums to
+`Totals.Total` after every event, and an end-to-end test splits a taxed,
+discounted bill by item and closes it at zero.
+Because: the invariant is the whole point, so it lives in one function every
+strategy must pass through, and the property test (2000 random bills, two to
+eight payers, every strategy) checks it from outside. Line.Due belongs to the
+projection because only it knows the discount spread and the pricing mode;
+payment stays a small, pure arithmetic package.
+Cost: odd paise on shared items always go to the earliest-listed payers, a
+bias of at most a paisa per shared item per payer. Deterministic and small,
+but not rotated; revisit if anyone notices.

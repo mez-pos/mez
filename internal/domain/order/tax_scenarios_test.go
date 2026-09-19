@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/payment"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 )
 
@@ -28,6 +29,7 @@ func projectTaxed(t *testing.T, taxes Taxes, payloads ...Payload) State {
 	if err != nil {
 		t.Fatalf("Project: %v", err)
 	}
+	checkDues(t, s)
 	return s
 }
 
@@ -241,5 +243,47 @@ func TestUntaxedVenueKeepsTaxAtZero(t *testing.T) {
 	checkTaxed(t, s.Totals, taxedFigures{subtotal: 6000, taxable: 6000, tax: 0, total: 6000, balance: 6000})
 	if !reflect.DeepEqual(s.TaxDetail, tax.TaxResult{}) {
 		t.Errorf("an untaxed venue has a tax snapshot: %+v", s.TaxDetail)
+	}
+}
+
+func TestASplitByItemSettlesATaxedBill(t *testing.T) {
+	// Three friends at a GST cafe pricing exclusive. Asha had the thali,
+	// Ben the dosa, and all three shared a plate of pakoras; 10% off the
+	// whole order. The split is built from each line's Due, tendered back
+	// into the order, and must close it at exactly zero.
+	taxes := gstCafe(tax.Exclusive)
+	bill := []Payload{
+		opened(),
+		dish("Thali", 1, 32000),       // 2
+		dish("Masala dosa", 1, 18000), // 3
+		dish("Pakoras", 1, 15001),     // 4
+		pct(ScopeOrder, 0, 1000),
+	}
+	s := projectTaxed(t, taxes, bill...)
+
+	payers := map[int64][]int{2: {0}, 3: {1}, 4: {0, 1, 2}}
+	items := make([]payment.Item, len(s.Lines))
+	for i, l := range s.Lines {
+		items[i] = payment.Item{LineID: l.ID, Amount: l.Due, Payers: payers[l.ID]}
+	}
+	split, err := payment.ByItem(s.Totals.Total, 3, items)
+	if err != nil {
+		t.Fatalf("ByItem: %v", err)
+	}
+	split, err = split.WithTips([]money.Amount{inr(3000), inr(0), inr(1500)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	methods := []PaymentMethod{PaymentCard, PaymentUPI, PaymentCash}
+	for i, sh := range split.Shares {
+		bill = append(bill, PaymentTendered{Method: methods[i], Amount: sh.Amount, Tip: sh.Tip, TenderedBy: 11})
+	}
+	s = projectTaxed(t, taxes, append(bill, closed)...)
+	if s.Status != StatusClosed || !s.Totals.BalanceDue.IsZero() {
+		t.Fatalf("status %q, balance %d: the split did not settle the bill", s.Status, s.Totals.BalanceDue.Minor)
+	}
+	if s.Totals.Tips != inr(4500) || s.Totals.Paid != s.Totals.Total {
+		t.Errorf("tips %d, paid %d, total %d: tips must stay out of the bill", s.Totals.Tips.Minor, s.Totals.Paid.Minor, s.Totals.Total.Minor)
 	}
 }

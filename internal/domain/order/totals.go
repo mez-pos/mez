@@ -184,7 +184,7 @@ func (p *projector) taxFigures(t *Totals) error {
 	var active []*Line
 	for i := range p.s.Lines {
 		l := &p.s.Lines[i]
-		l.OrderDiscount, l.Tax = p.zero(), p.zero()
+		l.OrderDiscount, l.Tax, l.Due = p.zero(), p.zero(), p.zero()
 		if l.Status == LineStatusActive {
 			active = append(active, l)
 		}
@@ -204,7 +204,7 @@ func (p *projector) taxFigures(t *Totals) error {
 	if p.taxes.Profile == nil {
 		t.Taxable, t.Tax, t.Total = t.Subtotal, p.zero(), t.Subtotal
 		p.s.TaxDetail = tax.TaxResult{}
-		return nil
+		return p.lineDues(active, t.Total)
 	}
 	lines := make([]tax.Line, len(active))
 	for i, l := range active {
@@ -228,6 +228,29 @@ func (p *projector) taxFigures(t *Totals) error {
 	}
 	t.Taxable, t.Tax, t.Total = res.Taxable, res.Tax, res.Total
 	p.s.TaxDetail = res
+	return p.lineDues(active, t.Total)
+}
+
+// lineDues sets what the guest pays for each active line and checks the
+// lines add up to the bill. Under inclusive pricing, or untaxed, a line's
+// tax is already inside its price.
+func (p *projector) lineDues(active []*Line, total money.Amount) error {
+	exclusive := p.taxes.Profile != nil && p.taxes.Venue.Pricing == tax.Exclusive
+	var sum summer
+	dues := p.zero()
+	for _, l := range active {
+		l.Due = sum.sub(l.Net, l.OrderDiscount)
+		if exclusive {
+			l.Due = sum.add(l.Due, l.Tax)
+		}
+		dues = sum.add(dues, l.Due)
+	}
+	if sum.err != nil {
+		return sum.err
+	}
+	if dues != total {
+		return fmt.Errorf("%w: lines are due %d, the bill is %d", ErrTaxConfig, dues.Minor, total.Minor)
+	}
 	return nil
 }
 

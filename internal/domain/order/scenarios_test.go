@@ -13,6 +13,22 @@ type figures struct {
 	voided, comped                    int64
 }
 
+// checkDues asserts the invariant split-by-item relies on: the active lines'
+// Due adds up to the bill's Total.
+func checkDues(t *testing.T, s State) {
+	t.Helper()
+	var dues int64
+	for _, l := range s.Lines {
+		if l.Status != LineStatusActive && !l.Due.IsZero() {
+			t.Errorf("line %d is %s but due %d", l.ID, l.Status, l.Due.Minor)
+		}
+		dues += l.Due.Minor
+	}
+	if dues != s.Totals.Total.Minor {
+		t.Errorf("lines are due %d, the bill is %d", dues, s.Totals.Total.Minor)
+	}
+}
+
 func checkFigures(t *testing.T, got Totals, want figures) {
 	t.Helper()
 	have := figures{
@@ -313,6 +329,7 @@ func TestScenarios(t *testing.T) {
 		t.Run(sc.name, func(t *testing.T) {
 			s := mustProject(t, sc.payloads...)
 			checkFigures(t, s.Totals, sc.want)
+			checkDues(t, s)
 			if s.Status != sc.status {
 				t.Errorf("status = %q, want %q", s.Status, sc.status)
 			}
