@@ -99,7 +99,7 @@ func TestProjectionRefusesAVoidOfARefundedPaymentThroughTheMachine(t *testing.T)
 		void(2),
 		RefundIssued{Amount: inr(22000), AgainstPaymentID: 3, Reason: "walked out"},
 		PaymentVoided{PaymentID: 3, Reason: "x", AuthorisedBy: 3},
-	))
+	), untaxed)
 	// A fully refunded payment carries Refunded, so the explicit check fires
 	// first; both errors name the same fault.
 	if !errors.Is(err, ErrPaymentNotCaptured) {
@@ -113,7 +113,7 @@ func TestProjectionRefusesAVoidOfAVoidedPaymentWithBothErrors(t *testing.T) {
 		pay(PaymentCard, 22000), // 3
 		PaymentVoided{PaymentID: 3, Reason: "declined", AuthorisedBy: 3},
 		PaymentVoided{PaymentID: 3, Reason: "declined", AuthorisedBy: 3},
-	))
+	), untaxed)
 	if !errors.Is(err, ErrPaymentNotCaptured) || !errors.Is(err, fsm.ErrInvalidTransition) {
 		t.Errorf("err = %v, want both ErrPaymentNotCaptured and fsm.ErrInvalidTransition", err)
 	}

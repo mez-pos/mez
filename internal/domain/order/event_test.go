@@ -28,6 +28,7 @@ func samplePayloads() []Payload {
 				{ModifierID: 8, Name: "No ice", Price: inr(0)},
 			},
 			Course: 1, Station: "bar",
+			TaxRate: 5000, HSN: "996331", TaxExempt: true,
 		},
 		LineQtyChanged{LineID: 2, From: 2, To: 3},
 		LineVoided{LineID: 2, ReasonCode: "wrong_item", AuthorisedBy: 3},

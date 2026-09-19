@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 )
 
 // recompute derives every figure in State from the lines, discounts and
@@ -128,8 +129,12 @@ func (p *projector) orderFigures() (Totals, error) {
 	}
 	t.OrderDiscounts = orderDiscounts
 	t.Subtotal = sum.sub(base, t.OrderDiscounts)
-	t.Tax = z // phase 03, task 5
-	t.Total = sum.add(t.Subtotal, t.Tax)
+	if sum.err != nil {
+		return Totals{}, sum.err
+	}
+	if err := p.taxFigures(&t); err != nil {
+		return Totals{}, err
+	}
 
 	t.Paid, t.Tips, t.Refunded = z, z, z
 	for _, tn := range p.s.Tenders {
@@ -169,6 +174,61 @@ func (p *projector) orderDiscounts(base money.Amount) (money.Amount, error) {
 		return money.Amount{}, fmt.Errorf("%w: order is worth %d, discounted %d", ErrDiscountExceedsValue, base.Minor, total.Minor)
 	}
 	return total, nil
+}
+
+// taxFigures spreads the order discounts over the active lines, in
+// proportion to what each is worth, then asks the venue's tax profile for the
+// tax on what each line is left with. It sets Taxable, Tax and Total, each
+// line's OrderDiscount and Tax, and the TaxDetail snapshot.
+func (p *projector) taxFigures(t *Totals) error {
+	var active []*Line
+	for i := range p.s.Lines {
+		l := &p.s.Lines[i]
+		l.OrderDiscount, l.Tax = p.zero(), p.zero()
+		if l.Status == LineStatusActive {
+			active = append(active, l)
+		}
+	}
+	weights := make([]int64, len(active))
+	for i, l := range active {
+		weights[i] = l.Net.Minor
+	}
+	shares, err := money.Allocate(t.OrderDiscounts, weights)
+	if err != nil {
+		return fmt.Errorf("spreading order discounts: %w", err)
+	}
+	for i, l := range active {
+		l.OrderDiscount = shares[i]
+	}
+
+	if p.taxes.Profile == nil {
+		t.Taxable, t.Tax, t.Total = t.Subtotal, p.zero(), t.Subtotal
+		p.s.TaxDetail = tax.TaxResult{}
+		return nil
+	}
+	lines := make([]tax.Line, len(active))
+	for i, l := range active {
+		amount, err := l.Net.Sub(l.OrderDiscount)
+		if err != nil {
+			return err
+		}
+		lines[i] = tax.Line{ID: l.ID, Name: l.Name, HSN: l.HSN, Amount: amount, Rate: l.TaxRate, Exempt: l.TaxExempt}
+	}
+	res, err := p.taxes.Profile.Compute(lines, p.taxes.Venue)
+	if err != nil {
+		return fmt.Errorf("computing tax: %w", err)
+	}
+	for i, l := range active {
+		l.Tax = res.Lines[i].Tax
+	}
+	// The profile sees exactly the subtotal, split by line, so one of these
+	// must hold. If neither does, the bill and its tax disagree.
+	if res.Gross != t.Subtotal {
+		return fmt.Errorf("%w: tax was computed on %d, the subtotal is %d", ErrTaxConfig, res.Gross.Minor, t.Subtotal.Minor)
+	}
+	t.Taxable, t.Tax, t.Total = res.Taxable, res.Tax, res.Total
+	p.s.TaxDetail = res
+	return nil
 }
 
 // discountValue is what a discount takes off base. Percentages are taken of

@@ -932,3 +932,31 @@ passes. US tax is rounded per jurisdiction part, which can differ by a cent
 from rounding the combined rate once; states differ on which they want, so
 this may need a per-venue switch. Wiring tax into the order projection is
 split out as Task 5b.
+
+## ADR-050 - Tax in the projection: explicit Taxes, discounts spread before tax
+2026-09 · Status: accepted. Supersedes the "tax is zero" line of ADR-046.
+Decision: `order.Project(events, taxes)` takes the venue's `Taxes` (a
+`tax.TaxProfile` and its `tax.VenueContext`) as an argument; `Taxes{}` is an
+untaxed venue. After every event the projection:
+1. spreads the order discounts over the active lines in proportion to each
+   line's Net, by largest remainder, with the new `money.Allocate`;
+2. passes each active line's Net less its share, with the tax facts
+   snapshotted on its `line.added` (`tax_rate`, `hsn`, `tax_exempt`), to the
+   profile;
+3. sets `Totals.Taxable`, `Totals.Tax` and `Totals.Total = Taxable + Tax`,
+   each line's `OrderDiscount` and `Tax`, and `State.TaxDetail`, the full
+   `tax.TaxResult`, which is what `invoice.issued` stores as its snapshot.
+Under inclusive pricing Total equals Subtotal; under exclusive pricing it is
+Subtotal + Tax; untaxed, it is Subtotal. Voided and comped lines carry no
+tax. A tax error (a GST line with no HSN) fails the event that caused it. A
+venue taxed in a currency other than the order's is `ErrTaxConfig` at open.
+Because: an argument keeps `Project` pure and makes forgetting tax a compile
+error rather than a silent zero. Tax is charged on what the guest actually
+pays for a line, so an order discount has to reach the lines first, and
+largest remainder means the shares always add back to the discount. The tax
+facts are snapshotted like the price, so a rate changed at 7pm does not
+touch a line added at 6pm.
+Cost: every projection runs the tax engine, O(lines) per event, fine at the
+size of a bill. `money.Allocate` works in 128-bit arithmetic to rule out
+overflow. Comps carry no tax here; if a regime wants tax on a free supply,
+that is a profile rule to add later.

@@ -45,7 +45,7 @@ Phase 02. **Read `docs/02-domain.md` in full before every task in this phase.**
   worked examples for each, including an inclusive-pricing GST case where the
   back-calculation must round to the paise.
 
-- [ ] **Task 5b - Tax in the projection.** (Split from Task 5, which built the
+- [x] **Task 5b - Tax in the projection.** (Split from Task 5, which built the
   tax package alone.) Snapshot each line's tax facts on `line.added` (rate,
   HSN, exempt), allocate order discounts across lines by largest remainder so
   each line's taxable amount is known, and fill `Totals.Tax` in

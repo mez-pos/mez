@@ -21,9 +21,13 @@ func stream(payloads ...Payload) []Event {
 	return events
 }
 
+// untaxed is a venue with no tax profile: Totals.Tax stays zero and Total is
+// the Subtotal. Most tests use it so their figures stay about the bill.
+var untaxed = Taxes{}
+
 func mustProject(t *testing.T, payloads ...Payload) State {
 	t.Helper()
-	s, err := Project(stream(payloads...))
+	s, err := Project(stream(payloads...), untaxed)
 	if err != nil {
 		t.Fatalf("Project: %v", err)
 	}
@@ -180,7 +184,7 @@ func TestProjectRejectsIllegalSequences(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			events := stream(tt.payloads...)
-			s, err := Project(events)
+			s, err := Project(events, untaxed)
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("err = %v, want %v", err, tt.wantErr)
 			}
@@ -230,7 +234,7 @@ func TestProjectRejectsABrokenEnvelope(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := Project(tt.events); !errors.Is(err, tt.wantErr) {
+			if _, err := Project(tt.events, untaxed); !errors.Is(err, tt.wantErr) {
 				t.Errorf("err = %v, want %v", err, tt.wantErr)
 			}
 		})
@@ -238,7 +242,7 @@ func TestProjectRejectsABrokenEnvelope(t *testing.T) {
 }
 
 func TestProjectionErrorNamesTheEvent(t *testing.T) {
-	_, err := Project(stream(opened(), coffee(1), void(9)))
+	_, err := Project(stream(opened(), coffee(1), void(9)), untaxed)
 
 	var pe *ProjectionError
 	if !errors.As(err, &pe) {
@@ -341,11 +345,11 @@ func TestProjectIsDeterministicAndDoesNotAliasEvents(t *testing.T) {
 		TicketSent{Station: "bar", LineIDs: []int64{2}},
 	)
 
-	first, err := Project(events)
+	first, err := Project(events, untaxed)
 	if err != nil {
 		t.Fatalf("Project: %v", err)
 	}
-	second, err := Project(events)
+	second, err := Project(events, untaxed)
 	if err != nil {
 		t.Fatalf("Project: %v", err)
 	}
@@ -358,7 +362,7 @@ func TestProjectIsDeterministicAndDoesNotAliasEvents(t *testing.T) {
 	first.Tickets[0].LineIDs[0] = 99
 	first.Discounts[0].Amount.Minor = 1
 
-	again, err := Project(events)
+	again, err := Project(events, untaxed)
 	if err != nil {
 		t.Fatalf("Project: %v", err)
 	}
@@ -400,7 +404,7 @@ func TestAFullRefundEndsThePayment(t *testing.T) {
 		t.Errorf("status = %q", s.Status)
 	}
 
-	_, err := Project(stream(append(base, PaymentVoided{PaymentID: 3, Reason: "x", AuthorisedBy: 3})...))
+	_, err := Project(stream(append(base, PaymentVoided{PaymentID: 3, Reason: "x", AuthorisedBy: 3})...), untaxed)
 	if !errors.Is(err, ErrPaymentNotCaptured) {
 		t.Errorf("voiding a refunded payment: err = %v, want ErrPaymentNotCaptured", err)
 	}
@@ -420,7 +424,7 @@ func TestOverflowIsAnErrorNotAWrappedTotal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := Project(stream(tt.payloads...)); !errors.Is(err, money.ErrOverflow) {
+			if _, err := Project(stream(tt.payloads...), untaxed); !errors.Is(err, money.ErrOverflow) {
 				t.Errorf("err = %v, want money.ErrOverflow", err)
 			}
 		})
@@ -435,7 +439,7 @@ func (foreignPayload) EventType() Type { return "loyalty.points_earned" }
 
 func TestProjectRejectsAPayloadItDoesNotKnow(t *testing.T) {
 	events := append(stream(opened()), NewEvent(2, testAt, 11, 2, foreignPayload{}))
-	if _, err := Project(events); !errors.Is(err, ErrInvalidPayload) {
+	if _, err := Project(events, untaxed); !errors.Is(err, ErrInvalidPayload) {
 		t.Errorf("err = %v, want ErrInvalidPayload", err)
 	}
 }

@@ -117,6 +117,10 @@ var (
 
 	// ErrCourseAlreadyFired means a course was fired twice.
 	ErrCourseAlreadyFired = errors.New("course is already fired")
+
+	// ErrTaxConfig means the venue's tax configuration cannot apply to the
+	// order, such as a venue taxed in rupees and an order in dollars.
+	ErrTaxConfig = errors.New("tax configuration does not fit the order")
 )
 
 // ProjectionError says which event made a stream impossible. The seq and

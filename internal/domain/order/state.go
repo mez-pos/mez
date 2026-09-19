@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 )
 
 // Status is where an order is in its life, derived from its events.
@@ -70,6 +71,11 @@ type State struct {
 	Invoices     []Invoice // every invoice issued, one per close
 
 	Totals Totals
+
+	// TaxDetail is the tax profile's full result for the bill as it stands:
+	// every line's components and the rate-wise summary. It is what
+	// invoice.issued stores as its tax_snapshot. Zero for an untaxed venue.
+	TaxDetail tax.TaxResult
 }
 
 // Line is one line of the bill, with the price snapshot it was added at.
@@ -82,6 +88,9 @@ type Line struct {
 	Modifiers []Modifier
 	Course    int64
 	Station   string
+	TaxRate   tax.Rate
+	HSN       string
+	TaxExempt bool
 
 	Status       LineStatus
 	ReasonCode   string // why it was voided or comped
@@ -97,6 +106,12 @@ type Line struct {
 	// Net is what the line contributes to the bill before order discounts:
 	// Gross less Discount while active, zero once voided or comped.
 	Net money.Amount
+	// OrderDiscount is the line's share of the order discounts, spread over
+	// active lines in proportion to Net. Tax is charged on Net less this.
+	OrderDiscount money.Amount
+	// Tax is the tax on the line, from the venue's tax profile. Zero when
+	// the venue is untaxed or the line is not active.
+	Tax money.Amount
 }
 
 // Discount is a discount as applied, with the value it currently takes off.
@@ -160,12 +175,16 @@ type Invoice struct {
 
 // Totals are the money of the order, all in its currency.
 //
-//	Gross          sum of Gross over active lines
+//	Gross          sum of Gross over active lines, as priced
 //	LineDiscounts  sum of line discounts over active lines
 //	OrderDiscounts order-scope discounts, taken off Gross - LineDiscounts
-//	Subtotal       Gross - LineDiscounts - OrderDiscounts
-//	Tax            zero until tax profiles land (phase 03, task 5)
-//	Total          Subtotal + Tax: what the guest owes
+//	Subtotal       Gross - LineDiscounts - OrderDiscounts, as priced: it
+//	               includes tax when the venue prices inclusive
+//	Taxable        the bill's value excluding tax
+//	Tax            the tax on it, from the venue's tax profile
+//	Total          Taxable + Tax: what the guest owes. Under inclusive
+//	               pricing this equals Subtotal; under exclusive pricing
+//	               it is Subtotal + Tax; untaxed, Subtotal
 //	Paid           tenders that are not voided
 //	Refunded       refunds issued
 //	NetPaid        Paid - Refunded: what the venue has kept
@@ -177,6 +196,7 @@ type Totals struct {
 	LineDiscounts  money.Amount
 	OrderDiscounts money.Amount
 	Subtotal       money.Amount
+	Taxable        money.Amount
 	Tax            money.Amount
 	Total          money.Amount
 	Paid           money.Amount

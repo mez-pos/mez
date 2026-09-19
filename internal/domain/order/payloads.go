@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 )
 
 // Channel is where an order came from. It affects routing, prepayment and
@@ -72,9 +73,10 @@ type Modifier struct {
 
 // LineAdded adds a line. Its line ID is the event's Seq.
 //
-// Name, UnitPrice and every modifier are copies taken at the moment the line
-// was added, not references to the menu: a price changed at 7pm does not
-// touch a ticket opened at 6pm. See "Prices and the snapshot rule".
+// Name, UnitPrice, every modifier and the tax facts are copies taken at the
+// moment the line was added, not references to the menu: a price or a tax
+// rate changed at 7pm does not touch a ticket opened at 6pm. See "Prices and
+// the snapshot rule".
 type LineAdded struct {
 	ItemID    int64        `json:"item_id"`
 	Name      string       `json:"name"`
@@ -83,6 +85,10 @@ type LineAdded struct {
 	Modifiers []Modifier   `json:"modifiers"`
 	Course    int64        `json:"course"`
 	Station   string       `json:"station"`
+
+	TaxRate   tax.Rate `json:"tax_rate"`             // GST and VAT; US sales tax takes the venue's jurisdiction
+	HSN       string   `json:"hsn,omitempty"`        // GST: the item's HSN or SAC code
+	TaxExempt bool     `json:"tax_exempt,omitempty"` // no tax, whatever the rate
 }
 
 // LineQtyChanged changes a line's quantity. From is recorded so the timeline
@@ -166,9 +172,10 @@ type PaymentVoided struct {
 
 // InvoiceIssued records the invoice number allocated to the order.
 //
-// TaxSnapshot is everything the tax profile used to compute the invoice,
-// held as raw JSON. Its shape belongs to the tax profile (phase 03, task 5),
-// and this package only has to carry it unchanged.
+// TaxSnapshot is everything the tax profile used to compute the invoice: the
+// State.TaxDetail at the moment of issue, a tax.TaxResult as JSON. It is held
+// raw so the invoice keeps exactly what was printed, whatever later builds
+// make of the type.
 type InvoiceIssued struct {
 	InvoiceNo   string          `json:"invoice_no"`
 	Series      string          `json:"series"`

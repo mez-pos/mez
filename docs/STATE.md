@@ -11,23 +11,25 @@ File: `docs/phases/phase-03.md`. Phase 02 is complete.
 
 ## Last completed task
 
-**Phase 03, Task 5 - tax profiles.** `internal/domain/tax`: the `TaxProfile`
-interface, a shared engine (line rounding, then reconciliation per rate), and
-GST, VAT and US sales tax profiles with hand-worked examples (Bengaluru cafe,
-99.00 inclusive back-calculation, London cafe, NYC 8.875%). 500-bill property
-test on the engine's invariants. 95% coverage. ADR-049. Task 5 was split:
-this session built the package; Task 5b wires it into the projection.
+**Phase 03, Task 5b - tax in the projection.** `order.Project(events,
+taxes)` now takes the venue's `Taxes` (profile and context; `Taxes{}` is
+untaxed). `line.added` snapshots `tax_rate`, `hsn` and `tax_exempt`. Order
+discounts are spread over lines with the new `money.Allocate` before tax.
+`Totals.Taxable` and `Totals.Tax` are real; `State.TaxDetail` is the invoice
+snapshot. Taxed scenarios for GST (both pricing modes, a void after payment,
+a mid-evening rate change), VAT and NYC sales tax. 97% coverage. ADR-050.
 
-What later tasks must know: tax rates are `tax.Rate`, thousandths of a
-percent, not basis points (ADR-049). `money.Amount.Scale(num, den)` exists
-for fractional arithmetic. `tax.TaxResult` is the invoice's `tax_snapshot`.
+What later tasks must know: every caller passes `Taxes`, built from venue
+settings; `invoice.issued.tax_snapshot` should be `State.TaxDetail` as JSON.
+`Total = Taxable + Tax` always; under inclusive pricing it equals Subtotal.
 
 ## Next task
 
-**Phase 03, Task 5b - tax in the projection.** Snapshot tax facts on
-`line.added`, allocate order discounts across lines, and fill `Totals.Tax`
-through a `TaxProfile` passed into the projection, keeping it pure. Read
-`docs/02-domain.md` in full first. The task text is in the phase file.
+**Phase 03, Task 6 - split payment.** `internal/domain/payment`: split by
+amount, by item, by guest and evenly; tenders must sum exactly to the total;
+tips a separate field; a property test over random totals and 2 to 8 ways.
+`money.SplitEvenly` and `money.Allocate` already exist. Read
+`docs/02-domain.md` in full first.
 
 ## Known broken / in progress
 
@@ -50,9 +52,6 @@ through a `TaxProfile` passed into the projection, keeping it pure. Read
   so only someone editing SQL needs it.
 - `docs/02-domain.md` asks for a lint rule that fails the build on `float64` in
   `internal/domain`. No phase task owns it and it does not exist yet.
-- `line.added` has no tax snapshot yet, so `Totals.Tax` is always zero until
-  Task 5b. `invoice.issued.tax_snapshot` is raw JSON; `tax.TaxResult` is the
-  shape to store in it. No events are persisted, so changing them is free.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no invoice number. Phase 07 must work that way or revisit it.
 

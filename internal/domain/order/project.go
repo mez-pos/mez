@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 )
 
 // Project folds an order's events into its current state.
@@ -17,12 +18,16 @@ import (
 // stream with the candidate on the end; if that fails, the event is refused
 // and nothing is written.
 //
-// The rules are in docs/02-domain.md and ADR-046.
-func Project(events []Event) (State, error) {
+// taxes is the venue's tax regime. Tax is recomputed after every event, so an
+// event that makes the bill untaxable (a GST line with no HSN) fails at its
+// own seq. Taxes{} is an untaxed venue.
+//
+// The rules are in docs/02-domain.md, ADR-046 and ADR-050.
+func Project(events []Event, taxes Taxes) (State, error) {
 	if len(events) == 0 {
 		return State{}, ErrNotOpened
 	}
-	var p projector
+	p := projector{taxes: taxes}
 	for i, e := range events {
 		if err := p.step(int64(i+1), e); err != nil {
 			return State{}, &ProjectionError{Seq: e.Seq, Type: e.Type, Err: err}
@@ -31,9 +36,18 @@ func Project(events []Event) (State, error) {
 	return p.s, nil
 }
 
+// Taxes is how a venue is taxed: a profile and the venue's side of the
+// calculation. The zero value, with no profile, is an untaxed venue. It is an
+// argument and not a lookup so that Project stays pure.
+type Taxes struct {
+	Profile tax.TaxProfile
+	Venue   tax.VenueContext
+}
+
 // projector is the fold's working state. It is private to one Project call,
 // which is what makes mutating it in place safe.
 type projector struct {
+	taxes    Taxes
 	s        State
 	opened   bool
 	closed   bool
@@ -118,6 +132,9 @@ func (p *projector) open(e Event, pl OrderOpened) error {
 	if pl.Covers < 0 || pl.TableID < 0 {
 		return invalid("covers and table must not be negative")
 	}
+	if p.taxes.Profile != nil && p.taxes.Venue.Currency != pl.Currency {
+		return fmt.Errorf("%w: the venue is taxed in %q, the order is in %q", ErrTaxConfig, p.taxes.Venue.Currency, pl.Currency)
+	}
 	p.opened = true
 	p.s = State{
 		Channel:  pl.Channel,
@@ -140,6 +157,9 @@ func (p *projector) addLine(e Event, pl LineAdded) error {
 	if pl.Course < 0 {
 		return invalid("course %d is negative", pl.Course)
 	}
+	if err := pl.TaxRate.Validate(); err != nil {
+		return invalid("tax rate: %v", err)
+	}
 	if err := p.checkPrice("unit price", pl.UnitPrice); err != nil {
 		return err
 	}
@@ -157,6 +177,9 @@ func (p *projector) addLine(e Event, pl LineAdded) error {
 		Modifiers:   slices.Clone(pl.Modifiers),
 		Course:      pl.Course,
 		Station:     pl.Station,
+		TaxRate:     pl.TaxRate,
+		HSN:         pl.HSN,
+		TaxExempt:   pl.TaxExempt,
 		Status:      LineStatusActive,
 		CourseFired: slices.Contains(p.s.FiredCourses, pl.Course),
 	})

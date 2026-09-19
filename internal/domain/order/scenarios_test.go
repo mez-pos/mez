@@ -5,7 +5,8 @@ import (
 )
 
 // figures is the money of an order in paise, for comparing a whole Totals at
-// a glance. Subtotal equals total while tax is zero (phase 03, task 5).
+// a glance. These scenarios run untaxed, so subtotal equals total; the taxed
+// ones are in tax_scenarios_test.go.
 type figures struct {
 	gross, lineDisc, orderDisc, total int64
 	paid, refunded, balance, tips     int64
