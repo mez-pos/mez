@@ -13,6 +13,12 @@ type Querier interface {
 	// The index on (venue_id, active) is what this reads down, which is why it
 	// exists.
 	ActiveStaffForVenue(ctx context.Context, venueID int64) ([]Staff, error)
+	AppendOrderEvent(ctx context.Context, arg AppendOrderEventParams) error
+	CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (int64, error)
+	// Orders, their events and their snapshots. internal/db/orders.go is the only
+	// caller: it keeps the orders row, the events and the snapshot in step inside
+	// one transaction, which a handler calling these directly would not.
+	CreateOrder(ctx context.Context, arg CreateOrderParams) (int64, error)
 	// Staff and the roles they hold. Roles are here rather than in a file of their
 	// own because a staff member cannot be created without one.
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
@@ -26,8 +32,19 @@ type Querier interface {
 	// and on every void they authorised, and a tax audit expects to find them.
 	DeactivateStaff(ctx context.Context, arg DeactivateStaffParams) error
 	DeleteSetting(ctx context.Context, arg DeleteSettingParams) error
+	InvoiceSeriesLastSeq(ctx context.Context, arg InvoiceSeriesLastSeqParams) (int64, error)
+	InvoicesForVenue(ctx context.Context, venueID int64) ([]Invoice, error)
 	ListVenues(ctx context.Context) ([]Venue, error)
+	// The invoice series counters and the register of numbers issued.
+	// Allocates the next number in a series in one statement: the first call for
+	// a key writes 1, every later one adds one. It runs inside the issuing
+	// transaction, so a rollback takes the number back. Never MAX(n)+1.
+	NextInvoiceSeq(ctx context.Context, arg NextInvoiceSeqParams) (int64, error)
+	OrderByID(ctx context.Context, id int64) (Order, error)
+	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error)
+	OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapshot, error)
 	RolesForVenue(ctx context.Context, venueID int64) ([]Role, error)
+	SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotParams) error
 	//
 	// An upsert rather than INSERT OR REPLACE. Replace deletes the row and inserts
 	// a new one, which fires delete triggers and cascades; this only touches the
@@ -38,6 +55,10 @@ type Querier interface {
 	// must constrain or compute with is a column on venues instead.
 	SettingsForVenue(ctx context.Context, venueID int64) ([]Setting, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
+	// Brings the index columns up to the projection just appended. The guard on
+	// the previous last_seq makes a write from a stale read touch no row, which
+	// the caller reports as a conflict rather than moving the index backwards.
+	UpdateOrderIndex(ctx context.Context, arg UpdateOrderIndexParams) (int64, error)
 	//
 	// Currency is deliberately absent. Changing it would reinterpret every minor
 	// unit already recorded against this venue, which is a migration, not a

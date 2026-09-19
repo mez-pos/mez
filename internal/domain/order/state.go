@@ -61,6 +61,11 @@ type State struct {
 	UpdatedAt time.Time // the time of the last event projected
 	Reopens   int64     // how many times the order has been reopened
 
+	// Invoiced is true once an invoice has been issued for the current
+	// settlement, and false again after a reopen. It is what refuses a
+	// second invoice.issued, and what Resume needs to carry a projection on.
+	Invoiced bool
+
 	Lines        []Line     // in the order they were added
 	Discounts    []Discount // line and order discounts, in the order applied
 	Notes        []Note

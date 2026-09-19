@@ -990,3 +990,41 @@ payment stays a small, pure arithmetic package.
 Cost: odd paise on shared items always go to the earliest-listed payers, a
 bias of at most a paisa per shared item per payer. Deterministic and small,
 but not rotated; revisit if anyone notices.
+
+## ADR-052 - Order persistence: read inside the write, snapshots as a checked cache, counters in SQL
+2026-09 · Status: accepted
+Decision: `internal/db` persists orders as `orders` (an index row),
+`order_events` (the stream) and `order_snapshots` (one per order), and
+invoice numbers as `invoice_series` (counters) and `invoices` (the register).
+- `AppendOrder(orderID, taxes, decide)` reads the stream, calls the
+  command's `Decide`, numbers its events, projects them with `order.Resume`
+  and appends them, all in one write transaction. The `(order_id, seq)`
+  unique index turns a second writer into `ErrSeqConflict`, retried from the
+  read up to three times. `Decide` may run more than once, so it does nothing
+  outside the transaction it is given.
+- Snapshots are retaken whenever an append crosses a multiple of 50 events.
+  Each records a basis: `order.ProjectionVersion` plus the tax profile and
+  venue tax context. A snapshot is used only under the same basis. If the
+  tail does not fold onto it, or a command is refused on top of it and a
+  replay disagrees with it, the events win: the load replays, the append
+  retries without it and rewrites it.
+- `order.Resume(from, events, taxes)` carries a projection on from a State.
+  `State.Invoiced` was added because it was the one flag of the fold that
+  State did not already imply. `order.DecodePayload` decodes a stored body.
+- The next invoice number is one upsert on the counter row inside the
+  issuing transaction. Triggers let a counter move only forward by one,
+  refuse an `invoices` row numbered past its counter, and make
+  `order_events`, `invoice_series` and `invoices` append-only.
+- Orders, events and invoices restrict deletes from `venues`: they are
+  financial records.
+Because: reading inside the write transaction means that under one writer a
+conflict cannot happen at all, so the retry and the unique index are
+backstops, not the mechanism. A snapshot keyed on its basis cannot serve a
+state computed under yesterday's tax registration. The triggers hold the
+series guarantee against a code path that forgets the allocator. The
+equivalence tests (every split point in the domain; every append across
+three snapshot points in the database) are the proof.
+Cost: a change to the projection's rules or to State's shape must bump
+`order.ProjectionVersion`, or old snapshots are served until they are
+retaken. Nothing enforces that. Deleting a venue with any orders now fails;
+closing a venue will be a status, not a delete.

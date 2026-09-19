@@ -11,24 +11,24 @@ File: `docs/phases/phase-04.md`. Phase 03 is complete.
 
 ## Last completed task
 
-**Phase 03, Task 6 - split payment. Phase 03 is complete.**
-`internal/domain/payment`: `Evenly`, `ByAmount`, `ByItem`, `ByGuest`, each
-returning a `Split` checked to sum to the bill exactly; tips on
-`Share.Tip`, never in `Amount`. 2000-bill property test, 96.4% coverage.
-`order.Line.Due` added so a bill can be split by item: the active lines' Due
-sums to `Totals.Total`, checked after every event. ADR-051.
-
-Phase 03 leaves the domain whole and pure: `order` (events, projection with
-tax, state machines), `invoice` (series, allocator contract, Audit), `tax`
-(GST, VAT, US sales tax), `payment`, `fsm`, `table`, `kitchen`. Every
-package is 95 to 100% covered, with no HTTP or SQL import. ADR-045 to 051.
+**Phase 04, Task 1 - order persistence.** Migration 00002: `orders`,
+`order_events` (unique `(order_id, seq)`, append-only by trigger),
+`order_snapshots`, `invoice_series`, `invoices`. `internal/db`:
+`OpenOrder`, `AppendOrder(orderID, taxes, Decide)` (read, decide, project,
+append in one tx, retry on seq conflict), `LoadOrder` (snapshot + tail),
+`RebuildOrder`, `OrderEvents`, and `InvoiceAllocator`, which passes
+`invoicetest.Conformance`. Snapshots every 50 events, keyed on projection
+version and tax regime, and self-healing. Domain gained `order.Resume`,
+`order.DecodePayload`, `State.Invoiced`, `order.ProjectionVersion`. ADR-052.
 
 ## Next task
 
-**Phase 04, Task 1.** Read `docs/phases/phase-04.md`; this session did not.
-The API must build `order.Taxes` from venue settings for every projection,
-store `State.TaxDetail` as `invoice.issued.tax_snapshot`, and hold the DB
-allocator to `invoicetest.Conformance` (ADR-048, ADR-050).
+**Phase 04, Task 2 - order service** (`internal/service/order`). Build each
+command as a `db.Decide`, publish after `AppendOrder` returns, and handle
+idempotency keys. Carried over: build `order.Taxes` from venue settings for
+every projection, store `State.TaxDetail` as `invoice.issued.tax_snapshot`
+(ADR-048, ADR-050), and issue invoices through `OrderTx.Invoices()` and
+`OrderTx.RecordInvoice` inside the append.
 
 ## Known broken / in progress
 
@@ -51,6 +51,8 @@ allocator to `invoicetest.Conformance` (ADR-048, ADR-050).
   so only someone editing SQL needs it.
 - `docs/02-domain.md` asks for a lint rule that fails the build on `float64` in
   `internal/domain`. No phase task owns it and it does not exist yet.
+- A change to `order.Project`'s rules or `order.State`'s shape must bump
+  `order.ProjectionVersion`, or stale snapshots are served. Nothing checks it.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no invoice number. Phase 07 must work that way or revisit it.
 

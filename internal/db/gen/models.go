@@ -22,6 +22,55 @@ type Device struct {
 	CreatedAt  time.Time
 }
 
+type Invoice struct {
+	ID        int64
+	VenueID   int64
+	OrderID   int64
+	Series    string
+	FyStart   int64
+	Seq       int64
+	InvoiceNo string
+	IssuedAt  time.Time
+}
+
+type InvoiceSeries struct {
+	VenueID int64
+	Series  string
+	FyStart int64
+	LastSeq int64
+}
+
+type Order struct {
+	ID        int64
+	PublicID  string
+	VenueID   int64
+	Channel   string
+	TableID   int64
+	Status    string
+	LastSeq   int64
+	OpenedAt  time.Time
+	ClosedAt  sql.NullTime
+	UpdatedAt time.Time
+}
+
+type OrderEvent struct {
+	ID       int64
+	OrderID  int64
+	Seq      int64
+	Type     string
+	Payload  string
+	ActorID  int64
+	DeviceID int64
+	At       time.Time
+}
+
+type OrderSnapshot struct {
+	OrderID int64
+	Seq     int64
+	Basis   string
+	State   string
+}
+
 type Role struct {
 	ID          int64
 	VenueID     int64

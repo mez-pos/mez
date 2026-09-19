@@ -160,16 +160,9 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 	if w.Type == "" {
 		return malformed("event at seq %d has no type", w.Seq)
 	}
-	decode, ok := decoders[w.Type]
-	if !ok {
-		return &UnknownEventTypeError{Type: w.Type, Seq: w.Seq}
-	}
-	if !isObject(w.Payload) {
-		return malformed("%q event at seq %d has no payload object", w.Type, w.Seq)
-	}
-	p, err := decode(w.Payload)
+	p, err := decodePayload(w.Type, w.Seq, w.Payload)
 	if err != nil {
-		return malformed("decoding %q payload at seq %d: %v", w.Type, w.Seq, err)
+		return err
 	}
 	*e = Event{
 		Seq:      w.Seq,
@@ -180,6 +173,30 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 		Payload:  p,
 	}
 	return nil
+}
+
+// DecodePayload decodes a stored payload into the concrete type t names. It
+// is how a database row, which keeps the envelope in columns and only the
+// payload as JSON, becomes an Event. The rules are UnmarshalJSON's: an
+// unknown type is an *UnknownEventTypeError and anything but a JSON object is
+// ErrMalformedEvent.
+func DecodePayload(t Type, raw json.RawMessage) (Payload, error) {
+	return decodePayload(t, 0, raw)
+}
+
+func decodePayload(t Type, seq int64, raw json.RawMessage) (Payload, error) {
+	decode, ok := decoders[t]
+	if !ok {
+		return nil, &UnknownEventTypeError{Type: t, Seq: seq}
+	}
+	if !isObject(raw) {
+		return nil, malformed("%q event at seq %d has no payload object", t, seq)
+	}
+	p, err := decode(raw)
+	if err != nil {
+		return nil, malformed("decoding %q payload at seq %d: %v", t, seq, err)
+	}
+	return p, nil
 }
 
 // decodeAs decodes a raw payload into P. Payloads are held as values, not

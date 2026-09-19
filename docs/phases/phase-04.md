@@ -10,7 +10,7 @@ Phase 03.
 
 ## Tasks
 
-- [ ] **Task 1 — Order persistence.**
+- [x] **Task 1 — Order persistence.**
   `internal/db` queries for appending events and reading a stream. Appending is
   transactional with a `(order_id, seq)` unique constraint and a retry on
   conflict. Snapshotting every N events, with rebuild-from-events proven

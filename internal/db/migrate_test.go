@@ -92,7 +92,10 @@ func TestMigrationsAreWellFormed(t *testing.T) {
 func TestMigrateCreatesTheSchema(t *testing.T) {
 	d := migratedDB(t)
 
-	want := []string{"devices", "roles", "settings", "staff", "venues"}
+	want := []string{
+		"devices", "roles", "settings", "staff", "venues",
+		"orders", "order_events", "order_snapshots", "invoice_series", "invoices",
+	}
 
 	for _, table := range want {
 		t.Run(table, func(t *testing.T) {

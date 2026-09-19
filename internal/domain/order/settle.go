@@ -73,6 +73,7 @@ func (p *projector) invoice(e Event, pl InvoiceIssued) error {
 		return fmt.Errorf("%w: %d outstanding", ErrBalanceDue, due.Minor)
 	}
 	p.invoiced = true
+	p.s.Invoiced = true
 	p.s.Invoices = append(p.s.Invoices, Invoice{Seq: e.Seq, InvoiceNo: pl.InvoiceNo, Series: pl.Series})
 	return nil
 }
@@ -138,6 +139,7 @@ func (p *projector) reopen(pl OrderReopened) error {
 	p.closed = false
 	p.reopened = true
 	p.invoiced = false
+	p.s.Invoiced = false
 	p.s.Reopens++
 	p.s.ClosedBy = 0
 	p.s.ClosedAt = time.Time{}
