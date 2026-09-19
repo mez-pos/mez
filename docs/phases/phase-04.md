@@ -66,6 +66,9 @@ Phase 03.
     `POST /api/v1/sessions` (sign in), `DELETE /api/v1/sessions/current`.
     Middleware puts the staff member in the context. Typed errors
     `invalid_pin` (401), `locked_out` (429 with Retry-After).
+    Also, from 3a's gaps: a per-IP rate limit on `POST /api/v1/devices/pair`
+    (429 `rate_limited` with Retry-After), and `venue_id`, `device_id` and
+    `staff_id` on the access log line of every authenticated request.
 
   - [ ] **Task 3c - Roles and permissions.**
     The permission keys as a Go enum, exhaustive, with the roles' JSON arrays
@@ -75,6 +78,16 @@ Phase 03.
     that staff member's permission and PIN, not the caller's. Wire the
     authenticated venue, staff and device into `service/order.Meta`. Expose
     3a's code creation as a back-office endpoint behind its permission.
+
+  - [ ] **Task 3d - First-run setup.**
+    A fresh install cannot pair its first device through the API: making a
+    code needs a permission, a permission needs a signed-in staff member,
+    and signing in needs a paired device. `nofiltr setup`, run on the venue
+    machine itself (local access is the trust root), creates the venue, its
+    default roles, the owner with a PIN, and prints the first pairing code.
+    Refuses to run twice on a database that already has a venue. Tested as
+    a command against a temp data directory. This is what the phase's
+    done-when script starts from.
 
 - [ ] **Task 4 — HTTP handlers.**
   `/api/v1` for orders, tickets, tables, menu read, payments, shifts. Decode →
