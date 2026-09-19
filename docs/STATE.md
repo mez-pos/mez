@@ -22,11 +22,10 @@ and series come from the venue row plus settings. `db.NewOrder.Within`,
 
 ## Next task
 
-**Phase 04, Task 3 - auth.** Device pairing, staff PIN sign-in (Argon2id,
-rate limit, lockout, attempts logged), roles and permissions middleware,
-typed permission errors. It fills `order.Meta` (venue, actor, device) for the
-service; the service trusts it. Void, comp, reopen and payment void carry an
-`AuthorisedBy` that the permission check must verify.
+**Phase 04, Task 3a - device pairing and device tokens.** Task 3 was split
+into 3a (pairing, device tokens, auth middleware), 3b (staff PIN sign-in,
+Argon2id, lockout, attempt log) and 3c (permissions, manager override, wiring
+into `service/order.Meta`). The scope of each is in the phase file.
 
 ## Known broken / in progress
 

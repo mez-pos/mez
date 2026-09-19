@@ -32,6 +32,50 @@ Phase 03.
   permissions with a middleware that checks them. Permission denial is a typed
   API error, not a 500.
 
+  Split into three sessions. Each has its own schema, its own HTTP surface
+  and its own adversarial tests, and it is security code: one session each.
+
+  - [ ] **Task 3a - Device pairing and device tokens.**
+    `internal/auth`: a random, high-entropy device token (only its SHA-256
+    stored in `devices.token_hash`; a token is long enough that a fast hash
+    is right, unlike a PIN). Migration: `pairing_codes` (venue, device name
+    and kind, code hash, expires_at, redeemed_at, created_by). Create a code
+    (short, readable, Crockford alphabet from `internal/domain/id`, expires in
+    minutes) and redeem it exactly once, in one transaction, for a device row
+    plus token. Redeeming an expired, used or unknown code fails the same way.
+    Revoking a device (`revoked_at`) kills its token. `internal/api`
+    middleware: `Authorization: Bearer <device token>` on every `/api/v1`
+    route except health and redeem; puts venue and device in the context;
+    `last_seen_at` updated no more than once a minute. Endpoints:
+    `POST /api/v1/devices/pair` (redeem). Creating a code is a back-office
+    action and waits for 3c's permission check: until then it is a Go
+    function with tests, not an endpoint. Typed errors `unauthenticated`
+    (401) and `device_revoked` (401).
+
+  - [ ] **Task 3b - Staff PIN sign-in.**
+    Add `golang.org/x/crypto` (allowed set; ADR required; v0.28.0 is already
+    in the module cache). PINs as Argon2id PHC strings with parameters
+    stored in the hash, constant-time compare, a dummy hash compared when the
+    staff member is unknown so timing does not reveal who exists. Migration:
+    `staff_sessions` (token hash, staff, device, expires_at, ended_at) and
+    `sign_in_attempts` (venue, device, staff or null, at, outcome, reason),
+    every attempt written, success or not. Lockout: N failures within a
+    window locks the staff member for a period, and a per-device limit stops
+    one tablet cycling through everyone. Both configurable with defaults in
+    code. Sign-in only on a paired device (3a's middleware). Endpoints:
+    `POST /api/v1/sessions` (sign in), `DELETE /api/v1/sessions/current`.
+    Middleware puts the staff member in the context. Typed errors
+    `invalid_pin` (401), `locked_out` (429 with Retry-After).
+
+  - [ ] **Task 3c - Roles and permissions.**
+    The permission keys as a Go enum, exhaustive, with the roles' JSON arrays
+    validated against it. `requirePermission(p)` middleware returning a typed
+    `forbidden` (403) error, never a 500. Manager override: commands that
+    carry `AuthorisedBy` (void, comp, reopen, payment void, discount) check
+    that staff member's permission and PIN, not the caller's. Wire the
+    authenticated venue, staff and device into `service/order.Meta`. Expose
+    3a's code creation as a back-office endpoint behind its permission.
+
 - [ ] **Task 4 — HTTP handlers.**
   `/api/v1` for orders, tickets, tables, menu read, payments, shifts. Decode →
   validate → service → encode, per `docs/03-conventions.md`. The stable error
