@@ -1,0 +1,175 @@
+package order
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/invoice"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+)
+
+// The venue settings this package reads, from the settings table. Anything
+// not set takes the default noted.
+const (
+	// SettingTaxPricing is "inclusive" or "exclusive". Default: inclusive,
+	// except US sales tax, which is always exclusive.
+	SettingTaxPricing = "tax.pricing"
+
+	// SettingTaxStateCode is the venue's two digit GST state code, "29" for
+	// Karnataka. Required under GST.
+	SettingTaxStateCode = "tax.state_code"
+
+	// SettingTaxJurisdiction is the US sales tax rates where the venue is, as
+	// JSON: [{"name":"CA","rate":7250}, ...], rates in thousandths of a
+	// percent as tax.Rate. Required under US sales tax.
+	SettingTaxJurisdiction = "tax.jurisdiction"
+
+	// SettingInvoiceSeries is the code of the series invoices are issued in.
+	// Default: INV.
+	SettingInvoiceSeries = "invoice.series"
+
+	// SettingInvoicePrefix is written by {prefix}. Default: the series code.
+	SettingInvoicePrefix = "invoice.prefix"
+
+	// SettingInvoiceTemplate is how a number is written. Default:
+	// {prefix}/{fy:short}/{seq:06d}, which is 16 characters, GST's limit.
+	SettingInvoiceTemplate = "invoice.template"
+)
+
+const (
+	defaultSeries   = "INV"
+	defaultTemplate = "{prefix}/{fy:short}/{seq:06d}"
+
+	// gstMaxInvoiceNo is the longest invoice number GST allows.
+	gstMaxInvoiceNo = 16
+)
+
+// ErrVenueConfig means the venue's settings cannot sell: a tax profile
+// missing what it needs, or an invoice series that cannot issue a number.
+// It is the back office's to fix, not the till's.
+var ErrVenueConfig = errors.New("venue is not configured to sell")
+
+// venue is everything a command needs to know about where it is being sold.
+type venue struct {
+	ID       int64
+	Currency string
+	Location *time.Location
+	Taxes    order.Taxes
+	Series   invoice.Series
+}
+
+// loadVenue reads a venue and its settings. It runs on every command: two
+// indexed reads against a local file, cheaper than keeping a cache coherent
+// with the back office.
+func loadVenue(ctx context.Context, q *gen.Queries, venueID int64) (venue, error) {
+	row, err := q.VenueByID(ctx, venueID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return venue{}, fmt.Errorf("%w: no venue %d", ErrVenueConfig, venueID)
+	}
+	if err != nil {
+		return venue{}, fmt.Errorf("reading venue %d: %w", venueID, err)
+	}
+	rows, err := q.SettingsForVenue(ctx, venueID)
+	if err != nil {
+		return venue{}, fmt.Errorf("reading the settings of venue %d: %w", venueID, err)
+	}
+	settings := make(map[string]string, len(rows))
+	for _, r := range rows {
+		settings[r.Key] = r.Value
+	}
+	return venueFrom(row, settings)
+}
+
+// venueFrom builds a venue from its row and settings, checking that what is
+// configured can actually be used.
+func venueFrom(row gen.Venue, settings map[string]string) (venue, error) {
+	loc, err := time.LoadLocation(row.Timezone)
+	if err != nil {
+		return venue{}, fmt.Errorf("%w: timezone %q: %v", ErrVenueConfig, row.Timezone, err)
+	}
+	taxes, err := taxesFor(row, settings)
+	if err != nil {
+		return venue{}, err
+	}
+	series, err := seriesFor(row, settings)
+	if err != nil {
+		return venue{}, err
+	}
+	return venue{ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, Series: series}, nil
+}
+
+// taxesFor builds the venue's tax regime from its profile, registration and
+// settings. The profile then checks the context on every computation; this
+// only refuses what is certain to fail, so the owner hears it at setup.
+func taxesFor(row gen.Venue, settings map[string]string) (order.Taxes, error) {
+	ctx := tax.VenueContext{Currency: row.Currency, Pricing: tax.Inclusive}
+	if p, ok := settings[SettingTaxPricing]; ok {
+		ctx.Pricing = tax.Pricing(p)
+		if ctx.Pricing != tax.Inclusive && ctx.Pricing != tax.Exclusive {
+			return order.Taxes{}, fmt.Errorf("%w: %s is %q, not inclusive or exclusive", ErrVenueConfig, SettingTaxPricing, p)
+		}
+	}
+
+	var profile tax.TaxProfile
+	switch row.TaxProfile {
+	case "none":
+		return order.Taxes{}, nil
+	case "gst_in":
+		profile = tax.GST{}
+		ctx.GSTIN = row.TaxRegistrationID
+		ctx.StateCode = settings[SettingTaxStateCode]
+		if ctx.GSTIN == "" || len(ctx.StateCode) != 2 {
+			return order.Taxes{}, fmt.Errorf("%w: GST needs a GSTIN and a two digit %s", ErrVenueConfig, SettingTaxStateCode)
+		}
+	case "vat_uk":
+		profile = tax.VAT{}
+		ctx.VATNumber = row.TaxRegistrationID
+		if ctx.VATNumber == "" {
+			return order.Taxes{}, fmt.Errorf("%w: VAT needs a VAT number", ErrVenueConfig)
+		}
+	case "sales_tax_us":
+		profile = tax.USSalesTax{}
+		if _, set := settings[SettingTaxPricing]; !set {
+			ctx.Pricing = tax.Exclusive
+		}
+		if err := json.Unmarshal([]byte(settings[SettingTaxJurisdiction]), &ctx.Jurisdiction); err != nil || len(ctx.Jurisdiction) == 0 {
+			return order.Taxes{}, fmt.Errorf("%w: US sales tax needs %s as a JSON list of rates", ErrVenueConfig, SettingTaxJurisdiction)
+		}
+	default:
+		return order.Taxes{}, fmt.Errorf("%w: unknown tax profile %q", ErrVenueConfig, row.TaxProfile)
+	}
+	return order.Taxes{Profile: profile, Venue: ctx}, nil
+}
+
+// seriesFor builds the invoice series the venue issues in.
+func seriesFor(row gen.Venue, settings map[string]string) (invoice.Series, error) {
+	code := strings.TrimSpace(settings[SettingInvoiceSeries])
+	if code == "" {
+		code = defaultSeries
+	}
+	prefix, ok := settings[SettingInvoicePrefix]
+	if !ok {
+		prefix = code
+	}
+	template := settings[SettingInvoiceTemplate]
+	if template == "" {
+		template = defaultTemplate
+	}
+	maxLength := 0
+	if row.TaxProfile == "gst_in" {
+		maxLength = gstMaxInvoiceNo
+	}
+	fy := invoice.FYRule{StartMonth: time.Month(row.FinancialYearStartMonth), StartDay: 1}
+	s, err := invoice.NewSeries(code, prefix, fy, template, maxLength)
+	if err != nil {
+		return invoice.Series{}, fmt.Errorf("%w: invoice series: %w", ErrVenueConfig, err)
+	}
+	return s, nil
+}

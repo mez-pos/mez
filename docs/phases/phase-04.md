@@ -19,7 +19,7 @@ Phase 03.
   many goroutines allocating invoice numbers produce a gapless, duplicate-free
   sequence.
 
-- [ ] **Task 2 — Order service.**
+- [x] **Task 2 — Order service.**
   `internal/service/order`. Load stream → project → validate the command →
   append event(s) → publish to the hub. One method per command. Handlers will
   call this; handlers contain no logic. Idempotency: a command carrying a key

@@ -566,3 +566,32 @@ func TestAnOrderThatDoesNotExist(t *testing.T) {
 		t.Errorf("AppendOrder: err = %v, want ErrOrderNotFound", err)
 	}
 }
+
+func TestOpenOrderWithinRunsInTheTransaction(t *testing.T) {
+	d := migratedDB(t)
+	ctx := context.Background()
+	seedVenue(t, d)
+	opened := ev(order.OrderOpened{Channel: order.ChannelCounter, Currency: "INR"})
+
+	errLater := errors.New("something after the open failed")
+	var seen *OrderTx
+	_, _, err := d.OpenOrder(ctx, NewOrder{PublicID: "ord_ROLLBACK", VenueID: 1, Opened: opened,
+		Within: func(_ context.Context, tx *OrderTx) error {
+			seen = tx
+			return errLater
+		}}, untaxed)
+	if !errors.Is(err, errLater) {
+		t.Fatalf("err = %v, want the Within error", err)
+	}
+	if seen == nil || seen.PublicID != "ord_ROLLBACK" || seen.State.LastSeq != 1 || seen.VenueID != 1 {
+		t.Fatalf("Within saw %+v", seen)
+	}
+	if _, err := d.LoadOrder(ctx, seen.OrderID, untaxed); !errors.Is(err, ErrOrderNotFound) {
+		t.Errorf("the order survived its Within failing: err = %v", err)
+	}
+
+	// The public ID was never taken, so it can be used again.
+	if _, _, err := d.OpenOrder(ctx, NewOrder{PublicID: "ord_ROLLBACK", VenueID: 1, Opened: opened}, untaxed); err != nil {
+		t.Errorf("reopening with the rolled back public ID: %v", err)
+	}
+}

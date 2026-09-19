@@ -32,6 +32,9 @@ type Querier interface {
 	// and on every void they authorised, and a tax audit expects to find them.
 	DeactivateStaff(ctx context.Context, arg DeactivateStaffParams) error
 	DeleteSetting(ctx context.Context, arg DeleteSettingParams) error
+	// Idempotency keys. Read and written only inside the transaction that
+	// appends a command's events; see internal/service/order.
+	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
 	InvoiceSeriesLastSeq(ctx context.Context, arg InvoiceSeriesLastSeqParams) (int64, error)
 	InvoicesForVenue(ctx context.Context, venueID int64) ([]Invoice, error)
 	ListVenues(ctx context.Context) ([]Venue, error)
@@ -44,6 +47,7 @@ type Querier interface {
 	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error)
 	OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapshot, error)
 	RolesForVenue(ctx context.Context, venueID int64) ([]Role, error)
+	SaveIdempotencyKey(ctx context.Context, arg SaveIdempotencyKeyParams) error
 	SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotParams) error
 	//
 	// An upsert rather than INSERT OR REPLACE. Replace deletes the row and inserts

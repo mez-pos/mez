@@ -1,0 +1,214 @@
+package order
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"log/slog"
+	"time"
+
+	"github.com/byjoellobo/nofiltr-pos/internal/db"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+)
+
+var (
+	// ErrOrderNotFound means no order with that ID at the caller's venue. An
+	// order at another venue is not found, rather than forbidden, so an ID
+	// says nothing about venues the caller cannot see.
+	ErrOrderNotFound = errors.New("order not found")
+
+	// ErrInvalidCommand means the command is malformed before the order is
+	// even consulted: a missing field, a bad idempotency key.
+	ErrInvalidCommand = errors.New("invalid command")
+
+	// ErrIdempotencyKeyReused means a key already applied to one request was
+	// sent with a different one. Answering with the first result would tell
+	// the client something happened that it did not ask for.
+	ErrIdempotencyKeyReused = errors.New("idempotency key was already used for a different request")
+)
+
+// Clock is where the service gets the time for the events it writes. The
+// domain never reads a clock; this is the one place the time is decided.
+type Clock interface {
+	Now() time.Time
+}
+
+type systemClock struct{}
+
+func (systemClock) Now() time.Time { return time.Now() }
+
+// Change is what a command did, as the hub receives it.
+type Change struct {
+	VenueID  int64
+	OrderID  int64
+	PublicID string
+	Events   []order.Event
+	State    order.State
+}
+
+// Publisher receives every change after it has committed. It must not block
+// or fail the command: the change is on disk, and a device that misses it
+// catches up by replay.
+type Publisher interface {
+	Publish(ctx context.Context, c Change)
+}
+
+// Options configure a Service. DB is required.
+type Options struct {
+	DB        *db.DB
+	Clock     Clock     // nil is the system clock
+	Publisher Publisher // nil publishes nothing
+	Log       *slog.Logger
+}
+
+// Service runs order commands.
+type Service struct {
+	db        *db.DB
+	clock     Clock
+	publisher Publisher
+	log       *slog.Logger
+}
+
+// New returns a Service.
+func New(opts Options) (*Service, error) {
+	if opts.DB == nil {
+		return nil, errors.New("order service: no database")
+	}
+	if opts.Clock == nil {
+		opts.Clock = systemClock{}
+	}
+	if opts.Log == nil {
+		opts.Log = slog.New(slog.NewTextHandler(io.Discard, nil))
+	}
+	return &Service{db: opts.DB, clock: opts.Clock, publisher: opts.Publisher, log: opts.Log}, nil
+}
+
+// Meta is who is asking, from where, and the idempotency key if they sent
+// one. Authentication fills it in; the service trusts it.
+type Meta struct {
+	VenueID        int64
+	ActorID        int64 // the staff member; 0 for a guest
+	DeviceID       int64
+	IdempotencyKey string
+}
+
+func (m Meta) validate() error {
+	if m.VenueID < 1 {
+		return fmt.Errorf("%w: no venue", ErrInvalidCommand)
+	}
+	if m.ActorID < 0 || m.DeviceID < 0 {
+		return fmt.Errorf("%w: negative actor or device", ErrInvalidCommand)
+	}
+	return checkKey(m.IdempotencyKey)
+}
+
+// Result is an order after a command: its state, and the events the command
+// appended. Replayed is true when an idempotency key matched and nothing was
+// appended this time; the result is then the one the first request got.
+type Result struct {
+	OrderID  int64
+	PublicID string
+	State    order.State
+	Events   []order.Event
+	Replayed bool
+}
+
+// decider turns a command into its events, given the order as it stands.
+type decider func(ctx context.Context, tx *db.OrderTx, v venue, at time.Time) ([]order.Payload, error)
+
+// run is the path every command on an existing order takes.
+func (s *Service) run(ctx context.Context, meta Meta, orderID int64, name string, cmd any, decide decider) (Result, error) {
+	if err := meta.validate(); err != nil {
+		return Result{}, err
+	}
+	v, err := loadVenue(ctx, s.db.Queries(), meta.VenueID)
+	if err != nil {
+		return Result{}, err
+	}
+	fp, err := fingerprint(name, orderID, cmd)
+	if err != nil {
+		return Result{}, err
+	}
+	at := s.clock.Now().UTC()
+
+	var (
+		publicID string
+		prior    *priorResult
+	)
+	state, events, err := s.db.AppendOrder(ctx, orderID, v.Taxes, func(ctx context.Context, tx *db.OrderTx) ([]order.Event, error) {
+		// Decide can run more than once, so everything it sets is reset.
+		publicID, prior = tx.PublicID, nil
+		if tx.VenueID != meta.VenueID {
+			return nil, fmt.Errorf("%w: %d", ErrOrderNotFound, orderID)
+		}
+		p, err := findPrior(ctx, tx.Queries(), meta, fp)
+		if err != nil || p != nil {
+			prior = p
+			return nil, err
+		}
+		payloads, err := decide(ctx, tx, v, at)
+		if err != nil {
+			return nil, err
+		}
+		if len(payloads) == 0 {
+			return nil, fmt.Errorf("order service: %s decided nothing", name)
+		}
+		first := tx.State.LastSeq + 1
+		if err := saveKey(ctx, tx.Queries(), meta, fp, tx.OrderID, first, first+int64(len(payloads))-1, at); err != nil {
+			return nil, err
+		}
+		return stamp(payloads, meta, at), nil
+	})
+	if errors.Is(err, db.ErrOrderNotFound) {
+		return Result{}, fmt.Errorf("%w: %d", ErrOrderNotFound, orderID)
+	}
+	if err != nil {
+		return Result{}, err
+	}
+	if prior != nil {
+		return s.replay(ctx, v, *prior)
+	}
+	res := Result{OrderID: orderID, PublicID: publicID, State: state, Events: events}
+	s.publish(ctx, meta.VenueID, res)
+	return res, nil
+}
+
+// stamp turns payloads into events: now, by this actor, on this device. The
+// store numbers them.
+func stamp(payloads []order.Payload, meta Meta, at time.Time) []order.Event {
+	events := make([]order.Event, len(payloads))
+	for i, p := range payloads {
+		events[i] = order.NewEvent(0, at, meta.ActorID, meta.DeviceID, p)
+	}
+	return events
+}
+
+func (s *Service) publish(ctx context.Context, venueID int64, res Result) {
+	if s.publisher == nil {
+		return
+	}
+	s.publisher.Publish(ctx, Change{
+		VenueID: venueID, OrderID: res.OrderID, PublicID: res.PublicID, Events: res.Events, State: res.State,
+	})
+}
+
+// Order is an order's current state, if it is at the caller's venue.
+func (s *Service) Order(ctx context.Context, venueID, orderID int64) (Result, error) {
+	row, err := s.db.Queries().OrderByID(ctx, orderID)
+	if err != nil || row.VenueID != venueID {
+		if err == nil || isNoRows(err) {
+			return Result{}, fmt.Errorf("%w: %d", ErrOrderNotFound, orderID)
+		}
+		return Result{}, fmt.Errorf("reading order %d: %w", orderID, err)
+	}
+	v, err := loadVenue(ctx, s.db.Queries(), venueID)
+	if err != nil {
+		return Result{}, err
+	}
+	state, err := s.db.LoadOrder(ctx, orderID, v.Taxes)
+	if err != nil {
+		return Result{}, err
+	}
+	return Result{OrderID: orderID, PublicID: row.PublicID, State: state}, nil
+}

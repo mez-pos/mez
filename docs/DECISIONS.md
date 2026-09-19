@@ -1028,3 +1028,45 @@ Cost: a change to the projection's rules or to State's shape must bump
 `order.ProjectionVersion`, or old snapshots are served until they are
 retaken. Nothing enforces that. Deleting a venue with any orders now fails;
 closing a venue will be a status, not a delete.
+
+## ADR-053 - Order service: commands as deciders, keys saved with their events, Close invoices
+2026-09 · Status: accepted
+Decision: `internal/service/order` has one method per command. Each builds a
+decider that `db.AppendOrder` runs inside the write transaction; the service
+stamps the events with its clock, the caller's actor and device, and
+publishes a `Change` only after commit.
+- Commands whose body is exactly their event's payload are defined as that
+  payload type (`type AddLine order.LineAdded`). Where the server owns a
+  field, the command leaves it out: `OpenOrder` takes no currency or opener,
+  `TenderPayment` no tenderer, `Close` and `IssueInvoice` no body.
+- An idempotency key is scoped to the venue and saved in the command's own
+  transaction as `(fingerprint, order_id, first_seq, last_seq)`. The
+  fingerprint hashes the command name, the order and the body; the same key
+  on another request is `ErrIdempotencyKeyReused`. A replay reads the events
+  back and projects to `last_seq`, which is the result the first request
+  got. A command that fails saves no key.
+- `Close` issues an invoice first, in the same transaction, when this
+  settlement has none and the bill is not zero. `IssueInvoice` exists for
+  issuing before close.
+- The tax regime and invoice series come from the venue row plus settings
+  (`tax.pricing`, `tax.state_code`, `tax.jurisdiction`, `invoice.series`,
+  `invoice.prefix`, `invoice.template`), read on every command. Pricing
+  defaults to inclusive, and exclusive under US sales tax. The series
+  defaults to `INV`, `{prefix}/{fy:short}/{seq:06d}`, capped at 16
+  characters under GST.
+- `SendTicket` with no lines sends every unsent, unvoided line for the
+  station whose course is 0 or fired.
+- An order at another venue is `ErrOrderNotFound`, not forbidden.
+- The package is `internal/service/order` because the phase says so, beside
+  the Windows service package it does not otherwise relate to.
+Because: the key and the events commit together or not at all, so a retry
+after a crash can neither double-apply nor find a key with nothing behind
+it. Storing a seq range rather than a serialised response keeps the key
+row small and needs nothing the transaction does not already know. Closing
+with the invoice in the same transaction means a sale can never be closed
+unnumbered by a till that forgot a step.
+Cost: a replay projects under today's tax settings, so if the owner changed
+them since, the replayed totals follow; the events and invoice snapshot do
+not. `AddLine` trusts the client's price and tax snapshot until the menu
+tables exist. Keys never expire yet. GST place of supply is always the
+venue's own state.

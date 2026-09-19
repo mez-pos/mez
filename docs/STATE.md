@@ -11,24 +11,22 @@ File: `docs/phases/phase-04.md`. Phase 03 is complete.
 
 ## Last completed task
 
-**Phase 04, Task 1 - order persistence.** Migration 00002: `orders`,
-`order_events` (unique `(order_id, seq)`, append-only by trigger),
-`order_snapshots`, `invoice_series`, `invoices`. `internal/db`:
-`OpenOrder`, `AppendOrder(orderID, taxes, Decide)` (read, decide, project,
-append in one tx, retry on seq conflict), `LoadOrder` (snapshot + tail),
-`RebuildOrder`, `OrderEvents`, and `InvoiceAllocator`, which passes
-`invoicetest.Conformance`. Snapshots every 50 events, keyed on projection
-version and tax regime, and self-healing. Domain gained `order.Resume`,
-`order.DecodePayload`, `State.Invoiced`, `order.ProjectionVersion`. ADR-052.
+**Phase 04, Task 2 - order service.** `internal/service/order`: `Open` and
+14 commands (lines, qty, void, comp, discount, note, fire, ticket, tender,
+void payment, invoice, refund, close, reopen), each a decider run inside
+`db.AppendOrder`, then published to a `Publisher`. Idempotency keys
+(migration 00003) are saved with their events and replay the exact prior
+result. `Close` issues the invoice in the same transaction when needed. Tax
+and series come from the venue row plus settings. `db.NewOrder.Within`,
+`db.OrderTx.PublicID` added. ADR-053.
 
 ## Next task
 
-**Phase 04, Task 2 - order service** (`internal/service/order`). Build each
-command as a `db.Decide`, publish after `AppendOrder` returns, and handle
-idempotency keys. Carried over: build `order.Taxes` from venue settings for
-every projection, store `State.TaxDetail` as `invoice.issued.tax_snapshot`
-(ADR-048, ADR-050), and issue invoices through `OrderTx.Invoices()` and
-`OrderTx.RecordInvoice` inside the append.
+**Phase 04, Task 3 - auth.** Device pairing, staff PIN sign-in (Argon2id,
+rate limit, lockout, attempts logged), roles and permissions middleware,
+typed permission errors. It fills `order.Meta` (venue, actor, device) for the
+service; the service trusts it. Void, comp, reopen and payment void carry an
+`AuthorisedBy` that the permission check must verify.
 
 ## Known broken / in progress
 
@@ -53,6 +51,10 @@ every projection, store `State.TaxDetail` as `invoice.issued.tax_snapshot`
   `internal/domain`. No phase task owns it and it does not exist yet.
 - A change to `order.Project`'s rules or `order.State`'s shape must bump
   `order.ProjectionVersion`, or stale snapshots are served. Nothing checks it.
+- `AddLine` takes the price and tax snapshot from the client, because no menu
+  tables exist yet. When they do, the service must resolve item IDs itself.
+- Idempotency keys never expire. GST place of supply is always the venue's
+  state, so inter-state (IGST) sales cannot be rung up yet.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no invoice number. Phase 07 must work that way or revisit it.
 

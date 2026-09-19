@@ -22,6 +22,16 @@ type Device struct {
 	CreatedAt  time.Time
 }
 
+type IdempotencyKey struct {
+	VenueID     int64
+	Key         string
+	Fingerprint string
+	OrderID     int64
+	FirstSeq    int64
+	LastSeq     int64
+	CreatedAt   time.Time
+}
+
 type Invoice struct {
 	ID        int64
 	VenueID   int64

@@ -95,6 +95,7 @@ func TestMigrateCreatesTheSchema(t *testing.T) {
 	want := []string{
 		"devices", "roles", "settings", "staff", "venues",
 		"orders", "order_events", "order_snapshots", "invoice_series", "invoices",
+		"idempotency_keys",
 	}
 
 	for _, table := range want {

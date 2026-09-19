@@ -53,6 +53,10 @@ type NewOrder struct {
 	PublicID string
 	VenueID  int64
 	Opened   order.Event
+
+	// Within, if set, runs inside the opening transaction once the order and
+	// its first event are written. An error from it rolls the order back.
+	Within func(ctx context.Context, tx *OrderTx) error
 }
 
 // OpenOrder writes a new order and its first event in one transaction and
@@ -88,7 +92,13 @@ func (d *DB) OpenOrder(ctx context.Context, n NewOrder, taxes order.Taxes) (int6
 		if err != nil {
 			return fmt.Errorf("creating order %q: %w", n.PublicID, err)
 		}
-		return appendEvents(ctx, q, orderID, []order.Event{first})
+		if err := appendEvents(ctx, q, orderID, []order.Event{first}); err != nil {
+			return err
+		}
+		if n.Within == nil {
+			return nil
+		}
+		return n.Within(ctx, &OrderTx{OrderID: orderID, VenueID: n.VenueID, PublicID: n.PublicID, State: state, q: q})
 	})
 	if err != nil {
 		return 0, order.State{}, err
@@ -101,9 +111,10 @@ func (d *DB) OpenOrder(ctx context.Context, n NewOrder, taxes order.Taxes) (int6
 // through Queries, or numbers it takes from Invoices, commits with the
 // events or not at all.
 type OrderTx struct {
-	OrderID int64
-	VenueID int64
-	State   order.State
+	OrderID  int64
+	VenueID  int64
+	PublicID string
+	State    order.State
 
 	q *gen.Queries
 }
@@ -183,7 +194,7 @@ func (d *DB) appendOnce(ctx context.Context, q *gen.Queries, orderID int64, taxe
 		return order.State{}, nil, fmt.Errorf("order %d: the orders row is at seq %d but its events reach %d", orderID, row.LastSeq, current.LastSeq)
 	}
 
-	decided, err := decide(ctx, &OrderTx{OrderID: orderID, VenueID: row.VenueID, State: current, q: q})
+	decided, err := decide(ctx, &OrderTx{OrderID: orderID, VenueID: row.VenueID, PublicID: row.PublicID, State: current, q: q})
 	if err != nil {
 		return order.State{}, nil, err
 	}
