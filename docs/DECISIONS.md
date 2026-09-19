@@ -1070,3 +1070,40 @@ them since, the replayed totals follow; the events and invoice snapshot do
 not. `AddLine` trusts the client's price and tax snapshot until the menu
 tables exist. Keys never expire yet. GST place of supply is always the
 venue's own state.
+
+## ADR-054 - Device pairing: hashed codes and tokens, one transaction, 401 by kind
+2026-09 · Status: accepted
+Decision: `internal/auth.Devices` pairs and authenticates devices.
+- A pairing code is 8 Crockford symbols (40 bits), shown as `XXXX-XXXX`,
+  valid for 10 minutes, for one device of a name and kind fixed when it is
+  made (terminal, kitchen or back office; never guest). Only its SHA-256 is
+  stored. It may be typed as read: `id.Normalize` takes lowercase, the
+  hyphen and O/I/L for 0/1.
+- Redeeming it reads the code, creates the device with its token hash and
+  marks the code used (`WHERE redeemed_at IS NULL`, one row or fail) in one
+  write transaction. Unknown, expired, used and malformed codes all return
+  the same `ErrInvalidPairingCode`.
+- A device token is `nfd_` plus 256 random bits in unpadded base64url. Only
+  its SHA-256 is stored, under a partial unique index. Tokens of the wrong
+  shape are refused before the database is asked.
+- Revoking sets `revoked_at` and keeps the hash, so a revoked token is
+  answered `device_revoked` rather than `unauthenticated`: the device knows
+  to show the pairing screen instead of retrying.
+- `last_seen_at` is written only when it is a minute or more old, and a
+  failure to write it does not fail the request.
+- `internal/api`: `WithDevices` mounts `POST /api/v1/devices/pair` and the
+  authenticated `GET /api/v1/devices/me`, behind `requireDevice`, which reads
+  `Authorization: Bearer`. A 401 always carries `WWW-Authenticate`. Without
+  `WithDevices` the routes do not exist, so a misconfigured server fails
+  closed. `decodeJSON` bounds bodies at 64 KiB and refuses unknown fields
+  and trailing values.
+Because: SHA-256 is right for secrets with the entropy to make guessing
+hopeless; PINs, which lack it, get Argon2id in 3b. Forty bits that live ten
+minutes and work once cannot be guessed online at any rate a LAN allows.
+Failing unknown, spent and expired codes the same way tells a guesser
+nothing. The single transaction is what makes "exactly once" true under a
+race, and a test of eight concurrent redeemers proves it.
+Cost: there is no way yet to make the first code on a real install: no
+venue is created at startup and no endpoint makes codes until 3c. The pair
+endpoint is not rate limited. The access log does not carry venue_id or
+device_id, because the device is known only inside the chain.

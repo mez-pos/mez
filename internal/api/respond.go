@@ -14,6 +14,21 @@ const (
 	CodeNotFound         = "not_found"
 	CodeMethodNotAllowed = "method_not_allowed"
 	CodeInternal         = "internal"
+
+	// CodeInvalidRequest is a body that is not the JSON the endpoint takes.
+	CodeInvalidRequest = "invalid_request"
+
+	// CodeUnauthenticated is a request with no device token, or one that is
+	// not any device's.
+	CodeUnauthenticated = "unauthenticated"
+
+	// CodeDeviceRevoked is a token of a device the venue has unpaired. The
+	// device should forget its token and show the pairing screen.
+	CodeDeviceRevoked = "device_revoked"
+
+	// CodeInvalidPairingCode is a pairing code that is unknown, expired or
+	// used. Which of the three is deliberately not said.
+	CodeInvalidPairingCode = "invalid_pairing_code"
 )
 
 // Error is one failure, in the shape 03-conventions.md fixes for every endpoint.
@@ -60,4 +75,9 @@ func writeJSON(w http.ResponseWriter, log *slog.Logger, status int, body any) {
 // writeError sends the standard envelope.
 func writeError(w http.ResponseWriter, log *slog.Logger, status int, code, message string) {
 	writeJSON(w, log, status, errorBody{Error: Error{Code: code, Message: message}})
+}
+
+// writeFieldError sends the standard envelope naming the field at fault.
+func writeFieldError(w http.ResponseWriter, log *slog.Logger, status int, code, message, field string) {
+	writeJSON(w, log, status, errorBody{Error: Error{Code: code, Message: message, Field: field}})
 }

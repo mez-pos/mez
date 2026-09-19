@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/api"
+	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 	"github.com/byjoellobo/nofiltr-pos/internal/config"
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
@@ -141,9 +142,15 @@ func run() (err error) {
 			"hint", "rebuild with -tags frontend once web/*/dist exists")
 	}
 
+	devices, err := auth.NewDevices(auth.DevicesOptions{DB: database, Log: log})
+	if err != nil {
+		return err
+	}
+
 	srv := api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
+		api.WithDevices(devices),
 	)
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)

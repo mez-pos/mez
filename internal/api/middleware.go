@@ -34,7 +34,10 @@ func chain(h http.Handler, layers ...middleware) http.Handler {
 
 type contextKey int
 
-const requestIDKey contextKey = iota
+const (
+	requestIDKey contextKey = iota
+	deviceKey
+)
 
 // RequestID returns the correlation id for a request, or "" outside one.
 func RequestID(ctx context.Context) string {
@@ -185,7 +188,7 @@ func (s *Server) cors(next http.Handler) http.Handler {
 		if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
 			if allowed {
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Idempotency-Key, "+HeaderRequestID)
+				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Idempotency-Key, "+HeaderRequestID)
 				w.Header().Set("Access-Control-Max-Age", "600")
 			}
 			// A preflight is answered here either way. Routing it would only

@@ -86,7 +86,7 @@ func (d *DB) OpenOrder(ctx context.Context, n NewOrder, taxes order.Taxes) (int6
 			ClosedAt:  nullTime(state.ClosedAt),
 			UpdatedAt: state.UpdatedAt,
 		})
-		if isUniqueViolation(err) && strings.Contains(err.Error(), "orders.public_id") {
+		if IsUniqueViolation(err) && strings.Contains(err.Error(), "orders.public_id") {
 			return fmt.Errorf("%w: %q", ErrPublicIDTaken, n.PublicID)
 		}
 		if err != nil {
@@ -392,7 +392,7 @@ func appendEvents(ctx context.Context, q *gen.Queries, orderID int64, events []o
 			DeviceID: e.DeviceID,
 			At:       e.At.UTC(),
 		})
-		if isUniqueViolation(err) {
+		if IsUniqueViolation(err) {
 			return fmt.Errorf("%w: order %d already has seq %d", ErrSeqConflict, orderID, e.Seq)
 		}
 		if err != nil {
@@ -433,8 +433,9 @@ func nullTime(t time.Time) sql.NullTime {
 	return sql.NullTime{Time: t.UTC(), Valid: true}
 }
 
-// isUniqueViolation reports whether err is SQLite refusing a duplicate key.
-func isUniqueViolation(err error) bool {
+// IsUniqueViolation reports whether err is SQLite refusing a duplicate key:
+// the signal to redraw a public ID or code, or a writer that lost a race.
+func IsUniqueViolation(err error) bool {
 	var se *sqlite.Error
 	if !errors.As(err, &se) {
 		return false

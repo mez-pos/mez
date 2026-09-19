@@ -81,6 +81,19 @@ type OrderSnapshot struct {
 	State   string
 }
 
+type PairingCode struct {
+	ID         int64
+	VenueID    int64
+	CodeHash   string
+	DeviceName string
+	DeviceKind string
+	CreatedBy  sql.NullInt64
+	CreatedAt  time.Time
+	ExpiresAt  time.Time
+	RedeemedAt sql.NullTime
+	DeviceID   sql.NullInt64
+}
+
 type Role struct {
 	ID          int64
 	VenueID     int64

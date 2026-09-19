@@ -18,6 +18,7 @@ type Server struct {
 	started time.Time
 	bundles map[string]fs.FS
 	dbCheck func() string
+	devices Devices
 	handler http.Handler
 }
 
@@ -88,6 +89,8 @@ func (s *Server) routes() http.Handler {
 	// is how a 405 keeps the JSON error shape instead of net/http's plain text.
 	mux.HandleFunc("GET /api/v1/health", s.health)
 	mux.HandleFunc("/api/v1/health", s.methodNotAllowed)
+
+	s.mountDevices(mux)
 
 	// Anything else under /api keeps the JSON envelope. Without this, an
 	// unknown endpoint would fall through to the terminal bundle mounted at /

@@ -11,21 +11,20 @@ File: `docs/phases/phase-04.md`. Phase 03 is complete.
 
 ## Last completed task
 
-**Phase 04, Task 2 - order service.** `internal/service/order`: `Open` and
-14 commands (lines, qty, void, comp, discount, note, fire, ticket, tender,
-void payment, invoice, refund, close, reopen), each a decider run inside
-`db.AppendOrder`, then published to a `Publisher`. Idempotency keys
-(migration 00003) are saved with their events and replay the exact prior
-result. `Close` issues the invoice in the same transaction when needed. Tax
-and series come from the venue row plus settings. `db.NewOrder.Within`,
-`db.OrderTx.PublicID` added. ADR-053.
+**Phase 04, Task 3a - device pairing and device tokens.** `internal/auth`:
+`Devices` with `CreatePairingCode` (8 symbols, 10 minutes, hashed),
+`Redeem` (one transaction, exactly once, one error for every bad code),
+`Authenticate` (`nfd_` + 256-bit token, SHA-256 stored), `Revoke`.
+Migration 00004 (`pairing_codes`, unique index on `devices.token_hash`).
+`internal/api`: `WithDevices`, `requireDevice` (Bearer, 401
+`unauthenticated` or `device_revoked`), `POST /api/v1/devices/pair`,
+`GET /api/v1/devices/me`, `decodeJSON`. Wired in `cmd/nofiltr`. ADR-054.
 
 ## Next task
 
-**Phase 04, Task 3a - device pairing and device tokens.** Task 3 was split
-into 3a (pairing, device tokens, auth middleware), 3b (staff PIN sign-in,
-Argon2id, lockout, attempt log) and 3c (permissions, manager override, wiring
-into `service/order.Meta`). The scope of each is in the phase file.
+**Phase 04, Task 3b - staff PIN sign-in.** Scope in the phase file. It adds
+`golang.org/x/crypto` (ADR needed; v0.28.0 is in the module cache), and
+signs in on a device `requireDevice` has admitted (`api.DeviceFrom`).
 
 ## Known broken / in progress
 
@@ -54,6 +53,9 @@ into `service/order.Meta`). The scope of each is in the phase file.
   tables exist yet. When they do, the service must resolve item IDs itself.
 - Idempotency keys never expire. GST place of supply is always the venue's
   state, so inter-state (IGST) sales cannot be rung up yet.
+- A real install cannot pair its first device yet: no venue is created at
+  startup, and making a code is a Go call until 3c exposes it. The pair
+  endpoint has no rate limit. The access log lacks venue_id and device_id.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no invoice number. Phase 07 must work that way or revisit it.
 

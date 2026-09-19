@@ -19,6 +19,9 @@ type Querier interface {
 	// caller: it keeps the orders row, the events and the snapshot in step inside
 	// one transaction, which a handler calling these directly would not.
 	CreateOrder(ctx context.Context, arg CreateOrderParams) (int64, error)
+	CreatePairedDevice(ctx context.Context, arg CreatePairedDeviceParams) (int64, error)
+	// Devices and the codes they pair with. internal/auth is the only caller.
+	CreatePairingCode(ctx context.Context, arg CreatePairingCodeParams) (int64, error)
 	// Staff and the roles they hold. Roles are here rather than in a file of their
 	// own because a staff member cannot be created without one.
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
@@ -32,6 +35,8 @@ type Querier interface {
 	// and on every void they authorised, and a tax audit expects to find them.
 	DeactivateStaff(ctx context.Context, arg DeactivateStaffParams) error
 	DeleteSetting(ctx context.Context, arg DeleteSettingParams) error
+	DeviceByID(ctx context.Context, id int64) (Device, error)
+	DeviceByTokenHash(ctx context.Context, tokenHash string) (Device, error)
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
@@ -46,6 +51,12 @@ type Querier interface {
 	OrderByID(ctx context.Context, id int64) (Order, error)
 	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error)
 	OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapshot, error)
+	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)
+	// Only an unredeemed code changes, so two redeemers cannot both succeed.
+	RedeemPairingCode(ctx context.Context, arg RedeemPairingCodeParams) (int64, error)
+	// Revoked rather than deleted, and the token hash kept, so a revoked token is
+	// recognised and refused as revoked rather than as unknown.
+	RevokeDevice(ctx context.Context, arg RevokeDeviceParams) (int64, error)
 	RolesForVenue(ctx context.Context, venueID int64) ([]Role, error)
 	SaveIdempotencyKey(ctx context.Context, arg SaveIdempotencyKeyParams) error
 	SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotParams) error
@@ -59,6 +70,7 @@ type Querier interface {
 	// must constrain or compute with is a column on venues instead.
 	SettingsForVenue(ctx context.Context, venueID int64) ([]Setting, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
+	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	// Brings the index columns up to the projection just appended. The guard on
 	// the previous last_seq makes a write from a stale read touch no row, which
 	// the caller reports as a conflict rather than moving the index backwards.

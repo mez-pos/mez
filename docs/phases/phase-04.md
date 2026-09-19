@@ -35,7 +35,7 @@ Phase 03.
   Split into three sessions. Each has its own schema, its own HTTP surface
   and its own adversarial tests, and it is security code: one session each.
 
-  - [ ] **Task 3a - Device pairing and device tokens.**
+  - [x] **Task 3a - Device pairing and device tokens.**
     `internal/auth`: a random, high-entropy device token (only its SHA-256
     stored in `devices.token_hash`; a token is long enough that a fast hash
     is right, unlike a PIN). Migration: `pairing_codes` (venue, device name
