@@ -39,6 +39,19 @@ const shutdownTimeout = 10 * time.Second
 const readHeaderTimeout = 10 * time.Second
 
 func main() {
+	// One subcommand, read before the flags: setup takes its own, and the
+	// server's parser refuses a positional argument.
+	if len(os.Args) > 1 && os.Args[1] == "setup" {
+		if err := runSetup(os.Args[2:], os.Stdout); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				return
+			}
+			logging.Bootstrap().Error("setup failed", "error", err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	if err := run(); err != nil {
 		// -h is a question, not a failure. The flag package's own output is
 		// captured so that a bad flag comes back as an error rather than being
@@ -47,7 +60,8 @@ func main() {
 		// to stdout without going through slog: it is an answer to the
 		// operator, not a log line.
 		if errors.Is(err, flag.ErrHelp) {
-			fmt.Fprintf(os.Stdout, "nofiltr %s\n\nUsage:\n%s", buildInfo().Version, config.Usage())
+			fmt.Fprintf(os.Stdout, "nofiltr %s\n\nUsage:\n%s\nSubcommands:\n  setup\tcreate the venue, its owner and the first pairing code\n",
+				buildInfo().Version, config.Usage())
 			return
 		}
 		logging.Bootstrap().Error("startup failed", "error", err)

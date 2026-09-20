@@ -137,7 +137,15 @@ func (c Config) RelayEnabled() bool { return c.RelayURL != "" }
 // When the operator passed -h the returned error wraps flag.ErrHelp; callers
 // should check errors.Is and exit 0 rather than reporting a failure.
 func Load() (Config, error) {
-	return load(os.Args[1:], os.LookupEnv, exeDir(), runtime.GOOS)
+	return LoadArgs(os.Args[1:])
+}
+
+// LoadArgs is Load with the command line given rather than read. A
+// subcommand parses its own flags and passes on only the ones it shares
+// with the server, so that `nofiltr setup -data-dir X` finds its database
+// exactly where `nofiltr -data-dir X` would.
+func LoadArgs(args []string) (Config, error) {
+	return load(args, os.LookupEnv, exeDir(), runtime.GOOS)
 }
 
 // Usage returns the flag documentation, the text -h asks for.

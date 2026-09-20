@@ -11,23 +11,23 @@ File: `docs/phases/phase-04.md`. Phase 03 is complete.
 
 ## Last completed task
 
-**Phase 04, Task 3c - roles and permissions.** `internal/auth`: a closed
-`Permission` list (15 keys), `PermissionSet` with strict writes and lenient
-reads, `DefaultRoles` (owner, manager, cashier, kitchen),
-`StaffAuth.Permissions`, and `Authorise` (the manager override: same
-lockouts and attempt log as a sign-in, no session, PIN then permission).
-`internal/api`: `requirePermission` (typed `forbidden`, 403), `Override` and
-`s.authorise` for request bodies, `Meta(r)` building `service/order.Meta`
-from what was proved plus `Idempotency-Key`, and
-`POST /api/v1/devices/codes` behind `device.manage`. ADR-057.
+**Phase 04, Task 3d - first-run setup. Task 3 is complete.** `nofiltr setup`
+(`cmd/nofiltr/setup.go`) creates the venue, the default roles, the owner with
+a PIN and the first pairing code, in one transaction that refuses to run on a
+database with a venue in it. `config.LoadArgs` exported so the subcommand
+resolves the data directory as the server does. Documented in
+`docs/running.md`. ADR-058.
+
+Phase 04 tasks 1 to 3 are done: order persistence, the order service, and
+auth (pairing, PIN sign-in, permissions, setup).
 
 ## Next task
 
-**Phase 04, Task 3d - first-run setup.** Scope in the phase file. A
-`nofiltr setup` command creating the venue, `auth.DefaultRoles`, the owner
-with a PIN (`auth.HashPIN`) and the first pairing code
-(`Devices.CreatePairingCode`), refusing to run on a database that already
-has a venue.
+**Phase 04, Task 4 - HTTP handlers.** `/api/v1` for orders, tickets, tables,
+menu read, payments, shifts. The pieces are in place: `api.Meta(r)` builds
+`service/order.Meta`, `api.Override` and `s.authorise` handle the manager
+override, `decodeJSON` and the error envelope are there, and every route
+mounts inside `requireDevice` and `requireStaff`.
 
 ## Known broken / in progress
 
@@ -56,8 +56,8 @@ has a venue.
   tables exist yet. When they do, the service must resolve item IDs itself.
 - Idempotency keys never expire. GST place of supply is always the venue's
   state, so inter-state (IGST) sales cannot be rung up yet.
-- A real install cannot pair its first device yet. Task 3d (`nofiltr setup`)
-  is what fixes it.
+- `nofiltr setup` cannot finish a US sales tax venue: its jurisdiction rates
+  are a list, and the back office that edits them arrives in phase 10.
 - Expired staff sessions and old sign-in attempts are never swept. The rate
   limiter is per process and resets with it.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before

@@ -1213,3 +1213,36 @@ cached. A role changed mid-shift takes effect on the next request, which is
 the behaviour wanted, but it also means a busy terminal reads the role row
 constantly. The override PIN travels in the request body over the LAN;
 phase 12's TLS story is what covers that.
+
+## ADR-058 - First-run setup is a local subcommand, not an endpoint
+2026-09 · Status: accepted
+Decision: `nofiltr setup` creates the venue, `auth.DefaultRoles`, the owner
+with a PIN, and the first pairing code, then prints them. It is the only
+subcommand, read from `os.Args` before the server's flags, since that parser
+refuses a positional argument.
+- It shares nothing with the API. Being sat at the machine is the trust:
+  local access to the data directory is already total, so an endpoint would
+  add a way in without adding any protection.
+- Everything but the pairing code is one transaction, with the check that no
+  venue exists inside it, so two runs racing cannot both create a venue. A
+  second run refuses with ErrAlreadySetUp.
+- The owner's PIN is drawn (six digits from crypto/rand) and printed unless
+  `-owner-pin` was given, in which case nothing is printed: the operator
+  already knows it. It is the only time a PIN is shown.
+- Only flags the server also has (`-data-dir`) are passed to
+  `config.LoadArgs`, so the database resolves exactly where serving would
+  find it, through config.toml and the environment.
+- A GST venue's state code is taken from the first two digits of its GSTIN
+  rather than asked for twice. US jurisdiction rates are a list, so they
+  stay a back office job.
+Because: the API cannot bootstrap itself. Making a pairing code needs a
+permission, a permission needs a signed-in staff member, and signing in
+needs a paired device, so something outside that circle has to start it.
+The command's whole output is carried to a till by a person, which is what
+its test asserts: the printed code pairs a device, and the printed PIN signs
+the printed owner in, with every permission.
+Cost: a venue's tax jurisdiction and cash rounding still need the back
+office, which does not exist until phase 10, so a US venue cannot complete
+setup from here. A drawn PIN is printed to a terminal, where it may reach a
+scrollback buffer; it is meant to be changed on the first day, and nothing
+enforces that yet.

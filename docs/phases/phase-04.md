@@ -25,7 +25,7 @@ Phase 03.
   call this; handlers contain no logic. Idempotency: a command carrying a key
   already applied returns the prior result instead of re-applying.
 
-- [ ] **Task 3 — Auth.**
+- [x] **Task 3 — Auth.**
   Device pairing: a back-office-generated code, redeemed once for a long-lived
   device token. Staff PIN sign-in on a paired device, Argon2id hashed, rate
   limited, lockout after repeated failures, all attempts logged. Roles and
@@ -79,7 +79,7 @@ Phase 03.
     authenticated venue, staff and device into `service/order.Meta`. Expose
     3a's code creation as a back-office endpoint behind its permission.
 
-  - [ ] **Task 3d - First-run setup.**
+  - [x] **Task 3d - First-run setup.**
     A fresh install cannot pair its first device through the API: making a
     code needs a permission, a permission needs a signed-in staff member,
     and signing in needs a paired device. `nofiltr setup`, run on the venue

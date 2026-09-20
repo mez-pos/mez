@@ -31,6 +31,41 @@ that means Git Bash or WSL, not `cmd.exe` or PowerShell.
 Two builds of the same commit produce byte-identical binaries, so you can check
 that what you are about to run matches the source it claims to come from.
 
+## Setting up, once
+
+Before the first run, create the venue, its owner and the code that pairs the
+first device. Do this on the machine itself: being sat at it is what the
+command trusts, because nothing else exists yet to authorise it.
+
+```sh
+./nofiltr setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata
+```
+
+It prints the venue, the owner, a PIN it drew for them, and a pairing code
+that works for ten minutes:
+
+```
+  Database    /var/lib/nofiltr/nofiltr.db
+  Venue       ven_7K3M9QX2
+  Owner       stf_A1B2C3D4
+  Owner PIN   418362   (drawn now: write it down, then change it in the back office)
+  Pairing code 6QG8-3BA9   (expires 09:44)
+```
+
+Write the PIN down: it is shown here and never again. Pass `-owner-pin` to
+choose one instead, and it is not printed at all.
+
+A venue that charges tax says so here, since an invoice cannot be issued
+without it:
+
+```sh
+./nofiltr setup -name "Filter Coffee House" -owner Priya   -tax-profile gst_in -tax-registration 29ABCDE1234F1Z5
+```
+
+`./nofiltr setup -h` lists the rest: currency, financial year, the legal name
+for invoices, and what the first device is called. Running it a second time on
+the same database refuses: one machine serves one venue.
+
 ## Starting it
 
 ```sh
