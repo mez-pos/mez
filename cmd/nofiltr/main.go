@@ -24,6 +24,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 	"github.com/byjoellobo/nofiltr-pos/internal/config"
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
+	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/web"
@@ -167,9 +168,15 @@ func run() (err error) {
 		return err
 	}
 
-	// The hub arrives in task 5; until then a command publishes nowhere and
-	// clients read the order back from the response.
-	orders, err := svcorder.New(svcorder.Options{DB: database, Log: log})
+	// The hub is a subsystem with goroutines of its own, so it shuts down
+	// with everything else rather than being left to the process exiting.
+	events, err := hub.New(hub.Options{Source: database, Log: log, Origins: cfg.StreamOrigins()})
+	if err != nil {
+		return err
+	}
+	running.push("hub", events.Close)
+
+	orders, err := svcorder.New(svcorder.Options{DB: database, Log: log, Publisher: publisher(events)})
 	if err != nil {
 		return err
 	}
@@ -180,9 +187,22 @@ func run() (err error) {
 		api.WithDevices(devices),
 		api.WithStaff(staff),
 		api.WithOrders(orders),
+		api.WithStream(events),
 	)
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
+}
+
+// publisher adapts the order service's publisher to the hub.
+//
+// The change itself is not passed on. The hub reads what it sends from the
+// database, so all it needs is to be told that a venue has moved: that way
+// a client that reconnects and a client that is already connected go down
+// the same path, and neither can be sent an event that is not on disk.
+func publisher(events *hub.Hub) svcorder.Publisher {
+	return svcorder.PublisherFunc(func(_ context.Context, c svcorder.Change) {
+		events.Notify(c.VenueID)
+	})
 }
 
 // dbCheck adapts the database's health to the vocabulary /api/v1/health

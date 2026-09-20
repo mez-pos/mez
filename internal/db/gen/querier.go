@@ -96,6 +96,13 @@ type Querier interface {
 	UpdateVenue(ctx context.Context, arg UpdateVenueParams) (Venue, error)
 	VenueByID(ctx context.Context, id int64) (Venue, error)
 	VenueByPublicID(ctx context.Context, publicID string) (Venue, error)
+	// The venue's events after a point in its stream, oldest first. This is what
+	// the hub reads, for a replay and for the live stream alike: order_events.id
+	// only grows, so a client's last-seen id is a position in one sequence.
+	VenueEventsAfter(ctx context.Context, arg VenueEventsAfterParams) ([]VenueEventsAfterRow, error)
+	// The cast is what gives sqlc an int64 rather than an any: coalesce over an
+	// aggregate has no column to take a type from.
+	VenueLastEventID(ctx context.Context, venueID int64) (int64, error)
 }
 
 var _ Querier = (*Queries)(nil)

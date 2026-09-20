@@ -263,3 +263,88 @@ func (q *Queries) UpdateOrderIndex(ctx context.Context, arg UpdateOrderIndexPara
 	}
 	return result.RowsAffected()
 }
+
+const venueEventsAfter = `-- name: VenueEventsAfter :many
+SELECT
+    e.id, e.order_id, e.seq, e.type, e.payload, e.actor_id, e.device_id, e.at,
+    o.public_id AS order_public_id, o.table_id, o.status AS order_status
+FROM order_events e
+JOIN orders o ON o.id = e.order_id
+WHERE o.venue_id = ? AND e.id > ?
+ORDER BY e.id
+LIMIT ?
+`
+
+type VenueEventsAfterParams struct {
+	VenueID int64
+	ID      int64
+	Limit   int64
+}
+
+type VenueEventsAfterRow struct {
+	ID            int64
+	OrderID       int64
+	Seq           int64
+	Type          string
+	Payload       string
+	ActorID       int64
+	DeviceID      int64
+	At            time.Time
+	OrderPublicID string
+	TableID       int64
+	OrderStatus   string
+}
+
+// The venue's events after a point in its stream, oldest first. This is what
+// the hub reads, for a replay and for the live stream alike: order_events.id
+// only grows, so a client's last-seen id is a position in one sequence.
+func (q *Queries) VenueEventsAfter(ctx context.Context, arg VenueEventsAfterParams) ([]VenueEventsAfterRow, error) {
+	rows, err := q.db.QueryContext(ctx, venueEventsAfter, arg.VenueID, arg.ID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VenueEventsAfterRow{}
+	for rows.Next() {
+		var i VenueEventsAfterRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrderID,
+			&i.Seq,
+			&i.Type,
+			&i.Payload,
+			&i.ActorID,
+			&i.DeviceID,
+			&i.At,
+			&i.OrderPublicID,
+			&i.TableID,
+			&i.OrderStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const venueLastEventID = `-- name: VenueLastEventID :one
+SELECT CAST(coalesce(max(e.id), 0) AS INTEGER) AS last_id
+FROM order_events e
+JOIN orders o ON o.id = e.order_id
+WHERE o.venue_id = ?
+`
+
+// The cast is what gives sqlc an int64 rather than an any: coalesce over an
+// aggregate has no column to take a type from.
+func (q *Queries) VenueLastEventID(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, venueLastEventID, venueID)
+	var last_id int64
+	err := row.Scan(&last_id)
+	return last_id, err
+}

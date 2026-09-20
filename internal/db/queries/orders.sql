@@ -62,3 +62,24 @@ SELECT
     opened_at, closed_at, updated_at
 FROM orders
 WHERE public_id = ?;
+
+-- name: VenueEventsAfter :many
+-- The venue's events after a point in its stream, oldest first. This is what
+-- the hub reads, for a replay and for the live stream alike: order_events.id
+-- only grows, so a client's last-seen id is a position in one sequence.
+SELECT
+    e.id, e.order_id, e.seq, e.type, e.payload, e.actor_id, e.device_id, e.at,
+    o.public_id AS order_public_id, o.table_id, o.status AS order_status
+FROM order_events e
+JOIN orders o ON o.id = e.order_id
+WHERE o.venue_id = ? AND e.id > ?
+ORDER BY e.id
+LIMIT ?;
+
+-- name: VenueLastEventID :one
+-- The cast is what gives sqlc an int64 rather than an any: coalesce over an
+-- aggregate has no column to take a type from.
+SELECT CAST(coalesce(max(e.id), 0) AS INTEGER) AS last_id
+FROM order_events e
+JOIN orders o ON o.id = e.order_id
+WHERE o.venue_id = ?;

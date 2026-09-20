@@ -103,7 +103,7 @@ Phase 03.
   schema or a service yet. Tables go with phase 08, the menu with phase 10,
   shifts with phase 09, each alongside the domain they serve.
 
-- [ ] **Task 5 — WebSocket hub.**
+- [x] **Task 5 — WebSocket hub.**
   `internal/hub`. One connection per device, authenticated with the device
   token. Client sends its last-seen `seq` on connect; the server replays the gap
   from SQLite, then streams live. Subscriptions by topic (`station:bar`,

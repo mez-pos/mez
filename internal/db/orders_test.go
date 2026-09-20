@@ -595,3 +595,61 @@ func TestOpenOrderWithinRunsInTheTransaction(t *testing.T) {
 		t.Errorf("reopening with the rolled back public ID: %v", err)
 	}
 }
+
+func TestVenueStream(t *testing.T) {
+	d := migratedDB(t)
+	ctx := context.Background()
+	seedVenue(t, d)
+	insertVenue(t, d, 2)
+
+	first := openTestOrder(t, d, "ord_STREAM01", untaxed)
+	mustAppend(t, d, first, untaxed, emit(dish(1), dish(2)))
+	second := openTestOrder(t, d, "ord_STREAM02", untaxed)
+	mustAppend(t, d, second, untaxed, emit(order.NoteAdded{Scope: order.ScopeOrder, Text: "hello"}))
+
+	all, err := d.VenueEventsAfter(ctx, 1, 0, 0)
+	if err != nil {
+		t.Fatalf("VenueEventsAfter: %v", err)
+	}
+	if len(all) != 5 {
+		t.Fatalf("%d events, want 5", len(all))
+	}
+	for i, e := range all {
+		if i > 0 && e.ID <= all[i-1].ID {
+			t.Fatalf("event %d has id %d after %d: the stream is not in order", i, e.ID, all[i-1].ID)
+		}
+		if e.Event.Payload == nil {
+			t.Errorf("event %d has no payload", e.ID)
+		}
+	}
+	if all[0].OrderPublicID != "ord_STREAM01" || all[0].TableID != 4 || all[0].Event.Type != order.TypeOrderOpened {
+		t.Errorf("first event = %+v", all[0])
+	}
+	if last := all[len(all)-1]; last.OrderPublicID != "ord_STREAM02" || last.Event.Type != order.TypeNoteAdded {
+		t.Errorf("last event = %+v", last)
+	}
+
+	// After a position, only what came later; and the limit is honoured.
+	tail, err := d.VenueEventsAfter(ctx, 1, all[2].ID, 0)
+	if err != nil || len(tail) != 2 || tail[0].ID != all[3].ID {
+		t.Errorf("tail = %d events (%v)", len(tail), err)
+	}
+	one, err := d.VenueEventsAfter(ctx, 1, 0, 1)
+	if err != nil || len(one) != 1 {
+		t.Errorf("limit 1 gave %d events (%v)", len(one), err)
+	}
+
+	last, err := d.VenueLastEventID(ctx, 1)
+	if err != nil || last != all[len(all)-1].ID {
+		t.Errorf("VenueLastEventID = %d (%v), want %d", last, err, all[len(all)-1].ID)
+	}
+
+	// Another venue's stream is its own, and an empty one is position zero.
+	other, err := d.VenueEventsAfter(ctx, 2, 0, 0)
+	if err != nil || len(other) != 0 {
+		t.Errorf("venue 2 = %d events (%v)", len(other), err)
+	}
+	if last, err := d.VenueLastEventID(ctx, 2); err != nil || last != 0 {
+		t.Errorf("venue 2 last = %d (%v), want 0", last, err)
+	}
+}

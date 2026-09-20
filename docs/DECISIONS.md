@@ -1287,3 +1287,45 @@ currencies named, because the projection formats it rather than wrapping
 the sentinel; `currency_mismatch` is reserved for arithmetic outside an
 event. Tables, menu read and shifts were in this task and moved to their own
 phases: no schema, no service, nothing to serve.
+
+## ADR-060 - The hub: a publish is a nudge, and every connection reads SQLite itself
+2026-09 · Status: accepted
+Decision: `internal/hub` streams a venue's events to its devices over
+WebSocket, using `coder/websocket` (the allowed set; it was already in the
+module graph, now direct).
+- **A publish carries no events.** `Hub.Notify(venueID)` says only that the
+  venue has moved. Each connection then reads `db.VenueEventsAfter` from its
+  own position and sends what it finds. Replay and live streaming are
+  therefore the same code path, and a device that was off for an hour
+  catches up exactly as one that missed a second does.
+- That settles backpressure without a policy: a slow device falls behind in
+  the database, not in memory, and all the hub holds for it is a one-slot
+  channel saying there is more to read. A write that blocks past the write
+  timeout drops the connection.
+- A position is `order_events.id`, which only grows, so one integer places a
+  client in the venue's whole stream. `last_event_id: 0` means "only what
+  happens next", which is what a screen opening fresh wants; `from_start`
+  asks for the lot; a client ahead of the stream (a restored backup) is
+  replayed from the beginning rather than left silent.
+- Topics are `venue`, `order:<public id>`, `table:<n>` and `station:<name>`,
+  derived from the event and its order. Subscribing to nothing means the
+  venue topic: a client that asks for nothing gets everything rather than
+  silence.
+- The socket is authenticated as a paired device like every other route.
+  A browser cannot set headers on a WebSocket, so the token rides in the
+  subprotocol (`token.<device token>`) rather than a query parameter, which
+  would put it in the access log. A native client may still use the header.
+- The origin check is `coder/websocket`'s default, which refuses a browser
+  page from another origin and allows a client that sends no Origin at all,
+  plus the configured dev origin. Turning it off would have been the easy
+  path and is the one thing a WebSocket must not do.
+Because: the events are on disk before anyone is told, so the database is
+the only thing worth streaming from. Sending the payload with the nudge
+would mean two paths to keep identical, and a client could be sent an event
+that a rolled-back transaction never committed.
+Cost: each connection does one indexed read per nudge, so ten devices mean
+ten reads per command. On a local file at a cafe's rate that is nothing, and
+it is the price of the guarantee. A nudge that arrives while a connection is
+mid-drain is coalesced, so the drain runs again; it never sends twice
+because the cursor only moves forward. The hub holds no per-venue goroutine,
+so a venue with no devices costs nothing at all.

@@ -54,6 +54,12 @@ type Publisher interface {
 	Publish(ctx context.Context, c Change)
 }
 
+// PublisherFunc lets a function be a Publisher.
+type PublisherFunc func(ctx context.Context, c Change)
+
+// Publish implements Publisher.
+func (f PublisherFunc) Publish(ctx context.Context, c Change) { f(ctx, c) }
+
 // Options configure a Service. DB is required.
 type Options struct {
 	DB        *db.DB

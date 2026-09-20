@@ -122,6 +122,16 @@ type Config struct {
 // CORSEnabled reports whether a development origin is configured.
 func (c Config) CORSEnabled() bool { return c.DevOrigin != "" }
 
+// StreamOrigins are the browser origins allowed to open a WebSocket besides
+// the one the page was served from. It is the dev origin or nothing, for
+// the same reason CORS is: a shipped binary lets no other page in.
+func (c Config) StreamOrigins() []string {
+	if c.DevOrigin == "" {
+		return nil
+	}
+	return []string{c.DevOrigin}
+}
+
 // LogDir is where the rotating file log lives.
 func (c Config) LogDir() string { return filepath.Join(c.DataDir, "logs") }
 

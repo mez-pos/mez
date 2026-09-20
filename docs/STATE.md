@@ -11,22 +11,23 @@ File: `docs/phases/phase-04.md`. Phase 03 is complete.
 
 ## Last completed task
 
-**Phase 04, Task 4 - HTTP handlers.** `/api/v1/orders`: open, read, lines,
-qty, void, comp, discount, note, fire course, ticket, payment, payment void,
-refund, invoice, close, reopen. Orders by public ID (`Service.Resolve`).
-Every refusal mapped to a status and a code in `order_errors.go`; anything
-unmapped is a 500, by design. Override routes check the authoriser's
-permission, not the caller's, so a cashier can void with a manager present.
-`Idempotency-Key` honoured throughout; a replay answers 200. Wired in
-`cmd/nofiltr`. ADR-059.
+**Phase 04, Task 5 - WebSocket hub.** `internal/hub`: `Serve` upgrades and
+streams, `Notify(venueID)` nudges. Every connection reads
+`db.VenueEventsAfter` from its own position, so replay and live are one path
+and a slow device falls behind on disk, not in memory. Topics: `venue`,
+`order:`, `table:`, `station:`. Heartbeat, write timeout, clean shutdown.
+`GET /api/v1/stream`, authenticated by device token in the header or, for a
+browser, the `token.` subprotocol. `coder/websocket` added (ADR-060), and
+`svcorder.PublisherFunc` wires the service to the hub in `cmd/nofiltr`.
 
 ## Next task
 
-**Phase 04, Task 5 - WebSocket hub.** `internal/hub`. The service already
-publishes every change through `svcorder.Publisher`, which `cmd/nofiltr`
-leaves nil today; the hub is what fills it. Replay comes from
-`db.OrderEvents`, and a client's last-seen position is the `last_seq` every
-order response carries.
+**Phase 04, Task 6 - TypeScript codegen.** Generate TS types from the API
+request and response structs into `web/shared/api-types.ts`, wire it into
+`make generate` and CI so Go and TS cannot drift, and document the loop in
+`docs/03-conventions.md`. The structs to generate from are in
+`internal/api`: the order request bodies, `orderResponse` and its parts, the
+error envelope, and the hub's message types in `internal/hub`.
 
 ## Known broken / in progress
 
@@ -59,6 +60,12 @@ order response carries.
   are a list, and the back office that edits them arrives in phase 10.
 - Expired staff sessions and old sign-in attempts are never swept. The rate
   limiter is per process and resets with it.
+- The phase's done-when script (a whole sale over HTTP with a WebSocket
+  client watching) is not written yet. Task 6 finishes the API surface it
+  would be written against.
+- Two guards nobody owns, worth a small task once the phase settles: the
+  `float64` lint rule for `internal/domain`, and something that fails the
+  build when `order.State` changes without `order.ProjectionVersion`.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no invoice number. Phase 07 must work that way or revisit it.
 
