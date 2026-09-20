@@ -6,6 +6,7 @@ package gen
 
 import (
 	"context"
+	"time"
 )
 
 type Querier interface {
@@ -26,6 +27,7 @@ type Querier interface {
 	// own because a staff member cannot be created without one.
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
 	CreateStaff(ctx context.Context, arg CreateStaffParams) (Staff, error)
+	CreateStaffSession(ctx context.Context, arg CreateStaffSessionParams) (int64, error)
 	// Venues. Explicit column lists throughout, per docs/03-conventions.md: a
 	// SELECT * here would silently change shape the next time a migration adds a
 	// column, and RETURNING * has exactly the same problem.
@@ -37,6 +39,7 @@ type Querier interface {
 	DeleteSetting(ctx context.Context, arg DeleteSettingParams) error
 	DeviceByID(ctx context.Context, id int64) (Device, error)
 	DeviceByTokenHash(ctx context.Context, tokenHash string) (Device, error)
+	EndStaffSession(ctx context.Context, arg EndStaffSessionParams) (int64, error)
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
@@ -52,6 +55,14 @@ type Querier interface {
 	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error)
 	OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapshot, error)
 	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)
+	// The device's latest failed attempts, of any staff member, newest first.
+	RecentDeviceFailures(ctx context.Context, arg RecentDeviceFailuresParams) ([]time.Time, error)
+	// The staff member's latest attempts that verified a PIN, newest first:
+	// successes and wrong PINs. Refusals during a lockout are left out, or a
+	// hammering client would push the failures that caused it out of the window.
+	RecentStaffVerdicts(ctx context.Context, arg RecentStaffVerdictsParams) ([]RecentStaffVerdictsRow, error)
+	// Staff sessions and sign-in attempts. internal/auth is the only caller.
+	RecordSignInAttempt(ctx context.Context, arg RecordSignInAttemptParams) error
 	// Only an unredeemed code changes, so two redeemers cannot both succeed.
 	RedeemPairingCode(ctx context.Context, arg RedeemPairingCodeParams) (int64, error)
 	// Revoked rather than deleted, and the token hash kept, so a revoked token is
@@ -70,6 +81,7 @@ type Querier interface {
 	// must constrain or compute with is a column on venues instead.
 	SettingsForVenue(ctx context.Context, venueID int64) ([]Setting, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
+	StaffSessionByTokenHash(ctx context.Context, tokenHash string) (StaffSessionByTokenHashRow, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	// Brings the index columns up to the projection just appended. The guard on
 	// the previous last_seq makes a write from a stale read touch no row, which

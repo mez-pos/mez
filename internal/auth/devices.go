@@ -187,7 +187,7 @@ func (d *Devices) Redeem(ctx context.Context, code string) (Paired, error) {
 	codeHash := hashSecret(norm)
 
 	for range maxDraws {
-		token, tokenHash, err := newDeviceToken(d.entropy)
+		token, hash, err := newToken(d.entropy, deviceTokenPrefix)
 		if err != nil {
 			return Paired{}, err
 		}
@@ -211,7 +211,7 @@ func (d *Devices) Redeem(ctx context.Context, code string) (Paired, error) {
 			}
 			devID, err := q.CreatePairedDevice(ctx, gen.CreatePairedDeviceParams{
 				PublicID: publicID, VenueID: pc.VenueID, Name: pc.DeviceName, Kind: pc.DeviceKind,
-				TokenHash: tokenHash, PairedAt: sql.NullTime{Time: now, Valid: true}, CreatedAt: now,
+				TokenHash: hash, PairedAt: sql.NullTime{Time: now, Valid: true}, CreatedAt: now,
 			})
 			if err != nil {
 				return err
@@ -247,7 +247,7 @@ func (d *Devices) Redeem(ctx context.Context, code string) (Paired, error) {
 // Authenticate finds the device a token belongs to. It reads on the read
 // pool, and writes last_seen_at at most once a minute.
 func (d *Devices) Authenticate(ctx context.Context, token string) (Device, error) {
-	hash, ok := deviceTokenHash(token)
+	hash, ok := tokenHash(token, deviceTokenPrefix)
 	if !ok {
 		return Device{}, ErrUnauthenticated
 	}

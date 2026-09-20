@@ -1107,3 +1107,66 @@ Cost: there is no way yet to make the first code on a real install: no
 venue is created at startup and no endpoint makes codes until 3c. The pair
 endpoint is not rate limited. The access log does not carry venue_id or
 device_id, because the device is known only inside the chain.
+
+## ADR-055 - Dependency: golang.org/x/crypto, for Argon2id
+2026-09 · Status: accepted
+Decision: `golang.org/x/crypto` joins the allowed set of
+`docs/03-conventions.md`, for `argon2` alone. It was already in the build as
+an indirect dependency of goose, at v0.40.0; it is now direct, at the same
+version. Pinning the older v0.28.0 that the phase file guessed at would have
+dragged goose back three minor versions, so the version already selected is
+the one taken.
+Because: a four-digit PIN has about thirteen bits in it. Nothing but a
+memory-hard hash makes a stolen `staff.pin_hash` cost anything to invert, and
+`argon2.IDKey` is the reference implementation, maintained by the Go team,
+already compiled into this binary.
+Cost: one more direct dependency to watch. It is pure Go, so `CGO_ENABLED=0`
+and cross-compilation are untouched.
+
+## ADR-056 - Staff sign-in: PIN on a paired device, sliding-window lockout, every attempt written
+2026-09 · Status: accepted
+Decision: `internal/auth.StaffAuth` signs staff in.
+- A PIN is 4 to 8 digits, stored as an Argon2id PHC string carrying its own
+  parameters (19 MiB, t=2, p=1, OWASP's minimum), so they can be raised
+  later without invalidating a single PIN. A stored hash is parsed
+  defensively: the memory it asks for is capped, because it comes from a row.
+- Sign-in takes the staff member's public ID and their PIN, on a device that
+  `requireDevice` has already admitted. A wrong PIN, an unknown staff
+  member, one from another venue and a deactivated one all return
+  `ErrInvalidPIN`, and the last three are compared against a dummy hash so
+  they take the same time.
+- Every attempt is written to `sign_in_attempts` with its real outcome
+  (`success`, `invalid_pin`, `unknown_staff`, `inactive_staff`,
+  `locked_out`), which is both the audit trail and what the lockout reads.
+- Lockout is a sliding window: 5 failures in 15 minutes for a staff member,
+  20 for a device across everyone. A success resets the staff count; a
+  refusal during a lockout is recorded but does not extend it, and the lock
+  lifts when the oldest counted failure leaves the window. Refusals during a
+  lockout are excluded from the count, or a client hammering the endpoint
+  would push its own failures out of it. Attempts for one staff member are
+  serialised by a keyed mutex, so parallel guesses cannot all pass the check
+  before any is recorded.
+- A session is `nfs_` plus 256 bits, hashed, bound to the device it was
+  opened on and refused from any other, lasting 12 hours. It dies with a
+  sign-out, an expiry, a revoked device, or the staff member being
+  deactivated.
+- `internal/api`: `X-Staff-Token` alongside the device's bearer token;
+  `requireStaff` inside `requireDevice`; `GET /api/v1/staff`,
+  `POST /api/v1/sessions`, `GET` and `DELETE /api/v1/sessions/current`.
+  Typed errors `invalid_pin` (401), `locked_out` (429 with Retry-After),
+  `sign_in_required` (401).
+- From 3a's gaps: `POST /api/v1/devices/pair` is limited to 10 requests a
+  minute per address, in memory, with no forwarded header trusted. The
+  access log carries `venue_id`, `device_id` and `actor_id` once
+  authentication knows them, through a holder the middleware fills in.
+Because: PIN entry is the one place a POS is attacked from the floor, so the
+answer to every wrong guess reads the same and every guess is on record.
+Binding a session to its device means a token read off one screen is useless
+at the next terminal. The device limit is what stops a tablet working
+through the whole staff list four tries at a time.
+Cost: a locked-out staff member is told so, and an unknown one is not, so a
+paired device can tell which IDs exist. It already can: it lists them to
+draw the sign-in tiles. Lockout state is derived from the attempts table on
+every sign-in rather than cached. The rate limiter is per process and resets
+with it. Sessions are not swept: expired rows stay until something deletes
+them.

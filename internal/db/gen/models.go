@@ -109,6 +109,16 @@ type Setting struct {
 	UpdatedAt time.Time
 }
 
+type SignInAttempt struct {
+	ID       int64
+	VenueID  int64
+	DeviceID int64
+	StaffID  sql.NullInt64
+	StaffRef string
+	At       time.Time
+	Outcome  string
+}
+
 type Staff struct {
 	ID        int64
 	PublicID  string
@@ -119,6 +129,17 @@ type Staff struct {
 	Active    bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type StaffSession struct {
+	ID        int64
+	TokenHash string
+	VenueID   int64
+	StaffID   int64
+	DeviceID  int64
+	CreatedAt time.Time
+	ExpiresAt time.Time
+	EndedAt   sql.NullTime
 }
 
 type Venue struct {

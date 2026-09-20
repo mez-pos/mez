@@ -9,33 +9,36 @@ import (
 	"strings"
 )
 
-// deviceTokenPrefix marks a device token, so one pasted into a support
-// ticket or caught by a secret scanner says what it is.
-const deviceTokenPrefix = "nfd_"
+// Token prefixes, so a token pasted into a support ticket or caught by a
+// secret scanner says what it is.
+const (
+	deviceTokenPrefix  = "nfd_"
+	sessionTokenPrefix = "nfs_"
+)
 
-// deviceTokenBytes is the entropy in a device token: 256 bits.
-const deviceTokenBytes = 32
+// tokenBytes is the entropy in a token: 256 bits.
+const tokenBytes = 32
 
-// newDeviceToken draws a device token and returns it with its hash. The
-// token goes to the device once; the hash is what is stored.
-func newDeviceToken(src io.Reader) (token, hash string, err error) {
-	var b [deviceTokenBytes]byte
+// newToken draws a token with a prefix and returns it with its hash. The
+// token is handed out once; the hash is what is stored.
+func newToken(src io.Reader, prefix string) (token, hash string, err error) {
+	var b [tokenBytes]byte
 	if _, err := io.ReadFull(src, b[:]); err != nil {
-		return "", "", fmt.Errorf("auth: drawing a device token: %w", err)
+		return "", "", fmt.Errorf("auth: drawing a token: %w", err)
 	}
-	token = deviceTokenPrefix + base64.RawURLEncoding.EncodeToString(b[:])
+	token = prefix + base64.RawURLEncoding.EncodeToString(b[:])
 	return token, hashSecret(token), nil
 }
 
-// deviceTokenHash checks a presented token's shape and returns its hash. A
-// token of the wrong shape is refused before it reaches the database.
-func deviceTokenHash(token string) (string, bool) {
-	body, ok := strings.CutPrefix(token, deviceTokenPrefix)
+// tokenHash checks a presented token's shape and returns its hash. A token
+// of the wrong shape is refused before it reaches the database.
+func tokenHash(token, prefix string) (string, bool) {
+	body, ok := strings.CutPrefix(token, prefix)
 	if !ok {
 		return "", false
 	}
 	raw, err := base64.RawURLEncoding.DecodeString(body)
-	if err != nil || len(raw) != deviceTokenBytes {
+	if err != nil || len(raw) != tokenBytes {
 		return "", false
 	}
 	return hashSecret(token), true

@@ -34,7 +34,9 @@ func (s *Server) mountDevices(mux *http.ServeMux) {
 	if s.devices == nil {
 		return
 	}
-	mux.HandleFunc("POST /api/v1/devices/pair", s.pairDevice)
+	// Pairing is the one endpoint anyone on the LAN may call, so it is the
+	// one needing a limit per caller. Sign-in has its lockout instead.
+	mux.Handle("POST /api/v1/devices/pair", s.rateLimit(pairLimit, http.HandlerFunc(s.pairDevice)))
 	mux.HandleFunc("/api/v1/devices/pair", s.methodNotAllowed)
 
 	mux.Handle("GET /api/v1/devices/me", s.requireDevice(http.HandlerFunc(s.currentDevice)))
@@ -62,6 +64,9 @@ func (s *Server) requireDevice(next http.Handler) http.Handler {
 			s.log.Error("authenticating a device failed", "request_id", RequestID(r.Context()), "error", err)
 			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 			return
+		}
+		if info := infoFrom(r.Context()); info != nil {
+			info.venueID, info.deviceID = dev.VenueID, dev.ID
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), deviceKey, dev)))
 	})

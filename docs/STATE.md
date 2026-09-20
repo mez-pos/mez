@@ -11,20 +11,23 @@ File: `docs/phases/phase-04.md`. Phase 03 is complete.
 
 ## Last completed task
 
-**Phase 04, Task 3a - device pairing and device tokens.** `internal/auth`:
-`Devices` with `CreatePairingCode` (8 symbols, 10 minutes, hashed),
-`Redeem` (one transaction, exactly once, one error for every bad code),
-`Authenticate` (`nfd_` + 256-bit token, SHA-256 stored), `Revoke`.
-Migration 00004 (`pairing_codes`, unique index on `devices.token_hash`).
-`internal/api`: `WithDevices`, `requireDevice` (Bearer, 401
-`unauthenticated` or `device_revoked`), `POST /api/v1/devices/pair`,
-`GET /api/v1/devices/me`, `decodeJSON`. Wired in `cmd/nofiltr`. ADR-054.
+**Phase 04, Task 3b - staff PIN sign-in.** `internal/auth`: `HashPIN` and
+`verifyPIN` (Argon2id PHC, `golang.org/x/crypto`, ADR-055), `StaffAuth` with
+`SignIn` (dummy hash for unknown staff, sliding-window lockout 5/15min per
+staff and 20/15min per device, every attempt written), `Session` (device
+bound, 12h), `SignOut`, `ActiveStaff`. Migration 00005 (`staff_sessions`,
+`sign_in_attempts`). `internal/api`: `WithStaff`, `requireStaff`
+(`X-Staff-Token`), `GET /api/v1/staff`, `POST /api/v1/sessions`, `GET` and
+`DELETE /api/v1/sessions/current`. Also 3a's gaps: a per-IP rate limit on
+pairing, and `venue_id`, `device_id`, `actor_id` on the access log. ADR-056.
 
 ## Next task
 
-**Phase 04, Task 3b - staff PIN sign-in.** Scope in the phase file. It adds
-`golang.org/x/crypto` (ADR needed; v0.28.0 is in the module cache), and
-signs in on a device `requireDevice` has admitted (`api.DeviceFrom`).
+**Phase 04, Task 3c - roles and permissions.** Scope in the phase file. The
+permission keys as a Go enum, `requirePermission` returning a typed
+`forbidden`, manager override checking the authoriser's permission and PIN,
+and the authenticated venue, staff and device wired into
+`service/order.Meta`.
 
 ## Known broken / in progress
 
@@ -53,9 +56,10 @@ signs in on a device `requireDevice` has admitted (`api.DeviceFrom`).
   tables exist yet. When they do, the service must resolve item IDs itself.
 - Idempotency keys never expire. GST place of supply is always the venue's
   state, so inter-state (IGST) sales cannot be rung up yet.
-- A real install cannot pair its first device yet: no venue is created at
-  startup, and making a code is a Go call until 3c exposes it. The pair
-  endpoint has no rate limit. The access log lacks venue_id and device_id.
+- A real install cannot pair its first device yet. Task 3d (`nofiltr setup`)
+  is what fixes it.
+- Expired staff sessions and old sign-in attempts are never swept. The rate
+  limiter is per process and resets with it.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no invoice number. Phase 07 must work that way or revisit it.
 

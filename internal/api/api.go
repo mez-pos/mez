@@ -19,6 +19,8 @@ type Server struct {
 	bundles map[string]fs.FS
 	dbCheck func() string
 	devices Devices
+	staff   Staff
+	limiter *limiter
 	handler http.Handler
 }
 
@@ -62,6 +64,7 @@ func New(cfg config.Config, log *slog.Logger, build BuildInfo, opts ...Option) *
 	}
 
 	s.started = s.now()
+	s.limiter = newLimiter(s.now)
 	s.handler = s.routes()
 	return s
 }
@@ -91,6 +94,7 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("/api/v1/health", s.methodNotAllowed)
 
 	s.mountDevices(mux)
+	s.mountStaff(mux)
 
 	// Anything else under /api keeps the JSON envelope. Without this, an
 	// unknown endpoint would fall through to the terminal bundle mounted at /

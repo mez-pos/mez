@@ -29,6 +29,23 @@ const (
 	// CodeInvalidPairingCode is a pairing code that is unknown, expired or
 	// used. Which of the three is deliberately not said.
 	CodeInvalidPairingCode = "invalid_pairing_code"
+
+	// CodeInvalidPIN is a staff member and PIN that did not sign in. An
+	// unknown or deactivated staff member gets this too.
+	CodeInvalidPIN = "invalid_pin"
+
+	// CodeLockedOut is sign-in locked after repeated failures. The response
+	// carries Retry-After.
+	CodeLockedOut = "locked_out"
+
+	// CodeSignInRequired is a request needing a staff member behind it,
+	// with no session or a session that has ended. The terminal shows the
+	// PIN pad.
+	CodeSignInRequired = "sign_in_required"
+
+	// CodeRateLimited is too many requests from one address. The response
+	// carries Retry-After.
+	CodeRateLimited = "rate_limited"
 )
 
 // Error is one failure, in the shape 03-conventions.md fixes for every endpoint.

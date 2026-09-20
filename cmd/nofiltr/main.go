@@ -147,10 +147,16 @@ func run() (err error) {
 		return err
 	}
 
+	staff, err := auth.NewStaffAuth(auth.StaffOptions{DB: database, Log: log})
+	if err != nil {
+		return err
+	}
+
 	srv := api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
 		api.WithDevices(devices),
+		api.WithStaff(staff),
 	)
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)

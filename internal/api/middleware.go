@@ -37,7 +37,25 @@ type contextKey int
 const (
 	requestIDKey contextKey = iota
 	deviceKey
+	staffKey
+	infoKey
 )
+
+// requestInfo is what the layers below the access log learn about a request
+// and it does not: who was behind it. It is a pointer in the context because
+// the log line is written by an outer layer after an inner one has filled it
+// in. Only the request's own goroutine touches it.
+type requestInfo struct {
+	venueID  int64
+	deviceID int64
+	staffID  int64
+}
+
+// infoFrom is the holder for this request, or nil outside one.
+func infoFrom(ctx context.Context) *requestInfo {
+	info, _ := ctx.Value(infoKey).(*requestInfo)
+	return info
+}
 
 // RequestID returns the correlation id for a request, or "" outside one.
 func RequestID(ctx context.Context) string {
@@ -100,9 +118,11 @@ func (s *Server) accessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := s.now()
 		rec := &recorder{ResponseWriter: w}
+		info := &requestInfo{}
+		r = r.WithContext(context.WithValue(r.Context(), infoKey, info))
 
 		defer func() {
-			s.log.Info("request",
+			fields := []any{
 				"request_id", RequestID(r.Context()),
 				"method", r.Method,
 				"path", r.URL.Path,
@@ -110,7 +130,19 @@ func (s *Server) accessLog(next http.Handler) http.Handler {
 				"bytes", rec.written,
 				"duration_ms", s.now().Sub(started).Milliseconds(),
 				"remote", remoteHost(r),
-			)
+			}
+			// Who it was, once authentication got far enough to know. An
+			// unauthenticated request carries none of these rather than
+			// three zeroes.
+			for _, f := range []struct {
+				key string
+				val int64
+			}{{"venue_id", info.venueID}, {"device_id", info.deviceID}, {"actor_id", info.staffID}} {
+				if f.val != 0 {
+					fields = append(fields, f.key, f.val)
+				}
+			}
+			s.log.Info("request", fields...)
 		}()
 
 		next.ServeHTTP(rec, r)
@@ -188,7 +220,8 @@ func (s *Server) cors(next http.Handler) http.Handler {
 		if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
 			if allowed {
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Idempotency-Key, "+HeaderRequestID)
+				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, Idempotency-Key, "+
+					HeaderStaffToken+", "+HeaderRequestID)
 				w.Header().Set("Access-Control-Max-Age", "600")
 			}
 			// A preflight is answered here either way. Routing it would only

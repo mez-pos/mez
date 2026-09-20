@@ -52,7 +52,7 @@ Phase 03.
     function with tests, not an endpoint. Typed errors `unauthenticated`
     (401) and `device_revoked` (401).
 
-  - [ ] **Task 3b - Staff PIN sign-in.**
+  - [x] **Task 3b - Staff PIN sign-in.**
     Add `golang.org/x/crypto` (allowed set; ADR required; v0.28.0 is already
     in the module cache). PINs as Argon2id PHC strings with parameters
     stored in the hash, constant-time compare, a dummy hash compared when the
