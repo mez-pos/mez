@@ -89,11 +89,19 @@ Phase 03.
     a command against a temp data directory. This is what the phase's
     done-when script starts from.
 
-- [ ] **Task 4 — HTTP handlers.**
-  `/api/v1` for orders, tickets, tables, menu read, payments, shifts. Decode →
-  validate → service → encode, per `docs/03-conventions.md`. The stable error
-  shape. `Idempotency-Key` honoured on every mutating endpoint. `httptest`
-  coverage of the happy path and every error shape.
+- [ ] **Task 4 - HTTP handlers.**
+  `/api/v1` for orders, lines, tickets and payments: everything
+  `internal/service/order` can already do. Decode, validate, call the
+  service, encode, per `docs/03-conventions.md`. The stable error shape, with
+  every domain error mapped to a code and a status, never a 500.
+  `Idempotency-Key` honoured on every mutating endpoint. Orders are addressed
+  by public ID. Manager overrides on void, comp, discount, payment void and
+  reopen, through 3c's `Override`. `httptest` coverage of the happy path and
+  every error shape.
+
+  Tables, menu read and shifts were listed here, and have moved: none has a
+  schema or a service yet. Tables go with phase 08, the menu with phase 10,
+  shifts with phase 09, each alongside the domain they serve.
 
 - [ ] **Task 5 — WebSocket hub.**
   `internal/hub`. One connection per device, authenticated with the device
