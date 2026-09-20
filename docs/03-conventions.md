@@ -98,7 +98,8 @@ request during service, because sqlc reads the migrations as its schema.
   arbitrary hex values in components — if a colour is missing, add a token.
 - File naming: `PascalCase.tsx` for components, `kebab-case.ts` for everything
   else.
-- API types are **generated**. Never hand-write a type that mirrors a Go struct.
+- API types are **generated**. Never hand-write a type that mirrors a Go
+  struct. See "Generated API types" below.
 - Terminal and back office may use shadcn/ui. The guest app may not — it has a
   60 KB gzipped budget.
 
@@ -114,6 +115,35 @@ From the design system. A task that breaks one of these is not done.
 - The guest never sees a screen the staff cannot explain.
 - Assume gloves, glare and a queue. No hover-dependent interactions, no
   right-click menus, no drag as the only way to do something.
+
+## Generated API types
+
+`web/shared/api-types.ts` is generated from the Go request and response
+structs, and committed. A frontend imports from it and never restates a
+shape the server owns.
+
+The loop:
+
+1. Change a request or response struct in `internal/api`, a hub message in
+   `internal/hub`, or a domain type they carry.
+2. Run `make generate`. It rewrites `web/shared/api-types.ts`.
+3. Commit the Go change and the generated file together.
+
+`make check` runs the generator again in memory and fails if the committed
+file is not what the structs produce, so a struct changed without step 2
+fails the build rather than reaching a screen as a type that lies. The
+generator is `internal/api/typescript_test.go` over `internal/codegen/ts`.
+
+Two things it needs from you:
+
+- **A vocabulary is a named Go type.** `Status order.Status` generates
+  `status: OrderStatus`, a union of the real values; `Status string`
+  generates `status: string`. Name the type, add it to the union list in the
+  generator, and every client gets the check.
+- **A new event type needs a line in `eventTypes`.** `order.Event` has a
+  custom JSON shape, so its TypeScript union is assembled by hand from that
+  list. A test compares the list with `order.Types()`, so a forgotten line
+  fails rather than producing a union missing an arm.
 
 ## Testing
 

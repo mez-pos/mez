@@ -109,12 +109,12 @@ type voidLineRequest struct {
 
 type discountRequest struct {
 	Override
-	Scope       string  `json:"scope"`
-	LineID      int64   `json:"line_id,omitempty"`
-	Kind        string  `json:"kind"`
-	BasisPoints int32   `json:"basis_points,omitempty"`
-	Amount      *amount `json:"amount,omitempty"`
-	Reason      string  `json:"reason"`
+	Scope       order.Scope        `json:"scope"`
+	LineID      int64              `json:"line_id,omitempty"`
+	Kind        order.DiscountKind `json:"kind"`
+	BasisPoints int32              `json:"basis_points,omitempty"`
+	Amount      *amount            `json:"amount,omitempty"`
+	Reason      string             `json:"reason"`
 }
 
 // amount mirrors money.Amount for a request body, so a discount can leave
@@ -231,7 +231,7 @@ func (s *Server) applyDiscount(w http.ResponseWriter, r *http.Request) {
 			return svcorder.Result{}, errAnswered
 		}
 		cmd := svcorder.ApplyDiscount{
-			Scope: order.Scope(req.Scope), LineID: req.LineID, Kind: order.DiscountKind(req.Kind),
+			Scope: req.Scope, LineID: req.LineID, Kind: req.Kind,
 			BasisPoints: req.BasisPoints, Reason: req.Reason,
 		}
 		if req.Amount != nil {

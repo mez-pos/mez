@@ -55,8 +55,8 @@ func (s *Server) mountDevices(mux *http.ServeMux) {
 
 // newCodeRequest is the body of POST /api/v1/devices/codes.
 type newCodeRequest struct {
-	Name string `json:"name"`
-	Kind string `json:"kind"`
+	Name string          `json:"name"`
+	Kind auth.DeviceKind `json:"kind"`
 }
 
 // pairingCodeResponse is a code to read out to whoever is pairing.
@@ -131,7 +131,7 @@ func bearer(r *http.Request) (string, bool) {
 	return token, token != ""
 }
 
-func (s *Server) unauthenticated(w http.ResponseWriter, code, message string) {
+func (s *Server) unauthenticated(w http.ResponseWriter, code ErrorCode, message string) {
 	w.Header().Set("WWW-Authenticate", `Bearer realm="nofiltr"`)
 	writeError(w, s.log, http.StatusUnauthorized, code, message)
 }
@@ -143,9 +143,9 @@ type pairRequest struct {
 
 // deviceResponse is a device as the API shows it: by public ID.
 type deviceResponse struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Kind string `json:"kind"`
+	ID   string          `json:"id"`
+	Name string          `json:"name"`
+	Kind auth.DeviceKind `json:"kind"`
 }
 
 // pairResponse is a newly paired device and the token it keeps.

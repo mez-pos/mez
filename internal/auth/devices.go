@@ -33,11 +33,16 @@ const maxDraws = 5
 // maxDeviceName is the longest device name accepted, in characters.
 const maxDeviceName = 64
 
-// The kinds a device can pair as. A guest session is not a paired device.
+// DeviceKind is what a device is. The schema knows the same four; a guest
+// session is the fourth and is not a paired device.
+type DeviceKind string
+
+// The kinds a device can pair as.
 const (
-	KindTerminal   = "terminal"
-	KindKitchen    = "kitchen"
-	KindBackOffice = "back_office"
+	KindTerminal   DeviceKind = "terminal"
+	KindKitchen    DeviceKind = "kitchen"
+	KindBackOffice DeviceKind = "back_office"
+	KindGuest      DeviceKind = "guest"
 )
 
 var (
@@ -69,7 +74,7 @@ type Device struct {
 	PublicID string
 	VenueID  int64
 	Name     string
-	Kind     string
+	Kind     DeviceKind
 }
 
 // NewCode is a request for a pairing code: the venue, who is asking (0 when
@@ -79,7 +84,7 @@ type NewCode struct {
 	VenueID    int64
 	CreatedBy  int64
 	DeviceName string
-	DeviceKind string
+	DeviceKind DeviceKind
 }
 
 // PairingCode is a code as shown to the person pairing: grouped for reading,
@@ -156,7 +161,7 @@ func (d *Devices) CreatePairingCode(ctx context.Context, n NewCode) (PairingCode
 		}
 		err = d.db.WriteTx(ctx, func(q *gen.Queries) error {
 			_, err := q.CreatePairingCode(ctx, gen.CreatePairingCodeParams{
-				VenueID: n.VenueID, CodeHash: hashSecret(code), DeviceName: name, DeviceKind: n.DeviceKind,
+				VenueID: n.VenueID, CodeHash: hashSecret(code), DeviceName: name, DeviceKind: string(n.DeviceKind),
 				CreatedBy: createdBy, CreatedAt: now, ExpiresAt: expires,
 			})
 			return err
@@ -225,7 +230,7 @@ func (d *Devices) Redeem(ctx context.Context, code string) (Paired, error) {
 			if used != 1 {
 				return ErrInvalidPairingCode
 			}
-			dev = Device{ID: devID, PublicID: publicID, VenueID: pc.VenueID, Name: pc.DeviceName, Kind: pc.DeviceKind}
+			dev = Device{ID: devID, PublicID: publicID, VenueID: pc.VenueID, Name: pc.DeviceName, Kind: DeviceKind(pc.DeviceKind)}
 			return nil
 		})
 		switch {
@@ -258,7 +263,7 @@ func (d *Devices) Authenticate(ctx context.Context, token string) (Device, error
 	if err != nil {
 		return Device{}, fmt.Errorf("auth: finding a device: %w", err)
 	}
-	dev := Device{ID: row.ID, PublicID: row.PublicID, VenueID: row.VenueID, Name: row.Name, Kind: row.Kind}
+	dev := Device{ID: row.ID, PublicID: row.PublicID, VenueID: row.VenueID, Name: row.Name, Kind: DeviceKind(row.Kind)}
 	if row.RevokedAt.Valid {
 		return Device{}, ErrDeviceRevoked
 	}

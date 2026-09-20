@@ -257,7 +257,7 @@ func TestEveryErrorShape(t *testing.T) {
 		path   string
 		body   string
 		status int
-		code   string
+		code   ErrorCode
 	}{
 		{"an order that does not exist", http.MethodGet, "/api/v1/orders/ord_NOSUCH01", "", http.StatusNotFound, CodeOrderNotFound},
 		{"a command on an order that does not exist", http.MethodPost, "/api/v1/orders/ord_NOSUCH01/notes", `{"scope":"order","text":"x"}`, http.StatusNotFound, CodeOrderNotFound},

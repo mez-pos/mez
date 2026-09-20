@@ -124,7 +124,7 @@ func TestAnOverrideChecksTheAuthoriserNotTheCaller(t *testing.T) {
 		name   string
 		body   string
 		status int
-		code   string
+		code   ErrorCode
 	}{
 		{"the cashier cannot authorise their own void", `{"authorised_by":"stf_ASHA0001","pin":"2468"}`, http.StatusForbidden, CodeForbidden},
 		{"a manager who mistypes", `{"authorised_by":"stf_PRIYA001","pin":"9999"}`, http.StatusUnauthorized, CodeInvalidPIN},

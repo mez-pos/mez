@@ -23,7 +23,7 @@ func TestRouting(t *testing.T) {
 		method string
 		path   string
 		status int
-		code   string // expected error code, empty for a success
+		code   ErrorCode // expected error code, empty for a success
 	}{
 		{
 			name:   "health",

@@ -11,23 +11,22 @@ File: `docs/phases/phase-04.md`. Phase 03 is complete.
 
 ## Last completed task
 
-**Phase 04, Task 5 - WebSocket hub.** `internal/hub`: `Serve` upgrades and
-streams, `Notify(venueID)` nudges. Every connection reads
-`db.VenueEventsAfter` from its own position, so replay and live are one path
-and a slow device falls behind on disk, not in memory. Topics: `venue`,
-`order:`, `table:`, `station:`. Heartbeat, write timeout, clean shutdown.
-`GET /api/v1/stream`, authenticated by device token in the header or, for a
-browser, the `token.` subprotocol. `coder/websocket` added (ADR-060), and
-`svcorder.PublisherFunc` wires the service to the hub in `cmd/nofiltr`.
+**Phase 04, Task 6 - TypeScript codegen.** `internal/codegen/ts` emits
+TypeScript from Go structs by reflection, no tool added.
+`internal/api/typescript_test.go` generates `web/shared/api-types.ts` (582
+lines: every request, response, hub message, and the vocabularies as
+unions), and fails if the committed file differs, so `make check` is the
+drift guard. `make generate` writes it. Documented in
+`docs/03-conventions.md`. Four types gained names on the way:
+`api.ErrorCode`, `auth.DeviceKind`, `hub.MessageType`, and the response
+structs now carry `order.Status` and friends. ADR-061.
 
 ## Next task
 
-**Phase 04, Task 6 - TypeScript codegen.** Generate TS types from the API
-request and response structs into `web/shared/api-types.ts`, wire it into
-`make generate` and CI so Go and TS cannot drift, and document the loop in
-`docs/03-conventions.md`. The structs to generate from are in
-`internal/api`: the order request bodies, `orderResponse` and its parts, the
-error envelope, and the hub's message types in `internal/hub`.
+**Phase 04 wrap-up, then phase 05.** Phase 04's six tasks are done. What is
+left before phase 05: the done-when script (a whole sale over HTTP with a
+WebSocket client watching), and the two unowned guards below. Then
+`docs/phases/phase-05.md`.
 
 ## Known broken / in progress
 

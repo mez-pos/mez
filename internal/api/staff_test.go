@@ -256,7 +256,7 @@ func TestStaffRoutesNeedBothTokens(t *testing.T) {
 		name   string
 		header map[string]string
 		status int
-		code   string
+		code   ErrorCode
 	}{
 		{"no tokens at all", nil, http.StatusUnauthorized, CodeUnauthenticated},
 		{"the device alone", w.asDevice(), http.StatusUnauthorized, CodeSignInRequired},

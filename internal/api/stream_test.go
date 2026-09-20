@@ -68,7 +68,7 @@ func TestTheStreamIsAuthenticatedLikeEverythingElse(t *testing.T) {
 	tests := []struct {
 		name   string
 		header map[string]string
-		code   string
+		code   ErrorCode
 	}{
 		{"no token at all", nil, CodeUnauthenticated},
 		{"only the subprotocol, no token", map[string]string{"Sec-WebSocket-Protocol": hub.Subprotocol}, CodeUnauthenticated},

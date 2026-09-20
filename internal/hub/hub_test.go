@@ -158,12 +158,12 @@ func (c *client) next() map[string]any {
 }
 
 // hello sends the opening message and returns the welcome.
-func (c *client) hello(msg clientMessage) map[string]any {
+func (c *client) hello(msg ClientMessage) map[string]any {
 	c.t.Helper()
-	msg.Type = msgHello
+	msg.Type = MsgHello
 	c.send(msg)
 	welcome := c.next()
-	if welcome["type"] != msgWelcome {
+	if welcome["type"] != string(MsgWelcome) {
 		c.t.Fatalf("first message back = %v", welcome)
 	}
 	return welcome
@@ -176,9 +176,9 @@ func (c *client) eventIDs() []int64 {
 	for {
 		msg := c.next()
 		switch msg["type"] {
-		case msgEvent:
+		case string(MsgEvent):
 			ids = append(ids, int64(msg["id"].(float64)))
-		case msgCaughtUp:
+		case string(MsgCaughtUp):
 			return ids
 		default:
 			c.t.Fatalf("unexpected message %v", msg)
@@ -195,7 +195,7 @@ func TestAReconnectLosesNothing(t *testing.T) {
 	}
 
 	first := w.dial(t)
-	welcome := first.hello(clientMessage{FromStart: true})
+	welcome := first.hello(ClientMessage{FromStart: true})
 	if welcome["from_event_id"] != float64(0) || welcome["latest_event_id"] != float64(5) {
 		t.Fatalf("welcome = %v", welcome)
 	}
@@ -218,7 +218,7 @@ func TestAReconnectLosesNothing(t *testing.T) {
 	waitFor(t, func() bool { return w.hub.Connections() == 0 })
 
 	second := w.dial(t)
-	welcome = second.hello(clientMessage{LastEventID: 5})
+	welcome = second.hello(ClientMessage{LastEventID: 5})
 	if welcome["from_event_id"] != float64(5) {
 		t.Fatalf("welcome = %v", welcome)
 	}
@@ -241,7 +241,7 @@ func TestAFreshScreenStartsAtNow(t *testing.T) {
 	}
 
 	c := w.dial(t)
-	welcome := c.hello(clientMessage{})
+	welcome := c.hello(ClientMessage{})
 	if welcome["from_event_id"] != float64(4) {
 		t.Fatalf("a fresh screen was given history: %v", welcome)
 	}
@@ -260,7 +260,7 @@ func TestAClientAheadOfTheStreamStartsAgain(t *testing.T) {
 	w.src.append("ord_AAAA1111", 0, order.NoteAdded{Scope: order.ScopeOrder, Text: "only"})
 
 	c := w.dial(t)
-	welcome := c.hello(clientMessage{LastEventID: 900})
+	welcome := c.hello(ClientMessage{LastEventID: 900})
 	if welcome["from_event_id"] != float64(0) {
 		t.Fatalf("welcome = %v", welcome)
 	}
@@ -272,7 +272,7 @@ func TestAClientAheadOfTheStreamStartsAgain(t *testing.T) {
 func TestTopicsDecideWhatIsSent(t *testing.T) {
 	w := newWorld(t)
 	c := w.dial(t)
-	c.hello(clientMessage{Topics: []string{prefixStation + "bar"}})
+	c.hello(ClientMessage{Topics: []string{prefixStation + "bar"}})
 
 	// A bar line and a bar ticket are the station's; the kitchen's are not,
 	// and neither is a note on the same order.
@@ -286,8 +286,8 @@ func TestTopicsDecideWhatIsSent(t *testing.T) {
 
 	// Subscribing again replaces the topics, and a table topic follows the
 	// order rather than the station.
-	c.send(clientMessage{Type: msgSubscribe, Topics: []string{prefixTable + "4"}})
-	if welcome := c.next(); welcome["type"] != msgWelcome {
+	c.send(ClientMessage{Type: MsgSubscribe, Topics: []string{prefixTable + "4"}})
+	if welcome := c.next(); welcome["type"] != string(MsgWelcome) {
 		t.Fatalf("subscribe was not acknowledged: %v", welcome)
 	}
 	onFour := w.src.append("ord_AAAA1111", 4, order.NoteAdded{Scope: order.ScopeOrder, Text: "table four"})
@@ -298,7 +298,7 @@ func TestTopicsDecideWhatIsSent(t *testing.T) {
 	}
 
 	// An order topic, and then the venue topic, which is everything.
-	c.send(clientMessage{Type: msgSubscribe, Topics: []string{prefixOrder + "ord_BBBB2222"}})
+	c.send(ClientMessage{Type: MsgSubscribe, Topics: []string{prefixOrder + "ord_BBBB2222"}})
 	c.next()
 	w.src.append("ord_AAAA1111", 4, order.NoteAdded{Scope: order.ScopeOrder, Text: "not mine"})
 	mine := w.src.append("ord_BBBB2222", 9, order.NoteAdded{Scope: order.ScopeOrder, Text: "mine"})
@@ -312,8 +312,8 @@ func TestTheProtocolRefusesWhatItDoesNotUnderstand(t *testing.T) {
 	t.Run("a first message that is not a hello", func(t *testing.T) {
 		w := newWorld(t)
 		c := w.dial(t)
-		c.send(clientMessage{Type: msgSubscribe})
-		if msg := c.next(); msg["type"] != msgErrorType || msg["code"] != "expected_hello" {
+		c.send(ClientMessage{Type: MsgSubscribe})
+		if msg := c.next(); msg["type"] != string(MsgError) || msg["code"] != "expected_hello" {
 			t.Fatalf("message = %v", msg)
 		}
 		// The hub closes it, which the client learns on its next read. That
@@ -342,7 +342,7 @@ func TestTheProtocolRefusesWhatItDoesNotUnderstand(t *testing.T) {
 	t.Run("a message this build does not know", func(t *testing.T) {
 		w := newWorld(t)
 		c := w.dial(t)
-		c.hello(clientMessage{})
+		c.hello(ClientMessage{})
 		c.send(map[string]string{"type": "loyalty.redeem"})
 		if msg := c.next(); msg["code"] != "unknown_message" {
 			t.Fatalf("message = %v", msg)
@@ -355,7 +355,7 @@ func TestTheProtocolRefusesWhatItDoesNotUnderstand(t *testing.T) {
 func TestASourceThatFailsClosesTheConnection(t *testing.T) {
 	w := newWorld(t)
 	c := w.dial(t)
-	c.hello(clientMessage{})
+	c.hello(ClientMessage{})
 
 	w.src.breaks(errors.New("disk I/O error"))
 	w.src.append("ord_AAAA1111", 0, order.NoteAdded{Scope: order.ScopeOrder, Text: "never seen"})
@@ -372,8 +372,8 @@ func TestASourceThatFailsClosesTheConnection(t *testing.T) {
 func TestShutdownDropsEveryone(t *testing.T) {
 	w := newWorld(t)
 	first, second := w.dial(t), w.dial(t)
-	first.hello(clientMessage{})
-	second.hello(clientMessage{})
+	first.hello(ClientMessage{})
+	second.hello(ClientMessage{})
 	if w.hub.Connections() != 2 {
 		t.Fatalf("%d connections, want 2", w.hub.Connections())
 	}
@@ -402,7 +402,7 @@ func TestShutdownDropsEveryone(t *testing.T) {
 func TestHeartbeat(t *testing.T) {
 	w := newWorld(t)
 	c := w.dial(t)
-	c.hello(clientMessage{})
+	c.hello(ClientMessage{})
 
 	// coder/websocket answers pings underneath, so a connection that is
 	// still here after several ping intervals is one the heartbeat has

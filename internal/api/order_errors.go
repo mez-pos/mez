@@ -13,26 +13,26 @@ import (
 // The order error codes. A client switches on these, so they change only
 // with the API version.
 const (
-	CodeOrderNotFound        = "order_not_found"
-	CodeLineNotFound         = "line_not_found"
-	CodeLineNotActive        = "line_not_active"
-	CodePaymentNotFound      = "payment_not_found"
-	CodePaymentNotCaptured   = "payment_not_captured"
-	CodeOrderClosed          = "order_closed"
-	CodeOrderNotClosed       = "order_not_closed"
-	CodeQtyMismatch          = "qty_mismatch"
-	CodeBalanceDue           = "balance_due"
-	CodeOverTender           = "over_tender"
-	CodeOverRefund           = "over_refund"
-	CodeDiscountTooLarge     = "discount_too_large"
-	CodeAlreadyInvoiced      = "already_invoiced"
-	CodeCourseAlreadyFired   = "course_already_fired"
-	CodeNothingToSend        = "nothing_to_send"
-	CodeInvalidTransition    = "invalid_transition"
-	CodeInvalidPayload       = "invalid_payload"
-	CodeCurrencyMismatch     = "currency_mismatch"
-	CodeIdempotencyKeyReused = "idempotency_key_reused"
-	CodeVenueNotConfigured   = "venue_not_configured"
+	CodeOrderNotFound        ErrorCode = "order_not_found"
+	CodeLineNotFound         ErrorCode = "line_not_found"
+	CodeLineNotActive        ErrorCode = "line_not_active"
+	CodePaymentNotFound      ErrorCode = "payment_not_found"
+	CodePaymentNotCaptured   ErrorCode = "payment_not_captured"
+	CodeOrderClosed          ErrorCode = "order_closed"
+	CodeOrderNotClosed       ErrorCode = "order_not_closed"
+	CodeQtyMismatch          ErrorCode = "qty_mismatch"
+	CodeBalanceDue           ErrorCode = "balance_due"
+	CodeOverTender           ErrorCode = "over_tender"
+	CodeOverRefund           ErrorCode = "over_refund"
+	CodeDiscountTooLarge     ErrorCode = "discount_too_large"
+	CodeAlreadyInvoiced      ErrorCode = "already_invoiced"
+	CodeCourseAlreadyFired   ErrorCode = "course_already_fired"
+	CodeNothingToSend        ErrorCode = "nothing_to_send"
+	CodeInvalidTransition    ErrorCode = "invalid_transition"
+	CodeInvalidPayload       ErrorCode = "invalid_payload"
+	CodeCurrencyMismatch     ErrorCode = "currency_mismatch"
+	CodeIdempotencyKeyReused ErrorCode = "idempotency_key_reused"
+	CodeVenueNotConfigured   ErrorCode = "venue_not_configured"
 )
 
 // orderErrors maps every refusal the order path can produce to a status and
@@ -48,7 +48,7 @@ const (
 var orderErrors = []struct {
 	err    error
 	status int
-	code   string
+	code   ErrorCode
 }{
 	// The service's own refusals.
 	{svcorder.ErrOrderNotFound, http.StatusNotFound, CodeOrderNotFound},

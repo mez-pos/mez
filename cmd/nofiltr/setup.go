@@ -47,7 +47,7 @@ type setupOptions struct {
 	OwnerPIN  string
 
 	DeviceName string
-	DeviceKind string
+	DeviceKind auth.DeviceKind
 }
 
 // setupResult is what setUp created, for the summary printed afterwards.
@@ -135,7 +135,7 @@ func parseSetupFlags(args []string, out io.Writer) (setupOptions, error) {
 	set.StringVar(&o.OwnerName, "owner", "Owner", "the owner's name")
 	set.StringVar(&o.OwnerPIN, "owner-pin", "", "the owner's PIN, 4 to 8 digits (default: one is drawn and printed)")
 	set.StringVar(&o.DeviceName, "device-name", "Counter 1", "what the first device will be called")
-	set.StringVar(&o.DeviceKind, "device-kind", auth.KindTerminal, "terminal, kitchen or back_office")
+	kind := set.String("device-kind", string(auth.KindTerminal), "terminal, kitchen or back_office")
 
 	if err := set.Parse(args); err != nil {
 		return setupOptions{}, err
@@ -143,6 +143,7 @@ func parseSetupFlags(args []string, out io.Writer) (setupOptions, error) {
 	if set.NArg() > 0 {
 		return setupOptions{}, fmt.Errorf("setup: unexpected argument %q", set.Arg(0))
 	}
+	o.DeviceKind = auth.DeviceKind(*kind)
 	return o, nil
 }
 

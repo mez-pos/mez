@@ -111,7 +111,7 @@ Phase 03.
   test that kills a connection mid-stream and verifies nothing is lost on
   reconnect.
 
-- [ ] **Task 6 — TypeScript codegen.**
+- [x] **Task 6 — TypeScript codegen.**
   Generate TS types from the API request/response structs into
   `web/shared/api-types.ts`. Wire into `make generate` and into CI so a drift
   between Go and TS fails the build. Document the loop in `docs/03-conventions.md`.

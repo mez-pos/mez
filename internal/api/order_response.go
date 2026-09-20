@@ -12,16 +12,16 @@ import (
 // orderResponse is an order as every screen reads it: the projection, not
 // the events. A terminal redraws the bill from this and nothing else.
 type orderResponse struct {
-	ID        string     `json:"id"`
-	Status    string     `json:"status"`
-	Channel   string     `json:"channel"`
-	Currency  string     `json:"currency"`
-	TableID   int64      `json:"table_id,omitempty"`
-	Covers    int64      `json:"covers"`
-	OpenedBy  int64      `json:"opened_by,omitempty"`
-	OpenedAt  time.Time  `json:"opened_at"`
-	ClosedAt  *time.Time `json:"closed_at,omitempty"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	ID        string        `json:"id"`
+	Status    order.Status  `json:"status"`
+	Channel   order.Channel `json:"channel"`
+	Currency  string        `json:"currency"`
+	TableID   int64         `json:"table_id,omitempty"`
+	Covers    int64         `json:"covers"`
+	OpenedBy  int64         `json:"opened_by,omitempty"`
+	OpenedAt  time.Time     `json:"opened_at"`
+	ClosedAt  *time.Time    `json:"closed_at,omitempty"`
+	UpdatedAt time.Time     `json:"updated_at"`
 
 	// LastSeq is the order's last event. A client sends it back on a
 	// WebSocket reconnect to be told what it missed.
@@ -54,11 +54,11 @@ type lineResponse struct {
 	Course    int64            `json:"course,omitempty"`
 	Station   string           `json:"station,omitempty"`
 
-	Status       string `json:"status"`
-	ReasonCode   string `json:"reason_code,omitempty"`
-	AuthorisedBy int64  `json:"authorised_by,omitempty"`
-	CourseFired  bool   `json:"course_fired"`
-	Sent         bool   `json:"sent"`
+	Status       order.LineStatus `json:"status"`
+	ReasonCode   string           `json:"reason_code,omitempty"`
+	AuthorisedBy int64            `json:"authorised_by,omitempty"`
+	CourseFired  bool             `json:"course_fired"`
+	Sent         bool             `json:"sent"`
 
 	Gross    money.Amount `json:"gross"`
 	Discount money.Amount `json:"discount"`
@@ -67,10 +67,10 @@ type lineResponse struct {
 }
 
 type noteResponse struct {
-	Seq    int64  `json:"seq"`
-	Scope  string `json:"scope"`
-	LineID int64  `json:"line_id,omitempty"`
-	Text   string `json:"text"`
+	Seq    int64       `json:"seq"`
+	Scope  order.Scope `json:"scope"`
+	LineID int64       `json:"line_id,omitempty"`
+	Text   string      `json:"text"`
 }
 
 type ticketResponse struct {
@@ -81,14 +81,14 @@ type ticketResponse struct {
 }
 
 type tenderResponse struct {
-	ID         int64        `json:"id"`
-	Method     string       `json:"method"`
-	Amount     money.Amount `json:"amount"`
-	Tip        money.Amount `json:"tip"`
-	Reference  string       `json:"reference,omitempty"`
-	Status     string       `json:"status"`
-	Refunded   money.Amount `json:"refunded"`
-	VoidReason string       `json:"void_reason,omitempty"`
+	ID         int64               `json:"id"`
+	Method     order.PaymentMethod `json:"method"`
+	Amount     money.Amount        `json:"amount"`
+	Tip        money.Amount        `json:"tip"`
+	Reference  string              `json:"reference,omitempty"`
+	Status     order.PaymentStatus `json:"status"`
+	Refunded   money.Amount        `json:"refunded"`
+	VoidReason string              `json:"void_reason,omitempty"`
 }
 
 type refundResponse struct {
@@ -105,12 +105,12 @@ type invoiceResponse struct {
 }
 
 type discountResponse struct {
-	Seq    int64        `json:"seq"`
-	Scope  string       `json:"scope"`
-	LineID int64        `json:"line_id,omitempty"`
-	Kind   string       `json:"kind"`
-	Reason string       `json:"reason"`
-	Value  money.Amount `json:"value"`
+	Seq    int64              `json:"seq"`
+	Scope  order.Scope        `json:"scope"`
+	LineID int64              `json:"line_id,omitempty"`
+	Kind   order.DiscountKind `json:"kind"`
+	Reason string             `json:"reason"`
+	Value  money.Amount       `json:"value"`
 }
 
 // totalsResponse is the money of the order. BalanceDue is what the charge
@@ -136,7 +136,7 @@ type totalsResponse struct {
 // untaxed venue rather than present and zero.
 type taxResponse struct {
 	Profile    string               `json:"profile"`
-	Pricing    string               `json:"pricing"`
+	Pricing    tax.Pricing          `json:"pricing"`
 	Components []tax.ComponentTotal `json:"components"`
 	Taxable    money.Amount         `json:"taxable"`
 	Tax        money.Amount         `json:"tax"`
@@ -166,7 +166,7 @@ func toCommandResponse(res svcorder.Result) commandResponse {
 func toOrderResponse(res svcorder.Result) orderResponse {
 	s := res.State
 	out := orderResponse{
-		ID: res.PublicID, Status: string(s.Status), Channel: string(s.Channel), Currency: s.Currency,
+		ID: res.PublicID, Status: s.Status, Channel: s.Channel, Currency: s.Currency,
 		TableID: s.TableID, Covers: s.Covers, OpenedBy: s.OpenedBy, OpenedAt: s.OpenedAt.UTC(),
 		UpdatedAt: s.UpdatedAt.UTC(), LastSeq: s.LastSeq, Reopens: s.Reopens, Invoiced: s.Invoiced,
 		Totals: totalsResponse(s.Totals),
@@ -181,14 +181,14 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 		out.Lines[i] = lineResponse{
 			ID: l.ID, ItemID: l.ItemID, Name: l.Name, Qty: l.Qty, UnitPrice: l.UnitPrice,
 			Modifiers: l.Modifiers, Course: l.Course, Station: l.Station,
-			Status: string(l.Status), ReasonCode: l.ReasonCode, AuthorisedBy: l.AuthorisedBy,
+			Status: l.Status, ReasonCode: l.ReasonCode, AuthorisedBy: l.AuthorisedBy,
 			CourseFired: l.CourseFired, Sent: l.Sent,
 			Gross: l.Gross, Discount: l.Discount, Tax: l.Tax, Due: l.Due,
 		}
 	}
 	out.Notes = make([]noteResponse, len(s.Notes))
 	for i, n := range s.Notes {
-		out.Notes[i] = noteResponse{Seq: n.Seq, Scope: string(n.Scope), LineID: n.LineID, Text: n.Text}
+		out.Notes[i] = noteResponse{Seq: n.Seq, Scope: n.Scope, LineID: n.LineID, Text: n.Text}
 	}
 	out.Tickets = make([]ticketResponse, len(s.Tickets))
 	for i, t := range s.Tickets {
@@ -197,8 +197,8 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 	out.Tenders = make([]tenderResponse, len(s.Tenders))
 	for i, t := range s.Tenders {
 		out.Tenders[i] = tenderResponse{
-			ID: t.ID, Method: string(t.Method), Amount: t.Amount, Tip: t.Tip, Reference: t.Reference,
-			Status: string(t.Status), Refunded: t.Refunded, VoidReason: t.VoidReason,
+			ID: t.ID, Method: t.Method, Amount: t.Amount, Tip: t.Tip, Reference: t.Reference,
+			Status: t.Status, Refunded: t.Refunded, VoidReason: t.VoidReason,
 		}
 	}
 	out.Refunds = make([]refundResponse, len(s.Refunds))
@@ -212,13 +212,13 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 	out.Discounts = make([]discountResponse, len(s.Discounts))
 	for i, d := range s.Discounts {
 		out.Discounts[i] = discountResponse{
-			Seq: d.Seq, Scope: string(d.Scope), LineID: d.LineID, Kind: string(d.Kind),
+			Seq: d.Seq, Scope: d.Scope, LineID: d.LineID, Kind: d.Kind,
 			Reason: d.Reason, Value: d.Value,
 		}
 	}
 	if s.TaxDetail.Profile != "" {
 		out.Tax = &taxResponse{
-			Profile: s.TaxDetail.Profile, Pricing: string(s.TaxDetail.Pricing),
+			Profile: s.TaxDetail.Profile, Pricing: s.TaxDetail.Pricing,
 			Components: s.TaxDetail.Components, Taxable: s.TaxDetail.Taxable,
 			Tax: s.TaxDetail.Tax, Total: s.TaxDetail.Total,
 		}

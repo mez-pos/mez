@@ -7,57 +7,61 @@ import (
 	"net/http"
 )
 
+// ErrorCode names a failure. A client switches on it, so the set is a type
+// rather than a loose string, and it generates into a TypeScript union.
+type ErrorCode string
+
 // Error codes. These are contracts: a client switches on them, so they change
 // only with the API version. The message is for a human and may be reworded at
 // any time.
 const (
-	CodeNotFound         = "not_found"
-	CodeMethodNotAllowed = "method_not_allowed"
-	CodeInternal         = "internal"
+	CodeNotFound         ErrorCode = "not_found"
+	CodeMethodNotAllowed ErrorCode = "method_not_allowed"
+	CodeInternal         ErrorCode = "internal"
 
 	// CodeInvalidRequest is a body that is not the JSON the endpoint takes.
-	CodeInvalidRequest = "invalid_request"
+	CodeInvalidRequest ErrorCode = "invalid_request"
 
 	// CodeUnauthenticated is a request with no device token, or one that is
 	// not any device's.
-	CodeUnauthenticated = "unauthenticated"
+	CodeUnauthenticated ErrorCode = "unauthenticated"
 
 	// CodeDeviceRevoked is a token of a device the venue has unpaired. The
 	// device should forget its token and show the pairing screen.
-	CodeDeviceRevoked = "device_revoked"
+	CodeDeviceRevoked ErrorCode = "device_revoked"
 
 	// CodeInvalidPairingCode is a pairing code that is unknown, expired or
 	// used. Which of the three is deliberately not said.
-	CodeInvalidPairingCode = "invalid_pairing_code"
+	CodeInvalidPairingCode ErrorCode = "invalid_pairing_code"
 
 	// CodeInvalidPIN is a staff member and PIN that did not sign in. An
 	// unknown or deactivated staff member gets this too.
-	CodeInvalidPIN = "invalid_pin"
+	CodeInvalidPIN ErrorCode = "invalid_pin"
 
 	// CodeLockedOut is sign-in locked after repeated failures. The response
 	// carries Retry-After.
-	CodeLockedOut = "locked_out"
+	CodeLockedOut ErrorCode = "locked_out"
 
 	// CodeSignInRequired is a request needing a staff member behind it,
 	// with no session or a session that has ended. The terminal shows the
 	// PIN pad.
-	CodeSignInRequired = "sign_in_required"
+	CodeSignInRequired ErrorCode = "sign_in_required"
 
 	// CodeRateLimited is too many requests from one address. The response
 	// carries Retry-After.
-	CodeRateLimited = "rate_limited"
+	CodeRateLimited ErrorCode = "rate_limited"
 
 	// CodeForbidden is a staff member without the permission the endpoint
 	// needs, or an authoriser without it. Field names the permission, or
 	// the field carrying the authoriser.
-	CodeForbidden = "forbidden"
+	CodeForbidden ErrorCode = "forbidden"
 )
 
 // Error is one failure, in the shape 03-conventions.md fixes for every endpoint.
 type Error struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-	Field   string `json:"field,omitempty"`
+	Code    ErrorCode `json:"code"`
+	Message string    `json:"message"`
+	Field   string    `json:"field,omitempty"`
 }
 
 // errorBody wraps Error so that the payload is {"error": {...}} rather than a
@@ -95,11 +99,11 @@ func writeJSON(w http.ResponseWriter, log *slog.Logger, status int, body any) {
 }
 
 // writeError sends the standard envelope.
-func writeError(w http.ResponseWriter, log *slog.Logger, status int, code, message string) {
+func writeError(w http.ResponseWriter, log *slog.Logger, status int, code ErrorCode, message string) {
 	writeJSON(w, log, status, errorBody{Error: Error{Code: code, Message: message}})
 }
 
 // writeFieldError sends the standard envelope naming the field at fault.
-func writeFieldError(w http.ResponseWriter, log *slog.Logger, status int, code, message, field string) {
+func writeFieldError(w http.ResponseWriter, log *slog.Logger, status int, code ErrorCode, message, field string) {
 	writeJSON(w, log, status, errorBody{Error: Error{Code: code, Message: message, Field: field}})
 }

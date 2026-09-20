@@ -89,6 +89,9 @@ run:
 ## generate: sqlc, go generate, TypeScript types
 ##           sqlc output is committed, so a clone builds without it installed.
 ##           Install with: go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
+##           The TypeScript types are generated from the Go request and
+##           response structs and committed too. `make check` regenerates them
+##           in memory and fails if they differ, so the two cannot drift.
 generate:
 	@sqlc=$$(command -v sqlc 2>/dev/null); \
 	if [ -z "$$sqlc" ] && [ -x "$$(go env GOPATH)/bin/sqlc" ]; then \
@@ -102,6 +105,7 @@ generate:
 	fi
 ifneq ($(strip $(PKGS)),)
 	@go generate ./...
+	@go test ./internal/api -run TestTypeScriptTypes -update -count=1 >/dev/null && 		echo "  types web/shared/api-types.ts"
 endif
 
 ## migrate: apply database migrations

@@ -17,23 +17,26 @@ import (
 )
 
 // The message types, in both directions. They are a contract: a terminal
-// switches on them.
+// switches on them, and they are generated into TypeScript.
 const (
 	// From the client.
-	msgHello     = "hello"     // first message: where I am, what I want
-	msgSubscribe = "subscribe" // change my topics
+	MsgHello     MessageType = "hello"     // first message: where I am, what I want
+	MsgSubscribe MessageType = "subscribe" // change my topics
 
 	// From the server.
-	msgWelcome   = "welcome"   // your position and what you are subscribed to
-	msgEvent     = "event"     // one event
-	msgCaughtUp  = "caught_up" // you have everything up to this position
-	msgErrorType = "error"     // what you sent could not be used
+	MsgWelcome  MessageType = "welcome"   // your position and what you are subscribed to
+	MsgEvent    MessageType = "event"     // one event
+	MsgCaughtUp MessageType = "caught_up" // you have everything up to this position
+	MsgError    MessageType = "error"     // what you sent could not be used
 )
 
-// clientMessage is anything a client sends. Only a handful of fields are
-// ever set; the type says which.
-type clientMessage struct {
-	Type string `json:"type"`
+// MessageType names a message in either direction.
+type MessageType string
+
+// ClientMessage is anything a client sends to the hub. Only a handful of
+// fields are ever set; the type says which.
+type ClientMessage struct {
+	Type MessageType `json:"type"`
 
 	// LastEventID is the position the client has. Zero with Replay false
 	// means "only what happens next", which is what a screen opening fresh
@@ -47,19 +50,20 @@ type clientMessage struct {
 	Topics []string `json:"topics,omitempty"`
 }
 
-// welcomeMessage answers the hello.
-type welcomeMessage struct {
-	Type     string   `json:"type"`
-	VenueID  int64    `json:"venue_id"`
-	DeviceID int64    `json:"device_id"`
-	From     int64    `json:"from_event_id"`
-	Latest   int64    `json:"latest_event_id"`
-	Topics   []string `json:"topics"`
+// WelcomeMessage answers the hello, and a later subscribe.
+type WelcomeMessage struct {
+	Type     MessageType `json:"type"`
+	VenueID  int64       `json:"venue_id"`
+	DeviceID int64       `json:"device_id"`
+	From     int64       `json:"from_event_id"`
+	Latest   int64       `json:"latest_event_id"`
+	Topics   []string    `json:"topics"`
 }
 
-// eventMessage is one event on the wire.
-type eventMessage struct {
-	Type    string      `json:"type"`
+// EventMessage is one event on the wire, with the little about its order
+// that a screen needs to file it.
+type EventMessage struct {
+	Type    MessageType `json:"type"`
 	ID      int64       `json:"id"`
 	OrderID string      `json:"order_id"`
 	Status  string      `json:"order_status"`
@@ -68,15 +72,17 @@ type eventMessage struct {
 	Event   order.Event `json:"event"`
 }
 
-type caughtUpMessage struct {
-	Type string `json:"type"`
-	ID   int64  `json:"id"`
+// CaughtUpMessage says the client has everything up to a position.
+type CaughtUpMessage struct {
+	Type MessageType `json:"type"`
+	ID   int64       `json:"id"`
 }
 
-type errorMessage struct {
-	Type    string `json:"type"`
-	Code    string `json:"code"`
-	Message string `json:"message"`
+// ErrorMessage says what the client sent could not be used.
+type ErrorMessage struct {
+	Type    MessageType `json:"type"`
+	Code    string      `json:"code"`
+	Message string      `json:"message"`
 }
 
 // conn is one connected device.
@@ -133,8 +139,8 @@ func (c *conn) run(ctx context.Context) error {
 	c.setCursor(from)
 	c.setTopics(hello.Topics)
 
-	if err := c.hub.writeJSON(ctx, c.ws, welcomeMessage{
-		Type: msgWelcome, VenueID: c.client.VenueID, DeviceID: c.client.DeviceID,
+	if err := c.hub.writeJSON(ctx, c.ws, WelcomeMessage{
+		Type: MsgWelcome, VenueID: c.client.VenueID, DeviceID: c.client.DeviceID,
 		From: from, Latest: latest, Topics: c.topicList(),
 	}); err != nil {
 		return err
@@ -173,14 +179,14 @@ func (c *conn) run(ctx context.Context) error {
 }
 
 // readHello waits for the first message, which must be a hello.
-func (c *conn) readHello(ctx context.Context) (clientMessage, error) {
+func (c *conn) readHello(ctx context.Context) (ClientMessage, error) {
 	msg, err := c.read(ctx)
 	if err != nil {
-		return clientMessage{}, err
+		return ClientMessage{}, err
 	}
-	if msg.Type != msgHello {
-		_ = c.hub.writeJSON(ctx, c.ws, errorMessage{Type: msgErrorType, Code: "expected_hello", Message: "say hello first"})
-		return clientMessage{}, fmt.Errorf("hub: first message was %q, not a hello", msg.Type)
+	if msg.Type != MsgHello {
+		_ = c.hub.writeJSON(ctx, c.ws, ErrorMessage{Type: MsgError, Code: "expected_hello", Message: "say hello first"})
+		return ClientMessage{}, fmt.Errorf("hub: first message was %q, not a hello", msg.Type)
 	}
 	return msg, nil
 }
@@ -193,17 +199,17 @@ func (c *conn) readLoop(ctx context.Context) error {
 			return err
 		}
 		switch msg.Type {
-		case msgSubscribe:
+		case MsgSubscribe:
 			c.setTopics(msg.Topics)
-			if err := c.hub.writeJSON(ctx, c.ws, welcomeMessage{
-				Type: msgWelcome, VenueID: c.client.VenueID, DeviceID: c.client.DeviceID,
+			if err := c.hub.writeJSON(ctx, c.ws, WelcomeMessage{
+				Type: MsgWelcome, VenueID: c.client.VenueID, DeviceID: c.client.DeviceID,
 				From: c.at(), Latest: c.at(), Topics: c.topicList(),
 			}); err != nil {
 				return err
 			}
 		default:
-			if err := c.hub.writeJSON(ctx, c.ws, errorMessage{
-				Type: msgErrorType, Code: "unknown_message", Message: "this build does not understand " + msg.Type,
+			if err := c.hub.writeJSON(ctx, c.ws, ErrorMessage{
+				Type: MsgError, Code: "unknown_message", Message: "this build does not understand " + string(msg.Type),
 			}); err != nil {
 				return err
 			}
@@ -211,15 +217,15 @@ func (c *conn) readLoop(ctx context.Context) error {
 	}
 }
 
-func (c *conn) read(ctx context.Context) (clientMessage, error) {
+func (c *conn) read(ctx context.Context) (ClientMessage, error) {
 	_, raw, err := c.ws.Read(ctx)
 	if err != nil {
-		return clientMessage{}, err
+		return ClientMessage{}, err
 	}
-	var msg clientMessage
+	var msg ClientMessage
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		_ = c.hub.writeJSON(ctx, c.ws, errorMessage{Type: msgErrorType, Code: "invalid_message", Message: "that is not a message this endpoint takes"})
-		return clientMessage{}, fmt.Errorf("hub: decoding a client message: %w", err)
+		_ = c.hub.writeJSON(ctx, c.ws, ErrorMessage{Type: MsgError, Code: "invalid_message", Message: "that is not a message this endpoint takes"})
+		return ClientMessage{}, fmt.Errorf("hub: decoding a client message: %w", err)
 	}
 	return msg, nil
 }
@@ -243,7 +249,7 @@ func (c *conn) drain(ctx context.Context) error {
 			}
 			c.setCursor(e.ID)
 		}
-		if err := c.hub.writeJSON(ctx, c.ws, caughtUpMessage{Type: msgCaughtUp, ID: c.at()}); err != nil {
+		if err := c.hub.writeJSON(ctx, c.ws, CaughtUpMessage{Type: MsgCaughtUp, ID: c.at()}); err != nil {
 			return err
 		}
 		if len(events) < c.hub.batch {
@@ -293,9 +299,9 @@ func stationOf(e order.Event) string {
 	}
 }
 
-func toMessage(e db.StreamEvent) eventMessage {
-	return eventMessage{
-		Type: msgEvent, ID: e.ID, OrderID: e.OrderPublicID, Status: e.OrderStatus,
+func toMessage(e db.StreamEvent) EventMessage {
+	return EventMessage{
+		Type: MsgEvent, ID: e.ID, OrderID: e.OrderPublicID, Status: e.OrderStatus,
 		TableID: e.TableID, Station: stationOf(e.Event), Event: e.Event,
 	}
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
 )
 
@@ -60,7 +61,7 @@ type Client struct {
 	VenueID  int64
 	DeviceID int64
 	Name     string
-	Kind     string
+	Kind     auth.DeviceKind
 }
 
 // Options configure a Hub. Source is required.

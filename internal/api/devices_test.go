@@ -123,7 +123,7 @@ func TestPairingErrors(t *testing.T) {
 	tests := []struct {
 		name  string
 		body  string
-		code  string
+		code  ErrorCode
 		field string
 	}{
 		{"a used code", `{"code":"` + used + `"}`, CodeInvalidPairingCode, "code"},
@@ -156,7 +156,7 @@ func TestTheDeviceMiddleware(t *testing.T) {
 	tests := []struct {
 		name   string
 		header map[string]string
-		code   string
+		code   ErrorCode
 	}{
 		{"no header", nil, CodeUnauthenticated},
 		{"another scheme", map[string]string{"Authorization": "Basic " + paired.Token}, CodeUnauthenticated},

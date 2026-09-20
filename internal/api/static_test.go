@@ -212,7 +212,7 @@ func TestTheAPIIsNotSwallowedByTheSPA(t *testing.T) {
 		if strings.Contains(resp.Body.String(), "doctype") {
 			t.Fatal("an unknown API path was answered with the terminal app")
 		}
-		if !strings.Contains(resp.Body.String(), CodeNotFound) {
+		if !strings.Contains(resp.Body.String(), string(CodeNotFound)) {
 			t.Errorf("body = %q, want the error envelope", resp.Body)
 		}
 	})
@@ -243,7 +243,7 @@ func TestWithoutBundlesTheRootIsStillTheEnvelope(t *testing.T) {
 	if resp.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", resp.Code, http.StatusNotFound)
 	}
-	if !strings.Contains(resp.Body.String(), CodeNotFound) {
+	if !strings.Contains(resp.Body.String(), string(CodeNotFound)) {
 		t.Errorf("body = %q, want the error envelope", resp.Body)
 	}
 }
@@ -261,7 +261,7 @@ func TestABundleWithoutAnIndexFailsSafely(t *testing.T) {
 	if resp.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want %d", resp.Code, http.StatusInternalServerError)
 	}
-	if !strings.Contains(resp.Body.String(), CodeInternal) {
+	if !strings.Contains(resp.Body.String(), string(CodeInternal)) {
 		t.Errorf("body = %q, want the error envelope", resp.Body)
 	}
 }
