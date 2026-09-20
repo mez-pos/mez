@@ -24,7 +24,14 @@ type till struct {
 	handler     http.Handler
 	deviceToken string
 	log         *bytes.Buffer
+
+	db      *db.DB
+	devices *auth.Devices
+	staff   *auth.StaffAuth
 }
+
+// seededAt is when the test world was created.
+var seededAt = time.Date(2026, 9, 18, 4, 30, 0, 0, time.UTC)
 
 func newTill(t *testing.T) *till {
 	t.Helper()
@@ -38,7 +45,7 @@ func newTill(t *testing.T) *till {
 		t.Fatalf("Migrate: %v", err)
 	}
 
-	at := time.Date(2026, 9, 18, 4, 30, 0, 0, time.UTC)
+	at := seededAt
 	pin, err := auth.HashPIN("2468")
 	if err != nil {
 		t.Fatal(err)
@@ -99,16 +106,24 @@ func newTill(t *testing.T) *till {
 		t.Fatal(err)
 	}
 	logged := &bytes.Buffer{}
-	srv := New(testConfig(), slog.New(slog.NewJSONHandler(logged, nil)), BuildInfo{Version: "1.2.3"},
-		WithDevices(devs), WithStaff(staff))
+	w := &till{log: logged, db: d, devices: devs, staff: staff}
+	w.rebuild(t)
 
 	code, err := devs.CreatePairingCode(ctx, auth.NewCode{VenueID: 1, DeviceName: "Counter 1", DeviceKind: auth.KindTerminal})
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := &till{srv: srv, handler: srv.Handler(), log: logged}
 	w.deviceToken = pairOK(t, w.handler, code.Code).Token
 	return w
+}
+
+// rebuild swaps in a server with more wired into it. Everything already in
+// the database, the paired device included, carries over.
+func (w *till) rebuild(t *testing.T, extra ...Option) {
+	t.Helper()
+	opts := append([]Option{WithDevices(w.devices), WithStaff(w.staff)}, extra...)
+	w.srv = New(testConfig(), slog.New(slog.NewJSONHandler(w.log, nil)), BuildInfo{Version: "1.2.3"}, opts...)
+	w.handler = w.srv.Handler()
 }
 
 // asDevice is the headers of a request from the paired terminal.

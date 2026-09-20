@@ -89,7 +89,7 @@ Phase 03.
     a command against a temp data directory. This is what the phase's
     done-when script starts from.
 
-- [ ] **Task 4 - HTTP handlers.**
+- [x] **Task 4 - HTTP handlers.**
   `/api/v1` for orders, lines, tickets and payments: everything
   `internal/service/order` can already do. Decode, validate, call the
   service, encode, per `docs/03-conventions.md`. The stable error shape, with

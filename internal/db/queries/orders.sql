@@ -55,3 +55,10 @@ INSERT INTO order_snapshots (order_id, seq, basis, state)
 VALUES (?, ?, ?, ?)
 ON CONFLICT (order_id) DO UPDATE
 SET seq = excluded.seq, basis = excluded.basis, state = excluded.state;
+
+-- name: OrderByPublicID :one
+SELECT
+    id, public_id, venue_id, channel, table_id, status, last_seq,
+    opened_at, closed_at, updated_at
+FROM orders
+WHERE public_id = ?;

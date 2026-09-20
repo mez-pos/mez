@@ -1246,3 +1246,44 @@ office, which does not exist until phase 10, so a US venue cannot complete
 setup from here. A drawn PIN is printed to a terminal, where it may reach a
 scrollback buffer; it is meant to be changed on the first day, and nothing
 enforces that yet.
+
+## ADR-059 - HTTP handlers: a code for every refusal, and the override decides authority
+2026-09 · Status: accepted
+Decision: `internal/api` serves `/api/v1/orders` over
+`internal/service/order`. Each route is the permission it needs wrapped
+around a handler that decodes, makes one service call and encodes.
+- Orders are addressed by public ID. `Service.Resolve` turns it into the
+  internal one, and an order at another venue is not found rather than
+  forbidden.
+- Request bodies that are exactly a service command are that command
+  (`addLineRequest = svcorder.AddLine`), so there is one definition of a
+  line to keep right, and task 6 generates one TypeScript type for it. The
+  rest add the manager's `Override` or take an ID from the path.
+- A mutating endpoint answers with the whole order plus the events it
+  appended, so a terminal redraws from the response and never has to
+  re-read. A replayed idempotent command answers 200 rather than 201: it
+  created nothing this time.
+- **The override decides authority, not the route.** Void, comp, discount,
+  payment void, refund and reopen ask only that the caller holds
+  `order.open`, and check the authoriser's permission against their PIN
+  inside the handler. Requiring the permission of the caller as well would
+  mean a cashier could never void with a manager stood beside them, which
+  is the opposite of what an override is for. The caller's own permission
+  is still checked on every route, so a kitchen screen cannot work the
+  register.
+- `order_errors.go` maps every refusal to a status and a code, most-specific
+  first. Anything not in the table is a bug, not a refusal, and becomes a
+  500 with the detail in the log. The message returned is the domain's own,
+  because it says what is wrong with the bill in words a till can show.
+Because: the error table is the contract a terminal is written against, and
+the rule that an unmapped error is a 500 is what keeps it honest: a new
+domain error shows up as a 500 in testing rather than as a silent 409 with
+the wrong code.
+Cost: the response carries the whole order on every command, which is a few
+kilobytes on a bill with fifty lines; the alternative is a client that has
+to merge events itself, and it can still do that from the same response.
+A currency mismatch inside an event arrives as `invalid_payload` with the
+currencies named, because the projection formats it rather than wrapping
+the sentinel; `currency_mismatch` is reserved for arithmetic outside an
+event. Tables, menu read and shifts were in this task and moved to their own
+phases: no schema, no service, nothing to serve.

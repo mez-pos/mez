@@ -25,6 +25,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/config"
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
+	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/web"
 )
 
@@ -166,11 +167,19 @@ func run() (err error) {
 		return err
 	}
 
+	// The hub arrives in task 5; until then a command publishes nowhere and
+	// clients read the order back from the response.
+	orders, err := svcorder.New(svcorder.Options{DB: database, Log: log})
+	if err != nil {
+		return err
+	}
+
 	srv := api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
 		api.WithDevices(devices),
 		api.WithStaff(staff),
+		api.WithOrders(orders),
 	)
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)

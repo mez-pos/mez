@@ -1,0 +1,227 @@
+package api
+
+import (
+	"time"
+
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+)
+
+// orderResponse is an order as every screen reads it: the projection, not
+// the events. A terminal redraws the bill from this and nothing else.
+type orderResponse struct {
+	ID        string     `json:"id"`
+	Status    string     `json:"status"`
+	Channel   string     `json:"channel"`
+	Currency  string     `json:"currency"`
+	TableID   int64      `json:"table_id,omitempty"`
+	Covers    int64      `json:"covers"`
+	OpenedBy  int64      `json:"opened_by,omitempty"`
+	OpenedAt  time.Time  `json:"opened_at"`
+	ClosedAt  *time.Time `json:"closed_at,omitempty"`
+	UpdatedAt time.Time  `json:"updated_at"`
+
+	// LastSeq is the order's last event. A client sends it back on a
+	// WebSocket reconnect to be told what it missed.
+	LastSeq  int64 `json:"last_seq"`
+	Reopens  int64 `json:"reopens,omitempty"`
+	Invoiced bool  `json:"invoiced"`
+
+	Lines     []lineResponse     `json:"lines"`
+	Notes     []noteResponse     `json:"notes"`
+	Tickets   []ticketResponse   `json:"tickets"`
+	Tenders   []tenderResponse   `json:"tenders"`
+	Refunds   []refundResponse   `json:"refunds"`
+	Invoices  []invoiceResponse  `json:"invoices"`
+	Discounts []discountResponse `json:"discounts"`
+
+	Totals totalsResponse `json:"totals"`
+	Tax    *taxResponse   `json:"tax,omitempty"`
+}
+
+// lineResponse is one line of the bill. The money fields are what the line
+// is worth now: Due is what the guest pays for it, and is what splitting by
+// item divides.
+type lineResponse struct {
+	ID        int64            `json:"id"`
+	ItemID    int64            `json:"item_id"`
+	Name      string           `json:"name"`
+	Qty       int64            `json:"qty"`
+	UnitPrice money.Amount     `json:"unit_price"`
+	Modifiers []order.Modifier `json:"modifiers,omitempty"`
+	Course    int64            `json:"course,omitempty"`
+	Station   string           `json:"station,omitempty"`
+
+	Status       string `json:"status"`
+	ReasonCode   string `json:"reason_code,omitempty"`
+	AuthorisedBy int64  `json:"authorised_by,omitempty"`
+	CourseFired  bool   `json:"course_fired"`
+	Sent         bool   `json:"sent"`
+
+	Gross    money.Amount `json:"gross"`
+	Discount money.Amount `json:"discount"`
+	Tax      money.Amount `json:"tax"`
+	Due      money.Amount `json:"due"`
+}
+
+type noteResponse struct {
+	Seq    int64  `json:"seq"`
+	Scope  string `json:"scope"`
+	LineID int64  `json:"line_id,omitempty"`
+	Text   string `json:"text"`
+}
+
+type ticketResponse struct {
+	Seq     int64     `json:"seq"`
+	Station string    `json:"station"`
+	LineIDs []int64   `json:"line_ids"`
+	At      time.Time `json:"at"`
+}
+
+type tenderResponse struct {
+	ID         int64        `json:"id"`
+	Method     string       `json:"method"`
+	Amount     money.Amount `json:"amount"`
+	Tip        money.Amount `json:"tip"`
+	Reference  string       `json:"reference,omitempty"`
+	Status     string       `json:"status"`
+	Refunded   money.Amount `json:"refunded"`
+	VoidReason string       `json:"void_reason,omitempty"`
+}
+
+type refundResponse struct {
+	Seq              int64        `json:"seq"`
+	Amount           money.Amount `json:"amount"`
+	AgainstPaymentID int64        `json:"against_payment_id"`
+	Reason           string       `json:"reason"`
+}
+
+type invoiceResponse struct {
+	Seq       int64  `json:"seq"`
+	InvoiceNo string `json:"invoice_no"`
+	Series    string `json:"series"`
+}
+
+type discountResponse struct {
+	Seq    int64        `json:"seq"`
+	Scope  string       `json:"scope"`
+	LineID int64        `json:"line_id,omitempty"`
+	Kind   string       `json:"kind"`
+	Reason string       `json:"reason"`
+	Value  money.Amount `json:"value"`
+}
+
+// totalsResponse is the money of the order. BalanceDue is what the charge
+// button shows.
+type totalsResponse struct {
+	Gross          money.Amount `json:"gross"`
+	LineDiscounts  money.Amount `json:"line_discounts"`
+	OrderDiscounts money.Amount `json:"order_discounts"`
+	Subtotal       money.Amount `json:"subtotal"`
+	Taxable        money.Amount `json:"taxable"`
+	Tax            money.Amount `json:"tax"`
+	Total          money.Amount `json:"total"`
+	Paid           money.Amount `json:"paid"`
+	Refunded       money.Amount `json:"refunded"`
+	NetPaid        money.Amount `json:"net_paid"`
+	BalanceDue     money.Amount `json:"balance_due"`
+	Tips           money.Amount `json:"tips"`
+	Voided         money.Amount `json:"voided"`
+	Comped         money.Amount `json:"comped"`
+}
+
+// taxResponse is the rate-wise summary a receipt prints. It is absent for an
+// untaxed venue rather than present and zero.
+type taxResponse struct {
+	Profile    string               `json:"profile"`
+	Pricing    string               `json:"pricing"`
+	Components []tax.ComponentTotal `json:"components"`
+	Taxable    money.Amount         `json:"taxable"`
+	Tax        money.Amount         `json:"tax"`
+	Total      money.Amount         `json:"total"`
+}
+
+// commandResponse is what a mutating endpoint answers: the order as it now
+// stands, and the events the command appended. Replayed says the command
+// carried an idempotency key that had already been applied, so this is the
+// earlier answer and nothing was written this time.
+type commandResponse struct {
+	Order    orderResponse `json:"order"`
+	Events   []order.Event `json:"events"`
+	Replayed bool          `json:"replayed,omitempty"`
+}
+
+// toCommandResponse renders a service result.
+func toCommandResponse(res svcorder.Result) commandResponse {
+	events := res.Events
+	if events == nil {
+		events = []order.Event{}
+	}
+	return commandResponse{Order: toOrderResponse(res), Events: events, Replayed: res.Replayed}
+}
+
+// toOrderResponse renders the projection.
+func toOrderResponse(res svcorder.Result) orderResponse {
+	s := res.State
+	out := orderResponse{
+		ID: res.PublicID, Status: string(s.Status), Channel: string(s.Channel), Currency: s.Currency,
+		TableID: s.TableID, Covers: s.Covers, OpenedBy: s.OpenedBy, OpenedAt: s.OpenedAt.UTC(),
+		UpdatedAt: s.UpdatedAt.UTC(), LastSeq: s.LastSeq, Reopens: s.Reopens, Invoiced: s.Invoiced,
+		Totals: totalsResponse(s.Totals),
+	}
+	if !s.ClosedAt.IsZero() {
+		closed := s.ClosedAt.UTC()
+		out.ClosedAt = &closed
+	}
+
+	out.Lines = make([]lineResponse, len(s.Lines))
+	for i, l := range s.Lines {
+		out.Lines[i] = lineResponse{
+			ID: l.ID, ItemID: l.ItemID, Name: l.Name, Qty: l.Qty, UnitPrice: l.UnitPrice,
+			Modifiers: l.Modifiers, Course: l.Course, Station: l.Station,
+			Status: string(l.Status), ReasonCode: l.ReasonCode, AuthorisedBy: l.AuthorisedBy,
+			CourseFired: l.CourseFired, Sent: l.Sent,
+			Gross: l.Gross, Discount: l.Discount, Tax: l.Tax, Due: l.Due,
+		}
+	}
+	out.Notes = make([]noteResponse, len(s.Notes))
+	for i, n := range s.Notes {
+		out.Notes[i] = noteResponse{Seq: n.Seq, Scope: string(n.Scope), LineID: n.LineID, Text: n.Text}
+	}
+	out.Tickets = make([]ticketResponse, len(s.Tickets))
+	for i, t := range s.Tickets {
+		out.Tickets[i] = ticketResponse{Seq: t.Seq, Station: t.Station, LineIDs: t.LineIDs, At: t.At.UTC()}
+	}
+	out.Tenders = make([]tenderResponse, len(s.Tenders))
+	for i, t := range s.Tenders {
+		out.Tenders[i] = tenderResponse{
+			ID: t.ID, Method: string(t.Method), Amount: t.Amount, Tip: t.Tip, Reference: t.Reference,
+			Status: string(t.Status), Refunded: t.Refunded, VoidReason: t.VoidReason,
+		}
+	}
+	out.Refunds = make([]refundResponse, len(s.Refunds))
+	for i, r := range s.Refunds {
+		out.Refunds[i] = refundResponse{Seq: r.Seq, Amount: r.Amount, AgainstPaymentID: r.AgainstPaymentID, Reason: r.Reason}
+	}
+	out.Invoices = make([]invoiceResponse, len(s.Invoices))
+	for i, in := range s.Invoices {
+		out.Invoices[i] = invoiceResponse{Seq: in.Seq, InvoiceNo: in.InvoiceNo, Series: in.Series}
+	}
+	out.Discounts = make([]discountResponse, len(s.Discounts))
+	for i, d := range s.Discounts {
+		out.Discounts[i] = discountResponse{
+			Seq: d.Seq, Scope: string(d.Scope), LineID: d.LineID, Kind: string(d.Kind),
+			Reason: d.Reason, Value: d.Value,
+		}
+	}
+	if s.TaxDetail.Profile != "" {
+		out.Tax = &taxResponse{
+			Profile: s.TaxDetail.Profile, Pricing: string(s.TaxDetail.Pricing),
+			Components: s.TaxDetail.Components, Taxable: s.TaxDetail.Taxable,
+			Tax: s.TaxDetail.Tax, Total: s.TaxDetail.Total,
+		}
+	}
+	return out
+}

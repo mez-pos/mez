@@ -11,23 +11,22 @@ File: `docs/phases/phase-04.md`. Phase 03 is complete.
 
 ## Last completed task
 
-**Phase 04, Task 3d - first-run setup. Task 3 is complete.** `nofiltr setup`
-(`cmd/nofiltr/setup.go`) creates the venue, the default roles, the owner with
-a PIN and the first pairing code, in one transaction that refuses to run on a
-database with a venue in it. `config.LoadArgs` exported so the subcommand
-resolves the data directory as the server does. Documented in
-`docs/running.md`. ADR-058.
-
-Phase 04 tasks 1 to 3 are done: order persistence, the order service, and
-auth (pairing, PIN sign-in, permissions, setup).
+**Phase 04, Task 4 - HTTP handlers.** `/api/v1/orders`: open, read, lines,
+qty, void, comp, discount, note, fire course, ticket, payment, payment void,
+refund, invoice, close, reopen. Orders by public ID (`Service.Resolve`).
+Every refusal mapped to a status and a code in `order_errors.go`; anything
+unmapped is a 500, by design. Override routes check the authoriser's
+permission, not the caller's, so a cashier can void with a manager present.
+`Idempotency-Key` honoured throughout; a replay answers 200. Wired in
+`cmd/nofiltr`. ADR-059.
 
 ## Next task
 
-**Phase 04, Task 4 - HTTP handlers.** `/api/v1` for orders, tickets, tables,
-menu read, payments, shifts. The pieces are in place: `api.Meta(r)` builds
-`service/order.Meta`, `api.Override` and `s.authorise` handle the manager
-override, `decodeJSON` and the error envelope are there, and every route
-mounts inside `requireDevice` and `requireStaff`.
+**Phase 04, Task 5 - WebSocket hub.** `internal/hub`. The service already
+publishes every change through `svcorder.Publisher`, which `cmd/nofiltr`
+leaves nil today; the hub is what fills it. Replay comes from
+`db.OrderEvents`, and a client's last-seen position is the `last_seq` every
+order response carries.
 
 ## Known broken / in progress
 

@@ -52,6 +52,7 @@ type Querier interface {
 	// transaction, so a rollback takes the number back. Never MAX(n)+1.
 	NextInvoiceSeq(ctx context.Context, arg NextInvoiceSeqParams) (int64, error)
 	OrderByID(ctx context.Context, id int64) (Order, error)
+	OrderByPublicID(ctx context.Context, publicID string) (Order, error)
 	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error)
 	OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapshot, error)
 	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)

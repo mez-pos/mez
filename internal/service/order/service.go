@@ -193,6 +193,20 @@ func (s *Service) publish(ctx context.Context, venueID int64, res Result) {
 	})
 }
 
+// Resolve turns the public ID a client uses into the internal one the
+// commands take. An order at another venue is not found, so an ID says
+// nothing about venues the caller cannot see.
+func (s *Service) Resolve(ctx context.Context, venueID int64, publicID string) (int64, error) {
+	row, err := s.db.Queries().OrderByPublicID(ctx, publicID)
+	if err != nil || row.VenueID != venueID {
+		if err == nil || isNoRows(err) {
+			return 0, fmt.Errorf("%w: %q", ErrOrderNotFound, publicID)
+		}
+		return 0, fmt.Errorf("reading order %q: %w", publicID, err)
+	}
+	return row.ID, nil
+}
+
 // Order is an order's current state, if it is at the caller's venue.
 func (s *Service) Order(ctx context.Context, venueID, orderID int64) (Result, error) {
 	row, err := s.db.Queries().OrderByID(ctx, orderID)

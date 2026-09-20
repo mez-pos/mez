@@ -113,6 +113,32 @@ func (q *Queries) OrderByID(ctx context.Context, id int64) (Order, error) {
 	return i, err
 }
 
+const orderByPublicID = `-- name: OrderByPublicID :one
+SELECT
+    id, public_id, venue_id, channel, table_id, status, last_seq,
+    opened_at, closed_at, updated_at
+FROM orders
+WHERE public_id = ?
+`
+
+func (q *Queries) OrderByPublicID(ctx context.Context, publicID string) (Order, error) {
+	row := q.db.QueryRowContext(ctx, orderByPublicID, publicID)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.VenueID,
+		&i.Channel,
+		&i.TableID,
+		&i.Status,
+		&i.LastSeq,
+		&i.OpenedAt,
+		&i.ClosedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const orderEventsAfter = `-- name: OrderEventsAfter :many
 SELECT id, order_id, seq, type, payload, actor_id, device_id, at
 FROM order_events

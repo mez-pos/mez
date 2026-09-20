@@ -20,6 +20,7 @@ type Server struct {
 	dbCheck func() string
 	devices Devices
 	staff   Staff
+	orders  Orders
 	limiter *limiter
 	handler http.Handler
 }
@@ -95,6 +96,7 @@ func (s *Server) routes() http.Handler {
 
 	s.mountDevices(mux)
 	s.mountStaff(mux)
+	s.mountOrders(mux)
 
 	// Anything else under /api keeps the JSON envelope. Without this, an
 	// unknown endpoint would fall through to the terminal bundle mounted at /
