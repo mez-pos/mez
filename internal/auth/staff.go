@@ -176,9 +176,62 @@ func (a *StaffAuth) ActiveStaff(ctx context.Context, venueID int64) ([]Staff, er
 // hash, so all three wrong answers take as long as each other and read the
 // same.
 func (a *StaffAuth) SignIn(ctx context.Context, dev Device, staffRef, pin string) (SignedIn, error) {
-	row, known, err := a.findStaff(ctx, dev.VenueID, staffRef)
+	row, err := a.verify(ctx, dev, staffRef, pin, nil)
 	if err != nil {
 		return SignedIn{}, err
+	}
+	now := a.now().UTC()
+	token, hashed, err := newToken(a.entropy, sessionTokenPrefix)
+	if err != nil {
+		return SignedIn{}, err
+	}
+	session := Session{
+		Staff:     staffOf(row),
+		DeviceID:  dev.ID,
+		ExpiresAt: now.Add(a.ttl),
+	}
+	err = a.db.WriteTx(ctx, func(q *gen.Queries) error {
+		session.ID, err = q.CreateStaffSession(ctx, gen.CreateStaffSessionParams{
+			TokenHash: hashed, VenueID: dev.VenueID, StaffID: row.ID, DeviceID: dev.ID,
+			CreatedAt: now, ExpiresAt: session.ExpiresAt,
+		})
+		return err
+	})
+	if err != nil {
+		return SignedIn{}, fmt.Errorf("auth: opening a session: %w", err)
+	}
+	return SignedIn{Session: session, Token: token}, nil
+}
+
+// Authorise checks a manager's PIN for one action, without opening a
+// session: the override behind a void, a comp, a discount, a payment void or
+// a reopen. The permission checked is the authoriser's, never the caller's.
+//
+// It runs the same gauntlet as a sign-in, so override attempts count toward
+// the same lockouts and are recorded in the same place.
+func (a *StaffAuth) Authorise(ctx context.Context, dev Device, staffRef, pin string, p Permission) (Staff, error) {
+	row, err := a.verify(ctx, dev, staffRef, pin, &p)
+	if err != nil {
+		return Staff{}, err
+	}
+	return staffOf(row), nil
+}
+
+// staffOf is a staff row as the rest of the system sees it.
+func staffOf(row gen.Staff) Staff {
+	return Staff{ID: row.ID, PublicID: row.PublicID, VenueID: row.VenueID, Name: row.Name, RoleID: row.RoleID}
+}
+
+// verify is the PIN check both a sign-in and an override run: find the staff
+// member, refuse a locked-out attempt before comparing anything, compare
+// against a dummy hash when there is nobody to compare against, and record
+// what happened. When need is set, the staff member must also hold that
+// permission, which is checked after the PIN so a manager who lacks it is
+// told apart from one who mistyped.
+func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string, need *Permission) (gen.Staff, error) {
+	row, known, err := a.findStaff(ctx, dev.VenueID, staffRef)
+	if err != nil {
+		return gen.Staff{}, err
 	}
 
 	// One attempt per staff member at a time, so parallel guesses cannot all
@@ -192,6 +245,7 @@ func (a *StaffAuth) SignIn(ctx context.Context, dev Device, staffRef, pin string
 	defer unlock()
 
 	now := a.now().UTC()
+
 	attempt := gen.RecordSignInAttemptParams{
 		VenueID: dev.VenueID, DeviceID: dev.ID, StaffRef: clip(staffRef), At: now,
 		StaffID: sql.NullInt64{Int64: row.ID, Valid: known},
@@ -199,15 +253,15 @@ func (a *StaffAuth) SignIn(ctx context.Context, dev Device, staffRef, pin string
 
 	if locked, err := a.locked(ctx, dev, row.ID, known, now); err != nil || locked != nil {
 		if err != nil {
-			return SignedIn{}, err
+			return gen.Staff{}, err
 		}
 		attempt.Outcome = outcomeLockedOut
 		if err := a.record(ctx, attempt, nil); err != nil {
-			return SignedIn{}, err
+			return gen.Staff{}, err
 		}
 		a.log.Warn("sign-in refused: locked out", "venue_id", dev.VenueID, "device_id", dev.ID,
 			"actor_id", row.ID, "scope", locked.Scope, "retry_after_s", int(locked.RetryAfter.Seconds()))
-		return SignedIn{}, locked
+		return gen.Staff{}, locked
 	}
 
 	hash, outcome := dummyHash(), outcomeUnknownStaff
@@ -228,34 +282,54 @@ func (a *StaffAuth) SignIn(ctx context.Context, dev Device, staffRef, pin string
 	if !match || outcome != outcomeInvalidPIN {
 		attempt.Outcome = outcome
 		if err := a.record(ctx, attempt, nil); err != nil {
-			return SignedIn{}, err
+			return gen.Staff{}, err
 		}
-		a.log.Warn("sign-in failed", "venue_id", dev.VenueID, "device_id", dev.ID, "actor_id", row.ID, "outcome", outcome)
-		return SignedIn{}, ErrInvalidPIN
+		a.log.Warn("PIN refused", "venue_id", dev.VenueID, "device_id", dev.ID, "actor_id", row.ID, "outcome", outcome)
+		return gen.Staff{}, ErrInvalidPIN
 	}
 
-	token, hashed, err := newToken(a.entropy, sessionTokenPrefix)
-	if err != nil {
-		return SignedIn{}, err
-	}
+	// The PIN was right, so the attempt succeeded and is recorded as such,
+	// whatever the permission check makes of it. A manager who is refused
+	// here mistyped nothing, and must not count toward a lockout.
 	attempt.Outcome = outcomeSuccess
-	session := Session{
-		Staff:     Staff{ID: row.ID, PublicID: row.PublicID, VenueID: row.VenueID, Name: row.Name, RoleID: row.RoleID},
-		DeviceID:  dev.ID,
-		ExpiresAt: now.Add(a.ttl),
+	if err := a.record(ctx, attempt, nil); err != nil {
+		return gen.Staff{}, err
 	}
-	err = a.record(ctx, attempt, func(q *gen.Queries) error {
-		session.ID, err = q.CreateStaffSession(ctx, gen.CreateStaffSessionParams{
-			TokenHash: hashed, VenueID: dev.VenueID, StaffID: row.ID, DeviceID: dev.ID,
-			CreatedAt: now, ExpiresAt: session.ExpiresAt,
-		})
-		return err
-	})
+	if need != nil {
+		held, err := a.Permissions(ctx, row.RoleID)
+		if err != nil {
+			return gen.Staff{}, err
+		}
+		if !held.Has(*need) {
+			a.log.Warn("authorisation refused", "venue_id", dev.VenueID, "device_id", dev.ID,
+				"actor_id", row.ID, "permission", string(*need))
+			return gen.Staff{}, fmt.Errorf("%w: %s cannot %s", ErrForbidden, row.Name, *need)
+		}
+	}
+	a.log.Info("PIN accepted", "venue_id", dev.VenueID, "device_id", dev.ID, "actor_id", row.ID)
+	return row, nil
+}
+
+// Permissions is what a role grants. A key this build does not know is
+// dropped and logged: it cannot be granted by code that never asks for it.
+func (a *StaffAuth) Permissions(ctx context.Context, roleID int64) (PermissionSet, error) {
+	role, err := a.db.Queries().RoleByID(ctx, roleID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return PermissionSet{}, nil
+	}
 	if err != nil {
-		return SignedIn{}, err
+		return nil, fmt.Errorf("auth: reading role %d: %w", roleID, err)
 	}
-	a.log.Info("staff signed in", "venue_id", dev.VenueID, "device_id", dev.ID, "actor_id", row.ID)
-	return SignedIn{Session: session, Token: token}, nil
+	set, unknown, err := parseStoredPermissions(role.Permissions)
+	if err != nil {
+		a.log.Error("a role's permissions cannot be read", "venue_id", role.VenueID, "role", role.Name, "error", err)
+		return PermissionSet{}, nil
+	}
+	if len(unknown) > 0 {
+		a.log.Warn("a role grants permissions this build does not know",
+			"venue_id", role.VenueID, "role", role.Name, "unknown", unknown)
+	}
+	return set, nil
 }
 
 // findStaff looks up the staff member a sign-in names, at the device's venue.

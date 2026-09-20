@@ -11,23 +11,23 @@ File: `docs/phases/phase-04.md`. Phase 03 is complete.
 
 ## Last completed task
 
-**Phase 04, Task 3b - staff PIN sign-in.** `internal/auth`: `HashPIN` and
-`verifyPIN` (Argon2id PHC, `golang.org/x/crypto`, ADR-055), `StaffAuth` with
-`SignIn` (dummy hash for unknown staff, sliding-window lockout 5/15min per
-staff and 20/15min per device, every attempt written), `Session` (device
-bound, 12h), `SignOut`, `ActiveStaff`. Migration 00005 (`staff_sessions`,
-`sign_in_attempts`). `internal/api`: `WithStaff`, `requireStaff`
-(`X-Staff-Token`), `GET /api/v1/staff`, `POST /api/v1/sessions`, `GET` and
-`DELETE /api/v1/sessions/current`. Also 3a's gaps: a per-IP rate limit on
-pairing, and `venue_id`, `device_id`, `actor_id` on the access log. ADR-056.
+**Phase 04, Task 3c - roles and permissions.** `internal/auth`: a closed
+`Permission` list (15 keys), `PermissionSet` with strict writes and lenient
+reads, `DefaultRoles` (owner, manager, cashier, kitchen),
+`StaffAuth.Permissions`, and `Authorise` (the manager override: same
+lockouts and attempt log as a sign-in, no session, PIN then permission).
+`internal/api`: `requirePermission` (typed `forbidden`, 403), `Override` and
+`s.authorise` for request bodies, `Meta(r)` building `service/order.Meta`
+from what was proved plus `Idempotency-Key`, and
+`POST /api/v1/devices/codes` behind `device.manage`. ADR-057.
 
 ## Next task
 
-**Phase 04, Task 3c - roles and permissions.** Scope in the phase file. The
-permission keys as a Go enum, `requirePermission` returning a typed
-`forbidden`, manager override checking the authoriser's permission and PIN,
-and the authenticated venue, staff and device wired into
-`service/order.Meta`.
+**Phase 04, Task 3d - first-run setup.** Scope in the phase file. A
+`nofiltr setup` command creating the venue, `auth.DefaultRoles`, the owner
+with a PIN (`auth.HashPIN`) and the first pairing code
+(`Devices.CreatePairingCode`), refusing to run on a database that already
+has a venue.
 
 ## Known broken / in progress
 

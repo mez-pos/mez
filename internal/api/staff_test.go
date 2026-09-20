@@ -20,6 +20,7 @@ import (
 
 // till is a signed-in world: a paired terminal, and Asha with PIN 2468.
 type till struct {
+	srv         *Server
 	handler     http.Handler
 	deviceToken string
 	log         *bytes.Buffer
@@ -50,15 +51,40 @@ func newTill(t *testing.T) *till {
 		if err != nil {
 			return err
 		}
-		role, err := q.CreateRole(ctx, gen.CreateRoleParams{VenueID: v.ID, Name: "cashier", Permissions: "[]", CreatedAt: at})
-		if err != nil {
-			return err
+		// The default roles, so a permission check has something real to
+		// read: Asha is a cashier, Priya owns the place.
+		roles := map[string]int64{}
+		for _, template := range auth.DefaultRoles() {
+			set, err := auth.NewPermissionSet(permissionKeys(template.Permissions))
+			if err != nil {
+				return err
+			}
+			raw, err := set.JSON()
+			if err != nil {
+				return err
+			}
+			role, err := q.CreateRole(ctx, gen.CreateRoleParams{
+				VenueID: v.ID, Name: template.Name, Permissions: raw, CreatedAt: at,
+			})
+			if err != nil {
+				return err
+			}
+			roles[template.Name] = role.ID
 		}
-		_, err = q.CreateStaff(ctx, gen.CreateStaffParams{
-			PublicID: "stf_ASHA0001", VenueID: v.ID, RoleID: role.ID, Name: "Asha", PinHash: pin,
-			Active: true, CreatedAt: at, UpdatedAt: at,
-		})
-		return err
+		for _, member := range []struct {
+			publicID, name, role string
+		}{
+			{"stf_ASHA0001", "Asha", "cashier"},
+			{"stf_PRIYA001", "Priya", "owner"},
+		} {
+			if _, err := q.CreateStaff(ctx, gen.CreateStaffParams{
+				PublicID: member.publicID, VenueID: v.ID, RoleID: roles[member.role], Name: member.name,
+				PinHash: pin, Active: true, CreatedAt: at, UpdatedAt: at,
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 	if err != nil {
 		t.Fatalf("seeding: %v", err)
@@ -80,7 +106,7 @@ func newTill(t *testing.T) *till {
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := &till{handler: srv.Handler(), log: logged}
+	w := &till{srv: srv, handler: srv.Handler(), log: logged}
 	w.deviceToken = pairOK(t, w.handler, code.Code).Token
 	return w
 }
@@ -95,10 +121,24 @@ func (w *till) asStaff(token string) map[string]string {
 	return h
 }
 
-// signIn signs Asha in and returns the response.
+// permissionKeys is a template's permissions as the strings a role stores.
+func permissionKeys(perms []auth.Permission) []string {
+	keys := make([]string, len(perms))
+	for i, p := range perms {
+		keys[i] = string(p)
+	}
+	return keys
+}
+
+// signIn signs Asha the cashier in and returns the response.
 func (w *till) signIn(t *testing.T, pin string) sessionResponse {
 	t.Helper()
-	rec := send(w.handler, http.MethodPost, "/api/v1/sessions", `{"staff_id":"stf_ASHA0001","pin":"`+pin+`"}`, w.asDevice())
+	return w.signInAs(t, "stf_ASHA0001", pin)
+}
+
+func (w *till) signInAs(t *testing.T, staffID, pin string) sessionResponse {
+	t.Helper()
+	rec := send(w.handler, http.MethodPost, "/api/v1/sessions", `{"staff_id":"`+staffID+`","pin":"`+pin+`"}`, w.asDevice())
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("sign in: status %d, body %s", rec.Code, rec.Body)
 	}
@@ -117,7 +157,7 @@ func TestSignInOverHTTP(t *testing.T) {
 
 	rec := send(w.handler, http.MethodGet, "/api/v1/staff", "", w.asDevice())
 	var list staffListResponse
-	if err := json.Unmarshal(rec.Body.Bytes(), &list); err != nil || len(list.Staff) != 1 || list.Staff[0].ID != "stf_ASHA0001" {
+	if err := json.Unmarshal(rec.Body.Bytes(), &list); err != nil || len(list.Staff) != 2 || list.Staff[0].ID != "stf_ASHA0001" {
 		t.Fatalf("staff list = %s (%v)", rec.Body, err)
 	}
 
@@ -336,6 +376,12 @@ func (brokenStaff) Session(context.Context, auth.Device, string) (auth.Session, 
 	return auth.Session{}, errDiskGone
 }
 func (brokenStaff) SignOut(context.Context, auth.Session) error { return errDiskGone }
+func (brokenStaff) Permissions(context.Context, int64) (auth.PermissionSet, error) {
+	return nil, errDiskGone
+}
+func (brokenStaff) Authorise(context.Context, auth.Device, string, string, auth.Permission) (auth.Staff, error) {
+	return auth.Staff{}, errDiskGone
+}
 
 // workingDevices admits any token, so the staff layer behind it can be
 // exercised on its own.
@@ -346,6 +392,9 @@ func (workingDevices) Authenticate(context.Context, string) (auth.Device, error)
 }
 func (workingDevices) Redeem(context.Context, string) (auth.Paired, error) {
 	return auth.Paired{}, errors.New("not used")
+}
+func (workingDevices) CreatePairingCode(context.Context, auth.NewCode) (auth.PairingCode, error) {
+	return auth.PairingCode{}, errors.New("not used")
 }
 
 func TestStaffFailuresThatAreNotTheClientsFault(t *testing.T) {

@@ -215,6 +215,9 @@ func (brokenDevices) Authenticate(context.Context, string) (auth.Device, error) 
 func (brokenDevices) Redeem(context.Context, string) (auth.Paired, error) {
 	return auth.Paired{}, errDiskGone
 }
+func (brokenDevices) CreatePairingCode(context.Context, auth.NewCode) (auth.PairingCode, error) {
+	return auth.PairingCode{}, errDiskGone
+}
 
 func TestAuthFailuresThatAreNotTheClientsFault(t *testing.T) {
 	h := newTestServer(t, testConfig(), WithDevices(brokenDevices{})).Handler()

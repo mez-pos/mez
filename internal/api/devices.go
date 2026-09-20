@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 )
@@ -14,6 +15,7 @@ import (
 type Devices interface {
 	Authenticate(ctx context.Context, token string) (auth.Device, error)
 	Redeem(ctx context.Context, code string) (auth.Paired, error)
+	CreatePairingCode(ctx context.Context, n auth.NewCode) (auth.PairingCode, error)
 }
 
 // WithDevices turns on device authentication and the pairing endpoint.
@@ -41,6 +43,53 @@ func (s *Server) mountDevices(mux *http.ServeMux) {
 
 	mux.Handle("GET /api/v1/devices/me", s.requireDevice(http.HandlerFunc(s.currentDevice)))
 	mux.HandleFunc("/api/v1/devices/me", s.methodNotAllowed)
+
+	// Making a code is a back office action: a signed-in staff member who
+	// may manage devices, on a device that is already paired.
+	if s.staff != nil {
+		mux.Handle("POST /api/v1/devices/codes", s.requireDevice(s.requireStaff(
+			s.requirePermission(auth.PermDeviceManage, http.HandlerFunc(s.createPairingCode)))))
+		mux.HandleFunc("/api/v1/devices/codes", s.methodNotAllowed)
+	}
+}
+
+// newCodeRequest is the body of POST /api/v1/devices/codes.
+type newCodeRequest struct {
+	Name string `json:"name"`
+	Kind string `json:"kind"`
+}
+
+// pairingCodeResponse is a code to read out to whoever is pairing.
+type pairingCodeResponse struct {
+	Code      string    `json:"code"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+// createPairingCode makes a code for one new device.
+func (s *Server) createPairingCode(w http.ResponseWriter, r *http.Request) {
+	var req newCodeRequest
+	if err := decodeJSON(w, r, &req); err != nil {
+		writeError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, err.Error())
+		return
+	}
+	dev, _ := DeviceFrom(r.Context())
+	session, _ := SessionFrom(r.Context())
+
+	code, err := s.devices.CreatePairingCode(r.Context(), auth.NewCode{
+		VenueID: dev.VenueID, CreatedBy: session.Staff.ID, DeviceName: req.Name, DeviceKind: req.Kind,
+	})
+	if errors.Is(err, auth.ErrInvalidDevice) {
+		writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, err.Error(), "kind")
+		return
+	}
+	if err != nil {
+		s.log.Error("making a pairing code failed", "request_id", RequestID(r.Context()), "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
+	// The code pairs a device, so it is a secret for as long as it lives.
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, s.log, http.StatusCreated, pairingCodeResponse{Code: code.Code, ExpiresAt: code.ExpiresAt.UTC()})
 }
 
 // requireDevice admits a request carrying a paired, unrevoked device's token

@@ -53,3 +53,8 @@ UPDATE staff
 SET active     = 0,
     updated_at = ?
 WHERE id = ?;
+
+-- name: RoleByID :one
+SELECT id, venue_id, name, permissions, created_at
+FROM roles
+WHERE id = ?;

@@ -34,9 +34,9 @@ func newStaffWorld(t *testing.T) *staffWorld {
 	w.till = pair(t, devs, 1).Device
 	w.bar = pair(t, devs, 1).Device
 	w.other = pair(t, devs, 2).Device
-	w.asha = addStaff(t, d, 1, "stf_ASHA0001", "Asha", "2468")
-	w.ravi = addStaff(t, d, 1, "stf_RAVI0001", "Ravi", "1357")
-	w.meera = addStaff(t, d, 2, "stf_MEERA001", "Meera", "2468")
+	w.asha = addStaff(t, d, 1, "stf_ASHA0001", "Asha", "2468", "cashier")
+	w.ravi = addStaff(t, d, 1, "stf_RAVI0001", "Ravi", "1357", "manager")
+	w.meera = addStaff(t, d, 2, "stf_MEERA001", "Meera", "2468", "cashier")
 	a, err := NewStaffAuth(StaffOptions{DB: d, Now: c.now})
 	if err != nil {
 		t.Fatalf("NewStaffAuth: %v", err)
@@ -45,7 +45,10 @@ func newStaffWorld(t *testing.T) *staffWorld {
 	return w
 }
 
-func addStaff(t *testing.T, d *db.DB, venue int64, publicID, name, pin string) gen.Staff {
+// addStaff creates a staff member, and the role they hold if the venue does
+// not have it yet. Roles start with no permissions: a test that needs one
+// grants it, so what is being relied on is written down in the test.
+func addStaff(t *testing.T, d *db.DB, venue int64, publicID, name, pin, roleName string) gen.Staff {
 	t.Helper()
 	ctx := context.Background()
 	hash, err := HashPIN(pin)
@@ -59,10 +62,13 @@ func addStaff(t *testing.T, d *db.DB, venue int64, publicID, name, pin string) g
 			return err
 		}
 		roleID := int64(0)
-		if len(roles) > 0 {
-			roleID = roles[0].ID
-		} else {
-			r, err := q.CreateRole(ctx, gen.CreateRoleParams{VenueID: venue, Name: "cashier", Permissions: "[]", CreatedAt: start})
+		for _, r := range roles {
+			if r.Name == roleName {
+				roleID = r.ID
+			}
+		}
+		if roleID == 0 {
+			r, err := q.CreateRole(ctx, gen.CreateRoleParams{VenueID: venue, Name: roleName, Permissions: "[]", CreatedAt: start})
 			if err != nil {
 				return err
 			}

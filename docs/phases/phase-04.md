@@ -70,7 +70,7 @@ Phase 03.
     (429 `rate_limited` with Retry-After), and `venue_id`, `device_id` and
     `staff_id` on the access log line of every authenticated request.
 
-  - [ ] **Task 3c - Roles and permissions.**
+  - [x] **Task 3c - Roles and permissions.**
     The permission keys as a Go enum, exhaustive, with the roles' JSON arrays
     validated against it. `requirePermission(p)` middleware returning a typed
     `forbidden` (403) error, never a 500. Manager override: commands that

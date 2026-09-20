@@ -46,6 +46,11 @@ const (
 	// CodeRateLimited is too many requests from one address. The response
 	// carries Retry-After.
 	CodeRateLimited = "rate_limited"
+
+	// CodeForbidden is a staff member without the permission the endpoint
+	// needs, or an authoriser without it. Field names the permission, or
+	// the field carrying the authoriser.
+	CodeForbidden = "forbidden"
 )
 
 // Error is one failure, in the shape 03-conventions.md fixes for every endpoint.

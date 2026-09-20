@@ -22,6 +22,8 @@ type Staff interface {
 	SignIn(ctx context.Context, dev auth.Device, staffRef, pin string) (auth.SignedIn, error)
 	Session(ctx context.Context, dev auth.Device, token string) (auth.Session, error)
 	SignOut(ctx context.Context, s auth.Session) error
+	Permissions(ctx context.Context, roleID int64) (auth.PermissionSet, error)
+	Authorise(ctx context.Context, dev auth.Device, staffRef, pin string, p auth.Permission) (auth.Staff, error)
 }
 
 // WithStaff turns on staff sign-in. It needs WithDevices: a PIN is only

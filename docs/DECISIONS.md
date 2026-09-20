@@ -1170,3 +1170,46 @@ draw the sign-in tiles. Lockout state is derived from the attempts table on
 every sign-in rather than cached. The rate limiter is per process and resets
 with it. Sessions are not swept: expired rows stay until something deletes
 them.
+
+## ADR-057 - Permissions: a closed list, read leniently, and an override that checks the authoriser
+2026-09 · Status: accepted
+Decision: `internal/auth` owns the permission vocabulary and the override.
+- `Permission` is a closed list of fifteen keys, ten for the register and
+  five for the back office. A role is written through `NewPermissionSet`,
+  which refuses a key this build does not know, so a typo fails in the back
+  office rather than granting nothing quietly.
+- A stored role is read leniently: an unknown key is dropped and logged
+  rather than failing the read. A database written by a newer build must
+  still let today's binary serve what it understands, and a permission this
+  build never asks for cannot be granted by accident. A role that is missing
+  entirely, or whose column cannot be parsed, grants nothing.
+- `DefaultRoles` are owner, manager, cashier and kitchen. The owner holds
+  everything; a manager cannot change prices or tax settings; a cashier
+  cannot void, comp or discount without one. They are a starting point the
+  owner edits, not a hierarchy the code enforces.
+- `StaffAuth.Authorise(dev, staffRef, pin, permission)` is the manager
+  override. It runs the same gauntlet as a sign-in, sharing its lockouts and
+  its attempt log, but opens no session. The PIN is checked first and the
+  permission second, so a correct PIN refused on permission is recorded as a
+  success and does not count toward a lockout: a manager who lacks a
+  permission has mistyped nothing.
+- `internal/api`: `requirePermission(p)` inside `requireStaff`, answering a
+  typed `forbidden` (403) naming the permission. `Override` is the struct a
+  request body embeds, and `s.authorise` checks it and answers the client,
+  mapping to `forbidden`, `invalid_pin` or `locked_out`. `Meta(r)` builds
+  `service/order.Meta` from what authentication proved, plus the
+  `Idempotency-Key` header, so a handler cannot pass a venue or an actor the
+  request did not establish.
+- `POST /api/v1/devices/codes` is 3a's code creation, behind
+  `device.manage`.
+Because: the override exists so that the person at the till cannot void
+their own mistakes, which means the permission checked must be the
+authoriser's and the audit trail must name them. Sharing the sign-in path
+means an override cannot be used to brute-force a manager's PIN past the
+lockout. A closed list keeps "what can a role do" answerable by reading one
+file.
+Cost: the permission set is checked per request, one indexed read, not
+cached. A role changed mid-shift takes effect on the next request, which is
+the behaviour wanted, but it also means a busy terminal reads the role row
+constantly. The override PIN travels in the request body over the LAN;
+phase 12's TLS story is what covers that.

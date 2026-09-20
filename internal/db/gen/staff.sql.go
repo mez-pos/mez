@@ -160,6 +160,25 @@ func (q *Queries) DeactivateStaff(ctx context.Context, arg DeactivateStaffParams
 	return err
 }
 
+const roleByID = `-- name: RoleByID :one
+SELECT id, venue_id, name, permissions, created_at
+FROM roles
+WHERE id = ?
+`
+
+func (q *Queries) RoleByID(ctx context.Context, id int64) (Role, error) {
+	row := q.db.QueryRowContext(ctx, roleByID, id)
+	var i Role
+	err := row.Scan(
+		&i.ID,
+		&i.VenueID,
+		&i.Name,
+		&i.Permissions,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const rolesForVenue = `-- name: RolesForVenue :many
 SELECT id, venue_id, name, permissions, created_at
 FROM roles

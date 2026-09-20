@@ -68,6 +68,7 @@ type Querier interface {
 	// Revoked rather than deleted, and the token hash kept, so a revoked token is
 	// recognised and refused as revoked rather than as unknown.
 	RevokeDevice(ctx context.Context, arg RevokeDeviceParams) (int64, error)
+	RoleByID(ctx context.Context, id int64) (Role, error)
 	RolesForVenue(ctx context.Context, venueID int64) ([]Role, error)
 	SaveIdempotencyKey(ctx context.Context, arg SaveIdempotencyKeyParams) error
 	SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotParams) error
