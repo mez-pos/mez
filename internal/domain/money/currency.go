@@ -37,6 +37,22 @@ func Exponent(currency string) int {
 	return defaultExponent
 }
 
+// DefaultExponent is the decimal places of any currency Exponents does not
+// list.
+const DefaultExponent = defaultExponent
+
+// Exponents is every currency whose exponent is not DefaultExponent. It is a
+// copy, so a caller cannot change how amounts are read. The TypeScript
+// generator emits it, so the frontends read minor units exactly as the
+// server does.
+func Exponents() map[string]int {
+	out := make(map[string]int, len(exponents))
+	for code, e := range exponents {
+		out[code] = e
+	}
+	return out
+}
+
 // validCurrency reports whether a currency code is well formed: exactly three
 // uppercase ASCII letters.
 //

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { StrictMode } from "react";
+import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { devCredentials } from "../../shared/credentials";
 import { createQueryClient } from "../../shared/query";
@@ -12,6 +12,10 @@ if (!root) {
   throw new Error("index.html has no #root element");
 }
 
+// The component gallery, in development only. import.meta.env.DEV is false in
+// a production build, so this branch and the lazy import both disappear.
+const Gallery = import.meta.env.DEV && window.location.pathname === "/gallery" ? lazy(() => import("./Gallery")) : null;
+
 const queryClient = createQueryClient();
 const realtime = createRealtime(devCredentials);
 
@@ -19,7 +23,13 @@ createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RealtimeProvider connection={realtime}>
-        <App />
+        {Gallery ? (
+          <Suspense>
+            <Gallery />
+          </Suspense>
+        ) : (
+          <App />
+        )}
       </RealtimeProvider>
     </QueryClientProvider>
   </StrictMode>,

@@ -1515,3 +1515,43 @@ message type in the hub would be the tidier contract. Until Task 6, a
 device token only reaches the client in development, through
 `VITE_DEVICE_TOKEN` in a gitignored `.env.local`; production builds drop that
 branch, and the built bundles were checked for it.
+
+## ADR-066 - Primitives: money through BigInt, chips from typed vocabularies, rem left alone
+2026-09 · Status: accepted
+Decision: the phase 05 part-one primitives live in `web/shared/ui/`, shared by
+all three apps, with their logic in plain modules tested by Vitest.
+- **Money is formatted without a float.** `formatMoney` gives Intl the major
+  part as a BigInt and replaces the fraction with digits cut from the minor
+  integer's decimal string. That is exact to `Number.MAX_SAFE_INTEGER`
+  paise, and BigInt works on the older phones guest must serve. The
+  exponent comes from `currencyExponents`, now generated from
+  `money.Exponents()`, so ¥1234 cannot be shown as 12.34 by a table that
+  drifted. Grouping follows the currency (lakhs for INR) until the venue's
+  locale exists. Negative is U+2212, the width of a digit. An amount that is
+  not a safe integer renders "Invalid amount" in danger rather than a guess.
+- **StatusChip takes `{ kind, status }`**, where each kind is a `Record` over
+  a generated union (`OrderStatus`, `PaymentStatus`, `LineStatus`) or the
+  kitchen list from tokens.md. A status added in Go fails the TypeScript
+  build until it has a tone and a word. Tests hold vermilion to "Late" alone
+  and strike through exactly the voided states.
+- **Chip tokens for ink, and two for paper, are now in tokens.md.** Ink
+  tints the status colour at 12% and 30% (accent at its measured 14% and
+  40%). The design's paper "warning" chip is vermilion-toned, so it became
+  the accent chip. Gold and slate chips on paper are derived with the
+  measured recipe (8% and 25%), with darker text values
+  (`--gold-paper-text`, `--slate-paper-text`) because the status colours
+  are 2.4:1 and 3.2:1 on them. The derived text is 4.6:1, like vermilion's
+  existing text value.
+- **The surface rule no longer sets font-size on the root.** The apps put
+  `data-surface` on `<html>`, so the 15px body size had redefined `rem` and
+  shrunk every Tailwind spacing class by 6%: `h-8` was 30px. The tap
+  targets were right only because they are px tokens. Measured in the
+  gallery after the fix: 32, 36, 44 and 58px, card padding 16px.
+- The gallery is a `pathname` check behind `import.meta.env.DEV` with a lazy
+  import. There is no router yet; Task 6's guards will choose one.
+Because: money and status are where a wrong glyph costs something, so both
+are driven by data the server generates and pinned by tests. The rem bug
+would have put every later screen 6% off its spec, silently.
+Cost: the chip words for server states ("Paid" for captured, "Held",
+"Comped") are this task's choice and are in one file to change. The paper
+primary button still uses `--vermilion-on`, 3.99:1 (ADR-062).

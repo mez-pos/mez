@@ -76,7 +76,7 @@
   const typeScale = ["text-meta", "text-sm", "text-base", "text-lg", "text-xl", "text-total"];
   const spacing = [2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 48, 64];
   const radii = ["radius-none", "radius-tight", "radius", "radius-round"];
-  const chips = ["neutral", "success", "warning", "danger"];
+  const chips = ["neutral", "success", "warning", "danger", "accent", "info"];
 
   const el = (tag, attrs = {}, ...kids) => {
     const n = document.createElement(tag);
@@ -144,12 +144,10 @@
     ground.append(el("div", { class: "row" }, ...statuses.map(([c, w]) => el("span", { class: "status", style: `color: var(--${c})` }, w)),
       el("span", { class: "status", style: "color: var(--fg-muted); text-decoration: line-through" }, "Void")));
 
-    if (g === "paper") {
-      ground.append(heading("Status chips on paper: background, border, text"));
-      ground.append(el("div", { class: "row" }, ...chips.map(c => el("span", { class: "pchip",
-        style: `background: var(--paper-chip-${c}-bg); border-color: var(--paper-chip-${c}-border); color: var(--paper-chip-${c}-text)` },
-        c[0].toUpperCase() + c.slice(1)))));
-    }
+    ground.append(heading("Status chips: background, border, text"));
+    ground.append(el("div", { class: "row" }, ...chips.map(c => el("span", { class: "pchip",
+      style: `background: var(--chip-${c}-bg); border-color: var(--chip-${c}-border); color: var(--chip-${c}-fg)` },
+      c[0].toUpperCase() + c.slice(1)))));
 
     ground.append(heading("Touch: tap-min 44 · tap-charge 58 · tap-gap 8"));
     ground.append(el("div", { class: "row", style: "gap: var(--tap-gap); align-items: center" },

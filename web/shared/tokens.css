@@ -66,6 +66,10 @@
   --danger-paper: #b23a2c;
   --slate: #7e86a8;
 
+  /* Paper text values darker than their status colour, for chips (derived) */
+  --gold-paper-text: #8a6a28;
+  --slate-paper-text: #636c93;
+
   /* Status chips on paper: background, border, text */
   --paper-chip-neutral-bg: #fffdf8;
   --paper-chip-neutral-border: #e3ded2;
@@ -73,12 +77,38 @@
   --paper-chip-success-bg: #f2f5ef;
   --paper-chip-success-border: #d6dfce;
   --paper-chip-success-text: #5e7a4e;
-  --paper-chip-warning-bg: #fbf1e8;
-  --paper-chip-warning-border: #edd6bf;
-  --paper-chip-warning-text: #b4522f;
+  --paper-chip-accent-bg: #fbf1e8;
+  --paper-chip-accent-border: #edd6bf;
+  --paper-chip-accent-text: #b4522f;
   --paper-chip-danger-bg: #fcecea;
   --paper-chip-danger-border: #efcfca;
   --paper-chip-danger-text: #b23a2c;
+  --paper-chip-warning-bg: #fbf5e9; /* derived */
+  --paper-chip-warning-border: #f1e4c9; /* derived */
+  --paper-chip-warning-text: var(--gold-paper-text);
+  --paper-chip-info-bg: #f5f3f2; /* derived */
+  --paper-chip-info-border: #dfdfe4; /* derived */
+  --paper-chip-info-text: var(--slate-paper-text);
+
+  /* Status chips on ink: the status colour tinted over the surface */
+  --ink-chip-neutral-bg: var(--ink-raised-high);
+  --ink-chip-neutral-border: var(--ink-hairline-2);
+  --ink-chip-neutral-text: var(--ink-text-muted);
+  --ink-chip-success-bg: rgba(127, 160, 107, 0.12);
+  --ink-chip-success-border: rgba(127, 160, 107, 0.3);
+  --ink-chip-success-text: var(--sage);
+  --ink-chip-warning-bg: rgba(224, 163, 60, 0.12);
+  --ink-chip-warning-border: rgba(224, 163, 60, 0.3);
+  --ink-chip-warning-text: var(--gold-ink);
+  --ink-chip-danger-bg: rgba(212, 90, 78, 0.12);
+  --ink-chip-danger-border: rgba(212, 90, 78, 0.3);
+  --ink-chip-danger-text: var(--danger);
+  --ink-chip-accent-bg: rgba(221, 90, 42, 0.14);
+  --ink-chip-accent-border: rgba(221, 90, 42, 0.4);
+  --ink-chip-accent-text: var(--vermilion);
+  --ink-chip-info-bg: rgba(126, 134, 168, 0.12);
+  --ink-chip-info-border: rgba(126, 134, 168, 0.3);
+  --ink-chip-info-text: var(--slate);
 
   /* Type */
   --font-serif: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
@@ -135,6 +165,25 @@
   --status-danger: var(--danger);
   --status-info: var(--slate);
 
+  --chip-neutral-bg: var(--ink-chip-neutral-bg);
+  --chip-neutral-border: var(--ink-chip-neutral-border);
+  --chip-neutral-fg: var(--ink-chip-neutral-text);
+  --chip-success-bg: var(--ink-chip-success-bg);
+  --chip-success-border: var(--ink-chip-success-border);
+  --chip-success-fg: var(--ink-chip-success-text);
+  --chip-warning-bg: var(--ink-chip-warning-bg);
+  --chip-warning-border: var(--ink-chip-warning-border);
+  --chip-warning-fg: var(--ink-chip-warning-text);
+  --chip-danger-bg: var(--ink-chip-danger-bg);
+  --chip-danger-border: var(--ink-chip-danger-border);
+  --chip-danger-fg: var(--ink-chip-danger-text);
+  --chip-accent-bg: var(--ink-chip-accent-bg);
+  --chip-accent-border: var(--ink-chip-accent-border);
+  --chip-accent-fg: var(--ink-chip-accent-text);
+  --chip-info-bg: var(--ink-chip-info-bg);
+  --chip-info-border: var(--ink-chip-info-border);
+  --chip-info-fg: var(--ink-chip-info-text);
+
   background: var(--canvas);
   color: var(--fg);
 }
@@ -172,15 +221,42 @@
   --status-danger: var(--danger-paper);
   --status-info: var(--slate);
 
+  --chip-neutral-bg: var(--paper-chip-neutral-bg);
+  --chip-neutral-border: var(--paper-chip-neutral-border);
+  --chip-neutral-fg: var(--paper-chip-neutral-text);
+  --chip-success-bg: var(--paper-chip-success-bg);
+  --chip-success-border: var(--paper-chip-success-border);
+  --chip-success-fg: var(--paper-chip-success-text);
+  --chip-warning-bg: var(--paper-chip-warning-bg);
+  --chip-warning-border: var(--paper-chip-warning-border);
+  --chip-warning-fg: var(--paper-chip-warning-text);
+  --chip-danger-bg: var(--paper-chip-danger-bg);
+  --chip-danger-border: var(--paper-chip-danger-border);
+  --chip-danger-fg: var(--paper-chip-danger-text);
+  --chip-accent-bg: var(--paper-chip-accent-bg);
+  --chip-accent-border: var(--paper-chip-accent-border);
+  --chip-accent-fg: var(--paper-chip-accent-text);
+  --chip-info-bg: var(--paper-chip-info-bg);
+  --chip-info-border: var(--paper-chip-info-border);
+  --chip-info-fg: var(--paper-chip-info-text);
+
   background: var(--canvas);
   color: var(--fg);
 }
 
 [data-surface] {
   font-family: var(--font-sans);
-  font-size: var(--text-base);
   font-feature-settings: "tnum" 1;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Body size below the root, never on it. The apps put data-surface on <html>,
+   and a font-size there redefines rem: at 15px every Tailwind spacing class
+   came out 6% small (h-8 was 30px). rem stays the browser's, 16px unless the
+   user has chosen otherwise. */
+[data-surface]:not(:root),
+:root[data-surface] > body {
+  font-size: var(--text-base);
 }
 
 /* Mobile Safari zooms on focus below 16px, and on the guest surface that

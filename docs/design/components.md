@@ -8,10 +8,10 @@ the same task, don't invent a one-off.
 
 | Component | Notes |
 |---|---|
-| `Button` | variants: primary (vermilion), secondary, ghost, danger. sizes: sm, md, tap (44px), charge (58px) |
-| `Money` | renders an `Amount`. Mono, tabular, right-aligned, currency-aware. **The only way money is ever rendered.** |
-| `Qty` | mono, tabular, with +/− tap targets |
-| `StatusChip` | colour **and** word. Takes a status enum, never free text |
+| `Button` | variants: primary (vermilion), secondary, ghost, danger (outlined). sizes: sm (32px), md (36px), tap (44px, the default), charge (58px). Labels are 15px at every size |
+| `Money` | renders an `Amount`. Mono, tabular, right-aligned, currency-aware. **The only way money is ever rendered.** `variant="total"` is the one serif total on a screen. Negative uses U+2212 |
+| `Qty` | mono, tabular, with +/− tap targets. Reports the next value; holds none |
+| `StatusChip` | colour **and** word. Takes `{ kind, status }` from `web/shared/ui/status.ts`: kitchen, order, payment or line. Never free text |
 | `Card` | ink-raised or paper surface |
 | `Sheet` | bottom sheet on touch, side panel on desktop |
 | `Modal` | confirm, form. Escape and a visible close, always |
@@ -21,7 +21,11 @@ the same task, don't invent a one-off.
 | `Toast` | transient. Never for errors that need a decision |
 | `EmptyState` | icon, one line, one action |
 | `Timeline` | renders an order's event stream |
-| `Meta` | the small-caps trail: `TERMINAL · REGISTER` |
+| `Meta` | the small-caps trail: `TERMINAL · REGISTER`. Items in ordinary case, uppercased by CSS |
+
+Built primitives live in `web/shared/ui/` and are exported from its
+`index.ts`. The dev-only gallery at `/gallery` in the terminal shows each one
+on ink and on paper.
 
 ## Composites (built inside their own phase)
 

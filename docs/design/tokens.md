@@ -113,6 +113,9 @@ grounds. Pick by surface, never by taste.
 | Danger, error, refund, void | `--danger` `#D45A4E` | `--danger-paper` `#B23A2C` |
 | Info, channel, reserved | `--slate` `#7E86A8` | `--slate` `#7E86A8` |
 
+Two text values for paper chips, derived (see Status chips):
+`--gold-paper-text` `#8A6A28` and `--slate-paper-text` `#636C93`.
+
 `--danger` was "to be defined" before Task 3. It is a desaturated red, clearly
 separate from vermilion. Vermilion is never an error colour.
 
@@ -121,16 +124,46 @@ and delivery"), the "Reserved" table state, and as a neutral data series in
 back office charts. It is the one status colour that is the same on both
 grounds.
 
-### Status chips on paper
+### Status chips
 
-Chips are a triad, not a single colour:
+Chips are a triad, not a single colour: background, border, text. Six tones:
+neutral, success, warning (gold), danger, accent (vermilion, "Late" only) and
+info (slate).
 
-| State | Background | Border | Text |
+**On paper.** Four rows are measured from the design; two are derived.
+
+| Tone | Background | Border | Text | Source |
+|---|---|---|---|---|
+| Neutral | `#FFFDF8` | `#E3DED2` | `#6E685C` | measured |
+| Success | `#F2F5EF` | `#D6DFCE` | `#5E7A4E` | measured |
+| Accent | `#FBF1E8` | `#EDD6BF` | `#B4522F` | measured |
+| Danger | `#FCECEA` | `#EFCFCA` | `#B23A2C` | measured |
+| Warning | `#FBF5E9` | `#F1E4C9` | `--gold-paper-text` `#8A6A28` | derived |
+| Info | `#F5F3F2` | `#DFDFE4` | `--slate-paper-text` `#636C93` | derived |
+
+The design's paper chip labelled "warning" is vermilion-toned (its text is
+`#B4522F`), so it is the accent chip here. Before Task 4 of phase 05 this table
+called it Warning. The design has no gold or slate chip on paper. Those two
+rows use the measured recipe: the status colour at 8% over `--paper-raised`
+for the background, and 25% for the border. For text, the paper status colour
+is too light: `--gold` on its chip is 2.38:1. So each gets a darker "text on
+paper" value, as vermilion already has one. The hue is the same, darkened
+until the text reaches 4.6:1 on its chip. The measured chips sit between 4.4
+and 5.4.
+
+**On ink.** The design tints a status colour over the surface rather than
+using solid fills: backgrounds at 8 to 16%, borders at 24 to 40%. These are
+standardised at 12% and 30%. Accent keeps its measured 14% and 40%, used 7
+times.
+
+| Tone | Background | Border | Text |
 |---|---|---|---|
-| Neutral | `#FFFDF8` | `#E3DED2` | `#6E685C` |
-| Success | `#F2F5EF` | `#D6DFCE` | `#5E7A4E` |
-| Warning | `#FBF1E8` | `#EDD6BF` | `#B4522F` |
-| Danger | `#FCECEA` | `#EFCFCA` | `#B23A2C` |
+| Neutral | `--ink-raised-high` | `--ink-hairline-2` | `--ink-text-muted` |
+| Success | `rgba(127,160,107,.12)` | `rgba(127,160,107,.30)` | `--sage` |
+| Warning | `rgba(224,163,60,.12)` | `rgba(224,163,60,.30)` | `--gold-ink` |
+| Danger | `rgba(212,90,78,.12)` | `rgba(212,90,78,.30)` | `--danger` |
+| Accent | `rgba(221,90,42,.14)` | `rgba(221,90,42,.40)` | `--vermilion` |
+| Info | `rgba(126,134,168,.12)` | `rgba(126,134,168,.30)` | `--slate` |
 
 **Status is colour plus a word. Never colour alone.** A chip reading "Ready" in
 sage is correct; a sage dot alone is not. Kitchen staff work at an angle, in

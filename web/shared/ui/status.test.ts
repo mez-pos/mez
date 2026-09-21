@@ -1,0 +1,42 @@
+import { describe, expect, it } from "vitest";
+import { chipSpec, kitchenStatuses, lineStatuses, orderStatuses, paymentStatuses, type ChipSpec } from "./status";
+
+const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
+  kitchen: kitchenStatuses,
+  order: orderStatuses,
+  payment: paymentStatuses,
+  line: lineStatuses,
+};
+
+describe("status vocabularies", () => {
+  for (const [kind, table] of Object.entries(all)) {
+    for (const [status, spec] of Object.entries(table)) {
+      it(`${kind} ${status} has a word, not colour alone`, () => {
+        expect(spec.word.trim()).not.toBe("");
+      });
+    }
+  }
+
+  it("keeps vermilion for Late alone (one accent, tokens.md)", () => {
+    const accented = Object.entries(all).flatMap(([kind, table]) =>
+      Object.entries(table)
+        .filter(([, spec]) => spec.tone === "accent")
+        .map(([status]) => `${kind}.${status}`),
+    );
+    expect(accented).toEqual(["kitchen.late"]);
+  });
+
+  it("strikes through every voided state, and only those", () => {
+    const struck = Object.entries(all).flatMap(([kind, table]) =>
+      Object.entries(table)
+        .filter(([, spec]) => spec.struck)
+        .map(([status]) => `${kind}.${status}`),
+    );
+    expect(struck).toEqual(["kitchen.void", "payment.voided", "line.voided"]);
+  });
+
+  it("looks up by kind", () => {
+    expect(chipSpec({ kind: "payment", status: "refunded" })).toEqual({ tone: "danger", word: "Refunded" });
+    expect(chipSpec({ kind: "kitchen", status: "ready" })).toEqual({ tone: "success", word: "Ready" });
+  });
+});

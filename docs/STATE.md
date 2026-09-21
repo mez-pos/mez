@@ -11,18 +11,17 @@ File: `docs/phases/phase-05.md`. Phase 04 is closed.
 
 ## Last completed task
 
-**Phase 05, Task 3 - API client and realtime hook.** `shared/api.ts`,
-`realtime.ts` (+ `use-realtime.tsx`), `query.ts`, `ConnectionIndicator`;
-60 Vitest tests, run by `make build-web`. Checked live against the binary:
-Live, server killed, unreachable, back to Live. ADR-065. Guest now renders
-through `preact/compat`: 19.4 KB of 60 (ADR-064).
+**Phase 05, Task 4 - Primitives, part one.** `web/shared/ui/`: `Button`,
+`Money`, `Qty`, `StatusChip`, `Card`, `Meta`, and the dev-only gallery at
+`/gallery` in the terminal. Chip tokens for ink added to tokens.md;
+`currencyExponents` generated from Go. Fixed `rem` being 15px. ADR-066.
 
 ## Next task
 
-**Phase 05, Task 4 - Primitives, part one.** Ink needs a status-chip triad
-in `tokens.md` before `StatusChip` (ADR-062). Reuse the `Tone` type in
-`shared/connection-status.ts`. Primitives go in `web/shared` so guest gets
-them too; nothing React-only.
+**Phase 05, Task 5 - Primitives, part two.** `Sheet`, `Modal`, `NumPad`,
+`SearchField`, `Toast`, `EmptyState`, `DataTable`, `Timeline`, into
+`web/shared/ui/` and the gallery. `DataTable` is back office only: keep it
+out of anything guest imports.
 
 ## Known broken / in progress
 
@@ -38,9 +37,9 @@ them too; nothing React-only.
   IGST sales cannot be rung up. `nofiltr setup` cannot finish a US venue.
 - Never swept: idempotency keys, expired staff sessions, sign-in attempts.
   The pairing rate limiter is per process.
-- Token gaps (ADR-062): five paper roles are stand-ins; ink has no chip
-  triad (Task 4 needs one, in tokens.md first); `--vermilion-on` on the
-  paper fill is 3.99:1, under AA.
+- Token gaps (ADR-062): five paper roles are stand-ins; `--vermilion-on`
+  on the paper fill is 3.99:1, under AA, and shows on the paper primary
+  button in the gallery.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no number. Phase 07 must work that way or revisit it.
 - Until Task 6 stores a device token, only a dev build can connect, with

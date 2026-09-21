@@ -158,3 +158,29 @@ func TestExponent(t *testing.T) {
 		})
 	}
 }
+
+func TestExponentsAgreesWithExponent(t *testing.T) {
+	got := Exponents()
+	if len(got) == 0 {
+		t.Fatal("Exponents is empty")
+	}
+	for code, e := range got {
+		if e == DefaultExponent {
+			t.Errorf("%s is listed with the default exponent %d; the list is exceptions only", code, e)
+		}
+		if want := Exponent(code); e != want {
+			t.Errorf("Exponents()[%q] = %d, Exponent says %d", code, e, want)
+		}
+	}
+	if Exponent("INR") != DefaultExponent {
+		t.Errorf("INR should take the default exponent")
+	}
+}
+
+func TestExponentsIsACopy(t *testing.T) {
+	Exponents()["JPY"] = 2
+	delete(Exponents(), "KWD")
+	if Exponent("JPY") != 0 || Exponent("KWD") != 3 {
+		t.Fatal("changing the map Exponents returned changed how amounts are read")
+	}
+}

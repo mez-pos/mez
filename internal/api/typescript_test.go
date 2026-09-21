@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -156,6 +157,9 @@ func generate() (*ts.Generator, error) {
 	if _, err := g.Add(money.Amount{}); err != nil {
 		return nil, err
 	}
+	if err := g.Raw("currencyExponents", currencyExponents(), nil); err != nil {
+		return nil, err
+	}
 	var arms string
 	for _, e := range eventTypes {
 		if _, err := g.Add(e.Payload); err != nil {
@@ -192,6 +196,28 @@ func generate() (*ts.Generator, error) {
 		}
 	}
 	return g, nil
+}
+
+// currencyExponents is money's exponent table as a TypeScript constant, so
+// a frontend turns minor units into a displayed amount exactly as the server
+// does. A yen shown as 12.34 when it means 1234 is the failure this prevents.
+func currencyExponents() string {
+	table := money.Exponents()
+	codes := make([]string, 0, len(table))
+	for code := range table {
+		codes = append(codes, code)
+	}
+	slices.Sort(codes)
+
+	var b strings.Builder
+	b.WriteString("/** Decimal places of a currency's minor unit, where not the default. ISO 4217. */\n")
+	b.WriteString("export const currencyExponents: Readonly<Record<string, number>> = {\n")
+	for _, code := range codes {
+		fmt.Fprintf(&b, "  %s: %d,\n", code, table[code])
+	}
+	b.WriteString("};\n\n")
+	fmt.Fprintf(&b, "export const defaultCurrencyExponent = %d;\n", money.DefaultExponent)
+	return b.String()
 }
 
 // asStrings is any list of named string constants as plain strings. It is

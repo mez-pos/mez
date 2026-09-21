@@ -51,6 +51,14 @@ const preset = {
         text: v("accent-text"),
       },
 
+      // Status chips: a background, border and text per tone. See tokens.md.
+      chip: Object.fromEntries(
+        (["neutral", "success", "warning", "danger", "accent", "info"] as const).map((tone) => [
+          tone,
+          { bg: v(`chip-${tone}-bg`), border: v(`chip-${tone}-border`), fg: v(`chip-${tone}-fg`) },
+        ]),
+      ),
+
       success: v("status-success"),
       warning: v("status-warning"),
       danger: v("status-danger"),
