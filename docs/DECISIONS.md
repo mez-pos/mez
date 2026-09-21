@@ -1555,3 +1555,45 @@ would have put every later screen 6% off its spec, silently.
 Cost: the chip words for server states ("Paid" for captured, "Held",
 "Comped") are this task's choice and are in one file to change. The paper
 primary button still uses `--vermilion-on`, 3.99:1 (ADR-062).
+
+## ADR-067 - Primitives, part two: native dialog, rules as types, logic beside each component
+2026-09 · Status: accepted
+Decision: `Sheet`, `Modal`, `NumPad`, `SearchField`, `Toast`, `EmptyState`,
+`DataTable` and `Timeline` are in `web/shared/ui/`. Each has its logic in a
+plain module with Vitest tests, and each was driven in a real browser on
+both grounds before commit.
+- **Modal and Sheet are the native `<dialog>`.** `showModal()` gives the top
+  layer, an inert page behind, focus in and back out, and Escape as a
+  `cancel` event, for no bytes. `use-dialog.ts` keeps it controlled by
+  `open`. The browser fires `close` a task later even for a close the hook
+  made, so the hook checks the owner's last `open` rather than a flag.
+  `::backdrop` inherits no custom properties in pre-2024 browsers, so its
+  rule carries the scrim's value as the `var()` fallback.
+- **Sheet picks its shape by `pointer`, not width.** The terminal is a wide
+  touch tablet; a width breakpoint would give it a mouse's side panel. It
+  was checked both ways: touch emulated, a 1280 by 680 sheet on the bottom
+  edge; with a mouse, a 384px panel down the right. The first touch run
+  found it on the top edge, because `h-auto` overrode the dialog's
+  `fit-content` height; that class is gone and the reason is in a comment.
+- **Two rules became types.** `ToastTone` has no danger, so a toast cannot
+  carry an error that needs a decision. `Timeline`'s switch is exhaustive over
+  the generated `OrderEventType`, so an event added in Go breaks the build
+  until it has words, as StatusChip does for statuses (ADR-066).
+- **NumPad types amounts as minor units shifting in from the right**, as a
+  till does: 1, 2, 5, 0 is 12.50. There is no decimal point to mistype and
+  nothing to parse. A key that would pass the maximum is ignored, not
+  clamped. Keys are 56px, over the 44px floor, for one thumb.
+- **DataTable leaves sorting and fetching to its owner**, because with
+  cursors the server sorts. Paging back keeps a stack of visited cursors. It
+  is not exported from `ui/index.ts`, so guest cannot reach it by a barrel
+  import. Every header is 15px, since sortable ones are controls and a mixed
+  row reads as a mistake.
+- `--scrim` is the design's measured `rgba(8,7,5,.72)`, now in tokens.md. Its
+  `backdrop-filter: blur(3px)` is left out as too costly for a cheap tablet
+  to paint mid-service.
+Because: each of these is where a real screen would otherwise make its own
+choice, and the ones that can hurt someone (a lost form, a mistyped amount,
+an unreadable void) are held by the platform or by a type, not by care.
+Cost: `<dialog>` needs Safari 15.4 or later. A toast shown while a modal is
+open sits behind its scrim. `Timeline` shows a line's unit price, not the
+line total, because the frontend renders money and never computes it.

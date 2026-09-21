@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { devCredentials } from "../../shared/credentials";
 import { createQueryClient } from "../../shared/query";
+import { ToastProvider } from "../../shared/ui";
 import { createRealtime, RealtimeProvider } from "../../shared/use-realtime";
 import { App } from "./App";
 import "./index.css";
@@ -19,7 +20,9 @@ createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RealtimeProvider connection={realtime}>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </RealtimeProvider>
     </QueryClientProvider>
   </StrictMode>,

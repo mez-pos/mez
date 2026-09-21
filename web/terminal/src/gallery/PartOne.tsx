@@ -1,10 +1,9 @@
-// Every primitive, on ink and on paper, side by side. Development only: main.tsx
-// loads this lazily behind import.meta.env.DEV, so a production build drops it.
-// Open http://localhost:5173/gallery with `npm run dev -w terminal`.
+// Gallery, part one: Button, Money, Qty, StatusChip, Card, Meta (phase 05 Task 4).
 
-import { useState, type ReactNode } from "react";
-import type { Money as Amount } from "../../shared/api-types";
-import { Button, Card, Meta, Money, Qty, StatusChip, type ButtonSize, type ButtonVariant, type ChipStatus } from "../../shared/ui";
+import { useState } from "react";
+import { Section } from "./Section";
+import type { Money as Amount } from "../../../shared/api-types";
+import { Button, Card, Meta, Money, Qty, StatusChip, type ButtonSize, type ButtonVariant, type ChipStatus } from "../../../shared/ui";
 
 const inr = (minor: number): Amount => ({ minor, currency: "INR" });
 
@@ -39,14 +38,6 @@ const chips: ChipStatus[] = [
   { kind: "line", status: "comped" },
 ];
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="mt-8">
-      <Meta items={["Gallery", title]} />
-      <div className="mt-3">{children}</div>
-    </section>
-  );
-}
 
 function Buttons() {
   return (
@@ -115,7 +106,7 @@ function Quantities() {
   );
 }
 
-function Primitives() {
+export function PartOne() {
   return (
     <>
       <Section title="Button">
@@ -145,20 +136,5 @@ function Primitives() {
         </Card>
       </Section>
     </>
-  );
-}
-
-export default function Gallery() {
-  return (
-    <div className="grid min-h-screen grid-cols-1 xl:grid-cols-2">
-      <div data-surface="ink" className="p-8">
-        <h1 className="font-serif text-total">Ink</h1>
-        <Primitives />
-      </div>
-      <div data-surface="paper" className="p-8">
-        <h1 className="font-serif text-total">Paper</h1>
-        <Primitives />
-      </div>
-    </div>
   );
 }

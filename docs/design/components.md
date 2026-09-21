@@ -13,14 +13,14 @@ the same task, don't invent a one-off.
 | `Qty` | mono, tabular, with +/− tap targets. Reports the next value; holds none |
 | `StatusChip` | colour **and** word. Takes `{ kind, status }` from `web/shared/ui/status.ts`: kitchen, order, payment or line. Never free text |
 | `Card` | ink-raised or paper surface |
-| `Sheet` | bottom sheet on touch, side panel on desktop |
-| `Modal` | confirm, form. Escape and a visible close, always |
-| `NumPad` | for amounts and PINs. 44px keys minimum |
-| `SearchField` | debounced, clearable, keyboard-dismissible |
-| `DataTable` | back office only. Sortable, cursor-paginated |
-| `Toast` | transient. Never for errors that need a decision |
+| `Sheet` | bottom sheet on touch, side panel on desktop. Decided by `pointer`, not width. Escape, close control or scrim closes it |
+| `Modal` | confirm, form. Escape and a visible close, always. The scrim does not close it. `Confirm` is the yes/no form |
+| `NumPad` | for amounts and PINs. Keys are 56px. Amounts shift in from the right as minor units; `numpad-keys.ts` does the arithmetic |
+| `SearchField` | debounced, clearable, keyboard-dismissible. Escape clears, Enter reports and blurs |
+| `DataTable` | back office only, imported from `ui/DataTable`, never the index. Sortable, cursor-paginated; the owner fetches |
+| `Toast` | transient. Never for errors that need a decision: it has no danger tone |
 | `EmptyState` | icon, one line, one action |
-| `Timeline` | renders an order's event stream |
+| `Timeline` | renders an order's event stream. Every event type has words, or the build fails |
 | `Meta` | the small-caps trail: `TERMINAL · REGISTER`. Items in ordinary case, uppercased by CSS |
 
 Built primitives live in `web/shared/ui/` and are exported from its

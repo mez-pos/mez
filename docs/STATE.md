@@ -11,17 +11,18 @@ File: `docs/phases/phase-05.md`. Phase 04 is closed.
 
 ## Last completed task
 
-**Phase 05, Task 4 - Primitives, part one.** `web/shared/ui/`: `Button`,
-`Money`, `Qty`, `StatusChip`, `Card`, `Meta`, and the dev-only gallery at
-`/gallery` in the terminal. Chip tokens for ink added to tokens.md;
-`currencyExponents` generated from Go. Fixed `rem` being 15px. ADR-066.
+**Phase 05, Task 5 - Primitives, part two.** `Sheet`, `Modal`/`Confirm`,
+`NumPad`, `SearchField`, `Toast`, `EmptyState`, `DataTable`, `Timeline` in
+`web/shared/ui/`, in the gallery (now `terminal/src/gallery/`), and driven
+in a browser on both grounds. `--scrim` added. ADR-067.
 
 ## Next task
 
-**Phase 05, Task 5 - Primitives, part two.** `Sheet`, `Modal`, `NumPad`,
-`SearchField`, `Toast`, `EmptyState`, `DataTable`, `Timeline`, into
-`web/shared/ui/` and the gallery. `DataTable` is back office only: keep it
-out of anything guest imports.
+**Phase 05, Task 6 - Device pairing and staff lock.** Pairing, PIN on the
+NumPad, lockout, route guards (choose a router), back office sign-in.
+Write `docs/design/screens/terminal-lock.md` as it is built. Replace
+`devCredentials` (`shared/credentials.ts`) with durable storage and call
+`realtime.restart()` when the token changes.
 
 ## Known broken / in progress
 

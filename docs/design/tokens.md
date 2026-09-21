@@ -294,6 +294,17 @@ to read a diff and see a step, not a pixel someone liked.
 This doc previously said 0 / 4 / 8 / 12. The design uses 3px 180 times and 2px
 83 times; 8px and 12px are effectively unused. The house is square, not soft.
 
+## Scrim
+
+| Token | Value | Use |
+|---|---|---|
+| `--scrim` | `rgba(8,7,5,.72)` | Behind a modal or sheet, on both grounds |
+
+Measured from the terminal's modal overlay. The design also sets
+`backdrop-filter: blur(3px)` there; that is left out, because a full-screen
+blur is the most expensive thing a cheap tablet can be asked to paint, and it
+would be asked mid-service.
+
 ## Elevation
 
 Elevation on ink is surface lightness, not shadow: shadows disappear on a dark
