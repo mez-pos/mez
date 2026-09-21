@@ -1,3 +1,5 @@
 @import "tailwindcss";
 @import "../../shared/tokens.css";
 @config "../../shared/tailwind.preset.ts";
+/* Tailwind scans the app's own tree; shared components live outside it. */
+@source "../../shared";

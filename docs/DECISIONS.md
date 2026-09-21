@@ -1444,3 +1444,74 @@ That is tight and may not fit. The obvious answer is Preact through
 `preact/compat` for the guest bundle only, about 4 KB, with the same
 components. The stack is settled as React, so this ADR does not switch. It
 records the case, and the choice belongs to the human before phase 11.
+
+## ADR-064 - Guest renders React source through preact/compat
+2026-09 · Status: accepted (the human asked for a solution to ADR-063's budget problem)
+Decision: the guest bundle aliases `react`, `react-dom`, `react-dom/client`
+and the JSX runtimes to `preact/compat` in `shared/vite-app.ts`, for guest
+only. Source stays React and type-checks against React's types; only the
+bundler knows. Terminal and back office are unchanged.
+- Measured: the empty guest app went from 48.4 KB to 11.7 KB gzipped. With
+  React Query and the API client it is 19.4 KB, leaving 40.6 KB for ordering.
+- Rejected: **no framework for guest**, because every shared primitive
+  (`Money`, `StatusChip`) would then be written twice, and the phase 05
+  gallery would prove nothing about the guest's copies. **Staying on React
+  and dropping React Query from guest** saves about 8 KB, breaks the "React
+  Query for all server state" rule, and still leaves ordering 20 KB.
+  **Preact everywhere** buys nothing: terminal and back office have no budget.
+- Guest gets Vite's own JSX transform, not `@vitejs/plugin-react`, whose
+  React Refresh cannot run on Preact. Editing guest in development is a full
+  reload, not a hot swap.
+- `web/scripts/check-size.mjs` fails the build if React's runtime appears in
+  the guest bundle, by a string only React contains. A stray import that
+  slipped past the alias would otherwise put 40 KB back silently.
+Because: the budget is a hard rule and React alone nearly spent it. This
+keeps one component codebase and one mental model, at the cost of one alias
+block.
+Cost: a library that reaches into React internals will not work in guest.
+The check above finds it at build time, not on a guest's phone. Preact is a
+second runtime to keep current. CLAUDE.md, `docs/01-architecture.md` and
+`web/README.md` now say this, so a later session does not "fix" it back.
+
+## ADR-065 - Realtime client: a heartbeat on `subscribe`, a probe to explain failures, resync as a contract
+2026-09 · Status: accepted
+Decision: `web/shared/realtime.ts` is a framework-free `RealtimeConnection`;
+`use-realtime.tsx` binds it to React with `useSyncExternalStore`. No server
+change was needed for any of the following.
+- **Heartbeat.** The hub pings at the WebSocket protocol level, which a
+  browser answers but page code cannot see, so a link that died silently
+  looks open until TCP gives up, minutes later. Every 15 s the client sends
+  `subscribe` with its unchanged topics; the hub answers with a `welcome`
+  and changes nothing. Any message resets the clock. Two intervals of
+  silence closes the socket and reconnects.
+- **Why it is down.** A refused handshake (401) and a server that is not
+  there look the same to a browser. After a failure the client makes one
+  request to `GET /api/v1/devices/me`: a 401 means unpaired, and retrying
+  stops; a network error means the server is unreachable; a 200 means the
+  stream alone dropped. `navigator.onLine` false skips the probe and says
+  "No network".
+- **Position.** The client keeps the highest id seen from `event` *and*
+  `caught_up`, because the hub advances its cursor past events filtered by
+  topic. A reconnect sends it as `last_event_id` and the hub replays the gap.
+- **Resync is a contract with screens.** The first welcome, and any welcome
+  whose `from_event_id` is not the position asked for (a restored backup),
+  emits `resync`. Screens refetch on resync and apply events as deltas after
+  it. That closes the race between a REST snapshot and the stream.
+- **Backoff** is equal jitter, 0.5 s doubling to a 10 s cap: at least half the
+  ceiling, so the countdown never shows zero, and spread, so a room of
+  tablets does not return on one tick after a server restart.
+- React Query runs with `networkMode: "always"`. Its default pauses whenever
+  `navigator.onLine` is false, which reflects the internet, while the server
+  is on the LAN or the same machine. Mutations are never retried
+  automatically; a charge is retried on purpose, with its idempotency key.
+Because: staff must be able to trust the indicator at a glance, and every
+one of its states was checked against the real server, not only in tests:
+Live, then "Server unreachable, retrying in 4s" with the binary killed,
+then Live again on its own.
+Cost: the heartbeat is 1 small message each way per device every 15 s. It
+leans on `subscribe` answering with `welcome`; if the hub ever stops
+answering it, every client will reconnect every 30 s, visibly. A `ping`
+message type in the hub would be the tidier contract. Until Task 6, a
+device token only reaches the client in development, through
+`VITE_DEVICE_TOKEN` in a gitignored `.env.local`; production builds drop that
+branch, and the built bundles were checked for it.

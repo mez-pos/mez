@@ -7,6 +7,10 @@
 // only if the page uses it, and `font-display: swap` means text renders
 // without them. They are listed so nobody forgets they exist. ADR-063.
 //
+// It also fails if React's own runtime is in the guest bundle. Guest renders
+// through preact/compat (ADR-064), and a stray import that bypasses the alias
+// would put 40 KB back without anyone noticing until the budget broke.
+//
 // The terminal and back office have no budget; their sizes are printed so a
 // jump is visible in the build log.
 
@@ -17,6 +21,8 @@ import { gzipSync } from "node:zlib";
 
 const GUEST_BUDGET_BYTES = 60 * 1024;
 const COUNTED = /\.(js|css|html)$/;
+// A string only React's runtime contains; Preact has no equivalent.
+const REACT_MARKER = "__SECRET_INTERNALS_DO_NOT_USE";
 const root = fileURLToPath(new URL("..", import.meta.url));
 
 function files(dir) {
@@ -36,7 +42,10 @@ function measure(app) {
   }
   const counted = all
     .filter((f) => COUNTED.test(f))
-    .map((f) => ({ file: relative(dist, f), gz: gzipSync(readFileSync(f), { level: 9 }).length }));
+    .map((f) => {
+      const body = readFileSync(f);
+      return { file: relative(dist, f), gz: gzipSync(body, { level: 9 }).length, react: body.includes(REACT_MARKER) };
+    });
   const other = all
     .filter((f) => !COUNTED.test(f))
     .map((f) => ({ file: relative(dist, f), raw: statSync(f).size }));
@@ -56,6 +65,10 @@ for (const app of ["terminal", "backoffice", "guest"]) {
   console.log(`  size  guest      ${kb(total)} gzipped of ${kb(GUEST_BUDGET_BYTES)} (${kb(headroom)} left)`);
   for (const f of counted) console.log(`          ${kb(f.gz).padStart(9)}  ${f.file}`);
   for (const f of other) console.log(`          ${kb(f.raw).padStart(9)}  ${f.file} (not counted)`);
+  for (const f of counted.filter((c) => c.react)) {
+    console.error(`  size  FAIL: guest ${f.file} contains React's runtime; guest must render through preact/compat`);
+    failed = true;
+  }
   if (headroom < 0) {
     console.error(`  size  FAIL: guest bundle is ${kb(-headroom)} over its ${kb(GUEST_BUDGET_BYTES)} gzipped budget`);
     failed = true;

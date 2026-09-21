@@ -53,7 +53,9 @@ this build fails.
 - **Every DB write that matters is in a transaction.** Invoice numbers,
   payments and shift closes especially.
 - **The guest app is a separate, tiny bundle.** It loads on 3G. No shadcn, no
-  heavy dependencies, hard budget of 60 KB gzipped.
+  heavy dependencies, hard budget of 60 KB gzipped. It renders React source
+  through `preact/compat` (ADR-064); `make build-web` fails if React's own
+  runtime gets into it.
 
 ## Stack — settled, do not relitigate
 

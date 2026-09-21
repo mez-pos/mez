@@ -10,6 +10,12 @@ guest app runs on a stranger's phone on 3G in a basement.
 | `backoffice/` | Owner and manager | Allowed | None stated |
 | `guest/` | Guest phone, QR, kiosk | **Never** | 60 KB gzipped, hard |
 
+Guest is written in React but bundled with Preact: `shared/vite-app.ts`
+aliases `react` and `react-dom` to `preact/compat` for guest only (ADR-064).
+The same components run in all three apps. Anything React-only (a library
+that reaches into React internals) will not work in guest; `make build-web`
+fails if React's runtime appears in the guest bundle.
+
 Never let a shared component library drag shadcn into the guest bundle. If a
 component is needed on all three, it is written twice or written dependency
 free.

@@ -40,7 +40,7 @@ a VPS are the same artifact. Windows install and self-host are not two products.
 | Migrations | `goose`, embedded via `embed.FS` |
 | HTTP | stdlib `net/http` + `ServeMux` (Go 1.22 routing) |
 | Realtime | `github.com/coder/websocket` |
-| Frontend | React 18 + TypeScript + Vite + Tailwind |
+| Frontend | React 18 + TypeScript + Vite + Tailwind (guest renders through `preact/compat`, ADR-064) |
 | UI shell | Edge/Chrome `--app= --kiosk` (ADR-007) |
 | Types | Go structs → TypeScript, generated at build |
 | Printing | ESC/POS over TCP:9100; Windows RAW spooler fallback |
@@ -80,7 +80,7 @@ scale, and every extra service is a support ticket from a cafe owner.
 /web                embed.go + placeholder bundles     (ADR-025)
   terminal/         staff SPA        (React, Tailwind, shadcn ok)
   backoffice/       owner SPA        (React, Tailwind, shadcn ok)
-  guest/            guest SPA        (React, Tailwind, NO shadcn, <60KB gz)
+  guest/            guest SPA        (React source on preact/compat, Tailwind, NO shadcn, <60KB gz)
 /docs
 /build              inno setup, docker, goreleaser
 ```

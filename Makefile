@@ -88,10 +88,10 @@ else
 	fi
 endif
 
-## build-web: typecheck and build the three frontends into web/*/dist, then
+## build-web: test, typecheck and build the three frontends into web/*/dist, then
 ##            fail if the guest bundle is over 60 KB gzipped. Needs Node 22.
 build-web: web/node_modules/.package-lock.json
-	@cd web && npm run build --silent && npm run size --silent
+	@cd web && npm test --silent && npm run build --silent && npm run size --silent
 
 # npm rewrites this file on every install, so it is newer than the lockfile
 # exactly when node_modules is current.

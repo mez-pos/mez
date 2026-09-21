@@ -11,17 +11,18 @@ File: `docs/phases/phase-05.md`. Phase 04 is closed.
 
 ## Last completed task
 
-**Phase 05, Task 2 - Three Vite apps.** One npm workspace in `web/`; the
-apps share `shared/vite-app.ts`. `make build-web` typechecks, builds and
-fails if guest is over 60 KB gzipped; `make build` then embeds the real
-frontends. CI runs both. `web/README.md` has the dev loop. ADR-063.
+**Phase 05, Task 3 - API client and realtime hook.** `shared/api.ts`,
+`realtime.ts` (+ `use-realtime.tsx`), `query.ts`, `ConnectionIndicator`;
+60 Vitest tests, run by `make build-web`. Checked live against the binary:
+Live, server killed, unreachable, back to Live. ADR-065. Guest now renders
+through `preact/compat`: 19.4 KB of 60 (ADR-064).
 
 ## Next task
 
-**Phase 05, Task 3 - API client and realtime hook.** `web/shared/api.ts`
-over the generated types, React Query per app, `useRealtime()` with `seq`
-and backoff, and a connection indicator. Watch the guest budget: 11.6 KB
-left before any of that lands (ADR-063).
+**Phase 05, Task 4 - Primitives, part one.** Ink needs a status-chip triad
+in `tokens.md` before `StatusChip` (ADR-062). Reuse the `Tone` type in
+`shared/connection-status.ts`. Primitives go in `web/shared` so guest gets
+them too; nothing React-only.
 
 ## Known broken / in progress
 
@@ -42,9 +43,9 @@ left before any of that lands (ADR-063).
   paper fill is 3.99:1, under AA.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no number. Phase 07 must work that way or revisit it.
-- Guest is 48.4 KB of 60 KB with an empty screen; React is 44 KB of it.
-  Preact via `preact/compat` for guest is the escape hatch (ADR-063). The
-  human decides; do not switch unilaterally.
+- Until Task 6 stores a device token, only a dev build can connect, with
+  `VITE_DEVICE_TOKEN` in `web/terminal/.env.local`. `nofiltr setup` prints a
+  pairing code; `POST /api/v1/devices/pair` turns it into a token.
 - `go test -race` needs cgo, which is banned; `make check` runs without it.
 - The domain import test checks direct imports only (ADR-016).
 - Tooling: `make` needs `sh` (Git Bash; GnuWin32 make 3.81 works). `make
