@@ -6,67 +6,50 @@
 
 ## Current phase
 
-**Phase 04 - HTTP API, WebSocket hub, TypeScript type codegen**
-File: `docs/phases/phase-04.md`. Phase 03 is complete.
+**Phase 05 - Frontend shell: Vite, Tailwind tokens, router, primitives, auth**
+File: `docs/phases/phase-05.md`. Phase 04 is closed.
 
 ## Last completed task
 
-**Phase 04, Task 6 - TypeScript codegen.** `internal/codegen/ts` emits
-TypeScript from Go structs by reflection, no tool added.
-`internal/api/typescript_test.go` generates `web/shared/api-types.ts` (582
-lines: every request, response, hub message, and the vocabularies as
-unions), and fails if the committed file differs, so `make check` is the
-drift guard. `make generate` writes it. Documented in
-`docs/03-conventions.md`. Four types gained names on the way:
-`api.ErrorCode`, `auth.DeviceKind`, `hub.MessageType`, and the response
-structs now carry `order.Status` and friends. ADR-061.
+**Phase 04 closed.** Six tasks: order persistence, the order service, auth
+(3a pairing, 3b PIN sign-in, 3c permissions, 3d `nofiltr setup`), HTTP
+handlers for `/api/v1/orders`, the WebSocket hub at `/api/v1/stream`, and
+generated types in `web/shared/api-types.ts`. ADR-052 to 061.
+
+The done-when is proven in tests, not yet as one script: `TestASaleOverHTTP`
+runs the whole sale over the API, and `TestAReconnectLosesNothing` proves the
+hub replays a gap. No script drives the real binary end to end. See below.
 
 ## Next task
 
-**Phase 04 wrap-up, then phase 05.** Phase 04's six tasks are done. What is
-left before phase 05: the done-when script (a whole sale over HTTP with a
-WebSocket client watching), and the two unowned guards below. Then
-`docs/phases/phase-05.md`.
+**Phase 05, Task 1 - Tokens into code.** Read `docs/phases/phase-05.md`. The
+frontends build against `web/shared/api-types.ts`; import from it, never
+restate a server shape (`docs/03-conventions.md`, "Generated API types").
 
 ## Known broken / in progress
 
-- `make` needs `sh` on PATH, so run it from Git Bash or WSL, not cmd.exe or
-  PowerShell. GnuWin32 make 3.81 works from Git Bash; ezwinports ships 4.x.
-- `make run` starts the real server on `:7777`, writing to the default
-  `data_dir`. See `docs/running.md`. `make migrate` needs the goose CLI; the
-  server migrates itself on startup, so it is only for a database with no
-  server.
-- `go test -race` needs cgo, which is banned, so `make check` runs without it.
-  Now racing untested: the serve goroutine, the log mutex, the health prober.
-- Every binary ships placeholder frontends. Phase 05 must add `-tags frontend`
-  to `make dist`; it fails today because `web/*/dist` does not exist.
-- `make build` writes `bin/nofiltr` with no `.exe`, so a stray server on Windows
-  is killed with `taskkill /F /IM nofiltr`, without the extension.
-- The domain import test checks direct imports only. See the cost note on
-  ADR-016.
-- `make generate` needs sqlc installed: `go install
-  github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1`. The generated code is committed,
-  so only someone editing SQL needs it.
-- `docs/02-domain.md` asks for a lint rule that fails the build on `float64` in
-  `internal/domain`. No phase task owns it and it does not exist yet.
-- A change to `order.Project`'s rules or `order.State`'s shape must bump
-  `order.ProjectionVersion`, or stale snapshots are served. Nothing checks it.
-- `AddLine` takes the price and tax snapshot from the client, because no menu
-  tables exist yet. When they do, the service must resolve item IDs itself.
-- Idempotency keys never expire. GST place of supply is always the venue's
-  state, so inter-state (IGST) sales cannot be rung up yet.
-- `nofiltr setup` cannot finish a US sales tax venue: its jurisdiction rates
-  are a list, and the back office that edits them arrives in phase 10.
-- Expired staff sessions and old sign-in attempts are never swept. The rate
-  limiter is per process and resets with it.
-- The phase's done-when script (a whole sale over HTTP with a WebSocket
-  client watching) is not written yet. Task 6 finishes the API surface it
-  would be written against.
-- Two guards nobody owns, worth a small task once the phase settles: the
-  `float64` lint rule for `internal/domain`, and something that fails the
-  build when `order.State` changes without `order.ProjectionVersion`.
+- Carried from phase 04, owned by no task yet:
+  - The done-when script: a sale over HTTP against the real binary, with a
+    WebSocket client watching. Start from `nofiltr setup`.
+  - A `float64` lint rule for `internal/domain` (`docs/02-domain.md`).
+  - A guard that fails the build when `order.State` changes without a bump
+    to `order.ProjectionVersion`; today a forgotten bump serves stale
+    snapshots.
+- `AddLine` trusts the client's price and tax snapshot until menu tables
+  exist (phase 10). GST place of supply is always the venue's state, so
+  IGST sales cannot be rung up. `nofiltr setup` cannot finish a US venue.
+- Never swept: idempotency keys, expired staff sessions, sign-in attempts.
+  The pairing rate limiter is per process.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
-  payment has no invoice number. Phase 07 must work that way or revisit it.
+  payment has no number. Phase 07 must work that way or revisit it.
+- Every binary ships placeholder frontends. Phase 05 must add `-tags
+  frontend` to `make dist`, which fails until `web/*/dist` exists.
+- `go test -race` needs cgo, which is banned; `make check` runs without it.
+- The domain import test checks direct imports only (ADR-016).
+- Tooling: `make` needs `sh` (Git Bash; GnuWin32 make 3.81 works). `make
+  generate` needs sqlc v1.31.1 and can dirty `go.sum` with goose's test
+  modules: restore it with `git checkout go.sum`. `bin/nofiltr` has no
+  `.exe`, so kill a stray server with `taskkill /F /IM nofiltr`.
 
 ## Open questions for the human
 
@@ -80,7 +63,7 @@ None.
 - [x] 01 — Go server skeleton, config, logging, embed, cross-compile
 - [x] 02 — SQLite, migrations, sqlc, money type, IDs
 - [x] 03 — Domain core: order events, projections, invoice series, tax
-- [ ] 04 — HTTP API, WebSocket hub, TypeScript type codegen
+- [x] 04 — HTTP API, WebSocket hub, TypeScript type codegen
 - [ ] 05 — Frontend shell: Vite, Tailwind tokens, router, primitives, auth
 - [ ] 06 — Terminal: register, modifiers, cart, open tickets
 - [ ] 07 — Payment, split, invoice, print queue, cash drawer
