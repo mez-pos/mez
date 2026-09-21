@@ -10,8 +10,10 @@
 // 10, 12, 14, 16, 20, 24, 32, 48, 64 px) are native classes already; the
 // limit is enforced by review, as tokens.md explains.
 //
-// No Tailwind import yet: the apps that install Tailwind arrive in Task 2,
-// which adds the `satisfies Config` check.
+// Each app's index.css loads this with `@config`, Tailwind v4's bridge to a
+// JS config. `satisfies Config` means a misspelt theme key fails `tsc`.
+
+import type { Config } from "tailwindcss";
 
 const v = (name: string): string => `var(--${name})`;
 
@@ -91,6 +93,6 @@ const preset = {
       },
     },
   },
-};
+} satisfies Config;
 
 export default preset;

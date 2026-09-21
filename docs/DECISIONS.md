@@ -1404,3 +1404,43 @@ on the paper fill measures 3.99:1, under the 4.5:1 AA line for body text;
 on ink it is 5.07:1. `--paper-raised` on the paper fill is 4.72:1. The
 charge button uses the doc's `--vermilion-on` today, and someone should
 decide before phase 07 builds a paper charge surface.
+
+## ADR-063 - Frontend build: one workspace, `make build` picks its embed, the guest budget counts JS, CSS and HTML
+2026-09 · Status: accepted
+Decision: `web/` is one npm workspace (terminal, backoffice, guest) with one
+lockfile. The toolchain is pinned exactly: Vite 8.3, TypeScript 7.0,
+Tailwind 4.3 through `@tailwindcss/vite`, React 18.3.1. All three apps share
+`web/shared/vite-app.ts`, so they differ only in base path and dev port.
+- **Tailwind v4 loads the preset with `@config`.** Probed, not assumed:
+  `bg-red-500`, `text-xs`, `rounded-lg` and `shadow-md` generate nothing,
+  the role classes generate `var(--...)`, and native spacing steps such as
+  `gap-2.5` still work. The preset carries `satisfies Config`, and each app's
+  tsconfig includes `web/shared`, so `api-types.ts` is now type-checked under
+  `strict`, `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`. It
+  passes.
+- **`make build` embeds the real bundles when all three `dist/index.html`
+  exist, and the placeholders otherwise, and says which.** That makes the
+  phase's `make build-web && make build` true without a flag, and keeps a
+  Node-free clone building. `make dist` depends on `build-web` and always
+  passes `-tags frontend`, so a release rebuilds and cannot ship a stale or
+  missing bundle.
+- **The guest budget counts every `.js`, `.css` and `.html` file in
+  `guest/dist`, gzipped at level 9.** That is what must arrive before the
+  first screen renders. Fonts are listed but not counted: they load in
+  parallel, only when used, and `font-display: swap` renders text without
+  them. `web/scripts/check-size.mjs` needs no dependency, and a probe at a
+  40 KB budget confirmed it fails with exit 1.
+- CI gains a `web` job running `make build-web`, beside `make check`. A
+  budget that only fails on the machines that happen to run it is not a
+  budget, and keeping it out of `make check` means Go work still needs no
+  Node.
+Because: the done-when asks for one binary serving three apps, and the
+guest budget is a hard rule in CLAUDE.md. Both should be enforced by
+commands, not by memory.
+Cost: **the guest app is 48.4 KB of its 60 KB with an empty screen.** React
+18 and react-dom are 44 KB of that. Ordering, a menu and a cart must fit in
+the remaining 11.6 KB, alongside React Query and the realtime hook (Task 3).
+That is tight and may not fit. The obvious answer is Preact through
+`preact/compat` for the guest bundle only, about 4 KB, with the same
+components. The stack is settled as React, so this ADR does not switch. It
+records the case, and the choice belongs to the human before phase 11.

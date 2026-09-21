@@ -1,0 +1,21 @@
+{
+  "name": "nofiltr-web",
+  "private": true,
+  "type": "module",
+  "workspaces": ["terminal", "backoffice", "guest"],
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces",
+    "build": "npm run build --workspaces",
+    "size": "node scripts/check-size.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
+    "@vitejs/plugin-react": "6.1.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.0"
+  }
+}

@@ -11,17 +11,17 @@ File: `docs/phases/phase-05.md`. Phase 04 is closed.
 
 ## Last completed task
 
-**Phase 05, Task 1 - Tokens into code.** `web/shared/tokens.css` (palette
-on `:root`, roles per `[data-surface]`), `tailwind.preset.ts` (roles only,
-defaults replaced), subset fonts in `web/shared/fonts/`, and
-`tokens-demo.html` (open it directly). ADR-062.
+**Phase 05, Task 2 - Three Vite apps.** One npm workspace in `web/`; the
+apps share `shared/vite-app.ts`. `make build-web` typechecks, builds and
+fails if guest is over 60 KB gzipped; `make build` then embeds the real
+frontends. CI runs both. `web/README.md` has the dev loop. ADR-063.
 
 ## Next task
 
-**Phase 05, Task 2 - Three Vite apps.** Install Tailwind, add `satisfies
-Config` to the preset and load it per app (`@config` on v4). Set
-`data-surface` on each root: ink for terminal, paper for the others. Import
-from `web/shared/api-types.ts`, never restate a server shape.
+**Phase 05, Task 3 - API client and realtime hook.** `web/shared/api.ts`
+over the generated types, React Query per app, `useRealtime()` with `seq`
+and backoff, and a connection indicator. Watch the guest budget: 11.6 KB
+left before any of that lands (ADR-063).
 
 ## Known broken / in progress
 
@@ -39,11 +39,12 @@ from `web/shared/api-types.ts`, never restate a server shape.
   The pairing rate limiter is per process.
 - Token gaps (ADR-062): five paper roles are stand-ins; ink has no chip
   triad (Task 4 needs one, in tokens.md first); `--vermilion-on` on the
-  paper fill is 3.99:1, under AA. The preset is uncompiled until Task 2.
+  paper fill is 3.99:1, under AA.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no number. Phase 07 must work that way or revisit it.
-- Every binary ships placeholder frontends. Phase 05 must add `-tags
-  frontend` to `make dist`, which fails until `web/*/dist` exists.
+- Guest is 48.4 KB of 60 KB with an empty screen; React is 44 KB of it.
+  Preact via `preact/compat` for guest is the escape hatch (ADR-063). The
+  human decides; do not switch unilaterally.
 - `go test -race` needs cgo, which is banned; `make check` runs without it.
 - The domain import test checks direct imports only (ADR-016).
 - Tooling: `make` needs `sh` (Git Bash; GnuWin32 make 3.81 works). `make

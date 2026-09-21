@@ -3,8 +3,8 @@
 # Run this from a shell that has `sh` on PATH. On Windows that means Git Bash
 # or WSL, not cmd.exe or PowerShell: every recipe below is POSIX.
 #
-# `make check` is the gate. CI runs exactly it and nothing else, so if it
-# passes locally it passes there.
+# `make check` is the gate for Go; `make build-web` is the gate for the
+# frontends. CI runs exactly those two, so if they pass locally they pass there.
 
 BIN     := nofiltr
 CMD     := ./cmd/$(BIN)
@@ -30,10 +30,19 @@ PKGS := $(shell go list ./... 2>/dev/null)
 # from one machine. See ADR-003.
 export CGO_ENABLED = 0
 
-.DEFAULT_GOAL := check
-.PHONY: check fmt vet test build run generate migrate migrate-new clean dist help
+# The real frontends are embedded (-tags frontend) when all three have been
+# built; otherwise the placeholders are, so a clone with no Node still builds.
+# `make build-web && make build` is therefore one binary serving all three
+# apps. `make dist` always rebuilds them first, so a release never ships a
+# stale or missing bundle. See ADR-025 and ADR-063.
+WEB_APPS  := terminal backoffice guest
+WEB_BUILT := $(foreach a,$(WEB_APPS),$(wildcard web/$(a)/dist/index.html))
+TAGS      := $(if $(filter 3,$(words $(WEB_BUILT))),frontend,)
 
-## check: fmt, vet, test and build. The gate. CI runs this.
+.DEFAULT_GOAL := check
+.PHONY: check fmt vet test build build-web run generate migrate migrate-new clean dist help
+
+## check: fmt, vet, test and build. The Go gate. CI runs this.
 check: fmt vet test build
 	@echo "ok: check passed ($(VERSION))"
 
@@ -71,13 +80,23 @@ ifeq ($(strip $(PKGS)),)
 else
 	@if [ -d "$(CMD)" ]; then \
 		mkdir -p bin && \
-		go build -trimpath -ldflags "$(LDFLAGS)" -o bin/$(BIN) $(CMD) && \
-		echo "  build bin/$(BIN)"; \
+		go build -trimpath -tags "$(TAGS)" -ldflags "$(LDFLAGS)" -o bin/$(BIN) $(CMD) && \
+		echo "  build bin/$(BIN) ($(if $(TAGS),real,placeholder) frontends)"; \
 	else \
 		go build ./... && \
 		echo "  build ok (no $(CMD) yet)"; \
 	fi
 endif
+
+## build-web: typecheck and build the three frontends into web/*/dist, then
+##            fail if the guest bundle is over 60 KB gzipped. Needs Node 22.
+build-web: web/node_modules/.package-lock.json
+	@cd web && npm run build --silent && npm run size --silent
+
+# npm rewrites this file on every install, so it is newer than the lockfile
+# exactly when node_modules is current.
+web/node_modules/.package-lock.json: web/package-lock.json
+	@cd web && npm ci --no-audit --no-fund
 
 ## run: build and run the server
 run:
@@ -140,11 +159,11 @@ migrate-new:
 
 ## clean: remove build output
 clean:
-	@rm -rf bin dist
+	@rm -rf bin dist $(foreach a,$(WEB_APPS),web/$(a)/dist)
 	@echo "  clean ok"
 
-## dist: cross-compile release binaries
-dist:
+## dist: cross-compile release binaries, with the real frontends
+dist: build-web
 	@if [ ! -d "$(CMD)" ]; then \
 		echo "no $(CMD) yet: it arrives in Phase 01"; exit 1; \
 	fi
@@ -154,7 +173,7 @@ dist:
 		ext=""; [ "$$os" = "windows" ] && ext=".exe"; \
 		out="dist/$(BIN)_$(VERSION)_$${os}_$${arch}$$ext"; \
 		echo "  $$out"; \
-		GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags "$(LDFLAGS)" -o "$$out" $(CMD); \
+		GOOS=$$os GOARCH=$$arch go build -trimpath -tags frontend -ldflags "$(LDFLAGS)" -o "$$out" $(CMD); \
 	done
 	@echo "  dist ok ($(VERSION))"
 

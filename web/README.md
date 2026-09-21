@@ -16,3 +16,30 @@ free.
 
 API types are generated from the Go structs. Never hand-write a type that
 mirrors one. See `docs/03-conventions.md`.
+
+## Working on the frontends
+
+Node 22.12 or later. One npm workspace, one lockfile, in `web/`.
+
+```sh
+make build-web          # typecheck, build all three, check the guest budget
+make build              # then embeds them: one binary serving all three apps
+make run                # the server on :7777, which the dev servers proxy to
+
+cd web && npm ci
+npm run dev -w terminal     # http://localhost:5173/
+npm run dev -w backoffice   # http://localhost:5174/backoffice/
+npm run dev -w guest        # http://localhost:5175/order/
+```
+
+The dev servers proxy `/api` (HTTP and the WebSocket stream) to `:7777`, so
+start the Go server first. Base paths match the mounts in `web.go`; a Vite
+base that disagrees with its mount serves `index.html` for every script.
+
+`make build` embeds the real bundles only when all three `dist/index.html`
+exist, and says which it used. `make clean` removes them. `make dist` always
+rebuilds them, so a release cannot ship a stale one.
+
+Every app shares `shared/vite-app.ts`, `shared/tokens.css` and
+`shared/tailwind.preset.ts`. The surface is set once, on `<html>` in each
+`index.html`: `data-surface="ink"` for the terminal, `"paper"` for the others.

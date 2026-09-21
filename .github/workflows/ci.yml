@@ -33,3 +33,20 @@ jobs:
           check-latest: true
 
       - run: make check
+
+  web:
+    name: make build-web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # Typechecks and builds all three frontends, then fails if the guest
+      # bundle is over 60 KB gzipped. A separate job so `make check` still
+      # runs on a machine with no Node. See ADR-063.
+      - run: make build-web
