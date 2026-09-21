@@ -1,0 +1,190 @@
+/*
+ * Design tokens. Source of truth: docs/design/tokens.md. Change that file
+ * first, then this one. A raw hex value anywhere else in web/ is a bug.
+ *
+ * Two layers:
+ *
+ * 1. The palette, on :root. Every named token from tokens.md, by its own
+ *    name, so both grounds are always addressable (the demo page needs that).
+ *    Components do not use these directly.
+ *
+ * 2. Roles, on [data-surface]. The same role name resolves to the ink value
+ *    or the paper value depending on the surface an element sits in. This is
+ *    what the Tailwind preset exposes, so a component written once renders
+ *    correctly on both grounds, and "pick by surface, never by taste" is
+ *    enforced by the cascade instead of by review.
+ */
+
+@import "./fonts/fonts.css";
+
+:root {
+  /* Ink surfaces (terminal) */
+  --ink: #0e0c09;
+  --ink-chrome: #14110d;
+  --ink-raised: #1a1712;
+  --ink-raised-high: #221e17;
+
+  /* Paper surfaces (back office, guest) */
+  --paper: #f4f1e9;
+  --paper-raised: #fffdf8;
+  --paper-sunken: #f2ede1;
+
+  /* Text on ink */
+  --ink-text: #f3efe6;
+  --ink-text-2: #c9c2b2;
+  --ink-text-3: #a39c8c;
+  --ink-text-muted: #8c8474;
+  --ink-text-faint: #6e685c;
+
+  /* Text on paper */
+  --paper-text: #1a1712;
+  --paper-text-2: #4a4438;
+  --paper-text-3: #6e685c;
+  --paper-text-muted: #8a8274;
+  --paper-text-faint: #9a9384;
+
+  /* Hairlines */
+  --ink-hairline: rgba(255, 255, 255, 0.07);
+  --ink-hairline-2: rgba(255, 255, 255, 0.1);
+  --ink-hairline-3: rgba(255, 255, 255, 0.14);
+  --paper-hairline: #e3ded2;
+  --paper-hairline-soft: #efeae0;
+
+  /* Accent: one vermilion, two values, picked by surface */
+  --vermilion: #dd5a2a;
+  --vermilion-hover: #f07440;
+  --vermilion-on: #150e09;
+  --vermilion-paper: #c24d22;
+  --vermilion-paper-text: #b4522f;
+
+  /* Status */
+  --sage: #7fa06b;
+  --sage-paper: #5e7a4e;
+  --gold-ink: #e0a33c;
+  --gold: #c79a3c;
+  --danger: #d45a4e;
+  --danger-paper: #b23a2c;
+  --slate: #7e86a8;
+
+  /* Status chips on paper: background, border, text */
+  --paper-chip-neutral-bg: #fffdf8;
+  --paper-chip-neutral-border: #e3ded2;
+  --paper-chip-neutral-text: #6e685c;
+  --paper-chip-success-bg: #f2f5ef;
+  --paper-chip-success-border: #d6dfce;
+  --paper-chip-success-text: #5e7a4e;
+  --paper-chip-warning-bg: #fbf1e8;
+  --paper-chip-warning-border: #edd6bf;
+  --paper-chip-warning-text: #b4522f;
+  --paper-chip-danger-bg: #fcecea;
+  --paper-chip-danger-border: #efcfca;
+  --paper-chip-danger-text: #b23a2c;
+
+  /* Type */
+  --font-serif: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: "Archivo", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+
+  --text-meta: 11px; /* uppercase, .12em tracking, metadata only: the floor */
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 21px;
+  --text-total: 32px;
+  --tracking-meta: 0.12em;
+
+  /* Touch */
+  --tap-min: 44px;
+  --tap-charge: 58px;
+  --tap-gap: 8px;
+
+  /* Radius */
+  --radius-none: 0;
+  --radius: 3px;
+  --radius-tight: 2px;
+  --radius-round: 50%;
+}
+
+[data-surface="ink"] {
+  color-scheme: dark;
+
+  --canvas: var(--ink);
+  --chrome: var(--ink-chrome);
+  --raised: var(--ink-raised);
+  --raised-high: var(--ink-raised-high);
+  --sunken: var(--ink); /* stand-in */
+
+  --fg: var(--ink-text);
+  --fg-2: var(--ink-text-2);
+  --fg-3: var(--ink-text-3);
+  --fg-muted: var(--ink-text-muted);
+  --fg-faint: var(--ink-text-faint);
+
+  --line: var(--ink-hairline);
+  --line-soft: var(--ink-hairline); /* stand-in */
+  --line-strong: var(--ink-hairline-2);
+  --line-focus: var(--ink-hairline-3);
+
+  --accent: var(--vermilion);
+  --accent-hover: var(--vermilion-hover);
+  --accent-fg: var(--vermilion-on);
+  --accent-text: var(--vermilion);
+
+  --status-success: var(--sage);
+  --status-warning: var(--gold-ink);
+  --status-danger: var(--danger);
+  --status-info: var(--slate);
+
+  background: var(--canvas);
+  color: var(--fg);
+}
+
+/* Paper has fewer tokens than ink. Where tokens.md names no paper value, the
+   role borrows the nearest one; each is marked "stand-in" and listed in
+   ADR-062. Replace them in tokens.md first when the back office needs them. */
+[data-surface="paper"] {
+  color-scheme: light;
+
+  --canvas: var(--paper);
+  --chrome: var(--paper-raised); /* stand-in */
+  --raised: var(--paper-raised);
+  --raised-high: var(--paper-raised); /* stand-in */
+  --sunken: var(--paper-sunken);
+
+  --fg: var(--paper-text);
+  --fg-2: var(--paper-text-2);
+  --fg-3: var(--paper-text-3);
+  --fg-muted: var(--paper-text-muted);
+  --fg-faint: var(--paper-text-faint);
+
+  --line: var(--paper-hairline);
+  --line-soft: var(--paper-hairline-soft);
+  --line-strong: var(--paper-hairline); /* stand-in */
+  --line-focus: var(--paper-text-faint); /* stand-in */
+
+  --accent: var(--vermilion-paper);
+  --accent-hover: var(--vermilion-paper); /* stand-in */
+  --accent-fg: var(--vermilion-on);
+  --accent-text: var(--vermilion-paper-text);
+
+  --status-success: var(--sage-paper);
+  --status-warning: var(--gold);
+  --status-danger: var(--danger-paper);
+  --status-info: var(--slate);
+
+  background: var(--canvas);
+  color: var(--fg);
+}
+
+[data-surface] {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Mobile Safari zooms on focus below 16px, and on the guest surface that
+   strands the guest mid-order. Controls only, every surface. */
+[data-surface] :is(input, select, textarea) {
+  font-size: max(16px, 1em);
+}

@@ -1,0 +1,59 @@
+/*
+ * Self-hosted faces. Subset to Latin, Latin-1, typographic punctuation, the
+ * euro and the rupee; see fonts/README.md to rebuild them.
+ *
+ * JetBrains Mono and Instrument Serif have no rupee glyph. Archivo's rupee is
+ * registered under both families with a one-character unicode-range, so a
+ * price or a total never drops to the system fallback on its first character.
+ * The rupee is the same width on every row, so tabular alignment holds.
+ */
+
+@font-face {
+  font-family: "Archivo";
+  src: url("./archivo.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./jetbrains-mono.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./rupee.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20B9;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("./instrument-serif.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("./instrument-serif-italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("./rupee.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal italic;
+  font-display: swap;
+  unicode-range: U+20B9;
+}

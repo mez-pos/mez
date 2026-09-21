@@ -11,20 +11,17 @@ File: `docs/phases/phase-05.md`. Phase 04 is closed.
 
 ## Last completed task
 
-**Phase 04 closed.** Six tasks: order persistence, the order service, auth
-(3a pairing, 3b PIN sign-in, 3c permissions, 3d `nofiltr setup`), HTTP
-handlers for `/api/v1/orders`, the WebSocket hub at `/api/v1/stream`, and
-generated types in `web/shared/api-types.ts`. ADR-052 to 061.
-
-The done-when is proven in tests, not yet as one script: `TestASaleOverHTTP`
-runs the whole sale over the API, and `TestAReconnectLosesNothing` proves the
-hub replays a gap. No script drives the real binary end to end. See below.
+**Phase 05, Task 1 - Tokens into code.** `web/shared/tokens.css` (palette
+on `:root`, roles per `[data-surface]`), `tailwind.preset.ts` (roles only,
+defaults replaced), subset fonts in `web/shared/fonts/`, and
+`tokens-demo.html` (open it directly). ADR-062.
 
 ## Next task
 
-**Phase 05, Task 1 - Tokens into code.** Read `docs/phases/phase-05.md`. The
-frontends build against `web/shared/api-types.ts`; import from it, never
-restate a server shape (`docs/03-conventions.md`, "Generated API types").
+**Phase 05, Task 2 - Three Vite apps.** Install Tailwind, add `satisfies
+Config` to the preset and load it per app (`@config` on v4). Set
+`data-surface` on each root: ink for terminal, paper for the others. Import
+from `web/shared/api-types.ts`, never restate a server shape.
 
 ## Known broken / in progress
 
@@ -40,6 +37,9 @@ restate a server shape (`docs/03-conventions.md`, "Generated API types").
   IGST sales cannot be rung up. `nofiltr setup` cannot finish a US venue.
 - Never swept: idempotency keys, expired staff sessions, sign-in attempts.
   The pairing rate limiter is per process.
+- Token gaps (ADR-062): five paper roles are stand-ins; ink has no chip
+  triad (Task 4 needs one, in tokens.md first); `--vermilion-on` on the
+  paper fill is 3.99:1, under AA. The preset is uncompiled until Task 2.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no number. Phase 07 must work that way or revisit it.
 - Every binary ships placeholder frontends. Phase 05 must add `-tags

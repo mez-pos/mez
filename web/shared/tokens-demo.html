@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nofiltr tokens</title>
+<!--
+  Every token in tokens.css, on both grounds, for a human to eyeball.
+  Open this file directly in a browser; it needs no build. Swatch labels are
+  read back from the computed styles, so they show what the CSS really says.
+  Not shipped: no app imports this file.
+-->
+<link rel="stylesheet" href="./tokens.css">
+<style>
+  body { margin: 0; }
+  .grounds { display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); }
+  .ground { padding: 32px; min-height: 100vh; box-sizing: border-box; }
+  h1 { font-family: var(--font-serif); font-weight: 400; font-size: var(--text-total); margin: 0 0 4px; }
+  h2 { font-size: var(--text-meta); letter-spacing: var(--tracking-meta); text-transform: uppercase;
+       color: var(--fg-faint); font-weight: 600; margin: 32px 0 10px; }
+  .meta { font-size: var(--text-meta); letter-spacing: var(--tracking-meta); text-transform: uppercase; color: var(--fg-faint); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .swatch { width: 112px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--raised); }
+  .swatch .chip { height: 44px; }
+  .swatch .label { padding: 6px 8px; font-size: var(--text-meta); line-height: 1.4; }
+  .swatch .label b { display: block; font-weight: 600; color: var(--fg-2); }
+  .swatch .label code { font-family: var(--font-mono); color: var(--fg-muted); }
+  .line-sample { height: 24px; border-bottom: 1px solid; }
+  .type-row { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
+  .mono { font-family: var(--font-mono); }
+  .serif { font-family: var(--font-serif); }
+  table.money { border-collapse: collapse; font-family: var(--font-mono); font-size: var(--text-base); }
+  table.money td { padding: 4px 0 4px 24px; text-align: right; border-bottom: 1px solid var(--line-soft); }
+  table.money td:first-child { padding-left: 0; text-align: left; font-family: var(--font-sans); color: var(--fg-2); }
+  .tap { display: inline-flex; align-items: center; justify-content: center; padding: 0 16px;
+         border-radius: var(--radius); font-size: var(--text-base); font-weight: 600; box-sizing: border-box; }
+  .tap-min { height: var(--tap-min); min-width: var(--tap-min); background: var(--raised-high); border: 1px solid var(--line-strong); color: var(--fg); }
+  .tap-charge { height: var(--tap-charge); background: var(--accent); color: var(--accent-fg); font-family: var(--font-mono); }
+  .tap-charge:hover { background: var(--accent-hover); }
+  .space { display: flex; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: var(--text-sm); color: var(--fg-muted); }
+  .space i { display: block; height: 10px; background: var(--accent); }
+  .radius { width: 56px; height: 56px; background: var(--raised-high); border: 1px solid var(--line-strong); }
+  .status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line);
+            border-radius: var(--radius-tight); font-size: var(--text-sm); }
+  .status::before { content: ""; width: 8px; height: 8px; border-radius: var(--radius-round); background: currentColor; }
+  .pchip { display: inline-block; padding: 4px 10px; border: 1px solid; border-radius: var(--radius-tight); font-size: var(--text-sm); }
+</style>
+</head>
+<body>
+<div class="grounds">
+  <section class="ground" data-surface="ink" data-ground="ink"></section>
+  <section class="ground" data-surface="paper" data-ground="paper"></section>
+</div>
+
+<script>
+  // Token lists mirror tokens.css. Each ground shows its own palette, then the
+  // roles as they resolve on that ground.
+  const palette = {
+    ink: {
+      Surfaces: ["ink", "ink-chrome", "ink-raised", "ink-raised-high"],
+      Text: ["ink-text", "ink-text-2", "ink-text-3", "ink-text-muted", "ink-text-faint"],
+      Accent: ["vermilion", "vermilion-hover", "vermilion-on"],
+      Status: ["sage", "gold-ink", "danger", "slate"],
+    },
+    paper: {
+      Surfaces: ["paper", "paper-raised", "paper-sunken"],
+      Text: ["paper-text", "paper-text-2", "paper-text-3", "paper-text-muted", "paper-text-faint"],
+      Accent: ["vermilion-paper", "vermilion-paper-text", "vermilion-on"],
+      Status: ["sage-paper", "gold", "danger-paper", "slate"],
+    },
+  };
+  const hairlines = { ink: ["ink-hairline", "ink-hairline-2", "ink-hairline-3"], paper: ["paper-hairline", "paper-hairline-soft"] };
+  const roles = ["canvas", "chrome", "raised", "raised-high", "sunken", "fg", "fg-2", "fg-3", "fg-muted", "fg-faint",
+                 "line", "line-soft", "line-strong", "line-focus", "accent", "accent-hover", "accent-fg", "accent-text",
+                 "status-success", "status-warning", "status-danger", "status-info"];
+  const typeScale = ["text-meta", "text-sm", "text-base", "text-lg", "text-xl", "text-total"];
+  const spacing = [2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 48, 64];
+  const radii = ["radius-none", "radius-tight", "radius", "radius-round"];
+  const chips = ["neutral", "success", "warning", "danger"];
+
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, val] of Object.entries(attrs)) {
+      if (k === "style") n.style.cssText = val; else n.setAttribute(k, val);
+    }
+    for (const kid of kids) n.append(kid);
+    return n;
+  };
+  const read = (node, name) => getComputedStyle(node).getPropertyValue(`--${name}`).trim();
+
+  function swatch(ground, name) {
+    return el("div", { class: "swatch" },
+      el("div", { class: "chip", style: `background: var(--${name})` }),
+      el("div", { class: "label" }, el("b", {}, `--${name}`), el("code", {}, read(ground, name))));
+  }
+
+  function heading(text) { return el("h2", {}, text); }
+
+  function render(ground) {
+    const g = ground.dataset.ground;
+    ground.append(el("h1", {}, g === "ink" ? "Ink" : "Paper"),
+      el("div", { class: "meta" }, g === "ink" ? "Terminal · dark · data-surface=ink" : "Back office, guest · light · data-surface=paper"));
+
+    for (const [group, names] of Object.entries(palette[g])) {
+      ground.append(heading(`Palette · ${group}`), el("div", { class: "row" }, ...names.map(n => swatch(ground, n))));
+    }
+
+    ground.append(heading("Hairlines"));
+    for (const n of hairlines[g]) {
+      ground.append(el("div", { class: "line-sample meta", style: `border-color: var(--${n})` }, `--${n} · ${read(ground, n)}`));
+    }
+
+    ground.append(heading("Roles, as resolved here"), el("div", { class: "row" }, ...roles.map(n => swatch(ground, n))));
+
+    ground.append(heading("Type scale"));
+    for (const n of typeScale) {
+      const isMeta = n === "text-meta";
+      const sample = isMeta ? "TERMINAL · REGISTER" : n === "text-total" ? "Total ₹1,284.50" : "Flat white, oat milk";
+      const cls = isMeta ? "meta" : n === "text-total" ? "serif" : "";
+      ground.append(el("div", { class: "type-row" },
+        el("span", { class: "mono meta" }, `${n.replace("text-", "")} · ${read(ground, n)}`),
+        el("span", { class: cls, style: `font-size: var(--${n})${isMeta ? "" : "; color: var(--fg)"}` }, sample)));
+    }
+
+    ground.append(heading("Families"));
+    ground.append(el("div", { class: "serif", style: "font-size: var(--text-xl)" }, "Instrument Serif · Good evening, table four"));
+    ground.append(el("div", { class: "serif", style: "font-size: var(--text-xl); font-style: italic" }, "Instrument Serif italic · ₹ 450"));
+    for (const w of [400, 500, 600, 700]) {
+      ground.append(el("div", { style: `font-weight: ${w}` }, `Archivo ${w} · Modify  Void  Discount  Note`));
+    }
+    for (const w of [400, 500, 600, 700]) {
+      ground.append(el("div", { class: "mono", style: `font-weight: ${w}` }, `JetBrains Mono ${w} · 0123456789 ₹ € £`));
+    }
+
+    ground.append(heading("Numbers: mono, tabular, right-aligned"));
+    const rows = [["Cappuccino ×2", "₹360.00"], ["Avocado toast", "₹1,120.00"], ["Service 10%", "₹148.00"], ["GST 5%", "₹81.40"], ["Total", "₹1,709.40"]];
+    ground.append(el("table", { class: "money" }, ...rows.map(([a, b]) => el("tr", {}, el("td", {}, a), el("td", {}, b)))));
+
+    ground.append(heading("Accent as text"),
+      el("div", { class: "mono", style: "color: var(--accent-text); font-size: var(--text-lg)" }, "₹1,709.40 due"));
+
+    ground.append(heading("Status: colour and word, never colour alone"));
+    const statuses = [["fg-muted", "Queued"], ["status-warning", "Firing"], ["status-success", "Ready"], ["accent-text", "Late"], ["status-info", "Reserved"], ["status-danger", "Refund"]];
+    ground.append(el("div", { class: "row" }, ...statuses.map(([c, w]) => el("span", { class: "status", style: `color: var(--${c})` }, w)),
+      el("span", { class: "status", style: "color: var(--fg-muted); text-decoration: line-through" }, "Void")));
+
+    if (g === "paper") {
+      ground.append(heading("Status chips on paper: background, border, text"));
+      ground.append(el("div", { class: "row" }, ...chips.map(c => el("span", { class: "pchip",
+        style: `background: var(--paper-chip-${c}-bg); border-color: var(--paper-chip-${c}-border); color: var(--paper-chip-${c}-text)` },
+        c[0].toUpperCase() + c.slice(1)))));
+    }
+
+    ground.append(heading("Touch: tap-min 44 · tap-charge 58 · tap-gap 8"));
+    ground.append(el("div", { class: "row", style: "gap: var(--tap-gap); align-items: center" },
+      el("span", { class: "tap tap-min" }, "Modify"), el("span", { class: "tap tap-min" }, "Void"),
+      el("span", { class: "tap tap-min" }, "7"), el("span", { class: "tap tap-charge" }, "Charge ₹1,709.40")));
+
+    ground.append(heading("Spacing scale, px"));
+    for (const s of spacing) ground.append(el("div", { class: "space" }, el("span", { style: "width: 24px; text-align: right" }, String(s)), el("i", { style: `width: ${s}px` })));
+
+    ground.append(heading("Radius"));
+    ground.append(el("div", { class: "row" }, ...radii.map(r => el("div", {},
+      el("div", { class: "radius", style: `border-radius: var(--${r})` }),
+      el("div", { class: "meta", style: "margin-top: 6px" }, `${r} · ${read(ground, r)}`)))));
+
+    ground.append(heading("Form control floor, 16px"));
+    ground.append(el("input", { value: "Search the menu", style: "background: var(--raised-high); color: var(--fg); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 10px 12px; font-family: var(--font-sans)" }));
+  }
+
+  document.querySelectorAll("[data-ground]").forEach(render);
+</script>
+</body>
+</html>

@@ -1366,3 +1366,41 @@ generated type says `T[]`; every response here builds its slices with make,
 and a field that may be absent is `omitempty` and therefore optional. The
 frontends do not consume the file until phase 05, so the first real proof
 that these types compile against a Vite build is still to come.
+
+## ADR-062 - Tokens: a palette on :root, roles on [data-surface], Tailwind sees only roles
+2026-09 · Status: accepted
+Decision: `web/shared/tokens.css` has two layers. Every named token in
+`docs/design/tokens.md` is a custom property on `:root`, by its own name.
+`[data-surface="ink"]` and `[data-surface="paper"]` then set role properties
+(`--canvas`, `--raised`, `--fg-2`, `--line`, `--accent`, `--accent-text`,
+`--status-success` and so on) to the palette value for that ground.
+`web/shared/tailwind.preset.ts` exposes only the roles, and *replaces*
+Tailwind's colours, font sizes, radii and shadows instead of extending them.
+- A component is written once and is correct on both grounds, which the
+  phase's done-when (every primitive on ink and paper) needs. "Pick by
+  surface, never by taste" is enforced by the cascade, not by review.
+- Replacing the defaults means `bg-red-500`, `text-xs` and `rounded-lg` do not
+  exist. The one-accent rule and the 11px floor cannot be bypassed from a
+  class name. Spacing stays native, as tokens.md already argues.
+- Paper has fewer tokens than ink. Where tokens.md names no paper value, a
+  role borrows the nearest one, marked `stand-in` in the CSS: paper
+  `chrome` and `raised-high` use `--paper-raised`; paper `line-strong` uses
+  `--paper-hairline`; paper `line-focus` uses `--paper-text-faint`; paper
+  `accent-hover` does not change. On ink, `sunken` is `--ink` and
+  `line-soft` is `--ink-hairline`. No status-chip triad exists for ink, and
+  no paper shadow exists at all, so none is exposed.
+- Fonts are subset from google/fonts sources with fonttools, not taken from
+  a CDN or npm. `fonts/README.md` has the exact commands. JetBrains Mono and
+  Instrument Serif have no rupee glyph, so Archivo's rupee is registered
+  under both families with `unicode-range: U+20B9`. Otherwise every price
+  would start with a character in a fallback face. About 88 KB across five
+  files, and a browser only fetches a face a page uses.
+Because: one set of classes that means the right thing on either ground is
+cheaper than two sets and a rule about which to use. Replacing the defaults
+turns two review rules into build facts.
+Cost: the stand-ins are guesses until the back office is designed in
+detail, and each one must go into tokens.md before it changes. `--vermilion-on`
+on the paper fill measures 3.99:1, under the 4.5:1 AA line for body text;
+on ink it is 5.07:1. `--paper-raised` on the paper fill is 4.72:1. The
+charge button uses the doc's `--vermilion-on` today, and someone should
+decide before phase 07 builds a paper charge surface.

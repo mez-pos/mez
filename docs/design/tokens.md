@@ -302,10 +302,13 @@ place a human can be hurt by it.
 
 Phase 05 Task 1 turns this file into:
 
-- `web/shared/tokens.css`: CSS custom properties, `[data-surface="ink"]` and
-  `[data-surface="paper"]` scopes
-- `tailwind.config.ts`: theme extension referencing the CSS variables, never
-  raw hex
+- `web/shared/tokens.css`: every token above as a custom property on
+  `:root`, plus role properties (`--raised`, `--fg-2`, `--accent`, ...) that
+  `[data-surface="ink"]` and `[data-surface="paper"]` resolve to that
+  ground's value. ADR-062.
+- `web/shared/tailwind.preset.ts`: exposes the roles only, replacing
+  Tailwind's default colours, sizes and radii. Never raw hex.
+- `web/shared/tokens-demo.html`: every token on both grounds, no build.
 
 Components reference Tailwind classes only. A raw hex value in a `.tsx` file is
 a bug.
