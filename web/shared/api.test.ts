@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ApiError, createApiClient, noCredentials, type Credentials } from "./api";
+import { ApiError, createApiClient, noCredentials, retryAfter, type Credentials } from "./api";
 
 interface Call {
   path: string;
@@ -126,4 +126,54 @@ describe("createApiClient", () => {
     expect(err).not.toBeInstanceOf(ApiError);
     expect((err as DOMException).name).toBe("AbortError");
   });
+});
+
+describe("lockouts and credential failures", () => {
+  it("reads Retry-After on a lockout", async () => {
+    const { fetch } = fakeFetch(
+      () => new Response(JSON.stringify({ error: { code: "locked_out", message: "locked" } }), { status: 429, headers: { "Retry-After": "240" } }),
+    );
+    const err = (await createApiClient({ credentials: signedIn, fetch }).post("/api/v1/sessions", {}).catch((e: unknown) => e)) as ApiError;
+    expect([err.code, err.retryAfterMs]).toEqual(["locked_out", 240_000]);
+  });
+
+  const failures = [
+    { code: "device_revoked", reported: true },
+    { code: "unauthenticated", reported: true },
+    { code: "sign_in_required", reported: true },
+    { code: "invalid_pin", reported: false },
+    { code: "invalid_pairing_code", reported: false },
+  ];
+  for (const tt of failures) {
+    it(`${tt.reported ? "reports" : "does not report"} ${tt.code}`, async () => {
+      const { fetch } = fakeFetch(() => json(401, { error: { code: tt.code, message: "no" } }));
+      const seen: string[] = [];
+      await createApiClient({ credentials: signedIn, fetch, onCredentialFailure: (c) => seen.push(c) })
+        .get("/x")
+        .catch(() => undefined);
+      expect(seen).toEqual(tt.reported ? [tt.code] : []);
+    });
+  }
+
+  it("does not report a 403, whatever its code", async () => {
+    const { fetch } = fakeFetch(() => json(403, { error: { code: "unauthenticated", message: "no" } }));
+    const seen: string[] = [];
+    await createApiClient({ credentials: signedIn, fetch, onCredentialFailure: (c) => seen.push(c) }).get("/x").catch(() => undefined);
+    expect(seen).toEqual([]);
+  });
+});
+
+describe("retryAfter", () => {
+  const now = Date.parse("2026-09-21T10:00:00Z");
+  const tests = [
+    { name: "seconds", header: "120", want: 120_000 },
+    { name: "zero", header: "0", want: 0 },
+    { name: "an HTTP date", header: "Mon, 21 Sep 2026 10:05:00 GMT", want: 300_000 },
+    { name: "a date already past", header: "Mon, 21 Sep 2026 09:00:00 GMT", want: 0 },
+    { name: "absent", header: null, want: null },
+    { name: "nonsense", header: "soon", want: null },
+  ];
+  for (const tt of tests) {
+    it(tt.name, () => expect(retryAfter(tt.header, now)).toBe(tt.want));
+  }
 });

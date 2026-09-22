@@ -18,6 +18,8 @@ export interface NumPadProps {
   onKey: (key: NumKey) => void;
   /** Names the pad for screen readers: "PIN", "Cash tendered". */
   label: string;
+  /** `lg` is 64px keys, for a pad that is the whole point of its screen. */
+  size?: "md" | "lg";
   disabled?: boolean;
   className?: string;
 }
@@ -39,7 +41,7 @@ function face(key: NumKey): { content: ReactNode; name: string } {
   }
 }
 
-export function NumPad({ layout, onKey, label, disabled = false, className }: NumPadProps) {
+export function NumPad({ layout, onKey, label, size = "md", disabled = false, className }: NumPadProps) {
   const bottom: NumKey[] = layout === "amount" ? ["00", "0", "back"] : ["clear", "0", "back"];
 
   // A keyboard works too: the back office has one, and so do most tills.
@@ -62,8 +64,9 @@ export function NumPad({ layout, onKey, label, disabled = false, className }: Nu
             disabled={disabled}
             onClick={() => onKey(key)}
             className={cx(
-              "flex h-14 min-w-tap select-none items-center justify-center rounded border border-line-strong bg-raised-high text-fg",
+              "flex min-w-tap select-none items-center justify-center rounded border border-line-strong bg-raised-high text-fg",
               "outline-offset-2 outline-line-focus focus-visible:outline-2 active:bg-raised disabled:opacity-40",
+              size === "lg" ? "h-16" : "h-14",
               key === "clear" ? "text-base font-semibold" : "font-mono text-xl tabular-nums",
             )}
           >

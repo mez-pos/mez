@@ -1,17 +1,33 @@
-import { ConnectionIndicator } from "../../shared/ConnectionIndicator";
+// The terminal's routes. Every path goes through the Gate, which sends an
+// unpaired device to /pair and a locked one to /lock (shared/auth/route.ts).
 
-// Shell only. Screens arrive from Task 6 onward.
+import { Redirect, Route, Switch } from "wouter";
+import { Gate } from "../../shared/auth/Gate";
+import { LockScreen } from "../../shared/screens/LockScreen";
+import { PairScreen } from "../../shared/screens/PairScreen";
+import { SignedInShell } from "../../shared/screens/SignedInShell";
+import { Splash } from "../../shared/screens/Splash";
+
 export function App() {
   return (
-    <div className="flex min-h-screen flex-col bg-canvas text-fg">
-      <header className="flex items-center justify-between gap-4 border-b border-line bg-chrome px-6 py-2">
-        <p className="text-meta font-semibold uppercase text-fg-faint">Nofiltr · Terminal</p>
-        <ConnectionIndicator />
-      </header>
-      <main className="p-8">
-        <h1 className="font-serif text-total">Terminal</h1>
-        <p className="mt-4 max-w-prose text-base text-fg-2">The register arrives in phase 06.</p>
-      </main>
-    </div>
+    <Gate splash={<Splash />}>
+      <Switch>
+        <Route path="/pair">
+          <PairScreen app="terminal" />
+        </Route>
+        <Route path="/lock">
+          <LockScreen />
+        </Route>
+        <Route path="/">
+          <SignedInShell area="Terminal" exitLabel="Lock">
+            <h1 className="font-serif text-total">Register</h1>
+            <p className="mt-4 max-w-prose text-base text-fg-2">The register arrives in phase 06.</p>
+          </SignedInShell>
+        </Route>
+        <Route>
+          <Redirect to="/" replace />
+        </Route>
+      </Switch>
+    </Gate>
   );
 }

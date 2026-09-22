@@ -7,7 +7,7 @@
 
 import type { ApiErrorBody, ErrorCode } from "./api-types";
 
-/** Where the two tokens come from. Task 6 supplies the durable store. */
+/** Where the two tokens come from: auth/session-store.ts keeps them. */
 export interface Credentials {
   deviceToken(): string | null;
   staffToken(): string | null;
@@ -34,6 +34,8 @@ export class ApiError extends Error {
     message: string,
     readonly status: number | null = null,
     readonly field: string | null = null,
+    /** From Retry-After, on a lockout or a rate limit: how long to wait. */
+    readonly retryAfterMs: number | null = null,
   ) {
     super(message);
   }
@@ -65,14 +67,37 @@ export interface ApiClient {
   del<T>(path: string, options?: RequestOptions): Promise<T>;
 }
 
+/**
+ * The refusals that mean the stored credentials are no longer good, from any
+ * request at all. The auth store listens, so a session that expired while a
+ * screen was open sends that screen back to the lock, and a device unpaired
+ * from the back office goes back to pairing.
+ */
+export type CredentialFailure = Extract<ErrorCode, "unauthenticated" | "device_revoked" | "sign_in_required">;
+
+const credentialFailures: readonly string[] = ["unauthenticated", "device_revoked", "sign_in_required"] satisfies CredentialFailure[];
+
 export interface ApiClientConfig {
   credentials: Credentials;
   fetch?: typeof fetch;
+  onCredentialFailure?: (code: CredentialFailure) => void;
 }
 
-export function createApiClient({ credentials, fetch: fetchFn = globalThis.fetch.bind(globalThis) }: ApiClientConfig): ApiClient {
-  const request = <T>(method: string, path: string, body: unknown, options: RequestOptions = {}): Promise<T> =>
-    send<T>(fetchFn, method, path, body, headersFor(credentials, body, options), options);
+export function createApiClient({
+  credentials,
+  fetch: fetchFn = globalThis.fetch.bind(globalThis),
+  onCredentialFailure,
+}: ApiClientConfig): ApiClient {
+  const request = async <T>(method: string, path: string, body: unknown, options: RequestOptions = {}): Promise<T> => {
+    try {
+      return await send<T>(fetchFn, method, path, body, headersFor(credentials, body, options), options);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401 && credentialFailures.includes(err.code)) {
+        onCredentialFailure?.(err.code as CredentialFailure);
+      }
+      throw err;
+    }
+  };
 
   return {
     get: (path, options) => request("GET", path, undefined, options),
@@ -132,9 +157,17 @@ async function readResponse<T>(response: Response): Promise<T> {
 
   if (isErrorBody(parsed)) {
     const { code, message, field } = parsed.error;
-    throw new ApiError(code, message, response.status, field ?? null);
+    throw new ApiError(code, message, response.status, field ?? null, retryAfter(response.headers.get("Retry-After")));
   }
   throw new ApiError("bad_response", `the server answered ${response.status} without an error body`, response.status);
+}
+
+/** Retry-After is seconds or an HTTP date (RFC 9110); either becomes milliseconds. */
+export function retryAfter(header: string | null, now: number = Date.now()): number | null {
+  if (header === null || header.trim() === "") return null;
+  if (/^\d+$/.test(header.trim())) return Number(header.trim()) * 1000;
+  const at = Date.parse(header);
+  return Number.isNaN(at) ? null : Math.max(0, at - now);
 }
 
 function isErrorBody(value: unknown): value is ApiErrorBody {

@@ -1,10 +1,11 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { devCredentials } from "../../shared/credentials";
+import { createAppAuth } from "../../shared/auth/app-auth";
+import { AuthProvider } from "../../shared/auth/use-auth";
 import { createQueryClient } from "../../shared/query";
 import { ToastProvider } from "../../shared/ui";
-import { createRealtime, RealtimeProvider } from "../../shared/use-realtime";
+import { RealtimeProvider } from "../../shared/use-realtime";
 import { App } from "./App";
 import "./index.css";
 
@@ -18,21 +19,23 @@ if (!root) {
 const Gallery = import.meta.env.DEV && window.location.pathname === "/gallery" ? lazy(() => import("./gallery/Gallery")) : null;
 
 const queryClient = createQueryClient();
-const realtime = createRealtime(devCredentials);
+const { store, realtime } = createAppAuth("terminal");
 
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RealtimeProvider connection={realtime}>
-        <ToastProvider>
-          {Gallery ? (
-            <Suspense>
-              <Gallery />
-            </Suspense>
-          ) : (
-            <App />
-          )}
-        </ToastProvider>
+        <AuthProvider store={store} realtime={realtime}>
+          <ToastProvider>
+            {Gallery ? (
+              <Suspense>
+                <Gallery />
+              </Suspense>
+            ) : (
+              <App />
+            )}
+          </ToastProvider>
+        </AuthProvider>
       </RealtimeProvider>
     </QueryClientProvider>
   </StrictMode>,

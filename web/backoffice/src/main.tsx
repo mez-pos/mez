@@ -1,10 +1,11 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { devCredentials } from "../../shared/credentials";
+import { createAppAuth } from "../../shared/auth/app-auth";
+import { AuthProvider } from "../../shared/auth/use-auth";
 import { createQueryClient } from "../../shared/query";
 import { ToastProvider } from "../../shared/ui";
-import { createRealtime, RealtimeProvider } from "../../shared/use-realtime";
+import { RealtimeProvider } from "../../shared/use-realtime";
 import { App } from "./App";
 import "./index.css";
 
@@ -14,15 +15,17 @@ if (!root) {
 }
 
 const queryClient = createQueryClient();
-const realtime = createRealtime(devCredentials);
+const { store, realtime } = createAppAuth("backoffice");
 
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RealtimeProvider connection={realtime}>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
+        <AuthProvider store={store} realtime={realtime}>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
+        </AuthProvider>
       </RealtimeProvider>
     </QueryClientProvider>
   </StrictMode>,

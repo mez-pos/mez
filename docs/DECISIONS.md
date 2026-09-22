@@ -1597,3 +1597,49 @@ an unreadable void) are held by the platform or by a type, not by care.
 Cost: `<dialog>` needs Safari 15.4 or later. A toast shown while a modal is
 open sits behind its scrim. `Timeline` shows a line's unit price, not the
 line total, because the frontend renders money and never computes it.
+
+## ADR-068 - Pairing and the staff lock: one auth store, guards as a function, wouter
+2026-09 · Status: accepted
+Decision: `web/shared/auth/` holds an `AuthStore` whose state is `checking`,
+`unpaired`, `locked` or `signed_in`, and a pure `routeFor(state, path)` that
+every guard in both apps applies through `Gate`. `PairScreen` and
+`LockScreen` in `web/shared/screens/` serve the terminal on ink and the back
+office sign-in on paper. Spec: `docs/design/screens/terminal-lock.md`.
+- **Router: wouter 3.11**, terminal and back office only. About 2 KB, hooks,
+  a `base` for `/backoffice`, and it runs on Preact for guest's routing in
+  phase 11. react-router is ten times the size for three routes. The phase
+  asked for a choice; this is it.
+- **Where credentials live.** The device token is in `localStorage`, so
+  pairing is once. The staff session is in `sessionStorage`, so a crashed
+  till asks for a PIN again. Keys are `nofiltr.<app>.*`, because the terminal
+  and the back office share an origin. Stored values are validated on read,
+  and storage that is refused degrades to memory.
+- **The server's word moves the state.** The API client reports
+  `device_revoked`, `unauthenticated` and `sign_in_required` from any
+  request, and the realtime stream reports a refused socket, both to the
+  store: a revoked till goes to Pair with the reason, and an expired session
+  goes to Lock with the reason. A 429 carries `Retry-After` into
+  `ApiError.retryAfterMs`, which the lockout countdown uses.
+- **Booting trusts storage when the server cannot answer.** A till that
+  starts before its server must not have to pair again; the indicator says
+  the server is missing. `boot()` runs once per store. React's development
+  double effect had run it twice, and the second run erased why the device
+  was unpaired; a browser run found it and a test holds it.
+- **A code for another app is refused client-side.** A terminal code redeemed
+  in the back office creates a terminal device on the server, and the app
+  will not store it. That device is orphaned until the back office can
+  revoke devices (phase 10). The message says which kind of code to ask for.
+- Checked in a browser against a real server: bad code, pair, auto-chosen
+  name, wrong PIN, right PIN, reload while signed in, Lock, the sixth
+  failure locking the pad with a live countdown that survives a reload
+  because the server enforces it, the back office end to end under
+  `/backoffice`, an unrecognised token clearing with its notice, and the
+  production binary from a clean browser to a signed-in terminal.
+Because: sign-in is where a POS meets a stranger and a hurry at once, so its
+states are one machine, its guards one function, and each refusal a
+sentence for the person at the till.
+Cost: `devCredentials` and `VITE_DEVICE_TOKEN` are gone; a dev build now
+pairs like a real one. Keys typed before the staff list has loaded are
+dropped. After a reload the pad does not know about a lockout until the
+first attempt is refused. Staff tiles show no role, and the heading shows
+the device's name, until the API returns both.

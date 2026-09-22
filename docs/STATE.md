@@ -6,23 +6,23 @@
 
 ## Current phase
 
-**Phase 05 - Frontend shell: Vite, Tailwind tokens, router, primitives, auth**
-File: `docs/phases/phase-05.md`. Phase 04 is closed.
+**Phase 06 - Terminal: register, modifiers, cart, open tickets**
+File: `docs/phases/phase-06.md`. Phase 05 is complete.
 
 ## Last completed task
 
-**Phase 05, Task 5 - Primitives, part two.** `Sheet`, `Modal`/`Confirm`,
-`NumPad`, `SearchField`, `Toast`, `EmptyState`, `DataTable`, `Timeline` in
-`web/shared/ui/`, in the gallery (now `terminal/src/gallery/`), and driven
-in a browser on both grounds. `--scrim` added. ADR-067.
+**Phase 05 closed.** Tokens, three Vite apps, API client and realtime,
+fourteen primitives and a gallery, pairing and the staff lock (ADR-062 to
+068). Done-when checked on the production binary: a clean browser pairs,
+signs in with a PIN, and the binary serves all three apps; the dev gallery
+shows every primitive on ink and paper.
 
 ## Next task
 
-**Phase 05, Task 6 - Device pairing and staff lock.** Pairing, PIN on the
-NumPad, lockout, route guards (choose a router), back office sign-in.
-Write `docs/design/screens/terminal-lock.md` as it is built. Replace
-`devCredentials` (`shared/credentials.ts`) with durable storage and call
-`realtime.restart()` when the token changes.
+**Phase 06, Task 1.** Read `docs/phases/phase-06.md`. Build inside
+`SignedInShell` (`web/shared/screens/`), from the primitives in
+`web/shared/ui/`; write `docs/design/screens/` specs lazily. `make
+build-web` is the frontend gate, alongside `make check`.
 
 ## Known broken / in progress
 
@@ -43,9 +43,11 @@ Write `docs/design/screens/terminal-lock.md` as it is built. Replace
   button in the gallery.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no number. Phase 07 must work that way or revisit it.
-- Until Task 6 stores a device token, only a dev build can connect, with
-  `VITE_DEVICE_TOKEN` in `web/terminal/.env.local`. `nofiltr setup` prints a
-  pairing code; `POST /api/v1/devices/pair` turns it into a token.
+- To try the apps: `nofiltr setup` prints a pairing code (`-device-kind
+  back_office` for the back office); pair in the browser. A code for the
+  wrong app is refused but its device stays on the server (ADR-068).
+- No endpoint returns the venue's name or a staff member's role; the lock
+  screen shows the device name and no roles until one does.
 - `go test -race` needs cgo, which is banned; `make check` runs without it.
 - The domain import test checks direct imports only (ADR-016).
 - Tooling: `make` needs `sh` (Git Bash; GnuWin32 make 3.81 works). `make
@@ -66,7 +68,7 @@ None.
 - [x] 02 — SQLite, migrations, sqlc, money type, IDs
 - [x] 03 — Domain core: order events, projections, invoice series, tax
 - [x] 04 — HTTP API, WebSocket hub, TypeScript type codegen
-- [ ] 05 — Frontend shell: Vite, Tailwind tokens, router, primitives, auth
+- [x] 05 — Frontend shell: Vite, Tailwind tokens, router, primitives, auth
 - [ ] 06 — Terminal: register, modifiers, cart, open tickets
 - [ ] 07 — Payment, split, invoice, print queue, cash drawer
 - [ ] 08 — Floor plan, tables, kitchen display, station routing
