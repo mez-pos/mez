@@ -10,12 +10,32 @@ import (
 )
 
 type Querier interface {
+	ActiveCategories(ctx context.Context, venueID int64) ([]ActiveCategoriesRow, error)
+	//
+	// An item in a retired category is not on sale either: retiring
+	// "Breakfast" at noon takes every breakfast item off the till with it.
+	ActiveItems(ctx context.Context, venueID int64) ([]ActiveItemsRow, error)
+	ActiveModifierGroups(ctx context.Context, venueID int64) ([]ActiveModifierGroupsRow, error)
+	ActiveModifiers(ctx context.Context, venueID int64) ([]ActiveModifiersRow, error)
 	//
 	// The index on (venue_id, active) is what this reads down, which is why it
 	// exists.
 	ActiveStaffForVenue(ctx context.Context, venueID int64) ([]Staff, error)
+	ActiveStations(ctx context.Context, venueID int64) ([]ActiveStationsRow, error)
 	AppendOrderEvent(ctx context.Context, arg AppendOrderEventParams) error
+	AttachModifierGroup(ctx context.Context, arg AttachModifierGroupParams) error
+	//
+	// Every write to a menu table calls this in the same transaction. A write
+	// that forgot would leave terminals selling from a cached menu, which is
+	// why the writes live behind db.DB rather than being called loose.
+	BumpMenuVersion(ctx context.Context, venueID int64) (int64, error)
+	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
+	CreateCategory(ctx context.Context, arg CreateCategoryParams) (int64, error)
+	CreateCourse(ctx context.Context, arg CreateCourseParams) (int64, error)
 	CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (int64, error)
+	CreateItem(ctx context.Context, arg CreateItemParams) (int64, error)
+	CreateModifier(ctx context.Context, arg CreateModifierParams) (int64, error)
+	CreateModifierGroup(ctx context.Context, arg CreateModifierGroupParams) (int64, error)
 	// Orders, their events and their snapshots. internal/db/orders.go is the only
 	// caller: it keeps the orders row, the events and the snapshot in step inside
 	// one transaction, which a handler calling these directly would not.
@@ -28,6 +48,8 @@ type Querier interface {
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
 	CreateStaff(ctx context.Context, arg CreateStaffParams) (Staff, error)
 	CreateStaffSession(ctx context.Context, arg CreateStaffSessionParams) (int64, error)
+	CreateStation(ctx context.Context, arg CreateStationParams) (int64, error)
+	CreateTaxClass(ctx context.Context, arg CreateTaxClassParams) (int64, error)
 	// Venues. Explicit column lists throughout, per docs/03-conventions.md: a
 	// SELECT * here would silently change shape the next time a migration adds a
 	// column, and RETURNING * has exactly the same problem.
@@ -45,7 +67,15 @@ type Querier interface {
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
 	InvoiceSeriesLastSeq(ctx context.Context, arg InvoiceSeriesLastSeqParams) (int64, error)
 	InvoicesForVenue(ctx context.Context, venueID int64) ([]Invoice, error)
+	ItemModifierGroupsForVenue(ctx context.Context, venueID int64) ([]ItemModifierGroupsForVenueRow, error)
 	ListVenues(ctx context.Context) ([]Venue, error)
+	// The menu. Reads return active rows only, in the order a terminal shows
+	// them: a retired item stays in the table for the events that name it, but
+	// never reaches a till. db.DB.Menu runs the reads in one read transaction,
+	// so the version and the rows it describes come from the same snapshot.
+	//
+	// A venue whose menu has never been written has no row, and is at 1.
+	MenuVersion(ctx context.Context, venueID int64) (int64, error)
 	// The invoice series counters and the register of numbers issued.
 	// Allocates the next number in a series in one statement: the first call for
 	// a key writes 1, every later one adds one. It runs inside the issuing
@@ -84,6 +114,7 @@ type Querier interface {
 	SettingsForVenue(ctx context.Context, venueID int64) ([]Setting, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
 	StaffSessionByTokenHash(ctx context.Context, tokenHash string) (StaffSessionByTokenHashRow, error)
+	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	// Brings the index columns up to the projection just appended. The guard on
 	// the previous last_seq makes a write from a stale read touch no row, which

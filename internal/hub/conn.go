@@ -24,10 +24,11 @@ const (
 	MsgSubscribe MessageType = "subscribe" // change my topics
 
 	// From the server.
-	MsgWelcome  MessageType = "welcome"   // your position and what you are subscribed to
-	MsgEvent    MessageType = "event"     // one event
-	MsgCaughtUp MessageType = "caught_up" // you have everything up to this position
-	MsgError    MessageType = "error"     // what you sent could not be used
+	MsgWelcome     MessageType = "welcome"      // your position and what you are subscribed to
+	MsgEvent       MessageType = "event"        // one event
+	MsgCaughtUp    MessageType = "caught_up"    // you have everything up to this position
+	MsgMenuChanged MessageType = "menu_changed" // the venue's menu has a new version
+	MsgError       MessageType = "error"        // what you sent could not be used
 )
 
 // MessageType names a message in either direction.
@@ -58,6 +59,11 @@ type WelcomeMessage struct {
 	From     int64       `json:"from_event_id"`
 	Latest   int64       `json:"latest_event_id"`
 	Topics   []string    `json:"topics"`
+
+	// MenuVersion is the venue's menu as of this welcome. A client whose
+	// cached menu is another version fetches it again: a reconnect is when
+	// a menu_changed missed while offline is caught.
+	MenuVersion int64 `json:"menu_version"`
 }
 
 // EventMessage is one event on the wire, with the little about its order
@@ -70,6 +76,15 @@ type EventMessage struct {
 	TableID int64       `json:"table_id,omitempty"`
 	Station string      `json:"station,omitempty"`
 	Event   order.Event `json:"event"`
+}
+
+// MenuChangedMessage says the venue's menu is at a new version. It goes to
+// every connection, whatever its topics: a kitchen watching one station
+// still needs that station's new items. It carries the version and not the
+// menu, which the client fetches from GET /api/v1/menu.
+type MenuChangedMessage struct {
+	Type    MessageType `json:"type"`
+	Version int64       `json:"version"`
 }
 
 // CaughtUpMessage says the client has everything up to a position.
@@ -99,6 +114,10 @@ type conn struct {
 	mu     sync.Mutex
 	topics map[string]struct{}
 	cursor int64
+
+	// menu is the menu version this connection last told its client about.
+	// Only the writing goroutine touches it.
+	menu int64
 }
 
 // wake tells the connection there may be more to read, without blocking.
@@ -116,6 +135,10 @@ func (c *conn) run(ctx context.Context) error {
 		return err
 	}
 	latest, err := c.hub.source.VenueLastEventID(ctx, c.client.VenueID)
+	if err != nil {
+		return err
+	}
+	c.menu, err = c.hub.source.MenuVersion(ctx, c.client.VenueID)
 	if err != nil {
 		return err
 	}
@@ -141,7 +164,7 @@ func (c *conn) run(ctx context.Context) error {
 
 	if err := c.hub.writeJSON(ctx, c.ws, WelcomeMessage{
 		Type: MsgWelcome, VenueID: c.client.VenueID, DeviceID: c.client.DeviceID,
-		From: from, Latest: latest, Topics: c.topicList(),
+		From: from, Latest: latest, Topics: c.topicList(), MenuVersion: c.menu,
 	}); err != nil {
 		return err
 	}
@@ -157,6 +180,9 @@ func (c *conn) run(ctx context.Context) error {
 
 	for {
 		if err := c.drain(ctx); err != nil {
+			return err
+		}
+		if err := c.checkMenu(ctx); err != nil {
 			return err
 		}
 		select {
@@ -256,6 +282,24 @@ func (c *conn) drain(ctx context.Context) error {
 			return nil
 		}
 	}
+}
+
+// checkMenu tells the client when the venue's menu has moved on. It runs
+// after every drain, so like an event, a change whose nudge was missed is
+// caught on the next ping.
+func (c *conn) checkMenu(ctx context.Context) error {
+	version, err := c.hub.source.MenuVersion(ctx, c.client.VenueID)
+	if err != nil {
+		return err
+	}
+	if version == c.menu {
+		return nil
+	}
+	if err := c.hub.writeJSON(ctx, c.ws, MenuChangedMessage{Type: MsgMenuChanged, Version: version}); err != nil {
+		return err
+	}
+	c.menu = version
+	return nil
 }
 
 // wants reports whether this connection is subscribed to an event.

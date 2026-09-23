@@ -27,7 +27,24 @@ var at = time.Date(2026, 9, 18, 4, 30, 0, 0, time.UTC)
 type source struct {
 	mu     sync.Mutex
 	events []db.StreamEvent
+	menu   int64
 	fail   error
+}
+
+func (s *source) MenuVersion(context.Context, int64) (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.fail != nil {
+		return 0, s.fail
+	}
+	return s.menu, nil
+}
+
+// setMenu moves the menu to a version, as a menu write would.
+func (s *source) setMenu(v int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.menu = v
 }
 
 func (s *source) VenueEventsAfter(_ context.Context, venueID, afterID int64, limit int) ([]db.StreamEvent, error) {
@@ -231,6 +248,43 @@ func TestAReconnectLosesNothing(t *testing.T) {
 	w.hub.Notify(1)
 	if got := second.eventIDs(); len(got) != 1 || got[0] != 9 {
 		t.Fatalf("live: %v", got)
+	}
+}
+
+// TestAMenuChangeReachesEveryone: the welcome says which menu is current,
+// a new version is announced to every connection whatever it subscribed
+// to, and a change whose nudge never came is found on the next ping.
+func TestAMenuChangeReachesEveryone(t *testing.T) {
+	w := newWorld(t)
+	w.src.setMenu(4)
+
+	till := w.dial(t)
+	if welcome := till.hello(ClientMessage{}); welcome["menu_version"] != float64(4) {
+		t.Fatalf("welcome = %v, want menu_version 4", welcome)
+	}
+	kitchen := w.dial(t)
+	kitchen.hello(ClientMessage{Topics: []string{"station:kitchen"}})
+
+	w.src.setMenu(5)
+	w.hub.Notify(1)
+	for name, c := range map[string]*client{"till": till, "kitchen": kitchen} {
+		msg := c.next()
+		if msg["type"] != string(MsgMenuChanged) || msg["version"] != float64(5) {
+			t.Fatalf("%s got %v, want menu_changed 5", name, msg)
+		}
+	}
+
+	// No Notify this time: the ping loop finds it.
+	w.src.setMenu(6)
+	if msg := till.next(); msg["type"] != string(MsgMenuChanged) || msg["version"] != float64(6) {
+		t.Fatalf("after a missed nudge: %v", msg)
+	}
+
+	// Events still flow, and an unchanged menu is not announced again.
+	w.src.append("ord_AAAA1111", 0, order.NoteAdded{Scope: order.ScopeOrder, Text: "hi"})
+	w.hub.Notify(1)
+	if got := till.eventIDs(); len(got) != 1 {
+		t.Fatalf("events after the menu change: %v", got)
 	}
 }
 

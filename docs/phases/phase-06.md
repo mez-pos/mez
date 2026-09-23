@@ -9,7 +9,7 @@ Phase 05.
 
 ## Tasks
 
-- [ ] **Task 1 — Menu data and read API.**
+- [x] **Task 1 — Menu data and read API.**
   Migration for `categories`, `items`, `modifier_groups`, `modifiers`,
   `item_modifier_groups`, `stations`, `courses`, including HSN and tax class per
   item. Seed data: a realistic cafe menu with drinks, food, modifiers and two

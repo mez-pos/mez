@@ -48,6 +48,9 @@ type setupOptions struct {
 
 	DeviceName string
 	DeviceKind auth.DeviceKind
+
+	// DemoMenu adds demoMenu to the venue, for trying the till out.
+	DemoMenu bool
 }
 
 // setupResult is what setUp created, for the summary printed afterwards.
@@ -58,6 +61,7 @@ type setupResult struct {
 	PINGenerated  bool
 	Code          auth.PairingCode
 	DBPath        string
+	MenuItems     int
 }
 
 // runSetup is `nofiltr setup`: the one command run on the venue's own
@@ -136,6 +140,7 @@ func parseSetupFlags(args []string, out io.Writer) (setupOptions, error) {
 	set.StringVar(&o.OwnerPIN, "owner-pin", "", "the owner's PIN, 4 to 8 digits (default: one is drawn and printed)")
 	set.StringVar(&o.DeviceName, "device-name", "Counter 1", "what the first device will be called")
 	kind := set.String("device-kind", string(auth.KindTerminal), "terminal, kitchen or back_office")
+	set.BoolVar(&o.DemoMenu, "demo-menu", false, "add a sample cafe menu priced in rupees, for trying the till out")
 
 	if err := set.Parse(args); err != nil {
 		return setupOptions{}, err
@@ -188,7 +193,17 @@ func setUp(ctx context.Context, database *db.DB, devices *auth.Devices, o setupO
 			return err
 		}
 		ownerID = owner.ID
-		return writeSettings(ctx, q, venue.ID, o, now)
+		if err := writeSettings(ctx, q, venue.ID, o, now); err != nil {
+			return err
+		}
+		if o.DemoMenu {
+			spec := demoMenu()
+			if _, err := db.WriteMenu(ctx, q, venue.ID, spec, now); err != nil {
+				return fmt.Errorf("setup: the demo menu: %w", err)
+			}
+			res.MenuItems = countItems(spec)
+		}
+		return nil
 	})
 	if err != nil {
 		return setupResult{}, err
@@ -218,6 +233,9 @@ func checkSetup(o setupOptions, now time.Time) (setupResult, gen.CreateVenuePara
 	currency := strings.ToUpper(strings.TrimSpace(o.Currency))
 	if len(currency) != 3 {
 		return fail("currency %q is not a three letter code", o.Currency)
+	}
+	if o.DemoMenu && currency != demoMenuCurrency {
+		return fail("the demo menu is priced in %s, and this venue is in %s: leave out -demo-menu", demoMenuCurrency, currency)
 	}
 	loc, err := time.LoadLocation(o.Timezone)
 	if err != nil {
@@ -362,5 +380,17 @@ func writeSetupSummary(w io.Writer, res setupResult) {
 		fmt.Fprintf(w, "  Owner PIN   %s   (drawn now: write it down, then change it in the back office)\n", res.OwnerPIN)
 	}
 	fmt.Fprintf(w, "  Pairing code %s   (expires %s)\n", res.Code.Code, res.Code.ExpiresAt.Local().Format("15:04"))
+	if res.MenuItems > 0 {
+		fmt.Fprintf(w, "  Demo menu   %d items\n", res.MenuItems)
+	}
 	fmt.Fprintf(w, "\nStart the server with `nofiltr`, open the terminal on the till,\nand enter the pairing code. Sign in as the owner to make more.\n\n")
+}
+
+// countItems is how many items a menu spec adds, for the summary.
+func countItems(spec db.MenuSpec) int {
+	n := 0
+	for _, c := range spec.Categories {
+		n += len(c.Items)
+	}
+	return n
 }

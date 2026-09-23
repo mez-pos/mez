@@ -1643,3 +1643,45 @@ pairs like a real one. Keys typed before the staff list has loaded are
 dropped. After a reload the pad does not know about a lockout until the
 first attempt is refused. Staff tiles show no role, and the heading shows
 the device's name, until the API returns both.
+
+## ADR-069 - The menu: one versioned document, tax classes, invalidated by the stream
+2026-09 · Status: accepted
+Decision: migration 00006 adds `stations`, `courses`, `tax_classes`,
+`categories`, `items`, `modifier_groups`, `modifiers`,
+`item_modifier_groups` and `menu_versions`. `GET /api/v1/menu` returns the
+whole active menu as one document with a version; the hub announces a new
+version as `menu_changed`, and `useMenu` (web/shared) caches it until then.
+- **Tax classes, a table the phase did not list.** An item points at a
+  class ("Restaurant service 5%") holding a `tax.Rate` and an exempt flag,
+  and carries its own HSN. A GST rate change is one row, not every item.
+- **Items carry what a line snapshots, resolved.** The response gives each
+  item its station's code, its course's number and its class's rate, exactly
+  the fields of `order.LineAdded`, so ringing an item up needs no second
+  lookup. Nothing an order records joins back to these tables.
+- **Nothing is deleted.** Rows retire with `active = 0`. A retired category
+  or station takes its items off the till; a retired group leaves the items.
+  Every table carries `venue_id`, with composite foreign keys, so a row can
+  never hang off another venue's parent.
+- **One document, one version.** A cafe menu is small, so the terminal
+  fetches all of it, inside one read transaction so the version matches the
+  rows. The ETag is the version: a revalidation is a 304 from one indexed
+  read. `menu_versions` is its own table rather than a column on `venues`,
+  because a new column changed the generated `gen.Venue` and every query
+  returning it.
+- **Invalidation rides the stream's recovery.** `welcome` carries
+  `menu_version`, and after every drain (a nudge or a ping) a connection
+  compares the venue's version with the one it last sent and sends
+  `menu_changed` to every connection, whatever its topics. A missed nudge is
+  caught on the next ping, and a device that was offline catches up on its
+  welcome, the same way events do. Nothing writes the menu over HTTP until
+  phase 10, so today only `CreateMenu` and `WriteMenu` bump the version.
+- **The menu types live in `internal/domain/menu`**, plain data, so
+  `internal/api` still imports nothing from `internal/db`.
+- **The demo menu is Go, behind `nofiltr setup -demo-menu`**, written in
+  setup's own transaction. It is not a migration, so a real venue never
+  gets fake items. It is priced in paise and refused for any other currency.
+Because: the till must ring up from what it has cached when the network
+blinks, and must never keep selling from a menu the owner has changed.
+Cost: no menu writes over the API yet (phase 10). `AddLine` still trusts the
+client's price and tax snapshot; it can now be checked against the menu,
+and is not. A modifier group's min/max is enforced by the terminal only.

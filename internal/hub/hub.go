@@ -50,10 +50,12 @@ const (
 	prefixStation = "station:"
 )
 
-// Source is where the hub reads events. *db.DB implements it.
+// Source is where the hub reads events, and the menu version it announces.
+// *db.DB implements it.
 type Source interface {
 	VenueEventsAfter(ctx context.Context, venueID, afterID int64, limit int) ([]db.StreamEvent, error)
 	VenueLastEventID(ctx context.Context, venueID int64) (int64, error)
+	MenuVersion(ctx context.Context, venueID int64) (int64, error)
 }
 
 // Client is who is connecting, as authentication established them.
@@ -128,7 +130,7 @@ func New(opts Options) (*Hub, error) {
 	}, nil
 }
 
-// Notify tells the hub that a venue has new events. It never blocks and
+// Notify tells the hub that a venue has new events, or a new menu. It never blocks and
 // never fails: the events are already on disk, and a connection that misses
 // the nudge catches up on its next ping or its next reconnect.
 func (h *Hub) Notify(venueID int64) {

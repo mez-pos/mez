@@ -11,18 +11,17 @@ File: `docs/phases/phase-06.md`. Phase 05 is complete.
 
 ## Last completed task
 
-**Phase 05 closed.** Tokens, three Vite apps, API client and realtime,
-fourteen primitives and a gallery, pairing and the staff lock (ADR-062 to
-068). Done-when checked on the production binary: a clean browser pairs,
-signs in with a PIN, and the binary serves all three apps; the dev gallery
-shows every primitive on ink and paper.
+**Phase 06, Task 1: menu data and read API** (ADR-069). Migration 00006,
+`GET /api/v1/menu` (whole menu, ETag is the version), `menu_changed` on the
+stream and `menu_version` in `welcome`, `useMenu` and `indexMenu` in
+`web/shared`, and `nofiltr setup -demo-menu` (18 items, bar and kitchen).
 
 ## Next task
 
-**Phase 06, Task 1.** Read `docs/phases/phase-06.md`. Build inside
-`SignedInShell` (`web/shared/screens/`), from the primitives in
-`web/shared/ui/`; write `docs/design/screens/` specs lazily. `make
-build-web` is the frontend gate, alongside `make check`.
+**Phase 06, Task 2: register screen.** Spec
+`docs/design/screens/terminal-register.md` first, then build inside
+`SignedInShell` from `useMenu()` and `indexMenu()`. `make build-web` is the
+frontend gate, alongside `make check`.
 
 ## Known broken / in progress
 
@@ -33,9 +32,9 @@ build-web` is the frontend gate, alongside `make check`.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
-- `AddLine` trusts the client's price and tax snapshot until menu tables
-  exist (phase 10). GST place of supply is always the venue's state, so
-  IGST sales cannot be rung up. `nofiltr setup` cannot finish a US venue.
+- `AddLine` is not checked against the menu (price, tax, modifier min/max);
+  no menu writes over HTTP until phase 10. GST place of supply is always
+  the venue's state, so no IGST. `nofiltr setup` cannot finish a US venue.
 - Never swept: idempotency keys, expired staff sessions, sign-in attempts.
   The pairing rate limiter is per process.
 - Token gaps (ADR-062): five paper roles are stand-ins; `--vermilion-on`
@@ -43,9 +42,11 @@ build-web` is the frontend gate, alongside `make check`.
   button in the gallery.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no number. Phase 07 must work that way or revisit it.
-- To try the apps: `nofiltr setup` prints a pairing code (`-device-kind
-  back_office` for the back office); pair in the browser. A code for the
-  wrong app is refused but its device stays on the server (ADR-068).
+- A data dir path containing `%` cannot be opened: `internal/db/open.go`
+  does not escape the path in its `file:` DSN.
+- To try the apps: `nofiltr setup -demo-menu` prints a pairing code
+  (`-device-kind back_office` for the back office); pair in the browser. A
+  code for the wrong app is refused but its device stays (ADR-068).
 - No endpoint returns the venue's name or a staff member's role; the lock
   screen shows the device name and no roles until one does.
 - `go test -race` needs cgo, which is banned; `make check` runs without it.

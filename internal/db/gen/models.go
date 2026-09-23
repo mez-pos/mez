@@ -9,6 +9,25 @@ import (
 	"time"
 )
 
+type Category struct {
+	ID        int64
+	VenueID   int64
+	Name      string
+	SortOrder int64
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type Course struct {
+	ID        int64
+	VenueID   int64
+	Number    int64
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type Device struct {
 	ID         int64
 	PublicID   string
@@ -48,6 +67,58 @@ type InvoiceSeries struct {
 	Series  string
 	FyStart int64
 	LastSeq int64
+}
+
+type Item struct {
+	ID         int64
+	VenueID    int64
+	CategoryID int64
+	Name       string
+	Price      int64
+	Hsn        string
+	TaxClassID int64
+	StationID  int64
+	CourseID   int64
+	SortOrder  int64
+	Active     bool
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type ItemModifierGroup struct {
+	VenueID   int64
+	ItemID    int64
+	GroupID   int64
+	SortOrder int64
+}
+
+type MenuVersion struct {
+	VenueID int64
+	Version int64
+}
+
+type Modifier struct {
+	ID        int64
+	VenueID   int64
+	GroupID   int64
+	Name      string
+	Price     int64
+	IsDefault bool
+	SortOrder int64
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type ModifierGroup struct {
+	ID        int64
+	VenueID   int64
+	Name      string
+	MinSelect int64
+	MaxSelect int64
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Order struct {
@@ -140,6 +211,27 @@ type StaffSession struct {
 	CreatedAt time.Time
 	ExpiresAt time.Time
 	EndedAt   sql.NullTime
+}
+
+type Station struct {
+	ID        int64
+	VenueID   int64
+	Code      string
+	Name      string
+	SortOrder int64
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type TaxClass struct {
+	ID        int64
+	VenueID   int64
+	Name      string
+	Rate      int64
+	Exempt    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Venue struct {

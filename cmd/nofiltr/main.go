@@ -187,6 +187,7 @@ func run() (err error) {
 		api.WithDevices(devices),
 		api.WithStaff(staff),
 		api.WithOrders(orders),
+		api.WithMenus(database),
 		api.WithStream(events),
 	)
 

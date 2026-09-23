@@ -131,6 +131,7 @@ export type StreamMessageType =
   | 'welcome'
   | 'event'
   | 'caught_up'
+  | 'menu_changed'
   | 'error';
 
 export interface Money {
@@ -576,6 +577,61 @@ export interface CommandResponse {
   replayed?: boolean;
 }
 
+export interface StationResponse {
+  id: number;
+  code: string;
+  name: string;
+}
+
+export interface CourseResponse {
+  id: number;
+  number: number;
+  name: string;
+}
+
+export interface CategoryResponse {
+  id: number;
+  name: string;
+}
+
+export interface ModifierResponse {
+  id: number;
+  name: string;
+  price: Money;
+  is_default: boolean;
+}
+
+export interface ModifierGroupResponse {
+  id: number;
+  name: string;
+  min_select: number;
+  max_select: number;
+  modifiers: ModifierResponse[];
+}
+
+export interface MenuItemResponse {
+  id: number;
+  category_id: number;
+  name: string;
+  price: Money;
+  station: string;
+  course: number;
+  tax_rate: number;
+  hsn?: string;
+  tax_exempt?: boolean;
+  modifier_groups: number[];
+}
+
+export interface MenuResponse {
+  version: number;
+  currency: string;
+  stations: StationResponse[];
+  courses: CourseResponse[];
+  categories: CategoryResponse[];
+  items: MenuItemResponse[];
+  modifier_groups: ModifierGroupResponse[];
+}
+
 export interface ClientMessage {
   type: StreamMessageType;
   last_event_id?: number;
@@ -590,6 +646,7 @@ export interface WelcomeMessage {
   from_event_id: number;
   latest_event_id: number;
   topics: string[];
+  menu_version: number;
 }
 
 export interface EventMessage {
@@ -605,6 +662,11 @@ export interface EventMessage {
 export interface CaughtUpMessage {
   type: StreamMessageType;
   id: number;
+}
+
+export interface MenuChangedMessage {
+  type: StreamMessageType;
+  version: number;
 }
 
 export interface StreamErrorMessage {

@@ -144,7 +144,8 @@ func generate() (*ts.Generator, error) {
 		{"Permission", auth.PermOrderOpen, permissions()},
 		{"OrderEventType", order.TypeOrderOpened, eventTypeNames()},
 		{"StreamMessageType", hub.MsgHello, asStrings([]hub.MessageType{
-			hub.MsgHello, hub.MsgSubscribe, hub.MsgWelcome, hub.MsgEvent, hub.MsgCaughtUp, hub.MsgError,
+			hub.MsgHello, hub.MsgSubscribe, hub.MsgWelcome, hub.MsgEvent, hub.MsgCaughtUp,
+			hub.MsgMenuChanged, hub.MsgError,
 		})},
 	}
 	for _, u := range unions {
@@ -186,9 +187,12 @@ func generate() (*ts.Generator, error) {
 		lineResponse{}, noteResponse{}, ticketResponse{}, tenderResponse{},
 		refundResponse{}, invoiceResponse{}, discountResponse{}, totalsResponse{},
 		taxResponse{}, orderResponse{}, commandResponse{},
+		// The menu.
+		stationResponse{}, courseResponse{}, categoryResponse{}, modifierResponse{},
+		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},
 		// The stream.
 		hub.ClientMessage{}, hub.WelcomeMessage{}, hub.EventMessage{},
-		hub.CaughtUpMessage{}, hub.ErrorMessage{},
+		hub.CaughtUpMessage{}, hub.MenuChangedMessage{}, hub.ErrorMessage{},
 	}
 	for _, root := range roots {
 		if _, err := g.Add(root); err != nil {

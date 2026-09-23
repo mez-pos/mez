@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -188,6 +189,7 @@ func TestSetupRefusals(t *testing.T) {
 		{"a PIN with letters in it", []string{"-owner-pin", "12a4"}, "PIN"},
 		{"a PIN too short", []string{"-owner-pin", "123"}, "PIN"},
 		{"an argument that is not a flag", []string{"today"}, "unexpected argument"},
+		{"the rupee demo menu in pounds", []string{"-currency", "GBP", "-demo-menu"}, "demo menu is priced in INR"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -239,5 +241,56 @@ func TestSetupDefaults(t *testing.T) {
 	}
 	if paired.Device.Name != "Kitchen" || paired.Device.Kind != auth.KindKitchen {
 		t.Errorf("paired = %+v", paired.Device)
+	}
+}
+
+// TestSetupDemoMenu: the flag leaves a menu the till can ring up from, and
+// without it the venue starts with none.
+func TestSetupDemoMenu(t *testing.T) {
+	dir, args := setupArgs(t, "-demo-menu")
+	out := runSetupIn(t, args)
+	want := countItems(demoMenu())
+	if got := field(t, out, "Demo menu"); got != fmt.Sprint(want) {
+		t.Errorf("summary says %s items, want %d", got, want)
+	}
+
+	m, err := opened(t, dir).Menu(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("Menu: %v", err)
+	}
+	if len(m.Items) != want || len(m.Stations) != 2 || len(m.Courses) != 2 || m.Version != 2 {
+		t.Fatalf("menu has %d items, %d stations, %d courses, version %d",
+			len(m.Items), len(m.Stations), len(m.Courses), m.Version)
+	}
+	required, defaults, negative := 0, 0, 0
+	for _, g := range m.Groups {
+		if g.MinSelect > 0 {
+			required++
+		}
+		for _, md := range g.Modifiers {
+			if md.IsDefault {
+				defaults++
+			}
+			if md.Price.Minor < 0 {
+				negative++
+			}
+		}
+	}
+	if required == 0 || defaults == 0 || negative == 0 {
+		t.Errorf("the demo menu should exercise required groups, defaults and a negative delta: %d %d %d",
+			required, defaults, negative)
+	}
+	for _, it := range m.Items {
+		if it.HSN != sacRestaurant || it.TaxRate == 0 || it.Price.Currency != demoMenuCurrency {
+			t.Errorf("item %q = %+v", it.Name, it)
+		}
+	}
+
+	plainDir, plainArgs := setupArgs(t)
+	if out := runSetupIn(t, plainArgs); strings.Contains(out, "Demo menu") {
+		t.Errorf("a plain setup mentions a demo menu: %q", out)
+	}
+	if m, err := opened(t, plainDir).Menu(context.Background(), 1); err != nil || len(m.Items) != 0 {
+		t.Errorf("a plain setup has a menu: %d items, %v", len(m.Items), err)
 	}
 }

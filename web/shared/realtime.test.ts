@@ -341,3 +341,45 @@ describe("RealtimeConnection: heartbeat", () => {
     expect(h.conn.current().state).toBe("live");
   });
 });
+
+describe("RealtimeConnection: the menu version", () => {
+  it("names the menu on every connection, and whenever it changes", () => {
+    const h = harness();
+    h.conn.start();
+    const first = h.latest();
+    first.open();
+    first.receive({ ...welcome(5, 5), menu_version: 3 });
+    first.receive({ type: "menu_changed", version: 4 });
+    first.drop();
+
+    vi.advanceTimersByTime(500);
+    const second = h.latest();
+    second.open();
+    second.receive({ ...welcome(5, 5), menu_version: 6 }); // changed twice while away
+
+    expect(h.notices.filter((n) => n.kind === "menu")).toEqual([
+      { kind: "menu", version: 3 },
+      { kind: "menu", version: 4 },
+      { kind: "menu", version: 6 },
+    ]);
+  });
+
+  it("does not repeat it on a heartbeat's welcome", () => {
+    const h = harness();
+    h.conn.start();
+    const s = h.latest();
+    s.open();
+    s.receive({ ...welcome(1, 1), menu_version: 2 });
+    s.receive({ ...welcome(1, 1), menu_version: 2 });
+    expect(h.notices.filter((n) => n.kind === "menu")).toHaveLength(1);
+  });
+
+  it("ignores a version it cannot use", () => {
+    const h = harness();
+    const s = connectAt(h, 1);
+    for (const version of [undefined, null, "7", 0, -1, 1.5]) {
+      s.receive({ type: "menu_changed", version });
+    }
+    expect(h.notices.filter((n) => n.kind === "menu")).toEqual([]);
+  });
+});

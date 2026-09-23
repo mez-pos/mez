@@ -4,6 +4,7 @@
 //   open    -> send hello { last_event_id }
 //   welcome -> the server's position; replay follows, then caught_up
 //   event   -> one event; its id is the stream position
+//   menu_changed -> the venue's menu is at a new version; fetch it
 //
 // What this adds on top of a WebSocket:
 // - The last position seen, so a reconnect replays the gap and loses nothing.
@@ -18,7 +19,7 @@
 //   request tells "server unreachable" apart from "this device was unpaired".
 
 import { backoffDelay, defaultBackoff, type Backoff } from "./backoff";
-import type { ClientMessage, EventMessage, WelcomeMessage } from "./api-types";
+import type { ClientMessage, EventMessage, MenuChangedMessage, WelcomeMessage } from "./api-types";
 
 export const streamPath = "/api/v1/stream";
 const subprotocol = "nofiltr.v1"; // hub.Subprotocol
@@ -42,10 +43,15 @@ export type RealtimeStatus =
  * What screens hear. After a `resync`, anything held from before `from` may
  * be stale or missing (first connection, a restored backup): refetch it.
  * Events after that are deltas on top of the refetch.
+ *
+ * `menu` names the venue's current menu version. It is heard on every
+ * connection, from the welcome, and whenever the menu changes; a cached menu
+ * of any other version is stale.
  */
 export type RealtimeNotice =
   | { readonly kind: "resync"; readonly from: number }
-  | { readonly kind: "event"; readonly message: EventMessage };
+  | { readonly kind: "event"; readonly message: EventMessage }
+  | { readonly kind: "menu"; readonly version: number };
 
 export type ProbeResult = "ok" | "unreachable" | "unauthenticated" | "device_revoked";
 
@@ -191,6 +197,9 @@ export class RealtimeConnection {
       case "caught_up":
         this.advance(message.id ?? 0);
         return;
+      case "menu_changed":
+        this.menuAt((message as MenuChangedMessage).version);
+        return;
       default:
         return; // "error" answers something this client sent; nothing to do but carry on
     }
@@ -208,7 +217,15 @@ export class RealtimeConnection {
     this.lastId = from;
     this.startHeartbeat();
     if (resync) this.emit({ kind: "resync", from });
+    // Every connection, not only a resync: the menu may have moved while
+    // this device was away, with no event to show for it.
+    this.menuAt(welcome.menu_version);
     this.setStatus(from >= welcome.latest_event_id ? this.liveStatus() : { state: "syncing", target: welcome.latest_event_id });
+  }
+
+  /** A version that is not a positive integer is not one to act on. */
+  private menuAt(version: unknown): void {
+    if (typeof version === "number" && Number.isInteger(version) && version > 0) this.emit({ kind: "menu", version });
   }
 
   private advance(id: number): void {
