@@ -12,13 +12,14 @@ interface TicketRailProps {
   orderId: string | null;
   pending: readonly PendingLine[];
   currency: string;
-  /** A tap that could not ring up on its own, for now. */
-  notice: string | null;
+  /** Whether a line can still have its modifiers changed. */
+  canModify: (line: LineResponse) => boolean;
+  onModify: (line: LineResponse) => void;
   onRetry: (key: string) => void;
   onRemove: (key: string) => void;
 }
 
-export function TicketRail({ order, orderId, pending, currency, notice, onRetry, onRemove }: TicketRailProps) {
+export function TicketRail({ order, orderId, pending, currency, canModify, onModify, onRetry, onRemove }: TicketRailProps) {
   const zero: Amount = { minor: 0, currency };
   const totals = order?.totals;
   const empty = (order?.lines.length ?? 0) === 0 && pending.length === 0;
@@ -32,11 +33,6 @@ export function TicketRail({ order, orderId, pending, currency, notice, onRetry,
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5">
-        {notice && (
-          <p role="status" className="mt-3 rounded border border-chip-warning-border bg-chip-warning-bg p-3 text-sm text-chip-warning-fg">
-            {notice}
-          </p>
-        )}
         {empty ? (
           <div className="py-16 text-center">
             <p className="font-serif text-xl italic text-fg-faint">No items yet</p>
@@ -44,7 +40,9 @@ export function TicketRail({ order, orderId, pending, currency, notice, onRetry,
           </div>
         ) : (
           <ol>
-            {order?.lines.map((line) => <OrderLine key={line.id} line={line} />)}
+            {order?.lines.map((line) => (
+              <OrderLine key={line.id} line={line} onModify={canModify(line) ? () => onModify(line) : undefined} />
+            ))}
             {pending.map((p) => (
               <PendingRow key={p.key} line={p} onRetry={onRetry} onRemove={onRemove} />
             ))}
@@ -77,7 +75,13 @@ function modifierText(mods: readonly { name: string }[] | undefined): string {
   return (mods ?? []).map((m) => m.name).join(", ");
 }
 
-function OrderLine({ line }: { line: LineResponse }) {
+interface OrderLineProps {
+  line: LineResponse;
+  /** Present while the kitchen has not seen the line and it has choices. */
+  onModify?: (() => void) | undefined;
+}
+
+function OrderLine({ line, onModify }: OrderLineProps) {
   const off = line.status !== "active";
   return (
     <li className="grid grid-cols-[1fr_auto] gap-3 border-b border-line py-3.5">
@@ -88,6 +92,11 @@ function OrderLine({ line }: { line: LineResponse }) {
         </div>
         {line.modifiers && line.modifiers.length > 0 && (
           <p className="mt-1 text-sm text-fg-muted">{modifierText(line.modifiers)}</p>
+        )}
+        {onModify && (
+          <Button variant="ghost" className="-ml-4 mt-1" onClick={onModify} aria-label={`Modify ${line.name}`}>
+            Modify
+          </Button>
         )}
       </div>
       <Money amount={line.gross} tone={off ? "muted" : "default"} />

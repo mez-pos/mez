@@ -18,8 +18,9 @@ const sacRestaurant = "996331"
 // demoMenu is a small South Indian cafe: coffee and cold drinks from the
 // bar, breakfast and cake from the kitchen. It exists so a new install can
 // ring up a sale in its first minute, and so the terminal has a realistic
-// menu to be designed against: required and optional modifiers, a default,
-// a negative price delta, two stations and two courses.
+// menu to be designed against: required and optional modifiers, defaults,
+// a free choice, two stations and two courses. No modifier costs less than
+// nothing: order.LineAdded refuses a negative modifier price (ADR-071).
 func demoMenu() db.MenuSpec {
 	const food, bar, kitchen = "Restaurant service 5%", "bar", "kitchen"
 	item := func(name string, rupees int64, station string, course int64, groups ...string) db.ItemSpec {
@@ -40,7 +41,7 @@ func demoMenu() db.MenuSpec {
 			}},
 			{Name: "Milk", MinSelect: 1, MaxSelect: 1, Modifiers: []db.ModifierSpec{
 				{Name: "Dairy", IsDefault: true}, {Name: "Oat", Price: 5000},
-				{Name: "Almond", Price: 5000}, {Name: "No milk", Price: -2000},
+				{Name: "Almond", Price: 5000}, {Name: "No milk"},
 			}},
 			{Name: "Sugar", MinSelect: 1, MaxSelect: 1, Modifiers: []db.ModifierSpec{
 				{Name: "Regular sugar", IsDefault: true}, {Name: "Less sugar"}, {Name: "No sugar"},
@@ -51,6 +52,11 @@ func demoMenu() db.MenuSpec {
 			}},
 			{Name: "Add on", MaxSelect: 2, Modifiers: []db.ModifierSpec{
 				{Name: "Extra chutney", Price: 1500}, {Name: "Ghee", Price: 2000},
+			}},
+			// Required with no default: the till has to ask, so the modifier
+			// sheet opens on the tap rather than ringing a guess up.
+			{Name: "Bread", MinSelect: 1, MaxSelect: 1, Modifiers: []db.ModifierSpec{
+				{Name: "Sourdough"}, {Name: "Multigrain"}, {Name: "Gluten free", Price: 4000},
 			}},
 			{Name: "Ice cream", MaxSelect: 1, Modifiers: []db.ModifierSpec{
 				{Name: "Scoop of vanilla", Price: 6000},
@@ -76,7 +82,7 @@ func demoMenu() db.MenuSpec {
 				item("Masala dosa", 140, kitchen, 1, "Add on"),
 				item("Upma", 90, kitchen, 1, "Add on"),
 				item("Egg bhurji toast", 180, kitchen, 1),
-				item("Avocado toast", 320, kitchen, 1),
+				item("Avocado toast", 320, kitchen, 1, "Bread"),
 			}},
 			{Name: "Cakes", Items: []db.ItemSpec{
 				item("Chocolate brownie", 150, kitchen, 2, "Ice cream"),

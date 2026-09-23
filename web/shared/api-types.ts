@@ -25,6 +25,8 @@ export type ErrorCode =
   | 'line_not_found'
   | 'line_not_active'
   | 'payment_not_found'
+  | 'modifiers_mismatch'
+  | 'line_in_kitchen'
   | 'payment_not_captured'
   | 'order_closed'
   | 'order_not_closed'
@@ -112,6 +114,7 @@ export type OrderEventType =
   | 'order.opened'
   | 'line.added'
   | 'line.qty_changed'
+  | 'line.modified'
   | 'line.voided'
   | 'line.comped'
   | 'discount.applied'
@@ -204,6 +207,12 @@ export interface LineQtyChanged {
   to: number;
 }
 
+export interface LineModified {
+  line_id: number;
+  from: LineModifier[];
+  to: LineModifier[];
+}
+
 export interface LineVoided {
   line_id: number;
   reason_code: string;
@@ -289,6 +298,7 @@ export type OrderEvent =
   | OrderEventOf<'order.opened', OrderOpened>
   | OrderEventOf<'line.added', LineAdded>
   | OrderEventOf<'line.qty_changed', LineQtyChanged>
+  | OrderEventOf<'line.modified', LineModified>
   | OrderEventOf<'line.voided', LineVoided>
   | OrderEventOf<'line.comped', LineComped>
   | OrderEventOf<'discount.applied', DiscountApplied>
@@ -389,6 +399,11 @@ export interface AddLine {
 export interface ChangeQtyRequest {
   from: number;
   to: number;
+}
+
+export interface ModifyLineRequest {
+  from: LineModifier[];
+  to: LineModifier[];
 }
 
 export interface VoidLineRequest {

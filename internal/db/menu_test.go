@@ -168,6 +168,7 @@ func TestCreateMenuRefusals(t *testing.T) {
 		{"unknown course", func(s *MenuSpec) { s.Categories[0].Items[0].Course = 9 }, true},
 		{"unknown tax class", func(s *MenuSpec) { s.Categories[0].Items[0].TaxClass = "Luxury" }, true},
 		{"unknown group", func(s *MenuSpec) { s.Categories[0].Items[0].Groups = []string{"Syrups"} }, true},
+		{"negative modifier price", func(s *MenuSpec) { s.Groups[1].Modifiers[0].Price = -2000 }, true},
 		{"negative price", func(s *MenuSpec) { s.Categories[0].Items[0].Price = -1 }, false},
 		{"hsn with letters", func(s *MenuSpec) { s.Categories[0].Items[0].HSN = "99A331" }, false},
 		{"station code in capitals", func(s *MenuSpec) { s.Stations[0].Code = "Bar" }, false},
@@ -259,4 +260,28 @@ func groupByID(t *testing.T, m menu.Menu, id int64) menu.ModifierGroup {
 	}
 	t.Fatalf("no group %d in %+v", id, m.Groups)
 	return menu.ModifierGroup{}
+}
+
+// TestANegativeModifierNeverReachesTheTill: one written before the writer
+// refused them is left off the menu, because a line with it is refused.
+func TestANegativeModifierNeverReachesTheTill(t *testing.T) {
+	d := menuDB(t)
+	ctx := context.Background()
+	if _, err := d.CreateMenu(ctx, 1, smallMenu(), menuNow); err != nil {
+		t.Fatalf("CreateMenu: %v", err)
+	}
+	if _, err := d.Writer().ExecContext(ctx, `UPDATE modifiers SET price = -2000 WHERE name = 'Oat'`); err != nil {
+		t.Fatal(err)
+	}
+	m, err := d.Menu(ctx, 1)
+	if err != nil {
+		t.Fatalf("Menu: %v", err)
+	}
+	for _, g := range m.Groups {
+		for _, md := range g.Modifiers {
+			if md.Price.Minor < 0 {
+				t.Errorf("%s offers %s at %d", g.Name, md.Name, md.Price.Minor)
+			}
+		}
+	}
 }

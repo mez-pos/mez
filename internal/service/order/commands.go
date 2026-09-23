@@ -33,6 +33,7 @@ var errReplay = errors.New("idempotency key already applied")
 type (
 	AddLine       order.LineAdded
 	ChangeQty     order.LineQtyChanged
+	ModifyLine    order.LineModified
 	VoidLine      order.LineVoided
 	CompLine      order.LineComped
 	ApplyDiscount order.DiscountApplied
@@ -140,6 +141,12 @@ func (s *Service) AddLine(ctx context.Context, meta Meta, orderID int64, cmd Add
 // two terminals editing one line cannot overwrite each other unseen.
 func (s *Service) ChangeQty(ctx context.Context, meta Meta, orderID int64, cmd ChangeQty) (Result, error) {
 	return s.run(ctx, meta, orderID, "change_qty", cmd, one(order.LineQtyChanged(cmd)))
+}
+
+// ModifyLine replaces a line's modifiers before the kitchen has it. From
+// must be what the line holds, as with ChangeQty.
+func (s *Service) ModifyLine(ctx context.Context, meta Meta, orderID int64, cmd ModifyLine) (Result, error) {
+	return s.run(ctx, meta, orderID, "modify_line", cmd, one(order.LineModified(cmd)))
 }
 
 // VoidLine takes a line off the bill.

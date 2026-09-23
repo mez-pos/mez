@@ -9,7 +9,7 @@ import { browserStorage } from "../../../shared/auth/storage";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { newKey, ticketMemory } from "./ticket-key";
-import { TicketQueue, type PendingLine } from "./ticket-queue";
+import { TicketQueue, type ModifyLine, type PendingLine } from "./ticket-queue";
 
 export const orderQueryKey = (id: string) => ["order", id] as const;
 
@@ -23,6 +23,8 @@ export interface Ticket {
   ringUp: (command: AddLine) => void;
   retry: (key: string) => void;
   remove: (key: string) => void;
+  /** Rejects with the words to show when the server refuses. */
+  modify: (lineId: number, change: ModifyLine) => Promise<void>;
 }
 
 export function useTicket(): Ticket {
@@ -38,6 +40,12 @@ export function useTicket(): Ticket {
           store.api.post<CommandResponse>(`/api/v1/orders/${encodeURIComponent(orderId)}/lines`, command, {
             idempotencyKey: key,
           }),
+        modifyLine: (orderId, lineId, change, key) =>
+          store.api.post<CommandResponse>(
+            `/api/v1/orders/${encodeURIComponent(orderId)}/lines/${lineId}/modifiers`,
+            change,
+            { idempotencyKey: key },
+          ),
       },
       newKey: () => newKey(),
       onOrder: (order) => queryClient.setQueryData(orderQueryKey(order.id), order),
@@ -79,5 +87,6 @@ export function useTicket(): Ticket {
     ringUp: (command) => queue.ringUp(command),
     retry: (key) => queue.retry(key),
     remove: (key) => queue.remove(key),
+    modify: (lineId, change) => queue.modify(lineId, change),
   };
 }

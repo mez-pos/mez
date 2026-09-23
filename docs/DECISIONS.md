@@ -1724,3 +1724,48 @@ both happen on the wifi a cafe actually has.
 Cost: only the counter channel, one ticket at a time, and no cover count
 until Task 5. The "Adding" state is covered by the queue's tests; in a
 browser a refused connection fails too fast to see it.
+
+## ADR-071 - `line.modified`: changing a line's modifiers before the kitchen has it
+2026-09 · Status: accepted (chosen by the owner over void and re-add)
+Decision: a new event, `line.modified { line_id, from, to }`, replaces an
+active line's modifiers while the line is not sent and its course is not
+fired. `POST /api/v1/orders/{id}/lines/{line}/modifiers` (`order.edit`)
+appends it; the terminal's ModifierSheet sends it from a line's Modify.
+- **Why an event, not void and re-add.** A void needs a manager's PIN and
+  a reason, and stays on the bill forever. Swapping dairy for oat on a
+  coffee nobody has started is not a void; asking a manager for it would
+  teach staff to skip the change. After the kitchen has the line, the item
+  may be made, and a change is a void and a new line again.
+- **`from` is required and checked,** like `line.qty_changed`'s `From`: a
+  till looking at a stale ticket is refused with `modifiers_mismatch`. The
+  terminal goes further and watches the stream: when the open line changes
+  underneath it, is sent or is voided, Save is disabled with the reason.
+- **Order is part of the snapshot.** `from` and `to` compare as ordered
+  lists: the order is how the ticket and invoice print them.
+- The item's unit price, name, station, course and tax facts cannot change
+  this way; only the modifiers. The line's discounts follow the new price,
+  and an amount discount the new price cannot carry is refused.
+- New sentinels `ErrModifiersMismatch` and `ErrLineInKitchen`, codes
+  `modifiers_mismatch` and `line_in_kitchen` (409). `docs/02-domain.md`
+  lists the event; the Timeline says "Changed Flat white: Dairy → Oat".
+  `order.State` does not change shape, so `ProjectionVersion` stays.
+- **Negative modifier prices are refused on the menu too.** The domain has
+  always refused them (`checkPrice`); ADR-069's demo menu offered "No milk,
+  less 20", which no till could have rung up. The menu writer now refuses
+  one as `ErrMenuSpec`, the menu read leaves out any already stored, and
+  the demo's "No milk" is free.
+- **Refusals are worded from the code.** The API's `message` is for
+  developers ("db: in transaction: projecting ..."); the register's words
+  come from `order-messages.ts`, keyed by `ErrorCode`, with a plain
+  fallback, so no server internals reach the till.
+- The sheet's rules (`modifier-selection.ts`): defaults chosen for a new
+  line, the line's own choices when editing; a pick-one group swaps and
+  clears on a second tap only when optional; a full pick-several group
+  refuses another pick rather than dropping one. Confirm is disabled until
+  every group's minimum is met, and the message line names the first that
+  is not.
+Because: the cheapest honest record of "the guest changed their mind before
+anything was made" is one event that says exactly that.
+Cost: a sixteenth event type every reader of the stream must know. An edit
+of a line with choices the menu has since retired drops them from the
+sheet; saving then removes them from the line.

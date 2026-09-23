@@ -7,8 +7,8 @@
 // up twice (docs/03-conventions.md, ADR-053). The order being opened has one
 // key too, kept until an order exists.
 
-import { ApiError } from "../../../shared/api";
-import type { AddLine, CommandResponse, OrderResponse } from "../../../shared/api-types";
+import { failureOf } from "./order-messages";
+import type { AddLine, CommandResponse, LineModifier, OrderResponse } from "../../../shared/api-types";
 
 export interface PendingLine {
   readonly key: string;
@@ -27,6 +27,13 @@ export interface TicketState {
 export interface TicketCommands {
   openOrder(key: string): Promise<CommandResponse>;
   addLine(orderId: string, command: AddLine, key: string): Promise<CommandResponse>;
+  modifyLine(orderId: string, lineId: number, change: ModifyLine, key: string): Promise<CommandResponse>;
+}
+
+/** A line's modifiers, from what the till showed to what was chosen. */
+export interface ModifyLine {
+  readonly from: readonly LineModifier[];
+  readonly to: readonly LineModifier[];
 }
 
 export interface TicketQueueOptions {
@@ -79,6 +86,28 @@ export class TicketQueue {
     this.update({ pending: this.state.pending.filter((p) => p.key !== key) });
   }
 
+  /**
+   * Changes a line's modifiers, after anything already queued, so a change
+   * made straight after a tap cannot overtake the tap. Resolves when the
+   * server has it; rejects with the words for the rail when it does not.
+   */
+  modify(lineId: number, change: ModifyLine): Promise<void> {
+    const key = this.opts.newKey();
+    const done = this.chain.then(async () => {
+      const orderId = this.state.orderId;
+      if (!orderId) throw new Error("There is no ticket to change.");
+      try {
+        const res = await this.opts.commands.modifyLine(orderId, lineId, change, key);
+        this.opts.onOrder(res.order);
+      } catch (err) {
+        throw new Error(failureOf(err));
+      }
+    });
+    // The chain carries on whether this one worked or not.
+    this.chain = done.catch(() => undefined);
+    return done;
+  }
+
   /** Starts a new ticket. Lines still being sent keep going to the old one. */
   startNew(): void {
     this.openKey = null;
@@ -127,13 +156,4 @@ export class TicketQueue {
     this.state = { ...this.state, ...patch };
     for (const listener of this.listeners) listener();
   }
-}
-
-/** One line for the rail: what went wrong, in the till's words. */
-export function failureOf(err: unknown): string {
-  if (err instanceof ApiError) {
-    if (err.unreachable) return "Not sent: the server can't be reached.";
-    return err.message;
-  }
-  return "Not sent: something went wrong.";
 }

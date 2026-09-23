@@ -21,6 +21,7 @@ type Orders interface {
 	Open(ctx context.Context, meta svcorder.Meta, cmd svcorder.OpenOrder) (svcorder.Result, error)
 	AddLine(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.AddLine) (svcorder.Result, error)
 	ChangeQty(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ChangeQty) (svcorder.Result, error)
+	ModifyLine(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ModifyLine) (svcorder.Result, error)
 	VoidLine(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.VoidLine) (svcorder.Result, error)
 	CompLine(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.CompLine) (svcorder.Result, error)
 	ApplyDiscount(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ApplyDiscount) (svcorder.Result, error)
@@ -66,6 +67,7 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	// What the cashier at the till may do on their own.
 	post("/api/v1/orders/{id}/lines", auth.PermOrderOpen, s.addLine)
 	post("/api/v1/orders/{id}/lines/{line}/qty", auth.PermOrderEdit, s.changeQty)
+	post("/api/v1/orders/{id}/lines/{line}/modifiers", auth.PermOrderEdit, s.modifyLine)
 	post("/api/v1/orders/{id}/notes", auth.PermOrderEdit, s.addNote)
 	post("/api/v1/orders/{id}/courses/{course}/fire", auth.PermOrderEdit, s.fireCourse)
 	post("/api/v1/orders/{id}/tickets", auth.PermOrderEdit, s.sendTicket)
@@ -100,6 +102,13 @@ type (
 type changeQtyRequest struct {
 	From int64 `json:"from"`
 	To   int64 `json:"to"`
+}
+
+// modifyLineRequest replaces a line's modifiers. From is what the terminal
+// believes the line has; a stale one is refused with modifiers_mismatch.
+type modifyLineRequest struct {
+	From []order.Modifier `json:"from"`
+	To   []order.Modifier `json:"to"`
 }
 
 type voidLineRequest struct {
@@ -182,6 +191,19 @@ func (s *Server) changeQty(w http.ResponseWriter, r *http.Request) {
 			return svcorder.Result{}, errAnswered
 		}
 		return s.orders.ChangeQty(r.Context(), meta, orderID, svcorder.ChangeQty{
+			LineID: lineID, From: req.From, To: req.To,
+		})
+	})
+}
+
+func (s *Server) modifyLine(w http.ResponseWriter, r *http.Request) {
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		var req modifyLineRequest
+		lineID, ok := s.pathID(w, r, "line")
+		if !ok || !s.decode(w, r, &req) {
+			return svcorder.Result{}, errAnswered
+		}
+		return s.orders.ModifyLine(r.Context(), meta, orderID, svcorder.ModifyLine{
 			LineID: lineID, From: req.From, To: req.To,
 		})
 	})

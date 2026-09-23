@@ -195,6 +195,11 @@ func (w *menuWriter) writeGroups(ctx context.Context, groups []ModifierGroupSpec
 		}
 		w.groups[g.Name] = id
 		for i, m := range g.Modifiers {
+			// The orders domain refuses a negative modifier price, so a menu
+			// that offered one would offer a choice no till could ring up.
+			if m.Price < 0 {
+				return fmt.Errorf("%w: modifier %q in %q costs %d, below nothing", ErrMenuSpec, m.Name, g.Name, m.Price)
+			}
 			if _, err := w.q.CreateModifier(ctx, gen.CreateModifierParams{
 				VenueID: w.venueID, GroupID: id, Name: m.Name, Price: m.Price, IsDefault: m.IsDefault,
 				SortOrder: int64(i), CreatedAt: w.now, UpdatedAt: w.now,

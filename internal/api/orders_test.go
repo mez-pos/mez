@@ -434,3 +434,47 @@ func jsonEqual(t *testing.T, a, b any) bool {
 	}
 	return string(left) == string(right)
 }
+
+// TestModifyALineOverHTTP: a line's modifiers change until the kitchen has
+// it, a stale From is refused, and a sent line is refused with the code a
+// terminal turns into "void it and add it again".
+func TestModifyALineOverHTTP(t *testing.T) {
+	r := newRegister(t)
+	id := r.openOrder(t)
+	const dairy = `{"modifier_id":3,"name":"Dairy","price":{"minor":0,"currency":"INR"}}`
+	const oat = `{"modifier_id":4,"name":"Oat","price":{"minor":5000,"currency":"INR"}}`
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines",
+		`{"item_id":5,"name":"Flat white","qty":2,"unit_price":{"minor":21000,"currency":"INR"},"modifiers":[`+dairy+`],"station":"bar","course":1,"tax_rate":5000,"hsn":"996331"}`)
+
+	res := r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines/2/modifiers", `{"from":[`+dairy+`],"to":[`+oat+`]}`)
+	line := res.Order.Lines[0]
+	if len(line.Modifiers) != 1 || line.Modifiers[0].Name != "Oat" || line.Gross.Minor != 52000 {
+		t.Fatalf("line after the change = %+v", line)
+	}
+	if len(res.Events) != 1 || res.Events[0].Type != "line.modified" {
+		t.Errorf("events = %+v, want one line.modified", res.Events)
+	}
+
+	tests := []struct {
+		name string
+		body string
+		code ErrorCode
+	}{
+		{"from modifiers the line no longer has", `{"from":[` + dairy + `],"to":[]}`, CodeModifiersMismatch},
+		{"no change", `{"from":[` + oat + `],"to":[` + oat + `]}`, CodeInvalidPayload},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			status, _, apiErr := r.call(t, http.MethodPost, "/api/v1/orders/"+id+"/lines/2/modifiers", tt.body)
+			if status < 400 || apiErr.Code != tt.code {
+				t.Errorf("status %d, code %q, want %q", status, apiErr.Code, tt.code)
+			}
+		})
+	}
+
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/tickets", `{"station":"bar","line_ids":[2]}`)
+	status, _, apiErr := r.call(t, http.MethodPost, "/api/v1/orders/"+id+"/lines/2/modifiers", `{"from":[`+oat+`],"to":[`+dairy+`]}`)
+	if status != http.StatusConflict || apiErr.Code != CodeLineInKitchen {
+		t.Errorf("a sent line: status %d, code %q, want 409 line_in_kitchen", status, apiErr.Code)
+	}
+}

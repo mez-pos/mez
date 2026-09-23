@@ -21,6 +21,8 @@ const (
 	CodeOrderClosed          ErrorCode = "order_closed"
 	CodeOrderNotClosed       ErrorCode = "order_not_closed"
 	CodeQtyMismatch          ErrorCode = "qty_mismatch"
+	CodeModifiersMismatch    ErrorCode = "modifiers_mismatch"
+	CodeLineInKitchen        ErrorCode = "line_in_kitchen"
 	CodeBalanceDue           ErrorCode = "balance_due"
 	CodeOverTender           ErrorCode = "over_tender"
 	CodeOverRefund           ErrorCode = "over_refund"
@@ -66,6 +68,8 @@ var orderErrors = []struct {
 	{order.ErrOrderNotClosed, http.StatusConflict, CodeOrderNotClosed},
 	{order.ErrAlreadyOpened, http.StatusConflict, CodeOrderClosed},
 	{order.ErrQtyMismatch, http.StatusConflict, CodeQtyMismatch},
+	{order.ErrModifiersMismatch, http.StatusConflict, CodeModifiersMismatch},
+	{order.ErrLineInKitchen, http.StatusConflict, CodeLineInKitchen},
 	{order.ErrBalanceDue, http.StatusConflict, CodeBalanceDue},
 	{order.ErrOverTender, http.StatusConflict, CodeOverTender},
 	{order.ErrOverRefund, http.StatusConflict, CodeOverRefund},

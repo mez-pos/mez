@@ -276,8 +276,8 @@ func TestSetupDemoMenu(t *testing.T) {
 			}
 		}
 	}
-	if required == 0 || defaults == 0 || negative == 0 {
-		t.Errorf("the demo menu should exercise required groups, defaults and a negative delta: %d %d %d",
+	if required == 0 || defaults == 0 || negative != 0 {
+		t.Errorf("the demo menu should have required groups and defaults, and no negative price: %d %d %d",
 			required, defaults, negative)
 	}
 	for _, it := range m.Items {

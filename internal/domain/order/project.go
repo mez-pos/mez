@@ -90,6 +90,8 @@ func (p *projector) apply(e Event) error {
 		return p.addLine(e, pl)
 	case LineQtyChanged:
 		return p.changeQty(pl)
+	case LineModified:
+		return p.modifyLine(pl)
 	case LineVoided:
 		return p.endLine(pl.LineID, LineStatusVoided, pl.ReasonCode, pl.AuthorisedBy)
 	case LineComped:
@@ -199,6 +201,39 @@ func (p *projector) changeQty(pl LineQtyChanged) error {
 	}
 	l.Qty = pl.To
 	return nil
+}
+
+// modifyLine replaces the modifiers of a line the kitchen has not seen.
+func (p *projector) modifyLine(pl LineModified) error {
+	l, err := p.activeLine(pl.LineID)
+	if err != nil {
+		return err
+	}
+	if l.Sent || l.CourseFired {
+		return fmt.Errorf("%w: line %d", ErrLineInKitchen, l.ID)
+	}
+	if !sameModifiers(pl.From, l.Modifiers) {
+		return fmt.Errorf("%w: line %d", ErrModifiersMismatch, l.ID)
+	}
+	if sameModifiers(pl.To, pl.From) {
+		return invalid("line %d: modifiers are unchanged", l.ID)
+	}
+	for _, m := range pl.To {
+		if strings.TrimSpace(m.Name) == "" {
+			return invalid("line %d: a modifier has no name snapshot", l.ID)
+		}
+		if err := p.checkPrice("modifier "+m.Name, m.Price); err != nil {
+			return err
+		}
+	}
+	l.Modifiers = slices.Clone(pl.To)
+	return nil
+}
+
+// sameModifiers compares two modifier lists in order. Order is part of the
+// snapshot: it is how the ticket and the invoice print them.
+func sameModifiers(a, b []Modifier) bool {
+	return slices.Equal(a, b)
 }
 
 // endLine voids or comps a line. Both need a reason and an authoriser, and

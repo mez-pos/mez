@@ -85,6 +85,10 @@ function describe(event: OrderEvent, ctx: Context): Described {
     }
     case "line.qty_changed":
       return { title: `${line(event.payload.line_id)}: ${event.payload.from} → ${event.payload.to}` };
+    case "line.modified": {
+      const names = (mods: readonly { name: string }[]) => mods.map((m) => m.name).join(", ") || "nothing";
+      return { title: `Changed ${line(event.payload.line_id)}`, detail: `${names(event.payload.from)} → ${names(event.payload.to)}` };
+    }
     case "line.voided":
       return { title: `Voided ${line(event.payload.line_id)}`, detail: humanise(event.payload.reason_code), tone: "danger", authorisedBy: event.payload.authorised_by };
     case "line.comped":

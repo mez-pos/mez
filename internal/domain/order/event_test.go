@@ -31,6 +31,8 @@ func samplePayloads() []Payload {
 			TaxRate: 5000, HSN: "996331", TaxExempt: true,
 		},
 		LineQtyChanged{LineID: 2, From: 2, To: 3},
+		LineModified{LineID: 2, From: []Modifier{{ModifierID: 3, Name: "Dairy", Price: inr(0)}},
+			To: []Modifier{{ModifierID: 4, Name: "Oat", Price: inr(5000)}}},
 		LineVoided{LineID: 2, ReasonCode: "wrong_item", AuthorisedBy: 3},
 		LineComped{LineID: 2, ReasonCode: "long_wait", AuthorisedBy: 3},
 		DiscountApplied{Scope: ScopeLine, LineID: 2, Kind: DiscountPercent, BasisPoints: 1000, Reason: "staff"},
@@ -79,7 +81,8 @@ func TestSamplesCoverEveryType(t *testing.T) {
 			t.Errorf("no round-trip sample for %q", typ)
 		}
 	}
-	if got, want := len(Types()), 15; got != want {
+	// 16 since line.modified (ADR-071).
+	if got, want := len(Types()), 16; got != want {
 		t.Errorf("Types() has %d types, docs/02-domain.md lists %d", got, want)
 	}
 }

@@ -16,6 +16,7 @@ const (
 	TypeOrderOpened     Type = "order.opened"
 	TypeLineAdded       Type = "line.added"
 	TypeLineQtyChanged  Type = "line.qty_changed"
+	TypeLineModified    Type = "line.modified"
 	TypeLineVoided      Type = "line.voided"
 	TypeLineComped      Type = "line.comped"
 	TypeDiscountApplied Type = "discount.applied"
@@ -43,6 +44,7 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeOrderOpened:     decodeAs[OrderOpened],
 	TypeLineAdded:       decodeAs[LineAdded],
 	TypeLineQtyChanged:  decodeAs[LineQtyChanged],
+	TypeLineModified:    decodeAs[LineModified],
 	TypeLineVoided:      decodeAs[LineVoided],
 	TypeLineComped:      decodeAs[LineComped],
 	TypeDiscountApplied: decodeAs[DiscountApplied],

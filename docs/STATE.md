@@ -11,18 +11,16 @@ File: `docs/phases/phase-06.md`. Phase 05 is complete.
 
 ## Last completed task
 
-**Phase 06, Task 2: register screen** (ADR-070, spec
-`docs/design/screens/terminal-register.md`). Category rail, item grid,
-search, and a ticket rail with a pinned total; one tap rings up an item
-whose defaults satisfy its groups, through an ordered outbox with
-idempotency keys and Retry. Checked in a browser against the real binary.
+**Phase 06, Task 3: modifiers** (ADR-071). `ModifierSheet` with required
+and optional groups, min/max, live price, defaults; a new `line.modified`
+event lets Modify change an unsent line without a manager. Demo menu has
+a required no-default group (Avocado toast: Bread). Checked in a browser.
 
 ## Next task
 
-**Phase 06, Task 3: modifiers.** `ModifierSheet` opens from
-`RegisterScreen.ringUp` where it now shows "Choose options for ...", and
-from a line's Modify. `defaultModifiers` and `indexMenu().groupsFor` in
-`web/terminal/src/register/` already know the groups and defaults.
+**Phase 06, Task 4: cart.** Quantity steppers, notes, void with a reason
+and manager override, comp, line and order discounts, voided lines struck
+through. A line the kitchen has is changed by void and re-add, not Modify.
 
 ## Known broken / in progress
 

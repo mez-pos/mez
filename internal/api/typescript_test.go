@@ -64,6 +64,7 @@ var eventTypes = []struct {
 	{order.TypeOrderOpened, order.OrderOpened{}, "OrderOpened"},
 	{order.TypeLineAdded, order.LineAdded{}, "LineAdded"},
 	{order.TypeLineQtyChanged, order.LineQtyChanged{}, "LineQtyChanged"},
+	{order.TypeLineModified, order.LineModified{}, "LineModified"},
 	{order.TypeLineVoided, order.LineVoided{}, "LineVoided"},
 	{order.TypeLineComped, order.LineComped{}, "LineComped"},
 	{order.TypeDiscountApplied, order.DiscountApplied{}, "DiscountApplied"},
@@ -85,6 +86,7 @@ var errorCodes = []ErrorCode{
 	CodeUnauthenticated, CodeDeviceRevoked, CodeInvalidPairingCode,
 	CodeInvalidPIN, CodeLockedOut, CodeSignInRequired, CodeRateLimited, CodeForbidden,
 	CodeOrderNotFound, CodeLineNotFound, CodeLineNotActive, CodePaymentNotFound,
+	CodeModifiersMismatch, CodeLineInKitchen,
 	CodePaymentNotCaptured, CodeOrderClosed, CodeOrderNotClosed, CodeQtyMismatch,
 	CodeBalanceDue, CodeOverTender, CodeOverRefund, CodeDiscountTooLarge,
 	CodeAlreadyInvoiced, CodeCourseAlreadyFired, CodeNothingToSend,
@@ -181,7 +183,7 @@ func generate() (*ts.Generator, error) {
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},
 		// Orders: what is sent.
 		Override{}, amount{}, openOrderRequest{}, addLineRequest{}, changeQtyRequest{},
-		voidLineRequest{}, discountRequest{}, addNoteRequest{}, sendTicketRequest{},
+		modifyLineRequest{}, voidLineRequest{}, discountRequest{}, addNoteRequest{}, sendTicketRequest{},
 		tenderRequest{}, voidPaymentRequest{}, refundRequest{}, reopenRequest{},
 		// Orders: what comes back.
 		lineResponse{}, noteResponse{}, ticketResponse{}, tenderResponse{},

@@ -99,6 +99,19 @@ type LineQtyChanged struct {
 	To     int64 `json:"to"`
 }
 
+// LineModified replaces a line's modifiers: oat milk instead of dairy on a
+// coffee not yet made. From is what the line had, so a terminal looking at a
+// stale ticket is refused and the timeline reads without replaying.
+//
+// It is only for a line the kitchen has not seen: not sent, its course not
+// fired. After that the item may already be made, and changing it is a void
+// and a new line, which needs a manager and leaves both on the bill. ADR-071.
+type LineModified struct {
+	LineID int64      `json:"line_id"`
+	From   []Modifier `json:"from"`
+	To     []Modifier `json:"to"`
+}
+
 // LineVoided removes a line from the bill. The line stays in the stream
 // forever; a void is visible to an audit and to the owner.
 type LineVoided struct {
@@ -206,6 +219,7 @@ type OrderReopened struct {
 func (OrderOpened) EventType() Type     { return TypeOrderOpened }
 func (LineAdded) EventType() Type       { return TypeLineAdded }
 func (LineQtyChanged) EventType() Type  { return TypeLineQtyChanged }
+func (LineModified) EventType() Type    { return TypeLineModified }
 func (LineVoided) EventType() Type      { return TypeLineVoided }
 func (LineComped) EventType() Type      { return TypeLineComped }
 func (DiscountApplied) EventType() Type { return TypeDiscountApplied }

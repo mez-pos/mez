@@ -101,6 +101,16 @@ func TestProjectRejectsIllegalSequences(t *testing.T) {
 		{"qty change to zero", with(oneCoffee, LineQtyChanged{LineID: 2, From: 1, To: 0}), ErrInvalidPayload},
 		{"qty change to the same", with(oneCoffee, LineQtyChanged{LineID: 2, From: 1, To: 1}), ErrInvalidPayload},
 		{"qty change on a voided line", with(oneCoffee, void(2), LineQtyChanged{LineID: 2, From: 1, To: 2}), ErrLineNotActive},
+		{"modify a missing line", with(oneCoffee, oat(9)), ErrLineNotFound},
+		{"modify from stale modifiers", with(oneCoffee, LineModified{LineID: 2, From: []Modifier{oatMilk}, To: nil}), ErrModifiersMismatch},
+		{"modify to the same", with(oneCoffee, LineModified{LineID: 2, From: nil, To: []Modifier{}}), ErrInvalidPayload},
+		{"modify to a negative price", with(oneCoffee, LineModified{LineID: 2, To: []Modifier{{ModifierID: 1, Name: "x", Price: inr(-1)}}}), ErrInvalidPayload},
+		{"modify to another currency", with(oneCoffee, LineModified{LineID: 2, To: []Modifier{{ModifierID: 1, Name: "x", Price: usd}}}), ErrInvalidPayload},
+		{"modify to a nameless modifier", with(oneCoffee, LineModified{LineID: 2, To: []Modifier{{ModifierID: 1, Price: inr(0)}}}), ErrInvalidPayload},
+		{"modify a voided line", with(oneCoffee, void(2), oat(2)), ErrLineNotActive},
+		{"modify a sent line", with(oneCoffee, TicketSent{Station: "bar", LineIDs: []int64{2}}, oat(2)), ErrLineInKitchen},
+		{"modify a line whose course is fired", with(oneCoffee, CourseFired{Course: 1}, oat(2)), ErrLineInKitchen},
+		{"modify after close", with(paidClosed, oat(2)), ErrOrderClosed},
 
 		{"void with no authoriser", with(oneCoffee, LineVoided{LineID: 2, ReasonCode: "x"}), ErrInvalidPayload},
 		{"void with no reason", with(oneCoffee, LineVoided{LineID: 2, AuthorisedBy: 3}), ErrInvalidPayload},
@@ -284,6 +294,48 @@ func TestLinePricesIncludeModifiersPerUnit(t *testing.T) {
 	}
 	if s.Totals.Gross != inr(72000) || s.Totals.BalanceDue != inr(72000) {
 		t.Errorf("totals = %+v", s.Totals)
+	}
+}
+
+var oatMilk = Modifier{ModifierID: 4, Name: "Oat", Price: inr(5000)}
+
+// oat swaps a plain line to oat milk.
+func oat(lineID int64) LineModified {
+	return LineModified{LineID: lineID, From: nil, To: []Modifier{oatMilk}}
+}
+
+// TestModifyingALineRepricesIt: the new modifiers are the line's, per unit,
+// and the totals follow; a second change starts from the first.
+func TestModifyingALineRepricesIt(t *testing.T) {
+	s := mustProject(t, opened(), coffee(2), oat(2))
+	l := s.Lines[0]
+	if len(l.Modifiers) != 1 || l.Modifiers[0] != oatMilk {
+		t.Fatalf("modifiers = %+v", l.Modifiers)
+	}
+	if l.Gross != inr(54000) || s.Totals.Gross != inr(54000) {
+		t.Errorf("gross %v, totals %v; want 2 x (22000 + 5000) = 54000", l.Gross, s.Totals.Gross)
+	}
+
+	dairy := Modifier{ModifierID: 3, Name: "Dairy", Price: inr(0)}
+	back := mustProject(t, opened(), coffee(2), oat(2), LineModified{LineID: 2, From: []Modifier{oatMilk}, To: []Modifier{dairy}})
+	if back.Lines[0].Gross != inr(44000) || back.Lines[0].Modifiers[0] != dairy {
+		t.Errorf("after the second change: %+v", back.Lines[0])
+	}
+}
+
+// TestModifyingKeepsTheLinesDiscounts: a percentage discount follows the new
+// price; an amount discount larger than the new value is refused.
+func TestModifyingKeepsTheLinesDiscounts(t *testing.T) {
+	s := mustProject(t, opened(), coffee(1), pct(ScopeLine, 2, 1000), oat(2))
+	if s.Lines[0].Discount != inr(2700) {
+		t.Errorf("10%% of 27000 = %v, want 2700", s.Lines[0].Discount)
+	}
+
+	withOat := LineAdded{Name: "Flat white", Qty: 1, UnitPrice: inr(22000), Modifiers: []Modifier{oatMilk}, Course: 1, Station: "bar"}
+	_, err := Project(stream(opened(), withOat, off(ScopeLine, 2, 25000),
+		LineModified{LineID: 2, From: []Modifier{oatMilk}, To: nil}), untaxed)
+	if !errors.Is(err, ErrDiscountExceedsValue) {
+		t.Errorf("err = %v, want ErrDiscountExceedsValue", err)
 	}
 }
 

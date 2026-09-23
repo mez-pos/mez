@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
 import type { AddLine, CommandResponse, OrderResponse } from "../../../shared/api-types";
-import { failureOf, TicketQueue, type TicketCommands } from "./ticket-queue";
+import { failureOf } from "./order-messages";
+import { TicketQueue, type TicketCommands } from "./ticket-queue";
 
 const line = (name: string): AddLine => ({
   item_id: 1, name, qty: 1, unit_price: { minor: 6000, currency: "INR" }, modifiers: [], course: 1, station: "bar", tax_rate: 5000,
@@ -36,6 +37,7 @@ function fakeServer() {
       lines += 1;
       return answer(orderId, lines);
     },
+    modifyLine: async () => answer("unused"),
   };
   return { calls, commands, failWith: (e: Error) => (failNext = e) };
 }
@@ -111,12 +113,12 @@ describe("TicketQueue", () => {
   it("carries on with later taps after one is refused", async () => {
     const server = fakeServer();
     const { q } = queue(server, "ord_1");
-    server.failWith(new ApiError("forbidden", "You can't open orders."));
+    server.failWith(new ApiError("forbidden", "role cashier lacks order.open"));
     q.ringUp(line("Latte"));
     q.ringUp(line("Upma"));
     await q.settled();
     expect(q.current().pending.map((p) => [p.command.name, p.status, p.error])).toEqual([
-      ["Latte", "failed", "You can't open orders."],
+      ["Latte", "failed", "You don't have permission to do that. Ask a manager."],
     ]);
   });
 
@@ -170,7 +172,58 @@ describe("TicketQueue", () => {
 describe("failureOf", () => {
   it("words each kind of failure", () => {
     expect(failureOf(new ApiError("timeout", "x"))).toBe("Not sent: the server can't be reached.");
-    expect(failureOf(new ApiError("invalid_transition", "This order is closed."))).toBe("This order is closed.");
+    expect(failureOf(new ApiError("order_closed", "db: order is closed"))).toBe("This ticket is closed.");
+    expect(failureOf(new ApiError("modifiers_mismatch", "db: in transaction: projecting line.modified at seq 6"))).toBe(
+      "This line was changed on another till. Close this and look again.",
+    );
+    // A code with no words of its own still never shows the server's text.
+    expect(failureOf(new ApiError("invalid_payload", "projecting line.added at seq 4: quantity 0"))).toBe(
+      "The server refused this. Check the ticket and try again.",
+    );
     expect(failureOf(new TypeError("boom"))).toBe("Not sent: something went wrong.");
+  });
+});
+
+describe("TicketQueue.modify", () => {
+  const oat = [{ modifier_id: 11, name: "Oat", price: { minor: 5000, currency: "INR" } }];
+
+  function withModify() {
+    const server = fakeServer();
+    const calls: string[] = server.calls;
+    let failNext: Error | null = null;
+    server.commands.modifyLine = async (orderId, lineId, change, key) => {
+      calls.push(`modify ${orderId} ${lineId} ${change.to.map((m) => m.name).join(",")} ${key}`);
+      const e = failNext;
+      failNext = null;
+      if (e) throw e;
+      return answer(orderId, 1);
+    };
+    return { server, failModify: (e: Error) => (failNext = e) };
+  }
+
+  it("waits for the tap before it, then sends the change", async () => {
+    const { server } = withModify();
+    const { q, orders } = queue(server);
+    q.ringUp(line("Flat white"));
+    const changed = q.modify(2, { from: [], to: oat });
+    await changed;
+    expect(server.calls).toEqual(["open k3", "add ord_1 Flat white k1", "modify ord_1 2 Oat k2"]);
+    expect(orders).toHaveLength(3);
+  });
+
+  it("rejects with the rail's words, and the queue carries on", async () => {
+    const { server, failModify } = withModify();
+    const { q } = queue(server, "ord_1");
+    failModify(new ApiError("line_in_kitchen", "db: line has gone to the kitchen: line 2"));
+    await expect(q.modify(2, { from: [], to: oat })).rejects.toThrow("This has gone to the kitchen. Void it and add it again.");
+    q.ringUp(line("Upma"));
+    await q.settled();
+    expect(q.current().pending).toEqual([]);
+  });
+
+  it("refuses when there is no ticket yet", async () => {
+    const { server } = withModify();
+    const { q } = queue(server);
+    await expect(q.modify(2, { from: [], to: oat })).rejects.toThrow("There is no ticket to change.");
   });
 });

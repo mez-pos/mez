@@ -98,3 +98,19 @@ describe("humanise", () => {
   it("turns a code into words", () => expect(humanise("wrong_item")).toBe("Wrong item"));
   it("returns nothing for nothing", () => expect(humanise("")).toBeNull());
 });
+
+describe("timelineEntries: a line changed before the kitchen had it", () => {
+  it("says what it was and what it is", () => {
+    const [, , changed, emptied] = timelineEntries(
+      [
+        events[0]!,
+        events[1]!,
+        { ...base, seq: 3, type: "line.modified", payload: { line_id: 2, from: [{ modifier_id: 1, name: "Oat milk", price: inr(4_000) }], to: [{ modifier_id: 2, name: "Dairy", price: inr(0) }] } },
+        { ...base, seq: 4, type: "line.modified", payload: { line_id: 2, from: [{ modifier_id: 2, name: "Dairy", price: inr(0) }], to: [] } },
+      ],
+      (id) => names[id],
+    );
+    expect(changed).toMatchObject({ title: "Changed Cappuccino", detail: "Oat milk → Dairy" });
+    expect(emptied).toMatchObject({ detail: "Dairy → nothing" });
+  });
+});

@@ -322,6 +322,27 @@ var scenarios = []struct {
 		want:   figures{gross: 115000, total: 115000, paid: 50000, balance: 65000},
 		status: StatusSettling,
 	},
+	{
+		name: "guest changes their milk before the coffee is made",
+		payloads: []Payload{
+			opened(),
+			LineAdded{ItemID: 5, Name: "Flat white", Qty: 2, UnitPrice: inr(21000), Course: 1, Station: "bar",
+				Modifiers: []Modifier{{ModifierID: 3, Name: "Dairy", Price: inr(0)}}}, // 2: 420.00
+			LineModified{LineID: 2,
+				From: []Modifier{{ModifierID: 3, Name: "Dairy", Price: inr(0)}},
+				To:   []Modifier{{ModifierID: 4, Name: "Oat", Price: inr(5000)}}}, // 2 x 260.00
+			TicketSent{Station: "bar", LineIDs: []int64{2}},
+			pay(PaymentUPI, 52000),
+			closed,
+		},
+		want:   figures{gross: 52000, total: 52000, paid: 52000},
+		status: StatusClosed,
+		check: func(t *testing.T, s State) {
+			if m := s.Lines[0].Modifiers; len(m) != 1 || m[0].Name != "Oat" {
+				t.Errorf("the ticket went out with %+v, want oat", m)
+			}
+		},
+	},
 }
 
 func TestScenarios(t *testing.T) {

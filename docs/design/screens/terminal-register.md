@@ -30,11 +30,19 @@ Nothing but the item grid and the line list scrolls.
     sensitive.
   - Middle, scrolling: the **lines**. Quantity in mono, the name, the chosen
     modifiers under it in muted text, the line's amount in mono on the right.
-    Lines still on their way to the server are shown faint with "Adding".
+    A line the kitchen has not seen, whose item has choices, has
+    **Modify**. Lines still on their way to the server are shown faint
+    with "Adding".
     A line the server refused stays, in danger, with **Retry** and
     **Remove**.
   - Bottom, fixed, never scrolls: **Subtotal**, **Tax**, and **Total** in
     Instrument Serif at `--text-total` via `Money variant="total"`.
+- **ModifierSheet** (`Sheet`: bottom on touch, side panel on desktop): the
+  item's name, then each group with "Required · Choose 1" or "Optional · Up
+  to 3" on the right, its choices two to a row, 44px, a price delta in mono
+  where there is one. Fixed at the bottom: a reserved message line and the
+  58px primary button, "Add to ticket" or "Save changes", carrying the
+  price of one of the item with the choices made, live.
 
 ## Data
 
@@ -51,8 +59,11 @@ Nothing but the item grid and the line list scrolls.
   server's projection and never from local arithmetic.
 - The current ticket's public id is kept in `sessionStorage`
   (`nofiltr.terminal.ticket`), so a reload comes back to it.
+- `POST /api/v1/orders/{id}/lines/{line}/modifiers` `{ from, to }`: change
+  a line's modifiers (`line.modified`, ADR-071), sent through the same
+  ordered queue as taps, with its own `Idempotency-Key`.
 - WebSocket: an `event` for the current order, or a `resync`, invalidates
-  `["order", id]`, so a line added on another till appears here.
+  `["order", id]`, so a line added or changed on another till appears here.
 
 ## Interactions
 
@@ -61,14 +72,20 @@ Nothing but the item grid and the line list scrolls.
 | Tap a category | Shows its items; clears the search | | Grid scrolls to the top |
 | Type in search | Matches items in every category by word prefix, ignoring case and accents | | Category chips show none chosen; an empty query goes back to the chosen category |
 | Tap an item whose required groups all have defaults | Rings it up with the defaults | `order.opened` (first item only), `line.added` | The line appears faint, then settles when the server answers; the total moves |
-| Tap an item with a required group and no default | Nothing is sent | | "Choose options for Flat white" in the rail; Task 3 opens the ModifierSheet here |
+| Tap an item with a required group and no default | Opens the ModifierSheet, defaults chosen | | Add is disabled, and the message line names the first group still to choose |
+| Tap a choice | Pick-one groups swap; an optional pick-one clears on a second tap; a full pick-several group refuses another | | The live price moves |
+| Add to ticket | Rings the item up with the choices | `line.added` | The sheet closes |
+| Modify on a line | Opens the sheet with the line's own choices | | "Save changes" |
+| Save changes | Sends from and to | `line.modified` | Closes on success; a refusal stays in the message line |
+| The line moves on while the sheet is open (another till, sent, voided) | Seen through the stream | | Save disabled, with why |
 | Retry on a refused line | Sends the same command with the same key | `line.added` | |
 | Remove on a refused line | Forgets it locally | | Nothing was recorded, so nothing is voided |
 
 **Taps to add a common item: one.** Filter coffee is the first item of the
 first category, which is chosen when the screen opens; one tap rings it up
-with Regular size and Regular sugar. After Task 3 an item whose options must
-be chosen takes two: the item, then Add on the sheet.
+with Regular size and Regular sugar. An item whose options must be chosen
+takes three: the item, the choice, Add. Changing a default (oat, not dairy)
+takes the item, Modify, the choice, Save.
 
 ## States
 
@@ -117,4 +134,9 @@ be chosen takes two: the item, then Add on the sheet.
   phase 10.
 - **The ticket id is not vermilion.** The design colours `#ticket` and the
   total both; one accent per screen means the total keeps it.
-- **Quantity steppers, Modify and Void on lines** are Task 4.
+- **Quantity steppers and Void on lines** are Task 4.
+- **Modify only until the kitchen has the line.** The design shows Modify on
+  every line. After a line is sent or its course fired, a change is a void
+  and a new line (Task 4), which needs a manager.
+- **No negative price deltas** ("no milk, less 20"): the orders domain
+  refuses them, so the menu does too (ADR-071).

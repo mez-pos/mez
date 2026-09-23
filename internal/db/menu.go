@@ -202,6 +202,11 @@ func assembleGroups(currency string, groups []gen.ActiveModifierGroupsRow, mods 
 		if !ok {
 			continue // a live modifier in a retired group
 		}
+		if row.Price < 0 {
+			// Written before the writer refused them (ADR-071). A line with
+			// it would be refused, so the till is never offered it.
+			continue
+		}
 		price, err := money.New(row.Price, currency)
 		if err != nil {
 			return assembledGroups{}, fmt.Errorf("db: price of modifier %d: %w", row.ID, err)

@@ -21,7 +21,7 @@ Phase 05.
   always visible and never scrolls away. Every target 44px minimum. Measure the
   taps to add a common item — if it is more than two, the layout is wrong.
 
-- [ ] **Task 3 — Modifiers.**
+- [x] **Task 3 — Modifiers.**
   `ModifierSheet`: required and optional groups, min/max selection, price deltas
   shown live via `Money`, defaults preselected. Blocks confirmation until
   required groups are satisfied. Editing an existing line reopens with current
