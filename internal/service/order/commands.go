@@ -149,6 +149,37 @@ func (s *Service) ModifyLine(ctx context.Context, meta Meta, orderID int64, cmd 
 	return s.run(ctx, meta, orderID, "modify_line", cmd, one(order.LineModified(cmd)))
 }
 
+// ErrNeedsApproval means a line cannot be removed without a manager: it
+// has gone to the kitchen, or money has been taken on the order.
+var ErrNeedsApproval = errors.New("this needs a manager's approval")
+
+// ReasonEnteredInError is the reason RemoveLine records.
+const ReasonEnteredInError = "entered_in_error"
+
+// RemoveLine takes off a line rung up by mistake, with no manager: the
+// caller authorises it themselves, and the void is on the order forever
+// like any other. It is only for a line nothing has happened to yet: not
+// sent, its course not fired, and no payment on the order, so it cannot
+// take back an item whose money was taken (ADR-073).
+func (s *Service) RemoveLine(ctx context.Context, meta Meta, orderID, lineID int64) (Result, error) {
+	cmd := VoidLine{LineID: lineID, ReasonCode: ReasonEnteredInError, AuthorisedBy: meta.ActorID}
+	return s.run(ctx, meta, orderID, "remove_line", cmd, func(_ context.Context, tx *db.OrderTx, _ venue, _ time.Time) ([]order.Payload, error) {
+		for _, t := range tx.State.Tenders {
+			if t.Status != order.PaymentStatusVoided {
+				return nil, fmt.Errorf("%w: the order has a payment", ErrNeedsApproval)
+			}
+		}
+		for _, l := range tx.State.Lines {
+			if l.ID == lineID && (l.Sent || l.CourseFired) {
+				return nil, fmt.Errorf("%w: line %d has gone to the kitchen", ErrNeedsApproval, lineID)
+			}
+		}
+		// A line that does not exist, or is already voided, is the
+		// projection's to refuse, with its own error.
+		return []order.Payload{order.LineVoided(cmd)}, nil
+	})
+}
+
 // VoidLine takes a line off the bill.
 func (s *Service) VoidLine(ctx context.Context, meta Meta, orderID int64, cmd VoidLine) (Result, error) {
 	return s.run(ctx, meta, orderID, "void_line", cmd, one(order.LineVoided(cmd)))

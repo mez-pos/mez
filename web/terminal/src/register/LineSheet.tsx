@@ -15,13 +15,17 @@ interface LineSheetProps {
   notes: readonly NoteResponse[];
   /** Whether its item has choices to modify. */
   hasChoices: boolean;
+  /** Whether the order has a payment on it, which ends Remove. */
+  paid: boolean;
   onSave: (change: { qty: number | null; note: string | null }) => Promise<void>;
+  /** Takes the line off with no manager; rejects with the words to show. */
+  onRemove: () => Promise<void>;
   onAction: (action: LineAction) => void;
   onClose: () => void;
 }
 
-export function LineSheet({ line, notes, hasChoices, onSave, onAction, onClose }: LineSheetProps) {
-  const can = lineActions(line);
+export function LineSheet({ line, notes, hasChoices, paid, onSave, onRemove, onAction, onClose }: LineSheetProps) {
+  const can = lineActions(line, paid);
   const [qty, setQty] = useState(line.qty);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -30,17 +34,19 @@ export function LineSheet({ line, notes, hasChoices, onSave, onAction, onClose }
   const trimmed = note.trim();
   const dirty = qty !== line.qty || trimmed !== "";
 
-  const save = async () => {
+  // Both close the sheet on success and keep it open with the reason if not.
+  const attempt = async (send: () => Promise<void>) => {
     setBusy(true);
     setError(null);
     try {
-      await onSave({ qty: qty !== line.qty ? qty : null, note: trimmed || null });
+      await send();
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setBusy(false);
     }
   };
+  const save = () => attempt(() => onSave({ qty: qty !== line.qty ? qty : null, note: trimmed || null }));
 
   const footer = (
     <div className="flex flex-col gap-2">
@@ -91,10 +97,18 @@ export function LineSheet({ line, notes, hasChoices, onSave, onAction, onClose }
           {can.change && hasChoices && <Button onClick={() => onAction("modify")}>Modify</Button>}
           {can.discount && <Button onClick={() => onAction("discount")}>Discount</Button>}
           {can.comp && <Button onClick={() => onAction("comp")}>Comp</Button>}
-          {can.void && (
-            <Button variant="danger" onClick={() => onAction("void")}>
-              Void
+          {can.remove ? (
+            // Nothing has happened to it yet, so no manager: it is still a
+            // void on the order, with who and why (ADR-073).
+            <Button variant="danger" disabled={busy} onClick={() => void attempt(onRemove)}>
+              Remove (rung up by mistake)
             </Button>
+          ) : (
+            can.void && (
+              <Button variant="danger" onClick={() => onAction("void")}>
+                Void
+              </Button>
+            )
           )}
         </div>
       </div>

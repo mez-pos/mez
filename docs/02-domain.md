@@ -50,7 +50,7 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 |---|---|
 | `order.opened` | channel, table, covers, opened_by |
 | `line.added` | item_id, qty, unit_price, modifiers[], course, station |
-| `line.qty_changed` | line_id, from, to |
+| `line.qty_changed` | line_id, from, to: only before the line reaches the kitchen |
 | `line.modified` | line_id, from[], to[]: modifiers, only before the line reaches the kitchen |
 | `line.voided` | line_id, reason_code, authorised_by |
 | `line.comped` | line_id, reason_code, authorised_by |

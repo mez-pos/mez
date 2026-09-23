@@ -23,6 +23,7 @@ type Orders interface {
 	ChangeQty(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ChangeQty) (svcorder.Result, error)
 	ModifyLine(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ModifyLine) (svcorder.Result, error)
 	VoidLine(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.VoidLine) (svcorder.Result, error)
+	RemoveLine(ctx context.Context, meta svcorder.Meta, orderID, lineID int64) (svcorder.Result, error)
 	CompLine(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.CompLine) (svcorder.Result, error)
 	ApplyDiscount(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ApplyDiscount) (svcorder.Result, error)
 	AddNote(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.AddNote) (svcorder.Result, error)
@@ -68,6 +69,7 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	post("/api/v1/orders/{id}/lines", auth.PermOrderOpen, s.addLine)
 	post("/api/v1/orders/{id}/lines/{line}/qty", auth.PermOrderEdit, s.changeQty)
 	post("/api/v1/orders/{id}/lines/{line}/modifiers", auth.PermOrderEdit, s.modifyLine)
+	post("/api/v1/orders/{id}/lines/{line}/remove", auth.PermOrderEdit, s.removeLine)
 	post("/api/v1/orders/{id}/notes", auth.PermOrderEdit, s.addNote)
 	post("/api/v1/orders/{id}/courses/{course}/fire", auth.PermOrderEdit, s.fireCourse)
 	post("/api/v1/orders/{id}/tickets", auth.PermOrderEdit, s.sendTicket)
@@ -206,6 +208,18 @@ func (s *Server) modifyLine(w http.ResponseWriter, r *http.Request) {
 		return s.orders.ModifyLine(r.Context(), meta, orderID, svcorder.ModifyLine{
 			LineID: lineID, From: req.From, To: req.To,
 		})
+	})
+}
+
+// removeLine takes off a line rung up by mistake, before anything has
+// happened to it, with no manager (ADR-073). It takes no body.
+func (s *Server) removeLine(w http.ResponseWriter, r *http.Request) {
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		lineID, ok := s.pathID(w, r, "line")
+		if !ok {
+			return svcorder.Result{}, errAnswered
+		}
+		return s.orders.RemoveLine(r.Context(), meta, orderID, lineID)
 	})
 }
 

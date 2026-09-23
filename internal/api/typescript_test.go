@@ -86,7 +86,7 @@ var errorCodes = []ErrorCode{
 	CodeUnauthenticated, CodeDeviceRevoked, CodeInvalidPairingCode,
 	CodeInvalidPIN, CodeLockedOut, CodeSignInRequired, CodeRateLimited, CodeForbidden,
 	CodeOrderNotFound, CodeLineNotFound, CodeLineNotActive, CodePaymentNotFound,
-	CodeModifiersMismatch, CodeLineInKitchen,
+	CodeModifiersMismatch, CodeLineInKitchen, CodeNeedsApproval,
 	CodePaymentNotCaptured, CodeOrderClosed, CodeOrderNotClosed, CodeQtyMismatch,
 	CodeBalanceDue, CodeOverTender, CodeOverRefund, CodeDiscountTooLarge,
 	CodeAlreadyInvoiced, CodeCourseAlreadyFired, CodeNothingToSend,

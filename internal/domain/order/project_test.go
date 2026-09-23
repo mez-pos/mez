@@ -108,6 +108,8 @@ func TestProjectRejectsIllegalSequences(t *testing.T) {
 		{"modify to another currency", with(oneCoffee, LineModified{LineID: 2, To: []Modifier{{ModifierID: 1, Name: "x", Price: usd}}}), ErrInvalidPayload},
 		{"modify to a nameless modifier", with(oneCoffee, LineModified{LineID: 2, To: []Modifier{{ModifierID: 1, Price: inr(0)}}}), ErrInvalidPayload},
 		{"modify a voided line", with(oneCoffee, void(2), oat(2)), ErrLineNotActive},
+		{"qty change on a sent line", with(oneCoffee, TicketSent{Station: "bar", LineIDs: []int64{2}}, LineQtyChanged{LineID: 2, From: 1, To: 2}), ErrLineInKitchen},
+		{"qty change on a fired course", with(oneCoffee, CourseFired{Course: 1}, LineQtyChanged{LineID: 2, From: 1, To: 2}), ErrLineInKitchen},
 		{"modify a sent line", with(oneCoffee, TicketSent{Station: "bar", LineIDs: []int64{2}}, oat(2)), ErrLineInKitchen},
 		{"modify a line whose course is fired", with(oneCoffee, CourseFired{Course: 1}, oat(2)), ErrLineInKitchen},
 		{"modify after close", with(paidClosed, oat(2)), ErrOrderClosed},

@@ -28,6 +28,8 @@ export interface Ticket {
   changeQty: (lineId: number, from: number, to: number) => Promise<void>;
   addNote: (note: AddNote) => Promise<void>;
   /** The approval is a manager's; the server checks their PIN and permission. */
+  /** Rung up by mistake, nothing done yet: no manager (ADR-073). */
+  removeLine: (lineId: number) => Promise<void>;
   voidLine: (lineId: number, reasonCode: string, approval: Override) => Promise<void>;
   compLine: (lineId: number, reasonCode: string, approval: Override) => Promise<void>;
   discount: (request: DiscountRequest) => Promise<void>;
@@ -101,6 +103,7 @@ export function useTicket(): Ticket {
     modify: (lineId, change) => queue.modify(lineId, change),
     changeQty: (lineId, from, to) => post(`/lines/${lineId}/qty`, { from, to }),
     addNote: (note) => post("/notes", note),
+    removeLine: (lineId) => post(`/lines/${lineId}/remove`, undefined),
     voidLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/void`, { ...approval, reason_code: reasonCode }),
     compLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/comp`, { ...approval, reason_code: reasonCode }),
     discount: (request) => post("/discounts", request),

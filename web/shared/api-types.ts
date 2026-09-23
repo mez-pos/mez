@@ -27,6 +27,7 @@ export type ErrorCode =
   | 'payment_not_found'
   | 'modifiers_mismatch'
   | 'line_in_kitchen'
+  | 'needs_approval'
   | 'payment_not_captured'
   | 'order_closed'
   | 'order_not_closed'

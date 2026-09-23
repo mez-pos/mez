@@ -188,10 +188,17 @@ func (p *projector) addLine(e Event, pl LineAdded) error {
 	return nil
 }
 
+// changeQty changes a line's quantity while the kitchen has not seen it.
+// After that, a lower quantity would be a void with no approval, and a
+// higher one would be charged but never sent: a void, or a new line, says
+// what happened instead (ADR-073).
 func (p *projector) changeQty(pl LineQtyChanged) error {
 	l, err := p.activeLine(pl.LineID)
 	if err != nil {
 		return err
+	}
+	if l.Sent || l.CourseFired {
+		return fmt.Errorf("%w: line %d", ErrLineInKitchen, l.ID)
 	}
 	if pl.From != l.Qty {
 		return fmt.Errorf("%w: line %d has %d, event says %d", ErrQtyMismatch, l.ID, l.Qty, pl.From)

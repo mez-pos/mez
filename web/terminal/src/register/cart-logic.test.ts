@@ -22,14 +22,18 @@ const line = (extra: Partial<LineResponse> = {}): LineResponse => ({
 
 describe("lineActions", () => {
   const cases: [string, Partial<LineResponse>, Record<string, boolean>][] = [
-    ["an unsent line allows everything", {}, { change: true, note: true, void: true, comp: true, discount: true }],
-    ["a sent line cannot change", { sent: true }, { change: false, void: true, comp: true, discount: true }],
-    ["a fired course cannot change", { course_fired: true }, { change: false, void: true }],
-    ["a voided line only takes a note", { status: "voided" }, { change: false, note: true, void: false, comp: false, discount: false }],
-    ["a comped line cannot be voided", { status: "comped" }, { void: false, comp: false }],
+    ["an unsent line allows everything", {}, { change: true, note: true, remove: true, void: true, comp: true, discount: true }],
+    ["a sent line cannot change or be removed", { sent: true }, { change: false, remove: false, void: true, comp: true, discount: true }],
+    ["a fired course cannot change", { course_fired: true }, { change: false, remove: false, void: true }],
+    ["a voided line only takes a note", { status: "voided" }, { change: false, note: true, remove: false, void: false, comp: false, discount: false }],
+    ["a comped line cannot be voided", { status: "comped" }, { void: false, comp: false, remove: false }],
   ];
   it.each(cases)("%s", (_, extra, want) => {
-    expect(lineActions(line(extra))).toMatchObject(want);
+    expect(lineActions(line(extra), false)).toMatchObject(want);
+  });
+
+  it("needs a manager's void once money is on the order", () => {
+    expect(lineActions(line(), true)).toMatchObject({ change: true, remove: false, void: true });
   });
 });
 

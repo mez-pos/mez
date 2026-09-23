@@ -41,15 +41,18 @@ export interface LineActions {
   /** Quantity and modifiers: only before the kitchen has it (ADR-071, ADR-072). */
   readonly change: boolean;
   readonly note: boolean;
+  /** Taken off with no manager: rung up by mistake, nothing done yet (ADR-073). */
+  readonly remove: boolean;
   readonly void: boolean;
   readonly comp: boolean;
   readonly discount: boolean;
 }
 
-export function lineActions(line: LineResponse): LineActions {
+/** `paid` is whether the order has a payment that is not voided. */
+export function lineActions(line: LineResponse, paid: boolean): LineActions {
   const active = line.status === "active";
   const unseen = active && !line.sent && !line.course_fired;
-  return { change: unseen, note: true, void: active, comp: active, discount: active };
+  return { change: unseen, note: true, remove: unseen && !paid, void: active, comp: active, discount: active };
 }
 
 /** A discount as typed: basis points (1250 is 12.5%) or an amount in minor units. */

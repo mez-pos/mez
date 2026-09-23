@@ -478,3 +478,42 @@ func TestModifyALineOverHTTP(t *testing.T) {
 		t.Errorf("a sent line: status %d, code %q, want 409 line_in_kitchen", status, apiErr.Code)
 	}
 }
+
+// TestRemoveALineRungUpByMistake: the cashier takes off a line nothing has
+// happened to, with no manager, and the void records them and the reason.
+// Once it has gone to the kitchen, or money is on the order, it needs a
+// manager's void instead (ADR-073).
+func TestRemoveALineRungUpByMistake(t *testing.T) {
+	r := newRegister(t)
+	id := r.openOrder(t)
+	line := `{"item_id":1,"name":"Upma","qty":1,"unit_price":{"minor":9000,"currency":"INR"},"station":"kitchen","tax_rate":5000,"hsn":"996331"}`
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines", line) // 2
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines", line) // 3
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines", line) // 4
+
+	res := r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines/2/remove", ``)
+	removed := res.Order.Lines[0]
+	if removed.Status != "voided" || removed.ReasonCode != "entered_in_error" || removed.AuthorisedBy == 0 {
+		t.Fatalf("removed line = %+v", removed)
+	}
+	if len(res.Events) != 1 || res.Events[0].Type != "line.voided" || res.Events[0].ActorID != removed.AuthorisedBy {
+		t.Errorf("events = %+v, want one line.voided by the caller", res.Events)
+	}
+
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/tickets", `{"station":"kitchen","line_ids":[3]}`)
+	status, _, apiErr := r.call(t, http.MethodPost, "/api/v1/orders/"+id+"/lines/3/remove", ``)
+	if status != http.StatusConflict || apiErr.Code != CodeNeedsApproval {
+		t.Errorf("a sent line: %d %q, want 409 needs_approval", status, apiErr.Code)
+	}
+
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/payments", `{"method":"cash","amount":{"minor":1000,"currency":"INR"}}`)
+	status, _, apiErr = r.call(t, http.MethodPost, "/api/v1/orders/"+id+"/lines/4/remove", ``)
+	if status != http.StatusConflict || apiErr.Code != CodeNeedsApproval {
+		t.Errorf("after a payment: %d %q, want 409 needs_approval", status, apiErr.Code)
+	}
+
+	status, _, apiErr = r.call(t, http.MethodPost, "/api/v1/orders/"+id+"/lines/2/remove", ``)
+	if status != http.StatusConflict || (apiErr.Code != CodeLineNotActive && apiErr.Code != CodeNeedsApproval) {
+		t.Errorf("removing twice: %d %q", status, apiErr.Code)
+	}
+}

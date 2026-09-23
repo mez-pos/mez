@@ -1814,3 +1814,30 @@ manager has not approved once the kitchen has started.
 Cost: removing a mistaken line that nobody has made still needs a void
 and a manager. Notes cannot be edited or removed; a second note corrects
 the first.
+
+## ADR-073 - Quantity stops at the kitchen; a mistaken line comes off without a manager until money is taken
+2026-09 · Status: accepted (decided on the owner's behalf, at their request)
+Decision: two rules the cart (ADR-072) left open.
+- **`line.qty_changed` is refused for a line sent, or in a fired course**
+  (`ErrLineInKitchen`), in the domain. Lowering it would be a void with no
+  approval and no reason; raising it would charge for an item the kitchen
+  is never told about, because a sent line is not sent again. A void, or a
+  new line, records what happened. The terminal already hid the stepper;
+  now a client that sends one anyway is refused.
+- **`POST .../lines/{line}/remove` takes off a line rung up by mistake
+  with no manager,** as `line.voided` with reason `entered_in_error` and
+  the caller as the authoriser. Only while nothing has happened to it: not
+  sent, its course not fired, and **no payment on the order** that is not
+  voided. Otherwise `needs_approval` (409), and the till offers Void.
+  Checked in the service, inside the append transaction, against the
+  state the event is appended to.
+- Why the payment rule: the fraud this invites is "take the cash, remove
+  the line, keep the cash". With no payment recorded, removing a line
+  loses nothing the till knew about; once money is on the order, taking
+  anything off needs a second person. The void stays on the order and in
+  reports either way, with who removed it.
+Because: a mis-tap at the counter is the commonest correction in a shift,
+and calling a manager for it teaches staff to leave mistakes on the bill.
+Cost: a remove is counted with voids in reports; phase 09's exception
+report should show `entered_in_error` separately, per staff member, so a
+pattern is visible.

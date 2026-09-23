@@ -48,10 +48,12 @@ export function TicketPanels({ panel, onPanel, ticket, hasChoices, onModify }: T
           line={line}
           notes={order.notes.filter((n) => n.scope === "line" && n.line_id === line.id)}
           hasChoices={hasChoices(line)}
+          paid={order.tenders.some((t) => t.status !== "voided")}
           onSave={async ({ qty, note }) => {
             if (qty !== null) await ticket.changeQty(line.id, line.qty, qty);
             if (note !== null) await ticket.addNote({ scope: "line", line_id: line.id, text: note });
           }}
+          onRemove={() => ticket.removeLine(line.id)}
           onAction={act}
           onClose={close}
         />

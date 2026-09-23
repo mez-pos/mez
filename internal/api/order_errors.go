@@ -23,6 +23,7 @@ const (
 	CodeQtyMismatch          ErrorCode = "qty_mismatch"
 	CodeModifiersMismatch    ErrorCode = "modifiers_mismatch"
 	CodeLineInKitchen        ErrorCode = "line_in_kitchen"
+	CodeNeedsApproval        ErrorCode = "needs_approval"
 	CodeBalanceDue           ErrorCode = "balance_due"
 	CodeOverTender           ErrorCode = "over_tender"
 	CodeOverRefund           ErrorCode = "over_refund"
@@ -57,6 +58,7 @@ var orderErrors = []struct {
 	{svcorder.ErrIdempotencyKeyReused, http.StatusConflict, CodeIdempotencyKeyReused},
 	{svcorder.ErrVenueConfig, http.StatusConflict, CodeVenueNotConfigured},
 	{svcorder.ErrNothingToSend, http.StatusConflict, CodeNothingToSend},
+	{svcorder.ErrNeedsApproval, http.StatusConflict, CodeNeedsApproval},
 	{svcorder.ErrInvalidCommand, http.StatusBadRequest, CodeInvalidRequest},
 
 	// What the order itself refuses.

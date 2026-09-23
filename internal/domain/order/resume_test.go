@@ -153,7 +153,9 @@ func TestResumeDoesNotTouchItsInput(t *testing.T) {
 		opened(),
 		coffee(2),                          // 2
 		item("Almond croissant", 1, 18000), // 3
-		TicketSent{Station: "bar", LineIDs: []int64{2}},
+		// The croissant goes out; the coffee's quantity changes below, which
+		// it could not once the bar had it (ADR-073).
+		TicketSent{Station: "bar", LineIDs: []int64{3}},
 		off(ScopeLine, 2, 1000),
 		pay(PaymentCard, 61000), // 6
 	)

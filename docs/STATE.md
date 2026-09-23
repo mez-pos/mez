@@ -32,11 +32,8 @@ slot in `use-ticket.ts` (`nofiltr.terminal.ticket`) becomes a list.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
-- The server accepts `line.qty_changed` on a line already sent: an
-  unapproved partial void. The terminal hides the stepper (ADR-072); the
-  domain should refuse it, or require an approval for a decrease.
-- A mistaken, unsent line can only leave the bill by a manager's void.
-  Worth deciding whether an unsent line may be removed without one.
+- Phase 09's exception report should count `entered_in_error` removes
+  per staff member, apart from manager voids (ADR-073).
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
   no menu writes over HTTP until phase 10. GST place of supply is always
   the venue's state, so no IGST. `nofiltr setup` cannot finish a US venue.

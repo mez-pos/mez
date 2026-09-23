@@ -85,8 +85,9 @@ var (
 	// line does not have: the client was looking at a stale ticket.
 	ErrModifiersMismatch = errors.New("modifiers changed from ones the line does not have")
 
-	// ErrLineInKitchen means a line.modified named a line already sent to
-	// its station, or whose course is fired. Void it and add it again.
+	// ErrLineInKitchen means a line.modified or line.qty_changed named a
+	// line already sent to its station, or whose course is fired. Void it,
+	// or add another line.
 	ErrLineInKitchen = errors.New("line has gone to the kitchen")
 
 	// ErrPaymentNotFound means an event named a payment ID that no
