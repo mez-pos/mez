@@ -11,16 +11,17 @@ File: `docs/phases/phase-06.md`. Phase 05 is complete.
 
 ## Last completed task
 
-**Phase 06, Task 3: modifiers** (ADR-071). `ModifierSheet` with required
-and optional groups, min/max, live price, defaults; a new `line.modified`
-event lets Modify change an unsent line without a manager. Demo menu has
-a required no-default group (Avocado toast: Bread). Checked in a browser.
+**Phase 06, Task 4: cart** (ADR-072). Tapping a line opens its sheet:
+quantity and note, Modify, Discount, Comp, Void. Void, comp and discounts
+take a reason and an approver's PIN. Voided lines stay struck through; the
+totals show items, discounts, subtotal, tax. Checked in a browser.
 
 ## Next task
 
-**Phase 06, Task 4: cart.** Quantity steppers, notes, void with a reason
-and manager override, comp, line and order discounts, voided lines struck
-through. A line the kitchen has is changed by void and re-add, not Modify.
+**Phase 06, Task 5: open tickets and hold.** Several open tickets, a list
+with table, covers, elapsed time (vermilion past a venue threshold) and
+total; switch without losing state; hold and resume. The single ticket
+slot in `use-ticket.ts` (`nofiltr.terminal.ticket`) becomes a list.
 
 ## Known broken / in progress
 
@@ -31,6 +32,11 @@ through. A line the kitchen has is changed by void and re-add, not Modify.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
+- The server accepts `line.qty_changed` on a line already sent: an
+  unapproved partial void. The terminal hides the stepper (ADR-072); the
+  domain should refuse it, or require an approval for a decrease.
+- A mistaken, unsent line can only leave the bill by a manager's void.
+  Worth deciding whether an unsent line may be removed without one.
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
   no menu writes over HTTP until phase 10. GST place of supply is always
   the venue's state, so no IGST. `nofiltr setup` cannot finish a US venue.

@@ -29,3 +29,18 @@ export function failureOf(err: unknown): string {
   }
   return "Not sent: something went wrong.";
 }
+
+/**
+ * Words for a refused manager approval. `err` is what TicketQueue.run
+ * rejected with; the server's error is its cause. `who` is the name chosen.
+ */
+export function approvalFailure(err: unknown, who: string): string {
+  const cause = err instanceof Error && err.cause instanceof ApiError ? err.cause : err;
+  if (cause instanceof ApiError) {
+    if (cause.code === "invalid_pin") return "That PIN isn't right. Try again.";
+    if (cause.code === "forbidden") return `${who} can't approve this. Choose a manager.`;
+    if (cause.code === "locked_out") return "Too many wrong PINs. Try again in a few minutes.";
+    return failureOf(cause);
+  }
+  return err instanceof Error ? err.message : failureOf(err);
+}

@@ -1,10 +1,12 @@
 // The ticket on the right. The lines scroll; the totals block does not, so
 // the total is on screen whatever the ticket's length (terminal-register.md).
-// Every figure is the server's projection, never arithmetic done here.
+// Every figure is the server's projection, never arithmetic done here. A
+// voided line stays on the ticket, struck through; nothing is ever hidden.
 
-import type { LineResponse, Money as Amount, OrderResponse } from "../../../shared/api-types";
-import { Button, Meta, Money } from "../../../shared/ui";
+import type { DiscountResponse, LineResponse, Money as Amount, NoteResponse, OrderResponse } from "../../../shared/api-types";
+import { Button, Meta, Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { humanise } from "../../../shared/ui/timeline-entries";
 import type { PendingLine } from "./ticket-queue";
 
 interface TicketRailProps {
@@ -12,17 +14,21 @@ interface TicketRailProps {
   orderId: string | null;
   pending: readonly PendingLine[];
   currency: string;
-  /** Whether a line can still have its modifiers changed. */
-  canModify: (line: LineResponse) => boolean;
-  onModify: (line: LineResponse) => void;
+  onOpenLine: (line: LineResponse) => void;
+  onOrderDiscount: () => void;
+  onOrderNote: () => void;
   onRetry: (key: string) => void;
   onRemove: (key: string) => void;
 }
 
-export function TicketRail({ order, orderId, pending, currency, canModify, onModify, onRetry, onRemove }: TicketRailProps) {
+export function TicketRail(props: TicketRailProps) {
+  const { order, orderId, pending, currency, onOpenLine, onOrderDiscount, onOrderNote, onRetry, onRemove } = props;
   const zero: Amount = { minor: 0, currency };
   const totals = order?.totals;
   const empty = (order?.lines.length ?? 0) === 0 && pending.length === 0;
+  const live = order?.lines.some((l) => l.status === "active") ?? false;
+  const orderNotes = order?.notes.filter((n) => n.scope === "order") ?? [];
+  const orderDiscounts = order?.discounts.filter((d) => d.scope === "order") ?? [];
 
   return (
     <aside aria-label="Ticket" className="flex w-104 shrink-0 flex-col border-l border-line bg-chrome">
@@ -33,6 +39,11 @@ export function TicketRail({ order, orderId, pending, currency, canModify, onMod
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5">
+        {orderNotes.map((n) => (
+          <p key={n.seq} className="mt-3 rounded border border-line bg-raised p-3 text-sm text-fg-2">
+            Note: {n.text}
+          </p>
+        ))}
         {empty ? (
           <div className="py-16 text-center">
             <p className="font-serif text-xl italic text-fg-faint">No items yet</p>
@@ -41,7 +52,7 @@ export function TicketRail({ order, orderId, pending, currency, canModify, onMod
         ) : (
           <ol>
             {order?.lines.map((line) => (
-              <OrderLine key={line.id} line={line} onModify={canModify(line) ? () => onModify(line) : undefined} />
+              <OrderLine key={line.id} line={line} notes={order.notes} onOpen={() => onOpenLine(line)} />
             ))}
             {pending.map((p) => (
               <PendingRow key={p.key} line={p} onRetry={onRetry} onRemove={onRemove} />
@@ -51,6 +62,21 @@ export function TicketRail({ order, orderId, pending, currency, canModify, onMod
       </div>
 
       <footer className="border-t border-line px-5 pb-5 pt-4">
+        <div className="mb-3 grid grid-cols-2 gap-tap-gap">
+          <Button disabled={!live} onClick={onOrderDiscount}>
+            Discount
+          </Button>
+          <Button disabled={!order} onClick={onOrderNote}>
+            Note
+          </Button>
+        </div>
+        {totals && (totals.line_discounts.minor > 0 || totals.order_discounts.minor > 0) && (
+          <TotalRow label="Items" amount={totals.gross} />
+        )}
+        {totals && totals.line_discounts.minor > 0 && <TotalRow label="Line discounts" amount={negate(totals.line_discounts)} />}
+        {orderDiscounts.map((d) => (
+          <TotalRow key={d.seq} label={`Discount · ${discountLabel(d)}`} amount={negate(d.value)} />
+        ))}
         <TotalRow label="Subtotal" amount={totals?.subtotal ?? zero} />
         <TotalRow label="Tax" amount={totals?.tax ?? zero} />
         <div className="mt-3 flex items-baseline justify-between border-t border-line-strong pt-3">
@@ -60,6 +86,12 @@ export function TicketRail({ order, orderId, pending, currency, canModify, onMod
       </footer>
     </aside>
   );
+}
+
+const negate = (a: Amount): Amount => ({ ...a, minor: -a.minor });
+
+function discountLabel(d: DiscountResponse): string {
+  return humanise(d.reason) ?? d.reason;
 }
 
 function TotalRow({ label, amount }: { label: string; amount: Amount }) {
@@ -77,29 +109,48 @@ function modifierText(mods: readonly { name: string }[] | undefined): string {
 
 interface OrderLineProps {
   line: LineResponse;
-  /** Present while the kitchen has not seen the line and it has choices. */
-  onModify?: (() => void) | undefined;
+  notes: readonly NoteResponse[];
+  onOpen: () => void;
 }
 
-function OrderLine({ line, onModify }: OrderLineProps) {
-  const off = line.status !== "active";
+function OrderLine({ line, notes, onOpen }: OrderLineProps) {
+  const voided = line.status === "voided";
+  const mine = notes.filter((n) => n.scope === "line" && n.line_id === line.id);
   return (
-    <li className="grid grid-cols-[1fr_auto] gap-3 border-b border-line py-3.5">
-      <div className={cx("min-w-0", off && "line-through opacity-60")}>
-        <div className="flex items-baseline gap-2">
-          <span className="font-mono text-sm tabular-nums text-fg-3">{line.qty}×</span>
-          <span className="text-base font-medium">{line.name}</span>
+    <li className="border-b border-line">
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`${line.qty} ${line.name}${line.status === "active" ? "" : `, ${line.status}`}`}
+        className="grid min-h-tap w-full grid-cols-[1fr_auto] gap-3 py-3.5 text-left outline-offset-2 outline-line-focus hover:bg-raised focus-visible:outline-2"
+      >
+        <div className="min-w-0">
+          <div className={cx("flex items-baseline gap-2", voided && "line-through opacity-60")}>
+            <span className="font-mono text-sm tabular-nums text-fg-3">{line.qty}×</span>
+            <span className="text-base font-medium">{line.name}</span>
+          </div>
+          {line.status !== "active" && (
+            <div className="mt-1.5 flex items-center gap-2">
+              <StatusChip status={{ kind: "line", status: line.status }} />
+              {line.reason_code && <span className="text-sm text-fg-muted">{humanise(line.reason_code)}</span>}
+            </div>
+          )}
+          {line.modifiers && line.modifiers.length > 0 && (
+            <p className={cx("mt-1 text-sm text-fg-muted", voided && "line-through")}>{modifierText(line.modifiers)}</p>
+          )}
+          {mine.map((n) => (
+            <p key={n.seq} className="mt-1 text-sm text-fg-2">
+              Note: {n.text}
+            </p>
+          ))}
+          {line.discount.minor > 0 && (
+            <p className="mt-1 flex gap-2 text-sm text-fg-muted">
+              Discount <Money amount={negate(line.discount)} />
+            </p>
+          )}
         </div>
-        {line.modifiers && line.modifiers.length > 0 && (
-          <p className="mt-1 text-sm text-fg-muted">{modifierText(line.modifiers)}</p>
-        )}
-        {onModify && (
-          <Button variant="ghost" className="-ml-4 mt-1" onClick={onModify} aria-label={`Modify ${line.name}`}>
-            Modify
-          </Button>
-        )}
-      </div>
-      <Money amount={line.gross} tone={off ? "muted" : "default"} />
+        <Money amount={line.gross} tone={line.status === "active" ? "default" : "muted"} className={cx(voided && "line-through")} />
+      </button>
     </li>
   );
 }

@@ -30,13 +30,24 @@ Nothing but the item grid and the line list scrolls.
     sensitive.
   - Middle, scrolling: the **lines**. Quantity in mono, the name, the chosen
     modifiers under it in muted text, the line's amount in mono on the right.
-    A line the kitchen has not seen, whose item has choices, has
-    **Modify**. Lines still on their way to the server are shown faint
-    with "Adding".
+    Each line is one tap target that opens its **LineSheet**. A voided line
+    stays, struck through, with a "Void" chip and its reason; a comped one
+    has a "Comped" chip; a line discount shows under the line. Notes show
+    under their line, and order notes above the lines. Lines still on their
+    way to the server are shown faint with "Adding".
     A line the server refused stays, in danger, with **Retry** and
     **Remove**.
-  - Bottom, fixed, never scrolls: **Subtotal**, **Tax**, and **Total** in
+  - Bottom, fixed, never scrolls: **Discount** and **Note** for the whole
+    order, then, when there are discounts, **Items**, **Line discounts** and
+    one row per order discount; then **Subtotal**, **Tax**, and **Total** in
     Instrument Serif at `--text-total` via `Money variant="total"`.
+- **LineSheet**: quantity stepper and a note, saved together; Modify,
+  Discount, Comp and Void. A line the kitchen has seen shows its quantity
+  without a stepper.
+- **ApprovalSheet** (void, comp, discount): first what and why (a reason
+  from a fixed list, and a discount's percentage or amount on the pad),
+  then who approves: staff names, the signed-in person chosen already, and
+  their PIN on the pad.
 - **ModifierSheet** (`Sheet`: bottom on touch, side panel on desktop): the
   item's name, then each group with "Required · Choose 1" or "Optional · Up
   to 3" on the right, its choices two to a row, 44px, a price delta in mono
@@ -62,6 +73,11 @@ Nothing but the item grid and the line list scrolls.
 - `POST /api/v1/orders/{id}/lines/{line}/modifiers` `{ from, to }`: change
   a line's modifiers (`line.modified`, ADR-071), sent through the same
   ordered queue as taps, with its own `Idempotency-Key`.
+- `.../lines/{line}/qty` `{ from, to }`, `.../notes` `{ scope, line_id?,
+  text }`, `.../lines/{line}/void` and `/comp` `{ authorised_by, pin,
+  reason_code }`, `.../discounts` `{ authorised_by, pin, scope, line_id?,
+  kind, basis_points | amount, reason }`: every one through the ordered
+  queue with its own key. `GET /api/v1/staff` for the approver's name.
 - WebSocket: an `event` for the current order, or a `resync`, invalidates
   `["order", id]`, so a line added or changed on another till appears here.
 
@@ -78,6 +94,12 @@ Nothing but the item grid and the line list scrolls.
 | Modify on a line | Opens the sheet with the line's own choices | | "Save changes" |
 | Save changes | Sends from and to | `line.modified` | Closes on success; a refusal stays in the message line |
 | The line moves on while the sheet is open (another till, sent, voided) | Seen through the stream | | Save disabled, with why |
+| Tap a line | Opens its LineSheet | | |
+| Change quantity or write a note, Save | Sends the quantity, then the note | `line.qty_changed`, `note.added` | |
+| Void or Comp, reason, approver and PIN | Sends it with the approval | `line.voided` / `line.comped` | Struck through / marked, and off the total |
+| Discount (line or order), size, reason, approver and PIN | Sends it | `discount.applied` | A row under the line, or in the totals |
+| A wrong PIN | | | "That PIN isn't right. Try again." The PIN clears; the choices stay |
+| Note on the order | | `note.added` | Shown above the lines |
 | Retry on a refused line | Sends the same command with the same key | `line.added` | |
 | Remove on a refused line | Forgets it locally | | Nothing was recorded, so nothing is voided |
 
@@ -134,7 +156,14 @@ takes the item, Modify, the choice, Save.
   phase 10.
 - **The ticket id is not vermilion.** The design colours `#ticket` and the
   total both; one accent per screen means the total keeps it.
-- **Quantity steppers and Void on lines** are Task 4.
+- **Line actions live in a sheet, not on the line.** The design puts
+  34px `−`, `+`, Modify and Void buttons, in 11px type, on every line. Under
+  the 44px and 15px rules that doubles each line's height, and puts Void a
+  thumb's width from `+`. One tap on the line opens them instead.
+- **Quantity only until the kitchen has the line** (ADR-072); after that,
+  void and ring up again.
+- **Discount and Note sit over the totals**; Hold and Fire are Task 5 and
+  phase 08.
 - **Modify only until the kitchen has the line.** The design shows Modify on
   every line. After a line is sent or its course fired, a change is a void
   and a new line (Task 4), which needs a manager.

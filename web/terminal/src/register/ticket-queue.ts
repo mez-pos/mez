@@ -86,24 +86,29 @@ export class TicketQueue {
     this.update({ pending: this.state.pending.filter((p) => p.key !== key) });
   }
 
-  /**
-   * Changes a line's modifiers, after anything already queued, so a change
-   * made straight after a tap cannot overtake the tap. Resolves when the
-   * server has it; rejects with the words for the rail when it does not.
-   */
+  /** Changes a line's modifiers. See run. */
   modify(lineId: number, change: ModifyLine): Promise<void> {
+    return this.run((orderId, key) => this.opts.commands.modifyLine(orderId, lineId, change, key));
+  }
+
+  /**
+   * Sends one command to the current order, after anything already queued,
+   * so a change made straight after a tap cannot overtake the tap. It gets
+   * its own idempotency key. Resolves when the server has it; rejects with
+   * the till's words when it does not. The chain carries on either way.
+   */
+  run(command: (orderId: string, key: string) => Promise<CommandResponse>): Promise<void> {
     const key = this.opts.newKey();
     const done = this.chain.then(async () => {
       const orderId = this.state.orderId;
       if (!orderId) throw new Error("There is no ticket to change.");
       try {
-        const res = await this.opts.commands.modifyLine(orderId, lineId, change, key);
+        const res = await command(orderId, key);
         this.opts.onOrder(res.order);
       } catch (err) {
-        throw new Error(failureOf(err));
+        throw new Error(failureOf(err), { cause: err });
       }
     });
-    // The chain carries on whether this one worked or not.
     this.chain = done.catch(() => undefined);
     return done;
   }

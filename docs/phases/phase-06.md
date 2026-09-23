@@ -27,7 +27,7 @@ Phase 05.
   required groups are satisfied. Editing an existing line reopens with current
   selections.
 
-- [ ] **Task 4 — Cart.**
+- [x] **Task 4 — Cart.**
   Line list with quantity controls, per-line notes, void with a reason code and
   authorisation, comp, line and order discounts. Every mutation emits the right
   domain event — check against `docs/02-domain.md`. Voided lines stay visible,

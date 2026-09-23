@@ -1769,3 +1769,48 @@ anything was made" is one event that says exactly that.
 Cost: a sixteenth event type every reader of the stream must know. An edit
 of a line with choices the menu has since retired drops them from the
 sheet; saving then removes them from the line.
+
+## ADR-072 - The cart: one sheet per line, approvals by PIN, change stops at the kitchen
+2026-09 · Status: accepted
+Decision: every cart action goes through the register's ordered queue
+(`TicketQueue.run`, one idempotency key per command) and emits the event
+`docs/02-domain.md` names: `line.qty_changed`, `note.added`,
+`line.voided`, `line.comped`, `discount.applied`. Nothing is computed on
+the till; the rail redraws from the order each command returns.
+- **A line opens a sheet.** Tapping a line opens its LineSheet: quantity
+  and a note saved together, and Modify, Discount, Comp, Void. The design's
+  row of 34px buttons on every line fails the 44px and 15px rules, and
+  puts Void next to `+`.
+- **Quantity changes stop at the kitchen, as modifiers do (ADR-071).** The
+  stepper is only on a line not sent and not in a fired course. After that,
+  lowering a quantity would be a void with no manager and no reason; the
+  till offers Void instead. The server does not enforce this yet: a client
+  that sends `line.qty_changed` for a sent line is accepted (see STATE).
+- **Approvals are a person and their PIN.** Void, comp and discount need
+  the authoriser's permission, checked by the server against the PIN they
+  type, so the ApprovalSheet asks who is approving (the signed-in person
+  first) and takes their PIN. A wrong PIN, someone without the permission
+  and a lockout each have their own words; the PIN clears, the reason and
+  amount stay.
+- **Reasons are fixed lists in the terminal** (`cart-logic.ts`): stable
+  snake_case codes, because the event stores the code and reports count
+  it. The back office will own them in phase 10.
+- **A discount is typed on the amount pad from the right** in both modes:
+  1250 is 12.50% (basis points, exactly what the event takes) or ₹12.50.
+  The sheet refuses nothing over 100% or over what it comes off before
+  asking the server, which checks again.
+- **Found and fixed on the way:** the approval pad dropped digits typed
+  faster than a render (a stale closure over the PIN); it now uses a
+  functional update, as the lock screen already did. `PinDots` moved to
+  `web/shared/screens/PinDots.tsx` so both pads share it.
+- Checked in a browser against the real binary: quantity and a note in
+  one save; a void refused for a wrong PIN, then accepted, struck through
+  with its reason and off the total; a comp; 10% off a line; ₹20 off the
+  order; an order note. Items, line discounts, the order discount,
+  subtotal and total all agreed with the arithmetic.
+Because: the cart is where a till loses money quietly, so every change is
+an event with a person and a reason on it, and the till offers nothing a
+manager has not approved once the kitchen has started.
+Cost: removing a mistaken line that nobody has made still needs a void
+and a manager. Notes cannot be edited or removed; a second note corrects
+the first.

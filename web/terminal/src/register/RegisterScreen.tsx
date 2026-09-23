@@ -13,6 +13,7 @@ import { ItemGrid } from "./ItemGrid";
 import { ModifierSheet } from "./ModifierSheet";
 import { sameModifiers } from "./modifier-selection";
 import { addLineFor, defaultModifiers, searchItems } from "./register-logic";
+import { TicketPanels, type Panel } from "./TicketPanels";
 import { TicketRail } from "./TicketRail";
 import { useTicket } from "./use-ticket";
 
@@ -23,7 +24,17 @@ export function RegisterScreen() {
 
   const [chosen, setChosen] = useState<number | null>(null);
   const [query, setQuery] = useState("");
-  const [sheet, setSheet] = useState<SheetState | null>(null);
+  const [sheet, setSheetState] = useState<SheetState | null>(null);
+  const [panel, setPanelState] = useState<Panel | null>(null);
+  // One sheet at a time: opening one closes the other.
+  const setSheet = (next: SheetState | null) => {
+    setSheetState(next);
+    if (next) setPanelState(null);
+  };
+  const setPanel = (next: Panel | null) => {
+    setPanelState(next);
+    if (next) setSheetState(null);
+  };
   // Bumped to empty the search box: SearchField keeps what is typed in it.
   const [searchKey, setSearchKey] = useState(0);
   const clearSearch = () => {
@@ -126,13 +137,22 @@ export function RegisterScreen() {
         orderId={ticket.orderId}
         pending={ticket.pending}
         currency={index?.menu.currency ?? "INR"}
-        canModify={(line) => editable(line) !== null}
+        onOpenLine={(line) => setPanel({ kind: "line", lineId: line.id })}
+        onOrderDiscount={() => setPanel({ kind: "discount", lineId: null })}
+        onOrderNote={() => setPanel({ kind: "note" })}
+        onRetry={ticket.retry}
+        onRemove={ticket.remove}
+      />
+
+      <TicketPanels
+        panel={panel}
+        onPanel={setPanel}
+        ticket={ticket}
+        hasChoices={(line) => editable(line) !== null}
         onModify={(line) => {
           const item = editable(line);
           if (item) setSheet({ kind: "edit", item, line, error: null, busy: false });
         }}
-        onRetry={ticket.retry}
-        onRemove={ticket.remove}
       />
 
       {sheet && index && (

@@ -4,7 +4,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { ApiError } from "../../../shared/api";
-import type { AddLine, CommandResponse, OpenOrder, OrderResponse } from "../../../shared/api-types";
+import type { AddLine, AddNote, CommandResponse, DiscountRequest, OpenOrder, OrderResponse, Override } from "../../../shared/api-types";
 import { browserStorage } from "../../../shared/auth/storage";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
@@ -25,6 +25,12 @@ export interface Ticket {
   remove: (key: string) => void;
   /** Rejects with the words to show when the server refuses. */
   modify: (lineId: number, change: ModifyLine) => Promise<void>;
+  changeQty: (lineId: number, from: number, to: number) => Promise<void>;
+  addNote: (note: AddNote) => Promise<void>;
+  /** The approval is a manager's; the server checks their PIN and permission. */
+  voidLine: (lineId: number, reasonCode: string, approval: Override) => Promise<void>;
+  compLine: (lineId: number, reasonCode: string, approval: Override) => Promise<void>;
+  discount: (request: DiscountRequest) => Promise<void>;
 }
 
 export function useTicket(): Ticket {
@@ -79,6 +85,11 @@ export function useTicket(): Ticket {
     if (touched) void queryClient.invalidateQueries({ queryKey: orderQueryKey(orderId) });
   });
 
+  const post = (suffix: string, body: unknown) =>
+    queue.run((id, key) =>
+      store.api.post<CommandResponse>(`/api/v1/orders/${encodeURIComponent(id)}${suffix}`, body, { idempotencyKey: key }),
+    );
+
   return {
     order: orderId ? order.data : undefined,
     orderId,
@@ -88,5 +99,10 @@ export function useTicket(): Ticket {
     retry: (key) => queue.retry(key),
     remove: (key) => queue.remove(key),
     modify: (lineId, change) => queue.modify(lineId, change),
+    changeQty: (lineId, from, to) => post(`/lines/${lineId}/qty`, { from, to }),
+    addNote: (note) => post("/notes", note),
+    voidLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/void`, { ...approval, reason_code: reasonCode }),
+    compLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/comp`, { ...approval, reason_code: reasonCode }),
+    discount: (request) => post("/discounts", request),
   };
 }
