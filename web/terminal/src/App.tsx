@@ -7,6 +7,7 @@ import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { SignedInShell } from "../../shared/screens/SignedInShell";
 import { Splash } from "../../shared/screens/Splash";
+import { RegisterScreen } from "./register/RegisterScreen";
 
 export function App() {
   return (
@@ -19,9 +20,8 @@ export function App() {
           <LockScreen />
         </Route>
         <Route path="/">
-          <SignedInShell area="Terminal" exitLabel="Lock">
-            <h1 className="font-serif text-total">Register</h1>
-            <p className="mt-4 max-w-prose text-base text-fg-2">The register arrives in phase 06.</p>
+          <SignedInShell area="Register" exitLabel="Lock" fill>
+            <RegisterScreen />
           </SignedInShell>
         </Route>
         <Route>

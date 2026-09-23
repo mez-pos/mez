@@ -1685,3 +1685,42 @@ blinks, and must never keep selling from a menu the owner has changed.
 Cost: no menu writes over the API yet (phase 10). `AddLine` still trusts the
 client's price and tax snapshot; it can now be checked against the menu,
 and is not. A modifier group's min/max is enforced by the terminal only.
+
+## ADR-070 - The register: one tap on defaults, an ordered outbox, keys that work over plain HTTP
+2026-09 · Status: accepted
+Decision: the register (`web/terminal/src/register/`, spec
+`docs/design/screens/terminal-register.md`) rings an item up in one tap
+with its default modifiers, sends every tap through a `TicketQueue` that
+runs one command at a time, and draws the ticket only from the server's
+projection.
+- **One tap when the defaults suffice.** An item whose every group's
+  defaults meet its min and max rings up at once; one that needs a choice
+  goes to the ModifierSheet (Task 3). Filter coffee, the first item of the
+  first category, is one tap from the screen opening. The design agrees:
+  its tile goes straight to the ticket, and Modify is on the line.
+- **An ordered outbox.** A tap becomes a pending line ("Adding") before any
+  request, and the queue sends taps in order, opening the order first, so
+  eight fast taps make one order and eight lines. A refused tap stays on
+  the ticket, in danger, with Retry and Remove, never lost silently.
+- **Idempotency keys per tap, kept for Retry,** and one for the open,
+  kept until an order exists. A retry after a lost answer adds nothing
+  twice; a failed open retried makes one order. Keys come from
+  `crypto.getRandomValues`, not `crypto.randomUUID`, which a till on
+  `http://192.168.x.x` does not have: it is not a secure context.
+- **The current ticket's order id is in `sessionStorage`**
+  (`nofiltr.terminal.ticket`), validated on read, so a reload returns to
+  it. An id the server answers 404 for starts a new ticket. Task 5's
+  ticket list replaces the single slot.
+- **`SignedInShell` gained `fill`**: the screen owns the height below the
+  header and scrolls inside itself, so the total can never scroll away.
+- Checked against the real binary with the demo menu and GST: one tap
+  rings Filter coffee up with its defaults; search by word prefix; eight
+  burst taps land in order on one order; the ticket survives a reload; a
+  line added over HTTP from outside appears through the stream; with the
+  server down a tap becomes "Not added" with Retry, and Retry after the
+  server returns adds exactly one line.
+Because: the till's worst failures are a lost tap and a doubled one, and
+both happen on the wifi a cafe actually has.
+Cost: only the counter channel, one ticket at a time, and no cover count
+until Task 5. The "Adding" state is covered by the queue's tests; in a
+browser a refused connection fails too fast to see it.

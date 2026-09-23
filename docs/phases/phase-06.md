@@ -15,7 +15,7 @@ Phase 05.
   item. Seed data: a realistic cafe menu with drinks, food, modifiers and two
   stations. Read endpoints, cached client-side and invalidated over WebSocket.
 
-- [ ] **Task 2 — Register screen.**
+- [x] **Task 2 — Register screen.**
   Spec it first into `docs/design/screens/terminal-register.md` from the design
   reference. Then build: category rail, item grid, search. The running total is
   always visible and never scrolls away. Every target 44px minimum. Measure the

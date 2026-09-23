@@ -11,17 +11,18 @@ File: `docs/phases/phase-06.md`. Phase 05 is complete.
 
 ## Last completed task
 
-**Phase 06, Task 1: menu data and read API** (ADR-069). Migration 00006,
-`GET /api/v1/menu` (whole menu, ETag is the version), `menu_changed` on the
-stream and `menu_version` in `welcome`, `useMenu` and `indexMenu` in
-`web/shared`, and `nofiltr setup -demo-menu` (18 items, bar and kitchen).
+**Phase 06, Task 2: register screen** (ADR-070, spec
+`docs/design/screens/terminal-register.md`). Category rail, item grid,
+search, and a ticket rail with a pinned total; one tap rings up an item
+whose defaults satisfy its groups, through an ordered outbox with
+idempotency keys and Retry. Checked in a browser against the real binary.
 
 ## Next task
 
-**Phase 06, Task 2: register screen.** Spec
-`docs/design/screens/terminal-register.md` first, then build inside
-`SignedInShell` from `useMenu()` and `indexMenu()`. `make build-web` is the
-frontend gate, alongside `make check`.
+**Phase 06, Task 3: modifiers.** `ModifierSheet` opens from
+`RegisterScreen.ringUp` where it now shows "Choose options for ...", and
+from a line's Modify. `defaultModifiers` and `indexMenu().groupsFor` in
+`web/terminal/src/register/` already know the groups and defaults.
 
 ## Known broken / in progress
 

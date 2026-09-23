@@ -1,0 +1,176 @@
+import { describe, expect, it } from "vitest";
+import { ApiError } from "../../../shared/api";
+import type { AddLine, CommandResponse, OrderResponse } from "../../../shared/api-types";
+import { failureOf, TicketQueue, type TicketCommands } from "./ticket-queue";
+
+const line = (name: string): AddLine => ({
+  item_id: 1, name, qty: 1, unit_price: { minor: 6000, currency: "INR" }, modifiers: [], course: 1, station: "bar", tax_rate: 5000,
+});
+
+const answer = (id: string, lines = 0): CommandResponse => ({
+  order: { id, lines: Array.from({ length: lines }) } as unknown as OrderResponse,
+  events: [],
+});
+
+/** A server in memory: records every call, fails when told to. */
+function fakeServer() {
+  const calls: string[] = [];
+  let failNext: Error | null = null;
+  let lines = 0;
+  let opened = 0;
+  const fail = () => {
+    const e = failNext;
+    failNext = null;
+    if (e) throw e;
+  };
+  const commands: TicketCommands = {
+    openOrder: async (key) => {
+      calls.push(`open ${key}`);
+      fail();
+      opened += 1;
+      return answer(`ord_${opened}`);
+    },
+    addLine: async (orderId, cmd, key) => {
+      calls.push(`add ${orderId} ${cmd.name} ${key}`);
+      fail();
+      lines += 1;
+      return answer(orderId, lines);
+    },
+  };
+  return { calls, commands, failWith: (e: Error) => (failNext = e) };
+}
+
+function queue(server: ReturnType<typeof fakeServer>, initialOrderId: string | null = null) {
+  let n = 0;
+  const orders: OrderResponse[] = [];
+  const remembered: (string | null)[] = [];
+  const q = new TicketQueue({
+    commands: server.commands,
+    newKey: () => `k${++n}`,
+    onOrder: (o) => orders.push(o),
+    remember: (id) => remembered.push(id),
+    initialOrderId,
+  });
+  return { q, orders, remembered };
+}
+
+const unreachable = () => new ApiError("network", "Failed to fetch");
+
+describe("TicketQueue", () => {
+  it("opens the order once, then adds each tap in order", async () => {
+    const server = fakeServer();
+    const { q, remembered } = queue(server);
+    q.ringUp(line("Filter coffee"));
+    q.ringUp(line("Upma"));
+    expect(q.current().pending.map((p) => p.status)).toEqual(["adding", "adding"]);
+
+    await q.settled();
+    expect(server.calls).toEqual(["open k3", "add ord_1 Filter coffee k1", "add ord_1 Upma k2"]);
+    expect(q.current()).toEqual({ orderId: "ord_1", pending: [] });
+    expect(remembered).toEqual(["ord_1"]);
+  });
+
+  it("adds to the order it resumed", async () => {
+    const server = fakeServer();
+    const { q } = queue(server, "ord_9");
+    q.ringUp(line("Latte"));
+    await q.settled();
+    expect(server.calls).toEqual(["add ord_9 Latte k1"]);
+  });
+
+  it("keeps a refused line, and a retry reuses its key", async () => {
+    const server = fakeServer();
+    const { q } = queue(server, "ord_1");
+    server.failWith(unreachable());
+    const key = q.ringUp(line("Latte"));
+    await q.settled();
+    expect(q.current().pending).toEqual([
+      { key, command: line("Latte"), status: "failed", error: "Not sent: the server can't be reached." },
+    ]);
+
+    q.retry(key);
+    expect(q.current().pending[0]?.status).toBe("adding");
+    await q.settled();
+    expect(server.calls).toEqual([`add ord_1 Latte ${key}`, `add ord_1 Latte ${key}`]);
+    expect(q.current().pending).toEqual([]);
+  });
+
+  it("retries a failed open with the same key, so only one order is made", async () => {
+    const server = fakeServer();
+    const { q } = queue(server);
+    server.failWith(unreachable());
+    const key = q.ringUp(line("Latte"));
+    await q.settled();
+    expect(q.current().orderId).toBeNull();
+
+    q.retry(key);
+    await q.settled();
+    expect(server.calls).toEqual(["open k2", "open k2", "add ord_1 Latte k1"]);
+  });
+
+  it("carries on with later taps after one is refused", async () => {
+    const server = fakeServer();
+    const { q } = queue(server, "ord_1");
+    server.failWith(new ApiError("forbidden", "You can't open orders."));
+    q.ringUp(line("Latte"));
+    q.ringUp(line("Upma"));
+    await q.settled();
+    expect(q.current().pending.map((p) => [p.command.name, p.status, p.error])).toEqual([
+      ["Latte", "failed", "You can't open orders."],
+    ]);
+  });
+
+  it("removes a refused line, and never one still being sent", async () => {
+    const server = fakeServer();
+    const { q } = queue(server, "ord_1");
+    const sending = q.ringUp(line("Latte"));
+    q.remove(sending);
+    expect(q.current().pending).toHaveLength(1);
+    await q.settled();
+
+    server.failWith(unreachable());
+    const refused = q.ringUp(line("Upma"));
+    await q.settled();
+    q.remove(refused);
+    expect(q.current().pending).toEqual([]);
+  });
+
+  it("hands every answer to the cache", async () => {
+    const server = fakeServer();
+    const { q, orders } = queue(server);
+    q.ringUp(line("Latte"));
+    await q.settled();
+    expect(orders.map((o) => o.lines.length)).toEqual([0, 1]);
+  });
+
+  it("starts a new ticket, forgetting the old one", async () => {
+    const server = fakeServer();
+    const { q, remembered } = queue(server, "ord_1");
+    q.startNew();
+    expect(q.current().orderId).toBeNull();
+    q.ringUp(line("Latte"));
+    await q.settled();
+    expect(server.calls[0]).toBe("open k2");
+    expect(remembered).toEqual([null, "ord_1"]);
+  });
+
+  it("tells listeners about every change", async () => {
+    const server = fakeServer();
+    const { q } = queue(server, "ord_1");
+    let heard = 0;
+    const stop = q.subscribe(() => (heard += 1));
+    q.ringUp(line("Latte"));
+    await q.settled();
+    stop();
+    q.ringUp(line("Upma"));
+    expect(heard).toBe(2); // added, then settled
+  });
+});
+
+describe("failureOf", () => {
+  it("words each kind of failure", () => {
+    expect(failureOf(new ApiError("timeout", "x"))).toBe("Not sent: the server can't be reached.");
+    expect(failureOf(new ApiError("invalid_transition", "This order is closed."))).toBe("This order is closed.");
+    expect(failureOf(new TypeError("boom"))).toBe("Not sent: something went wrong.");
+  });
+});

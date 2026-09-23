@@ -10,16 +10,21 @@ interface SignedInShellProps {
   area: string;
   /** "Lock" on a shared till; "Sign out" on a manager's own computer. */
   exitLabel: "Lock" | "Sign out";
+  /**
+   * The screen takes the whole height below the header and scrolls inside
+   * itself, as the register does so its total never leaves the screen.
+   */
+  fill?: boolean;
   children: ReactNode;
 }
 
-export function SignedInShell({ area, exitLabel, children }: SignedInShellProps) {
+export function SignedInShell({ area, exitLabel, fill = false, children }: SignedInShellProps) {
   const status = useAuth();
   const store = useAuthStore();
   if (status.kind !== "signed_in") return null; // the Gate never lets this happen
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas text-fg">
+    <div className={fill ? "flex h-screen flex-col overflow-hidden bg-canvas text-fg" : "flex min-h-screen flex-col bg-canvas text-fg"}>
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-chrome px-6 py-2">
         <Meta items={["Nofiltr", area, status.device.name]} />
         <div className="flex items-center gap-tap-gap">
@@ -28,7 +33,7 @@ export function SignedInShell({ area, exitLabel, children }: SignedInShellProps)
           <Button onClick={() => void store.signOut()}>{exitLabel}</Button>
         </div>
       </header>
-      <main className="flex-1 p-8">{children}</main>
+      <main className={fill ? "flex min-h-0 flex-1" : "flex-1 p-8"}>{children}</main>
     </div>
   );
 }
