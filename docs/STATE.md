@@ -19,12 +19,11 @@ real paper.
 
 ## Next task
 
-**Phase 07, Task 5: durable print queue.** Jobs in SQLite, queued to
-printing to done or failed, retries with backoff, dead letters, a queue
-in the UI with manual retry, TCP 9100 with the Windows RAW spooler as
-fallback, printers per station in the back office. Nothing calls the
-layouts yet: the queue is what renders a receipt on close and a ticket on
-send, and prints a reprint (ADR-078).
+**Phase 07, Task 5a: print queue core.** Task 5 was split into 5a (queue,
+worker, transports), 5b (jobs from the till and the queue on screen) and
+5c (printers in the back office); see `docs/phases/phase-07.md`. Nothing
+calls the Task 4 layouts yet: 5b is what prints a receipt, a kitchen
+ticket and a reprint (ADR-078, ADR-079).
 
 ## Known broken / in progress
 
