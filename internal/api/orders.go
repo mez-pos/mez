@@ -9,6 +9,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/payment"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 )
 
@@ -19,6 +20,7 @@ type Orders interface {
 	Order(ctx context.Context, venueID, orderID int64) (svcorder.Result, error)
 	OpenOrders(ctx context.Context, venueID int64) (svcorder.OpenTickets, error)
 	OrderHistory(ctx context.Context, venueID, orderID int64) (svcorder.History, error)
+	Split(ctx context.Context, venueID, orderID int64, req svcorder.SplitRequest) (payment.Split, error)
 	Hold(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 	Resume(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 
@@ -84,6 +86,7 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	post("/api/v1/orders/{id}/resume", auth.PermOrderEdit, s.resumeOrder)
 	post("/api/v1/orders/{id}/courses/{course}/fire", auth.PermOrderEdit, s.fireCourse)
 	post("/api/v1/orders/{id}/tickets", auth.PermOrderEdit, s.sendTicket)
+	post("/api/v1/orders/{id}/split", auth.PermPaymentTake, s.splitOrder)
 	post("/api/v1/orders/{id}/payments", auth.PermPaymentTake, s.tenderPayment)
 	post("/api/v1/orders/{id}/invoice", auth.PermPaymentTake, s.issueInvoice)
 	post("/api/v1/orders/{id}/close", auth.PermPaymentTake, s.closeOrder)

@@ -1,16 +1,20 @@
 // The tender screen (docs/design/screens/terminal-tender.md): cash, card or
 // UPI against the ticket in front, a tip kept apart from the bill, and the
-// amount still due always in view. Splits are Task 2; the invoice Task 3.
+// amount still due always in view. The invoice is Task 3.
 //
 // Every figure is the server's but the change due and the part of a cash
-// payment that settles the bill, which tender-logic.ts works out.
+// payment that settles the bill, which tender-logic.ts works out. A split
+// (Task 2) comes from the server too; each share is then one tender.
 
 import { useState } from "react";
-import type { Money as Amount, OrderResponse, PaymentMethod, TenderPayment } from "../../../shared/api-types";
+import type { Money as Amount, OrderResponse, PaymentMethod, SplitResponse, TenderPayment } from "../../../shared/api-types";
 import { Button, Money, NumPad, applyAmountKey, type NumKey } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { newKey } from "../register/ticket-key";
 import type { Ticket } from "../register/use-ticket";
+import { nextShare, splitStale } from "./split-logic";
+import { SplitPanel } from "./SplitPanel";
+import { SplitShares } from "./SplitShares";
 import { attemptKey, planTender, quickTenders, type Attempt } from "./tender-logic";
 import { TenderSummary, methodNames } from "./TenderSummary";
 
@@ -33,6 +37,14 @@ const padCeiling = 1_000_000_000;
 
 type Field = "amount" | "tip";
 
+/** A split in use: the server's shares, which are paid, and which is next. */
+interface SplitInUse {
+  split: SplitResponse;
+  amountsKeyed: number;
+  paid: ReadonlySet<number>;
+  current: number | null;
+}
+
 export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps) {
   const currency = order.currency;
   const due = order.totals.balance_due.minor;
@@ -46,9 +58,19 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [lastChange, setLastChange] = useState<number | null>(null);
+  const [splitting, setSplitting] = useState(false);
+  const [inUse, setInUse] = useState<SplitInUse | null>(null);
 
-  const amountShown = entered === null ? due : method === "cash" ? entered : Math.min(entered, due);
-  const plan = planTender({ method, entered: amountShown, tip, due });
+  const stale = inUse !== null && splitStale(inUse.split, inUse.paid, due);
+  const share = inUse && inUse.current !== null && !stale ? inUse.split.shares[inUse.current] : undefined;
+  // A share is paid whole: card and UPI take exactly it, cash at least it.
+  const target = share ? share.amount.minor : due;
+  const whole = share !== undefined;
+  const amountShown =
+    entered === null || (whole && method !== "cash") ? target : method === "cash" ? entered : Math.min(entered, target);
+  const plan = stale
+    ? { amount: 0, change: 0, charge: 0, problem: "Split the bill again before taking payment." }
+    : planTender({ method, entered: amountShown, tip, due: target, whole });
   const money = (minor: number): Amount => ({ minor, currency });
 
   const choose = (next: PaymentMethod) => {
@@ -56,7 +78,15 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
     setEntered(next === "cash" ? 0 : null);
     setTip(0);
     setReference("");
-    setField("amount");
+    setField(next !== "cash" && whole ? "tip" : "amount");
+    setError(null);
+  };
+
+  const takeSplit = (split: SplitResponse, amountsKeyed: number) => {
+    setInUse({ split, amountsKeyed, paid: new Set(), current: 0 });
+    setSplitting(false);
+    setEntered(method === "cash" ? 0 : null);
+    setField(method === "cash" ? "amount" : "tip");
     setError(null);
   };
 
@@ -66,10 +96,11 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
       setTip((t) => applyAmountKey(t, k, padCeiling));
       return;
     }
+    if (whole && method !== "cash") return;
     // A card amount that is following the balance starts afresh on the first
     // digit, so a part payment is keyed, not the balance backspaced away.
     const from = entered === null && k !== "back" ? 0 : amountShown;
-    setEntered(applyAmountKey(from, k, method === "cash" ? padCeiling : due));
+    setEntered(applyAmountKey(from, k, method === "cash" ? padCeiling : target));
   };
 
   const send = async () => {
@@ -88,11 +119,15 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
     try {
       await tender(body, next.key);
       setAttempt(null);
+      if (inUse && inUse.current !== null) {
+        const paid = new Set(inUse.paid).add(inUse.current);
+        setInUse({ ...inUse, paid, current: nextShare(inUse.split, paid) });
+      }
       setLastChange(method === "cash" ? plan.change : null);
       setEntered(method === "cash" ? 0 : null);
       setTip(0);
       setReference("");
-      setField("amount");
+      setField(method !== "cash" && inUse ? "tip" : "amount");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -109,7 +144,9 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
       {busy ? "Sending" : <ActionLabel method={method} amount={money(plan.charge)} />}
     </Button>
   );
-  const message = error
+  const message = splitting
+    ? null
+    : error
     ? { text: error, tone: "error" as const }
     : !paid && plan.problem
       ? { text: plan.problem, tone: "hint" as const }
@@ -118,13 +155,41 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
   return (
     <div className="flex min-w-0 flex-1">
       <section aria-label="Tender" className="flex min-w-0 flex-1 flex-col overflow-y-auto px-6 py-5">
-        {paid ? (
+        {splitting && !paid ? (
+          <SplitPanel order={order} onUse={takeSplit} onCancel={() => setSplitting(false)} />
+        ) : paid ? (
           <div className="m-auto text-center">
             <p className="font-serif text-total">Paid in full</p>
             <p className="mt-2 text-base text-fg-muted">The invoice and closing the ticket come next.</p>
           </div>
         ) : (
           <>
+            {inUse ? (
+              <SplitShares
+                split={inUse.split}
+                amountsKeyed={inUse.amountsKeyed}
+                paid={inUse.paid}
+                current={inUse.current}
+                stale={stale}
+                disabled={busy}
+                onPick={(payer) => {
+                  setInUse({ ...inUse, current: payer });
+                  setEntered(method === "cash" ? 0 : null);
+                  setError(null);
+                }}
+                onClear={() => {
+                  setInUse(null);
+                  setEntered(method === "cash" ? 0 : null);
+                  setField("amount");
+                }}
+              />
+            ) : (
+              <div className="mb-4 flex justify-end">
+                <Button disabled={busy} onClick={() => setSplitting(true)}>
+                  Split the bill
+                </Button>
+              </div>
+            )}
             <div role="radiogroup" aria-label="Payment method" className="grid grid-cols-3 gap-tap-gap">
               {methods.map((m) => (
                 <button
@@ -150,16 +215,17 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
               <div className="rounded border border-line bg-chrome p-5">
                 <div className="grid grid-cols-2 gap-tap-gap">
                   <AmountField
-                    label={method === "cash" ? "Cash handed over" : "Amount"}
+                    label={method === "cash" ? "Cash handed over" : share ? "This share" : "Amount"}
                     amount={money(amountShown)}
                     active={field === "amount"}
+                    disabled={whole && method !== "cash"}
                     onClick={() => setField("amount")}
                   />
                   <AmountField label="Tip" amount={money(tip)} active={field === "tip"} onClick={() => setField("tip")} />
                 </div>
                 {method === "cash" && (
                   <div className="mt-3 flex flex-wrap gap-tap-gap" aria-label="Quick tender">
-                    {quickTenders(due, currency).map((q, i) => (
+                    {quickTenders(target, currency).map((q, i) => (
                       <Button
                         key={q}
                         disabled={busy}
@@ -220,7 +286,7 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
         order={order}
         label={label}
         change={change}
-        action={paid ? null : action}
+        action={paid || splitting ? null : action}
         message={message}
         busy={busy}
         onBack={onBack}
@@ -240,14 +306,17 @@ interface AmountFieldProps {
   label: string;
   amount: Amount;
   active: boolean;
+  /** A share by card is its whole amount: nothing to key. */
+  disabled?: boolean;
   onClick: () => void;
 }
 
-function AmountField({ label, amount, active, onClick }: AmountFieldProps) {
+function AmountField({ label, amount, active, disabled = false, onClick }: AmountFieldProps) {
   return (
     <button
       type="button"
       aria-pressed={active}
+      disabled={disabled}
       onClick={onClick}
       className={cx(
         "flex min-h-tap flex-col items-stretch gap-1 rounded border bg-canvas px-4 py-3 text-left",

@@ -18,6 +18,12 @@ const words: Partial<Record<ErrorCode, string>> = {
   order_held: "This ticket is on hold. Resume it to carry on.",
   order_not_held: "This ticket isn't on hold.",
   venue_not_configured: "This venue's tax settings aren't finished. Ask a manager.",
+  over_tender: "That's more than is owed now. Look at the amount due again.",
+  split_invalid: "That split doesn't work. Check the number of payers.",
+  split_over_allocated: "Those amounts come to more than is owed.",
+  split_unassigned: "Every item needs someone to pay for it.",
+  split_mismatch: "The split doesn't add up to the bill. Split it again.",
+  split_after_payment: "Money has been taken, so split what's left evenly or by amount.",
   rate_limited: "Too many requests. Wait a moment and retry.",
   internal: "The server hit a problem. Try again.",
 };

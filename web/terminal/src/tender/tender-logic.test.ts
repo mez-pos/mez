@@ -81,6 +81,21 @@ describe("planTender", () => {
       { amount: 0, change: 0, charge: 0, problem: "Enter the amount." },
     ],
     [
+      "a share in cash: more than the share, change back",
+      { method: "cash", entered: 50000, tip: 0, due: 35100, whole: true },
+      { amount: 35100, change: 14900, charge: 35100, problem: null },
+    ],
+    [
+      "a share in cash: less than the share is refused, not a part payment",
+      { method: "cash", entered: 20000, tip: 0, due: 35100, whole: true },
+      { amount: 0, change: 0, charge: 0, problem: "A share is paid in one go: take at least the share." },
+    ],
+    [
+      "a share by card takes exactly the share, whatever was keyed",
+      { method: "card", entered: 100, tip: 500, due: 35100, whole: true },
+      { amount: 35100, change: 0, charge: 35600, problem: null },
+    ],
+    [
       "nothing owed",
       { method: "cash", entered: 50000, tip: 0, due: 0 },
       { amount: 0, change: 0, charge: 0, problem: "Nothing is owed on this ticket." },

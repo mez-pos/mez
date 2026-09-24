@@ -29,8 +29,13 @@ export interface TenderInput {
   /** Cash: what the guest handed over. Card and UPI: the amount to take. */
   entered: number;
   tip: number;
-  /** The ticket's balance, from the server. */
+  /** The ticket's balance, from the server, or the share of it being paid. */
   due: number;
+  /**
+   * A split share is paid whole, in one tender, so a split never has a
+   * share part paid to keep track of. Card and UPI take exactly the share.
+   */
+  whole?: boolean;
 }
 
 export interface TenderPlan {
@@ -46,7 +51,7 @@ export interface TenderPlan {
 
 const refused = (problem: string): TenderPlan => ({ amount: 0, change: 0, charge: 0, problem });
 
-export function planTender({ method, entered, tip, due }: TenderInput): TenderPlan {
+export function planTender({ method, entered, tip, due, whole = false }: TenderInput): TenderPlan {
   if (due <= 0) return refused("Nothing is owed on this ticket.");
   if (method === "cash") {
     // The tip is left out of the cash handed over; the rest pays the bill,
@@ -55,9 +60,10 @@ export function planTender({ method, entered, tip, due }: TenderInput): TenderPl
     const available = entered - tip;
     const amount = Math.min(available, due);
     if (amount <= 0) return refused("Enter the cash handed over.");
+    if (whole && amount < due) return refused("A share is paid in one go: take at least the share.");
     return { amount, change: available - amount, charge: amount, problem: null };
   }
-  const amount = Math.min(entered, due);
+  const amount = whole ? due : Math.min(entered, due);
   if (amount <= 0) return refused("Enter the amount.");
   return { amount, change: 0, charge: amount + tip, problem: null };
 }

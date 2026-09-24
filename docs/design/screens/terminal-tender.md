@@ -2,7 +2,7 @@
 
 Where a ticket becomes money. Built in phase 07 Task 1: cash, card and UPI
 tenders against the ticket in front, with a tip taken apart from the bill.
-Splits are Task 2, the invoice and closing the ticket are Task 3.
+Splits in Task 2. The invoice and closing the ticket are Task 3.
 
 ## Purpose
 
@@ -43,6 +43,25 @@ Opened from **Charge** on the register. It takes the register's place inside
     do and how much: "Take ₹500.00 cash", "Charge ₹450.00 to card",
     "Record ₹450.00 UPI". Under it, **Back to ticket**.
 
+- **Split the bill** (Task 2), over the methods until a split is in use.
+  It opens the **split panel** in the tender column; the rail keeps the
+  amount due but no tender button, so the panel's **Use this split** is
+  the one accent.
+  - Top: Evenly, By amount, By item, By guest, one 44px segment each.
+  - Left: the choices. Evenly: the number of payers (2 to 20). By amount:
+    the amounts keyed so far, each with Remove, and the pad with **Add
+    payer**; whatever is left is one more payer, "The rest". By item and by
+    guest: the number of payers or guests, then every line that costs
+    something with its due and a 44px chip per payer ("Payer 1", several
+    may share a line) or per seat ("Table", "Guest 1": one each).
+  - Right, "Shares, from the server": one row per share, then "In all"
+    and the server's total, so a three-way split of an odd total reads
+    down to the paisa (₹410.00 is ₹136.67, ₹136.67, ₹136.66).
+- **A split in use**: a bar over the methods naming the split, a 44px
+  button per share with its amount (a paid share struck through with a
+  "Paid" chip), and **Clear split**. The chosen share is what the next
+  tender is for.
+
 ## Data
 
 - The ticket is the register's `useTicket()`: `["order", id]`, redrawn from
@@ -60,6 +79,18 @@ Opened from **Charge** on the register. It takes the register's place inside
     after a failure sends the same key, so a lost answer can never charge
     twice. Changing the method, an amount, the tip or the reference makes
     it a new tender with a new key.
+- `POST /api/v1/orders/{id}/split` (`SplitRequest`: `kind`, `ways`,
+  `amounts`, `items` with payers, `seats` with a guest, 0 the table) runs
+  `internal/domain/payment` over the order's own lines and answers
+  `SplitResponse`: the total and one share per payer. It records nothing
+  and takes no key. Evenly and by amount divide the balance, so they work
+  after a part payment; by item and by guest divide the lines, which sum
+  to the whole bill, so they are refused with `split_after_payment` once
+  money is taken. The panel asks again on every change and whenever the
+  order moves (its key holds `last_seq`).
+- **A share is paid whole, in one tender.** Card and UPI take exactly the
+  share; cash takes at least it, with change. So no share is ever part
+  paid, and a split needs no ledger of its own.
 - Every figure shown is the server's except the change due and the amount
   a cash tender will record, which are the only sums done here
   (`tender-logic.ts`, tested).
@@ -75,6 +106,12 @@ Opened from **Charge** on the register. It takes the register's place inside
 | Exact | Cash handed over becomes the balance | | Change due is zero |
 | A quick-tender amount | Cash handed over becomes it | | Change due shows at once |
 | Tender button | Sends the tender | `payment.tendered` | The fields clear; a cash tender leaves its change on screen until the next tender or Back |
+| Split the bill | Opens the split panel on Evenly, 2 payers | | The shares come from the server |
+| Change the kind, a count, an amount, a line's payer or seat | Asks the server again | | The shares redraw; a refusal shows in words ("Every item needs someone to pay for it.") |
+| Use this split | | | The share bar shows; Payer 1's share is chosen |
+| Tap a share | Chooses it | | The tender is for that share |
+| A share's tender | Pays the share | `payment.tendered` | Struck through, "Paid"; the next unpaid share is chosen |
+| Clear split | Back to the whole balance | | |
 | Balance reaches zero | | | "Paid in full" in place of the pad; Back to ticket. The invoice and closing arrive with Task 3 |
 | Back to ticket | Returns to the register | | The ticket shows its payments and balance |
 | Refused | | | The server's reason in words under the tender button; the fields stay, and a retry reuses the key |
@@ -93,6 +130,10 @@ Opened from **Charge** on the register. It takes the register's place inside
   most the new balance.
 - **Offline or refused:** "Not sent: the server can't be reached." under
   the button, nothing recorded; the same key goes with the retry.
+- **Split made stale:** when the shares left no longer add up to the
+  balance (a line added, a payment taken on another till), the share bar
+  says "The bill changed after it was split. Clear the split and split it
+  again." and nothing can be tendered against it.
 - **Sending:** the tender button says "Sending" and every control is
   disabled, so a second tap cannot send a second tender.
 
@@ -117,7 +158,9 @@ Departures:
 - **Tiles are 96px, not 92px** (`h-24`), on the spacing scale.
 - **Three methods, not six.** Wallet, Gift card and House tab have no
   backing feature; `other` exists in the domain but has no screen yet.
-- **No split panel.** Splits are Task 2.
+- **The split panel is a whole column, not a card beside the pad**, and
+  has by amount and by guest as well. "By seat" is by guest: lines carry
+  no seat until tables arrive (phase 08), so the seat is chosen here.
 - **Tip is an amount on the pad, not 5/10/15/20% buttons.** A percentage is
   money arithmetic in the UI; the pad needs none. Percent presets can come
   back once the server offers them.

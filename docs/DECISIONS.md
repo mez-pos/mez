@@ -1942,3 +1942,36 @@ Because: the bill is the server's projection, and a till that did its own
 sums would one day disagree with the invoice.
 Cost: the tender screen is not a route; a reload returns to the register,
 which shows the payments and the balance, and Charge again.
+
+## ADR-077 - Splits: the server divides, each share is one whole tender
+2026-09 · Status: accepted
+Decision: `POST /api/v1/orders/{id}/split` runs `internal/domain/payment`
+(Evenly, ByAmount, ByItem, ByGuest) over the order's own lines and returns
+the shares. It is read-only: no event, no idempotency key. The till shows
+the shares and takes one tender per share.
+- **No arithmetic in the UI.** Every share is the server's. The one sum on
+  the till is the staleness check (the unpaid shares against the balance),
+  which decides whether a split may still be used, never an amount.
+- **A split is a plan, not a record.** Nothing new is stored: the tenders
+  are the record, as before. A split lives on the tender screen and is
+  gone on Back or a reload; the balance is still right, and the rest can
+  be split again.
+- **A share is paid whole.** Card and UPI take exactly the share, cash at
+  least it. A part-paid share would need the UI to track what is left of
+  it, which is money arithmetic the task forbids.
+- **Evenly and by amount divide the balance; by item and by guest divide
+  the lines,** which sum to the whole bill. Once money is taken the lines
+  no longer say what is owed, so those two are refused with
+  `split_after_payment` rather than guessed at.
+- **By guest takes its seats from the panel.** Lines have no seat until
+  tables arrive (phase 08); then the panel can default each line to its
+  seat.
+- New codes: `split_invalid`, `split_over_allocated`, `split_unassigned`,
+  `split_mismatch`, `split_after_payment`. At most 20 payers.
+- Checked in a browser against the built binary: ₹410.00 split evenly
+  three ways showed ₹136.67, ₹136.67, ₹136.66 and "In all ₹410.00", and
+  was paid by cash (₹200, ₹63.33 change), card with a slip reference, and
+  UPI, to a zero balance. By item with a shared latte also checked.
+Because: a split that loses or invents a paisa is money gone, and the
+domain package already refuses one; the UI only has to not do it again.
+Cost: a split does not survive leaving the tender screen.

@@ -7,6 +7,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/fsm"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/payment"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 )
 
@@ -62,6 +63,13 @@ var orderErrors = []struct {
 	{svcorder.ErrNothingToSend, http.StatusConflict, CodeNothingToSend},
 	{svcorder.ErrNeedsApproval, http.StatusConflict, CodeNeedsApproval},
 	{svcorder.ErrInvalidCommand, http.StatusBadRequest, CodeInvalidRequest},
+
+	// How a bill divides (order_split.go).
+	{svcorder.ErrSplitAfterPayment, http.StatusConflict, CodeSplitAfterPayment},
+	{payment.ErrOverAllocated, http.StatusUnprocessableEntity, CodeSplitOverAllocated},
+	{payment.ErrUnassigned, http.StatusUnprocessableEntity, CodeSplitUnassigned},
+	{payment.ErrMismatch, http.StatusConflict, CodeSplitMismatch},
+	{payment.ErrInvalidSplit, http.StatusUnprocessableEntity, CodeSplitInvalid},
 
 	// What the order itself refuses.
 	{order.ErrLineNotFound, http.StatusConflict, CodeLineNotFound},

@@ -45,7 +45,12 @@ export type ErrorCode =
   | 'invalid_payload'
   | 'currency_mismatch'
   | 'idempotency_key_reused'
-  | 'venue_not_configured';
+  | 'venue_not_configured'
+  | 'split_invalid'
+  | 'split_over_allocated'
+  | 'split_unassigned'
+  | 'split_mismatch'
+  | 'split_after_payment';
 
 export type OrderStatus =
   | 'open'
@@ -77,6 +82,12 @@ export type PaymentMethod =
   | 'card'
   | 'upi'
   | 'other';
+
+export type SplitKind =
+  | 'evenly'
+  | 'amount'
+  | 'item'
+  | 'guest';
 
 export type DiscountScope =
   | 'line'
@@ -474,6 +485,24 @@ export interface ReopenRequest {
   reason: string;
 }
 
+export interface SplitRequest {
+  kind: SplitKind;
+  ways?: number;
+  amounts?: Money[];
+  items?: SplitItem[];
+  seats?: SplitSeat[];
+}
+
+export interface SplitItem {
+  line_id: number;
+  payers: number[];
+}
+
+export interface SplitSeat {
+  line_id: number;
+  guest: number;
+}
+
 export interface LineResponse {
   id: number;
   item_id: number;
@@ -634,6 +663,18 @@ export interface HistoryResponse {
   staff: NameResponse[];
   devices: NameResponse[];
   time_zone: string;
+}
+
+export interface SplitResponse {
+  kind: SplitKind;
+  total: Money;
+  shares: ShareResponse[];
+}
+
+export interface ShareResponse {
+  payer: number;
+  amount: Money;
+  line_ids: number[];
 }
 
 export interface StationResponse {

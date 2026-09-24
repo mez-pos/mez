@@ -18,6 +18,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
+	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 )
 
 // typesFile is the generated file, relative to this package.
@@ -94,6 +95,7 @@ var errorCodes = []ErrorCode{
 	CodeAlreadyInvoiced, CodeCourseAlreadyFired, CodeNothingToSend,
 	CodeInvalidTransition, CodeInvalidPayload, CodeCurrencyMismatch,
 	CodeIdempotencyKeyReused, CodeVenueNotConfigured,
+	CodeSplitInvalid, CodeSplitOverAllocated, CodeSplitUnassigned, CodeSplitMismatch, CodeSplitAfterPayment,
 }
 
 // generate builds the whole file.
@@ -139,6 +141,7 @@ func generate() (*ts.Generator, error) {
 			string(order.PaymentStatusVoided), string(order.PaymentStatusRefunded),
 		}},
 		{"PaymentMethod", order.PaymentCash, paymentMethods()},
+		{"SplitKind", svcorder.SplitByEvenly, asStrings(svcorder.SplitKinds())},
 		{"DiscountScope", order.ScopeLine, []string{string(order.ScopeLine), string(order.ScopeOrder)}},
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
@@ -186,11 +189,12 @@ func generate() (*ts.Generator, error) {
 		// Orders: what is sent.
 		Override{}, amount{}, openOrderRequest{}, addLineRequest{}, changeQtyRequest{},
 		modifyLineRequest{}, voidLineRequest{}, discountRequest{}, addNoteRequest{}, sendTicketRequest{},
-		tenderRequest{}, voidPaymentRequest{}, refundRequest{}, reopenRequest{},
+		tenderRequest{}, voidPaymentRequest{}, refundRequest{}, reopenRequest{}, splitRequest{},
 		// Orders: what comes back.
 		lineResponse{}, noteResponse{}, ticketResponse{}, tenderResponse{},
 		refundResponse{}, invoiceResponse{}, discountResponse{}, totalsResponse{},
 		taxResponse{}, orderResponse{}, commandResponse{}, ticketSummary{}, openTicketsResponse{}, nameResponse{}, historyResponse{},
+		splitResponse{}, shareResponse{},
 		// The menu.
 		stationResponse{}, courseResponse{}, categoryResponse{}, modifierResponse{},
 		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},

@@ -15,7 +15,7 @@ Phase 06.
   and unmistakable. Tips captured separately, never folded into the tender.
   Amount due always visible.
 
-- [ ] **Task 2 — Splits.**
+- [x] **Task 2 — Splits.**
   By amount, by item, by guest, evenly. Driven by the Phase 03 split package —
   no arithmetic in the UI. Partial payment leaves the ticket open with a correct
   remaining balance. The three-way-split-of-an-odd-total case must be visibly

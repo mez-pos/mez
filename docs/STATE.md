@@ -11,18 +11,18 @@ File: `docs/phases/phase-07.md`. Phase 06 is complete.
 
 ## Last completed task
 
-**Phase 07, Task 1: tender screen** (ADR-076, `terminal-tender.md`).
-Charge on the register opens it: cash with quick-tender and change due,
-card and UPI with a reference, a tip keyed apart from the bill, amount due
-always in view. Part payments leave the ticket settling with the right
-balance. One idempotency key per tender, reused on retry. Checked in a
-browser against the built binary: card part payment with tip, then cash.
+**Phase 07, Task 2: splits** (ADR-077, `terminal-tender.md`). A read-only
+`POST /orders/{id}/split` runs the domain split package; the tender
+screen's split panel does evenly, by amount, by item and by guest, and
+each share is paid whole in one tender. Checked in a browser: ₹410.00
+three ways (136.67, 136.67, 136.66) paid by cash, card and UPI.
 
 ## Next task
 
-**Phase 07, Task 2: splits.** By amount, by item, by guest, evenly,
-driven by `internal/domain/payment` (split.go). The tender screen stops
-at "Paid in full"; Task 3 issues the invoice.
+**Phase 07, Task 3: invoice issue.** The number is allocated inside the
+settling transaction with a full tax and price snapshot, an on-screen
+preview, and a logged, permissioned reprint that never takes a new
+number. The tender screen stops at "Paid in full"; that is where it goes.
 
 ## Known broken / in progress
 
@@ -45,6 +45,8 @@ at "Paid in full"; Task 3 issues the invoice.
   button in the gallery.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no number. Phase 07 must work that way or revisit it.
+- A split lives only on the tender screen (ADR-077); by guest picks seats
+  there until lines carry them (phase 08).
 - A paid ticket still takes lines and discounts until Task 3 closes it.
   The server does not cap a tender's `reference`; the till caps it at 40.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`
