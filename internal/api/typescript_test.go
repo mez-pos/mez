@@ -190,7 +190,7 @@ func generate() (*ts.Generator, error) {
 		// Orders: what comes back.
 		lineResponse{}, noteResponse{}, ticketResponse{}, tenderResponse{},
 		refundResponse{}, invoiceResponse{}, discountResponse{}, totalsResponse{},
-		taxResponse{}, orderResponse{}, commandResponse{}, ticketSummary{}, openTicketsResponse{},
+		taxResponse{}, orderResponse{}, commandResponse{}, ticketSummary{}, openTicketsResponse{}, nameResponse{}, historyResponse{},
 		// The menu.
 		stationResponse{}, courseResponse{}, categoryResponse{}, modifierResponse{},
 		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},

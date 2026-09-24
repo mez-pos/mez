@@ -19,6 +19,7 @@ interface TicketRailProps {
   /** Open tickets at the venue, this one included. */
   ticketCount: number;
   onTickets: () => void;
+  onHistory: () => void;
   onHold: () => void;
   onResume: () => void;
   onOpenLine: (line: LineResponse) => void;
@@ -29,7 +30,7 @@ interface TicketRailProps {
 }
 
 export function TicketRail(props: TicketRailProps) {
-  const { order, orderId, pending, currency, label, ticketCount, onTickets, onHold, onResume } = props;
+  const { order, orderId, pending, currency, label, ticketCount, onTickets, onHistory, onHold, onResume } = props;
   const { onOpenLine, onOrderDiscount, onOrderNote, onRetry, onRemove } = props;
   const held = order?.status === "held";
   const zero: Amount = { minor: 0, currency };
@@ -47,9 +48,14 @@ export function TicketRail(props: TicketRailProps) {
           {/* Not in the trail: it uppercases, and an order id is read back as written. */}
           <p className="mt-1 font-mono text-base text-fg-2">{orderId ?? "New ticket"}</p>
         </div>
-        <Button onClick={onTickets} aria-label={`Tickets, ${ticketCount} open`}>
-          Tickets <span className="font-mono tabular-nums text-fg-muted">{ticketCount}</span>
-        </Button>
+        <div className="flex shrink-0 flex-col gap-tap-gap">
+          <Button onClick={onTickets} aria-label={`Tickets, ${ticketCount} open`}>
+            Tickets <span className="font-mono tabular-nums text-fg-muted">{ticketCount}</span>
+          </Button>
+          <Button variant="ghost" disabled={!orderId} onClick={onHistory}>
+            History
+          </Button>
+        </div>
       </header>
       {held && (
         <div role="status" className="flex items-center justify-between gap-3 border-b border-line bg-raised px-5 py-3">

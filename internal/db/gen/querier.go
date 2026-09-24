@@ -61,6 +61,10 @@ type Querier interface {
 	DeleteSetting(ctx context.Context, arg DeleteSettingParams) error
 	DeviceByID(ctx context.Context, id int64) (Device, error)
 	DeviceByTokenHash(ctx context.Context, tokenHash string) (Device, error)
+	//
+	// Every device ever paired at the venue, revoked included, for the same
+	// reason: history names the till an event came from.
+	DeviceNamesForVenue(ctx context.Context, venueID int64) ([]DeviceNamesForVenueRow, error)
 	EndStaffSession(ctx context.Context, arg EndStaffSessionParams) (int64, error)
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
@@ -113,6 +117,10 @@ type Querier interface {
 	// must constrain or compute with is a column on venues instead.
 	SettingsForVenue(ctx context.Context, venueID int64) ([]Setting, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
+	//
+	// Everyone who has worked at the venue, inactive included: an order's
+	// history names the people on it, whether or not they still work there.
+	StaffNamesForVenue(ctx context.Context, venueID int64) ([]StaffNamesForVenueRow, error)
 	StaffSessionByTokenHash(ctx context.Context, tokenHash string) (StaffSessionByTokenHashRow, error)
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error

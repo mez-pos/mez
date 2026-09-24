@@ -1,6 +1,8 @@
 package api
 
 import (
+	"cmp"
+	"slices"
 	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
@@ -270,4 +272,36 @@ func toOpenTicketsResponse(open svcorder.OpenTickets) openTicketsResponse {
 		}
 	}
 	return out
+}
+
+// nameResponse names a staff member or a device by the internal id events
+// carry: actor_id, device_id, authorised_by and the like.
+type nameResponse struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+// historyResponse is an order's events, oldest first, and every name they
+// can mention. time_zone is the venue's, to show the times in.
+type historyResponse struct {
+	Events   []order.Event  `json:"events"`
+	Staff    []nameResponse `json:"staff"`
+	Devices  []nameResponse `json:"devices"`
+	TimeZone string         `json:"time_zone"`
+}
+
+func toHistoryResponse(h svcorder.History) historyResponse {
+	names := func(m map[int64]string) []nameResponse {
+		out := make([]nameResponse, 0, len(m))
+		for id, name := range m {
+			out = append(out, nameResponse{ID: id, Name: name})
+		}
+		slices.SortFunc(out, func(a, b nameResponse) int { return cmp.Compare(a.ID, b.ID) })
+		return out
+	}
+	events := h.Events
+	if events == nil {
+		events = []order.Event{}
+	}
+	return historyResponse{Events: events, Staff: names(h.Staff), Devices: names(h.Devices), TimeZone: h.TimeZone}
 }

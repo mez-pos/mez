@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 )
 
@@ -614,5 +616,58 @@ func TestLateAfterFallsBackToTwentyMinutes(t *testing.T) {
 		if got := r.openTickets(t).LateAfterMinutes; got != 20 {
 			t.Errorf("setting %q gave %d minutes, want 20", v, got)
 		}
+	}
+}
+
+// TestAnOrdersHistory: every event, in order, with the names of the staff
+// and devices they mention, and the venue's time zone (Task 6).
+func TestAnOrdersHistory(t *testing.T) {
+	r := newRegister(t)
+	id := r.openOrder(t)
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines",
+		`{"item_id":1,"name":"Upma","qty":1,"unit_price":{"minor":9000,"currency":"INR"},"station":"kitchen","tax_rate":5000,"hsn":"996331"}`)
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines/2/void", `{`+r.override()+`,"reason_code":"wrong_item"}`)
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/notes", `{"scope":"order","text":"regular"}`)
+
+	rec := send(r.handler, http.MethodGet, "/api/v1/orders/"+id+"/events", "", r.asStaff(r.staffToken))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status %d: %s", rec.Code, rec.Body)
+	}
+	var h historyResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &h); err != nil {
+		t.Fatal(err)
+	}
+	var types []string
+	for i, e := range h.Events {
+		types = append(types, string(e.Type))
+		if e.Seq != int64(i+1) {
+			t.Errorf("event %d has seq %d", i, e.Seq)
+		}
+	}
+	if got := strings.Join(types, ","); got != "order.opened,line.added,line.voided,note.added" {
+		t.Errorf("events = %s", got)
+	}
+	named := func(list []nameResponse, id int64) string {
+		for _, n := range list {
+			if n.ID == id {
+				return n.Name
+			}
+		}
+		return ""
+	}
+	void := h.Events[2]
+	if named(h.Staff, void.ActorID) == "" || named(h.Devices, void.DeviceID) == "" {
+		t.Errorf("the void's actor %d or device %d has no name: %+v %+v", void.ActorID, void.DeviceID, h.Staff, h.Devices)
+	}
+	if p, ok := void.Payload.(order.LineVoided); !ok || named(h.Staff, p.AuthorisedBy) == "" {
+		t.Errorf("the authoriser has no name: %+v", void.Payload)
+	}
+	if h.TimeZone != "Asia/Kolkata" {
+		t.Errorf("time zone = %q", h.TimeZone)
+	}
+
+	rec = send(r.handler, http.MethodGet, "/api/v1/orders/ord_NOSUCH01/events", "", r.asStaff(r.staffToken))
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("an unknown order: %d", rec.Code)
 	}
 }

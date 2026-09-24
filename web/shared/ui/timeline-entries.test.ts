@@ -47,7 +47,7 @@ describe("timelineEntries", () => {
   });
 
   it("returns only the entry's own fields", () => {
-    expect(Object.keys(entries[4] ?? {}).sort()).toEqual(["amount", "at", "by", "detail", "seq", "title", "tone"]);
+    expect(Object.keys(entries[4] ?? {}).sort()).toEqual(["amount", "at", "by", "detail", "device", "seq", "title", "tone"]);
   });
 
   it("gives the details a person needs", () => {
@@ -123,5 +123,33 @@ describe("timelineEntries: hold and resume", () => {
     );
     expect(held).toMatchObject({ title: "Put on hold", tone: "warning" });
     expect(resumed).toMatchObject({ title: "Taken off hold" });
+  });
+});
+
+describe("timelineEntries: the device", () => {
+  const devices: Record<number, string> = { 1: "Counter 1" };
+  it("names the till an event came from, and leaves out one it cannot name", () => {
+    const [opened, added] = timelineEntries(
+      [events[0]!, { ...events[1]!, device_id: 9 }],
+      (id) => names[id],
+      (id) => devices[id],
+    );
+    expect(opened).toMatchObject({ by: "Asha", device: "Counter 1" });
+    expect(added?.device).toBeNull();
+  });
+
+  it("has no device without a resolver", () => {
+    expect(timelineEntries(events.slice(0, 1))[0]?.device).toBeNull();
+  });
+});
+
+describe("timelineEntries: a counter sale and a coded reason", () => {
+  it("leaves out zero covers, and words a discount's reason code", () => {
+    const [opened, discounted] = timelineEntries([
+      { ...base, seq: 1, type: "order.opened", payload: { channel: "counter", currency: "INR", covers: 0, opened_by: 1 } },
+      { ...base, seq: 2, type: "discount.applied", payload: { scope: "order", kind: "pct", basis_points: 1000, reason: "manager_call" } },
+    ]);
+    expect(opened?.detail).toBe("Counter");
+    expect(discounted).toMatchObject({ title: "10% off the order", detail: "Manager call" });
   });
 });

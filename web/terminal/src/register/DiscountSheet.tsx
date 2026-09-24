@@ -7,7 +7,8 @@ import type { DiscountRequest, Money as Amount } from "../../../shared/api-types
 import { applyAmountKey, Money, NumPad } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { ApprovalSheet } from "./ApprovalSheet";
-import { discountProblem, discountReasons, discountRequest, formatPercent, type DiscountEntry } from "./cart-logic";
+import { percent } from "../../../shared/ui/timeline-entries";
+import { discountProblem, discountReasons, discountRequest, type DiscountEntry } from "./cart-logic";
 import { ReasonPicker } from "./ReasonPicker";
 
 interface DiscountSheetProps {
@@ -66,7 +67,7 @@ export function DiscountSheet({ target, worth, onSubmit, onClose }: DiscountShee
             Off <Money amount={worth} />
           </span>
           <span className="font-mono text-xl tabular-nums" aria-live="polite">
-            {kind === "pct" ? formatPercent(value) : <Money amount={{ minor: value, currency: worth.currency }} />}
+            {kind === "pct" ? percent(value) : <Money amount={{ minor: value, currency: worth.currency }} />}
           </span>
         </div>
         <NumPad layout="amount" label="Discount" onKey={(k) => setValue((v) => applyAmountKey(v, k, max))} />

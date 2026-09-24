@@ -5,11 +5,12 @@ import type { OrderEvent } from "../api-types";
 import { cx } from "./cx";
 import { Money } from "./Money";
 import type { ChipTone } from "./status";
-import { timelineEntries, type StaffName } from "./timeline-entries";
+import { timelineEntries, type DeviceName, type StaffName } from "./timeline-entries";
 
 export interface TimelineProps {
   events: readonly OrderEvent[];
   staffName?: StaffName;
+  deviceName?: DeviceName;
   /** The venue's time zone, once settings carry it; the device's until then. */
   timeZone?: string;
   className?: string;
@@ -24,9 +25,9 @@ const dots: Record<ChipTone, string> = {
   info: "text-info",
 };
 
-export function Timeline({ events, staffName, timeZone, className }: TimelineProps) {
+export function Timeline({ events, staffName, deviceName, timeZone, className }: TimelineProps) {
   const time = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", ...(timeZone ? { timeZone } : {}) });
-  const entries = timelineEntries(events, staffName);
+  const entries = timelineEntries(events, staffName, deviceName);
 
   return (
     <ol className={cx("flex flex-col", className)}>
@@ -39,7 +40,10 @@ export function Timeline({ events, staffName, timeZone, className }: TimelinePro
           <div className="min-w-0">
             <p className={cx("text-base", entry.tone === "danger" ? "text-danger" : "text-fg")}>{entry.title}</p>
             {entry.detail && <p className="text-sm text-fg-2">{entry.detail}</p>}
-            <p className="text-sm text-fg-faint">{entry.by}</p>
+            <p className="text-sm text-fg-faint">
+              {entry.by}
+              {entry.device && ` · ${entry.device}`}
+            </p>
           </div>
           {entry.amount ? <Money amount={entry.amount} tone={entry.tone === "danger" ? "danger" : "default"} /> : <span />}
         </li>

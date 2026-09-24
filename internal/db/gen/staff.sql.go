@@ -239,3 +239,40 @@ func (q *Queries) StaffByPublicID(ctx context.Context, publicID string) (Staff, 
 	)
 	return i, err
 }
+
+const staffNamesForVenue = `-- name: StaffNamesForVenue :many
+SELECT id, name
+FROM staff
+WHERE venue_id = ?
+ORDER BY id
+`
+
+type StaffNamesForVenueRow struct {
+	ID   int64
+	Name string
+}
+
+// Everyone who has worked at the venue, inactive included: an order's
+// history names the people on it, whether or not they still work there.
+func (q *Queries) StaffNamesForVenue(ctx context.Context, venueID int64) ([]StaffNamesForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, staffNamesForVenue, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StaffNamesForVenueRow{}
+	for rows.Next() {
+		var i StaffNamesForVenueRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

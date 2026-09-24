@@ -16,6 +16,7 @@ import { addLineFor, defaultModifiers, searchItems } from "./register-logic";
 import { TicketPanels, type Panel } from "./TicketPanels";
 import { TicketRail } from "./TicketRail";
 import { TicketsSheet } from "./TicketsSheet";
+import { HistorySheet } from "./HistorySheet";
 import { ticketLabel } from "./ticket-time";
 import { useTicket } from "./use-ticket";
 
@@ -29,6 +30,7 @@ export function RegisterScreen() {
   const [sheet, setSheetState] = useState<SheetState | null>(null);
   const [panel, setPanelState] = useState<Panel | null>(null);
   const [ticketsOpen, setTicketsOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const toast = useToast();
   const fail = (what: string) => (err: unknown) =>
     toast(`${what}: ${err instanceof Error ? err.message : String(err)}`, { tone: "warning" });
@@ -146,6 +148,7 @@ export function RegisterScreen() {
         label={ticketLabel(ticket.order ?? ticket.opening)}
         ticketCount={Math.max(ticket.open?.orders.length ?? 0, ticket.orderId ? 1 : 0)}
         onTickets={() => setTicketsOpen(true)}
+        onHistory={() => setHistoryOpen(true)}
         onHold={() => ticket.hold().catch(fail("Couldn't hold"))}
         onResume={() => {
           if (ticket.orderId) ticket.resume(ticket.orderId).catch(fail("Couldn't resume"));
@@ -157,6 +160,10 @@ export function RegisterScreen() {
         onRemove={ticket.remove}
       />
 
+      {historyOpen && ticket.orderId && (
+        <HistorySheet key={ticket.orderId} orderId={ticket.orderId} onClose={() => setHistoryOpen(false)} />
+      )}
+
       {ticketsOpen && (
         <TicketsSheet
           open={ticket.open}
@@ -165,6 +172,7 @@ export function RegisterScreen() {
             // A sheet about a line on the ticket being left must not stay open.
             setPanel(null);
             setSheet(null);
+            setHistoryOpen(false);
             return t.status === "held" ? ticket.resume(t.id) : Promise.resolve(ticket.switchTo(t.id));
           }}
           onNew={(opening) => {

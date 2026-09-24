@@ -58,3 +58,12 @@ WHERE id = ?;
 SELECT id, venue_id, name, permissions, created_at
 FROM roles
 WHERE id = ?;
+
+-- name: StaffNamesForVenue :many
+--
+-- Everyone who has worked at the venue, inactive included: an order's
+-- history names the people on it, whether or not they still work there.
+SELECT id, name
+FROM staff
+WHERE venue_id = ?
+ORDER BY id;

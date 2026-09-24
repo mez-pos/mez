@@ -624,6 +624,18 @@ export interface OpenTicketsResponse {
   orders: TicketSummary[];
 }
 
+export interface NameResponse {
+  id: number;
+  name: string;
+}
+
+export interface HistoryResponse {
+  events: OrderEvent[];
+  staff: NameResponse[];
+  devices: NameResponse[];
+  time_zone: string;
+}
+
 export interface StationResponse {
   id: number;
   code: string;

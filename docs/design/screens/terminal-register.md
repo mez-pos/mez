@@ -28,7 +28,7 @@ Nothing but the item grid and the line list scrolls.
   - Top, fixed: the metadata trail (`TICKET · TABLE 4 · 2 COVERS`), then
     the order id in mono, as written: the trail uppercases, and `ord_` ids
     are case sensitive. On the right, **Tickets** with the count of open
-    tickets. A held ticket shows "Held · On hold: nothing can be added"
+    tickets, and **History** under it. A held ticket shows "Held · On hold: nothing can be added"
     and **Resume** under the header.
   - Middle, scrolling: the **lines**. Quantity in mono, the name, the chosen
     modifiers under it in muted text, the line's amount in mono on the right.
@@ -50,6 +50,12 @@ Nothing but the item grid and the line list scrolls.
   20 by default) the time turns vermilion with a "Late" chip: now. The
   ticket in front says "On screen". Below: **Counter sale**, and a table
   number on the pad with a covers stepper, **Start table 4, 2 covers**.
+- **HistorySheet** (Task 6, read-only): the order's events, oldest first,
+  through the `Timeline` primitive. Each entry: the time in mono in the
+  venue's time zone, a dot in the event's tone, what happened, its detail
+  (a void or comp reason, a discount's reason, a note, a modifier change as
+  "Dairy → Oat"), and who did it, "authorised by" when someone else
+  approved it, and on which till. It refreshes as the order moves.
 - **LineSheet**: quantity stepper and a note, saved together; Modify,
   Discount, Comp and Void. A line the kitchen has seen shows its quantity
   without a stepper.
@@ -87,6 +93,10 @@ Nothing but the item grid and the line list scrolls.
   reason_code }`, `.../discounts` `{ authorised_by, pin, scope, line_id?,
   kind, basis_points | amount, reason }`: every one through the ordered
   queue with its own key. `GET /api/v1/staff` for the approver's name.
+- `GET /api/v1/orders/{id}/events`: the order's events and the names of
+  every staff member and device the venue has had (inactive and revoked
+  included), plus its time zone. Key `["order", id, "events"]`, under the
+  order's key, so the order's invalidation refreshes it.
 - `GET /api/v1/orders`: the open tickets and `late_after_minutes`, key
   `["orders", "open"]`, refetched on any event in the stream.
   `POST .../hold` and `.../resume` park and unpark a ticket.

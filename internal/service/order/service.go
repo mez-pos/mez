@@ -266,3 +266,48 @@ func (s *Service) OpenOrders(ctx context.Context, venueID int64) (OpenTickets, e
 	}
 	return out, nil
 }
+
+// History is an order's events and the names they need: every staff member
+// and device the venue has had, by internal id, and the venue's time zone
+// to show the times in. It is what the till's order timeline reads.
+type History struct {
+	Events   []order.Event
+	Staff    map[int64]string
+	Devices  map[int64]string
+	TimeZone string
+}
+
+// OrderHistory reads an order's whole stream, in order.
+func (s *Service) OrderHistory(ctx context.Context, venueID, orderID int64) (History, error) {
+	row, err := s.db.Queries().OrderByID(ctx, orderID)
+	if err != nil || row.VenueID != venueID {
+		if err == nil || isNoRows(err) {
+			return History{}, fmt.Errorf("%w: %d", ErrOrderNotFound, orderID)
+		}
+		return History{}, fmt.Errorf("reading order %d: %w", orderID, err)
+	}
+	venue, err := s.db.Queries().VenueByID(ctx, venueID)
+	if err != nil {
+		return History{}, fmt.Errorf("reading venue %d: %w", venueID, err)
+	}
+	events, err := s.db.OrderEvents(ctx, orderID, 0)
+	if err != nil {
+		return History{}, err
+	}
+	staff, err := s.db.Queries().StaffNamesForVenue(ctx, venueID)
+	if err != nil {
+		return History{}, fmt.Errorf("reading the staff of venue %d: %w", venueID, err)
+	}
+	devices, err := s.db.Queries().DeviceNamesForVenue(ctx, venueID)
+	if err != nil {
+		return History{}, fmt.Errorf("reading the devices of venue %d: %w", venueID, err)
+	}
+	h := History{Events: events, Staff: make(map[int64]string, len(staff)), Devices: make(map[int64]string, len(devices)), TimeZone: venue.Timezone}
+	for _, st := range staff {
+		h.Staff[st.ID] = st.Name
+	}
+	for _, d := range devices {
+		h.Devices[d.ID] = d.Name
+	}
+	return h, nil
+}

@@ -1880,3 +1880,31 @@ Because: a counter runs a queue and a table at once, and the ticket a
 cashier is looking at must be the one their taps land on.
 Cost: covers and table are fixed when the order opens; there is no event
 to move a ticket to another table until phase 08.
+
+## ADR-075 - The order timeline: events with names, from one read-only endpoint
+2026-09 · Status: accepted
+Decision: `GET /api/v1/orders/{id}/events` returns an order's whole stream
+with `staff` and `devices` (id and name) and the venue's `time_zone`; the
+register's History sheet renders it with the `Timeline` primitive.
+- **Names travel with the events.** Events carry internal ids (actor,
+  device, authoriser); the staff list the till has uses public ids and
+  holds only active staff. History must name the person who left last
+  month and the till that was unpaired, so the endpoint sends every staff
+  member and device the venue has ever had. It is a small list, and
+  cheaper than resolving the ids each payload type can mention.
+- **The timeline says which till.** `TimelineEntry.device`, from an
+  optional `deviceName`; an id with no name is left out, not guessed.
+- **Times are in the venue's zone,** now that an endpoint carries it. One
+  the browser does not know falls back to the device's own.
+- **Reason codes read as words everywhere.** Discount reasons became codes
+  in ADR-072; the timeline now humanises them as it did voids and comps.
+  A counter sale's "0 covers" is left out.
+- The history refreshes as the order moves: its query key sits under the
+  order's, which the stream already invalidates.
+- Checked in a browser: an order with lines, a sent line voided with a
+  reason and approval, a discount, a hold and resume and a note, read back
+  in order with names, till and times; a modifier change made by another
+  client appeared in the open sheet.
+Because: the event stream is the audit trail, and this is the screen an
+owner opens when a number looks wrong.
+Cost: every history read sends the venue's staff and device lists.

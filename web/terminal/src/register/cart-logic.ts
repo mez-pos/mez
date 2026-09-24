@@ -60,14 +60,6 @@ export type DiscountEntry =
   | { readonly kind: "pct"; readonly basisPoints: number }
   | { readonly kind: "amount"; readonly minor: number };
 
-/** 1250 as "12.5%", 1000 as "10%". */
-export function formatPercent(basisPoints: number): string {
-  const whole = Math.trunc(basisPoints / 100);
-  const frac = basisPoints % 100;
-  if (frac === 0) return `${whole}%`;
-  return `${whole}.${String(frac).padStart(2, "0").replace(/0$/, "")}%`;
-}
-
 /**
  * Why a discount cannot be sent yet, in the till's words, or null. `worth`
  * is what it would come off: the line's value after its own discounts, or

@@ -6,22 +6,24 @@
 
 ## Current phase
 
-**Phase 06 - Terminal: register, modifiers, cart, open tickets**
-File: `docs/phases/phase-06.md`. Phase 05 is complete.
+**Phase 07 - Payment, split, invoice, print queue, cash drawer**
+File: `docs/phases/phase-07.md`. Phase 06 is complete.
 
 ## Last completed task
 
-**Phase 06, Task 5: open tickets and hold** (ADR-074), after settling two
-cart rules (ADR-073: quantity stops at the kitchen; a mistaken unsent line
-comes off without a manager until money is taken). New events `order.held`
-and `order.resumed`; `GET /api/v1/orders`; a TicketBook of one queue per
-ticket; late tickets in vermilion. Checked in a browser, two tabs live.
+**Phase 06 closed.** Menu and its API (ADR-069), register (070), modifiers
+and `line.modified` (071), cart with approvals (072), quantity and removal
+rules (073), open tickets and hold (074), order timeline (075). Done-when
+checked in a browser: a full order with modifiers, a void with a reason, a
+discount, held and resumed, survives a reload, and shows live in a second
+tab. The second tab shares the device; a separately paired device was not
+scripted.
 
 ## Next task
 
-**Phase 06, Task 6: order timeline.** Render the order's events with the
-`Timeline` primitive (`web/shared/ui/`), which already has words for all
-18 types. It needs the events: no endpoint returns an order's events yet.
+**Phase 07, Task 1.** Read `docs/phases/phase-07.md`. The register has no
+Charge button yet (spec: terminal-register.md); the payment endpoints and
+the domain already exist from phase 04.
 
 ## Known broken / in progress
 
@@ -72,7 +74,7 @@ None.
 - [x] 03 — Domain core: order events, projections, invoice series, tax
 - [x] 04 — HTTP API, WebSocket hub, TypeScript type codegen
 - [x] 05 — Frontend shell: Vite, Tailwind tokens, router, primitives, auth
-- [ ] 06 — Terminal: register, modifiers, cart, open tickets
+- [x] 06 — Terminal: register, modifiers, cart, open tickets
 - [ ] 07 — Payment, split, invoice, print queue, cash drawer
 - [ ] 08 — Floor plan, tables, kitchen display, station routing
 - [ ] 09 — Shift, blind drawer count, Z-report, tips

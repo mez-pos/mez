@@ -6,7 +6,6 @@ import {
   discountProblem,
   discountReasons,
   discountRequest,
-  formatPercent,
   lineActions,
   voidReasons,
 } from "./cart-logic";
@@ -44,18 +43,6 @@ describe("reasons", () => {
       expect(humanise(r.code)).toBeTruthy();
     }
     expect(new Set(voidReasons.map((r) => r.code)).size).toBe(voidReasons.length);
-  });
-});
-
-describe("formatPercent", () => {
-  it.each([
-    [1000, "10%"],
-    [1250, "12.5%"],
-    [1205, "12.05%"],
-    [5, "0.05%"],
-    [10000, "100%"],
-  ])("%i is %s", (bp, text) => {
-    expect(formatPercent(bp)).toBe(text);
   });
 });
 

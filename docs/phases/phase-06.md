@@ -39,7 +39,7 @@ Phase 05.
   resume. Elapsed time in mono, and past a venue-configured threshold it turns
   vermilion — this is a "now" signal, which is what vermilion means.
 
-- [ ] **Task 6 — Order timeline.**
+- [x] **Task 6 — Order timeline.**
   Renders the event stream via the `Timeline` primitive: who did what, when, on
   which device, with reasons for voids and comps. This falls almost entirely out
   of the event model. Read-only.

@@ -43,3 +43,12 @@ WHERE id = ?;
 UPDATE devices
 SET revoked_at = ?
 WHERE id = ? AND venue_id = ? AND revoked_at IS NULL;
+
+-- name: DeviceNamesForVenue :many
+--
+-- Every device ever paired at the venue, revoked included, for the same
+-- reason: history names the till an event came from.
+SELECT id, name
+FROM devices
+WHERE venue_id = ?
+ORDER BY id;

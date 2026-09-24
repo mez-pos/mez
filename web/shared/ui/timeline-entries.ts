@@ -20,10 +20,15 @@ export interface TimelineEntry {
   readonly tone: ChipTone;
   /** Who did it, and who authorised it when that was someone else. */
   readonly by: string;
+  /** The till it was done on, when the screen can name it. */
+  readonly device: string | null;
 }
 
 /** Staff names by id, when the screen has them; "Staff 7" otherwise. */
 export type StaffName = (id: number) => string | undefined;
+
+/** Device names by id; an unnamed device is left out rather than guessed. */
+export type DeviceName = (id: number) => string | undefined;
 
 const channels: Record<OrderChannel, string> = {
   counter: "Counter",
@@ -46,7 +51,11 @@ interface Context {
   readonly staff: StaffName;
 }
 
-export function timelineEntries(events: readonly OrderEvent[], staff: StaffName = () => undefined): TimelineEntry[] {
+export function timelineEntries(
+  events: readonly OrderEvent[],
+  staff: StaffName = () => undefined,
+  device: DeviceName = () => undefined,
+): TimelineEntry[] {
   const ctx: Context = { lines: new Map(), payments: new Map(), staff };
   return events.map((event) => {
     remember(ctx, event);
@@ -59,6 +68,7 @@ export function timelineEntries(events: readonly OrderEvent[], staff: StaffName 
       tone: "neutral",
       ...described,
       by: byLine(ctx, event.actor_id, authorisedBy),
+      device: event.device_id ? (device(event.device_id) ?? null) : null,
     };
   });
 }
@@ -75,7 +85,9 @@ function describe(event: OrderEvent, ctx: Context): Described {
   switch (event.type) {
     case "order.opened": {
       const p = event.payload;
-      const parts = [channels[p.channel], p.table_id ? `Table ${p.table_id}` : null, `${p.covers} ${p.covers === 1 ? "cover" : "covers"}`];
+      // Covers only when counted: a counter sale's "0 covers" says nothing.
+      const covers = p.covers > 0 ? `${p.covers} ${p.covers === 1 ? "cover" : "covers"}` : null;
+      const parts = [channels[p.channel], p.table_id ? `Table ${p.table_id}` : null, covers];
       return { title: "Order opened", detail: parts.filter(Boolean).join(" · ") };
     }
     case "line.added": {
@@ -135,9 +147,9 @@ function describe(event: OrderEvent, ctx: Context): Described {
 function discount(p: DiscountApplied, line: (id: number) => string): Described {
   const target = p.line_id ? line(p.line_id) : "the order";
   if (p.kind === "pct" && p.basis_points !== undefined) {
-    return { title: `${percent(p.basis_points)} off ${target}`, detail: p.reason };
+    return { title: `${percent(p.basis_points)} off ${target}`, detail: humanise(p.reason) };
   }
-  return { title: `Discount on ${target}`, detail: p.reason, amount: p.amount ?? null };
+  return { title: `Discount on ${target}`, detail: humanise(p.reason), amount: p.amount ?? null };
 }
 
 /** Basis points as a percentage, by string, so 1250 is "12.5%" with no float. */

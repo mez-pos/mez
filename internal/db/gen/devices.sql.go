@@ -123,6 +123,43 @@ func (q *Queries) DeviceByTokenHash(ctx context.Context, tokenHash string) (Devi
 	return i, err
 }
 
+const deviceNamesForVenue = `-- name: DeviceNamesForVenue :many
+SELECT id, name
+FROM devices
+WHERE venue_id = ?
+ORDER BY id
+`
+
+type DeviceNamesForVenueRow struct {
+	ID   int64
+	Name string
+}
+
+// Every device ever paired at the venue, revoked included, for the same
+// reason: history names the till an event came from.
+func (q *Queries) DeviceNamesForVenue(ctx context.Context, venueID int64) ([]DeviceNamesForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, deviceNamesForVenue, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DeviceNamesForVenueRow{}
+	for rows.Next() {
+		var i DeviceNamesForVenueRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const pairingCodeByHash = `-- name: PairingCodeByHash :one
 SELECT id, venue_id, code_hash, device_name, device_kind, created_by,
        created_at, expires_at, redeemed_at, device_id
