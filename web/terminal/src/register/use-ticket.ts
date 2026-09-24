@@ -15,6 +15,7 @@ import type {
   OpenTicketsResponse,
   OrderResponse,
   Override,
+  TenderPayment,
 } from "../../../shared/api-types";
 import { browserStorage } from "../../../shared/auth/storage";
 import { useAuthStore } from "../../../shared/auth/use-auth";
@@ -64,6 +65,11 @@ export interface Ticket {
   voidLine: (lineId: number, reasonCode: string, approval: Override) => Promise<void>;
   compLine: (lineId: number, reasonCode: string, approval: Override) => Promise<void>;
   discount: (request: DiscountRequest) => Promise<void>;
+  /**
+   * Takes a payment. The key is the caller's, kept across retries of the
+   * same tender, so a lost answer cannot charge twice (terminal-tender.md).
+   */
+  tender: (payment: TenderPayment, key: string) => Promise<void>;
 }
 
 const counterSale: OpenOrder = { channel: "counter", covers: 0 };
@@ -132,9 +138,11 @@ export function useTicket(): Ticket {
     if (touched) void queryClient.invalidateQueries({ queryKey: orderQueryKey(orderId) });
   });
 
-  const post = (suffix: string, body: unknown, on = queue) =>
-    on.run((id, key) =>
-      store.api.post<CommandResponse>(`/api/v1/orders/${encodeURIComponent(id)}${suffix}`, body, { idempotencyKey: key }),
+  const post = (suffix: string, body: unknown, on = queue, key?: string) =>
+    on.run(
+      (id, sent) =>
+        store.api.post<CommandResponse>(`/api/v1/orders/${encodeURIComponent(id)}${suffix}`, body, { idempotencyKey: sent }),
+      key,
     );
 
   return {
@@ -161,5 +169,6 @@ export function useTicket(): Ticket {
     voidLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/void`, { ...approval, reason_code: reasonCode }),
     compLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/comp`, { ...approval, reason_code: reasonCode }),
     discount: (request) => post("/discounts", request),
+    tender: (payment, key) => post("/payments", payment, queue, key),
   };
 }

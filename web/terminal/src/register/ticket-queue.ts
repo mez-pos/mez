@@ -98,11 +98,11 @@ export class TicketQueue {
   /**
    * Sends one command to the current order, after anything already queued,
    * so a change made straight after a tap cannot overtake the tap. It gets
-   * its own idempotency key. Resolves when the server has it; rejects with
-   * the till's words when it does not. The chain carries on either way.
+   * its own idempotency key, or `key` when the caller keeps one to retry
+   * with (a payment). Resolves when the server has it; rejects with the
+   * till's words when it does not. The chain carries on either way.
    */
-  run(command: (orderId: string, key: string) => Promise<CommandResponse>): Promise<void> {
-    const key = this.opts.newKey();
+  run(command: (orderId: string, key: string) => Promise<CommandResponse>, key = this.opts.newKey()): Promise<void> {
     const done = this.chain.then(async () => {
       const orderId = this.state.orderId;
       if (!orderId) throw new Error("There is no ticket to change.");

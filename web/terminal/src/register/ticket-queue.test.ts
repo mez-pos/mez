@@ -228,3 +228,19 @@ describe("TicketQueue.modify", () => {
     await expect(q.modify(2, { from: [], to: oat })).rejects.toThrow("There is no ticket to change.");
   });
 });
+
+describe("TicketQueue.run", () => {
+  it("sends the caller's key when it is given one, and a new key when not", async () => {
+    const server = fakeServer();
+    const { q } = queue(server, "ord_9");
+    const keys: string[] = [];
+    const send = async (_id: string, key: string) => {
+      keys.push(key);
+      return answer("ord_9");
+    };
+    await q.run(send, "pay-1");
+    await q.run(send, "pay-1");
+    await q.run(send);
+    expect(keys).toEqual(["pay-1", "pay-1", "k1"]);
+  });
+});

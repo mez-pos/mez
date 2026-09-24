@@ -11,19 +11,18 @@ File: `docs/phases/phase-07.md`. Phase 06 is complete.
 
 ## Last completed task
 
-**Phase 06 closed.** Menu and its API (ADR-069), register (070), modifiers
-and `line.modified` (071), cart with approvals (072), quantity and removal
-rules (073), open tickets and hold (074), order timeline (075). Done-when
-checked in a browser: a full order with modifiers, a void with a reason, a
-discount, held and resumed, survives a reload, and shows live in a second
-tab. The second tab shares the device; a separately paired device was not
-scripted.
+**Phase 07, Task 1: tender screen** (ADR-076, `terminal-tender.md`).
+Charge on the register opens it: cash with quick-tender and change due,
+card and UPI with a reference, a tip keyed apart from the bill, amount due
+always in view. Part payments leave the ticket settling with the right
+balance. One idempotency key per tender, reused on retry. Checked in a
+browser against the built binary: card part payment with tip, then cash.
 
 ## Next task
 
-**Phase 07, Task 1.** Read `docs/phases/phase-07.md`. The register has no
-Charge button yet (spec: terminal-register.md); the payment endpoints and
-the domain already exist from phase 04.
+**Phase 07, Task 2: splits.** By amount, by item, by guest, evenly,
+driven by `internal/domain/payment` (split.go). The tender screen stops
+at "Paid in full"; Task 3 issues the invoice.
 
 ## Known broken / in progress
 
@@ -46,6 +45,8 @@ the domain already exist from phase 04.
   button in the gallery.
 - `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
   payment has no number. Phase 07 must work that way or revisit it.
+- A paid ticket still takes lines and discounts until Task 3 closes it.
+  The server does not cap a tender's `reference`; the till caps it at 40.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`
   does not escape the path in its `file:` DSN.
 - To try the apps: `nofiltr setup -demo-menu` prints a pairing code

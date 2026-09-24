@@ -12,8 +12,8 @@ export interface MoneyProps {
   amount: Amount;
   /** `figure` for rows and columns; `total` for the one total on a screen. */
   variant?: "figure" | "total";
-  /** Tone for a figure that means something: a refund, an amount due. */
-  tone?: "default" | "muted" | "accent" | "danger";
+  /** Tone for a figure that means something: a refund, an amount due, change to hand back. */
+  tone?: "default" | "muted" | "accent" | "danger" | "success";
   locale?: string;
   className?: string;
 }
@@ -23,6 +23,7 @@ const tones = {
   muted: "text-fg-muted",
   accent: "text-accent-text",
   danger: "text-danger",
+  success: "text-success",
 } as const;
 
 export function Money({ amount, variant = "figure", tone = "default", locale, className }: MoneyProps) {

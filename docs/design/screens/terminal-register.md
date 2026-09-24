@@ -3,7 +3,8 @@
 The till's main screen: find an item, ring it up, see the ticket and its
 total. Built in phase 06: the menu side and the ticket rail in Task 2,
 modifiers in Task 3, cart editing in Task 4, open tickets and hold in Task 5.
-Payment (the Charge button) arrives in phase 07.
+Charge arrived in phase 07 Task 1 and opens the tender screen
+(`terminal-tender.md`).
 
 ## Purpose
 
@@ -42,7 +43,10 @@ Nothing but the item grid and the line list scrolls.
   - Bottom, fixed, never scrolls: **Discount**, **Note** and **Hold** for
     the whole order, then, when there are discounts, **Items**, **Line discounts** and
     one row per order discount; then **Subtotal**, **Tax**, and **Total** in
-    Instrument Serif at `--text-total` via `Money variant="total"`.
+    Instrument Serif at `--text-total` via `Money variant="total"`. Once
+    anything is paid, **Paid** and **Balance** under it. Last, **Charge**,
+    58px and primary, with why it is disabled under it when it is
+    (nothing on the ticket, held, lines still Adding, nothing owed).
 - **TicketsSheet**: every ticket not closed, oldest first: where it is
   ("Table 4 · 2 covers" or "Counter"), a Held or Settling chip, the order
   id, its item count, its total, and how long it has run in mono ("12m",
@@ -128,6 +132,7 @@ Nothing but the item grid and the line list scrolls.
 | Note on the order | | `note.added` | Shown above the lines |
 | Retry on a refused line | Sends the same command with the same key | `line.added` | |
 | Remove on a refused line | Forgets it locally | | Nothing was recorded, so nothing is voided |
+| Charge | Opens the tender screen on this ticket | | Any sheet closes; Back to ticket returns here |
 
 **Taps to add a common item: one.** Filter coffee is the first item of the
 first category, which is chosen when the screen opens; one tap rings it up
@@ -158,8 +163,10 @@ takes the item, Modify, the choice, Save.
 - Every target is 44px or more: category chips, item tiles (7rem), Retry and
   Remove.
 - Every number is mono and right-aligned: counts, prices, quantities, totals.
-- Vermilion is only for money and now: the total figure, and nothing else
-  on this screen. Categories, tiles and the ticket id do not use it.
+- Vermilion is only for money and now: the Charge button, and nothing else
+  on this screen. The total was vermilion until Charge arrived; one accent
+  means it is now the default text colour. Categories, tiles and the ticket
+  id do not use it.
 - A tap on a tile must never be lost to a slow server: the line appears at
   once as Adding, and taps are sent in order, one at a time, so the first
   item's order exists before the second item is added to it.
@@ -175,9 +182,7 @@ takes the item, Modify, the choice, Save.
   the design's 11px actions would wrap at 392px.
 - **No item note line or coloured top border** on tiles. The menu has no
   descriptions or item tags; the station stands in as metadata.
-- **No Discount, Note, Hold, Fire or Charge yet.** They arrive with Tasks 4
-  and 5 and phases 07 and 08; a disabled Charge button would be a vermilion
-  call to action that does nothing.
+- **No Fire yet.** It arrives with phase 08.
 - **No "Guest" picker** in the rail header: there are no customers until
   phase 10.
 - **The ticket id is not vermilion.** The design colours `#ticket` and the

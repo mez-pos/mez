@@ -27,11 +27,14 @@ interface TicketRailProps {
   onOrderNote: () => void;
   onRetry: (key: string) => void;
   onRemove: (key: string) => void;
+  onCharge: () => void;
+  /** Why Charge is disabled; null when the ticket can be charged. */
+  chargeBlock: string | null;
 }
 
 export function TicketRail(props: TicketRailProps) {
   const { order, orderId, pending, currency, label, ticketCount, onTickets, onHistory, onHold, onResume } = props;
-  const { onOpenLine, onOrderDiscount, onOrderNote, onRetry, onRemove } = props;
+  const { onOpenLine, onOrderDiscount, onOrderNote, onRetry, onRemove, onCharge, chargeBlock } = props;
   const held = order?.status === "held";
   const zero: Amount = { minor: 0, currency };
   const totals = order?.totals;
@@ -112,8 +115,30 @@ export function TicketRail(props: TicketRailProps) {
         <TotalRow label="Tax" amount={totals?.tax ?? zero} />
         <div className="mt-3 flex items-baseline justify-between border-t border-line-strong pt-3">
           <span className="font-serif text-xl">Total</span>
-          <Money amount={totals?.total ?? zero} variant="total" tone="accent" />
+          {/* Not vermilion: Charge is this screen's one accent. */}
+          <Money amount={totals?.total ?? zero} variant="total" />
         </div>
+        {totals && totals.paid.minor > 0 && (
+          <>
+            <TotalRow label="Paid" amount={negate(totals.net_paid)} />
+            <TotalRow label="Balance" amount={totals.balance_due} />
+          </>
+        )}
+        <Button
+          variant="primary"
+          size="charge"
+          disabled={chargeBlock !== null}
+          onClick={onCharge}
+          aria-describedby={chargeBlock ? "charge-block" : undefined}
+          className="mt-4 w-full"
+        >
+          Charge
+        </Button>
+        {chargeBlock && order && (
+          <p id="charge-block" className="mt-2 text-sm text-fg-muted">
+            {chargeBlock}
+          </p>
+        )}
       </footer>
     </aside>
   );

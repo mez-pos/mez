@@ -1,7 +1,8 @@
 // The register (docs/design/screens/terminal-register.md): the menu on the
 // left, the ticket on the right. One tap on an item rings it up with its
 // default modifiers, or opens the modifier sheet when someone has to choose;
-// the ticket's total never leaves the screen.
+// the ticket's total never leaves the screen. Charge swaps it for the tender
+// screen (terminal-tender.md) on the same ticket.
 
 import { useMemo, useState, type ReactNode } from "react";
 import type { LineModifier, LineResponse, MenuItemResponse } from "../../../shared/api-types";
@@ -17,6 +18,8 @@ import { TicketPanels, type Panel } from "./TicketPanels";
 import { TicketRail } from "./TicketRail";
 import { TicketsSheet } from "./TicketsSheet";
 import { HistorySheet } from "./HistorySheet";
+import { TenderScreen } from "../tender/TenderScreen";
+import { chargeBlock } from "../tender/tender-logic";
 import { ticketLabel } from "./ticket-time";
 import { useTicket } from "./use-ticket";
 
@@ -31,6 +34,9 @@ export function RegisterScreen() {
   const [panel, setPanelState] = useState<Panel | null>(null);
   const [ticketsOpen, setTicketsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // The ticket being charged. Kept by id, so the tender screen goes away if
+  // another ticket comes to the front.
+  const [charging, setCharging] = useState<string | null>(null);
   const toast = useToast();
   const fail = (what: string) => (err: unknown) =>
     toast(`${what}: ${err instanceof Error ? err.message : String(err)}`, { tone: "warning" });
@@ -101,6 +107,13 @@ export function RegisterScreen() {
     }
   };
 
+  const block = chargeBlock(ticket.order, ticket.pending.length);
+  const label = ticketLabel(ticket.order ?? ticket.opening);
+
+  if (charging && ticket.order && charging === ticket.orderId) {
+    return <TenderScreen order={ticket.order} tender={ticket.tender} label={label} onBack={() => setCharging(null)} />;
+  }
+
   return (
     <div className="flex min-w-0 flex-1">
       <section aria-label="Menu" className="flex min-w-0 flex-1 flex-col">
@@ -145,7 +158,7 @@ export function RegisterScreen() {
         orderId={ticket.orderId}
         pending={ticket.pending}
         currency={index?.menu.currency ?? "INR"}
-        label={ticketLabel(ticket.order ?? ticket.opening)}
+        label={label}
         ticketCount={Math.max(ticket.open?.orders.length ?? 0, ticket.orderId ? 1 : 0)}
         onTickets={() => setTicketsOpen(true)}
         onHistory={() => setHistoryOpen(true)}
@@ -158,6 +171,13 @@ export function RegisterScreen() {
         onOrderNote={() => setPanel({ kind: "note" })}
         onRetry={ticket.retry}
         onRemove={ticket.remove}
+        chargeBlock={block}
+        onCharge={() => {
+          setPanel(null);
+          setSheet(null);
+          setHistoryOpen(false);
+          setCharging(ticket.orderId);
+        }}
       />
 
       {historyOpen && ticket.orderId && (

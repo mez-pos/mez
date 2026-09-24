@@ -1908,3 +1908,37 @@ register's History sheet renders it with the `Timeline` primitive.
 Because: the event stream is the audit trail, and this is the screen an
 owner opens when a number looks wrong.
 Cost: every history read sends the venue's staff and device lists.
+
+## ADR-076 - The tender screen: the server keeps the money, the till keeps only the change
+2026-09 · Status: accepted
+Decision: Charge on the register swaps it for a tender screen
+(`terminal-tender.md`) that posts `TenderPayment` through the ticket's
+ordered queue. No backend change: the endpoint and domain came in phase 04.
+- **Cash sends the lesser of the balance and what was handed over less
+  the tip.** The domain refuses an over-tender, so the change is never
+  recorded; it is shown, worked out in `tender-logic.ts`, the only money
+  sums on the screen. Amount due is always `totals.balance_due`.
+- **The tip is keyed as an amount, not picked as a percentage.** A percent
+  button is money arithmetic in the UI with its own rounding rule; the
+  domain has none yet. Card and UPI buttons show amount plus tip, because
+  that is what the card machine is keyed with; the two go to the server
+  apart.
+- **One idempotency key per tender attempt, kept across retries.**
+  `TicketQueue.run` takes an optional key. A retry of the same tender
+  reuses it, so a lost answer cannot charge twice; any change to method,
+  amount, tip or reference makes a new key, since the server refuses a
+  reused key with a different body.
+- **Quick-tender is exact, then the next multiple of ₹10, ₹50, ₹100 and
+  ₹500 strictly above the balance**, in the currency's major unit. The
+  steps are hardcoded for rupees until the venue has settings (phase 10).
+- **Charge takes the register's one accent;** the total went to the
+  default text colour.
+- The screen stops at "Paid in full". Issuing the invoice and closing the
+  ticket are Task 3, inside the settling transaction.
+- Checked in a browser against the built binary: ₹180 paid as ₹100 card
+  with a ₹10 tip and a slip reference, then ₹100 cash for the ₹80 left,
+  showing ₹20 change and a zero balance.
+Because: the bill is the server's projection, and a till that did its own
+sums would one day disagree with the invoice.
+Cost: the tender screen is not a route; a reload returns to the register,
+which shows the payments and the balance, and Charge again.

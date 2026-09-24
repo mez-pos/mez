@@ -9,7 +9,7 @@ Phase 06.
 
 ## Tasks
 
-- [ ] **Task 1 — Tender screen.**
+- [x] **Task 1 — Tender screen.**
   Spec first. Cash with quick-tender buttons and change due in large Instrument
   Serif, card-as-tender with a reference field, UPI. The charge button is 58px
   and unmistakable. Tips captured separately, never folded into the tender.
