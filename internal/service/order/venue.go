@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,6 +31,10 @@ const (
 	// JSON: [{"name":"CA","rate":7250}, ...], rates in thousandths of a
 	// percent as tax.Rate. Required under US sales tax.
 	SettingTaxJurisdiction = "tax.jurisdiction"
+
+	// SettingTicketLateMinutes is how long an open ticket may run before the
+	// till shows its time in vermilion. Default: 20. ADR-074.
+	SettingTicketLateMinutes = "terminal.ticket_late_minutes"
 
 	// SettingInvoiceSeries is the code of the series invoices are issued in.
 	// Default: INV.
@@ -58,11 +63,12 @@ var ErrVenueConfig = errors.New("venue is not configured to sell")
 
 // venue is everything a command needs to know about where it is being sold.
 type venue struct {
-	ID       int64
-	Currency string
-	Location *time.Location
-	Taxes    order.Taxes
-	Series   invoice.Series
+	ID        int64
+	Currency  string
+	Location  *time.Location
+	Taxes     order.Taxes
+	Series    invoice.Series
+	LateAfter time.Duration
 }
 
 // loadVenue reads a venue and its settings. It runs on every command: two
@@ -102,7 +108,10 @@ func venueFrom(row gen.Venue, settings map[string]string) (venue, error) {
 	if err != nil {
 		return venue{}, err
 	}
-	return venue{ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, Series: series}, nil
+	return venue{
+		ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, Series: series,
+		LateAfter: lateAfter(settings[SettingTicketLateMinutes]),
+	}, nil
 }
 
 // taxesFor builds the venue's tax regime from its profile, registration and
@@ -172,4 +181,18 @@ func seriesFor(row gen.Venue, settings map[string]string) (invoice.Series, error
 		return invoice.Series{}, fmt.Errorf("%w: invoice series: %w", ErrVenueConfig, err)
 	}
 	return s, nil
+}
+
+// defaultLateAfter is how long a ticket runs before it shows as late.
+const defaultLateAfter = 20 * time.Minute
+
+// lateAfter reads SettingTicketLateMinutes. A value that is not a whole
+// number of minutes from 1 to 600 falls back to the default rather than
+// refusing to sell: it only colours a clock.
+func lateAfter(v string) time.Duration {
+	n, err := strconv.Atoi(strings.TrimSpace(v))
+	if err != nil || n < 1 || n > 600 {
+		return defaultLateAfter
+	}
+	return time.Duration(n) * time.Minute
 }

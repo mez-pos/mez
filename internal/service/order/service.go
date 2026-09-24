@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
+	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 )
 
@@ -231,4 +232,37 @@ func (s *Service) Order(ctx context.Context, venueID, orderID int64) (Result, er
 		return Result{}, err
 	}
 	return Result{OrderID: orderID, PublicID: row.PublicID, State: state}, nil
+}
+
+// maxOpenTickets caps the open-ticket list. A venue with more than this
+// many orders open at once has a problem the list will not solve.
+const maxOpenTickets = 200
+
+// OpenTickets is every order at a venue that is not closed, and how long
+// one may run before the till shows it as late.
+type OpenTickets struct {
+	Orders    []Result
+	LateAfter time.Duration
+}
+
+// OpenOrders lists the venue's unclosed orders, oldest first, each
+// projected as a read of it would be.
+func (s *Service) OpenOrders(ctx context.Context, venueID int64) (OpenTickets, error) {
+	v, err := loadVenue(ctx, s.db.Queries(), venueID)
+	if err != nil {
+		return OpenTickets{}, err
+	}
+	rows, err := s.db.Queries().UnclosedOrdersForVenue(ctx, gen.UnclosedOrdersForVenueParams{VenueID: venueID, Limit: maxOpenTickets})
+	if err != nil {
+		return OpenTickets{}, fmt.Errorf("listing the open orders of venue %d: %w", venueID, err)
+	}
+	out := OpenTickets{Orders: make([]Result, 0, len(rows)), LateAfter: v.LateAfter}
+	for _, r := range rows {
+		state, err := s.db.LoadOrder(ctx, r.ID, v.Taxes)
+		if err != nil {
+			return OpenTickets{}, err
+		}
+		out.Orders = append(out.Orders, Result{OrderID: r.ID, PublicID: r.PublicID, State: state})
+	}
+	return out, nil
 }

@@ -64,6 +64,8 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 | `refund.issued` | amount, against_payment_id, reason |
 | `order.closed` | closed_by |
 | `order.reopened` | reason, authorised_by |
+| `order.held` | none: parks an open order, which then takes only notes and a resume |
+| `order.resumed` | (none) |
 
 Two consequences worth naming: the **order timeline** screen in the design is
 just this list rendered, and **voids are visible forever**, which is exactly what

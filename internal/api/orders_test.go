@@ -517,3 +517,102 @@ func TestRemoveALineRungUpByMistake(t *testing.T) {
 		t.Errorf("removing twice: %d %q", status, apiErr.Code)
 	}
 }
+
+func (r *register) openTickets(t *testing.T) openTicketsResponse {
+	t.Helper()
+	rec := send(r.handler, http.MethodGet, "/api/v1/orders", "", r.asStaff(r.staffToken))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /orders: %d %s", rec.Code, rec.Body)
+	}
+	var out openTicketsResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+// TestOpenTicketsHoldAndResume: the list shows every unclosed ticket,
+// oldest first, with the venue's late threshold; a held ticket says so and
+// takes nothing but notes until it is resumed (ADR-074).
+func TestOpenTicketsHoldAndResume(t *testing.T) {
+	r := newRegister(t)
+	line := `{"item_id":1,"name":"Upma","qty":1,"unit_price":{"minor":9000,"currency":"INR"},"station":"kitchen","tax_rate":5000,"hsn":"996331"}`
+
+	if got := r.openTickets(t); got.LateAfterMinutes != 20 || len(got.Orders) != 0 {
+		t.Fatalf("an empty venue: %+v", got)
+	}
+	first := r.openOrder(t)
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+first+"/lines", line)
+	second := r.openOrder(t)
+
+	list := r.openTickets(t)
+	if len(list.Orders) != 2 || list.Orders[0].ID != first || list.Orders[1].ID != second {
+		t.Fatalf("list = %+v", list.Orders)
+	}
+	if o := list.Orders[0]; o.Lines != 1 || o.Total.Minor == 0 || o.TableID != 4 || o.Covers != 2 || o.Status != "open" {
+		t.Errorf("first ticket = %+v", o)
+	}
+
+	res := r.ok(t, http.MethodPost, "/api/v1/orders/"+first+"/hold", ``)
+	if res.Order.Status != "held" || res.Events[0].Type != "order.held" {
+		t.Fatalf("after hold: %s %+v", res.Order.Status, res.Events)
+	}
+	if got := r.openTickets(t).Orders[0].Status; got != "held" {
+		t.Errorf("the list says %q", got)
+	}
+	tests := []struct {
+		name, path, body string
+		code             ErrorCode
+	}{
+		{"a line on a held ticket", "/lines", line, CodeOrderHeld},
+		{"holding twice", "/hold", ``, CodeOrderHeld},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			status, _, apiErr := r.call(t, http.MethodPost, "/api/v1/orders/"+first+tt.path, tt.body)
+			if status != http.StatusConflict || apiErr.Code != tt.code {
+				t.Errorf("%d %q, want 409 %q", status, apiErr.Code, tt.code)
+			}
+		})
+	}
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+first+"/notes", `{"scope":"order","text":"back in five"}`)
+
+	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+first+"/resume", ``)
+	if res.Order.Status != "open" {
+		t.Errorf("after resume: %s", res.Order.Status)
+	}
+	status, _, apiErr := r.call(t, http.MethodPost, "/api/v1/orders/"+first+"/resume", ``)
+	if status != http.StatusConflict || apiErr.Code != CodeOrderNotHeld {
+		t.Errorf("resuming twice: %d %q", status, apiErr.Code)
+	}
+
+	// Closed tickets leave the list; a venue setting moves the threshold.
+	r.ok(t, http.MethodPost, "/api/v1/orders/"+second+"/close", ``)
+	if err := r.db.WriteTx(context.Background(), func(q *gen.Queries) error {
+		return q.SetSetting(context.Background(), gen.SetSettingParams{
+			VenueID: 1, Key: svcorder.SettingTicketLateMinutes, Value: "12", UpdatedAt: seededAt,
+		})
+	}); err != nil {
+		t.Fatal(err)
+	}
+	list = r.openTickets(t)
+	if len(list.Orders) != 1 || list.Orders[0].ID != first || list.LateAfterMinutes != 12 {
+		t.Errorf("after closing one and setting 12 minutes: %+v", list)
+	}
+}
+
+func TestLateAfterFallsBackToTwentyMinutes(t *testing.T) {
+	r := newRegister(t)
+	for _, v := range []string{"", "0", "-5", "ten", "601"} {
+		if err := r.db.WriteTx(context.Background(), func(q *gen.Queries) error {
+			return q.SetSetting(context.Background(), gen.SetSettingParams{
+				VenueID: 1, Key: svcorder.SettingTicketLateMinutes, Value: v, UpdatedAt: seededAt,
+			})
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if got := r.openTickets(t).LateAfterMinutes; got != 20 {
+			t.Errorf("setting %q gave %d minutes, want 20", v, got)
+		}
+	}
+}

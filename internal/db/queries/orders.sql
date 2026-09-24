@@ -83,3 +83,14 @@ SELECT CAST(coalesce(max(e.id), 0) AS INTEGER) AS last_id
 FROM order_events e
 JOIN orders o ON o.id = e.order_id
 WHERE o.venue_id = ?;
+
+-- name: UnclosedOrdersForVenue :many
+--
+-- The tickets a till can switch between: everything not closed, oldest
+-- first. It is a working set, tens of orders, not history, so it is capped
+-- rather than paginated (ADR-074).
+SELECT id, public_id
+FROM orders
+WHERE venue_id = ? AND status != 'closed'
+ORDER BY opened_at, id
+LIMIT ?;

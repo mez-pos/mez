@@ -25,8 +25,8 @@ function fakeServer() {
     if (e) throw e;
   };
   const commands: TicketCommands = {
-    openOrder: async (key) => {
-      calls.push(`open ${key}`);
+    openOrder: async (open, key) => {
+      calls.push(open.table_id ? `open table ${open.table_id} ${key}` : `open ${key}`);
       fail();
       opened += 1;
       return answer(`ord_${opened}`);
@@ -145,15 +145,16 @@ describe("TicketQueue", () => {
     expect(orders.map((o) => o.lines.length)).toEqual([0, 1]);
   });
 
-  it("starts a new ticket, forgetting the old one", async () => {
+  it("opens as the ticket was started: at a table, with covers", async () => {
     const server = fakeServer();
-    const { q, remembered } = queue(server, "ord_1");
-    q.startNew();
-    expect(q.current().orderId).toBeNull();
+    const q = new TicketQueue({
+      commands: server.commands, newKey: () => "k", onOrder: () => {}, remember: () => {},
+      open: { channel: "counter", table_id: 4, covers: 2 },
+    });
     q.ringUp(line("Latte"));
     await q.settled();
-    expect(server.calls[0]).toBe("open k2");
-    expect(remembered).toEqual([null, "ord_1"]);
+    expect(server.calls[0]).toBe("open table 4 k");
+    expect(q.opening).toEqual({ channel: "counter", table_id: 4, covers: 2 });
   });
 
   it("tells listeners about every change", async () => {

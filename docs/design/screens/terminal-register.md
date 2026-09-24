@@ -25,9 +25,11 @@ Nothing but the item grid and the line list scrolls.
     wraps), the station as metadata, and the price in mono at the bottom,
     right-aligned. An item with modifier groups says how many choices it has.
 - **Ticket rail** (26rem, chrome surface, hairline on the left):
-  - Top, fixed: the metadata trail (`TICKET · COUNTER`), then the order id
-    in mono, as written: the trail uppercases, and `ord_` ids are case
-    sensitive.
+  - Top, fixed: the metadata trail (`TICKET · TABLE 4 · 2 COVERS`), then
+    the order id in mono, as written: the trail uppercases, and `ord_` ids
+    are case sensitive. On the right, **Tickets** with the count of open
+    tickets. A held ticket shows "Held · On hold: nothing can be added"
+    and **Resume** under the header.
   - Middle, scrolling: the **lines**. Quantity in mono, the name, the chosen
     modifiers under it in muted text, the line's amount in mono on the right.
     Each line is one tap target that opens its **LineSheet**. A voided line
@@ -37,10 +39,17 @@ Nothing but the item grid and the line list scrolls.
     way to the server are shown faint with "Adding".
     A line the server refused stays, in danger, with **Retry** and
     **Remove**.
-  - Bottom, fixed, never scrolls: **Discount** and **Note** for the whole
-    order, then, when there are discounts, **Items**, **Line discounts** and
+  - Bottom, fixed, never scrolls: **Discount**, **Note** and **Hold** for
+    the whole order, then, when there are discounts, **Items**, **Line discounts** and
     one row per order discount; then **Subtotal**, **Tax**, and **Total** in
     Instrument Serif at `--text-total` via `Money variant="total"`.
+- **TicketsSheet**: every ticket not closed, oldest first: where it is
+  ("Table 4 · 2 covers" or "Counter"), a Held or Settling chip, the order
+  id, its item count, its total, and how long it has run in mono ("12m",
+  "1h 05m"). Past the venue's threshold (`terminal.ticket_late_minutes`,
+  20 by default) the time turns vermilion with a "Late" chip: now. The
+  ticket in front says "On screen". Below: **Counter sale**, and a table
+  number on the pad with a covers stepper, **Start table 4, 2 covers**.
 - **LineSheet**: quantity stepper and a note, saved together; Modify,
   Discount, Comp and Void. A line the kitchen has seen shows its quantity
   without a stepper.
@@ -78,6 +87,9 @@ Nothing but the item grid and the line list scrolls.
   reason_code }`, `.../discounts` `{ authorised_by, pin, scope, line_id?,
   kind, basis_points | amount, reason }`: every one through the ordered
   queue with its own key. `GET /api/v1/staff` for the approver's name.
+- `GET /api/v1/orders`: the open tickets and `late_after_minutes`, key
+  `["orders", "open"]`, refetched on any event in the stream.
+  `POST .../hold` and `.../resume` park and unpark a ticket.
 - WebSocket: an `event` for the current order, or a `resync`, invalidates
   `["order", id]`, so a line added or changed on another till appears here.
 
@@ -95,6 +107,10 @@ Nothing but the item grid and the line list scrolls.
 | Save changes | Sends from and to | `line.modified` | Closes on success; a refusal stays in the message line |
 | The line moves on while the sheet is open (another till, sent, voided) | Seen through the stream | | Save disabled, with why |
 | Tap a line | Opens its LineSheet | | |
+| Tickets, then a ticket | Brings it to the front; a held one is resumed as it comes | `order.resumed` if held | Any sheet on the old ticket closes; lines still sending there keep going to it |
+| Tickets, New: counter or a table | A new ticket in front; the order opens with the table and covers on its first item | `order.opened` | |
+| Hold | Parks the ticket, and a counter ticket takes its place | `order.held` | Listed as Held |
+| Resume on a held ticket | | `order.resumed` | The banner goes |
 | Change quantity or write a note, Save | Sends the quantity, then the note | `line.qty_changed`, `note.added` | |
 | Void or Comp, reason, approver and PIN | Sends it with the approval | `line.voided` / `line.comped` | Struck through / marked, and off the total |
 | Discount (line or order), size, reason, approver and PIN | Sends it | `discount.applied` | A row under the line, or in the totals |
@@ -162,8 +178,10 @@ takes the item, Modify, the choice, Save.
   thumb's width from `+`. One tap on the line opens them instead.
 - **Quantity only until the kitchen has the line** (ADR-072); after that,
   void and ring up again.
-- **Discount and Note sit over the totals**; Hold and Fire are Task 5 and
-  phase 08.
+- **Discount, Note and Hold sit over the totals**; Fire is phase 08.
+- **Open tickets are a sheet, not a rail.** The design has no ticket list
+  on the register; the Orders screen (`s_orders`) is the full list with
+  history, and arrives with it.
 - **Modify only until the kitchen has the line.** The design shows Modify on
   every line. After a line is sent or its course fired, a change is a void
   and a new line (Task 4), which needs a manager.

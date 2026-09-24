@@ -17,6 +17,9 @@ import (
 type Orders interface {
 	Resolve(ctx context.Context, venueID int64, publicID string) (int64, error)
 	Order(ctx context.Context, venueID, orderID int64) (svcorder.Result, error)
+	OpenOrders(ctx context.Context, venueID int64) (svcorder.OpenTickets, error)
+	Hold(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
+	Resume(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 
 	Open(ctx context.Context, meta svcorder.Meta, cmd svcorder.OpenOrder) (svcorder.Result, error)
 	AddLine(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.AddLine) (svcorder.Result, error)
@@ -62,6 +65,8 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 		s.requirePermission(auth.PermOrderOpen, http.HandlerFunc(s.readOrder)))))
 	mux.Handle("POST /api/v1/orders", s.requireDevice(s.requireStaff(
 		s.requirePermission(auth.PermOrderOpen, http.HandlerFunc(s.openOrder)))))
+	mux.Handle("GET /api/v1/orders", s.requireDevice(s.requireStaff(
+		s.requirePermission(auth.PermOrderOpen, http.HandlerFunc(s.listOpenOrders)))))
 	mux.HandleFunc("/api/v1/orders", s.methodNotAllowed)
 	mux.HandleFunc("/api/v1/orders/{id}", s.methodNotAllowed)
 
@@ -71,6 +76,8 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	post("/api/v1/orders/{id}/lines/{line}/modifiers", auth.PermOrderEdit, s.modifyLine)
 	post("/api/v1/orders/{id}/lines/{line}/remove", auth.PermOrderEdit, s.removeLine)
 	post("/api/v1/orders/{id}/notes", auth.PermOrderEdit, s.addNote)
+	post("/api/v1/orders/{id}/hold", auth.PermOrderEdit, s.holdOrder)
+	post("/api/v1/orders/{id}/resume", auth.PermOrderEdit, s.resumeOrder)
 	post("/api/v1/orders/{id}/courses/{course}/fire", auth.PermOrderEdit, s.fireCourse)
 	post("/api/v1/orders/{id}/tickets", auth.PermOrderEdit, s.sendTicket)
 	post("/api/v1/orders/{id}/payments", auth.PermPaymentTake, s.tenderPayment)
@@ -164,6 +171,30 @@ func (s *Server) readOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, s.log, http.StatusOK, toOrderResponse(res))
+}
+
+// listOpenOrders answers with every ticket not yet closed, for the till's
+// ticket list, and how long one may run before it shows as late.
+func (s *Server) listOpenOrders(w http.ResponseWriter, r *http.Request) {
+	open, err := s.orders.OpenOrders(r.Context(), Meta(r).VenueID)
+	if err != nil {
+		s.writeOrderError(w, r, err)
+		return
+	}
+	writeJSON(w, s.log, http.StatusOK, toOpenTicketsResponse(open))
+}
+
+// holdOrder and resumeOrder take no body (ADR-074).
+func (s *Server) holdOrder(w http.ResponseWriter, r *http.Request) {
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		return s.orders.Hold(r.Context(), meta, orderID)
+	})
+}
+
+func (s *Server) resumeOrder(w http.ResponseWriter, r *http.Request) {
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		return s.orders.Resume(r.Context(), meta, orderID)
+	})
 }
 
 func (s *Server) openOrder(w http.ResponseWriter, r *http.Request) {

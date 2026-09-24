@@ -29,6 +29,8 @@ const (
 	TypeRefundIssued    Type = "refund.issued"
 	TypeOrderClosed     Type = "order.closed"
 	TypeOrderReopened   Type = "order.reopened"
+	TypeOrderHeld       Type = "order.held"
+	TypeOrderResumed    Type = "order.resumed"
 )
 
 // Payload is the type-specific body of an event. Each payload type knows its
@@ -57,6 +59,8 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeRefundIssued:    decodeAs[RefundIssued],
 	TypeOrderClosed:     decodeAs[OrderClosed],
 	TypeOrderReopened:   decodeAs[OrderReopened],
+	TypeOrderHeld:       decodeAs[OrderHeld],
+	TypeOrderResumed:    decodeAs[OrderResumed],
 }
 
 // Types lists every event type this build knows, sorted, for tests and for

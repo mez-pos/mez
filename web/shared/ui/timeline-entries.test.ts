@@ -114,3 +114,14 @@ describe("timelineEntries: a line changed before the kitchen had it", () => {
     expect(emptied).toMatchObject({ detail: "Dairy → nothing" });
   });
 });
+
+describe("timelineEntries: hold and resume", () => {
+  it("has words for both", () => {
+    const [, held, resumed] = timelineEntries(
+      [events[0]!, { ...base, seq: 2, type: "order.held", payload: {} }, { ...base, seq: 3, type: "order.resumed", payload: {} }],
+      (id) => names[id],
+    );
+    expect(held).toMatchObject({ title: "Put on hold", tone: "warning" });
+    expect(resumed).toMatchObject({ title: "Taken off hold" });
+  });
+});

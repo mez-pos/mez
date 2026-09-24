@@ -85,6 +85,10 @@ function describe(event: OrderEvent, ctx: Context): Described {
     }
     case "line.qty_changed":
       return { title: `${line(event.payload.line_id)}: ${event.payload.from} → ${event.payload.to}` };
+    case "order.held":
+      return { title: "Put on hold", tone: "warning" };
+    case "order.resumed":
+      return { title: "Taken off hold" };
     case "line.modified": {
       const names = (mods: readonly { name: string }[]) => mods.map((m) => m.name).join(", ") || "nothing";
       return { title: `Changed ${line(event.payload.line_id)}`, detail: `${names(event.payload.from)} → ${names(event.payload.to)}` };

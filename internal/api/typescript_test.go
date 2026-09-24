@@ -77,6 +77,8 @@ var eventTypes = []struct {
 	{order.TypeRefundIssued, order.RefundIssued{}, "RefundIssued"},
 	{order.TypeOrderClosed, order.OrderClosed{}, "OrderClosed"},
 	{order.TypeOrderReopened, order.OrderReopened{}, "OrderReopened"},
+	{order.TypeOrderHeld, order.OrderHeld{}, "OrderHeld"},
+	{order.TypeOrderResumed, order.OrderResumed{}, "OrderResumed"},
 }
 
 // errorCodes is every code the API answers with. A client switches on
@@ -86,7 +88,7 @@ var errorCodes = []ErrorCode{
 	CodeUnauthenticated, CodeDeviceRevoked, CodeInvalidPairingCode,
 	CodeInvalidPIN, CodeLockedOut, CodeSignInRequired, CodeRateLimited, CodeForbidden,
 	CodeOrderNotFound, CodeLineNotFound, CodeLineNotActive, CodePaymentNotFound,
-	CodeModifiersMismatch, CodeLineInKitchen, CodeNeedsApproval,
+	CodeModifiersMismatch, CodeLineInKitchen, CodeNeedsApproval, CodeOrderHeld, CodeOrderNotHeld,
 	CodePaymentNotCaptured, CodeOrderClosed, CodeOrderNotClosed, CodeQtyMismatch,
 	CodeBalanceDue, CodeOverTender, CodeOverRefund, CodeDiscountTooLarge,
 	CodeAlreadyInvoiced, CodeCourseAlreadyFired, CodeNothingToSend,
@@ -188,7 +190,7 @@ func generate() (*ts.Generator, error) {
 		// Orders: what comes back.
 		lineResponse{}, noteResponse{}, ticketResponse{}, tenderResponse{},
 		refundResponse{}, invoiceResponse{}, discountResponse{}, totalsResponse{},
-		taxResponse{}, orderResponse{}, commandResponse{},
+		taxResponse{}, orderResponse{}, commandResponse{}, ticketSummary{}, openTicketsResponse{},
 		// The menu.
 		stationResponse{}, courseResponse{}, categoryResponse{}, modifierResponse{},
 		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},

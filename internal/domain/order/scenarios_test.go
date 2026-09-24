@@ -323,6 +323,21 @@ var scenarios = []struct {
 		status: StatusSettling,
 	},
 	{
+		name: "held while the guest finds a friend, resumed, a note on hold",
+		payloads: []Payload{
+			opened(),
+			coffee(1), // 2: 220.00
+			OrderHeld{},
+			NoteAdded{Scope: ScopeOrder, Text: "back in five"},
+			OrderResumed{},
+			coffee(1), // 6
+			pay(PaymentCash, 44000),
+			closed,
+		},
+		want:   figures{gross: 44000, total: 44000, paid: 44000},
+		status: StatusClosed,
+	},
+	{
 		name: "guest changes their milk before the coffee is made",
 		payloads: []Payload{
 			opened(),

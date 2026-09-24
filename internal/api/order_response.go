@@ -225,3 +225,49 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 	}
 	return out
 }
+
+// ticketSummary is one open ticket, for the till's ticket list: enough to
+// tell tickets apart and see which is late, not the bill itself.
+type ticketSummary struct {
+	ID         string        `json:"id"`
+	Status     order.Status  `json:"status"`
+	Channel    order.Channel `json:"channel"`
+	TableID    int64         `json:"table_id,omitempty"`
+	Covers     int64         `json:"covers"`
+	OpenedBy   int64         `json:"opened_by,omitempty"`
+	OpenedAt   time.Time     `json:"opened_at"`
+	UpdatedAt  time.Time     `json:"updated_at"`
+	Lines      int64         `json:"lines"` // active lines
+	Total      money.Amount  `json:"total"`
+	BalanceDue money.Amount  `json:"balance_due"`
+}
+
+// openTicketsResponse is every ticket not yet closed, oldest first.
+type openTicketsResponse struct {
+	// LateAfterMinutes is how long a ticket may run before the till shows
+	// its time in vermilion: the venue's terminal.ticket_late_minutes.
+	LateAfterMinutes int64           `json:"late_after_minutes"`
+	Orders           []ticketSummary `json:"orders"`
+}
+
+func toOpenTicketsResponse(open svcorder.OpenTickets) openTicketsResponse {
+	out := openTicketsResponse{
+		LateAfterMinutes: int64(open.LateAfter / time.Minute),
+		Orders:           make([]ticketSummary, len(open.Orders)),
+	}
+	for i, r := range open.Orders {
+		st := r.State
+		var active int64
+		for _, l := range st.Lines {
+			if l.Status == order.LineStatusActive {
+				active++
+			}
+		}
+		out.Orders[i] = ticketSummary{
+			ID: r.PublicID, Status: st.Status, Channel: st.Channel, TableID: st.TableID, Covers: st.Covers,
+			OpenedBy: st.OpenedBy, OpenedAt: st.OpenedAt.UTC(), UpdatedAt: st.UpdatedAt.UTC(), Lines: active,
+			Total: st.Totals.Total, BalanceDue: st.Totals.BalanceDue,
+		}
+	}
+	return out
+}

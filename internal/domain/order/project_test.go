@@ -2,6 +2,7 @@ package order
 
 import (
 	"errors"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/fsm"
 	"math"
 	"reflect"
 	"strings"
@@ -101,6 +102,12 @@ func TestProjectRejectsIllegalSequences(t *testing.T) {
 		{"qty change to zero", with(oneCoffee, LineQtyChanged{LineID: 2, From: 1, To: 0}), ErrInvalidPayload},
 		{"qty change to the same", with(oneCoffee, LineQtyChanged{LineID: 2, From: 1, To: 1}), ErrInvalidPayload},
 		{"qty change on a voided line", with(oneCoffee, void(2), LineQtyChanged{LineID: 2, From: 1, To: 2}), ErrLineNotActive},
+		{"add to a held order", with(oneCoffee, OrderHeld{}, coffee(1)), ErrOrderHeld},
+		{"pay a held order", with(oneCoffee, OrderHeld{}, pay(PaymentCash, 22000)), ErrOrderHeld},
+		{"hold twice", with(oneCoffee, OrderHeld{}, OrderHeld{}), ErrOrderHeld},
+		{"resume an order not held", with(oneCoffee, OrderResumed{}), ErrOrderNotHeld},
+		{"hold an order being settled", with(oneCoffee, pay(PaymentCash, 10000), OrderHeld{}), fsm.ErrInvalidTransition},
+		{"hold a closed order", with(paidClosed, OrderHeld{}), ErrOrderClosed},
 		{"modify a missing line", with(oneCoffee, oat(9)), ErrLineNotFound},
 		{"modify from stale modifiers", with(oneCoffee, LineModified{LineID: 2, From: []Modifier{oatMilk}, To: nil}), ErrModifiersMismatch},
 		{"modify to the same", with(oneCoffee, LineModified{LineID: 2, From: nil, To: []Modifier{}}), ErrInvalidPayload},

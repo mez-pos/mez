@@ -1841,3 +1841,42 @@ and calling a manager for it teaches staff to leave mistakes on the bill.
 Cost: a remove is counted with voids in reports; phase 09's exception
 report should show `entered_in_error` separately, per staff member, so a
 pattern is visible.
+
+## ADR-074 - Open tickets: hold as events, one outbox per ticket, a cache that only moves forward
+2026-09 · Status: accepted
+Decision: a till works several tickets. `order.held` and `order.resumed`
+park and unpark an order; `GET /api/v1/orders` lists the unclosed ones;
+the terminal keeps one TicketQueue per ticket in a TicketBook.
+- **Hold is two events, not a flag on the side.** The order machine
+  always had `open -> held -> open`; the projection now produces it. Only
+  an open order can be held (one being settled has money on it). A held
+  order takes only a note and a resume, so nothing is added to a parked
+  ticket by a till that does not know it is parked (`order_held`, 409).
+- **The open-ticket list is capped, not paginated.** It is a working set,
+  tens of orders, oldest first, each projected from its snapshot; the cap
+  is 200. Order history, which is paginated, is the Orders screen's.
+- **The late threshold is a venue setting,** `terminal.ticket_late_minutes`
+  (default 20, whole minutes 1 to 600), sent with the list. A bad value
+  falls back to 20 rather than stopping sales: it only colours a clock.
+  Past it the time is vermilion with a "Late" chip, colour and word.
+- **One outbox per ticket.** Switching tickets changes which queue is in
+  front; a queue still sending keeps sending to its own order. A tap on
+  ticket A, a switch to ticket B while A is still opening, and a tap on B
+  land on A and B respectively. Each queue carries its own opening (table,
+  covers), sent when its first item opens the order. Only the ticket in
+  front is remembered across a reload.
+- **The order cache only moves forward.** A read that leaves before a
+  command and lands after it would put the older order back: found in a
+  browser, where switching to a held ticket fetched it while the resume
+  was in flight, and the rail showed "held" after the server had resumed
+  it. Every write to the cache keeps the copy with the higher `last_seq`.
+- Checked in a browser against the real binary: a counter ticket and a
+  table ticket side by side; hold, which moves the till to a fresh counter
+  ticket; the list with both, the held one marked; switching back; a
+  reload keeping the ticket in front; 25 minutes on, "Late 25m" in
+  vermilion; resume from the list, three times over the race; and a second
+  tab signed in on the same ticket seeing a line added in the first.
+Because: a counter runs a queue and a table at once, and the ticket a
+cashier is looking at must be the one their taps land on.
+Cost: covers and table are fixed when the order opens; there is no event
+to move a ticket to another table until phase 08.

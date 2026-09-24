@@ -8,7 +8,7 @@
 // key too, kept until an order exists.
 
 import { failureOf } from "./order-messages";
-import type { AddLine, CommandResponse, LineModifier, OrderResponse } from "../../../shared/api-types";
+import type { AddLine, CommandResponse, LineModifier, OpenOrder, OrderResponse } from "../../../shared/api-types";
 
 export interface PendingLine {
   readonly key: string;
@@ -25,7 +25,7 @@ export interface TicketState {
 }
 
 export interface TicketCommands {
-  openOrder(key: string): Promise<CommandResponse>;
+  openOrder(open: OpenOrder, key: string): Promise<CommandResponse>;
   addLine(orderId: string, command: AddLine, key: string): Promise<CommandResponse>;
   modifyLine(orderId: string, lineId: number, change: ModifyLine, key: string): Promise<CommandResponse>;
 }
@@ -44,7 +44,11 @@ export interface TicketQueueOptions {
   /** Where the current order's id is kept across a reload. */
   remember: (orderId: string | null) => void;
   initialOrderId?: string | null;
+  /** How this ticket opens when its first item is rung up: counter or table, covers. */
+  open?: OpenOrder;
 }
+
+const counterSale: OpenOrder = { channel: "counter", covers: 0 };
 
 export class TicketQueue {
   private state: TicketState;
@@ -113,11 +117,9 @@ export class TicketQueue {
     return done;
   }
 
-  /** Starts a new ticket. Lines still being sent keep going to the old one. */
-  startNew(): void {
-    this.openKey = null;
-    this.update({ orderId: null, pending: this.state.pending.filter((p) => p.status === "adding") });
-    this.opts.remember(null);
+  /** How this ticket opens, or opened. */
+  get opening(): OpenOrder {
+    return this.opts.open ?? counterSale;
   }
 
   /** Resolves when everything queued so far has been sent or refused. */
@@ -145,7 +147,7 @@ export class TicketQueue {
   private async ensureOrder(): Promise<string> {
     if (this.state.orderId) return this.state.orderId;
     this.openKey ??= this.opts.newKey();
-    const res = await this.opts.commands.openOrder(this.openKey);
+    const res = await this.opts.commands.openOrder(this.opening, this.openKey);
     this.openKey = null;
     this.opts.onOrder(res.order);
     this.opts.remember(res.order.id);

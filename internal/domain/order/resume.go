@@ -36,6 +36,7 @@ func Resume(from State, events []Event, taxes Taxes) (State, error) {
 		opened:   true,
 		closed:   from.Status == StatusClosed,
 		reopened: from.Status == StatusReopened,
+		held:     from.Status == StatusHeld,
 		invoiced: from.Invoiced,
 	}
 	for i, e := range events {

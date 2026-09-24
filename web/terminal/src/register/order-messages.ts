@@ -15,6 +15,8 @@ const words: Partial<Record<ErrorCode, string>> = {
   qty_mismatch: "This line was changed on another till. Look again and retry.",
   line_in_kitchen: "This has gone to the kitchen. Void it and add it again.",
   needs_approval: "This needs a manager now. Use Void.",
+  order_held: "This ticket is on hold. Resume it to carry on.",
+  order_not_held: "This ticket isn't on hold.",
   venue_not_configured: "This venue's tax settings aren't finished. Ask a manager.",
   rate_limited: "Too many requests. Wait a moment and retry.",
   internal: "The server hit a problem. Try again.",

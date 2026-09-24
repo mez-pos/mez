@@ -11,17 +11,17 @@ File: `docs/phases/phase-06.md`. Phase 05 is complete.
 
 ## Last completed task
 
-**Phase 06, Task 4: cart** (ADR-072). Tapping a line opens its sheet:
-quantity and note, Modify, Discount, Comp, Void. Void, comp and discounts
-take a reason and an approver's PIN. Voided lines stay struck through; the
-totals show items, discounts, subtotal, tax. Checked in a browser.
+**Phase 06, Task 5: open tickets and hold** (ADR-074), after settling two
+cart rules (ADR-073: quantity stops at the kitchen; a mistaken unsent line
+comes off without a manager until money is taken). New events `order.held`
+and `order.resumed`; `GET /api/v1/orders`; a TicketBook of one queue per
+ticket; late tickets in vermilion. Checked in a browser, two tabs live.
 
 ## Next task
 
-**Phase 06, Task 5: open tickets and hold.** Several open tickets, a list
-with table, covers, elapsed time (vermilion past a venue threshold) and
-total; switch without losing state; hold and resume. The single ticket
-slot in `use-ticket.ts` (`nofiltr.terminal.ticket`) becomes a list.
+**Phase 06, Task 6: order timeline.** Render the order's events with the
+`Timeline` primitive (`web/shared/ui/`), which already has words for all
+18 types. It needs the events: no endpoint returns an order's events yet.
 
 ## Known broken / in progress
 

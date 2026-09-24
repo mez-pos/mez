@@ -52,6 +52,7 @@ type projector struct {
 	opened   bool
 	closed   bool
 	reopened bool // reopened since the last close
+	held     bool // parked by order.held, until order.resumed
 	invoiced bool // an invoice issued since the order was last opened or reopened
 }
 
@@ -72,6 +73,9 @@ func (p *projector) step(wantSeq int64, e Event) error {
 	}
 	if p.closed && e.Type != TypeOrderReopened && e.Type != TypeNoteAdded {
 		return ErrOrderClosed
+	}
+	if p.held && e.Type != TypeOrderResumed && e.Type != TypeNoteAdded {
+		return ErrOrderHeld
 	}
 	if err := p.apply(e); err != nil {
 		return err
@@ -116,6 +120,15 @@ func (p *projector) apply(e Event) error {
 		return p.close(e, pl)
 	case OrderReopened:
 		return p.reopen(pl)
+	case OrderHeld:
+		p.held = true // the status check refuses a hold from anything but open
+		return nil
+	case OrderResumed:
+		if !p.held {
+			return ErrOrderNotHeld
+		}
+		p.held = false
+		return nil
 	default:
 		return invalid("no projection for %T", e.Payload)
 	}

@@ -225,6 +225,50 @@ func (q *Queries) SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotPa
 	return err
 }
 
+const unclosedOrdersForVenue = `-- name: UnclosedOrdersForVenue :many
+SELECT id, public_id
+FROM orders
+WHERE venue_id = ? AND status != 'closed'
+ORDER BY opened_at, id
+LIMIT ?
+`
+
+type UnclosedOrdersForVenueParams struct {
+	VenueID int64
+	Limit   int64
+}
+
+type UnclosedOrdersForVenueRow struct {
+	ID       int64
+	PublicID string
+}
+
+// The tickets a till can switch between: everything not closed, oldest
+// first. It is a working set, tens of orders, not history, so it is capped
+// rather than paginated (ADR-074).
+func (q *Queries) UnclosedOrdersForVenue(ctx context.Context, arg UnclosedOrdersForVenueParams) ([]UnclosedOrdersForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, unclosedOrdersForVenue, arg.VenueID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UnclosedOrdersForVenueRow{}
+	for rows.Next() {
+		var i UnclosedOrdersForVenueRow
+		if err := rows.Scan(&i.ID, &i.PublicID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateOrderIndex = `-- name: UpdateOrderIndex :execrows
 UPDATE orders
 SET table_id   = ?1,

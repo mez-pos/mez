@@ -28,6 +28,8 @@ export type ErrorCode =
   | 'modifiers_mismatch'
   | 'line_in_kitchen'
   | 'needs_approval'
+  | 'order_held'
+  | 'order_not_held'
   | 'payment_not_captured'
   | 'order_closed'
   | 'order_not_closed'
@@ -127,7 +129,9 @@ export type OrderEventType =
   | 'invoice.issued'
   | 'refund.issued'
   | 'order.closed'
-  | 'order.reopened';
+  | 'order.reopened'
+  | 'order.held'
+  | 'order.resumed';
 
 export type StreamMessageType =
   | 'hello'
@@ -285,6 +289,12 @@ export interface OrderReopened {
   authorised_by: number;
 }
 
+export interface OrderHeld {
+}
+
+export interface OrderResumed {
+}
+
 export interface OrderEventOf<T extends OrderEventType, P> {
   seq: number;
   type: T;
@@ -311,7 +321,9 @@ export type OrderEvent =
   | OrderEventOf<'invoice.issued', InvoiceIssued>
   | OrderEventOf<'refund.issued', RefundIssued>
   | OrderEventOf<'order.closed', OrderClosed>
-  | OrderEventOf<'order.reopened', OrderReopened>;
+  | OrderEventOf<'order.reopened', OrderReopened>
+  | OrderEventOf<'order.held', OrderHeld>
+  | OrderEventOf<'order.resumed', OrderResumed>;
 
 export interface ApiError {
   code: ErrorCode;
@@ -591,6 +603,25 @@ export interface CommandResponse {
   order: OrderResponse;
   events: OrderEvent[];
   replayed?: boolean;
+}
+
+export interface TicketSummary {
+  id: string;
+  status: OrderStatus;
+  channel: OrderChannel;
+  table_id?: number;
+  covers: number;
+  opened_by?: number;
+  opened_at: string;
+  updated_at: string;
+  lines: number;
+  total: Money;
+  balance_due: Money;
+}
+
+export interface OpenTicketsResponse {
+  late_after_minutes: number;
+  orders: TicketSummary[];
 }
 
 export interface StationResponse {

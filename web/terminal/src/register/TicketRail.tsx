@@ -14,6 +14,13 @@ interface TicketRailProps {
   orderId: string | null;
   pending: readonly PendingLine[];
   currency: string;
+  /** Where the ticket in front is: "Table 4 · 2 covers". */
+  label: string;
+  /** Open tickets at the venue, this one included. */
+  ticketCount: number;
+  onTickets: () => void;
+  onHold: () => void;
+  onResume: () => void;
   onOpenLine: (line: LineResponse) => void;
   onOrderDiscount: () => void;
   onOrderNote: () => void;
@@ -22,7 +29,9 @@ interface TicketRailProps {
 }
 
 export function TicketRail(props: TicketRailProps) {
-  const { order, orderId, pending, currency, onOpenLine, onOrderDiscount, onOrderNote, onRetry, onRemove } = props;
+  const { order, orderId, pending, currency, label, ticketCount, onTickets, onHold, onResume } = props;
+  const { onOpenLine, onOrderDiscount, onOrderNote, onRetry, onRemove } = props;
+  const held = order?.status === "held";
   const zero: Amount = { minor: 0, currency };
   const totals = order?.totals;
   const empty = (order?.lines.length ?? 0) === 0 && pending.length === 0;
@@ -32,11 +41,24 @@ export function TicketRail(props: TicketRailProps) {
 
   return (
     <aside aria-label="Ticket" className="flex w-104 shrink-0 flex-col border-l border-line bg-chrome">
-      <header className="border-b border-line px-5 py-4">
-        <Meta items={["Ticket", "Counter"]} />
-        {/* Not in the trail: it uppercases, and an order id is read back as written. */}
-        <p className="mt-1 font-mono text-base text-fg-2">{orderId ?? "New ticket"}</p>
+      <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+        <div className="min-w-0">
+          <Meta items={["Ticket", label]} />
+          {/* Not in the trail: it uppercases, and an order id is read back as written. */}
+          <p className="mt-1 font-mono text-base text-fg-2">{orderId ?? "New ticket"}</p>
+        </div>
+        <Button onClick={onTickets} aria-label={`Tickets, ${ticketCount} open`}>
+          Tickets <span className="font-mono tabular-nums text-fg-muted">{ticketCount}</span>
+        </Button>
       </header>
+      {held && (
+        <div role="status" className="flex items-center justify-between gap-3 border-b border-line bg-raised px-5 py-3">
+          <span className="flex items-center gap-2 text-sm text-fg-2">
+            <StatusChip status={{ kind: "order", status: "held" }} /> On hold: nothing can be added.
+          </span>
+          <Button onClick={onResume}>Resume</Button>
+        </div>
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5">
         {orderNotes.map((n) => (
@@ -62,12 +84,15 @@ export function TicketRail(props: TicketRailProps) {
       </div>
 
       <footer className="border-t border-line px-5 pb-5 pt-4">
-        <div className="mb-3 grid grid-cols-2 gap-tap-gap">
-          <Button disabled={!live} onClick={onOrderDiscount}>
+        <div className="mb-3 grid grid-cols-3 gap-tap-gap">
+          <Button disabled={!live || held} onClick={onOrderDiscount}>
             Discount
           </Button>
           <Button disabled={!order} onClick={onOrderNote}>
             Note
+          </Button>
+          <Button disabled={order?.status !== "open"} onClick={onHold}>
+            Hold
           </Button>
         </div>
         {totals && (totals.line_discounts.minor > 0 || totals.order_discounts.minor > 0) && (

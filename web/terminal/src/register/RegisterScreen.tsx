@@ -6,7 +6,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import type { LineModifier, LineResponse, MenuItemResponse } from "../../../shared/api-types";
 import { indexMenu } from "../../../shared/menu";
-import { EmptyState, InboxIcon, SearchField, SearchIcon } from "../../../shared/ui";
+import { EmptyState, InboxIcon, SearchField, SearchIcon, useToast } from "../../../shared/ui";
 import { useMenu } from "../../../shared/use-menu";
 import { CategoryRail } from "./CategoryRail";
 import { ItemGrid } from "./ItemGrid";
@@ -15,6 +15,8 @@ import { sameModifiers } from "./modifier-selection";
 import { addLineFor, defaultModifiers, searchItems } from "./register-logic";
 import { TicketPanels, type Panel } from "./TicketPanels";
 import { TicketRail } from "./TicketRail";
+import { TicketsSheet } from "./TicketsSheet";
+import { ticketLabel } from "./ticket-time";
 import { useTicket } from "./use-ticket";
 
 export function RegisterScreen() {
@@ -26,6 +28,10 @@ export function RegisterScreen() {
   const [query, setQuery] = useState("");
   const [sheet, setSheetState] = useState<SheetState | null>(null);
   const [panel, setPanelState] = useState<Panel | null>(null);
+  const [ticketsOpen, setTicketsOpen] = useState(false);
+  const toast = useToast();
+  const fail = (what: string) => (err: unknown) =>
+    toast(`${what}: ${err instanceof Error ? err.message : String(err)}`, { tone: "warning" });
   // One sheet at a time: opening one closes the other.
   const setSheet = (next: SheetState | null) => {
     setSheetState(next);
@@ -137,12 +143,37 @@ export function RegisterScreen() {
         orderId={ticket.orderId}
         pending={ticket.pending}
         currency={index?.menu.currency ?? "INR"}
+        label={ticketLabel(ticket.order ?? ticket.opening)}
+        ticketCount={Math.max(ticket.open?.orders.length ?? 0, ticket.orderId ? 1 : 0)}
+        onTickets={() => setTicketsOpen(true)}
+        onHold={() => ticket.hold().catch(fail("Couldn't hold"))}
+        onResume={() => {
+          if (ticket.orderId) ticket.resume(ticket.orderId).catch(fail("Couldn't resume"));
+        }}
         onOpenLine={(line) => setPanel({ kind: "line", lineId: line.id })}
         onOrderDiscount={() => setPanel({ kind: "discount", lineId: null })}
         onOrderNote={() => setPanel({ kind: "note" })}
         onRetry={ticket.retry}
         onRemove={ticket.remove}
       />
+
+      {ticketsOpen && (
+        <TicketsSheet
+          open={ticket.open}
+          currentId={ticket.orderId}
+          onPick={(t) => {
+            // A sheet about a line on the ticket being left must not stay open.
+            setPanel(null);
+            setSheet(null);
+            return t.status === "held" ? ticket.resume(t.id) : Promise.resolve(ticket.switchTo(t.id));
+          }}
+          onNew={(opening) => {
+            setPanel(null);
+            ticket.startNew(opening);
+          }}
+          onClose={() => setTicketsOpen(false)}
+        />
+      )}
 
       <TicketPanels
         panel={panel}

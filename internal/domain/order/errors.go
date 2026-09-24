@@ -69,6 +69,13 @@ var (
 	// not closed.
 	ErrOrderNotClosed = errors.New("order is not closed")
 
+	// ErrOrderHeld means an event other than a resume or a note arrived for
+	// a held order. Resume it first.
+	ErrOrderHeld = errors.New("order is on hold")
+
+	// ErrOrderNotHeld means order.resumed arrived for an order not held.
+	ErrOrderNotHeld = errors.New("order is not on hold")
+
 	// ErrLineNotFound means an event named a line ID that no line.added
 	// created.
 	ErrLineNotFound = errors.New("no such line")

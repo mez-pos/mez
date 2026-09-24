@@ -33,7 +33,7 @@ Phase 05.
   domain event — check against `docs/02-domain.md`. Voided lines stay visible,
   struck through. The subtotal, tax and total block uses `Money` throughout.
 
-- [ ] **Task 5 — Open tickets and hold.**
+- [x] **Task 5 — Open tickets and hold.**
   Multiple concurrent open tickets. A ticket list with table, covers, elapsed
   time and total. Switch between them without losing cart state. Hold and
   resume. Elapsed time in mono, and past a venue-configured threshold it turns

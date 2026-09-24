@@ -149,6 +149,16 @@ func (s *Service) ModifyLine(ctx context.Context, meta Meta, orderID int64, cmd 
 	return s.run(ctx, meta, orderID, "modify_line", cmd, one(order.LineModified(cmd)))
 }
 
+// Hold parks an open order; Resume takes it off hold (ADR-074).
+func (s *Service) Hold(ctx context.Context, meta Meta, orderID int64) (Result, error) {
+	return s.run(ctx, meta, orderID, "hold", struct{}{}, one(order.OrderHeld{}))
+}
+
+// Resume takes a held order off hold.
+func (s *Service) Resume(ctx context.Context, meta Meta, orderID int64) (Result, error) {
+	return s.run(ctx, meta, orderID, "resume", struct{}{}, one(order.OrderResumed{}))
+}
+
 // ErrNeedsApproval means a line cannot be removed without a manager: it
 // has gone to the kitchen, or money has been taken on the order.
 var ErrNeedsApproval = errors.New("this needs a manager's approval")

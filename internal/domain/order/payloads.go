@@ -214,6 +214,15 @@ type OrderReopened struct {
 	AuthorisedBy int64  `json:"authorised_by"`
 }
 
+// OrderHeld parks an open order: the guest has stepped away, the table is
+// waiting on someone. A held order takes nothing but notes until it is
+// resumed, so nobody adds to a ticket they did not mean to (ADR-074). Only
+// an open order can be held; one with money on it is being settled.
+type OrderHeld struct{}
+
+// OrderResumed takes an order off hold.
+type OrderResumed struct{}
+
 // EventType implementations: each payload names its own type.
 
 func (OrderOpened) EventType() Type     { return TypeOrderOpened }
@@ -232,3 +241,5 @@ func (InvoiceIssued) EventType() Type   { return TypeInvoiceIssued }
 func (RefundIssued) EventType() Type    { return TypeRefundIssued }
 func (OrderClosed) EventType() Type     { return TypeOrderClosed }
 func (OrderReopened) EventType() Type   { return TypeOrderReopened }
+func (OrderHeld) EventType() Type       { return TypeOrderHeld }
+func (OrderResumed) EventType() Type    { return TypeOrderResumed }

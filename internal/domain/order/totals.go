@@ -271,6 +271,8 @@ func (p *projector) status() Status {
 		return StatusClosed
 	case p.reopened:
 		return StatusReopened
+	case p.held:
+		return StatusHeld
 	}
 	for _, t := range p.s.Tenders {
 		if t.Status == PaymentStatusCaptured {

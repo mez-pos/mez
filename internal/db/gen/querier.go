@@ -116,6 +116,11 @@ type Querier interface {
 	StaffSessionByTokenHash(ctx context.Context, tokenHash string) (StaffSessionByTokenHashRow, error)
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
+	//
+	// The tickets a till can switch between: everything not closed, oldest
+	// first. It is a working set, tens of orders, not history, so it is capped
+	// rather than paginated (ADR-074).
+	UnclosedOrdersForVenue(ctx context.Context, arg UnclosedOrdersForVenueParams) ([]UnclosedOrdersForVenueRow, error)
 	// Brings the index columns up to the projection just appended. The guard on
 	// the previous last_seq makes a write from a stale read touch no row, which
 	// the caller reports as a conflict rather than moving the index backwards.
