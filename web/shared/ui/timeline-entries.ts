@@ -141,6 +141,13 @@ function describe(event: OrderEvent, ctx: Context): Described {
       return { title: "Order closed", tone: "success" };
     case "order.reopened":
       return { title: "Order reopened", detail: event.payload.reason, tone: "warning", authorisedBy: event.payload.authorised_by };
+    case "invoice.reprinted":
+      return {
+        title: `Reprinted ${event.payload.invoice_no}`,
+        detail: humanise(event.payload.reason),
+        tone: "warning",
+        authorisedBy: event.payload.authorised_by,
+      };
   }
 }
 

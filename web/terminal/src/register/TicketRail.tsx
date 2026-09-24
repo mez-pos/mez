@@ -30,11 +30,13 @@ interface TicketRailProps {
   onCharge: () => void;
   /** Why Charge is disabled; null when the ticket can be charged. */
   chargeBlock: string | null;
+  /** "Charge", or "Invoice and close" once paid. */
+  chargeLabel: string;
 }
 
 export function TicketRail(props: TicketRailProps) {
   const { order, orderId, pending, currency, label, ticketCount, onTickets, onHistory, onHold, onResume } = props;
-  const { onOpenLine, onOrderDiscount, onOrderNote, onRetry, onRemove, onCharge, chargeBlock } = props;
+  const { onOpenLine, onOrderDiscount, onOrderNote, onRetry, onRemove, onCharge, chargeBlock, chargeLabel } = props;
   const held = order?.status === "held";
   const zero: Amount = { minor: 0, currency };
   const totals = order?.totals;
@@ -94,7 +96,7 @@ export function TicketRail(props: TicketRailProps) {
 
       <footer className="border-t border-line px-5 pb-5 pt-4">
         <div className="mb-3 grid grid-cols-3 gap-tap-gap">
-          <Button disabled={!live || held} onClick={onOrderDiscount}>
+          <Button disabled={!live || held || order?.invoiced} onClick={onOrderDiscount}>
             Discount
           </Button>
           <Button disabled={!order} onClick={onOrderNote}>
@@ -132,7 +134,7 @@ export function TicketRail(props: TicketRailProps) {
           aria-describedby={chargeBlock ? "charge-block" : undefined}
           className="mt-4 w-full"
         >
-          Charge
+          {chargeLabel}
         </Button>
         {chargeBlock && order && (
           <p id="charge-block" className="mt-2 text-sm text-fg-muted">

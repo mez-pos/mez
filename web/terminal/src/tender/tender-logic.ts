@@ -94,12 +94,21 @@ function sameTender(a: TenderPayment, b: TenderPayment): boolean {
   );
 }
 
-/** Why Charge is disabled on the register, or null when it is not. */
+/**
+ * Why Charge is disabled on the register, or null when it is not. A paid
+ * ticket still open is not blocked: Charge then finishes it (chargeLabel).
+ */
 export function chargeBlock(order: OrderResponse | undefined, pending: number): string | null {
   if (!order || !order.lines.some((l) => l.status === "active")) return "Nothing to charge yet.";
   if (order.status === "closed") return "This ticket is closed.";
   if (order.status === "held") return "Resume this ticket to charge it.";
   if (pending > 0) return "Wait for every item to be added.";
-  if (order.totals.balance_due.minor <= 0) return "Nothing is owed on this ticket.";
+  if (order.totals.balance_due.minor < 0) return "The guest is owed money back. Refunds come with Task 6.";
   return null;
+}
+
+/** Charge while money is owed; once paid, the same button finishes the ticket. */
+export function chargeLabel(order: OrderResponse | undefined): string {
+  if (!order || order.totals.balance_due.minor !== 0 || order.status === "closed") return "Charge";
+  return order.invoiced ? "Close ticket" : "Invoice and close";
 }

@@ -180,6 +180,7 @@ type Invoice struct {
 	Seq       int64
 	InvoiceNo string
 	Series    string
+	Reprints  int // copies printed since, each an invoice.reprinted
 }
 
 // Totals are the money of the order, all in its currency.

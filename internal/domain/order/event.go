@@ -13,24 +13,25 @@ type Type string
 
 // The event types of docs/02-domain.md, one per row of its table.
 const (
-	TypeOrderOpened     Type = "order.opened"
-	TypeLineAdded       Type = "line.added"
-	TypeLineQtyChanged  Type = "line.qty_changed"
-	TypeLineModified    Type = "line.modified"
-	TypeLineVoided      Type = "line.voided"
-	TypeLineComped      Type = "line.comped"
-	TypeDiscountApplied Type = "discount.applied"
-	TypeNoteAdded       Type = "note.added"
-	TypeCourseFired     Type = "course.fired"
-	TypeTicketSent      Type = "ticket.sent"
-	TypePaymentTendered Type = "payment.tendered"
-	TypePaymentVoided   Type = "payment.voided"
-	TypeInvoiceIssued   Type = "invoice.issued"
-	TypeRefundIssued    Type = "refund.issued"
-	TypeOrderClosed     Type = "order.closed"
-	TypeOrderReopened   Type = "order.reopened"
-	TypeOrderHeld       Type = "order.held"
-	TypeOrderResumed    Type = "order.resumed"
+	TypeOrderOpened      Type = "order.opened"
+	TypeLineAdded        Type = "line.added"
+	TypeLineQtyChanged   Type = "line.qty_changed"
+	TypeLineModified     Type = "line.modified"
+	TypeLineVoided       Type = "line.voided"
+	TypeLineComped       Type = "line.comped"
+	TypeDiscountApplied  Type = "discount.applied"
+	TypeNoteAdded        Type = "note.added"
+	TypeCourseFired      Type = "course.fired"
+	TypeTicketSent       Type = "ticket.sent"
+	TypePaymentTendered  Type = "payment.tendered"
+	TypePaymentVoided    Type = "payment.voided"
+	TypeInvoiceIssued    Type = "invoice.issued"
+	TypeRefundIssued     Type = "refund.issued"
+	TypeOrderClosed      Type = "order.closed"
+	TypeOrderReopened    Type = "order.reopened"
+	TypeOrderHeld        Type = "order.held"
+	TypeOrderResumed     Type = "order.resumed"
+	TypeInvoiceReprinted Type = "invoice.reprinted"
 )
 
 // Payload is the type-specific body of an event. Each payload type knows its
@@ -43,24 +44,25 @@ type Payload interface {
 // It is the single list of what this build understands: a type missing here
 // is an unknown type on read, by construction.
 var decoders = map[Type]func(json.RawMessage) (Payload, error){
-	TypeOrderOpened:     decodeAs[OrderOpened],
-	TypeLineAdded:       decodeAs[LineAdded],
-	TypeLineQtyChanged:  decodeAs[LineQtyChanged],
-	TypeLineModified:    decodeAs[LineModified],
-	TypeLineVoided:      decodeAs[LineVoided],
-	TypeLineComped:      decodeAs[LineComped],
-	TypeDiscountApplied: decodeAs[DiscountApplied],
-	TypeNoteAdded:       decodeAs[NoteAdded],
-	TypeCourseFired:     decodeAs[CourseFired],
-	TypeTicketSent:      decodeAs[TicketSent],
-	TypePaymentTendered: decodeAs[PaymentTendered],
-	TypePaymentVoided:   decodeAs[PaymentVoided],
-	TypeInvoiceIssued:   decodeAs[InvoiceIssued],
-	TypeRefundIssued:    decodeAs[RefundIssued],
-	TypeOrderClosed:     decodeAs[OrderClosed],
-	TypeOrderReopened:   decodeAs[OrderReopened],
-	TypeOrderHeld:       decodeAs[OrderHeld],
-	TypeOrderResumed:    decodeAs[OrderResumed],
+	TypeOrderOpened:      decodeAs[OrderOpened],
+	TypeLineAdded:        decodeAs[LineAdded],
+	TypeLineQtyChanged:   decodeAs[LineQtyChanged],
+	TypeLineModified:     decodeAs[LineModified],
+	TypeLineVoided:       decodeAs[LineVoided],
+	TypeLineComped:       decodeAs[LineComped],
+	TypeDiscountApplied:  decodeAs[DiscountApplied],
+	TypeNoteAdded:        decodeAs[NoteAdded],
+	TypeCourseFired:      decodeAs[CourseFired],
+	TypeTicketSent:       decodeAs[TicketSent],
+	TypePaymentTendered:  decodeAs[PaymentTendered],
+	TypePaymentVoided:    decodeAs[PaymentVoided],
+	TypeInvoiceIssued:    decodeAs[InvoiceIssued],
+	TypeRefundIssued:     decodeAs[RefundIssued],
+	TypeOrderClosed:      decodeAs[OrderClosed],
+	TypeOrderReopened:    decodeAs[OrderReopened],
+	TypeOrderHeld:        decodeAs[OrderHeld],
+	TypeOrderResumed:     decodeAs[OrderResumed],
+	TypeInvoiceReprinted: decodeAs[InvoiceReprinted],
 }
 
 // Types lists every event type this build knows, sorted, for tests and for

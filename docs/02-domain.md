@@ -60,7 +60,8 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 | `ticket.sent` | station, line_ids[] |
 | `payment.tendered` | method, amount, tip, reference, tendered_by |
 | `payment.voided` | payment_id, reason, authorised_by |
-| `invoice.issued` | invoice_no, series, tax_snapshot |
+| `invoice.issued` | invoice_no, series, tax_snapshot, prices (seller, lines, totals at issue) |
+| `invoice.reprinted` | invoice_no, reason, authorised_by: a copy, never a new number; allowed after a close |
 | `refund.issued` | amount, against_payment_id, reason |
 | `order.closed` | closed_by |
 | `order.reopened` | reason, authorised_by |
@@ -84,7 +85,16 @@ current menu price. If the owner changes a price at 7pm, tickets opened at 6pm
 settle at the old price. Never join to `items` to compute a historical total.
 
 The same applies to tax rates, modifiers and item names. An issued invoice
-carries a full snapshot of everything used to compute it.
+carries a full snapshot of everything used to compute it: `tax_snapshot` (the
+tax result) and `prices` (the seller, each active line as billed, and the
+totals). A preview or a reprint renders from those, never from today's menu,
+venue settings or projection (ADR-078).
+
+**An invoiced bill is frozen.** The payment that brings the balance to zero
+issues the invoice in its own transaction. From then until a reopen, no event
+may change what was sold (`line.*`, `discount.applied`): the projection
+refuses it with `ErrOrderInvoiced`. Notes, kitchen events, refunds, the close
+and `invoice.reprinted` still may.
 
 ## Invoice series
 

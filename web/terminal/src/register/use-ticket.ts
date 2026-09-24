@@ -70,6 +70,12 @@ export interface Ticket {
    * same tender, so a lost answer cannot charge twice (terminal-tender.md).
    */
   tender: (payment: TenderPayment, key: string) => Promise<void>;
+  /** Issues the invoice for a bill paid before invoices came with the payment. */
+  issueInvoice: () => Promise<void>;
+  /** Closes the ticket; the register then starts a counter ticket. */
+  close: () => Promise<void>;
+  /** Logs a copy of an invoice, with a manager's approval; no new number. */
+  reprint: (invoiceSeq: number, reason: string, approval: Override) => Promise<void>;
 }
 
 const counterSale: OpenOrder = { channel: "counter", covers: 0 };
@@ -170,5 +176,8 @@ export function useTicket(): Ticket {
     compLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/comp`, { ...approval, reason_code: reasonCode }),
     discount: (request) => post("/discounts", request),
     tender: (payment, key) => post("/payments", payment, queue, key),
+    issueInvoice: () => post("/invoice", undefined),
+    close: () => post("/close", undefined),
+    reprint: (invoiceSeq, reason, approval) => post(`/invoices/${invoiceSeq}/reprint`, { ...approval, reason }),
   };
 }

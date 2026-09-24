@@ -21,6 +21,8 @@ type Orders interface {
 	OpenOrders(ctx context.Context, venueID int64) (svcorder.OpenTickets, error)
 	OrderHistory(ctx context.Context, venueID, orderID int64) (svcorder.History, error)
 	Split(ctx context.Context, venueID, orderID int64, req svcorder.SplitRequest) (payment.Split, error)
+	Invoice(ctx context.Context, venueID, orderID, seq int64) (svcorder.IssuedInvoice, error)
+	Reprint(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ReprintInvoice) (svcorder.Result, error)
 	Hold(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 	Resume(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 
@@ -75,6 +77,9 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	mux.Handle("GET /api/v1/orders/{id}/events", s.requireDevice(s.requireStaff(
 		s.requirePermission(auth.PermOrderOpen, http.HandlerFunc(s.orderHistory)))))
 	mux.HandleFunc("/api/v1/orders/{id}/events", s.methodNotAllowed)
+	mux.Handle("GET /api/v1/orders/{id}/invoices/{seq}", s.requireDevice(s.requireStaff(
+		s.requirePermission(auth.PermPaymentTake, http.HandlerFunc(s.readInvoice)))))
+	mux.HandleFunc("/api/v1/orders/{id}/invoices/{seq}", s.methodNotAllowed)
 
 	// What the cashier at the till may do on their own.
 	post("/api/v1/orders/{id}/lines", auth.PermOrderOpen, s.addLine)
@@ -102,6 +107,7 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	post("/api/v1/orders/{id}/payments/{payment}/void", auth.PermOrderOpen, s.voidPayment)
 	post("/api/v1/orders/{id}/refunds", auth.PermOrderOpen, s.refund)
 	post("/api/v1/orders/{id}/reopen", auth.PermOrderOpen, s.reopenOrder)
+	post("/api/v1/orders/{id}/invoices/{seq}/reprint", auth.PermOrderOpen, s.reprintInvoice)
 }
 
 // The request bodies. Those that are exactly a service command are that

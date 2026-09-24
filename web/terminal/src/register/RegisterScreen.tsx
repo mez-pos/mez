@@ -19,7 +19,7 @@ import { TicketRail } from "./TicketRail";
 import { TicketsSheet } from "./TicketsSheet";
 import { HistorySheet } from "./HistorySheet";
 import { TenderScreen } from "../tender/TenderScreen";
-import { chargeBlock } from "../tender/tender-logic";
+import { chargeBlock, chargeLabel } from "../tender/tender-logic";
 import { ticketLabel } from "./ticket-time";
 import { useTicket } from "./use-ticket";
 
@@ -111,7 +111,7 @@ export function RegisterScreen() {
   const label = ticketLabel(ticket.order ?? ticket.opening);
 
   if (charging && ticket.order && charging === ticket.orderId) {
-    return <TenderScreen order={ticket.order} tender={ticket.tender} label={label} onBack={() => setCharging(null)} />;
+    return <TenderScreen order={ticket.order} ticket={ticket} label={label} onBack={() => setCharging(null)} />;
   }
 
   return (
@@ -172,6 +172,7 @@ export function RegisterScreen() {
         onRetry={ticket.retry}
         onRemove={ticket.remove}
         chargeBlock={block}
+        chargeLabel={chargeLabel(ticket.order)}
         onCharge={() => {
           setPanel(null);
           setSheet(null);

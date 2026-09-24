@@ -240,17 +240,36 @@ func waiting(s order.State, station string) []int64 {
 	return ids
 }
 
-// TenderPayment records a payment against the order.
+// TenderPayment records a payment against the order. The tender that
+// settles the bill also issues its invoice, in the same transaction: the
+// number is allocated with the payment that earned it, or not at all.
 func (s *Service) TenderPayment(ctx context.Context, meta Meta, orderID int64, cmd TenderPayment) (Result, error) {
-	return s.run(ctx, meta, orderID, "tender_payment", cmd, func(_ context.Context, _ *db.OrderTx, v venue, _ time.Time) ([]order.Payload, error) {
+	return s.run(ctx, meta, orderID, "tender_payment", cmd, func(ctx context.Context, tx *db.OrderTx, v venue, at time.Time) ([]order.Payload, error) {
 		tip := cmd.Tip
 		if tip == (money.Amount{}) {
 			tip = money.Amount{Currency: v.Currency}
 		}
-		return []order.Payload{order.PaymentTendered{
+		tendered := order.PaymentTendered{
 			Method: cmd.Method, Amount: cmd.Amount, Tip: tip, Reference: cmd.Reference, TenderedBy: meta.ActorID,
-		}}, nil
+		}
+		if !settles(tx.State, cmd.Amount) {
+			return []order.Payload{tendered}, nil
+		}
+		inv, err := issueInvoice(ctx, tx, v, at)
+		if err != nil {
+			return nil, err
+		}
+		return []order.Payload{tendered, inv}, nil
 	})
+}
+
+// settles reports whether a tender of amount brings the bill to exactly
+// zero with no invoice yet for this settlement. A tender the projection will
+// refuse (over the balance, the wrong currency) does not settle: it fails
+// on its own, before any number is allocated.
+func settles(st order.State, amount money.Amount) bool {
+	due := st.Totals.BalanceDue
+	return !st.Invoiced && !st.Totals.Total.IsZero() && amount.Currency == due.Currency && amount.Minor == due.Minor
 }
 
 // VoidPayment voids a tender.
@@ -313,5 +332,7 @@ func issueInvoice(ctx context.Context, tx *db.OrderTx, v venue, at time.Time) (o
 	if err != nil {
 		return order.InvoiceIssued{}, fmt.Errorf("encoding the tax snapshot: %w", err)
 	}
-	return order.InvoiceIssued{InvoiceNo: issued.InvoiceNo, Series: v.Series.Code, TaxSnapshot: snapshot}, nil
+	return order.InvoiceIssued{
+		InvoiceNo: issued.InvoiceNo, Series: v.Series.Code, TaxSnapshot: snapshot, Prices: pricesOf(tx.State, v.Seller),
+	}, nil
 }

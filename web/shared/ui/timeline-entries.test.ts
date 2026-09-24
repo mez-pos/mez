@@ -7,7 +7,7 @@ const at = "2026-09-21T13:05:00Z";
 const base = { at, actor_id: 1, device_id: 1 };
 
 // A whole order: opened, two lines, a void, a discount, a payment voided and
-// paid again, invoiced, refunded, closed.
+// paid again, invoiced, refunded, closed, and a copy of the invoice reprinted.
 const events: OrderEvent[] = [
   { ...base, seq: 1, type: "order.opened", payload: { channel: "counter", currency: "INR", table_id: 4, covers: 2, opened_by: 1 } },
   { ...base, seq: 2, type: "line.added", payload: { item_id: 9, name: "Cappuccino", qty: 2, unit_price: inr(18_000), modifiers: [{ modifier_id: 1, name: "Oat milk", price: inr(4_000) }], course: 1, station: "bar", tax_rate: 500 } },
@@ -21,6 +21,7 @@ const events: OrderEvent[] = [
   { ...base, seq: 10, type: "invoice.issued", payload: { invoice_no: "CAF/26-27/000042", series: "CAF", tax_snapshot: {} } },
   { ...base, seq: 11, type: "refund.issued", payload: { amount: inr(5_000), against_payment_id: 8, reason: "Cold coffee" } },
   { ...base, seq: 12, type: "order.closed", payload: { closed_by: 1 } },
+  { ...base, seq: 13, type: "invoice.reprinted", payload: { invoice_no: "CAF/26-27/000042", reason: "guest_copy", authorised_by: 2 } },
 ];
 
 const names: Record<number, string> = { 1: "Asha", 2: "Ravi" };
@@ -43,6 +44,7 @@ describe("timelineEntries", () => {
       "Invoice CAF/26-27/000042",
       "Refund",
       "Order closed",
+      "Reprinted CAF/26-27/000042",
     ]);
   });
 

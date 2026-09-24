@@ -15,16 +15,17 @@ type Permission string
 // anything not here grants nothing, because nothing asks for it.
 const (
 	// The register.
-	PermOrderOpen    Permission = "order.open"    // open an order and add to it
-	PermOrderEdit    Permission = "order.edit"    // change quantities, notes, courses, tickets
-	PermLineVoid     Permission = "line.void"     // take a line off the bill
-	PermLineComp     Permission = "line.comp"     // give a line away
-	PermDiscountGive Permission = "discount.give" // discount a line or the order
-	PermPaymentTake  Permission = "payment.take"  // tender a payment, issue the invoice, close
-	PermPaymentVoid  Permission = "payment.void"  // void a tender
-	PermRefundGive   Permission = "refund.give"   // refund against a tender
-	PermOrderReopen  Permission = "order.reopen"  // reopen a closed order
-	PermKitchenView  Permission = "kitchen.view"  // see and bump the kitchen display
+	PermOrderOpen      Permission = "order.open"      // open an order and add to it
+	PermOrderEdit      Permission = "order.edit"      // change quantities, notes, courses, tickets
+	PermLineVoid       Permission = "line.void"       // take a line off the bill
+	PermLineComp       Permission = "line.comp"       // give a line away
+	PermDiscountGive   Permission = "discount.give"   // discount a line or the order
+	PermPaymentTake    Permission = "payment.take"    // tender a payment, issue the invoice, close
+	PermPaymentVoid    Permission = "payment.void"    // void a tender
+	PermRefundGive     Permission = "refund.give"     // refund against a tender
+	PermOrderReopen    Permission = "order.reopen"    // reopen a closed order
+	PermInvoiceReprint Permission = "invoice.reprint" // print a copy of an issued invoice
+	PermKitchenView    Permission = "kitchen.view"    // see and bump the kitchen display
 
 	// The back office.
 	PermDeviceManage Permission = "device.manage" // pair and revoke devices
@@ -38,7 +39,7 @@ const (
 // them: the register first, then the office.
 var all = []Permission{
 	PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
-	PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermKitchenView,
+	PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView,
 	PermDeviceManage, PermStaffManage, PermMenuEdit, PermSettingsEdit, PermReportsView,
 }
 
@@ -144,7 +145,7 @@ type RoleTemplate struct {
 func DefaultRoles() []RoleTemplate {
 	manager := []Permission{
 		PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
-		PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermKitchenView,
+		PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView,
 		PermStaffManage, PermReportsView,
 	}
 	return []RoleTemplate{

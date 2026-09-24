@@ -13,6 +13,7 @@ import { cx } from "../../../shared/ui/cx";
 import { newKey } from "../register/ticket-key";
 import type { Ticket } from "../register/use-ticket";
 import { nextShare, splitStale } from "./split-logic";
+import { InvoicePanel } from "./InvoicePanel";
 import { SplitPanel } from "./SplitPanel";
 import { SplitShares } from "./SplitShares";
 import { attemptKey, planTender, quickTenders, type Attempt } from "./tender-logic";
@@ -20,7 +21,7 @@ import { TenderSummary, methodNames } from "./TenderSummary";
 
 interface TenderScreenProps {
   order: OrderResponse;
-  tender: Ticket["tender"];
+  ticket: Pick<Ticket, "tender" | "issueInvoice" | "reprint" | "close">;
   /** Where the ticket is: "Table 4 · 2 covers". */
   label: string;
   onBack: () => void;
@@ -45,7 +46,8 @@ interface SplitInUse {
   current: number | null;
 }
 
-export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps) {
+export function TenderScreen({ order, ticket, label, onBack }: TenderScreenProps) {
+  const { tender } = ticket;
   const currency = order.currency;
   const due = order.totals.balance_due.minor;
   const [method, setMethod] = useState<PaymentMethod>("cash");
@@ -144,6 +146,25 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
       {busy ? "Sending" : <ActionLabel method={method} amount={money(plan.charge)} />}
     </Button>
   );
+  // Once paid, the one action left is closing the ticket, after its invoice.
+  const closeAction = (
+    <Button
+      variant="primary"
+      size="charge"
+      disabled={busy || !order.invoiced}
+      onClick={() => {
+        setBusy(true);
+        setError(null);
+        ticket
+          .close()
+          .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
+          .finally(() => setBusy(false));
+      }}
+    >
+      {busy ? "Closing" : "Close ticket"}
+    </Button>
+  );
+
   const message = splitting
     ? null
     : error
@@ -158,10 +179,7 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
         {splitting && !paid ? (
           <SplitPanel order={order} onUse={takeSplit} onCancel={() => setSplitting(false)} />
         ) : paid ? (
-          <div className="m-auto text-center">
-            <p className="font-serif text-total">Paid in full</p>
-            <p className="mt-2 text-base text-fg-muted">The invoice and closing the ticket come next.</p>
-          </div>
+          <InvoicePanel order={order} ticket={ticket} onError={setError} />
         ) : (
           <>
             {inUse ? (
@@ -286,7 +304,7 @@ export function TenderScreen({ order, tender, label, onBack }: TenderScreenProps
         order={order}
         label={label}
         change={change}
-        action={paid || splitting ? null : action}
+        action={splitting ? null : paid ? closeAction : action}
         message={message}
         busy={busy}
         onBack={onBack}

@@ -71,11 +71,14 @@ func (p *projector) step(wantSeq int64, e Event) error {
 	if _, isOpen := e.Payload.(OrderOpened); !p.opened && !isOpen {
 		return ErrNotOpened
 	}
-	if p.closed && e.Type != TypeOrderReopened && e.Type != TypeNoteAdded {
+	if p.closed && e.Type != TypeOrderReopened && e.Type != TypeNoteAdded && e.Type != TypeInvoiceReprinted {
 		return ErrOrderClosed
 	}
-	if p.held && e.Type != TypeOrderResumed && e.Type != TypeNoteAdded {
+	if p.held && e.Type != TypeOrderResumed && e.Type != TypeNoteAdded && e.Type != TypeInvoiceReprinted {
 		return ErrOrderHeld
+	}
+	if p.invoiced && changesBill(e.Type) {
+		return fmt.Errorf("%w: %s", ErrOrderInvoiced, e.Type)
 	}
 	if err := p.apply(e); err != nil {
 		return err
@@ -114,6 +117,8 @@ func (p *projector) apply(e Event) error {
 		return p.voidPayment(pl)
 	case InvoiceIssued:
 		return p.invoice(e, pl)
+	case InvoiceReprinted:
+		return p.reprint(pl)
 	case RefundIssued:
 		return p.refund(e, pl)
 	case OrderClosed:
@@ -378,4 +383,16 @@ func needReason(reason string, authorisedBy int64) error {
 		return invalid("not authorised by anyone")
 	}
 	return nil
+}
+
+// changesBill reports the events that change what the guest owes for what.
+// None may follow an invoice until a reopen: the invoice already says what
+// was sold, and a sale must never close bigger or smaller than its invoice.
+// Payments, refunds, notes and the kitchen's events do not change the bill.
+func changesBill(t Type) bool {
+	switch t {
+	case TypeLineAdded, TypeLineQtyChanged, TypeLineModified, TypeLineVoided, TypeLineComped, TypeDiscountApplied:
+		return true
+	}
+	return false
 }

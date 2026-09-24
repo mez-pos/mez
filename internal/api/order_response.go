@@ -104,6 +104,7 @@ type invoiceResponse struct {
 	Seq       int64  `json:"seq"`
 	InvoiceNo string `json:"invoice_no"`
 	Series    string `json:"series"`
+	Reprints  int    `json:"reprints"`
 }
 
 type discountResponse struct {
@@ -196,20 +197,14 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 	for i, t := range s.Tickets {
 		out.Tickets[i] = ticketResponse{Seq: t.Seq, Station: t.Station, LineIDs: t.LineIDs, At: t.At.UTC()}
 	}
-	out.Tenders = make([]tenderResponse, len(s.Tenders))
-	for i, t := range s.Tenders {
-		out.Tenders[i] = tenderResponse{
-			ID: t.ID, Method: t.Method, Amount: t.Amount, Tip: t.Tip, Reference: t.Reference,
-			Status: t.Status, Refunded: t.Refunded, VoidReason: t.VoidReason,
-		}
-	}
+	out.Tenders = toTenderResponses(s.Tenders)
 	out.Refunds = make([]refundResponse, len(s.Refunds))
 	for i, r := range s.Refunds {
 		out.Refunds[i] = refundResponse{Seq: r.Seq, Amount: r.Amount, AgainstPaymentID: r.AgainstPaymentID, Reason: r.Reason}
 	}
 	out.Invoices = make([]invoiceResponse, len(s.Invoices))
 	for i, in := range s.Invoices {
-		out.Invoices[i] = invoiceResponse{Seq: in.Seq, InvoiceNo: in.InvoiceNo, Series: in.Series}
+		out.Invoices[i] = invoiceResponse{Seq: in.Seq, InvoiceNo: in.InvoiceNo, Series: in.Series, Reprints: in.Reprints}
 	}
 	out.Discounts = make([]discountResponse, len(s.Discounts))
 	for i, d := range s.Discounts {
@@ -218,14 +213,30 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 			Reason: d.Reason, Value: d.Value,
 		}
 	}
-	if s.TaxDetail.Profile != "" {
-		out.Tax = &taxResponse{
-			Profile: s.TaxDetail.Profile, Pricing: s.TaxDetail.Pricing,
-			Components: s.TaxDetail.Components, Taxable: s.TaxDetail.Taxable,
-			Tax: s.TaxDetail.Tax, Total: s.TaxDetail.Total,
+	out.Tax = toTaxResponse(s.TaxDetail)
+	return out
+}
+
+func toTenderResponses(tenders []order.Tender) []tenderResponse {
+	out := make([]tenderResponse, len(tenders))
+	for i, t := range tenders {
+		out[i] = tenderResponse{
+			ID: t.ID, Method: t.Method, Amount: t.Amount, Tip: t.Tip, Reference: t.Reference,
+			Status: t.Status, Refunded: t.Refunded, VoidReason: t.VoidReason,
 		}
 	}
 	return out
+}
+
+// toTaxResponse is nil for an untaxed venue.
+func toTaxResponse(t tax.TaxResult) *taxResponse {
+	if t.Profile == "" {
+		return nil
+	}
+	return &taxResponse{
+		Profile: t.Profile, Pricing: t.Pricing, Components: t.Components,
+		Taxable: t.Taxable, Tax: t.Tax, Total: t.Total,
+	}
 }
 
 // ticketSummary is one open ticket, for the till's ticket list: enough to

@@ -14,7 +14,7 @@ import (
 // the same events: a new field, a changed rule, a changed rounding. Leaving it
 // alone after such a change serves stale snapshots until they happen to be
 // retaken, which is the one way a snapshot can disagree with its events.
-const ProjectionVersion = 1
+const ProjectionVersion = 2
 
 // Resume carries a projection on from a State that Project or Resume
 // returned, folding in the events after it. It is the same fold with the same

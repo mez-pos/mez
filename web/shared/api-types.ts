@@ -50,7 +50,9 @@ export type ErrorCode =
   | 'split_over_allocated'
   | 'split_unassigned'
   | 'split_mismatch'
-  | 'split_after_payment';
+  | 'split_after_payment'
+  | 'invoice_not_found'
+  | 'order_invoiced';
 
 export type OrderStatus =
   | 'open'
@@ -117,6 +119,7 @@ export type Permission =
   | 'payment.void'
   | 'refund.give'
   | 'order.reopen'
+  | 'invoice.reprint'
   | 'kitchen.view'
   | 'device.manage'
   | 'staff.manage'
@@ -142,7 +145,8 @@ export type OrderEventType =
   | 'order.closed'
   | 'order.reopened'
   | 'order.held'
-  | 'order.resumed';
+  | 'order.resumed'
+  | 'invoice.reprinted';
 
 export type StreamMessageType =
   | 'hello'
@@ -283,6 +287,41 @@ export interface InvoiceIssued {
   invoice_no: string;
   series: string;
   tax_snapshot: unknown;
+  prices?: InvoicePrices;
+}
+
+export interface InvoicePrices {
+  seller: InvoiceSeller;
+  lines: InvoiceLine[];
+  gross: Money;
+  line_discounts: Money;
+  order_discounts: Money;
+  subtotal: Money;
+  taxable: Money;
+  tax: Money;
+  total: Money;
+}
+
+export interface InvoiceSeller {
+  name: string;
+  legal_name: string;
+  tax_profile: string;
+  registration?: string;
+  state_code?: string;
+}
+
+export interface InvoiceLine {
+  line_id: number;
+  name: string;
+  qty: number;
+  unit_price: Money;
+  modifiers?: LineModifier[];
+  hsn?: string;
+  gross: Money;
+  discount: Money;
+  order_discount: Money;
+  tax: Money;
+  due: Money;
 }
 
 export interface RefundIssued {
@@ -304,6 +343,12 @@ export interface OrderHeld {
 }
 
 export interface OrderResumed {
+}
+
+export interface InvoiceReprinted {
+  invoice_no: string;
+  reason: string;
+  authorised_by: number;
 }
 
 export interface OrderEventOf<T extends OrderEventType, P> {
@@ -334,7 +379,8 @@ export type OrderEvent =
   | OrderEventOf<'order.closed', OrderClosed>
   | OrderEventOf<'order.reopened', OrderReopened>
   | OrderEventOf<'order.held', OrderHeld>
-  | OrderEventOf<'order.resumed', OrderResumed>;
+  | OrderEventOf<'order.resumed', OrderResumed>
+  | OrderEventOf<'invoice.reprinted', InvoiceReprinted>;
 
 export interface ApiError {
   code: ErrorCode;
@@ -559,6 +605,7 @@ export interface InvoiceResponse {
   seq: number;
   invoice_no: string;
   series: string;
+  reprints: number;
 }
 
 export interface DiscountResponse {
@@ -675,6 +722,24 @@ export interface ShareResponse {
   payer: number;
   amount: Money;
   line_ids: number[];
+}
+
+export interface IssuedInvoiceResponse {
+  seq: number;
+  invoice_no: string;
+  series: string;
+  issued_at: string;
+  time_zone: string;
+  tax?: TaxResponse;
+  prices?: InvoicePrices;
+  reprints: number;
+  tenders: TenderResponse[];
+}
+
+export interface ReprintRequest {
+  authorised_by: string;
+  pin: string;
+  reason: string;
 }
 
 export interface StationResponse {

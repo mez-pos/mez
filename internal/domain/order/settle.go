@@ -72,6 +72,11 @@ func (p *projector) invoice(e Event, pl InvoiceIssued) error {
 	if due := p.s.Totals.BalanceDue; !due.IsZero() {
 		return fmt.Errorf("%w: %d outstanding", ErrBalanceDue, due.Minor)
 	}
+	// A price snapshot must be of this bill: an invoice that prints one total
+	// and settles another is worse than one with no snapshot.
+	if pl.Prices != nil && pl.Prices.Total != p.s.Totals.Total {
+		return invalid("the invoice's prices total %d, the bill is %d", pl.Prices.Total.Minor, p.s.Totals.Total.Minor)
+	}
 	p.invoiced = true
 	p.s.Invoiced = true
 	p.s.Invoices = append(p.s.Invoices, Invoice{Seq: e.Seq, InvoiceNo: pl.InvoiceNo, Series: pl.Series})
@@ -236,4 +241,19 @@ func (p *projector) findTender(id int64) (*Tender, error) {
 		}
 	}
 	return nil, fmt.Errorf("%w: %d", ErrPaymentNotFound, id)
+}
+
+// reprint records a copy of an issued invoice. It changes no money and
+// allocates no number; it only counts, so a Z-report can show reprints.
+func (p *projector) reprint(pl InvoiceReprinted) error {
+	if err := needReason(pl.Reason, pl.AuthorisedBy); err != nil {
+		return err
+	}
+	for i := range p.s.Invoices {
+		if p.s.Invoices[i].InvoiceNo == pl.InvoiceNo {
+			p.s.Invoices[i].Reprints++
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: %q", ErrInvoiceNotFound, pl.InvoiceNo)
 }

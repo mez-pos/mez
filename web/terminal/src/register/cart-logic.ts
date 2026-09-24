@@ -28,6 +28,13 @@ export const compReasons: readonly Reason[] = [
   { code: "manager_call", label: "Manager's call" },
 ];
 
+export const reprintReasons: readonly Reason[] = [
+  { code: "guest_copy", label: "Guest asked for a copy" },
+  { code: "printer_jam", label: "Printer jammed" },
+  { code: "lost", label: "Receipt lost" },
+  { code: "accounts", label: "For the accounts" },
+];
+
 export const discountReasons: readonly Reason[] = [
   { code: "regular", label: "Regular" },
   { code: "staff", label: "Staff" },

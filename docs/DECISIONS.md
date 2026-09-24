@@ -1975,3 +1975,44 @@ the shares and takes one tender per share.
 Because: a split that loses or invents a paisa is money gone, and the
 domain package already refuses one; the UI only has to not do it again.
 Cost: a split does not survive leaving the tender screen.
+
+## ADR-078 - The invoice comes with the settling payment, and freezes the bill
+2026-09 · Status: accepted
+Decision: the tender that brings the balance to exactly zero also issues
+the invoice, in the same transaction (`TenderPayment`), with a price
+snapshot beside the tax snapshot. Reprints are an event, never a number.
+- **Numbered at settlement, not at close.** Before, the number waited for
+  Close; a ticket paid and never closed had none, and the preview had
+  nothing to show. Now the payment and its number commit or roll back
+  together. A tender the order refuses allocates nothing. Close still
+  issues one for a bill that somehow has none, and `POST /invoice` remains
+  for bills paid before this change.
+- **`invoice.issued` gains `prices`:** the seller as the venue stood
+  (trading and legal name, profile, registration, GST state code), each
+  active line as billed, and the totals. The projection refuses a snapshot
+  whose total is not the bill's. Old invoices have none and still read.
+- **An invoiced bill is frozen until a reopen** (`ErrOrderInvoiced`,
+  `order_invoiced`). Numbering at settlement opened a gap Close never had:
+  a line added to a paid, invoiced ticket would have closed a sale bigger
+  than its invoice. Refunds and payment voids are Task 6's to rule on.
+- **`invoice.reprinted {invoice_no, reason, authorised_by}`,** allowed on a
+  closed or held order, counted on `State.Invoices[].Reprints`
+  (`ProjectionVersion` 2). It needs `invoice.reprint` from the approver,
+  checked with their PIN like a void; migration 00007 grants it to owner
+  and manager roles that still have their default names. Printing the copy
+  is the print queue's (Task 5); the event is the log.
+- **Routes address an invoice by the seq of its `invoice.issued`,**
+  because numbers hold slashes: `GET /orders/{id}/invoices/{seq}`,
+  `POST /orders/{id}/invoices/{seq}/reprint`.
+- The till: "Paid in full" shows the invoice as a paper slip from its
+  snapshots, Close ticket, and Reprint behind a manager's approval. Charge
+  on a paid, open ticket reads Close ticket (or Invoice and close).
+- Checked in a browser against the built binary: a ticket paid before this
+  change invoiced as INV/26-27/000001, reprinted once with the owner's PIN
+  (same number, "Reprinted 1 time"), closed; a fresh espresso paid in cash
+  was INV/26-27/000002 at once; a line added after was refused in words.
+  Migration 00007 applied to that older database.
+Because: an invoice is a legal record of what was sold. It must be numbered
+with the money that settled it and never disagree with the bill.
+Cost: a guest who wants one more coffee after paying needs a new ticket or
+a manager's reopen.

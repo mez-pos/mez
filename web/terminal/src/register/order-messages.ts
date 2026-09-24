@@ -19,6 +19,8 @@ const words: Partial<Record<ErrorCode, string>> = {
   order_not_held: "This ticket isn't on hold.",
   venue_not_configured: "This venue's tax settings aren't finished. Ask a manager.",
   over_tender: "That's more than is owed now. Look at the amount due again.",
+  order_invoiced: "This bill is invoiced. Close it and start a new ticket.",
+  invoice_not_found: "That invoice isn't on this ticket.",
   split_invalid: "That split doesn't work. Check the number of payers.",
   split_over_allocated: "Those amounts come to more than is owed.",
   split_unassigned: "Every item needs someone to pay for it.",

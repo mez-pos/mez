@@ -151,6 +151,10 @@ func TestASaleOverHTTP(t *testing.T) {
 	if !paid.Order.Totals.BalanceDue.IsZero() || paid.Order.Totals.Tips.Minor != 2000 || len(paid.Order.Tenders) != 2 {
 		t.Fatalf("after paying: %+v", paid.Order.Totals)
 	}
+	// The settling tender brings its invoice with it.
+	if len(paid.Events) != 2 || len(paid.Order.Invoices) != 1 || paid.Order.Invoices[0].InvoiceNo != "INV/26-27/000001" {
+		t.Errorf("settling tender: %d events, invoices %+v", len(paid.Events), paid.Order.Invoices)
+	}
 
 	closed := r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/close", `{}`)
 	if closed.Order.Status != "closed" || closed.Order.ClosedAt == nil {
@@ -159,8 +163,8 @@ func TestASaleOverHTTP(t *testing.T) {
 	if len(closed.Order.Invoices) != 1 || closed.Order.Invoices[0].InvoiceNo != "INV/26-27/000001" {
 		t.Errorf("invoices = %+v", closed.Order.Invoices)
 	}
-	if len(closed.Events) != 2 {
-		t.Errorf("close appended %d events, want the invoice and the close", len(closed.Events))
+	if len(closed.Events) != 1 {
+		t.Errorf("close appended %d events, want only the close", len(closed.Events))
 	}
 
 	// And the order reads back the same as the last command answered.
@@ -214,10 +218,11 @@ func TestTheRestOfTheCommands(t *testing.T) {
 		t.Errorf("course 1 was not fired")
 	}
 
-	// Pay it, void that payment, pay again, invoice, close, reopen, refund.
+	// Pay part, void that payment, pay the lot (which invoices), close,
+	// reopen, refund.
 	due := res.Order.Totals.BalanceDue
 	pay := fmt.Sprintf(`{"method":"card","amount":{"minor":%d,"currency":"INR"}}`, due.Minor)
-	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/payments", pay)
+	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/payments", `{"method":"card","amount":{"minor":100,"currency":"INR"}}`)
 	tender := res.Order.Tenders[0].ID
 	res = r.ok(t, http.MethodPost, fmt.Sprintf("/api/v1/orders/%s/payments/%d/void", id, tender),
 		`{`+r.override()+`,"reason":"wrong card"}`)
@@ -226,10 +231,12 @@ func TestTheRestOfTheCommands(t *testing.T) {
 	}
 	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/payments", pay)
 	tender = res.Order.Tenders[1].ID
-
-	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/invoice", ``)
 	if len(res.Order.Invoices) != 1 {
 		t.Fatalf("invoices = %+v", res.Order.Invoices)
+	}
+	status, _, apiErr := r.call(t, http.MethodPost, "/api/v1/orders/"+id+"/invoice", ``)
+	if status != http.StatusConflict || apiErr.Code != CodeAlreadyInvoiced {
+		t.Errorf("a second invoice: %d %s", status, apiErr.Code)
 	}
 	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/close", ``)
 	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/reopen",

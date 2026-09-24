@@ -131,6 +131,15 @@ var (
 	// in between.
 	ErrAlreadyInvoiced = errors.New("order is already invoiced")
 
+	// ErrOrderInvoiced means the bill was changed after its invoice was
+	// issued. The invoice is what was sold; a change needs a reopen first,
+	// and then the next settlement is its own invoice.
+	ErrOrderInvoiced = errors.New("the bill is invoiced: reopen it to change it")
+
+	// ErrInvoiceNotFound means an event named an invoice number this order
+	// was never issued.
+	ErrInvoiceNotFound = errors.New("no such invoice on this order")
+
 	// ErrCourseAlreadyFired means a course was fired twice.
 	ErrCourseAlreadyFired = errors.New("course is already fired")
 

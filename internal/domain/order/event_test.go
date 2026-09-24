@@ -44,6 +44,13 @@ func samplePayloads() []Payload {
 		PaymentTendered{Method: PaymentCard, Amount: inr(52000), Tip: inr(5000), Reference: "AUTH 0042", TenderedBy: 11},
 		PaymentVoided{PaymentID: 9, Reason: "double charge", AuthorisedBy: 3},
 		InvoiceIssued{InvoiceNo: "NF/2026-27/000123", Series: "NF", TaxSnapshot: json.RawMessage(`{"profile":"gst","cgst":1300}`)},
+		InvoiceIssued{InvoiceNo: "NF/2026-27/000124", Series: "NF", TaxSnapshot: json.RawMessage(`{}`), Prices: &InvoicePrices{
+			Seller: InvoiceSeller{Name: "Filter Coffee House", LegalName: "FCH LLP", TaxProfile: "gst_in", Registration: "29ABCDE1234F1Z5", StateCode: "29"},
+			Lines: []InvoiceLine{{LineID: 2, Name: "Filter coffee", Qty: 2, UnitPrice: inr(4000), HSN: "996331",
+				Gross: inr(8000), Discount: inr(0), OrderDiscount: inr(0), Tax: inr(400), Due: inr(8400)}},
+			Gross: inr(8000), LineDiscounts: inr(0), OrderDiscounts: inr(0), Subtotal: inr(8000), Taxable: inr(8000), Tax: inr(400), Total: inr(8400),
+		}},
+		InvoiceReprinted{InvoiceNo: "NF/2026-27/000123", Reason: "guest_copy", AuthorisedBy: 2},
 		RefundIssued{Amount: inr(22000), AgainstPaymentID: 9, Reason: "cold food"},
 		OrderClosed{ClosedBy: 11},
 		OrderReopened{Reason: "tip entered wrong", AuthorisedBy: 3},
@@ -83,8 +90,9 @@ func TestSamplesCoverEveryType(t *testing.T) {
 			t.Errorf("no round-trip sample for %q", typ)
 		}
 	}
-	// 16 since line.modified (ADR-071), 18 since order.held and resumed (ADR-074).
-	if got, want := len(Types()), 18; got != want {
+	// 16 since line.modified (ADR-071), 18 since order.held and resumed (ADR-074),
+	// 19 since invoice.reprinted (ADR-078).
+	if got, want := len(Types()), 19; got != want {
 		t.Errorf("Types() has %d types, docs/02-domain.md lists %d", got, want)
 	}
 }

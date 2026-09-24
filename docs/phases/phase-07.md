@@ -21,7 +21,7 @@ Phase 06.
   remaining balance. The three-way-split-of-an-odd-total case must be visibly
   correct, to the paise, on screen.
 
-- [ ] **Task 3 — Invoice issue.**
+- [x] **Task 3 — Invoice issue.**
   Full settlement allocates an invoice number inside the settling transaction
   and emits `invoice.issued` with a complete tax and price snapshot. Invoice
   preview on screen. Reprint is a separate, logged, permissioned action that

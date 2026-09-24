@@ -69,6 +69,7 @@ type venue struct {
 	Taxes     order.Taxes
 	Series    invoice.Series
 	LateAfter time.Duration
+	Seller    order.InvoiceSeller // as an invoice issued now names the venue
 }
 
 // loadVenue reads a venue and its settings. It runs on every command: two
@@ -111,7 +112,23 @@ func venueFrom(row gen.Venue, settings map[string]string) (venue, error) {
 	return venue{
 		ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, Series: series,
 		LateAfter: lateAfter(settings[SettingTicketLateMinutes]),
+		Seller:    sellerFor(row, settings),
 	}, nil
+}
+
+// sellerFor is the venue as its invoices name it. The legal name falls back
+// to the trading name, which is what setup does when none is given.
+func sellerFor(row gen.Venue, settings map[string]string) order.InvoiceSeller {
+	s := order.InvoiceSeller{
+		Name: row.Name, LegalName: row.LegalName, TaxProfile: row.TaxProfile, Registration: row.TaxRegistrationID,
+	}
+	if s.LegalName == "" {
+		s.LegalName = row.Name
+	}
+	if row.TaxProfile == "gst_in" {
+		s.StateCode = settings[SettingTaxStateCode]
+	}
+	return s
 }
 
 // taxesFor builds the venue's tax regime from its profile, registration and

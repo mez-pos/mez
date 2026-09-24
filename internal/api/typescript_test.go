@@ -80,6 +80,7 @@ var eventTypes = []struct {
 	{order.TypeOrderReopened, order.OrderReopened{}, "OrderReopened"},
 	{order.TypeOrderHeld, order.OrderHeld{}, "OrderHeld"},
 	{order.TypeOrderResumed, order.OrderResumed{}, "OrderResumed"},
+	{order.TypeInvoiceReprinted, order.InvoiceReprinted{}, "InvoiceReprinted"},
 }
 
 // errorCodes is every code the API answers with. A client switches on
@@ -96,6 +97,7 @@ var errorCodes = []ErrorCode{
 	CodeInvalidTransition, CodeInvalidPayload, CodeCurrencyMismatch,
 	CodeIdempotencyKeyReused, CodeVenueNotConfigured,
 	CodeSplitInvalid, CodeSplitOverAllocated, CodeSplitUnassigned, CodeSplitMismatch, CodeSplitAfterPayment,
+	CodeInvoiceNotFound, CodeOrderInvoiced,
 }
 
 // generate builds the whole file.
@@ -194,7 +196,7 @@ func generate() (*ts.Generator, error) {
 		lineResponse{}, noteResponse{}, ticketResponse{}, tenderResponse{},
 		refundResponse{}, invoiceResponse{}, discountResponse{}, totalsResponse{},
 		taxResponse{}, orderResponse{}, commandResponse{}, ticketSummary{}, openTicketsResponse{}, nameResponse{}, historyResponse{},
-		splitResponse{}, shareResponse{},
+		splitResponse{}, shareResponse{}, issuedInvoiceResponse{}, reprintRequest{},
 		// The menu.
 		stationResponse{}, courseResponse{}, categoryResponse{}, modifierResponse{},
 		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},

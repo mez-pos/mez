@@ -65,12 +65,17 @@ var scenarios = []struct {
 			pay(PaymentCash, 44000), // 3
 			invoiceNo("NF/2026-27/000001"),
 			closed,
+			// The guest comes back for a copy: after the close, no new number.
+			InvoiceReprinted{InvoiceNo: "NF/2026-27/000001", Reason: "guest_copy", AuthorisedBy: 2},
 		},
 		want:   figures{gross: 44000, total: 44000, paid: 44000},
 		status: StatusClosed,
 		check: func(t *testing.T, s State) {
 			if len(s.Invoices) != 1 || s.Invoices[0].InvoiceNo != "NF/2026-27/000001" || s.ClosedAt.IsZero() {
 				t.Errorf("invoices %+v, closed at %v", s.Invoices, s.ClosedAt)
+			}
+			if s.Invoices[0].Reprints != 1 {
+				t.Errorf("reprints = %d, want 1", s.Invoices[0].Reprints)
 			}
 		},
 	},

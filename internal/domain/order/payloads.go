@@ -189,10 +189,64 @@ type PaymentVoided struct {
 // State.TaxDetail at the moment of issue, a tax.TaxResult as JSON. It is held
 // raw so the invoice keeps exactly what was printed, whatever later builds
 // make of the type.
+//
+// Prices is the rest of the printed invoice as it stood at issue: who sold,
+// each line as billed, and the totals. A reprint renders from it, never from
+// today's menu, venue or projection. Invoices issued before it existed
+// (phase 07, Task 3) have none.
 type InvoiceIssued struct {
 	InvoiceNo   string          `json:"invoice_no"`
 	Series      string          `json:"series"`
 	TaxSnapshot json.RawMessage `json:"tax_snapshot"`
+	Prices      *InvoicePrices  `json:"prices,omitempty"`
+}
+
+// InvoicePrices is the price snapshot on an invoice.
+type InvoicePrices struct {
+	Seller InvoiceSeller `json:"seller"`
+	Lines  []InvoiceLine `json:"lines"`
+	// The bill's totals at issue, as Totals names them.
+	Gross          money.Amount `json:"gross"`
+	LineDiscounts  money.Amount `json:"line_discounts"`
+	OrderDiscounts money.Amount `json:"order_discounts"`
+	Subtotal       money.Amount `json:"subtotal"`
+	Taxable        money.Amount `json:"taxable"`
+	Tax            money.Amount `json:"tax"`
+	Total          money.Amount `json:"total"`
+}
+
+// InvoiceSeller is the venue as the invoice names it, at issue.
+type InvoiceSeller struct {
+	Name         string `json:"name"`
+	LegalName    string `json:"legal_name"`
+	TaxProfile   string `json:"tax_profile"`
+	Registration string `json:"registration,omitempty"` // GSTIN, VAT number
+	StateCode    string `json:"state_code,omitempty"`   // GST place of supply
+}
+
+// InvoiceLine is one active line of the bill as it was invoiced.
+type InvoiceLine struct {
+	LineID        int64        `json:"line_id"`
+	Name          string       `json:"name"`
+	Qty           int64        `json:"qty"`
+	UnitPrice     money.Amount `json:"unit_price"`
+	Modifiers     []Modifier   `json:"modifiers,omitempty"`
+	HSN           string       `json:"hsn,omitempty"`
+	Gross         money.Amount `json:"gross"`
+	Discount      money.Amount `json:"discount"`
+	OrderDiscount money.Amount `json:"order_discount"`
+	Tax           money.Amount `json:"tax"`
+	Due           money.Amount `json:"due"`
+}
+
+// InvoiceReprinted records a copy of an issued invoice printed again. It
+// allocates nothing: the copy carries the original number. It needs a
+// reason and whoever allowed it, and it may follow a close, so a reprint of
+// last week's bill is on that bill's own timeline.
+type InvoiceReprinted struct {
+	InvoiceNo    string `json:"invoice_no"`
+	Reason       string `json:"reason"`
+	AuthorisedBy int64  `json:"authorised_by"`
 }
 
 // RefundIssued returns money against a captured payment.
@@ -225,21 +279,22 @@ type OrderResumed struct{}
 
 // EventType implementations: each payload names its own type.
 
-func (OrderOpened) EventType() Type     { return TypeOrderOpened }
-func (LineAdded) EventType() Type       { return TypeLineAdded }
-func (LineQtyChanged) EventType() Type  { return TypeLineQtyChanged }
-func (LineModified) EventType() Type    { return TypeLineModified }
-func (LineVoided) EventType() Type      { return TypeLineVoided }
-func (LineComped) EventType() Type      { return TypeLineComped }
-func (DiscountApplied) EventType() Type { return TypeDiscountApplied }
-func (NoteAdded) EventType() Type       { return TypeNoteAdded }
-func (CourseFired) EventType() Type     { return TypeCourseFired }
-func (TicketSent) EventType() Type      { return TypeTicketSent }
-func (PaymentTendered) EventType() Type { return TypePaymentTendered }
-func (PaymentVoided) EventType() Type   { return TypePaymentVoided }
-func (InvoiceIssued) EventType() Type   { return TypeInvoiceIssued }
-func (RefundIssued) EventType() Type    { return TypeRefundIssued }
-func (OrderClosed) EventType() Type     { return TypeOrderClosed }
-func (OrderReopened) EventType() Type   { return TypeOrderReopened }
-func (OrderHeld) EventType() Type       { return TypeOrderHeld }
-func (OrderResumed) EventType() Type    { return TypeOrderResumed }
+func (OrderOpened) EventType() Type      { return TypeOrderOpened }
+func (LineAdded) EventType() Type        { return TypeLineAdded }
+func (LineQtyChanged) EventType() Type   { return TypeLineQtyChanged }
+func (LineModified) EventType() Type     { return TypeLineModified }
+func (LineVoided) EventType() Type       { return TypeLineVoided }
+func (LineComped) EventType() Type       { return TypeLineComped }
+func (DiscountApplied) EventType() Type  { return TypeDiscountApplied }
+func (NoteAdded) EventType() Type        { return TypeNoteAdded }
+func (CourseFired) EventType() Type      { return TypeCourseFired }
+func (TicketSent) EventType() Type       { return TypeTicketSent }
+func (PaymentTendered) EventType() Type  { return TypePaymentTendered }
+func (PaymentVoided) EventType() Type    { return TypePaymentVoided }
+func (InvoiceIssued) EventType() Type    { return TypeInvoiceIssued }
+func (RefundIssued) EventType() Type     { return TypeRefundIssued }
+func (OrderClosed) EventType() Type      { return TypeOrderClosed }
+func (OrderReopened) EventType() Type    { return TypeOrderReopened }
+func (OrderHeld) EventType() Type        { return TypeOrderHeld }
+func (OrderResumed) EventType() Type     { return TypeOrderResumed }
+func (InvoiceReprinted) EventType() Type { return TypeInvoiceReprinted }

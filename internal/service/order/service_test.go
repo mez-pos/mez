@@ -154,10 +154,17 @@ func TestAWholeSale(t *testing.T) {
 	if closed.State.Status != order.StatusClosed || closed.State.ClosedBy != 7 {
 		t.Fatalf("closed = %s by %d", closed.State.Status, closed.State.ClosedBy)
 	}
-	if len(closed.Events) != 2 || closed.Events[0].Type != order.TypeInvoiceIssued || closed.Events[1].Type != order.TypeOrderClosed {
-		t.Fatalf("close appended %+v, want invoice.issued then order.closed", closed.Events)
+	if len(paid.Events) != 2 || paid.Events[1].Type != order.TypeInvoiceIssued {
+		t.Fatalf("the settling tender appended %+v, want payment.tendered then invoice.issued", paid.Events)
 	}
-	issued := closed.Events[0].Payload.(order.InvoiceIssued)
+	if len(closed.Events) != 1 || closed.Events[0].Type != order.TypeOrderClosed {
+		t.Fatalf("close appended %+v, want only order.closed: the invoice came with the payment", closed.Events)
+	}
+	issued := paid.Events[1].Payload.(order.InvoiceIssued)
+	if p := issued.Prices; p == nil || p.Total != inr(37800) || len(p.Lines) != 2 || p.Lines[0].Name != "Masala dosa" ||
+		p.Seller.Registration != "29ABCDE1234F1Z5" || p.Seller.StateCode != "29" || p.Seller.Name != "Filter Coffee House" {
+		t.Errorf("price snapshot = %+v", issued.Prices)
+	}
 	if issued.InvoiceNo != "INV/26-27/000001" || issued.Series != "INV" {
 		t.Errorf("invoice = %+v", issued)
 	}
@@ -169,7 +176,7 @@ func TestAWholeSale(t *testing.T) {
 		t.Errorf("tax snapshot %+v, want the bill's tax detail with 18.00 of GST", snapshot)
 	}
 
-	for _, e := range closed.Events {
+	for _, e := range append(paid.Events, closed.Events...) {
 		if !e.At.Equal(now) || e.ActorID != 7 || e.DeviceID != 3 {
 			t.Errorf("event %s stamped %v by %d on %d", e.Type, e.At, e.ActorID, e.DeviceID)
 		}
@@ -347,10 +354,22 @@ func TestInvoicesStayGapless(t *testing.T) {
 	if _, err := s.IssueInvoice(ctx, m, a); !errors.Is(err, order.ErrBalanceDue) {
 		t.Fatalf("invoice with a balance: err = %v", err)
 	}
-	must(t)(s.TenderPayment(ctx, m, a, TenderPayment{Method: order.PaymentCash, Amount: inr(4200)}))
-	inv := must(t)(s.IssueInvoice(ctx, m, a))
+	// A tender the order refuses allocates nothing, though it would have
+	// settled the bill had it been in the right currency.
+	if _, err := s.TenderPayment(ctx, m, a, TenderPayment{Method: order.PaymentCash, Amount: money.Amount{Minor: 4200, Currency: "USD"}}); err == nil {
+		t.Fatal("a dollar tender on a rupee bill was taken")
+	}
+	part := must(t)(s.TenderPayment(ctx, m, a, TenderPayment{Method: order.PaymentCash, Amount: inr(2000)}))
+	if len(part.State.Invoices) != 0 {
+		t.Fatalf("a part payment issued %+v", part.State.Invoices)
+	}
+	// The tender that settles the bill issues its invoice in the same command.
+	inv := must(t)(s.TenderPayment(ctx, m, a, TenderPayment{Method: order.PaymentCard, Amount: inr(2200)}))
+	if len(inv.Events) != 2 || inv.Events[1].Type != order.TypeInvoiceIssued {
+		t.Fatalf("settling tender appended %+v, want payment.tendered then invoice.issued", inv.Events)
+	}
 	if no := inv.State.Invoices[0].InvoiceNo; no != "INV/26-27/000001" {
-		t.Fatalf("first invoice %s: the refused one left a gap", no)
+		t.Fatalf("first invoice %s: the refused ones left a gap", no)
 	}
 	if _, err := s.IssueInvoice(ctx, m, a); !errors.Is(err, order.ErrAlreadyInvoiced) {
 		t.Errorf("second invoice: err = %v", err)

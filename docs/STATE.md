@@ -11,18 +11,19 @@ File: `docs/phases/phase-07.md`. Phase 06 is complete.
 
 ## Last completed task
 
-**Phase 07, Task 2: splits** (ADR-077, `terminal-tender.md`). A read-only
-`POST /orders/{id}/split` runs the domain split package; the tender
-screen's split panel does evenly, by amount, by item and by guest, and
-each share is paid whole in one tender. Checked in a browser: ₹410.00
-three ways (136.67, 136.67, 136.66) paid by cash, card and UPI.
+**Phase 07, Task 3: invoice issue** (ADR-078). The settling tender issues
+the invoice in its transaction, with a price snapshot (seller, lines,
+totals). An invoiced bill is frozen until a reopen. Paid in full shows the
+invoice preview, Close ticket, and a manager-approved Reprint that logs
+`invoice.reprinted` and never takes a number. Migration 00007 grants
+`invoice.reprint`. Checked in a browser.
 
 ## Next task
 
-**Phase 07, Task 3: invoice issue.** The number is allocated inside the
-settling transaction with a full tax and price snapshot, an on-screen
-preview, and a logged, permissioned reprint that never takes a new
-number. The tender screen stops at "Paid in full"; that is where it goes.
+**Phase 07, Task 4: ESC/POS driver.** `internal/device/escpos`: a command
+builder (text, alignment, sizes, bold, barcode, QR, cut, drawer kick), the
+receipt, kitchen ticket and Z-report layouts, and `--test-print`. The
+receipt layout renders from the invoice's snapshots (ADR-078).
 
 ## Known broken / in progress
 
@@ -43,12 +44,14 @@ number. The tender screen stops at "Paid in full"; that is where it goes.
 - Token gaps (ADR-062): five paper roles are stand-ins; `--vermilion-on`
   on the paper fill is 3.99:1, under AA, and shows on the paper primary
   button in the gallery.
-- `invoice.issued` needs a zero balance (ADR-046), so a bill printed before
-  payment has no number. Phase 07 must work that way or revisit it.
+- A bill printed before payment has no number: numbers come with the
+  settling payment (ADR-046, ADR-078). Task 4's pre-payment bill layout
+  must say it is not a tax invoice.
 - A split lives only on the tender screen (ADR-077); by guest picks seats
   there until lines carry them (phase 08).
-- A paid ticket still takes lines and discounts until Task 3 closes it.
-  The server does not cap a tender's `reference`; the till caps it at 40.
+- The server does not cap a tender's `reference`; the till caps it at 40.
+- A payment can still be voided after its invoice (ADR-078): Task 6 must
+  decide that, with refunds.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`
   does not escape the path in its `file:` DSN.
 - To try the apps: `nofiltr setup -demo-menu` prints a pairing code

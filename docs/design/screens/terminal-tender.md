@@ -112,7 +112,10 @@ Opened from **Charge** on the register. It takes the register's place inside
 | Tap a share | Chooses it | | The tender is for that share |
 | A share's tender | Pays the share | `payment.tendered` | Struck through, "Paid"; the next unpaid share is chosen |
 | Clear split | Back to the whole balance | | |
-| Balance reaches zero | | | "Paid in full" in place of the pad; Back to ticket. The invoice and closing arrive with Task 3 |
+| Balance reaches zero | The settling tender issues the invoice in the same transaction | `payment.tendered`, `invoice.issued` | The invoice preview in place of the pad; the rail's button becomes **Close ticket** |
+| Close ticket | Closes the order | `order.closed` | The register, with a new counter ticket |
+| Reprint | A reason (guest copy, printer jammed, receipt lost, for the accounts), then a manager's name and PIN | `invoice.reprinted` | "Reprinted 1 time" on the preview; the number never changes |
+| Invoice and close, on a ticket paid before Task 3 | Opens the paid screen with **Issue the invoice** | `invoice.issued` | The preview |
 | Back to ticket | Returns to the register | | The ticket shows its payments and balance |
 | Refused | | | The server's reason in words under the tender button; the fields stay, and a retry reuses the key |
 
@@ -123,8 +126,18 @@ Opened from **Charge** on the register. It takes the register's place inside
 - **Partly paid:** the payments list shows what was taken; amount due is
   what is left. Back on the register, the rail shows Paid and Balance under
   the total, and Charge takes the balance.
-- **Paid in full:** the tender column says "Paid in full" in Instrument
-  Serif with the last change due, and Back to ticket.
+- **Paid in full:** the tender column shows "Paid in full", **Reprint**,
+  and the **invoice preview**: a paper slip (`data-surface="paper"`) the
+  shape of the 80mm receipt, drawn from the invoice's own snapshots. Seller,
+  registration, "Tax invoice" and the number, when and where issued; each
+  line with its modifiers and HSN/SAC; taxable value, each tax component,
+  the total; the payments and tips; how many times it has been reprinted.
+  The rail keeps the last change due, and its button is **Close ticket**.
+  An invoice issued before prices were kept says so instead of the lines.
+- **Invoiced:** on the register, Discount is disabled and a line rung up
+  is refused with "This bill is invoiced. Close it and start a new
+  ticket." Charge reads **Close ticket** (or **Invoice and close** for a
+  bill paid before invoices came with the payment).
 - **Moved on another till:** the balance redraws from the stream. A card
   amount above the new balance is lowered to it; a cash tender records at
   most the new balance.
@@ -165,9 +178,9 @@ Departures:
   money arithmetic in the UI; the pad needs none. Percent presets can come
   back once the server offers them.
 - **No receipt choice.** Printing arrives with Tasks 4 and 5; WhatsApp and
-  email have no feature.
-- **"Settle & print" is split in two.** This screen records tenders. The
-  invoice and print are Task 3 onwards, and the button says what it does.
+  email have no feature. Reprint logs the copy now and prints it then.
+- **"Settle & print" is split in two.** The settling tender issues the
+  invoice; Close ticket closes. Printing joins in with the print queue.
 - **No "Void bill" here.** Voiding a payment is Task 6's refund and void
   flow, behind a manager.
 - **Quick-tender is the next round amounts above the balance**, not fixed
