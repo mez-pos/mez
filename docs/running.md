@@ -188,6 +188,34 @@ separately and all read `unknown` today, because the subsystems that answer them
 are built in later phases. `commit` and `build_date` identify exactly which
 build is running, which is the first thing to establish on a support call.
 
+## Testing your receipt printer
+
+Before your first service, check the printer from the same computer. You do
+not need to set anything up first, and the server does not need to be running:
+
+```sh
+./nofiltr --test-print 192.168.1.50
+```
+
+Use the printer's own IP address; its self-test slip usually shows it (hold
+the feed button while switching it on). Port 9100 is assumed; add `:9101` if
+yours differs. The printer should print one slip with:
+
+- a line of digits `1234567890...` that fills exactly one line. If it wraps or
+  stops short, the paper width is wrong. `-paper 58` is for 58mm rolls; 80mm
+  is the default.
+- left, centre and right text, bold, underline, and large text
+- a barcode and a QR code. Scan both with a phone: the barcode reads
+  `NF/26-27/000001`, and the QR code reads `Nofiltr printer test OK`.
+- a cut at the end
+
+Add `-drawer` to open the cash drawer plugged into the printer as well. If
+nothing prints, the command tells you it could not connect: check that the
+printer is on, on the same network as this computer, and at that address.
+
+`-save test.bin` writes the page to a file instead, so you can send it to a
+printer shared by Windows as raw bytes (`copy /b test.bin \\THIS-PC\Printer`).
+
 ## Stopping it
 
 Ctrl+C, or `SIGTERM` from a service manager. Either way it stops accepting new

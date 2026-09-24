@@ -11,19 +11,20 @@ File: `docs/phases/phase-07.md`. Phase 06 is complete.
 
 ## Last completed task
 
-**Phase 07, Task 3: invoice issue** (ADR-078). The settling tender issues
-the invoice in its transaction, with a price snapshot (seller, lines,
-totals). An invoiced bill is frozen until a reopen. Paid in full shows the
-invoice preview, Close ticket, and a manager-approved Reprint that logs
-`invoice.reprinted` and never takes a number. Migration 00007 grants
-`invoice.reprint`. Checked in a browser.
+**Phase 07, Task 4: ESC/POS driver** (ADR-079). `internal/device/escpos`:
+the command builder, receipt, kitchen ticket and Z-report layouts at 80mm
+and 58mm, `Send` over TCP 9100, and `nofiltr --test-print ADDRESS`
+(`docs/running.md`). Checked against a stand-in TCP printer, not yet on
+real paper.
 
 ## Next task
 
-**Phase 07, Task 4: ESC/POS driver.** `internal/device/escpos`: a command
-builder (text, alignment, sizes, bold, barcode, QR, cut, drawer kick), the
-receipt, kitchen ticket and Z-report layouts, and `--test-print`. The
-receipt layout renders from the invoice's snapshots (ADR-078).
+**Phase 07, Task 5: durable print queue.** Jobs in SQLite, queued to
+printing to done or failed, retries with backoff, dead letters, a queue
+in the UI with manual retry, TCP 9100 with the Windows RAW spooler as
+fallback, printers per station in the back office. Nothing calls the
+layouts yet: the queue is what renders a receipt on close and a ticket on
+send, and prints a reprint (ADR-078).
 
 ## Known broken / in progress
 
@@ -50,6 +51,8 @@ receipt layout renders from the invoice's snapshots (ADR-078).
 - A split lives only on the tender screen (ADR-077); by guest picks seats
   there until lines carry them (phase 08).
 - The server does not cap a tender's `reference`; the till caps it at 40.
+- Printing is ASCII only (ADR-079): non-Latin item names print as "?".
+  No physical printer has run the driver yet.
 - A payment can still be voided after its invoice (ADR-078): Task 6 must
   decide that, with refunds.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`

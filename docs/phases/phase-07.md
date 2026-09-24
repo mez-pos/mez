@@ -27,7 +27,7 @@ Phase 06.
   preview on screen. Reprint is a separate, logged, permissioned action that
   never allocates a new number.
 
-- [ ] **Task 4 — ESC/POS driver.**
+- [x] **Task 4 — ESC/POS driver.**
   `internal/device/escpos`. Command builder: text, alignment, sizes, bold,
   barcode, QR, cut, drawer kick (`DLE DC4`). Layout templates for the customer
   receipt, the kitchen ticket and the Z-report. A `--test-print` flag on the

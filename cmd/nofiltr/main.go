@@ -24,6 +24,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 	"github.com/byjoellobo/nofiltr-pos/internal/config"
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
+	"github.com/byjoellobo/nofiltr-pos/internal/device/escpos"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
@@ -54,6 +55,19 @@ func main() {
 		return
 	}
 
+	// A printer test, before the server's flags: it needs no venue, no
+	// database and no server, so an owner can run it on day one.
+	if isTestPrint(os.Args[1:]) {
+		if err := runTestPrint(os.Args[1:], os.Stdout, time.Now(), escpos.Send); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				return
+			}
+			logging.Bootstrap().Error("test print failed", "error", err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	if err := run(); err != nil {
 		// -h is a question, not a failure. The flag package's own output is
 		// captured so that a bad flag comes back as an error rather than being
@@ -62,7 +76,8 @@ func main() {
 		// to stdout without going through slog: it is an answer to the
 		// operator, not a log line.
 		if errors.Is(err, flag.ErrHelp) {
-			fmt.Fprintf(os.Stdout, "nofiltr %s\n\nUsage:\n%s\nSubcommands:\n  setup\tcreate the venue, its owner and the first pairing code\n",
+			fmt.Fprintf(os.Stdout, "nofiltr %s\n\nUsage:\n%s\nSubcommands:\n  setup\tcreate the venue, its owner and the first pairing code\n"+
+				"  --test-print ADDRESS\tprint a test page on a receipt printer (-paper 58, -drawer, -save FILE)\n",
 				buildInfo().Version, config.Usage())
 			return
 		}

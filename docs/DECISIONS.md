@@ -2016,3 +2016,41 @@ Because: an invoice is a legal record of what was sold. It must be numbered
 with the money that settled it and never disagree with the bill.
 Cost: a guest who wants one more coffee after paying needs a new ticket or
 a manager's reopen.
+
+## ADR-079 - ESC/POS: ASCII on the wire, layouts from snapshots, a builder that refuses whole
+2026-09 · Status: accepted
+Decision: `internal/device/escpos` builds byte streams from the Epson
+TM-series commands; `Send` writes them to TCP 9100; `nofiltr --test-print`
+prints a test page with no venue, database or server.
+- **ASCII only, code page PC437.** Printers disagree on code pages and none
+  prints the rupee sign reliably, so `Printable` spells accents and marks
+  in ASCII ("Creme brulee", "Rs.") and turns anything else, including a
+  control byte in an item name, into "?". A name can never become a
+  printer command. Devanagari menus print as "?" until a raster font path
+  exists; that is a later phase's.
+- **The builder keeps its first error and refuses the whole stream.** A
+  size of 9 or a barcode with a brace makes `Bytes` fail rather than send
+  a half-built receipt.
+- **The drawer kick is `DLE DC4 1 m t`**, as the task asks: real time, so
+  it opens mid-receipt or with the paper out. `ESC p` would wait behind
+  the print buffer. 200ms pulse, pin 2.
+- **Layouts take what to print and never sum it.** `Receipt` takes the
+  invoice's snapshots (ADR-078), `KitchenTicket` the lines, `ZReport` the
+  figures phase 09 will compute. Totals are double height, not double
+  width, so a large total never wraps. A receipt with no invoice number is
+  a bill and says "BILL - NOT A TAX INVOICE"; a reprint says DUPLICATE.
+  The invoice number is also a Code 128 barcode for a refund to scan.
+- **Paper is columns:** 48 on 80mm, 32 on 58mm. Every layout is tested at
+  both through a decoder that replays the bytes as paper and fails on a
+  line over the width, a byte outside ASCII, or a command it does not
+  know.
+- **`--test-print ADDRESS`** (`-paper 58`, `-drawer`, `-save FILE`) is
+  checked before the server's own flags, like `setup`. The page shows a
+  full-width ruler, so a wrong paper width is read off the slip.
+- Checked against a TCP listener standing in for a printer: the built
+  binary sent 954 bytes that replay as the page, with the drawer kick and
+  the cut; an address with nothing listening fails in words. Not yet
+  checked on a physical printer.
+Because: a receipt is the one thing the guest takes away, and a printer
+that prints garbage mid-service is worse than one that prints nothing.
+Cost: no non-Latin text on paper yet.
