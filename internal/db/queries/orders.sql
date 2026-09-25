@@ -94,3 +94,27 @@ FROM orders
 WHERE venue_id = ? AND status != 'closed'
 ORDER BY opened_at, id
 LIMIT ?;
+
+-- name: ClosedOrdersForVenue :many
+-- The till's past bills: the latest closed, newest first (Task 6b).
+SELECT id, public_id
+FROM orders
+WHERE venue_id = ? AND status = 'closed'
+ORDER BY closed_at DESC, id DESC
+LIMIT ?;
+
+-- name: OrdersByDocument :many
+-- The orders an invoice or credit note number belongs to, as typed or
+-- scanned from a receipt, or whose invoice has the sequence number seq in
+-- any series or year ("42" for INV/26-27/000042). Newest first.
+SELECT o.id, o.public_id
+FROM orders o
+WHERE o.venue_id = sqlc.arg(venue_id) AND o.id IN (
+    SELECT i.order_id FROM invoices i
+    WHERE i.venue_id = sqlc.arg(venue_id) AND (i.invoice_no = sqlc.arg(number) OR i.seq = sqlc.arg(seq))
+    UNION
+    SELECT c.order_id FROM credit_notes c
+    WHERE c.venue_id = sqlc.arg(venue_id) AND c.credit_no = sqlc.arg(number)
+)
+ORDER BY o.id DESC
+LIMIT 20;

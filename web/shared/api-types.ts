@@ -635,6 +635,8 @@ export interface LineResponse {
   discount: Money;
   tax: Money;
   due: Money;
+  credited_qty: number;
+  credited: Money;
 }
 
 export interface NoteResponse {
@@ -909,6 +911,20 @@ export interface CreditPlanResponse {
   tax: Money;
   total: Money;
   components: ComponentTotal[];
+}
+
+export interface PastBillResponse {
+  id: string;
+  invoice_no?: string;
+  table_id?: number;
+  covers: number;
+  closed_at: string;
+  total: Money;
+  credited: Money;
+}
+
+export interface PastBillsResponse {
+  bills: PastBillResponse[];
 }
 
 export interface StationResponse {

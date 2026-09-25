@@ -164,4 +164,14 @@ describe("timelineEntries: a counter sale and a coded reason", () => {
     expect(opened?.detail).toBe("Counter");
     expect(discounted).toMatchObject({ title: "10% off the order", detail: "Manager call" });
   });
+
+  it("words the reason codes the till sends for a refund, a payment void and a reopen", () => {
+    const entries = timelineEntries([
+      { ...base, seq: 1, type: "payment.tendered", payload: { method: "card", amount: inr(5_000), tip: inr(0), tendered_by: 1 } },
+      { ...base, seq: 2, type: "order.reopened", payload: { reason: "payment_not_taken", authorised_by: 1 } },
+      { ...base, seq: 3, type: "payment.voided", payload: { payment_id: 1, reason: "payment_not_taken", authorised_by: 1 } },
+      { ...base, seq: 4, type: "refund.issued", payload: { amount: inr(5_000), against_payment_id: 1, reason: "cold_or_late" } },
+    ]);
+    expect(entries.map((e) => e.detail).slice(1)).toEqual(["Payment not taken", "Payment not taken", "Cold or late"]);
+  });
 });

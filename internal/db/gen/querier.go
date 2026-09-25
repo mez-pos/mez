@@ -41,6 +41,8 @@ type Querier interface {
 	// cannot both succeed.
 	ClaimPrintJob(ctx context.Context, arg ClaimPrintJobParams) (int64, error)
 	ClearReceiptPrinter(ctx context.Context, arg ClearReceiptPrinterParams) error
+	// The till's past bills: the latest closed, newest first (Task 6b).
+	ClosedOrdersForVenue(ctx context.Context, arg ClosedOrdersForVenueParams) ([]ClosedOrdersForVenueRow, error)
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (int64, error)
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (int64, error)
@@ -114,6 +116,10 @@ type Querier interface {
 	OrderByPublicID(ctx context.Context, publicID string) (Order, error)
 	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error)
 	OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapshot, error)
+	// The orders an invoice or credit note number belongs to, as typed or
+	// scanned from a receipt, or whose invoice has the sequence number seq in
+	// any series or year ("42" for INV/26-27/000042). Newest first.
+	OrdersByDocument(ctx context.Context, arg OrdersByDocumentParams) ([]OrdersByDocumentRow, error)
 	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)
 	PrintJobByID(ctx context.Context, id int64) (PrintJobByIDRow, error)
 	// The queue as staff see it: every job not yet printed, and what printed

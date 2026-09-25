@@ -24,6 +24,7 @@ type Orders interface {
 	Invoice(ctx context.Context, venueID, orderID, seq int64) (svcorder.IssuedInvoice, error)
 	Reprint(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ReprintInvoice) (svcorder.Result, error)
 	PlanCredit(ctx context.Context, venueID, orderID int64, req order.CreditRequest) (order.CreditPlan, error)
+	PastBills(ctx context.Context, venueID int64, query string) ([]svcorder.Result, error)
 	Credit(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.IssueCredit) (svcorder.Result, error)
 	Hold(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 	Resume(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
@@ -68,6 +69,9 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 		mux.HandleFunc(pattern, s.methodNotAllowed)
 	}
 
+	// The literal path wins over {id}: an order's id is never "closed".
+	mux.Handle("GET /api/v1/orders/closed", s.requireDevice(s.requireStaff(
+		s.requirePermission(auth.PermOrderOpen, http.HandlerFunc(s.listPastBills)))))
 	mux.Handle("GET /api/v1/orders/{id}", s.requireDevice(s.requireStaff(
 		s.requirePermission(auth.PermOrderOpen, http.HandlerFunc(s.readOrder)))))
 	mux.Handle("POST /api/v1/orders", s.requireDevice(s.requireStaff(

@@ -15,7 +15,7 @@ const override = { authorised_by: "stf_MGR00001", pin: "2468" };
 
 const line = (extra: Partial<LineResponse> = {}): LineResponse => ({
   id: 2, item_id: 1, name: "Flat white", qty: 1, unit_price: inr(21000), status: "active",
-  course_fired: false, sent: false, gross: inr(21000), discount: inr(0), tax: inr(1000), due: inr(21000),
+  course_fired: false, sent: false, gross: inr(21000), discount: inr(0), tax: inr(1000), due: inr(21000), credited_qty: 0, credited: inr(0),
   ...extra,
 });
 

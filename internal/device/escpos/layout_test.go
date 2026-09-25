@@ -333,3 +333,33 @@ func TestTestPage(t *testing.T) {
 		t.Error("the drawer was kicked without -drawer")
 	}
 }
+
+func TestCreditNote(t *testing.T) {
+	c := CreditNote{
+		CreditNo: "CN/26-27/000001", AgainstInvoiceNo: "INV/26-27/000042", IssuedAt: issued, OrderRef: "ord_7K2M9Q4X",
+		Seller: order.InvoiceSeller{Name: "Filter Coffee House", LegalName: "FCH Hospitality LLP", TaxProfile: "gst_in", Registration: "29ABCDE1234F1Z5", StateCode: "29"},
+		Reason: "one dosa was cold",
+		Lines: []order.CreditLine{
+			{LineID: 2, Name: "Masala dosa", Qty: 1, Taxable: inr(12000), Tax: inr(600), Amount: inr(12600)},
+			{LineID: 3, Name: "Filter coffee", Taxable: inr(952), Tax: inr(48), Amount: inr(1000)},
+		},
+		Taxable: inr(12952), Tax: inr(648), Total: inr(13600),
+		Components: []tax.ComponentTotal{{Name: "CGST", Rate: 2500, Taxable: inr(12952), Amount: inr(324)}, {Name: "SGST", Rate: 2500, Taxable: inr(12952), Amount: inr(324)}},
+		Refunds:    []CreditRefund{{Method: order.PaymentCash, Amount: inr(13600)}},
+		Kick:       true,
+	}
+	for _, paper := range []Paper{Paper80, Paper58} {
+		data, err := c.Layout(paper)
+		if err != nil {
+			t.Fatal(err)
+		}
+		p := decode(t, data)
+		p.fits(t, paper)
+		p.has(t, "CREDIT NOTE", "No.   CN/26-27/000001", "Against invoice INV/26-27/000042", "GSTIN 29ABCDE1234F1Z5",
+			"Reason: one dosa was cold", "1 x Masala dosa", "126.00", "Filter coffee (part)", "10.00",
+			"Taxable value", "CGST 2.5%", "3.24", "CREDIT", "Rs.136.00", "Refunded to Cash")
+		if p.kicks != 1 || len(p.cuts) != 1 || len(p.codes) != 1 || p.codes[0] != "barcode:CN/26-27/000001" {
+			t.Errorf("kicks %d, cuts %v, codes %v", p.kicks, p.cuts, p.codes)
+		}
+	}
+}

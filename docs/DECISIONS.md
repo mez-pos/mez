@@ -2253,3 +2253,36 @@ must say what was sold and, separately, what was credited, each under its
 own unbroken run of numbers.
 Cost: Task 6 is split in two (6a domain and API, 6b the till), and a
 refund is a document of its own that must print.
+
+## ADR-084 - Past bills at the till: found by number, voided in one command, credit notes printed
+2026-09 · Status: accepted
+Decision: a settled bill is reached from Tickets, **Past bills**, and every
+change to it goes through the commands ADR-083 already has.
+  - **Finding a bill:** `GET /api/v1/orders/closed?q=` (`order.open`). No
+    query gives the latest 30 closed orders. A query matches an invoice or
+    credit note number exactly, or, when it is all digits, the invoice
+    sequence (typing "4" finds INV/26-27/000004). A scanner types the
+    receipt's barcode into the same field. Matching is on the registers,
+    not on order payloads, so it stays an index lookup.
+  - **Voiding a payment on a closed bill** appends `order.reopened` and
+    `payment.voided` in one command with one approval, rather than asking
+    for a reopen first. The bill then shows **Take the balance**, which
+    brings it to the register's tender screen; the invoice keeps its
+    number (ADR-083).
+  - **The credit note prints** on the receipt printer through the queue,
+    in the same transaction as the credit note (ADR-081): the `CreditNote`
+    layout in `escpos`, headed CREDIT NOTE with the invoice it corrects,
+    the lines or the part credited, tax by component, and the refunds with
+    their methods. A refund to a cash payment kicks the drawer.
+  - **Lines carry `credited_qty` and `credited`**, so the refund sheet's
+    steppers stop at what is left without the till doing sums.
+  - The till refunds to one payment per credit note; the API takes several.
+    A refund larger than one payment has left is refused (`over_refund`)
+    and the manager splits it into two credit notes.
+  - Reason codes are worded on screen, on the timeline and on the printed
+    note ("cold_or_late" is "Cold or late").
+Because: a manager at the counter has the receipt in hand. The number on it
+is the fastest way back to the bill, and a void that needs a reopen first is
+two approvals for one mistake.
+Cost: one credit note per payment from the till; a search that knows only
+exact numbers and invoice sequences, not items, amounts or dates.

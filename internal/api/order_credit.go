@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
@@ -97,4 +98,40 @@ func toCreditResponses(credits []order.Credit) []creditResponse {
 		}
 	}
 	return out
+}
+
+// pastBillResponse is a closed bill on the till's past bills list.
+type pastBillResponse struct {
+	ID        string       `json:"id"`
+	InvoiceNo string       `json:"invoice_no,omitempty"`
+	TableID   int64        `json:"table_id,omitempty"`
+	Covers    int64        `json:"covers"`
+	ClosedAt  time.Time    `json:"closed_at"`
+	Total     money.Amount `json:"total"`
+	Credited  money.Amount `json:"credited"`
+}
+
+type pastBillsResponse struct {
+	Bills []pastBillResponse `json:"bills"`
+}
+
+// listPastBills answers the latest closed bills, or those a number finds.
+func (s *Server) listPastBills(w http.ResponseWriter, r *http.Request) {
+	bills, err := s.orders.PastBills(r.Context(), Meta(r).VenueID, r.URL.Query().Get("q"))
+	if err != nil {
+		s.writeOrderError(w, r, err)
+		return
+	}
+	out := pastBillsResponse{Bills: make([]pastBillResponse, len(bills))}
+	for i, b := range bills {
+		st := b.State
+		out.Bills[i] = pastBillResponse{
+			ID: b.PublicID, TableID: st.TableID, Covers: st.Covers, ClosedAt: st.ClosedAt.UTC(),
+			Total: st.Totals.Total, Credited: st.Totals.Credited,
+		}
+		if n := len(st.Invoices); n > 0 {
+			out.Bills[i].InvoiceNo = st.Invoices[n-1].InvoiceNo
+		}
+	}
+	writeJSON(w, s.log, http.StatusOK, out)
 }

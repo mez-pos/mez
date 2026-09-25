@@ -76,7 +76,7 @@ Phase 06.
     each one's last result, an add and edit form, the station assignment,
     and the test button. Screen spec first.
 
-- [ ] **Task 6 — Refunds and voids after payment.**
+- [x] **Task 6 — Refunds and voids after payment.**
   Full and partial refunds against a specific payment, with reason and
   authorisation. Post-payment voids. Both emit corrective events and appear on
   the timeline and in the Z-report. Never a destructive edit.
@@ -100,7 +100,7 @@ Phase 06.
     split across two payments; over-refund; a credit note gapless beside a
     refused one; the tax on a credit note matching the invoice's rates to
     the paisa. The timeline shows both, in words.
-  - [ ] **Task 6b - Refunds and voids at the till.** A way to find a past
+  - [x] **Task 6b - Refunds and voids at the till.** A way to find a past
     bill (recent closed orders, and an invoice number typed or scanned from
     the receipt's barcode), its invoice and payments, and from there:
     refund (choose the payment, what is credited, the reason, a manager's

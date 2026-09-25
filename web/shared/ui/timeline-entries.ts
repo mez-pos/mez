@@ -127,7 +127,7 @@ function describe(event: OrderEvent, ctx: Context): Described {
       const paid = ctx.payments.get(event.payload.payment_id);
       return {
         title: paid ? `Voided ${methods[paid.method].toLowerCase()} payment` : "Voided a payment",
-        detail: event.payload.reason,
+        detail: humanise(event.payload.reason),
         amount: paid?.amount ?? null,
         tone: "danger",
         authorisedBy: event.payload.authorised_by,
@@ -136,11 +136,11 @@ function describe(event: OrderEvent, ctx: Context): Described {
     case "invoice.issued":
       return { title: `Invoice ${event.payload.invoice_no}`, tone: "success" };
     case "refund.issued":
-      return { title: "Refund", detail: event.payload.reason, amount: event.payload.amount, tone: "danger" };
+      return { title: "Refund", detail: humanise(event.payload.reason), amount: event.payload.amount, tone: "danger" };
     case "order.closed":
       return { title: "Order closed", tone: "success" };
     case "order.reopened":
-      return { title: "Order reopened", detail: event.payload.reason, tone: "warning", authorisedBy: event.payload.authorised_by };
+      return { title: "Order reopened", detail: humanise(event.payload.reason), tone: "warning", authorisedBy: event.payload.authorised_by };
     case "credit_note.issued":
       return {
         title: `Credit note ${event.payload.credit_no}`,

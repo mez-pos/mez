@@ -15,10 +15,12 @@ interface TicketsSheetProps {
   currentId: string | null;
   onPick: (ticket: TicketSummary) => Promise<void>;
   onNew: (opening: OpenOrder) => void;
+  /** Opens the settled bills, to refund, void a payment or reprint. */
+  onPastBills: () => void;
   onClose: () => void;
 }
 
-export function TicketsSheet({ open, currentId, onPick, onNew, onClose }: TicketsSheetProps) {
+export function TicketsSheet({ open, currentId, onPick, onNew, onPastBills, onClose }: TicketsSheetProps) {
   const now = useClock(15_000);
   const [error, setError] = useState<string | null>(null);
   const [table, setTable] = useState(0);
@@ -95,6 +97,18 @@ export function TicketsSheet({ open, currentId, onPick, onNew, onClose }: Ticket
             })}
           </ul>
         )}
+
+        <section aria-label="Past bills" className="flex flex-col gap-2 border-t border-line pt-6">
+          <Button
+            onClick={() => {
+              onPastBills();
+              onClose();
+            }}
+          >
+            Past bills
+          </Button>
+          <p className="text-sm text-fg-muted">Refund, void a payment or reprint a settled bill.</p>
+        </section>
 
         <section aria-label="New ticket" className="flex flex-col gap-4 border-t border-line pt-6">
           <h3 className="text-lg font-semibold">New ticket</h3>

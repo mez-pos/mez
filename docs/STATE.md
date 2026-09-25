@@ -6,25 +6,24 @@
 
 ## Current phase
 
-**Phase 07 - Payment, split, invoice, print queue, cash drawer**
-File: `docs/phases/phase-07.md`. Phase 06 is complete.
+**Phase 08 - Floor plan, tables, kitchen display, station routing**
+File: `docs/phases/phase-08.md`. Phase 07 is complete.
 
 ## Last completed task
 
-**Phase 07, Task 6a: credit notes and refunds, in the domain and the API**
-(ADR-083). `order.PlanCredit` (by units or by amount, tax by component to
-the paisa), `credit_note.issued` allowed on a closed bill, a balance net of
-credits, reopen keeping the invoice; the `CN` series and the
-`credit_notes` register (migration 00010); preview and issue endpoints.
-A payment voided after the invoice is settled without a new number.
+**Phase 07, Task 6b: refunds and voids at the till** (ADR-084). Tickets,
+Past bills finds a closed bill by invoice or credit note number (or the
+invoice's sequence); the bill screen refunds through the credit note
+preview and a manager's PIN, voids a payment (reopening a closed bill in
+one command), reprints, and shows the history. Credit notes print on the
+receipt printer, with the drawer kick for a cash refund. The phase's
+done-when ran in the browser: a three-way split, INV/26-27/000004, a
+partial refund to the card as CN/26-27/000001, on the timeline, the
+queue, the printed note and the totals.
 
 ## Next task
 
-**Phase 07, Task 6b: refunds and voids at the till.** Find a past bill
-(recent closed orders, or an invoice number typed or scanned), then refund
-through the credit note preview and a manager's PIN, void a payment, or
-reprint; the credit note printed through the queue (an `escpos` layout).
-Screen spec first, and the phase's done-when check at the end.
+**Phase 08, Task 1: floor plan data and editor.** Read the phase file.
 
 ## Known broken / in progress
 
@@ -56,7 +55,10 @@ Screen spec first, and the phase's done-when check at the end.
 - The Windows spooler's write path is untested on a real printer (ADR-080).
 - The cash drawer opens only with the settling receipt, not on a cash part
   payment (ADR-081). Kitchen tickets print only once phase 08 adds Send.
-- Credit notes do not print yet, and the print planner ignores them (6b).
+- The till refunds to one payment per credit note (ADR-084); past bills
+  search only exact numbers and invoice sequences.
+- `make build` does not build under cmd or PowerShell; for the browser,
+  `CGO_ENABLED=0 go build -tags frontend -o bin/nofiltr ./cmd/nofiltr`.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`
   does not escape the path in its `file:` DSN.
 - To try the apps: `nofiltr setup -demo-menu` prints a pairing code
@@ -86,7 +88,7 @@ None.
 - [x] 04 — HTTP API, WebSocket hub, TypeScript type codegen
 - [x] 05 — Frontend shell: Vite, Tailwind tokens, router, primitives, auth
 - [x] 06 — Terminal: register, modifiers, cart, open tickets
-- [ ] 07 — Payment, split, invoice, print queue, cash drawer
+- [x] 07 — Payment, split, invoice, print queue, cash drawer
 - [ ] 08 — Floor plan, tables, kitchen display, station routing
 - [ ] 09 — Shift, blind drawer count, Z-report, tips
 - [ ] 10 — Back office: menu editor, inventory, reports

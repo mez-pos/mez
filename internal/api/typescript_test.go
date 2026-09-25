@@ -215,6 +215,7 @@ func generate() (*ts.Generator, error) {
 		printersResponse{}, testPageResponse{},
 		// Credit notes.
 		creditPreviewRequest{}, creditRequest{}, creditPlanResponse{}, creditResponse{},
+		pastBillResponse{}, pastBillsResponse{},
 		// The menu.
 		stationResponse{}, courseResponse{}, categoryResponse{}, modifierResponse{},
 		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},

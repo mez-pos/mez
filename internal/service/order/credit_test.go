@@ -144,3 +144,59 @@ func TestCreditSeriesConfig(t *testing.T) {
 		t.Errorf("a named credit series: %+v, %v", v.Credits, err)
 	}
 }
+
+// TestPastBills: the latest closed bills, and a search by invoice number,
+// by its digits, and by credit note number.
+func TestPastBills(t *testing.T) {
+	s, _, _ := newService(t)
+	ctx := context.Background()
+	first, _ := splitBill(t, s)
+	second, closed := splitBill(t, s)
+	open(t, s) // an open ticket is not a past bill
+
+	all, err := s.PastBills(ctx, 1, "")
+	if err != nil || len(all) != 2 || all[0].OrderID != second || all[1].OrderID != first {
+		t.Fatalf("past bills = %d, %v", len(all), err)
+	}
+	for _, q := range []string{"INV/26-27/000001", "1", " 000001 "} {
+		got, err := s.PastBills(ctx, 1, q)
+		if err != nil || len(got) != 1 || got[0].OrderID != first {
+			t.Errorf("search %q: %d results, %v", q, len(got), err)
+		}
+	}
+	must(t)(s.Credit(ctx, cashier(""), second, IssueCredit{
+		Credit: order.CreditRequest{Lines: []order.CreditItem{{LineID: 2, Qty: 1}}}, Reason: "cold", AuthorisedBy: 7,
+		Refunds: []RefundPart{{PaymentID: closed.Tenders[0].ID, Amount: inr(12600)}},
+	}))
+	if got, _ := s.PastBills(ctx, 1, "CN/26-27/000001"); len(got) != 1 || got[0].OrderID != second {
+		t.Errorf("search by credit note: %+v", got)
+	}
+	if got, _ := s.PastBills(ctx, 1, "INV/26-27/000009"); len(got) != 0 {
+		t.Errorf("a number nobody has: %+v", got)
+	}
+	if got, _ := s.PastBills(ctx, 2, ""); len(got) != 0 {
+		t.Errorf("another venue's bills: %+v", got)
+	}
+}
+
+// TestVoidOnAClosedBill: voiding a payment on a closed bill reopens it in
+// the same command; the balance is taken again with no new number.
+func TestVoidOnAClosedBill(t *testing.T) {
+	s, _, _ := newService(t)
+	ctx := context.Background()
+	id, closed := splitBill(t, s)
+	res := must(t)(s.VoidPayment(ctx, cashier(""), id, VoidPayment{PaymentID: closed.Tenders[1].ID, Reason: "card reversed", AuthorisedBy: 7}))
+	if len(res.Events) != 2 || res.Events[0].Type != order.TypeOrderReopened || res.Events[1].Type != order.TypePaymentVoided {
+		t.Fatalf("events = %+v", res.Events)
+	}
+	if res.State.Status != order.StatusReopened || res.State.Totals.BalanceDue != inr(12600) {
+		t.Fatalf("after the void: %s, balance %d", res.State.Status, res.State.Totals.BalanceDue.Minor)
+	}
+	paid := must(t)(s.TenderPayment(ctx, cashier(""), id, TenderPayment{Method: order.PaymentCash, Amount: inr(12600)}))
+	if len(paid.Events) != 1 || len(paid.State.Invoices) != 1 {
+		t.Errorf("the new payment took a number: %+v", paid.Events)
+	}
+	if res := must(t)(s.Close(ctx, cashier(""), id)); res.State.Status != order.StatusClosed {
+		t.Errorf("status = %s", res.State.Status)
+	}
+}

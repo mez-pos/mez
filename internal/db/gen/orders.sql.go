@@ -39,6 +39,48 @@ func (q *Queries) AppendOrderEvent(ctx context.Context, arg AppendOrderEventPara
 	return err
 }
 
+const closedOrdersForVenue = `-- name: ClosedOrdersForVenue :many
+SELECT id, public_id
+FROM orders
+WHERE venue_id = ? AND status = 'closed'
+ORDER BY closed_at DESC, id DESC
+LIMIT ?
+`
+
+type ClosedOrdersForVenueParams struct {
+	VenueID int64
+	Limit   int64
+}
+
+type ClosedOrdersForVenueRow struct {
+	ID       int64
+	PublicID string
+}
+
+// The till's past bills: the latest closed, newest first (Task 6b).
+func (q *Queries) ClosedOrdersForVenue(ctx context.Context, arg ClosedOrdersForVenueParams) ([]ClosedOrdersForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, closedOrdersForVenue, arg.VenueID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClosedOrdersForVenueRow{}
+	for rows.Next() {
+		var i ClosedOrdersForVenueRow
+		if err := rows.Scan(&i.ID, &i.PublicID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createOrder = `-- name: CreateOrder :one
 
 INSERT INTO orders (
@@ -199,6 +241,57 @@ func (q *Queries) OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapsh
 		&i.State,
 	)
 	return i, err
+}
+
+const ordersByDocument = `-- name: OrdersByDocument :many
+SELECT o.id, o.public_id
+FROM orders o
+WHERE o.venue_id = ?1 AND o.id IN (
+    SELECT i.order_id FROM invoices i
+    WHERE i.venue_id = ?1 AND (i.invoice_no = ?2 OR i.seq = ?3)
+    UNION
+    SELECT c.order_id FROM credit_notes c
+    WHERE c.venue_id = ?1 AND c.credit_no = ?2
+)
+ORDER BY o.id DESC
+LIMIT 20
+`
+
+type OrdersByDocumentParams struct {
+	VenueID int64
+	Number  string
+	Seq     int64
+}
+
+type OrdersByDocumentRow struct {
+	ID       int64
+	PublicID string
+}
+
+// The orders an invoice or credit note number belongs to, as typed or
+// scanned from a receipt, or whose invoice has the sequence number seq in
+// any series or year ("42" for INV/26-27/000042). Newest first.
+func (q *Queries) OrdersByDocument(ctx context.Context, arg OrdersByDocumentParams) ([]OrdersByDocumentRow, error) {
+	rows, err := q.db.QueryContext(ctx, ordersByDocument, arg.VenueID, arg.Number, arg.Seq)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []OrdersByDocumentRow{}
+	for rows.Next() {
+		var i OrdersByDocumentRow
+		if err := rows.Scan(&i.ID, &i.PublicID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const saveOrderSnapshot = `-- name: SaveOrderSnapshot :exec

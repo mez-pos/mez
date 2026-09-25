@@ -273,8 +273,18 @@ func settles(st order.State, amount money.Amount) bool {
 }
 
 // VoidPayment voids a tender.
+//
+// On a closed bill it reopens it first, in the same command and under the
+// same approval (ADR-084): the money has to be taken again, and a closed
+// bill takes no payment. The invoice keeps its number (ADR-083).
 func (s *Service) VoidPayment(ctx context.Context, meta Meta, orderID int64, cmd VoidPayment) (Result, error) {
-	return s.run(ctx, meta, orderID, "void_payment", cmd, one(order.PaymentVoided(cmd)))
+	return s.run(ctx, meta, orderID, "void_payment", cmd, func(_ context.Context, tx *db.OrderTx, _ venue, _ time.Time) ([]order.Payload, error) {
+		voided := order.PaymentVoided(cmd)
+		if tx.State.Status != order.StatusClosed {
+			return []order.Payload{voided}, nil
+		}
+		return []order.Payload{order.OrderReopened{Reason: cmd.Reason, AuthorisedBy: cmd.AuthorisedBy}, voided}, nil
+	})
 }
 
 // Refund gives money back against a tender.

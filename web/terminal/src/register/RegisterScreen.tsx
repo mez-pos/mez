@@ -18,6 +18,8 @@ import { TicketPanels, type Panel } from "./TicketPanels";
 import { TicketRail } from "./TicketRail";
 import { TicketsSheet } from "./TicketsSheet";
 import { HistorySheet } from "./HistorySheet";
+import { BillScreen } from "../bills/BillScreen";
+import { PastBillsSheet } from "../bills/PastBillsSheet";
 import { TenderScreen } from "../tender/TenderScreen";
 import { chargeBlock, chargeLabel } from "../tender/tender-logic";
 import { ticketLabel } from "./ticket-time";
@@ -37,6 +39,9 @@ export function RegisterScreen() {
   // The ticket being charged. Kept by id, so the tender screen goes away if
   // another ticket comes to the front.
   const [charging, setCharging] = useState<string | null>(null);
+  // A settled bill on screen (Task 6b), and the sheet that finds one.
+  const [bill, setBill] = useState<string | null>(null);
+  const [pastBillsOpen, setPastBillsOpen] = useState(false);
   const toast = useToast();
   const fail = (what: string) => (err: unknown) =>
     toast(`${what}: ${err instanceof Error ? err.message : String(err)}`, { tone: "warning" });
@@ -109,6 +114,20 @@ export function RegisterScreen() {
 
   const block = chargeBlock(ticket.order, ticket.pending.length);
   const label = ticketLabel(ticket.order ?? ticket.opening);
+
+  if (bill) {
+    return (
+      <BillScreen
+        orderId={bill}
+        onBack={() => setBill(null)}
+        onTakeBalance={(id) => {
+          setBill(null);
+          ticket.switchTo(id);
+          setCharging(id);
+        }}
+      />
+    );
+  }
 
   if (charging && ticket.order && charging === ticket.orderId) {
     return <TenderScreen order={ticket.order} ticket={ticket} label={label} onBack={() => setCharging(null)} />;
@@ -200,7 +219,18 @@ export function RegisterScreen() {
             setPanel(null);
             ticket.startNew(opening);
           }}
+          onPastBills={() => setPastBillsOpen(true)}
           onClose={() => setTicketsOpen(false)}
+        />
+      )}
+
+      {pastBillsOpen && (
+        <PastBillsSheet
+          onPick={(b) => {
+            setPastBillsOpen(false);
+            setBill(b.id);
+          }}
+          onClose={() => setPastBillsOpen(false)}
         />
       )}
 

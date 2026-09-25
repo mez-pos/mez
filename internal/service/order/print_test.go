@@ -183,3 +183,27 @@ func TestReceiptWithNoPrinter(t *testing.T) {
 		t.Errorf("after the retry: %+v", again)
 	}
 }
+
+// TestCreditNotePrints: a credit note prints on the receipt printer, and
+// opens the drawer when the money goes back in cash.
+func TestCreditNotePrints(t *testing.T) {
+	s, d, _ := printingService(t, true)
+	ctx := context.Background()
+	id := open(t, s).OrderID
+	must(t)(s.AddLine(ctx, cashier(""), id, dosa(2)))
+	paid := must(t)(s.TenderPayment(ctx, cashier(""), id, TenderPayment{Method: order.PaymentCash, Amount: inr(25200)}))
+	must(t)(s.Credit(ctx, cashier(""), id, IssueCredit{
+		Credit: order.CreditRequest{Lines: []order.CreditItem{{LineID: 2, Qty: 1}}}, Reason: "cold_or_late", AuthorisedBy: 7,
+		Refunds: []RefundPart{{PaymentID: paid.State.Tenders[0].ID, Amount: inr(12600)}},
+	}))
+	cn := jobs(t, d)[0]
+	if cn.Label != "Credit note CN/26-27/000001" || cn.PrinterID.Int64 != 1 || cn.Kind != "receipt" {
+		t.Fatalf("credit note job = %+v", cn)
+	}
+	p := payload(t, d, cn.ID)
+	if !bytes.Contains(p, []byte("CREDIT NOTE")) || !bytes.Contains(p, []byte("Against invoice INV/26-27/000001")) ||
+		!bytes.Contains(p, []byte("Reason: Cold or late")) || !bytes.Contains(p, []byte("Refunded to Cash")) ||
+		!bytes.Contains(p, []byte{0x10, 0x14, 1, 0, 2}) {
+		t.Errorf("credit note payload:\n%q", p)
+	}
+}

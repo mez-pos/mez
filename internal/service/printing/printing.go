@@ -13,6 +13,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
 	"github.com/byjoellobo/nofiltr-pos/internal/device/escpos"
@@ -53,6 +55,8 @@ func Plan(ctx context.Context, tx *gen.Queries, in Input, now time.Time) (int, e
 			j, err = duplicate(ctx, tx, in, e, pl)
 		case order.TicketSent:
 			j, err = kitchen(ctx, tx, in, e, pl)
+		case order.CreditNoteIssued:
+			j, err = creditNote(ctx, tx, in, e, pl)
 		default:
 			ok = false
 		}
@@ -216,5 +220,49 @@ func title(code string) string {
 	if code == "" {
 		return "Kitchen"
 	}
-	return strings.ToUpper(code[:1]) + strings.ReplaceAll(code[1:], "_", " ")
+	return words(code)
+}
+
+// words is a code as the timeline says it: "cold_or_late" is "Cold or
+// late". Free text keeps its words, with its first letter raised.
+func words(code string) string {
+	first, n := utf8.DecodeRuneInString(code)
+	if n == 0 {
+		return ""
+	}
+	return string(unicode.ToUpper(first)) + strings.ReplaceAll(code[n:], "_", " ")
+}
+
+// creditNote lays out a credit note (ADR-083) for the receipt printer, with
+// the refunds appended with it. The drawer opens first when any of the
+// money goes back in cash.
+func creditNote(ctx context.Context, tx *gen.Queries, in Input, e order.Event, pl order.CreditNoteIssued) (printq.Job, error) {
+	route, err := printq.RouteFor(ctx, tx, in.VenueID, printjob.Receipt, "")
+	if err != nil {
+		return printq.Job{}, err
+	}
+	c := escpos.CreditNote{
+		CreditNo: pl.CreditNo, AgainstInvoiceNo: pl.AgainstInvoiceNo, IssuedAt: e.At.In(in.Location), OrderRef: in.PublicID,
+		Reason: words(pl.Reason), Lines: pl.Lines, Taxable: pl.Taxable, Tax: pl.Tax, Total: pl.Total, Components: pl.Components,
+	}
+	if pl.Seller != nil {
+		c.Seller = *pl.Seller
+	}
+	for _, later := range in.Appended {
+		r, ok := later.Payload.(order.RefundIssued)
+		if !ok || later.Seq < e.Seq {
+			continue
+		}
+		for _, t := range in.State.Tenders {
+			if t.ID != r.AgainstPaymentID {
+				continue
+			}
+			c.Refunds = append(c.Refunds, escpos.CreditRefund{Method: t.Method, Reference: t.Reference, Amount: r.Amount})
+			if t.Method == order.PaymentCash {
+				c.Kick = true
+			}
+		}
+	}
+	data, layoutErr := c.Layout(paper(route))
+	return job(in, e, route, printjob.Receipt, "Credit note "+pl.CreditNo, "", data, layoutErr), nil
 }

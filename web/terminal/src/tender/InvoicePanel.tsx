@@ -88,13 +88,13 @@ export function InvoicePanel({ order, ticket, onError }: InvoicePanelProps) {
   );
 }
 
-interface ReprintSheetProps {
+export interface ReprintSheetProps {
   invoiceNo: string;
   onSubmit: (reason: string, approval: Parameters<Ticket["reprint"]>[2]) => Promise<void>;
   onClose: () => void;
 }
 
-function ReprintSheet({ invoiceNo, onSubmit, onClose }: ReprintSheetProps) {
+export function ReprintSheet({ invoiceNo, onSubmit, onClose }: ReprintSheetProps) {
   const [reason, setReason] = useState<string | null>(null);
   return (
     <ApprovalSheet

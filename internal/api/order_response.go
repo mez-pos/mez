@@ -67,6 +67,11 @@ type lineResponse struct {
 	Discount money.Amount `json:"discount"`
 	Tax      money.Amount `json:"tax"`
 	Due      money.Amount `json:"due"`
+
+	// What credit notes have taken off the line so far (ADR-083): whole
+	// units, and value. The refund sheet steps up to Qty - CreditedQty.
+	CreditedQty int64        `json:"credited_qty"`
+	Credited    money.Amount `json:"credited"`
 }
 
 type noteResponse struct {
@@ -190,6 +195,8 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 			CourseFired: l.CourseFired, Sent: l.Sent,
 			Gross: l.Gross, Discount: l.Discount, Tax: l.Tax, Due: l.Due,
 		}
+		c := s.CreditedFor(l.ID)
+		out.Lines[i].CreditedQty, out.Lines[i].Credited = c.Qty, c.Amount
 	}
 	out.Notes = make([]noteResponse, len(s.Notes))
 	for i, n := range s.Notes {
