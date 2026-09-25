@@ -2054,3 +2054,44 @@ prints a test page with no venue, database or server.
 Because: a receipt is the one thing the guest takes away, and a printer
 that prints garbage mid-service is worse than one that prints nothing.
 Cost: no non-Latin text on paper yet.
+
+## ADR-080 - The print queue: bytes in SQLite, one job at a time per printer, never dropped
+2026-09 · Status: accepted
+Decision: `print_jobs` holds each job's finished ESC/POS bytes and its
+state; `internal/device/printq` sends them; `internal/domain/printjob`
+decides what follows each send.
+- **The bytes are the job.** A job is rendered once, when it is queued,
+  and a retry sends exactly those bytes. A reprint of the receipt later
+  is a new job from the invoice's snapshots (ADR-078), not a re-render of
+  an old one.
+- **States:** queued, printing, done, failed (waiting out its backoff),
+  dead (no more automatic tries). Done is final. Dead goes back to queued
+  only by a person (5b). A job with no printer is created dead with
+  "no printer is set up for this", so it is on the screen, not lost.
+- **Retries:** 2s doubling to a five-minute cap, ten tries, 13.5 minutes
+  in all. A failure marked `printjob.ErrPermanent` (a retired printer, a
+  transport this build lacks, a Windows printer name that does not exist)
+  goes dead at once.
+- **One job at a time per printer, in order,** decided in SQL: the due
+  query returns a printer's oldest unfinished job only, so a job printing
+  or backing off holds back that printer's later jobs and nobody else's.
+  Printers are sent to in parallel, so a jammed bar printer never delays
+  the kitchen. A claim moves a job to printing only from the state the
+  worker read, so it cannot be sent twice at once.
+- **A crash mid-send prints twice rather than never.** On start, jobs left
+  printing go back to queued with the reason noted. A send that completes
+  as shutdown begins is still recorded, so it does not print again.
+- **Transports:** TCP 9100 through `escpos.Send`; the Windows RAW spooler
+  through `winspool.drv` via `syscall` (no cgo), in a Windows-only file.
+  Elsewhere a spooler job fails permanently with the reason. The real
+  spooler answered a missing printer name as permanent in the tests; the
+  write path has not met a real printer.
+- The worker is owned by `printq.Queue` (Start, Close, Wake), polls every
+  second for due backoffs, and stops before the database closes.
+- Checked: migration 00008 applied to the scratch database from earlier
+  tasks and the server started with the queue running. Nothing queues a
+  job yet; that is 5b.
+Because: printers jam mid-service, and a receipt that never printed is an
+invoice the guest never got. Every job ends printed or in front of a person.
+Cost: a job's bytes are fixed when queued: a wrong paper width set on the
+printer later needs a new job, not a retry.

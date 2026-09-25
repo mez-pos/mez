@@ -25,6 +25,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/config"
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/device/escpos"
+	"github.com/byjoellobo/nofiltr-pos/internal/device/printq"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
@@ -190,6 +191,18 @@ func run() (err error) {
 		return err
 	}
 	running.push("hub", events.Close)
+
+	// The print queue sends whatever is waiting, including what a crash left
+	// half printed, from the moment the server is up. It stops before the
+	// database closes: the stack unwinds in reverse.
+	prints, err := printq.New(printq.Options{DB: database, Log: log})
+	if err != nil {
+		return err
+	}
+	if err := prints.Start(ctx); err != nil {
+		return err
+	}
+	running.push("print queue", prints.Close)
 
 	orders, err := svcorder.New(svcorder.Options{DB: database, Log: log, Publisher: publisher(events)})
 	if err != nil {

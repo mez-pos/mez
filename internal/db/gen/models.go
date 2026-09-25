@@ -165,6 +165,36 @@ type PairingCode struct {
 	DeviceID   sql.NullInt64
 }
 
+type PrintJob struct {
+	ID            int64
+	VenueID       int64
+	PrinterID     sql.NullInt64
+	Kind          string
+	Label         string
+	Payload       []byte
+	State         string
+	Attempts      int64
+	NextAttemptAt time.Time
+	LastError     string
+	OrderID       sql.NullInt64
+	EventSeq      sql.NullInt64
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	DoneAt        sql.NullTime
+}
+
+type Printer struct {
+	ID        int64
+	VenueID   int64
+	Name      string
+	Transport string
+	Address   string
+	PaperMm   int64
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type Role struct {
 	ID          int64
 	VenueID     int64

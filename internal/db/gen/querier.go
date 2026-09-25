@@ -29,6 +29,10 @@ type Querier interface {
 	// that forgot would leave terminals selling from a cached menu, which is
 	// why the writes live behind db.DB rather than being called loose.
 	BumpMenuVersion(ctx context.Context, venueID int64) (int64, error)
+	// Moves a job the worker picked to printing, and counts the attempt. It
+	// matches only from the state the worker saw, so two claims of one job
+	// cannot both succeed.
+	ClaimPrintJob(ctx context.Context, arg ClaimPrintJobParams) (int64, error)
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (int64, error)
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (int64, error)
@@ -43,6 +47,9 @@ type Querier interface {
 	CreatePairedDevice(ctx context.Context, arg CreatePairedDeviceParams) (int64, error)
 	// Devices and the codes they pair with. internal/auth is the only caller.
 	CreatePairingCode(ctx context.Context, arg CreatePairingCodeParams) (int64, error)
+	CreatePrintJob(ctx context.Context, arg CreatePrintJobParams) (int64, error)
+	// The print queue: printers and the jobs waiting for them (ADR-080).
+	CreatePrinter(ctx context.Context, arg CreatePrinterParams) (int64, error)
 	// Staff and the roles they hold. Roles are here rather than in a file of their
 	// own because a staff member cannot be created without one.
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
@@ -65,7 +72,14 @@ type Querier interface {
 	// Every device ever paired at the venue, revoked included, for the same
 	// reason: history names the till an event came from.
 	DeviceNamesForVenue(ctx context.Context, venueID int64) ([]DeviceNamesForVenueRow, error)
+	// The next job for each printer, if it is due: the oldest job not yet done
+	// or dead. A printer's jobs print one at a time and in order, because a job
+	// still printing, or failed and waiting out its backoff, holds back every
+	// later one for that printer. Jobs with no printer are never picked.
+	DuePrintJobs(ctx context.Context, now time.Time) ([]DuePrintJobsRow, error)
 	EndStaffSession(ctx context.Context, arg EndStaffSessionParams) (int64, error)
+	// Records how a send went. Only a job still printing can finish.
+	FinishPrintJob(ctx context.Context, arg FinishPrintJobParams) (int64, error)
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
@@ -90,6 +104,8 @@ type Querier interface {
 	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error)
 	OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapshot, error)
 	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)
+	PrintJobByID(ctx context.Context, id int64) (PrintJob, error)
+	PrinterByID(ctx context.Context, id int64) (Printer, error)
 	// The device's latest failed attempts, of any staff member, newest first.
 	RecentDeviceFailures(ctx context.Context, arg RecentDeviceFailuresParams) ([]time.Time, error)
 	// The staff member's latest attempts that verified a PIN, newest first:
@@ -100,6 +116,9 @@ type Querier interface {
 	RecordSignInAttempt(ctx context.Context, arg RecordSignInAttemptParams) error
 	// Only an unredeemed code changes, so two redeemers cannot both succeed.
 	RedeemPairingCode(ctx context.Context, arg RedeemPairingCodeParams) (int64, error)
+	// On start, jobs a crash left printing go back to queued. Whether their
+	// bytes reached the printer is unknown; printing twice beats never.
+	RequeueStalePrintJobs(ctx context.Context, now time.Time) (int64, error)
 	// Revoked rather than deleted, and the token hash kept, so a revoked token is
 	// recognised and refused as revoked rather than as unknown.
 	RevokeDevice(ctx context.Context, arg RevokeDeviceParams) (int64, error)

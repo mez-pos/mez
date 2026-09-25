@@ -43,7 +43,7 @@ Phase 06.
   Split into three sub-tasks (too large for one session). Task 5 is done
   when all three are.
 
-  - [ ] **Task 5a - Queue core.** A migration for `printers` (name,
+  - [x] **Task 5a - Queue core.** A migration for `printers` (name,
     transport tcp or windows, address or Windows printer name, paper 80 or
     58, active) and `print_jobs` (venue, printer, kind receipt, kitchen,
     z_report or test, the ESC/POS bytes, state, attempts, next attempt,

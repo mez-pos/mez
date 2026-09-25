@@ -11,19 +11,21 @@ File: `docs/phases/phase-07.md`. Phase 06 is complete.
 
 ## Last completed task
 
-**Phase 07, Task 4: ESC/POS driver** (ADR-079). `internal/device/escpos`:
-the command builder, receipt, kitchen ticket and Z-report layouts at 80mm
-and 58mm, `Send` over TCP 9100, and `nofiltr --test-print ADDRESS`
-(`docs/running.md`). Checked against a stand-in TCP printer, not yet on
-real paper.
+**Phase 07, Task 5a: print queue core** (ADR-080). Migration 00008
+(`printers`, `print_jobs`), `internal/domain/printjob` (states, backoff,
+dead letters), `internal/device/printq` (worker, one job at a time per
+printer, crash recovery, TCP and the Windows spooler), started and
+stopped with the server. Nothing queues jobs yet.
 
 ## Next task
 
-**Phase 07, Task 5a: print queue core.** Task 5 was split into 5a (queue,
-worker, transports), 5b (jobs from the till and the queue on screen) and
-5c (printers in the back office); see `docs/phases/phase-07.md`. Nothing
-calls the Task 4 layouts yet: 5b is what prints a receipt, a kitchen
-ticket and a reprint (ADR-078, ADR-079).
+**Phase 07, Task 5b: jobs from the till, and the queue on screen.** Jobs
+written in the same transaction as their event (`printq.EnqueueTx`): the
+receipt on `invoice.issued` with a drawer kick for cash, a kitchen ticket
+per station on `ticket.sent`, a DUPLICATE on `invoice.reprinted`. Then the
+jobs API, the stream, and the terminal's queue sheet with Retry. Printers
+have no station assignment yet (5c): 5b needs a way to pick a printer, or
+queues jobs dead with "no printer is set up".
 
 ## Known broken / in progress
 
@@ -52,6 +54,7 @@ ticket and a reprint (ADR-078, ADR-079).
 - The server does not cap a tender's `reference`; the till caps it at 40.
 - Printing is ASCII only (ADR-079): non-Latin item names print as "?".
   No physical printer has run the driver yet.
+- The Windows spooler's write path is untested on a real printer (ADR-080).
 - A payment can still be voided after its invoice (ADR-078): Task 6 must
   decide that, with refunds.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`
