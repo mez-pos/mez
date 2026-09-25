@@ -2185,3 +2185,35 @@ Because: before this, a venue could not route a receipt anywhere without
 editing its database.
 Cost: a manager cannot set up a replacement printer during service without
 the owner, until roles can be edited (phase 10).
+
+## ADR-083 - Refunds on an invoiced bill are credit notes, never a second invoice
+2026-09 · Status: accepted (the owner's choice, 2026-09-25)
+Decision: when money goes back to a guest on a bill that already has an
+invoice, the till issues a credit note: its own gapless series, naming the
+invoice it corrects, with a snapshot of what it credits and the tax on it.
+The original invoice is never changed and never issued again.
+This supersedes the part of ADR-046 that said "one invoice per settlement;
+a reopen allows the next", and the path it described for refunding a
+settled bill (reopen, correct, refund, close, which then issued a second
+invoice).
+- **Why:** under GST a reduction to an issued tax invoice is recorded as a
+  credit note against it. Two tax invoices for one sale, the first never
+  cancelled, overstates the register and has no document the guest or an
+  auditor can match to the refund. VAT receipts work the same way.
+- **What is decided now:** credit notes exist, are gapless per venue,
+  series and financial year like invoices, and are appended with the
+  refund in one transaction, allowed on a closed order, with a reason and
+  a manager's `refund.give`. Reopening no longer clears the invoice.
+- **What Task 6a decides and records here:** the event's shape; whether a
+  credit is taken by line and quantity, by amount spread over the tax
+  rates, or both; how the projection reports a bill net of its credit
+  notes; and the series settings.
+- **Payment voids are not credit notes.** An invoice records the sale, not
+  its payment. A payment voided after the invoice (a card charged twice,
+  a UPI reversal) returns the balance to due; the next tender settles it
+  without allocating a number (ADR-078's open question).
+Because: the invoice register is what the venue files its tax from. It
+must say what was sold and, separately, what was credited, each under its
+own unbroken run of numbers.
+Cost: Task 6 is split in two (6a domain and API, 6b the till), and a
+refund is a document of its own that must print.

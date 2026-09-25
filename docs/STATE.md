@@ -19,11 +19,11 @@ Checked in a browser with a stand-in TCP printer.
 
 ## Next task
 
-**Phase 07, Task 6: refunds and voids after payment.** Full and partial
-refunds against a specific payment, with reason and authorisation, and
-post-payment voids, as corrective events on the timeline and later in the
-Z-report. It must settle what ADR-078 left open: a payment voided after
-its invoice was issued.
+**Phase 07, Task 6a: credit notes and refunds, in the domain and the
+API.** Task 6 was split after the owner chose credit notes for refunds on
+invoiced bills (ADR-083, superseding part of ADR-046): 6a is the domain,
+series and API, 6b the till's screens and the printed credit note. See
+`docs/phases/phase-07.md`.
 
 ## Known broken / in progress
 
@@ -55,8 +55,8 @@ its invoice was issued.
 - The Windows spooler's write path is untested on a real printer (ADR-080).
 - The cash drawer opens only with the settling receipt, not on a cash part
   payment (ADR-081). Kitchen tickets print only once phase 08 adds Send.
-- A payment can still be voided after its invoice (ADR-078): Task 6 must
-  decide that, with refunds.
+- A payment voided after its invoice returns the balance to due and is
+  settled without a new number (ADR-083); Task 6a makes that so and tests it.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`
   does not escape the path in its `file:` DSN.
 - To try the apps: `nofiltr setup -demo-menu` prints a pairing code

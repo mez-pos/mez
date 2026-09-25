@@ -81,6 +81,36 @@ Phase 06.
   authorisation. Post-payment voids. Both emit corrective events and appear on
   the timeline and in the Z-report. Never a destructive edit.
 
+  Split into two sub-tasks after the owner chose credit notes for refunds on
+  invoiced bills (ADR-083). Task 6 is done when both are.
+
+  - [ ] **Task 6a - Credit notes and refunds, in the domain and the API.**
+    A refund on an invoiced bill issues a credit note in its own gapless
+    series (the invoice allocator, a `CN` series) that names the invoice it
+    corrects and snapshots what it credits: the lines and quantities (or an
+    amount, spread over the bill's tax rates as the invoice was), with
+    their taxable value and tax. The credit note and the refund against
+    the chosen payment are appended in one transaction, allowed on a closed
+    order, with a reason and a manager's approval (`refund.give`); the
+    projection keeps the original invoice untouched and reports the net.
+    Reopening an invoiced bill no longer allows a second invoice. A payment
+    voided after its invoice (`payment.void`) puts the balance back to due
+    and is settled by the next tender without a new number. Tests for:
+    full and partial refunds by line, by quantity and by amount; refunds
+    split across two payments; over-refund; a credit note gapless beside a
+    refused one; the tax on a credit note matching the invoice's rates to
+    the paisa. The timeline shows both, in words.
+  - [ ] **Task 6b - Refunds and voids at the till.** A way to find a past
+    bill (recent closed orders, and an invoice number typed or scanned from
+    the receipt's barcode), its invoice and payments, and from there:
+    refund (choose the payment, what is credited, the reason, a manager's
+    PIN), void a payment, and reprint. The credit note goes to the receipt
+    printer through the print queue (a `credit_note` layout in `escpos`,
+    marked as a credit note with the invoice it corrects). Screen spec
+    first. Done-when check: a three-way split, then a partial refund
+    against one payment, seen on the timeline, the queue, the printed
+    credit note and the order's totals.
+
 ## Done when
 A ticket is split three ways across cash, card and UPI, a gapless tax-compliant
 invoice is issued, a receipt prints, the drawer kicks, and a partial refund
