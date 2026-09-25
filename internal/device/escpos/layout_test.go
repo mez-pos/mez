@@ -216,6 +216,16 @@ func TestReceiptCopyAndBill(t *testing.T) {
 	}
 	decode(t, data).has(t, "TAX INVOICE - DUPLICATE", "INV/26-27/000042")
 
+	cash := receipt()
+	cash.Kick = true
+	data, err = cash.Layout(Paper80)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p := decode(t, data); p.kicks != 1 {
+		t.Errorf("a cash receipt kicked the drawer %d times", p.kicks)
+	}
+
 	bill := receipt()
 	bill.InvoiceNo, bill.Tenders = "", nil
 	data, err = bill.Layout(Paper80)

@@ -24,11 +24,18 @@ type Querier interface {
 	ActiveStations(ctx context.Context, venueID int64) ([]ActiveStationsRow, error)
 	AppendOrderEvent(ctx context.Context, arg AppendOrderEventParams) error
 	AttachModifierGroup(ctx context.Context, arg AttachModifierGroupParams) error
+	// For a change that touches every venue at once: the requeue on start.
+	BumpAllPrintVersions(ctx context.Context) error
 	//
 	// Every write to a menu table calls this in the same transaction. A write
 	// that forgot would leave terminals selling from a cached menu, which is
 	// why the writes live behind db.DB rather than being called loose.
 	BumpMenuVersion(ctx context.Context, venueID int64) (int64, error)
+	// Moves the venue's print version on, in the transaction that changed a job.
+	BumpPrintVersion(ctx context.Context, venueID int64) error
+	// A person's cancel: a job that has not printed stops being tried. It is
+	// kept, dead, with who cancelled it, and can still be retried.
+	CancelPrintJob(ctx context.Context, arg CancelPrintJobParams) (int64, error)
 	// Moves a job the worker picked to printing, and counts the attempt. It
 	// matches only from the state the worker saw, so two claims of one job
 	// cannot both succeed.
@@ -104,8 +111,14 @@ type Querier interface {
 	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error)
 	OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapshot, error)
 	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)
-	PrintJobByID(ctx context.Context, id int64) (PrintJob, error)
-	PrinterByID(ctx context.Context, id int64) (Printer, error)
+	PrintJobByID(ctx context.Context, id int64) (PrintJobByIDRow, error)
+	// The queue as staff see it: every job not yet printed, and what printed
+	// since the given time, newest first. Payloads stay behind.
+	PrintJobsForVenue(ctx context.Context, arg PrintJobsForVenueParams) ([]PrintJobsForVenueRow, error)
+	PrintVersion(ctx context.Context, venueID int64) (int64, error)
+	PrinterByID(ctx context.Context, id int64) (PrinterByIDRow, error)
+	// The venue's receipt printer, if it has one in service.
+	ReceiptPrinter(ctx context.Context, venueID int64) (ReceiptPrinterRow, error)
 	// The device's latest failed attempts, of any staff member, newest first.
 	RecentDeviceFailures(ctx context.Context, arg RecentDeviceFailuresParams) ([]time.Time, error)
 	// The staff member's latest attempts that verified a PIN, newest first:
@@ -119,6 +132,9 @@ type Querier interface {
 	// On start, jobs a crash left printing go back to queued. Whether their
 	// bytes reached the printer is unknown; printing twice beats never.
 	RequeueStalePrintJobs(ctx context.Context, now time.Time) (int64, error)
+	// A person's retry: a failed or dead job back to the queue with its tries
+	// restored, on the printer given (the one it had, or one set up since).
+	RetryPrintJob(ctx context.Context, arg RetryPrintJobParams) (int64, error)
 	// Revoked rather than deleted, and the token hash kept, so a revoked token is
 	// recognised and refused as revoked rather than as unknown.
 	RevokeDevice(ctx context.Context, arg RevokeDeviceParams) (int64, error)
@@ -141,6 +157,8 @@ type Querier interface {
 	// history names the people on it, whether or not they still work there.
 	StaffNamesForVenue(ctx context.Context, venueID int64) ([]StaffNamesForVenueRow, error)
 	StaffSessionByTokenHash(ctx context.Context, tokenHash string) (StaffSessionByTokenHashRow, error)
+	// The printer a station's tickets go to, if it has one in service.
+	StationPrinter(ctx context.Context, arg StationPrinterParams) (StationPrinterRow, error)
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	//

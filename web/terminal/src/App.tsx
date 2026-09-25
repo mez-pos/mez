@@ -7,6 +7,7 @@ import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { SignedInShell } from "../../shared/screens/SignedInShell";
 import { Splash } from "../../shared/screens/Splash";
+import { PrintStatus } from "./print/PrintStatus";
 import { RegisterScreen } from "./register/RegisterScreen";
 
 export function App() {
@@ -20,7 +21,7 @@ export function App() {
           <LockScreen />
         </Route>
         <Route path="/">
-          <SignedInShell area="Register" exitLabel="Lock" fill>
+          <SignedInShell area="Register" exitLabel="Lock" fill status={<PrintStatus />}>
             <RegisterScreen />
           </SignedInShell>
         </Route>

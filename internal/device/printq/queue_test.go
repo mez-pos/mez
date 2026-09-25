@@ -128,7 +128,7 @@ func (f *fixture) pass(t *testing.T) {
 	f.q.sends.Wait()
 }
 
-func (f *fixture) job(t *testing.T, id int64) gen.PrintJob {
+func (f *fixture) job(t *testing.T, id int64) gen.PrintJobByIDRow {
 	t.Helper()
 	j, err := f.db.Queries().PrintJobByID(context.Background(), id)
 	if err != nil {
@@ -355,5 +355,76 @@ func TestInvalidJobs(t *testing.T) {
 	}
 	if _, err := New(Options{}); err == nil {
 		t.Error("a queue with no database")
+	}
+}
+
+// TestRetryCancelAndList: a person's retry and cancel, the list staff see,
+// and the version that tells the tills.
+func TestRetryCancelAndList(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	var changed []int64
+	f.q.onChange = func(v int64) { changed = append(changed, v) }
+	version := func() int64 {
+		v, err := f.q.Version(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	if version() != 0 {
+		t.Fatal("a venue with no jobs has a version")
+	}
+
+	f.fake.fail("bar", errors.New("paper out"))
+	stuck := f.add(t, 1, "Receipt 1")
+	waiting := f.add(t, 1, "Receipt 2")
+	v1 := version()
+	f.pass(t)
+	if version() <= v1 || len(changed) < 3 {
+		t.Errorf("a send moved the version %d to %d, told %v", v1, version(), changed)
+	}
+
+	// A cancel stops a waiting job, and says who.
+	if err := f.q.Cancel(ctx, 1, waiting, "Asha"); err != nil {
+		t.Fatal(err)
+	}
+	if j := f.job(t, waiting); j.State != "dead" || j.LastError != "cancelled by Asha" {
+		t.Errorf("cancelled job = %+v", j)
+	}
+	if err := f.q.Cancel(ctx, 1, waiting, "Asha"); !errors.Is(err, ErrJobState) {
+		t.Errorf("a second cancel: %v", err)
+	}
+
+	// A retry restores the tries of a job that failed.
+	f.fake.fail("bar", nil)
+	if err := f.q.Retry(ctx, 1, stuck); err != nil {
+		t.Fatal(err)
+	}
+	if j := f.job(t, stuck); j.State != "queued" || j.Attempts != 0 || j.LastError != "" {
+		t.Errorf("retried job = %+v", j)
+	}
+	f.pass(t)
+	if err := f.q.Retry(ctx, 1, stuck); !errors.Is(err, ErrJobState) {
+		t.Errorf("a retry of a printed job: %v", err)
+	}
+	if err := f.q.Retry(ctx, 2, waiting); !errors.Is(err, ErrJobNotFound) {
+		t.Errorf("another venue's job: %v", err)
+	}
+	if err := f.q.Retry(ctx, 1, 999); !errors.Is(err, ErrJobNotFound) {
+		t.Errorf("no such job: %v", err)
+	}
+
+	list, err := f.q.Jobs(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 2 || list[0].ID != waiting || list[1].ID != stuck || list[1].PrinterName != "Bar" {
+		t.Errorf("list = %+v", list)
+	}
+	// A printed job leaves the list once it is old news.
+	f.clock.add(ShownFor + time.Minute)
+	if list, _ := f.q.Jobs(ctx, 1); len(list) != 1 || list[0].ID != waiting {
+		t.Errorf("list later = %+v", list)
 	}
 }

@@ -24,11 +24,12 @@ const (
 	MsgSubscribe MessageType = "subscribe" // change my topics
 
 	// From the server.
-	MsgWelcome     MessageType = "welcome"      // your position and what you are subscribed to
-	MsgEvent       MessageType = "event"        // one event
-	MsgCaughtUp    MessageType = "caught_up"    // you have everything up to this position
-	MsgMenuChanged MessageType = "menu_changed" // the venue's menu has a new version
-	MsgError       MessageType = "error"        // what you sent could not be used
+	MsgWelcome      MessageType = "welcome"       // your position and what you are subscribed to
+	MsgEvent        MessageType = "event"         // one event
+	MsgCaughtUp     MessageType = "caught_up"     // you have everything up to this position
+	MsgMenuChanged  MessageType = "menu_changed"  // the venue's menu has a new version
+	MsgPrintChanged MessageType = "print_changed" // the venue's print jobs moved
+	MsgError        MessageType = "error"         // what you sent could not be used
 )
 
 // MessageType names a message in either direction.
@@ -64,6 +65,8 @@ type WelcomeMessage struct {
 	// cached menu is another version fetches it again: a reconnect is when
 	// a menu_changed missed while offline is caught.
 	MenuVersion int64 `json:"menu_version"`
+	// PrintVersion is the venue's print jobs as of this welcome.
+	PrintVersion int64 `json:"print_version"`
 }
 
 // EventMessage is one event on the wire, with the little about its order
@@ -83,6 +86,15 @@ type EventMessage struct {
 // still needs that station's new items. It carries the version and not the
 // menu, which the client fetches from GET /api/v1/menu.
 type MenuChangedMessage struct {
+	Type    MessageType `json:"type"`
+	Version int64       `json:"version"`
+}
+
+// PrintChangedMessage says the venue's print jobs have moved: queued,
+// printed, failed, retried. Like the menu's, it goes to every connection
+// and carries a version, not the jobs, which the client reads from
+// GET /api/v1/print-jobs (ADR-081).
+type PrintChangedMessage struct {
 	Type    MessageType `json:"type"`
 	Version int64       `json:"version"`
 }
@@ -115,9 +127,10 @@ type conn struct {
 	topics map[string]struct{}
 	cursor int64
 
-	// menu is the menu version this connection last told its client about.
-	// Only the writing goroutine touches it.
-	menu int64
+	// menu and print are the versions this connection last told its client
+	// about. Only the writing goroutine touches them.
+	menu  int64
+	print int64
 }
 
 // wake tells the connection there may be more to read, without blocking.
@@ -139,6 +152,10 @@ func (c *conn) run(ctx context.Context) error {
 		return err
 	}
 	c.menu, err = c.hub.source.MenuVersion(ctx, c.client.VenueID)
+	if err != nil {
+		return err
+	}
+	c.print, err = c.hub.source.PrintVersion(ctx, c.client.VenueID)
 	if err != nil {
 		return err
 	}
@@ -164,7 +181,7 @@ func (c *conn) run(ctx context.Context) error {
 
 	if err := c.hub.writeJSON(ctx, c.ws, WelcomeMessage{
 		Type: MsgWelcome, VenueID: c.client.VenueID, DeviceID: c.client.DeviceID,
-		From: from, Latest: latest, Topics: c.topicList(), MenuVersion: c.menu,
+		From: from, Latest: latest, Topics: c.topicList(), MenuVersion: c.menu, PrintVersion: c.print,
 	}); err != nil {
 		return err
 	}
@@ -183,6 +200,9 @@ func (c *conn) run(ctx context.Context) error {
 			return err
 		}
 		if err := c.checkMenu(ctx); err != nil {
+			return err
+		}
+		if err := c.checkPrint(ctx); err != nil {
 			return err
 		}
 		select {
@@ -299,6 +319,23 @@ func (c *conn) checkMenu(ctx context.Context) error {
 		return err
 	}
 	c.menu = version
+	return nil
+}
+
+// checkPrint tells the client when the venue's print jobs have moved, as
+// checkMenu does for the menu.
+func (c *conn) checkPrint(ctx context.Context) error {
+	version, err := c.hub.source.PrintVersion(ctx, c.client.VenueID)
+	if err != nil {
+		return err
+	}
+	if version == c.print {
+		return nil
+	}
+	if err := c.hub.writeJSON(ctx, c.ws, PrintChangedMessage{Type: MsgPrintChanged, Version: version}); err != nil {
+		return err
+	}
+	c.print = version
 	return nil
 }
 

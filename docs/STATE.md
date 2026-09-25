@@ -11,21 +11,20 @@ File: `docs/phases/phase-07.md`. Phase 06 is complete.
 
 ## Last completed task
 
-**Phase 07, Task 5a: print queue core** (ADR-080). Migration 00008
-(`printers`, `print_jobs`), `internal/domain/printjob` (states, backoff,
-dead letters), `internal/device/printq` (worker, one job at a time per
-printer, crash recovery, TCP and the Windows spooler), started and
-stopped with the server. Nothing queues jobs yet.
+**Phase 07, Task 5b: jobs from the till, and the queue on screen**
+(ADR-081). Receipts (with the cash drawer kick), duplicates and kitchen
+tickets are queued in the order's own transaction and routed by station
+and receipt printer (migration 00009); the jobs API with retry and
+cancel; `print_changed` on the stream; the terminal's print queue sheet
+and header warning. Checked in a browser with a stand-in TCP printer.
 
 ## Next task
 
-**Phase 07, Task 5b: jobs from the till, and the queue on screen.** Jobs
-written in the same transaction as their event (`printq.EnqueueTx`): the
-receipt on `invoice.issued` with a drawer kick for cash, a kitchen ticket
-per station on `ticket.sent`, a DUPLICATE on `invoice.reprinted`. Then the
-jobs API, the stream, and the terminal's queue sheet with Retry. Printers
-have no station assignment yet (5c): 5b needs a way to pick a printer, or
-queues jobs dead with "no printer is set up".
+**Phase 07, Task 5c: printers in the back office.** API to list, add,
+change and retire printers, set the receipt printer and each station's
+printer (`stations.printer_id`, `printers.is_receipt`, ADR-081), and send
+a test page through the queue; the back office's first real screen, spec
+first. The back office app is still only its shell.
 
 ## Known broken / in progress
 
@@ -55,6 +54,8 @@ queues jobs dead with "no printer is set up".
 - Printing is ASCII only (ADR-079): non-Latin item names print as "?".
   No physical printer has run the driver yet.
 - The Windows spooler's write path is untested on a real printer (ADR-080).
+- The cash drawer opens only with the settling receipt, not on a cash part
+  payment (ADR-081). Kitchen tickets print only once phase 08 adds Send.
 - A payment can still be voided after its invoice (ADR-078): Task 6 must
   decide that, with refunds.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`

@@ -11,6 +11,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/printing"
 )
 
 var (
@@ -67,6 +68,16 @@ type Options struct {
 	Clock     Clock     // nil is the system clock
 	Publisher Publisher // nil publishes nothing
 	Log       *slog.Logger
+	// Prints, when set, has the commands queue what their events print, in
+	// the same transaction (ADR-081), and is woken once they commit. Nil
+	// prints nothing, which is what most tests want.
+	Prints PrintQueue
+}
+
+// PrintQueue is the print queue as the order service needs it: woken after
+// a command queued jobs, so the receipt prints as the guest pays.
+type PrintQueue interface {
+	Wake()
 }
 
 // Service runs order commands.
@@ -75,6 +86,7 @@ type Service struct {
 	clock     Clock
 	publisher Publisher
 	log       *slog.Logger
+	prints    PrintQueue
 }
 
 // New returns a Service.
@@ -88,7 +100,7 @@ func New(opts Options) (*Service, error) {
 	if opts.Log == nil {
 		opts.Log = slog.New(slog.NewTextHandler(io.Discard, nil))
 	}
-	return &Service{db: opts.DB, clock: opts.Clock, publisher: opts.Publisher, log: opts.Log}, nil
+	return &Service{db: opts.DB, clock: opts.Clock, publisher: opts.Publisher, log: opts.Log, prints: opts.Prints}, nil
 }
 
 // Meta is who is asking, from where, and the idempotency key if they sent
@@ -142,10 +154,11 @@ func (s *Service) run(ctx context.Context, meta Meta, orderID int64, name string
 	var (
 		publicID string
 		prior    *priorResult
+		queued   int
 	)
 	state, events, err := s.db.AppendOrder(ctx, orderID, v.Taxes, func(ctx context.Context, tx *db.OrderTx) ([]order.Event, error) {
 		// Decide can run more than once, so everything it sets is reset.
-		publicID, prior = tx.PublicID, nil
+		publicID, prior, queued = tx.PublicID, nil, 0
 		if tx.VenueID != meta.VenueID {
 			return nil, fmt.Errorf("%w: %d", ErrOrderNotFound, orderID)
 		}
@@ -165,6 +178,17 @@ func (s *Service) run(ctx context.Context, meta Meta, orderID int64, name string
 		if err := saveKey(ctx, tx.Queries(), meta, fp, tx.OrderID, first, first+int64(len(payloads))-1, at); err != nil {
 			return nil, err
 		}
+		if s.prints != nil {
+			tx.OnAppended(func(ctx context.Context, q *gen.Queries, next order.State, appended []order.Event) error {
+				n, err := printing.Plan(ctx, q, printing.Input{
+					VenueID: meta.VenueID, OrderID: tx.OrderID, PublicID: tx.PublicID, Location: v.Location,
+					State: next, Appended: appended,
+					Stream: func(ctx context.Context) ([]order.Event, error) { return tx.Events(ctx, 0) },
+				}, at)
+				queued = n
+				return err
+			})
+		}
 		return stamp(payloads, meta, at), nil
 	})
 	if errors.Is(err, db.ErrOrderNotFound) {
@@ -177,6 +201,9 @@ func (s *Service) run(ctx context.Context, meta Meta, orderID int64, name string
 		return s.replay(ctx, v, *prior)
 	}
 	res := Result{OrderID: orderID, PublicID: publicID, State: state, Events: events}
+	if queued > 0 {
+		s.prints.Wake()
+	}
 	s.publish(ctx, meta.VenueID, res)
 	return res, nil
 }

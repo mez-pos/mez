@@ -57,7 +57,7 @@ Phase 06.
     clearly elsewhere. Started and stopped with the server. Tests with a
     temp-file DB and a fake transport: retry, backoff, dead letter, the
     crash recovery.
-  - [ ] **Task 5b - Jobs from the till, and the queue on screen.** Jobs
+  - [x] **Task 5b - Jobs from the till, and the queue on screen.** Jobs
     written in the same transaction as the event that causes them, so
     none is lost: the receipt when an invoice is issued (with the drawer
     kick when cash was taken), a kitchen ticket per station on

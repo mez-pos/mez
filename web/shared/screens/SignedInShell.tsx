@@ -15,10 +15,12 @@ interface SignedInShellProps {
    * itself, as the register does so its total never leaves the screen.
    */
   fill?: boolean;
+  /** The app's own status in the header, before the connection: the till's print queue. */
+  status?: ReactNode;
   children: ReactNode;
 }
 
-export function SignedInShell({ area, exitLabel, fill = false, children }: SignedInShellProps) {
+export function SignedInShell({ area, exitLabel, fill = false, status: extra, children }: SignedInShellProps) {
   const status = useAuth();
   const store = useAuthStore();
   if (status.kind !== "signed_in") return null; // the Gate never lets this happen
@@ -28,6 +30,7 @@ export function SignedInShell({ area, exitLabel, fill = false, children }: Signe
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-chrome px-6 py-2">
         <Meta items={["Nofiltr", area, status.device.name]} />
         <div className="flex items-center gap-tap-gap">
+          {extra}
           <ConnectionIndicator />
           <span className="px-2 text-base font-semibold">{status.staff.name}</span>
           <Button onClick={() => void store.signOut()}>{exitLabel}</Button>

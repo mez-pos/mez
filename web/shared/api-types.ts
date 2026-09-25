@@ -52,7 +52,10 @@ export type ErrorCode =
   | 'split_mismatch'
   | 'split_after_payment'
   | 'invoice_not_found'
-  | 'order_invoiced';
+  | 'order_invoiced'
+  | 'print_job_not_found'
+  | 'print_job_state'
+  | 'no_printer';
 
 export type OrderStatus =
   | 'open'
@@ -90,6 +93,19 @@ export type SplitKind =
   | 'amount'
   | 'item'
   | 'guest';
+
+export type PrintJobState =
+  | 'queued'
+  | 'printing'
+  | 'done'
+  | 'failed'
+  | 'dead';
+
+export type PrintJobKind =
+  | 'receipt'
+  | 'kitchen'
+  | 'z_report'
+  | 'test';
 
 export type DiscountScope =
   | 'line'
@@ -155,6 +171,7 @@ export type StreamMessageType =
   | 'event'
   | 'caught_up'
   | 'menu_changed'
+  | 'print_changed'
   | 'error';
 
 export interface Money {
@@ -742,6 +759,25 @@ export interface ReprintRequest {
   reason: string;
 }
 
+export interface PrintJobResponse {
+  id: number;
+  kind: PrintJobKind;
+  label: string;
+  state: PrintJobState;
+  printer?: string;
+  station?: string;
+  attempts: number;
+  max_attempts: number;
+  next_attempt_at?: string;
+  last_error?: string;
+  created_at: string;
+  done_at?: string;
+}
+
+export interface PrintJobsResponse {
+  jobs: PrintJobResponse[];
+}
+
 export interface StationResponse {
   id: number;
   code: string;
@@ -812,6 +848,7 @@ export interface WelcomeMessage {
   latest_event_id: number;
   topics: string[];
   menu_version: number;
+  print_version: number;
 }
 
 export interface EventMessage {
@@ -830,6 +867,11 @@ export interface CaughtUpMessage {
 }
 
 export interface MenuChangedMessage {
+  type: StreamMessageType;
+  version: number;
+}
+
+export interface PrintChangedMessage {
   type: StreamMessageType;
   version: number;
 }

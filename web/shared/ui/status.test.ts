@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { chipSpec, kitchenStatuses, lineStatuses, orderStatuses, paymentStatuses, type ChipSpec } from "./status";
+import { chipSpec, kitchenStatuses, lineStatuses, orderStatuses, paymentStatuses, printStatuses, type ChipSpec } from "./status";
 
 const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   kitchen: kitchenStatuses,
   order: orderStatuses,
   payment: paymentStatuses,
   line: lineStatuses,
+  print: printStatuses,
 };
 
 describe("status vocabularies", () => {
@@ -38,5 +39,6 @@ describe("status vocabularies", () => {
   it("looks up by kind", () => {
     expect(chipSpec({ kind: "payment", status: "refunded" })).toEqual({ tone: "danger", word: "Refunded" });
     expect(chipSpec({ kind: "kitchen", status: "ready" })).toEqual({ tone: "success", word: "Ready" });
+    expect(chipSpec({ kind: "print", status: "dead" })).toEqual({ tone: "danger", word: "Not printed" });
   });
 });

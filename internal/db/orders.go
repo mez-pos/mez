@@ -116,7 +116,23 @@ type OrderTx struct {
 	PublicID string
 	State    order.State
 
-	q *gen.Queries
+	q     *gen.Queries
+	after AfterAppend
+}
+
+// AfterAppend runs once the decided events are appended and the order index
+// moved, inside the same transaction: next is the new state, appended the
+// events as numbered. An error rolls the whole append back. It is how a
+// print job is written with the event that causes it (ADR-081).
+type AfterAppend func(ctx context.Context, q *gen.Queries, next order.State, appended []order.Event) error
+
+// OnAppended registers fn to run after the append. Decide may run more than
+// once; the last registration of the attempt that commits is the one run.
+func (o *OrderTx) OnAppended(fn AfterAppend) { o.after = fn }
+
+// Events is the order's stream after afterSeq, read inside the transaction.
+func (o *OrderTx) Events(ctx context.Context, afterSeq int64) ([]order.Event, error) {
+	return orderEvents(ctx, o.q, o.OrderID, afterSeq)
 }
 
 // Queries is the generated query set bound to the appending transaction.
@@ -194,7 +210,8 @@ func (d *DB) appendOnce(ctx context.Context, q *gen.Queries, orderID int64, taxe
 		return order.State{}, nil, fmt.Errorf("order %d: the orders row is at seq %d but its events reach %d", orderID, row.LastSeq, current.LastSeq)
 	}
 
-	decided, err := decide(ctx, &OrderTx{OrderID: orderID, VenueID: row.VenueID, PublicID: row.PublicID, State: current, q: q})
+	otx := &OrderTx{OrderID: orderID, VenueID: row.VenueID, PublicID: row.PublicID, State: current, q: q}
+	decided, err := decide(ctx, otx)
 	if err != nil {
 		return order.State{}, nil, err
 	}
@@ -236,6 +253,11 @@ func (d *DB) appendOnce(ctx context.Context, q *gen.Queries, orderID int64, taxe
 	if crossed || (!useSnapshot && next.LastSeq >= SnapshotEvery) {
 		if err := saveSnapshot(ctx, q, orderID, next, taxes); err != nil {
 			return order.State{}, nil, err
+		}
+	}
+	if otx.after != nil {
+		if err := otx.after(ctx, q, next, events); err != nil {
+			return order.State{}, nil, fmt.Errorf("order %d: after appending: %w", orderID, err)
 		}
 	}
 	return next, events, nil

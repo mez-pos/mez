@@ -43,6 +43,9 @@ type Options struct {
 	Poll time.Duration
 	// SendTimeout bounds one send. Defaults to fifteen seconds.
 	SendTimeout time.Duration
+	// OnChange is told a venue's jobs moved, after the change commits: the
+	// stream's nudge (hub.Notify). Optional.
+	OnChange func(venueID int64)
 }
 
 // Queue is the print queue and its worker. Start it once; Close stops it
@@ -54,6 +57,7 @@ type Queue struct {
 	transports  map[string]Transport
 	poll        time.Duration
 	sendTimeout time.Duration
+	onChange    func(venueID int64)
 
 	wake     chan struct{}
 	cancel   context.CancelFunc
@@ -71,7 +75,7 @@ func New(o Options) (*Queue, error) {
 	}
 	q := &Queue{
 		db: o.DB, log: o.Log, clock: o.Clock, transports: o.Transports,
-		poll: o.Poll, sendTimeout: o.SendTimeout, wake: make(chan struct{}, 1),
+		poll: o.Poll, sendTimeout: o.SendTimeout, onChange: o.OnChange, wake: make(chan struct{}, 1),
 	}
 	if q.log == nil {
 		q.log = slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -199,12 +203,25 @@ func (q *Queue) claim(ctx context.Context, job gen.DuePrintJobsRow) (bool, error
 	err := q.db.WriteTx(ctx, func(tx *gen.Queries) error {
 		var err error
 		n, err = tx.ClaimPrintJob(ctx, gen.ClaimPrintJobParams{Now: q.clock.Now().UTC(), ID: job.ID, FromState: job.State})
-		return err
+		if err != nil || n != 1 {
+			return err
+		}
+		return tx.BumpPrintVersion(ctx, job.VenueID)
 	})
 	if err != nil {
 		return false, fmt.Errorf("claiming print job %d: %w", job.ID, err)
 	}
+	if n == 1 {
+		q.changed(job.VenueID)
+	}
 	return n == 1, nil
+}
+
+// changed tells OnChange a venue's jobs moved.
+func (q *Queue) changed(venueID int64) {
+	if q.onChange != nil {
+		q.onChange(venueID)
+	}
 }
 
 // send makes one attempt and records how it went.
@@ -219,10 +236,11 @@ func (q *Queue) send(ctx context.Context, job gen.DuePrintJobsRow) {
 	record, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cancel()
 	out := printjob.After(attempt, err, q.clock.Now().UTC())
-	if err := q.finish(record, job.ID, out); err != nil {
+	if err := q.finish(record, job.VenueID, job.ID, out); err != nil {
 		q.log.Error("print queue: recording a send", "job_id", job.ID, "error", err)
 		return
 	}
+	q.changed(job.VenueID)
 	attrs := []any{"job_id", job.ID, "venue_id", job.VenueID, "printer", job.PrinterName, "kind", job.Kind, "attempt", attempt}
 	switch out.State {
 	case printjob.Failed:
@@ -249,7 +267,7 @@ func (q *Queue) transmit(ctx context.Context, job gen.DuePrintJobsRow) error {
 	return t.Send(sendCtx, job.Address, job.Payload)
 }
 
-func (q *Queue) finish(ctx context.Context, id int64, out printjob.Outcome) error {
+func (q *Queue) finish(ctx context.Context, venueID, id int64, out printjob.Outcome) error {
 	if _, err := printjob.Transition(printjob.Printing, out.State); err != nil {
 		return err
 	}
@@ -266,7 +284,10 @@ func (q *Queue) finish(ctx context.Context, id int64, out printjob.Outcome) erro
 		if err == nil && n != 1 {
 			err = fmt.Errorf("print job %d was no longer printing", id)
 		}
-		return err
+		if err != nil {
+			return err
+		}
+		return tx.BumpPrintVersion(ctx, venueID)
 	})
 }
 
@@ -275,7 +296,10 @@ func (q *Queue) requeueStale(ctx context.Context) (int64, error) {
 	err := q.db.WriteTx(ctx, func(tx *gen.Queries) error {
 		var err error
 		n, err = tx.RequeueStalePrintJobs(ctx, q.clock.Now().UTC())
-		return err
+		if err != nil || n == 0 {
+			return err
+		}
+		return tx.BumpAllPrintVersions(ctx)
 	})
 	if err != nil {
 		return 0, fmt.Errorf("printq: requeueing jobs left printing: %w", err)

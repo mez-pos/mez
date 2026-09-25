@@ -195,7 +195,8 @@ func run() (err error) {
 	// The print queue sends whatever is waiting, including what a crash left
 	// half printed, from the moment the server is up. It stops before the
 	// database closes: the stack unwinds in reverse.
-	prints, err := printq.New(printq.Options{DB: database, Log: log})
+	// A job that moves is announced on the stream, as an order event is.
+	prints, err := printq.New(printq.Options{DB: database, Log: log, OnChange: events.Notify})
 	if err != nil {
 		return err
 	}
@@ -204,7 +205,7 @@ func run() (err error) {
 	}
 	running.push("print queue", prints.Close)
 
-	orders, err := svcorder.New(svcorder.Options{DB: database, Log: log, Publisher: publisher(events)})
+	orders, err := svcorder.New(svcorder.Options{DB: database, Log: log, Publisher: publisher(events), Prints: prints})
 	if err != nil {
 		return err
 	}
@@ -217,6 +218,7 @@ func run() (err error) {
 		api.WithOrders(orders),
 		api.WithMenus(database),
 		api.WithStream(events),
+		api.WithPrints(prints),
 	)
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)

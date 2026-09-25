@@ -136,7 +136,7 @@ export function useTicket(): Ticket {
   }, [gone, book]);
 
   useRealtimeNotices((notice) => {
-    if (notice.kind === "menu") return;
+    if (notice.kind === "menu" || notice.kind === "print") return;
     // Any order's event can change the list: a new ticket on another till.
     void queryClient.invalidateQueries({ queryKey: openTicketsKey });
     if (!orderId) return;

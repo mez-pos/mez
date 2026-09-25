@@ -28,7 +28,24 @@ type source struct {
 	mu     sync.Mutex
 	events []db.StreamEvent
 	menu   int64
+	print  int64
 	fail   error
+}
+
+func (s *source) PrintVersion(context.Context, int64) (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.fail != nil {
+		return 0, s.fail
+	}
+	return s.print, nil
+}
+
+// setPrint moves the print version on, as a job change would.
+func (s *source) setPrint(v int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.print = v
 }
 
 func (s *source) MenuVersion(context.Context, int64) (int64, error) {
@@ -285,6 +302,31 @@ func TestAMenuChangeReachesEveryone(t *testing.T) {
 	w.hub.Notify(1)
 	if got := till.eventIDs(); len(got) != 1 {
 		t.Fatalf("events after the menu change: %v", got)
+	}
+}
+
+// TestAPrintChangeReachesEveryone: print jobs moving is announced like the
+// menu: to every connection, by version, and found on a ping if missed.
+func TestAPrintChangeReachesEveryone(t *testing.T) {
+	w := newWorld(t)
+	w.src.setPrint(7)
+	till := w.dial(t)
+	if welcome := till.hello(ClientMessage{}); welcome["print_version"] != float64(7) {
+		t.Fatalf("welcome = %v, want print_version 7", welcome)
+	}
+	kitchen := w.dial(t)
+	kitchen.hello(ClientMessage{Topics: []string{"station:kitchen"}})
+
+	w.src.setPrint(8)
+	w.hub.Notify(1)
+	for name, c := range map[string]*client{"till": till, "kitchen": kitchen} {
+		if msg := c.next(); msg["type"] != string(MsgPrintChanged) || msg["version"] != float64(8) {
+			t.Fatalf("%s got %v, want print_changed 8", name, msg)
+		}
+	}
+	w.src.setPrint(9)
+	if msg := till.next(); msg["type"] != string(MsgPrintChanged) || msg["version"] != float64(9) {
+		t.Fatalf("after a missed nudge: %v", msg)
 	}
 }
 

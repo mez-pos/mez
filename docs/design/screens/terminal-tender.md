@@ -177,8 +177,9 @@ Departures:
 - **Tip is an amount on the pad, not 5/10/15/20% buttons.** A percentage is
   money arithmetic in the UI; the pad needs none. Percent presets can come
   back once the server offers them.
-- **No receipt choice.** Printing arrives with Tasks 4 and 5; WhatsApp and
-  email have no feature. Reprint logs the copy now and prints it then.
+- **No receipt choice.** The settling payment queues the receipt on the
+  receipt printer (ADR-081), with the drawer kick for cash; WhatsApp and
+  email have no feature. Reprint queues a copy marked DUPLICATE.
 - **"Settle & print" is split in two.** The settling tender issues the
   invoice; Close ticket closes. Printing joins in with the print queue.
 - **No "Void bill" here.** Voiding a payment is Task 6's refund and void

@@ -2095,3 +2095,53 @@ Because: printers jam mid-service, and a receipt that never printed is an
 invoice the guest never got. Every job ends printed or in front of a person.
 Cost: a job's bytes are fixed when queued: a wrong paper width set on the
 printer later needs a new job, not a retry.
+
+## ADR-081 - Print jobs are written in the order's transaction, and routed by station
+2026-09 · Status: accepted
+Decision: an order command's appended events decide its print jobs inside
+the same transaction (`db.OrderTx.OnAppended`, `internal/service/printing`),
+so a job exists exactly when its event does.
+- **What prints:** `invoice.issued` queues the receipt on the receipt
+  printer, with the drawer kick first when a captured cash tender is on
+  the order; `invoice.reprinted` queues a copy marked DUPLICATE, from the
+  original invoice's snapshots and its original time, without the kick;
+  `ticket.sent` queues a kitchen ticket on that station's printer. Each
+  job names the order and the event that caused it. A replayed command
+  appends nothing, so it queues nothing twice.
+- **Routing (migration 00009):** `stations.printer_id`, and one printer
+  per venue flagged `is_receipt`. No printer is not an error: the job is
+  created dead with "no printer is set up for this", kept on screen, and
+  a retry takes the printer set up since (a kitchen job remembers its
+  station for this). The back office sets these in 5c; until then they
+  are set in the database.
+- **A layout that fails is still a job:** dead, with the reason, never a
+  failed payment. A database error does fail the command: the job and
+  its event commit together or not at all.
+- **The till hears about jobs like it hears about the menu:** a per-venue
+  `print_versions` counter moves in every transaction that changes a job
+  (queued, claimed, finished, requeued, retried, cancelled); the stream
+  compares it after each drain and sends `print_changed`. The queue's
+  `OnChange` nudges the hub after its own writes.
+- **API:** `GET /api/v1/print-jobs` (every job not printed, and what
+  printed in the last two hours), `POST .../{id}/retry` (failed or dead,
+  ten fresh tries) and `.../{id}/cancel` (`order.edit`; queued or failed
+  to dead, "cancelled by" who). Codes `print_job_not_found`,
+  `print_job_state`, `no_printer`.
+- **Terminal:** a Print queue button in the header that becomes "Not
+  printed 2" in the danger tone while anything is failing or dead, and a
+  sheet listing jobs with a chip (Waiting, Printing, Printed, Retrying,
+  Not printed), what is happening in words with a countdown to the next
+  try, and Retry and Cancel (`terminal-print-queue.md`).
+- The drawer kicks only with a receipt: a cash part payment before the
+  bill is settled does not open it yet.
+- Checked in a browser against the built binary: a cash sale with no
+  receipt printer showed "Not printed 1" in the header as it settled; a
+  printer row pointed at a TCP listener, then Retry in the sheet, turned
+  the job to Printed, and the listener got the 48-column receipt with the
+  drawer kick first and a partial cut. Kitchen tickets are covered by the
+  service tests only: the terminal has no Send button until phase 08.
+Because: a receipt queued after its payment committed can be lost to a
+crash between the two, and one queued before can print for a payment
+that rolled back. Only the same transaction is neither.
+Cost: rendering happens inside the order transaction, which holds the
+write lock a few milliseconds longer.

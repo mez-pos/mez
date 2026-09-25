@@ -6,7 +6,7 @@
 // added in Go fails the TypeScript build here until it has a tone and a word.
 // Tones follow docs/design/tokens.md: vermilion (accent) is for "Late" alone.
 
-import type { LineStatus, OrderStatus, PaymentStatus } from "../api-types";
+import type { LineStatus, OrderStatus, PaymentStatus, PrintJobState } from "../api-types";
 
 export type ChipTone = "neutral" | "success" | "warning" | "danger" | "accent" | "info";
 
@@ -49,12 +49,23 @@ export const lineStatuses: Readonly<Record<LineStatus, ChipSpec>> = {
   comped: { tone: "info", word: "Comped" },
 };
 
+// A print job's words are about the paper, not the queue: staff need to
+// know whether the guest has their receipt (ADR-081).
+export const printStatuses: Readonly<Record<PrintJobState, ChipSpec>> = {
+  queued: { tone: "neutral", word: "Waiting" },
+  printing: { tone: "info", word: "Printing" },
+  done: { tone: "success", word: "Printed" },
+  failed: { tone: "warning", word: "Retrying" },
+  dead: { tone: "danger", word: "Not printed" },
+};
+
 /** What a StatusChip is given: which vocabulary, and a value from it. */
 export type ChipStatus =
   | { readonly kind: "kitchen"; readonly status: KitchenStatus }
   | { readonly kind: "order"; readonly status: OrderStatus }
   | { readonly kind: "payment"; readonly status: PaymentStatus }
-  | { readonly kind: "line"; readonly status: LineStatus };
+  | { readonly kind: "line"; readonly status: LineStatus }
+  | { readonly kind: "print"; readonly status: PrintJobState };
 
 export function chipSpec(chip: ChipStatus): ChipSpec {
   switch (chip.kind) {
@@ -66,5 +77,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
       return paymentStatuses[chip.status];
     case "line":
       return lineStatuses[chip.status];
+    case "print":
+      return printStatuses[chip.status];
   }
 }

@@ -383,3 +383,30 @@ describe("RealtimeConnection: the menu version", () => {
     expect(h.notices.filter((n) => n.kind === "menu")).toEqual([]);
   });
 });
+
+describe("RealtimeConnection: the print queue version", () => {
+  it("names it on every connection, zero included, and whenever it moves", () => {
+    const h = harness();
+    h.conn.start();
+    const s = h.latest();
+    s.open();
+    s.receive({ ...welcome(5, 5), print_version: 0 });
+    s.receive({ type: "print_changed", version: 1 });
+    s.receive({ type: "print_changed", version: 2 });
+    expect(h.notices.filter((n) => n.kind === "print")).toEqual([
+      { kind: "print", version: 0 },
+      { kind: "print", version: 1 },
+      { kind: "print", version: 2 },
+    ]);
+  });
+
+  it("ignores a version it cannot use", () => {
+    const h = harness();
+    const s = connectAt(h, 1);
+    const before = h.notices.filter((n) => n.kind === "print").length;
+    for (const version of [undefined, null, "7", -1, 1.5]) {
+      s.receive({ type: "print_changed", version });
+    }
+    expect(h.notices.filter((n) => n.kind === "print")).toHaveLength(before);
+  });
+});

@@ -11,6 +11,56 @@ import (
 	"time"
 )
 
+const bumpAllPrintVersions = `-- name: BumpAllPrintVersions :exec
+UPDATE print_versions SET version = version + 1
+`
+
+// For a change that touches every venue at once: the requeue on start.
+func (q *Queries) BumpAllPrintVersions(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, bumpAllPrintVersions)
+	return err
+}
+
+const bumpPrintVersion = `-- name: BumpPrintVersion :exec
+INSERT INTO print_versions (venue_id, version)
+VALUES (?, 1)
+ON CONFLICT (venue_id) DO UPDATE SET version = print_versions.version + 1
+`
+
+// Moves the venue's print version on, in the transaction that changed a job.
+func (q *Queries) BumpPrintVersion(ctx context.Context, venueID int64) error {
+	_, err := q.db.ExecContext(ctx, bumpPrintVersion, venueID)
+	return err
+}
+
+const cancelPrintJob = `-- name: CancelPrintJob :execrows
+UPDATE print_jobs
+SET state = 'dead', last_error = ?1, updated_at = ?2
+WHERE id = ?3 AND venue_id = ?4 AND state IN ('queued', 'failed')
+`
+
+type CancelPrintJobParams struct {
+	Reason  string
+	Now     time.Time
+	ID      int64
+	VenueID int64
+}
+
+// A person's cancel: a job that has not printed stops being tried. It is
+// kept, dead, with who cancelled it, and can still be retried.
+func (q *Queries) CancelPrintJob(ctx context.Context, arg CancelPrintJobParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, cancelPrintJob,
+		arg.Reason,
+		arg.Now,
+		arg.ID,
+		arg.VenueID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const claimPrintJob = `-- name: ClaimPrintJob :execrows
 UPDATE print_jobs
 SET state = 'printing', attempts = attempts + 1, updated_at = ?1
@@ -36,8 +86,8 @@ func (q *Queries) ClaimPrintJob(ctx context.Context, arg ClaimPrintJobParams) (i
 
 const createPrintJob = `-- name: CreatePrintJob :one
 INSERT INTO print_jobs (venue_id, printer_id, kind, label, payload, state, attempts, next_attempt_at,
-                        last_error, order_id, event_seq, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)
+                        last_error, order_id, event_seq, station, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id
 `
 
@@ -52,6 +102,7 @@ type CreatePrintJobParams struct {
 	LastError     string
 	OrderID       sql.NullInt64
 	EventSeq      sql.NullInt64
+	Station       string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -68,6 +119,7 @@ func (q *Queries) CreatePrintJob(ctx context.Context, arg CreatePrintJobParams) 
 		arg.LastError,
 		arg.OrderID,
 		arg.EventSeq,
+		arg.Station,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -212,14 +264,33 @@ func (q *Queries) FinishPrintJob(ctx context.Context, arg FinishPrintJobParams) 
 
 const printJobByID = `-- name: PrintJobByID :one
 SELECT id, venue_id, printer_id, kind, label, payload, state, attempts, next_attempt_at, last_error,
-       order_id, event_seq, created_at, updated_at, done_at
+       order_id, event_seq, station, created_at, updated_at, done_at
 FROM print_jobs
 WHERE id = ?
 `
 
-func (q *Queries) PrintJobByID(ctx context.Context, id int64) (PrintJob, error) {
+type PrintJobByIDRow struct {
+	ID            int64
+	VenueID       int64
+	PrinterID     sql.NullInt64
+	Kind          string
+	Label         string
+	Payload       []byte
+	State         string
+	Attempts      int64
+	NextAttemptAt time.Time
+	LastError     string
+	OrderID       sql.NullInt64
+	EventSeq      sql.NullInt64
+	Station       string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	DoneAt        sql.NullTime
+}
+
+func (q *Queries) PrintJobByID(ctx context.Context, id int64) (PrintJobByIDRow, error) {
 	row := q.db.QueryRowContext(ctx, printJobByID, id)
-	var i PrintJob
+	var i PrintJobByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.VenueID,
@@ -233,11 +304,96 @@ func (q *Queries) PrintJobByID(ctx context.Context, id int64) (PrintJob, error) 
 		&i.LastError,
 		&i.OrderID,
 		&i.EventSeq,
+		&i.Station,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DoneAt,
 	)
 	return i, err
+}
+
+const printJobsForVenue = `-- name: PrintJobsForVenue :many
+SELECT j.id, j.printer_id, coalesce(p.name, '') AS printer_name, j.kind, j.label, j.state, j.attempts,
+       j.next_attempt_at, j.last_error, j.order_id, j.station, j.created_at, j.updated_at, j.done_at
+FROM print_jobs j
+LEFT JOIN printers p ON p.id = j.printer_id
+WHERE j.venue_id = ?1 AND (j.state != 'done' OR j.updated_at >= ?2)
+ORDER BY j.id DESC
+LIMIT ?3
+`
+
+type PrintJobsForVenueParams struct {
+	VenueID int64
+	Since   time.Time
+	MaxJobs int64
+}
+
+type PrintJobsForVenueRow struct {
+	ID            int64
+	PrinterID     sql.NullInt64
+	PrinterName   string
+	Kind          string
+	Label         string
+	State         string
+	Attempts      int64
+	NextAttemptAt time.Time
+	LastError     string
+	OrderID       sql.NullInt64
+	Station       string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	DoneAt        sql.NullTime
+}
+
+// The queue as staff see it: every job not yet printed, and what printed
+// since the given time, newest first. Payloads stay behind.
+func (q *Queries) PrintJobsForVenue(ctx context.Context, arg PrintJobsForVenueParams) ([]PrintJobsForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, printJobsForVenue, arg.VenueID, arg.Since, arg.MaxJobs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PrintJobsForVenueRow{}
+	for rows.Next() {
+		var i PrintJobsForVenueRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PrinterID,
+			&i.PrinterName,
+			&i.Kind,
+			&i.Label,
+			&i.State,
+			&i.Attempts,
+			&i.NextAttemptAt,
+			&i.LastError,
+			&i.OrderID,
+			&i.Station,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DoneAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const printVersion = `-- name: PrintVersion :one
+SELECT CAST(coalesce((SELECT version FROM print_versions WHERE venue_id = ?), 0) AS INTEGER) AS version
+`
+
+func (q *Queries) PrintVersion(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, printVersion, venueID)
+	var version int64
+	err := row.Scan(&version)
+	return version, err
 }
 
 const printerByID = `-- name: PrinterByID :one
@@ -246,9 +402,21 @@ FROM printers
 WHERE id = ?
 `
 
-func (q *Queries) PrinterByID(ctx context.Context, id int64) (Printer, error) {
+type PrinterByIDRow struct {
+	ID        int64
+	VenueID   int64
+	Name      string
+	Transport string
+	Address   string
+	PaperMm   int64
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) PrinterByID(ctx context.Context, id int64) (PrinterByIDRow, error) {
 	row := q.db.QueryRowContext(ctx, printerByID, id)
-	var i Printer
+	var i PrinterByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.VenueID,
@@ -260,6 +428,25 @@ func (q *Queries) PrinterByID(ctx context.Context, id int64) (Printer, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
+	return i, err
+}
+
+const receiptPrinter = `-- name: ReceiptPrinter :one
+SELECT id, paper_mm
+FROM printers
+WHERE venue_id = ? AND is_receipt = 1 AND active = 1
+`
+
+type ReceiptPrinterRow struct {
+	ID      int64
+	PaperMm int64
+}
+
+// The venue's receipt printer, if it has one in service.
+func (q *Queries) ReceiptPrinter(ctx context.Context, venueID int64) (ReceiptPrinterRow, error) {
+	row := q.db.QueryRowContext(ctx, receiptPrinter, venueID)
+	var i ReceiptPrinterRow
+	err := row.Scan(&i.ID, &i.PaperMm)
 	return i, err
 }
 
@@ -278,4 +465,58 @@ func (q *Queries) RequeueStalePrintJobs(ctx context.Context, now time.Time) (int
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const retryPrintJob = `-- name: RetryPrintJob :execrows
+UPDATE print_jobs
+SET state = 'queued', attempts = 0, printer_id = ?1, next_attempt_at = ?2,
+    last_error = '', updated_at = ?2
+WHERE id = ?3 AND venue_id = ?4 AND state IN ('failed', 'dead')
+`
+
+type RetryPrintJobParams struct {
+	PrinterID sql.NullInt64
+	Now       time.Time
+	ID        int64
+	VenueID   int64
+}
+
+// A person's retry: a failed or dead job back to the queue with its tries
+// restored, on the printer given (the one it had, or one set up since).
+func (q *Queries) RetryPrintJob(ctx context.Context, arg RetryPrintJobParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, retryPrintJob,
+		arg.PrinterID,
+		arg.Now,
+		arg.ID,
+		arg.VenueID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const stationPrinter = `-- name: StationPrinter :one
+SELECT p.id, p.paper_mm
+FROM stations s
+JOIN printers p ON p.id = s.printer_id
+WHERE s.venue_id = ? AND s.code = ? AND p.active = 1
+`
+
+type StationPrinterParams struct {
+	VenueID int64
+	Code    string
+}
+
+type StationPrinterRow struct {
+	ID      int64
+	PaperMm int64
+}
+
+// The printer a station's tickets go to, if it has one in service.
+func (q *Queries) StationPrinter(ctx context.Context, arg StationPrinterParams) (StationPrinterRow, error) {
+	row := q.db.QueryRowContext(ctx, stationPrinter, arg.VenueID, arg.Code)
+	var i StationPrinterRow
+	err := row.Scan(&i.ID, &i.PaperMm)
+	return i, err
 }

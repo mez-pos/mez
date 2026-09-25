@@ -12,13 +12,13 @@ WHERE id = ?;
 
 -- name: CreatePrintJob :one
 INSERT INTO print_jobs (venue_id, printer_id, kind, label, payload, state, attempts, next_attempt_at,
-                        last_error, order_id, event_seq, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)
+                        last_error, order_id, event_seq, station, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id;
 
 -- name: PrintJobByID :one
 SELECT id, venue_id, printer_id, kind, label, payload, state, attempts, next_attempt_at, last_error,
-       order_id, event_seq, created_at, updated_at, done_at
+       order_id, event_seq, station, created_at, updated_at, done_at
 FROM print_jobs
 WHERE id = ?;
 
@@ -61,3 +61,55 @@ UPDATE print_jobs
 SET state = 'queued', next_attempt_at = sqlc.arg(now), updated_at = sqlc.arg(now),
     last_error = 'the server stopped while this was printing'
 WHERE state = 'printing';
+
+-- name: ReceiptPrinter :one
+-- The venue's receipt printer, if it has one in service.
+SELECT id, paper_mm
+FROM printers
+WHERE venue_id = ? AND is_receipt = 1 AND active = 1;
+
+-- name: StationPrinter :one
+-- The printer a station's tickets go to, if it has one in service.
+SELECT p.id, p.paper_mm
+FROM stations s
+JOIN printers p ON p.id = s.printer_id
+WHERE s.venue_id = ? AND s.code = ? AND p.active = 1;
+
+-- name: BumpPrintVersion :exec
+-- Moves the venue's print version on, in the transaction that changed a job.
+INSERT INTO print_versions (venue_id, version)
+VALUES (?, 1)
+ON CONFLICT (venue_id) DO UPDATE SET version = print_versions.version + 1;
+
+-- name: BumpAllPrintVersions :exec
+-- For a change that touches every venue at once: the requeue on start.
+UPDATE print_versions SET version = version + 1;
+
+-- name: PrintVersion :one
+SELECT CAST(coalesce((SELECT version FROM print_versions WHERE venue_id = ?), 0) AS INTEGER) AS version;
+
+-- name: PrintJobsForVenue :many
+-- The queue as staff see it: every job not yet printed, and what printed
+-- since the given time, newest first. Payloads stay behind.
+SELECT j.id, j.printer_id, coalesce(p.name, '') AS printer_name, j.kind, j.label, j.state, j.attempts,
+       j.next_attempt_at, j.last_error, j.order_id, j.station, j.created_at, j.updated_at, j.done_at
+FROM print_jobs j
+LEFT JOIN printers p ON p.id = j.printer_id
+WHERE j.venue_id = sqlc.arg(venue_id) AND (j.state != 'done' OR j.updated_at >= sqlc.arg(since))
+ORDER BY j.id DESC
+LIMIT sqlc.arg(max_jobs);
+
+-- name: RetryPrintJob :execrows
+-- A person's retry: a failed or dead job back to the queue with its tries
+-- restored, on the printer given (the one it had, or one set up since).
+UPDATE print_jobs
+SET state = 'queued', attempts = 0, printer_id = sqlc.arg(printer_id), next_attempt_at = sqlc.arg(now),
+    last_error = '', updated_at = sqlc.arg(now)
+WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id) AND state IN ('failed', 'dead');
+
+-- name: CancelPrintJob :execrows
+-- A person's cancel: a job that has not printed stops being tried. It is
+-- kept, dead, with who cancelled it, and can still be retried.
+UPDATE print_jobs
+SET state = 'dead', last_error = sqlc.arg(reason), updated_at = sqlc.arg(now)
+WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id) AND state IN ('queued', 'failed');

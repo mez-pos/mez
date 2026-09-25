@@ -181,6 +181,12 @@ type PrintJob struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	DoneAt        sql.NullTime
+	Station       string
+}
+
+type PrintVersion struct {
+	VenueID int64
+	Version int64
 }
 
 type Printer struct {
@@ -193,6 +199,7 @@ type Printer struct {
 	Active    bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	IsReceipt bool
 }
 
 type Role struct {
@@ -252,6 +259,7 @@ type Station struct {
 	Active    bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	PrinterID sql.NullInt64
 }
 
 type TaxClass struct {

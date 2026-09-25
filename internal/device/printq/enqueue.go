@@ -21,6 +21,10 @@ type Job struct {
 	Payload   []byte // the ESC/POS bytes, from escpos
 	OrderID   int64  // with EventSeq, what caused it; 0 when no order did
 	EventSeq  int64
+	Station   string // a kitchen ticket's station, so a retry can find its printer
+	// Fail keeps the job dead from the start with this reason: something that
+	// could not be laid out is still on the queue for a person, never lost.
+	Fail string
 }
 
 // NoPrinter is the error a job with no printer is kept with.
@@ -47,13 +51,20 @@ func EnqueueTx(ctx context.Context, tx *gen.Queries, j Job, now time.Time) (int6
 	} else {
 		params.State, params.LastError = string(printjob.Dead), NoPrinter
 	}
+	if j.Fail != "" {
+		params.State, params.LastError = string(printjob.Dead), j.Fail
+	}
 	if j.OrderID != 0 {
 		params.OrderID = sql.NullInt64{Int64: j.OrderID, Valid: true}
 		params.EventSeq = sql.NullInt64{Int64: j.EventSeq, Valid: true}
 	}
+	params.Station = j.Station
 	id, err := tx.CreatePrintJob(ctx, params)
 	if err != nil {
 		return 0, fmt.Errorf("printq: queueing %q: %w", j.Label, err)
+	}
+	if err := tx.BumpPrintVersion(ctx, j.VenueID); err != nil {
+		return 0, fmt.Errorf("printq: %w", err)
 	}
 	return id, nil
 }
@@ -71,6 +82,7 @@ func (q *Queue) Enqueue(ctx context.Context, j Job) (int64, error) {
 		return 0, err
 	}
 	q.Wake()
+	q.changed(j.VenueID)
 	return id, nil
 }
 

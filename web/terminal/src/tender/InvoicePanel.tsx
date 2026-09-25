@@ -75,7 +75,7 @@ export function InvoicePanel({ order, ticket, onError }: InvoicePanelProps) {
       )}
       {invoice.data && <InvoicePreview invoice={invoice.data} />}
       <p className="w-88 max-w-full text-sm text-fg-faint">
-        Printing arrives with the print queue. A reprint is logged on this order now and keeps the number.
+        The receipt went to the print queue with the payment. A reprint prints a copy marked DUPLICATE and keeps the number.
       </p>
       {reprinting && (
         <ReprintSheet

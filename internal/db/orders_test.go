@@ -653,3 +653,52 @@ func TestVenueStream(t *testing.T) {
 		t.Errorf("venue 2 last = %d (%v), want 0", last, err)
 	}
 }
+
+// TestAfterAppend: the hook sees the numbered events and the new state in
+// the appending transaction, and a failure there rolls the append back.
+func TestAfterAppend(t *testing.T) {
+	d := migratedDB(t)
+	ctx := context.Background()
+	seedVenue(t, d)
+	orderID := openTestOrder(t, d, "ord_AFTER", untaxed)
+
+	var seen []int64
+	var lastSeq int64
+	state, _, err := d.AppendOrder(ctx, orderID, untaxed, func(ctx context.Context, tx *OrderTx) ([]order.Event, error) {
+		tx.OnAppended(func(ctx context.Context, q *gen.Queries, next order.State, appended []order.Event) error {
+			for _, e := range appended {
+				seen = append(seen, e.Seq)
+			}
+			lastSeq = next.LastSeq
+			// The transaction is the append's: what it wrote reads back here.
+			_, err := orderEvents(ctx, q, orderID, 0)
+			return err
+		})
+		return []order.Event{ev(dish(1)), ev(dish(2))}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(seen) != 2 || seen[0] != 2 || seen[1] != 3 || lastSeq != state.LastSeq {
+		t.Errorf("the hook saw seqs %v and last seq %d; the order is at %d", seen, lastSeq, state.LastSeq)
+	}
+
+	failed := errors.New("printer table on fire")
+	_, _, err = d.AppendOrder(ctx, orderID, untaxed, func(ctx context.Context, tx *OrderTx) ([]order.Event, error) {
+		tx.OnAppended(func(context.Context, *gen.Queries, order.State, []order.Event) error { return failed })
+		return []order.Event{ev(dish(3))}, nil
+	})
+	if !errors.Is(err, failed) {
+		t.Fatalf("err = %v, want the hook's", err)
+	}
+	checkLoads(t, d, orderID, untaxed, state)
+
+	var got []order.Event
+	_, _, err = d.AppendOrder(ctx, orderID, untaxed, func(ctx context.Context, tx *OrderTx) ([]order.Event, error) {
+		got, err = tx.Events(ctx, 0)
+		return nil, err
+	})
+	if err != nil || int64(len(got)) != state.LastSeq {
+		t.Errorf("Events in the transaction: %d, %v; want %d", len(got), err, state.LastSeq)
+	}
+}

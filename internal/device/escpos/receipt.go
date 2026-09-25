@@ -26,12 +26,17 @@ type Receipt struct {
 	Tenders   []order.Tender       // voided ones are left off
 	Copy      bool                 // a reprint: marked DUPLICATE, same number
 	Footer    string               // the venue's line at the bottom, if any
+	Kick      bool                 // open the cash drawer as the receipt starts: cash was taken
 }
 
 // Layout lays the receipt out for p and ends it with a partial cut.
 func (r Receipt) Layout(p Paper) ([]byte, error) {
 	w := p.Columns
 	b := New()
+	if r.Kick {
+		// First, so the drawer opens while the receipt prints, not after.
+		b.KickDrawer(DrawerPin2, 2)
+	}
 	r.header(b, w)
 
 	b.Line(rule('-', w))

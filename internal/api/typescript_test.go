@@ -16,6 +16,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/codegen/ts"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
@@ -98,6 +99,7 @@ var errorCodes = []ErrorCode{
 	CodeIdempotencyKeyReused, CodeVenueNotConfigured,
 	CodeSplitInvalid, CodeSplitOverAllocated, CodeSplitUnassigned, CodeSplitMismatch, CodeSplitAfterPayment,
 	CodeInvoiceNotFound, CodeOrderInvoiced,
+	CodePrintJobNotFound, CodePrintJobState, CodeNoPrinter,
 }
 
 // generate builds the whole file.
@@ -144,6 +146,8 @@ func generate() (*ts.Generator, error) {
 		}},
 		{"PaymentMethod", order.PaymentCash, paymentMethods()},
 		{"SplitKind", svcorder.SplitByEvenly, asStrings(svcorder.SplitKinds())},
+		{"PrintJobState", printjob.Queued, asStrings(printjob.Machine().States())},
+		{"PrintJobKind", printjob.Receipt, asStrings(printjob.Kinds())},
 		{"DiscountScope", order.ScopeLine, []string{string(order.ScopeLine), string(order.ScopeOrder)}},
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
@@ -154,7 +158,7 @@ func generate() (*ts.Generator, error) {
 		{"OrderEventType", order.TypeOrderOpened, eventTypeNames()},
 		{"StreamMessageType", hub.MsgHello, asStrings([]hub.MessageType{
 			hub.MsgHello, hub.MsgSubscribe, hub.MsgWelcome, hub.MsgEvent, hub.MsgCaughtUp,
-			hub.MsgMenuChanged, hub.MsgError,
+			hub.MsgMenuChanged, hub.MsgPrintChanged, hub.MsgError,
 		})},
 	}
 	for _, u := range unions {
@@ -197,12 +201,14 @@ func generate() (*ts.Generator, error) {
 		refundResponse{}, invoiceResponse{}, discountResponse{}, totalsResponse{},
 		taxResponse{}, orderResponse{}, commandResponse{}, ticketSummary{}, openTicketsResponse{}, nameResponse{}, historyResponse{},
 		splitResponse{}, shareResponse{}, issuedInvoiceResponse{}, reprintRequest{},
+		// The print queue.
+		printJobResponse{}, printJobsResponse{},
 		// The menu.
 		stationResponse{}, courseResponse{}, categoryResponse{}, modifierResponse{},
 		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},
 		// The stream.
 		hub.ClientMessage{}, hub.WelcomeMessage{}, hub.EventMessage{},
-		hub.CaughtUpMessage{}, hub.MenuChangedMessage{}, hub.ErrorMessage{},
+		hub.CaughtUpMessage{}, hub.MenuChangedMessage{}, hub.PrintChangedMessage{}, hub.ErrorMessage{},
 	}
 	for _, root := range roots {
 		if _, err := g.Add(root); err != nil {

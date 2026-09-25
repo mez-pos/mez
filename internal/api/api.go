@@ -23,6 +23,7 @@ type Server struct {
 	orders  Orders
 	menus   Menus
 	stream  Stream
+	prints  Prints
 	limiter *limiter
 	handler http.Handler
 }
@@ -101,6 +102,7 @@ func (s *Server) routes() http.Handler {
 	s.mountOrders(mux)
 	s.mountMenu(mux)
 	s.mountStream(mux)
+	s.mountPrints(mux)
 
 	// Anything else under /api keeps the JSON envelope. Without this, an
 	// unknown endpoint would fall through to the terminal bundle mounted at /
