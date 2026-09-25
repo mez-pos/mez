@@ -113,3 +113,46 @@ WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id) AND state IN ('failed'
 UPDATE print_jobs
 SET state = 'dead', last_error = sqlc.arg(reason), updated_at = sqlc.arg(now)
 WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id) AND state IN ('queued', 'failed');
+
+-- name: PrintersForVenue :many
+-- The venue's printers with each one's newest job, for the back office.
+SELECT p.id, p.name, p.transport, p.address, p.paper_mm, p.active, p.is_receipt,
+       CAST(coalesce(j.id, 0) AS INTEGER) AS last_job_id, coalesce(j.state, '') AS last_job_state,
+       coalesce(j.label, '') AS last_job_label, coalesce(j.last_error, '') AS last_job_error,
+       j.updated_at AS last_job_at
+FROM printers p
+LEFT JOIN print_jobs j ON j.id = (SELECT max(k.id) FROM print_jobs k WHERE k.printer_id = p.id)
+WHERE p.venue_id = ?
+ORDER BY p.id;
+
+-- name: StationsWithPrinters :many
+SELECT code, name, printer_id
+FROM stations
+WHERE venue_id = ? AND active = 1
+ORDER BY sort_order, id;
+
+-- name: UpdatePrinter :execrows
+UPDATE printers
+SET name = sqlc.arg(name), transport = sqlc.arg(transport), address = sqlc.arg(address),
+    paper_mm = sqlc.arg(paper_mm), updated_at = sqlc.arg(now)
+WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id);
+
+-- name: SetPrinterActive :execrows
+-- Retiring also stops it printing receipts; its stations keep pointing at
+-- it, and print nowhere until given another (StationPrinter needs active).
+UPDATE printers
+SET active = sqlc.arg(active), is_receipt = CASE WHEN sqlc.arg(active) THEN is_receipt ELSE 0 END,
+    updated_at = sqlc.arg(now)
+WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id);
+
+-- name: ClearReceiptPrinter :exec
+UPDATE printers SET is_receipt = 0, updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND is_receipt = 1;
+
+-- name: MarkReceiptPrinter :execrows
+UPDATE printers SET is_receipt = 1, updated_at = sqlc.arg(now)
+WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id) AND active = 1;
+
+-- name: SetStationPrinter :execrows
+UPDATE stations SET printer_id = sqlc.narg(printer_id), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND code = sqlc.arg(code) AND active = 1;

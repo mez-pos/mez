@@ -11,21 +11,22 @@ import (
 
 // Server holds what the handlers need and builds the routing tree once.
 type Server struct {
-	cfg     config.Config
-	log     *slog.Logger
-	build   BuildInfo
-	now     func() time.Time
-	started time.Time
-	bundles map[string]fs.FS
-	dbCheck func() string
-	devices Devices
-	staff   Staff
-	orders  Orders
-	menus   Menus
-	stream  Stream
-	prints  Prints
-	limiter *limiter
-	handler http.Handler
+	cfg      config.Config
+	log      *slog.Logger
+	build    BuildInfo
+	now      func() time.Time
+	started  time.Time
+	bundles  map[string]fs.FS
+	dbCheck  func() string
+	devices  Devices
+	staff    Staff
+	orders   Orders
+	menus    Menus
+	stream   Stream
+	prints   Prints
+	printers Printers
+	limiter  *limiter
+	handler  http.Handler
 }
 
 // Option adjusts a Server at construction.
@@ -103,6 +104,7 @@ func (s *Server) routes() http.Handler {
 	s.mountMenu(mux)
 	s.mountStream(mux)
 	s.mountPrints(mux)
+	s.mountPrinters(mux)
 
 	// Anything else under /api keeps the JSON envelope. Without this, an
 	// unknown endpoint would fall through to the terminal bundle mounted at /

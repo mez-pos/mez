@@ -20,6 +20,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
 )
 
 // typesFile is the generated file, relative to this package.
@@ -100,6 +101,7 @@ var errorCodes = []ErrorCode{
 	CodeSplitInvalid, CodeSplitOverAllocated, CodeSplitUnassigned, CodeSplitMismatch, CodeSplitAfterPayment,
 	CodeInvoiceNotFound, CodeOrderInvoiced,
 	CodePrintJobNotFound, CodePrintJobState, CodeNoPrinter,
+	CodePrinterNotFound, CodePrinterRetired, CodeStationNotFound, CodePrinterNameTaken, CodeInvalidPrinter,
 }
 
 // generate builds the whole file.
@@ -113,12 +115,13 @@ func generate() (*ts.Generator, error) {
 		Names: map[reflect.Type]string{
 			// Two packages have an Error; the API's is the one clients see
 			// most, and the hub's says which socket message it is.
-			reflect.TypeOf(Error{}):            "ApiError",
-			reflect.TypeOf(hub.ErrorMessage{}): "StreamErrorMessage",
-			reflect.TypeOf(errorBody{}):        "ApiErrorBody",
-			reflect.TypeOf(amount{}):           "MoneyInput",
-			reflect.TypeOf(money.Amount{}):     "Money",
-			reflect.TypeOf(order.Modifier{}):   "LineModifier",
+			reflect.TypeOf(Error{}):             "ApiError",
+			reflect.TypeOf(hub.ErrorMessage{}):  "StreamErrorMessage",
+			reflect.TypeOf(errorBody{}):         "ApiErrorBody",
+			reflect.TypeOf(amount{}):            "MoneyInput",
+			reflect.TypeOf(money.Amount{}):      "Money",
+			reflect.TypeOf(order.Modifier{}):    "LineModifier",
+			reflect.TypeOf(printers.Settings{}): "PrinterSettings",
 		},
 	})
 
@@ -148,6 +151,7 @@ func generate() (*ts.Generator, error) {
 		{"SplitKind", svcorder.SplitByEvenly, asStrings(svcorder.SplitKinds())},
 		{"PrintJobState", printjob.Queued, asStrings(printjob.Machine().States())},
 		{"PrintJobKind", printjob.Receipt, asStrings(printjob.Kinds())},
+		{"PrinterTransport", printers.Network, asStrings(printers.Transports())},
 		{"DiscountScope", order.ScopeLine, []string{string(order.ScopeLine), string(order.ScopeOrder)}},
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
@@ -203,6 +207,9 @@ func generate() (*ts.Generator, error) {
 		splitResponse{}, shareResponse{}, issuedInvoiceResponse{}, reprintRequest{},
 		// The print queue.
 		printJobResponse{}, printJobsResponse{},
+		// Printer settings.
+		printerRequest{}, assignRequest{}, printerResponse{}, lastJobResponse{}, stationPrinterResponse{},
+		printersResponse{}, testPageResponse{},
 		// The menu.
 		stationResponse{}, courseResponse{}, categoryResponse{}, modifierResponse{},
 		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},

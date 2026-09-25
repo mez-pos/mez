@@ -40,6 +40,7 @@ type Querier interface {
 	// matches only from the state the worker saw, so two claims of one job
 	// cannot both succeed.
 	ClaimPrintJob(ctx context.Context, arg ClaimPrintJobParams) (int64, error)
+	ClearReceiptPrinter(ctx context.Context, arg ClearReceiptPrinterParams) error
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (int64, error)
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (int64, error)
@@ -94,6 +95,7 @@ type Querier interface {
 	InvoicesForVenue(ctx context.Context, venueID int64) ([]Invoice, error)
 	ItemModifierGroupsForVenue(ctx context.Context, venueID int64) ([]ItemModifierGroupsForVenueRow, error)
 	ListVenues(ctx context.Context) ([]Venue, error)
+	MarkReceiptPrinter(ctx context.Context, arg MarkReceiptPrinterParams) (int64, error)
 	// The menu. Reads return active rows only, in the order a terminal shows
 	// them: a retired item stays in the table for the events that name it, but
 	// never reaches a till. db.DB.Menu runs the reads in one read transaction,
@@ -117,6 +119,8 @@ type Querier interface {
 	PrintJobsForVenue(ctx context.Context, arg PrintJobsForVenueParams) ([]PrintJobsForVenueRow, error)
 	PrintVersion(ctx context.Context, venueID int64) (int64, error)
 	PrinterByID(ctx context.Context, id int64) (PrinterByIDRow, error)
+	// The venue's printers with each one's newest job, for the back office.
+	PrintersForVenue(ctx context.Context, venueID int64) ([]PrintersForVenueRow, error)
 	// The venue's receipt printer, if it has one in service.
 	ReceiptPrinter(ctx context.Context, venueID int64) (ReceiptPrinterRow, error)
 	// The device's latest failed attempts, of any staff member, newest first.
@@ -142,11 +146,15 @@ type Querier interface {
 	RolesForVenue(ctx context.Context, venueID int64) ([]Role, error)
 	SaveIdempotencyKey(ctx context.Context, arg SaveIdempotencyKeyParams) error
 	SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotParams) error
+	// Retiring also stops it printing receipts; its stations keep pointing at
+	// it, and print nowhere until given another (StationPrinter needs active).
+	SetPrinterActive(ctx context.Context, arg SetPrinterActiveParams) (int64, error)
 	//
 	// An upsert rather than INSERT OR REPLACE. Replace deletes the row and inserts
 	// a new one, which fires delete triggers and cascades; this only touches the
 	// two columns that change.
 	SetSetting(ctx context.Context, arg SetSettingParams) error
+	SetStationPrinter(ctx context.Context, arg SetStationPrinterParams) (int64, error)
 	Setting(ctx context.Context, arg SettingParams) (Setting, error)
 	// Per-venue settings the schema has no opinion about. Anything the database
 	// must constrain or compute with is a column on venues instead.
@@ -159,6 +167,7 @@ type Querier interface {
 	StaffSessionByTokenHash(ctx context.Context, tokenHash string) (StaffSessionByTokenHashRow, error)
 	// The printer a station's tickets go to, if it has one in service.
 	StationPrinter(ctx context.Context, arg StationPrinterParams) (StationPrinterRow, error)
+	StationsWithPrinters(ctx context.Context, venueID int64) ([]StationsWithPrintersRow, error)
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	//
@@ -170,6 +179,7 @@ type Querier interface {
 	// the previous last_seq makes a write from a stale read touch no row, which
 	// the caller reports as a conflict rather than moving the index backwards.
 	UpdateOrderIndex(ctx context.Context, arg UpdateOrderIndexParams) (int64, error)
+	UpdatePrinter(ctx context.Context, arg UpdatePrinterParams) (int64, error)
 	//
 	// Currency is deliberately absent. Changing it would reinterpret every minor
 	// unit already recorded against this venue, which is a migration, not a

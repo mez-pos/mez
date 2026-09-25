@@ -55,7 +55,12 @@ export type ErrorCode =
   | 'order_invoiced'
   | 'print_job_not_found'
   | 'print_job_state'
-  | 'no_printer';
+  | 'no_printer'
+  | 'printer_not_found'
+  | 'printer_retired'
+  | 'station_not_found'
+  | 'printer_name_taken'
+  | 'invalid_printer';
 
 export type OrderStatus =
   | 'open'
@@ -106,6 +111,10 @@ export type PrintJobKind =
   | 'kitchen'
   | 'z_report'
   | 'test';
+
+export type PrinterTransport =
+  | 'tcp'
+  | 'windows';
 
 export type DiscountScope =
   | 'line'
@@ -776,6 +785,52 @@ export interface PrintJobResponse {
 
 export interface PrintJobsResponse {
   jobs: PrintJobResponse[];
+}
+
+export interface PrinterSettings {
+  name: string;
+  transport: PrinterTransport;
+  address: string;
+  paper_mm: number;
+}
+
+export interface AssignRequest {
+  printer_id: number | null;
+}
+
+export interface PrinterResponse {
+  id: number;
+  name: string;
+  transport: PrinterTransport;
+  address: string;
+  paper_mm: number;
+  active: boolean;
+  is_receipt: boolean;
+  stations: string[];
+  last_job?: LastJobResponse;
+}
+
+export interface LastJobResponse {
+  id: number;
+  state: PrintJobState;
+  label: string;
+  error?: string;
+  at: string;
+}
+
+export interface StationPrinterResponse {
+  code: string;
+  name: string;
+  printer_id?: number;
+}
+
+export interface PrintersResponse {
+  printers: PrinterResponse[];
+  stations: StationPrinterResponse[];
+}
+
+export interface TestPageResponse {
+  job_id: number;
 }
 
 export interface StationResponse {

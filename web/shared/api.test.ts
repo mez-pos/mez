@@ -57,6 +57,13 @@ describe("createApiClient", () => {
     expect(headers.get("Idempotency-Key")).toBe("k-1");
   });
 
+  it("sends PUT with a JSON body", async () => {
+    const { fetch, calls } = fakeFetch(() => Response.json({ ok: true }));
+    await createApiClient({ credentials: signedIn, fetch }).put("/api/v1/printers/receipt", { printer_id: 3 });
+    expect(calls[0]?.init.method).toBe("PUT");
+    expect(calls[0]?.init.body).toBe('{"printer_id":3}');
+  });
+
   it("resolves 204 with nothing", async () => {
     const { fetch } = fakeFetch(() => new Response(null, { status: 204 }));
     await expect(createApiClient({ credentials: signedIn, fetch }).del("/api/v1/sessions/current")).resolves.toBeUndefined();

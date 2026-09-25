@@ -11,20 +11,19 @@ File: `docs/phases/phase-07.md`. Phase 06 is complete.
 
 ## Last completed task
 
-**Phase 07, Task 5b: jobs from the till, and the queue on screen**
-(ADR-081). Receipts (with the cash drawer kick), duplicates and kitchen
-tickets are queued in the order's own transaction and routed by station
-and receipt printer (migration 00009); the jobs API with retry and
-cancel; `print_changed` on the stream; the terminal's print queue sheet
-and header warning. Checked in a browser with a stand-in TCP printer.
+**Phase 07, Task 5c: printers in the back office** (ADR-082), which
+completes Task 5. Printer settings service and API (`settings.edit`), the
+back office's first screen at `/backoffice/printers`: add, edit, retire,
+test page through the queue, receipt printer and per-station printers.
+Checked in a browser with a stand-in TCP printer.
 
 ## Next task
 
-**Phase 07, Task 5c: printers in the back office.** API to list, add,
-change and retire printers, set the receipt printer and each station's
-printer (`stations.printer_id`, `printers.is_receipt`, ADR-081), and send
-a test page through the queue; the back office's first real screen, spec
-first. The back office app is still only its shell.
+**Phase 07, Task 6: refunds and voids after payment.** Full and partial
+refunds against a specific payment, with reason and authorisation, and
+post-payment voids, as corrective events on the timeline and later in the
+Z-report. It must settle what ADR-078 left open: a payment voided after
+its invoice was issued.
 
 ## Known broken / in progress
 

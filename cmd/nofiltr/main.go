@@ -29,6 +29,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
 	"github.com/byjoellobo/nofiltr-pos/web"
 )
 
@@ -210,6 +211,11 @@ func run() (err error) {
 		return err
 	}
 
+	printerSettings, err := printers.New(database, prints, nil, build.Version)
+	if err != nil {
+		return err
+	}
+
 	srv := api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
@@ -219,6 +225,7 @@ func run() (err error) {
 		api.WithMenus(database),
 		api.WithStream(events),
 		api.WithPrints(prints),
+		api.WithPrinters(printerSettings),
 	)
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)

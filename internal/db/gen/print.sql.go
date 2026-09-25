@@ -84,6 +84,21 @@ func (q *Queries) ClaimPrintJob(ctx context.Context, arg ClaimPrintJobParams) (i
 	return result.RowsAffected()
 }
 
+const clearReceiptPrinter = `-- name: ClearReceiptPrinter :exec
+UPDATE printers SET is_receipt = 0, updated_at = ?1
+WHERE venue_id = ?2 AND is_receipt = 1
+`
+
+type ClearReceiptPrinterParams struct {
+	Now     time.Time
+	VenueID int64
+}
+
+func (q *Queries) ClearReceiptPrinter(ctx context.Context, arg ClearReceiptPrinterParams) error {
+	_, err := q.db.ExecContext(ctx, clearReceiptPrinter, arg.Now, arg.VenueID)
+	return err
+}
+
 const createPrintJob = `-- name: CreatePrintJob :one
 INSERT INTO print_jobs (venue_id, printer_id, kind, label, payload, state, attempts, next_attempt_at,
                         last_error, order_id, event_seq, station, created_at, updated_at)
@@ -262,6 +277,25 @@ func (q *Queries) FinishPrintJob(ctx context.Context, arg FinishPrintJobParams) 
 	return result.RowsAffected()
 }
 
+const markReceiptPrinter = `-- name: MarkReceiptPrinter :execrows
+UPDATE printers SET is_receipt = 1, updated_at = ?1
+WHERE id = ?2 AND venue_id = ?3 AND active = 1
+`
+
+type MarkReceiptPrinterParams struct {
+	Now     time.Time
+	ID      int64
+	VenueID int64
+}
+
+func (q *Queries) MarkReceiptPrinter(ctx context.Context, arg MarkReceiptPrinterParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, markReceiptPrinter, arg.Now, arg.ID, arg.VenueID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const printJobByID = `-- name: PrintJobByID :one
 SELECT id, venue_id, printer_id, kind, label, payload, state, attempts, next_attempt_at, last_error,
        order_id, event_seq, station, created_at, updated_at, done_at
@@ -431,6 +465,69 @@ func (q *Queries) PrinterByID(ctx context.Context, id int64) (PrinterByIDRow, er
 	return i, err
 }
 
+const printersForVenue = `-- name: PrintersForVenue :many
+SELECT p.id, p.name, p.transport, p.address, p.paper_mm, p.active, p.is_receipt,
+       CAST(coalesce(j.id, 0) AS INTEGER) AS last_job_id, coalesce(j.state, '') AS last_job_state,
+       coalesce(j.label, '') AS last_job_label, coalesce(j.last_error, '') AS last_job_error,
+       j.updated_at AS last_job_at
+FROM printers p
+LEFT JOIN print_jobs j ON j.id = (SELECT max(k.id) FROM print_jobs k WHERE k.printer_id = p.id)
+WHERE p.venue_id = ?
+ORDER BY p.id
+`
+
+type PrintersForVenueRow struct {
+	ID           int64
+	Name         string
+	Transport    string
+	Address      string
+	PaperMm      int64
+	Active       bool
+	IsReceipt    bool
+	LastJobID    int64
+	LastJobState string
+	LastJobLabel string
+	LastJobError string
+	LastJobAt    sql.NullTime
+}
+
+// The venue's printers with each one's newest job, for the back office.
+func (q *Queries) PrintersForVenue(ctx context.Context, venueID int64) ([]PrintersForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, printersForVenue, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PrintersForVenueRow{}
+	for rows.Next() {
+		var i PrintersForVenueRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Transport,
+			&i.Address,
+			&i.PaperMm,
+			&i.Active,
+			&i.IsReceipt,
+			&i.LastJobID,
+			&i.LastJobState,
+			&i.LastJobLabel,
+			&i.LastJobError,
+			&i.LastJobAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const receiptPrinter = `-- name: ReceiptPrinter :one
 SELECT id, paper_mm
 FROM printers
@@ -496,6 +593,60 @@ func (q *Queries) RetryPrintJob(ctx context.Context, arg RetryPrintJobParams) (i
 	return result.RowsAffected()
 }
 
+const setPrinterActive = `-- name: SetPrinterActive :execrows
+UPDATE printers
+SET active = ?1, is_receipt = CASE WHEN ?1 THEN is_receipt ELSE 0 END,
+    updated_at = ?2
+WHERE id = ?3 AND venue_id = ?4
+`
+
+type SetPrinterActiveParams struct {
+	Active  bool
+	Now     time.Time
+	ID      int64
+	VenueID int64
+}
+
+// Retiring also stops it printing receipts; its stations keep pointing at
+// it, and print nowhere until given another (StationPrinter needs active).
+func (q *Queries) SetPrinterActive(ctx context.Context, arg SetPrinterActiveParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setPrinterActive,
+		arg.Active,
+		arg.Now,
+		arg.ID,
+		arg.VenueID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const setStationPrinter = `-- name: SetStationPrinter :execrows
+UPDATE stations SET printer_id = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND code = ?4 AND active = 1
+`
+
+type SetStationPrinterParams struct {
+	PrinterID sql.NullInt64
+	Now       time.Time
+	VenueID   int64
+	Code      string
+}
+
+func (q *Queries) SetStationPrinter(ctx context.Context, arg SetStationPrinterParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setStationPrinter,
+		arg.PrinterID,
+		arg.Now,
+		arg.VenueID,
+		arg.Code,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const stationPrinter = `-- name: StationPrinter :one
 SELECT p.id, p.paper_mm
 FROM stations s
@@ -519,4 +670,73 @@ func (q *Queries) StationPrinter(ctx context.Context, arg StationPrinterParams) 
 	var i StationPrinterRow
 	err := row.Scan(&i.ID, &i.PaperMm)
 	return i, err
+}
+
+const stationsWithPrinters = `-- name: StationsWithPrinters :many
+SELECT code, name, printer_id
+FROM stations
+WHERE venue_id = ? AND active = 1
+ORDER BY sort_order, id
+`
+
+type StationsWithPrintersRow struct {
+	Code      string
+	Name      string
+	PrinterID sql.NullInt64
+}
+
+func (q *Queries) StationsWithPrinters(ctx context.Context, venueID int64) ([]StationsWithPrintersRow, error) {
+	rows, err := q.db.QueryContext(ctx, stationsWithPrinters, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StationsWithPrintersRow{}
+	for rows.Next() {
+		var i StationsWithPrintersRow
+		if err := rows.Scan(&i.Code, &i.Name, &i.PrinterID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updatePrinter = `-- name: UpdatePrinter :execrows
+UPDATE printers
+SET name = ?1, transport = ?2, address = ?3,
+    paper_mm = ?4, updated_at = ?5
+WHERE id = ?6 AND venue_id = ?7
+`
+
+type UpdatePrinterParams struct {
+	Name      string
+	Transport string
+	Address   string
+	PaperMm   int64
+	Now       time.Time
+	ID        int64
+	VenueID   int64
+}
+
+func (q *Queries) UpdatePrinter(ctx context.Context, arg UpdatePrinterParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updatePrinter,
+		arg.Name,
+		arg.Transport,
+		arg.Address,
+		arg.PaperMm,
+		arg.Now,
+		arg.ID,
+		arg.VenueID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

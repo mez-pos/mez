@@ -33,7 +33,7 @@ Phase 06.
   receipt, the kitchen ticket and the Z-report. A `--test-print` flag on the
   binary so a cafe owner can verify their printer before service.
 
-- [ ] **Task 5 — Durable print queue.**
+- [x] **Task 5 — Durable print queue.**
   Jobs persisted in SQLite: queued → printing → done | failed. Retries with
   backoff, a dead-letter state, and a visible queue in the UI with a manual
   retry. Printers jam mid-service and a lost invoice is a compliance problem,
@@ -69,7 +69,7 @@ Phase 06.
     terminal: a print-queue sheet with each job's state as a chip and a
     word, its error, and Retry; a header warning while any job is failed
     or dead.
-  - [ ] **Task 5c - Printers in the back office.** API to list, add,
+  - [x] **Task 5c - Printers in the back office.** API to list, add,
     change and retire printers, assign one to each station and one as the
     receipt printer, and send a test page (`escpos.TestPage`) through the
     queue. The back office's first real screen: the printers list with

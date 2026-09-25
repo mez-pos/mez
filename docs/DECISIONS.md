@@ -2145,3 +2145,43 @@ crash between the two, and one queued before can print for a payment
 that rolled back. Only the same transaction is neither.
 Cost: rendering happens inside the order transaction, which holds the
 write lock a few milliseconds longer.
+
+## ADR-082 - Printer settings: the back office's first screen, owner only
+2026-09 · Status: accepted
+Decision: `internal/service/printers` holds the printer settings, served
+at `/api/v1/printers` and `/api/v1/stations/{code}/printer`, and edited on
+the back office's first real screen (`backoffice-printers.md`).
+- **Owner only for now:** every call needs `settings.edit`, which only the
+  owner role has by default. A manager can retry and cancel jobs on the
+  till (ADR-081) but not rewire printers mid-service.
+- **Checked on the server, shown under the field:** a name (1 to 40,
+  unique per venue), network or USB, an address (a host, or host:port with
+  a port 1 to 65535, never a URL) or a Windows printer name, 80mm or 58mm.
+  A refusal is `invalid_printer` or `printer_name_taken` with the field,
+  and the form puts it there.
+- **Every change answers with the settings as they now stand,** which the
+  screen puts straight in its cache; the stream's `print_changed` moves each
+  printer's last result (its newest job) live.
+- **Retire, not delete:** a printer's jobs name it forever. Retired, it
+  prints nothing (its waiting jobs go dead as the worker reaches them), it
+  stops printing receipts, and its stations print nowhere until given
+  another. Brought back, it gets its stations back but not the receipts,
+  which someone may have moved on purpose.
+- **A test page is a queued job** (`kind` test, `escpos.TestPage` at the
+  printer's paper width): it retries, and shows on the terminals' print
+  queue, so the owner tests the same path a receipt takes.
+- `PUT /api/v1/printers/receipt` sits beside `PUT /api/v1/printers/{id}`;
+  the literal path wins, and "receipt" is never an id. The API client
+  gained `put`.
+- No idempotency keys on these: a retried create is refused as a name
+  taken, and the rest set a value, so a repeat is harmless.
+- Checked in a browser on a fresh venue with the demo menu: a URL as the
+  address was refused under the field; a printer at a TCP listener was
+  added, made the receipt printer, and its test page queued, printed
+  (the listener got the 48-column page) and showed Printed live; the
+  kitchen station assigned; retiring cleared receipts and the station
+  selects and disabled the test.
+Because: before this, a venue could not route a receipt anywhere without
+editing its database.
+Cost: a manager cannot set up a replacement printer during service without
+the owner, until roles can be edited (phase 10).
