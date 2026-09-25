@@ -83,6 +83,7 @@ var eventTypes = []struct {
 	{order.TypeOrderHeld, order.OrderHeld{}, "OrderHeld"},
 	{order.TypeOrderResumed, order.OrderResumed{}, "OrderResumed"},
 	{order.TypeInvoiceReprinted, order.InvoiceReprinted{}, "InvoiceReprinted"},
+	{order.TypeCreditNoteIssued, order.CreditNoteIssued{}, "CreditNoteIssued"},
 }
 
 // errorCodes is every code the API answers with. A client switches on
@@ -102,6 +103,7 @@ var errorCodes = []ErrorCode{
 	CodeInvoiceNotFound, CodeOrderInvoiced,
 	CodePrintJobNotFound, CodePrintJobState, CodeNoPrinter,
 	CodePrinterNotFound, CodePrinterRetired, CodeStationNotFound, CodePrinterNameTaken, CodeInvalidPrinter,
+	CodeNotInvoiced, CodeOverCredit, CodeRefundsMismatch,
 }
 
 // generate builds the whole file.
@@ -115,13 +117,14 @@ func generate() (*ts.Generator, error) {
 		Names: map[reflect.Type]string{
 			// Two packages have an Error; the API's is the one clients see
 			// most, and the hub's says which socket message it is.
-			reflect.TypeOf(Error{}):             "ApiError",
-			reflect.TypeOf(hub.ErrorMessage{}):  "StreamErrorMessage",
-			reflect.TypeOf(errorBody{}):         "ApiErrorBody",
-			reflect.TypeOf(amount{}):            "MoneyInput",
-			reflect.TypeOf(money.Amount{}):      "Money",
-			reflect.TypeOf(order.Modifier{}):    "LineModifier",
-			reflect.TypeOf(printers.Settings{}): "PrinterSettings",
+			reflect.TypeOf(Error{}):               "ApiError",
+			reflect.TypeOf(hub.ErrorMessage{}):    "StreamErrorMessage",
+			reflect.TypeOf(errorBody{}):           "ApiErrorBody",
+			reflect.TypeOf(amount{}):              "MoneyInput",
+			reflect.TypeOf(money.Amount{}):        "Money",
+			reflect.TypeOf(order.Modifier{}):      "LineModifier",
+			reflect.TypeOf(printers.Settings{}):   "PrinterSettings",
+			reflect.TypeOf(order.CreditRequest{}): "CreditSelection",
 		},
 	})
 
@@ -210,6 +213,8 @@ func generate() (*ts.Generator, error) {
 		// Printer settings.
 		printerRequest{}, assignRequest{}, printerResponse{}, lastJobResponse{}, stationPrinterResponse{},
 		printersResponse{}, testPageResponse{},
+		// Credit notes.
+		creditPreviewRequest{}, creditRequest{}, creditPlanResponse{}, creditResponse{},
 		// The menu.
 		stationResponse{}, courseResponse{}, categoryResponse{}, modifierResponse{},
 		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},

@@ -188,29 +188,32 @@ var scenarios = []struct {
 		},
 	},
 	{
-		name: "reopened to add a forgotten item",
+		// A reopen fixes a payment, never the sale: the invoice stands and no
+		// second number is taken (ADR-083).
+		name: "reopened to fix a reversed card payment",
 		payloads: []Payload{
 			opened(),
 			coffee(1),               // 2
-			pay(PaymentCash, 22000), // 3
+			pay(PaymentCard, 22000), // 3
 			invoiceNo("NF/2026-27/000003"),
 			closed,
-			OrderReopened{Reason: "forgot the cookie", AuthorisedBy: 3},
-			item("Choc chip cookie", 1, 12000), // 7
-			pay(PaymentUPI, 12000),             // 8
-			invoiceNo("NF/2026-27/000004"),
+			OrderReopened{Reason: "card reversed by the bank", AuthorisedBy: 3},
+			PaymentVoided{PaymentID: 3, Reason: "reversed by the bank", AuthorisedBy: 3},
+			pay(PaymentUPI, 22000), // 8
 			closed,
 		},
-		want:   figures{gross: 34000, total: 34000, paid: 34000},
+		want:   figures{gross: 22000, total: 22000, paid: 22000},
 		status: StatusClosed,
 		check: func(t *testing.T, s State) {
-			if s.Reopens != 1 || len(s.Invoices) != 2 || s.LastSeq != 10 {
-				t.Errorf("reopens %d, invoices %+v, last seq %d", s.Reopens, s.Invoices, s.LastSeq)
+			if s.Reopens != 1 || len(s.Invoices) != 1 || s.LastSeq != 9 || s.Tenders[0].Status != PaymentStatusVoided {
+				t.Errorf("reopens %d, invoices %+v, last seq %d, tender %s", s.Reopens, s.Invoices, s.LastSeq, s.Tenders[0].Status)
 			}
 		},
 	},
 	{
-		name: "partial refund after close, through a reopen",
+		// The invoice stands at 780.00; the credit note says 180.00 of it
+		// came back (ADR-083). The bill stays closed throughout.
+		name: "partial refund after close, by credit note",
 		payloads: []Payload{
 			opened(),
 			LineAdded{Name: "Tomato soup", Qty: 2, UnitPrice: inr(18000), Station: "kitchen"},      // 2: 360.00
@@ -218,16 +221,22 @@ var scenarios = []struct {
 			pay(PaymentCard, 78000), // 4
 			invoiceNo("NF/2026-27/000005"),
 			closed,
-			OrderReopened{Reason: "one soup served cold", AuthorisedBy: 3},
-			LineQtyChanged{LineID: 2, From: 2, To: 1},
+			CreditNoteIssued{
+				CreditNo: "CN/2026-27/000001", Series: "CN", AgainstInvoiceNo: "NF/2026-27/000005",
+				Reason: "one soup served cold", AuthorisedBy: 3,
+				Lines:   []CreditLine{{LineID: 2, Name: "Tomato soup", Qty: 1, Taxable: inr(18000), Tax: inr(0), Amount: inr(18000)}},
+				Taxable: inr(18000), Tax: inr(0), Total: inr(18000),
+			},
 			RefundIssued{Amount: inr(18000), AgainstPaymentID: 4, Reason: "soup served cold"},
-			closed,
 		},
-		want:   figures{gross: 60000, total: 60000, paid: 78000, refunded: 18000},
+		want:   figures{gross: 78000, total: 78000, paid: 78000, refunded: 18000},
 		status: StatusClosed,
 		check: func(t *testing.T, s State) {
 			if s.Tenders[0].Status != PaymentStatusCaptured || s.Tenders[0].Refunded != inr(18000) {
 				t.Errorf("tender after a partial refund = %+v", s.Tenders[0])
+			}
+			if s.Totals.Credited != inr(18000) || len(s.Invoices) != 1 || s.Reopens != 0 {
+				t.Errorf("credited %d, invoices %+v, reopens %d", s.Totals.Credited.Minor, s.Invoices, s.Reopens)
 			}
 		},
 	},

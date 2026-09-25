@@ -73,7 +73,8 @@ type State struct {
 	Tickets      []Ticket
 	Tenders      []Tender // every tender, voided ones included
 	Refunds      []Refund
-	Invoices     []Invoice // every invoice issued, one per close
+	Invoices     []Invoice // every invoice issued; a bill has one (ADR-083)
+	Credits      []Credit  // credit notes against the invoice, in order
 
 	Totals Totals
 
@@ -198,7 +199,9 @@ type Invoice struct {
 //	Paid           tenders that are not voided
 //	Refunded       refunds issued
 //	NetPaid        Paid - Refunded: what the venue has kept
-//	BalanceDue     Total - NetPaid; negative when the venue owes the guest
+//	Credited       what the credit notes take off the invoiced Total
+//	BalanceDue     Total - Credited - NetPaid; negative when the venue owes
+//	               the guest
 //	Tips           tips on tenders that are not voided, never in Paid
 //	Voided, Comped the Gross of voided and comped lines, for reporting
 type Totals struct {
@@ -212,6 +215,7 @@ type Totals struct {
 	Paid           money.Amount
 	Refunded       money.Amount
 	NetPaid        money.Amount
+	Credited       money.Amount
 	BalanceDue     money.Amount
 	Tips           money.Amount
 	Voided         money.Amount

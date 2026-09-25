@@ -141,6 +141,14 @@ function describe(event: OrderEvent, ctx: Context): Described {
       return { title: "Order closed", tone: "success" };
     case "order.reopened":
       return { title: "Order reopened", detail: event.payload.reason, tone: "warning", authorisedBy: event.payload.authorised_by };
+    case "credit_note.issued":
+      return {
+        title: `Credit note ${event.payload.credit_no}`,
+        detail: `Against ${event.payload.against_invoice_no}: ${humanise(event.payload.reason) ?? event.payload.reason}`,
+        amount: event.payload.total,
+        tone: "danger",
+        authorisedBy: event.payload.authorised_by,
+      };
     case "invoice.reprinted":
       return {
         title: `Reprinted ${event.payload.invoice_no}`,

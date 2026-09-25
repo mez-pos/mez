@@ -37,6 +37,7 @@ type orderResponse struct {
 	Tenders   []tenderResponse   `json:"tenders"`
 	Refunds   []refundResponse   `json:"refunds"`
 	Invoices  []invoiceResponse  `json:"invoices"`
+	Credits   []creditResponse   `json:"credits"`
 	Discounts []discountResponse `json:"discounts"`
 
 	Totals totalsResponse `json:"totals"`
@@ -129,6 +130,7 @@ type totalsResponse struct {
 	Paid           money.Amount `json:"paid"`
 	Refunded       money.Amount `json:"refunded"`
 	NetPaid        money.Amount `json:"net_paid"`
+	Credited       money.Amount `json:"credited"`
 	BalanceDue     money.Amount `json:"balance_due"`
 	Tips           money.Amount `json:"tips"`
 	Voided         money.Amount `json:"voided"`
@@ -198,6 +200,7 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 		out.Tickets[i] = ticketResponse{Seq: t.Seq, Station: t.Station, LineIDs: t.LineIDs, At: t.At.UTC()}
 	}
 	out.Tenders = toTenderResponses(s.Tenders)
+	out.Credits = toCreditResponses(s.Credits)
 	out.Refunds = make([]refundResponse, len(s.Refunds))
 	for i, r := range s.Refunds {
 		out.Refunds[i] = refundResponse{Seq: r.Seq, Amount: r.Amount, AgainstPaymentID: r.AgainstPaymentID, Reason: r.Reason}

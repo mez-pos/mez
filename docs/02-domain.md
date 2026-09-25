@@ -62,6 +62,7 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 | `payment.voided` | payment_id, reason, authorised_by |
 | `invoice.issued` | invoice_no, series, tax_snapshot, prices (seller, lines, totals at issue) |
 | `invoice.reprinted` | invoice_no, reason, authorised_by: a copy, never a new number; allowed after a close |
+| `credit_note.issued` | credit_no, series, against_invoice_no, reason, authorised_by, lines (units or a share, with tax by component), totals: money back on an invoiced bill, never a second invoice; allowed after a close |
 | `refund.issued` | amount, against_payment_id, reason |
 | `order.closed` | closed_by |
 | `order.reopened` | reason, authorised_by |
@@ -89,6 +90,11 @@ carries a full snapshot of everything used to compute it: `tax_snapshot` (the
 tax result) and `prices` (the seller, each active line as billed, and the
 totals). A preview or a reprint renders from those, never from today's menu,
 venue settings or projection (ADR-078).
+
+**A refund on an invoiced bill is a credit note** (ADR-083): its own gapless
+series, naming the invoice, with the refunds that pay it out after it; the
+balance is `Total - Credited - NetPaid`. A reopen corrects payments only: it
+never allows a second invoice.
 
 **An invoiced bill is frozen.** The payment that brings the balance to zero
 issues the invoice in its own transaction. From then until a reopen, no event

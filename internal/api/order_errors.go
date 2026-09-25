@@ -63,6 +63,7 @@ var orderErrors = []struct {
 	{svcorder.ErrNothingToSend, http.StatusConflict, CodeNothingToSend},
 	{svcorder.ErrNeedsApproval, http.StatusConflict, CodeNeedsApproval},
 	{svcorder.ErrInvoiceNotIssued, http.StatusNotFound, CodeInvoiceNotFound},
+	{svcorder.ErrRefundsMismatch, http.StatusUnprocessableEntity, CodeRefundsMismatch},
 	{svcorder.ErrInvalidCommand, http.StatusBadRequest, CodeInvalidRequest},
 
 	// How a bill divides (order_split.go).
@@ -78,6 +79,8 @@ var orderErrors = []struct {
 	{order.ErrPaymentNotFound, http.StatusConflict, CodePaymentNotFound},
 	{order.ErrInvoiceNotFound, http.StatusNotFound, CodeInvoiceNotFound},
 	{order.ErrOrderInvoiced, http.StatusConflict, CodeOrderInvoiced},
+	{order.ErrNotInvoiced, http.StatusConflict, CodeNotInvoiced},
+	{order.ErrOverCredit, http.StatusConflict, CodeOverCredit},
 	{order.ErrPaymentNotCaptured, http.StatusConflict, CodePaymentNotCaptured},
 	{order.ErrOrderClosed, http.StatusConflict, CodeOrderClosed},
 	{order.ErrOrderNotClosed, http.StatusConflict, CodeOrderNotClosed},

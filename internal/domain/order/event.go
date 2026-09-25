@@ -32,6 +32,7 @@ const (
 	TypeOrderHeld        Type = "order.held"
 	TypeOrderResumed     Type = "order.resumed"
 	TypeInvoiceReprinted Type = "invoice.reprinted"
+	TypeCreditNoteIssued Type = "credit_note.issued"
 )
 
 // Payload is the type-specific body of an event. Each payload type knows its
@@ -63,6 +64,7 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeOrderHeld:        decodeAs[OrderHeld],
 	TypeOrderResumed:     decodeAs[OrderResumed],
 	TypeInvoiceReprinted: decodeAs[InvoiceReprinted],
+	TypeCreditNoteIssued: decodeAs[CreditNoteIssued],
 }
 
 // Types lists every event type this build knows, sorted, for tests and for

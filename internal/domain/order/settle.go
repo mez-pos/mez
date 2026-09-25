@@ -84,9 +84,9 @@ func (p *projector) invoice(e Event, pl InvoiceIssued) error {
 }
 
 // refund gives money back against a tender. It is only possible while the
-// venue owes the guest, which is a negative balance: a void or comp after
-// payment creates one. A closed order owes nothing, so refunding one means
-// reopening it and recording why the guest is owed. See ADR-046.
+// venue owes the guest, which is a negative balance: a void or comp before
+// the invoice, or a credit note after it (ADR-083). A closed order takes a
+// refund only after a credit note on it has made the balance negative.
 func (p *projector) refund(e Event, pl RefundIssued) error {
 	t, err := p.findTender(pl.AgainstPaymentID)
 	if err != nil {
@@ -141,10 +141,10 @@ func (p *projector) reopen(pl OrderReopened) error {
 	if err := needReason(pl.Reason, pl.AuthorisedBy); err != nil {
 		return err
 	}
+	// The invoice stands (ADR-083): a reopen corrects payments, and what was
+	// sold is corrected by a credit note, never by a second invoice.
 	p.closed = false
 	p.reopened = true
-	p.invoiced = false
-	p.s.Invoiced = false
 	p.s.Reopens++
 	p.s.ClosedBy = 0
 	p.s.ClosedAt = time.Time{}

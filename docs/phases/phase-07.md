@@ -84,7 +84,7 @@ Phase 06.
   Split into two sub-tasks after the owner chose credit notes for refunds on
   invoiced bills (ADR-083). Task 6 is done when both are.
 
-  - [ ] **Task 6a - Credit notes and refunds, in the domain and the API.**
+  - [x] **Task 6a - Credit notes and refunds, in the domain and the API.**
     A refund on an invoiced bill issues a credit note in its own gapless
     series (the invoice allocator, a `CN` series) that names the invoice it
     corrects and snapshots what it credits: the lines and quantities (or an

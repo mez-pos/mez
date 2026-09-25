@@ -44,6 +44,7 @@ type Querier interface {
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (int64, error)
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (int64, error)
+	CreateCreditNote(ctx context.Context, arg CreateCreditNoteParams) (int64, error)
 	CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (int64, error)
 	CreateItem(ctx context.Context, arg CreateItemParams) (int64, error)
 	CreateModifier(ctx context.Context, arg CreateModifierParams) (int64, error)
@@ -69,6 +70,7 @@ type Querier interface {
 	// SELECT * here would silently change shape the next time a migration adds a
 	// column, and RETURNING * has exactly the same problem.
 	CreateVenue(ctx context.Context, arg CreateVenueParams) (Venue, error)
+	CreditNotesForVenue(ctx context.Context, venueID int64) ([]CreditNote, error)
 	//
 	// Staff are deactivated, never deleted: their name is on every order they took
 	// and on every void they authorised, and a tax audit expects to find them.

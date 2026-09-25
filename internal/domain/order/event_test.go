@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 )
 
 func inr(minor int64) money.Amount { return money.Amount{Minor: minor, Currency: "INR"} }
@@ -51,6 +52,14 @@ func samplePayloads() []Payload {
 			Gross: inr(8000), LineDiscounts: inr(0), OrderDiscounts: inr(0), Subtotal: inr(8000), Taxable: inr(8000), Tax: inr(400), Total: inr(8400),
 		}},
 		InvoiceReprinted{InvoiceNo: "NF/2026-27/000123", Reason: "guest_copy", AuthorisedBy: 2},
+		CreditNoteIssued{
+			CreditNo: "CN/26-27/000001", Series: "CN", AgainstInvoiceNo: "NF/2026-27/000123", Reason: "cold", AuthorisedBy: 2,
+			Lines: []CreditLine{{LineID: 2, Name: "Filter coffee", Qty: 1, Taxable: inr(4000), Tax: inr(200), Amount: inr(4200),
+				Components: []tax.ComponentAmount{{Name: "CGST", Rate: 2500, Amount: inr(100)}, {Name: "SGST", Rate: 2500, Amount: inr(100)}}}},
+			Taxable: inr(4000), Tax: inr(200), Total: inr(4200),
+			Components: []tax.ComponentTotal{{Name: "CGST", Rate: 2500, Taxable: inr(4000), Amount: inr(100)}, {Name: "SGST", Rate: 2500, Taxable: inr(4000), Amount: inr(100)}},
+			Seller:     &InvoiceSeller{Name: "Filter Coffee House", LegalName: "FCH LLP", TaxProfile: "gst_in", Registration: "29ABCDE1234F1Z5"},
+		},
 		RefundIssued{Amount: inr(22000), AgainstPaymentID: 9, Reason: "cold food"},
 		OrderClosed{ClosedBy: 11},
 		OrderReopened{Reason: "tip entered wrong", AuthorisedBy: 3},
@@ -91,8 +100,8 @@ func TestSamplesCoverEveryType(t *testing.T) {
 		}
 	}
 	// 16 since line.modified (ADR-071), 18 since order.held and resumed (ADR-074),
-	// 19 since invoice.reprinted (ADR-078).
-	if got, want := len(Types()), 19; got != want {
+	// 19 since invoice.reprinted (ADR-078), 20 since credit_note.issued (ADR-083).
+	if got, want := len(Types()), 20; got != want {
 		t.Errorf("Types() has %d types, docs/02-domain.md lists %d", got, want)
 	}
 }

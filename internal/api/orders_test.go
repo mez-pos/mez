@@ -239,16 +239,26 @@ func TestTheRestOfTheCommands(t *testing.T) {
 		t.Errorf("a second invoice: %d %s", status, apiErr.Code)
 	}
 	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/close", ``)
-	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/reopen",
-		`{`+r.override()+`,"reason":"guest was overcharged"}`)
-	if res.Order.Status != "reopened" {
-		t.Errorf("status = %s", res.Order.Status)
+
+	// A refund on the closed, invoiced bill is a credit note (ADR-083):
+	// preview the figures, then issue it with a manager's approval.
+	rec := send(r.handler, http.MethodPost, "/api/v1/orders/"+id+"/credit-notes/preview", `{"amount":{"minor":1000,"currency":"INR"}}`, r.asStaff(r.staffToken))
+	var preview creditPlanResponse
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &preview) != nil || preview.Total.Minor != 1000 {
+		t.Fatalf("preview: %d %s", rec.Code, rec.Body)
 	}
-	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines/2/void", `{`+r.override()+`,"reason_code":"stale"}`)
-	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/refunds",
-		fmt.Sprintf(`{%s,"amount":{"minor":1000,"currency":"INR"},"against_payment_id":%d,"reason":"stale"}`, r.override(), tender))
-	if len(res.Order.Refunds) != 1 || res.Order.Totals.Refunded.Minor != 1000 {
-		t.Errorf("refunds = %+v", res.Order.Refunds)
+	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/credit-notes", fmt.Sprintf(
+		`{%s,"credit":{"amount":{"minor":1000,"currency":"INR"}},"refunds":[{"payment_id":%d,"amount":{"minor":1000,"currency":"INR"}}],"reason":"stale"}`,
+		r.override(), tender))
+	if len(res.Order.Credits) != 1 || res.Order.Credits[0].CreditNo != "CN/26-27/000001" || len(res.Order.Refunds) != 1 ||
+		res.Order.Totals.Credited.Minor != 1000 || res.Order.Status != "closed" {
+		t.Errorf("credit: %+v, refunds %+v, status %s", res.Order.Credits, res.Order.Refunds, res.Order.Status)
+	}
+	// A reopen, for a payment fix, keeps the invoice.
+	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/reopen",
+		`{`+r.override()+`,"reason":"card reversed"}`)
+	if res.Order.Status != "reopened" || !res.Order.Invoiced {
+		t.Errorf("status = %s, invoiced %v", res.Order.Status, res.Order.Invoiced)
 	}
 }
 

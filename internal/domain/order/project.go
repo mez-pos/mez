@@ -71,7 +71,7 @@ func (p *projector) step(wantSeq int64, e Event) error {
 	if _, isOpen := e.Payload.(OrderOpened); !p.opened && !isOpen {
 		return ErrNotOpened
 	}
-	if p.closed && e.Type != TypeOrderReopened && e.Type != TypeNoteAdded && e.Type != TypeInvoiceReprinted {
+	if p.closed && !afterClose(e.Type) {
 		return ErrOrderClosed
 	}
 	if p.held && e.Type != TypeOrderResumed && e.Type != TypeNoteAdded && e.Type != TypeInvoiceReprinted {
@@ -119,6 +119,8 @@ func (p *projector) apply(e Event) error {
 		return p.invoice(e, pl)
 	case InvoiceReprinted:
 		return p.reprint(pl)
+	case CreditNoteIssued:
+		return p.credit(e, pl)
 	case RefundIssued:
 		return p.refund(e, pl)
 	case OrderClosed:
@@ -392,6 +394,17 @@ func needReason(reason string, authorisedBy int64) error {
 func changesBill(t Type) bool {
 	switch t {
 	case TypeLineAdded, TypeLineQtyChanged, TypeLineModified, TypeLineVoided, TypeLineComped, TypeDiscountApplied:
+		return true
+	}
+	return false
+}
+
+// afterClose reports the events a closed order still takes: a note, a
+// reopen, a reprint, and a credit note with the refunds that pay it out
+// (ADR-083). None of them changes what was sold.
+func afterClose(t Type) bool {
+	switch t {
+	case TypeOrderReopened, TypeNoteAdded, TypeInvoiceReprinted, TypeCreditNoteIssued, TypeRefundIssued:
 		return true
 	}
 	return false

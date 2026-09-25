@@ -11,19 +11,20 @@ File: `docs/phases/phase-07.md`. Phase 06 is complete.
 
 ## Last completed task
 
-**Phase 07, Task 5c: printers in the back office** (ADR-082), which
-completes Task 5. Printer settings service and API (`settings.edit`), the
-back office's first screen at `/backoffice/printers`: add, edit, retire,
-test page through the queue, receipt printer and per-station printers.
-Checked in a browser with a stand-in TCP printer.
+**Phase 07, Task 6a: credit notes and refunds, in the domain and the API**
+(ADR-083). `order.PlanCredit` (by units or by amount, tax by component to
+the paisa), `credit_note.issued` allowed on a closed bill, a balance net of
+credits, reopen keeping the invoice; the `CN` series and the
+`credit_notes` register (migration 00010); preview and issue endpoints.
+A payment voided after the invoice is settled without a new number.
 
 ## Next task
 
-**Phase 07, Task 6a: credit notes and refunds, in the domain and the
-API.** Task 6 was split after the owner chose credit notes for refunds on
-invoiced bills (ADR-083, superseding part of ADR-046): 6a is the domain,
-series and API, 6b the till's screens and the printed credit note. See
-`docs/phases/phase-07.md`.
+**Phase 07, Task 6b: refunds and voids at the till.** Find a past bill
+(recent closed orders, or an invoice number typed or scanned), then refund
+through the credit note preview and a manager's PIN, void a payment, or
+reprint; the credit note printed through the queue (an `escpos` layout).
+Screen spec first, and the phase's done-when check at the end.
 
 ## Known broken / in progress
 
@@ -55,8 +56,7 @@ series and API, 6b the till's screens and the printed credit note. See
 - The Windows spooler's write path is untested on a real printer (ADR-080).
 - The cash drawer opens only with the settling receipt, not on a cash part
   payment (ADR-081). Kitchen tickets print only once phase 08 adds Send.
-- A payment voided after its invoice returns the balance to due and is
-  settled without a new number (ADR-083); Task 6a makes that so and tests it.
+- Credit notes do not print yet, and the print planner ignores them (6b).
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`
   does not escape the path in its `file:` DSN.
 - To try the apps: `nofiltr setup -demo-menu` prints a pairing code

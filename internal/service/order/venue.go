@@ -49,8 +49,15 @@ const (
 )
 
 const (
-	defaultSeries   = "INV"
-	defaultTemplate = "{prefix}/{fy:short}/{seq:06d}"
+	// SettingCreditSeries is the code of the series credit notes are issued
+	// in (ADR-083), and SettingCreditPrefix what {prefix} writes for them.
+	// They use the invoice template. Defaults: "CN", and the code.
+	SettingCreditSeries = "credit_note.series"
+	SettingCreditPrefix = "credit_note.prefix"
+
+	defaultCreditSeries = "CN"
+	defaultSeries       = "INV"
+	defaultTemplate     = "{prefix}/{fy:short}/{seq:06d}"
 
 	// gstMaxInvoiceNo is the longest invoice number GST allows.
 	gstMaxInvoiceNo = 16
@@ -68,6 +75,7 @@ type venue struct {
 	Location  *time.Location
 	Taxes     order.Taxes
 	Series    invoice.Series
+	Credits   invoice.Series // the credit note series
 	LateAfter time.Duration
 	Seller    order.InvoiceSeller // as an invoice issued now names the venue
 }
@@ -109,8 +117,12 @@ func venueFrom(row gen.Venue, settings map[string]string) (venue, error) {
 	if err != nil {
 		return venue{}, err
 	}
+	credits, err := creditSeriesFor(row, settings, series)
+	if err != nil {
+		return venue{}, err
+	}
 	return venue{
-		ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, Series: series,
+		ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, Series: series, Credits: credits,
 		LateAfter: lateAfter(settings[SettingTicketLateMinutes]),
 		Seller:    sellerFor(row, settings),
 	}, nil
@@ -196,6 +208,37 @@ func seriesFor(row gen.Venue, settings map[string]string) (invoice.Series, error
 	s, err := invoice.NewSeries(code, prefix, fy, template, maxLength)
 	if err != nil {
 		return invoice.Series{}, fmt.Errorf("%w: invoice series: %w", ErrVenueConfig, err)
+	}
+	return s, nil
+}
+
+// creditSeriesFor builds the credit note series. It must not be the invoice
+// series: the two share the counters table, and one run of numbers for both
+// would put credit notes in the gaps of the invoice register.
+func creditSeriesFor(row gen.Venue, settings map[string]string, invoices invoice.Series) (invoice.Series, error) {
+	code := strings.TrimSpace(settings[SettingCreditSeries])
+	if code == "" {
+		code = defaultCreditSeries
+	}
+	if code == invoices.Code {
+		return invoice.Series{}, fmt.Errorf("%w: credit notes and invoices both use series %q", ErrVenueConfig, code)
+	}
+	prefix, ok := settings[SettingCreditPrefix]
+	if !ok {
+		prefix = code
+	}
+	template := settings[SettingInvoiceTemplate]
+	if template == "" {
+		template = defaultTemplate
+	}
+	maxLength := 0
+	if row.TaxProfile == "gst_in" {
+		maxLength = gstMaxInvoiceNo
+	}
+	fy := invoice.FYRule{StartMonth: time.Month(row.FinancialYearStartMonth), StartDay: 1}
+	s, err := invoice.NewSeries(code, prefix, fy, template, maxLength)
+	if err != nil {
+		return invoice.Series{}, fmt.Errorf("%w: credit note series: %w", ErrVenueConfig, err)
 	}
 	return s, nil
 }

@@ -130,6 +130,22 @@ type AfterAppend func(ctx context.Context, q *gen.Queries, next order.State, app
 // once; the last registration of the attempt that commits is the one run.
 func (o *OrderTx) OnAppended(fn AfterAppend) { o.after = fn }
 
+// RecordCreditNote writes an issued credit note to the register against
+// this order (ADR-083). Its credit_note.issued event is the record.
+func (o *OrderTx) RecordCreditNote(ctx context.Context, in invoice.Issued, againstInvoiceNo string, total int64, at time.Time) error {
+	if in.Key.VenueID != o.VenueID {
+		return fmt.Errorf("db: credit note %s was allocated for venue %d, the order is at venue %d", in.InvoiceNo, in.Key.VenueID, o.VenueID)
+	}
+	_, err := o.q.CreateCreditNote(ctx, gen.CreateCreditNoteParams{
+		VenueID: o.VenueID, OrderID: o.OrderID, Series: in.Key.Series, FyStart: int64(in.Key.FYStart), Seq: in.Seq,
+		CreditNo: in.InvoiceNo, AgainstInvoiceNo: againstInvoiceNo, TotalMinor: total, IssuedAt: at.UTC(),
+	})
+	if err != nil {
+		return fmt.Errorf("db: recording credit note %s: %w", in.InvoiceNo, err)
+	}
+	return nil
+}
+
 // Events is the order's stream after afterSeq, read inside the transaction.
 func (o *OrderTx) Events(ctx context.Context, afterSeq int64) ([]order.Event, error) {
 	return orderEvents(ctx, o.q, o.OrderID, afterSeq)

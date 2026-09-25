@@ -65,8 +65,12 @@ func TestInvoicedBillIsFrozen(t *testing.T) {
 		}
 	}
 	after := append(paid, NoteAdded{Scope: ScopeOrder, Text: "table 4"}, closed,
-		OrderReopened{Reason: "wrong item", AuthorisedBy: 2}, coffee(1))
+		OrderReopened{Reason: "wrong item", AuthorisedBy: 2})
 	if _, err := Project(stream(after...), Taxes{}); err != nil {
-		t.Errorf("a note, a close, a reopen and a new line: %v", err)
+		t.Errorf("a note, a close and a reopen: %v", err)
+	}
+	// A reopen does not unfreeze the bill (ADR-083).
+	if _, err := Project(stream(append(after, coffee(1))...), Taxes{}); !errors.Is(err, ErrOrderInvoiced) {
+		t.Errorf("a new line after the reopen: %v", err)
 	}
 }

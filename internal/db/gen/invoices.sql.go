@@ -10,6 +10,41 @@ import (
 	"time"
 )
 
+const createCreditNote = `-- name: CreateCreditNote :one
+INSERT INTO credit_notes (venue_id, order_id, series, fy_start, seq, credit_no, against_invoice_no, total_minor, issued_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING id
+`
+
+type CreateCreditNoteParams struct {
+	VenueID          int64
+	OrderID          int64
+	Series           string
+	FyStart          int64
+	Seq              int64
+	CreditNo         string
+	AgainstInvoiceNo string
+	TotalMinor       int64
+	IssuedAt         time.Time
+}
+
+func (q *Queries) CreateCreditNote(ctx context.Context, arg CreateCreditNoteParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createCreditNote,
+		arg.VenueID,
+		arg.OrderID,
+		arg.Series,
+		arg.FyStart,
+		arg.Seq,
+		arg.CreditNo,
+		arg.AgainstInvoiceNo,
+		arg.TotalMinor,
+		arg.IssuedAt,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createInvoice = `-- name: CreateInvoice :one
 INSERT INTO invoices (venue_id, order_id, series, fy_start, seq, invoice_no, issued_at)
 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -39,6 +74,47 @@ func (q *Queries) CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (i
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const creditNotesForVenue = `-- name: CreditNotesForVenue :many
+SELECT id, venue_id, order_id, series, fy_start, seq, credit_no, against_invoice_no, total_minor, issued_at
+FROM credit_notes
+WHERE venue_id = ?
+ORDER BY series, fy_start, seq
+`
+
+func (q *Queries) CreditNotesForVenue(ctx context.Context, venueID int64) ([]CreditNote, error) {
+	rows, err := q.db.QueryContext(ctx, creditNotesForVenue, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CreditNote{}
+	for rows.Next() {
+		var i CreditNote
+		if err := rows.Scan(
+			&i.ID,
+			&i.VenueID,
+			&i.OrderID,
+			&i.Series,
+			&i.FyStart,
+			&i.Seq,
+			&i.CreditNo,
+			&i.AgainstInvoiceNo,
+			&i.TotalMinor,
+			&i.IssuedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const invoiceSeriesLastSeq = `-- name: InvoiceSeriesLastSeq :one

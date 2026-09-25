@@ -25,3 +25,14 @@ SELECT id, venue_id, order_id, series, fy_start, seq, invoice_no, issued_at
 FROM invoices
 WHERE venue_id = ?
 ORDER BY series, fy_start, seq;
+
+-- name: CreateCreditNote :one
+INSERT INTO credit_notes (venue_id, order_id, series, fy_start, seq, credit_no, against_invoice_no, total_minor, issued_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING id;
+
+-- name: CreditNotesForVenue :many
+SELECT id, venue_id, order_id, series, fy_start, seq, credit_no, against_invoice_no, total_minor, issued_at
+FROM credit_notes
+WHERE venue_id = ?
+ORDER BY series, fy_start, seq;

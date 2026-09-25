@@ -60,7 +60,10 @@ export type ErrorCode =
   | 'printer_retired'
   | 'station_not_found'
   | 'printer_name_taken'
-  | 'invalid_printer';
+  | 'invalid_printer'
+  | 'not_invoiced'
+  | 'over_credit'
+  | 'refunds_mismatch';
 
 export type OrderStatus =
   | 'open'
@@ -171,7 +174,8 @@ export type OrderEventType =
   | 'order.reopened'
   | 'order.held'
   | 'order.resumed'
-  | 'invoice.reprinted';
+  | 'invoice.reprinted'
+  | 'credit_note.issued';
 
 export type StreamMessageType =
   | 'hello'
@@ -377,6 +381,43 @@ export interface InvoiceReprinted {
   authorised_by: number;
 }
 
+export interface CreditNoteIssued {
+  credit_no: string;
+  series: string;
+  against_invoice_no: string;
+  reason: string;
+  authorised_by: number;
+  lines: CreditLine[];
+  taxable: Money;
+  tax: Money;
+  total: Money;
+  components?: ComponentTotal[];
+  seller?: InvoiceSeller;
+}
+
+export interface CreditLine {
+  line_id: number;
+  name: string;
+  qty: number;
+  taxable: Money;
+  tax: Money;
+  amount: Money;
+  components?: ComponentAmount[];
+}
+
+export interface ComponentAmount {
+  name: string;
+  rate: number;
+  amount: Money;
+}
+
+export interface ComponentTotal {
+  name: string;
+  rate: number;
+  taxable: Money;
+  amount: Money;
+}
+
 export interface OrderEventOf<T extends OrderEventType, P> {
   seq: number;
   type: T;
@@ -406,7 +447,8 @@ export type OrderEvent =
   | OrderEventOf<'order.reopened', OrderReopened>
   | OrderEventOf<'order.held', OrderHeld>
   | OrderEventOf<'order.resumed', OrderResumed>
-  | OrderEventOf<'invoice.reprinted', InvoiceReprinted>;
+  | OrderEventOf<'invoice.reprinted', InvoiceReprinted>
+  | OrderEventOf<'credit_note.issued', CreditNoteIssued>;
 
 export interface ApiError {
   code: ErrorCode;
@@ -654,6 +696,7 @@ export interface TotalsResponse {
   paid: Money;
   refunded: Money;
   net_paid: Money;
+  credited: Money;
   balance_due: Money;
   tips: Money;
   voided: Money;
@@ -667,13 +710,6 @@ export interface TaxResponse {
   taxable: Money;
   tax: Money;
   total: Money;
-}
-
-export interface ComponentTotal {
-  name: string;
-  rate: number;
-  taxable: Money;
-  amount: Money;
 }
 
 export interface OrderResponse {
@@ -696,9 +732,20 @@ export interface OrderResponse {
   tenders: TenderResponse[];
   refunds: RefundResponse[];
   invoices: InvoiceResponse[];
+  credits: CreditResponse[];
   discounts: DiscountResponse[];
   totals: TotalsResponse;
   tax?: TaxResponse;
+}
+
+export interface CreditResponse {
+  seq: number;
+  credit_no: string;
+  against_invoice_no: string;
+  reason: string;
+  taxable: Money;
+  tax: Money;
+  total: Money;
 }
 
 export interface CommandResponse {
@@ -831,6 +878,37 @@ export interface PrintersResponse {
 
 export interface TestPageResponse {
   job_id: number;
+}
+
+export interface CreditSelection {
+  lines?: CreditItem[];
+  amount?: Money;
+}
+
+export interface CreditItem {
+  line_id: number;
+  qty: number;
+}
+
+export interface CreditRequest {
+  authorised_by: string;
+  pin: string;
+  credit: CreditSelection;
+  refunds: RefundPart[];
+  reason: string;
+}
+
+export interface RefundPart {
+  payment_id: number;
+  amount: Money;
+}
+
+export interface CreditPlanResponse {
+  lines: CreditLine[];
+  taxable: Money;
+  tax: Money;
+  total: Money;
+  components: ComponentTotal[];
 }
 
 export interface StationResponse {

@@ -18,11 +18,17 @@ func reopenedStream() []Payload {
 		pay(PaymentCash, 44000), // 3
 		invoiceNo("NF/2026-27/000001"),
 		closed,
-		OrderReopened{Reason: "guest added a pastry", AuthorisedBy: 3},
-		item("Almond croissant", 1, 18000), // 7
-		pay(PaymentUPI, 18000),             // 8
-		invoiceNo("NF/2026-27/000002"),
+		OrderReopened{Reason: "cash was short", AuthorisedBy: 3},
+		PaymentVoided{PaymentID: 3, Reason: "a note was forged", AuthorisedBy: 3},
+		pay(PaymentUPI, 44000), // 8
 		closed,
+		CreditNoteIssued{
+			CreditNo: "CN/2026-27/000001", Series: "CN", AgainstInvoiceNo: "NF/2026-27/000001",
+			Reason: "one coffee spilled", AuthorisedBy: 3,
+			Lines:   []CreditLine{{LineID: 2, Name: "Flat white", Qty: 1, Taxable: inr(22000), Tax: inr(0), Amount: inr(22000)}},
+			Taxable: inr(22000), Tax: inr(0), Total: inr(22000),
+		},
+		RefundIssued{Amount: inr(22000), AgainstPaymentID: 8, Reason: "one coffee spilled"},
 		NoteAdded{Scope: ScopeOrder, Text: "regular, likes it hot"},
 	}
 }
@@ -41,7 +47,7 @@ func TestResumeFromAnyPointEqualsAFullReplay(t *testing.T) {
 		streams = append(streams, stream_{sc.name, sc.payloads, untaxed})
 	}
 	streams = append(streams,
-		stream_{"reopened and settled twice", reopenedStream(), untaxed},
+		stream_{"reopened for a payment, then credited", reopenedStream(), untaxed},
 		stream_{"gst exclusive with a discount", []Payload{
 			opened(),
 			dish("Masala dosa", 2, 12000),

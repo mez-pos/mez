@@ -23,6 +23,8 @@ type Orders interface {
 	Split(ctx context.Context, venueID, orderID int64, req svcorder.SplitRequest) (payment.Split, error)
 	Invoice(ctx context.Context, venueID, orderID, seq int64) (svcorder.IssuedInvoice, error)
 	Reprint(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ReprintInvoice) (svcorder.Result, error)
+	PlanCredit(ctx context.Context, venueID, orderID int64, req order.CreditRequest) (order.CreditPlan, error)
+	Credit(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.IssueCredit) (svcorder.Result, error)
 	Hold(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 	Resume(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 
@@ -108,6 +110,10 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	post("/api/v1/orders/{id}/refunds", auth.PermOrderOpen, s.refund)
 	post("/api/v1/orders/{id}/reopen", auth.PermOrderOpen, s.reopenOrder)
 	post("/api/v1/orders/{id}/invoices/{seq}/reprint", auth.PermOrderOpen, s.reprintInvoice)
+	// A credit note's figures before approval, and the credit note itself,
+	// with its refunds (ADR-083). Issuing needs a manager's refund.give.
+	post("/api/v1/orders/{id}/credit-notes/preview", auth.PermOrderOpen, s.previewCredit)
+	post("/api/v1/orders/{id}/credit-notes", auth.PermOrderOpen, s.issueCredit)
 }
 
 // The request bodies. Those that are exactly a service command are that

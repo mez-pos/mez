@@ -298,3 +298,4 @@ func (OrderReopened) EventType() Type    { return TypeOrderReopened }
 func (OrderHeld) EventType() Type        { return TypeOrderHeld }
 func (OrderResumed) EventType() Type     { return TypeOrderResumed }
 func (InvoiceReprinted) EventType() Type { return TypeInvoiceReprinted }
+func (CreditNoteIssued) EventType() Type { return TypeCreditNoteIssued }

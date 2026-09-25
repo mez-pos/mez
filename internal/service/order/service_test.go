@@ -489,11 +489,23 @@ func TestEveryCommandReachesItsEvent(t *testing.T) {
 	must(t)(s.TenderPayment(ctx, m, id, TenderPayment{Method: order.PaymentCash, Amount: due}))
 	closed := must(t)(s.Close(ctx, m, id))
 	pay := closed.State.Tenders[len(closed.State.Tenders)-1].ID
-	reopened := must(t)(s.Reopen(ctx, m, id, Reopen{Reason: "pastry was stale", AuthorisedBy: 7}))
-	must(t)(s.ChangeQty(ctx, m, id, ChangeQty{LineID: 2, From: 2, To: 1}))
-	refunded := must(t)(s.Refund(ctx, m, id, Refund{Amount: inr(1000), AgainstPaymentID: pay, Reason: "stale"}))
-	if reopened.State.Status != order.StatusReopened || len(refunded.State.Refunds) != 1 {
-		t.Errorf("reopen %s, refunds %+v", reopened.State.Status, refunded.State.Refunds)
+	// A credit note and its refund on the closed bill (ADR-083), then a
+	// reopen, which corrects payments and never the sale.
+	req := order.CreditRequest{Lines: []order.CreditItem{{LineID: 2, Qty: 1}}}
+	preview, err := s.PlanCredit(ctx, 1, id, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	credited := must(t)(s.Credit(ctx, m, id, IssueCredit{
+		Credit: req, Reason: "pastry was stale", AuthorisedBy: 7,
+		Refunds: []RefundPart{{PaymentID: pay, Amount: preview.Total}},
+	}))
+	if len(credited.State.Credits) != 1 || len(credited.State.Refunds) != 1 || credited.State.Status != order.StatusClosed {
+		t.Errorf("credit: %+v, refunds %+v, %s", credited.State.Credits, credited.State.Refunds, credited.State.Status)
+	}
+	reopened := must(t)(s.Reopen(ctx, m, id, Reopen{Reason: "card reversed", AuthorisedBy: 7}))
+	if reopened.State.Status != order.StatusReopened || !reopened.State.Invoiced {
+		t.Errorf("reopen %s, invoiced %v", reopened.State.Status, reopened.State.Invoiced)
 	}
 }
 

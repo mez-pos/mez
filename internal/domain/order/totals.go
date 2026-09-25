@@ -148,7 +148,11 @@ func (p *projector) orderFigures() (Totals, error) {
 		t.Refunded = sum.add(t.Refunded, r.Amount)
 	}
 	t.NetPaid = sum.sub(t.Paid, t.Refunded)
-	t.BalanceDue = sum.sub(t.Total, t.NetPaid)
+	t.Credited = z
+	for _, c := range p.s.Credits {
+		t.Credited = sum.add(t.Credited, c.Total)
+	}
+	t.BalanceDue = sum.sub(sum.sub(t.Total, t.Credited), t.NetPaid)
 	return t, sum.err
 }
 

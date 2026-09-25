@@ -193,7 +193,8 @@ func TestProjectRejectsIllegalSequences(t *testing.T) {
 		{"close with a balance due", with(oneCoffee, pay(PaymentCash, 21999), closed), ErrBalanceDue},
 		{"close owing the guest", with(oneCoffee, pay(PaymentCash, 22000), void(2), closed), ErrBalanceDue},
 		{"add a line when closed", with(paidClosed, coffee(1)), ErrOrderClosed},
-		{"refund when closed", with(paidClosed, RefundIssued{Amount: inr(1), AgainstPaymentID: 3, Reason: "x"}), ErrOrderClosed},
+		// A closed bill owes nothing back until a credit note says it does.
+		{"refund when closed, with no credit", with(paidClosed, RefundIssued{Amount: inr(1), AgainstPaymentID: 3, Reason: "x"}), ErrOverRefund},
 		{"close twice", with(paidClosed, closed), ErrOrderClosed},
 		{"reopen an open order", with(oneCoffee, OrderReopened{Reason: "x", AuthorisedBy: 3}), ErrOrderNotClosed},
 		{"reopen with no authoriser", with(paidClosed, OrderReopened{Reason: "x"}), ErrInvalidPayload},

@@ -2204,10 +2204,46 @@ invoice).
   series and financial year like invoices, and are appended with the
   refund in one transaction, allowed on a closed order, with a reason and
   a manager's `refund.give`. Reopening no longer clears the invoice.
-- **What Task 6a decides and records here:** the event's shape; whether a
-  credit is taken by line and quantity, by amount spread over the tax
-  rates, or both; how the projection reports a bill net of its credit
-  notes; and the series settings.
+- **As built in Task 6a:**
+  - `credit_note.issued {credit_no, series, against_invoice_no, reason,
+    authorised_by, lines[], taxable, tax, total, components[], seller}`.
+    Each line: line_id, name, qty (units credited whole; 0 for a share
+    of an amount), taxable, tax, amount, and its tax by component.
+  - **Both kinds of credit.** By units: a line's Due and tax times the
+    units over its quantity, rounded once half to even, and the units
+    that finish a line take exactly what is left of it, so parts always
+    add up to the line to the paisa. By amount: spread over the lines by
+    what each has left (`money.Allocate`), each share carrying tax in
+    proportion to the tax the line has left. A line's tax is split over
+    its components (CGST, SGST) by what is left of each.
+    `order.PlanCredit` does this, pure; the projection checks the limits
+    (the current invoice, active lines, nothing past what is left, figures
+    that add up), not the rounding.
+  - **The balance nets the credit:** `Totals.Credited`, and `BalanceDue =
+    Total - Credited - NetPaid`. `Total` stays the invoiced total. A
+    closed order takes `credit_note.issued` and `refund.issued`; a refund
+    still needs a negative balance, so a closed bill is refunded only
+    after a credit note. A reopen no longer clears `Invoiced`, and an
+    invoiced bill stays frozen through it (ADR-078).
+  - **Service:** `PlanCredit` (a preview, nothing written) and `Credit`,
+    which plans, checks the refunds pay out the credit exactly (one per
+    payment named), allocates from the credit note series, writes the
+    `credit_notes` register (migration 00010, numbers checked against the
+    counters like invoices, never edited or deleted) and appends the
+    credit note with its refunds, in one transaction. A refused credit
+    takes no number.
+  - **Series:** `credit_note.series` (default `CN`) and
+    `credit_note.prefix` (default the code), with the invoice template and
+    GST's 16-character limit. The same code as the invoice series is
+    refused: the two share the counters table.
+  - **API:** `POST /orders/{id}/credit-notes/preview` and
+    `POST /orders/{id}/credit-notes` (`refund.give` from the approver, with
+    their PIN). Codes `not_invoiced`, `over_credit`, `refunds_mismatch`.
+    The order carries `credits[]` and `totals.credited`; the timeline
+    shows "Credit note CN/...", against which invoice, and why.
+  - `ProjectionVersion` 3. A stream that reopened an invoiced bill and
+    then changed it no longer projects; nothing in the field has one,
+    since nothing has shipped.
 - **Payment voids are not credit notes.** An invoice records the sale, not
   its payment. A payment voided after the invoice (a card charged twice,
   a UPI reversal) returns the balance to due; the next tender settles it

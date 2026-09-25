@@ -22,6 +22,15 @@ const events: OrderEvent[] = [
   { ...base, seq: 11, type: "refund.issued", payload: { amount: inr(5_000), against_payment_id: 8, reason: "Cold coffee" } },
   { ...base, seq: 12, type: "order.closed", payload: { closed_by: 1 } },
   { ...base, seq: 13, type: "invoice.reprinted", payload: { invoice_no: "CAF/26-27/000042", reason: "guest_copy", authorised_by: 2 } },
+  {
+    ...base,
+    seq: 14,
+    type: "credit_note.issued",
+    payload: {
+      credit_no: "CN/26-27/000001", series: "CN", against_invoice_no: "CAF/26-27/000042", reason: "cold_food", authorised_by: 2,
+      lines: [], taxable: inr(4_762), tax: inr(238), total: inr(5_000),
+    },
+  },
 ];
 
 const names: Record<number, string> = { 1: "Asha", 2: "Ravi" };
@@ -45,6 +54,7 @@ describe("timelineEntries", () => {
       "Refund",
       "Order closed",
       "Reprinted CAF/26-27/000042",
+      "Credit note CN/26-27/000001",
     ]);
   });
 
@@ -66,8 +76,8 @@ describe("timelineEntries", () => {
     expect(entries[11]?.amount).toBeNull();
   });
 
-  it("marks voids and refunds as danger, and keeps them", () => {
-    expect(entries.filter((e) => e.tone === "danger").map((e) => e.seq)).toEqual([5, 9, 11]);
+  it("marks voids, refunds and credit notes as danger, and keeps them", () => {
+    expect(entries.filter((e) => e.tone === "danger").map((e) => e.seq)).toEqual([5, 9, 11, 14]);
   });
 
   it("names who did it, and who authorised it when different", () => {

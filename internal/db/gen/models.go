@@ -28,6 +28,19 @@ type Course struct {
 	UpdatedAt time.Time
 }
 
+type CreditNote struct {
+	ID               int64
+	VenueID          int64
+	OrderID          int64
+	Series           string
+	FyStart          int64
+	Seq              int64
+	CreditNo         string
+	AgainstInvoiceNo string
+	TotalMinor       int64
+	IssuedAt         time.Time
+}
+
 type Device struct {
 	ID         int64
 	PublicID   string
