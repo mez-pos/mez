@@ -439,10 +439,14 @@ func TestSendTicketHoldsUnfiredCourses(t *testing.T) {
 	if _, err := s.SendTicket(ctx, m, id, SendTicket{Station: "kitchen"}); !errors.Is(err, ErrNothingToSend) {
 		t.Errorf("nothing waiting: err = %v", err)
 	}
-	must(t)(s.FireCourse(ctx, m, id, FireCourse{Course: 2}))
-	second := must(t)(s.SendTicket(ctx, m, id, SendTicket{Station: "kitchen"}))
-	if got := second.Events[0].Payload.(order.TicketSent).LineIDs; !reflect.DeepEqual(got, []int64{3}) {
-		t.Errorf("after firing, sent %v, want the main", got)
+	// Firing course 2 sends the main with it, to the kitchen alone (ADR-089).
+	fired := must(t)(s.FireCourse(ctx, m, id, FireCourse{Course: 2}))
+	if len(fired.Events) != 2 || fired.Events[1].Payload.(order.TicketSent).Station != "kitchen" ||
+		!reflect.DeepEqual(fired.Events[1].Payload.(order.TicketSent).LineIDs, []int64{3}) {
+		t.Errorf("firing course 2 appended %+v, want the fire and the main's ticket", fired.Events)
+	}
+	if _, err := s.SendTicket(ctx, m, id, SendTicket{Station: "kitchen"}); !errors.Is(err, ErrNothingToSend) {
+		t.Errorf("after the fire, the kitchen still had %v", err)
 	}
 	explicit := must(t)(s.SendTicket(ctx, m, id, SendTicket{Station: "bar", LineIDs: []int64{4}}))
 	if !explicit.State.Lines[2].Sent {
@@ -614,5 +618,40 @@ func TestNewAndMeta(t *testing.T) {
 	}
 	if _, err := s.Open(ctx, Meta{VenueID: 9}, OpenOrder{Channel: order.ChannelCounter}); !errors.Is(err, ErrVenueConfig) {
 		t.Errorf("open at a venue that does not exist: err = %v", err)
+	}
+}
+
+// TestSendRoutesEachStationItsOwn: Send fires the first course and gives the
+// bar and the kitchen one ticket each with only their lines; a later course
+// waits for its fire; a second Send has nothing (ADR-089).
+func TestSendRoutesEachStationItsOwn(t *testing.T) {
+	s, _, _ := newService(t)
+	ctx := context.Background()
+	m := cashier("")
+	id := open(t, s).OrderID
+	starter, main, drink := dosa(1), dosa(1), coffee(1)
+	starter.Course, main.Name, main.Course, drink.Course = 1, "Thali", 2, 1
+	must(t)(s.AddLine(ctx, m, id, starter)) // 2, kitchen, course 1
+	must(t)(s.AddLine(ctx, m, id, main))    // 3, kitchen, course 2
+	must(t)(s.AddLine(ctx, m, id, drink))   // 4, bar, course 1
+
+	sent := must(t)(s.Send(ctx, m, id))
+	var got []string
+	for _, e := range sent.Events {
+		switch pl := e.Payload.(type) {
+		case order.CourseFired:
+			got = append(got, fmt.Sprintf("fire %d", pl.Course))
+		case order.TicketSent:
+			got = append(got, fmt.Sprintf("%s %v", pl.Station, pl.LineIDs))
+		}
+	}
+	if want := []string{"fire 1", "kitchen [2]", "bar [4]"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("Send appended %v, want %v", got, want)
+	}
+	if sent.State.Lines[1].Sent {
+		t.Error("the main went before its course was fired")
+	}
+	if _, err := s.Send(ctx, m, id); !errors.Is(err, ErrNothingToSend) {
+		t.Errorf("a second Send: %v", err)
 	}
 }

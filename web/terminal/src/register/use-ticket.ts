@@ -61,6 +61,10 @@ export interface Ticket {
   modify: (lineId: number, change: ModifyLine) => Promise<void>;
   changeQty: (lineId: number, from: number, to: number) => Promise<void>;
   addNote: (note: AddNote) => Promise<void>;
+  /** Sends what is waiting to its stations, firing the first course if none has gone (ADR-089). */
+  send: () => Promise<void>;
+  /** Fires a course: its lines go to their stations. */
+  fire: (course: number) => Promise<void>;
   /** Rung up by mistake, nothing done yet: no manager (ADR-073). */
   removeLine: (lineId: number) => Promise<void>;
   /** The approval is a manager's; the server checks their PIN and permission. */
@@ -174,6 +178,8 @@ export function useTicket(): Ticket {
     modify: (lineId, change) => queue.modify(lineId, change),
     changeQty: (lineId, from, to) => post(`/lines/${lineId}/qty`, { from, to }),
     addNote: (note) => post("/notes", note),
+    send: () => post("/send", undefined),
+    fire: (course) => post(`/courses/${course}/fire`, undefined),
     removeLine: (lineId) => post(`/lines/${lineId}/remove`, undefined),
     voidLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/void`, { ...approval, reason_code: reasonCode }),
     compLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/comp`, { ...approval, reason_code: reasonCode }),

@@ -46,7 +46,7 @@ Phase 07.
     service commands, API, and the floor screen's Move and Join. A table
     joined to an order is not free. Codegen lines for the new events.
 
-- [ ] **Task 3 — Station routing and courses.**
+- [x] **Task 3 — Station routing and courses.**
   Items carry a station. Lines carry a course. Firing a course sends only that
   course's lines, and only to the relevant stations. The bar and the kitchen
   each get only their own lines. Emits `ticket.sent`.

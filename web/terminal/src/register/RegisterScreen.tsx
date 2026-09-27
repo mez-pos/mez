@@ -24,6 +24,7 @@ import { BillScreen } from "../bills/BillScreen";
 import { PastBillsSheet } from "../bills/PastBillsSheet";
 import { TenderScreen } from "../tender/TenderScreen";
 import { chargeBlock, chargeLabel } from "../tender/tender-logic";
+import { sendPlan } from "./send-logic";
 import { ticketLabel } from "./ticket-time";
 import { useTicket } from "./use-ticket";
 import { FloorView } from "../floor/FloorView";
@@ -212,6 +213,9 @@ export function RegisterScreen() {
         onOrderNote={() => setPanel({ kind: "note" })}
         onRetry={ticket.retry}
         onRemove={ticket.remove}
+        sendPlan={sendPlan(ticket.order)}
+        onSend={() => ticket.send().catch(fail("Couldn't send"))}
+        onFire={(course) => ticket.fire(course).catch(fail(`Couldn't fire course ${course}`))}
         chargeBlock={block}
         chargeLabel={chargeLabel(ticket.order)}
         onCharge={() => {

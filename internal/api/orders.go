@@ -42,6 +42,7 @@ type Orders interface {
 	ApplyDiscount(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ApplyDiscount) (svcorder.Result, error)
 	AddNote(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.AddNote) (svcorder.Result, error)
 	FireCourse(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.FireCourse) (svcorder.Result, error)
+	Send(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 	SendTicket(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.SendTicket) (svcorder.Result, error)
 	TenderPayment(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.TenderPayment) (svcorder.Result, error)
 	VoidPayment(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.VoidPayment) (svcorder.Result, error)
@@ -104,6 +105,8 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	post("/api/v1/orders/{id}/resume", auth.PermOrderEdit, s.resumeOrder)
 	post("/api/v1/orders/{id}/courses/{course}/fire", auth.PermOrderEdit, s.fireCourse)
 	post("/api/v1/orders/{id}/tickets", auth.PermOrderEdit, s.sendTicket)
+	// The till's Send: what is waiting, each station its own (ADR-089).
+	post("/api/v1/orders/{id}/send", auth.PermOrderEdit, s.sendOrder)
 	post("/api/v1/orders/{id}/split", auth.PermPaymentTake, s.splitOrder)
 	post("/api/v1/orders/{id}/payments", auth.PermPaymentTake, s.tenderPayment)
 	post("/api/v1/orders/{id}/invoice", auth.PermPaymentTake, s.issueInvoice)
@@ -397,6 +400,12 @@ func (s *Server) partTables(w http.ResponseWriter, r *http.Request) {
 			return svcorder.Result{}, errAnswered
 		}
 		return s.orders.PartTables(r.Context(), meta, orderID, req)
+	})
+}
+
+func (s *Server) sendOrder(w http.ResponseWriter, r *http.Request) {
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		return s.orders.Send(r.Context(), meta, orderID)
 	})
 }
 

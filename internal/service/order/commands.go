@@ -214,8 +214,26 @@ func (s *Service) AddNote(ctx context.Context, meta Meta, orderID int64, cmd Add
 }
 
 // FireCourse fires a course.
+// With it go the course's lines not yet sent, a ticket to each of their
+// stations and no other (ADR-089), in the same command: a course is never
+// fired without its tickets.
 func (s *Service) FireCourse(ctx context.Context, meta Meta, orderID int64, cmd FireCourse) (Result, error) {
-	return s.run(ctx, meta, orderID, "fire_course", cmd, one(order.CourseFired(cmd)))
+	return s.run(ctx, meta, orderID, "fire_course", cmd, func(_ context.Context, tx *db.OrderTx, _ venue, _ time.Time) ([]order.Payload, error) {
+		return order.Fire(tx.State, cmd.Course), nil
+	})
+}
+
+// Send is the till's Send: what is waiting goes to its stations, and while
+// nothing has been fired, the first course fires with it (order.ToSend,
+// ADR-089). Nothing waiting is refused with ErrNothingToSend.
+func (s *Service) Send(ctx context.Context, meta Meta, orderID int64) (Result, error) {
+	return s.run(ctx, meta, orderID, "send", struct{}{}, func(_ context.Context, tx *db.OrderTx, _ venue, _ time.Time) ([]order.Payload, error) {
+		out := order.ToSend(tx.State)
+		if len(out) == 0 {
+			return nil, fmt.Errorf("%w: nothing is waiting", ErrNothingToSend)
+		}
+		return out, nil
+	})
 }
 
 // SendTicket sends lines to a station.

@@ -750,3 +750,33 @@ func TestTablesOverHTTP(t *testing.T) {
 	}
 	_ = other
 }
+
+// TestSendOverHTTP: Send fires the first course, one ticket per station;
+// a second Send has nothing; firing course 2 sends it on its own (ADR-089).
+func TestSendOverHTTP(t *testing.T) {
+	r := newRegister(t)
+	id := r.openOrder(t)
+	line := func(name, station string, course int) {
+		r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines", fmt.Sprintf(
+			`{"item_id":1,"name":%q,"qty":1,"unit_price":{"minor":10000,"currency":"INR"},"station":%q,"course":%d,"tax_rate":5000,"hsn":"996331"}`,
+			name, station, course))
+	}
+	line("Samosa", "kitchen", 1)
+	line("Lime soda", "bar", 1)
+	line("Thali", "kitchen", 2)
+
+	sent := r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/send", ``)
+	if len(sent.Order.Tickets) != 2 || sent.Order.Tickets[0].Station != "kitchen" || sent.Order.Tickets[1].Station != "bar" {
+		t.Fatalf("tickets after Send = %+v", sent.Order.Tickets)
+	}
+	if sent.Order.Lines[2].Sent {
+		t.Error("the thali went before course 2 was fired")
+	}
+	if status, _, apiErr := r.call(t, http.MethodPost, "/api/v1/orders/"+id+"/send", ``); status != http.StatusConflict || apiErr.Code != CodeNothingToSend {
+		t.Errorf("a second Send: %d %s", status, apiErr.Code)
+	}
+	fired := r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/courses/2/fire", ``)
+	if len(fired.Order.Tickets) != 3 || fired.Order.Tickets[2].Station != "kitchen" || !fired.Order.Lines[2].Sent {
+		t.Errorf("after firing course 2: %+v", fired.Order.Tickets)
+	}
+}

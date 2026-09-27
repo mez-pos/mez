@@ -11,17 +11,17 @@ File: `docs/phases/phase-08.md`. Phase 07 is complete.
 
 ## Last completed task
 
-**Phase 08, Task 2c: transfer, join and split tables** (ADR-088), which
-completes Task 2. Order events `order.table_changed`, `order.tables_joined`
-and `order.tables_parted` (ProjectionVersion 4); Move, Join and Part check
-the target is free in the command's transaction. `order_tables` (migration
-00013) indexes every table a party sits at. The floor's Move, Join and Part
-modes; a joined table shows "With T4"; the ticket reads "Table T4 + T7".
-Run in the browser on two tills.
+**Phase 08, Task 3: station routing and courses** (ADR-089). The domain
+routes (`order.Tickets`, `Fire`, `ToSend`): one ticket per station, only
+its own lines. `FireCourse` appends the fire with its tickets; the new
+`Send` (`POST /api/v1/orders/{id}/send`) sends what is waiting and fires
+the first course while none has gone. The till's Send N and Fire course N.
+Run in the browser: the bar got the espresso, the kitchen the toast, and
+the tart waited for Fire course 2.
 
 ## Next task
 
-**Phase 08, Task 3: station routing and courses.** Read the phase file.
+**Phase 08, Task 4: kitchen display.** Read the phase file.
 
 ## Known broken / in progress
 
@@ -58,7 +58,9 @@ Run in the browser on two tills.
   No physical printer has run the driver yet.
 - The Windows spooler's write path is untested on a real printer (ADR-080).
 - The cash drawer opens only with the settling receipt, not on a cash part
-  payment (ADR-081). Kitchen tickets print only once phase 08 adds Send.
+  payment (ADR-081).
+- The ticket rail does not mark lines sent or held by course; the KDS
+  (Task 4) is where a line's progress shows.
 - The till refunds to one payment per credit note (ADR-084); past bills
   search only exact numbers and invoice sequences.
 - `make build` does not build under cmd or PowerShell; for the browser,

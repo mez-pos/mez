@@ -2425,3 +2425,32 @@ orders (ADR-086) rather than a second record of who sits where, and the
 timeline shows every move like every other change.
 Cost: a table with two tickets can only be moved by moving the other
 ticket away first; the timeline names tables by number, not by name.
+
+## ADR-089 - Firing a course sends it; Send fires the first course
+2026-09 · Status: accepted
+Decision: routing is in the domain (`internal/domain/order/route.go`), and
+a fire is never recorded without its tickets.
+  - **`order.Tickets(state, course)`** is one `ticket.sent` per station for
+    the course's lines not yet sent, stations in the order their first line
+    was rung up. A voided line never goes; a comped one does, since it is
+    still made; a line with no station is left out. The bar and the
+    kitchen each get only their own lines.
+  - **`FireCourse`** appends `course.fired` and those tickets in one
+    command. A course fired with nothing in it is still fired, so lines
+    added to it later go on Send.
+  - **`Send`** (`POST /api/v1/orders/{id}/send`) appends `order.ToSend`:
+    the unsent lines of every fired course and of course 0, and, while no
+    course has been fired, the lowest course with lines waiting, fired now.
+    A cafe whose menu is all course 1 sends everything with one tap; a
+    restaurant's mains wait for **Fire course 2**. Nothing waiting is
+    `nothing_to_send`.
+  - `SendTicket` (one station, or chosen lines) stays for the API.
+  - Kitchen tickets print as before: the print planner turns each
+    `ticket.sent` into a job at the station's printer (ADR-081).
+  - On the till, **Send N** and **Fire course N** sit over Discount, Note
+    and Hold; `send-logic.ts` reads the same rule from the lines to label
+    them, and the server decides.
+Because: a course fired with no ticket is a table whose mains never reach
+the pass, and a till that has to send each station by hand will miss one.
+Cost: the first Send fires only the first course; a table that wants
+everything at once fires each course, one tap each.

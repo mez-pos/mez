@@ -8,6 +8,7 @@ import { Button, Meta, Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { humanise } from "../../../shared/ui/timeline-entries";
 import type { PendingLine } from "./ticket-queue";
+import { sendLabel, type SendPlan } from "./send-logic";
 
 interface TicketRailProps {
   order: OrderResponse | undefined;
@@ -28,6 +29,10 @@ interface TicketRailProps {
   onRetry: (key: string) => void;
   onRemove: (key: string) => void;
   onCharge: () => void;
+  /** What Send and Fire would do now (send-logic.ts). */
+  sendPlan: SendPlan;
+  onSend: () => void;
+  onFire: (course: number) => void;
   /** Why Charge is disabled; null when the ticket can be charged. */
   chargeBlock: string | null;
   /** "Charge", or "Invoice and close" once paid. */
@@ -37,6 +42,7 @@ interface TicketRailProps {
 export function TicketRail(props: TicketRailProps) {
   const { order, orderId, pending, currency, label, ticketCount, onTickets, onHistory, onHold, onResume } = props;
   const { onOpenLine, onOrderDiscount, onOrderNote, onRetry, onRemove, onCharge, chargeBlock, chargeLabel } = props;
+  const { sendPlan, onSend, onFire } = props;
   const held = order?.status === "held";
   const zero: Amount = { minor: 0, currency };
   const totals = order?.totals;
@@ -95,6 +101,21 @@ export function TicketRail(props: TicketRailProps) {
       </div>
 
       <footer className="border-t border-line px-5 pb-5 pt-4">
+        <div className="mb-3 grid grid-cols-2 gap-tap-gap">
+          <Button disabled={!live || held || sendPlan.waiting === 0} onClick={onSend} aria-describedby="send-what">
+            {sendLabel(sendPlan)}
+          </Button>
+          <Button disabled={!live || held || sendPlan.next === null} onClick={() => sendPlan.next && onFire(sendPlan.next.course)}>
+            {sendPlan.next ? `Fire course ${sendPlan.next.course}` : "Fire"}
+          </Button>
+          <p id="send-what" className="col-span-2 text-sm text-fg-muted">
+            {sendPlan.firing !== null
+              ? `Send fires course ${sendPlan.firing}. Later courses wait for Fire.`
+              : sendPlan.next
+                ? `Course ${sendPlan.next.course} is held: ${sendPlan.next.lines} ${sendPlan.next.lines === 1 ? "item" : "items"}.`
+                : "Each station gets only its own items."}
+          </p>
+        </div>
         <div className="mb-3 grid grid-cols-3 gap-tap-gap">
           <Button disabled={!live || held || order?.invoiced} onClick={onOrderDiscount}>
             Discount

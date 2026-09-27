@@ -182,7 +182,11 @@ takes the item, Modify, the choice, Save.
   the design's 11px actions would wrap at 392px.
 - **No item note line or coloured top border** on tiles. The menu has no
   descriptions or item tags; the station stands in as metadata.
-- **No Fire yet.** It arrives with phase 08.
+- **Send and Fire** (phase 08 Task 3, ADR-089) sit over Discount, Note and
+  Hold. **Send N** sends what is waiting, each station only its own items,
+  and fires the first course while none has gone; **Fire course 2** fires
+  the next course held back. A line under them says which course Send
+  fires, or what is held.
 - **No "Guest" picker** in the rail header: there are no customers until
   phase 10.
 - **The ticket id is not vermilion.** The design colours `#ticket` and the
@@ -193,7 +197,7 @@ takes the item, Modify, the choice, Save.
   thumb's width from `+`. One tap on the line opens them instead.
 - **Quantity only until the kitchen has the line** (ADR-072); after that,
   void and ring up again.
-- **Discount, Note and Hold sit over the totals**; Fire is phase 08.
+- **Discount, Note and Hold sit over the totals**, under Send and Fire.
 - **Open tickets are a sheet, not a rail.** The design has no ticket list
   on the register; the Orders screen (`s_orders`) is the full list with
   history, and arrives with it.
