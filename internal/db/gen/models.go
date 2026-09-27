@@ -295,6 +295,16 @@ type Station struct {
 	PrinterID sql.NullInt64
 }
 
+type StationTicket struct {
+	OrderID   int64
+	TicketSeq int64
+	VenueID   int64
+	Station   string
+	Status    string
+	SentAt    time.Time
+	ReadyAt   sql.NullTime
+}
+
 type Table struct {
 	ID        int64
 	VenueID   int64

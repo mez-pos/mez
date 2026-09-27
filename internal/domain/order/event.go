@@ -38,6 +38,10 @@ const (
 	TypeOrderTableChanged Type = "order.table_changed"
 	TypeTablesJoined      Type = "order.tables_joined"
 	TypeTablesParted      Type = "order.tables_parted"
+
+	// A ticket at its station (ADR-090).
+	TypeTicketBumped   Type = "ticket.bumped"
+	TypeTicketRecalled Type = "ticket.recalled"
 )
 
 // Payload is the type-specific body of an event. Each payload type knows its
@@ -74,6 +78,9 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeOrderTableChanged: decodeAs[OrderTableChanged],
 	TypeTablesJoined:      decodeAs[TablesJoined],
 	TypeTablesParted:      decodeAs[TablesParted],
+
+	TypeTicketBumped:   decodeAs[TicketBumped],
+	TypeTicketRecalled: decodeAs[TicketRecalled],
 }
 
 // Types lists every event type this build knows, sorted, for tests and for

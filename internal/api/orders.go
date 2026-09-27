@@ -43,6 +43,8 @@ type Orders interface {
 	AddNote(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.AddNote) (svcorder.Result, error)
 	FireCourse(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.FireCourse) (svcorder.Result, error)
 	Send(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
+	// The kitchen display's commands and read (ADR-090).
+	Kitchen
 	SendTicket(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.SendTicket) (svcorder.Result, error)
 	TenderPayment(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.TenderPayment) (svcorder.Result, error)
 	VoidPayment(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.VoidPayment) (svcorder.Result, error)

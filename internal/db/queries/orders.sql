@@ -126,3 +126,20 @@ DELETE FROM order_tables WHERE order_id = ?;
 
 -- name: AddOrderTable :exec
 INSERT INTO order_tables (order_id, table_id, closed_at) VALUES (?, ?, ?);
+
+-- name: UpsertStationTicket :exec
+-- A ticket as its order's projection now has it (ADR-090).
+INSERT INTO station_tickets (order_id, ticket_seq, venue_id, station, status, sent_at, ready_at)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (order_id, ticket_seq) DO UPDATE SET status = excluded.status, ready_at = excluded.ready_at;
+
+-- name: StationBoard :many
+-- A station's tickets still in the kitchen, oldest first, and those bumped
+-- since a time, for the display's recall.
+SELECT st.order_id, st.ticket_seq, st.status, st.sent_at, st.ready_at, o.public_id
+FROM station_tickets st
+JOIN orders o ON o.id = st.order_id
+WHERE st.venue_id = sqlc.arg(venue_id) AND st.station = sqlc.arg(station)
+  AND (st.status = 'fired' OR (st.status = 'ready' AND st.ready_at >= sqlc.arg(ready_since)))
+ORDER BY st.sent_at, st.order_id, st.ticket_seq
+LIMIT sqlc.arg(max_tickets);

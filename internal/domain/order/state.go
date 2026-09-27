@@ -3,6 +3,7 @@ package order
 import (
 	"time"
 
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/kitchen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 )
@@ -156,6 +157,10 @@ type Ticket struct {
 	Station string
 	LineIDs []int64
 	At      time.Time
+	// Status is where it is at the station: fired when sent, ready once
+	// bumped (ADR-090). ReadyAt is when it was bumped, zero otherwise.
+	Status  kitchen.TicketStatus
+	ReadyAt time.Time
 }
 
 // Tender is one payment.tendered and what has happened to it since.

@@ -405,11 +405,15 @@ func topicsOf(e db.StreamEvent) []string {
 	return topics
 }
 
-// stationOf is the station an event concerns. A ticket is sent to one, and
-// a line belongs to one; nothing else does.
+// stationOf is the station an event concerns. A ticket is sent to one and
+// bumped and recalled there, and a line belongs to one; nothing else does.
 func stationOf(e order.Event) string {
 	switch p := e.Payload.(type) {
 	case order.TicketSent:
+		return p.Station
+	case order.TicketBumped:
+		return p.Station
+	case order.TicketRecalled:
 		return p.Station
 	case order.LineAdded:
 		return p.Station

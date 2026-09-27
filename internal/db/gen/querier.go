@@ -194,6 +194,9 @@ type Querier interface {
 	// history names the people on it, whether or not they still work there.
 	StaffNamesForVenue(ctx context.Context, venueID int64) ([]StaffNamesForVenueRow, error)
 	StaffSessionByTokenHash(ctx context.Context, tokenHash string) (StaffSessionByTokenHashRow, error)
+	// A station's tickets still in the kitchen, oldest first, and those bumped
+	// since a time, for the display's recall.
+	StationBoard(ctx context.Context, arg StationBoardParams) ([]StationBoardRow, error)
 	// The printer a station's tickets go to, if it has one in service.
 	StationPrinter(ctx context.Context, arg StationPrinterParams) (StationPrinterRow, error)
 	StationsWithPrinters(ctx context.Context, venueID int64) ([]StationsWithPrintersRow, error)
@@ -223,6 +226,8 @@ type Querier interface {
 	// unit already recorded against this venue, which is a migration, not a
 	// setting.
 	UpdateVenue(ctx context.Context, arg UpdateVenueParams) (Venue, error)
+	// A ticket as its order's projection now has it (ADR-090).
+	UpsertStationTicket(ctx context.Context, arg UpsertStationTicketParams) error
 	VenueByID(ctx context.Context, id int64) (Venue, error)
 	VenueByPublicID(ctx context.Context, publicID string) (Venue, error)
 	// The venue's events after a point in its stream, oldest first. This is what

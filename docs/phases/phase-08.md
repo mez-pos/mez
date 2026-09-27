@@ -61,7 +61,7 @@ Phase 07.
   told by order events, so a display that drops off catches up from the
   stream like any other device (Task 5).
 
-  - [ ] **4a: Station tickets, bump and recall, and the kitchen's API.**
+  - [x] **4a: Station tickets, bump and recall, and the kitchen's API.**
     Order events `ticket.bumped` and `ticket.recalled` `{ticket_seq,
     station}`: a sent ticket is in the kitchen until bumped to ready, and
     recalled back if it was bumped by mistake; checked against

@@ -109,6 +109,10 @@ function describe(event: OrderEvent, ctx: Context): Described {
       return { title: `Joined ${tablesText(event.payload.tables)}` };
     case "order.tables_parted":
       return { title: `Let go ${tablesText(event.payload.tables)}` };
+    case "ticket.bumped":
+      return { title: `Ready at the ${event.payload.station}`, tone: "success" };
+    case "ticket.recalled":
+      return { title: `Recalled at the ${event.payload.station}`, tone: "warning" };
     case "line.modified": {
       const names = (mods: readonly { name: string }[]) => mods.map((m) => m.name).join(", ") || "nothing";
       return { title: `Changed ${line(event.payload.line_id)}`, detail: `${names(event.payload.from)} → ${names(event.payload.to)}` };

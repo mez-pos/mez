@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/kitchen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 )
@@ -71,10 +72,10 @@ func (p *projector) step(wantSeq int64, e Event) error {
 	if _, isOpen := e.Payload.(OrderOpened); !p.opened && !isOpen {
 		return ErrNotOpened
 	}
-	if p.closed && !afterClose(e.Type) {
+	if p.closed && !afterClose(e.Type) && !kitchenEvent(e.Type) {
 		return ErrOrderClosed
 	}
-	if p.held && e.Type != TypeOrderResumed && e.Type != TypeNoteAdded && e.Type != TypeInvoiceReprinted {
+	if p.held && e.Type != TypeOrderResumed && e.Type != TypeNoteAdded && e.Type != TypeInvoiceReprinted && !kitchenEvent(e.Type) {
 		return ErrOrderHeld
 	}
 	if p.invoiced && changesBill(e.Type) {
@@ -142,6 +143,10 @@ func (p *projector) apply(e Event) error {
 		return p.joinTables(pl)
 	case TablesParted:
 		return p.partTables(pl)
+	case TicketBumped:
+		return p.bump(e, pl)
+	case TicketRecalled:
+		return p.recall(pl)
 	default:
 		return invalid("no projection for %T", e.Payload)
 	}
@@ -368,7 +373,7 @@ func (p *projector) sendTicket(e Event, pl TicketSent) error {
 		l.Sent = true
 	}
 	p.s.Tickets = append(p.s.Tickets, Ticket{
-		Seq: e.Seq, Station: pl.Station, LineIDs: slices.Clone(pl.LineIDs), At: e.At.UTC(),
+		Seq: e.Seq, Station: pl.Station, LineIDs: slices.Clone(pl.LineIDs), At: e.At.UTC(), Status: kitchen.TicketFired,
 	})
 	return nil
 }

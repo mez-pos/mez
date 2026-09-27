@@ -157,6 +157,21 @@ describe("timelineEntries: where the party sits", () => {
   });
 });
 
+describe("timelineEntries: the pass", () => {
+  it("words a bump and a recall", () => {
+    const [, bumped, recalled] = timelineEntries(
+      [
+        events[0]!,
+        { ...base, seq: 2, type: "ticket.bumped", payload: { ticket_seq: 5, station: "kitchen" } },
+        { ...base, seq: 3, type: "ticket.recalled", payload: { ticket_seq: 5, station: "kitchen" } },
+      ],
+      (id) => names[id],
+    );
+    expect(bumped).toMatchObject({ title: "Ready at the kitchen", tone: "success" });
+    expect(recalled).toMatchObject({ title: "Recalled at the kitchen", tone: "warning" });
+  });
+});
+
 describe("timelineEntries: the device", () => {
   const devices: Record<number, string> = { 1: "Counter 1" };
   it("names the till an event came from, and leaves out one it cannot name", () => {

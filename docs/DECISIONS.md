@@ -2454,3 +2454,38 @@ Because: a course fired with no ticket is a table whose mains never reach
 the pass, and a till that has to send each station by hand will miss one.
 Cost: the first Send fires only the first course; a table that wants
 everything at once fires each course, one tap each.
+
+## ADR-090 - A ticket's life at its station is order events; the display needs no PIN
+2026-09 · Status: accepted
+Decision: bumping and recalling are order events, and a device paired as
+a kitchen display uses the kitchen's API with no staff sign-in.
+  - **Events:** `ticket.bumped` and `ticket.recalled` `{ticket_seq,
+    station}`. A `ticket.sent` makes its ticket `fired`; a bump makes it
+    `ready` with a ready time; a recall puts it back to `fired`. Both are
+    checked against `internal/domain/kitchen`, which gains the two moves a
+    display makes: fired to ready (no separate "picked up" tap) and ready
+    to fired (recall). `collected` is left for later: on a display, bumped
+    off is done. `ProjectionVersion` is 5.
+  - **The kitchen works after the bill.** Bump and recall are taken by a
+    closed or held order: a cafe paid at the counter still makes the
+    coffee.
+  - **The hub files them under their station**, so a display subscribed to
+    `station:kitchen` gets its bumps and recalls and nothing else's.
+  - **`station_tickets`** (migration 00014) indexes every ticket sent, with
+    its status and times, kept in step by the append. A station's board is
+    one index read: tickets fired, oldest first, and those bumped within
+    `RecallWindow` (30 minutes), from open and closed orders alike. No
+    backfill: a ticket sent before the display existed would disagree with
+    its order, and a display must not open on a day of old orders.
+  - **API:** `GET /api/v1/kitchen/{station}/tickets`, and `POST
+    /api/v1/kitchen/orders/{id}/tickets/{seq}/bump` and `.../recall`,
+    each answering with the station's board: lines with modifiers and
+    notes, the order's notes, the table's name (joined ones too), covers,
+    and times. Only a device of kind `kitchen` gets in, with no staff
+    session: the events carry the device and actor 0. A terminal is
+    refused. The order response's tickets carry their status too.
+Because: a display that drops off must catch up from the stream with
+nothing lost (Task 5), which only events give; and a screen on the wall of
+a kitchen has nobody to type a PIN into it.
+Cost: anyone at the pass can bump, and the timeline names the device, not
+a person.

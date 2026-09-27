@@ -344,6 +344,69 @@ func (q *Queries) SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotPa
 	return err
 }
 
+const stationBoard = `-- name: StationBoard :many
+SELECT st.order_id, st.ticket_seq, st.status, st.sent_at, st.ready_at, o.public_id
+FROM station_tickets st
+JOIN orders o ON o.id = st.order_id
+WHERE st.venue_id = ?1 AND st.station = ?2
+  AND (st.status = 'fired' OR (st.status = 'ready' AND st.ready_at >= ?3))
+ORDER BY st.sent_at, st.order_id, st.ticket_seq
+LIMIT ?4
+`
+
+type StationBoardParams struct {
+	VenueID    int64
+	Station    string
+	ReadySince sql.NullTime
+	MaxTickets int64
+}
+
+type StationBoardRow struct {
+	OrderID   int64
+	TicketSeq int64
+	Status    string
+	SentAt    time.Time
+	ReadyAt   sql.NullTime
+	PublicID  string
+}
+
+// A station's tickets still in the kitchen, oldest first, and those bumped
+// since a time, for the display's recall.
+func (q *Queries) StationBoard(ctx context.Context, arg StationBoardParams) ([]StationBoardRow, error) {
+	rows, err := q.db.QueryContext(ctx, stationBoard,
+		arg.VenueID,
+		arg.Station,
+		arg.ReadySince,
+		arg.MaxTickets,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StationBoardRow{}
+	for rows.Next() {
+		var i StationBoardRow
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.TicketSeq,
+			&i.Status,
+			&i.SentAt,
+			&i.ReadyAt,
+			&i.PublicID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const unclosedOrdersForVenue = `-- name: UnclosedOrdersForVenue :many
 SELECT id, public_id
 FROM orders
@@ -425,6 +488,36 @@ func (q *Queries) UpdateOrderIndex(ctx context.Context, arg UpdateOrderIndexPara
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const upsertStationTicket = `-- name: UpsertStationTicket :exec
+INSERT INTO station_tickets (order_id, ticket_seq, venue_id, station, status, sent_at, ready_at)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT (order_id, ticket_seq) DO UPDATE SET status = excluded.status, ready_at = excluded.ready_at
+`
+
+type UpsertStationTicketParams struct {
+	OrderID   int64
+	TicketSeq int64
+	VenueID   int64
+	Station   string
+	Status    string
+	SentAt    time.Time
+	ReadyAt   sql.NullTime
+}
+
+// A ticket as its order's projection now has it (ADR-090).
+func (q *Queries) UpsertStationTicket(ctx context.Context, arg UpsertStationTicketParams) error {
+	_, err := q.db.ExecContext(ctx, upsertStationTicket,
+		arg.OrderID,
+		arg.TicketSeq,
+		arg.VenueID,
+		arg.Station,
+		arg.Status,
+		arg.SentAt,
+		arg.ReadyAt,
+	)
+	return err
 }
 
 const venueEventsAfter = `-- name: VenueEventsAfter :many

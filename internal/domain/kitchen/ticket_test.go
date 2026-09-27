@@ -14,9 +14,9 @@ func TestTicketTransitionsAreExactlyTheDomainTable(t *testing.T) {
 		[]TicketStatus{TicketQueued, TicketFired, TicketInProgress, TicketReady, TicketCollected},
 		map[TicketStatus][]TicketStatus{
 			TicketQueued:     {TicketFired},
-			TicketFired:      {TicketInProgress},
+			TicketFired:      {TicketInProgress, TicketReady},
 			TicketInProgress: {TicketReady},
-			TicketReady:      {TicketCollected},
+			TicketReady:      {TicketCollected, TicketFired},
 		})
 }
 
@@ -39,7 +39,6 @@ func TestTicketShortcutsAreRefused(t *testing.T) {
 		from, to TicketStatus
 	}{
 		{"cook before the course is fired", TicketQueued, TicketInProgress},
-		{"ready without being cooked", TicketFired, TicketReady},
 		{"collect from the queue", TicketQueued, TicketCollected},
 		{"un-collect", TicketCollected, TicketReady},
 	}

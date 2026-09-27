@@ -77,7 +77,8 @@ export type ErrorCode =
   | 'table_moved'
   | 'table_already_at'
   | 'table_not_joined'
-  | 'no_table';
+  | 'no_table'
+  | 'ticket_not_found';
 
 export type OrderStatus =
   | 'open'
@@ -145,6 +146,13 @@ export type TableStatus =
   | 'settling'
   | 'dirty';
 
+export type TicketStatus =
+  | 'queued'
+  | 'fired'
+  | 'in_progress'
+  | 'ready'
+  | 'collected';
+
 export type DiscountScope =
   | 'line'
   | 'order';
@@ -204,7 +212,9 @@ export type OrderEventType =
   | 'credit_note.issued'
   | 'order.table_changed'
   | 'order.tables_joined'
-  | 'order.tables_parted';
+  | 'order.tables_parted'
+  | 'ticket.bumped'
+  | 'ticket.recalled';
 
 export type StreamMessageType =
   | 'hello'
@@ -461,6 +471,16 @@ export interface TablesParted {
   tables: number[];
 }
 
+export interface TicketBumped {
+  ticket_seq: number;
+  station: string;
+}
+
+export interface TicketRecalled {
+  ticket_seq: number;
+  station: string;
+}
+
 export interface OrderEventOf<T extends OrderEventType, P> {
   seq: number;
   type: T;
@@ -494,7 +514,9 @@ export type OrderEvent =
   | OrderEventOf<'credit_note.issued', CreditNoteIssued>
   | OrderEventOf<'order.table_changed', OrderTableChanged>
   | OrderEventOf<'order.tables_joined', TablesJoined>
-  | OrderEventOf<'order.tables_parted', TablesParted>;
+  | OrderEventOf<'order.tables_parted', TablesParted>
+  | OrderEventOf<'ticket.bumped', TicketBumped>
+  | OrderEventOf<'ticket.recalled', TicketRecalled>;
 
 export interface ApiError {
   code: ErrorCode;
@@ -697,6 +719,8 @@ export interface TicketResponse {
   station: string;
   line_ids: number[];
   at: string;
+  status: TicketStatus;
+  ready_at?: string;
 }
 
 export interface TenderResponse {
@@ -1004,6 +1028,37 @@ export interface JoinTables {
 
 export interface PartTables {
   tables: number[];
+}
+
+export interface KitchenLineResponse {
+  id: number;
+  name: string;
+  qty: number;
+  course: number;
+  modifiers: string[];
+  notes: string[];
+  status: LineStatus;
+}
+
+export interface KitchenTicketResponse {
+  order_id: string;
+  ticket_seq: number;
+  station: string;
+  status: TicketStatus;
+  sent_at: string;
+  ready_at?: string;
+  channel: OrderChannel;
+  table_id?: number;
+  table?: string;
+  covers: number;
+  notes: string[];
+  lines: KitchenLineResponse[];
+}
+
+export interface KitchenBoardResponse {
+  station: string;
+  tickets: KitchenTicketResponse[];
+  recall_minutes: number;
 }
 
 export interface CreditSelection {

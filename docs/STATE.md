@@ -11,18 +11,18 @@ File: `docs/phases/phase-08.md`. Phase 07 is complete.
 
 ## Last completed task
 
-**Phase 08, Task 3: station routing and courses** (ADR-089). The domain
-routes (`order.Tickets`, `Fire`, `ToSend`): one ticket per station, only
-its own lines. `FireCourse` appends the fire with its tickets; the new
-`Send` (`POST /api/v1/orders/{id}/send`) sends what is waiting and fires
-the first course while none has gone. The till's Send N and Fire course N.
-Run in the browser: the bar got the espresso, the kitchen the toast, and
-the tart waited for Fire course 2.
+**Phase 08, Task 4a: station tickets, bump and recall, and the kitchen's
+API** (ADR-090). Order events `ticket.bumped` and `ticket.recalled`
+(ProjectionVersion 5), allowed after the bill; the kitchen machine gains
+fired to ready and ready to fired. `station_tickets` (migration 00014)
+indexes every ticket. `GET /api/v1/kitchen/{station}/tickets` and bump and
+recall under `/api/v1/kitchen/orders/{id}/tickets/{seq}/`, for kitchen
+devices with no PIN; the hub files both events under their station. Run
+against the real binary: a kitchen device paired, read, bumped.
 
 ## Next task
 
-**Phase 08, Task 4a: station tickets, bump and recall, and the kitchen's
-API.** Task 4 is split into 4a and 4b in the phase file. Read it.
+**Phase 08, Task 4b: the kitchen display.** Spec first. Read the phase file.
 
 ## Known broken / in progress
 
@@ -60,8 +60,8 @@ API.** Task 4 is split into 4a and 4b in the phase file. Read it.
 - The Windows spooler's write path is untested on a real printer (ADR-080).
 - The cash drawer opens only with the settling receipt, not on a cash part
   payment (ADR-081).
-- The ticket rail does not mark lines sent or held by course; the KDS
-  (Task 4) is where a line's progress shows.
+- The ticket rail does not mark lines sent or held by course; 4b shows a
+  line Ready from its ticket's status. No `collected` step (ADR-090).
 - The till refunds to one payment per credit note (ADR-084); past bills
   search only exact numbers and invoice sequences.
 - `make build` does not build under cmd or PowerShell; for the browser,

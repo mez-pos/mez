@@ -272,6 +272,9 @@ func (d *DB) appendOnce(ctx context.Context, q *gen.Queries, orderID int64, taxe
 	if err := syncTables(ctx, q, orderID, current, next); err != nil {
 		return order.State{}, nil, err
 	}
+	if err := syncTickets(ctx, q, orderID, row.VenueID, current, next); err != nil {
+		return order.State{}, nil, err
+	}
 	crossed := current.LastSeq/SnapshotEvery != next.LastSeq/SnapshotEvery
 	if crossed || (!useSnapshot && next.LastSeq >= SnapshotEvery) {
 		if err := saveSnapshot(ctx, q, orderID, next, taxes); err != nil {
@@ -502,6 +505,29 @@ func syncTables(ctx context.Context, q *gen.Queries, orderID int64, prev, next o
 		err := q.AddOrderTable(ctx, gen.AddOrderTableParams{OrderID: orderID, TableID: t, ClosedAt: nullTime(next.ClosedAt)})
 		if err != nil {
 			return fmt.Errorf("order %d: writing table %d: %w", orderID, t, err)
+		}
+	}
+	return nil
+}
+
+// syncTickets brings station_tickets up to the projection: a row for every
+// ticket sent, with where it is at its station (ADR-090). Only tickets that
+// are new or moved are written.
+func syncTickets(ctx context.Context, q *gen.Queries, orderID, venueID int64, prev, next order.State) error {
+	before := make(map[int64]order.Ticket, len(prev.Tickets))
+	for _, t := range prev.Tickets {
+		before[t.Seq] = t
+	}
+	for _, t := range next.Tickets {
+		if b, ok := before[t.Seq]; ok && b.Status == t.Status && b.ReadyAt.Equal(t.ReadyAt) {
+			continue
+		}
+		err := q.UpsertStationTicket(ctx, gen.UpsertStationTicketParams{
+			OrderID: orderID, TicketSeq: t.Seq, VenueID: venueID, Station: t.Station,
+			Status: string(t.Status), SentAt: t.At, ReadyAt: nullTime(t.ReadyAt),
+		})
+		if err != nil {
+			return fmt.Errorf("order %d: writing ticket %d: %w", orderID, t.Seq, err)
 		}
 	}
 	return nil

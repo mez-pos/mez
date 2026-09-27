@@ -71,6 +71,8 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 | `order.table_changed` | from, to: the ticket moves to another table; from is where the till saw it |
 | `order.tables_joined` | tables[]: one party spread over more tables, still one order and one bill |
 | `order.tables_parted` | tables[]: joined tables let go again |
+| `ticket.bumped` | ticket_seq, station: on the pass, ready; allowed after a close and on hold |
+| `ticket.recalled` | ticket_seq, station: a bump undone, back in the kitchen |
 
 Two consequences worth naming: the **order timeline** screen in the design is
 just this list rendered, and **voids are visible forever**, which is exactly what
@@ -183,7 +185,9 @@ model, regardless of origin. This is the core product promise; do not fork it.
 
 **Order:** open → (held) → open → settling → closed → (reopened) → closed
 **Table:** free → seated → ordered → settling → dirty → free
-**Ticket at a station:** queued → fired → in progress → ready → collected
+**Ticket at a station:** queued → fired → in progress → ready → collected,
+plus fired → ready (bumped straight off the display) and ready → fired
+(recalled), ADR-090
 **Payment:** pending → captured → (voided | refunded)
 
 Illegal transitions return typed errors, not panics, and are tested explicitly.

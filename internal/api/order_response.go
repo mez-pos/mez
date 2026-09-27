@@ -5,6 +5,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/kitchen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
@@ -87,6 +88,9 @@ type ticketResponse struct {
 	Station string    `json:"station"`
 	LineIDs []int64   `json:"line_ids"`
 	At      time.Time `json:"at"`
+	// Status is where it is at its station, ready once bumped (ADR-090).
+	Status  kitchen.TicketStatus `json:"status"`
+	ReadyAt *time.Time           `json:"ready_at,omitempty"`
 }
 
 type tenderResponse struct {
@@ -205,7 +209,11 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 	}
 	out.Tickets = make([]ticketResponse, len(s.Tickets))
 	for i, t := range s.Tickets {
-		out.Tickets[i] = ticketResponse{Seq: t.Seq, Station: t.Station, LineIDs: t.LineIDs, At: t.At.UTC()}
+		out.Tickets[i] = ticketResponse{Seq: t.Seq, Station: t.Station, LineIDs: t.LineIDs, At: t.At.UTC(), Status: t.Status}
+		if !t.ReadyAt.IsZero() {
+			ready := t.ReadyAt.UTC()
+			out.Tickets[i].ReadyAt = &ready
+		}
 	}
 	out.Tenders = toTenderResponses(s.Tenders)
 	out.Credits = toCreditResponses(s.Credits)

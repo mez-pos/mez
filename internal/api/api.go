@@ -107,6 +107,7 @@ func (s *Server) routes() http.Handler {
 	s.mountPrints(mux)
 	s.mountPrinters(mux)
 	s.mountFloor(mux)
+	s.mountKitchen(mux)
 
 	// Anything else under /api keeps the JSON envelope. Without this, an
 	// unknown endpoint would fall through to the terminal bundle mounted at /

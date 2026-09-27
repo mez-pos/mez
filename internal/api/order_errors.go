@@ -46,6 +46,9 @@ const (
 	CodeTableAlreadyAt ErrorCode = "table_already_at"
 	CodeTableNotJoined ErrorCode = "table_not_joined"
 	CodeNoTable        ErrorCode = "no_table"
+
+	// The kitchen display (ADR-090).
+	CodeTicketNotFound ErrorCode = "ticket_not_found"
 )
 
 // orderErrors maps every refusal the order path can produce to a status and
@@ -83,6 +86,7 @@ var orderErrors = []struct {
 	{payment.ErrInvalidSplit, http.StatusUnprocessableEntity, CodeSplitInvalid},
 
 	// What the order itself refuses.
+	{order.ErrTicketNotFound, http.StatusNotFound, CodeTicketNotFound},
 	{order.ErrTableMismatch, http.StatusConflict, CodeTableMoved},
 	{order.ErrTableAlreadyAt, http.StatusConflict, CodeTableAlreadyAt},
 	{order.ErrTableNotJoined, http.StatusConflict, CodeTableNotJoined},

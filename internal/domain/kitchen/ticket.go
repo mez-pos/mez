@@ -3,9 +3,12 @@
 //
 //	queued -> fired -> in progress -> ready -> collected
 //
-// It is only the transition table. Station routing and the kitchen display
-// arrive with phase 08, and with them any recall or cancel moves the display
-// turns out to need; this table deliberately has none yet.
+// It is only the transition table. The kitchen display (phase 08, Task 4,
+// ADR-090) adds the two moves a pass makes beyond the domain's line:
+//
+//	fired -> ready     bumped straight off the screen: a display has no
+//	                   "picked up" tap, and a ticket is cooked while shown
+//	ready -> fired     recalled: bumped by mistake, back on the screen
 package kitchen
 
 import "github.com/byjoellobo/nofiltr-pos/internal/domain/fsm"
@@ -22,14 +25,14 @@ const (
 	TicketCollected  TicketStatus = "collected"   // taken to the guest
 )
 
-// machine is a straight line: each state moves only to the next.
+// machine is the domain's line, plus the display's bump and recall.
 var machine = fsm.Must("ticket",
 	[]TicketStatus{TicketQueued, TicketFired, TicketInProgress, TicketReady, TicketCollected},
 	map[TicketStatus][]TicketStatus{
 		TicketQueued:     {TicketFired},
-		TicketFired:      {TicketInProgress},
+		TicketFired:      {TicketInProgress, TicketReady},
 		TicketInProgress: {TicketReady},
-		TicketReady:      {TicketCollected},
+		TicketReady:      {TicketCollected, TicketFired},
 	})
 
 // Transition checks a ticket status change. A refusal unwraps to

@@ -14,6 +14,7 @@ import (
 
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 	"github.com/byjoellobo/nofiltr-pos/internal/codegen/ts"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/kitchen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
@@ -89,6 +90,8 @@ var eventTypes = []struct {
 	{order.TypeOrderTableChanged, order.OrderTableChanged{}, "OrderTableChanged"},
 	{order.TypeTablesJoined, order.TablesJoined{}, "TablesJoined"},
 	{order.TypeTablesParted, order.TablesParted{}, "TablesParted"},
+	{order.TypeTicketBumped, order.TicketBumped{}, "TicketBumped"},
+	{order.TypeTicketRecalled, order.TicketRecalled{}, "TicketRecalled"},
 }
 
 // errorCodes is every code the API answers with. A client switches on
@@ -112,6 +115,7 @@ var errorCodes = []ErrorCode{
 	CodeAreaNotFound, CodeAreaRetired, CodeAreaInUse, CodeTableNotFound, CodeCellTaken, CodeFloorNameTaken, CodeInvalidFloor,
 	CodeTableOccupied, CodeTableNotEmpty,
 	CodeTableTaken, CodeTableMoved, CodeTableAlreadyAt, CodeTableNotJoined, CodeNoTable,
+	CodeTicketNotFound,
 }
 
 // generate builds the whole file.
@@ -167,6 +171,7 @@ func generate() (*ts.Generator, error) {
 		{"PrinterTransport", printers.Network, asStrings(printers.Transports())},
 		{"TableShape", floor.Square, asStrings(floor.Shapes())},
 		{"TableStatus", table.StatusFree, asStrings(table.Machine().States())},
+		{"TicketStatus", kitchen.TicketFired, asStrings(kitchen.Machine().States())},
 		{"DiscountScope", order.ScopeLine, []string{string(order.ScopeLine), string(order.ScopeOrder)}},
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
@@ -229,6 +234,8 @@ func generate() (*ts.Generator, error) {
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},
 		moveTableRequest{}, joinTablesRequest{}, partTablesRequest{},
+		// The kitchen display.
+		kitchenLineResponse{}, kitchenTicketResponse{}, kitchenBoardResponse{},
 		// Credit notes.
 		creditPreviewRequest{}, creditRequest{}, creditPlanResponse{}, creditResponse{},
 		pastBillResponse{}, pastBillsResponse{},

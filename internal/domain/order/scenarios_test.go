@@ -2,6 +2,8 @@ package order
 
 import (
 	"testing"
+
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/kitchen"
 )
 
 // figures is the money of an order in paise, for comparing a whole Totals at
@@ -353,6 +355,26 @@ var scenarios = []struct {
 		check: func(t *testing.T, s State) {
 			if s.TableID != 7 || len(s.Joined) != 1 || s.Joined[0] != 8 {
 				t.Errorf("tables = %d + %v, want 7 + [8]", s.TableID, s.Joined)
+			}
+		},
+	},
+	{
+		name: "paid at the counter, the coffee bumped after, recalled, bumped again",
+		payloads: []Payload{
+			opened(),
+			coffee(1), // 2
+			TicketSent{Station: "bar", LineIDs: []int64{2}}, // 3
+			pay(PaymentUPI, 22000),
+			closed,
+			TicketBumped{TicketSeq: 3, Station: "bar"},
+			TicketRecalled{TicketSeq: 3, Station: "bar"},
+			TicketBumped{TicketSeq: 3, Station: "bar"},
+		},
+		want:   figures{gross: 22000, total: 22000, paid: 22000},
+		status: StatusClosed,
+		check: func(t *testing.T, s State) {
+			if tk := s.Tickets[0]; tk.Status != kitchen.TicketReady || tk.ReadyAt.IsZero() {
+				t.Errorf("ticket = %+v", tk)
 			}
 		},
 	},
