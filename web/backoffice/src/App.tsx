@@ -7,6 +7,7 @@ import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { SignedInShell } from "../../shared/screens/SignedInShell";
 import { Splash } from "../../shared/screens/Splash";
+import { FloorScreen } from "./floor/FloorScreen";
 import { PrintersScreen } from "./printers/PrintersScreen";
 
 export function App() {
@@ -26,16 +27,27 @@ export function App() {
               <PrintersScreen />
             </SignedInShell>
           </Route>
+          <Route path="/floor">
+            <SignedInShell area="Floor plan" exitLabel="Sign out">
+              <FloorScreen />
+            </SignedInShell>
+          </Route>
           <Route path="/">
             <SignedInShell area="Back office" exitLabel="Sign out">
               <h1 className="font-serif text-total">Back office</h1>
-              <nav aria-label="Settings" className="mt-6">
-                <Link
-                  href="/printers"
-                  className="inline-flex min-h-tap items-center rounded border border-line-strong bg-raised px-4 text-base font-semibold"
-                >
-                  Printers
-                </Link>
+              <nav aria-label="Settings" className="mt-6 flex flex-wrap gap-tap-gap">
+                {[
+                  { href: "/floor", label: "Floor plan" },
+                  { href: "/printers", label: "Printers" },
+                ].map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className="inline-flex min-h-tap items-center rounded border border-line-strong bg-raised px-4 text-base font-semibold"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
               </nav>
               <p className="mt-4 max-w-prose text-base text-fg-2">Menus, staff and reports arrive in phase 10.</p>
             </SignedInShell>

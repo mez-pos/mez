@@ -63,7 +63,14 @@ export type ErrorCode =
   | 'invalid_printer'
   | 'not_invoiced'
   | 'over_credit'
-  | 'refunds_mismatch';
+  | 'refunds_mismatch'
+  | 'area_not_found'
+  | 'area_retired'
+  | 'area_in_use'
+  | 'table_not_found'
+  | 'cell_taken'
+  | 'floor_name_taken'
+  | 'invalid_floor';
 
 export type OrderStatus =
   | 'open'
@@ -118,6 +125,11 @@ export type PrintJobKind =
 export type PrinterTransport =
   | 'tcp'
   | 'windows';
+
+export type TableShape =
+  | 'square'
+  | 'round'
+  | 'long';
 
 export type DiscountScope =
   | 'line'
@@ -880,6 +892,47 @@ export interface PrintersResponse {
 
 export interface TestPageResponse {
   job_id: number;
+}
+
+export interface AreaSettings {
+  name: string;
+}
+
+export interface TableSettings {
+  area_id: number;
+  name: string;
+  seats: number;
+  shape: TableShape;
+  x: number;
+  y: number;
+}
+
+export interface GridResponse {
+  columns: number;
+  rows: number;
+}
+
+export interface AreaResponse {
+  id: number;
+  name: string;
+  active: boolean;
+}
+
+export interface TableResponse {
+  id: number;
+  area_id: number;
+  name: string;
+  seats: number;
+  shape: TableShape;
+  x: number;
+  y: number;
+  active: boolean;
+}
+
+export interface FloorResponse {
+  grid: GridResponse;
+  areas: AreaResponse[];
+  tables: TableResponse[];
 }
 
 export interface CreditSelection {

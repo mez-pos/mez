@@ -2286,3 +2286,37 @@ is the fastest way back to the bill, and a void that needs a reopen first is
 two approvals for one mistake.
 Cost: one credit note per payment from the till; a search that knows only
 exact numbers and invoice sequences, not items, amounts or dates.
+
+## ADR-085 - The floor plan: a fixed grid, one table per cell, retired never deleted
+2026-09 · Status: accepted
+Decision: the back office lays out the floor (phase 08, Task 1) as areas,
+each a grid of 12 columns by 8 rows, and tables placed one per cell.
+  - **Layout only.** `areas` and `tables` (migration 00011) hold names,
+    seats, shape (square, round, long) and a cell. Whether a table is free,
+    seated or dirty is a projection of its orders, from Task 2, never a
+    column here.
+  - **A cell, not coordinates.** A table's `x` and `y` are whole cells from
+    the top left; every shape takes one cell. The grid size lives in the
+    service (`floor.Columns`, `floor.Rows`) and is sent with the plan, so
+    the terminal draws the same grid.
+  - **One table in service per cell**, by a partial unique index. The
+    service checks the cell first, inside the write transaction, so a
+    refusal names the table already there under the column field.
+  - **Retired, never deleted**, like printers: an order's `table_id` keeps
+    pointing at a real row. A retired table gives its cell up, can still be
+    edited and moved, and comes back only to a free cell in an area in
+    service. An area retires only once its tables have.
+  - **Names are unique across the venue**, not the area: staff say "table
+    4" without saying where.
+  - **Three ways to move a table**, all the same `PUT`: drag (pointer
+    events, so fingers and pens work), Move then tap a cell, and the column
+    and row typed in the edit form. Drag is never the only path.
+  - Every call needs `settings.edit`, including the read; Task 2's floor
+    screen will need its own read for terminals.
+  - `orders.table_id` gets no foreign key yet: SQLite cannot add one
+    without rebuilding `orders`, and nothing writes a table id until Task 2.
+Because: a grid is enough to make the screen look like the room, and it
+makes "is this spot free" a lookup rather than geometry. Free positioning
+and table sizes can come later without changing what an order refers to.
+Cost: a long table cannot span two cells; a room larger than 12 by 8 must
+be split into areas.

@@ -1,10 +1,11 @@
 // Add or edit a printer (backoffice-printers.md). The server checks every
 // field; a refusal shows under the field it is about.
 
-import { useId, useState, type ReactNode } from "react";
+import { useState } from "react";
 import type { PrinterTransport } from "../../../shared/api-types";
 import { Button, Modal } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { Choice, Field, inputClass } from "../FormFields";
 import { problemOf, type PrinterForm, type Problem } from "./printers-logic";
 
 interface PrinterFormModalProps {
@@ -13,9 +14,6 @@ interface PrinterFormModalProps {
   onSave: (form: PrinterForm) => Promise<void>;
   onClose: () => void;
 }
-
-const inputClass =
-  "min-h-tap w-full rounded border border-line-strong bg-raised px-3 text-fg outline-offset-2 outline-line-focus focus-visible:outline-2";
 
 export function PrinterFormModal({ title, initial, onSave, onClose }: PrinterFormModalProps) {
   const [form, setForm] = useState(initial);
@@ -104,61 +102,5 @@ export function PrinterFormModal({ title, initial, onSave, onClose }: PrinterFor
         />
       </div>
     </Modal>
-  );
-}
-
-function Field({ label, hint, error, children }: { label: string; hint?: string; error: string | null; children: (id: string) => ReactNode }) {
-  const id = useId();
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-base font-semibold">
-        {label}
-      </label>
-      {children(id)}
-      {hint && <p className="text-sm text-fg-muted">{hint}</p>}
-      {error && (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-interface ChoiceProps<T extends string> {
-  label: string;
-  value: T;
-  options: readonly { value: T; label: string }[];
-  onChange: (v: T) => void;
-  error: string | null;
-}
-
-function Choice<T extends string>({ label, value, options, onChange, error }: ChoiceProps<T>) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <p className="text-base font-semibold">{label}</p>
-      <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-tap-gap">
-        {options.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            role="radio"
-            aria-checked={value === o.value}
-            onClick={() => onChange(o.value)}
-            className={cx(
-              "min-h-tap rounded border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
-              value === o.value ? "border-line-focus bg-raised font-semibold text-fg" : "border-line text-fg-2",
-            )}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-      {error && (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
-      )}
-    </div>
   );
 }

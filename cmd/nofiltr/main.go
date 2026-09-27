@@ -28,6 +28,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/device/printq"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
 	"github.com/byjoellobo/nofiltr-pos/web"
@@ -216,6 +217,11 @@ func run() (err error) {
 		return err
 	}
 
+	floorPlan, err := floor.New(database, nil)
+	if err != nil {
+		return err
+	}
+
 	srv := api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
@@ -226,6 +232,7 @@ func run() (err error) {
 		api.WithStream(events),
 		api.WithPrints(prints),
 		api.WithPrinters(printerSettings),
+		api.WithFloor(floorPlan),
 	)
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)

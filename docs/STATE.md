@@ -11,19 +11,18 @@ File: `docs/phases/phase-08.md`. Phase 07 is complete.
 
 ## Last completed task
 
-**Phase 07, Task 6b: refunds and voids at the till** (ADR-084). Tickets,
-Past bills finds a closed bill by invoice or credit note number (or the
-invoice's sequence); the bill screen refunds through the credit note
-preview and a manager's PIN, voids a payment (reopening a closed bill in
-one command), reprints, and shows the history. Credit notes print on the
-receipt printer, with the drawer kick for a cash refund. The phase's
-done-when ran in the browser: a three-way split, INV/26-27/000004, a
-partial refund to the card as CN/26-27/000001, on the timeline, the
-queue, the printed note and the totals.
+**Phase 08, Task 1: floor plan data and editor** (ADR-085). Migration
+00011 adds `areas` and `tables` (grid cell, seats, shape; retired, never
+deleted; one table in service per cell). `internal/service/floor` and
+`/api/v1/floor` (settings.edit). The back office's Floor plan screen
+(`backoffice-floor.md`): area tabs, a 12 by 8 grid, and three ways to move
+a table: drag, Move then tap, or typing the column and row. Run in the
+browser: areas, tables placed by tap and by number, a drag, a drag onto a
+taken cell refused, a tap-move, retire and a refused bring-back.
 
 ## Next task
 
-**Phase 08, Task 1: floor plan data and editor.** Read the phase file.
+**Phase 08, Task 2: floor plan screen.** Spec first. Read the phase file.
 
 ## Known broken / in progress
 
@@ -39,6 +38,9 @@ queue, the printed note and the totals.
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
   no menu writes over HTTP until phase 10. GST place of supply is always
   the venue's state, so no IGST. `nofiltr setup` cannot finish a US venue.
+- The floor plan's read needs `settings.edit`; the terminal's floor screen
+  (Task 2) needs a read of its own. `orders.table_id` has no foreign key
+  (ADR-085), and no stream message tells devices the plan changed.
 - Never swept: idempotency keys, expired staff sessions, sign-in attempts.
   The pairing rate limiter is per process.
 - Token gaps (ADR-062): five paper roles are stand-ins; `--vermilion-on`
@@ -68,7 +70,9 @@ queue, the printed note and the totals.
   screen shows the device name and no roles until one does.
 - `go test -race` needs cgo, which is banned; `make check` runs without it.
 - The domain import test checks direct imports only (ADR-016).
-- Tooling: `make` needs `sh` (Git Bash; GnuWin32 make 3.81 works). `make
+- Tooling: `make` needs `sh` (Git Bash; GnuWin32 make 3.81 works, at
+  `C:/Program Files (x86)/GnuWin32/bin/make.exe`). `make check` does not
+  rebuild the web bundles: run `make build-web` before trying the browser. `make
   generate` needs sqlc v1.31.1 and can dirty `go.sum` with goose's test
   modules: restore it with `git checkout go.sum`. `bin/nofiltr` has no
   `.exe`, so kill a stray server with `taskkill /F /IM nofiltr`.

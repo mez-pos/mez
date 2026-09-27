@@ -9,7 +9,7 @@ Phase 07.
 
 ## Tasks
 
-- [ ] **Task 1 — Floor plan data and editor.**
+- [x] **Task 1 — Floor plan data and editor.**
   Migration for `areas`, `tables` (with position, seats, shape). A back-office
   editor to place tables. Keep it simple — a grid with drag, and a numeric
   fallback for position, because drag must never be the only path.

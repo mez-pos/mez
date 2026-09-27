@@ -23,6 +23,9 @@ type Querier interface {
 	ActiveStaffForVenue(ctx context.Context, venueID int64) ([]Staff, error)
 	ActiveStations(ctx context.Context, venueID int64) ([]ActiveStationsRow, error)
 	AppendOrderEvent(ctx context.Context, arg AppendOrderEventParams) error
+	AreaByID(ctx context.Context, id int64) (AreaByIDRow, error)
+	// The floor plan: areas and the tables placed in them (ADR-085).
+	AreasForVenue(ctx context.Context, venueID int64) ([]AreasForVenueRow, error)
 	AttachModifierGroup(ctx context.Context, arg AttachModifierGroupParams) error
 	// For a change that touches every venue at once: the requeue on start.
 	BumpAllPrintVersions(ctx context.Context) error
@@ -43,7 +46,9 @@ type Querier interface {
 	ClearReceiptPrinter(ctx context.Context, arg ClearReceiptPrinterParams) error
 	// The till's past bills: the latest closed, newest first (Task 6b).
 	ClosedOrdersForVenue(ctx context.Context, arg ClosedOrdersForVenueParams) ([]ClosedOrdersForVenueRow, error)
+	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
+	CreateArea(ctx context.Context, arg CreateAreaParams) (int64, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (int64, error)
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (int64, error)
 	CreateCreditNote(ctx context.Context, arg CreateCreditNoteParams) (int64, error)
@@ -67,6 +72,7 @@ type Querier interface {
 	CreateStaff(ctx context.Context, arg CreateStaffParams) (Staff, error)
 	CreateStaffSession(ctx context.Context, arg CreateStaffSessionParams) (int64, error)
 	CreateStation(ctx context.Context, arg CreateStationParams) (int64, error)
+	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
 	CreateTaxClass(ctx context.Context, arg CreateTaxClassParams) (int64, error)
 	// Venues. Explicit column lists throughout, per docs/03-conventions.md: a
 	// SELECT * here would silently change shape the next time a migration adds a
@@ -141,6 +147,7 @@ type Querier interface {
 	RecordSignInAttempt(ctx context.Context, arg RecordSignInAttemptParams) error
 	// Only an unredeemed code changes, so two redeemers cannot both succeed.
 	RedeemPairingCode(ctx context.Context, arg RedeemPairingCodeParams) (int64, error)
+	RenameArea(ctx context.Context, arg RenameAreaParams) (int64, error)
 	// On start, jobs a crash left printing go back to queued. Whether their
 	// bytes reached the printer is unknown; printing twice beats never.
 	RequeueStalePrintJobs(ctx context.Context, now time.Time) (int64, error)
@@ -154,6 +161,7 @@ type Querier interface {
 	RolesForVenue(ctx context.Context, venueID int64) ([]Role, error)
 	SaveIdempotencyKey(ctx context.Context, arg SaveIdempotencyKeyParams) error
 	SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotParams) error
+	SetAreaActive(ctx context.Context, arg SetAreaActiveParams) (int64, error)
 	// Retiring also stops it printing receipts; its stations keep pointing at
 	// it, and print nowhere until given another (StationPrinter needs active).
 	SetPrinterActive(ctx context.Context, arg SetPrinterActiveParams) (int64, error)
@@ -163,6 +171,7 @@ type Querier interface {
 	// two columns that change.
 	SetSetting(ctx context.Context, arg SetSettingParams) error
 	SetStationPrinter(ctx context.Context, arg SetStationPrinterParams) (int64, error)
+	SetTableActive(ctx context.Context, arg SetTableActiveParams) (int64, error)
 	Setting(ctx context.Context, arg SettingParams) (Setting, error)
 	// Per-venue settings the schema has no opinion about. Anything the database
 	// must constrain or compute with is a column on venues instead.
@@ -176,6 +185,10 @@ type Querier interface {
 	// The printer a station's tickets go to, if it has one in service.
 	StationPrinter(ctx context.Context, arg StationPrinterParams) (StationPrinterRow, error)
 	StationsWithPrinters(ctx context.Context, venueID int64) ([]StationsWithPrintersRow, error)
+	TableByID(ctx context.Context, id int64) (TableByIDRow, error)
+	// The table in service in a cell, if any, other than the one being placed.
+	TableInCell(ctx context.Context, arg TableInCellParams) (TableInCellRow, error)
+	TablesForVenue(ctx context.Context, venueID int64) ([]TablesForVenueRow, error)
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	//
@@ -188,6 +201,7 @@ type Querier interface {
 	// the caller reports as a conflict rather than moving the index backwards.
 	UpdateOrderIndex(ctx context.Context, arg UpdateOrderIndexParams) (int64, error)
 	UpdatePrinter(ctx context.Context, arg UpdatePrinterParams) (int64, error)
+	UpdateTable(ctx context.Context, arg UpdateTableParams) (int64, error)
 	//
 	// Currency is deliberately absent. Changing it would reinterpret every minor
 	// unit already recorded against this venue, which is a migration, not a

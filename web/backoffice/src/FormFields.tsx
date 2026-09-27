@@ -1,0 +1,65 @@
+// The back office's form fields: a labelled input with its hint and the
+// server's refusal under it, and a row of choices. Used by every settings
+// modal, so they all read and refuse alike.
+
+import { useId, type ReactNode } from "react";
+import { cx } from "../../shared/ui/cx";
+
+export const inputClass =
+  "min-h-tap w-full rounded border border-line-strong bg-raised px-3 text-fg outline-offset-2 outline-line-focus focus-visible:outline-2";
+
+export function Field({ label, hint, error, children }: { label: string; hint?: string; error: string | null; children: (id: string) => ReactNode }) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-base font-semibold">
+        {label}
+      </label>
+      {children(id)}
+      {hint && <p className="text-sm text-fg-muted">{hint}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export interface ChoiceProps<T extends string> {
+  label: string;
+  value: T;
+  options: readonly { value: T; label: string }[];
+  onChange: (v: T) => void;
+  error: string | null;
+}
+
+export function Choice<T extends string>({ label, value, options, onChange, error }: ChoiceProps<T>) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-base font-semibold">{label}</p>
+      <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-tap-gap">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={value === o.value}
+            onClick={() => onChange(o.value)}
+            className={cx(
+              "min-h-tap rounded border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
+              value === o.value ? "border-line-focus bg-raised font-semibold text-fg" : "border-line text-fg-2",
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}

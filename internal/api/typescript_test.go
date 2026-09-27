@@ -19,6 +19,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
 )
@@ -104,6 +105,7 @@ var errorCodes = []ErrorCode{
 	CodePrintJobNotFound, CodePrintJobState, CodeNoPrinter,
 	CodePrinterNotFound, CodePrinterRetired, CodeStationNotFound, CodePrinterNameTaken, CodeInvalidPrinter,
 	CodeNotInvoiced, CodeOverCredit, CodeRefundsMismatch,
+	CodeAreaNotFound, CodeAreaRetired, CodeAreaInUse, CodeTableNotFound, CodeCellTaken, CodeFloorNameTaken, CodeInvalidFloor,
 }
 
 // generate builds the whole file.
@@ -125,6 +127,8 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(order.Modifier{}):      "LineModifier",
 			reflect.TypeOf(printers.Settings{}):   "PrinterSettings",
 			reflect.TypeOf(order.CreditRequest{}): "CreditSelection",
+			reflect.TypeOf(floor.AreaSettings{}):  "AreaSettings",
+			reflect.TypeOf(floor.TableSettings{}): "TableSettings",
 		},
 	})
 
@@ -155,6 +159,7 @@ func generate() (*ts.Generator, error) {
 		{"PrintJobState", printjob.Queued, asStrings(printjob.Machine().States())},
 		{"PrintJobKind", printjob.Receipt, asStrings(printjob.Kinds())},
 		{"PrinterTransport", printers.Network, asStrings(printers.Transports())},
+		{"TableShape", floor.Square, asStrings(floor.Shapes())},
 		{"DiscountScope", order.ScopeLine, []string{string(order.ScopeLine), string(order.ScopeOrder)}},
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
@@ -213,6 +218,8 @@ func generate() (*ts.Generator, error) {
 		// Printer settings.
 		printerRequest{}, assignRequest{}, printerResponse{}, lastJobResponse{}, stationPrinterResponse{},
 		printersResponse{}, testPageResponse{},
+		// The floor plan.
+		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		// Credit notes.
 		creditPreviewRequest{}, creditRequest{}, creditPlanResponse{}, creditResponse{},
 		pastBillResponse{}, pastBillsResponse{},

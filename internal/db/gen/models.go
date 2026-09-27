@@ -9,6 +9,15 @@ import (
 	"time"
 )
 
+type Area struct {
+	ID        int64
+	VenueID   int64
+	Name      string
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type Category struct {
 	ID        int64
 	VenueID   int64
@@ -273,6 +282,20 @@ type Station struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	PrinterID sql.NullInt64
+}
+
+type Table struct {
+	ID        int64
+	VenueID   int64
+	AreaID    int64
+	Name      string
+	Seats     int64
+	Shape     string
+	X         int64
+	Y         int64
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type TaxClass struct {
