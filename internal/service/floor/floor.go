@@ -73,9 +73,10 @@ type systemClock struct{}
 func (systemClock) Now() time.Time { return time.Now() }
 
 // Orders is what the live floor needs of the orders: every one not yet
-// closed, projected. *order.Service is the implementation.
+// closed, projected, and closing an empty one when the guests leave. *order.Service is the implementation.
 type Orders interface {
 	OpenOrders(ctx context.Context, venueID int64) (svcorder.OpenTickets, error)
+	Close(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 }
 
 // Options configure a Service. DB is required; Orders is needed only for

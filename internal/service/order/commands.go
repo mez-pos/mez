@@ -106,6 +106,9 @@ func (s *Service) Open(ctx context.Context, meta Meta, cmd OpenOrder) (Result, e
 					prior = p
 					return errReplay
 				}
+				if err := tableInService(ctx, tx.Queries(), meta.VenueID, cmd.TableID); err != nil {
+					return err
+				}
 				return saveKey(ctx, tx.Queries(), meta, fp, tx.OrderID, 1, 1, at)
 			},
 		}, v.Taxes)

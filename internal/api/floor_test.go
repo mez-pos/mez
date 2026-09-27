@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/table"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
@@ -195,5 +196,23 @@ func TestLiveFloorOverHTTP(t *testing.T) {
 	}
 	if rec := send(w.handler, http.MethodGet, "/api/v1/floor", "", cashier); rec.Code != http.StatusForbidden {
 		t.Errorf("a cashier read the plan: %d", rec.Code)
+	}
+
+	// The party at T4 ordered nothing and left: T4 is free.
+	if status, out, _ := live(http.MethodPost, fmt.Sprintf("/api/v1/floor/tables/%d/release", t4)); status != http.StatusOK || out.Tables[0].Status != table.StatusFree {
+		t.Errorf("guests left T4: %d %+v", status, out.Tables)
+	}
+	// A party with tea on the ticket cannot simply leave.
+	tea, err := orders.Open(ctx, svcorder.Meta{VenueID: 1, ActorID: 1, DeviceID: 1}, svcorder.OpenOrder{Channel: order.ChannelCounter, TableID: t5, Covers: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := orders.AddLine(ctx, svcorder.Meta{VenueID: 1, ActorID: 1, DeviceID: 1}, tea.OrderID, svcorder.AddLine{
+		ItemID: 1, Name: "Tea", Qty: 1, UnitPrice: money.Amount{Minor: 3000, Currency: "INR"}, Station: "bar",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if status, _, apiErr := live(http.MethodPost, fmt.Sprintf("/api/v1/floor/tables/%d/release", t5)); status != http.StatusConflict || apiErr.Code != CodeTableNotEmpty {
+		t.Errorf("guests left T5 with tea: %d %s", status, apiErr.Code)
 	}
 }

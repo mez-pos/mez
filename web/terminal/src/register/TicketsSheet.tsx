@@ -1,11 +1,11 @@
 // The open tickets (Task 5): every ticket at the venue not yet closed, with
 // where it is, how long it has run and what it comes to; and a new one,
-// at the counter or at a table. Tap one to bring it to the front; a held
+// at the counter, or at a table by way of the floor (terminal-floor.md). Tap one to bring it to the front; a held
 // one is taken off hold as it comes.
 
 import { useEffect, useState } from "react";
 import type { OpenOrder, OpenTicketsResponse, TicketSummary } from "../../../shared/api-types";
-import { Button, Money, NumPad, Qty, Sheet, StatusChip, applyAmountKey } from "../../../shared/ui";
+import { Button, Money, Sheet, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { elapsed, ticketLabel } from "./ticket-time";
 
@@ -13,18 +13,20 @@ interface TicketsSheetProps {
   open: OpenTicketsResponse | undefined;
   /** The order in front, to mark it. */
   currentId: string | null;
+  /** Table names by id, from the floor. */
+  names: ReadonlyMap<number, string>;
   onPick: (ticket: TicketSummary) => Promise<void>;
   onNew: (opening: OpenOrder) => void;
   /** Opens the settled bills, to refund, void a payment or reprint. */
   onPastBills: () => void;
+  /** Opens the floor, where a party is seated at a table. */
+  onFloor: () => void;
   onClose: () => void;
 }
 
-export function TicketsSheet({ open, currentId, onPick, onNew, onPastBills, onClose }: TicketsSheetProps) {
+export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBills, onFloor, onClose }: TicketsSheetProps) {
   const now = useClock(15_000);
   const [error, setError] = useState<string | null>(null);
-  const [table, setTable] = useState(0);
-  const [covers, setCovers] = useState(2);
   const lateAfter = open?.late_after_minutes ?? 20;
 
   const pick = async (t: TicketSummary) => {
@@ -70,7 +72,7 @@ export function TicketsSheet({ open, currentId, onPick, onNew, onPastBills, onCl
                   >
                     <span className="flex min-w-0 flex-col gap-1">
                       <span className="flex items-center gap-2">
-                        <span className="text-base font-semibold">{ticketLabel(t)}</span>
+                        <span className="text-base font-semibold">{ticketLabel(t, names)}</span>
                         {t.status !== "open" && <StatusChip status={{ kind: "order", status: t.status }} />}
                         {here && <span className="text-meta uppercase text-fg-faint">On screen</span>}
                       </span>
@@ -113,15 +115,13 @@ export function TicketsSheet({ open, currentId, onPick, onNew, onPastBills, onCl
         <section aria-label="New ticket" className="flex flex-col gap-4 border-t border-line pt-6">
           <h3 className="text-lg font-semibold">New ticket</h3>
           <Button onClick={() => start({ channel: "counter", covers: 0 })}>Counter sale</Button>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-base text-fg-2">
-              Table <span className="font-mono tabular-nums">{table || "–"}</span>
-            </span>
-            <Qty value={covers} onChange={setCovers} label="Covers" bounds={{ min: 1, max: 99 }} />
-          </div>
-          <NumPad layout="pin" label="Table number" onKey={(k) => setTable((t) => applyAmountKey(t, k, 999))} />
-          <Button disabled={table === 0} onClick={() => start({ channel: "counter", table_id: table, covers })}>
-            {table ? `Start table ${table}, ${covers} ${covers === 1 ? "cover" : "covers"}` : "Enter a table number"}
+          <Button
+            onClick={() => {
+              onFloor();
+              onClose();
+            }}
+          >
+            Seat a table
           </Button>
         </section>
       </div>

@@ -50,6 +50,16 @@ export class TicketBook {
     this.opts.remember(null);
   }
 
+  /**
+   * Seats a party: a new ticket in front whose order opens now, at the
+   * table, so the floor shows it seated before the first item. Resolves
+   * with the order's id.
+   */
+  seat(open: OpenOrder): Promise<string> {
+    this.startNew(open);
+    return this.state.current.openNow();
+  }
+
   /** Brings an existing order to the front, with its own queue. */
   switchTo(orderId: string): TicketQueue {
     const found = this.state.queues.find((q) => q.current().orderId === orderId);

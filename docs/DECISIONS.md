@@ -2353,3 +2353,39 @@ nothing about an order says the table was wiped down.
 Cost: the live read projects every open order at the venue (capped at 200)
 on each call. "Guests left" (Task 2b) closes an empty order, which on its
 own would leave the table dirty: 2b must clear it in the same step.
+
+## ADR-087 - The floor is a view of the register; seating opens the order at once
+2026-09 · Status: accepted
+Decision: the terminal's floor (phase 08, Task 2b, `terminal-floor.md`)
+is a view the register swaps in, as it does the bill and tender screens,
+not a route of its own.
+  - **Inside the register**, so the till's ticket book (ADR-074) lives on
+    while the floor shows: a ticket being rung up on another table is not
+    lost by looking at the room.
+  - **Seating opens the order now**, through the ticket queue
+    (`TicketQueue.openNow`, `TicketBook.seat`), not with the first item as
+    a counter ticket does. A seated party with nothing ordered is exactly
+    what the floor must show (ADR-086).
+  - **A tap does the likely thing:** a free table seats a party; an
+    ordered or paying table with one ticket opens it; a seated table, a
+    table to clear, or two tickets at one table open a sheet, because each
+    has a choice in it.
+  - **Words are the floor's:** Free, Seated, Ordered, Paying, To clear, in
+    success, info, neutral, warning and danger. Vermilion stays for Late.
+  - **Guests left** is `POST /api/v1/floor/tables/{id}/release`: every
+    order at the table must be empty (`table.Leavable`: no active line, no
+    money taken, nothing owed); each is closed by the order service's own
+    close command, with no invoice, and the table is cleared. It is not one
+    transaction, but a retry finds the orders closed and clears again.
+  - **The server checks the table** when an order opens: one the venue
+    does not have in service is refused (`table_not_found`). The Tickets
+    sheet's typed table number goes, replaced by Seat a table, since a
+    typed number is an id and the table's name is what staff know.
+  - **`make check` now typechecks the three frontends.** It did not,
+    though the conventions said so, and Task 2a shipped a terminal type
+    error (the new `floor` notice in `useTicket`), fixed here.
+Because: the floor and the register are two looks at the same shift's
+tickets. Keeping one book under both means a seated party's ticket is the
+ticket in front, with nothing to hand over between screens.
+Cost: the floor has no URL of its own, so a till cannot open straight to
+it; the register is the landing screen.

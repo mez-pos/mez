@@ -6,7 +6,7 @@
 // added in Go fails the TypeScript build here until it has a tone and a word.
 // Tones follow docs/design/tokens.md: vermilion (accent) is for "Late" alone.
 
-import type { LineStatus, OrderStatus, PaymentStatus, PrintJobState } from "../api-types";
+import type { LineStatus, OrderStatus, PaymentStatus, PrintJobState, TableStatus } from "../api-types";
 
 export type ChipTone = "neutral" | "success" | "warning" | "danger" | "accent" | "info";
 
@@ -59,13 +59,25 @@ export const printStatuses: Readonly<Record<PrintJobState, ChipSpec>> = {
   dead: { tone: "danger", word: "Not printed" },
 };
 
+// A table's turn (terminal-floor.md, ADR-086). The words are the floor's:
+// staff say a table is paying or needs clearing, not that it is settling
+// or dirty. Never vermilion: a table is not "late".
+export const tableStatuses: Readonly<Record<TableStatus, ChipSpec>> = {
+  free: { tone: "success", word: "Free" },
+  seated: { tone: "info", word: "Seated" },
+  ordered: { tone: "neutral", word: "Ordered" },
+  settling: { tone: "warning", word: "Paying" },
+  dirty: { tone: "danger", word: "To clear" },
+};
+
 /** What a StatusChip is given: which vocabulary, and a value from it. */
 export type ChipStatus =
   | { readonly kind: "kitchen"; readonly status: KitchenStatus }
   | { readonly kind: "order"; readonly status: OrderStatus }
   | { readonly kind: "payment"; readonly status: PaymentStatus }
   | { readonly kind: "line"; readonly status: LineStatus }
-  | { readonly kind: "print"; readonly status: PrintJobState };
+  | { readonly kind: "print"; readonly status: PrintJobState }
+  | { readonly kind: "table"; readonly status: TableStatus };
 
 export function chipSpec(chip: ChipStatus): ChipSpec {
   switch (chip.kind) {
@@ -79,5 +91,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
       return lineStatuses[chip.status];
     case "print":
       return printStatuses[chip.status];
+    case "table":
+      return tableStatuses[chip.status];
   }
 }

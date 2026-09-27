@@ -40,11 +40,17 @@ WEB_BUILT := $(foreach a,$(WEB_APPS),$(wildcard web/$(a)/dist/index.html))
 TAGS      := $(if $(filter 3,$(words $(WEB_BUILT))),frontend,)
 
 .DEFAULT_GOAL := check
-.PHONY: check fmt vet test build build-web run generate migrate migrate-new clean dist help
+.PHONY: check fmt vet test typecheck build build-web run generate migrate migrate-new clean dist help
 
-## check: fmt, vet, test and build. The Go gate. CI runs this.
-check: fmt vet test build
+## check: fmt, vet, test, typecheck and build. The gate. CI runs this.
+check: fmt vet test typecheck build
 	@echo "ok: check passed ($(VERSION))"
+
+## typecheck: tsc --noEmit over the three frontends, so a type the Go
+##            structs changed cannot reach a screen unchecked. Needs Node 22.
+typecheck: web/node_modules/.package-lock.json
+	@cd web && npm run typecheck --silent
+	@echo "  tsc   ok"
 
 ## fmt: fail if anything is not gofmt-clean
 fmt:

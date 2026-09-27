@@ -43,6 +43,18 @@ function world(initialOrderId: string | null = null) {
   };
 }
 
+describe("TicketBook.seat", () => {
+  it("opens the table's order at once, in front, and remembers it", async () => {
+    const { book, calls, remembered } = world();
+    const id = await book.seat({ channel: "counter", table_id: 4, covers: 3 });
+    expect(id).toBe("ord_1");
+    expect(calls).toEqual(["open ord_1 table 4"]);
+    expect(book.current().current.current().orderId).toBe("ord_1");
+    expect(book.current().current.opening).toEqual({ channel: "counter", table_id: 4, covers: 3 });
+    expect(remembered).toEqual([null, "ord_1"]);
+  });
+});
+
 describe("TicketBook", () => {
   it("starts on the remembered ticket", () => {
     const { book } = world("ord_7");

@@ -143,3 +143,28 @@ func TestClear(t *testing.T) {
 		})
 	}
 }
+
+func TestLeavable(t *testing.T) {
+	paid := open(order.StatusOpen, 2, t0, 0)
+	paid.Totals.Paid = inr(100)
+	comped := open(order.StatusOpen, 2, t0, 0, order.LineStatusComped)
+	tests := []struct {
+		name string
+		o    order.State
+		want bool
+	}{
+		{"nothing on it", open(order.StatusOpen, 2, t0, 0), true},
+		{"only a voided line", open(order.StatusOpen, 2, t0, 0, order.LineStatusVoided), true},
+		{"a comped line, nothing owed", comped, true},
+		{"a line on it", open(order.StatusOpen, 2, t0, 100, order.LineStatusActive), false},
+		{"being paid", open(order.StatusSettling, 2, t0, 0), false},
+		{"money taken", paid, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Leavable(tt.o); got != tt.want {
+				t.Errorf("Leavable = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

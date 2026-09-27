@@ -11,17 +11,17 @@ File: `docs/phases/phase-08.md`. Phase 07 is complete.
 
 ## Last completed task
 
-**Phase 08, Task 2a: table state, and the floor read for terminals**
-(ADR-086). `table.Derive` works out free, seated, ordered, settling or
-dirty from the orders at a table; `tables.cleared_at` (migration 00012) is
-the only stored part. `GET /api/v1/floor/live` and `POST
-.../tables/{id}/clear` need `order.open`. Clears and plan edits move
-`floor_versions`, sent as `floor_changed`; the web client emits a `floor`
-notice, and the back office editor refetches on it.
+**Phase 08, Task 2b: the floor screen** (ADR-087, `terminal-floor.md`).
+The register's Floor view: area tabs, tiles in colour and a word with
+covers, time and balance. Seat opens the order at once; a tap opens a
+table's ticket; Guests left (`.../release`) closes an empty ticket and
+frees the table; Clear. Opening an order checks the table. Ticket labels
+use table names. `make check` now typechecks the frontends, which caught a
+type error 2a had shipped. Run in the browser on two tills.
 
 ## Next task
 
-**Phase 08, Task 2b: the floor screen.** Spec first. Read the phase file.
+**Phase 08, Task 2c: transfer, join and split tables.** Read the phase file.
 
 ## Known broken / in progress
 
@@ -37,9 +37,10 @@ notice, and the back office editor refetches on it.
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
   no menu writes over HTTP until phase 10. GST place of supply is always
   the venue's state, so no IGST. `nofiltr setup` cannot finish a US venue.
-- `orders.table_id` has no foreign key (ADR-085). "Guests left" in 2b
-  closes an empty order and must clear the table in the same step, or it
-  shows dirty (ADR-086).
+- `orders.table_id` has no foreign key (ADR-085). Guests left closes and
+  clears in two steps, not one transaction; a retry repairs it (ADR-087).
+- Nothing stops seating a dirty table over the API; the floor only offers
+  Seat on a free one. The floor has no URL of its own (ADR-087).
 - Never swept: idempotency keys, expired staff sessions, sign-in attempts.
   The pairing rate limiter is per process.
 - Token gaps (ADR-062): five paper roles are stand-ins; `--vermilion-on`

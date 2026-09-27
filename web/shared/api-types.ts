@@ -71,7 +71,8 @@ export type ErrorCode =
   | 'cell_taken'
   | 'floor_name_taken'
   | 'invalid_floor'
-  | 'table_occupied';
+  | 'table_occupied'
+  | 'table_not_empty';
 
 export type OrderStatus =
   | 'open'

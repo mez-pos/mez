@@ -50,6 +50,8 @@ export interface Ticket {
   retry: (key: string) => void;
   remove: (key: string) => void;
   startNew: (open: OpenOrder) => void;
+  /** Seats a party: a ticket in front whose order opens now, at the table. */
+  seat: (open: OpenOrder) => Promise<void>;
   switchTo: (orderId: string) => void;
   /** Parks the ticket in front and starts a counter ticket. */
   hold: () => Promise<void>;
@@ -136,7 +138,7 @@ export function useTicket(): Ticket {
   }, [gone, book]);
 
   useRealtimeNotices((notice) => {
-    if (notice.kind === "menu" || notice.kind === "print") return;
+    if (notice.kind === "menu" || notice.kind === "print" || notice.kind === "floor") return;
     // Any order's event can change the list: a new ticket on another till.
     void queryClient.invalidateQueries({ queryKey: openTicketsKey });
     if (!orderId) return;
@@ -162,6 +164,7 @@ export function useTicket(): Ticket {
     retry: (key) => queue.retry(key),
     remove: (key) => queue.remove(key),
     startNew: (opening) => book.startNew(opening),
+    seat: (opening) => book.seat(opening).then(() => undefined),
     switchTo: (id) => void book.switchTo(id),
     hold: async () => {
       await post("/hold", undefined);

@@ -117,6 +117,23 @@ export class TicketQueue {
     return done;
   }
 
+  /**
+   * Opens the order now, not with the first line: a party seated at a
+   * table is on the floor before anyone orders (terminal-floor.md). It
+   * waits its turn behind anything queued, and an order already open is
+   * simply answered. Rejects with the till's words.
+   */
+  openNow(): Promise<string> {
+    const done = this.chain.then(() => this.ensureOrder());
+    this.chain = done.then(
+      () => undefined,
+      () => undefined,
+    );
+    return done.catch((err: unknown) => {
+      throw new Error(failureOf(err), { cause: err });
+    });
+  }
+
   /** How this ticket opens, or opened. */
   get opening(): OpenOrder {
     return this.opts.open ?? counterSale;

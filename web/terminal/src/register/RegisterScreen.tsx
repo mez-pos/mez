@@ -2,12 +2,14 @@
 // left, the ticket on the right. One tap on an item rings it up with its
 // default modifiers, or opens the modifier sheet when someone has to choose;
 // the ticket's total never leaves the screen. Charge swaps it for the tender
-// screen (terminal-tender.md) on the same ticket.
+// screen (terminal-tender.md) on the same ticket, and Floor swaps it for the
+// dining room (terminal-floor.md), where a party is seated or a table's
+// ticket found.
 
 import { useMemo, useState, type ReactNode } from "react";
 import type { LineModifier, LineResponse, MenuItemResponse } from "../../../shared/api-types";
 import { indexMenu } from "../../../shared/menu";
-import { EmptyState, InboxIcon, SearchField, SearchIcon, useToast } from "../../../shared/ui";
+import { Button, EmptyState, InboxIcon, SearchField, SearchIcon, useToast } from "../../../shared/ui";
 import { useMenu } from "../../../shared/use-menu";
 import { CategoryRail } from "./CategoryRail";
 import { ItemGrid } from "./ItemGrid";
@@ -24,10 +26,16 @@ import { TenderScreen } from "../tender/TenderScreen";
 import { chargeBlock, chargeLabel } from "../tender/tender-logic";
 import { ticketLabel } from "./ticket-time";
 import { useTicket } from "./use-ticket";
+import { FloorView } from "../floor/FloorView";
+import { tableNames } from "../floor/floor-logic";
+import { useLiveFloor } from "../floor/use-live-floor";
 
 export function RegisterScreen() {
   const menu = useMenu();
   const ticket = useTicket();
+  const floor = useLiveFloor();
+  const names = useMemo(() => tableNames(floor.data), [floor.data]);
+  const [floorOpen, setFloorOpen] = useState(false);
   const index = useMemo(() => (menu.data ? indexMenu(menu.data) : null), [menu.data]);
 
   const [chosen, setChosen] = useState<number | null>(null);
@@ -113,7 +121,11 @@ export function RegisterScreen() {
   };
 
   const block = chargeBlock(ticket.order, ticket.pending.length);
-  const label = ticketLabel(ticket.order ?? ticket.opening);
+  const label = ticketLabel(ticket.order ?? ticket.opening, names);
+
+  if (floorOpen) {
+    return <FloorView floor={floor} ticket={ticket} onRegister={() => setFloorOpen(false)} />;
+  }
 
   if (bill) {
     return (
@@ -137,6 +149,16 @@ export function RegisterScreen() {
     <div className="flex min-w-0 flex-1">
       <section aria-label="Menu" className="flex min-w-0 flex-1 flex-col">
         <div className="flex flex-wrap items-start gap-tap-gap px-6 pt-4">
+          <Button
+            onClick={() => {
+              setPanel(null);
+              setSheet(null);
+              setHistoryOpen(false);
+              setFloorOpen(true);
+            }}
+          >
+            Floor
+          </Button>
           <CategoryRail
             categories={categories}
             counts={counts}
@@ -208,6 +230,7 @@ export function RegisterScreen() {
         <TicketsSheet
           open={ticket.open}
           currentId={ticket.orderId}
+          names={names}
           onPick={(t) => {
             // A sheet about a line on the ticket being left must not stay open.
             setPanel(null);
@@ -220,6 +243,7 @@ export function RegisterScreen() {
             ticket.startNew(opening);
           }}
           onPastBills={() => setPastBillsOpen(true)}
+          onFloor={() => setFloorOpen(true)}
           onClose={() => setTicketsOpen(false)}
         />
       )}

@@ -10,6 +10,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/table"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
+	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 )
 
 // Floor is what the API needs from the floor plan. *floor.Service is the
@@ -24,6 +25,7 @@ type Floor interface {
 	SetTableActive(ctx context.Context, venueID, id int64, active bool) error
 	Live(ctx context.Context, venueID int64) (floor.Live, error)
 	Clear(ctx context.Context, venueID, id int64) error
+	Release(ctx context.Context, meta svcorder.Meta, id int64) error
 }
 
 // WithFloor mounts the floor plan editor (phase 08, Task 1), which needs
@@ -43,6 +45,7 @@ const (
 	CodeFloorNameTaken ErrorCode = "floor_name_taken"
 	CodeInvalidFloor   ErrorCode = "invalid_floor"
 	CodeTableOccupied  ErrorCode = "table_occupied"
+	CodeTableNotEmpty  ErrorCode = "table_not_empty"
 )
 
 type areaRequest = floor.AreaSettings
@@ -127,6 +130,21 @@ func (s *Server) mountFloor(mux *http.ServeMux) {
 	}
 	service("GET /api/v1/floor/live", s.writeLiveFloor)
 	service("POST /api/v1/floor/tables/{id}/clear", s.clearTable)
+	service("POST /api/v1/floor/tables/{id}/release", s.releaseTable)
+}
+
+// releaseTable lets guests go who sat and ordered nothing: their empty
+// tickets close and the table is free (ADR-087).
+func (s *Server) releaseTable(w http.ResponseWriter, r *http.Request) {
+	id, ok := s.pathID(w, r, "id")
+	if !ok {
+		return
+	}
+	if err := s.floor.Release(r.Context(), Meta(r), id); err != nil {
+		s.writeFloorError(w, r, err)
+		return
+	}
+	s.writeLiveFloor(w, r)
 }
 
 func (s *Server) clearTable(w http.ResponseWriter, r *http.Request) {
@@ -289,6 +307,8 @@ func (s *Server) writeFloorError(w http.ResponseWriter, r *http.Request, err err
 		writeError(w, s.log, http.StatusNotFound, CodeTableNotFound, "No such table.")
 	case errors.Is(err, table.ErrOccupied):
 		writeError(w, s.log, http.StatusConflict, CodeTableOccupied, "Guests are still at this table: settle or move their ticket first.")
+	case errors.Is(err, table.ErrNotEmpty):
+		writeError(w, s.log, http.StatusConflict, CodeTableNotEmpty, "Something is on this table's ticket: void it or take the payment first.")
 	case errors.Is(err, floor.ErrAreaInUse):
 		writeError(w, s.log, http.StatusConflict, CodeAreaInUse, "Retire or move the tables in this area first.")
 	default:

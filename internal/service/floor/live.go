@@ -9,6 +9,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/table"
+	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 )
 
 // LiveTable is a table in service and where it is in its turn.
@@ -107,4 +108,43 @@ func (s *Service) Clear(ctx context.Context, venueID, id int64) error {
 		n, err := tx.ClearTable(ctx, gen.ClearTableParams{Now: sql.NullTime{Time: s.clock.Now().UTC(), Valid: true}, ID: id, VenueID: venueID})
 		return one(n, err, ErrTableNotFound)
 	})
+}
+
+// Release lets the guests at a table go before they ordered anything: it
+// closes every order open at the table, each of which must be empty
+// (table.Leavable), then clears the table, so it is free rather than dirty.
+// Retried, it finds the orders closed and clears again: no harm. The
+// closes are the order service's own commands, on their own events.
+func (s *Service) Release(ctx context.Context, meta svcorder.Meta, id int64) error {
+	if s.orders == nil {
+		return errors.New("floor: letting guests go needs the orders")
+	}
+	if _, err := tableByID(ctx, s.db.Queries(), meta.VenueID, id); err != nil {
+		return err
+	}
+	open, err := s.orders.OpenOrders(ctx, meta.VenueID)
+	if err != nil {
+		return fmt.Errorf("floor: reading the open orders: %w", err)
+	}
+	var at []svcorder.Result
+	for _, o := range open.Orders {
+		if o.State.TableID != id {
+			continue
+		}
+		if !table.Leavable(o.State) {
+			return fmt.Errorf("%w: %s", table.ErrNotEmpty, o.PublicID)
+		}
+		at = append(at, o)
+	}
+	// One request closes several orders, so none of them may carry its
+	// idempotency key: the key would match the first close and refuse the
+	// second as a different request.
+	each := meta
+	each.IdempotencyKey = ""
+	for _, o := range at {
+		if _, err := s.orders.Close(ctx, each, o.OrderID); err != nil {
+			return fmt.Errorf("floor: closing %s: %w", o.PublicID, err)
+		}
+	}
+	return s.Clear(ctx, meta.VenueID, id)
 }

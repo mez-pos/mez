@@ -9,8 +9,14 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 )
 
-// ErrOccupied refuses clearing a table that still has an order open at it.
-var ErrOccupied = errors.New("the table has an order open at it")
+// The refusals.
+var (
+	// ErrOccupied refuses clearing a table that still has an order open at it.
+	ErrOccupied = errors.New("the table has an order open at it")
+	// ErrNotEmpty refuses letting guests go from a table whose ticket has
+	// something on it: a line to void or a payment to settle first.
+	ErrNotEmpty = errors.New("the ticket at the table is not empty")
+)
 
 // Turn is what the floor knows about one table (ADR-086): the orders at it
 // not yet closed, when the last one to close there closed, and when the
@@ -105,6 +111,13 @@ func Clear(unclosed int64, lastClosedAt, clearedAt time.Time) error {
 	}
 	_, err := Transition(status, StatusFree)
 	return err
+}
+
+// Leavable reports whether guests can get up and go from an order with
+// nothing owed and nothing given: no active line, no money taken, not being
+// paid. Closing it then leaves no bill behind, and no invoice number used.
+func Leavable(o order.State) bool {
+	return o.Status != order.StatusSettling && !hasActiveLine(o) && o.Totals.Paid.IsZero() && o.Totals.Total.IsZero()
 }
 
 func hasActiveLine(o order.State) bool {

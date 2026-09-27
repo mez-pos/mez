@@ -58,6 +58,7 @@ var orderErrors = []struct {
 }{
 	// The service's own refusals.
 	{svcorder.ErrOrderNotFound, http.StatusNotFound, CodeOrderNotFound},
+	{svcorder.ErrNoSuchTable, http.StatusUnprocessableEntity, CodeTableNotFound},
 	{svcorder.ErrIdempotencyKeyReused, http.StatusConflict, CodeIdempotencyKeyReused},
 	{svcorder.ErrVenueConfig, http.StatusConflict, CodeVenueNotConfigured},
 	{svcorder.ErrNothingToSend, http.StatusConflict, CodeNothingToSend},

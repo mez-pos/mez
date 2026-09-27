@@ -107,7 +107,7 @@ var errorCodes = []ErrorCode{
 	CodePrinterNotFound, CodePrinterRetired, CodeStationNotFound, CodePrinterNameTaken, CodeInvalidPrinter,
 	CodeNotInvoiced, CodeOverCredit, CodeRefundsMismatch,
 	CodeAreaNotFound, CodeAreaRetired, CodeAreaInUse, CodeTableNotFound, CodeCellTaken, CodeFloorNameTaken, CodeInvalidFloor,
-	CodeTableOccupied,
+	CodeTableOccupied, CodeTableNotEmpty,
 }
 
 // generate builds the whole file.

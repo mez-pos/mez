@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"sync"
@@ -97,11 +98,29 @@ func addVenue(t *testing.T, d *db.DB, publicID string, settings map[string]strin
 				return err
 			}
 		}
-		return nil
+		return seedTables(ctx, q, v.ID)
 	})
 	if err != nil {
 		t.Fatalf("adding venue %s: %v", publicID, err)
 	}
+}
+
+// seedTables gives a venue an area with tables 1 to 10. In the first venue
+// of a fresh database their ids are 1 to 10, so table 4 is table id 4.
+func seedTables(ctx context.Context, q *gen.Queries, venueID int64) error {
+	area, err := q.CreateArea(ctx, gen.CreateAreaParams{VenueID: venueID, Name: "Floor", CreatedAt: now, UpdatedAt: now})
+	if err != nil {
+		return err
+	}
+	for i := int64(1); i <= 10; i++ {
+		if _, err := q.CreateTable(ctx, gen.CreateTableParams{
+			VenueID: venueID, AreaID: area, Name: fmt.Sprint(i), Seats: 4, Shape: "square", X: i - 1, Y: 0,
+			CreatedAt: now, UpdatedAt: now,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // must fails the test on a command error: must(t)(s.AddLine(...)).

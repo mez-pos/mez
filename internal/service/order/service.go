@@ -28,6 +28,10 @@ var (
 	// sent with a different one. Answering with the first result would tell
 	// the client something happened that it did not ask for.
 	ErrIdempotencyKeyReused = errors.New("idempotency key was already used for a different request")
+
+	// ErrNoSuchTable means an order was opened at a table the venue does
+	// not have in service: another venue's, a retired one, or none at all.
+	ErrNoSuchTable = errors.New("no such table in service at this venue")
 )
 
 // Clock is where the service gets the time for the events it writes. The

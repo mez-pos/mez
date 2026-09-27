@@ -14,9 +14,15 @@ export function elapsed(openedAt: string, now: number, lateAfterMinutes: number)
   return { text, late: lateAfterMinutes > 0 && minutes >= lateAfterMinutes };
 }
 
-/** "Table 4 · 2 covers", "Counter". */
-export function ticketLabel(t: { readonly table_id?: number; readonly covers: number }): string {
-  const where = t.table_id ? `Table ${t.table_id}` : "Counter";
+/**
+ * "Table T4 · 2 covers", "Counter". A table goes by its name from the floor
+ * (terminal-floor.md); by its number until the floor has been read.
+ */
+export function ticketLabel(
+  t: { readonly table_id?: number; readonly covers: number },
+  names: ReadonlyMap<number, string> = new Map(),
+): string {
+  const where = t.table_id ? `Table ${names.get(t.table_id) ?? t.table_id}` : "Counter";
   if (!t.covers) return where;
   return `${where} · ${t.covers} ${t.covers === 1 ? "cover" : "covers"}`;
 }

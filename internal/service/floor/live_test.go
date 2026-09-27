@@ -207,3 +207,49 @@ func TestEveryPlanChangeMovesTheVersion(t *testing.T) {
 		t.Errorf("floor version = %d, want 5", v)
 	}
 }
+
+// TestGuestsLeave: a party that sat and ordered nothing goes, and the table
+// is free again rather than dirty; one with something on the ticket cannot.
+func TestGuestsLeave(t *testing.T) {
+	w := newLive(t)
+	ctx := context.Background()
+	inside := must(w.floor.CreateArea(ctx, 1, AreaSettings{Name: "Inside"}))
+	t1 := must(w.floor.CreateTable(ctx, 1, TableSettings{AreaID: inside, Name: "T1", Seats: 2, Shape: Square}))
+	t2 := must(w.floor.CreateTable(ctx, 1, TableSettings{AreaID: inside, Name: "T2", Seats: 2, Shape: Square, X: 1}))
+	meta := staff
+	meta.IdempotencyKey = "guests-left-0001"
+
+	// Two empty tickets at T1: both close, with one key between them.
+	w.clock.tick()
+	first := must(w.orders.Open(ctx, staff, svcorder.OpenOrder{Channel: order.ChannelCounter, TableID: t1, Covers: 2}))
+	must(w.orders.Open(ctx, staff, svcorder.OpenOrder{Channel: order.ChannelCounter, TableID: t1, Covers: 1}))
+	w.clock.tick()
+	if err := w.floor.Release(ctx, meta, t1); err != nil {
+		t.Fatal(err)
+	}
+	if lt := w.want(t, t1, table.StatusFree); len(lt.Orders) != 0 {
+		t.Errorf("orders still at T1: %v", lt.Orders)
+	}
+	if res := must(w.orders.Order(ctx, 1, first.OrderID)); res.State.Status != order.StatusClosed || len(res.State.Invoices) != 0 {
+		t.Errorf("the empty ticket: %s, %d invoices", res.State.Status, len(res.State.Invoices))
+	}
+	// Retried: nothing open, the table clear. No harm.
+	if err := w.floor.Release(ctx, meta, t1); err != nil {
+		t.Errorf("retried: %v", err)
+	}
+
+	// Something on the ticket: refused, and the table stays as it was.
+	opened := must(w.orders.Open(ctx, staff, svcorder.OpenOrder{Channel: order.ChannelCounter, TableID: t2, Covers: 2}))
+	must(w.orders.AddLine(ctx, staff, opened.OrderID, svcorder.AddLine{ItemID: 1, Name: "Tea", Qty: 1, UnitPrice: money.Amount{Minor: 3000, Currency: "INR"}, Station: "bar"}))
+	if err := w.floor.Release(ctx, staff, t2); !errors.Is(err, table.ErrNotEmpty) {
+		t.Errorf("released T2 with tea on it: %v", err)
+	}
+	w.want(t, t2, table.StatusOrdered)
+
+	if err := w.floor.Release(ctx, staff, 999); !errors.Is(err, ErrTableNotFound) {
+		t.Errorf("released no table: %v", err)
+	}
+	if err := newService(t).Release(ctx, staff, t1); err == nil {
+		t.Error("released without the orders")
+	}
+}

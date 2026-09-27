@@ -33,7 +33,7 @@ Phase 07.
     with each tile's state, covers, opened at, balance and order id. A
     stream notice when a tile changes. `POST .../tables/{id}/clear`
     (dirty to free). ADR. Tests: every state, and each transition's edge.
-  - [ ] **2b: The floor screen.** Spec first (`terminal-floor.md`). The
+  - [x] **2b: The floor screen.** Spec first (`terminal-floor.md`). The
     terminal's Floor view: area tabs, tiles with colour **and** a word,
     covers, elapsed time, balance. Free: seat a party (covers, then an
     order opened at the table). Seated or later: opens the ticket on the

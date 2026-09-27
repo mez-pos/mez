@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { chipSpec, kitchenStatuses, lineStatuses, orderStatuses, paymentStatuses, printStatuses, type ChipSpec } from "./status";
+import {
+  chipSpec,
+  kitchenStatuses,
+  lineStatuses,
+  orderStatuses,
+  paymentStatuses,
+  printStatuses,
+  tableStatuses,
+  type ChipSpec,
+} from "./status";
 
 const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   kitchen: kitchenStatuses,
@@ -7,6 +16,7 @@ const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   payment: paymentStatuses,
   line: lineStatuses,
   print: printStatuses,
+  table: tableStatuses,
 };
 
 describe("status vocabularies", () => {
@@ -34,6 +44,12 @@ describe("status vocabularies", () => {
         .map(([status]) => `${kind}.${status}`),
     );
     expect(struck).toEqual(["kitchen.void", "payment.voided", "line.voided"]);
+  });
+
+  it("gives every table state its own tone, so the floor reads at a glance", () => {
+    const tones = Object.values(tableStatuses).map((s) => s.tone);
+    expect(new Set(tones).size).toBe(tones.length);
+    expect(chipSpec({ kind: "table", status: "dirty" })).toEqual({ tone: "danger", word: "To clear" });
   });
 
   it("looks up by kind", () => {

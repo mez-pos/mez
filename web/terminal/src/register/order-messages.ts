@@ -33,6 +33,9 @@ const words: Partial<Record<ErrorCode, string>> = {
   split_unassigned: "Every item needs someone to pay for it.",
   split_mismatch: "The split doesn't add up to the bill. Split it again.",
   split_after_payment: "Money has been taken, so split what's left evenly or by amount.",
+  table_not_found: "That table isn't on the floor any more. Look at the floor again.",
+  table_occupied: "Guests are still at this table: settle or move their ticket first.",
+  table_not_empty: "Something is on this table's ticket: void it or take the payment first.",
   rate_limited: "Too many requests. Wait a moment and retry.",
   internal: "The server hit a problem. Try again.",
 };

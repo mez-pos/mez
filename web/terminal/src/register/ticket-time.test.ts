@@ -35,4 +35,9 @@ describe("ticketLabel", () => {
   ])("%o is %s", (t, label) => {
     expect(ticketLabel(t)).toBe(label);
   });
+  it("names the table from the floor when it can", () => {
+    const names = new Map([[4, "T4"]]);
+    expect(ticketLabel({ table_id: 4, covers: 2 }, names)).toBe("Table T4 · 2 covers");
+    expect(ticketLabel({ table_id: 5, covers: 0 }, names)).toBe("Table 5");
+  });
 });

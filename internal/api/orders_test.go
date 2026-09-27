@@ -47,10 +47,10 @@ func newRegister(t *testing.T) *register {
 				return err
 			}
 		}
-		return nil
+		return seedTables(ctx, q, 1)
 	})
 	if err != nil {
-		t.Fatalf("giving the venue GST: %v", err)
+		t.Fatalf("giving the venue GST and tables: %v", err)
 	}
 
 	orders, err := svcorder.New(svcorder.Options{DB: w.db})
@@ -62,6 +62,24 @@ func newRegister(t *testing.T) *register {
 	r := &register{till: w, ownerPIN: "2468"}
 	r.staffToken = w.signIn(t, "2468").Token
 	return r
+}
+
+// seedTables gives a venue an area with tables 1 to 10, whose ids are 1 to
+// 10 in a fresh database, so an order can be opened at table 4.
+func seedTables(ctx context.Context, q *gen.Queries, venueID int64) error {
+	area, err := q.CreateArea(ctx, gen.CreateAreaParams{VenueID: venueID, Name: "Floor", CreatedAt: seededAt, UpdatedAt: seededAt})
+	if err != nil {
+		return err
+	}
+	for i := int64(1); i <= 10; i++ {
+		if _, err := q.CreateTable(ctx, gen.CreateTableParams{
+			VenueID: venueID, AreaID: area, Name: fmt.Sprint(i), Seats: 4, Shape: "square", X: i - 1, Y: 0,
+			CreatedAt: seededAt, UpdatedAt: seededAt,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // call sends a request as the signed-in cashier.

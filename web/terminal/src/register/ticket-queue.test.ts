@@ -58,6 +58,27 @@ function queue(server: ReturnType<typeof fakeServer>, initialOrderId: string | n
 
 const unreachable = () => new ApiError("network", "Failed to fetch");
 
+describe("TicketQueue.openNow", () => {
+  it("opens the order before any line, once, and remembers it", async () => {
+    const server = fakeServer();
+    const { q, remembered } = queue(server);
+    await expect(q.openNow()).resolves.toBe("ord_1");
+    await expect(q.openNow()).resolves.toBe("ord_1");
+    q.ringUp(line("Tea"));
+    await q.settled();
+    expect(server.calls).toEqual(["open k1", "add ord_1 Tea k2"]);
+    expect(remembered).toEqual(["ord_1"]);
+  });
+
+  it("rejects in the till's words, and a later tap opens it again", async () => {
+    const server = fakeServer();
+    const { q } = queue(server);
+    server.failWith(unreachable());
+    await expect(q.openNow()).rejects.toThrow(failureOf(unreachable()));
+    await expect(q.openNow()).resolves.toBe("ord_1");
+  });
+});
+
 describe("TicketQueue", () => {
   it("opens the order once, then adds each tap in order", async () => {
     const server = fakeServer();
