@@ -1059,6 +1059,7 @@ export interface KitchenBoardResponse {
   station: string;
   tickets: KitchenTicketResponse[];
   recall_minutes: number;
+  late_after_minutes: number;
 }
 
 export interface CreditSelection {

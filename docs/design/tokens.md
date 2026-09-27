@@ -198,6 +198,8 @@ pick a pixel value.
 | `--text-lg` | `17px` | Sub-headings, emphasised rows |
 | `--text-xl` | `21px` | Section titles |
 | `--text-total` | `32px` | Instrument Serif, the one total on a screen |
+| `--text-kitchen` | `26px` | The kitchen display's lines, read from three metres (ADR-091) |
+| `--text-display` | `44px` | The kitchen display's table and timer |
 
 ### The 11px floor
 

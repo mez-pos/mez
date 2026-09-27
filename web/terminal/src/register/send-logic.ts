@@ -34,6 +34,15 @@ export function sendPlan(order: OrderResponse | undefined): SendPlan {
   return { waiting: ready.length, firing: null, next };
 }
 
+/** The lines whose ticket the kitchen has bumped: on the pass (ADR-090). */
+export function readyLines(order: OrderResponse | undefined): ReadonlySet<number> {
+  const ready = new Set<number>();
+  for (const t of order?.tickets ?? []) {
+    if (t.status === "ready") for (const id of t.line_ids) ready.add(id);
+  }
+  return ready;
+}
+
 /** "Send 3", "Send", or "Sent" when nothing is waiting. */
 export function sendLabel(plan: SendPlan): string {
   return plan.waiting > 0 ? `Send ${plan.waiting}` : "Sent";

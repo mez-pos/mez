@@ -11,7 +11,7 @@
 
 import type { DeviceResponse, StaffResponse } from "../api-types";
 
-export type AppKind = "terminal" | "backoffice";
+export type AppKind = "terminal" | "backoffice" | "kitchen";
 
 export interface StoredDevice {
   readonly token: string;

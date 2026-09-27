@@ -121,6 +121,8 @@
   --text-lg: 17px;
   --text-xl: 21px;
   --text-total: 32px;
+  --text-kitchen: 26px; /* the kitchen display's lines, read from three metres */
+  --text-display: 44px; /* the kitchen display's table and timer */
   --tracking-meta: 0.12em;
 
   /* Touch */

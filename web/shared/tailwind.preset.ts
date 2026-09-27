@@ -78,6 +78,8 @@ const preset = {
       lg: v("text-lg"),
       xl: v("text-xl"),
       total: v("text-total"),
+      kitchen: v("text-kitchen"),
+      display: v("text-display"),
     },
 
     borderRadius: {

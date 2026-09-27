@@ -11,18 +11,17 @@ File: `docs/phases/phase-08.md`. Phase 07 is complete.
 
 ## Last completed task
 
-**Phase 08, Task 4a: station tickets, bump and recall, and the kitchen's
-API** (ADR-090). Order events `ticket.bumped` and `ticket.recalled`
-(ProjectionVersion 5), allowed after the bill; the kitchen machine gains
-fired to ready and ready to fired. `station_tickets` (migration 00014)
-indexes every ticket. `GET /api/v1/kitchen/{station}/tickets` and bump and
-recall under `/api/v1/kitchen/orders/{id}/tickets/{seq}/`, for kitchen
-devices with no PIN; the hub files both events under their station. Run
-against the real binary: a kitchen device paired, read, bumped.
+**Phase 08, Task 4b: the kitchen display** (ADR-091, `kitchen-display.md`),
+which completes Task 4. `/kitchen` in the terminal's bundle, a `kitchen`
+app kind: pair as a kitchen device, choose the station, no PIN. Cards in
+large type with timers escalating to Waiting (gold) and Late (vermilion),
+Bump, Recall the last bumped, all-day counts; the till shows a line Ready.
+Run in the browser with a till beside it: sent, shown, bumped, Ready on
+the till, recalled, and the timers run ahead to Waiting and Late.
 
 ## Next task
 
-**Phase 08, Task 4b: the kitchen display.** Spec first. Read the phase file.
+**Phase 08, Task 5: realtime across devices.** Read the phase file.
 
 ## Known broken / in progress
 
@@ -60,8 +59,9 @@ against the real binary: a kitchen device paired, read, bumped.
 - The Windows spooler's write path is untested on a real printer (ADR-080).
 - The cash drawer opens only with the settling receipt, not on a cash part
   payment (ADR-081).
-- The ticket rail does not mark lines sent or held by course; 4b shows a
-  line Ready from its ticket's status. No `collected` step (ADR-090).
+- The ticket rail marks a line Ready but not sent or held by course. No
+  `collected` step (ADR-090). A display's station is per device; a void
+  on a sent line reaches it within 20 seconds, not at once (ADR-091).
 - The till refunds to one payment per credit note (ADR-084); past bills
   search only exact numbers and invoice sequences.
 - `make build` does not build under cmd or PowerShell; for the browser,

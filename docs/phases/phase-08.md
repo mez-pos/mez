@@ -51,7 +51,7 @@ Phase 07.
   course's lines, and only to the relevant stations. The bar and the kitchen
   each get only their own lines. Emits `ticket.sent`.
 
-- [ ] **Task 4 — Kitchen display.**
+- [x] **Task 4 — Kitchen display.**
   A separate route, designed for a wall-mounted tablet read at three metres.
   Large type. Ticket cards with elapsed timers that escalate through gold to
   vermilion. Bump to ready, recall, all-day counts per item. Touch targets
@@ -71,7 +71,7 @@ Phase 07.
     collected, with lines, table and times) and `POST .../bump`, `.../recall`
     for a device paired as `kitchen`, with no staff sign-in: the actor is
     the device. Codegen, tests, ADR.
-  - [ ] **4b: The kitchen display.** Spec first (`kitchen-display.md`).
+  - [x] **4b: The kitchen display.** Spec first (`kitchen-display.md`).
     A `kitchen` app kind: pair as a kitchen device, choose the station, no
     PIN. Cards in large type, timers escalating through gold to vermilion,
     Bump (large), Recall the last bumped, all-day counts per item. Live

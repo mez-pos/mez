@@ -8,7 +8,7 @@ import { Button, Meta, Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { humanise } from "../../../shared/ui/timeline-entries";
 import type { PendingLine } from "./ticket-queue";
-import { sendLabel, type SendPlan } from "./send-logic";
+import { readyLines, sendLabel, type SendPlan } from "./send-logic";
 
 interface TicketRailProps {
   order: OrderResponse | undefined;
@@ -43,6 +43,7 @@ export function TicketRail(props: TicketRailProps) {
   const { order, orderId, pending, currency, label, ticketCount, onTickets, onHistory, onHold, onResume } = props;
   const { onOpenLine, onOrderDiscount, onOrderNote, onRetry, onRemove, onCharge, chargeBlock, chargeLabel } = props;
   const { sendPlan, onSend, onFire } = props;
+  const ready = readyLines(order);
   const held = order?.status === "held";
   const zero: Amount = { minor: 0, currency };
   const totals = order?.totals;
@@ -91,7 +92,7 @@ export function TicketRail(props: TicketRailProps) {
         ) : (
           <ol>
             {order?.lines.map((line) => (
-              <OrderLine key={line.id} line={line} notes={order.notes} onOpen={() => onOpenLine(line)} />
+              <OrderLine key={line.id} line={line} notes={order.notes} ready={ready.has(line.id)} onOpen={() => onOpenLine(line)} />
             ))}
             {pending.map((p) => (
               <PendingRow key={p.key} line={p} onRetry={onRetry} onRemove={onRemove} />
@@ -189,10 +190,12 @@ function modifierText(mods: readonly { name: string }[] | undefined): string {
 interface OrderLineProps {
   line: LineResponse;
   notes: readonly NoteResponse[];
+  /** Its ticket is on the pass (ADR-090). */
+  ready: boolean;
   onOpen: () => void;
 }
 
-function OrderLine({ line, notes, onOpen }: OrderLineProps) {
+function OrderLine({ line, notes, ready, onOpen }: OrderLineProps) {
   const voided = line.status === "voided";
   const mine = notes.filter((n) => n.scope === "line" && n.line_id === line.id);
   return (
@@ -208,6 +211,11 @@ function OrderLine({ line, notes, onOpen }: OrderLineProps) {
             <span className="font-mono text-sm tabular-nums text-fg-3">{line.qty}×</span>
             <span className="text-base font-medium">{line.name}</span>
           </div>
+          {ready && line.status !== "voided" && (
+            <div className="mt-1.5 flex items-center gap-2">
+              <StatusChip status={{ kind: "kitchen", status: "ready" }} />
+            </div>
+          )}
           {line.status !== "active" && (
             <div className="mt-1.5 flex items-center gap-2">
               <StatusChip status={{ kind: "line", status: line.status }} />

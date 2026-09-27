@@ -8,7 +8,7 @@ import type { AppKind } from "../auth/storage";
 import { useAuth, useAuthStore } from "../auth/use-auth";
 import { Button, Meta } from "../ui";
 
-const appNames: Record<AppKind, string> = { terminal: "terminal", backoffice: "back office" };
+const appNames: Record<AppKind, string> = { terminal: "terminal", backoffice: "back office", kitchen: "kitchen display" };
 
 const notices = {
   revoked: "This device was unpaired from the back office. Pair it again to keep using it.",

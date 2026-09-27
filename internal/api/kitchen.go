@@ -56,6 +56,8 @@ type kitchenBoardResponse struct {
 	Tickets []kitchenTicketResponse `json:"tickets"`
 	// RecallMinutes is how long a bumped ticket stays to be recalled.
 	RecallMinutes int64 `json:"recall_minutes"`
+	// LateAfterMinutes is when a ticket is late: its timer turns vermilion.
+	LateAfterMinutes int64 `json:"late_after_minutes"`
 }
 
 func (s *Server) mountKitchen(mux *http.ServeMux) {
@@ -131,7 +133,8 @@ func (s *Server) writeBoard(w http.ResponseWriter, r *http.Request, station stri
 	}
 	out := kitchenBoardResponse{
 		Station: station, Tickets: make([]kitchenTicketResponse, 0, len(board.Tickets)),
-		RecallMinutes: int64(svcorder.RecallWindow / time.Minute),
+		RecallMinutes:    int64(svcorder.RecallWindow / time.Minute),
+		LateAfterMinutes: int64(board.LateAfter / time.Minute),
 	}
 	for _, bt := range board.Tickets {
 		out.Tickets = append(out.Tickets, kitchenTicket(bt, board.Tables))

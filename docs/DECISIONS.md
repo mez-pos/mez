@@ -2489,3 +2489,31 @@ nothing lost (Task 5), which only events give; and a screen on the wall of
 a kitchen has nobody to type a PIN into it.
 Cost: anyone at the pass can bump, and the timeline names the device, not
 a person.
+
+## ADR-091 - The kitchen display is a fourth app in the terminal's bundle
+2026-09 · Status: accepted
+Decision: the kitchen display (`kitchen-display.md`) is served at
+`/kitchen` from the terminal's bundle, as its own app.
+  - **Its own app kind, `kitchen`:** its device token under
+    `nofiltr.kitchen.*`, pairing as a kitchen device (a terminal code is
+    refused), and no PIN: paired is enough (ADR-090). `main.tsx` picks the
+    app from the path before anything else starts, as it already does for
+    the gallery. No fourth bundle, vite config or mount: a display on the
+    LAN loads the terminal's 100 KB once and caches it.
+  - **One station per device,** kept in `localStorage`. The stream is
+    subscribed to `station:{code}` alone, so the display hears only its
+    own tickets; changing station reloads the page to subscribe afresh.
+    A void or note on a sent line carries no station, so the board is also
+    read every 20 seconds.
+  - **Timers** escalate from the venue's own late time: gold with the word
+    "Waiting" from half of it, vermilion with "Late" from it. The board
+    carries `late_after_minutes`.
+  - **Type for three metres:** two tokens, `--text-kitchen` (26px) for
+    lines and `--text-display` (44px) for where and when; Bump is 72px.
+  - **The till shows Ready** on a line whose ticket is bumped, from the
+    order's own tickets.
+Because: the display is a small, single-purpose screen that shares the
+terminal's primitives, stream and API client; a separate bundle would be
+plumbing for no user.
+Cost: the display carries the register's code it never runs, and the
+station is per device, not per venue setting.

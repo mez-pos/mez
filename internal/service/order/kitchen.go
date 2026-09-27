@@ -72,6 +72,9 @@ type BoardTicket struct {
 type Board struct {
 	Tickets []BoardTicket
 	Tables  map[int64]string
+	// LateAfter is the venue's threshold for a late ticket, which the
+	// display's timers escalate to.
+	LateAfter time.Duration
 }
 
 // Board reads a station's tickets for its display.
@@ -92,7 +95,7 @@ func (s *Service) Board(ctx context.Context, venueID int64, station string) (Boa
 	if err != nil {
 		return Board{}, fmt.Errorf("reading the tables: %w", err)
 	}
-	out := Board{Tickets: make([]BoardTicket, 0, len(rows)), Tables: make(map[int64]string, len(tables))}
+	out := Board{Tickets: make([]BoardTicket, 0, len(rows)), Tables: make(map[int64]string, len(tables)), LateAfter: v.LateAfter}
 	for _, t := range tables {
 		out.Tables[t.ID] = t.Name
 	}

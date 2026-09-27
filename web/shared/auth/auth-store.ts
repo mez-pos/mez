@@ -23,6 +23,7 @@ export type AuthStatus =
 export const deviceKindFor: Readonly<Record<AppKind, DeviceKind>> = {
   terminal: "terminal",
   backoffice: "back_office",
+  kitchen: "kitchen",
 };
 
 /** A code redeemed for the wrong app: the device exists, but not for this screen. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LineResponse, OrderResponse } from "../../../shared/api-types";
-import { sendLabel, sendPlan } from "./send-logic";
+import { readyLines, sendLabel, sendPlan } from "./send-logic";
 
 const line = (id: number, course: number, extra: Partial<LineResponse> = {}): LineResponse =>
   ({ id, course, station: "kitchen", status: "active", sent: false, course_fired: false, ...extra }) as LineResponse;
@@ -39,5 +39,19 @@ describe("sendPlan", () => {
 
   it("is nothing without an order", () => {
     expect(sendPlan(undefined)).toEqual({ waiting: 0, firing: null, next: null });
+  });
+});
+
+describe("readyLines", () => {
+  it("is the lines on tickets the kitchen has bumped", () => {
+    const o = {
+      lines: [],
+      tickets: [
+        { seq: 3, station: "bar", line_ids: [2], at: "", status: "ready" },
+        { seq: 5, station: "kitchen", line_ids: [4], at: "", status: "fired" },
+      ],
+    } as unknown as OrderResponse;
+    expect([...readyLines(o)]).toEqual([2]);
+    expect(readyLines(undefined).size).toBe(0);
   });
 });
