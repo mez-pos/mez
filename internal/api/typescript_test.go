@@ -86,6 +86,9 @@ var eventTypes = []struct {
 	{order.TypeOrderResumed, order.OrderResumed{}, "OrderResumed"},
 	{order.TypeInvoiceReprinted, order.InvoiceReprinted{}, "InvoiceReprinted"},
 	{order.TypeCreditNoteIssued, order.CreditNoteIssued{}, "CreditNoteIssued"},
+	{order.TypeOrderTableChanged, order.OrderTableChanged{}, "OrderTableChanged"},
+	{order.TypeTablesJoined, order.TablesJoined{}, "TablesJoined"},
+	{order.TypeTablesParted, order.TablesParted{}, "TablesParted"},
 }
 
 // errorCodes is every code the API answers with. A client switches on
@@ -108,6 +111,7 @@ var errorCodes = []ErrorCode{
 	CodeNotInvoiced, CodeOverCredit, CodeRefundsMismatch,
 	CodeAreaNotFound, CodeAreaRetired, CodeAreaInUse, CodeTableNotFound, CodeCellTaken, CodeFloorNameTaken, CodeInvalidFloor,
 	CodeTableOccupied, CodeTableNotEmpty,
+	CodeTableTaken, CodeTableMoved, CodeTableAlreadyAt, CodeTableNotJoined, CodeNoTable,
 }
 
 // generate builds the whole file.
@@ -224,6 +228,7 @@ func generate() (*ts.Generator, error) {
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},
+		moveTableRequest{}, joinTablesRequest{}, partTablesRequest{},
 		// Credit notes.
 		creditPreviewRequest{}, creditRequest{}, creditPlanResponse{}, creditResponse{},
 		pastBillResponse{}, pastBillsResponse{},

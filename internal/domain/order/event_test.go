@@ -34,6 +34,9 @@ func samplePayloads() []Payload {
 		LineQtyChanged{LineID: 2, From: 2, To: 3},
 		OrderHeld{},
 		OrderResumed{},
+		OrderTableChanged{From: 4, To: 7},
+		TablesJoined{Tables: []int64{8, 9}},
+		TablesParted{Tables: []int64{9}},
 		LineModified{LineID: 2, From: []Modifier{{ModifierID: 3, Name: "Dairy", Price: inr(0)}},
 			To: []Modifier{{ModifierID: 4, Name: "Oat", Price: inr(5000)}}},
 		LineVoided{LineID: 2, ReasonCode: "wrong_item", AuthorisedBy: 3},
@@ -100,8 +103,9 @@ func TestSamplesCoverEveryType(t *testing.T) {
 		}
 	}
 	// 16 since line.modified (ADR-071), 18 since order.held and resumed (ADR-074),
-	// 19 since invoice.reprinted (ADR-078), 20 since credit_note.issued (ADR-083).
-	if got, want := len(Types()), 20; got != want {
+	// 19 since invoice.reprinted (ADR-078), 20 since credit_note.issued (ADR-083),
+	// 23 since the table moves (ADR-088).
+	if got, want := len(Types()), 23; got != want {
 		t.Errorf("Types() has %d types, docs/02-domain.md lists %d", got, want)
 	}
 }

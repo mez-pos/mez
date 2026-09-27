@@ -98,6 +98,8 @@ type liveTableResponse struct {
 	Balance *money.Amount `json:"balance,omitempty"`
 	// Orders are the public ids of the orders open at it, oldest first.
 	Orders []string `json:"orders"`
+	// JoinedTo is the table whose party this one is joined to (ADR-088).
+	JoinedTo int64 `json:"joined_to,omitempty"`
 }
 
 type liveFloorResponse struct {
@@ -178,7 +180,7 @@ func (s *Server) writeLiveFloor(w http.ResponseWriter, r *http.Request) {
 		t, v := lt.Table, lt.View
 		out.Tables[i] = liveTableResponse{
 			ID: t.ID, AreaID: t.AreaID, Name: t.Name, Seats: t.Seats, Shape: floor.Shape(t.Shape), X: t.X, Y: t.Y,
-			Status: v.Status, Covers: v.Covers, Orders: lt.Orders,
+			Status: v.Status, Covers: v.Covers, Orders: lt.Orders, JoinedTo: lt.JoinedTo,
 		}
 		if !v.Since.IsZero() {
 			since := v.Since.UTC()

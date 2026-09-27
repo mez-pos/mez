@@ -19,10 +19,13 @@ export function elapsed(openedAt: string, now: number, lateAfterMinutes: number)
  * (terminal-floor.md); by its number until the floor has been read.
  */
 export function ticketLabel(
-  t: { readonly table_id?: number; readonly covers: number },
+  t: { readonly table_id?: number; readonly joined?: readonly number[]; readonly covers: number },
   names: ReadonlyMap<number, string> = new Map(),
 ): string {
-  const where = t.table_id ? `Table ${names.get(t.table_id) ?? t.table_id}` : "Counter";
+  const name = (id: number) => names.get(id) ?? String(id);
+  // A party joined over more tables names them all: "Table T4 + T7".
+  const tables = t.table_id ? [t.table_id, ...(t.joined ?? [])].map(name).join(" + ") : "";
+  const where = tables ? `Table ${tables}` : "Counter";
   if (!t.covers) return where;
   return `${where} · ${t.covers} ${t.covers === 1 ? "cover" : "covers"}`;
 }

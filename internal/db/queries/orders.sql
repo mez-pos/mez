@@ -118,3 +118,11 @@ WHERE o.venue_id = sqlc.arg(venue_id) AND o.id IN (
 )
 ORDER BY o.id DESC
 LIMIT 20;
+
+-- name: DeleteOrderTables :exec
+-- The order's rows in order_tables, before they are written again from its
+-- projection (ADR-088).
+DELETE FROM order_tables WHERE order_id = ?;
+
+-- name: AddOrderTable :exec
+INSERT INTO order_tables (order_id, table_id, closed_at) VALUES (?, ?, ?);

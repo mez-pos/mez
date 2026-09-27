@@ -189,9 +189,9 @@ func (q *Queries) FloorVersion(ctx context.Context, venueID int64) (int64, error
 
 const liveTables = `-- name: LiveTables :many
 SELECT t.id, t.area_id, t.name, t.seats, t.shape, t.x, t.y, t.cleared_at,
-       (SELECT o.closed_at FROM orders o
-        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.closed_at IS NOT NULL
-        ORDER BY o.closed_at DESC LIMIT 1) AS last_closed_at
+       (SELECT ot.closed_at FROM order_tables ot
+        WHERE ot.table_id = t.id AND ot.closed_at IS NOT NULL
+        ORDER BY ot.closed_at DESC LIMIT 1) AS last_closed_at
 FROM tables t
 JOIN areas a ON a.id = t.area_id
 WHERE t.venue_id = ? AND t.active = 1 AND a.active = 1
@@ -211,7 +211,8 @@ type LiveTablesRow struct {
 }
 
 // The tables in service, with when each was last cleared and when the last
-// order at it closed: what a table's turn is derived from, with its orders.
+// order at it closed, joined tables included (ADR-088): what a table's turn
+// is derived from, with its orders.
 func (q *Queries) LiveTables(ctx context.Context, venueID int64) ([]LiveTablesRow, error) {
 	rows, err := q.db.QueryContext(ctx, liveTables, venueID)
 	if err != nil {
@@ -387,12 +388,12 @@ func (q *Queries) TableInCell(ctx context.Context, arg TableInCellParams) (Table
 }
 
 const tableTurn = `-- name: TableTurn :one
-SELECT t.id, t.venue_id, t.active, t.cleared_at,
-       (SELECT count(*) FROM orders o
-        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.status != 'closed') AS unclosed,
-       (SELECT o.closed_at FROM orders o
-        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.closed_at IS NOT NULL
-        ORDER BY o.closed_at DESC LIMIT 1) AS last_closed_at
+SELECT t.id, t.venue_id, t.name, t.active, t.cleared_at,
+       (SELECT count(*) FROM order_tables ot
+        WHERE ot.table_id = t.id AND ot.closed_at IS NULL) AS unclosed,
+       (SELECT ot.closed_at FROM order_tables ot
+        WHERE ot.table_id = t.id AND ot.closed_at IS NOT NULL
+        ORDER BY ot.closed_at DESC LIMIT 1) AS last_closed_at
 FROM tables t
 WHERE t.id = ?
 `
@@ -400,20 +401,23 @@ WHERE t.id = ?
 type TableTurnRow struct {
 	ID           int64
 	VenueID      int64
+	Name         string
 	Active       bool
 	ClearedAt    sql.NullTime
 	Unclosed     int64
 	LastClosedAt sql.NullTime
 }
 
-// One table's turn, for clearing it: its orders not yet closed, the last
-// one to close, and when it was last cleared.
+// One table's turn: the orders at it not yet closed, its own or joined, the
+// last one to close there, and when it was last cleared. For clearing it,
+// and for moving or joining a party to it.
 func (q *Queries) TableTurn(ctx context.Context, id int64) (TableTurnRow, error) {
 	row := q.db.QueryRowContext(ctx, tableTurn, id)
 	var i TableTurnRow
 	err := row.Scan(
 		&i.ID,
 		&i.VenueID,
+		&i.Name,
 		&i.Active,
 		&i.ClearedAt,
 		&i.Unclosed,

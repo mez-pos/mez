@@ -72,7 +72,12 @@ export type ErrorCode =
   | 'floor_name_taken'
   | 'invalid_floor'
   | 'table_occupied'
-  | 'table_not_empty';
+  | 'table_not_empty'
+  | 'table_taken'
+  | 'table_moved'
+  | 'table_already_at'
+  | 'table_not_joined'
+  | 'no_table';
 
 export type OrderStatus =
   | 'open'
@@ -196,7 +201,10 @@ export type OrderEventType =
   | 'order.held'
   | 'order.resumed'
   | 'invoice.reprinted'
-  | 'credit_note.issued';
+  | 'credit_note.issued'
+  | 'order.table_changed'
+  | 'order.tables_joined'
+  | 'order.tables_parted';
 
 export type StreamMessageType =
   | 'hello'
@@ -440,6 +448,19 @@ export interface ComponentTotal {
   amount: Money;
 }
 
+export interface OrderTableChanged {
+  from: number;
+  to: number;
+}
+
+export interface TablesJoined {
+  tables: number[];
+}
+
+export interface TablesParted {
+  tables: number[];
+}
+
 export interface OrderEventOf<T extends OrderEventType, P> {
   seq: number;
   type: T;
@@ -470,7 +491,10 @@ export type OrderEvent =
   | OrderEventOf<'order.held', OrderHeld>
   | OrderEventOf<'order.resumed', OrderResumed>
   | OrderEventOf<'invoice.reprinted', InvoiceReprinted>
-  | OrderEventOf<'credit_note.issued', CreditNoteIssued>;
+  | OrderEventOf<'credit_note.issued', CreditNoteIssued>
+  | OrderEventOf<'order.table_changed', OrderTableChanged>
+  | OrderEventOf<'order.tables_joined', TablesJoined>
+  | OrderEventOf<'order.tables_parted', TablesParted>;
 
 export interface ApiError {
   code: ErrorCode;
@@ -742,6 +766,7 @@ export interface OrderResponse {
   channel: OrderChannel;
   currency: string;
   table_id?: number;
+  joined?: number[];
   covers: number;
   opened_by?: number;
   opened_at: string;
@@ -783,6 +808,7 @@ export interface TicketSummary {
   status: OrderStatus;
   channel: OrderChannel;
   table_id?: number;
+  joined?: number[];
   covers: number;
   opened_by?: number;
   opened_at: string;
@@ -958,12 +984,26 @@ export interface LiveTableResponse {
   since?: string;
   balance?: Money;
   orders: string[];
+  joined_to?: number;
 }
 
 export interface LiveFloorResponse {
   grid: GridResponse;
   areas: AreaResponse[];
   tables: LiveTableResponse[];
+}
+
+export interface MoveTable {
+  from: number;
+  to: number;
+}
+
+export interface JoinTables {
+  tables: number[];
+}
+
+export interface PartTables {
+  tables: number[];
 }
 
 export interface CreditSelection {

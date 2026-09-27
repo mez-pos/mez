@@ -136,6 +136,12 @@ func (p *projector) apply(e Event) error {
 		}
 		p.held = false
 		return nil
+	case OrderTableChanged:
+		return p.changeTable(pl)
+	case TablesJoined:
+		return p.joinTables(pl)
+	case TablesParted:
+		return p.partTables(pl)
 	default:
 		return invalid("no projection for %T", e.Payload)
 	}

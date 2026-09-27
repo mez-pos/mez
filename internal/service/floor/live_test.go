@@ -253,3 +253,32 @@ func TestGuestsLeave(t *testing.T) {
 		t.Error("released without the orders")
 	}
 }
+
+// TestAJoinedParty: the party shows at every table it sits at, counted and
+// owing at its own; its tables all go dirty when the bill closes.
+func TestAJoinedParty(t *testing.T) {
+	w := newLive(t)
+	ctx := context.Background()
+	inside := must(w.floor.CreateArea(ctx, 1, AreaSettings{Name: "Inside"}))
+	t1 := must(w.floor.CreateTable(ctx, 1, TableSettings{AreaID: inside, Name: "T1", Seats: 4, Shape: Square}))
+	t2 := must(w.floor.CreateTable(ctx, 1, TableSettings{AreaID: inside, Name: "T2", Seats: 4, Shape: Square, X: 1}))
+
+	w.clock.tick()
+	party := must(w.orders.Open(ctx, staff, svcorder.OpenOrder{Channel: order.ChannelCounter, TableID: t1, Covers: 7}))
+	must(w.orders.JoinTables(ctx, staff, party.OrderID, svcorder.JoinTables{Tables: []int64{t2}}))
+	own, joined := w.want(t, t1, table.StatusSeated), w.want(t, t2, table.StatusSeated)
+	if own.JoinedTo != 0 || own.View.Covers != 7 || !own.View.BalanceValid {
+		t.Errorf("T1 = %+v", own)
+	}
+	if joined.JoinedTo != t1 || joined.View.Covers != 0 || joined.View.BalanceValid || len(joined.Orders) != 1 || joined.Orders[0] != party.PublicID {
+		t.Errorf("T2 = %+v", joined)
+	}
+	// Guests left from the joined table: the whole empty party goes.
+	w.clock.tick()
+	if err := w.floor.Release(ctx, staff, t2); err != nil {
+		t.Fatal(err)
+	}
+	// Both tables are free: the party got up from both.
+	w.want(t, t2, table.StatusFree)
+	w.want(t, t1, table.StatusFree)
+}

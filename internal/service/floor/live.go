@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
@@ -19,6 +20,10 @@ type LiveTable struct {
 	// Orders are the public ids of the orders open at it, oldest first.
 	// Usually one; two when a second ticket was opened at the table.
 	Orders []string
+	// JoinedTo is the table whose party this one is joined to (ADR-088),
+	// 0 when it has a party of its own or none. A joined table shows the
+	// party's state; its covers and balance are shown at the party's own.
+	JoinedTo int64
 }
 
 // Live is the floor as terminals show it in service: the areas in service
@@ -49,21 +54,24 @@ func (s *Service) Live(ctx context.Context, venueID int64) (Live, error) {
 	}
 
 	type atTable struct {
-		states []order.State
-		ids    []string
+		states   []order.State
+		ids      []string
+		joinedTo int64
 	}
 	byTable := map[int64]*atTable{}
 	for _, o := range open.Orders {
-		if o.State.TableID == 0 {
-			continue
+		for _, id := range o.State.Tables() {
+			at := byTable[id]
+			if at == nil {
+				at = &atTable{}
+				byTable[id] = at
+			}
+			at.states = append(at.states, o.State)
+			at.ids = append(at.ids, o.PublicID)
+			if id != o.State.TableID {
+				at.joinedTo = o.State.TableID
+			}
 		}
-		at := byTable[o.State.TableID]
-		if at == nil {
-			at = &atTable{}
-			byTable[o.State.TableID] = at
-		}
-		at.states = append(at.states, o.State)
-		at.ids = append(at.ids, o.PublicID)
 	}
 
 	out := Live{Tables: make([]LiveTable, 0, len(rows))}
@@ -85,7 +93,11 @@ func (s *Service) Live(ctx context.Context, venueID int64) (Live, error) {
 		if ids == nil {
 			ids = []string{}
 		}
-		out.Tables = append(out.Tables, LiveTable{Table: r, View: v, Orders: ids})
+		if at.joinedTo != 0 {
+			// The party is counted, and owes, at its own table.
+			v.Covers, v.BalanceValid = 0, false
+		}
+		out.Tables = append(out.Tables, LiveTable{Table: r, View: v, Orders: ids, JoinedTo: at.joinedTo})
 	}
 	return out, nil
 }
@@ -112,7 +124,8 @@ func (s *Service) Clear(ctx context.Context, venueID, id int64) error {
 
 // Release lets the guests at a table go before they ordered anything: it
 // closes every order open at the table, each of which must be empty
-// (table.Leavable), then clears the table, so it is free rather than dirty.
+// (table.Leavable), then clears every table those orders sat at, so they
+// are free rather than dirty.
 // Retried, it finds the orders closed and clears again: no harm. The
 // closes are the order service's own commands, on their own events.
 func (s *Service) Release(ctx context.Context, meta svcorder.Meta, id int64) error {
@@ -128,7 +141,7 @@ func (s *Service) Release(ctx context.Context, meta svcorder.Meta, id int64) err
 	}
 	var at []svcorder.Result
 	for _, o := range open.Orders {
-		if o.State.TableID != id {
+		if !slices.Contains(o.State.Tables(), id) {
 			continue
 		}
 		if !table.Leavable(o.State) {
@@ -141,10 +154,23 @@ func (s *Service) Release(ctx context.Context, meta svcorder.Meta, id int64) err
 	// second as a different request.
 	each := meta
 	each.IdempotencyKey = ""
+	// Every table the closed tickets sat at is left, not just the one
+	// tapped: a party joined over two tables got up from both.
+	left := []int64{id}
 	for _, o := range at {
 		if _, err := s.orders.Close(ctx, each, o.OrderID); err != nil {
 			return fmt.Errorf("floor: closing %s: %w", o.PublicID, err)
 		}
+		for _, t := range o.State.Tables() {
+			if !slices.Contains(left, t) {
+				left = append(left, t)
+			}
+		}
 	}
-	return s.Clear(ctx, meta.VenueID, id)
+	for _, t := range left {
+		if err := s.Clear(ctx, meta.VenueID, t); err != nil {
+			return err
+		}
+	}
+	return nil
 }

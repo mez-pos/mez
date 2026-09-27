@@ -138,6 +138,25 @@ describe("timelineEntries: hold and resume", () => {
   });
 });
 
+describe("timelineEntries: where the party sits", () => {
+  it("words a move, a seating, a join and a part", () => {
+    const [, moved, seated, joined, parted] = timelineEntries(
+      [
+        events[0]!,
+        { ...base, seq: 2, type: "order.table_changed", payload: { from: 4, to: 7 } },
+        { ...base, seq: 3, type: "order.table_changed", payload: { from: 0, to: 3 } },
+        { ...base, seq: 4, type: "order.tables_joined", payload: { tables: [8, 9, 10] } },
+        { ...base, seq: 5, type: "order.tables_parted", payload: { tables: [9] } },
+      ],
+      (id) => names[id],
+    );
+    expect(moved).toMatchObject({ title: "Moved from table 4 to 7" });
+    expect(seated).toMatchObject({ title: "Seated at table 3" });
+    expect(joined).toMatchObject({ title: "Joined tables 8, 9 and 10" });
+    expect(parted).toMatchObject({ title: "Let go table 9" });
+  });
+});
+
 describe("timelineEntries: the device", () => {
   const devices: Record<number, string> = { 1: "Counter 1" };
   it("names the till an event came from, and leaves out one it cannot name", () => {

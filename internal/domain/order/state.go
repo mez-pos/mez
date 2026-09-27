@@ -50,6 +50,9 @@ type State struct {
 	Channel  Channel
 	Currency string
 	TableID  int64
+	// Joined are the tables joined to TableID for one party (ADR-088), in
+	// the order they were joined. Nil when the party is at one table.
+	Joined   []int64
 	Covers   int64
 	OpenedBy int64
 	OpenedAt time.Time

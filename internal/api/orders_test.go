@@ -706,3 +706,47 @@ func TestAnOrdersHistory(t *testing.T) {
 		t.Errorf("an unknown order: %d", rec.Code)
 	}
 }
+
+// TestTablesOverHTTP: a ticket moves to a free table, joins another, lets
+// it go, and every refusal comes back with its code (ADR-088).
+func TestTablesOverHTTP(t *testing.T) {
+	r := newRegister(t)
+	id := r.openOrder(t) // at table 4
+	path := func(suffix string) string { return "/api/v1/orders/" + id + suffix }
+
+	status, res, _ := r.call(t, http.MethodPost, path("/table"), `{"from":4,"to":6}`)
+	if status != http.StatusOK || res.Order.TableID != 6 {
+		t.Fatalf("move: %d %+v", status, res.Order)
+	}
+	_, res, _ = r.call(t, http.MethodPost, path("/tables/join"), `{"tables":[7,8]}`)
+	if len(res.Order.Joined) != 2 || res.Order.Joined[0] != 7 {
+		t.Fatalf("join: %+v", res.Order.Joined)
+	}
+	_, res, _ = r.call(t, http.MethodPost, path("/tables/part"), `{"tables":[8]}`)
+	if len(res.Order.Joined) != 1 {
+		t.Fatalf("part: %+v", res.Order.Joined)
+	}
+
+	other := r.openOrder(t) // a second party at table 4, now free again
+	refusals := []struct {
+		name, path, body string
+		status           int
+		code             ErrorCode
+	}{
+		{"onto a table in use", path("/table"), `{"from":6,"to":4}`, 409, CodeTableTaken},
+		{"from a stale screen", path("/table"), `{"from":3,"to":9}`, 409, CodeTableMoved},
+		{"onto no table", path("/table"), `{"from":6,"to":99}`, 422, CodeTableNotFound},
+		{"joining a table in use", path("/tables/join"), `{"tables":[4]}`, 409, CodeTableTaken},
+		{"parting a table never joined", path("/tables/part"), `{"tables":[9]}`, 409, CodeTableNotJoined},
+		{"joining nothing", path("/tables/join"), `{"tables":[]}`, 422, CodeInvalidPayload},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			status, _, apiErr := r.call(t, http.MethodPost, tt.path, tt.body)
+			if status != tt.status || apiErr.Code != tt.code {
+				t.Errorf("%d %s, want %d %s", status, apiErr.Code, tt.status, tt.code)
+			}
+		})
+	}
+	_ = other
+}

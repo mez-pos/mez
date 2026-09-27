@@ -3,7 +3,8 @@
 The dining room at a glance: every table in service, where it is in its
 turn, how many sit at it, how long, and what they owe. Where a party is
 seated, where a table's ticket is found, and where a table is cleared.
-Built in phase 08 Task 2b (ADR-087). Transfer, join and split are Task 2c.
+Built in phase 08 Task 2b (ADR-087); Move, Join and Part in Task 2c
+(ADR-088).
 
 ## Purpose
 
@@ -38,6 +39,24 @@ till are kept while it shows.
   - seated with nothing ordered: **Open ticket** (primary), **Guests left**
   - dirty: **Clear table** (primary)
   - two tickets at one table: each ticket, tap to open
+
+## Move, Join and Part (Task 2c)
+
+Three header buttons, 44px, beside Register. Each turns on a mode with a
+banner saying what to tap next and **Done** (primary) to end it; taps on
+tiles then do the mode's work instead of their usual one.
+
+- **Move**: tap the party's table, then a free one. The ticket moves;
+  the mode ends. Tapping the party's table again picks another.
+- **Join**: tap the party's table, then free tables, one tap each, until
+  Done. Tapping a table already joined lets it go.
+- **Part**: tap joined tables to let them go.
+
+A **joined table** shows the party's state and "With T4"; its covers and
+balance are shown only at the party's own table. The ticket reads "Table
+T4 + T7 · 6 covers". Refusals are said under the banner in words: "T5 isn't
+free. Tap a free table.", "T7 is joined to T4. Tap that one.", and a table
+with two tickets cannot be moved from the floor.
 
 ## States and their words
 
@@ -74,6 +93,9 @@ Vermilion stays for "Late", on tickets: a table is never vermilion.
   through the ticket queue, so it is the ticket in front.
 - `POST /api/v1/floor/tables/{id}/clear`, `.../release` (Guests left).
   Both answer with the live floor.
+- Move: `POST /api/v1/orders/{id}/table` `{ from, to }`; Join and Part:
+  `POST /api/v1/orders/{id}/tables/join` and `.../part` `{ tables }`.
+  A joined table carries `joined_to` in the live floor.
 - Ticket labels use the table's name from this read ("Table T4"), not its
   id.
 

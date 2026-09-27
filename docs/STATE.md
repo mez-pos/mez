@@ -11,17 +11,17 @@ File: `docs/phases/phase-08.md`. Phase 07 is complete.
 
 ## Last completed task
 
-**Phase 08, Task 2b: the floor screen** (ADR-087, `terminal-floor.md`).
-The register's Floor view: area tabs, tiles in colour and a word with
-covers, time and balance. Seat opens the order at once; a tap opens a
-table's ticket; Guests left (`.../release`) closes an empty ticket and
-frees the table; Clear. Opening an order checks the table. Ticket labels
-use table names. `make check` now typechecks the frontends, which caught a
-type error 2a had shipped. Run in the browser on two tills.
+**Phase 08, Task 2c: transfer, join and split tables** (ADR-088), which
+completes Task 2. Order events `order.table_changed`, `order.tables_joined`
+and `order.tables_parted` (ProjectionVersion 4); Move, Join and Part check
+the target is free in the command's transaction. `order_tables` (migration
+00013) indexes every table a party sits at. The floor's Move, Join and Part
+modes; a joined table shows "With T4"; the ticket reads "Table T4 + T7".
+Run in the browser on two tills.
 
 ## Next task
 
-**Phase 08, Task 2c: transfer, join and split tables.** Read the phase file.
+**Phase 08, Task 3: station routing and courses.** Read the phase file.
 
 ## Known broken / in progress
 
@@ -41,6 +41,8 @@ type error 2a had shipped. Run in the browser on two tills.
   clears in two steps, not one transaction; a retry repairs it (ADR-087).
 - Nothing stops seating a dirty table over the API; the floor only offers
   Seat on a free one. The floor has no URL of its own (ADR-087).
+- A table with two tickets cannot be moved from the floor; the timeline
+  names tables by number (ADR-088).
 - Never swept: idempotency keys, expired staff sessions, sign-in attempts.
   The pairing rate limiter is per process.
 - Token gaps (ADR-062): five paper roles are stand-ins; `--vermilion-on`

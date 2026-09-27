@@ -179,6 +179,12 @@ type OrderSnapshot struct {
 	State   string
 }
 
+type OrderTable struct {
+	OrderID  int64
+	TableID  int64
+	ClosedAt sql.NullTime
+}
+
 type PairingCode struct {
 	ID         int64
 	VenueID    int64

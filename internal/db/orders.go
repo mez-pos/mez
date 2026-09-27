@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
@@ -93,6 +94,9 @@ func (d *DB) OpenOrder(ctx context.Context, n NewOrder, taxes order.Taxes) (int6
 			return fmt.Errorf("creating order %q: %w", n.PublicID, err)
 		}
 		if err := appendEvents(ctx, q, orderID, []order.Event{first}); err != nil {
+			return err
+		}
+		if err := syncTables(ctx, q, orderID, order.State{}, state); err != nil {
 			return err
 		}
 		if n.Within == nil {
@@ -264,6 +268,9 @@ func (d *DB) appendOnce(ctx context.Context, q *gen.Queries, orderID int64, taxe
 	}
 	if moved != 1 {
 		return order.State{}, nil, fmt.Errorf("%w: order %d is no longer at seq %d", ErrSeqConflict, orderID, current.LastSeq)
+	}
+	if err := syncTables(ctx, q, orderID, current, next); err != nil {
+		return order.State{}, nil, err
 	}
 	crossed := current.LastSeq/SnapshotEvery != next.LastSeq/SnapshotEvery
 	if crossed || (!useSnapshot && next.LastSeq >= SnapshotEvery) {
@@ -479,4 +486,23 @@ func IsUniqueViolation(err error) bool {
 		return false
 	}
 	return se.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE || se.Code() == sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY
+}
+
+// syncTables brings order_tables up to the projection: a row for every table
+// the order sits at, with its closing time (ADR-088). It writes only when
+// the tables or the closing moved, so a line or a payment touches nothing.
+func syncTables(ctx context.Context, q *gen.Queries, orderID int64, prev, next order.State) error {
+	if slices.Equal(prev.Tables(), next.Tables()) && prev.ClosedAt.Equal(next.ClosedAt) {
+		return nil
+	}
+	if err := q.DeleteOrderTables(ctx, orderID); err != nil {
+		return fmt.Errorf("order %d: clearing its tables: %w", orderID, err)
+	}
+	for _, t := range next.Tables() {
+		err := q.AddOrderTable(ctx, gen.AddOrderTableParams{OrderID: orderID, TableID: t, ClosedAt: nullTime(next.ClosedAt)})
+		if err != nil {
+			return fmt.Errorf("order %d: writing table %d: %w", orderID, t, err)
+		}
+	}
+	return nil
 }

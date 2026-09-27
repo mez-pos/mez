@@ -27,6 +27,9 @@ type Orders interface {
 	PastBills(ctx context.Context, venueID int64, query string) ([]svcorder.Result, error)
 	Credit(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.IssueCredit) (svcorder.Result, error)
 	Hold(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
+	MoveTable(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.MoveTable) (svcorder.Result, error)
+	JoinTables(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.JoinTables) (svcorder.Result, error)
+	PartTables(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.PartTables) (svcorder.Result, error)
 	Resume(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 
 	Open(ctx context.Context, meta svcorder.Meta, cmd svcorder.OpenOrder) (svcorder.Result, error)
@@ -94,6 +97,10 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	post("/api/v1/orders/{id}/lines/{line}/remove", auth.PermOrderEdit, s.removeLine)
 	post("/api/v1/orders/{id}/notes", auth.PermOrderEdit, s.addNote)
 	post("/api/v1/orders/{id}/hold", auth.PermOrderEdit, s.holdOrder)
+	// Where the party sits (ADR-088).
+	post("/api/v1/orders/{id}/table", auth.PermOrderEdit, s.moveTable)
+	post("/api/v1/orders/{id}/tables/join", auth.PermOrderEdit, s.joinTables)
+	post("/api/v1/orders/{id}/tables/part", auth.PermOrderEdit, s.partTables)
 	post("/api/v1/orders/{id}/resume", auth.PermOrderEdit, s.resumeOrder)
 	post("/api/v1/orders/{id}/courses/{course}/fire", auth.PermOrderEdit, s.fireCourse)
 	post("/api/v1/orders/{id}/tickets", auth.PermOrderEdit, s.sendTicket)
@@ -354,6 +361,42 @@ func (s *Server) addNote(w http.ResponseWriter, r *http.Request) {
 			return svcorder.Result{}, errAnswered
 		}
 		return s.orders.AddNote(r.Context(), meta, orderID, req)
+	})
+}
+
+type (
+	moveTableRequest  = svcorder.MoveTable
+	joinTablesRequest = svcorder.JoinTables
+	partTablesRequest = svcorder.PartTables
+)
+
+func (s *Server) moveTable(w http.ResponseWriter, r *http.Request) {
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		var req moveTableRequest
+		if !s.decode(w, r, &req) {
+			return svcorder.Result{}, errAnswered
+		}
+		return s.orders.MoveTable(r.Context(), meta, orderID, req)
+	})
+}
+
+func (s *Server) joinTables(w http.ResponseWriter, r *http.Request) {
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		var req joinTablesRequest
+		if !s.decode(w, r, &req) {
+			return svcorder.Result{}, errAnswered
+		}
+		return s.orders.JoinTables(r.Context(), meta, orderID, req)
+	})
+}
+
+func (s *Server) partTables(w http.ResponseWriter, r *http.Request) {
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		var req partTablesRequest
+		if !s.decode(w, r, &req) {
+			return svcorder.Result{}, errAnswered
+		}
+		return s.orders.PartTables(r.Context(), meta, orderID, req)
 	})
 }
 

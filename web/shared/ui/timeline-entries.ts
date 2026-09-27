@@ -101,6 +101,14 @@ function describe(event: OrderEvent, ctx: Context): Described {
       return { title: "Put on hold", tone: "warning" };
     case "order.resumed":
       return { title: "Taken off hold" };
+    case "order.table_changed":
+      return {
+        title: event.payload.from ? `Moved from table ${event.payload.from} to ${event.payload.to}` : `Seated at table ${event.payload.to}`,
+      };
+    case "order.tables_joined":
+      return { title: `Joined ${tablesText(event.payload.tables)}` };
+    case "order.tables_parted":
+      return { title: `Let go ${tablesText(event.payload.tables)}` };
     case "line.modified": {
       const names = (mods: readonly { name: string }[]) => mods.map((m) => m.name).join(", ") || "nothing";
       return { title: `Changed ${line(event.payload.line_id)}`, detail: `${names(event.payload.from)} → ${names(event.payload.to)}` };
@@ -184,4 +192,10 @@ function byLine(ctx: Context, actor: number, authorisedBy: number | undefined): 
   const name = (id: number) => ctx.staff(id) ?? `Staff ${id}`;
   if (authorisedBy && authorisedBy !== actor) return `${name(actor)}, authorised by ${name(authorisedBy)}`;
   return name(actor);
+}
+
+/** "table 7", "tables 7 and 8", "tables 7, 8 and 9". */
+function tablesText(tables: readonly number[]): string {
+  if (tables.length === 1) return `table ${tables[0]}`;
+  return `tables ${tables.slice(0, -1).join(", ")} and ${tables[tables.length - 1]}`;
 }

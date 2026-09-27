@@ -14,7 +14,7 @@ import (
 // the same events: a new field, a changed rule, a changed rounding. Leaving it
 // alone after such a change serves stale snapshots until they happen to be
 // retaken, which is the one way a snapshot can disagree with its events.
-const ProjectionVersion = 3
+const ProjectionVersion = 4
 
 // Resume carries a projection on from a State that Project or Resume
 // returned, folding in the events after it. It is the same fold with the same
@@ -64,6 +64,7 @@ func (s State) clone() State {
 			c.Discounts[i].Amount = &amount
 		}
 	}
+	c.Joined = slices.Clone(s.Joined)
 	c.Notes = slices.Clone(s.Notes)
 	c.FiredCourses = slices.Clone(s.FiredCourses)
 	c.Tickets = slices.Clone(s.Tickets)

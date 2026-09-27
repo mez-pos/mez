@@ -22,6 +22,7 @@ type Querier interface {
 	// exists.
 	ActiveStaffForVenue(ctx context.Context, venueID int64) ([]Staff, error)
 	ActiveStations(ctx context.Context, venueID int64) ([]ActiveStationsRow, error)
+	AddOrderTable(ctx context.Context, arg AddOrderTableParams) error
 	AppendOrderEvent(ctx context.Context, arg AppendOrderEventParams) error
 	AreaByID(ctx context.Context, id int64) (AreaByIDRow, error)
 	// The floor plan: areas and the tables placed in them (ADR-085).
@@ -86,6 +87,9 @@ type Querier interface {
 	// Staff are deactivated, never deleted: their name is on every order they took
 	// and on every void they authorised, and a tax audit expects to find them.
 	DeactivateStaff(ctx context.Context, arg DeactivateStaffParams) error
+	// The order's rows in order_tables, before they are written again from its
+	// projection (ADR-088).
+	DeleteOrderTables(ctx context.Context, orderID int64) error
 	DeleteSetting(ctx context.Context, arg DeleteSettingParams) error
 	DeviceByID(ctx context.Context, id int64) (Device, error)
 	DeviceByTokenHash(ctx context.Context, tokenHash string) (Device, error)
@@ -110,7 +114,8 @@ type Querier interface {
 	ItemModifierGroupsForVenue(ctx context.Context, venueID int64) ([]ItemModifierGroupsForVenueRow, error)
 	ListVenues(ctx context.Context) ([]Venue, error)
 	// The tables in service, with when each was last cleared and when the last
-	// order at it closed: what a table's turn is derived from, with its orders.
+	// order at it closed, joined tables included (ADR-088): what a table's turn
+	// is derived from, with its orders.
 	LiveTables(ctx context.Context, venueID int64) ([]LiveTablesRow, error)
 	MarkReceiptPrinter(ctx context.Context, arg MarkReceiptPrinterParams) (int64, error)
 	// The menu. Reads return active rows only, in the order a terminal shows
@@ -195,8 +200,9 @@ type Querier interface {
 	TableByID(ctx context.Context, id int64) (TableByIDRow, error)
 	// The table in service in a cell, if any, other than the one being placed.
 	TableInCell(ctx context.Context, arg TableInCellParams) (TableInCellRow, error)
-	// One table's turn, for clearing it: its orders not yet closed, the last
-	// one to close, and when it was last cleared.
+	// One table's turn: the orders at it not yet closed, its own or joined, the
+	// last one to close there, and when it was last cleared. For clearing it,
+	// and for moving or joining a party to it.
 	TableTurn(ctx context.Context, id int64) (TableTurnRow, error)
 	TablesForVenue(ctx context.Context, venueID int64) ([]TablesForVenueRow, error)
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)

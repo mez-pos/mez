@@ -14,7 +14,7 @@ Phase 07.
   editor to place tables. Keep it simple — a grid with drag, and a numeric
   fallback for position, because drag must never be the only path.
 
-- [ ] **Task 2 — Floor plan screen.**
+- [x] **Task 2 — Floor plan screen.**
   Spec first. Table tiles showing state, covers, elapsed time and balance.
   State colours follow the status rules — colour **and** a word on every tile.
   Seat a party, open a ticket for a table, transfer a ticket, merge and split
@@ -39,7 +39,7 @@ Phase 07.
     order opened at the table). Seated or later: opens the ticket on the
     register. Dirty: Clear. Seated with nothing ordered: Guests left
     (seated to free). Live across terminals from 2a's notice.
-  - [ ] **2c: Transfer, join and split tables.** Order events
+  - [x] **2c: Transfer, join and split tables.** Order events
     `order.table_changed` (a ticket moves to a free table) and
     `order.tables_joined` / `order.tables_parted` (a party spreads over
     more tables: one order, several tables, all showing it). Projection,

@@ -2389,3 +2389,39 @@ tickets. Keeping one book under both means a seated party's ticket is the
 ticket in front, with nothing to hand over between screens.
 Cost: the floor has no URL of its own, so a till cannot open straight to
 it; the register is the landing screen.
+
+## ADR-088 - Moving and joining tables are order events; order_tables indexes where a party sits
+2026-09 · Status: accepted
+Decision: where a party sits is part of its order's story, told by three
+events, and the floor reads it through an index kept with the order.
+  - **Events:** `order.table_changed` `{from, to}` moves the order; `from`
+    is where the till saw it, so a move on a stale screen is refused
+    (`table_moved`) rather than applied to wherever the order went since.
+    `order.tables_joined` and `order.tables_parted` `{tables[]}` spread one
+    order, and one bill, over more tables and let them go. `State.Joined`
+    holds them; `ProjectionVersion` is 4. Allowed after an invoice, since
+    they change nothing on the bill; refused while held or closed.
+  - **Free is checked in the command's transaction.** Move and Join refuse
+    a table that is not in service at the venue (`table_not_found`) or not
+    free (`table_taken`): an order open at it, joined or its own, or a bill
+    closed there since it was last cleared. The single writer means two
+    tills cannot take the same free table.
+  - **`order_tables`** (migration 00013) has a row per table an order sits
+    at, with the order's `closed_at`, rewritten by the append that changes
+    either. "Is an order open here" and "when did the last one close" are
+    index lookups however many orders a table has seen, and a joined table
+    goes dirty with the party's bill like its own table does. The live
+    floor and `TableTurn` read it; 00012's index on `orders` is dropped.
+  - **A joined table** shows the party's state with `joined_to`; covers
+    and balance are counted at the party's own table only. Guests left on
+    any of the party's tables closes the empty ticket and clears all of
+    them. A parted table goes back to its own turn, usually free.
+  - **On the floor**, Move, Join and Part are modes: header buttons, a
+    banner, taps, Done. `stepMode` in `floor-logic.ts` decides each tap,
+    so the rules are tested apart from the screen. A table with two tickets
+    cannot be moved from the floor, since a tap cannot say which.
+Because: an order that knows its tables keeps the floor a projection of
+orders (ADR-086) rather than a second record of who sits where, and the
+timeline shows every move like every other change.
+Cost: a table with two tickets can only be moved by moving the other
+ticket away first; the timeline names tables by number, not by name.

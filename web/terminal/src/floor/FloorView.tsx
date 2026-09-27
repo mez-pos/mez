@@ -2,6 +2,8 @@
 // as a tile with its state in colour and a word, its covers, its time and
 // what it owes. A tap seats a party, opens a table's ticket, or opens a
 // sheet when there is a choice to make: guests leaving, a table to clear.
+// Move, Join and Part turn taps into moving a party and joining tables
+// (ADR-088) until Done.
 
 import { useEffect, useState } from "react";
 import { ApiError } from "../../../shared/api";
@@ -13,7 +15,19 @@ import { tableStatuses } from "../../../shared/ui/status";
 import { failureOf } from "../register/order-messages";
 import { elapsed, ticketLabel } from "../register/ticket-time";
 import type { Ticket } from "../register/use-ticket";
-import { areaToShow, countsText, startingCovers, tableNames, tapFor, tileText, tilesOf } from "./floor-logic";
+import {
+  areaToShow,
+  countsText,
+  idle,
+  modeText,
+  startingCovers,
+  stepMode,
+  tableNames,
+  tapFor,
+  tileText,
+  tilesOf,
+  type Mode,
+} from "./floor-logic";
 import type { LiveFloorApi } from "./use-live-floor";
 
 interface FloorViewProps {
@@ -29,9 +43,28 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
   const [areaChoice, setAreaChoice] = useState<number | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>(idle);
+  const [busy, setBusy] = useState(false);
   const now = useClock(30_000);
   const data = floor.data;
   const areaId = data ? areaToShow(data, areaChoice) : null;
+  const names = tableNames(data);
+  const banner = modeText(mode);
+  const picked = mode.kind === "move" ? mode.from : mode.kind === "join" ? mode.to : null;
+
+  /** A tap while Move, Join or Part is on: the mode decides, the server does. */
+  const tapInMode = (t: LiveTableResponse) => {
+    const step = stepMode(mode, t, names);
+    setMode(step.mode);
+    setError(step.refused ?? null);
+    const action = step.action;
+    if (!action) return;
+    setBusy(true);
+    floor
+      .act(action)
+      .catch((err: unknown) => setError(wordsOf(err)))
+      .finally(() => setBusy(false));
+  };
 
   /** Brings a ticket to the front, off hold if it was held, and goes to it. */
   const openTicket = async (orderId: string) => {
@@ -42,6 +75,10 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
   };
 
   const tap = (t: LiveTableResponse) => {
+    if (mode.kind !== "idle") {
+      if (!busy) tapInMode(t);
+      return;
+    }
     setError(null);
     const what = tapFor(t);
     if (what.kind === "seat") setOpen({ kind: "seat", table: t });
@@ -56,8 +93,32 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
           <h1 className="font-serif text-total">Floor</h1>
           {data && <p className="text-base text-fg-2">{countsText(data.tables)}</p>}
         </div>
-        <Button onClick={onRegister}>Register</Button>
+        <div className="flex flex-wrap gap-tap-gap">
+          {data && data.tables.length > 0 && mode.kind === "idle" && (
+            <>
+              <Button onClick={() => setMode({ kind: "move", from: null })}>Move</Button>
+              <Button onClick={() => setMode({ kind: "join", to: null })}>Join</Button>
+              <Button onClick={() => setMode({ kind: "part" })}>Part</Button>
+            </>
+          )}
+          <Button onClick={onRegister}>Register</Button>
+        </div>
       </div>
+
+      {banner && (
+        <div role="status" className="flex flex-wrap items-center gap-tap-gap rounded border border-line-focus bg-raised px-4 py-2">
+          <p className="flex-1 text-base font-semibold">{banner}</p>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setMode(idle);
+              setError(null);
+            }}
+          >
+            Done
+          </Button>
+        </div>
+      )}
 
       {data && data.areas.length > 1 && (
         <div role="tablist" aria-label="Areas" className="flex flex-wrap gap-tap-gap">
@@ -91,7 +152,9 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
       {data && data.tables.length === 0 && (
         <EmptyState icon={<InboxIcon />} line="No tables yet. Lay out the floor in the back office." action={{ label: "Register", onClick: onRegister }} />
       )}
-      {data && areaId !== null && <Grid data={data} areaId={areaId} now={now} onTap={tap} />}
+      {data && areaId !== null && (
+        <Grid data={data} areaId={areaId} now={now} names={names} picked={picked?.id ?? null} onTap={tap} />
+      )}
 
       {open?.kind === "seat" && (
         <SeatSheet
@@ -109,7 +172,7 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
           // The sheet follows the table as the floor moves under it.
           table={data.tables.find((t) => t.id === open.table.id) ?? open.table}
           tickets={ticket.open?.orders ?? []}
-          names={tableNames(data)}
+          names={names}
           now={now}
           lateAfter={ticket.open?.late_after_minutes ?? 20}
           floor={floor}
@@ -128,10 +191,13 @@ interface GridProps {
   data: LiveFloorResponse;
   areaId: number;
   now: number;
+  names: ReadonlyMap<number, string>;
+  /** The party's table while moving or joining, drawn with the focus outline. */
+  picked: number | null;
   onTap: (t: LiveTableResponse) => void;
 }
 
-function Grid({ data, areaId, now, onTap }: GridProps) {
+function Grid({ data, areaId, now, names, picked, onTap }: GridProps) {
   const rows = tilesOf(data, areaId);
   if (rows.length === 0) return <p className="text-base text-fg-muted">No tables in this area.</p>;
   const columns = rows[0]?.length ?? 0;
@@ -150,7 +216,7 @@ function Grid({ data, areaId, now, onTap }: GridProps) {
               <li key={`${x},${y}`} aria-hidden="true" />
             ) : (
               <li key={t.id}>
-                <TableTile table={t} now={now} onTap={() => onTap(t)} />
+                <TableTile table={t} now={now} names={names} picked={picked === t.id} onTap={() => onTap(t)} />
               </li>
             ),
           ),
@@ -170,20 +236,30 @@ const borders: Readonly<Record<ChipTone, string>> = {
   info: "border-chip-info-border",
 };
 
-function TableTile({ table: t, now, onTap }: { table: LiveTableResponse; now: number; onTap: () => void }) {
-  const text = tileText(t, now);
+interface TableTileProps {
+  table: LiveTableResponse;
+  now: number;
+  names: ReadonlyMap<number, string>;
+  picked: boolean;
+  onTap: () => void;
+}
+
+function TableTile({ table: t, now, names, picked, onTap }: TableTileProps) {
+  const text = tileText(t, now, names);
   const spec = tableStatuses[t.status];
   const round = t.shape === "round";
   return (
     <button
       type="button"
       onClick={onTap}
+      aria-pressed={picked || undefined}
       aria-label={`Table ${t.name}, ${spec.word}, ${text.people}${text.time ? `, ${text.time}` : ""}`}
       className={cx(
         "flex aspect-square min-h-22 w-full flex-col border-2 bg-raised outline-offset-2 outline-line-focus focus-visible:outline-2",
         // A round table is drawn round, with everything in the middle of it.
         round ? "items-center justify-center gap-1 rounded-round p-4 text-center" : "justify-between rounded p-2.5 text-left",
         borders[spec.tone],
+        picked && "outline outline-4",
       )}
     >
       <span className={cx("flex gap-2", round ? "flex-col items-center" : "items-start justify-between")}>

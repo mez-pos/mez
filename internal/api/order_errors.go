@@ -39,6 +39,13 @@ const (
 	CodeCurrencyMismatch     ErrorCode = "currency_mismatch"
 	CodeIdempotencyKeyReused ErrorCode = "idempotency_key_reused"
 	CodeVenueNotConfigured   ErrorCode = "venue_not_configured"
+
+	// Where the party sits (ADR-088).
+	CodeTableTaken     ErrorCode = "table_taken"
+	CodeTableMoved     ErrorCode = "table_moved"
+	CodeTableAlreadyAt ErrorCode = "table_already_at"
+	CodeTableNotJoined ErrorCode = "table_not_joined"
+	CodeNoTable        ErrorCode = "no_table"
 )
 
 // orderErrors maps every refusal the order path can produce to a status and
@@ -59,6 +66,7 @@ var orderErrors = []struct {
 	// The service's own refusals.
 	{svcorder.ErrOrderNotFound, http.StatusNotFound, CodeOrderNotFound},
 	{svcorder.ErrNoSuchTable, http.StatusUnprocessableEntity, CodeTableNotFound},
+	{svcorder.ErrTableTaken, http.StatusConflict, CodeTableTaken},
 	{svcorder.ErrIdempotencyKeyReused, http.StatusConflict, CodeIdempotencyKeyReused},
 	{svcorder.ErrVenueConfig, http.StatusConflict, CodeVenueNotConfigured},
 	{svcorder.ErrNothingToSend, http.StatusConflict, CodeNothingToSend},
@@ -75,6 +83,10 @@ var orderErrors = []struct {
 	{payment.ErrInvalidSplit, http.StatusUnprocessableEntity, CodeSplitInvalid},
 
 	// What the order itself refuses.
+	{order.ErrTableMismatch, http.StatusConflict, CodeTableMoved},
+	{order.ErrTableAlreadyAt, http.StatusConflict, CodeTableAlreadyAt},
+	{order.ErrTableNotJoined, http.StatusConflict, CodeTableNotJoined},
+	{order.ErrNoTable, http.StatusConflict, CodeNoTable},
 	{order.ErrLineNotFound, http.StatusConflict, CodeLineNotFound},
 	{order.ErrLineNotActive, http.StatusConflict, CodeLineNotActive},
 	{order.ErrPaymentNotFound, http.StatusConflict, CodePaymentNotFound},

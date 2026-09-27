@@ -81,7 +81,7 @@ export interface TileText {
   readonly time: string | null;
 }
 
-export function tileText(t: LiveTableResponse, now: number): TileText {
+export function tileText(t: LiveTableResponse, now: number, names: ReadonlyMap<number, string> = new Map()): TileText {
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const time = t.since ? elapsed(t.since, now, 0).text : null;
   switch (t.status) {
@@ -90,6 +90,7 @@ export function tileText(t: LiveTableResponse, now: number): TileText {
     case "dirty":
       return { people: "Needs clearing", time };
     default:
+      if (t.joined_to) return { people: `With ${names.get(t.joined_to) ?? `table ${t.joined_to}`}`, time };
       return { people: t.covers > 0 ? count(t.covers, "cover", "covers") : "Seated", time };
   }
 }
@@ -97,4 +98,88 @@ export function tileText(t: LiveTableResponse, now: number): TileText {
 /** Table names by id, for ticket labels. */
 export function tableNames(floor: LiveFloorResponse | undefined): ReadonlyMap<number, string> {
   return new Map((floor?.tables ?? []).map((t) => [t.id, t.name]));
+}
+
+/**
+ * Moving and joining on the floor (ADR-088): a mode the header turns on,
+ * then taps on tiles. Move takes a party's table, then a free one. Join
+ * takes a party's table, then any number of free ones; tapping a table
+ * already joined lets it go. Part lets joined tables go, one tap each.
+ */
+export type Mode =
+  | { readonly kind: "idle" }
+  | { readonly kind: "move"; readonly from: LiveTableResponse | null }
+  | { readonly kind: "join"; readonly to: LiveTableResponse | null }
+  | { readonly kind: "part" };
+
+/** What a tap in a mode asks the server to do. */
+export type FloorAction =
+  | { readonly kind: "move"; readonly orderId: string; readonly from: number; readonly to: number }
+  | { readonly kind: "join"; readonly orderId: string; readonly table: number }
+  | { readonly kind: "part"; readonly orderId: string; readonly table: number };
+
+export interface Step {
+  readonly mode: Mode;
+  readonly action?: FloorAction;
+  /** Why the tap did nothing: shown until the next one. */
+  readonly refused?: string;
+}
+
+export const idle: Mode = { kind: "idle" };
+
+/** Why a table cannot be the party's table in a move or join; null when it can. */
+function notAParty(t: LiveTableResponse, names: ReadonlyMap<number, string>): string | null {
+  if (t.status === "free" || t.status === "dirty") return `${t.name} has nobody at it. Tap a table with guests.`;
+  if (t.joined_to) return `${t.name} is joined to ${names.get(t.joined_to) ?? "another table"}. Tap that one.`;
+  if (t.orders.length !== 1) return `${t.name} has ${t.orders.length} tickets: the floor can't tell which one to move.`;
+  return null;
+}
+
+export function stepMode(mode: Mode, t: LiveTableResponse, names: ReadonlyMap<number, string>): Step {
+  switch (mode.kind) {
+    case "idle":
+      return { mode };
+    case "move": {
+      if (mode.from === null) {
+        const refused = notAParty(t, names);
+        return refused ? { mode, refused } : { mode: { kind: "move", from: t } };
+      }
+      if (t.id === mode.from.id) return { mode: { kind: "move", from: null } };
+      if (t.status !== "free") return { mode, refused: `${t.name} isn't free. Tap a free table.` };
+      const orderId = mode.from.orders[0] ?? "";
+      return { mode: idle, action: { kind: "move", orderId, from: mode.from.id, to: t.id } };
+    }
+    case "join": {
+      if (mode.to === null) {
+        const refused = notAParty(t, names);
+        return refused ? { mode, refused } : { mode: { kind: "join", to: t } };
+      }
+      const orderId = mode.to.orders[0] ?? "";
+      if (t.id === mode.to.id) return { mode };
+      if (t.joined_to === mode.to.id) return { mode, action: { kind: "part", orderId, table: t.id } };
+      if (t.status !== "free") return { mode, refused: `${t.name} isn't free. Tap a free table to join.` };
+      return { mode, action: { kind: "join", orderId, table: t.id } };
+    }
+    case "part": {
+      const orderId = t.orders[0];
+      if (!t.joined_to || !orderId) return { mode, refused: `${t.name} isn't joined to another table.` };
+      return { mode, action: { kind: "part", orderId, table: t.id } };
+    }
+  }
+}
+
+/** The banner while a mode is on. */
+export function modeText(mode: Mode): string | null {
+  switch (mode.kind) {
+    case "idle":
+      return null;
+    case "move":
+      return mode.from ? `Tap a free table for ${mode.from.name}'s party` : "Move: tap the table the party is at";
+    case "join":
+      return mode.to
+        ? `Tap free tables to join to ${mode.to.name}. Tap a joined one to let it go.`
+        : "Join: tap the party's table";
+    case "part":
+      return "Part: tap a joined table to let it go";
+  }
 }

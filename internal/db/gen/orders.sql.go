@@ -11,6 +11,21 @@ import (
 	"time"
 )
 
+const addOrderTable = `-- name: AddOrderTable :exec
+INSERT INTO order_tables (order_id, table_id, closed_at) VALUES (?, ?, ?)
+`
+
+type AddOrderTableParams struct {
+	OrderID  int64
+	TableID  int64
+	ClosedAt sql.NullTime
+}
+
+func (q *Queries) AddOrderTable(ctx context.Context, arg AddOrderTableParams) error {
+	_, err := q.db.ExecContext(ctx, addOrderTable, arg.OrderID, arg.TableID, arg.ClosedAt)
+	return err
+}
+
 const appendOrderEvent = `-- name: AppendOrderEvent :exec
 INSERT INTO order_events (order_id, seq, type, payload, actor_id, device_id, at)
 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -127,6 +142,17 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const deleteOrderTables = `-- name: DeleteOrderTables :exec
+DELETE FROM order_tables WHERE order_id = ?
+`
+
+// The order's rows in order_tables, before they are written again from its
+// projection (ADR-088).
+func (q *Queries) DeleteOrderTables(ctx context.Context, orderID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteOrderTables, orderID)
+	return err
 }
 
 const orderByID = `-- name: OrderByID :one

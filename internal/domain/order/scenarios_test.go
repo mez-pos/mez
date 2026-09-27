@@ -337,6 +337,26 @@ var scenarios = []struct {
 		status: StatusSettling,
 	},
 	{
+		name: "a party moves to the window, grows over two more tables, then lets one go",
+		payloads: []Payload{
+			OrderOpened{Channel: ChannelCounter, Currency: "INR", TableID: 4, Covers: 6, OpenedBy: 11},
+			item("Thali", 2, 30000), // 2: 600.00
+			OrderTableChanged{From: 4, To: 7},
+			TablesJoined{Tables: []int64{8, 9}},
+			item("Thali", 2, 30000), // 5
+			TablesParted{Tables: []int64{9}},
+			pay(PaymentCash, 120000),
+			closed,
+		},
+		want:   figures{gross: 120000, total: 120000, paid: 120000},
+		status: StatusClosed,
+		check: func(t *testing.T, s State) {
+			if s.TableID != 7 || len(s.Joined) != 1 || s.Joined[0] != 8 {
+				t.Errorf("tables = %d + %v, want 7 + [8]", s.TableID, s.Joined)
+			}
+		},
+	},
+	{
 		name: "held while the guest finds a friend, resumed, a note on hold",
 		payloads: []Payload{
 			opened(),

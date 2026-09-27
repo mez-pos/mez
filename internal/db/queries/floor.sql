@@ -61,25 +61,27 @@ WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id);
 
 -- name: LiveTables :many
 -- The tables in service, with when each was last cleared and when the last
--- order at it closed: what a table's turn is derived from, with its orders.
+-- order at it closed, joined tables included (ADR-088): what a table's turn
+-- is derived from, with its orders.
 SELECT t.id, t.area_id, t.name, t.seats, t.shape, t.x, t.y, t.cleared_at,
-       (SELECT o.closed_at FROM orders o
-        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.closed_at IS NOT NULL
-        ORDER BY o.closed_at DESC LIMIT 1) AS last_closed_at
+       (SELECT ot.closed_at FROM order_tables ot
+        WHERE ot.table_id = t.id AND ot.closed_at IS NOT NULL
+        ORDER BY ot.closed_at DESC LIMIT 1) AS last_closed_at
 FROM tables t
 JOIN areas a ON a.id = t.area_id
 WHERE t.venue_id = ? AND t.active = 1 AND a.active = 1
 ORDER BY t.area_id, t.y, t.x, t.id;
 
 -- name: TableTurn :one
--- One table's turn, for clearing it: its orders not yet closed, the last
--- one to close, and when it was last cleared.
-SELECT t.id, t.venue_id, t.active, t.cleared_at,
-       (SELECT count(*) FROM orders o
-        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.status != 'closed') AS unclosed,
-       (SELECT o.closed_at FROM orders o
-        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.closed_at IS NOT NULL
-        ORDER BY o.closed_at DESC LIMIT 1) AS last_closed_at
+-- One table's turn: the orders at it not yet closed, its own or joined, the
+-- last one to close there, and when it was last cleared. For clearing it,
+-- and for moving or joining a party to it.
+SELECT t.id, t.venue_id, t.name, t.active, t.cleared_at,
+       (SELECT count(*) FROM order_tables ot
+        WHERE ot.table_id = t.id AND ot.closed_at IS NULL) AS unclosed,
+       (SELECT ot.closed_at FROM order_tables ot
+        WHERE ot.table_id = t.id AND ot.closed_at IS NOT NULL
+        ORDER BY ot.closed_at DESC LIMIT 1) AS last_closed_at
 FROM tables t
 WHERE t.id = ?;
 

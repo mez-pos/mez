@@ -19,6 +19,7 @@ type orderResponse struct {
 	Channel   order.Channel `json:"channel"`
 	Currency  string        `json:"currency"`
 	TableID   int64         `json:"table_id,omitempty"`
+	Joined    []int64       `json:"joined,omitempty"` // tables joined for one party (ADR-088)
 	Covers    int64         `json:"covers"`
 	OpenedBy  int64         `json:"opened_by,omitempty"`
 	OpenedAt  time.Time     `json:"opened_at"`
@@ -177,7 +178,7 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 	s := res.State
 	out := orderResponse{
 		ID: res.PublicID, Status: s.Status, Channel: s.Channel, Currency: s.Currency,
-		TableID: s.TableID, Covers: s.Covers, OpenedBy: s.OpenedBy, OpenedAt: s.OpenedAt.UTC(),
+		TableID: s.TableID, Joined: s.Joined, Covers: s.Covers, OpenedBy: s.OpenedBy, OpenedAt: s.OpenedAt.UTC(),
 		UpdatedAt: s.UpdatedAt.UTC(), LastSeq: s.LastSeq, Reopens: s.Reopens, Invoiced: s.Invoiced,
 		Totals: totalsResponse(s.Totals),
 	}
@@ -256,6 +257,7 @@ type ticketSummary struct {
 	Status     order.Status  `json:"status"`
 	Channel    order.Channel `json:"channel"`
 	TableID    int64         `json:"table_id,omitempty"`
+	Joined     []int64       `json:"joined,omitempty"`
 	Covers     int64         `json:"covers"`
 	OpenedBy   int64         `json:"opened_by,omitempty"`
 	OpenedAt   time.Time     `json:"opened_at"`
@@ -287,7 +289,7 @@ func toOpenTicketsResponse(open svcorder.OpenTickets) openTicketsResponse {
 			}
 		}
 		out.Orders[i] = ticketSummary{
-			ID: r.PublicID, Status: st.Status, Channel: st.Channel, TableID: st.TableID, Covers: st.Covers,
+			ID: r.PublicID, Status: st.Status, Channel: st.Channel, TableID: st.TableID, Joined: st.Joined, Covers: st.Covers,
 			OpenedBy: st.OpenedBy, OpenedAt: st.OpenedAt.UTC(), UpdatedAt: st.UpdatedAt.UTC(), Lines: active,
 			Total: st.Totals.Total, BalanceDue: st.Totals.BalanceDue,
 		}

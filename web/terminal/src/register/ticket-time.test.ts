@@ -39,5 +39,6 @@ describe("ticketLabel", () => {
     const names = new Map([[4, "T4"]]);
     expect(ticketLabel({ table_id: 4, covers: 2 }, names)).toBe("Table T4 · 2 covers");
     expect(ticketLabel({ table_id: 5, covers: 0 }, names)).toBe("Table 5");
+    expect(ticketLabel({ table_id: 4, joined: [7], covers: 6 }, new Map([[4, "T4"], [7, "T7"]]))).toBe("Table T4 + T7 · 6 covers");
   });
 });

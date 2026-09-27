@@ -68,6 +68,9 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 | `order.reopened` | reason, authorised_by |
 | `order.held` | none: parks an open order, which then takes only notes and a resume |
 | `order.resumed` | (none) |
+| `order.table_changed` | from, to: the ticket moves to another table; from is where the till saw it |
+| `order.tables_joined` | tables[]: one party spread over more tables, still one order and one bill |
+| `order.tables_parted` | tables[]: joined tables let go again |
 
 Two consequences worth naming: the **order timeline** screen in the design is
 just this list rendered, and **voids are visible forever**, which is exactly what
