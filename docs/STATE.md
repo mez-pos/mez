@@ -11,19 +11,17 @@ File: `docs/phases/phase-08.md`. Phase 07 is complete.
 
 ## Last completed task
 
-**Phase 08, Task 1: floor plan data and editor** (ADR-085). Migration
-00011 adds `areas` and `tables` (grid cell, seats, shape; retired, never
-deleted; one table in service per cell). `internal/service/floor` and
-`/api/v1/floor` (settings.edit). The back office's Floor plan screen
-(`backoffice-floor.md`): area tabs, a 12 by 8 grid, and three ways to move
-a table: drag, Move then tap, or typing the column and row. Run in the
-browser: areas, tables placed by tap and by number, a drag, a drag onto a
-taken cell refused, a tap-move, retire and a refused bring-back.
+**Phase 08, Task 2a: table state, and the floor read for terminals**
+(ADR-086). `table.Derive` works out free, seated, ordered, settling or
+dirty from the orders at a table; `tables.cleared_at` (migration 00012) is
+the only stored part. `GET /api/v1/floor/live` and `POST
+.../tables/{id}/clear` need `order.open`. Clears and plan edits move
+`floor_versions`, sent as `floor_changed`; the web client emits a `floor`
+notice, and the back office editor refetches on it.
 
 ## Next task
 
-**Phase 08, Task 2a: table state, and the floor read for terminals.**
-Task 2 is split into 2a, 2b and 2c in the phase file. Read it.
+**Phase 08, Task 2b: the floor screen.** Spec first. Read the phase file.
 
 ## Known broken / in progress
 
@@ -39,9 +37,9 @@ Task 2 is split into 2a, 2b and 2c in the phase file. Read it.
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
   no menu writes over HTTP until phase 10. GST place of supply is always
   the venue's state, so no IGST. `nofiltr setup` cannot finish a US venue.
-- The floor plan's read needs `settings.edit`; the terminal's floor screen
-  (Task 2) needs a read of its own. `orders.table_id` has no foreign key
-  (ADR-085), and no stream message tells devices the plan changed.
+- `orders.table_id` has no foreign key (ADR-085). "Guests left" in 2b
+  closes an empty order and must clear the table in the same step, or it
+  shows dirty (ADR-086).
 - Never swept: idempotency keys, expired staff sessions, sign-in attempts.
   The pairing rate limiter is per process.
 - Token gaps (ADR-062): five paper roles are stand-ins; `--vermilion-on`

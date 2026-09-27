@@ -2320,3 +2320,36 @@ makes "is this spot free" a lookup rather than geometry. Free positioning
 and table sizes can come later without changing what an order refers to.
 Cost: a long table cannot span two cells; a room larger than 12 by 8 must
 be split into areas.
+
+## ADR-086 - A table's turn is derived from its orders; only "cleared" is stored
+2026-09 · Status: accepted
+Decision: where a table is in its turn (free, seated, ordered, settling,
+dirty) is worked out on every read, by `table.Derive` in
+`internal/domain/table`, from the orders at it. The one stored fact is
+`tables.cleared_at` (migration 00012).
+  - **With orders open at the table:** ordered if any has an active line
+    and is not settling (a second round after the bill counts as ordered);
+    else settling if any is settling; else seated. A held or reopened
+    order still sits at its table. Covers add up; the balance is the sum
+    of what is owed; `since` is the first order's opening.
+  - **With none open:** dirty if an order closed there after `cleared_at`,
+    else free. Clearing (`POST /api/v1/floor/tables/{id}/clear`) sets
+    `cleared_at`; clearing a free table again succeeds, since two staff
+    clearing one table is not an error, and an occupied table is refused
+    (`table_occupied`).
+  - **The live floor** is `GET /api/v1/floor/live`, for anyone with
+    `order.open`: the areas and tables in service, each with status,
+    covers, since, balance and the public ids of its open orders.
+  - **Terminals learn of changes two ways.** Anything an order does
+    (seating, a line, a payment, closing) is already an order event on the
+    stream, carrying its `table_id`. What orders do not carry, a table
+    cleared or the plan edited, moves a per-venue `floor_versions` counter
+    in the same transaction, announced as `floor_changed` like
+    `print_changed` (ADR-081).
+Because: a stored table status would be a second record of what the orders
+already say, and the two would drift the first time a payment and a status
+update landed in different transactions. Dirty is the exception because
+nothing about an order says the table was wiped down.
+Cost: the live read projects every open order at the venue (capped at 200)
+on each call. "Guests left" (Task 2b) closes an empty order, which on its
+own would leave the table dirty: 2b must clear it in the same step.

@@ -29,6 +29,7 @@ const (
 	MsgCaughtUp     MessageType = "caught_up"     // you have everything up to this position
 	MsgMenuChanged  MessageType = "menu_changed"  // the venue's menu has a new version
 	MsgPrintChanged MessageType = "print_changed" // the venue's print jobs moved
+	MsgFloorChanged MessageType = "floor_changed" // the venue's floor moved other than by an order event
 	MsgError        MessageType = "error"         // what you sent could not be used
 )
 
@@ -67,6 +68,8 @@ type WelcomeMessage struct {
 	MenuVersion int64 `json:"menu_version"`
 	// PrintVersion is the venue's print jobs as of this welcome.
 	PrintVersion int64 `json:"print_version"`
+	// FloorVersion is the venue's floor as of this welcome.
+	FloorVersion int64 `json:"floor_version"`
 }
 
 // EventMessage is one event on the wire, with the little about its order
@@ -99,6 +102,15 @@ type PrintChangedMessage struct {
 	Version int64       `json:"version"`
 }
 
+// FloorChangedMessage says the venue's floor has changed in a way its
+// orders' events do not show: the plan edited, a table cleared. The client
+// reads the floor again from GET /api/v1/floor/live (ADR-086). A change an
+// order makes, seating or settling, arrives as that order's event.
+type FloorChangedMessage struct {
+	Type    MessageType `json:"type"`
+	Version int64       `json:"version"`
+}
+
 // CaughtUpMessage says the client has everything up to a position.
 type CaughtUpMessage struct {
 	Type MessageType `json:"type"`
@@ -127,10 +139,11 @@ type conn struct {
 	topics map[string]struct{}
 	cursor int64
 
-	// menu and print are the versions this connection last told its client
-	// about. Only the writing goroutine touches them.
+	// menu, print and floor are the versions this connection last told its
+	// client about. Only the writing goroutine touches them.
 	menu  int64
 	print int64
+	floor int64
 }
 
 // wake tells the connection there may be more to read, without blocking.
@@ -159,6 +172,10 @@ func (c *conn) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	c.floor, err = c.hub.source.FloorVersion(ctx, c.client.VenueID)
+	if err != nil {
+		return err
+	}
 
 	from := hello.LastEventID
 	switch {
@@ -182,6 +199,7 @@ func (c *conn) run(ctx context.Context) error {
 	if err := c.hub.writeJSON(ctx, c.ws, WelcomeMessage{
 		Type: MsgWelcome, VenueID: c.client.VenueID, DeviceID: c.client.DeviceID,
 		From: from, Latest: latest, Topics: c.topicList(), MenuVersion: c.menu, PrintVersion: c.print,
+		FloorVersion: c.floor,
 	}); err != nil {
 		return err
 	}
@@ -203,6 +221,9 @@ func (c *conn) run(ctx context.Context) error {
 			return err
 		}
 		if err := c.checkPrint(ctx); err != nil {
+			return err
+		}
+		if err := c.checkFloor(ctx); err != nil {
 			return err
 		}
 		select {
@@ -336,6 +357,23 @@ func (c *conn) checkPrint(ctx context.Context) error {
 		return err
 	}
 	c.print = version
+	return nil
+}
+
+// checkFloor tells the client when the venue's floor has changed, as
+// checkMenu does for the menu.
+func (c *conn) checkFloor(ctx context.Context) error {
+	version, err := c.hub.source.FloorVersion(ctx, c.client.VenueID)
+	if err != nil {
+		return err
+	}
+	if version == c.floor {
+		return nil
+	}
+	if err := c.hub.writeJSON(ctx, c.ws, FloorChangedMessage{Type: MsgFloorChanged, Version: version}); err != nil {
+		return err
+	}
+	c.floor = version
 	return nil
 }
 

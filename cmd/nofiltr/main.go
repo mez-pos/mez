@@ -217,7 +217,7 @@ func run() (err error) {
 		return err
 	}
 
-	floorPlan, err := floor.New(database, nil)
+	floorPlan, err := floor.New(floor.Options{DB: database, Orders: orders, OnChange: events.Notify})
 	if err != nil {
 		return err
 	}

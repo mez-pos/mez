@@ -29,6 +29,8 @@ type Querier interface {
 	AttachModifierGroup(ctx context.Context, arg AttachModifierGroupParams) error
 	// For a change that touches every venue at once: the requeue on start.
 	BumpAllPrintVersions(ctx context.Context) error
+	// Moves the venue's floor version on, in the transaction that changed it.
+	BumpFloorVersion(ctx context.Context, venueID int64) error
 	//
 	// Every write to a menu table calls this in the same transaction. A write
 	// that forgot would leave terminals selling from a cached menu, which is
@@ -44,6 +46,7 @@ type Querier interface {
 	// cannot both succeed.
 	ClaimPrintJob(ctx context.Context, arg ClaimPrintJobParams) (int64, error)
 	ClearReceiptPrinter(ctx context.Context, arg ClearReceiptPrinterParams) error
+	ClearTable(ctx context.Context, arg ClearTableParams) (int64, error)
 	// The till's past bills: the latest closed, newest first (Task 6b).
 	ClosedOrdersForVenue(ctx context.Context, arg ClosedOrdersForVenueParams) ([]ClosedOrdersForVenueRow, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
@@ -98,6 +101,7 @@ type Querier interface {
 	EndStaffSession(ctx context.Context, arg EndStaffSessionParams) (int64, error)
 	// Records how a send went. Only a job still printing can finish.
 	FinishPrintJob(ctx context.Context, arg FinishPrintJobParams) (int64, error)
+	FloorVersion(ctx context.Context, venueID int64) (int64, error)
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
@@ -105,6 +109,9 @@ type Querier interface {
 	InvoicesForVenue(ctx context.Context, venueID int64) ([]Invoice, error)
 	ItemModifierGroupsForVenue(ctx context.Context, venueID int64) ([]ItemModifierGroupsForVenueRow, error)
 	ListVenues(ctx context.Context) ([]Venue, error)
+	// The tables in service, with when each was last cleared and when the last
+	// order at it closed: what a table's turn is derived from, with its orders.
+	LiveTables(ctx context.Context, venueID int64) ([]LiveTablesRow, error)
 	MarkReceiptPrinter(ctx context.Context, arg MarkReceiptPrinterParams) (int64, error)
 	// The menu. Reads return active rows only, in the order a terminal shows
 	// them: a retired item stays in the table for the events that name it, but
@@ -188,6 +195,9 @@ type Querier interface {
 	TableByID(ctx context.Context, id int64) (TableByIDRow, error)
 	// The table in service in a cell, if any, other than the one being placed.
 	TableInCell(ctx context.Context, arg TableInCellParams) (TableInCellRow, error)
+	// One table's turn, for clearing it: its orders not yet closed, the last
+	// one to close, and when it was last cleared.
+	TableTurn(ctx context.Context, id int64) (TableTurnRow, error)
 	TablesForVenue(ctx context.Context, venueID int64) ([]TablesForVenueRow, error)
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error

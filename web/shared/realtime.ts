@@ -6,6 +6,7 @@
 //   event   -> one event; its id is the stream position
 //   menu_changed -> the venue's menu is at a new version; fetch it
 //   print_changed -> the venue's print jobs moved; read the queue again
+//   floor_changed -> the floor moved other than by an order; read it again
 //
 // What this adds on top of a WebSocket:
 // - The last position seen, so a reconnect replays the gap and loses nothing.
@@ -20,7 +21,14 @@
 //   request tells "server unreachable" apart from "this device was unpaired".
 
 import { backoffDelay, defaultBackoff, type Backoff } from "./backoff";
-import type { ClientMessage, EventMessage, MenuChangedMessage, PrintChangedMessage, WelcomeMessage } from "./api-types";
+import type {
+  ClientMessage,
+  EventMessage,
+  FloorChangedMessage,
+  MenuChangedMessage,
+  PrintChangedMessage,
+  WelcomeMessage,
+} from "./api-types";
 
 export const streamPath = "/api/v1/stream";
 const subprotocol = "nofiltr.v1"; // hub.Subprotocol
@@ -53,7 +61,8 @@ export type RealtimeNotice =
   | { readonly kind: "resync"; readonly from: number }
   | { readonly kind: "event"; readonly message: EventMessage }
   | { readonly kind: "menu"; readonly version: number }
-  | { readonly kind: "print"; readonly version: number };
+  | { readonly kind: "print"; readonly version: number }
+  | { readonly kind: "floor"; readonly version: number };
 
 export type ProbeResult = "ok" | "unreachable" | "unauthenticated" | "device_revoked";
 
@@ -205,6 +214,9 @@ export class RealtimeConnection {
       case "print_changed":
         this.printAt((message as PrintChangedMessage).version);
         return;
+      case "floor_changed":
+        this.floorAt((message as FloorChangedMessage).version);
+        return;
       default:
         return; // "error" answers something this client sent; nothing to do but carry on
     }
@@ -227,6 +239,8 @@ export class RealtimeConnection {
     this.menuAt(welcome.menu_version);
     // The print queue likewise: jobs may have printed or failed meanwhile.
     this.printAt(welcome.print_version);
+    // And the floor: a table cleared, or the plan edited.
+    this.floorAt(welcome.floor_version);
     this.setStatus(from >= welcome.latest_event_id ? this.liveStatus() : { state: "syncing", target: welcome.latest_event_id });
   }
 
@@ -238,6 +252,11 @@ export class RealtimeConnection {
   /** Zero is a version: a venue that has queued nothing yet. */
   private printAt(version: unknown): void {
     if (typeof version === "number" && Number.isInteger(version) && version >= 0) this.emit({ kind: "print", version });
+  }
+
+  /** Zero is a version: a venue whose floor has never changed. */
+  private floorAt(version: unknown): void {
+    if (typeof version === "number" && Number.isInteger(version) && version >= 0) this.emit({ kind: "floor", version });
   }
 
   private advance(id: number): void {

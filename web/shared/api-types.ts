@@ -70,7 +70,8 @@ export type ErrorCode =
   | 'table_not_found'
   | 'cell_taken'
   | 'floor_name_taken'
-  | 'invalid_floor';
+  | 'invalid_floor'
+  | 'table_occupied';
 
 export type OrderStatus =
   | 'open'
@@ -130,6 +131,13 @@ export type TableShape =
   | 'square'
   | 'round'
   | 'long';
+
+export type TableStatus =
+  | 'free'
+  | 'seated'
+  | 'ordered'
+  | 'settling'
+  | 'dirty';
 
 export type DiscountScope =
   | 'line'
@@ -197,6 +205,7 @@ export type StreamMessageType =
   | 'caught_up'
   | 'menu_changed'
   | 'print_changed'
+  | 'floor_changed'
   | 'error';
 
 export interface Money {
@@ -935,6 +944,27 @@ export interface FloorResponse {
   tables: TableResponse[];
 }
 
+export interface LiveTableResponse {
+  id: number;
+  area_id: number;
+  name: string;
+  seats: number;
+  shape: TableShape;
+  x: number;
+  y: number;
+  status: TableStatus;
+  covers: number;
+  since?: string;
+  balance?: Money;
+  orders: string[];
+}
+
+export interface LiveFloorResponse {
+  grid: GridResponse;
+  areas: AreaResponse[];
+  tables: LiveTableResponse[];
+}
+
 export interface CreditSelection {
   lines?: CreditItem[];
   amount?: Money;
@@ -1051,6 +1081,7 @@ export interface WelcomeMessage {
   topics: string[];
   menu_version: number;
   print_version: number;
+  floor_version: number;
 }
 
 export interface EventMessage {
@@ -1074,6 +1105,11 @@ export interface MenuChangedMessage {
 }
 
 export interface PrintChangedMessage {
+  type: StreamMessageType;
+  version: number;
+}
+
+export interface FloorChangedMessage {
   type: StreamMessageType;
   version: number;
 }

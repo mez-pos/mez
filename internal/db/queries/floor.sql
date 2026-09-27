@@ -58,3 +58,40 @@ WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id);
 -- name: SetTableActive :execrows
 UPDATE tables SET active = sqlc.arg(active), updated_at = sqlc.arg(now)
 WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id);
+
+-- name: LiveTables :many
+-- The tables in service, with when each was last cleared and when the last
+-- order at it closed: what a table's turn is derived from, with its orders.
+SELECT t.id, t.area_id, t.name, t.seats, t.shape, t.x, t.y, t.cleared_at,
+       (SELECT o.closed_at FROM orders o
+        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.closed_at IS NOT NULL
+        ORDER BY o.closed_at DESC LIMIT 1) AS last_closed_at
+FROM tables t
+JOIN areas a ON a.id = t.area_id
+WHERE t.venue_id = ? AND t.active = 1 AND a.active = 1
+ORDER BY t.area_id, t.y, t.x, t.id;
+
+-- name: TableTurn :one
+-- One table's turn, for clearing it: its orders not yet closed, the last
+-- one to close, and when it was last cleared.
+SELECT t.id, t.venue_id, t.active, t.cleared_at,
+       (SELECT count(*) FROM orders o
+        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.status != 'closed') AS unclosed,
+       (SELECT o.closed_at FROM orders o
+        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.closed_at IS NOT NULL
+        ORDER BY o.closed_at DESC LIMIT 1) AS last_closed_at
+FROM tables t
+WHERE t.id = ?;
+
+-- name: ClearTable :execrows
+UPDATE tables SET cleared_at = sqlc.arg(now), updated_at = sqlc.arg(now)
+WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id);
+
+-- name: BumpFloorVersion :exec
+-- Moves the venue's floor version on, in the transaction that changed it.
+INSERT INTO floor_versions (venue_id, version)
+VALUES (?, 1)
+ON CONFLICT (venue_id) DO UPDATE SET version = floor_versions.version + 1;
+
+-- name: FloorVersion :one
+SELECT CAST(coalesce((SELECT version FROM floor_versions WHERE venue_id = ?), 0) AS INTEGER) AS version;

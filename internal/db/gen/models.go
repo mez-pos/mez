@@ -63,6 +63,11 @@ type Device struct {
 	CreatedAt  time.Time
 }
 
+type FloorVersion struct {
+	VenueID int64
+	Version int64
+}
+
 type IdempotencyKey struct {
 	VenueID     int64
 	Key         string
@@ -296,6 +301,7 @@ type Table struct {
 	Active    bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	ClearedAt sql.NullTime
 }
 
 type TaxClass struct {

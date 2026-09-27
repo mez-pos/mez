@@ -7,6 +7,7 @@ package gen
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -71,6 +72,37 @@ func (q *Queries) AreasForVenue(ctx context.Context, venueID int64) ([]AreasForV
 		return nil, err
 	}
 	return items, nil
+}
+
+const bumpFloorVersion = `-- name: BumpFloorVersion :exec
+INSERT INTO floor_versions (venue_id, version)
+VALUES (?, 1)
+ON CONFLICT (venue_id) DO UPDATE SET version = floor_versions.version + 1
+`
+
+// Moves the venue's floor version on, in the transaction that changed it.
+func (q *Queries) BumpFloorVersion(ctx context.Context, venueID int64) error {
+	_, err := q.db.ExecContext(ctx, bumpFloorVersion, venueID)
+	return err
+}
+
+const clearTable = `-- name: ClearTable :execrows
+UPDATE tables SET cleared_at = ?1, updated_at = ?1
+WHERE id = ?2 AND venue_id = ?3
+`
+
+type ClearTableParams struct {
+	Now     sql.NullTime
+	ID      int64
+	VenueID int64
+}
+
+func (q *Queries) ClearTable(ctx context.Context, arg ClearTableParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, clearTable, arg.Now, arg.ID, arg.VenueID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const countActiveTablesInArea = `-- name: CountActiveTablesInArea :one
@@ -142,6 +174,75 @@ func (q *Queries) CreateTable(ctx context.Context, arg CreateTableParams) (int64
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const floorVersion = `-- name: FloorVersion :one
+SELECT CAST(coalesce((SELECT version FROM floor_versions WHERE venue_id = ?), 0) AS INTEGER) AS version
+`
+
+func (q *Queries) FloorVersion(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, floorVersion, venueID)
+	var version int64
+	err := row.Scan(&version)
+	return version, err
+}
+
+const liveTables = `-- name: LiveTables :many
+SELECT t.id, t.area_id, t.name, t.seats, t.shape, t.x, t.y, t.cleared_at,
+       (SELECT o.closed_at FROM orders o
+        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.closed_at IS NOT NULL
+        ORDER BY o.closed_at DESC LIMIT 1) AS last_closed_at
+FROM tables t
+JOIN areas a ON a.id = t.area_id
+WHERE t.venue_id = ? AND t.active = 1 AND a.active = 1
+ORDER BY t.area_id, t.y, t.x, t.id
+`
+
+type LiveTablesRow struct {
+	ID           int64
+	AreaID       int64
+	Name         string
+	Seats        int64
+	Shape        string
+	X            int64
+	Y            int64
+	ClearedAt    sql.NullTime
+	LastClosedAt sql.NullTime
+}
+
+// The tables in service, with when each was last cleared and when the last
+// order at it closed: what a table's turn is derived from, with its orders.
+func (q *Queries) LiveTables(ctx context.Context, venueID int64) ([]LiveTablesRow, error) {
+	rows, err := q.db.QueryContext(ctx, liveTables, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []LiveTablesRow{}
+	for rows.Next() {
+		var i LiveTablesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AreaID,
+			&i.Name,
+			&i.Seats,
+			&i.Shape,
+			&i.X,
+			&i.Y,
+			&i.ClearedAt,
+			&i.LastClosedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const renameArea = `-- name: RenameArea :execrows
@@ -282,6 +383,42 @@ func (q *Queries) TableInCell(ctx context.Context, arg TableInCellParams) (Table
 	)
 	var i TableInCellRow
 	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
+const tableTurn = `-- name: TableTurn :one
+SELECT t.id, t.venue_id, t.active, t.cleared_at,
+       (SELECT count(*) FROM orders o
+        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.status != 'closed') AS unclosed,
+       (SELECT o.closed_at FROM orders o
+        WHERE o.venue_id = t.venue_id AND o.table_id = t.id AND o.closed_at IS NOT NULL
+        ORDER BY o.closed_at DESC LIMIT 1) AS last_closed_at
+FROM tables t
+WHERE t.id = ?
+`
+
+type TableTurnRow struct {
+	ID           int64
+	VenueID      int64
+	Active       bool
+	ClearedAt    sql.NullTime
+	Unclosed     int64
+	LastClosedAt sql.NullTime
+}
+
+// One table's turn, for clearing it: its orders not yet closed, the last
+// one to close, and when it was last cleared.
+func (q *Queries) TableTurn(ctx context.Context, id int64) (TableTurnRow, error) {
+	row := q.db.QueryRowContext(ctx, tableTurn, id)
+	var i TableTurnRow
+	err := row.Scan(
+		&i.ID,
+		&i.VenueID,
+		&i.Active,
+		&i.ClearedAt,
+		&i.Unclosed,
+		&i.LastClosedAt,
+	)
 	return i, err
 }
 

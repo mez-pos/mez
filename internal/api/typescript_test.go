@@ -17,6 +17,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/table"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
@@ -106,6 +107,7 @@ var errorCodes = []ErrorCode{
 	CodePrinterNotFound, CodePrinterRetired, CodeStationNotFound, CodePrinterNameTaken, CodeInvalidPrinter,
 	CodeNotInvoiced, CodeOverCredit, CodeRefundsMismatch,
 	CodeAreaNotFound, CodeAreaRetired, CodeAreaInUse, CodeTableNotFound, CodeCellTaken, CodeFloorNameTaken, CodeInvalidFloor,
+	CodeTableOccupied,
 }
 
 // generate builds the whole file.
@@ -160,6 +162,7 @@ func generate() (*ts.Generator, error) {
 		{"PrintJobKind", printjob.Receipt, asStrings(printjob.Kinds())},
 		{"PrinterTransport", printers.Network, asStrings(printers.Transports())},
 		{"TableShape", floor.Square, asStrings(floor.Shapes())},
+		{"TableStatus", table.StatusFree, asStrings(table.Machine().States())},
 		{"DiscountScope", order.ScopeLine, []string{string(order.ScopeLine), string(order.ScopeOrder)}},
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
@@ -170,7 +173,7 @@ func generate() (*ts.Generator, error) {
 		{"OrderEventType", order.TypeOrderOpened, eventTypeNames()},
 		{"StreamMessageType", hub.MsgHello, asStrings([]hub.MessageType{
 			hub.MsgHello, hub.MsgSubscribe, hub.MsgWelcome, hub.MsgEvent, hub.MsgCaughtUp,
-			hub.MsgMenuChanged, hub.MsgPrintChanged, hub.MsgError,
+			hub.MsgMenuChanged, hub.MsgPrintChanged, hub.MsgFloorChanged, hub.MsgError,
 		})},
 	}
 	for _, u := range unions {
@@ -220,6 +223,7 @@ func generate() (*ts.Generator, error) {
 		printersResponse{}, testPageResponse{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
+		liveTableResponse{}, liveFloorResponse{},
 		// Credit notes.
 		creditPreviewRequest{}, creditRequest{}, creditPlanResponse{}, creditResponse{},
 		pastBillResponse{}, pastBillsResponse{},
@@ -228,7 +232,7 @@ func generate() (*ts.Generator, error) {
 		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},
 		// The stream.
 		hub.ClientMessage{}, hub.WelcomeMessage{}, hub.EventMessage{},
-		hub.CaughtUpMessage{}, hub.MenuChangedMessage{}, hub.PrintChangedMessage{}, hub.ErrorMessage{},
+		hub.CaughtUpMessage{}, hub.MenuChangedMessage{}, hub.PrintChangedMessage{}, hub.FloorChangedMessage{}, hub.ErrorMessage{},
 	}
 	for _, root := range roots {
 		if _, err := g.Add(root); err != nil {

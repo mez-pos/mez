@@ -410,3 +410,28 @@ describe("RealtimeConnection: the print queue version", () => {
     expect(h.notices.filter((n) => n.kind === "print")).toHaveLength(before);
   });
 });
+
+describe("RealtimeConnection: the floor version", () => {
+  it("names it on every connection, zero included, and whenever it moves", () => {
+    const h = harness();
+    h.conn.start();
+    const s = h.latest();
+    s.open();
+    s.receive({ ...welcome(5, 5), floor_version: 0 });
+    s.receive({ type: "floor_changed", version: 3 });
+    expect(h.notices.filter((n) => n.kind === "floor")).toEqual([
+      { kind: "floor", version: 0 },
+      { kind: "floor", version: 3 },
+    ]);
+  });
+
+  it("ignores a version it cannot use", () => {
+    const h = harness();
+    const s = connectAt(h, 1);
+    const before = h.notices.filter((n) => n.kind === "floor").length;
+    for (const version of [undefined, null, "7", -1, 1.5]) {
+      s.receive({ type: "floor_changed", version });
+    }
+    expect(h.notices.filter((n) => n.kind === "floor")).toHaveLength(before);
+  });
+});

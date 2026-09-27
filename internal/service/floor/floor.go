@@ -14,6 +14,7 @@ import (
 
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 )
 
 // The refusals. The API maps them to codes; those that are about a field
@@ -71,21 +72,58 @@ type systemClock struct{}
 
 func (systemClock) Now() time.Time { return time.Now() }
 
-// Service is the floor plan.
+// Orders is what the live floor needs of the orders: every one not yet
+// closed, projected. *order.Service is the implementation.
+type Orders interface {
+	OpenOrders(ctx context.Context, venueID int64) (svcorder.OpenTickets, error)
+}
+
+// Options configure a Service. DB is required; Orders is needed only for
+// the live floor.
+type Options struct {
+	DB     *db.DB
+	Orders Orders
+	Clock  Clock
+	// OnChange is told a venue's floor version moved, after the change is
+	// committed: the hub's Notify, so terminals read the floor again.
+	OnChange func(venueID int64)
+}
+
+// Service is the floor plan, and the floor as it stands in service.
 type Service struct {
-	db    *db.DB
-	clock Clock
+	db       *db.DB
+	orders   Orders
+	clock    Clock
+	onChange func(venueID int64)
 }
 
 // New returns a Service.
-func New(d *db.DB, clock Clock) (*Service, error) {
-	if d == nil {
+func New(o Options) (*Service, error) {
+	if o.DB == nil {
 		return nil, errors.New("floor: a database is required")
 	}
-	if clock == nil {
-		clock = systemClock{}
+	if o.Clock == nil {
+		o.Clock = systemClock{}
 	}
-	return &Service{db: d, clock: clock}, nil
+	if o.OnChange == nil {
+		o.OnChange = func(int64) {}
+	}
+	return &Service{db: o.DB, orders: o.Orders, clock: o.Clock, onChange: o.OnChange}, nil
+}
+
+// write runs a change to a venue's floor in one transaction, moves the
+// venue's floor version on in the same one, and says so once committed.
+func (s *Service) write(ctx context.Context, venueID int64, fn func(tx *gen.Queries) error) error {
+	err := s.db.WriteTx(ctx, func(tx *gen.Queries) error {
+		if err := fn(tx); err != nil {
+			return err
+		}
+		return tx.BumpFloorVersion(ctx, venueID)
+	})
+	if err == nil {
+		s.onChange(venueID)
+	}
+	return err
 }
 
 // AreaSettings is an area as the back office edits it.
@@ -161,7 +199,7 @@ func (s *Service) CreateArea(ctx context.Context, venueID int64, in AreaSettings
 	}
 	now := s.clock.Now().UTC()
 	var id int64
-	err = s.db.WriteTx(ctx, func(tx *gen.Queries) error {
+	err = s.write(ctx, venueID, func(tx *gen.Queries) error {
 		var err error
 		id, err = tx.CreateArea(ctx, gen.CreateAreaParams{VenueID: venueID, Name: in.Name, CreatedAt: now, UpdatedAt: now})
 		return err
@@ -175,7 +213,7 @@ func (s *Service) RenameArea(ctx context.Context, venueID, id int64, in AreaSett
 	if err != nil {
 		return err
 	}
-	err = s.db.WriteTx(ctx, func(tx *gen.Queries) error {
+	err = s.write(ctx, venueID, func(tx *gen.Queries) error {
 		n, err := tx.RenameArea(ctx, gen.RenameAreaParams{Name: in.Name, Now: s.clock.Now().UTC(), ID: id, VenueID: venueID})
 		return one(n, err, ErrAreaNotFound)
 	})
@@ -185,7 +223,7 @@ func (s *Service) RenameArea(ctx context.Context, venueID, id int64, in AreaSett
 // SetAreaActive retires an area or brings it back. An area is retired only
 // once its tables are, so no table in service stands somewhere hidden.
 func (s *Service) SetAreaActive(ctx context.Context, venueID, id int64, active bool) error {
-	return s.db.WriteTx(ctx, func(tx *gen.Queries) error {
+	return s.write(ctx, venueID, func(tx *gen.Queries) error {
 		a, err := area(ctx, tx, venueID, id)
 		if err != nil {
 			return err
@@ -212,7 +250,7 @@ func (s *Service) CreateTable(ctx context.Context, venueID int64, in TableSettin
 	}
 	now := s.clock.Now().UTC()
 	var id int64
-	err = s.db.WriteTx(ctx, func(tx *gen.Queries) error {
+	err = s.write(ctx, venueID, func(tx *gen.Queries) error {
 		if err := placeable(ctx, tx, venueID, 0, in); err != nil {
 			return err
 		}
@@ -234,8 +272,8 @@ func (s *Service) UpdateTable(ctx context.Context, venueID, id int64, in TableSe
 	if err != nil {
 		return err
 	}
-	err = s.db.WriteTx(ctx, func(tx *gen.Queries) error {
-		t, err := table(ctx, tx, venueID, id)
+	err = s.write(ctx, venueID, func(tx *gen.Queries) error {
+		t, err := tableByID(ctx, tx, venueID, id)
 		if err != nil {
 			return err
 		}
@@ -261,8 +299,8 @@ func (s *Service) UpdateTable(ctx context.Context, venueID, id int64, in TableSe
 // SetTableActive retires a table or brings it back. Brought back, it needs
 // its cell free and its area in service.
 func (s *Service) SetTableActive(ctx context.Context, venueID, id int64, active bool) error {
-	return s.db.WriteTx(ctx, func(tx *gen.Queries) error {
-		t, err := table(ctx, tx, venueID, id)
+	return s.write(ctx, venueID, func(tx *gen.Queries) error {
+		t, err := tableByID(ctx, tx, venueID, id)
 		if err != nil {
 			return err
 		}
@@ -313,7 +351,7 @@ func area(ctx context.Context, q *gen.Queries, venueID, id int64) (gen.AreaByIDR
 	return a, nil
 }
 
-func table(ctx context.Context, q *gen.Queries, venueID, id int64) (gen.TableByIDRow, error) {
+func tableByID(ctx context.Context, q *gen.Queries, venueID, id int64) (gen.TableByIDRow, error) {
 	t, err := q.TableByID(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) || (err == nil && t.VenueID != venueID) {
 		return gen.TableByIDRow{}, fmt.Errorf("%w: %d", ErrTableNotFound, id)

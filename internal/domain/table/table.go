@@ -2,8 +2,8 @@
 //
 //	free -> seated -> ordered -> settling -> dirty -> free
 //
-// It is only the transition table. Which order sits at which table, and the
-// floor plan itself, arrive with phase 08.
+// table.go is the transition table; turn.go derives where a table is from
+// the orders at it (ADR-086). The floor plan itself is internal/service/floor.
 package table
 
 import "github.com/byjoellobo/nofiltr-pos/internal/domain/fsm"

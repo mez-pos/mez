@@ -50,13 +50,14 @@ const (
 	prefixStation = "station:"
 )
 
-// Source is where the hub reads events, and the menu version it announces.
+// Source is where the hub reads events, and the versions it announces.
 // *db.DB implements it.
 type Source interface {
 	VenueEventsAfter(ctx context.Context, venueID, afterID int64, limit int) ([]db.StreamEvent, error)
 	VenueLastEventID(ctx context.Context, venueID int64) (int64, error)
 	MenuVersion(ctx context.Context, venueID int64) (int64, error)
 	PrintVersion(ctx context.Context, venueID int64) (int64, error)
+	FloorVersion(ctx context.Context, venueID int64) (int64, error)
 }
 
 // Client is who is connecting, as authentication established them.

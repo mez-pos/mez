@@ -24,7 +24,7 @@ Phase 07.
   turn is derived, not stored, except for one fact orders cannot give:
   that it has been cleared since its last order closed.
 
-  - [ ] **2a: Table state, and the floor read for terminals.** Migration:
+  - [x] **2a: Table state, and the floor read for terminals.** Migration:
     `tables.cleared_at`. A pure function in `internal/domain/table` from a
     table's open and last closed order to its tile: `free`, `seated` (an
     order open with no active lines), `ordered`, `settling`, `dirty` (its

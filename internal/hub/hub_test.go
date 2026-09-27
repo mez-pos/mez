@@ -29,6 +29,7 @@ type source struct {
 	events []db.StreamEvent
 	menu   int64
 	print  int64
+	floor  int64
 	fail   error
 }
 
@@ -39,6 +40,22 @@ func (s *source) PrintVersion(context.Context, int64) (int64, error) {
 		return 0, s.fail
 	}
 	return s.print, nil
+}
+
+func (s *source) FloorVersion(context.Context, int64) (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.fail != nil {
+		return 0, s.fail
+	}
+	return s.floor, nil
+}
+
+// setFloor moves the floor version on, as clearing a table would.
+func (s *source) setFloor(v int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.floor = v
 }
 
 // setPrint moves the print version on, as a job change would.
@@ -326,6 +343,31 @@ func TestAPrintChangeReachesEveryone(t *testing.T) {
 	}
 	w.src.setPrint(9)
 	if msg := till.next(); msg["type"] != string(MsgPrintChanged) || msg["version"] != float64(9) {
+		t.Fatalf("after a missed nudge: %v", msg)
+	}
+}
+
+// TestAFloorChangeReachesEveryone: a table cleared or the plan edited is
+// announced like the print jobs, and found on a ping if the nudge is missed.
+func TestAFloorChangeReachesEveryone(t *testing.T) {
+	w := newWorld(t)
+	w.src.setFloor(3)
+	till := w.dial(t)
+	if welcome := till.hello(ClientMessage{}); welcome["floor_version"] != float64(3) {
+		t.Fatalf("welcome = %v, want floor_version 3", welcome)
+	}
+	other := w.dial(t)
+	other.hello(ClientMessage{})
+
+	w.src.setFloor(4)
+	w.hub.Notify(1)
+	for name, c := range map[string]*client{"till": till, "other": other} {
+		if msg := c.next(); msg["type"] != string(MsgFloorChanged) || msg["version"] != float64(4) {
+			t.Fatalf("%s got %v, want floor_changed 4", name, msg)
+		}
+	}
+	w.src.setFloor(5)
+	if msg := till.next(); msg["type"] != string(MsgFloorChanged) || msg["version"] != float64(5) {
 		t.Fatalf("after a missed nudge: %v", msg)
 	}
 }

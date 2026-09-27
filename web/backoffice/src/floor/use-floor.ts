@@ -1,9 +1,11 @@
 // The venue's floor plan (backoffice-floor.md). Every change answers with
-// the whole plan as it now stands, which replaces the cache.
+// the whole plan as it now stands, which replaces the cache; the stream's
+// floor_changed refreshes it when another device changed it.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AreaSettings, FloorResponse, TableSettings } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
+import { useRealtimeNotices } from "../../../shared/use-realtime";
 
 export const floorKey = ["floor"] as const;
 
@@ -29,6 +31,9 @@ export function useFloor(): FloorApi {
     queryKey: floorKey,
     queryFn: ({ signal }) => store.api.get<FloorResponse>("/api/v1/floor", { signal }),
     staleTime: Infinity,
+  });
+  useRealtimeNotices((notice) => {
+    if (notice.kind === "floor" || notice.kind === "resync") void queryClient.invalidateQueries({ queryKey: floorKey });
   });
 
   const keep = (next: FloorResponse) => {

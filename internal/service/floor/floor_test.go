@@ -17,9 +17,9 @@ type clock struct{}
 
 func (clock) Now() time.Time { return now }
 
-// newService is the floor plan over a fresh database: venues 1 and 2, and
-// an area of venue 2's (id 1) that venue 1 must not reach.
-func newService(t *testing.T) *Service {
+// openDB is a fresh database: venues 1 and 2, untaxed, and an area of
+// venue 2's (id 1) that venue 1 must not reach.
+func openDB(t *testing.T) *db.DB {
 	t.Helper()
 	ctx := context.Background()
 	d, err := db.Open(ctx, db.Options{Path: filepath.Join(t.TempDir(), db.FileName)})
@@ -45,7 +45,13 @@ func newService(t *testing.T) *Service {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := New(d, clock{})
+	return d
+}
+
+// newService is the floor plan over openDB, with no orders.
+func newService(t *testing.T) *Service {
+	t.Helper()
+	s, err := New(Options{DB: openDB(t), Clock: clock{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,8 +68,8 @@ func must[T any](v T, err error) T {
 }
 
 func TestNewNeedsADatabase(t *testing.T) {
-	if _, err := New(nil, nil); err == nil {
-		t.Error("New(nil) worked")
+	if _, err := New(Options{}); err == nil {
+		t.Error("New with no database worked")
 	}
 }
 
