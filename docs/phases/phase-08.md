@@ -57,6 +57,27 @@ Phase 07.
   vermilion. Bump to ready, recall, all-day counts per item. Touch targets
   bigger than the 44px minimum — this screen is used with wet hands.
 
+  Too big for one session: split into 4a and 4b. A station ticket's life is
+  told by order events, so a display that drops off catches up from the
+  stream like any other device (Task 5).
+
+  - [ ] **4a: Station tickets, bump and recall, and the kitchen's API.**
+    Order events `ticket.bumped` and `ticket.recalled` `{ticket_seq,
+    station}`: a sent ticket is in the kitchen until bumped to ready, and
+    recalled back if it was bumped by mistake; checked against
+    `internal/domain/kitchen`'s machine. Projection: each ticket's status
+    and ready time. The hub files both under their station's topic.
+    `GET /api/v1/kitchen/tickets?station=` (the station's tickets not yet
+    collected, with lines, table and times) and `POST .../bump`, `.../recall`
+    for a device paired as `kitchen`, with no staff sign-in: the actor is
+    the device. Codegen, tests, ADR.
+  - [ ] **4b: The kitchen display.** Spec first (`kitchen-display.md`).
+    A `kitchen` app kind: pair as a kitchen device, choose the station, no
+    PIN. Cards in large type, timers escalating through gold to vermilion,
+    Bump (large), Recall the last bumped, all-day counts per item. Live
+    from the station topic. The terminal's ticket shows a line Ready once
+    its ticket is bumped.
+
 - [ ] **Task 5 — Realtime across devices.**
   Verify the whole loop: fire on the terminal, appears on the KDS within a
   second; bump on the KDS, terminal reflects it. Unplug the KDS mid-service and

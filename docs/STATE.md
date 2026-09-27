@@ -21,7 +21,8 @@ the tart waited for Fire course 2.
 
 ## Next task
 
-**Phase 08, Task 4: kitchen display.** Read the phase file.
+**Phase 08, Task 4a: station tickets, bump and recall, and the kitchen's
+API.** Task 4 is split into 4a and 4b in the phase file. Read it.
 
 ## Known broken / in progress
 
