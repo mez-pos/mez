@@ -20,6 +20,32 @@ Phase 07.
   Seat a party, open a ticket for a table, transfer a ticket, merge and split
   tables.
 
+  Too big for one session: split into 2a, 2b and 2c. Where a table is in its
+  turn is derived, not stored, except for one fact orders cannot give:
+  that it has been cleared since its last order closed.
+
+  - [ ] **2a: Table state, and the floor read for terminals.** Migration:
+    `tables.cleared_at`. A pure function in `internal/domain/table` from a
+    table's open and last closed order to its tile: `free`, `seated` (an
+    order open with no active lines), `ordered`, `settling`, `dirty` (its
+    last order closed after `cleared_at`), checked against the table
+    machine. `GET /api/v1/floor/live` (`order.open`): the plan in service
+    with each tile's state, covers, opened at, balance and order id. A
+    stream notice when a tile changes. `POST .../tables/{id}/clear`
+    (dirty to free). ADR. Tests: every state, and each transition's edge.
+  - [ ] **2b: The floor screen.** Spec first (`terminal-floor.md`). The
+    terminal's Floor view: area tabs, tiles with colour **and** a word,
+    covers, elapsed time, balance. Free: seat a party (covers, then an
+    order opened at the table). Seated or later: opens the ticket on the
+    register. Dirty: Clear. Seated with nothing ordered: Guests left
+    (seated to free). Live across terminals from 2a's notice.
+  - [ ] **2c: Transfer, join and split tables.** Order events
+    `order.table_changed` (a ticket moves to a free table) and
+    `order.tables_joined` / `order.tables_parted` (a party spreads over
+    more tables: one order, several tables, all showing it). Projection,
+    service commands, API, and the floor screen's Move and Join. A table
+    joined to an order is not free. Codegen lines for the new events.
+
 - [ ] **Task 3 — Station routing and courses.**
   Items carry a station. Lines carry a course. Firing a course sends only that
   course's lines, and only to the relevant stations. The bar and the kitchen

@@ -22,7 +22,8 @@ taken cell refused, a tap-move, retire and a refused bring-back.
 
 ## Next task
 
-**Phase 08, Task 2: floor plan screen.** Spec first. Read the phase file.
+**Phase 08, Task 2a: table state, and the floor read for terminals.**
+Task 2 is split into 2a, 2b and 2c in the phase file. Read it.
 
 ## Known broken / in progress
 
