@@ -216,6 +216,12 @@ func (s *Service) MoveCash(ctx context.Context, meta Meta, shiftID int64, m shif
 		if shift.Status(row.Status) != shift.StatusOpen {
 			return fmt.Errorf("%w: %s", ErrShiftClosed, row.PublicID)
 		}
+		switch _, err := closingOf(ctx, q, row.ID); {
+		case err == nil:
+			return fmt.Errorf("%w: %s", ErrDrawerCounted, row.PublicID)
+		case !errors.Is(err, ErrNotCounted):
+			return err
+		}
 		return appendEvent(ctx, q, row.ID, meta, e, now)
 	})
 	if err != nil {
@@ -225,8 +231,8 @@ func (s *Service) MoveCash(ctx context.Context, meta Meta, shiftID int64, m shif
 	return s.ByID(ctx, meta.VenueID, shiftID)
 }
 
-// Close closes an open shift. From Task 2 it will first need the blind
-// count; for now it only ends the shift.
+// Close closes an open shift. The drawer must be counted first, and a
+// variance past the threshold explained (ADR-095).
 func (s *Service) Close(ctx context.Context, meta Meta, shiftID int64) (Shift, error) {
 	if err := meta.validate(); err != nil {
 		return Shift{}, err
@@ -242,6 +248,17 @@ func (s *Service) Close(ctx context.Context, meta Meta, shiftID int64) (Shift, e
 		}
 		if _, err := shift.Transition(shift.Status(row.Status), shift.StatusClosed); err != nil {
 			return fmt.Errorf("%w: %s: %w", ErrShiftClosed, row.PublicID, err)
+		}
+		v, err := venueOf(ctx, q, meta.VenueID)
+		if err != nil {
+			return err
+		}
+		sh, err := load(ctx, q, row, v.currency)
+		if err != nil {
+			return err
+		}
+		if err := sh.ReadyToClose(); err != nil {
+			return err
 		}
 		n, err := q.CloseShift(ctx, gen.CloseShiftParams{ID: row.ID, ClosedBy: meta.ActorID, ClosedAt: sql.NullTime{Time: now, Valid: true}})
 		if err != nil {

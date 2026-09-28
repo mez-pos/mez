@@ -71,6 +71,9 @@ type DrawerCount struct {
 	Total         int64
 	CountedBy     int64
 	CountedAt     time.Time
+	Expected      int64
+	Variance      int64
+	Threshold     int64
 }
 
 type FloorVersion struct {
@@ -365,6 +368,13 @@ type TaxClass struct {
 	Exempt    bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type VarianceReason struct {
+	ShiftID     int64
+	Reason      string
+	ExplainedBy int64
+	ExplainedAt time.Time
 }
 
 type Venue struct {

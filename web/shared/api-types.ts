@@ -84,7 +84,12 @@ export type ErrorCode =
   | 'shift_closed'
   | 'shift_not_found'
   | 'invalid_count'
-  | 'invalid_cash_movement';
+  | 'invalid_cash_movement'
+  | 'already_counted'
+  | 'not_counted'
+  | 'drawer_counted'
+  | 'variance_unexplained'
+  | 'already_explained';
 
 export type OrderStatus =
   | 'open'
@@ -1057,7 +1062,7 @@ export interface Denomination {
   count: number;
 }
 
-export interface OpenShiftRequest {
+export interface CountRequest {
   total: MoneyInput;
   denominations?: Denomination[];
 }
@@ -1069,6 +1074,10 @@ export interface CashRequest {
   override: Override;
 }
 
+export interface ReasonRequest {
+  reason: string;
+}
+
 export interface ShiftEventResponse {
   id: number;
   type: ShiftEventType;
@@ -1077,6 +1086,24 @@ export interface ShiftEventResponse {
   actor_id: number;
   authorised_by: number;
   at: string;
+}
+
+export interface ReconciliationResponse {
+  expected: Money;
+  counted: Money;
+  variance: Money;
+  threshold: Money;
+  over: boolean;
+  short: boolean;
+  reason_required: boolean;
+  counted_by: number;
+  counted_at: string;
+}
+
+export interface VarianceReasonResponse {
+  reason: string;
+  explained_by: number;
+  explained_at: string;
 }
 
 export interface ShiftResponse {
@@ -1090,6 +1117,9 @@ export interface ShiftResponse {
   closed_at?: string;
   float: Money;
   events: ShiftEventResponse[];
+  counted: boolean;
+  reconciliation?: ReconciliationResponse;
+  reason?: VarianceReasonResponse;
 }
 
 export interface CurrentShiftResponse {

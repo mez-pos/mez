@@ -22,11 +22,11 @@ SET status = 'closed', closed_by = sqlc.arg(closed_by), closed_at = sqlc.arg(clo
 WHERE id = sqlc.arg(id) AND status = 'open';
 
 -- name: CreateDrawerCount :exec
-INSERT INTO drawer_counts (shift_id, kind, denominations, total, counted_by, counted_at)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO drawer_counts (shift_id, kind, denominations, total, counted_by, counted_at, expected, variance, threshold)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: DrawerCountsForShift :many
-SELECT kind, denominations, total, counted_by, counted_at
+SELECT kind, denominations, total, counted_by, counted_at, expected, variance, threshold
 FROM drawer_counts
 WHERE shift_id = ?
 ORDER BY id;
@@ -49,9 +49,29 @@ WHERE shift_id = ? AND idempotency_key = ? AND idempotency_key != '';
 
 -- name: OpenShiftIDForVenue :one
 -- The shift an order event is recorded in, read inside the appending
--- transaction so a close cannot slip between the read and the write.
-SELECT id FROM shifts WHERE venue_id = ? AND status = 'open';
+-- transaction so a close cannot slip between the read and the write. A
+-- shift whose drawer is counted takes nothing more (ADR-095).
+SELECT id FROM shifts
+WHERE venue_id = ? AND status = 'open'
+  AND NOT EXISTS (SELECT 1 FROM drawer_counts WHERE drawer_counts.shift_id = shifts.id AND kind = 'closing');
 
 -- name: ShiftOfOrderEvents :many
 -- Which shift each of an order's events was recorded in, by seq.
 SELECT seq, shift_id FROM order_events WHERE order_id = ? ORDER BY seq;
+
+-- name: OrderEventsTouchingShift :many
+-- The whole streams of the orders with any event in a shift: a refund in
+-- it may be against a tender taken in an earlier one.
+SELECT order_id, seq, type, payload, actor_id, device_id, at, shift_id
+FROM order_events
+WHERE order_id IN (SELECT DISTINCT e.order_id FROM order_events e WHERE e.shift_id = sqlc.arg(shift_id))
+ORDER BY order_id, seq;
+
+-- name: CreateVarianceReason :exec
+INSERT INTO variance_reasons (shift_id, reason, explained_by, explained_at)
+VALUES (?, ?, ?, ?);
+
+-- name: VarianceReason :one
+SELECT shift_id, reason, explained_by, explained_at
+FROM variance_reasons
+WHERE shift_id = ?;

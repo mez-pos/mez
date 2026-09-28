@@ -67,8 +67,8 @@ func (q *Queries) CloseShift(ctx context.Context, arg CloseShiftParams) (int64, 
 }
 
 const createDrawerCount = `-- name: CreateDrawerCount :exec
-INSERT INTO drawer_counts (shift_id, kind, denominations, total, counted_by, counted_at)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO drawer_counts (shift_id, kind, denominations, total, counted_by, counted_at, expected, variance, threshold)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateDrawerCountParams struct {
@@ -78,6 +78,9 @@ type CreateDrawerCountParams struct {
 	Total         int64
 	CountedBy     int64
 	CountedAt     time.Time
+	Expected      int64
+	Variance      int64
+	Threshold     int64
 }
 
 func (q *Queries) CreateDrawerCount(ctx context.Context, arg CreateDrawerCountParams) error {
@@ -88,6 +91,9 @@ func (q *Queries) CreateDrawerCount(ctx context.Context, arg CreateDrawerCountPa
 		arg.Total,
 		arg.CountedBy,
 		arg.CountedAt,
+		arg.Expected,
+		arg.Variance,
+		arg.Threshold,
 	)
 	return err
 }
@@ -122,8 +128,30 @@ func (q *Queries) CreateShift(ctx context.Context, arg CreateShiftParams) (int64
 	return id, err
 }
 
+const createVarianceReason = `-- name: CreateVarianceReason :exec
+INSERT INTO variance_reasons (shift_id, reason, explained_by, explained_at)
+VALUES (?, ?, ?, ?)
+`
+
+type CreateVarianceReasonParams struct {
+	ShiftID     int64
+	Reason      string
+	ExplainedBy int64
+	ExplainedAt time.Time
+}
+
+func (q *Queries) CreateVarianceReason(ctx context.Context, arg CreateVarianceReasonParams) error {
+	_, err := q.db.ExecContext(ctx, createVarianceReason,
+		arg.ShiftID,
+		arg.Reason,
+		arg.ExplainedBy,
+		arg.ExplainedAt,
+	)
+	return err
+}
+
 const drawerCountsForShift = `-- name: DrawerCountsForShift :many
-SELECT kind, denominations, total, counted_by, counted_at
+SELECT kind, denominations, total, counted_by, counted_at, expected, variance, threshold
 FROM drawer_counts
 WHERE shift_id = ?
 ORDER BY id
@@ -135,6 +163,9 @@ type DrawerCountsForShiftRow struct {
 	Total         int64
 	CountedBy     int64
 	CountedAt     time.Time
+	Expected      int64
+	Variance      int64
+	Threshold     int64
 }
 
 func (q *Queries) DrawerCountsForShift(ctx context.Context, shiftID int64) ([]DrawerCountsForShiftRow, error) {
@@ -152,6 +183,9 @@ func (q *Queries) DrawerCountsForShift(ctx context.Context, shiftID int64) ([]Dr
 			&i.Total,
 			&i.CountedBy,
 			&i.CountedAt,
+			&i.Expected,
+			&i.Variance,
+			&i.Threshold,
 		); err != nil {
 			return nil, err
 		}
@@ -190,16 +224,71 @@ func (q *Queries) OpenShiftForVenue(ctx context.Context, venueID int64) (Shift, 
 }
 
 const openShiftIDForVenue = `-- name: OpenShiftIDForVenue :one
-SELECT id FROM shifts WHERE venue_id = ? AND status = 'open'
+SELECT id FROM shifts
+WHERE venue_id = ? AND status = 'open'
+  AND NOT EXISTS (SELECT 1 FROM drawer_counts WHERE drawer_counts.shift_id = shifts.id AND kind = 'closing')
 `
 
 // The shift an order event is recorded in, read inside the appending
-// transaction so a close cannot slip between the read and the write.
+// transaction so a close cannot slip between the read and the write. A
+// shift whose drawer is counted takes nothing more (ADR-095).
 func (q *Queries) OpenShiftIDForVenue(ctx context.Context, venueID int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, openShiftIDForVenue, venueID)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const orderEventsTouchingShift = `-- name: OrderEventsTouchingShift :many
+SELECT order_id, seq, type, payload, actor_id, device_id, at, shift_id
+FROM order_events
+WHERE order_id IN (SELECT DISTINCT e.order_id FROM order_events e WHERE e.shift_id = ?1)
+ORDER BY order_id, seq
+`
+
+type OrderEventsTouchingShiftRow struct {
+	OrderID  int64
+	Seq      int64
+	Type     string
+	Payload  string
+	ActorID  int64
+	DeviceID int64
+	At       time.Time
+	ShiftID  int64
+}
+
+// The whole streams of the orders with any event in a shift: a refund in
+// it may be against a tender taken in an earlier one.
+func (q *Queries) OrderEventsTouchingShift(ctx context.Context, shiftID int64) ([]OrderEventsTouchingShiftRow, error) {
+	rows, err := q.db.QueryContext(ctx, orderEventsTouchingShift, shiftID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []OrderEventsTouchingShiftRow{}
+	for rows.Next() {
+		var i OrderEventsTouchingShiftRow
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.Seq,
+			&i.Type,
+			&i.Payload,
+			&i.ActorID,
+			&i.DeviceID,
+			&i.At,
+			&i.ShiftID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const shiftByID = `-- name: ShiftByID :one
@@ -344,4 +433,22 @@ func (q *Queries) ShiftOfOrderEvents(ctx context.Context, orderID int64) ([]Shif
 		return nil, err
 	}
 	return items, nil
+}
+
+const varianceReason = `-- name: VarianceReason :one
+SELECT shift_id, reason, explained_by, explained_at
+FROM variance_reasons
+WHERE shift_id = ?
+`
+
+func (q *Queries) VarianceReason(ctx context.Context, shiftID int64) (VarianceReason, error) {
+	row := q.db.QueryRowContext(ctx, varianceReason, shiftID)
+	var i VarianceReason
+	err := row.Scan(
+		&i.ShiftID,
+		&i.Reason,
+		&i.ExplainedBy,
+		&i.ExplainedAt,
+	)
+	return i, err
 }

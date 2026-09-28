@@ -85,8 +85,13 @@ func (w *shiftTill) current(t *testing.T) *shiftResponse {
 	if status != http.StatusOK {
 		t.Fatalf("GET shift: %d %s", status, raw)
 	}
-	if strings.Contains(string(raw), "drawer") {
-		t.Errorf("the shift gives the drawer's expected figure away before the blind count: %s", raw)
+	// Blind: nothing that gives the drawer's figure away before the count.
+	if !strings.Contains(string(raw), `"counted":true`) {
+		for _, tell := range []string{"drawer", "expected", "sales", "reconciliation", "variance"} {
+			if strings.Contains(string(raw), tell) {
+				t.Errorf("the shift says %q before the blind count: %s", tell, raw)
+			}
+		}
 	}
 	var out currentShiftResponse
 	if err := json.Unmarshal(raw, &out); err != nil {
@@ -152,7 +157,36 @@ func TestAShiftOverHTTP(t *testing.T) {
 	}
 
 	closePath := fmt.Sprintf("/api/v1/shift/%d/close", opened.ID)
+	countPath := fmt.Sprintf("/api/v1/shift/%d/count", opened.ID)
+	reasonPath := fmt.Sprintf("/api/v1/shift/%d/reason", opened.ID)
 	w.refused(t, w.cashier, http.MethodPost, closePath, "", http.StatusForbidden, CodeForbidden)
+	w.refused(t, w.owner, http.MethodPost, closePath, "", http.StatusConflict, CodeNotCounted)
+	w.refused(t, w.cashier, http.MethodPost, reasonPath, `{"reason":"early"}`, http.StatusConflict, CodeNotCounted)
+
+	// The blind count: ₹970 counted against ₹1,100 float less ₹120.50 out,
+	// revealed only in the answer.
+	blind := `{"total":{"minor":97000,"currency":"INR"},"denominations":[{"face":50000,"count":1},{"face":1000,"count":47}]}`
+	counted := w.shift(t, w.cashier, http.MethodPost, countPath, blind, http.StatusOK)
+	rec := counted.Reconciliation
+	if !counted.Counted || rec == nil || rec.Expected.Minor != 97950 || rec.Counted.Minor != 97000 ||
+		rec.Variance.Minor != -950 || !rec.Short || rec.Over || !rec.ReasonRequired || rec.CountedBy != 1 {
+		t.Fatalf("the reveal = %+v", rec)
+	}
+	w.refused(t, w.cashier, http.MethodPost, countPath, `{"total":{"minor":97950,"currency":"INR"}}`, http.StatusConflict, CodeAlreadyCounted)
+	w.refused(t, w.cashier, http.MethodPost, cash, payout("stf_PRIYA001"), http.StatusConflict, CodeDrawerCounted)
+	w.refused(t, w.cashier, http.MethodPost, "/api/v1/orders", openOrderBody, http.StatusConflict, CodeNoOpenShift)
+	if got := w.current(t); got == nil || got.Reconciliation == nil || got.Reconciliation.Variance.Minor != -950 {
+		t.Errorf("after the count the shift shows its reconciliation: %+v", got)
+	}
+
+	w.refused(t, w.owner, http.MethodPost, closePath, "", http.StatusConflict, CodeVarianceUnexplained)
+	w.refused(t, w.cashier, http.MethodPost, reasonPath, `{"reason":"  "}`, http.StatusBadRequest, CodeInvalidRequest)
+	explained := w.shift(t, w.cashier, http.MethodPost, reasonPath, `{"reason":"change given twice"}`, http.StatusOK)
+	if explained.Reason == nil || explained.Reason.Reason != "change given twice" || explained.Reason.ExplainedBy != 1 {
+		t.Errorf("reason = %+v", explained.Reason)
+	}
+	w.refused(t, w.cashier, http.MethodPost, reasonPath, `{"reason":"another"}`, http.StatusConflict, CodeAlreadyExplained)
+
 	closed := w.shift(t, w.owner, http.MethodPost, closePath, "", http.StatusOK)
 	if closed.Status != shift.StatusClosed || closed.ClosedAt == nil || closed.ClosedBy != 2 {
 		t.Errorf("closed = %+v", closed)

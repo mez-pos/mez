@@ -2627,3 +2627,46 @@ added, and per-event stamping is the only rule under which a shift's
 figures still add up when a bill spans two shifts.
 Cost: every test that sells has to open a shift first; the terminal
 cannot sell until a shift screen exists (Task 2), only over the API.
+
+## ADR-095 - The blind count is taken once and reveals the drawer in its answer
+2026-09 · Status: accepted
+Decision: phase 09, Task 2a's close is count, reveal, explain, close, and
+the server holds the expected figure back until the count is in.
+  - **Expected cash** is the float, plus cash in, less cash out, plus the
+    shift's cash from sales: cash tenders taken in the shift, bill and tip
+    (the tip was handed over at the till and sits in the drawer until paid
+    out, which is a cash movement), less cash tenders voided in it (bill
+    and tip) and refunds against cash tenders given in it, whichever shift
+    took the money. It is worked out from the whole streams of the orders
+    touched in the shift (`shift.CashFromOrders`), so a refund today of
+    yesterday's cash bill leaves today's drawer.
+  - **Blind.** `GET /api/v1/shift` serves no expected figure, no cash
+    sales and no drawer before the count; the answer to
+    `POST /shift/{id}/count` is the first to carry `reconciliation`. A
+    test fails if any of those words appear in an uncounted shift.
+  - **Once.** One closing count per shift (the unique index from 00015).
+    The same count retried is answered; any other count is
+    `already_counted`, so nobody recounts until the drawer matches. A
+    miscount is explained, not replaced.
+  - **Recorded with what it was measured against:** the expected figure,
+    the variance (the database checks it is total less expected) and the
+    threshold then in force, on the count's row. Loosening the threshold
+    afterwards cannot excuse a counted shortfall.
+  - **Threshold:** venue setting `shift.variance_threshold_minor`, in
+    minor units, default 0: any variance at all needs a reason until the
+    owner says otherwise. Exactly at the threshold needs none.
+  - **Reason:** `variance_reasons`, one per shift, write-once, up to 500
+    characters, given after the reveal; allowed within the threshold too.
+  - **A counted shift is shut:** the store's open-shift lookup skips it,
+    so orders get `no_open_shift`, and cash movements `drawer_counted`.
+    It is still the current shift until closed, and still blocks opening
+    the next one.
+  - **Close** needs the count and, past the threshold, the reason
+    (`not_counted`, `variance_unexplained`).
+  - Counting and explaining need payment.take (whoever handles the drawer);
+    closing still needs shift.manage.
+Because: a count that can be retaken until it matches, or a threshold
+applied after the fact, is not a control; and an expected figure anywhere
+before the count is one a cashier can read.
+Cost: a genuine miscount stays on the record with its explanation; there
+is no recount.

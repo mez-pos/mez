@@ -29,7 +29,7 @@ Phase 08.
   Variance computed after submission, over or short, with a mandatory reason
   above a configurable threshold. Recorded immutably.
   Split in two:
-  - [ ] **2a - The count on the server.** Expected cash from the float,
+  - [x] **2a - The count on the server.** Expected cash from the float,
     movements and the shift's cash tenders, voids and refunds; one closing
     count per shift, recorded with its expected figure, variance and the
     threshold then in force; a reason recorded once when the variance is

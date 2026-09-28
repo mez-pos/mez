@@ -109,6 +109,20 @@ func movement(t *testing.T, kind shift.MovementKind, minor int64, reason string)
 	return m
 }
 
+// countExact counts the drawer at exactly what is expected, so the shift
+// can close with no reason.
+func countExact(t *testing.T, f *fixture, shiftID int64) {
+	t.Helper()
+	sh := must(f.svc.ByID(ctx, 1, shiftID))
+	c, err := shift.LumpSum(shift.CountClosing, sh.Expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.svc.Count(ctx, cashier, shiftID, c); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func must[T any](v T, err error) T {
 	if err != nil {
 		panic(err)
@@ -142,8 +156,8 @@ func TestAShiftFromOpenToClose(t *testing.T) {
 	if opened.Float.Total != inr(110000) || len(opened.Float.Denominations) != 2 {
 		t.Errorf("float = %+v, want 1100.00 in two denominations", opened.Float)
 	}
-	if opened.Drawer != inr(110000) {
-		t.Errorf("drawer = %s, want the float", opened.Drawer)
+	if opened.Expected != inr(110000) {
+		t.Errorf("drawer = %s, want the float", opened.Expected)
 	}
 
 	current := must(f.svc.Current(ctx, 1))
@@ -155,14 +169,15 @@ func TestAShiftFromOpenToClose(t *testing.T) {
 	f.clock.set(start.Add(3 * time.Hour))
 	must(f.svc.MoveCash(ctx, cashier, opened.ID, movement(t, shift.CashIn, 50000, "coins from the safe")))
 	moved := must(f.svc.MoveCash(ctx, cashier, opened.ID, movement(t, shift.CashOut, 12050, "ice from the shop")))
-	if moved.Drawer != inr(147950) {
-		t.Errorf("drawer = %s, want 1479.50", moved.Drawer)
+	if moved.Expected != inr(147950) {
+		t.Errorf("drawer = %s, want 1479.50", moved.Expected)
 	}
 	if moved.TradingDay != "2026-09-27" {
 		t.Errorf("trading day moved to %s", moved.TradingDay)
 	}
 
 	f.clock.set(start.Add(4 * time.Hour))
+	countExact(t, f, opened.ID)
 	closed, err := f.svc.Close(ctx, Meta{VenueID: 1, ActorID: 2, DeviceID: 7}, opened.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -192,8 +207,8 @@ func TestAShiftFromOpenToClose(t *testing.T) {
 	if _, err := f.svc.Current(ctx, 1); !errors.Is(err, ErrNoOpenShift) {
 		t.Errorf("after close: err = %v, want ErrNoOpenShift", err)
 	}
-	if len(f.changed) != 4 {
-		t.Errorf("told of %d changes, want 4", len(f.changed))
+	if len(f.changed) != 5 {
+		t.Errorf("told of %d changes, want 5", len(f.changed))
 	}
 
 	// The next shift opens on a new day.
@@ -292,6 +307,7 @@ func TestMoveCashRefusals(t *testing.T) {
 func TestAClosedShiftTakesNothingMore(t *testing.T) {
 	f := newFixture(t)
 	open := must(f.svc.Open(ctx, cashier, float(t, 100000)))
+	countExact(t, f, open.ID)
 	must(f.svc.Close(ctx, cashier, open.ID))
 
 	if _, err := f.svc.MoveCash(ctx, cashier, open.ID, movement(t, shift.CashOut, 100, "milk")); !errors.Is(err, ErrShiftClosed) {
@@ -319,14 +335,15 @@ func TestRetriesAreRecordedOnce(t *testing.T) {
 	payout := movement(t, shift.CashOut, 12050, "ice")
 	must(f.svc.MoveCash(ctx, withKey("pay-1"), first.ID, payout))
 	got := must(f.svc.MoveCash(ctx, withKey("pay-1"), first.ID, payout))
-	if len(got.Events) != 2 || got.Drawer != inr(87950) {
-		t.Errorf("a retried payout counted twice: %d events, drawer %s", len(got.Events), got.Drawer)
+	if len(got.Events) != 2 || got.Expected != inr(87950) {
+		t.Errorf("a retried payout counted twice: %d events, drawer %s", len(got.Events), got.Expected)
 	}
 	bigger := movement(t, shift.CashOut, 99999, "ice")
 	if _, err := f.svc.MoveCash(ctx, withKey("pay-1"), first.ID, bigger); !errors.Is(err, ErrIdempotencyKeyReused) {
 		t.Errorf("the key for another payout: err = %v, want ErrIdempotencyKeyReused", err)
 	}
 
+	countExact(t, f, first.ID)
 	must(f.svc.Close(ctx, withKey("close-1"), first.ID))
 	if _, err := f.svc.Close(ctx, withKey("close-1"), first.ID); err != nil {
 		t.Errorf("a retried close: %v", err)
@@ -367,6 +384,7 @@ func TestTheRecordCannotBeRewritten(t *testing.T) {
 		})
 	}
 
+	countExact(t, f, open.ID)
 	must(f.svc.Close(ctx, cashier, open.ID))
 	err := f.db.Tx(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, "UPDATE shifts SET status = 'open', closed_at = NULL, closed_by = 0")

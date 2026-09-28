@@ -119,6 +119,7 @@ var errorCodes = []ErrorCode{
 	CodeTableTaken, CodeTableMoved, CodeTableAlreadyAt, CodeTableNotJoined, CodeNoTable,
 	CodeTicketNotFound,
 	CodeNoOpenShift, CodeShiftOpen, CodeShiftClosed, CodeShiftUnknown, CodeInvalidCount, CodeInvalidCash,
+	CodeAlreadyCounted, CodeNotCounted, CodeDrawerCounted, CodeVarianceUnexplained, CodeAlreadyExplained,
 }
 
 // generate builds the whole file.
@@ -241,7 +242,8 @@ func generate() (*ts.Generator, error) {
 		liveTableResponse{}, liveFloorResponse{},
 		moveTableRequest{}, joinTablesRequest{}, partTablesRequest{},
 		// The shift.
-		shift.Denomination{}, openShiftRequest{}, cashRequest{}, shiftEventResponse{}, shiftResponse{}, currentShiftResponse{},
+		shift.Denomination{}, countRequest{}, cashRequest{}, reasonRequest{}, shiftEventResponse{},
+		reconciliationResponse{}, varianceReasonResponse{}, shiftResponse{}, currentShiftResponse{},
 		// The kitchen display.
 		kitchenLineResponse{}, kitchenTicketResponse{}, kitchenBoardResponse{},
 		// Credit notes.

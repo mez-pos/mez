@@ -11,19 +11,21 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 1b: everything attached to the shift** (ADR-094), which
-completes Task 1. Migration 00016 stamps every order event with the shift
-open when it was recorded (`order_events.shift_id`) and each order with
-the shift it opened in; with no shift open, every order event but a
-kitchen bump, recall or reprint is refused (`shift.NeedsShift`,
-`no_open_shift`). Shift API: `GET /api/v1/shift`, `POST /shift/open`
-(shift.manage), `/shift/{id}/cash` (payment.take, override for
-cash.move), `/shift/{id}/close` (shift.manage). No drawer figure is
-served.
+**Phase 09, Task 2a: the blind count on the server** (ADR-095). Expected
+cash is the float, the movements and the shift's cash (tenders with their
+tips, less voids and refunds against cash, whichever shift took them).
+`POST /api/v1/shift/{id}/count` records the closing count once, with the
+expected figure, variance and the threshold in force (setting
+`shift.variance_threshold_minor`, default 0), and is the first answer to
+reveal them. A counted shift takes no sales or cash. `.../reason` records
+the reason once; close needs the count and, past the threshold, the
+reason. Migration 00017.
 
 ## Next task
 
-**Phase 09, Task 2: blind drawer count.** Read `docs/phases/phase-09.md`.
+**Phase 09, Task 2b: the close-of-day screen.** Write
+`docs/design/screens/terminal-close.md` first. Read
+`docs/phases/phase-09.md`.
 
 ## Known broken / in progress
 
@@ -35,14 +37,15 @@ served.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
-- Shifts (ADR-093, ADR-094): `Close` needs no count until Task 2.
-  **The terminal has no screen to open a shift**, so it cannot sell until
-  one is opened over the API (`POST /api/v1/shift/open` as the owner,
-  body `{"total":{"minor":0,"currency":"INR"}}`); Task 2's close-of-day
-  screen should add Open. Terminals are not told over the stream when a
-  shift opens or closes. `Shift.Drawer` has no cash sales in it yet. The
-  day start is a constant. A payout larger than the drawer is not
-  refused. Closing leaves open tickets to carry into the next shift.
+- Shifts (ADR-093 to ADR-095): **the terminal has no screen to open,
+  count or close a shift** (Task 2b), so it cannot sell until one is
+  opened over the API (`POST /api/v1/shift/open` as the owner, body
+  `{"total":{"minor":0,"currency":"INR"}}`). Terminals are not told over
+  the stream when a shift opens, is counted or closes. The day start is a
+  constant. A payout larger than the drawer is not refused. Closing leaves
+  open tickets to carry into the next shift. A counted drawer cannot be
+  recounted: a miscount is explained, not replaced. The variance threshold
+  has no back office setting yet (phase 10); set it in `settings`.
 - Phase 09's exception report should count `entered_in_error` removes
   per staff member, apart from manager voids (ADR-073).
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);

@@ -84,6 +84,7 @@ type Querier interface {
 	CreateStation(ctx context.Context, arg CreateStationParams) (int64, error)
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
 	CreateTaxClass(ctx context.Context, arg CreateTaxClassParams) (int64, error)
+	CreateVarianceReason(ctx context.Context, arg CreateVarianceReasonParams) error
 	// Venues. Explicit column lists throughout, per docs/03-conventions.md: a
 	// SELECT * here would silently change shape the next time a migration adds a
 	// column, and RETURNING * has exactly the same problem.
@@ -139,11 +140,15 @@ type Querier interface {
 	NextInvoiceSeq(ctx context.Context, arg NextInvoiceSeqParams) (int64, error)
 	OpenShiftForVenue(ctx context.Context, venueID int64) (Shift, error)
 	// The shift an order event is recorded in, read inside the appending
-	// transaction so a close cannot slip between the read and the write.
+	// transaction so a close cannot slip between the read and the write. A
+	// shift whose drawer is counted takes nothing more (ADR-095).
 	OpenShiftIDForVenue(ctx context.Context, venueID int64) (int64, error)
 	OrderByID(ctx context.Context, id int64) (OrderByIDRow, error)
 	OrderByPublicID(ctx context.Context, publicID string) (OrderByPublicIDRow, error)
 	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEventsAfterRow, error)
+	// The whole streams of the orders with any event in a shift: a refund in
+	// it may be against a tender taken in an earlier one.
+	OrderEventsTouchingShift(ctx context.Context, shiftID int64) ([]OrderEventsTouchingShiftRow, error)
 	OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapshot, error)
 	// The orders an invoice or credit note number belongs to, as typed or
 	// scanned from a receipt, or whose invoice has the sequence number seq in
@@ -244,6 +249,7 @@ type Querier interface {
 	UpdateVenue(ctx context.Context, arg UpdateVenueParams) (Venue, error)
 	// A ticket as its order's projection now has it (ADR-090).
 	UpsertStationTicket(ctx context.Context, arg UpsertStationTicketParams) error
+	VarianceReason(ctx context.Context, shiftID int64) (VarianceReason, error)
 	VenueByID(ctx context.Context, id int64) (Venue, error)
 	VenueByPublicID(ctx context.Context, publicID string) (Venue, error)
 	// The venue's events after a point in its stream, oldest first. This is what
