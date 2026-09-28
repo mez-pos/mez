@@ -26,6 +26,7 @@ type Server struct {
 	prints   Prints
 	printers Printers
 	floor    Floor
+	shifts   Shifts
 	limiter  *limiter
 	handler  http.Handler
 }
@@ -108,6 +109,7 @@ func (s *Server) routes() http.Handler {
 	s.mountPrinters(mux)
 	s.mountFloor(mux)
 	s.mountKitchen(mux)
+	s.mountShifts(mux)
 
 	// Anything else under /api keeps the JSON envelope. Without this, an
 	// unknown endpoint would fall through to the terminal bundle mounted at /

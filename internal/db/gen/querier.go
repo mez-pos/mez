@@ -138,9 +138,12 @@ type Querier interface {
 	// transaction, so a rollback takes the number back. Never MAX(n)+1.
 	NextInvoiceSeq(ctx context.Context, arg NextInvoiceSeqParams) (int64, error)
 	OpenShiftForVenue(ctx context.Context, venueID int64) (Shift, error)
-	OrderByID(ctx context.Context, id int64) (Order, error)
-	OrderByPublicID(ctx context.Context, publicID string) (Order, error)
-	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error)
+	// The shift an order event is recorded in, read inside the appending
+	// transaction so a close cannot slip between the read and the write.
+	OpenShiftIDForVenue(ctx context.Context, venueID int64) (int64, error)
+	OrderByID(ctx context.Context, id int64) (OrderByIDRow, error)
+	OrderByPublicID(ctx context.Context, publicID string) (OrderByPublicIDRow, error)
+	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEventsAfterRow, error)
 	OrderSnapshot(ctx context.Context, orderID int64) (OrderSnapshot, error)
 	// The orders an invoice or credit note number belongs to, as typed or
 	// scanned from a receipt, or whose invoice has the sequence number seq in
@@ -199,6 +202,8 @@ type Querier interface {
 	ShiftByID(ctx context.Context, id int64) (Shift, error)
 	ShiftEventByKey(ctx context.Context, arg ShiftEventByKeyParams) (ShiftEventByKeyRow, error)
 	ShiftEvents(ctx context.Context, shiftID int64) ([]ShiftEventsRow, error)
+	// Which shift each of an order's events was recorded in, by seq.
+	ShiftOfOrderEvents(ctx context.Context, orderID int64) ([]ShiftOfOrderEventsRow, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
 	//
 	// Everyone who has worked at the venue, inactive included: an order's

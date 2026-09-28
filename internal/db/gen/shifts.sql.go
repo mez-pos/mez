@@ -189,6 +189,19 @@ func (q *Queries) OpenShiftForVenue(ctx context.Context, venueID int64) (Shift, 
 	return i, err
 }
 
+const openShiftIDForVenue = `-- name: OpenShiftIDForVenue :one
+SELECT id FROM shifts WHERE venue_id = ? AND status = 'open'
+`
+
+// The shift an order event is recorded in, read inside the appending
+// transaction so a close cannot slip between the read and the write.
+func (q *Queries) OpenShiftIDForVenue(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, openShiftIDForVenue, venueID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const shiftByID = `-- name: ShiftByID :one
 SELECT id, public_id, venue_id, status, trading_day, opened_by, opened_at, closed_by, closed_at
 FROM shifts
@@ -287,6 +300,39 @@ func (q *Queries) ShiftEvents(ctx context.Context, shiftID int64) ([]ShiftEvents
 			&i.DeviceID,
 			&i.At,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const shiftOfOrderEvents = `-- name: ShiftOfOrderEvents :many
+SELECT seq, shift_id FROM order_events WHERE order_id = ? ORDER BY seq
+`
+
+type ShiftOfOrderEventsRow struct {
+	Seq     int64
+	ShiftID int64
+}
+
+// Which shift each of an order's events was recorded in, by seq.
+func (q *Queries) ShiftOfOrderEvents(ctx context.Context, orderID int64) ([]ShiftOfOrderEventsRow, error) {
+	rows, err := q.db.QueryContext(ctx, shiftOfOrderEvents, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ShiftOfOrderEventsRow{}
+	for rows.Next() {
+		var i ShiftOfOrderEventsRow
+		if err := rows.Scan(&i.Seq, &i.ShiftID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -17,6 +17,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/invoice"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
 )
 
 // SnapshotEvery is how many events apart an order's snapshot is retaken. A
@@ -76,7 +77,12 @@ func (d *DB) OpenOrder(ctx context.Context, n NewOrder, taxes order.Taxes) (int6
 
 	var orderID int64
 	err = d.WriteTx(ctx, func(q *gen.Queries) error {
+		shiftID, err := shiftFor(ctx, q, n.VenueID, []order.Event{first})
+		if err != nil {
+			return err
+		}
 		orderID, err = q.CreateOrder(ctx, gen.CreateOrderParams{
+			ShiftID:   shiftID,
 			PublicID:  n.PublicID,
 			VenueID:   n.VenueID,
 			Channel:   string(state.Channel),
@@ -93,7 +99,7 @@ func (d *DB) OpenOrder(ctx context.Context, n NewOrder, taxes order.Taxes) (int6
 		if err != nil {
 			return fmt.Errorf("creating order %q: %w", n.PublicID, err)
 		}
-		if err := appendEvents(ctx, q, orderID, []order.Event{first}); err != nil {
+		if err := appendEvents(ctx, q, orderID, shiftID, []order.Event{first}); err != nil {
 			return err
 		}
 		if err := syncTables(ctx, q, orderID, order.State{}, state); err != nil {
@@ -251,7 +257,11 @@ func (d *DB) appendOnce(ctx context.Context, q *gen.Queries, orderID int64, taxe
 		}
 		return order.State{}, nil, err
 	}
-	if err := appendEvents(ctx, q, orderID, events); err != nil {
+	shiftID, err := shiftFor(ctx, q, row.VenueID, events)
+	if err != nil {
+		return order.State{}, nil, err
+	}
+	if err := appendEvents(ctx, q, orderID, shiftID, events); err != nil {
 		return order.State{}, nil, err
 	}
 	moved, err := q.UpdateOrderIndex(ctx, gen.UpdateOrderIndexParams{
@@ -422,7 +432,28 @@ func snapshotBasis(taxes order.Taxes) (string, error) {
 	return fmt.Sprintf("v%d|%s|%s", order.ProjectionVersion, profile, venue), nil
 }
 
-func appendEvents(ctx context.Context, q *gen.Queries, orderID int64, events []order.Event) error {
+// shiftFor is the venue's open shift, which the events are recorded in, or
+// 0 with none open. With none open, an event that needs a shift refuses
+// the whole append with shift.ErrNoOpenShift (ADR-094). It is read in the
+// appending transaction, so a shift cannot close between the check and
+// the write: SQLite has one writer.
+func shiftFor(ctx context.Context, q *gen.Queries, venueID int64, events []order.Event) (int64, error) {
+	shiftID, err := q.OpenShiftIDForVenue(ctx, venueID)
+	if err == nil {
+		return shiftID, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return 0, fmt.Errorf("reading venue %d's open shift: %w", venueID, err)
+	}
+	for _, e := range events {
+		if shift.NeedsShift(e.Type) {
+			return 0, fmt.Errorf("%w: %s at venue %d", shift.ErrNoOpenShift, e.Type, venueID)
+		}
+	}
+	return 0, nil
+}
+
+func appendEvents(ctx context.Context, q *gen.Queries, orderID, shiftID int64, events []order.Event) error {
 	for _, e := range events {
 		if e.Payload == nil {
 			return fmt.Errorf("order %d: event at seq %d has no payload", orderID, e.Seq)
@@ -439,6 +470,7 @@ func appendEvents(ctx context.Context, q *gen.Queries, orderID int64, events []o
 			ActorID:  e.ActorID,
 			DeviceID: e.DeviceID,
 			At:       e.At.UTC(),
+			ShiftID:  shiftID,
 		})
 		if IsUniqueViolation(err) {
 			return fmt.Errorf("%w: order %d already has seq %d", ErrSeqConflict, orderID, e.Seq)

@@ -26,7 +26,7 @@ import (
 // The refusals. The API maps them to codes.
 var (
 	ErrInvalidCommand       = errors.New("invalid shift command")
-	ErrNoOpenShift          = errors.New("no shift is open")
+	ErrNoOpenShift          = shift.ErrNoOpenShift
 	ErrShiftOpen            = errors.New("a shift is already open")
 	ErrShiftNotFound        = errors.New("no such shift at this venue")
 	ErrShiftClosed          = errors.New("the shift is closed")

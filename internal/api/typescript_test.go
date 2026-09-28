@@ -18,12 +18,14 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/table"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
+	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
 )
 
 // typesFile is the generated file, relative to this package.
@@ -116,6 +118,7 @@ var errorCodes = []ErrorCode{
 	CodeTableOccupied, CodeTableNotEmpty,
 	CodeTableTaken, CodeTableMoved, CodeTableAlreadyAt, CodeTableNotJoined, CodeNoTable,
 	CodeTicketNotFound,
+	CodeNoOpenShift, CodeShiftOpen, CodeShiftClosed, CodeShiftUnknown, CodeInvalidCount, CodeInvalidCash,
 }
 
 // generate builds the whole file.
@@ -172,6 +175,9 @@ func generate() (*ts.Generator, error) {
 		{"TableShape", floor.Square, asStrings(floor.Shapes())},
 		{"TableStatus", table.StatusFree, asStrings(table.Machine().States())},
 		{"TicketStatus", kitchen.TicketFired, asStrings(kitchen.Machine().States())},
+		{"ShiftStatus", shift.StatusOpen, asStrings(shift.Machine().States())},
+		{"ShiftEventType", svcshift.EventOpened, asStrings(svcshift.EventTypes())},
+		{"CashMovementKind", shift.CashIn, asStrings(shift.MovementKinds())},
 		{"DiscountScope", order.ScopeLine, []string{string(order.ScopeLine), string(order.ScopeOrder)}},
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
@@ -234,6 +240,8 @@ func generate() (*ts.Generator, error) {
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},
 		moveTableRequest{}, joinTablesRequest{}, partTablesRequest{},
+		// The shift.
+		shift.Denomination{}, openShiftRequest{}, cashRequest{}, shiftEventResponse{}, shiftResponse{}, currentShiftResponse{},
 		// The kitchen display.
 		kitchenLineResponse{}, kitchenTicketResponse{}, kitchenBoardResponse{},
 		// Credit notes.

@@ -27,8 +27,8 @@ func (q *Queries) AddOrderTable(ctx context.Context, arg AddOrderTableParams) er
 }
 
 const appendOrderEvent = `-- name: AppendOrderEvent :exec
-INSERT INTO order_events (order_id, seq, type, payload, actor_id, device_id, at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO order_events (order_id, seq, type, payload, actor_id, device_id, at, shift_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type AppendOrderEventParams struct {
@@ -39,6 +39,7 @@ type AppendOrderEventParams struct {
 	ActorID  int64
 	DeviceID int64
 	At       time.Time
+	ShiftID  int64
 }
 
 func (q *Queries) AppendOrderEvent(ctx context.Context, arg AppendOrderEventParams) error {
@@ -50,6 +51,7 @@ func (q *Queries) AppendOrderEvent(ctx context.Context, arg AppendOrderEventPara
 		arg.ActorID,
 		arg.DeviceID,
 		arg.At,
+		arg.ShiftID,
 	)
 	return err
 }
@@ -107,8 +109,9 @@ INSERT INTO orders (
     last_seq,
     opened_at,
     closed_at,
-    updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    updated_at,
+    shift_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id
 `
 
@@ -122,6 +125,7 @@ type CreateOrderParams struct {
 	OpenedAt  time.Time
 	ClosedAt  sql.NullTime
 	UpdatedAt time.Time
+	ShiftID   int64
 }
 
 // Orders, their events and their snapshots. internal/db/orders.go is the only
@@ -138,6 +142,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 		arg.OpenedAt,
 		arg.ClosedAt,
 		arg.UpdatedAt,
+		arg.ShiftID,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -163,9 +168,22 @@ FROM orders
 WHERE id = ?
 `
 
-func (q *Queries) OrderByID(ctx context.Context, id int64) (Order, error) {
+type OrderByIDRow struct {
+	ID        int64
+	PublicID  string
+	VenueID   int64
+	Channel   string
+	TableID   int64
+	Status    string
+	LastSeq   int64
+	OpenedAt  time.Time
+	ClosedAt  sql.NullTime
+	UpdatedAt time.Time
+}
+
+func (q *Queries) OrderByID(ctx context.Context, id int64) (OrderByIDRow, error) {
 	row := q.db.QueryRowContext(ctx, orderByID, id)
-	var i Order
+	var i OrderByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.PublicID,
@@ -189,9 +207,22 @@ FROM orders
 WHERE public_id = ?
 `
 
-func (q *Queries) OrderByPublicID(ctx context.Context, publicID string) (Order, error) {
+type OrderByPublicIDRow struct {
+	ID        int64
+	PublicID  string
+	VenueID   int64
+	Channel   string
+	TableID   int64
+	Status    string
+	LastSeq   int64
+	OpenedAt  time.Time
+	ClosedAt  sql.NullTime
+	UpdatedAt time.Time
+}
+
+func (q *Queries) OrderByPublicID(ctx context.Context, publicID string) (OrderByPublicIDRow, error) {
 	row := q.db.QueryRowContext(ctx, orderByPublicID, publicID)
-	var i Order
+	var i OrderByPublicIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.PublicID,
@@ -219,15 +250,26 @@ type OrderEventsAfterParams struct {
 	Seq     int64
 }
 
-func (q *Queries) OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error) {
+type OrderEventsAfterRow struct {
+	ID       int64
+	OrderID  int64
+	Seq      int64
+	Type     string
+	Payload  string
+	ActorID  int64
+	DeviceID int64
+	At       time.Time
+}
+
+func (q *Queries) OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEventsAfterRow, error) {
 	rows, err := q.db.QueryContext(ctx, orderEventsAfter, arg.OrderID, arg.Seq)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []OrderEvent{}
+	items := []OrderEventsAfterRow{}
 	for rows.Next() {
-		var i OrderEvent
+		var i OrderEventsAfterRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrderID,

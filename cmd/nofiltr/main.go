@@ -31,6 +31,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
+	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
 	"github.com/byjoellobo/nofiltr-pos/web"
 )
 
@@ -222,6 +223,11 @@ func run() (err error) {
 		return err
 	}
 
+	shifts, err := svcshift.New(svcshift.Options{DB: database})
+	if err != nil {
+		return err
+	}
+
 	srv := api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
@@ -233,6 +239,7 @@ func run() (err error) {
 		api.WithPrints(prints),
 		api.WithPrinters(printerSettings),
 		api.WithFloor(floorPlan),
+		api.WithShifts(shifts),
 	)
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)

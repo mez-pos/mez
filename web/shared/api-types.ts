@@ -78,7 +78,13 @@ export type ErrorCode =
   | 'table_already_at'
   | 'table_not_joined'
   | 'no_table'
-  | 'ticket_not_found';
+  | 'ticket_not_found'
+  | 'no_open_shift'
+  | 'shift_open'
+  | 'shift_closed'
+  | 'shift_not_found'
+  | 'invalid_count'
+  | 'invalid_cash_movement';
 
 export type OrderStatus =
   | 'open'
@@ -153,6 +159,20 @@ export type TicketStatus =
   | 'ready'
   | 'collected';
 
+export type ShiftStatus =
+  | 'open'
+  | 'closed';
+
+export type ShiftEventType =
+  | 'opened'
+  | 'cash_in'
+  | 'cash_out'
+  | 'closed';
+
+export type CashMovementKind =
+  | 'cash_in'
+  | 'cash_out';
+
 export type DiscountScope =
   | 'line'
   | 'order';
@@ -183,6 +203,8 @@ export type Permission =
   | 'order.reopen'
   | 'invoice.reprint'
   | 'kitchen.view'
+  | 'shift.manage'
+  | 'cash.move'
   | 'device.manage'
   | 'staff.manage'
   | 'menu.edit'
@@ -1028,6 +1050,50 @@ export interface JoinTables {
 
 export interface PartTables {
   tables: number[];
+}
+
+export interface Denomination {
+  face: number;
+  count: number;
+}
+
+export interface OpenShiftRequest {
+  total: MoneyInput;
+  denominations?: Denomination[];
+}
+
+export interface CashRequest {
+  kind: CashMovementKind;
+  amount: MoneyInput;
+  reason: string;
+  override: Override;
+}
+
+export interface ShiftEventResponse {
+  id: number;
+  type: ShiftEventType;
+  amount: Money;
+  reason: string;
+  actor_id: number;
+  authorised_by: number;
+  at: string;
+}
+
+export interface ShiftResponse {
+  id: number;
+  public_id: string;
+  status: ShiftStatus;
+  trading_day: string;
+  opened_by: number;
+  opened_at: string;
+  closed_by?: number;
+  closed_at?: string;
+  float: Money;
+  events: ShiftEventResponse[];
+}
+
+export interface CurrentShiftResponse {
+  shift: ShiftResponse | null;
 }
 
 export interface KitchenLineResponse {

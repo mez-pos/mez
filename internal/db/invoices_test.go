@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"slices"
 	"sync"
 	"testing"
@@ -52,7 +53,7 @@ func TestInvoiceAllocatorConformance(t *testing.T) {
 func TestConcurrentIssuingIsGaplessOnDisk(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	orderID := openTestOrder(t, d, "ord_INVOICES", untaxed)
 
 	series := map[string]invoice.Series{}
@@ -166,7 +167,7 @@ func TestConcurrentIssuingIsGaplessOnDisk(t *testing.T) {
 func TestInvoiceSchemaGuards(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	orderID := openTestOrder(t, d, "ord_GUARDS", untaxed)
 
 	key := invoice.Key{VenueID: 1, Series: "NF", FYStart: 2026}
@@ -221,7 +222,7 @@ func TestInvoiceSchemaGuards(t *testing.T) {
 func TestRecordInvoiceRefusesAnotherVenuesNumber(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	orderID := openTestOrder(t, d, "ord_ELSEWHERE", untaxed)
 
 	err := d.WriteTx(ctx, func(q *gen.Queries) error {
@@ -243,4 +244,26 @@ func insertVenue(t *testing.T, d *DB, id int64) {
 	if err != nil {
 		t.Fatalf("inserting venue %d: %v", id, err)
 	}
+	openTestShift(t, d, id)
+}
+
+// openTestShift opens a shift at the venue: an order is refused without
+// one (ADR-094).
+func openTestShift(t *testing.T, d *DB, venueID int64) {
+	t.Helper()
+	_, err := d.Writer().ExecContext(context.Background(),
+		`INSERT INTO shifts (public_id, venue_id, status, trading_day, opened_by, opened_at)
+		 VALUES (?, ?, 'open', '2026-09-18', 1, '2026-09-18 00:00:00+00:00')`,
+		fmt.Sprintf("shf_T%07d", venueID), venueID)
+	if err != nil {
+		t.Fatalf("opening a shift at venue %d: %v", venueID, err)
+	}
+}
+
+// seedTradingVenue is seedVenue with a shift open, for tests that write
+// orders.
+func seedTradingVenue(t *testing.T, d *DB) {
+	t.Helper()
+	seedVenue(t, d)
+	openTestShift(t, d, 1)
 }

@@ -2591,3 +2591,39 @@ money between days.
 Cost: a payout larger than the drawer is not refused (the count at close
 shows it); the day start is a constant until the back office has
 settings for it.
+
+## ADR-094 - Every order event carries its shift; the store refuses a sale with none open
+2026-09 · Status: accepted
+Decision: orders and payments are attached to shifts (phase 09, Task 1b)
+where events are written, in `internal/db`, not in each command.
+  - **Stamped per event, not per order.** `order_events.shift_id` is the
+    shift open when the event was recorded, read inside the appending
+    transaction (SQLite's one writer means a close cannot slip in
+    between). A tab opened in one shift and paid in the next reports its
+    payment, discounts and voids in the shift they happened in; the
+    Z-report (Task 3) reads events by shift, not orders by day.
+    `orders.shift_id` is the shift the order opened in, for lists.
+  - **Refused with no shift open:** every order event except
+    `ticket.bumped`, `ticket.recalled` and `invoice.reprinted`
+    (`shift.NeedsShift`), none of which touch money. A type not listed
+    needs a shift, so a new event is let out on purpose, and a test names
+    every type. One refused event refuses the whole append.
+    `shift.ErrNoOpenShift` is `409 no_open_shift`.
+  - **0 is no shift,** as `table_id` is: orders from before migration
+    00016, and the kitchen's bumps after close. No foreign keys, since
+    `ALTER TABLE` cannot add one with a non-null default.
+  - **Closing does not wait for open tickets.** They carry into the next
+    shift, and so does anything taken for them. Whether close should warn
+    about them is Task 2's screen.
+  - **The API:** `GET /api/v1/shift` (order.open) answers the open shift
+    or `{"shift": null}`, never 404; `POST /shift/open` and
+    `/shift/{id}/close` need the new `shift.manage`; `/shift/{id}/cash`
+    needs payment.take from the cashier and an override for the new
+    `cash.move`, as a void does. Migration 00016 grants both to owner and
+    manager, as 00007 did for reprints. The shift response has **no
+    expected drawer figure**: Task 2's blind count must come first.
+Because: a check in the store cannot be forgotten by the next command
+added, and per-event stamping is the only rule under which a shift's
+figures still add up when a bill spans two shifts.
+Cost: every test that sells has to open a shift first; the terminal
+cannot sell until a shift screen exists (Task 2), only over the API.

@@ -9,7 +9,7 @@ Phase 08.
 
 ## Tasks
 
-- [ ] **Task 1 — Shift lifecycle.**
+- [x] **Task 1 — Shift lifecycle.**
   Migration for `shifts`, `drawer_counts`, `shift_events`. Open a shift with a
   starting float. Every order and payment is attached to a shift. The trading
   day is the shift, not the calendar day — a bar closing at 2am belongs to the
@@ -19,7 +19,7 @@ Phase 08.
     `shift_events`; `internal/domain/shift` (lifecycle, trading day, cash
     movements, the drawer's running balance); a shift service to open with a
     float, move cash with reason and authorising manager, and close.
-  - [ ] **1b - Everything attached to it.** Orders and payments carry the
+  - [x] **1b - Everything attached to it.** Orders and payments carry the
     open shift; opening an order or taking a payment with no open shift is
     refused; the shift API, with `shift.manage` and `cash.move` permissions.
 

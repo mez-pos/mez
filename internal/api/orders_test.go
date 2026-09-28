@@ -52,6 +52,7 @@ func newRegister(t *testing.T) *register {
 	if err != nil {
 		t.Fatalf("giving the venue GST and tables: %v", err)
 	}
+	w.openTestShift(t)
 
 	orders, err := svcorder.New(svcorder.Options{DB: w.db})
 	if err != nil {
@@ -62,6 +63,22 @@ func newRegister(t *testing.T) *register {
 	r := &register{till: w, ownerPIN: "2468"}
 	r.staffToken = w.signIn(t, "2468").Token
 	return r
+}
+
+// openTestShift opens the venue's shift behind the API's back: an order
+// is refused without one (ADR-094).
+func (w *till) openTestShift(t *testing.T) {
+	t.Helper()
+	ctx := context.Background()
+	err := w.db.WriteTx(ctx, func(q *gen.Queries) error {
+		_, err := q.CreateShift(ctx, gen.CreateShiftParams{
+			PublicID: "shf_TILL0001", VenueID: 1, TradingDay: "2026-09-18", OpenedBy: 2, OpenedAt: seededAt,
+		})
+		return err
+	})
+	if err != nil {
+		t.Fatalf("opening a shift: %v", err)
+	}
 }
 
 // seedTables gives a venue an area with tables 1 to 10, whose ids are 1 to

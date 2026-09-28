@@ -97,7 +97,7 @@ func checkLoads(t *testing.T, d *DB, orderID int64, taxes order.Taxes, want orde
 func TestOpenAppendAndReadAnOrder(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 
 	orderID, opened, err := d.OpenOrder(ctx, NewOrder{
 		PublicID: "ord_7K3M9QX2",
@@ -154,7 +154,7 @@ func TestOpenAppendAndReadAnOrder(t *testing.T) {
 func TestSnapshotsAreEquivalentToReplay(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	taxes := gstCafe()
 	orderID := openTestOrder(t, d, "ord_LONGTAB", taxes)
 
@@ -236,7 +236,7 @@ func longOrder(t *testing.T, d *DB, publicID string, taxes order.Taxes) (int64, 
 func TestASnapshotUnderAnotherTaxRegimeIsIgnored(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	orderID, _ := longOrder(t, d, "ord_REGIME", gstCafe())
 
 	// The guest turns out to be from Maharashtra: inter-state, so IGST
@@ -262,7 +262,7 @@ func TestASnapshotUnderAnotherTaxRegimeIsIgnored(t *testing.T) {
 func TestASnapshotThatDoesNotFoldIsReplacedByReplay(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	taxes := gstCafe()
 	orderID, _ := longOrder(t, d, "ord_BADSNAP", taxes)
 
@@ -315,7 +315,7 @@ func TestASnapshotThatDoesNotFoldIsReplacedByReplay(t *testing.T) {
 func TestARefusedCommandWritesNothing(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	orderID := openTestOrder(t, d, "ord_REFUSED", untaxed)
 	before := mustAppend(t, d, orderID, untaxed, emit(order.LineAdded{Name: "Flat white", Qty: 1, UnitPrice: inr(22000), Station: "bar"}))
 
@@ -369,7 +369,7 @@ func TestARefusedCommandWritesNothing(t *testing.T) {
 func TestARefusalOnAGoodSnapshotStands(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	taxes := gstCafe()
 	orderID, state := longOrder(t, d, "ord_GOODSNAP", taxes)
 
@@ -383,7 +383,7 @@ func TestARefusalOnAGoodSnapshotStands(t *testing.T) {
 func TestACommandWithNothingToSayAppendsNothing(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	orderID := openTestOrder(t, d, "ord_NOTHING", untaxed)
 	before, err := d.LoadOrder(ctx, orderID, untaxed)
 	if err != nil {
@@ -401,7 +401,7 @@ func TestACommandWithNothingToSayAppendsNothing(t *testing.T) {
 func TestASeqConflictIsRetriedFromTheRead(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	orderID := openTestOrder(t, d, "ord_CONFLICT", untaxed)
 
 	// interloper writes an event at the next seq behind the store's back,
@@ -454,7 +454,7 @@ func TestASeqConflictIsRetriedFromTheRead(t *testing.T) {
 func TestConcurrentAppendsLoseNothing(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	orderID := openTestOrder(t, d, "ord_BUSYBAR", untaxed)
 
 	const workers, each = 8, 10
@@ -503,7 +503,7 @@ func TestConcurrentAppendsLoseNothing(t *testing.T) {
 func TestOrderEventsAreAppendOnly(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	openTestOrder(t, d, "ord_ETCHED", untaxed)
 
 	for _, stmt := range []string{
@@ -519,7 +519,7 @@ func TestOrderEventsAreAppendOnly(t *testing.T) {
 func TestOpenOrderRefusals(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	openTestOrder(t, d, "ord_TAKEN", untaxed)
 	opened := ev(order.OrderOpened{Channel: order.ChannelCounter, Currency: "INR"})
 
@@ -570,7 +570,7 @@ func TestAnOrderThatDoesNotExist(t *testing.T) {
 func TestOpenOrderWithinRunsInTheTransaction(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	opened := ev(order.OrderOpened{Channel: order.ChannelCounter, Currency: "INR"})
 
 	errLater := errors.New("something after the open failed")
@@ -599,7 +599,7 @@ func TestOpenOrderWithinRunsInTheTransaction(t *testing.T) {
 func TestVenueStream(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	insertVenue(t, d, 2)
 
 	first := openTestOrder(t, d, "ord_STREAM01", untaxed)
@@ -659,7 +659,7 @@ func TestVenueStream(t *testing.T) {
 func TestAfterAppend(t *testing.T) {
 	d := migratedDB(t)
 	ctx := context.Background()
-	seedVenue(t, d)
+	seedTradingVenue(t, d)
 	orderID := openTestOrder(t, d, "ord_AFTER", untaxed)
 
 	var seen []int64

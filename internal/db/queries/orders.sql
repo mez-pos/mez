@@ -12,8 +12,9 @@ INSERT INTO orders (
     last_seq,
     opened_at,
     closed_at,
-    updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    updated_at,
+    shift_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id;
 
 -- name: OrderByID :one
@@ -36,8 +37,8 @@ SET table_id   = sqlc.arg(table_id),
 WHERE id = sqlc.arg(id) AND last_seq = sqlc.arg(prev_seq);
 
 -- name: AppendOrderEvent :exec
-INSERT INTO order_events (order_id, seq, type, payload, actor_id, device_id, at)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO order_events (order_id, seq, type, payload, actor_id, device_id, at, shift_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: OrderEventsAfter :many
 SELECT id, order_id, seq, type, payload, actor_id, device_id, at

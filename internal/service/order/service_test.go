@@ -98,7 +98,14 @@ func addVenue(t *testing.T, d *db.DB, publicID string, settings map[string]strin
 				return err
 			}
 		}
-		return seedTables(ctx, q, v.ID)
+		if err := seedTables(ctx, q, v.ID); err != nil {
+			return err
+		}
+		// An open shift: an order is refused without one (ADR-094).
+		_, err = q.CreateShift(ctx, gen.CreateShiftParams{
+			PublicID: "shf_" + publicID[len(publicID)-8:], VenueID: v.ID, TradingDay: "2026-09-18", OpenedBy: 1, OpenedAt: now,
+		})
+		return err
 	})
 	if err != nil {
 		t.Fatalf("adding venue %s: %v", publicID, err)

@@ -39,7 +39,11 @@ func openDB(t *testing.T) *db.DB {
 				return err
 			}
 		}
-		_, err := q.CreateArea(ctx, gen.CreateAreaParams{VenueID: 2, Name: "Elsewhere", CreatedAt: now, UpdatedAt: now})
+		if _, err := q.CreateArea(ctx, gen.CreateAreaParams{VenueID: 2, Name: "Elsewhere", CreatedAt: now, UpdatedAt: now}); err != nil {
+			return err
+		}
+		// An open shift at venue 1: an order is refused without one (ADR-094).
+		_, err := q.CreateShift(ctx, gen.CreateShiftParams{PublicID: "shf_FLOOR001", VenueID: 1, TradingDay: "2026-09-27", OpenedBy: 1, OpenedAt: now})
 		return err
 	})
 	if err != nil {

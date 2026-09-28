@@ -8,6 +8,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/payment"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 )
 
@@ -68,6 +69,8 @@ var orderErrors = []struct {
 }{
 	// The service's own refusals.
 	{svcorder.ErrOrderNotFound, http.StatusNotFound, CodeOrderNotFound},
+	// The till is shut: nothing is sold until a shift opens (ADR-094).
+	{shift.ErrNoOpenShift, http.StatusConflict, CodeNoOpenShift},
 	{svcorder.ErrNoSuchTable, http.StatusUnprocessableEntity, CodeTableNotFound},
 	{svcorder.ErrTableTaken, http.StatusConflict, CodeTableTaken},
 	{svcorder.ErrIdempotencyKeyReused, http.StatusConflict, CodeIdempotencyKeyReused},

@@ -131,6 +131,7 @@ func TestFloorOverHTTP(t *testing.T) {
 // table, but not an occupied one; the back office's plan stays the owner's.
 func TestLiveFloorOverHTTP(t *testing.T) {
 	w := newTill(t)
+	w.openTestShift(t)
 	ctx := context.Background()
 	orders, err := svcorder.New(svcorder.Options{DB: w.db})
 	if err != nil {

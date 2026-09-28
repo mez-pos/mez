@@ -11,19 +11,19 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 1a: the shift itself** (ADR-093). Migration 00015
-(`shifts`, `drawer_counts`, `shift_events`, all write-once or append-only
-by trigger; one open shift per venue by partial unique index);
-`internal/domain/shift` (lifecycle open -> closed, `TradingDay` with a
-04:00 local day start, drawer counts by denomination or lump sum, cash
-movements, `Drawer`); `internal/service/shift` (Open with a float,
-MoveCash, Close, Current, ByID, idempotent by key). Not yet reachable
-over HTTP.
+**Phase 09, Task 1b: everything attached to the shift** (ADR-094), which
+completes Task 1. Migration 00016 stamps every order event with the shift
+open when it was recorded (`order_events.shift_id`) and each order with
+the shift it opened in; with no shift open, every order event but a
+kitchen bump, recall or reprint is refused (`shift.NeedsShift`,
+`no_open_shift`). Shift API: `GET /api/v1/shift`, `POST /shift/open`
+(shift.manage), `/shift/{id}/cash` (payment.take, override for
+cash.move), `/shift/{id}/close` (shift.manage). No drawer figure is
+served.
 
 ## Next task
 
-**Phase 09, Task 1b: everything attached to the shift.** Read
-`docs/phases/phase-09.md`.
+**Phase 09, Task 2: blind drawer count.** Read `docs/phases/phase-09.md`.
 
 ## Known broken / in progress
 
@@ -35,10 +35,14 @@ over HTTP.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
-- Shifts (ADR-093): `Close` needs no count until Task 2; nothing refuses
-  selling without a shift until 1b; `Shift.Drawer` is float and movements
-  only, no cash sales yet. The day start is a constant, not a venue
-  setting. A payout larger than the drawer is not refused.
+- Shifts (ADR-093, ADR-094): `Close` needs no count until Task 2.
+  **The terminal has no screen to open a shift**, so it cannot sell until
+  one is opened over the API (`POST /api/v1/shift/open` as the owner,
+  body `{"total":{"minor":0,"currency":"INR"}}`); Task 2's close-of-day
+  screen should add Open. Terminals are not told over the stream when a
+  shift opens or closes. `Shift.Drawer` has no cash sales in it yet. The
+  day start is a constant. A payout larger than the drawer is not
+  refused. Closing leaves open tickets to carry into the next shift.
 - Phase 09's exception report should count `entered_in_error` removes
   per staff member, apart from manager voids (ADR-073).
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);

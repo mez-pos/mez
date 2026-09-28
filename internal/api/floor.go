@@ -8,6 +8,7 @@ import (
 
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/table"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
@@ -311,6 +312,8 @@ func (s *Server) writeFloorError(w http.ResponseWriter, r *http.Request, err err
 		writeError(w, s.log, http.StatusConflict, CodeTableOccupied, "Guests are still at this table: settle or move their ticket first.")
 	case errors.Is(err, table.ErrNotEmpty):
 		writeError(w, s.log, http.StatusConflict, CodeTableNotEmpty, "Something is on this table's ticket: void it or take the payment first.")
+	case errors.Is(err, shift.ErrNoOpenShift):
+		writeError(w, s.log, http.StatusConflict, CodeNoOpenShift, "No shift is open: open the till first.")
 	case errors.Is(err, floor.ErrAreaInUse):
 		writeError(w, s.log, http.StatusConflict, CodeAreaInUse, "Retire or move the tables in this area first.")
 	default:

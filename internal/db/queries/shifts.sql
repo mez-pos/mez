@@ -46,3 +46,12 @@ ORDER BY id;
 SELECT id, type, amount, reason, actor_id, authorised_by, device_id, at
 FROM shift_events
 WHERE shift_id = ? AND idempotency_key = ? AND idempotency_key != '';
+
+-- name: OpenShiftIDForVenue :one
+-- The shift an order event is recorded in, read inside the appending
+-- transaction so a close cannot slip between the read and the write.
+SELECT id FROM shifts WHERE venue_id = ? AND status = 'open';
+
+-- name: ShiftOfOrderEvents :many
+-- Which shift each of an order's events was recorded in, by seq.
+SELECT seq, shift_id FROM order_events WHERE order_id = ? ORDER BY seq;

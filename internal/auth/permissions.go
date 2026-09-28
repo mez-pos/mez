@@ -26,6 +26,8 @@ const (
 	PermOrderReopen    Permission = "order.reopen"    // reopen a closed order
 	PermInvoiceReprint Permission = "invoice.reprint" // print a copy of an issued invoice
 	PermKitchenView    Permission = "kitchen.view"    // see and bump the kitchen display
+	PermShiftManage    Permission = "shift.manage"    // open and close the shift
+	PermCashMove       Permission = "cash.move"       // authorise cash into or out of the drawer
 
 	// The back office.
 	PermDeviceManage Permission = "device.manage" // pair and revoke devices
@@ -40,6 +42,7 @@ const (
 var all = []Permission{
 	PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
 	PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView,
+	PermShiftManage, PermCashMove,
 	PermDeviceManage, PermStaffManage, PermMenuEdit, PermSettingsEdit, PermReportsView,
 }
 
@@ -146,6 +149,7 @@ func DefaultRoles() []RoleTemplate {
 	manager := []Permission{
 		PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
 		PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView,
+		PermShiftManage, PermCashMove,
 		PermStaffManage, PermReportsView,
 	}
 	return []RoleTemplate{

@@ -169,6 +169,7 @@ type Order struct {
 	OpenedAt  time.Time
 	ClosedAt  sql.NullTime
 	UpdatedAt time.Time
+	ShiftID   int64
 }
 
 type OrderEvent struct {
@@ -180,6 +181,7 @@ type OrderEvent struct {
 	ActorID  int64
 	DeviceID int64
 	At       time.Time
+	ShiftID  int64
 }
 
 type OrderSnapshot struct {

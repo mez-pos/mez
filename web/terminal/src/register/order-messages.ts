@@ -7,6 +7,7 @@ import type { ErrorCode } from "../../../shared/api-types";
 
 const words: Partial<Record<ErrorCode, string>> = {
   forbidden: "You don't have permission to do that. Ask a manager.",
+  no_open_shift: "The till isn't open. A manager needs to open the shift first.",
   order_not_found: "This ticket isn't on the server any more.",
   order_closed: "This ticket is closed.",
   line_not_found: "That line isn't on this ticket.",
