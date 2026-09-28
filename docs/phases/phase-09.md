@@ -28,6 +28,19 @@ Phase 08.
   figure. This is non-negotiable; showing expected first defeats the control.
   Variance computed after submission, over or short, with a mandatory reason
   above a configurable threshold. Recorded immutably.
+  Split in two:
+  - [ ] **2a - The count on the server.** Expected cash from the float,
+    movements and the shift's cash tenders, voids and refunds; one closing
+    count per shift, recorded with its expected figure, variance and the
+    threshold then in force; a reason recorded once when the variance is
+    over it; a counted shift takes no more sales or cash; close needs the
+    count and, over the threshold, the reason. The API reveals expected only
+    in the answer to the count.
+  - [ ] **2b - The close-of-day screen.** Write
+    `docs/design/screens/terminal-close.md` first. Open the shift with a
+    float; count the drawer by denomination with nothing expected on
+    screen; then the reveal, over or short, the reason when asked, and
+    close.
 
 - [ ] **Task 3 — Z-report.**
   Gross and net sales, by category, by item, by payment method, by channel, by
