@@ -24,6 +24,7 @@ type Querier interface {
 	ActiveStations(ctx context.Context, venueID int64) ([]ActiveStationsRow, error)
 	AddOrderTable(ctx context.Context, arg AddOrderTableParams) error
 	AppendOrderEvent(ctx context.Context, arg AppendOrderEventParams) error
+	AppendShiftEvent(ctx context.Context, arg AppendShiftEventParams) (int64, error)
 	AreaByID(ctx context.Context, id int64) (AreaByIDRow, error)
 	// The floor plan: areas and the tables placed in them (ADR-085).
 	AreasForVenue(ctx context.Context, venueID int64) ([]AreasForVenueRow, error)
@@ -48,6 +49,7 @@ type Querier interface {
 	ClaimPrintJob(ctx context.Context, arg ClaimPrintJobParams) (int64, error)
 	ClearReceiptPrinter(ctx context.Context, arg ClearReceiptPrinterParams) error
 	ClearTable(ctx context.Context, arg ClearTableParams) (int64, error)
+	CloseShift(ctx context.Context, arg CloseShiftParams) (int64, error)
 	// The till's past bills: the latest closed, newest first (Task 6b).
 	ClosedOrdersForVenue(ctx context.Context, arg ClosedOrdersForVenueParams) ([]ClosedOrdersForVenueRow, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
@@ -56,6 +58,7 @@ type Querier interface {
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (int64, error)
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (int64, error)
 	CreateCreditNote(ctx context.Context, arg CreateCreditNoteParams) (int64, error)
+	CreateDrawerCount(ctx context.Context, arg CreateDrawerCountParams) error
 	CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (int64, error)
 	CreateItem(ctx context.Context, arg CreateItemParams) (int64, error)
 	CreateModifier(ctx context.Context, arg CreateModifierParams) (int64, error)
@@ -73,6 +76,9 @@ type Querier interface {
 	// Staff and the roles they hold. Roles are here rather than in a file of their
 	// own because a staff member cannot be created without one.
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
+	// Shifts, their drawer counts and their events (phase 09, Task 1a). Written
+	// only by internal/service/shift, each change in one transaction.
+	CreateShift(ctx context.Context, arg CreateShiftParams) (int64, error)
 	CreateStaff(ctx context.Context, arg CreateStaffParams) (Staff, error)
 	CreateStaffSession(ctx context.Context, arg CreateStaffSessionParams) (int64, error)
 	CreateStation(ctx context.Context, arg CreateStationParams) (int64, error)
@@ -97,6 +103,7 @@ type Querier interface {
 	// Every device ever paired at the venue, revoked included, for the same
 	// reason: history names the till an event came from.
 	DeviceNamesForVenue(ctx context.Context, venueID int64) ([]DeviceNamesForVenueRow, error)
+	DrawerCountsForShift(ctx context.Context, shiftID int64) ([]DrawerCountsForShiftRow, error)
 	// The next job for each printer, if it is due: the oldest job not yet done
 	// or dead. A printer's jobs print one at a time and in order, because a job
 	// still printing, or failed and waiting out its backoff, holds back every
@@ -130,6 +137,7 @@ type Querier interface {
 	// a key writes 1, every later one adds one. It runs inside the issuing
 	// transaction, so a rollback takes the number back. Never MAX(n)+1.
 	NextInvoiceSeq(ctx context.Context, arg NextInvoiceSeqParams) (int64, error)
+	OpenShiftForVenue(ctx context.Context, venueID int64) (Shift, error)
 	OrderByID(ctx context.Context, id int64) (Order, error)
 	OrderByPublicID(ctx context.Context, publicID string) (Order, error)
 	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEvent, error)
@@ -188,6 +196,9 @@ type Querier interface {
 	// Per-venue settings the schema has no opinion about. Anything the database
 	// must constrain or compute with is a column on venues instead.
 	SettingsForVenue(ctx context.Context, venueID int64) ([]Setting, error)
+	ShiftByID(ctx context.Context, id int64) (Shift, error)
+	ShiftEventByKey(ctx context.Context, arg ShiftEventByKeyParams) (ShiftEventByKeyRow, error)
+	ShiftEvents(ctx context.Context, shiftID int64) ([]ShiftEventsRow, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
 	//
 	// Everyone who has worked at the venue, inactive included: an order's

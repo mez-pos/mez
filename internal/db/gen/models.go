@@ -63,6 +63,16 @@ type Device struct {
 	CreatedAt  time.Time
 }
 
+type DrawerCount struct {
+	ID            int64
+	ShiftID       int64
+	Kind          string
+	Denominations string
+	Total         int64
+	CountedBy     int64
+	CountedAt     time.Time
+}
+
 type FloorVersion struct {
 	VenueID int64
 	Version int64
@@ -248,6 +258,31 @@ type Setting struct {
 	Key       string
 	Value     string
 	UpdatedAt time.Time
+}
+
+type Shift struct {
+	ID         int64
+	PublicID   string
+	VenueID    int64
+	Status     string
+	TradingDay string
+	OpenedBy   int64
+	OpenedAt   time.Time
+	ClosedBy   int64
+	ClosedAt   sql.NullTime
+}
+
+type ShiftEvent struct {
+	ID             int64
+	ShiftID        int64
+	Type           string
+	Amount         int64
+	Reason         string
+	ActorID        int64
+	AuthorisedBy   int64
+	DeviceID       int64
+	IdempotencyKey string
+	At             time.Time
 }
 
 type SignInAttempt struct {

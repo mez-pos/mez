@@ -15,7 +15,7 @@ Phase 08.
   day is the shift, not the calendar day — a bar closing at 2am belongs to the
   previous day. Cash movements in and out, with reason and authorisation.
   Split in two (one venue, one drawer, one open shift at a time):
-  - [ ] **1a - The shift itself.** Migration for `shifts`, `drawer_counts`,
+  - [x] **1a - The shift itself.** Migration for `shifts`, `drawer_counts`,
     `shift_events`; `internal/domain/shift` (lifecycle, trading day, cash
     movements, the drawer's running balance); a shift service to open with a
     float, move cash with reason and authorising manager, and close.

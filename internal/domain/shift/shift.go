@@ -1,0 +1,84 @@
+// Package shift is the reporting unit of a trading day, from
+// docs/02-domain.md: a shift opens with a counted float, moves cash in and
+// out with a reason and a manager's say-so, and closes.
+//
+//	open -> closed
+//
+// shift.go is the lifecycle and the trading day; count.go is a drawer count;
+// cash.go is a cash movement and the drawer's running balance. Storage is
+// internal/service/shift.
+package shift
+
+import (
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/fsm"
+)
+
+// Status is where a shift is in its life.
+type Status string
+
+// The shift statuses, in order.
+const (
+	StatusOpen   Status = "open"   // selling; the drawer is in use
+	StatusClosed Status = "closed" // done; nothing more is attached to it
+)
+
+// Statuses is every status, for the generated vocabulary.
+func Statuses() []Status { return []Status{StatusOpen, StatusClosed} }
+
+// machine is the shift's lifecycle. Closing is final: a mistake found after
+// close is corrected by a later document (the Z-report's correction, Task 3),
+// never by reopening the shift the report was drawn from.
+var machine = fsm.Must("shift",
+	[]Status{StatusOpen, StatusClosed},
+	map[Status][]Status{
+		StatusOpen: {StatusClosed},
+	})
+
+// Machine is the lifecycle, for the exhaustive test.
+func Machine() fsm.Machine[Status] { return machine }
+
+// Transition checks a shift status change. A refusal unwraps to
+// fsm.ErrInvalidTransition.
+func Transition(from, to Status) (Status, error) {
+	return machine.Transition(from, to)
+}
+
+// DefaultDayStart is when a new trading day begins, in the venue's local
+// time. A shift opened before it belongs to the day before: the bar's
+// late shift that someone opens at 00:30 is still last night's trade.
+const DefaultDayStart = 4 * time.Hour
+
+// dayFormat is how a trading day is written: a civil date, no zone.
+const dayFormat = "2006-01-02"
+
+// ErrInvalidDayStart refuses a day start outside the day.
+var ErrInvalidDayStart = errors.New("the trading day must start within the day")
+
+// TradingDay is the trading day a shift opened at openedAt belongs to: the
+// venue's local date then, or the date before when it opened ahead of
+// dayStart. It is decided once, at opening, and stored, so a bar that
+// closes at 2am reports the whole night under the day it opened.
+func TradingDay(openedAt time.Time, loc *time.Location, dayStart time.Duration) (string, error) {
+	if loc == nil {
+		return "", errors.New("shift: a trading day needs the venue's timezone")
+	}
+	if dayStart < 0 || dayStart >= 24*time.Hour {
+		return "", fmt.Errorf("%w: %s", ErrInvalidDayStart, dayStart)
+	}
+	local := openedAt.In(loc)
+	// The wall clock, not time since midnight: on a daylight-saving night
+	// the two differ by an hour, and staff read the clock on the wall.
+	wall := time.Duration(local.Hour())*time.Hour + time.Duration(local.Minute())*time.Minute +
+		time.Duration(local.Second())*time.Second + time.Duration(local.Nanosecond())
+	// The date alone, at noon UTC, so stepping back a day is calendar
+	// arithmetic that no zone rule can bend.
+	day := time.Date(local.Year(), local.Month(), local.Day(), 12, 0, 0, 0, time.UTC)
+	if wall < dayStart {
+		day = day.AddDate(0, 0, -1)
+	}
+	return day.Format(dayFormat), nil
+}

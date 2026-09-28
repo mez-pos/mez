@@ -2549,3 +2549,45 @@ Because: the phase says to write this as an automated test, and a test of
 the loop that fakes the hub or the database proves the fakes.
 Cost: one long test, where a failure names the step but reruns the whole
 service.
+
+## ADR-093 - A shift is a row, a float count and an append-only ledger
+2026-09 · Status: accepted
+Decision: phase 09's shift (Task 1a) is stored as three tables, and the
+trading day is decided once, when the shift opens.
+  - **One open shift per venue**, enforced by a partial unique index on
+    `shifts (venue_id) WHERE status = 'open'`: one venue, one drawer in
+    v1. Two tills opening at once give the second `ErrShiftOpen`.
+  - **Lifecycle open -> closed, and closed is final.** A trigger refuses
+    any change to a closed shift, and an open one may change only by
+    closing. A mistake found after close is a later document (the
+    Z-report's correction, Task 3), never a reopened shift.
+  - **The trading day** is the local date in the venue's zone at opening,
+    or the day before when it opens before `shift.DefaultDayStart`
+    (04:00, by the wall clock, so a daylight-saving night does not move
+    it). It is stored on the shift, so a timezone edit later cannot move
+    a closed day. There is no venue setting for the day start yet.
+  - **The float is a drawer count,** the `opening` row of
+    `drawer_counts`, not a column on the shift. Task 2's blind count is
+    the `closing` row of the same shape. A count is denominations
+    (`[{face, count}]`, face in minor units) that must add up to its
+    total, or a lump sum with none. Counts are never updated or deleted.
+  - **Cash movements are `shift_events`** (`opened`, `cash_in`,
+    `cash_out`, `closed`), append-only by trigger like order events. A
+    movement's amount is positive and the type is the direction; the
+    database itself refuses one with no reason or no authorising staff
+    member. Checking that the authoriser may is the API's (Task 1b),
+    through the same override flow as a void.
+  - **Idempotency on the event,** not the order-keyed
+    `idempotency_keys`: `shift_events.idempotency_key`, unique per shift.
+    A retry with the same key and the same request gets the shift back;
+    the same key for a different request is `ErrIdempotencyKeyReused`.
+  - `Shift.Drawer` is the float plus cash in less cash out. It becomes
+    the expected cash once 1b attaches cash payments and refunds, and is
+    shown to staff only after the blind count (Task 2).
+Because: the shift is what the Z-report and the blind count stand on, so
+its record has to be as tamper-proof as the order events, and a day
+decided at report time would let a zone change or a late close move
+money between days.
+Cost: a payout larger than the drawer is not refused (the count at close
+shows it); the day start is a constant until the back office has
+settings for it.

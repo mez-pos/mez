@@ -11,17 +11,19 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 08, Task 5: realtime across devices** (ADR-092), which completes
-phase 08. `TestTheDineInLoopAcrossDevices` runs the real stack in process
-with a till and a kitchen display on real WebSockets: sent to the display
-and bumped to the till each within a second; the display unplugged,
-service going on, and its reconnect replaying exactly what it missed,
-nothing twice; then course 2 to two stations, the bill settled, table 4
-dirty, cleared and free. Passes 20 runs in a row.
+**Phase 09, Task 1a: the shift itself** (ADR-093). Migration 00015
+(`shifts`, `drawer_counts`, `shift_events`, all write-once or append-only
+by trigger; one open shift per venue by partial unique index);
+`internal/domain/shift` (lifecycle open -> closed, `TradingDay` with a
+04:00 local day start, drawer counts by denomination or lump sum, cash
+movements, `Drawer`); `internal/service/shift` (Open with a float,
+MoveCash, Close, Current, ByID, idempotent by key). Not yet reachable
+over HTTP.
 
 ## Next task
 
-**Phase 09, Task 1.** Read `docs/phases/phase-09.md`.
+**Phase 09, Task 1b: everything attached to the shift.** Read
+`docs/phases/phase-09.md`.
 
 ## Known broken / in progress
 
@@ -33,6 +35,10 @@ dirty, cleared and free. Passes 20 runs in a row.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
+- Shifts (ADR-093): `Close` needs no count until Task 2; nothing refuses
+  selling without a shift until 1b; `Shift.Drawer` is float and movements
+  only, no cash sales yet. The day start is a constant, not a venue
+  setting. A payout larger than the drawer is not refused.
 - Phase 09's exception report should count `entered_in_error` removes
   per staff member, apart from manager voids (ADR-073).
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
