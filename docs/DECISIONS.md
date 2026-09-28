@@ -2517,3 +2517,35 @@ terminal's primitives, stream and API client; a separate bundle would be
 plumbing for no user.
 Cost: the display carries the register's code it never runs, and the
 station is per device, not per venue setting.
+
+## ADR-092 - The dine-in loop is one test on the real stack, in process
+2026-09 · Status: accepted
+Decision: phase 08's realtime loop and its done-when are proved by
+`TestTheDineInLoopAcrossDevices` (`internal/api/loop_test.go`), not by a
+manual check.
+  - **The real stack:** a temp-file database, the order service
+    publishing to a real hub, the floor service, and the API with the
+    stream, behind an `httptest` server. Two real WebSocket clients
+    (`coder/websocket`) stand in for the till (the venue topic) and a
+    kitchen display paired as a kitchen device (`station:kitchen`); the
+    till's commands go over HTTP as the browser's do.
+  - **What it proves:** a sent ticket is on the display, and a bump on the
+    till, each within a second (measured, logged; a few milliseconds on a
+    laptop). The display is unplugged with no goodbye, service goes on (a
+    second round, a recall, the bar), and it reconnects with the last id
+    it saw: its replay is exactly the kitchen's events after that id, in
+    order, then `caught_up`; no event reaches either device twice; the
+    live stream carries on. Then course 2 is fired to the kitchen and the
+    bar, the bill is settled and closed, table 4 goes dirty, is cleared
+    (the till is told `floor_changed`) and is free.
+  - The browser's half of the reconnect, sending its last id in the hello,
+    is `realtime.test.ts`'s.
+  - It is in process rather than against the built binary: the binary adds
+    only `main.go`'s wiring, which the test repeats, and a test that
+    builds and runs a binary is slow and fragile on Windows. The carried
+    "done-when script against the real binary" stays open for phase 12's
+    installer smoke test.
+Because: the phase says to write this as an automated test, and a test of
+the loop that fakes the hub or the database proves the fakes.
+Cost: one long test, where a failure names the step but reruns the whole
+service.

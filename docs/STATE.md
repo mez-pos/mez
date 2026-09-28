@@ -6,28 +6,29 @@
 
 ## Current phase
 
-**Phase 08 - Floor plan, tables, kitchen display, station routing**
-File: `docs/phases/phase-08.md`. Phase 07 is complete.
+**Phase 09 - Shift, blind drawer count, Z-report, tips**
+File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 08, Task 4b: the kitchen display** (ADR-091, `kitchen-display.md`),
-which completes Task 4. `/kitchen` in the terminal's bundle, a `kitchen`
-app kind: pair as a kitchen device, choose the station, no PIN. Cards in
-large type with timers escalating to Waiting (gold) and Late (vermilion),
-Bump, Recall the last bumped, all-day counts; the till shows a line Ready.
-Run in the browser with a till beside it: sent, shown, bumped, Ready on
-the till, recalled, and the timers run ahead to Waiting and Late.
+**Phase 08, Task 5: realtime across devices** (ADR-092), which completes
+phase 08. `TestTheDineInLoopAcrossDevices` runs the real stack in process
+with a till and a kitchen display on real WebSockets: sent to the display
+and bumped to the till each within a second; the display unplugged,
+service going on, and its reconnect replaying exactly what it missed,
+nothing twice; then course 2 to two stations, the bill settled, table 4
+dirty, cleared and free. Passes 20 runs in a row.
 
 ## Next task
 
-**Phase 08, Task 5: realtime across devices.** Read the phase file.
+**Phase 09, Task 1.** Read `docs/phases/phase-09.md`.
 
 ## Known broken / in progress
 
 - Carried from phase 04, owned by no task yet:
-  - The done-when script: a sale over HTTP against the real binary, with a
-    WebSocket client watching. Start from `nofiltr setup`.
+  - The done-when script against the real binary. The same loop now runs
+    in process on the real stack (ADR-092); the binary itself is left for
+    phase 12's installer smoke test.
   - A `float64` lint rule for `internal/domain` (`docs/02-domain.md`).
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
@@ -98,7 +99,7 @@ None.
 - [x] 05 — Frontend shell: Vite, Tailwind tokens, router, primitives, auth
 - [x] 06 — Terminal: register, modifiers, cart, open tickets
 - [x] 07 — Payment, split, invoice, print queue, cash drawer
-- [ ] 08 — Floor plan, tables, kitchen display, station routing
+- [x] 08 — Floor plan, tables, kitchen display, station routing
 - [ ] 09 — Shift, blind drawer count, Z-report, tips
 - [ ] 10 — Back office: menu editor, inventory, reports
 - [ ] 11 — Relay service, outbound tunnel, guest QR ordering

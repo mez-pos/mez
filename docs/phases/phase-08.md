@@ -78,7 +78,7 @@ Phase 07.
     from the station topic. The terminal's ticket shows a line Ready once
     its ticket is bumped.
 
-- [ ] **Task 5 — Realtime across devices.**
+- [x] **Task 5 — Realtime across devices.**
   Verify the whole loop: fire on the terminal, appears on the KDS within a
   second; bump on the KDS, terminal reflects it. Unplug the KDS mid-service and
   reconnect — it must catch up from its last `seq` with nothing lost and nothing
