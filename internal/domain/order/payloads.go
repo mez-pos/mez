@@ -112,6 +112,11 @@ type LineModified struct {
 	To     []Modifier `json:"to"`
 }
 
+// ReasonEnteredInError is the reason code of a line taken off because it
+// was rung up by mistake, with no manager (ADR-073). The Z-report counts
+// these apart from a manager's voids.
+const ReasonEnteredInError = "entered_in_error"
+
 // LineVoided removes a line from the bill. The line stays in the stream
 // forever; a void is visible to an audit and to the owner.
 type LineVoided struct {

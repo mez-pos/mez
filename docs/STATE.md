@@ -11,17 +11,20 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 2b: the close-of-day screen** (`terminal-close.md`,
-ADR-096), which completes Task 2. With no shift open the register is
-"The till is closed": count the float by note and coin, Open the till.
-Tickets has **Close the day**: the blind counter, Submit count (with a
-confirm), then the reveal (expected, counted, Short/Over/Balanced), the
-reason when owed, and Close the shift. A counted shift shows its reveal
-on every till until closed. Tried in the browser end to end.
+**Phase 09, Task 3a: the Z-report's figures** (ADR-097).
+`internal/domain/zreport.Build` walks the whole streams of the orders
+touched in a shift, projecting as it goes: sales are invoices issued in
+the shift as the bill stood then, by category, item, channel and staff
+(who opened the bill); discounts, comps, manager voids and
+entered-in-error removes by staff; credit notes and refunds; tax per
+component and rate net of credits; payments by method net of voids and
+refunds, tips apart; and the balance of payments against sales. A
+hand-computed GST day balances to the paisa. Not stored or shown yet.
 
 ## Next task
 
-**Phase 09, Task 3: Z-report.** Read `docs/phases/phase-09.md`.
+**Phase 09, Task 3b: the Z-report as a document.** Read
+`docs/phases/phase-09.md`.
 
 ## Known broken / in progress
 
@@ -33,6 +36,8 @@ on every till until closed. Tried in the browser end to end.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
+- Z-report (ADR-097): categories are the menu's when the report is
+  built, not when the item was sold; staff are ids until 3b names them.
 - Shifts (ADR-093 to ADR-096): terminals learn of a shift opening,
   counted or closed by polling every 30 seconds, not the stream. Opening
   and closing need shift.manage: a cashier is told to ask a manager, with
@@ -42,8 +47,6 @@ on every till until closed. Tried in the browser end to end.
   A counted drawer cannot be recounted. The variance threshold has no
   back office setting yet (phase 10); set it in `settings`. Denomination
   tables exist for INR, USD, EUR and GBP only; others count one total.
-- Phase 09's exception report should count `entered_in_error` removes
-  per staff member, apart from manager voids (ADR-073).
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
   no menu writes over HTTP until phase 10. GST place of supply is always
   the venue's state, so no IGST. `nofiltr setup` cannot finish a US venue.

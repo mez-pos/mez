@@ -49,7 +49,7 @@ Phase 08.
   generated, numbered, and a correction is a new document referencing the old.
   Print via the Phase 07 templates and view on screen.
   Split in three:
-  - [ ] **3a - The figures.** `internal/domain/zreport`: from the whole
+  - [x] **3a - The figures.** `internal/domain/zreport`: from the whole
     streams of the orders touched in a shift, the sales invoiced in it (by
     category, item, channel, staff), discounts, comps, voids (manager voids
     apart from entered-in-error removes), credit notes, refunds, tax per

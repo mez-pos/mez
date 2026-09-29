@@ -2694,3 +2694,36 @@ sale the server refuses, and a counted drawer that looks like a working
 register invites one more.
 Cost: every till polls; a shift opened elsewhere reaches a closed till
 within 30 seconds, not at once.
+
+## ADR-097 - A Z-report adds up events by the shift they were recorded in
+2026-09 · Status: accepted
+Decision: phase 09, Task 3a's figures come from `zreport.Build`, a pure
+fold over the whole streams of the orders touched in a shift, projected
+event by event so each of the shift's events is measured against the bill
+as it stood just before and after it.
+  - **A sale is an invoice issued in the shift,** at the bill's state when
+    it was issued: its active lines' gross, discounts (line and the
+    order's share), tax and due. Every heading (category, item, channel,
+    staff) is built from those same lines, and a bill whose lines do not
+    add up to its total fails the report (`ErrInconsistent`).
+  - **Everything else belongs to the shift it happened in:** credit notes
+    (sales reversed, and their tax off the tax lines), refunds, comps and
+    voids at the line's gross, payments by method taken, voided and
+    refunded. A refund today of yesterday's bill is today's.
+  - **Removes apart from voids:** a line taken off as entered in error
+    (`order.ReasonEnteredInError`, moved into the domain) is counted per
+    staff member who removed it, apart from a manager's voids (ADR-073).
+  - **Staff** is who opened the bill. **Categories** are the menu's when
+    the report is built, since a line does not carry its category; the
+    report is frozen when generated (3b), so a later menu edit cannot move
+    a closed day's figures.
+  - **Tips** are counted apart and are in neither sales nor payments.
+  - **Balance:** payments net of voids and refunds, against sales net of
+    credit notes. On a day whose bills were paid and invoiced within it
+    the difference is zero; otherwise it is money taken for bills invoiced
+    in another shift or not yet (a deposit on an open tab).
+Because: the only rule under which two shifts' reports add up to the two
+days' money is that each event counts once, where it was recorded; and a
+report that recomputes prices can disagree with the invoices it reports.
+Cost: a report projects every stream it touches from the start, which is
+fine for a shift's few hundred orders.

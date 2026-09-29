@@ -167,7 +167,7 @@ func (s *Service) Resume(ctx context.Context, meta Meta, orderID int64) (Result,
 var ErrNeedsApproval = errors.New("this needs a manager's approval")
 
 // ReasonEnteredInError is the reason RemoveLine records.
-const ReasonEnteredInError = "entered_in_error"
+const ReasonEnteredInError = order.ReasonEnteredInError
 
 // RemoveLine takes off a line rung up by mistake, with no manager: the
 // caller authorises it themselves, and the void is on the order forever
