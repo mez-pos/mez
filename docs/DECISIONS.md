@@ -2854,3 +2854,39 @@ shares of every choice of people, and never splits money itself.
 Because: a share the screen works out could differ from the one recorded,
 and a manager should see exactly what they are committing to.
 Cost: a request per change while choosing; a shift's pool is small.
+
+## ADR-103 - The tax register is filled by column key, never by regime
+2026-09 · Status: accepted
+Decision: phase 09, Task 5a writes the exports in `internal/domain/export`
+from the documents issued in a shift, with no code that asks which tax
+regime the venue is under.
+  - **The register** is the profile's `RegisterColumns()`, in order, with
+    its labels. Each key is either a dimension (invoice number, date,
+    place of supply, HSN, rate, jurisdiction, invoice value) or an amount
+    (taxable value, net, taxable, exempt, CGST, SGST, IGST, VAT, tax,
+    gross). A line's values come from the invoice's own tax snapshot;
+    components go to the column named for them (UTGST with SGST). Rows are
+    summed over everything that shares every dimension column, so the
+    profile's choice of columns is its choice of granularity: GST gives a
+    row per invoice, HSN and rate, VAT per receipt and rate, US sales tax
+    (whose columns have no invoice number) per day and authority. A
+    register with a `jurisdiction` column is kept by authority, one row per
+    component; with an `exempt` column, lines with no tax go there. A key
+    this build cannot fill fails the export, and a test walks every
+    profile's columns.
+  - **Credit notes** are negative rows, their lines' HSN and rate taken
+    from the bill.
+  - **Tally** is a CSV of ledger entries (date, voucher type, number,
+    reference, ledger, debit, credit) for TallyPrime's spreadsheet import:
+    a Sales voucher per invoice debits the payment methods it was paid by
+    and credits "Sales @ 5%" and each "CGST @ 2.5%"; a Credit Note is the
+    reverse, crediting the methods its refunds went to. An invoice whose
+    voucher does not balance fails the export; a credit note not wholly
+    refunded in the shift balances against "Customer credit".
+  - **The day's sales:** a row per invoice or credit note, with its
+    channel, who opened it, its figures and what it was paid by.
+  - Amounts are plain decimals ("-285.30"); dates are in the venue's zone.
+Because: the phase asks for a VAT venue to export VAT columns with no code
+change, and grouping by the profile's own columns gives each regime its
+register's shape from one path.
+Cost: Tally's import needs its ledgers mapped once, by name, in Tally.

@@ -11,18 +11,20 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 4b: the tips screen** (`tips.md`, ADR-102), which
-completes Task 4. A Z-report in the back office has **Tips**, opening
-`/shifts/{id}/tips`: the pool, the rule in words, and everyone who can
-share it (the server's suggestions in, the rest of the staff out), with
-In/Out, hours when the rule is by hours, what each took, and each share
-from `POST /api/v1/shift/{id}/tips/preview`. **Pool the tips** confirms
-and records it; a pooled shift shows the read-only report. Tried in the
-browser end to end with one staff member.
+**Phase 09, Task 5a: the export files** (ADR-103).
+`internal/domain/export.Build` writes three CSVs from a shift's orders:
+the tax register, filled from the profile's `RegisterColumns()` keys and
+grouped by its non-amount columns (GST per invoice, HSN and rate; VAT per
+receipt and rate; US per day and authority with exempt sales apart),
+credit notes negative; Tally vouchers, a Sales voucher per invoice and a
+Credit Note per credit note, each balanced; and the day's sales, a row per
+document. Tested for GST, VAT, US and an untaxed venue. Not stored or
+downloadable yet.
 
 ## Next task
 
-**Phase 09, Task 5: exports.** Read `docs/phases/phase-09.md`.
+**Phase 09, Task 5b: exports stored and downloaded.** Read
+`docs/phases/phase-09.md`.
 
 ## Known broken / in progress
 

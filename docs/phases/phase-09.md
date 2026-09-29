@@ -87,7 +87,7 @@ Phase 08.
   VAT columns without a code change. Queued at close, re-downloadable from back
   office.
   Split in two:
-  - [ ] **5a - The files.** `internal/domain/export`, from the shift's
+  - [x] **5a - The files.** `internal/domain/export`, from the shift's
     orders: the tax register filled column by column from the profile's
     `RegisterColumns()` keys (rows grouped by the non-amount columns, so
     GST is per invoice, HSN and rate, and US sales tax per day and
