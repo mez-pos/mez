@@ -2782,3 +2782,26 @@ Because: the paper and the screen must say what the stored report says,
 and a report printed from anything else could differ from it.
 Cost: none worth naming; the escpos layout grew optional sections, and
 an X-report (Final false) still prints as before.
+
+## ADR-100 - One report view, shared by the till and the back office
+2026-09 · Status: accepted
+Decision: phase 09, Task 3d shows a Z-report through one component,
+`web/shared/zreport/ZReportView`, over the stored document.
+  - **No arithmetic:** every figure, count and total on screen is the
+    document's (ADR-098); the view only chooses words (a channel's name,
+    a method's, "2.5%" from thousandths by string, "Short Rs. 10.00").
+  - **Shared, not duplicated:** the till and the back office import the
+    same view, screen wrapper (loading, not allowed, not found, Print a
+    copy) and hooks. A report is read once and kept (`staleTime:
+    Infinity`), since it never changes.
+  - **The till** shows the report its own close issued, from the close's
+    answer, with View and Print a copy; it keeps no list. The back office
+    lists every report, cursor-paged 50 at a time, and opens one by
+    number at `/reports/{n}`.
+  - **By item** is on screen, folded to ten until asked, and not on paper.
+  - The print route answers 204, which the API client reads as done; the
+    shift service now tells the stream after a close, a correction or a
+    copy queues a print, so a till's print badge follows.
+Because: a report on two screens that could each add up differently is
+two reports.
+Cost: the terminal bundle carries the view (about 2 KB gzipped).

@@ -254,7 +254,7 @@ func TestZReportsOverHTTP(t *testing.T) {
 		t.Errorf("Z 1 = %+v", z)
 	}
 	w.refused(t, w.owner, http.MethodGet, "/api/v1/z-reports/99", "", http.StatusNotFound, CodeZReportNotFound)
-	if status, raw := w.do(w.owner, http.MethodPost, "/api/v1/z-reports/1/print", "", ""); status != http.StatusAccepted {
+	if status, raw := w.do(w.owner, http.MethodPost, "/api/v1/z-reports/1/print", "", ""); status != http.StatusNoContent {
 		t.Errorf("printing a copy: %d %s", status, raw)
 	}
 	w.refused(t, w.owner, http.MethodPost, "/api/v1/z-reports/99/print", "", http.StatusNotFound, CodeZReportNotFound)

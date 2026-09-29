@@ -158,6 +158,7 @@ func (s *Service) PrintZReport(ctx context.Context, meta Meta, number int64) err
 		return fmt.Errorf("printing Z-report %d: %w", number, err)
 	}
 	s.wake()
+	s.onChange(meta.VenueID)
 	return nil
 }
 

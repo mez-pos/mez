@@ -34,6 +34,7 @@ import { useLiveFloor } from "../floor/use-live-floor";
 import { CloseDayScreen } from "../shift/CloseDayScreen";
 import { TillClosedScreen } from "../shift/TillClosedScreen";
 import { useShift } from "../shift/use-shift";
+import { ZReportScreen } from "../../../shared/zreport/ZReportScreen";
 
 export function RegisterScreen() {
   const menu = useMenu();
@@ -42,6 +43,9 @@ export function RegisterScreen() {
   const shift = useShift();
   // The shift being closed, by id: a new shift is not.
   const [closing, setClosing] = useState<number | null>(null);
+  // The Z-report this till's close issued, and whether it is on screen.
+  const [lastZ, setLastZ] = useState<number | null>(null);
+  const [viewingZ, setViewingZ] = useState(false);
   const names = useMemo(() => tableNames(floor.data), [floor.data]);
   const [floorOpen, setFloorOpen] = useState(false);
   const index = useMemo(() => (menu.data ? indexMenu(menu.data) : null), [menu.data]);
@@ -133,10 +137,24 @@ export function RegisterScreen() {
 
   const currency = index?.menu.currency ?? "INR";
   if (!shift.shift) {
-    return <TillClosedScreen currency={currency} state={shift} />;
+    if (viewingZ && lastZ) {
+      return <ZReportScreen number={lastZ} backLabel="Back" onBack={() => setViewingZ(false)} />;
+    }
+    return <TillClosedScreen currency={currency} state={shift} lastZ={lastZ} onViewZ={() => setViewingZ(true)} />;
   }
   if (shift.shift.counted || closing === shift.shift.id) {
-    return <CloseDayScreen shift={shift.shift} currency={currency} commands={shift.commands} onBack={() => setClosing(null)} />;
+    return (
+      <CloseDayScreen
+        shift={shift.shift}
+        currency={currency}
+        commands={shift.commands}
+        onBack={() => setClosing(null)}
+        onClosed={(z) => {
+          setLastZ(z);
+          setViewingZ(false);
+        }}
+      />
+    );
   }
 
   if (floorOpen) {

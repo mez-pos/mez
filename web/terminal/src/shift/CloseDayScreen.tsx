@@ -17,9 +17,11 @@ interface CloseDayScreenProps {
   commands: ShiftCommands;
   /** Back to selling: offered only before the count, after which the drawer is shut. */
   onBack: () => void;
+  /** Told the number of the Z-report the close issued. */
+  onClosed: (zReport: number) => void;
 }
 
-export function CloseDayScreen({ shift, currency, commands, onBack }: CloseDayScreenProps) {
+export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: CloseDayScreenProps) {
   const [counted, setCounted] = useState<Counted>(emptyCount);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -71,7 +73,12 @@ export function CloseDayScreen({ shift, currency, commands, onBack }: CloseDaySc
               variant="primary"
               size="charge"
               disabled={busy || reasonOwed(rec, shift.reason !== undefined) !== null}
-              onClick={() => void run(() => commands.close(shift.id), "Shift closed.")}
+              onClick={() =>
+                void run(async () => {
+                  const closed = await commands.close(shift.id);
+                  onClosed(closed.z_report ?? 0);
+                }, "Shift closed.")
+              }
             >
               Close the shift
             </Button>

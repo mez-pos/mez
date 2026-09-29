@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { formatMoney } from "../../../shared/money";
-import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
+import { Button, Card, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
 import { DrawerCounter, emptyCount, type Counted } from "./DrawerCounter";
 import { countRequest } from "./shift-logic";
 import type { ShiftState } from "./use-shift";
@@ -12,9 +12,12 @@ import type { ShiftState } from "./use-shift";
 interface TillClosedScreenProps {
   currency: string;
   state: ShiftState;
+  /** The Z-report this till's close just issued, if any. */
+  lastZ: number | null;
+  onViewZ: () => void;
 }
 
-export function TillClosedScreen({ currency, state }: TillClosedScreenProps) {
+export function TillClosedScreen({ currency, state, lastZ, onViewZ }: TillClosedScreenProps) {
   const [counted, setCounted] = useState<Counted>(emptyCount);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +56,14 @@ export function TillClosedScreen({ currency, state }: TillClosedScreenProps) {
           <h1 className="font-serif text-total">The till is closed</h1>
           <p className="mt-1 text-base text-fg-muted">Count the float into the drawer to start the day.</p>
         </header>
+        {lastZ !== null && lastZ > 0 && (
+          <Card className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-base">
+              <span className="font-semibold">Z-report {lastZ} issued.</span> It is printing.
+            </p>
+            <Button onClick={onViewZ}>View the report</Button>
+          </Card>
+        )}
         <DrawerCounter title="Float" currency={currency} value={counted} onChange={setCounted} disabled={busy} />
         {error && (
           <p role="alert" className="text-base text-danger">

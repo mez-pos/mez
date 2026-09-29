@@ -1,7 +1,7 @@
 // The back office's routes, under /backoffice. Sign-in is the same staff PIN
 // as the terminal, on a device paired as a back office (ADR-056).
 
-import { Link, Redirect, Route, Router, Switch } from "wouter";
+import { Link, Redirect, Route, Router, Switch, useLocation } from "wouter";
 import { Gate } from "../../shared/auth/Gate";
 import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
@@ -9,6 +9,8 @@ import { SignedInShell } from "../../shared/screens/SignedInShell";
 import { Splash } from "../../shared/screens/Splash";
 import { FloorScreen } from "./floor/FloorScreen";
 import { PrintersScreen } from "./printers/PrintersScreen";
+import { ZReportsScreen } from "./reports/ZReportsScreen";
+import { ZReportScreen } from "../../shared/zreport/ZReportScreen";
 
 export function App() {
   return (
@@ -27,6 +29,18 @@ export function App() {
               <PrintersScreen />
             </SignedInShell>
           </Route>
+          <Route path="/reports/:number">
+            {(params) => (
+              <SignedInShell area="Z-report" exitLabel="Sign out">
+                <ReportRoute number={Number(params.number)} />
+              </SignedInShell>
+            )}
+          </Route>
+          <Route path="/reports">
+            <SignedInShell area="Z-reports" exitLabel="Sign out">
+              <ZReportsScreen />
+            </SignedInShell>
+          </Route>
           <Route path="/floor">
             <SignedInShell area="Floor plan" exitLabel="Sign out">
               <FloorScreen />
@@ -39,6 +53,7 @@ export function App() {
                 {[
                   { href: "/floor", label: "Floor plan" },
                   { href: "/printers", label: "Printers" },
+                  { href: "/reports", label: "Z-reports" },
                 ].map((l) => (
                   <Link
                     key={l.href}
@@ -49,7 +64,7 @@ export function App() {
                   </Link>
                 ))}
               </nav>
-              <p className="mt-4 max-w-prose text-base text-fg-2">Menus, staff and reports arrive in phase 10.</p>
+              <p className="mt-4 max-w-prose text-base text-fg-2">Menus and staff arrive in phase 10.</p>
             </SignedInShell>
           </Route>
           <Route>
@@ -59,4 +74,11 @@ export function App() {
       </Gate>
     </Router>
   );
+}
+
+/** A report by the number in its path; a path that is not one is sent back to the list. */
+function ReportRoute({ number }: { number: number }) {
+  const [, navigate] = useLocation();
+  if (!Number.isSafeInteger(number) || number < 1) return <Redirect to="/reports" replace />;
+  return <ZReportScreen number={number} backLabel="All reports" onBack={() => navigate("/reports")} />;
 }

@@ -223,7 +223,7 @@ func run() (err error) {
 		return err
 	}
 
-	shifts, err := svcshift.New(svcshift.Options{DB: database, Prints: prints})
+	shifts, err := svcshift.New(svcshift.Options{DB: database, Prints: prints, OnChange: events.Notify})
 	if err != nil {
 		return err
 	}

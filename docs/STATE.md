@@ -11,19 +11,19 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 3c: printing the Z-report** (ADR-099). The close and a
-correction each queue their report on the receipt printer in their own
-transaction, laid out by `escpos.ZReport` from the stored document:
-correction header, trading day, sales with net of credit notes, tax per
-component and rate, by category, channel and staff, payments, exceptions
-(removes apart from voids, credit notes, reprints) and the drawer's
-make-up with the count and reason. `POST /api/v1/z-reports/{n}/print`
-prints a COPY. With no printer the job waits dead on the queue.
+**Phase 09, Task 3d: the Z-report on screen** (`zreport.md`, ADR-100),
+which completes Task 3. One shared `ZReportView` (web/shared/zreport)
+shows the stored document: sales, tax per rate, by category, channel,
+staff and item, payments, exceptions and the drawer. The till's close now
+offers "Z-report n issued. View the report", with Print a copy; the back
+office has Z-reports (`/reports`, 50 a page) and `/reports/{n}`. The
+shift service now tells the stream when it queues a print. Tried on the
+till in the browser against a hand-checked GST sale.
 
 ## Next task
 
-**Phase 09, Task 3d: view the Z-report.** Write
-`docs/design/screens/zreport.md` first. Read `docs/phases/phase-09.md`.
+**Phase 09, Task 4: tips.** Read `docs/phases/phase-09.md`. Before it,
+the phase asks the human to check a Z-report against a hand-computed day.
 
 ## Known broken / in progress
 
@@ -35,9 +35,12 @@ prints a COPY. With no printer the job waits dead on the queue.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
-- Z-report (ADR-097, ADR-098): categories are the menu's when the report
-  is built, not when the item was sold. No screen shows it yet (3d); the
-  printout has no by-item lines, the screen will. A report that cannot be built blocks the close; there is no
+- Z-report (ADR-097 to ADR-100): categories are the menu's when the
+  report is built, not when the item was sold. The printout has no
+  by-item lines; the screen does. The till shows only the report its own
+  close issued, until reload; the back office list was typechecked and
+  API-tested, not tried in a browser. No screen issues a correction yet
+  (the API does). A report that cannot be built blocks the close; there is no
   way round that short of fixing the data.
 - Shifts (ADR-093 to ADR-096): terminals learn of a shift opening,
   counted or closed by polling every 30 seconds, not the stream. Opening

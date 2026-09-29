@@ -74,6 +74,7 @@ func (s *Service) CorrectZReport(ctx context.Context, meta Meta, shiftID int64, 
 		return ZReport{}, fmt.Errorf("correcting the Z-report: %w", err)
 	}
 	s.wake()
+	s.onChange(meta.VenueID)
 	return s.ZReport(ctx, meta.VenueID, number)
 }
 

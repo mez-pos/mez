@@ -42,7 +42,7 @@ Phase 08.
     screen; then the reveal, over or short, the reason when asked, and
     close.
 
-- [ ] **Task 3 — Z-report.**
+- [x] **Task 3 — Z-report.**
   Gross and net sales, by category, by item, by payment method, by channel, by
   staff. Discounts, comps, voids, refunds — each with counts and totals.
   Tax breakdown per rate. Cash reconciliation and variance. Immutable once
@@ -62,7 +62,7 @@ Phase 08.
     stored document (categories, channels, staff, exceptions, tax per rate,
     payments, the drawer, a correction's header), queued in the closing and
     correcting transactions, and printed again on request as a copy.
-  - [ ] **3d - View.** Write `docs/design/screens/zreport.md` first. The
+  - [x] **3d - View.** Write `docs/design/screens/zreport.md` first. The
     report on the till after close, and the list and the report in the
     back office, from the one stored document.
 

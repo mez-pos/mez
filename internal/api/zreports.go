@@ -116,7 +116,7 @@ func (s *Server) printZReport(w http.ResponseWriter, r *http.Request) {
 		s.writeZError(w, r, err)
 		return
 	}
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) shiftZReport(w http.ResponseWriter, r *http.Request) {

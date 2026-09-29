@@ -109,3 +109,19 @@ func TestZReportsPrintOnCloseCorrectionAndRequest(t *testing.T) {
 		t.Error("printing Z 99: want an error")
 	}
 }
+
+// The till's print badge follows the queue through the stream: a
+// correction and a copy each say the venue changed.
+func TestPrintingAReportTellsTheStream(t *testing.T) {
+	f := newFixture(t)
+	open := must(f.svc.Open(ctx, cashier, float(t, 0)))
+	closeExact(t, f, cashier, open.ID)
+	before := len(f.changed)
+	must(f.svc.CorrectZReport(ctx, cashier, open.ID, "fix"))
+	if err := f.svc.PrintZReport(ctx, cashier, 1); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(f.changed) - before; got != 2 {
+		t.Errorf("told of %d changes, want one for the correction and one for the copy", got)
+	}
+}
