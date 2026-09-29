@@ -28,6 +28,7 @@ type Server struct {
 	floor    Floor
 	shifts   Shifts
 	zreports ZReports
+	tips     Tips
 	limiter  *limiter
 	handler  http.Handler
 }
@@ -112,6 +113,7 @@ func (s *Server) routes() http.Handler {
 	s.mountKitchen(mux)
 	s.mountShifts(mux)
 	s.mountZReports(mux)
+	s.mountTips(mux)
 
 	// Anything else under /api keeps the JSON envelope. Without this, an
 	// unknown endpoint would fall through to the terminal bundle mounted at /

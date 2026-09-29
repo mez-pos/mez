@@ -11,19 +11,19 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 3d: the Z-report on screen** (`zreport.md`, ADR-100),
-which completes Task 3. One shared `ZReportView` (web/shared/zreport)
-shows the stored document: sales, tax per rate, by category, channel,
-staff and item, payments, exceptions and the drawer. The till's close now
-offers "Z-report n issued. View the report", with Print a copy; the back
-office has Z-reports (`/reports`, 50 a page) and `/reports/{n}`. The
-shift service now tells the stream when it queues a print. Tried on the
-till in the browser against a hand-checked GST sale.
+**Phase 09, Task 4a: the tip pool on the server** (ADR-101).
+`internal/domain/tips`: tips each staff member took on their tenders in
+the shift, net of voids, and `Split` to the paisa evenly, by hours or by
+role weight. Settings `tips.rule` (default even) and `tips.role_weights`
+(JSON by role name, default 1). `GET /api/v1/shift/{id}/tips`
+(reports.view) previews or reads the pool; `POST` (shift.manage) pools a
+closed shift once, with hours entered then, recorded immutably
+(migration 00019). Everyone who took a tip is on the report, pooled or not.
 
 ## Next task
 
-**Phase 09, Task 4: tips.** Read `docs/phases/phase-09.md`. Before it,
-the phase asks the human to check a Z-report against a hand-computed day.
+**Phase 09, Task 4b: the tips screen.** Write
+`docs/design/screens/tips.md` first. Read `docs/phases/phase-09.md`.
 
 ## Known broken / in progress
 
@@ -42,6 +42,9 @@ the phase asks the human to check a Z-report against a hand-computed day.
   API-tested, not tried in a browser. No screen issues a correction yet
   (the API does). A report that cannot be built blocks the close; there is no
   way round that short of fixing the data.
+- Tips (ADR-101): hours are typed in at pooling (no timesheets until
+  phase 10); a pool is once per shift with no correction; no screen yet
+  (4b); the rule and weights have no back office setting (phase 10).
 - Shifts (ADR-093 to ADR-096): terminals learn of a shift opening,
   counted or closed by polling every 30 seconds, not the stream. Opening
   and closing need shift.manage: a cashier is told to ask a manager, with

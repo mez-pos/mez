@@ -128,6 +128,32 @@ func (q *Queries) CreateShift(ctx context.Context, arg CreateShiftParams) (int64
 	return id, err
 }
 
+const createTipPool = `-- name: CreateTipPool :exec
+INSERT INTO tip_pools (shift_id, rule, total, body, pooled_by, pooled_at)
+VALUES (?, ?, ?, ?, ?, ?)
+`
+
+type CreateTipPoolParams struct {
+	ShiftID  int64
+	Rule     string
+	Total    int64
+	Body     string
+	PooledBy int64
+	PooledAt time.Time
+}
+
+func (q *Queries) CreateTipPool(ctx context.Context, arg CreateTipPoolParams) error {
+	_, err := q.db.ExecContext(ctx, createTipPool,
+		arg.ShiftID,
+		arg.Rule,
+		arg.Total,
+		arg.Body,
+		arg.PooledBy,
+		arg.PooledAt,
+	)
+	return err
+}
+
 const createVarianceReason = `-- name: CreateVarianceReason :exec
 INSERT INTO variance_reasons (shift_id, reason, explained_by, explained_at)
 VALUES (?, ?, ?, ?)
@@ -433,6 +459,71 @@ func (q *Queries) ShiftOfOrderEvents(ctx context.Context, orderID int64) ([]Shif
 		return nil, err
 	}
 	return items, nil
+}
+
+const staffRolesForVenue = `-- name: StaffRolesForVenue :many
+SELECT s.id, s.public_id, s.name, r.name AS role_name
+FROM staff s
+JOIN roles r ON r.id = s.role_id
+WHERE s.venue_id = ?
+ORDER BY s.id
+`
+
+type StaffRolesForVenueRow struct {
+	ID       int64
+	PublicID string
+	Name     string
+	RoleName string
+}
+
+// Everyone who has worked at the venue with their role's name: a tip pool
+// weighs each by their role.
+func (q *Queries) StaffRolesForVenue(ctx context.Context, venueID int64) ([]StaffRolesForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, staffRolesForVenue, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StaffRolesForVenueRow{}
+	for rows.Next() {
+		var i StaffRolesForVenueRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.Name,
+			&i.RoleName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const tipPool = `-- name: TipPool :one
+SELECT shift_id, rule, total, body, pooled_by, pooled_at
+FROM tip_pools
+WHERE shift_id = ?
+`
+
+func (q *Queries) TipPool(ctx context.Context, shiftID int64) (TipPool, error) {
+	row := q.db.QueryRowContext(ctx, tipPool, shiftID)
+	var i TipPool
+	err := row.Scan(
+		&i.ShiftID,
+		&i.Rule,
+		&i.Total,
+		&i.Body,
+		&i.PooledBy,
+		&i.PooledAt,
+	)
+	return i, err
 }
 
 const varianceReason = `-- name: VarianceReason :one

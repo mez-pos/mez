@@ -370,6 +370,15 @@ type TaxClass struct {
 	UpdatedAt time.Time
 }
 
+type TipPool struct {
+	ShiftID  int64
+	Rule     string
+	Total    int64
+	Body     string
+	PooledBy int64
+	PooledAt time.Time
+}
+
 type VarianceReason struct {
 	ShiftID     int64
 	Reason      string

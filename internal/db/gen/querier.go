@@ -84,6 +84,7 @@ type Querier interface {
 	CreateStation(ctx context.Context, arg CreateStationParams) (int64, error)
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
 	CreateTaxClass(ctx context.Context, arg CreateTaxClassParams) (int64, error)
+	CreateTipPool(ctx context.Context, arg CreateTipPoolParams) error
 	CreateVarianceReason(ctx context.Context, arg CreateVarianceReasonParams) error
 	// Venues. Explicit column lists throughout, per docs/03-conventions.md: a
 	// SELECT * here would silently change shape the next time a migration adds a
@@ -224,6 +225,9 @@ type Querier interface {
 	// Everyone who has worked at the venue, inactive included: an order's
 	// history names the people on it, whether or not they still work there.
 	StaffNamesForVenue(ctx context.Context, venueID int64) ([]StaffNamesForVenueRow, error)
+	// Everyone who has worked at the venue with their role's name: a tip pool
+	// weighs each by their role.
+	StaffRolesForVenue(ctx context.Context, venueID int64) ([]StaffRolesForVenueRow, error)
 	StaffSessionByTokenHash(ctx context.Context, tokenHash string) (StaffSessionByTokenHashRow, error)
 	// A station's tickets still in the kitchen, oldest first, and those bumped
 	// since a time, for the display's recall.
@@ -240,6 +244,7 @@ type Querier interface {
 	TableTurn(ctx context.Context, id int64) (TableTurnRow, error)
 	TablesForVenue(ctx context.Context, venueID int64) ([]TablesForVenueRow, error)
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
+	TipPool(ctx context.Context, shiftID int64) (TipPool, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	//
 	// The tickets a till can switch between: everything not closed, oldest

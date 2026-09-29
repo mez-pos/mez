@@ -75,3 +75,21 @@ VALUES (?, ?, ?, ?);
 SELECT shift_id, reason, explained_by, explained_at
 FROM variance_reasons
 WHERE shift_id = ?;
+
+-- name: CreateTipPool :exec
+INSERT INTO tip_pools (shift_id, rule, total, body, pooled_by, pooled_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+-- name: TipPool :one
+SELECT shift_id, rule, total, body, pooled_by, pooled_at
+FROM tip_pools
+WHERE shift_id = ?;
+
+-- name: StaffRolesForVenue :many
+-- Everyone who has worked at the venue with their role's name: a tip pool
+-- weighs each by their role.
+SELECT s.id, s.public_id, s.name, r.name AS role_name
+FROM staff s
+JOIN roles r ON r.id = s.role_id
+WHERE s.venue_id = ?
+ORDER BY s.id;

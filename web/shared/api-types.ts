@@ -91,7 +91,10 @@ export type ErrorCode =
   | 'variance_unexplained'
   | 'already_explained'
   | 'z_report_not_found'
-  | 'shift_still_open';
+  | 'shift_still_open'
+  | 'already_pooled'
+  | 'not_staff'
+  | 'invalid_tip_pool';
 
 export type OrderStatus =
   | 'open'
@@ -179,6 +182,11 @@ export type ShiftEventType =
 export type CashMovementKind =
   | 'cash_in'
   | 'cash_out';
+
+export type TipRule =
+  | 'even'
+  | 'hours'
+  | 'role_weight';
 
 export type DiscountScope =
   | 'line'
@@ -1275,6 +1283,37 @@ export interface ZSummary {
 
 export interface CorrectRequest {
   reason: string;
+}
+
+export interface PoolMember {
+  staff_id: string;
+  minutes: number;
+}
+
+export interface PoolRequest {
+  members: PoolMember[];
+}
+
+export interface TipMemberResponse {
+  staff_id: string;
+  name: string;
+  role: string;
+  in_pool: boolean;
+  minutes: number;
+  weight: number;
+  taken: Money;
+  share: Money;
+}
+
+export interface TipPoolResponse {
+  shift_id: number;
+  pooled: boolean;
+  rule: TipRule;
+  total: Money;
+  members: TipMemberResponse[];
+  pooled_by?: number;
+  pooled_at?: string;
+  problem?: string;
 }
 
 export interface KitchenLineResponse {

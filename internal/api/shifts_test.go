@@ -277,3 +277,32 @@ func TestZReportsOverHTTP(t *testing.T) {
 	}
 	w.refused(t, w.owner, http.MethodGet, "/api/v1/z-reports?before=nope", "", http.StatusBadRequest, CodeInvalidRequest)
 }
+
+// TestTipsOverHTTP: the owner reads a shift's tips and pools them once it
+// is closed; a cashier can do neither.
+func TestTipsOverHTTP(t *testing.T) {
+	w := newShiftTill(t)
+	opened := w.shift(t, w.owner, http.MethodPost, "/api/v1/shift/open", `{"total":{"minor":0,"currency":"INR"}}`, http.StatusCreated)
+	path := fmt.Sprintf("/api/v1/shift/%d/tips", opened.ID)
+	both := `{"members":[{"staff_id":"stf_ASHA0001","minutes":0},{"staff_id":"stf_PRIYA001","minutes":0}]}`
+	w.refused(t, w.owner, http.MethodPost, path, both, http.StatusConflict, CodeShiftStillOpen)
+
+	w.shift(t, w.cashier, http.MethodPost, fmt.Sprintf("/api/v1/shift/%d/count", opened.ID), `{"total":{"minor":0,"currency":"INR"}}`, http.StatusOK)
+	w.shift(t, w.owner, http.MethodPost, fmt.Sprintf("/api/v1/shift/%d/close", opened.ID), "", http.StatusOK)
+
+	w.refused(t, w.cashier, http.MethodGet, path, "", http.StatusForbidden, CodeForbidden)
+	w.refused(t, w.cashier, http.MethodPost, path, both, http.StatusForbidden, CodeForbidden)
+	w.refused(t, w.owner, http.MethodPost, path, `{"members":[{"staff_id":"stf_NOBODY01"}]}`, http.StatusUnprocessableEntity, CodeNotStaff)
+	w.refused(t, w.owner, http.MethodPost, path, `{"members":[]}`, http.StatusUnprocessableEntity, CodeInvalidTipPool)
+
+	status, raw := w.do(w.owner, http.MethodGet, path, "", "")
+	var p tipPoolResponse
+	if status != http.StatusOK || json.Unmarshal(raw, &p) != nil || p.Pooled || p.Rule != "even" || p.Total.Minor != 0 {
+		t.Fatalf("preview: %d %s", status, raw)
+	}
+	status, raw = w.do(w.owner, http.MethodPost, path, both, "")
+	if status != http.StatusOK || json.Unmarshal(raw, &p) != nil || !p.Pooled || len(p.Members) != 2 || p.Members[1].StaffID != "stf_PRIYA001" || p.Members[1].Name != "Priya" {
+		t.Fatalf("pool: %d %s", status, raw)
+	}
+	w.refused(t, w.owner, http.MethodPost, path, `{"members":[{"staff_id":"stf_ASHA0001"}]}`, http.StatusConflict, CodeAlreadyPooled)
+}

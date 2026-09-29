@@ -21,6 +21,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/table"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/tips"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
@@ -120,7 +121,7 @@ var errorCodes = []ErrorCode{
 	CodeTicketNotFound,
 	CodeNoOpenShift, CodeShiftOpen, CodeShiftClosed, CodeShiftUnknown, CodeInvalidCount, CodeInvalidCash,
 	CodeAlreadyCounted, CodeNotCounted, CodeDrawerCounted, CodeVarianceUnexplained, CodeAlreadyExplained,
-	CodeZReportNotFound, CodeShiftStillOpen,
+	CodeZReportNotFound, CodeShiftStillOpen, CodeAlreadyPooled, CodeNotStaff, CodeInvalidTipPool,
 }
 
 // generate builds the whole file.
@@ -180,6 +181,7 @@ func generate() (*ts.Generator, error) {
 		{"ShiftStatus", shift.StatusOpen, asStrings(shift.Machine().States())},
 		{"ShiftEventType", svcshift.EventOpened, asStrings(svcshift.EventTypes())},
 		{"CashMovementKind", shift.CashIn, asStrings(shift.MovementKinds())},
+		{"TipRule", tips.Even, asStrings(tips.Rules())},
 		{"DiscountScope", order.ScopeLine, []string{string(order.ScopeLine), string(order.ScopeOrder)}},
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
@@ -247,6 +249,8 @@ func generate() (*ts.Generator, error) {
 		reconciliationResponse{}, varianceReasonResponse{}, shiftResponse{}, currentShiftResponse{},
 		// Z-reports.
 		zNameResponse{}, zReportResponse{}, zReportsResponse{}, correctRequest{},
+		// Tips.
+		svcshift.PoolMember{}, poolRequest{}, tipMemberResponse{}, tipPoolResponse{},
 		// The kitchen display.
 		kitchenLineResponse{}, kitchenTicketResponse{}, kitchenBoardResponse{},
 		// Credit notes.

@@ -2805,3 +2805,32 @@ Decision: phase 09, Task 3d shows a Z-report through one component,
 Because: a report on two screens that could each add up differently is
 two reports.
 Cost: the terminal bundle carries the view (about 2 KB gzipped).
+
+## ADR-101 - Tips are pooled once per closed shift, by a venue rule
+2026-09 · Status: accepted
+Decision: phase 09, Task 4a pools a shift's tips after it closes, split by
+the venue's rule, and records the split once.
+  - **The pool** is every tip taken on a tender in the shift, less the tips
+    of tenders voided in it (`tips.Taken`, by who tendered). It equals the
+    Z-report's tips; tips are never in sales or payments.
+  - **Rules:** `even`, `hours` or `role_weight`, venue setting
+    `tips.rule` (default even). Role weights are `tips.role_weights`, a
+    JSON object by role name, 1 to 100, a role not named weighing 1.
+    Hours are typed in at pooling, in minutes, since there are no
+    timesheets until phase 10.
+  - **Exact:** `tips.Split` gives every share through `money.Allocate`, so
+    the shares always add up to the pool; the paisa left over goes by the
+    largest remainder, earliest member first.
+  - **Who:** the preview suggests everyone who took a tip or recorded an
+    order event in the shift; the manager chooses. Anyone who took a tip
+    stays on the report with what they took, in the pool or not.
+  - **Once:** pooling needs a closed shift and shift.manage, and is
+    recorded immutably (`tip_pools`, one per shift). A retry of the same
+    pool by the same person returns it; any other is `already_pooled`.
+    Reading needs reports.view.
+  - **Staff are named by public ID** in the API (`stf_...`), as everywhere
+    a client picks a person.
+Because: a split that anyone can redo after the money is handed out is
+not a record of what was handed out.
+Cost: a pool entered wrongly cannot be redone; the fix is outside the
+system until a correction exists.

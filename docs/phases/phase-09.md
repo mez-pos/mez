@@ -71,7 +71,7 @@ Phase 08.
   split, by hours, by role weight. A tip report per staff member. Tips never
   touch the sales figures.
   Split in two:
-  - [ ] **4a - The pool on the server.** Tips taken per staff member from
+  - [x] **4a - The pool on the server.** Tips taken per staff member from
     the shift's tenders, net of voids; `internal/domain/tips` splitting the
     pool to the paisa, evenly, by hours or by role weight (the rule and the
     weights venue settings; hours entered at pooling, since there are no
