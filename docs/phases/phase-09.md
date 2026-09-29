@@ -70,6 +70,16 @@ Phase 08.
   Per-payment tips aggregated to the shift. Pooling rules configurable: even
   split, by hours, by role weight. A tip report per staff member. Tips never
   touch the sales figures.
+  Split in two:
+  - [ ] **4a - The pool on the server.** Tips taken per staff member from
+    the shift's tenders, net of voids; `internal/domain/tips` splitting the
+    pool to the paisa, evenly, by hours or by role weight (the rule and the
+    weights venue settings; hours entered at pooling, since there are no
+    timesheets until phase 10); pooled once per closed shift, recorded
+    immutably; the API's preview, pool and per-staff report.
+  - [ ] **4b - The tips screen.** Write `docs/design/screens/tips.md`
+    first. Pool a closed shift's tips from the back office, and each staff
+    member's tips on the report.
 
 - [ ] **Task 5 — Exports.**
   CSV and Tally-compatible export of the tax register and the day's sales.
