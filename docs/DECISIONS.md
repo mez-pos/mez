@@ -2890,3 +2890,28 @@ Because: the phase asks for a VAT venue to export VAT columns with no code
 change, and grouping by the profile's own columns gives each regime its
 register's shape from one path.
 Cost: Tally's import needs its ledgers mapped once, by name, in Tally.
+
+## ADR-104 - Exports are written with the close and read back as JSON
+2026-09 · Status: accepted
+Decision: phase 09, Task 5b stores a closed shift's three files (tax
+register, Tally vouchers, day's sales) in the closing transaction, and the
+back office downloads them through the ordinary signed-in API.
+  - **Written with the close,** after the Z-report and before its print,
+    in the same transaction: every closed shift has its files, and a shift
+    whose files cannot be written (an invoice voucher that does not
+    balance) does not close, as with its report (ADR-098). One file of
+    each kind per shift, write-once by trigger (`exports`).
+  - **Named for filing:** `2026-09-28-shf_7K3M9QX2-tax-register.csv`,
+    the trading day first so a folder sorts by day.
+  - **Read as JSON:** `GET /api/v1/exports/{id}` answers the file's name,
+    content type and CSV text; the back office turns it into a file with a
+    Blob and a download link. A plain link could not carry the device and
+    staff tokens, and a second, cookie-based way to sign in is not worth a
+    CSV of a few kilobytes.
+  - Reading needs reports.view. "Queued at close" in the phase is met by
+    writing at close; there is no background job, since the files take
+    milliseconds and must exist exactly when the close does.
+Because: a bookkeeper's files should be as certain as the report they
+come from, and as easy to take again.
+Cost: a file travels as a JSON string, a few percent larger; shifts closed
+before this have none.

@@ -93,3 +93,19 @@ FROM staff s
 JOIN roles r ON r.id = s.role_id
 WHERE s.venue_id = ?
 ORDER BY s.id;
+
+-- name: CreateExport :exec
+INSERT INTO exports (shift_id, kind, filename, body, created_at)
+VALUES (?, ?, ?, ?, ?);
+
+-- name: ExportsForShift :many
+SELECT id, kind, filename, length(body) AS size, created_at
+FROM exports
+WHERE shift_id = ?
+ORDER BY id;
+
+-- name: ExportByID :one
+SELECT e.id, e.shift_id, e.kind, e.filename, e.body, e.created_at, s.venue_id
+FROM exports e
+JOIN shifts s ON s.id = e.shift_id
+WHERE e.id = ?;

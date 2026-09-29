@@ -98,6 +98,30 @@ func (q *Queries) CreateDrawerCount(ctx context.Context, arg CreateDrawerCountPa
 	return err
 }
 
+const createExport = `-- name: CreateExport :exec
+INSERT INTO exports (shift_id, kind, filename, body, created_at)
+VALUES (?, ?, ?, ?, ?)
+`
+
+type CreateExportParams struct {
+	ShiftID   int64
+	Kind      string
+	Filename  string
+	Body      string
+	CreatedAt time.Time
+}
+
+func (q *Queries) CreateExport(ctx context.Context, arg CreateExportParams) error {
+	_, err := q.db.ExecContext(ctx, createExport,
+		arg.ShiftID,
+		arg.Kind,
+		arg.Filename,
+		arg.Body,
+		arg.CreatedAt,
+	)
+	return err
+}
+
 const createShift = `-- name: CreateShift :one
 
 INSERT INTO shifts (public_id, venue_id, status, trading_day, opened_by, opened_at)
@@ -212,6 +236,82 @@ func (q *Queries) DrawerCountsForShift(ctx context.Context, shiftID int64) ([]Dr
 			&i.Expected,
 			&i.Variance,
 			&i.Threshold,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const exportByID = `-- name: ExportByID :one
+SELECT e.id, e.shift_id, e.kind, e.filename, e.body, e.created_at, s.venue_id
+FROM exports e
+JOIN shifts s ON s.id = e.shift_id
+WHERE e.id = ?
+`
+
+type ExportByIDRow struct {
+	ID        int64
+	ShiftID   int64
+	Kind      string
+	Filename  string
+	Body      string
+	CreatedAt time.Time
+	VenueID   int64
+}
+
+func (q *Queries) ExportByID(ctx context.Context, id int64) (ExportByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, exportByID, id)
+	var i ExportByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.ShiftID,
+		&i.Kind,
+		&i.Filename,
+		&i.Body,
+		&i.CreatedAt,
+		&i.VenueID,
+	)
+	return i, err
+}
+
+const exportsForShift = `-- name: ExportsForShift :many
+SELECT id, kind, filename, length(body) AS size, created_at
+FROM exports
+WHERE shift_id = ?
+ORDER BY id
+`
+
+type ExportsForShiftRow struct {
+	ID        int64
+	Kind      string
+	Filename  string
+	Size      sql.NullInt64
+	CreatedAt time.Time
+}
+
+func (q *Queries) ExportsForShift(ctx context.Context, shiftID int64) ([]ExportsForShiftRow, error) {
+	rows, err := q.db.QueryContext(ctx, exportsForShift, shiftID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ExportsForShiftRow{}
+	for rows.Next() {
+		var i ExportsForShiftRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Kind,
+			&i.Filename,
+			&i.Size,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

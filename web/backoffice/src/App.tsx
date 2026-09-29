@@ -10,6 +10,7 @@ import { Splash } from "../../shared/screens/Splash";
 import { FloorScreen } from "./floor/FloorScreen";
 import { PrintersScreen } from "./printers/PrintersScreen";
 import { ZReportsScreen } from "./reports/ZReportsScreen";
+import { ExportsPanel } from "./reports/ExportsPanel";
 import { TipsScreen } from "./tips/TipsScreen";
 import { Button } from "../../shared/ui";
 import { ZReportScreen } from "../../shared/zreport/ZReportScreen";
@@ -95,6 +96,7 @@ function ReportRoute({ number }: { number: number }) {
       backLabel="All reports"
       onBack={() => navigate("/reports")}
       extraActions={(z) => <Button onClick={() => navigate(`/shifts/${z.shift_id}/tips`)}>Tips</Button>}
+      footer={(z) => <ExportsPanel shiftId={z.shift_id} />}
     />
   );
 }

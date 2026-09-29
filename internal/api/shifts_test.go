@@ -310,3 +310,26 @@ func TestTipsOverHTTP(t *testing.T) {
 	}
 	w.refused(t, w.owner, http.MethodPost, path, `{"members":[{"staff_id":"stf_ASHA0001"}]}`, http.StatusConflict, CodeAlreadyPooled)
 }
+
+// TestExportsOverHTTP: a closed shift's three files are listed and read,
+// as JSON carrying the CSV; a cashier cannot see them.
+func TestExportsOverHTTP(t *testing.T) {
+	w := newShiftTill(t)
+	opened := w.shift(t, w.owner, http.MethodPost, "/api/v1/shift/open", `{"total":{"minor":0,"currency":"INR"}}`, http.StatusCreated)
+	w.shift(t, w.cashier, http.MethodPost, fmt.Sprintf("/api/v1/shift/%d/count", opened.ID), `{"total":{"minor":0,"currency":"INR"}}`, http.StatusOK)
+	w.shift(t, w.owner, http.MethodPost, fmt.Sprintf("/api/v1/shift/%d/close", opened.ID), "", http.StatusOK)
+
+	list := fmt.Sprintf("/api/v1/shift/%d/exports", opened.ID)
+	w.refused(t, w.cashier, http.MethodGet, list, "", http.StatusForbidden, CodeForbidden)
+	status, raw := w.do(w.owner, http.MethodGet, list, "", "")
+	var files exportsResponse
+	if status != http.StatusOK || json.Unmarshal(raw, &files) != nil || len(files.Files) != 3 || files.Files[0].Kind != "tax_register" {
+		t.Fatalf("list: %d %s", status, raw)
+	}
+	status, raw = w.do(w.owner, http.MethodGet, fmt.Sprintf("/api/v1/exports/%d", files.Files[2].ID), "", "")
+	var f exportResponse
+	if status != http.StatusOK || json.Unmarshal(raw, &f) != nil || f.Kind != "sales" || !strings.HasPrefix(f.Text, "Date,Time,Type") || f.ContentType != "text/csv; charset=utf-8" {
+		t.Fatalf("one: %d %s", status, raw)
+	}
+	w.refused(t, w.owner, http.MethodGet, "/api/v1/exports/999", "", http.StatusNotFound, CodeExportNotFound)
+}

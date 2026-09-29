@@ -76,6 +76,15 @@ type DrawerCount struct {
 	Threshold     int64
 }
 
+type Export struct {
+	ID        int64
+	ShiftID   int64
+	Kind      string
+	Filename  string
+	Body      string
+	CreatedAt time.Time
+}
+
 type FloorVersion struct {
 	VenueID int64
 	Version int64

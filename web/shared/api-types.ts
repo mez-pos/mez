@@ -94,7 +94,8 @@ export type ErrorCode =
   | 'shift_still_open'
   | 'already_pooled'
   | 'not_staff'
-  | 'invalid_tip_pool';
+  | 'invalid_tip_pool'
+  | 'export_not_found';
 
 export type OrderStatus =
   | 'open'
@@ -187,6 +188,11 @@ export type TipRule =
   | 'even'
   | 'hours'
   | 'role_weight';
+
+export type ExportKind =
+  | 'tax_register'
+  | 'tally'
+  | 'sales';
 
 export type DiscountScope =
   | 'line'
@@ -1314,6 +1320,29 @@ export interface TipPoolResponse {
   pooled_by?: number;
   pooled_at?: string;
   problem?: string;
+}
+
+export interface ExportFileResponse {
+  id: number;
+  kind: ExportKind;
+  filename: string;
+  size: number;
+  created_at: string;
+}
+
+export interface ExportsResponse {
+  files: ExportFileResponse[];
+}
+
+export interface ExportResponse {
+  id: number;
+  kind: ExportKind;
+  filename: string;
+  size: number;
+  created_at: string;
+  shift_id: number;
+  content_type: string;
+  text: string;
 }
 
 export interface KitchenLineResponse {

@@ -122,6 +122,7 @@ var errorCodes = []ErrorCode{
 	CodeNoOpenShift, CodeShiftOpen, CodeShiftClosed, CodeShiftUnknown, CodeInvalidCount, CodeInvalidCash,
 	CodeAlreadyCounted, CodeNotCounted, CodeDrawerCounted, CodeVarianceUnexplained, CodeAlreadyExplained,
 	CodeZReportNotFound, CodeShiftStillOpen, CodeAlreadyPooled, CodeNotStaff, CodeInvalidTipPool,
+	CodeExportNotFound,
 }
 
 // generate builds the whole file.
@@ -182,6 +183,7 @@ func generate() (*ts.Generator, error) {
 		{"ShiftEventType", svcshift.EventOpened, asStrings(svcshift.EventTypes())},
 		{"CashMovementKind", shift.CashIn, asStrings(shift.MovementKinds())},
 		{"TipRule", tips.Even, asStrings(tips.Rules())},
+		{"ExportKind", svcshift.ExportTaxRegister, asStrings(svcshift.ExportKinds())},
 		{"DiscountScope", order.ScopeLine, []string{string(order.ScopeLine), string(order.ScopeOrder)}},
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
@@ -251,6 +253,8 @@ func generate() (*ts.Generator, error) {
 		zNameResponse{}, zReportResponse{}, zReportsResponse{}, correctRequest{},
 		// Tips.
 		svcshift.PoolMember{}, poolRequest{}, tipMemberResponse{}, tipPoolResponse{},
+		// Exports.
+		exportFileResponse{}, exportsResponse{}, exportResponse{},
 		// The kitchen display.
 		kitchenLineResponse{}, kitchenTicketResponse{}, kitchenBoardResponse{},
 		// Credit notes.

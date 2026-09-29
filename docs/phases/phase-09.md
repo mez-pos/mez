@@ -81,7 +81,7 @@ Phase 08.
     first. Pool a closed shift's tips from the back office, and each staff
     member's tips on the report.
 
-- [ ] **Task 5 — Exports.**
+- [x] **Task 5 — Exports.**
   CSV and Tally-compatible export of the tax register and the day's sales.
   Driven by `RegisterColumns()` from the tax profile, so a VAT venue exports
   VAT columns without a code change. Queued at close, re-downloadable from back
@@ -94,7 +94,7 @@ Phase 08.
     authority), credit notes negative; a Tally voucher CSV, every voucher
     balanced; and the day's sales, one row per invoice. CSV, tested for all
     three profiles.
-  - [ ] **5b - Stored and downloaded.** Built in the closing transaction
+  - [x] **5b - Stored and downloaded.** Built in the closing transaction
     and kept; listed and downloaded from the back office's Z-report.
 
 ## Done when

@@ -40,6 +40,11 @@ nothing up.
   the report**. The report takes the register's place with **Back** and
   **Print a copy**. Only the till that closed shows the card; the back
   office has every report.
+- **Exports** (back office only), under the report: a card per file the
+  close wrote (Task 5b, ADR-104): **Tax register**, **Tally vouchers**,
+  **Day's sales**, each with a line on what it holds, its file name and
+  size in mono, and **Download**, which saves the CSV. A shift closed
+  before exports existed says it has none.
 - **In the back office:** **Z-reports** on the home page opens the list:
   newest first, each row the number in mono, the trading day, the shift id,
   the sales total, and "Correction" as a chip on a correction. **Older

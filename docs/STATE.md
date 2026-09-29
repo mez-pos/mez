@@ -11,20 +11,20 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 5a: the export files** (ADR-103).
-`internal/domain/export.Build` writes three CSVs from a shift's orders:
-the tax register, filled from the profile's `RegisterColumns()` keys and
-grouped by its non-amount columns (GST per invoice, HSN and rate; VAT per
-receipt and rate; US per day and authority with exempt sales apart),
-credit notes negative; Tally vouchers, a Sales voucher per invoice and a
-Credit Note per credit note, each balanced; and the day's sales, a row per
-document. Tested for GST, VAT, US and an untaxed venue. Not stored or
-downloadable yet.
+**Phase 09, Task 5b: exports stored and downloaded** (ADR-104), which
+completes Task 5 and every task of phase 09. The closing transaction
+writes the tax register, Tally vouchers and day's sales (migration
+00020), write-once; `GET /api/v1/shift/{id}/exports` lists them and
+`GET /api/v1/exports/{id}` returns one as JSON with its CSV text
+(reports.view). The back office's Z-report has an Exports section with
+Download, which saves the file. Tried in the browser on a GST venue: the
+Tally file downloaded and balances.
 
 ## Next task
 
-**Phase 09, Task 5b: exports stored and downloaded.** Read
-`docs/phases/phase-09.md`.
+**Phase 09's done-when, before phase 10.** A human checks a Z-report
+against a hand-computed day (the phase's note) and an export a bookkeeper
+would use. Then tick phase 09 below and start **Phase 10, Task 1**.
 
 ## Known broken / in progress
 
@@ -36,6 +36,10 @@ downloadable yet.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
+- Exports (ADR-103, ADR-104): not yet imported into a real TallyPrime;
+  its ledgers are mapped by name once in Tally. Shifts closed before
+  migration 00020 have no files. A shift whose files cannot be written
+  does not close, as with its Z-report.
 - Z-report (ADR-097 to ADR-100): categories are the menu's when the
   report is built, not when the item was sold. The printout has no
   by-item lines; the screen does. The till shows only the report its own

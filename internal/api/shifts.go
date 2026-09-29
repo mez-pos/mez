@@ -36,6 +36,9 @@ func WithShifts(sh Shifts) Option {
 		if t, ok := sh.(Tips); ok {
 			s.tips = t
 		}
+		if e, ok := sh.(Exports); ok {
+			s.exports = e
+		}
 	}
 }
 

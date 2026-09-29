@@ -14,9 +14,11 @@ interface ZReportScreenProps {
   onBack: () => void;
   /** More beside Print a copy: the back office's Tips. */
   extraActions?: (z: ZReportResponse) => ReactNode;
+  /** Under the report: the back office's exports. */
+  footer?: (z: ZReportResponse) => ReactNode;
 }
 
-export function ZReportScreen({ number, backLabel, onBack, extraActions }: ZReportScreenProps) {
+export function ZReportScreen({ number, backLabel, onBack, extraActions, footer }: ZReportScreenProps) {
   const report = useZReport(number);
   const print = usePrintZReport();
   const [printing, setPrinting] = useState(false);
@@ -75,6 +77,7 @@ export function ZReportScreen({ number, backLabel, onBack, extraActions }: ZRepo
           </>
         }
       />
+      {footer?.(report.data)}
     </div>
   );
 }

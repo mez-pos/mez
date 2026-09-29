@@ -59,6 +59,7 @@ type Querier interface {
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (int64, error)
 	CreateCreditNote(ctx context.Context, arg CreateCreditNoteParams) (int64, error)
 	CreateDrawerCount(ctx context.Context, arg CreateDrawerCountParams) error
+	CreateExport(ctx context.Context, arg CreateExportParams) error
 	CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (int64, error)
 	CreateItem(ctx context.Context, arg CreateItemParams) (int64, error)
 	CreateModifier(ctx context.Context, arg CreateModifierParams) (int64, error)
@@ -113,6 +114,8 @@ type Querier interface {
 	// later one for that printer. Jobs with no printer are never picked.
 	DuePrintJobs(ctx context.Context, now time.Time) ([]DuePrintJobsRow, error)
 	EndStaffSession(ctx context.Context, arg EndStaffSessionParams) (int64, error)
+	ExportByID(ctx context.Context, id int64) (ExportByIDRow, error)
+	ExportsForShift(ctx context.Context, shiftID int64) ([]ExportsForShiftRow, error)
 	// Records how a send went. Only a job still printing can finish.
 	FinishPrintJob(ctx context.Context, arg FinishPrintJobParams) (int64, error)
 	FloorVersion(ctx context.Context, venueID int64) (int64, error)

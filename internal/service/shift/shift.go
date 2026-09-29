@@ -284,6 +284,9 @@ func (s *Service) Close(ctx context.Context, meta Meta, shiftID int64) (Shift, e
 		if _, err := issue(ctx, q, meta.VenueID, row.ID, nil, "", &doc); err != nil {
 			return err
 		}
+		if err := writeExports(ctx, q, meta.VenueID, sh, v, now); err != nil {
+			return err
+		}
 		return queueZ(ctx, q, meta.VenueID, meta.DeviceID, v, doc, false, now)
 	})
 	if err != nil {
