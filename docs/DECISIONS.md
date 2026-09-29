@@ -2670,3 +2670,27 @@ applied after the fact, is not a control; and an expected figure anywhere
 before the count is one a cashier can read.
 Cost: a genuine miscount stays on the record with its explanation; there
 is no recount.
+
+## ADR-096 - The till's shift screens take the register's place
+2026-09 · Status: accepted
+Decision: phase 09, Task 2b's screens (`terminal-close.md`) are states of
+the register, not routes.
+  - **No shift, no register:** with `{"shift": null}` the register is
+    "The till is closed", so there is no path to a sale the server would
+    refuse. A counted shift shows its reveal on every till until someone
+    closes it, since that till can sell nothing either.
+  - **The counter counts by value:** one row per face value, largest
+    first; a note and a coin of the same value share a row. The tables
+    live in the terminal (`shift-logic.ts`) for INR, USD, EUR and GBP; a
+    currency with none is counted as one total on the pad. The pad types
+    a row's count rather than steppers, since forty-seven Rs. 10 notes
+    are typed, not tapped.
+  - **The count is confirmed first,** because it cannot be retaken
+    (ADR-095). Back to the register is offered only before it.
+  - **The shift is polled** every 30 seconds and read from every
+    command's answer; the stream carries no shifts yet.
+Because: a till that can show the register with no shift open invites a
+sale the server refuses, and a counted drawer that looks like a working
+register invites one more.
+Cost: every till polls; a shift opened elsewhere reaches a closed till
+within 30 seconds, not at once.

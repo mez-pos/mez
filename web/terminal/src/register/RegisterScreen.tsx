@@ -4,7 +4,8 @@
 // the ticket's total never leaves the screen. Charge swaps it for the tender
 // screen (terminal-tender.md) on the same ticket, and Floor swaps it for the
 // dining room (terminal-floor.md), where a party is seated or a table's
-// ticket found.
+// ticket found. With no shift open the till is closed (terminal-close.md),
+// and a counted shift shows its close until it is closed.
 
 import { useMemo, useState, type ReactNode } from "react";
 import type { LineModifier, LineResponse, MenuItemResponse } from "../../../shared/api-types";
@@ -30,11 +31,17 @@ import { useTicket } from "./use-ticket";
 import { FloorView } from "../floor/FloorView";
 import { tableNames } from "../floor/floor-logic";
 import { useLiveFloor } from "../floor/use-live-floor";
+import { CloseDayScreen } from "../shift/CloseDayScreen";
+import { TillClosedScreen } from "../shift/TillClosedScreen";
+import { useShift } from "../shift/use-shift";
 
 export function RegisterScreen() {
   const menu = useMenu();
   const ticket = useTicket();
   const floor = useLiveFloor();
+  const shift = useShift();
+  // The shift being closed, by id: a new shift is not.
+  const [closing, setClosing] = useState<number | null>(null);
   const names = useMemo(() => tableNames(floor.data), [floor.data]);
   const [floorOpen, setFloorOpen] = useState(false);
   const index = useMemo(() => (menu.data ? indexMenu(menu.data) : null), [menu.data]);
@@ -123,6 +130,14 @@ export function RegisterScreen() {
 
   const block = chargeBlock(ticket.order, ticket.pending.length);
   const label = ticketLabel(ticket.order ?? ticket.opening, names);
+
+  const currency = index?.menu.currency ?? "INR";
+  if (!shift.shift) {
+    return <TillClosedScreen currency={currency} state={shift} />;
+  }
+  if (shift.shift.counted || closing === shift.shift.id) {
+    return <CloseDayScreen shift={shift.shift} currency={currency} commands={shift.commands} onBack={() => setClosing(null)} />;
+  }
 
   if (floorOpen) {
     return <FloorView floor={floor} ticket={ticket} onRegister={() => setFloorOpen(false)} />;
@@ -248,6 +263,12 @@ export function RegisterScreen() {
           }}
           onPastBills={() => setPastBillsOpen(true)}
           onFloor={() => setFloorOpen(true)}
+          onCloseDay={() => {
+            setPanel(null);
+            setSheet(null);
+            setHistoryOpen(false);
+            setClosing(shift.shift?.id ?? null);
+          }}
           onClose={() => setTicketsOpen(false)}
         />
       )}

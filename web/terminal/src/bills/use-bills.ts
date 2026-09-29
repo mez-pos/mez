@@ -32,7 +32,7 @@ export function usePastBills(query: string) {
 }
 
 /** A key per request body: the same body again is a retry, and reuses it. */
-function useAttemptKeys() {
+export function useAttemptKeys() {
   const last = useRef<{ body: string; key: string } | null>(null);
   return {
     keyFor(body: unknown): string {

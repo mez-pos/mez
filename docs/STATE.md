@@ -11,21 +11,17 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 2a: the blind count on the server** (ADR-095). Expected
-cash is the float, the movements and the shift's cash (tenders with their
-tips, less voids and refunds against cash, whichever shift took them).
-`POST /api/v1/shift/{id}/count` records the closing count once, with the
-expected figure, variance and the threshold in force (setting
-`shift.variance_threshold_minor`, default 0), and is the first answer to
-reveal them. A counted shift takes no sales or cash. `.../reason` records
-the reason once; close needs the count and, past the threshold, the
-reason. Migration 00017.
+**Phase 09, Task 2b: the close-of-day screen** (`terminal-close.md`,
+ADR-096), which completes Task 2. With no shift open the register is
+"The till is closed": count the float by note and coin, Open the till.
+Tickets has **Close the day**: the blind counter, Submit count (with a
+confirm), then the reveal (expected, counted, Short/Over/Balanced), the
+reason when owed, and Close the shift. A counted shift shows its reveal
+on every till until closed. Tried in the browser end to end.
 
 ## Next task
 
-**Phase 09, Task 2b: the close-of-day screen.** Write
-`docs/design/screens/terminal-close.md` first. Read
-`docs/phases/phase-09.md`.
+**Phase 09, Task 3: Z-report.** Read `docs/phases/phase-09.md`.
 
 ## Known broken / in progress
 
@@ -37,15 +33,15 @@ reason. Migration 00017.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
-- Shifts (ADR-093 to ADR-095): **the terminal has no screen to open,
-  count or close a shift** (Task 2b), so it cannot sell until one is
-  opened over the API (`POST /api/v1/shift/open` as the owner, body
-  `{"total":{"minor":0,"currency":"INR"}}`). Terminals are not told over
-  the stream when a shift opens, is counted or closes. The day start is a
-  constant. A payout larger than the drawer is not refused. Closing leaves
-  open tickets to carry into the next shift. A counted drawer cannot be
-  recounted: a miscount is explained, not replaced. The variance threshold
-  has no back office setting yet (phase 10); set it in `settings`.
+- Shifts (ADR-093 to ADR-096): terminals learn of a shift opening,
+  counted or closed by polling every 30 seconds, not the stream. Opening
+  and closing need shift.manage: a cashier is told to ask a manager, with
+  no override sheet. No till screen for cash in or out yet (the API has
+  it). The day start is a constant. A payout larger than the drawer is
+  not refused. Closing leaves open tickets to carry into the next shift.
+  A counted drawer cannot be recounted. The variance threshold has no
+  back office setting yet (phase 10); set it in `settings`. Denomination
+  tables exist for INR, USD, EUR and GBP only; others count one total.
 - Phase 09's exception report should count `entered_in_error` removes
   per staff member, apart from manager voids (ADR-073).
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
@@ -82,7 +78,8 @@ reason. Migration 00017.
   `CGO_ENABLED=0 go build -tags frontend -o bin/nofiltr ./cmd/nofiltr`.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`
   does not escape the path in its `file:` DSN.
-- To try the apps: `nofiltr setup -demo-menu` prints a pairing code
+- To try the apps: `nofiltr setup -demo-menu` prints a pairing code; sign
+  in as the owner and count a float to open the till
   (`-device-kind back_office` for the back office); pair in the browser. A
   code for the wrong app is refused but its device stays (ADR-068).
 - No endpoint returns the venue's name or a staff member's role; the lock

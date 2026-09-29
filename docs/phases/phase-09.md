@@ -23,7 +23,7 @@ Phase 08.
     open shift; opening an order or taking a payment with no open shift is
     refused; the shift API, with `shift.manage` and `cash.move` permissions.
 
-- [ ] **Task 2 — Blind drawer count.**
+- [x] **Task 2 — Blind drawer count.**
   Staff enter counted denominations **before** the system reveals the expected
   figure. This is non-negotiable; showing expected first defeats the control.
   Variance computed after submission, over or short, with a mandatory reason
@@ -36,7 +36,7 @@ Phase 08.
     over it; a counted shift takes no more sales or cash; close needs the
     count and, over the threshold, the reason. The API reveals expected only
     in the answer to the count.
-  - [ ] **2b - The close-of-day screen.** Write
+  - [x] **2b - The close-of-day screen.** Write
     `docs/design/screens/terminal-close.md` first. Open the shift with a
     float; count the drawer by denomination with nothing expected on
     screen; then the reveal, over or short, the reason when asked, and
