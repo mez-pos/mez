@@ -48,6 +48,19 @@ Phase 08.
   Tax breakdown per rate. Cash reconciliation and variance. Immutable once
   generated, numbered, and a correction is a new document referencing the old.
   Print via the Phase 07 templates and view on screen.
+  Split in three:
+  - [ ] **3a - The figures.** `internal/domain/zreport`: from the whole
+    streams of the orders touched in a shift, the sales invoiced in it (by
+    category, item, channel, staff), discounts, comps, voids (manager voids
+    apart from entered-in-error removes), credit notes, refunds, tax per
+    component and rate, payments by method with tips apart, and the
+    balance between payments and sales. A hand-computed day to the paisa.
+  - [ ] **3b - The document.** Stored immutable and numbered per venue,
+    generated as the shift closes; a correction is a new report naming the
+    one it corrects. The API reads a shift's report and the list.
+  - [ ] **3c - Print and view.** The Phase 07 `escpos.ZReport` laid out
+    from it, printed on close through the queue; the report on the till
+    after close and in the back office.
 
 - [ ] **Task 4 — Tips.**
   Per-payment tips aggregated to the shift. Pooling rules configurable: even
