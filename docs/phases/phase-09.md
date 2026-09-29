@@ -58,9 +58,13 @@ Phase 08.
   - [x] **3b - The document.** Stored immutable and numbered per venue,
     generated as the shift closes; a correction is a new report naming the
     one it corrects. The API reads a shift's report and the list.
-  - [ ] **3c - Print and view.** The Phase 07 `escpos.ZReport` laid out
-    from it, printed on close through the queue; the report on the till
-    after close and in the back office.
+  - [ ] **3c - Print.** The Phase 07 `escpos.ZReport` laid out from the
+    stored document (categories, channels, staff, exceptions, tax per rate,
+    payments, the drawer, a correction's header), queued in the closing and
+    correcting transactions, and printed again on request as a copy.
+  - [ ] **3d - View.** Write `docs/design/screens/zreport.md` first. The
+    report on the till after close, and the list and the report in the
+    back office, from the one stored document.
 
 - [ ] **Task 4 — Tips.**
   Per-payment tips aggregated to the shift. Pooling rules configurable: even
