@@ -11,19 +11,18 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 4a: the tip pool on the server** (ADR-101).
-`internal/domain/tips`: tips each staff member took on their tenders in
-the shift, net of voids, and `Split` to the paisa evenly, by hours or by
-role weight. Settings `tips.rule` (default even) and `tips.role_weights`
-(JSON by role name, default 1). `GET /api/v1/shift/{id}/tips`
-(reports.view) previews or reads the pool; `POST` (shift.manage) pools a
-closed shift once, with hours entered then, recorded immutably
-(migration 00019). Everyone who took a tip is on the report, pooled or not.
+**Phase 09, Task 4b: the tips screen** (`tips.md`, ADR-102), which
+completes Task 4. A Z-report in the back office has **Tips**, opening
+`/shifts/{id}/tips`: the pool, the rule in words, and everyone who can
+share it (the server's suggestions in, the rest of the staff out), with
+In/Out, hours when the rule is by hours, what each took, and each share
+from `POST /api/v1/shift/{id}/tips/preview`. **Pool the tips** confirms
+and records it; a pooled shift shows the read-only report. Tried in the
+browser end to end with one staff member.
 
 ## Next task
 
-**Phase 09, Task 4b: the tips screen.** Write
-`docs/design/screens/tips.md` first. Read `docs/phases/phase-09.md`.
+**Phase 09, Task 5: exports.** Read `docs/phases/phase-09.md`.
 
 ## Known broken / in progress
 
@@ -42,9 +41,11 @@ closed shift once, with hours entered then, recorded immutably
   API-tested, not tried in a browser. No screen issues a correction yet
   (the API does). A report that cannot be built blocks the close; there is no
   way round that short of fixing the data.
-- Tips (ADR-101): hours are typed in at pooling (no timesheets until
-  phase 10); a pool is once per shift with no correction; no screen yet
-  (4b); the rule and weights have no back office setting (phase 10).
+- Tips (ADR-101, ADR-102): hours are typed in at pooling (no timesheets
+  until phase 10); a pool is once per shift with no correction; the rule
+  and weights have no back office setting (phase 10). The browser run had
+  one staff member: no API adds staff yet, so a multi-person or by-hours
+  pool was tested in Go and vitest, not by hand.
 - Shifts (ADR-093 to ADR-096): terminals learn of a shift opening,
   counted or closed by polling every 30 seconds, not the stream. Opening
   and closing need shift.manage: a cashier is told to ask a manager, with

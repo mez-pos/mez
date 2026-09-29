@@ -300,6 +300,10 @@ func TestTipsOverHTTP(t *testing.T) {
 	if status != http.StatusOK || json.Unmarshal(raw, &p) != nil || p.Pooled || p.Rule != "even" || p.Total.Minor != 0 {
 		t.Fatalf("preview: %d %s", status, raw)
 	}
+	status, raw = w.do(w.owner, http.MethodPost, path+"/preview", both, "")
+	if status != http.StatusOK || json.Unmarshal(raw, &p) != nil || p.Pooled || len(p.Members) != 2 {
+		t.Fatalf("preview with members: %d %s", status, raw)
+	}
 	status, raw = w.do(w.owner, http.MethodPost, path, both, "")
 	if status != http.StatusOK || json.Unmarshal(raw, &p) != nil || !p.Pooled || len(p.Members) != 2 || p.Members[1].StaffID != "stf_PRIYA001" || p.Members[1].Name != "Priya" {
 		t.Fatalf("pool: %d %s", status, raw)

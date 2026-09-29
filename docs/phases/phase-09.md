@@ -66,7 +66,7 @@ Phase 08.
     report on the till after close, and the list and the report in the
     back office, from the one stored document.
 
-- [ ] **Task 4 — Tips.**
+- [x] **Task 4 — Tips.**
   Per-payment tips aggregated to the shift. Pooling rules configurable: even
   split, by hours, by role weight. A tip report per staff member. Tips never
   touch the sales figures.
@@ -77,7 +77,7 @@ Phase 08.
     weights venue settings; hours entered at pooling, since there are no
     timesheets until phase 10); pooled once per closed shift, recorded
     immutably; the API's preview, pool and per-staff report.
-  - [ ] **4b - The tips screen.** Write `docs/design/screens/tips.md`
+  - [x] **4b - The tips screen.** Write `docs/design/screens/tips.md`
     first. Pool a closed shift's tips from the back office, and each staff
     member's tips on the report.
 

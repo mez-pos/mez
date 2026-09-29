@@ -2834,3 +2834,23 @@ Because: a split that anyone can redo after the money is handed out is
 not a record of what was handed out.
 Cost: a pool entered wrongly cannot be redone; the fix is outside the
 system until a correction exists.
+
+## ADR-102 - The tips screen shows the server's shares before pooling
+2026-09 · Status: accepted
+Decision: phase 09, Task 4b's screen (`tips.md`) asks the server for the
+shares of every choice of people, and never splits money itself.
+  - **A preview route,** `POST /api/v1/shift/{id}/tips/preview`
+    (reports.view), gives what pooling would, recorded nowhere. The screen
+    calls it on every change of who is in or their hours, keeping the last
+    answer on screen while the next comes.
+  - **The only arithmetic** on the screen is hours and minutes into
+    minutes (whole hours, 0 to 59 minutes, at most 36 hours).
+  - **Where it lives:** from a Z-report in the back office (Tips), at
+    `/shifts/{id}/tips`; the Z-report screen takes extra actions for it.
+    The till has no tips screen.
+  - **Starting people:** the server's suggestions in, then every active
+    staff member out; a pooled shift is the read-only report, with anyone
+    who took a tip and was left out shown with no share.
+Because: a share the screen works out could differ from the one recorded,
+and a manager should see exactly what they are committing to.
+Cost: a request per change while choosing; a shift's pool is small.

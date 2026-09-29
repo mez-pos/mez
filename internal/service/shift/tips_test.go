@@ -96,6 +96,13 @@ func TestATipPoolSplitsEvenlyByDefault(t *testing.T) {
 	closeExact(t, f, cashier, open.ID)
 	manager := Meta{VenueID: 1, ActorID: 2}
 	everyone := []PoolMember{{Staff: "stf_Asha0001"}, {Staff: "stf_Priya0001"}, {Staff: "stf_Ravi0001"}}
+	peek := must(f.svc.PreviewTips(ctx, 1, open.ID, everyone))
+	if peek.Pooled || member(peek, 1).Share != inr(2334) {
+		t.Errorf("the preview for everyone = %+v", peek)
+	}
+	if again := must(f.svc.Tips(ctx, 1, open.ID)); again.Pooled {
+		t.Error("a preview was recorded")
+	}
 	pool := must(f.svc.PoolTips(ctx, manager, open.ID, everyone))
 	if !pool.Pooled || pool.PooledBy != 2 || pool.Total != inr(7000) {
 		t.Fatalf("pool = %+v", pool)

@@ -96,6 +96,26 @@ func (s *Service) Tips(ctx context.Context, venueID, shiftID int64) (TipPool, er
 	return pool, err
 }
 
+// PreviewTips is the split for these members, worked out and not
+// recorded: what Pool would give, so a screen shows the server's shares
+// before anyone commits to them. A shift already pooled answers with its
+// pool.
+func (s *Service) PreviewTips(ctx context.Context, venueID, shiftID int64, members []PoolMember) (TipPool, error) {
+	q := s.db.Queries()
+	row, err := shiftAt(ctx, q, venueID, shiftID)
+	if err != nil {
+		return TipPool{}, err
+	}
+	if stored, ok, err := storedPool(ctx, q, row.ID); err != nil || ok {
+		return stored, err
+	}
+	in, err := tipInputs(ctx, q, venueID, row.ID)
+	if err != nil {
+		return TipPool{}, err
+	}
+	return in.pool(row.ID, members)
+}
+
 // PoolTips splits a closed shift's tips among the members by the venue's
 // rule, and records it. It is done once; the same pool retried by the same
 // person gets it back, anything else is ErrAlreadyPooled.

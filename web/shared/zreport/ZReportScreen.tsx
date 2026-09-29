@@ -1,7 +1,8 @@
 // One Z-report, read by its number, with Print a copy and the way back
 // (docs/design/screens/zreport.md). Both apps show a report through this.
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import type { ZReportResponse } from "../api-types";
 import { Button, EmptyState, InboxIcon, useToast } from "../ui";
 import { reportProblem } from "./zreport-logic";
 import { statusOf, usePrintZReport, useZReport } from "./use-zreport";
@@ -11,9 +12,11 @@ interface ZReportScreenProps {
   number: number;
   backLabel: string;
   onBack: () => void;
+  /** More beside Print a copy: the back office's Tips. */
+  extraActions?: (z: ZReportResponse) => ReactNode;
 }
 
-export function ZReportScreen({ number, backLabel, onBack }: ZReportScreenProps) {
+export function ZReportScreen({ number, backLabel, onBack, extraActions }: ZReportScreenProps) {
   const report = useZReport(number);
   const print = usePrintZReport();
   const [printing, setPrinting] = useState(false);
@@ -64,6 +67,7 @@ export function ZReportScreen({ number, backLabel, onBack }: ZReportScreenProps)
         z={report.data}
         actions={
           <>
+            {extraActions?.(report.data)}
             <Button disabled={printing} onClick={() => void copy()}>
               Print a copy
             </Button>

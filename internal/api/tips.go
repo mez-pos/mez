@@ -17,6 +17,7 @@ import (
 type Tips interface {
 	Tips(ctx context.Context, venueID, shiftID int64) (svcshift.TipPool, error)
 	PoolTips(ctx context.Context, meta svcshift.Meta, shiftID int64, members []svcshift.PoolMember) (svcshift.TipPool, error)
+	PreviewTips(ctx context.Context, venueID, shiftID int64, members []svcshift.PoolMember) (svcshift.TipPool, error)
 }
 
 // The tip pool's error codes.
@@ -63,6 +64,8 @@ func (s *Server) mountTips(mux *http.ServeMux) {
 	}
 	handle("GET /api/v1/shift/{id}/tips", auth.PermReportsView, s.readTips)
 	handle("POST /api/v1/shift/{id}/tips", auth.PermShiftManage, s.poolTips)
+	// The shares for a choice of members, not recorded.
+	handle("POST /api/v1/shift/{id}/tips/preview", auth.PermReportsView, s.previewTips)
 }
 
 func (s *Server) readTips(w http.ResponseWriter, r *http.Request) {
@@ -84,6 +87,19 @@ func (s *Server) poolTips(w http.ResponseWriter, r *http.Request) {
 		req.Members = []svcshift.PoolMember{}
 	}
 	p, err := s.tips.PoolTips(r.Context(), shiftMeta(r), id, req.Members)
+	s.writeTips(w, r, p, err)
+}
+
+func (s *Server) previewTips(w http.ResponseWriter, r *http.Request) {
+	var req poolRequest
+	id, ok := s.pathID(w, r, "id")
+	if !ok || !s.decode(w, r, &req) {
+		return
+	}
+	if req.Members == nil {
+		req.Members = []svcshift.PoolMember{}
+	}
+	p, err := s.tips.PreviewTips(r.Context(), Meta(r).VenueID, id, req.Members)
 	s.writeTips(w, r, p, err)
 }
 

@@ -10,6 +10,8 @@ import { Splash } from "../../shared/screens/Splash";
 import { FloorScreen } from "./floor/FloorScreen";
 import { PrintersScreen } from "./printers/PrintersScreen";
 import { ZReportsScreen } from "./reports/ZReportsScreen";
+import { TipsScreen } from "./tips/TipsScreen";
+import { Button } from "../../shared/ui";
 import { ZReportScreen } from "../../shared/zreport/ZReportScreen";
 
 export function App() {
@@ -33,6 +35,13 @@ export function App() {
             {(params) => (
               <SignedInShell area="Z-report" exitLabel="Sign out">
                 <ReportRoute number={Number(params.number)} />
+              </SignedInShell>
+            )}
+          </Route>
+          <Route path="/shifts/:id/tips">
+            {(params) => (
+              <SignedInShell area="Tips" exitLabel="Sign out">
+                <TipsRoute id={Number(params.id)} />
               </SignedInShell>
             )}
           </Route>
@@ -80,5 +89,18 @@ export function App() {
 function ReportRoute({ number }: { number: number }) {
   const [, navigate] = useLocation();
   if (!Number.isSafeInteger(number) || number < 1) return <Redirect to="/reports" replace />;
-  return <ZReportScreen number={number} backLabel="All reports" onBack={() => navigate("/reports")} />;
+  return (
+    <ZReportScreen
+      number={number}
+      backLabel="All reports"
+      onBack={() => navigate("/reports")}
+      extraActions={(z) => <Button onClick={() => navigate(`/shifts/${z.shift_id}/tips`)}>Tips</Button>}
+    />
+  );
+}
+
+/** A shift's tips by the id in its path. */
+function TipsRoute({ id }: { id: number }) {
+  if (!Number.isSafeInteger(id) || id < 1) return <Redirect to="/reports" replace />;
+  return <TipsScreen shiftId={id} onBack={() => window.history.back()} />;
 }
