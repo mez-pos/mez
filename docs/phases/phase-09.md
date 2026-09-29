@@ -86,6 +86,16 @@ Phase 08.
   Driven by `RegisterColumns()` from the tax profile, so a VAT venue exports
   VAT columns without a code change. Queued at close, re-downloadable from back
   office.
+  Split in two:
+  - [ ] **5a - The files.** `internal/domain/export`, from the shift's
+    orders: the tax register filled column by column from the profile's
+    `RegisterColumns()` keys (rows grouped by the non-amount columns, so
+    GST is per invoice, HSN and rate, and US sales tax per day and
+    authority), credit notes negative; a Tally voucher CSV, every voucher
+    balanced; and the day's sales, one row per invoice. CSV, tested for all
+    three profiles.
+  - [ ] **5b - Stored and downloaded.** Built in the closing transaction
+    and kept; listed and downloaded from the back office's Z-report.
 
 ## Done when
 A full trading day — open, sell across channels, discount, void, refund, close
