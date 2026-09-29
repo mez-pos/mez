@@ -56,6 +56,8 @@ type Options struct {
 	DayStart time.Duration
 	// OnChange is told a venue's shift changed, after it is committed.
 	OnChange func(venueID int64)
+	// Prints, when set, is woken after a Z-report is queued to print.
+	Prints PrintQueue
 }
 
 // Service is a venue's shifts.
@@ -64,6 +66,7 @@ type Service struct {
 	clock    Clock
 	dayStart time.Duration
 	onChange func(venueID int64)
+	prints   PrintQueue
 }
 
 // New returns a Service.
@@ -83,7 +86,7 @@ func New(o Options) (*Service, error) {
 	if o.OnChange == nil {
 		o.OnChange = func(int64) {}
 	}
-	return &Service{db: o.DB, clock: o.Clock, dayStart: o.DayStart, onChange: o.OnChange}, nil
+	return &Service{db: o.DB, clock: o.Clock, dayStart: o.DayStart, onChange: o.OnChange, prints: o.Prints}, nil
 }
 
 // Meta is who is doing it, where, and the request's idempotency key.
@@ -278,12 +281,15 @@ func (s *Service) Close(ctx context.Context, meta Meta, shiftID int64) (Shift, e
 		if err != nil {
 			return err
 		}
-		_, err = issue(ctx, q, meta.VenueID, row.ID, nil, "", doc)
-		return err
+		if _, err := issue(ctx, q, meta.VenueID, row.ID, nil, "", &doc); err != nil {
+			return err
+		}
+		return queueZ(ctx, q, meta.VenueID, meta.DeviceID, v, doc, false, now)
 	})
 	if err != nil {
 		return Shift{}, fmt.Errorf("closing the shift: %w", err)
 	}
+	s.wake()
 	s.onChange(meta.VenueID)
 	return s.ByID(ctx, meta.VenueID, shiftID)
 }

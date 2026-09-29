@@ -363,3 +363,34 @@ func TestCreditNote(t *testing.T) {
 		}
 	}
 }
+
+func TestZReportPhase09Sections(t *testing.T) {
+	float, net, counted, diff, paid := inr(200000), inr(61080), inr(252000), inr(-950), inr(5000)
+	z := ZReport{
+		Final: true, Copy: true, Number: 3, Corrects: 1, Reason: "The cakes were filed under coffee",
+		Venue: "Filter Coffee House", Device: "Counter 1", TradingDay: "2026-09-28", By: "Priya",
+		Orders: 3, Gross: inr(79000), Discounts: inr(3500), Discounted: ZCount{Count: 2, Amount: inr(3500)},
+		Taxable: inr(75500), Total: inr(81030), NetOfCredits: &net,
+		Taxes:       []ZTax{{Name: "CGST 2.5%", Amount: inr(1075)}, {Name: "CGST 9%", Amount: inr(1215)}},
+		Categories:  []ZLine{{Name: "Coffee", Count: 5, Amount: inr(65100)}, {Name: "Cakes", Count: 1, Amount: inr(15930)}},
+		Channels:    []ZLine{{Name: "Counter", Count: 2, Amount: inr(41130)}},
+		Staff:       []ZLine{{Name: "Ravi", Count: 2, Amount: inr(41130)}},
+		CreditNotes: ZCount{Count: 1, Amount: inr(19950)}, Removed: ZCount{Count: 1, Amount: inr(12000)},
+		Unbalanced: &paid, CashFloat: &float, CashIn: inr(0), CashOut: inr(12050), CashSales: inr(28530),
+		CashExpected: inr(252950), CashCounted: &counted, CashDifference: &diff, CashReason: "Change given twice to table 4",
+	}
+	for _, paper := range []Paper{Paper80, Paper58} {
+		data, err := z.Layout(paper)
+		if err != nil {
+			t.Fatal(err)
+		}
+		p := decode(t, data)
+		p.fits(t, paper)
+		p.has(t, "Z-REPORT 3", "COPY", "CORRECTS Z-REPORT 1", "The cakes were", "Trading day", "2026-09-28",
+			"Discounts (2)", "CGST 2.5%", "CGST 9%", "Less credit notes", "-199.50", "Net sales", "610.80",
+			"BY CATEGORY", "Coffee (5)", "651.00", "Cakes (1)", "BY CHANNEL", "Counter (2)", "BY STAFF", "Ravi (2)",
+			"Paid for other shifts", "50.00", "Credit notes (1)", "Removed in error (1)",
+			"Float", "2,000.00", "Cash out", "-120.50", "Cash sales, net", "285.30", "Expected", "2,529.50",
+			"Difference", "-9.50", "Why: Change given twice")
+	}
+}

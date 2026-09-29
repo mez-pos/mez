@@ -65,12 +65,15 @@ func (s *Service) CorrectZReport(ctx context.Context, meta Meta, shiftID int64, 
 			number = d.Number
 			return nil
 		}
-		number, err = issue(ctx, q, meta.VenueID, row.ID, &latest, reason, doc)
-		return err
+		if number, err = issue(ctx, q, meta.VenueID, row.ID, &latest, reason, &doc); err != nil {
+			return err
+		}
+		return queueZ(ctx, q, meta.VenueID, meta.DeviceID, v, doc, false, now)
 	})
 	if err != nil {
 		return ZReport{}, fmt.Errorf("correcting the Z-report: %w", err)
 	}
+	s.wake()
 	return s.ZReport(ctx, meta.VenueID, number)
 }
 

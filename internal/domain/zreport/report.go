@@ -40,6 +40,7 @@ type Report struct {
 	Removed     []StaffTally `json:"removed"`      // lines rung up by mistake, by who removed them
 	CreditNotes Tally        `json:"credit_notes"` // sales reversed, tax included
 	Refunds     Tally        `json:"refunds"`      // money handed back
+	Reprints    int64        `json:"reprints"`     // invoice copies printed
 
 	// Taxes is the tax invoiced less the tax credited, per component and rate.
 	Taxes []TaxLine `json:"taxes"`

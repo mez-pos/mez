@@ -41,6 +41,7 @@ type event struct {
 
 // venue is what the shift needs to know of the venue.
 type venue struct {
+	name     string
 	currency string
 	location *time.Location
 }
@@ -57,7 +58,7 @@ func venueOf(ctx context.Context, q *gen.Queries, venueID int64) (venue, error) 
 	if err != nil {
 		return venue{}, fmt.Errorf("%w: timezone %q: %v", ErrVenueConfig, row.Timezone, err)
 	}
-	return venue{currency: row.Currency, location: loc}, nil
+	return venue{name: row.Name, currency: row.Currency, location: loc}, nil
 }
 
 // isRetry reports whether the request's key already recorded an event in

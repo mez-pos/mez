@@ -118,6 +118,7 @@ func handDay(t *testing.T) Input {
 	a.add(order.DiscountApplied{Scope: order.ScopeLine, LineID: cake, Kind: order.DiscountPercent, BasisPoints: 1000, Reason: "regular"})
 	a.add(order.PaymentTendered{Method: order.PaymentCash, Amount: inr(28530), Tip: inr(2000), TenderedBy: 3})
 	a.invoice("INV/26-27/000001")
+	a.as(2, order.InvoiceReprinted{InvoiceNo: "INV/26-27/000001", Reason: "guest asked", AuthorisedBy: 2})
 
 	b := newBill(t, 1, order.ChannelQRTable, 5)
 	latte := b.line(3, "Latte", 2, 20000, gst5)
@@ -154,6 +155,9 @@ func TestAHandComputedDayBalancesToThePaisa(t *testing.T) {
 	}
 	if r.Sales != want {
 		t.Errorf("sales = %+v\n want %+v", r.Sales, want)
+	}
+	if r.Reprints != 1 {
+		t.Errorf("reprints = %d, want 1", r.Reprints)
 	}
 	if r.Invoices != (Invoices{Count: 3, First: "INV/26-27/000001", Last: "INV/26-27/000003"}) {
 		t.Errorf("invoices = %+v", r.Invoices)

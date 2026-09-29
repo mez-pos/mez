@@ -1170,6 +1170,7 @@ export interface Report {
   removed: StaffTally[];
   credit_notes: Tally;
   refunds: Tally;
+  reprints: number;
   taxes: TaxLine[];
   payments: Payment[];
   tips: Money;

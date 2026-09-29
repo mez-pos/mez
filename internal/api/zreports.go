@@ -21,6 +21,7 @@ type ZReports interface {
 	ZReportForShift(ctx context.Context, venueID, shiftID int64) (svcshift.ZReport, error)
 	ZReports(ctx context.Context, venueID, before int64) ([]svcshift.ZSummary, error)
 	CorrectZReport(ctx context.Context, meta svcshift.Meta, shiftID int64, reason string) (svcshift.ZReport, error)
+	PrintZReport(ctx context.Context, meta svcshift.Meta, number int64) error
 }
 
 // The Z-report error codes.
@@ -69,6 +70,8 @@ func (s *Server) mountZReports(mux *http.ServeMux) {
 	}
 	handle("GET /api/v1/z-reports", auth.PermReportsView, s.listZReports)
 	handle("GET /api/v1/z-reports/{number}", auth.PermReportsView, s.oneZReport)
+	// A copy, marked COPY, on the report printer.
+	handle("POST /api/v1/z-reports/{number}/print", auth.PermReportsView, s.printZReport)
 	handle("GET /api/v1/shift/{id}/z-report", auth.PermReportsView, s.shiftZReport)
 	handle("POST /api/v1/shift/{id}/z-report/corrections", auth.PermShiftManage, s.correctZReport)
 }
@@ -102,6 +105,18 @@ func (s *Server) oneZReport(w http.ResponseWriter, r *http.Request) {
 	}
 	z, err := s.zreports.ZReport(r.Context(), Meta(r).VenueID, number)
 	s.writeZ(w, r, z, err, http.StatusOK)
+}
+
+func (s *Server) printZReport(w http.ResponseWriter, r *http.Request) {
+	number, ok := s.pathID(w, r, "number")
+	if !ok {
+		return
+	}
+	if err := s.zreports.PrintZReport(r.Context(), shiftMeta(r), number); err != nil {
+		s.writeZError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (s *Server) shiftZReport(w http.ResponseWriter, r *http.Request) {

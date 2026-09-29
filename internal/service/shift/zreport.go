@@ -197,7 +197,8 @@ func itemCategories(ctx context.Context, q *gen.Queries, venueID int64) (map[int
 }
 
 // issue numbers a document and stores it, in the caller's transaction.
-func issue(ctx context.Context, q *gen.Queries, venueID, shiftID int64, corrects *ZReport, reason string, doc ZDocument) (int64, error) {
+// The number, and for a correction what it corrects, are set on doc.
+func issue(ctx context.Context, q *gen.Queries, venueID, shiftID int64, corrects *ZReport, reason string, doc *ZDocument) (int64, error) {
 	number, err := q.NextZNumber(ctx, venueID)
 	if err != nil {
 		return 0, fmt.Errorf("numbering the Z-report: %w", err)

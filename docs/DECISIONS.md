@@ -2756,3 +2756,29 @@ it must exist for every closed day, read the same forever, and change
 only by a later document that says why.
 Cost: a corrupted stream stops the till from closing until it is fixed;
 that is loud on purpose.
+
+## ADR-099 - The Z-report prints from the stored document, with the close
+2026-09 · Status: accepted
+Decision: phase 09, Task 3c prints Z-reports through the print queue, laid
+out from the frozen document (ADR-098), never from the orders.
+  - **Queued in the same transaction** as the close or the correction, so
+    a report is on the queue exactly when it exists; the queue is woken
+    once that commits. It goes to the receipt printer; with none it waits
+    dead with the reason, as every job does, and prints once one is set up
+    and the job retried.
+  - **A copy on request** (`POST /api/v1/z-reports/{n}/print`,
+    reports.view) is marked COPY; a correction prints "CORRECTS Z-REPORT n"
+    and its reason.
+  - **What the paper carries:** the Phase 07 layout, extended: trading
+    day, discounts with their count, tax per component and rate ("CGST
+    2.5%"), net of credit notes when there are any, by category, channel
+    and staff, payments net by method, tips apart, "Paid for other shifts"
+    when payments and sales differ, the exceptions (removed in error apart
+    from voids, credit notes, reprints) and the drawer's make-up (float,
+    cash in, cash out, cash sales, expected, counted, difference, why). By
+    item is left to the screen: a hundred lines of paper is not read.
+  - The report now counts invoice reprints in the shift.
+Because: the paper and the screen must say what the stored report says,
+and a report printed from anything else could differ from it.
+Cost: none worth naming; the escpos layout grew optional sections, and
+an X-report (Final false) still prints as before.

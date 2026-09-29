@@ -58,7 +58,7 @@ Phase 08.
   - [x] **3b - The document.** Stored immutable and numbered per venue,
     generated as the shift closes; a correction is a new report naming the
     one it corrects. The API reads a shift's report and the list.
-  - [ ] **3c - Print.** The Phase 07 `escpos.ZReport` laid out from the
+  - [x] **3c - Print.** The Phase 07 `escpos.ZReport` laid out from the
     stored document (categories, channels, staff, exceptions, tax per rate,
     payments, the drawer, a correction's header), queued in the closing and
     correcting transactions, and printed again on request as a copy.

@@ -11,19 +11,19 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 3b: the Z-report as a document** (ADR-098). Closing a
-shift builds its report and stores it in the same transaction (migration
-00018): numbered per venue from a counter, frozen as JSON with the
-drawer and the staff names, and immutable by trigger; a close whose report
-cannot be built does not happen. A correction is a new number naming the
-one it corrects, with a reason. API: `GET /api/v1/z-reports` (cursor
-`before`), `GET /z-reports/{number}`, `GET /shift/{id}/z-report`
-(reports.view), `POST /shift/{id}/z-report/corrections` (shift.manage).
+**Phase 09, Task 3c: printing the Z-report** (ADR-099). The close and a
+correction each queue their report on the receipt printer in their own
+transaction, laid out by `escpos.ZReport` from the stored document:
+correction header, trading day, sales with net of credit notes, tax per
+component and rate, by category, channel and staff, payments, exceptions
+(removes apart from voids, credit notes, reprints) and the drawer's
+make-up with the count and reason. `POST /api/v1/z-reports/{n}/print`
+prints a COPY. With no printer the job waits dead on the queue.
 
 ## Next task
 
-**Phase 09, Task 3c: print and view the Z-report.** Read
-`docs/phases/phase-09.md`.
+**Phase 09, Task 3d: view the Z-report.** Write
+`docs/design/screens/zreport.md` first. Read `docs/phases/phase-09.md`.
 
 ## Known broken / in progress
 
@@ -36,8 +36,8 @@ one it corrects, with a reason. API: `GET /api/v1/z-reports` (cursor
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
 - Z-report (ADR-097, ADR-098): categories are the menu's when the report
-  is built, not when the item was sold. Nothing prints it or shows it
-  yet (3c). A report that cannot be built blocks the close; there is no
+  is built, not when the item was sold. No screen shows it yet (3d); the
+  printout has no by-item lines, the screen will. A report that cannot be built blocks the close; there is no
   way round that short of fixing the data.
 - Shifts (ADR-093 to ADR-096): terminals learn of a shift opening,
   counted or closed by polling every 30 seconds, not the stream. Opening

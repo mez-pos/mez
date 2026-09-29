@@ -77,6 +77,8 @@ func (b *builder) event(e order.Event, before, after order.State) error {
 		return b.sale(p, after)
 	case order.CreditNoteIssued:
 		return b.credit(p)
+	case order.InvoiceReprinted:
+		b.r.Reprints++
 	case order.LineVoided:
 		return b.void(e, p, before)
 	case order.LineComped:
