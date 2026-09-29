@@ -231,8 +231,9 @@ func (s *Service) MoveCash(ctx context.Context, meta Meta, shiftID int64, m shif
 	return s.ByID(ctx, meta.VenueID, shiftID)
 }
 
-// Close closes an open shift. The drawer must be counted first, and a
-// variance past the threshold explained (ADR-095).
+// Close closes an open shift and issues its Z-report in the same
+// transaction. The drawer must be counted first, and a variance past the
+// threshold explained (ADR-095).
 func (s *Service) Close(ctx context.Context, meta Meta, shiftID int64) (Shift, error) {
 	if err := meta.validate(); err != nil {
 		return Shift{}, err
@@ -267,7 +268,18 @@ func (s *Service) Close(ctx context.Context, meta Meta, shiftID int64) (Shift, e
 		if n != 1 {
 			return fmt.Errorf("%w: %s", ErrShiftClosed, row.PublicID)
 		}
-		return appendEvent(ctx, q, row.ID, meta, event{Type: EventClosed}, now)
+		if err := appendEvent(ctx, q, row.ID, meta, event{Type: EventClosed}, now); err != nil {
+			return err
+		}
+		// The Z-report is issued with the close, or neither happens: no
+		// closed shift is ever without its report (ADR-098).
+		sh.Status, sh.ClosedBy, sh.ClosedAt = shift.StatusClosed, meta.ActorID, now
+		doc, err := document(ctx, q, meta.VenueID, sh, v.currency, meta.ActorID, now)
+		if err != nil {
+			return err
+		}
+		_, err = issue(ctx, q, meta.VenueID, row.ID, nil, "", doc)
+		return err
 	})
 	if err != nil {
 		return Shift{}, fmt.Errorf("closing the shift: %w", err)

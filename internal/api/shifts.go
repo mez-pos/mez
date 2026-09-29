@@ -25,9 +25,15 @@ type Shifts interface {
 }
 
 // WithShifts mounts the shift endpoints. They need WithDevices and
-// WithStaff.
+// WithStaff. A Shifts that also keeps Z-reports, as *shift.Service does,
+// mounts those too.
 func WithShifts(sh Shifts) Option {
-	return func(s *Server) { s.shifts = sh }
+	return func(s *Server) {
+		s.shifts = sh
+		if z, ok := sh.(ZReports); ok {
+			s.zreports = z
+		}
+	}
 }
 
 // The shift error codes.
@@ -121,6 +127,9 @@ type shiftResponse struct {
 	// Reconciliation is absent until the drawer is counted.
 	Reconciliation *reconciliationResponse `json:"reconciliation,omitempty"`
 	Reason         *varianceReasonResponse `json:"reason,omitempty"`
+	// ZReport is the number of the shift's Z-report as it now stands;
+	// absent while the shift is open.
+	ZReport int64 `json:"z_report,omitempty"`
 }
 
 // currentShiftResponse answers "is the till open?": the open shift, or
@@ -270,7 +279,7 @@ func shiftMeta(r *http.Request) svcshift.Meta {
 func toShiftResponse(sh svcshift.Shift) shiftResponse {
 	out := shiftResponse{
 		ID: sh.ID, PublicID: sh.PublicID, Status: sh.Status, TradingDay: sh.TradingDay,
-		OpenedBy: sh.OpenedBy, OpenedAt: sh.OpenedAt.UTC(), ClosedBy: sh.ClosedBy,
+		OpenedBy: sh.OpenedBy, OpenedAt: sh.OpenedAt.UTC(), ClosedBy: sh.ClosedBy, ZReport: sh.ZReport,
 		Float: sh.Float.Total, Events: make([]shiftEventResponse, len(sh.Events)),
 	}
 	if !sh.ClosedAt.IsZero() {

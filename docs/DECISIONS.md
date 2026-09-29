@@ -2727,3 +2727,32 @@ days' money is that each event counts once, where it was recorded; and a
 report that recomputes prices can disagree with the invoices it reports.
 Cost: a report projects every stream it touches from the start, which is
 fine for a shift's few hundred orders.
+
+## ADR-098 - The Z-report is issued in the closing transaction and frozen
+2026-09 · Status: accepted
+Decision: phase 09, Task 3b stores each Z-report as a numbered, immutable
+document written by the same transaction that closes its shift.
+  - **With the close, or not at all.** `Close` builds the report and
+    stores it before committing; a report that cannot be built (a stream
+    the projection refuses) refuses the close. No closed shift is ever
+    without its report, and no report describes a shift still open.
+  - **Numbered per venue** from `z_report_series`, one upsert in the
+    transaction, never reset and never `MAX(number) + 1`, as invoices are.
+  - **Frozen:** the body is the whole document as JSON: the figures
+    (`zreport.Report`), the drawer's reconciliation, the shift, and the
+    names of the staff it mentions as they were then. It is never worked
+    out again from the orders once written; a trigger refuses any update or
+    delete.
+  - **Corrections** are new reports: the next number, `corrects_id` and a
+    reason (the schema requires a reason exactly when it corrects), the
+    figures worked out afresh. The original stays. A shift's report "as it
+    stands" is its highest number. A retry of the same correction by the
+    same person with unchanged figures returns it rather than issuing
+    another. Only a closed shift can be corrected.
+  - **API:** reading needs reports.view; correcting needs shift.manage.
+    The list is cursor-paginated on the number, 50 a page.
+Because: a Z-report is the owner's and the tax office's record of a day;
+it must exist for every closed day, read the same forever, and change
+only by a later document that says why.
+Cost: a corrupted stream stops the till from closing until it is fixed;
+that is loud on purpose.

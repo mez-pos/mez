@@ -27,6 +27,7 @@ type Server struct {
 	printers Printers
 	floor    Floor
 	shifts   Shifts
+	zreports ZReports
 	limiter  *limiter
 	handler  http.Handler
 }
@@ -110,6 +111,7 @@ func (s *Server) routes() http.Handler {
 	s.mountFloor(mux)
 	s.mountKitchen(mux)
 	s.mountShifts(mux)
+	s.mountZReports(mux)
 
 	// Anything else under /api keeps the JSON envelope. Without this, an
 	// unknown endpoint would fall through to the terminal bundle mounted at /

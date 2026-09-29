@@ -228,3 +228,47 @@ func TestShiftRoutesAreGuarded(t *testing.T) {
 		}
 	}
 }
+
+// TestZReportsOverHTTP: the close answers with its Z number; the owner
+// reads it, lists it and corrects it; a cashier cannot see reports.
+func TestZReportsOverHTTP(t *testing.T) {
+	w := newShiftTill(t)
+	opened := w.shift(t, w.owner, http.MethodPost, "/api/v1/shift/open", `{"total":{"minor":10000,"currency":"INR"}}`, http.StatusCreated)
+	base := fmt.Sprintf("/api/v1/shift/%d", opened.ID)
+	w.refused(t, w.owner, http.MethodGet, base+"/z-report", "", http.StatusNotFound, CodeZReportNotFound)
+	w.refused(t, w.owner, http.MethodPost, base+"/z-report/corrections", `{"reason":"early"}`, http.StatusConflict, CodeShiftStillOpen)
+	w.shift(t, w.cashier, http.MethodPost, base+"/count", `{"total":{"minor":10000,"currency":"INR"}}`, http.StatusOK)
+	closed := w.shift(t, w.owner, http.MethodPost, base+"/close", "", http.StatusOK)
+	if closed.ZReport != 1 {
+		t.Fatalf("the close's Z number = %d, want 1", closed.ZReport)
+	}
+
+	w.refused(t, w.cashier, http.MethodGet, "/api/v1/z-reports/1", "", http.StatusForbidden, CodeForbidden)
+	status, raw := w.do(w.owner, http.MethodGet, "/api/v1/z-reports/1", "", "")
+	var z zReportResponse
+	if status != http.StatusOK || json.Unmarshal(raw, &z) != nil {
+		t.Fatalf("GET Z 1: %d %s", status, raw)
+	}
+	if z.Number != 1 || z.ShiftID != opened.ID || z.Drawer.Float.Minor != 10000 || z.Drawer.Counted.Minor != 10000 ||
+		z.Shift.TradingDay != "2026-09-18" || len(z.Names) == 0 || z.Names[0].Name != "Asha" {
+		t.Errorf("Z 1 = %+v", z)
+	}
+	w.refused(t, w.owner, http.MethodGet, "/api/v1/z-reports/99", "", http.StatusNotFound, CodeZReportNotFound)
+
+	w.refused(t, w.cashier, http.MethodPost, base+"/z-report/corrections", `{"reason":"recount"}`, http.StatusForbidden, CodeForbidden)
+	status, raw = w.do(w.owner, http.MethodPost, base+"/z-report/corrections", `{"reason":"categories fixed"}`, "")
+	if status != http.StatusCreated || json.Unmarshal(raw, &z) != nil || z.Number != 2 || z.Corrects != 1 || z.Reason != "categories fixed" {
+		t.Fatalf("correction: %d %s", status, raw)
+	}
+	status, raw = w.do(w.owner, http.MethodGet, base+"/z-report", "", "")
+	if status != http.StatusOK || json.Unmarshal(raw, &z) != nil || z.Number != 2 {
+		t.Errorf("the shift's report now: %d %s", status, raw)
+	}
+
+	status, raw = w.do(w.owner, http.MethodGet, "/api/v1/z-reports", "", "")
+	var list zReportsResponse
+	if status != http.StatusOK || json.Unmarshal(raw, &list) != nil || len(list.Reports) != 2 || list.Reports[0].Number != 2 || list.NextBefore != 0 {
+		t.Errorf("list: %d %s", status, raw)
+	}
+	w.refused(t, w.owner, http.MethodGet, "/api/v1/z-reports?before=nope", "", http.StatusBadRequest, CodeInvalidRequest)
+}

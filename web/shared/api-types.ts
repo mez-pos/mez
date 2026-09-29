@@ -89,7 +89,9 @@ export type ErrorCode =
   | 'not_counted'
   | 'drawer_counted'
   | 'variance_unexplained'
-  | 'already_explained';
+  | 'already_explained'
+  | 'z_report_not_found'
+  | 'shift_still_open';
 
 export type OrderStatus =
   | 'open'
@@ -1120,10 +1122,158 @@ export interface ShiftResponse {
   counted: boolean;
   reconciliation?: ReconciliationResponse;
   reason?: VarianceReasonResponse;
+  z_report?: number;
 }
 
 export interface CurrentShiftResponse {
   shift: ShiftResponse | null;
+}
+
+export interface ZNameResponse {
+  id: number;
+  name: string;
+}
+
+export interface ZReportResponse {
+  number: number;
+  corrects?: number;
+  reason?: string;
+  shift_id: number;
+  shift: ZShift;
+  report: Report;
+  drawer: ZDrawer;
+  names: ZNameResponse[];
+  generated_by: number;
+  generated_at: string;
+}
+
+export interface ZShift {
+  public_id: string;
+  trading_day: string;
+  opened_by: number;
+  opened_at: string;
+  closed_by: number;
+  closed_at: string;
+}
+
+export interface Report {
+  currency: string;
+  sales: Sales;
+  invoices: Invoices;
+  by_category: Group[];
+  by_item: Group[];
+  by_channel: Group[];
+  by_staff: Group[];
+  discounts: Tally;
+  comps: Tally;
+  voids: Tally;
+  removed: StaffTally[];
+  credit_notes: Tally;
+  refunds: Tally;
+  taxes: TaxLine[];
+  payments: Payment[];
+  tips: Money;
+  balance: Balance;
+}
+
+export interface Sales {
+  bills: number;
+  gross: Money;
+  discounts: Money;
+  net: Money;
+  taxable: Money;
+  tax: Money;
+  total: Money;
+  net_of_credits: Money;
+}
+
+export interface Invoices {
+  count: number;
+  first?: string;
+  last?: string;
+}
+
+export interface Group {
+  key: string;
+  name: string;
+  qty: number;
+  gross: Money;
+  discounts: Money;
+  net: Money;
+  tax: Money;
+  total: Money;
+}
+
+export interface Tally {
+  count: number;
+  amount: Money;
+}
+
+export interface StaffTally {
+  staff_id: number;
+  count: number;
+  amount: Money;
+}
+
+export interface TaxLine {
+  name: string;
+  rate: number;
+  taxable: Money;
+  amount: Money;
+}
+
+export interface Payment {
+  method: PaymentMethod;
+  count: number;
+  taken: Money;
+  voided: Money;
+  refunded: Money;
+  net: Money;
+}
+
+export interface Balance {
+  payments: Money;
+  sales: Money;
+  difference: Money;
+}
+
+export interface ZDrawer {
+  float: Money;
+  cash_in: Money;
+  cash_out: Money;
+  sales: CashSales;
+  expected: Money;
+  counted: Money;
+  variance: Money;
+  threshold: Money;
+  reason?: string;
+  counted_by: number;
+}
+
+export interface CashSales {
+  taken: Money;
+  voided: Money;
+  refunded: Money;
+}
+
+export interface ZReportsResponse {
+  reports: ZSummary[];
+  next_before?: number;
+}
+
+export interface ZSummary {
+  number: number;
+  shift_id: number;
+  shift_public_id: string;
+  trading_day: string;
+  correction: boolean;
+  reason?: string;
+  generated_at: string;
+  sales_total: Money;
+}
+
+export interface CorrectRequest {
+  reason: string;
 }
 
 export interface KitchenLineResponse {

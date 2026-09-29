@@ -11,19 +11,18 @@ File: `docs/phases/phase-09.md`. Phase 08 is complete.
 
 ## Last completed task
 
-**Phase 09, Task 3a: the Z-report's figures** (ADR-097).
-`internal/domain/zreport.Build` walks the whole streams of the orders
-touched in a shift, projecting as it goes: sales are invoices issued in
-the shift as the bill stood then, by category, item, channel and staff
-(who opened the bill); discounts, comps, manager voids and
-entered-in-error removes by staff; credit notes and refunds; tax per
-component and rate net of credits; payments by method net of voids and
-refunds, tips apart; and the balance of payments against sales. A
-hand-computed GST day balances to the paisa. Not stored or shown yet.
+**Phase 09, Task 3b: the Z-report as a document** (ADR-098). Closing a
+shift builds its report and stores it in the same transaction (migration
+00018): numbered per venue from a counter, frozen as JSON with the
+drawer and the staff names, and immutable by trigger; a close whose report
+cannot be built does not happen. A correction is a new number naming the
+one it corrects, with a reason. API: `GET /api/v1/z-reports` (cursor
+`before`), `GET /z-reports/{number}`, `GET /shift/{id}/z-report`
+(reports.view), `POST /shift/{id}/z-report/corrections` (shift.manage).
 
 ## Next task
 
-**Phase 09, Task 3b: the Z-report as a document.** Read
+**Phase 09, Task 3c: print and view the Z-report.** Read
 `docs/phases/phase-09.md`.
 
 ## Known broken / in progress
@@ -36,8 +35,10 @@ hand-computed GST day balances to the paisa. Not stored or shown yet.
   - A guard that fails the build when `order.State` changes without a bump
     to `order.ProjectionVersion`; today a forgotten bump serves stale
     snapshots.
-- Z-report (ADR-097): categories are the menu's when the report is
-  built, not when the item was sold; staff are ids until 3b names them.
+- Z-report (ADR-097, ADR-098): categories are the menu's when the report
+  is built, not when the item was sold. Nothing prints it or shows it
+  yet (3c). A report that cannot be built blocks the close; there is no
+  way round that short of fixing the data.
 - Shifts (ADR-093 to ADR-096): terminals learn of a shift opening,
   counted or closed by polling every 30 seconds, not the stream. Opening
   and closing need shift.manage: a cashier is told to ask a manager, with

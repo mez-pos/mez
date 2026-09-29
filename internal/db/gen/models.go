@@ -391,3 +391,20 @@ type Venue struct {
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
 }
+
+type ZReport struct {
+	ID          int64
+	VenueID     int64
+	Number      int64
+	ShiftID     int64
+	CorrectsID  sql.NullInt64
+	Reason      string
+	Body        string
+	GeneratedBy int64
+	GeneratedAt time.Time
+}
+
+type ZReportSeries struct {
+	VenueID int64
+	Last    int64
+}

@@ -80,6 +80,16 @@ type venue struct {
 	Seller    order.InvoiceSeller // as an invoice issued now names the venue
 }
 
+// VenueTaxes is how the venue's orders are taxed, read through q, the same
+// way every command reads it: what a Z-report projects its orders under.
+func VenueTaxes(ctx context.Context, q *gen.Queries, venueID int64) (order.Taxes, error) {
+	v, err := loadVenue(ctx, q, venueID)
+	if err != nil {
+		return order.Taxes{}, err
+	}
+	return v.Taxes, nil
+}
+
 // loadVenue reads a venue and its settings. It runs on every command: two
 // indexed reads against a local file, cheaper than keeping a cache coherent
 // with the back office.

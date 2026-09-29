@@ -120,6 +120,7 @@ var errorCodes = []ErrorCode{
 	CodeTicketNotFound,
 	CodeNoOpenShift, CodeShiftOpen, CodeShiftClosed, CodeShiftUnknown, CodeInvalidCount, CodeInvalidCash,
 	CodeAlreadyCounted, CodeNotCounted, CodeDrawerCounted, CodeVarianceUnexplained, CodeAlreadyExplained,
+	CodeZReportNotFound, CodeShiftStillOpen,
 }
 
 // generate builds the whole file.
@@ -244,6 +245,8 @@ func generate() (*ts.Generator, error) {
 		// The shift.
 		shift.Denomination{}, countRequest{}, cashRequest{}, reasonRequest{}, shiftEventResponse{},
 		reconciliationResponse{}, varianceReasonResponse{}, shiftResponse{}, currentShiftResponse{},
+		// Z-reports.
+		zNameResponse{}, zReportResponse{}, zReportsResponse{}, correctRequest{},
 		// The kitchen display.
 		kitchenLineResponse{}, kitchenTicketResponse{}, kitchenBoardResponse{},
 		// Credit notes.

@@ -89,6 +89,7 @@ type Querier interface {
 	// SELECT * here would silently change shape the next time a migration adds a
 	// column, and RETURNING * has exactly the same problem.
 	CreateVenue(ctx context.Context, arg CreateVenueParams) (Venue, error)
+	CreateZReport(ctx context.Context, arg CreateZReportParams) (int64, error)
 	CreditNotesForVenue(ctx context.Context, venueID int64) ([]CreditNote, error)
 	//
 	// Staff are deactivated, never deleted: their name is on every order they took
@@ -119,7 +120,12 @@ type Querier interface {
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
 	InvoiceSeriesLastSeq(ctx context.Context, arg InvoiceSeriesLastSeqParams) (int64, error)
 	InvoicesForVenue(ctx context.Context, venueID int64) ([]Invoice, error)
+	// Every item's category, retired ones included: a report names what was
+	// sold, even if it is off the menu now.
+	ItemCategoriesForVenue(ctx context.Context, venueID int64) ([]ItemCategoriesForVenueRow, error)
 	ItemModifierGroupsForVenue(ctx context.Context, venueID int64) ([]ItemModifierGroupsForVenueRow, error)
+	// The shift's report as it now stands: the last correction, or the original.
+	LatestZReportForShift(ctx context.Context, shiftID int64) (ZReport, error)
 	ListVenues(ctx context.Context) ([]Venue, error)
 	// The tables in service, with when each was last cleared and when the last
 	// order at it closed, joined tables included (ADR-088): what a table's turn
@@ -138,6 +144,10 @@ type Querier interface {
 	// a key writes 1, every later one adds one. It runs inside the issuing
 	// transaction, so a rollback takes the number back. Never MAX(n)+1.
 	NextInvoiceSeq(ctx context.Context, arg NextInvoiceSeqParams) (int64, error)
+	// Z-reports (ADR-098). Written only by internal/service/shift, in the
+	// transaction that closes a shift or issues a correction.
+	// Moves the venue's counter on and returns the number taken.
+	NextZNumber(ctx context.Context, venueID int64) (int64, error)
 	OpenShiftForVenue(ctx context.Context, venueID int64) (Shift, error)
 	// The shift an order event is recorded in, read inside the appending
 	// transaction so a close cannot slip between the read and the write. A
@@ -259,6 +269,11 @@ type Querier interface {
 	// The cast is what gives sqlc an int64 rather than an any: coalesce over an
 	// aggregate has no column to take a type from.
 	VenueLastEventID(ctx context.Context, venueID int64) (int64, error)
+	ZReportByID(ctx context.Context, id int64) (ZReport, error)
+	ZReportByNumber(ctx context.Context, arg ZReportByNumberParams) (ZReport, error)
+	// A page of the venue's reports, newest first, below a number: the
+	// cursor is the last number of the page before.
+	ZReportsBefore(ctx context.Context, arg ZReportsBeforeParams) ([]ZReportsBeforeRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

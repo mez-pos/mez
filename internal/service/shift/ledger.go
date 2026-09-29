@@ -40,6 +40,9 @@ type Shift struct {
 	Closing *Closing `json:"closing,omitempty"`
 	// Reason explains the variance; nil until given.
 	Reason *VarianceReason `json:"reason,omitempty"`
+	// ZReport is the number of the shift's Z-report as it now stands, its
+	// latest correction or the original; 0 while the shift is open.
+	ZReport int64 `json:"z_report,omitempty"`
 }
 
 // Closing is the blind count at close, as recorded.
@@ -126,6 +129,12 @@ func load(ctx context.Context, q *gen.Queries, row gen.Shift, currency string) (
 	} else if out.Expected, err = shift.Expected(out.Float, movements, out.Sales); err != nil {
 		return Shift{}, fmt.Errorf("shift %d's expected drawer: %w", row.ID, err)
 	}
+	switch z, err := q.LatestZReportForShift(ctx, row.ID); {
+	case err == nil:
+		out.ZReport = z.Number
+	case !errors.Is(err, sql.ErrNoRows):
+		return Shift{}, fmt.Errorf("reading shift %d's Z-report: %w", row.ID, err)
+	}
 	reason, err := q.VarianceReason(ctx, row.ID)
 	switch {
 	case err == nil:
@@ -202,16 +211,30 @@ func loadEvents(ctx context.Context, q *gen.Queries, sh *Shift, currency string)
 
 // cashSales reads the orders touched in the shift and adds up their cash.
 func cashSales(ctx context.Context, q *gen.Queries, shiftID int64, currency string) (shift.CashSales, error) {
+	orders, err := stampedOrders(ctx, q, shiftID)
+	if err != nil {
+		return shift.CashSales{}, err
+	}
+	sales, err := shift.CashFromOrders(currency, shiftID, orders)
+	if err != nil {
+		return shift.CashSales{}, fmt.Errorf("shift %d's cash sales: %w", shiftID, err)
+	}
+	return sales, nil
+}
+
+// stampedOrders is the whole streams of the orders with any event in the
+// shift, each event with the shift it was recorded in.
+func stampedOrders(ctx context.Context, q *gen.Queries, shiftID int64) ([][]shift.StampedEvent, error) {
 	rows, err := q.OrderEventsTouchingShift(ctx, shiftID)
 	if err != nil {
-		return shift.CashSales{}, fmt.Errorf("reading shift %d's orders: %w", shiftID, err)
+		return nil, fmt.Errorf("reading shift %d's orders: %w", shiftID, err)
 	}
 	var orders [][]shift.StampedEvent
 	last := int64(0)
 	for _, r := range rows {
 		p, err := order.DecodePayload(order.Type(r.Type), json.RawMessage(r.Payload))
 		if err != nil {
-			return shift.CashSales{}, fmt.Errorf("order %d, seq %d: %w", r.OrderID, r.Seq, err)
+			return nil, fmt.Errorf("order %d, seq %d: %w", r.OrderID, r.Seq, err)
 		}
 		if r.OrderID != last || len(orders) == 0 {
 			orders = append(orders, nil)
@@ -220,9 +243,5 @@ func cashSales(ctx context.Context, q *gen.Queries, shiftID int64, currency stri
 		e := order.Event{Seq: r.Seq, Type: order.Type(r.Type), At: r.At.UTC(), ActorID: r.ActorID, DeviceID: r.DeviceID, Payload: p}
 		orders[len(orders)-1] = append(orders[len(orders)-1], shift.StampedEvent{Event: e, ShiftID: r.ShiftID})
 	}
-	sales, err := shift.CashFromOrders(currency, shiftID, orders)
-	if err != nil {
-		return shift.CashSales{}, fmt.Errorf("shift %d's cash sales: %w", shiftID, err)
-	}
-	return sales, nil
+	return orders, nil
 }

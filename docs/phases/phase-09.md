@@ -55,7 +55,7 @@ Phase 08.
     apart from entered-in-error removes), credit notes, refunds, tax per
     component and rate, payments by method with tips apart, and the
     balance between payments and sales. A hand-computed day to the paisa.
-  - [ ] **3b - The document.** Stored immutable and numbered per venue,
+  - [x] **3b - The document.** Stored immutable and numbered per venue,
     generated as the shift closes; a correction is a new report naming the
     one it corrects. The API reads a shift's report and the list.
   - [ ] **3c - Print and view.** The Phase 07 `escpos.ZReport` laid out
