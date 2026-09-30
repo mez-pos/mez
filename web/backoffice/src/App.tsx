@@ -1,16 +1,18 @@
 // The back office's routes, under /backoffice. Sign-in is the same staff PIN
 // as the terminal, on a device paired as a back office (ADR-056).
 
-import { Link, Redirect, Route, Router, Switch, useLocation } from "wouter";
+import { Redirect, Route, Router, Switch, useLocation } from "wouter";
 import { Gate } from "../../shared/auth/Gate";
 import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
-import { SignedInShell } from "../../shared/screens/SignedInShell";
 import { Splash } from "../../shared/screens/Splash";
 import { FloorScreen } from "./floor/FloorScreen";
 import { PrintersScreen } from "./printers/PrintersScreen";
 import { ZReportsScreen } from "./reports/ZReportsScreen";
 import { ExportsPanel } from "./reports/ExportsPanel";
+import { BackOfficeShell } from "./shell/BackOfficeShell";
+import { Dashboard } from "./shell/Dashboard";
+import { SectionGate } from "./shell/SectionGate";
 import { TipsScreen } from "./tips/TipsScreen";
 import { Button } from "../../shared/ui";
 import { ZReportScreen } from "../../shared/zreport/ZReportScreen";
@@ -27,62 +29,57 @@ export function App() {
           <Route path="/lock">
             <LockScreen />
           </Route>
-          <Route path="/printers">
-            <SignedInShell area="Printers" exitLabel="Sign out">
-              <PrintersScreen />
-            </SignedInShell>
-          </Route>
-          <Route path="/reports/:number">
-            {(params) => (
-              <SignedInShell area="Z-report" exitLabel="Sign out">
-                <ReportRoute number={Number(params.number)} />
-              </SignedInShell>
-            )}
-          </Route>
-          <Route path="/shifts/:id/tips">
-            {(params) => (
-              <SignedInShell area="Tips" exitLabel="Sign out">
-                <TipsRoute id={Number(params.id)} />
-              </SignedInShell>
-            )}
-          </Route>
-          <Route path="/reports">
-            <SignedInShell area="Z-reports" exitLabel="Sign out">
-              <ZReportsScreen />
-            </SignedInShell>
-          </Route>
-          <Route path="/floor">
-            <SignedInShell area="Floor plan" exitLabel="Sign out">
-              <FloorScreen />
-            </SignedInShell>
-          </Route>
-          <Route path="/">
-            <SignedInShell area="Back office" exitLabel="Sign out">
-              <h1 className="font-serif text-total">Back office</h1>
-              <nav aria-label="Settings" className="mt-6 flex flex-wrap gap-tap-gap">
-                {[
-                  { href: "/floor", label: "Floor plan" },
-                  { href: "/printers", label: "Printers" },
-                  { href: "/reports", label: "Z-reports" },
-                ].map((l) => (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    className="inline-flex min-h-tap items-center rounded border border-line-strong bg-raised px-4 text-base font-semibold"
-                  >
-                    {l.label}
-                  </Link>
-                ))}
-              </nav>
-              <p className="mt-4 max-w-prose text-base text-fg-2">Menus and staff arrive in phase 10.</p>
-            </SignedInShell>
-          </Route>
           <Route>
-            <Redirect to="/" replace />
+            <BackOfficeShell>
+              <SignedInRoutes />
+            </BackOfficeShell>
           </Route>
         </Switch>
       </Gate>
     </Router>
+  );
+}
+
+/** Every screen inside the shell, each behind the permission its section needs. */
+function SignedInRoutes() {
+  return (
+    <Switch>
+      <Route path="/printers">
+        <SectionGate id="printers">
+          <PrintersScreen />
+        </SectionGate>
+      </Route>
+      <Route path="/reports/:number">
+        {(params) => (
+          <SectionGate id="zreports">
+            <ReportRoute number={Number(params.number)} />
+          </SectionGate>
+        )}
+      </Route>
+      <Route path="/shifts/:id/tips">
+        {(params) => (
+          <SectionGate id="zreports">
+            <TipsRoute id={Number(params.id)} />
+          </SectionGate>
+        )}
+      </Route>
+      <Route path="/reports">
+        <SectionGate id="zreports">
+          <ZReportsScreen />
+        </SectionGate>
+      </Route>
+      <Route path="/floor">
+        <SectionGate id="floor">
+          <FloorScreen />
+        </SectionGate>
+      </Route>
+      <Route path="/">
+        <Dashboard />
+      </Route>
+      <Route>
+        <Redirect to="/" replace />
+      </Route>
+    </Switch>
   );
 }
 

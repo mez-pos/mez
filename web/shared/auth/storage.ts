@@ -9,7 +9,7 @@
 // origin: a manager's laptop can be paired as both without one erasing the
 // other.
 
-import type { DeviceResponse, StaffResponse } from "../api-types";
+import type { DeviceResponse, Permission, StaffResponse } from "../api-types";
 
 export type AppKind = "terminal" | "backoffice" | "kitchen";
 
@@ -21,6 +21,8 @@ export interface StoredDevice {
 export interface StoredStaff {
   readonly token: string;
   readonly staff: StaffResponse;
+  /** Absent in a session stored before sessions carried them (ADR-105). */
+  readonly permissions?: readonly Permission[];
   readonly expiresAt: string;
 }
 
@@ -103,5 +105,7 @@ function isStoredDevice(v: unknown): v is StoredDevice {
 }
 
 function isStoredStaff(v: unknown): v is StoredStaff {
-  return isObject(v) && typeof v.token === "string" && typeof v.expiresAt === "string" && isObject(v.staff) && typeof v.staff.id === "string";
+  const perms = isObject(v) ? v.permissions : undefined;
+  const permsOK = perms === undefined || (Array.isArray(perms) && perms.every((p) => typeof p === "string"));
+  return isObject(v) && typeof v.token === "string" && typeof v.expiresAt === "string" && isObject(v.staff) && typeof v.staff.id === "string" && permsOK;
 }

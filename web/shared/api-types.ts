@@ -612,6 +612,7 @@ export interface SignInRequest {
 
 export interface SessionResponse {
   staff: StaffResponse;
+  permissions: Permission[];
   expires_at: string;
   token?: string;
 }

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -102,11 +103,14 @@ type signInRequest struct {
 }
 
 // sessionResponse is a staff session. The token is only in the response that
-// opens it.
+// opens it. Permissions are what the staff member's role grants, so a screen
+// can hide what would only be refused (ADR-105); every endpoint still checks.
+// They are here and not on staffResponse, which any paired device can list.
 type sessionResponse struct {
-	Staff     staffResponse `json:"staff"`
-	ExpiresAt time.Time     `json:"expires_at"`
-	Token     string        `json:"token,omitempty"`
+	Staff       staffResponse     `json:"staff"`
+	Permissions []auth.Permission `json:"permissions"`
+	ExpiresAt   time.Time         `json:"expires_at"`
+	Token       string            `json:"token,omitempty"`
 }
 
 func toStaffResponse(s auth.Staff) staffResponse {
@@ -159,18 +163,40 @@ func (s *Server) signIn(w http.ResponseWriter, r *http.Request) {
 	if info := infoFrom(r.Context()); info != nil {
 		info.staffID = in.Session.Staff.ID
 	}
+	res, err := s.toSessionResponse(r.Context(), in.Session)
+	if err != nil {
+		s.log.Error("reading permissions at sign-in failed", "request_id", RequestID(r.Context()), "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
+	res.Token = in.Token
 	w.Header().Set("Cache-Control", "no-store")
-	writeJSON(w, s.log, http.StatusCreated, sessionResponse{
-		Staff: toStaffResponse(in.Session.Staff), ExpiresAt: in.Session.ExpiresAt.UTC(), Token: in.Token,
-	})
+	writeJSON(w, s.log, http.StatusCreated, res)
 }
 
-// currentSession says who is signed in on this device.
+// currentSession says who is signed in on this device, and what they may do.
 func (s *Server) currentSession(w http.ResponseWriter, r *http.Request) {
 	session, _ := SessionFrom(r.Context())
-	writeJSON(w, s.log, http.StatusOK, sessionResponse{
-		Staff: toStaffResponse(session.Staff), ExpiresAt: session.ExpiresAt.UTC(),
-	})
+	res, err := s.toSessionResponse(r.Context(), session)
+	if err != nil {
+		s.log.Error("reading permissions failed", "request_id", RequestID(r.Context()), "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
+	writeJSON(w, s.log, http.StatusOK, res)
+}
+
+// toSessionResponse is a session as the API shows it, without its token.
+func (s *Server) toSessionResponse(ctx context.Context, session auth.Session) (sessionResponse, error) {
+	held, err := s.staff.Permissions(ctx, session.Staff.RoleID)
+	if err != nil {
+		return sessionResponse{}, fmt.Errorf("permissions for role %d: %w", session.Staff.RoleID, err)
+	}
+	return sessionResponse{
+		Staff:       toStaffResponse(session.Staff),
+		Permissions: held.Keys(),
+		ExpiresAt:   session.ExpiresAt.UTC(),
+	}, nil
 }
 
 // signOut ends the session. The device stays paired.

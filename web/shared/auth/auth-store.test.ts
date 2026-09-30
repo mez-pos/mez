@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DeviceResponse } from "../api-types";
+import type { DeviceResponse, Permission } from "../api-types";
 import { AuthStore, WrongDeviceKind } from "./auth-store";
 import { credentialStore, type KeyValue } from "./storage";
 
@@ -19,12 +19,15 @@ const refuse = (code: string) => json(401, { error: { code, message: code } });
 const till: DeviceResponse = { id: "dev_1", name: "Counter 1", kind: "terminal" };
 const asha = { id: "stf_1", name: "Asha" };
 
-function setup(route: Route, seed: { device?: boolean; staff?: boolean } = {}) {
+function setup(route: Route, seed: { device?: boolean; staff?: boolean; permissions?: readonly Permission[] } = {}) {
   const local = new MapStorage();
   const session = new MapStorage();
   const store = credentialStore("terminal", local, session);
   if (seed.device) store.saveDevice({ token: "nfd_old", device: { ...till, name: "Old name" } });
-  if (seed.staff) store.saveStaff({ token: "nfs_old", staff: asha, expiresAt: "2026-09-21T20:00:00Z" });
+  if (seed.staff) {
+    const stored = { token: "nfs_old", staff: asha, expiresAt: "2026-09-21T20:00:00Z" };
+    store.saveStaff(seed.permissions ? { ...stored, permissions: seed.permissions } : stored);
+  }
   const calls: string[] = [];
   const fetchFn = (async (path: RequestInfo | URL, init?: RequestInit) => {
     const method = init?.method ?? "GET";
@@ -54,11 +57,29 @@ describe("AuthStore.boot", () => {
 
   it("is signed in when the stored session still stands", async () => {
     const { auth } = setup(
-      (_, path) => (path === "/api/v1/devices/me" ? json(200, till) : json(200, { staff: asha, expires_at: "2026-09-21T21:00:00Z" })),
+      (_, path) =>
+        path === "/api/v1/devices/me" ? json(200, till) : json(200, { staff: asha, permissions: ["order.open"], expires_at: "2026-09-21T21:00:00Z" }),
       { device: true, staff: true },
     );
     await auth.boot();
-    expect(auth.current()).toEqual({ kind: "signed_in", device: till, staff: asha, expiresAt: "2026-09-21T21:00:00Z" });
+    expect(auth.current()).toEqual({ kind: "signed_in", device: till, staff: asha, permissions: ["order.open"], expiresAt: "2026-09-21T21:00:00Z" });
+  });
+
+  it("takes the server's permissions over the stored ones, and stores them", async () => {
+    const { auth, store } = setup(
+      (_, path) => (path === "/api/v1/devices/me" ? json(200, till) : json(200, { staff: asha, permissions: [], expires_at: "x" })),
+      { device: true, staff: true, permissions: ["reports.view"] },
+    );
+    await auth.boot();
+    expect(auth.current()).toMatchObject({ kind: "signed_in", permissions: [] });
+    expect(store.staff()?.permissions).toEqual([]);
+  });
+
+  it("reads a session stored before sessions carried permissions as holding none", async () => {
+    const { auth, store } = setup(unreachable, { device: true, staff: true });
+    expect(store.staff()?.permissions).toBeUndefined();
+    await auth.boot();
+    expect(auth.current()).toMatchObject({ kind: "signed_in", permissions: [] });
   });
 
   it("is locked, saying so, when the stored session has expired", async () => {
@@ -87,9 +108,9 @@ describe("AuthStore.boot", () => {
   });
 
   it("trusts what is stored when the server cannot be reached", async () => {
-    const { auth } = setup(unreachable, { device: true, staff: true });
+    const { auth } = setup(unreachable, { device: true, staff: true, permissions: ["reports.view"] });
     await auth.boot();
-    expect(auth.current()).toMatchObject({ kind: "signed_in", staff: asha, device: { name: "Old name" } });
+    expect(auth.current()).toMatchObject({ kind: "signed_in", staff: asha, permissions: ["reports.view"], device: { name: "Old name" } });
   });
 });
 
@@ -129,13 +150,13 @@ describe("AuthStore sign-in and sign-out", () => {
     let sent: unknown = null;
     const { auth, store } = paired((_, __, init) => {
       sent = JSON.parse(String(init.body));
-      return json(201, { staff: asha, expires_at: "2026-09-21T21:00:00Z", token: "nfs_new" });
+      return json(201, { staff: asha, permissions: ["menu.edit"], expires_at: "2026-09-21T21:00:00Z", token: "nfs_new" });
     });
     await auth.boot();
     await auth.signIn("stf_1", "2468");
     expect(sent).toEqual({ staff_id: "stf_1", pin: "2468" });
-    expect(auth.current()).toMatchObject({ kind: "signed_in", staff: asha });
-    expect(store.staff()?.token).toBe("nfs_new");
+    expect(auth.current()).toMatchObject({ kind: "signed_in", staff: asha, permissions: ["menu.edit"] });
+    expect(store.staff()).toMatchObject({ token: "nfs_new", permissions: ["menu.edit"] });
   });
 
   it("stays locked on a wrong PIN, and does not treat it as a lost device", async () => {

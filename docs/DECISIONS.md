@@ -2915,3 +2915,29 @@ Because: a bookkeeper's files should be as certain as the report they
 come from, and as easy to take again.
 Cost: a file travels as a JSON string, a few percent larger; shifts closed
 before this have none.
+
+## ADR-105 - The session carries its permissions; the back office hides by them
+2026-09 · Status: accepted
+Decision: phase 10, Task 1 gives the back office a shell whose sections
+are shown only to staff who may open them
+(`docs/design/screens/backoffice-shell.md`).
+  - **Permissions on the session,** not on the staff list:
+    `POST /api/v1/sessions` and `GET /api/v1/sessions/current` answer
+    `permissions`, the role's set in canonical order. `GET /api/v1/staff`
+    is open to any paired device, and what each person may do is not its
+    business.
+  - **Hiding is a courtesy.** Every endpoint still runs
+    `requirePermission`; the client's list only keeps a manager from
+    landing on screens that would answer 403. A path typed by hand shows
+    "That is not yours to open" and the screen never mounts.
+  - **One list** (`web/backoffice/src/shell/nav-logic.ts`) drives the
+    navigation, the dashboard, the route guard and the `g` chords, so
+    they cannot disagree. A section not built yet stays in it as Soon.
+  - Stock is gated on `menu.edit` until Task 3 decides whether stock
+    needs a permission of its own.
+  - A session stored before this has no permissions and shows nothing
+    gated until the server answers the boot check.
+Because: the phase asks for permission-gated sections, and the client had
+no way to know a role's permissions short of trying every endpoint.
+Cost: a role edited mid-session reaches the shell only at the next sign-in
+or reload; the server refuses in the meantime.

@@ -6,27 +6,37 @@
 
 ## Current phase
 
-**Phase 09 - Shift, blind drawer count, Z-report, tips**
-File: `docs/phases/phase-09.md`. Phase 08 is complete.
+**Phase 10 - Back office**
+File: `docs/phases/phase-10.md`. Phase 09's tasks are all done; its
+done-when (a human checks a Z-report against a hand-computed day, and an
+export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 09, Task 5b: exports stored and downloaded** (ADR-104), which
-completes Task 5 and every task of phase 09. The closing transaction
-writes the tax register, Tally vouchers and day's sales (migration
-00020), write-once; `GET /api/v1/shift/{id}/exports` lists them and
-`GET /api/v1/exports/{id}` returns one as JSON with its CSV text
-(reports.view). The back office's Z-report has an Exports section with
-Download, which saves the file. Tried in the browser on a GST venue: the
-Tally file downloaded and balances.
+**Phase 10, Task 1: back office shell** (ADR-105, spec
+`docs/design/screens/backoffice-shell.md`). Sessions now answer
+`permissions`. Every signed-in back office screen sits in
+`BackOfficeShell`: a left navigation grouped Run the venue / Reports /
+Settings, hiding what the staff member may not open; `g` chords between
+sections; a `SectionGate` on each route; a dashboard skeleton with no
+numbers yet. Tried in the browser as the owner: dashboard, `g t`, `g r`,
+chords ignored while typing in a field.
 
 ## Next task
 
-**Phase 09's done-when, before phase 10.** A human checks a Z-report
-against a hand-computed day (the phase's note) and an export a bookkeeper
-would use. Then tick phase 09 below and start **Phase 10, Task 1**.
+**Phase 10, Task 2: menu and item editor.** Write
+`docs/design/screens/backoffice-menu.md` first. When it lands, set
+`built: true` on `menu` in `web/backoffice/src/shell/nav-logic.ts` and
+route `/menu` behind `SectionGate`.
 
 ## Known broken / in progress
+
+- Shell (ADR-105): only tried as the owner. A cashier or manager view and
+  the "not yours to open" screen are tested in vitest, not by hand: no API
+  adds staff until Task 4. Printers, floor and Z-reports still carry their
+  own "Back office" link above the title, now redundant with the
+  navigation. Permissions changed mid-session reach the shell at the next
+  sign-in or reload. Stock is gated on `menu.edit` for now.
 
 - Carried from phase 04, owned by no task yet:
   - The done-when script against the real binary. The same loop now runs

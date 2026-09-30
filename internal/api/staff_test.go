@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -376,6 +377,58 @@ func TestTheLimiter(t *testing.T) {
 	if got := retryAfterSeconds(time.Millisecond); got != 1 {
 		t.Errorf("retryAfterSeconds(1ms) = %d, want 1", got)
 	}
+}
+
+func TestASessionSaysWhatItsRoleMayDo(t *testing.T) {
+	w := newTill(t)
+	cashier := w.signIn(t, "2468")
+	owner := w.signInAs(t, "stf_PRIYA001", "2468")
+
+	tests := []struct {
+		name  string
+		token string
+		want  []auth.Permission
+	}{
+		{"a cashier", cashier.Token, cashierPermissions(t)},
+		{"the owner", owner.Token, auth.Permissions()},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := send(w.handler, http.MethodGet, "/api/v1/sessions/current", "", w.asStaff(tt.token))
+			var current sessionResponse
+			if err := json.Unmarshal(rec.Body.Bytes(), &current); err != nil || rec.Code != http.StatusOK {
+				t.Fatalf("current: %d %s (%v)", rec.Code, rec.Body, err)
+			}
+			if !slices.Equal(current.Permissions, tt.want) {
+				t.Errorf("permissions = %v, want %v", current.Permissions, tt.want)
+			}
+		})
+	}
+	if !slices.Equal(owner.Permissions, auth.Permissions()) {
+		t.Errorf("sign-in permissions = %v, want the owner's", owner.Permissions)
+	}
+
+	// Any paired device can list staff; what each may do stays off it.
+	rec := send(w.handler, http.MethodGet, "/api/v1/staff", "", w.asDevice())
+	if strings.Contains(rec.Body.String(), "permissions") {
+		t.Errorf("the staff list names permissions: %s", rec.Body)
+	}
+}
+
+// cashierPermissions is the default cashier role, in canonical order.
+func cashierPermissions(t *testing.T) []auth.Permission {
+	t.Helper()
+	for _, template := range auth.DefaultRoles() {
+		if template.Name == "cashier" {
+			set, err := auth.NewPermissionSet(permissionKeys(template.Permissions))
+			if err != nil {
+				t.Fatal(err)
+			}
+			return set.Keys()
+		}
+	}
+	t.Fatal("no default cashier role")
+	return nil
 }
 
 // brokenStaff fails the way a database that has gone away does.
