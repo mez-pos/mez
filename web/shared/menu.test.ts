@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MenuItemResponse, MenuResponse } from "./api-types";
-import { indexMenu, isMenuStale, isSoldOut } from "./menu";
+import { indexMenu, isMenuStale, isSoldOut, photoUrl } from "./menu";
 
 const rupees = (r: number) => ({ minor: r * 100, currency: "INR" });
 
@@ -71,4 +71,11 @@ describe("isSoldOut", () => {
       expect(isSoldOut(tt.until === undefined ? {} : { sold_out_until: tt.until }, now)).toBe(tt.want);
     });
   }
+});
+
+describe("photoUrl", () => {
+  it("serves a photo by its name", () => {
+    expect(photoUrl("ab12.jpg")).toBe("/api/v1/menu/photos/ab12.jpg");
+    expect(photoUrl("../x")).toBe("/api/v1/menu/photos/..%2Fx");
+  });
 });

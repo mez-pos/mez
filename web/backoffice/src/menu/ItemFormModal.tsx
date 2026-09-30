@@ -9,6 +9,7 @@ import { Button, Modal, Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { Field, inputClass } from "../FormFields";
 import { ItemGroupsField } from "./ItemGroupsField";
+import { ItemPhotoField, type PhotoChange } from "./ItemPhotoField";
 import { choices, courseText, priceChange, problemOf, taxClassText, toItemInput, type ItemForm, type Problem } from "./menu-logic";
 
 interface ItemFormModalProps {
@@ -16,14 +17,15 @@ interface ItemFormModalProps {
   /** Null for a new item. */
   item: EditorItem | null;
   initial: ItemForm;
-  /** The item, and the groups it offers in order. */
-  onSave: (input: MenuItemInput, groups: number[]) => Promise<void>;
+  /** The item, the groups it offers in order, and what to do to its photo. */
+  onSave: (input: MenuItemInput, groups: number[], photo: PhotoChange) => Promise<void>;
   onClose: () => void;
 }
 
 export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemFormModalProps) {
   const [form, setForm] = useState(initial);
   const [groups, setGroups] = useState<number[]>(item?.modifier_groups ?? []);
+  const [photo, setPhoto] = useState<PhotoChange>({ kind: "keep" });
   const [problem, setProblem] = useState<Problem | null>(null);
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<ItemForm>) => {
@@ -38,7 +40,7 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
     }
     setBusy(true);
     try {
-      await onSave(built.input, groups);
+      await onSave(built.input, groups, photo);
       onClose();
     } catch (err) {
       setProblem(problemOf(err));
@@ -162,6 +164,15 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
             </Select>
           )}
         </Field>
+        <ItemPhotoField
+          current={item?.photo ?? ""}
+          change={photo}
+          onChange={(c) => {
+            setPhoto(c);
+            setProblem(null);
+          }}
+          error={on("photo")}
+        />
         <ItemGroupsField
           menu={menu}
           chosen={groups}

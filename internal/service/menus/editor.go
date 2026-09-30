@@ -93,6 +93,8 @@ type Item struct {
 	ModifierGroups []int64 `json:"modifier_groups"`
 	// SoldOutUntil is set while it is sold out for today (ADR-109).
 	SoldOutUntil *time.Time `json:"sold_out_until,omitempty"`
+	// Photo is the stored photo's name, or empty (ADR-110).
+	Photo string `json:"photo,omitempty"`
 }
 
 // Editor reads the venue's menu for editing.
@@ -145,7 +147,7 @@ func (s *Service) Editor(ctx context.Context, venueID int64) (Editor, error) {
 			ID: r.ID, CategoryID: r.CategoryID, Name: r.Name,
 			Price: money.Amount{Minor: r.Price, Currency: venue.Currency}, HSN: r.Hsn,
 			TaxClassID: r.TaxClassID, StationID: r.StationID, CourseID: r.CourseID, Active: r.Active,
-			ModifierGroups: linked,
+			ModifierGroups: linked, Photo: r.Photo,
 		}
 		if r.SoldOutUntil.Valid {
 			until := r.SoldOutUntil.Time.UTC()

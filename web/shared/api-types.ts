@@ -100,7 +100,8 @@ export type ErrorCode =
   | 'item_not_found'
   | 'invalid_menu'
   | 'menu_order_stale'
-  | 'modifier_group_not_found';
+  | 'modifier_group_not_found'
+  | 'photo_not_found';
 
 export type OrderStatus =
   | 'open'
@@ -1075,6 +1076,7 @@ export interface EditorItem {
   active: boolean;
   modifier_groups: number[];
   sold_out_until?: string;
+  photo?: string;
 }
 
 export interface EditorGroup {
@@ -1110,6 +1112,11 @@ export interface MenuModifierInput {
 export interface SoldOutResponse {
   id: number;
   sold_out_until?: string;
+}
+
+export interface PhotoResponse {
+  id: number;
+  photo: string;
 }
 
 export interface AreaSettings {
@@ -1581,6 +1588,7 @@ export interface MenuItemResponse {
   tax_exempt?: boolean;
   modifier_groups: number[];
   sold_out_until?: string;
+  photo?: string;
 }
 
 export interface MenuResponse {

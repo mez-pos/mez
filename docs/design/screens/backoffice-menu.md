@@ -99,6 +99,22 @@ group of choices**; Add a category and Add an item are hidden.
   is the other thing: off the menu until someone brings it back.
 - It is a menu edit: every till learns at once through `menu_changed`.
 
+## Photos (Task 2d2)
+
+- **In the item form,** a Photo field: a 96px preview (or "None"),
+  **Choose a photo** / **Choose another**, and **Remove**. Nothing is sent
+  until Save; the photo is uploaded after the item, like its choices.
+- **Made smaller here:** the chosen file is drawn onto a canvas at most
+  480px on its longer side (EXIF rotation applied), on white, and sent as
+  a JPEG. Under 64px on a side is refused before sending.
+- **The server checks again** (ADR-110): JPEG only, at most 512 KB, 64 to
+  1024px a side, and it must decode. A refusal shows under the field.
+- **In the table,** a 32px thumbnail before each item's name; an empty
+  box where there is none, so names line up.
+- On a new item, if the photo or the choices fail after the item is
+  saved, the form closes and a warning says which, so Save is never
+  pressed twice for one item.
+
 ## Categories (`Modal`, sm)
 
 Add and Rename: one field, Name. Retire asks first (`Confirm`): "Retire

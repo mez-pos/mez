@@ -120,6 +120,8 @@ type menuItemResponse struct {
 	// SoldOutUntil is set while the item is sold out: until then the
 	// register shows it sold out and will not ring it up (ADR-109).
 	SoldOutUntil *time.Time `json:"sold_out_until,omitempty"`
+	// Photo is a stored photo's name, served at /api/v1/menu/photos/{name}.
+	Photo string `json:"photo,omitempty"`
 }
 
 // modifierGroupResponse is a group of choices. A group with min_select
@@ -167,7 +169,7 @@ func toMenuResponse(m menu.Menu) menuResponse {
 		out.Items[i] = menuItemResponse{
 			ID: it.ID, CategoryID: it.CategoryID, Name: it.Name, Price: it.Price,
 			Station: it.Station, Course: it.Course, TaxRate: it.TaxRate, HSN: it.HSN,
-			TaxExempt: it.TaxExempt, ModifierGroups: groups, SoldOutUntil: it.SoldOutUntil,
+			TaxExempt: it.TaxExempt, ModifierGroups: groups, SoldOutUntil: it.SoldOutUntil, Photo: it.Photo,
 		}
 	}
 	for i, g := range m.Groups {

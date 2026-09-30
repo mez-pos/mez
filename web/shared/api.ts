@@ -64,6 +64,7 @@ export interface RequestOptions {
 export interface ApiClient {
   get<T>(path: string, options?: RequestOptions): Promise<T>;
   post<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>;
+  /** A Blob body is sent as it is, with its own type: a photo (ADR-110). Anything else is JSON. */
   put<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>;
   del<T>(path: string, options?: RequestOptions): Promise<T>;
 }
@@ -114,7 +115,8 @@ function headersFor(credentials: Credentials, body: unknown, options: RequestOpt
   const staff = credentials.staffToken();
   if (device) headers.set("Authorization", `Bearer ${device}`);
   if (staff) headers.set(headerStaffToken, staff);
-  if (body !== undefined) headers.set("Content-Type", "application/json");
+  if (body instanceof Blob) headers.set("Content-Type", body.type || "application/octet-stream");
+  else if (body !== undefined) headers.set("Content-Type", "application/json");
   if (options.idempotencyKey) headers.set(headerIdempotencyKey, options.idempotencyKey);
   return headers;
 }
@@ -134,7 +136,7 @@ async function send<T>(
       method,
       headers,
       signal: deadline.signal,
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      ...(body === undefined ? {} : { body: body instanceof Blob ? body : JSON.stringify(body) }),
     });
   } catch (err) {
     if (options.signal?.aborted) throw err; // the caller cancelled; not a failure

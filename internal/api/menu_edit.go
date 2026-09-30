@@ -3,7 +3,10 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
@@ -27,6 +30,9 @@ type MenuEditor interface {
 	SetGroupActive(ctx context.Context, venueID, id int64, active bool) error
 	SetItemGroups(ctx context.Context, venueID, itemID int64, ids []int64) error
 	SetItemSoldOut(ctx context.Context, venueID, id int64, soldOut bool) (*time.Time, error)
+	SetItemPhoto(ctx context.Context, venueID, id int64, data []byte) (string, error)
+	ClearItemPhoto(ctx context.Context, venueID, id int64) error
+	OpenPhoto(name string) (*os.File, error)
 }
 
 // WithMenuEditor mounts the menu editor (phase 10, Task 2a). It needs
@@ -42,6 +48,7 @@ const (
 	CodeInvalidMenu      ErrorCode = "invalid_menu"
 	CodeMenuOrderStale   ErrorCode = "menu_order_stale"
 	CodeGroupNotFound    ErrorCode = "modifier_group_not_found"
+	CodePhotoNotFound    ErrorCode = "photo_not_found"
 )
 
 type (
@@ -55,6 +62,12 @@ type (
 type soldOutResponse struct {
 	ID           int64      `json:"id"`
 	SoldOutUntil *time.Time `json:"sold_out_until,omitempty"`
+}
+
+// photoResponse answers a photo upload with the stored photo's name.
+type photoResponse struct {
+	ID    int64  `json:"id"`
+	Photo string `json:"photo"`
 }
 
 // menuOrderRequest is a list of ids in the order they should show.
@@ -94,6 +107,12 @@ func (s *Server) mountMenuEditor(mux *http.ServeMux) {
 	handle("PUT /api/v1/menu/items/{id}/groups", s.setItemGroups)
 	handle("POST /api/v1/menu/items/{id}/sold-out", s.soldOut(true))
 	handle("POST /api/v1/menu/items/{id}/on-sale", s.soldOut(false))
+	handle("PUT /api/v1/menu/items/{id}/photo", s.putItemPhoto)
+	handle("DELETE /api/v1/menu/items/{id}/photo", s.deleteItemPhoto)
+	// Public: an <img> cannot send the device and staff tokens, and nothing
+	// on a menu is private. The name is a hash, checked before any path is
+	// made from it (ADR-110).
+	mux.HandleFunc("GET /api/v1/menu/photos/{name}", s.servePhoto)
 
 	handle("POST /api/v1/menu/groups", s.createGroup)
 	handle("PUT /api/v1/menu/groups/{id}", s.updateGroup)
@@ -114,6 +133,66 @@ func (s *Server) soldOut(soldOut bool) http.HandlerFunc {
 		}
 		writeJSON(w, s.log, http.StatusOK, soldOutResponse{ID: id, SoldOutUntil: until})
 	}
+}
+
+func (s *Server) putItemPhoto(w http.ResponseWriter, r *http.Request) {
+	id, ok := s.pathID(w, r, "id")
+	if !ok {
+		return
+	}
+	if ct := r.Header.Get("Content-Type"); ct != "image/jpeg" {
+		writeFieldError(w, s.log, http.StatusUnsupportedMediaType, CodeInvalidMenu, "Send the photo as image/jpeg.", "photo")
+		return
+	}
+	data, err := io.ReadAll(http.MaxBytesReader(w, r.Body, menus.MaxPhotoBytes+1))
+	var tooBig *http.MaxBytesError
+	switch {
+	case errors.As(err, &tooBig):
+		writeFieldError(w, s.log, http.StatusRequestEntityTooLarge, CodeInvalidMenu,
+			fmt.Sprintf("That photo is over %d KB.", menus.MaxPhotoBytes>>10), "photo")
+		return
+	case err != nil:
+		writeError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, "the photo could not be read")
+		return
+	}
+	name, err := s.menuEditor.SetItemPhoto(r.Context(), Meta(r).VenueID, id, data)
+	if err != nil {
+		s.writeMenuEditError(w, r, err)
+		return
+	}
+	writeJSON(w, s.log, http.StatusOK, photoResponse{ID: id, Photo: name})
+}
+
+func (s *Server) deleteItemPhoto(w http.ResponseWriter, r *http.Request) {
+	id, ok := s.pathID(w, r, "id")
+	if !ok {
+		return
+	}
+	s.menuEdited(w, r, http.StatusOK, id, s.menuEditor.ClearItemPhoto(r.Context(), Meta(r).VenueID, id))
+}
+
+// servePhoto answers a stored photo. Its name is the hash of its bytes, so
+// it never changes and may be kept for good; a new photo is a new name.
+func (s *Server) servePhoto(w http.ResponseWriter, r *http.Request) {
+	f, err := s.menuEditor.OpenPhoto(r.PathValue("name"))
+	if errors.Is(err, menus.ErrPhotoNotFound) {
+		writeError(w, s.log, http.StatusNotFound, CodePhotoNotFound, "No such photo.")
+		return
+	}
+	if err != nil {
+		s.writeMenuEditError(w, r, err)
+		return
+	}
+	defer func() { _ = f.Close() }()
+	info, err := f.Stat()
+	if err != nil {
+		s.writeMenuEditError(w, r, err)
+		return
+	}
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	http.ServeContent(w, r, "", info.ModTime(), f)
 }
 
 func (s *Server) setItemGroups(w http.ResponseWriter, r *http.Request) {

@@ -13,23 +13,29 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 2d1: sold out for today** (ADR-109). Task 2d is split
-into 2d1 and 2d2. Migration 00021 adds `items.sold_out_until`; the back
-office's item rows have Sold out / Back on sale; it lasts until the next
-trading day starts (`shift.NextDayStart`, 04:00 venue time). The register
-shows the tile struck with "Sold out" and will not ring it up, and brings
-it back by its own clock (`isSoldOut`, `shared/use-clock.ts`, which now
-also serves the floor and tickets sheet). Tried in the browser: marked
-over the API, the till's tile turned sold out live with no reload.
+**Phase 10, Task 2d2: item photos** (ADR-110), which completes Task 2 (the
+menu editor: 2a to 2d2). The editor's item form chooses a photo, shrinks it
+to 480px in the browser and uploads it after the item; the server checks
+it again and stores it in `<data dir>/photos/` by its SHA-256 (migration
+00022). `GET /api/v1/menu/photos/{name}` serves it publicly, cached for
+good. The editor table has thumbnails; the register tiles show the photo.
+Tried in the browser: a 2400px photo stored as 480 x 360, 17 KB; a photo
+set over the API appeared on the till's tile live.
 
 ## Next task
 
-**Phase 10, Task 2d2: item photos.** Upload in the editor, stored beside
-the database, served with the menu, shown on the register tiles. Decide
-the size limit, formats and resizing first (no cgo: no libvips).
+**Phase 10, Task 3: inventory basics.** Stock items, recipes mapping menu
+items to stock, deduction on sale, manual adjustments, wastage with reason
+codes, low-stock alerts, closing stock at shift end. Almost certainly
+needs splitting before any code: read the phase file and split first.
+Decide whether stock gets its own permission (ADR-105 gated it on
+`menu.edit` for now).
 
 ## Known broken / in progress
 
+- Photos (ADR-110): `<data dir>/photos/` is not backed up by Litestream
+  (phase 12 must add it); unreferenced photo files are never swept; the
+  guest app does not show photos yet.
 - Sold out (ADR-109): only the back office can mark it, not the till; the
   server does not refuse a sold-out item rung up (AddLine is unchecked);
   a till with a wrong clock ends it at the wrong time.

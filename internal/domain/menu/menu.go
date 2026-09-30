@@ -64,6 +64,8 @@ type Item struct {
 	// next trading day. Nil is on sale. The terminal compares it with its own
 	// clock, so the item comes back with no edit to the menu (ADR-109).
 	SoldOutUntil *time.Time
+	// Photo is the stored photo's name, or empty (ADR-110).
+	Photo string
 }
 
 // ModifierGroup is a set of choices with bounds on how many to pick.

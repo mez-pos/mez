@@ -1,10 +1,14 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/jpeg"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -37,7 +41,11 @@ func newEditorTill(t *testing.T) *editorTill {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	svc, err := menus.New(menus.Options{DB: w.db})
+	photos, err := menus.NewPhotoStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc, err := menus.New(menus.Options{DB: w.db, Photos: photos})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,5 +286,86 @@ func TestSoldOutOverHTTP(t *testing.T) {
 	rec = send(m.handler, http.MethodPost, "/api/v1/menu/items/999/sold-out", "", m.owner)
 	if rec.Code != http.StatusNotFound || errorOf(t, rec).Code != CodeItemNotFound {
 		t.Errorf("missing item: %d %s", rec.Code, rec.Body)
+	}
+}
+
+func testJPEG(t *testing.T, w, h int) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, image.NewRGBA(image.Rect(0, 0, w, h)), nil); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func TestItemPhotosOverHTTP(t *testing.T) {
+	m := newEditorTill(t)
+	food := m.edit(t, http.MethodPost, "/api/v1/menu/categories", `{"name":"Food"}`, http.StatusCreated)
+	dosa := m.edit(t, http.MethodPost, "/api/v1/menu/items", m.itemBody(food, "Dosa", 12000), http.StatusCreated)
+	path := fmt.Sprintf("/api/v1/menu/items/%d/photo", dosa)
+	data := testJPEG(t, 480, 360)
+
+	upload := func(body []byte, contentType string, headers map[string]string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPut, path, bytes.NewReader(body))
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+		req.Header.Set("Content-Type", contentType)
+		rec := httptest.NewRecorder()
+		m.handler.ServeHTTP(rec, req)
+		return rec
+	}
+
+	rec := upload(data, "image/jpeg", m.owner)
+	var out photoResponse
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &out) != nil || len(out.Photo) != 68 {
+		t.Fatalf("upload: %d %s", rec.Code, rec.Body)
+	}
+
+	// The terminal's menu names it, and it is served to anyone, for good.
+	rec = send(m.handler, http.MethodGet, "/api/v1/menu", "", m.asDevice())
+	var till menuResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &till); err != nil || till.Items[0].Photo != out.Photo {
+		t.Fatalf("till menu: %s (%v)", rec.Body, err)
+	}
+	rec = send(m.handler, http.MethodGet, "/api/v1/menu/photos/"+out.Photo, "", nil)
+	if rec.Code != http.StatusOK || !bytes.Equal(rec.Body.Bytes(), data) {
+		t.Fatalf("serve: %d, %d bytes", rec.Code, rec.Body.Len())
+	}
+	if rec.Header().Get("Content-Type") != "image/jpeg" || !strings.Contains(rec.Header().Get("Cache-Control"), "immutable") ||
+		rec.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Errorf("serve headers = %v", rec.Header())
+	}
+
+	refusals := []struct {
+		name        string
+		body        []byte
+		contentType string
+		headers     map[string]string
+		status      int
+	}{
+		{"not a JPEG content type", data, "image/png", m.owner, http.StatusUnsupportedMediaType},
+		{"over the byte limit", make([]byte, menus.MaxPhotoBytes+10), "image/jpeg", m.owner, http.StatusRequestEntityTooLarge},
+		{"not a JPEG at all", []byte("hello"), "image/jpeg", m.owner, http.StatusUnprocessableEntity},
+		{"a device alone", data, "image/jpeg", m.asDevice(), http.StatusUnauthorized},
+		{"a cashier", data, "image/jpeg", m.asStaff(m.signIn(t, "2468").Token), http.StatusForbidden},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			if rec := upload(tt.body, tt.contentType, tt.headers); rec.Code != tt.status {
+				t.Errorf("status %d %s, want %d", rec.Code, rec.Body, tt.status)
+			}
+		})
+	}
+
+	for _, name := range []string{"..%2Fnofiltr.db", "nothing.jpg", strings.Repeat("0", 64) + ".jpg"} {
+		if rec := send(m.handler, http.MethodGet, "/api/v1/menu/photos/"+name, "", nil); rec.Code != http.StatusNotFound {
+			t.Errorf("GET photo %q: %d, want 404", name, rec.Code)
+		}
+	}
+
+	m.edit(t, http.MethodDelete, path, "", http.StatusOK)
+	if e := m.editor(t); e.Items[0].Photo != "" {
+		t.Errorf("after delete, photo = %q", e.Items[0].Photo)
 	}
 }

@@ -3054,3 +3054,35 @@ Because: a flag would need someone, or a job, to clear it every morning;
 a time clears itself, and offline tills agree without asking the server.
 Cost: a till whose clock is wrong ends it at the wrong time; only the back
 office can mark it, not the till during service.
+
+## ADR-110 - Photos are shrunk in the browser and stored by their hash
+2026-09 · Status: accepted
+Decision: phase 10, Task 2d2 gives items a photo, with no new dependency.
+  - **Shrunk in the browser:** the editor draws the chosen file on a
+    canvas at most 480px on its longer side, on white, and sends a JPEG
+    (`web/backoffice/src/menu/photo.ts`). Canvas applies a phone photo's
+    EXIF rotation, which Go's `image/jpeg` ignores, and resizing in Go
+    would mean `golang.org/x/image` or a hand-rolled filter. A 2400px,
+    393 KB photo arrived as 480 x 360 and 17 KB.
+  - **Checked again on the server** (`internal/service/menus/photos.go`):
+    at most 512 KB, JPEG only, 64 to 1024px a side read from the header
+    before decoding, then a full decode. The bytes are stored as sent,
+    not re-encoded.
+  - **Stored by hash** in `<data dir>/photos/<sha256>.jpg`, written whole
+    and renamed into place; `items.photo` holds the name (migration 00022).
+    The same photo on two items is one file. Removing a photo leaves the
+    file: nothing sweeps unreferenced ones yet.
+  - **Served in public:** `GET /api/v1/menu/photos/{name}` needs no
+    tokens, because an `<img>` cannot send them and nothing on a menu is
+    private. The name must match `^[0-9a-f]{64}\.jpg$` before any path is
+    built from it. Served `immutable` for a year: a new photo is a new
+    name, and a till offline after its first load still shows it.
+  - **Setting one is a menu edit** (ADR-106): the version bumps and tills
+    show it at once (seen in the browser on the register).
+  - The raw upload is `PUT` with `Content-Type: image/jpeg`; the shared
+    API client now sends a `Blob` body as it is.
+Because: the till needs a small, correctly rotated picture, and the
+browser that chose the file is the one place that can make it cheaply.
+Cost: the photos folder is not in the database, so Litestream does not
+back it up (phase 12 must); an upload from a client that skips the
+editor is kept at up to 1024px and 512 KB.

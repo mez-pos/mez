@@ -233,6 +233,10 @@ type Querier interface {
 	SetCategorySort(ctx context.Context, arg SetCategorySortParams) (int64, error)
 	SetItemActive(ctx context.Context, arg SetItemActiveParams) (int64, error)
 	//
+	// The file is written before this runs; '' takes the photo off. A file no
+	// item names any more stays on disk (ADR-110).
+	SetItemPhoto(ctx context.Context, arg SetItemPhotoParams) (int64, error)
+	//
 	// NULL puts it back on sale now; a time keeps it sold out until then.
 	SetItemSoldOut(ctx context.Context, arg SetItemSoldOutParams) (int64, error)
 	SetItemSort(ctx context.Context, arg SetItemSortParams) (int64, error)

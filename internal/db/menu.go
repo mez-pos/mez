@@ -163,6 +163,7 @@ func assembleMenu(version int64, currency string, r menuRows) (menu.Menu, error)
 			until := row.SoldOutUntil.Time.UTC()
 			item.SoldOutUntil = &until
 		}
+		item.Photo = row.Photo
 		m.Items = append(m.Items, item)
 	}
 	return m, nil

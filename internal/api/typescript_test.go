@@ -124,7 +124,7 @@ var errorCodes = []ErrorCode{
 	CodeAlreadyCounted, CodeNotCounted, CodeDrawerCounted, CodeVarianceUnexplained, CodeAlreadyExplained,
 	CodeZReportNotFound, CodeShiftStillOpen, CodeAlreadyPooled, CodeNotStaff, CodeInvalidTipPool,
 	CodeExportNotFound,
-	CodeCategoryNotFound, CodeItemNotFound, CodeInvalidMenu, CodeMenuOrderStale, CodeGroupNotFound,
+	CodeCategoryNotFound, CodeItemNotFound, CodeInvalidMenu, CodeMenuOrderStale, CodeGroupNotFound, CodePhotoNotFound,
 }
 
 // generate builds the whole file.
@@ -259,7 +259,7 @@ func generate() (*ts.Generator, error) {
 		// The menu editor.
 		categoryRequest{}, itemRequest{}, menuOrderRequest{}, menuEditResponse{}, menus.Editor{},
 		menus.Station{}, menus.Course{}, menus.TaxClass{}, menus.Category{}, menus.Item{},
-		groupRequest{}, menus.ModifierInput{}, menus.Group{}, menus.Modifier{}, soldOutResponse{},
+		groupRequest{}, menus.ModifierInput{}, menus.Group{}, menus.Modifier{}, soldOutResponse{}, photoResponse{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},

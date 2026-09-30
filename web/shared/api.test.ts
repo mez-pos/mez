@@ -64,6 +64,15 @@ describe("createApiClient", () => {
     expect(calls[0]?.init.body).toBe('{"printer_id":3}');
   });
 
+  it("sends a Blob as it is, with its own type", async () => {
+    const { fetch, calls } = fakeFetch(() => json(200, { photo: "p.jpg" }));
+    const api = createApiClient({ credentials: signedIn, fetch });
+    const photo = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: "image/jpeg" });
+    await api.put("/api/v1/menu/items/1/photo", photo);
+    expect(new Headers(calls[0]?.init.headers).get("Content-Type")).toBe("image/jpeg");
+    expect(calls[0]?.init.body).toBe(photo);
+  });
+
   it("resolves 204 with nothing", async () => {
     const { fetch } = fakeFetch(() => new Response(null, { status: 204 }));
     await expect(createApiClient({ credentials: signedIn, fetch }).del("/api/v1/sessions/current")).resolves.toBeUndefined();

@@ -106,7 +106,7 @@ export function itemFormFrom(item: EditorItem): ItemForm {
   };
 }
 
-export type ItemField = "name" | "category_id" | "price" | "hsn" | "tax_class_id" | "station_id" | "course_id";
+export type ItemField = "name" | "category_id" | "price" | "hsn" | "tax_class_id" | "station_id" | "course_id" | "photo";
 
 /** A refusal as the form shows it: under its field, or over the form. */
 export interface Problem {
@@ -145,7 +145,7 @@ export function priceChange(saved: EditorItem | null, typed: string): { was: Mon
   return { was: saved.price, now: { minor, currency: saved.price.currency } };
 }
 
-const itemFields: readonly string[] = ["name", "category_id", "price", "hsn", "tax_class_id", "station_id", "course_id", "ids"];
+const itemFields: readonly string[] = ["name", "category_id", "price", "hsn", "tax_class_id", "station_id", "course_id", "ids", "photo"];
 
 export function problemOf(err: unknown): Problem {
   if (err instanceof ApiError) {

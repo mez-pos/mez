@@ -71,3 +71,8 @@ export function isSoldOut(item: { readonly sold_out_until?: string }, now: Date)
   const until = Date.parse(item.sold_out_until);
   return Number.isFinite(until) && until > now.getTime();
 }
+
+/** Where a stored photo is served (ADR-110). Its name is its hash, so the URL never changes what it shows. */
+export function photoUrl(name: string): string {
+  return `/api/v1/menu/photos/${encodeURIComponent(name)}`;
+}

@@ -64,6 +64,9 @@ type Options struct {
 	// OnChange is told the venue after every committed edit: the hub's
 	// Notify, so connected devices learn the menu's new version at once.
 	OnChange func(venueID int64)
+	// Photos is where item photos are kept. Without it, a photo cannot be
+	// set, and none is served.
+	Photos *PhotoStore
 }
 
 // Service is the menu editor.
@@ -71,6 +74,7 @@ type Service struct {
 	db       *db.DB
 	clock    Clock
 	onChange func(venueID int64)
+	photos   *PhotoStore
 }
 
 // New returns a Service.
@@ -84,7 +88,7 @@ func New(o Options) (*Service, error) {
 	if o.OnChange == nil {
 		o.OnChange = func(int64) {}
 	}
-	return &Service{db: o.DB, clock: o.Clock, onChange: o.OnChange}, nil
+	return &Service{db: o.DB, clock: o.Clock, onChange: o.OnChange, photos: o.Photos}, nil
 }
 
 // CategoryInput is a category as the editor sends it.

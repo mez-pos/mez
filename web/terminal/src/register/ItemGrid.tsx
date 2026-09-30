@@ -5,6 +5,7 @@
 // guest it is gone rather than hunt for it.
 
 import type { MenuItemResponse, ModifierGroupResponse } from "../../../shared/api-types";
+import { photoUrl } from "../../../shared/menu";
 import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { choiceCount } from "./register-logic";
@@ -36,6 +37,16 @@ export function ItemGrid({ items, groupsFor, stationName, onTap, soldOut }: Item
                 gone ? "cursor-not-allowed opacity-60" : "hover:bg-raised-high active:bg-raised-high",
               )}
             >
+              {item.photo && (
+                // The name is under it, so the photo says nothing a reader needs.
+                <img
+                  src={photoUrl(item.photo)}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className={cx("-mx-1 -mt-1 mb-0.5 h-20 w-[calc(100%+0.5rem)] rounded-tight object-cover", gone && "grayscale")}
+                />
+              )}
               <span className={cx("text-base font-semibold leading-snug", gone ? "text-fg-muted line-through" : "text-fg")}>{item.name}</span>
               {gone && <span className="text-meta font-semibold uppercase text-warning">Sold out</span>}
               <span className="text-meta uppercase text-fg-faint">

@@ -161,6 +161,10 @@ takes the item, Modify, the choice, Save.
   it cannot be tapped (a screen reader hears "Latte, sold out"). The till
   compares the item's `sold_out_until` with its own clock once a minute, so
   the tile comes back by itself when the trading day turns.
+- **Photo** (phase 10, Task 2d2, ADR-110): an item with a photo shows it
+  as an 80px strip across the top of its tile, above the name, loaded
+  lazily; greyed when sold out. It carries no meaning of its own (empty
+  alt): the name is the label.
 
 ## Constraints
 

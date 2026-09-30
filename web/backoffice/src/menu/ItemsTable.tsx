@@ -4,7 +4,7 @@
 import { useState } from "react";
 import type { EditorCategory, EditorItem, MenuEditor } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, Money } from "../../../shared/ui";
-import { isSoldOut } from "../../../shared/menu";
+import { isSoldOut, photoUrl } from "../../../shared/menu";
 import { useClock } from "../../../shared/use-clock";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
@@ -43,6 +43,11 @@ export function ItemsTable({ menu, category, api, onEdit, onProblem }: ItemsTabl
       header: "Item",
       cell: (i) => (
         <span className="flex items-center gap-2">
+          {i.photo ? (
+            <img src={photoUrl(i.photo)} alt="" loading="lazy" className="size-8 shrink-0 rounded-tight object-cover" />
+          ) : (
+            <span aria-hidden="true" className="size-8 shrink-0 rounded-tight border border-line-soft bg-sunken" />
+          )}
           <span className={cx(!i.active && "text-fg-muted line-through")}>{i.name}</span>
           {!i.active && <span className="text-meta uppercase text-fg-faint">Retired</span>}
           {i.active && isSoldOut(i, now) && (

@@ -219,7 +219,11 @@ func run() (err error) {
 		return err
 	}
 
-	menuEditor, err := menus.New(menus.Options{DB: database, OnChange: events.Notify})
+	photos, err := menus.NewPhotoStore(filepath.Join(cfg.DataDir, "photos"))
+	if err != nil {
+		return err
+	}
+	menuEditor, err := menus.New(menus.Options{DB: database, OnChange: events.Notify, Photos: photos})
 	if err != nil {
 		return err
 	}

@@ -50,7 +50,7 @@ func (q *Queries) ActiveCategories(ctx context.Context, venueID int64) ([]Active
 const activeItems = `-- name: ActiveItems :many
 SELECT
     i.id, i.category_id, i.name, i.price, i.hsn,
-    i.tax_class_id, i.station_id, i.course_id, i.sort_order, i.sold_out_until
+    i.tax_class_id, i.station_id, i.course_id, i.sort_order, i.sold_out_until, i.photo
 FROM items i
 JOIN categories c ON c.venue_id = i.venue_id AND c.id = i.category_id
 WHERE i.venue_id = ? AND i.active = 1 AND c.active = 1
@@ -68,6 +68,7 @@ type ActiveItemsRow struct {
 	CourseID     int64
 	SortOrder    int64
 	SoldOutUntil sql.NullTime
+	Photo        string
 }
 
 // An item in a retired category is not on sale either: retiring
@@ -92,6 +93,7 @@ func (q *Queries) ActiveItems(ctx context.Context, venueID int64) ([]ActiveItems
 			&i.CourseID,
 			&i.SortOrder,
 			&i.SoldOutUntil,
+			&i.Photo,
 		); err != nil {
 			return nil, err
 		}
@@ -662,7 +664,7 @@ func (q *Queries) EditorCategories(ctx context.Context, venueID int64) ([]Editor
 const editorItems = `-- name: EditorItems :many
 SELECT
     id, category_id, name, price, hsn,
-    tax_class_id, station_id, course_id, sort_order, active, sold_out_until
+    tax_class_id, station_id, course_id, sort_order, active, sold_out_until, photo
 FROM items
 WHERE venue_id = ?
 ORDER BY category_id, sort_order, id
@@ -680,6 +682,7 @@ type EditorItemsRow struct {
 	SortOrder    int64
 	Active       bool
 	SoldOutUntil sql.NullTime
+	Photo        string
 }
 
 func (q *Queries) EditorItems(ctx context.Context, venueID int64) ([]EditorItemsRow, error) {
@@ -703,6 +706,7 @@ func (q *Queries) EditorItems(ctx context.Context, venueID int64) ([]EditorItems
 			&i.SortOrder,
 			&i.Active,
 			&i.SoldOutUntil,
+			&i.Photo,
 		); err != nil {
 			return nil, err
 		}
@@ -1135,6 +1139,34 @@ type SetItemActiveParams struct {
 func (q *Queries) SetItemActive(ctx context.Context, arg SetItemActiveParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, setItemActive,
 		arg.Active,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const setItemPhoto = `-- name: SetItemPhoto :execrows
+UPDATE items
+SET photo = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type SetItemPhotoParams struct {
+	Photo   string
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+// The file is written before this runs; ” takes the photo off. A file no
+// item names any more stays on disk (ADR-110).
+func (q *Queries) SetItemPhoto(ctx context.Context, arg SetItemPhotoParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setItemPhoto,
+		arg.Photo,
 		arg.Now,
 		arg.VenueID,
 		arg.ID,

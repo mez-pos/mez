@@ -35,6 +35,8 @@ export interface MenuEditorApi {
   updateGroup: (id: number, input: MenuGroupInput) => Promise<void>;
   setGroupActive: (id: number, active: boolean) => Promise<void>;
   setItemSoldOut: (id: number, soldOut: boolean) => Promise<void>;
+  setItemPhoto: (id: number, photo: Blob) => Promise<void>;
+  clearItemPhoto: (id: number) => Promise<void>;
 }
 
 export function useMenuEditor(): MenuEditorApi {
@@ -85,5 +87,9 @@ export function useMenuEditor(): MenuEditorApi {
       done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/groups/${id}/${active ? "restore" : "retire"}`))),
     setItemSoldOut: (id, soldOut) =>
       done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/items/${id}/${soldOut ? "sold-out" : "on-sale"}`))),
+    // A photo can take longer than a small edit over a venue's wifi.
+    setItemPhoto: (id, photo) =>
+      done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/items/${id}/photo`, photo, { timeoutMs: 30_000 }))),
+    clearItemPhoto: (id) => done(edit(() => store.api.del<MenuEditResponse>(`/api/v1/menu/items/${id}/photo`))),
   };
 }

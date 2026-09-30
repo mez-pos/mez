@@ -133,6 +133,7 @@ type Item struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	SoldOutUntil sql.NullTime
+	Photo        string
 }
 
 type ItemModifierGroup struct {

@@ -11,6 +11,7 @@ import { emptyGroupForm, groupFormFrom, groupsChanged, usedBy } from "./group-lo
 import { GroupFormModal } from "./GroupFormModal";
 import { GroupsView } from "./GroupsView";
 import { ItemFormModal } from "./ItemFormModal";
+import type { PhotoChange } from "./ItemPhotoField";
 import { ItemsTable } from "./ItemsTable";
 import { itemFormFrom, newItemForm, problemOf, selectedCategory } from "./menu-logic";
 import { useMenuEditor, type MenuEditorApi } from "./use-menu-editor";
@@ -24,6 +25,18 @@ type Editing =
   | { kind: "edit-group"; group: EditorGroup };
 
 type View = "items" | "choices";
+
+/** Does what the item form asked for its photo, after the item is saved. */
+function applyPhoto(api: MenuEditorApi, id: number, change: PhotoChange): Promise<void> {
+  switch (change.kind) {
+    case "keep":
+      return Promise.resolve();
+    case "new":
+      return api.setItemPhoto(id, change.blob);
+    case "remove":
+      return api.clearItemPhoto(id);
+  }
+}
 
 export function MenuScreen() {
   const api = useMenuEditor();
@@ -152,18 +165,17 @@ function EditingModal({ menu, editing, api, onSelect, onClose }: EditingModalPro
           menu={menu}
           item={null}
           initial={newItemForm(menu, editing.categoryId)}
-          onSave={async (input, groups) => {
+          onSave={async (input, groups, photo) => {
             const id = await api.createItem(input);
             onSelect(input.category_id);
             // The item is saved now: a failure here must not leave the form
             // open, where Save again would add it twice.
-            if (groups.length > 0) {
-              try {
-                await api.setItemGroups(id, groups);
-              } catch {
-                toast(`${input.name} is saved, but its choices are not. Edit it to add them.`, { tone: "warning" });
-                return;
-              }
+            const missing: string[] = [];
+            if (groups.length > 0) await api.setItemGroups(id, groups).catch(() => missing.push("its choices"));
+            await applyPhoto(api, id, photo).catch(() => missing.push("its photo"));
+            if (missing.length > 0) {
+              toast(`${input.name} is saved, but ${missing.join(" and ")} did not. Edit it to try again.`, { tone: "warning" });
+              return;
             }
             toast("Saved.", { tone: "success" });
           }}
@@ -176,9 +188,10 @@ function EditingModal({ menu, editing, api, onSelect, onClose }: EditingModalPro
           menu={menu}
           item={editing.item}
           initial={itemFormFrom(editing.item)}
-          onSave={async (input: MenuItemInput, groups) => {
+          onSave={async (input: MenuItemInput, groups, photo) => {
             await api.updateItem(editing.item.id, input);
             if (groupsChanged(editing.item, groups)) await api.setItemGroups(editing.item.id, groups);
+            await applyPhoto(api, editing.item.id, photo);
             onSelect(input.category_id);
             const repriced = input.price.minor !== editing.item.price.minor;
             toast(repriced ? "Saved. Tickets already open keep their prices." : "Saved.", { tone: "success" });

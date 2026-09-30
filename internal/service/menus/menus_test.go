@@ -37,6 +37,8 @@ type world struct {
 	refs    map[int64]refs
 	nudged  []int64
 	elseCat int64 // a category of venue 2, to name from venue 1
+	// photoDir is where the fixture's photo store writes.
+	photoDir string
 }
 
 func newWorld(t *testing.T) *world {
@@ -91,7 +93,12 @@ func newWorld(t *testing.T) *world {
 	if _, err := d.Writer().ExecContext(ctx, `UPDATE stations SET active = 0 WHERE code = 'bar'`); err != nil {
 		t.Fatal(err)
 	}
-	w.s, err = New(Options{DB: d, Clock: clock{}, OnChange: func(v int64) { w.nudged = append(w.nudged, v) }})
+	w.photoDir = filepath.Join(t.TempDir(), "photos")
+	photos, err := NewPhotoStore(w.photoDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.s, err = New(Options{DB: d, Clock: clock{}, OnChange: func(v int64) { w.nudged = append(w.nudged, v) }, Photos: photos})
 	if err != nil {
 		t.Fatal(err)
 	}

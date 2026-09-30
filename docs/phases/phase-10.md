@@ -14,7 +14,7 @@ Phase 09.
   Spec it first. This surface is keyboard-driven and data-dense — different
   rules from the terminal, and that is correct.
 
-- [ ] **Task 2 — Menu and item editor.**
+- [x] **Task 2 — Menu and item editor.**
   Categories, items, modifier groups, pricing, tax class and HSN, station
   assignment, availability, item photos. A price change takes effect for new
   lines only — open tickets keep their snapshot. Make that visible in the UI so
@@ -33,13 +33,13 @@ Phase 09.
     tickets keep the price they were rung up at.
   - [x] **Task 2c: Modifier groups.** Server and screen: groups, their
     choices and bounds, and which items offer them.
-  - [ ] **Task 2d: Availability and photos.** Sold out for today, apart
+  - [x] **Task 2d: Availability and photos.** Sold out for today, apart
     from retiring an item; item photos stored beside the database and
     shown on the register.
     - [x] **Task 2d1: Sold out for today.** Marked in the editor, shown on
       the register as sold out until the next trading day starts, with no
       menu edit needed to undo it the next morning.
-    - [ ] **Task 2d2: Item photos.** Upload in the editor, stored beside
+    - [x] **Task 2d2: Item photos.** Upload in the editor, stored beside
       the database, served with the menu, shown on the register tiles.
 
 - [ ] **Task 3 — Inventory basics.**
