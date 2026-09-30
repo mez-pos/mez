@@ -36,6 +36,11 @@ Phase 09.
   - [ ] **Task 2d: Availability and photos.** Sold out for today, apart
     from retiring an item; item photos stored beside the database and
     shown on the register.
+    - [ ] **Task 2d1: Sold out for today.** Marked in the editor, shown on
+      the register as sold out until the next trading day starts, with no
+      menu edit needed to undo it the next morning.
+    - [ ] **Task 2d2: Item photos.** Upload in the editor, stored beside
+      the database, served with the menu, shown on the register tiles.
 
 - [ ] **Task 3 — Inventory basics.**
   Stock items, recipes mapping menu items to stock, deduction on sale, manual
