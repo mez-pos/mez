@@ -11,6 +11,76 @@ import (
 	"time"
 )
 
+const addItemRecipePart = `-- name: AddItemRecipePart :exec
+INSERT INTO item_recipes (venue_id, item_id, stock_item_id, qty) VALUES (?, ?, ?, ?)
+`
+
+type AddItemRecipePartParams struct {
+	VenueID     int64
+	ItemID      int64
+	StockItemID int64
+	Qty         int64
+}
+
+func (q *Queries) AddItemRecipePart(ctx context.Context, arg AddItemRecipePartParams) error {
+	_, err := q.db.ExecContext(ctx, addItemRecipePart,
+		arg.VenueID,
+		arg.ItemID,
+		arg.StockItemID,
+		arg.Qty,
+	)
+	return err
+}
+
+const addModifierRecipePart = `-- name: AddModifierRecipePart :exec
+INSERT INTO modifier_recipes (venue_id, modifier_id, stock_item_id, qty) VALUES (?, ?, ?, ?)
+`
+
+type AddModifierRecipePartParams struct {
+	VenueID     int64
+	ModifierID  int64
+	StockItemID int64
+	Qty         int64
+}
+
+func (q *Queries) AddModifierRecipePart(ctx context.Context, arg AddModifierRecipePartParams) error {
+	_, err := q.db.ExecContext(ctx, addModifierRecipePart,
+		arg.VenueID,
+		arg.ModifierID,
+		arg.StockItemID,
+		arg.Qty,
+	)
+	return err
+}
+
+const clearItemRecipe = `-- name: ClearItemRecipe :exec
+DELETE FROM item_recipes WHERE venue_id = ? AND item_id = ?
+`
+
+type ClearItemRecipeParams struct {
+	VenueID int64
+	ItemID  int64
+}
+
+func (q *Queries) ClearItemRecipe(ctx context.Context, arg ClearItemRecipeParams) error {
+	_, err := q.db.ExecContext(ctx, clearItemRecipe, arg.VenueID, arg.ItemID)
+	return err
+}
+
+const clearModifierRecipe = `-- name: ClearModifierRecipe :exec
+DELETE FROM modifier_recipes WHERE venue_id = ? AND modifier_id = ?
+`
+
+type ClearModifierRecipeParams struct {
+	VenueID    int64
+	ModifierID int64
+}
+
+func (q *Queries) ClearModifierRecipe(ctx context.Context, arg ClearModifierRecipeParams) error {
+	_, err := q.db.ExecContext(ctx, clearModifierRecipe, arg.VenueID, arg.ModifierID)
+	return err
+}
+
 const createStockItem = `-- name: CreateStockItem :one
 
 INSERT INTO stock_items (venue_id, name, unit, low_level, created_at, updated_at)
@@ -84,6 +154,112 @@ func (q *Queries) InsertStockMovement(ctx context.Context, arg InsertStockMoveme
 	return id, err
 }
 
+const itemRecipesForVenue = `-- name: ItemRecipesForVenue :many
+
+SELECT item_id, stock_item_id, qty
+FROM item_recipes
+WHERE venue_id = ?
+ORDER BY item_id, stock_item_id
+`
+
+type ItemRecipesForVenueRow struct {
+	ItemID      int64
+	StockItemID int64
+	Qty         int64
+}
+
+// Recipes (Task 3b, ADR-112).
+func (q *Queries) ItemRecipesForVenue(ctx context.Context, venueID int64) ([]ItemRecipesForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, itemRecipesForVenue, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ItemRecipesForVenueRow{}
+	for rows.Next() {
+		var i ItemRecipesForVenueRow
+		if err := rows.Scan(&i.ItemID, &i.StockItemID, &i.Qty); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const menuItemForRecipe = `-- name: MenuItemForRecipe :one
+SELECT id FROM items WHERE venue_id = ? AND id = ?
+`
+
+type MenuItemForRecipeParams struct {
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) MenuItemForRecipe(ctx context.Context, arg MenuItemForRecipeParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, menuItemForRecipe, arg.VenueID, arg.ID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const modifierForRecipe = `-- name: ModifierForRecipe :one
+SELECT id FROM modifiers WHERE venue_id = ? AND id = ?
+`
+
+type ModifierForRecipeParams struct {
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) ModifierForRecipe(ctx context.Context, arg ModifierForRecipeParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, modifierForRecipe, arg.VenueID, arg.ID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const modifierRecipesForVenue = `-- name: ModifierRecipesForVenue :many
+SELECT modifier_id, stock_item_id, qty
+FROM modifier_recipes
+WHERE venue_id = ?
+ORDER BY modifier_id, stock_item_id
+`
+
+type ModifierRecipesForVenueRow struct {
+	ModifierID  int64
+	StockItemID int64
+	Qty         int64
+}
+
+func (q *Queries) ModifierRecipesForVenue(ctx context.Context, venueID int64) ([]ModifierRecipesForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, modifierRecipesForVenue, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ModifierRecipesForVenueRow{}
+	for rows.Next() {
+		var i ModifierRecipesForVenueRow
+		if err := rows.Scan(&i.ModifierID, &i.StockItemID, &i.Qty); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setStockItemActive = `-- name: SetStockItemActive :execrows
 UPDATE stock_items
 SET active = ?1, updated_at = ?2
@@ -108,6 +284,48 @@ func (q *Queries) SetStockItemActive(ctx context.Context, arg SetStockItemActive
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const soldForOrder = `-- name: SoldForOrder :many
+SELECT stock_item_id, CAST(-SUM(delta) AS INTEGER) AS taken
+FROM stock_movements
+WHERE venue_id = ? AND order_id = ? AND kind = 'sold'
+GROUP BY stock_item_id
+`
+
+type SoldForOrderParams struct {
+	VenueID int64
+	OrderID int64
+}
+
+type SoldForOrderRow struct {
+	StockItemID int64
+	Taken       int64
+}
+
+// What an order's sold movements have taken so far, per stock item, as a
+// positive amount.
+func (q *Queries) SoldForOrder(ctx context.Context, arg SoldForOrderParams) ([]SoldForOrderRow, error) {
+	rows, err := q.db.QueryContext(ctx, soldForOrder, arg.VenueID, arg.OrderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SoldForOrderRow{}
+	for rows.Next() {
+		var i SoldForOrderRow
+		if err := rows.Scan(&i.StockItemID, &i.Taken); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const stockItemForEdit = `-- name: StockItemForEdit :one

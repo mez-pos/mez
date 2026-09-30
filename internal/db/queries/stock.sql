@@ -63,3 +63,44 @@ WHERE m.venue_id = sqlc.arg(venue_id) AND m.stock_item_id = sqlc.arg(stock_item_
   AND (sqlc.arg(before_id) = 0 OR m.id < sqlc.arg(before_id))
 ORDER BY m.id DESC
 LIMIT sqlc.arg(max_rows);
+
+-- Recipes (Task 3b, ADR-112).
+
+-- name: ItemRecipesForVenue :many
+SELECT item_id, stock_item_id, qty
+FROM item_recipes
+WHERE venue_id = ?
+ORDER BY item_id, stock_item_id;
+
+-- name: ModifierRecipesForVenue :many
+SELECT modifier_id, stock_item_id, qty
+FROM modifier_recipes
+WHERE venue_id = ?
+ORDER BY modifier_id, stock_item_id;
+
+-- name: ClearItemRecipe :exec
+DELETE FROM item_recipes WHERE venue_id = ? AND item_id = ?;
+
+-- name: AddItemRecipePart :exec
+INSERT INTO item_recipes (venue_id, item_id, stock_item_id, qty) VALUES (?, ?, ?, ?);
+
+-- name: ClearModifierRecipe :exec
+DELETE FROM modifier_recipes WHERE venue_id = ? AND modifier_id = ?;
+
+-- name: AddModifierRecipePart :exec
+INSERT INTO modifier_recipes (venue_id, modifier_id, stock_item_id, qty) VALUES (?, ?, ?, ?);
+
+-- name: MenuItemForRecipe :one
+SELECT id FROM items WHERE venue_id = ? AND id = ?;
+
+-- name: ModifierForRecipe :one
+SELECT id FROM modifiers WHERE venue_id = ? AND id = ?;
+
+-- name: SoldForOrder :many
+--
+-- What an order's sold movements have taken so far, per stock item, as a
+-- positive amount.
+SELECT stock_item_id, CAST(-SUM(delta) AS INTEGER) AS taken
+FROM stock_movements
+WHERE venue_id = ? AND order_id = ? AND kind = 'sold'
+GROUP BY stock_item_id;

@@ -13,27 +13,29 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 3a: stock items and the stock ledger** (ADR-111). Task 3
-is split into 3a to 3d in the phase file. Migration 00023 adds
-`stock_items` and an append-only `stock_movements` ledger, and grants the
-new `stock.manage` to owner and manager roles. On hand is the sum of the
-ledger; received, adjusted, wasted (with a reason code) and counted are
-entered by hand under `/api/v1/stock` (history cursor-paginated).
-Quantities are thousandths of g, ml or each. The Stock nav entry now needs
-`stock.manage`. Smoke-tested on the real binary: 5 kg received, 3.2 kg
-spoiled, 1.8 kg on hand and low.
+**Phase 10, Task 3b: recipes and deduction on sale** (ADR-112). Migration
+00024 adds recipes on menu items and on modifiers. When an order closes,
+the order service's append hook calls `svcstock.DeductSale` in the same
+transaction: every line not voided (comps count), item recipe plus each
+modifier's, times quantity, reconciled against what the order already
+took. Recipes are read and replaced under `/api/v1/stock/recipes`
+(`stock.manage`). Tested through the order service: a real order with a
+void and a comp took exactly its usage; closing again after a reopen took
+nothing; an all-comp order with no invoice still took its stock.
 
 ## Next task
 
-**Phase 10, Task 3b: recipes and deduction on sale.** Which stock each
-menu item uses, and a `sold` movement written when an order is invoiced,
-in the same transaction. Decide what a void, a comp and a credit note do
-to stock, and whether modifiers carry recipes too.
+**Phase 10, Task 3c: the Stock screen.** Spec first
+(`docs/design/screens/backoffice-stock.md`): stock items with on hand and
+low, receive / adjust / waste with a reason / count, the movement history
+(paged), and recipes on the menu item form and on each modifier. Mark
+`stock` built in `nav-logic.ts` and route `/stock`.
 
 ## Known broken / in progress
 
-- Stock (ADR-111): server only until 3c. Nothing is sold out of stock yet
-  (3b). A movement after the shift's closing drawer count records no
+- Stock (ADR-111, ADR-112): server only until 3c. A close uses today's
+  recipes, not the ones when the line was rung up. A sold movement needs a
+  real staff id: the guest channel (phase 11) must supply one. A movement after the shift's closing drawer count records no
   shift (3d). No low-stock alert anywhere yet (3d).
 - Photos (ADR-110): `<data dir>/photos/` is not backed up by Litestream
   (phase 12 must add it); unreferenced photo files are never swept; the

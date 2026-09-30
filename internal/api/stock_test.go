@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
 
+	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	domstock "github.com/byjoellobo/nofiltr-pos/internal/domain/stock"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/stock"
 )
@@ -133,4 +135,66 @@ func TestStockRefusals(t *testing.T) {
 			t.Errorf("status %d %s", rec.Code, rec.Body)
 		}
 	})
+}
+
+func TestRecipesOverHTTP(t *testing.T) {
+	w, owner := newStockTill(t)
+	ctx := context.Background()
+	if _, err := w.db.CreateMenu(ctx, 1, db.MenuSpec{
+		Stations:   []db.StationSpec{{Code: "bar", Name: "Bar"}},
+		Courses:    []db.CourseSpec{{Number: 1, Name: "Mains"}},
+		TaxClasses: []db.TaxClassSpec{{Name: "Food"}},
+		Groups:     []db.ModifierGroupSpec{{Name: "Milk", MaxSelect: 1, Modifiers: []db.ModifierSpec{{Name: "Oat"}}}},
+		Categories: []db.CategorySpec{{Name: "Coffee", Items: []db.ItemSpec{
+			{Name: "Latte", Price: 18000, TaxClass: "Food", Station: "bar", Course: 1, Groups: []string{"Milk"}},
+		}}},
+	}, seededAt); err != nil {
+		t.Fatal(err)
+	}
+	menu, err := w.db.Menu(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	latte, oat := menu.Items[0].ID, menu.Groups[0].Modifiers[0].ID
+
+	rec := send(w.handler, http.MethodPost, "/api/v1/stock/items", `{"name":"Oat milk","unit":"ml"}`, owner)
+	var milk stockEditResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &milk); err != nil {
+		t.Fatal(err)
+	}
+	body := fmt.Sprintf(`{"parts":[{"stock_item_id":%d,"qty":200000}]}`, milk.ID)
+	for _, path := range []string{fmt.Sprintf("/api/v1/stock/recipes/items/%d", latte), fmt.Sprintf("/api/v1/stock/recipes/modifiers/%d", oat)} {
+		if rec := send(w.handler, http.MethodPut, path, body, owner); rec.Code != http.StatusOK {
+			t.Fatalf("PUT %s: %d %s", path, rec.Code, rec.Body)
+		}
+	}
+	rec = send(w.handler, http.MethodGet, "/api/v1/stock/recipes", "", owner)
+	var book stock.RecipeBook
+	if err := json.Unmarshal(rec.Body.Bytes(), &book); err != nil || len(book.Items) != 1 || len(book.Modifiers) != 1 ||
+		book.Modifiers[0].ID != oat || book.Items[0].Parts[0].Qty != 200000 {
+		t.Fatalf("recipes: %s", rec.Body)
+	}
+
+	tests := []struct {
+		name, path, body string
+		status           int
+		code             ErrorCode
+		field            string
+	}{
+		{"a missing menu item", "/api/v1/stock/recipes/items/999", body, http.StatusNotFound, CodeItemNotFound, ""},
+		{"a missing modifier", "/api/v1/stock/recipes/modifiers/999", body, http.StatusNotFound, CodeModifierNotFound, ""},
+		{"none of it", fmt.Sprintf("/api/v1/stock/recipes/items/%d", latte), fmt.Sprintf(`{"parts":[{"stock_item_id":%d,"qty":0}]}`, milk.ID),
+			http.StatusUnprocessableEntity, CodeInvalidStock, "parts.0.qty"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := send(w.handler, http.MethodPut, tt.path, tt.body, owner)
+			if rec.Code != tt.status {
+				t.Fatalf("status %d %s, want %d", rec.Code, rec.Body, tt.status)
+			}
+			if got := errorOf(t, rec); got.Code != tt.code || got.Field != tt.field {
+				t.Errorf("error = %+v, want %s on %q", got, tt.code, tt.field)
+			}
+		})
+	}
 }

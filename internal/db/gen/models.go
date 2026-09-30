@@ -143,6 +143,13 @@ type ItemModifierGroup struct {
 	SortOrder int64
 }
 
+type ItemRecipe struct {
+	VenueID     int64
+	ItemID      int64
+	StockItemID int64
+	Qty         int64
+}
+
 type MenuVersion struct {
 	VenueID int64
 	Version int64
@@ -170,6 +177,13 @@ type ModifierGroup struct {
 	Active    bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type ModifierRecipe struct {
+	VenueID     int64
+	ModifierID  int64
+	StockItemID int64
+	Qty         int64
 }
 
 type Order struct {

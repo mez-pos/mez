@@ -12,6 +12,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printing"
+	svcstock "github.com/byjoellobo/nofiltr-pos/internal/service/stock"
 )
 
 var (
@@ -182,17 +183,26 @@ func (s *Service) run(ctx context.Context, meta Meta, orderID int64, name string
 		if err := saveKey(ctx, tx.Queries(), meta, fp, tx.OrderID, first, first+int64(len(payloads))-1, at); err != nil {
 			return nil, err
 		}
-		if s.prints != nil {
-			tx.OnAppended(func(ctx context.Context, q *gen.Queries, next order.State, appended []order.Event) error {
+		tx.OnAppended(func(ctx context.Context, q *gen.Queries, next order.State, appended []order.Event) error {
+			if s.prints != nil {
 				n, err := printing.Plan(ctx, q, printing.Input{
 					VenueID: meta.VenueID, OrderID: tx.OrderID, PublicID: tx.PublicID, Location: v.Location,
 					State: next, Appended: appended,
 					Stream: func(ctx context.Context) ([]order.Event, error) { return tx.Events(ctx, 0) },
 				}, at)
 				queued = n
-				return err
-			})
-		}
+				if err != nil {
+					return err
+				}
+			}
+			// A close takes the order's stock, in this transaction (ADR-112).
+			if closes(appended) {
+				return svcstock.DeductSale(ctx, q, svcstock.Sale{
+					VenueID: meta.VenueID, OrderID: tx.OrderID, StaffID: meta.ActorID, Lines: soldLines(next), At: at,
+				})
+			}
+			return nil
+		})
 		return stamp(payloads, meta, at), nil
 	})
 	if errors.Is(err, db.ErrOrderNotFound) {

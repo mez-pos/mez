@@ -105,7 +105,8 @@ export type ErrorCode =
   | 'stock_item_not_found'
   | 'stock_item_retired'
   | 'stock_name_taken'
-  | 'invalid_stock';
+  | 'invalid_stock'
+  | 'modifier_not_found';
 
 export type OrderStatus =
   | 'open'
@@ -1197,6 +1198,25 @@ export interface StockMovement {
 export interface MovementsResponse {
   movements: StockMovement[];
   next_before?: number;
+}
+
+export interface RecipePart {
+  stock_item_id: number;
+  qty: number;
+}
+
+export interface Recipe {
+  id: number;
+  parts: RecipePart[];
+}
+
+export interface RecipeBook {
+  items: Recipe[];
+  modifiers: Recipe[];
+}
+
+export interface RecipeRequest {
+  parts: RecipePart[];
 }
 
 export interface AreaSettings {

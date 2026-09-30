@@ -3122,3 +3122,36 @@ Cost: on hand is a SUM over every movement of an item; fine for years of
 a cafe's rows, and a snapshot can be added without changing the ledger.
 The open shift is found as order events find it, so a movement after the
 closing drawer count has no shift (Task 3d must decide).
+
+## ADR-112 - Stock is taken when an order closes, and reconciled, not added
+2026-09 · Status: accepted
+Decision: phase 10, Task 3b takes a sale's stock in the transaction that
+closes the order (`svcstock.DeductSale`, called from the order service's
+append hook when the appended events include `order.closed`).
+  - **At the close, not the invoice.** A bill of nothing but comps totals
+    zero and closes with no invoice; its food was made. Every order that
+    is done closes.
+  - **Reconciled:** the close works out what the order's lines use now
+    and writes the difference from what its earlier `sold` movements took.
+    Closing again after a reopen with the same lines writes nothing; a
+    line voided after a reopen gets its stock back; one added takes only
+    its own.
+  - **What counts:** every line not voided, times its quantity: the
+    item's recipe plus each chosen modifier's recipe. A comped line counts
+    (it was made); a voided one does not (if it was made and thrown away,
+    that is a waste movement). A credit note gives nothing back: food that
+    went out does not come back into the store.
+  - **Recipes live on items and modifiers** (migration 00024). A
+    substitution is modelled on the modifiers: Dairy takes 200 ml of milk,
+    Oat 200 ml of oat milk, and the latte's own recipe only what every
+    latte uses. Editing a recipe needs `stock.manage`.
+  - **The recipes used are today's,** not a snapshot from when the line
+    was rung up: unlike money, stock is not billed, and a recipe corrected
+    at 7pm should cost the 6pm tickets it closes the corrected amount.
+  - The sold movements are the closing staff member's, in the open shift,
+    naming the order.
+Because: an order's stock is only right if it follows the order to the
+end, however many times it is reopened.
+Cost: a close reads every recipe of the venue (a cafe's few hundred rows).
+A sold movement needs a real staff id, so an order closed with no staff
+(the guest channel, phase 11) must name who it is closed for.

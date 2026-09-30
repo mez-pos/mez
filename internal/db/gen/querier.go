@@ -22,6 +22,8 @@ type Querier interface {
 	// exists.
 	ActiveStaffForVenue(ctx context.Context, venueID int64) ([]Staff, error)
 	ActiveStations(ctx context.Context, venueID int64) ([]ActiveStationsRow, error)
+	AddItemRecipePart(ctx context.Context, arg AddItemRecipePartParams) error
+	AddModifierRecipePart(ctx context.Context, arg AddModifierRecipePartParams) error
 	AddOrderTable(ctx context.Context, arg AddOrderTableParams) error
 	AppendOrderEvent(ctx context.Context, arg AppendOrderEventParams) error
 	AppendShiftEvent(ctx context.Context, arg AppendShiftEventParams) (int64, error)
@@ -52,6 +54,8 @@ type Querier interface {
 	// matches only from the state the worker saw, so two claims of one job
 	// cannot both succeed.
 	ClaimPrintJob(ctx context.Context, arg ClaimPrintJobParams) (int64, error)
+	ClearItemRecipe(ctx context.Context, arg ClearItemRecipeParams) error
+	ClearModifierRecipe(ctx context.Context, arg ClearModifierRecipeParams) error
 	ClearReceiptPrinter(ctx context.Context, arg ClearReceiptPrinterParams) error
 	ClearTable(ctx context.Context, arg ClearTableParams) (int64, error)
 	CloseShift(ctx context.Context, arg CloseShiftParams) (int64, error)
@@ -153,6 +157,8 @@ type Querier interface {
 	ItemForEdit(ctx context.Context, arg ItemForEditParams) (ItemForEditRow, error)
 	ItemIDsInCategory(ctx context.Context, arg ItemIDsInCategoryParams) ([]int64, error)
 	ItemModifierGroupsForVenue(ctx context.Context, venueID int64) ([]ItemModifierGroupsForVenueRow, error)
+	// Recipes (Task 3b, ADR-112).
+	ItemRecipesForVenue(ctx context.Context, venueID int64) ([]ItemRecipesForVenueRow, error)
 	// The shift's report as it now stands: the last correction, or the original.
 	LatestZReportForShift(ctx context.Context, shiftID int64) (ZReport, error)
 	ListVenues(ctx context.Context) ([]Venue, error)
@@ -161,6 +167,7 @@ type Querier interface {
 	// is derived from, with its orders.
 	LiveTables(ctx context.Context, venueID int64) ([]LiveTablesRow, error)
 	MarkReceiptPrinter(ctx context.Context, arg MarkReceiptPrinterParams) (int64, error)
+	MenuItemForRecipe(ctx context.Context, arg MenuItemForRecipeParams) (int64, error)
 	// The menu. Reads return active rows only, in the order a terminal shows
 	// them: a retired item stays in the table for the events that name it, but
 	// never reaches a till. db.DB.Menu runs the reads in one read transaction,
@@ -168,7 +175,9 @@ type Querier interface {
 	//
 	// A venue whose menu has never been written has no row, and is at 1.
 	MenuVersion(ctx context.Context, venueID int64) (int64, error)
+	ModifierForRecipe(ctx context.Context, arg ModifierForRecipeParams) (int64, error)
 	ModifierIDsOfGroup(ctx context.Context, arg ModifierIDsOfGroupParams) ([]int64, error)
+	ModifierRecipesForVenue(ctx context.Context, venueID int64) ([]ModifierRecipesForVenueRow, error)
 	NextCategorySort(ctx context.Context, venueID int64) (int64, error)
 	// The invoice series counters and the register of numbers issued.
 	// Allocates the next number in a series in one statement: the first call for
@@ -266,6 +275,10 @@ type Querier interface {
 	ShiftEvents(ctx context.Context, shiftID int64) ([]ShiftEventsRow, error)
 	// Which shift each of an order's events was recorded in, by seq.
 	ShiftOfOrderEvents(ctx context.Context, orderID int64) ([]ShiftOfOrderEventsRow, error)
+	//
+	// What an order's sold movements have taken so far, per stock item, as a
+	// positive amount.
+	SoldForOrder(ctx context.Context, arg SoldForOrderParams) ([]SoldForOrderRow, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
 	//
 	// Everyone who has worked at the venue, inactive included: an order's

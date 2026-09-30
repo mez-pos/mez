@@ -53,9 +53,11 @@ Phase 09.
     items with a unit and a low-stock level; an append-only ledger of
     movements (received, adjusted, wasted with a reason code, counted),
     on hand as its sum; a `stock.manage` permission. Go tests.
-  - [ ] **Task 3b: Recipes and deduction on sale.** Which stock each menu
-    item uses, and a sale movement written when an order is invoiced, in
-    the same transaction. What a void, comp or credit note does to stock.
+  - [x] **Task 3b: Recipes and deduction on sale.** Which stock each menu
+    item and modifier uses, and sold movements written when an order
+    closes, in the same transaction (closed, not invoiced: an all-comp
+    bill closes with no invoice, ADR-112). What a void, comp or credit
+    note does to stock.
   - [ ] **Task 3c: The Stock screen.** Spec first
     (`backoffice-stock.md`). Stock items with on hand, receive, adjust,
     waste with a reason, a movement history, and recipes on the item form.

@@ -19,6 +19,9 @@ type Stock interface {
 	SetItemActive(ctx context.Context, venueID, id int64, active bool) error
 	Record(ctx context.Context, venueID, staffID, itemID int64, in stock.MovementInput) (stock.Recorded, error)
 	Movements(ctx context.Context, venueID, itemID, before int64, limit int) ([]stock.Movement, int64, error)
+	Recipes(ctx context.Context, venueID int64) (stock.RecipeBook, error)
+	SetItemRecipe(ctx context.Context, venueID, itemID int64, parts []stock.RecipePart) error
+	SetModifierRecipe(ctx context.Context, venueID, modifierID int64, parts []stock.RecipePart) error
 }
 
 // WithStock mounts the stock routes. They need WithDevices and WithStaff,
@@ -33,6 +36,7 @@ const (
 	CodeStockItemRetired  ErrorCode = "stock_item_retired"
 	CodeStockNameTaken    ErrorCode = "stock_name_taken"
 	CodeInvalidStock      ErrorCode = "invalid_stock"
+	CodeModifierNotFound  ErrorCode = "modifier_not_found"
 )
 
 type (
@@ -42,6 +46,12 @@ type (
 
 type stockItemsResponse struct {
 	Items []stock.Item `json:"items"`
+}
+
+// recipeRequest is a recipe, whole: what one sold takes from stock. An
+// empty list clears it.
+type recipeRequest struct {
+	Parts []stock.RecipePart `json:"parts"`
 }
 
 type stockEditResponse struct {
@@ -69,6 +79,34 @@ func (s *Server) mountStock(mux *http.ServeMux) {
 	handle("POST /api/v1/stock/items/{id}/restore", s.activateStockItem(true))
 	handle("POST /api/v1/stock/items/{id}/movements", s.recordMovement)
 	handle("GET /api/v1/stock/items/{id}/movements", s.listMovements)
+	handle("GET /api/v1/stock/recipes", s.listRecipes)
+	handle("PUT /api/v1/stock/recipes/items/{id}", s.setRecipe(s.stock.SetItemRecipe))
+	handle("PUT /api/v1/stock/recipes/modifiers/{id}", s.setRecipe(s.stock.SetModifierRecipe))
+}
+
+func (s *Server) listRecipes(w http.ResponseWriter, r *http.Request) {
+	book, err := s.stock.Recipes(r.Context(), Meta(r).VenueID)
+	if err != nil {
+		s.writeStockError(w, r, err)
+		return
+	}
+	writeJSON(w, s.log, http.StatusOK, book)
+}
+
+// setRecipe replaces a menu item's or a modifier's recipe with set.
+func (s *Server) setRecipe(set func(ctx context.Context, venueID, id int64, parts []stock.RecipePart) error) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req recipeRequest
+		id, ok := s.pathID(w, r, "id")
+		if !ok || !s.decode(w, r, &req) {
+			return
+		}
+		if err := set(r.Context(), Meta(r).VenueID, id, req.Parts); err != nil {
+			s.writeStockError(w, r, err)
+			return
+		}
+		writeJSON(w, s.log, http.StatusOK, stockEditResponse{ID: id})
+	}
 }
 
 func (s *Server) listStock(w http.ResponseWriter, r *http.Request) {
@@ -188,6 +226,10 @@ func (s *Server) writeStockError(w http.ResponseWriter, r *http.Request, err err
 		writeFieldError(w, s.log, http.StatusUnprocessableEntity, CodeInvalidStock, invalid.Message, invalid.Field)
 	case errors.Is(err, stock.ErrNotFound):
 		writeError(w, s.log, http.StatusNotFound, CodeStockItemNotFound, "No such stock item.")
+	case errors.Is(err, stock.ErrMenuItemNotFound):
+		writeError(w, s.log, http.StatusNotFound, CodeItemNotFound, "No such item on the menu.")
+	case errors.Is(err, stock.ErrModifierNotFound):
+		writeError(w, s.log, http.StatusNotFound, CodeModifierNotFound, "No such choice on the menu.")
 	case errors.Is(err, stock.ErrRetired):
 		writeError(w, s.log, http.StatusConflict, CodeStockItemRetired, "That stock item is retired. Bring it back first.")
 	default:

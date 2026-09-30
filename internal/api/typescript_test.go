@@ -127,7 +127,7 @@ var errorCodes = []ErrorCode{
 	CodeZReportNotFound, CodeShiftStillOpen, CodeAlreadyPooled, CodeNotStaff, CodeInvalidTipPool,
 	CodeExportNotFound,
 	CodeCategoryNotFound, CodeItemNotFound, CodeInvalidMenu, CodeMenuOrderStale, CodeGroupNotFound, CodePhotoNotFound,
-	CodeStockItemNotFound, CodeStockItemRetired, CodeStockNameTaken, CodeInvalidStock,
+	CodeStockItemNotFound, CodeStockItemRetired, CodeStockNameTaken, CodeInvalidStock, CodeModifierNotFound,
 }
 
 // generate builds the whole file.
@@ -165,6 +165,9 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(stock.Item{}):          "StockItem",
 			reflect.TypeOf(stock.Recorded{}):      "StockRecorded",
 			reflect.TypeOf(stock.Movement{}):      "StockMovement",
+			reflect.TypeOf(stock.RecipePart{}):    "RecipePart",
+			reflect.TypeOf(stock.Recipe{}):        "Recipe",
+			reflect.TypeOf(stock.RecipeBook{}):    "RecipeBook",
 			reflect.TypeOf(order.CreditRequest{}): "CreditSelection",
 			reflect.TypeOf(floor.AreaSettings{}):  "AreaSettings",
 			reflect.TypeOf(floor.TableSettings{}): "TableSettings",
@@ -274,6 +277,7 @@ func generate() (*ts.Generator, error) {
 		// Stock.
 		stockItemRequest{}, movementRequest{}, stock.Item{}, stockItemsResponse{}, stockEditResponse{},
 		stock.Recorded{}, stock.Movement{}, movementsResponse{},
+		stock.RecipePart{}, stock.Recipe{}, stock.RecipeBook{}, recipeRequest{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},
