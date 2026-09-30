@@ -119,19 +119,20 @@ type InvoiceSeries struct {
 }
 
 type Item struct {
-	ID         int64
-	VenueID    int64
-	CategoryID int64
-	Name       string
-	Price      int64
-	Hsn        string
-	TaxClassID int64
-	StationID  int64
-	CourseID   int64
-	SortOrder  int64
-	Active     bool
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID           int64
+	VenueID      int64
+	CategoryID   int64
+	Name         string
+	Price        int64
+	Hsn          string
+	TaxClassID   int64
+	StationID    int64
+	CourseID     int64
+	SortOrder    int64
+	Active       bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	SoldOutUntil sql.NullTime
 }
 
 type ItemModifierGroup struct {

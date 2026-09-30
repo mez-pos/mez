@@ -5,6 +5,8 @@
 package menu
 
 import (
+	"time"
+
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 )
@@ -58,6 +60,10 @@ type Item struct {
 	Station    string // the station's code
 	Course     int64  // the course's number
 	Groups     []int64
+	// SoldOutUntil is when a sold-out item is back on sale: the start of the
+	// next trading day. Nil is on sale. The terminal compares it with its own
+	// clock, so the item comes back with no edit to the menu (ADR-109).
+	SoldOutUntil *time.Time
 }
 
 // ModifierGroup is a set of choices with bounds on how many to pick.

@@ -9,8 +9,9 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import type { LineModifier, LineResponse, MenuItemResponse } from "../../../shared/api-types";
-import { indexMenu } from "../../../shared/menu";
+import { indexMenu, isSoldOut } from "../../../shared/menu";
 import { Button, EmptyState, InboxIcon, SearchField, SearchIcon, useToast } from "../../../shared/ui";
+import { useClock } from "../../../shared/use-clock";
 import { useMenu } from "../../../shared/use-menu";
 import { CategoryRail } from "./CategoryRail";
 import { ItemGrid } from "./ItemGrid";
@@ -49,6 +50,8 @@ export function RegisterScreen() {
   const names = useMemo(() => tableNames(floor.data), [floor.data]);
   const [floorOpen, setFloorOpen] = useState(false);
   const index = useMemo(() => (menu.data ? indexMenu(menu.data) : null), [menu.data]);
+  // Once a minute, so a dish sold out yesterday is back when the trading day turns.
+  const now = useClock(60_000);
 
   const [chosen, setChosen] = useState<number | null>(null);
   const [query, setQuery] = useState("");
@@ -219,6 +222,7 @@ export function RegisterScreen() {
                 groupsFor={(item) => index?.groupsFor(item) ?? []}
                 stationName={(code) => stations.get(code) ?? code}
                 onTap={ringUp}
+                soldOut={(item) => isSoldOut(item, new Date(now))}
               />
             )}
             {shown.length === 0 && !searching && categories.length > 0 && (

@@ -82,3 +82,24 @@ func TradingDay(openedAt time.Time, loc *time.Location, dayStart time.Duration) 
 	}
 	return day.Format(dayFormat), nil
 }
+
+// NextDayStart is the moment the trading day after the one at now begins:
+// dayStart on the venue's wall clock, on the day after now's trading day.
+// Something good "for today" is good until then: sold out at 23:00, or at
+// 01:30 after midnight, is back on sale at the next dayStart, not at
+// midnight. On a daylight-saving night whose clocks skip dayStart, it is
+// the first moment after the gap, as time.Date normalises it.
+func NextDayStart(now time.Time, loc *time.Location, dayStart time.Duration) (time.Time, error) {
+	day, err := TradingDay(now, loc, dayStart)
+	if err != nil {
+		return time.Time{}, err
+	}
+	d, err := time.Parse(dayFormat, day)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("shift: reading trading day %q: %w", day, err)
+	}
+	h := int(dayStart / time.Hour)
+	m := int(dayStart % time.Hour / time.Minute)
+	s := int(dayStart % time.Minute / time.Second)
+	return time.Date(d.Year(), d.Month(), d.Day()+1, h, m, s, 0, loc), nil
+}

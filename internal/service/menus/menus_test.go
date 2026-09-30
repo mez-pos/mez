@@ -484,3 +484,53 @@ func categoryNames(e Editor) []string {
 	}
 	return out
 }
+
+// Sold out lasts until the next trading day starts where the venue is:
+// the fixture's clock is 12:00 in Kolkata, so 04:00 IST tomorrow, which
+// is 22:30 UTC today.
+func TestSoldOutForToday(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	cat := w.category(t, plain, "Food")
+	dosa := w.create(t, plain, w.item(plain, cat, "Dosa", 12000, ""))
+	want := time.Date(2026, 9, 30, 22, 30, 0, 0, time.UTC)
+
+	before := w.version(t, plain)
+	until, err := w.s.SetItemSoldOut(ctx, plain, dosa, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if until == nil || !until.Equal(want) {
+		t.Fatalf("until = %v, want %s", until, want)
+	}
+	if w.version(t, plain) != before+1 || len(w.nudged) == 0 {
+		t.Error("marking sold out is a menu edit: it bumps the version and nudges the stream")
+	}
+
+	m, err := w.d.Menu(ctx, plain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Items) != 1 || m.Items[0].SoldOutUntil == nil || !m.Items[0].SoldOutUntil.Equal(want) {
+		t.Errorf("the till's dosa = %+v; it stays on the menu, marked", m.Items)
+	}
+	if got := findItem(w.editor(t, plain), dosa).SoldOutUntil; got == nil || !got.Equal(want) {
+		t.Errorf("the editor's dosa sold out until %v", got)
+	}
+
+	back, err := w.s.SetItemSoldOut(ctx, plain, dosa, false)
+	if err != nil || back != nil {
+		t.Fatalf("on sale again = %v, %v", back, err)
+	}
+	if findItem(w.editor(t, plain), dosa).SoldOutUntil != nil {
+		t.Error("back on sale, it has no sold-out time")
+	}
+
+	if _, err := w.s.SetItemSoldOut(ctx, plain, 999, true); !errors.Is(err, ErrItemNotFound) {
+		t.Errorf("a missing item: %v", err)
+	}
+	other := w.create(t, gst, w.item(gst, w.elseCat, "Thali", 25000, "996331"))
+	if _, err := w.s.SetItemSoldOut(ctx, plain, other, true); !errors.Is(err, ErrItemNotFound) {
+		t.Errorf("another venue's item: %v", err)
+	}
+}

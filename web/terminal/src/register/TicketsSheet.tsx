@@ -3,7 +3,8 @@
 // at the counter, or at a table by way of the floor (terminal-floor.md). Tap one to bring it to the front; a held
 // one is taken off hold as it comes.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useClock } from "../../../shared/use-clock";
 import type { OpenOrder, OpenTicketsResponse, TicketSummary } from "../../../shared/api-types";
 import { Button, Money, Sheet, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
@@ -141,14 +142,4 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
       </div>
     </Sheet>
   );
-}
-
-/** The time, every `every` ms, for a list whose ages must move. */
-function useClock(every: number): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), every);
-    return () => clearInterval(id);
-  }, [every]);
-  return now;
 }

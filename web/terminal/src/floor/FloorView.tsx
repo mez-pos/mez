@@ -5,7 +5,8 @@
 // Move, Join and Part turn taps into moving a party and joining tables
 // (ADR-088) until Done.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useClock } from "../../../shared/use-clock";
 import { ApiError } from "../../../shared/api";
 import type { ChipTone } from "../../../shared/ui";
 import type { LiveFloorResponse, LiveTableResponse, TicketSummary } from "../../../shared/api-types";
@@ -419,14 +420,4 @@ function TableSheet({ table: t, tickets, names, now, lateAfter, floor, onTicket,
 function wordsOf(err: unknown): string {
   if (err instanceof ApiError || !(err instanceof Error)) return failureOf(err);
   return err.message;
-}
-
-/** The time, every `every` ms, for tiles whose minutes must move. */
-function useClock(every: number): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), every);
-    return () => clearInterval(id);
-  }, [every]);
-  return now;
 }

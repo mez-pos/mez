@@ -4,6 +4,8 @@
 import { useState } from "react";
 import type { EditorCategory, EditorItem, MenuEditor } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, Money } from "../../../shared/ui";
+import { isSoldOut } from "../../../shared/menu";
+import { useClock } from "../../../shared/use-clock";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
 import { itemsOf, moved, namesById, problemOf } from "./menu-logic";
@@ -22,6 +24,7 @@ export function ItemsTable({ menu, category, api, onEdit, onProblem }: ItemsTabl
   const items = itemsOf(menu, category.id);
   const ids = items.map((i) => i.id);
   const names = namesById(menu);
+  const now = new Date(useClock(60_000));
 
   const run = (fn: () => Promise<void>) => {
     setBusy(true);
@@ -42,6 +45,11 @@ export function ItemsTable({ menu, category, api, onEdit, onProblem }: ItemsTabl
         <span className="flex items-center gap-2">
           <span className={cx(!i.active && "text-fg-muted line-through")}>{i.name}</span>
           {!i.active && <span className="text-meta uppercase text-fg-faint">Retired</span>}
+          {i.active && isSoldOut(i, now) && (
+            <span className="text-meta font-semibold uppercase text-warning" title={`Back on sale ${new Date(i.sold_out_until!).toLocaleString()}`}>
+              Sold out today
+            </span>
+          )}
         </span>
       ),
     },
@@ -67,6 +75,11 @@ export function ItemsTable({ menu, category, api, onEdit, onProblem }: ItemsTabl
             <Button disabled={busy || index === ids.length - 1} aria-label={`Move ${i.name} down`} onClick={() => move(index, 1)}>
               <span aria-hidden="true">↓</span>
             </Button>
+            {i.active && (
+              <Button disabled={busy} onClick={() => run(() => api.setItemSoldOut(i.id, !isSoldOut(i, now)))}>
+                {isSoldOut(i, now) ? "Back on sale" : "Sold out"}
+              </Button>
+            )}
             <Button disabled={busy} onClick={() => run(() => api.setItemActive(i.id, !i.active))}>
               {i.active ? "Retire" : "Bring back"}
             </Button>

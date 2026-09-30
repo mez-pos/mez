@@ -1074,6 +1074,7 @@ export interface EditorItem {
   course_id: number;
   active: boolean;
   modifier_groups: number[];
+  sold_out_until?: string;
 }
 
 export interface EditorGroup {
@@ -1104,6 +1105,11 @@ export interface MenuModifierInput {
   name: string;
   price: Money;
   is_default: boolean;
+}
+
+export interface SoldOutResponse {
+  id: number;
+  sold_out_until?: string;
 }
 
 export interface AreaSettings {
@@ -1574,6 +1580,7 @@ export interface MenuItemResponse {
   hsn?: string;
   tax_exempt?: boolean;
   modifier_groups: number[];
+  sold_out_until?: string;
 }
 
 export interface MenuResponse {

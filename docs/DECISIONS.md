@@ -3028,3 +3028,29 @@ Because: a choice sheet the till can never complete is a stuck order at
 the counter; refusing it when it is saved is the cheap place.
 Cost: a negative choice price is not checked against the items that
 offer it, so a line can be priced below zero by its choices.
+
+## ADR-109 - Sold out is a time, and the till's clock ends it
+2026-09 · Status: accepted
+Decision: phase 10, Task 2d1 marks an item sold out for today by storing
+when it is back on sale (`items.sold_out_until`, migration 00021), not a
+flag.
+  - **Until the next trading day:** `shift.NextDayStart` gives the moment
+    the day after now's trading day begins, at `shift.DefaultDayStart`
+    (04:00) on the venue's wall clock. Sold out at 23:00 or at 01:30 is
+    back at 04:00, the same boundary the shift and Z-report use.
+  - **The till decides when it ends:** the menu carries `sold_out_until`;
+    `isSoldOut` compares it with the device's clock, re-read once a
+    minute. Nothing has to bump the menu version at 04:00, and an
+    unreadable time counts as on sale.
+  - **Marking is a menu edit** through ADR-106's door: the version bumps
+    and every till shows it at once (seen in the browser: the tile turned
+    sold out with no reload).
+  - **Sold out is not retired.** The tile stays in its place, struck, with
+    "Sold out" in words, and cannot be tapped, so staff can tell a guest.
+  - The server does not refuse ringing up a sold-out item: `AddLine` is
+    not checked against the menu at all yet (STATE). The till's disabled
+    tile is the only guard.
+Because: a flag would need someone, or a job, to clear it every morning;
+a time clears itself, and offline tills agree without asking the server.
+Cost: a till whose clock is wrong ends it at the wrong time; only the back
+office can mark it, not the till during service.

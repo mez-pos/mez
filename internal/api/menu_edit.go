@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/menus"
@@ -25,6 +26,7 @@ type MenuEditor interface {
 	UpdateGroup(ctx context.Context, venueID, id int64, in menus.GroupInput) error
 	SetGroupActive(ctx context.Context, venueID, id int64, active bool) error
 	SetItemGroups(ctx context.Context, venueID, itemID int64, ids []int64) error
+	SetItemSoldOut(ctx context.Context, venueID, id int64, soldOut bool) (*time.Time, error)
 }
 
 // WithMenuEditor mounts the menu editor (phase 10, Task 2a). It needs
@@ -47,6 +49,13 @@ type (
 	itemRequest     = menus.ItemInput
 	groupRequest    = menus.GroupInput
 )
+
+// soldOutResponse answers a sold-out change: when the item is back on
+// sale, or nothing when it already is.
+type soldOutResponse struct {
+	ID           int64      `json:"id"`
+	SoldOutUntil *time.Time `json:"sold_out_until,omitempty"`
+}
 
 // menuOrderRequest is a list of ids in the order they should show.
 type menuOrderRequest struct {
@@ -83,11 +92,28 @@ func (s *Server) mountMenuEditor(mux *http.ServeMux) {
 	handle("POST /api/v1/menu/items/{id}/retire", s.activateItem(false))
 	handle("POST /api/v1/menu/items/{id}/restore", s.activateItem(true))
 	handle("PUT /api/v1/menu/items/{id}/groups", s.setItemGroups)
+	handle("POST /api/v1/menu/items/{id}/sold-out", s.soldOut(true))
+	handle("POST /api/v1/menu/items/{id}/on-sale", s.soldOut(false))
 
 	handle("POST /api/v1/menu/groups", s.createGroup)
 	handle("PUT /api/v1/menu/groups/{id}", s.updateGroup)
 	handle("POST /api/v1/menu/groups/{id}/retire", s.activateGroup(false))
 	handle("POST /api/v1/menu/groups/{id}/restore", s.activateGroup(true))
+}
+
+func (s *Server) soldOut(soldOut bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := s.pathID(w, r, "id")
+		if !ok {
+			return
+		}
+		until, err := s.menuEditor.SetItemSoldOut(r.Context(), Meta(r).VenueID, id, soldOut)
+		if err != nil {
+			s.writeMenuEditError(w, r, err)
+			return
+		}
+		writeJSON(w, s.log, http.StatusOK, soldOutResponse{ID: id, SoldOutUntil: until})
+	}
 }
 
 func (s *Server) setItemGroups(w http.ResponseWriter, r *http.Request) {

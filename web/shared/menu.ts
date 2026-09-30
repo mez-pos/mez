@@ -58,3 +58,16 @@ export function indexMenu(menu: MenuResponse): MenuIndex {
       }),
   };
 }
+
+/**
+ * Whether an item is sold out at now: it carries the moment it is back on
+ * sale, the start of the next trading day (ADR-109), and is sold out until
+ * then. Compared with this device's clock, so it comes back the next
+ * morning without a menu edit. An unreadable time is treated as on sale:
+ * the till would rather ring up a dish than hide one it cannot explain.
+ */
+export function isSoldOut(item: { readonly sold_out_until?: string }, now: Date): boolean {
+  if (!item.sold_out_until) return false;
+  const until = Date.parse(item.sold_out_until);
+  return Number.isFinite(until) && until > now.getTime();
+}

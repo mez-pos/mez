@@ -34,6 +34,7 @@ export interface MenuEditorApi {
   createGroup: (input: MenuGroupInput) => Promise<number>;
   updateGroup: (id: number, input: MenuGroupInput) => Promise<void>;
   setGroupActive: (id: number, active: boolean) => Promise<void>;
+  setItemSoldOut: (id: number, soldOut: boolean) => Promise<void>;
 }
 
 export function useMenuEditor(): MenuEditorApi {
@@ -82,5 +83,7 @@ export function useMenuEditor(): MenuEditorApi {
     updateGroup: (id, input) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/groups/${id}`, input))),
     setGroupActive: (id, active) =>
       done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/groups/${id}/${active ? "restore" : "retire"}`))),
+    setItemSoldOut: (id, soldOut) =>
+      done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/items/${id}/${soldOut ? "sold-out" : "on-sale"}`))),
   };
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MenuItemResponse, MenuResponse } from "./api-types";
-import { indexMenu, isMenuStale } from "./menu";
+import { indexMenu, isMenuStale, isSoldOut } from "./menu";
 
 const rupees = (r: number) => ({ minor: r * 100, currency: "INR" });
 
@@ -54,4 +54,21 @@ describe("indexMenu", () => {
     expect(index.groupsFor(menu.items[1]!)).toEqual([]);
     expect(index.groupsFor(menu.items[2]!)).toEqual([]);
   });
+});
+
+describe("isSoldOut", () => {
+  const now = new Date("2026-09-30T12:00:00Z");
+  const tests: { name: string; until: string | undefined; want: boolean }[] = [
+    { name: "on sale", until: undefined, want: false },
+    { name: "until tomorrow morning", until: "2026-09-30T22:30:00Z", want: true },
+    { name: "a time already passed: back on sale", until: "2026-09-30T11:59:59Z", want: false },
+    { name: "exactly now: back on sale", until: "2026-09-30T12:00:00Z", want: false },
+    { name: "an empty time", until: "", want: false },
+    { name: "a time it cannot read", until: "tomorrow", want: false },
+  ];
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(isSoldOut(tt.until === undefined ? {} : { sold_out_until: tt.until }, now)).toBe(tt.want);
+    });
+  }
 });

@@ -51,7 +51,7 @@ ORDER BY sort_order, id;
 -- "Breakfast" at noon takes every breakfast item off the till with it.
 SELECT
     i.id, i.category_id, i.name, i.price, i.hsn,
-    i.tax_class_id, i.station_id, i.course_id, i.sort_order
+    i.tax_class_id, i.station_id, i.course_id, i.sort_order, i.sold_out_until
 FROM items i
 JOIN categories c ON c.venue_id = i.venue_id AND c.id = i.category_id
 WHERE i.venue_id = ? AND i.active = 1 AND c.active = 1
@@ -135,7 +135,7 @@ ORDER BY sort_order, id;
 -- name: EditorItems :many
 SELECT
     id, category_id, name, price, hsn,
-    tax_class_id, station_id, course_id, sort_order, active
+    tax_class_id, station_id, course_id, sort_order, active, sold_out_until
 FROM items
 WHERE venue_id = ?
 ORDER BY category_id, sort_order, id;
@@ -275,3 +275,10 @@ WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
 -- name: DetachItemGroups :exec
 DELETE FROM item_modifier_groups
 WHERE venue_id = ? AND item_id = ?;
+
+-- name: SetItemSoldOut :execrows
+--
+-- NULL puts it back on sale now; a time keeps it sold out until then.
+UPDATE items
+SET sold_out_until = sqlc.narg(until), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);

@@ -13,25 +13,26 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 2c: modifier groups** (ADR-108). Server: a group is
-saved whole with its choices (left-out choices are retired); items offer
-groups as one ordered list; `internal/domain/menu.CleanGroup` refuses a
-group its choices cannot satisfy. Screen: the Menu page has Items and
-Choices; a group form with choice rows; "Choices offered" in the item
-form. Also relaxed ADR-106's HSN rule: a well-formed HSN is kept on a
-non-GST venue (the demo menu's items were uneditable there). Tried in the
-browser on the demo menu: refused bounds, a group edited and saved, groups
-added and reordered on Latte; checked in the database in till order.
+**Phase 10, Task 2d1: sold out for today** (ADR-109). Task 2d is split
+into 2d1 and 2d2. Migration 00021 adds `items.sold_out_until`; the back
+office's item rows have Sold out / Back on sale; it lasts until the next
+trading day starts (`shift.NextDayStart`, 04:00 venue time). The register
+shows the tile struck with "Sold out" and will not ring it up, and brings
+it back by its own clock (`isSoldOut`, `shared/use-clock.ts`, which now
+also serves the floor and tickets sheet). Tried in the browser: marked
+over the API, the till's tile turned sold out live with no reload.
 
 ## Next task
 
-**Phase 10, Task 2d: availability and photos.** Sold out for today, apart
-from retiring an item; item photos stored beside the database and shown on
-the register. Likely to need splitting: photos alone touch storage,
-serving, the editor and the register.
+**Phase 10, Task 2d2: item photos.** Upload in the editor, stored beside
+the database, served with the menu, shown on the register tiles. Decide
+the size limit, formats and resizing first (no cgo: no libvips).
 
 ## Known broken / in progress
 
+- Sold out (ADR-109): only the back office can mark it, not the till; the
+  server does not refuse a sold-out item rung up (AddLine is unchecked);
+  a till with a wrong clock ends it at the wrong time.
 - Menu editor (ADR-106, ADR-107): no `Idempotency-Key` on
   its routes, as with printers. Duplicate item names are allowed. No
   write path yet for stations, courses or tax classes (Task 6). An item's

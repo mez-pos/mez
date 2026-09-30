@@ -3,6 +3,7 @@ package menus
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
@@ -90,6 +91,8 @@ type Item struct {
 	// ModifierGroups are the ids of the groups it offers, in the order its
 	// choice sheet shows them, retired groups included.
 	ModifierGroups []int64 `json:"modifier_groups"`
+	// SoldOutUntil is set while it is sold out for today (ADR-109).
+	SoldOutUntil *time.Time `json:"sold_out_until,omitempty"`
 }
 
 // Editor reads the venue's menu for editing.
@@ -143,6 +146,10 @@ func (s *Service) Editor(ctx context.Context, venueID int64) (Editor, error) {
 			Price: money.Amount{Minor: r.Price, Currency: venue.Currency}, HSN: r.Hsn,
 			TaxClassID: r.TaxClassID, StationID: r.StationID, CourseID: r.CourseID, Active: r.Active,
 			ModifierGroups: linked,
+		}
+		if r.SoldOutUntil.Valid {
+			until := r.SoldOutUntil.Time.UTC()
+			out.Items[i].SoldOutUntil = &until
 		}
 	}
 	return out, nil

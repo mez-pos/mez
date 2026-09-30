@@ -89,6 +89,16 @@ group of choices**; Add a category and Add an item are hidden.
   listed, marked; **Offer another** is a select of the active groups not
   yet offered. Saved after the item, as one ordered list.
 
+## Sold out for today (Task 2d1)
+
+- An active item's row has **Sold out** beside Retire; while sold out, its
+  name carries "SOLD OUT TODAY" in the warning colour (the time it returns
+  on hover) and the button reads **Back on sale**.
+- Sold out lasts until the next trading day starts (04:00 in the venue's
+  timezone, ADR-109), then the item is on sale again with no edit. Retire
+  is the other thing: off the menu until someone brings it back.
+- It is a menu edit: every till learns at once through `menu_changed`.
+
 ## Categories (`Modal`, sm)
 
 Add and Rename: one field, Name. Retire asks first (`Confirm`): "Retire

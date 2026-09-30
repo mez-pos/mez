@@ -23,6 +23,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/menu"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 )
@@ -228,6 +229,39 @@ func (s *Service) SetItemActive(ctx context.Context, venueID, id int64, active b
 		n, err := q.SetItemActive(ctx, gen.SetItemActiveParams{Active: active, Now: s.now(), VenueID: venueID, ID: id})
 		return oneRow(n, err, ErrItemNotFound)
 	})
+}
+
+// SetItemSoldOut marks an item sold out until the next trading day starts
+// in the venue's timezone, or puts it back on sale now. It returns when it
+// comes back, or nil. Retiring is separate: a sold-out item stays on the
+// menu, shown as sold out, and returns by itself (ADR-109).
+func (s *Service) SetItemSoldOut(ctx context.Context, venueID, id int64, soldOut bool) (*time.Time, error) {
+	var until *time.Time
+	err := s.edit(ctx, venueID, func(q *gen.Queries) error {
+		at := sql.NullTime{}
+		if soldOut {
+			venue, err := q.VenueByID(ctx, venueID)
+			if err != nil {
+				return fmt.Errorf("menus: reading venue %d: %w", venueID, err)
+			}
+			loc, err := time.LoadLocation(venue.Timezone)
+			if err != nil {
+				return fmt.Errorf("menus: venue %d timezone %q: %w", venueID, venue.Timezone, err)
+			}
+			next, err := shift.NextDayStart(s.now(), loc, shift.DefaultDayStart)
+			if err != nil {
+				return fmt.Errorf("menus: the next trading day: %w", err)
+			}
+			next = next.UTC()
+			at, until = sql.NullTime{Time: next, Valid: true}, &next
+		}
+		n, err := q.SetItemSoldOut(ctx, gen.SetItemSoldOutParams{Until: at, Now: s.now(), VenueID: venueID, ID: id})
+		return oneRow(n, err, ErrItemNotFound)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return until, nil
 }
 
 // OrderItems puts a category's items in the order given. ids must name

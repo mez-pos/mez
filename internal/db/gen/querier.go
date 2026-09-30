@@ -232,6 +232,9 @@ type Querier interface {
 	SetCategoryActive(ctx context.Context, arg SetCategoryActiveParams) (int64, error)
 	SetCategorySort(ctx context.Context, arg SetCategorySortParams) (int64, error)
 	SetItemActive(ctx context.Context, arg SetItemActiveParams) (int64, error)
+	//
+	// NULL puts it back on sale now; a time keeps it sold out until then.
+	SetItemSoldOut(ctx context.Context, arg SetItemSoldOutParams) (int64, error)
 	SetItemSort(ctx context.Context, arg SetItemSortParams) (int64, error)
 	SetModifierGroupActive(ctx context.Context, arg SetModifierGroupActiveParams) (int64, error)
 	// Retiring also stops it printing receipts; its stations keep pointing at

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
@@ -249,4 +250,33 @@ func TestModifierGroupsOverHTTP(t *testing.T) {
 			t.Errorf("status %d, want 403", rec.Code)
 		}
 	})
+}
+
+func TestSoldOutOverHTTP(t *testing.T) {
+	m := newEditorTill(t)
+	food := m.edit(t, http.MethodPost, "/api/v1/menu/categories", `{"name":"Food"}`, http.StatusCreated)
+	dosa := m.edit(t, http.MethodPost, "/api/v1/menu/items", m.itemBody(food, "Dosa", 12000), http.StatusCreated)
+
+	rec := send(m.handler, http.MethodPost, fmt.Sprintf("/api/v1/menu/items/%d/sold-out", dosa), "", m.owner)
+	var out soldOutResponse
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &out) != nil || out.SoldOutUntil == nil {
+		t.Fatalf("sold out: %d %s", rec.Code, rec.Body)
+	}
+	rec = send(m.handler, http.MethodGet, "/api/v1/menu", "", m.asDevice())
+	var till menuResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &till); err != nil {
+		t.Fatal(err)
+	}
+	if len(till.Items) != 1 || till.Items[0].SoldOutUntil == nil || !till.Items[0].SoldOutUntil.Equal(*out.SoldOutUntil) {
+		t.Errorf("till items = %+v", till.Items)
+	}
+
+	rec = send(m.handler, http.MethodPost, fmt.Sprintf("/api/v1/menu/items/%d/on-sale", dosa), "", m.owner)
+	if rec.Code != http.StatusOK || strings.Contains(rec.Body.String(), "sold_out_until") {
+		t.Errorf("on sale: %d %s", rec.Code, rec.Body)
+	}
+	rec = send(m.handler, http.MethodPost, "/api/v1/menu/items/999/sold-out", "", m.owner)
+	if rec.Code != http.StatusNotFound || errorOf(t, rec).Code != CodeItemNotFound {
+		t.Errorf("missing item: %d %s", rec.Code, rec.Body)
+	}
 }

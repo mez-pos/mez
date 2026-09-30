@@ -259,7 +259,7 @@ func generate() (*ts.Generator, error) {
 		// The menu editor.
 		categoryRequest{}, itemRequest{}, menuOrderRequest{}, menuEditResponse{}, menus.Editor{},
 		menus.Station{}, menus.Course{}, menus.TaxClass{}, menus.Category{}, menus.Item{},
-		groupRequest{}, menus.ModifierInput{}, menus.Group{}, menus.Modifier{},
+		groupRequest{}, menus.ModifierInput{}, menus.Group{}, menus.Modifier{}, soldOutResponse{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},

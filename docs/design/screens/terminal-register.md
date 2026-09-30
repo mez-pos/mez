@@ -156,6 +156,11 @@ takes the item, Modify, the choice, Save.
   indicator in the shell header says why.
 - **Permission denied:** `order.open` is needed to ring up; a refusal shows
   on the line as its reason.
+- **Sold out** (phase 10, Task 2d1, ADR-109): the tile stays in its place,
+  its name struck and muted, "SOLD OUT" under it in the warning colour, and
+  it cannot be tapped (a screen reader hears "Latte, sold out"). The till
+  compares the item's `sold_out_until` with its own clock once a minute, so
+  the tile comes back by itself when the trading day turns.
 
 ## Constraints
 
