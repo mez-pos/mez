@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
@@ -23,6 +24,26 @@ type Editor struct {
 	TaxClasses []TaxClass `json:"tax_classes"`
 	Categories []Category `json:"categories"`
 	Items      []Item     `json:"items"`
+	// Groups are every modifier group, retired ones included, by name.
+	Groups []Group `json:"modifier_groups"`
+}
+
+// Group is a modifier group with the choices it offers, in order.
+type Group struct {
+	ID        int64      `json:"id"`
+	Name      string     `json:"name"`
+	MinSelect int64      `json:"min_select"`
+	MaxSelect int64      `json:"max_select"`
+	Active    bool       `json:"active"`
+	Modifiers []Modifier `json:"modifiers"`
+}
+
+// Modifier is one choice on offer.
+type Modifier struct {
+	ID        int64        `json:"id"`
+	Name      string       `json:"name"`
+	Price     money.Amount `json:"price"`
+	IsDefault bool         `json:"is_default"`
 }
 
 // Station is where an item is made.
@@ -66,8 +87,8 @@ type Item struct {
 	StationID  int64        `json:"station_id"`
 	CourseID   int64        `json:"course_id"`
 	Active     bool         `json:"active"`
-	// ModifierGroups are the ids of the groups it offers, in order. They are
-	// edited in Task 2c; here they are shown.
+	// ModifierGroups are the ids of the groups it offers, in the order its
+	// choice sheet shows them, retired groups included.
 	ModifierGroups []int64 `json:"modifier_groups"`
 }
 
@@ -94,6 +115,7 @@ func (s *Service) Editor(ctx context.Context, venueID int64) (Editor, error) {
 		TaxClasses: make([]TaxClass, len(rows.TaxClasses)),
 		Categories: make([]Category, len(rows.Categories)),
 		Items:      make([]Item, len(rows.Items)),
+		Groups:     groupsOf(rows, venue.Currency),
 	}
 	for i, r := range rows.Stations {
 		out.Stations[i] = Station{ID: r.ID, Code: r.Code, Name: r.Name, Active: r.Active}
@@ -124,4 +146,23 @@ func (s *Service) Editor(ctx context.Context, venueID int64) (Editor, error) {
 		}
 	}
 	return out, nil
+}
+
+// groupsOf is every group with its choices on offer, in order.
+func groupsOf(rows db.MenuEditorRows, currency string) []Group {
+	choices := map[int64][]Modifier{}
+	for _, m := range rows.Modifiers {
+		choices[m.GroupID] = append(choices[m.GroupID], Modifier{
+			ID: m.ID, Name: m.Name, Price: money.Amount{Minor: m.Price, Currency: currency}, IsDefault: m.IsDefault,
+		})
+	}
+	out := make([]Group, len(rows.Groups))
+	for i, g := range rows.Groups {
+		mods := choices[g.ID]
+		if mods == nil {
+			mods = []Modifier{}
+		}
+		out[i] = Group{ID: g.ID, Name: g.Name, MinSelect: g.MinSelect, MaxSelect: g.MaxSelect, Active: g.Active, Modifiers: mods}
+	}
+	return out
 }

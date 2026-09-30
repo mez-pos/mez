@@ -3,7 +3,8 @@
 Where the owner keeps what the venue sells: the categories that are the
 register's tabs, and the items in each, with price, tax, where each is made
 and which course. Built in phase 10 Task 2b over the server of Task 2a
-(ADR-106). Modifier groups are Task 2c; sold out and photos are Task 2d.
+(ADR-106); groups of choices were added in Task 2c (ADR-108). Sold out
+and photos are Task 2d.
 
 ## Purpose
 
@@ -61,6 +62,32 @@ that needs one; hint "4, 6 or 8 digits. Every GST invoice line shows it.");
 - Every other refusal is the server's words under its field.
 - A new item starts in the selected category, with the first active
   station, the first course and the first tax class chosen.
+
+## Choices (Task 2c)
+
+A switch under the header, **Items** and **Choices** (`aria-pressed`),
+changes what the page shows. On Choices the primary button is **Add a
+group of choices**; Add a category and Add an item are hidden.
+
+- **The groups table:** Group (retired struck, with "Retired"), Asks
+  ("Pick 1", "Optional, up to 2", "Pick 1 to 3"), Choices (each name, its
+  price change in `Money` when not zero, "(to start)" on a default),
+  Items (how many offer it, mono), and **Edit**, **Retire** or **Bring
+  back**. No confirm on retire: it is one click back, and the items keep
+  offering it when it returns.
+- **The group form** (`Modal`, md): Name; **Fewest to pick** (0 makes it
+  optional) and **Most to pick**, mono; **Choices**, one row each: name,
+  price change (40, -20, or empty for none), **Picked to start**, arrows,
+  **Remove**; **Add a choice**. A refusal about one choice shows on its
+  row. On an edit, a line says how many items offer it and that open
+  tickets keep what they were rung up with. Removing a choice retires it.
+- **The server refuses** a group whose choices cannot meet its bounds:
+  more to pick than it offers, more picked to start than may be picked,
+  two choices with one name (`internal/domain/menu/group.go`).
+- **In the item form**, "Choices offered": the item's groups in choice
+  sheet order, each with its rule, arrows and Remove; a retired one stays
+  listed, marked; **Offer another** is a select of the active groups not
+  yet offered. Saved after the item, as one ordered list.
 
 ## Categories (`Modal`, sm)
 

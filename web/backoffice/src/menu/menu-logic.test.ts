@@ -51,6 +51,7 @@ const menu: MenuEditor = {
     { id: 11, name: "Breakfast", active: false },
   ],
   items: [item(100, 10, "Latte", 18000), item(101, 10, "Mocha", 20000), item(102, 11, "Dosa", 12000, { station_id: 1 })],
+  modifier_groups: [],
 };
 
 describe("itemsOf and selectedCategory", () => {
@@ -160,6 +161,9 @@ describe("problemOf", () => {
 
   it("puts a field's refusal under that field", () => {
     expect(problemOf(refusal("invalid_menu", "hsn"))).toEqual({ field: "hsn", message: "The server's words." });
+  });
+  it("puts a refusal of the item's groups under them", () => {
+    expect(problemOf(refusal("invalid_menu", "ids")).field).toBe("ids");
   });
   it("puts a refusal about no field over the form", () => {
     expect(problemOf(refusal("item_not_found"))).toEqual({ field: null, message: "The server's words." });

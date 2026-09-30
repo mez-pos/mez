@@ -21,6 +21,7 @@ import (
 
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/menu"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
@@ -43,9 +44,10 @@ type Invalid struct {
 
 func (e *Invalid) Error() string { return e.Field + ": " + e.Message }
 
-// MaxNameLength is the longest category or item name, in characters. It
-// fits a register tile and a ticket line.
-const MaxNameLength = 60
+// MaxNameLength is the longest category or item name, in characters: the
+// same limit as a modifier group's, which fits a register tile and a
+// ticket line.
+const MaxNameLength = menu.MaxNameLength
 
 // Clock is where the service gets the time.
 type Clock interface{ Now() time.Time }
@@ -266,8 +268,10 @@ func (s *Service) edit(ctx context.Context, venueID int64, fn func(q *gen.Querie
 func (s *Service) now() time.Time { return s.clock.Now().UTC() }
 
 // checkItem cleans an item and checks everything it names belongs to the
-// venue and can be used. An HSN is required exactly where the venue's tax
-// profile prints one on every line, and refused elsewhere.
+// venue and can be used. An HSN is required where the venue's tax profile
+// prints one on every line; elsewhere it may stay, if well formed, so a
+// menu written for GST (the demo menu, or a venue that changed profile)
+// can still be edited (ADR-108).
 func (s *Service) checkItem(ctx context.Context, q *gen.Queries, venueID int64, in ItemInput) (ItemInput, error) {
 	name, err := cleanName(in.Name)
 	if err != nil {
@@ -296,8 +300,8 @@ func (s *Service) checkItem(ctx context.Context, q *gen.Queries, venueID int64, 
 	switch needs := tax.NeedsHSN(taxes.Profile); {
 	case needs && !tax.ValidHSN(in.HSN):
 		return ItemInput{}, &Invalid{"hsn", "Every item needs an HSN or SAC code of 4, 6 or 8 digits: invoices show it."}
-	case !needs && in.HSN != "":
-		return ItemInput{}, &Invalid{"hsn", "This venue's tax profile has no HSN codes. Leave it empty."}
+	case !needs && in.HSN != "" && !tax.ValidHSN(in.HSN):
+		return ItemInput{}, &Invalid{"hsn", "An HSN or SAC code is 4, 6 or 8 digits. It is not needed here; you can leave it empty."}
 	}
 
 	return in, s.checkRefs(ctx, q, venueID, in)

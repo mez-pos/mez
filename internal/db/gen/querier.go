@@ -107,6 +107,7 @@ type Querier interface {
 	// projection (ADR-088).
 	DeleteOrderTables(ctx context.Context, orderID int64) error
 	DeleteSetting(ctx context.Context, arg DeleteSettingParams) error
+	DetachItemGroups(ctx context.Context, arg DetachItemGroupsParams) error
 	DeviceByID(ctx context.Context, id int64) (Device, error)
 	DeviceByTokenHash(ctx context.Context, tokenHash string) (Device, error)
 	//
@@ -121,6 +122,10 @@ type Querier interface {
 	DuePrintJobs(ctx context.Context, now time.Time) ([]DuePrintJobsRow, error)
 	EditorCategories(ctx context.Context, venueID int64) ([]EditorCategoriesRow, error)
 	EditorItems(ctx context.Context, venueID int64) ([]EditorItemsRow, error)
+	// Modifier groups in the editor (phase 10, Task 2c). A group's choices are
+	// saved with it: a choice left out is retired, not deleted, so a line that
+	// chose it still names something.
+	EditorModifierGroups(ctx context.Context, venueID int64) ([]EditorModifierGroupsRow, error)
 	// The back office's editor reads everything, retired rows included, so a
 	// retired item can be brought back. db.DB.MenuEditor runs these in one read
 	// transaction with MenuVersion.
@@ -131,6 +136,7 @@ type Querier interface {
 	// Records how a send went. Only a job still printing can finish.
 	FinishPrintJob(ctx context.Context, arg FinishPrintJobParams) (int64, error)
 	FloorVersion(ctx context.Context, venueID int64) (int64, error)
+	GroupForEdit(ctx context.Context, arg GroupForEditParams) (GroupForEditRow, error)
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
@@ -157,6 +163,7 @@ type Querier interface {
 	//
 	// A venue whose menu has never been written has no row, and is at 1.
 	MenuVersion(ctx context.Context, venueID int64) (int64, error)
+	ModifierIDsOfGroup(ctx context.Context, arg ModifierIDsOfGroupParams) ([]int64, error)
 	NextCategorySort(ctx context.Context, venueID int64) (int64, error)
 	// The invoice series counters and the register of numbers issued.
 	// Allocates the next number in a series in one statement: the first call for
@@ -210,6 +217,7 @@ type Querier interface {
 	// On start, jobs a crash left printing go back to queued. Whether their
 	// bytes reached the printer is unknown; printing twice beats never.
 	RequeueStalePrintJobs(ctx context.Context, now time.Time) (int64, error)
+	RetireModifier(ctx context.Context, arg RetireModifierParams) (int64, error)
 	// A person's retry: a failed or dead job back to the queue with its tries
 	// restored, on the printer given (the one it had, or one set up since).
 	RetryPrintJob(ctx context.Context, arg RetryPrintJobParams) (int64, error)
@@ -225,6 +233,7 @@ type Querier interface {
 	SetCategorySort(ctx context.Context, arg SetCategorySortParams) (int64, error)
 	SetItemActive(ctx context.Context, arg SetItemActiveParams) (int64, error)
 	SetItemSort(ctx context.Context, arg SetItemSortParams) (int64, error)
+	SetModifierGroupActive(ctx context.Context, arg SetModifierGroupActiveParams) (int64, error)
 	// Retiring also stops it printing receipts; its stations keep pointing at
 	// it, and print nowhere until given another (StationPrinter needs active).
 	SetPrinterActive(ctx context.Context, arg SetPrinterActiveParams) (int64, error)
@@ -282,6 +291,10 @@ type Querier interface {
 	// (docs/02-domain.md, "Prices and the snapshot rule"); this changes only
 	// what the next line copies.
 	UpdateItem(ctx context.Context, arg UpdateItemParams) (int64, error)
+	//
+	// Saving a choice also brings it back: one the owner lists is on offer.
+	UpdateModifier(ctx context.Context, arg UpdateModifierParams) (int64, error)
+	UpdateModifierGroup(ctx context.Context, arg UpdateModifierGroupParams) (int64, error)
 	// Brings the index columns up to the projection just appended. The guard on
 	// the previous last_seq makes a write from a stale read touch no row, which
 	// the caller reports as a conflict rather than moving the index backwards.

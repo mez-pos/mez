@@ -175,3 +175,78 @@ func TestWithoutAMenuEditorTheRoutesDoNotExist(t *testing.T) {
 		t.Errorf("status %d, want 404", rec.Code)
 	}
 }
+
+// TestModifierGroupsOverHTTP: the owner builds a group, offers it on an
+// item, and the terminal's menu carries it; refusals name their row.
+func TestModifierGroupsOverHTTP(t *testing.T) {
+	m := newEditorTill(t)
+	food := m.edit(t, http.MethodPost, "/api/v1/menu/categories", `{"name":"Coffee"}`, http.StatusCreated)
+	latte := m.edit(t, http.MethodPost, "/api/v1/menu/items", m.itemBody(food, "Latte", 18000), http.StatusCreated)
+	milk := m.edit(t, http.MethodPost, "/api/v1/menu/groups",
+		`{"name":"Milk","min_select":1,"max_select":1,"modifiers":[`+
+			`{"name":"Dairy","price":{"minor":0,"currency":"INR"},"is_default":true},`+
+			`{"name":"Oat","price":{"minor":4000,"currency":"INR"},"is_default":false}]}`, http.StatusCreated)
+	m.edit(t, http.MethodPut, fmt.Sprintf("/api/v1/menu/items/%d/groups", latte), fmt.Sprintf(`{"ids":[%d]}`, milk), http.StatusOK)
+
+	e := m.editor(t)
+	if len(e.Groups) != 1 || len(e.Groups[0].Modifiers) != 2 || e.Groups[0].Modifiers[1].Price.Minor != 4000 {
+		t.Fatalf("editor groups = %+v", e.Groups)
+	}
+	oat := e.Groups[0].Modifiers[1].ID
+
+	rec := send(m.handler, http.MethodGet, "/api/v1/menu", "", m.asDevice())
+	var till menuResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &till); err != nil {
+		t.Fatal(err)
+	}
+	if len(till.Items) != 1 || len(till.Items[0].ModifierGroups) != 1 || till.Items[0].ModifierGroups[0] != milk || len(till.ModifierGroups) != 1 {
+		t.Errorf("till = items %+v, groups %+v", till.Items, till.ModifierGroups)
+	}
+
+	// Drop dairy, keep oat by id: one choice left, and min 1 still met.
+	m.edit(t, http.MethodPut, fmt.Sprintf("/api/v1/menu/groups/%d", milk),
+		fmt.Sprintf(`{"name":"Milk","min_select":1,"max_select":1,"modifiers":[{"id":%d,"name":"Oat","price":{"minor":4500,"currency":"INR"},"is_default":true}]}`, oat),
+		http.StatusOK)
+	m.edit(t, http.MethodPost, fmt.Sprintf("/api/v1/menu/groups/%d/retire", milk), "", http.StatusOK)
+	m.edit(t, http.MethodPost, fmt.Sprintf("/api/v1/menu/groups/%d/restore", milk), "", http.StatusOK)
+	if g := m.editor(t).Groups[0]; len(g.Modifiers) != 1 || g.Modifiers[0].ID != oat || g.Modifiers[0].Price.Minor != 4500 || !g.Active {
+		t.Errorf("after edits = %+v", g)
+	}
+
+	tests := []struct {
+		name, method, path, body string
+		status                   int
+		code                     ErrorCode
+		field                    string
+	}{
+		{"asks for more than it offers", http.MethodPost, "/api/v1/menu/groups",
+			`{"name":"X","min_select":2,"max_select":2,"modifiers":[{"name":"A","price":{"minor":0,"currency":"INR"},"is_default":false}]}`,
+			http.StatusUnprocessableEntity, CodeInvalidMenu, "min_select"},
+		{"a nameless choice", http.MethodPost, "/api/v1/menu/groups",
+			`{"name":"X","min_select":0,"max_select":1,"modifiers":[{"name":"","price":{"minor":0,"currency":"INR"},"is_default":false}]}`,
+			http.StatusUnprocessableEntity, CodeInvalidMenu, "modifiers.0.name"},
+		{"a missing group", http.MethodPost, "/api/v1/menu/groups/999/retire", "", http.StatusNotFound, CodeGroupNotFound, ""},
+		{"a group twice on an item", http.MethodPut, fmt.Sprintf("/api/v1/menu/items/%d/groups", latte), fmt.Sprintf(`{"ids":[%d,%d]}`, milk, milk),
+			http.StatusUnprocessableEntity, CodeInvalidMenu, "ids"},
+		{"groups on a missing item", http.MethodPut, "/api/v1/menu/items/999/groups", `{"ids":[]}`, http.StatusNotFound, CodeItemNotFound, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := send(m.handler, tt.method, tt.path, tt.body, m.owner)
+			if rec.Code != tt.status {
+				t.Fatalf("status %d %s, want %d", rec.Code, rec.Body, tt.status)
+			}
+			if got := errorOf(t, rec); got.Code != tt.code || got.Field != tt.field {
+				t.Errorf("error = %+v, want %s on %q", got, tt.code, tt.field)
+			}
+		})
+	}
+
+	t.Run("a cashier may not", func(t *testing.T) {
+		cashier := m.asStaff(m.signIn(t, "2468").Token)
+		rec := send(m.handler, http.MethodPost, fmt.Sprintf("/api/v1/menu/groups/%d/retire", milk), "", cashier)
+		if rec.Code != http.StatusForbidden {
+			t.Errorf("status %d, want 403", rec.Code)
+		}
+	})
+}

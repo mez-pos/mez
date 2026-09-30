@@ -31,7 +31,7 @@ Phase 09.
     (`backoffice-menu.md`). Categories down the side, items in a dense
     table, an item form. A price change says, where it is made, that open
     tickets keep the price they were rung up at.
-  - [ ] **Task 2c: Modifier groups.** Server and screen: groups, their
+  - [x] **Task 2c: Modifier groups.** Server and screen: groups, their
     choices and bounds, and which items offer them.
   - [ ] **Task 2d: Availability and photos.** Sold out for today, apart
     from retiring an item; item photos stored beside the database and

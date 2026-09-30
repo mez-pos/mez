@@ -4,7 +4,14 @@
 // first.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { MenuCategoryInput, MenuEditResponse, MenuEditor, MenuItemInput, MenuOrderRequest } from "../../../shared/api-types";
+import type {
+  MenuCategoryInput,
+  MenuEditResponse,
+  MenuEditor,
+  MenuGroupInput,
+  MenuItemInput,
+  MenuOrderRequest,
+} from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 
@@ -23,6 +30,10 @@ export interface MenuEditorApi {
   updateItem: (id: number, input: MenuItemInput) => Promise<void>;
   setItemActive: (id: number, active: boolean) => Promise<void>;
   orderItems: (categoryId: number, ids: number[]) => Promise<void>;
+  setItemGroups: (itemId: number, ids: number[]) => Promise<void>;
+  createGroup: (input: MenuGroupInput) => Promise<number>;
+  updateGroup: (id: number, input: MenuGroupInput) => Promise<void>;
+  setGroupActive: (id: number, active: boolean) => Promise<void>;
 }
 
 export function useMenuEditor(): MenuEditorApi {
@@ -66,5 +77,10 @@ export function useMenuEditor(): MenuEditorApi {
       done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/items/${id}/${active ? "restore" : "retire"}`))),
     orderItems: (categoryId, ids) =>
       done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/categories/${categoryId}/items/order`, order(ids)))),
+    setItemGroups: (itemId, ids) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/items/${itemId}/groups`, order(ids)))),
+    createGroup: (input) => edit(() => store.api.post<MenuEditResponse>("/api/v1/menu/groups", input)),
+    updateGroup: (id, input) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/groups/${id}`, input))),
+    setGroupActive: (id, active) =>
+      done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/groups/${id}/${active ? "restore" : "retire"}`))),
   };
 }

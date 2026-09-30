@@ -21,6 +21,10 @@ type MenuEditor interface {
 	UpdateItem(ctx context.Context, venueID, id int64, in menus.ItemInput) error
 	SetItemActive(ctx context.Context, venueID, id int64, active bool) error
 	OrderItems(ctx context.Context, venueID, categoryID int64, ids []int64) error
+	CreateGroup(ctx context.Context, venueID int64, in menus.GroupInput) (int64, error)
+	UpdateGroup(ctx context.Context, venueID, id int64, in menus.GroupInput) error
+	SetGroupActive(ctx context.Context, venueID, id int64, active bool) error
+	SetItemGroups(ctx context.Context, venueID, itemID int64, ids []int64) error
 }
 
 // WithMenuEditor mounts the menu editor (phase 10, Task 2a). It needs
@@ -35,11 +39,13 @@ const (
 	CodeItemNotFound     ErrorCode = "item_not_found"
 	CodeInvalidMenu      ErrorCode = "invalid_menu"
 	CodeMenuOrderStale   ErrorCode = "menu_order_stale"
+	CodeGroupNotFound    ErrorCode = "modifier_group_not_found"
 )
 
 type (
 	categoryRequest = menus.CategoryInput
 	itemRequest     = menus.ItemInput
+	groupRequest    = menus.GroupInput
 )
 
 // menuOrderRequest is a list of ids in the order they should show.
@@ -76,6 +82,49 @@ func (s *Server) mountMenuEditor(mux *http.ServeMux) {
 	handle("PUT /api/v1/menu/items/{id}", s.updateItem)
 	handle("POST /api/v1/menu/items/{id}/retire", s.activateItem(false))
 	handle("POST /api/v1/menu/items/{id}/restore", s.activateItem(true))
+	handle("PUT /api/v1/menu/items/{id}/groups", s.setItemGroups)
+
+	handle("POST /api/v1/menu/groups", s.createGroup)
+	handle("PUT /api/v1/menu/groups/{id}", s.updateGroup)
+	handle("POST /api/v1/menu/groups/{id}/retire", s.activateGroup(false))
+	handle("POST /api/v1/menu/groups/{id}/restore", s.activateGroup(true))
+}
+
+func (s *Server) setItemGroups(w http.ResponseWriter, r *http.Request) {
+	var req menuOrderRequest
+	id, ok := s.pathID(w, r, "id")
+	if !ok || !s.decode(w, r, &req) {
+		return
+	}
+	s.menuEdited(w, r, http.StatusOK, id, s.menuEditor.SetItemGroups(r.Context(), Meta(r).VenueID, id, req.IDs))
+}
+
+func (s *Server) createGroup(w http.ResponseWriter, r *http.Request) {
+	var req groupRequest
+	if !s.decode(w, r, &req) {
+		return
+	}
+	id, err := s.menuEditor.CreateGroup(r.Context(), Meta(r).VenueID, req)
+	s.menuEdited(w, r, http.StatusCreated, id, err)
+}
+
+func (s *Server) updateGroup(w http.ResponseWriter, r *http.Request) {
+	var req groupRequest
+	id, ok := s.pathID(w, r, "id")
+	if !ok || !s.decode(w, r, &req) {
+		return
+	}
+	s.menuEdited(w, r, http.StatusOK, id, s.menuEditor.UpdateGroup(r.Context(), Meta(r).VenueID, id, req))
+}
+
+func (s *Server) activateGroup(active bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := s.pathID(w, r, "id")
+		if !ok {
+			return
+		}
+		s.menuEdited(w, r, http.StatusOK, id, s.menuEditor.SetGroupActive(r.Context(), Meta(r).VenueID, id, active))
+	}
 }
 
 func (s *Server) readMenuEditor(w http.ResponseWriter, r *http.Request) {
@@ -179,6 +228,8 @@ func (s *Server) writeMenuEditError(w http.ResponseWriter, r *http.Request, err 
 		writeError(w, s.log, http.StatusNotFound, CodeCategoryNotFound, "No such category.")
 	case errors.Is(err, menus.ErrItemNotFound):
 		writeError(w, s.log, http.StatusNotFound, CodeItemNotFound, "No such item.")
+	case errors.Is(err, menus.ErrGroupNotFound):
+		writeError(w, s.log, http.StatusNotFound, CodeGroupNotFound, "No such group of choices.")
 	case errors.Is(err, menus.ErrStaleOrder):
 		writeError(w, s.log, http.StatusConflict, CodeMenuOrderStale,
 			"The menu changed since you opened it. Reload and put it in order again.")

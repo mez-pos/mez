@@ -13,29 +13,31 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 2b: the menu editor screen** (ADR-107, spec
-`docs/design/screens/backoffice-menu.md`). `/menu` in the back office
-(`g m`): categories with item counts, the selected one's items in a table
-(price, tax, HSN on a GST venue, station, course), add, edit, rename,
-retire with a confirm for a category, bring back, and arrows to reorder.
-Editing a price shows, before Save, that open tickets keep the old price.
-`parseAmount` in `web/shared/money.ts` reads typed prices without floats.
-Tried in the browser on a GST demo venue: price change and notice, the
-server's HSN refusal under its field, reorder, retire a category. Fixed on
-the way: the shell's content column stretched with a wide table.
+**Phase 10, Task 2c: modifier groups** (ADR-108). Server: a group is
+saved whole with its choices (left-out choices are retired); items offer
+groups as one ordered list; `internal/domain/menu.CleanGroup` refuses a
+group its choices cannot satisfy. Screen: the Menu page has Items and
+Choices; a group form with choice rows; "Choices offered" in the item
+form. Also relaxed ADR-106's HSN rule: a well-formed HSN is kept on a
+non-GST venue (the demo menu's items were uneditable there). Tried in the
+browser on the demo menu: refused bounds, a group edited and saved, groups
+added and reordered on Latte; checked in the database in till order.
 
 ## Next task
 
-**Phase 10, Task 2c: modifier groups.** Server and screen: groups, their
-choices and bounds, and which items offer them. The editor already reads
-`modifier_groups` ids per item (ADR-106).
+**Phase 10, Task 2d: availability and photos.** Sold out for today, apart
+from retiring an item; item photos stored beside the database and shown on
+the register. Likely to need splitting: photos alone touch storage,
+serving, the editor and the register.
 
 ## Known broken / in progress
 
 - Menu editor (ADR-106, ADR-107): no `Idempotency-Key` on
   its routes, as with printers. Duplicate item names are allowed. No
-  write path yet for stations, courses or tax classes (Task 6), nor for
-  modifier groups (2c). A venue whose tax profile changes to one needing
+  write path yet for stations, courses or tax classes (Task 6). An item's
+  groups save in a second request after the item (ADR-108). A negative
+  choice price is not checked against the items offering it. A venue
+  whose tax profile changes to one needing
   HSN keeps items without one until each is edited (Task 6 must handle
   this). The table scrolls sideways below about 1100px of content width.
   Retiring an item shows no "open tickets keep it" note. Form controls

@@ -145,7 +145,7 @@ export function priceChange(saved: EditorItem | null, typed: string): { was: Mon
   return { was: saved.price, now: { minor, currency: saved.price.currency } };
 }
 
-const itemFields: readonly string[] = ["name", "category_id", "price", "hsn", "tax_class_id", "station_id", "course_id"];
+const itemFields: readonly string[] = ["name", "category_id", "price", "hsn", "tax_class_id", "station_id", "course_id", "ids"];
 
 export function problemOf(err: unknown): Problem {
   if (err instanceof ApiError) {
@@ -154,7 +154,7 @@ export function problemOf(err: unknown): Problem {
     if (err.code === "menu_order_stale") {
       return { field: null, message: "The menu changed on another screen. It has been reloaded; move it again." };
     }
-    const field = itemFields.includes(err.field ?? "") ? (err.field as ItemField) : null;
+    const field = itemFields.includes(err.field ?? "") ? (err.field as Problem["field"]) : null;
     return { field, message: err.message };
   }
   return { field: null, message: "Something went wrong. Try again." };

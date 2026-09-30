@@ -2998,3 +2998,33 @@ Because: "open tickets keep their price" is only understood if it is
 read at the moment of choosing a new one.
 Cost: the notice appears only in the form; a retire has no equivalent
 ("tickets already open keep this item") yet.
+
+## ADR-108 - A group of choices is saved whole, and must be satisfiable
+2026-09 · Status: accepted
+Decision: phase 10, Task 2c edits modifier groups through the menu door
+of ADR-106.
+  - **Saved whole:** `POST /api/v1/menu/groups` and `PUT .../groups/{id}`
+    take the name, the bounds and every choice in order. A choice with an
+    id is updated in place; one without is new; one the group had but the
+    request leaves out is retired (never deleted: a line that chose it
+    still names it). Listing a retired choice's id brings it back.
+  - **Satisfiable or refused:** `internal/domain/menu.CleanGroup` refuses
+    a group its own choices cannot meet (asks for more than it offers,
+    more picked to start than may be picked) and two choices with one
+    name. More allowed than offered is fine. A refusal about one choice
+    names it as `modifiers.N.name`, so the form shows it on that row.
+  - **Items offer groups as one ordered list:** `PUT .../items/{id}/groups`.
+    Retiring a group keeps the links; the till's menu already drops a
+    retired group, so bringing it back restores it everywhere. The item
+    form saves the item, then its groups: two requests. If the second
+    fails after a new item was created, the form closes with a warning
+    rather than stay open where Save again would add the item twice.
+  - **Supersedes ADR-106 on HSN away from GST:** a well-formed HSN is now
+    kept on a venue whose profile does not use one, and only a malformed
+    one refused. The demo menu carries HSN codes on every venue, so the
+    first rule made its items uneditable outside GST; a venue leaving GST
+    would have met the same wall.
+Because: a choice sheet the till can never complete is a stuck order at
+the counter; refusing it when it is saved is the cheap place.
+Cost: a negative choice price is not checked against the items that
+offer it, so a line can be priced below zero by its choices.

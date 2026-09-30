@@ -124,7 +124,7 @@ var errorCodes = []ErrorCode{
 	CodeAlreadyCounted, CodeNotCounted, CodeDrawerCounted, CodeVarianceUnexplained, CodeAlreadyExplained,
 	CodeZReportNotFound, CodeShiftStillOpen, CodeAlreadyPooled, CodeNotStaff, CodeInvalidTipPool,
 	CodeExportNotFound,
-	CodeCategoryNotFound, CodeItemNotFound, CodeInvalidMenu, CodeMenuOrderStale,
+	CodeCategoryNotFound, CodeItemNotFound, CodeInvalidMenu, CodeMenuOrderStale, CodeGroupNotFound,
 }
 
 // generate builds the whole file.
@@ -153,6 +153,10 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(menus.TaxClass{}):      "EditorTaxClass",
 			reflect.TypeOf(menus.Category{}):      "EditorCategory",
 			reflect.TypeOf(menus.Item{}):          "EditorItem",
+			reflect.TypeOf(menus.GroupInput{}):    "MenuGroupInput",
+			reflect.TypeOf(menus.ModifierInput{}): "MenuModifierInput",
+			reflect.TypeOf(menus.Group{}):         "EditorGroup",
+			reflect.TypeOf(menus.Modifier{}):      "EditorModifier",
 			reflect.TypeOf(order.CreditRequest{}): "CreditSelection",
 			reflect.TypeOf(floor.AreaSettings{}):  "AreaSettings",
 			reflect.TypeOf(floor.TableSettings{}): "TableSettings",
@@ -255,6 +259,7 @@ func generate() (*ts.Generator, error) {
 		// The menu editor.
 		categoryRequest{}, itemRequest{}, menuOrderRequest{}, menuEditResponse{}, menus.Editor{},
 		menus.Station{}, menus.Course{}, menus.TaxClass{}, menus.Category{}, menus.Item{},
+		groupRequest{}, menus.ModifierInput{}, menus.Group{}, menus.Modifier{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},

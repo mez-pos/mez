@@ -18,6 +18,10 @@ type MenuEditorRows struct {
 	Categories []gen.EditorCategoriesRow
 	Items      []gen.EditorItemsRow
 	Links      []gen.ItemModifierGroupsForVenueRow
+	Groups     []gen.EditorModifierGroupsRow
+	// Modifiers are the choices on offer; a retired one is gone from its
+	// group's form, and comes back only by being added again.
+	Modifiers []gen.ActiveModifiersRow
 }
 
 // MenuEditor reads the editor's rows in one read-only transaction, so the
@@ -42,6 +46,8 @@ func (d *DB) MenuEditor(ctx context.Context, venueID int64) (MenuEditorRows, err
 		{"categories", func() (err error) { out.Categories, err = q.EditorCategories(ctx, venueID); return }},
 		{"items", func() (err error) { out.Items, err = q.EditorItems(ctx, venueID); return }},
 		{"modifier links", func() (err error) { out.Links, err = q.ItemModifierGroupsForVenue(ctx, venueID); return }},
+		{"modifier groups", func() (err error) { out.Groups, err = q.EditorModifierGroups(ctx, venueID); return }},
+		{"modifiers", func() (err error) { out.Modifiers, err = q.ActiveModifiers(ctx, venueID); return }},
 	}
 	for _, s := range steps {
 		if err := s.run(); err != nil {

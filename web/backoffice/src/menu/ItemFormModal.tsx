@@ -8,6 +8,7 @@ import type { EditorItem, MenuEditor, MenuItemInput } from "../../../shared/api-
 import { Button, Modal, Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { Field, inputClass } from "../FormFields";
+import { ItemGroupsField } from "./ItemGroupsField";
 import { choices, courseText, priceChange, problemOf, taxClassText, toItemInput, type ItemForm, type Problem } from "./menu-logic";
 
 interface ItemFormModalProps {
@@ -15,12 +16,14 @@ interface ItemFormModalProps {
   /** Null for a new item. */
   item: EditorItem | null;
   initial: ItemForm;
-  onSave: (input: MenuItemInput) => Promise<void>;
+  /** The item, and the groups it offers in order. */
+  onSave: (input: MenuItemInput, groups: number[]) => Promise<void>;
   onClose: () => void;
 }
 
 export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemFormModalProps) {
   const [form, setForm] = useState(initial);
+  const [groups, setGroups] = useState<number[]>(item?.modifier_groups ?? []);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<ItemForm>) => {
@@ -35,7 +38,7 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
     }
     setBusy(true);
     try {
-      await onSave(built.input);
+      await onSave(built.input, groups);
       onClose();
     } catch (err) {
       setProblem(problemOf(err));
@@ -119,7 +122,11 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
           )}
         </Field>
         {(menu.needs_hsn || form.hsn !== "") && (
-          <Field label="HSN or SAC code" hint="4, 6 or 8 digits. Every GST invoice line shows it." error={on("hsn")}>
+          <Field
+            label="HSN or SAC code"
+            hint={menu.needs_hsn ? "4, 6 or 8 digits. Every GST invoice line shows it." : "Not needed at this venue. You can leave it empty."}
+            error={on("hsn")}
+          >
             {(id) => (
               <input
                 id={id}
@@ -155,6 +162,15 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
             </Select>
           )}
         </Field>
+        <ItemGroupsField
+          menu={menu}
+          chosen={groups}
+          onChange={(ids) => {
+            setGroups(ids);
+            setProblem(null);
+          }}
+          error={problem?.field === "ids" ? problem.message : null}
+        />
         {/* Enter in a field saves, as a form should; the visible Save is in the footer. */}
         <button type="submit" hidden />
       </form>

@@ -226,3 +226,52 @@ WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
 UPDATE items
 SET sort_order = sqlc.arg(sort_order), updated_at = sqlc.arg(now)
 WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- Modifier groups in the editor (phase 10, Task 2c). A group's choices are
+-- saved with it: a choice left out is retired, not deleted, so a line that
+-- chose it still names something.
+
+-- name: EditorModifierGroups :many
+SELECT id, name, min_select, max_select, active
+FROM modifier_groups
+WHERE venue_id = ?
+ORDER BY name, id;
+
+-- name: GroupForEdit :one
+SELECT id, active
+FROM modifier_groups
+WHERE venue_id = ? AND id = ?;
+
+-- name: UpdateModifierGroup :execrows
+UPDATE modifier_groups
+SET name = sqlc.arg(name), min_select = sqlc.arg(min_select), max_select = sqlc.arg(max_select),
+    updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetModifierGroupActive :execrows
+UPDATE modifier_groups
+SET active = sqlc.arg(active), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: ModifierIDsOfGroup :many
+SELECT id
+FROM modifiers
+WHERE venue_id = ? AND group_id = ?
+ORDER BY id;
+
+-- name: UpdateModifier :execrows
+--
+-- Saving a choice also brings it back: one the owner lists is on offer.
+UPDATE modifiers
+SET name = sqlc.arg(name), price = sqlc.arg(price), is_default = sqlc.arg(is_default),
+    sort_order = sqlc.arg(sort_order), active = 1, updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND group_id = sqlc.arg(group_id) AND id = sqlc.arg(id);
+
+-- name: RetireModifier :execrows
+UPDATE modifiers
+SET active = 0, is_default = 0, updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: DetachItemGroups :exec
+DELETE FROM item_modifier_groups
+WHERE venue_id = ? AND item_id = ?;

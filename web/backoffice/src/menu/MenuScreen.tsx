@@ -4,9 +4,12 @@
 // keep what they were rung up at.
 
 import { useState } from "react";
-import type { EditorItem, MenuEditor, MenuItemInput } from "../../../shared/api-types";
+import type { EditorGroup, EditorItem, MenuEditor, MenuItemInput } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
 import { CategoryFormModal, CategoryPanel } from "./CategoryPanel";
+import { emptyGroupForm, groupFormFrom, groupsChanged, usedBy } from "./group-logic";
+import { GroupFormModal } from "./GroupFormModal";
+import { GroupsView } from "./GroupsView";
 import { ItemFormModal } from "./ItemFormModal";
 import { ItemsTable } from "./ItemsTable";
 import { itemFormFrom, newItemForm, problemOf, selectedCategory } from "./menu-logic";
@@ -16,13 +19,18 @@ type Editing =
   | { kind: "add-category" }
   | { kind: "rename-category"; id: number; name: string }
   | { kind: "add-item"; categoryId: number }
-  | { kind: "edit-item"; item: EditorItem };
+  | { kind: "edit-item"; item: EditorItem }
+  | { kind: "add-group" }
+  | { kind: "edit-group"; group: EditorGroup };
+
+type View = "items" | "choices";
 
 export function MenuScreen() {
   const api = useMenuEditor();
   const [wanted, setWanted] = useState<number | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [view, setView] = useState<View>("items");
   const menu = api.data;
   const category = menu ? selectedCategory(menu, wanted) : null;
 
@@ -35,14 +43,37 @@ export function MenuScreen() {
             Changes reach every till at once. Tickets already open keep the prices they were rung up at.
           </p>
         </div>
-        <div className="flex flex-wrap gap-tap-gap">
-          <Button disabled={!menu} onClick={() => setEditing({ kind: "add-category" })}>
-            Add a category
+        {view === "items" ? (
+          <div className="flex flex-wrap gap-tap-gap">
+            <Button disabled={!menu} onClick={() => setEditing({ kind: "add-category" })}>
+              Add a category
+            </Button>
+            <Button variant="primary" disabled={!category} onClick={() => category && setEditing({ kind: "add-item", categoryId: category.id })}>
+              Add an item
+            </Button>
+          </div>
+        ) : (
+          <Button variant="primary" disabled={!menu} onClick={() => setEditing({ kind: "add-group" })}>
+            Add a group of choices
           </Button>
-          <Button variant="primary" disabled={!category} onClick={() => category && setEditing({ kind: "add-item", categoryId: category.id })}>
-            Add an item
+        )}
+      </div>
+
+      <div role="group" aria-label="Show" className="flex gap-tap-gap">
+        {(["items", "choices"] as const).map((v) => (
+          <Button
+            key={v}
+            variant="ghost"
+            aria-pressed={view === v}
+            className={view === v ? "bg-raised font-semibold text-fg" : undefined}
+            onClick={() => {
+              setView(v);
+              setProblem(null);
+            }}
+          >
+            {v === "items" ? "Items" : "Choices"}
           </Button>
-        </div>
+        ))}
       </div>
 
       {problem && (
@@ -54,8 +85,11 @@ export function MenuScreen() {
       {!api.loading && api.error !== null && (
         <EmptyState icon={<InboxIcon />} line={problemOf(api.error).message} action={{ label: "Try again", onClick: api.refetch }} />
       )}
-      {menu && !category && <EmptyState icon={<InboxIcon />} line="No menu yet. Add a category, then the items in it." />}
-      {menu && category && (
+      {menu && view === "choices" && (
+        <GroupsView menu={menu} api={api} onEdit={(group) => setEditing({ kind: "edit-group", group })} onProblem={setProblem} />
+      )}
+      {menu && view === "items" && !category && <EmptyState icon={<InboxIcon />} line="No menu yet. Add a category, then the items in it." />}
+      {menu && view === "items" && category && (
         <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-start">
           <CategoryPanel
             menu={menu}
@@ -118,9 +152,19 @@ function EditingModal({ menu, editing, api, onSelect, onClose }: EditingModalPro
           menu={menu}
           item={null}
           initial={newItemForm(menu, editing.categoryId)}
-          onSave={async (input) => {
-            await api.createItem(input);
+          onSave={async (input, groups) => {
+            const id = await api.createItem(input);
             onSelect(input.category_id);
+            // The item is saved now: a failure here must not leave the form
+            // open, where Save again would add it twice.
+            if (groups.length > 0) {
+              try {
+                await api.setItemGroups(id, groups);
+              } catch {
+                toast(`${input.name} is saved, but its choices are not. Edit it to add them.`, { tone: "warning" });
+                return;
+              }
+            }
             toast("Saved.", { tone: "success" });
           }}
           onClose={onClose}
@@ -132,11 +176,40 @@ function EditingModal({ menu, editing, api, onSelect, onClose }: EditingModalPro
           menu={menu}
           item={editing.item}
           initial={itemFormFrom(editing.item)}
-          onSave={async (input: MenuItemInput) => {
+          onSave={async (input: MenuItemInput, groups) => {
             await api.updateItem(editing.item.id, input);
+            if (groupsChanged(editing.item, groups)) await api.setItemGroups(editing.item.id, groups);
             onSelect(input.category_id);
             const repriced = input.price.minor !== editing.item.price.minor;
             toast(repriced ? "Saved. Tickets already open keep their prices." : "Saved.", { tone: "success" });
+          }}
+          onClose={onClose}
+        />
+      );
+    case "add-group":
+      return (
+        <GroupFormModal
+          title="Add a group of choices"
+          currency={menu.currency}
+          initial={emptyGroupForm()}
+          usedBy={0}
+          onSave={async (input) => {
+            await api.createGroup(input);
+            toast("Saved. Offer it on items from each item's form.", { tone: "success" });
+          }}
+          onClose={onClose}
+        />
+      );
+    case "edit-group":
+      return (
+        <GroupFormModal
+          title={`Edit ${editing.group.name}`}
+          currency={menu.currency}
+          initial={groupFormFrom(editing.group)}
+          usedBy={usedBy(menu, editing.group.id)}
+          onSave={async (input) => {
+            await api.updateGroup(editing.group.id, input);
+            toast("Saved. Tickets already open keep their choices.", { tone: "success" });
           }}
           onClose={onClose}
         />

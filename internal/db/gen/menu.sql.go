@@ -599,6 +599,21 @@ func (q *Queries) CreateTaxClass(ctx context.Context, arg CreateTaxClassParams) 
 	return id, err
 }
 
+const detachItemGroups = `-- name: DetachItemGroups :exec
+DELETE FROM item_modifier_groups
+WHERE venue_id = ? AND item_id = ?
+`
+
+type DetachItemGroupsParams struct {
+	VenueID int64
+	ItemID  int64
+}
+
+func (q *Queries) DetachItemGroups(ctx context.Context, arg DetachItemGroupsParams) error {
+	_, err := q.db.ExecContext(ctx, detachItemGroups, arg.VenueID, arg.ItemID)
+	return err
+}
+
 const editorCategories = `-- name: EditorCategories :many
 SELECT id, name, sort_order, active
 FROM categories
@@ -697,6 +712,54 @@ func (q *Queries) EditorItems(ctx context.Context, venueID int64) ([]EditorItems
 	return items, nil
 }
 
+const editorModifierGroups = `-- name: EditorModifierGroups :many
+
+SELECT id, name, min_select, max_select, active
+FROM modifier_groups
+WHERE venue_id = ?
+ORDER BY name, id
+`
+
+type EditorModifierGroupsRow struct {
+	ID        int64
+	Name      string
+	MinSelect int64
+	MaxSelect int64
+	Active    bool
+}
+
+// Modifier groups in the editor (phase 10, Task 2c). A group's choices are
+// saved with it: a choice left out is retired, not deleted, so a line that
+// chose it still names something.
+func (q *Queries) EditorModifierGroups(ctx context.Context, venueID int64) ([]EditorModifierGroupsRow, error) {
+	rows, err := q.db.QueryContext(ctx, editorModifierGroups, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []EditorModifierGroupsRow{}
+	for rows.Next() {
+		var i EditorModifierGroupsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.MinSelect,
+			&i.MaxSelect,
+			&i.Active,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const editorStations = `-- name: EditorStations :many
 
 SELECT id, code, name, active
@@ -741,6 +804,29 @@ func (q *Queries) EditorStations(ctx context.Context, venueID int64) ([]EditorSt
 		return nil, err
 	}
 	return items, nil
+}
+
+const groupForEdit = `-- name: GroupForEdit :one
+SELECT id, active
+FROM modifier_groups
+WHERE venue_id = ? AND id = ?
+`
+
+type GroupForEditParams struct {
+	VenueID int64
+	ID      int64
+}
+
+type GroupForEditRow struct {
+	ID     int64
+	Active bool
+}
+
+func (q *Queries) GroupForEdit(ctx context.Context, arg GroupForEditParams) (GroupForEditRow, error) {
+	row := q.db.QueryRowContext(ctx, groupForEdit, arg.VenueID, arg.ID)
+	var i GroupForEditRow
+	err := row.Scan(&i.ID, &i.Active)
+	return i, err
 }
 
 const itemForEdit = `-- name: ItemForEdit :one
@@ -864,6 +950,41 @@ func (q *Queries) MenuVersion(ctx context.Context, venueID int64) (int64, error)
 	return version, err
 }
 
+const modifierIDsOfGroup = `-- name: ModifierIDsOfGroup :many
+SELECT id
+FROM modifiers
+WHERE venue_id = ? AND group_id = ?
+ORDER BY id
+`
+
+type ModifierIDsOfGroupParams struct {
+	VenueID int64
+	GroupID int64
+}
+
+func (q *Queries) ModifierIDsOfGroup(ctx context.Context, arg ModifierIDsOfGroupParams) ([]int64, error) {
+	rows, err := q.db.QueryContext(ctx, modifierIDsOfGroup, arg.VenueID, arg.GroupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int64{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const nextCategorySort = `-- name: NextCategorySort :one
 SELECT CAST(COALESCE(MAX(sort_order) + 1, 0) AS INTEGER) AS next
 FROM categories
@@ -915,6 +1036,26 @@ func (q *Queries) RenameCategory(ctx context.Context, arg RenameCategoryParams) 
 		arg.VenueID,
 		arg.ID,
 	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const retireModifier = `-- name: RetireModifier :execrows
+UPDATE modifiers
+SET active = 0, is_default = 0, updated_at = ?1
+WHERE venue_id = ?2 AND id = ?3
+`
+
+type RetireModifierParams struct {
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) RetireModifier(ctx context.Context, arg RetireModifierParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, retireModifier, arg.Now, arg.VenueID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -1015,6 +1156,32 @@ type SetItemSortParams struct {
 func (q *Queries) SetItemSort(ctx context.Context, arg SetItemSortParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, setItemSort,
 		arg.SortOrder,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const setModifierGroupActive = `-- name: SetModifierGroupActive :execrows
+UPDATE modifier_groups
+SET active = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type SetModifierGroupActiveParams struct {
+	Active  bool
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) SetModifierGroupActive(ctx context.Context, arg SetModifierGroupActiveParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setModifierGroupActive,
+		arg.Active,
 		arg.Now,
 		arg.VenueID,
 		arg.ID,
@@ -1143,6 +1310,73 @@ func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) (int64, 
 		arg.StationID,
 		arg.CourseID,
 		arg.SortOrder,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const updateModifier = `-- name: UpdateModifier :execrows
+UPDATE modifiers
+SET name = ?1, price = ?2, is_default = ?3,
+    sort_order = ?4, active = 1, updated_at = ?5
+WHERE venue_id = ?6 AND group_id = ?7 AND id = ?8
+`
+
+type UpdateModifierParams struct {
+	Name      string
+	Price     int64
+	IsDefault bool
+	SortOrder int64
+	Now       time.Time
+	VenueID   int64
+	GroupID   int64
+	ID        int64
+}
+
+// Saving a choice also brings it back: one the owner lists is on offer.
+func (q *Queries) UpdateModifier(ctx context.Context, arg UpdateModifierParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateModifier,
+		arg.Name,
+		arg.Price,
+		arg.IsDefault,
+		arg.SortOrder,
+		arg.Now,
+		arg.VenueID,
+		arg.GroupID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const updateModifierGroup = `-- name: UpdateModifierGroup :execrows
+UPDATE modifier_groups
+SET name = ?1, min_select = ?2, max_select = ?3,
+    updated_at = ?4
+WHERE venue_id = ?5 AND id = ?6
+`
+
+type UpdateModifierGroupParams struct {
+	Name      string
+	MinSelect int64
+	MaxSelect int64
+	Now       time.Time
+	VenueID   int64
+	ID        int64
+}
+
+func (q *Queries) UpdateModifierGroup(ctx context.Context, arg UpdateModifierGroupParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateModifierGroup,
+		arg.Name,
+		arg.MinSelect,
+		arg.MaxSelect,
 		arg.Now,
 		arg.VenueID,
 		arg.ID,

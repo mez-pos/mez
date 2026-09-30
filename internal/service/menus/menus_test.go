@@ -213,7 +213,7 @@ func TestItemsAreChecked(t *testing.T) {
 		{"a price below zero", func(in *ItemInput) { in.Price.Minor = -1 }, "price"},
 		{"a price in another currency", func(in *ItemInput) { in.Price.Currency = "USD" }, "price"},
 		{"a price with no currency", func(in *ItemInput) { in.Price.Currency = "" }, "price"},
-		{"an HSN where the profile has none", func(in *ItemInput) { in.HSN = "996331" }, "hsn"},
+		{"a malformed HSN where the profile has none", func(in *ItemInput) { in.HSN = "99633" }, "hsn"},
 		{"no category", func(in *ItemInput) { in.CategoryID = 0 }, "category_id"},
 		{"another venue's category", func(in *ItemInput) { in.CategoryID = w.elseCat }, "category_id"},
 		{"a retired category", func(in *ItemInput) { in.CategoryID = retired }, "category_id"},
@@ -234,6 +234,15 @@ func TestItemsAreChecked(t *testing.T) {
 		})
 	}
 
+	t.Run("a well-formed HSN is kept where the profile has none", func(t *testing.T) {
+		id, err := w.s.CreateItem(ctx, plain, w.item(plain, cat, "Idli", 8000, "996331"))
+		if err != nil {
+			t.Fatalf("err = %v", err)
+		}
+		if got := findItem(w.editor(t, plain), id).HSN; got != "996331" {
+			t.Errorf("HSN = %q", got)
+		}
+	})
 	t.Run("a free item is fine", func(t *testing.T) {
 		if _, err := w.s.CreateItem(ctx, plain, w.item(plain, cat, "Water", 0, "")); err != nil {
 			t.Errorf("err = %v", err)

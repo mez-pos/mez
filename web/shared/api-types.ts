@@ -99,7 +99,8 @@ export type ErrorCode =
   | 'category_not_found'
   | 'item_not_found'
   | 'invalid_menu'
-  | 'menu_order_stale';
+  | 'menu_order_stale'
+  | 'modifier_group_not_found';
 
 export type OrderStatus =
   | 'open'
@@ -1033,6 +1034,7 @@ export interface MenuEditor {
   tax_classes: EditorTaxClass[];
   categories: EditorCategory[];
   items: EditorItem[];
+  modifier_groups: EditorGroup[];
 }
 
 export interface EditorStation {
@@ -1072,6 +1074,36 @@ export interface EditorItem {
   course_id: number;
   active: boolean;
   modifier_groups: number[];
+}
+
+export interface EditorGroup {
+  id: number;
+  name: string;
+  min_select: number;
+  max_select: number;
+  active: boolean;
+  modifiers: EditorModifier[];
+}
+
+export interface EditorModifier {
+  id: number;
+  name: string;
+  price: Money;
+  is_default: boolean;
+}
+
+export interface MenuGroupInput {
+  name: string;
+  min_select: number;
+  max_select: number;
+  modifiers: MenuModifierInput[];
+}
+
+export interface MenuModifierInput {
+  id?: number;
+  name: string;
+  price: Money;
+  is_default: boolean;
 }
 
 export interface AreaSettings {
