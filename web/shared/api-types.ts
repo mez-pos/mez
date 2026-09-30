@@ -95,7 +95,11 @@ export type ErrorCode =
   | 'already_pooled'
   | 'not_staff'
   | 'invalid_tip_pool'
-  | 'export_not_found';
+  | 'export_not_found'
+  | 'category_not_found'
+  | 'item_not_found'
+  | 'invalid_menu'
+  | 'menu_order_stale';
 
 export type OrderStatus =
   | 'open'
@@ -996,6 +1000,78 @@ export interface PrintersResponse {
 
 export interface TestPageResponse {
   job_id: number;
+}
+
+export interface MenuCategoryInput {
+  name: string;
+}
+
+export interface MenuItemInput {
+  category_id: number;
+  name: string;
+  price: Money;
+  hsn: string;
+  tax_class_id: number;
+  station_id: number;
+  course_id: number;
+}
+
+export interface MenuOrderRequest {
+  ids: number[];
+}
+
+export interface MenuEditResponse {
+  id?: number;
+}
+
+export interface MenuEditor {
+  version: number;
+  currency: string;
+  needs_hsn: boolean;
+  stations: EditorStation[];
+  courses: EditorCourse[];
+  tax_classes: EditorTaxClass[];
+  categories: EditorCategory[];
+  items: EditorItem[];
+}
+
+export interface EditorStation {
+  id: number;
+  code: string;
+  name: string;
+  active: boolean;
+}
+
+export interface EditorCourse {
+  id: number;
+  number: number;
+  name: string;
+}
+
+export interface EditorTaxClass {
+  id: number;
+  name: string;
+  rate: number;
+  exempt: boolean;
+}
+
+export interface EditorCategory {
+  id: number;
+  name: string;
+  active: boolean;
+}
+
+export interface EditorItem {
+  id: number;
+  category_id: number;
+  name: string;
+  price: Money;
+  hsn: string;
+  tax_class_id: number;
+  station_id: number;
+  course_id: number;
+  active: boolean;
+  modifier_groups: number[];
 }
 
 export interface AreaSettings {

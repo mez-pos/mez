@@ -13,23 +13,32 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 1: back office shell** (ADR-105, spec
-`docs/design/screens/backoffice-shell.md`). Sessions now answer
-`permissions`. Every signed-in back office screen sits in
-`BackOfficeShell`: a left navigation grouped Run the venue / Reports /
-Settings, hiding what the staff member may not open; `g` chords between
-sections; a `SectionGate` on each route; a dashboard skeleton with no
-numbers yet. Tried in the browser as the owner: dashboard, `g t`, `g r`,
-chords ignored while typing in a field.
+**Phase 10, Task 2a: categories and items on the server** (ADR-106).
+Task 2 is split into 2a to 2d in the phase file. `internal/service/menus`
+creates, edits, retires, brings back and orders categories and items
+through `db.DB.EditMenu`, which bumps the menu version in the same
+transaction; the hub is nudged after. `GET /api/v1/menu/editor` reads it
+all, retired rows included (`menu.edit`). On a venue whose profile prints
+HSN per line, every item needs a valid one. Smoke-tested on the real
+binary: an item added over the API reached the till's menu at a new
+version.
 
 ## Next task
 
-**Phase 10, Task 2: menu and item editor.** Write
-`docs/design/screens/backoffice-menu.md` first. When it lands, set
-`built: true` on `menu` in `web/backoffice/src/shell/nav-logic.ts` and
-route `/menu` behind `SectionGate`.
+**Phase 10, Task 2b: the editor for categories and items.** Spec
+`docs/design/screens/backoffice-menu.md` first. Then set `built: true` on
+`menu` in `web/backoffice/src/shell/nav-logic.ts` and route `/menu`
+behind `SectionGate`. The price notice: open tickets keep the price they
+were rung up at.
 
 ## Known broken / in progress
+
+- Menu editor (ADR-106): server only until 2b. No `Idempotency-Key` on
+  its routes, as with printers. Duplicate item names are allowed. No
+  write path yet for stations, courses or tax classes (Task 6), nor for
+  modifier groups (2c). A venue whose tax profile changes to one needing
+  HSN keeps items without one until each is edited (Task 6 must handle
+  this).
 
 - Shell (ADR-105): only tried as the owner. A cashier or manager view and
   the "not yours to open" screen are tested in vitest, not by hand: no API
@@ -72,7 +81,7 @@ route `/menu` behind `SectionGate`.
   back office setting yet (phase 10); set it in `settings`. Denomination
   tables exist for INR, USD, EUR and GBP only; others count one total.
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
-  no menu writes over HTTP until phase 10. GST place of supply is always
+  the menu is now written over HTTP (ADR-106), so this matters more. GST place of supply is always
   the venue's state, so no IGST. `nofiltr setup` cannot finish a US venue.
 - `orders.table_id` has no foreign key (ADR-085). Guests left closes and
   clears in two steps, not one transaction; a retry repairs it (ADR-087).

@@ -43,6 +43,11 @@ type Querier interface {
 	// A person's cancel: a job that has not printed stops being tried. It is
 	// kept, dead, with who cancelled it, and can still be retried.
 	CancelPrintJob(ctx context.Context, arg CancelPrintJobParams) (int64, error)
+	// The editor's writes. Each goes through db.DB.EditMenu, which bumps the
+	// menu version in the same transaction. Every one is scoped by venue_id:
+	// an id from another venue matches nothing.
+	CategoryForEdit(ctx context.Context, arg CategoryForEditParams) (CategoryForEditRow, error)
+	CategoryIDs(ctx context.Context, venueID int64) ([]int64, error)
 	// Moves a job the worker picked to printing, and counts the attempt. It
 	// matches only from the state the worker saw, so two claims of one job
 	// cannot both succeed.
@@ -53,6 +58,7 @@ type Querier interface {
 	// The till's past bills: the latest closed, newest first (Task 6b).
 	ClosedOrdersForVenue(ctx context.Context, arg ClosedOrdersForVenueParams) ([]ClosedOrdersForVenueRow, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
+	CourseForEdit(ctx context.Context, arg CourseForEditParams) (int64, error)
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
 	CreateArea(ctx context.Context, arg CreateAreaParams) (int64, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (int64, error)
@@ -113,6 +119,12 @@ type Querier interface {
 	// still printing, or failed and waiting out its backoff, holds back every
 	// later one for that printer. Jobs with no printer are never picked.
 	DuePrintJobs(ctx context.Context, now time.Time) ([]DuePrintJobsRow, error)
+	EditorCategories(ctx context.Context, venueID int64) ([]EditorCategoriesRow, error)
+	EditorItems(ctx context.Context, venueID int64) ([]EditorItemsRow, error)
+	// The back office's editor reads everything, retired rows included, so a
+	// retired item can be brought back. db.DB.MenuEditor runs these in one read
+	// transaction with MenuVersion.
+	EditorStations(ctx context.Context, venueID int64) ([]EditorStationsRow, error)
 	EndStaffSession(ctx context.Context, arg EndStaffSessionParams) (int64, error)
 	ExportByID(ctx context.Context, id int64) (ExportByIDRow, error)
 	ExportsForShift(ctx context.Context, shiftID int64) ([]ExportsForShiftRow, error)
@@ -127,6 +139,8 @@ type Querier interface {
 	// Every item's category, retired ones included: a report names what was
 	// sold, even if it is off the menu now.
 	ItemCategoriesForVenue(ctx context.Context, venueID int64) ([]ItemCategoriesForVenueRow, error)
+	ItemForEdit(ctx context.Context, arg ItemForEditParams) (ItemForEditRow, error)
+	ItemIDsInCategory(ctx context.Context, arg ItemIDsInCategoryParams) ([]int64, error)
 	ItemModifierGroupsForVenue(ctx context.Context, venueID int64) ([]ItemModifierGroupsForVenueRow, error)
 	// The shift's report as it now stands: the last correction, or the original.
 	LatestZReportForShift(ctx context.Context, shiftID int64) (ZReport, error)
@@ -143,11 +157,13 @@ type Querier interface {
 	//
 	// A venue whose menu has never been written has no row, and is at 1.
 	MenuVersion(ctx context.Context, venueID int64) (int64, error)
+	NextCategorySort(ctx context.Context, venueID int64) (int64, error)
 	// The invoice series counters and the register of numbers issued.
 	// Allocates the next number in a series in one statement: the first call for
 	// a key writes 1, every later one adds one. It runs inside the issuing
 	// transaction, so a rollback takes the number back. Never MAX(n)+1.
 	NextInvoiceSeq(ctx context.Context, arg NextInvoiceSeqParams) (int64, error)
+	NextItemSort(ctx context.Context, arg NextItemSortParams) (int64, error)
 	// Z-reports (ADR-098). Written only by internal/service/shift, in the
 	// transaction that closes a shift or issues a correction.
 	// Moves the venue's counter on and returns the number taken.
@@ -190,6 +206,7 @@ type Querier interface {
 	// Only an unredeemed code changes, so two redeemers cannot both succeed.
 	RedeemPairingCode(ctx context.Context, arg RedeemPairingCodeParams) (int64, error)
 	RenameArea(ctx context.Context, arg RenameAreaParams) (int64, error)
+	RenameCategory(ctx context.Context, arg RenameCategoryParams) (int64, error)
 	// On start, jobs a crash left printing go back to queued. Whether their
 	// bytes reached the printer is unknown; printing twice beats never.
 	RequeueStalePrintJobs(ctx context.Context, now time.Time) (int64, error)
@@ -204,6 +221,10 @@ type Querier interface {
 	SaveIdempotencyKey(ctx context.Context, arg SaveIdempotencyKeyParams) error
 	SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotParams) error
 	SetAreaActive(ctx context.Context, arg SetAreaActiveParams) (int64, error)
+	SetCategoryActive(ctx context.Context, arg SetCategoryActiveParams) (int64, error)
+	SetCategorySort(ctx context.Context, arg SetCategorySortParams) (int64, error)
+	SetItemActive(ctx context.Context, arg SetItemActiveParams) (int64, error)
+	SetItemSort(ctx context.Context, arg SetItemSortParams) (int64, error)
 	// Retiring also stops it printing receipts; its stations keep pointing at
 	// it, and print nowhere until given another (StationPrinter needs active).
 	SetPrinterActive(ctx context.Context, arg SetPrinterActiveParams) (int64, error)
@@ -235,6 +256,7 @@ type Querier interface {
 	// A station's tickets still in the kitchen, oldest first, and those bumped
 	// since a time, for the display's recall.
 	StationBoard(ctx context.Context, arg StationBoardParams) ([]StationBoardRow, error)
+	StationForEdit(ctx context.Context, arg StationForEditParams) (StationForEditRow, error)
 	// The printer a station's tickets go to, if it has one in service.
 	StationPrinter(ctx context.Context, arg StationPrinterParams) (StationPrinterRow, error)
 	StationsWithPrinters(ctx context.Context, venueID int64) ([]StationsWithPrintersRow, error)
@@ -246,6 +268,7 @@ type Querier interface {
 	// and for moving or joining a party to it.
 	TableTurn(ctx context.Context, id int64) (TableTurnRow, error)
 	TablesForVenue(ctx context.Context, venueID int64) ([]TablesForVenueRow, error)
+	TaxClassForEdit(ctx context.Context, arg TaxClassForEditParams) (int64, error)
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
 	TipPool(ctx context.Context, shiftID int64) (TipPool, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
@@ -254,6 +277,11 @@ type Querier interface {
 	// first. It is a working set, tens of orders, not history, so it is capped
 	// rather than paginated (ADR-074).
 	UnclosedOrdersForVenue(ctx context.Context, arg UnclosedOrdersForVenueParams) ([]UnclosedOrdersForVenueRow, error)
+	//
+	// A line already rung up keeps the name, price and tax it copied
+	// (docs/02-domain.md, "Prices and the snapshot rule"); this changes only
+	// what the next line copies.
+	UpdateItem(ctx context.Context, arg UpdateItemParams) (int64, error)
 	// Brings the index columns up to the projection just appended. The guard on
 	// the previous last_seq makes a write from a stale read touch no row, which
 	// the caller reports as a conflict rather than moving the index backwards.

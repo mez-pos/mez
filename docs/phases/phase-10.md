@@ -22,7 +22,7 @@ Phase 09.
 
   Split into four (the schema is phase 02's; nothing writes it over HTTP):
 
-  - [ ] **Task 2a: Categories and items on the server.** A menu write path
+  - [x] **Task 2a: Categories and items on the server.** A menu write path
     that cannot forget the version bump or the stream nudge; the back
     office's read of the whole menu, retired rows included; create, edit,
     retire and bring back categories and items (price, tax class, HSN,

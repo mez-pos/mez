@@ -11,27 +11,28 @@ import (
 
 // Server holds what the handlers need and builds the routing tree once.
 type Server struct {
-	cfg      config.Config
-	log      *slog.Logger
-	build    BuildInfo
-	now      func() time.Time
-	started  time.Time
-	bundles  map[string]fs.FS
-	dbCheck  func() string
-	devices  Devices
-	staff    Staff
-	orders   Orders
-	menus    Menus
-	stream   Stream
-	prints   Prints
-	printers Printers
-	floor    Floor
-	shifts   Shifts
-	zreports ZReports
-	tips     Tips
-	exports  Exports
-	limiter  *limiter
-	handler  http.Handler
+	cfg        config.Config
+	log        *slog.Logger
+	build      BuildInfo
+	now        func() time.Time
+	started    time.Time
+	bundles    map[string]fs.FS
+	dbCheck    func() string
+	devices    Devices
+	staff      Staff
+	orders     Orders
+	menus      Menus
+	stream     Stream
+	prints     Prints
+	printers   Printers
+	menuEditor MenuEditor
+	floor      Floor
+	shifts     Shifts
+	zreports   ZReports
+	tips       Tips
+	exports    Exports
+	limiter    *limiter
+	handler    http.Handler
 }
 
 // Option adjusts a Server at construction.
@@ -110,6 +111,7 @@ func (s *Server) routes() http.Handler {
 	s.mountStream(mux)
 	s.mountPrints(mux)
 	s.mountPrinters(mux)
+	s.mountMenuEditor(mux)
 	s.mountFloor(mux)
 	s.mountKitchen(mux)
 	s.mountShifts(mux)

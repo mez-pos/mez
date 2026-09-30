@@ -2941,3 +2941,36 @@ Because: the phase asks for permission-gated sections, and the client had
 no way to know a role's permissions short of trying every endpoint.
 Cost: a role edited mid-session reaches the shell only at the next sign-in
 or reload; the server refuses in the meantime.
+
+## ADR-106 - Menu edits go through one door that bumps the version
+2026-09 · Status: accepted
+Decision: phase 10, Task 2a writes categories and items from the back
+office through `internal/service/menus`, over `/api/v1/menu/...` with
+`menu.edit`.
+  - **One door:** `db.DB.EditMenu` runs an edit and `BumpMenuVersion` in
+    one transaction; the service then calls the hub's `Notify`, whose
+    ping makes every connection compare versions and send
+    `menu_changed`. An edit that fails writes nothing, bumps nothing and
+    nudges nobody.
+  - **Nothing is deleted:** retire and bring back, as the schema intends.
+    The editor's read (`GET /api/v1/menu/editor`) includes retired rows;
+    the till's does not. Retiring a category takes its items off the till
+    without touching their own flag, so bringing it back restores them.
+  - **HSN by the profile, not by name:** `tax.NeedsHSN` reads the
+    profile's own per-line invoice fields. Where it is true every item
+    needs a code `tax.ValidHSN` accepts (4, 6 or 8 digits, the same rule
+    GST invoicing applies), so an item that could never be invoiced is
+    refused at save, not at the till. Elsewhere an HSN is refused.
+  - **Ordering by whole list:** `PUT .../order` takes every id in scope,
+    retired ones included; anything else is `menu_order_stale` (409), so
+    an editor holding a stale list cannot drop rows from the order.
+  - A price arrives as `money.Amount` and must be in the venue's
+    currency. An edit answers only the id; the editor reads the menu
+    again, as the printers screen does.
+  - Like the printer settings, these routes do not honour
+    `Idempotency-Key`: a retried create can add a second item.
+Because: the snapshot rule already keeps open tickets safe from any edit;
+what can still go wrong is a till selling from a menu it thinks is current,
+and the one door closes that.
+Cost: every edit re-reads the whole editor document; fine at a cafe's
+few hundred items.

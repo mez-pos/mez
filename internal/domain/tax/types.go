@@ -165,3 +165,19 @@ type TaxProfile interface {
 	InvoiceFields() []Field
 	RegisterColumns() []Column
 }
+
+// NeedsHSN reports whether a profile's invoices show an HSN or SAC code on
+// every line, and so whether every item must carry one. It reads the
+// profile's own invoice fields, so a caller never has to know the regime.
+// A nil profile (a venue that charges no tax) needs none.
+func NeedsHSN(p TaxProfile) bool {
+	if p == nil {
+		return false
+	}
+	for _, f := range p.InvoiceFields() {
+		if f.Key == "hsn" && f.Scope == ScopeLine {
+			return true
+		}
+	}
+	return false
+}

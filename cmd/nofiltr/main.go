@@ -29,6 +29,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/menus"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
 	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
@@ -218,6 +219,11 @@ func run() (err error) {
 		return err
 	}
 
+	menuEditor, err := menus.New(menus.Options{DB: database, OnChange: events.Notify})
+	if err != nil {
+		return err
+	}
+
 	floorPlan, err := floor.New(floor.Options{DB: database, Orders: orders, OnChange: events.Notify})
 	if err != nil {
 		return err
@@ -238,6 +244,7 @@ func run() (err error) {
 		api.WithStream(events),
 		api.WithPrints(prints),
 		api.WithPrinters(printerSettings),
+		api.WithMenuEditor(menuEditor),
 		api.WithFloor(floorPlan),
 		api.WithShifts(shifts),
 	)

@@ -24,6 +24,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tips"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/menus"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
 	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
@@ -123,6 +124,7 @@ var errorCodes = []ErrorCode{
 	CodeAlreadyCounted, CodeNotCounted, CodeDrawerCounted, CodeVarianceUnexplained, CodeAlreadyExplained,
 	CodeZReportNotFound, CodeShiftStillOpen, CodeAlreadyPooled, CodeNotStaff, CodeInvalidTipPool,
 	CodeExportNotFound,
+	CodeCategoryNotFound, CodeItemNotFound, CodeInvalidMenu, CodeMenuOrderStale,
 }
 
 // generate builds the whole file.
@@ -143,6 +145,14 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(money.Amount{}):        "Money",
 			reflect.TypeOf(order.Modifier{}):      "LineModifier",
 			reflect.TypeOf(printers.Settings{}):   "PrinterSettings",
+			reflect.TypeOf(menus.CategoryInput{}): "MenuCategoryInput",
+			reflect.TypeOf(menus.ItemInput{}):     "MenuItemInput",
+			reflect.TypeOf(menus.Editor{}):        "MenuEditor",
+			reflect.TypeOf(menus.Station{}):       "EditorStation",
+			reflect.TypeOf(menus.Course{}):        "EditorCourse",
+			reflect.TypeOf(menus.TaxClass{}):      "EditorTaxClass",
+			reflect.TypeOf(menus.Category{}):      "EditorCategory",
+			reflect.TypeOf(menus.Item{}):          "EditorItem",
 			reflect.TypeOf(order.CreditRequest{}): "CreditSelection",
 			reflect.TypeOf(floor.AreaSettings{}):  "AreaSettings",
 			reflect.TypeOf(floor.TableSettings{}): "TableSettings",
@@ -242,6 +252,9 @@ func generate() (*ts.Generator, error) {
 		// Printer settings.
 		printerRequest{}, assignRequest{}, printerResponse{}, lastJobResponse{}, stationPrinterResponse{},
 		printersResponse{}, testPageResponse{},
+		// The menu editor.
+		categoryRequest{}, itemRequest{}, menuOrderRequest{}, menuEditResponse{}, menus.Editor{},
+		menus.Station{}, menus.Course{}, menus.TaxClass{}, menus.Category{}, menus.Item{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},

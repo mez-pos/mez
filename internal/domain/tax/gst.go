@@ -42,7 +42,7 @@ func (g GST) Compute(lines []Line, ctx VenueContext) (TaxResult, error) {
 	}
 
 	return compute(g.Name(), lines, ctx, func(l Line) ([]Component, error) {
-		if !validHSN(l.HSN) {
+		if !ValidHSN(l.HSN) {
 			return nil, fmt.Errorf("%w: %q", ErrMissingHSN, l.HSN)
 		}
 		if err := l.Rate.Validate(); err != nil {
@@ -104,8 +104,10 @@ func validGSTIN(s string) bool {
 	return true
 }
 
-// validHSN accepts an HSN or SAC code of 4, 6 or 8 digits.
-func validHSN(s string) bool {
+// ValidHSN accepts an HSN or SAC code of 4, 6 or 8 digits: what GST
+// refuses a line without. The menu editor checks with it too, so an item
+// that could never be invoiced is refused when it is saved, not at the till.
+func ValidHSN(s string) bool {
 	return (len(s) == 4 || len(s) == 6 || len(s) == 8) && isDigits(s)
 }
 

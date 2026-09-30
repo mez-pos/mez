@@ -115,3 +115,114 @@ RETURNING id;
 -- name: AttachModifierGroup :exec
 INSERT INTO item_modifier_groups (venue_id, item_id, group_id, sort_order)
 VALUES (?, ?, ?, ?);
+
+-- The back office's editor reads everything, retired rows included, so a
+-- retired item can be brought back. db.DB.MenuEditor runs these in one read
+-- transaction with MenuVersion.
+
+-- name: EditorStations :many
+SELECT id, code, name, active
+FROM stations
+WHERE venue_id = ?
+ORDER BY sort_order, id;
+
+-- name: EditorCategories :many
+SELECT id, name, sort_order, active
+FROM categories
+WHERE venue_id = ?
+ORDER BY sort_order, id;
+
+-- name: EditorItems :many
+SELECT
+    id, category_id, name, price, hsn,
+    tax_class_id, station_id, course_id, sort_order, active
+FROM items
+WHERE venue_id = ?
+ORDER BY category_id, sort_order, id;
+
+-- The editor's writes. Each goes through db.DB.EditMenu, which bumps the
+-- menu version in the same transaction. Every one is scoped by venue_id:
+-- an id from another venue matches nothing.
+
+-- name: CategoryForEdit :one
+SELECT id, active
+FROM categories
+WHERE venue_id = ? AND id = ?;
+
+-- name: ItemForEdit :one
+SELECT id, category_id, sort_order, active
+FROM items
+WHERE venue_id = ? AND id = ?;
+
+-- name: StationForEdit :one
+SELECT id, active
+FROM stations
+WHERE venue_id = ? AND id = ?;
+
+-- name: TaxClassForEdit :one
+SELECT id
+FROM tax_classes
+WHERE venue_id = ? AND id = ?;
+
+-- name: CourseForEdit :one
+SELECT id
+FROM courses
+WHERE venue_id = ? AND id = ?;
+
+-- name: NextCategorySort :one
+SELECT CAST(COALESCE(MAX(sort_order) + 1, 0) AS INTEGER) AS next
+FROM categories
+WHERE venue_id = ?;
+
+-- name: NextItemSort :one
+SELECT CAST(COALESCE(MAX(sort_order) + 1, 0) AS INTEGER) AS next
+FROM items
+WHERE venue_id = ? AND category_id = ?;
+
+-- name: CategoryIDs :many
+SELECT id
+FROM categories
+WHERE venue_id = ?
+ORDER BY id;
+
+-- name: ItemIDsInCategory :many
+SELECT id
+FROM items
+WHERE venue_id = ? AND category_id = ?
+ORDER BY id;
+
+-- name: RenameCategory :execrows
+UPDATE categories
+SET name = sqlc.arg(name), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetCategoryActive :execrows
+UPDATE categories
+SET active = sqlc.arg(active), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetCategorySort :execrows
+UPDATE categories
+SET sort_order = sqlc.arg(sort_order), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: UpdateItem :execrows
+--
+-- A line already rung up keeps the name, price and tax it copied
+-- (docs/02-domain.md, "Prices and the snapshot rule"); this changes only
+-- what the next line copies.
+UPDATE items
+SET category_id = sqlc.arg(category_id), name = sqlc.arg(name), price = sqlc.arg(price),
+    hsn = sqlc.arg(hsn), tax_class_id = sqlc.arg(tax_class_id), station_id = sqlc.arg(station_id),
+    course_id = sqlc.arg(course_id), sort_order = sqlc.arg(sort_order), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetItemActive :execrows
+UPDATE items
+SET active = sqlc.arg(active), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetItemSort :execrows
+UPDATE items
+SET sort_order = sqlc.arg(sort_order), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
