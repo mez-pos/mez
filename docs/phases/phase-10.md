@@ -47,6 +47,21 @@ Phase 09.
   adjustments, wastage with reason codes, low-stock alerts, closing stock at
   shift end. Keep it basic — purchasing and suppliers stay out of scope.
 
+  Split into four (a ledger first, so every later part only appends to it):
+
+  - [ ] **Task 3a: Stock items and the stock ledger.** Server. Stock
+    items with a unit and a low-stock level; an append-only ledger of
+    movements (received, adjusted, wasted with a reason code, counted),
+    on hand as its sum; a `stock.manage` permission. Go tests.
+  - [ ] **Task 3b: Recipes and deduction on sale.** Which stock each menu
+    item uses, and a sale movement written when an order is invoiced, in
+    the same transaction. What a void, comp or credit note does to stock.
+  - [ ] **Task 3c: The Stock screen.** Spec first
+    (`backoffice-stock.md`). Stock items with on hand, receive, adjust,
+    waste with a reason, a movement history, and recipes on the item form.
+  - [ ] **Task 3d: Low stock and closing stock.** Low-stock alerts where a
+    manager sees them; a stock count as part of closing the shift.
+
 - [ ] **Task 4 — People.**
   Staff CRUD, roles, permissions, PIN reset. An audit view of who voided,
   comped, discounted and refunded, filterable by staff and date. This is one of
