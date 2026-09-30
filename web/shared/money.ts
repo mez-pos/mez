@@ -74,3 +74,34 @@ function formatterFor(locale: string, currency: string, exponent: number): Intl.
   }
   return format;
 }
+
+/**
+ * The minor units of a price typed in major units: "180" is 18000 paise,
+ * "180.5" is 18050, "1,80,000.00" is 18000000. Null for anything that is
+ * not a price: empty, negative, letters, or more decimals than the currency
+ * has ("12.345" in rupees). The text is read as digits and joined, never
+ * through a float, so "0.29" is 29 and not 28.999999999999996.
+ */
+export function parseAmount(text: string, currency: string): number | null {
+  const exponent = exponentOf(currency);
+  const cleaned = text.trim().replace(/[\s,]/g, "");
+  const match = /^(\d*)(?:\.(\d*))?$/.exec(cleaned);
+  if (!match) return null;
+  const [, whole = "", fraction = ""] = match;
+  if (whole === "" && fraction === "") return null;
+  if (fraction.length > exponent) return null;
+  const minor = Number(`${whole || "0"}${fraction.padEnd(exponent, "0")}`);
+  return Number.isSafeInteger(minor) ? minor : null;
+}
+
+/**
+ * The text a price input starts with for an amount: "180.50", "180.00",
+ * "1234" for a currency with no minor unit. No grouping and no symbol, so
+ * it reads back through parseAmount unchanged.
+ */
+export function amountInputText(amount: Money): string {
+  const exponent = exponentOf(amount.currency);
+  const { major, fraction } = split(Math.abs(amount.minor), exponent);
+  const sign = amount.minor < 0 ? "-" : "";
+  return exponent > 0 ? `${sign}${major}.${fraction}` : `${sign}${major}`;
+}

@@ -7,6 +7,7 @@ import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { Splash } from "../../shared/screens/Splash";
 import { FloorScreen } from "./floor/FloorScreen";
+import { MenuScreen } from "./menu/MenuScreen";
 import { PrintersScreen } from "./printers/PrintersScreen";
 import { ZReportsScreen } from "./reports/ZReportsScreen";
 import { ExportsPanel } from "./reports/ExportsPanel";
@@ -44,6 +45,11 @@ export function App() {
 function SignedInRoutes() {
   return (
     <Switch>
+      <Route path="/menu">
+        <SectionGate id="menu">
+          <MenuScreen />
+        </SectionGate>
+      </Route>
       <Route path="/printers">
         <SectionGate id="printers">
           <PrintersScreen />

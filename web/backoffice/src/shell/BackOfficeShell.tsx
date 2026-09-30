@@ -22,9 +22,9 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
 
   return (
     <SignedInShell area={current?.label ?? "Back office"} exitLabel="Sign out" fill>
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
         <SectionNav current={current} />
-        <div className="min-h-0 flex-1 overflow-y-auto p-8">{children}</div>
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-8">{children}</div>
       </div>
     </SignedInShell>
   );

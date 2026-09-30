@@ -2974,3 +2974,27 @@ what can still go wrong is a till selling from a menu it thinks is current,
 and the one door closes that.
 Cost: every edit re-reads the whole editor document; fine at a cafe's
 few hundred items.
+
+## ADR-107 - The menu editor says what a price change does before Save
+2026-09 · Status: accepted
+Decision: phase 10, Task 2b's editor (`docs/design/screens/backoffice-menu.md`)
+shows the snapshot rule where the owner decides, not after.
+  - **The notice is live:** editing an item and typing a different price
+    shows "Tickets already open keep ₹200.00. Lines rung up after you save
+    are ₹220.00." under the price, before Save. The toast after a repriced
+    save repeats it, and a line under the page title says it always.
+  - **Prices are typed in major units and read as text:**
+    `parseAmount` (`web/shared/money.ts`) joins the whole and fraction
+    digits into one integer, refuses more decimals than the currency has,
+    and never divides or multiplies a float. `amountInputText` is its
+    inverse for the form's starting value.
+  - **Order by arrows, not drag:** each move saves the whole list at once
+    (ADR-106); a stale list reloads and says so.
+  - **Layout:** categories beside the items only from 1536px; below that
+    they sit above, so a 1366px laptop keeps every column and action. The
+    shell's content column gained `min-w-0`: without it a wide table
+    stretched the page instead of scrolling inside its own box.
+Because: "open tickets keep their price" is only understood if it is
+read at the moment of choosing a new one.
+Cost: the notice appears only in the form; a retire has no equivalent
+("tickets already open keep this item") yet.

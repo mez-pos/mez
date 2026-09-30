@@ -13,32 +13,34 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 2a: categories and items on the server** (ADR-106).
-Task 2 is split into 2a to 2d in the phase file. `internal/service/menus`
-creates, edits, retires, brings back and orders categories and items
-through `db.DB.EditMenu`, which bumps the menu version in the same
-transaction; the hub is nudged after. `GET /api/v1/menu/editor` reads it
-all, retired rows included (`menu.edit`). On a venue whose profile prints
-HSN per line, every item needs a valid one. Smoke-tested on the real
-binary: an item added over the API reached the till's menu at a new
-version.
+**Phase 10, Task 2b: the menu editor screen** (ADR-107, spec
+`docs/design/screens/backoffice-menu.md`). `/menu` in the back office
+(`g m`): categories with item counts, the selected one's items in a table
+(price, tax, HSN on a GST venue, station, course), add, edit, rename,
+retire with a confirm for a category, bring back, and arrows to reorder.
+Editing a price shows, before Save, that open tickets keep the old price.
+`parseAmount` in `web/shared/money.ts` reads typed prices without floats.
+Tried in the browser on a GST demo venue: price change and notice, the
+server's HSN refusal under its field, reorder, retire a category. Fixed on
+the way: the shell's content column stretched with a wide table.
 
 ## Next task
 
-**Phase 10, Task 2b: the editor for categories and items.** Spec
-`docs/design/screens/backoffice-menu.md` first. Then set `built: true` on
-`menu` in `web/backoffice/src/shell/nav-logic.ts` and route `/menu`
-behind `SectionGate`. The price notice: open tickets keep the price they
-were rung up at.
+**Phase 10, Task 2c: modifier groups.** Server and screen: groups, their
+choices and bounds, and which items offer them. The editor already reads
+`modifier_groups` ids per item (ADR-106).
 
 ## Known broken / in progress
 
-- Menu editor (ADR-106): server only until 2b. No `Idempotency-Key` on
+- Menu editor (ADR-106, ADR-107): no `Idempotency-Key` on
   its routes, as with printers. Duplicate item names are allowed. No
   write path yet for stations, courses or tax classes (Task 6), nor for
   modifier groups (2c). A venue whose tax profile changes to one needing
   HSN keeps items without one until each is edited (Task 6 must handle
-  this).
+  this). The table scrolls sideways below about 1100px of content width.
+  Retiring an item shows no "open tickets keep it" note. Form controls
+  use the shared `inputClass`, which does not set the 16px control size
+  tokens.md asks for (the printers form has the same gap).
 
 - Shell (ADR-105): only tried as the owner. A cashier or manager view and
   the "not yours to open" screen are tested in vitest, not by hand: no API

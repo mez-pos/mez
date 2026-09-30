@@ -27,7 +27,7 @@ Phase 09.
     office's read of the whole menu, retired rows included; create, edit,
     retire and bring back categories and items (price, tax class, HSN,
     station, course, order). `menu.edit`. Go tests.
-  - [ ] **Task 2b: The editor for categories and items.** Spec first
+  - [x] **Task 2b: The editor for categories and items.** Spec first
     (`backoffice-menu.md`). Categories down the side, items in a dense
     table, an item form. A price change says, where it is made, that open
     tickets keep the price they were rung up at.

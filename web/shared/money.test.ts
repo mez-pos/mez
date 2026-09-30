@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exponentOf, formatMoney } from "./money";
+import { amountInputText, exponentOf, formatMoney, parseAmount } from "./money";
 
 describe("formatMoney", () => {
   // Intl joins a currency code to its number with a no-break space (U+00A0),
@@ -51,5 +51,57 @@ describe("exponentOf", () => {
   ];
   for (const tt of tests) {
     it(tt.currency, () => expect(exponentOf(tt.currency)).toBe(tt.want));
+  }
+});
+
+describe("parseAmount", () => {
+  const tests: { text: string; currency: string; want: number | null }[] = [
+    { text: "180", currency: "INR", want: 18000 },
+    { text: "180.5", currency: "INR", want: 18050 },
+    { text: "180.50", currency: "INR", want: 18050 },
+    { text: " 180.50 ", currency: "INR", want: 18050 },
+    { text: "1,80,000.00", currency: "INR", want: 18_000_000 },
+    { text: "1 234", currency: "INR", want: 123_400 },
+    { text: ".5", currency: "INR", want: 50 },
+    { text: "5.", currency: "INR", want: 500 },
+    { text: "0", currency: "INR", want: 0 },
+    { text: "0.29", currency: "INR", want: 29 },
+    { text: "0.07", currency: "USD", want: 7 },
+    { text: "1234", currency: "JPY", want: 1234 },
+    { text: "1.234", currency: "KWD", want: 1234 },
+    { text: "", currency: "INR", want: null },
+    { text: ".", currency: "INR", want: null },
+    { text: "12.345", currency: "INR", want: null },
+    { text: "12.0", currency: "JPY", want: null },
+    { text: "-5", currency: "INR", want: null },
+    { text: "abc", currency: "INR", want: null },
+    { text: "1e5", currency: "INR", want: null },
+    { text: "1.2.3", currency: "INR", want: null },
+    { text: "₹180", currency: "INR", want: null },
+    { text: "99999999999999999", currency: "INR", want: null },
+  ];
+  for (const tt of tests) {
+    it(`reads ${JSON.stringify(tt.text)} ${tt.currency} as ${tt.want}`, () => {
+      expect(parseAmount(tt.text, tt.currency)).toBe(tt.want);
+    });
+  }
+});
+
+describe("amountInputText", () => {
+  const tests = [
+    { minor: 18050, currency: "INR", want: "180.50" },
+    { minor: 18000, currency: "INR", want: "180.00" },
+    { minor: 5, currency: "INR", want: "0.05" },
+    { minor: 0, currency: "USD", want: "0.00" },
+    { minor: 1234, currency: "JPY", want: "1234" },
+    { minor: 1234, currency: "KWD", want: "1.234" },
+    { minor: -250, currency: "GBP", want: "-2.50" },
+  ];
+  for (const tt of tests) {
+    it(`writes ${tt.minor} ${tt.currency} as ${tt.want}, which reads back`, () => {
+      const text = amountInputText({ minor: tt.minor, currency: tt.currency });
+      expect(text).toBe(tt.want);
+      if (tt.minor >= 0) expect(parseAmount(text, tt.currency)).toBe(tt.minor);
+    });
   }
 });
