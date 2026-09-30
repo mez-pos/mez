@@ -20,6 +20,23 @@ Phase 09.
   lines only — open tickets keep their snapshot. Make that visible in the UI so
   the owner understands it.
 
+  Split into four (the schema is phase 02's; nothing writes it over HTTP):
+
+  - [ ] **Task 2a: Categories and items on the server.** A menu write path
+    that cannot forget the version bump or the stream nudge; the back
+    office's read of the whole menu, retired rows included; create, edit,
+    retire and bring back categories and items (price, tax class, HSN,
+    station, course, order). `menu.edit`. Go tests.
+  - [ ] **Task 2b: The editor for categories and items.** Spec first
+    (`backoffice-menu.md`). Categories down the side, items in a dense
+    table, an item form. A price change says, where it is made, that open
+    tickets keep the price they were rung up at.
+  - [ ] **Task 2c: Modifier groups.** Server and screen: groups, their
+    choices and bounds, and which items offer them.
+  - [ ] **Task 2d: Availability and photos.** Sold out for today, apart
+    from retiring an item; item photos stored beside the database and
+    shown on the register.
+
 - [ ] **Task 3 — Inventory basics.**
   Stock items, recipes mapping menu items to stock, deduction on sale, manual
   adjustments, wastage with reason codes, low-stock alerts, closing stock at
