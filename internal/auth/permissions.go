@@ -35,6 +35,7 @@ const (
 	PermMenuEdit     Permission = "menu.edit"     // prices and the menu
 	PermSettingsEdit Permission = "settings.edit" // tax, invoice series, venue settings
 	PermReportsView  Permission = "reports.view"  // sales, voids, the Z-report
+	PermStockManage  Permission = "stock.manage"  // stock items, deliveries, waste, counts (ADR-111)
 )
 
 // all is every permission, in the order a back office screen should list
@@ -43,7 +44,7 @@ var all = []Permission{
 	PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
 	PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView,
 	PermShiftManage, PermCashMove,
-	PermDeviceManage, PermStaffManage, PermMenuEdit, PermSettingsEdit, PermReportsView,
+	PermDeviceManage, PermStaffManage, PermMenuEdit, PermSettingsEdit, PermReportsView, PermStockManage,
 }
 
 // ErrUnknownPermission means a permission key this build does not have.
@@ -150,7 +151,7 @@ func DefaultRoles() []RoleTemplate {
 		PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
 		PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView,
 		PermShiftManage, PermCashMove,
-		PermStaffManage, PermReportsView,
+		PermStaffManage, PermReportsView, PermStockManage,
 	}
 	return []RoleTemplate{
 		{Name: "owner", Permissions: Permissions()},

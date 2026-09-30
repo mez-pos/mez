@@ -50,7 +50,7 @@ Paper surface, inside `SignedInShell` (header: `NOFILTR · <section> ·
 |---|---|---|---|
 | Dashboard | `/` | signed in | this task |
 | Menu | `/menu` | `menu.edit` | Task 2 |
-| Stock | `/stock` | `menu.edit` | Task 3 |
+| Stock | `/stock` | `stock.manage` (ADR-111) | Task 3 |
 | People | `/people` | `staff.manage` | Task 4 |
 | Z-reports | `/reports` | `reports.view` | phase 09 |
 | Sales reports | `/sales` | `reports.view` | Task 5 |

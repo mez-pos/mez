@@ -3086,3 +3086,39 @@ browser that chose the file is the one place that can make it cheaply.
 Cost: the photos folder is not in the database, so Litestream does not
 back it up (phase 12 must); an upload from a client that skips the
 editor is kept at up to 1024px and 512 KB.
+
+## ADR-111 - Stock is a ledger, in thousandths, under its own permission
+2026-09 · Status: accepted
+Decision: phase 10, Task 3a keeps stock as an append-only ledger
+(`internal/domain/stock`, `internal/service/stock`, migration 00023).
+  - **On hand is a sum, never stored:** `stock_movements` rows are never
+    updated or deleted (triggers refuse it), and on hand is the sum of
+    their deltas. A count records counted and the delta from the ledger,
+    so a count that finds less shows as a loss someone can see, not as a
+    number quietly replaced.
+  - **Kinds:** received and wasted take a positive amount, wasted with a
+    reason code (expired, spoiled, spilled, dropped, other with a note);
+    adjusted takes a signed change and a note; counted takes what was
+    counted. `sold` is in the vocabulary for Task 3b and refused by hand.
+  - **Quantities are thousandths of the unit** (g, ml or each), int64:
+    18.5 g is 18500, half a lime is 500. No floats, as with money. The
+    unit cannot change once an item has history.
+  - **A movement is recorded in one write transaction** that reads on
+    hand, computes the delta and appends, so two counts at once cannot
+    both use a stale figure. It records the staff member signed in and
+    the open shift, or 0.
+  - **`stock.manage` is a new permission,** not `menu.edit`: a manager
+    who counts the walk-in should not need to be able to change prices.
+    Migration 00023 grants it to roles still named owner and manager, as
+    00007 did for `invoice.reprint`; new venues' manager template has it.
+    The back office's Stock section now needs it (it was `menu.edit`,
+    ADR-105).
+  - History is cursor-paginated by id, newest first (`?before=&limit=`).
+  - Low is on hand at or under the item's level; a level of 0 is never
+    low, and a retired item is never low.
+Because: stock is only trusted if every number on it can be explained by
+the rows under it.
+Cost: on hand is a SUM over every movement of an item; fine for years of
+a cafe's rows, and a snapshot can be added without changing the ledger.
+The open shift is found as order events find it, so a movement after the
+closing drawer count has no shift (Task 3d must decide).

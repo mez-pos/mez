@@ -19,6 +19,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
+	domstock "github.com/byjoellobo/nofiltr-pos/internal/domain/stock"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/table"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tips"
@@ -28,6 +29,7 @@ import (
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
 	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/stock"
 )
 
 // typesFile is the generated file, relative to this package.
@@ -125,6 +127,7 @@ var errorCodes = []ErrorCode{
 	CodeZReportNotFound, CodeShiftStillOpen, CodeAlreadyPooled, CodeNotStaff, CodeInvalidTipPool,
 	CodeExportNotFound,
 	CodeCategoryNotFound, CodeItemNotFound, CodeInvalidMenu, CodeMenuOrderStale, CodeGroupNotFound, CodePhotoNotFound,
+	CodeStockItemNotFound, CodeStockItemRetired, CodeStockNameTaken, CodeInvalidStock,
 }
 
 // generate builds the whole file.
@@ -157,6 +160,11 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(menus.ModifierInput{}): "MenuModifierInput",
 			reflect.TypeOf(menus.Group{}):         "EditorGroup",
 			reflect.TypeOf(menus.Modifier{}):      "EditorModifier",
+			reflect.TypeOf(stock.ItemInput{}):     "StockItemInput",
+			reflect.TypeOf(stock.MovementInput{}): "StockMovementInput",
+			reflect.TypeOf(stock.Item{}):          "StockItem",
+			reflect.TypeOf(stock.Recorded{}):      "StockRecorded",
+			reflect.TypeOf(stock.Movement{}):      "StockMovement",
 			reflect.TypeOf(order.CreditRequest{}): "CreditSelection",
 			reflect.TypeOf(floor.AreaSettings{}):  "AreaSettings",
 			reflect.TypeOf(floor.TableSettings{}): "TableSettings",
@@ -205,6 +213,9 @@ func generate() (*ts.Generator, error) {
 			auth.KindTerminal, auth.KindKitchen, auth.KindBackOffice, auth.KindGuest,
 		})},
 		{"Permission", auth.PermOrderOpen, permissions()},
+		{"StockUnit", domstock.Gram, asStrings(domstock.Units())},
+		{"StockMovementKind", domstock.Received, asStrings(domstock.Kinds())},
+		{"WasteReason", domstock.Expired, asStrings(domstock.WasteReasons())},
 		{"OrderEventType", order.TypeOrderOpened, eventTypeNames()},
 		{"StreamMessageType", hub.MsgHello, asStrings([]hub.MessageType{
 			hub.MsgHello, hub.MsgSubscribe, hub.MsgWelcome, hub.MsgEvent, hub.MsgCaughtUp,
@@ -260,6 +271,9 @@ func generate() (*ts.Generator, error) {
 		categoryRequest{}, itemRequest{}, menuOrderRequest{}, menuEditResponse{}, menus.Editor{},
 		menus.Station{}, menus.Course{}, menus.TaxClass{}, menus.Category{}, menus.Item{},
 		groupRequest{}, menus.ModifierInput{}, menus.Group{}, menus.Modifier{}, soldOutResponse{}, photoResponse{},
+		// Stock.
+		stockItemRequest{}, movementRequest{}, stock.Item{}, stockItemsResponse{}, stockEditResponse{},
+		stock.Recorded{}, stock.Movement{}, movementsResponse{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},

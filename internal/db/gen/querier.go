@@ -89,6 +89,10 @@ type Querier interface {
 	CreateStaff(ctx context.Context, arg CreateStaffParams) (Staff, error)
 	CreateStaffSession(ctx context.Context, arg CreateStaffSessionParams) (int64, error)
 	CreateStation(ctx context.Context, arg CreateStationParams) (int64, error)
+	// Stock (phase 10, Task 3a, ADR-111). Every query is scoped by venue_id: an
+	// id from another venue matches nothing. On hand is always the sum of the
+	// ledger, never a stored number.
+	CreateStockItem(ctx context.Context, arg CreateStockItemParams) (int64, error)
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
 	CreateTaxClass(ctx context.Context, arg CreateTaxClassParams) (int64, error)
 	CreateTipPool(ctx context.Context, arg CreateTipPoolParams) error
@@ -140,6 +144,7 @@ type Querier interface {
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
+	InsertStockMovement(ctx context.Context, arg InsertStockMovementParams) (int64, error)
 	InvoiceSeriesLastSeq(ctx context.Context, arg InvoiceSeriesLastSeqParams) (int64, error)
 	InvoicesForVenue(ctx context.Context, venueID int64) ([]Invoice, error)
 	// Every item's category, retired ones included: a report names what was
@@ -250,6 +255,7 @@ type Querier interface {
 	// two columns that change.
 	SetSetting(ctx context.Context, arg SetSettingParams) error
 	SetStationPrinter(ctx context.Context, arg SetStationPrinterParams) (int64, error)
+	SetStockItemActive(ctx context.Context, arg SetStockItemActiveParams) (int64, error)
 	SetTableActive(ctx context.Context, arg SetTableActiveParams) (int64, error)
 	Setting(ctx context.Context, arg SettingParams) (Setting, error)
 	// Per-venue settings the schema has no opinion about. Anything the database
@@ -276,6 +282,16 @@ type Querier interface {
 	// The printer a station's tickets go to, if it has one in service.
 	StationPrinter(ctx context.Context, arg StationPrinterParams) (StationPrinterRow, error)
 	StationsWithPrinters(ctx context.Context, venueID int64) ([]StationsWithPrintersRow, error)
+	StockItemForEdit(ctx context.Context, arg StockItemForEditParams) (StockItemForEditRow, error)
+	//
+	// Every item, retired ones too, with what the ledger says is on hand.
+	StockItemsWithOnHand(ctx context.Context, venueID int64) ([]StockItemsWithOnHandRow, error)
+	StockMovementCount(ctx context.Context, arg StockMovementCountParams) (int64, error)
+	//
+	// Newest first, a page at a time: before_id is the last id of the page
+	// before, or 0 for the first page.
+	StockMovementsForItem(ctx context.Context, arg StockMovementsForItemParams) ([]StockMovementsForItemRow, error)
+	StockOnHand(ctx context.Context, arg StockOnHandParams) (int64, error)
 	TableByID(ctx context.Context, id int64) (TableByIDRow, error)
 	// The table in service in a cell, if any, other than the one being placed.
 	TableInCell(ctx context.Context, arg TableInCellParams) (TableInCellRow, error)
@@ -307,6 +323,7 @@ type Querier interface {
 	// the caller reports as a conflict rather than moving the index backwards.
 	UpdateOrderIndex(ctx context.Context, arg UpdateOrderIndexParams) (int64, error)
 	UpdatePrinter(ctx context.Context, arg UpdatePrinterParams) (int64, error)
+	UpdateStockItem(ctx context.Context, arg UpdateStockItemParams) (int64, error)
 	UpdateTable(ctx context.Context, arg UpdateTableParams) (int64, error)
 	//
 	// Currency is deliberately absent. Changing it would reinterpret every minor

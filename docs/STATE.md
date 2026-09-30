@@ -13,26 +13,28 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 2d2: item photos** (ADR-110), which completes Task 2 (the
-menu editor: 2a to 2d2). The editor's item form chooses a photo, shrinks it
-to 480px in the browser and uploads it after the item; the server checks
-it again and stores it in `<data dir>/photos/` by its SHA-256 (migration
-00022). `GET /api/v1/menu/photos/{name}` serves it publicly, cached for
-good. The editor table has thumbnails; the register tiles show the photo.
-Tried in the browser: a 2400px photo stored as 480 x 360, 17 KB; a photo
-set over the API appeared on the till's tile live.
+**Phase 10, Task 3a: stock items and the stock ledger** (ADR-111). Task 3
+is split into 3a to 3d in the phase file. Migration 00023 adds
+`stock_items` and an append-only `stock_movements` ledger, and grants the
+new `stock.manage` to owner and manager roles. On hand is the sum of the
+ledger; received, adjusted, wasted (with a reason code) and counted are
+entered by hand under `/api/v1/stock` (history cursor-paginated).
+Quantities are thousandths of g, ml or each. The Stock nav entry now needs
+`stock.manage`. Smoke-tested on the real binary: 5 kg received, 3.2 kg
+spoiled, 1.8 kg on hand and low.
 
 ## Next task
 
-**Phase 10, Task 3: inventory basics.** Stock items, recipes mapping menu
-items to stock, deduction on sale, manual adjustments, wastage with reason
-codes, low-stock alerts, closing stock at shift end. Almost certainly
-needs splitting before any code: read the phase file and split first.
-Decide whether stock gets its own permission (ADR-105 gated it on
-`menu.edit` for now).
+**Phase 10, Task 3b: recipes and deduction on sale.** Which stock each
+menu item uses, and a `sold` movement written when an order is invoiced,
+in the same transaction. Decide what a void, a comp and a credit note do
+to stock, and whether modifiers carry recipes too.
 
 ## Known broken / in progress
 
+- Stock (ADR-111): server only until 3c. Nothing is sold out of stock yet
+  (3b). A movement after the shift's closing drawer count records no
+  shift (3d). No low-stock alert anywhere yet (3d).
 - Photos (ADR-110): `<data dir>/photos/` is not backed up by Litestream
   (phase 12 must add it); unreferenced photo files are never swept; the
   guest app does not show photos yet.

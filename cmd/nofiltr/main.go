@@ -33,6 +33,7 @@ import (
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
 	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
+	svcstock "github.com/byjoellobo/nofiltr-pos/internal/service/stock"
 	"github.com/byjoellobo/nofiltr-pos/web"
 )
 
@@ -228,6 +229,11 @@ func run() (err error) {
 		return err
 	}
 
+	stockBook, err := svcstock.New(database, nil)
+	if err != nil {
+		return err
+	}
+
 	floorPlan, err := floor.New(floor.Options{DB: database, Orders: orders, OnChange: events.Notify})
 	if err != nil {
 		return err
@@ -249,6 +255,7 @@ func run() (err error) {
 		api.WithPrints(prints),
 		api.WithPrinters(printerSettings),
 		api.WithMenuEditor(menuEditor),
+		api.WithStock(stockBook),
 		api.WithFloor(floorPlan),
 		api.WithShifts(shifts),
 	)

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Permission } from "../../../shared/api-types";
 import { CHORD_WINDOW_MS, NAV, canOpen, chord, section, sectionForPath, visibleNav, type KeyInput } from "./nav-logic";
 
-const owner: Permission[] = ["menu.edit", "staff.manage", "reports.view", "settings.edit", "device.manage"];
+const owner: Permission[] = ["menu.edit", "staff.manage", "reports.view", "settings.edit", "device.manage", "stock.manage"];
 const manager: Permission[] = ["staff.manage", "reports.view", "shift.manage"];
 const cashier: Permission[] = ["order.open", "payment.take"];
 

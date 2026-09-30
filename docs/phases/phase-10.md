@@ -49,7 +49,7 @@ Phase 09.
 
   Split into four (a ledger first, so every later part only appends to it):
 
-  - [ ] **Task 3a: Stock items and the stock ledger.** Server. Stock
+  - [x] **Task 3a: Stock items and the stock ledger.** Server. Stock
     items with a unit and a low-stock level; an append-only ledger of
     movements (received, adjusted, wasted with a reason code, counted),
     on hand as its sum; a `stock.manage` permission. Go tests.

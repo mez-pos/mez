@@ -101,7 +101,11 @@ export type ErrorCode =
   | 'invalid_menu'
   | 'menu_order_stale'
   | 'modifier_group_not_found'
-  | 'photo_not_found';
+  | 'photo_not_found'
+  | 'stock_item_not_found'
+  | 'stock_item_retired'
+  | 'stock_name_taken'
+  | 'invalid_stock';
 
 export type OrderStatus =
   | 'open'
@@ -236,7 +240,27 @@ export type Permission =
   | 'staff.manage'
   | 'menu.edit'
   | 'settings.edit'
-  | 'reports.view';
+  | 'reports.view'
+  | 'stock.manage';
+
+export type StockUnit =
+  | 'g'
+  | 'ml'
+  | 'each';
+
+export type StockMovementKind =
+  | 'received'
+  | 'adjusted'
+  | 'wasted'
+  | 'counted'
+  | 'sold';
+
+export type WasteReason =
+  | 'expired'
+  | 'spoiled'
+  | 'spilled'
+  | 'dropped'
+  | 'other';
 
 export type OrderEventType =
   | 'order.opened'
@@ -1117,6 +1141,62 @@ export interface SoldOutResponse {
 export interface PhotoResponse {
   id: number;
   photo: string;
+}
+
+export interface StockItemInput {
+  name: string;
+  unit: StockUnit;
+  low_level: number;
+}
+
+export interface StockMovementInput {
+  kind: StockMovementKind;
+  qty: number;
+  reason?: WasteReason;
+  note?: string;
+}
+
+export interface StockItem {
+  id: number;
+  name: string;
+  unit: StockUnit;
+  low_level: number;
+  active: boolean;
+  on_hand: number;
+  low: boolean;
+}
+
+export interface StockItemsResponse {
+  items: StockItem[];
+}
+
+export interface StockEditResponse {
+  id: number;
+}
+
+export interface StockRecorded {
+  id: number;
+  delta: number;
+  on_hand: number;
+}
+
+export interface StockMovement {
+  id: number;
+  kind: StockMovementKind;
+  delta: number;
+  counted?: number;
+  reason?: WasteReason;
+  note?: string;
+  shift_id?: number;
+  order_id?: number;
+  staff_id: string;
+  staff_name: string;
+  at: string;
+}
+
+export interface MovementsResponse {
+  movements: StockMovement[];
+  next_before?: number;
 }
 
 export interface AreaSettings {

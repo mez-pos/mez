@@ -356,6 +356,32 @@ type StationTicket struct {
 	ReadyAt   sql.NullTime
 }
 
+type StockItem struct {
+	ID        int64
+	VenueID   int64
+	Name      string
+	Unit      string
+	LowLevel  int64
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type StockMovement struct {
+	ID          int64
+	VenueID     int64
+	StockItemID int64
+	Kind        string
+	Delta       int64
+	Counted     sql.NullInt64
+	Reason      string
+	Note        string
+	StaffID     int64
+	ShiftID     int64
+	OrderID     int64
+	CreatedAt   time.Time
+}
+
 type Table struct {
 	ID        int64
 	VenueID   int64
