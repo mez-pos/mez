@@ -3239,3 +3239,22 @@ Because: an owner hands the back office to a manager to run staff; that
 must not be a way to take the owner's place.
 Cost: an owner who wants a manager to manage owners must make them an
 owner. A permission removed from a role takes effect at once, mid-shift.
+
+## ADR-116 - The sign-in screen reads who works here every time it shows
+2026-10 · Status: accepted
+Decision: the lock screen (`web/shared/screens/LockScreen.tsx`) reads
+`GET /api/v1/staff` afresh whenever it mounts (`refetchOnMount: "always"`),
+on every device.
+  - Found in phase 10, Task 4b's browser run: a manager added in the back
+    office did not appear on the sign-in tiles of the same browser after
+    signing out, so their PIN went to the wrong person as a failed
+    attempt. The list was cached with the app's 30-second default and
+    never read again on that screen.
+  - The lock screen is exactly when someone is about to sign in, and the
+    list may have changed elsewhere: added, renamed or deactivated
+    (ADR-115). One small read each time it shows is the price.
+  - The People screen keeps its own list (`["people"]`); it is not shared
+    with the tiles, which show only active staff and only names.
+Because: a person the till cannot show cannot work, and a wrong tile
+spends a lockout attempt on someone else.
+Cost: a sign-in screen offline shows the list it last read, as before.

@@ -51,7 +51,7 @@ export const NAV: readonly NavGroup[] = [
     sections: [
       { id: "menu", label: "Menu", path: "/menu", needs: "menu.edit", key: "m", built: true, description: "Categories, items, modifiers and prices." },
       { id: "stock", label: "Stock", path: "/stock", needs: "stock.manage", key: "k", built: true, description: "Stock items, recipes, wastage and counts." },
-      { id: "people", label: "People", path: "/people", needs: "staff.manage", key: "p", built: false, description: "Staff, roles, PINs, and who voided what." },
+      { id: "people", label: "People", path: "/people", needs: "staff.manage", key: "p", built: true, description: "Staff, roles, PINs, and who voided what." },
     ],
   },
   {

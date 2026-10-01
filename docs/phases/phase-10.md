@@ -76,7 +76,7 @@ Phase 09.
     roles with their permission sets. Guards: the venue always keeps
     someone active who can manage staff, and a deactivated person's
     sessions end. `staff.manage`. Go tests.
-  - [ ] **Task 4b: The People screen.** Spec first (`backoffice-people.md`).
+  - [x] **Task 4b: The People screen.** Spec first (`backoffice-people.md`).
     Staff with their roles, add and edit, PIN reset, and a role editor
     showing each permission in words.
   - [ ] **Task 4c: The audit trail on the server.** Every void, comp,

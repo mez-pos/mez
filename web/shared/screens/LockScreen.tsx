@@ -27,9 +27,13 @@ export function LockScreen() {
   const now = useNow(lockedUntil !== null);
   const locked = lockedUntil !== null && lockedUntil > now;
 
+  // Read afresh every time the lock screen shows: it is where someone is
+  // about to sign in, and the back office may have just added, renamed or
+  // deactivated them (ADR-115). A cached list hid a new person until reload.
   const staff = useQuery({
     queryKey: ["staff"],
     queryFn: () => store.api.get<StaffListResponse>("/api/v1/staff").then((r) => r.staff),
+    refetchOnMount: "always",
   });
 
   // One name on the list: nothing to choose, so it is chosen.

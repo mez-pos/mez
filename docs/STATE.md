@@ -13,24 +13,23 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 4a: staff and roles on the server** (ADR-115). Task 4 is
-split into 4a to 4d. `internal/service/people` and `/api/v1/people`
-(`staff.manage`): list everyone and every role; add, rename, move, deactivate
-and bring back staff; reset a PIN (which ends their sessions); add, edit and
-delete unused roles. Nobody hands out permissions they do not hold, and a
-change that would leave nobody able to manage staff is refused. Tested over
-HTTP with a real manager: they managed a cashier, were refused the owner;
-a new PIN signed the cashier out at once. Smoke-tested on the real binary:
-a cashier added over the API appeared on the sign-in tiles.
+**Phase 10, Task 4b: the People screen** (spec
+`docs/design/screens/backoffice-people.md`). `/people` (`g p`,
+`staff.manage`): staff with role and since, add (PIN typed twice), edit,
+new PIN, deactivate with a confirm, bring back; roles as cards with their
+permissions in words by group, add, edit, delete when unused. The role
+editor greys out permissions you do not hold (ADR-115). Fixed on the way:
+the sign-in tiles were cached and hid a newly added person (ADR-116).
+Tried in the browser as the owner and, for the first time, as a manager:
+the manager's navigation, "not yours to open" on Printers, the refusal
+when resetting the owner's PIN, and the greyed permissions.
 
 ## Next task
 
-**Phase 10, Task 4b: the People screen.** Spec first
-(`docs/design/screens/backoffice-people.md`): staff with their roles, add
-and edit, PIN reset, deactivate, and a role editor that shows each
-permission in words. Mark `people` built in `nav-logic.ts` and route
-`/people`. Now that staff can be added, try the shell as a manager and a
-cashier by hand (ADR-105's untested views).
+**Phase 10, Task 4c: the audit trail on the server.** Every void, comp,
+discount and refund (and payment void, reopen) with who did it, who
+authorised it, why, the order and the amount; filterable by staff and
+date, cursor paged. Read from the order events, never a second copy.
 
 ## Known broken / in progress
 
@@ -58,12 +57,11 @@ cashier by hand (ADR-105's untested views).
   use the shared `inputClass`, which does not set the 16px control size
   tokens.md asks for (the printers form has the same gap).
 
-- Shell (ADR-105): only tried as the owner. A cashier or manager view and
-  the "not yours to open" screen are tested in vitest, not by hand; staff
-  can now be added over the API (Task 4a), so try them in Task 4b. Printers, floor and Z-reports still carry their
-  own "Back office" link above the title, now redundant with the
+- Shell (ADR-105): tried as owner and manager (Task 4b); a cashier sees
+  the dashboard alone (vitest). Printers, floor and Z-reports still carry
+  their own "Back office" link above the title, now redundant with the
   navigation. Permissions changed mid-session reach the shell at the next
-  sign-in or reload. Stock is gated on `menu.edit` for now.
+  sign-in or reload.
 
 - Carried from phase 04, owned by no task yet:
   - The done-when script against the real binary. The same loop now runs
