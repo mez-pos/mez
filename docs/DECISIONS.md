@@ -3288,3 +3288,37 @@ Because: an owner asking "who has been voiding coffees?" needs one answer,
 straight from the record, with the amounts the guest was charged.
 Cost: a page projects up to its 100 orders; a filtered count scans the
 range's correction events, cheap at a cafe's volume.
+
+## ADR-118 - Range reports count through the Z-report's builder, whole, not paged
+2026-10 · Status: accepted
+Decision: phase 10, Task 5a reads sales over a range of trading days
+(`internal/domain/report`, `internal/service/reports`,
+`GET /api/v1/reports/sales?from=&to=&every=`, `reports.view`).
+  - **One builder.** `zreport.BuildEach` adds up the orders into one
+    report per key in a single pass; `zreport.Build` is it with the shift
+    as the only key. The range report keys each event by its trading day
+    (04:00 to 04:00 in the venue's timezone): the range's totals, a period
+    of sales over time (day, week from Monday, or month, cut to the
+    range), and a weekday by hour cell. A range's figures are therefore
+    the Z-report's own rules: a sale is a bill invoiced in the range, as
+    invoiced; a credit note, void, comp, payment or refund falls where it
+    was recorded. A test holds a range and a Z-report over the same events
+    to the same figures.
+  - **The heatmap is the trading day's weekday and the clock's hour**, so
+    01:30 on a Saturday is Friday night's trade, at 01:00.
+  - **By time, not by shift.** An order is read when it was opened before
+    the range ends and last written after it starts (migration 00027
+    indexes `orders (venue_id, updated_at)`); its whole stream is
+    projected, since a refund may be against a payment from before.
+  - **Whole, not paged.** The phase asks for cursor pagination. These are
+    aggregates: their size is bounded by the menu, the staff and the days
+    asked for, never by how much was traded, so they come in one answer.
+    Paging stays where rows grow with trade: the audit trail and the
+    Z-report list.
+  - Staff groups are named as people are named now; items and categories
+    as the menu stands now, as in the Z-report (ADR-097).
+Because: an owner must never see one figure on the Z-report and another
+in the reports for the same day.
+Cost: a range projects every order it touches, each from its first event;
+a year at a busy cafe is some seconds. Stored Z-reports could answer
+whole shifts faster, but not a day that splits a shift or an hour.

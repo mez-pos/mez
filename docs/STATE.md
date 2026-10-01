@@ -13,20 +13,21 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 4d: the audit screen** (Task 4 is done). Spec in
-`docs/design/screens/backoffice-audit.md`; `web/backoffice/src/audit/`.
-Its own navigation entry under Reports (`g a`, `reports.view`): From and
-To trading days (last seven by default), a Person filter, one toggle chip
-per kind with its count, the trail newest first (When, What with the item,
-Amount, By, Authorised by, Why, Bill) with Show older. Tried in the
-browser as the owner over a cashier's void, comp and two discounts.
+**Phase 10, Task 5a: sales reports on the server** (ADR-118).
+`GET /api/v1/reports/sales?from=&to=&every=day|week|month` (`reports.view`):
+a range of trading days added up through the Z-report's own builder
+(`zreport.BuildEach`, one pass): the range's totals (sales, by item, by
+category, by channel, by staff with names, payments, discounts, voids,
+comps, credit notes, taxes), sales over time with empty periods, and an
+hour by weekday heatmap. `internal/domain/report`, `internal/service/reports`,
+migration 00027. Tried against a real binary's data.
 
 ## Next task
 
-**Phase 10, Task 5: Reports.** Large (eight reports, CSV on each): split
-it into sub-tasks in the phase file first, commit the split, then build
-the first. The audit trail (Task 4c) already covers the void and discount
-rows; the Z-report builder (phase 09) is the nearest existing code.
+**Phase 10, Task 5b: CSV on the server.** Every report of 5a, and the
+audit trail, as a CSV download: money in major units with the currency
+named once, days as trading days. Look at how `internal/domain/export`
+writes the Tally files before writing a second CSV writer.
 
 ## Known broken / in progress
 
@@ -34,6 +35,10 @@ rows; the Z-report builder (phase 09) is the nearest existing code.
   "Not recorded" for who authorised them. The Person filter lists active
   staff only (it reads `GET /api/v1/staff`); a deactivated person's rows
   show by name but cannot be filtered on. The trail has no CSV export yet.
+- Reports (ADR-118): no screen yet (5c, 5d). A range projects every order
+  it touches from its first event; a year at a busy venue may take seconds.
+  Items and categories are named as the menu stands now. The day start is
+  the shift's constant.
 - Stock (ADR-111 to ADR-114): no closing-stock report yet (Task 5). The
   closing count cannot be skipped while items are marked. A close uses today's
   recipes, not the ones when the line was rung up. A sold movement needs a

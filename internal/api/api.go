@@ -29,6 +29,7 @@ type Server struct {
 	stock      Stock
 	people     People
 	audit      Audit
+	reports    Reports
 	floor      Floor
 	shifts     Shifts
 	zreports   ZReports
@@ -118,6 +119,7 @@ func (s *Server) routes() http.Handler {
 	s.mountStock(mux)
 	s.mountPeople(mux)
 	s.mountAudit(mux)
+	s.mountReports(mux)
 	s.mountFloor(mux)
 	s.mountKitchen(mux)
 	s.mountShifts(mux)

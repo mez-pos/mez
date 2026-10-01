@@ -217,6 +217,12 @@ type Querier interface {
 	OrderByID(ctx context.Context, id int64) (OrderByIDRow, error)
 	OrderByPublicID(ctx context.Context, publicID string) (OrderByPublicIDRow, error)
 	OrderEventsAfter(ctx context.Context, arg OrderEventsAfterParams) ([]OrderEventsAfterRow, error)
+	// The range reports (phase 10, Task 5a, ADR-118).
+	//
+	// The whole streams of the orders with any event in [from_at, to_at): a
+	// refund in the range may be against a payment taken before it. An order's
+	// events all fall between its opening and its last write (updated_at).
+	OrderEventsTouchingRange(ctx context.Context, arg OrderEventsTouchingRangeParams) ([]OrderEventsTouchingRangeRow, error)
 	// The whole streams of the orders with any event in a shift: a refund in
 	// it may be against a tender taken in an earlier one.
 	OrderEventsTouchingShift(ctx context.Context, shiftID int64) ([]OrderEventsTouchingShiftRow, error)

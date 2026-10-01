@@ -1,0 +1,194 @@
+// Package reports reads the range reports (phase 10, Task 5a, ADR-118):
+// a range of trading days added up from the order events, through the
+// Z-report's builder, with the venue's timezone, taxes, menu and staff.
+package reports
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"slices"
+	"strconv"
+	"time"
+
+	"github.com/byjoellobo/nofiltr-pos/internal/db"
+	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/report"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/zreport"
+	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+)
+
+// ErrBadRange is a range the reports cannot be read over.
+var ErrBadRange = report.ErrBadRange
+
+// Service reads the reports.
+type Service struct {
+	db *db.DB
+}
+
+// New returns a Service.
+func New(d *db.DB) (*Service, error) {
+	if d == nil {
+		return nil, errors.New("reports: a database is required")
+	}
+	return &Service{db: d}, nil
+}
+
+// Query is what the owner asks for: trading days From to To inclusive,
+// like "2026-10-01", and how sales over time are cut.
+type Query struct {
+	From  string       `json:"from"`
+	To    string       `json:"to"`
+	Every report.Every `json:"every"`
+}
+
+// Sales is a range's reports, with the staff they mention named.
+type Sales struct {
+	report.Result
+	// Names are the staff the report mentions, by ID, as they are named now.
+	Names map[int64]string `json:"names"`
+}
+
+// Sales reads a range's reports.
+func (s *Service) Sales(ctx context.Context, venueID int64, qy Query) (Sales, error) {
+	q := s.db.Queries()
+	v, err := q.VenueByID(ctx, venueID)
+	if err != nil {
+		return Sales{}, fmt.Errorf("reports: reading venue %d: %w", venueID, err)
+	}
+	loc, err := time.LoadLocation(v.Timezone)
+	if err != nil {
+		return Sales{}, fmt.Errorf("reports: venue timezone %q: %w", v.Timezone, err)
+	}
+	if qy.Every == "" {
+		qy.Every = report.Day
+	}
+	rg := report.Range{From: qy.From, To: qy.To, Every: qy.Every, Loc: loc, DayStart: shift.DefaultDayStart}
+	periods, err := rg.Periods()
+	if err != nil {
+		return Sales{}, err
+	}
+	from, to, err := instants(rg, periods)
+	if err != nil {
+		return Sales{}, err
+	}
+
+	taxes, err := svcorder.VenueTaxes(ctx, q, venueID)
+	if err != nil {
+		return Sales{}, fmt.Errorf("reports: %w", err)
+	}
+	orders, err := ordersTouching(ctx, q, venueID, from, to)
+	if err != nil {
+		return Sales{}, err
+	}
+	categories, err := itemCategories(ctx, q, venueID)
+	if err != nil {
+		return Sales{}, err
+	}
+	res, err := report.Build(report.Input{Range: rg, Currency: v.Currency, Taxes: taxes, Orders: orders, Categories: categories})
+	if err != nil {
+		return Sales{}, fmt.Errorf("reports: %s to %s: %w", qy.From, qy.To, err)
+	}
+	names, err := staffNames(ctx, q, venueID)
+	if err != nil {
+		return Sales{}, err
+	}
+	return named(res, names), nil
+}
+
+// instants is the UTC span the range's trading days run over, to read the
+// orders it touches. Events are placed by their trading day afterwards, so
+// a span a little wide on a daylight-saving night costs nothing but reads.
+func instants(rg report.Range, periods []report.Period) (time.Time, time.Time, error) {
+	if len(periods) == 0 {
+		return time.Time{}, time.Time{}, fmt.Errorf("%w: no days", report.ErrBadRange)
+	}
+	first, err := time.ParseInLocation("2006-01-02", rg.From, rg.Loc)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("%w: %v", report.ErrBadRange, err)
+	}
+	last, err := time.ParseInLocation("2006-01-02", rg.To, rg.Loc)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("%w: %v", report.ErrBadRange, err)
+	}
+	from := first.Add(rg.DayStart - time.Hour)
+	to := last.AddDate(0, 0, 1).Add(rg.DayStart + time.Hour)
+	return from.UTC(), to.UTC(), nil
+}
+
+// ordersTouching is the whole streams of the orders with any event between
+// from and to.
+func ordersTouching(ctx context.Context, q *gen.Queries, venueID int64, from, to time.Time) ([][]shift.StampedEvent, error) {
+	rows, err := q.OrderEventsTouchingRange(ctx, gen.OrderEventsTouchingRangeParams{VenueID: venueID, FromAt: from, ToAt: to})
+	if err != nil {
+		return nil, fmt.Errorf("reports: reading the orders: %w", err)
+	}
+	var orders [][]shift.StampedEvent
+	last := int64(0)
+	for _, r := range rows {
+		p, err := order.DecodePayload(order.Type(r.Type), json.RawMessage(r.Payload))
+		if err != nil {
+			return nil, fmt.Errorf("reports: order %d, seq %d: %w", r.OrderID, r.Seq, err)
+		}
+		if r.OrderID != last || len(orders) == 0 {
+			orders = append(orders, nil)
+			last = r.OrderID
+		}
+		e := order.Event{Seq: r.Seq, Type: order.Type(r.Type), At: r.At.UTC(), ActorID: r.ActorID, DeviceID: r.DeviceID, Payload: p}
+		orders[len(orders)-1] = append(orders[len(orders)-1], shift.StampedEvent{Event: e, ShiftID: r.ShiftID})
+	}
+	return orders, nil
+}
+
+func itemCategories(ctx context.Context, q *gen.Queries, venueID int64) (map[int64]zreport.Category, error) {
+	rows, err := q.ItemCategoriesForVenue(ctx, venueID)
+	if err != nil {
+		return nil, fmt.Errorf("reports: reading the menu's categories: %w", err)
+	}
+	out := make(map[int64]zreport.Category, len(rows))
+	for _, r := range rows {
+		out[r.ItemID] = zreport.Category{ID: r.CategoryID, Name: r.CategoryName}
+	}
+	return out, nil
+}
+
+func staffNames(ctx context.Context, q *gen.Queries, venueID int64) (map[int64]string, error) {
+	rows, err := q.StaffForVenue(ctx, venueID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("reports: reading staff: %w", err)
+	}
+	out := make(map[int64]string, len(rows))
+	for _, r := range rows {
+		out[r.ID] = r.Name
+	}
+	return out, nil
+}
+
+// named puts names to the staff the report mentions: each staff group is
+// named, and Names holds everyone it mentions, removed lines included.
+func named(res report.Result, all map[int64]string) Sales {
+	names := map[int64]string{}
+	mention := func(id int64) string {
+		name, ok := all[id]
+		if !ok {
+			name = "Someone no longer on record"
+		}
+		names[id] = name
+		return name
+	}
+	byStaff := slices.Clone(res.Totals.ByStaff)
+	for i, g := range byStaff {
+		if id, err := strconv.ParseInt(g.Key, 10, 64); err == nil && id != 0 {
+			byStaff[i].Name = mention(id)
+		}
+	}
+	for _, r := range res.Totals.Removed {
+		mention(r.StaffID)
+	}
+	res.Totals.ByStaff = byStaff
+	return Sales{Result: res, Names: names}
+}

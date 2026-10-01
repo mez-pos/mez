@@ -38,30 +38,72 @@ type Input struct {
 
 // Build adds up a shift's orders into its report.
 func Build(in Input) (Report, error) {
-	zero, err := money.New(0, in.Currency)
-	if err != nil {
-		return Report{}, fmt.Errorf("zreport: %w", err)
-	}
-	b := newBuilder(in, zero)
-	for _, events := range in.Orders {
-		if err := b.order(events); err != nil {
-			return Report{}, err
+	const key = "shift"
+	reports, err := BuildEach(in, []string{key}, func(se shift.StampedEvent) []string {
+		if se.ShiftID == in.ShiftID {
+			return []string{key}
 		}
+		return nil
+	})
+	if err != nil {
+		return Report{}, err
 	}
-	return b.finish()
+	return reports[key], nil
 }
 
-// order walks one order's stream, projecting as it goes, and counts the
-// events recorded in the shift against the state just before and after.
-func (b *builder) order(events []shift.StampedEvent) error {
+// Keys names the reports an event is counted in: none, one or several.
+type Keys func(shift.StampedEvent) []string
+
+// BuildEach adds up the orders into one report per key, in one pass over
+// them (the range reports, ADR-118). An event is counted, exactly as a
+// Z-report counts it, in each report keys names for it. Every key in want
+// has a report, an empty one if nothing was counted in it; a key keys
+// names that is not in want is counted all the same. in.ShiftID is unused.
+func BuildEach(in Input, want []string, keys Keys) (map[string]Report, error) {
+	zero, err := money.New(0, in.Currency)
+	if err != nil {
+		return nil, fmt.Errorf("zreport: %w", err)
+	}
+	builders := make(map[string]*builder, len(want))
+	builderOf := func(k string) *builder {
+		b, ok := builders[k]
+		if !ok {
+			b = newBuilder(in, zero)
+			builders[k] = b
+		}
+		return b
+	}
+	for _, k := range want {
+		builderOf(k)
+	}
+	for _, events := range in.Orders {
+		if err := walk(events, in.Taxes, keys, builderOf); err != nil {
+			return nil, err
+		}
+	}
+	out := make(map[string]Report, len(builders))
+	for k, b := range builders {
+		r, err := b.finish()
+		if err != nil {
+			return nil, err
+		}
+		out[k] = r
+	}
+	return out, nil
+}
+
+// walk goes through one order's stream, projecting as it goes, and counts
+// each event in the reports keys names, against the state just before and
+// after it.
+func walk(events []shift.StampedEvent, taxes order.Taxes, keys Keys, builderOf func(string) *builder) error {
 	var before order.State
 	for _, se := range events {
-		after, err := order.Resume(before, []order.Event{se.Event}, b.in.Taxes)
+		after, err := order.Resume(before, []order.Event{se.Event}, taxes)
 		if err != nil {
 			return fmt.Errorf("zreport: projecting: %w", err)
 		}
-		if se.ShiftID == b.in.ShiftID {
-			if err := b.event(se.Event, before, after); err != nil {
+		for _, k := range keys(se) {
+			if err := builderOf(k).event(se.Event, before, after); err != nil {
 				return fmt.Errorf("zreport: %s at seq %d: %w", se.Event.Type, se.Event.Seq, err)
 			}
 		}

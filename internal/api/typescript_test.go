@@ -18,6 +18,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/report"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
 	domstock "github.com/byjoellobo/nofiltr-pos/internal/domain/stock"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/table"
@@ -30,6 +31,7 @@ import (
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/people"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/reports"
 	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/stock"
 )
@@ -184,6 +186,9 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(audit.Person{}):            "AuditPerson",
 			reflect.TypeOf(audit.Entry{}):             "AuditEntry",
 			reflect.TypeOf(audit.Page{}):              "AuditPage",
+			reflect.TypeOf(reports.Sales{}):           "SalesReport",
+			reflect.TypeOf(report.Point{}):            "SalesPoint",
+			reflect.TypeOf(report.Hour{}):             "SalesHour",
 			reflect.TypeOf(order.CreditRequest{}):     "CreditSelection",
 			reflect.TypeOf(floor.AreaSettings{}):      "AreaSettings",
 			reflect.TypeOf(floor.TableSettings{}):     "TableSettings",
@@ -236,6 +241,7 @@ func generate() (*ts.Generator, error) {
 		{"StockMovementKind", domstock.Received, asStrings(domstock.Kinds())},
 		{"WasteReason", domstock.Expired, asStrings(domstock.WasteReasons())},
 		{"AuditKind", audit.Void, asStrings(audit.Kinds())},
+		{"ReportEvery", report.Day, asStrings(report.Everys())},
 		{"OrderEventType", order.TypeOrderOpened, eventTypeNames()},
 		{"StreamMessageType", hub.MsgHello, asStrings([]hub.MessageType{
 			hub.MsgHello, hub.MsgSubscribe, hub.MsgWelcome, hub.MsgEvent, hub.MsgCaughtUp,
@@ -300,6 +306,8 @@ func generate() (*ts.Generator, error) {
 		staffRequest{}, roleRequest{}, pinRequest{}, people.Person{}, people.Role{}, peopleResponse{}, staffAddedResponse{}, roleEditResponse{},
 		// The audit trail.
 		audit.Person{}, audit.Entry{}, audit.Page{},
+		// The range reports.
+		reports.Sales{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},

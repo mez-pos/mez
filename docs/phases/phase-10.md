@@ -93,7 +93,7 @@ Phase 09.
   Split into six (the figures on the server first, then the screens over
   them):
 
-  - [ ] **Task 5a: Sales reports on the server.** One pass over the orders
+  - [x] **Task 5a: Sales reports on the server.** One pass over the orders
     touched in a range of trading days, through the Z-report's own builder
     so a day's report and its Z-report agree: the range's totals, sales
     over time (by day, week or month), product mix, category performance,

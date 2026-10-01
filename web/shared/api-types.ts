@@ -281,6 +281,11 @@ export type AuditKind =
   | 'payment_void'
   | 'reopen';
 
+export type ReportEvery =
+  | 'day'
+  | 'week'
+  | 'month';
+
 export type OrderEventType =
   | 'order.opened'
   | 'line.added'
@@ -1338,6 +1343,111 @@ export interface AuditPage {
   counts: Record<AuditKind, number>;
 }
 
+export interface SalesReport {
+  from: string;
+  to: string;
+  every: ReportEvery;
+  totals: Report;
+  series: SalesPoint[];
+  hours: SalesHour[];
+  names: Record<number, string>;
+}
+
+export interface Report {
+  currency: string;
+  sales: Sales;
+  invoices: Invoices;
+  by_category: Group[];
+  by_item: Group[];
+  by_channel: Group[];
+  by_staff: Group[];
+  discounts: Tally;
+  comps: Tally;
+  voids: Tally;
+  removed: StaffTally[];
+  credit_notes: Tally;
+  refunds: Tally;
+  reprints: number;
+  taxes: TaxLine[];
+  payments: Payment[];
+  tips: Money;
+  balance: Balance;
+}
+
+export interface Sales {
+  bills: number;
+  gross: Money;
+  discounts: Money;
+  net: Money;
+  taxable: Money;
+  tax: Money;
+  total: Money;
+  net_of_credits: Money;
+}
+
+export interface Invoices {
+  count: number;
+  first?: string;
+  last?: string;
+}
+
+export interface Group {
+  key: string;
+  name: string;
+  qty: number;
+  gross: Money;
+  discounts: Money;
+  net: Money;
+  tax: Money;
+  total: Money;
+}
+
+export interface Tally {
+  count: number;
+  amount: Money;
+}
+
+export interface StaffTally {
+  staff_id: number;
+  count: number;
+  amount: Money;
+}
+
+export interface TaxLine {
+  name: string;
+  rate: number;
+  taxable: Money;
+  amount: Money;
+}
+
+export interface Payment {
+  method: PaymentMethod;
+  count: number;
+  taken: Money;
+  voided: Money;
+  refunded: Money;
+  net: Money;
+}
+
+export interface Balance {
+  payments: Money;
+  sales: Money;
+  difference: Money;
+}
+
+export interface SalesPoint {
+  start: string;
+  end: string;
+  sales: Sales;
+}
+
+export interface SalesHour {
+  weekday: number;
+  hour: number;
+  bills: number;
+  total: Money;
+}
+
 export interface AreaSettings {
   name: string;
 }
@@ -1509,88 +1619,6 @@ export interface ZShift {
   opened_at: string;
   closed_by: number;
   closed_at: string;
-}
-
-export interface Report {
-  currency: string;
-  sales: Sales;
-  invoices: Invoices;
-  by_category: Group[];
-  by_item: Group[];
-  by_channel: Group[];
-  by_staff: Group[];
-  discounts: Tally;
-  comps: Tally;
-  voids: Tally;
-  removed: StaffTally[];
-  credit_notes: Tally;
-  refunds: Tally;
-  reprints: number;
-  taxes: TaxLine[];
-  payments: Payment[];
-  tips: Money;
-  balance: Balance;
-}
-
-export interface Sales {
-  bills: number;
-  gross: Money;
-  discounts: Money;
-  net: Money;
-  taxable: Money;
-  tax: Money;
-  total: Money;
-  net_of_credits: Money;
-}
-
-export interface Invoices {
-  count: number;
-  first?: string;
-  last?: string;
-}
-
-export interface Group {
-  key: string;
-  name: string;
-  qty: number;
-  gross: Money;
-  discounts: Money;
-  net: Money;
-  tax: Money;
-  total: Money;
-}
-
-export interface Tally {
-  count: number;
-  amount: Money;
-}
-
-export interface StaffTally {
-  staff_id: number;
-  count: number;
-  amount: Money;
-}
-
-export interface TaxLine {
-  name: string;
-  rate: number;
-  taxable: Money;
-  amount: Money;
-}
-
-export interface Payment {
-  method: PaymentMethod;
-  count: number;
-  taken: Money;
-  voided: Money;
-  refunded: Money;
-  net: Money;
-}
-
-export interface Balance {
-  payments: Money;
-  sales: Money;
-  difference: Money;
 }
 
 export interface ZDrawer {
