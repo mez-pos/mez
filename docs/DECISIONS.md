@@ -3155,3 +3155,26 @@ end, however many times it is reopened.
 Cost: a close reads every recipe of the venue (a cafe's few hundred rows).
 A sold movement needs a real staff id, so an order closed with no staff
 (the guest channel, phase 11) must name who it is closed for.
+
+## ADR-113 - Recipes are kept on the Stock screen, not in the menu forms
+2026-10 · Status: accepted
+Decision: phase 10, Task 3c puts recipe editing on the Stock screen's
+Recipes view (`docs/design/screens/backoffice-stock.md`), not on the menu
+editor's item and choice forms.
+  - **One permission per screen.** Recipes save under `stock.manage`
+    (ADR-112); the menu forms need `menu.edit`. On the menu forms, a
+    manager with only one of the two would be refused half way through a
+    save, after the item had saved and the recipe had not.
+  - **The dishes come from the till's menu** (`GET /api/v1/menu`), which
+    any paired device may read, so a stock keeper without `menu.edit`
+    sees every dish and choice on sale. Retired dishes are not listed:
+    they sell nothing, so their recipes take nothing.
+  - **Amounts are typed in the unit,** up to three decimals, and sent in
+    thousandths (`web/backoffice/src/stock/qty.ts`), read as digits like
+    money and never through a float.
+  - A count shows what it will record ("The ledger says 5,000 g. This
+    records −50 g.") before it is saved, as a price change does (ADR-107).
+Because: the person who counts the walk-in and sets the recipes is often
+not the one who prices the menu.
+Cost: an owner setting up a new dish edits it in two places: the menu for
+what it costs, the Stock screen for what it takes.

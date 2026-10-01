@@ -58,7 +58,7 @@ Phase 09.
     closes, in the same transaction (closed, not invoiced: an all-comp
     bill closes with no invoice, ADR-112). What a void, comp or credit
     note does to stock.
-  - [ ] **Task 3c: The Stock screen.** Spec first
+  - [x] **Task 3c: The Stock screen.** Spec first
     (`backoffice-stock.md`). Stock items with on hand, receive, adjust,
     waste with a reason, a movement history, and recipes on the item form.
   - [ ] **Task 3d: Low stock and closing stock.** Low-stock alerts where a

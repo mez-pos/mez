@@ -13,27 +13,26 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 3b: recipes and deduction on sale** (ADR-112). Migration
-00024 adds recipes on menu items and on modifiers. When an order closes,
-the order service's append hook calls `svcstock.DeductSale` in the same
-transaction: every line not voided (comps count), item recipe plus each
-modifier's, times quantity, reconciled against what the order already
-took. Recipes are read and replaced under `/api/v1/stock/recipes`
-(`stock.manage`). Tested through the order service: a real order with a
-void and a comp took exactly its usage; closing again after a reopen took
-nothing; an all-comp order with no invoice still took its stock.
+**Phase 10, Task 3c: the Stock screen** (ADR-113, spec
+`docs/design/screens/backoffice-stock.md`). `/stock` in the back office
+(`g k`, `stock.manage`): stock items with on hand, low and low-at;
+Receive, Waste (with a reason), Count (showing what it will record before
+saving), Correct, Edit, Retire; each item's history, paged. A Recipes view
+lists the till's dishes and choices with what each takes, edited there
+rather than in the menu forms. Tried in the browser: added beans,
+received 5,000 g, counted 4,950 g (−50 g shown before saving), gave Latte
+18 g, and read the history.
 
 ## Next task
 
-**Phase 10, Task 3c: the Stock screen.** Spec first
-(`docs/design/screens/backoffice-stock.md`): stock items with on hand and
-low, receive / adjust / waste with a reason / count, the movement history
-(paged), and recipes on the menu item form and on each modifier. Mark
-`stock` built in `nav-logic.ts` and route `/stock`.
+**Phase 10, Task 3d: low stock and closing stock.** Low-stock alerts
+where a manager sees them (the dashboard at least), and a stock count as
+part of closing the shift. Decide which shift a count after the closing
+drawer count belongs to (ADR-111's open question).
 
 ## Known broken / in progress
 
-- Stock (ADR-111, ADR-112): server only until 3c. A close uses today's
+- Stock (ADR-111 to ADR-113): a close uses today's
   recipes, not the ones when the line was rung up. A sold movement needs a
   real staff id: the guest channel (phase 11) must supply one. A movement after the shift's closing drawer count records no
   shift (3d). No low-stock alert anywhere yet (3d).
