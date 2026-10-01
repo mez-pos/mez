@@ -90,6 +90,30 @@ Phase 09.
   mix, channel mix, staff performance, discount and void analysis. Cursor
   paginated. Every number mono and right-aligned. CSV export on every report.
 
+  Split into six (the figures on the server first, then the screens over
+  them):
+
+  - [ ] **Task 5a: Sales reports on the server.** One pass over the orders
+    touched in a range of trading days, through the Z-report's own builder
+    so a day's report and its Z-report agree: the range's totals, sales
+    over time (by day, week or month), product mix, category performance,
+    payment mix, channel mix, staff performance and an hour by weekday
+    heatmap. `reports.view`. Go tests.
+  - [ ] **Task 5b: CSV on the server.** Every report of 5a, and the audit
+    trail, as a CSV download a spreadsheet opens: money in major units with
+    the currency named once, days as trading days.
+  - [ ] **Task 5c: The Sales screen.** Spec first (`backoffice-reports.md`).
+    A range picker, the headline figures, sales over time drawn without a
+    chart library, payment and channel mix.
+  - [ ] **Task 5d: What sold, who sold it, and when.** Product mix,
+    category performance and staff performance tables, and the hourly
+    heatmap, each with its CSV.
+  - [ ] **Task 5e: Discount and void analysis.** Corrections over a range
+    by reason, by who did them and by who authorised them (server and
+    screen, with CSV), linking down to the audit trail.
+  - [ ] **Task 5f: Closing stock.** The close's stock counts by shift:
+    expected against counted, the variance in units and at cost, with CSV.
+
 - [ ] **Task 6 — Settings.**
   Venue details, tax profile selection and configuration, invoice series,
   currency and rounding rule, timezone, financial year start, printers and
