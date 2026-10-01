@@ -36,8 +36,9 @@ untested views are non-owner ones, which Task 4 finally makes possible.
 - Stock (ADR-111 to ADR-114): no closing-stock report yet (Task 5). The
   closing count cannot be skipped while items are marked. A close uses today's
   recipes, not the ones when the line was rung up. A sold movement needs a
-  real staff id: the guest channel (phase 11) must supply one. A movement after the shift's closing drawer count records no
-  shift (3d). No low-stock alert anywhere yet (3d).
+  real staff id: the guest channel (phase 11) must supply one. A movement
+  entered by hand after the closing drawer count records no shift (the
+  closing count names its own, ADR-114).
 - Photos (ADR-110): `<data dir>/photos/` is not backed up by Litestream
   (phase 12 must add it); unreferenced photo files are never swept; the
   guest app does not show photos yet.
