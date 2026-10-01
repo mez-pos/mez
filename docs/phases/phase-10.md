@@ -69,6 +69,22 @@ Phase 09.
   comped, discounted and refunded, filterable by staff and date. This is one of
   the highest-value features for an owner; do not bury it.
 
+  Split into four (people first, then the trail they leave):
+
+  - [ ] **Task 4a: Staff and roles on the server.** Add, rename, move to
+    another role, deactivate and bring back staff; set and reset a PIN;
+    roles with their permission sets. Guards: the venue always keeps
+    someone active who can manage staff, and a deactivated person's
+    sessions end. `staff.manage`. Go tests.
+  - [ ] **Task 4b: The People screen.** Spec first (`backoffice-people.md`).
+    Staff with their roles, add and edit, PIN reset, and a role editor
+    showing each permission in words.
+  - [ ] **Task 4c: The audit trail on the server.** Every void, comp,
+    discount and refund, with who did it, who authorised it, why, the
+    order and the amount; filterable by staff and date, cursor paged.
+  - [ ] **Task 4d: The audit screen.** Its own entry in the navigation,
+    not a tab inside People: the trail an owner reads most.
+
 - [ ] **Task 5 — Reports.**
   Sales over time, product mix, category performance, hourly heatmap, payment
   mix, channel mix, staff performance, discount and void analysis. Cursor
