@@ -78,6 +78,8 @@ The skeleton the reports task fills.
 - **Today**: a `Card` saying "Sales, covers and open tickets for today
   arrive with reports." No placeholder numbers: a dash that looks like a
   zero is a lie on a money screen.
+- **Low stock** (phase 10, Task 3d): for whoever has `stock.manage`,
+  what is at or under its level (`backoffice-stock.md`).
 - **Your sections**: one `Card` per group you can see, each entry with a
   one-line description and a link to it. The same list as the navigation,
   so the two never disagree.

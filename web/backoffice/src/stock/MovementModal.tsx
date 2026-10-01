@@ -7,7 +7,7 @@ import type { StockItem, StockMovementInput, StockRecorded } from "../../../shar
 import { Button, Modal } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { Field, inputClass } from "../FormFields";
-import { formatDelta, formatQty } from "./qty";
+import { formatDelta, formatQty } from "../../../shared/stock-qty";
 import { countDelta, emptyMovementForm, problemOf, reasons, toMovementInput, type HandKind, type MovementForm, type Problem } from "./stock-logic";
 
 const copy: Readonly<Record<HandKind, { title: string; qty: string; save: string }>> = {

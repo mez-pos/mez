@@ -12,7 +12,7 @@ import type {
   StockUnit,
   WasteReason,
 } from "../../../shared/api-types";
-import { formatQty, parseQty, qtyInputText } from "./qty";
+import { formatQty, parseQty, qtyInputText } from "../../../shared/stock-qty";
 
 /** The movements a person enters; sold is the till's. */
 export type HandKind = "received" | "wasted" | "counted" | "adjusted";
@@ -88,21 +88,23 @@ export interface ItemForm {
   name: string;
   unit: StockUnit;
   low: string;
+  /** Counted, blind, as each shift closes (ADR-114). */
+  countAtClose: boolean;
 }
 
 export function emptyItemForm(): ItemForm {
-  return { name: "", unit: "g", low: "" };
+  return { name: "", unit: "g", low: "", countAtClose: false };
 }
 
 export function itemFormFrom(it: StockItem): ItemForm {
-  return { name: it.name, unit: it.unit, low: it.low_level === 0 ? "" : qtyInputText(it.low_level) };
+  return { name: it.name, unit: it.unit, low: it.low_level === 0 ? "" : qtyInputText(it.low_level), countAtClose: it.count_at_close };
 }
 
 /** The request for an item form; an empty low-stock level is none. */
 export function toItemInput(form: ItemForm): { input: StockItemInput } | { problem: Problem } {
   const low = form.low.trim() === "" ? 0 : parseQty(form.low);
   if (low === null) return { problem: { field: "low_level", message: unreadable } };
-  return { input: { name: form.name.trim(), unit: form.unit, low_level: low } };
+  return { input: { name: form.name.trim(), unit: form.unit, low_level: low, count_at_close: form.countAtClose } };
 }
 
 /** What a recipe takes, in words: "Beans 18 g, Milk 200 ml"; empty for none. */

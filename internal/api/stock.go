@@ -22,6 +22,8 @@ type Stock interface {
 	Recipes(ctx context.Context, venueID int64) (stock.RecipeBook, error)
 	SetItemRecipe(ctx context.Context, venueID, itemID int64, parts []stock.RecipePart) error
 	SetModifierRecipe(ctx context.Context, venueID, modifierID int64, parts []stock.RecipePart) error
+	ClosingCount(ctx context.Context, venueID, shiftID int64) (stock.ClosingSheet, error)
+	RecordClosingCount(ctx context.Context, venueID, staffID, shiftID int64, counts []stock.ClosingCountInput) (stock.ClosingSheet, error)
 }
 
 // WithStock mounts the stock routes. They need WithDevices and WithStaff,
@@ -37,6 +39,8 @@ const (
 	CodeStockNameTaken    ErrorCode = "stock_name_taken"
 	CodeInvalidStock      ErrorCode = "invalid_stock"
 	CodeModifierNotFound  ErrorCode = "modifier_not_found"
+	CodeStockCounted      ErrorCode = "stock_already_counted"
+	CodeStockCountStale   ErrorCode = "stock_count_stale"
 )
 
 type (
@@ -52,6 +56,11 @@ type stockItemsResponse struct {
 // empty list clears it.
 type recipeRequest struct {
 	Parts []stock.RecipePart `json:"parts"`
+}
+
+// closingCountRequest is a shift's closing count: every item on the list.
+type closingCountRequest struct {
+	Counts []stock.ClosingCountInput `json:"counts"`
 }
 
 type stockEditResponse struct {
@@ -82,6 +91,42 @@ func (s *Server) mountStock(mux *http.ServeMux) {
 	handle("GET /api/v1/stock/recipes", s.listRecipes)
 	handle("PUT /api/v1/stock/recipes/items/{id}", s.setRecipe(s.stock.SetItemRecipe))
 	handle("PUT /api/v1/stock/recipes/modifiers/{id}", s.setRecipe(s.stock.SetModifierRecipe))
+
+	// The closing count is part of closing the shift, so it needs what the
+	// close needs (ADR-114).
+	closing := func(pattern string, h http.HandlerFunc) {
+		mux.Handle(pattern, s.requireDevice(s.requireStaff(s.requirePermission(auth.PermShiftManage, h))))
+	}
+	closing("GET /api/v1/shift/{id}/stock-count", s.readClosingCount)
+	closing("POST /api/v1/shift/{id}/stock-count", s.recordClosingCount)
+}
+
+func (s *Server) readClosingCount(w http.ResponseWriter, r *http.Request) {
+	id, ok := s.pathID(w, r, "id")
+	if !ok {
+		return
+	}
+	sheet, err := s.stock.ClosingCount(r.Context(), Meta(r).VenueID, id)
+	if err != nil {
+		s.writeStockError(w, r, err)
+		return
+	}
+	writeJSON(w, s.log, http.StatusOK, sheet)
+}
+
+func (s *Server) recordClosingCount(w http.ResponseWriter, r *http.Request) {
+	var req closingCountRequest
+	id, ok := s.pathID(w, r, "id")
+	if !ok || !s.decode(w, r, &req) {
+		return
+	}
+	session, _ := SessionFrom(r.Context())
+	sheet, err := s.stock.RecordClosingCount(r.Context(), Meta(r).VenueID, session.Staff.ID, id, req.Counts)
+	if err != nil {
+		s.writeStockError(w, r, err)
+		return
+	}
+	writeJSON(w, s.log, http.StatusCreated, sheet)
 }
 
 func (s *Server) listRecipes(w http.ResponseWriter, r *http.Request) {
@@ -230,6 +275,14 @@ func (s *Server) writeStockError(w http.ResponseWriter, r *http.Request, err err
 		writeError(w, s.log, http.StatusNotFound, CodeItemNotFound, "No such item on the menu.")
 	case errors.Is(err, stock.ErrModifierNotFound):
 		writeError(w, s.log, http.StatusNotFound, CodeModifierNotFound, "No such choice on the menu.")
+	case errors.Is(err, stock.ErrShiftNotFound):
+		writeError(w, s.log, http.StatusNotFound, CodeShiftUnknown, "No such shift.")
+	case errors.Is(err, stock.ErrShiftClosed):
+		writeError(w, s.log, http.StatusConflict, CodeShiftClosed, "That shift is closed.")
+	case errors.Is(err, stock.ErrAlreadyCounted):
+		writeError(w, s.log, http.StatusConflict, CodeStockCounted, "The closing stock is already counted. It can't be counted again.")
+	case errors.Is(err, stock.ErrStaleCount):
+		writeError(w, s.log, http.StatusConflict, CodeStockCountStale, "The list of items to count changed. Reload and count again.")
 	case errors.Is(err, stock.ErrRetired):
 		writeError(w, s.log, http.StatusConflict, CodeStockItemRetired, "That stock item is retired. Bring it back first.")
 	default:

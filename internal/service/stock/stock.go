@@ -59,6 +59,8 @@ type ItemInput struct {
 	Name     string     `json:"name"`
 	Unit     stock.Unit `json:"unit"`
 	LowLevel stock.Qty  `json:"low_level"`
+	// CountAtClose puts it on the till's closing count (ADR-114).
+	CountAtClose bool `json:"count_at_close"`
 }
 
 // Item is a stock item with what is on hand.
@@ -69,6 +71,8 @@ type Item struct {
 	LowLevel stock.Qty  `json:"low_level"`
 	Active   bool       `json:"active"`
 	OnHand   stock.Qty  `json:"on_hand"`
+	// CountAtClose: it is counted, blind, as each shift closes.
+	CountAtClose bool `json:"count_at_close"`
 	// Low is on hand at or under the low-stock level (stock.IsLow).
 	Low bool `json:"low"`
 }
@@ -84,7 +88,7 @@ func (s *Service) Items(ctx context.Context, venueID int64) ([]Item, error) {
 		onHand, level := stock.Qty(r.OnHand), stock.Qty(r.LowLevel)
 		out[i] = Item{
 			ID: r.ID, Name: r.Name, Unit: stock.Unit(r.Unit), LowLevel: level, Active: r.Active,
-			OnHand: onHand, Low: r.Active && stock.IsLow(onHand, level),
+			OnHand: onHand, Low: r.Active && stock.IsLow(onHand, level), CountAtClose: r.CountAtClose,
 		}
 	}
 	return out, nil
@@ -100,7 +104,8 @@ func (s *Service) CreateItem(ctx context.Context, venueID int64, in ItemInput) (
 	var id int64
 	err = s.db.WriteTx(ctx, func(q *gen.Queries) error {
 		id, err = q.CreateStockItem(ctx, gen.CreateStockItemParams{
-			VenueID: venueID, Name: d.Name, Unit: string(d.Unit), LowLevel: int64(d.LowLevel), CreatedAt: now, UpdatedAt: now,
+			VenueID: venueID, Name: d.Name, Unit: string(d.Unit), LowLevel: int64(d.LowLevel), CountAtClose: in.CountAtClose,
+			CreatedAt: now, UpdatedAt: now,
 		})
 		return err
 	})
@@ -130,7 +135,8 @@ func (s *Service) UpdateItem(ctx context.Context, venueID, id int64, in ItemInpu
 			}
 		}
 		n, err := q.UpdateStockItem(ctx, gen.UpdateStockItemParams{
-			Name: d.Name, Unit: string(d.Unit), LowLevel: int64(d.LowLevel), Now: s.now(), VenueID: venueID, ID: id,
+			Name: d.Name, Unit: string(d.Unit), LowLevel: int64(d.LowLevel), CountAtClose: in.CountAtClose,
+			Now: s.now(), VenueID: venueID, ID: id,
 		})
 		return oneRow(n, err)
 	}))

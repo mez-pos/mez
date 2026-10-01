@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
@@ -194,6 +195,57 @@ func TestRecipesOverHTTP(t *testing.T) {
 			}
 			if got := errorOf(t, rec); got.Code != tt.code || got.Field != tt.field {
 				t.Errorf("error = %+v, want %s on %q", got, tt.code, tt.field)
+			}
+		})
+	}
+}
+
+func TestClosingStockOverHTTP(t *testing.T) {
+	w, owner := newStockTill(t)
+	res, err := w.db.Writer().ExecContext(context.Background(),
+		`INSERT INTO shifts (public_id, venue_id, status, trading_day, opened_by, opened_at)
+		 VALUES ('shf_HTTPCLS1', 1, 'open', '2026-09-30', 1, '2026-09-30 06:00:00+00:00')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	shift, _ := res.LastInsertId()
+	rec := send(w.handler, http.MethodPost, "/api/v1/stock/items", `{"name":"Milk","unit":"ml","low_level":0,"count_at_close":true}`, owner)
+	var milk stockEditResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &milk); err != nil {
+		t.Fatal(err)
+	}
+	path := fmt.Sprintf("/api/v1/shift/%d/stock-count", shift)
+
+	rec = send(w.handler, http.MethodGet, path, "", owner)
+	var sheet stock.ClosingSheet
+	if err := json.Unmarshal(rec.Body.Bytes(), &sheet); err != nil || sheet.Done || len(sheet.Items) != 1 || sheet.Items[0].ID != milk.ID {
+		t.Fatalf("sheet: %d %s", rec.Code, rec.Body)
+	}
+	if strings.Contains(rec.Body.String(), "on_hand") {
+		t.Error("the closing count is blind: the sheet must not carry on hand")
+	}
+
+	rec = send(w.handler, http.MethodPost, path, fmt.Sprintf(`{"counts":[{"stock_item_id":%d,"qty":3000000}]}`, milk.ID), owner)
+	sheet = stock.ClosingSheet{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &sheet); err != nil || rec.Code != http.StatusCreated || !sheet.Done || sheet.Results[0].Delta != 3_000_000 {
+		t.Fatalf("count: %d %s", rec.Code, rec.Body)
+	}
+
+	refusals := []struct {
+		name, method, path, body string
+		headers                  map[string]string
+		status                   int
+		code                     ErrorCode
+	}{
+		{"counting again", http.MethodPost, path, fmt.Sprintf(`{"counts":[{"stock_item_id":%d,"qty":0}]}`, milk.ID), owner, http.StatusConflict, CodeStockCounted},
+		{"a missing shift", http.MethodGet, "/api/v1/shift/999/stock-count", "", owner, http.StatusNotFound, CodeShiftUnknown},
+		{"a cashier", http.MethodGet, path, "", w.asStaff(w.signIn(t, "2468").Token), http.StatusForbidden, CodeForbidden},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := send(w.handler, tt.method, tt.path, tt.body, tt.headers)
+			if rec.Code != tt.status || errorOf(t, rec).Code != tt.code {
+				t.Errorf("%d %s, want %d %s", rec.Code, rec.Body, tt.status, tt.code)
 			}
 		})
 	}

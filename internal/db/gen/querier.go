@@ -61,6 +61,9 @@ type Querier interface {
 	CloseShift(ctx context.Context, arg CloseShiftParams) (int64, error)
 	// The till's past bills: the latest closed, newest first (Task 6b).
 	ClosedOrdersForVenue(ctx context.Context, arg ClosedOrdersForVenueParams) ([]ClosedOrdersForVenueRow, error)
+	//
+	// The close's count of a shift: what was counted and what it moved.
+	ClosingCountForShift(ctx context.Context, arg ClosingCountForShiftParams) ([]ClosingCountForShiftRow, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
 	CourseForEdit(ctx context.Context, arg CourseForEditParams) (int64, error)
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
@@ -159,6 +162,8 @@ type Querier interface {
 	ItemModifierGroupsForVenue(ctx context.Context, venueID int64) ([]ItemModifierGroupsForVenueRow, error)
 	// Recipes (Task 3b, ADR-112).
 	ItemRecipesForVenue(ctx context.Context, venueID int64) ([]ItemRecipesForVenueRow, error)
+	// Closing stock (Task 3d, ADR-114).
+	ItemsToCountAtClose(ctx context.Context, venueID int64) ([]ItemsToCountAtCloseRow, error)
 	// The shift's report as it now stands: the last correction, or the original.
 	LatestZReportForShift(ctx context.Context, shiftID int64) (ZReport, error)
 	ListVenues(ctx context.Context) ([]Venue, error)

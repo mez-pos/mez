@@ -3178,3 +3178,33 @@ Because: the person who counts the walk-in and sets the recipes is often
 not the one who prices the menu.
 Cost: an owner setting up a new dish edits it in two places: the menu for
 what it costs, the Stock screen for what it takes.
+
+## ADR-114 - Closing stock is a blind count the close waits for
+2026-10 · Status: accepted
+Decision: phase 10, Task 3d counts chosen stock items as part of closing
+the shift on the till, and shows what is low on the back office dashboard.
+  - **Chosen items:** a stock item marked **Count at close** (migration
+    00025) is on the till's closing list. Most venues count a few costly
+    items nightly (milk, beans, spirits), not everything.
+  - **Blind, as the drawer is:** the till shows names and units only; what
+    the ledger says, and what the count moved, arrive with the answer to
+    the count. A count that can see the expected figure tends to find it.
+  - **Once per shift, whole:** `POST /api/v1/shift/{id}/stock-count` takes
+    every item on the list in one transaction, as `counted` movements of
+    that shift marked `closing`. A count missing an item or naming one not
+    on the list is refused (`stock_count_stale`); a second count is
+    refused (`stock_already_counted`), and the till reads a retry's refusal
+    as the count having gone in. A closed shift is refused.
+  - **It names its shift.** This settles ADR-111's open question: the
+    count runs after the closing drawer count, when the order events'
+    "open shift" lookup no longer finds the shift, so the shift is in the
+    path, checked to be this venue's and still open.
+  - **Close the shift waits for it** while there is a list to count; with
+    nothing marked, there is no step. It needs `shift.manage`, as the close
+    does: it is part of closing, done by whoever closes.
+  - **Low stock on the dashboard,** for whoever has `stock.manage`: each
+    low item, its on hand and its level.
+Because: "closing stock at shift end" is only worth having if it is
+honest, and only done if it sits in the close everyone already does.
+Cost: a manager who must close without time to count cannot skip it (they
+can untick Count at close). There is no closing-stock report yet (Task 5).

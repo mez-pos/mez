@@ -89,6 +89,13 @@ export function StockItemModal({ item, onSave, onCorrect, onSetActive, onClose }
             />
           )}
         </Field>
+        <label className="flex min-h-tap items-center gap-2.5 text-base">
+          <input type="checkbox" className="size-5" checked={form.countAtClose} onChange={(e) => set({ countAtClose: e.target.checked })} />
+          <span>
+            Count at close
+            <span className="block text-sm text-fg-muted">Counted, blind, on the till as each shift closes.</span>
+          </span>
+        </label>
         {item && (
           <div className="flex flex-wrap gap-tap-gap border-t border-line-soft pt-4">
             {item.active && (

@@ -3,13 +3,14 @@
 -- ledger, never a stored number.
 
 -- name: CreateStockItem :one
-INSERT INTO stock_items (venue_id, name, unit, low_level, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO stock_items (venue_id, name, unit, low_level, count_at_close, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 RETURNING id;
 
 -- name: UpdateStockItem :execrows
 UPDATE stock_items
-SET name = sqlc.arg(name), unit = sqlc.arg(unit), low_level = sqlc.arg(low_level), updated_at = sqlc.arg(now)
+SET name = sqlc.arg(name), unit = sqlc.arg(unit), low_level = sqlc.arg(low_level),
+    count_at_close = sqlc.arg(count_at_close), updated_at = sqlc.arg(now)
 WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
 
 -- name: SetStockItemActive :execrows
@@ -26,7 +27,7 @@ WHERE venue_id = ? AND id = ?;
 --
 -- Every item, retired ones too, with what the ledger says is on hand.
 SELECT
-    i.id, i.name, i.unit, i.low_level, i.active,
+    i.id, i.name, i.unit, i.low_level, i.active, i.count_at_close,
     CAST(COALESCE(SUM(m.delta), 0) AS INTEGER) AS on_hand
 FROM stock_items i
 LEFT JOIN stock_movements m ON m.venue_id = i.venue_id AND m.stock_item_id = i.id
@@ -46,8 +47,8 @@ WHERE venue_id = ? AND stock_item_id = ?;
 
 -- name: InsertStockMovement :one
 INSERT INTO stock_movements (
-    venue_id, stock_item_id, kind, delta, counted, reason, note, staff_id, shift_id, order_id, created_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    venue_id, stock_item_id, kind, delta, counted, reason, note, staff_id, shift_id, order_id, closing, created_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id;
 
 -- name: StockMovementsForItem :many
@@ -104,3 +105,20 @@ SELECT stock_item_id, CAST(-SUM(delta) AS INTEGER) AS taken
 FROM stock_movements
 WHERE venue_id = ? AND order_id = ? AND kind = 'sold'
 GROUP BY stock_item_id;
+
+-- Closing stock (Task 3d, ADR-114).
+
+-- name: ItemsToCountAtClose :many
+SELECT id, name, unit
+FROM stock_items
+WHERE venue_id = ? AND active = 1 AND count_at_close = 1
+ORDER BY name COLLATE NOCASE, id;
+
+-- name: ClosingCountForShift :many
+--
+-- The close's count of a shift: what was counted and what it moved.
+SELECT m.stock_item_id, i.name, i.unit, m.counted, m.delta
+FROM stock_movements m
+JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
+WHERE m.venue_id = ? AND m.shift_id = ? AND m.closing = 1
+ORDER BY i.name COLLATE NOCASE, i.id;

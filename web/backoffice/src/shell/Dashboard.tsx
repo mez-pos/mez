@@ -5,12 +5,14 @@
 import { Link } from "wouter";
 import { useAuth } from "../../../shared/auth/use-auth";
 import { Card } from "../../../shared/ui";
+import { LowStockCard } from "../stock/LowStockCard";
 import { usePermissions } from "./BackOfficeShell";
 import { visibleNav } from "./nav-logic";
 
 export function Dashboard() {
   const status = useAuth();
-  const groups = visibleNav(usePermissions())
+  const held = usePermissions();
+  const groups = visibleNav(held)
     .map((g) => ({ ...g, sections: g.sections.filter((s) => s.id !== "dashboard") }))
     .filter((g) => g.sections.length > 0);
 
@@ -27,6 +29,8 @@ export function Dashboard() {
           <p className="text-sm text-fg-2">Sales, covers and open tickets for today arrive with reports.</p>
         </Card>
       </section>
+
+      <LowStockCard held={held} />
 
       <section aria-labelledby="yours" className="mt-8">
         <h2 id="yours" className="text-meta font-semibold uppercase text-fg-faint">

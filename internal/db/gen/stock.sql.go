@@ -81,20 +81,72 @@ func (q *Queries) ClearModifierRecipe(ctx context.Context, arg ClearModifierReci
 	return err
 }
 
+const closingCountForShift = `-- name: ClosingCountForShift :many
+SELECT m.stock_item_id, i.name, i.unit, m.counted, m.delta
+FROM stock_movements m
+JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
+WHERE m.venue_id = ? AND m.shift_id = ? AND m.closing = 1
+ORDER BY i.name COLLATE NOCASE, i.id
+`
+
+type ClosingCountForShiftParams struct {
+	VenueID int64
+	ShiftID int64
+}
+
+type ClosingCountForShiftRow struct {
+	StockItemID int64
+	Name        string
+	Unit        string
+	Counted     sql.NullInt64
+	Delta       int64
+}
+
+// The close's count of a shift: what was counted and what it moved.
+func (q *Queries) ClosingCountForShift(ctx context.Context, arg ClosingCountForShiftParams) ([]ClosingCountForShiftRow, error) {
+	rows, err := q.db.QueryContext(ctx, closingCountForShift, arg.VenueID, arg.ShiftID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClosingCountForShiftRow{}
+	for rows.Next() {
+		var i ClosingCountForShiftRow
+		if err := rows.Scan(
+			&i.StockItemID,
+			&i.Name,
+			&i.Unit,
+			&i.Counted,
+			&i.Delta,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createStockItem = `-- name: CreateStockItem :one
 
-INSERT INTO stock_items (venue_id, name, unit, low_level, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO stock_items (venue_id, name, unit, low_level, count_at_close, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 RETURNING id
 `
 
 type CreateStockItemParams struct {
-	VenueID   int64
-	Name      string
-	Unit      string
-	LowLevel  int64
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	VenueID      int64
+	Name         string
+	Unit         string
+	LowLevel     int64
+	CountAtClose bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 // Stock (phase 10, Task 3a, ADR-111). Every query is scoped by venue_id: an
@@ -106,6 +158,7 @@ func (q *Queries) CreateStockItem(ctx context.Context, arg CreateStockItemParams
 		arg.Name,
 		arg.Unit,
 		arg.LowLevel,
+		arg.CountAtClose,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -116,8 +169,8 @@ func (q *Queries) CreateStockItem(ctx context.Context, arg CreateStockItemParams
 
 const insertStockMovement = `-- name: InsertStockMovement :one
 INSERT INTO stock_movements (
-    venue_id, stock_item_id, kind, delta, counted, reason, note, staff_id, shift_id, order_id, created_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    venue_id, stock_item_id, kind, delta, counted, reason, note, staff_id, shift_id, order_id, closing, created_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id
 `
 
@@ -132,6 +185,7 @@ type InsertStockMovementParams struct {
 	StaffID     int64
 	ShiftID     int64
 	OrderID     int64
+	Closing     bool
 	CreatedAt   time.Time
 }
 
@@ -147,6 +201,7 @@ func (q *Queries) InsertStockMovement(ctx context.Context, arg InsertStockMoveme
 		arg.StaffID,
 		arg.ShiftID,
 		arg.OrderID,
+		arg.Closing,
 		arg.CreatedAt,
 	)
 	var id int64
@@ -179,6 +234,44 @@ func (q *Queries) ItemRecipesForVenue(ctx context.Context, venueID int64) ([]Ite
 	for rows.Next() {
 		var i ItemRecipesForVenueRow
 		if err := rows.Scan(&i.ItemID, &i.StockItemID, &i.Qty); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const itemsToCountAtClose = `-- name: ItemsToCountAtClose :many
+
+SELECT id, name, unit
+FROM stock_items
+WHERE venue_id = ? AND active = 1 AND count_at_close = 1
+ORDER BY name COLLATE NOCASE, id
+`
+
+type ItemsToCountAtCloseRow struct {
+	ID   int64
+	Name string
+	Unit string
+}
+
+// Closing stock (Task 3d, ADR-114).
+func (q *Queries) ItemsToCountAtClose(ctx context.Context, venueID int64) ([]ItemsToCountAtCloseRow, error) {
+	rows, err := q.db.QueryContext(ctx, itemsToCountAtClose, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ItemsToCountAtCloseRow{}
+	for rows.Next() {
+		var i ItemsToCountAtCloseRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Unit); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -354,7 +447,7 @@ func (q *Queries) StockItemForEdit(ctx context.Context, arg StockItemForEditPara
 
 const stockItemsWithOnHand = `-- name: StockItemsWithOnHand :many
 SELECT
-    i.id, i.name, i.unit, i.low_level, i.active,
+    i.id, i.name, i.unit, i.low_level, i.active, i.count_at_close,
     CAST(COALESCE(SUM(m.delta), 0) AS INTEGER) AS on_hand
 FROM stock_items i
 LEFT JOIN stock_movements m ON m.venue_id = i.venue_id AND m.stock_item_id = i.id
@@ -364,12 +457,13 @@ ORDER BY i.name COLLATE NOCASE, i.id
 `
 
 type StockItemsWithOnHandRow struct {
-	ID       int64
-	Name     string
-	Unit     string
-	LowLevel int64
-	Active   bool
-	OnHand   int64
+	ID           int64
+	Name         string
+	Unit         string
+	LowLevel     int64
+	Active       bool
+	CountAtClose bool
+	OnHand       int64
 }
 
 // Every item, retired ones too, with what the ledger says is on hand.
@@ -388,6 +482,7 @@ func (q *Queries) StockItemsWithOnHand(ctx context.Context, venueID int64) ([]St
 			&i.Unit,
 			&i.LowLevel,
 			&i.Active,
+			&i.CountAtClose,
 			&i.OnHand,
 		); err != nil {
 			return nil, err
@@ -516,17 +611,19 @@ func (q *Queries) StockOnHand(ctx context.Context, arg StockOnHandParams) (int64
 
 const updateStockItem = `-- name: UpdateStockItem :execrows
 UPDATE stock_items
-SET name = ?1, unit = ?2, low_level = ?3, updated_at = ?4
-WHERE venue_id = ?5 AND id = ?6
+SET name = ?1, unit = ?2, low_level = ?3,
+    count_at_close = ?4, updated_at = ?5
+WHERE venue_id = ?6 AND id = ?7
 `
 
 type UpdateStockItemParams struct {
-	Name     string
-	Unit     string
-	LowLevel int64
-	Now      time.Time
-	VenueID  int64
-	ID       int64
+	Name         string
+	Unit         string
+	LowLevel     int64
+	CountAtClose bool
+	Now          time.Time
+	VenueID      int64
+	ID           int64
 }
 
 func (q *Queries) UpdateStockItem(ctx context.Context, arg UpdateStockItemParams) (int64, error) {
@@ -534,6 +631,7 @@ func (q *Queries) UpdateStockItem(ctx context.Context, arg UpdateStockItemParams
 		arg.Name,
 		arg.Unit,
 		arg.LowLevel,
+		arg.CountAtClose,
 		arg.Now,
 		arg.VenueID,
 		arg.ID,

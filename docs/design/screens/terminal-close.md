@@ -75,6 +75,23 @@ closing takes a manager under three minutes with a full drawer.
 | Save reason | Records it | The quote; Close the shift enabled |
 | Close the shift | Ends the shift | "Shift closed"; the till is closed |
 
+
+## Closing stock (phase 10, Task 3d, ADR-114)
+
+- After the drawer is counted and revealed, the stock items marked **Count
+  at close** in the back office are listed under it: "Count the stock",
+  one field each in its unit, mono, right-aligned. **Blind**, as the
+  drawer is: what the stock record says is not on the till until the
+  count is in.
+- **Save the stock count** sends every item together; an item left
+  empty, or typed in words, is named under its field before anything is
+  sent. It is taken once per shift.
+- Once it is in: "Closing stock", each item's count and what it moved
+  (the count against the record), a loss in the danger colour.
+- **Close the shift** waits for it while there is a list to count. With
+  nothing marked, the step is not shown.
+- `GET` and `POST /api/v1/shift/{id}/stock-count`, `shift.manage`.
+
 ## States
 
 - **Loading:** "Checking the till" in place of the register.

@@ -2,7 +2,7 @@
 // unit; people type and read whole units with up to three decimals. Read
 // as digits and joined, never through a float, as money is.
 
-import type { StockUnit } from "../../../shared/api-types";
+import type { StockUnit } from "./api-types";
 
 /** Thousandths in one whole unit. */
 export const perUnit = 1000;

@@ -13,26 +13,28 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 3c: the Stock screen** (ADR-113, spec
-`docs/design/screens/backoffice-stock.md`). `/stock` in the back office
-(`g k`, `stock.manage`): stock items with on hand, low and low-at;
-Receive, Waste (with a reason), Count (showing what it will record before
-saving), Correct, Edit, Retire; each item's history, paged. A Recipes view
-lists the till's dishes and choices with what each takes, edited there
-rather than in the menu forms. Tried in the browser: added beans,
-received 5,000 g, counted 4,950 g (−50 g shown before saving), gave Latte
-18 g, and read the history.
+**Phase 10, Task 3d: low stock and closing stock** (ADR-114), which
+completes Task 3 (inventory: 3a to 3d). Stock items can be marked Count at
+close (migration 00025); the till's close-of-day screen lists them after
+the drawer, counted blind, recorded once per shift as closing counts of
+that shift, and Close the shift waits for it. The back office dashboard
+shows a Low stock card to `stock.manage`. Stock quantity helpers moved to
+`web/shared/stock-qty.ts`. Tried in the browser: a full close with beans
+and milk counted (−200 g and +1,500 ml revealed after), the shift closed,
+and the database held both closing counts against it.
 
 ## Next task
 
-**Phase 10, Task 3d: low stock and closing stock.** Low-stock alerts
-where a manager sees them (the dashboard at least), and a stock count as
-part of closing the shift. Decide which shift a count after the closing
-drawer count belongs to (ADR-111's open question).
+**Phase 10, Task 4: People.** Staff CRUD, roles, permissions, PIN reset,
+and an audit view of who voided, comped, discounted and refunded,
+filterable by staff and date. Large: split it in the phase file first.
+Mind ADR-105 (permissions on the session) and that the shell's only
+untested views are non-owner ones, which Task 4 finally makes possible.
 
 ## Known broken / in progress
 
-- Stock (ADR-111 to ADR-113): a close uses today's
+- Stock (ADR-111 to ADR-114): no closing-stock report yet (Task 5). The
+  closing count cannot be skipped while items are marked. A close uses today's
   recipes, not the ones when the line was rung up. A sold movement needs a
   real staff id: the guest channel (phase 11) must supply one. A movement after the shift's closing drawer count records no
   shift (3d). No low-stock alert anywhere yet (3d).

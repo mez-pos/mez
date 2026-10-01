@@ -4,7 +4,7 @@
 import type { StockItem } from "../../../shared/api-types";
 import { Button, Modal } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
-import { formatDelta, formatQty } from "./qty";
+import { formatDelta, formatQty } from "../../../shared/stock-qty";
 import { movementText, problemOf } from "./stock-logic";
 import { useHistory } from "./use-stock";
 

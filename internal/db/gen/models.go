@@ -371,14 +371,15 @@ type StationTicket struct {
 }
 
 type StockItem struct {
-	ID        int64
-	VenueID   int64
-	Name      string
-	Unit      string
-	LowLevel  int64
-	Active    bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID           int64
+	VenueID      int64
+	Name         string
+	Unit         string
+	LowLevel     int64
+	Active       bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	CountAtClose bool
 }
 
 type StockMovement struct {
@@ -394,6 +395,7 @@ type StockMovement struct {
 	ShiftID     int64
 	OrderID     int64
 	CreatedAt   time.Time
+	Closing     bool
 }
 
 type Table struct {

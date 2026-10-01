@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDelta, formatQty, parseQty, qtyInputText } from "./qty";
+import { formatDelta, formatQty, parseQty, qtyInputText } from "./stock-qty";
 
 describe("parseQty", () => {
   const tests: { text: string; signed?: boolean; want: number | null }[] = [

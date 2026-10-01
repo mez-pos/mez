@@ -67,6 +67,16 @@ export function useStock(): StockApi {
   };
 }
 
+/** The stock list alone, for the dashboard's low-stock card. Same key as the screen's, so they agree. */
+export function useStockItems(enabled: boolean) {
+  const store = useAuthStore();
+  return useQuery({
+    queryKey: stockKey,
+    queryFn: ({ signal }) => store.api.get<StockItemsResponse>("/api/v1/stock", { signal }),
+    enabled,
+  });
+}
+
 /** An item's history, a page at a time, newest first. */
 export function useHistory(id: number) {
   const store = useAuthStore();

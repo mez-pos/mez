@@ -42,7 +42,7 @@ Phase 09.
     - [x] **Task 2d2: Item photos.** Upload in the editor, stored beside
       the database, served with the menu, shown on the register tiles.
 
-- [ ] **Task 3 — Inventory basics.**
+- [x] **Task 3 — Inventory basics.**
   Stock items, recipes mapping menu items to stock, deduction on sale, manual
   adjustments, wastage with reason codes, low-stock alerts, closing stock at
   shift end. Keep it basic — purchasing and suppliers stay out of scope.
@@ -61,7 +61,7 @@ Phase 09.
   - [x] **Task 3c: The Stock screen.** Spec first
     (`backoffice-stock.md`). Stock items with on hand, receive, adjust,
     waste with a reason, a movement history, and recipes on the item form.
-  - [ ] **Task 3d: Low stock and closing stock.** Low-stock alerts where a
+  - [x] **Task 3d: Low stock and closing stock.** Low-stock alerts where a
     manager sees them; a stock count as part of closing the shift.
 
 - [ ] **Task 4 — People.**

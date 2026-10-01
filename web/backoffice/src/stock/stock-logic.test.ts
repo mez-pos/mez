@@ -16,8 +16,8 @@ import {
   toParts,
 } from "./stock-logic";
 
-const beans: StockItem = { id: 1, name: "Beans", unit: "g", low_level: 2_000_000, active: true, on_hand: 4_750_000, low: false };
-const milk: StockItem = { id: 2, name: "Milk", unit: "ml", low_level: 0, active: true, on_hand: 0, low: false };
+const beans: StockItem = { id: 1, name: "Beans", unit: "g", low_level: 2_000_000, active: true, on_hand: 4_750_000, low: false, count_at_close: true };
+const milk: StockItem = { id: 2, name: "Milk", unit: "ml", low_level: 0, active: true, on_hand: 0, low: false, count_at_close: false };
 
 describe("toMovementInput", () => {
   it("sends a delivery in thousandths, with no reason", () => {
@@ -60,12 +60,12 @@ describe("movementText", () => {
 describe("the item form", () => {
   it("reads an item in and back out", () => {
     const form = itemFormFrom(beans);
-    expect(form).toEqual({ name: "Beans", unit: "g", low: "2000" });
-    expect(toItemInput(form)).toEqual({ input: { name: "Beans", unit: "g", low_level: 2_000_000 } });
+    expect(form).toEqual({ name: "Beans", unit: "g", low: "2000", countAtClose: true });
+    expect(toItemInput(form)).toEqual({ input: { name: "Beans", unit: "g", low_level: 2_000_000, count_at_close: true } });
   });
   it("treats an empty low level as none, and trims the name", () => {
     expect(itemFormFrom(milk).low).toBe("");
-    expect(toItemInput({ ...emptyItemForm(), name: " Ice " })).toEqual({ input: { name: "Ice", unit: "g", low_level: 0 } });
+    expect(toItemInput({ ...emptyItemForm(), name: " Ice " })).toEqual({ input: { name: "Ice", unit: "g", low_level: 0, count_at_close: false } });
   });
   it("refuses a low level it cannot read", () => {
     expect(toItemInput({ ...emptyItemForm(), low: "some" })).toMatchObject({ problem: { field: "low_level" } });

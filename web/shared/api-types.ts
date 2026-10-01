@@ -106,7 +106,9 @@ export type ErrorCode =
   | 'stock_item_retired'
   | 'stock_name_taken'
   | 'invalid_stock'
-  | 'modifier_not_found';
+  | 'modifier_not_found'
+  | 'stock_already_counted'
+  | 'stock_count_stale';
 
 export type OrderStatus =
   | 'open'
@@ -1148,6 +1150,7 @@ export interface StockItemInput {
   name: string;
   unit: StockUnit;
   low_level: number;
+  count_at_close: boolean;
 }
 
 export interface StockMovementInput {
@@ -1164,6 +1167,7 @@ export interface StockItem {
   low_level: number;
   active: boolean;
   on_hand: number;
+  count_at_close: boolean;
   low: boolean;
 }
 
@@ -1217,6 +1221,35 @@ export interface RecipeBook {
 
 export interface RecipeRequest {
   parts: RecipePart[];
+}
+
+export interface ClosingStockItem {
+  id: number;
+  name: string;
+  unit: StockUnit;
+}
+
+export interface ClosingStockResult {
+  stock_item_id: number;
+  name: string;
+  unit: StockUnit;
+  counted: number;
+  delta: number;
+}
+
+export interface ClosingStockSheet {
+  done: boolean;
+  items: ClosingStockItem[];
+  results: ClosingStockResult[];
+}
+
+export interface ClosingStockCount {
+  stock_item_id: number;
+  qty: number;
+}
+
+export interface ClosingCountRequest {
+  counts: ClosingStockCount[];
 }
 
 export interface AreaSettings {

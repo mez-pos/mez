@@ -7,7 +7,10 @@ import type { ShiftResponse } from "../../../shared/api-types";
 import { formatMoney } from "../../../shared/money";
 import { Button, Confirm, Meta, Money, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { ClosingStock } from "./ClosingStock";
+import { stockCountOwed } from "./closing-stock-logic";
 import { DrawerCounter, emptyCount, type Counted } from "./DrawerCounter";
+import { useClosingStock } from "./use-closing-stock";
 import { countRequest, maxReason, reasonOwed, varianceWords } from "./shift-logic";
 import type { ShiftCommands } from "./use-shift";
 
@@ -27,6 +30,7 @@ export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
+  const stock = useClosingStock(shift.id);
 
   const run = async (what: () => Promise<unknown>, done?: string) => {
     setBusy(true);
@@ -48,7 +52,10 @@ export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: 
     <div className="flex min-w-0 flex-1">
       <section aria-label="Close the day" className="flex min-w-0 flex-1 justify-center overflow-y-auto px-6 py-5">
         {rec ? (
-          <Reveal shift={shift} busy={busy} onExplain={(reason) => void run(() => commands.explain(shift.id, reason))} />
+          <div className="flex w-full max-w-xl flex-col gap-10">
+            <Reveal shift={shift} busy={busy} onExplain={(reason) => void run(() => commands.explain(shift.id, reason))} />
+            {stock.sheet.data && <ClosingStock sheet={stock.sheet.data} onRecord={stock.record} />}
+          </div>
         ) : (
           <DrawerCounter title="Count the drawer" currency={currency} value={counted} onChange={setCounted} disabled={busy} />
         )}
@@ -72,7 +79,7 @@ export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: 
             <Button
               variant="primary"
               size="charge"
-              disabled={busy || reasonOwed(rec, shift.reason !== undefined) !== null}
+              disabled={busy || reasonOwed(rec, shift.reason !== undefined) !== null || stockCountOwed(stock.sheet.data)}
               onClick={() =>
                 void run(async () => {
                   const closed = await commands.close(shift.id);

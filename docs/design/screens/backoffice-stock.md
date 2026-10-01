@@ -3,7 +3,8 @@
 Where a manager keeps the stores: what there is, what came in, what was
 thrown away and what a count found, and what each dish takes. Built in
 phase 10 Task 3c over the server of Tasks 3a and 3b (ADR-111, ADR-112).
-Low-stock alerts and the closing count are Task 3d.
+Low stock on the dashboard and the closing count were added in Task 3d
+(ADR-114).
 
 ## Purpose
 
@@ -65,6 +66,15 @@ so a manager without `menu.edit` can keep recipes.
 - **The recipe form** (`Modal`, md): one row per stock item it takes: a
   select of active stock items, the amount in that item's unit, Remove;
   **Add a stock item**; Save. The server's refusal shows on its row.
+
+## Low stock and the closing count (Task 3d)
+
+- **Edit** has **Count at close**: the item is counted, blind, on the till
+  as each shift closes (`terminal-close.md`). The Items table marks such
+  an item "AT CLOSE".
+- **The dashboard** shows a **Low stock** card to whoever has
+  `stock.manage`: each low item's on hand "of" its level, or "Nothing is
+  low.", and Go to stock.
 
 ## Data
 

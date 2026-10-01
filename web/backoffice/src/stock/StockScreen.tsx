@@ -10,7 +10,7 @@ import { cx } from "../../../shared/ui/cx";
 import { useMenu } from "../../../shared/use-menu";
 import { HistoryModal } from "./HistoryModal";
 import { MovementModal } from "./MovementModal";
-import { formatDelta, formatQty } from "./qty";
+import { formatDelta, formatQty } from "../../../shared/stock-qty";
 import { RecipesView } from "./RecipesView";
 import { problemOf, type HandKind } from "./stock-logic";
 import { StockItemModal } from "./StockItemModal";
@@ -79,6 +79,7 @@ function ItemsTable({ items, onOpen }: { items: readonly StockItem[]; onOpen: (o
           <span className={cx("font-semibold", !it.active && "text-fg-muted line-through")}>{it.name}</span>
           {!it.active && <span className="text-meta uppercase text-fg-faint">Retired</span>}
           {it.low && <span className="text-meta font-semibold uppercase text-warning">Low</span>}
+          {it.active && it.count_at_close && <span className="text-meta uppercase text-fg-faint">At close</span>}
         </span>
       ),
     },
