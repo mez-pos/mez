@@ -24,6 +24,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/tips"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/audit"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/menus"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
@@ -131,6 +132,7 @@ var errorCodes = []ErrorCode{
 	CodeStockItemNotFound, CodeStockItemRetired, CodeStockNameTaken, CodeInvalidStock, CodeModifierNotFound,
 	CodeStockCounted, CodeStockCountStale,
 	CodeStaffNotFound, CodeRoleNotFound, CodeRoleInUse, CodeRoleNameTaken, CodeBeyondYou, CodeLastManager, CodeInvalidPerson,
+	CodeInvalidFilter,
 }
 
 // generate builds the whole file.
@@ -179,6 +181,9 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(people.RoleInput{}):        "RoleInput",
 			reflect.TypeOf(people.Person{}):           "Person",
 			reflect.TypeOf(people.Role{}):             "Role",
+			reflect.TypeOf(audit.Person{}):            "AuditPerson",
+			reflect.TypeOf(audit.Entry{}):             "AuditEntry",
+			reflect.TypeOf(audit.Page{}):              "AuditPage",
 			reflect.TypeOf(order.CreditRequest{}):     "CreditSelection",
 			reflect.TypeOf(floor.AreaSettings{}):      "AreaSettings",
 			reflect.TypeOf(floor.TableSettings{}):     "TableSettings",
@@ -230,6 +235,7 @@ func generate() (*ts.Generator, error) {
 		{"StockUnit", domstock.Gram, asStrings(domstock.Units())},
 		{"StockMovementKind", domstock.Received, asStrings(domstock.Kinds())},
 		{"WasteReason", domstock.Expired, asStrings(domstock.WasteReasons())},
+		{"AuditKind", audit.Void, asStrings(audit.Kinds())},
 		{"OrderEventType", order.TypeOrderOpened, eventTypeNames()},
 		{"StreamMessageType", hub.MsgHello, asStrings([]hub.MessageType{
 			hub.MsgHello, hub.MsgSubscribe, hub.MsgWelcome, hub.MsgEvent, hub.MsgCaughtUp,
@@ -292,6 +298,8 @@ func generate() (*ts.Generator, error) {
 		stock.ClosingItem{}, stock.ClosingResult{}, stock.ClosingSheet{}, stock.ClosingCountInput{}, closingCountRequest{},
 		// People.
 		staffRequest{}, roleRequest{}, pinRequest{}, people.Person{}, people.Role{}, peopleResponse{}, staffAddedResponse{}, roleEditResponse{},
+		// The audit trail.
+		audit.Person{}, audit.Entry{}, audit.Page{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},

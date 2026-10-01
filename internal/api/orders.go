@@ -344,12 +344,13 @@ func (s *Server) applyDiscount(w http.ResponseWriter, r *http.Request) {
 		if !s.decode(w, r, &req) {
 			return svcorder.Result{}, errAnswered
 		}
-		if _, ok := s.authorise(w, r, req.Override, auth.PermDiscountGive); !ok {
+		by, ok := s.authorise(w, r, req.Override, auth.PermDiscountGive)
+		if !ok {
 			return svcorder.Result{}, errAnswered
 		}
 		cmd := svcorder.ApplyDiscount{
 			Scope: req.Scope, LineID: req.LineID, Kind: req.Kind,
-			BasisPoints: req.BasisPoints, Reason: req.Reason,
+			BasisPoints: req.BasisPoints, Reason: req.Reason, AuthorisedBy: by.ID,
 		}
 		if req.Amount != nil {
 			value := toMoney(*req.Amount)
@@ -464,11 +465,12 @@ func (s *Server) refund(w http.ResponseWriter, r *http.Request) {
 		if !s.decode(w, r, &req) {
 			return svcorder.Result{}, errAnswered
 		}
-		if _, ok := s.authorise(w, r, req.Override, auth.PermRefundGive); !ok {
+		by, ok := s.authorise(w, r, req.Override, auth.PermRefundGive)
+		if !ok {
 			return svcorder.Result{}, errAnswered
 		}
 		return s.orders.Refund(r.Context(), meta, orderID, svcorder.Refund{
-			Amount: toMoney(req.Amount), AgainstPaymentID: req.AgainstPaymentID, Reason: req.Reason,
+			Amount: toMoney(req.Amount), AgainstPaymentID: req.AgainstPaymentID, Reason: req.Reason, AuthorisedBy: by.ID,
 		})
 	})
 }

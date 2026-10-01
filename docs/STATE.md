@@ -13,26 +13,28 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 4b: the People screen** (spec
-`docs/design/screens/backoffice-people.md`). `/people` (`g p`,
-`staff.manage`): staff with role and since, add (PIN typed twice), edit,
-new PIN, deactivate with a confirm, bring back; roles as cards with their
-permissions in words by group, add, edit, delete when unused. The role
-editor greys out permissions you do not hold (ADR-115). Fixed on the way:
-the sign-in tiles were cached and hid a newly added person (ADR-116).
-Tried in the browser as the owner and, for the first time, as a manager:
-the manager's navigation, "not yours to open" on Printers, the refusal
-when resetting the owner's PIN, and the greyed permissions.
+**Phase 10, Task 4c: the audit trail on the server** (ADR-117).
+`internal/service/audit` and `GET /api/v1/audit?from=&to=&staff=&kind=&before=&limit=`
+(`reports.view`): every void, comp, discount, refund, payment void and
+reopen from the order events, with who did it, who authorised it, why, the
+order, the item and what it was worth (from the order's projection);
+filtered by trading days, person (did or authorised) and kind; newest
+first, cursor paged, with counts per kind. Discounts and refunds now record
+who authorised them (the API had dropped it); `ProjectionVersion` is 6.
+Tested through the real order service with a day of eight corrections.
 
 ## Next task
 
-**Phase 10, Task 4c: the audit trail on the server.** Every void, comp,
-discount and refund (and payment void, reopen) with who did it, who
-authorised it, why, the order and the amount; filterable by staff and
-date, cursor paged. Read from the order events, never a second copy.
+**Phase 10, Task 4d: the audit screen.** Spec first
+(`docs/design/screens/backoffice-audit.md`). Its own navigation entry
+under Reports, not a tab in People: the counts per kind at the top, a
+person and kind filter, a date range, the trail newest first with Show
+older, every amount mono and right-aligned.
 
 ## Known broken / in progress
 
+- Audit (ADR-117): discounts and refunds recorded before Task 4c show no
+  authoriser. Server only until 4d.
 - Stock (ADR-111 to ADR-114): no closing-stock report yet (Task 5). The
   closing count cannot be skipped while items are marked. A close uses today's
   recipes, not the ones when the line was rung up. A sold movement needs a

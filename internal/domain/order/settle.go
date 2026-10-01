@@ -118,7 +118,7 @@ func (p *projector) refund(e Event, pl RefundIssued) error {
 		}
 	}
 	p.s.Refunds = append(p.s.Refunds, Refund{
-		Seq: e.Seq, Amount: pl.Amount, AgainstPaymentID: pl.AgainstPaymentID, Reason: pl.Reason,
+		Seq: e.Seq, Amount: pl.Amount, AgainstPaymentID: pl.AgainstPaymentID, Reason: pl.Reason, AuthorisedBy: pl.AuthorisedBy,
 	})
 	return nil
 }

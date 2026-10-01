@@ -28,6 +28,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/device/printq"
 	"github.com/byjoellobo/nofiltr-pos/internal/hub"
 	"github.com/byjoellobo/nofiltr-pos/internal/logging"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/audit"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/menus"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
@@ -240,6 +241,11 @@ func run() (err error) {
 		return err
 	}
 
+	trail, err := audit.New(database, orders)
+	if err != nil {
+		return err
+	}
+
 	floorPlan, err := floor.New(floor.Options{DB: database, Orders: orders, OnChange: events.Notify})
 	if err != nil {
 		return err
@@ -263,6 +269,7 @@ func run() (err error) {
 		api.WithMenuEditor(menuEditor),
 		api.WithStock(stockBook),
 		api.WithPeople(staffBook),
+		api.WithAudit(trail),
 		api.WithFloor(floorPlan),
 		api.WithShifts(shifts),
 	)

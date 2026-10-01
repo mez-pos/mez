@@ -299,7 +299,7 @@ func (p *projector) discount(e Event, pl DiscountApplied) error {
 	}
 	d := Discount{
 		Seq: e.Seq, Scope: pl.Scope, LineID: pl.LineID, Kind: pl.Kind,
-		BasisPoints: pl.BasisPoints, Reason: pl.Reason, ActorID: e.ActorID,
+		BasisPoints: pl.BasisPoints, Reason: pl.Reason, ActorID: e.ActorID, AuthorisedBy: pl.AuthorisedBy,
 	}
 	switch pl.Kind {
 	case DiscountPercent:

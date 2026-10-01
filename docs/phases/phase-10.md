@@ -79,7 +79,7 @@ Phase 09.
   - [x] **Task 4b: The People screen.** Spec first (`backoffice-people.md`).
     Staff with their roles, add and edit, PIN reset, and a role editor
     showing each permission in words.
-  - [ ] **Task 4c: The audit trail on the server.** Every void, comp,
+  - [x] **Task 4c: The audit trail on the server.** Every void, comp,
     discount and refund, with who did it, who authorised it, why, the
     order and the amount; filterable by staff and date, cursor paged.
   - [ ] **Task 4d: The audit screen.** Its own entry in the navigation,

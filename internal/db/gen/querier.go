@@ -31,6 +31,16 @@ type Querier interface {
 	// The floor plan: areas and the tables placed in them (ADR-085).
 	AreasForVenue(ctx context.Context, venueID int64) ([]AreasForVenueRow, error)
 	AttachModifierGroup(ctx context.Context, arg AttachModifierGroupParams) error
+	//
+	// How many of each type the same filter finds, over every page.
+	AuditCounts(ctx context.Context, arg AuditCountsParams) ([]AuditCountsRow, error)
+	// The audit trail (phase 10, Task 4c, ADR-117): corrections read straight
+	// from the order events. staff_id 0 is anyone; otherwise it matches the
+	// person who did it or the person who authorised it.
+	//
+	// Newest first, a page at a time: before_id is the last id of the page
+	// before, or 0 for the first page.
+	AuditEvents(ctx context.Context, arg AuditEventsParams) ([]AuditEventsRow, error)
 	// For a change that touches every venue at once: the requeue on start.
 	BumpAllPrintVersions(ctx context.Context) error
 	// Moves the venue's floor version on, in the transaction that changed it.

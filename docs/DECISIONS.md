@@ -3258,3 +3258,33 @@ on every device.
 Because: a person the till cannot show cannot work, and a wrong tile
 spends a lockout attempt on someone else.
 Cost: a sign-in screen offline shows the list it last read, as before.
+
+## ADR-117 - The audit trail is the order events, with the bill's own figures
+2026-10 · Status: accepted
+Decision: phase 10, Task 4c reads every void, comp, discount, refund,
+payment void and reopen from `order_events` (`internal/service/audit`,
+`GET /api/v1/audit`, `reports.view`).
+  - **No second copy.** The trail is a query over the append-only events
+    (indexed by type and time, migration 00026), so it cannot disagree
+    with what happened.
+  - **The bill's own figures.** What each was worth comes from its order's
+    projection: a void or comp is the line's gross, a discount its
+    computed value, a refund its amount, a payment void the tender's. Each
+    order on a page is projected once.
+  - **Who authorised it is now kept for discounts and refunds too.** The
+    API checked the manager's override for both but threw the name away;
+    `DiscountApplied` and `RefundIssued` now carry `authorised_by`, and the
+    state's `Discount` and `Refund` keep it (`ProjectionVersion` 6). An
+    older discount or refund has none, and the trail says nothing rather
+    than guess. A void, comp, payment void or reopen always had it.
+  - **Filter by trading day, person and kind.** Days run 04:00 to 04:00 in
+    the venue's timezone, as the shift counts them; a person matches what
+    they did or what they authorised; a year at most per query. Newest
+    first, cursor paged; counts per kind cover the whole filter, every kind
+    present.
+  - It needs `reports.view`, as the Z-report does: it is a report on the
+    day's money.
+Because: an owner asking "who has been voiding coffees?" needs one answer,
+straight from the record, with the amounts the guest was charged.
+Cost: a page projects up to its 100 orders; a filtered count scans the
+range's correction events, cheap at a cafe's volume.

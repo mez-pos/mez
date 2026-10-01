@@ -115,7 +115,8 @@ export type ErrorCode =
   | 'role_name_taken'
   | 'beyond_your_permissions'
   | 'last_staff_manager'
-  | 'invalid_person';
+  | 'invalid_person'
+  | 'invalid_filter';
 
 export type OrderStatus =
   | 'open'
@@ -272,6 +273,14 @@ export type WasteReason =
   | 'dropped'
   | 'other';
 
+export type AuditKind =
+  | 'void'
+  | 'comp'
+  | 'discount'
+  | 'refund'
+  | 'payment_void'
+  | 'reopen';
+
 export type OrderEventType =
   | 'order.opened'
   | 'line.added'
@@ -405,6 +414,7 @@ export interface DiscountApplied {
   basis_points?: number;
   amount?: Money;
   reason: string;
+  authorised_by?: number;
 }
 
 export interface NoteAdded {
@@ -481,6 +491,7 @@ export interface RefundIssued {
   amount: Money;
   against_payment_id: number;
   reason: string;
+  authorised_by?: number;
 }
 
 export interface OrderClosed {
@@ -1301,6 +1312,30 @@ export interface StaffAddedResponse {
 
 export interface RoleEditResponse {
   id: number;
+}
+
+export interface AuditPerson {
+  id: string;
+  name: string;
+}
+
+export interface AuditEntry {
+  id: number;
+  kind: AuditKind;
+  at: string;
+  order_id: string;
+  by?: AuditPerson;
+  authorised_by?: AuditPerson;
+  reason?: string;
+  item?: string;
+  qty?: number;
+  amount?: Money;
+}
+
+export interface AuditPage {
+  entries: AuditEntry[];
+  next_before?: number;
+  counts: Record<AuditKind, number>;
 }
 
 export interface AreaSettings {

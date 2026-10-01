@@ -140,7 +140,9 @@ type Discount struct {
 	Amount      *money.Amount
 	Reason      string
 	ActorID     int64
-	Value       money.Amount // zero when its line is no longer active
+	// AuthorisedBy is who let it through; zero when not recorded (ADR-117).
+	AuthorisedBy int64
+	Value        money.Amount // zero when its line is no longer active
 }
 
 // Note is free text on a line or the order.
@@ -182,6 +184,7 @@ type Refund struct {
 	Amount           money.Amount
 	AgainstPaymentID int64
 	Reason           string
+	AuthorisedBy     int64 // zero when not recorded (ADR-117)
 }
 
 // Invoice is an invoice issued for the order.

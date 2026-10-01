@@ -146,6 +146,9 @@ type DiscountApplied struct {
 	BasisPoints int32         `json:"basis_points,omitempty"`
 	Amount      *money.Amount `json:"amount,omitempty"`
 	Reason      string        `json:"reason"`
+	// AuthorisedBy is the staff member whose permission or PIN let it
+	// through (ADR-117). Zero on a discount recorded before it was kept.
+	AuthorisedBy int64 `json:"authorised_by,omitempty"`
 }
 
 // NoteAdded attaches free text to a line or the order: "no onions", "birthday
@@ -259,6 +262,8 @@ type RefundIssued struct {
 	Amount           money.Amount `json:"amount"`
 	AgainstPaymentID int64        `json:"against_payment_id"`
 	Reason           string       `json:"reason"`
+	// AuthorisedBy is who let it through (ADR-117); zero on an older refund.
+	AuthorisedBy int64 `json:"authorised_by,omitempty"`
 }
 
 // OrderClosed settles the order.
