@@ -14,6 +14,7 @@ import { ExportsPanel } from "./reports/ExportsPanel";
 import { BackOfficeShell } from "./shell/BackOfficeShell";
 import { Dashboard } from "./shell/Dashboard";
 import { SectionGate } from "./shell/SectionGate";
+import { AuditScreen } from "./audit/AuditScreen";
 import { PeopleScreen } from "./people/PeopleScreen";
 import { StockScreen } from "./stock/StockScreen";
 import { TipsScreen } from "./tips/TipsScreen";
@@ -50,6 +51,11 @@ function SignedInRoutes() {
       <Route path="/menu">
         <SectionGate id="menu">
           <MenuScreen />
+        </SectionGate>
+      </Route>
+      <Route path="/audit">
+        <SectionGate id="audit">
+          <AuditScreen />
         </SectionGate>
       </Route>
       <Route path="/people">

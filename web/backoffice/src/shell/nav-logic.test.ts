@@ -14,13 +14,13 @@ describe("visibleNav", () => {
     {
       name: "the owner sees everything",
       held: owner,
-      ids: ["dashboard", "menu", "stock", "people", "zreports", "sales", "floor", "printers", "settings", "devices"],
+      ids: ["dashboard", "menu", "stock", "people", "zreports", "audit", "sales", "floor", "printers", "settings", "devices"],
       groups: [null, "Run the venue", "Reports", "Settings"],
     },
     {
       name: "a manager sees people and reports, and no settings group",
       held: manager,
-      ids: ["dashboard", "people", "zreports", "sales"],
+      ids: ["dashboard", "people", "zreports", "audit", "sales"],
       groups: [null, "Run the venue", "Reports"],
     },
     { name: "a cashier sees the dashboard alone", held: cashier, ids: ["dashboard"], groups: [null] },
@@ -97,6 +97,7 @@ describe("chord", () => {
     { name: "a modifier is never a chord", keys: [key("g", 0), key("t", 10, { modified: true })], want: [] },
     { name: "g then m goes to the menu", keys: [key("g", 0), key("m", 10)], want: ["/menu"] },
     { name: "g then k goes to stock", keys: [key("g", 0), key("k", 10)], want: ["/stock"] },
+    { name: "g then a goes to the audit", keys: [key("g", 0), key("a", 10)], want: ["/audit"] },
     { name: "g then p goes to people", keys: [key("g", 0), key("p", 10)], want: ["/people"] },
     { name: "a section not built yet goes nowhere", keys: [key("g", 0), key("s", 10)], want: [] },
     { name: "a section the staff member cannot open goes nowhere", keys: [key("g", 0), key("t", 10)], held: manager, want: [] },

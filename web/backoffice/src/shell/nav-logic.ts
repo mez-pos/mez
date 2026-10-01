@@ -11,6 +11,7 @@ export type SectionId =
   | "stock"
   | "people"
   | "zreports"
+  | "audit"
   | "sales"
   | "floor"
   | "printers"
@@ -67,6 +68,7 @@ export const NAV: readonly NavGroup[] = [
         built: true,
         description: "Every closed day, its exports and its tips.",
       },
+      { id: "audit", label: "Audit", path: "/audit", needs: "reports.view", key: "a", built: true, description: "Every void, comp, discount and refund, who and why." },
       { id: "sales", label: "Sales reports", path: "/sales", needs: "reports.view", key: "s", built: false, description: "Sales over time, product mix, staff and voids." },
     ],
   },

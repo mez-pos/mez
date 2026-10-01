@@ -53,6 +53,7 @@ Paper surface, inside `SignedInShell` (header: `NOFILTR · <section> ·
 | Stock | `/stock` | `stock.manage` (ADR-111) | Task 3 |
 | People | `/people` | `staff.manage` | Task 4 |
 | Z-reports | `/reports` | `reports.view` | phase 09 |
+| Audit | `/audit` | `reports.view` | phase 10, Task 4d |
 | Sales reports | `/sales` | `reports.view` | Task 5 |
 | Floor plan | `/floor` | `settings.edit` | phase 08 |
 | Printers | `/printers` | `settings.edit` | phase 07 |
@@ -88,7 +89,7 @@ The skeleton the reports task fills.
 
 | Keys | Does |
 |---|---|
-| `g` then a letter | Go to that section: `d` Dashboard, `m` Menu, `k` Stock, `p` People, `r` Z-reports, `s` Sales reports, `f` Floor plan, `t` Printers, `v` Venue settings, `e` Devices |
+| `g` then a letter | Go to that section: `d` Dashboard, `m` Menu, `k` Stock, `p` People, `r` Z-reports, `a` Audit, `s` Sales reports, `f` Floor plan, `t` Printers, `v` Venue settings, `e` Devices |
 | `Tab` | Moves through the navigation, then the content |
 
 - The second key must come within 1.5 seconds of `g`, or the `g` is

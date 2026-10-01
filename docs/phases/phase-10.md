@@ -9,7 +9,7 @@ Phase 09.
 
 ## Tasks
 
-- [ ] **Task 1 — Back office shell.**
+- [x] **Task 1 — Back office shell.**
   Paper surface. Navigation, dashboard skeleton, permission-gated sections.
   Spec it first. This surface is keyboard-driven and data-dense — different
   rules from the terminal, and that is correct.
@@ -64,7 +64,7 @@ Phase 09.
   - [x] **Task 3d: Low stock and closing stock.** Low-stock alerts where a
     manager sees them; a stock count as part of closing the shift.
 
-- [ ] **Task 4 — People.**
+- [x] **Task 4 — People.**
   Staff CRUD, roles, permissions, PIN reset. An audit view of who voided,
   comped, discounted and refunded, filterable by staff and date. This is one of
   the highest-value features for an owner; do not bury it.
@@ -82,7 +82,7 @@ Phase 09.
   - [x] **Task 4c: The audit trail on the server.** Every void, comp,
     discount and refund, with who did it, who authorised it, why, the
     order and the amount; filterable by staff and date, cursor paged.
-  - [ ] **Task 4d: The audit screen.** Its own entry in the navigation,
+  - [x] **Task 4d: The audit screen.** Its own entry in the navigation,
     not a tab inside People: the trail an owner reads most.
 
 - [ ] **Task 5 — Reports.**

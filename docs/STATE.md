@@ -13,28 +13,27 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 4c: the audit trail on the server** (ADR-117).
-`internal/service/audit` and `GET /api/v1/audit?from=&to=&staff=&kind=&before=&limit=`
-(`reports.view`): every void, comp, discount, refund, payment void and
-reopen from the order events, with who did it, who authorised it, why, the
-order, the item and what it was worth (from the order's projection);
-filtered by trading days, person (did or authorised) and kind; newest
-first, cursor paged, with counts per kind. Discounts and refunds now record
-who authorised them (the API had dropped it); `ProjectionVersion` is 6.
-Tested through the real order service with a day of eight corrections.
+**Phase 10, Task 4d: the audit screen** (Task 4 is done). Spec in
+`docs/design/screens/backoffice-audit.md`; `web/backoffice/src/audit/`.
+Its own navigation entry under Reports (`g a`, `reports.view`): From and
+To trading days (last seven by default), a Person filter, one toggle chip
+per kind with its count, the trail newest first (When, What with the item,
+Amount, By, Authorised by, Why, Bill) with Show older. Tried in the
+browser as the owner over a cashier's void, comp and two discounts.
 
 ## Next task
 
-**Phase 10, Task 4d: the audit screen.** Spec first
-(`docs/design/screens/backoffice-audit.md`). Its own navigation entry
-under Reports, not a tab in People: the counts per kind at the top, a
-person and kind filter, a date range, the trail newest first with Show
-older, every amount mono and right-aligned.
+**Phase 10, Task 5: Reports.** Large (eight reports, CSV on each): split
+it into sub-tasks in the phase file first, commit the split, then build
+the first. The audit trail (Task 4c) already covers the void and discount
+rows; the Z-report builder (phase 09) is the nearest existing code.
 
 ## Known broken / in progress
 
-- Audit (ADR-117): discounts and refunds recorded before Task 4c show no
-  authoriser. Server only until 4d.
+- Audit (ADR-117): discounts and refunds recorded before Task 4c show
+  "Not recorded" for who authorised them. The Person filter lists active
+  staff only (it reads `GET /api/v1/staff`); a deactivated person's rows
+  show by name but cannot be filtered on. The trail has no CSV export yet.
 - Stock (ADR-111 to ADR-114): no closing-stock report yet (Task 5). The
   closing count cannot be skipped while items are marked. A close uses today's
   recipes, not the ones when the line was rung up. A sold movement needs a
