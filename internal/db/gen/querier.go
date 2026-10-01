@@ -117,6 +117,7 @@ type Querier interface {
 	// The order's rows in order_tables, before they are written again from its
 	// projection (ADR-088).
 	DeleteOrderTables(ctx context.Context, orderID int64) error
+	DeleteRole(ctx context.Context, arg DeleteRoleParams) (int64, error)
 	DeleteSetting(ctx context.Context, arg DeleteSettingParams) error
 	DetachItemGroups(ctx context.Context, arg DetachItemGroupsParams) error
 	DeviceByID(ctx context.Context, id int64) (Device, error)
@@ -141,6 +142,10 @@ type Querier interface {
 	// retired item can be brought back. db.DB.MenuEditor runs these in one read
 	// transaction with MenuVersion.
 	EditorStations(ctx context.Context, venueID int64) ([]EditorStationsRow, error)
+	//
+	// A new PIN signs the person out everywhere: whoever knew the old one
+	// should not stay signed in with it.
+	EndSessionsOfStaff(ctx context.Context, arg EndSessionsOfStaffParams) error
 	EndStaffSession(ctx context.Context, arg EndStaffSessionParams) (int64, error)
 	ExportByID(ctx context.Context, id int64) (ExportByIDRow, error)
 	ExportsForShift(ctx context.Context, shiftID int64) ([]ExportsForShiftRow, error)
@@ -244,6 +249,7 @@ type Querier interface {
 	// recognised and refused as revoked rather than as unknown.
 	RevokeDevice(ctx context.Context, arg RevokeDeviceParams) (int64, error)
 	RoleByID(ctx context.Context, id int64) (Role, error)
+	RoleForEdit(ctx context.Context, arg RoleForEditParams) (RoleForEditRow, error)
 	RolesForVenue(ctx context.Context, venueID int64) ([]Role, error)
 	SaveIdempotencyKey(ctx context.Context, arg SaveIdempotencyKeyParams) error
 	SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotParams) error
@@ -268,6 +274,8 @@ type Querier interface {
 	// a new one, which fires delete triggers and cascades; this only touches the
 	// two columns that change.
 	SetSetting(ctx context.Context, arg SetSettingParams) error
+	SetStaffActive(ctx context.Context, arg SetStaffActiveParams) (int64, error)
+	SetStaffPIN(ctx context.Context, arg SetStaffPINParams) (int64, error)
 	SetStationPrinter(ctx context.Context, arg SetStationPrinterParams) (int64, error)
 	SetStockItemActive(ctx context.Context, arg SetStockItemActiveParams) (int64, error)
 	SetTableActive(ctx context.Context, arg SetTableActiveParams) (int64, error)
@@ -285,10 +293,23 @@ type Querier interface {
 	// positive amount.
 	SoldForOrder(ctx context.Context, arg SoldForOrderParams) ([]SoldForOrderRow, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
+	StaffCountByRole(ctx context.Context, venueID int64) ([]StaffCountByRoleRow, error)
+	StaffForEdit(ctx context.Context, arg StaffForEditParams) (StaffForEditRow, error)
+	// The People screen (phase 10, Task 4a, ADR-115). Every query is scoped by
+	// venue_id: an id from another venue matches nothing.
+	//
+	// Everyone, inactive too, with their role's name.
+	StaffForVenue(ctx context.Context, venueID int64) ([]StaffForVenueRow, error)
+	//
+	// How many active people can still manage staff. Every change to people
+	// or roles checks this inside its own transaction and is refused at zero:
+	// a venue nobody can manage cannot be repaired from the back office.
+	StaffManagersLeft(ctx context.Context, venueID int64) (int64, error)
 	//
 	// Everyone who has worked at the venue, inactive included: an order's
 	// history names the people on it, whether or not they still work there.
 	StaffNamesForVenue(ctx context.Context, venueID int64) ([]StaffNamesForVenueRow, error)
+	StaffRoleOf(ctx context.Context, arg StaffRoleOfParams) (int64, error)
 	// Everyone who has worked at the venue with their role's name: a tip pool
 	// weighs each by their role.
 	StaffRolesForVenue(ctx context.Context, venueID int64) ([]StaffRolesForVenueRow, error)
@@ -341,6 +362,8 @@ type Querier interface {
 	// the caller reports as a conflict rather than moving the index backwards.
 	UpdateOrderIndex(ctx context.Context, arg UpdateOrderIndexParams) (int64, error)
 	UpdatePrinter(ctx context.Context, arg UpdatePrinterParams) (int64, error)
+	UpdateRole(ctx context.Context, arg UpdateRoleParams) (int64, error)
+	UpdateStaff(ctx context.Context, arg UpdateStaffParams) (int64, error)
 	UpdateStockItem(ctx context.Context, arg UpdateStockItemParams) (int64, error)
 	UpdateTable(ctx context.Context, arg UpdateTableParams) (int64, error)
 	//

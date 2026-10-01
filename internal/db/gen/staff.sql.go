@@ -7,6 +7,7 @@ package gen
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -160,6 +161,43 @@ func (q *Queries) DeactivateStaff(ctx context.Context, arg DeactivateStaffParams
 	return err
 }
 
+const deleteRole = `-- name: DeleteRole :execrows
+DELETE FROM roles
+WHERE roles.venue_id = ?1 AND roles.id = ?2
+  AND NOT EXISTS (SELECT 1 FROM staff WHERE staff.role_id = roles.id)
+`
+
+type DeleteRoleParams struct {
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) DeleteRole(ctx context.Context, arg DeleteRoleParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteRole, arg.VenueID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const endSessionsOfStaff = `-- name: EndSessionsOfStaff :exec
+UPDATE staff_sessions
+SET ended_at = ?1
+WHERE staff_id = ?2 AND ended_at IS NULL
+`
+
+type EndSessionsOfStaffParams struct {
+	Now     sql.NullTime
+	StaffID int64
+}
+
+// A new PIN signs the person out everywhere: whoever knew the old one
+// should not stay signed in with it.
+func (q *Queries) EndSessionsOfStaff(ctx context.Context, arg EndSessionsOfStaffParams) error {
+	_, err := q.db.ExecContext(ctx, endSessionsOfStaff, arg.Now, arg.StaffID)
+	return err
+}
+
 const roleByID = `-- name: RoleByID :one
 SELECT id, venue_id, name, permissions, created_at
 FROM roles
@@ -176,6 +214,30 @@ func (q *Queries) RoleByID(ctx context.Context, id int64) (Role, error) {
 		&i.Permissions,
 		&i.CreatedAt,
 	)
+	return i, err
+}
+
+const roleForEdit = `-- name: RoleForEdit :one
+SELECT id, name, permissions
+FROM roles
+WHERE venue_id = ? AND id = ?
+`
+
+type RoleForEditParams struct {
+	VenueID int64
+	ID      int64
+}
+
+type RoleForEditRow struct {
+	ID          int64
+	Name        string
+	Permissions string
+}
+
+func (q *Queries) RoleForEdit(ctx context.Context, arg RoleForEditParams) (RoleForEditRow, error) {
+	row := q.db.QueryRowContext(ctx, roleForEdit, arg.VenueID, arg.ID)
+	var i RoleForEditRow
+	err := row.Scan(&i.ID, &i.Name, &i.Permissions)
 	return i, err
 }
 
@@ -215,6 +277,58 @@ func (q *Queries) RolesForVenue(ctx context.Context, venueID int64) ([]Role, err
 	return items, nil
 }
 
+const setStaffActive = `-- name: SetStaffActive :execrows
+UPDATE staff
+SET active = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type SetStaffActiveParams struct {
+	Active  bool
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) SetStaffActive(ctx context.Context, arg SetStaffActiveParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setStaffActive,
+		arg.Active,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const setStaffPIN = `-- name: SetStaffPIN :execrows
+UPDATE staff
+SET pin_hash = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type SetStaffPINParams struct {
+	PinHash string
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) SetStaffPIN(ctx context.Context, arg SetStaffPINParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setStaffPIN,
+		arg.PinHash,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const staffByPublicID = `-- name: StaffByPublicID :one
 SELECT
     id, public_id, venue_id, role_id, name, pin_hash, active,
@@ -238,6 +352,137 @@ func (q *Queries) StaffByPublicID(ctx context.Context, publicID string) (Staff, 
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const staffCountByRole = `-- name: StaffCountByRole :many
+SELECT role_id, COUNT(*) AS n
+FROM staff
+WHERE venue_id = ? AND active = 1
+GROUP BY role_id
+`
+
+type StaffCountByRoleRow struct {
+	RoleID int64
+	N      int64
+}
+
+func (q *Queries) StaffCountByRole(ctx context.Context, venueID int64) ([]StaffCountByRoleRow, error) {
+	rows, err := q.db.QueryContext(ctx, staffCountByRole, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StaffCountByRoleRow{}
+	for rows.Next() {
+		var i StaffCountByRoleRow
+		if err := rows.Scan(&i.RoleID, &i.N); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const staffForEdit = `-- name: StaffForEdit :one
+SELECT id, role_id, active
+FROM staff
+WHERE venue_id = ? AND public_id = ?
+`
+
+type StaffForEditParams struct {
+	VenueID  int64
+	PublicID string
+}
+
+type StaffForEditRow struct {
+	ID     int64
+	RoleID int64
+	Active bool
+}
+
+func (q *Queries) StaffForEdit(ctx context.Context, arg StaffForEditParams) (StaffForEditRow, error) {
+	row := q.db.QueryRowContext(ctx, staffForEdit, arg.VenueID, arg.PublicID)
+	var i StaffForEditRow
+	err := row.Scan(&i.ID, &i.RoleID, &i.Active)
+	return i, err
+}
+
+const staffForVenue = `-- name: StaffForVenue :many
+
+SELECT s.id, s.public_id, s.name, s.role_id, r.name AS role_name, s.active, s.created_at
+FROM staff s
+JOIN roles r ON r.id = s.role_id
+WHERE s.venue_id = ?
+ORDER BY s.active DESC, s.name COLLATE NOCASE, s.id
+`
+
+type StaffForVenueRow struct {
+	ID        int64
+	PublicID  string
+	Name      string
+	RoleID    int64
+	RoleName  string
+	Active    bool
+	CreatedAt time.Time
+}
+
+// The People screen (phase 10, Task 4a, ADR-115). Every query is scoped by
+// venue_id: an id from another venue matches nothing.
+//
+// Everyone, inactive too, with their role's name.
+func (q *Queries) StaffForVenue(ctx context.Context, venueID int64) ([]StaffForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, staffForVenue, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StaffForVenueRow{}
+	for rows.Next() {
+		var i StaffForVenueRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.Name,
+			&i.RoleID,
+			&i.RoleName,
+			&i.Active,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const staffManagersLeft = `-- name: StaffManagersLeft :one
+SELECT COUNT(*) AS n
+FROM staff s
+JOIN roles r ON r.id = s.role_id
+WHERE s.venue_id = ? AND s.active = 1
+  AND EXISTS (SELECT 1 FROM json_each(r.permissions) WHERE value = 'staff.manage')
+`
+
+// How many active people can still manage staff. Every change to people
+// or roles checks this inside its own transaction and is refused at zero:
+// a venue nobody can manage cannot be repaired from the back office.
+func (q *Queries) StaffManagersLeft(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, staffManagersLeft, venueID)
+	var n int64
+	err := row.Scan(&n)
+	return n, err
 }
 
 const staffNamesForVenue = `-- name: StaffNamesForVenue :many
@@ -275,4 +520,74 @@ func (q *Queries) StaffNamesForVenue(ctx context.Context, venueID int64) ([]Staf
 		return nil, err
 	}
 	return items, nil
+}
+
+const staffRoleOf = `-- name: StaffRoleOf :one
+SELECT role_id FROM staff WHERE venue_id = ? AND id = ?
+`
+
+type StaffRoleOfParams struct {
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) StaffRoleOf(ctx context.Context, arg StaffRoleOfParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, staffRoleOf, arg.VenueID, arg.ID)
+	var role_id int64
+	err := row.Scan(&role_id)
+	return role_id, err
+}
+
+const updateRole = `-- name: UpdateRole :execrows
+UPDATE roles
+SET name = ?1, permissions = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type UpdateRoleParams struct {
+	Name        string
+	Permissions string
+	VenueID     int64
+	ID          int64
+}
+
+func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateRole,
+		arg.Name,
+		arg.Permissions,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const updateStaff = `-- name: UpdateStaff :execrows
+UPDATE staff
+SET name = ?1, role_id = ?2, updated_at = ?3
+WHERE venue_id = ?4 AND id = ?5
+`
+
+type UpdateStaffParams struct {
+	Name    string
+	RoleID  int64
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) UpdateStaff(ctx context.Context, arg UpdateStaffParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateStaff,
+		arg.Name,
+		arg.RoleID,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

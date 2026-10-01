@@ -27,6 +27,7 @@ type Server struct {
 	printers   Printers
 	menuEditor MenuEditor
 	stock      Stock
+	people     People
 	floor      Floor
 	shifts     Shifts
 	zreports   ZReports
@@ -114,6 +115,7 @@ func (s *Server) routes() http.Handler {
 	s.mountPrinters(mux)
 	s.mountMenuEditor(mux)
 	s.mountStock(mux)
+	s.mountPeople(mux)
 	s.mountFloor(mux)
 	s.mountKitchen(mux)
 	s.mountShifts(mux)

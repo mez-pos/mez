@@ -27,6 +27,7 @@ import (
 	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/menus"
 	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/nofiltr-pos/internal/service/people"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
 	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/stock"
@@ -129,6 +130,7 @@ var errorCodes = []ErrorCode{
 	CodeCategoryNotFound, CodeItemNotFound, CodeInvalidMenu, CodeMenuOrderStale, CodeGroupNotFound, CodePhotoNotFound,
 	CodeStockItemNotFound, CodeStockItemRetired, CodeStockNameTaken, CodeInvalidStock, CodeModifierNotFound,
 	CodeStockCounted, CodeStockCountStale,
+	CodeStaffNotFound, CodeRoleNotFound, CodeRoleInUse, CodeRoleNameTaken, CodeBeyondYou, CodeLastManager, CodeInvalidPerson,
 }
 
 // generate builds the whole file.
@@ -173,6 +175,10 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(stock.ClosingResult{}):     "ClosingStockResult",
 			reflect.TypeOf(stock.ClosingSheet{}):      "ClosingStockSheet",
 			reflect.TypeOf(stock.ClosingCountInput{}): "ClosingStockCount",
+			reflect.TypeOf(people.StaffInput{}):       "PersonInput",
+			reflect.TypeOf(people.RoleInput{}):        "RoleInput",
+			reflect.TypeOf(people.Person{}):           "Person",
+			reflect.TypeOf(people.Role{}):             "Role",
 			reflect.TypeOf(order.CreditRequest{}):     "CreditSelection",
 			reflect.TypeOf(floor.AreaSettings{}):      "AreaSettings",
 			reflect.TypeOf(floor.TableSettings{}):     "TableSettings",
@@ -284,6 +290,8 @@ func generate() (*ts.Generator, error) {
 		stock.Recorded{}, stock.Movement{}, movementsResponse{},
 		stock.RecipePart{}, stock.Recipe{}, stock.RecipeBook{}, recipeRequest{},
 		stock.ClosingItem{}, stock.ClosingResult{}, stock.ClosingSheet{}, stock.ClosingCountInput{}, closingCountRequest{},
+		// People.
+		staffRequest{}, roleRequest{}, pinRequest{}, people.Person{}, people.Role{}, peopleResponse{}, staffAddedResponse{}, roleEditResponse{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},

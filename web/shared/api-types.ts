@@ -108,7 +108,14 @@ export type ErrorCode =
   | 'invalid_stock'
   | 'modifier_not_found'
   | 'stock_already_counted'
-  | 'stock_count_stale';
+  | 'stock_count_stale'
+  | 'staff_not_found'
+  | 'role_not_found'
+  | 'role_in_use'
+  | 'role_name_taken'
+  | 'beyond_your_permissions'
+  | 'last_staff_manager'
+  | 'invalid_person';
 
 export type OrderStatus =
   | 'open'
@@ -1250,6 +1257,50 @@ export interface ClosingStockCount {
 
 export interface ClosingCountRequest {
   counts: ClosingStockCount[];
+}
+
+export interface PersonInput {
+  name: string;
+  role_id: number;
+  pin?: string;
+}
+
+export interface RoleInput {
+  name: string;
+  permissions: Permission[];
+}
+
+export interface PinRequest {
+  pin: string;
+}
+
+export interface Person {
+  id: string;
+  name: string;
+  role_id: number;
+  role_name: string;
+  active: boolean;
+  since: string;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  permissions: Permission[];
+  people: number;
+}
+
+export interface PeopleResponse {
+  staff: Person[];
+  roles: Role[];
+}
+
+export interface StaffAddedResponse {
+  id: string;
+}
+
+export interface RoleEditResponse {
+  id: number;
 }
 
 export interface AreaSettings {

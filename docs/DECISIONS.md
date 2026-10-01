@@ -3208,3 +3208,34 @@ Because: "closing stock at shift end" is only worth having if it is
 honest, and only done if it sits in the close everyone already does.
 Cost: a manager who must close without time to count cannot skip it (they
 can untick Count at close). There is no closing-stock report yet (Task 5).
+
+## ADR-115 - Nobody hands out what they do not hold, and someone can always manage staff
+2026-10 · Status: accepted
+Decision: phase 10, Task 4a lets the back office add, change, deactivate
+and re-PIN staff and edit roles (`internal/service/people`,
+`/api/v1/people`, `staff.manage`), under two rules checked inside each
+change's transaction.
+  - **Only what you hold.** The person acting must hold every permission
+    of a role they create, edit, delete or assign, and of the role of
+    anyone they change, deactivate or re-PIN (`auth.PermissionSet.Covers`).
+    `staff.manage` alone would otherwise be every permission: a manager
+    could make themselves owner, or reset the owner's PIN and sign in as
+    them.
+  - **Someone can always manage staff.** After the change, the venue must
+    have an active person whose role grants `staff.manage`; if not, the
+    change is refused (`last_staff_manager`). No screen can repair a venue
+    nobody may manage. Nobody deactivates themselves.
+  - **A new PIN signs the person out everywhere,** ending their open
+    sessions in the same transaction: whoever knew the old one should not
+    stay signed in. Deactivating needs no such step: a session already
+    stops when its person is inactive (`auth.StaffAuth.Session`).
+  - **Nothing is deleted but an unused role.** People are deactivated, as
+    before (their names are on orders and voids); a role can be deleted
+    only when nobody, active or not, holds it.
+  - Role changes take effect on the next request (permissions are read per
+    request); the back office shell learns them at the next sign-in
+    (ADR-105).
+Because: an owner hands the back office to a manager to run staff; that
+must not be a way to take the owner's place.
+Cost: an owner who wants a manager to manage owners must make them an
+owner. A permission removed from a role takes effect at once, mid-shift.

@@ -1,0 +1,368 @@
+package people
+
+import (
+	"context"
+	"errors"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/byjoellobo/nofiltr-pos/internal/auth"
+	"github.com/byjoellobo/nofiltr-pos/internal/db"
+	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+)
+
+var now = time.Date(2026, 10, 1, 6, 30, 0, 0, time.UTC)
+
+type clock struct{}
+
+func (clock) Now() time.Time { return now }
+
+// venue is a fixture venue: its roles by name, and its people by name as
+// {id, public id}.
+type venue struct {
+	id     int64
+	roles  map[string]int64
+	people map[string]member
+}
+
+type member struct {
+	id       int64
+	publicID string
+}
+
+type fixture struct {
+	s    *Service
+	d    *db.DB
+	cafe venue // Priya owns it, Meera manages it, Asha is a cashier
+	solo venue // Ravi owns it alone
+}
+
+func newFixture(t *testing.T) fixture {
+	t.Helper()
+	ctx := context.Background()
+	d, err := db.Open(ctx, db.Options{Path: filepath.Join(t.TempDir(), db.FileName)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = d.Close(context.Background()) })
+	if err := d.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	f := fixture{d: d}
+	err = d.WriteTx(ctx, func(q *gen.Queries) error {
+		seed := func(publicID string, people map[string]string) (venue, error) {
+			v := venue{roles: map[string]int64{}, people: map[string]member{}}
+			row, err := q.CreateVenue(ctx, gen.CreateVenueParams{
+				PublicID: publicID, Name: "Cafe", Currency: "INR", Timezone: "Asia/Kolkata",
+				FinancialYearStartMonth: 4, TaxProfile: "none", CashRoundingStepMinor: 1, CreatedAt: now, UpdatedAt: now,
+			})
+			if err != nil {
+				return v, err
+			}
+			v.id = row.ID
+			for _, tpl := range auth.DefaultRoles() {
+				keys := make([]string, len(tpl.Permissions))
+				for i, p := range tpl.Permissions {
+					keys[i] = string(p)
+				}
+				set, err := auth.NewPermissionSet(keys)
+				if err != nil {
+					return v, err
+				}
+				raw, err := set.JSON()
+				if err != nil {
+					return v, err
+				}
+				r, err := q.CreateRole(ctx, gen.CreateRoleParams{VenueID: v.id, Name: tpl.Name, Permissions: raw, CreatedAt: now})
+				if err != nil {
+					return v, err
+				}
+				v.roles[tpl.Name] = r.ID
+			}
+			for name, role := range people {
+				pub := "stf_" + name[:4] + publicID[len(publicID)-4:]
+				s, err := q.CreateStaff(ctx, gen.CreateStaffParams{
+					PublicID: pub, VenueID: v.id, RoleID: v.roles[role], Name: name, PinHash: "x", Active: true, CreatedAt: now, UpdatedAt: now,
+				})
+				if err != nil {
+					return v, err
+				}
+				v.people[name] = member{id: s.ID, publicID: pub}
+			}
+			return v, nil
+		}
+		var err error
+		if f.cafe, err = seed("ven_PEOPLE01", map[string]string{"Priya": "owner", "Meera": "manager", "Asha": "cashier"}); err != nil {
+			return err
+		}
+		f.solo, err = seed("ven_PEOPLE02", map[string]string{"Ravi": "owner"})
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.s, err = New(d, clock{}); err != nil {
+		t.Fatal(err)
+	}
+	return f
+}
+
+func fieldOf(err error) string {
+	var invalid *Invalid
+	if errors.As(err, &invalid) {
+		return invalid.Field
+	}
+	return ""
+}
+
+func (f fixture) person(t *testing.T, v venue, publicID string) Person {
+	t.Helper()
+	all, err := f.s.People(context.Background(), v.id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range all {
+		if p.ID == publicID {
+			return p
+		}
+	}
+	t.Fatalf("no %s", publicID)
+	return Person{}
+}
+
+func TestPeopleAndRoles(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	people, err := f.s.People(ctx, f.cafe.id)
+	if err != nil || len(people) != 3 || people[0].Name != "Asha" || people[0].RoleName != "cashier" || !people[0].Active {
+		t.Fatalf("people = %+v, %v", people, err)
+	}
+	roles, err := f.s.Roles(ctx, f.cafe.id)
+	if err != nil || len(roles) != 4 {
+		t.Fatalf("roles = %+v, %v", roles, err)
+	}
+	held := map[string]int64{"owner": 1, "manager": 1, "cashier": 1, "kitchen": 0}
+	for _, r := range roles {
+		if r.People != held[r.Name] {
+			t.Errorf("%s held by %d, want %d", r.Name, r.People, held[r.Name])
+		}
+		if r.Name == "owner" && !slices.Equal(r.Permissions, auth.Permissions()) {
+			t.Errorf("owner grants %v", r.Permissions)
+		}
+	}
+}
+
+func TestAddingAndChangingStaff(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	owner := f.cafe.people["Priya"].id
+
+	id, err := f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: " Kiran ", RoleID: f.cafe.roles["cashier"], PIN: "1357"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p := f.person(t, f.cafe, id); p.Name != "Kiran" || p.RoleName != "cashier" || !p.Active || len(id) < 5 || id[:4] != "stf_" {
+		t.Errorf("added = %+v (%s)", p, id)
+	}
+	if err := f.s.UpdateStaff(ctx, f.cafe.id, owner, id, StaffInput{Name: "Kiran S", RoleID: f.cafe.roles["manager"]}); err != nil {
+		t.Fatal(err)
+	}
+	if p := f.person(t, f.cafe, id); p.Name != "Kiran S" || p.RoleName != "manager" {
+		t.Errorf("updated = %+v", p)
+	}
+
+	tests := []struct {
+		name  string
+		err   error
+		field string
+		is    error
+	}{
+		{"no name", ignore(f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: " ", RoleID: f.cafe.roles["cashier"], PIN: "1357"})), "name", nil},
+		{"a PIN too short", ignore(f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "X", RoleID: f.cafe.roles["cashier"], PIN: "12"})), "pin", nil},
+		{"a PIN of letters", ignore(f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "X", RoleID: f.cafe.roles["cashier"], PIN: "abcd"})), "pin", nil},
+		{"another venue's role", ignore(f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "X", RoleID: f.solo.roles["cashier"], PIN: "1357"})), "", ErrRoleNotFound},
+		{"another venue's person", f.s.UpdateStaff(ctx, f.cafe.id, owner, f.solo.people["Ravi"].publicID, StaffInput{Name: "X", RoleID: f.cafe.roles["cashier"]}), "", ErrStaffNotFound},
+		{"deactivating yourself", f.s.SetStaffActive(ctx, f.cafe.id, owner, f.cafe.people["Priya"].publicID, false), "active", nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.is != nil {
+				if !errors.Is(tt.err, tt.is) {
+					t.Errorf("err = %v, want %v", tt.err, tt.is)
+				}
+				return
+			}
+			if fieldOf(tt.err) != tt.field {
+				t.Errorf("err = %v, want a refusal on %q", tt.err, tt.field)
+			}
+		})
+	}
+
+	asha := f.cafe.people["Asha"].publicID
+	if err := f.s.SetStaffActive(ctx, f.cafe.id, owner, asha, false); err != nil {
+		t.Fatal(err)
+	}
+	if f.person(t, f.cafe, asha).Active {
+		t.Error("Asha is still active")
+	}
+	if err := f.s.SetStaffActive(ctx, f.cafe.id, owner, asha, true); err != nil || !f.person(t, f.cafe, asha).Active {
+		t.Errorf("bringing Asha back: %v", err)
+	}
+}
+
+func ignore(_ string, err error) error { return err }
+
+// A manager can manage staff, but only within what a manager holds.
+func TestNobodyHandsOutMoreThanTheyHold(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	meera := f.cafe.people["Meera"].id
+	priya := f.cafe.people["Priya"].publicID
+	asha := f.cafe.people["Asha"].publicID
+
+	beyond := []struct {
+		name string
+		err  error
+	}{
+		{"adding an owner", ignore(f.s.AddStaff(ctx, f.cafe.id, meera, StaffInput{Name: "X", RoleID: f.cafe.roles["owner"], PIN: "1357"}))},
+		{"making a cashier an owner", f.s.UpdateStaff(ctx, f.cafe.id, meera, asha, StaffInput{Name: "Asha", RoleID: f.cafe.roles["owner"]})},
+		{"renaming the owner", f.s.UpdateStaff(ctx, f.cafe.id, meera, priya, StaffInput{Name: "P", RoleID: f.cafe.roles["owner"]})},
+		{"deactivating the owner", f.s.SetStaffActive(ctx, f.cafe.id, meera, priya, false)},
+		{"resetting the owner's PIN", f.s.ResetPIN(ctx, f.cafe.id, meera, priya, "0000")},
+		{"a role with settings", ignore2(f.s.AddRole(ctx, f.cafe.id, meera, RoleInput{Name: "Shift lead", Permissions: []auth.Permission{auth.PermSettingsEdit}}))},
+		{"editing the owner role", f.s.UpdateRole(ctx, f.cafe.id, meera, f.cafe.roles["owner"], RoleInput{Name: "owner", Permissions: nil})},
+		{"giving the cashier role more", f.s.UpdateRole(ctx, f.cafe.id, meera, f.cafe.roles["cashier"], RoleInput{Name: "cashier", Permissions: []auth.Permission{auth.PermDeviceManage}})},
+		{"deleting the owner role", f.s.DeleteRole(ctx, f.cafe.id, meera, f.cafe.roles["owner"])},
+	}
+	for _, tt := range beyond {
+		t.Run(tt.name, func(t *testing.T) {
+			if !errors.Is(tt.err, ErrBeyondYou) {
+				t.Errorf("err = %v, want beyond you", tt.err)
+			}
+		})
+	}
+
+	// Within a manager's own: fine.
+	if _, err := f.s.AddStaff(ctx, f.cafe.id, meera, StaffInput{Name: "Kiran", RoleID: f.cafe.roles["cashier"], PIN: "1357"}); err != nil {
+		t.Errorf("a manager adding a cashier: %v", err)
+	}
+	if err := f.s.ResetPIN(ctx, f.cafe.id, meera, asha, "2468"); err != nil {
+		t.Errorf("a manager resetting a cashier's PIN: %v", err)
+	}
+	if _, err := f.s.AddRole(ctx, f.cafe.id, meera, RoleInput{Name: "Barista", Permissions: []auth.Permission{auth.PermOrderOpen, auth.PermKitchenView}}); err != nil {
+		t.Errorf("a manager adding a role within theirs: %v", err)
+	}
+}
+
+func ignore2(_ int64, err error) error { return err }
+
+func TestAVenueKeepsSomeoneWhoCanManageStaff(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	ravi := f.solo.people["Ravi"]
+
+	refused := []struct {
+		name string
+		err  error
+	}{
+		{"the only owner becomes a cashier", f.s.UpdateStaff(ctx, f.solo.id, ravi.id, ravi.publicID, StaffInput{Name: "Ravi", RoleID: f.solo.roles["cashier"]})},
+		{"the owner role loses staff.manage", f.s.UpdateRole(ctx, f.solo.id, ravi.id, f.solo.roles["owner"], RoleInput{Name: "owner", Permissions: []auth.Permission{auth.PermOrderOpen}})},
+	}
+	for _, tt := range refused {
+		t.Run(tt.name, func(t *testing.T) {
+			if !errors.Is(tt.err, ErrLastManager) {
+				t.Errorf("err = %v, want last manager", tt.err)
+			}
+		})
+	}
+	if p := f.person(t, f.solo, ravi.publicID); p.RoleName != "owner" {
+		t.Errorf("a refused change must change nothing: Ravi is %s", p.RoleName)
+	}
+
+	// With a manager beside her, the cafe's owner may step down to manager.
+	priya := f.cafe.people["Priya"]
+	if err := f.s.UpdateStaff(ctx, f.cafe.id, priya.id, priya.publicID, StaffInput{Name: "Priya", RoleID: f.cafe.roles["manager"]}); err != nil {
+		t.Errorf("stepping down with a manager left: %v", err)
+	}
+}
+
+func TestAResetPINSignsThePersonOut(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	asha := f.cafe.people["Asha"]
+	w := f.d.Writer()
+	if _, err := w.ExecContext(ctx, `INSERT INTO devices (id, public_id, venue_id, name, kind, created_at)
+		VALUES (9, 'dev_PEOPLE01', ?, 'Till', 'terminal', '2026-10-01 06:00:00+00:00')`, f.cafe.id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.ExecContext(ctx, `INSERT INTO staff_sessions (token_hash, venue_id, staff_id, device_id, created_at, expires_at)
+		VALUES (?, ?, ?, 9, '2026-10-01 06:00:00+00:00', '2026-10-01 18:00:00+00:00')`, strings.Repeat("a", 64), f.cafe.id, asha.id); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.ResetPIN(ctx, f.cafe.id, f.cafe.people["Priya"].id, asha.publicID, "97531"); err != nil {
+		t.Fatal(err)
+	}
+	var open int
+	if err := w.QueryRowContext(ctx, `SELECT COUNT(*) FROM staff_sessions WHERE staff_id = ? AND ended_at IS NULL`, asha.id).Scan(&open); err != nil {
+		t.Fatal(err)
+	}
+	if open != 0 {
+		t.Errorf("%d sessions still open after a new PIN", open)
+	}
+	var hash string
+	if err := w.QueryRowContext(ctx, `SELECT pin_hash FROM staff WHERE id = ?`, asha.id).Scan(&hash); err != nil || hash == "x" || hash[:9] != "$argon2id" {
+		t.Errorf("stored hash = %q, %v", hash, err)
+	}
+	if err := f.s.ResetPIN(ctx, f.cafe.id, asha.id, asha.publicID, "1234"); err != nil {
+		t.Errorf("changing your own PIN: %v", err)
+	}
+}
+
+func TestRoles(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	owner := f.cafe.people["Priya"].id
+
+	id, err := f.s.AddRole(ctx, f.cafe.id, owner, RoleInput{Name: "Barista", Permissions: []auth.Permission{auth.PermKitchenView, auth.PermOrderOpen}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.UpdateRole(ctx, f.cafe.id, owner, id, RoleInput{Name: "Head barista", Permissions: []auth.Permission{auth.PermOrderOpen, auth.PermLineVoid}}); err != nil {
+		t.Fatal(err)
+	}
+	roles, _ := f.s.Roles(ctx, f.cafe.id)
+	var got Role
+	for _, r := range roles {
+		if r.ID == id {
+			got = r
+		}
+	}
+	if got.Name != "Head barista" || !slices.Equal(got.Permissions, []auth.Permission{auth.PermOrderOpen, auth.PermLineVoid}) || got.People != 0 {
+		t.Errorf("role = %+v", got)
+	}
+
+	if _, err := f.s.AddRole(ctx, f.cafe.id, owner, RoleInput{Name: "cashier"}); !errors.Is(err, ErrRoleNameTaken) || fieldOf(err) != "name" {
+		t.Errorf("a name taken: %v", err)
+	}
+	if _, err := f.s.AddRole(ctx, f.cafe.id, owner, RoleInput{Name: "X", Permissions: []auth.Permission{"tea.make"}}); fieldOf(err) != "permissions" {
+		t.Errorf("a permission that does not exist: %v", err)
+	}
+	if err := f.s.DeleteRole(ctx, f.cafe.id, owner, f.cafe.roles["cashier"]); !errors.Is(err, ErrRoleInUse) {
+		t.Errorf("deleting a role someone holds: %v", err)
+	}
+	if err := f.s.DeleteRole(ctx, f.cafe.id, owner, id); err != nil {
+		t.Errorf("deleting a role nobody holds: %v", err)
+	}
+	if err := f.s.UpdateRole(ctx, f.cafe.id, owner, f.solo.roles["cashier"], RoleInput{Name: "X"}); !errors.Is(err, ErrRoleNotFound) {
+		t.Errorf("another venue's role: %v", err)
+	}
+}
+
+func TestNewNeedsADatabase(t *testing.T) {
+	if _, err := New(nil, nil); err == nil {
+		t.Error("New with no database must fail")
+	}
+}

@@ -13,23 +13,24 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 3d: low stock and closing stock** (ADR-114), which
-completes Task 3 (inventory: 3a to 3d). Stock items can be marked Count at
-close (migration 00025); the till's close-of-day screen lists them after
-the drawer, counted blind, recorded once per shift as closing counts of
-that shift, and Close the shift waits for it. The back office dashboard
-shows a Low stock card to `stock.manage`. Stock quantity helpers moved to
-`web/shared/stock-qty.ts`. Tried in the browser: a full close with beans
-and milk counted (−200 g and +1,500 ml revealed after), the shift closed,
-and the database held both closing counts against it.
+**Phase 10, Task 4a: staff and roles on the server** (ADR-115). Task 4 is
+split into 4a to 4d. `internal/service/people` and `/api/v1/people`
+(`staff.manage`): list everyone and every role; add, rename, move, deactivate
+and bring back staff; reset a PIN (which ends their sessions); add, edit and
+delete unused roles. Nobody hands out permissions they do not hold, and a
+change that would leave nobody able to manage staff is refused. Tested over
+HTTP with a real manager: they managed a cashier, were refused the owner;
+a new PIN signed the cashier out at once. Smoke-tested on the real binary:
+a cashier added over the API appeared on the sign-in tiles.
 
 ## Next task
 
-**Phase 10, Task 4: People.** Staff CRUD, roles, permissions, PIN reset,
-and an audit view of who voided, comped, discounted and refunded,
-filterable by staff and date. Large: split it in the phase file first.
-Mind ADR-105 (permissions on the session) and that the shell's only
-untested views are non-owner ones, which Task 4 finally makes possible.
+**Phase 10, Task 4b: the People screen.** Spec first
+(`docs/design/screens/backoffice-people.md`): staff with their roles, add
+and edit, PIN reset, deactivate, and a role editor that shows each
+permission in words. Mark `people` built in `nav-logic.ts` and route
+`/people`. Now that staff can be added, try the shell as a manager and a
+cashier by hand (ADR-105's untested views).
 
 ## Known broken / in progress
 
@@ -58,8 +59,8 @@ untested views are non-owner ones, which Task 4 finally makes possible.
   tokens.md asks for (the printers form has the same gap).
 
 - Shell (ADR-105): only tried as the owner. A cashier or manager view and
-  the "not yours to open" screen are tested in vitest, not by hand: no API
-  adds staff until Task 4. Printers, floor and Z-reports still carry their
+  the "not yours to open" screen are tested in vitest, not by hand; staff
+  can now be added over the API (Task 4a), so try them in Task 4b. Printers, floor and Z-reports still carry their
   own "Back office" link above the title, now redundant with the
   navigation. Permissions changed mid-session reach the shell at the next
   sign-in or reload. Stock is gated on `menu.edit` for now.
@@ -86,8 +87,8 @@ untested views are non-owner ones, which Task 4 finally makes possible.
 - Tips (ADR-101, ADR-102): hours are typed in at pooling (no timesheets
   until phase 10); a pool is once per shift with no correction; the rule
   and weights have no back office setting (phase 10). The browser run had
-  one staff member: no API adds staff yet, so a multi-person or by-hours
-  pool was tested in Go and vitest, not by hand.
+  one staff member, so a multi-person or by-hours pool was tested in Go
+  and vitest, not by hand; staff can now be added (Task 4a).
 - Shifts (ADR-093 to ADR-096): terminals learn of a shift opening,
   counted or closed by polling every 30 seconds, not the stream. Opening
   and closing need shift.manage: a cashier is told to ask a manager, with

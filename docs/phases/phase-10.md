@@ -71,7 +71,7 @@ Phase 09.
 
   Split into four (people first, then the trail they leave):
 
-  - [ ] **Task 4a: Staff and roles on the server.** Add, rename, move to
+  - [x] **Task 4a: Staff and roles on the server.** Add, rename, move to
     another role, deactivate and bring back staff; set and reset a PIN;
     roles with their permission sets. Guards: the venue always keeps
     someone active who can manage staff, and a deactivated person's

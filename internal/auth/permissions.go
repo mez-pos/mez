@@ -89,6 +89,18 @@ func (s PermissionSet) Has(p Permission) bool {
 	return ok
 }
 
+// Covers reports whether s holds every permission in other. Someone may
+// only hand out what they hold themselves (ADR-115): a manager who can
+// manage staff cannot make anyone, themselves included, an owner.
+func (s PermissionSet) Covers(other PermissionSet) bool {
+	for p := range other {
+		if !s.Has(p) {
+			return false
+		}
+	}
+	return true
+}
+
 // Keys is the set's permissions, in the canonical order.
 func (s PermissionSet) Keys() []Permission {
 	out := make([]Permission, 0, len(s))

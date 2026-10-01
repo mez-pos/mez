@@ -190,3 +190,32 @@ func grant(t *testing.T, w *staffWorld, roleID int64, perms ...Permission) {
 		t.Fatal(err)
 	}
 }
+
+func TestCovers(t *testing.T) {
+	set := func(ps ...Permission) PermissionSet {
+		s := PermissionSet{}
+		for _, p := range ps {
+			s[p] = struct{}{}
+		}
+		return s
+	}
+	manager := set(PermStaffManage, PermReportsView, PermOrderOpen)
+	tests := []struct {
+		name  string
+		other PermissionSet
+		want  bool
+	}{
+		{"nothing", set(), true},
+		{"some of its own", set(PermOrderOpen), true},
+		{"all of its own", manager, true},
+		{"one it does not hold", set(PermOrderOpen, PermSettingsEdit), false},
+		{"the owner's", set(Permissions()...), false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := manager.Covers(tt.other); got != tt.want {
+				t.Errorf("Covers = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
