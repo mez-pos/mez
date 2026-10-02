@@ -224,7 +224,7 @@ func run() (err error) {
 		return err
 	}
 
-	venueSettings, err := settings.New(database, nil)
+	venueSettings, err := settings.New(settings.Options{DB: database, OnChange: events.Notify})
 	if err != nil {
 		return err
 	}

@@ -26,3 +26,9 @@ SET value      = excluded.value,
 -- name: DeleteSetting :exec
 DELETE FROM settings
 WHERE venue_id = ? AND key = ?;
+
+-- name: UnsettledOrderCount :one
+-- Orders that are not closed: a ticket open, held, being paid or reopened.
+SELECT COUNT(*)
+FROM orders
+WHERE venue_id = ? AND status != 'closed';

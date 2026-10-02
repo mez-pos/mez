@@ -423,6 +423,7 @@ type TaxClass struct {
 	Exempt    bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	Active    bool
 }
 
 type TipPool struct {

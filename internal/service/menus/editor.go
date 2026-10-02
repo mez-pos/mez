@@ -68,6 +68,7 @@ type TaxClass struct {
 	Name   string   `json:"name"`
 	Rate   tax.Rate `json:"rate"`
 	Exempt bool     `json:"exempt"`
+	Active bool     `json:"active"`
 }
 
 // Category is a tab on the register, in the order it shows.
@@ -129,7 +130,7 @@ func (s *Service) Editor(ctx context.Context, venueID int64) (Editor, error) {
 		out.Courses[i] = Course{ID: r.ID, Number: r.Number, Name: r.Name}
 	}
 	for i, r := range rows.TaxClasses {
-		out.TaxClasses[i] = TaxClass{ID: r.ID, Name: r.Name, Rate: tax.Rate(r.Rate), Exempt: r.Exempt}
+		out.TaxClasses[i] = TaxClass{ID: r.ID, Name: r.Name, Rate: tax.Rate(r.Rate), Exempt: r.Exempt, Active: r.Active}
 	}
 	for i, r := range rows.Categories {
 		out.Categories[i] = Category{ID: r.ID, Name: r.Name, Active: r.Active}

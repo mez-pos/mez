@@ -113,3 +113,17 @@ func (q *Queries) SettingsForVenue(ctx context.Context, venueID int64) ([]Settin
 	}
 	return items, nil
 }
+
+const unsettledOrderCount = `-- name: UnsettledOrderCount :one
+SELECT COUNT(*)
+FROM orders
+WHERE venue_id = ? AND status != 'closed'
+`
+
+// Orders that are not closed: a ticket open, held, being paid or reopened.
+func (q *Queries) UnsettledOrderCount(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, unsettledOrderCount, venueID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}

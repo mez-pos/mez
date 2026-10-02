@@ -13,26 +13,31 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6a: the settings service and venue details.** Server
-only (ADR-130). `internal/service/settings` has a registry of every
-settings key with its default and a value check; `Set` saves keys all or
-none and refuses an unknown key. Routes: `GET /api/v1/settings`,
-`PUT /api/v1/settings/venue` (name, legal name, timezone; `settings.edit`)
-and `GET /api/v1/venue` (the name, for any paired device). No route
-writes keys yet. Task 6 was split into 6a to 6l first (ADR-129).
+**Phase 10, Task 6b: tax profile and tax classes.** Server only (ADR-131).
+`GET` and `PUT /api/v1/settings/tax` read and save the profile, its
+registration id, pricing, GST state code and US rates as one checked unit
+(`internal/service/settings/tax.go`); `/api/v1/settings/tax-classes`
+creates, edits, retires and restores classes (migration 00029 adds
+`active`). A profile change is refused while tickets are open; items
+without an HSN are listed, not refused. The item form offers active
+classes only. Before it, 6a (ADR-130) and the split (ADR-129).
 
 ## Next task
 
-**Phase 10, Task 6b: Tax profile and tax classes.** Server. Choose the
-profile and what it needs (registration id, `tax.pricing`,
-`tax.state_code`, `tax.jurisdiction`), checked together per profile as
-`taxesFor` in `internal/service/order/venue.go` does; save the keys
-through `settings.Service.Set` and the profile and registration id with
-`UpdateVenue` (write a query or a method for just those columns).
-Create, rename, re-rate and retire tax classes (`CreateTaxClass` exists,
-nothing else); a rate change is for new lines only. A profile that needs
-HSN reports the items without one. Route pattern as `internal/api/
-printers.go`; add the types to `typescript_test.go`. Go tests.
+**Phase 10, Task 6c: Invoice series, financial year and rounding.**
+Server. Series code, prefix and number template for invoices and credit
+notes (keys `invoice.*` and `credit_note.*`, already in the registry in
+`internal/service/settings/keys.go`), the venue's financial year start
+month and the cash rounding step (venue columns; `UpdateVenue` rewrites
+all of them, so read first as `UpdateDetails` and `UpdateTax` do). Check
+the keys together: a template must parse and fit the profile's length
+limit (GST 16, see `seriesFor` in `internal/service/order/venue.go`),
+the invoice and credit series must differ, and no change may make an
+issued number come round again (series restart per financial year start;
+`invoice_series` rows are never deleted). Decide, and write down, what a
+change of financial year start does to the series in force. Go tests, in
+`internal/domain/invoice` where the rule lives. Route pattern as
+`internal/api/settings_tax.go`.
 
 ## Known broken / in progress
 
@@ -98,12 +103,12 @@ printers.go`; add the types to `typescript_test.go`. Go tests.
   a till with a wrong clock ends it at the wrong time.
 - Menu editor (ADR-106, ADR-107): no `Idempotency-Key` on
   its routes, as with printers. Duplicate item names are allowed. No
-  write path yet for stations, courses or tax classes (Task 6). An item's
+  write path yet for stations or courses (6e); tax classes have one. An item's
   groups save in a second request after the item (ADR-108). A negative
   choice price is not checked against the items offering it. A venue
   whose tax profile changes to one needing
-  HSN keeps items without one until each is edited (Task 6 must handle
-  this). The table scrolls sideways below about 1100px of content width.
+  HSN keeps items without one until each is edited; the tax settings list
+  them (ADR-131). The table scrolls sideways below about 1100px of content width.
   Retiring an item shows no "open tickets keep it" note. Form controls
   use the shared `inputClass`, which does not set the 16px control size
   tokens.md asks for (the printers form has the same gap).

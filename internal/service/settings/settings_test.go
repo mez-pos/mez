@@ -39,7 +39,7 @@ func newService(t *testing.T) (*Service, *db.DB) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := New(d, clock{})
+	s, err := New(Options{DB: d, Clock: clock{}})
 	if err != nil {
 		t.Fatal(err)
 	}

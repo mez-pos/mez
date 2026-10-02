@@ -108,6 +108,43 @@ func (q *Queries) ActiveItems(ctx context.Context, venueID int64) ([]ActiveItems
 	return items, nil
 }
 
+const activeItemsOnTaxClass = `-- name: ActiveItemsOnTaxClass :many
+SELECT name
+FROM items
+WHERE venue_id = ? AND tax_class_id = ? AND active = 1
+ORDER BY name, id
+`
+
+type ActiveItemsOnTaxClassParams struct {
+	VenueID    int64
+	TaxClassID int64
+}
+
+// The items on the menu now that charge this class: what stops it being
+// retired.
+func (q *Queries) ActiveItemsOnTaxClass(ctx context.Context, arg ActiveItemsOnTaxClassParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, activeItemsOnTaxClass, arg.VenueID, arg.TaxClassID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const activeModifierGroups = `-- name: ActiveModifierGroups :many
 SELECT id, name, min_select, max_select
 FROM modifier_groups
@@ -939,6 +976,63 @@ func (q *Queries) ItemModifierGroupsForVenue(ctx context.Context, venueID int64)
 	return items, nil
 }
 
+const itemTaxClassActive = `-- name: ItemTaxClassActive :one
+SELECT tax_classes.active
+FROM items
+JOIN tax_classes ON tax_classes.venue_id = items.venue_id AND tax_classes.id = items.tax_class_id
+WHERE items.venue_id = ? AND items.id = ?
+`
+
+type ItemTaxClassActiveParams struct {
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) ItemTaxClassActive(ctx context.Context, arg ItemTaxClassActiveParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, itemTaxClassActive, arg.VenueID, arg.ID)
+	var active bool
+	err := row.Scan(&active)
+	return active, err
+}
+
+const itemsForHSN = `-- name: ItemsForHSN :many
+SELECT id, name, hsn
+FROM items
+WHERE venue_id = ? AND active = 1
+ORDER BY name, id
+`
+
+type ItemsForHSNRow struct {
+	ID   int64
+	Name string
+	Hsn  string
+}
+
+// Every item on the menu now, with the code it carries: what a profile
+// that prints HSN needs every one to have.
+func (q *Queries) ItemsForHSN(ctx context.Context, venueID int64) ([]ItemsForHSNRow, error) {
+	rows, err := q.db.QueryContext(ctx, itemsForHSN, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ItemsForHSNRow{}
+	for rows.Next() {
+		var i ItemsForHSNRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Hsn); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const menuVersion = `-- name: MenuVersion :one
 
 SELECT CAST(COALESCE(
@@ -1256,6 +1350,32 @@ func (q *Queries) SetModifierGroupActive(ctx context.Context, arg SetModifierGro
 	return result.RowsAffected()
 }
 
+const setTaxClassActive = `-- name: SetTaxClassActive :execrows
+UPDATE tax_classes
+SET active = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type SetTaxClassActiveParams struct {
+	Active  bool
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) SetTaxClassActive(ctx context.Context, arg SetTaxClassActiveParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setTaxClassActive,
+		arg.Active,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const stationForEdit = `-- name: StationForEdit :one
 SELECT id, active
 FROM stations
@@ -1280,7 +1400,7 @@ func (q *Queries) StationForEdit(ctx context.Context, arg StationForEditParams) 
 }
 
 const taxClassForEdit = `-- name: TaxClassForEdit :one
-SELECT id
+SELECT id, active
 FROM tax_classes
 WHERE venue_id = ? AND id = ?
 `
@@ -1290,15 +1410,20 @@ type TaxClassForEditParams struct {
 	ID      int64
 }
 
-func (q *Queries) TaxClassForEdit(ctx context.Context, arg TaxClassForEditParams) (int64, error) {
+type TaxClassForEditRow struct {
+	ID     int64
+	Active bool
+}
+
+func (q *Queries) TaxClassForEdit(ctx context.Context, arg TaxClassForEditParams) (TaxClassForEditRow, error) {
 	row := q.db.QueryRowContext(ctx, taxClassForEdit, arg.VenueID, arg.ID)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+	var i TaxClassForEditRow
+	err := row.Scan(&i.ID, &i.Active)
+	return i, err
 }
 
 const taxClassesForVenue = `-- name: TaxClassesForVenue :many
-SELECT id, name, rate, exempt
+SELECT id, name, rate, exempt, active
 FROM tax_classes
 WHERE venue_id = ?
 ORDER BY id
@@ -1309,6 +1434,7 @@ type TaxClassesForVenueRow struct {
 	Name   string
 	Rate   int64
 	Exempt bool
+	Active bool
 }
 
 func (q *Queries) TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error) {
@@ -1325,6 +1451,7 @@ func (q *Queries) TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxC
 			&i.Name,
 			&i.Rate,
 			&i.Exempt,
+			&i.Active,
 		); err != nil {
 			return nil, err
 		}
@@ -1441,6 +1568,36 @@ func (q *Queries) UpdateModifierGroup(ctx context.Context, arg UpdateModifierGro
 		arg.Name,
 		arg.MinSelect,
 		arg.MaxSelect,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const updateTaxClass = `-- name: UpdateTaxClass :execrows
+UPDATE tax_classes
+SET name = ?1, rate = ?2, exempt = ?3, updated_at = ?4
+WHERE venue_id = ?5 AND id = ?6
+`
+
+type UpdateTaxClassParams struct {
+	Name    string
+	Rate    int64
+	Exempt  bool
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) UpdateTaxClass(ctx context.Context, arg UpdateTaxClassParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateTaxClass,
+		arg.Name,
+		arg.Rate,
+		arg.Exempt,
 		arg.Now,
 		arg.VenueID,
 		arg.ID,

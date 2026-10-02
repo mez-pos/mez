@@ -35,21 +35,34 @@ type systemClock struct{}
 
 func (systemClock) Now() time.Time { return time.Now() }
 
+// Options configures a Service.
+type Options struct {
+	DB    *db.DB
+	Clock Clock
+	// OnChange is told the venue after a committed edit to the menu (a tax
+	// class), so connected devices read the menu again.
+	OnChange func(venueID int64)
+}
+
 // Service is the venue settings.
 type Service struct {
-	db    *db.DB
-	clock Clock
+	db       *db.DB
+	clock    Clock
+	onChange func(venueID int64)
 }
 
 // New returns a Service.
-func New(d *db.DB, clock Clock) (*Service, error) {
-	if d == nil {
+func New(o Options) (*Service, error) {
+	if o.DB == nil {
 		return nil, errors.New("settings: a database is required")
 	}
-	if clock == nil {
-		clock = systemClock{}
+	if o.Clock == nil {
+		o.Clock = systemClock{}
 	}
-	return &Service{db: d, clock: clock}, nil
+	if o.OnChange == nil {
+		o.OnChange = func(int64) {}
+	}
+	return &Service{db: o.DB, clock: o.Clock, onChange: o.OnChange}, nil
 }
 
 // Limits on what a venue is called: labels printed on a receipt, not prose.
@@ -207,17 +220,23 @@ func (s *Service) Set(ctx context.Context, venueID int64, values map[string]stri
 		} else if err != nil {
 			return fmt.Errorf("reading venue %d: %w", venueID, err)
 		}
-		for name, v := range trimmed {
-			var err error
-			if v == "" {
-				err = q.DeleteSetting(ctx, gen.DeleteSettingParams{VenueID: venueID, Key: name})
-			} else {
-				err = q.SetSetting(ctx, gen.SetSettingParams{VenueID: venueID, Key: name, Value: v, UpdatedAt: now})
-			}
-			if err != nil {
-				return fmt.Errorf("saving %s: %w", name, err)
-			}
-		}
-		return nil
+		return saveKeys(ctx, q, venueID, trimmed, now)
 	})
+}
+
+// saveKeys writes checked values inside a transaction the caller owns: a
+// value of "" deletes its key.
+func saveKeys(ctx context.Context, q *gen.Queries, venueID int64, values map[string]string, now time.Time) error {
+	for name, v := range values {
+		var err error
+		if v == "" {
+			err = q.DeleteSetting(ctx, gen.DeleteSettingParams{VenueID: venueID, Key: name})
+		} else {
+			err = q.SetSetting(ctx, gen.SetSettingParams{VenueID: venueID, Key: name, Value: v, UpdatedAt: now})
+		}
+		if err != nil {
+			return fmt.Errorf("saving %s: %w", name, err)
+		}
+	}
+	return nil
 }

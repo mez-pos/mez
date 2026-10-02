@@ -15,6 +15,11 @@ type Settings interface {
 	Read(ctx context.Context, venueID int64) (settings.Overview, error)
 	VenueName(ctx context.Context, venueID int64) (string, error)
 	UpdateDetails(ctx context.Context, venueID int64, in settings.Details) error
+	Tax(ctx context.Context, venueID int64) (settings.TaxSetup, error)
+	UpdateTax(ctx context.Context, venueID int64, in settings.TaxInput) error
+	CreateTaxClass(ctx context.Context, venueID int64, in settings.TaxClassInput) (int64, error)
+	UpdateTaxClass(ctx context.Context, venueID, id int64, in settings.TaxClassInput) error
+	SetTaxClassActive(ctx context.Context, venueID, id int64, active bool) error
 }
 
 // WithSettings mounts the venue settings (phase 10, Task 6a). Reading them
@@ -79,6 +84,7 @@ func (s *Server) mountSettings(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/settings", s.methodNotAllowed)
 	handle("PUT /api/v1/settings/venue", s.updateVenueDetails)
 	mux.HandleFunc("/api/v1/settings/venue", s.methodNotAllowed)
+	s.mountTaxSettings(mux)
 }
 
 func (s *Server) readVenueName(w http.ResponseWriter, r *http.Request) {
@@ -127,6 +133,9 @@ func (s *Server) writeSettings(w http.ResponseWriter, r *http.Request, status in
 
 func (s *Server) writeSettingsError(w http.ResponseWriter, r *http.Request, err error) {
 	var invalid *settings.Invalid
+	if s.writeTaxError(w, err) {
+		return
+	}
 	switch {
 	case errors.As(err, &invalid):
 		writeFieldError(w, s.log, http.StatusUnprocessableEntity, CodeInvalidSetting, invalid.Message, invalid.Field)

@@ -34,7 +34,7 @@ WHERE venue_id = ?
 ORDER BY number;
 
 -- name: TaxClassesForVenue :many
-SELECT id, name, rate, exempt
+SELECT id, name, rate, exempt, active
 FROM tax_classes
 WHERE venue_id = ?
 ORDER BY id;
@@ -160,7 +160,7 @@ FROM stations
 WHERE venue_id = ? AND id = ?;
 
 -- name: TaxClassForEdit :one
-SELECT id
+SELECT id, active
 FROM tax_classes
 WHERE venue_id = ? AND id = ?;
 
@@ -290,3 +290,35 @@ WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
 UPDATE items
 SET photo = sqlc.arg(photo), updated_at = sqlc.arg(now)
 WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: UpdateTaxClass :execrows
+UPDATE tax_classes
+SET name = sqlc.arg(name), rate = sqlc.arg(rate), exempt = sqlc.arg(exempt), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetTaxClassActive :execrows
+UPDATE tax_classes
+SET active = sqlc.arg(active), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: ActiveItemsOnTaxClass :many
+-- The items on the menu now that charge this class: what stops it being
+-- retired.
+SELECT name
+FROM items
+WHERE venue_id = ? AND tax_class_id = ? AND active = 1
+ORDER BY name, id;
+
+-- name: ItemTaxClassActive :one
+SELECT tax_classes.active
+FROM items
+JOIN tax_classes ON tax_classes.venue_id = items.venue_id AND tax_classes.id = items.tax_class_id
+WHERE items.venue_id = ? AND items.id = ?;
+
+-- name: ItemsForHSN :many
+-- Every item on the menu now, with the code it carries: what a profile
+-- that prints HSN needs every one to have.
+SELECT id, name, hsn
+FROM items
+WHERE venue_id = ? AND active = 1
+ORDER BY name, id;

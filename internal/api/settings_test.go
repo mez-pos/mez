@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -13,7 +15,7 @@ import (
 // device may read the venue's name.
 func TestVenueSettingsOverHTTP(t *testing.T) {
 	w := newTill(t)
-	svc, err := settings.New(w.db, nil)
+	svc, err := settings.New(settings.Options{DB: w.db})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,6 +96,115 @@ func TestVenueSettingsOverHTTP(t *testing.T) {
 		}
 		if rec := send(w.handler, http.MethodPost, "/api/v1/venue", "", w.asDevice()); rec.Code != http.StatusMethodNotAllowed {
 			t.Errorf("POST /venue: %d", rec.Code)
+		}
+	})
+}
+
+// TestTaxSettingsOverHTTP: the owner reads the tax profile, changes it and
+// the tax classes, and each refusal comes back with its code and field.
+func TestTaxSettingsOverHTTP(t *testing.T) {
+	w := newTill(t)
+	svc, err := settings.New(settings.Options{DB: w.db})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.rebuild(t, WithSettings(svc))
+	owner := w.asStaff(w.signInAs(t, "stf_PRIYA001", "2468").Token)
+
+	call := func(method, path, body string) (int, taxSettingsResponse, Error) {
+		t.Helper()
+		rec := send(w.handler, method, path, body, owner)
+		if rec.Code >= 400 {
+			return rec.Code, taxSettingsResponse{}, errorOf(t, rec)
+		}
+		var out taxSettingsResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatalf("%s %s: %v: %s", method, path, err, rec.Body)
+		}
+		return rec.Code, out, Error{}
+	}
+
+	status, out, _ := call(http.MethodGet, "/api/v1/settings/tax", "")
+	if status != http.StatusOK || out.Profile == "" || out.Classes == nil || out.ItemsWithoutHSN == nil || out.Jurisdiction == nil {
+		t.Fatalf("read: %d %+v", status, out)
+	}
+
+	status, out, _ = call(http.MethodPut, "/api/v1/settings/tax",
+		`{"profile":"gst_in","registration_id":"29abcde1234f1z5","pricing":"inclusive"}`)
+	if status != http.StatusOK || out.Profile != "gst_in" || out.RegistrationID != "29ABCDE1234F1Z5" || out.StateCode != "29" || !out.NeedsHSN {
+		t.Fatalf("gst: %d %+v", status, out)
+	}
+	status, out, _ = call(http.MethodPut, "/api/v1/settings/tax",
+		`{"profile":"sales_tax_us","jurisdiction":[{"name":"CA","rate":7250}]}`)
+	if status != http.StatusOK || out.Pricing != "exclusive" || len(out.Jurisdiction) != 1 || out.Jurisdiction[0].Rate != 7250 || out.StateCode != "" {
+		t.Fatalf("us: %d %+v", status, out)
+	}
+
+	status, out, _ = call(http.MethodPost, "/api/v1/settings/tax-classes", `{"name":"Zero-rated food","rate":0}`)
+	if status != http.StatusCreated || len(out.Classes) == 0 {
+		t.Fatalf("created: %d %+v", status, out)
+	}
+	class := out.Classes[len(out.Classes)-1]
+	if class.Name != "Zero-rated food" || !class.Active {
+		t.Fatalf("created: %+v", class)
+	}
+	path := fmt.Sprintf("/api/v1/settings/tax-classes/%d", class.ID)
+	_, out, _ = call(http.MethodPut, path, `{"name":"Food","rate":5000}`)
+	if c := out.Classes[len(out.Classes)-1]; c.Name != "Food" || c.Rate != 5000 {
+		t.Fatalf("updated: %+v", c)
+	}
+	_, out, _ = call(http.MethodPost, path+"/retire", "")
+	if out.Classes[len(out.Classes)-1].Active {
+		t.Fatal("retired, and still active")
+	}
+	_, out, _ = call(http.MethodPost, path+"/restore", "")
+	if !out.Classes[len(out.Classes)-1].Active {
+		t.Fatal("brought back, and still retired")
+	}
+
+	refusals := []struct {
+		name, method, path, body string
+		status                   int
+		code                     ErrorCode
+		field                    string
+	}{
+		{"an unknown profile", http.MethodPut, "/api/v1/settings/tax", `{"profile":"gst"}`, 422, CodeInvalidSetting, "profile"},
+		{"gst with no gstin", http.MethodPut, "/api/v1/settings/tax", `{"profile":"gst_in"}`, 422, CodeInvalidSetting, "registration_id"},
+		{"a class with no name", http.MethodPost, "/api/v1/settings/tax-classes", `{"name":"","rate":0}`, 422, CodeInvalidSetting, "name"},
+		{"a class named twice", http.MethodPost, "/api/v1/settings/tax-classes", `{"name":"food","rate":0}`, 409, CodeTaxClassNameTaken, "name"},
+		{"no such class", http.MethodPut, "/api/v1/settings/tax-classes/999", `{"name":"X","rate":0}`, 404, CodeTaxClassNotFound, ""},
+		{"retiring no such class", http.MethodPost, "/api/v1/settings/tax-classes/999/retire", "", 404, CodeTaxClassNotFound, ""},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			status, _, apiErr := call(tt.method, tt.path, tt.body)
+			if status != tt.status || apiErr.Code != tt.code || apiErr.Field != tt.field {
+				t.Errorf("%d %s %q, want %d %s %q", status, apiErr.Code, apiErr.Field, tt.status, tt.code, tt.field)
+			}
+		})
+	}
+
+	t.Run("a ticket open holds back a change of profile", func(t *testing.T) {
+		if _, err := w.db.Writer().ExecContext(context.Background(),
+			`INSERT INTO orders (public_id, venue_id, channel, status, last_seq, opened_at, updated_at)
+			 VALUES ('ord_OPENTAX1', 1, 'counter', 'open', 1, ?, ?)`, seededAt, seededAt); err != nil {
+			t.Fatal(err)
+		}
+		status, _, apiErr := call(http.MethodPut, "/api/v1/settings/tax", `{"profile":"none"}`)
+		if status != 409 || apiErr.Code != CodeTicketsOpen {
+			t.Errorf("%d %s", status, apiErr.Code)
+		}
+	})
+
+	t.Run("a cashier cannot read or change the tax", func(t *testing.T) {
+		cashier := w.asStaff(w.signIn(t, "2468").Token)
+		for _, req := range [][2]string{
+			{http.MethodGet, "/api/v1/settings/tax"}, {http.MethodPut, "/api/v1/settings/tax"},
+			{http.MethodPost, "/api/v1/settings/tax-classes"}, {http.MethodPost, "/api/v1/settings/tax-classes/1/retire"},
+		} {
+			if rec := send(w.handler, req[0], req[1], `{"profile":"none"}`, cashier); rec.Code != http.StatusForbidden {
+				t.Errorf("%s %s: %d", req[0], req[1], rec.Code)
+			}
 		}
 	})
 }

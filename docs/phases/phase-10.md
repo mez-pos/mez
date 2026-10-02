@@ -159,7 +159,7 @@ Phase 09.
     refused when it is saved. Venue details through it: name, legal
     name, timezone (must load as an IANA zone). A venue's name readable
     by any paired device, for the lock screen. `settings.edit`. Go tests.
-  - [ ] **Task 6b: Tax profile and tax classes.** Server. Choose the
+  - [x] **Task 6b: Tax profile and tax classes.** Server. Choose the
     profile and what it needs (registration id, pricing inclusive or
     exclusive, state code, jurisdiction), validated per profile. Create,
     rename, re-rate and retire tax classes; a rate change is for new

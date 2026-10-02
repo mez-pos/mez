@@ -230,6 +230,16 @@ func (s *Service) UpdateItem(ctx context.Context, venueID, id int64, in ItemInpu
 // into a retired category stays off the till until the category is back.
 func (s *Service) SetItemActive(ctx context.Context, venueID, id int64, active bool) error {
 	return s.edit(ctx, venueID, func(q *gen.Queries) error {
+		if active {
+			// An item cannot come back charging a class that is retired.
+			ok, err := q.ItemTaxClassActive(ctx, gen.ItemTaxClassActiveParams{VenueID: venueID, ID: id})
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return fmt.Errorf("menus: reading item %d's tax class: %w", id, err)
+			}
+			if err == nil && !ok {
+				return &Invalid{"tax_class_id", "This item's tax class is retired. Bring the class back, or edit the item to use another."}
+			}
+		}
 		n, err := q.SetItemActive(ctx, gen.SetItemActiveParams{Active: active, Now: s.now(), VenueID: venueID, ID: id})
 		return oneRow(n, err, ErrItemNotFound)
 	})
@@ -359,8 +369,12 @@ func (s *Service) checkRefs(ctx context.Context, q *gen.Queries, venueID int64, 
 		return &Invalid{"category_id", "That category is retired. Bring it back first."}
 	}
 
-	if _, err := q.TaxClassForEdit(ctx, gen.TaxClassForEditParams{VenueID: venueID, ID: in.TaxClassID}); err != nil {
+	class, err := q.TaxClassForEdit(ctx, gen.TaxClassForEditParams{VenueID: venueID, ID: in.TaxClassID})
+	if err != nil {
 		return refError(err, "tax_class_id", "Choose a tax class.")
+	}
+	if !class.Active {
+		return &Invalid{"tax_class_id", "That tax class is retired. Choose another."}
 	}
 	station, err := q.StationForEdit(ctx, gen.StationForEditParams{VenueID: venueID, ID: in.StationID})
 	if err != nil {

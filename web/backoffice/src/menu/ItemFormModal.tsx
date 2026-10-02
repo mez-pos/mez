@@ -115,11 +115,13 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
         <Field label="Tax class" error={on("tax_class_id")}>
           {(id) => (
             <Select id={id} value={form.taxClassId} onChange={(taxClassId) => set({ taxClassId })}>
-              {menu.tax_classes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {taxClassText(t)}
-                </option>
-              ))}
+              {menu.tax_classes
+                .filter((t) => t.active || t.id === form.taxClassId)
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {taxClassText(t)}
+                  </option>
+                ))}
             </Select>
           )}
         </Field>

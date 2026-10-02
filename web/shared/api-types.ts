@@ -118,7 +118,11 @@ export type ErrorCode =
   | 'invalid_person'
   | 'invalid_filter'
   | 'invalid_setting'
-  | 'venue_not_found';
+  | 'venue_not_found'
+  | 'tax_class_not_found'
+  | 'tax_class_name_taken'
+  | 'tax_class_in_use'
+  | 'tickets_open';
 
 export type OrderStatus =
   | 'open'
@@ -1101,6 +1105,49 @@ export interface SettingsResponse {
   settings: SettingEntryResponse[];
 }
 
+export interface JurisdictionRate {
+  name: string;
+  rate: number;
+}
+
+export interface TaxSettingsRequest {
+  profile: string;
+  registration_id: string;
+  pricing: string;
+  state_code: string;
+  jurisdiction: JurisdictionRate[];
+}
+
+export interface TaxClassRequest {
+  name: string;
+  rate: number;
+  exempt: boolean;
+}
+
+export interface TaxClassResponse {
+  id: number;
+  name: string;
+  rate: number;
+  exempt: boolean;
+  active: boolean;
+}
+
+export interface ItemRefResponse {
+  id: number;
+  name: string;
+}
+
+export interface TaxSettingsResponse {
+  profile: string;
+  registration_id: string;
+  pricing: string;
+  state_code: string;
+  jurisdiction: JurisdictionRate[];
+  needs_hsn: boolean;
+  items_without_hsn: ItemRefResponse[];
+  classes: TaxClassResponse[];
+}
+
 export interface MenuCategoryInput {
   name: string;
 }
@@ -1153,6 +1200,7 @@ export interface EditorTaxClass {
   name: string;
   rate: number;
   exempt: boolean;
+  active: boolean;
 }
 
 export interface EditorCategory {

@@ -43,8 +43,9 @@ const menu: MenuEditor = {
   ],
   courses: [{ id: 1, number: 1, name: "Mains" }],
   tax_classes: [
-    { id: 1, name: "Food", rate: 5000, exempt: false },
-    { id: 2, name: "Water", rate: 0, exempt: true },
+    { id: 1, name: "Food", rate: 5000, exempt: false, active: true },
+    { id: 2, name: "Water", rate: 0, exempt: true, active: true },
+    { id: 3, name: "Old rate", rate: 12000, exempt: false, active: false },
   ],
   categories: [
     { id: 10, name: "Coffee", active: true },
@@ -99,9 +100,9 @@ describe("rateText and taxClassText", () => {
   it("names a class with its rate, or as exempt", () => {
     expect(taxClassText(menu.tax_classes[0]!)).toBe("Food, 5%");
     expect(taxClassText(menu.tax_classes[1]!)).toBe("Water, exempt");
-    expect(taxClassText({ id: 3, name: "Restaurant 5%", rate: 5000, exempt: false })).toBe("Restaurant 5%");
-    expect(taxClassText({ id: 4, name: "Exempt", rate: 0, exempt: true })).toBe("Exempt");
-    expect(taxClassText({ id: 5, name: "Food 5%", rate: 18000, exempt: false })).toBe("Food 5%, 18%");
+    expect(taxClassText({ id: 3, name: "Restaurant 5%", rate: 5000, exempt: false, active: true })).toBe("Restaurant 5%");
+    expect(taxClassText({ id: 4, name: "Exempt", rate: 0, exempt: true, active: true })).toBe("Exempt");
+    expect(taxClassText({ id: 5, name: "Food 5%", rate: 18000, exempt: false, active: true })).toBe("Food 5%, 18%");
   });
 });
 
@@ -119,6 +120,8 @@ describe("the item form", () => {
   it("starts with nothing chosen on an empty menu, for the server to refuse", () => {
     const empty = { ...menu, stations: [], courses: [], tax_classes: [] };
     expect(newItemForm(empty, 10)).toMatchObject({ taxClassId: 0, stationId: 0, courseId: 0 });
+    const firstRetired = { ...menu, tax_classes: [{ ...menu.tax_classes[0]!, active: false }, menu.tax_classes[1]!] };
+    expect(newItemForm(firstRetired, 10).taxClassId).toBe(2);
   });
   it("reads an item into the form and back unchanged", () => {
     const latte = menu.items[0]!;

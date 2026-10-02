@@ -15,6 +15,9 @@ type Querier interface {
 	// An item in a retired category is not on sale either: retiring
 	// "Breakfast" at noon takes every breakfast item off the till with it.
 	ActiveItems(ctx context.Context, venueID int64) ([]ActiveItemsRow, error)
+	// The items on the menu now that charge this class: what stops it being
+	// retired.
+	ActiveItemsOnTaxClass(ctx context.Context, arg ActiveItemsOnTaxClassParams) ([]string, error)
 	ActiveModifierGroups(ctx context.Context, venueID int64) ([]ActiveModifierGroupsRow, error)
 	ActiveModifiers(ctx context.Context, venueID int64) ([]ActiveModifiersRow, error)
 	//
@@ -185,6 +188,10 @@ type Querier interface {
 	ItemModifierGroupsForVenue(ctx context.Context, venueID int64) ([]ItemModifierGroupsForVenueRow, error)
 	// Recipes (Task 3b, ADR-112).
 	ItemRecipesForVenue(ctx context.Context, venueID int64) ([]ItemRecipesForVenueRow, error)
+	ItemTaxClassActive(ctx context.Context, arg ItemTaxClassActiveParams) (bool, error)
+	// Every item on the menu now, with the code it carries: what a profile
+	// that prints HSN needs every one to have.
+	ItemsForHSN(ctx context.Context, venueID int64) ([]ItemsForHSNRow, error)
 	// Closing stock (Task 3d, ADR-114).
 	ItemsToCountAtClose(ctx context.Context, venueID int64) ([]ItemsToCountAtCloseRow, error)
 	// The shift's report as it now stands: the last correction, or the original.
@@ -303,6 +310,7 @@ type Querier interface {
 	SetStationPrinter(ctx context.Context, arg SetStationPrinterParams) (int64, error)
 	SetStockItemActive(ctx context.Context, arg SetStockItemActiveParams) (int64, error)
 	SetTableActive(ctx context.Context, arg SetTableActiveParams) (int64, error)
+	SetTaxClassActive(ctx context.Context, arg SetTaxClassActiveParams) (int64, error)
 	Setting(ctx context.Context, arg SettingParams) (Setting, error)
 	// Per-venue settings the schema has no opinion about. Anything the database
 	// must constrain or compute with is a column on venues instead.
@@ -363,7 +371,7 @@ type Querier interface {
 	// and for moving or joining a party to it.
 	TableTurn(ctx context.Context, id int64) (TableTurnRow, error)
 	TablesForVenue(ctx context.Context, venueID int64) ([]TablesForVenueRow, error)
-	TaxClassForEdit(ctx context.Context, arg TaxClassForEditParams) (int64, error)
+	TaxClassForEdit(ctx context.Context, arg TaxClassForEditParams) (TaxClassForEditRow, error)
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
 	TipPool(ctx context.Context, shiftID int64) (TipPool, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
@@ -372,6 +380,8 @@ type Querier interface {
 	// first. It is a working set, tens of orders, not history, so it is capped
 	// rather than paginated (ADR-074).
 	UnclosedOrdersForVenue(ctx context.Context, arg UnclosedOrdersForVenueParams) ([]UnclosedOrdersForVenueRow, error)
+	// Orders that are not closed: a ticket open, held, being paid or reopened.
+	UnsettledOrderCount(ctx context.Context, venueID int64) (int64, error)
 	//
 	// A line already rung up keeps the name, price and tax it copied
 	// (docs/02-domain.md, "Prices and the snapshot rule"); this changes only
@@ -390,6 +400,7 @@ type Querier interface {
 	UpdateStaff(ctx context.Context, arg UpdateStaffParams) (int64, error)
 	UpdateStockItem(ctx context.Context, arg UpdateStockItemParams) (int64, error)
 	UpdateTable(ctx context.Context, arg UpdateTableParams) (int64, error)
+	UpdateTaxClass(ctx context.Context, arg UpdateTaxClassParams) (int64, error)
 	//
 	// Currency is deliberately absent. Changing it would reinterpret every minor
 	// unit already recorded against this venue, which is a migration, not a

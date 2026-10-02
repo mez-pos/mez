@@ -3678,3 +3678,39 @@ value clears a key back to its default.
     day start into a setting, should make the readers use the registry.
 Because: a bad value should be refused when saved, not when a bill is paid.
 Cost: a setting changed by hand in the database still fails late, as before.
+
+## ADR-131 - Tax profile and tax classes
+2026-10 · Status: accepted.
+Decision: the tax profile is edited as one unit (`PUT /api/v1/settings/tax`),
+and tax classes get create, edit, retire and restore
+(`/api/v1/settings/tax-classes`), all `settings.edit`.
+  - **One unit, checked by the profile itself.** The profile, registration
+    id, pricing, GST state code and US jurisdiction are written in one
+    transaction. Each profile's own `Compute`, run on no lines, refuses a
+    context it could not sell under (a GSTIN in another state than the state
+    code), and the sale path's own reading of the venue runs on what was
+    just written; either refusing rolls it back. What a profile does not
+    use is cleared, so switching leaves no stale state code or rates.
+  - **A GST state code left empty is the GSTIN's first two digits.**
+  - **US sales tax is always exclusive**, and says so when asked for
+    inclusive rather than ignoring it.
+  - **A change of profile is refused while any ticket is not closed**
+    (`tickets_open`): its lines would be taxed under one regime and
+    settled under another. Correcting a GSTIN or a rate under the same
+    profile is allowed.
+  - **A profile that prints HSN does not refuse items without one.** It
+    lists the active items with no valid code (`items_without_hsn`); they
+    keep selling and their invoices fall short until each is edited.
+  - **Tax classes can be retired** (migration 00029, `active`). A class
+    that active items charge cannot be retired, and the refusal names
+    them. An item cannot be created on, edited onto or brought back onto
+    a retired class. Names are unique ignoring case, retired included.
+    An exempt class must be at 0%.
+  - **A rate change is for new lines only**, as an item's price change
+    is: a line copies its rate when rung up. Every class edit bumps the
+    menu version and nudges the stream, through `EditMenu`.
+Because: a wrong tax profile costs the owner a filing, and one that only
+fails when a bill is paid costs a customer a wait.
+Cost: no screen yet (6h). Invoice numbers already issued under a profile
+are not touched by changing it; a venue that switches mid financial year
+keeps one series. Whether it should start another is 6c's question.
