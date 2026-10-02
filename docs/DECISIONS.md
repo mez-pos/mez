@@ -3558,3 +3558,29 @@ what the counts found, in money, without opening each shift.
 Cost: items are named as they are named now. A shift with no closing
 count is not listed, so a night nobody counted looks like no night at
 all; the screen should say what it lists.
+
+## ADR-126 - The closing stock section says which way, and what its total leaves out
+2026-10 · Status: accepted
+Decision: phase 10, Task 5f3 puts the closing stock report (ADR-125) on
+the Sales screen (`web/backoffice/src/sales/SalesClosingStock.tsx`). It
+finishes Task 5f, and with it Task 5.
+  - **A section with its own read,** as Corrections has (ADR-123): the
+    last on the screen, following the screen's range.
+  - **The headline is words.** "Short by 23.60", "Over by 6.40" or
+    "Counted as expected", with the danger, warning or success colour
+    behind the words and never in place of them. The amount is shown
+    without a sign: the word says which way.
+  - **"Not costed" is never 0.00.** A count with no cost reads "Not
+    costed" where its cost and value would be. A total that skipped
+    counts says how many under it; when no count had a cost the headline
+    gives no figure at all and says why.
+  - **Over is a warning, not good news.** More stock than the ledger
+    expected means a delivery not recorded or a sale not rung up, so it
+    is not painted as a success.
+  - Two tables from the one answer: by item over the range, largest loss
+    first, and a row per item per shift. One CSV, the server's.
+Because: an owner reading "23.60" needs to know it is a loss and that
+two items are missing from it before deciding anything.
+Cost: the by-shift table repeats the day on every row and has no
+subtotal per shift, though the answer carries one. Only shifts whose
+close counted stock are listed, and the section says so.

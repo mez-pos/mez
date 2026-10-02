@@ -3,7 +3,7 @@
 A range of trading days added up: what was sold, how it was paid, where it
 came from. Built in phase 10 Task 5c over the server of Tasks 5a and 5b
 (ADR-118, ADR-119). Task 5d added what sold, who sold it and when; Task
-5e2 the corrections (ADR-122); Task 5f adds closing stock. They are
+5e2 the corrections (ADR-122); Task 5f3 closing stock (ADR-125). They are
 sections of this one screen, under the same range.
 
 ## Purpose
@@ -106,6 +106,29 @@ Paper, inside the back office shell, section **Sales reports**, path
     Who let them through (`authorised_by`).
   - It reads on its own, so the sales above show while it adds up.
 
+- **Closing stock,** what the counts at each close found: the shifts in
+  the range whose close counted stock, each item's expected against
+  counted (ADR-125). The last section, with its own read.
+  - One line first, the variance at cost over the range in words and a
+    tone, never colour alone: "Short by 23.60" in the danger colour,
+    "Over by 6.40" in the warning colour, "Counted as expected" in the
+    success colour. When some counts had no cost, a second line, muted:
+    "2 counts had no cost and are not in this." When none had a cost,
+    the first line reads "No cost on what was counted" and there is no
+    figure.
+  - Under it in `fg-3`: "Only shifts whose close counted stock are
+    listed. Each count is valued at what the item cost that night."
+  - **By item:** Item, Counts, Variance (a signed quantity in its unit,
+    "-400 ml", danger colour below zero) and At cost (`Money`, danger
+    colour below zero; "Not costed" muted when none of its counts had a
+    cost; "2 not costed" muted under the amount when only some had).
+    Largest loss first, as the server sends it.
+  - **By shift:** a row per item per shift, oldest first: Day, Item,
+    Expected, Counted, Variance, Cost ("60.00 / l", or "Not costed"
+    muted) and At cost. It scrolls inside its frame past twelve rows.
+  - **Download CSV** on the section saves the file, a row per item per
+    shift.
+
 ## States
 
 - **Nothing in the range:** the headline says zero in every figure; in
@@ -120,6 +143,10 @@ Paper, inside the back office shell, section **Sales reports**, path
   a refused range (over a year, To before From) says the server's words.
 - **No corrections in the range:** "No corrections between 24 Sept and
   30 Sept." in place of its tables.
+- **No closing counts in the range:** "No closing counts between 24 Sept
+  and 30 Sept." in place of its tables, and no headline.
+- **Closing stock cannot be read:** the words in place of its tables,
+  with Try again; the rest of the screen is unaffected.
 - **Corrections cannot be read:** the words in place of its tables, with
   Try again; the sales above are unaffected.
 - **A download that fails** says so in a toast; the screen stays.
@@ -133,6 +160,8 @@ Paper, inside the back office shell, section **Sales reports**, path
 - `GET /api/v1/audit/analysis?from=&to=`, keyed by the range, and
   `GET /api/v1/audit/analysis/csv?from=&to=&by=` on a download.
 - A link to the trail is `/audit?from=&to=&kind=` or `&staff=`.
+- `GET /api/v1/reports/closing-stock?from=&to=`, keyed by the range, and
+  `.../closing-stock/csv` on a download.
 
 ## Constraints
 

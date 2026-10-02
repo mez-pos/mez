@@ -13,25 +13,25 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 5f2: Closing stock on the server** (ADR-125).
-`GET /api/v1/reports/closing-stock?from=&to=` (`reports.view`): the
-closing counts of the shifts whose trading day is in the range, by shift
-(expected, counted, variance in units, and at the cost kept on the
-count) and by item over the range, largest loss first; `uncosted` says
-how many counts had no cost. `.../csv` as `CsvResponse`.
-`internal/service/stock/closing_report.go`, types `ClosingStockReport`
-and friends. Go tests only: not tried against a real binary.
+**Phase 10, Task 5f3: The closing stock section** (ADR-126). It
+finishes Task 5f and Task 5 (Reports). A Closing stock section on
+`/sales` over `GET /api/v1/reports/closing-stock`: a headline in words
+("Short by", "Over by", "Counted as expected"), how many counts its
+total leaves out, a table by item and one by shift, its CSV.
+`SalesClosingStock.tsx`, `closing-logic.ts`. Tried in a browser against
+a real binary: one close, milk costed and beans not, the tables and the
+file checked against a hand sum (this also tried Task 5f2's routes).
 
 ## Next task
 
-**Phase 10, Task 5f3: The closing stock section.** Spec first (in
-`backoffice-reports.md`). A section of `/sales` over
-`GET /api/v1/reports/closing-stock` for the screen's range, its own read
-as Corrections has (`SalesCorrections.tsx`), with its CSV
-(`useCsvDownload`). Quantities through `formatQty`/`formatDelta`
-(`web/shared/stock-qty.ts`); a missing `cost`/`value` reads "Not costed",
-never 0.00; say how many counts a total leaves out (`uncosted`). It
-finishes Task 5f and Task 5.
+**Phase 10, Task 6: Settings.** Venue details, tax profile, invoice
+series, currency and rounding, timezone, financial year start, printers
+and station mapping, devices, receipt templates, shift and tip rules,
+backup configuration. Far larger than one session: split it first,
+commit the split, and stop. Known broken below lists what earlier tasks
+left for it (stations, courses and tax classes have no write path; the
+day start, variance threshold and tip rule are constants; `settings.edit`
+gates Floor plan and Printers already).
 
 ## Known broken / in progress
 
@@ -61,8 +61,10 @@ finishes Task 5f and Task 5.
 - Stock cost (ADR-124): movements from before migration 00028 have no
   cost. Nothing shows a cost's history; a new cost is for stock moved
   from then on.
-- Closing stock report (ADR-125): no screen yet (5f3). A shift with no
-  closing count is not listed. Items are named as they are now.
+- Closing stock (ADR-125, ADR-126): a shift with no closing count is not
+  listed. Items are named as they are now. The browser run had one close
+  on one day; several shifts and a partly costed item were tested in Go
+  and vitest, not by eye. No subtotal per shift on screen.
 - Stock (ADR-111 to ADR-114): The
   closing count cannot be skipped while items are marked. A close uses today's
   recipes, not the ones when the line was rung up. A sold movement needs a

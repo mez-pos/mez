@@ -85,7 +85,7 @@ Phase 09.
   - [x] **Task 4d: The audit screen.** Its own entry in the navigation,
     not a tab inside People: the trail an owner reads most.
 
-- [ ] **Task 5 — Reports.**
+- [x] **Task 5 — Reports.**
   Sales over time, product mix, category performance, hourly heatmap, payment
   mix, channel mix, staff performance, discount and void analysis. Cursor
   paginated. Every number mono and right-aligned. CSV export on every report.
@@ -123,7 +123,7 @@ Phase 09.
       `backoffice-reports.md`). A section of the Sales screen over 5e1,
       with its CSV; each row links to the audit trail already filtered,
       so the audit screen learns to open on a range, a person and a kind.
-  - [ ] **Task 5f: Closing stock.** The close's stock counts by shift:
+  - [x] **Task 5f: Closing stock.** The close's stock counts by shift:
     expected against counted, the variance in units and at cost, with CSV.
 
     Split into three (stock has no cost yet, so that comes first):
@@ -137,7 +137,7 @@ Phase 09.
       by shift over a range of trading days: expected, counted, the
       variance in units and at the cost kept with the count; its CSV.
       `reports.view`. Go tests.
-    - [ ] **Task 5f3: The closing stock section.** Spec first. A section
+    - [x] **Task 5f3: The closing stock section.** Spec first. A section
       of the Sales screen over 5f2, with its CSV.
 
 - [ ] **Task 6 — Settings.**

@@ -10,6 +10,7 @@ import { useAuthStore } from "../../../shared/auth/use-auth";
 import { EmptyState, InboxIcon } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { inputClass } from "../FormFields";
+import { ClosingStock } from "./SalesClosingStock";
 import { Corrections } from "./SalesCorrections";
 import { Headline, Mixes, OverTime } from "./SalesSections";
 import { Heatmap, Sold } from "./SalesTables";
@@ -100,6 +101,7 @@ export function SalesScreen() {
       )}
       {/* Its own read, so the sales above show while it adds up. */}
       {picked && <Corrections range={range} />}
+      {picked && <ClosingStock range={range} />}
     </div>
   );
 }
