@@ -35,6 +35,7 @@ import (
 	"github.com/byjoellobo/mez/internal/service/people"
 	"github.com/byjoellobo/mez/internal/service/printers"
 	"github.com/byjoellobo/mez/internal/service/reports"
+	"github.com/byjoellobo/mez/internal/service/settings"
 	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 	svcstock "github.com/byjoellobo/mez/internal/service/stock"
 	"github.com/byjoellobo/mez/web"
@@ -223,6 +224,11 @@ func run() (err error) {
 		return err
 	}
 
+	venueSettings, err := settings.New(database, nil)
+	if err != nil {
+		return err
+	}
+
 	photos, err := menus.NewPhotoStore(filepath.Join(cfg.DataDir, "photos"))
 	if err != nil {
 		return err
@@ -272,6 +278,7 @@ func run() (err error) {
 		api.WithStream(events),
 		api.WithPrints(prints),
 		api.WithPrinters(printerSettings),
+		api.WithSettings(venueSettings),
 		api.WithMenuEditor(menuEditor),
 		api.WithStock(stockBook),
 		api.WithPeople(staffBook),

@@ -13,26 +13,26 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6: the split.** Docs only. Settings is now twelve
-sub-tasks, 6a to 6l, in the phase file: six write paths on the server,
-four screen tasks, devices, and backups parked behind phase 12
-(ADR-129). Before it, the redesign's Tasks 1 to 9 (ADR-127, ADR-128);
-its done-when, a person walking the spine and seeing no old screen, is
-owed.
+**Phase 10, Task 6a: the settings service and venue details.** Server
+only (ADR-130). `internal/service/settings` has a registry of every
+settings key with its default and a value check; `Set` saves keys all or
+none and refuses an unknown key. Routes: `GET /api/v1/settings`,
+`PUT /api/v1/settings/venue` (name, legal name, timezone; `settings.edit`)
+and `GET /api/v1/venue` (the name, for any paired device). No route
+writes keys yet. Task 6 was split into 6a to 6l first (ADR-129).
 
 ## Next task
 
-**Phase 10, Task 6a: The settings service and venue details.** Server
-only. `GET /api/v1/settings` reads everything the venue is set to; one
-write path for the `settings` table knows every key and its type and
-refuses a bad value on save. Venue details go through it: name, legal
-name, timezone. A venue's name readable by any paired device.
-`settings.edit`. Go tests. What exists: `UpdateVenue` in
-`internal/db/queries/venues.sql` (no route calls it); the keys are
-constants in `internal/service/order/venue.go`,
-`internal/service/shift/tips.go` and `count.go`; route pattern as in
-`internal/api/printers.go`. Leave tax, numbering and the day start to
-6b, 6c and 6d.
+**Phase 10, Task 6b: Tax profile and tax classes.** Server. Choose the
+profile and what it needs (registration id, `tax.pricing`,
+`tax.state_code`, `tax.jurisdiction`), checked together per profile as
+`taxesFor` in `internal/service/order/venue.go` does; save the keys
+through `settings.Service.Set` and the profile and registration id with
+`UpdateVenue` (write a query or a method for just those columns).
+Create, rename, re-rate and retire tax classes (`CreateTaxClass` exists,
+nothing else); a rate change is for new lines only. A profile that needs
+HSN reports the items without one. Route pattern as `internal/api/
+printers.go`; add the types to `typescript_test.go`. Go tests.
 
 ## Known broken / in progress
 

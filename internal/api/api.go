@@ -25,6 +25,7 @@ type Server struct {
 	stream     Stream
 	prints     Prints
 	printers   Printers
+	settings   Settings
 	menuEditor MenuEditor
 	stock      Stock
 	people     People
@@ -115,6 +116,7 @@ func (s *Server) routes() http.Handler {
 	s.mountStream(mux)
 	s.mountPrints(mux)
 	s.mountPrinters(mux)
+	s.mountSettings(mux)
 	s.mountMenuEditor(mux)
 	s.mountStock(mux)
 	s.mountPeople(mux)

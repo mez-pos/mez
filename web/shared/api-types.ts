@@ -116,7 +116,9 @@ export type ErrorCode =
   | 'beyond_your_permissions'
   | 'last_staff_manager'
   | 'invalid_person'
-  | 'invalid_filter';
+  | 'invalid_filter'
+  | 'invalid_setting'
+  | 'venue_not_found';
 
 export type OrderStatus =
   | 'open'
@@ -1068,6 +1070,35 @@ export interface PrintersResponse {
 
 export interface TestPageResponse {
   job_id: number;
+}
+
+export interface VenueDetailsRequest {
+  name: string;
+  legal_name: string;
+  timezone: string;
+}
+
+export interface VenueNameResponse {
+  name: string;
+}
+
+export interface SettingsVenueResponse {
+  name: string;
+  legal_name: string;
+  currency: string;
+  timezone: string;
+}
+
+export interface SettingEntryResponse {
+  key: string;
+  value: string;
+  set: boolean;
+  default: string;
+}
+
+export interface SettingsResponse {
+  venue: SettingsVenueResponse;
+  settings: SettingEntryResponse[];
 }
 
 export interface MenuCategoryInput {

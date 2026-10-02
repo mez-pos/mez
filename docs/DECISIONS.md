@@ -3657,3 +3657,24 @@ Decision: phase 10's Task 6 is twelve sub-tasks, 6a to 6l, in
 Because: the task lists eleven areas; three have no server at all.
 Cost: phase 10 cannot be ticked until 6l is built or moved, and its
 done-when does not need backups. The owner decides which (STATE.md).
+
+## ADR-130 - Settings: a key registry, and no generic write route
+2026-10 · Status: accepted.
+Decision: `internal/service/settings` holds every key the code reads from
+the `settings` table, each with its default and a check of its value alone.
+`Set` refuses an unknown key or a bad value and saves all or none; an empty
+value clears a key back to its default.
+  - **No HTTP route writes keys yet.** Only venue details are editable over
+    HTTP (`PUT /api/v1/settings/venue`). A generic key write would let a
+    client save a GST profile's state code and not its registration id.
+    Tasks 6b to 6d each add a route that checks their keys together, then
+    calls `Set`.
+  - **`GET /api/v1/settings`** lists every key with its value, whether it
+    is set, and its default, beside the venue. **`GET /api/v1/venue`**
+    gives a paired device the name alone, for the lock screen.
+  - **Defaults are stated twice**: in the registry, for display, and where
+    each key is read (`order/venue.go`, `shift`). A test checks each default
+    passes its own check; nothing checks the two agree. 6d, which moves the
+    day start into a setting, should make the readers use the registry.
+Because: a bad value should be refused when saved, not when a bill is paid.
+Cost: a setting changed by hand in the database still fails late, as before.

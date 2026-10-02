@@ -134,7 +134,7 @@ var errorCodes = []ErrorCode{
 	CodeStockItemNotFound, CodeStockItemRetired, CodeStockNameTaken, CodeInvalidStock, CodeModifierNotFound,
 	CodeStockCounted, CodeStockCountStale,
 	CodeStaffNotFound, CodeRoleNotFound, CodeRoleInUse, CodeRoleNameTaken, CodeBeyondYou, CodeLastManager, CodeInvalidPerson,
-	CodeInvalidFilter,
+	CodeInvalidFilter, CodeInvalidSetting, CodeVenueNotFound,
 }
 
 // generate builds the whole file.
@@ -304,6 +304,8 @@ func generate() (*ts.Generator, error) {
 		// Printer settings.
 		printerRequest{}, assignRequest{}, printerResponse{}, lastJobResponse{}, stationPrinterResponse{},
 		printersResponse{}, testPageResponse{},
+		// Venue settings.
+		venueDetailsRequest{}, venueNameResponse{}, settingsVenueResponse{}, settingEntryResponse{}, settingsResponse{},
 		// The menu editor.
 		categoryRequest{}, itemRequest{}, menuOrderRequest{}, menuEditResponse{}, menus.Editor{},
 		menus.Station{}, menus.Course{}, menus.TaxClass{}, menus.Category{}, menus.Item{},

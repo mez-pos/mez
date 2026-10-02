@@ -152,7 +152,7 @@ Phase 09.
   Currency is not a setting: changing it would reinterpret every amount
   recorded, so every screen shows it and none edits it.
 
-  - [ ] **Task 6a: The settings service and venue details.** Server. One
+  - [x] **Task 6a: The settings service and venue details.** Server. One
     read of everything the venue is set to (`GET /api/v1/settings`), and
     one write path for the `settings` table that knows every key and its
     type, so a value that would later fail as a venue config error is
