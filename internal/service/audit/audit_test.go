@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -267,6 +268,80 @@ func TestFiltering(t *testing.T) {
 				t.Errorf("err = %v, want %v", err, tt.is)
 			}
 		})
+	}
+}
+
+func TestTheTrailAsATable(t *testing.T) {
+	f := newFixture(t)
+	f.aDay(t)
+	ctx := context.Background()
+
+	got, err := f.s.Table(ctx, 1, day("2026-10-01", "2026-10-01"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	header := []string{"Trading day", "At", "Kind", "Order", "Item", "Qty", "Amount (INR)", "Reason", "By", "Authorised by"}
+	if !slices.Equal(got.Header, header) {
+		t.Errorf("header %q", got.Header)
+	}
+	if len(got.Rows) != 8 {
+		t.Fatalf("%d rows, want 8", len(got.Rows))
+	}
+	// Without the order's id, which is random. 06:30 UTC is noon in Kolkata.
+	const at = "2026-10-01 12:00:00"
+	for _, want := range [][]string{
+		{"2026-10-01", at, "Void", "Chai", "1", "30.00", "wrong_item", "Asha", "Priya"},
+		{"2026-10-01", at, "Comp", "Vada", "1", "50.00", "regular", "Asha", "Priya"},
+		{"2026-10-01", at, "Discount", "Coffee", "3", "60.00", "happy hour", "Asha", "Priya"},
+		{"2026-10-01", at, "Discount", "", "", "10.00", "loyalty", "Asha", "Asha"},
+		{"2026-10-01", at, "Payment void", "", "", "10.00", "card declined", "Asha", "Priya"},
+		{"2026-10-01", at, "Refund", "", "", "50.00", "cold food", "Asha", "Priya"},
+		{"2026-10-01", at, "Reopen", "", "", "", "wrong tender", "Asha", "Priya"},
+	} {
+		if !slices.ContainsFunc(got.Rows, func(row []string) bool {
+			return row[3] != "" && slices.Equal(slices.Concat(row[:3], row[4:]), want)
+		}) {
+			t.Errorf("no row %q in %q", want, got.Rows)
+		}
+	}
+	if _, err := got.CSV(); err != nil {
+		t.Errorf("as CSV: %v", err)
+	}
+
+	only, err := f.s.Table(ctx, 1, Filter{From: "2026-10-01", To: "2026-10-01", Kind: Void, StaffID: "stf_PRIYA001"})
+	if err != nil || len(only.Rows) != 2 {
+		t.Errorf("the voids Priya authorised: %d rows, err %v; want 2", len(only.Rows), err)
+	}
+	quiet, err := f.s.Table(ctx, 1, day("2026-09-30", "2026-09-30"))
+	if err != nil || quiet.Rows == nil || len(quiet.Rows) != 0 || len(quiet.Header) != len(header) {
+		t.Errorf("a quiet day: %+v, err %v; want the header alone", quiet, err)
+	}
+	if _, err := f.s.Table(ctx, 1, day("2026-10-02", "2026-10-01")); !errors.Is(err, ErrBadFilter) {
+		t.Errorf("backwards: err %v, want ErrBadFilter", err)
+	}
+	if _, err := f.s.Table(ctx, 1, Filter{From: "2026-10-01", To: "2026-10-01", StaffID: "stf_NOBODY01"}); !errors.Is(err, ErrStaffNotFound) {
+		t.Errorf("someone not here: err %v, want ErrStaffNotFound", err)
+	}
+}
+
+// A download is the whole trail: more corrections than two pages hold, and
+// a page size or cursor in the filter is not read.
+func TestTheTableIsNotPaged(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	m := svcorder.Meta{VenueID: 1, ActorID: f.asha, DeviceID: 1}
+	id := must(t)(f.orders.Open(ctx, m, svcorder.OpenOrder{Channel: order.ChannelCounter})).OrderID
+	const n = MaxPage*2 + 5
+	for range n {
+		res := must(t)(f.orders.AddLine(ctx, m, id, line("Chai", 1, 3000)))
+		must(t)(f.orders.VoidLine(ctx, m, id, svcorder.VoidLine{LineID: res.Events[0].Seq, ReasonCode: "wrong_item", AuthorisedBy: f.priya}))
+	}
+	got, err := f.s.Table(ctx, 1, Filter{From: "2026-10-01", To: "2026-10-01", Limit: 3, Before: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Rows) != n {
+		t.Errorf("%d rows, want all %d", len(got.Rows), n)
 	}
 }
 

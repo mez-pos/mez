@@ -92,9 +92,9 @@ func side(date, kind, number, ref string, e entry, debit bool) []string {
 	}
 	row := []string{date, kind, number, ref, e.Name, "", ""}
 	if debit {
-		row[5] = decimal(amount)
+		row[5] = Decimal(amount)
 	} else {
-		row[6] = decimal(amount)
+		row[6] = Decimal(amount)
 	}
 	return row
 }
@@ -122,7 +122,7 @@ func sales(docs []document) Table {
 		row := []string{
 			d.At.Format("2006-01-02"), d.At.Format("15:04"), "Invoice", d.Number, d.Against,
 			string(st.Channel), fmt.Sprint(st.OpenedBy), "", "",
-			decimal(d.Detail.Taxable), decimal(d.Detail.Tax), decimal(d.Detail.Total),
+			Decimal(d.Detail.Taxable), Decimal(d.Detail.Tax), Decimal(d.Detail.Total),
 		}
 		if d.Credit {
 			row[2] = "Credit note"
@@ -134,14 +134,14 @@ func sales(docs []document) Table {
 					discounts += l.Discount.Minor + l.OrderDiscount.Minor
 				}
 			}
-			row[7] = decimal(money.Amount{Minor: gross, Currency: d.Detail.Total.Currency})
-			row[8] = decimal(money.Amount{Minor: discounts, Currency: d.Detail.Total.Currency})
+			row[7] = Decimal(money.Amount{Minor: gross, Currency: d.Detail.Total.Currency})
+			row[8] = Decimal(money.Amount{Minor: discounts, Currency: d.Detail.Total.Currency})
 		}
 		for _, ml := range methodLedgers {
 			cell := ""
 			for _, e := range d.Paid {
 				if e.Name == ml.name {
-					cell = decimal(e.Amount)
+					cell = Decimal(e.Amount)
 				}
 			}
 			row = append(row, cell)

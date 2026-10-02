@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -169,6 +170,48 @@ func TestOneDayLeavesTheOthersOut(t *testing.T) {
 		if s := got.Totals.Sales; s.Bills != tt.bills || s.Total.Minor != tt.total {
 			t.Errorf("%s: %d bills, %s; want %d, %d", tt.day, s.Bills, s.Total, tt.bills, tt.total)
 		}
+	}
+}
+
+func TestASheetOfTheRange(t *testing.T) {
+	f := newFixture(t)
+	f.threeDays(t)
+	ctx := context.Background()
+	q := Query{From: "2026-10-01", To: "2026-10-03"}
+
+	// By name, as the report itself names staff, and in major units.
+	staff, err := f.s.SalesTable(ctx, 1, q, report.SheetStaff)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range [][]string{
+		{"Asha", "2", "320.00", "0.00", "320.00", "0.00", "320.00"},
+		{"Priya", "1", "40.00", "0.00", "40.00", "0.00", "40.00"},
+	} {
+		if !slices.ContainsFunc(staff.Rows, func(row []string) bool { return slices.Equal(row, want) }) {
+			t.Errorf("no row %q in %q", want, staff.Rows)
+		}
+	}
+
+	// The coffee at 01:30 on the 2nd is the 1st's trade.
+	days, err := f.s.SalesTable(ctx, 1, q, report.SheetOverTime)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got [][]string
+	for _, row := range days.Rows {
+		got = append(got, []string{row[0], row[2], row[8]})
+	}
+	want := [][]string{{"2026-10-01", "2", "160.00"}, {"2026-10-02", "0", "0.00"}, {"2026-10-03", "1", "200.00"}}
+	if !slices.EqualFunc(got, want, func(a, b []string) bool { return slices.Equal(a, b) }) {
+		t.Errorf("days %q, want %q", got, want)
+	}
+
+	if _, err := f.s.SalesTable(ctx, 1, q, "profit"); !errors.Is(err, ErrNoSheet) {
+		t.Errorf("a sheet we do not have: err %v, want ErrNoSheet", err)
+	}
+	if _, err := f.s.SalesTable(ctx, 1, Query{From: "2026-10-03", To: "2026-10-01"}, report.SheetItems); !errors.Is(err, ErrBadRange) {
+		t.Errorf("backwards: err %v, want ErrBadRange", err)
 	}
 }
 

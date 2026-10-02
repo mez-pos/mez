@@ -314,3 +314,23 @@ func dump(rows [][]string) string {
 	}
 	return b.String()
 }
+
+func TestTextKeepsAFormulaAsText(t *testing.T) {
+	tests := []struct{ name, in, want string }{
+		{"a name", "Masala Dosa", "Masala Dosa"},
+		{"nothing", "", ""},
+		{"a formula", "=HYPERLINK(\"http://x\")", "'=HYPERLINK(\"http://x\")"},
+		{"a plus", "+1", "'+1"},
+		{"a minus", "-1", "'-1"},
+		{"an at", "@SUM(A1)", "'@SUM(A1)"},
+		{"a tab", "	=1", "'	=1"},
+		{"a sign inside", "half-price", "half-price"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Text(tt.in); got != tt.want {
+				t.Errorf("Text(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}

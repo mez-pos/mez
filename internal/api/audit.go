@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/audit"
 )
 
@@ -14,6 +15,7 @@ import (
 // Task 4c, ADR-117). *audit.Service is the implementation.
 type Audit interface {
 	Trail(ctx context.Context, venueID int64, f audit.Filter) (audit.Page, error)
+	Table(ctx context.Context, venueID int64, f audit.Filter) (export.Table, error)
 }
 
 // WithAudit mounts the trail. It needs WithDevices and WithStaff, and
@@ -32,6 +34,7 @@ func (s *Server) mountAudit(mux *http.ServeMux) {
 		return
 	}
 	mux.Handle("GET /api/v1/audit", s.requireDevice(s.requireStaff(s.requirePermission(auth.PermReportsView, http.HandlerFunc(s.readTrail)))))
+	mux.Handle("GET /api/v1/audit/csv", s.requireDevice(s.requireStaff(s.requirePermission(auth.PermReportsView, http.HandlerFunc(s.readTrailCSV)))))
 }
 
 // readTrail answers ?from=2026-10-01&to=2026-10-07, both trading days and
@@ -67,5 +70,25 @@ func (s *Server) readTrail(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.Header().Set("Cache-Control", "no-store")
 		writeJSON(w, s.log, http.StatusOK, page)
+	}
+}
+
+// readTrailCSV answers the same from, to, staff and kind as readTrail with
+// everything they find as one CSV file: a download is not paged.
+func (s *Server) readTrailCSV(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	f := audit.Filter{From: q.Get("from"), To: q.Get("to"), StaffID: q.Get("staff"), Kind: audit.Kind(q.Get("kind"))}
+	t, err := s.audit.Table(r.Context(), Meta(r).VenueID, f)
+	switch {
+	case errors.Is(err, audit.ErrBadFilter):
+		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
+	case errors.Is(err, audit.ErrStaffNotFound):
+		writeFieldError(w, s.log, http.StatusNotFound, CodeStaffNotFound, "No such person.", "staff")
+	case err != nil:
+		s.log.Error("reading the audit trail as CSV failed", "request_id", RequestID(r.Context()), "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+	default:
+		// The filter was read, so from and to are days and safe in a name.
+		s.writeCSV(w, r, "audit-"+f.From+"-to-"+f.To+".csv", t)
 	}
 }

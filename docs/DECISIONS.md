@@ -3322,3 +3322,41 @@ in the reports for the same day.
 Cost: a range projects every order it touches, each from its first event;
 a year at a busy cafe is some seconds. Stored Z-reports could answer
 whole shifts faster, but not a day that splits a shift or an hour.
+
+## ADR-119 - A report's CSV is its own figures as a table, through the Tally writer
+2026-10 · Status: accepted
+Decision: phase 10, Task 5b serves every report of Task 5a and the audit
+trail as CSV (`GET /api/v1/reports/sales/csv?from=&to=&every=&report=`,
+`GET /api/v1/audit/csv?from=&to=&staff=&kind=`, `reports.view`).
+  - **One CSV writer.** A report becomes an `export.Table`, the header and
+    rows the shift's Tally files already use, and `Table.CSV` writes it
+    (RFC 4180, CRLF). `export.Decimal` is now exported for the amounts.
+  - **A sheet per report.** `report.Result.Table(sheet)`: summary,
+    over_time, items, categories, channels, staff, payments, taxes, hours.
+    It is built from the same `Result` the JSON answers with, so a file
+    cannot disagree with its screen.
+  - **Money in major units, the currency in the header.** A cell is
+    "1285.50"; the column is "Net (INR)". "Named once" is read as once per
+    column, never per cell: a file that is renamed, or a column pasted
+    elsewhere, still says what its numbers are.
+  - **Days are trading days.** Sales over time gives each period's first
+    and last trading day; the heatmap names the trading day's weekday; an
+    audit row has its trading day and its time on the venue's clock, so a
+    void at 01:30 sits under the night it belongs to.
+  - **The audit file is the whole filter, not a page.** `audit.Table`
+    walks the trail's own cursor, a hundred at a time, projecting each
+    order once across the pages. `before` and `limit` are not read.
+  - **Typed text cannot run as a formula.** `export.Text` puts an
+    apostrophe before a cell that starts with =, +, - or @ (an item's
+    name, a reason, a person's name). Amounts are not passed through it.
+  - **JSON, not the file.** As with a shift's exports (ADR-104) the answer
+    is `{filename, content_type, text}`, read by the signed-in client and
+    saved by the screen. The text opens with a UTF-8 byte order mark:
+    without one Excel reads the file in the machine's code page and a
+    Devanagari item name arrives as noise.
+Because: an owner hands these to an accountant, who opens them in a
+spreadsheet; the numbers must sum there and match the screen.
+Cost: a sheet reads the whole range again, as the JSON does; nine sheets
+are nine reads. The Tally files are not passed through `export.Text` and
+carry no byte order mark: they are written at the close and Tally's
+import has not been tried with either.

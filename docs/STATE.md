@@ -13,28 +13,33 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 5a: sales reports on the server** (ADR-118).
-`GET /api/v1/reports/sales?from=&to=&every=day|week|month` (`reports.view`):
-a range of trading days added up through the Z-report's own builder
-(`zreport.BuildEach`, one pass): the range's totals (sales, by item, by
-category, by channel, by staff with names, payments, discounts, voids,
-comps, credit notes, taxes), sales over time with empty periods, and an
-hour by weekday heatmap. `internal/domain/report`, `internal/service/reports`,
-migration 00027. Tried against a real binary's data.
+**Phase 10, Task 5b: CSV on the server** (ADR-119).
+`GET /api/v1/reports/sales/csv?from=&to=&every=&report=` (summary,
+over_time, items, categories, channels, staff, payments, taxes, hours) and
+`GET /api/v1/audit/csv?from=&to=&staff=&kind=` (the whole filter, not a
+page), both `reports.view`, both answering `CsvResponse` `{filename,
+content_type, text}` as the shift exports do. Tables are `export.Table`
+(the Tally writer); `report.Result.Table`, `audit.Service.Table`. Go
+tests only: not tried against a real binary or opened in a spreadsheet.
 
 ## Next task
 
-**Phase 10, Task 5b: CSV on the server.** Every report of 5a, and the
-audit trail, as a CSV download: money in major units with the currency
-named once, days as trading days. Look at how `internal/domain/export`
-writes the Tally files before writing a second CSV writer.
+**Phase 10, Task 5c: The Sales screen.** Spec first
+(`docs/design/screens/backoffice-reports.md`). A range picker, the
+headline figures, sales over time drawn without a chart library, payment
+and channel mix. The CSV buttons save `CsvResponse.text` as a Blob under
+`filename`, as `web/backoffice/src/reports/ExportsPanel.tsx` saves a
+shift's exports.
 
 ## Known broken / in progress
 
 - Audit (ADR-117): discounts and refunds recorded before Task 4c show
   "Not recorded" for who authorised them. The Person filter lists active
   staff only (it reads `GET /api/v1/staff`); a deactivated person's rows
-  show by name but cannot be filtered on. The trail has no CSV export yet.
+  show by name but cannot be filtered on. The audit screen has no CSV
+  button yet (the route exists, ADR-119).
+- CSV (ADR-119): each sheet reads the range again. The Tally files skip
+  the formula guard and the byte order mark the report files have.
 - Reports (ADR-118): no screen yet (5c, 5d). A range projects every order
   it touches from its first event; a year at a busy venue may take seconds.
   Items and categories are named as the menu stands now. The day start is

@@ -15,6 +15,7 @@ import (
 
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/report"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
@@ -24,6 +25,9 @@ import (
 
 // ErrBadRange is a range the reports cannot be read over.
 var ErrBadRange = report.ErrBadRange
+
+// ErrNoSheet is a report the range does not have as a table.
+var ErrNoSheet = report.ErrNoSheet
 
 // Service reads the reports.
 type Service struct {
@@ -98,6 +102,20 @@ func (s *Service) Sales(ctx context.Context, venueID int64, qy Query) (Sales, er
 		return Sales{}, err
 	}
 	return named(res, names), nil
+}
+
+// SalesTable is one of a range's reports as a table, for a CSV download
+// (phase 10, Task 5b, ADR-119): the same figures Sales answers with.
+func (s *Service) SalesTable(ctx context.Context, venueID int64, qy Query, sheet report.Sheet) (export.Table, error) {
+	// Before the orders are read: a wrong name should not cost a year of them.
+	if err := sheet.Check(); err != nil {
+		return export.Table{}, err
+	}
+	res, err := s.Sales(ctx, venueID, qy)
+	if err != nil {
+		return export.Table{}, err
+	}
+	return res.Table(sheet)
 }
 
 // instants is the UTC span the range's trading days run over, to read the

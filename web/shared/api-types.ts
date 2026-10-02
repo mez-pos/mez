@@ -286,6 +286,17 @@ export type ReportEvery =
   | 'week'
   | 'month';
 
+export type ReportSheet =
+  | 'summary'
+  | 'over_time'
+  | 'items'
+  | 'categories'
+  | 'channels'
+  | 'staff'
+  | 'payments'
+  | 'taxes'
+  | 'hours';
+
 export type OrderEventType =
   | 'order.opened'
   | 'line.added'
@@ -1710,6 +1721,12 @@ export interface ExportResponse {
   size: number;
   created_at: string;
   shift_id: number;
+  content_type: string;
+  text: string;
+}
+
+export interface CsvResponse {
+  filename: string;
   content_type: string;
   text: string;
 }

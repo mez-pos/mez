@@ -221,9 +221,9 @@ func byMethod(sums map[order.PaymentMethod]int64, currency string, sign int64) [
 
 func neg(a money.Amount) money.Amount { return money.Amount{Minor: -a.Minor, Currency: a.Currency} }
 
-// decimal is an amount as a plain decimal, "-285.30", with no symbol or
+// Decimal is an amount as a plain decimal, "-285.30", with no symbol or
 // grouping: what a spreadsheet and Tally read as a number.
-func decimal(a money.Amount) string {
+func Decimal(a money.Amount) string {
 	exp := money.Exponent(a.Currency)
 	minor := a.Minor
 	sign := ""
@@ -238,6 +238,18 @@ func decimal(a money.Amount) string {
 		scale *= 10
 	}
 	return fmt.Sprintf("%s%d.%0*d", sign, minor/scale, exp, minor%scale)
+}
+
+// Text is a cell of text someone typed (an item's name, a reason) made safe
+// for a spreadsheet, which runs a cell starting with =, +, - or @ as a
+// formula: such a cell gets a leading apostrophe, which a spreadsheet reads
+// as "this is text". Amounts are never passed through it: "-50.00" is a
+// number.
+func Text(s string) string {
+	if s != "" && strings.ContainsRune("=+-@\t\r", rune(s[0])) {
+		return "'" + s
+	}
+	return s
 }
 
 // rateText is a tax rate as the register prints it: "5%".

@@ -133,19 +133,54 @@ type Page struct {
 // Trail reads a page of corrections.
 func (s *Service) Trail(ctx context.Context, venueID int64, f Filter) (Page, error) {
 	q := s.db.Queries()
-	from, to, err := rangeOf(ctx, q, venueID, f.From, f.To)
+	ask, err := asked(ctx, q, venueID, f)
 	if err != nil {
 		return Page{}, err
 	}
-	staff, err := staffOf(ctx, q, venueID)
+	p := ask.params
+	counts, err := q.AuditCounts(ctx, gen.AuditCountsParams{VenueID: venueID, FromAt: p.FromAt, ToAt: p.ToAt, StaffID: p.StaffID})
+	if err != nil {
+		return Page{}, fmt.Errorf("audit: counting the trail: %w", err)
+	}
+
+	// Every kind, none included, so a reader need not tell absent from zero.
+	out := Page{Counts: make(map[Kind]int64, len(eventOf))}
+	for _, k := range Kinds() {
+		out.Counts[k] = 0
+	}
+	for _, c := range counts {
+		out.Counts[kindOf(c.Type)] = c.N
+	}
+	out.Entries, out.NextBefore, err = s.entries(ctx, q, ask, map[int64]order.State{})
 	if err != nil {
 		return Page{}, err
+	}
+	return out, nil
+}
+
+// asking is a filter made ready to read with: the query's parameters, the
+// page size, and the venue's staff to name people from.
+type asking struct {
+	params gen.AuditEventsParams
+	limit  int
+	staff  people
+}
+
+// asked checks a filter and makes it ready.
+func asked(ctx context.Context, q *gen.Queries, venueID int64, f Filter) (asking, error) {
+	from, to, err := rangeOf(ctx, q, venueID, f.From, f.To)
+	if err != nil {
+		return asking{}, err
+	}
+	staff, err := staffOf(ctx, q, venueID)
+	if err != nil {
+		return asking{}, err
 	}
 	staffID := int64(0)
 	if f.StaffID != "" {
 		p, ok := staff.byPublic[f.StaffID]
 		if !ok {
-			return Page{}, fmt.Errorf("%w: %s", ErrStaffNotFound, f.StaffID)
+			return asking{}, fmt.Errorf("%w: %s", ErrStaffNotFound, f.StaffID)
 		}
 		staffID = p
 	}
@@ -153,7 +188,7 @@ func (s *Service) Trail(ctx context.Context, venueID int64, f Filter) (Page, err
 	if f.Kind != "" {
 		et, ok := eventOf[f.Kind]
 		if !ok {
-			return Page{}, fmt.Errorf("%w: kind %q", ErrBadFilter, f.Kind)
+			return asking{}, fmt.Errorf("%w: kind %q", ErrBadFilter, f.Kind)
 		}
 		kind = string(et)
 	}
@@ -161,48 +196,45 @@ func (s *Service) Trail(ctx context.Context, venueID int64, f Filter) (Page, err
 	if limit <= 0 || limit > MaxPage {
 		limit = MaxPage
 	}
+	return asking{
+		params: gen.AuditEventsParams{
+			VenueID: venueID, FromAt: from, ToAt: to, Kind: kind, StaffID: staffID, BeforeID: f.Before, MaxRows: int64(limit + 1),
+		},
+		limit: limit, staff: staff,
+	}, nil
+}
 
-	rows, err := q.AuditEvents(ctx, gen.AuditEventsParams{
-		VenueID: venueID, FromAt: from, ToAt: to, Kind: kind, StaffID: staffID, BeforeID: f.Before, MaxRows: int64(limit + 1),
-	})
+// entries reads one page, newest first, and the cursor for the next, 0 when
+// there is none. states holds the orders already projected, so a caller
+// reading page after page projects each order once.
+func (s *Service) entries(ctx context.Context, q *gen.Queries, ask asking, states map[int64]order.State) ([]Entry, int64, error) {
+	rows, err := q.AuditEvents(ctx, ask.params)
 	if err != nil {
-		return Page{}, fmt.Errorf("audit: reading the trail: %w", err)
+		return nil, 0, fmt.Errorf("audit: reading the trail: %w", err)
 	}
-	counts, err := q.AuditCounts(ctx, gen.AuditCountsParams{VenueID: venueID, FromAt: from, ToAt: to, StaffID: staffID})
-	if err != nil {
-		return Page{}, fmt.Errorf("audit: counting the trail: %w", err)
+	next := int64(0)
+	if len(rows) > ask.limit {
+		rows = rows[:ask.limit]
+		next = rows[ask.limit-1].ID
 	}
-
-	// Every kind, none included, so a reader need not tell absent from zero.
-	out := Page{Entries: make([]Entry, 0, len(rows)), Counts: make(map[Kind]int64, len(eventOf))}
-	for _, k := range Kinds() {
-		out.Counts[k] = 0
-	}
-	for _, c := range counts {
-		out.Counts[kindOf(c.Type)] = c.N
-	}
-	if len(rows) > limit {
-		rows = rows[:limit]
-		out.NextBefore = rows[limit-1].ID
-	}
-	states := map[int64]order.State{}
+	out := make([]Entry, 0, len(rows))
 	for _, r := range rows {
 		st, ok := states[r.OrderID]
 		if !ok {
-			res, err := s.orders.Order(ctx, venueID, r.OrderID)
+			res, err := s.orders.Order(ctx, ask.params.VenueID, r.OrderID)
 			if err != nil {
-				return Page{}, fmt.Errorf("audit: reading order %s: %w", r.OrderPublicID, err)
+				return nil, 0, fmt.Errorf("audit: reading order %s: %w", r.OrderPublicID, err)
 			}
 			st = res.State
 			states[r.OrderID] = st
 		}
-		e, err := entryOf(r, st, staff)
+		e, err := entryOf(r, st, ask.staff)
 		if err != nil {
-			return Page{}, err
+			return nil, 0, err
 		}
-		out.Entries = append(out.Entries, e)
+		out = append(out, e)
 	}
-	return out, nil
+	return out, next, nil
 }
 
 // entryOf words one event, with what its order's projection says it was worth.

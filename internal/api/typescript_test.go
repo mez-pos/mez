@@ -242,6 +242,7 @@ func generate() (*ts.Generator, error) {
 		{"WasteReason", domstock.Expired, asStrings(domstock.WasteReasons())},
 		{"AuditKind", audit.Void, asStrings(audit.Kinds())},
 		{"ReportEvery", report.Day, asStrings(report.Everys())},
+		{"ReportSheet", report.SheetSummary, asStrings(report.Sheets())},
 		{"OrderEventType", order.TypeOrderOpened, eventTypeNames()},
 		{"StreamMessageType", hub.MsgHello, asStrings([]hub.MessageType{
 			hub.MsgHello, hub.MsgSubscribe, hub.MsgWelcome, hub.MsgEvent, hub.MsgCaughtUp,
@@ -321,6 +322,8 @@ func generate() (*ts.Generator, error) {
 		svcshift.PoolMember{}, poolRequest{}, tipMemberResponse{}, tipPoolResponse{},
 		// Exports.
 		exportFileResponse{}, exportsResponse{}, exportResponse{},
+		// Reports as CSV.
+		csvResponse{},
 		// The kitchen display.
 		kitchenLineResponse{}, kitchenTicketResponse{}, kitchenBoardResponse{},
 		// Credit notes.

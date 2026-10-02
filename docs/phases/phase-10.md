@@ -99,7 +99,7 @@ Phase 09.
     over time (by day, week or month), product mix, category performance,
     payment mix, channel mix, staff performance and an hour by weekday
     heatmap. `reports.view`. Go tests.
-  - [ ] **Task 5b: CSV on the server.** Every report of 5a, and the audit
+  - [x] **Task 5b: CSV on the server.** Every report of 5a, and the audit
     trail, as a CSV download a spreadsheet opens: money in major units with
     the currency named once, days as trading days.
   - [ ] **Task 5c: The Sales screen.** Spec first (`backoffice-reports.md`).

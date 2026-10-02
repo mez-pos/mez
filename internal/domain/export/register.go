@@ -78,7 +78,7 @@ func fineRows(in Input, d document, lt tax.LineTax, perAuthority, hasExempt bool
 		"place_of_supply": in.Taxes.Venue.StateCode,
 		"hsn":             lt.HSN,
 		"rate":            rateText(lt.Rate),
-		"invoice_value":   decimal(d.Detail.Total),
+		"invoice_value":   Decimal(d.Detail.Total),
 	}
 	exempt := len(lt.Components) == 0
 	if perAuthority {
@@ -155,7 +155,7 @@ func group(rows []fineRow, keys []string, currency string) [][]string {
 				d++
 				continue
 			}
-			row[i] = decimal(money.Amount{Minor: g.amounts[k], Currency: currency})
+			row[i] = Decimal(money.Amount{Minor: g.amounts[k], Currency: currency})
 		}
 		out = append(out, row)
 	}
