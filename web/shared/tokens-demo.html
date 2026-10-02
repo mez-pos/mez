@@ -15,9 +15,9 @@
   body { margin: 0; }
   .grounds { display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); }
   .ground { padding: 32px; min-height: 100vh; box-sizing: border-box; }
-  h1 { font-family: var(--font-serif); font-weight: 400; font-size: var(--text-total); margin: 0 0 4px; }
+  h1 { font-family: var(--font-serif); font-weight: 600; color: var(--fg-heading); font-size: var(--text-total); margin: 0 0 4px; }
   h2 { font-size: var(--text-meta); letter-spacing: var(--tracking-meta); text-transform: uppercase;
-       color: var(--fg-faint); font-weight: 600; margin: 32px 0 10px; }
+       color: var(--fg-muted); font-weight: 700; margin: 32px 0 10px; }
   .meta { font-size: var(--text-meta); letter-spacing: var(--tracking-meta); text-transform: uppercase; color: var(--fg-faint); }
   .row { display: flex; flex-wrap: wrap; gap: 8px; }
   .swatch { width: 112px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--raised); }
@@ -28,22 +28,22 @@
   .line-sample { height: 24px; border-bottom: 1px solid; }
   .type-row { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
   .mono { font-family: var(--font-mono); }
-  .serif { font-family: var(--font-serif); }
+  .serif { font-family: var(--font-serif); font-weight: 600; color: var(--fg-heading); }
   table.money { border-collapse: collapse; font-family: var(--font-mono); font-size: var(--text-base); }
   table.money td { padding: 4px 0 4px 24px; text-align: right; border-bottom: 1px solid var(--line-soft); }
   table.money td:first-child { padding-left: 0; text-align: left; font-family: var(--font-sans); color: var(--fg-2); }
-  .tap { display: inline-flex; align-items: center; justify-content: center; padding: 0 16px;
-         border-radius: var(--radius); font-size: var(--text-base); font-weight: 600; box-sizing: border-box; }
-  .tap-min { height: var(--tap-min); min-width: var(--tap-min); background: var(--raised-high); border: 1px solid var(--line-strong); color: var(--fg); }
-  .tap-charge { height: var(--tap-charge); background: var(--accent); color: var(--accent-fg); font-family: var(--font-mono); }
+  .tap { display: inline-flex; align-items: center; justify-content: center; padding: 0 20px;
+         border-radius: var(--radius-pill); font-size: var(--text-base); font-weight: 600; box-sizing: border-box; }
+  .tap-min { height: var(--tap-min); min-width: var(--tap-min); background: var(--raised); border: 1px solid var(--line-strong); color: var(--fg); }
+  .tap-charge { height: var(--tap-charge); background: var(--accent); color: var(--accent-fg); box-shadow: var(--shadow-action); }
   .tap-charge:hover { background: var(--accent-hover); }
   .space { display: flex; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: var(--text-sm); color: var(--fg-muted); }
   .space i { display: block; height: 10px; background: var(--accent); }
   .radius { width: 56px; height: 56px; background: var(--raised-high); border: 1px solid var(--line-strong); }
   .status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line);
-            border-radius: var(--radius-tight); font-size: var(--text-sm); }
+            border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 600; }
   .status::before { content: ""; width: 8px; height: 8px; border-radius: var(--radius-round); background: currentColor; }
-  .pchip { display: inline-block; padding: 4px 10px; border: 1px solid; border-radius: var(--radius-tight); font-size: var(--text-sm); }
+  .pchip { display: inline-block; padding: 4px 12px; border: 1px solid; border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -57,25 +57,27 @@
   // roles as they resolve on that ground.
   const palette = {
     ink: {
-      Surfaces: ["ink", "ink-chrome", "ink-raised", "ink-raised-high"],
-      Text: ["ink-text", "ink-text-2", "ink-text-3", "ink-text-muted", "ink-text-faint"],
-      Accent: ["vermilion", "vermilion-hover", "vermilion-on"],
-      Status: ["sage", "gold-ink", "danger", "slate"],
+      Surfaces: ["night", "night-chrome", "night-raised", "night-raised-high"],
+      Text: ["night-text", "night-text-2", "night-text-3", "night-text-muted"],
+      Action: ["green", "green-press", "terracotta", "mustard", "brick"],
+      Status: ["night-green-fill", "night-green-ink", "night-brick-fill", "night-brick-ink", "night-late", "night-mustard-fill", "night-mustard-ink", "night-info-fill", "night-info-ink"],
     },
     paper: {
-      Surfaces: ["paper", "paper-raised", "paper-sunken"],
-      Text: ["paper-text", "paper-text-2", "paper-text-3", "paper-text-muted", "paper-text-faint"],
-      Accent: ["vermilion-paper", "vermilion-paper-text", "vermilion-on"],
-      Status: ["sage-paper", "gold", "danger-paper", "slate"],
+      Surfaces: ["parchment", "card", "card-hover", "well"],
+      Text: ["heading", "body", "body-2", "muted", "faint"],
+      Action: ["green", "green-press", "green-tint", "terracotta", "terracotta-press", "terracotta-tint", "mustard", "brick", "brick-tint", "on-fill"],
+      Status: ["free-fill", "free-ink", "occupied-fill", "occupied-ink", "bill-fill", "bill-ink", "cleaning-fill", "cleaning-ink", "info-fill", "info-ink", "reserved-fill", "reserved-ink"],
     },
   };
-  const hairlines = { ink: ["ink-hairline", "ink-hairline-2", "ink-hairline-3"], paper: ["paper-hairline", "paper-hairline-soft"] };
-  const roles = ["canvas", "chrome", "raised", "raised-high", "sunken", "fg", "fg-2", "fg-3", "fg-muted", "fg-faint",
-                 "line", "line-soft", "line-strong", "line-focus", "accent", "accent-hover", "accent-fg", "accent-text",
+  const hairlines = { ink: ["night-line", "night-line-strong"], paper: ["hairline", "hairline-soft", "hairline-strong"] };
+  const roles = ["canvas", "chrome", "raised", "raised-high", "sunken", "fg", "fg-2", "fg-3", "fg-muted", "fg-faint", "fg-heading",
+                 "line", "line-soft", "line-strong", "line-focus", "accent", "accent-hover", "accent-fg", "accent-text", "accent-tint",
+                 "attention", "attention-hover", "attention-text", "attention-tint", "highlight", "danger-fill", "danger-tint",
                  "status-success", "status-warning", "status-danger", "status-info"];
   const typeScale = ["text-meta", "text-sm", "text-base", "text-lg", "text-xl", "text-total"];
   const spacing = [2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 48, 64];
-  const radii = ["radius-none", "radius-tight", "radius", "radius-round"];
+  const radii = ["radius-none", "radius-tight", "radius", "radius-card", "radius-sheet", "radius-pill", "radius-round"];
+  const shadows = ["shadow-rest", "shadow-card", "shadow-modal", "shadow-action"];
   const chips = ["neutral", "success", "warning", "danger", "accent", "info"];
 
   const el = (tag, attrs = {}, ...kids) => {
@@ -98,8 +100,8 @@
 
   function render(ground) {
     const g = ground.dataset.ground;
-    ground.append(el("h1", {}, g === "ink" ? "Ink" : "Paper"),
-      el("div", { class: "meta" }, g === "ink" ? "Terminal · dark · data-surface=ink" : "Back office, guest · light · data-surface=paper"));
+    ground.append(el("h1", {}, g === "ink" ? "Espresso night" : "Paper"),
+      el("div", { class: "meta" }, g === "ink" ? "Kitchen display · dark · data-surface=ink" : "Till, back office, guest · light · data-surface=paper"));
 
     for (const [group, names] of Object.entries(palette[g])) {
       ground.append(heading(`Palette · ${group}`), el("div", { class: "row" }, ...names.map(n => swatch(ground, n))));
@@ -123,16 +125,16 @@
     }
 
     ground.append(heading("Families"));
-    ground.append(el("div", { class: "serif", style: "font-size: var(--text-xl)" }, "Instrument Serif · Good evening, table four"));
-    ground.append(el("div", { class: "serif", style: "font-size: var(--text-xl); font-style: italic" }, "Instrument Serif italic · ₹ 450"));
+    ground.append(el("div", { class: "serif", style: "font-size: var(--text-xl)" }, "Fraunces 600 · Good evening, table four · ₹450"));
     for (const w of [400, 500, 600, 700]) {
-      ground.append(el("div", { style: `font-weight: ${w}` }, `Archivo ${w} · Modify  Void  Discount  Note`));
+      ground.append(el("div", { style: `font-weight: ${w}` }, `DM Sans ${w} · Modify  Void  Discount  Note`));
     }
     for (const w of [400, 500, 600, 700]) {
-      ground.append(el("div", { class: "mono", style: `font-weight: ${w}` }, `JetBrains Mono ${w} · 0123456789 ₹ € £`));
+      ground.append(el("div", { class: "mono", style: `font-weight: ${w}` }, `Archivo ${w} · 0123456789 ₹ € £`));
     }
+    ground.append(el("div", { style: "font-family: var(--font-script); font-size: 26px; color: var(--attention-text)" }, "Caveat · Same Tables. New Stories."));
 
-    ground.append(heading("Numbers: mono, tabular, right-aligned"));
+    ground.append(heading("Numbers: Archivo, tabular, right-aligned"));
     const rows = [["Cappuccino ×2", "₹360.00"], ["Avocado toast", "₹1,120.00"], ["Service 10%", "₹148.00"], ["GST 5%", "₹81.40"], ["Total", "₹1,709.40"]];
     ground.append(el("table", { class: "money" }, ...rows.map(([a, b]) => el("tr", {}, el("td", {}, a), el("td", {}, b)))));
 
@@ -140,7 +142,7 @@
       el("div", { class: "mono", style: "color: var(--accent-text); font-size: var(--text-lg)" }, "₹1,709.40 due"));
 
     ground.append(heading("Status: colour and word, never colour alone"));
-    const statuses = [["fg-muted", "Queued"], ["status-warning", "Firing"], ["status-success", "Ready"], ["accent-text", "Late"], ["status-info", "Reserved"], ["status-danger", "Refund"]];
+    const statuses = [["fg-muted", "Queued"], ["status-warning", "Firing"], ["status-success", "Ready"], ["attention-text", "Late"], ["status-info", "Reserved"], ["status-danger", "Refund"]];
     ground.append(el("div", { class: "row" }, ...statuses.map(([c, w]) => el("span", { class: "status", style: `color: var(--${c})` }, w)),
       el("span", { class: "status", style: "color: var(--fg-muted); text-decoration: line-through" }, "Void")));
 
@@ -149,7 +151,7 @@
       style: `background: var(--chip-${c}-bg); border-color: var(--chip-${c}-border); color: var(--chip-${c}-fg)` },
       c[0].toUpperCase() + c.slice(1)))));
 
-    ground.append(heading("Touch: tap-min 44 · tap-charge 58 · tap-gap 8"));
+    ground.append(heading("Touch: tap-min 48 · tap-charge 56 · tap-gap 8"));
     ground.append(el("div", { class: "row", style: "gap: var(--tap-gap); align-items: center" },
       el("span", { class: "tap tap-min" }, "Modify"), el("span", { class: "tap tap-min" }, "Void"),
       el("span", { class: "tap tap-min" }, "7"), el("span", { class: "tap tap-charge" }, "Charge ₹1,709.40")));
@@ -162,8 +164,13 @@
       el("div", { class: "radius", style: `border-radius: var(--${r})` }),
       el("div", { class: "meta", style: "margin-top: 6px" }, `${r} · ${read(ground, r)}`)))));
 
+    ground.append(heading("Elevation"));
+    ground.append(el("div", { class: "row", style: "gap: 24px; padding: 8px 0 24px" }, ...shadows.map(n => el("div", {},
+      el("div", { class: "radius", style: `width: 96px; border-radius: var(--radius-card); background: var(--raised); box-shadow: var(--${n})` }),
+      el("div", { class: "meta", style: "margin-top: 10px" }, n)))));
+
     ground.append(heading("Form control floor, 16px"));
-    ground.append(el("input", { value: "Search the menu", style: "background: var(--raised-high); color: var(--fg); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 10px 12px; font-family: var(--font-sans)" }));
+    ground.append(el("input", { value: "Search the menu", style: "background: var(--raised); color: var(--fg); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 12px 16px; font-family: var(--font-sans)" }));
   }
 
   document.querySelectorAll("[data-ground]").forEach(render);

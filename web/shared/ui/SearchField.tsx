@@ -2,7 +2,7 @@
 //
 // - Typing reports after `debounceMs` of quiet, so a menu of 400 items is not
 //   filtered on every keystroke of "cappuccino".
-// - Clear is a 44px control, and reports the empty query at once.
+// - Clear is a full tap target, and reports the empty query at once.
 // - Escape clears; Escape on an empty field leaves it. Enter reports at once
 //   and leaves the field, which drops a tablet's on-screen keyboard.
 // - The input's text is 16px at least (tokens.css), so iOS does not zoom.
@@ -58,7 +58,7 @@ export function SearchField({ onSearch, label, debounceMs = 200, initialQuery = 
 
   return (
     <div className={cx("relative flex items-center", className)}>
-      <SearchIcon className="pointer-events-none absolute left-3 text-fg-muted" />
+      <SearchIcon className="pointer-events-none absolute left-4 text-fg-muted" />
       <input
         ref={input}
         type="search"
@@ -71,8 +71,8 @@ export function SearchField({ onSearch, label, debounceMs = 200, initialQuery = 
         autoComplete="off"
         spellCheck={false}
         className={cx(
-          "h-tap w-full rounded border border-line-strong bg-raised-high pl-10 pr-12 text-fg placeholder:text-fg-faint",
-          "outline-offset-2 outline-line-focus focus-visible:outline-2",
+          "h-tap w-full rounded-pill border border-line-strong bg-raised pl-11 pr-12 text-fg placeholder:text-fg-muted",
+          "outline-accent-tint focus-visible:border-accent focus-visible:outline-3",
           // The browser's own clear button would be a second, smaller one.
           "[&::-webkit-search-cancel-button]:appearance-none",
         )}

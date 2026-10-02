@@ -21,7 +21,7 @@ const dots: Record<ChipTone, string> = {
   success: "text-success",
   warning: "text-warning",
   danger: "text-danger",
-  accent: "text-accent",
+  accent: "text-attention",
   info: "text-info",
 };
 

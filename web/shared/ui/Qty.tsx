@@ -1,4 +1,4 @@
-// A quantity: mono and tabular, with − and + as full tap targets. Without
+// A quantity: tabular, in one pill, with − and + as full tap targets. Without
 // onChange it is a plain figure, for a line that can no longer change.
 //
 // It reports the next value and holds none itself: an order line's quantity
@@ -18,21 +18,21 @@ export interface QtyProps {
 }
 
 export function Qty({ value, onChange, bounds = defaultQtyBounds, label, className }: QtyProps) {
-  const figure = <span className="min-w-8 px-1 text-center font-mono tabular-nums text-lg">{value}</span>;
+  const figure = <span className="min-w-8 px-1 text-center font-mono text-lg font-semibold tabular-nums">{value}</span>;
   if (!onChange) {
     return <span className={cx("inline-flex items-center", className)}>{figure}</span>;
   }
 
   const step = (by: 1 | -1) => () => onChange(stepQty(value, by, bounds));
-  const button = "inline-flex size-tap items-center justify-center rounded border border-line-strong bg-raised-high text-xl text-fg outline-offset-2 outline-line-focus focus-visible:outline-2 disabled:opacity-40";
+  const button = "inline-flex size-tap items-center justify-center rounded-pill text-xl hover:bg-raised-high outline-line-focus focus-visible:outline-2 disabled:opacity-40";
 
   return (
-    <span role="group" aria-label={label ? `Quantity of ${label}` : "Quantity"} className={cx("inline-flex items-center gap-tap-gap", className)}>
-      <button type="button" aria-label="Decrease" className={button} onClick={step(-1)} disabled={!canStep(value, -1, bounds)}>
+    <span role="group" aria-label={label ? `Quantity of ${label}` : "Quantity"} className={cx("inline-flex items-center rounded-pill border border-line-strong bg-raised", className)}>
+      <button type="button" aria-label="Decrease" className={cx(button, "text-fg")} onClick={step(-1)} disabled={!canStep(value, -1, bounds)}>
         {"−"}
       </button>
       <output aria-live="polite">{figure}</output>
-      <button type="button" aria-label="Increase" className={button} onClick={step(1)} disabled={!canStep(value, 1, bounds)}>
+      <button type="button" aria-label="Increase" className={cx(button, "text-accent-text")} onClick={step(1)} disabled={!canStep(value, 1, bounds)}>
         +
       </button>
     </span>

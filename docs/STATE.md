@@ -13,8 +13,13 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Redesign, Tasks 1 and 2** (`docs/phases/redesign.md`, ADR-127,
-ADR-128). The product is renamed mez, all the way down. The mez design
+**Redesign, Task 3: the remaining primitives** (`docs/phases/redesign.md`).
+NumPad (borderless well keys), PIN dots, Qty (one pill), SearchField,
+Toast (green for good news, a mustard rule for a warning), EmptyState,
+DataTable (caps headers, no stripes, hover fill), ConnectionIndicator,
+and `tokens-demo.html` on both grounds. Buttons no longer wrap. Seen in
+a browser: lock, register, the back office menu, the demo page. Before
+it, Tasks 1 and 2 (ADR-127, ADR-128). The product is renamed mez, all the way down. The mez design
 language is in: `tokens.css`, the preset, Fraunces, DM Sans and Caveat,
 the recoloured logo, and the shared primitives. The till is now paper;
 the kitchen alone is espresso night. Seen in a browser against a real
@@ -26,7 +31,7 @@ Reports (ADR-126).
 
 Either, as the owner chooses:
 
-**Redesign, Task 3: the remaining primitives** (`docs/phases/redesign.md`).
+**Redesign, Task 4: register and tender** (`docs/phases/redesign.md`).
 
 **Phase 10, Task 6: Settings.** Far larger than one session: split it
 first, commit the split, and stop. Known broken below lists what earlier
@@ -37,10 +42,12 @@ the day start, variance threshold and tip rule are constants;
 ## Known broken / in progress
 
 - Redesign (ADR-128): screens are restyled through the primitives only.
-  Tables still stripe with the well colour; register category chips and
-  menu cards are not yet the design's. `tokens-demo.html` shows the old
-  palette. The screen specs describe the old layouts. Not seen by eye:
-  tender, floor, kitchen board, sheets and modals, the guest app.
+  Register category chips and menu cards are not yet the design's. The
+  screen specs describe the old layouts. Not seen by eye: tender, floor,
+  kitchen board, sheets and modals, a toast, an empty state, Qty, the
+  guest app. NumPad keys use `sunken`, a stand-in on night that matches
+  the canvas: no night screen has a keypad yet. Menu table cells wrap at
+  1366px (Task 7).
 
 - Audit (ADR-117): discounts and refunds recorded before Task 4c show
   "Not recorded" for who authorised them. The Person filter lists active

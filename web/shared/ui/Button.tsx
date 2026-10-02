@@ -42,7 +42,7 @@ export function Button({ variant = "secondary", size = "tap", type = "button", c
       // never charge a card.
       type={type}
       className={cx(
-        "inline-flex select-none items-center justify-center gap-2 rounded-pill font-semibold",
+        "inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-pill font-semibold",
         "outline-offset-2 outline-attention focus-visible:outline-3",
         "disabled:pointer-events-none disabled:opacity-40",
         variants[variant],

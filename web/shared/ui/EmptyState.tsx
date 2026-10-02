@@ -16,10 +16,10 @@ export interface EmptyStateProps {
 export function EmptyState({ icon, line, action, className }: EmptyStateProps) {
   return (
     <div className={cx("flex flex-col items-center gap-4 px-6 py-12 text-center", className)}>
-      <div aria-hidden="true" className="text-fg-faint">
+      <div aria-hidden="true" className="flex size-14 items-center justify-center rounded-round bg-sunken text-fg-muted">
         {icon}
       </div>
-      <p className="text-base text-fg-2">{line}</p>
+      <p className="max-w-md font-serif text-lg">{line}</p>
       {action && <Button onClick={action.onClick}>{action.label}</Button>}
     </div>
   );

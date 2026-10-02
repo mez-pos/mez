@@ -1,5 +1,5 @@
 // Whether this screen is talking to the server, at a glance. Colour and word,
-// and a "retry now" control while it is down: a 44px target, because the
+// and a "retry now" control while it is down: a full tap target, because the
 // person who wants it has a tray in the other hand.
 
 import { useEffect, useState } from "react";
@@ -25,12 +25,12 @@ export function ConnectionIndicator() {
       {detail && <span className="text-fg-muted">{detail}</span>}
     </>
   );
-  const shape = "inline-flex min-h-tap items-center gap-2 rounded border border-line bg-raised px-3 text-base";
+  const shape = "inline-flex min-h-tap items-center gap-2 rounded-pill border border-line bg-raised px-4 text-base";
 
   return (
     <div role="status" aria-live="polite" className="inline-flex items-center gap-tap-gap">
       {retryable ? (
-        <button type="button" onClick={reconnectNow} className={`${shape} hover:border-line-focus`}>
+        <button type="button" onClick={reconnectNow} className={`${shape} hover:bg-raised-high`}>
           {body}
           <span className="font-semibold text-fg">Retry now</span>
         </button>

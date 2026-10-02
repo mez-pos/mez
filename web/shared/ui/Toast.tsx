@@ -7,7 +7,6 @@
 // the right order: the decision in front, the news behind it.
 
 import { createContext, useCallback, useContext, useEffect, useReducer, type ReactNode } from "react";
-import { Button } from "./Button";
 import { cx } from "./cx";
 import { CloseIcon } from "./icons";
 import { emptyToasts, toastReducer, type Toast, type ToastTone } from "./toast-queue";
@@ -52,9 +51,17 @@ export function useToast(): ShowToast {
   return show;
 }
 
+// Good news is the green fill; a warning is a card with a mustard rule; the
+// rest is a plain card.
+const shells: Record<ToastTone, string> = {
+  neutral: "border-line-strong bg-raised text-fg shadow-card",
+  success: "border-accent bg-accent text-accent-fg shadow-action",
+  warning: "border-chip-warning-border border-l-4 border-l-highlight bg-raised text-fg shadow-card",
+};
+
 const dots: Record<ToastTone, string> = {
   neutral: "text-fg-muted",
-  success: "text-success",
+  success: "text-accent-fg",
   warning: "text-warning",
 };
 
@@ -65,12 +72,18 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
   }, [toast.id, toast.durationMs, onDismiss]);
 
   return (
-    <div className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded border border-line-strong bg-raised-high py-1 pl-4 pr-1 text-fg">
+    <div className={cx("pointer-events-auto flex w-full max-w-md items-center gap-3 rounded border py-1 pl-4 pr-1", shells[toast.tone])}>
       <span aria-hidden="true" className={cx("size-2 shrink-0 rounded-round bg-current", dots[toast.tone])} />
-      <p className="flex-1 text-base">{toast.message}</p>
-      <Button variant="ghost" aria-label="Dismiss" onClick={() => onDismiss(toast.id)}>
+      <p className="flex-1 text-base font-medium">{toast.message}</p>
+      {/* Not a Button: its ghost is terracotta, and this sits on any tone's fill. */}
+      <button
+        type="button"
+        aria-label="Dismiss"
+        onClick={() => onDismiss(toast.id)}
+        className="inline-flex size-tap shrink-0 items-center justify-center rounded-pill outline-current focus-visible:outline-2"
+      >
         <CloseIcon />
-      </Button>
+      </button>
     </div>
   );
 }

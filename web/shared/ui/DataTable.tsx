@@ -46,8 +46,8 @@ export interface DataTableProps<T> {
 export function DataTable<T>({ columns, rows, rowKey, label, sort = null, onSortChange, pagination, loading = false, empty }: DataTableProps<T>) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-x-auto rounded border border-line bg-raised">
-        <table aria-label={label} aria-busy={loading} className="w-full border-collapse text-sm">
+      <div className="overflow-x-auto rounded-card border border-line bg-raised shadow-rest">
+        <table aria-label={label} aria-busy={loading} className="w-full border-collapse text-base">
           <thead>
             <tr className="border-b border-line">
               {columns.map((column) => (
@@ -57,9 +57,9 @@ export function DataTable<T>({ columns, rows, rowKey, label, sort = null, onSort
           </thead>
           <tbody className={cx(loading && "opacity-40")}>
             {rows.map((row) => (
-              <tr key={rowKey(row)} className="border-b border-line-soft last:border-b-0 even:bg-sunken">
+              <tr key={rowKey(row)} className="border-b border-line-soft last:border-b-0 hover:bg-raised-high">
                 {columns.map((column) => (
-                  <td key={column.id} className={cx("px-4 py-2.5 text-fg-2", column.align === "right" && "text-right tabular-nums")}>
+                  <td key={column.id} className={cx("px-4 py-3.5 text-fg", column.align === "right" && "text-right tabular-nums")}>
                     {column.cell(row)}
                   </td>
                 ))}
@@ -78,7 +78,7 @@ function HeaderCell<T>({ column, sort, onSortChange }: { column: Column<T>; sort
   const right = column.align === "right";
   const direction = sort?.column === column.id ? sort.direction : null;
   const ariaSort = direction === "asc" ? "ascending" : direction === "desc" ? "descending" : undefined;
-  const base = cx("px-4 py-2 text-base font-semibold text-fg-muted", right ? "text-right" : "text-left");
+  const base = cx("whitespace-nowrap px-4 py-3 text-meta font-bold uppercase text-fg-muted", right ? "text-right" : "text-left");
 
   if (!column.sortable || !onSortChange) {
     return (
@@ -87,14 +87,15 @@ function HeaderCell<T>({ column, sort, onSortChange }: { column: Column<T>; sort
       </th>
     );
   }
-  // A sortable header is a control, so its label is 15px (tokens.md).
+  // Column headers are uppercase metadata, the one text allowed at 11px
+  // (tokens.md); a sortable one keeps a full-height target around it.
   return (
     <th scope="col" aria-sort={ariaSort} className={cx(base, "p-0")}>
       <button
         type="button"
         onClick={() => onSortChange(nextSort(sort, column.id))}
         className={cx(
-          "inline-flex h-9 w-full items-center gap-1.5 px-4 text-base font-semibold hover:text-fg",
+          "inline-flex h-10 w-full items-center gap-1.5 px-4 text-meta font-bold uppercase hover:text-fg",
           "outline-offset-2 outline-line-focus focus-visible:outline-2",
           right && "flex-row-reverse",
           direction && "text-fg",

@@ -1,5 +1,5 @@
 // A keypad for amounts and PINs. Phone layout, 1 at the top left, which is
-// what card terminals use. Keys are 56px: over the 44px minimum, because a
+// what card terminals use. Keys are 56px: over the 48px minimum, because a
 // PIN is typed with one thumb while the other hand holds something, and the
 // whole pad is within a thumb's reach (docs/phases/phase-05.md, Task 5).
 //
@@ -64,10 +64,11 @@ export function NumPad({ layout, onKey, label, size = "md", disabled = false, cl
             disabled={disabled}
             onClick={() => onKey(key)}
             className={cx(
-              "flex min-w-tap select-none items-center justify-center rounded border border-line-strong bg-raised-high text-fg",
-              "outline-offset-2 outline-line-focus focus-visible:outline-2 active:bg-raised disabled:opacity-40",
+              // A well-coloured key with no border; pressed, it darkens one step.
+              "flex min-w-tap select-none items-center justify-center rounded bg-sunken text-fg",
+              "outline-offset-2 outline-line-focus focus-visible:outline-2 active:bg-line-strong disabled:opacity-40",
               size === "lg" ? "h-16" : "h-14",
-              key === "clear" ? "text-base font-semibold" : "font-mono text-xl tabular-nums",
+              key === "clear" ? "text-base font-semibold" : "font-mono text-xl font-semibold tabular-nums",
             )}
           >
             {content}

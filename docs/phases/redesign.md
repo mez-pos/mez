@@ -14,7 +14,7 @@ reference file a task names. Do not read the whole reference folder.
 - [x] **Task 2 - Foundation.** Tokens, preset, fonts, logo, the shared
   primitives (Button, Card, StatusChip, Modal, Sheet, fields), the shell
   header, lock, pair and splash, the back office navigation.
-- [ ] **Task 3 - The remaining primitives.** NumPad, Qty, SearchField,
+- [x] **Task 3 - The remaining primitives.** NumPad, Qty, SearchField,
   Toast, EmptyState, Timeline, DataTable (52px rows, soft dividers, hover
   fill, no striping), ConnectionIndicator. Rewrite `tokens-demo.html`.
 - [ ] **Task 4 - Register and tender.** `mez Desktop POS.dc.html`:
