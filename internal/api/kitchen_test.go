@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/kitchen"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/domain/kitchen"
 )
 
 // TestKitchenOverHTTP: a kitchen display, with no one signed in, reads its

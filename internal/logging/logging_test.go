@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/config"
+	"github.com/byjoellobo/mez/internal/config"
 )
 
 // TestSetupWritesToBothSinks: the developer watching the terminal and the

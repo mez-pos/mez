@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/money"
 )
 
 // symbols are the currency marks a receipt's total carries, in ASCII.

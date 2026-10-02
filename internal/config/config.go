@@ -28,8 +28,8 @@ import (
 // FileName is the configuration file Load looks for beside the binary.
 const FileName = "config.toml"
 
-// envPrefix namespaces the environment: NOFILTR_LISTEN_ADDR, and so on.
-const envPrefix = "NOFILTR_"
+// envPrefix namespaces the environment: MEZ_LISTEN_ADDR, and so on.
+const envPrefix = "MEZ_"
 
 // Configuration keys. These are the names in config.toml; the environment and
 // the flags are mechanical transforms of them, so there is exactly one list of
@@ -152,8 +152,8 @@ func Load() (Config, error) {
 
 // LoadArgs is Load with the command line given rather than read. A
 // subcommand parses its own flags and passes on only the ones it shares
-// with the server, so that `nofiltr setup -data-dir X` finds its database
-// exactly where `nofiltr -data-dir X` would.
+// with the server, so that `mez setup -data-dir X` finds its database
+// exactly where `mez -data-dir X` would.
 func LoadArgs(args []string) (Config, error) {
 	return load(args, os.LookupEnv, exeDir(), runtime.GOOS)
 }
@@ -230,7 +230,7 @@ func defaultDataDir(lookup func(string) (string, bool), goos string) string {
 	if !ok || strings.TrimSpace(base) == "" {
 		base = "C:\\ProgramData"
 	}
-	return filepath.Join(base, "Nofiltr POS")
+	return filepath.Join(base, "mez")
 }
 
 // merge applies one layer over another. A key present in src wins even when its
@@ -267,7 +267,7 @@ func readFile(path string, explicit bool) (map[string]string, error) {
 	return values, nil
 }
 
-// fromEnv collects the NOFILTR_* variables that are actually set.
+// fromEnv collects the MEZ_* variables that are actually set.
 func fromEnv(lookup func(string) (string, bool)) map[string]string {
 	values := make(map[string]string, len(keys))
 	for _, k := range keys {
@@ -308,7 +308,7 @@ func parseFlags(args []string) (map[string]string, string, error) {
 // definition serves both parsing and Usage, so the two cannot describe
 // different programs.
 func newFlagSet(out *strings.Builder) (*flag.FlagSet, map[string]*string, *string) {
-	set := flag.NewFlagSet("nofiltr", flag.ContinueOnError)
+	set := flag.NewFlagSet("mez", flag.ContinueOnError)
 	set.SetOutput(out)
 
 	dest := make(map[string]*string, len(keys))

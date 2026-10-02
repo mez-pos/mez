@@ -36,7 +36,7 @@ function Stations({ station, onStation }: KitchenAppProps) {
       <h1 className="font-serif text-display">Which station is this?</h1>
       {menu.isPending && <p className="text-kitchen text-fg-muted">Loading the stations</p>}
       {menu.isError && !menu.data && (
-        <EmptyState icon={<InboxIcon />} line="Can't reach the Nofiltr server." action={{ label: "Try again", onClick: () => void menu.refetch() }} />
+        <EmptyState icon={<InboxIcon />} line="Can't reach the mez server." action={{ label: "Try again", onClick: () => void menu.refetch() }} />
       )}
       {menu.data && stations.length === 0 && (
         <p className="text-kitchen text-fg-muted">This venue has no stations yet. Add them with the menu.</p>

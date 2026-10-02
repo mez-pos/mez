@@ -20,7 +20,7 @@ import (
 )
 
 // FileName is the database file inside the data directory.
-const FileName = "nofiltr.db"
+const FileName = "mez.db"
 
 // driverName is what modernc.org/sqlite registers itself as.
 const driverName = "sqlite"
@@ -196,7 +196,7 @@ func (d *DB) Path() string { return d.path }
 // Close stops the prober and closes both pools. It is safe to call twice,
 // because shutdown must not depend on being reached exactly once.
 //
-// The signature matches the shutdown stack in cmd/nofiltr: ctx is the whole
+// The signature matches the shutdown stack in cmd/mez: ctx is the whole
 // shutdown budget, shared with every other subsystem.
 func (d *DB) Close(ctx context.Context) error {
 	d.closeOnce.Do(func() {

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/db/gen"
 )
 
 func TestEditMenuBumpsTheVersionWithTheEdit(t *testing.T) {

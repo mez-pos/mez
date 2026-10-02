@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
+	"github.com/byjoellobo/mez/internal/auth"
 )
 
 // HeaderStaffToken carries the staff session token. It is a header of its

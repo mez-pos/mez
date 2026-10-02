@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/api"
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
+	"github.com/byjoellobo/mez/internal/api"
+	"github.com/byjoellobo/mez/internal/db"
 )
 
 // TestDBCheckMapsOntoTheAPIVocabulary is the seam between two packages that

@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/db/gen"
 )
 
 // Queries is the generated query set bound to the read pool.

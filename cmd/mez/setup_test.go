@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/db/gen"
 )
 
 // setupArgs are the flags a real first run passes, in a temp data directory.

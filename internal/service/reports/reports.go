@@ -13,14 +13,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/report"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/zreport"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/export"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/report"
+	"github.com/byjoellobo/mez/internal/domain/shift"
+	"github.com/byjoellobo/mez/internal/domain/zreport"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // ErrBadRange is a range the reports cannot be read over.

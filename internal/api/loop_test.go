@@ -13,10 +13,10 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/hub"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/hub"
+	"github.com/byjoellobo/mez/internal/service/floor"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // The dine-in loop across devices, on the real stack (phase 08, Task 5,
@@ -64,7 +64,7 @@ func dialStream(t *testing.T, base, token string, hello hub.ClientMessage, seen 
 	url := "ws" + strings.TrimPrefix(base, "http") + "/api/v1/stream"
 	conn, _, err := websocket.Dial(ctx, url, &websocket.DialOptions{
 		HTTPHeader:   http.Header{"Authorization": {"Bearer " + token}},
-		Subprotocols: []string{"nofiltr.v1"},
+		Subprotocols: []string{"mez.v1"},
 	})
 	if err != nil {
 		cancel()

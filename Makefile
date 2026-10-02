@@ -1,4 +1,4 @@
-# Nofiltr POS
+# mez
 #
 # Run this from a shell that has `sh` on PATH. On Windows that means Git Bash
 # or WSL, not cmd.exe or PowerShell: every recipe below is POSIX.
@@ -6,7 +6,7 @@
 # `make check` is the gate for Go; `make build-web` is the gate for the
 # frontends. CI runs exactly those two, so if they pass locally they pass there.
 
-BIN     := nofiltr
+BIN     := mez
 CMD     := ./cmd/$(BIN)
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT  := $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
@@ -142,7 +142,7 @@ migrate:
 		echo "or just run the server, which migrates on startup"; \
 		exit 1; \
 	fi
-	@goose -dir internal/db/migrations sqlite3 "$${NOFILTR_DB:-./data/nofiltr.db}" up
+	@goose -dir internal/db/migrations sqlite3 "$${MEZ_DB:-./data/mez.db}" up
 
 ## migrate-new: scaffold the next migration, NAME=add_orders
 ##              Numbered sequentially, not by timestamp: one line of history,

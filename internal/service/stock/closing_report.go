@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/stock"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/export"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/stock"
 )
 
 // ErrBadRange is a range of trading days the closing stock cannot be read

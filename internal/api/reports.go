@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/report"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/reports"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/domain/export"
+	"github.com/byjoellobo/mez/internal/domain/report"
+	"github.com/byjoellobo/mez/internal/service/reports"
 )
 
 // Reports is what the API needs from the range reports (phase 10, Task 5a,

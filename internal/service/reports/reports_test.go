@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/report"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/report"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 var kolkata, _ = time.LoadLocation("Asia/Kolkata")

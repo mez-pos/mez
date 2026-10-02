@@ -88,7 +88,7 @@ export function AuditScreen() {
       {trail.error && (
         <EmptyState
           icon={<InboxIcon />}
-          line={trail.error instanceof ApiError && !trail.error.unreachable ? trail.error.message : "Can't reach the Nofiltr server. Check this computer's connection."}
+          line={trail.error instanceof ApiError && !trail.error.unreachable ? trail.error.message : "Can't reach the mez server. Check this computer's connection."}
           action={{ label: "Try again", onClick: () => void trail.refetch() }}
         />
       )}

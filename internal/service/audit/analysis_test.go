@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/money"
 )
 
 func tally(count, minor int64) Tally { return Tally{Count: count, Amount: inr(minor)} }

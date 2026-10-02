@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/stock"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/stock"
 )
 
 // The refusals. The API maps them to codes; Invalid carries the field.

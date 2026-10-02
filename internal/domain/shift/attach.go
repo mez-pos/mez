@@ -3,7 +3,7 @@ package shift
 import (
 	"errors"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/order"
 )
 
 // ErrNoOpenShift refuses an order event that must belong to a shift when

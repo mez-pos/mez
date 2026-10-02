@@ -95,7 +95,7 @@ closing takes a manager under three minutes with a full drawer.
 ## States
 
 - **Loading:** "Checking the till" in place of the register.
-- **Offline:** "Can't reach the Nofiltr server to check the till." with Try
+- **Offline:** "Can't reach the mez server to check the till." with Try
   again. Nothing opens or closes offline.
 - **Not allowed:** a cashier's Open or Close gets "You don't have
   permission to do that. Ask a manager."; counting and the reason are open

@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/db/gen"
 )
 
 // MenuEditorRows is everything the back office's menu editor shows, retired

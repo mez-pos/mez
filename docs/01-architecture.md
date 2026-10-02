@@ -10,7 +10,7 @@
                                          │  outbound WSS, initiated by venue
                                          │
 ┌────────────────────────────────────────┴─────────────────────────────┐
-│  VENUE PC  —  nofiltr.exe  (Windows Service)                         │
+│  VENUE PC  —  mez.exe  (Windows Service)                         │
 │                                                                      │
 │   HTTP + WebSocket on :7777        SQLite (WAL)  ──> Litestream ──>  │
 │   embedded SPA bundles             the source of truth       backup  │
@@ -27,7 +27,7 @@
 no sync engine, no CRDT, no conflict resolution, because there is only ever one
 writer. Offline is the default state, not a degraded mode.
 
-The consequence: `nofiltr.exe` on a counter PC and the same binary in Docker on
+The consequence: `mez.exe` on a counter PC and the same binary in Docker on
 a VPS are the same artifact. Windows install and self-host are not two products.
 
 ## Stack
@@ -65,7 +65,7 @@ scale, and every extra service is a support ticket from a cafe owner.
 
 ```
 /cmd
-  nofiltr/          server entrypoint
+  mez/          server entrypoint
   relay/            the optional cloud relay
 /internal
   config/           env + file config, sane defaults

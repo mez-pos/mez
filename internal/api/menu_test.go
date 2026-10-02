@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/menu"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/domain/menu"
+	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
 // menuTill is a paired till whose venue has a coffee menu.

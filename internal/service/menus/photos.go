@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/db/gen"
 )
 
 // Photo limits (ADR-110). The editor resizes to 480px before it uploads;

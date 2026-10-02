@@ -1,3 +1,5 @@
+github.com/byjoellobo/nofiltr-pos v0.0.0-20260917095229-369c75e3121d h1:gDLJUMpoqKY3+a4gRUfq3XHV04sUnA3tMz9/mQpUqMI=
+github.com/byjoellobo/nofiltr-pos v0.0.0-20260917095229-369c75e3121d/go.mod h1:m0L0FMXvyEzdlqPxX5FFRuqlxJerYV9SMPFUfe2qNCM=
 github.com/coder/websocket v1.8.15 h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA=
 github.com/coder/websocket v1.8.15/go.mod h1:NX3SzP+inril6yawo5CQXx8+fk145lPDC6pumgx0mVg=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

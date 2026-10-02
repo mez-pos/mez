@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // The split error codes (phase 07, Task 2).

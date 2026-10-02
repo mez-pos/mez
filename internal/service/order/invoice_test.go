@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/order"
 )
 
 // TestInvoiceReadAndReprint: an invoice reads back as issued, and a reprint

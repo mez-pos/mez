@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/stock"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/domain/export"
+	"github.com/byjoellobo/mez/internal/service/stock"
 )
 
 // Stock is what the API needs from the venue's stock (phase 10, Task 3a).

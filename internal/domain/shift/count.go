@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/money"
 )
 
 // CountKind says which end of the shift a drawer count is from.

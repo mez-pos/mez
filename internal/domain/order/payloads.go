@@ -3,8 +3,8 @@ package order
 import (
 	"encoding/json"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
 // Channel is where an order came from. It affects routing, prepayment and

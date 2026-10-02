@@ -86,7 +86,7 @@ export function SalesScreen() {
       {picked && report.error && (
         <EmptyState
           icon={<InboxIcon />}
-          line={report.error instanceof ApiError && !report.error.unreachable ? report.error.message : "Can't reach the Nofiltr server. Check this computer's connection."}
+          line={report.error instanceof ApiError && !report.error.unreachable ? report.error.message : "Can't reach the mez server. Check this computer's connection."}
           action={{ label: "Try again", onClick: () => void report.refetch() }}
         />
       )}

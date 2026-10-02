@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/shift"
 )
 
 // closeTestShift closes the venue's open shift by hand.

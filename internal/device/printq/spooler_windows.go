@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
+	"github.com/byjoellobo/mez/internal/domain/printjob"
 )
 
 // The Windows print spooler, called directly: winspool.drv's RAW printing
@@ -64,7 +64,7 @@ func sendSpooler(ctx context.Context, printer string, data []byte) error {
 	}
 	defer procClosePrinter.Call(uintptr(h)) //nolint:errcheck // nothing to do if closing fails
 
-	doc := docInfo1{docName: utf16("Nofiltr"), datatype: utf16("RAW")}
+	doc := docInfo1{docName: utf16("mez"), datatype: utf16("RAW")}
 	if job, _, errno := procStartDocPrinterW.Call(uintptr(h), 1, uintptr(unsafe.Pointer(&doc))); job == 0 {
 		return fmt.Errorf("spooler: starting a document on %q: %w", printer, errno)
 	}

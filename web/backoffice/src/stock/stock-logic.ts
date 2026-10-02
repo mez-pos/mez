@@ -167,7 +167,7 @@ const rowField = /^parts\.(\d+)\.(stock_item_id|qty)$/;
 
 export function problemOf(err: unknown): Problem {
   if (err instanceof ApiError) {
-    if (err.unreachable) return { field: null, message: "Can't reach the Nofiltr server. Check this computer's connection." };
+    if (err.unreachable) return { field: null, message: "Can't reach the mez server. Check this computer's connection." };
     if (err.code === "forbidden") return { field: null, message: "Only someone who can manage stock can do this." };
     const row = rowField.exec(err.field ?? "");
     if (row) return { field: null, row: { index: Number(row[1]), field: row[2] as "stock_item_id" | "qty" }, message: err.message };

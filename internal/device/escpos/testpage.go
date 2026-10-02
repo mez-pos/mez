@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-// TestPage is what `nofiltr --test-print` prints: everything a receipt
+// TestPage is what `mez --test-print` prints: everything a receipt
 // uses, so an owner can see before service that their printer does all of
 // it. A line that comes out wrong names the command that failed.
 func TestPage(p Paper, at time.Time, version string, kick bool) ([]byte, error) {
 	w := p.Columns
-	b := New().Align(Center).Bold(true).Size(2, 2).Line("NOFILTR").Size(1, 1).Line("Printer test").Bold(false)
+	b := New().Align(Center).Bold(true).Size(2, 2).Line("MEZ").Size(1, 1).Line("Printer test").Bold(false)
 	b.Line(at.Format("02/01/2006 15:04:05"))
 	if version != "" {
-		b.Line("nofiltr " + version)
+		b.Line("mez " + version)
 	}
 	b.Align(Left).Line(rule('=', w))
 
@@ -75,4 +75,4 @@ func ruler(w int) string {
 
 // testQR is plain words, not a link: a phone shows them, and there is no
 // address to go stale.
-const testQR = "Nofiltr printer test OK"
+const testQR = "mez printer test OK"

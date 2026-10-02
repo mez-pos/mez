@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/hub"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/hub"
 )
 
 // tokenProtocolPrefix is how a browser sends its device token. The
 // WebSocket API cannot set headers, so the token rides in the subprotocol
-// list: ["nofiltr.v1", "token.nfd_..."]. It is never a query parameter,
+// list: ["mez.v1", "token.nfd_..."]. It is never a query parameter,
 // which would put it in the access log and in any proxy's history.
 const tokenProtocolPrefix = "token."
 

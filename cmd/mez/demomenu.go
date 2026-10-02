@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
 // demoMenuCurrency is the currency the demo menu is priced in. Its prices

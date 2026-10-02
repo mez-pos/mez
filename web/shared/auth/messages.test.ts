@@ -10,7 +10,7 @@ describe("pairingError", () => {
     { name: "a spent code", err: new ApiError("invalid_pairing_code", "x", 401), want: /didn't work.*10 minutes.*once/ },
     { name: "rate limited, with the wait", err: new ApiError("rate_limited", "x", 429, null, 42_000), want: /Wait 0:42/ },
     { name: "rate limited, wait unknown", err: new ApiError("rate_limited", "x", 429), want: /Wait a minute/ },
-    { name: "no server", err: new ApiError("network", "x"), want: /Can't reach the Nofiltr server at 192\.168\.1\.20:7777/ },
+    { name: "no server", err: new ApiError("network", "x"), want: /Can't reach the mez server at 192\.168\.1\.20:7777/ },
     { name: "a code for another app", err: new WrongDeviceKind("terminal", "back_office"), want: /pairs a terminal, and this is the back office/ },
     { name: "anything else", err: new Error("boom"), want: /Something went wrong/ },
   ];

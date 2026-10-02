@@ -73,7 +73,7 @@ export function lastBumped(board: KitchenBoardResponse | undefined): KitchenTick
 }
 
 /** Where the station chosen on this device is kept: a display stays on its station. */
-export const stationKey = "nofiltr.kitchen.station";
+export const stationKey = "mez.kitchen.station";
 
 export function readStation(storage: Pick<Storage, "getItem"> | null): string | null {
   try {

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/table"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/table"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // moving is a clock both services share, moved on by the test, so an

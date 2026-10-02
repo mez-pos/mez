@@ -214,9 +214,9 @@ describe("credentialStore", () => {
 
   it("treats a malformed entry as absent", () => {
     const local = new MapStorage();
-    local.setItem("nofiltr.terminal.device", "{not json");
+    local.setItem("mez.terminal.device", "{not json");
     expect(credentialStore("terminal", local, null).device()).toBeNull();
-    local.setItem("nofiltr.terminal.device", JSON.stringify({ token: 5 }));
+    local.setItem("mez.terminal.device", JSON.stringify({ token: 5 }));
     expect(credentialStore("terminal", local, null).device()).toBeNull();
   });
 

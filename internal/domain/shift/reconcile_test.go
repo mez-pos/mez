@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/order"
 )
 
 var when = time.Date(2026, 9, 28, 10, 0, 0, 0, time.UTC)

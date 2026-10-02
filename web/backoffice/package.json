@@ -1,5 +1,5 @@
 {
-  "name": "@nofiltr/backoffice",
+  "name": "@mez/backoffice",
   "private": true,
   "type": "module",
   "scripts": {

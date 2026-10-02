@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // register is a till with an order service behind it: a GST cafe, a paired

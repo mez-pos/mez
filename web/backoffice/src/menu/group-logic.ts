@@ -126,7 +126,7 @@ const groupFields: readonly string[] = ["name", "min_select", "max_select", "mod
 
 export function groupProblemOf(err: unknown): GroupProblem {
   if (err instanceof ApiError) {
-    if (err.unreachable) return { field: null, message: "Can't reach the Nofiltr server. Check this computer's connection." };
+    if (err.unreachable) return { field: null, message: "Can't reach the mez server. Check this computer's connection." };
     if (err.code === "forbidden") return { field: null, message: "Only someone who can edit the menu can do this." };
     const row = rowField.exec(err.field ?? "");
     if (row) {

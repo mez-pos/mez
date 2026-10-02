@@ -149,7 +149,7 @@ const itemFields: readonly string[] = ["name", "category_id", "price", "hsn", "t
 
 export function problemOf(err: unknown): Problem {
   if (err instanceof ApiError) {
-    if (err.unreachable) return { field: null, message: "Can't reach the Nofiltr server. Check this computer's connection." };
+    if (err.unreachable) return { field: null, message: "Can't reach the mez server. Check this computer's connection." };
     if (err.code === "forbidden") return { field: null, message: "Only someone who can edit the menu can do this." };
     if (err.code === "menu_order_stale") {
       return { field: null, message: "The menu changed on another screen. It has been reloaded; move it again." };

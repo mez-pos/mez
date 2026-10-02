@@ -15,7 +15,7 @@ const kindNames: Record<DeviceKind, string> = {
 };
 
 export function unreachableMessage(host: string): string {
-  return `Can't reach the Nofiltr server at ${host}. Check this device is on the venue's network.`;
+  return `Can't reach the mez server at ${host}. Check this device is on the venue's network.`;
 }
 
 export function pairingError(err: unknown, host: string): string {

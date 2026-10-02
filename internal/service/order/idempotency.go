@@ -12,8 +12,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/order"
 )
 
 // maxKeyLength matches the schema's check. A UUID is 36.

@@ -46,7 +46,7 @@ export function Corrections({ range }: { range: SalesRange }) {
       {analysis.error && (
         <EmptyState
           icon={<InboxIcon />}
-          line={analysis.error instanceof ApiError && !analysis.error.unreachable ? analysis.error.message : "Can't reach the Nofiltr server. Check this computer's connection."}
+          line={analysis.error instanceof ApiError && !analysis.error.unreachable ? analysis.error.message : "Can't reach the mez server. Check this computer's connection."}
           action={{ label: "Try again", onClick: () => void analysis.refetch() }}
         />
       )}

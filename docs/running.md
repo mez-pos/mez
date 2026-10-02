@@ -1,6 +1,6 @@
-# Running Nofiltr POS
+# Running mez
 
-Nofiltr POS is one binary. It needs no database server, no Docker and no
+mez is one binary. It needs no database server, no Docker and no
 internet connection. Put it on the machine behind the counter, start it, and it
 serves the register on port 7777.
 
@@ -21,9 +21,9 @@ alongside them:
 
 | File | Runs on |
 |---|---|
-| `nofiltr_<version>_windows_amd64.exe` | Windows 10 and 11, 64-bit |
-| `nofiltr_<version>_linux_amd64` | Linux, 64-bit |
-| `nofiltr_<version>_darwin_arm64` | macOS, Apple silicon |
+| `mez_<version>_windows_amd64.exe` | Windows 10 and 11, 64-bit |
+| `mez_<version>_linux_amd64` | Linux, 64-bit |
+| `mez_<version>_darwin_arm64` | macOS, Apple silicon |
 
 Building needs Go 1.23 or newer and a shell with `sh` on the path. On Windows
 that means Git Bash or WSL, not `cmd.exe` or PowerShell.
@@ -38,14 +38,14 @@ first device. Do this on the machine itself: being sat at it is what the
 command trusts, because nothing else exists yet to authorise it.
 
 ```sh
-./nofiltr setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata
+./mez setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata
 ```
 
 It prints the venue, the owner, a PIN it drew for them, and a pairing code
 that works for ten minutes:
 
 ```
-  Database    /var/lib/nofiltr/nofiltr.db
+  Database    /var/lib/mez/mez.db
   Venue       ven_7K3M9QX2
   Owner       stf_A1B2C3D4
   Owner PIN   418362   (drawn now: write it down, then change it in the back office)
@@ -59,17 +59,17 @@ A venue that charges tax says so here, since an invoice cannot be issued
 without it:
 
 ```sh
-./nofiltr setup -name "Filter Coffee House" -owner Priya   -tax-profile gst_in -tax-registration 29ABCDE1234F1Z5
+./mez setup -name "Filter Coffee House" -owner Priya   -tax-profile gst_in -tax-registration 29ABCDE1234F1Z5
 ```
 
-`./nofiltr setup -h` lists the rest: currency, financial year, the legal name
+`./mez setup -h` lists the rest: currency, financial year, the legal name
 for invoices, and what the first device is called. Running it a second time on
 the same database refuses: one machine serves one venue.
 
 ## Starting it
 
 ```sh
-./nofiltr
+./mez
 ```
 
 It prints a line per event to the terminal and stops on Ctrl+C, finishing any
@@ -96,13 +96,13 @@ sits in one directory:
 
 | Platform | Default |
 |---|---|
-| Windows | `C:\ProgramData\Nofiltr POS` |
+| Windows | `C:\ProgramData\mez` |
 | Linux and macOS | `./data`, beside wherever you started it from |
 
 Back up that directory and you have backed up the venue.
 
-Logs are in `logs/` inside it, as `nofiltr.log`. The current file is rotated to
-`nofiltr.log.1` once it reaches 8 MB, and five rotations are kept, so the logs
+Logs are in `logs/` inside it, as `mez.log`. The current file is rotated to
+`mez.log.1` once it reaches 8 MB, and five rotations are kept, so the logs
 never grow past about 48 MB.
 
 ## Changing the port, and everything else
@@ -117,11 +117,11 @@ There are four places a setting can come from. Each one beats the ones above it:
 So, to move the server to port 8080, any of these will do:
 
 ```sh
-./nofiltr -listen-addr :8080
+./mez -listen-addr :8080
 ```
 
 ```sh
-NOFILTR_LISTEN_ADDR=:8080 ./nofiltr
+MEZ_LISTEN_ADDR=:8080 ./mez
 ```
 
 ```toml
@@ -133,14 +133,14 @@ The full set of settings:
 
 | Setting | Flag | Environment | Default |
 |---|---|---|---|
-| `listen_addr` | `-listen-addr` | `NOFILTR_LISTEN_ADDR` | `:7777` |
-| `data_dir` | `-data-dir` | `NOFILTR_DATA_DIR` | platform, see above |
-| `log_level` | `-log-level` | `NOFILTR_LOG_LEVEL` | `info` |
-| `log_format` | `-log-format` | `NOFILTR_LOG_FORMAT` | `auto` |
-| `venue_id` | `-venue-id` | `NOFILTR_VENUE_ID` | empty |
-| `relay_url` | `-relay-url` | `NOFILTR_RELAY_URL` | empty, so no relay |
-| `timezone` | `-timezone` | `NOFILTR_TIMEZONE` | the machine's own |
-| `dev_origin` | `-dev-origin` | `NOFILTR_DEV_ORIGIN` | empty, so no CORS |
+| `listen_addr` | `-listen-addr` | `MEZ_LISTEN_ADDR` | `:7777` |
+| `data_dir` | `-data-dir` | `MEZ_DATA_DIR` | platform, see above |
+| `log_level` | `-log-level` | `MEZ_LOG_LEVEL` | `info` |
+| `log_format` | `-log-format` | `MEZ_LOG_FORMAT` | `auto` |
+| `venue_id` | `-venue-id` | `MEZ_VENUE_ID` | empty |
+| `relay_url` | `-relay-url` | `MEZ_RELAY_URL` | empty, so no relay |
+| `timezone` | `-timezone` | `MEZ_TIMEZONE` | the machine's own |
+| `dev_origin` | `-dev-origin` | `MEZ_DEV_ORIGIN` | empty, so no CORS |
 
 Notes on a few of them:
 
@@ -154,7 +154,7 @@ Notes on a few of them:
   has never had one installed.
 - `dev_origin` is only for developing the frontends. Leave it empty.
 
-Run `./nofiltr -h` for the same list from the binary itself.
+Run `./mez -h` for the same list from the binary itself.
 
 `config.toml` is a flat list of `key = value`. Comments start with `#`. Sections,
 arrays and single quotes are not supported and are rejected with a line number
@@ -194,7 +194,7 @@ Before your first service, check the printer from the same computer. You do
 not need to set anything up first, and the server does not need to be running:
 
 ```sh
-./nofiltr --test-print 192.168.1.50
+./mez --test-print 192.168.1.50
 ```
 
 Use the printer's own IP address; its self-test slip usually shows it (hold
@@ -206,7 +206,7 @@ yours differs. The printer should print one slip with:
   is the default.
 - left, centre and right text, bold, underline, and large text
 - a barcode and a QR code. Scan both with a phone: the barcode reads
-  `NF/26-27/000001`, and the QR code reads `Nofiltr printer test OK`.
+  `NF/26-27/000001`, and the QR code reads `mez printer test OK`.
 - a cut at the end
 
 Add `-drawer` to open the cash drawer plugged into the printer as well. If
@@ -226,7 +226,7 @@ exits regardless.
 ## When it will not start
 
 **`bind: address already in use`, or `Only one usage of each socket address`.**
-Something already holds port 7777, usually an older copy of Nofiltr still
+Something already holds port 7777, usually an older copy of mez still
 running. Stop it, or start this one on another port with `-listen-addr :7778`.
 
 **`creating data directory ...: permission denied`.** The account running the

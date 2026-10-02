@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
+	"github.com/byjoellobo/mez/internal/domain/export"
+	"github.com/byjoellobo/mez/internal/domain/shift"
 )
 
 // kindWords is each kind as the file says it.

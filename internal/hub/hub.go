@@ -13,14 +13,14 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/db"
 )
 
 // Subprotocol is the WebSocket subprotocol a client must ask for. A browser
 // cannot set headers on a WebSocket, so this is also where its device token
 // travels: the second protocol offered is "token.<device token>".
-const Subprotocol = "nofiltr.v1"
+const Subprotocol = "mez.v1"
 
 // The defaults, all overridable for a test.
 const (

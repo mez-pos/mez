@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/db/gen"
 )
 
 // Sign-in outcomes, as sign_in_attempts records them.

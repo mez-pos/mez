@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
+	"github.com/byjoellobo/mez/internal/domain/printjob"
 )
 
 // TestSpoolerNoSuchPrinter: a printer name this computer does not have is
@@ -13,7 +13,7 @@ import (
 // Either way the job goes dead with the reason instead of spending its
 // retries. On Windows this calls the real spooler.
 func TestSpoolerNoSuchPrinter(t *testing.T) {
-	err := sendSpooler(context.Background(), "Nofiltr test: no printer has this name", []byte("x"))
+	err := sendSpooler(context.Background(), "mez test: no printer has this name", []byte("x"))
 	if !errors.Is(err, printjob.ErrPermanent) {
 		t.Errorf("err = %v, want ErrPermanent", err)
 	}

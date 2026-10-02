@@ -3,8 +3,8 @@ package order
 import (
 	"fmt"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
 // recompute derives every figure in State from the lines, discounts and

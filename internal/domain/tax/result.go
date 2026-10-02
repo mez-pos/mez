@@ -3,7 +3,7 @@ package tax
 import (
 	"fmt"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/money"
 )
 
 // assemble turns the worked lines into a TaxResult: each line's taxable

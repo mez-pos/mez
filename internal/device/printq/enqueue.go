@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/printjob"
 )
 
 // Job is something to print.

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/device/escpos"
+	"github.com/byjoellobo/mez/internal/device/escpos"
 )
 
 // isTestPrint reports whether the command line asks for a test print:
-// `nofiltr --test-print 192.168.1.50`, or -test-print, or with "=".
+// `mez --test-print 192.168.1.50`, or -test-print, or with "=".
 func isTestPrint(args []string) bool {
 	if len(args) == 0 {
 		return false
@@ -67,7 +67,7 @@ func runTestPrint(args []string, stdout io.Writer, now time.Time, send printTran
 
 func parseTestPrintFlags(args []string, out io.Writer) (testPrintOptions, error) {
 	var o testPrintOptions
-	set := flag.NewFlagSet("nofiltr --test-print", flag.ContinueOnError)
+	set := flag.NewFlagSet("mez --test-print", flag.ContinueOnError)
 	set.SetOutput(out)
 	set.StringVar(&o.Addr, "test-print", "", "the printer's address, host or host:port (port 9100 if none)")
 	width := set.Int("paper", 80, "roll width in mm: 80 or 58")

@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/menu"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	"github.com/byjoellobo/mez/internal/domain/menu"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
 // Menus is what the API needs to read a venue's menu. *db.DB implements it.

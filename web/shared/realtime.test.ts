@@ -121,7 +121,7 @@ describe("RealtimeConnection: connecting", () => {
 
     const s = h.latest();
     expect(s.url).toBe("ws://till/api/v1/stream");
-    expect(s.protocols).toEqual(["nofiltr.v1", "token.nfd_abc"]);
+    expect(s.protocols).toEqual(["mez.v1", "token.nfd_abc"]);
     s.open();
     expect(s.sent).toEqual([{ type: "hello", topics: ["station:bar"] }]);
   });

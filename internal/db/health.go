@@ -6,7 +6,7 @@ import (
 )
 
 // Health statuses. The strings are the ones /api/v1/health publishes, and
-// cmd/nofiltr maps them onto the API constants explicitly rather than letting
+// cmd/mez maps them onto the API constants explicitly rather than letting
 // two packages agree by accident.
 const (
 	StatusOK      = "ok"

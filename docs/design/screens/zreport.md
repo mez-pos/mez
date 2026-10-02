@@ -79,7 +79,7 @@ nothing up.
 - **Not allowed:** "You don't have permission to see reports. Ask a
   manager."
 - **Not found:** "There is no Z-report 99."
-- **Offline:** "Can't reach the Nofiltr server to load the report." with
+- **Offline:** "Can't reach the mez server to load the report." with
   Try again.
 
 ## Constraints

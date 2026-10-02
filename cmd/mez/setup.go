@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/config"
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/id"
-	"github.com/byjoellobo/nofiltr-pos/internal/logging"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/config"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/id"
+	"github.com/byjoellobo/mez/internal/logging"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // generatedPINDigits is how long a PIN this command draws is. Six rather
@@ -30,7 +30,7 @@ const generatedPINDigits = 6
 // would leave two venues on a machine that serves one.
 var ErrAlreadySetUp = errors.New("this database is already set up")
 
-// setupOptions is everything `nofiltr setup` takes.
+// setupOptions is everything `mez setup` takes.
 type setupOptions struct {
 	DataDir string
 
@@ -64,7 +64,7 @@ type setupResult struct {
 	MenuItems     int
 }
 
-// runSetup is `nofiltr setup`: the one command run on the venue's own
+// runSetup is `mez setup`: the one command run on the venue's own
 // machine before anything else works.
 //
 // It exists because the API cannot bootstrap itself. Making a pairing code
@@ -124,7 +124,7 @@ func runSetup(args []string, stdout io.Writer) error {
 // parseSetupFlags reads the command line for setup.
 func parseSetupFlags(args []string, out io.Writer) (setupOptions, error) {
 	var o setupOptions
-	set := flag.NewFlagSet("nofiltr setup", flag.ContinueOnError)
+	set := flag.NewFlagSet("mez setup", flag.ContinueOnError)
 	set.SetOutput(out)
 
 	set.StringVar(&o.DataDir, "data-dir", "", "directory holding the database (default: as the server resolves it)")
@@ -372,7 +372,7 @@ func drawPIN() (string, error) {
 // is the only place the owner's PIN is ever shown, and only when this
 // command drew it.
 func writeSetupSummary(w io.Writer, res setupResult) {
-	fmt.Fprintf(w, "\nNofiltr POS is set up.\n\n")
+	fmt.Fprintf(w, "\nmez is set up.\n\n")
 	fmt.Fprintf(w, "  Database    %s\n", res.DBPath)
 	fmt.Fprintf(w, "  Venue       %s\n", res.VenuePublicID)
 	fmt.Fprintf(w, "  Owner       %s\n", res.OwnerPublicID)
@@ -383,7 +383,7 @@ func writeSetupSummary(w io.Writer, res setupResult) {
 	if res.MenuItems > 0 {
 		fmt.Fprintf(w, "  Demo menu   %d items\n", res.MenuItems)
 	}
-	fmt.Fprintf(w, "\nStart the server with `nofiltr`, open the terminal on the till,\nand enter the pairing code. Sign in as the owner to make more.\n\n")
+	fmt.Fprintf(w, "\nStart the server with `mez`, open the terminal on the till,\nand enter the pairing code. Sign in as the owner to make more.\n\n")
 }
 
 // countItems is how many items a menu spec adds, for the summary.

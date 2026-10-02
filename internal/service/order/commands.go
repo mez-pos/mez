@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/id"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/invoice"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/domain/id"
+	"github.com/byjoellobo/mez/internal/domain/invoice"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/order"
 )
 
 // ErrNothingToSend means a ticket was asked for with no lines given and none

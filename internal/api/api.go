@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/config"
+	"github.com/byjoellobo/mez/internal/config"
 )
 
 // Server holds what the handlers need and builds the routing tree once.
@@ -66,7 +66,7 @@ func WithStatic(bundles map[string]fs.FS) Option {
 }
 
 // New builds the server. It does no IO: the caller owns the listener, so the
-// lifecycle stays in cmd/nofiltr where it can be shut down in order.
+// lifecycle stays in cmd/mez where it can be shut down in order.
 func New(cfg config.Config, log *slog.Logger, build BuildInfo, opts ...Option) *Server {
 	s := &Server{
 		cfg:   cfg,

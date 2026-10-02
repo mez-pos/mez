@@ -9,7 +9,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/fsm"
+	"github.com/byjoellobo/mez/internal/domain/fsm"
 )
 
 // Exhaustive walks every pair of states, not a sample. Each move in legal

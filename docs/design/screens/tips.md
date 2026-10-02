@@ -62,7 +62,7 @@ get.
 - **Refused:** the server's reason in words: "You don't have permission
   to do that. Ask a manager.", "Enter hours for everyone in the pool.",
   "This shift's tips are already pooled."
-- **Offline:** "Can't reach the Nofiltr server to load the tips." with
+- **Offline:** "Can't reach the mez server to load the tips." with
   Try again.
 
 ## Constraints

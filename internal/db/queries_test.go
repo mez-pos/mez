@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/db/gen"
 )
 
 // at is a fixed instant. The clock is injected everywhere else in this project

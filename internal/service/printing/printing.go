@@ -16,12 +16,12 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/device/escpos"
-	"github.com/byjoellobo/nofiltr-pos/internal/device/printq"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/device/escpos"
+	"github.com/byjoellobo/mez/internal/device/printq"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/printjob"
+	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
 // Input is one append: the order after it, and the events it added.

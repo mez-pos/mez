@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
 // printed is a byte stream as paper: its lines of text, each with the width
@@ -319,7 +319,7 @@ func TestTestPage(t *testing.T) {
 		}
 		p := decode(t, data)
 		p.fits(t, paper)
-		p.has(t, "NOFILTR", "Printer test", "nofiltr v1.2.3", ruler(paper.Columns), "bold", "double height",
+		p.has(t, "MEZ", "Printer test", "mez v1.2.3", ruler(paper.Columns), "bold", "double height",
 			"Cash drawer: kicked")
 		if p.kicks != 1 || len(p.cuts) != 1 || len(p.codes) != 2 || p.codes[1] != "qr:"+testQR {
 			t.Errorf("kicks %d, cuts %v, codes %v", p.kicks, p.cuts, p.codes)

@@ -6,7 +6,7 @@
 // the orders at it (ADR-086). The floor plan itself is internal/service/floor.
 package table
 
-import "github.com/byjoellobo/nofiltr-pos/internal/domain/fsm"
+import "github.com/byjoellobo/mez/internal/domain/fsm"
 
 // Status is where a table is in its turn.
 type Status string

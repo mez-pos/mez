@@ -31,7 +31,7 @@ import type {
 } from "./api-types";
 
 export const streamPath = "/api/v1/stream";
-const subprotocol = "nofiltr.v1"; // hub.Subprotocol
+const subprotocol = "mez.v1"; // hub.Subprotocol
 const tokenPrefix = "token."; // api.tokenProtocolPrefix
 
 export type DownReason =

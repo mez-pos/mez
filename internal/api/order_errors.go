@@ -4,12 +4,12 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/fsm"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/payment"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/domain/fsm"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/payment"
+	"github.com/byjoellobo/mez/internal/domain/shift"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // The order error codes. A client switches on these, so they change only

@@ -3584,3 +3584,23 @@ two items are missing from it before deciding anything.
 Cost: the by-shift table repeats the day on every row and has no
 subtotal per shift, though the answer carries one. Only shifts whose
 close counted stock are listed, and the section says so.
+
+## ADR-127 - The product is renamed mez, all the way down
+2026-10 · Status: accepted
+Decision: Nofiltr POS becomes **mez**, written lower case as its wordmark
+is. The rename is whole, not a display name over an old core:
+  - Binary `mez`, `cmd/mez`, module `github.com/byjoellobo/mez`.
+  - Environment `MEZ_*`; database `mez.db`; log `mez.log`; the default
+    data directory ends in `mez`.
+  - Browser storage keys `mez.<app>.*` and the stream's subprotocol
+    `mez.v1`, changed on both sides in the one commit.
+  - Device and staff tokens keep `nfd_` and `nfs_`: they are opaque
+    prefixes, not the name, and nothing reads them as words.
+  - Entries above this one, finished phase files and the archived design
+    reference still say Nofiltr. They are history and are left as written.
+Because: the owner renamed the product with its new design language, and
+nothing is released, so there is no installed venue to migrate.
+Cost: a data directory from before this commit is not found: move it, and
+rename `nofiltr.db` (with its `-wal` and `-shm`) to `mez.db`. A paired
+browser must pair again. The module path names a GitHub repository that
+is still called `nofiltr-pos` until the owner renames it.

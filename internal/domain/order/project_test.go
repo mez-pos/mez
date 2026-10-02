@@ -2,14 +2,14 @@ package order
 
 import (
 	"errors"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/fsm"
+	"github.com/byjoellobo/mez/internal/domain/fsm"
 	"math"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/money"
 )
 
 // stream numbers payloads from seq 1, a minute apart, as staff member 11 on

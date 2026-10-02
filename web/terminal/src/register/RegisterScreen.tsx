@@ -368,7 +368,7 @@ function MenuBody({ state, empty, searching, query, onRetry, onClearSearch, chil
     return (
       <EmptyState
         icon={<InboxIcon />}
-        line="Can't reach the Nofiltr server to load the menu."
+        line="Can't reach the mez server to load the menu."
         action={{ label: "Try again", onClick: onRetry }}
       />
     );

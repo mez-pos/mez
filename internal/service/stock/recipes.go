@@ -9,8 +9,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/stock"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/stock"
 )
 
 // The recipe refusals.

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/invoice"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/invoice/invoicetest"
+	"github.com/byjoellobo/mez/internal/domain/invoice"
+	"github.com/byjoellobo/mez/internal/domain/invoice/invoicetest"
 )
 
 var ist = time.FixedZone("IST", 5*3600+1800)

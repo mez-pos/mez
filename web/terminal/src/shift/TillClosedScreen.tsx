@@ -27,7 +27,7 @@ export function TillClosedScreen({ currency, state, lastZ, onViewZ }: TillClosed
     return state.error ? (
       <EmptyState
         icon={<InboxIcon />}
-        line="Can't reach the Nofiltr server to check the till."
+        line="Can't reach the mez server to check the till."
         action={{ label: "Try again", onClick: state.retry }}
       />
     ) : (

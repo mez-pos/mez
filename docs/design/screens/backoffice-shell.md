@@ -24,7 +24,7 @@ and that is correct:
 
 ## Layout
 
-Paper surface, inside `SignedInShell` (header: `NOFILTR · <section> ·
+Paper surface, inside `SignedInShell` (header: `MEZ · <section> ·
 <device>`, the connection, the staff member, **Sign out**).
 
 - **Navigation**, a column 240px wide on the left of the page, scrolling on

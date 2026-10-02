@@ -47,7 +47,7 @@ export function ExportsPanel({ shiftId }: { shiftId: number }) {
     <section aria-label="Exports" className="mx-auto mt-4 flex w-full max-w-3xl flex-col gap-3">
       <h2 className="font-serif text-xl">Exports</h2>
       {files.isPending && <p className="text-base text-fg-muted">Loading the files</p>}
-      {files.isError && <p className="text-base text-danger">Can't reach the Nofiltr server to list the files.</p>}
+      {files.isError && <p className="text-base text-danger">Can't reach the mez server to list the files.</p>}
       {files.data?.files.length === 0 && (
         <p className="text-base text-fg-muted">This shift has no export files. Shifts closed before exports existed have none.</p>
       )}

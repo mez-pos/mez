@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/invoice"
+	"github.com/byjoellobo/mez/internal/domain/invoice"
 )
 
 // Conformance runs the invoice.Allocator contract against an implementation.

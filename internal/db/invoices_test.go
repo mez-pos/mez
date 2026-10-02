@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/invoice"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/invoice/invoicetest"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/invoice"
+	"github.com/byjoellobo/mez/internal/domain/invoice/invoicetest"
 )
 
 // sqlAllocTx adapts a write transaction to invoicetest.Tx.

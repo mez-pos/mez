@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/api"
-	"github.com/byjoellobo/nofiltr-pos/internal/config"
+	"github.com/byjoellobo/mez/internal/api"
+	"github.com/byjoellobo/mez/internal/config"
 )
 
 // TestServeFinishesInFlightRequests is the test this task exists for. Cancelling

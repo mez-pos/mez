@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/device/printq"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
+	"github.com/byjoellobo/mez/internal/device/printq"
+	"github.com/byjoellobo/mez/internal/domain/printjob"
 )
 
 type waker struct{ woken int }

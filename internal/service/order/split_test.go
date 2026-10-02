@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/payment"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/payment"
 )
 
 // oddBill opens an order with two lines: 2, a ₹10.01 biscuit, and 3, a

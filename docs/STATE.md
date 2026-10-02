@@ -130,7 +130,7 @@ gates Floor plan and Printers already).
   tables exist for INR, USD, EUR and GBP only; others count one total.
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
   the menu is now written over HTTP (ADR-106), so this matters more. GST place of supply is always
-  the venue's state, so no IGST. `nofiltr setup` cannot finish a US venue.
+  the venue's state, so no IGST. `mez setup` cannot finish a US venue.
 - `orders.table_id` has no foreign key (ADR-085). Guests left closes and
   clears in two steps, not one transaction; a retry repairs it (ADR-087).
 - Nothing stops seating a dirty table over the API; the floor only offers
@@ -159,10 +159,10 @@ gates Floor plan and Printers already).
 - The till refunds to one payment per credit note (ADR-084); past bills
   search only exact numbers and invoice sequences.
 - `make build` does not build under cmd or PowerShell; for the browser,
-  `CGO_ENABLED=0 go build -tags frontend -o bin/nofiltr ./cmd/nofiltr`.
+  `CGO_ENABLED=0 go build -tags frontend -o bin/mez ./cmd/mez`.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`
   does not escape the path in its `file:` DSN.
-- To try the apps: `nofiltr setup -demo-menu` prints a pairing code; sign
+- To try the apps: `mez setup -demo-menu` prints a pairing code; sign
   in as the owner and count a float to open the till
   (`-device-kind back_office` for the back office); pair in the browser. A
   code for the wrong app is refused but its device stays (ADR-068).
@@ -174,12 +174,15 @@ gates Floor plan and Printers already).
   `C:/Program Files (x86)/GnuWin32/bin/make.exe`). `make check` does not
   rebuild the web bundles: run `make build-web` before trying the browser. `make
   generate` needs sqlc v1.31.1 and can dirty `go.sum` with goose's test
-  modules: restore it with `git checkout go.sum`. `bin/nofiltr` has no
-  `.exe`, so kill a stray server with `taskkill /F /IM nofiltr`.
+  modules: restore it with `git checkout go.sum`. `bin/mez` has no
+  `.exe`, so kill a stray server with `taskkill /F /IM mez`.
 
 ## Open questions for the human
 
-None.
+- The GitHub repository is still `nofiltr-pos`; the module path is now
+  `github.com/byjoellobo/mez` (ADR-127). Rename the repository to match.
+- A data directory from before the rename: move it to the new default
+  and rename `nofiltr.db` to `mez.db`. Paired browsers pair again.
 
 ---
 

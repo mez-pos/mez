@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tips"
-	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/tips"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
 // Tips is what the API needs of a shift's tip pool (ADR-101).

@@ -48,15 +48,15 @@ func TestLoadPrecedence(t *testing.T) {
 			env:  map[string]string{"PROGRAMDATA": filepath.Join("C:", "ProgramData")},
 			check: func(t *testing.T, c Config) {
 				equal(t, "data_dir", c.DataDir,
-					mustAbs(t, filepath.Join("C:", "ProgramData", "Nofiltr POS")))
+					mustAbs(t, filepath.Join("C:", "ProgramData", "mez")))
 			},
 		},
 		{
 			name: "windows without PROGRAMDATA still lands somewhere sane",
 			goos: "windows",
 			check: func(t *testing.T, c Config) {
-				if !strings.Contains(c.DataDir, "Nofiltr POS") {
-					t.Errorf("data_dir = %q, want it to contain %q", c.DataDir, "Nofiltr POS")
+				if !strings.Contains(c.DataDir, "mez") {
+					t.Errorf("data_dir = %q, want it to contain %q", c.DataDir, "mez")
 				}
 			},
 		},
@@ -82,7 +82,7 @@ func TestLoadPrecedence(t *testing.T) {
 			goos: "linux",
 			file: `listen_addr = ":8080"` + "\n" + `log_level = "debug"`,
 			env: map[string]string{
-				"NOFILTR_LISTEN_ADDR": ":9090",
+				"MEZ_LISTEN_ADDR": ":9090",
 			},
 			check: func(t *testing.T, c Config) {
 				equal(t, "listen_addr", c.ListenAddr, ":9090")
@@ -93,7 +93,7 @@ func TestLoadPrecedence(t *testing.T) {
 			name: "flag beats environment and file",
 			goos: "linux",
 			file: `listen_addr = ":8080"`,
-			env:  map[string]string{"NOFILTR_LISTEN_ADDR": ":9090"},
+			env:  map[string]string{"MEZ_LISTEN_ADDR": ":9090"},
 			args: []string{"-listen-addr", ":7000"},
 			check: func(t *testing.T, c Config) {
 				equal(t, "listen_addr", c.ListenAddr, ":7000")
@@ -113,7 +113,7 @@ func TestLoadPrecedence(t *testing.T) {
 			name: "an empty environment value turns the relay back off",
 			goos: "linux",
 			file: `relay_url = "wss://relay.example.com/v1"`,
-			env:  map[string]string{"NOFILTR_RELAY_URL": ""},
+			env:  map[string]string{"MEZ_RELAY_URL": ""},
 			check: func(t *testing.T, c Config) {
 				equal(t, "relay_url", c.RelayURL, "")
 				equal(t, "relay_enabled", c.RelayEnabled(), false)
@@ -131,7 +131,7 @@ func TestLoadPrecedence(t *testing.T) {
 		{
 			name: "data_dir is made absolute",
 			goos: "linux",
-			args: []string{"-data-dir", filepath.Join("var", "nofiltr")},
+			args: []string{"-data-dir", filepath.Join("var", "mez")},
 			check: func(t *testing.T, c Config) {
 				if !filepath.IsAbs(c.DataDir) {
 					t.Errorf("data_dir = %q, want an absolute path", c.DataDir)
@@ -219,52 +219,52 @@ func TestLoadRejects(t *testing.T) {
 		},
 		{
 			name: "empty listen address",
-			env:  map[string]string{"NOFILTR_LISTEN_ADDR": ""},
+			env:  map[string]string{"MEZ_LISTEN_ADDR": ""},
 			want: "must not be empty",
 		},
 		{
 			name: "unknown log format",
-			env:  map[string]string{"NOFILTR_LOG_FORMAT": "xml"},
+			env:  map[string]string{"MEZ_LOG_FORMAT": "xml"},
 			want: "want auto, json or text",
 		},
 		{
 			name: "unknown log level",
-			env:  map[string]string{"NOFILTR_LOG_LEVEL": "chatty"},
+			env:  map[string]string{"MEZ_LOG_LEVEL": "chatty"},
 			want: "want debug, info, warn or error",
 		},
 		{
 			name: "relay with a scheme we cannot dial",
-			env:  map[string]string{"NOFILTR_RELAY_URL": "ftp://relay.example.com"},
+			env:  map[string]string{"MEZ_RELAY_URL": "ftp://relay.example.com"},
 			want: "scheme must be ws, wss, http or https",
 		},
 		{
 			name: "relay without a host",
-			env:  map[string]string{"NOFILTR_RELAY_URL": "wss://"},
+			env:  map[string]string{"MEZ_RELAY_URL": "wss://"},
 			want: "missing host",
 		},
 		{
 			name: "dev origin with a path",
-			env:  map[string]string{"NOFILTR_DEV_ORIGIN": "http://localhost:5173/app"},
+			env:  map[string]string{"MEZ_DEV_ORIGIN": "http://localhost:5173/app"},
 			want: "want an origin with no path",
 		},
 		{
 			name: "dev origin with a trailing slash never matches a browser",
-			env:  map[string]string{"NOFILTR_DEV_ORIGIN": "http://localhost:5173/"},
+			env:  map[string]string{"MEZ_DEV_ORIGIN": "http://localhost:5173/"},
 			want: "want an origin with no path",
 		},
 		{
 			name: "dev origin with a scheme a browser will not send",
-			env:  map[string]string{"NOFILTR_DEV_ORIGIN": "ws://localhost:5173"},
+			env:  map[string]string{"MEZ_DEV_ORIGIN": "ws://localhost:5173"},
 			want: "scheme must be http or https",
 		},
 		{
 			name: "unknown timezone",
-			env:  map[string]string{"NOFILTR_TIMEZONE": "Mars/Olympus"},
+			env:  map[string]string{"MEZ_TIMEZONE": "Mars/Olympus"},
 			want: "unknown timezone",
 		},
 		{
 			name: "empty data_dir",
-			env:  map[string]string{"NOFILTR_DATA_DIR": "  "},
+			env:  map[string]string{"MEZ_DATA_DIR": "  "},
 			want: "must not be empty",
 		},
 		{
@@ -420,7 +420,7 @@ func TestEveryKeyIsReachable(t *testing.T) {
 	// is whether the layer was read at all.
 	sample := map[string]string{
 		keyListenAddr: ":7001",
-		keyDataDir:    filepath.Join("tmp", "nofiltr"),
+		keyDataDir:    filepath.Join("tmp", "mez"),
 		keyLogLevel:   "warn",
 		keyLogFormat:  "text",
 		keyVenueID:    "blr-01",

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
+	"github.com/byjoellobo/mez/internal/auth"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
 // Exports is what the API needs of a shift's export files (ADR-104).

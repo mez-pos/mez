@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/service/people"
+	"github.com/byjoellobo/mez/internal/service/people"
 )
 
 func newPeopleTill(t *testing.T) (*till, map[string]string) {

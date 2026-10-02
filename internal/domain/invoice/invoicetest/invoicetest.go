@@ -12,7 +12,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/invoice"
+	"github.com/byjoellobo/mez/internal/domain/invoice"
 )
 
 // ErrTxDone means a transaction was used after Commit or Rollback.

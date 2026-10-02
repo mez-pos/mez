@@ -58,7 +58,7 @@ const fields = ["name", "transport", "address", "paper_mm"] as const;
 
 export function problemOf(err: unknown): Problem {
   if (err instanceof ApiError) {
-    if (err.unreachable) return { field: null, message: "Can't reach the Nofiltr server. Check this computer's connection." };
+    if (err.unreachable) return { field: null, message: "Can't reach the mez server. Check this computer's connection." };
     const field = (fields as readonly string[]).includes(err.field ?? "") ? (err.field as Problem["field"]) : null;
     if (err.code === "forbidden") return { field: null, message: "Only someone who can change the venue's settings can do this." };
     return { field, message: err.message };

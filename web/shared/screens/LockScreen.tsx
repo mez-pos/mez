@@ -112,7 +112,7 @@ export function LockScreen() {
 
       <div className="grid w-full max-w-4xl items-center gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section aria-labelledby="lock-title">
-          <Meta items={["Nofiltr", "Sign in"]} />
+          <Meta items={["mez", "Sign in"]} />
           <h1 id="lock-title" className="mt-3 font-serif text-total">
             {device?.name ?? "This device"}
           </h1>

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/export"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // ErrExportNotFound means no such export file at this venue.

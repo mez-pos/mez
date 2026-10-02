@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
 // The register's column keys this package can fill, from every profile's

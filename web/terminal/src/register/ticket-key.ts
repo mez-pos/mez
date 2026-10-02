@@ -13,7 +13,7 @@ export function newKey(
   return Array.from(random(new Uint8Array(16)), hex).join("");
 }
 
-const ticketKey = "nofiltr.terminal.ticket";
+const ticketKey = "mez.terminal.ticket";
 
 /** Where the current ticket's order id survives a reload. */
 export interface TicketMemory {

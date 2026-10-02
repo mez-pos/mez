@@ -1,4 +1,4 @@
-# Nofiltr POS
+# mez
 
 An open-source, self-hostable Point of Sale for cafes, bars and small
 restaurants. One binary on the venue's own computer. Keeps selling with no

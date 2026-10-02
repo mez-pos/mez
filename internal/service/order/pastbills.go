@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/db/gen"
 )
 
 // maxPastBills is how many closed bills the till lists before a search:

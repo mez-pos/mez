@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
 // invoicedBill is a paid, invoiced, closed GST bill, priced exclusive:

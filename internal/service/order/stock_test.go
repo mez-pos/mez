@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/stock"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/tax"
-	svcstock "github.com/byjoellobo/nofiltr-pos/internal/service/stock"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/stock"
+	"github.com/byjoellobo/mez/internal/domain/tax"
+	svcstock "github.com/byjoellobo/mez/internal/service/stock"
 )
 
 // pantry is the order service over a menu with recipes: a dosa takes 150 g

@@ -143,7 +143,7 @@ func TestOpeningAPhotoByName(t *testing.T) {
 	w := newWorld(t)
 	for _, name := range []string{
 		"",
-		"../nofiltr.db",
+		"../mez.db",
 		"abc.jpg",
 		"ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789.jpg",
 		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef.png",

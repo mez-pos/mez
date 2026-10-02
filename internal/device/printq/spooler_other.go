@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
+	"github.com/byjoellobo/mez/internal/domain/printjob"
 )
 
 // sendSpooler has no spooler to send to off Windows. The job goes dead with

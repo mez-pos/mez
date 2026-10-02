@@ -69,7 +69,7 @@ export function membersOf(rows: readonly Row[]): PoolMember[] | null {
 /** Why the server would not split or pool, in words. */
 export function tipProblem(err: unknown, rule: TipRule): string {
   if (err instanceof ApiError) {
-    if (err.unreachable) return "Can't reach the Nofiltr server to load the tips.";
+    if (err.unreachable) return "Can't reach the mez server to load the tips.";
     switch (err.code) {
       case "forbidden":
         return "You don't have permission to do that. Ask a manager.";

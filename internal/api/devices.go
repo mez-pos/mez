@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
+	"github.com/byjoellobo/mez/internal/auth"
 )
 
 // Devices is what the API needs from device authentication.
@@ -132,7 +132,7 @@ func bearer(r *http.Request) (string, bool) {
 }
 
 func (s *Server) unauthenticated(w http.ResponseWriter, code ErrorCode, message string) {
-	w.Header().Set("WWW-Authenticate", `Bearer realm="nofiltr"`)
+	w.Header().Set("WWW-Authenticate", `Bearer realm="mez"`)
 	writeError(w, s.log, http.StatusUnauthorized, code, message)
 }
 

@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/device/escpos"
-	"github.com/byjoellobo/nofiltr-pos/internal/device/printq"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/device/escpos"
+	"github.com/byjoellobo/mez/internal/device/printq"
+	"github.com/byjoellobo/mez/internal/domain/printjob"
 )
 
 // The refusals. The API maps them to codes; Invalid carries the field.

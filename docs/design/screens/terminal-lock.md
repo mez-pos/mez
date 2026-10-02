@@ -15,7 +15,7 @@ them plainly when that cannot happen.
 
 - Top right, fixed: the connection indicator. Staff must know the server is
   there before they trust a PIN refusal.
-- Left column: the metadata trail (`NOFILTR · SIGN IN`), the device's name
+- Left column: the metadata trail (`MEZ · SIGN IN`), the device's name
   in Instrument Serif, one line of instruction, an expiry notice if the last
   session ended on its own, then the staff name tiles (initials and name,
   44px or taller, in a grid of 10rem columns).
@@ -36,7 +36,7 @@ address.
 - `GET /api/v1/staff`: the name tiles. React Query, key `["staff"]`.
 - `POST /api/v1/sessions` `{ staff_id, pin }`: sign in. The session token goes
   to `sessionStorage`, the device token to `localStorage`, both under
-  `nofiltr.<app>.*` (`web/shared/auth/storage.ts`).
+  `mez.<app>.*` (`web/shared/auth/storage.ts`).
 - `POST /api/v1/devices/pair` `{ code }`: pairing.
 - `DELETE /api/v1/sessions/current`: Lock, from the signed-in header.
 - WebSocket: none of its own. The indicator reflects the app's stream, and a
@@ -52,7 +52,7 @@ address.
 | Sign in, or Enter | `POST /sessions` once the PIN has 4 digits | Signed in: the Gate goes to `/` |
 | Wrong PIN | | "That PIN isn't right. Try again." PIN cleared |
 | Locked out (429) | | "Too many wrong PINs. Try again in 14:41." counting down from `Retry-After`; pad and Sign in disabled until it ends |
-| Server unreachable | | "Can't reach the Nofiltr server at host. ... Your PIN wasn't checked." |
+| Server unreachable | | "Can't reach the mez server at host. ... Your PIN wasn't checked." |
 | Lock (signed in) | Ends the session, locally even if the server cannot be told | Back to Lock |
 
 ## States

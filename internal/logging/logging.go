@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/config"
+	"github.com/byjoellobo/mez/internal/config"
 )
 
 // Rotation policy for the file log. These are constants rather than settings
@@ -15,7 +15,7 @@ import (
 // writer rather than replacing it.
 const (
 	// FileName is the live log inside Config.LogDir().
-	FileName = "nofiltr.log"
+	FileName = "mez.log"
 
 	// MaxFileBytes is the size at which the log rotates. Eight megabytes is
 	// roughly a busy week, and small enough to attach to a support mail.

@@ -1,5 +1,5 @@
 {
-  "name": "@nofiltr/terminal",
+  "name": "@mez/terminal",
   "private": true,
   "type": "module",
   "scripts": {

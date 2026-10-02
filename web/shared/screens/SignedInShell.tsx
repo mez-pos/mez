@@ -28,7 +28,7 @@ export function SignedInShell({ area, exitLabel, fill = false, status: extra, ch
   return (
     <div className={fill ? "flex h-screen flex-col overflow-hidden bg-canvas text-fg" : "flex min-h-screen flex-col bg-canvas text-fg"}>
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-chrome px-6 py-2">
-        <Meta items={["Nofiltr", area, status.device.name]} />
+        <Meta items={["mez", area, status.device.name]} />
         <div className="flex items-center gap-tap-gap">
           {extra}
           <ConnectionIndicator />

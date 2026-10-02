@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/device/printq"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/device/printq"
+	"github.com/byjoellobo/mez/internal/domain/printjob"
+	"github.com/byjoellobo/mez/internal/service/printers"
 )
 
 // TestPrintersOverHTTP: the owner adds, routes, tests and retires

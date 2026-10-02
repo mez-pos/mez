@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/menus"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/service/menus"
 )
 
 // editorTill is the till with a menu editor and the ids an item can name.
@@ -358,7 +358,7 @@ func TestItemPhotosOverHTTP(t *testing.T) {
 		})
 	}
 
-	for _, name := range []string{"..%2Fnofiltr.db", "nothing.jpg", strings.Repeat("0", 64) + ".jpg"} {
+	for _, name := range []string{"..%2Fmez.db", "nothing.jpg", strings.Repeat("0", 64) + ".jpg"} {
 		if rec := send(m.handler, http.MethodGet, "/api/v1/menu/photos/"+name, "", nil); rec.Code != http.StatusNotFound {
 			t.Errorf("GET photo %q: %d, want 404", name, rec.Code)
 		}

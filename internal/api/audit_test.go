@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/service/audit"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/service/audit"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 func TestTheAuditTrailAsCSV(t *testing.T) {

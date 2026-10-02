@@ -1,7 +1,7 @@
-# Nofiltr POS — Agent Instructions
+# mez — Agent Instructions
 
-> Product name: **Nofiltr POS**. Binary: `nofiltr`.
-> Go module path: `github.com/byjoellobo/nofiltr-pos` (set in `go.mod`).
+> Product name: **mez**. Binary: `mez`.
+> Go module path: `github.com/byjoellobo/mez` (set in `go.mod`).
 
 You are building an open-source, self-hostable Point of Sale system for cafes,
 bars and small restaurants. It runs as a single binary on the venue's own
@@ -47,7 +47,7 @@ this build fails.
 - **No cgo.** Use `modernc.org/sqlite`. The build must cross-compile with
   `CGO_ENABLED=0`.
 - **Boots with zero external services.** No Postgres, no Redis, no Docker
-  required. `./nofiltr` on a bare machine must work.
+  required. `./mez` on a bare machine must work.
 - **Offline is the default state, not an error path.** Nothing in the terminal,
   kitchen display or back office may require the internet.
 - **Every DB write that matters is in a transaction.** Invoice numbers,

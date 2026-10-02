@@ -53,5 +53,5 @@ export function clockText(iso: string): string {
 export function reportProblem(status: number | undefined, number?: number): string {
   if (status === 403) return "You don't have permission to see reports. Ask a manager.";
   if (status === 404 && number !== undefined) return `There is no Z-report ${number}.`;
-  return "Can't reach the Nofiltr server to load the report.";
+  return "Can't reach the mez server to load the report.";
 }

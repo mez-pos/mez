@@ -17,7 +17,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/money"
 )
 
 // The sentinel errors of this package. Callers match with errors.Is and map

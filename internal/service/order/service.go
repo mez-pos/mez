@@ -8,11 +8,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/printing"
-	svcstock "github.com/byjoellobo/nofiltr-pos/internal/service/stock"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/service/printing"
+	svcstock "github.com/byjoellobo/mez/internal/service/stock"
 )
 
 var (

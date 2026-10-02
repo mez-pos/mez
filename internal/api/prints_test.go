@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/device/printq"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/printjob"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
+	"github.com/byjoellobo/mez/internal/device/printq"
+	"github.com/byjoellobo/mez/internal/domain/printjob"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // TestPrintQueueOverHTTP: a paid bill's receipt, with no receipt printer set

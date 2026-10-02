@@ -88,7 +88,7 @@ Nothing but the item grid and the line list scrolls.
   command's answer replaces the cached order, so the rail redraws from the
   server's projection and never from local arithmetic.
 - The current ticket's public id is kept in `sessionStorage`
-  (`nofiltr.terminal.ticket`), so a reload comes back to it.
+  (`mez.terminal.ticket`), so a reload comes back to it.
 - `POST /api/v1/orders/{id}/lines/{line}/modifiers` `{ from, to }`: change
   a line's modifiers (`line.modified`, ADR-071), sent through the same
   ordered queue as taps, with its own `Idempotency-Key`.

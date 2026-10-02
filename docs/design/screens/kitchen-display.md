@@ -13,7 +13,7 @@ which tickets are late and how many of each dish are still to go.
 ## Where it lives
 
 `/kitchen` on the server, served by the terminal's bundle. It pairs as a
-**kitchen** device (`nofiltr setup -device-kind kitchen`, or a code a
+**kitchen** device (`mez setup -device-kind kitchen`, or a code a
 manager makes with kind kitchen) and never asks for a PIN: a screen on a
 wall has nobody to type one. A code for a terminal is refused here, as
 anywhere (ADR-068).

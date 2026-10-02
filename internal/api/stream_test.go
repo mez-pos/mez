@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/hub"
+	"github.com/byjoellobo/mez/internal/hub"
 )
 
 // servedStream records what the hub was handed.

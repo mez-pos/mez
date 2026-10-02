@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/fsm"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
-	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/domain/fsm"
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/shift"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
 // Shifts is what the API needs of the venue's shifts (phase 09, Task 1b).

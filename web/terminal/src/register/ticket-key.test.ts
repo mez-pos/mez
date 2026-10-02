@@ -32,7 +32,7 @@ describe("ticketMemory", () => {
 
   it("refuses a stored value that is not an order id", () => {
     const s = memoryStorage();
-    s.map.set("nofiltr.terminal.ticket", "../../api/v1/staff");
+    s.map.set("mez.terminal.ticket", "../../api/v1/staff");
     expect(ticketMemory(s).read()).toBeNull();
   });
 

@@ -42,10 +42,10 @@ export function PairScreen({ app }: { app: AppKind }) {
     <main className="flex min-h-screen items-center justify-center bg-canvas p-6 text-fg">
       <form onSubmit={submit} className="flex w-full max-w-md flex-col gap-6" noValidate>
         <div>
-          <Meta items={["Nofiltr", appNames[app], "Pairing"]} />
+          <Meta items={["mez", appNames[app], "Pairing"]} />
           <h1 className="mt-3 font-serif text-total">Pair this {appNames[app]}</h1>
           <p className="mt-3 text-base text-fg-2">
-            Enter the eight-character code from <span className="font-mono">nofiltr setup</span>, or ask a manager for one. A code lasts 10
+            Enter the eight-character code from <span className="font-mono">mez setup</span>, or ask a manager for one. A code lasts 10
             minutes and works once.
           </p>
         </div>

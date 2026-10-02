@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
+	"github.com/byjoellobo/mez/internal/domain/export"
 )
 
 // csvResponse is a report as a CSV file (phase 10, Task 5b, ADR-119). Like

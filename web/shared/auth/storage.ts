@@ -43,8 +43,8 @@ export interface CredentialStore {
 }
 
 export function credentialStore(app: AppKind, durable: KeyValue | null, session: KeyValue | null): CredentialStore {
-  const deviceKey = `nofiltr.${app}.device`;
-  const staffKey = `nofiltr.${app}.staff`;
+  const deviceKey = `mez.${app}.device`;
+  const staffKey = `mez.${app}.staff`;
   return {
     device: () => read(durable, deviceKey, isStoredDevice),
     staff: () => read(session, staffKey, isStoredStaff),
@@ -59,7 +59,7 @@ export function credentialStore(app: AppKind, durable: KeyValue | null, session:
 export function browserStorage(which: "local" | "session"): KeyValue | null {
   try {
     const storage = which === "local" ? window.localStorage : window.sessionStorage;
-    const probe = "nofiltr.probe";
+    const probe = "mez.probe";
     storage.setItem(probe, "1");
     storage.removeItem(probe);
     return storage;

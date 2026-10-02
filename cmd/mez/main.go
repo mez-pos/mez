@@ -1,4 +1,4 @@
-// Command nofiltr is the Nofiltr POS server. One binary on the venue's own
+// Command mez is the mez server. One binary on the venue's own
 // computer: HTTP API, the three SPA bundles, the WebSocket hub, the print queue
 // and the scheduler.
 //
@@ -20,24 +20,24 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/byjoellobo/nofiltr-pos/internal/api"
-	"github.com/byjoellobo/nofiltr-pos/internal/auth"
-	"github.com/byjoellobo/nofiltr-pos/internal/config"
-	"github.com/byjoellobo/nofiltr-pos/internal/db"
-	"github.com/byjoellobo/nofiltr-pos/internal/device/escpos"
-	"github.com/byjoellobo/nofiltr-pos/internal/device/printq"
-	"github.com/byjoellobo/nofiltr-pos/internal/hub"
-	"github.com/byjoellobo/nofiltr-pos/internal/logging"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/audit"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/floor"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/menus"
-	svcorder "github.com/byjoellobo/nofiltr-pos/internal/service/order"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/people"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/printers"
-	"github.com/byjoellobo/nofiltr-pos/internal/service/reports"
-	svcshift "github.com/byjoellobo/nofiltr-pos/internal/service/shift"
-	svcstock "github.com/byjoellobo/nofiltr-pos/internal/service/stock"
-	"github.com/byjoellobo/nofiltr-pos/web"
+	"github.com/byjoellobo/mez/internal/api"
+	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/config"
+	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/device/escpos"
+	"github.com/byjoellobo/mez/internal/device/printq"
+	"github.com/byjoellobo/mez/internal/hub"
+	"github.com/byjoellobo/mez/internal/logging"
+	"github.com/byjoellobo/mez/internal/service/audit"
+	"github.com/byjoellobo/mez/internal/service/floor"
+	"github.com/byjoellobo/mez/internal/service/menus"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/byjoellobo/mez/internal/service/people"
+	"github.com/byjoellobo/mez/internal/service/printers"
+	"github.com/byjoellobo/mez/internal/service/reports"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
+	svcstock "github.com/byjoellobo/mez/internal/service/stock"
+	"github.com/byjoellobo/mez/web"
 )
 
 // shutdownTimeout bounds the whole shutdown, not one subsystem of it. Ten
@@ -85,7 +85,7 @@ func main() {
 		// to stdout without going through slog: it is an answer to the
 		// operator, not a log line.
 		if errors.Is(err, flag.ErrHelp) {
-			fmt.Fprintf(os.Stdout, "nofiltr %s\n\nUsage:\n%s\nSubcommands:\n  setup\tcreate the venue, its owner and the first pairing code\n"+
+			fmt.Fprintf(os.Stdout, "mez %s\n\nUsage:\n%s\nSubcommands:\n  setup\tcreate the venue, its owner and the first pairing code\n"+
 				"  --test-print ADDRESS\tprint a test page on a receipt printer (-paper 58, -drawer, -save FILE)\n",
 				buildInfo().Version, config.Usage())
 			return
