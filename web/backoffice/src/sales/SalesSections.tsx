@@ -11,9 +11,9 @@ import { channelName, methodName } from "../../../shared/zreport/zreport-logic";
 import { dayText } from "../audit/audit-logic";
 import { averageBill, barHeights, periodText, shares } from "./sales-logic";
 
-const count = (n: number) => <span className="font-mono tabular-nums">{n}</span>;
+export const count = (n: number) => <span className="font-mono tabular-nums">{n}</span>;
 
-function Section({ title, csv, children }: { title: string; csv: ReactNode; children: ReactNode }) {
+export function Section({ title, csv, children }: { title: string; csv: ReactNode; children: ReactNode }) {
   return (
     <section aria-label={title} className="flex min-w-0 flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -118,11 +118,11 @@ export function OverTime({ report, csv }: { report: SalesReport; csv: ReactNode 
 }
 
 /** A share as a slate bar and a whole percentage. */
-function Share({ percent }: { percent: number | undefined }) {
+export function Share({ percent }: { percent: number | undefined }) {
   if (percent === undefined) return null;
   return (
     <span className="flex items-center justify-end gap-2">
-      <span aria-hidden className="h-2 w-16 rounded-tight bg-sunken">
+      <span aria-hidden className="h-2 w-16 rounded-tight bg-line">
         <span className="block h-full rounded-tight bg-info" style={{ width: `${percent}%` }} />
       </span>
       <span className="w-10 font-mono tabular-nums">{percent}%</span>

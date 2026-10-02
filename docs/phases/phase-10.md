@@ -105,7 +105,7 @@ Phase 09.
   - [x] **Task 5c: The Sales screen.** Spec first (`backoffice-reports.md`).
     A range picker, the headline figures, sales over time drawn without a
     chart library, payment and channel mix.
-  - [ ] **Task 5d: What sold, who sold it, and when.** Product mix,
+  - [x] **Task 5d: What sold, who sold it, and when.** Product mix,
     category performance and staff performance tables, and the hourly
     heatmap, each with its CSV.
   - [ ] **Task 5e: Discount and void analysis.** Corrections over a range

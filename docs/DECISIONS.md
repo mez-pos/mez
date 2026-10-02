@@ -3390,3 +3390,35 @@ dependency for seven rectangles.
 Cost: the average bill is not in the CSV, since the server does not
 compute it. A year by day is 366 thin bars; the cut defaults away from
 that but does not forbid it.
+
+## ADR-121 - What sold and when: the server's rows, sorted in the browser, and a heatmap that is a table
+2026-10 · Status: accepted
+Decision: phase 10, Task 5d adds four sections to the Sales screen
+(`web/backoffice/src/sales/SalesTables.tsx`): product mix, category
+performance, staff performance and the hour by weekday heatmap.
+  - **No new read.** They are parts of the `SalesReport` the screen
+    already holds (ADR-118, ADR-120); only a download asks again.
+  - **Sorted in the browser.** These tables are whole, not paged
+    (ADR-118), so a header reorders the rows already here: by name,
+    quantity or total, opening by total, largest first. `DataTable`'s
+    sort props were built for a server that sorts a page; here the owner
+    of the rows sorts them. No figure changes, and a share stays a share
+    of the whole table.
+  - **The heatmap is a table, and the count is the figure.** A row per
+    weekday, all seven; a column per hour from the first with a bill to
+    the last. Each cell prints its bill count over a slate tint in four
+    steps by its total; a screen reader hears the cell in words. Colour
+    alone would break the rule the terminal lives by, and a back office
+    reader may be colour-blind too.
+  - **Hours run as the trading day does,** 04:00 first and 03:00 last,
+    so 01:00 sits to the right of the evening it belongs to, on the
+    weekday the server already gave it.
+  - Staff performance shows an average bill, worked out as the headline's
+    is (ADR-120).
+Because: "what sells, who sells it, and when are we busy" is the
+question after "how did the week go", and it should not cost a second
+screen or a second request.
+Cost: a CSV is in the server's order, not the order on screen. The tint
+compares totals while the cell prints bills, so a cell of few large
+bills is dark with a small number; the hover and the Busiest line give
+both.

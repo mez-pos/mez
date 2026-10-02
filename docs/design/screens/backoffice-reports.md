@@ -2,9 +2,9 @@
 
 A range of trading days added up: what was sold, how it was paid, where it
 came from. Built in phase 10 Task 5c over the server of Tasks 5a and 5b
-(ADR-118, ADR-119). Task 5d adds what sold, who sold it and when; Task 5e
-the discount and void analysis; Task 5f closing stock. They are sections
-of this one screen, under the same range.
+(ADR-118, ADR-119). Task 5d added what sold, who sold it and when; Task
+5e adds the discount and void analysis; Task 5f closing stock. They are
+sections of this one screen, under the same range.
 
 ## Purpose
 
@@ -56,11 +56,38 @@ Paper, inside the back office shell, section **Sales reports**, path
   - A share is a whole percentage of the listed rows; shares are not
     shown when the figures they would divide are zero or negative.
 
+- **What sold,** product mix: Item, Qty, Gross, Discounts, Net, Tax,
+  Total, and its share of the total. Sorted by Total, largest first;
+  the Item, Qty and Total headers sort it (a header pressed again turns
+  it round). It scrolls inside its frame past twelve rows. Items are
+  named as the menu stands now. **Download CSV** saves `items`.
+- **By category,** category performance: the same columns under
+  Category, the same sorting. **Download CSV** saves `categories`.
+- **Who sold it,** staff performance, by who opened the bill: Opened by,
+  Bills, Gross, Discounts, Total, Average bill, and their share of the
+  total. Sorted by Total; Opened by, Bills and Total sort it.
+  **Download CSV** saves `staff`.
+- **When it sold,** the hour by weekday heatmap, a table: a row per
+  weekday, Monday first, all seven; a column per hour of the clock from
+  the first hour with a bill to the last, in the order the trading day
+  runs them (04:00 first, 03:00 last), so 01:00 is at the right, after
+  the evening it belongs to. A weekday is the trading day's.
+  - A cell with bills shows their count, mono, over a slate tint in four
+    steps by its total against the busiest cell's. The count is the
+    figure; the tint only repeats it. An empty cell is a sunken blank
+    the same size, so the grid holds its shape.
+  - Each cell says the whole of it to a screen reader and on hover:
+    "Friday 13:00, 3 bills, 630.00".
+  - Under it, one line: the busiest hour in words, "Busiest: Friday
+    13:00, 3 bills, 630.00".
+  - **Download CSV** saves `hours`.
+
 ## States
 
 - **Nothing in the range:** the headline says zero in every figure; in
   place of the bars, "No sales between 24 Sept and 30 Sept."; the mix
-  cards say "Nothing was paid" and "No bills".
+  cards say "Nothing was paid" and "No bills"; the tables of what sold
+  say "Nothing sold"; in place of the heatmap, "No bills to place".
 - **A day cleared:** "Pick a first and a last day." in place of the cards.
 - **Loading:** "Adding up the range" in place of the cards. While the
   last range's figures are shown dimmed, Download CSV is off: a file must
@@ -81,8 +108,9 @@ Paper, inside the back office shell, section **Sales reports**, path
 - No accent on this screen: nothing on it is an action that moves money.
 - Every number mono, every amount right-aligned and through `Money`.
 - The screen adds nothing up. Every figure is the server's; the only
-  arithmetic here is a bar's height, a share, and the average bill
-  (the total over the bills, to the nearest minor unit).
+  arithmetic here is a bar's height, a share, a cell's tint, and an
+  average bill (the total over the bills, to the nearest minor unit).
+- Sorting a table reorders the server's rows; it changes no figure.
 - No chart library: the bars are elements with a height.
 
 ## Reference

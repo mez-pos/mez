@@ -13,22 +13,23 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 5c: The Sales screen** (ADR-120, spec
-`docs/design/screens/backoffice-reports.md`). `/sales`, `g s`,
-`reports.view`: quick ranges and From/To, a Day/Week/Month cut that
-follows the range, the headline figures, sales over time as plain bars
-over a table, payment and channel mix with shares, and a Download CSV per
-section. `web/backoffice/src/sales`. Tried in a browser against a real
-binary: four bills rung up over the API, figures and both CSV files
-checked against a hand sum (this also tried Task 5b's routes).
+**Phase 10, Task 5d: What sold, who sold it, and when** (ADR-121).
+Four more sections on `/sales`, from the same read: product mix, category
+performance and staff performance (sorted by their headers in the
+browser, each row with its share), and the hour by weekday heatmap as a
+table whose cells print their bill count. Each has its CSV.
+`web/backoffice/src/sales/SalesTables.tsx`. Tried in a browser against a
+real binary on a GST venue: three bills, every table and three CSV files
+checked against a hand sum.
 
 ## Next task
 
-**Phase 10, Task 5d: What sold, who sold it, and when.** Product mix,
-category performance and staff performance tables, and the hourly
-heatmap, each with its CSV. They are sections of the Sales screen
-(`SalesSections.tsx`), fed by the same read; the sheets are `items`,
-`categories`, `staff` and `hours`. Add them to the spec first.
+**Phase 10, Task 5e: Discount and void analysis.** Corrections over a
+range by reason, by who did them and by who authorised them (server and
+screen, with CSV), linking down to the audit trail. The trail's query and
+entries are in `internal/service/audit` (`asked`, `entries`); the screen
+part is another section of `/sales`. Spec it in `backoffice-reports.md`
+first. Likely two sub-tasks (server, then screen): split if so.
 
 ## Known broken / in progress
 
@@ -39,8 +40,10 @@ heatmap, each with its CSV. They are sections of the Sales screen
   button yet (the route exists, ADR-119).
 - CSV (ADR-119): each sheet reads the range again. The Tally files skip
   the formula guard and the byte order mark the report files have.
-- Sales screen (ADR-120): tried with one day of sales and no tax, credit
-  notes or refunds. The range is not in the URL, so a reload returns to
+- Sales screen (ADR-120, ADR-121): tried with one day of sales and no
+  credit notes, refunds or discounts, so the heatmap was seen with one
+  cell only (its layout over many hours is tested in vitest, not by eye).
+  A CSV is in the server's order, not the table's sort. The range is not in the URL, so a reload returns to
   seven days. A CSV has not been opened in Excel itself. Left open past
   04:00, the range stays yesterday's and no quick range shows pressed.
 - Reports (ADR-118): the screen lacks 5d to 5f. A range projects every order

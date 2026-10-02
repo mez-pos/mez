@@ -12,6 +12,7 @@ import { cx } from "../../../shared/ui/cx";
 import { inputClass } from "../FormFields";
 import { saveFile } from "../save-file";
 import { Headline, Mixes, OverTime } from "./SalesSections";
+import { Heatmap, Sold } from "./SalesTables";
 import { csvPath, everyFor, everyWords, quickRange, quickRangeOf, quickRanges, salesPath, type SalesRange } from "./sales-logic";
 
 const everys = Object.keys(everyWords) as ReportEvery[];
@@ -108,6 +109,8 @@ export function SalesScreen() {
           <Headline report={report.data} csv={csv("summary")} />
           <OverTime report={report.data} csv={csv("over_time")} />
           <Mixes report={report.data} paymentsCsv={csv("payments")} channelsCsv={csv("channels")} />
+          <Sold report={report.data} itemsCsv={csv("items")} categoriesCsv={csv("categories")} staffCsv={csv("staff")} />
+          <Heatmap report={report.data} csv={csv("hours")} />
         </div>
       )}
     </div>
