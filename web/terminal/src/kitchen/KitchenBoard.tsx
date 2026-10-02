@@ -46,7 +46,7 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
               type="button"
               disabled={busy !== null}
               onClick={() => run(`recall-${recallable.order_id}-${recallable.ticket_seq}`, () => board.recall(recallable))}
-              className="min-h-18 rounded border-2 border-line-strong bg-raised px-6 text-kitchen font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4 disabled:opacity-50"
+              className="min-h-18 rounded-pill border-2 border-line-strong bg-raised px-8 text-kitchen font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4 disabled:opacity-50"
             >
               Recall {whereText(recallable)}
             </button>
@@ -54,7 +54,7 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
           <button
             type="button"
             onClick={onChangeStation}
-            className="min-h-14 rounded border border-line px-4 text-lg text-fg-2 outline-offset-2 outline-line-focus focus-visible:outline-4"
+            className="min-h-14 rounded-pill border border-line-strong px-6 text-lg text-fg-2 outline-offset-2 outline-line-focus focus-visible:outline-4"
           >
             Change station
           </button>
@@ -66,7 +66,7 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
           <span className="text-fg-muted">All day</span>
           {counts.map((c) => (
             <span key={c.name}>
-              <span className="font-mono font-semibold tabular-nums">{c.qty}</span> {c.name}
+              <span className="font-mono font-semibold tabular-nums text-highlight">{c.qty}</span> {c.name}
             </span>
           ))}
         </section>
@@ -106,12 +106,12 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
   );
 }
 
-// A timer's tone as the card's border and the timer's colour. Vermilion is
-// "Late" alone, as everywhere (tokens.md).
-const toneClass: Readonly<Record<TimerTone, { border: string; text: string }>> = {
-  calm: { border: "border-line-strong", text: "text-fg" },
-  waiting: { border: "border-warning", text: "text-warning" },
-  late: { border: "border-danger-line", text: "text-attention-text" },
+// A timer's tone as the rule down the card's left and the timer's pill:
+// mustard while it waits, the late red once it is late (tokens.md).
+const toneClass: Readonly<Record<TimerTone, { rule: string; pill: string }>> = {
+  calm: { rule: "border-l-fg-muted", pill: "bg-chip-neutral-bg text-fg" },
+  waiting: { rule: "border-l-highlight", pill: "bg-chip-warning-bg text-chip-warning-fg" },
+  late: { rule: "border-l-danger-line", pill: "bg-chip-danger-bg text-chip-danger-fg" },
 };
 
 interface TicketCardProps {
@@ -130,34 +130,32 @@ function TicketCard({ ticket: t, now, lateAfter, busy, disabled, onBump }: Ticke
   return (
     <article
       aria-label={`${whereText(t)}, ${timerText(elapsed)}${word ? `, ${word}` : ""}`}
-      className={cx("flex flex-col rounded border-4 bg-raised", toneClass[tone].border)}
+      className={cx("flex flex-col overflow-hidden rounded-card border border-l-8 border-line-strong bg-raised shadow-card", toneClass[tone].rule)}
     >
       <header className="flex flex-col gap-1 border-b border-line px-4 py-3">
         {/* Where it goes on a line of its own: it is what a runner reads first. */}
-        <p className="break-words text-display font-semibold leading-tight">{whereText(t)}</p>
+        <p className="break-words font-serif text-display leading-tight">{whereText(t)}</p>
         <div className="flex items-baseline justify-between gap-3">
           <span className="text-lg text-fg-2">{t.covers > 0 ? `${t.covers} ${t.covers === 1 ? "cover" : "covers"}` : ""}</span>
-          <span className="flex items-baseline gap-2">
-            {word && <span className={cx("text-lg font-semibold uppercase", toneClass[tone].text)}>{word}</span>}
-            <span className={cx("font-mono text-display font-semibold leading-none tabular-nums", toneClass[tone].text)}>
-              {timerText(elapsed)}
-            </span>
+          <span className={cx("flex items-baseline gap-2 rounded-pill px-4 py-1.5", toneClass[tone].pill)}>
+            {word && <span className="text-lg font-semibold uppercase">{word}</span>}
+            <span className="font-mono text-display font-semibold leading-none tabular-nums">{timerText(elapsed)}</span>
           </span>
         </div>
       </header>
       {t.notes.length > 0 && (
-        <p className="border-b border-line px-4 py-2 text-kitchen italic text-fg-2">{t.notes.join(" · ")}</p>
+        <p className="border-b border-line bg-chip-warning-bg px-4 py-2 text-kitchen text-chip-warning-fg">{t.notes.join(" · ")}</p>
       )}
       <ul className="flex flex-col gap-2 px-4 py-3">
         {t.lines.map((l) => (
           <li key={l.id} className={cx(l.status === "voided" && "text-fg-muted line-through")}>
             <p className="text-kitchen font-semibold">
-              <span className="font-mono tabular-nums">{l.qty}</span> × {l.name}
+              <span className={cx("font-mono tabular-nums", l.status !== "voided" && "text-highlight")}>{l.qty}</span> × {l.name}
               {l.status === "voided" && <span className="ml-2 text-lg no-underline">Void</span>}
             </p>
             {l.modifiers.length > 0 && <p className="text-lg text-fg-2">{l.modifiers.join(", ")}</p>}
             {l.notes.map((n, i) => (
-              <p key={i} className="text-lg italic text-fg-2">
+              <p key={i} className="text-lg text-chip-warning-fg">
                 {n}
               </p>
             ))}
@@ -168,7 +166,7 @@ function TicketCard({ ticket: t, now, lateAfter, busy, disabled, onBump }: Ticke
         type="button"
         disabled={disabled}
         onClick={onBump}
-        className="mt-auto min-h-18 border-t-2 border-line-strong bg-raised-high text-display font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4 disabled:opacity-50"
+        className="m-4 mt-auto min-h-18 rounded-pill bg-accent text-display font-semibold text-accent-fg outline-offset-2 outline-line-focus hover:bg-accent-hover focus-visible:outline-4 disabled:opacity-50"
       >
         {busy ? "Bumping" : "Bump"}
       </button>

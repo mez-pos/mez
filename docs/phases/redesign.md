@@ -22,7 +22,7 @@ reference file a task names. Do not read the whole reference folder.
   ticket rail, the tender screen, modifiers sheet.
 - [x] **Task 5 - Floor, past bills, print queue, close the day.** Table
   cards and status pills from the same file.
-- [ ] **Task 6 - Kitchen display.** `mez Desktop KDS and Dashboard.dc.html`,
+- [x] **Task 6 - Kitchen display.** `mez Desktop KDS and Dashboard.dc.html`,
   espresso night: column headers, the ticket's left rule by age, timer
   pill. Read it from three metres.
 - [ ] **Task 7 - Back office.** `mez Desktop Management.dc.html`:

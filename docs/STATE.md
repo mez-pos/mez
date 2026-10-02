@@ -13,20 +13,22 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Redesign, Task 5: floor, past bills, print queue, close the day**
-(`docs/phases/redesign.md`). Table tiles are cards with a serif name,
-bordered in their state's fill; area tabs are pills, the chosen one
-green. Soft dividers in the bills, refund and print queue lists; the
-refund's credit note panel is a well; fields in close the day match the
-rest. Seen in a browser with six tables: the floor with one table
-ordered, the seat sheet (and Qty in it), the drawer count. Before it,
-Tasks 1 to 4 (ADR-127, ADR-128).
+**Redesign, Task 6: kitchen display** (`docs/phases/redesign.md`), on
+espresso night. A ticket is a card with a rule down its left by age
+(muted, mustard, the late red), its timer in a pill of the same tone
+with the word, quantities in mustard, and Bump a green pill. Notes are
+mustard ink, not italic: the faces have no italic. The board keeps one
+grid, oldest first; the design's three status columns would be a
+function change. Seen in a browser, paired as a kitchen device with a
+real ticket: calm, and late with the page's clock moved on. Before it,
+Tasks 1 to 5 (ADR-127, ADR-128).
 
 ## Next task
 
 Either, as the owner chooses:
 
-**Redesign, Task 6: kitchen display** (`docs/phases/redesign.md`).
+**Redesign, Task 7: back office** (`docs/phases/redesign.md`). Larger
+than one session: split it by screen first.
 
 **Phase 10, Task 6: Settings.** Far larger than one session: split it
 first, commit the split, and stop. Known broken below lists what earlier
@@ -42,7 +44,8 @@ the day start, variance threshold and tip rule are constants;
   discount, note, approval and tickets sheets, a past bill and its
   refund sheet, the print queue, the reconciliation after a count,
   closing stock, floor states other than free and ordered, move and
-  join, kitchen board, a toast, an empty state, the guest app. The
+  join, the kitchen's waiting tone, order and line notes, a voided
+  line and Recall, a toast, an empty state, the guest app. The
   drawer count's face values sit right-aligned in their column, as
   before the redesign. NumPad keys use `sunken`, a stand-in on night that matches
   the canvas: no night screen has a keypad yet. Menu table cells wrap at

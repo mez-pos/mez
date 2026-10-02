@@ -47,7 +47,7 @@ function Stations({ station, onStation }: KitchenAppProps) {
             key={s.code}
             type="button"
             onClick={() => onStation(s.code)}
-            className="min-h-24 rounded border-2 border-line-strong bg-raised px-6 text-left text-display font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4"
+            className="min-h-24 rounded-card border-2 border-line-strong bg-raised px-6 text-left font-serif text-display shadow-card outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-4"
           >
             {s.name}
           </button>
