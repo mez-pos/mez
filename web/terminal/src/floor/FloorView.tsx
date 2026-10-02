@@ -107,7 +107,7 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
       </div>
 
       {banner && (
-        <div role="status" className="flex flex-wrap items-center gap-tap-gap rounded border border-line-focus bg-raised px-4 py-2">
+        <div role="status" className="flex flex-wrap items-center gap-tap-gap rounded border border-accent bg-accent-tint text-accent-text px-4 py-2">
           <p className="flex-1 text-base font-semibold">{banner}</p>
           <Button
             variant="primary"
@@ -132,7 +132,7 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
               onClick={() => setAreaChoice(a.id)}
               className={cx(
                 "min-h-tap rounded border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
-                a.id === areaId ? "border-line-focus bg-raised-high font-semibold text-fg" : "border-line text-fg-2",
+                a.id === areaId ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line text-fg-2",
               )}
             >
               {a.name}
@@ -389,7 +389,7 @@ function TableSheet({ table: t, tickets, names, now, lateAfter, floor, onTicket,
                     </span>
                     <span className="flex flex-col items-end gap-1">
                       <Money amount={o.total} />
-                      <span className={cx("font-mono text-sm tabular-nums", time.late ? "text-accent-text" : "text-fg-muted")}>
+                      <span className={cx("font-mono text-sm tabular-nums", time.late ? "text-attention-text" : "text-fg-muted")}>
                         {time.text}
                       </span>
                     </span>

@@ -69,7 +69,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
               onClick={() => setDraft(kind === "items" ? { kind, units: {} } : { kind, minor: 0 })}
               className={cx(
                 "min-h-tap rounded border px-3 text-base font-semibold outline-offset-2 outline-line-focus focus-visible:outline-2",
-                draft.kind === kind ? "border-line-focus bg-raised-high" : "border-line text-fg-2",
+                draft.kind === kind ? "border-accent bg-accent-tint text-accent-text" : "border-line text-fg-2",
               )}
             >
               {kind === "items" ? "Items" : "An amount"}
@@ -134,7 +134,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
                 onClick={() => setPaymentId(t.id)}
                 className={cx(
                   "flex min-h-tap items-center justify-between gap-3 rounded border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
-                  paymentId === t.id ? "border-line-focus bg-raised-high font-semibold" : "border-line",
+                  paymentId === t.id ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line",
                 )}
               >
                 <span>

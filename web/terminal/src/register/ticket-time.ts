@@ -1,5 +1,5 @@
 // How long a ticket has been open, as the ticket list shows it. Past the
-// venue's threshold it is late, which is a "now" signal: vermilion (Task 5).
+// venue's threshold it is late, which is a "now" signal: terracotta (Task 5).
 
 export interface Elapsed {
   /** "4m", "1h 05m": minutes are what a floor works in. */

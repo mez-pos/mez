@@ -144,7 +144,7 @@ function Approver({ approver, onChoose, pin, onKey, disabled }: ApproverProps) {
               className={cx(
                 "min-h-tap w-full rounded border px-4 text-left text-base",
                 "outline-offset-2 outline-line-focus focus-visible:outline-2",
-                chosen?.id === s.id ? "border-line-focus bg-raised-high font-semibold text-fg" : "border-line bg-raised text-fg-2",
+                chosen?.id === s.id ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line bg-raised text-fg-2",
               )}
             >
               {s.name}

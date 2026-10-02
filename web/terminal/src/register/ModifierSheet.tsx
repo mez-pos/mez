@@ -84,8 +84,8 @@ function GroupPicker({ group, picked, state, onTap }: GroupPickerProps) {
   return (
     <fieldset>
       <legend className="flex w-full items-baseline justify-between gap-4">
-        <span className="text-lg font-semibold">{group.name}</span>
-        <span className={cx("text-meta uppercase", required && !state.satisfied ? "text-accent-text" : "text-fg-faint")}>
+        <span className="font-serif text-lg">{group.name}</span>
+        <span className={cx("text-meta uppercase", required && !state.satisfied ? "text-attention-text" : "text-fg-muted")}>
           {required ? "Required" : "Optional"} · {state.rule}
         </span>
       </legend>
@@ -104,7 +104,7 @@ function GroupPicker({ group, picked, state, onTap }: GroupPickerProps) {
               className={cx(
                 "flex min-h-tap items-center justify-between gap-3 rounded border px-4 py-2.5 text-left text-base",
                 "outline-offset-2 outline-line-focus focus-visible:outline-2",
-                on ? "border-line-focus bg-raised-high font-semibold text-fg" : "border-line bg-raised text-fg-2",
+                on ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line bg-raised text-fg-2",
                 blocked && "opacity-40",
               )}
             >

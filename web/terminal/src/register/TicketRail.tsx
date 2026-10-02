@@ -86,8 +86,8 @@ export function TicketRail(props: TicketRailProps) {
         ))}
         {empty ? (
           <div className="py-16 text-center">
-            <p className="font-serif text-xl italic text-fg-faint">No items yet</p>
-            <p className="mt-1.5 text-sm text-fg-faint">Tap the menu to start a ticket</p>
+            <p className="font-serif text-xl text-fg-muted">No items yet</p>
+            <p className="mt-1.5 text-sm text-fg-muted">Tap the menu to start a ticket</p>
           </div>
         ) : (
           <ol>
@@ -139,7 +139,7 @@ export function TicketRail(props: TicketRailProps) {
         <TotalRow label="Tax" amount={totals?.tax ?? zero} />
         <div className="mt-3 flex items-baseline justify-between border-t border-line-strong pt-3">
           <span className="font-serif text-xl">Total</span>
-          {/* Not vermilion: Charge is this screen's one accent. */}
+          {/* In the heading ink: Charge is this screen's one green. */}
           <Money amount={totals?.total ?? zero} variant="total" />
         </div>
         {totals && totals.paid.minor > 0 && (
@@ -199,16 +199,16 @@ function OrderLine({ line, notes, ready, onOpen }: OrderLineProps) {
   const voided = line.status === "voided";
   const mine = notes.filter((n) => n.scope === "line" && n.line_id === line.id);
   return (
-    <li className="border-b border-line">
+    <li className="border-b border-line-soft">
       <button
         type="button"
         onClick={onOpen}
         aria-label={`${line.qty} ${line.name}${line.status === "active" ? "" : `, ${line.status}`}`}
-        className="grid min-h-tap w-full grid-cols-[1fr_auto] gap-3 py-3.5 text-left outline-offset-2 outline-line-focus hover:bg-raised focus-visible:outline-2"
+        className="grid min-h-tap w-full grid-cols-[1fr_auto] gap-3 py-3.5 text-left outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
       >
         <div className="min-w-0">
           <div className={cx("flex items-baseline gap-2", voided && "line-through opacity-60")}>
-            <span className="font-mono text-sm tabular-nums text-fg-3">{line.qty}×</span>
+            <span className="font-mono text-sm font-semibold tabular-nums text-fg-muted">{line.qty}×</span>
             <span className="text-base font-medium">{line.name}</span>
           </div>
           {ready && line.status !== "voided" && (
@@ -252,7 +252,7 @@ function PendingRow({ line, onRetry, onRemove }: PendingRowProps) {
   const failed = line.status === "failed";
   const { command } = line;
   return (
-    <li className="border-b border-line py-3.5" aria-busy={!failed}>
+    <li className="border-b border-line-soft py-3.5" aria-busy={!failed}>
       <div className={cx("flex items-baseline gap-2", !failed && "text-fg-faint")}>
         <span className="font-mono text-sm tabular-nums">{command.qty}×</span>
         <span className="text-base font-medium">{command.name}</span>

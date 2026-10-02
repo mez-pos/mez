@@ -17,7 +17,7 @@ reference file a task names. Do not read the whole reference folder.
 - [x] **Task 3 - The remaining primitives.** NumPad, Qty, SearchField,
   Toast, EmptyState, Timeline, DataTable (52px rows, soft dividers, hover
   fill, no striping), ConnectionIndicator. Rewrite `tokens-demo.html`.
-- [ ] **Task 4 - Register and tender.** `mez Desktop POS.dc.html`:
+- [x] **Task 4 - Register and tender.** `mez Desktop POS.dc.html`:
   category chips as pills with a green active fill, menu cards, the
   ticket rail, the tender screen, modifiers sheet.
 - [ ] **Task 5 - Floor, past bills, print queue, close the day.** Table

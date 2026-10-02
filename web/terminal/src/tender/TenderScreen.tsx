@@ -220,7 +220,7 @@ export function TenderScreen({ order, ticket, label, onBack }: TenderScreenProps
                   className={cx(
                     "flex h-24 flex-col items-start justify-between rounded border p-3.5 text-left",
                     "outline-offset-2 outline-line-focus focus-visible:outline-2 disabled:opacity-40",
-                    method === m.method ? "border-line-focus bg-raised-high" : "border-line bg-raised",
+                    method === m.method ? "border-accent bg-accent-tint text-accent-text" : "border-line bg-raised",
                   )}
                 >
                   <span className="text-lg font-semibold">{methodNames[m.method]}</span>
@@ -230,7 +230,7 @@ export function TenderScreen({ order, ticket, label, onBack }: TenderScreenProps
             </div>
 
             <div className="mt-5 grid grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-5">
-              <div className="rounded border border-line bg-chrome p-5">
+              <div className="rounded-card border border-line bg-chrome shadow-rest p-5">
                 <div className="grid grid-cols-2 gap-tap-gap">
                   <AmountField
                     label={method === "cash" ? "Cash handed over" : share ? "This share" : "Amount"}
@@ -269,7 +269,7 @@ export function TenderScreen({ order, ticket, label, onBack }: TenderScreenProps
                 />
               </div>
 
-              <div className="rounded border border-line bg-chrome p-5">
+              <div className="rounded-card border border-line bg-chrome shadow-rest p-5">
                 {method === "cash" ? (
                   <p className="text-base text-fg-muted">
                     Key what the guest hands over. A tip comes out of the change; it is never part of the bill.
@@ -289,7 +289,7 @@ export function TenderScreen({ order, ticket, label, onBack }: TenderScreenProps
                       maxLength={40}
                       autoComplete="off"
                       spellCheck={false}
-                      className="min-h-tap rounded border border-line-strong bg-raised-high px-3 font-mono text-fg outline-offset-2 outline-line-focus focus-visible:outline-2"
+                      className="min-h-tap rounded border border-line-strong bg-raised px-4 font-mono text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
                     />
                     <span className="text-sm text-fg-faint">Optional. Kept with the payment for reconciling.</span>
                   </label>

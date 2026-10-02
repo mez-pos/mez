@@ -49,7 +49,7 @@ export function SplitPanel({ order, onUse, onCancel }: SplitPanelProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">Split the bill</h2>
+        <h2 className="font-serif text-xl">Split the bill</h2>
         <Button variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
@@ -64,7 +64,7 @@ export function SplitPanel({ order, onUse, onCancel }: SplitPanelProps) {
             onClick={() => set({ kind: k.kind })}
             className={cx(
               "min-h-tap rounded border px-3 text-base font-semibold outline-offset-2 outline-line-focus focus-visible:outline-2",
-              draft.kind === k.kind ? "border-line-focus bg-raised-high text-fg" : "border-line bg-raised text-fg-2",
+              draft.kind === k.kind ? "border-accent bg-accent-tint text-accent-text" : "border-line bg-raised text-fg-2",
             )}
           >
             {k.name}
@@ -73,7 +73,7 @@ export function SplitPanel({ order, onUse, onCancel }: SplitPanelProps) {
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-5">
-        <div className="min-h-0 overflow-y-auto rounded border border-line bg-chrome p-5">
+        <div className="min-h-0 overflow-y-auto rounded-card border border-line bg-chrome shadow-rest p-5">
           {draft.kind === "amount" ? (
             <AmountChooser
               amounts={draft.amounts}
@@ -104,7 +104,7 @@ export function SplitPanel({ order, onUse, onCancel }: SplitPanelProps) {
           )}
         </div>
 
-        <section aria-label="Shares" className="flex min-h-0 flex-col rounded border border-line bg-chrome p-5">
+        <section aria-label="Shares" className="flex min-h-0 flex-col rounded-card border border-line bg-chrome shadow-rest p-5">
           <p className="text-meta font-semibold uppercase text-fg-muted">Shares, from the server</p>
           <div className="min-h-0 flex-1 overflow-y-auto" aria-live="polite">
             {!request && <p className="mt-3 text-base text-fg-muted">Key an amount and add it.</p>}
@@ -222,7 +222,7 @@ function LineChooser({ draft, order, onDraft }: LineChooserProps) {
                   }
                   className={cx(
                     "min-h-tap min-w-tap rounded border px-3 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
-                    chosen(i) ? "border-line-focus bg-raised-high font-semibold text-fg" : "border-line bg-raised text-fg-muted",
+                    chosen(i) ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line bg-raised text-fg-muted",
                   )}
                 >
                   {byGuest ? (i === 0 ? "Table" : `Guest ${i}`) : `Payer ${i + 1}`}

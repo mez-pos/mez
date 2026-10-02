@@ -70,7 +70,7 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
                     className={cx(
                       "grid min-h-tap w-full grid-cols-[1fr_auto] items-center gap-3 rounded border px-4 py-3 text-left",
                       "outline-offset-2 outline-line-focus focus-visible:outline-2",
-                      here ? "border-line-focus bg-raised-high" : "border-line bg-raised hover:bg-raised-high",
+                      here ? "border-accent bg-accent-tint text-accent-text" : "border-line bg-raised hover:bg-raised-high",
                     )}
                   >
                     <span className="flex min-w-0 flex-col gap-1">
@@ -91,7 +91,7 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
                       <Money amount={t.total} />
                       <span className="flex items-center gap-2">
                         {time.late && <StatusChip status={{ kind: "kitchen", status: "late" }} />}
-                        <span className={cx("font-mono text-sm tabular-nums", time.late ? "text-accent-text" : "text-fg-muted")}>
+                        <span className={cx("font-mono text-sm tabular-nums", time.late ? "text-attention-text" : "text-fg-muted")}>
                           {time.text}
                         </span>
                       </span>

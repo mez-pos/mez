@@ -13,25 +13,21 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Redesign, Task 3: the remaining primitives** (`docs/phases/redesign.md`).
-NumPad (borderless well keys), PIN dots, Qty (one pill), SearchField,
-Toast (green for good news, a mustard rule for a warning), EmptyState,
-DataTable (caps headers, no stripes, hover fill), ConnectionIndicator,
-and `tokens-demo.html` on both grounds. Buttons no longer wrap. Seen in
-a browser: lock, register, the back office menu, the demo page. Before
-it, Tasks 1 and 2 (ADR-127, ADR-128). The product is renamed mez, all the way down. The mez design
-language is in: `tokens.css`, the preset, Fraunces, DM Sans and Caveat,
-the recoloured logo, and the shared primitives. The till is now paper;
-the kitchen alone is espresso night. Seen in a browser against a real
-binary: pair, lock, register with a line on a ticket, the back office
-menu, the kitchen's pair screen. Before that, Phase 10 Task 5f3 finished
-Reports (ADR-126).
+**Redesign, Task 4: register and tender** (`docs/phases/redesign.md`).
+Category chips are pills, the chosen one a green fill. Menu cards carry
+a serif name and price. A chosen option, on every screen, is a green
+border on the green tint. Tender panels are cards. "Late" is terracotta
+again: it rode the accent role, which turned green in Task 2. Sheet
+footers fill the sheet's width. Seen in a browser: register, the
+modifier sheet, the cash tender screen. Before it, Tasks 1 to 3
+(ADR-127, ADR-128).
 
 ## Next task
 
 Either, as the owner chooses:
 
-**Redesign, Task 4: register and tender** (`docs/phases/redesign.md`).
+**Redesign, Task 5: floor, past bills, print queue, close the day**
+(`docs/phases/redesign.md`).
 
 **Phase 10, Task 6: Settings.** Far larger than one session: split it
 first, commit the split, and stop. Known broken below lists what earlier
@@ -42,10 +38,12 @@ the day start, variance threshold and tip rule are constants;
 ## Known broken / in progress
 
 - Redesign (ADR-128): screens are restyled through the primitives only.
-  Register category chips and menu cards are not yet the design's. The
-  screen specs describe the old layouts. Not seen by eye: tender, floor,
-  kitchen board, sheets and modals, a toast, an empty state, Qty, the
-  guest app. NumPad keys use `sunken`, a stand-in on night that matches
+  The screen specs describe the old layouts. Not seen by eye: card and
+  UPI tender, split, the invoice panel, a menu card with a photo, the
+  discount, note, approval and tickets sheets, floor, kitchen board, a
+  toast, an empty state, Qty, the guest app. The chosen-option green was
+  applied by pattern to floor, refund, drawer count and the back office
+  too, unseen. NumPad keys use `sunken`, a stand-in on night that matches
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 

@@ -47,7 +47,7 @@ export function NoteSheet({ onSave, onClose }: NoteSheetProps) {
           onChange={(e) => setText(e.target.value)}
           maxLength={200}
           rows={3}
-          className="rounded border border-line-strong bg-raised-high px-3 py-2 text-fg outline-offset-2 outline-line-focus focus-visible:outline-2"
+          className="rounded border border-line-strong bg-raised px-4 py-3 text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
         />
       </label>
     </Sheet>

@@ -55,7 +55,7 @@ export function DiscountSheet({ target, worth, onSubmit, onClose }: DiscountShee
               className={cx(
                 "min-h-tap rounded border px-4 text-base",
                 "outline-offset-2 outline-line-focus focus-visible:outline-2",
-                kind === k ? "border-line-focus bg-raised-high font-semibold text-fg" : "border-line bg-raised text-fg-2",
+                kind === k ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line bg-raised text-fg-2",
               )}
             >
               {k === "pct" ? "Percentage" : "Amount"}

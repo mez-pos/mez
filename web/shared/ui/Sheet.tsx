@@ -63,7 +63,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
             </Button>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">{children}</div>
-          {footer && <div className="flex flex-wrap justify-end gap-tap-gap border-t border-line px-6 py-4">{footer}</div>}
+          {footer && <div className="flex flex-wrap justify-end gap-tap-gap border-t border-line px-6 py-4 *:grow">{footer}</div>}
         </div>
       )}
     </dialog>

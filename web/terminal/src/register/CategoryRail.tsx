@@ -25,13 +25,13 @@ export function CategoryRail({ categories, counts, chosen, onChoose }: CategoryR
             aria-pressed={active}
             onClick={() => onChoose(c.id)}
             className={cx(
-              "flex min-h-tap items-center gap-2.5 rounded border px-4 text-base font-medium",
-              "outline-offset-2 outline-line-focus focus-visible:outline-2",
-              active ? "border-line-focus bg-raised-high text-fg" : "border-line bg-raised text-fg-2 hover:text-fg",
+              "flex min-h-tap items-center gap-2.5 rounded-pill border px-5 text-base",
+              "outline-offset-2 outline-attention focus-visible:outline-3",
+              active ? "border-accent bg-accent font-semibold text-accent-fg" : "border-line-strong bg-raised font-medium text-fg hover:bg-raised-high",
             )}
           >
             <span>{c.name}</span>
-            <span className="font-mono text-sm tabular-nums text-fg-muted">{counts.get(c.id) ?? 0}</span>
+            <span className={cx("font-mono text-sm tabular-nums", !active && "text-fg-muted")}>{counts.get(c.id) ?? 0}</span>
           </button>
         );
       })}

@@ -55,7 +55,7 @@ export function DrawerCounter({ title, currency, value, onChange, disabled = fal
                     className={cx(
                       "grid min-h-tap w-full grid-cols-[1fr_5rem_8rem] items-center gap-3 rounded border px-4 text-left",
                       "outline-offset-2 outline-line-focus focus-visible:outline-2 disabled:opacity-40",
-                      here ? "border-line-focus bg-raised-high" : "border-line bg-raised hover:bg-raised-high",
+                      here ? "border-accent bg-accent-tint text-accent-text" : "border-line bg-raised hover:bg-raised-high",
                     )}
                   >
                     <Money amount={{ minor: face, currency }} className="text-left" />

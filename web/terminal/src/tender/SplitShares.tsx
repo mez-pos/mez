@@ -20,7 +20,7 @@ interface SplitSharesProps {
 
 export function SplitShares({ split, amountsKeyed, paid, current, stale, disabled, onPick, onClear }: SplitSharesProps) {
   return (
-    <section aria-label="Split" className="mb-5 rounded border border-line bg-chrome p-4">
+    <section aria-label="Split" className="mb-5 rounded-card border border-line bg-chrome shadow-rest p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-meta font-semibold uppercase text-fg-muted">
           Split {split.kind === "evenly" ? "evenly" : `by ${split.kind}`} · {split.shares.length} shares
@@ -48,7 +48,7 @@ export function SplitShares({ split, amountsKeyed, paid, current, stale, disable
               className={cx(
                 "flex min-h-tap flex-col items-start gap-0.5 rounded border px-3 py-2 text-left",
                 "outline-offset-2 outline-line-focus focus-visible:outline-2",
-                current === s.payer ? "border-line-focus bg-raised-high" : "border-line bg-raised",
+                current === s.payer ? "border-accent bg-accent-tint text-accent-text" : "border-line bg-raised",
                 done && "opacity-60",
               )}
             >

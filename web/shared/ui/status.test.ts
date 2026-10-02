@@ -28,7 +28,7 @@ describe("status vocabularies", () => {
     }
   }
 
-  it("keeps vermilion for Late alone (one accent, tokens.md)", () => {
+  it("keeps terracotta for Late alone (tokens.md)", () => {
     const accented = Object.entries(all).flatMap(([kind, table]) =>
       Object.entries(table)
         .filter(([, spec]) => spec.tone === "accent")

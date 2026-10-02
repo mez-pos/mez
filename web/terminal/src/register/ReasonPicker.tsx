@@ -26,7 +26,7 @@ export function ReasonPicker({ reasons, chosen, onChoose, label }: ReasonPickerP
             className={cx(
               "min-h-tap rounded border px-4 py-2.5 text-left text-base",
               "outline-offset-2 outline-line-focus focus-visible:outline-2",
-              chosen === r.code ? "border-line-focus bg-raised-high font-semibold text-fg" : "border-line bg-raised text-fg-2",
+              chosen === r.code ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line bg-raised text-fg-2",
             )}
           >
             {r.label}

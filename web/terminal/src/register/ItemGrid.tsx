@@ -20,7 +20,7 @@ interface ItemGridProps {
 
 export function ItemGrid({ items, groupsFor, stationName, onTap, soldOut }: ItemGridProps) {
   return (
-    <ul className="grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-2.5">
+    <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-3">
       {items.map((item) => {
         const choices = choiceCount(groupsFor(item));
         const gone = soldOut(item);
@@ -32,7 +32,7 @@ export function ItemGrid({ items, groupsFor, stationName, onTap, soldOut }: Item
               disabled={gone}
               aria-label={gone ? `${item.name}, sold out` : undefined}
               className={cx(
-                "flex h-full min-h-28 w-full flex-col gap-1.5 rounded border border-line bg-raised p-3.5 text-left",
+                "flex h-full min-h-28 w-full flex-col gap-1.5 overflow-hidden rounded-card border border-line bg-raised p-4 text-left shadow-rest",
                 "outline-offset-2 outline-line-focus focus-visible:outline-2",
                 gone ? "cursor-not-allowed opacity-60" : "hover:bg-raised-high active:bg-raised-high",
               )}
@@ -44,17 +44,17 @@ export function ItemGrid({ items, groupsFor, stationName, onTap, soldOut }: Item
                   alt=""
                   loading="lazy"
                   decoding="async"
-                  className={cx("-mx-1 -mt-1 mb-0.5 h-20 w-[calc(100%+0.5rem)] rounded-tight object-cover", gone && "grayscale")}
+                  className={cx("-mx-4 -mt-4 mb-1.5 h-24 w-[calc(100%+2rem)] max-w-none object-cover", gone && "grayscale")}
                 />
               )}
-              <span className={cx("text-base font-semibold leading-snug", gone ? "text-fg-muted line-through" : "text-fg")}>{item.name}</span>
+              <span className={cx("font-serif text-lg leading-snug", gone && "text-fg-muted line-through")}>{item.name}</span>
               {gone && <span className="text-meta font-semibold uppercase text-warning">Sold out</span>}
               <span className="text-meta uppercase text-fg-faint">
                 {stationName(item.station)}
                 {choices > 0 && ` · ${choices} choices`}
               </span>
-              <span className="mt-auto self-end">
-                <Money amount={item.price} />
+              <span className="mt-auto self-end pt-1">
+                <Money amount={item.price} className="text-lg font-semibold" />
               </span>
             </button>
           </li>

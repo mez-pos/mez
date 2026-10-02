@@ -1,6 +1,6 @@
 // A station's board (docs/design/screens/kitchen-display.md): the tickets
 // still to make as cards in large type, oldest first, each with a timer that
-// turns gold and then vermilion, and a Bump big enough for a wet thumb; the
+// turns mustard and then terracotta, and a Bump big enough for a wet thumb; the
 // all-day counts; Recall for the ticket bumped last.
 
 import { useEffect, useState } from "react";
@@ -111,7 +111,7 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
 const toneClass: Readonly<Record<TimerTone, { border: string; text: string }>> = {
   calm: { border: "border-line-strong", text: "text-fg" },
   waiting: { border: "border-warning", text: "text-warning" },
-  late: { border: "border-accent", text: "text-accent-text" },
+  late: { border: "border-danger-line", text: "text-attention-text" },
 };
 
 interface TicketCardProps {

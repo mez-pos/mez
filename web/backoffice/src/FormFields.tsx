@@ -48,7 +48,7 @@ export function Choice<T extends string>({ label, value, options, onChange, erro
             onClick={() => onChange(o.value)}
             className={cx(
               "min-h-tap rounded border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
-              value === o.value ? "border-line-focus bg-raised font-semibold text-fg" : "border-line text-fg-2",
+              value === o.value ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line text-fg-2",
             )}
           >
             {o.label}
