@@ -4,7 +4,7 @@
 // Colours, font sizes, radii and shadows *replace* Tailwind's defaults rather
 // than extending them, so `bg-red-500`, `text-xs` and `rounded-lg` do not
 // exist and cannot slip in. Colour classes name roles (`bg-raised`,
-// `text-accent`), which resolve per [data-surface], never ink or paper hexes.
+// `text-accent`), which resolve per [data-surface], never paper or night hexes.
 //
 // Spacing is left as Tailwind's native scale. The allowed steps (2, 4, 6, 8,
 // 10, 12, 14, 16, 20, 24, 32, 48, 64 px) are native classes already; the
@@ -35,6 +35,7 @@ const preset = {
         3: v("fg-3"),
         muted: v("fg-muted"),
         faint: v("fg-faint"),
+        heading: v("fg-heading"),
       },
 
       line: {
@@ -49,7 +50,21 @@ const preset = {
         hover: v("accent-hover"),
         fg: v("accent-fg"),
         text: v("accent-text"),
+        tint: v("accent-tint"),
       },
+
+      // Terracotta: the second voice. New order, export, the active nav item.
+      attention: {
+        DEFAULT: v("attention"),
+        hover: v("attention-hover"),
+        fg: v("attention-fg"),
+        text: v("attention-text"),
+        tint: v("attention-tint"),
+      },
+
+      highlight: v("highlight"),
+      // The logo's arches and wordmark; its top is `highlight`.
+      logo: v("logo-ink"),
 
       // Status chips: a background, border and text per tone. See tokens.md.
       chip: Object.fromEntries(
@@ -61,14 +76,22 @@ const preset = {
 
       success: v("status-success"),
       warning: v("status-warning"),
-      danger: v("status-danger"),
+      danger: {
+        DEFAULT: v("status-danger"),
+        fill: v("danger-fill"),
+        tint: v("danger-tint"),
+        "tint-hover": v("danger-tint-hover"),
+        line: v("danger-line"),
+      },
       info: v("status-info"),
     },
 
     fontFamily: {
       serif: v("font-serif"),
       sans: v("font-sans"),
+      // The numeral face. The class keeps its name; it is not a monospace.
       mono: v("font-mono"),
+      script: v("font-script"),
     },
 
     fontSize: {
@@ -86,13 +109,19 @@ const preset = {
       none: v("radius-none"),
       DEFAULT: v("radius"),
       tight: v("radius-tight"),
+      card: v("radius-card"),
+      sheet: v("radius-sheet"),
+      pill: v("radius-pill"),
       round: v("radius-round"),
     },
 
-    // Elevation on ink is surface lightness. tokens.md names no paper shadow
-    // value yet; add one there before adding it here.
+    // Warm on paper, nearly absent on night: each resolves per surface.
     boxShadow: {
       none: "none",
+      rest: v("shadow-rest"),
+      card: v("shadow-card"),
+      modal: v("shadow-modal"),
+      action: v("shadow-action"),
     },
 
     extend: {

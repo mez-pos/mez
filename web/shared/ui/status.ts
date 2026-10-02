@@ -4,7 +4,7 @@
 //
 // The server's vocabularies are Records over the generated unions, so a status
 // added in Go fails the TypeScript build here until it has a tone and a word.
-// Tones follow docs/design/tokens.md: vermilion (accent) is for "Late" alone.
+// Tones follow docs/design/tokens.md: terracotta (accent) is for "Late" alone.
 
 import type { LineStatus, OrderStatus, PaymentStatus, PrintJobState, TableStatus } from "../api-types";
 
@@ -61,13 +61,16 @@ export const printStatuses: Readonly<Record<PrintJobState, ChipSpec>> = {
 
 // A table's turn (terminal-floor.md, ADR-086). The words are the floor's:
 // staff say a table is paying or needs clearing, not that it is settling
-// or dirty. Never vermilion: a table is not "late".
+// or dirty. Never terracotta: a table is not "late". The tones are the
+// design's floor, one per state: free is green, seated is blue, a table
+// with an order on it is the occupied rose (the danger chip's fill, which
+// is no alarm here), paying is mustard and one to clear is the cleaning grey.
 export const tableStatuses: Readonly<Record<TableStatus, ChipSpec>> = {
   free: { tone: "success", word: "Free" },
   seated: { tone: "info", word: "Seated" },
-  ordered: { tone: "neutral", word: "Ordered" },
+  ordered: { tone: "danger", word: "Ordered" },
   settling: { tone: "warning", word: "Paying" },
-  dirty: { tone: "danger", word: "To clear" },
+  dirty: { tone: "neutral", word: "To clear" },
 };
 
 /** What a StatusChip is given: which vocabulary, and a value from it. */

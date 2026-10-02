@@ -26,6 +26,9 @@ const queryClient = createQueryClient();
 // The kitchen display is served from this bundle at /kitchen (ADR-091): its
 // own device, paired as kitchen, listening to its station alone.
 const kitchen = window.location.pathname === "/kitchen" || window.location.pathname.startsWith("/kitchen/");
+// The kitchen runs on espresso night, the one dark ground (tokens.md); the
+// till is paper, as index.html says.
+if (kitchen) document.documentElement.dataset.surface = "ink";
 const durable = browserStorage("local");
 const station = kitchen ? readStation(durable) : null;
 const { store, realtime } = kitchen

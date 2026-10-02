@@ -28,12 +28,12 @@ export function Modal({ open, onClose, title, children, footer, size = "sm" }: M
     <dialog
       ref={ref}
       aria-labelledby={titleId}
-      className={cx("m-auto w-full rounded border border-line bg-raised p-0 text-fg", widths[size])}
+      className={cx("m-auto w-full rounded-sheet border border-line bg-raised p-0 text-fg shadow-modal", widths[size])}
     >
       {open && (
         <div className="flex flex-col gap-4 p-6">
           <div className="flex items-start justify-between gap-4">
-            <h2 id={titleId} className="pt-2.5 text-xl font-semibold">
+            <h2 id={titleId} className="pt-2.5 font-serif text-xl">
               {title}
             </h2>
             <Button variant="ghost" aria-label="Close" onClick={onClose} className="-mr-2 -mt-1 shrink-0">

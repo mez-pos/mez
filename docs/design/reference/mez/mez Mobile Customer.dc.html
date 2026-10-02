@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Poppins:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; background:#EFE7D8; }
+  * { box-sizing:border-box; }
+  a { color:#B9522F; text-decoration:none; }
+  a:hover { color:#8F3E23; }
+</style>
+</helmet>
+
+<div style="padding:56px;background:#EFE7D8;font-family:'DM Sans',system-ui,sans-serif;color:#3A2E2A;-webkit-font-smoothing:antialiased">
+
+  <div style="max-width:1200px;margin:0 0 48px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.16em;color:#B9522F;margin-bottom:12px">MEZ · BATCH A</div>
+    <h1 style="font-family:Fraunces,serif;font-size:46px;font-weight:600;color:#5B1F1F;margin:0 0 12px;letter-spacing:-.025em">Mobile customer — QR self-ordering</h1>
+    <p style="font-size:17px;line-height:1.55;color:#3A2E2A;margin:0;max-width:720px">390 × 844 · no login, one-handed, 48px targets. Guest scans the table QR, orders, tracks, pays. Same tokens and components as the design system sheet.</p>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:44px">
+
+  <!-- 1 QR LANDING -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">01 · QR LANDING</div>
+    <div data-screen-label="M01 QR Landing" style="width:390px;height:844px;background:#F8F3E9;border-radius:28px;overflow:hidden;position:relative;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;color:#3A2E2A;font-variant-numeric:tabular-nums"><span>7:14</span><span style="display:flex;gap:6px;align-items:center"><i data-lucide="signal" width="14" height="14" stroke-width="2"></i><i data-lucide="wifi" width="14" height="14" stroke-width="2"></i><i data-lucide="battery-full" width="16" height="16" stroke-width="2"></i></span></div>
+      <div style="flex:1;display:flex;flex-direction:column;padding:8px 20px 20px;position:relative;overflow:hidden">
+        <div style="position:absolute;right:-30px;top:120px;opacity:.1"><i data-lucide="leaf" width="220" height="220" stroke-width="1" color="#2F4A2C"></i></div>
+        <div style="display:flex;justify-content:flex-end;position:relative;z-index:1">
+          <div style="display:flex;align-items:center;gap:7px;height:40px;padding:0 16px;border-radius:999px;background:#FFFDF8;border:1px solid #EAE0D0;font-size:14px;font-weight:600"><i data-lucide="globe" width="16" height="16" stroke-width="1.75"></i> English <i data-lucide="chevron-down" width="15" height="15" stroke-width="2"></i></div>
+        </div>
+        <div style="text-align:center;margin-top:26px;position:relative;z-index:1">
+          <img src="assets/mez-mark.png" alt="mez" style="width:51px;height:51px;object-fit:contain;display:block;flex:none">
+          <div style="font-family:Poppins,'DM Sans',sans-serif;font-size:40px;font-weight:700;letter-spacing:-.035em;color:#123E3F;line-height:1">mez</div>
+          <div style="font-size:9.5px;font-weight:700;letter-spacing:.2em;color:#7A6E66;margin-top:7px">GOOD FOOD BRINGS PEOPLE TOGETHER</div>
+        </div>
+        <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:24px;padding:22px;margin-top:24px;text-align:center;box-shadow:0 2px 6px rgba(91,31,31,.04),0 14px 30px rgba(91,31,31,.05);position:relative;z-index:1">
+          <div style="font-size:15px;color:#7A6E66">You're at</div>
+          <div style="font-family:Fraunces,serif;font-size:38px;font-weight:600;color:#2F4A2C;line-height:1.1;margin-top:2px">Table T4</div>
+          <div style="height:1px;background:#EAE0D0;margin:16px 0"></div>
+          <div style="font-family:Fraunces,serif;font-size:27px;font-weight:600;color:#5B1F1F">Welcome!</div>
+          <div style="font-size:15px;color:#3A2E2A;line-height:1.5;margin-top:6px">Scan. Order. Relax.<br>We'll take care of the rest.</div>
+          <div style="font-family:Caveat,cursive;font-size:24px;color:#B9522F;margin-top:10px">A small place for big moments ♡</div>
+        </div>
+        <div style="margin-top:18px;height:158px;border-radius:999px 999px 20px 20px;background:repeating-linear-gradient(45deg,#EFE6D6 0 9px,#F6EFE2 9px 18px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:11px;color:#8B7F72;text-align:center;line-height:1.5;position:relative;z-index:1">arch crop<br>hero dish photo</div>
+        <div style="height:52px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:11px;font-size:18px;font-weight:600;margin-top:18px;box-shadow:0 10px 24px rgba(47,74,44,.26);position:relative;z-index:1"><i data-lucide="utensils" width="20" height="20" stroke-width="2"></i> Start Ordering <i data-lucide="arrow-right" width="19" height="19" stroke-width="2.2"></i></div>
+        <div style="display:flex;gap:10px;margin-top:20px;position:relative;z-index:1">
+          <div style="flex:1;text-align:center"><div style="width:44px;height:44px;border-radius:50%;background:#E8EFE3;color:#2F4A2C;display:flex;align-items:center;justify-content:center;margin:0 auto 8px"><i data-lucide="smartphone" width="20" height="20" stroke-width="1.75"></i></div><div style="font-size:13px;font-weight:700;color:#3A2E2A">Easy Ordering</div><div style="font-size:11.5px;color:#7A6E66;line-height:1.4">From your phone</div></div>
+          <div style="flex:1;text-align:center"><div style="width:44px;height:44px;border-radius:50%;background:#F6E4DC;color:#B9522F;display:flex;align-items:center;justify-content:center;margin:0 auto 8px"><i data-lucide="chef-hat" width="20" height="20" stroke-width="1.75"></i></div><div style="font-size:13px;font-weight:700;color:#3A2E2A">Freshly Made</div><div style="font-size:11.5px;color:#7A6E66;line-height:1.4">Just for you</div></div>
+          <div style="flex:1;text-align:center"><div style="width:44px;height:44px;border-radius:50%;background:#FAEBC8;color:#7A5306;display:flex;align-items:center;justify-content:center;margin:0 auto 8px"><i data-lucide="heart" width="20" height="20" stroke-width="1.75"></i></div><div style="font-size:13px;font-weight:700;color:#3A2E2A">Better Dining</div><div style="font-size:11.5px;color:#7A6E66;line-height:1.4">Every visit</div></div>
+        </div>
+      </div>
+      <div style="height:34px;display:flex;align-items:center;justify-content:center"><div style="width:130px;height:5px;border-radius:999px;background:#3A2E2A;opacity:.28"></div></div>
+    </div>
+  </div>
+
+  <!-- 2 MENU -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">02 · MENU</div>
+    <div data-screen-label="M02 Menu" style="width:390px;height:844px;background:#F8F3E9;border-radius:28px;overflow:hidden;position:relative;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums"><span>7:15</span><span style="display:flex;gap:6px;align-items:center"><i data-lucide="signal" width="14" height="14" stroke-width="2"></i><i data-lucide="wifi" width="14" height="14" stroke-width="2"></i><i data-lucide="battery-full" width="16" height="16" stroke-width="2"></i></span></div>
+      <div style="height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#FFFDF8;border-bottom:1px solid #EAE0D0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <img src="assets/mez-mark.png" alt="mez" style="width:25px;height:25px;object-fit:contain;display:block;flex:none">
+          <div style="font-family:Poppins,'DM Sans',sans-serif;font-size:21px;font-weight:700;letter-spacing:-.035em;color:#123E3F;">mez</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="display:flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:999px;background:#F6E4DC;color:#9C4325;font-size:13.5px;font-weight:700"><i data-lucide="armchair" width="15" height="15" stroke-width="1.9"></i> Table T4 <i data-lucide="chevron-down" width="14" height="14" stroke-width="2.2"></i></div>
+          <div style="width:36px;height:36px;border-radius:50%;background:#F2EADB;display:flex;align-items:center;justify-content:center"><i data-lucide="menu" width="18" height="18" stroke-width="2"></i></div>
+        </div>
+      </div>
+      <div style="flex:1;overflow:hidden;position:relative">
+        <div style="height:92px;margin:12px 16px 0;border-radius:18px;background:#2F4A2C;position:relative;overflow:hidden;display:flex;align-items:center;padding:0 18px">
+          <div style="position:absolute;right:-12px;top:-12px;opacity:.16"><i data-lucide="leaf" width="130" height="130" stroke-width="1" color="#F5EADB"></i></div>
+          <div style="position:relative"><div style="font-family:Caveat,cursive;font-size:27px;color:#F5EADB;line-height:1.15">Great Food,<br>Brighter Days ♡</div></div>
+          <div style="margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.16em;color:#C9D6BE;text-align:right;line-height:1.7;position:relative">FRESH<br>FLAVOURS<br>DAILY</div>
+        </div>
+        <div style="margin:12px 16px 0;height:46px;border-radius:999px;background:#FFFDF8;border:1px solid #EAE0D0;display:flex;align-items:center;gap:10px;padding:0 16px;font-size:14.5px;color:#7A6E66"><i data-lucide="search" width="18" height="18" stroke-width="1.75"></i> Search for dishes, e.g. pizza…</div>
+        <div style="display:flex;gap:8px;padding:12px 16px 0;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:7px;height:42px;padding:0 16px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;font-size:14px;font-weight:600;flex:none"><i data-lucide="layout-grid" width="16" height="16" stroke-width="1.9"></i> All</div>
+          <div style="display:flex;align-items:center;gap:7px;height:42px;padding:0 16px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14px;flex:none"><i data-lucide="soup" width="16" height="16" stroke-width="1.75"></i> Starters</div>
+          <div style="display:flex;align-items:center;gap:7px;height:42px;padding:0 16px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14px;flex:none"><i data-lucide="pizza" width="16" height="16" stroke-width="1.75"></i> Pizzas</div>
+          <div style="display:flex;align-items:center;gap:7px;height:42px;padding:0 16px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14px;flex:none"><i data-lucide="cake-slice" width="16" height="16" stroke-width="1.75"></i> Des</div>
+        </div>
+        <div style="display:flex;gap:8px;padding:8px 16px 0;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:999px;background:#E8EFE3;border:1px solid #CFDEC5;color:#216B26;font-size:13px;font-weight:600;flex:none"><i data-lucide="leaf" width="14" height="14" stroke-width="2"></i> Veg</div>
+          <div style="display:flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:999px;background:#E8EFE3;border:1px solid #CFDEC5;color:#216B26;font-size:13px;font-weight:600;flex:none"><i data-lucide="sprout" width="14" height="14" stroke-width="2"></i> Vegan</div>
+          <div style="display:flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:999px;background:#F9E2DB;border:1px solid #EFCCC1;color:#A8321C;font-size:13px;font-weight:600;flex:none"><i data-lucide="flame" width="14" height="14" stroke-width="2"></i> Spicy</div>
+          <div style="display:flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:999px;background:#FAEBC8;border:1px solid #EDD8A6;color:#7A5306;font-size:13px;font-weight:600;flex:none"><i data-lucide="wheat-off" width="14" height="14" stroke-width="2"></i> GF</div>
+        </div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:16px 16px 0">
+          <div><div style="font-family:Fraunces,serif;font-size:25px;font-weight:600;color:#5B1F1F;line-height:1.1">All Items</div><div style="font-size:12.5px;color:#7A6E66;margin-top:2px">Fresh ingredients. Great taste.</div></div>
+          <div style="display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:13px;font-weight:600">Popular <i data-lucide="chevron-down" width="14" height="14" stroke-width="2"></i></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 16px 0">
+          <sc-for list="{{ menuGrid }}" as="m" hint-placeholder-count="4">
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:18px;overflow:hidden;box-shadow:0 2px 6px rgba(91,31,31,.04)">
+              <div style="height:96px;background:repeating-linear-gradient(45deg,#EFE6D6 0 9px,#F6EFE2 9px 18px);position:relative;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#8B7F72">{{ m.slot }}
+                <div style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(255,253,248,.92);display:flex;align-items:center;justify-content:center"><i data-lucide="heart" width="14" height="14" stroke-width="2" color="#7A6E66"></i></div>
+              </div>
+              <div style="padding:11px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <div style="width:14px;height:14px;border-radius:3px;border:2px solid {{ m.dietColor }};display:flex;align-items:center;justify-content:center;flex:none"><span style="width:6px;height:6px;border-radius:50%;background:{{ m.dietColor }}"></span></div>
+                  <div style="font-family:Fraunces,serif;font-size:14.5px;font-weight:600;color:#5B1F1F;line-height:1.2">{{ m.name }}</div>
+                </div>
+                <div style="font-family:Fraunces,serif;font-size:16px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums;margin-top:4px">{{ m.price }}</div>
+                <div style="font-size:11.5px;color:#7A6E66;line-height:1.4;margin-top:4px;height:32px;overflow:hidden">{{ m.desc }}</div>
+                <div style="height:38px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:7px;font-size:14px;font-weight:600;margin-top:9px"><i data-lucide="plus" width="15" height="15" stroke-width="2.4"></i> Add</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="position:absolute;left:14px;right:14px;bottom:86px;height:66px;border-radius:20px;background:#2F4A2C;display:flex;align-items:center;padding:0 16px;gap:12px;box-shadow:0 10px 24px rgba(47,74,44,.3)">
+        <div style="position:relative;color:#F5EADB"><i data-lucide="shopping-cart" width="24" height="24" stroke-width="1.9"></i><div style="position:absolute;top:-6px;right:-8px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:#A33A28;color:#FFFDF8;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">3</div></div>
+        <div style="color:#F5EADB"><div style="font-size:15.5px;font-weight:700">View Cart</div><div style="font-size:12px;color:#C9D6BE;font-variant-numeric:tabular-nums">3 items · ₹797</div></div>
+        <div style="margin-left:auto;height:42px;padding:0 16px;border-radius:999px;background:#FFFDF8;color:#2F4A2C;font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px">Checkout <i data-lucide="arrow-right" width="16" height="16" stroke-width="2.4"></i></div>
+      </div>
+      <div style="height:80px;background:#FFFDF8;border-top:1px solid #EAE0D0;display:flex;align-items:center;padding-bottom:12px">
+        <div style="flex:1;text-align:center;color:#2F4A2C"><i data-lucide="utensils" width="21" height="21" stroke-width="2"></i><div style="font-size:11px;font-weight:700;margin-top:3px">Menu</div></div>
+        <div style="flex:1;text-align:center;color:#7A6E66"><i data-lucide="receipt-text" width="21" height="21" stroke-width="1.75"></i><div style="font-size:11px;font-weight:500;margin-top:3px">Orders</div></div>
+        <div style="flex:1;text-align:center;color:#7A6E66"><i data-lucide="tag" width="21" height="21" stroke-width="1.75"></i><div style="font-size:11px;font-weight:500;margin-top:3px">Offers</div></div>
+        <div style="flex:1;text-align:center;color:#7A6E66"><i data-lucide="bell" width="21" height="21" stroke-width="1.75"></i><div style="font-size:11px;font-weight:500;margin-top:3px">Help</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 ITEM SHEET -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">03 · ITEM DETAIL SHEET</div>
+    <div data-screen-label="M03 Item Detail" style="width:390px;height:844px;background:#F8F3E9;border-radius:28px;overflow:hidden;position:relative;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10)">
+      <div style="position:absolute;inset:0;background:#F8F3E9;filter:blur(1px);opacity:.5">
+        <div style="height:100px;background:#FFFDF8"></div>
+      </div>
+      <div style="position:absolute;inset:0;background:rgba(58,46,42,.42)"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;top:96px;background:#FFFDF8;border-radius:24px 24px 0 0;box-shadow:0 -10px 30px rgba(91,31,31,.18);display:flex;flex-direction:column">
+        <div style="height:182px;background:repeating-linear-gradient(45deg,#EFE6D6 0 9px,#F6EFE2 9px 18px);border-radius:24px 24px 0 0;position:relative;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:11px;color:#8B7F72">margherita 4:3 photo
+          <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:44px;height:5px;border-radius:999px;background:rgba(58,46,42,.25)"></div>
+          <div style="position:absolute;top:16px;left:14px;display:flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:#E7A83A;color:#40320D;font-size:12px;font-weight:700"><i data-lucide="crown" width="13" height="13" stroke-width="2.2"></i> Bestseller</div>
+          <div style="position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:#FFFDF8;display:flex;align-items:center;justify-content:center"><i data-lucide="x" width="18" height="18" stroke-width="2.2"></i></div>
+          <div style="position:absolute;bottom:14px;right:14px;font-family:Caveat,cursive;font-size:22px;color:#7A4A3A;text-align:right;line-height:1.2">A classic, always ♡</div>
+        </div>
+        <div style="flex:1;padding:16px;overflow:hidden">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:17px;height:17px;border-radius:3px;border:2px solid #2E7D32;display:flex;align-items:center;justify-content:center;flex:none"><span style="width:7px;height:7px;border-radius:50%;background:#2E7D32"></span></div><div style="font-family:Fraunces,serif;font-size:25px;font-weight:600;color:#5B1F1F;line-height:1.15">Margherita Pizza</div></div>
+            <div style="font-family:Fraunces,serif;font-size:25px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">₹299</div>
+          </div>
+          <div style="font-size:14px;color:#7A6E66;line-height:1.5;margin-top:7px">Classic wood-fired pizza with tomato sauce, mozzarella and fresh basil.</div>
+          <div style="display:flex;gap:7px;margin-top:11px">
+            <span style="height:28px;padding:0 11px;border-radius:999px;background:#E8EFE3;color:#216B26;font-size:12.5px;font-weight:600;display:flex;align-items:center">Vegetarian</span>
+            <span style="height:28px;padding:0 11px;border-radius:999px;background:#F6E4DC;color:#9C4325;font-size:12.5px;font-weight:600;display:flex;align-items:center">Chef's Special</span>
+            <span style="height:28px;padding:0 11px;border-radius:999px;background:#FAEBC8;color:#7A5306;font-size:12.5px;font-weight:600;display:flex;align-items:center">★ 4.8</span>
+          </div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:20px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:600;color:#5B1F1F">Choose size</div><span style="font-size:12px;color:#A8321C;font-weight:600">Required</span></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px">
+            <div style="border:1.5px solid #2F4A2C;background:#E8EFE3;border-radius:14px;padding:11px 8px;text-align:center"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #2F4A2C;display:flex;align-items:center;justify-content:center;margin:0 auto 6px"><span style="width:8px;height:8px;border-radius:50%;background:#2F4A2C"></span></div><div style="font-size:13px;font-weight:700;color:#2F4A2C">Personal</div><div style="font-size:11px;color:#5F5850">7 inch</div><div style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px">₹299</div></div>
+            <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:14px;padding:11px 8px;text-align:center"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #DCCDB4;margin:0 auto 6px"></div><div style="font-size:13px;font-weight:700">Regular</div><div style="font-size:11px;color:#7A6E66">10 inch</div><div style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px">₹449</div></div>
+            <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:14px;padding:11px 8px;text-align:center"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #DCCDB4;margin:0 auto 6px"></div><div style="font-size:13px;font-weight:700">Large</div><div style="font-size:11px;color:#7A6E66">12 inch</div><div style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px">₹599</div></div>
+          </div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:20px"><div style="font-family:Fraunces,serif;font-size:18px;font-weight:600;color:#5B1F1F">Add extras</div><span style="font-size:12px;color:#7A6E66">Optional</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:11px">
+            <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:20px;border-radius:6px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="check" width="13" height="13" stroke-width="3.2"></i></div><span style="font-size:13.5px;flex:1">Extra Cheese</span><span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">+₹60</span></div>
+            <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:20px;border-radius:6px;border:1.5px solid #DCCDB4;flex:none"></div><span style="font-size:13.5px;flex:1">Fresh Basil</span><span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:#7A6E66">+₹30</span></div>
+            <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:20px;border-radius:6px;border:1.5px solid #DCCDB4;flex:none"></div><span style="font-size:13.5px;flex:1">Mushrooms</span><span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:#7A6E66">+₹40</span></div>
+            <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:20px;border-radius:6px;border:1.5px solid #DCCDB4;flex:none"></div><span style="font-size:13.5px;flex:1">Jalapeños</span><span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:#7A6E66">+₹30</span></div>
+            <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:20px;border-radius:6px;border:1.5px solid #DCCDB4;flex:none"></div><span style="font-size:13.5px;flex:1">Olives</span><span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:#7A6E66">+₹30</span></div>
+            <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:20px;border-radius:6px;border:1.5px solid #DCCDB4;flex:none"></div><span style="font-size:13.5px;flex:1">Cherry Tomatoes</span><span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:#7A6E66">+₹40</span></div>
+          </div>
+          <div style="font-family:Fraunces,serif;font-size:18px;font-weight:600;color:#5B1F1F;margin-top:20px">Special instructions</div>
+          <div style="min-height:58px;border:1px solid #DCCDB4;border-radius:14px;background:#FFFDF8;padding:12px 14px;font-size:13.5px;color:#7A6E66;margin-top:10px;line-height:1.45">e.g. less cheese, extra crispy, no onions…</div>
+        </div>
+        <div style="border-top:1px solid #EAE0D0;padding:14px 16px 20px;background:#FFFDF8;display:flex;align-items:center;gap:12px">
+          <div style="display:flex;align-items:center;border:1px solid #DCCDB4;border-radius:999px;height:48px;flex:none"><div style="width:42px;text-align:center;color:#7A6E66;font-size:19px">−</div><span style="min-width:26px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums">1</span><div style="width:42px;text-align:center;color:#2F4A2C;font-size:19px">+</div></div>
+          <div style="flex:1;height:48px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:10px;font-size:16px;font-weight:600;box-shadow:0 8px 18px rgba(47,74,44,.24)"><i data-lucide="shopping-cart" width="18" height="18" stroke-width="2"></i> Add to order · <span style="font-variant-numeric:tabular-nums">₹359</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 CART & CHECKOUT -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">04 · CART &amp; CHECKOUT</div>
+    <div data-screen-label="M04 Cart Checkout" style="width:390px;height:844px;background:#F8F3E9;border-radius:28px;overflow:hidden;position:relative;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums"><span>7:18</span><span style="display:flex;gap:6px;align-items:center"><i data-lucide="signal" width="14" height="14" stroke-width="2"></i><i data-lucide="wifi" width="14" height="14" stroke-width="2"></i><i data-lucide="battery-full" width="16" height="16" stroke-width="2"></i></span></div>
+      <div style="height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;background:#FFFDF8;border-bottom:1px solid #EAE0D0">
+        <div style="width:36px;height:36px;border-radius:50%;background:#F2EADB;display:flex;align-items:center;justify-content:center"><i data-lucide="arrow-left" width="18" height="18" stroke-width="2"></i></div>
+        <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Your Cart</div>
+        <div style="height:26px;padding:0 10px;border-radius:999px;background:#E8EFE3;color:#216B26;font-size:12px;font-weight:700;display:flex;align-items:center">3 items</div>
+        <div style="margin-left:auto;height:34px;padding:0 12px;border-radius:999px;background:#FBEDE9;color:#A33A28;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px"><i data-lucide="trash-2" width="14" height="14" stroke-width="2"></i> Clear</div>
+      </div>
+      <div style="flex:1;overflow:hidden;padding:14px 16px 0">
+        <sc-for list="{{ cart }}" as="c" hint-placeholder-count="3">
+          <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:16px;padding:11px;display:flex;gap:11px;margin-bottom:10px">
+            <div style="width:62px;height:62px;border-radius:12px;background:repeating-linear-gradient(45deg,#EFE6D6 0 8px,#F6EFE2 8px 16px);flex:none"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;gap:8px"><div style="font-family:Fraunces,serif;font-size:16px;font-weight:600;color:#5B1F1F;line-height:1.2">{{ c.name }}</div><div style="font-family:Fraunces,serif;font-size:16px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">{{ c.line }}</div></div>
+              <div style="font-size:12px;color:#7A6E66;margin-top:3px">{{ c.opts }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+                <div style="display:flex;align-items:center;gap:6px"><div style="width:13px;height:13px;border-radius:3px;border:2px solid {{ c.dietColor }};display:flex;align-items:center;justify-content:center"><span style="width:5px;height:5px;border-radius:50%;background:{{ c.dietColor }}"></span></div><span style="font-size:11.5px;color:#7A6E66">{{ c.diet }}</span></div>
+                <div style="display:flex;align-items:center;border:1px solid #DCCDB4;border-radius:999px;height:34px"><div style="width:32px;text-align:center;color:#7A6E66">−</div><span style="min-width:20px;text-align:center;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">{{ c.qty }}</span><div style="width:32px;text-align:center;color:#2F4A2C">+</div></div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="background:#E8EFE3;border:1px solid #CFDEC5;border-radius:16px;padding:12px;display:flex;align-items:center;gap:11px;margin-bottom:12px">
+          <div style="width:34px;height:34px;border-radius:50%;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="plus" width="18" height="18" stroke-width="2.4"></i></div>
+          <div style="flex:1"><div style="font-size:14px;font-weight:700;color:#2F4A2C">Add more items</div><div style="font-size:11.5px;color:#5F5850">Browse the full menu</div></div>
+          <i data-lucide="chevron-right" width="18" height="18" stroke-width="2.2" color="#2F4A2C"></i>
+        </div>
+        <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:16px;padding:14px">
+          <div style="font-family:Fraunces,serif;font-size:17px;font-weight:600;color:#5B1F1F;margin-bottom:10px">Order Summary</div>
+          <div style="display:grid;gap:7px;font-size:13.5px">
+            <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Items total (3)</span><span style="font-variant-numeric:tabular-nums">₹797</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">CGST (2.5%)</span><span style="font-variant-numeric:tabular-nums">₹20</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">SGST (2.5%)</span><span style="font-variant-numeric:tabular-nums">₹20</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Tip</span><span style="font-variant-numeric:tabular-nums">₹50</span></div>
+            <div style="height:1px;background:#EAE0D0;margin:3px 0"></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:Fraunces,serif;font-size:18px;font-weight:600;color:#5B1F1F">Total</span><span style="font-family:Fraunces,serif;font-size:22px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">₹887</span></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:14px"><i data-lucide="heart" width="17" height="17" stroke-width="2" color="#B9522F"></i><span style="font-family:Fraunces,serif;font-size:16px;font-weight:600;color:#5B1F1F">Add a tip</span><span style="font-size:12px;color:#7A6E66">100% goes to the team</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">
+          <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:12px;padding:9px 4px;text-align:center"><div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">₹20</div><div style="font-size:10.5px;color:#7A6E66">Nice</div></div>
+          <div style="border:1.5px solid #2F4A2C;background:#2F4A2C;border-radius:12px;padding:9px 4px;text-align:center;color:#FFFDF8"><div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">₹50</div><div style="font-size:10.5px;opacity:.85">Great</div></div>
+          <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:12px;padding:9px 4px;text-align:center"><div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">₹100</div><div style="font-size:10.5px;color:#7A6E66">Awesome</div></div>
+          <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:12px;padding:9px 4px;text-align:center"><div style="font-size:14px;font-weight:700">Custom</div><div style="font-size:10.5px;color:#7A6E66">Your call</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px">
+          <div style="border:1.5px solid #2F4A2C;background:#E8EFE3;border-radius:14px;padding:11px;display:flex;align-items:center;gap:9px"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #2F4A2C;display:flex;align-items:center;justify-content:center;flex:none"><span style="width:8px;height:8px;border-radius:50%;background:#2F4A2C"></span></div><div><div style="font-size:13px;font-weight:700;color:#2F4A2C">Pay Now</div><div style="font-size:11px;color:#5F5850">UPI · Card</div></div></div>
+          <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:14px;padding:11px;display:flex;align-items:center;gap:9px"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #DCCDB4;flex:none"></div><div><div style="font-size:13px;font-weight:700">At Counter</div><div style="font-size:11px;color:#7A6E66">Settle later</div></div></div>
+        </div>
+      </div>
+      <div style="padding:12px 16px 22px;background:#FFFDF8;border-top:1px solid #EAE0D0">
+        <div style="height:52px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:11px;font-size:17px;font-weight:600;box-shadow:0 10px 24px rgba(47,74,44,.26)"><i data-lucide="utensils" width="19" height="19" stroke-width="2"></i> Place Order · <span style="font-variant-numeric:tabular-nums">₹887</span></div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:11.5px;color:#7A6E66;margin-top:9px"><i data-lucide="lock" width="13" height="13" stroke-width="2"></i> Your order is secure</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 ORDER TRACKING -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">05 · LIVE ORDER TRACKING</div>
+    <div data-screen-label="M05 Order Tracking" style="width:390px;height:844px;background:#F8F3E9;border-radius:28px;overflow:hidden;position:relative;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums"><span>7:28</span><span style="display:flex;gap:6px;align-items:center"><i data-lucide="signal" width="14" height="14" stroke-width="2"></i><i data-lucide="wifi" width="14" height="14" stroke-width="2"></i><i data-lucide="battery-full" width="16" height="16" stroke-width="2"></i></span></div>
+      <div style="height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#FFFDF8;border-bottom:1px solid #EAE0D0">
+        <div style="display:flex;align-items:center;gap:8px"><img src="assets/mez-mark.png" alt="mez" style="width:25px;height:25px;object-fit:contain;display:block;flex:none"><div style="font-family:Poppins,'DM Sans',sans-serif;font-size:21px;font-weight:700;letter-spacing:-.035em;color:#123E3F">mez</div></div>
+        <div style="display:flex;align-items:center;gap:8px"><div style="display:flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:999px;background:#F6E4DC;color:#9C4325;font-size:13.5px;font-weight:700"><i data-lucide="armchair" width="15" height="15" stroke-width="1.9"></i> Table T4</div><div style="width:36px;height:36px;border-radius:50%;background:#F2EADB;display:flex;align-items:center;justify-content:center"><i data-lucide="more-horizontal" width="18" height="18" stroke-width="2"></i></div></div>
+      </div>
+      <div style="flex:1;overflow:hidden">
+        <div style="background:#EFF4EB;padding:18px 16px;position:relative;overflow:hidden">
+          <div style="position:absolute;right:-24px;bottom:-24px;opacity:.14"><i data-lucide="leaf" width="150" height="150" stroke-width="1" color="#2F4A2C"></i></div>
+          <div style="display:flex;gap:14px;align-items:center;position:relative">
+            <div>
+              <div style="font-family:Fraunces,serif;font-size:26px;font-weight:600;color:#5B1F1F;line-height:1.15">Your order is<br>on its way!</div>
+              <div style="width:36px;height:3px;background:#2F4A2C;border-radius:2px;margin:9px 0"></div>
+              <div style="font-size:13.5px;color:#3A2E2A;line-height:1.45">Freshly prepared with care,<br>just for you.</div>
+            </div>
+            <div style="width:104px;height:104px;border-radius:50%;background:repeating-linear-gradient(45deg,#E5DCC9 0 9px,#EFE8D9 9px 18px);flex:none;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#8B7F72;text-align:center;line-height:1.4">flat chef<br>mascot</div>
+          </div>
+          <div style="font-family:Caveat,cursive;font-size:22px;color:#7A4A3A;margin-top:10px;position:relative">Good Food, Happier People ♡</div>
+        </div>
+        <div style="background:#FFFDF8;border-bottom:1px solid #EAE0D0;padding:18px 16px">
+          <div style="display:flex">
+            <div style="flex:1;text-align:center"><div style="display:flex;align-items:center"><div style="flex:1"></div><div style="width:36px;height:36px;border-radius:50%;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="check" width="18" height="18" stroke-width="3"></i></div><div style="flex:1;height:3px;background:#2F4A2C"></div></div><div style="font-size:11.5px;font-weight:700;margin-top:7px">Received</div><div style="font-size:10.5px;color:#7A6E66;font-variant-numeric:tabular-nums">7:15 PM</div></div>
+            <div style="flex:1;text-align:center"><div style="display:flex;align-items:center"><div style="flex:1;height:3px;background:#2F4A2C"></div><div style="width:36px;height:36px;border-radius:50%;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 0 0 5px #DDE8D3"><i data-lucide="chef-hat" width="17" height="17" stroke-width="2"></i></div><div style="flex:1;height:3px;background:#E0D6C4"></div></div><div style="font-size:11.5px;font-weight:700;margin-top:7px">Preparing</div><div style="font-size:10.5px;color:#7A6E66;font-variant-numeric:tabular-nums">7:22 PM</div></div>
+            <div style="flex:1;text-align:center"><div style="display:flex;align-items:center"><div style="flex:1;height:3px;background:#E0D6C4"></div><div style="width:36px;height:36px;border-radius:50%;background:#EDE4D4;color:#9C8B7A;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="bell-ring" width="17" height="17" stroke-width="2"></i></div><div style="flex:1;height:3px;background:#E0D6C4"></div></div><div style="font-size:11.5px;font-weight:700;margin-top:7px;color:#7A6E66">On the way</div><div style="font-size:10.5px;color:#7A6E66">~4 min</div></div>
+            <div style="flex:1;text-align:center"><div style="display:flex;align-items:center"><div style="flex:1;height:3px;background:#E0D6C4"></div><div style="width:36px;height:36px;border-radius:50%;background:#EDE4D4;color:#9C8B7A;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="utensils" width="17" height="17" stroke-width="2"></i></div><div style="flex:1"></div></div><div style="font-size:11.5px;font-weight:700;margin-top:7px;color:#7A6E66">Served</div><div style="font-size:10.5px;color:#7A6E66">Enjoy!</div></div>
+          </div>
+        </div>
+        <div style="padding:14px 16px 0">
+          <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:16px;padding:14px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:600;color:#5B1F1F">Order details</div><div style="font-size:12.5px;color:#7A6E66;font-variant-numeric:tabular-nums">#TVL7842</div></div>
+            <sc-for list="{{ cart }}" as="c" hint-placeholder-count="3">
+              <div style="display:flex;gap:11px;align-items:center;padding-top:12px;margin-top:12px;border-top:1px solid #F4EDE0">
+                <div style="width:46px;height:46px;border-radius:10px;background:repeating-linear-gradient(45deg,#EFE6D6 0 8px,#F6EFE2 8px 16px);flex:none"></div>
+                <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:#3A2E2A">{{ c.name }}</div><div style="font-size:11.5px;color:#7A6E66">{{ c.opts }}</div></div>
+                <div style="font-size:13px;color:#7A6E66;font-variant-numeric:tabular-nums">{{ c.qty }}×</div>
+                <div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">{{ c.line }}</div>
+              </div>
+            </sc-for>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid #EAE0D0;margin-top:12px;padding-top:12px"><span style="font-size:13.5px;color:#5F5850">Paid · UPI · incl. taxes &amp; tip</span><span style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">₹887</span></div>
+          </div>
+          <div style="background:#E8EFE3;border:1px solid #CFDEC5;border-radius:14px;padding:12px;display:flex;gap:10px;margin-top:12px">
+            <i data-lucide="bell" width="18" height="18" stroke-width="2" color="#216B26"></i>
+            <div><div style="font-size:13.5px;font-weight:700;color:#216B26">We'll notify you when it's on the way</div><div style="font-size:12px;color:#3A2E2A;margin-top:2px">Relax, grab a drink, or order more.</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px">
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:14px;padding:12px"><i data-lucide="refresh-cw" width="18" height="18" stroke-width="1.9" color="#2F4A2C"></i><div style="font-size:13.5px;font-weight:700;margin-top:7px">Reorder items</div><div style="font-size:11px;color:#7A6E66">Favourites again</div></div>
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:14px;padding:12px"><i data-lucide="receipt-text" width="18" height="18" stroke-width="1.9" color="#B9522F"></i><div style="font-size:13.5px;font-weight:700;margin-top:7px">Request bill</div><div style="font-size:11px;color:#7A6E66">We'll bring it over</div></div>
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:14px;padding:12px"><i data-lucide="bell-ring" width="18" height="18" stroke-width="1.9" color="#B9522F"></i><div style="font-size:13.5px;font-weight:700;margin-top:7px">Call waiter</div><div style="font-size:11px;color:#7A6E66">Rohan is nearby</div></div>
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:14px;padding:12px"><i data-lucide="plus" width="18" height="18" stroke-width="1.9" color="#2F4A2C"></i><div style="font-size:13.5px;font-weight:700;margin-top:7px">Add more</div><div style="font-size:11px;color:#7A6E66">Craving dessert?</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="height:34px;display:flex;align-items:center;justify-content:center"><div style="width:130px;height:5px;border-radius:999px;background:#3A2E2A;opacity:.28"></div></div>
+    </div>
+  </div>
+
+  <!-- 6 OFFERS -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">06 · OFFERS &amp; COMBOS</div>
+    <div data-screen-label="M06 Offers" style="width:390px;height:844px;background:#F8F3E9;border-radius:28px;overflow:hidden;position:relative;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums"><span>7:16</span><span style="display:flex;gap:6px;align-items:center"><i data-lucide="signal" width="14" height="14" stroke-width="2"></i><i data-lucide="wifi" width="14" height="14" stroke-width="2"></i><i data-lucide="battery-full" width="16" height="16" stroke-width="2"></i></span></div>
+      <div style="height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;background:#FFFDF8;border-bottom:1px solid #EAE0D0">
+        <div style="width:36px;height:36px;border-radius:50%;background:#F2EADB;display:flex;align-items:center;justify-content:center"><i data-lucide="arrow-left" width="18" height="18" stroke-width="2"></i></div>
+        <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Offers &amp; Combos</div>
+      </div>
+      <div style="flex:1;padding:14px 16px;overflow:hidden">
+        <div style="background:#B9522F;border-radius:18px;padding:18px;position:relative;overflow:hidden">
+          <div style="position:absolute;right:-18px;bottom:-22px;opacity:.18"><i data-lucide="tag" width="130" height="130" stroke-width="1" color="#FFFDF8"></i></div>
+          <div style="position:relative;color:#FFFDF8">
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:.16em;opacity:.9">HAPPY HOUR · 4–7 PM</div>
+            <div style="font-family:Fraunces,serif;font-size:28px;font-weight:600;line-height:1.1;margin-top:7px">Flat 20% off<br>all beverages</div>
+            <div style="font-size:13px;opacity:.92;margin-top:7px">Iced Latte, Fresh Lime Soda &amp; more</div>
+            <div style="display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:999px;background:#FFFDF8;color:#B9522F;font-size:14px;font-weight:700;margin-top:13px">Apply offer <i data-lucide="arrow-right" width="16" height="16" stroke-width="2.4"></i></div>
+          </div>
+        </div>
+        <div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F;margin:18px 0 10px">Combo meals</div>
+        <sc-for list="{{ combos }}" as="k" hint-placeholder-count="3">
+          <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:16px;padding:12px;display:flex;gap:12px;margin-bottom:10px;box-shadow:0 2px 6px rgba(91,31,31,.04)">
+            <div style="width:78px;height:78px;border-radius:14px;background:repeating-linear-gradient(45deg,#EFE6D6 0 9px,#F6EFE2 9px 18px);flex:none"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:7px"><div style="width:13px;height:13px;border-radius:3px;border:2px solid {{ k.dietColor }};display:flex;align-items:center;justify-content:center;flex:none"><span style="width:5px;height:5px;border-radius:50%;background:{{ k.dietColor }}"></span></div><div style="font-family:Fraunces,serif;font-size:16px;font-weight:600;color:#5B1F1F;line-height:1.2">{{ k.name }}</div></div>
+              <div style="font-size:11.5px;color:#7A6E66;line-height:1.4;margin-top:4px">{{ k.desc }}</div>
+              <div style="display:flex;align-items:center;gap:9px;margin-top:8px">
+                <span style="font-family:Fraunces,serif;font-size:17px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">{{ k.price }}</span>
+                <span style="font-size:12.5px;color:#7A6E66;text-decoration:line-through;font-variant-numeric:tabular-nums">{{ k.was }}</span>
+                <span style="height:24px;padding:0 9px;border-radius:999px;background:#FAEBC8;color:#7A5306;font-size:11.5px;font-weight:700;display:flex;align-items:center">{{ k.save }}</span>
+                <div style="margin-left:auto;height:34px;padding:0 15px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;font-size:13.5px;font-weight:600;display:flex;align-items:center">Add</div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+        <div style="background:#FFFDF8;border:1px dashed #DCCDB4;border-radius:16px;padding:14px;display:flex;align-items:center;gap:11px;margin-top:4px">
+          <div style="width:38px;height:38px;border-radius:10px;background:#DCE8F7;color:#23509A;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="ticket" width="19" height="19" stroke-width="1.9"></i></div>
+          <div style="flex:1"><div style="font-size:13.5px;font-weight:700">Have a coupon code?</div><div style="font-size:11.5px;color:#7A6E66">Try WELCOME10 for 10% off</div></div>
+          <div style="height:34px;padding:0 14px;border-radius:999px;border:1px solid #DCCDB4;font-size:13px;font-weight:600;display:flex;align-items:center">Apply</div>
+        </div>
+      </div>
+      <div style="height:80px;background:#FFFDF8;border-top:1px solid #EAE0D0;display:flex;align-items:center;padding-bottom:12px">
+        <div style="flex:1;text-align:center;color:#7A6E66"><i data-lucide="utensils" width="21" height="21" stroke-width="1.75"></i><div style="font-size:11px;margin-top:3px">Menu</div></div>
+        <div style="flex:1;text-align:center;color:#7A6E66"><i data-lucide="receipt-text" width="21" height="21" stroke-width="1.75"></i><div style="font-size:11px;margin-top:3px">Orders</div></div>
+        <div style="flex:1;text-align:center;color:#2F4A2C"><i data-lucide="tag" width="21" height="21" stroke-width="2"></i><div style="font-size:11px;font-weight:700;margin-top:3px">Offers</div></div>
+        <div style="flex:1;text-align:center;color:#7A6E66"><i data-lucide="bell" width="21" height="21" stroke-width="1.75"></i><div style="font-size:11px;margin-top:3px">Help</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7 CALL WAITER -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">07 · CALL WAITER / HELP</div>
+    <div data-screen-label="M07 Call Waiter" style="width:390px;height:844px;background:#F8F3E9;border-radius:28px;overflow:hidden;position:relative;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10)">
+      <div style="position:absolute;inset:0;background:rgba(58,46,42,.45)"></div>
+      <div style="position:absolute;top:44px;left:16px;right:16px;opacity:.5"><div style="height:56px;background:#FFFDF8;border-radius:16px"></div></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;background:#FFFDF8;border-radius:24px 24px 0 0;padding:18px 16px 24px;box-shadow:0 -10px 30px rgba(91,31,31,.2)">
+        <div style="width:44px;height:5px;border-radius:999px;background:#DCCDB4;margin:0 auto 16px"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">How can we help?</div><div style="font-size:13.5px;color:#7A6E66;margin-top:3px">Rohan is looking after Table T4.</div></div>
+          <div style="width:34px;height:34px;border-radius:50%;background:#F2EADB;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="x" width="18" height="18" stroke-width="2.2"></i></div>
+        </div>
+        <div style="display:grid;gap:10px;margin-top:18px">
+          <div style="height:54px;border:1.5px solid #2F4A2C;background:#E8EFE3;border-radius:16px;display:flex;align-items:center;gap:12px;padding:0 16px"><i data-lucide="glass-water" width="20" height="20" stroke-width="1.9" color="#2F4A2C"></i><span style="font-size:15px;font-weight:700;color:#2F4A2C;flex:1">Water refill</span><i data-lucide="check" width="18" height="18" stroke-width="3" color="#2F4A2C"></i></div>
+          <div style="height:54px;border:1px solid #E3D8C6;border-radius:16px;display:flex;align-items:center;gap:12px;padding:0 16px"><i data-lucide="utensils" width="20" height="20" stroke-width="1.75"></i><span style="font-size:15px;flex:1">Extra cutlery or napkins</span></div>
+          <div style="height:54px;border:1px solid #E3D8C6;border-radius:16px;display:flex;align-items:center;gap:12px;padding:0 16px"><i data-lucide="flame" width="20" height="20" stroke-width="1.75"></i><span style="font-size:15px;flex:1">Something's too spicy</span></div>
+          <div style="height:54px;border:1px solid #E3D8C6;border-radius:16px;display:flex;align-items:center;gap:12px;padding:0 16px"><i data-lucide="receipt-text" width="20" height="20" stroke-width="1.75"></i><span style="font-size:15px;flex:1">Bring the bill</span></div>
+          <div style="height:54px;border:1px solid #E3D8C6;border-radius:16px;display:flex;align-items:center;gap:12px;padding:0 16px"><i data-lucide="message-circle" width="20" height="20" stroke-width="1.75"></i><span style="font-size:15px;flex:1">Something else…</span></div>
+        </div>
+        <div style="min-height:66px;border:1px solid #DCCDB4;border-radius:16px;background:#FFFDF8;padding:12px 14px;font-size:13.5px;color:#7A6E66;margin-top:12px;line-height:1.45">Add a note for Rohan (optional)</div>
+        <div style="height:52px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:10px;font-size:17px;font-weight:600;margin-top:14px;box-shadow:0 10px 24px rgba(47,74,44,.26)"><i data-lucide="bell-ring" width="19" height="19" stroke-width="2"></i> Send request</div>
+        <div style="text-align:center;font-family:Caveat,cursive;font-size:22px;color:#B9522F;margin-top:12px">Good Teams, Great Service ♡</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8 REQUEST BILL / SPLIT / UPI -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">08 · REQUEST BILL · SPLIT · UPI</div>
+    <div data-screen-label="M08 Request Bill Split UPI" style="width:390px;height:844px;background:#F8F3E9;border-radius:28px;overflow:hidden;position:relative;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums"><span>8:02</span><span style="display:flex;gap:6px;align-items:center"><i data-lucide="signal" width="14" height="14" stroke-width="2"></i><i data-lucide="wifi" width="14" height="14" stroke-width="2"></i><i data-lucide="battery-full" width="16" height="16" stroke-width="2"></i></span></div>
+      <div style="height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;background:#FFFDF8;border-bottom:1px solid #EAE0D0">
+        <div style="width:36px;height:36px;border-radius:50%;background:#F2EADB;display:flex;align-items:center;justify-content:center"><i data-lucide="arrow-left" width="18" height="18" stroke-width="2"></i></div>
+        <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Pay your bill</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:999px;background:#F6E4DC;color:#9C4325;font-size:12.5px;font-weight:700">Table T4</div>
+      </div>
+      <div style="flex:1;padding:14px 16px;overflow:hidden">
+        <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:16px;padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-family:Fraunces,serif;font-size:17px;font-weight:600;color:#5B1F1F">Bill for Table T4</div><span style="font-size:12px;color:#7A6E66;font-variant-numeric:tabular-nums">#TVL7842</span></div>
+          <div style="display:grid;gap:7px;font-size:13.5px;margin-top:12px">
+            <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Items total (3)</span><span style="font-variant-numeric:tabular-nums">₹797</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">CGST (2.5%)</span><span style="font-variant-numeric:tabular-nums">₹20</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">SGST (2.5%)</span><span style="font-variant-numeric:tabular-nums">₹20</span></div>
+            <div style="height:1px;background:#EAE0D0;margin:3px 0"></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:Fraunces,serif;font-size:18px;font-weight:600;color:#5B1F1F">Bill total</span><span style="font-family:Fraunces,serif;font-size:22px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">₹837</span></div>
+          </div>
+        </div>
+        <div style="font-family:Fraunces,serif;font-size:18px;font-weight:600;color:#5B1F1F;margin:16px 0 10px">Split the bill</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px">
+          <div style="border:1.5px solid #2F4A2C;background:#E8EFE3;border-radius:14px;padding:12px 8px;text-align:center"><div style="font-size:13px;font-weight:700;color:#2F4A2C">Pay all</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#2F4A2C;margin-top:2px">₹837</div></div>
+          <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:14px;padding:12px 8px;text-align:center"><div style="font-size:13px;font-weight:700">Split 2</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px">₹419</div></div>
+          <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:14px;padding:12px 8px;text-align:center"><div style="font-size:13px;font-weight:700">Split 3</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px">₹279</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12.5px;color:#7A6E66"><i data-lucide="users" width="15" height="15" stroke-width="1.9"></i> Or split by item — each guest picks what they ordered</div>
+        <div style="font-family:Fraunces,serif;font-size:18px;font-weight:600;color:#5B1F1F;margin:18px 0 10px">Pay with</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+          <div style="border:1.5px solid #2F4A2C;background:#E8EFE3;border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:7px"><i data-lucide="qr-code" width="22" height="22" stroke-width="1.9" color="#2F4A2C"></i><span style="font-size:13.5px;font-weight:700;color:#2F4A2C">UPI</span></div>
+          <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:7px"><i data-lucide="credit-card" width="22" height="22" stroke-width="1.75"></i><span style="font-size:13.5px;font-weight:700">Card</span></div>
+          <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:7px"><i data-lucide="wallet" width="22" height="22" stroke-width="1.75"></i><span style="font-size:13.5px;font-weight:700">Wallet</span></div>
+          <div style="border:1px solid #E3D8C6;background:#FFFDF8;border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:7px"><i data-lucide="banknote" width="22" height="22" stroke-width="1.75"></i><span style="font-size:13.5px;font-weight:700">At counter</span></div>
+        </div>
+        <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:16px;padding:16px;margin-top:14px;text-align:center">
+          <div style="font-size:12.5px;color:#7A6E66">Scan with any UPI app</div>
+          <div style="width:128px;height:128px;margin:10px auto;border-radius:12px;background:repeating-conic-gradient(#3A2E2A 0 25%,#FFFDF8 0 50%) 0 0/16px 16px;border:6px solid #FFFDF8;box-shadow:0 0 0 1px #EAE0D0"></div>
+          <div style="font-size:13px;font-weight:700;color:#3A2E2A">mez@upi · ₹837</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:#7A6E66;margin-top:7px"><span style="width:8px;height:8px;border-radius:50%;background:#E9A21A"></span> Waiting for payment…</div>
+        </div>
+      </div>
+      <div style="padding:12px 16px 22px;background:#FFFDF8;border-top:1px solid #EAE0D0">
+        <div style="height:52px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:10px;font-size:17px;font-weight:600"><i data-lucide="shield-check" width="19" height="19" stroke-width="2"></i> Pay <span style="font-variant-numeric:tabular-nums">₹837</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9 SUCCESS + RATING -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">09 · PAYMENT SUCCESS + RATING</div>
+    <div data-screen-label="M09 Success Rating" style="width:390px;height:844px;background:#F8F3E9;border-radius:28px;overflow:hidden;position:relative;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums"><span>8:06</span><span style="display:flex;gap:6px;align-items:center"><i data-lucide="signal" width="14" height="14" stroke-width="2"></i><i data-lucide="wifi" width="14" height="14" stroke-width="2"></i><i data-lucide="battery-full" width="16" height="16" stroke-width="2"></i></span></div>
+      <div style="flex:1;padding:16px;overflow:hidden">
+        <div style="background:#EFF4EB;border:1px solid #D9E4D0;border-radius:22px;padding:24px 18px;text-align:center;position:relative;overflow:hidden">
+          <div style="position:absolute;left:-26px;top:-26px;opacity:.13"><i data-lucide="leaf" width="130" height="130" stroke-width="1" color="#2F4A2C"></i></div>
+          <div style="width:64px;height:64px;border-radius:50%;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;margin:0 auto;position:relative"><i data-lucide="check" width="32" height="32" stroke-width="3"></i></div>
+          <div style="font-family:Fraunces,serif;font-size:27px;font-weight:600;color:#5B1F1F;margin-top:14px;position:relative">Payment successful!</div>
+          <div style="font-family:Fraunces,serif;font-size:38px;font-weight:600;color:#2F4A2C;font-variant-numeric:tabular-nums;margin-top:6px;position:relative">₹887</div>
+          <div style="font-size:13px;color:#5F5850;margin-top:4px;position:relative">Paid via UPI · Order #TVL7842 · Table T4</div>
+          <div style="font-family:Caveat,cursive;font-size:23px;color:#B9522F;margin-top:12px;position:relative">Thank you for dining with us ♡</div>
+        </div>
+        <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:18px;padding:18px;margin-top:14px;text-align:center">
+          <div style="font-family:Fraunces,serif;font-size:19px;font-weight:600;color:#5B1F1F">How was everything?</div>
+          <div style="display:flex;justify-content:center;gap:10px;margin-top:14px;color:#E7A83A">
+            <i data-lucide="star" width="36" height="36" stroke-width="1.6" fill="#E7A83A"></i>
+            <i data-lucide="star" width="36" height="36" stroke-width="1.6" fill="#E7A83A"></i>
+            <i data-lucide="star" width="36" height="36" stroke-width="1.6" fill="#E7A83A"></i>
+            <i data-lucide="star" width="36" height="36" stroke-width="1.6" fill="#E7A83A"></i>
+            <i data-lucide="star" width="36" height="36" stroke-width="1.6" color="#DCCDB4"></i>
+          </div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:16px">
+            <span style="height:32px;padding:0 13px;border-radius:999px;background:#E8EFE3;color:#216B26;font-size:12.5px;font-weight:600;display:flex;align-items:center">Great food</span>
+            <span style="height:32px;padding:0 13px;border-radius:999px;background:#E8EFE3;color:#216B26;font-size:12.5px;font-weight:600;display:flex;align-items:center">Quick service</span>
+            <span style="height:32px;padding:0 13px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:12.5px;font-weight:500;display:flex;align-items:center">Friendly staff</span>
+            <span style="height:32px;padding:0 13px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:12.5px;font-weight:500;display:flex;align-items:center">Good ambience</span>
+            <span style="height:32px;padding:0 13px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:12.5px;font-weight:500;display:flex;align-items:center">Value for money</span>
+          </div>
+          <div style="min-height:60px;border:1px solid #DCCDB4;border-radius:14px;padding:12px 14px;font-size:13.5px;color:#7A6E66;margin-top:14px;text-align:left">Tell us more (optional)</div>
+          <div style="height:48px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;margin-top:14px">Submit feedback</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px">
+          <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:14px;padding:13px;display:flex;align-items:center;gap:9px"><i data-lucide="download" width="18" height="18" stroke-width="1.9" color="#B9522F"></i><span style="font-size:13.5px;font-weight:600">Get receipt</span></div>
+          <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:14px;padding:13px;display:flex;align-items:center;gap:9px"><i data-lucide="heart" width="18" height="18" stroke-width="1.9" color="#B9522F"></i><span style="font-size:13.5px;font-weight:600">Save favourites</span></div>
+        </div>
+      </div>
+      <div style="height:34px;display:flex;align-items:center;justify-content:center"><div style="width:130px;height:5px;border-radius:999px;background:#3A2E2A;opacity:.28"></div></div>
+    </div>
+  </div>
+
+  <!-- 10 FAVOURITES / PAST ORDERS / LANGUAGE -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">10 · FAVOURITES, PAST ORDERS &amp; LANGUAGE</div>
+    <div data-screen-label="M10 Favourites Past Orders" style="width:390px;height:844px;background:#F8F3E9;border-radius:28px;overflow:hidden;position:relative;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums"><span>7:12</span><span style="display:flex;gap:6px;align-items:center"><i data-lucide="signal" width="14" height="14" stroke-width="2"></i><i data-lucide="wifi" width="14" height="14" stroke-width="2"></i><i data-lucide="battery-full" width="16" height="16" stroke-width="2"></i></span></div>
+      <div style="height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;background:#FFFDF8;border-bottom:1px solid #EAE0D0">
+        <div style="width:36px;height:36px;border-radius:50%;background:#F2EADB;display:flex;align-items:center;justify-content:center"><i data-lucide="arrow-left" width="18" height="18" stroke-width="2"></i></div>
+        <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Your favourites</div>
+      </div>
+      <div style="flex:1;padding:14px 16px;overflow:hidden;position:relative">
+        <div style="display:inline-flex;background:#F2EADB;border-radius:999px;padding:4px;gap:4px;margin-bottom:14px">
+          <div style="height:36px;padding:0 16px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;font-size:13.5px;font-weight:600;display:flex;align-items:center">Favourites</div>
+          <div style="height:36px;padding:0 16px;border-radius:999px;font-size:13.5px;display:flex;align-items:center">Past orders</div>
+        </div>
+        <sc-for list="{{ favourites }}" as="f" hint-placeholder-count="3">
+          <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:16px;padding:11px;display:flex;gap:11px;align-items:center;margin-bottom:10px">
+            <div style="width:56px;height:56px;border-radius:12px;background:repeating-linear-gradient(45deg,#EFE6D6 0 8px,#F6EFE2 8px 16px);flex:none"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px"><div style="width:13px;height:13px;border-radius:3px;border:2px solid {{ f.dietColor }};display:flex;align-items:center;justify-content:center;flex:none"><span style="width:5px;height:5px;border-radius:50%;background:{{ f.dietColor }}"></span></div><div style="font-size:14.5px;font-weight:700;color:#3A2E2A">{{ f.name }}</div></div>
+              <div style="font-size:11.5px;color:#7A6E66;margin-top:3px">Ordered {{ f.times }}</div>
+            </div>
+            <div style="text-align:right"><div style="font-family:Fraunces,serif;font-size:16px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">{{ f.price }}</div><div style="height:30px;padding:0 13px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;font-size:12.5px;font-weight:600;display:flex;align-items:center;margin-top:6px">Add</div></div>
+          </div>
+        </sc-for>
+        <div style="font-family:Fraunces,serif;font-size:18px;font-weight:600;color:#5B1F1F;margin:16px 0 10px">Recent visits</div>
+        <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:16px;padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><div><div style="font-size:14px;font-weight:700">#TVL7791 · Table T2</div><div style="font-size:11.5px;color:#7A6E66;margin-top:2px">12 Sep 2026 · 3 items</div></div><div style="font-family:Fraunces,serif;font-size:17px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">₹648</div></div>
+          <div style="height:1px;background:#F4EDE0;margin:12px 0"></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><div><div style="font-size:14px;font-weight:700">#TVL7602 · Table T7</div><div style="font-size:11.5px;color:#7A6E66;margin-top:2px">28 Aug 2026 · 5 items</div></div><div style="font-family:Fraunces,serif;font-size:17px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">₹1,284</div></div>
+          <div style="height:38px;border-radius:999px;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;font-weight:600;margin-top:14px"><i data-lucide="refresh-cw" width="15" height="15" stroke-width="2"></i> Reorder last visit</div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:0;background:#FFFDF8;border-radius:24px 24px 0 0;padding:16px;box-shadow:0 -10px 30px rgba(91,31,31,.14);border-top:1px solid #EAE0D0">
+          <div style="width:44px;height:5px;border-radius:999px;background:#DCCDB4;margin:0 auto 14px"></div>
+          <div style="font-family:Fraunces,serif;font-size:19px;font-weight:600;color:#5B1F1F;margin-bottom:12px">Choose language</div>
+          <div style="display:grid;gap:8px">
+            <div style="height:46px;border:1.5px solid #2F4A2C;background:#E8EFE3;border-radius:14px;display:flex;align-items:center;padding:0 14px;gap:11px"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #2F4A2C;display:flex;align-items:center;justify-content:center"><span style="width:8px;height:8px;border-radius:50%;background:#2F4A2C"></span></div><span style="font-size:14.5px;font-weight:700;color:#2F4A2C">English</span></div>
+            <div style="height:46px;border:1px solid #E3D8C6;border-radius:14px;display:flex;align-items:center;padding:0 14px;gap:11px"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #DCCDB4"></div><span style="font-size:14.5px">हिन्दी · Hindi</span></div>
+            <div style="height:46px;border:1px solid #E3D8C6;border-radius:14px;display:flex;align-items:center;padding:0 14px;gap:11px"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #DCCDB4"></div><span style="font-size:14.5px">ಕನ್ನಡ · Kannada</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11 EDGE STATES -->
+  <div style="width:100%">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin:16px 0 10px">11 · EDGE STATES</div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px">
+      <div data-screen-label="M11a Empty Cart" style="width:290px;height:560px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 6px 14px rgba(91,31,31,.07),0 20px 40px rgba(91,31,31,.08);display:flex;flex-direction:column;padding:18px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.14em;color:#B9522F">EMPTY CART</div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+          <div style="width:118px;height:118px;border-radius:999px 999px 18px 18px;background:repeating-linear-gradient(45deg,#EFE6D6 0 9px,#F6EFE2 9px 18px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#8B7F72;text-align:center;line-height:1.4">chef mascot<br>empty cart</div>
+          <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F;margin-top:16px">Your cart is empty</div>
+          <div style="font-size:13.5px;color:#7A6E66;line-height:1.5;margin-top:6px;max-width:220px">Add something delicious and it'll show up right here.</div>
+          <div style="height:46px;padding:0 24px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:inline-flex;align-items:center;font-size:15px;font-weight:600;margin-top:18px">Browse menu</div>
+        </div>
+      </div>
+
+      <div data-screen-label="M11b Kitchen Closed" style="width:290px;height:560px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 6px 14px rgba(91,31,31,.07),0 20px 40px rgba(91,31,31,.08);display:flex;flex-direction:column;padding:18px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.14em;color:#B9522F">KITCHEN CLOSED</div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+          <div style="width:104px;height:104px;border-radius:18px;background:#3A2E2A;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#F5EADB;padding:12px"><i data-lucide="moon" width="26" height="26" stroke-width="1.75"></i><div style="font-family:Caveat,cursive;font-size:19px;margin-top:6px;line-height:1.15">See you<br>tomorrow ♡</div></div>
+          <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F;margin-top:16px">Kitchen is closed</div>
+          <div style="font-size:13.5px;color:#7A6E66;line-height:1.5;margin-top:6px;max-width:230px">We're open again tomorrow at 11:00 AM. You can still browse the menu.</div>
+          <div style="height:44px;padding:0 22px;border-radius:999px;border:1px solid #DCCDB4;display:inline-flex;align-items:center;font-size:14.5px;font-weight:600;margin-top:18px">View menu</div>
+        </div>
+      </div>
+
+      <div data-screen-label="M11c Sold Out" style="width:290px;height:560px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 6px 14px rgba(91,31,31,.07),0 20px 40px rgba(91,31,31,.08);display:flex;flex-direction:column;padding:18px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.14em;color:#B9522F">ITEM SOLD OUT</div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:18px;overflow:hidden;opacity:1">
+            <div style="height:104px;background:repeating-linear-gradient(45deg,#EFE6D6 0 9px,#F6EFE2 9px 18px);position:relative;display:flex;align-items:center;justify-content:center">
+              <div style="position:absolute;inset:0;background:rgba(58,46,42,.5);display:flex;align-items:center;justify-content:center"><span style="height:30px;padding:0 14px;border-radius:999px;background:#FFFDF8;color:#A33A28;font-size:12.5px;font-weight:700;display:flex;align-items:center">Sold out today</span></div>
+            </div>
+            <div style="padding:12px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-family:Fraunces,serif;font-size:16px;font-weight:600;color:#7A6E66">Chicken Biryani</div><div style="font-family:Fraunces,serif;font-size:16px;font-weight:600;color:#7A6E66;font-variant-numeric:tabular-nums">₹349</div></div>
+              <div style="height:38px;border-radius:999px;background:#EDE4D4;color:#8B8378;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;margin-top:10px">Unavailable</div>
+            </div>
+          </div>
+          <div style="background:#E8EFE3;border:1px solid #CFDEC5;border-radius:14px;padding:12px;margin-top:12px"><div style="font-size:13px;font-weight:700;color:#216B26">Try Paneer Tikka instead</div><div style="font-size:11.5px;color:#3A2E2A;margin-top:2px">Chef's pick, ready in 12 min · ₹249</div></div>
+        </div>
+      </div>
+
+      <div data-screen-label="M11d Session Expired" style="width:290px;height:560px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 6px 14px rgba(91,31,31,.07),0 20px 40px rgba(91,31,31,.08);display:flex;flex-direction:column;padding:18px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.14em;color:#B9522F">SESSION EXPIRED</div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+          <div style="width:72px;height:72px;border-radius:50%;background:#FAEBC8;color:#7A5306;display:flex;align-items:center;justify-content:center"><i data-lucide="timer-off" width="30" height="30" stroke-width="1.75"></i></div>
+          <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F;margin-top:16px">Session ended</div>
+          <div style="font-size:13.5px;color:#7A6E66;line-height:1.5;margin-top:6px;max-width:225px">Your table session timed out. Scan the QR on Table T4 to start again — your cart is saved.</div>
+          <div style="height:46px;padding:0 22px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;margin-top:18px"><i data-lucide="qr-code" width="17" height="17" stroke-width="2"></i> Rescan QR</div>
+        </div>
+      </div>
+
+      <div data-screen-label="M11e Offline" style="width:290px;height:560px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 6px 14px rgba(91,31,31,.07),0 20px 40px rgba(91,31,31,.08);display:flex;flex-direction:column;padding:18px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.14em;color:#B9522F">NO INTERNET</div>
+        <div style="background:#FBEDE9;border:1px solid #E7C3B9;border-radius:14px;padding:12px;display:flex;gap:10px;margin-top:12px"><i data-lucide="wifi-off" width="18" height="18" stroke-width="2" color="#A33A28"></i><div><div style="font-size:13px;font-weight:700;color:#A33A28">You're offline</div><div style="font-size:11.5px;color:#3A2E2A;margin-top:2px">Your cart is saved on this device.</div></div></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+          <div style="width:72px;height:72px;border-radius:50%;background:#F2EADB;color:#7A6E66;display:flex;align-items:center;justify-content:center"><i data-lucide="cloud-off" width="30" height="30" stroke-width="1.75"></i></div>
+          <div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F;margin-top:14px">Can't reach the kitchen</div>
+          <div style="font-size:13.5px;color:#7A6E66;line-height:1.5;margin-top:6px;max-width:225px">We'll send your order the moment you're back online.</div>
+          <div style="height:44px;padding:0 22px;border-radius:999px;border:1px solid #DCCDB4;display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:600;margin-top:16px"><i data-lucide="refresh-cw" width="16" height="16" stroke-width="2"></i> Retry</div>
+          <div style="font-size:12px;color:#7A6E66;margin-top:14px">Or ask Rohan — press the bell on your table.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  icons() {
+    const go = () => { if (window.lucide && window.lucide.createIcons) { window.lucide.createIcons(); return true; } return false; };
+    if (go()) return;
+    let n = 0;
+    const t = setInterval(() => { if (go() || ++n > 60) clearInterval(t); }, 100);
+  }
+  componentDidMount() { this.icons(); }
+  componentDidUpdate() { this.icons(); }
+  renderVals() {
+    const G = '#2E7D32', R = '#A8321C';
+    return {
+      menuGrid: [
+        { name: 'Margherita Pizza', price: '₹299', desc: 'Wood-fired, tomato, mozzarella & basil.', diet: 'Veg', dietColor: G, slot: 'pizza 4:3' },
+        { name: 'Chicken Biryani', price: '₹349', desc: 'Basmati rice, tender chicken, whole spices.', diet: 'Non-veg', dietColor: R, slot: 'biryani 4:3' },
+        { name: 'Alfredo Pasta', price: '₹269', desc: 'Creamy parmesan sauce with mushrooms.', diet: 'Veg', dietColor: G, slot: 'pasta 4:3' },
+        { name: 'Paneer Tikka', price: '₹249', desc: 'Chargrilled cottage cheese, aromatic spices.', diet: 'Veg', dietColor: G, slot: 'tikka 4:3' }
+      ],
+      cart: [
+        { name: 'Margherita Pizza', line: '₹359', opts: 'Regular (10") · Extra Cheese', qty: 1, diet: 'Vegetarian', dietColor: G },
+        { name: 'Alfredo Pasta', line: '₹269', opts: 'Regular · Mushrooms, No Garlic', qty: 1, diet: 'Vegetarian', dietColor: G },
+        { name: 'Iced Latte', line: '₹169', opts: 'Regular · No Sugar', qty: 1, diet: 'Vegetarian', dietColor: G }
+      ],
+      combos: [
+        { name: 'Pizza & Latte Combo', desc: 'Margherita Pizza + Iced Latte', price: '₹399', was: '₹468', save: 'Save ₹69', dietColor: G },
+        { name: 'Biryani Feast', desc: 'Chicken Biryani + Raita + Gulab Jamun', price: '₹449', was: '₹528', save: 'Save ₹79', dietColor: R },
+        { name: 'Snack Platter', desc: 'Paneer Tikka + Masala Fries + Lime Soda', price: '₹519', was: '₹597', save: 'Save ₹78', dietColor: G }
+      ],
+      favourites: [
+        { name: 'Margherita Pizza', price: '₹299', times: '6 times', dietColor: G },
+        { name: 'Iced Latte', price: '₹169', times: '5 times', dietColor: G },
+        { name: 'Chicken Biryani', price: '₹349', times: '3 times', dietColor: R },
+        { name: 'Tiramisu', price: '₹229', times: '2 times', dietColor: G }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

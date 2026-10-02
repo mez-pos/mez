@@ -3604,3 +3604,33 @@ Cost: a data directory from before this commit is not found: move it, and
 rename `nofiltr.db` (with its `-wal` and `-shm`) to `mez.db`. A paired
 browser must pair again. The module path names a GitHub repository that
 is still called `nofiltr-pos` until the owner renames it.
+
+## ADR-128 - The mez design language replaces ink and vermilion
+2026-10 · Status: accepted. Supersedes the palette, type and radius of
+ADR-014 and ADR-062; their rules on text floors and roles stand.
+Decision: the look moves to the design in `docs/design/reference/mez/`,
+written down in `docs/design/tokens.md`. Looks only: no screen gains or
+loses a function.
+  - **Roles held, values changed.** Components name roles, so the change
+    is `tokens.css`, the preset, the fonts and the shared primitives.
+  - **Paper everywhere, night in the kitchen.** The till leaves the dark
+    ground; `data-surface="ink"` now means espresso night and is set for
+    `/kitchen` alone.
+  - **Two voices.** `accent` is green, which commits. A new `attention`
+    role is terracotta: active navigation, links, a new `attention`
+    button. Brick is danger.
+  - **Archivo stays for numbers.** Fraunces and DM Sans as shipped have
+    no tabular figures, so `font-mono` is Archivo, the numeral face.
+  - **The floors stay.** 11px metadata, 13px sentence text, 15px
+    interactive labels and 16px controls outrank the design's smaller
+    buttons, for the reasons ADR-014 gave.
+  - **The logo is recoloured** to the sheet's green and mustard, in
+    `web/shared/brand/`, and drawn inline by `Logo`.
+  - A table's five states keep five tones; "to clear" is now the
+    cleaning grey and "ordered" the occupied rose.
+Because: the owner chose the new language with the new name.
+Cost: the screen specs in `docs/design/screens/` still describe the old
+layouts and cite the old archive. Screens are restyled through the
+primitives only so far; `docs/phases/redesign.md` lists what each still
+needs. `tokens-demo.html` shows the old palette. A light till under
+service lighting is untested by anyone on a shift.

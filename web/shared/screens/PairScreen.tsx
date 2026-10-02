@@ -6,7 +6,7 @@ import { formatPairingCode, isCompletePairingCode } from "../auth/format";
 import { pairingError } from "../auth/messages";
 import type { AppKind } from "../auth/storage";
 import { useAuth, useAuthStore } from "../auth/use-auth";
-import { Button, Meta } from "../ui";
+import { Button, Logo, Meta } from "../ui";
 
 const appNames: Record<AppKind, string> = { terminal: "terminal", backoffice: "back office", kitchen: "kitchen display" };
 
@@ -42,7 +42,8 @@ export function PairScreen({ app }: { app: AppKind }) {
     <main className="flex min-h-screen items-center justify-center bg-canvas p-6 text-fg">
       <form onSubmit={submit} className="flex w-full max-w-md flex-col gap-6" noValidate>
         <div>
-          <Meta items={["mez", appNames[app], "Pairing"]} />
+          <Logo className="mb-6 h-12" />
+          <Meta items={[appNames[app], "Pairing"]} />
           <h1 className="mt-3 font-serif text-total">Pair this {appNames[app]}</h1>
           <p className="mt-3 text-base text-fg-2">
             Enter the eight-character code from <span className="font-mono">mez setup</span>, or ask a manager for one. A code lasts 10

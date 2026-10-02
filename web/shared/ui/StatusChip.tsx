@@ -23,7 +23,7 @@ export function StatusChip({ status, className }: StatusChipProps) {
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-tight border px-2.5 py-0.5 text-sm font-semibold",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border px-3 py-1 text-sm font-semibold",
         tones[tone],
         className,
       )}

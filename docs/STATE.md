@@ -13,27 +13,34 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 5f3: The closing stock section** (ADR-126). It
-finishes Task 5f and Task 5 (Reports). A Closing stock section on
-`/sales` over `GET /api/v1/reports/closing-stock`: a headline in words
-("Short by", "Over by", "Counted as expected"), how many counts its
-total leaves out, a table by item and one by shift, its CSV.
-`SalesClosingStock.tsx`, `closing-logic.ts`. Tried in a browser against
-a real binary: one close, milk costed and beans not, the tables and the
-file checked against a hand sum (this also tried Task 5f2's routes).
+**Redesign, Tasks 1 and 2** (`docs/phases/redesign.md`, ADR-127,
+ADR-128). The product is renamed mez, all the way down. The mez design
+language is in: `tokens.css`, the preset, Fraunces, DM Sans and Caveat,
+the recoloured logo, and the shared primitives. The till is now paper;
+the kitchen alone is espresso night. Seen in a browser against a real
+binary: pair, lock, register with a line on a ticket, the back office
+menu, the kitchen's pair screen. Before that, Phase 10 Task 5f3 finished
+Reports (ADR-126).
 
 ## Next task
 
-**Phase 10, Task 6: Settings.** Venue details, tax profile, invoice
-series, currency and rounding, timezone, financial year start, printers
-and station mapping, devices, receipt templates, shift and tip rules,
-backup configuration. Far larger than one session: split it first,
-commit the split, and stop. Known broken below lists what earlier tasks
-left for it (stations, courses and tax classes have no write path; the
-day start, variance threshold and tip rule are constants; `settings.edit`
-gates Floor plan and Printers already).
+Either, as the owner chooses:
+
+**Redesign, Task 3: the remaining primitives** (`docs/phases/redesign.md`).
+
+**Phase 10, Task 6: Settings.** Far larger than one session: split it
+first, commit the split, and stop. Known broken below lists what earlier
+tasks left for it (stations, courses and tax classes have no write path;
+the day start, variance threshold and tip rule are constants;
+`settings.edit` gates Floor plan and Printers already).
 
 ## Known broken / in progress
+
+- Redesign (ADR-128): screens are restyled through the primitives only.
+  Tables still stripe with the well colour; register category chips and
+  menu cards are not yet the design's. `tokens-demo.html` shows the old
+  palette. The screen specs describe the old layouts. Not seen by eye:
+  tender, floor, kitchen board, sheets and modals, the guest app.
 
 - Audit (ADR-117): discounts and refunds recorded before Task 4c show
   "Not recorded" for who authorised them. The Person filter lists active
@@ -139,9 +146,6 @@ gates Floor plan and Printers already).
   names tables by number (ADR-088).
 - Never swept: idempotency keys, expired staff sessions, sign-in attempts.
   The pairing rate limiter is per process.
-- Token gaps (ADR-062): five paper roles are stand-ins; `--vermilion-on`
-  on the paper fill is 3.99:1, under AA, and shows on the paper primary
-  button in the gallery.
 - A bill printed before payment has no number: numbers come with the
   settling payment (ADR-046, ADR-078). Task 4's pre-payment bill layout
   must say it is not a tax invoice.

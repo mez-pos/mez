@@ -1,360 +1,229 @@
 # Design tokens
 
-Extracted from the `claude-design` output and archived in
-`docs/design/reference/`. This file is the source of truth once the reference
-folder is deleted. If a colour or size is needed and not here, add it here
-first, then use it.
+The mez design language, read out of `docs/design/reference/mez/` (the
+design system file first, then the five screen files). This file is the
+source of truth. If a colour or size is needed and not here, add it here
+first, then use it. Never introduce a colour outside this sheet.
 
-Every value below was read out of the archived design files in Phase 00 Task 3
-and counted by frequency. Where the design and this doc disagreed on a fact,
-the design won and the old value is noted. Where they disagreed on a *rule*,
-each case was argued on its merits and settled; see "Where this doc overrules
-the design" at the end. Nothing here is left open.
+The language before the rename is kept in `tokens-nofiltr.md`, as history.
+ADR-128 records the change.
 
-## Ink and paper
+## The language in one paragraph
 
-The terminal runs on **warm ink**: dark, for ten-hour shifts under service
-lighting. Back office and guest surfaces run on **paper**: light. One vermilion
-carries the brand across all three, at two different values (see Accent).
+A beautifully printed menu, brought to life. Parchment ground and ivory
+cards, floated on warm hairlines and low brown shadows, never grey. Forest
+green commits. Terracotta asks for attention. Serif headings in a maroon
+ink, a neutral sans for everything functional. Status is a pastel fill, a
+saturated dot and a word, in a pill. Round, soft shapes.
 
-### Ink surfaces (Terminal)
+## Surfaces
 
-| Token | Hex | Use |
+Two surfaces. `data-surface="paper"` is every screen but one: till, back
+office, guest. `data-surface="ink"` is **espresso night**, the kitchen
+display, where a bright screen over a hot pass is the wrong tool.
+
+### Paper
+
+| Token | Hex | Role | Use |
+|---|---|---|---|
+| `--parchment` | `#F8F3E9` | `canvas` | Page ground |
+| `--card` | `#FFFDF8` | `raised`, `chrome` | Panels, cards, header, navigation |
+| `--card-hover` | `#F6EFE2` | `raised-high` | Hover and pressed fills on a card |
+| `--well` | `#F2EADB` | `sunken` | Inputs, wells, keys |
+
+### Espresso night
+
+| Token | Hex | Role |
 |---|---|---|
-| `--ink` | `#0E0C09` | Page background |
-| `--ink-chrome` | `#14110D` | Nav rail, right rail, header bars |
-| `--ink-raised` | `#1A1712` | Cards, panels, rows |
-| `--ink-raised-high` | `#221E17` | Inputs, selected rows, the layer above a card |
-
-The design also uses `#1C1913` for cards, 31 times, which is 2/2/1 away from
-`--ink-raised` and indistinguishable on screen. Treat it as the same token and
-do not add it.
-
-### Paper surfaces (Back office, Guest)
-
-| Token | Hex | Use |
-|---|---|---|
-| `--paper` | `#F4F1E9` | Page background |
-| `--paper-raised` | `#FFFDF8` | Cards, panels, inputs, table rows |
-| `--paper-sunken` | `#F2EDE1` | Recessed wells, alternating rows |
-
-`--paper` was `#FBF7EF` in this doc before Task 3. The archived back office
-root is `background:#F4F1E9`, and `#FBF7EF` appears three times in total, so
-the old value was wrong. `#FBF9F3`, `#F8F5EE` and `#EDE7DA` also appear as
-one-off near-duplicates of `--paper-raised`; collapse them into it.
-
-A caution for anyone reading the archive: the Guest file's `body` background is
-`#141109`, dark. That is the prototype canvas behind a phone mockup, not a
-guest surface. Guest screens are paper, inside the frame.
+| `--night` | `#241C17` | `canvas` |
+| `--night-chrome` | `#2E241E` | `chrome` |
+| `--night-raised` | `#332821` | `raised` (the ticket) |
+| `--night-raised-high` | `#3D3028` | `raised-high` (derived) |
 
 ## Text
 
-Percentages are the measured opacity of the text colour over its surface, given
-for anyone deriving an intermediate value. Use the hex.
-
-### On ink
-
-| Token | Hex | % | Use |
+| Token | Hex | Role | On parchment |
 |---|---|---|---|
-| `--ink-text` | `#F3EFE6` | 100 | Body, the root text colour |
-| `--ink-text-2` | `#C9C2B2` | 82 | Secondary text, item names in lists |
-| `--ink-text-3` | `#A39C8C` | 65 | Tertiary, supporting detail |
-| `--ink-text-muted` | `#8C8474` | 55 | Labels |
-| `--ink-text-faint` | `#6E685C` | 42 | Metadata, the small-caps trail |
+| `--heading` | `#5B1F1F` | `fg-heading` | 12.4:1. Serif titles and display prices |
+| `--body` | `#3A2E2A` | `fg` | 11.1:1. Body |
+| `--body-2` | `#5F5850` | `fg-2` | Secondary text |
+| `--muted` | `#7A6E66` | `fg-3`, `fg-muted` | 4.6:1. The floor for sentence text, 13px minimum |
+| `--faint` | `#8B7F72` | `fg-faint` | Uppercase metadata only |
 
-`#150E09` is the text colour *on* vermilion fills, not a surface text colour.
+On night: `--night-text` `#F5EADB`, `--night-text-2` `#E4D6C4`,
+`--night-text-3` `#BCA995`, `--night-text-muted` `#A8968A`.
 
-### On paper
+## Rules
 
-| Token | Hex | % | Use |
+| Token | Hex | Role |
+|---|---|---|
+| `--hairline` | `#EAE0D0` | `line`. Card borders, dividers |
+| `--hairline-soft` | `#F4EDE0` | `line-soft`. Row dividers inside a table |
+| `--hairline-strong` | `#DCCDB4` | `line-strong`. Inputs, secondary buttons |
+
+Focus is green on a field (a 1.5px border and a 3px `--green-tint` halo)
+and a 3px terracotta outline on a button. On night: `--night-line`
+`#47382E`, `--night-line-strong` `#4A3A30`, focus in mustard.
+
+## Brand and action
+
+**Green commits. Terracotta asks for attention. One primary per screen.**
+
+| Token | Hex | Role | Use |
 |---|---|---|---|
-| `--paper-text` | `#1A1712` | 100 | Body, the root text colour |
-| `--paper-text-2` | `#4A4438` | 78 | Secondary text |
-| `--paper-text-3` | `#6E685C` | 61 | Tertiary, supporting detail |
-| `--paper-text-muted` | `#8A8274` | 49 | Labels |
-| `--paper-text-faint` | `#9A9384` | 41 | Metadata, column headers |
+| `--green` | `#2F4A2C` | `accent` | Settle, send, save, confirm. Success |
+| `--green-press` | `#24391F` | `accent-hover` | Hover and pressed |
+| `--green-tint` | `#E8EFE3` | `accent-tint` | Selected rows, tint fills, focus halo |
+| `--terracotta` | `#B9522F` | `attention` | Active navigation, New order, Export, links |
+| `--terracotta-press` | `#9C4325` | `attention-hover` | Hover; terracotta as text on its tint |
+| `--terracotta-tint` | `#F6E4DC` | `attention-tint` | Offers, soft badges, ghost hover |
+| `--mustard` | `#E7A83A` | `highlight` | Bestseller, ratings, the logo's top. Never text on a light ground |
+| `--brick` | `#A33A28` | `danger`, `danger-fill` | Void, refund, delete, errors |
+| `--on-fill` | `#FFFDF8` | `accent-fg`, `attention-fg` | Text on a green, terracotta or brick fill |
 
-## Hairline
+Brick has a tint for the destructive button: `--brick-tint` `#FBEDE9`,
+hover `#F6DDD6`, border `--brick-line` `#E7C3B9`.
 
-| Token | Value | Use |
-|---|---|---|
-| `--ink-hairline` | `rgba(255,255,255,.07)` | Dividers and card borders on ink |
-| `--ink-hairline-2` | `rgba(255,255,255,.10)` | Stronger separation, input borders |
-| `--ink-hairline-3` | `rgba(255,255,255,.14)` | Emphasis, focus |
-| `--paper-hairline` | `#E3DED2` | Dividers and card borders on paper |
-| `--paper-hairline-soft` | `#EFEAE0` | Interior rules inside a card |
+## Status
 
-This doc previously said hairline was "12% of primary". Measured, it is 7% on
-ink. `--paper-hairline` is a solid hex, not an alpha.
+A fill and an ink, the ink darkened until it holds 4.5:1 on its fill.
 
-## Accent
-
-**One accent, enforced.** Vermilion means money, action or now. It is not
-decoration, not a heading colour, not a hover state on something inert. If a
-screen has two vermilion elements competing, one of them is wrong.
-
-Vermilion has two values because a single hex cannot hold contrast on both
-grounds. Pick by surface, never by taste.
-
-| Token | Hex | Use |
-|---|---|---|
-| `--vermilion` | `#DD5A2A` | The accent on ink |
-| `--vermilion-hover` | `#F07440` | Hover and active on ink |
-| `--vermilion-on` | `#150E09` | Text and icons on a vermilion fill |
-| `--vermilion-paper` | `#C24D22` | The accent on paper: fills, borders, dots |
-| `--vermilion-paper-text` | `#B4522F` | Vermilion as text on paper, including mono numerals |
-
-## Status colours
-
-| Meaning | On ink | On paper |
-|---|---|---|
-| Success, settled, ready | `--sage` `#7FA06B` | `--sage-paper` `#5E7A4E` |
-| Warning, pending, attention | `--gold-ink` `#E0A33C` | `--gold` `#C79A3C` |
-| Danger, error, refund, void | `--danger` `#D45A4E` | `--danger-paper` `#B23A2C` |
-| Info, channel, reserved | `--slate` `#7E86A8` | `--slate` `#7E86A8` |
-
-Two text values for paper chips, derived (see Status chips):
-`--gold-paper-text` `#8A6A28` and `--slate-paper-text` `#636C93`.
-
-`--danger` was "to be defined" before Task 3. It is a desaturated red, clearly
-separate from vermilion. Vermilion is never an error colour.
-
-`--slate` was missing entirely. The design uses it for channel identity ("Web
-and delivery"), the "Reserved" table state, and as a neutral data series in
-back office charts. It is the one status colour that is the same on both
-grounds.
-
-### Status chips
-
-Chips are a triad, not a single colour: background, border, text. Six tones:
-neutral, success, warning (gold), danger, accent (vermilion, "Late" only) and
-info (slate).
-
-**On paper.** Four rows are measured from the design; two are derived.
-
-| Tone | Background | Border | Text | Source |
-|---|---|---|---|---|
-| Neutral | `#FFFDF8` | `#E3DED2` | `#6E685C` | measured |
-| Success | `#F2F5EF` | `#D6DFCE` | `#5E7A4E` | measured |
-| Accent | `#FBF1E8` | `#EDD6BF` | `#B4522F` | measured |
-| Danger | `#FCECEA` | `#EFCFCA` | `#B23A2C` | measured |
-| Warning | `#FBF5E9` | `#F1E4C9` | `--gold-paper-text` `#8A6A28` | derived |
-| Info | `#F5F3F2` | `#DFDFE4` | `--slate-paper-text` `#636C93` | derived |
-
-The design's paper chip labelled "warning" is vermilion-toned (its text is
-`#B4522F`), so it is the accent chip here. Before Task 4 of phase 05 this table
-called it Warning. The design has no gold or slate chip on paper. Those two
-rows use the measured recipe: the status colour at 8% over `--paper-raised`
-for the background, and 25% for the border. For text, the paper status colour
-is too light: `--gold` on its chip is 2.38:1. So each gets a darker "text on
-paper" value, as vermilion already has one. The hue is the same, darkened
-until the text reaches 4.6:1 on its chip. The measured chips sit between 4.4
-and 5.4.
-
-**On ink.** The design tints a status colour over the surface rather than
-using solid fills: backgrounds at 8 to 16%, borders at 24 to 40%. These are
-standardised at 12% and 30%. Accent keeps its measured 14% and 40%, used 7
-times.
-
-| Tone | Background | Border | Text |
+| Meaning | Fill | Ink | Chip tone |
 |---|---|---|---|
-| Neutral | `--ink-raised-high` | `--ink-hairline-2` | `--ink-text-muted` |
-| Success | `rgba(127,160,107,.12)` | `rgba(127,160,107,.30)` | `--sage` |
-| Warning | `rgba(224,163,60,.12)` | `rgba(224,163,60,.30)` | `--gold-ink` |
-| Danger | `rgba(212,90,78,.12)` | `rgba(212,90,78,.30)` | `--danger` |
-| Accent | `rgba(221,90,42,.14)` | `rgba(221,90,42,.40)` | `--vermilion` |
-| Info | `rgba(126,134,168,.12)` | `rgba(126,134,168,.30)` | `--slate` |
+| Free, ready, paid | `#DDE8D3` | `#216B26` | `success` |
+| Occupied, refunded, failed | `#F6D3CB` | `#A8321C` | `danger` |
+| Needs bill, pending | `#FAEBC8` | `#7A5306` | `warning` |
+| Cleaning, neutral, void | `#E8E2DA` | `#5A4F46` | `neutral` |
+| Info, seated, held | `#DCE8F7` | `#23509A` | `info` |
+| Late | `#F6E4DC` | `#9C4325` | `accent` |
+| Reserved | `#E2D9F0` | `#55399F` | no state uses it yet |
 
-**Status is colour plus a word. Never colour alone.** A chip reading "Ready" in
-sage is correct; a sage dot alone is not. Kitchen staff work at an angle, in
-steam, and some of them are colour-blind.
+On night the fills are dark and the inks light: green `#31402C` and
+`#A8CE97`, brick `#5A2A20` and `#FFC4B4`, a late ticket's rule `#C4432B`.
+Mustard and info on night are derived (`tokens.css` marks them).
 
-| State | Colour | Word |
-|---|---|---|
-| Queued | muted | Queued |
-| Fired / in progress | gold | Firing |
-| Ready | sage | Ready |
-| Late / attention | vermilion | Late |
-| Voided | muted + strikethrough | Void |
+**Status is colour plus a word. Never colour alone.** A chip reading
+"Ready" in green is correct; a green dot alone is not. Kitchen staff work
+at an angle, in steam, and some of them are colour-blind.
+
+A table's five states each take their own tone, so the floor reads at a
+glance: free `success`, seated `info`, ordered `danger` (the occupied
+rose, no alarm), paying `warning`, to clear `neutral`.
 
 ## Typography
 
-| Family | Role |
-|---|---|
-| **Instrument Serif** | Titles, totals, guest greetings |
-| **Archivo** | All interface text |
-| **JetBrains Mono** | Every number, tabular figures |
+| Family | Role | Class |
+|---|---|---|
+| **Fraunces** 600 | Titles, the total on a screen | `font-serif` |
+| **DM Sans** | All interface text | `font-sans` |
+| **Archivo** | Every number in a column | `font-mono` |
+| **Caveat** | Script garnish | `font-script` |
+
+`font-serif` carries its own ink and weight: heading maroon, 600,
+`-0.02em`. A colour or weight class on the same element still wins.
+
+**Archivo is the numeral face, and `font-mono` is its class, though it is
+no monospace.** The design asks for tabular numerals throughout, but
+Fraunces and DM Sans as Google ships them have no `tnum` feature: their
+digits are proportional and a column of rupees would not align. Archivo
+has it. The class kept its name to spare a hundred call sites. ADR-128.
+
+Script is decoration: never a button, label, price, status or field. One
+script line per screen region at most.
 
 ### Type scale
 
-Sizes are named by role, not by number. A component picks the role; it does not
-pick a pixel value.
-
 | Token | Size | Role |
 |---|---|---|
-| `--text-meta` | `11px` | Uppercase letter-spaced `.12em` metadata only. The floor. |
-| `--text-sm` | `13px` | Secondary text, table cells, dense back office rows |
-| `--text-base` | `15px` | Body, item names, every interactive label |
+| `--text-meta` | `11px` | Uppercase, `.16em`, 700. Metadata only. The floor |
+| `--text-sm` | `13px` | Secondary text, table cells |
+| `--text-base` | `15px` | Body, every interactive label |
 | `--text-lg` | `17px` | Sub-headings, emphasised rows |
-| `--text-xl` | `21px` | Section titles |
-| `--text-total` | `32px` | Instrument Serif, the one total on a screen |
-| `--text-kitchen` | `26px` | The kitchen display's lines, read from three metres (ADR-091) |
+| `--text-xl` | `22px` | Section titles (serif) |
+| `--text-total` | `32px` | Page titles, the one total on a screen (serif) |
+| `--text-kitchen` | `26px` | The kitchen display's lines (ADR-091) |
 | `--text-display` | `44px` | The kitchen display's table and timer |
 
-### The 11px floor
+Kept from before, because the reasons have not changed (ADR-014):
+nothing renders below 11px, sentence-case text is 13px or larger, every
+interactive label is 15px, and form controls are 16px minimum so mobile
+Safari does not zoom. The design draws small buttons at 13 and 14px; the
+15px floor wins.
 
-**Nothing renders below 11px, and 11px is only available to uppercase,
-letter-spaced metadata.** All sentence-case text is 13px or larger.
-
-The archived design does not honour this. It sets invoice column headers at
-9px, and the split-bill controls ("Evenly", "By item", "By seat") at 10px, and
-the ticket-rail actions ("Modify", "Void", "Discount", "Note") at 11px
-sentence-case. Uppercase at 9px is defensible because cap-height and tracking
-carry it; an 11px sentence-case **Void** button sitting next to **Modify**, read
-at arm's length through glare by someone wearing gloves, is not. The cost of
-misreading it is a destroyed line on a live ticket.
-
-So: metadata rises 9px to `--text-meta`, and every interactive label rises to
-`--text-base`. This is a deliberate, recorded deviation from the mock, not an
-oversight. See ADR-014.
-
-**Consequence for Phase 06:** the terminal's right rail is 392px in the design
-and its line lengths assume the smaller text. At `--text-base` some labels will
-wrap. Re-check rail width and truncation when building the register, and widen
-the rail rather than dropping back below the floor.
-
-### Rules
-
-- **Every number is monospaced and right-aligned**, with `font-variant-numeric:
-  tabular-nums`, so a column of rupees reads down and decimal points align.
-  Prices, quantities, totals, times, table numbers, invoice numbers. The design
-  sets `font-feature-settings:'tnum' 1` on the root of all three surfaces.
-- The small-caps metadata trail under list items (`TERMINAL · REGISTER`) is
-  Archivo, uppercase, letter-spaced `.12em`, faint text colour, `--text-meta`.
-- Instrument Serif is for the total on a screen, not for every heading in a
-  form. Back office uses it sparingly.
-- **Form controls are 16px minimum on every surface**, no exceptions. Mobile
-  Safari zooms the viewport when an `input`, `select` or `textarea` below 16px
-  takes focus, and on the guest surface that zoom strands the guest mid-order
-  with no way back. This is a rule about controls, not about body text. The
-  archived design contains no real form elements, so it neither confirms nor
-  contradicts it.
-
-## Touch sizing, hard constraints
+## Touch sizing
 
 | Token | Value | Rule |
 |---|---|---|
-| `--tap-min` | `44px` | Absolute minimum for anything tappable during service |
-| `--tap-charge` | `58px` | The charge/pay button. Always |
+| `--tap-min` | `48px` | Minimum for anything tapped during service |
+| `--tap-charge` | `56px` | The charge button. Always |
 | `--tap-gap` | `8px` | Minimum gap between adjacent tap targets |
 
-Verified against the design: 44px and 46px are the common target heights and
-nothing interactive in the terminal is below 44px. The charge button is 58px.
+Mouse-and-keyboard screens in the back office may use 40px (`md`) and
+32px (`sm`) buttons. No hover-only affordances, no drag as the only path.
 
-A 12-inch tablet, gloves, glare, a queue. No hover-only affordances. No
-right-click. No drag as the only path to an action.
+## Spacing
 
-## Spacing scale
-
-**2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 48, 64. Nothing else.**
-
-This doc previously said "4 / 8 / 12 / 16 / 24 / 32 / 48 / 64. Nothing else."
-The design does not obey that and never did: its most common gap is 10px, used
-67 times, which a 4px grid cannot express.
-
-The scale above is a 2px base through 16px, then 4px and wider. Two properties
-make it the right answer rather than a capitulation:
-
-- It already covers 71% of the design's spacing untouched, including the 10px
-  gap that carries the terminal's density. Forcing 10px to 8px or 12px would
-  restyle every dense list in the app to fix a rule, which is backwards.
-- Every value is a **native Tailwind class**, so nothing needs an arbitrary
-  value: 2px is `gap-0.5`, 6px is `gap-1.5`, 10px is `gap-2.5`, 14px is
-  `gap-3.5`. Tailwind's `--spacing` is `0.25rem` and numeric utilities multiply
-  it, and the 0.5/1.5/2.5/3.5 micro-steps have shipped by default since v2. The
-  "no arbitrary values" rule survives intact.
-
-The remaining 29% snaps to the nearest step: 7 and 9 go to 8, 11 goes to 12,
-18 goes to 16 or 20 by eye. Those four account for 73 uses across 35 screens
-and none of them is load-bearing.
-
-Be clear about who is imposing this. Tailwind v4 resolves *any* multiple of
-`--spacing`, so `gap-4.5` would render 18px perfectly well. The scale is not a
-limit the framework sets; it is a limit we set, so that 35 screens built in 12
-phases by different sessions land on the same rhythm. A reviewer should be able
-to read a diff and see a step, not a pixel someone liked.
+Unchanged: **2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32, 48, 64**, all native
+Tailwind steps. The design's own scale (4, 8, 12, 16, 24, 32, 48) is
+inside it. Card padding is 24, panel padding 32 on a desktop.
 
 ## Radius
 
-| Token | Value | Use |
-|---|---|---|
-| `--radius-none` | `0` | Hairline dividers, full-bleed rows |
-| `--radius` | `3px` | Everything: cards, chips, inputs, buttons |
-| `--radius-tight` | `2px` | Small chips, tags, swatches |
-| `--radius-round` | `50%` | Avatars, status dots |
-
-This doc previously said 0 / 4 / 8 / 12. The design uses 3px 180 times and 2px
-83 times; 8px and 12px are effectively unused. The house is square, not soft.
-
-## Scrim
-
-| Token | Value | Use |
-|---|---|---|
-| `--scrim` | `rgba(8,7,5,.72)` | Behind a modal or sheet, on both grounds |
-
-Measured from the terminal's modal overlay. The design also sets
-`backdrop-filter: blur(3px)` there; that is left out, because a full-screen
-blur is the most expensive thing a cheap tablet can be asked to paint, and it
-would be asked mid-service.
+| Token | Value | Class | Use |
+|---|---|---|---|
+| `--radius-tight` | `8px` | `rounded-tight` | Small tags, swatches |
+| `--radius` | `14px` | `rounded` | Inputs, tiles, keys, rows |
+| `--radius-card` | `20px` | `rounded-card` | Cards, panels |
+| `--radius-sheet` | `24px` | `rounded-sheet` | Sheets, modals |
+| `--radius-pill` | `999px` | `rounded-pill` | Buttons, chips, pills |
+| `--radius-round` | `50%` | `rounded-round` | Avatars, dots |
 
 ## Elevation
 
-Elevation on ink is surface lightness, not shadow: shadows disappear on a dark
-background under glare. Climb `--ink` to `--ink-chrome` to `--ink-raised` to
-`--ink-raised-high`.
+Warm, never grey. Each class resolves per surface.
 
-On paper, a single soft shadow level, plus `--paper-hairline`. The only heavy
-shadow in the design is on the printed-invoice preview, which is deliberately
-pretending to be paper on a desk.
-
-## Surface-specific defaults
-
-**Terminal**: ink background, dense, high contrast, big targets.
-**Back office**: paper background, data tables, keyboard-friendly.
-**Guest**: paper background, generous spacing, and a hard 60 KB gzipped bundle
-budget.
-
-## Where this doc overrules the design
-
-Three rules here are contradicted by the archived design. All three are settled
-(ADR-014); none is open. The principle used to settle them:
-
-> A measurement is evidence about a fact. It is not evidence about a
-> constraint. Where the design and a constraint disagree, the constraint has to
-> justify itself on its own merits, and then one of the two changes.
-
-| Conflict | Settled as | Who moved |
+| Class | On paper | On night |
 |---|---|---|
-| Spacing scale | 2px base: 2/4/6/8/10/12/14/16/20/24/32/48/64 | **The doc moved.** The old 4px grid could not express the 10px gap the design leans on 67 times, and the new scale is entirely native Tailwind. |
-| Body font size | 11px floor, metadata only; 13px sentence-case minimum; 15px for every interactive label | **The design moves.** 9px uppercase is defensible; an 11px sentence-case "Void" next to "Modify" under glare is not. |
-| Guest 16px minimum | Scoped to form controls on every surface, not body text | **Neither.** The conflict was not real. The Safari zoom-on-focus behaviour applies to `input`, `select` and `textarea`, and the mock contains none. |
+| `shadow-rest` | `0 1px 2px rgba(91,31,31,.05)` | none |
+| `shadow-card` | `0 2px 6px rgba(91,31,31,.04), 0 12px 26px rgba(91,31,31,.06)` | `0 12px 26px rgba(0,0,0,.28)` |
+| `shadow-modal` | `0 8px 18px rgba(91,31,31,.08), 0 28px 56px rgba(91,31,31,.10)` | as card |
+| `shadow-action` | `0 4px 12px rgba(47,74,44,.22)`, under the primary button | none |
 
-Two of the three moved the doc, not the design, which is the honest outcome: the
-old spacing scale and the old flat "13 to 15px body" rule were both written
-before anyone measured anything. The one place the design gives way is the one
-place a human can be hurt by it.
+`--scrim` is `rgba(58,46,42,.44)`, with no backdrop blur: a full-screen
+blur is the most expensive thing a cheap tablet can be asked to paint.
+
+## Buttons
+
+| Variant | Look | For |
+|---|---|---|
+| `primary` | Green fill, ivory text | Settle, send, save, confirm |
+| `attention` | Terracotta fill | New order, export, generate |
+| `secondary` | Ivory, strong hairline | Reversible, beside a primary |
+| `ghost` | Terracotta text | Navigation, inline links |
+| `danger` | Brick text on brick tint | Void, refund. Always confirmed |
+
+All pills. Sizes: `charge` 56, `tap` 48, `md` 40, `sm` 32.
+
+## Logo
+
+The table mark: a mustard top over two arches, with the wordmark. Never
+redraw or stretch it. The files in `web/shared/brand/` are the brand's,
+recoloured to this sheet: the arches and wordmark in `--green`, the top
+in `--mustard`, ivory `--card` where the ground is dark. `Logo` in
+`web/shared/ui` draws the same shapes inline, in the surface's colours.
+Minimum mark size 20px. The mono files are for thermal printers.
+
+## Icons
+
+Line icons in `currentColor`, 1.75px stroke, round caps and joins, on a
+24px grid. Never filled, except status dots and the veg marker.
 
 ## Implementation
 
-Phase 05 Task 1 turns this file into:
-
-- `web/shared/tokens.css`: every token above as a custom property on
-  `:root`, plus role properties (`--raised`, `--fg-2`, `--accent`, ...) that
-  `[data-surface="ink"]` and `[data-surface="paper"]` resolve to that
-  ground's value. ADR-062.
+- `web/shared/tokens.css`: every token above on `:root`, plus the roles
+  that `[data-surface="paper"]` and `[data-surface="ink"]` resolve.
 - `web/shared/tailwind.preset.ts`: exposes the roles only, replacing
-  Tailwind's default colours, sizes and radii. Never raw hex.
-- `web/shared/tokens-demo.html`: every token on both grounds, no build.
+  Tailwind's default colours, sizes, radii and shadows. Never raw hex.
 
-Components reference Tailwind classes only. A raw hex value in a `.tsx` file is
-a bug.
+Components reference Tailwind classes only. A raw hex value in a `.tsx`
+file is a bug.

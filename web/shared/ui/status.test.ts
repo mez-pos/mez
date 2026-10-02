@@ -49,7 +49,7 @@ describe("status vocabularies", () => {
   it("gives every table state its own tone, so the floor reads at a glance", () => {
     const tones = Object.values(tableStatuses).map((s) => s.tone);
     expect(new Set(tones).size).toBe(tones.length);
-    expect(chipSpec({ kind: "table", status: "dirty" })).toEqual({ tone: "danger", word: "To clear" });
+    expect(chipSpec({ kind: "table", status: "dirty" })).toEqual({ tone: "neutral", word: "To clear" });
   });
 
   it("looks up by kind", () => {

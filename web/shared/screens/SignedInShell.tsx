@@ -4,7 +4,7 @@
 import type { ReactNode } from "react";
 import { useAuth, useAuthStore } from "../auth/use-auth";
 import { ConnectionIndicator } from "../ConnectionIndicator";
-import { Button, Meta } from "../ui";
+import { Button, Logo, Meta } from "../ui";
 
 interface SignedInShellProps {
   area: string;
@@ -28,7 +28,10 @@ export function SignedInShell({ area, exitLabel, fill = false, status: extra, ch
   return (
     <div className={fill ? "flex h-screen flex-col overflow-hidden bg-canvas text-fg" : "flex min-h-screen flex-col bg-canvas text-fg"}>
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-chrome px-6 py-2">
-        <Meta items={["mez", area, status.device.name]} />
+        <div className="flex items-center gap-4">
+          <Logo className="h-8" />
+          <Meta items={[area, status.device.name]} />
+        </div>
         <div className="flex items-center gap-tap-gap">
           {extra}
           <ConnectionIndicator />

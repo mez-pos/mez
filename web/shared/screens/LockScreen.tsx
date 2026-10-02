@@ -9,7 +9,7 @@ import { formatWait, initials } from "../auth/format";
 import { signInError, unreachableMessage } from "../auth/messages";
 import { useAuth, useAuthStore } from "../auth/use-auth";
 import { ConnectionIndicator } from "../ConnectionIndicator";
-import { applyPinKey, Button, EmptyState, InboxIcon, Meta, NumPad, type NumKey } from "../ui";
+import { applyPinKey, Button, EmptyState, InboxIcon, Logo, Meta, NumPad, type NumKey } from "../ui";
 import { cx } from "../ui/cx";
 import { keyFromKeyboard } from "../ui/numpad-keys";
 import { minPin, PinDots } from "./PinDots";
@@ -112,7 +112,8 @@ export function LockScreen() {
 
       <div className="grid w-full max-w-4xl items-center gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section aria-labelledby="lock-title">
-          <Meta items={["mez", "Sign in"]} />
+          <Logo className="mb-6 h-12" />
+          <Meta items={["Sign in"]} />
           <h1 id="lock-title" className="mt-3 font-serif text-total">
             {device?.name ?? "This device"}
           </h1>
@@ -125,7 +126,7 @@ export function LockScreen() {
           <StaffTiles query={staff} selected={selected} onChoose={choose} />
         </section>
 
-        <section aria-label="PIN" className="rounded border border-line bg-chrome p-6">
+        <section aria-label="PIN" className="rounded-card border border-line bg-chrome p-6 shadow-card">
           <p className="min-h-6 text-base font-semibold">{selected ? selected.name : "Choose your name"}</p>
           <PinDots length={pin.length} />
           <NumPad layout="pin" size="lg" label="PIN" onKey={key} disabled={!canType} className="mt-4" />

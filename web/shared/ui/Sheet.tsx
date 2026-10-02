@@ -50,12 +50,12 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         <div
           className={cx(
             "flex max-h-[85dvh] flex-col border-line bg-raised",
-            "rounded-t border-t",
+            "rounded-t-sheet border-t shadow-modal",
             "pointer-fine:h-full pointer-fine:max-h-none pointer-fine:rounded-none pointer-fine:border-l pointer-fine:border-t-0",
           )}
         >
           <div className="flex items-center justify-between gap-4 border-b border-line px-6 py-2">
-            <h2 id={titleId} className="text-xl font-semibold">
+            <h2 id={titleId} className="font-serif text-xl">
               {title}
             </h2>
             <Button variant="ghost" aria-label="Close" onClick={onClose} className="-mr-2 shrink-0">

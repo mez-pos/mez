@@ -8,242 +8,277 @@
  *    name, so both grounds are always addressable (the demo page needs that).
  *    Components do not use these directly.
  *
- * 2. Roles, on [data-surface]. The same role name resolves to the ink value
- *    or the paper value depending on the surface an element sits in. This is
+ * 2. Roles, on [data-surface]. The same role name resolves to the paper value
+ *    or the night value depending on the surface an element sits in. This is
  *    what the Tailwind preset exposes, so a component written once renders
- *    correctly on both grounds, and "pick by surface, never by taste" is
- *    enforced by the cascade instead of by review.
+ *    correctly on both grounds.
+ *
+ * Two surfaces: "paper" is parchment and ivory, every screen but one;
+ * "ink" is espresso night, the kitchen display.
  */
 
 @import "./fonts/fonts.css";
 
 :root {
-  /* Ink surfaces (terminal) */
-  --ink: #0e0c09;
-  --ink-chrome: #14110d;
-  --ink-raised: #1a1712;
-  --ink-raised-high: #221e17;
+  /* Paper surfaces */
+  --parchment: #f8f3e9;
+  --card: #fffdf8;
+  --card-hover: #f6efe2;
+  --well: #f2eadb;
 
-  /* Paper surfaces (back office, guest) */
-  --paper: #f4f1e9;
-  --paper-raised: #fffdf8;
-  --paper-sunken: #f2ede1;
+  /* Ink on paper */
+  --heading: #5b1f1f;
+  --body: #3a2e2a;
+  --body-2: #5f5850;
+  --muted: #7a6e66;
+  --faint: #8b7f72;
 
-  /* Text on ink */
-  --ink-text: #f3efe6;
-  --ink-text-2: #c9c2b2;
-  --ink-text-3: #a39c8c;
-  --ink-text-muted: #8c8474;
-  --ink-text-faint: #6e685c;
+  /* Rules on paper */
+  --hairline: #eae0d0;
+  --hairline-soft: #f4ede0;
+  --hairline-strong: #dccdb4;
 
-  /* Text on paper */
-  --paper-text: #1a1712;
-  --paper-text-2: #4a4438;
-  --paper-text-3: #6e685c;
-  --paper-text-muted: #8a8274;
-  --paper-text-faint: #9a9384;
+  /* Brand and action */
+  --green: #2f4a2c;
+  --green-press: #24391f;
+  --green-tint: #e8efe3;
+  --terracotta: #b9522f;
+  --terracotta-press: #9c4325;
+  --terracotta-tint: #f6e4dc;
+  --mustard: #e7a83a;
+  --brick: #a33a28;
+  --brick-tint: #fbede9;
+  --brick-tint-press: #f6ddd6;
+  --brick-line: #e7c3b9;
+  --on-fill: #fffdf8;
 
-  /* Hairlines */
-  --ink-hairline: rgba(255, 255, 255, 0.07);
-  --ink-hairline-2: rgba(255, 255, 255, 0.1);
-  --ink-hairline-3: rgba(255, 255, 255, 0.14);
-  --paper-hairline: #e3ded2;
-  --paper-hairline-soft: #efeae0;
+  /* Status on paper: a pastel fill and a darkened ink, 4.5:1 or better */
+  --free-fill: #dde8d3;
+  --free-ink: #216b26;
+  --occupied-fill: #f6d3cb;
+  --occupied-ink: #a8321c;
+  --bill-fill: #faebc8;
+  --bill-ink: #7a5306;
+  --reserved-fill: #e2d9f0;
+  --reserved-ink: #55399f;
+  --cleaning-fill: #e8e2da;
+  --cleaning-ink: #5a4f46;
+  --info-fill: #dce8f7;
+  --info-ink: #23509a;
+  --success: #2e7d32;
 
-  /* Accent: one vermilion, two values, picked by surface */
-  --vermilion: #dd5a2a;
-  --vermilion-hover: #f07440;
-  --vermilion-on: #150e09;
-  --vermilion-paper: #c24d22;
-  --vermilion-paper-text: #b4522f;
-
-  /* Status */
-  --sage: #7fa06b;
-  --sage-paper: #5e7a4e;
-  --gold-ink: #e0a33c;
-  --gold: #c79a3c;
-  --danger: #d45a4e;
-  --danger-paper: #b23a2c;
-  --slate: #7e86a8;
-
-  /* Paper text values darker than their status colour, for chips (derived) */
-  --gold-paper-text: #8a6a28;
-  --slate-paper-text: #636c93;
-
-  /* Status chips on paper: background, border, text */
-  --paper-chip-neutral-bg: #fffdf8;
-  --paper-chip-neutral-border: #e3ded2;
-  --paper-chip-neutral-text: #6e685c;
-  --paper-chip-success-bg: #f2f5ef;
-  --paper-chip-success-border: #d6dfce;
-  --paper-chip-success-text: #5e7a4e;
-  --paper-chip-accent-bg: #fbf1e8;
-  --paper-chip-accent-border: #edd6bf;
-  --paper-chip-accent-text: #b4522f;
-  --paper-chip-danger-bg: #fcecea;
-  --paper-chip-danger-border: #efcfca;
-  --paper-chip-danger-text: #b23a2c;
-  --paper-chip-warning-bg: #fbf5e9; /* derived */
-  --paper-chip-warning-border: #f1e4c9; /* derived */
-  --paper-chip-warning-text: var(--gold-paper-text);
-  --paper-chip-info-bg: #f5f3f2; /* derived */
-  --paper-chip-info-border: #dfdfe4; /* derived */
-  --paper-chip-info-text: var(--slate-paper-text);
-
-  /* Status chips on ink: the status colour tinted over the surface */
-  --ink-chip-neutral-bg: var(--ink-raised-high);
-  --ink-chip-neutral-border: var(--ink-hairline-2);
-  --ink-chip-neutral-text: var(--ink-text-muted);
-  --ink-chip-success-bg: rgba(127, 160, 107, 0.12);
-  --ink-chip-success-border: rgba(127, 160, 107, 0.3);
-  --ink-chip-success-text: var(--sage);
-  --ink-chip-warning-bg: rgba(224, 163, 60, 0.12);
-  --ink-chip-warning-border: rgba(224, 163, 60, 0.3);
-  --ink-chip-warning-text: var(--gold-ink);
-  --ink-chip-danger-bg: rgba(212, 90, 78, 0.12);
-  --ink-chip-danger-border: rgba(212, 90, 78, 0.3);
-  --ink-chip-danger-text: var(--danger);
-  --ink-chip-accent-bg: rgba(221, 90, 42, 0.14);
-  --ink-chip-accent-border: rgba(221, 90, 42, 0.4);
-  --ink-chip-accent-text: var(--vermilion);
-  --ink-chip-info-bg: rgba(126, 134, 168, 0.12);
-  --ink-chip-info-border: rgba(126, 134, 168, 0.3);
-  --ink-chip-info-text: var(--slate);
+  /* Espresso night (kitchen display) */
+  --night: #241c17;
+  --night-chrome: #2e241e;
+  --night-raised: #332821;
+  --night-raised-high: #3d3028; /* derived: between the ticket and its rule */
+  --night-line: #47382e;
+  --night-line-strong: #4a3a30;
+  --night-text: #f5eadb;
+  --night-text-2: #e4d6c4;
+  --night-text-3: #bca995;
+  --night-text-muted: #a8968a;
+  --night-green-fill: #31402c;
+  --night-green-ink: #a8ce97;
+  --night-brick-fill: #5a2a20;
+  --night-brick-ink: #ffc4b4;
+  --night-late: #c4432b;
+  --night-mustard-fill: #4d3c1c; /* derived: mustard at the green fill's depth */
+  --night-mustard-ink: #ffd98a;
+  --night-info-fill: #26354d; /* derived */
+  --night-info-ink: #a9c4ec; /* derived */
 
   /* Type */
-  --font-serif: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --font-sans: "Archivo", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+  --font-serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: "DM Sans", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+  /* The numeral face, not a monospace: Archivo, for its tabular figures. */
+  --font-mono: "Archivo", "DM Sans", "Segoe UI", Arial, sans-serif;
+  --font-script: "Caveat", "Segoe Script", cursive;
 
-  --text-meta: 11px; /* uppercase, .12em tracking, metadata only: the floor */
+  --text-meta: 11px; /* uppercase, .16em tracking, metadata only: the floor */
   --text-sm: 13px;
   --text-base: 15px;
   --text-lg: 17px;
-  --text-xl: 21px;
+  --text-xl: 22px;
   --text-total: 32px;
   --text-kitchen: 26px; /* the kitchen display's lines, read from three metres */
   --text-display: 44px; /* the kitchen display's table and timer */
-  --tracking-meta: 0.12em;
+  --tracking-meta: 0.16em;
+  --tracking-serif: -0.02em;
 
   /* Touch */
-  --tap-min: 44px;
-  --tap-charge: 58px;
+  --tap-min: 48px;
+  --tap-charge: 56px;
   --tap-gap: 8px;
 
   /* Behind a modal or sheet */
-  --scrim: rgba(8, 7, 5, 0.72);
+  --scrim: rgba(58, 46, 42, 0.44);
 
   /* Radius */
   --radius-none: 0;
-  --radius: 3px;
-  --radius-tight: 2px;
+  --radius-tight: 8px;
+  --radius: 14px;
+  --radius-card: 20px;
+  --radius-sheet: 24px;
+  --radius-pill: 999px;
   --radius-round: 50%;
+
+  /* Elevation on paper: warm, never grey */
+  --e1: 0 1px 2px rgba(91, 31, 31, 0.05);
+  --e2: 0 2px 6px rgba(91, 31, 31, 0.04), 0 12px 26px rgba(91, 31, 31, 0.06);
+  --e3: 0 8px 18px rgba(91, 31, 31, 0.08), 0 28px 56px rgba(91, 31, 31, 0.1);
+  --e-action: 0 4px 12px rgba(47, 74, 44, 0.22);
+  --e-night: 0 12px 26px rgba(0, 0, 0, 0.28);
 }
 
-[data-surface="ink"] {
-  color-scheme: dark;
+[data-surface="paper"] {
+  color-scheme: light;
 
-  --canvas: var(--ink);
-  --chrome: var(--ink-chrome);
-  --raised: var(--ink-raised);
-  --raised-high: var(--ink-raised-high);
-  --sunken: var(--ink); /* stand-in */
+  --canvas: var(--parchment);
+  --chrome: var(--card);
+  --raised: var(--card);
+  --raised-high: var(--card-hover);
+  --sunken: var(--well);
 
-  --fg: var(--ink-text);
-  --fg-2: var(--ink-text-2);
-  --fg-3: var(--ink-text-3);
-  --fg-muted: var(--ink-text-muted);
-  --fg-faint: var(--ink-text-faint);
+  --fg: var(--body);
+  --fg-2: var(--body-2);
+  --fg-3: var(--muted);
+  --fg-muted: var(--muted);
+  --fg-faint: var(--faint);
+  --fg-heading: var(--heading);
 
-  --line: var(--ink-hairline);
-  --line-soft: var(--ink-hairline); /* stand-in */
-  --line-strong: var(--ink-hairline-2);
-  --line-focus: var(--ink-hairline-3);
+  --line: var(--hairline);
+  --line-soft: var(--hairline-soft);
+  --line-strong: var(--hairline-strong);
+  --line-focus: var(--green);
 
-  --accent: var(--vermilion);
-  --accent-hover: var(--vermilion-hover);
-  --accent-fg: var(--vermilion-on);
-  --accent-text: var(--vermilion);
+  /* Green commits. */
+  --accent: var(--green);
+  --accent-hover: var(--green-press);
+  --accent-fg: var(--on-fill);
+  --accent-text: var(--green);
+  --accent-tint: var(--green-tint);
 
-  --status-success: var(--sage);
-  --status-warning: var(--gold-ink);
-  --status-danger: var(--danger);
-  --status-info: var(--slate);
+  /* Terracotta asks for attention. */
+  --attention: var(--terracotta);
+  --attention-hover: var(--terracotta-press);
+  --attention-fg: var(--on-fill);
+  --attention-text: var(--terracotta);
+  --attention-tint: var(--terracotta-tint);
 
-  --chip-neutral-bg: var(--ink-chip-neutral-bg);
-  --chip-neutral-border: var(--ink-chip-neutral-border);
-  --chip-neutral-fg: var(--ink-chip-neutral-text);
-  --chip-success-bg: var(--ink-chip-success-bg);
-  --chip-success-border: var(--ink-chip-success-border);
-  --chip-success-fg: var(--ink-chip-success-text);
-  --chip-warning-bg: var(--ink-chip-warning-bg);
-  --chip-warning-border: var(--ink-chip-warning-border);
-  --chip-warning-fg: var(--ink-chip-warning-text);
-  --chip-danger-bg: var(--ink-chip-danger-bg);
-  --chip-danger-border: var(--ink-chip-danger-border);
-  --chip-danger-fg: var(--ink-chip-danger-text);
-  --chip-accent-bg: var(--ink-chip-accent-bg);
-  --chip-accent-border: var(--ink-chip-accent-border);
-  --chip-accent-fg: var(--ink-chip-accent-text);
-  --chip-info-bg: var(--ink-chip-info-bg);
-  --chip-info-border: var(--ink-chip-info-border);
-  --chip-info-fg: var(--ink-chip-info-text);
+  --danger-fill: var(--brick);
+  --danger-tint: var(--brick-tint);
+  --danger-tint-hover: var(--brick-tint-press);
+  --danger-line: var(--brick-line);
+
+  --logo-ink: var(--green);
+
+  --status-success: var(--free-ink);
+  --status-warning: var(--bill-ink);
+  --status-danger: var(--brick);
+  --status-info: var(--info-ink);
+  --highlight: var(--mustard);
+
+  --chip-neutral-bg: var(--cleaning-fill);
+  --chip-neutral-border: var(--cleaning-fill);
+  --chip-neutral-fg: var(--cleaning-ink);
+  --chip-success-bg: var(--free-fill);
+  --chip-success-border: var(--free-fill);
+  --chip-success-fg: var(--free-ink);
+  --chip-warning-bg: var(--bill-fill);
+  --chip-warning-border: var(--bill-fill);
+  --chip-warning-fg: var(--bill-ink);
+  --chip-danger-bg: var(--occupied-fill);
+  --chip-danger-border: var(--occupied-fill);
+  --chip-danger-fg: var(--occupied-ink);
+  --chip-accent-bg: var(--terracotta-tint);
+  --chip-accent-border: var(--terracotta-tint);
+  --chip-accent-fg: var(--terracotta-press);
+  --chip-info-bg: var(--info-fill);
+  --chip-info-border: var(--info-fill);
+  --chip-info-fg: var(--info-ink);
+
+  --shadow-rest: var(--e1);
+  --shadow-card: var(--e2);
+  --shadow-modal: var(--e3);
+  --shadow-action: var(--e-action);
 
   background: var(--canvas);
   color: var(--fg);
 }
 
-/* Paper has fewer tokens than ink. Where tokens.md names no paper value, the
-   role borrows the nearest one; each is marked "stand-in" and listed in
-   ADR-062. Replace them in tokens.md first when the back office needs them. */
-[data-surface="paper"] {
-  color-scheme: light;
+/* Espresso night. Elevation here is surface lightness; the one shadow is the
+   ticket's. Roles the design gives no night value for borrow the nearest one
+   and are marked "stand-in". */
+[data-surface="ink"] {
+  color-scheme: dark;
 
-  --canvas: var(--paper);
-  --chrome: var(--paper-raised); /* stand-in */
-  --raised: var(--paper-raised);
-  --raised-high: var(--paper-raised); /* stand-in */
-  --sunken: var(--paper-sunken);
+  --canvas: var(--night);
+  --chrome: var(--night-chrome);
+  --raised: var(--night-raised);
+  --raised-high: var(--night-raised-high);
+  --sunken: var(--night); /* stand-in */
 
-  --fg: var(--paper-text);
-  --fg-2: var(--paper-text-2);
-  --fg-3: var(--paper-text-3);
-  --fg-muted: var(--paper-text-muted);
-  --fg-faint: var(--paper-text-faint);
+  --fg: var(--night-text);
+  --fg-2: var(--night-text-2);
+  --fg-3: var(--night-text-3);
+  --fg-muted: var(--night-text-muted);
+  --fg-faint: var(--night-text-muted); /* stand-in */
+  --fg-heading: var(--night-text);
 
-  --line: var(--paper-hairline);
-  --line-soft: var(--paper-hairline-soft);
-  --line-strong: var(--paper-hairline); /* stand-in */
-  --line-focus: var(--paper-text-faint); /* stand-in */
+  --line: var(--night-line);
+  --line-soft: var(--night-line); /* stand-in */
+  --line-strong: var(--night-line-strong);
+  --line-focus: var(--mustard);
 
-  --accent: var(--vermilion-paper);
-  --accent-hover: var(--vermilion-paper); /* stand-in */
-  --accent-fg: var(--vermilion-on);
-  --accent-text: var(--vermilion-paper-text);
+  --accent: var(--green);
+  --accent-hover: var(--green-press);
+  --accent-fg: var(--night-text);
+  --accent-text: var(--night-green-ink);
+  --accent-tint: var(--night-green-fill);
 
-  --status-success: var(--sage-paper);
-  --status-warning: var(--gold);
-  --status-danger: var(--danger-paper);
-  --status-info: var(--slate);
+  --attention: var(--terracotta);
+  --attention-hover: var(--terracotta-press);
+  --attention-fg: var(--on-fill);
+  --attention-text: var(--night-brick-ink);
+  --attention-tint: var(--night-brick-fill);
 
-  --chip-neutral-bg: var(--paper-chip-neutral-bg);
-  --chip-neutral-border: var(--paper-chip-neutral-border);
-  --chip-neutral-fg: var(--paper-chip-neutral-text);
-  --chip-success-bg: var(--paper-chip-success-bg);
-  --chip-success-border: var(--paper-chip-success-border);
-  --chip-success-fg: var(--paper-chip-success-text);
-  --chip-warning-bg: var(--paper-chip-warning-bg);
-  --chip-warning-border: var(--paper-chip-warning-border);
-  --chip-warning-fg: var(--paper-chip-warning-text);
-  --chip-danger-bg: var(--paper-chip-danger-bg);
-  --chip-danger-border: var(--paper-chip-danger-border);
-  --chip-danger-fg: var(--paper-chip-danger-text);
-  --chip-accent-bg: var(--paper-chip-accent-bg);
-  --chip-accent-border: var(--paper-chip-accent-border);
-  --chip-accent-fg: var(--paper-chip-accent-text);
-  --chip-info-bg: var(--paper-chip-info-bg);
-  --chip-info-border: var(--paper-chip-info-border);
-  --chip-info-fg: var(--paper-chip-info-text);
+  --danger-fill: var(--brick);
+  --danger-tint: var(--night-brick-fill);
+  --danger-tint-hover: var(--night-brick-fill); /* stand-in */
+  --danger-line: var(--night-late);
+
+  --logo-ink: var(--night-text);
+
+  --status-success: var(--night-green-ink);
+  --status-warning: var(--mustard);
+  --status-danger: var(--night-brick-ink);
+  --status-info: var(--night-info-ink);
+  --highlight: var(--mustard);
+
+  --chip-neutral-bg: var(--night-raised-high);
+  --chip-neutral-border: var(--night-line-strong);
+  --chip-neutral-fg: var(--night-text-3);
+  --chip-success-bg: var(--night-green-fill);
+  --chip-success-border: var(--night-green-fill);
+  --chip-success-fg: var(--night-green-ink);
+  --chip-warning-bg: var(--night-mustard-fill);
+  --chip-warning-border: var(--night-mustard-fill);
+  --chip-warning-fg: var(--night-mustard-ink);
+  --chip-danger-bg: var(--night-brick-fill);
+  --chip-danger-border: var(--night-brick-fill);
+  --chip-danger-fg: var(--night-brick-ink);
+  --chip-accent-bg: var(--night-brick-fill);
+  --chip-accent-border: var(--night-late);
+  --chip-accent-fg: var(--night-brick-ink);
+  --chip-info-bg: var(--night-info-fill);
+  --chip-info-border: var(--night-info-fill);
+  --chip-info-fg: var(--night-info-ink);
+
+  --shadow-rest: none;
+  --shadow-card: var(--e-night);
+  --shadow-modal: var(--e-night);
+  --shadow-action: none;
 
   background: var(--canvas);
   color: var(--fg);
@@ -264,10 +299,21 @@
   font-size: var(--text-base);
 }
 
+/* Serif is the heading voice: Fraunces 600 in the heading ink. In the base
+   layer, so a colour or weight utility on the same element still wins, and a
+   total painted in the danger colour stays that colour. */
+@layer base {
+  .font-serif {
+    color: var(--fg-heading);
+    font-weight: 600;
+    letter-spacing: var(--tracking-serif);
+  }
+}
+
 /* ::backdrop inherits nothing in browsers before 2024, so the fallback is
    the token's value, not a second opinion about it. */
 dialog::backdrop {
-  background: var(--scrim, rgba(8, 7, 5, 0.72));
+  background: var(--scrim, rgba(58, 46, 42, 0.44));
 }
 
 /* Mobile Safari zooms on focus below 16px, and on the guest surface that

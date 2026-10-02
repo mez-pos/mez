@@ -40,7 +40,7 @@ function SectionNav({ current }: { current: Section | null }) {
       {groups.map((g) => (
         <div key={g.label ?? "top"} className="mb-4 last:mb-0">
           {g.label && <h2 className="px-3 pb-1.5 text-meta font-semibold uppercase text-fg-faint">{g.label}</h2>}
-          <ul className="flex flex-wrap gap-0.5 md:flex-col">
+          <ul className="flex flex-wrap gap-1 md:flex-col">
             {g.sections.map((s) => (
               <li key={s.id}>
                 <NavEntry section={s} active={current?.id === s.id} />
@@ -53,12 +53,13 @@ function SectionNav({ current }: { current: Section | null }) {
   );
 }
 
-const entry = "flex min-h-tap items-center justify-between gap-3 rounded border-l-2 px-3 text-sm";
+// The active section is the terracotta fill, the design's sidebar voice.
+const entry = "flex min-h-10 items-center justify-between gap-3 rounded-pill px-4 text-base";
 
 function NavEntry({ section: s, active }: { section: Section; active: boolean }) {
   if (!s.built) {
     return (
-      <span className={`${entry} border-transparent text-fg-muted`}>
+      <span className={`${entry} text-fg-muted`}>
         {s.label}
         <span className="text-meta font-semibold uppercase text-fg-faint">Soon</span>
       </span>
@@ -70,12 +71,12 @@ function NavEntry({ section: s, active }: { section: Section; active: boolean })
       aria-current={active ? "page" : undefined}
       className={
         active
-          ? `${entry} border-line-strong bg-raised font-semibold text-fg`
-          : `${entry} border-transparent text-fg-2 hover:bg-raised focus-visible:bg-raised`
+          ? `${entry} bg-attention font-semibold text-attention-fg`
+          : `${entry} text-fg-2 hover:bg-attention-tint focus-visible:bg-attention-tint`
       }
     >
       {s.label}
-      <kbd aria-label={`Keys: g then ${s.key}`} className="font-mono text-meta text-fg-faint">
+      <kbd aria-label={`Keys: g then ${s.key}`} className={active ? "font-mono text-meta" : "font-mono text-meta text-fg-faint"}>
         g {s.key}
       </kbd>
     </Link>

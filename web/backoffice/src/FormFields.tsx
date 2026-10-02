@@ -6,7 +6,7 @@ import { useId, type ReactNode } from "react";
 import { cx } from "../../shared/ui/cx";
 
 export const inputClass =
-  "min-h-tap w-full rounded border border-line-strong bg-raised px-3 text-fg outline-offset-2 outline-line-focus focus-visible:outline-2";
+  "min-h-tap w-full rounded border border-line-strong bg-raised px-4 text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3";
 
 export function Field({ label, hint, error, children }: { label: string; hint?: string; error: string | null; children: (id: string) => ReactNode }) {
   const id = useId();

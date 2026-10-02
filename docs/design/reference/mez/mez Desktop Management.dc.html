@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Poppins:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; background:#EFE7D8; }
+  * { box-sizing:border-box; }
+  a { color:#B9522F; text-decoration:none; }
+  a:hover { color:#8F3E23; }
+</style>
+</helmet>
+
+<div style="padding:56px;background:#EFE7D8;font-family:'DM Sans',system-ui,sans-serif;color:#3A2E2A;-webkit-font-smoothing:antialiased">
+
+  <div style="max-width:1200px;margin:0 0 48px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.16em;color:#B9522F;margin-bottom:12px">MEZ · BATCH E</div>
+    <h1 style="font-family:Fraunces,serif;font-size:46px;font-weight:600;color:#5B1F1F;margin:0 0 12px;letter-spacing:-.025em">Back office &amp; management</h1>
+    <p style="font-size:17px;line-height:1.55;color:#3A2E2A;margin:0;max-width:720px">1920 × 1080 · reports, menu, inventory, staff, customers, settings, end-of-day close and the first-run setup wizard for new open-source installs.</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:52px">
+
+  <!-- REPORTS -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">01 · SALES REPORTS</div>
+    <div data-screen-label="D15 Sales Reports" style="width:1920px;height:1080px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:72px;background:#FFFDF8;border-bottom:1px solid #EAE0D0;display:flex;align-items:center;padding:0 28px;gap:22px">
+        <div style="display:flex;align-items:center;gap:11px"><img src="assets/mez-mark.png" alt="mez" style="width:35px;height:35px;object-fit:contain;display:block;flex:none"><div style="font-family:Poppins,'DM Sans',sans-serif;font-size:25px;font-weight:700;letter-spacing:-.035em;color:#123E3F">mez</div></div>
+        <div style="display:flex;gap:4px">
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="home" width="18" height="18" stroke-width="1.75"></i> Dashboard</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="receipt-text" width="18" height="18" stroke-width="1.75"></i> Orders</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="armchair" width="18" height="18" stroke-width="1.75"></i> Tables</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="utensils" width="18" height="18" stroke-width="1.75"></i> Menu</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="package" width="18" height="18" stroke-width="1.75"></i> Inventory</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:600"><i data-lucide="chart-column" width="18" height="18" stroke-width="1.9"></i> Reports</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="settings" width="18" height="18" stroke-width="1.75"></i> Settings</div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:18px">
+          <div style="height:44px;padding:0 18px;border-radius:999px;background:#F2EADB;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px;font-variant-numeric:tabular-nums"><i data-lucide="calendar" width="17" height="17" stroke-width="1.85"></i> Fri, 19 Sep 2026</div>
+          <div style="display:flex;align-items:center;gap:10px"><div style="width:40px;height:40px;border-radius:50%;background:#E5E9DE;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:700;color:#2F4A2C">AS</div><div><div style="font-size:14px;font-weight:700">Aditi</div><div style="font-size:12px;color:#7A6E66">Admin</div></div></div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;overflow:hidden">
+        <div style="width:240px;background:#FFFDF8;border-right:1px solid #EAE0D0;padding:18px 14px;display:flex;flex-direction:column;gap:3px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#7A6E66;padding:0 12px 10px">REPORTS</div>
+          <div style="height:46px;border-radius:14px;background:#F6E4DC;color:#9C4325;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:14.5px;font-weight:700"><i data-lucide="chart-column" width="18" height="18" stroke-width="1.9"></i> Sales</div>
+          <div style="height:46px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:14.5px"><i data-lucide="utensils" width="18" height="18" stroke-width="1.75"></i> Item reports</div>
+          <div style="height:46px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:14.5px"><i data-lucide="package" width="18" height="18" stroke-width="1.75"></i> Inventory</div>
+          <div style="height:46px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:14.5px"><i data-lucide="users" width="18" height="18" stroke-width="1.75"></i> Staff</div>
+          <div style="height:46px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:14.5px"><i data-lucide="heart" width="18" height="18" stroke-width="1.75"></i> Customers</div>
+          <div style="height:1px;background:#EAE0D0;margin:14px 8px"></div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.16em;color:#7A6E66;padding:0 12px 10px">SETTINGS</div>
+          <div style="height:46px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:14.5px"><i data-lucide="store" width="18" height="18" stroke-width="1.75"></i> Outlet</div>
+          <div style="height:46px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:14.5px"><i data-lucide="percent" width="18" height="18" stroke-width="1.75"></i> Taxes &amp; charges</div>
+          <div style="height:46px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:14.5px"><i data-lucide="printer" width="18" height="18" stroke-width="1.75"></i> Printers</div>
+          <div style="height:46px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:14.5px"><i data-lucide="qr-code" width="18" height="18" stroke-width="1.75"></i> Table &amp; QR codes</div>
+          <div style="margin-top:auto;padding:0 8px"><div style="font-family:Caveat,cursive;font-size:27px;color:#7A4A3A;line-height:1.2">Good Food<br>Happier<br>People ♡</div></div>
+        </div>
+        <div style="flex:1;padding:22px 26px;overflow:hidden">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px">
+            <div><div style="font-family:Fraunces,serif;font-size:36px;font-weight:600;color:#5B1F1F;letter-spacing:-.02em">Sales Reports</div><div style="font-size:15.5px;color:#7A6E66;margin-top:4px">Insight into the last 19 days of trading</div></div>
+            <div style="display:flex;gap:11px">
+              <div style="height:46px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px"><i data-lucide="calendar-range" width="17" height="17" stroke-width="1.85"></i> 01 Sep – 19 Sep 2026</div>
+              <div style="height:46px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px">All Outlets <i data-lucide="chevron-down" width="16" height="16" stroke-width="2"></i></div>
+              <div style="height:46px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px">All Order Types <i data-lucide="chevron-down" width="16" height="16" stroke-width="2"></i></div>
+              <div style="height:46px;padding:0 22px;border-radius:999px;background:#B9522F;color:#FFFDF8;font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px"><i data-lucide="download" width="17" height="17" stroke-width="1.9"></i> Export</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px">
+            <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+              <div style="background:{{ k.bg }};border:1px solid {{ k.border }};border-radius:20px;padding:20px;display:flex;gap:15px;align-items:center">
+                <div style="width:54px;height:54px;border-radius:50%;background:{{ k.chip }};color:{{ k.ink }};display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ k.icon }}" width="25" height="25" stroke-width="1.9"></i></div>
+                <div><div style="font-size:13.5px;color:#5F5850;font-weight:500">{{ k.label }}</div><div style="font-family:Fraunces,serif;font-size:31px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums;line-height:1.15">{{ k.value }}</div><div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#216B26;font-weight:700;margin-top:2px"><i data-lucide="trending-up" width="14" height="14" stroke-width="2.4"></i> {{ k.delta }} <span style="color:#7A6E66;font-weight:400">vs. prev.</span></div></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:16px">
+            <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+              <div style="display:flex;align-items:center;gap:14px">
+                <div style="font-family:Fraunces,serif;font-size:23px;font-weight:600;color:#5B1F1F">Sales trend</div>
+                <div style="display:flex;gap:16px;margin-left:auto;font-size:12.5px;color:#5F5850">
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:#2F4A2C"></span>Dine-in</span>
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:#B9522F"></span>Takeaway</span>
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:#E7A83A"></span>Delivery</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:16px;margin-top:18px">
+                <div style="display:flex;flex-direction:column;justify-content:space-between;height:230px;font-size:11.5px;color:#7A6E66;font-variant-numeric:tabular-nums;text-align:right;padding-bottom:22px"><span>₹25K</span><span>₹20K</span><span>₹15K</span><span>₹10K</span><span>₹5K</span><span>0</span></div>
+                <div style="flex:1">
+                  <div style="display:flex;align-items:flex-end;gap:7px;height:208px;border-bottom:1px solid #EAE0D0">
+                    <sc-for list="{{ trend }}" as="b" hint-placeholder-count="19">
+                      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%"><div style="background:#E7A83A;height:{{ b.d }};border-radius:4px 4px 0 0"></div><div style="background:#B9522F;height:{{ b.t }}"></div><div style="background:#2F4A2C;height:{{ b.i }};border-radius:0 0 2px 2px"></div></div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;gap:7px;margin-top:9px;font-size:11px;color:#7A6E66;font-variant-numeric:tabular-nums">
+                    <span style="flex:1;text-align:center">Sep 1</span><span style="flex:2;text-align:center">Sep 4</span><span style="flex:2;text-align:center">Sep 7</span><span style="flex:2;text-align:center">Sep 10</span><span style="flex:2;text-align:center">Sep 13</span><span style="flex:2;text-align:center">Sep 16</span><span style="flex:2;text-align:center">Sep 19</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="width:470px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+              <div style="font-family:Fraunces,serif;font-size:23px;font-weight:600;color:#5B1F1F">Sales by category</div>
+              <div style="display:flex;align-items:center;gap:24px;margin-top:18px">
+                <div style="position:relative;width:180px;height:180px;border-radius:50%;background:conic-gradient(#2F4A2C 0 32%,#B9522F 32% 50%,#E7A83A 50% 64%,#7A5306 64% 76%,#9C8B7A 76% 86%,#C9B49B 86% 94%,#DCCDB4 94% 100%);flex:none">
+                  <div style="position:absolute;inset:38px;background:#FFFDF8;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-family:Fraunces,serif;font-size:23px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">₹1,24,580</div><div style="font-size:11.5px;color:#7A6E66">Total sales</div></div>
+                </div>
+                <div style="flex:1;display:grid;gap:10px;font-size:14px">
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:#2F4A2C"></span>Pizzas<strong style="margin-left:auto;font-variant-numeric:tabular-nums">32%</strong></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:#B9522F"></span>Burgers<strong style="margin-left:auto;font-variant-numeric:tabular-nums">18%</strong></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:#E7A83A"></span>Beverages<strong style="margin-left:auto;font-variant-numeric:tabular-nums">14%</strong></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:#7A5306"></span>Pastas<strong style="margin-left:auto;font-variant-numeric:tabular-nums">12%</strong></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:#9C8B7A"></span>Starters<strong style="margin-left:auto;font-variant-numeric:tabular-nums">10%</strong></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:#C9B49B"></span>Desserts<strong style="margin-left:auto;font-variant-numeric:tabular-nums">8%</strong></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:#DCCDB4"></span>Others<strong style="margin-left:auto;font-variant-numeric:tabular-nums">6%</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:16px">
+            <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between"><div style="font-family:Fraunces,serif;font-size:22px;font-weight:600;color:#5B1F1F">Top selling items</div><div style="font-size:13.5px;font-weight:700;color:#B9522F">View all</div></div>
+              <div style="display:grid;grid-template-columns:24px 1fr 90px 110px;gap:14px;font-size:11.5px;font-weight:700;letter-spacing:.1em;color:#7A6E66;padding:14px 0 11px;border-bottom:1px solid #EAE0D0"><span>#</span><span>ITEM</span><span style="text-align:right">QTY</span><span style="text-align:right">SALES</span></div>
+              <sc-for list="{{ topSelling }}" as="t" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:24px 1fr 90px 110px;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid #F4EDE0;font-size:14.5px">
+                  <span style="color:#7A6E66;font-variant-numeric:tabular-nums">{{ t.rank }}</span>
+                  <div style="display:flex;align-items:center;gap:11px"><div style="width:34px;height:34px;border-radius:9px;background:repeating-linear-gradient(45deg,#EFE6D6 0 7px,#F6EFE2 7px 14px);flex:none"></div><strong>{{ t.name }}</strong></div>
+                  <span style="text-align:right;font-variant-numeric:tabular-nums">{{ t.qty }}</span>
+                  <span style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">{{ t.sales }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="width:420px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+              <div style="font-family:Fraunces,serif;font-size:22px;font-weight:600;color:#5B1F1F">Order type breakdown</div>
+              <div style="display:flex;align-items:center;gap:22px;margin-top:18px">
+                <div style="position:relative;width:150px;height:150px;border-radius:50%;background:conic-gradient(#2F4A2C 0 52%,#B9522F 52% 84%,#E7A83A 84% 100%);flex:none">
+                  <div style="position:absolute;inset:32px;background:#FFFDF8;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-family:Fraunces,serif;font-size:25px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">428</div><div style="font-size:11px;color:#7A6E66">Orders</div></div>
+                </div>
+                <div style="flex:1;display:grid;gap:13px;font-size:14px">
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:#2F4A2C"></span>Dine-in<strong style="margin-left:auto;font-variant-numeric:tabular-nums">52% (223)</strong></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:#B9522F"></span>Takeaway<strong style="margin-left:auto;font-variant-numeric:tabular-nums">32% (137)</strong></div>
+                  <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:#E7A83A"></span>Delivery<strong style="margin-left:auto;font-variant-numeric:tabular-nums">16% (68)</strong></div>
+                </div>
+              </div>
+            </div>
+            <div style="width:420px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+              <div style="font-family:Fraunces,serif;font-size:22px;font-weight:600;color:#5B1F1F">Sales by payment method</div>
+              <div style="display:grid;gap:15px;margin-top:20px;font-size:14px">
+                <div style="display:flex;align-items:center;gap:12px"><span style="width:56px;color:#5F5850">UPI</span><div style="flex:1;height:11px;border-radius:999px;background:#F2EADB"><div style="width:46%;height:11px;border-radius:999px;background:#2F4A2C"></div></div><span style="width:40px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">46%</span><span style="width:70px;text-align:right;color:#5F5850;font-variant-numeric:tabular-nums">₹57,307</span></div>
+                <div style="display:flex;align-items:center;gap:12px"><span style="width:56px;color:#5F5850">Card</span><div style="flex:1;height:11px;border-radius:999px;background:#F2EADB"><div style="width:28%;height:11px;border-radius:999px;background:#B9522F"></div></div><span style="width:40px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">28%</span><span style="width:70px;text-align:right;color:#5F5850;font-variant-numeric:tabular-nums">₹34,882</span></div>
+                <div style="display:flex;align-items:center;gap:12px"><span style="width:56px;color:#5F5850">Cash</span><div style="flex:1;height:11px;border-radius:999px;background:#F2EADB"><div style="width:22%;height:11px;border-radius:999px;background:#E7A83A"></div></div><span style="width:40px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">22%</span><span style="width:70px;text-align:right;color:#5F5850;font-variant-numeric:tabular-nums">₹27,391</span></div>
+                <div style="display:flex;align-items:center;gap:12px"><span style="width:56px;color:#5F5850">Wallet</span><div style="flex:1;height:11px;border-radius:999px;background:#F2EADB"><div style="width:4%;height:11px;border-radius:999px;background:#9C8B7A"></div></div><span style="width:40px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">4%</span><span style="width:70px;text-align:right;color:#5F5850;font-variant-numeric:tabular-nums">₹5,000</span></div>
+              </div>
+              <div style="height:1px;background:#EAE0D0;margin:20px 0"></div>
+              <div style="display:flex;align-items:center;gap:14px"><div style="width:52px;height:52px;border-radius:12px;background:#F6E4DC;color:#B9522F;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="qr-code" width="24" height="24" stroke-width="1.85"></i></div><div style="flex:1"><div style="font-size:14.5px;font-weight:700">Generate table QR codes</div><div style="font-size:12.5px;color:#7A6E66">Print codes for self-ordering</div></div><div style="height:40px;padding:0 16px;border-radius:999px;background:#B9522F;color:#FFFDF8;font-size:13.5px;font-weight:600;display:flex;align-items:center">Generate</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ITEM / INVENTORY / STAFF / CUSTOMER REPORT TABS -->
+  <div style="display:flex;gap:44px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">02 · ITEM &amp; INVENTORY REPORTS</div>
+      <div data-screen-label="D16 Item Inventory Reports" style="width:940px;height:820px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;gap:8px">
+          <div style="height:42px;padding:0 18px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;font-size:14px;font-weight:600;display:flex;align-items:center">Item</div>
+          <div style="height:42px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14px;display:flex;align-items:center">Inventory</div>
+          <div style="height:42px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14px;display:flex;align-items:center">Staff</div>
+          <div style="height:42px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14px;display:flex;align-items:center">Customer</div>
+        </div>
+        <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+          <div style="font-family:Fraunces,serif;font-size:22px;font-weight:600;color:#5B1F1F">Item performance</div>
+          <div style="display:grid;grid-template-columns:1fr 80px 100px 90px 100px 110px;gap:14px;font-size:11.5px;font-weight:700;letter-spacing:.1em;color:#7A6E66;padding:16px 0 11px;border-bottom:1px solid #EAE0D0"><span>ITEM</span><span style="text-align:right">QTY</span><span style="text-align:right">REVENUE</span><span style="text-align:right">COST</span><span style="text-align:right">MARGIN</span><span>TREND</span></div>
+          <sc-for list="{{ itemPerf }}" as="i" hint-placeholder-count="7">
+            <div style="display:grid;grid-template-columns:1fr 80px 100px 90px 100px 110px;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid #F4EDE0;font-size:14.5px">
+              <div style="display:flex;align-items:center;gap:10px"><div style="width:14px;height:14px;border-radius:3px;border:2px solid {{ i.dietColor }};display:flex;align-items:center;justify-content:center;flex:none"><span style="width:5px;height:5px;border-radius:50%;background:{{ i.dietColor }}"></span></div><strong>{{ i.name }}</strong></div>
+              <span style="text-align:right;font-variant-numeric:tabular-nums">{{ i.qty }}</span>
+              <span style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">{{ i.rev }}</span>
+              <span style="text-align:right;color:#5F5850;font-variant-numeric:tabular-nums">{{ i.cost }}</span>
+              <span style="text-align:right;font-weight:700;color:#216B26;font-variant-numeric:tabular-nums">{{ i.margin }}</span>
+              <div style="display:flex;align-items:center;gap:7px;font-size:13px;color:{{ i.trendInk }};font-weight:700"><i data-lucide="{{ i.trendIcon }}" width="15" height="15" stroke-width="2.2"></i> {{ i.trend }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:1;display:flex;gap:16px">
+          <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+            <div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F">Wastage this week</div>
+            <div style="display:grid;gap:13px;margin-top:18px;font-size:14px">
+              <div style="display:flex;align-items:center;gap:12px"><span style="width:110px;color:#5F5850">Vegetables</span><div style="flex:1;height:10px;border-radius:999px;background:#F2EADB"><div style="width:62%;height:10px;border-radius:999px;background:#B9522F"></div></div><strong style="width:66px;text-align:right;font-variant-numeric:tabular-nums">₹1,240</strong></div>
+              <div style="display:flex;align-items:center;gap:12px"><span style="width:110px;color:#5F5850">Dairy</span><div style="flex:1;height:10px;border-radius:999px;background:#F2EADB"><div style="width:38%;height:10px;border-radius:999px;background:#E7A83A"></div></div><strong style="width:66px;text-align:right;font-variant-numeric:tabular-nums">₹760</strong></div>
+              <div style="display:flex;align-items:center;gap:12px"><span style="width:110px;color:#5F5850">Bakery</span><div style="flex:1;height:10px;border-radius:999px;background:#F2EADB"><div style="width:24%;height:10px;border-radius:999px;background:#9C8B7A"></div></div><strong style="width:66px;text-align:right;font-variant-numeric:tabular-nums">₹480</strong></div>
+              <div style="display:flex;align-items:center;gap:12px"><span style="width:110px;color:#5F5850">Meat</span><div style="flex:1;height:10px;border-radius:999px;background:#F2EADB"><div style="width:16%;height:10px;border-radius:999px;background:#2F4A2C"></div></div><strong style="width:66px;text-align:right;font-variant-numeric:tabular-nums">₹320</strong></div>
+            </div>
+            <div style="background:#FBF0DC;border-radius:14px;padding:14px;margin-top:20px;font-size:13.5px;color:#3A2E2A;line-height:1.5">Total wastage <strong>₹2,800</strong> — 2.2% of food cost. Tomatoes account for a third of it; consider ordering twice a week.</div>
+          </div>
+          <div style="width:330px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+            <div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F">Stock health</div>
+            <div style="display:grid;gap:14px;margin-top:18px">
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:42px;height:42px;border-radius:11px;background:#DDE8D3;color:#216B26;display:flex;align-items:center;justify-content:center"><i data-lucide="check" width="20" height="20" stroke-width="2.4"></i></div><div><div style="font-size:15px;font-weight:700">48 items healthy</div><div style="font-size:12.5px;color:#7A6E66">Above reorder point</div></div></div>
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:42px;height:42px;border-radius:11px;background:#FAEBC8;color:#7A5306;display:flex;align-items:center;justify-content:center"><i data-lucide="alert-triangle" width="20" height="20" stroke-width="2"></i></div><div><div style="font-size:15px;font-weight:700">6 items low</div><div style="font-size:12.5px;color:#7A6E66">Reorder within 2 days</div></div></div>
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:42px;height:42px;border-radius:11px;background:#F6D3CB;color:#A8321C;display:flex;align-items:center;justify-content:center"><i data-lucide="x-circle" width="20" height="20" stroke-width="2"></i></div><div><div style="font-size:15px;font-weight:700">1 item out</div><div style="font-size:12.5px;color:#7A6E66">French Fries</div></div></div>
+            </div>
+            <div style="height:46px;border-radius:999px;background:#B9522F;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:9px;font-size:15px;font-weight:600;margin-top:24px"><i data-lucide="file-plus" width="17" height="17" stroke-width="1.9"></i> Raise purchase order</div>
+            <div style="text-align:center;font-family:Caveat,cursive;font-size:25px;color:#7A4A3A;margin-top:20px">Great Food,<br>Brighter Days ♡</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">03 · STAFF &amp; CUSTOMER REPORTS</div>
+      <div data-screen-label="D17 Staff Customer Reports" style="width:940px;height:820px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between"><div style="font-family:Fraunces,serif;font-size:22px;font-weight:600;color:#5B1F1F">Staff performance · Sep</div><div style="font-size:13.5px;color:#7A6E66">Tips are paid out weekly</div></div>
+          <div style="display:grid;grid-template-columns:24px 1fr 110px 80px 100px 90px 80px;gap:13px;font-size:11.5px;font-weight:700;letter-spacing:.1em;color:#7A6E66;padding:16px 0 11px;border-bottom:1px solid #EAE0D0"><span>#</span><span>STAFF</span><span>ROLE</span><span style="text-align:right">ORDERS</span><span style="text-align:right">SALES</span><span style="text-align:right">TIPS</span><span style="text-align:right">RATING</span></div>
+          <sc-for list="{{ staffReport }}" as="s" hint-placeholder-count="5">
+            <div style="display:grid;grid-template-columns:24px 1fr 110px 80px 100px 90px 80px;gap:13px;align-items:center;padding:12px 0;border-bottom:1px solid #F4EDE0;font-size:14.5px">
+              <span style="color:#7A6E66;font-variant-numeric:tabular-nums">{{ s.rank }}</span>
+              <div style="display:flex;align-items:center;gap:11px"><div style="width:34px;height:34px;border-radius:50%;background:#EDE0D2;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#7A4A3A">{{ s.initials }}</div><strong>{{ s.name }}</strong></div>
+              <span style="color:#5F5850">{{ s.role }}</span>
+              <span style="text-align:right;font-variant-numeric:tabular-nums">{{ s.orders }}</span>
+              <span style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">{{ s.sales }}</span>
+              <span style="text-align:right;color:#7A5306;font-weight:700;font-variant-numeric:tabular-nums">{{ s.tips }}</span>
+              <span style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">{{ s.rating }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:1;display:flex;gap:16px">
+          <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+            <div style="font-family:Fraunces,serif;font-size:22px;font-weight:600;color:#5B1F1F">Customers</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px">
+              <div style="background:#EFF4EB;border:1px solid #D9E4D0;border-radius:16px;padding:16px"><div style="font-size:13px;color:#5F5850">New this month</div><div style="font-family:Fraunces,serif;font-size:28px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">184</div></div>
+              <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:16px;padding:16px"><div style="font-size:13px;color:#5F5850">Returning</div><div style="font-family:Fraunces,serif;font-size:28px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">62%</div></div>
+              <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:16px;padding:16px"><div style="font-size:13px;color:#5F5850">Avg. spend</div><div style="font-family:Fraunces,serif;font-size:28px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">₹291</div></div>
+              <div style="background:#FBF0DC;border:1px solid #EDD8A6;border-radius:16px;padding:16px"><div style="font-size:13px;color:#5F5850">Avg. rating</div><div style="font-family:Fraunces,serif;font-size:28px;font-weight:600;color:#7A5306;font-variant-numeric:tabular-nums">4.7</div></div>
+            </div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:.16em;color:#7A6E66;margin:22px 0 12px">TOP REGULARS</div>
+            <sc-for list="{{ regulars }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F4EDE0">
+                <div style="width:36px;height:36px;border-radius:50%;background:#F2EADB;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;color:#7A6E66">{{ r.initials }}</div>
+                <div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:700">{{ r.name }}</div><div style="font-size:12px;color:#7A6E66;font-variant-numeric:tabular-nums">{{ r.visits }}</div></div>
+                <div style="height:26px;padding:0 10px;border-radius:999px;background:{{ r.chip }};color:{{ r.ink }};font-size:12px;font-weight:700;display:flex;align-items:center">{{ r.tier }}</div>
+                <div style="font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums;min-width:72px;text-align:right">{{ r.spend }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="width:330px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+            <div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F">Feedback themes</div>
+            <div style="display:grid;gap:11px;margin-top:18px">
+              <div style="display:flex;align-items:center;gap:10px;font-size:14px"><span style="height:28px;padding:0 11px;border-radius:999px;background:#E8EFE3;color:#216B26;font-size:12.5px;font-weight:700;display:flex;align-items:center">Great food</span><strong style="margin-left:auto;font-variant-numeric:tabular-nums">142</strong></div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:14px"><span style="height:28px;padding:0 11px;border-radius:999px;background:#E8EFE3;color:#216B26;font-size:12.5px;font-weight:700;display:flex;align-items:center">Quick service</span><strong style="margin-left:auto;font-variant-numeric:tabular-nums">118</strong></div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:14px"><span style="height:28px;padding:0 11px;border-radius:999px;background:#E8EFE3;color:#216B26;font-size:12.5px;font-weight:700;display:flex;align-items:center">Friendly staff</span><strong style="margin-left:auto;font-variant-numeric:tabular-nums">96</strong></div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:14px"><span style="height:28px;padding:0 11px;border-radius:999px;background:#FAEBC8;color:#7A5306;font-size:12.5px;font-weight:700;display:flex;align-items:center">Slow at peak</span><strong style="margin-left:auto;font-variant-numeric:tabular-nums">31</strong></div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:14px"><span style="height:28px;padding:0 11px;border-radius:999px;background:#F6D3CB;color:#A8321C;font-size:12.5px;font-weight:700;display:flex;align-items:center">Too spicy</span><strong style="margin-left:auto;font-variant-numeric:tabular-nums">12</strong></div>
+            </div>
+            <div style="height:1px;background:#EAE0D0;margin:20px 0"></div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:.16em;color:#7A6E66;margin-bottom:12px">RATING SPREAD</div>
+            <div style="display:grid;gap:9px;font-size:13.5px">
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:26px;font-variant-numeric:tabular-nums">5★</span><div style="flex:1;height:9px;border-radius:999px;background:#F2EADB"><div style="width:72%;height:9px;border-radius:999px;background:#E7A83A"></div></div><span style="width:40px;text-align:right;font-variant-numeric:tabular-nums">72%</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:26px;font-variant-numeric:tabular-nums">4★</span><div style="flex:1;height:9px;border-radius:999px;background:#F2EADB"><div style="width:19%;height:9px;border-radius:999px;background:#E7A83A"></div></div><span style="width:40px;text-align:right;font-variant-numeric:tabular-nums">19%</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:26px;font-variant-numeric:tabular-nums">3★</span><div style="flex:1;height:9px;border-radius:999px;background:#F2EADB"><div style="width:6%;height:9px;border-radius:999px;background:#E7A83A"></div></div><span style="width:40px;text-align:right;font-variant-numeric:tabular-nums">6%</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:26px;font-variant-numeric:tabular-nums">2★</span><div style="flex:1;height:9px;border-radius:999px;background:#F2EADB"><div style="width:2%;height:9px;border-radius:999px;background:#B9522F"></div></div><span style="width:40px;text-align:right;font-variant-numeric:tabular-nums">2%</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:26px;font-variant-numeric:tabular-nums">1★</span><div style="flex:1;height:9px;border-radius:999px;background:#F2EADB"><div style="width:1%;height:9px;border-radius:999px;background:#B9522F"></div></div><span style="width:40px;text-align:right;font-variant-numeric:tabular-nums">1%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU MANAGEMENT -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">04 · MENU MANAGEMENT</div>
+    <div data-screen-label="D18 Menu Management" style="width:1920px;height:1080px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:72px;background:#FFFDF8;border-bottom:1px solid #EAE0D0;display:flex;align-items:center;padding:0 28px;gap:22px">
+        <div style="display:flex;align-items:center;gap:11px"><img src="assets/mez-mark.png" alt="mez" style="width:35px;height:35px;object-fit:contain;display:block;flex:none"><div style="font-family:Poppins,'DM Sans',sans-serif;font-size:25px;font-weight:700;letter-spacing:-.035em;color:#123E3F">mez</div></div>
+        <div style="display:flex;gap:4px">
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="home" width="18" height="18" stroke-width="1.75"></i> Dashboard</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="receipt-text" width="18" height="18" stroke-width="1.75"></i> Orders</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="armchair" width="18" height="18" stroke-width="1.75"></i> Tables</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:600"><i data-lucide="utensils" width="18" height="18" stroke-width="1.9"></i> Menu</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="package" width="18" height="18" stroke-width="1.75"></i> Inventory</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="chart-column" width="18" height="18" stroke-width="1.75"></i> Reports</div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:18px">
+          <div style="display:flex;align-items:center;gap:10px"><div style="width:40px;height:40px;border-radius:50%;background:#E5E9DE;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:700;color:#2F4A2C">AS</div><div><div style="font-size:14px;font-weight:700">Aditi</div><div style="font-size:12px;color:#7A6E66">Admin</div></div></div>
+          <div style="font-family:Caveat,cursive;font-size:22px;color:#7A4A3A;line-height:1.15;text-align:right">Good Food,<br>Happier People ♡</div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;overflow:hidden">
+        <div style="width:240px;background:#FFFDF8;border-right:1px solid #EAE0D0;padding:16px 14px;display:flex;flex-direction:column;gap:4px">
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="home" width="19" height="19" stroke-width="1.75"></i> Dashboard</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="receipt-text" width="19" height="19" stroke-width="1.75"></i> Orders</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="armchair" width="19" height="19" stroke-width="1.75"></i> Tables</div>
+          <div style="height:48px;border-radius:14px;background:#B9522F;color:#FFFDF8;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px;font-weight:600"><i data-lucide="utensils" width="19" height="19" stroke-width="1.9"></i> Menu Management</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="package" width="19" height="19" stroke-width="1.75"></i> Inventory</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="users" width="19" height="19" stroke-width="1.75"></i> Staff</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="heart" width="19" height="19" stroke-width="1.75"></i> Customers</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="chart-column" width="19" height="19" stroke-width="1.75"></i> Reports</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="settings" width="19" height="19" stroke-width="1.75"></i> Settings</div>
+        </div>
+        <div style="flex:1;padding:22px 26px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px">
+            <div><div style="font-family:Fraunces,serif;font-size:36px;font-weight:600;color:#5B1F1F;letter-spacing:-.02em">Menu Management</div><div style="font-size:15.5px;color:#7A6E66;margin-top:4px">Create and manage items, categories, modifiers and combos.</div></div>
+            <div style="display:flex;gap:11px">
+              <div style="width:320px;height:46px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;display:flex;align-items:center;gap:10px;padding:0 18px;font-size:14.5px;color:#7A6E66"><i data-lucide="search" width="18" height="18" stroke-width="1.75"></i> Search menu items… (Ctrl + K)</div>
+              <div style="height:46px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px">All Items <i data-lucide="chevron-down" width="16" height="16" stroke-width="2"></i></div>
+              <div style="height:46px;padding:0 22px;border-radius:999px;background:#B9522F;color:#FFFDF8;font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px"><i data-lucide="plus" width="18" height="18" stroke-width="2.2"></i> Add New Item</div>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;gap:16px;margin-top:20px;overflow:hidden">
+            <div style="width:230px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:18px;display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;justify-content:space-between"><div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Categories</div><div style="width:32px;height:32px;border-radius:50%;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center"><i data-lucide="plus" width="16" height="16" stroke-width="2.2"></i></div></div>
+              <div style="display:grid;gap:3px;margin-top:14px">
+                <div style="height:44px;border-radius:12px;background:#F6E4DC;color:#9C4325;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px;font-weight:700"><i data-lucide="layout-grid" width="18" height="18" stroke-width="1.9"></i> All Items <span style="margin-left:auto;font-variant-numeric:tabular-nums">68</span></div>
+                <div style="height:44px;border-radius:12px;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px"><i data-lucide="star" width="18" height="18" stroke-width="1.75"></i> Popular <span style="margin-left:auto;color:#7A6E66;font-variant-numeric:tabular-nums">8</span></div>
+                <div style="height:44px;border-radius:12px;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px"><i data-lucide="leaf" width="18" height="18" stroke-width="1.75"></i> Starters <span style="margin-left:auto;color:#7A6E66;font-variant-numeric:tabular-nums">10</span></div>
+                <div style="height:44px;border-radius:12px;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px"><i data-lucide="soup" width="18" height="18" stroke-width="1.75"></i> Main Course <span style="margin-left:auto;color:#7A6E66;font-variant-numeric:tabular-nums">16</span></div>
+                <div style="height:44px;border-radius:12px;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px"><i data-lucide="pizza" width="18" height="18" stroke-width="1.75"></i> Pizzas <span style="margin-left:auto;color:#7A6E66;font-variant-numeric:tabular-nums">8</span></div>
+                <div style="height:44px;border-radius:12px;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px"><i data-lucide="beef" width="18" height="18" stroke-width="1.75"></i> Burgers <span style="margin-left:auto;color:#7A6E66;font-variant-numeric:tabular-nums">6</span></div>
+                <div style="height:44px;border-radius:12px;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px"><i data-lucide="utensils" width="18" height="18" stroke-width="1.75"></i> Pasta <span style="margin-left:auto;color:#7A6E66;font-variant-numeric:tabular-nums">6</span></div>
+                <div style="height:44px;border-radius:12px;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px"><i data-lucide="salad" width="18" height="18" stroke-width="1.75"></i> Salads <span style="margin-left:auto;color:#7A6E66;font-variant-numeric:tabular-nums">5</span></div>
+                <div style="height:44px;border-radius:12px;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px"><i data-lucide="coffee" width="18" height="18" stroke-width="1.75"></i> Beverages <span style="margin-left:auto;color:#7A6E66;font-variant-numeric:tabular-nums">8</span></div>
+                <div style="height:44px;border-radius:12px;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px"><i data-lucide="cake-slice" width="18" height="18" stroke-width="1.75"></i> Desserts <span style="margin-left:auto;color:#7A6E66;font-variant-numeric:tabular-nums">6</span></div>
+                <div style="height:44px;border-radius:12px;display:flex;align-items:center;gap:11px;padding:0 13px;font-size:14.5px"><i data-lucide="gift" width="18" height="18" stroke-width="1.75"></i> Combos <span style="margin-left:auto;color:#7A6E66;font-variant-numeric:tabular-nums">5</span></div>
+              </div>
+              <div style="margin-top:auto;font-family:Caveat,cursive;font-size:25px;color:#7A4A3A;line-height:1.2;padding-top:18px">Good Food<br>Happier People ♡</div>
+            </div>
+            <div style="width:340px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;display:flex;flex-direction:column;overflow:hidden">
+              <div style="padding:18px;border-bottom:1px solid #EAE0D0;display:flex;align-items:center;gap:10px"><div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Menu items (68)</div><div style="margin-left:auto;height:34px;padding:0 12px;border-radius:999px;border:1px solid #E3D8C6;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">A–Z <i data-lucide="chevron-down" width="14" height="14" stroke-width="2"></i></div></div>
+              <div style="flex:1;padding:10px;overflow:hidden">
+                <sc-for list="{{ menuItems }}" as="m" hint-placeholder-count="9">
+                  <div style="border-radius:14px;background:{{ m.rowBg }};border:1px solid {{ m.rowBorder }};padding:9px;display:flex;align-items:center;gap:11px;margin-bottom:6px">
+                    <div style="width:44px;height:44px;border-radius:10px;background:repeating-linear-gradient(45deg,#EFE6D6 0 8px,#F6EFE2 8px 16px);flex:none"></div>
+                    <div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:700;color:#3A2E2A">{{ m.name }}</div><div style="font-size:13px;color:#5F5850;font-variant-numeric:tabular-nums">{{ m.price }}</div></div>
+                    <div style="display:flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:999px;background:{{ m.chip }};color:{{ m.ink }};font-size:11.5px;font-weight:700"><span style="width:7px;height:7px;border-radius:50%;background:{{ m.dot }}"></span> {{ m.state }}</div>
+                    <i data-lucide="more-horizontal" width="17" height="17" stroke-width="2" color="#7A6E66"></i>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px;overflow:hidden">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between"><div style="font-family:Fraunces,serif;font-size:26px;font-weight:600;color:#5B1F1F">Edit menu item</div><div style="height:38px;padding:0 14px;border-radius:999px;background:#FBEDE9;border:1px solid #E7C3B9;color:#A33A28;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px"><i data-lucide="trash-2" width="16" height="16" stroke-width="1.9"></i> Delete item</div></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px">
+                <div><div style="font-size:13.5px;font-weight:600;margin-bottom:8px">Item name <span style="color:#A33A28">*</span></div><div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px">Margherita Pizza</div></div>
+                <div><div style="font-size:13.5px;font-weight:600;margin-bottom:8px">Category <span style="color:#A33A28">*</span></div><div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;justify-content:space-between;padding:0 15px;font-size:15px">Pizzas <i data-lucide="chevron-down" width="17" height="17" stroke-width="2"></i></div></div>
+                <div><div style="font-size:13.5px;font-weight:600;margin-bottom:8px">Price (₹) <span style="color:#A33A28">*</span></div><div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">299</div></div>
+                <div><div style="font-size:13.5px;font-weight:600;margin-bottom:8px">Cost price (₹)</div><div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">120</div></div>
+              </div>
+              <div style="margin-top:16px"><div style="font-size:13.5px;font-weight:600;margin-bottom:8px">Description</div><div style="min-height:72px;border:1px solid #DCCDB4;border-radius:14px;padding:13px 15px;font-size:14.5px;line-height:1.5">Classic wood-fired pizza with fresh tomatoes, mozzarella, basil and a drizzle of olive oil.</div><div style="text-align:right;font-size:12px;color:#7A6E66;margin-top:5px;font-variant-numeric:tabular-nums">86 / 200</div></div>
+              <div style="display:flex;align-items:center;gap:26px;margin-top:16px">
+                <div style="display:flex;align-items:center;gap:12px;font-size:14.5px;font-weight:600">Status <div style="width:52px;height:30px;border-radius:999px;background:#2F4A2C;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div> Active</div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:14.5px"><div style="width:21px;height:21px;border-radius:6px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center"><i data-lucide="check" width="14" height="14" stroke-width="3.2"></i></div> Show in online ordering</div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:14.5px"><div style="width:21px;height:21px;border-radius:6px;border:1.5px solid #DCCDB4"></div> Happy-hour pricing</div>
+              </div>
+              <div style="display:flex;gap:6px;margin-top:20px;background:#F2EADB;border-radius:999px;padding:4px;width:fit-content">
+                <div style="height:42px;padding:0 20px;border-radius:999px;background:#B9522F;color:#FFFDF8;font-size:14.5px;font-weight:600;display:flex;align-items:center">Modifiers</div>
+                <div style="height:42px;padding:0 20px;border-radius:999px;font-size:14.5px;display:flex;align-items:center">Inventory</div>
+                <div style="height:42px;padding:0 20px;border-radius:999px;font-size:14.5px;display:flex;align-items:center">Nutrition</div>
+                <div style="height:42px;padding:0 20px;border-radius:999px;font-size:14.5px;display:flex;align-items:center">Advanced</div>
+              </div>
+              <div style="margin-top:18px">
+                <div style="border:1px solid #EAE0D0;border-radius:16px;padding:16px">
+                  <div style="display:flex;align-items:center;gap:10px"><i data-lucide="grip-vertical" width="17" height="17" stroke-width="1.9" color="#9C8B7A"></i><div style="font-size:14.5px;font-weight:700">Size <span style="color:#A33A28;font-weight:600">(required)</span></div><i data-lucide="trash-2" width="17" height="17" stroke-width="1.9" color="#A33A28" style="margin-left:auto"></i></div>
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px">
+                    <div style="border:1.5px solid #2F4A2C;background:#E8EFE3;border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #2F4A2C;display:flex;align-items:center;justify-content:center;flex:none"><span style="width:8px;height:8px;border-radius:50%;background:#2F4A2C"></span></div><div><div style="font-size:14px;font-weight:700;color:#2F4A2C">Regular</div><div style="font-size:12.5px;color:#5F5850;font-variant-numeric:tabular-nums">₹0</div></div></div>
+                    <div style="border:1px solid #E3D8C6;border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #DCCDB4;flex:none"></div><div><div style="font-size:14px;font-weight:700">Medium</div><div style="font-size:12.5px;color:#7A6E66;font-variant-numeric:tabular-nums">+₹80</div></div></div>
+                    <div style="border:1px solid #E3D8C6;border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px"><div style="width:18px;height:18px;border-radius:50%;border:2px solid #DCCDB4;flex:none"></div><div><div style="font-size:14px;font-weight:700">Large</div><div style="font-size:12.5px;color:#7A6E66;font-variant-numeric:tabular-nums">+₹150</div></div></div>
+                  </div>
+                </div>
+                <div style="border:1px solid #EAE0D0;border-radius:16px;padding:16px;margin-top:12px">
+                  <div style="display:flex;align-items:center;gap:10px"><i data-lucide="grip-vertical" width="17" height="17" stroke-width="1.9" color="#9C8B7A"></i><div style="font-size:14.5px;font-weight:700">Extra toppings <span style="color:#7A6E66;font-weight:500">(optional)</span></div><i data-lucide="trash-2" width="17" height="17" stroke-width="1.9" color="#A33A28" style="margin-left:auto"></i></div>
+                  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px">
+                    <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:20px;border-radius:6px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="check" width="13" height="13" stroke-width="3.2"></i></div><div><div style="font-size:13.5px;font-weight:600">Extra Cheese</div><div style="font-size:12px;color:#5F5850;font-variant-numeric:tabular-nums">+₹40</div></div></div>
+                    <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:20px;border-radius:6px;border:1.5px solid #DCCDB4;flex:none"></div><div><div style="font-size:13.5px;font-weight:600">Mushrooms</div><div style="font-size:12px;color:#7A6E66;font-variant-numeric:tabular-nums">+₹40</div></div></div>
+                    <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:20px;border-radius:6px;border:1.5px solid #DCCDB4;flex:none"></div><div><div style="font-size:13.5px;font-weight:600">Olives</div><div style="font-size:12px;color:#7A6E66;font-variant-numeric:tabular-nums">+₹30</div></div></div>
+                    <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:20px;border-radius:6px;border:1.5px solid #DCCDB4;flex:none"></div><div><div style="font-size:13.5px;font-weight:600">Capsicum</div><div style="font-size:12px;color:#7A6E66;font-variant-numeric:tabular-nums">+₹30</div></div></div>
+                  </div>
+                </div>
+                <div style="height:48px;border-radius:14px;border:1px dashed #DCCDB4;display:flex;align-items:center;justify-content:center;gap:9px;font-size:14.5px;font-weight:600;color:#7A6E66;margin-top:12px"><i data-lucide="plus" width="17" height="17" stroke-width="2.2"></i> Add modifier group</div>
+              </div>
+            </div>
+            <div style="width:300px;display:flex;flex-direction:column;gap:14px">
+              <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:18px">
+                <div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:14.5px;font-weight:700">Item image</div><div style="font-size:13px;font-weight:700;color:#B9522F">Upload</div></div>
+                <div style="height:190px;border-radius:14px;background:repeating-linear-gradient(45deg,#EFE6D6 0 10px,#F6EFE2 10px 20px);margin-top:12px;position:relative;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:10px;color:#8B7F72">pizza 4:3 photo<div style="position:absolute;bottom:10px;right:10px;width:34px;height:34px;border-radius:50%;background:#FFFDF8;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(91,31,31,.12)"><i data-lucide="pencil" width="16" height="16" stroke-width="2"></i></div></div>
+                <div style="height:42px;border-radius:12px;border:1px dashed #DCCDB4;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;color:#7A6E66;margin-top:11px"><i data-lucide="upload" width="16" height="16" stroke-width="1.9"></i> Drop a new photo</div>
+              </div>
+              <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:18px;flex:1">
+                <div style="font-size:14.5px;font-weight:700;margin-bottom:14px">Inventory / stock</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:14px"><span>Track inventory</span><div style="width:52px;height:30px;border-radius:999px;background:#2F4A2C;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                <div style="margin-top:14px"><div style="font-size:13px;color:#5F5850;margin-bottom:7px">Current stock</div><div style="display:flex;gap:9px"><div style="flex:1;height:44px;border:1px solid #DCCDB4;border-radius:12px;display:flex;align-items:center;padding:0 13px;font-size:15px;font-variant-numeric:tabular-nums">25</div><div style="width:80px;height:44px;border:1px solid #DCCDB4;border-radius:12px;display:flex;align-items:center;justify-content:space-between;padding:0 11px;font-size:14px">pcs <i data-lucide="chevron-down" width="14" height="14" stroke-width="2"></i></div></div></div>
+                <div style="margin-top:12px"><div style="font-size:13px;color:#5F5850;margin-bottom:7px">Low-stock alert</div><div style="display:flex;gap:9px"><div style="flex:1;height:44px;border:1px solid #DCCDB4;border-radius:12px;display:flex;align-items:center;padding:0 13px;font-size:15px;font-variant-numeric:tabular-nums">5</div><div style="width:80px;height:44px;border:1px solid #DCCDB4;border-radius:12px;display:flex;align-items:center;justify-content:space-between;padding:0 11px;font-size:14px">pcs <i data-lucide="chevron-down" width="14" height="14" stroke-width="2"></i></div></div></div>
+                <div style="background:#FBF0DC;border-radius:12px;padding:12px;margin-top:14px;font-size:12.5px;color:#7A5306;line-height:1.5">You'll be notified when stock drops below 5 pcs.</div>
+                <div style="font-size:14.5px;font-weight:700;margin-top:20px">Tags</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px">
+                  <span style="height:30px;padding:0 11px;border-radius:999px;background:#E8EFE3;color:#216B26;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px">Vegetarian <i data-lucide="x" width="12" height="12" stroke-width="2.6"></i></span>
+                  <span style="height:30px;padding:0 11px;border-radius:999px;background:#FAEBC8;color:#7A5306;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px">Bestseller <i data-lucide="x" width="12" height="12" stroke-width="2.6"></i></span>
+                  <span style="height:30px;padding:0 11px;border-radius:999px;border:1px dashed #DCCDB4;color:#7A6E66;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px"><i data-lucide="plus" width="12" height="12" stroke-width="2.6"></i> Add</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:11px">
+                <div style="flex:1;height:52px;border-radius:999px;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600">Cancel</div>
+                <div style="flex:1.4;height:52px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;font-size:15.5px;font-weight:600;box-shadow:0 8px 18px rgba(47,74,44,.22)">Save changes</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">05 · INVENTORY — STOCK, PURCHASE ORDERS, SUPPLIERS, WASTAGE</div>
+    <div data-screen-label="D19 Inventory" style="width:1920px;height:1080px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:72px;background:#FFFDF8;border-bottom:1px solid #EAE0D0;display:flex;align-items:center;padding:0 28px;gap:22px">
+        <div style="display:flex;align-items:center;gap:11px"><img src="assets/mez-mark.png" alt="mez" style="width:35px;height:35px;object-fit:contain;display:block;flex:none"><div style="font-family:Poppins,'DM Sans',sans-serif;font-size:25px;font-weight:700;letter-spacing:-.035em;color:#123E3F">mez</div></div>
+        <div style="display:flex;gap:4px">
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="home" width="18" height="18" stroke-width="1.75"></i> Dashboard</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="utensils" width="18" height="18" stroke-width="1.75"></i> Menu</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:600"><i data-lucide="package" width="18" height="18" stroke-width="1.9"></i> Inventory</div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:9px;font-size:14.5px"><i data-lucide="chart-column" width="18" height="18" stroke-width="1.75"></i> Reports</div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:18px">
+          <div style="display:flex;align-items:center;gap:10px"><div style="width:40px;height:40px;border-radius:50%;background:#E5E9DE;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:700;color:#2F4A2C">AS</div><div><div style="font-size:14px;font-weight:700">Aditi</div><div style="font-size:12px;color:#7A6E66">Admin</div></div></div>
+        </div>
+      </div>
+      <div style="flex:1;padding:24px 28px;overflow:hidden;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px">
+          <div><div style="font-family:Fraunces,serif;font-size:36px;font-weight:600;color:#5B1F1F;letter-spacing:-.02em">Inventory</div><div style="font-size:15.5px;color:#7A6E66;margin-top:4px">55 tracked ingredients · 6 low · 1 out of stock</div></div>
+          <div style="display:flex;gap:11px">
+            <div style="height:46px;padding:0 20px;border-radius:999px;border:1px solid #DCCDB4;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px"><i data-lucide="clipboard-list" width="17" height="17" stroke-width="1.9"></i> Stock count</div>
+            <div style="height:46px;padding:0 20px;border-radius:999px;border:1px solid #DCCDB4;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px"><i data-lucide="trash" width="17" height="17" stroke-width="1.9"></i> Log wastage</div>
+            <div style="height:46px;padding:0 22px;border-radius:999px;background:#B9522F;color:#FFFDF8;font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px"><i data-lucide="plus" width="18" height="18" stroke-width="2.2"></i> New purchase order</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:9px;margin-top:20px">
+          <div style="height:42px;padding:0 18px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;font-size:14px;font-weight:600;display:flex;align-items:center">Stock levels</div>
+          <div style="height:42px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14px;display:flex;align-items:center">Purchase orders (3)</div>
+          <div style="height:42px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14px;display:flex;align-items:center">Suppliers (7)</div>
+          <div style="height:42px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:14px;display:flex;align-items:center">Wastage log</div>
+        </div>
+        <div style="flex:1;display:flex;gap:18px;margin-top:20px;overflow:hidden">
+          <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:1fr 110px 120px 110px 130px 150px 110px;gap:14px;font-size:11.5px;font-weight:700;letter-spacing:.1em;color:#7A6E66;padding-bottom:13px;border-bottom:1px solid #EAE0D0"><span>INGREDIENT</span><span style="text-align:right">IN STOCK</span><span style="text-align:right">REORDER AT</span><span style="text-align:right">UNIT COST</span><span>SUPPLIER</span><span>STOCK LEVEL</span><span>STATUS</span></div>
+            <sc-for list="{{ stock }}" as="s" hint-placeholder-count="12">
+              <div style="display:grid;grid-template-columns:1fr 110px 120px 110px 130px 150px 110px;gap:14px;align-items:center;padding:13px 0;border-bottom:1px solid #F4EDE0;font-size:14.5px">
+                <div style="display:flex;align-items:center;gap:11px"><div style="width:34px;height:34px;border-radius:9px;background:#F6EFE2;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ s.icon }}" width="17" height="17" stroke-width="1.85" color="#7A6E66"></i></div><strong>{{ s.name }}</strong></div>
+                <span style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">{{ s.qty }}</span>
+                <span style="text-align:right;color:#5F5850;font-variant-numeric:tabular-nums">{{ s.reorder }}</span>
+                <span style="text-align:right;color:#5F5850;font-variant-numeric:tabular-nums">{{ s.cost }}</span>
+                <span style="color:#5F5850">{{ s.supplier }}</span>
+                <div style="height:9px;border-radius:999px;background:#F2EADB"><div style="width:{{ s.pct }};height:9px;border-radius:999px;background:{{ s.bar }}"></div></div>
+                <div style="display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:{{ s.chip }};color:{{ s.ink }};font-size:12.5px;font-weight:700;justify-self:start"><span style="width:7px;height:7px;border-radius:50%;background:{{ s.dot }}"></span> {{ s.state }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="width:400px;display:flex;flex-direction:column;gap:16px">
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between"><div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Open purchase orders</div><div style="font-size:13px;font-weight:700;color:#B9522F">View all</div></div>
+              <div style="display:grid;gap:11px;margin-top:14px">
+                <sc-for list="{{ pos }}" as="p" hint-placeholder-count="3">
+                  <div style="border:1px solid #EAE0D0;border-radius:14px;padding:14px">
+                    <div style="display:flex;align-items:center;gap:10px"><div style="font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums">{{ p.id }}</div><div style="height:26px;padding:0 10px;border-radius:999px;background:{{ p.chip }};color:{{ p.ink }};font-size:12px;font-weight:700;display:flex;align-items:center">{{ p.state }}</div><div style="margin-left:auto;font-family:Fraunces,serif;font-size:17px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">{{ p.amount }}</div></div>
+                    <div style="font-size:13px;color:#7A6E66;margin-top:6px">{{ p.detail }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px;flex:1">
+              <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Wastage this week</div>
+              <div style="display:grid;gap:11px;margin-top:14px">
+                <sc-for list="{{ wastage }}" as="w" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F4EDE0">
+                    <div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600">{{ w.item }}</div><div style="font-size:12px;color:#7A6E66">{{ w.reason }}</div></div>
+                    <div style="font-size:13.5px;color:#5F5850;font-variant-numeric:tabular-nums">{{ w.qty }}</div>
+                    <div style="font-size:14.5px;font-weight:700;color:#A8321C;font-variant-numeric:tabular-nums;min-width:62px;text-align:right">{{ w.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="background:#FBEDE9;border-radius:14px;padding:14px;margin-top:16px;display:flex;align-items:center;gap:12px"><i data-lucide="trending-down" width="20" height="20" stroke-width="1.9" color="#A33A28"></i><div style="font-size:13.5px;color:#3A2E2A;line-height:1.5">Wastage is down 8% week on week. Total <strong>₹2,800</strong>.</div></div>
+              <div style="text-align:center;font-family:Caveat,cursive;font-size:25px;color:#7A4A3A;margin-top:20px">Good Teams,<br>Great Service ♡</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAFF & ROLES -->
+  <div style="display:flex;gap:44px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">06 · STAFF, ROLES &amp; SHIFTS</div>
+      <div data-screen-label="D20 Staff Roles" style="width:1180px;height:880px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);padding:24px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between">
+          <div><div style="font-family:Fraunces,serif;font-size:34px;font-weight:600;color:#5B1F1F;letter-spacing:-.02em">Staff &amp; roles</div><div style="font-size:15px;color:#7A6E66;margin-top:4px">9 people · 4 on shift now</div></div>
+          <div style="display:flex;gap:11px">
+            <div style="height:46px;padding:0 20px;border-radius:999px;border:1px solid #DCCDB4;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px"><i data-lucide="calendar-days" width="17" height="17" stroke-width="1.9"></i> Roster</div>
+            <div style="height:46px;padding:0 22px;border-radius:999px;background:#B9522F;color:#FFFDF8;font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px"><i data-lucide="user-plus" width="18" height="18" stroke-width="1.9"></i> Add staff</div>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;gap:16px;margin-top:20px;overflow:hidden">
+          <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:1fr 120px 130px 130px 110px;gap:14px;font-size:11.5px;font-weight:700;letter-spacing:.1em;color:#7A6E66;padding-bottom:13px;border-bottom:1px solid #EAE0D0"><span>PERSON</span><span>ROLE</span><span>SHIFT</span><span>STATE</span><span style="text-align:right">PIN</span></div>
+            <sc-for list="{{ staffList }}" as="s" hint-placeholder-count="9">
+              <div style="display:grid;grid-template-columns:1fr 120px 130px 130px 110px;gap:14px;align-items:center;padding:13px 0;border-bottom:1px solid #F4EDE0;font-size:14.5px">
+                <div style="display:flex;align-items:center;gap:12px"><div style="width:38px;height:38px;border-radius:50%;background:#EDE0D2;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#7A4A3A">{{ s.initials }}</div><div><strong>{{ s.name }}</strong><div style="font-size:12.5px;color:#7A6E66;font-variant-numeric:tabular-nums">{{ s.phone }}</div></div></div>
+                <span style="color:#5F5850">{{ s.role }}</span>
+                <span style="color:#5F5850;font-variant-numeric:tabular-nums">{{ s.shift }}</span>
+                <div style="display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:{{ s.chip }};color:{{ s.ink }};font-size:12.5px;font-weight:700;justify-self:start"><span style="width:7px;height:7px;border-radius:50%;background:{{ s.dot }}"></span> {{ s.state }}</div>
+                <span style="text-align:right;color:#7A6E66;font-variant-numeric:tabular-nums">•••• {{ s.pin }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="width:380px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px;display:flex;flex-direction:column">
+            <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Permissions — Waiter</div>
+            <div style="font-size:13.5px;color:#7A6E66;margin-top:5px">Applies to Rohan and Arjun.</div>
+            <div style="display:grid;gap:14px;margin-top:18px">
+              <sc-if value="{{ true }}" hint-placeholder-val="{{ true }}">
+                <div style="display:grid;gap:14px">
+                  <div style="display:flex;align-items:center;gap:12px;font-size:14.5px">Take orders <div style="margin-left:auto;width:52px;height:30px;border-radius:999px;background:#2F4A2C;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;font-size:14.5px">Send to kitchen <div style="margin-left:auto;width:52px;height:30px;border-radius:999px;background:#2F4A2C;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;font-size:14.5px">Apply discounts <div style="margin-left:auto;width:52px;height:30px;border-radius:999px;background:#DCCDB4;display:flex;align-items:center;padding:3px"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;font-size:14.5px">Void or refund <div style="margin-left:auto;width:52px;height:30px;border-radius:999px;background:#DCCDB4;display:flex;align-items:center;padding:3px"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;font-size:14.5px">Open cash drawer <div style="margin-left:auto;width:52px;height:30px;border-radius:999px;background:#DCCDB4;display:flex;align-items:center;padding:3px"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;font-size:14.5px">View reports <div style="margin-left:auto;width:52px;height:30px;border-radius:999px;background:#DCCDB4;display:flex;align-items:center;padding:3px"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;font-size:14.5px">Edit menu &amp; prices <div style="margin-left:auto;width:52px;height:30px;border-radius:999px;background:#DCCDB4;display:flex;align-items:center;padding:3px"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;font-size:14.5px">Transfer / merge tables <div style="margin-left:auto;width:52px;height:30px;border-radius:999px;background:#2F4A2C;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                </div>
+              </sc-if>
+            </div>
+            <div style="background:#FBF0DC;border-radius:14px;padding:14px;margin-top:18px;font-size:13px;color:#7A5306;line-height:1.5">Anything switched off asks for a manager PIN instead of being hidden — servers can still get help fast.</div>
+            <div style="margin-top:auto;display:flex;gap:11px">
+              <div style="flex:1;height:48px;border-radius:999px;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:600">Reset</div>
+              <div style="flex:1;height:48px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600">Save role</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">07 · CUSTOMERS, LOYALTY &amp; OFFERS</div>
+      <div data-screen-label="D21 Customers Offers" style="width:700px;height:880px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between">
+          <div><div style="font-family:Fraunces,serif;font-size:30px;font-weight:600;color:#5B1F1F;letter-spacing:-.02em">Customers</div><div style="font-size:14.5px;color:#7A6E66;margin-top:3px">1,284 profiles · 62% return</div></div>
+          <div style="height:44px;padding:0 18px;border-radius:999px;background:#B9522F;color:#FFFDF8;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px"><i data-lucide="plus" width="17" height="17" stroke-width="2.2"></i> New offer</div>
+        </div>
+        <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px">
+          <div style="display:grid;grid-template-columns:1fr 90px 100px;gap:12px;font-size:11.5px;font-weight:700;letter-spacing:.1em;color:#7A6E66;padding-bottom:12px;border-bottom:1px solid #EAE0D0"><span>CUSTOMER</span><span style="text-align:right">VISITS</span><span style="text-align:right">SPEND</span></div>
+          <sc-for list="{{ regulars }}" as="r" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:1fr 90px 100px;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #F4EDE0;font-size:14.5px">
+              <div style="display:flex;align-items:center;gap:11px"><div style="width:36px;height:36px;border-radius:50%;background:#F2EADB;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;color:#7A6E66">{{ r.initials }}</div><div><strong>{{ r.name }}</strong><div style="height:22px;padding:0 8px;border-radius:999px;background:{{ r.chip }};color:{{ r.ink }};font-size:11px;font-weight:700;display:inline-flex;align-items:center;margin-top:3px">{{ r.tier }}</div></div></div>
+              <span style="text-align:right;font-variant-numeric:tabular-nums">{{ r.visitCount }}</span>
+              <span style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">{{ r.spend }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px">
+          <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Loyalty programme</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:14px">
+            <div style="background:#F6EFE2;border-radius:14px;padding:13px;text-align:center"><div style="font-size:12.5px;color:#5F5850">Bronze</div><div style="font-size:15px;font-weight:700;margin-top:3px">1× points</div></div>
+            <div style="background:#F2EADB;border-radius:14px;padding:13px;text-align:center"><div style="font-size:12.5px;color:#5F5850">Silver</div><div style="font-size:15px;font-weight:700;margin-top:3px">1.5× points</div></div>
+            <div style="background:#FBF0DC;border-radius:14px;padding:13px;text-align:center"><div style="font-size:12.5px;color:#7A5306">Gold</div><div style="font-size:15px;font-weight:700;color:#7A5306;margin-top:3px">2× points</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:14.5px;margin-top:16px">Earn rate <div style="margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums">1 point per ₹10</div></div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:14.5px;margin-top:10px">Redemption <div style="margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums">100 points = ₹50</div></div>
+        </div>
+        <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px">
+          <div style="font-family:Fraunces,serif;font-size:21px;font-weight:600;color:#5B1F1F">Offers &amp; coupons</div>
+          <div style="display:grid;gap:11px;margin-top:14px">
+            <sc-for list="{{ offers }}" as="o" hint-placeholder-count="4">
+              <div style="border:1px solid #EAE0D0;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px">
+                <div style="width:40px;height:40px;border-radius:11px;background:{{ o.chip }};color:{{ o.ink }};display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ o.icon }}" width="19" height="19" stroke-width="1.9"></i></div>
+                <div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:700">{{ o.name }}</div><div style="font-size:12.5px;color:#7A6E66">{{ o.detail }}</div></div>
+                <div style="height:26px;padding:0 10px;border-radius:999px;background:{{ o.stateChip }};color:{{ o.stateInk }};font-size:11.5px;font-weight:700;display:flex;align-items:center">{{ o.state }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="text-align:center;font-family:Caveat,cursive;font-size:25px;color:#7A4A3A;margin-top:20px">A small place for big moments ♡</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">08 · SETTINGS</div>
+    <div data-screen-label="D22 Settings" style="width:1920px;height:1080px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:72px;background:#FFFDF8;border-bottom:1px solid #EAE0D0;display:flex;align-items:center;padding:0 28px;gap:22px">
+        <div style="display:flex;align-items:center;gap:11px"><img src="assets/mez-mark.png" alt="mez" style="width:35px;height:35px;object-fit:contain;display:block;flex:none"><div style="font-family:Poppins,'DM Sans',sans-serif;font-size:25px;font-weight:700;letter-spacing:-.035em;color:#123E3F">mez</div></div>
+        <div style="font-family:Fraunces,serif;font-size:22px;font-weight:600;color:#5B1F1F;margin-left:10px">Settings</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:18px">
+          <div style="height:44px;padding:0 18px;border-radius:999px;background:#F2EADB;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px">Restaurant Branch — Indiranagar <i data-lucide="chevron-down" width="16" height="16" stroke-width="2"></i></div>
+          <div style="display:flex;align-items:center;gap:10px"><div style="width:40px;height:40px;border-radius:50%;background:#E5E9DE;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:700;color:#2F4A2C">AS</div><div><div style="font-size:14px;font-weight:700">Aditi</div><div style="font-size:12px;color:#7A6E66">Admin</div></div></div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;overflow:hidden">
+        <div style="width:290px;background:#FFFDF8;border-right:1px solid #EAE0D0;padding:20px 16px;display:flex;flex-direction:column;gap:4px">
+          <div style="height:50px;border-radius:14px;background:#B9522F;color:#FFFDF8;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px;font-weight:600"><i data-lucide="store" width="19" height="19" stroke-width="1.9"></i> Outlet</div>
+          <div style="height:50px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="percent" width="19" height="19" stroke-width="1.75"></i> Taxes &amp; charges</div>
+          <div style="height:50px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="printer" width="19" height="19" stroke-width="1.75"></i> Printers &amp; devices</div>
+          <div style="height:50px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="qr-code" width="19" height="19" stroke-width="1.75"></i> Tables &amp; QR codes</div>
+          <div style="height:50px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="plug" width="19" height="19" stroke-width="1.75"></i> Integrations</div>
+          <div style="height:50px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="languages" width="19" height="19" stroke-width="1.75"></i> Language &amp; theme</div>
+          <div style="height:50px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="database" width="19" height="19" stroke-width="1.75"></i> Backup &amp; restore</div>
+          <div style="margin-top:auto;background:#F6EFE2;border-radius:16px;padding:16px">
+            <div style="font-size:13px;font-weight:700;color:#3A2E2A">mez v1.0.0</div>
+            <div style="font-size:12.5px;color:#7A6E66;line-height:1.5;margin-top:4px">Open source · AGPL-3.0 · self-hosted on your own hardware.</div>
+          </div>
+        </div>
+        <div style="flex:1;padding:26px 30px;overflow:hidden;display:flex;gap:20px">
+          <div style="flex:1;display:flex;flex-direction:column;gap:18px">
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:24px">
+              <div style="font-family:Fraunces,serif;font-size:26px;font-weight:600;color:#5B1F1F">Outlet details</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px">
+                <div><div style="font-size:13.5px;font-weight:600;margin-bottom:8px">Outlet name</div><div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px">Restaurant Branch — Indiranagar</div></div>
+                <div><div style="font-size:13.5px;font-weight:600;margin-bottom:8px">GSTIN</div><div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">29ABCDE1234F1Z5</div></div>
+                <div style="grid-column:span 2"><div style="font-size:13.5px;font-weight:600;margin-bottom:8px">Address</div><div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px">100 Feet Road, Indiranagar, Bengaluru 560038</div></div>
+                <div><div style="font-size:13.5px;font-weight:600;margin-bottom:8px">Phone</div><div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">+91 80 4123 7788</div></div>
+                <div><div style="font-size:13.5px;font-weight:600;margin-bottom:8px">Service hours</div><div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">11:00 AM – 11:30 PM</div></div>
+              </div>
+            </div>
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:24px">
+              <div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Taxes &amp; charges</div>
+              <div style="display:grid;gap:14px;margin-top:18px">
+                <div style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #EAE0D0;border-radius:14px"><div style="flex:1"><div style="font-size:15px;font-weight:700">CGST</div><div style="font-size:12.5px;color:#7A6E66">Central GST on the discounted subtotal</div></div><div style="width:100px;height:44px;border:1px solid #DCCDB4;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">2.5%</div><div style="width:52px;height:30px;border-radius:999px;background:#2F4A2C;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #EAE0D0;border-radius:14px"><div style="flex:1"><div style="font-size:15px;font-weight:700">SGST</div><div style="font-size:12.5px;color:#7A6E66">State GST on the discounted subtotal</div></div><div style="width:100px;height:44px;border:1px solid #DCCDB4;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">2.5%</div><div style="width:52px;height:30px;border-radius:999px;background:#2F4A2C;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #EAE0D0;border-radius:14px"><div style="flex:1"><div style="font-size:15px;font-weight:700">Service charge</div><div style="font-size:12.5px;color:#7A6E66">Optional and clearly shown to guests</div></div><div style="width:100px;height:44px;border:1px solid #DCCDB4;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#7A6E66;font-variant-numeric:tabular-nums">5%</div><div style="width:52px;height:30px;border-radius:999px;background:#DCCDB4;display:flex;align-items:center;padding:3px"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #EAE0D0;border-radius:14px"><div style="flex:1"><div style="font-size:15px;font-weight:700">Round the final total</div><div style="font-size:12.5px;color:#7A6E66">To the nearest rupee, once, at the end</div></div><div style="width:52px;height:30px;border-radius:999px;background:#2F4A2C;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+              </div>
+            </div>
+            <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:24px">
+              <div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Printers &amp; devices</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px">
+                <sc-for list="{{ devices }}" as="d" hint-placeholder-count="4">
+                  <div style="border:1px solid #EAE0D0;border-radius:16px;padding:16px;display:flex;align-items:center;gap:13px">
+                    <div style="width:44px;height:44px;border-radius:12px;background:{{ d.chip }};color:{{ d.ink }};display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ d.icon }}" width="21" height="21" stroke-width="1.9"></i></div>
+                    <div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:700">{{ d.name }}</div><div style="font-size:12.5px;color:#7A6E66">{{ d.detail }}</div></div>
+                    <div style="display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:{{ d.stateChip }};color:{{ d.stateInk }};font-size:12px;font-weight:700"><span style="width:7px;height:7px;border-radius:50%;background:{{ d.dot }}"></span> {{ d.state }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="width:420px;display:flex;flex-direction:column;gap:18px">
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:24px">
+              <div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Table &amp; QR codes</div>
+              <div style="display:flex;gap:16px;align-items:center;margin-top:18px">
+                <div style="width:118px;height:118px;border-radius:12px;background:repeating-conic-gradient(#3A2E2A 0 25%,#FFFDF8 0 50%) 0 0/15px 15px;border:6px solid #FFFDF8;box-shadow:0 0 0 1px #EAE0D0;flex:none"></div>
+                <div><div style="font-size:15px;font-weight:700">18 tables have QR codes</div><div style="font-size:13px;color:#7A6E66;line-height:1.5;margin-top:5px">Each code deep-links to its table's ordering session. Reprint any time — codes never expire.</div></div>
+              </div>
+              <div style="display:flex;gap:11px;margin-top:16px">
+                <div style="flex:1;height:46px;border-radius:999px;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center;gap:9px;font-size:14.5px;font-weight:600"><i data-lucide="printer" width="17" height="17" stroke-width="1.9"></i> Print sheet</div>
+                <div style="flex:1;height:46px;border-radius:999px;background:#B9522F;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:9px;font-size:14.5px;font-weight:600"><i data-lucide="qr-code" width="17" height="17" stroke-width="1.9"></i> Generate QR</div>
+              </div>
+            </div>
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:24px">
+              <div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Language &amp; theme</div>
+              <div style="font-size:13.5px;font-weight:600;margin:18px 0 10px">Interface language</div>
+              <div style="display:flex;gap:9px">
+                <div style="height:44px;padding:0 18px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;font-size:14px;font-weight:600;display:flex;align-items:center">English</div>
+                <div style="height:44px;padding:0 18px;border-radius:999px;border:1px solid #E3D8C6;font-size:14px;display:flex;align-items:center">हिन्दी</div>
+                <div style="height:44px;padding:0 18px;border-radius:999px;border:1px solid #E3D8C6;font-size:14px;display:flex;align-items:center">ಕನ್ನಡ</div>
+              </div>
+              <div style="font-size:13.5px;font-weight:600;margin:18px 0 10px">Theme</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+                <div style="border:1.5px solid #2F4A2C;background:#E8EFE3;border-radius:14px;padding:14px"><div style="height:44px;border-radius:10px;background:#F8F3E9;border:1px solid #EAE0D0;margin-bottom:10px"></div><div style="font-size:14px;font-weight:700;color:#2F4A2C">Parchment</div><div style="font-size:12px;color:#5F5850">Front of house</div></div>
+                <div style="border:1px solid #E3D8C6;border-radius:14px;padding:14px"><div style="height:44px;border-radius:10px;background:#2A211C;margin-bottom:10px"></div><div style="font-size:14px;font-weight:700">Espresso night</div><div style="font-size:12px;color:#7A6E66">Kitchen screens</div></div>
+              </div>
+            </div>
+            <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:24px;display:flex;flex-direction:column">
+              <div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Backup &amp; restore</div>
+              <div style="display:flex;align-items:center;gap:13px;margin-top:18px;padding:14px;background:#EFF4EB;border-radius:14px"><i data-lucide="check-circle-2" width="21" height="21" stroke-width="1.9" color="#216B26"></i><div><div style="font-size:14.5px;font-weight:700;color:#216B26">Last backup 4:00 AM today</div><div style="font-size:12.5px;color:#3A2E2A">Nightly to local disk + your own S3 bucket</div></div></div>
+              <div style="display:grid;gap:11px;margin-top:16px">
+                <div style="height:48px;border-radius:14px;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14.5px;font-weight:600"><i data-lucide="download" width="17" height="17" stroke-width="1.9"></i> Download backup now</div>
+                <div style="height:48px;border-radius:14px;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14.5px;font-weight:600"><i data-lucide="upload" width="17" height="17" stroke-width="1.9"></i> Restore from file</div>
+              </div>
+              <div style="margin-top:auto;display:flex;gap:12px">
+                <div style="flex:1;height:52px;border-radius:999px;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600">Discard</div>
+                <div style="flex:1.4;height:52px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">Save settings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Z REPORT + SETUP WIZARD -->
+  <div style="display:flex;gap:44px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">09 · END-OF-DAY CLOSE / Z-REPORT</div>
+      <div data-screen-label="D23 Z Report" style="width:940px;height:880px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);padding:24px;display:flex;gap:18px">
+        <div style="flex:1;display:flex;flex-direction:column">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.16em;color:#B9522F">STEP 2 OF 2</div>
+          <div style="font-family:Fraunces,serif;font-size:34px;font-weight:600;color:#5B1F1F;margin-top:9px;letter-spacing:-.02em">Close the day</div>
+          <div style="font-size:15px;color:#7A6E66;margin-top:5px">Count the drawer, reconcile, then print the Z-report.</div>
+          <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px;margin-top:20px">
+            <div style="font-size:12px;font-weight:700;letter-spacing:.16em;color:#7A6E66;margin-bottom:14px">CASH RECONCILIATION</div>
+            <div style="display:grid;gap:11px;font-size:15px">
+              <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Opening float</span><span style="font-variant-numeric:tabular-nums">₹5,400</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Cash sales</span><span style="font-variant-numeric:tabular-nums">₹27,391</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Cash refunds</span><span style="font-variant-numeric:tabular-nums;color:#A8321C">− ₹387</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Paid out (petty cash)</span><span style="font-variant-numeric:tabular-nums;color:#A8321C">− ₹1,200</span></div>
+              <div style="height:1px;background:#EAE0D0;margin:3px 0"></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-weight:700">Expected in drawer</span><span style="font-weight:700;font-variant-numeric:tabular-nums">₹31,204</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:#5F5850">Counted</span><div style="width:140px;height:44px;border:1.5px solid #2F4A2C;border-radius:12px;display:flex;align-items:center;justify-content:flex-end;padding:0 13px;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;box-shadow:0 0 0 3px rgba(47,74,44,.12)">₹31,154</div></div>
+            </div>
+            <div style="background:#FBF0DC;border:1px solid #EDD8A6;border-radius:14px;padding:14px;margin-top:16px;display:flex;align-items:center;gap:12px"><i data-lucide="alert-triangle" width="20" height="20" stroke-width="1.9" color="#7A5306"></i><div style="flex:1"><div style="font-size:14.5px;font-weight:700;color:#7A5306">Short by ₹50</div><div style="font-size:12.5px;color:#3A2E2A">Within the ₹100 tolerance — add a note for the manager.</div></div></div>
+            <div style="min-height:66px;border:1px solid #DCCDB4;border-radius:14px;padding:12px 14px;font-size:14px;color:#7A6E66;margin-top:14px">Note — e.g. ₹50 given as change from petty cash at 9:12 PM.</div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:auto;padding-top:18px">
+            <div style="width:170px;height:56px;border-radius:999px;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center;gap:9px;font-size:15px;font-weight:600"><i data-lucide="printer" width="18" height="18" stroke-width="1.9"></i> Print</div>
+            <div style="flex:1;height:56px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:10px;font-size:17px;font-weight:600;box-shadow:0 8px 18px rgba(47,74,44,.22)"><i data-lucide="lock" width="19" height="19" stroke-width="2"></i> Close day &amp; lock terminal</div>
+          </div>
+        </div>
+        <div style="width:380px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:24px;font-family:ui-monospace,SFMono-Regular,monospace;overflow:hidden">
+          <div style="text-align:center;border-bottom:1px dashed #DCCDB4;padding-bottom:14px">
+            <div style="font-size:15px;font-weight:700;letter-spacing:.1em">Z-REPORT</div>
+            <div style="font-size:11.5px;color:#7A6E66;margin-top:5px;line-height:1.6">mez · Restaurant Branch<br>Indiranagar · Counter 1</div>
+            <div style="font-size:11.5px;color:#7A6E66;margin-top:6px">19 Sep 2026 · 11:38 PM</div>
+          </div>
+          <div style="padding:14px 0;border-bottom:1px dashed #DCCDB4;display:grid;gap:8px;font-size:12.5px">
+            <div style="display:flex;justify-content:space-between"><span>Gross sales</span><span>₹1,29,240</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Discounts</span><span>− ₹4,660</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Net sales</span><span>₹1,24,580</span></div>
+            <div style="display:flex;justify-content:space-between"><span>CGST 2.5%</span><span>₹3,115</span></div>
+            <div style="display:flex;justify-content:space-between"><span>SGST 2.5%</span><span>₹3,115</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Tips collected</span><span>₹6,420</span></div>
+          </div>
+          <div style="padding:14px 0;border-bottom:1px dashed #DCCDB4;display:grid;gap:8px;font-size:12.5px">
+            <div style="display:flex;justify-content:space-between"><span>Cash</span><span>₹27,391</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Card</span><span>₹34,882</span></div>
+            <div style="display:flex;justify-content:space-between"><span>UPI</span><span>₹57,307</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Wallet</span><span>₹5,000</span></div>
+          </div>
+          <div style="padding:14px 0;border-bottom:1px dashed #DCCDB4;display:grid;gap:8px;font-size:12.5px">
+            <div style="display:flex;justify-content:space-between"><span>Orders</span><span>428</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Covers</span><span>682</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Avg. order</span><span>₹291</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Refunds</span><span>2 · ₹556</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Voids</span><span>1 · ₹198</span></div>
+          </div>
+          <div style="padding:14px 0;display:grid;gap:8px;font-size:12.5px">
+            <div style="display:flex;justify-content:space-between"><span>Expected drawer</span><span>₹31,204</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Counted</span><span>₹31,154</span></div>
+            <div style="display:flex;justify-content:space-between;font-weight:700"><span>Variance</span><span>− ₹50</span></div>
+          </div>
+          <div style="text-align:center;font-size:11px;color:#7A6E66;border-top:1px dashed #DCCDB4;padding-top:14px;line-height:1.7">CLOSED BY ADITI (MANAGER)<br>GOOD FOOD BRINGS PEOPLE TOGETHER</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">10 · FIRST-RUN SETUP WIZARD</div>
+      <div data-screen-label="D24 Setup Wizard" style="width:940px;height:880px;background:#F3EADA;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);padding:32px;display:flex;flex-direction:column;position:relative">
+        <div style="position:absolute;right:-70px;top:-50px;width:420px;height:420px;border-radius:999px;background:#EFE4D0"></div>
+        <div style="position:relative;display:flex;align-items:center;gap:13px">
+          <img src="assets/mez-mark.png" alt="mez" style="width:46px;height:46px;object-fit:contain;display:block;flex:none">
+          <div><div style="font-family:Poppins,'DM Sans',sans-serif;font-size:32px;font-weight:700;letter-spacing:-.035em;color:#123E3F;line-height:1;">mez</div><div style="font-size:9px;font-weight:700;letter-spacing:.2em;color:#7A6E66;margin-top:5px">GOOD FOOD BRINGS PEOPLE TOGETHER</div></div>
+        </div>
+        <div style="position:relative;margin-top:26px">
+          <div style="font-family:Fraunces,serif;font-size:38px;font-weight:600;color:#5B1F1F;line-height:1.1;letter-spacing:-.02em">Welcome — let's set up<br>your restaurant.</div>
+          <div style="font-size:15.5px;color:#3A2E2A;margin-top:9px;max-width:520px;line-height:1.55">Five steps, about four minutes. You can change everything later in Settings.</div>
+        </div>
+        <div style="position:relative;display:flex;align-items:center;gap:0;margin-top:26px">
+          <div style="display:flex;align-items:center;flex:1"><div style="width:40px;height:40px;border-radius:50%;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="check" width="20" height="20" stroke-width="3"></i></div><div style="flex:1;height:3px;background:#2F4A2C"></div></div>
+          <div style="display:flex;align-items:center;flex:1"><div style="width:40px;height:40px;border-radius:50%;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="check" width="20" height="20" stroke-width="3"></i></div><div style="flex:1;height:3px;background:#2F4A2C"></div></div>
+          <div style="display:flex;align-items:center;flex:1"><div style="width:40px;height:40px;border-radius:50%;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 0 0 5px #DDE8D3;font-size:15px;font-weight:700">3</div><div style="flex:1;height:3px;background:#E0D6C4"></div></div>
+          <div style="display:flex;align-items:center;flex:1"><div style="width:40px;height:40px;border-radius:50%;background:#EDE4D4;color:#9C8B7A;display:flex;align-items:center;justify-content:center;flex:none;font-size:15px;font-weight:700">4</div><div style="flex:1;height:3px;background:#E0D6C4"></div></div>
+          <div style="width:40px;height:40px;border-radius:50%;background:#EDE4D4;color:#9C8B7A;display:flex;align-items:center;justify-content:center;flex:none;font-size:15px;font-weight:700">5</div>
+        </div>
+        <div style="position:relative;display:flex;gap:0;margin-top:11px;font-size:12.5px;color:#5F5850;font-weight:600">
+          <span style="flex:1">Outlet</span><span style="flex:1">Taxes</span><span style="flex:1;color:#2F4A2C;font-weight:700">Tables &amp; areas</span><span style="flex:1">Menu import</span><span style="width:70px;text-align:right">Staff</span>
+        </div>
+        <div style="position:relative;flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:24px;margin-top:22px;display:flex;flex-direction:column">
+          <div style="font-family:Fraunces,serif;font-size:26px;font-weight:600;color:#5B1F1F">Tables &amp; areas</div>
+          <div style="font-size:14.5px;color:#7A6E66;margin-top:5px">Add your dining areas and how many tables sit in each. QR codes are generated automatically.</div>
+          <div style="display:grid;gap:12px;margin-top:20px">
+            <div style="display:grid;grid-template-columns:1fr 130px 130px 44px;gap:12px;align-items:center">
+              <div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px">Main Dining</div>
+              <div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">9 tables</div>
+              <div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">34 seats</div>
+              <div style="width:44px;height:44px;border-radius:12px;background:#FBEDE9;color:#A33A28;display:flex;align-items:center;justify-content:center"><i data-lucide="trash-2" width="18" height="18" stroke-width="1.9"></i></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 130px 130px 44px;gap:12px;align-items:center">
+              <div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px">Terrace</div>
+              <div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">6 tables</div>
+              <div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">22 seats</div>
+              <div style="width:44px;height:44px;border-radius:12px;background:#FBEDE9;color:#A33A28;display:flex;align-items:center;justify-content:center"><i data-lucide="trash-2" width="18" height="18" stroke-width="1.9"></i></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 130px 130px 44px;gap:12px;align-items:center">
+              <div style="height:48px;border:1.5px solid #2F4A2C;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;box-shadow:0 0 0 3px rgba(47,74,44,.12)">Private Room</div>
+              <div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">3 tables</div>
+              <div style="height:48px;border:1px solid #DCCDB4;border-radius:14px;display:flex;align-items:center;padding:0 15px;font-size:15px;font-variant-numeric:tabular-nums">12 seats</div>
+              <div style="width:44px;height:44px;border-radius:12px;background:#FBEDE9;color:#A33A28;display:flex;align-items:center;justify-content:center"><i data-lucide="trash-2" width="18" height="18" stroke-width="1.9"></i></div>
+            </div>
+            <div style="height:48px;border-radius:14px;border:1px dashed #DCCDB4;display:flex;align-items:center;justify-content:center;gap:9px;font-size:14.5px;font-weight:600;color:#7A6E66"><i data-lucide="plus" width="17" height="17" stroke-width="2.2"></i> Add another area</div>
+          </div>
+          <div style="background:#EFF4EB;border:1px solid #D9E4D0;border-radius:14px;padding:16px;margin-top:20px;display:flex;align-items:center;gap:13px">
+            <i data-lucide="qr-code" width="22" height="22" stroke-width="1.9" color="#216B26"></i>
+            <div style="flex:1"><div style="font-size:14.5px;font-weight:700;color:#216B26">18 QR codes will be created</div><div style="font-size:13px;color:#3A2E2A;margin-top:2px">One per table, ready to print on the last step.</div></div>
+            <div style="width:52px;height:30px;border-radius:999px;background:#2F4A2C;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div>
+          </div>
+          <div style="margin-top:auto;display:flex;align-items:center;gap:12px;padding-top:20px">
+            <div style="font-size:14px;color:#7A6E66">Step 3 of 5 · about 2 minutes left</div>
+            <div style="margin-left:auto;width:140px;height:52px;border-radius:999px;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600">Back</div>
+            <div style="width:190px;height:52px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:10px;font-size:16px;font-weight:600">Continue <i data-lucide="arrow-right" width="18" height="18" stroke-width="2.2"></i></div>
+          </div>
+        </div>
+        <div style="position:relative;display:flex;align-items:center;gap:16px;margin-top:18px">
+          <div style="font-family:Caveat,cursive;font-size:27px;color:#7A4A3A">A small place for big moments ♡</div>
+          <div style="margin-left:auto;font-size:13px;color:#7A6E66">Need help? Read the self-hosting guide.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  icons() {
+    const go = () => { if (window.lucide && window.lucide.createIcons) { window.lucide.createIcons(); return true; } return false; };
+    if (go()) return;
+    let n = 0;
+    const t = setInterval(() => { if (go() || ++n > 60) clearInterval(t); }, 100);
+  }
+  componentDidMount() { this.icons(); }
+  componentDidUpdate() { this.icons(); }
+  renderVals() {
+    const G = '#2E7D32', R = '#A8321C';
+    const up = { trendIcon:'trending-up', trendInk:'#216B26' };
+    const dn = { trendIcon:'trending-down', trendInk:'#A8321C' };
+    const stk = {
+      ok:   { chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', state:'Healthy', bar:'#2F4A2C' },
+      low:  { chip:'#FAEBC8', ink:'#7A5306', dot:'#E9A21A', state:'Low',     bar:'#E7A83A' },
+      out:  { chip:'#F6D3CB', ink:'#A8321C', dot:'#C4432B', state:'Out',     bar:'#C4432B' }
+    };
+    const s = (name, icon, qty, reorder, cost, supplier, pct, k) => Object.assign({ name, icon, qty, reorder, cost, supplier, pct }, stk[k]);
+    const on  = { chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', state:'On shift' };
+    const off = { chip:'#E8E2DA', ink:'#5A4F46', dot:'#6E6258', state:'Off duty' };
+    const lv  = { chip:'#E2D9F0', ink:'#55399F', dot:'#6B4FBB', state:'On leave' };
+    const p = (name, initials, phone, role, shift, pin, k) => Object.assign({ name, initials, phone, role, shift, pin }, k);
+    return {
+      kpis: [
+        { label:'Total sales', value:'₹1,24,580', delta:'12%', icon:'indian-rupee', bg:'#EFF4EB', border:'#D9E4D0', chip:'#DDE8D3', ink:'#2F4A2C' },
+        { label:'Total orders', value:'428', delta:'8%', icon:'receipt-text', bg:'#FFFDF8', border:'#EAE0D0', chip:'#F6E4DC', ink:'#B9522F' },
+        { label:'Average order value', value:'₹291', delta:'4%', icon:'tag', bg:'#FFFDF8', border:'#EAE0D0', chip:'#FAEBC8', ink:'#7A5306' },
+        { label:'Total guests', value:'682', delta:'10%', icon:'users', bg:'#FFFDF8', border:'#EAE0D0', chip:'#DCE8F7', ink:'#23509A' }
+      ],
+      trend: [
+        { i:'18%', t:'8%', d:'6%' }, { i:'22%', t:'9%', d:'7%' }, { i:'26%', t:'11%', d:'8%' }, { i:'30%', t:'12%', d:'9%' },
+        { i:'34%', t:'13%', d:'10%' }, { i:'40%', t:'15%', d:'11%' }, { i:'36%', t:'14%', d:'10%' }, { i:'44%', t:'16%', d:'12%' },
+        { i:'48%', t:'18%', d:'13%' }, { i:'42%', t:'16%', d:'11%' }, { i:'52%', t:'19%', d:'14%' }, { i:'58%', t:'21%', d:'15%' },
+        { i:'50%', t:'18%', d:'13%' }, { i:'46%', t:'17%', d:'12%' }, { i:'38%', t:'14%', d:'10%' }, { i:'34%', t:'13%', d:'9%' },
+        { i:'42%', t:'16%', d:'11%' }, { i:'54%', t:'20%', d:'14%' }, { i:'48%', t:'18%', d:'13%' }
+      ],
+      topSelling: [
+        { rank:'1', name:'Chicken Biryani', qty:'128', sales:'₹44,672' },
+        { rank:'2', name:'Margherita Pizza', qty:'96', sales:'₹28,704' },
+        { rank:'3', name:'Masala Fries', qty:'84', sales:'₹16,716' },
+        { rank:'4', name:'Iced Latte', qty:'73', sales:'₹12,337' },
+        { rank:'5', name:'Paneer Tikka', qty:'68', sales:'₹16,932' }
+      ],
+      itemPerf: [
+        Object.assign({ name:'Chicken Biryani', dietColor:R, qty:'128', rev:'₹44,672', cost:'₹15,360', margin:'66%', trend:'14%' }, up),
+        Object.assign({ name:'Margherita Pizza', dietColor:G, qty:'96', rev:'₹28,704', cost:'₹11,520', margin:'60%', trend:'9%' }, up),
+        Object.assign({ name:'Paneer Tikka', dietColor:G, qty:'68', rev:'₹16,932', cost:'₹6,120', margin:'64%', trend:'6%' }, up),
+        Object.assign({ name:'Masala Fries', dietColor:G, qty:'84', rev:'₹16,716', cost:'₹4,200', margin:'75%', trend:'11%' }, up),
+        Object.assign({ name:'Iced Latte', dietColor:G, qty:'73', rev:'₹12,337', cost:'₹2,920', margin:'76%', trend:'4%' }, up),
+        Object.assign({ name:'Alfredo Pasta', dietColor:G, qty:'54', rev:'₹14,526', cost:'₹6,480', margin:'55%', trend:'3%' }, dn),
+        Object.assign({ name:'Tiramisu', dietColor:G, qty:'31', rev:'₹7,099', cost:'₹3,410', margin:'52%', trend:'7%' }, dn)
+      ],
+      staffReport: [
+        { rank:'1', name:'Rohan', initials:'RW', role:'Waiter', orders:'102', sales:'₹29,340', tips:'₹4,120', rating:'4.9' },
+        { rank:'2', name:'Aditi', initials:'AS', role:'Cashier', orders:'88', sales:'₹24,610', tips:'₹2,860', rating:'4.8' },
+        { rank:'3', name:'Neha', initials:'NM', role:'Manager', orders:'76', sales:'₹19,820', tips:'₹2,240', rating:'4.7' },
+        { rank:'4', name:'Arjun', initials:'AW', role:'Waiter', orders:'64', sales:'₹17,450', tips:'₹1,980', rating:'4.6' },
+        { rank:'5', name:'Chef Arjun', initials:'CA', role:'Kitchen', orders:'—', sales:'—', tips:'₹1,540', rating:'4.9' }
+      ],
+      regulars: [
+        { name:'Meera Iyer', initials:'MI', visits:'14 visits · last 12 Sep', visitCount:'14', tier:'Gold', spend:'₹18,420', chip:'#FBF0DC', ink:'#7A5306' },
+        { name:'Karthik R', initials:'KR', visits:'11 visits · last 16 Sep', visitCount:'11', tier:'Gold', spend:'₹14,280', chip:'#FBF0DC', ink:'#7A5306' },
+        { name:'Anjali Nair', initials:'AN', visits:'8 visits · last 09 Sep', visitCount:'8', tier:'Silver', spend:'₹9,640', chip:'#F2EADB', ink:'#5F5850' },
+        { name:'Devika S', initials:'DS', visits:'6 visits · last 18 Sep', visitCount:'6', tier:'Silver', spend:'₹7,180', chip:'#F2EADB', ink:'#5F5850' }
+      ],
+      menuItems: [
+        { name:'Margherita Pizza', price:'₹299', state:'Active', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', rowBg:'#F6E4DC', rowBorder:'#EDD2C7' },
+        { name:'Paneer Tikka', price:'₹249', state:'Active', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', rowBg:'#FFFDF8', rowBorder:'#EAE0D0' },
+        { name:'Classic Burger', price:'₹269', state:'Active', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', rowBg:'#FFFDF8', rowBorder:'#EAE0D0' },
+        { name:'Masala Fries', price:'₹199', state:'Active', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', rowBg:'#FFFDF8', rowBorder:'#EAE0D0' },
+        { name:'Alfredo Pasta', price:'₹269', state:'Active', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', rowBg:'#FFFDF8', rowBorder:'#EAE0D0' },
+        { name:'Chicken Biryani', price:'₹349', state:'Active', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', rowBg:'#FFFDF8', rowBorder:'#EAE0D0' },
+        { name:'Caesar Salad', price:'₹249', state:'Inactive', chip:'#E8E2DA', ink:'#5A4F46', dot:'#6E6258', rowBg:'#FFFDF8', rowBorder:'#EAE0D0' },
+        { name:'Tomato Basil Soup', price:'₹189', state:'Active', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', rowBg:'#FFFDF8', rowBorder:'#EAE0D0' },
+        { name:'Iced Latte', price:'₹169', state:'Active', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', rowBg:'#FFFDF8', rowBorder:'#EAE0D0' },
+        { name:'Tiramisu', price:'₹229', state:'Active', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', rowBg:'#FFFDF8', rowBorder:'#EAE0D0' }
+      ],
+      stock: [
+        s('Mozzarella Cheese','package','2 kg','5 kg','₹420/kg','Amul Dairy','18%','low'),
+        s('Tomato Sauce','package','1 unit','4 units','₹180/unit','Bharat Foods','12%','low'),
+        s('Chicken (boneless)','beef','3 kg','8 kg','₹280/kg','Fresh Meats Co','22%','low'),
+        s('French Fries','package','0 kg','10 kg','₹140/kg','Bharat Foods','0%','out'),
+        s('Fresh Basil','leaf','5 bunches','12 bunches','₹40/bunch','Greens Direct','28%','low'),
+        s('Basmati Rice','package','42 kg','15 kg','₹120/kg','Bharat Foods','84%','ok'),
+        s('Paneer','package','11 kg','6 kg','₹360/kg','Amul Dairy','72%','ok'),
+        s('Pizza Dough Base','pizza','58 pcs','20 pcs','₹28/pc','Bake House','88%','ok'),
+        s('Coffee Beans','coffee','9 kg','4 kg','₹880/kg','Coorg Roasters','68%','ok'),
+        s('Oat Milk','milk-off','24 litres','10 litres','₹190/l','Greens Direct','76%','ok'),
+        s('Onions','package','36 kg','12 kg','₹32/kg','Greens Direct','80%','ok'),
+        s('Cooking Oil','package','5 tins','6 tins','₹1,940/tin','Bharat Foods','34%','low')
+      ],
+      pos: [
+        { id:'PO-2041', state:'Awaiting delivery', chip:'#FAEBC8', ink:'#7A5306', amount:'₹18,420', detail:'Bharat Foods · 7 lines · expected 20 Sep' },
+        { id:'PO-2040', state:'Partially received', chip:'#DCE8F7', ink:'#23509A', amount:'₹9,860', detail:'Amul Dairy · 4 of 6 lines received' },
+        { id:'PO-2039', state:'Draft', chip:'#E8E2DA', ink:'#5A4F46', amount:'₹4,240', detail:'Greens Direct · needs manager approval' }
+      ],
+      wastage: [
+        { item:'Tomatoes', reason:'Overripe · logged by Chef Arjun', qty:'4 kg', value:'₹128' },
+        { item:'Mozzarella Cheese', reason:'Opened, unused past 48 hrs', qty:'1.5 kg', value:'₹630' },
+        { item:'Garlic Bread', reason:'Order voided after prep', qty:'6 pcs', value:'₹240' },
+        { item:'Fresh Basil', reason:'Wilted', qty:'3 bunches', value:'₹120' }
+      ],
+      staffList: [
+        p('Aditi Sharma','AS','+91 98450 22110','Manager','10:30 AM – 8:00 PM','2481', on),
+        p('Rohan Verma','RW','+91 99801 34422','Waiter','4:00 PM – 11:30 PM','1097', on),
+        p('Neha Kulkarni','NM','+91 98860 55103','Manager','2:00 PM – 10:00 PM','3312', on),
+        p('Chef Arjun','CA','+91 90192 77841','Kitchen','10:00 AM – 10:00 PM','4455', on),
+        p('Arjun Menon','AW','+91 88450 19023','Waiter','11:00 AM – 7:00 PM','5120', off),
+        p('Priya Das','PD','+91 97410 66287','Cashier','11:00 AM – 7:00 PM','6701', off),
+        p('Imran Khan','IK','+91 98455 90312','Kitchen','4:00 PM – 11:30 PM','7788', off),
+        p('Sunita Rao','SR','+91 99000 42187','Waiter','—','8123', lv),
+        p('Vikram Shetty','VS','+91 98863 71140','Host','5:00 PM – 11:00 PM','9034', off)
+      ],
+      offers: [
+        { name:'Happy Hour — 20% off beverages', detail:'Daily 4–7 PM · dine-in only', state:'Live', icon:'coffee', chip:'#F6E4DC', ink:'#9C4325', stateChip:'#DDE8D3', stateInk:'#216B26' },
+        { name:'WELCOME10', detail:'10% off first QR order · max ₹100', state:'Live', icon:'ticket', chip:'#DCE8F7', ink:'#23509A', stateChip:'#DDE8D3', stateInk:'#216B26' },
+        { name:'Biryani Feast combo', detail:'Biryani + raita + gulab jamun · ₹449', state:'Live', icon:'gift', chip:'#FBF0DC', ink:'#7A5306', stateChip:'#DDE8D3', stateInk:'#216B26' },
+        { name:'Weekend brunch — buy 2 get 1', detail:'Sat &amp; Sun 11 AM – 3 PM', state:'Scheduled', icon:'calendar-days', chip:'#F2EADB', ink:'#5F5850', stateChip:'#FAEBC8', stateInk:'#7A5306' }
+      ],
+      devices: [
+        { name:'Counter 1 receipt printer', detail:'Epson TM-T82 · USB', icon:'printer', chip:'#DDE8D3', ink:'#216B26', state:'Online', stateChip:'#DDE8D3', stateInk:'#216B26', dot:'#2E7D32' },
+        { name:'Kitchen KOT printer', detail:'Epson TM-T88 · LAN 192.168.1.42', icon:'printer', chip:'#DDE8D3', ink:'#216B26', state:'Online', stateChip:'#DDE8D3', stateInk:'#216B26', dot:'#2E7D32' },
+        { name:'Card terminal', detail:'Ezetap · Bluetooth', icon:'credit-card', chip:'#DCE8F7', ink:'#23509A', state:'Paired', stateChip:'#DCE8F7', stateInk:'#23509A', dot:'#2B5FB4' },
+        { name:'Cash drawer', detail:'Triggered by receipt printer', icon:'banknote', chip:'#F2EADB', ink:'#5F5850', state:'Idle', stateChip:'#E8E2DA', stateInk:'#5A4F46', dot:'#6E6258' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

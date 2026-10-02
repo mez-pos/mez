@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Poppins:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin:0; background:#EFE7D8; }
+  * { box-sizing:border-box; }
+  a { color:#B9522F; text-decoration:none; }
+  a:hover { color:#8F3E23; }
+</style>
+</helmet>
+
+<div style="padding:56px;background:#EFE7D8;font-family:'DM Sans',system-ui,sans-serif;color:#3A2E2A;-webkit-font-smoothing:antialiased">
+
+  <div style="max-width:1200px;margin:0 0 48px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.16em;color:#B9522F;margin-bottom:12px">MEZ · BATCH D</div>
+    <h1 style="font-family:Fraunces,serif;font-size:46px;font-weight:600;color:#5B1F1F;margin:0 0 12px;letter-spacing:-.025em">Kitchen display &amp; admin dashboard</h1>
+    <p style="font-size:17px;line-height:1.55;color:#3A2E2A;margin:0;max-width:720px">1920 × 1080 · the two screens that stay open all service. KDS ships in parchment and an "espresso night" variant for hot, dim kitchens.</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:52px">
+
+  <!-- KDS LIGHT -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">01 · KITCHEN DISPLAY — PARCHMENT</div>
+    <div data-screen-label="D10 KDS Parchment" style="width:1920px;height:1080px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:92px;background:#FFFDF8;border-bottom:1px solid #EAE0D0;display:flex;align-items:center;padding:0 28px;gap:24px">
+        <div style="display:flex;align-items:center;gap:11px"><img src="assets/mez-mark.png" alt="mez" style="width:37px;height:37px;object-fit:contain;display:block;flex:none"><div><div style="font-family:Poppins,'DM Sans',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.035em;color:#123E3F;line-height:1">mez</div><div style="font-size:8.5px;font-weight:700;letter-spacing:.18em;color:#7A6E66;margin-top:3px">GOOD FOOD BRINGS PEOPLE TOGETHER</div></div></div>
+        <div style="flex:1;text-align:center">
+          <div style="display:flex;align-items:center;justify-content:center;gap:12px"><i data-lucide="chef-hat" width="30" height="30" stroke-width="1.7" color="#B9522F"></i><div style="font-family:Fraunces,serif;font-size:34px;font-weight:600;color:#5B1F1F;letter-spacing:-.02em">Kitchen Display</div></div>
+          <div style="font-size:14px;color:#7A6E66;margin-top:2px">Fresh orders. Happy people.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <div style="font-size:14.5px;color:#3A2E2A;font-weight:600;font-variant-numeric:tabular-nums">Fri, 19 Sep 2026 · 10:24 AM</div>
+          <div style="display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;background:#DDE8D3;color:#216B26;font-size:13.5px;font-weight:700"><span style="width:9px;height:9px;border-radius:50%;background:#2E7D32"></span> Kitchen Online</div>
+          <div style="font-family:Caveat,cursive;font-size:22px;color:#7A4A3A;line-height:1.15;text-align:right">Good Food,<br>Brighter Days ♡</div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;gap:16px;padding:18px 20px;overflow:hidden">
+        <div style="flex:1;display:flex;flex-direction:column;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;overflow:hidden">
+          <div style="height:64px;background:#B9522F;display:flex;align-items:center;padding:0 20px;gap:12px"><i data-lucide="bell" width="24" height="24" stroke-width="1.9" color="#FFFDF8"></i><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#FFFDF8">New Orders</div><div style="margin-left:auto;width:36px;height:36px;border-radius:50%;background:rgba(255,253,248,.24);color:#FFFDF8;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">4</div></div>
+          <div style="flex:1;padding:14px;display:grid;gap:12px;align-content:start;overflow:hidden">
+            <sc-for list="{{ newOrders }}" as="t" hint-placeholder-count="4">
+              <div style="background:#FFFDF8;border:1px solid #F0D5CC;border-left:5px solid #C4432B;border-radius:16px;padding:15px;box-shadow:0 2px 6px rgba(91,31,31,.04)">
+                <div style="display:flex;align-items:center;gap:11px">
+                  <div style="width:38px;height:38px;border-radius:10px;background:#F6D3CB;color:#A8321C;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ t.icon }}" width="19" height="19" stroke-width="1.9"></i></div>
+                  <div style="flex:1"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums;line-height:1.1">{{ t.id }}</div><div style="font-size:13px;color:#7A6E66;margin-top:2px">{{ t.meta }}</div></div>
+                  <div style="text-align:right"><div style="font-size:12.5px;color:#7A6E66;font-variant-numeric:tabular-nums">{{ t.placed }}</div><div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#F6D3CB;color:#A8321C;font-size:13px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums"><i data-lucide="timer" width="13" height="13" stroke-width="2.2"></i> {{ t.age }}</div></div>
+                </div>
+                <div style="height:1px;background:#F4EDE0;margin:13px 0"></div>
+                <div style="display:grid;gap:9px">
+                  <sc-for list="{{ t.lines }}" as="l" hint-placeholder-count="3">
+                    <div style="display:flex;gap:12px;font-size:16px"><span style="font-weight:700;color:#B9522F;font-variant-numeric:tabular-nums;min-width:18px">{{ l.q }}</span><div><div style="font-weight:600;color:#3A2E2A">{{ l.name }}</div><div style="font-size:13px;color:#7A6E66">{{ l.note }}</div></div></div>
+                  </sc-for>
+                </div>
+                <div style="height:44px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;justify-content:center;gap:9px;font-size:15px;font-weight:600;margin-top:14px"><i data-lucide="play" width="16" height="16" stroke-width="2.2"></i> Start preparing</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;overflow:hidden">
+          <div style="height:64px;background:#E7A83A;display:flex;align-items:center;padding:0 20px;gap:12px"><i data-lucide="chef-hat" width="24" height="24" stroke-width="1.9" color="#40320D"></i><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#40320D">Preparing</div><div style="margin-left:auto;width:36px;height:36px;border-radius:50%;background:rgba(64,50,13,.16);color:#40320D;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">3</div></div>
+          <div style="flex:1;padding:14px;display:grid;gap:12px;align-content:start;overflow:hidden">
+            <sc-for list="{{ preparing }}" as="t" hint-placeholder-count="3">
+              <div style="background:#FFFDF8;border:1px solid #EDD8A6;border-left:5px solid #E9A21A;border-radius:16px;padding:15px;box-shadow:0 2px 6px rgba(91,31,31,.04)">
+                <div style="display:flex;align-items:center;gap:11px">
+                  <div style="width:38px;height:38px;border-radius:10px;background:#FAEBC8;color:#7A5306;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ t.icon }}" width="19" height="19" stroke-width="1.9"></i></div>
+                  <div style="flex:1"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums;line-height:1.1">{{ t.id }}</div><div style="font-size:13px;color:#7A6E66;margin-top:2px">{{ t.meta }}</div></div>
+                  <div style="text-align:right"><div style="font-size:12.5px;color:#7A6E66;font-variant-numeric:tabular-nums">{{ t.placed }}</div><div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#FAEBC8;color:#7A5306;font-size:13px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums"><i data-lucide="timer" width="13" height="13" stroke-width="2.2"></i> {{ t.age }}</div></div>
+                </div>
+                <div style="height:1px;background:#F4EDE0;margin:13px 0"></div>
+                <div style="display:grid;gap:9px">
+                  <sc-for list="{{ t.lines }}" as="l" hint-placeholder-count="2">
+                    <div style="display:flex;gap:12px;font-size:16px"><span style="font-weight:700;color:#B9522F;font-variant-numeric:tabular-nums;min-width:18px">{{ l.q }}</span><div><div style="font-weight:600;color:#3A2E2A">{{ l.name }}</div><div style="font-size:13px;color:#7A6E66">{{ l.note }}</div></div></div>
+                  </sc-for>
+                </div>
+                <div style="height:8px;border-radius:999px;background:#F2EADB;margin-top:14px"><div style="width:{{ t.pct }};height:8px;border-radius:999px;background:#E9A21A"></div></div>
+                <div style="height:44px;border-radius:999px;border:1px solid #DCCDB4;display:flex;align-items:center;justify-content:center;gap:9px;font-size:15px;font-weight:600;margin-top:12px"><i data-lucide="check" width="16" height="16" stroke-width="2.4"></i> Mark ready</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;overflow:hidden">
+          <div style="height:64px;background:#2F4A2C;display:flex;align-items:center;padding:0 20px;gap:12px"><i data-lucide="utensils" width="24" height="24" stroke-width="1.9" color="#FFFDF8"></i><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#FFFDF8">Ready for pickup</div><div style="margin-left:auto;width:36px;height:36px;border-radius:50%;background:rgba(255,253,248,.24);color:#FFFDF8;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">2</div></div>
+          <div style="flex:1;padding:14px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+            <sc-for list="{{ ready }}" as="t" hint-placeholder-count="2">
+              <div style="background:#FFFDF8;border:1px solid #CFDEC5;border-left:5px solid #2F4A2C;border-radius:16px;padding:15px;box-shadow:0 2px 6px rgba(91,31,31,.04)">
+                <div style="display:flex;align-items:center;gap:11px">
+                  <div style="width:38px;height:38px;border-radius:10px;background:#DDE8D3;color:#216B26;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ t.icon }}" width="19" height="19" stroke-width="1.9"></i></div>
+                  <div style="flex:1"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums;line-height:1.1">{{ t.id }}</div><div style="font-size:13px;color:#7A6E66;margin-top:2px">{{ t.meta }}</div></div>
+                  <div style="height:30px;padding:0 12px;border-radius:999px;background:#DDE8D3;color:#216B26;font-size:13px;font-weight:700;display:flex;align-items:center">Ready</div>
+                </div>
+                <div style="height:1px;background:#F4EDE0;margin:13px 0"></div>
+                <div style="display:grid;gap:9px">
+                  <sc-for list="{{ t.lines }}" as="l" hint-placeholder-count="2">
+                    <div style="display:flex;gap:12px;font-size:16px"><span style="font-weight:700;color:#216B26;font-variant-numeric:tabular-nums;min-width:18px">{{ l.q }}</span><div style="font-weight:600;color:#3A2E2A">{{ l.name }}</div></div>
+                  </sc-for>
+                </div>
+                <div style="height:44px;border-radius:999px;background:#E8EFE3;color:#2F4A2C;display:flex;align-items:center;justify-content:center;gap:9px;font-size:15px;font-weight:700;margin-top:14px"><i data-lucide="bell-ring" width="16" height="16" stroke-width="2.2"></i> Called Rohan</div>
+              </div>
+            </sc-for>
+            <div style="margin-top:auto;background:#EFF4EB;border-radius:16px;padding:20px;display:flex;align-items:center;gap:16px">
+              <div style="width:84px;height:84px;border-radius:14px;background:repeating-linear-gradient(45deg,#DFE8D6 0 9px,#E9F0E2 9px 18px);flex:none;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#5F7255;text-align:center;line-height:1.4">pot<br>spot art</div>
+              <div style="font-family:Caveat,cursive;font-size:29px;color:#7A4A3A;line-height:1.2">Good Food<br>In Progress ♡</div>
+            </div>
+          </div>
+        </div>
+        <div style="width:340px;display:flex;flex-direction:column;gap:14px">
+          <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><i data-lucide="chart-column" width="20" height="20" stroke-width="1.9" color="#B9522F"></i><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F">Today's stats</div></div>
+            <div style="display:grid;gap:12px;font-size:15px">
+              <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Total orders</span><strong style="font-variant-numeric:tabular-nums">28</strong></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">In progress</span><strong style="font-variant-numeric:tabular-nums">3</strong></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Completed</span><strong style="font-variant-numeric:tabular-nums">22</strong></div>
+              <div style="height:1px;background:#EAE0D0"></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Avg. prep time</span><strong style="font-variant-numeric:tabular-nums">11 min</strong></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#5F5850">Slowest today</span><strong style="font-variant-numeric:tabular-nums">Biryani · 19 min</strong></div>
+            </div>
+          </div>
+          <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px;flex:1">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><i data-lucide="timer" width="20" height="20" stroke-width="1.9" color="#B9522F"></i><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#5B1F1F">Upcoming (next 5)</div></div>
+            <div style="display:grid;gap:10px">
+              <sc-for list="{{ upcoming }}" as="u" hint-placeholder-count="5">
+                <div style="border:1px solid #EAE0D0;border-radius:14px;padding:12px;display:flex;align-items:center;gap:11px">
+                  <div style="flex:1"><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">{{ u.id }}</div><div style="font-size:12.5px;color:#7A6E66">{{ u.meta }}</div></div>
+                  <div style="height:28px;padding:0 10px;border-radius:999px;background:{{ u.chip }};color:{{ u.ink }};font-size:12.5px;font-weight:700;display:flex;align-items:center;font-variant-numeric:tabular-nums">{{ u.eta }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="text-align:center;font-family:Caveat,cursive;font-size:26px;color:#7A4A3A;margin-top:22px">Great Food,<br>Happier People ♡</div>
+          </div>
+        </div>
+      </div>
+      <div style="height:76px;background:#FFFDF8;border-top:1px solid #EAE0D0;display:flex;align-items:center;padding:0 28px;gap:28px">
+        <div style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600"><i data-lucide="settings" width="19" height="19" stroke-width="1.85"></i> Settings</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600"><i data-lucide="volume-2" width="19" height="19" stroke-width="1.85"></i> Sound on</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:15px">Auto advance <div style="width:52px;height:30px;border-radius:999px;background:#2F4A2C;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:15px">Group by table <div style="width:52px;height:30px;border-radius:999px;background:#DCCDB4;display:flex;align-items:center;padding:3px"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:15px">Night mode <div style="width:52px;height:30px;border-radius:999px;background:#DCCDB4;display:flex;align-items:center;padding:3px"><div style="width:24px;height:24px;border-radius:50%;background:#FFFDF8"></div></div></div>
+        <div style="margin-left:auto;height:52px;padding:0 26px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:600"><i data-lucide="check" width="19" height="19" stroke-width="2.4"></i> Mark all complete</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KDS NIGHT -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">02 · KITCHEN DISPLAY — ESPRESSO NIGHT</div>
+    <div data-screen-label="D11 KDS Night" style="width:1920px;height:1080px;background:#241C17;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.14);display:flex;flex-direction:column">
+      <div style="height:92px;background:#2E241E;border-bottom:1px solid #47382E;display:flex;align-items:center;padding:0 28px;gap:24px">
+        <div style="display:flex;align-items:center;gap:11px"><img src="assets/mez-mark-light.png" alt="mez" style="width:37px;height:37px;object-fit:contain;display:block;flex:none"><div><div style="font-family:Poppins,'DM Sans',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.035em;color:#F5EADB;line-height:1">mez</div><div style="font-size:8.5px;font-weight:700;letter-spacing:.18em;color:#A8968A;margin-top:3px">GOOD FOOD BRINGS PEOPLE TOGETHER</div></div></div>
+        <div style="flex:1;text-align:center">
+          <div style="display:flex;align-items:center;justify-content:center;gap:12px"><i data-lucide="chef-hat" width="30" height="30" stroke-width="1.7" color="#E7A83A"></i><div style="font-family:Fraunces,serif;font-size:34px;font-weight:600;color:#F5EADB;letter-spacing:-.02em">Kitchen Display</div></div>
+          <div style="font-size:14px;color:#A8968A;margin-top:2px">Dinner service · espresso night</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <div style="font-size:14.5px;color:#E4D6C4;font-weight:600;font-variant-numeric:tabular-nums">Fri, 19 Sep 2026 · 8:42 PM</div>
+          <div style="display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;background:#31402C;color:#A8CE97;font-size:13.5px;font-weight:700"><span style="width:9px;height:9px;border-radius:50%;background:#7FA070"></span> Kitchen Online</div>
+          <div style="font-family:Caveat,cursive;font-size:22px;color:#D9AA8C;line-height:1.15;text-align:right">Good Food,<br>Brighter Days ♡</div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;gap:16px;padding:18px 20px;overflow:hidden">
+        <div style="flex:1;display:flex;flex-direction:column;background:#2E241E;border:1px solid #47382E;border-radius:20px;overflow:hidden">
+          <div style="height:64px;background:#8E3A22;display:flex;align-items:center;padding:0 20px;gap:12px"><i data-lucide="bell" width="24" height="24" stroke-width="1.9" color="#FFE9DE"></i><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#FFE9DE">New Orders</div><div style="margin-left:auto;width:36px;height:36px;border-radius:50%;background:rgba(255,233,222,.2);color:#FFE9DE;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">4</div></div>
+          <div style="flex:1;padding:14px;display:grid;gap:12px;align-content:start;overflow:hidden">
+            <sc-for list="{{ newOrders }}" as="t" hint-placeholder-count="4">
+              <div style="background:#332821;border:1px solid #4A3A30;border-left:5px solid #C4432B;border-radius:16px;padding:15px">
+                <div style="display:flex;align-items:center;gap:11px">
+                  <div style="width:38px;height:38px;border-radius:10px;background:#5A2A20;color:#FFC4B4;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ t.icon }}" width="19" height="19" stroke-width="1.9"></i></div>
+                  <div style="flex:1"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#F5EADB;font-variant-numeric:tabular-nums;line-height:1.1">{{ t.id }}</div><div style="font-size:13px;color:#A8968A;margin-top:2px">{{ t.meta }}</div></div>
+                  <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#5A2A20;color:#FFC4B4;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums"><i data-lucide="timer" width="13" height="13" stroke-width="2.2"></i> {{ t.age }}</div>
+                </div>
+                <div style="height:1px;background:#4A3A30;margin:13px 0"></div>
+                <div style="display:grid;gap:9px">
+                  <sc-for list="{{ t.lines }}" as="l" hint-placeholder-count="3">
+                    <div style="display:flex;gap:12px;font-size:16px"><span style="font-weight:700;color:#E7A83A;font-variant-numeric:tabular-nums;min-width:18px">{{ l.q }}</span><div><div style="font-weight:600;color:#F5EADB">{{ l.name }}</div><div style="font-size:13px;color:#A8968A">{{ l.note }}</div></div></div>
+                  </sc-for>
+                </div>
+                <div style="height:44px;border-radius:999px;background:#3E5638;color:#F5EADB;display:flex;align-items:center;justify-content:center;gap:9px;font-size:15px;font-weight:600;margin-top:14px"><i data-lucide="play" width="16" height="16" stroke-width="2.2"></i> Start preparing</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;background:#2E241E;border:1px solid #47382E;border-radius:20px;overflow:hidden">
+          <div style="height:64px;background:#8A6318;display:flex;align-items:center;padding:0 20px;gap:12px"><i data-lucide="chef-hat" width="24" height="24" stroke-width="1.9" color="#FFF1D4"></i><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#FFF1D4">Preparing</div><div style="margin-left:auto;width:36px;height:36px;border-radius:50%;background:rgba(255,241,212,.2);color:#FFF1D4;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">3</div></div>
+          <div style="flex:1;padding:14px;display:grid;gap:12px;align-content:start;overflow:hidden">
+            <sc-for list="{{ preparing }}" as="t" hint-placeholder-count="3">
+              <div style="background:#332821;border:1px solid #4A3A30;border-left:5px solid #E9A21A;border-radius:16px;padding:15px">
+                <div style="display:flex;align-items:center;gap:11px">
+                  <div style="width:38px;height:38px;border-radius:10px;background:#544117;color:#FFD98A;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ t.icon }}" width="19" height="19" stroke-width="1.9"></i></div>
+                  <div style="flex:1"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#F5EADB;font-variant-numeric:tabular-nums;line-height:1.1">{{ t.id }}</div><div style="font-size:13px;color:#A8968A;margin-top:2px">{{ t.meta }}</div></div>
+                  <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:#544117;color:#FFD98A;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums"><i data-lucide="timer" width="13" height="13" stroke-width="2.2"></i> {{ t.age }}</div>
+                </div>
+                <div style="height:1px;background:#4A3A30;margin:13px 0"></div>
+                <div style="display:grid;gap:9px">
+                  <sc-for list="{{ t.lines }}" as="l" hint-placeholder-count="2">
+                    <div style="display:flex;gap:12px;font-size:16px"><span style="font-weight:700;color:#E7A83A;font-variant-numeric:tabular-nums;min-width:18px">{{ l.q }}</span><div><div style="font-weight:600;color:#F5EADB">{{ l.name }}</div><div style="font-size:13px;color:#A8968A">{{ l.note }}</div></div></div>
+                  </sc-for>
+                </div>
+                <div style="height:8px;border-radius:999px;background:#453529;margin-top:14px"><div style="width:{{ t.pct }};height:8px;border-radius:999px;background:#E9A21A"></div></div>
+                <div style="height:44px;border-radius:999px;border:1px solid #5C4A3C;color:#F5EADB;display:flex;align-items:center;justify-content:center;gap:9px;font-size:15px;font-weight:600;margin-top:12px"><i data-lucide="check" width="16" height="16" stroke-width="2.4"></i> Mark ready</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;background:#2E241E;border:1px solid #47382E;border-radius:20px;overflow:hidden">
+          <div style="height:64px;background:#3E5638;display:flex;align-items:center;padding:0 20px;gap:12px"><i data-lucide="utensils" width="24" height="24" stroke-width="1.9" color="#E4F0DC"></i><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#E4F0DC">Ready for pickup</div><div style="margin-left:auto;width:36px;height:36px;border-radius:50%;background:rgba(228,240,220,.2);color:#E4F0DC;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">2</div></div>
+          <div style="flex:1;padding:14px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+            <sc-for list="{{ ready }}" as="t" hint-placeholder-count="2">
+              <div style="background:#332821;border:1px solid #4A3A30;border-left:5px solid #7FA070;border-radius:16px;padding:15px">
+                <div style="display:flex;align-items:center;gap:11px">
+                  <div style="width:38px;height:38px;border-radius:10px;background:#31402C;color:#A8CE97;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ t.icon }}" width="19" height="19" stroke-width="1.9"></i></div>
+                  <div style="flex:1"><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#F5EADB;font-variant-numeric:tabular-nums;line-height:1.1">{{ t.id }}</div><div style="font-size:13px;color:#A8968A;margin-top:2px">{{ t.meta }}</div></div>
+                  <div style="height:30px;padding:0 12px;border-radius:999px;background:#31402C;color:#A8CE97;font-size:13px;font-weight:700;display:flex;align-items:center">Ready</div>
+                </div>
+                <div style="height:1px;background:#4A3A30;margin:13px 0"></div>
+                <div style="display:grid;gap:9px">
+                  <sc-for list="{{ t.lines }}" as="l" hint-placeholder-count="2">
+                    <div style="display:flex;gap:12px;font-size:16px"><span style="font-weight:700;color:#A8CE97;font-variant-numeric:tabular-nums;min-width:18px">{{ l.q }}</span><div style="font-weight:600;color:#F5EADB">{{ l.name }}</div></div>
+                  </sc-for>
+                </div>
+                <div style="height:44px;border-radius:999px;background:#31402C;color:#A8CE97;display:flex;align-items:center;justify-content:center;gap:9px;font-size:15px;font-weight:700;margin-top:14px"><i data-lucide="bell-ring" width="16" height="16" stroke-width="2.2"></i> Called Rohan</div>
+              </div>
+            </sc-for>
+            <div style="margin-top:auto;background:#31402C;border-radius:16px;padding:20px;display:flex;align-items:center;gap:16px">
+              <div style="width:84px;height:84px;border-radius:14px;background:repeating-linear-gradient(45deg,#3B4C35 0 9px,#44573D 9px 18px);flex:none;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#A8CE97;text-align:center;line-height:1.4">pot<br>spot art</div>
+              <div style="font-family:Caveat,cursive;font-size:29px;color:#E4D6C4;line-height:1.2">Good Food<br>In Progress ♡</div>
+            </div>
+          </div>
+        </div>
+        <div style="width:340px;display:flex;flex-direction:column;gap:14px">
+          <div style="background:#2E241E;border:1px solid #47382E;border-radius:20px;padding:20px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><i data-lucide="chart-column" width="20" height="20" stroke-width="1.9" color="#E7A83A"></i><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#F5EADB">Tonight's stats</div></div>
+            <div style="display:grid;gap:12px;font-size:15px;color:#E4D6C4">
+              <div style="display:flex;justify-content:space-between"><span style="color:#A8968A">Total orders</span><strong style="font-variant-numeric:tabular-nums">64</strong></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#A8968A">In progress</span><strong style="font-variant-numeric:tabular-nums">3</strong></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#A8968A">Completed</span><strong style="font-variant-numeric:tabular-nums">57</strong></div>
+              <div style="height:1px;background:#47382E"></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#A8968A">Avg. prep time</span><strong style="font-variant-numeric:tabular-nums">13 min</strong></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#A8968A">Longest wait</span><strong style="font-variant-numeric:tabular-nums">T9 · 15 min</strong></div>
+            </div>
+          </div>
+          <div style="background:#2E241E;border:1px solid #47382E;border-radius:20px;padding:20px;flex:1">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><i data-lucide="timer" width="20" height="20" stroke-width="1.9" color="#E7A83A"></i><div style="font-family:Fraunces,serif;font-size:20px;font-weight:600;color:#F5EADB">Upcoming (next 5)</div></div>
+            <div style="display:grid;gap:10px">
+              <sc-for list="{{ upcomingNight }}" as="u" hint-placeholder-count="5">
+                <div style="border:1px solid #47382E;border-radius:14px;padding:12px;display:flex;align-items:center;gap:11px">
+                  <div style="flex:1"><div style="font-size:15px;font-weight:700;color:#F5EADB;font-variant-numeric:tabular-nums">{{ u.id }}</div><div style="font-size:12.5px;color:#A8968A">{{ u.meta }}</div></div>
+                  <div style="height:28px;padding:0 10px;border-radius:999px;background:{{ u.chip }};color:{{ u.ink }};font-size:12.5px;font-weight:700;display:flex;align-items:center;font-variant-numeric:tabular-nums">{{ u.eta }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="text-align:center;font-family:Caveat,cursive;font-size:26px;color:#D9AA8C;margin-top:22px">Great Food,<br>Happier People ♡</div>
+          </div>
+        </div>
+      </div>
+      <div style="height:76px;background:#2E241E;border-top:1px solid #47382E;display:flex;align-items:center;padding:0 28px;gap:28px;color:#E4D6C4">
+        <div style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600"><i data-lucide="settings" width="19" height="19" stroke-width="1.85"></i> Settings</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600"><i data-lucide="volume-2" width="19" height="19" stroke-width="1.85"></i> Sound on</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:15px">Auto advance <div style="width:52px;height:30px;border-radius:999px;background:#7FA070;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#241C17"></div></div></div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:15px">Group by table <div style="width:52px;height:30px;border-radius:999px;background:#5C4A3C;display:flex;align-items:center;padding:3px"><div style="width:24px;height:24px;border-radius:50%;background:#241C17"></div></div></div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:15px">Night mode <div style="width:52px;height:30px;border-radius:999px;background:#7FA070;display:flex;align-items:center;padding:3px;justify-content:flex-end"><div style="width:24px;height:24px;border-radius:50%;background:#241C17"></div></div></div>
+        <div style="margin-left:auto;height:52px;padding:0 26px;border-radius:999px;background:#3E5638;color:#F5EADB;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:600"><i data-lucide="check" width="19" height="19" stroke-width="2.4"></i> Mark all complete</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">03 · ADMIN DASHBOARD HOME</div>
+    <div data-screen-label="D12 Dashboard" style="width:1920px;height:1080px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+      <div style="height:72px;background:#FFFDF8;border-bottom:1px solid #EAE0D0;display:flex;align-items:center;padding:0 28px;gap:24px">
+        <div style="display:flex;align-items:center;gap:11px"><img src="assets/mez-mark.png" alt="mez" style="width:35px;height:35px;object-fit:contain;display:block;flex:none"><div style="font-family:Poppins,'DM Sans',sans-serif;font-size:25px;font-weight:700;letter-spacing:-.035em;color:#123E3F">mez</div></div>
+        <div style="flex:1;max-width:600px;height:44px;border-radius:999px;border:1px solid #E3D8C6;display:flex;align-items:center;gap:10px;padding:0 18px;font-size:14.5px;color:#7A6E66"><i data-lucide="search" width="18" height="18" stroke-width="1.75"></i> Search orders, tables, menu items or staff… (Ctrl + K)</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:20px">
+          <div style="height:44px;padding:0 18px;border-radius:999px;background:#F2EADB;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:9px;font-variant-numeric:tabular-nums"><i data-lucide="calendar" width="17" height="17" stroke-width="1.85"></i> Fri, 19 Sep 2026 · 10:24 AM</div>
+          <div style="position:relative"><i data-lucide="bell" width="22" height="22" stroke-width="1.75"></i><div style="position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#A33A28;border:2px solid #FFFDF8"></div></div>
+          <div style="display:flex;align-items:center;gap:10px"><div style="width:40px;height:40px;border-radius:50%;background:#E5E9DE;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:700;color:#2F4A2C">AS</div><div><div style="font-size:14px;font-weight:700">Aditi</div><div style="font-size:12px;color:#7A6E66">Admin</div></div><i data-lucide="chevron-down" width="16" height="16" stroke-width="2"></i></div>
+          <div style="font-family:Caveat,cursive;font-size:22px;color:#7A4A3A;line-height:1.15;text-align:right">Good Food,<br>Happier People ♡</div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;overflow:hidden">
+        <div style="width:240px;background:#FFFDF8;border-right:1px solid #EAE0D0;padding:16px 14px;display:flex;flex-direction:column;gap:4px">
+          <div style="height:48px;border-radius:14px;background:#B9522F;color:#FFFDF8;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px;font-weight:600"><i data-lucide="home" width="19" height="19" stroke-width="1.9"></i> Dashboard</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="receipt-text" width="19" height="19" stroke-width="1.75"></i> Orders</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="armchair" width="19" height="19" stroke-width="1.75"></i> Tables</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="utensils" width="19" height="19" stroke-width="1.75"></i> Menu Management</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="package" width="19" height="19" stroke-width="1.75"></i> Inventory</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="users" width="19" height="19" stroke-width="1.75"></i> Staff</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="heart" width="19" height="19" stroke-width="1.75"></i> Customers</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="chart-column" width="19" height="19" stroke-width="1.75"></i> Reports</div>
+          <div style="height:48px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 16px;font-size:15px"><i data-lucide="settings" width="19" height="19" stroke-width="1.75"></i> Settings</div>
+          <div style="margin-top:auto;position:relative;padding:0 8px"><div style="font-family:Caveat,cursive;font-size:28px;color:#7A4A3A;line-height:1.2">Good Food<br>Happier<br>People ♡</div></div>
+        </div>
+        <div style="flex:1;padding:22px 26px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+            <div style="background:#EFF4EB;border:1px solid #D9E4D0;border-radius:20px;padding:20px;display:flex;gap:16px;align-items:center;position:relative;overflow:hidden">
+              <div style="position:absolute;right:-16px;bottom:-16px;opacity:.16"><i data-lucide="leaf" width="110" height="110" stroke-width="1" color="#2F4A2C"></i></div>
+              <div style="width:56px;height:56px;border-radius:50%;background:#DDE8D3;color:#2F4A2C;display:flex;align-items:center;justify-content:center;flex:none;position:relative"><i data-lucide="indian-rupee" width="26" height="26" stroke-width="1.9"></i></div>
+              <div style="position:relative"><div style="font-size:13.5px;color:#5F5850;font-weight:500">Today's sales</div><div style="font-family:Fraunces,serif;font-size:32px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums;line-height:1.15">₹24,580</div><div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#216B26;font-weight:700;margin-top:2px"><i data-lucide="trending-up" width="14" height="14" stroke-width="2.4"></i> 12% <span style="color:#7A6E66;font-weight:400">vs. yesterday</span></div></div>
+            </div>
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px;display:flex;gap:16px;align-items:center">
+              <div style="width:56px;height:56px;border-radius:50%;background:#F6E4DC;color:#B9522F;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="receipt-text" width="26" height="26" stroke-width="1.9"></i></div>
+              <div><div style="font-size:13.5px;color:#5F5850;font-weight:500">Total orders</div><div style="font-family:Fraunces,serif;font-size:32px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums;line-height:1.15">86</div><div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#216B26;font-weight:700;margin-top:2px"><i data-lucide="trending-up" width="14" height="14" stroke-width="2.4"></i> 8% <span style="color:#7A6E66;font-weight:400">vs. yesterday</span></div></div>
+            </div>
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px;display:flex;gap:16px;align-items:center">
+              <div style="width:56px;height:56px;border-radius:50%;background:#FAEBC8;color:#7A5306;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="armchair" width="26" height="26" stroke-width="1.9"></i></div>
+              <div><div style="font-size:13.5px;color:#5F5850;font-weight:500">Active tables</div><div style="font-family:Fraunces,serif;font-size:32px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums;line-height:1.15">12 / 18</div><div style="font-size:13px;color:#7A6E66;margin-top:2px">67% occupied</div></div>
+            </div>
+            <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:20px;display:flex;gap:16px;align-items:center">
+              <div style="width:56px;height:56px;border-radius:50%;background:#DCE8F7;color:#23509A;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="tag" width="26" height="26" stroke-width="1.9"></i></div>
+              <div><div style="font-size:13.5px;color:#5F5850;font-weight:500">Average order value</div><div style="font-family:Fraunces,serif;font-size:32px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums;line-height:1.15">₹286</div><div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#216B26;font-weight:700;margin-top:2px"><i data-lucide="trending-up" width="14" height="14" stroke-width="2.4"></i> 5% <span style="color:#7A6E66;font-weight:400">vs. yesterday</span></div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:16px">
+            <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+              <div style="display:flex;align-items:center;gap:14px">
+                <div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Sales overview</div>
+                <div style="display:flex;gap:16px;margin-left:auto;font-size:12.5px;color:#5F5850">
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:#2F4A2C"></span>Dine-in</span>
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:#B9522F"></span>Takeaway</span>
+                  <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:#E7A83A"></span>Delivery</span>
+                </div>
+                <div style="height:36px;padding:0 14px;border-radius:999px;border:1px solid #E3D8C6;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px">Today <i data-lucide="chevron-down" width="15" height="15" stroke-width="2"></i></div>
+              </div>
+              <div style="display:flex;gap:18px;margin-top:20px">
+                <div style="display:flex;flex-direction:column;justify-content:space-between;height:250px;font-size:11.5px;color:#7A6E66;font-variant-numeric:tabular-nums;text-align:right;padding-bottom:22px"><span>₹4K</span><span>₹3K</span><span>₹2K</span><span>₹1K</span><span>0</span></div>
+                <div style="flex:1">
+                  <div style="display:flex;align-items:flex-end;gap:14px;height:228px;border-bottom:1px solid #EAE0D0">
+                    <sc-for list="{{ salesBars }}" as="b" hint-placeholder-count="8">
+                      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%"><div style="background:#E7A83A;height:{{ b.d }};border-radius:5px 5px 0 0"></div><div style="background:#B9522F;height:{{ b.t }}"></div><div style="background:#2F4A2C;height:{{ b.i }};border-radius:0 0 3px 3px"></div></div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;gap:14px;margin-top:9px;font-size:11.5px;color:#7A6E66;font-variant-numeric:tabular-nums">
+                    <span style="flex:1;text-align:center">8 AM</span><span style="flex:1;text-align:center">10 AM</span><span style="flex:1;text-align:center">12 PM</span><span style="flex:1;text-align:center">2 PM</span><span style="flex:1;text-align:center">4 PM</span><span style="flex:1;text-align:center">6 PM</span><span style="flex:1;text-align:center">8 PM</span><span style="flex:1;text-align:center">10 PM</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="width:400px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between"><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Top selling items</div><div style="font-size:13.5px;font-weight:700;color:#B9522F">View all</div></div>
+              <div style="margin-top:14px">
+                <sc-for list="{{ topItems }}" as="i" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F4EDE0">
+                    <span style="font-size:14px;font-weight:700;color:#7A6E66;font-variant-numeric:tabular-nums;min-width:14px">{{ i.rank }}</span>
+                    <div style="width:44px;height:44px;border-radius:10px;background:repeating-linear-gradient(45deg,#EFE6D6 0 8px,#F6EFE2 8px 16px);flex:none"></div>
+                    <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#3A2E2A">{{ i.name }}</div><div style="font-size:12.5px;color:#7A6E66;font-variant-numeric:tabular-nums">{{ i.orders }}</div></div>
+                    <div style="font-family:Fraunces,serif;font-size:17px;font-weight:600;color:#5B1F1F;font-variant-numeric:tabular-nums">{{ i.price }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="width:400px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between"><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Active tables</div><div style="font-size:13.5px;font-weight:700;color:#B9522F">View floor</div></div>
+              <div style="margin-top:14px">
+                <sc-for list="{{ activeTables }}" as="a" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #F4EDE0">
+                    <div style="width:44px;height:36px;border-radius:10px;background:#F2EADB;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#5B1F1F">{{ a.id }}</div>
+                    <div style="flex:1;font-size:14px;color:#3A2E2A;font-variant-numeric:tabular-nums">{{ a.guests }}</div>
+                    <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;background:{{ a.chip }};color:{{ a.ink }};font-size:12.5px;font-weight:700"><span style="width:7px;height:7px;border-radius:50%;background:{{ a.dot }}"></span> {{ a.state }}</div>
+                    <div style="font-size:13px;color:#7A6E66;font-variant-numeric:tabular-nums;min-width:56px;text-align:right">{{ a.time }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:16px">
+            <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+              <div style="display:flex;align-items:center;gap:14px"><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Staff performance</div><div style="margin-left:auto;height:36px;padding:0 14px;border-radius:999px;border:1px solid #E3D8C6;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px">Today <i data-lucide="chevron-down" width="15" height="15" stroke-width="2"></i></div></div>
+              <div style="display:grid;grid-template-columns:28px 1fr 110px 90px 100px;gap:14px;font-size:11.5px;font-weight:700;letter-spacing:.1em;color:#7A6E66;padding:14px 0 12px;border-bottom:1px solid #EAE0D0"><span>#</span><span>STAFF</span><span>ROLE</span><span style="text-align:right">ORDERS</span><span style="text-align:right">SALES</span></div>
+              <sc-for list="{{ staffPerf }}" as="s" hint-placeholder-count="4">
+                <div style="display:grid;grid-template-columns:28px 1fr 110px 90px 100px;gap:14px;align-items:center;padding:13px 0;border-bottom:1px solid #F4EDE0;font-size:15px">
+                  <span style="color:#7A6E66;font-variant-numeric:tabular-nums">{{ s.rank }}</span>
+                  <div style="display:flex;align-items:center;gap:11px"><div style="width:34px;height:34px;border-radius:50%;background:#EDE0D2;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#7A4A3A">{{ s.initials }}</div><strong>{{ s.name }}</strong></div>
+                  <span style="color:#5F5850">{{ s.role }}</span>
+                  <span style="text-align:right;font-variant-numeric:tabular-nums">{{ s.orders }}</span>
+                  <span style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">{{ s.sales }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="width:400px;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between"><div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Low stock alerts</div><div style="font-size:13.5px;font-weight:700;color:#B9522F">View all</div></div>
+              <div style="margin-top:14px">
+                <sc-for list="{{ lowStock }}" as="l" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #F4EDE0">
+                    <div style="width:36px;height:36px;border-radius:10px;background:#F6EFE2;display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ l.icon }}" width="18" height="18" stroke-width="1.85" color="#7A6E66"></i></div>
+                    <div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#3A2E2A">{{ l.name }}</div></div>
+                    <div style="font-size:13.5px;color:{{ l.ink }};font-weight:600;font-variant-numeric:tabular-nums">{{ l.left }}</div>
+                    <div style="height:28px;padding:0 10px;border-radius:999px;background:{{ l.chip }};color:{{ l.ink }};font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px"><i data-lucide="{{ l.badgeIcon }}" width="13" height="13" stroke-width="2.2"></i> {{ l.badge }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="width:400px;display:flex;flex-direction:column;gap:14px">
+              <div style="background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px">
+                <div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F;margin-bottom:14px">Quick actions</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div style="height:48px;border-radius:14px;border:1px solid #E3D8C6;display:flex;align-items:center;gap:9px;padding:0 13px;font-size:14px;font-weight:600"><i data-lucide="plus" width="17" height="17" stroke-width="2.2"></i> Add menu item</div>
+                  <div style="height:48px;border-radius:14px;border:1px solid #E3D8C6;display:flex;align-items:center;gap:9px;padding:0 13px;font-size:14px;font-weight:600"><i data-lucide="package" width="17" height="17" stroke-width="1.9"></i> Inventory</div>
+                  <div style="height:48px;border-radius:14px;border:1px solid #E3D8C6;display:flex;align-items:center;gap:9px;padding:0 13px;font-size:14px;font-weight:600"><i data-lucide="chart-column" width="17" height="17" stroke-width="1.9"></i> View reports</div>
+                  <div style="height:48px;border-radius:14px;border:1px solid #E3D8C6;display:flex;align-items:center;gap:9px;padding:0 13px;font-size:14px;font-weight:600"><i data-lucide="users" width="17" height="17" stroke-width="1.9"></i> Manage staff</div>
+                </div>
+              </div>
+              <div style="flex:1;background:#EFF4EB;border:1px solid #D9E4D0;border-radius:20px;padding:22px;display:flex;align-items:center;gap:18px;position:relative;overflow:hidden">
+                <div style="position:absolute;left:-24px;bottom:-24px;opacity:.14"><i data-lucide="leaf" width="140" height="140" stroke-width="1" color="#2F4A2C"></i></div>
+                <div style="width:88px;height:88px;border-radius:14px;background:repeating-linear-gradient(45deg,#DFE8D6 0 9px,#E9F0E2 9px 18px);flex:none;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#5F7255;text-align:center;line-height:1.4;position:relative">coffee<br>spot art</div>
+                <div style="font-family:Caveat,cursive;font-size:32px;color:#7A4A3A;line-height:1.2;position:relative">Good Food,<br>Brighter Days ♡</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS + OFFLINE -->
+  <div style="display:flex;gap:44px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">04 · NOTIFICATIONS CENTRE</div>
+      <div data-screen-label="D13 Notifications" style="width:940px;height:760px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);display:flex;flex-direction:column">
+        <div style="height:64px;background:#FFFDF8;border-bottom:1px solid #EAE0D0;display:flex;align-items:center;padding:0 24px;gap:14px">
+          <div style="font-family:Fraunces,serif;font-size:24px;font-weight:600;color:#5B1F1F">Notifications</div>
+          <div style="height:26px;min-width:26px;padding:0 9px;border-radius:999px;background:#A33A28;color:#FFFDF8;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums">6</div>
+          <div style="margin-left:auto;display:flex;gap:10px">
+            <div style="height:40px;padding:0 16px;border-radius:999px;border:1px solid #E3D8C6;font-size:14px;font-weight:600;display:flex;align-items:center">Mark all read</div>
+            <div style="width:40px;height:40px;border-radius:50%;border:1px solid #E3D8C6;display:flex;align-items:center;justify-content:center"><i data-lucide="settings" width="18" height="18" stroke-width="1.9"></i></div>
+          </div>
+        </div>
+        <div style="padding:16px 24px 0;display:flex;gap:9px">
+          <div style="height:38px;padding:0 16px;border-radius:999px;background:#2F4A2C;color:#FFFDF8;font-size:13.5px;font-weight:600;display:flex;align-items:center">All</div>
+          <div style="height:38px;padding:0 16px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:13.5px;display:flex;align-items:center">Orders</div>
+          <div style="height:38px;padding:0 16px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:13.5px;display:flex;align-items:center">Inventory</div>
+          <div style="height:38px;padding:0 16px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:13.5px;display:flex;align-items:center">Staff</div>
+          <div style="height:38px;padding:0 16px;border-radius:999px;background:#FFFDF8;border:1px solid #E3D8C6;font-size:13.5px;display:flex;align-items:center">System</div>
+        </div>
+        <div style="flex:1;padding:16px 24px;display:grid;gap:10px;align-content:start;overflow:hidden">
+          <sc-for list="{{ notifications }}" as="n" hint-placeholder-count="6">
+            <div style="background:{{ n.bg }};border:1px solid {{ n.border }};border-radius:16px;padding:15px;display:flex;gap:13px;align-items:flex-start">
+              <div style="width:42px;height:42px;border-radius:11px;background:{{ n.chip }};color:{{ n.ink }};display:flex;align-items:center;justify-content:center;flex:none"><i data-lucide="{{ n.icon }}" width="20" height="20" stroke-width="1.9"></i></div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:10px"><div style="font-size:15.5px;font-weight:700;color:#3A2E2A">{{ n.title }}</div><sc-if value="{{ n.unread }}" hint-placeholder-val="{{ false }}"><span style="width:8px;height:8px;border-radius:50%;background:#A33A28"></span></sc-if></div>
+                <div style="font-size:13.5px;color:#5F5850;line-height:1.5;margin-top:3px">{{ n.body }}</div>
+              </div>
+              <div style="text-align:right;flex:none"><div style="font-size:12.5px;color:#7A6E66;font-variant-numeric:tabular-nums">{{ n.time }}</div><div style="height:34px;padding:0 14px;border-radius:999px;border:1px solid #DCCDB4;font-size:13px;font-weight:600;display:flex;align-items:center;margin-top:8px">{{ n.action }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:#7A6E66;margin-bottom:10px">05 · OFFLINE / SYNC STATES</div>
+      <div data-screen-label="D14 Offline Sync" style="width:940px;height:760px;background:#F8F3E9;border-radius:24px;overflow:hidden;box-shadow:0 8px 18px rgba(91,31,31,.08),0 28px 56px rgba(91,31,31,.10);padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="background:#FBEDE9;border:1px solid #E7C3B9;border-left:5px solid #A33A28;border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px">
+          <i data-lucide="wifi-off" width="24" height="24" stroke-width="2" color="#A33A28"></i>
+          <div style="flex:1"><div style="font-size:16px;font-weight:700;color:#A33A28">Offline — working locally</div><div style="font-size:13.5px;color:#3A2E2A;margin-top:3px">3 orders and 1 payment are queued. They'll sync automatically when the connection returns.</div></div>
+          <div style="height:42px;padding:0 18px;border-radius:999px;background:#FFFDF8;border:1px solid #E7C3B9;color:#A33A28;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px"><i data-lucide="refresh-cw" width="16" height="16" stroke-width="2.2"></i> Retry now</div>
+        </div>
+        <div style="background:#FBF0DC;border:1px solid #EDD8A6;border-left:5px solid #E9A21A;border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px">
+          <i data-lucide="refresh-cw" width="24" height="24" stroke-width="2" color="#7A5306"></i>
+          <div style="flex:1"><div style="font-size:16px;font-weight:700;color:#7A5306">Syncing 3 of 4 queued items…</div><div style="height:8px;border-radius:999px;background:#F2E4C4;margin-top:9px"><div style="width:74%;height:8px;border-radius:999px;background:#E9A21A"></div></div></div>
+          <div style="font-size:13.5px;color:#7A5306;font-weight:700;font-variant-numeric:tabular-nums">74%</div>
+        </div>
+        <div style="background:#EFF4EB;border:1px solid #D9E4D0;border-left:5px solid #2F4A2C;border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px">
+          <i data-lucide="check-circle-2" width="24" height="24" stroke-width="2" color="#216B26"></i>
+          <div style="flex:1"><div style="font-size:16px;font-weight:700;color:#216B26">All caught up</div><div style="font-size:13.5px;color:#3A2E2A;margin-top:3px">Last synced 10:24 AM · 86 orders, 12 tables, 68 menu items up to date.</div></div>
+        </div>
+        <div style="flex:1;background:#FFFDF8;border:1px solid #EAE0D0;border-radius:20px;padding:22px;display:flex;flex-direction:column">
+          <div style="font-family:Fraunces,serif;font-size:22px;font-weight:600;color:#5B1F1F">Offline queue</div>
+          <div style="display:grid;grid-template-columns:130px 1fr 120px 130px;gap:14px;font-size:11.5px;font-weight:700;letter-spacing:.1em;color:#7A6E66;padding:16px 0 12px;border-bottom:1px solid #EAE0D0"><span>QUEUED AT</span><span>ACTION</span><span style="text-align:right">AMOUNT</span><span>STATE</span></div>
+          <sc-for list="{{ queue }}" as="q" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:130px 1fr 120px 130px;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid #F4EDE0;font-size:14.5px">
+              <span style="color:#5F5850;font-variant-numeric:tabular-nums">{{ q.at }}</span>
+              <span>{{ q.what }}</span>
+              <span style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">{{ q.amount }}</span>
+              <div style="display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:{{ q.chip }};color:{{ q.ink }};font-size:12.5px;font-weight:700;justify-self:start"><span style="width:7px;height:7px;border-radius:50%;background:{{ q.dot }}"></span> {{ q.state }}</div>
+            </div>
+          </sc-for>
+          <div style="margin-top:auto;background:#F6EFE2;border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px">
+            <i data-lucide="hard-drive" width="20" height="20" stroke-width="1.9" color="#7A6E66"></i>
+            <div style="font-size:13.5px;color:#3A2E2A;line-height:1.5;flex:1">Orders keep flowing offline. Printing, KOT and bills all work from the local copy; card and UPI need the network.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  icons() {
+    const go = () => { if (window.lucide && window.lucide.createIcons) { window.lucide.createIcons(); return true; } return false; };
+    if (go()) return;
+    let n = 0;
+    const t = setInterval(() => { if (go() || ++n > 60) clearInterval(t); }, 100);
+  }
+  componentDidMount() { this.icons(); }
+  componentDidUpdate() { this.icons(); }
+  renderVals() {
+    const eta = (m, warn) => warn
+      ? { chip:'#F6D3CB', ink:'#A8321C', eta:m }
+      : { chip:'#FAEBC8', ink:'#7A5306', eta:m };
+    const etaN = (m, warn) => warn
+      ? { chip:'#5A2A20', ink:'#FFC4B4', eta:m }
+      : { chip:'#544117', ink:'#FFD98A', eta:m };
+    return {
+      newOrders: [
+        { id:'#T6-0018', meta:'Dine-in · Table 6', placed:'10:23 AM', age:'12 min', icon:'utensils', lines:[
+          { q:'2', name:'Chicken Biryani', note:'Medium spice · Raita' },
+          { q:'1', name:'Masala Fries', note:'Extra masala' },
+          { q:'1', name:'Garlic Naan', note:'Butter on top' },
+          { q:'1', name:'Iced Latte', note:'No ice' }
+        ]},
+        { id:'#T3-0019', meta:'Dine-in · Table 3', placed:'10:24 AM', age:'10 min', icon:'armchair', lines:[
+          { q:'1', name:'Margherita Pizza', note:'Cut into 8' },
+          { q:'1', name:'Caesar Salad', note:'Extra dressing' },
+          { q:'1', name:'Fresh Lime Soda', note:'Sweet &amp; salt' }
+        ]},
+        { id:'#T9-0020', meta:'Dine-in · Table 9', placed:'10:24 AM', age:'15 min', icon:'armchair', lines:[
+          { q:'1', name:'Paneer Tikka', note:'Hot' },
+          { q:'2', name:'Butter Naan', note:'' },
+          { q:'1', name:'Dal Makhani', note:'Less cream' }
+        ]},
+        { id:'#TA-0021', meta:'Takeaway · Counter', placed:'10:25 AM', age:'6 min', icon:'shopping-bag', lines:[
+          { q:'1', name:'Classic Burger', note:'No onions · pack separately' },
+          { q:'1', name:'Masala Fries', note:'' }
+        ]}
+      ],
+      preparing: [
+        { id:'#T1-0015', meta:'Dine-in · Table 1', placed:'10:18 AM', age:'6 min', icon:'armchair', pct:'62%', lines:[
+          { q:'1', name:'Classic Burger', note:'No onions' },
+          { q:'1', name:'Masala Fries', note:'' }
+        ]},
+        { id:'#T4-0016', meta:'Dine-in · Table 4', placed:'10:20 AM', age:'4 min', icon:'armchair', pct:'44%', lines:[
+          { q:'1', name:'Alfredo Pasta', note:'Extra cheese' },
+          { q:'1', name:'Garlic Bread', note:'' }
+        ]},
+        { id:'#T8-0017', meta:'Dine-in · Table 8', placed:'10:21 AM', age:'3 min', icon:'armchair', pct:'28%', lines:[
+          { q:'1', name:'Chicken Biryani', note:'Hot · extra raita' },
+          { q:'1', name:'Masala Fries', note:'Sweet potato swap' },
+          { q:'1', name:'Iced Latte', note:'Oat milk' }
+        ]}
+      ],
+      ready: [
+        { id:'#T2-0014', meta:'Dine-in · Table 2 · 10:16 AM', icon:'armchair', lines:[
+          { q:'1', name:'Margherita Pizza' }, { q:'1', name:'Iced Latte' }
+        ]},
+        { id:'#T5-0013', meta:'Dine-in · Table 5 · 10:19 AM', icon:'armchair', lines:[
+          { q:'1', name:'Chicken Biryani' }, { q:'1', name:'Raita' }, { q:'1', name:'Mango Lassi' }
+        ]}
+      ],
+      upcoming: [
+        Object.assign({ id:'#T10-0022', meta:'Dine-in · Table 10' }, eta('2 min', true)),
+        Object.assign({ id:'#T7-0023', meta:'Dine-in · Table 7' }, eta('6 min', false)),
+        Object.assign({ id:'#T11-0024', meta:'Dine-in · Table 11' }, eta('8 min', false)),
+        Object.assign({ id:'#T12-0025', meta:'Dine-in · Table 12' }, eta('12 min', false)),
+        Object.assign({ id:'#DL-0026', meta:'Delivery · Swiggy' }, eta('15 min', false))
+      ],
+      upcomingNight: [
+        Object.assign({ id:'#T10-0062', meta:'Dine-in · Table 10' }, etaN('2 min', true)),
+        Object.assign({ id:'#T7-0063', meta:'Dine-in · Table 7' }, etaN('6 min', false)),
+        Object.assign({ id:'#T11-0064', meta:'Dine-in · Table 11' }, etaN('8 min', false)),
+        Object.assign({ id:'#T12-0065', meta:'Dine-in · Table 12' }, etaN('12 min', false)),
+        Object.assign({ id:'#DL-0066', meta:'Delivery · Zomato' }, etaN('15 min', false))
+      ],
+      salesBars: [
+        { i:'14%', t:'6%', d:'8%' }, { i:'22%', t:'9%', d:'10%' }, { i:'32%', t:'14%', d:'12%' }, { i:'26%', t:'11%', d:'9%' },
+        { i:'44%', t:'16%', d:'14%' }, { i:'52%', t:'20%', d:'18%' }, { i:'38%', t:'15%', d:'13%' }, { i:'28%', t:'12%', d:'11%' }
+      ],
+      topItems: [
+        { rank:'1', name:'Chicken Biryani', orders:'128 orders', price:'₹349' },
+        { rank:'2', name:'Margherita Pizza', orders:'96 orders', price:'₹299' },
+        { rank:'3', name:'Masala Fries', orders:'84 orders', price:'₹199' },
+        { rank:'4', name:'Iced Latte', orders:'73 orders', price:'₹169' },
+        { rank:'5', name:'Paneer Tikka', orders:'68 orders', price:'₹249' }
+      ],
+      activeTables: [
+        { id:'T2', guests:'4 guests', state:'Ordering', chip:'#F6D3CB', ink:'#A8321C', dot:'#C4432B', time:'12 min' },
+        { id:'T3', guests:'2 guests', state:'Eating', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', time:'28 min' },
+        { id:'T5', guests:'6 guests', state:'Needs bill', chip:'#FAEBC8', ink:'#7A5306', dot:'#E9A21A', time:'1h 5m' },
+        { id:'T6', guests:'2 guests', state:'Ordering', chip:'#F6D3CB', ink:'#A8321C', dot:'#C4432B', time:'8 min' },
+        { id:'T8', guests:'4 guests', state:'Eating', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32', time:'42 min' }
+      ],
+      staffPerf: [
+        { rank:'1', name:'Rohan', initials:'RW', role:'Waiter', orders:'28', sales:'₹8,420' },
+        { rank:'2', name:'Aditi', initials:'AS', role:'Cashier', orders:'26', sales:'₹7,650' },
+        { rank:'3', name:'Neha', initials:'NM', role:'Manager', orders:'18', sales:'₹5,230' },
+        { rank:'4', name:'Arjun', initials:'AW', role:'Waiter', orders:'14', sales:'₹3,280' }
+      ],
+      lowStock: [
+        { name:'Mozzarella Cheese', left:'2 kg left', badge:'Low', badgeIcon:'alert-triangle', icon:'package', chip:'#FAEBC8', ink:'#7A5306' },
+        { name:'Tomato Sauce', left:'1 unit left', badge:'Low', badgeIcon:'alert-triangle', icon:'package', chip:'#FAEBC8', ink:'#7A5306' },
+        { name:'Chicken (boneless)', left:'3 kg left', badge:'Low', badgeIcon:'alert-triangle', icon:'beef', chip:'#FAEBC8', ink:'#7A5306' },
+        { name:'French Fries', left:'Out of stock', badge:'Out', badgeIcon:'x-circle', icon:'package', chip:'#F6D3CB', ink:'#A8321C' },
+        { name:'Fresh Basil', left:'5 units left', badge:'Low', badgeIcon:'alert-triangle', icon:'leaf', chip:'#FAEBC8', ink:'#7A5306' }
+      ],
+      notifications: [
+        { icon:'bell-ring', title:'Table T4 called a waiter', body:'Guest asked for a water refill and extra cutlery.', time:'2 min ago', action:'Assign', unread:true, bg:'#FFFDF8', border:'#EAE0D0', chip:'#F6E4DC', ink:'#9C4325' },
+        { icon:'x-circle', title:'French Fries is out of stock', body:'Removed from online ordering automatically. 4 menu items affected.', time:'14 min ago', action:'Restock', unread:true, bg:'#FBEDE9', border:'#E7C3B9', chip:'#F6D3CB', ink:'#A8321C' },
+        { icon:'rotate-ccw', title:'Refund approved — #T2-0025', body:'₹387 returned to guest by Neha. Reason: item not served.', time:'26 min ago', action:'View', unread:true, bg:'#FFFDF8', border:'#EAE0D0', chip:'#FAEBC8', ink:'#7A5306' },
+        { icon:'qr-code', title:'12 QR orders today', body:'Guests at T4, T10 and T12 are ordering from their phones.', time:'1 hr ago', action:'View', unread:false, bg:'#FFFDF8', border:'#EAE0D0', chip:'#DCE8F7', ink:'#23509A' },
+        { icon:'user-check', title:'Rohan started his shift', body:'Clocked in at 4:00 PM · assigned to Main Dining.', time:'2 hr ago', action:'Roster', unread:false, bg:'#FFFDF8', border:'#EAE0D0', chip:'#DDE8D3', ink:'#216B26' },
+        { icon:'printer', title:'Kitchen printer reconnected', body:'KOT printing resumed on Counter 1 after a 3-minute drop.', time:'3 hr ago', action:'Devices', unread:false, bg:'#FFFDF8', border:'#EAE0D0', chip:'#E8E2DA', ink:'#5A4F46' }
+      ],
+      queue: [
+        { at:'10:22 AM', what:'Order #T9-0020 — 4 items sent to kitchen', amount:'₹637', state:'Queued', chip:'#FAEBC8', ink:'#7A5306', dot:'#E9A21A' },
+        { at:'10:20 AM', what:'Cash payment — Table 1', amount:'₹492', state:'Queued', chip:'#FAEBC8', ink:'#7A5306', dot:'#E9A21A' },
+        { at:'10:18 AM', what:'Order #T8-0017 — 3 items sent to kitchen', amount:'₹918', state:'Syncing', chip:'#DCE8F7', ink:'#23509A', dot:'#2B5FB4' },
+        { at:'10:15 AM', what:'Table 7 marked for cleaning', amount:'—', state:'Synced', chip:'#DDE8D3', ink:'#216B26', dot:'#2E7D32' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
