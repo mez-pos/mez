@@ -25,12 +25,11 @@ a hand sum (this also tried Task 5e1's routes).
 
 ## Next task
 
-**Phase 10, Task 5f: Closing stock.** The close's stock counts by shift:
-expected against counted, the variance in units and at cost, with CSV.
-The closing counts are ADR-114's (`internal/service/stock`,
-`ClosingSheet`); check whether stock items carry a cost before
-promising "at cost". Server and a section or screen: split first if it
-is both.
+**Phase 10, Task 5f1: What stock costs.** Task 5f is split in three
+(5f1 cost, 5f2 report on the server, 5f3 its section), because stock
+items have no cost and "variance at cost" needs one. 5f1: a cost on
+`stock_items` (per kg, litre or each), on the Stock screen's item form,
+and kept on every `stock_movements` row as it was when written.
 
 ## Known broken / in progress
 

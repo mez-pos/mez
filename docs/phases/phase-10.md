@@ -126,6 +126,20 @@ Phase 09.
   - [ ] **Task 5f: Closing stock.** The close's stock counts by shift:
     expected against counted, the variance in units and at cost, with CSV.
 
+    Split into three (stock has no cost yet, so that comes first):
+
+    - [ ] **Task 5f1: What stock costs.** A stock item's cost, per
+      kilogram, litre or each, entered on the Stock screen; every stock
+      movement keeps the cost as it was when it was written, so a past
+      variance is never valued at today's cost. Server and the item
+      form. Go tests.
+    - [ ] **Task 5f2: Closing stock on the server.** The close's counts
+      by shift over a range of trading days: expected, counted, the
+      variance in units and at the cost kept with the count; its CSV.
+      `reports.view`. Go tests.
+    - [ ] **Task 5f3: The closing stock section.** Spec first. A section
+      of the Sales screen over 5f2, with its CSV.
+
 - [ ] **Task 6 — Settings.**
   Venue details, tax profile selection and configuration, invoice series,
   currency and rounding rule, timezone, financial year start, printers and
