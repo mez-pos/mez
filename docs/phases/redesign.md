@@ -28,8 +28,9 @@ reference file a task names. Do not read the whole reference folder.
 - [x] **Task 7 - Back office.** `mez Desktop Management.dc.html`:
   dashboard stat cards, menu, stock, people, reports and charts (green,
   terracotta, mustard, in that order), audit, Z-report, printers, floor.
-- [ ] **Task 8 - Guest.** `mez Mobile Customer.dc.html`, inside the 60 KB
-  budget.
+- [x] **Task 8 - Guest.** The placeholder only: the guest app has no
+  screens until phase 11. Build those from `mez Mobile Customer.dc.html`
+  when they arrive, inside the 60 KB budget.
 - [ ] **Task 9 - Screen specs.** Bring `docs/design/screens/*.md` in line
   with what was built, and retire the old archive's citations.
 
