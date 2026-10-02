@@ -81,3 +81,36 @@ export function auditQuery(f: AuditFilter, before: number, limit = 50): string {
   if (before) p.set("before", String(before));
   return `/api/v1/audit?${p.toString()}`;
 }
+
+const dayPattern = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The path that opens the trail on a filter (backoffice-audit.md). */
+export function auditLink(f: Pick<AuditFilter, "from" | "to"> & Partial<Pick<AuditFilter, "staff" | "kind">>): string {
+  const p = new URLSearchParams({ from: f.from, to: f.to });
+  if (f.staff) p.set("staff", f.staff);
+  if (f.kind) p.set("kind", f.kind);
+  return `/audit?${p.toString()}`;
+}
+
+/**
+ * The filter the screen opens on: what its address asks for, where that can
+ * be read, and the last seven days otherwise. An address is typed by anyone,
+ * so a day that is not one and a kind we do not have are dropped here, not
+ * sent to the server.
+ */
+export function filterFromSearch(search: string, now: Date): AuditFilter {
+  const p = new URLSearchParams(search);
+  const from = p.get("from") ?? "";
+  const to = p.get("to") ?? "";
+  const kind = p.get("kind");
+  const range = dayPattern.test(from) && dayPattern.test(to) && from <= to ? { from, to } : lastDays(now, 7);
+  return { ...range, staff: p.get("staff") ?? "", kind: kinds.find((k) => k === kind) ?? null };
+}
+
+/** What a set of corrections were, in words: "2 voids · 1 comp". Kinds with none are left out. */
+export function kindsText(tallies: readonly { kind: AuditKind; count: number }[]): string {
+  return tallies
+    .filter((t) => t.count > 0)
+    .map((t) => `${t.count} ${(t.count === 1 ? kindWords[t.kind].one : kindWords[t.kind].many).toLowerCase()}`)
+    .join(" · ");
+}

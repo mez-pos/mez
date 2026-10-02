@@ -2,7 +2,7 @@
 // Every figure is the server's (ADR-118); this builds the queries, picks how
 // a range is cut, and turns figures into a bar's height or a share.
 
-import type { Group, Money, ReportEvery, ReportSheet, SalesHour, SalesPoint } from "../../../shared/api-types";
+import type { AuditAnalysisSheet, Group, Money, ReportEvery, ReportSheet, SalesHour, SalesPoint } from "../../../shared/api-types";
 import { formatMoney } from "../../../shared/money";
 import type { Sort } from "../../../shared/ui/table-state";
 import { dayText, lastDays, tradingDay } from "../audit/audit-logic";
@@ -203,4 +203,14 @@ export function tint(total: number, top: number): number {
 /** A cell in words: "Friday 13:00, 3 bills, ₹630.00". */
 export function cellText(c: SalesHour): string {
   return `${weekdayName(c.weekday)} ${hourText(c.hour)}, ${c.bills} ${c.bills === 1 ? "bill" : "bills"}, ${formatMoney(c.total)}`;
+}
+
+/** The path the range's corrections are read from, added up (ADR-122). */
+export function analysisPath(range: SalesRange): string {
+  return `/api/v1/audit/analysis?${new URLSearchParams({ from: range.from, to: range.to }).toString()}`;
+}
+
+/** The path one grouping of the range's corrections is downloaded from as CSV. */
+export function analysisCsvPath(range: SalesRange, by: AuditAnalysisSheet): string {
+  return `/api/v1/audit/analysis/csv?${new URLSearchParams({ from: range.from, to: range.to, by }).toString()}`;
 }

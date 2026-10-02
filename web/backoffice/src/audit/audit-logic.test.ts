@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AuditEntry } from "../../../shared/api-types";
-import { auditQuery, authorisedText, dayText, itemText, kinds, kindWords, lastDays, reasonWords, tradingDay } from "./audit-logic";
+import { auditLink, auditQuery, authorisedText, dayText, filterFromSearch, itemText, kinds, kindWords, kindsText, lastDays, reasonWords, tradingDay } from "./audit-logic";
 
 const entry = (over: Partial<AuditEntry>): AuditEntry => ({ id: 1, kind: "void", at: "2026-10-01T06:30:00Z", order_id: "ord_1", ...over });
 
@@ -52,5 +52,49 @@ describe("auditQuery", () => {
     expect(auditQuery({ ...f, staff: "stf_A", kind: "void" }, 120, 25)).toBe(
       "/api/v1/audit?from=2026-09-24&to=2026-09-30&limit=25&staff=stf_A&kind=void&before=120",
     );
+  });
+});
+
+describe("opening on an address", () => {
+  const now = new Date(2026, 9, 3, 12, 0);
+  const week = { from: "2026-09-27", to: "2026-10-03" };
+  it("links to a filter and reads it back", () => {
+    const link = auditLink({ from: "2026-09-01", to: "2026-09-30", staff: "stf_ASHA0001", kind: "void" });
+    expect(link).toBe("/audit?from=2026-09-01&to=2026-09-30&staff=stf_ASHA0001&kind=void");
+    expect(filterFromSearch(link.slice(link.indexOf("?")), now)).toEqual({ from: "2026-09-01", to: "2026-09-30", staff: "stf_ASHA0001", kind: "void" });
+  });
+  it("leaves out what is not asked for", () => {
+    expect(auditLink({ from: "2026-09-01", to: "2026-09-30" })).toBe("/audit?from=2026-09-01&to=2026-09-30");
+    expect(auditLink({ from: "2026-09-01", to: "2026-09-30", staff: "", kind: null })).toBe("/audit?from=2026-09-01&to=2026-09-30");
+  });
+  const tests: { name: string; search: string; want: ReturnType<typeof filterFromSearch> }[] = [
+    { name: "no address", search: "", want: { ...week, staff: "", kind: null } },
+    { name: "a kind alone keeps the default days", search: "?kind=refund", want: { ...week, staff: "", kind: "refund" } },
+    { name: "a kind we do not have", search: "?from=2026-09-01&to=2026-09-30&kind=theft", want: { from: "2026-09-01", to: "2026-09-30", staff: "", kind: null } },
+    { name: "a day that is not one", search: "?from=yesterday&to=2026-09-30", want: { ...week, staff: "", kind: null } },
+    { name: "one day missing", search: "?from=2026-09-01", want: { ...week, staff: "", kind: null } },
+    { name: "backwards", search: "?from=2026-09-30&to=2026-09-01", want: { ...week, staff: "", kind: null } },
+  ];
+  for (const tt of tests) {
+    it(tt.name, () => {
+      expect(filterFromSearch(tt.search, now)).toEqual(tt.want);
+    });
+  }
+});
+
+describe("what a set of corrections were", () => {
+  it("says each kind there was, one or many", () => {
+    expect(
+      kindsText([
+        { kind: "void", count: 2 },
+        { kind: "comp", count: 1 },
+        { kind: "discount", count: 0 },
+        { kind: "payment_void", count: 3 },
+      ]),
+    ).toBe("2 voids · 1 comp · 3 payment voids");
+  });
+  it("says nothing for none", () => {
+    expect(kindsText([{ kind: "void", count: 0 }])).toBe("");
+    expect(kindsText([])).toBe("");
   });
 });

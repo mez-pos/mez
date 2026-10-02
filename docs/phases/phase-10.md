@@ -108,7 +108,7 @@ Phase 09.
   - [x] **Task 5d: What sold, who sold it, and when.** Product mix,
     category performance and staff performance tables, and the hourly
     heatmap, each with its CSV.
-  - [ ] **Task 5e: Discount and void analysis.** Corrections over a range
+  - [x] **Task 5e: Discount and void analysis.** Corrections over a range
     by reason, by who did them and by who authorised them (server and
     screen, with CSV), linking down to the audit trail.
 
@@ -119,7 +119,7 @@ Phase 09.
       by who did them and by who authorised them, each a count and what
       they were worth. Its own route beside the trail, its CSV, generated
       types. `reports.view`. Go tests.
-    - [ ] **Task 5e2: The corrections section.** Spec first (in
+    - [x] **Task 5e2: The corrections section.** Spec first (in
       `backoffice-reports.md`). A section of the Sales screen over 5e1,
       with its CSV; each row links to the audit trail already filtered,
       so the audit screen learns to open on a range, a person and a kind.

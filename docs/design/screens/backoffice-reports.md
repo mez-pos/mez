@@ -3,7 +3,7 @@
 A range of trading days added up: what was sold, how it was paid, where it
 came from. Built in phase 10 Task 5c over the server of Tasks 5a and 5b
 (ADR-118, ADR-119). Task 5d added what sold, who sold it and when; Task
-5e adds the discount and void analysis; Task 5f closing stock. They are
+5e2 the corrections (ADR-122); Task 5f adds closing stock. They are
 sections of this one screen, under the same range.
 
 ## Purpose
@@ -82,6 +82,30 @@ Paper, inside the back office shell, section **Sales reports**, path
     13:00, 3 bills, 630.00".
   - **Download CSV** saves `hours`.
 
+- **Corrections,** the discount and void analysis: every void, comp,
+  discount, refund, payment void and reopen in the range, added up. It
+  is the audit trail read at a distance, and every row opens the trail
+  on what it counted.
+  - One line first: "8 corrections worth 330.00", figures mono, and under
+    it in `fg-3`: "What each was worth to its bill, not money out of the
+    drawer. A reopen counts and is worth nothing."
+  - **By kind:** Kind, Count, Amount; every kind, none included. A kind
+    with any is a link to the audit trail for the range and that kind.
+  - **By reason:** Kind, Reason (a code in words, "Wrong item"; "No
+    reason given" muted when empty), Count, Amount; largest first.
+  - **Who did them** and **Who let them through:** the person, Count,
+    Amount, and what they were in words under the name ("2 voids · 1
+    comp"); largest first. A person on the staff is a link to the trail
+    for the range and that person. Nobody on record reads "A guest" as
+    who did it and "Not recorded" as who let it through, muted, and
+    links nowhere, as does someone no longer on record.
+  - The trail finds a person by what they did or what they authorised
+    (ADR-117), so a person's link may show a few more rows than the
+    count beside it. A note under the two tables says so.
+  - **Download CSV** on By reason (`reason`), Who did them (`by`) and
+    Who let them through (`authorised_by`).
+  - It reads on its own, so the sales above show while it adds up.
+
 ## States
 
 - **Nothing in the range:** the headline says zero in every figure; in
@@ -94,6 +118,10 @@ Paper, inside the back office shell, section **Sales reports**, path
   match its screen.
 - **Offline / refused:** the words in place of the cards, with Try again;
   a refused range (over a year, To before From) says the server's words.
+- **No corrections in the range:** "No corrections between 24 Sept and
+  30 Sept." in place of its tables.
+- **Corrections cannot be read:** the words in place of its tables, with
+  Try again; the sales above are unaffected.
 - **A download that fails** says so in a toast; the screen stays.
 
 ## Data
@@ -102,6 +130,9 @@ Paper, inside the back office shell, section **Sales reports**, path
   last answer kept while the next is read.
 - `GET /api/v1/reports/sales/csv?from=&to=&every=&report=` on a download:
   `CsvResponse.text` saved as `filename`.
+- `GET /api/v1/audit/analysis?from=&to=`, keyed by the range, and
+  `GET /api/v1/audit/analysis/csv?from=&to=&by=` on a download.
+- A link to the trail is `/audit?from=&to=&kind=` or `&staff=`.
 
 ## Constraints
 

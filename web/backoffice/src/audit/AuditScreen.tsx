@@ -11,11 +11,12 @@ import { Button, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
 import { inputClass } from "../FormFields";
-import { auditQuery, authorisedText, dayText, itemText, kinds, kindWords, lastDays, reasonWords, type AuditFilter } from "./audit-logic";
+import { auditQuery, authorisedText, dayText, filterFromSearch, itemText, kinds, kindWords, reasonWords, type AuditFilter } from "./audit-logic";
 
 export function AuditScreen() {
   const store = useAuthStore();
-  const [filter, setFilter] = useState<AuditFilter>(() => ({ ...lastDays(new Date(), 7), staff: "", kind: null }));
+  // The filter in the address, when the screen was opened on one (a link from the Sales reports).
+  const [filter, setFilter] = useState<AuditFilter>(() => filterFromSearch(window.location.search, new Date()));
   const staff = useQuery({
     queryKey: ["staff"],
     queryFn: () => store.api.get<StaffListResponse>("/api/v1/staff").then((r) => r.staff),
@@ -51,6 +52,8 @@ export function AuditScreen() {
           Person
           <select className={inputClass} value={filter.staff} onChange={(e) => set({ staff: e.target.value })}>
             <option value="">Anyone</option>
+            {/* Opened on someone not on the list (deactivated since): say the trail is filtered. */}
+            {filter.staff !== "" && staff.data && !staff.data.some((s) => s.id === filter.staff) && <option value={filter.staff}>Someone no longer active</option>}
             {staff.data?.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}

@@ -3460,3 +3460,36 @@ read up close.
 Cost: it projects every order the range's corrections touch, as the
 trail's CSV does; a year at a busy venue is some seconds. A sheet reads
 the trail again.
+
+## ADR-123 - The corrections section links down to a trail that opens on its address
+2026-10 · Status: accepted
+Decision: phase 10, Task 5e2 puts the corrections analysis (ADR-122) on
+the Sales screen (`web/backoffice/src/sales/SalesCorrections.tsx`) and
+lets the Audit screen open on a filter.
+  - **A section with its own read.** It asks
+    `GET /api/v1/audit/analysis` for the screen's range apart from the
+    sales report, so the sales show while the corrections add up, and
+    one failing does not blank the other. It follows the range only: the
+    person and kind filters stay the audit screen's.
+  - **Every row is a way down.** A kind links to
+    `/audit?from=&to=&kind=`, a person to `&staff=`. A kind with none, a
+    guest, "not recorded" and someone no longer on record link nowhere.
+    Reasons are not links: the trail has no reason filter.
+  - **The Audit screen reads its address once, on opening**
+    (`filterFromSearch`). An address is typed by anyone, so a day that
+    is not one, a range backwards, or a kind we do not have falls back
+    to the default and is never sent. Changing a filter afterwards does
+    not rewrite the address: the link is a way in, not a second copy of
+    the filter to keep in step.
+  - **A person's link may show more than their count.** The trail finds
+    a person by what they did or authorised (ADR-117); the two tables
+    split those. The screen says so under them and does not pretend the
+    link is exact.
+  - The Download CSV button became `useCsvDownload`, shared by the sales
+    sections and this one; each caller downloads one file at a time.
+Because: the analysis answers "who and why" at a distance; the next
+question is always "show me those", and it should be one click.
+Cost: back from the trail returns to the Sales screen's default range,
+since its range is not in its address either. A deactivated person is
+not in the Person list (active staff only), so the box says "Someone no
+longer active" for a link to them, without their name.

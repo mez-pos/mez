@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { Group, Money, SalesHour, SalesPoint } from "../../../shared/api-types";
 import type { Sort } from "../../../shared/ui/table-state";
 import {
+  analysisCsvPath,
+  analysisPath,
   averageBill,
   barHeights,
   cellText,
@@ -211,5 +213,13 @@ describe("the heatmap", () => {
     expect(hourText(4)).toBe("04:00");
     expect(cellText(cell(5, 13, 3, 63000))).toMatch(/^Friday 13:00, 3 bills, .*630\.00$/);
     expect(cellText(cell(7, 0, 1, 10000))).toMatch(/^Sunday 00:00, 1 bill, /);
+  });
+});
+
+describe("the corrections' paths", () => {
+  const range = { from: "2026-09-27", to: "2026-10-03" };
+  it("reads the analysis and names the grouping to download", () => {
+    expect(analysisPath(range)).toBe("/api/v1/audit/analysis?from=2026-09-27&to=2026-10-03");
+    expect(analysisCsvPath(range, "authorised_by")).toBe("/api/v1/audit/analysis/csv?from=2026-09-27&to=2026-10-03&by=authorised_by");
   });
 });

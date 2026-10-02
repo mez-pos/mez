@@ -13,23 +13,24 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 5e1: Corrections added up on the server** (ADR-122;
-Task 5e is split into 5e1 and 5e2).
-`GET /api/v1/audit/analysis?from=&to=&staff=&kind=` (`reports.view`): the
-trail's entries grouped by kind, by kind and reason, by who did them and
-by who authorised them, each a count and an amount, largest first;
-`.../analysis/csv?by=reason|by|authorised_by` as `CsvResponse`.
-`internal/service/audit/analysis.go`, types `AuditAnalysis` and friends.
-Go tests only: not tried against a real binary.
+**Phase 10, Task 5e2: The corrections section** (ADR-123; with 5e1
+this finishes Task 5e). A Corrections section on `/sales` over
+`GET /api/v1/audit/analysis`: by kind, by reason, who did them and who
+let them through, three CSV files, and each kind and person a link to
+`/audit?from=&to=&kind=|staff=`, which the Audit screen now opens on
+(`filterFromSearch`). `SalesCorrections.tsx`, `use-csv-download.tsx`.
+Tried in a browser against a real binary: a void, a comp, two discounts
+and a reopen, the tables, the three files and both links checked against
+a hand sum (this also tried Task 5e1's routes).
 
 ## Next task
 
-**Phase 10, Task 5e2: The corrections section.** Spec first (in
-`backoffice-reports.md`). A section of `/sales` over
-`GET /api/v1/audit/analysis` for the screen's range, with its CSV; each
-row links to `/audit` already filtered, so `AuditScreen` must learn to
-open on `?from=&to=&staff=&kind=` (today its filter is state only, see
-`audit-logic.ts`). Reason codes read through `reasonWords`.
+**Phase 10, Task 5f: Closing stock.** The close's stock counts by shift:
+expected against counted, the variance in units and at cost, with CSV.
+The closing counts are ADR-114's (`internal/service/stock`,
+`ClosingSheet`); check whether stock items carry a cost before
+promising "at cost". Server and a section or screen: split first if it
+is both.
 
 ## Known broken / in progress
 
@@ -44,7 +45,12 @@ open on `?from=&to=&staff=&kind=` (today its filter is state only, see
 - Sales screen (ADR-120, ADR-121): tried with one day of sales and no
   credit notes, refunds or discounts, so the heatmap was seen with one
   cell only (its layout over many hours is tested in vitest, not by eye).
-  A CSV is in the server's order, not the table's sort. The range is not in the URL, so a reload returns to
+  A CSV is in the server's order, not the table's sort.
+- Corrections (ADR-123): the browser run had one person, so a row for a
+  guest, "not recorded" or someone removed was not seen by eye. Back from
+  the trail returns `/sales` to seven days. A deactivated person's link
+  shows "Someone no longer active" in the Person box (not seen by eye).
+  A sales download and a corrections download can run at once. The range is not in the URL, so a reload returns to
   seven days. A CSV has not been opened in Excel itself. Left open past
   04:00, the range stays yesterday's and no quick range shows pressed.
 - Reports (ADR-118): the screen lacks 5d to 5f. A range projects every order

@@ -24,6 +24,14 @@ under Reports in the navigation, `reports.view`, keys `g a`.
   - **Person**: Anyone, or someone on the staff; it finds what they did
     and what they authorised.
   - The filters apply as they change; the page goes back to the newest.
+  - The screen opens on the filter in its address when it has one:
+    `/audit?from=&to=&staff=&kind=`, as the Sales reports' corrections
+    link to it (phase 10 Task 5e2). Anything in the address that is not
+    a day, or not a kind, is ignored for the default. Changing a filter
+    afterwards does not rewrite the address. A person in the address
+    who is not on the Person list (deactivated since) shows there as
+    "Someone no longer active", so the trail never looks unfiltered
+    when it is filtered.
 - **Counts:** one chip per kind, the count in mono: "Voids 12", "Comps
   3", "Discounts 5", "Refunds 1", "Payment voids 0", "Reopens 2". A chip
   is a toggle (`aria-pressed`): pressed, the trail shows that kind only;

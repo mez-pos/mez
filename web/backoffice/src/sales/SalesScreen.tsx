@@ -4,15 +4,16 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import type { CsvResponse, ReportEvery, ReportSheet, SalesReport } from "../../../shared/api-types";
+import type { ReportEvery, ReportSheet, SalesReport } from "../../../shared/api-types";
 import { ApiError } from "../../../shared/api";
 import { useAuthStore } from "../../../shared/auth/use-auth";
-import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
+import { EmptyState, InboxIcon } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { inputClass } from "../FormFields";
-import { saveFile } from "../save-file";
+import { Corrections } from "./SalesCorrections";
 import { Headline, Mixes, OverTime } from "./SalesSections";
 import { Heatmap, Sold } from "./SalesTables";
+import { useCsvDownload } from "./use-csv-download";
 import { csvPath, everyFor, everyWords, quickRange, quickRangeOf, quickRanges, salesPath, type SalesRange } from "./sales-logic";
 
 const everys = Object.keys(everyWords) as ReportEvery[];
@@ -25,11 +26,10 @@ const toggleClass = (on: boolean) =>
 
 export function SalesScreen() {
   const store = useAuthStore();
-  const toast = useToast();
+  const button = useCsvDownload();
   const [range, setRange] = useState<SalesRange>(() => quickRange("week", new Date()));
   // Null until chosen by hand: until then the cut follows the range.
   const [chosen, setChosen] = useState<ReportEvery | null>(null);
-  const [busy, setBusy] = useState<ReportSheet | null>(null);
   const every = chosen ?? everyFor(range);
   const quick = quickRangeOf(range, new Date());
 
@@ -41,24 +41,9 @@ export function SalesScreen() {
     placeholderData: keepPreviousData,
   });
 
-  const download = async (sheet: ReportSheet) => {
-    setBusy(sheet);
-    try {
-      const got = await store.api.get<CsvResponse>(csvPath(range, every, sheet));
-      saveFile(got.filename, got.text, got.content_type);
-    } catch (err) {
-      toast(`Couldn't download the file: ${err instanceof Error ? err.message : String(err)}`, { tone: "warning" });
-    } finally {
-      setBusy(null);
-    }
-  };
   const picked = range.from !== "" && range.to !== "";
   // Not while the figures shown are the last range's: a file must match its screen.
-  const csv = (sheet: ReportSheet) => (
-    <Button size="md" disabled={busy !== null || report.isPlaceholderData} onClick={() => void download(sheet)}>
-      {busy === sheet ? "Downloading" : "Download CSV"}
-    </Button>
-  );
+  const csv = (sheet: ReportSheet) => button(csvPath(range, every, sheet), report.isPlaceholderData);
 
   return (
     <div className="flex max-w-6xl flex-col gap-6">
@@ -113,6 +98,8 @@ export function SalesScreen() {
           <Heatmap report={report.data} csv={csv("hours")} />
         </div>
       )}
+      {/* Its own read, so the sales above show while it adds up. */}
+      {picked && <Corrections range={range} />}
     </div>
   );
 }

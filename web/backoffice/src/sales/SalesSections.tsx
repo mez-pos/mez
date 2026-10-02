@@ -13,10 +13,11 @@ import { averageBill, barHeights, periodText, shares } from "./sales-logic";
 
 export const count = (n: number) => <span className="font-mono tabular-nums">{n}</span>;
 
+/** A titled part of the screen. `csv` is its Download CSV button, or null for a part with no file. */
 export function Section({ title, csv, children }: { title: string; csv: ReactNode; children: ReactNode }) {
   return (
     <section aria-label={title} className="flex min-w-0 flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex min-h-9 flex-wrap items-center justify-between gap-4">
         <h2 className="font-serif text-xl">{title}</h2>
         {csv}
       </div>
