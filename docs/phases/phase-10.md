@@ -165,7 +165,7 @@ Phase 09.
     rename, re-rate and retire tax classes; a rate change is for new
     lines only. A profile that needs HSN reports the items without one
     rather than refusing the change. Go tests.
-  - [ ] **Task 6c: Invoice series, financial year and rounding.** Server.
+  - [x] **Task 6c: Invoice series, financial year and rounding.** Server.
     Series code, prefix and number template for invoices and credit
     notes, the financial year's first month, the cash rounding step. A
     template must parse and fit the profile's length limit; no change

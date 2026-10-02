@@ -122,7 +122,9 @@ export type ErrorCode =
   | 'tax_class_not_found'
   | 'tax_class_name_taken'
   | 'tax_class_in_use'
-  | 'tickets_open';
+  | 'tickets_open'
+  | 'numbering_locked'
+  | 'number_taken';
 
 export type OrderStatus =
   | 'open'
@@ -1146,6 +1148,32 @@ export interface TaxSettingsResponse {
   needs_hsn: boolean;
   items_without_hsn: ItemRefResponse[];
   classes: TaxClassResponse[];
+}
+
+export interface NumberingRequest {
+  invoice_series: string;
+  credit_series: string;
+  invoice_prefix: string;
+  credit_prefix: string;
+  template: string;
+  financial_year_start_month: number;
+  cash_rounding_step: number;
+}
+
+export interface NumberingResponse {
+  invoice_series: string;
+  credit_series: string;
+  invoice_prefix: string;
+  credit_prefix: string;
+  template: string;
+  financial_year_start_month: number;
+  cash_rounding_step: number;
+  currency: string;
+  next_invoice_no: string;
+  next_credit_no: string;
+  number_limit: number;
+  fy_locked: boolean;
+  max_rounding_step: number;
 }
 
 export interface MenuCategoryInput {

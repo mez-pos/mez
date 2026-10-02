@@ -144,3 +144,19 @@ func (t Template) Format(prefix string, fy FinancialYear, seq int64) (string, er
 
 // String is the template as written.
 func (t Template) String() string { return t.raw }
+
+// UsesPrefix reports whether the template writes {prefix}.
+func (t Template) UsesPrefix() bool { return t.has(tokPrefix) }
+
+// UsesFY reports whether the template writes the financial year, either
+// {fy} or {fy:short}.
+func (t Template) UsesFY() bool { return t.has(tokFY) || t.has(tokFYShort) }
+
+func (t Template) has(k tokenKind) bool {
+	for _, p := range t.parts {
+		if p.kind == k {
+			return true
+		}
+	}
+	return false
+}

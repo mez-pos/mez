@@ -16,6 +16,8 @@ const (
 	CodeTaxClassNameTaken ErrorCode = "tax_class_name_taken"
 	CodeTaxClassInUse     ErrorCode = "tax_class_in_use"
 	CodeTicketsOpen       ErrorCode = "tickets_open"
+	CodeNumberingLocked   ErrorCode = "numbering_locked"
+	CodeNumberTaken       ErrorCode = "number_taken"
 )
 
 // jurisdictionRate is one authority's rate under US sales tax, in thousandths
@@ -167,9 +169,9 @@ func (s *Server) writeTax(w http.ResponseWriter, r *http.Request, status int) {
 	writeJSON(w, s.log, status, out)
 }
 
-// writeTaxError maps the tax settings' own refusals; ok is false for any
-// other error.
-func (s *Server) writeTaxError(w http.ResponseWriter, err error) bool {
+// writeSettingsRefusal maps the refusals that have a status and code of their
+// own; ok is false for any other error.
+func (s *Server) writeSettingsRefusal(w http.ResponseWriter, err error) bool {
 	var inUse *settings.TaxClassInUse
 	var invalid *settings.Invalid
 	switch {
@@ -180,6 +182,10 @@ func (s *Server) writeTaxError(w http.ResponseWriter, err error) bool {
 	case errors.As(err, &inUse):
 		writeError(w, s.log, http.StatusConflict, CodeTaxClassInUse,
 			"Items still use this tax class: "+strings.Join(inUse.Items, ", ")+". Move them to another class first.")
+	case errors.Is(err, settings.ErrNumberingLocked) && errors.As(err, &invalid):
+		writeFieldError(w, s.log, http.StatusConflict, CodeNumberingLocked, invalid.Message, invalid.Field)
+	case errors.Is(err, settings.ErrNumberTaken) && errors.As(err, &invalid):
+		writeFieldError(w, s.log, http.StatusConflict, CodeNumberTaken, invalid.Message, invalid.Field)
 	case errors.Is(err, settings.ErrOpenOrders):
 		writeError(w, s.log, http.StatusConflict, CodeTicketsOpen,
 			"Tickets are still open. Settle or void them before changing the tax profile.")

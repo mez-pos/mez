@@ -13,31 +13,33 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6b: tax profile and tax classes.** Server only (ADR-131).
-`GET` and `PUT /api/v1/settings/tax` read and save the profile, its
-registration id, pricing, GST state code and US rates as one checked unit
-(`internal/service/settings/tax.go`); `/api/v1/settings/tax-classes`
-creates, edits, retires and restores classes (migration 00029 adds
-`active`). A profile change is refused while tickets are open; items
-without an HSN are listed, not refused. The item form offers active
-classes only. Before it, 6a (ADR-130) and the split (ADR-129).
+**Phase 10, Task 6c: invoice numbering, financial year and rounding.**
+Server only (ADR-132). `GET` and `PUT /api/v1/settings/numbering`
+(`internal/service/settings/numbering.go`): series codes, prefixes, the
+shared template, financial year start, cash rounding step; the response
+carries the next invoice and credit note numbers for the screen's
+preview. `invoice.CheckNumbering` refuses a template with no year or no
+prefix, one prefix or code for both series; a series whose next number
+is already issued is refused; the financial year start locks once a
+number is issued. Before it, 6a (ADR-130), 6b (ADR-131), the split
+(ADR-129).
 
 ## Next task
 
-**Phase 10, Task 6c: Invoice series, financial year and rounding.**
-Server. Series code, prefix and number template for invoices and credit
-notes (keys `invoice.*` and `credit_note.*`, already in the registry in
-`internal/service/settings/keys.go`), the venue's financial year start
-month and the cash rounding step (venue columns; `UpdateVenue` rewrites
-all of them, so read first as `UpdateDetails` and `UpdateTax` do). Check
-the keys together: a template must parse and fit the profile's length
-limit (GST 16, see `seriesFor` in `internal/service/order/venue.go`),
-the invoice and credit series must differ, and no change may make an
-issued number come round again (series restart per financial year start;
-`invoice_series` rows are never deleted). Decide, and write down, what a
-change of financial year start does to the series in force. Go tests, in
-`internal/domain/invoice` where the rule lives. Route pattern as
-`internal/api/settings_tax.go`.
+**Phase 10, Task 6d: Shift and tip rules.** Server. The trading day's
+start becomes a venue setting (a new key in
+`internal/service/settings/keys.go`, with a check: a time of day) read by
+every place that uses `shift.DefaultDayStart` today:
+`internal/service/shift/shift.go` (the `DayStart` option, constant),
+`service/reports/reports.go`, `service/audit/audit.go` and `csv.go`,
+`service/menus/menus.go` (sold out). A change takes effect from the next
+shift opened: an open shift keeps its trading day. Also routes for the
+variance threshold (`shift.variance_threshold_minor`, minor units), the
+tip rule and role weights (`tips.rule`, `tips.role_weights`, weights keyed
+by role name: check they name real roles), and the minutes before a
+ticket is late (`terminal.ticket_late_minutes`); check them together and
+save through `settings.Service.Set`. Make the readers use the registry's
+defaults. Go tests. Route pattern as `internal/api/settings_numbering.go`.
 
 ## Known broken / in progress
 
@@ -59,6 +61,10 @@ change of financial year start does to the series in force. Go tests, in
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 
+- Numbering (ADR-132): the cash rounding step is saved but no sale or
+  payment applies it yet (a payment path owes that). The financial year
+  start cannot move once a number is issued. A tax profile change does
+  not start a new invoice series; one series spans it (ADR-131).
 - Audit (ADR-117): discounts and refunds recorded before Task 4c show
   "Not recorded" for who authorised them. The Person filter lists active
   staff only (it reads `GET /api/v1/staff`); a deactivated person's rows

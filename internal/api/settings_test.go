@@ -208,3 +208,96 @@ func TestTaxSettingsOverHTTP(t *testing.T) {
 		}
 	})
 }
+
+// TestNumberingSettingsOverHTTP: the owner reads how invoices are numbered,
+// changes it, and each refusal comes back with its code and field.
+func TestNumberingSettingsOverHTTP(t *testing.T) {
+	w := newTill(t)
+	svc, err := settings.New(settings.Options{DB: w.db})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.rebuild(t, WithSettings(svc))
+	owner := w.asStaff(w.signInAs(t, "stf_PRIYA001", "2468").Token)
+
+	call := func(method, body string) (int, numberingResponse, Error) {
+		t.Helper()
+		rec := send(w.handler, method, "/api/v1/settings/numbering", body, owner)
+		if rec.Code >= 400 {
+			return rec.Code, numberingResponse{}, errorOf(t, rec)
+		}
+		var out numberingResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatalf("%s: %v: %s", method, err, rec.Body)
+		}
+		return rec.Code, out, Error{}
+	}
+
+	status, out, _ := call(http.MethodGet, "")
+	if status != http.StatusOK || out.InvoiceSeries != "INV" || out.CreditSeries != "CN" || out.Template == "" ||
+		out.NextInvoiceNo == "" || out.NextCreditNo == "" || out.Currency == "" || out.MaxRoundingStep < 1 || out.FYLocked {
+		t.Fatalf("read: %d %+v", status, out)
+	}
+
+	body := `{"invoice_series":"nf","credit_series":"CR","invoice_prefix":"","credit_prefix":"","template":"",` +
+		`"financial_year_start_month":1,"cash_rounding_step":1}`
+	status, out, _ = call(http.MethodPut, body)
+	if status != http.StatusOK || out.InvoiceSeries != "NF" || out.InvoicePrefix != "NF" || out.CreditPrefix != "CR" ||
+		out.FinancialYearStartMonth != 1 || out.CashRoundingStep != 1 {
+		t.Fatalf("saved: %d %+v", status, out)
+	}
+
+	refusals := []struct {
+		name, body string
+		status     int
+		code       ErrorCode
+		field      string
+	}{
+		{"no year in the template", `{"template":"{prefix}-{seq}","financial_year_start_month":1,"cash_rounding_step":1}`, 422, CodeInvalidSetting, "template"},
+		{"the same series for both", `{"invoice_series":"A","credit_series":"A","financial_year_start_month":1,"cash_rounding_step":1}`, 422, CodeInvalidSetting, "credit_series"},
+		{"a month that is not", `{"financial_year_start_month":13,"cash_rounding_step":1}`, 422, CodeInvalidSetting, "financial_year_start_month"},
+		{"an unknown field", `{"financial_year_start_month":1,"cash_rounding_step":1,"currency":"USD"}`, 400, CodeInvalidRequest, ""},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			status, _, apiErr := call(http.MethodPut, tt.body)
+			if status != tt.status || apiErr.Code != tt.code || apiErr.Field != tt.field {
+				t.Errorf("%d %s %q, want %d %s %q", status, apiErr.Code, apiErr.Field, tt.status, tt.code, tt.field)
+			}
+		})
+	}
+
+	t.Run("once a number is issued the year is fixed and a repeated number is refused", func(t *testing.T) {
+		ctx := context.Background()
+		if _, err := w.db.Writer().ExecContext(ctx,
+			`INSERT INTO orders (public_id, venue_id, channel, status, last_seq, opened_at, updated_at)
+			 VALUES ('ord_NUMBER01', 1, 'counter', 'closed', 1, ?, ?)`, seededAt, seededAt); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.db.Writer().ExecContext(ctx, `INSERT INTO invoice_series (venue_id, series, fy_start, last_seq) VALUES (1, 'NF', 2026, 1)`); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.db.Writer().ExecContext(ctx,
+			`INSERT INTO invoices (venue_id, order_id, series, fy_start, seq, invoice_no, issued_at)
+			 VALUES (1, 1, 'NF', 2026, 1, 'NF/26/000001', ?)`, seededAt); err != nil {
+			t.Fatal(err)
+		}
+		status, out, _ := call(http.MethodGet, "")
+		if !out.FYLocked {
+			t.Fatalf("not locked: %d %+v", status, out)
+		}
+		status, _, apiErr := call(http.MethodPut, `{"invoice_series":"NF","financial_year_start_month":4,"cash_rounding_step":1}`)
+		if status != 409 || apiErr.Code != CodeNumberingLocked || apiErr.Field != "financial_year_start_month" {
+			t.Errorf("moving the year: %d %s %q", status, apiErr.Code, apiErr.Field)
+		}
+	})
+
+	t.Run("a cashier cannot read or change it", func(t *testing.T) {
+		cashier := w.asStaff(w.signIn(t, "2468").Token)
+		for _, method := range []string{http.MethodGet, http.MethodPut} {
+			if rec := send(w.handler, method, "/api/v1/settings/numbering", body, cashier); rec.Code != http.StatusForbidden {
+				t.Errorf("%s: %d", method, rec.Code)
+			}
+		}
+	})
+}

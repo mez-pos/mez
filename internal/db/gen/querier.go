@@ -127,6 +127,7 @@ type Querier interface {
 	// column, and RETURNING * has exactly the same problem.
 	CreateVenue(ctx context.Context, arg CreateVenueParams) (Venue, error)
 	CreateZReport(ctx context.Context, arg CreateZReportParams) (int64, error)
+	CreditNoTaken(ctx context.Context, arg CreditNoTakenParams) (bool, error)
 	CreditNotesForVenue(ctx context.Context, venueID int64) ([]CreditNote, error)
 	//
 	// Staff are deactivated, never deleted: their name is on every order they took
@@ -178,6 +179,10 @@ type Querier interface {
 	// unit_cost is the item's cost as it stands, read here so no caller can
 	// forget it and none can pass another (ADR-124).
 	InsertStockMovement(ctx context.Context, arg InsertStockMovementParams) (int64, error)
+	InvoiceNoTaken(ctx context.Context, arg InvoiceNoTakenParams) (bool, error)
+	// How many counters the venue has ever started: more than none means a
+	// number has been issued.
+	InvoiceSeriesCount(ctx context.Context, venueID int64) (int64, error)
 	InvoiceSeriesLastSeq(ctx context.Context, arg InvoiceSeriesLastSeqParams) (int64, error)
 	InvoicesForVenue(ctx context.Context, venueID int64) ([]Invoice, error)
 	// Every item's category, retired ones included: a report names what was

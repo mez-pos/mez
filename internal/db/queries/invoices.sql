@@ -36,3 +36,16 @@ SELECT id, venue_id, order_id, series, fy_start, seq, credit_no, against_invoice
 FROM credit_notes
 WHERE venue_id = ?
 ORDER BY series, fy_start, seq;
+
+-- name: InvoiceSeriesCount :one
+-- How many counters the venue has ever started: more than none means a
+-- number has been issued.
+SELECT COUNT(*)
+FROM invoice_series
+WHERE venue_id = ?;
+
+-- name: InvoiceNoTaken :one
+SELECT EXISTS (SELECT 1 FROM invoices WHERE venue_id = ? AND invoice_no = ?);
+
+-- name: CreditNoTaken :one
+SELECT EXISTS (SELECT 1 FROM credit_notes WHERE venue_id = ? AND credit_no = ?);

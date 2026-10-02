@@ -76,6 +76,22 @@ func (q *Queries) CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (i
 	return id, err
 }
 
+const creditNoTaken = `-- name: CreditNoTaken :one
+SELECT EXISTS (SELECT 1 FROM credit_notes WHERE venue_id = ? AND credit_no = ?)
+`
+
+type CreditNoTakenParams struct {
+	VenueID  int64
+	CreditNo string
+}
+
+func (q *Queries) CreditNoTaken(ctx context.Context, arg CreditNoTakenParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, creditNoTaken, arg.VenueID, arg.CreditNo)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const creditNotesForVenue = `-- name: CreditNotesForVenue :many
 SELECT id, venue_id, order_id, series, fy_start, seq, credit_no, against_invoice_no, total_minor, issued_at
 FROM credit_notes
@@ -115,6 +131,37 @@ func (q *Queries) CreditNotesForVenue(ctx context.Context, venueID int64) ([]Cre
 		return nil, err
 	}
 	return items, nil
+}
+
+const invoiceNoTaken = `-- name: InvoiceNoTaken :one
+SELECT EXISTS (SELECT 1 FROM invoices WHERE venue_id = ? AND invoice_no = ?)
+`
+
+type InvoiceNoTakenParams struct {
+	VenueID   int64
+	InvoiceNo string
+}
+
+func (q *Queries) InvoiceNoTaken(ctx context.Context, arg InvoiceNoTakenParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, invoiceNoTaken, arg.VenueID, arg.InvoiceNo)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const invoiceSeriesCount = `-- name: InvoiceSeriesCount :one
+SELECT COUNT(*)
+FROM invoice_series
+WHERE venue_id = ?
+`
+
+// How many counters the venue has ever started: more than none means a
+// number has been issued.
+func (q *Queries) InvoiceSeriesCount(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, invoiceSeriesCount, venueID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const invoiceSeriesLastSeq = `-- name: InvoiceSeriesLastSeq :one

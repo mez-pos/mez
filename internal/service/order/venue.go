@@ -55,12 +55,16 @@ const (
 	SettingCreditSeries = "credit_note.series"
 	SettingCreditPrefix = "credit_note.prefix"
 
-	defaultCreditSeries = "CN"
-	defaultSeries       = "INV"
-	defaultTemplate     = "{prefix}/{fy:short}/{seq:06d}"
+	// GSTMaxInvoiceNo is the longest invoice number GST allows.
+	GSTMaxInvoiceNo = 16
+)
 
-	// gstMaxInvoiceNo is the longest invoice number GST allows.
-	gstMaxInvoiceNo = 16
+// What a series is when the venue has set none: the code invoices are issued
+// in, the code credit notes are, and how a number is written.
+const (
+	DefaultSeries       = "INV"
+	DefaultCreditSeries = "CN"
+	DefaultTemplate     = "{prefix}/{fy:short}/{seq:06d}"
 )
 
 // ErrVenueConfig means the venue's settings cannot sell: a tax profile
@@ -200,7 +204,7 @@ func taxesFor(row gen.Venue, settings map[string]string) (order.Taxes, error) {
 func seriesFor(row gen.Venue, settings map[string]string) (invoice.Series, error) {
 	code := strings.TrimSpace(settings[SettingInvoiceSeries])
 	if code == "" {
-		code = defaultSeries
+		code = DefaultSeries
 	}
 	prefix, ok := settings[SettingInvoicePrefix]
 	if !ok {
@@ -208,11 +212,11 @@ func seriesFor(row gen.Venue, settings map[string]string) (invoice.Series, error
 	}
 	template := settings[SettingInvoiceTemplate]
 	if template == "" {
-		template = defaultTemplate
+		template = DefaultTemplate
 	}
 	maxLength := 0
 	if row.TaxProfile == "gst_in" {
-		maxLength = gstMaxInvoiceNo
+		maxLength = GSTMaxInvoiceNo
 	}
 	fy := invoice.FYRule{StartMonth: time.Month(row.FinancialYearStartMonth), StartDay: 1}
 	s, err := invoice.NewSeries(code, prefix, fy, template, maxLength)
@@ -228,7 +232,7 @@ func seriesFor(row gen.Venue, settings map[string]string) (invoice.Series, error
 func creditSeriesFor(row gen.Venue, settings map[string]string, invoices invoice.Series) (invoice.Series, error) {
 	code := strings.TrimSpace(settings[SettingCreditSeries])
 	if code == "" {
-		code = defaultCreditSeries
+		code = DefaultCreditSeries
 	}
 	if code == invoices.Code {
 		return invoice.Series{}, fmt.Errorf("%w: credit notes and invoices both use series %q", ErrVenueConfig, code)
@@ -239,11 +243,11 @@ func creditSeriesFor(row gen.Venue, settings map[string]string, invoices invoice
 	}
 	template := settings[SettingInvoiceTemplate]
 	if template == "" {
-		template = defaultTemplate
+		template = DefaultTemplate
 	}
 	maxLength := 0
 	if row.TaxProfile == "gst_in" {
-		maxLength = gstMaxInvoiceNo
+		maxLength = GSTMaxInvoiceNo
 	}
 	fy := invoice.FYRule{StartMonth: time.Month(row.FinancialYearStartMonth), StartDay: 1}
 	s, err := invoice.NewSeries(code, prefix, fy, template, maxLength)
@@ -265,4 +269,20 @@ func lateAfter(v string) time.Duration {
 		return defaultLateAfter
 	}
 	return time.Duration(n) * time.Minute
+}
+
+// SeriesOf is the series invoices and credit notes are issued in, read from a
+// venue row and its settings the way every sale reads them, so a settings
+// screen shows and checks what the till will do. It does not read the tax
+// profile: numbering can be fixed on a venue whose tax is not yet set up.
+func SeriesOf(row gen.Venue, settings map[string]string) (invoices, credits invoice.Series, err error) {
+	invoices, err = seriesFor(row, settings)
+	if err != nil {
+		return invoice.Series{}, invoice.Series{}, err
+	}
+	credits, err = creditSeriesFor(row, settings, invoices)
+	if err != nil {
+		return invoice.Series{}, invoice.Series{}, err
+	}
+	return invoices, credits, nil
 }

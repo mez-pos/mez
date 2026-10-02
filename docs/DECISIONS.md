@@ -3714,3 +3714,42 @@ fails when a bill is paid costs a customer a wait.
 Cost: no screen yet (6h). Invoice numbers already issued under a profile
 are not touched by changing it; a venue that switches mid financial year
 keeps one series. Whether it should start another is 6c's question.
+
+## ADR-132 - Invoice numbering: what may change, and when
+2026-10 · Status: accepted.
+Decision: `GET` and `PUT /api/v1/settings/numbering` (`settings.edit`) edit
+the invoice and credit note series codes and prefixes, the shared number
+template, the financial year start month and the cash rounding step. Saved
+in one transaction, then read back as a sale reads it and checked.
+  - **The year must be in the number, and so must the prefix.** Counters
+    restart per financial year, so a template without `{fy}` repeats last
+    year's numbers; invoices and credit notes share a template (ADR-083),
+    so one without `{prefix}`, or with the same prefix on both, gives an
+    invoice and a credit note the same number. `invoice.CheckNumbering`
+    refuses all three, as well as one code for both series.
+  - **The financial year start is fixed once any number is issued**
+    (`numbering_locked`). Numbering restarts on that date; moving it
+    under issued numbers is an accountant's migration. Before the first
+    sale it moves freely. Series code, prefix and template may change at
+    any time: a prefix or template change continues the same counter, a
+    new code starts a new run at 1 (and going back to an old code
+    continues its old counter).
+  - **A series must not write a number already issued.** After saving, the
+    next number of each series is looked up in `invoices` and
+    `credit_notes`, and a hit is refused (`number_taken`): renaming INV
+    to NF and keeping the prefix INV would write INV/26-27/000001 again
+    and the unique index would refuse the sale at the till. Only the next
+    number is checked; a template change that makes a later number meet
+    an old one is not.
+  - **A prefix or code equal to its default is not stored**, so a prefix
+    keeps following its code. The registry's defaults now come from
+    `service/order`, the same constants the sale path uses; ADR-130's
+    note on the two copies drifting is closed for series and template.
+  - **The cash rounding step is saved and checked** (1 up to one whole
+    unit of the currency) **but nothing applies it yet.** It is a venue
+    column no sale or payment reads.
+  - **Series codes are capitals and digits**, uppercased on the way in.
+Because: a repeated invoice number is a compliance incident and a refused
+sale; both are cheaper to refuse here.
+Cost: a venue that mis-set its financial year after trading cannot fix it
+from the back office.
