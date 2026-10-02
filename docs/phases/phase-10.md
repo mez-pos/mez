@@ -111,6 +111,18 @@ Phase 09.
   - [ ] **Task 5e: Discount and void analysis.** Corrections over a range
     by reason, by who did them and by who authorised them (server and
     screen, with CSV), linking down to the audit trail.
+
+    Split into two (the figures first, then the section over them):
+
+    - [ ] **Task 5e1: Corrections added up on the server.** The audit
+      trail's entries over a range, grouped: by kind, by kind and reason,
+      by who did them and by who authorised them, each a count and what
+      they were worth. Its own route beside the trail, its CSV, generated
+      types. `reports.view`. Go tests.
+    - [ ] **Task 5e2: The corrections section.** Spec first (in
+      `backoffice-reports.md`). A section of the Sales screen over 5e1,
+      with its CSV; each row links to the audit trail already filtered,
+      so the audit screen learns to open on a range, a person and a kind.
   - [ ] **Task 5f: Closing stock.** The close's stock counts by shift:
     expected against counted, the variance in units and at cost, with CSV.
 

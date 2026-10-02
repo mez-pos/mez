@@ -24,12 +24,12 @@ checked against a hand sum.
 
 ## Next task
 
-**Phase 10, Task 5e: Discount and void analysis.** Corrections over a
-range by reason, by who did them and by who authorised them (server and
-screen, with CSV), linking down to the audit trail. The trail's query and
-entries are in `internal/service/audit` (`asked`, `entries`); the screen
-part is another section of `/sales`. Spec it in `backoffice-reports.md`
-first. Likely two sub-tasks (server, then screen): split if so.
+**Phase 10, Task 5e1: Corrections added up on the server.** Task 5e is
+split in two (5e1 server, 5e2 screen). 5e1: the audit trail's entries
+over a range grouped by kind, by kind and reason, by who did them and by
+who authorised them, each a count and an amount; a route beside
+`GET /api/v1/audit`, its CSV, generated types. The trail's query and
+entries are in `internal/service/audit` (`asked`, `entries`).
 
 ## Known broken / in progress
 
