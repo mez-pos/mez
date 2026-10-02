@@ -179,6 +179,10 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(stock.ClosingResult{}):     "ClosingStockResult",
 			reflect.TypeOf(stock.ClosingSheet{}):      "ClosingStockSheet",
 			reflect.TypeOf(stock.ClosingCountInput{}): "ClosingStockCount",
+			reflect.TypeOf(stock.ClosingLine{}):       "ClosingStockLine",
+			reflect.TypeOf(stock.ClosingShift{}):      "ClosingStockShift",
+			reflect.TypeOf(stock.ClosingItemTotal{}):  "ClosingStockItemTotal",
+			reflect.TypeOf(stock.ClosingReport{}):     "ClosingStockReport",
 			reflect.TypeOf(people.StaffInput{}):       "PersonInput",
 			reflect.TypeOf(people.RoleInput{}):        "RoleInput",
 			reflect.TypeOf(people.Person{}):           "Person",
@@ -309,6 +313,7 @@ func generate() (*ts.Generator, error) {
 		stock.Recorded{}, stock.Movement{}, movementsResponse{},
 		stock.RecipePart{}, stock.Recipe{}, stock.RecipeBook{}, recipeRequest{},
 		stock.ClosingItem{}, stock.ClosingResult{}, stock.ClosingSheet{}, stock.ClosingCountInput{}, closingCountRequest{},
+		stock.ClosingReport{},
 		// People.
 		staffRequest{}, roleRequest{}, pinRequest{}, people.Person{}, people.Role{}, peopleResponse{}, staffAddedResponse{}, roleEditResponse{},
 		// The audit trail.

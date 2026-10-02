@@ -130,3 +130,18 @@ FROM stock_movements m
 JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
 WHERE m.venue_id = ? AND m.shift_id = ? AND m.closing = 1
 ORDER BY i.name COLLATE NOCASE, i.id;
+
+-- name: ClosingCountsInRange :many
+--
+-- The closing counts of the shifts whose trading day is in a range (Task
+-- 5f2, ADR-125), by day, then shift, then item. unit_cost is the item's
+-- cost when it was counted, 0 for not known (ADR-124).
+SELECT
+    m.shift_id, sh.public_id AS shift_public_id, sh.trading_day,
+    m.stock_item_id, i.name, i.unit, m.counted, m.delta, m.unit_cost
+FROM stock_movements m
+JOIN shifts sh ON sh.id = m.shift_id AND sh.venue_id = m.venue_id
+JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
+WHERE m.venue_id = sqlc.arg(venue_id) AND m.closing = 1
+  AND sh.trading_day >= sqlc.arg(from_day) AND sh.trading_day <= sqlc.arg(to_day)
+ORDER BY sh.trading_day, sh.id, i.name COLLATE NOCASE, i.id;

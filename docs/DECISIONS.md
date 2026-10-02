@@ -3526,3 +3526,35 @@ Because: "we were short 2 litres" becomes a decision only when it reads
 Cost: rows written before migration 00028 have no cost and value at
 zero; a report must say "not known", not 0.00. An owner who never
 updates a cost gets variances at an old price, shown as the price it was.
+
+## ADR-125 - Closing stock is reported by shift, each variance at the cost it was counted at
+2026-10 · Status: accepted
+Decision: phase 10, Task 5f2 reports the closing counts over a range
+(`internal/service/stock/closing_report.go`,
+`GET /api/v1/reports/closing-stock?from=&to=`, `.../csv`, `reports.view`).
+  - **By the shift's trading day.** A closing count belongs to its shift
+    (ADR-114), and a shift to the trading day it opened on, which is
+    stored. The range picks shifts by that day: no timezone arithmetic,
+    and a count made at 01:00 sits with the night it closed.
+  - **Expected is derived, here only.** A count stores what was found
+    and the change it made; expected is counted less that change.
+    Variance is the change: below zero is short.
+  - **At the cost on the count** (ADR-124), through `stock.Value`. A
+    count with no cost has no cost and no value in the answer and empty
+    cells in the file, never 0.00. Each total says how many of its counts
+    had none (`uncosted`), so "23.60 lost" is never read as the whole of
+    it when half the items were not costed.
+  - **Two views of the same rows.** By shift, oldest first, each with its
+    lines; and by item over the range, the largest loss first, which is
+    where "milk is short every night" shows.
+  - **reports.view, not stock.manage.** It is mounted with the stock
+    routes, which own its service, but read by whoever reads the
+    Z-report. The CSV is a row per item per shift, quantities in whole
+    units.
+  - Whole, not paged, as the range reports are (ADR-118): bounded by the
+    shifts in at most a year and the few items counted nightly.
+Because: the close already makes staff count; the owner needs to see
+what the counts found, in money, without opening each shift.
+Cost: items are named as they are named now. A shift with no closing
+count is not listed, so a night nobody counted looks like no night at
+all; the screen should say what it lists.

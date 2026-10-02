@@ -133,7 +133,7 @@ Phase 09.
       movement keeps the cost as it was when it was written, so a past
       variance is never valued at today's cost. Server and the item
       form. Go tests.
-    - [ ] **Task 5f2: Closing stock on the server.** The close's counts
+    - [x] **Task 5f2: Closing stock on the server.** The close's counts
       by shift over a range of trading days: expected, counted, the
       variance in units and at the cost kept with the count; its CSV.
       `reports.view`. Go tests.

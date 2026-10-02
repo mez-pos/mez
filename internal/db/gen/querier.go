@@ -74,6 +74,11 @@ type Querier interface {
 	//
 	// The close's count of a shift: what was counted and what it moved.
 	ClosingCountForShift(ctx context.Context, arg ClosingCountForShiftParams) ([]ClosingCountForShiftRow, error)
+	//
+	// The closing counts of the shifts whose trading day is in a range (Task
+	// 5f2, ADR-125), by day, then shift, then item. unit_cost is the item's
+	// cost when it was counted, 0 for not known (ADR-124).
+	ClosingCountsInRange(ctx context.Context, arg ClosingCountsInRangeParams) ([]ClosingCountsInRangeRow, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
 	CourseForEdit(ctx context.Context, arg CourseForEditParams) (int64, error)
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)

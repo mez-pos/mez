@@ -132,6 +132,72 @@ func (q *Queries) ClosingCountForShift(ctx context.Context, arg ClosingCountForS
 	return items, nil
 }
 
+const closingCountsInRange = `-- name: ClosingCountsInRange :many
+SELECT
+    m.shift_id, sh.public_id AS shift_public_id, sh.trading_day,
+    m.stock_item_id, i.name, i.unit, m.counted, m.delta, m.unit_cost
+FROM stock_movements m
+JOIN shifts sh ON sh.id = m.shift_id AND sh.venue_id = m.venue_id
+JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
+WHERE m.venue_id = ?1 AND m.closing = 1
+  AND sh.trading_day >= ?2 AND sh.trading_day <= ?3
+ORDER BY sh.trading_day, sh.id, i.name COLLATE NOCASE, i.id
+`
+
+type ClosingCountsInRangeParams struct {
+	VenueID int64
+	FromDay string
+	ToDay   string
+}
+
+type ClosingCountsInRangeRow struct {
+	ShiftID       int64
+	ShiftPublicID string
+	TradingDay    string
+	StockItemID   int64
+	Name          string
+	Unit          string
+	Counted       sql.NullInt64
+	Delta         int64
+	UnitCost      int64
+}
+
+// The closing counts of the shifts whose trading day is in a range (Task
+// 5f2, ADR-125), by day, then shift, then item. unit_cost is the item's
+// cost when it was counted, 0 for not known (ADR-124).
+func (q *Queries) ClosingCountsInRange(ctx context.Context, arg ClosingCountsInRangeParams) ([]ClosingCountsInRangeRow, error) {
+	rows, err := q.db.QueryContext(ctx, closingCountsInRange, arg.VenueID, arg.FromDay, arg.ToDay)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClosingCountsInRangeRow{}
+	for rows.Next() {
+		var i ClosingCountsInRangeRow
+		if err := rows.Scan(
+			&i.ShiftID,
+			&i.ShiftPublicID,
+			&i.TradingDay,
+			&i.StockItemID,
+			&i.Name,
+			&i.Unit,
+			&i.Counted,
+			&i.Delta,
+			&i.UnitCost,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createStockItem = `-- name: CreateStockItem :one
 
 INSERT INTO stock_items (venue_id, name, unit, low_level, count_at_close, cost, created_at, updated_at)

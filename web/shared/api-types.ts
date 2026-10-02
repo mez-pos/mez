@@ -1294,6 +1294,45 @@ export interface ClosingCountRequest {
   counts: ClosingStockCount[];
 }
 
+export interface ClosingStockReport {
+  from: string;
+  to: string;
+  currency: string;
+  shifts: ClosingStockShift[];
+  items: ClosingStockItemTotal[];
+  value: Money;
+  uncosted: number;
+}
+
+export interface ClosingStockShift {
+  shift_id: string;
+  trading_day: string;
+  lines: ClosingStockLine[];
+  value: Money;
+  uncosted: number;
+}
+
+export interface ClosingStockLine {
+  stock_item_id: number;
+  name: string;
+  unit: StockUnit;
+  expected: number;
+  counted: number;
+  variance: number;
+  cost?: Money;
+  value?: Money;
+}
+
+export interface ClosingStockItemTotal {
+  stock_item_id: number;
+  name: string;
+  unit: StockUnit;
+  counts: number;
+  variance: number;
+  value: Money;
+  uncosted: number;
+}
+
 export interface PersonInput {
   name: string;
   role_id: number;

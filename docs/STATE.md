@@ -13,23 +13,25 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 5f1: What stock costs** (ADR-124; Task 5f is split
-into 5f1 to 5f3). A stock item has a cost, minor units per kilogram,
-litre or each by its unit (migration 00028), on the Stock screen's item
-form and table; every `stock_movements` row keeps `unit_cost` as the
-item's cost when it was written (the insert reads it). `stock.Value`
-values a quantity at a cost. `GET /api/v1/stock` now names the
-`currency`. Tried in a browser against a real binary: add, refuse an
-unreadable cost, edit, the table.
+**Phase 10, Task 5f2: Closing stock on the server** (ADR-125).
+`GET /api/v1/reports/closing-stock?from=&to=` (`reports.view`): the
+closing counts of the shifts whose trading day is in the range, by shift
+(expected, counted, variance in units, and at the cost kept on the
+count) and by item over the range, largest loss first; `uncosted` says
+how many counts had no cost. `.../csv` as `CsvResponse`.
+`internal/service/stock/closing_report.go`, types `ClosingStockReport`
+and friends. Go tests only: not tried against a real binary.
 
 ## Next task
 
-**Phase 10, Task 5f2: Closing stock on the server.** The close's counts
-by shift over a range of trading days: for each item expected (counted
-less delta), counted, the variance in units and at the `unit_cost` kept
-on the closing movement (`stock.Value`; 0 is "not known", say so, do
-not print 0.00). `ClosingCountForShift` reads one shift and does not
-select `unit_cost` yet. A route under reports, its CSV, `reports.view`.
+**Phase 10, Task 5f3: The closing stock section.** Spec first (in
+`backoffice-reports.md`). A section of `/sales` over
+`GET /api/v1/reports/closing-stock` for the screen's range, its own read
+as Corrections has (`SalesCorrections.tsx`), with its CSV
+(`useCsvDownload`). Quantities through `formatQty`/`formatDelta`
+(`web/shared/stock-qty.ts`); a missing `cost`/`value` reads "Not costed",
+never 0.00; say how many counts a total leaves out (`uncosted`). It
+finishes Task 5f and Task 5.
 
 ## Known broken / in progress
 
@@ -59,7 +61,9 @@ select `unit_cost` yet. A route under reports, its CSV, `reports.view`.
 - Stock cost (ADR-124): movements from before migration 00028 have no
   cost. Nothing shows a cost's history; a new cost is for stock moved
   from then on.
-- Stock (ADR-111 to ADR-114): no closing-stock report yet (Task 5f2). The
+- Closing stock report (ADR-125): no screen yet (5f3). A shift with no
+  closing count is not listed. Items are named as they are now.
+- Stock (ADR-111 to ADR-114): The
   closing count cannot be skipped while items are marked. A close uses today's
   recipes, not the ones when the line was rung up. A sold movement needs a
   real staff id: the guest channel (phase 11) must supply one. A movement

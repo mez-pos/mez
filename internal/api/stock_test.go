@@ -258,3 +258,53 @@ func TestClosingStockOverHTTP(t *testing.T) {
 		})
 	}
 }
+
+func TestTheClosingStockReportOverHTTP(t *testing.T) {
+	w, owner := newStockTill(t)
+	const base = "/api/v1/reports/closing-stock"
+
+	rec := send(w.handler, http.MethodGet, base+"?from=2026-09-01&to=2026-09-30", "", owner)
+	var got stock.ClosingReport
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &got) != nil {
+		t.Fatalf("report: %d %s", rec.Code, rec.Body)
+	}
+	if got.From != "2026-09-01" || got.Currency != "INR" || got.Shifts == nil || got.Items == nil {
+		t.Errorf("a quiet September: %s", rec.Body)
+	}
+	if rec.Header().Get("Cache-Control") != "no-store" {
+		t.Error("the report may be cached")
+	}
+
+	rec = send(w.handler, http.MethodGet, base+"/csv?from=2026-09-01&to=2026-09-30", "", owner)
+	var file csvResponse
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &file) != nil {
+		t.Fatalf("csv: %d %s", rec.Code, rec.Body)
+	}
+	if file.Filename != "closing-stock-2026-09-01-to-2026-09-30.csv" || !strings.HasPrefix(file.Text, byteOrderMark+"Trading day,Shift,Item,Unit,Expected,Counted,Variance,Cost (INR),") {
+		t.Errorf("file %q: %q", file.Filename, file.Text)
+	}
+
+	// It is a report: a cashier, who cannot read the Z-report, cannot read it.
+	cashier := w.asStaff(w.signIn(t, "2468").Token)
+	refusals := []struct {
+		name, path string
+		headers    map[string]string
+		status     int
+		code       ErrorCode
+	}{
+		{"no range", base, owner, http.StatusBadRequest, CodeInvalidFilter},
+		{"backwards", base + "?from=2026-09-30&to=2026-09-01", owner, http.StatusBadRequest, CodeInvalidFilter},
+		{"over a year", base + "?from=2025-01-01&to=2026-09-01", owner, http.StatusBadRequest, CodeInvalidFilter},
+		{"a cashier", base + "?from=2026-09-01&to=2026-09-30", cashier, http.StatusForbidden, CodeForbidden},
+		{"a file of no range", base + "/csv", owner, http.StatusBadRequest, CodeInvalidFilter},
+		{"a file for a cashier", base + "/csv?from=2026-09-01&to=2026-09-30", cashier, http.StatusForbidden, CodeForbidden},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := send(w.handler, http.MethodGet, tt.path, "", tt.headers)
+			if rec.Code != tt.status || errorOf(t, rec).Code != tt.code {
+				t.Errorf("%d %s, want %d %s", rec.Code, rec.Body, tt.status, tt.code)
+			}
+		})
+	}
+}

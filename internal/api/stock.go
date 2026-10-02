@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/auth"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
 	"github.com/byjoellobo/nofiltr-pos/internal/service/stock"
 )
 
@@ -25,6 +26,8 @@ type Stock interface {
 	SetModifierRecipe(ctx context.Context, venueID, modifierID int64, parts []stock.RecipePart) error
 	ClosingCount(ctx context.Context, venueID, shiftID int64) (stock.ClosingSheet, error)
 	RecordClosingCount(ctx context.Context, venueID, staffID, shiftID int64, counts []stock.ClosingCountInput) (stock.ClosingSheet, error)
+	ClosingReport(ctx context.Context, venueID int64, from, to string) (stock.ClosingReport, error)
+	ClosingTable(ctx context.Context, venueID int64, from, to string) (export.Table, error)
 }
 
 // WithStock mounts the stock routes. They need WithDevices and WithStaff,
@@ -102,6 +105,50 @@ func (s *Server) mountStock(mux *http.ServeMux) {
 	}
 	closing("GET /api/v1/shift/{id}/stock-count", s.readClosingCount)
 	closing("POST /api/v1/shift/{id}/stock-count", s.recordClosingCount)
+
+	// The closing stock over a range is a report, read by whoever reads the
+	// Z-report: it needs reports.view, not stock.manage.
+	report := func(pattern string, h http.HandlerFunc) {
+		mux.Handle(pattern, s.requireDevice(s.requireStaff(s.requirePermission(auth.PermReportsView, h))))
+	}
+	report("GET /api/v1/reports/closing-stock", s.readClosingReport)
+	report("GET /api/v1/reports/closing-stock/csv", s.readClosingReportCSV)
+}
+
+// readClosingReport answers ?from=2026-10-01&to=2026-10-07, both trading
+// days and required, with the closing stock counts of the shifts in them:
+// expected, counted, and the variance in units and at cost (phase 10, Task
+// 5f2, ADR-125). Bounded by the shifts and the items counted, so whole.
+func (s *Server) readClosingReport(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	rep, err := s.stock.ClosingReport(r.Context(), Meta(r).VenueID, q.Get("from"), q.Get("to"))
+	if errors.Is(err, stock.ErrBadRange) {
+		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
+		return
+	}
+	if err != nil {
+		s.writeStockError(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, s.log, http.StatusOK, rep)
+}
+
+// readClosingReportCSV answers the same range as a CSV file, a row per
+// item per shift.
+func (s *Server) readClosingReportCSV(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	t, err := s.stock.ClosingTable(r.Context(), Meta(r).VenueID, q.Get("from"), q.Get("to"))
+	if errors.Is(err, stock.ErrBadRange) {
+		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
+		return
+	}
+	if err != nil {
+		s.writeStockError(w, r, err)
+		return
+	}
+	// The range was read, so from and to are days and safe in a name.
+	s.writeCSV(w, r, "closing-stock-"+q.Get("from")+"-to-"+q.Get("to")+".csv", t)
 }
 
 func (s *Server) readClosingCount(w http.ResponseWriter, r *http.Request) {
