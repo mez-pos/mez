@@ -127,8 +127,8 @@ function Choose({ shiftId, pool, staffList, commit }: ChooseProps) {
                     aria-pressed={r.inPool}
                     onClick={() => set(i, { inPool: !r.inPool })}
                     className={cx(
-                      "min-h-tap min-w-20 rounded border px-4 font-semibold outline-offset-2 outline-line-focus focus-visible:outline-2",
-                      r.inPool ? "border-success text-success" : "border-line text-fg-muted",
+                      "min-h-tap min-w-20 rounded-pill border px-4 font-semibold outline-offset-2 outline-line-focus focus-visible:outline-2",
+                      r.inPool ? "border-accent bg-accent-tint text-accent-text" : "border-line-strong bg-raised text-fg-muted",
                     )}
                   >
                     {r.inPool ? "In" : "Out"}

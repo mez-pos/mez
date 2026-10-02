@@ -9,6 +9,7 @@ import { ApiError } from "../../../shared/api";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { EmptyState, InboxIcon } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { pillClass } from "../../../shared/ui/pill";
 import { inputClass } from "../FormFields";
 import { ClosingStock } from "./SalesClosingStock";
 import { Corrections } from "./SalesCorrections";
@@ -19,11 +20,7 @@ import { csvPath, everyFor, everyWords, quickRange, quickRangeOf, quickRanges, s
 
 const everys = Object.keys(everyWords) as ReportEvery[];
 
-const toggleClass = (on: boolean) =>
-  cx(
-    "flex min-h-tap items-center rounded border px-3.5 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
-    on ? "border-line-strong bg-raised font-semibold text-fg" : "border-line text-fg-2 hover:bg-raised",
-  );
+const toggleClass = pillClass;
 
 export function SalesScreen() {
   const store = useAuthStore();

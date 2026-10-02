@@ -13,22 +13,20 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Redesign, Task 6: kitchen display** (`docs/phases/redesign.md`), on
-espresso night. A ticket is a card with a rule down its left by age
-(muted, mustard, the late red), its timer in a pill of the same tone
-with the word, quantities in mustard, and Bump a green pill. Notes are
-mustard ink, not italic: the faces have no italic. The board keeps one
-grid, oldest first; the design's three status columns would be a
-function change. Seen in a browser, paired as a kitchen device with a
-real ticket: calm, and late with the page's clock moved on. Before it,
-Tasks 1 to 5 (ADR-127, ADR-128).
+**Redesign, Task 7: back office** (`docs/phases/redesign.md`). Smaller
+than feared, so not split: the screens are cards and tables the earlier
+tasks restyled. What it added: `pillClass` (`web/shared/ui/pill.ts`) for
+filters, view switches and area tabs, the chosen one green; charts,
+share bars and the heatmap in green, not the info blue; form options as
+cards; the floor editor's tables as ivory cards. Seen in a browser with
+one cash sale: dashboard, sales reports, stock and its add form, people,
+the floor plan. Before it, Tasks 1 to 6 (ADR-127, ADR-128).
 
 ## Next task
 
 Either, as the owner chooses:
 
-**Redesign, Task 7: back office** (`docs/phases/redesign.md`). Larger
-than one session: split it by screen first.
+**Redesign, Task 8: guest** (`docs/phases/redesign.md`).
 
 **Phase 10, Task 6: Settings.** Far larger than one session: split it
 first, commit the split, and stop. Known broken below lists what earlier
@@ -45,7 +43,11 @@ the day start, variance threshold and tip rule are constants;
   refund sheet, the print queue, the reconciliation after a count,
   closing stock, floor states other than free and ordered, move and
   join, the kitchen's waiting tone, order and line notes, a voided
-  line and Recall, a toast, an empty state, the guest app. The
+  line and Recall, a toast, the guest app. In the back office: menu
+  choices, recipes, roles, Z-reports, tips, audit, printers, and the
+  sales screen after the charts turned green. Charts are one colour;
+  the design's green, terracotta, mustard order waits for a chart with
+  more than one series. The
   drawer count's face values sit right-aligned in their column, as
   before the redesign. NumPad keys use `sunken`, a stand-in on night that matches
   the canvas: no night screen has a keypad yet. Menu table cells wrap at

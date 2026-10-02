@@ -42,9 +42,9 @@ export function PeopleScreen() {
         {(["staff", "roles"] as const).map((v) => (
           <Button
             key={v}
-            variant="ghost"
+            size="md"
+            variant={view === v ? "primary" : "secondary"}
             aria-pressed={view === v}
-            className={view === v ? "bg-raised font-semibold text-fg" : undefined}
             onClick={() => {
               setView(v);
               setProblem(null);

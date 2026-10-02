@@ -25,7 +25,7 @@ reference file a task names. Do not read the whole reference folder.
 - [x] **Task 6 - Kitchen display.** `mez Desktop KDS and Dashboard.dc.html`,
   espresso night: column headers, the ticket's left rule by age, timer
   pill. Read it from three metres.
-- [ ] **Task 7 - Back office.** `mez Desktop Management.dc.html`:
+- [x] **Task 7 - Back office.** `mez Desktop Management.dc.html`:
   dashboard stat cards, menu, stock, people, reports and charts (green,
   terracotta, mustard, in that order), audit, Z-report, printers, floor.
 - [ ] **Task 8 - Guest.** `mez Mobile Customer.dc.html`, inside the 60 KB

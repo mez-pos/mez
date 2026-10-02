@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import type { AreaResponse, FloorResponse, TableResponse } from "../../../shared/api-types";
 import { Button, Card, EmptyState, InboxIcon } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { pillClass } from "../../../shared/ui/pill";
 import {
   areaToShow,
   cellsOf,
@@ -151,11 +152,7 @@ function AreaView({ data, areaId, api, onChooseArea, onEdit }: AreaViewProps) {
             role="tab"
             aria-selected={a.id === areaId}
             onClick={() => onChooseArea(a.id)}
-            className={cx(
-              "min-h-tap rounded border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
-              a.id === areaId ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line text-fg-2",
-              !a.active && "text-fg-muted line-through",
-            )}
+            className={cx(pillClass(a.id === areaId), !a.active && "line-through opacity-60")}
           >
             {a.name}
           </button>

@@ -142,7 +142,7 @@ export function Heatmap({ report, csv }: { report: SalesReport; csv: ReactNode }
                         ) : (
                           <div title={cellText(c)} className="relative flex h-8 min-w-10 items-center justify-end overflow-hidden rounded-tight px-1.5">
                             {/* The tint repeats the count beside it; its strength is data. */}
-                            <span aria-hidden className="absolute inset-0 bg-info" style={{ opacity: tint(c.total.minor, top) * 0.6 }} />
+                            <span aria-hidden className="absolute inset-0 bg-accent" style={{ opacity: tint(c.total.minor, top) * 0.45 }} />
                             <span aria-hidden className="relative font-mono tabular-nums text-fg">
                               {c.bills}
                             </span>

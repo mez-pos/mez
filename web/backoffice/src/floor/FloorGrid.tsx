@@ -130,13 +130,13 @@ function TableShapeTile({ table: t }: { table: TableResponse }) {
   return (
     <span
       className={cx(
-        "flex flex-col items-center justify-center border border-line-strong bg-raised-high text-fg",
+        "flex flex-col items-center justify-center border border-line-strong bg-raised text-fg shadow-rest",
         t.shape === "round" && "aspect-square h-[88%] rounded-round",
         t.shape === "square" && "h-[88%] w-[88%] rounded",
         t.shape === "long" && "h-[60%] w-full rounded",
       )}
     >
-      <span className="max-w-full truncate px-1 text-lg font-semibold leading-tight">{t.name}</span>
+      <span className="max-w-full truncate px-1 font-serif text-lg leading-tight">{t.name}</span>
       <span className="text-sm text-fg-2">
         <span className="font-mono">{t.seats}</span>
       </span>

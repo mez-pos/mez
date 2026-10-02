@@ -48,7 +48,7 @@ export function StockScreen() {
 
       <div role="group" aria-label="Show" className="flex gap-tap-gap">
         {(["items", "recipes"] as const).map((v) => (
-          <Button key={v} variant="ghost" aria-pressed={view === v} className={view === v ? "bg-raised font-semibold text-fg" : undefined} onClick={() => setView(v)}>
+          <Button key={v} size="md" variant={view === v ? "primary" : "secondary"} aria-pressed={view === v} onClick={() => setView(v)}>
             {v === "items" ? "Items" : "Recipes"}
           </Button>
         ))}

@@ -10,6 +10,7 @@ import { useAuthStore } from "../../../shared/auth/use-auth";
 import { Button, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
+import { pillClass } from "../../../shared/ui/pill";
 import { inputClass } from "../FormFields";
 import { auditQuery, authorisedText, dayText, filterFromSearch, itemText, kinds, kindWords, reasonWords, type AuditFilter } from "./audit-logic";
 
@@ -72,10 +73,7 @@ export function AuditScreen() {
               type="button"
               aria-pressed={on}
               onClick={() => set({ kind: on ? null : k })}
-              className={cx(
-                "flex min-h-tap items-center gap-2 rounded border px-3.5 text-sm outline-offset-2 outline-line-focus focus-visible:outline-2",
-                on ? "border-line-strong bg-raised font-semibold text-fg" : "border-line text-fg-2 hover:bg-raised",
-              )}
+              className={pillClass(on)}
             >
               {kindWords[k].many}
               <span className="font-mono tabular-nums">{counts ? counts[k] : "·"}</span>

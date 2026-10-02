@@ -99,7 +99,7 @@ export function OverTime({ report, csv }: { report: SalesReport; csv: ReactNode 
             {report.series.map((p, i) => (
               <div key={p.start} className="flex h-full min-w-0 flex-1 items-end">
                 {/* The one inline style: a height that is data. */}
-                <div className="min-h-px w-full rounded-tight bg-info" style={{ height: `${heights[i] ?? 0}%` }} />
+                <div className="min-h-px w-full rounded-tight bg-accent" style={{ height: `${heights[i] ?? 0}%` }} />
               </div>
             ))}
           </div>
@@ -118,13 +118,13 @@ export function OverTime({ report, csv }: { report: SalesReport; csv: ReactNode 
   );
 }
 
-/** A share as a slate bar and a whole percentage. */
+/** A share as a green bar and a whole percentage. */
 export function Share({ percent }: { percent: number | undefined }) {
   if (percent === undefined) return null;
   return (
     <span className="flex items-center justify-end gap-2">
-      <span aria-hidden className="h-2 w-16 rounded-tight bg-line">
-        <span className="block h-full rounded-tight bg-info" style={{ width: `${percent}%` }} />
+      <span aria-hidden className="h-2 w-16 overflow-hidden rounded-pill bg-sunken">
+        <span className="block h-full rounded-pill bg-accent" style={{ width: `${percent}%` }} />
       </span>
       <span className="w-10 font-mono tabular-nums">{percent}%</span>
     </span>
