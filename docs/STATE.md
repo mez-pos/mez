@@ -13,23 +13,22 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 5b: CSV on the server** (ADR-119).
-`GET /api/v1/reports/sales/csv?from=&to=&every=&report=` (summary,
-over_time, items, categories, channels, staff, payments, taxes, hours) and
-`GET /api/v1/audit/csv?from=&to=&staff=&kind=` (the whole filter, not a
-page), both `reports.view`, both answering `CsvResponse` `{filename,
-content_type, text}` as the shift exports do. Tables are `export.Table`
-(the Tally writer); `report.Result.Table`, `audit.Service.Table`. Go
-tests only: not tried against a real binary or opened in a spreadsheet.
+**Phase 10, Task 5c: The Sales screen** (ADR-120, spec
+`docs/design/screens/backoffice-reports.md`). `/sales`, `g s`,
+`reports.view`: quick ranges and From/To, a Day/Week/Month cut that
+follows the range, the headline figures, sales over time as plain bars
+over a table, payment and channel mix with shares, and a Download CSV per
+section. `web/backoffice/src/sales`. Tried in a browser against a real
+binary: four bills rung up over the API, figures and both CSV files
+checked against a hand sum (this also tried Task 5b's routes).
 
 ## Next task
 
-**Phase 10, Task 5c: The Sales screen.** Spec first
-(`docs/design/screens/backoffice-reports.md`). A range picker, the
-headline figures, sales over time drawn without a chart library, payment
-and channel mix. The CSV buttons save `CsvResponse.text` as a Blob under
-`filename`, as `web/backoffice/src/reports/ExportsPanel.tsx` saves a
-shift's exports.
+**Phase 10, Task 5d: What sold, who sold it, and when.** Product mix,
+category performance and staff performance tables, and the hourly
+heatmap, each with its CSV. They are sections of the Sales screen
+(`SalesSections.tsx`), fed by the same read; the sheets are `items`,
+`categories`, `staff` and `hours`. Add them to the spec first.
 
 ## Known broken / in progress
 
@@ -40,7 +39,11 @@ shift's exports.
   button yet (the route exists, ADR-119).
 - CSV (ADR-119): each sheet reads the range again. The Tally files skip
   the formula guard and the byte order mark the report files have.
-- Reports (ADR-118): no screen yet (5c, 5d). A range projects every order
+- Sales screen (ADR-120): tried with one day of sales and no tax, credit
+  notes or refunds. The range is not in the URL, so a reload returns to
+  seven days. A CSV has not been opened in Excel itself. Left open past
+  04:00, the range stays yesterday's and no quick range shows pressed.
+- Reports (ADR-118): the screen lacks 5d to 5f. A range projects every order
   it touches from its first event; a year at a busy venue may take seconds.
   Items and categories are named as the menu stands now. The day start is
   the shift's constant.

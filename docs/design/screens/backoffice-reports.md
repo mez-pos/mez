@@ -1,0 +1,91 @@
+# Back office: Sales reports
+
+A range of trading days added up: what was sold, how it was paid, where it
+came from. Built in phase 10 Task 5c over the server of Tasks 5a and 5b
+(ADR-118, ADR-119). Task 5d adds what sold, who sold it and when; Task 5e
+the discount and void analysis; Task 5f closing stock. They are sections
+of this one screen, under the same range.
+
+## Purpose
+
+Answer "how did last week go?" in one look, and hand the accountant a file
+whose numbers are the ones on the screen.
+
+## Layout
+
+Paper, inside the back office shell, section **Sales reports**, path
+`/sales`, under Reports in the navigation, `reports.view`, keys `g s`.
+
+- **Header:** "Sales reports" in Instrument Serif; under it, one line in
+  `fg-3`: "A sale counts on the trading day its bill was invoiced. A
+  trading day runs 04:00 to 04:00."
+- **Range,** one row that wraps:
+  - Quick ranges, a row of toggles (`aria-pressed`): **Today**, **7
+    days**, **30 days**, **This month**. The last seven days, today
+    included, by default. The pressed one is the one the dates match;
+    none is pressed for a range typed by hand.
+  - **From** and **To**: trading days (`<input type="date">`), mono.
+  - **By**: Day, Week or Month, how sales over time is cut. It follows
+    the range until it is chosen by hand: a day up to 31 days, a week up
+    to 26 weeks, a month beyond.
+  - The range applies as it changes. While a new range is read the old
+    figures stay, dimmed.
+- **The range,** the headline figures in a card:
+  - The one total on the screen: **Sales**, the total of the bills
+    invoiced, tax included, in Instrument Serif; under it "12 bills ·
+    average 285.00" in `fg-3`, mono figures.
+  - Beside it a short table of figures, label left, amount mono right:
+    Gross, Discounts, Net sales, Tax, Credit notes (with their count),
+    Sales after credit notes, Refunds (with their count), Tips.
+  - **Download CSV** saves the `summary` sheet.
+- **Sales over time,** a card:
+  - Bars, one per period, 128px tall, drawn with plain elements: each bar's height
+    is its share of the tallest period's total. Slate, the neutral data
+    series (tokens.md); no accent. A period with no sales is a hairline.
+    The first and last period are labelled under the bars. The bars are
+    a picture of the table below and hidden from screen readers.
+  - Under the bars, the table: Period ("1 Oct", or "28 Sept to 4 Oct"),
+    Bills, Net, Tax, Total. It scrolls inside the card past twelve rows.
+  - **Download CSV** saves the `over_time` sheet.
+- **How it was paid** and **Where it came from,** two cards side by side
+  on a wide screen:
+  - Payments: Method, Tenders, Net (taken less voided and refunded), and
+    its share of every method's net as a percentage with a slate bar.
+  - Channels: Channel, Bills, Total, and its share of the total.
+  - Each has **Download CSV** (`payments`, `channels`).
+  - A share is a whole percentage of the listed rows; shares are not
+    shown when the figures they would divide are zero or negative.
+
+## States
+
+- **Nothing in the range:** the headline says zero in every figure; in
+  place of the bars, "No sales between 24 Sept and 30 Sept."; the mix
+  cards say "Nothing was paid" and "No bills".
+- **A day cleared:** "Pick a first and a last day." in place of the cards.
+- **Loading:** "Adding up the range" in place of the cards. While the
+  last range's figures are shown dimmed, Download CSV is off: a file must
+  match its screen.
+- **Offline / refused:** the words in place of the cards, with Try again;
+  a refused range (over a year, To before From) says the server's words.
+- **A download that fails** says so in a toast; the screen stays.
+
+## Data
+
+- `GET /api/v1/reports/sales?from=&to=&every=`, keyed by the range, the
+  last answer kept while the next is read.
+- `GET /api/v1/reports/sales/csv?from=&to=&every=&report=` on a download:
+  `CsvResponse.text` saved as `filename`.
+
+## Constraints
+
+- No accent on this screen: nothing on it is an action that moves money.
+- Every number mono, every amount right-aligned and through `Money`.
+- The screen adds nothing up. Every figure is the server's; the only
+  arithmetic here is a bar's height, a share, and the average bill
+  (the total over the bills, to the nearest minor unit).
+- No chart library: the bars are elements with a height.
+
+## Reference
+
+Built from `docs/design/components.md` and the paper tokens. The archive
+was not consulted.

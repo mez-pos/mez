@@ -7,6 +7,7 @@ import { useState } from "react";
 import type { ExportFileResponse, ExportKind, ExportResponse, ExportsResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { Button, Card, useToast } from "../../../shared/ui";
+import { saveFile } from "../save-file";
 
 const kinds: Readonly<Record<ExportKind, { title: string; what: string }>> = {
   tax_register: { title: "Tax register", what: "Every invoice and credit note by the columns your tax regime reports." },
@@ -18,18 +19,6 @@ const kinds: Readonly<Record<ExportKind, { title: string; what: string }>> = {
 export function sizeText(bytes: number): string {
   if (bytes < 1024) return `${bytes} bytes`;
   return `${(Math.round((bytes / 1024) * 10) / 10).toString()} KB`;
-}
-
-/** Hands text to the browser as a file to save. */
-function save(filename: string, text: string, type: string) {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.append(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
 }
 
 export function ExportsPanel({ shiftId }: { shiftId: number }) {
@@ -46,7 +35,7 @@ export function ExportsPanel({ shiftId }: { shiftId: number }) {
     setBusy(f.id);
     try {
       const got = await store.api.get<ExportResponse>(`/api/v1/exports/${f.id}`);
-      save(got.filename, got.text, got.content_type);
+      saveFile(got.filename, got.text, got.content_type);
     } catch (err) {
       toast(`Couldn't download ${f.filename}: ${err instanceof Error ? err.message : String(err)}`, { tone: "warning" });
     } finally {

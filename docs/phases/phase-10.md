@@ -102,7 +102,7 @@ Phase 09.
   - [x] **Task 5b: CSV on the server.** Every report of 5a, and the audit
     trail, as a CSV download a spreadsheet opens: money in major units with
     the currency named once, days as trading days.
-  - [ ] **Task 5c: The Sales screen.** Spec first (`backoffice-reports.md`).
+  - [x] **Task 5c: The Sales screen.** Spec first (`backoffice-reports.md`).
     A range picker, the headline figures, sales over time drawn without a
     chart library, payment and channel mix.
   - [ ] **Task 5d: What sold, who sold it, and when.** Product mix,

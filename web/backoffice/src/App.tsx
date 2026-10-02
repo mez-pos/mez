@@ -16,6 +16,7 @@ import { Dashboard } from "./shell/Dashboard";
 import { SectionGate } from "./shell/SectionGate";
 import { AuditScreen } from "./audit/AuditScreen";
 import { PeopleScreen } from "./people/PeopleScreen";
+import { SalesScreen } from "./sales/SalesScreen";
 import { StockScreen } from "./stock/StockScreen";
 import { TipsScreen } from "./tips/TipsScreen";
 import { Button } from "../../shared/ui";
@@ -56,6 +57,11 @@ function SignedInRoutes() {
       <Route path="/audit">
         <SectionGate id="audit">
           <AuditScreen />
+        </SectionGate>
+      </Route>
+      <Route path="/sales">
+        <SectionGate id="sales">
+          <SalesScreen />
         </SectionGate>
       </Route>
       <Route path="/people">

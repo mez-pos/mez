@@ -3360,3 +3360,33 @@ Cost: a sheet reads the whole range again, as the JSON does; nine sheets
 are nine reads. The Tally files are not passed through `export.Text` and
 carry no byte order mark: they are written at the close and Tally's
 import has not been tried with either.
+
+## ADR-120 - The Sales reports screen is one screen of sections, its bars plain elements
+2026-10 · Status: accepted
+Decision: phase 10, Task 5c builds `/sales` (`backoffice-reports.md`,
+`web/backoffice/src/sales`).
+  - **One screen, one range.** The headline, sales over time and the
+    payment and channel mix are sections under one range picker; Tasks 5d
+    to 5f add their sections to it, not screens of their own. One read of
+    `GET /api/v1/reports/sales` feeds every section.
+  - **The cut follows the range until chosen.** A day up to 31 days, a
+    week up to 26 weeks, a month beyond; choosing Day, Week or Month by
+    hand holds from then on.
+  - **Bars without a library.** A bar is an element whose height is its
+    share of the tallest period, the one inline style on the screen: a
+    height that is data has no class. Slate, the neutral data series; no
+    accent. The same periods are a table under the bars, so the bars are
+    hidden from screen readers and no figure is only a picture.
+  - **Three things are worked out in the browser:** a bar's height, a
+    share as a whole percentage of the listed rows (so shares may sum to
+    99 or 101), and the average bill, the total over the bills to the
+    nearest minor unit. Every other figure is the server's. A share is
+    not shown when a row is negative or the sum is not positive.
+  - **A download is the section's own sheet** (ADR-119), saved through
+    `save-file.ts`, which the shift exports now share.
+Because: an owner compares a week at a glance and then wants the same
+numbers as a file; a chart library would be the back office's largest
+dependency for seven rectangles.
+Cost: the average bill is not in the CSV, since the server does not
+compute it. A year by day is 366 thin bars; the cut defaults away from
+that but does not forbid it.
