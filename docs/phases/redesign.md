@@ -20,7 +20,7 @@ reference file a task names. Do not read the whole reference folder.
 - [x] **Task 4 - Register and tender.** `mez Desktop POS.dc.html`:
   category chips as pills with a green active fill, menu cards, the
   ticket rail, the tender screen, modifiers sheet.
-- [ ] **Task 5 - Floor, past bills, print queue, close the day.** Table
+- [x] **Task 5 - Floor, past bills, print queue, close the day.** Table
   cards and status pills from the same file.
 - [ ] **Task 6 - Kitchen display.** `mez Desktop KDS and Dashboard.dc.html`,
   espresso night: column headers, the ticket's left rule by age, timer

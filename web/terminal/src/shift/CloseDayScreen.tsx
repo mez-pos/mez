@@ -145,7 +145,7 @@ function Reveal({ shift, busy, onExplain }: RevealProps) {
       </dl>
       <p
         className={cx(
-          "flex items-baseline justify-between border-t border-line pt-3 text-xl font-semibold",
+          "flex items-baseline justify-between border-t border-line pt-3 font-serif text-xl",
           words.tone === "danger" && "text-danger",
           words.tone === "warning" && "text-warning",
           words.tone === "success" && "text-success",
@@ -175,7 +175,7 @@ function Reveal({ shift, busy, onExplain }: RevealProps) {
               maxLength={maxReason}
               rows={3}
               onChange={(e) => setReason(e.target.value)}
-              className="rounded border border-line bg-raised px-3 py-2 text-base text-fg outline-offset-2 outline-line-focus focus-visible:outline-2"
+              className="rounded border border-line-strong bg-raised px-4 py-3 text-base text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
             />
           </label>
           <Button type="submit" disabled={busy || reason.trim() === ""} className="self-start">

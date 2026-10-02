@@ -107,7 +107,7 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
       </div>
 
       {banner && (
-        <div role="status" className="flex flex-wrap items-center gap-tap-gap rounded border border-accent bg-accent-tint text-accent-text px-4 py-2">
+        <div role="status" className="flex flex-wrap items-center gap-tap-gap rounded border border-accent bg-accent-tint px-4 py-2 text-accent-text">
           <p className="flex-1 text-base font-semibold">{banner}</p>
           <Button
             variant="primary"
@@ -131,8 +131,8 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
               aria-selected={a.id === areaId}
               onClick={() => setAreaChoice(a.id)}
               className={cx(
-                "min-h-tap rounded border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
-                a.id === areaId ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line text-fg-2",
+                "min-h-tap rounded-pill border px-5 text-base outline-offset-2 outline-attention focus-visible:outline-3",
+                a.id === areaId ? "border-accent bg-accent font-semibold text-accent-fg" : "border-line-strong bg-raised font-medium text-fg hover:bg-raised-high",
               )}
             >
               {a.name}
@@ -206,7 +206,7 @@ function Grid({ data, areaId, now, names, picked, onTap }: GridProps) {
     <div className="overflow-x-auto">
       <ul
         aria-label="Tables"
-        className="grid gap-2.5"
+        className="grid gap-3"
         // A tile is 88 to 144px, whatever the width: a small floor stays
         // tiles, not a wall of squares, and a wide one scrolls sideways.
         style={{ gridTemplateColumns: `repeat(${columns}, minmax(5.5rem, 9rem))` }}
@@ -256,15 +256,15 @@ function TableTile({ table: t, now, names, picked, onTap }: TableTileProps) {
       aria-pressed={picked || undefined}
       aria-label={`Table ${t.name}, ${spec.word}, ${text.people}${text.time ? `, ${text.time}` : ""}`}
       className={cx(
-        "flex aspect-square min-h-22 w-full flex-col border-2 bg-raised outline-offset-2 outline-line-focus focus-visible:outline-2",
+        "flex aspect-square min-h-22 w-full flex-col border-2 bg-raised shadow-rest outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2",
         // A round table is drawn round, with everything in the middle of it.
-        round ? "items-center justify-center gap-1 rounded-round p-4 text-center" : "justify-between rounded p-2.5 text-left",
+        round ? "items-center justify-center gap-1 rounded-round p-4 text-center" : "justify-between rounded-card p-3 text-left",
         borders[spec.tone],
         picked && "outline outline-4",
       )}
     >
       <span className={cx("flex gap-2", round ? "flex-col items-center" : "items-start justify-between")}>
-        <span className="max-w-full truncate text-xl font-semibold leading-tight">{t.name}</span>
+        <span className="max-w-full truncate font-serif text-xl leading-tight">{t.name}</span>
         {text.time && <span className="font-mono text-sm tabular-nums text-fg-muted">{text.time}</span>}
       </span>
       <span className={cx("flex flex-col gap-1", round ? "items-center" : "items-start")}>
@@ -379,7 +379,7 @@ function TableSheet({ table: t, tickets, names, now, lateAfter, floor, onTicket,
                     type="button"
                     disabled={busy}
                     onClick={() => run(() => onTicket(o.id), false)}
-                    className="grid min-h-tap w-full grid-cols-[1fr_auto] items-center gap-3 rounded border border-line bg-raised px-4 py-3 text-left outline-offset-2 outline-line-focus focus-visible:outline-2"
+                    className="grid min-h-tap w-full grid-cols-[1fr_auto] items-center gap-3 rounded border border-line-strong bg-raised px-4 py-3 text-left outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
                   >
                     <span className="flex flex-col gap-1">
                       <span className="text-base font-semibold">Open ticket: {ticketLabel(o, names)}</span>

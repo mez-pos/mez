@@ -55,7 +55,7 @@ function JobRow({ job, now, queue }: { job: PrintJobResponse; now: Date; queue: 
       .finally(() => setBusy(false));
   };
   return (
-    <li className="border-b border-line py-3">
+    <li className="border-b border-line-soft py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-base font-semibold">{job.label}</p>

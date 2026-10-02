@@ -36,7 +36,7 @@ export function PastBillsSheet({ onPick, onClose }: PastBillsSheetProps) {
         )}
         <ol>
           {bills.data?.bills.map((b) => (
-            <li key={b.id} className="border-b border-line">
+            <li key={b.id} className="border-b border-line-soft">
               <button
                 type="button"
                 onClick={() => onPick(b)}

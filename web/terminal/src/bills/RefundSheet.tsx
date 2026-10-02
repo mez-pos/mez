@@ -82,7 +82,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
             {order.lines
               .filter((l) => unitsLeft(l) > 0)
               .map((l) => (
-                <li key={l.id} className="flex items-center justify-between gap-3 border-b border-line py-2">
+                <li key={l.id} className="flex items-center justify-between gap-3 border-b border-line-soft py-2">
                   <span className="min-w-0">
                     <span className="block text-base font-medium">{l.name}</span>
                     <span className="text-sm text-fg-muted">
@@ -111,7 +111,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
           </div>
         )}
 
-        <section aria-label="Credit note" aria-live="polite" className="rounded border border-line bg-chrome p-4">
+        <section aria-label="Credit note" aria-live="polite" className="rounded-card border border-line bg-sunken p-4">
           {!selection && <p className="text-base text-fg-muted">The credit note's figures show here.</p>}
           {selection && preview.isPending && <p className="text-base text-fg-muted">Working it out</p>}
           {selection && preview.isError && (

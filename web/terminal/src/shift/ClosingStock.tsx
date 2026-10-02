@@ -78,7 +78,7 @@ export function ClosingStock({ sheet, onRecord }: ClosingStockProps) {
               <span className="flex items-center gap-2">
                 <input
                   aria-label={`${it.name}, in ${it.unit}`}
-                  className="min-h-tap w-36 rounded border border-line-strong bg-raised-high px-3 text-right font-mono text-base tabular-nums text-fg outline-offset-2 outline-line-focus focus-visible:outline-2"
+                  className="min-h-tap w-36 rounded border border-line-strong bg-raised px-4 text-right font-mono text-base tabular-nums text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
                   inputMode="decimal"
                   autoComplete="off"
                   value={typed[it.id] ?? ""}

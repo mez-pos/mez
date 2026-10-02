@@ -13,21 +13,20 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Redesign, Task 4: register and tender** (`docs/phases/redesign.md`).
-Category chips are pills, the chosen one a green fill. Menu cards carry
-a serif name and price. A chosen option, on every screen, is a green
-border on the green tint. Tender panels are cards. "Late" is terracotta
-again: it rode the accent role, which turned green in Task 2. Sheet
-footers fill the sheet's width. Seen in a browser: register, the
-modifier sheet, the cash tender screen. Before it, Tasks 1 to 3
-(ADR-127, ADR-128).
+**Redesign, Task 5: floor, past bills, print queue, close the day**
+(`docs/phases/redesign.md`). Table tiles are cards with a serif name,
+bordered in their state's fill; area tabs are pills, the chosen one
+green. Soft dividers in the bills, refund and print queue lists; the
+refund's credit note panel is a well; fields in close the day match the
+rest. Seen in a browser with six tables: the floor with one table
+ordered, the seat sheet (and Qty in it), the drawer count. Before it,
+Tasks 1 to 4 (ADR-127, ADR-128).
 
 ## Next task
 
 Either, as the owner chooses:
 
-**Redesign, Task 5: floor, past bills, print queue, close the day**
-(`docs/phases/redesign.md`).
+**Redesign, Task 6: kitchen display** (`docs/phases/redesign.md`).
 
 **Phase 10, Task 6: Settings.** Far larger than one session: split it
 first, commit the split, and stop. Known broken below lists what earlier
@@ -40,10 +39,12 @@ the day start, variance threshold and tip rule are constants;
 - Redesign (ADR-128): screens are restyled through the primitives only.
   The screen specs describe the old layouts. Not seen by eye: card and
   UPI tender, split, the invoice panel, a menu card with a photo, the
-  discount, note, approval and tickets sheets, floor, kitchen board, a
-  toast, an empty state, Qty, the guest app. The chosen-option green was
-  applied by pattern to floor, refund, drawer count and the back office
-  too, unseen. NumPad keys use `sunken`, a stand-in on night that matches
+  discount, note, approval and tickets sheets, a past bill and its
+  refund sheet, the print queue, the reconciliation after a count,
+  closing stock, floor states other than free and ordered, move and
+  join, kitchen board, a toast, an empty state, the guest app. The
+  drawer count's face values sit right-aligned in their column, as
+  before the redesign. NumPad keys use `sunken`, a stand-in on night that matches
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 

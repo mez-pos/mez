@@ -54,10 +54,10 @@ export function BillScreen({ orderId, onBack, onTakeBalance }: BillScreenProps) 
         {invoice ? <InvoiceFor order={order} seq={invoice.seq} /> : <p className="text-base text-fg-muted">This bill has no invoice.</p>}
         {order.credits.length > 0 && (
           <section aria-label="Credit notes" className="w-88 max-w-full">
-            <h2 className="text-lg font-semibold">Credit notes</h2>
+            <h2 className="font-serif text-lg">Credit notes</h2>
             <ol>
               {order.credits.map((c) => (
-                <li key={c.seq} className="flex items-baseline justify-between gap-3 border-b border-line py-2">
+                <li key={c.seq} className="flex items-baseline justify-between gap-3 border-b border-line-soft py-2">
                   <span className="min-w-0">
                     <span className="block font-mono text-base">{c.credit_no}</span>
                     <span className="text-sm text-fg-muted">{refundReasonText(c.reason)}</span>
@@ -81,7 +81,7 @@ export function BillScreen({ orderId, onBack, onTakeBalance }: BillScreenProps) 
           {order.totals.refunded.minor > 0 && <Row label="Refunded" amount={negate(order.totals.refunded)} />}
           <ol aria-label="Payments taken" className="mt-3 border-t border-line pt-2">
             {order.tenders.map((t) => (
-              <li key={t.id} className="flex flex-col gap-1 border-b border-line py-2.5">
+              <li key={t.id} className="flex flex-col gap-1 border-b border-line-soft py-2.5">
                 <div className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2 text-base">
                     {methodNames[t.method]}
