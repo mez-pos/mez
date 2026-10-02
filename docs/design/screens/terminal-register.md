@@ -17,22 +17,22 @@ Two columns inside `SignedInShell`, filling the screen below its header.
 Nothing but the item grid and the line list scrolls.
 
 - **Menu column** (flexible):
-  - Top, fixed: the **category rail**, one 44px chip per category with its
-    item count in mono, wrapping onto a second row rather than scrolling
+  - Top, fixed: the **category rail**, one 48px chip per category with its
+    item count in the numeral face, wrapping onto a second row rather than scrolling
     sideways. The chosen category is the raised-high surface with a strong
     border; the rest are raised. Right of the chips, the **search field**.
   - Below, scrolling: the **item grid**, `repeat(auto-fill, minmax(10.5rem,
     1fr))`, gap 10px. A tile is at least 7rem tall: the name (base, semibold,
-    wraps), the station as metadata, and the price in mono at the bottom,
+    wraps), the station as metadata, and the price in the numeral face at the bottom,
     right-aligned. An item with modifier groups says how many choices it has.
 - **Ticket rail** (26rem, chrome surface, hairline on the left):
   - Top, fixed: the metadata trail (`TICKET · TABLE 4 · 2 COVERS`), then
-    the order id in mono, as written: the trail uppercases, and `ord_` ids
+    the order id in the numeral face, as written: the trail uppercases, and `ord_` ids
     are case sensitive. On the right, **Tickets** with the count of open
     tickets, and **History** under it. A held ticket shows "Held · On hold: nothing can be added"
     and **Resume** under the header.
-  - Middle, scrolling: the **lines**. Quantity in mono, the name, the chosen
-    modifiers under it in muted text, the line's amount in mono on the right.
+  - Middle, scrolling: the **lines**. Quantity in the numeral face, the name, the chosen
+    modifiers under it in muted text, the line's amount in the numeral face on the right.
     Each line is one tap target that opens its **LineSheet**. A voided line
     stays, struck through, with a "Void" chip and its reason; a comped one
     has a "Comped" chip; a line discount shows under the line. Notes show
@@ -43,19 +43,19 @@ Nothing but the item grid and the line list scrolls.
   - Bottom, fixed, never scrolls: **Discount**, **Note** and **Hold** for
     the whole order, then, when there are discounts, **Items**, **Line discounts** and
     one row per order discount; then **Subtotal**, **Tax**, and **Total** in
-    Instrument Serif at `--text-total` via `Money variant="total"`. Once
+    the serif at `--text-total` via `Money variant="total"`. Once
     anything is paid, **Paid** and **Balance** under it. Last, **Charge**,
-    58px and primary, with why it is disabled under it when it is
+    56px and primary, with why it is disabled under it when it is
     (nothing on the ticket, held, lines still Adding, nothing owed).
 - **TicketsSheet**: every ticket not closed, oldest first: where it is
   ("Table 4 · 2 covers" or "Counter"), a Held or Settling chip, the order
-  id, its item count, its total, and how long it has run in mono ("12m",
+  id, its item count, its total, and how long it has run in the numeral face ("12m",
   "1h 05m"). Past the venue's threshold (`terminal.ticket_late_minutes`,
-  20 by default) the time turns vermilion with a "Late" chip: now. The
+  20 by default) the time turns terracotta with a "Late" chip: now. The
   ticket in front says "On screen". Below: **Counter sale**, and a table
   number on the pad with a covers stepper, **Start table 4, 2 covers**.
 - **HistorySheet** (Task 6, read-only): the order's events, oldest first,
-  through the `Timeline` primitive. Each entry: the time in mono in the
+  through the `Timeline` primitive. Each entry: the time in the numeral face in the
   venue's time zone, a dot in the event's tone, what happened, its detail
   (a void or comp reason, a discount's reason, a note, a modifier change as
   "Dairy → Oat"), and who did it, "authorised by" when someone else
@@ -69,9 +69,9 @@ Nothing but the item grid and the line list scrolls.
   their PIN on the pad.
 - **ModifierSheet** (`Sheet`: bottom on touch, side panel on desktop): the
   item's name, then each group with "Required · Choose 1" or "Optional · Up
-  to 3" on the right, its choices two to a row, 44px, a price delta in mono
+  to 3" on the right, its choices two to a row, 48px, a price delta in the numeral face
   where there is one. Fixed at the bottom: a reserved message line and the
-  58px primary button, "Add to ticket" or "Save changes", carrying the
+  56px primary button, "Add to ticket" or "Save changes", carrying the
   price of one of the item with the choices made, live.
 
 ## Data
@@ -149,7 +149,7 @@ takes the item, Modify, the choice, Save.
 - **No search match:** "Nothing matches "latte"." with Clear search.
 - **Menu error:** says the server could not be reached, with Try again. A
   menu already cached keeps working while the server is away.
-- **Empty ticket:** "No items yet" in Instrument Serif italic, "Tap the menu
+- **Empty ticket:** "No items yet" in the serif, "Tap the menu
   to start a ticket". Totals show zero.
 - **Offline:** a tap still shows its line as Adding; when the command fails
   it becomes a refused line with Retry, never a silent loss. The connection
@@ -169,21 +169,23 @@ takes the item, Modify, the choice, Save.
 ## Constraints
 
 - The total block never scrolls away. It is outside the scrolling line list.
-- Every target is 44px or more: category chips, item tiles (7rem), Retry and
+- Every target is 48px or more: category chips, item tiles (7rem), Retry and
   Remove.
-- Every number is mono and right-aligned: counts, prices, quantities, totals.
-- Vermilion is only for money and now: the Charge button, and nothing else
-  on this screen. The total was vermilion until Charge arrived; one accent
-  means it is now the default text colour. Categories, tiles and the ticket
-  id do not use it.
+- Every number is tabular and right-aligned: counts, prices, quantities, totals.
+- Green commits: the Charge button, and the chosen category's pill, which
+  says where you are. The total is the heading ink, not green. Tiles and
+  the ticket id do not use it.
 - A tap on a tile must never be lost to a slow server: the line appears at
   once as Adding, and taps are sent in order, one at a time, so the first
   item's order exists before the second item is added to it.
 
 ## Reference
 
-`docs/design/reference/Nofiltr Terminal.dc.html`, block `s_register`, line
-76. Departures:
+The layout was first drawn from the Nofiltr archive
+(`docs/design/reference/Nofiltr Terminal.dc.html`, block `s_register`),
+kept as history. Its look is now `docs/design/tokens.md` and
+`docs/design/reference/mez/mez Desktop POS.dc.html`. Departures from the
+first:
 
 - **Search replaces "Open items" and "Favourites"** in the top right. Neither
   has a backing feature yet; search is what the task asks for.
@@ -198,11 +200,11 @@ takes the item, Modify, the choice, Save.
   fires, or what is held.
 - **No "Guest" picker** in the rail header: there are no customers until
   phase 10.
-- **The ticket id is not vermilion.** The design colours `#ticket` and the
-  total both; one accent per screen means the total keeps it.
+- **The ticket id is not coloured.** The first design coloured `#ticket`
+  and the total both.
 - **Line actions live in a sheet, not on the line.** The design puts
   34px `−`, `+`, Modify and Void buttons, in 11px type, on every line. Under
-  the 44px and 15px rules that doubles each line's height, and puts Void a
+  the 48px and 15px rules that doubles each line's height, and puts Void a
   thumb's width from `+`. One tap on the line opens them instead.
 - **Quantity only until the kitchen has the line** (ADR-072); after that,
   void and ring up again.

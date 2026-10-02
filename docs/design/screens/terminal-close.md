@@ -15,34 +15,34 @@ closing takes a manager under three minutes with a full drawer.
 
 - **Till closed** takes the register's place whenever no shift is open.
   One centred column, 32rem:
-  - "The till is closed" in Instrument Serif, and under it "Count the float
+  - "The till is closed" in the serif, and under it "Count the float
     into the drawer to start the day."
   - **The counter** (below), titled "Float".
   - **Open the till** with the float's figure, "Open the till with
-    Rs. 2,000.00" (the one accent, 58px). A float of nothing is allowed.
+    Rs. 2,000.00" (the one primary, 56px). A float of nothing is allowed.
 - **Close the day** is in the Tickets sheet, under Past bills: **Close the
   day** and "Count the drawer and end the shift." It takes the register's
   place in two columns, like the tender screen:
   - **Left:** the counter, titled "Count the drawer". Nothing on this
     screen says, hints or rounds towards what is expected.
   - **Right rail** (26rem): the shift's trading day and when it opened, in
-    mono; "Counted" and the counter's total as the one total; **Submit
-    count** (the accent); **Back to the register**. Submit asks first:
+    tabular; "Counted" and the counter's total as the one total; **Submit
+    count** (the primary); **Back to the register**. Submit asks first:
     "The count can't be changed once it's in. Submit Rs. 9,520.00?"
 - **The reveal** replaces the counter once the count is in, and is what a
   counted shift opens on (after a reload, or on another till):
-  - **Expected**, **Counted** and the **variance** in mono, right-aligned.
+  - **Expected**, **Counted** and the **variance** in the numeral face, right-aligned.
     The variance is a word and a colour, never colour alone: "Balanced",
-    "Short Rs. 9.50" (danger), "Over Rs. 5.00" (gold, the warning tone).
+    "Short Rs. 9.50" (danger), "Over Rs. 5.00" (mustard, the warning tone).
   - When the variance is past the venue's threshold and has no reason:
     "Rs. 9.50 is more than the Rs. 0.00 allowed. Say why before
     closing." and a reason field (up to 500 characters) with **Save
     reason**. Within the threshold the field is there but optional.
   - A saved reason shows as a quote with who gave it; it cannot be changed.
-  - **Close the shift** (the accent) once the count is in and any reason
+  - **Close the shift** (the primary) once the count is in and any reason
     owed is saved. Then "Shift closed" and the till is closed.
 - **The counter:** one row per note and coin of the venue's currency,
-  largest first (Rs. 500 down to Rs. 1 for INR): the face in mono, the
+  largest first (Rs. 500 down to Rs. 1 for INR): the face in the numeral face, the
   count, and the row's value. Tapping a row picks it; the pad (`NumPad`,
   amount layout, `lg`) types that row's count, and **Next** moves to the
   row below. The picked row has the focus ring and a raised fill. Under the
@@ -80,7 +80,7 @@ closing takes a manager under three minutes with a full drawer.
 
 - After the drawer is counted and revealed, the stock items marked **Count
   at close** in the back office are listed under it: "Count the stock",
-  one field each in its unit, mono, right-aligned. **Blind**, as the
+  one field each in its unit, tabular, right-aligned. **Blind**, as the
   drawer is: what the stock record says is not on the till until the
   count is in.
 - **Save the stock count** sends every item together; an item left
@@ -109,8 +109,8 @@ closing takes a manager under three minutes with a full drawer.
   and the reveal only from the server's answer to the count.
 - The only arithmetic in the UI is adding up the counter for display;
   the server's total is the one recorded.
-- One accent per screen: Open the till, Submit count, Close the shift.
-- Every number mono and right-aligned; every target 44px, the pad 64px.
+- One primary per screen: Open the till, Submit count, Close the shift.
+- Every number tabular and right-aligned; every target 48px, the pad 64px.
 
 ## Reference
 

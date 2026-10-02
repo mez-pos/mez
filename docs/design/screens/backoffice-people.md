@@ -15,7 +15,7 @@ without being able to hand out more than you hold.
 Paper, inside the back office shell, section **People**, path `/people`,
 `staff.manage`.
 
-- **Header row:** "People" in Instrument Serif; **Add a person** (primary)
+- **Header row:** "People" in the serif; **Add a person** (primary)
   on the Staff view, **Add a role** (primary) on the Roles view.
 - **A switch, Staff and Roles** (`aria-pressed`), as Menu and Stock have.
 
@@ -27,8 +27,8 @@ A table, the active first, by name:
 |---|---|
 | Name | the name; "(you)" after your own; "Deactivated" (struck, muted) |
 | Role | the role's name |
-| Since | the date they were added, mono |
-| | **Edit**, **New PIN**, **Deactivate** or **Bring back** (44px) |
+| Since | the date they were added, tabular |
+| | **Edit**, **New PIN**, **Deactivate** or **Bring back** (48px) |
 
 - An action the server would refuse because their role holds what yours
   does not is still shown; the refusal says why. You cannot deactivate
@@ -45,7 +45,7 @@ A table, the active first, by name:
 ### Roles
 
 One `Card` per role, by name: the name, how many active people hold it
-(mono), and its permissions in words, grouped; **Edit**, and **Delete**
+(tabular), and its permissions in words, grouped; **Edit**, and **Delete**
 when nobody holds it.
 
 - **The role form** (`Modal`, md): Name, then every permission as a
@@ -84,8 +84,8 @@ a PIN not 4 to 8 digits; "That reaches permissions you don't have";
 
 ## Constraints
 
-- One accent per view: its Add button.
-- Dates mono. A PIN field is `inputMode="numeric"`, `type="password"`,
+- One primary per view: its Add button.
+- Dates tabular. A PIN field is `inputMode="numeric"`, `type="password"`,
   `autoComplete="new-password"`, never shown back.
 
 ## Reference

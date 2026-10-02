@@ -13,7 +13,7 @@ the person at the till retry it or stop it.
 
 - **In the header**, before the connection indicator, on every terminal
   screen: **Print queue** (ghost) while everything is fine, and **Not
-  printed 2** (the danger button, the count in mono) while any job is
+  printed 2** (the danger button, the count in the numeral face) while any job is
   failing or has been given up on. Either opens the sheet.
 - **The sheet** (`Sheet`: bottom on touch, side panel with a mouse), titled
   "Print queue": the jobs newest first. Each row:
@@ -27,7 +27,7 @@ the person at the till retry it or stop it.
     danger ("No printer is set up for this; set one up and retry.",
     "Cancelled by Asha.")
   - **Retry** (a failing or given-up job) and **Cancel** (a job still
-    waiting or failing), 44px. A refusal shows under them in words.
+    waiting or failing), 48px. A refusal shows under them in words.
 
 ## Data
 
@@ -61,9 +61,9 @@ the person at the till retry it or stop it.
 ## Constraints
 
 - State is a chip with a word, never colour alone.
-- Nothing here is vermilion: the queue is not money. Not printed uses the
-  danger tone, outlined.
-- Every target 44px.
+- Nothing here is green: the queue is not money. Not printed uses the
+  danger button, brick on its tint.
+- Every target 48px.
 
 ## Reference
 

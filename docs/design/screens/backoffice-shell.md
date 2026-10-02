@@ -18,13 +18,13 @@ and that is correct:
 - Rows and tables are `--text-sm` where the terminal is `--text-base`.
 - Every section is reachable from the keyboard (see Keys). Focus is always
   visible.
-- Controls stay 44px: the back office is used on a tablet as often as a
+- Controls stay 48px: the back office is used on a tablet as often as a
   laptop. Density comes from text size and rhythm, not from small targets.
-- Numbers mono and right-aligned, as everywhere.
+- Numbers tabular and right-aligned, as everywhere.
 
 ## Layout
 
-Paper surface, inside `SignedInShell` (header: `MEZ · <section> ·
+Paper surface, inside `SignedInShell` (header: the logo, then `<section> ·
 <device>`, the connection, the staff member, **Sign out**).
 
 - **Navigation**, a column 240px wide on the left of the page, scrolling on
@@ -34,10 +34,10 @@ Paper surface, inside `SignedInShell` (header: `MEZ · <section> ·
   - **Run the venue**: Menu, Stock, People
   - **Reports**: Z-reports, Sales reports
   - **Settings**: Floor plan, Printers, Venue settings, Devices
-- Each entry is 44px, sentence case, with its key chord on the right in
-  mono, faint: `g m`. The current one has `aria-current="page"`, the raised
-  fill, a strong left rule and semibold text. Not vermilion: vermilion is
-  money, action or now, and "where you are" is none of those.
+- Each entry is 48px, sentence case, with its key chord on the right in
+  tabular, faint: `g m`. The current one has `aria-current="page"`, the
+  terracotta fill and semibold text, as a pill. Terracotta is the
+  sidebar's voice (tokens.md); green is kept for the action that commits.
 - An entry whose screen is not built yet is muted, carries a faint
   uppercase **SOON** label, and is not a link. Not a `StatusChip`: "not
   built" is not a status of anything the venue owns. Its task sets
@@ -64,7 +64,7 @@ Paper surface, inside `SignedInShell` (header: `MEZ · <section> ·
   entries left is not shown either. A cashier signed in here sees
   Dashboard alone.
 - Typing the path of a section you may not open shows **"That is not yours
-  to open"**, the permission it needs in mono, and **Back to the
+  to open"**, the permission it needs in the numeral face, and **Back to the
   dashboard**. The screen's own requests are not made.
 - The permissions are the ones the server sent with the session
   (`GET /api/v1/sessions/current`, `POST /api/v1/sessions`). Hiding is a
@@ -74,7 +74,7 @@ Paper surface, inside `SignedInShell` (header: `MEZ · <section> ·
 
 The skeleton the reports task fills.
 
-- The title "Back office" (Instrument Serif), and under it the signed-in
+- The title "Back office" (the serif), and under it the signed-in
   name: "Signed in as Asha".
 - **Today**: a `Card` saying "Sales, covers and open tickets for today
   arrive with reports." No placeholder numbers: a dash that looks like a

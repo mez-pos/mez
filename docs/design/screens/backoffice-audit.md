@@ -15,7 +15,7 @@ last week?" in one look, from the record itself.
 Paper, inside the back office shell, section **Audit**, path `/audit`,
 under Reports in the navigation, `reports.view`, keys `g a`.
 
-- **Header:** "Audit" in Instrument Serif; under it, one line in `fg-3`:
+- **Header:** "Audit" in the serif; under it, one line in `fg-3`:
   "Every correction to a bill, from the record. Amounts are what the bill
   itself used."
 - **Filters,** one row that wraps:
@@ -32,7 +32,7 @@ under Reports in the navigation, `reports.view`, keys `g a`.
     who is not on the Person list (deactivated since) shows there as
     "Someone no longer active", so the trail never looks unfiltered
     when it is filtered.
-- **Counts:** one chip per kind, the count in mono: "Voids 12", "Comps
+- **Counts:** one chip per kind, the count in the numeral face: "Voids 12", "Comps
   3", "Discounts 5", "Refunds 1", "Payment voids 0", "Reopens 2". A chip
   is a toggle (`aria-pressed`): pressed, the trail shows that kind only;
   pressed again, every kind. The counts cover the whole range, not the
@@ -41,13 +41,13 @@ under Reports in the navigation, `reports.view`, keys `g a`.
 
   | Column | Shows |
   |---|---|
-  | When | the day and time, mono |
+  | When | the day and time, tabular |
   | What | the kind in words; the item and quantity under it ("Chai × 1"), or "Whole bill" for a bill discount |
-  | Amount | `Money`, mono, right-aligned; empty for a reopen |
+  | Amount | `Money`, tabular, right-aligned; empty for a reopen |
   | By | who did it |
   | Authorised by | who let it through; "Not recorded" muted for a discount or refund from before ADR-117; "Themselves" when the same person |
   | Why | the reason, in words where it is a code ("wrong_item" reads "Wrong item") |
-  | Bill | the order's id, mono |
+  | Bill | the order's id, tabular |
 
 - **Show older** under the trail loads the next page.
 
@@ -67,8 +67,8 @@ under Reports in the navigation, `reports.view`, keys `g a`.
 
 ## Constraints
 
-- No accent on this screen: nothing on it is an action that moves money.
-- Every number mono, every amount right-aligned.
+- No primary on this screen: nothing on it is an action that moves money.
+- Every number tabular, every amount right-aligned.
 - A deactivated person is not in the Person list, but their rows are in
   the trail by name.
 

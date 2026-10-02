@@ -14,14 +14,14 @@ nothing up.
 ## Layout
 
 - **The report** (`ZReportView`, shared by both apps), one column, 48rem:
-  - **Header:** "Z-report 12" in Instrument Serif; under it Meta: the
+  - **Header:** "Z-report 12" in the serif; under it Meta: the
     trading day, "Opened 18:02, closed 01:47" in the venue's time, "Closed
     by Priya". A correction carries a warning band: "Corrects Z-report 11"
     and its reason. **Print a copy** (secondary) at the right.
   - **Sales** card: Bills, Gross, Discounts (with their count), Net,
     Taxable value, Tax, then **Total** as the one total; with credit notes,
     "Less credit notes" and **Net sales**. Invoices issued, first and last
-    number, in mono.
+    number, in the numeral face.
   - **Tax** card: one row per component and rate ("CGST 2.5%"): taxable
     value and tax, in columns.
   - **By category**, **By channel**, **By staff**: a table each (name,
@@ -43,10 +43,10 @@ nothing up.
 - **Exports** (back office only), under the report: a card per file the
   close wrote (Task 5b, ADR-104): **Tax register**, **Tally vouchers**,
   **Day's sales**, each with a line on what it holds, its file name and
-  size in mono, and **Download**, which saves the CSV. A shift closed
+  size in the numeral face, and **Download**, which saves the CSV. A shift closed
   before exports existed says it has none.
 - **In the back office:** **Z-reports** on the home page opens the list:
-  newest first, each row the number in mono, the trading day, the shift id,
+  newest first, each row the number in the numeral face, the trading day, the shift id,
   the sales total, and "Correction" as a chip on a correction. **Older
   reports** loads the next 50. A row opens `/reports/12`: the report, with
   **All reports** back to the list.
@@ -85,8 +85,8 @@ nothing up.
 ## Constraints
 
 - No arithmetic: every figure, total and count is the document's.
-- Every number mono and right-aligned; every target 44px.
-- One accent per screen at most, and here none is needed: nothing on a
+- Every number tabular and right-aligned; every target 48px.
+- One primary per screen at most, and here none is needed: nothing on a
   report moves money.
 - A difference is a word and a colour, never colour alone.
 

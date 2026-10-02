@@ -13,31 +13,34 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Redesign, Task 8: guest** (`docs/phases/redesign.md`). The guest app
-is a placeholder until phase 11, so this restyled the placeholder alone:
-the logo, a serif greeting in a card, one script line. It is the first
-screen to use Caveat. 22.5 KB of the 60 KB budget. Seen in a browser at
-390 by 844. Phase 11 builds the real guest screens from
-`docs/design/reference/mez/mez Mobile Customer.dc.html`. Before it,
-Tasks 1 to 7 (ADR-127, ADR-128).
+**Redesign, Task 9: screen specs** (`docs/phases/redesign.md`). Docs
+only. Every spec in `docs/design/screens/` and `components.md` now
+speaks the mez language: the serif, tabular figures, 48 and 56px
+targets, green for the primary, terracotta for late and for where you
+are, the table tones as built, the kitchen on espresso night. The three
+specs that cited the Nofiltr archive now name it as history and point at
+tokens.md and the mez reference. It finishes the redesign's tasks; its
+done-when, a person walking the spine and seeing no old screen, is owed.
+Before it, Tasks 1 to 8 (ADR-127, ADR-128).
 
 ## Next task
 
-Either, as the owner chooses:
-
-**Redesign, Task 9: screen specs** (`docs/phases/redesign.md`). Docs
-only.
-
-**Phase 10, Task 6: Settings.** Far larger than one session: split it
-first, commit the split, and stop. Known broken below lists what earlier
-tasks left for it (stations, courses and tax classes have no write path;
-the day start, variance threshold and tip rule are constants;
-`settings.edit` gates Floor plan and Printers already).
+**Phase 10, Task 6: Settings.** Venue details, tax profile, invoice
+series, currency and rounding, timezone, financial year start, printers
+and station mapping, devices, receipt templates, shift and tip rules,
+backup configuration. Far larger than one session: split it first,
+commit the split, and stop. Known broken below lists what earlier tasks
+left for it (stations, courses and tax classes have no write path; the
+day start, variance threshold and tip rule are constants;
+`settings.edit` gates Floor plan and Printers already). Build its
+screens in the mez language from the start: `docs/design/tokens.md`, and
+`docs/design/reference/mez/mez Desktop Management.dc.html` for settings.
 
 ## Known broken / in progress
 
 - Redesign (ADR-128): screens are restyled through the primitives only.
-  The screen specs describe the old layouts. Not seen by eye: card and
+  The specs' layouts were not re-read against the mez screen files,
+  only their vocabulary and rules. Not seen by eye: card and
   UPI tender, split, the invoice panel, a menu card with a photo, the
   discount, note, approval and tickets sheets, a past bill and its
   refund sheet, the print queue, the reconciliation after a count,

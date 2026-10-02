@@ -17,8 +17,8 @@ leaves with a printed credit note.
   number", which a barcode scanner types into (the receipt's barcode is
   the invoice number) and which takes the digits alone ("42" finds
   INV/26-27/000042 in any year). Under it, the last 30 closed bills, newest
-  first: the invoice number in mono, where ("Table 4", "Counter"), when
-  closed in mono, the total, and a "Credited" chip with the amount when
+  first: the invoice number in the numeral face, where ("Table 4", "Counter"), when
+  closed in the numeral face, the total, and a "Credited" chip with the amount when
   any of it has been credited. A bill opens with one tap.
 - **The bill** takes the register's place, like the tender screen, in two
   columns:
@@ -28,14 +28,14 @@ leaves with a printed credit note.
   - **Right rail** (26rem): the order id, **Total**, **Credited** and
     **Refunded** rows, then each payment: method, reference, amount, how
     much has gone back on it, and **Void** for one that has not. At the
-    bottom: **Refund** (the one accent), **Reprint**, **History** (the
+    bottom: **Refund** (the one primary), **Reprint**, **History** (the
     order's timeline, as on a ticket), and **Back to the register**.
 - **Refund** (`Sheet`, two steps like the approval sheet):
   - **What goes back:** "Items" or "An amount". Items: each line with a
     quantity stepper from 0 up to what is left to credit on it ("2 of 3
     left"). An amount: the pad. Under either, the credit note's figures
     from the server's preview: each credited line, the tax by component,
-    and the total, in mono, with "Credit note total" in Instrument Serif.
+    and the total, in the numeral face, with "Credit note total" in the serif.
   - **Back to:** the payments that have anything left, one to choose; the
     whole credit goes back to it.
   - **Why:** a reason from a fixed list (dish was wrong, cold or late,
@@ -93,8 +93,8 @@ leaves with a printed credit note.
 
 - No arithmetic in the UI: every figure on the refund sheet is the
   preview's.
-- One accent on the bill: Refund. Void is the danger button, outlined.
-- Every number mono and right-aligned; every target 44px.
+- One primary on the bill: Refund. Void is the danger button, brick on its tint.
+- Every number tabular and right-aligned; every target 48px.
 
 ## Reference
 

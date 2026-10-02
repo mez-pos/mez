@@ -16,17 +16,17 @@ them plainly when that cannot happen.
 - Top right, fixed: the connection indicator. Staff must know the server is
   there before they trust a PIN refusal.
 - Left column: the metadata trail (`MEZ · SIGN IN`), the device's name
-  in Instrument Serif, one line of instruction, an expiry notice if the last
+  in the serif, one line of instruction, an expiry notice if the last
   session ended on its own, then the staff name tiles (initials and name,
-  44px or taller, in a grid of 10rem columns).
-- Right column, 22rem, a chrome panel: the chosen name, PIN slots, the NumPad
+  48px or taller, in a grid of 10rem columns).
+- Right column, 22rem, a chrome panel: the chosen name, PIN dots, the NumPad
   at 64px keys, **Sign in** (primary), a reserved error line, and "Forgot
   your PIN? Ask a manager to reset it."
 - Below `lg` the columns stack, tiles first.
 
 **Pair**, one centred column, 28rem: trail, "Pair this terminal", what a code
 is and how long it lasts, a notice if the device was just unpaired, the code
-field (mono, 20px, `XXXX-XXXX`), the error line, **Pair**, and the server's
+field (tabular, 20px, `XXXX-XXXX`), the error line, **Pair**, and the server's
 address.
 
 ## Data
@@ -47,7 +47,7 @@ address.
 | Action | Does | Then |
 |---|---|---|
 | Tap a name | Chooses it, clears the PIN | Pad enabled. With one name on the list it is chosen already |
-| Tap a digit, or type one | Appends, up to 8 | A slot fills; past four, a slot is added |
+| Tap a digit, or type one | Appends, up to 8 | A dot fills; past four, a dot is added |
 | Delete / Clear keys, Backspace / Delete | Remove one digit / all | |
 | Sign in, or Enter | `POST /sessions` once the PIN has 4 digits | Signed in: the Gate goes to `/` |
 | Wrong PIN | | "That PIN isn't right. Try again." PIN cleared |
@@ -86,10 +86,13 @@ address.
 
 ## Reference
 
-`docs/design/reference/Nofiltr Terminal.dc.html`, block `s_lock`, line 947.
-Departures:
+The layout was first drawn from the Nofiltr archive
+(`docs/design/reference/Nofiltr Terminal.dc.html`, block `s_lock`), kept as
+history. Its look is now `docs/design/tokens.md` and
+`docs/design/reference/mez/mez Desktop POS.dc.html`. Departures from the
+first:
 
-- **PIN slots grow from four.** The design has four fixed boxes and opens on
+- **PIN dots grow from four.** The design has four fixed dots and opens on
   the fourth digit; PINs are 4 to 8 digits (ADR-056), so there is a Sign in
   button and Enter, not auto-submit.
 - **"Sign in", not "Open shift".** Shifts arrive in phase 09; the button will

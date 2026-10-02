@@ -31,7 +31,7 @@ reference file a task names. Do not read the whole reference folder.
 - [x] **Task 8 - Guest.** The placeholder only: the guest app has no
   screens until phase 11. Build those from `mez Mobile Customer.dc.html`
   when they arrive, inside the 60 KB budget.
-- [ ] **Task 9 - Screen specs.** Bring `docs/design/screens/*.md` in line
+- [x] **Task 9 - Screen specs.** Bring `docs/design/screens/*.md` in line
   with what was built, and retire the old archive's citations.
 
 ## Done when

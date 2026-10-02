@@ -20,25 +20,27 @@ anywhere (ADR-068).
 
 ## Layout
 
-Ink surface, full screen, no shell chrome but a thin header.
+Espresso night (`data-surface="ink"`), full screen, no shell chrome but
+a thin header.
 
 - **Choose a station** (first run, or Change station): the venue's
   stations as buttons at least 96px tall, "Kitchen", "Bar". The choice is
   kept on the device.
-- **Header** (64px): the station's name in Instrument Serif, the time, the
+- **Header** (64px): the station's name in the serif, the time, the
   connection chip, **Recall** (the last ticket bumped, "Recall T4") and
   **Change station**.
 - **All day**: a strip of counts over the tickets still to make, by dish,
-  most first: "3 Masala dosa · 2 Upma · 1 Avocado toast". Mono numbers.
+  most first: "3 Masala dosa · 2 Upma · 1 Avocado toast". Tabular numbers.
 - **Tickets**: cards in a grid, oldest first, at least 280px wide. Each:
   - where it goes, very large: "T4", "T4 + T7", or "Counter" with the
     order's short id
-  - its timer, very large and mono, "7:42", and its covers
-  - the timer's tone: the surface under half the venue's late time, gold
-    ("Waiting") from half, vermilion ("Late") from the late time. Colour
+  - its timer, very large and tabular, "7:42", and its covers
+  - the timer's tone, as a rule down the card's left and a pill around
+    the timer: muted under half the venue's late time, mustard
+    ("Waiting") from half, the late red ("Late") from the late time. Colour
     and the word, both.
   - the lines: quantity and name large; modifiers under them; notes in
-    italic; a line voided after it was sent struck through, "Void"
+    mustard ink; a line voided after it was sent struck through, "Void"
   - the order's own notes at the top, when it has any
   - **Bump**, full width, at least 72px tall, at the card's foot
 - A card is never removed under a finger: a bumped card goes, the others
@@ -77,4 +79,4 @@ Ink surface, full screen, no shell chrome but a thin header.
 - Nothing tappable under 72px except Change station (56px).
 - Type: 44px for where and when, 26px for lines (`--text-display`,
   `--text-kitchen`).
-- One accent: vermilion is "Late", only.
+- Bump is the one green. The late red is "Late", only.

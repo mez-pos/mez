@@ -14,7 +14,7 @@ get.
 
 - **Opening it:** **Tips** beside Print a copy on a Z-report in the back
   office. The page is `/shifts/{id}/tips`, with **The Z-report** back.
-- **Header:** "Tips" in Instrument Serif; Meta: the rule in words ("Split
+- **Header:** "Tips" in the serif; Meta: the rule in words ("Split
   evenly", "Split by hours worked", "Split by role weight") and the
   trading day. Then the pool as the one total: "Rs. 70.00 in tips".
 - **Not yet pooled:** a table of people, first those the server suggests
@@ -24,11 +24,11 @@ get.
     colour).
   - **Hours**, only when the rule is by hours: hours and minutes fields.
   - **Role** and its **weight**, only when the rule is by role weight.
-  - **Took**: tips on their own payments, in mono.
+  - **Took**: tips on their own payments, in the numeral face.
   - **Share**: the server's preview for the people in, redrawn after each
     change; "–" for someone out.
   - Under the table, why there is no preview when there is none ("Enter
-    hours for everyone in the pool."). **Pool the tips** (the one accent),
+    hours for everyone in the pool."). **Pool the tips** (the one primary),
     asking first: "Pool Rs. 70.00 among 3 people? A pool can't be changed
     once it's made."
 - **Pooled:** the same table read-only, with who was in, their hours or
@@ -69,8 +69,8 @@ get.
 
 - No arithmetic: every share is the server's; the screen only turns hours
   and minutes into minutes.
-- Every number mono and right-aligned; every target 44px.
-- One accent: Pool the tips.
+- Every number tabular and right-aligned; every target 48px.
+- One primary: Pool the tips.
 
 ## Reference
 

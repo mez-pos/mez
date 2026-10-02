@@ -16,7 +16,7 @@ ledger, and keep the recipes that make sales take stock.
 Paper, inside the back office shell, section **Stock**, path `/stock`,
 `stock.manage`.
 
-- **Header row:** "Stock" in Instrument Serif; **Add a stock item**
+- **Header row:** "Stock" in the serif; **Add a stock item**
   (primary) on the Items view.
 - **Under it, one line** in `fg-3`: "On hand is what was received, less
   what was sold, wasted and corrected. A count records the difference."
@@ -29,10 +29,10 @@ A dense table, by name:
 | Column | Shows |
 |---|---|
 | Item | the name; "Retired" (struck, muted) when retired; "LOW" in the warning colour when low |
-| On hand | mono, right-aligned, in its unit: "4,750 g", "12 each", "1.5 each"; below zero in the danger colour |
-| Low at | mono, right-aligned; "None" when 0 |
+| On hand | tabular, right-aligned, in its unit: "4,750 g", "12 each", "1.5 each"; below zero in the danger colour |
+| Low at | tabular, right-aligned; "None" when 0 |
 | Cost | what a kilogram, a litre or one of it costs, by its unit: `Money` then "/ kg", "/ l" or "/ each"; "Not set" muted when not known |
-| | **Receive**, **Waste**, **Count**, **History**, **Edit** (44px); a retired item has History and Edit only |
+| | **Receive**, **Waste**, **Count**, **History**, **Edit** (48px); a retired item has History and Edit only |
 
 - **The movement form** (`Modal`, sm), opened by Receive, Waste or Count,
   or by **Correct** inside Edit:
@@ -50,7 +50,7 @@ A dense table, by name:
   item with history is refused by the server, with its reason under Unit.
 - **History** (`Modal`, md): the item's movements, newest first: when,
   what (Received, Wasted: spilled, Counted 4,700 g, Sold, Corrected), the
-  change in mono with its sign, who, and the note. **Show older** loads
+  change in the numeral face with its sign, who, and the note. **Show older** loads
   the next page (cursor).
 
 ### Recipes
@@ -102,8 +102,8 @@ so a manager without `menu.edit` can keep recipes.
 
 ## Constraints
 
-- One accent per view: **Add a stock item** on Items; none on Recipes.
-- Every amount mono and right-aligned, its unit written after it.
+- One primary per view: **Add a stock item** on Items; none on Recipes.
+- Every amount tabular and right-aligned, its unit written after it.
 - Retire has no confirm: it is one click back, and the history stays.
 
 ## Reference

@@ -16,7 +16,7 @@ whose numbers are the ones on the screen.
 Paper, inside the back office shell, section **Sales reports**, path
 `/sales`, under Reports in the navigation, `reports.view`, keys `g s`.
 
-- **Header:** "Sales reports" in Instrument Serif; under it, one line in
+- **Header:** "Sales reports" in the serif; under it, one line in
   `fg-3`: "A sale counts on the trading day its bill was invoiced. A
   trading day runs 04:00 to 04:00."
 - **Range,** one row that wraps:
@@ -24,7 +24,7 @@ Paper, inside the back office shell, section **Sales reports**, path
     days**, **30 days**, **This month**. The last seven days, today
     included, by default. The pressed one is the one the dates match;
     none is pressed for a range typed by hand.
-  - **From** and **To**: trading days (`<input type="date">`), mono.
+  - **From** and **To**: trading days (`<input type="date">`), tabular.
   - **By**: Day, Week or Month, how sales over time is cut. It follows
     the range until it is chosen by hand: a day up to 31 days, a week up
     to 26 weeks, a month beyond.
@@ -32,16 +32,16 @@ Paper, inside the back office shell, section **Sales reports**, path
     figures stay, dimmed.
 - **The range,** the headline figures in a card:
   - The one total on the screen: **Sales**, the total of the bills
-    invoiced, tax included, in Instrument Serif; under it "12 bills ·
-    average 285.00" in `fg-3`, mono figures.
-  - Beside it a short table of figures, label left, amount mono right:
+    invoiced, tax included, in the serif; under it "12 bills ·
+    average 285.00" in `fg-3`, tabular figures.
+  - Beside it a short table of figures, label left, amount tabular right:
     Gross, Discounts, Net sales, Tax, Credit notes (with their count),
     Sales after credit notes, Refunds (with their count), Tips.
   - **Download CSV** saves the `summary` sheet.
 - **Sales over time,** a card:
   - Bars, one per period, 128px tall, drawn with plain elements: each bar's height
-    is its share of the tallest period's total. Slate, the neutral data
-    series (tokens.md); no accent. A period with no sales is a hairline.
+    is its share of the tallest period's total. Green, the first chart
+    colour (tokens.md). A period with no sales is a hairline.
     The first and last period are labelled under the bars. The bars are
     a picture of the table below and hidden from screen readers.
   - Under the bars, the table: Period ("1 Oct", or "28 Sept to 4 Oct"),
@@ -50,7 +50,7 @@ Paper, inside the back office shell, section **Sales reports**, path
 - **How it was paid** and **Where it came from,** two cards side by side
   on a wide screen:
   - Payments: Method, Tenders, Net (taken less voided and refunded), and
-    its share of every method's net as a percentage with a slate bar.
+    its share of every method's net as a percentage with a green bar.
   - Channels: Channel, Bills, Total, and its share of the total.
   - Each has **Download CSV** (`payments`, `channels`).
   - A share is a whole percentage of the listed rows; shares are not
@@ -72,7 +72,7 @@ Paper, inside the back office shell, section **Sales reports**, path
   the first hour with a bill to the last, in the order the trading day
   runs them (04:00 first, 03:00 last), so 01:00 is at the right, after
   the evening it belongs to. A weekday is the trading day's.
-  - A cell with bills shows their count, mono, over a slate tint in four
+  - A cell with bills shows their count, tabular, over a green tint in four
     steps by its total against the busiest cell's. The count is the
     figure; the tint only repeats it. An empty cell is a sunken blank
     the same size, so the grid holds its shape.
@@ -86,7 +86,7 @@ Paper, inside the back office shell, section **Sales reports**, path
   discount, refund, payment void and reopen in the range, added up. It
   is the audit trail read at a distance, and every row opens the trail
   on what it counted.
-  - One line first: "8 corrections worth 330.00", figures mono, and under
+  - One line first: "8 corrections worth 330.00", figures tabular, and under
     it in `fg-3`: "What each was worth to its bill, not money out of the
     drawer. A reopen counts and is worth nothing."
   - **By kind:** Kind, Count, Amount; every kind, none included. A kind
@@ -165,8 +165,8 @@ Paper, inside the back office shell, section **Sales reports**, path
 
 ## Constraints
 
-- No accent on this screen: nothing on it is an action that moves money.
-- Every number mono, every amount right-aligned and through `Money`.
+- No primary on this screen: nothing on it is an action that moves money.
+- Every number tabular, every amount right-aligned and through `Money`.
 - The screen adds nothing up. Every figure is the server's; the only
   arithmetic here is a bar's height, a share, a cell's tint, and an
   average bill (the total over the bills, to the nearest minor unit).

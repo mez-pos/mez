@@ -15,19 +15,19 @@ at a glance which printer is failing during it.
 Paper surface, inside `SignedInShell`. The back office home links here
 ("Printers") until the menu editor and reports arrive in phase 10.
 
-- **Header row:** the title "Printers" in Instrument Serif, and **Add a
+- **Header row:** the title "Printers" in the serif, and **Add a
   printer** on the right.
 - **Printers**, one `Card` each, in the order added:
   - the name (lg, semibold); a "Receipts" chip when it prints receipts, and
     a "Retired" chip (struck) when retired
-  - how it is reached, in mono: `10.0.0.5:9100`, or `USB: EPSON TM-T82`
+  - how it is reached, in the numeral face: `10.0.0.5:9100`, or `USB: EPSON TM-T82`
     for a printer this computer drives through Windows; the paper, "80mm"
     or "58mm"
   - the stations whose tickets it prints: "Kitchen, Bar", or "No stations"
   - its **last result**: the newest job's state as a `StatusChip`, its
     label and when; or "Nothing printed yet"
   - **Test page**, **Edit**, and **Retire** (or **Bring back** when retired),
-    44px
+    48px
 - **Where things print** (a `Card`): the receipt printer, then one row per
   active station, each a native select of the active printers plus "None".
   A change saves at once and says "Saved".
@@ -77,11 +77,11 @@ Paper surface, inside `SignedInShell`. The back office home links here
 
 ## Constraints
 
-- One accent: **Add a printer** is the primary button; nothing else is
-  vermilion (the paper accent).
-- Every control 44px on this screen too: it is used on a tablet as often as
+- One primary: **Add a printer** is the primary button; nothing else is
+  green.
+- Every control 48px on this screen too: it is used on a tablet as often as
   a laptop.
-- Addresses and paper widths in mono.
+- Addresses and paper widths in the numeral face.
 
 ## Reference
 

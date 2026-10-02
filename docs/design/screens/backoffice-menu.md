@@ -18,14 +18,14 @@ at (`docs/02-domain.md`, "Prices and the snapshot rule").
 Paper, inside the back office shell (`backoffice-shell.md`), section
 **Menu**, path `/menu`, `menu.edit`.
 
-- **Header row:** "Menu" in Instrument Serif; on the right **Add a
-  category** (secondary) and **Add an item** (primary, the one accent).
+- **Header row:** "Menu" in the serif; on the right **Add a
+  category** (secondary) and **Add an item** (primary, the one primary).
 - **Under it, one line** in `fg-3`: "Changes reach every till at once.
   Tickets already open keep the prices they were rung up at."
 - **Two columns** side by side from 1536px wide; below that the categories
   sit above the items, so a laptop keeps the whole table:
   - **Categories**, 280px, a `Card` list in register order. Each row: the
-    name, the number of items in mono on the right, and "Retired" (struck,
+    name, the number of items in the numeral face on the right, and "Retired" (struck,
     muted) when retired. The selected row has the raised fill and a strong
     left rule, as the shell's navigation does. Under the list, for the
     selected category: **Rename**, **Move up**, **Move down**, and
@@ -34,19 +34,19 @@ Paper, inside the back office shell (`backoffice-shell.md`), section
     | Column | Shows |
     |---|---|
     | Item | the name; "Retired" after it, muted, when retired |
-    | Price | `Money`, mono, right-aligned |
+    | Price | `Money`, tabular, right-aligned |
     | Tax | the class's name and rate: "Food, 5%" |
-    | HSN | mono; only on a venue whose profile needs one |
+    | HSN | tabular; only on a venue whose profile needs one |
     | Made at | the station's name |
     | Course | its number and name: "1 Mains" |
-    | | **Edit**, **↑**, **↓** (labelled "Move Latte up" for a screen reader), **Retire** or **Bring back**, 44px |
+    | | **Edit**, **↑**, **↓** (labelled "Move Latte up" for a screen reader), **Retire** or **Bring back**, 48px |
 - A retired category's items still list, under a line: "This category is
   retired: none of its items are on the till."
 
 ## The item form (`Modal`, md)
 
 Name; **Category** (a select of active categories); **Price**, typed in
-major units ("180" or "180.50"), mono, the currency's symbol before it;
+major units ("180" or "180.50"), tabular, the currency's symbol before it;
 **Tax class** (select, "Food, 5%"); **HSN or SAC code** (only on a venue
 that needs one; hint "4, 6 or 8 digits. Every GST invoice line shows it.");
 **Made at** (active stations); **Course**. Save, Cancel.
@@ -72,11 +72,11 @@ group of choices**; Add a category and Add an item are hidden.
 - **The groups table:** Group (retired struck, with "Retired"), Asks
   ("Pick 1", "Optional, up to 2", "Pick 1 to 3"), Choices (each name, its
   price change in `Money` when not zero, "(to start)" on a default),
-  Items (how many offer it, mono), and **Edit**, **Retire** or **Bring
+  Items (how many offer it, tabular), and **Edit**, **Retire** or **Bring
   back**. No confirm on retire: it is one click back, and the items keep
   offering it when it returns.
 - **The group form** (`Modal`, md): Name; **Fewest to pick** (0 makes it
-  optional) and **Most to pick**, mono; **Choices**, one row each: name,
+  optional) and **Most to pick**, tabular; **Choices**, one row each: name,
   price change (40, -20, or empty for none), **Picked to start**, arrows,
   **Remove**; **Add a choice**. A refusal about one choice shows on its
   row. On an edit, a line says how many items offer it and that open
@@ -148,10 +148,10 @@ another screen. It has been reloaded; move it again."
 
 ## Constraints
 
-- One accent: **Add an item**. Retire is a secondary button, not danger:
+- One primary: **Add an item**. Retire is a secondary button, not danger:
   it is undone in one click.
-- Every number mono and right-aligned: prices, counts, HSN, course numbers.
-- The price input is 16px (form controls), mono.
+- Every number tabular and right-aligned: prices, counts, HSN, course numbers.
+- The price input is 16px (form controls), tabular.
 
 ## Reference
 

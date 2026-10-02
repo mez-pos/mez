@@ -13,22 +13,22 @@ need something now: a bill to take, a table to clear.
 
 ## Layout
 
-Ink surface, inside the register's `SignedInShell`; it replaces the
+Paper surface, inside the register's `SignedInShell`; it replaces the
 register's body as the bill and tender screens do, so the tickets on this
 till are kept while it shows.
 
-- **Header row:** "Floor" in Instrument Serif; **Register** on the right
+- **Header row:** "Floor" in the serif; **Register** on the right
   (back to the ticket in front). A count per state in words: "3 free · 4
   seated · 1 paying · 2 to clear".
-- **Areas**, a row of 44px tabs when the venue has more than one.
+- **Areas**, a row of 48px tabs when the venue has more than one.
 - **The grid**: the area as the back office laid it out
   (`backoffice-floor.md`), `grid.columns` by `grid.rows`, empty cells
   blank and empty rows and columns at the edges dropped. Each **tile** is
   88 to 144px square (a round table drawn round), and shows:
   - the table's name (xl, semibold) and its shape's outline
   - its state as a `StatusChip`: **colour and the word**, always
-  - occupied: covers ("3 covers", mono number), the time since seated
-    ("42m", mono), and the balance (`Money`, mono, right-aligned)
+  - occupied: covers ("3 covers", tabular number), the time since seated
+    ("42m", tabular), and the balance (`Money`, tabular, right-aligned)
   - dirty: the time since the bill closed ("6m")
   - free: its seats ("4 seats")
   The tile's border takes the state's tone; its fill stays the surface, so
@@ -42,7 +42,7 @@ till are kept while it shows.
 
 ## Move, Join and Part (Task 2c)
 
-Three header buttons, 44px, beside Register. Each turns on a mode with a
+Three header buttons, 48px, beside Register. Each turns on a mode with a
 banner saying what to tap next and **Done** (primary) to end it; taps on
 tiles then do the mode's work instead of their usual one.
 
@@ -62,13 +62,14 @@ with two tickets cannot be moved from the floor.
 
 | State | Tone | Word |
 |---|---|---|
-| free | success (sage) | Free |
-| seated | info (slate) | Seated |
-| ordered | neutral | Ordered |
-| settling | warning (gold) | Paying |
-| dirty | danger | To clear |
+| free | success (green) | Free |
+| seated | info (blue) | Seated |
+| ordered | danger (the occupied rose, no alarm) | Ordered |
+| settling | warning (mustard) | Paying |
+| dirty | neutral (the cleaning grey) | To clear |
 
-Vermilion stays for "Late", on tickets: a table is never vermilion.
+Five states, five tones (tokens.md). Terracotta stays for "Late", on
+tickets: a table is never terracotta.
 
 ## Interactions
 
@@ -111,5 +112,5 @@ Vermilion stays for "Late", on tickets: a table is never vermilion.
 ## Constraints
 
 - Colour and a word on every tile, never colour alone.
-- Tiles at least 88px, every button 44px; numbers mono.
+- Tiles at least 88px, every button 48px; numbers tabular.
 - No drag, no long press: every action is a tap and a sheet.

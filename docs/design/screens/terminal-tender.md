@@ -20,7 +20,7 @@ Opened from **Charge** on the register. It takes the register's place inside
     Each has its name and a hint in muted text ("Drawer", "Slip reference",
     "Transaction ID").
   - Below, two panels side by side:
-    - **Amount**: two fields, each one tap target of at least 44px, that
+    - **Amount**: two fields, each one tap target of at least 48px, that
       the pad types into: the amount (for cash, "Cash handed over"; for card
       and UPI, "Amount") and **Tip**. The field the pad is typing into has
       the strong border. Under them, for cash only, the **quick-tender**
@@ -31,33 +31,33 @@ Opened from **Charge** on the register. It takes the register's place inside
 - **Summary rail** (26rem, chrome, hairline on the left), the same width
   as the ticket rail it replaces:
   - Top: the metadata trail (`CHARGE · TABLE 4 · 2 COVERS`) and the order
-    id in mono.
+    id in the numeral face.
   - **Total**, then one row per payment already taken: its method, its
-    reference in muted text, the amount in mono, and its tip on a second
+    reference in muted text, the amount in the numeral face, and its tip on a second
     row when there is one. Scrolls if there are many.
-  - **Amount due** in Instrument Serif at `--text-total`: the ticket's
+  - **Amount due** in the serif at `--text-total`: the ticket's
     balance, from the server. It never leaves the screen.
-  - **Change due**, cash only, in Instrument Serif at `--text-total` in the
+  - **Change due**, cash only, in the serif at `--text-total` in the
     success colour, in a dashed box: what to hand back.
-  - Bottom, fixed: the 58px **tender button**, primary, naming what it will
+  - Bottom, fixed: the 56px **tender button**, primary, naming what it will
     do and how much: "Take ₹500.00 cash", "Charge ₹450.00 to card",
     "Record ₹450.00 UPI". Under it, **Back to ticket**.
 
 - **Split the bill** (Task 2), over the methods until a split is in use.
   It opens the **split panel** in the tender column; the rail keeps the
   amount due but no tender button, so the panel's **Use this split** is
-  the one accent.
-  - Top: Evenly, By amount, By item, By guest, one 44px segment each.
+  the one primary.
+  - Top: Evenly, By amount, By item, By guest, one 48px segment each.
   - Left: the choices. Evenly: the number of payers (2 to 20). By amount:
     the amounts keyed so far, each with Remove, and the pad with **Add
     payer**; whatever is left is one more payer, "The rest". By item and by
     guest: the number of payers or guests, then every line that costs
-    something with its due and a 44px chip per payer ("Payer 1", several
+    something with its due and a 48px chip per payer ("Payer 1", several
     may share a line) or per seat ("Table", "Guest 1": one each).
   - Right, "Shares, from the server": one row per share, then "In all"
     and the server's total, so a three-way split of an odd total reads
     down to the paisa (₹410.00 is ₹136.67, ₹136.67, ₹136.66).
-- **A split in use**: a bar over the methods naming the split, a 44px
+- **A split in use**: a bar over the methods naming the split, a 48px
   button per share with its amount (a paid share struck through with a
   "Paid" chip), and **Clear split**. The chosen share is what the next
   tender is for.
@@ -152,11 +152,11 @@ Opened from **Charge** on the register. It takes the register's place inside
 
 ## Constraints
 
-- The tender button is 58px (`size="charge"`). Every other target is 44px
+- The tender button is 56px (`size="charge"`). Every other target is 48px
   or more: method tiles, fields, quick-tender buttons, the pad's 64px keys.
-- Every number is mono and right-aligned, except Amount due and Change due,
-  which are the screen's totals in Instrument Serif.
-- One accent: the tender button. Amount due is the default text colour, and
+- Every number is tabular and right-aligned, except Amount due and Change due,
+  which are the screen's totals in the serif.
+- One primary: the tender button. Amount due is the heading ink, and
   change due is the success colour with the words "Change due" beside it.
 - A tip is never added into the amount the server records. The card and UPI
   button says the sum the guest's card will be charged ("Charge ₹495.00 to
@@ -165,8 +165,11 @@ Opened from **Charge** on the register. It takes the register's place inside
 
 ## Reference
 
-`docs/design/reference/Nofiltr Terminal.dc.html`, block `s_pay`, line 184.
-Departures:
+The layout was first drawn from the Nofiltr archive
+(`docs/design/reference/Nofiltr Terminal.dc.html`, block `s_pay`), kept as
+history. Its look is now `docs/design/tokens.md` and
+`docs/design/reference/mez/mez Desktop POS.dc.html`. Departures from the
+first:
 
 - **Tiles are 96px, not 92px** (`h-24`), on the spacing scale.
 - **Three methods, not six.** Wallet, Gift card and House tab have no
@@ -186,5 +189,5 @@ Departures:
   flow, behind a manager.
 - **Quick-tender is the next round amounts above the balance**, not fixed
   ₹500 to ₹2000 notes: a ₹180 coffee is paid with a ₹200 note, not ₹500.
-- **Amount due is not vermilion.** The design shows the ticket id in
-  vermilion; one accent per screen means the tender button keeps it.
+- **Amount due is not green.** It is the heading ink; the tender button
+  is the screen's one green.

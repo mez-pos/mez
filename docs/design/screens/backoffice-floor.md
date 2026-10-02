@@ -15,17 +15,17 @@ looks like the floor.
 Paper surface, inside `SignedInShell`. The back office home links here
 ("Floor plan") beside Printers.
 
-- **Header row:** the title "Floor plan" in Instrument Serif; **Add an
+- **Header row:** the title "Floor plan" in the serif; **Add an
   area** (secondary) and **Add a table** (primary) on the right. No area
   yet: only Add an area.
-- **Areas**, a row of 44px tabs, in the order added. A retired area's tab
+- **Areas**, a row of 48px tabs, in the order added. A retired area's tab
   is struck. Under the tabs, the chosen area's **Rename** and **Retire**
   (or **Bring back**).
 - **The grid**: the chosen area as `grid.columns` by `grid.rows` cells
   (12 by 8), every cell at least 56px, the whole grid scrolling sideways
   on a narrow screen rather than shrinking under that. A free cell is a
   dashed outline; a table fills its cell:
-  - its name (lg, semibold) and its seats ("4 seats", sm, mono number)
+  - its name (lg, semibold) and its seats ("4 seats", sm, tabular number)
   - its shape: square, round (a circle) or long (a wide bar)
 - **The chosen table** (a `Card` under the grid): name, seats, shape, and
   where: "Inside, column 3, row 2". **Edit**, **Move**, **Retire**.
@@ -84,9 +84,9 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
 
 ## Constraints
 
-- One accent: **Add a table** is the primary button. The chosen table is
-  shown with the focus outline, not vermilion.
-- Every control 44px; every cell 56px. Seats, columns and rows in mono.
+- One primary: **Add a table** is the primary button. The chosen table is
+  shown with the focus outline, not a fill.
+- Every control 48px; every cell 56px. Seats, columns and rows in the numeral face.
 - No hover-dependent behaviour: a drag is a shortcut, not the way.
 
 ## Reference

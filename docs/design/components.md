@@ -8,11 +8,11 @@ the same task, don't invent a one-off.
 
 | Component | Notes |
 |---|---|
-| `Button` | variants: primary (vermilion), secondary, ghost, danger (outlined). sizes: sm (32px), md (36px), tap (44px, the default), charge (58px). Labels are 15px at every size |
-| `Money` | renders an `Amount`. Mono, tabular, right-aligned, currency-aware. **The only way money is ever rendered.** `variant="total"` is the one serif total on a screen. Negative uses U+2212 |
-| `Qty` | mono, tabular, with +/− tap targets. Reports the next value; holds none |
+| `Button` | variants: primary (green), attention (terracotta), secondary, ghost (terracotta text), danger (brick on its tint). All pills. sizes: sm (32px), md (40px), tap (48px, the default), charge (56px). Labels are 15px at every size and never wrap |
+| `Money` | renders an `Amount`. The numeral face, tabular, right-aligned, currency-aware. **The only way money is ever rendered.** `variant="total"` is the one serif total on a screen. Negative uses U+2212 |
+| `Qty` | tabular, in one pill, with +/− tap targets. Reports the next value; holds none |
 | `StatusChip` | colour **and** word. Takes `{ kind, status }` from `web/shared/ui/status.ts`: kitchen, order, payment or line. Never free text |
-| `Card` | ink-raised or paper surface |
+| `Card` | an ivory card on a hairline and a warm shadow; the ticket surface on espresso night |
 | `Sheet` | bottom sheet on touch, side panel on desktop. Decided by `pointer`, not width. Escape, close control or scrim closes it |
 | `Modal` | confirm, form. Escape and a visible close, always. The scrim does not close it. `Confirm` is the yes/no form |
 | `NumPad` | for amounts and PINs. Keys are 56px. Amounts shift in from the right as minor units; `numpad-keys.ts` does the arithmetic |
@@ -21,11 +21,16 @@ the same task, don't invent a one-off.
 | `Toast` | transient. Never for errors that need a decision: it has no danger tone |
 | `EmptyState` | icon, one line, one action |
 | `Timeline` | renders an order's event stream. Every event type has words, or the build fails |
+| `Logo` | the table mark and wordmark, inline, in the surface's colours. `variant="mark"` is the table alone |
 | `Meta` | the small-caps trail: `TERMINAL · REGISTER`. Items in ordinary case, uppercased by CSS |
 
 Built primitives live in `web/shared/ui/` and are exported from its
 `index.ts`. The dev-only gallery at `/gallery` in the terminal shows each one
-on ink and on paper.
+on paper and on espresso night.
+
+`pillClass` (`web/shared/ui/pill.ts`) is the toggle and tab look: a pill,
+the chosen one the green fill. Filters, view switches and area tabs use
+it; an option inside a form is a tinted card instead.
 
 ## Composites (built inside their own phase)
 
@@ -79,8 +84,8 @@ departure from it.
 The generated design is a starting point, not a contract. Some screens are good;
 some are not. When implementing:
 
-- **Keep** the tokens, the touch rules, the ink/paper split, the one-accent rule,
-  the metadata trail, the monospaced-numbers rule. These are the good part.
+- **Keep** the tokens, the touch rules, the paper and night split, the one-primary rule,
+  the metadata trail, the tabular-numbers rule. These are the good part.
 - **Change** any layout that fails a real service constraint — too many taps to
   fire an order, a total that scrolls off screen, an action hidden behind hover.
 - **Record** the departure in the screen spec under Reference, one line, so it
