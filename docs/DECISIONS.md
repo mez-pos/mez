@@ -3422,3 +3422,41 @@ Cost: a CSV is in the server's order, not the order on screen. The tint
 compares totals while the cell prints bills, so a cell of few large
 bills is dark with a small number; the hover and the Busiest line give
 both.
+
+## ADR-122 - The corrections analysis is the audit trail's own entries, grouped
+2026-10 · Status: accepted
+Decision: phase 10, Task 5e1 adds up corrections over a range
+(`internal/service/audit/analysis.go`,
+`GET /api/v1/audit/analysis?from=&to=&staff=&kind=`,
+`GET /api/v1/audit/analysis/csv?...&by=reason|by|authorised_by`,
+`reports.view`). Task 5e was split in two: this, then its screen (5e2).
+  - **The trail's entries, not a second query.** The analysis reads every
+    page of the same filter the trail lists (ADR-117) and groups the
+    entries, so a count here is the number of rows the owner finds when
+    they open the trail on that filter. It takes the trail's filter
+    whole: range, person and kind.
+  - **Four groupings, each a count and an amount.** By kind (every kind,
+    none included); by kind and reason; by who did it; by who authorised
+    it. A person's row also has every kind's tally, so a screen need not
+    show only the blended amount. Nobody on record is its own row: a
+    guest as who did it, "not recorded" as who authorised it (a discount
+    or refund from before ADR-117).
+  - **An amount is what each was worth to its bill,** as the trail has
+    it: a void or comp its line's gross, a discount its value, a refund
+    or payment void the money. A reopen counts and is worth nothing.
+    Sums across kinds are therefore "the value corrected", not money out
+    of the drawer.
+  - **Largest first,** by amount, then count, then a fixed order, so the
+    answer does not shuffle between two reads.
+  - **In the audit package, not the sales report.** It is about who and
+    why, lives beside the trail it links to, and shares its filter; the
+    sales report's own discounts, comps and voids tallies stay as they
+    are.
+  - An amount in another currency than the venue's is refused, never
+    summed.
+Because: "who is voiding, who is letting it through, and what reason do
+they give" is the trail read at a distance; it must agree with the trail
+read up close.
+Cost: it projects every order the range's corrections touch, as the
+trail's CSV does; a year at a busy venue is some seconds. A sheet reads
+the trail again.

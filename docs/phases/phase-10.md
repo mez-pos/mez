@@ -114,7 +114,7 @@ Phase 09.
 
     Split into two (the figures first, then the section over them):
 
-    - [ ] **Task 5e1: Corrections added up on the server.** The audit
+    - [x] **Task 5e1: Corrections added up on the server.** The audit
       trail's entries over a range, grouped: by kind, by kind and reason,
       by who did them and by who authorised them, each a count and what
       they were worth. Its own route beside the trail, its CSV, generated

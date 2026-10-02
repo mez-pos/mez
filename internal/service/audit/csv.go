@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/export"
-	"github.com/byjoellobo/nofiltr-pos/internal/domain/order"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/shift"
 )
 
@@ -41,24 +40,18 @@ func (s *Service) Table(ctx context.Context, venueID int64, f Filter) (export.Ta
 		Header: []string{"Trading day", "At", "Kind", "Order", "Item", "Qty", "Amount (" + v.Currency + ")", "Reason", "By", "Authorised by"},
 		Rows:   [][]string{},
 	}
-	states := map[int64]order.State{}
-	for {
-		entries, next, err := s.entries(ctx, q, ask, states)
+	entries, err := s.everything(ctx, q, ask)
+	if err != nil {
+		return export.Table{}, err
+	}
+	for _, e := range entries {
+		row, err := rowOf(e, loc)
 		if err != nil {
 			return export.Table{}, err
 		}
-		for _, e := range entries {
-			row, err := rowOf(e, loc)
-			if err != nil {
-				return export.Table{}, err
-			}
-			t.Rows = append(t.Rows, row)
-		}
-		if next == 0 {
-			return t, nil
-		}
-		ask.params.BeforeID = next
+		t.Rows = append(t.Rows, row)
 	}
+	return t, nil
 }
 
 // rowOf is one correction as the file's cells.

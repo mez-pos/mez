@@ -186,6 +186,11 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(audit.Person{}):            "AuditPerson",
 			reflect.TypeOf(audit.Entry{}):             "AuditEntry",
 			reflect.TypeOf(audit.Page{}):              "AuditPage",
+			reflect.TypeOf(audit.Tally{}):             "AuditTally",
+			reflect.TypeOf(audit.KindTally{}):         "AuditKindTally",
+			reflect.TypeOf(audit.ReasonTally{}):       "AuditReasonTally",
+			reflect.TypeOf(audit.PersonTally{}):       "AuditPersonTally",
+			reflect.TypeOf(audit.Analysis{}):          "AuditAnalysis",
 			reflect.TypeOf(reports.Sales{}):           "SalesReport",
 			reflect.TypeOf(report.Point{}):            "SalesPoint",
 			reflect.TypeOf(report.Hour{}):             "SalesHour",
@@ -241,6 +246,7 @@ func generate() (*ts.Generator, error) {
 		{"StockMovementKind", domstock.Received, asStrings(domstock.Kinds())},
 		{"WasteReason", domstock.Expired, asStrings(domstock.WasteReasons())},
 		{"AuditKind", audit.Void, asStrings(audit.Kinds())},
+		{"AuditAnalysisSheet", audit.SheetReason, asStrings(audit.AnalysisSheets())},
 		{"ReportEvery", report.Day, asStrings(report.Everys())},
 		{"ReportSheet", report.SheetSummary, asStrings(report.Sheets())},
 		{"OrderEventType", order.TypeOrderOpened, eventTypeNames()},
@@ -306,7 +312,7 @@ func generate() (*ts.Generator, error) {
 		// People.
 		staffRequest{}, roleRequest{}, pinRequest{}, people.Person{}, people.Role{}, peopleResponse{}, staffAddedResponse{}, roleEditResponse{},
 		// The audit trail.
-		audit.Person{}, audit.Entry{}, audit.Page{},
+		audit.Person{}, audit.Entry{}, audit.Page{}, audit.Analysis{},
 		// The range reports.
 		reports.Sales{},
 		// The floor plan.

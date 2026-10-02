@@ -16,6 +16,8 @@ import (
 type Audit interface {
 	Trail(ctx context.Context, venueID int64, f audit.Filter) (audit.Page, error)
 	Table(ctx context.Context, venueID int64, f audit.Filter) (export.Table, error)
+	Analysis(ctx context.Context, venueID int64, f audit.Filter) (audit.Analysis, error)
+	AnalysisTable(ctx context.Context, venueID int64, f audit.Filter, sheet audit.AnalysisSheet) (export.Table, error)
 }
 
 // WithAudit mounts the trail. It needs WithDevices and WithStaff, and
@@ -35,6 +37,8 @@ func (s *Server) mountAudit(mux *http.ServeMux) {
 	}
 	mux.Handle("GET /api/v1/audit", s.requireDevice(s.requireStaff(s.requirePermission(auth.PermReportsView, http.HandlerFunc(s.readTrail)))))
 	mux.Handle("GET /api/v1/audit/csv", s.requireDevice(s.requireStaff(s.requirePermission(auth.PermReportsView, http.HandlerFunc(s.readTrailCSV)))))
+	mux.Handle("GET /api/v1/audit/analysis", s.requireDevice(s.requireStaff(s.requirePermission(auth.PermReportsView, http.HandlerFunc(s.readAnalysis)))))
+	mux.Handle("GET /api/v1/audit/analysis/csv", s.requireDevice(s.requireStaff(s.requirePermission(auth.PermReportsView, http.HandlerFunc(s.readAnalysisCSV)))))
 }
 
 // readTrail answers ?from=2026-10-01&to=2026-10-07, both trading days and
@@ -91,4 +95,57 @@ func (s *Server) readTrailCSV(w http.ResponseWriter, r *http.Request) {
 		// The filter was read, so from and to are days and safe in a name.
 		s.writeCSV(w, r, "audit-"+f.From+"-to-"+f.To+".csv", t)
 	}
+}
+
+// readAnalysis answers the same from, to, staff and kind as readTrail with
+// everything they find added up: by kind, by reason, by who did it and by
+// who authorised it (phase 10, Task 5e1, ADR-122). Aggregates, so whole,
+// not paged.
+func (s *Server) readAnalysis(w http.ResponseWriter, r *http.Request) {
+	a, err := s.audit.Analysis(r.Context(), Meta(r).VenueID, trailFilter(r))
+	if s.auditRefused(w, r, err, "adding up the corrections") {
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, s.log, http.StatusOK, a)
+}
+
+// readAnalysisCSV answers one grouping of the analysis as a CSV file:
+// ?by= names it (reason, by or authorised_by).
+func (s *Server) readAnalysisCSV(w http.ResponseWriter, r *http.Request) {
+	f := trailFilter(r)
+	sheet := audit.AnalysisSheet(r.URL.Query().Get("by"))
+	t, err := s.audit.AnalysisTable(r.Context(), Meta(r).VenueID, f, sheet)
+	if errors.Is(err, audit.ErrNoSheet) {
+		writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error(), "by")
+		return
+	}
+	if s.auditRefused(w, r, err, "adding up the corrections as CSV") {
+		return
+	}
+	// The filter was read, so from and to are days and safe in a name.
+	s.writeCSV(w, r, "corrections-"+string(sheet)+"-"+f.From+"-to-"+f.To+".csv", t)
+}
+
+// trailFilter is the filter a whole-trail route reads: no cursor, no limit.
+func trailFilter(r *http.Request) audit.Filter {
+	q := r.URL.Query()
+	return audit.Filter{From: q.Get("from"), To: q.Get("to"), StaffID: q.Get("staff"), Kind: audit.Kind(q.Get("kind"))}
+}
+
+// auditRefused writes the answer to a failed read of the trail and says
+// whether it did.
+func (s *Server) auditRefused(w http.ResponseWriter, r *http.Request, err error, doing string) bool {
+	switch {
+	case err == nil:
+		return false
+	case errors.Is(err, audit.ErrBadFilter):
+		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
+	case errors.Is(err, audit.ErrStaffNotFound):
+		writeFieldError(w, s.log, http.StatusNotFound, CodeStaffNotFound, "No such person.", "staff")
+	default:
+		s.log.Error(doing+" failed", "request_id", RequestID(r.Context()), "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+	}
+	return true
 }

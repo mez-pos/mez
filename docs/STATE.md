@@ -13,23 +13,23 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 5d: What sold, who sold it, and when** (ADR-121).
-Four more sections on `/sales`, from the same read: product mix, category
-performance and staff performance (sorted by their headers in the
-browser, each row with its share), and the hour by weekday heatmap as a
-table whose cells print their bill count. Each has its CSV.
-`web/backoffice/src/sales/SalesTables.tsx`. Tried in a browser against a
-real binary on a GST venue: three bills, every table and three CSV files
-checked against a hand sum.
+**Phase 10, Task 5e1: Corrections added up on the server** (ADR-122;
+Task 5e is split into 5e1 and 5e2).
+`GET /api/v1/audit/analysis?from=&to=&staff=&kind=` (`reports.view`): the
+trail's entries grouped by kind, by kind and reason, by who did them and
+by who authorised them, each a count and an amount, largest first;
+`.../analysis/csv?by=reason|by|authorised_by` as `CsvResponse`.
+`internal/service/audit/analysis.go`, types `AuditAnalysis` and friends.
+Go tests only: not tried against a real binary.
 
 ## Next task
 
-**Phase 10, Task 5e1: Corrections added up on the server.** Task 5e is
-split in two (5e1 server, 5e2 screen). 5e1: the audit trail's entries
-over a range grouped by kind, by kind and reason, by who did them and by
-who authorised them, each a count and an amount; a route beside
-`GET /api/v1/audit`, its CSV, generated types. The trail's query and
-entries are in `internal/service/audit` (`asked`, `entries`).
+**Phase 10, Task 5e2: The corrections section.** Spec first (in
+`backoffice-reports.md`). A section of `/sales` over
+`GET /api/v1/audit/analysis` for the screen's range, with its CSV; each
+row links to `/audit` already filtered, so `AuditScreen` must learn to
+open on `?from=&to=&staff=&kind=` (today its filter is state only, see
+`audit-logic.ts`). Reason codes read through `reasonWords`.
 
 ## Known broken / in progress
 
@@ -37,7 +37,8 @@ entries are in `internal/service/audit` (`asked`, `entries`).
   "Not recorded" for who authorised them. The Person filter lists active
   staff only (it reads `GET /api/v1/staff`); a deactivated person's rows
   show by name but cannot be filtered on. The audit screen has no CSV
-  button yet (the route exists, ADR-119).
+  button yet (the route exists, ADR-119). The analysis (ADR-122) sums
+  what each correction was worth to its bill, not money out of the drawer.
 - CSV (ADR-119): each sheet reads the range again. The Tally files skip
   the formula guard and the byte order mark the report files have.
 - Sales screen (ADR-120, ADR-121): tried with one day of sales and no

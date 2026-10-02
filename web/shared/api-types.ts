@@ -281,6 +281,11 @@ export type AuditKind =
   | 'payment_void'
   | 'reopen';
 
+export type AuditAnalysisSheet =
+  | 'reason'
+  | 'by'
+  | 'authorised_by';
+
 export type ReportEvery =
   | 'day'
   | 'week'
@@ -1352,6 +1357,42 @@ export interface AuditPage {
   entries: AuditEntry[];
   next_before?: number;
   counts: Record<AuditKind, number>;
+}
+
+export interface AuditAnalysis {
+  from: string;
+  to: string;
+  currency: string;
+  total: AuditTally;
+  by_kind: AuditKindTally[];
+  by_reason: AuditReasonTally[];
+  by: AuditPersonTally[];
+  authorised_by: AuditPersonTally[];
+}
+
+export interface AuditTally {
+  count: number;
+  amount: Money;
+}
+
+export interface AuditKindTally {
+  kind: AuditKind;
+  count: number;
+  amount: Money;
+}
+
+export interface AuditReasonTally {
+  kind: AuditKind;
+  reason: string;
+  count: number;
+  amount: Money;
+}
+
+export interface AuditPersonTally {
+  person?: AuditPerson;
+  count: number;
+  amount: Money;
+  kinds: AuditKindTally[];
 }
 
 export interface SalesReport {
