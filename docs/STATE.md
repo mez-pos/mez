@@ -13,28 +13,26 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Redesign, Task 9: screen specs** (`docs/phases/redesign.md`). Docs
-only. Every spec in `docs/design/screens/` and `components.md` now
-speaks the mez language: the serif, tabular figures, 48 and 56px
-targets, green for the primary, terracotta for late and for where you
-are, the table tones as built, the kitchen on espresso night. The three
-specs that cited the Nofiltr archive now name it as history and point at
-tokens.md and the mez reference. It finishes the redesign's tasks; its
-done-when, a person walking the spine and seeing no old screen, is owed.
-Before it, Tasks 1 to 8 (ADR-127, ADR-128).
+**Phase 10, Task 6: the split.** Docs only. Settings is now twelve
+sub-tasks, 6a to 6l, in the phase file: six write paths on the server,
+four screen tasks, devices, and backups parked behind phase 12
+(ADR-129). Before it, the redesign's Tasks 1 to 9 (ADR-127, ADR-128);
+its done-when, a person walking the spine and seeing no old screen, is
+owed.
 
 ## Next task
 
-**Phase 10, Task 6: Settings.** Venue details, tax profile, invoice
-series, currency and rounding, timezone, financial year start, printers
-and station mapping, devices, receipt templates, shift and tip rules,
-backup configuration. Far larger than one session: split it first,
-commit the split, and stop. Known broken below lists what earlier tasks
-left for it (stations, courses and tax classes have no write path; the
-day start, variance threshold and tip rule are constants;
-`settings.edit` gates Floor plan and Printers already). Build its
-screens in the mez language from the start: `docs/design/tokens.md`, and
-`docs/design/reference/mez/mez Desktop Management.dc.html` for settings.
+**Phase 10, Task 6a: The settings service and venue details.** Server
+only. `GET /api/v1/settings` reads everything the venue is set to; one
+write path for the `settings` table knows every key and its type and
+refuses a bad value on save. Venue details go through it: name, legal
+name, timezone. A venue's name readable by any paired device.
+`settings.edit`. Go tests. What exists: `UpdateVenue` in
+`internal/db/queries/venues.sql` (no route calls it); the keys are
+constants in `internal/service/order/venue.go`,
+`internal/service/shift/tips.go` and `count.go`; route pattern as in
+`internal/api/printers.go`. Leave tax, numbering and the day start to
+6b, 6c and 6d.
 
 ## Known broken / in progress
 
@@ -197,6 +195,9 @@ screens in the mez language from the start: `docs/design/tokens.md`, and
 
 ## Open questions for the human
 
+- Backup configuration (Task 6l) has nothing to configure until phase
+  12, Task 4 brings Litestream. Build it after that task, or move it
+  into phase 12 so phase 10 can be ticked? (ADR-129)
 - The GitHub repository is still `nofiltr-pos`; the module path is now
   `github.com/byjoellobo/mez` (ADR-127). Rename the repository to match.
 - A data directory from before the rename: move it to the new default

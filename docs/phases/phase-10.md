@@ -146,6 +146,69 @@ Phase 09.
   station mapping, device management, receipt templates, shift and tip rules,
   backup configuration.
 
+  Split into twelve (the write paths on the server first, then the
+  screens over them). Printers and their station mapping, and the floor
+  plan, are built already (phases 07 and 08) and stay where they are.
+  Currency is not a setting: changing it would reinterpret every amount
+  recorded, so every screen shows it and none edits it.
+
+  - [ ] **Task 6a: The settings service and venue details.** Server. One
+    read of everything the venue is set to (`GET /api/v1/settings`), and
+    one write path for the `settings` table that knows every key and its
+    type, so a value that would later fail as a venue config error is
+    refused when it is saved. Venue details through it: name, legal
+    name, timezone (must load as an IANA zone). A venue's name readable
+    by any paired device, for the lock screen. `settings.edit`. Go tests.
+  - [ ] **Task 6b: Tax profile and tax classes.** Server. Choose the
+    profile and what it needs (registration id, pricing inclusive or
+    exclusive, state code, jurisdiction), validated per profile. Create,
+    rename, re-rate and retire tax classes; a rate change is for new
+    lines only. A profile that needs HSN reports the items without one
+    rather than refusing the change. Go tests.
+  - [ ] **Task 6c: Invoice series, financial year and rounding.** Server.
+    Series code, prefix and number template for invoices and credit
+    notes, the financial year's first month, the cash rounding step. A
+    template must parse and fit the profile's length limit; no change
+    may ever make an issued number come round again. Go tests, in
+    `internal/domain/invoice` where the rule lives.
+  - [ ] **Task 6d: Shift and tip rules.** Server. The trading day's start
+    becomes a venue setting, read by every place that uses the constant
+    today (shifts, reports, audit, sold out); a change takes effect from
+    the next shift opened. The variance threshold, the tip rule and its
+    role weights, the minutes before a ticket is late. Go tests.
+  - [ ] **Task 6e: Stations and courses.** Server. Create, rename, order
+    and retire stations and courses, through the menu's write path so the
+    version bumps and tills hear of it. A station with items or a
+    printer mapped cannot be retired without saying where they go.
+    Go tests.
+  - [ ] **Task 6f: Receipt template.** Server. Header and footer lines
+    and what a receipt shows beyond what the tax profile requires, kept
+    as settings and read by the receipt and bill layouts. ASCII only
+    until printing is not (ADR-079): refuse what would print as "?".
+    Go tests.
+  - [ ] **Task 6g: The Venue settings screen.** Spec first
+    (`backoffice-settings.md`), from `tokens.md` and the mez Desktop
+    Management reference. The screen's frame, its sections, how a
+    section saves and says it saved, and the venue details section.
+  - [ ] **Task 6h: Tax and numbering on the screen.** The tax profile and
+    tax classes, invoice and credit note numbering with a live preview
+    of the next number, financial year and rounding. A change of profile
+    lists the items it leaves without an HSN and links to them.
+  - [ ] **Task 6i: Shift, tips and receipt on the screen.** Day start,
+    variance threshold, tip rule and weights, late ticket minutes, and
+    the receipt template with a preview at the printer's width.
+  - [ ] **Task 6j: Stations and courses on the screen.** Stations beside
+    their printer on the Printers screen; courses where the spec of 6g
+    puts them. The menu's item form picks from both already.
+  - [ ] **Task 6k: Devices.** Server and screen, spec first
+    (`backoffice-devices.md`). Every paired device with its kind and
+    when it was last seen; rename, revoke, and issue a pairing code for
+    a kind. A back office cannot revoke itself. `device.manage`. Split
+    it again if the server half fills a session.
+  - [ ] **Task 6l: Backup configuration.** Waits for phase 12, Task 4:
+    there is nothing to configure until Litestream is in the binary.
+    Build it after that task, or move it there (ADR-129).
+
 ## Done when
 A new venue can be configured end to end from back office — menu, tax, printers,
 staff, settings — and trade a full day, without anyone editing a config file.

@@ -3634,3 +3634,26 @@ layouts and cite the old archive. Screens are restyled through the
 primitives only so far; `docs/phases/redesign.md` lists what each still
 needs. `tokens-demo.html` shows the old palette. A light till under
 service lighting is untested by anyone on a shift.
+
+## ADR-129 - Settings is split by write path, and backups wait
+2026-10 · Status: accepted.
+Decision: phase 10's Task 6 is twelve sub-tasks, 6a to 6l, in
+`docs/phases/phase-10.md`.
+  - **Server first, then screens**, as Tasks 2 to 5 went: 6a to 6f are
+    write paths with Go tests, 6g to 6j the screen over them.
+  - **Split where the rules differ, not where the form does.** Tax,
+    invoice numbering and the trading day each carry a rule that costs
+    money when wrong, so each is its own server task.
+  - **One write path for the `settings` table** (6a) that knows every
+    key and its type. Today a bad value is found when a shift is counted
+    or tips are pooled (`ErrVenueConfig`); it should be refused on save.
+  - **Printers, station mapping and the floor plan are not rebuilt.**
+    They exist; 6e and 6j add only the stations themselves.
+  - **Currency is shown, never edited** (`UpdateVenue` already leaves it
+    out).
+  - **Backup configuration (6l) is parked last.** Litestream arrives in
+    phase 12, Task 4; a form before then would store settings nothing
+    reads, and where the bucket's credentials live is that task's call.
+Because: the task lists eleven areas; three have no server at all.
+Cost: phase 10 cannot be ticked until 6l is built or moved, and its
+done-when does not need backups. The owner decides which (STATE.md).
