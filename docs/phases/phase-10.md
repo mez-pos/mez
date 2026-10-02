@@ -128,7 +128,7 @@ Phase 09.
 
     Split into three (stock has no cost yet, so that comes first):
 
-    - [ ] **Task 5f1: What stock costs.** A stock item's cost, per
+    - [x] **Task 5f1: What stock costs.** A stock item's cost, per
       kilogram, litre or each, entered on the Stock screen; every stock
       movement keeps the cost as it was when it was written, so a past
       variance is never valued at today's cost. Server and the item

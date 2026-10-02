@@ -13,23 +13,23 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 5e2: The corrections section** (ADR-123; with 5e1
-this finishes Task 5e). A Corrections section on `/sales` over
-`GET /api/v1/audit/analysis`: by kind, by reason, who did them and who
-let them through, three CSV files, and each kind and person a link to
-`/audit?from=&to=&kind=|staff=`, which the Audit screen now opens on
-(`filterFromSearch`). `SalesCorrections.tsx`, `use-csv-download.tsx`.
-Tried in a browser against a real binary: a void, a comp, two discounts
-and a reopen, the tables, the three files and both links checked against
-a hand sum (this also tried Task 5e1's routes).
+**Phase 10, Task 5f1: What stock costs** (ADR-124; Task 5f is split
+into 5f1 to 5f3). A stock item has a cost, minor units per kilogram,
+litre or each by its unit (migration 00028), on the Stock screen's item
+form and table; every `stock_movements` row keeps `unit_cost` as the
+item's cost when it was written (the insert reads it). `stock.Value`
+values a quantity at a cost. `GET /api/v1/stock` now names the
+`currency`. Tried in a browser against a real binary: add, refuse an
+unreadable cost, edit, the table.
 
 ## Next task
 
-**Phase 10, Task 5f1: What stock costs.** Task 5f is split in three
-(5f1 cost, 5f2 report on the server, 5f3 its section), because stock
-items have no cost and "variance at cost" needs one. 5f1: a cost on
-`stock_items` (per kg, litre or each), on the Stock screen's item form,
-and kept on every `stock_movements` row as it was when written.
+**Phase 10, Task 5f2: Closing stock on the server.** The close's counts
+by shift over a range of trading days: for each item expected (counted
+less delta), counted, the variance in units and at the `unit_cost` kept
+on the closing movement (`stock.Value`; 0 is "not known", say so, do
+not print 0.00). `ClosingCountForShift` reads one shift and does not
+select `unit_cost` yet. A route under reports, its CSV, `reports.view`.
 
 ## Known broken / in progress
 
@@ -56,7 +56,10 @@ and kept on every `stock_movements` row as it was when written.
   it touches from its first event; a year at a busy venue may take seconds.
   Items and categories are named as the menu stands now. The day start is
   the shift's constant.
-- Stock (ADR-111 to ADR-114): no closing-stock report yet (Task 5). The
+- Stock cost (ADR-124): movements from before migration 00028 have no
+  cost. Nothing shows a cost's history; a new cost is for stock moved
+  from then on.
+- Stock (ADR-111 to ADR-114): no closing-stock report yet (Task 5f2). The
   closing count cannot be skipped while items are marked. A close uses today's
   recipes, not the ones when the line was rung up. A sold movement needs a
   real staff id: the guest channel (phase 11) must supply one. A movement

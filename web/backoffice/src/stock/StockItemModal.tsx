@@ -6,18 +6,20 @@ import type { StockItem, StockItemInput } from "../../../shared/api-types";
 import { Button, Modal } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { Choice, Field, inputClass } from "../FormFields";
-import { emptyItemForm, itemFormFrom, problemOf, toItemInput, units, type ItemForm, type Problem } from "./stock-logic";
+import { costMeasures, emptyItemForm, itemFormFrom, problemOf, toItemInput, units, type ItemForm, type Problem } from "./stock-logic";
 
 interface StockItemModalProps {
   /** Null to add one. */
   item: StockItem | null;
+  /** The venue currency, which stock is costed in. */
+  currency: string;
   onSave: (input: StockItemInput) => Promise<void>;
   onCorrect: () => void;
   onSetActive: (active: boolean) => Promise<void>;
   onClose: () => void;
 }
 
-export function StockItemModal({ item, onSave, onCorrect, onSetActive, onClose }: StockItemModalProps) {
+export function StockItemModal({ item, currency, onSave, onCorrect, onSetActive, onClose }: StockItemModalProps) {
   const [form, setForm] = useState<ItemForm>(item ? itemFormFrom(item) : emptyItemForm());
   const [problem, setProblem] = useState<Problem | null>(null);
   const [busy, setBusy] = useState(false);
@@ -36,7 +38,7 @@ export function StockItemModal({ item, onSave, onCorrect, onSetActive, onClose }
     }
   };
   const save = () => {
-    const built = toItemInput(form);
+    const built = toItemInput(form, currency);
     if ("problem" in built) {
       setProblem(built.problem);
       return;
@@ -86,6 +88,22 @@ export function StockItemModal({ item, onSave, onCorrect, onSetActive, onClose }
               inputMode="decimal"
               autoComplete="off"
               onChange={(e) => set({ low: e.target.value })}
+            />
+          )}
+        </Field>
+        <Field
+          label={`Cost of ${costMeasures[form.unit].full}, in ${currency}`}
+          hint="What you pay for it. It values a count that comes up short or over. Empty for not known."
+          error={on("cost")}
+        >
+          {(id) => (
+            <input
+              id={id}
+              className={cx(inputClass, "text-right font-mono tabular-nums")}
+              value={form.cost}
+              inputMode="decimal"
+              autoComplete="off"
+              onChange={(e) => set({ cost: e.target.value })}
             />
           )}
         </Field>

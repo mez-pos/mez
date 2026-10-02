@@ -3,14 +3,14 @@
 -- ledger, never a stored number.
 
 -- name: CreateStockItem :one
-INSERT INTO stock_items (venue_id, name, unit, low_level, count_at_close, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO stock_items (venue_id, name, unit, low_level, count_at_close, cost, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id;
 
 -- name: UpdateStockItem :execrows
 UPDATE stock_items
 SET name = sqlc.arg(name), unit = sqlc.arg(unit), low_level = sqlc.arg(low_level),
-    count_at_close = sqlc.arg(count_at_close), updated_at = sqlc.arg(now)
+    count_at_close = sqlc.arg(count_at_close), cost = sqlc.arg(cost), updated_at = sqlc.arg(now)
 WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
 
 -- name: SetStockItemActive :execrows
@@ -27,7 +27,7 @@ WHERE venue_id = ? AND id = ?;
 --
 -- Every item, retired ones too, with what the ledger says is on hand.
 SELECT
-    i.id, i.name, i.unit, i.low_level, i.active, i.count_at_close,
+    i.id, i.name, i.unit, i.low_level, i.active, i.count_at_close, i.cost,
     CAST(COALESCE(SUM(m.delta), 0) AS INTEGER) AS on_hand
 FROM stock_items i
 LEFT JOIN stock_movements m ON m.venue_id = i.venue_id AND m.stock_item_id = i.id
@@ -46,9 +46,17 @@ FROM stock_movements
 WHERE venue_id = ? AND stock_item_id = ?;
 
 -- name: InsertStockMovement :one
+--
+-- unit_cost is the item's cost as it stands, read here so no caller can
+-- forget it and none can pass another (ADR-124).
 INSERT INTO stock_movements (
-    venue_id, stock_item_id, kind, delta, counted, reason, note, staff_id, shift_id, order_id, closing, created_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    venue_id, stock_item_id, kind, delta, counted, reason, note, staff_id, shift_id, order_id, closing, created_at,
+    unit_cost
+) VALUES (
+    sqlc.arg(venue_id), sqlc.arg(stock_item_id), sqlc.arg(kind), sqlc.arg(delta), sqlc.arg(counted), sqlc.arg(reason),
+    sqlc.arg(note), sqlc.arg(staff_id), sqlc.arg(shift_id), sqlc.arg(order_id), sqlc.arg(closing), sqlc.arg(created_at),
+    (SELECT i.cost FROM stock_items i WHERE i.venue_id = sqlc.arg(venue_id) AND i.id = sqlc.arg(stock_item_id))
+)
 RETURNING id;
 
 -- name: StockMovementsForItem :many

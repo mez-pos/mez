@@ -134,8 +134,8 @@ func (q *Queries) ClosingCountForShift(ctx context.Context, arg ClosingCountForS
 
 const createStockItem = `-- name: CreateStockItem :one
 
-INSERT INTO stock_items (venue_id, name, unit, low_level, count_at_close, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO stock_items (venue_id, name, unit, low_level, count_at_close, cost, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id
 `
 
@@ -145,6 +145,7 @@ type CreateStockItemParams struct {
 	Unit         string
 	LowLevel     int64
 	CountAtClose bool
+	Cost         int64
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -159,6 +160,7 @@ func (q *Queries) CreateStockItem(ctx context.Context, arg CreateStockItemParams
 		arg.Unit,
 		arg.LowLevel,
 		arg.CountAtClose,
+		arg.Cost,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -169,8 +171,13 @@ func (q *Queries) CreateStockItem(ctx context.Context, arg CreateStockItemParams
 
 const insertStockMovement = `-- name: InsertStockMovement :one
 INSERT INTO stock_movements (
-    venue_id, stock_item_id, kind, delta, counted, reason, note, staff_id, shift_id, order_id, closing, created_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    venue_id, stock_item_id, kind, delta, counted, reason, note, staff_id, shift_id, order_id, closing, created_at,
+    unit_cost
+) VALUES (
+    ?1, ?2, ?3, ?4, ?5, ?6,
+    ?7, ?8, ?9, ?10, ?11, ?12,
+    (SELECT i.cost FROM stock_items i WHERE i.venue_id = ?1 AND i.id = ?2)
+)
 RETURNING id
 `
 
@@ -189,6 +196,8 @@ type InsertStockMovementParams struct {
 	CreatedAt   time.Time
 }
 
+// unit_cost is the item's cost as it stands, read here so no caller can
+// forget it and none can pass another (ADR-124).
 func (q *Queries) InsertStockMovement(ctx context.Context, arg InsertStockMovementParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, insertStockMovement,
 		arg.VenueID,
@@ -447,7 +456,7 @@ func (q *Queries) StockItemForEdit(ctx context.Context, arg StockItemForEditPara
 
 const stockItemsWithOnHand = `-- name: StockItemsWithOnHand :many
 SELECT
-    i.id, i.name, i.unit, i.low_level, i.active, i.count_at_close,
+    i.id, i.name, i.unit, i.low_level, i.active, i.count_at_close, i.cost,
     CAST(COALESCE(SUM(m.delta), 0) AS INTEGER) AS on_hand
 FROM stock_items i
 LEFT JOIN stock_movements m ON m.venue_id = i.venue_id AND m.stock_item_id = i.id
@@ -463,6 +472,7 @@ type StockItemsWithOnHandRow struct {
 	LowLevel     int64
 	Active       bool
 	CountAtClose bool
+	Cost         int64
 	OnHand       int64
 }
 
@@ -483,6 +493,7 @@ func (q *Queries) StockItemsWithOnHand(ctx context.Context, venueID int64) ([]St
 			&i.LowLevel,
 			&i.Active,
 			&i.CountAtClose,
+			&i.Cost,
 			&i.OnHand,
 		); err != nil {
 			return nil, err
@@ -612,8 +623,8 @@ func (q *Queries) StockOnHand(ctx context.Context, arg StockOnHandParams) (int64
 const updateStockItem = `-- name: UpdateStockItem :execrows
 UPDATE stock_items
 SET name = ?1, unit = ?2, low_level = ?3,
-    count_at_close = ?4, updated_at = ?5
-WHERE venue_id = ?6 AND id = ?7
+    count_at_close = ?4, cost = ?5, updated_at = ?6
+WHERE venue_id = ?7 AND id = ?8
 `
 
 type UpdateStockItemParams struct {
@@ -621,6 +632,7 @@ type UpdateStockItemParams struct {
 	Unit         string
 	LowLevel     int64
 	CountAtClose bool
+	Cost         int64
 	Now          time.Time
 	VenueID      int64
 	ID           int64
@@ -632,6 +644,7 @@ func (q *Queries) UpdateStockItem(ctx context.Context, arg UpdateStockItemParams
 		arg.Unit,
 		arg.LowLevel,
 		arg.CountAtClose,
+		arg.Cost,
 		arg.Now,
 		arg.VenueID,
 		arg.ID,

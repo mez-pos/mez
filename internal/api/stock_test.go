@@ -38,7 +38,7 @@ func TestStockOverHTTP(t *testing.T) {
 	}
 
 	var created stockEditResponse
-	if err := post("/api/v1/stock/items", `{"name":"Milk","unit":"ml","low_level":2000000}`, http.StatusCreated).Decode(&created); err != nil {
+	if err := post("/api/v1/stock/items", `{"name":"Milk","unit":"ml","low_level":2000000,"cost":{"minor":6000,"currency":"INR"}}`, http.StatusCreated).Decode(&created); err != nil {
 		t.Fatal(err)
 	}
 	moves := fmt.Sprintf("/api/v1/stock/items/%d/movements", created.ID)
@@ -59,6 +59,14 @@ func TestStockOverHTTP(t *testing.T) {
 	}
 	if it := list.Items[0]; it.Name != "Milk" || it.Unit != domstock.Millilitre || it.OnHand != 5_400_000 || it.Low {
 		t.Errorf("milk = %+v", it)
+	}
+	// 60.00 a litre, in the currency the list names.
+	if it := list.Items[0]; list.Currency != "INR" || it.Cost.Minor != 6000 || it.Cost.Currency != "INR" {
+		t.Errorf("milk costs %+v in a list costed in %q", it.Cost, list.Currency)
+	}
+	dollars := send(w.handler, http.MethodPost, "/api/v1/stock/items", `{"name":"Cream","unit":"ml","cost":{"minor":100,"currency":"USD"}}`, owner)
+	if e := errorOf(t, dollars); dollars.Code < 400 || e.Code != CodeInvalidStock || e.Field != "cost" {
+		t.Errorf("a cost in dollars: %d %s, want the cost refused", dollars.Code, dollars.Body)
 	}
 
 	rec = send(w.handler, http.MethodGet, moves+"?limit=2", "", owner)

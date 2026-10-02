@@ -12,6 +12,7 @@ import type {
   StockUnit,
   WasteReason,
 } from "../../../shared/api-types";
+import { amountInputText, parseAmount } from "../../../shared/money";
 import { formatQty, parseQty, qtyInputText } from "../../../shared/stock-qty";
 
 /** The movements a person enters; sold is the till's. */
@@ -90,21 +91,38 @@ export interface ItemForm {
   low: string;
   /** Counted, blind, as each shift closes (ADR-114). */
   countAtClose: boolean;
+  /** What a kilogram, a litre or one of it costs, as typed; empty for not known (ADR-124). */
+  cost: string;
 }
 
+/** What a cost is quoted for, by the item's unit: in full for the form, short for a table. */
+export const costMeasures: Readonly<Record<StockUnit, { full: string; short: string }>> = {
+  g: { full: "a kilogram", short: "kg" },
+  ml: { full: "a litre", short: "l" },
+  each: { full: "one", short: "each" },
+};
+
 export function emptyItemForm(): ItemForm {
-  return { name: "", unit: "g", low: "", countAtClose: false };
+  return { name: "", unit: "g", low: "", countAtClose: false, cost: "" };
 }
 
 export function itemFormFrom(it: StockItem): ItemForm {
-  return { name: it.name, unit: it.unit, low: it.low_level === 0 ? "" : qtyInputText(it.low_level), countAtClose: it.count_at_close };
+  return {
+    name: it.name,
+    unit: it.unit,
+    low: it.low_level === 0 ? "" : qtyInputText(it.low_level),
+    countAtClose: it.count_at_close,
+    cost: it.cost.minor === 0 ? "" : amountInputText(it.cost),
+  };
 }
 
-/** The request for an item form; an empty low-stock level is none. */
-export function toItemInput(form: ItemForm): { input: StockItemInput } | { problem: Problem } {
+/** The request for an item form; an empty low-stock level is none, an empty cost not known. */
+export function toItemInput(form: ItemForm, currency: string): { input: StockItemInput } | { problem: Problem } {
   const low = form.low.trim() === "" ? 0 : parseQty(form.low);
   if (low === null) return { problem: { field: "low_level", message: unreadable } };
-  return { input: { name: form.name.trim(), unit: form.unit, low_level: low, count_at_close: form.countAtClose } };
+  const cost = form.cost.trim() === "" ? 0 : parseAmount(form.cost, currency);
+  if (cost === null) return { problem: { field: "cost", message: "Type a cost like 60 or 1250.50." } };
+  return { input: { name: form.name.trim(), unit: form.unit, low_level: low, count_at_close: form.countAtClose, cost: { minor: cost, currency } } };
 }
 
 /** What a recipe takes, in words: "Beans 18 g, Milk 200 ml"; empty for none. */

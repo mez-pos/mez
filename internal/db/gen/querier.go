@@ -166,6 +166,9 @@ type Querier interface {
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
+	//
+	// unit_cost is the item's cost as it stands, read here so no caller can
+	// forget it and none can pass another (ADR-124).
 	InsertStockMovement(ctx context.Context, arg InsertStockMovementParams) (int64, error)
 	InvoiceSeriesLastSeq(ctx context.Context, arg InvoiceSeriesLastSeqParams) (int64, error)
 	InvoicesForVenue(ctx context.Context, venueID int64) ([]Invoice, error)

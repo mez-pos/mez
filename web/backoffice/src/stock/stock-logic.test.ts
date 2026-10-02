@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
 import type { StockItem, StockMovement } from "../../../shared/api-types";
 import {
+  costMeasures,
   countDelta,
   emptyItemForm,
   emptyMovementForm,
@@ -16,8 +17,8 @@ import {
   toParts,
 } from "./stock-logic";
 
-const beans: StockItem = { id: 1, name: "Beans", unit: "g", low_level: 2_000_000, active: true, on_hand: 4_750_000, low: false, count_at_close: true };
-const milk: StockItem = { id: 2, name: "Milk", unit: "ml", low_level: 0, active: true, on_hand: 0, low: false, count_at_close: false };
+const beans: StockItem = { id: 1, name: "Beans", unit: "g", low_level: 2_000_000, active: true, on_hand: 4_750_000, low: false, count_at_close: true, cost: { minor: 125000, currency: "INR" } };
+const milk: StockItem = { id: 2, name: "Milk", unit: "ml", low_level: 0, active: true, on_hand: 0, low: false, count_at_close: false, cost: { minor: 0, currency: "INR" } };
 
 describe("toMovementInput", () => {
   it("sends a delivery in thousandths, with no reason", () => {
@@ -60,15 +61,34 @@ describe("movementText", () => {
 describe("the item form", () => {
   it("reads an item in and back out", () => {
     const form = itemFormFrom(beans);
-    expect(form).toEqual({ name: "Beans", unit: "g", low: "2000", countAtClose: true });
-    expect(toItemInput(form)).toEqual({ input: { name: "Beans", unit: "g", low_level: 2_000_000, count_at_close: true } });
+    expect(form).toEqual({ name: "Beans", unit: "g", low: "2000", countAtClose: true, cost: "1250.00" });
+    expect(toItemInput(form, "INR")).toEqual({
+      input: { name: "Beans", unit: "g", low_level: 2_000_000, count_at_close: true, cost: { minor: 125000, currency: "INR" } },
+    });
   });
   it("treats an empty low level as none, and trims the name", () => {
     expect(itemFormFrom(milk).low).toBe("");
-    expect(toItemInput({ ...emptyItemForm(), name: " Ice " })).toEqual({ input: { name: "Ice", unit: "g", low_level: 0, count_at_close: false } });
+    expect(toItemInput({ ...emptyItemForm(), name: " Ice " }, "INR")).toEqual({
+      input: { name: "Ice", unit: "g", low_level: 0, count_at_close: false, cost: { minor: 0, currency: "INR" } },
+    });
   });
   it("refuses a low level it cannot read", () => {
-    expect(toItemInput({ ...emptyItemForm(), low: "some" })).toMatchObject({ problem: { field: "low_level" } });
+    expect(toItemInput({ ...emptyItemForm(), low: "some" }, "INR")).toMatchObject({ problem: { field: "low_level" } });
+  });
+  it("treats an empty cost as not known, and reads one in the venue currency", () => {
+    expect(itemFormFrom(milk).cost).toBe("");
+    expect(toItemInput({ ...emptyItemForm(), name: "Milk", unit: "ml", cost: " 60 " }, "INR")).toMatchObject({ input: { cost: { minor: 6000, currency: "INR" } } });
+    expect(toItemInput({ ...emptyItemForm(), name: "Yen", cost: "60" }, "JPY")).toMatchObject({ input: { cost: { minor: 60, currency: "JPY" } } });
+  });
+  it("refuses a cost it cannot read", () => {
+    for (const cost of ["cheap", "-5", "12.345"]) {
+      expect(toItemInput({ ...emptyItemForm(), cost }, "INR")).toMatchObject({ problem: { field: "cost" } });
+    }
+  });
+  it("names what a cost is for", () => {
+    expect(costMeasures.g).toEqual({ full: "a kilogram", short: "kg" });
+    expect(costMeasures.ml.short).toBe("l");
+    expect(costMeasures.each.full).toBe("one");
   });
 });
 

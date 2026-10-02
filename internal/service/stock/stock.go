@@ -12,6 +12,7 @@ import (
 
 	"github.com/byjoellobo/nofiltr-pos/internal/db"
 	"github.com/byjoellobo/nofiltr-pos/internal/db/gen"
+	"github.com/byjoellobo/nofiltr-pos/internal/domain/money"
 	"github.com/byjoellobo/nofiltr-pos/internal/domain/stock"
 )
 
@@ -61,6 +62,9 @@ type ItemInput struct {
 	LowLevel stock.Qty  `json:"low_level"`
 	// CountAtClose puts it on the till's closing count (ADR-114).
 	CountAtClose bool `json:"count_at_close"`
+	// Cost is what a kilogram, a litre or one of it costs, by its unit, in
+	// the venue's currency (ADR-124). Zero, or left out, is "not known".
+	Cost money.Amount `json:"cost"`
 }
 
 // Item is a stock item with what is on hand.
@@ -75,11 +79,50 @@ type Item struct {
 	CountAtClose bool `json:"count_at_close"`
 	// Low is on hand at or under the low-stock level (stock.IsLow).
 	Low bool `json:"low"`
+	// Cost is what a kilogram, a litre or one of it costs; zero is not known.
+	Cost money.Amount `json:"cost"`
+}
+
+// Currency is the currency the venue's stock is costed in: its own.
+func (s *Service) Currency(ctx context.Context, venueID int64) (string, error) {
+	return currencyOf(ctx, s.db.Queries(), venueID)
+}
+
+func currencyOf(ctx context.Context, q *gen.Queries, venueID int64) (string, error) {
+	v, err := q.VenueByID(ctx, venueID)
+	if err != nil {
+		return "", fmt.Errorf("stock: reading venue %d: %w", venueID, err)
+	}
+	return v.Currency, nil
+}
+
+// costOf is an input's cost in minor units, checked. A cost left out is
+// zero; one in another currency than the venue's is refused, not converted.
+func costOf(ctx context.Context, q *gen.Queries, venueID int64, in money.Amount) (int64, error) {
+	if in.Minor == 0 && in.Currency == "" {
+		return 0, nil
+	}
+	currency, err := currencyOf(ctx, q, venueID)
+	if err != nil {
+		return 0, err
+	}
+	if in.Currency != currency {
+		return 0, &Invalid{"cost", "The cost must be in " + currency + ", the venue's currency."}
+	}
+	if p := stock.CleanCost(in.Minor); p != nil {
+		return 0, &Invalid{p.Field, p.Message}
+	}
+	return in.Minor, nil
 }
 
 // Items is every stock item, retired ones too, by name.
 func (s *Service) Items(ctx context.Context, venueID int64) ([]Item, error) {
-	rows, err := s.db.Queries().StockItemsWithOnHand(ctx, venueID)
+	q := s.db.Queries()
+	currency, err := currencyOf(ctx, q, venueID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.StockItemsWithOnHand(ctx, venueID)
 	if err != nil {
 		return nil, fmt.Errorf("stock: reading the stock of venue %d: %w", venueID, err)
 	}
@@ -89,6 +132,7 @@ func (s *Service) Items(ctx context.Context, venueID int64) ([]Item, error) {
 		out[i] = Item{
 			ID: r.ID, Name: r.Name, Unit: stock.Unit(r.Unit), LowLevel: level, Active: r.Active,
 			OnHand: onHand, Low: r.Active && stock.IsLow(onHand, level), CountAtClose: r.CountAtClose,
+			Cost: money.Amount{Minor: r.Cost, Currency: currency},
 		}
 	}
 	return out, nil
@@ -103,16 +147,22 @@ func (s *Service) CreateItem(ctx context.Context, venueID int64, in ItemInput) (
 	now := s.now()
 	var id int64
 	err = s.db.WriteTx(ctx, func(q *gen.Queries) error {
+		cost, err := costOf(ctx, q, venueID, in.Cost)
+		if err != nil {
+			return err
+		}
 		id, err = q.CreateStockItem(ctx, gen.CreateStockItemParams{
 			VenueID: venueID, Name: d.Name, Unit: string(d.Unit), LowLevel: int64(d.LowLevel), CountAtClose: in.CountAtClose,
-			CreatedAt: now, UpdatedAt: now,
+			Cost: cost, CreatedAt: now, UpdatedAt: now,
 		})
 		return err
 	})
 	return id, nameTaken(err)
 }
 
-// UpdateItem changes a stock item's name, unit or low-stock level. The unit
+// UpdateItem changes a stock item's name, unit, low-stock level or cost. A
+// new cost is for movements from now on: those already written keep the
+// cost they were written at (ADR-124). The unit
 // cannot change once anything is recorded against it: 500 of it would mean
 // grams in one row and millilitres in the next.
 func (s *Service) UpdateItem(ctx context.Context, venueID, id int64, in ItemInput) error {
@@ -134,9 +184,13 @@ func (s *Service) UpdateItem(ctx context.Context, venueID, id int64, in ItemInpu
 				return &Invalid{"unit", "Its history is recorded in " + unitWord(stock.Unit(current.Unit)) + ". Add a new item for another unit."}
 			}
 		}
+		cost, err := costOf(ctx, q, venueID, in.Cost)
+		if err != nil {
+			return err
+		}
 		n, err := q.UpdateStockItem(ctx, gen.UpdateStockItemParams{
 			Name: d.Name, Unit: string(d.Unit), LowLevel: int64(d.LowLevel), CountAtClose: in.CountAtClose,
-			Now: s.now(), VenueID: venueID, ID: id,
+			Cost: cost, Now: s.now(), VenueID: venueID, ID: id,
 		})
 		return oneRow(n, err)
 	}))

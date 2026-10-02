@@ -3493,3 +3493,36 @@ Cost: back from the trail returns to the Sales screen's default range,
 since its range is not in its address either. A deactivated person is
 not in the Person list (active staff only), so the box says "Someone no
 longer active" for a link to them, without their name.
+
+## ADR-124 - Stock has a cost per kilogram, litre or each, and the ledger keeps it as it was
+2026-10 · Status: accepted
+Decision: phase 10, Task 5f1 gives a stock item a cost (migration 00028,
+`internal/domain/stock/cost.go`, the Stock screen's item form). Task 5f
+was split in three: this, the closing stock report (5f2), its section
+(5f3). The phase asked for a variance "at cost" and stock had none.
+  - **What an invoice says.** A cost is minor units of the venue's
+    currency for a kilogram of an item counted in grams, a litre of one
+    in millilitres, or one of an item counted by the piece. A supplier
+    prices milk by the litre, not the millilitre, and the form asks for
+    what the owner can read off the bill. Zero is "not known", not free.
+  - **One rule for worth.** `stock.Value(qty, unit, cost)` is the
+    quantity (thousandths of the unit) times the cost over the measure,
+    in whole numbers, a half rounding away from zero; a shortfall is
+    negative. Nothing else turns stock into money.
+  - **The ledger keeps the cost it was written at.** Every
+    `stock_movements` row has `unit_cost`, filled by the insert itself
+    from the item's cost at that moment: no caller passes it, so none
+    can forget it or pass another. A cost changed later is for stock
+    moved from then on. Valuing last month's variance at today's price
+    is the stock form of "a historical total from current menu prices".
+  - **In the venue's currency or refused.** The item carries its cost as
+    a `Money`; an input in another currency is refused, not converted.
+    The stock list says which currency that is, for a form with no item
+    to read it from.
+  - Purchasing stays out of scope: there is no cost per delivery, no
+    average or FIFO cost. The cost is one figure the owner keeps current.
+Because: "we were short 2 litres" becomes a decision only when it reads
+"and that is 128.00".
+Cost: rows written before migration 00028 have no cost and value at
+zero; a report must say "not known", not 0.00. An owner who never
+updates a cost gets variances at an old price, shown as the price it was.

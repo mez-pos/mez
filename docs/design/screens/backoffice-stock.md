@@ -31,6 +31,7 @@ A dense table, by name:
 | Item | the name; "Retired" (struck, muted) when retired; "LOW" in the warning colour when low |
 | On hand | mono, right-aligned, in its unit: "4,750 g", "12 each", "1.5 each"; below zero in the danger colour |
 | Low at | mono, right-aligned; "None" when 0 |
+| Cost | what a kilogram, a litre or one of it costs, by its unit: `Money` then "/ kg", "/ l" or "/ each"; "Not set" muted when not known |
 | | **Receive**, **Waste**, **Count**, **History**, **Edit** (44px); a retired item has History and Edit only |
 
 - **The movement form** (`Modal`, sm), opened by Receive, Waste or Count,
@@ -69,6 +70,12 @@ so a manager without `menu.edit` can keep recipes.
 
 ## Low stock and the closing count (Task 3d)
 
+- **Edit** has **Cost** (phase 10 Task 5f1, ADR-124): what the venue
+  pays for a kilogram of an item counted in grams, a litre of one in
+  millilitres, or one of an item counted by the piece, in the venue's
+  currency; the label says which ("Cost of a litre, in INR"). Empty for
+  not known. A new cost is for stock moved from now on: what is already
+  in the history keeps the cost it had.
 - **Edit** has **Count at close**: the item is counted, blind, on the till
   as each shift closes (`terminal-close.md`). The Items table marks such
   an item "AT CLOSE".

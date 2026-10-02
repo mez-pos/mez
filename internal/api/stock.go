@@ -17,6 +17,7 @@ type Stock interface {
 	CreateItem(ctx context.Context, venueID int64, in stock.ItemInput) (int64, error)
 	UpdateItem(ctx context.Context, venueID, id int64, in stock.ItemInput) error
 	SetItemActive(ctx context.Context, venueID, id int64, active bool) error
+	Currency(ctx context.Context, venueID int64) (string, error)
 	Record(ctx context.Context, venueID, staffID, itemID int64, in stock.MovementInput) (stock.Recorded, error)
 	Movements(ctx context.Context, venueID, itemID, before int64, limit int) ([]stock.Movement, int64, error)
 	Recipes(ctx context.Context, venueID int64) (stock.RecipeBook, error)
@@ -50,6 +51,8 @@ type (
 
 type stockItemsResponse struct {
 	Items []stock.Item `json:"items"`
+	// Currency is what the venue's stock is costed in.
+	Currency string `json:"currency"`
 }
 
 // recipeRequest is a recipe, whole: what one sold takes from stock. An
@@ -160,7 +163,12 @@ func (s *Server) listStock(w http.ResponseWriter, r *http.Request) {
 		s.writeStockError(w, r, err)
 		return
 	}
-	writeJSON(w, s.log, http.StatusOK, stockItemsResponse{Items: items})
+	currency, err := s.stock.Currency(r.Context(), Meta(r).VenueID)
+	if err != nil {
+		s.writeStockError(w, r, err)
+		return
+	}
+	writeJSON(w, s.log, http.StatusOK, stockItemsResponse{Items: items, Currency: currency})
 }
 
 func (s *Server) createStockItem(w http.ResponseWriter, r *http.Request) {

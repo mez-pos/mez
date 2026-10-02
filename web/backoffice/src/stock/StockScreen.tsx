@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import type { StockItem, StockRecorded } from "../../../shared/api-types";
-import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
+import { Button, EmptyState, InboxIcon, Money, useToast } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
 import { useMenu } from "../../../shared/use-menu";
@@ -12,7 +12,7 @@ import { HistoryModal } from "./HistoryModal";
 import { MovementModal } from "./MovementModal";
 import { formatDelta, formatQty } from "../../../shared/stock-qty";
 import { RecipesView } from "./RecipesView";
-import { problemOf, type HandKind } from "./stock-logic";
+import { costMeasures, problemOf, type HandKind } from "./stock-logic";
 import { StockItemModal } from "./StockItemModal";
 import { useStock, type StockApi } from "./use-stock";
 
@@ -64,7 +64,7 @@ export function StockScreen() {
       )}
       {items && view === "recipes" && !menu.data && <p className="text-base text-fg-muted">Loading the menu</p>}
 
-      {open && <Opened open={open} api={api} onOpen={setOpen} onClose={() => setOpen(null)} />}
+      {open && api.items.data && <Opened open={open} currency={api.items.data.currency} api={api} onOpen={setOpen} onClose={() => setOpen(null)} />}
     </div>
   );
 }
@@ -97,6 +97,19 @@ function ItemsTable({ items, onOpen }: { items: readonly StockItem[]; onOpen: (o
         it.low_level === 0 ? <span className="text-fg-muted">None</span> : <span className="font-mono tabular-nums">{formatQty(it.low_level, it.unit)}</span>,
     },
     {
+      id: "cost",
+      header: "Cost",
+      align: "right",
+      cell: (it) =>
+        it.cost.minor === 0 ? (
+          <span className="text-fg-muted">Not set</span>
+        ) : (
+          <span className="whitespace-nowrap">
+            <Money amount={it.cost} /> <span className="text-fg-3">/ {costMeasures[it.unit].short}</span>
+          </span>
+        ),
+    },
+    {
       id: "actions",
       header: "",
       align: "right",
@@ -127,18 +140,21 @@ function ItemsTable({ items, onOpen }: { items: readonly StockItem[]; onOpen: (o
 
 interface OpenedProps {
   open: Open;
+  /** The venue currency, which stock is costed in. */
+  currency: string;
   api: StockApi;
   onOpen: (o: Open) => void;
   onClose: () => void;
 }
 
-function Opened({ open, api, onOpen, onClose }: OpenedProps) {
+function Opened({ open, currency, api, onOpen, onClose }: OpenedProps) {
   const toast = useToast();
   switch (open.kind) {
     case "add":
       return (
         <StockItemModal
           item={null}
+          currency={currency}
           onSave={async (input) => {
             await api.createItem(input);
             toast(`Added ${input.name}.`, { tone: "success" });
@@ -152,6 +168,7 @@ function Opened({ open, api, onOpen, onClose }: OpenedProps) {
       return (
         <StockItemModal
           item={open.item}
+          currency={currency}
           onSave={async (input) => {
             await api.updateItem(open.item.id, input);
             toast("Saved.", { tone: "success" });

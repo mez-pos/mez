@@ -1190,6 +1190,7 @@ export interface StockItemInput {
   unit: StockUnit;
   low_level: number;
   count_at_close: boolean;
+  cost: Money;
 }
 
 export interface StockMovementInput {
@@ -1208,10 +1209,12 @@ export interface StockItem {
   on_hand: number;
   count_at_close: boolean;
   low: boolean;
+  cost: Money;
 }
 
 export interface StockItemsResponse {
   items: StockItem[];
+  currency: string;
 }
 
 export interface StockEditResponse {

@@ -380,6 +380,7 @@ type StockItem struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	CountAtClose bool
+	Cost         int64
 }
 
 type StockMovement struct {
@@ -396,6 +397,7 @@ type StockMovement struct {
 	OrderID     int64
 	CreatedAt   time.Time
 	Closing     bool
+	UnitCost    int64
 }
 
 type Table struct {
