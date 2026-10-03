@@ -4123,3 +4123,16 @@ settings screen over a feature that does not exist would be guessed twice.
 Cost: phase 10 ends without a Backups section in settings; a venue has no
 backups until phase 12.
 ---
+
+## ADR-142 - The Windows Service wrapper lives in internal/winsvc
+2026-10 · Status: accepted. Amends ADR-020's pointer to `internal/service`.
+Decision: phase 12, Task 1 puts the `kardianos/service` wrapper in
+`internal/winsvc`. `internal/service` stays the parent of the application
+services (`internal/service/order`, `menus`, `shift` and the rest), and its
+package comment says so.
+Because: the phase 00 skeleton reserved `internal/service` for the Windows
+Service, and from phase 04 on it became the application layer. Its comment still
+described the wrapper, so a reader, or phase 12, would follow it to the wrong
+place.
+Cost: none in code; ADR-020's text names the old path and is read with this one.
+---
