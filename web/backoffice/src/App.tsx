@@ -17,6 +17,7 @@ import { SectionGate } from "./shell/SectionGate";
 import { AuditScreen } from "./audit/AuditScreen";
 import { PeopleScreen } from "./people/PeopleScreen";
 import { SalesScreen } from "./sales/SalesScreen";
+import { SettingsScreen } from "./settings/SettingsScreen";
 import { StockScreen } from "./stock/StockScreen";
 import { TipsScreen } from "./tips/TipsScreen";
 import { Button } from "../../shared/ui";
@@ -73,6 +74,16 @@ function SignedInRoutes() {
         <SectionGate id="stock">
           <StockScreen />
         </SectionGate>
+      </Route>
+      <Route path="/settings">
+        <Redirect to="/settings/venue" replace />
+      </Route>
+      <Route path="/settings/:section">
+        {(params) => (
+          <SectionGate id="settings">
+            <SettingsScreen path={`/settings/${params.section}`} />
+          </SectionGate>
+        )}
       </Route>
       <Route path="/printers">
         <SectionGate id="printers">

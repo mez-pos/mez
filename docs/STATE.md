@@ -13,23 +13,26 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6f: receipt template.** Server only (ADR-135).
-`GET` and `PUT /api/v1/settings/receipt` (`internal/service/settings/
-receipt.go`): up to four header and four footer lines and three parts that
-may be hidden (barcode, order id, choices), read by the receipt, a bill and a
-credit note through `printing.templateFor`. Text the printer would print as
-"?" is refused when saved (`escpos.Unprintable`); printing itself never
-refuses a sale over a template. Before it, 6e (ADR-134), 6d (ADR-133), 6c
-(ADR-132), 6b (ADR-131), 6a (ADR-130), the split (ADR-129).
+**Phase 10, Task 6g: the venue settings screen** (ADR-136). Spec
+`docs/design/screens/backoffice-settings.md`; code in
+`web/backoffice/src/settings/`. A frame at `/settings/<section>` with a rail
+of sections (Soon for those not built), a `SectionCard` every section is drawn
+in (Discard and Save, Unsaved changes, Saved, errors under the field), and
+the Venue section: name, legal name, timezone, currency shown. Tried in a
+browser: load, edit, a server refusal, save, reload, a narrow screen. Before
+it, 6f (ADR-135), 6e (ADR-134), 6d (ADR-133), 6c (ADR-132), 6b (ADR-131), 6a
+(ADR-130), the split (ADR-129).
 
 ## Next task
 
-**Phase 10, Task 6g: The Venue settings screen.** Spec first
-(`docs/design/screens/backoffice-settings.md`), from `docs/design/tokens.md`
-and the mez Desktop Management reference. The screen's frame, its sections,
-how a section saves and says it saved, and the venue details section. The
-server routes it will use: `GET /api/v1/settings`, `PUT /api/v1/settings/venue`.
-See the phase file for 6h to 6l.
+**Phase 10, Task 6h: Tax and numbering on the screen.** The tax profile and
+tax classes, invoice and credit note numbering with a live preview of the next
+number, financial year and rounding. A change of profile lists the items it
+leaves without an HSN and links to them. Add a section to
+`web/backoffice/src/settings/` (set `built: true` in `settings-logic.ts`,
+draw it in `SectionCard`). Routes: `GET`/`PUT /api/v1/settings/tax`,
+`POST`/`PUT /api/v1/settings/tax-classes` (and `/{id}/retire`, `/restore`),
+`GET`/`PUT /api/v1/settings/numbering`. Extend the spec first.
 
 ## Known broken / in progress
 
@@ -51,6 +54,10 @@ See the phase file for 6h to 6l.
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 
+- Venue settings screen (ADR-136): the "Leave without saving?" prompt is not
+  seen by eye (only a second section can raise it, from the rail), and the
+  shell's navigation drops a draft without asking. Timezone suggestions come
+  from the browser's list. The Devices entry is still Soon.
 - Receipt template (ADR-135): no screen yet (6i). The till's on-screen invoice
   preview does not show the header and footer, and no logo (ADR-079). A
   duplicate of an old receipt prints with today's template. Not tried on a

@@ -186,7 +186,7 @@ Phase 09.
     as settings and read by the receipt and bill layouts. ASCII only
     until printing is not (ADR-079): refuse what would print as "?".
     Go tests.
-  - [ ] **Task 6g: The Venue settings screen.** Spec first
+  - [x] **Task 6g: The Venue settings screen.** Spec first
     (`backoffice-settings.md`), from `tokens.md` and the mez Desktop
     Management reference. The screen's frame, its sections, how a
     section saves and says it saved, and the venue details section.

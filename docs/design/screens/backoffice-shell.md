@@ -57,7 +57,7 @@ Paper surface, inside `SignedInShell` (header: the logo, then `<section> ·
 | Sales reports | `/sales` | `reports.view` | Task 5 |
 | Floor plan | `/floor` | `settings.edit` | phase 08 |
 | Printers | `/printers` | `settings.edit` | phase 07 |
-| Venue settings | `/settings` | `settings.edit` | Task 6 |
+| Venue settings | `/settings` | `settings.edit` | Task 6g |
 | Devices | `/devices` | `device.manage` | Task 6 |
 
 - An entry you lack the permission for is **not shown**. A group with no

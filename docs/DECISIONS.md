@@ -3879,3 +3879,45 @@ Cost: no logo (a raster path is later work, ADR-079); the till's on-screen
 invoice preview does not show the template; changing the template changes
 the next duplicate of an old receipt as well, since a duplicate is laid out
 when it is asked for.
+
+## ADR-136 - The venue settings screen: a frame, and a section that saves alone
+2026-10 · Status: accepted.
+Decision: `/settings` is a frame (`web/backoffice/src/settings/`): a rail of
+sections beside the one open, at `/settings/<section>`. Each section keeps its
+own draft and saves on its own, in the one footer every section shares
+(`SectionCard`): Discard and Save, both disabled until the draft differs;
+"Unsaved changes", then "Saving", then "Saved" in words in one live region; a
+refusal about a field under that field, one about no field in the footer.
+Spec: `docs/design/screens/backoffice-settings.md`. The Venue section edits
+the name, legal name and timezone through `PUT /api/v1/settings/venue`, and
+shows the currency, which is never edited.
+  - **One Save per section, not one for the screen.** The archive's Settings
+    has one Save at the very end. The sections here write through different
+    routes with different checks (tax refuses while tickets are open, numbering
+    locks the financial year), so one button over all of them could save some
+    and refuse the rest, with a screen showing neither. A save sends one
+    section and answers with that section as it now stands, which becomes the
+    draft: what is on screen after Save is what the server holds.
+  - **Leaving a dirty section asks, in the frame.** A rail entry asks "Leave
+    without saving?" (Keep editing, Leave); the browser asks before a tab
+    closes or reloads. The shell's own navigation does not ask: a guard on
+    every back office link is a cross-cutting change to the shell, and a
+    draft of a name or a timezone is cheap to retype. The frame knows only
+    whether the open section is dirty; the section reports it.
+  - **A section is a path** (`/settings/venue`), so reload and a pasted link
+    keep the place, and the shell's `/settings` entry stays current across
+    them. `/settings` and a path that names no built section go to Venue.
+    Sections not built are shown muted with Soon, not as links, the shell's
+    rule, so the rail already shows what 6h to 6l add.
+  - **The client checks what is free to check** (a name given, lengths,
+    a timezone given) so a refusal is instant; the server checks again and its
+    words win for anything else, such as a timezone that is not a zone.
+  - **The timezone is a text field with the browser's zone list as
+    suggestions** (`Intl.supportedValuesOf`, a short list where it is
+    missing), not a select: 400 names is not a menu, and the server decides
+    what is a zone.
+Because: the settings are the one place an owner can break the venue, and a
+screen that says plainly what is saved and what is not is most of what stops
+that.
+Cost: the leave prompt cannot be seen until a second section exists (it is
+only reachable from the rail); the shell's navigation drops a draft silently.
