@@ -1,9 +1,9 @@
 # Back office: Venue settings
 
-The frame every venue setting sits in, and its first section, the venue's own
-details. Built in phase 10 Task 6g (ADR-136). Sections 6h to 6j (tax and
-numbering; shift, tips and receipt; stations and courses) fill the frame
-later, each with the same behaviour.
+The frame every venue setting sits in, its first section (the venue's own
+details, Task 6g, ADR-136) and its second (tax and numbering, Task 6h,
+ADR-137). Sections 6i and 6j (shift, tips and receipt; stations and courses)
+fill the frame later, each with the same behaviour.
 
 ## Purpose
 
@@ -53,6 +53,63 @@ Paper surface, inside the back office shell, reached from **Venue settings**
   be changed: every amount recorded would change what it means." It is not a
   control.
 
+### Tax and numbering section
+
+Three cards one below the other. The profile and the numbering each save on
+their own, as a section does (below); the tax classes save at once.
+
+- **Tax profile** (a `SectionCard`). **Tax**, a choice: No tax, GST (India),
+  VAT (UK), US sales tax. What the choice needs follows it:
+  - GST and VAT: **Prices**, a choice: "Prices include tax" or "Tax is added
+    on top".
+  - GST: **GSTIN** (numeral face; "Invoices print it. Capitals and spaces are
+    tidied for you.") and **Place of supply**, the two digit state code, short
+    ("Empty takes the first two digits of the GSTIN.").
+  - VAT: **VAT number**.
+  - US sales tax: "Tax is always added on top of the price under US sales
+    tax." and **Rates where the venue is**: one row per authority, a name and
+    a percentage, **Remove** on each, **Add a rate**. "Each is added together
+    on the bill."
+  - When the draft is another profile than the saved one: "Changing the
+    profile is refused while any ticket is open. Settle or void them first.
+    Tickets already paid keep the tax they were charged." The refusal itself
+    (`tickets_open`) arrives in the footer.
+  - **Items without an HSN.** While the form is the saved profile and that
+    profile prints an HSN or SAC code on every line, any item without a valid
+    one is listed in a sunken panel: "3 items have no HSN or SAC code. They
+    still sell, but their invoices fall short until each is edited.", each a
+    link (a pill) to `/menu?item=<id>`, which opens that item's form; at most
+    eight, then "and N more in the menu". The list is the server's answer to
+    the last save, so a change of profile shows what it leaves owing as soon as
+    it is saved. A draft of another profile hides the list.
+- **Tax classes** (a `Card`, no draft). A heading, one line ("A rate that
+  items share. A new rate is for lines rung up from then on: tickets already
+  open keep theirs.") and **Add a tax class**. One row per class: its name, its
+  rate in the numeral face ("5%", "2.5%", "Exempt") and **Edit** and **Retire**
+  (danger) or, for a retired class, "Retired" under a struck name and **Bring
+  back**. **Add** and **Edit** open a modal: name; **Tax**, a choice "Charged at
+  a rate" or "Exempt"; **Rate** as a percentage (hidden when exempt; "The whole
+  rate, like 5 or 12. Under GST it is split in half into CGST and SGST on the
+  invoice."). The server's refusals are shown as sent: a name in use, a rate
+  outside 0 to 100, and for Retire the items that still charge the class (the
+  first eight, then "and N more"), in a line under the list.
+- **Invoice numbering** (a `SectionCard`). **Invoices** and **Credit notes**
+  each a **Series code** (capitals and digits, 8 at most, its own counter) and
+  a **Prefix** ("Follows the code unless you change it": typing a code carries
+  the prefix with it while the two were the same). **Number format**, the
+  template in the numeral face, with what its parts mean and, under GST, the
+  length limit. **Financial year starts in**, a month; disabled once a number
+  has been issued, with the reason. **Round cash to the nearest**, in the
+  currency's major units (0.50, not 50), the range beside it, and the honest
+  note that payments do not apply it yet.
+  - **Next numbers.** A sunken panel: "The next numbers are" the invoice and
+    credit note numbers as saved, in the numeral face. As soon as the draft
+    differs it reads "If you save, the next numbers are" and shows what the
+    server works out for the draft (`POST /api/v1/settings/numbering/preview`,
+    350ms after typing pauses; nothing is saved). A draft the server would
+    refuse shows "No preview yet:" and the server's reason, the same words Save
+    would give under the field.
+
 ## How a section saves
 
 Every section behaves the same, so that the next ones need no new rules.
@@ -69,6 +126,9 @@ Every section behaves the same, so that the next ones need no new rules.
   under the field they are about; a refusal about no field appears in the
   footer.
 - **Discard** puts the draft back to what the server has, and clears errors.
+- **A section may have several forms** (Tax and numbering has two with a
+  draft): each is dirty, saves and discards on its own, and leaving the section
+  asks when any of them is dirty.
 - **Leaving a section with unsaved changes** (another entry in the rail) asks:
   "Leave without saving?", "Your changes to Venue are not saved.", **Keep
   editing** (secondary) and **Leave** (primary). Leaving by the shell's
@@ -85,10 +145,19 @@ Every section behaves the same, so that the next ones need no new rules.
   key `["settings"]`.
 - `PUT /api/v1/settings/venue` `{ name, legal_name, timezone }`: answers with
   the same shape as the GET; the answer replaces the cache.
-- Both need `settings.edit`.
-- Later sections add their own routes and keys (`/api/v1/settings/tax`,
-  `/numbering`, `/rules`, `/receipt`); each answers with its section as it now
-  stands, as these do.
+- Tax and numbering: `GET`/`PUT /api/v1/settings/tax` (`profile`,
+  `registration_id`, `pricing`, `state_code`, `jurisdiction[]`; answers with
+  those and `needs_hsn`, `items_without_hsn[]`, `classes[]`), `POST
+  /api/v1/settings/tax-classes`, `PUT /api/v1/settings/tax-classes/{id}`,
+  `POST .../{id}/retire` and `.../restore` (each answers with the tax settings
+  as they now stand; rates are thousandths of a percent, shown as percent),
+  `GET`/`PUT /api/v1/settings/numbering` and `POST
+  /api/v1/settings/numbering/preview` (the PUT body; answers with the numbering
+  and the next numbers, saving nothing). Cache keys `["settings","tax"]` and
+  `["settings","numbering"]`.
+- All need `settings.edit`.
+- Later sections add their own routes and keys (`/api/v1/settings/rules`,
+  `/receipt`); each answers with its section as it now stands, as these do.
 
 ## Interactions
 
@@ -115,6 +184,9 @@ Every section behaves the same, so that the next ones need no new rules.
   computer's connection." The draft is kept.
 - **Not allowed:** the shell's "That is not yours to open", with
   `settings.edit` in the numeral face.
+- **Tax and numbering, loading:** "Loading the tax settings"; if either read
+  fails, the reason with **Try again**.
+- **No tax classes:** "No tax classes yet. Items need one, so add the first."
 
 ## Constraints
 

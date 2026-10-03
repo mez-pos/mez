@@ -13,26 +13,28 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6g: the venue settings screen** (ADR-136). Spec
-`docs/design/screens/backoffice-settings.md`; code in
-`web/backoffice/src/settings/`. A frame at `/settings/<section>` with a rail
-of sections (Soon for those not built), a `SectionCard` every section is drawn
-in (Discard and Save, Unsaved changes, Saved, errors under the field), and
-the Venue section: name, legal name, timezone, currency shown. Tried in a
-browser: load, edit, a server refusal, save, reload, a narrow screen. Before
-it, 6f (ADR-135), 6e (ADR-134), 6d (ADR-133), 6c (ADR-132), 6b (ADR-131), 6a
-(ADR-130), the split (ADR-129).
+**Phase 10, Task 6h: tax and numbering on the screen** (ADR-137). The
+`/settings/tax` section: a tax profile card (per-profile fields, the items
+still without an HSN as links to `/menu?item=<id>`), a tax classes card (add,
+edit, retire, bring back), and an invoice numbering card with a live preview of
+the next invoice and credit note numbers, from the new
+`POST /api/v1/settings/numbering/preview`. Tried in a browser: switching to GST,
+the client and server refusals, the live preview and its refusal, the HSN link,
+adding a class, an in-use retire refused, the US rates editor. Before it, 6g
+(ADR-136), 6f (ADR-135), 6e (ADR-134), 6d (ADR-133), 6c (ADR-132), 6b (ADR-131),
+6a (ADR-130), the split (ADR-129).
 
 ## Next task
 
-**Phase 10, Task 6h: Tax and numbering on the screen.** The tax profile and
-tax classes, invoice and credit note numbering with a live preview of the next
-number, financial year and rounding. A change of profile lists the items it
-leaves without an HSN and links to them. Add a section to
-`web/backoffice/src/settings/` (set `built: true` in `settings-logic.ts`,
-draw it in `SectionCard`). Routes: `GET`/`PUT /api/v1/settings/tax`,
-`POST`/`PUT /api/v1/settings/tax-classes` (and `/{id}/retire`, `/restore`),
-`GET`/`PUT /api/v1/settings/numbering`. Extend the spec first.
+**Phase 10, Task 6i: Shift, tips and receipt on the screen.** Day start,
+variance threshold, tip rule and weights, late ticket minutes, and the receipt
+template with a preview at the printer's width. Add the `shifts` section to
+`web/backoffice/src/settings/` (`built: true` in `settings-logic.ts`; draw it in
+`SectionCard` and `useSectionDraft`). Routes: `GET`/`PUT /api/v1/settings/rules`
+and `GET`/`PUT /api/v1/settings/receipt`. The receipt preview needs the layout
+at 48 and 32 columns: decide whether the server renders it (a preview route like
+the numbering's, through `escpos` and its decoder) or the screen draws it; write
+the choice into the spec first.
 
 ## Known broken / in progress
 
@@ -54,6 +56,11 @@ draw it in `SectionCard`). Routes: `GET`/`PUT /api/v1/settings/tax`,
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 
+- Tax and numbering screen (ADR-137): the live preview of the next numbers
+  needs a second ask per pause in typing; the rounding step is saved but nothing
+  applies it (ADR-132). The profile card's "leaves N items without an HSN" shows
+  only after a save, not as a draft. A tax class's retire refusal names eight
+  items. The shell's navigation still drops a dirty draft.
 - Venue settings screen (ADR-136): the "Leave without saving?" prompt is not
   seen by eye (only a second section can raise it, from the rail), and the
   shell's navigation drops a draft without asking. Timezone suggestions come

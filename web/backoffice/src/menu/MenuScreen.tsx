@@ -3,7 +3,7 @@
 // change them. Every change reaches the tills at once; tickets already open
 // keep what they were rung up at.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { EditorGroup, EditorItem, MenuEditor, MenuItemInput } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
 import { CategoryFormModal, CategoryPanel } from "./CategoryPanel";
@@ -13,7 +13,7 @@ import { GroupsView } from "./GroupsView";
 import { ItemFormModal } from "./ItemFormModal";
 import type { PhotoChange } from "./ItemPhotoField";
 import { ItemsTable } from "./ItemsTable";
-import { itemFormFrom, newItemForm, problemOf, selectedCategory } from "./menu-logic";
+import { itemFormFrom, itemFromSearch, newItemForm, problemOf, selectedCategory } from "./menu-logic";
 import { useMenuEditor, type MenuEditorApi } from "./use-menu-editor";
 
 type Editing =
@@ -46,6 +46,19 @@ export function MenuScreen() {
   const [view, setView] = useState<View>("items");
   const menu = api.data;
   const category = menu ? selectedCategory(menu, wanted) : null;
+
+  // A link that names an item (`/menu?item=12`, from the tax settings) opens
+  // its form once, as soon as the menu is read.
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!menu || asked.current) return;
+    asked.current = true;
+    const item = itemFromSearch(window.location.search, menu);
+    if (item) {
+      setWanted(item.category_id);
+      setEditing({ kind: "edit-item", item });
+    }
+  }, [menu]);
 
   return (
     <div className="flex max-w-6xl flex-col gap-6">

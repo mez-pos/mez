@@ -8,6 +8,7 @@ import { Link, Redirect, useLocation } from "wouter";
 import { Button, EmptyState, InboxIcon, Modal } from "../../../shared/ui";
 import { DEFAULT_SECTION, SETTINGS_SECTIONS, builtSectionFor, problemOf, type SettingsSection } from "./settings-logic";
 import { useSettings } from "./use-settings";
+import { TaxSection } from "./TaxSection";
 import { VenueSection } from "./VenueSection";
 
 export function SettingsScreen({ path }: { path: string }) {
@@ -19,9 +20,21 @@ export function SettingsScreen({ path }: { path: string }) {
 function Frame({ section }: { section: SettingsSection }) {
   const api = useSettings();
   const [, navigate] = useLocation();
-  const [dirty, setDirty] = useState(false);
+  // Which forms of the open section differ from what is saved: a section may
+  // have several, each saving on its own.
+  const [dirtyForms, setDirtyForms] = useState<ReadonlySet<string>>(new Set());
   const [leaving, setLeaving] = useState<string | null>(null);
-  const reportDirty = useCallback((d: boolean) => setDirty(d), []);
+  const dirty = dirtyForms.size > 0;
+  const reportDirty = useCallback((form: string, d: boolean) => {
+    setDirtyForms((prev) => {
+      if (prev.has(form) === d) return prev;
+      const next = new Set(prev);
+      if (d) next.add(form);
+      else next.delete(form);
+      return next;
+    });
+  }, []);
+  const venueDirty = useCallback((d: boolean) => reportDirty("venue", d), [reportDirty]);
 
   // The browser's own prompt when the tab is closed or reloaded on a draft.
   useEffect(() => {
@@ -43,11 +56,16 @@ function Frame({ section }: { section: SettingsSection }) {
       <h1 className="font-serif text-total">Venue settings</h1>
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
         <Rail current={section} onGo={goTo} />
-        {api.loading && <p className="text-base text-fg-muted">Loading the settings</p>}
-        {!api.loading && api.error !== null && (
-          <EmptyState icon={<InboxIcon />} line={problemOf(api.error).message} action={{ label: "Try again", onClick: api.refetch }} />
+        {section.id === "venue" && (
+          <>
+            {api.loading && <p className="text-base text-fg-muted">Loading the settings</p>}
+            {!api.loading && api.error !== null && (
+              <EmptyState icon={<InboxIcon />} line={problemOf(api.error).message} action={{ label: "Try again", onClick: api.refetch }} />
+            )}
+            {api.data && <VenueSection venue={api.data.venue} onSave={api.saveVenue} onDirty={venueDirty} />}
+          </>
         )}
-        {api.data && section.id === "venue" && <VenueSection venue={api.data.venue} onSave={api.saveVenue} onDirty={reportDirty} />}
+        {section.id === "tax" && <TaxSection onDirty={reportDirty} />}
       </div>
 
       <Modal

@@ -4,6 +4,7 @@ import type { EditorItem, MenuEditor } from "../../../shared/api-types";
 import {
   choices,
   itemFormFrom,
+  itemFromSearch,
   itemsOf,
   moved,
   namesById,
@@ -194,5 +195,20 @@ describe("namesById", () => {
       "1 Mains",
       "Unknown",
     ]);
+  });
+});
+
+describe("a link to an item", () => {
+  const item = (id: number, category: number) => ({ ...menu.items[0]!, id, category_id: category });
+  const withItems = { ...menu, items: [item(7, 10), item(12, 11)] };
+  it("names it by id", () => {
+    expect(itemFromSearch("?item=12", withItems)?.id).toBe(12);
+    expect(itemFromSearch("item=7", withItems)?.category_id).toBe(10);
+    expect(itemFromSearch("?x=1&item=7", withItems)?.id).toBe(7);
+  });
+  it("is no item when it names none, or one the menu lacks", () => {
+    for (const bad of ["", "?item=", "?item=99", "?item=0", "?item=-1", "?item=1.5", "?item=abc", "?item=7x", "?other=7", "?item=12345678901234567890"]) {
+      expect(itemFromSearch(bad, withItems), bad).toBeNull();
+    }
   });
 });

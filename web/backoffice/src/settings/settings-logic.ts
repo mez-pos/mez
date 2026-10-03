@@ -2,8 +2,8 @@
 // which sections there are, the venue details form and its checks, and how a
 // refusal reads. No React here, so all of it is tested directly.
 
-import { ApiError } from "../../../shared/api";
 import type { SettingsVenueResponse, VenueDetailsRequest } from "../../../shared/api-types";
+import { problemWith, type Problem as FieldProblem } from "./problem";
 
 export type SettingsSectionId = "venue" | "tax" | "shifts" | "stations" | "backup";
 
@@ -15,12 +15,10 @@ export interface SettingsSection {
   readonly built: boolean;
 }
 
-export const SETTINGS_ROOT = "/settings";
-
 /** The sections, in the order the rail shows them. */
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   { id: "venue", label: "Venue", path: "/settings/venue", built: true },
-  { id: "tax", label: "Tax and numbering", path: "/settings/tax", built: false },
+  { id: "tax", label: "Tax and numbering", path: "/settings/tax", built: true },
   { id: "shifts", label: "Shift, tips and receipt", path: "/settings/shifts", built: false },
   { id: "stations", label: "Stations and courses", path: "/settings/stations", built: false },
   { id: "backup", label: "Backup", path: "/settings/backup", built: false },
@@ -65,11 +63,7 @@ export function venueChanged(draft: VenueForm, saved: VenueForm): boolean {
 
 export type VenueField = "name" | "legal_name" | "timezone";
 
-export interface Problem {
-  /** The field it is about, or null for the footer. */
-  field: VenueField | null;
-  message: string;
-}
+export type Problem = FieldProblem<VenueField>;
 
 /** What can be refused without asking the server. */
 export function venueProblem(form: VenueForm): Problem | null {
@@ -84,20 +78,10 @@ export function venueProblem(form: VenueForm): Problem | null {
   return null;
 }
 
-const venueFields: readonly string[] = ["name", "legal_name", "timezone"];
+const venueFields: readonly VenueField[] = ["name", "legal_name", "timezone"];
 
 /** A failed request as words, and the field to put them under. */
-export function problemOf(err: unknown): Problem {
-  if (err instanceof ApiError) {
-    if (err.unreachable) return { field: null, message: "Can't reach the mez server. Check this computer's connection." };
-    if (err.code === "forbidden") {
-      return { field: null, message: "Only someone who can change the venue's settings can do this." };
-    }
-    const field = venueFields.includes(err.field ?? "") ? (err.field as VenueField) : null;
-    return { field, message: err.message };
-  }
-  return { field: null, message: "Something went wrong. Try again." };
-}
+export const problemOf = (err: unknown): Problem => problemWith(err, venueFields);
 
 /** Zone names for the timezone field's suggestions: the browser's own list when it has one. */
 export function timezoneNames(intl: { supportedValuesOf?: (key: "timeZone") => string[] } = Intl as never): string[] {

@@ -3921,3 +3921,50 @@ screen that says plainly what is saved and what is not is most of what stops
 that.
 Cost: the leave prompt cannot be seen until a second section exists (it is
 only reachable from the rail); the shell's navigation drops a draft silently.
+
+## ADR-137 - Tax and numbering on the screen: a preview the server works out
+2026-10 · Status: accepted.
+Decision: the Tax and numbering section (`/settings/tax`) is three cards: the
+tax profile and the invoice numbering, each a draft saved on its own through
+`SectionCard`, and the tax classes, each change saved at once. Spec:
+`docs/design/screens/backoffice-settings.md`. Two additions outside the screen:
+`POST /api/v1/settings/numbering/preview`, and `/menu?item=<id>`.
+  - **The preview is the server's, not a second template engine in the
+    browser.** `PreviewNumbering` takes a draft numbering and answers with the
+    next invoice and credit note numbers it would write, running the same
+    checks a save runs (`cleanNumbering`, the series build, `CheckNumbering`,
+    the issued-number check) and writing nothing. A draft a save would refuse is
+    refused with the same field and words, which the screen shows as "No preview
+    yet" until it is fixed. The browser asks 350ms after typing pauses and drops
+    an answer for a draft that is no longer the one on screen. It is the one
+    place a financial year start that a save would refuse (numbers issued) is
+    not refused: the screen disables that field beside its own reason.
+  - **The items without an HSN are listed from the save's answer.** The server
+    reports them for the profile it holds, so the list belongs to the saved
+    profile and is hidden while the draft is another (`showWithoutHSN`). A
+    change of profile therefore shows what it leaves owing as soon as it is
+    saved, not before: working it out for a draft would be a second computation
+    of "what does this profile require" that the tax package already owns.
+    Each item links to `/menu?item=<id>`; the menu editor reads the query once,
+    when its data arrives, selects the item's category and opens its form. An id
+    the menu lacks, or anything else in the query, opens nothing.
+  - **A prefix keeps following its code.** The server stores a prefix equal to
+    its code as unset (ADR-132), so the form does the same while typing: a code
+    typed carries the prefix with it while the two were the same, and stops once
+    the owner writes a prefix of their own.
+  - **Rates are typed as percent, sent as thousandths of a percent** (ADR-049),
+    by string arithmetic, never a float. The cash rounding step is typed in
+    major units ("0.50") and sent in minor units; its range comes from the
+    currency's largest step the server reports, so no currency's decimals are
+    written into the client.
+  - **A refusal names the server's keys, the form shows its inputs.** A shared
+    `problemWith` sends a refusal about a field the form does not have to the
+    section's footer, so nothing is refused silently.
+  - **A retire that is refused names at most eight items** and how many more
+    (`namesLine`): the full list on a menu of hundreds is not a sentence.
+Because: the numbering and tax settings are where a venue most easily breaks its
+own invoices, and the point of the screen is that the owner sees the number
+they are about to create before they create it.
+Cost: the preview and the screen each ask the server per change of draft (cheap,
+local); the screen's draft state for the profile is lost when the owner leaves by
+the shell's navigation, as for the venue section (ADR-136).

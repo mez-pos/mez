@@ -26,6 +26,18 @@ export function selectedCategory(menu: MenuEditor, wanted: number | null): Edito
 }
 
 /**
+ * The item a link asked for (`/menu?item=12`), if the menu has it. A link from
+ * the tax settings lists the items still without an HSN code; this is where
+ * one opens. Anything else in the query, or an id the menu lacks, is no item.
+ */
+export function itemFromSearch(search: string, menu: MenuEditor): EditorItem | null {
+  const raw = new URLSearchParams(search).get("item");
+  if (raw === null || !/^[1-9]\d{0,15}$/.test(raw)) return null;
+  const id = Number(raw);
+  return menu.items.find((i) => i.id === id) ?? null;
+}
+
+/**
  * ids with the one at index moved by delta places (-1 up, +1 down), as a new
  * list. Null when it is already at that end.
  */

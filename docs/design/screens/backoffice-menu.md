@@ -157,3 +157,10 @@ another screen. It has been reloaded; move it again."
 
 Built from `docs/design/components.md` and the paper tokens. The archive
 was not consulted.
+
+## Linking to an item
+
+`/menu?item=<id>` opens that item's form as soon as the menu is read, in its
+category (phase 10, Task 6h). The tax settings link the items still without an
+HSN code this way. Only the first load reads the query; an id the menu lacks,
+or anything else in it, opens nothing.

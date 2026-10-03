@@ -190,7 +190,7 @@ Phase 09.
     (`backoffice-settings.md`), from `tokens.md` and the mez Desktop
     Management reference. The screen's frame, its sections, how a
     section saves and says it saved, and the venue details section.
-  - [ ] **Task 6h: Tax and numbering on the screen.** The tax profile and
+  - [x] **Task 6h: Tax and numbering on the screen.** The tax profile and
     tax classes, invoice and credit note numbering with a live preview
     of the next number, financial year and rounding. A change of profile
     lists the items it leaves without an HSN and links to them.

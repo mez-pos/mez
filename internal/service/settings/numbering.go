@@ -88,13 +88,19 @@ func (s *Service) Numbering(ctx context.Context, venueID int64) (Numbering, erro
 	if err != nil {
 		return Numbering{}, err
 	}
+	return s.numberingOf(ctx, q, v, stored)
+}
+
+// numberingOf is the numbering a venue row and its settings describe, and
+// what each series would write next. The row and settings may be a draft.
+func (s *Service) numberingOf(ctx context.Context, q *gen.Queries, v gen.Venue, stored map[string]string) (Numbering, error) {
 	inv, credit, err := svcorder.SeriesOf(v, stored)
 	if err != nil {
-		return Numbering{}, fmt.Errorf("venue %d's numbering cannot issue a number: %w", venueID, err)
+		return Numbering{}, fmt.Errorf("venue %d's numbering cannot issue a number: %w", v.ID, err)
 	}
-	issued, err := q.InvoiceSeriesCount(ctx, venueID)
+	issued, err := q.InvoiceSeriesCount(ctx, v.ID)
 	if err != nil {
-		return Numbering{}, fmt.Errorf("counting the series of venue %d: %w", venueID, err)
+		return Numbering{}, fmt.Errorf("counting the series of venue %d: %w", v.ID, err)
 	}
 	out := Numbering{
 		NumberingInput: NumberingInput{
@@ -112,6 +118,45 @@ func (s *Service) Numbering(ctx context.Context, venueID int64) (Numbering, erro
 		return Numbering{}, err
 	}
 	return out, nil
+}
+
+// PreviewNumbering is what saving in would give, and nothing saved: the
+// numbering as it would stand, with the next number of each series. It runs
+// the checks a save runs, so a draft a save would refuse is refused here with
+// the same words and field. A financial year start that a save would refuse
+// because numbers are issued is not refused: the screen says so beside it.
+func (s *Service) PreviewNumbering(ctx context.Context, venueID int64, in NumberingInput) (Numbering, error) {
+	q := s.db.Queries()
+	v, stored, err := rawVenue(ctx, q, venueID)
+	if err != nil {
+		return Numbering{}, err
+	}
+	in, keys, err := cleanNumbering(in, v.Currency)
+	if err != nil {
+		return Numbering{}, err
+	}
+	v.FinancialYearStartMonth, v.CashRoundingStepMinor = int64(in.FinancialYearStartMonth), in.CashRoundingStep
+	for k, val := range keys {
+		if val == "" {
+			delete(stored, k)
+		} else {
+			stored[k] = val
+		}
+	}
+	inv, credit, err := svcorder.SeriesOf(v, stored)
+	if err != nil {
+		return Numbering{}, &Invalid{"template", "That cannot issue a number: " + err.Error()}
+	}
+	var ne *invoice.NumberingError
+	if err := invoice.CheckNumbering(inv, credit); errors.As(err, &ne) {
+		return Numbering{}, &Invalid{ne.Field, "Change this: " + ne.Reason + "."}
+	} else if err != nil {
+		return Numbering{}, err
+	}
+	if err := s.checkNextNumbers(ctx, q, v, inv, credit); err != nil {
+		return Numbering{}, err
+	}
+	return s.numberingOf(ctx, q, v, stored)
 }
 
 // maxRoundingStep is one whole unit of the currency, in minor units: cash

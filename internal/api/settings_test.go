@@ -461,3 +461,61 @@ func TestReceiptSettingsOverHTTP(t *testing.T) {
 		}
 	})
 }
+
+// TestNumberingPreviewOverHTTP: the screen's live preview answers with the next
+// numbers a body would give and saves nothing; a body a save would refuse comes
+// back with its field.
+func TestNumberingPreviewOverHTTP(t *testing.T) {
+	w := newTill(t)
+	svc, err := settings.New(settings.Options{DB: w.db})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.rebuild(t, WithSettings(svc))
+	owner := w.asStaff(w.signInAs(t, "stf_PRIYA001", "2468").Token)
+	const path = "/api/v1/settings/numbering/preview"
+
+	body := `{"invoice_series":"nf","credit_series":"CR","template":"{prefix}/{fy:short}/{seq:04d}","financial_year_start_month":1,"cash_rounding_step":1}`
+	rec := send(w.handler, http.MethodPost, path, body, owner)
+	var out numberingResponse
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &out) != nil || out.NextInvoiceNo == "" ||
+		out.InvoicePrefix != "NF" || out.NextCreditNo == "" || out.FinancialYearStartMonth != 1 {
+		t.Fatalf("preview: %d %s", rec.Code, rec.Body)
+	}
+
+	rec = send(w.handler, http.MethodGet, "/api/v1/settings/numbering", "", owner)
+	var saved numberingResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &saved); err != nil || saved.InvoiceSeries != "INV" || saved.FinancialYearStartMonth != 4 {
+		t.Fatalf("a preview saved something: %d %s", rec.Code, rec.Body)
+	}
+
+	rec = send(w.handler, http.MethodPost, path, `{"template":"{prefix}-{seq}","financial_year_start_month":1,"cash_rounding_step":1}`, owner)
+	if apiErr := errorOf(t, rec); rec.Code != 422 || apiErr.Code != CodeInvalidSetting || apiErr.Field != "template" {
+		t.Errorf("a template with no year: %d %s %q", rec.Code, apiErr.Code, apiErr.Field)
+	}
+	if rec = send(w.handler, http.MethodGet, path, "", owner); rec.Code != http.StatusMethodNotAllowed {
+		t.Errorf("GET on the preview: %d", rec.Code)
+	}
+	cashier := w.asStaff(w.signIn(t, "2468").Token)
+	if rec = send(w.handler, http.MethodPost, path, body, cashier); rec.Code != http.StatusForbidden {
+		t.Errorf("a cashier: %d", rec.Code)
+	}
+}
+
+func TestNamesLine(t *testing.T) {
+	tests := []struct {
+		name  string
+		names []string
+		want  string
+	}{
+		{"none", nil, ""},
+		{"one", []string{"Dosa"}, "Dosa"},
+		{"at the limit", []string{"a", "b", "c"}, "a, b, c"},
+		{"over it", []string{"a", "b", "c", "d", "e"}, "a, b, c and 2 more"},
+	}
+	for _, tt := range tests {
+		if got := namesLine(tt.names, 3); got != tt.want {
+			t.Errorf("%s: namesLine = %q, want %q", tt.name, got, tt.want)
+		}
+	}
+}

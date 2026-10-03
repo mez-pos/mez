@@ -280,3 +280,90 @@ func TestNumberingKeepsTheRestOfTheVenue(t *testing.T) {
 		t.Fatalf("an unknown venue: %v", err)
 	}
 }
+
+// A preview is what a save would give, with nothing saved.
+func TestPreviewNumbering(t *testing.T) {
+	s, d := newService(t)
+	ctx := context.Background()
+
+	got, err := s.PreviewNumbering(ctx, 1, with(func(in *NumberingInput) {
+		in.InvoiceSeries, in.Template, in.FinancialYearStartMonth, in.CashRoundingStep = "nf", "{prefix}-{fy:short}-{seq:04d}", 1, 100
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// January start: the financial year 2026 is "26", uppercase code, own prefix.
+	if got.NextInvoiceNo != "NF-26-0001" || got.NextCreditNo != "CN-26-0001" || got.InvoicePrefix != "NF" ||
+		got.FinancialYearStartMonth != 1 || got.CashRoundingStep != 100 || got.Currency != "INR" || got.MaxRoundingStep != 100 {
+		t.Fatalf("preview = %+v", got)
+	}
+
+	// Nothing was saved.
+	if saved, err := s.Numbering(ctx, 1); err != nil || saved.NumberingInput != stock() || saved.NextInvoiceNo != "INV/26-27/000001" {
+		t.Fatalf("after the preview: %+v, %v", saved, err)
+	}
+	o, _ := s.Read(ctx, 1)
+	for _, e := range o.Entries {
+		if e.Set {
+			t.Errorf("%s was stored by a preview", e.Key)
+		}
+	}
+	if v, err := s.db.Queries().VenueByID(ctx, 1); err != nil || v.FinancialYearStartMonth != 4 || v.CashRoundingStepMinor != 50 {
+		t.Errorf("the venue row changed: %+v, %v", v, err)
+	}
+
+	// It continues the counter of the series it names, as a save would.
+	issue(t, d, "INV", "INV/26-27/000001")
+	got, err = s.PreviewNumbering(ctx, 1, with(func(in *NumberingInput) { in.InvoicePrefix = "AB" }))
+	if err != nil || got.NextInvoiceNo != "AB/26-27/000002" || !got.FYLocked {
+		t.Fatalf("with a number issued: %+v, %v", got, err)
+	}
+}
+
+// A draft a save would refuse is refused by the preview, with the same field.
+func TestPreviewNumberingRefusesWhatASaveWould(t *testing.T) {
+	tests := []struct {
+		name  string
+		in    NumberingInput
+		field string
+	}{
+		{"a template with no year", with(func(in *NumberingInput) { in.Template = "{prefix}-{seq:06d}" }), "template"},
+		{"the same series for both", with(func(in *NumberingInput) { in.CreditSeries = "INV" }), "credit_series"},
+		{"month 13", with(func(in *NumberingInput) { in.FinancialYearStartMonth = 13 }), "financial_year_start_month"},
+		{"a step over a rupee", with(func(in *NumberingInput) { in.CashRoundingStep = 101 }), "cash_rounding_step"},
+		{"a number too long for GST", with(func(in *NumberingInput) { in.Template = "{prefix}/{fy}/{seq:06d}" }), "template"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s, _ := newService(t)
+			_, err := s.PreviewNumbering(context.Background(), 1, tt.in)
+			var inv *Invalid
+			if !errors.As(err, &inv) || inv.Field != tt.field {
+				t.Fatalf("err = %v, want a refusal of %q", err, tt.field)
+			}
+		})
+	}
+	s, d := newService(t)
+	issue(t, d, "NF", "NF/26-27/000001")
+	// Renaming a series to one whose next number was issued: refused as a save is.
+	if err := s.UpdateNumbering(context.Background(), 1, with(func(in *NumberingInput) { in.InvoiceSeries, in.InvoicePrefix = "NF", "NF" })); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.PreviewNumbering(context.Background(), 1, with(func(in *NumberingInput) { in.InvoiceSeries, in.InvoicePrefix = "NF", "NF" })); err != nil {
+		t.Fatalf("a continuing series: %v", err)
+	}
+	if _, err := s.PreviewNumbering(context.Background(), 99, base()); !errors.Is(err, ErrNoVenue) {
+		t.Errorf("an unknown venue: %v", err)
+	}
+}
+
+// Moving the financial year under issued numbers is refused by a save but
+// previewed, so the screen can show it beside its own note.
+func TestPreviewNumberingIgnoresTheYearLock(t *testing.T) {
+	s, d := newService(t)
+	issue(t, d, "INV", "INV/26-27/000001")
+	got, err := s.PreviewNumbering(context.Background(), 1, with(func(in *NumberingInput) { in.FinancialYearStartMonth = 1 }))
+	if err != nil || got.FinancialYearStartMonth != 1 || !got.FYLocked {
+		t.Fatalf("%+v, %v", got, err)
+	}
+}

@@ -37,6 +37,8 @@ func (s *Server) mountNumberingSettings(mux *http.ServeMux) {
 	}
 	handle("GET /api/v1/settings/numbering", s.readNumbering)
 	handle("PUT /api/v1/settings/numbering", s.updateNumbering)
+	handle("POST /api/v1/settings/numbering/preview", s.previewNumbering)
+	mux.HandleFunc("/api/v1/settings/numbering/preview", s.methodNotAllowed)
 	mux.HandleFunc("/api/v1/settings/numbering", s.methodNotAllowed)
 }
 
@@ -56,6 +58,22 @@ func (s *Server) updateNumbering(w http.ResponseWriter, r *http.Request) {
 	s.writeNumbering(w, r)
 }
 
+// previewNumbering answers with the numbering a save of the body would give,
+// and what each series would write next, without saving anything: the screen's
+// live preview. A body a save would refuse is refused the same way.
+func (s *Server) previewNumbering(w http.ResponseWriter, r *http.Request) {
+	var req numberingRequest
+	if !s.decode(w, r, &req) {
+		return
+	}
+	n, err := s.settings.PreviewNumbering(r.Context(), Meta(r).VenueID, settings.NumberingInput(req))
+	if err != nil {
+		s.writeSettingsError(w, r, err)
+		return
+	}
+	s.writeNumberingOf(w, n)
+}
+
 // writeNumbering answers with the numbering as it now stands.
 func (s *Server) writeNumbering(w http.ResponseWriter, r *http.Request) {
 	n, err := s.settings.Numbering(r.Context(), Meta(r).VenueID)
@@ -63,6 +81,10 @@ func (s *Server) writeNumbering(w http.ResponseWriter, r *http.Request) {
 		s.writeSettingsError(w, r, err)
 		return
 	}
+	s.writeNumberingOf(w, n)
+}
+
+func (s *Server) writeNumberingOf(w http.ResponseWriter, n settings.Numbering) {
 	writeJSON(w, s.log, http.StatusOK, numberingResponse{
 		numberingRequest: numberingRequest(n.NumberingInput),
 		Currency:         n.Currency, NextInvoiceNo: n.NextInvoiceNo, NextCreditNo: n.NextCreditNo,

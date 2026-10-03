@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -181,7 +182,7 @@ func (s *Server) writeSettingsRefusal(w http.ResponseWriter, err error) bool {
 		writeError(w, s.log, http.StatusNotFound, CodeTaxClassNotFound, "No such tax class.")
 	case errors.As(err, &inUse):
 		writeError(w, s.log, http.StatusConflict, CodeTaxClassInUse,
-			"Items still use this tax class: "+strings.Join(inUse.Items, ", ")+". Move them to another class first.")
+			"Items still use this tax class: "+namesLine(inUse.Items, maxNamedItems)+". Move them to another class first.")
 	case errors.Is(err, settings.ErrNumberingLocked) && errors.As(err, &invalid):
 		writeFieldError(w, s.log, http.StatusConflict, CodeNumberingLocked, invalid.Message, invalid.Field)
 	case errors.Is(err, settings.ErrNumberTaken) && errors.As(err, &invalid):
@@ -193,4 +194,17 @@ func (s *Server) writeSettingsRefusal(w http.ResponseWriter, err error) bool {
 		return false
 	}
 	return true
+}
+
+// maxNamedItems is how many items a refusal names: enough to find them, few
+// enough to read, on a menu of hundreds.
+const maxNamedItems = 8
+
+// namesLine is names as a sentence's list: all of them, or the first few and
+// how many more.
+func namesLine(names []string, max int) string {
+	if len(names) <= max {
+		return strings.Join(names, ", ")
+	}
+	return fmt.Sprintf("%s and %d more", strings.Join(names[:max], ", "), len(names)-max)
 }

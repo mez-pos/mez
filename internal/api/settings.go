@@ -19,6 +19,7 @@ type Settings interface {
 	UpdateTax(ctx context.Context, venueID int64, in settings.TaxInput) error
 	Numbering(ctx context.Context, venueID int64) (settings.Numbering, error)
 	UpdateNumbering(ctx context.Context, venueID int64, in settings.NumberingInput) error
+	PreviewNumbering(ctx context.Context, venueID int64, in settings.NumberingInput) (settings.Numbering, error)
 	Rules(ctx context.Context, venueID int64) (settings.Rules, error)
 	UpdateRules(ctx context.Context, venueID int64, in settings.RulesInput) error
 	Receipt(ctx context.Context, venueID int64) (settings.Receipt, error)
