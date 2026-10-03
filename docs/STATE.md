@@ -13,17 +13,18 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6k: Devices** (ADR-140). Server: `GET /api/v1/devices`, `POST
-/api/v1/devices/{id}/rename` and `/revoke` (`internal/auth/devices_manage.go`,
-`internal/api/devices_manage.go`); a device may not revoke itself. Screen:
-`/devices` (`web/backoffice/src/devices/`, spec `backoffice-devices.md`): who is
-in service with kind, paired date and when last heard from, who is waiting to be
-paired, who was revoked; Pair a device (shows the code once), Rename, Revoke. The
-last Soon entry of the navigation is built. Tried in a browser: this device with
-Revoke disabled and its reason, a refused name, a pairing code and the device
-paired with it, the list after, rename, revoke and Revoked. Before it, 6j
-(ADR-139), 6i (ADR-138), 6h (ADR-137), 6g (ADR-136), 6f (ADR-135), 6e (ADR-134),
-6d (ADR-133), 6c (ADR-132), 6b (ADR-131), 6a (ADR-130), the split (ADR-129).
+**A code audit and documentation pass, outside the task list** (ADR-141,
+ADR-142). CI fixed: vitest pins `Asia/Kolkata` (a date test failed on the UTC
+runner), Actions moved off Node 20. Duplication removed: `bodyCommand[T]` (order
+handlers), `resort` (menu reorders), `checkVersion` (hub), and `FormModal` for
+eight back office form modals (Enter now saves forms of two or more fields).
+Prettier adopted (`web/.prettierrc.json`, width 160), gated in `make build-web`;
+`make fmt-web` applies it. staticcheck clean. go.mod no longer requires the old
+`nofiltr-pos` module. Docs: README rewritten, `CONTRIBUTING.md`, `docs/deploy.md`
+(Windows, Linux, Docker, a domain with HTTPS, backups, upgrades), `running.md`
+refreshed. `build/Dockerfile` and `docker-compose.yml` built and tried: setup,
+serve, all three apps, data kept across a recreate (a head start on phase 12,
+Task 5). Before it, phase 10 Task 6k (ADR-140).
 
 ## Next task
 
@@ -34,6 +35,15 @@ venue configured end to end from the back office and traded a full day) is a
 human check, as phase 09's is, and stays unticked below.
 
 ## Known broken / in progress
+
+- Audit (2026-10-03): `FormModal` was typechecked and tested, not tried in a
+  browser; look at one save, one refusal and Enter in a two-field modal. `mez
+  setup` pairs a till by default, and only the back office issues more codes,
+  so a venue set up with defaults has no screen to reach the back office from:
+  the docs say `-device-kind back_office` first; phase 12's wizard should
+  pair the back office. Setup's closing line says "open the terminal on the
+  till" whatever the kind, and prints the code's expiry in the machine's zone
+  (UTC in Docker), not the venue's.
 
 - Redesign (ADR-128): screens are restyled through the primitives only.
   The specs' layouts were not re-read against the mez screen files,

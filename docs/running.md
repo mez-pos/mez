@@ -4,9 +4,10 @@ mez is one binary. It needs no database server, no Docker and no
 internet connection. Put it on the machine behind the counter, start it, and it
 serves the register on port 7777.
 
-This page covers starting it, where it keeps your data, and how to change the
-port. It describes the server as it exists today, at the end of Phase 01: it
-serves and it answers health checks, but it does not take orders yet.
+This page covers starting it, where it keeps your data, every setting, and
+what to do when it will not start. For installing it on Windows, Linux, Docker
+or a domain with HTTPS, and for backups and upgrades, see
+[`deploy.md`](deploy.md).
 
 ## Getting a binary
 
@@ -66,6 +67,12 @@ without it:
 for invoices, and what the first device is called. Running it a second time on
 the same database refuses: one machine serves one venue.
 
+Pair the back office first, with `-device-kind back_office`: the back office's
+**Devices** screen is where every other device's pairing code is made. A
+first code for a till still works for selling, but leaves no screen to pair a
+second device from. `-demo-menu` adds a sample cafe menu for trying it out.
+[`deploy.md`](deploy.md#first-run-on-any-platform) lists every flag.
+
 ## Starting it
 
 ```sh
@@ -86,8 +93,9 @@ Three addresses are served:
 | `/backoffice` | Menu, reports and settings, for the owner |
 | `/order` | The guest ordering page, opened from a QR code |
 
-Until Phase 05 these show a placeholder page rather than the real apps. The
-server says so at startup, on the line reading `serving placeholder frontends`.
+A binary built without the apps (no `-tags frontend`, as `go build` alone
+gives) serves a placeholder page instead, and says so at startup on the line
+reading `serving placeholder frontends`. `make dist` always includes them.
 
 ## Where your data lives
 
@@ -99,7 +107,10 @@ sits in one directory:
 | Windows | `C:\ProgramData\mez` |
 | Linux and macOS | `./data`, beside wherever you started it from |
 
-Back up that directory and you have backed up the venue.
+Inside it: `mez.db` (with `mez.db-wal` and `mez.db-shm` while it runs),
+`photos/` for menu photos, and `logs/`. Back up that directory and you have
+backed up the venue; [`deploy.md`](deploy.md#backups) says how to copy it
+safely.
 
 Logs are in `logs/` inside it, as `mez.log`. The current file is rotated to
 `mez.log.1` once it reaches 8 MB, and five rotations are kept, so the logs
@@ -141,6 +152,7 @@ The full set of settings:
 | `relay_url` | `-relay-url` | `MEZ_RELAY_URL` | empty, so no relay |
 | `timezone` | `-timezone` | `MEZ_TIMEZONE` | the machine's own |
 | `dev_origin` | `-dev-origin` | `MEZ_DEV_ORIGIN` | empty, so no CORS |
+| | `-config` | | `config.toml` beside the binary |
 
 Notes on a few of them:
 
@@ -175,7 +187,7 @@ curl http://localhost:7777/api/v1/health
   "started_at": "2026-09-17T16:27:04Z",
   "uptime_seconds": 1,
   "checks": {
-    "db": "unknown",
+    "db": "ok",
     "disk": "unknown",
     "printer": "unknown",
     "tunnel": "unknown"
@@ -184,8 +196,9 @@ curl http://localhost:7777/api/v1/health
 ```
 
 `status` answers one question: is this process serving. The checks are reported
-separately and all read `unknown` today, because the subsystems that answer them
-are built in later phases. `commit` and `build_date` identify exactly which
+separately: `db` is `ok` when the database answers and `failing` when it does
+not. `disk`, `printer` and `tunnel` read `unknown` until the subsystems that
+answer them are built (the relay in phase 11, the rest in phase 12). `commit` and `build_date` identify exactly which
 build is running, which is the first thing to establish on a support call.
 
 ## Testing your receipt printer
@@ -241,11 +254,14 @@ because a setting that is silently dropped is a change you believe you made.
 `Asia/Kolkata` or `Europe/Lisbon`, not an abbreviation like `IST`.
 
 **The page says "placeholder bundle".** The binary was built without the
-frontends. Rebuild with `-tags frontend` once `web/*/dist` exists, from Phase 05
-onwards.
+frontends. Build them (`make build-web`) and rebuild with `make build`, or use
+`make dist`, which always includes them.
 
 ## What is not here yet
 
-At the end of Phase 01 this server has no database, no menu, no orders and no
-printing. It starts, serves, logs, answers health and shuts down cleanly. The
-rest arrives phase by phase; `docs/STATE.md` says where the build has got to.
+The guest QR ordering app and the relay that lets guests reach the venue
+from the internet are phase 11. The Windows installer and service, the
+first-run wizard and Litestream backups are phase 12; until then
+[`deploy.md`](deploy.md) shows how to run it at startup and back it up by
+hand. [`STATE.md`](STATE.md) says where the build has got to and lists
+everything known to be missing or broken.
