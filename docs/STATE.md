@@ -14,43 +14,42 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**The rebuild was planned** (ADR-143): `docs/phases/rebuild.md` holds the
-flow map by role, every design screen with its file and line, the rules for a
-screen task and Tasks 0 to 17. `MEZ_DEV_SERVER` points the Vite proxy at a
-server on another port, so a dev venue in `.dev-data/` runs beside Docker.
-No screen has changed yet.
+**Rebuild, Task 0: the dev loop and the demo venue** (ADR-144). `mez pair`
+makes a pairing code at the machine (no database or venue is refused; the
+expiry is on the venue's clock). `-demo-menu` now makes a demo cafe: the menu,
+twelve tables in two areas, and Arjun (manager, 2222), Meera (cashier, 3333)
+and Ravi (kitchen, 4444), PINs public and printed. `make dev` runs
+`build/dev.sh`: it builds, sets up `.dev-data` on a first run with a code for
+each app, starts the server on 7791 and both apps under Vite, and stops all
+three on Ctrl+C. Go tests for pair, the demo floor and the demo staff;
+`make check` passes. `make dev` itself was tried with the server and a Vite
+app, on other ports because the earlier dev servers were still running; the two
+Vite apps together were not started by it, and no screen has changed yet.
 
-Before it: **a code audit and documentation pass, outside the task list** (ADR-141,
-ADR-142). CI fixed: vitest pins `Asia/Kolkata` (a date test failed on the UTC
-runner), Actions moved off Node 20. Duplication removed: `bodyCommand[T]` (order
-handlers), `resort` (menu reorders), `checkVersion` (hub), and `FormModal` for
-eight back office form modals (Enter now saves forms of two or more fields).
-Prettier adopted (`web/.prettierrc.json`, width 160), gated in `make build-web`;
-`make fmt-web` applies it. staticcheck clean. go.mod no longer requires the old
-`nofiltr-pos` module. Docs: README rewritten, `CONTRIBUTING.md`, `docs/deploy.md`
-(Windows, Linux, Docker, a domain with HTTPS, backups, upgrades), `running.md`
-refreshed. `build/Dockerfile` and `docker-compose.yml` built and tried: setup,
-serve, all three apps, data kept across a recreate (a head start on phase 12,
-Task 5). Before it, phase 10 Task 6k (ADR-140).
+Before it: the rebuild was planned (ADR-143, `docs/phases/rebuild.md`), and
+`MEZ_DEV_SERVER` points the Vite proxy at a server on another port. Before
+that, a code audit and documentation pass (ADR-141, ADR-142): CI fixed,
+duplication removed, Prettier adopted, README, `CONTRIBUTING.md` and
+`docs/deploy.md` written, `build/Dockerfile` and compose built and tried.
 
 ## Next task
 
-**Rebuild, Task 0** (the dev loop and the demo venue): `mez pair`, a fuller
-demo venue with tables and one person per role, `make dev`. Then Task 1 (the
-server fields the design needs), Task 2 (the shell), Task 3 (login). Phase 11
-waits for this phase. Phase 10's tasks are all done (6l moved to phase 12,
-ADR-141); its done-when is a human check and stays unticked below.
+**Rebuild, Task 1** (what the design needs from the server), in sub-tasks:
+1a a `waiter` role and `GET /api/v1/staff` returning each person's role name
+(add a waiter to `demoStaff`: `TestDemoVenueHasEveryRole` fails until then),
+1b service type on an order, 1c item description, dietary mark and popular
+flag. Then Task 2 (the shell) and Task 3 (login). Phase 11 waits for this
+phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its
+done-when is a human check and stays unticked below.
 
 ## Known broken / in progress
 
 - Audit (2026-10-03): `FormModal` was typechecked and tested, not tried in a
   browser; look at one save, one refusal and Enter in a two-field modal. `mez
-  setup` pairs a till by default, and only the back office issues more codes,
-  so a venue set up with defaults has no screen to reach the back office from:
-  the docs say `-device-kind back_office` first; phase 12's wizard should
-  pair the back office. Setup's closing line says "open the terminal on the
-  till" whatever the kind, and prints the code's expiry in the machine's zone
-  (UTC in Docker), not the venue's.
+  setup` pairs a till by default, so a venue set up with defaults reaches the
+  back office with `mez pair -device-kind back_office` (ADR-144); phase 12's
+  wizard should pair it. Setup's closing line and expiry now follow the
+  device kind and the venue's zone.
 
 - Redesign (ADR-128): screens are restyled through the primitives only.
   The specs' layouts were not re-read against the mez screen files,
@@ -235,10 +234,10 @@ ADR-141); its done-when is a human check and stays unticked below.
   `CGO_ENABLED=0 go build -tags frontend -o bin/mez ./cmd/mez`.
 - A data dir path containing `%` cannot be opened: `internal/db/open.go`
   does not escape the path in its `file:` DSN.
-- To try the apps: `mez setup -demo-menu` prints a pairing code; sign
-  in as the owner and count a float to open the till
-  (`-device-kind back_office` for the back office); pair in the browser. A
-  code for the wrong app is refused but its device stays (ADR-068).
+- To try the apps: `make dev` (ADR-144) prints a pairing code for each; pair
+  in the browser, sign in as the owner or a demo person and count a float to
+  open the till. A code for the wrong app is refused but its device stays
+  (ADR-068).
 - No endpoint returns the venue's name or a staff member's role; the lock
   screen shows the device name and no roles until one does.
 - `go test -race` needs cgo, which is banned; `make check` runs without it.

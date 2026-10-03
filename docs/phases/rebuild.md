@@ -142,27 +142,29 @@ The design's words replace the old ones on every screen:
 ## How to see it
 
 ```sh
-# Once: a dev venue beside the Docker one.
-go build -tags frontend -o bin/mez ./cmd/mez
-./bin/mez setup -data-dir .dev-data -name "Dev Cafe" -owner Priya -owner-pin 1234 \
-  -timezone Asia/Kolkata -tax-profile gst_in -tax-registration 29ABCDE1234F1Z5 \
-  -device-kind back_office -demo-menu
-
-# Each time: the server, then the two apps with hot reload.
-./bin/mez -data-dir .dev-data -listen-addr 127.0.0.1:7791
-cd web/terminal   && MEZ_DEV_SERVER=http://127.0.0.1:7791 npm run dev   # http://localhost:5173
-cd web/backoffice && MEZ_DEV_SERVER=http://127.0.0.1:7791 npm run dev   # http://localhost:5174/backoffice/
+make dev
 ```
 
-A pairing code lasts 10 minutes. Until Task 0 lands, the setup code pairs
-the back office, and its Devices screen makes the code for the terminal.
-A Go change needs the server rebuilt and restarted; a screen change does not.
+It builds the binary, makes a demo venue in `.dev-data` the first time and
+prints a pairing code for the terminal, the back office and the kitchen
+display, then starts the server on `127.0.0.1:7791` and the two apps with hot
+reload: the terminal on http://localhost:5173 (the kitchen at `/kitchen`) and
+the back office on http://localhost:5174/backoffice/. Ctrl+C stops all three.
+
+Sign in as Priya (PIN 1234), or as the demo staff: Arjun the manager (2222),
+Meera the cashier (3333), Ravi in the kitchen (4444). Another code, for a
+browser that is not paired yet: `bin/mez pair -data-dir .dev-data -device-kind
+terminal`. A venue made before Task 0 has no floor or staff: delete
+`.dev-data` and run `make dev` again.
+
+A pairing code lasts 10 minutes. A Go change needs `make dev` run again; a
+screen change does not.
 
 ## Tasks
 
 One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
 
-- [ ] **Task 0 - The dev loop and the demo venue.**
+- [x] **Task 0 - The dev loop and the demo venue.** (ADR-144)
   `mez pair -device-kind K -device-name N`: a pairing code made at the
   machine itself, as setup's is (closes the "no screen to reach the back
   office from" gap in `STATE.md`). `-demo-menu` becomes a fuller demo: a

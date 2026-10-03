@@ -55,8 +55,10 @@ works for ten minutes. Open `http://localhost:7777/backoffice`, enter the
 code, sign in with the PIN, and use **Devices** to pair each till and kitchen
 display. On a tablet, open `http://<this machine's address>:7777`.
 
-Drop `-demo-menu` for a real venue. `./mez setup -h` lists the tax, currency
-and financial year options.
+Drop `-demo-menu` for a real venue: it adds a demo menu, tables and staff with
+public PINs. `./mez setup -h` lists the tax, currency and financial year
+options, and `./mez pair -device-kind kitchen` makes another pairing code at
+the machine.
 
 Check a receipt printer before service, with no setup needed:
 

@@ -98,12 +98,17 @@ mez setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata \
 | `-tax-pricing` | the profile's | `inclusive` or `exclusive` |
 | `-device-kind` | `terminal` | What the first pairing code pairs: `terminal`, `kitchen` or `back_office` |
 | `-device-name` | `Counter 1` | What that device is called |
-| `-demo-menu` | off | Adds an 18-item sample cafe menu priced in rupees |
+| `-demo-menu` | off | Makes a demo cafe: an 18-item menu priced in rupees, twelve tables, and a manager, cashier and cook with public PINs. Never for a venue that sells |
 | `-data-dir` | the platform default | Where the database goes |
 
 It prints the owner's PIN (only once) and a pairing code that lasts ten
 minutes. Running it again on the same database is refused: one data directory
 is one venue.
+
+`mez pair` makes another pairing code at the machine, any time after setup,
+with `-device-kind` (`terminal`, `kitchen` or `back_office`), `-device-name`
+and `-data-dir` as above. In Docker:
+`docker run --rm -v mez-data:/data mez pair -device-kind back_office`.
 
 Then start the server and finish in the browser:
 

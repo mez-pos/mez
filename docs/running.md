@@ -70,7 +70,21 @@ the same database refuses: one machine serves one venue.
 Pair the back office first, with `-device-kind back_office`: the back office's
 **Devices** screen is where every other device's pairing code is made. A
 first code for a till still works for selling, but leaves no screen to pair a
-second device from. `-demo-menu` adds a sample cafe menu for trying it out.
+second device from. If that is what you did, `mez pair` makes another code at
+the machine, with no sign-in:
+
+```sh
+./mez pair -device-kind back_office -device-name Office
+```
+
+`-device-kind` is `terminal`, `kitchen` or `back_office`, and the name is
+optional. Run it as often as needed; each code lasts ten minutes and pairs one
+device. It takes `-data-dir` as the server does, and works while the server runs.
+
+`-demo-menu` makes the venue a demo cafe for trying it out: a menu, twelve
+tables in two areas, and a person for each role (a manager, a cashier and a
+kitchen cook) with PINs that `setup` prints. Those PINs are public, so never
+use `-demo-menu` on a venue that sells.
 [`deploy.md`](deploy.md#first-run-on-any-platform) lists every flag.
 
 ## Starting it

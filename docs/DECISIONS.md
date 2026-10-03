@@ -4162,3 +4162,31 @@ Cost: phase 11 waits. The specs in `docs/design/screens/` are wrong until the
 phase's last task rewrites them. Events gain fields, so the projection
 version moves.
 ---
+
+## ADR-144 - `mez pair`, and a demo venue with public PINs
+2026-10 · Status: accepted
+Decision: `mez pair -device-kind K [-device-name N] [-data-dir D]` makes a
+pairing code at the machine, as `setup` makes its first one. It refuses a
+missing database (it would otherwise create an empty one) and a database with
+no venue, and prints the expiry on the venue's clock. The code records no
+creator: no person made it. `-demo-menu` now makes a whole demo cafe: the menu,
+twelve tables in two areas, and one person for each role but the owner, with
+fixed PINs that setup prints and calls public. The flag keeps its name, since
+the docs use it. `make dev` (`build/dev.sh`) builds, sets up `.dev-data` on its
+first run with a code for each app, starts the server on 7791 and the two
+apps under Vite, and stops all three on Ctrl+C.
+  - A role added to `auth.DefaultRoles` must arrive with a demo person: a test
+    fails until it has one. The waiter (Task 1a) is the first.
+  - The demo floor and staff are written in setup's one transaction, straight
+    to the tables, not through the floor and people services: a venue never
+    exists half demonstrated. A test passes every table back through the floor
+    service's own validation.
+Because: the first device decides what can be reached. A venue set up with
+a till had no screen to pair the back office from, and the rebuild is judged
+by signing in as each role, which needs each role to exist with a PIN known
+before the venue is made. Fixed PINs are safe only because a demo venue never
+sells, and the flag, the summary and the docs all say so.
+Cost: a person who runs `-demo-menu` on a real venue has four known PINs until
+they change them. A dev venue made before this has no floor or staff: delete
+`.dev-data` and run `make dev` again.
+---

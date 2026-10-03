@@ -11,6 +11,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -52,17 +53,20 @@ const shutdownTimeout = 10 * time.Second
 const readHeaderTimeout = 10 * time.Second
 
 func main() {
-	// One subcommand, read before the flags: setup takes its own, and the
+	// Two subcommands, read before the flags: each takes its own, and the
 	// server's parser refuses a positional argument.
-	if len(os.Args) > 1 && os.Args[1] == "setup" {
-		if err := runSetup(os.Args[2:], os.Stdout); err != nil {
-			if errors.Is(err, flag.ErrHelp) {
-				return
+	if len(os.Args) > 1 {
+		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "pair": runPair}
+		if command, ok := commands[os.Args[1]]; ok {
+			if err := command(os.Args[2:], os.Stdout); err != nil {
+				if errors.Is(err, flag.ErrHelp) {
+					return
+				}
+				logging.Bootstrap().Error(os.Args[1]+" failed", "error", err)
+				os.Exit(1)
 			}
-			logging.Bootstrap().Error("setup failed", "error", err)
-			os.Exit(1)
+			return
 		}
-		return
 	}
 
 	// A printer test, before the server's flags: it needs no venue, no
@@ -87,6 +91,7 @@ func main() {
 		// operator, not a log line.
 		if errors.Is(err, flag.ErrHelp) {
 			fmt.Fprintf(os.Stdout, "mez %s\n\nUsage:\n%s\nSubcommands:\n  setup\tcreate the venue, its owner and the first pairing code\n"+
+				"  pair\tmake another pairing code at this machine (-device-kind, -device-name)\n"+
 				"  --test-print ADDRESS\tprint a test page on a receipt printer (-paper 58, -drawer, -save FILE)\n",
 				buildInfo().Version, config.Usage())
 			return

@@ -64,13 +64,23 @@ these two.
 | `make generate` | Regenerates sqlc code and `web/shared/api-types.ts` |
 | `make migrate-new NAME=...` | Scaffolds the next migration |
 | `make run` | Runs the server |
+| `make dev` | Dev venue, server and the web apps with hot reload |
 | `make dist` | Release binaries for Windows, Linux and macOS |
 | `make help` | Lists everything |
 
 ## Run it while you work
 
-Create a throwaway venue with a sample menu, pairing the back office first,
-then start the server:
+`make dev` does the rest of this section in one go. It builds the binary,
+makes a demo cafe in `.dev-data` the first time (with a pairing code for the
+till, the back office and the kitchen display, and the demo staff's PINs),
+starts the server on `:7791`, and starts the terminal and back office under
+Vite with hot reload. Ctrl+C stops all three. `DEV_DATA` and `DEV_PORT` change
+the directory and the port; delete `.dev-data` to start the venue again. A
+fresh code for a browser that is not paired yet is
+`bin/mez pair -data-dir .dev-data -device-kind terminal`.
+
+To do it by hand, create a throwaway venue with a sample menu, pairing the
+back office first, then start the server:
 
 ```sh
 go run ./cmd/mez setup -data-dir ./data -name "Dev Cafe" -owner Dev -owner-pin 1234 \
@@ -102,7 +112,7 @@ one.
 ## Where things are
 
 ```
-cmd/mez/              the binary: serve, setup, --test-print
+cmd/mez/              the binary: serve, setup, pair, --test-print
 internal/
   domain/             pure business rules, no IO: money, order events and
                       projection, invoice series, tax, shifts, stock, tips...

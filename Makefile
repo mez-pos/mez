@@ -40,7 +40,7 @@ WEB_BUILT := $(foreach a,$(WEB_APPS),$(wildcard web/$(a)/dist/index.html))
 TAGS      := $(if $(filter 3,$(words $(WEB_BUILT))),frontend,)
 
 .DEFAULT_GOAL := check
-.PHONY: check fmt fmt-web vet test typecheck build build-web run generate migrate migrate-new clean dist help
+.PHONY: check fmt fmt-web vet test typecheck build build-web run dev generate migrate migrate-new clean dist help
 
 ## check: fmt, vet, test, typecheck and build. The gate. CI runs this.
 check: fmt vet test typecheck build
@@ -115,6 +115,14 @@ run:
 		echo "no $(CMD) yet: it arrives in Phase 01"; exit 1; \
 	fi
 	@go run -ldflags "$(LDFLAGS)" $(CMD)
+
+## dev: a dev venue (a demo cafe in .dev-data), the server on port 7791 and
+##      the terminal and back office under Vite with hot reload. The first run
+##      prints a pairing code for each app. DEV_DATA and DEV_PORT change the
+##      directory and the port. Needs Node 22. See build/dev.sh.
+dev: web/node_modules/.package-lock.json
+	@mkdir -p bin && go build -o bin/$(BIN) $(CMD)
+	@sh build/dev.sh
 
 ## generate: sqlc, go generate, TypeScript types
 ##           sqlc output is committed, so a clone builds without it installed.

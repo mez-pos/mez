@@ -49,7 +49,9 @@ type setupOptions struct {
 	DeviceName string
 	DeviceKind auth.DeviceKind
 
-	// DemoMenu adds demoMenu to the venue, for trying the till out.
+	// DemoMenu makes the venue a demo cafe, for trying mez out: demoMenu, the
+	// demoFloor of twelve tables, and a demoStaff member for each role. The
+	// flag keeps the name it had when the menu was all it added.
 	DemoMenu bool
 }
 
@@ -62,6 +64,13 @@ type setupResult struct {
 	Code          auth.PairingCode
 	DBPath        string
 	MenuItems     int
+	Tables        int
+	DemoStaff     []demoPerson
+
+	// Device and Zone are for the closing lines: which app takes the code,
+	// and the venue's clock the code's expiry is read on.
+	Device auth.DeviceKind
+	Zone   *time.Location
 }
 
 // runSetup is `mez setup`: the one command run on the venue's own
@@ -140,7 +149,7 @@ func parseSetupFlags(args []string, out io.Writer) (setupOptions, error) {
 	set.StringVar(&o.OwnerPIN, "owner-pin", "", "the owner's PIN, 4 to 8 digits (default: one is drawn and printed)")
 	set.StringVar(&o.DeviceName, "device-name", "Counter 1", "what the first device will be called")
 	kind := set.String("device-kind", string(auth.KindTerminal), "terminal, kitchen or back_office")
-	set.BoolVar(&o.DemoMenu, "demo-menu", false, "add a sample cafe menu priced in rupees, for trying the till out")
+	set.BoolVar(&o.DemoMenu, "demo-menu", false, "make this a demo cafe: a menu priced in rupees, twelve tables and a person for each role (public PINs: never for a real venue)")
 
 	if err := set.Parse(args); err != nil {
 		return setupOptions{}, err
@@ -202,6 +211,10 @@ func setUp(ctx context.Context, database *db.DB, devices *auth.Devices, o setupO
 				return fmt.Errorf("setup: the demo menu: %w", err)
 			}
 			res.MenuItems = countItems(spec)
+			if res.DemoStaff, err = writeDemoVenue(ctx, q, venue.ID, roles, now); err != nil {
+				return fmt.Errorf("setup: the demo venue: %w", err)
+			}
+			res.Tables = countTables(demoFloor)
 		}
 		return nil
 	})
@@ -273,6 +286,7 @@ func checkSetup(o setupOptions, now time.Time) (setupResult, gen.CreateVenuePara
 	}
 
 	var res setupResult
+	res.Device, res.Zone = o.DeviceKind, loc
 	res.OwnerPIN = o.OwnerPIN
 	if res.OwnerPIN == "" {
 		if res.OwnerPIN, err = drawPIN(); err != nil {
@@ -379,11 +393,47 @@ func writeSetupSummary(w io.Writer, res setupResult) {
 	if res.PINGenerated {
 		fmt.Fprintf(w, "  Owner PIN   %s   (drawn now: write it down, then change it in the back office)\n", res.OwnerPIN)
 	}
-	fmt.Fprintf(w, "  Pairing code %s   (expires %s)\n", res.Code.Code, res.Code.ExpiresAt.Local().Format("15:04"))
+	fmt.Fprintf(w, "  Pairing code %s   (expires %s)\n", res.Code.Code, expiryIn(res.Code, res.Zone))
 	if res.MenuItems > 0 {
 		fmt.Fprintf(w, "  Demo menu   %d items\n", res.MenuItems)
+		fmt.Fprintf(w, "  Demo floor  %d tables\n", res.Tables)
+		writeDemoStaff(w, res.DemoStaff)
 	}
-	fmt.Fprintf(w, "\nStart the server with `mez`, open the terminal on the till,\nand enter the pairing code. Sign in as the owner to make more.\n\n")
+	fmt.Fprintf(w, "\nStart the server with `mez`, then %s and enter the pairing code.\n", openHint(res.Device))
+	fmt.Fprintf(w, "Sign in as the owner to make more codes, or run `mez pair` at this machine.\n\n")
+}
+
+// writeDemoStaff lists the demo venue's people and their PINs. The PINs are
+// not secrets and the line says so: a demo venue must never sell for real.
+func writeDemoStaff(w io.Writer, people []demoPerson) {
+	if len(people) == 0 {
+		return
+	}
+	fmt.Fprintf(w, "  Demo staff  (their PINs are public: this venue is for trying mez, not for selling)\n")
+	for _, p := range people {
+		fmt.Fprintf(w, "    %-9s %-8s PIN %s\n", p.Name, p.Role, p.PIN)
+	}
+}
+
+// expiryIn is when a code stops working, on the venue's clock. The machine's
+// own zone is not it: a Docker container is on UTC.
+func expiryIn(code auth.PairingCode, zone *time.Location) string {
+	if zone == nil {
+		zone = time.Local
+	}
+	return code.ExpiresAt.In(zone).Format("15:04 MST")
+}
+
+// openHint says where a paired device's app is, by the kind of device.
+func openHint(kind auth.DeviceKind) string {
+	switch kind {
+	case auth.KindBackOffice:
+		return "open the back office (/backoffice/ on this machine's address)"
+	case auth.KindKitchen:
+		return "open the kitchen display (/kitchen on this machine's address)"
+	default:
+		return "open the terminal on the till"
+	}
 }
 
 // countItems is how many items a menu spec adds, for the summary.
