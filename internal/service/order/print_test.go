@@ -207,3 +207,77 @@ func TestCreditNotePrints(t *testing.T) {
 		t.Errorf("credit note payload:\n%q", p)
 	}
 }
+
+// settle rings up a dosa and pays it in cash, returning the receipt's bytes.
+func settle(t *testing.T, s *Service, d *db.DB, key string) []byte {
+	t.Helper()
+	ctx := context.Background()
+	id := open(t, s).OrderID
+	must(t)(s.AddLine(ctx, cashier(""), id, dosa(1)))
+	must(t)(s.TenderPayment(ctx, cashier(key), id, TenderPayment{Method: order.PaymentCash, Amount: inr(12600)}))
+	return payload(t, d, jobs(t, d)[0].ID)
+}
+
+func setSetting(t *testing.T, d *db.DB, key, value string) {
+	t.Helper()
+	if _, err := d.Writer().ExecContext(context.Background(),
+		`INSERT INTO settings (venue_id, key, value, updated_at) VALUES (1, ?, ?, '2026-09-18 04:30:00+00:00')
+		 ON CONFLICT (venue_id, key) DO UPDATE SET value = excluded.value`, key, value); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestReceiptsFollowTheVenuesTemplate: the header, footer and optional parts a
+// venue sets are on the receipt it prints, and on a credit note's header and
+// footer; a venue that has set none prints what it always did.
+func TestReceiptsFollowTheVenuesTemplate(t *testing.T) {
+	s, d, _ := printingService(t, true)
+	ctx := context.Background()
+
+	plain := settle(t, s, d, "pay-plain")
+	if bytes.Contains(plain, []byte("MG Road")) || bytes.Count(plain, []byte("INV/26-27/000001")) != 2 {
+		t.Fatalf("a venue with no template: %q", plain)
+	}
+
+	setSetting(t, d, "receipt.header", "Unit 4, MG Road\nTel 080 1234 5678")
+	setSetting(t, d, "receipt.footer", "Thank you. Come back soon!")
+	setSetting(t, d, "receipt.hide_barcode", "true")
+	templated := settle(t, s, d, "pay-templated")
+	for _, want := range []string{"Unit 4, MG Road", "Tel 080 1234 5678", "Thank you. Come back soon!"} {
+		if !bytes.Contains(templated, []byte(want)) {
+			t.Errorf("no %q on the receipt:\n%q", want, templated)
+		}
+	}
+	// "No.   INV/..." and no barcode of it: the number once.
+	if bytes.Count(templated, []byte("INV/26-27/000002")) != 1 {
+		t.Errorf("the barcode printed though it is off: %q", templated)
+	}
+
+	// A credit note takes the header and footer, and keeps its barcode.
+	id := open(t, s).OrderID
+	must(t)(s.AddLine(ctx, cashier(""), id, dosa(2)))
+	paid := must(t)(s.TenderPayment(ctx, cashier("pay-credit"), id, TenderPayment{Method: order.PaymentCash, Amount: inr(25200)}))
+	must(t)(s.Credit(ctx, cashier(""), id, IssueCredit{
+		Credit: order.CreditRequest{Lines: []order.CreditItem{{LineID: 2, Qty: 1}}}, Reason: "cold_or_late", AuthorisedBy: 7,
+		Refunds: []RefundPart{{PaymentID: paid.State.Tenders[0].ID, Amount: inr(12600)}},
+	}))
+	cn := payload(t, d, jobs(t, d)[0].ID)
+	if !bytes.Contains(cn, []byte("CREDIT NOTE")) || !bytes.Contains(cn, []byte("Unit 4, MG Road")) ||
+		!bytes.Contains(cn, []byte("Thank you. Come back soon!")) || bytes.Count(cn, []byte("CN/26-27/000001")) != 2 {
+		t.Errorf("credit note:\n%q", cn)
+	}
+}
+
+// A template can never refuse a sale: whatever is stored, the receipt prints.
+func TestAnUnreadableTemplateStillPrintsTheReceipt(t *testing.T) {
+	s, d, _ := printingService(t, true)
+	setSetting(t, d, "receipt.header", "स्वागत\n\n   \nline 2\nline 3\nline 4\nline 5\nline 6")
+	setSetting(t, d, "receipt.hide_barcode", "perhaps")
+	p := settle(t, s, d, "pay-odd")
+	if !bytes.Contains(p, []byte("????")) || !bytes.Contains(p, []byte("line 4")) || bytes.Contains(p, []byte("line 5")) {
+		t.Errorf("an odd template: unreadable text prints as ?, four lines at most:\n%q", p)
+	}
+	if bytes.Count(p, []byte("INV/26-27/000001")) != 2 {
+		t.Error("a switch that is not true hid the barcode")
+	}
+}

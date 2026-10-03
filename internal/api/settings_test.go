@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/byjoellobo/mez/internal/service/settings"
@@ -380,6 +381,82 @@ func TestRulesSettingsOverHTTP(t *testing.T) {
 	})
 	t.Run("another verb is not allowed", func(t *testing.T) {
 		if rec := send(w.handler, http.MethodDelete, "/api/v1/settings/rules", "", owner); rec.Code != http.StatusMethodNotAllowed {
+			t.Errorf("DELETE: %d", rec.Code)
+		}
+	})
+}
+
+// TestReceiptSettingsOverHTTP: the owner reads the receipt template, changes
+// it, and each refusal comes back with its code and field.
+func TestReceiptSettingsOverHTTP(t *testing.T) {
+	w := newTill(t)
+	svc, err := settings.New(settings.Options{DB: w.db})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.rebuild(t, WithSettings(svc))
+	owner := w.asStaff(w.signInAs(t, "stf_PRIYA001", "2468").Token)
+
+	call := func(method, body string) (int, receiptResponse, Error) {
+		t.Helper()
+		rec := send(w.handler, method, "/api/v1/settings/receipt", body, owner)
+		if rec.Code >= 400 {
+			return rec.Code, receiptResponse{}, errorOf(t, rec)
+		}
+		var out receiptResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatalf("%s: %v: %s", method, err, rec.Body)
+		}
+		return rec.Code, out, Error{}
+	}
+
+	status, out, _ := call(http.MethodGet, "")
+	if status != http.StatusOK || out.Header == nil || len(out.Header) != 0 || out.Footer == nil || out.HideBarcode ||
+		out.HideOrderRef || out.HideModifiers || out.MaxLines != 4 || out.MaxLineChars != 48 {
+		t.Fatalf("read: %d %+v", status, out)
+	}
+
+	body := `{"header":["  Unit 4, MG Road ","","Tel 080 1234 5678"],"footer":["Thank you!"],"hide_barcode":true}`
+	status, out, _ = call(http.MethodPut, body)
+	if status != http.StatusOK || !slices.Equal(out.Header, []string{"Unit 4, MG Road", "Tel 080 1234 5678"}) ||
+		!slices.Equal(out.Footer, []string{"Thank you!"}) || !out.HideBarcode || out.HideOrderRef || out.HideModifiers {
+		t.Fatalf("saved: %d %+v", status, out)
+	}
+
+	refusals := []struct {
+		name, body string
+		status     int
+		code       ErrorCode
+		field      string
+	}{
+		{"too many header lines", `{"header":["1","2","3","4","5"]}`, 422, CodeInvalidSetting, "header"},
+		{"a line that is too long", `{"footer":["` + strings.Repeat("a", 49) + `"]}`, 422, CodeInvalidSetting, "footer"},
+		{"text the printer cannot print", `{"header":["स्वागत"]}`, 422, CodeInvalidSetting, "header"},
+		{"an unknown field", `{"header":[],"logo":"x"}`, 400, CodeInvalidRequest, ""},
+		{"lines that are not a list", `{"header":"Unit 4"}`, 400, CodeInvalidRequest, ""},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			status, _, apiErr := call(http.MethodPut, tt.body)
+			if status != tt.status || apiErr.Code != tt.code || apiErr.Field != tt.field {
+				t.Errorf("%d %s %q, want %d %s %q", status, apiErr.Code, apiErr.Field, tt.status, tt.code, tt.field)
+			}
+		})
+	}
+	if _, out, _ = call(http.MethodGet, ""); !out.HideBarcode || len(out.Header) != 2 {
+		t.Errorf("a refused update changed the template: %+v", out)
+	}
+
+	t.Run("a cashier cannot read or change it", func(t *testing.T) {
+		cashier := w.asStaff(w.signIn(t, "2468").Token)
+		for _, method := range []string{http.MethodGet, http.MethodPut} {
+			if rec := send(w.handler, method, "/api/v1/settings/receipt", body, cashier); rec.Code != http.StatusForbidden {
+				t.Errorf("%s: %d", method, rec.Code)
+			}
+		}
+	})
+	t.Run("another verb is not allowed", func(t *testing.T) {
+		if rec := send(w.handler, http.MethodDelete, "/api/v1/settings/receipt", "", owner); rec.Code != http.StatusMethodNotAllowed {
 			t.Errorf("DELETE: %d", rec.Code)
 		}
 	})

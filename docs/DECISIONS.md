@@ -3838,3 +3838,44 @@ items off the till or its tickets onto no printer.
 Cost: a retired station's display needs setting to another by hand; the
 numbering gap after a retire; the item form (web) now filters retired
 courses as it does stations, but nothing on a screen manages them yet (6j).
+
+## ADR-135 - The receipt template: lines the venue adds, parts it may leave off
+2026-10 · Status: accepted.
+Decision: `GET` and `PUT /api/v1/settings/receipt` (`settings.edit`) edit what a
+venue adds to its customer documents: up to four header lines (under its name
+and registration), up to four footer lines, and three parts it may hide: the
+invoice number's barcode, the order's id under the date, and the choices
+under each line. Saved through `settings.Service.Set`, all or none. The
+receipt, a bill printed before payment and a credit note read it when they are
+queued (`printing.templateFor`, inside the transaction that queues them).
+  - **Only what the tax profile does not require is optional.** The seller's
+    registration, the number, the date, place of supply, HSN, the tax lines and
+    the total are not in the template and cannot be turned off.
+  - **The zero template is the receipt as it was.** The three switches are
+    `hide_*` in the JSON, the layouts and the keys (`receipt.hide_barcode`,
+    ...; "true" hides, anything else shows), so a request that leaves one out
+    cannot take a part off a receipt. The table number stays when the order id
+    is hidden.
+  - **Printing is ASCII, so text the printer would turn into "?" is refused
+    when saved** (`escpos.Unprintable`, the same table `Printable` prints
+    with), naming the line and character. Accents and the rupee sign pass:
+    they print spelled out ("Cafe", "Rs."), as they do on item names
+    (ADR-079). Lines are at most 48 characters, one full 80mm line; on 58mm
+    they wrap.
+  - **Printing never refuses a sale over it.** The reader (`TemplateOf`)
+    cannot fail: a switch that is not "true" is off, at most four lines are
+    read, text that will print as "?" prints as it will. Only the settings
+    write path is strict, so a hand-edited value costs a "?" and not a payment.
+  - **A pasted block is its lines.** A newline inside a line splits it, and the
+    four-line limit applies to the result; blank lines are dropped. Lines are
+    stored joined by a newline, one key each for header and footer.
+  - **A credit note takes the header and footer** (its seller block is a legal
+    document too) **but not the switches:** it has no choices or order id of
+    its own, and its barcode is what a later refund scans.
+Because: a cafe's address, phone number and "thank you" are the first thing
+asked of a receipt, and they must not be a way to print a receipt that
+misses what the tax authority requires, or a reason a payment fails.
+Cost: no logo (a raster path is later work, ADR-079); the till's on-screen
+invoice preview does not show the template; changing the template changes
+the next duplicate of an old receipt as well, since a duplicate is laid out
+when it is asked for.

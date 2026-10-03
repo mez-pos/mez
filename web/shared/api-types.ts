@@ -1196,6 +1196,24 @@ export interface RulesResponse {
   open_shift_day: string;
 }
 
+export interface ReceiptRequest {
+  header: string[];
+  footer: string[];
+  hide_barcode: boolean;
+  hide_order_ref: boolean;
+  hide_modifiers: boolean;
+}
+
+export interface ReceiptResponse {
+  header: string[];
+  footer: string[];
+  hide_barcode: boolean;
+  hide_order_ref: boolean;
+  hide_modifiers: boolean;
+  max_lines: number;
+  max_line_chars: number;
+}
+
 export interface MenuCategoryInput {
   name: string;
 }

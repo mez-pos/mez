@@ -6,11 +6,14 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
+	"github.com/byjoellobo/mez/internal/device/escpos"
 	"github.com/byjoellobo/mez/internal/domain/invoice"
 	"github.com/byjoellobo/mez/internal/domain/shift"
 	"github.com/byjoellobo/mez/internal/domain/tips"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/byjoellobo/mez/internal/service/printing"
 	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
@@ -43,6 +46,11 @@ var keys = []key{
 	{Name: svcshift.SettingVarianceThreshold, Default: strconv.FormatInt(svcshift.DefaultVarianceThreshold, 10), Check: wholeNumber(0, 1_000_000_00, "minor units")},
 	{Name: svcshift.SettingTipRule, Default: string(tips.Even), Check: tipRule},
 	{Name: svcshift.SettingTipRoleWeights, Check: roleWeights},
+	{Name: printing.SettingReceiptHeader, Check: receiptLines},
+	{Name: printing.SettingReceiptFooter, Check: receiptLines},
+	{Name: printing.SettingReceiptHideBarcode, Default: "false", Check: oneOf("true", "false")},
+	{Name: printing.SettingReceiptHideOrderRef, Default: "false", Check: oneOf("true", "false")},
+	{Name: printing.SettingReceiptHideModifiers, Default: "false", Check: oneOf("true", "false")},
 }
 
 // find is the key named name.
@@ -124,6 +132,28 @@ func template(v string) string {
 func timeOfDay(v string) string {
 	if _, err := shift.ParseDayStart(v); err != nil {
 		return "Enter a time of day like 04:00, on the 24 hour clock."
+	}
+	return ""
+}
+
+// receiptLines is a header or footer as stored: up to a few non-blank lines
+// of text the printer can print. Printing is ASCII only (ADR-079), so a
+// character it would turn into "?" is refused here, where it can be fixed,
+// rather than printed on every receipt.
+func receiptLines(v string) string {
+	lines := strings.Split(v, "\n")
+	if len(lines) > escpos.MaxTemplateLines {
+		return fmt.Sprintf("Use at most %d lines.", escpos.MaxTemplateLines)
+	}
+	for i, l := range lines {
+		switch r, bad := escpos.Unprintable(l); {
+		case strings.TrimSpace(l) == "":
+			return fmt.Sprintf("Line %d is empty.", i+1)
+		case utf8.RuneCountInString(l) > escpos.MaxTemplateLineChars:
+			return fmt.Sprintf("Keep line %d to %d characters.", i+1, escpos.MaxTemplateLineChars)
+		case bad:
+			return fmt.Sprintf("Line %d has %q, which the printer cannot print. Use letters, digits and common punctuation.", i+1, r)
+		}
 	}
 	return ""
 }

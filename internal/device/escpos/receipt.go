@@ -25,7 +25,7 @@ type Receipt struct {
 	Taxes     []tax.ComponentTotal // the rate-wise summary from the tax snapshot
 	Tenders   []order.Tender       // voided ones are left off
 	Copy      bool                 // a reprint: marked DUPLICATE, same number
-	Footer    string               // the venue's line at the bottom, if any
+	Template  Template             // what the venue adds, and which optional parts print
 	Kick      bool                 // open the cash drawer as the receipt starts: cash was taken
 }
 
@@ -44,7 +44,7 @@ func (r Receipt) Layout(p Paper) ([]byte, error) {
 		for _, s := range columns(fmt.Sprintf("%d x %s", l.Qty, l.Name), amountText(l.Gross, false), w) {
 			b.Line(s)
 		}
-		if len(l.Modifiers) > 0 {
+		if len(l.Modifiers) > 0 && !r.Template.HideModifiers {
 			names := make([]string, len(l.Modifiers))
 			for i, m := range l.Modifiers {
 				names[i] = m.Name
@@ -115,6 +115,9 @@ func (r Receipt) header(b *Builder, w int) {
 		}
 		b.Line(label + " " + s.Registration)
 	}
+	for _, l := range textLines(r.Template.Header, w) {
+		b.Line(l)
+	}
 	b.Feed(1)
 
 	b.Bold(true)
@@ -138,8 +141,11 @@ func (r Receipt) header(b *Builder, w int) {
 		b.Line("Place of supply  " + s.StateCode)
 	}
 	ref := r.OrderRef
+	if r.Template.HideOrderRef {
+		ref = ""
+	}
 	if r.Table > 0 {
-		ref = fmt.Sprintf("Table %d  %s", r.Table, ref)
+		ref = strings.TrimRight(fmt.Sprintf("Table %d  %s", r.Table, ref), " ")
 	}
 	if ref != "" {
 		b.Line(ref)
@@ -168,15 +174,13 @@ func (r Receipt) footer(b *Builder, w int) {
 		for _, l := range wrap("Pay at the counter to receive your tax invoice.", w) {
 			b.Line(l)
 		}
-	} else {
+	} else if !r.Template.HideBarcode {
 		// The number as a barcode, so a refund or a reprint can scan the
 		// guest's copy instead of typing it.
 		b.Barcode(Printable(r.InvoiceNo), 60)
 	}
-	for _, l := range wrap(r.Footer, w) {
-		if l != "" {
-			b.Line(l)
-		}
+	for _, l := range textLines(r.Template.Footer, w) {
+		b.Line(l)
 	}
 	b.Align(Left).Feed(2)
 }

@@ -181,7 +181,7 @@ Phase 09.
     version bumps and tills hear of it. A station with items or a
     printer mapped cannot be retired without saying where they go.
     Go tests.
-  - [ ] **Task 6f: Receipt template.** Server. Header and footer lines
+  - [x] **Task 6f: Receipt template.** Server. Header and footer lines
     and what a receipt shows beyond what the tax profile requires, kept
     as settings and read by the receipt and bill layouts. ASCII only
     until printing is not (ADR-079): refuse what would print as "?".

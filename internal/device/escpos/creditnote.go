@@ -26,6 +26,11 @@ type CreditNote struct {
 	Components       []tax.ComponentTotal
 	Refunds          []CreditRefund
 	Kick             bool // cash went back: open the drawer as it prints
+	// Header and Footer are the venue's own lines (Template), as on a receipt:
+	// the barcode and the optional parts of a receipt are not theirs to hide
+	// here, a credit note having no choices or order reference of its own.
+	Header []string
+	Footer []string
 }
 
 // CreditRefund is money back against one payment.
@@ -59,6 +64,9 @@ func (c CreditNote) Layout(p Paper) ([]byte, error) {
 			label = "VAT No."
 		}
 		b.Line(label + " " + c.Seller.Registration)
+	}
+	for _, l := range textLines(c.Header, w) {
+		b.Line(l)
 	}
 	b.Feed(1).Bold(true).Size(1, 2).Line("CREDIT NOTE").Size(1, 1).Bold(false).Align(Left)
 	b.Line("No.   " + c.CreditNo)
@@ -106,6 +114,10 @@ func (c CreditNote) Layout(p Paper) ([]byte, error) {
 		}
 		total(b, label, r.Amount, w)
 	}
-	b.Feed(1).Align(Center).Barcode(Printable(c.CreditNo), 60).Align(Left).Feed(2)
+	b.Feed(1).Align(Center).Barcode(Printable(c.CreditNo), 60)
+	for _, l := range textLines(c.Footer, w) {
+		b.Line(l)
+	}
+	b.Align(Left).Feed(2)
 	return b.Cut(true).Bytes()
 }

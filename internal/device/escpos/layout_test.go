@@ -170,7 +170,7 @@ func receipt() Receipt {
 			{Method: order.PaymentCard, Amount: inr(100), Tip: inr(0), Status: order.PaymentStatusVoided},
 			{Method: order.PaymentCard, Amount: inr(1262100), Tip: inr(5000), Reference: "AUTH 1234", Status: order.PaymentStatusCaptured},
 		},
-		Footer: "Thank you. Come back soon!",
+		Template: Template{Footer: []string{"Thank you. Come back soon!"}},
 	}
 }
 

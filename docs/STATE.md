@@ -13,23 +13,23 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6e: stations and courses.** Server (ADR-134), plus the
-item form's course list. Create, rename, order, retire and restore both,
-under `/api/v1/menu/stations` and `/courses` (`internal/service/menus/
-stations.go`, `courses.go`); migration 00030 adds `courses.active`. A station
-or course with items (or a station with a printer) retires only with a
-`move_to`; one venue keeps one of each in service; courses cannot be
-renumbered while tickets are open. Before it, 6d (ADR-133), 6c (ADR-132),
-6b (ADR-131), 6a (ADR-130), the split (ADR-129).
+**Phase 10, Task 6f: receipt template.** Server only (ADR-135).
+`GET` and `PUT /api/v1/settings/receipt` (`internal/service/settings/
+receipt.go`): up to four header and four footer lines and three parts that
+may be hidden (barcode, order id, choices), read by the receipt, a bill and a
+credit note through `printing.templateFor`. Text the printer would print as
+"?" is refused when saved (`escpos.Unprintable`); printing itself never
+refuses a sale over a template. Before it, 6e (ADR-134), 6d (ADR-133), 6c
+(ADR-132), 6b (ADR-131), 6a (ADR-130), the split (ADR-129).
 
 ## Next task
 
-**Phase 10, Task 6f: Receipt template.** Server. Header and footer lines and
-what a receipt shows beyond what the tax profile requires, kept as settings
-(new keys in `internal/service/settings/keys.go`) and read by the receipt and
-bill layouts (`internal/device/escpos`, `internal/service/printing`). ASCII
-only until printing is not (ADR-079): refuse what would print as "?". Go
-tests. See the phase file for the rest of 6.
+**Phase 10, Task 6g: The Venue settings screen.** Spec first
+(`docs/design/screens/backoffice-settings.md`), from `docs/design/tokens.md`
+and the mez Desktop Management reference. The screen's frame, its sections,
+how a section saves and says it saved, and the venue details section. The
+server routes it will use: `GET /api/v1/settings`, `PUT /api/v1/settings/venue`.
+See the phase file for 6h to 6l.
 
 ## Known broken / in progress
 
@@ -51,6 +51,10 @@ tests. See the phase file for the rest of 6.
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 
+- Receipt template (ADR-135): no screen yet (6i). The till's on-screen invoice
+  preview does not show the header and footer, and no logo (ADR-079). A
+  duplicate of an old receipt prints with today's template. Not tried on a
+  printer: tested through the layout decoder at both paper widths.
 - Stations and courses (ADR-134): no screen yet (6j). A retired station's
   kitchen display keeps its board and must be set to another by hand. Retiring
   a course leaves a gap in the numbers until the next ordering. Server and

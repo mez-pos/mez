@@ -86,9 +86,13 @@ func receipt(ctx context.Context, tx *gen.Queries, in Input, e order.Event, pl o
 			return printq.Job{}, fmt.Errorf("printing: the tax snapshot of %s: %w", pl.InvoiceNo, err)
 		}
 	}
+	tpl, err := templateFor(ctx, tx, in.VenueID)
+	if err != nil {
+		return printq.Job{}, err
+	}
 	r := escpos.Receipt{
 		InvoiceNo: pl.InvoiceNo, IssuedAt: e.At.In(in.Location), OrderRef: in.PublicID, Table: in.State.TableID,
-		Taxes: detail.Components, Tenders: in.State.Tenders, Copy: dup,
+		Taxes: detail.Components, Tenders: in.State.Tenders, Copy: dup, Template: tpl,
 		// The drawer opens with the original, when cash was taken; a copy
 		// is paper only.
 		Kick: !dup && tookCash(in.State),
@@ -241,7 +245,12 @@ func creditNote(ctx context.Context, tx *gen.Queries, in Input, e order.Event, p
 	if err != nil {
 		return printq.Job{}, err
 	}
+	tpl, err := templateFor(ctx, tx, in.VenueID)
+	if err != nil {
+		return printq.Job{}, err
+	}
 	c := escpos.CreditNote{
+		Header: tpl.Header, Footer: tpl.Footer,
 		CreditNo: pl.CreditNo, AgainstInvoiceNo: pl.AgainstInvoiceNo, IssuedAt: e.At.In(in.Location), OrderRef: in.PublicID,
 		Reason: words(pl.Reason), Lines: pl.Lines, Taxable: pl.Taxable, Tax: pl.Tax, Total: pl.Total, Components: pl.Components,
 	}

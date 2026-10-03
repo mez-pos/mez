@@ -309,7 +309,7 @@ func generate() (*ts.Generator, error) {
 		// Venue settings.
 		venueDetailsRequest{}, venueNameResponse{}, settingsVenueResponse{}, settingEntryResponse{}, settingsResponse{},
 		jurisdictionRate{}, taxSettingsRequest{}, taxClassRequest{}, taxClassResponse{}, itemRefResponse{}, taxSettingsResponse{},
-		numberingRequest{}, numberingResponse{}, rulesRequest{}, rulesResponse{},
+		numberingRequest{}, numberingResponse{}, rulesRequest{}, rulesResponse{}, receiptRequest{}, receiptResponse{},
 		// The menu editor.
 		categoryRequest{}, itemRequest{}, menuOrderRequest{}, menuEditResponse{}, menus.Editor{},
 		stationRequest{}, courseRequest{}, retireRequest{}, stationRetiredResponse{}, courseRetiredResponse{},
