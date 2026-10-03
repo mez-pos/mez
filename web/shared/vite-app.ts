@@ -4,12 +4,14 @@
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig, type PluginOption, type UserConfig } from "vite";
+import { defineConfig, loadEnv, type PluginOption, type UserConfig } from "vite";
 
 // The server `make run` starts. Every API call and the WebSocket stream go
 // through the dev proxy to it, so dev and production use the same origin-
 // relative paths and nothing in the apps knows which one it is in.
-const serverOrigin = "http://localhost:7777";
+// MEZ_DEV_SERVER points the proxy at a server on another port, for a dev
+// venue running beside a real one.
+const serverOrigin = loadEnv("development", ".", "MEZ_").MEZ_DEV_SERVER ?? "http://localhost:7777";
 
 // Guest renders through preact/compat: the same React source and the same
 // React types, about 40 KB less on a 3G phone. Only the bundler knows.

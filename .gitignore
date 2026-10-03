@@ -31,3 +31,6 @@ Thumbs.db
 # The design source — archived into docs/design/reference/ in Phase 00 Task 2
 /claude-design/
 .playwright-mcp/
+
+# The dev venue (docs/phases/rebuild.md)
+/.dev-data/

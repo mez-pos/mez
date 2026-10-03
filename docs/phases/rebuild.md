@@ -1,0 +1,244 @@
+# Rebuild - the screens follow the mez design
+
+## Goal
+
+Every staff screen is laid out and flows as the mez design files show, not
+only coloured like them. A person signs in and lands on their own work:
+a cashier on the order screen, a waiter on their tables, the kitchen on its
+board, a manager with the whole navigation. ADR-143.
+
+This runs before phase 11. The server, the domain and the `*-logic.ts` files
+stay; the screens over them are rebuilt.
+
+## Why this phase exists
+
+The redesign (ADR-128, `redesign.md`) changed tokens and primitives and kept
+the old Nofiltr layouts. The owner ran the result on 2026-10-03 and rejected
+it: no flow, kitchen jargon on the buttons, no way to tell a cashier's screen
+from a waiter's. The design files were never rebuilt from, only borrowed from.
+
+## The design source
+
+`docs/design/reference/mez/` only. The PNG mockups under
+`claude-design/design/uploads/` are not a reference: ignore them.
+
+Each screen is a block carrying `data-screen-label`. Open one file, jump to
+one line, read to the next label. Do not browse a whole file.
+
+| File | Screen | Line |
+|---|---|---|
+| `mez Desktop POS.dc.html` (1920x1080) | D01 Login | 36 |
+| | D02 Shift Open | 106 |
+| | D03 POS Order | 175 |
+| | D04 Item Modal | 293 |
+| | D05 Floor Plan | 363 |
+| | D06 Reservations (table list part only) | 478 |
+| | D07 Payment | 574 |
+| | D08a Split Bill | 700 |
+| | D08b UPI Card States | 751 |
+| | D09 Orders Refund | 790 |
+| `mez Tablet Waiter.dc.html` (1366x1024) | T01 Waiter Home | 36 |
+| | T02 Order Taking | 101 |
+| | T03 Table Detail | 247 |
+| | T04 KOT Preview | 377 |
+| | T05 Bill Split Payment | 425 |
+| | T06 Transfer Merge | 489 |
+| | T07 Requests Inbox | 525 |
+| | T08 Shift Summary | 552 |
+| `mez Desktop KDS and Dashboard.dc.html` | D10 KDS Parchment | 36 |
+| | D11 KDS Night | 158 |
+| | D12 Dashboard | 280 |
+| | D13 Notifications | 429 |
+| | D14 Offline Sync | 462 |
+| `mez Desktop Management.dc.html` | D15 Sales Reports | 36 |
+| | D16 Item Inventory Reports | 176 |
+| | D17 Staff Customer Reports | 224 |
+| | D18 Menu Management | 286 |
+| | D19 Inventory | 428 |
+| | D20 Staff Roles | 507 |
+| | D21 Customers Offers | 557 |
+| | D22 Settings | 602 |
+| | D23 Z Report | 707 |
+| | D24 Setup Wizard | 770 |
+| `mez Design System.dc.html` | The component sheet, no screens | - |
+
+`mez Mobile Customer.dc.html` (M01 to M11) is phase 11's, not this phase's.
+
+## The flow map
+
+One sign-in screen for everyone (D01): tap your face, enter your PIN. Your
+role is under your name. Where you land depends on the role, not the device.
+
+```
+                         D01 Login (profile + PIN)
+                                   |
+        +-------------+------------+-------------+----------------+
+        |             |                          |                |
+     Cashier        Waiter                    Kitchen       Manager / Owner
+        |             |                          |                |
+  shift open?    T01 My tables              D10/D11 board    same as cashier,
+   no -> D02          |                                      plus Menu and
+   yes |         tap a table                                 Reports in the
+        v             v                                      top navigation
+   D03 Order     T03 Table detail                            (back office)
+   (pick table,       |
+    Dine-in /    T02 Order taking -> Send to Kitchen (T04 KOT preview)
+    Takeaway /        |
+    Delivery)    T05 Bill, split, payment
+        |
+   D04 Item modal (choices, note, quantity)
+        |
+   Save Order  or  Pay
+        |
+   D07 Payment -> D08a Split -> D08b UPI / card -> Complete -> New Order
+```
+
+Top navigation on the desktop, from D05: **Orders, Tables, Menu, Reports**.
+
+- Orders: the order screen (D03), and order history with refunds (D09).
+- Tables: the floor (D05) and the table list.
+- Menu, Reports: manager and owner only; they open the back office.
+- The profile menu (top right) holds Lock, Close the shift, Print queue.
+
+A 40px status bar on every desktop screen: version, Online or Offline, the
+venue, Keyboard Shortcuts, Open Cash Drawer, date and time.
+
+## Words
+
+The design's words replace the old ones on every screen:
+
+| Old | New |
+|---|---|
+| Till, Register | Order screen; "the shift" for open and close |
+| Ticket | Order |
+| Charge | Pay |
+| Sent, Fire | Send to Kitchen (fire by course lives under Course View) |
+| Hold | Save Order |
+| Tickets (sheet) | Orders |
+| "The till is closed" | Open the shift (D02) |
+
+## Rules for every screen task
+
+1. Read `docs/design/tokens.md`, then only the named line range of the one
+   design file. The old `docs/design/screens/*.md` describe the old layouts:
+   where they disagree with the mez file, the mez file wins.
+2. Rebuild the layout as drawn: regions, order, sizes, icons, labels. Keep
+   the hooks and `*-logic.ts` files and their tests; replace the JSX.
+3. A control the design shows and the server cannot do is either built in
+   Task 1 or left out. Never draw a control that does nothing.
+4. A function the app has and the design does not show (hold and resume,
+   fire by course, history, approvals, print queue, past bills) is kept and
+   placed under the screen's "..." or "More Actions" menu. Note where.
+5. Item cards must look finished with no photo: most venues will not have
+   photos on day one.
+6. The design is drawn at 1920x1080 (desktop) and 1366x1024 (tablet). The
+   desktop screens must hold together down to 1366 wide.
+7. Text floors from ADR-014 stand: 11px metadata, 13px sentences, 15px
+   interactive labels, 16px controls, 48px touch targets.
+8. Done means: a screenshot of the real screen beside the design's screen,
+   both in the session's reply, and the owner has looked at it in the dev
+   server. List anything left out and why.
+
+## How to see it
+
+```sh
+# Once: a dev venue beside the Docker one.
+go build -tags frontend -o bin/mez ./cmd/mez
+./bin/mez setup -data-dir .dev-data -name "Dev Cafe" -owner Priya -owner-pin 1234 \
+  -timezone Asia/Kolkata -tax-profile gst_in -tax-registration 29ABCDE1234F1Z5 \
+  -device-kind back_office -demo-menu
+
+# Each time: the server, then the two apps with hot reload.
+./bin/mez -data-dir .dev-data -listen-addr 127.0.0.1:7791
+cd web/terminal   && MEZ_DEV_SERVER=http://127.0.0.1:7791 npm run dev   # http://localhost:5173
+cd web/backoffice && MEZ_DEV_SERVER=http://127.0.0.1:7791 npm run dev   # http://localhost:5174/backoffice/
+```
+
+A pairing code lasts 10 minutes. Until Task 0 lands, the setup code pairs
+the back office, and its Devices screen makes the code for the terminal.
+A Go change needs the server rebuilt and restarted; a screen change does not.
+
+## Tasks
+
+One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
+
+- [ ] **Task 0 - The dev loop and the demo venue.**
+  `mez pair -device-kind K -device-name N`: a pairing code made at the
+  machine itself, as setup's is (closes the "no screen to reach the back
+  office from" gap in `STATE.md`). `-demo-menu` becomes a fuller demo: a
+  floor of about twelve tables in two areas, and one staff member of each
+  role with known PINs printed by setup. `make dev` starts the three
+  processes above. Go tests for both.
+
+- [ ] **Task 1 - What the design needs from the server.** Split into
+  sub-tasks before starting; each is domain code with tests.
+  - 1a. A `waiter` role (take orders, send, see own tables; no refunds, no
+    shift close). `GET /api/v1/staff` returns each person's role name, so
+    the login can show it.
+  - 1b. Service type on an order: dine-in, takeaway, delivery. A new field
+    on the opening event, not a change to old events; old orders read as
+    dine-in when they have a table and takeaway when not. Guest count on a
+    seated order if the events do not carry it yet. Shown on the Z-report
+    only if that is free; otherwise note it.
+  - 1c. Item fields the cards show: a short description, a dietary mark
+    (veg, non-veg, vegan, gluten free), a "popular" flag. Menu editor form
+    fields for them, plain, until Task 16 rebuilds that screen.
+  Check first what exists: `internal/domain/order/payloads.go` has a
+  `Channel`, which is where the order came from, not how it is served.
+
+- [ ] **Task 2 - The shell.** Routes in the terminal app instead of state
+  flags in `RegisterScreen.tsx`: `/order`, `/tables`, `/orders`, `/pay/:id`,
+  `/shift`, `/waiter`, `/kitchen`. The 72px top navigation and 40px status
+  bar from D05. Landing by role. Icons: the design uses lucide; add the
+  icons needed to `web/shared/ui/icons.tsx` or take `lucide-react` in the
+  terminal and back office only (never the guest bundle), and say which in
+  an ADR. Decide and record how a manager on a terminal reaches Menu and
+  Reports (one pairing should be enough for one browser).
+
+- [ ] **Task 3 - Login.** D01. Left panel with the brand, right with profile
+  tiles (avatar initials, name, role), PIN dots, keypad, Login.
+- [ ] **Task 4 - Open the shift.** D02. A step in the cashier's flow with
+  "Tonight's shift" beside it, not a wall. A waiter who signs in with no
+  shift open is told who can open it.
+- [ ] **Task 5 - The order screen.** D03. 240px category sidebar with icons,
+  filter chips, item cards with "+", the 400px order rail: table picker,
+  service type, guests, lines with steppers and delete, order note, totals,
+  Save Order, Pay.
+- [ ] **Task 6 - The item modal.** D04. Choices, add-ons, note, course,
+  quantity, "Add to Order" with the price.
+- [ ] **Task 7 - Tables.** D05, and the table list from D06. Areas, the
+  five states, the selected table's panel: Add Items, Send to Kitchen, More
+  Actions, Settle Bill. Reservations and the waitlist are out of scope.
+- [ ] **Task 8 - Payment.** D07. Three steps (Payment, Split Bill,
+  Complete), method tiles, amount received with quick amounts, change, tip,
+  receipt choices, the success panel with New Order.
+- [ ] **Task 9 - Split and UPI or card states.** D08a, D08b.
+- [ ] **Task 10 - Orders and refund.** D09. Past bills and the print queue
+  move here.
+- [ ] **Task 11 - Waiter home.** T01.
+- [ ] **Task 12 - Waiter order taking.** T02, T04 (KOT preview).
+- [ ] **Task 13 - Waiter table detail, transfer and merge.** T03, T06.
+- [ ] **Task 14 - Waiter bill and shift summary.** T05, T08.
+- [ ] **Task 15 - Kitchen display.** D10 and D11.
+- [ ] **Task 16 - Back office.** Split into one sub-task per screen before
+  starting: D12 dashboard, D15 to D17 reports, D18 menu, D19 inventory,
+  D20 staff and roles, D22 settings, D23 Z-report. D14's offline and sync
+  states go with the shell's status bar if Task 2 did not cover them.
+- [ ] **Task 17 - Close.** Rewrite `docs/design/screens/*.md` from what was
+  built. Walk register, kitchen, payment, invoice and Z-report as each role.
+
+## Not in this phase
+
+- D06 reservations and waitlist, D21 customers and offers: out of v1 scope
+  (`CLAUDE.md`, scope discipline).
+- D13 notifications, T07 requests inbox: they need the guest channel
+  (phase 11). The bell is not drawn until something rings it.
+- D24 setup wizard: phase 12.
+- M01 to M11, the guest phone: phase 11, built from the mez file then.
+
+## Done when
+
+The owner signs in as a cashier, a waiter, the kitchen and a manager in the
+dev server, takes an order from each side through to a paid bill and a
+Z-report, and says each screen matches its design. `make check` and
+`make build-web` pass.

@@ -4136,3 +4136,29 @@ described the wrapper, so a reader, or phase 12, would follow it to the wrong
 place.
 Cost: none in code; ADR-020's text names the old path and is read with this one.
 ---
+
+## ADR-143 - The screens are rebuilt from the mez design, by role
+2026-10 · Status: accepted (decided by the human). Amends ADR-128's "looks
+only".
+Decision: a new phase, `docs/phases/rebuild.md`, runs before phase 11. Every
+staff screen is rebuilt layout for layout from `docs/design/reference/mez/`.
+  - **By role, not by device.** One sign-in; a cashier lands on the order
+    screen, a waiter on their tables, the kitchen on its board, a manager
+    with the full navigation. Pairing stays as the device's trust.
+  - **The mez HTML files are the only reference.** The PNG mockups are not.
+  - **The server grows where the design needs it:** a waiter role, roles at
+    sign-in, a service type (dine-in, takeaway, delivery), item description
+    and dietary marks. Each is a domain task with tests.
+  - **Logic stays, JSX goes.** Hooks and `*-logic.ts` files and their tests
+    are kept; functions the design does not draw move under a More menu.
+  - **Done is seen, not tested.** A screen task closes on a screenshot beside
+    its design and the owner looking at it in the dev server.
+  - Reservations, waitlist, customers, offers, notifications, the setup
+    wizard and the guest phone are not in it.
+Because: the owner ran the build and rejected it. ADR-128 moved tokens and
+primitives onto the old Nofiltr layouts, so the app had the design's colours
+and none of its flow, and no session had walked it as a user would.
+Cost: phase 11 waits. The specs in `docs/design/screens/` are wrong until the
+phase's last task rewrites them. Events gain fields, so the projection
+version moves.
+---

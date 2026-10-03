@@ -6,14 +6,21 @@
 
 ## Current phase
 
-**Phase 10 - Back office**
-File: `docs/phases/phase-10.md`. Phase 09's tasks are all done; its
-done-when (a human checks a Z-report against a hand-computed day, and an
-export a bookkeeper would use) is still owed, so it stays unticked below.
+**Rebuild - the screens follow the mez design** (ADR-143)
+File: `docs/phases/rebuild.md`. It runs before phase 11. The owner ran the
+build on 2026-10-03 and rejected the screens: the redesign had recoloured the
+old layouts and kept their flow. Read that file's flow map, words and rules
+before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**A code audit and documentation pass, outside the task list** (ADR-141,
+**The rebuild was planned** (ADR-143): `docs/phases/rebuild.md` holds the
+flow map by role, every design screen with its file and line, the rules for a
+screen task and Tasks 0 to 17. `MEZ_DEV_SERVER` points the Vite proxy at a
+server on another port, so a dev venue in `.dev-data/` runs beside Docker.
+No screen has changed yet.
+
+Before it: **a code audit and documentation pass, outside the task list** (ADR-141,
 ADR-142). CI fixed: vitest pins `Asia/Kolkata` (a date test failed on the UTC
 runner), Actions moved off Node 20. Duplication removed: `bodyCommand[T]` (order
 handlers), `resort` (menu reorders), `checkVersion` (hub), and `FormModal` for
@@ -28,11 +35,11 @@ Task 5). Before it, phase 10 Task 6k (ADR-140).
 
 ## Next task
 
-**Phase 11, Task 1.** Phase 10's tasks are all done: Task 6l (Backup
-configuration) moved into phase 12, Task 4 (ADR-141). Read
-`docs/phases/phase-11.md` and start its first task. Phase 10's done-when (a new
-venue configured end to end from the back office and traded a full day) is a
-human check, as phase 09's is, and stays unticked below.
+**Rebuild, Task 0** (the dev loop and the demo venue): `mez pair`, a fuller
+demo venue with tables and one person per role, `make dev`. Then Task 1 (the
+server fields the design needs), Task 2 (the shell), Task 3 (login). Phase 11
+waits for this phase. Phase 10's tasks are all done (6l moved to phase 12,
+ADR-141); its done-when is a human check and stays unticked below.
 
 ## Known broken / in progress
 
