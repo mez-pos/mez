@@ -8,6 +8,7 @@ import type { PrinterResponse, PrintersResponse } from "../../../shared/api-type
 import { Button, Card, EmptyState, InboxIcon, StatusChip } from "../../../shared/ui";
 import { agoText, connectionText, emptyForm, formFrom, problemOf, stationsText, toSettings } from "./printers-logic";
 import { PrinterFormModal } from "./PrinterFormModal";
+import { usePermissions } from "../shell/BackOfficeShell";
 import { usePrinters, type PrinterSettingsApi } from "./use-printers";
 
 type Editing = { kind: "add" } | { kind: "edit"; printer: PrinterResponse };
@@ -134,19 +135,29 @@ function PrinterCard({ printer: p, data, api, onEdit }: PrinterCardProps) {
 
 /** Where receipts and each station's tickets print. */
 function Routing({ data, api }: { data: PrintersResponse; api: PrinterSettingsApi }) {
+  const mayEditMenu = usePermissions().includes("menu.edit");
   const active = data.printers.filter((p) => p.active);
   const receipt = data.printers.find((p) => p.is_receipt && p.active)?.id ?? null;
   return (
     <Card padding="lg" className="flex flex-col gap-4">
       <h2 className="text-xl font-semibold">Where things print</h2>
       <Assign label="Receipts" value={receipt} printers={active} onChange={(id) => api.setReceipt(id)} />
-      {data.stations.length === 0 && <p className="text-base text-fg-muted">No stations yet: they come with the menu.</p>}
+      {data.stations.length === 0 && <p className="text-base text-fg-muted">No stations yet. They are added in the menu, with the items made at each.</p>}
       {data.stations.map((s) => {
         const current = s.printer_id !== undefined && active.some((p) => p.id === s.printer_id) ? s.printer_id : null;
         return (
           <Assign key={s.code} label={`${s.name} tickets`} value={current} printers={active} onChange={(id) => api.setStation(s.code, id)} />
         );
       })}
+      {mayEditMenu && (
+        <p className="text-sm text-fg-muted">
+          Stations are added, renamed and retired in the menu:{" "}
+          <Link href="/menu?view=setup" className="text-attention-text underline">
+            Stations and courses
+          </Link>
+          .
+        </p>
+      )}
     </Card>
   );
 }

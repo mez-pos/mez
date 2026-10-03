@@ -2,8 +2,9 @@
 
 The frame every venue setting sits in, its first section (the venue's own
 details, Task 6g, ADR-136), its second (tax and numbering, Task 6h, ADR-137)
-and its third (shift, tips and receipt, Task 6i, ADR-138). Section 6j
-(stations and courses) fills the frame later, with the same behaviour.
+and its third (shift, tips and receipt, Task 6i, ADR-138). Backup (Task 6l)
+fills the frame later, with the same behaviour. Stations and courses are not
+here: they are the menu editor's (`backoffice-menu.md`, ADR-139).
 
 ## Purpose
 
@@ -29,7 +30,6 @@ Paper surface, inside the back office shell, reached from **Venue settings**
   | Venue | `/settings/venue` | this task |
   | Tax and numbering | `/settings/tax` | Task 6h |
   | Shift, tips and receipt | `/settings/shifts` | Task 6i |
-  | Stations and courses | `/settings/stations` | Task 6j |
   | Backup | `/settings/backup` | Task 6l |
   `/settings` goes to `/settings/venue`; a path that is none of these goes
   there too.
@@ -216,7 +216,7 @@ Every section behaves the same, so that the next ones need no new rules.
   `align`, `width`, `height`, `bold`, `barcode`; saves nothing). Cache keys
   `["settings","rules"]` and `["settings","receipt"]`.
 - All need `settings.edit`.
-- Section 6j adds its own routes; each answers with its section as it now
+- Later sections add their own routes; each answers with its section as it now
   stands, as these do.
 
 ## Interactions

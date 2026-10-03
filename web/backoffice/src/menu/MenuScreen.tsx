@@ -13,7 +13,8 @@ import { GroupsView } from "./GroupsView";
 import { ItemFormModal } from "./ItemFormModal";
 import type { PhotoChange } from "./ItemPhotoField";
 import { ItemsTable } from "./ItemsTable";
-import { itemFormFrom, itemFromSearch, newItemForm, problemOf, selectedCategory } from "./menu-logic";
+import { itemFormFrom, itemFromSearch, newItemForm, problemOf, selectedCategory, viewFromSearch, viewWords, type MenuView } from "./menu-logic";
+import { SetupView } from "./SetupView";
 import { useMenuEditor, type MenuEditorApi } from "./use-menu-editor";
 
 type Editing =
@@ -23,8 +24,6 @@ type Editing =
   | { kind: "edit-item"; item: EditorItem }
   | { kind: "add-group" }
   | { kind: "edit-group"; group: EditorGroup };
-
-type View = "items" | "choices";
 
 /** Does what the item form asked for its photo, after the item is saved. */
 function applyPhoto(api: MenuEditorApi, id: number, change: PhotoChange): Promise<void> {
@@ -43,7 +42,7 @@ export function MenuScreen() {
   const [wanted, setWanted] = useState<number | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  const [view, setView] = useState<View>("items");
+  const [view, setView] = useState<MenuView>(() => viewFromSearch(window.location.search));
   const menu = api.data;
   const category = menu ? selectedCategory(menu, wanted) : null;
 
@@ -78,15 +77,15 @@ export function MenuScreen() {
               Add an item
             </Button>
           </div>
-        ) : (
+        ) : view === "choices" ? (
           <Button variant="primary" disabled={!menu} onClick={() => setEditing({ kind: "add-group" })}>
             Add a group of choices
           </Button>
-        )}
+        ) : null}
       </div>
 
       <div role="group" aria-label="Show" className="flex gap-tap-gap">
-        {(["items", "choices"] as const).map((v) => (
+        {(["items", "choices", "setup"] as const).map((v) => (
           <Button
             key={v}
             size="md"
@@ -97,7 +96,7 @@ export function MenuScreen() {
               setProblem(null);
             }}
           >
-            {v === "items" ? "Items" : "Choices"}
+            {viewWords[v]}
           </Button>
         ))}
       </div>
@@ -114,6 +113,7 @@ export function MenuScreen() {
       {menu && view === "choices" && (
         <GroupsView menu={menu} api={api} onEdit={(group) => setEditing({ kind: "edit-group", group })} onProblem={setProblem} />
       )}
+      {menu && view === "setup" && <SetupView menu={menu} api={api} onProblem={setProblem} />}
       {menu && view === "items" && !category && <EmptyState icon={<InboxIcon />} line="No menu yet. Add a category, then the items in it." />}
       {menu && view === "items" && category && (
         <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-start">

@@ -197,9 +197,10 @@ Phase 09.
   - [x] **Task 6i: Shift, tips and receipt on the screen.** Day start,
     variance threshold, tip rule and weights, late ticket minutes, and
     the receipt template with a preview at the printer's width.
-  - [ ] **Task 6j: Stations and courses on the screen.** Stations beside
-    their printer on the Printers screen; courses where the spec of 6g
-    puts them. The menu's item form picks from both already.
+  - [x] **Task 6j: Stations and courses on the screen.** Built in the menu
+    editor as a third view, where the routes' permission (`menu.edit`) is the
+    gate, with a pointer from the Printers screen (ADR-139). The menu's item
+    form picks from both already.
   - [ ] **Task 6k: Devices.** Server and screen, spec first
     (`backoffice-devices.md`). Every paired device with its kind and
     when it was last seen; rename, revoke, and issue a pairing code for

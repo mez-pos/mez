@@ -145,7 +145,7 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
             )}
           </Field>
         )}
-        <Field label="Made at" error={on("station_id")}>
+        <Field label="Made at" hint="Stations are set up under Stations and courses." error={on("station_id")}>
           {(id) => (
             <Select id={id} value={form.stationId} onChange={(stationId) => set({ stationId })}>
               {stations.map((s) => (
@@ -156,7 +156,7 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
             </Select>
           )}
         </Field>
-        <Field label="Course" error={on("course_id")}>
+        <Field label="Course" hint="When it is fired. Courses are set up under Stations and courses." error={on("course_id")}>
           {(id) => (
             <Select id={id} value={form.courseId} onChange={(courseId) => set({ courseId })}>
               {courses.map((c) => (

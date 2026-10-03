@@ -16,6 +16,8 @@ import {
   taxClassText,
   toItemInput,
   unreadablePrice,
+  viewFromSearch,
+  viewWords,
 } from "./menu-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
@@ -210,5 +212,23 @@ describe("a link to an item", () => {
     for (const bad of ["", "?item=", "?item=99", "?item=0", "?item=-1", "?item=1.5", "?item=abc", "?item=7x", "?other=7", "?item=12345678901234567890"]) {
       expect(itemFromSearch(bad, withItems), bad).toBeNull();
     }
+  });
+});
+
+describe("the view a link asks for", () => {
+  it("is items unless it names another", () => {
+    expect(viewFromSearch("")).toBe("items");
+    expect(viewFromSearch("?view=items")).toBe("items");
+    expect(viewFromSearch("?view=choices")).toBe("choices");
+    expect(viewFromSearch("?view=setup")).toBe("setup");
+    expect(viewFromSearch("view=setup&item=3")).toBe("setup");
+  });
+  it("ignores a view that is none of them", () => {
+    for (const bad of ["?view=", "?view=stations", "?view=SETUP", "?view=setup%00", "?other=setup"]) {
+      expect(viewFromSearch(bad), bad).toBe("items");
+    }
+  });
+  it("has words for each view", () => {
+    expect(viewWords).toEqual({ items: "Items", choices: "Choices", setup: "Stations and courses" });
   });
 });

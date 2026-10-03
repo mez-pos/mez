@@ -11,6 +11,10 @@ import type {
   MenuGroupInput,
   MenuItemInput,
   MenuOrderRequest,
+  CourseRetiredResponse,
+  RetireInput,
+  StationInput,
+  StationRetiredResponse,
 } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
@@ -37,6 +41,17 @@ export interface MenuEditorApi {
   setItemSoldOut: (id: number, soldOut: boolean) => Promise<void>;
   setItemPhoto: (id: number, photo: Blob) => Promise<void>;
   clearItemPhoto: (id: number) => Promise<void>;
+  createStation: (input: StationInput) => Promise<number>;
+  renameStation: (id: number, name: string) => Promise<void>;
+  orderStations: (ids: number[]) => Promise<void>;
+  /** Retires a station, its items and printer going to `moveTo` (0 for nowhere). */
+  retireStation: (id: number, moveTo: number) => Promise<StationRetiredResponse>;
+  restoreStation: (id: number) => Promise<void>;
+  createCourse: (name: string) => Promise<number>;
+  renameCourse: (id: number, name: string) => Promise<void>;
+  orderCourses: (ids: number[]) => Promise<void>;
+  retireCourse: (id: number, moveTo: number) => Promise<CourseRetiredResponse>;
+  restoreCourse: (id: number) => Promise<void>;
 }
 
 export function useMenuEditor(): MenuEditorApi {
@@ -61,6 +76,15 @@ export function useMenuEditor(): MenuEditorApi {
     }
   };
   const done = (p: Promise<number>) => p.then(() => undefined);
+  // The same, for an edit that answers with more than an id.
+  const refreshing = async <T,>(send: () => Promise<T>): Promise<T> => {
+    try {
+      return await send();
+    } finally {
+      await queryClient.invalidateQueries({ queryKey: menuEditorKey });
+    }
+  };
+  const to = (moveTo: number): RetireInput => ({ move_to: moveTo });
   const name = (n: string): MenuCategoryInput => ({ name: n });
   const order = (ids: number[]): MenuOrderRequest => ({ ids });
 
@@ -91,5 +115,15 @@ export function useMenuEditor(): MenuEditorApi {
     setItemPhoto: (id, photo) =>
       done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/items/${id}/photo`, photo, { timeoutMs: 30_000 }))),
     clearItemPhoto: (id) => done(edit(() => store.api.del<MenuEditResponse>(`/api/v1/menu/items/${id}/photo`))),
+    createStation: (input) => edit(() => store.api.post<MenuEditResponse>("/api/v1/menu/stations", input)),
+    renameStation: (id, n) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/stations/${id}`, { code: "", name: n } satisfies StationInput))),
+    orderStations: (ids) => done(edit(() => store.api.put<MenuEditResponse>("/api/v1/menu/stations/order", order(ids)))),
+    retireStation: (id, moveTo) => refreshing(() => store.api.post<StationRetiredResponse>(`/api/v1/menu/stations/${id}/retire`, to(moveTo))),
+    restoreStation: (id) => done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/stations/${id}/restore`))),
+    createCourse: (n) => edit(() => store.api.post<MenuEditResponse>("/api/v1/menu/courses", { name: n })),
+    renameCourse: (id, n) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/courses/${id}`, { name: n }))),
+    orderCourses: (ids) => done(edit(() => store.api.put<MenuEditResponse>("/api/v1/menu/courses/order", order(ids)))),
+    retireCourse: (id, moveTo) => refreshing(() => store.api.post<CourseRetiredResponse>(`/api/v1/menu/courses/${id}/retire`, to(moveTo))),
+    restoreCourse: (id) => done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/courses/${id}/restore`))),
   };
 }

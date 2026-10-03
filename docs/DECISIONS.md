@@ -4015,3 +4015,49 @@ should see its wrapping, its barcode and its footer before the first one prints.
 Cost: the preview asks the server on every pause in typing (local, cheap); the
 sample's figures are made up and the preview does not show a credit note; the
 screen has not been seen against a thermal printer, only against the layout.
+
+## ADR-139 - Stations and courses live in the menu editor, not in settings
+2026-10 · Status: accepted.
+Decision: stations and courses are managed in a third view of the menu editor,
+"Stations and courses" (`/menu?view=setup`), beside Items and Choices. The phase
+plan put stations on the Printers screen and courses in the settings frame
+(ADR-129, written before the routes existed); the routes are `menu.edit`
+(ADR-134), so they are drawn where `menu.edit` is the gate. The settings rail
+loses its "Stations and courses" entry, which will never be built.
+  - **The screen's permission follows the route's.** Printers and the settings
+    frame need `settings.edit`; the station and course routes check `menu.edit`.
+    A role with one and not the other would have been shown controls that answer
+    "only someone who can change the venue's settings", or been refused a screen
+    it could use. Only the owner holds both today, but roles are the owner's to
+    cut (phase 10, Task 4b). The Menu screen already carries `menu.edit`, the
+    editor's data (each row's item count, from the items it reads) and the item
+    form that picks from both lists.
+  - **Printers keeps a pointer, not a second editor.** Under "Where things print"
+    a person who may edit the menu sees "Stations are added, renamed and retired
+    in the menu" with a link to `/menu?view=setup`; the printer assignment itself
+    stays where the printers are. A station retired there leaves the select.
+  - **A retire asks where things go, in words that fit what is known.** The
+    client knows the items a row carries (retired items included, as the server
+    counts them) and not whether a station has a printer, so the modal names the
+    items and says the printer follows when the chosen station has none. A row
+    with items must name a destination (refused before asking); a station with
+    none may name none, and the server's own refusal covers a printer it could
+    not place. A course with no items asks nothing. The only row in service shows
+    "This is the only station in service. Add another before retiring it." and no
+    way to confirm. What moved comes back from the server and is said in a toast:
+    "Bar retired. 10 items moved to Kitchen."
+  - **Ordering is arrows, as for categories and items,** over every row,
+    retired ones included, since that is what the server's order takes. Courses
+    renumber as they move; a reorder under open tickets is refused with the
+    server's words (ADR-134) in the view's problem line, and the description
+    says so before it happens.
+  - **A station's code is chosen once**: the add form offers it (empty makes one
+    from the name) and the rename form shows it read only.
+  - **`?view=` joins `?item=`**: the menu editor reads the view the link asks for
+    once, on first load, as it reads an item (ADR-137).
+Because: a screen that can be opened should be able to do what it shows, and an
+owner setting up a venue adds stations and courses in the same place as the
+items that name them.
+Cost: a venue setting that is not under Settings; an owner looking for stations
+under Printers is pointed, not served; the view cannot show whether a station
+has a printer.

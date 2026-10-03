@@ -5,7 +5,7 @@
 import type { SettingsVenueResponse, VenueDetailsRequest } from "../../../shared/api-types";
 import { problemWith, type Problem as FieldProblem } from "./problem";
 
-export type SettingsSectionId = "venue" | "tax" | "shifts" | "stations" | "backup";
+export type SettingsSectionId = "venue" | "tax" | "shifts" | "backup";
 
 export interface SettingsSection {
   readonly id: SettingsSectionId;
@@ -20,7 +20,6 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   { id: "venue", label: "Venue", path: "/settings/venue", built: true },
   { id: "tax", label: "Tax and numbering", path: "/settings/tax", built: true },
   { id: "shifts", label: "Shift, tips and receipt", path: "/settings/shifts", built: true },
-  { id: "stations", label: "Stations and courses", path: "/settings/stations", built: false },
   { id: "backup", label: "Backup", path: "/settings/backup", built: false },
 ];
 

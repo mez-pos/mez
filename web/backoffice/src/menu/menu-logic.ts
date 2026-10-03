@@ -25,6 +25,17 @@ export function selectedCategory(menu: MenuEditor, wanted: number | null): Edito
   return menu.categories.find((c) => c.id === wanted) ?? menu.categories[0] ?? null;
 }
 
+/** The three views of the menu editor. */
+export type MenuView = "items" | "choices" | "setup";
+
+export const viewWords: Record<MenuView, string> = { items: "Items", choices: "Choices", setup: "Stations and courses" };
+
+/** The view a link asked for (`/menu?view=setup`): items unless it names another. */
+export function viewFromSearch(search: string): MenuView {
+  const v = new URLSearchParams(search).get("view");
+  return v === "choices" || v === "setup" ? v : "items";
+}
+
 /**
  * The item a link asked for (`/menu?item=12`), if the menu has it. A link from
  * the tax settings lists the items still without an HSN code; this is where

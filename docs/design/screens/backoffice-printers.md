@@ -28,7 +28,9 @@ Paper surface, inside `SignedInShell`. The back office home links here
     label and when; or "Nothing printed yet"
   - **Test page**, **Edit**, and **Retire** (or **Bring back** when retired),
     48px
-- **Where things print** (a `Card`): the receipt printer, then one row per
+- **Where things print** (a `Card`; for a person who may edit the menu, ending
+  with "Stations are added, renamed and retired in the menu" and a link to
+  `/menu?view=setup`, ADR-139): the receipt printer, then one row per
   active station, each a native select of the active printers plus "None".
   A change saves at once and says "Saved".
 - **Add / Edit** (`Modal`): name; **How it connects**: "Network (IP

@@ -137,6 +137,50 @@ another screen. It has been reloaded; move it again."
 - The writes of ADR-106. Every one answers only an id; the screen reads the
   editor again.
 
+## Stations and courses
+
+The third view, "Stations and courses" (`/menu?view=setup`; phase 10, Task 6j,
+ADR-139), under the same **Show** buttons as Items and Choices. It has no
+primary button of its own: each list has its own **Add**, secondary.
+
+- **Stations**, a `Card`: a title, one line ("Where an item is made: each
+  station has its own kitchen display, and prints on the printer you set for it
+  under Printers.") and **Add a station**. One row per station, in order,
+  retired ones struck through with "Retired": its name, its code in the numeral
+  face and how many items are made there (retired items count: "No items",
+  "1 item", "7 items"), then **Rename**, **Up**, **Down** (arrows, disabled at
+  the ends) and **Retire**, or **Bring back** for a retired one.
+- **Courses**, a `Card`, the same: "When an item is fired: course 1 first, then
+  the table asks for the next. Putting courses in a new order is refused while
+  any ticket is open, since tickets keep the number they were rung up at." Each
+  row's tag is its number ("Course 1"), which follows its place.
+- **Add a station** (`Modal`): **Name**, and **Code** ("Short and lowercase, like
+  bar. Empty makes one from the name. It cannot be changed later: tickets and
+  screens find the station by it."). **Add a course**: **Name** only; it is
+  numbered after the last. **Rename** shows the name alone, and for a station
+  "Its code, bar, never changes."
+- **Retire** (`Modal`, "Retire Bar"):
+  - A station: "It stops taking new items and tickets. If it prints on a printer,
+    the printer goes to the station you choose when that one has none. 10 items
+    are made here." A course: "It leaves the till. Tickets already rung up keep
+    the course they copied."
+  - **Move its 10 items to**, a select of the other rows in service ("Choose a
+    station"): required when the row has items ("Choose the station its items go
+    to."). A station with no items asks "Its printer, if it has one, goes to"
+    with "No station" as the choice; a course with no items asks nothing.
+  - The only row in service: "This is the only station in service. Add another
+    before retiring it.", and **Retire station** disabled.
+  - **Retire station** (or **Retire course**) is the danger button. On success a
+    toast says what moved: "Bar retired. 10 items moved to Kitchen. Its printer
+    now serves Kitchen."
+- **Bring back** puts a row in service again and moves nothing back: "Bar is
+  back in service."
+- Every change saves at once and the view reads the menu again. A refusal that
+  belongs to no field (a reorder under open tickets, a missing row) is the
+  screen's problem line under the **Show** buttons, in the server's words.
+- The item form's **Made at** and **Course** offer the rows in service only, and
+  say where they are set up.
+
 ## States
 
 - **No categories:** "No menu yet. Add a category, then the items in it."

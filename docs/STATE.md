@@ -13,30 +13,30 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6i: shift, tips and receipt on the screen** (ADR-138). The
-`/settings/shifts` section: a rules card (trading day start, drawer variance in
-major units, how tips are shared with a weight per role, late ticket minutes)
-and a receipt card (header and footer text, three things to print, and a
-preview of a sample receipt at 80mm or 58mm). The preview is the server's:
-`POST /api/v1/settings/receipt/preview` lays a made-up bill out with the real
-receipt layout (`escpos.SampleReceipt`, `escpos.Replay`, which the layout tests'
-decoder became). Tried in a browser: the rules card and its refusal, role
-weights, a save and reload, the preview at both widths including the address
-wrapping at 58mm, a live refusal of unprintable text, and a receipt saved. Before it,
-6h (ADR-137), 6g (ADR-136), 6f (ADR-135), 6e (ADR-134), 6d (ADR-133), 6c
-(ADR-132), 6b (ADR-131), 6a (ADR-130), the split (ADR-129).
+**Phase 10, Task 6j: stations and courses on the screen** (ADR-139). A third
+view of the menu editor, "Stations and courses" (`/menu?view=setup`): a list of
+each with its code or number and its item count, Add, Rename, up and down,
+Retire and Bring back. A retire asks where the items (and a station's printer)
+go and says what moved; the only row in service cannot be retired; a course
+reorder under open tickets is refused in the server's words. Built in the menu
+editor, not under Settings or Printers as the plan said, because the routes
+check `menu.edit` (ADR-139); the settings rail lost its "Stations and courses"
+entry and the Printers screen points to the new view. Tried in a browser: add a
+station (code derived), retire with and without a destination, retire an empty
+one, the last-station guard, add and reorder a course, retire a course with
+items, and the Printers pointer. Before it, 6i (ADR-138), 6h (ADR-137), 6g
+(ADR-136), 6f (ADR-135), 6e (ADR-134), 6d (ADR-133), 6c (ADR-132), 6b (ADR-131),
+6a (ADR-130), the split (ADR-129).
 
 ## Next task
 
-**Phase 10, Task 6j: Stations and courses on the screen.** Stations beside
-their printer on the Printers screen; courses where the spec puts them (a
-`stations` section of `/settings`, `built: true` in `settings-logic.ts`). The
-menu's item form picks from both already. Routes (ADR-134): `POST
-/api/v1/menu/stations`, `PUT .../{id}`, `PUT .../order`, `POST .../{id}/retire`
-(body `{ "move_to": id }`, answers with `items_moved` and `printer_moved`) and
-`.../restore`; the same for `/courses`. Extend the spec first: how an owner
-says where a retired station's items and printer go, and what ordering the
-courses means while tickets are open (`tickets_open`).
+**Phase 10, Task 6k: Devices.** Server and screen, spec first
+(`docs/design/screens/backoffice-devices.md`). Every paired device with its kind
+and when it was last seen; rename, revoke, and issue a pairing code for a kind. A
+back office cannot revoke itself. `device.manage`. Split it again if the server
+half fills a session. The nav entry (`Devices`, `/devices`, key `g e`) is Soon in
+`web/backoffice/src/shell/nav-logic.ts`: set `built: true` with the screen. See
+`internal/auth/devices.go` and `internal/api/devices.go` for what exists.
 
 ## Known broken / in progress
 
@@ -58,6 +58,11 @@ courses means while tickets are open (`tickets_open`).
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 
+- Stations and courses view (ADR-139): it cannot show whether a station has a
+  printer (that is `settings.edit` data), so a retire says the printer follows
+  and the toast says whether it did. A kitchen display set to a retired station
+  still shows its board and is set to another by hand (ADR-134). Ordering is by
+  arrows, not drag.
 - Shift, tips and receipt screen (ADR-138): the receipt preview is of a made-up
   bill and shows no credit note; it was checked against the layout, not a
   printer. A tip weight for a renamed or removed role is not shown and drops at
