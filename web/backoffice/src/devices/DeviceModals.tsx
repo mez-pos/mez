@@ -1,0 +1,238 @@
+// The three forms of the Devices screen (backoffice-devices.md): pair a device
+// and be shown its code, rename one, and confirm unpairing one.
+
+import { useState } from "react";
+import type { DeviceKind, DeviceRecordResponse, PairingCodeResponse } from "../../../shared/api-types";
+import { Button, Modal } from "../../../shared/ui";
+import { Choice, Field, inputClass } from "../FormFields";
+import type { Problem } from "../settings/problem";
+import { PAIRABLE, actionProblemOf, nameProblem, pairProblemOf, timeText, type PairField } from "./devices-logic";
+
+interface PairModalProps {
+  /** Makes the code for a name and kind. */
+  onPair: (name: string, kind: DeviceKind) => Promise<PairingCodeResponse>;
+  onClose: () => void;
+}
+
+export function PairModal({ onPair, onClose }: PairModalProps) {
+  const [name, setName] = useState("");
+  const [kind, setKind] = useState<DeviceKind>("terminal");
+  const [problem, setProblem] = useState<Problem<PairField> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [code, setCode] = useState<PairingCodeResponse | null>(null);
+
+  const make = async () => {
+    const refused = nameProblem(name);
+    if (refused) {
+      setProblem(refused);
+      return;
+    }
+    setBusy(true);
+    try {
+      setCode(await onPair(name.trim(), kind));
+    } catch (err) {
+      setProblem(pairProblemOf(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const on = (field: PairField) => (problem?.field === field ? problem.message : null);
+
+  if (code) {
+    return (
+      <Modal open onClose={onClose} title={`Pair ${name.trim()}`} footer={<Button variant="primary" onClick={onClose}>Done</Button>}>
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <p
+            aria-label={`Pairing code ${code.code.replace("-", " ")}`}
+            className="font-mono text-display tracking-widest text-heading"
+            data-testid="pairing-code"
+          >
+            {code.code}
+          </p>
+          <p className="text-base">
+            Enter this on the new device. It works once and runs out at {timeText(code.expires_at)}.
+          </p>
+        </div>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Pair a device"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" disabled={busy} onClick={() => void make()}>
+            {busy ? "Making a code" : "Make a code"}
+          </Button>
+        </>
+      }
+    >
+      <form
+        className="flex flex-col gap-5"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!busy) void make();
+        }}
+      >
+        {problem && problem.field === null && (
+          <p role="alert" className="text-base text-danger">
+            {problem.message}
+          </p>
+        )}
+        <Field label="Name" hint="What the device will be called: Counter 1, Pass, Office." error={on("name")}>
+          {(id) => (
+            <input
+              id={id}
+              className={inputClass}
+              value={name}
+              maxLength={64}
+              autoComplete="off"
+              onChange={(e) => {
+                setName(e.target.value);
+                setProblem(null);
+              }}
+            />
+          )}
+        </Field>
+        <Choice
+          label="What it is"
+          value={kind}
+          options={PAIRABLE}
+          onChange={(k: DeviceKind) => {
+            setKind(k);
+            setProblem(null);
+          }}
+          error={on("kind")}
+        />
+      </form>
+    </Modal>
+  );
+}
+
+interface RenameModalProps {
+  device: DeviceRecordResponse;
+  onRename: (name: string) => Promise<void>;
+  onClose: () => void;
+}
+
+export function RenameModal({ device, onRename, onClose }: RenameModalProps) {
+  const [name, setName] = useState(device.name);
+  const [problem, setProblem] = useState<Problem<PairField> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    const refused = nameProblem(name);
+    if (refused) {
+      setProblem(refused);
+      return;
+    }
+    setBusy(true);
+    try {
+      await onRename(name.trim());
+      onClose();
+    } catch (err) {
+      setProblem(pairProblemOf(err));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Rename ${device.name}`}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" disabled={busy} onClick={() => void save()}>
+            {busy ? "Saving" : "Save"}
+          </Button>
+        </>
+      }
+    >
+      <form
+        className="flex flex-col gap-5"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!busy) void save();
+        }}
+      >
+        {problem && problem.field !== "name" && (
+          <p role="alert" className="text-base text-danger">
+            {problem.message}
+          </p>
+        )}
+        <Field label="Name" hint="Its label on every screen and in the history. It keeps working." error={problem?.field === "name" ? problem.message : null}>
+          {(id) => (
+            <input
+              id={id}
+              className={inputClass}
+              value={name}
+              maxLength={64}
+              autoComplete="off"
+              onChange={(e) => {
+                setName(e.target.value);
+                setProblem(null);
+              }}
+            />
+          )}
+        </Field>
+      </form>
+    </Modal>
+  );
+}
+
+interface RevokeModalProps {
+  device: DeviceRecordResponse;
+  onRevoke: () => Promise<void>;
+  onClose: () => void;
+}
+
+export function RevokeModal({ device, onRevoke, onClose }: RevokeModalProps) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const confirm = async () => {
+    setBusy(true);
+    try {
+      await onRevoke();
+      onClose();
+    } catch (err) {
+      setError(actionProblemOf(err));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Revoke ${device.name}?`}
+      footer={
+        <>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="danger" disabled={busy} onClick={() => void confirm()}>
+            {busy ? "Revoking" : "Revoke device"}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-base">
+        It stops working at once and shows the pairing screen. Orders it took stay as they are. To use it again it needs a new code.
+      </p>
+      {error && (
+        <p role="alert" className="mt-3 text-base text-danger">
+          {error}
+        </p>
+      )}
+    </Modal>
+  );
+}

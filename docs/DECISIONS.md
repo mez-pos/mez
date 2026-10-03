@@ -4061,3 +4061,54 @@ items that name them.
 Cost: a venue setting that is not under Settings; an owner looking for stations
 under Printers is pointed, not served; the view cannot show whether a station
 has a printer.
+
+## ADR-140 - Devices: list, rename, revoke, and a device never revokes itself
+2026-10 · Status: accepted.
+Decision: `GET /api/v1/devices`, `POST /api/v1/devices/{id}/rename` and `POST
+/api/v1/devices/{id}/revoke` (all `device.manage`), beside the pairing-code route
+that already existed, and a Devices screen on them (`/devices`, key `g e`; spec
+`docs/design/screens/backoffice-devices.md`). The last entry of the back office
+navigation stops being Soon: every section is built.
+  - **No device may revoke itself, whatever its kind.** The task named the back
+    office; any paired device with a staff member signed in on it could otherwise
+    unpair the screen it is using, and a back office that does it cannot pair
+    another. `Devices.RevokeByPublicID` takes the acting device and refuses its own
+    id (`cannot_revoke_self`, 409), so the rule is in one place and not in a
+    handler. Two back offices can revoke each other; the one in use cannot revoke
+    itself. A venue's last back office therefore cannot be revoked from itself, and
+    the screen says so beside the disabled button.
+  - **The per-device routes are sub-paths, not `PUT /devices/{id}`.** The mux
+    refuses two patterns when neither is more specific: the existing method-less
+    catch-alls on `/api/v1/devices/pair`, `/me` and `/codes` (for a 405 in the
+    API's own words) overlap `PUT /api/v1/devices/{id}`. `POST .../{id}/rename`
+    and `.../{id}/revoke` do not, and follow `retire` and `restore` elsewhere.
+    Each answers with the list as it now stands.
+  - **A revoked device is listed, last, and keeps its name.** Revoking sets
+    `revoked_at` and keeps the row, as before, so history can still name the till
+    an event came from (`DeviceNamesForVenue`). A rename of a revoked device is
+    refused (`device_unpaired`, 409): relabelling a retired till would rename it
+    in history for no one's benefit. A rename of a live device relabels it
+    everywhere, history included, and does not touch its token or pairing.
+  - **Waiting codes are listed without their codes.** Only a code's hash is kept
+    (ADR-053), so the list says "Counter 1 (Till) runs out in 7 min" and cannot
+    show the code again: it was shown once, when it was made. A code used or run
+    out is not listed.
+  - **A refused name says it is the name.** A pairing code refused for its name
+    used to name the field `kind`. `auth.InvalidDevice` carries the field, still
+    an `ErrInvalidDevice`, and the name and kind refusals come back under their
+    own fields.
+  - **"Last seen" is as fresh as the server records it:** at most once a minute
+    (`touch`), so the list is read every 30 seconds and says "Seen just now" for
+    anything under a minute. A day without a request is shown in the warning ink
+    and in words. Dates are written out ("3 Oct 2026"), not asked of the browser's
+    locale, whose abbreviations differ.
+  - **Rename and revoke carry no `Idempotency-Key`,** as the menu editor's routes
+    do not: each is idempotent by nature (a revoke of a revoked device is not an
+    error; a rename to the same name is the same rename).
+Because: a till that walks out of the building, or a tablet that was sold, had to
+be unpaired by editing the database; and the one mistake that cannot be undone
+from the screen, revoking the screen itself, should not be possible from it.
+Cost: an open live stream of a revoked device is not closed: it authenticates when
+it connects, so it is refused at its next connect, while every request it makes
+is refused at once and it can sell nothing; its name in the hub is the one it
+connected with until it does.

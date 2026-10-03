@@ -6,6 +6,7 @@ import { Gate } from "../../shared/auth/Gate";
 import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { Splash } from "../../shared/screens/Splash";
+import { DevicesScreen } from "./devices/DevicesScreen";
 import { FloorScreen } from "./floor/FloorScreen";
 import { MenuScreen } from "./menu/MenuScreen";
 import { PrintersScreen } from "./printers/PrintersScreen";
@@ -84,6 +85,11 @@ function SignedInRoutes() {
             <SettingsScreen path={`/settings/${params.section}`} />
           </SectionGate>
         )}
+      </Route>
+      <Route path="/devices">
+        <SectionGate id="devices">
+          <DevicesScreen />
+        </SectionGate>
       </Route>
       <Route path="/printers">
         <SectionGate id="printers">

@@ -13,30 +13,28 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6j: stations and courses on the screen** (ADR-139). A third
-view of the menu editor, "Stations and courses" (`/menu?view=setup`): a list of
-each with its code or number and its item count, Add, Rename, up and down,
-Retire and Bring back. A retire asks where the items (and a station's printer)
-go and says what moved; the only row in service cannot be retired; a course
-reorder under open tickets is refused in the server's words. Built in the menu
-editor, not under Settings or Printers as the plan said, because the routes
-check `menu.edit` (ADR-139); the settings rail lost its "Stations and courses"
-entry and the Printers screen points to the new view. Tried in a browser: add a
-station (code derived), retire with and without a destination, retire an empty
-one, the last-station guard, add and reorder a course, retire a course with
-items, and the Printers pointer. Before it, 6i (ADR-138), 6h (ADR-137), 6g
-(ADR-136), 6f (ADR-135), 6e (ADR-134), 6d (ADR-133), 6c (ADR-132), 6b (ADR-131),
-6a (ADR-130), the split (ADR-129).
+**Phase 10, Task 6k: Devices** (ADR-140). Server: `GET /api/v1/devices`, `POST
+/api/v1/devices/{id}/rename` and `/revoke` (`internal/auth/devices_manage.go`,
+`internal/api/devices_manage.go`); a device may not revoke itself. Screen:
+`/devices` (`web/backoffice/src/devices/`, spec `backoffice-devices.md`): who is
+in service with kind, paired date and when last heard from, who is waiting to be
+paired, who was revoked; Pair a device (shows the code once), Rename, Revoke. The
+last Soon entry of the navigation is built. Tried in a browser: this device with
+Revoke disabled and its reason, a refused name, a pairing code and the device
+paired with it, the list after, rename, revoke and Revoked. Before it, 6j
+(ADR-139), 6i (ADR-138), 6h (ADR-137), 6g (ADR-136), 6f (ADR-135), 6e (ADR-134),
+6d (ADR-133), 6c (ADR-132), 6b (ADR-131), 6a (ADR-130), the split (ADR-129).
 
 ## Next task
 
-**Phase 10, Task 6k: Devices.** Server and screen, spec first
-(`docs/design/screens/backoffice-devices.md`). Every paired device with its kind
-and when it was last seen; rename, revoke, and issue a pairing code for a kind. A
-back office cannot revoke itself. `device.manage`. Split it again if the server
-half fills a session. The nav entry (`Devices`, `/devices`, key `g e`) is Soon in
-`web/backoffice/src/shell/nav-logic.ts`: set `built: true` with the screen. See
-`internal/auth/devices.go` and `internal/api/devices.go` for what exists.
+**Nothing buildable is left in Phase 10 but Task 6l (Backup configuration), which
+waits for phase 12, Task 4 (Litestream).** The human decides (Open questions,
+first item): build it after phase 12's Task 4, or move it into phase 12 so
+phase 10 can be ticked. Until they answer, do not guess. If it moves: edit
+`docs/phases/phase-10.md` and `phase-12.md`, tick Task 6, then read
+`docs/phases/phase-11.md` and start its first task. Phase 10's done-when (a new
+venue configured end to end from the back office and traded a full day) is a
+human check, as phase 09's is, and stays unticked below.
 
 ## Known broken / in progress
 
@@ -58,6 +56,12 @@ half fills a session. The nav entry (`Devices`, `/devices`, key `g e`) is Soon i
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 
+- Devices (ADR-140): revoking a device does not close its open live stream; it
+  is refused at its next connect, and every request it makes is refused at once.
+  A revoked till's name in the hub is the one it connected with. Rename and
+  revoke carry no `Idempotency-Key`. A device is "last seen" at most once a
+  minute. The pairing code is shown once and cannot be shown again from the
+  list (only its hash is kept).
 - Stations and courses view (ADR-139): it cannot show whether a station has a
   printer (that is `settings.edit` data), so a retire says the printer follows
   and the toast says whether it did. A kitchen display set to a retired station
@@ -75,7 +79,7 @@ half fills a session. The nav entry (`Devices`, `/devices`, key `g e`) is Soon i
 - Venue settings screen (ADR-136): the "Leave without saving?" prompt is not
   seen by eye (only a second section can raise it, from the rail), and the
   shell's navigation drops a draft without asking. Timezone suggestions come
-  from the browser's list. The Devices entry is still Soon.
+  from the browser's list.
 - Receipt template (ADR-135): no screen yet (6i). The till's on-screen invoice
   preview does not show the header and footer, and no logo (ADR-079). A
   duplicate of an old receipt prints with today's template. Not tried on a

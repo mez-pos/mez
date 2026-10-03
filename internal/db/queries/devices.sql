@@ -52,3 +52,34 @@ SELECT id, name
 FROM devices
 WHERE venue_id = ?
 ORDER BY id;
+
+-- The back office's devices screen (phase 10, Task 6k). Every one is scoped by
+-- venue_id: an id from another venue matches nothing.
+
+-- name: DevicesForVenue :many
+-- Every paired device, revoked ones last: the screen lists who is in service
+-- and who was. A guest session is not a device, and a row with no pairing is
+-- not one either.
+SELECT id, public_id, name, kind, paired_at, last_seen_at, revoked_at
+FROM devices
+WHERE venue_id = ? AND kind != 'guest' AND paired_at IS NOT NULL
+ORDER BY (revoked_at IS NOT NULL), id;
+
+-- name: DeviceByPublicID :one
+SELECT id, public_id, venue_id, name, kind, paired_at, last_seen_at, revoked_at
+FROM devices
+WHERE venue_id = ? AND public_id = ?;
+
+-- name: RenameDevice :execrows
+-- A revoked device keeps the name its history knows it by.
+UPDATE devices
+SET name = ?
+WHERE venue_id = ? AND id = ? AND revoked_at IS NULL;
+
+-- name: OpenPairingCodes :many
+-- Codes made and not yet used or expired, without the codes themselves: only
+-- their hashes are kept. The screen says a device is waiting to be paired.
+SELECT device_name, device_kind, created_at, expires_at
+FROM pairing_codes
+WHERE venue_id = ? AND redeemed_at IS NULL AND expires_at > ?
+ORDER BY id;

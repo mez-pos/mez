@@ -218,6 +218,13 @@ func (brokenDevices) Redeem(context.Context, string) (auth.Paired, error) {
 func (brokenDevices) CreatePairingCode(context.Context, auth.NewCode) (auth.PairingCode, error) {
 	return auth.PairingCode{}, errDiskGone
 }
+func (brokenDevices) Roster(context.Context, int64) (auth.Roster, error) {
+	return auth.Roster{}, errDiskGone
+}
+func (brokenDevices) Rename(context.Context, int64, string, string, int64) error { return errDiskGone }
+func (brokenDevices) RevokeByPublicID(context.Context, int64, string, int64, int64) error {
+	return errDiskGone
+}
 
 func TestAuthFailuresThatAreNotTheClientsFault(t *testing.T) {
 	h := newTestServer(t, testConfig(), WithDevices(brokenDevices{})).Handler()

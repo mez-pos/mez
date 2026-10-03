@@ -16,6 +16,9 @@ type Devices interface {
 	Authenticate(ctx context.Context, token string) (auth.Device, error)
 	Redeem(ctx context.Context, code string) (auth.Paired, error)
 	CreatePairingCode(ctx context.Context, n auth.NewCode) (auth.PairingCode, error)
+	Roster(ctx context.Context, venueID int64) (auth.Roster, error)
+	Rename(ctx context.Context, venueID int64, publicID, name string, by int64) error
+	RevokeByPublicID(ctx context.Context, venueID int64, publicID string, actingID, by int64) error
 }
 
 // WithDevices turns on device authentication and the pairing endpoint.
@@ -50,6 +53,7 @@ func (s *Server) mountDevices(mux *http.ServeMux) {
 		mux.Handle("POST /api/v1/devices/codes", s.requireDevice(s.requireStaff(
 			s.requirePermission(auth.PermDeviceManage, http.HandlerFunc(s.createPairingCode)))))
 		mux.HandleFunc("/api/v1/devices/codes", s.methodNotAllowed)
+		s.mountDeviceManagement(mux)
 	}
 }
 
@@ -78,8 +82,9 @@ func (s *Server) createPairingCode(w http.ResponseWriter, r *http.Request) {
 	code, err := s.devices.CreatePairingCode(r.Context(), auth.NewCode{
 		VenueID: dev.VenueID, CreatedBy: session.Staff.ID, DeviceName: req.Name, DeviceKind: req.Kind,
 	})
-	if errors.Is(err, auth.ErrInvalidDevice) {
-		writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, err.Error(), "kind")
+	var invalid *auth.InvalidDevice
+	if errors.As(err, &invalid) {
+		writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, invalid.Message, invalid.Field)
 		return
 	}
 	if err != nil {

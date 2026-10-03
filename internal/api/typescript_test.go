@@ -136,7 +136,7 @@ var errorCodes = []ErrorCode{
 	CodeStaffNotFound, CodeRoleNotFound, CodeRoleInUse, CodeRoleNameTaken, CodeBeyondYou, CodeLastManager, CodeInvalidPerson,
 	CodeInvalidFilter, CodeInvalidSetting, CodeVenueNotFound,
 	CodeTaxClassNotFound, CodeTaxClassNameTaken, CodeTaxClassInUse, CodeTicketsOpen,
-	CodeNumberingLocked, CodeNumberTaken, CodeCourseNotFound,
+	CodeNumberingLocked, CodeNumberTaken, CodeCourseNotFound, CodeDeviceNotFound, CodeCannotRevokeSelf, CodeDeviceUnpaired,
 }
 
 // generate builds the whole file.
@@ -289,7 +289,7 @@ func generate() (*ts.Generator, error) {
 	roots := []any{
 		// Errors and pairing.
 		Error{}, errorBody{}, pairRequest{}, deviceResponse{}, pairResponse{},
-		newCodeRequest{}, pairingCodeResponse{},
+		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{},
 		// Staff.
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},
 		// Orders: what is sent.

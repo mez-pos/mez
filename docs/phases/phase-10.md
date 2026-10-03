@@ -201,7 +201,7 @@ Phase 09.
     editor as a third view, where the routes' permission (`menu.edit`) is the
     gate, with a pointer from the Printers screen (ADR-139). The menu's item
     form picks from both already.
-  - [ ] **Task 6k: Devices.** Server and screen, spec first
+  - [x] **Task 6k: Devices.** Server and screen, spec first
     (`backoffice-devices.md`). Every paired device with its kind and
     when it was last seen; rename, revoke, and issue a pairing code for
     a kind. A back office cannot revoke itself. `device.manage`. Split

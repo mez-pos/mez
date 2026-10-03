@@ -100,7 +100,7 @@ describe("chord", () => {
     { name: "g then a goes to the audit", keys: [key("g", 0), key("a", 10)], want: ["/audit"] },
     { name: "g then p goes to people", keys: [key("g", 0), key("p", 10)], want: ["/people"] },
     { name: "g then v goes to the venue settings", keys: [key("g", 0), key("v", 10)], want: ["/settings"] },
-    { name: "a section not built yet goes nowhere", keys: [key("g", 0), key("e", 10)], want: [] },
+    { name: "g then e goes to the devices", keys: [key("g", 0), key("e", 10)], want: ["/devices"] },
     { name: "g then s goes to the sales reports", keys: [key("g", 0), key("s", 10)], want: ["/sales"] },
     { name: "a section the staff member cannot open goes nowhere", keys: [key("g", 0), key("t", 10)], held: manager, want: [] },
     { name: "an unknown letter ends the chord", keys: [key("g", 0), key("x", 10), key("t", 20)], want: [] },

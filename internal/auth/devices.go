@@ -8,9 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/db/gen"
@@ -141,14 +139,14 @@ func NewDevices(opts DevicesOptions) (*Devices, error) {
 // CreatePairingCode makes a code that pairs one device of the given name and
 // kind at the venue, valid for PairingCodeTTL.
 func (d *Devices) CreatePairingCode(ctx context.Context, n NewCode) (PairingCode, error) {
-	name := strings.TrimSpace(n.DeviceName)
-	if name == "" || utf8.RuneCountInString(name) > maxDeviceName {
-		return PairingCode{}, fmt.Errorf("%w: a name of 1 to %d characters is needed", ErrInvalidDevice, maxDeviceName)
+	name, err := cleanDeviceName(n.DeviceName)
+	if err != nil {
+		return PairingCode{}, err
 	}
 	switch n.DeviceKind {
 	case KindTerminal, KindKitchen, KindBackOffice:
 	default:
-		return PairingCode{}, fmt.Errorf("%w: kind %q", ErrInvalidDevice, n.DeviceKind)
+		return PairingCode{}, &InvalidDevice{Field: "kind", Message: fmt.Sprintf("kind %q is not a device that can be paired", n.DeviceKind)}
 	}
 	createdBy := sql.NullInt64{Int64: n.CreatedBy, Valid: n.CreatedBy > 0}
 	now := d.now().UTC()

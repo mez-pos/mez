@@ -143,11 +143,18 @@ type Querier interface {
 	DeleteSetting(ctx context.Context, arg DeleteSettingParams) error
 	DetachItemGroups(ctx context.Context, arg DetachItemGroupsParams) error
 	DeviceByID(ctx context.Context, id int64) (Device, error)
+	DeviceByPublicID(ctx context.Context, arg DeviceByPublicIDParams) (DeviceByPublicIDRow, error)
 	DeviceByTokenHash(ctx context.Context, tokenHash string) (Device, error)
 	//
 	// Every device ever paired at the venue, revoked included, for the same
 	// reason: history names the till an event came from.
 	DeviceNamesForVenue(ctx context.Context, venueID int64) ([]DeviceNamesForVenueRow, error)
+	// The back office's devices screen (phase 10, Task 6k). Every one is scoped by
+	// venue_id: an id from another venue matches nothing.
+	// Every paired device, revoked ones last: the screen lists who is in service
+	// and who was. A guest session is not a device, and a row with no pairing is
+	// not one either.
+	DevicesForVenue(ctx context.Context, venueID int64) ([]DevicesForVenueRow, error)
 	DrawerCountsForShift(ctx context.Context, shiftID int64) ([]DrawerCountsForShiftRow, error)
 	// The next job for each printer, if it is due: the oldest job not yet done
 	// or dead. A printer's jobs print one at a time and in order, because a job
@@ -245,6 +252,9 @@ type Querier interface {
 	// transaction that closes a shift or issues a correction.
 	// Moves the venue's counter on and returns the number taken.
 	NextZNumber(ctx context.Context, venueID int64) (int64, error)
+	// Codes made and not yet used or expired, without the codes themselves: only
+	// their hashes are kept. The screen says a device is waiting to be paired.
+	OpenPairingCodes(ctx context.Context, arg OpenPairingCodesParams) ([]OpenPairingCodesRow, error)
 	OpenShiftForVenue(ctx context.Context, venueID int64) (Shift, error)
 	// The shift an order event is recorded in, read inside the appending
 	// transaction so a close cannot slip between the read and the write. A
@@ -291,6 +301,8 @@ type Querier interface {
 	RenameArea(ctx context.Context, arg RenameAreaParams) (int64, error)
 	RenameCategory(ctx context.Context, arg RenameCategoryParams) (int64, error)
 	RenameCourse(ctx context.Context, arg RenameCourseParams) (int64, error)
+	// A revoked device keeps the name its history knows it by.
+	RenameDevice(ctx context.Context, arg RenameDeviceParams) (int64, error)
 	RenameStation(ctx context.Context, arg RenameStationParams) (int64, error)
 	// On start, jobs a crash left printing go back to queued. Whether their
 	// bytes reached the printer is unknown; printing twice beats never.

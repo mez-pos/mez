@@ -125,7 +125,10 @@ export type ErrorCode =
   | 'tickets_open'
   | 'numbering_locked'
   | 'number_taken'
-  | 'course_not_found';
+  | 'course_not_found'
+  | 'device_not_found'
+  | 'cannot_revoke_self'
+  | 'device_unpaired';
 
 export type OrderStatus =
   | 'open'
@@ -675,6 +678,31 @@ export interface NewCodeRequest {
 export interface PairingCodeResponse {
   code: string;
   expires_at: string;
+}
+
+export interface DeviceRecordResponse {
+  id: string;
+  name: string;
+  kind: DeviceKind;
+  paired_at: string;
+  last_seen_at?: string;
+  revoked_at?: string;
+  this: boolean;
+}
+
+export interface WaitingCodeResponse {
+  name: string;
+  kind: DeviceKind;
+  expires_at: string;
+}
+
+export interface DeviceListResponse {
+  devices: DeviceRecordResponse[];
+  waiting: WaitingCodeResponse[];
+}
+
+export interface RenameDeviceRequest {
+  name: string;
 }
 
 export interface StaffResponse {

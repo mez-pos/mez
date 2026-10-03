@@ -78,7 +78,7 @@ export const NAV: readonly NavGroup[] = [
       { id: "floor", label: "Floor plan", path: "/floor", needs: "settings.edit", key: "f", built: true, description: "Areas and tables." },
       { id: "printers", label: "Printers", path: "/printers", needs: "settings.edit", key: "t", built: true, description: "Receipt and kitchen printers, and where each ticket prints." },
       { id: "settings", label: "Venue settings", path: "/settings", needs: "settings.edit", key: "v", built: true, description: "Tax, invoice series, currency, shift and tip rules." },
-      { id: "devices", label: "Devices", path: "/devices", needs: "device.manage", key: "e", built: false, description: "Tills, kitchen displays and back offices paired here." },
+      { id: "devices", label: "Devices", path: "/devices", needs: "device.manage", key: "e", built: true, description: "Tills, kitchen displays and back offices paired here." },
     ],
   },
 ];

@@ -464,6 +464,15 @@ func (workingDevices) Redeem(context.Context, string) (auth.Paired, error) {
 func (workingDevices) CreatePairingCode(context.Context, auth.NewCode) (auth.PairingCode, error) {
 	return auth.PairingCode{}, errors.New("not used")
 }
+func (workingDevices) Roster(context.Context, int64) (auth.Roster, error) {
+	return auth.Roster{}, errors.New("not used")
+}
+func (workingDevices) Rename(context.Context, int64, string, string, int64) error {
+	return errors.New("not used")
+}
+func (workingDevices) RevokeByPublicID(context.Context, int64, string, int64, int64) error {
+	return errors.New("not used")
+}
 
 func TestStaffFailuresThatAreNotTheClientsFault(t *testing.T) {
 	h := newTestServer(t, testConfig(), WithDevices(workingDevices{}), WithStaff(brokenStaff{})).Handler()

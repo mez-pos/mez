@@ -58,7 +58,7 @@ Paper surface, inside `SignedInShell` (header: the logo, then `<section> ·
 | Floor plan | `/floor` | `settings.edit` | phase 08 |
 | Printers | `/printers` | `settings.edit` | phase 07 |
 | Venue settings | `/settings` | `settings.edit` | Task 6g |
-| Devices | `/devices` | `device.manage` | Task 6 |
+| Devices | `/devices` | `device.manage` | Task 6k |
 
 - An entry you lack the permission for is **not shown**. A group with no
   entries left is not shown either. A cashier signed in here sees

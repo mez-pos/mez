@@ -99,6 +99,44 @@ func (q *Queries) DeviceByID(ctx context.Context, id int64) (Device, error) {
 	return i, err
 }
 
+const deviceByPublicID = `-- name: DeviceByPublicID :one
+SELECT id, public_id, venue_id, name, kind, paired_at, last_seen_at, revoked_at
+FROM devices
+WHERE venue_id = ? AND public_id = ?
+`
+
+type DeviceByPublicIDParams struct {
+	VenueID  int64
+	PublicID string
+}
+
+type DeviceByPublicIDRow struct {
+	ID         int64
+	PublicID   string
+	VenueID    int64
+	Name       string
+	Kind       string
+	PairedAt   sql.NullTime
+	LastSeenAt sql.NullTime
+	RevokedAt  sql.NullTime
+}
+
+func (q *Queries) DeviceByPublicID(ctx context.Context, arg DeviceByPublicIDParams) (DeviceByPublicIDRow, error) {
+	row := q.db.QueryRowContext(ctx, deviceByPublicID, arg.VenueID, arg.PublicID)
+	var i DeviceByPublicIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.VenueID,
+		&i.Name,
+		&i.Kind,
+		&i.PairedAt,
+		&i.LastSeenAt,
+		&i.RevokedAt,
+	)
+	return i, err
+}
+
 const deviceByTokenHash = `-- name: DeviceByTokenHash :one
 SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at
 FROM devices
@@ -160,6 +198,109 @@ func (q *Queries) DeviceNamesForVenue(ctx context.Context, venueID int64) ([]Dev
 	return items, nil
 }
 
+const devicesForVenue = `-- name: DevicesForVenue :many
+
+SELECT id, public_id, name, kind, paired_at, last_seen_at, revoked_at
+FROM devices
+WHERE venue_id = ? AND kind != 'guest' AND paired_at IS NOT NULL
+ORDER BY (revoked_at IS NOT NULL), id
+`
+
+type DevicesForVenueRow struct {
+	ID         int64
+	PublicID   string
+	Name       string
+	Kind       string
+	PairedAt   sql.NullTime
+	LastSeenAt sql.NullTime
+	RevokedAt  sql.NullTime
+}
+
+// The back office's devices screen (phase 10, Task 6k). Every one is scoped by
+// venue_id: an id from another venue matches nothing.
+// Every paired device, revoked ones last: the screen lists who is in service
+// and who was. A guest session is not a device, and a row with no pairing is
+// not one either.
+func (q *Queries) DevicesForVenue(ctx context.Context, venueID int64) ([]DevicesForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, devicesForVenue, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DevicesForVenueRow{}
+	for rows.Next() {
+		var i DevicesForVenueRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.Name,
+			&i.Kind,
+			&i.PairedAt,
+			&i.LastSeenAt,
+			&i.RevokedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const openPairingCodes = `-- name: OpenPairingCodes :many
+SELECT device_name, device_kind, created_at, expires_at
+FROM pairing_codes
+WHERE venue_id = ? AND redeemed_at IS NULL AND expires_at > ?
+ORDER BY id
+`
+
+type OpenPairingCodesParams struct {
+	VenueID   int64
+	ExpiresAt time.Time
+}
+
+type OpenPairingCodesRow struct {
+	DeviceName string
+	DeviceKind string
+	CreatedAt  time.Time
+	ExpiresAt  time.Time
+}
+
+// Codes made and not yet used or expired, without the codes themselves: only
+// their hashes are kept. The screen says a device is waiting to be paired.
+func (q *Queries) OpenPairingCodes(ctx context.Context, arg OpenPairingCodesParams) ([]OpenPairingCodesRow, error) {
+	rows, err := q.db.QueryContext(ctx, openPairingCodes, arg.VenueID, arg.ExpiresAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []OpenPairingCodesRow{}
+	for rows.Next() {
+		var i OpenPairingCodesRow
+		if err := rows.Scan(
+			&i.DeviceName,
+			&i.DeviceKind,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const pairingCodeByHash = `-- name: PairingCodeByHash :one
 SELECT id, venue_id, code_hash, device_name, device_kind, created_by,
        created_at, expires_at, redeemed_at, device_id
@@ -200,6 +341,27 @@ type RedeemPairingCodeParams struct {
 // Only an unredeemed code changes, so two redeemers cannot both succeed.
 func (q *Queries) RedeemPairingCode(ctx context.Context, arg RedeemPairingCodeParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, redeemPairingCode, arg.RedeemedAt, arg.DeviceID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const renameDevice = `-- name: RenameDevice :execrows
+UPDATE devices
+SET name = ?
+WHERE venue_id = ? AND id = ? AND revoked_at IS NULL
+`
+
+type RenameDeviceParams struct {
+	Name    string
+	VenueID int64
+	ID      int64
+}
+
+// A revoked device keeps the name its history knows it by.
+func (q *Queries) RenameDevice(ctx context.Context, arg RenameDeviceParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, renameDevice, arg.Name, arg.VenueID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
