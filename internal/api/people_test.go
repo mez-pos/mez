@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/service/people"
 )
 
@@ -46,7 +47,7 @@ func roleID(t *testing.T, p peopleResponse, name string) int64 {
 func TestPeopleOverHTTP(t *testing.T) {
 	w, owner := newPeopleTill(t)
 	all := w.people(t, owner)
-	if len(all.Staff) != 2 || len(all.Roles) != 4 {
+	if len(all.Staff) != 2 || len(all.Roles) != len(auth.DefaultRoles()) {
 		t.Fatalf("people = %+v", all)
 	}
 

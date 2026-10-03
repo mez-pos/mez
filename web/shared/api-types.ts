@@ -708,6 +708,7 @@ export interface RenameDeviceRequest {
 export interface StaffResponse {
   id: string;
   name: string;
+  role: string;
 }
 
 export interface StaffListResponse {

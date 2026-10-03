@@ -27,6 +27,7 @@ type demoPerson struct {
 var demoStaff = []demoPerson{
 	{Name: "Arjun", Role: "manager", PIN: "2222"},
 	{Name: "Meera", Role: "cashier", PIN: "3333"},
+	{Name: "Kabir", Role: "waiter", PIN: "5555"},
 	{Name: "Ravi", Role: "kitchen", PIN: "4444"},
 }
 

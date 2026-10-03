@@ -355,3 +355,40 @@ func TestLockRemaining(t *testing.T) {
 		})
 	}
 }
+
+// TestAStaffMemberCarriesTheirRoleName: the sign-in screen shows a role under
+// each name, and every way a person reaches the code (the list, a sign-in, a
+// session found again, a manager's override) has to say it.
+func TestAStaffMemberCarriesTheirRoleName(t *testing.T) {
+	w := newStaffWorld(t)
+	ctx := context.Background()
+	grant(t, w, w.ravi.RoleID, PermLineVoid)
+
+	list, err := w.auth.ActiveStaff(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	roles := map[string]string{}
+	for _, s := range list {
+		roles[s.Name] = s.RoleName
+	}
+	if roles["Asha"] != "cashier" || roles["Ravi"] != "manager" || len(roles) != 2 {
+		t.Errorf("the list says %v", roles)
+	}
+
+	in, err := w.auth.SignIn(ctx, w.till, "stf_ASHA0001", "2468")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if in.Session.Staff.RoleName != "cashier" {
+		t.Errorf("a sign-in says %q", in.Session.Staff.RoleName)
+	}
+	again, err := w.auth.Session(ctx, w.till, in.Token)
+	if err != nil || again.Staff.RoleName != "cashier" {
+		t.Errorf("a session found again says %q (%v)", again.Staff.RoleName, err)
+	}
+	by, err := w.auth.Authorise(ctx, w.till, "stf_RAVI0001", "1357", PermLineVoid)
+	if err != nil || by.RoleName != "manager" {
+		t.Errorf("an override says %q (%v)", by.RoleName, err)
+	}
+}

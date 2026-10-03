@@ -37,13 +37,14 @@ WHERE public_id = ?;
 -- name: ActiveStaffForVenue :many
 --
 -- The index on (venue_id, active) is what this reads down, which is why it
--- exists.
+-- exists. The role's name rides along for the sign-in screen.
 SELECT
-    id, public_id, venue_id, role_id, name, pin_hash, active,
-    created_at, updated_at
-FROM staff
-WHERE venue_id = ? AND active = 1
-ORDER BY name;
+    s.id, s.public_id, s.venue_id, s.role_id, r.name AS role_name, s.name, s.pin_hash, s.active,
+    s.created_at, s.updated_at
+FROM staff s
+JOIN roles r ON r.id = s.role_id
+WHERE s.venue_id = ? AND s.active = 1
+ORDER BY s.name;
 
 -- name: DeactivateStaff :exec
 --

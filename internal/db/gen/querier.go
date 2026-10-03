@@ -23,8 +23,8 @@ type Querier interface {
 	ActiveModifiers(ctx context.Context, venueID int64) ([]ActiveModifiersRow, error)
 	//
 	// The index on (venue_id, active) is what this reads down, which is why it
-	// exists.
-	ActiveStaffForVenue(ctx context.Context, venueID int64) ([]Staff, error)
+	// exists. The role's name rides along for the sign-in screen.
+	ActiveStaffForVenue(ctx context.Context, venueID int64) ([]ActiveStaffForVenueRow, error)
 	ActiveStationCount(ctx context.Context, venueID int64) (int64, error)
 	ActiveStations(ctx context.Context, venueID int64) ([]ActiveStationsRow, error)
 	AddItemRecipePart(ctx context.Context, arg AddItemRecipePartParams) error

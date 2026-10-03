@@ -86,6 +86,10 @@ type Staff struct {
 	VenueID  int64
 	Name     string
 	RoleID   int64
+	// RoleName is what the role is called, for the sign-in screen to show
+	// under the name. It is a label: what a person may do is the role's
+	// permissions, never its name.
+	RoleName string
 }
 
 // Session is a signed-in staff member on a device.
@@ -163,7 +167,7 @@ func (a *StaffAuth) ActiveStaff(ctx context.Context, venueID int64) ([]Staff, er
 	}
 	out := make([]Staff, len(rows))
 	for i, r := range rows {
-		out[i] = Staff{ID: r.ID, PublicID: r.PublicID, VenueID: r.VenueID, Name: r.Name, RoleID: r.RoleID}
+		out[i] = Staff{ID: r.ID, PublicID: r.PublicID, VenueID: r.VenueID, Name: r.Name, RoleID: r.RoleID, RoleName: r.RoleName}
 	}
 	return out, nil
 }
@@ -180,13 +184,17 @@ func (a *StaffAuth) SignIn(ctx context.Context, dev Device, staffRef, pin string
 	if err != nil {
 		return SignedIn{}, err
 	}
+	who, err := a.staffOf(ctx, row)
+	if err != nil {
+		return SignedIn{}, err
+	}
 	now := a.now().UTC()
 	token, hashed, err := newToken(a.entropy, sessionTokenPrefix)
 	if err != nil {
 		return SignedIn{}, err
 	}
 	session := Session{
-		Staff:     staffOf(row),
+		Staff:     who,
 		DeviceID:  dev.ID,
 		ExpiresAt: now.Add(a.ttl),
 	}
@@ -214,12 +222,17 @@ func (a *StaffAuth) Authorise(ctx context.Context, dev Device, staffRef, pin str
 	if err != nil {
 		return Staff{}, err
 	}
-	return staffOf(row), nil
+	return a.staffOf(ctx, row)
 }
 
-// staffOf is a staff row as the rest of the system sees it.
-func staffOf(row gen.Staff) Staff {
-	return Staff{ID: row.ID, PublicID: row.PublicID, VenueID: row.VenueID, Name: row.Name, RoleID: row.RoleID}
+// staffOf is a staff row as the rest of the system sees it, with the name of
+// their role, which the row itself does not carry.
+func (a *StaffAuth) staffOf(ctx context.Context, row gen.Staff) (Staff, error) {
+	role, err := a.db.Queries().RoleByID(ctx, row.RoleID)
+	if err != nil {
+		return Staff{}, fmt.Errorf("auth: reading the role of staff %d: %w", row.ID, err)
+	}
+	return Staff{ID: row.ID, PublicID: row.PublicID, VenueID: row.VenueID, Name: row.Name, RoleID: row.RoleID, RoleName: role.Name}, nil
 }
 
 // verify is the PIN check both a sign-in and an override run: find the staff
@@ -444,7 +457,7 @@ func (a *StaffAuth) Session(ctx context.Context, dev Device, token string) (Sess
 	}
 	return Session{
 		ID:        row.ID,
-		Staff:     Staff{ID: row.StaffID, PublicID: row.StaffPublicID, VenueID: row.VenueID, Name: row.StaffName, RoleID: row.RoleID},
+		Staff:     Staff{ID: row.StaffID, PublicID: row.StaffPublicID, VenueID: row.VenueID, Name: row.StaffName, RoleID: row.RoleID, RoleName: row.RoleName},
 		DeviceID:  row.DeviceID,
 		ExpiresAt: row.ExpiresAt.UTC(),
 	}, nil

@@ -7,7 +7,7 @@ const states: Record<string, AuthStatus> = {
   checking: { kind: "checking" },
   unpaired: { kind: "unpaired", notice: null },
   locked: { kind: "locked", device, notice: null },
-  signed_in: { kind: "signed_in", device, staff: { id: "s", name: "Asha" }, permissions: [], expiresAt: "x" },
+  signed_in: { kind: "signed_in", device, staff: { id: "s", name: "Asha", role: "cashier" }, permissions: [], expiresAt: "x" },
 };
 
 describe("routeFor", () => {

@@ -13,29 +13,44 @@ import (
 
 const activeStaffForVenue = `-- name: ActiveStaffForVenue :many
 SELECT
-    id, public_id, venue_id, role_id, name, pin_hash, active,
-    created_at, updated_at
-FROM staff
-WHERE venue_id = ? AND active = 1
-ORDER BY name
+    s.id, s.public_id, s.venue_id, s.role_id, r.name AS role_name, s.name, s.pin_hash, s.active,
+    s.created_at, s.updated_at
+FROM staff s
+JOIN roles r ON r.id = s.role_id
+WHERE s.venue_id = ? AND s.active = 1
+ORDER BY s.name
 `
 
+type ActiveStaffForVenueRow struct {
+	ID        int64
+	PublicID  string
+	VenueID   int64
+	RoleID    int64
+	RoleName  string
+	Name      string
+	PinHash   string
+	Active    bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 // The index on (venue_id, active) is what this reads down, which is why it
-// exists.
-func (q *Queries) ActiveStaffForVenue(ctx context.Context, venueID int64) ([]Staff, error) {
+// exists. The role's name rides along for the sign-in screen.
+func (q *Queries) ActiveStaffForVenue(ctx context.Context, venueID int64) ([]ActiveStaffForVenueRow, error) {
 	rows, err := q.db.QueryContext(ctx, activeStaffForVenue, venueID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Staff{}
+	items := []ActiveStaffForVenueRow{}
 	for rows.Next() {
-		var i Staff
+		var i ActiveStaffForVenueRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.PublicID,
 			&i.VenueID,
 			&i.RoleID,
+			&i.RoleName,
 			&i.Name,
 			&i.PinHash,
 			&i.Active,

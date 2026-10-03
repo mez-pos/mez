@@ -30,9 +30,10 @@ RETURNING id;
 -- name: StaffSessionByTokenHash :one
 SELECT
     s.id, s.venue_id, s.staff_id, s.device_id, s.expires_at, s.ended_at,
-    st.public_id AS staff_public_id, st.name AS staff_name, st.role_id, st.active AS staff_active
+    st.public_id AS staff_public_id, st.name AS staff_name, st.role_id, r.name AS role_name, st.active AS staff_active
 FROM staff_sessions s
 JOIN staff st ON st.id = s.staff_id
+JOIN roles r ON r.id = st.role_id
 WHERE s.token_hash = ?;
 
 -- name: EndStaffSession :execrows

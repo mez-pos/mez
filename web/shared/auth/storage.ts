@@ -107,5 +107,15 @@ function isStoredDevice(v: unknown): v is StoredDevice {
 function isStoredStaff(v: unknown): v is StoredStaff {
   const perms = isObject(v) ? v.permissions : undefined;
   const permsOK = perms === undefined || (Array.isArray(perms) && perms.every((p) => typeof p === "string"));
-  return isObject(v) && typeof v.token === "string" && typeof v.expiresAt === "string" && isObject(v.staff) && typeof v.staff.id === "string" && permsOK;
+  // A session stored before sessions named the role has none: it is dropped,
+  // and the person signs in again, rather than carried with a role of undefined.
+  return (
+    isObject(v) &&
+    typeof v.token === "string" &&
+    typeof v.expiresAt === "string" &&
+    isObject(v.staff) &&
+    typeof v.staff.id === "string" &&
+    typeof v.staff.role === "string" &&
+    permsOK
+  );
 }

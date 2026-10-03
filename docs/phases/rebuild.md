@@ -152,7 +152,7 @@ reload: the terminal on http://localhost:5173 (the kitchen at `/kitchen`) and
 the back office on http://localhost:5174/backoffice/. Ctrl+C stops all three.
 
 Sign in as Priya (PIN 1234), or as the demo staff: Arjun the manager (2222),
-Meera the cashier (3333), Ravi in the kitchen (4444). Another code, for a
+Meera the cashier (3333), Kabir the waiter (5555), Ravi in the kitchen (4444). Another code, for a
 browser that is not paired yet: `bin/mez pair -data-dir .dev-data -device-kind
 terminal`. A venue made before Task 0 has no floor or staff: delete
 `.dev-data` and run `make dev` again.
@@ -174,7 +174,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
 
 - [ ] **Task 1 - What the design needs from the server.** Split into
   sub-tasks before starting; each is domain code with tests.
-  - 1a. A `waiter` role (take orders, send, see own tables; no refunds, no
+  - [x] 1a (ADR-145). A `waiter` role (take orders, send, see own tables; no refunds, no
     shift close). `GET /api/v1/staff` returns each person's role name, so
     the login can show it.
   - 1b. Service type on an order: dine-in, takeaway, delivery. A new field

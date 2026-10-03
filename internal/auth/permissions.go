@@ -171,6 +171,13 @@ func DefaultRoles() []RoleTemplate {
 		{Name: "cashier", Permissions: []Permission{
 			PermOrderOpen, PermOrderEdit, PermPaymentTake, PermKitchenView,
 		}},
+		// A waiter works a tablet: takes orders, sends them to the kitchen and
+		// settles the bill at the table (ADR-145). The same permissions as the
+		// cashier today; what differs is where they land after signing in.
+		// Migration 00031 gives this role to venues that already exist.
+		{Name: "waiter", Permissions: []Permission{
+			PermOrderOpen, PermOrderEdit, PermPaymentTake, PermKitchenView,
+		}},
 		{Name: "kitchen", Permissions: []Permission{PermKitchenView}},
 	}
 }

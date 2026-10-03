@@ -176,9 +176,13 @@ func TestSignInOverHTTP(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &list); err != nil || len(list.Staff) != 2 || list.Staff[0].ID != "stf_ASHA0001" {
 		t.Fatalf("staff list = %s (%v)", rec.Body, err)
 	}
+	// The sign-in screen shows the role under the name (rebuild Task 1a).
+	if roles := []string{list.Staff[0].Role, list.Staff[1].Role}; roles[0] != "cashier" || roles[1] != "owner" {
+		t.Errorf("the list's roles = %v, want cashier and owner", roles)
+	}
 
 	in := w.signIn(t, "2468")
-	if in.Token == "" || in.Staff.Name != "Asha" || in.ExpiresAt.IsZero() {
+	if in.Token == "" || in.Staff.Name != "Asha" || in.Staff.Role != "cashier" || in.ExpiresAt.IsZero() {
 		t.Fatalf("signed in = %+v", in)
 	}
 

@@ -14,33 +14,26 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 0: the dev loop and the demo venue** (ADR-144). `mez pair`
-makes a pairing code at the machine (no database or venue is refused; the
-expiry is on the venue's clock). `-demo-menu` now makes a demo cafe: the menu,
-twelve tables in two areas, and Arjun (manager, 2222), Meera (cashier, 3333)
-and Ravi (kitchen, 4444), PINs public and printed. `make dev` runs
-`build/dev.sh`: it builds, sets up `.dev-data` on a first run with a code for
-each app, starts the server on 7791 and both apps under Vite, and stops all
-three on Ctrl+C. Go tests for pair, the demo floor and the demo staff;
-`make check` passes. `make dev` itself was tried with the server and a Vite
-app, on other ports because the earlier dev servers were still running; the two
-Vite apps together were not started by it, and no screen has changed yet.
+**Rebuild, Task 1a: the waiter role and role names** (ADR-145). `waiter` is a
+default role (order.open, order.edit, payment.take, kitchen.view); migration
+00031 gives it to existing venues. `GET /api/v1/staff` and sessions carry
+`role`. The demo venue has Kabir (waiter, 5555). The web auth store drops a
+session saved before roles were named. Tests: the role's permissions, role names
+on every auth path, the migration (once, and not beside the owner's own
+"waiter"), the stored-session drop. `make check` and `make build-web` pass.
+Not tried in a browser: no screen shows a role yet (Task 3).
 
-Before it: the rebuild was planned (ADR-143, `docs/phases/rebuild.md`), and
-`MEZ_DEV_SERVER` points the Vite proxy at a server on another port. Before
-that, a code audit and documentation pass (ADR-141, ADR-142): CI fixed,
-duplication removed, Prettier adopted, README, `CONTRIBUTING.md` and
-`docs/deploy.md` written, `build/Dockerfile` and compose built and tried.
+Before it: Task 0 (ADR-144), `mez pair`, a demo cafe and `make dev`. Before that,
+the rebuild plan (ADR-143, `docs/phases/rebuild.md`).
 
 ## Next task
 
-**Rebuild, Task 1** (what the design needs from the server), in sub-tasks:
-1a a `waiter` role and `GET /api/v1/staff` returning each person's role name
-(add a waiter to `demoStaff`: `TestDemoVenueHasEveryRole` fails until then),
-1b service type on an order, 1c item description, dietary mark and popular
-flag. Then Task 2 (the shell) and Task 3 (login). Phase 11 waits for this
-phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its
-done-when is a human check and stays unticked below.
+**Rebuild, Task 1b** (service type on an order: dine-in, takeaway, delivery, a
+new field on the opening event; guest count if the events lack it), then 1c
+(item description, dietary mark, popular flag). 1b moves
+`order.ProjectionVersion`. Then Task 2 (the shell) and Task 3 (login). Phase 11
+waits for this phase. Phase 10's tasks are all done (6l moved to phase 12,
+ADR-141); its done-when is a human check and stays unticked below.
 
 ## Known broken / in progress
 

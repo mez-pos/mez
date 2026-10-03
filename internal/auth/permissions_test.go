@@ -74,6 +74,20 @@ func TestDefaultRoles(t *testing.T) {
 	if !slices.Equal(roles["kitchen"], []Permission{PermKitchenView}) {
 		t.Errorf("the kitchen role = %v", roles["kitchen"])
 	}
+	// The waiter takes orders, sends them and settles the bill at the table
+	// (ADR-145). Nothing that gives money back or changes what was rung up
+	// without a manager, and no say over the shift. The same list is in
+	// migration 00031, which gives the role to venues that already exist.
+	wantWaiter := []Permission{PermOrderOpen, PermOrderEdit, PermPaymentTake, PermKitchenView}
+	if !slices.Equal(roles["waiter"], wantWaiter) {
+		t.Errorf("the waiter role = %v, want %v", roles["waiter"], wantWaiter)
+	}
+	for _, p := range []Permission{PermLineVoid, PermLineComp, PermDiscountGive, PermPaymentVoid, PermRefundGive,
+		PermOrderReopen, PermShiftManage, PermCashMove} {
+		if slices.Contains(roles["waiter"], p) {
+			t.Errorf("a waiter can %s", p)
+		}
+	}
 	// Every template is made of permissions this build knows.
 	for name, perms := range roles {
 		for _, p := range perms {

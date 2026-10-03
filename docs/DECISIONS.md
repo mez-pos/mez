@@ -4190,3 +4190,29 @@ Cost: a person who runs `-demo-menu` on a real venue has four known PINs until
 they change them. A dev venue made before this has no floor or staff: delete
 `.dev-data` and run `make dev` again.
 ---
+
+## ADR-145 - The waiter role, and a role's name on every staff member
+2026-10 · Status: accepted
+Decision: a `waiter` role joins `auth.DefaultRoles`: order.open, order.edit,
+payment.take, kitchen.view. Migration 00031 adds it, once, to venues that exist,
+skipping a venue that already has a role called "waiter" in any case. `GET
+/api/v1/staff` and every session response carry `role`, the role's name, on the
+staff member; `auth.Staff` gains `RoleName`, filled by the staff list, a
+sign-in, a session found again and an override.
+  - **A name is a label.** Nothing checks a role by name; what a person may do
+    is the permissions on the session. The sign-in screen (Task 3) shows the
+    name under the face and the landing (Task 2) will follow permissions, not
+    the word "waiter".
+  - **Waiter and cashier hold the same permissions today.** The design draws
+    the waiter settling the bill (T05), and neither may refund, void, discount
+    or manage the shift. What differs is where each lands. "Own tables" (T01) is
+    a view of the orders a person opened, built in Task 11; it is not a
+    permission.
+  - A session stored in a browser before this has no role, so it is dropped and
+    the person signs in again.
+Because: the rebuild lands people by role, and a role that does not exist
+cannot be signed into or demonstrated.
+Cost: the shift's count route is guarded by payment.take, so a waiter can count
+a drawer; Task 4 decides whether that stays. The migration's list and
+`DefaultRoles` are two copies of one list, each held by a test.
+---

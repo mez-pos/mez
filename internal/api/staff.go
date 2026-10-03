@@ -90,6 +90,9 @@ func (s *Server) requireStaff(next http.Handler) http.Handler {
 type staffResponse struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+	// Role is the name of their role, shown under the name on the sign-in
+	// screen. It is a label only: the permissions are on the session.
+	Role string `json:"role"`
 }
 
 type staffListResponse struct {
@@ -114,7 +117,7 @@ type sessionResponse struct {
 }
 
 func toStaffResponse(s auth.Staff) staffResponse {
-	return staffResponse{ID: s.PublicID, Name: s.Name}
+	return staffResponse{ID: s.PublicID, Name: s.Name, Role: s.RoleName}
 }
 
 // listStaff is who can sign in here, for the terminal's name tiles.

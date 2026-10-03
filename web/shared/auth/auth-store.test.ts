@@ -17,7 +17,7 @@ const json = (status: number, body: unknown, headers: Record<string, string> = {
 const refuse = (code: string) => json(401, { error: { code, message: code } });
 
 const till: DeviceResponse = { id: "dev_1", name: "Counter 1", kind: "terminal" };
-const asha = { id: "stf_1", name: "Asha" };
+const asha = { id: "stf_1", name: "Asha", role: "cashier" };
 
 function setup(route: Route, seed: { device?: boolean; staff?: boolean; permissions?: readonly Permission[] } = {}) {
   const local = new MapStorage();
@@ -80,6 +80,12 @@ describe("AuthStore.boot", () => {
     expect(store.staff()?.permissions).toBeUndefined();
     await auth.boot();
     expect(auth.current()).toMatchObject({ kind: "signed_in", permissions: [] });
+  });
+
+  it("forgets a session stored before sessions named the role", () => {
+    const { store } = setup(unreachable, { device: true });
+    store.saveStaff({ token: "nfs_old", staff: { id: "stf_1", name: "Asha" } as never, expiresAt: "2026-09-21T20:00:00Z" });
+    expect(store.staff()).toBeNull();
   });
 
   it("is locked, saying so, when the stored session has expired", async () => {

@@ -141,10 +141,10 @@ func TestPeopleAndRoles(t *testing.T) {
 		t.Fatalf("people = %+v, %v", people, err)
 	}
 	roles, err := f.s.Roles(ctx, f.cafe.id)
-	if err != nil || len(roles) != 4 {
+	if err != nil || len(roles) != len(auth.DefaultRoles()) {
 		t.Fatalf("roles = %+v, %v", roles, err)
 	}
-	held := map[string]int64{"owner": 1, "manager": 1, "cashier": 1, "kitchen": 0}
+	held := map[string]int64{"owner": 1, "manager": 1, "cashier": 1, "waiter": 0, "kitchen": 0}
 	for _, r := range roles {
 		if r.People != held[r.Name] {
 			t.Errorf("%s held by %d, want %d", r.Name, r.People, held[r.Name])

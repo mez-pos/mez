@@ -35,8 +35,8 @@ describe("toMinutes", () => {
 describe("startingRows and membersOf", () => {
   it("starts with the suggested people in, then the rest of the staff out", () => {
     const rows = startingRows(pool, [
-      { id: "stf_PRIYA001", name: "Priya" },
-      { id: "stf_ASHA0001", name: "Asha" },
+      { id: "stf_PRIYA001", name: "Priya", role: "owner" },
+      { id: "stf_ASHA0001", name: "Asha", role: "cashier" },
     ]);
     expect(rows.map((r) => [r.staffId, r.inPool])).toEqual([
       ["stf_RAVI0001", true],

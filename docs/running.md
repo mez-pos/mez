@@ -82,8 +82,8 @@ optional. Run it as often as needed; each code lasts ten minutes and pairs one
 device. It takes `-data-dir` as the server does, and works while the server runs.
 
 `-demo-menu` makes the venue a demo cafe for trying it out: a menu, twelve
-tables in two areas, and a person for each role (a manager, a cashier and a
-kitchen cook) with PINs that `setup` prints. Those PINs are public, so never
+tables in two areas, and a person for each role (a manager, a cashier, a
+waiter and a kitchen cook) with PINs that `setup` prints. Those PINs are public, so never
 use `-demo-menu` on a venue that sells.
 [`deploy.md`](deploy.md#first-run-on-any-platform) lists every flag.
 
