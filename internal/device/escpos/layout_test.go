@@ -26,91 +26,20 @@ type printedLine struct {
 	bold  bool
 }
 
-// decode replays a stream the way a printer would, for the commands this
-// package writes. An unknown command fails the test: a layout must not send
-// anything the package does not know it sent.
+// decode replays a stream the way a printer would (Replay), failing the test
+// on a command the package does not know it sent. A barcode is a code, not a
+// line of text, so it is left out of the lines.
 func decode(t *testing.T, data []byte) printed {
 	t.Helper()
-	var p printed
-	var cur strings.Builder
-	width, bold := 1, false
-	var qr string
-	i := 0
-	need := func(n int) []byte {
-		if i+n > len(data) {
-			t.Fatalf("stream ends inside a command at %d", i)
-		}
-		s := data[i : i+n]
-		i += n
-		return s
+	page, err := Replay(data)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for i < len(data) {
-		c := data[i]
-		switch {
-		case c == lf:
-			p.lines = append(p.lines, printedLine{cur.String(), width, bold})
-			cur.Reset()
-			i++
-		case c == esc:
-			op := need(2)[1]
-			switch op {
-			case '@':
-				width, bold = 1, false
-			case 't', 'a', '-':
-				need(1)
-			case 'E':
-				bold = need(1)[0] == 1
-			case 'd':
-				for n := int(need(1)[0]); n > 0; n-- {
-					p.lines = append(p.lines, printedLine{"", width, bold})
-				}
-			default:
-				t.Fatalf("unknown ESC %q at %d", op, i)
-			}
-		case c == gs:
-			op := need(2)[1]
-			switch op {
-			case '!':
-				width = int(need(1)[0]>>4) + 1
-			case 'h', 'w', 'H':
-				need(1)
-			case 'k':
-				m := need(1)[0]
-				if m != 73 {
-					t.Fatalf("barcode type %d", m)
-				}
-				n := int(need(1)[0])
-				p.codes = append(p.codes, "barcode:"+string(need(n)[2:]))
-			case '(':
-				if need(1)[0] != 'k' {
-					t.Fatalf("GS ( not k at %d", i)
-				}
-				lh := need(2)
-				body := need(int(lh[0]) | int(lh[1])<<8)
-				switch body[1] {
-				case 80:
-					qr = string(body[3:])
-				case 81:
-					p.codes = append(p.codes, "qr:"+qr)
-				}
-			case 'V':
-				m := need(2)[0]
-				p.cuts = append(p.cuts, map[byte]string{65: "full", 66: "partial"}[m])
-			default:
-				t.Fatalf("unknown GS %q at %d", op, i)
-			}
-		case c == dle:
-			need(5)
-			p.kicks++
-		case c < 0x20 || c > 0x7E:
-			t.Fatalf("byte %#x in text at %d", c, i)
-		default:
-			cur.WriteByte(c)
-			i++
+	p := printed{cuts: page.Cuts, kicks: page.Kicks, codes: page.Codes}
+	for _, l := range page.Lines {
+		if !l.Barcode {
+			p.lines = append(p.lines, printedLine{l.Text, l.Width, l.Bold})
 		}
-	}
-	if cur.Len() > 0 {
-		t.Errorf("text %q not ended with a line feed", cur.String())
 	}
 	return p
 }

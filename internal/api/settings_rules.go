@@ -18,14 +18,17 @@ type rulesRequest struct {
 	TicketLateMinutes int              `json:"ticket_late_minutes"`
 }
 
-// rulesResponse is the rules as they stand. roles are the names a weight may
-// use; open_shift_day is the trading day of the shift now open, which keeps
-// it when day_start changes, or "" when none is open.
+// rulesResponse is the rules as they stand. minor_per_major is how many minor
+// units make one major unit of the currency, for showing the variance
+// threshold as an amount. roles are the names a weight may use; open_shift_day
+// is the trading day of the shift now open, which keeps it when day_start
+// changes, or "" when none is open.
 type rulesResponse struct {
 	rulesRequest
-	Currency     string   `json:"currency"`
-	Roles        []string `json:"roles"`
-	OpenShiftDay string   `json:"open_shift_day"`
+	Currency      string   `json:"currency"`
+	MinorPerMajor int64    `json:"minor_per_major"`
+	Roles         []string `json:"roles"`
+	OpenShiftDay  string   `json:"open_shift_day"`
 }
 
 func (s *Server) mountRulesSettings(mux *http.ServeMux) {
@@ -62,6 +65,6 @@ func (s *Server) writeRules(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, s.log, http.StatusOK, rulesResponse{
 		rulesRequest: rulesRequest(n.RulesInput),
-		Currency:     n.Currency, Roles: n.Roles, OpenShiftDay: n.OpenShiftDay,
+		Currency:     n.Currency, MinorPerMajor: n.MinorPerMajor, Roles: n.Roles, OpenShiftDay: n.OpenShiftDay,
 	})
 }

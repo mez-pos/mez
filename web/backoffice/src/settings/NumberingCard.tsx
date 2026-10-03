@@ -18,7 +18,7 @@ import {
   toNumberingInput,
   withSeries,
 } from "./numbering-logic";
-import { useNumberingPreview, type Preview } from "./use-numbering-preview";
+import { usePreview, type Preview } from "./use-preview";
 import { useSectionDraft } from "./use-section-draft";
 import type { NumberingApi } from "./use-tax";
 
@@ -42,7 +42,13 @@ export function NumberingCard({ numbering: n, api, onDirty }: NumberingCardProps
   const set = (patch: Partial<typeof form>) => d.update((f) => ({ ...f, ...patch }));
   const stepOk = numberingProblem(form, max) === null;
   const input: NumberingRequest | null = stepOk ? toNumberingInput(form, max) : null;
-  const preview = useNumberingPreview(d.dirty, input, previewKey(form, max), api.preview);
+  const preview = usePreview({
+    active: d.dirty,
+    input,
+    missing: "Fix the rounding step to see the next numbers.",
+    key: previewKey(form, max),
+    ask: api.preview,
+  });
 
   return (
     <SectionCard
@@ -190,13 +196,13 @@ function Series(props: {
 }
 
 /** The next numbers: as saved when nothing is typed, as the server works them out when it is. */
-function NextNumbers({ dirty, saved, preview }: { dirty: boolean; saved: NumberingResponse; preview: Preview }) {
+function NextNumbers({ dirty, saved, preview }: { dirty: boolean; saved: NumberingResponse; preview: Preview<NumberingResponse> }) {
   const heading = dirty ? "If you save, the next numbers are" : "The next numbers are";
   let body: ReactNode;
   if (!dirty) {
     body = <Numbers invoice={saved.next_invoice_no} credit={saved.next_credit_no} />;
   } else if (preview.state === "ok") {
-    body = <Numbers invoice={preview.invoice} credit={preview.credit} />;
+    body = <Numbers invoice={preview.value.next_invoice_no} credit={preview.value.next_credit_no} />;
   } else if (preview.state === "error") {
     body = <p className="text-base text-fg-2">No preview yet: {preview.message}</p>;
   } else {

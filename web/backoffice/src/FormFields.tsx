@@ -63,3 +63,36 @@ export function Choice<T extends string>({ label, value, options, onChange, erro
     </div>
   );
 }
+
+/** A box to tick, with what it does in words. The whole row is the target: 48px. */
+export function CheckField({
+  label,
+  hint,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="flex flex-col">
+      <label htmlFor={id} className="flex min-h-tap cursor-pointer items-center gap-3 text-base">
+        <input
+          id={id}
+          type="checkbox"
+          className="size-6 shrink-0 accent-accent"
+          checked={checked}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+        {label}
+      </label>
+      {hint && <p className="ml-9 text-sm text-fg-muted">{hint}</p>}
+    </div>
+  );
+}

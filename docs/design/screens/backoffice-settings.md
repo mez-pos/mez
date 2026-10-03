@@ -1,9 +1,9 @@
 # Back office: Venue settings
 
 The frame every venue setting sits in, its first section (the venue's own
-details, Task 6g, ADR-136) and its second (tax and numbering, Task 6h,
-ADR-137). Sections 6i and 6j (shift, tips and receipt; stations and courses)
-fill the frame later, each with the same behaviour.
+details, Task 6g, ADR-136), its second (tax and numbering, Task 6h, ADR-137)
+and its third (shift, tips and receipt, Task 6i, ADR-138). Section 6j
+(stations and courses) fills the frame later, with the same behaviour.
 
 ## Purpose
 
@@ -110,6 +110,56 @@ their own, as a section does (below); the tax classes save at once.
     refuse shows "No preview yet:" and the server's reason, the same words Save
     would give under the field.
 
+### Shift, tips and receipt section
+
+Two cards, each a `SectionCard` saving on its own.
+
+- **Shifts, tips and tickets.**
+  - **The trading day starts at**, a time input (24 hour value, like 04:00). "Sales
+    before this time belong to the day before. A shift keeps its day when this
+    changes: a new start applies from the next shift. Reports use the new start
+    for every day." When a shift is open its day is named: "The shift open now
+    keeps its day, 2026-10-02."
+  - **A drawer may be out by (INR)**, an amount in major units in the numeral
+    face, with the currency's decimals ("0.00"; yen has none). "Over or short
+    by more than this, closing the shift needs a reason. 0 asks for a reason on
+    any difference."
+  - **Tips are shared**, a choice: Shared evenly, By hours worked, By role
+    weight. By hours: "Each person's share follows the hours entered when the
+    tips are pooled." By role weight: **Weight of each role**, one row per role
+    the venue has (a label and a short number, placeholder 1): "A whole number
+    from 1 to 100. A role left empty counts as 1: a manager at 2 takes twice a
+    cashier's share." Tips shared by role need at least one weight. Weights kept
+    while another rule is chosen are saved and unused. A weight stored for a
+    role that has since been renamed or removed is not shown, and is gone at the
+    next save: the server refuses a weight for a role it does not know.
+  - **A ticket is late after (minutes)**, a whole number from 1 to 600: "The till
+    shows its time as late once it has been open this long."
+- **Receipt.** What the receipt, a bill printed before payment and a credit
+  note say beyond what the tax profile requires, which always prints.
+  - **Under the venue's name** and **At the bottom**: a text area each, one line
+    per row, up to four lines of 48 characters; blank lines are dropped, a
+    pasted block is its lines. The printer prints plain letters and digits:
+    accents print without them, other scripts cannot be printed yet, and such
+    text is refused with the line and the character.
+  - **Print**, three boxes (the whole row is the target): the invoice number as a
+    barcode, the order reference (the table number always prints), the choices
+    under each item. They are ticked as the receipt is today; the server stores
+    what is turned off (`hide_*`).
+  - **Preview.** A sunken panel: **Paper**, a choice of 80mm or 58mm, and a sample
+    receipt drawn on a paper strip as wide as the printer's line (48 or 32
+    characters, in a monospace face so the columns line up): the venue's real
+    name, registration, tax profile and next invoice number, made-up items and
+    amounts, and the draft template. The lines come from the server
+    (`POST /api/v1/settings/receipt/preview`), laid out by the code that prints a
+    real receipt and replayed as paper: centred and bold lines as printed, the
+    barcode drawn as bars over its number, wrapping where the printer wraps.
+    It updates 350ms after typing pauses and keeps the last receipt on screen
+    while the next is worked out. A draft the server would refuse (too many
+    lines, text it cannot print) shows "No preview yet:" and the server's
+    reason, the same words Save would give. The credit note takes the same header
+    and footer; only the receipt is previewed.
+
 ## How a section saves
 
 Every section behaves the same, so that the next ones need no new rules.
@@ -126,8 +176,8 @@ Every section behaves the same, so that the next ones need no new rules.
   under the field they are about; a refusal about no field appears in the
   footer.
 - **Discard** puts the draft back to what the server has, and clears errors.
-- **A section may have several forms** (Tax and numbering has two with a
-  draft): each is dirty, saves and discards on its own, and leaving the section
+- **A section may have several forms** (Tax and numbering, and Shift, tips and
+  receipt, have two with a draft): each is dirty, saves and discards on its own, and leaving the section
   asks when any of them is dirty.
 - **Leaving a section with unsaved changes** (another entry in the rail) asks:
   "Leave without saving?", "Your changes to Venue are not saved.", **Keep
@@ -155,9 +205,19 @@ Every section behaves the same, so that the next ones need no new rules.
   /api/v1/settings/numbering/preview` (the PUT body; answers with the numbering
   and the next numbers, saving nothing). Cache keys `["settings","tax"]` and
   `["settings","numbering"]`.
+- Shift, tips and receipt: `GET`/`PUT /api/v1/settings/rules` (`day_start`,
+  `variance_threshold` in minor units, `tip_rule`, `tip_role_weights` by role
+  name, `ticket_late_minutes`; answers with those and `currency`,
+  `minor_per_major`, `roles`, `open_shift_day`), `GET`/`PUT
+  /api/v1/settings/receipt` (`header[]`, `footer[]`, `hide_barcode`,
+  `hide_order_ref`, `hide_modifiers`; answers with those and `max_lines`,
+  `max_line_chars`) and `POST /api/v1/settings/receipt/preview` (the same body
+  and `paper_mm` 80 or 58; answers with `columns` and `lines[]` of `text`,
+  `align`, `width`, `height`, `bold`, `barcode`; saves nothing). Cache keys
+  `["settings","rules"]` and `["settings","receipt"]`.
 - All need `settings.edit`.
-- Later sections add their own routes and keys (`/api/v1/settings/rules`,
-  `/receipt`); each answers with its section as it now stands, as these do.
+- Section 6j adds its own routes; each answers with its section as it now
+  stands, as these do.
 
 ## Interactions
 
@@ -187,6 +247,8 @@ Every section behaves the same, so that the next ones need no new rules.
 - **Tax and numbering, loading:** "Loading the tax settings"; if either read
   fails, the reason with **Try again**.
 - **No tax classes:** "No tax classes yet. Items need one, so add the first."
+- **Shift, tips and receipt, loading:** "Loading the shift and receipt
+  settings"; if either read fails, the reason with **Try again**.
 
 ## Constraints
 

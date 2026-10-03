@@ -29,7 +29,8 @@ describe("the sections", () => {
   it("name a built section by its path, and no other", () => {
     expect(builtSectionFor("/settings/venue")?.id).toBe("venue");
     expect(builtSectionFor("/settings/tax")?.id).toBe("tax");
-    expect(builtSectionFor("/settings/shifts")).toBeNull(); // not built yet
+    expect(builtSectionFor("/settings/shifts")?.id).toBe("shifts");
+    expect(builtSectionFor("/settings/stations")).toBeNull(); // not built yet
     expect(builtSectionFor("/settings/nothing")).toBeNull();
     expect(builtSectionFor("/settings")).toBeNull();
   });

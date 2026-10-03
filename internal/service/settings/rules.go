@@ -43,6 +43,9 @@ type RulesInput struct {
 type Rules struct {
 	RulesInput
 	Currency string
+	// MinorPerMajor is how many minor units make one major unit of the
+	// currency (100 for rupees), to show an amount the way it is spoken.
+	MinorPerMajor int64
 	// Roles are the venue's role names, for the weights: a weight names one.
 	Roles []string
 	// OpenShiftDay is the trading day of the shift now open, or "". That
@@ -74,6 +77,7 @@ func (s *Service) Rules(ctx context.Context, venueID int64) (Rules, error) {
 	}
 	var out Rules
 	out.Currency = v.Currency
+	out.MinorPerMajor = maxRoundingStep(v.Currency)
 	var raw struct{ dayStart, variance, rule, weights, late string }
 	for _, f := range []struct {
 		into *string

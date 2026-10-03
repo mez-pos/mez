@@ -1192,6 +1192,7 @@ export interface RulesResponse {
   tip_role_weights: Record<string, number>;
   ticket_late_minutes: number;
   currency: string;
+  minor_per_major: number;
   roles: string[];
   open_shift_day: string;
 }
@@ -1212,6 +1213,29 @@ export interface ReceiptResponse {
   hide_modifiers: boolean;
   max_lines: number;
   max_line_chars: number;
+}
+
+export interface ReceiptPreviewRequest {
+  header: string[];
+  footer: string[];
+  hide_barcode: boolean;
+  hide_order_ref: boolean;
+  hide_modifiers: boolean;
+  paper_mm: number;
+}
+
+export interface ReceiptPreviewResponse {
+  columns: number;
+  lines: ReceiptPreviewLine[];
+}
+
+export interface ReceiptPreviewLine {
+  text: string;
+  align: string;
+  width: number;
+  height: number;
+  bold: boolean;
+  barcode: boolean;
 }
 
 export interface MenuCategoryInput {

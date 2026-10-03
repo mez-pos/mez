@@ -8,6 +8,7 @@ import { Link, Redirect, useLocation } from "wouter";
 import { Button, EmptyState, InboxIcon, Modal } from "../../../shared/ui";
 import { DEFAULT_SECTION, SETTINGS_SECTIONS, builtSectionFor, problemOf, type SettingsSection } from "./settings-logic";
 import { useSettings } from "./use-settings";
+import { ShiftsSection } from "./ShiftsSection";
 import { TaxSection } from "./TaxSection";
 import { VenueSection } from "./VenueSection";
 
@@ -66,6 +67,7 @@ function Frame({ section }: { section: SettingsSection }) {
           </>
         )}
         {section.id === "tax" && <TaxSection onDirty={reportDirty} />}
+        {section.id === "shifts" && <ShiftsSection onDirty={reportDirty} />}
       </div>
 
       <Modal

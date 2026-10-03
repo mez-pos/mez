@@ -24,6 +24,7 @@ type Settings interface {
 	UpdateRules(ctx context.Context, venueID int64, in settings.RulesInput) error
 	Receipt(ctx context.Context, venueID int64) (settings.Receipt, error)
 	UpdateReceipt(ctx context.Context, venueID int64, in settings.ReceiptInput) error
+	PreviewReceipt(ctx context.Context, venueID int64, in settings.ReceiptInput, paperMM int) (settings.ReceiptPreview, error)
 	CreateTaxClass(ctx context.Context, venueID int64, in settings.TaxClassInput) (int64, error)
 	UpdateTaxClass(ctx context.Context, venueID, id int64, in settings.TaxClassInput) error
 	SetTaxClassActive(ctx context.Context, venueID, id int64, active bool) error

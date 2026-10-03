@@ -13,28 +13,30 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6h: tax and numbering on the screen** (ADR-137). The
-`/settings/tax` section: a tax profile card (per-profile fields, the items
-still without an HSN as links to `/menu?item=<id>`), a tax classes card (add,
-edit, retire, bring back), and an invoice numbering card with a live preview of
-the next invoice and credit note numbers, from the new
-`POST /api/v1/settings/numbering/preview`. Tried in a browser: switching to GST,
-the client and server refusals, the live preview and its refusal, the HSN link,
-adding a class, an in-use retire refused, the US rates editor. Before it, 6g
-(ADR-136), 6f (ADR-135), 6e (ADR-134), 6d (ADR-133), 6c (ADR-132), 6b (ADR-131),
-6a (ADR-130), the split (ADR-129).
+**Phase 10, Task 6i: shift, tips and receipt on the screen** (ADR-138). The
+`/settings/shifts` section: a rules card (trading day start, drawer variance in
+major units, how tips are shared with a weight per role, late ticket minutes)
+and a receipt card (header and footer text, three things to print, and a
+preview of a sample receipt at 80mm or 58mm). The preview is the server's:
+`POST /api/v1/settings/receipt/preview` lays a made-up bill out with the real
+receipt layout (`escpos.SampleReceipt`, `escpos.Replay`, which the layout tests'
+decoder became). Tried in a browser: the rules card and its refusal, role
+weights, a save and reload, the preview at both widths including the address
+wrapping at 58mm, a live refusal of unprintable text, and a receipt saved. Before it,
+6h (ADR-137), 6g (ADR-136), 6f (ADR-135), 6e (ADR-134), 6d (ADR-133), 6c
+(ADR-132), 6b (ADR-131), 6a (ADR-130), the split (ADR-129).
 
 ## Next task
 
-**Phase 10, Task 6i: Shift, tips and receipt on the screen.** Day start,
-variance threshold, tip rule and weights, late ticket minutes, and the receipt
-template with a preview at the printer's width. Add the `shifts` section to
-`web/backoffice/src/settings/` (`built: true` in `settings-logic.ts`; draw it in
-`SectionCard` and `useSectionDraft`). Routes: `GET`/`PUT /api/v1/settings/rules`
-and `GET`/`PUT /api/v1/settings/receipt`. The receipt preview needs the layout
-at 48 and 32 columns: decide whether the server renders it (a preview route like
-the numbering's, through `escpos` and its decoder) or the screen draws it; write
-the choice into the spec first.
+**Phase 10, Task 6j: Stations and courses on the screen.** Stations beside
+their printer on the Printers screen; courses where the spec puts them (a
+`stations` section of `/settings`, `built: true` in `settings-logic.ts`). The
+menu's item form picks from both already. Routes (ADR-134): `POST
+/api/v1/menu/stations`, `PUT .../{id}`, `PUT .../order`, `POST .../{id}/retire`
+(body `{ "move_to": id }`, answers with `items_moved` and `printer_moved`) and
+`.../restore`; the same for `/courses`. Extend the spec first: how an owner
+says where a retired station's items and printer go, and what ordering the
+courses means while tickets are open (`tickets_open`).
 
 ## Known broken / in progress
 
@@ -56,6 +58,10 @@ the choice into the spec first.
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 
+- Shift, tips and receipt screen (ADR-138): the receipt preview is of a made-up
+  bill and shows no credit note; it was checked against the layout, not a
+  printer. A tip weight for a renamed or removed role is not shown and drops at
+  the next save. The preview asks the server on every pause in typing.
 - Tax and numbering screen (ADR-137): the live preview of the next numbers
   needs a second ask per pause in typing; the rounding step is saved but nothing
   applies it (ADR-132). The profile card's "leaves N items without an HSN" shows

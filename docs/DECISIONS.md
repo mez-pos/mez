@@ -3968,3 +3968,50 @@ they are about to create before they create it.
 Cost: the preview and the screen each ask the server per change of draft (cheap,
 local); the screen's draft state for the profile is lost when the owner leaves by
 the shell's navigation, as for the venue section (ADR-136).
+
+## ADR-138 - Shift, tips and receipt on the screen: the preview is the printer's own layout
+2026-10 · Status: accepted.
+Decision: the Shift, tips and receipt section (`/settings/shifts`) is two cards,
+each a draft saved on its own through `SectionCard`: the shift and tip rules
+(ADR-133) and the receipt template (ADR-135). Spec:
+`docs/design/screens/backoffice-settings.md`. The receipt card carries a preview
+of a sample receipt at the printer's width, which the server lays out.
+  - **The preview is rendered by the server, from the real layout.**
+    `POST /api/v1/settings/receipt/preview` takes a draft template and a paper
+    width, builds a made-up paid bill under the venue's real name, registration,
+    tax profile and next invoice number (`escpos.SampleReceipt`), lays it out
+    with `Receipt.Layout` at 48 or 32 columns, and replays the bytes as paper
+    (`escpos.Replay`). The screen only draws the lines it is sent. The
+    alternative, a second layout in the browser, would drift from the printer
+    the first time a line wrapped differently or `Printable` spelled a letter
+    another way; this way what the owner sees is what is printed, including the
+    wrapping at 58mm and the refusal of text the printer cannot print.
+  - **`Replay` is the layout tests' decoder, promoted.** The decoder that checked
+    every layout in tests became `escpos.Replay`, extended to track alignment and
+    character height and to report a barcode as a line of its own; the tests now
+    call it, so the preview and the tests read a stream the same way, and a
+    command the package does not know is an error in both. It returns an error
+    where the test decoder called `t.Fatalf`.
+  - **The preview runs a save's checks.** The template is checked as `Set` checks
+    it (line count, line length, characters the printer cannot print), so a
+    draft a save would refuse is refused with the same field and words, shown
+    as "No preview yet:". The sample is for the receipt only; a credit note takes
+    the same header and footer but is not drawn.
+  - **The drawer threshold is typed in major units.** The rules response carries
+    `minor_per_major` (100 for rupees, 1 for yen), the same count the numbering
+    screen uses for its rounding step; `majorText` and `parseMajor` are shared by
+    both, and no currency's decimals are written into the client.
+  - **Weights are a list of the venue's roles.** The form has a row per role the
+    server names in `roles`; a weight stored for a role that is gone is not shown
+    and drops at the next save, since the server refuses one (the cost noted in
+    ADR-133). Tips shared by role need a weight for at least one role, as the
+    server requires.
+  - **One preview hook for both screens.** `usePreview` generalises the
+    numbering preview: asked once typing pauses, an answer for a draft that is no
+    longer on screen is dropped, and the last good answer stays up while the next
+    is worked out, so a receipt does not flicker to a message on every key.
+Because: the receipt is the one document the guest takes away, and the owner
+should see its wrapping, its barcode and its footer before the first one prints.
+Cost: the preview asks the server on every pause in typing (local, cheap); the
+sample's figures are made up and the preview does not show a credit note; the
+screen has not been seen against a thermal printer, only against the layout.

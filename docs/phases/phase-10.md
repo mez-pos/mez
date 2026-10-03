@@ -194,7 +194,7 @@ Phase 09.
     tax classes, invoice and credit note numbering with a live preview
     of the next number, financial year and rounding. A change of profile
     lists the items it leaves without an HSN and links to them.
-  - [ ] **Task 6i: Shift, tips and receipt on the screen.** Day start,
+  - [x] **Task 6i: Shift, tips and receipt on the screen.** Day start,
     variance threshold, tip rule and weights, late ticket minutes, and
     the receipt template with a preview at the printer's width.
   - [ ] **Task 6j: Stations and courses on the screen.** Stations beside

@@ -53,7 +53,7 @@ func TestRulesOfANewVenueAreTheDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := Rules{RulesInput: stockRules(), Currency: "INR", Roles: []string{"Cashier", "Manager"}}
+	want := Rules{RulesInput: stockRules(), Currency: "INR", MinorPerMajor: 100, Roles: []string{"Cashier", "Manager"}}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got  %+v\nwant %+v", got, want)
 	}

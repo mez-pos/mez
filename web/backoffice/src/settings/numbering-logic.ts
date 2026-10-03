@@ -5,6 +5,7 @@
 // costs nothing. No React in this file, so all of it is tested directly.
 
 import type { NumberingRequest, NumberingResponse } from "../../../shared/api-types";
+import { majorText, parseMajor } from "./money-text";
 import { problemWith, type Problem } from "./problem";
 
 export const MONTHS = [
@@ -46,25 +47,13 @@ export function numberingFormFrom(n: NumberingResponse): NumberingForm {
   };
 }
 
-/** How many decimals the currency has: its largest step is one whole unit, 10 to that power. */
-const decimalsOf = (maxStep: number): number => String(maxStep).length - 1;
-
 /** A rounding step in minor units as major units: 50 paise is "0.50". */
-export function stepText(minor: number, maxStep: number): string {
-  const d = decimalsOf(maxStep);
-  if (d === 0) return String(minor);
-  return `${Math.trunc(minor / maxStep)}.${String(minor % maxStep).padStart(d, "0")}`;
-}
+export const stepText = majorText;
 
 /** The step the owner typed, in minor units, or null when it is not between the smallest unit and one whole unit. */
 export function parseStep(text: string, maxStep: number): number | null {
-  const d = decimalsOf(maxStep);
-  const m = /^(\d{1,9})(?:\.(\d+))?$/.exec(text.trim());
-  const fraction = m?.[2] ?? "";
-  // No more decimals than the currency has: "0.505" is not a step in rupees.
-  if (!m || fraction.length > d) return null;
-  const minor = Number(m[1]) * maxStep + (d === 0 ? 0 : Number(fraction.padEnd(d, "0")));
-  return minor >= 1 && minor <= maxStep ? minor : null;
+  const minor = parseMajor(text, maxStep);
+  return minor !== null && minor >= 1 && minor <= maxStep ? minor : null;
 }
 
 /** The range of steps in words: "from 0.01 to 1.00". */
