@@ -1,0 +1,14 @@
+# The image builds from source (build/Dockerfile); none of this is source.
+.git
+bin
+dist
+data
+**/node_modules
+web/*/dist
+claude-design
+.playwright-mcp
+*.db
+*.db-wal
+*.db-shm
+config.toml
+.env

@@ -1,0 +1,27 @@
+# mez with its data in a named volume. From the repository root:
+#
+#   docker compose -f build/docker-compose.yml build
+#   docker compose -f build/docker-compose.yml run --rm mez setup -name "My Cafe" -owner Priya -timezone Asia/Kolkata
+#   docker compose -f build/docker-compose.yml up -d
+#
+# See docs/deploy.md for putting it behind a domain with HTTPS.
+
+services:
+  mez:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    image: mez:local
+    restart: unless-stopped
+    ports:
+      - "7777:7777"
+    environment:
+      # An IANA name. The container's own clock is UTC, which is rarely the
+      # venue's day.
+      MEZ_TIMEZONE: Asia/Kolkata
+      MEZ_LOG_FORMAT: json
+    volumes:
+      - mez-data:/data
+
+volumes:
+  mez-data:
