@@ -35,6 +35,7 @@ type Course struct {
 	Name      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	Active    bool
 }
 
 type CreditNote struct {

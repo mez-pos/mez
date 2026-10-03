@@ -369,3 +369,130 @@ func TestItemPhotosOverHTTP(t *testing.T) {
 		t.Errorf("after delete, photo = %q", e.Items[0].Photo)
 	}
 }
+
+// TestStationsAndCoursesOverHTTP: the owner adds, renames, orders, retires and
+// restores stations and courses; a retire says where items go, and answers
+// with what moved.
+func TestStationsAndCoursesOverHTTP(t *testing.T) {
+	m := newEditorTill(t)
+
+	cat := m.edit(t, http.MethodPost, "/api/v1/menu/categories", `{"name":"Food"}`, http.StatusCreated)
+	m.edit(t, http.MethodPost, "/api/v1/menu/items", m.itemBody(cat, "Dosa", 12000), http.StatusCreated)
+
+	bar := m.edit(t, http.MethodPost, "/api/v1/menu/stations", `{"name":" Juice Bar "}`, http.StatusCreated)
+	starters := m.edit(t, http.MethodPost, "/api/v1/menu/courses", `{"name":"Starters"}`, http.StatusCreated)
+	e := m.editor(t)
+	if len(e.Stations) != 2 || e.Stations[1].Code != "juice-bar" || e.Stations[1].Name != "Juice Bar" ||
+		len(e.Courses) != 2 || e.Courses[1].Number != 2 || !e.Courses[1].Active {
+		t.Fatalf("stations %+v, courses %+v", e.Stations, e.Courses)
+	}
+
+	m.edit(t, http.MethodPut, fmt.Sprintf("/api/v1/menu/stations/%d", bar), `{"name":"Juices"}`, http.StatusOK)
+	m.edit(t, http.MethodPut, fmt.Sprintf("/api/v1/menu/courses/%d", starters), `{"name":"Small plates"}`, http.StatusOK)
+	m.edit(t, http.MethodPut, "/api/v1/menu/stations/order", fmt.Sprintf(`{"ids":[%d,%d]}`, bar, m.station), http.StatusOK)
+	m.edit(t, http.MethodPut, "/api/v1/menu/courses/order", fmt.Sprintf(`{"ids":[%d,%d]}`, starters, m.course), http.StatusOK)
+	e = m.editor(t)
+	if e.Stations[0].ID != bar || e.Stations[0].Name != "Juices" || e.Courses[0].ID != starters || e.Courses[0].Name != "Small plates" || e.Courses[0].Number != 1 {
+		t.Fatalf("after renaming and ordering: stations %+v, courses %+v", e.Stations, e.Courses)
+	}
+
+	retire := func(path, body string) (int, map[string]any, Error) {
+		t.Helper()
+		rec := send(m.handler, http.MethodPost, path, body, m.owner)
+		if rec.Code >= 400 {
+			return rec.Code, nil, errorOf(t, rec)
+		}
+		var out map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatalf("%s: %v: %s", path, err, rec.Body)
+		}
+		return rec.Code, out, Error{}
+	}
+	stationPath := func(id int64, verb string) string { return fmt.Sprintf("/api/v1/menu/stations/%d/%s", id, verb) }
+	coursePath := func(id int64, verb string) string { return fmt.Sprintf("/api/v1/menu/courses/%d/%s", id, verb) }
+
+	// The kitchen has an item: it cannot go without saying where.
+	status, _, apiErr := retire(stationPath(m.station, "retire"), "")
+	if status != 422 || apiErr.Code != CodeInvalidMenu || apiErr.Field != "move_to" {
+		t.Errorf("a station with items and no destination: %d %s %q", status, apiErr.Code, apiErr.Field)
+	}
+	status, out, _ := retire(stationPath(m.station, "retire"), fmt.Sprintf(`{"move_to":%d}`, bar))
+	if status != 200 || out["items_moved"] != float64(1) || out["printer_moved"] != false || out["id"] != float64(m.station) {
+		t.Errorf("retiring the kitchen: %d %v", status, out)
+	}
+	status, out, _ = retire(coursePath(m.course, "retire"), fmt.Sprintf(`{"move_to":%d}`, starters))
+	if status != 200 || out["items_moved"] != float64(1) {
+		t.Errorf("retiring mains: %d %v", status, out)
+	}
+	e = m.editor(t)
+	if e.Stations[1].Active || e.Courses[1].Active || e.Items[0].StationID != bar || e.Items[0].CourseID != starters {
+		t.Errorf("after retiring: stations %+v, courses %+v, item %+v", e.Stations, e.Courses, e.Items[0])
+	}
+
+	// Each venue keeps one in service, and an unknown field is not ignored.
+	if status, _, apiErr = retire(stationPath(bar, "retire"), ""); status != 422 || apiErr.Field != "id" {
+		t.Errorf("the only station: %d %s %q", status, apiErr.Code, apiErr.Field)
+	}
+	if status, _, apiErr = retire(stationPath(bar, "retire"), `{"move_to":1,"printer":2}`); status != 400 || apiErr.Code != CodeInvalidRequest {
+		t.Errorf("an unknown field: %d %s", status, apiErr.Code)
+	}
+
+	m.edit(t, http.MethodPost, stationPath(m.station, "restore"), "", http.StatusOK)
+	m.edit(t, http.MethodPost, coursePath(m.course, "restore"), "", http.StatusOK)
+	if e = m.editor(t); !e.Stations[1].Active || !e.Courses[1].Active {
+		t.Errorf("after restoring: stations %+v, courses %+v", e.Stations, e.Courses)
+	}
+}
+
+func TestStationAndCourseRefusalsOverHTTP(t *testing.T) {
+	m := newEditorTill(t)
+	refusals := []struct {
+		name, method, path, body string
+		status                   int
+		code                     ErrorCode
+		field                    string
+	}{
+		{"a code in use", "POST", "/api/v1/menu/stations", `{"code":"kitchen","name":"Again"}`, 422, CodeInvalidMenu, "code"},
+		{"a bad code", "POST", "/api/v1/menu/stations", `{"code":"Juice Bar","name":"Juice"}`, 422, CodeInvalidMenu, "code"},
+		{"no station name", "POST", "/api/v1/menu/stations", `{"name":""}`, 422, CodeInvalidMenu, "name"},
+		{"no course name", "POST", "/api/v1/menu/courses", `{"name":""}`, 422, CodeInvalidMenu, "name"},
+		{"renaming a missing station", "PUT", "/api/v1/menu/stations/999", `{"name":"X"}`, 404, CodeStationNotFound, ""},
+		{"renaming a missing course", "PUT", "/api/v1/menu/courses/999", `{"name":"X"}`, 404, CodeCourseNotFound, ""},
+		{"retiring a missing station", "POST", "/api/v1/menu/stations/999/retire", "", 404, CodeStationNotFound, ""},
+		{"restoring a missing course", "POST", "/api/v1/menu/courses/999/restore", "", 404, CodeCourseNotFound, ""},
+		{"a stale station order", "PUT", "/api/v1/menu/stations/order", `{"ids":[]}`, 409, CodeMenuOrderStale, ""},
+		{"a stale course order", "PUT", "/api/v1/menu/courses/order", `{"ids":[1,1]}`, 409, CodeMenuOrderStale, ""},
+		{"a station id that is not a number", "PUT", "/api/v1/menu/stations/x", `{"name":"X"}`, 400, CodeInvalidRequest, "id"},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := send(m.handler, tt.method, tt.path, tt.body, m.owner)
+			apiErr := errorOf(t, rec)
+			if rec.Code != tt.status || apiErr.Code != tt.code || apiErr.Field != tt.field {
+				t.Errorf("%d %s %q, want %d %s %q", rec.Code, apiErr.Code, apiErr.Field, tt.status, tt.code, tt.field)
+			}
+		})
+	}
+
+	t.Run("courses cannot be renumbered under an open ticket", func(t *testing.T) {
+		starters := m.edit(t, http.MethodPost, "/api/v1/menu/courses", `{"name":"Starters"}`, http.StatusCreated)
+		if _, err := m.db.Writer().ExecContext(context.Background(),
+			`INSERT INTO orders (public_id, venue_id, channel, status, last_seq, opened_at, updated_at)
+			 VALUES ('ord_COURSE01', 1, 'counter', 'open', 1, ?, ?)`, seededAt, seededAt); err != nil {
+			t.Fatal(err)
+		}
+		rec := send(m.handler, http.MethodPut, "/api/v1/menu/courses/order", fmt.Sprintf(`{"ids":[%d,%d]}`, starters, m.course), m.owner)
+		if apiErr := errorOf(t, rec); rec.Code != 409 || apiErr.Code != CodeTicketsOpen {
+			t.Errorf("%d %s", rec.Code, apiErr.Code)
+		}
+	})
+
+	t.Run("a cashier cannot", func(t *testing.T) {
+		cashier := m.asStaff(m.signIn(t, "2468").Token)
+		for _, path := range []string{"/api/v1/menu/stations", "/api/v1/menu/courses"} {
+			if rec := send(m.handler, http.MethodPost, path, `{"name":"X"}`, cashier); rec.Code != http.StatusForbidden {
+				t.Errorf("POST %s: %d", path, rec.Code)
+			}
+		}
+	})
+}

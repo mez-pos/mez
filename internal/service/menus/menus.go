@@ -240,6 +240,18 @@ func (s *Service) SetItemActive(ctx context.Context, venueID, id int64, active b
 			if err == nil && !ok {
 				return &Invalid{"tax_class_id", "This item's tax class is retired. Bring the class back, or edit the item to use another."}
 			}
+			// Nor onto a station or course that is retired: the menu read
+			// fails on a course it does not have.
+			live, err := q.ItemStationCourseActive(ctx, gen.ItemStationCourseActiveParams{VenueID: venueID, ID: id})
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return fmt.Errorf("menus: reading item %d's station and course: %w", id, err)
+			}
+			if err == nil && !live.StationActive {
+				return &Invalid{"station_id", "This item's station is retired. Bring the station back, or edit the item to use another."}
+			}
+			if err == nil && !live.CourseActive {
+				return &Invalid{"course_id", "This item's course is retired. Bring the course back, or edit the item to use another."}
+			}
 		}
 		n, err := q.SetItemActive(ctx, gen.SetItemActiveParams{Active: active, Now: s.now(), VenueID: venueID, ID: id})
 		return oneRow(n, err, ErrItemNotFound)
@@ -388,8 +400,12 @@ func (s *Service) checkRefs(ctx context.Context, q *gen.Queries, venueID int64, 
 	if !station.Active {
 		return &Invalid{"station_id", "That station is retired. Choose another."}
 	}
-	if _, err := q.CourseForEdit(ctx, gen.CourseForEditParams{VenueID: venueID, ID: in.CourseID}); err != nil {
+	course, err := q.CourseForEdit(ctx, gen.CourseForEditParams{VenueID: venueID, ID: in.CourseID})
+	if err != nil {
 		return refError(err, "course_id", "Choose a course.")
+	}
+	if !course.Active {
+		return &Invalid{"course_id", "That course is retired. Choose another."}
 	}
 	return nil
 }

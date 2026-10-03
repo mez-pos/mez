@@ -3796,3 +3796,45 @@ to set them but the database.
 Cost: a renamed role orphans its weight (the pool reads the old name and
 ignores it; no check runs on a role rename). Re-bucketing the past on a
 day start change, as above.
+
+## ADR-134 - Stations and courses: retiring says where things go
+2026-10 · Status: accepted.
+Decision: stations and courses are created, renamed, put in order, retired
+and restored under `/api/v1/menu/stations` and `/courses` (`menu.edit`),
+through `EditMenu`, so each edit bumps the menu version and tills hear of it.
+Migration 00030 gives courses an `active` flag, as stations and tax classes
+have; the till's menu reads active courses only.
+  - **A station's code is chosen once.** It is what a line snapshots and what
+    the kitchen stream routes on, so the form sends it only when the station
+    is made (empty takes one from the name: "Juice Bar" is `juice-bar`) and a
+    rename changes the name alone. A code a retired station holds is still
+    taken.
+  - **Retiring names a destination, `move_to`.** A station with any item
+    (retired items too, so one brought back never names a station out of
+    service) or a printer must say which station in service takes them; a
+    course with any item, the same. A station or course that carries nothing
+    retires with no body. The answer says what moved (`items_moved`,
+    `printer_moved`). The printer follows to the new station when that has
+    none; when it has its own, the retired station's printer is freed and the
+    other's stays. Either way the retired station prints nowhere.
+  - **A venue keeps one station and one course in service.** Items need both,
+    and the till reads a menu with neither as one nobody can sell from.
+  - **Restoring moves nothing back.** What was moved off stays where it went.
+    Bringing an item back, or making one, refuses a retired station or course,
+    as it already did a retired tax class: the menu read fails on an item
+    naming a course it does not have.
+  - **Courses are numbered by their place, and renumbering waits for the
+    floor to be clear.** Lines copy their course's number and the kitchen
+    fires by number, so putting courses in a new order is refused while any
+    ticket is unsettled (`tickets_open`); an order that changes no number is
+    always accepted. Adding, renaming and retiring need no such wait. Retiring
+    leaves a gap in the numbers (1 and 3 in service) rather than renumbering
+    the rest under open tickets; the next ordering closes it.
+  - **Open tickets are untouched.** Tickets already sent to a retired station
+    stay on its board until done, and a display set to it keeps showing it.
+Because: a station with no way to leave service is clutter that stays on every
+form for good, and one that could leave carelessly would drop a kitchen's
+items off the till or its tickets onto no printer.
+Cost: a retired station's display needs setting to another by hand; the
+numbering gap after a retire; the item form (web) now filters retired
+courses as it does stations, but nothing on a screen manages them yet (6j).

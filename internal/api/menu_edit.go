@@ -30,6 +30,16 @@ type MenuEditor interface {
 	SetGroupActive(ctx context.Context, venueID, id int64, active bool) error
 	SetItemGroups(ctx context.Context, venueID, itemID int64, ids []int64) error
 	SetItemSoldOut(ctx context.Context, venueID, id int64, soldOut bool) (*time.Time, error)
+	CreateStation(ctx context.Context, venueID int64, in menus.StationInput) (int64, error)
+	RenameStation(ctx context.Context, venueID, id int64, in menus.StationInput) error
+	OrderStations(ctx context.Context, venueID int64, ids []int64) error
+	RetireStation(ctx context.Context, venueID, id int64, in menus.RetireInput) (menus.StationRetired, error)
+	RestoreStation(ctx context.Context, venueID, id int64) error
+	CreateCourse(ctx context.Context, venueID int64, in menus.CourseInput) (int64, error)
+	RenameCourse(ctx context.Context, venueID, id int64, in menus.CourseInput) error
+	OrderCourses(ctx context.Context, venueID int64, ids []int64) error
+	RetireCourse(ctx context.Context, venueID, id int64, in menus.RetireInput) (menus.CourseRetired, error)
+	RestoreCourse(ctx context.Context, venueID, id int64) error
 	SetItemPhoto(ctx context.Context, venueID, id int64, data []byte) (string, error)
 	ClearItemPhoto(ctx context.Context, venueID, id int64) error
 	OpenPhoto(name string) (*os.File, error)
@@ -49,6 +59,7 @@ const (
 	CodeMenuOrderStale   ErrorCode = "menu_order_stale"
 	CodeGroupNotFound    ErrorCode = "modifier_group_not_found"
 	CodePhotoNotFound    ErrorCode = "photo_not_found"
+	CodeCourseNotFound   ErrorCode = "course_not_found"
 )
 
 type (
@@ -113,6 +124,8 @@ func (s *Server) mountMenuEditor(mux *http.ServeMux) {
 	// on a menu is private. The name is a hash, checked before any path is
 	// made from it (ADR-110).
 	mux.HandleFunc("GET /api/v1/menu/photos/{name}", s.servePhoto)
+
+	s.mountStationsAndCourses(handle)
 
 	handle("POST /api/v1/menu/groups", s.createGroup)
 	handle("PUT /api/v1/menu/groups/{id}", s.updateGroup)
@@ -335,6 +348,13 @@ func (s *Server) writeMenuEditError(w http.ResponseWriter, r *http.Request, err 
 		writeError(w, s.log, http.StatusNotFound, CodeItemNotFound, "No such item.")
 	case errors.Is(err, menus.ErrGroupNotFound):
 		writeError(w, s.log, http.StatusNotFound, CodeGroupNotFound, "No such group of choices.")
+	case errors.Is(err, menus.ErrStationNotFound):
+		writeError(w, s.log, http.StatusNotFound, CodeStationNotFound, "No such station.")
+	case errors.Is(err, menus.ErrCourseNotFound):
+		writeError(w, s.log, http.StatusNotFound, CodeCourseNotFound, "No such course.")
+	case errors.Is(err, menus.ErrTicketsOpen):
+		writeError(w, s.log, http.StatusConflict, CodeTicketsOpen,
+			"Tickets are still open. Settle or void them before changing the order of the courses.")
 	case errors.Is(err, menus.ErrStaleOrder):
 		writeError(w, s.log, http.StatusConflict, CodeMenuOrderStale,
 			"The menu changed since you opened it. Reload and put it in order again.")

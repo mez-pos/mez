@@ -51,6 +51,7 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
   const change = priceChange(item, form.price);
   const categories = choices(menu.categories, form.categoryId);
   const stations = choices(menu.stations, form.stationId);
+  const courses = choices(menu.courses, form.courseId);
 
   return (
     <Modal
@@ -158,9 +159,9 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
         <Field label="Course" error={on("course_id")}>
           {(id) => (
             <Select id={id} value={form.courseId} onChange={(courseId) => set({ courseId })}>
-              {menu.courses.map((c) => (
+              {courses.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {courseText(c)}
+                  {c.active ? courseText(c) : `${courseText(c)} (retired)`}
                 </option>
               ))}
             </Select>

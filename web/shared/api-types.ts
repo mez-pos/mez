@@ -124,7 +124,8 @@ export type ErrorCode =
   | 'tax_class_in_use'
   | 'tickets_open'
   | 'numbering_locked'
-  | 'number_taken';
+  | 'number_taken'
+  | 'course_not_found';
 
 export type OrderStatus =
   | 'open'
@@ -1240,6 +1241,7 @@ export interface EditorCourse {
   id: number;
   number: number;
   name: string;
+  active: boolean;
 }
 
 export interface EditorTaxClass {
@@ -1285,6 +1287,30 @@ export interface EditorModifier {
   name: string;
   price: Money;
   is_default: boolean;
+}
+
+export interface StationInput {
+  code: string;
+  name: string;
+}
+
+export interface CourseInput {
+  name: string;
+}
+
+export interface RetireInput {
+  move_to: number;
+}
+
+export interface StationRetiredResponse {
+  id: number;
+  items_moved: number;
+  printer_moved: boolean;
+}
+
+export interface CourseRetiredResponse {
+  id: number;
+  items_moved: number;
 }
 
 export interface MenuGroupInput {

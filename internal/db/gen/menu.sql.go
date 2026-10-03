@@ -47,6 +47,19 @@ func (q *Queries) ActiveCategories(ctx context.Context, venueID int64) ([]Active
 	return items, nil
 }
 
+const activeCourseCount = `-- name: ActiveCourseCount :one
+SELECT COUNT(*)
+FROM courses
+WHERE venue_id = ? AND active = 1
+`
+
+func (q *Queries) ActiveCourseCount(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, activeCourseCount, venueID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const activeItems = `-- name: ActiveItems :many
 SELECT
     i.id, i.category_id, i.name, i.price, i.hsn,
@@ -233,6 +246,19 @@ func (q *Queries) ActiveModifiers(ctx context.Context, venueID int64) ([]ActiveM
 	return items, nil
 }
 
+const activeStationCount = `-- name: ActiveStationCount :one
+SELECT COUNT(*)
+FROM stations
+WHERE venue_id = ? AND active = 1
+`
+
+func (q *Queries) ActiveStationCount(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, activeStationCount, venueID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const activeStations = `-- name: ActiveStations :many
 SELECT id, code, name, sort_order
 FROM stations
@@ -373,7 +399,7 @@ func (q *Queries) CategoryIDs(ctx context.Context, venueID int64) ([]int64, erro
 }
 
 const courseForEdit = `-- name: CourseForEdit :one
-SELECT id
+SELECT id, active
 FROM courses
 WHERE venue_id = ? AND id = ?
 `
@@ -383,17 +409,52 @@ type CourseForEditParams struct {
 	ID      int64
 }
 
-func (q *Queries) CourseForEdit(ctx context.Context, arg CourseForEditParams) (int64, error) {
+type CourseForEditRow struct {
+	ID     int64
+	Active bool
+}
+
+func (q *Queries) CourseForEdit(ctx context.Context, arg CourseForEditParams) (CourseForEditRow, error) {
 	row := q.db.QueryRowContext(ctx, courseForEdit, arg.VenueID, arg.ID)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+	var i CourseForEditRow
+	err := row.Scan(&i.ID, &i.Active)
+	return i, err
+}
+
+const courseIDsByNumber = `-- name: CourseIDsByNumber :many
+SELECT id
+FROM courses
+WHERE venue_id = ?
+ORDER BY number
+`
+
+func (q *Queries) CourseIDsByNumber(ctx context.Context, venueID int64) ([]int64, error) {
+	rows, err := q.db.QueryContext(ctx, courseIDsByNumber, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int64{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const coursesForVenue = `-- name: CoursesForVenue :many
 SELECT id, number, name
 FROM courses
-WHERE venue_id = ?
+WHERE venue_id = ? AND active = 1
 ORDER BY number
 `
 
@@ -698,6 +759,48 @@ func (q *Queries) EditorCategories(ctx context.Context, venueID int64) ([]Editor
 	return items, nil
 }
 
+const editorCourses = `-- name: EditorCourses :many
+SELECT id, number, name, active
+FROM courses
+WHERE venue_id = ?
+ORDER BY number
+`
+
+type EditorCoursesRow struct {
+	ID     int64
+	Number int64
+	Name   string
+	Active bool
+}
+
+func (q *Queries) EditorCourses(ctx context.Context, venueID int64) ([]EditorCoursesRow, error) {
+	rows, err := q.db.QueryContext(ctx, editorCourses, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []EditorCoursesRow{}
+	for rows.Next() {
+		var i EditorCoursesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Number,
+			&i.Name,
+			&i.Active,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const editorItems = `-- name: EditorItems :many
 SELECT
     id, category_id, name, price, hsn,
@@ -875,6 +978,42 @@ func (q *Queries) GroupForEdit(ctx context.Context, arg GroupForEditParams) (Gro
 	return i, err
 }
 
+const itemCountForCourse = `-- name: ItemCountForCourse :one
+SELECT COUNT(*)
+FROM items
+WHERE venue_id = ? AND course_id = ?
+`
+
+type ItemCountForCourseParams struct {
+	VenueID  int64
+	CourseID int64
+}
+
+func (q *Queries) ItemCountForCourse(ctx context.Context, arg ItemCountForCourseParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, itemCountForCourse, arg.VenueID, arg.CourseID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const itemCountForStation = `-- name: ItemCountForStation :one
+SELECT COUNT(*)
+FROM items
+WHERE venue_id = ? AND station_id = ?
+`
+
+type ItemCountForStationParams struct {
+	VenueID   int64
+	StationID int64
+}
+
+func (q *Queries) ItemCountForStation(ctx context.Context, arg ItemCountForStationParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, itemCountForStation, arg.VenueID, arg.StationID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const itemForEdit = `-- name: ItemForEdit :one
 SELECT id, category_id, sort_order, active
 FROM items
@@ -974,6 +1113,32 @@ func (q *Queries) ItemModifierGroupsForVenue(ctx context.Context, venueID int64)
 		return nil, err
 	}
 	return items, nil
+}
+
+const itemStationCourseActive = `-- name: ItemStationCourseActive :one
+SELECT stations.active AS station_active, courses.active AS course_active
+FROM items
+JOIN stations ON stations.venue_id = items.venue_id AND stations.id = items.station_id
+JOIN courses ON courses.venue_id = items.venue_id AND courses.id = items.course_id
+WHERE items.venue_id = ? AND items.id = ?
+`
+
+type ItemStationCourseActiveParams struct {
+	VenueID int64
+	ID      int64
+}
+
+type ItemStationCourseActiveRow struct {
+	StationActive bool
+	CourseActive  bool
+}
+
+// Whether an item's station and course are both in service.
+func (q *Queries) ItemStationCourseActive(ctx context.Context, arg ItemStationCourseActiveParams) (ItemStationCourseActiveRow, error) {
+	row := q.db.QueryRowContext(ctx, itemStationCourseActive, arg.VenueID, arg.ID)
+	var i ItemStationCourseActiveRow
+	err := row.Scan(&i.StationActive, &i.CourseActive)
+	return i, err
 }
 
 const itemTaxClassActive = `-- name: ItemTaxClassActive :one
@@ -1088,6 +1253,60 @@ func (q *Queries) ModifierIDsOfGroup(ctx context.Context, arg ModifierIDsOfGroup
 	return items, nil
 }
 
+const moveCourseItems = `-- name: MoveCourseItems :execrows
+UPDATE items
+SET course_id = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND course_id = ?4
+`
+
+type MoveCourseItemsParams struct {
+	ToCourse   int64
+	Now        time.Time
+	VenueID    int64
+	FromCourse int64
+}
+
+func (q *Queries) MoveCourseItems(ctx context.Context, arg MoveCourseItemsParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, moveCourseItems,
+		arg.ToCourse,
+		arg.Now,
+		arg.VenueID,
+		arg.FromCourse,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const moveStationItems = `-- name: MoveStationItems :execrows
+UPDATE items
+SET station_id = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND station_id = ?4
+`
+
+type MoveStationItemsParams struct {
+	ToStation   int64
+	Now         time.Time
+	VenueID     int64
+	FromStation int64
+}
+
+// Every item of a station, retired ones too: one brought back later must not
+// name a station that is gone.
+func (q *Queries) MoveStationItems(ctx context.Context, arg MoveStationItemsParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, moveStationItems,
+		arg.ToStation,
+		arg.Now,
+		arg.VenueID,
+		arg.FromStation,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const nextCategorySort = `-- name: NextCategorySort :one
 SELECT CAST(COALESCE(MAX(sort_order) + 1, 0) AS INTEGER) AS next
 FROM categories
@@ -1096,6 +1315,19 @@ WHERE venue_id = ?
 
 func (q *Queries) NextCategorySort(ctx context.Context, venueID int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, nextCategorySort, venueID)
+	var next int64
+	err := row.Scan(&next)
+	return next, err
+}
+
+const nextCourseNumber = `-- name: NextCourseNumber :one
+SELECT CAST(COALESCE(MAX(number) + 1, 1) AS INTEGER) AS next
+FROM courses
+WHERE venue_id = ?
+`
+
+func (q *Queries) NextCourseNumber(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, nextCourseNumber, venueID)
 	var next int64
 	err := row.Scan(&next)
 	return next, err
@@ -1119,6 +1351,22 @@ func (q *Queries) NextItemSort(ctx context.Context, arg NextItemSortParams) (int
 	return next, err
 }
 
+const nextStationSort = `-- name: NextStationSort :one
+
+SELECT CAST(COALESCE(MAX(sort_order) + 1, 0) AS INTEGER) AS next
+FROM stations
+WHERE venue_id = ?
+`
+
+// Stations and courses (phase 10, Task 6e). Each write goes through
+// db.DB.EditMenu and is scoped by venue_id.
+func (q *Queries) NextStationSort(ctx context.Context, venueID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, nextStationSort, venueID)
+	var next int64
+	err := row.Scan(&next)
+	return next, err
+}
+
 const renameCategory = `-- name: RenameCategory :execrows
 UPDATE categories
 SET name = ?1, updated_at = ?2
@@ -1134,6 +1382,58 @@ type RenameCategoryParams struct {
 
 func (q *Queries) RenameCategory(ctx context.Context, arg RenameCategoryParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, renameCategory,
+		arg.Name,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const renameCourse = `-- name: RenameCourse :execrows
+UPDATE courses
+SET name = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type RenameCourseParams struct {
+	Name    string
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) RenameCourse(ctx context.Context, arg RenameCourseParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, renameCourse,
+		arg.Name,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const renameStation = `-- name: RenameStation :execrows
+UPDATE stations
+SET name = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type RenameStationParams struct {
+	Name    string
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) RenameStation(ctx context.Context, arg RenameStationParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, renameStation,
 		arg.Name,
 		arg.Now,
 		arg.VenueID,
@@ -1207,6 +1507,58 @@ type SetCategorySortParams struct {
 func (q *Queries) SetCategorySort(ctx context.Context, arg SetCategorySortParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, setCategorySort,
 		arg.SortOrder,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const setCourseActive = `-- name: SetCourseActive :execrows
+UPDATE courses
+SET active = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type SetCourseActiveParams struct {
+	Active  bool
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) SetCourseActive(ctx context.Context, arg SetCourseActiveParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setCourseActive,
+		arg.Active,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const setCourseNumber = `-- name: SetCourseNumber :execrows
+UPDATE courses
+SET number = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type SetCourseNumberParams struct {
+	Number  int64
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) SetCourseNumber(ctx context.Context, arg SetCourseNumberParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setCourseNumber,
+		arg.Number,
 		arg.Now,
 		arg.VenueID,
 		arg.ID,
@@ -1350,6 +1702,84 @@ func (q *Queries) SetModifierGroupActive(ctx context.Context, arg SetModifierGro
 	return result.RowsAffected()
 }
 
+const setStationActive = `-- name: SetStationActive :execrows
+UPDATE stations
+SET active = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type SetStationActiveParams struct {
+	Active  bool
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) SetStationActive(ctx context.Context, arg SetStationActiveParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setStationActive,
+		arg.Active,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const setStationPrinterByID = `-- name: SetStationPrinterByID :execrows
+UPDATE stations
+SET printer_id = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type SetStationPrinterByIDParams struct {
+	PrinterID sql.NullInt64
+	Now       time.Time
+	VenueID   int64
+	ID        int64
+}
+
+func (q *Queries) SetStationPrinterByID(ctx context.Context, arg SetStationPrinterByIDParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setStationPrinterByID,
+		arg.PrinterID,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const setStationSort = `-- name: SetStationSort :execrows
+UPDATE stations
+SET sort_order = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4
+`
+
+type SetStationSortParams struct {
+	SortOrder int64
+	Now       time.Time
+	VenueID   int64
+	ID        int64
+}
+
+func (q *Queries) SetStationSort(ctx context.Context, arg SetStationSortParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setStationSort,
+		arg.SortOrder,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const setTaxClassActive = `-- name: SetTaxClassActive :execrows
 UPDATE tax_classes
 SET active = ?1, updated_at = ?2
@@ -1396,6 +1826,62 @@ func (q *Queries) StationForEdit(ctx context.Context, arg StationForEditParams) 
 	row := q.db.QueryRowContext(ctx, stationForEdit, arg.VenueID, arg.ID)
 	var i StationForEditRow
 	err := row.Scan(&i.ID, &i.Active)
+	return i, err
+}
+
+const stationIDs = `-- name: StationIDs :many
+SELECT id
+FROM stations
+WHERE venue_id = ?
+ORDER BY id
+`
+
+func (q *Queries) StationIDs(ctx context.Context, venueID int64) ([]int64, error) {
+	rows, err := q.db.QueryContext(ctx, stationIDs, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int64{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const stationRouting = `-- name: StationRouting :one
+SELECT id, active, printer_id
+FROM stations
+WHERE venue_id = ? AND id = ?
+`
+
+type StationRoutingParams struct {
+	VenueID int64
+	ID      int64
+}
+
+type StationRoutingRow struct {
+	ID        int64
+	Active    bool
+	PrinterID sql.NullInt64
+}
+
+// A station as retiring it needs to see it: whether it is in service and the
+// printer its tickets go to, if any.
+func (q *Queries) StationRouting(ctx context.Context, arg StationRoutingParams) (StationRoutingRow, error) {
+	row := q.db.QueryRowContext(ctx, stationRouting, arg.VenueID, arg.ID)
+	var i StationRoutingRow
+	err := row.Scan(&i.ID, &i.Active, &i.PrinterID)
 	return i, err
 }
 

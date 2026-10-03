@@ -11,6 +11,7 @@ import (
 
 type Querier interface {
 	ActiveCategories(ctx context.Context, venueID int64) ([]ActiveCategoriesRow, error)
+	ActiveCourseCount(ctx context.Context, venueID int64) (int64, error)
 	//
 	// An item in a retired category is not on sale either: retiring
 	// "Breakfast" at noon takes every breakfast item off the till with it.
@@ -24,6 +25,7 @@ type Querier interface {
 	// The index on (venue_id, active) is what this reads down, which is why it
 	// exists.
 	ActiveStaffForVenue(ctx context.Context, venueID int64) ([]Staff, error)
+	ActiveStationCount(ctx context.Context, venueID int64) (int64, error)
 	ActiveStations(ctx context.Context, venueID int64) ([]ActiveStationsRow, error)
 	AddItemRecipePart(ctx context.Context, arg AddItemRecipePartParams) error
 	AddModifierRecipePart(ctx context.Context, arg AddModifierRecipePartParams) error
@@ -83,7 +85,8 @@ type Querier interface {
 	// cost when it was counted, 0 for not known (ADR-124).
 	ClosingCountsInRange(ctx context.Context, arg ClosingCountsInRangeParams) ([]ClosingCountsInRangeRow, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
-	CourseForEdit(ctx context.Context, arg CourseForEditParams) (int64, error)
+	CourseForEdit(ctx context.Context, arg CourseForEditParams) (CourseForEditRow, error)
+	CourseIDsByNumber(ctx context.Context, venueID int64) ([]int64, error)
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
 	CreateArea(ctx context.Context, arg CreateAreaParams) (int64, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (int64, error)
@@ -152,6 +155,7 @@ type Querier interface {
 	// later one for that printer. Jobs with no printer are never picked.
 	DuePrintJobs(ctx context.Context, now time.Time) ([]DuePrintJobsRow, error)
 	EditorCategories(ctx context.Context, venueID int64) ([]EditorCategoriesRow, error)
+	EditorCourses(ctx context.Context, venueID int64) ([]EditorCoursesRow, error)
 	EditorItems(ctx context.Context, venueID int64) ([]EditorItemsRow, error)
 	// Modifier groups in the editor (phase 10, Task 2c). A group's choices are
 	// saved with it: a choice left out is retired, not deleted, so a line that
@@ -188,11 +192,15 @@ type Querier interface {
 	// Every item's category, retired ones included: a report names what was
 	// sold, even if it is off the menu now.
 	ItemCategoriesForVenue(ctx context.Context, venueID int64) ([]ItemCategoriesForVenueRow, error)
+	ItemCountForCourse(ctx context.Context, arg ItemCountForCourseParams) (int64, error)
+	ItemCountForStation(ctx context.Context, arg ItemCountForStationParams) (int64, error)
 	ItemForEdit(ctx context.Context, arg ItemForEditParams) (ItemForEditRow, error)
 	ItemIDsInCategory(ctx context.Context, arg ItemIDsInCategoryParams) ([]int64, error)
 	ItemModifierGroupsForVenue(ctx context.Context, venueID int64) ([]ItemModifierGroupsForVenueRow, error)
 	// Recipes (Task 3b, ADR-112).
 	ItemRecipesForVenue(ctx context.Context, venueID int64) ([]ItemRecipesForVenueRow, error)
+	// Whether an item's station and course are both in service.
+	ItemStationCourseActive(ctx context.Context, arg ItemStationCourseActiveParams) (ItemStationCourseActiveRow, error)
 	ItemTaxClassActive(ctx context.Context, arg ItemTaxClassActiveParams) (bool, error)
 	// Every item on the menu now, with the code it carries: what a profile
 	// that prints HSN needs every one to have.
@@ -218,13 +226,21 @@ type Querier interface {
 	ModifierForRecipe(ctx context.Context, arg ModifierForRecipeParams) (int64, error)
 	ModifierIDsOfGroup(ctx context.Context, arg ModifierIDsOfGroupParams) ([]int64, error)
 	ModifierRecipesForVenue(ctx context.Context, venueID int64) ([]ModifierRecipesForVenueRow, error)
+	MoveCourseItems(ctx context.Context, arg MoveCourseItemsParams) (int64, error)
+	// Every item of a station, retired ones too: one brought back later must not
+	// name a station that is gone.
+	MoveStationItems(ctx context.Context, arg MoveStationItemsParams) (int64, error)
 	NextCategorySort(ctx context.Context, venueID int64) (int64, error)
+	NextCourseNumber(ctx context.Context, venueID int64) (int64, error)
 	// The invoice series counters and the register of numbers issued.
 	// Allocates the next number in a series in one statement: the first call for
 	// a key writes 1, every later one adds one. It runs inside the issuing
 	// transaction, so a rollback takes the number back. Never MAX(n)+1.
 	NextInvoiceSeq(ctx context.Context, arg NextInvoiceSeqParams) (int64, error)
 	NextItemSort(ctx context.Context, arg NextItemSortParams) (int64, error)
+	// Stations and courses (phase 10, Task 6e). Each write goes through
+	// db.DB.EditMenu and is scoped by venue_id.
+	NextStationSort(ctx context.Context, venueID int64) (int64, error)
 	// Z-reports (ADR-098). Written only by internal/service/shift, in the
 	// transaction that closes a shift or issues a correction.
 	// Moves the venue's counter on and returns the number taken.
@@ -274,6 +290,8 @@ type Querier interface {
 	RedeemPairingCode(ctx context.Context, arg RedeemPairingCodeParams) (int64, error)
 	RenameArea(ctx context.Context, arg RenameAreaParams) (int64, error)
 	RenameCategory(ctx context.Context, arg RenameCategoryParams) (int64, error)
+	RenameCourse(ctx context.Context, arg RenameCourseParams) (int64, error)
+	RenameStation(ctx context.Context, arg RenameStationParams) (int64, error)
 	// On start, jobs a crash left printing go back to queued. Whether their
 	// bytes reached the printer is unknown; printing twice beats never.
 	RequeueStalePrintJobs(ctx context.Context, now time.Time) (int64, error)
@@ -292,6 +310,8 @@ type Querier interface {
 	SetAreaActive(ctx context.Context, arg SetAreaActiveParams) (int64, error)
 	SetCategoryActive(ctx context.Context, arg SetCategoryActiveParams) (int64, error)
 	SetCategorySort(ctx context.Context, arg SetCategorySortParams) (int64, error)
+	SetCourseActive(ctx context.Context, arg SetCourseActiveParams) (int64, error)
+	SetCourseNumber(ctx context.Context, arg SetCourseNumberParams) (int64, error)
 	SetItemActive(ctx context.Context, arg SetItemActiveParams) (int64, error)
 	//
 	// The file is written before this runs; '' takes the photo off. A file no
@@ -312,7 +332,10 @@ type Querier interface {
 	SetSetting(ctx context.Context, arg SetSettingParams) error
 	SetStaffActive(ctx context.Context, arg SetStaffActiveParams) (int64, error)
 	SetStaffPIN(ctx context.Context, arg SetStaffPINParams) (int64, error)
+	SetStationActive(ctx context.Context, arg SetStationActiveParams) (int64, error)
 	SetStationPrinter(ctx context.Context, arg SetStationPrinterParams) (int64, error)
+	SetStationPrinterByID(ctx context.Context, arg SetStationPrinterByIDParams) (int64, error)
+	SetStationSort(ctx context.Context, arg SetStationSortParams) (int64, error)
 	SetStockItemActive(ctx context.Context, arg SetStockItemActiveParams) (int64, error)
 	SetTableActive(ctx context.Context, arg SetTableActiveParams) (int64, error)
 	SetTaxClassActive(ctx context.Context, arg SetTaxClassActiveParams) (int64, error)
@@ -355,8 +378,12 @@ type Querier interface {
 	// since a time, for the display's recall.
 	StationBoard(ctx context.Context, arg StationBoardParams) ([]StationBoardRow, error)
 	StationForEdit(ctx context.Context, arg StationForEditParams) (StationForEditRow, error)
+	StationIDs(ctx context.Context, venueID int64) ([]int64, error)
 	// The printer a station's tickets go to, if it has one in service.
 	StationPrinter(ctx context.Context, arg StationPrinterParams) (StationPrinterRow, error)
+	// A station as retiring it needs to see it: whether it is in service and the
+	// printer its tickets go to, if any.
+	StationRouting(ctx context.Context, arg StationRoutingParams) (StationRoutingRow, error)
 	StationsWithPrinters(ctx context.Context, venueID int64) ([]StationsWithPrintersRow, error)
 	StockItemForEdit(ctx context.Context, arg StockItemForEditParams) (StockItemForEditRow, error)
 	//

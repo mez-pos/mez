@@ -176,7 +176,7 @@ Phase 09.
     today (shifts, reports, audit, sold out); a change takes effect from
     the next shift opened. The variance threshold, the tip rule and its
     role weights, the minutes before a ticket is late. Go tests.
-  - [ ] **Task 6e: Stations and courses.** Server. Create, rename, order
+  - [x] **Task 6e: Stations and courses.** Server. Create, rename, order
     and retire stations and courses, through the menu's write path so the
     version bumps and tills hear of it. A station with items or a
     printer mapped cannot be retired without saying where they go.

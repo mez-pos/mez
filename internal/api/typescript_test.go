@@ -136,7 +136,7 @@ var errorCodes = []ErrorCode{
 	CodeStaffNotFound, CodeRoleNotFound, CodeRoleInUse, CodeRoleNameTaken, CodeBeyondYou, CodeLastManager, CodeInvalidPerson,
 	CodeInvalidFilter, CodeInvalidSetting, CodeVenueNotFound,
 	CodeTaxClassNotFound, CodeTaxClassNameTaken, CodeTaxClassInUse, CodeTicketsOpen,
-	CodeNumberingLocked, CodeNumberTaken,
+	CodeNumberingLocked, CodeNumberTaken, CodeCourseNotFound,
 }
 
 // generate builds the whole file.
@@ -312,6 +312,7 @@ func generate() (*ts.Generator, error) {
 		numberingRequest{}, numberingResponse{}, rulesRequest{}, rulesResponse{},
 		// The menu editor.
 		categoryRequest{}, itemRequest{}, menuOrderRequest{}, menuEditResponse{}, menus.Editor{},
+		stationRequest{}, courseRequest{}, retireRequest{}, stationRetiredResponse{}, courseRetiredResponse{},
 		menus.Station{}, menus.Course{}, menus.TaxClass{}, menus.Category{}, menus.Item{},
 		groupRequest{}, menus.ModifierInput{}, menus.Group{}, menus.Modifier{}, soldOutResponse{}, photoResponse{},
 		// Stock.

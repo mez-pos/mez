@@ -41,7 +41,7 @@ const menu: MenuEditor = {
     { id: 1, code: "bar", name: "Bar", active: false },
     { id: 2, code: "kitchen", name: "Kitchen", active: true },
   ],
-  courses: [{ id: 1, number: 1, name: "Mains" }],
+  courses: [{ id: 1, number: 1, name: "Mains", active: true }],
   tax_classes: [
     { id: 1, name: "Food", rate: 5000, exempt: false, active: true },
     { id: 2, name: "Water", rate: 0, exempt: true, active: true },
@@ -116,6 +116,12 @@ describe("choices", () => {
 describe("the item form", () => {
   it("starts a new item in the category, with the first usable choices", () => {
     expect(newItemForm(menu, 11)).toEqual({ name: "", categoryId: 11, price: "", hsn: "", taxClassId: 1, stationId: 2, courseId: 1 });
+  });
+  it("offers the courses in service, and a retired one only to an item that has it", () => {
+    const withRetired = { ...menu, courses: [{ id: 1, number: 1, name: "Mains", active: false }, { id: 2, number: 2, name: "Desserts", active: true }] };
+    expect(newItemForm(withRetired, 10).courseId).toBe(2);
+    expect(choices(withRetired.courses, 2).map((c) => c.name)).toEqual(["Desserts"]);
+    expect(choices(withRetired.courses, 1).map((c) => c.name)).toEqual(["Mains", "Desserts"]);
   });
   it("starts with nothing chosen on an empty menu, for the server to refuse", () => {
     const empty = { ...menu, stations: [], courses: [], tax_classes: [] };

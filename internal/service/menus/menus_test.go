@@ -90,7 +90,8 @@ func newWorld(t *testing.T) *world {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// No query retires a station yet: Task 6 edits stations.
+	// Retired by hand, not through the service: the station tests that retire
+	// one must not depend on the code they are testing for their setup.
 	if _, err := d.Writer().ExecContext(ctx, `UPDATE stations SET active = 0 WHERE code = 'bar'`); err != nil {
 		t.Fatal(err)
 	}

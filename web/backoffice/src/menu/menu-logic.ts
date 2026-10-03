@@ -90,7 +90,7 @@ export function newItemForm(menu: MenuEditor, categoryId: number): ItemForm {
     hsn: "",
     taxClassId: menu.tax_classes.find((t) => t.active)?.id ?? 0,
     stationId: menu.stations.find((s) => s.active)?.id ?? 0,
-    courseId: menu.courses[0]?.id ?? 0,
+    courseId: menu.courses.find((c) => c.active)?.id ?? 0,
   };
 }
 

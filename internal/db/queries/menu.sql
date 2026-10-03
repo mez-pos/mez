@@ -30,7 +30,7 @@ ORDER BY sort_order, id;
 -- name: CoursesForVenue :many
 SELECT id, number, name
 FROM courses
-WHERE venue_id = ?
+WHERE venue_id = ? AND active = 1
 ORDER BY number;
 
 -- name: TaxClassesForVenue :many
@@ -126,6 +126,12 @@ FROM stations
 WHERE venue_id = ?
 ORDER BY sort_order, id;
 
+-- name: EditorCourses :many
+SELECT id, number, name, active
+FROM courses
+WHERE venue_id = ?
+ORDER BY number;
+
 -- name: EditorCategories :many
 SELECT id, name, sort_order, active
 FROM categories
@@ -165,7 +171,7 @@ FROM tax_classes
 WHERE venue_id = ? AND id = ?;
 
 -- name: CourseForEdit :one
-SELECT id
+SELECT id, active
 FROM courses
 WHERE venue_id = ? AND id = ?;
 
@@ -322,3 +328,110 @@ SELECT id, name, hsn
 FROM items
 WHERE venue_id = ? AND active = 1
 ORDER BY name, id;
+
+-- Stations and courses (phase 10, Task 6e). Each write goes through
+-- db.DB.EditMenu and is scoped by venue_id.
+
+-- name: NextStationSort :one
+SELECT CAST(COALESCE(MAX(sort_order) + 1, 0) AS INTEGER) AS next
+FROM stations
+WHERE venue_id = ?;
+
+-- name: StationIDs :many
+SELECT id
+FROM stations
+WHERE venue_id = ?
+ORDER BY id;
+
+-- name: StationRouting :one
+-- A station as retiring it needs to see it: whether it is in service and the
+-- printer its tickets go to, if any.
+SELECT id, active, printer_id
+FROM stations
+WHERE venue_id = ? AND id = ?;
+
+-- name: ActiveStationCount :one
+SELECT COUNT(*)
+FROM stations
+WHERE venue_id = ? AND active = 1;
+
+-- name: RenameStation :execrows
+UPDATE stations
+SET name = sqlc.arg(name), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetStationSort :execrows
+UPDATE stations
+SET sort_order = sqlc.arg(sort_order), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetStationActive :execrows
+UPDATE stations
+SET active = sqlc.arg(active), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetStationPrinterByID :execrows
+UPDATE stations
+SET printer_id = sqlc.narg(printer_id), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: MoveStationItems :execrows
+-- Every item of a station, retired ones too: one brought back later must not
+-- name a station that is gone.
+UPDATE items
+SET station_id = sqlc.arg(to_station), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND station_id = sqlc.arg(from_station);
+
+-- name: ItemCountForStation :one
+SELECT COUNT(*)
+FROM items
+WHERE venue_id = ? AND station_id = ?;
+
+-- name: NextCourseNumber :one
+SELECT CAST(COALESCE(MAX(number) + 1, 1) AS INTEGER) AS next
+FROM courses
+WHERE venue_id = ?;
+
+-- name: CourseIDsByNumber :many
+SELECT id
+FROM courses
+WHERE venue_id = ?
+ORDER BY number;
+
+-- name: ActiveCourseCount :one
+SELECT COUNT(*)
+FROM courses
+WHERE venue_id = ? AND active = 1;
+
+-- name: RenameCourse :execrows
+UPDATE courses
+SET name = sqlc.arg(name), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetCourseNumber :execrows
+UPDATE courses
+SET number = sqlc.arg(number), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: SetCourseActive :execrows
+UPDATE courses
+SET active = sqlc.arg(active), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
+
+-- name: MoveCourseItems :execrows
+UPDATE items
+SET course_id = sqlc.arg(to_course), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND course_id = sqlc.arg(from_course);
+
+-- name: ItemCountForCourse :one
+SELECT COUNT(*)
+FROM items
+WHERE venue_id = ? AND course_id = ?;
+
+-- name: ItemStationCourseActive :one
+-- Whether an item's station and course are both in service.
+SELECT stations.active AS station_active, courses.active AS course_active
+FROM items
+JOIN stations ON stations.venue_id = items.venue_id AND stations.id = items.station_id
+JOIN courses ON courses.venue_id = items.venue_id AND courses.id = items.course_id
+WHERE items.venue_id = ? AND items.id = ?;

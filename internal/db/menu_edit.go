@@ -13,7 +13,7 @@ import (
 type MenuEditorRows struct {
 	Version    int64
 	Stations   []gen.EditorStationsRow
-	Courses    []gen.CoursesForVenueRow
+	Courses    []gen.EditorCoursesRow
 	TaxClasses []gen.TaxClassesForVenueRow
 	Categories []gen.EditorCategoriesRow
 	Items      []gen.EditorItemsRow
@@ -41,7 +41,7 @@ func (d *DB) MenuEditor(ctx context.Context, venueID int64) (MenuEditorRows, err
 	}{
 		{"version", func() (err error) { out.Version, err = q.MenuVersion(ctx, venueID); return }},
 		{"stations", func() (err error) { out.Stations, err = q.EditorStations(ctx, venueID); return }},
-		{"courses", func() (err error) { out.Courses, err = q.CoursesForVenue(ctx, venueID); return }},
+		{"courses", func() (err error) { out.Courses, err = q.EditorCourses(ctx, venueID); return }},
 		{"tax classes", func() (err error) { out.TaxClasses, err = q.TaxClassesForVenue(ctx, venueID); return }},
 		{"categories", func() (err error) { out.Categories, err = q.EditorCategories(ctx, venueID); return }},
 		{"items", func() (err error) { out.Items, err = q.EditorItems(ctx, venueID); return }},

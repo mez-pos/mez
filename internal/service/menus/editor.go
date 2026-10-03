@@ -60,6 +60,7 @@ type Course struct {
 	ID     int64  `json:"id"`
 	Number int64  `json:"number"`
 	Name   string `json:"name"`
+	Active bool   `json:"active"`
 }
 
 // TaxClass is a rate items share.
@@ -127,7 +128,7 @@ func (s *Service) Editor(ctx context.Context, venueID int64) (Editor, error) {
 		out.Stations[i] = Station{ID: r.ID, Code: r.Code, Name: r.Name, Active: r.Active}
 	}
 	for i, r := range rows.Courses {
-		out.Courses[i] = Course{ID: r.ID, Number: r.Number, Name: r.Name}
+		out.Courses[i] = Course{ID: r.ID, Number: r.Number, Name: r.Name, Active: r.Active}
 	}
 	for i, r := range rows.TaxClasses {
 		out.TaxClasses[i] = TaxClass{ID: r.ID, Name: r.Name, Rate: tax.Rate(r.Rate), Exempt: r.Exempt, Active: r.Active}
