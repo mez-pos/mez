@@ -4,8 +4,8 @@
 
 import { useState, type ReactNode } from "react";
 import type { Permission, Person, PersonInput, Role, RoleInput } from "../../../shared/api-types";
-import { Button, Modal } from "../../../shared/ui";
 import { Field, inputClass } from "../FormFields";
+import { FormModal } from "../FormModal";
 import {
   mayGive,
   newStaffForm,
@@ -41,7 +41,15 @@ function useSave(onClose: () => void) {
   return { problem, setProblem, busy, save, on };
 }
 
-function Frame({ title, busy, onSave, onClose, problem, size = "sm", children }: {
+function Frame({
+  title,
+  busy,
+  onSave,
+  onClose,
+  problem,
+  size = "sm",
+  children,
+}: {
   title: string;
   busy: boolean;
   onSave: () => void;
@@ -50,43 +58,25 @@ function Frame({ title, busy, onSave, onClose, problem, size = "sm", children }:
   size?: "sm" | "md";
   children: ReactNode;
 }) {
+  const own = problem !== null && problem.field !== null && ["name", "pin", "again", "role_id"].includes(problem.field);
   return (
-    <Modal
-      open
-      onClose={onClose}
-      title={title}
-      size={size}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" disabled={busy} onClick={onSave}>
-            {busy ? "Saving" : "Save"}
-          </Button>
-        </>
-      }
-    >
-      <form
-        className="flex flex-col gap-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSave();
-        }}
-      >
-        {problem && (problem.field === null || !["name", "pin", "again", "role_id"].includes(problem.field)) && (
-          <p role="alert" className="text-base text-danger">
-            {problem.message}
-          </p>
-        )}
-        {children}
-        <button type="submit" hidden />
-      </form>
-    </Modal>
+    <FormModal title={title} size={size} busy={busy} onSave={onSave} onClose={onClose} refusal={problem && !own ? problem.message : null}>
+      {children}
+    </FormModal>
   );
 }
 
-function PinFields({ pin, again, onChange, on }: { pin: string; again: string; onChange: (p: { pin?: string; again?: string }) => void; on: (f: string) => string | null }) {
+function PinFields({
+  pin,
+  again,
+  onChange,
+  on,
+}: {
+  pin: string;
+  again: string;
+  onChange: (p: { pin?: string; again?: string }) => void;
+  on: (f: string) => string | null;
+}) {
   const props = { type: "password", inputMode: "numeric" as const, autoComplete: "new-password", maxLength: 8, className: `${inputClass} font-mono` };
   return (
     <>

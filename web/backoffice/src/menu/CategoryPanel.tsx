@@ -3,9 +3,10 @@
 
 import { useState } from "react";
 import type { EditorCategory, MenuEditor } from "../../../shared/api-types";
-import { Button, Card, Confirm, Modal } from "../../../shared/ui";
+import { Button, Card, Confirm } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { Field, inputClass } from "../FormFields";
+import { FormModal } from "../FormModal";
 import { itemsOf, moved, problemOf } from "./menu-logic";
 import type { MenuEditorApi } from "./use-menu-editor";
 
@@ -97,9 +98,7 @@ export function CategoryPanel({ menu, selected, onSelect, api, onRename, onProbl
         title={`Retire ${selected.name}?`}
         confirmLabel="Retire"
       >
-        <p className="text-base">
-          {count === 1 ? "Its one item comes" : `Its ${count} items come`} off every till. You can bring it back.
-        </p>
+        <p className="text-base">{count === 1 ? "Its one item comes" : `Its ${count} items come`} off every till. You can bring it back.</p>
       </Confirm>
     </div>
   );
@@ -127,43 +126,22 @@ export function CategoryFormModal({ title, initial, onSave, onClose }: CategoryF
     }
   };
   return (
-    <Modal
-      open
-      onClose={onClose}
-      title={title}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" disabled={busy} onClick={() => void save()}>
-            {busy ? "Saving" : "Save"}
-          </Button>
-        </>
-      }
-    >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void save();
-        }}
-      >
-        <Field label="Name" error={problem}>
-          {(id) => (
-            <input
-              id={id}
-              className={inputClass}
-              value={name}
-              maxLength={60}
-              autoFocus
-              onChange={(e) => {
-                setName(e.target.value);
-                setProblem(null);
-              }}
-            />
-          )}
-        </Field>
-      </form>
-    </Modal>
+    <FormModal title={title} busy={busy} onSave={() => void save()} onClose={onClose}>
+      <Field label="Name" error={problem}>
+        {(id) => (
+          <input
+            id={id}
+            className={inputClass}
+            value={name}
+            maxLength={60}
+            autoFocus
+            onChange={(e) => {
+              setName(e.target.value);
+              setProblem(null);
+            }}
+          />
+        )}
+      </Field>
+    </FormModal>
   );
 }

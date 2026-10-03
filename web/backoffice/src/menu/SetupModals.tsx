@@ -4,16 +4,8 @@
 import { useState } from "react";
 import { Button, Modal } from "../../../shared/ui";
 import { Field, inputClass } from "../FormFields";
-import {
-  destinations,
-  itemsText,
-  nameProblem,
-  retireProblem,
-  setupProblemOf,
-  type SetupField,
-  type SetupKind,
-  type SetupRow,
-} from "./setup-logic";
+import { FormModal } from "../FormModal";
+import { destinations, itemsText, nameProblem, retireProblem, setupProblemOf, type SetupField, type SetupKind, type SetupRow } from "./setup-logic";
 import type { Problem } from "../settings/problem";
 
 interface NameModalProps {
@@ -48,78 +40,50 @@ export function NameModal({ title, initial, code, onSave, onClose }: NameModalPr
   const on = (field: SetupField) => (problem?.field === field ? problem.message : null);
 
   return (
-    <Modal
-      open
-      onClose={onClose}
-      title={title}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" disabled={busy} onClick={() => void save()}>
-            {busy ? "Saving" : "Save"}
-          </Button>
-        </>
-      }
-    >
-      <form
-        className="flex flex-col gap-5"
-        noValidate
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!busy) void save();
-        }}
-      >
-        {problem && problem.field === null && (
-          <p role="alert" className="text-base text-danger">
-            {problem.message}
-          </p>
+    <FormModal title={title} busy={busy} onSave={() => void save()} onClose={onClose} refusal={problem && problem.field === null ? problem.message : null}>
+      <Field label="Name" error={on("name")}>
+        {(id) => (
+          <input
+            id={id}
+            className={inputClass}
+            value={name}
+            maxLength={60}
+            autoComplete="off"
+            onChange={(e) => {
+              setName(e.target.value);
+              setProblem(null);
+            }}
+          />
         )}
-        <Field label="Name" error={on("name")}>
+      </Field>
+      {code?.mode === "choose" && (
+        <Field
+          label="Code"
+          hint="Short and lowercase, like bar. Empty makes one from the name. It cannot be changed later: tickets and screens find the station by it."
+          error={on("code")}
+        >
           {(id) => (
             <input
               id={id}
-              className={inputClass}
-              value={name}
-              maxLength={60}
+              className={`${inputClass} max-w-48 font-mono`}
+              value={chosen}
+              maxLength={32}
               autoComplete="off"
+              spellCheck={false}
               onChange={(e) => {
-                setName(e.target.value);
+                setChosen(e.target.value);
                 setProblem(null);
               }}
             />
           )}
         </Field>
-        {code?.mode === "choose" && (
-          <Field
-            label="Code"
-            hint="Short and lowercase, like bar. Empty makes one from the name. It cannot be changed later: tickets and screens find the station by it."
-            error={on("code")}
-          >
-            {(id) => (
-              <input
-                id={id}
-                className={`${inputClass} max-w-48 font-mono`}
-                value={chosen}
-                maxLength={32}
-                autoComplete="off"
-                spellCheck={false}
-                onChange={(e) => {
-                  setChosen(e.target.value);
-                  setProblem(null);
-                }}
-              />
-            )}
-          </Field>
-        )}
-        {code?.mode === "fixed" && (
-          <p className="text-sm text-fg-muted">
-            Its code, <span className="font-mono">{code.value}</span>, never changes.
-          </p>
-        )}
-      </form>
-    </Modal>
+      )}
+      {code?.mode === "fixed" && (
+        <p className="text-sm text-fg-muted">
+          Its code, <span className="font-mono">{code.value}</span>, never changes.
+        </p>
+      )}
+    </FormModal>
   );
 }
 

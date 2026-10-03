@@ -3,18 +3,10 @@
 
 import { useState } from "react";
 import type { TaxClassResponse } from "../../../shared/api-types";
-import { Button, Card, EmptyState, InboxIcon, Modal } from "../../../shared/ui";
+import { Button, Card, EmptyState, InboxIcon } from "../../../shared/ui";
 import { Choice, Field, inputClass } from "../FormFields";
-import {
-  classFormFrom,
-  classProblem,
-  classProblemOf,
-  classRateText,
-  emptyClassForm,
-  toClassInput,
-  type ClassField,
-  type ClassForm,
-} from "./tax-logic";
+import { FormModal } from "../FormModal";
+import { classFormFrom, classProblem, classProblemOf, classRateText, emptyClassForm, toClassInput, type ClassField, type ClassForm } from "./tax-logic";
 import { problemWith } from "./problem";
 import type { TaxApi } from "./use-tax";
 
@@ -39,9 +31,7 @@ export function TaxClassesCard({ classes, api }: { classes: TaxClassResponse[]; 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="font-serif text-xl">Tax classes</h2>
-          <p className="mt-1 text-base text-fg-2">
-            A rate that items share. A new rate is for lines rung up from then on: tickets already open keep theirs.
-          </p>
+          <p className="mt-1 text-base text-fg-2">A rate that items share. A new rate is for lines rung up from then on: tickets already open keep theirs.</p>
         </div>
         <Button onClick={() => setEditing({ kind: "add" })}>Add a tax class</Button>
       </div>
@@ -131,66 +121,44 @@ function ClassModal({
   const on = (field: ClassField) => (problem?.field === field ? problem.message : null);
 
   return (
-    <Modal
-      open
-      onClose={onClose}
+    <FormModal
       title={title}
       size="md"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" disabled={busy} onClick={() => void save()}>
-            {busy ? "Saving" : "Save"}
-          </Button>
-        </>
-      }
+      busy={busy}
+      onSave={() => void save()}
+      onClose={onClose}
+      refusal={problem && problem.field === null ? problem.message : null}
     >
-      <form
-        className="flex flex-col gap-5"
-        noValidate
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!busy) void save();
-        }}
-      >
-        {problem && problem.field === null && (
-          <p role="alert" className="text-base text-danger">
-            {problem.message}
-          </p>
-        )}
-        <Field label="Name" hint="Like Food, Drinks or Alcohol." error={on("name")}>
-          {(id) => <input id={id} className={inputClass} value={form.name} maxLength={40} autoComplete="off" onChange={(e) => set({ name: e.target.value })} />}
+      <Field label="Name" hint="Like Food, Drinks or Alcohol." error={on("name")}>
+        {(id) => <input id={id} className={inputClass} value={form.name} maxLength={40} autoComplete="off" onChange={(e) => set({ name: e.target.value })} />}
+      </Field>
+      <Choice
+        label="Tax"
+        value={form.exempt ? "exempt" : "rate"}
+        options={[
+          { value: "rate", label: "Charged at a rate" },
+          { value: "exempt", label: "Exempt" },
+        ]}
+        onChange={(v: string) => set({ exempt: v === "exempt" })}
+        error={null}
+      />
+      {!form.exempt && (
+        <Field label="Rate" hint="The whole rate, like 5 or 12. Under GST it is split in half into CGST and SGST on the invoice." error={on("rate")}>
+          {(id) => (
+            <div className="flex items-center gap-2">
+              <input
+                id={id}
+                className={`${inputClass} max-w-32 font-mono`}
+                value={form.rate}
+                inputMode="decimal"
+                autoComplete="off"
+                onChange={(e) => set({ rate: e.target.value })}
+              />
+              <span aria-hidden="true">%</span>
+            </div>
+          )}
         </Field>
-        <Choice
-          label="Tax"
-          value={form.exempt ? "exempt" : "rate"}
-          options={[
-            { value: "rate", label: "Charged at a rate" },
-            { value: "exempt", label: "Exempt" },
-          ]}
-          onChange={(v: string) => set({ exempt: v === "exempt" })}
-          error={null}
-        />
-        {!form.exempt && (
-          <Field label="Rate" hint="The whole rate, like 5 or 12. Under GST it is split in half into CGST and SGST on the invoice." error={on("rate")}>
-            {(id) => (
-              <div className="flex items-center gap-2">
-                <input
-                  id={id}
-                  className={`${inputClass} max-w-32 font-mono`}
-                  value={form.rate}
-                  inputMode="decimal"
-                  autoComplete="off"
-                  onChange={(e) => set({ rate: e.target.value })}
-                />
-                <span aria-hidden="true">%</span>
-              </div>
-            )}
-          </Field>
-        )}
-      </form>
-    </Modal>
+      )}
+    </FormModal>
   );
 }

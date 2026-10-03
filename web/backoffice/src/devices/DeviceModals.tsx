@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { DeviceKind, DeviceRecordResponse, PairingCodeResponse } from "../../../shared/api-types";
 import { Button, Modal } from "../../../shared/ui";
 import { Choice, Field, inputClass } from "../FormFields";
+import { FormModal } from "../FormModal";
 import type { Problem } from "../settings/problem";
 import { PAIRABLE, actionProblemOf, nameProblem, pairProblemOf, timeText, type PairField } from "./devices-logic";
 
@@ -40,7 +41,16 @@ export function PairModal({ onPair, onClose }: PairModalProps) {
 
   if (code) {
     return (
-      <Modal open onClose={onClose} title={`Pair ${name.trim()}`} footer={<Button variant="primary" onClick={onClose}>Done</Button>}>
+      <Modal
+        open
+        onClose={onClose}
+        title={`Pair ${name.trim()}`}
+        footer={
+          <Button variant="primary" onClick={onClose}>
+            Done
+          </Button>
+        }
+      >
         <div className="flex flex-col items-center gap-4 py-2 text-center">
           <p
             aria-label={`Pairing code ${code.code.replace("-", " ")}`}
@@ -49,9 +59,7 @@ export function PairModal({ onPair, onClose }: PairModalProps) {
           >
             {code.code}
           </p>
-          <p className="text-base">
-            Enter this on the new device. It works once and runs out at {timeText(code.expires_at)}.
-          </p>
+          <p className="text-base">Enter this on the new device. It works once and runs out at {timeText(code.expires_at)}.</p>
         </div>
       </Modal>
     );
@@ -143,51 +151,29 @@ export function RenameModal({ device, onRename, onClose }: RenameModalProps) {
   };
 
   return (
-    <Modal
-      open
-      onClose={onClose}
+    <FormModal
       title={`Rename ${device.name}`}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" disabled={busy} onClick={() => void save()}>
-            {busy ? "Saving" : "Save"}
-          </Button>
-        </>
-      }
+      busy={busy}
+      onSave={() => void save()}
+      onClose={onClose}
+      refusal={problem && problem.field !== "name" ? problem.message : null}
     >
-      <form
-        className="flex flex-col gap-5"
-        noValidate
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!busy) void save();
-        }}
-      >
-        {problem && problem.field !== "name" && (
-          <p role="alert" className="text-base text-danger">
-            {problem.message}
-          </p>
+      <Field label="Name" hint="Its label on every screen and in the history. It keeps working." error={problem?.field === "name" ? problem.message : null}>
+        {(id) => (
+          <input
+            id={id}
+            className={inputClass}
+            value={name}
+            maxLength={64}
+            autoComplete="off"
+            onChange={(e) => {
+              setName(e.target.value);
+              setProblem(null);
+            }}
+          />
         )}
-        <Field label="Name" hint="Its label on every screen and in the history. It keeps working." error={problem?.field === "name" ? problem.message : null}>
-          {(id) => (
-            <input
-              id={id}
-              className={inputClass}
-              value={name}
-              maxLength={64}
-              autoComplete="off"
-              onChange={(e) => {
-                setName(e.target.value);
-                setProblem(null);
-              }}
-            />
-          )}
-        </Field>
-      </form>
-    </Modal>
+      </Field>
+    </FormModal>
   );
 }
 
@@ -225,9 +211,7 @@ export function RevokeModal({ device, onRevoke, onClose }: RevokeModalProps) {
         </>
       }
     >
-      <p className="text-base">
-        It stops working at once and shows the pairing screen. Orders it took stay as they are. To use it again it needs a new code.
-      </p>
+      <p className="text-base">It stops working at once and shows the pairing screen. Orders it took stay as they are. To use it again it needs a new code.</p>
       {error && (
         <p role="alert" className="mt-3 text-base text-danger">
           {error}
