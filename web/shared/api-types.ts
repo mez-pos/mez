@@ -1176,6 +1176,25 @@ export interface NumberingResponse {
   max_rounding_step: number;
 }
 
+export interface RulesRequest {
+  day_start: string;
+  variance_threshold: number;
+  tip_rule: string;
+  tip_role_weights: Record<string, number>;
+  ticket_late_minutes: number;
+}
+
+export interface RulesResponse {
+  day_start: string;
+  variance_threshold: number;
+  tip_rule: string;
+  tip_role_weights: Record<string, number>;
+  ticket_late_minutes: number;
+  currency: string;
+  roles: string[];
+  open_shift_day: string;
+}
+
 export interface MenuCategoryInput {
   name: string;
 }

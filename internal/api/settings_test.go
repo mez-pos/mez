@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/byjoellobo/mez/internal/service/settings"
@@ -298,6 +299,88 @@ func TestNumberingSettingsOverHTTP(t *testing.T) {
 			if rec := send(w.handler, method, "/api/v1/settings/numbering", body, cashier); rec.Code != http.StatusForbidden {
 				t.Errorf("%s: %d", method, rec.Code)
 			}
+		}
+	})
+}
+
+// TestRulesSettingsOverHTTP: the owner reads how shifts and tips are run,
+// changes it, and each refusal comes back with its code and field.
+func TestRulesSettingsOverHTTP(t *testing.T) {
+	w := newTill(t)
+	svc, err := settings.New(settings.Options{DB: w.db})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.rebuild(t, WithSettings(svc))
+	owner := w.asStaff(w.signInAs(t, "stf_PRIYA001", "2468").Token)
+
+	call := func(method, body string) (int, rulesResponse, Error) {
+		t.Helper()
+		rec := send(w.handler, method, "/api/v1/settings/rules", body, owner)
+		if rec.Code >= 400 {
+			return rec.Code, rulesResponse{}, errorOf(t, rec)
+		}
+		var out rulesResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatalf("%s: %v: %s", method, err, rec.Body)
+		}
+		return rec.Code, out, Error{}
+	}
+
+	status, out, _ := call(http.MethodGet, "")
+	if status != http.StatusOK || out.DayStart != "04:00" || out.VarianceThreshold != 0 || out.TipRule != "even" ||
+		out.TicketLateMinutes != 20 || out.TipRoleWeights == nil || out.Currency != "INR" || out.OpenShiftDay != "" {
+		t.Fatalf("read: %d %+v", status, out)
+	}
+	if !slices.Contains(out.Roles, "owner") || !slices.Contains(out.Roles, "cashier") {
+		t.Fatalf("the roles a weight may name: %v", out.Roles)
+	}
+
+	body := `{"day_start":"05:30","variance_threshold":5000,"tip_rule":"role_weight",` +
+		`"tip_role_weights":{"owner":3,"cashier":1},"ticket_late_minutes":12}`
+	status, out, _ = call(http.MethodPut, body)
+	if status != http.StatusOK || out.DayStart != "05:30" || out.VarianceThreshold != 5000 || out.TipRule != "role_weight" ||
+		out.TipRoleWeights["owner"] != 3 || out.TipRoleWeights["cashier"] != 1 || out.TicketLateMinutes != 12 {
+		t.Fatalf("saved: %d %+v", status, out)
+	}
+
+	refusals := []struct {
+		name, body string
+		status     int
+		code       ErrorCode
+		field      string
+	}{
+		{"a day start that is not a time", `{"day_start":"dawn","ticket_late_minutes":20}`, 422, CodeInvalidSetting, "day_start"},
+		{"a negative threshold", `{"variance_threshold":-1,"ticket_late_minutes":20}`, 422, CodeInvalidSetting, "variance_threshold"},
+		{"a tip rule that does not exist", `{"tip_rule":"coin_toss","ticket_late_minutes":20}`, 422, CodeInvalidSetting, "tip_rule"},
+		{"a weight for a role that is not here", `{"tip_role_weights":{"barista":2},"ticket_late_minutes":20}`, 422, CodeInvalidSetting, "tip_role_weights"},
+		{"role weights with no weights", `{"tip_rule":"role_weight","ticket_late_minutes":20}`, 422, CodeInvalidSetting, "tip_role_weights"},
+		{"no minutes", `{}`, 422, CodeInvalidSetting, "ticket_late_minutes"},
+		{"an unknown field", `{"ticket_late_minutes":20,"currency":"USD"}`, 400, CodeInvalidRequest, ""},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			status, _, apiErr := call(http.MethodPut, tt.body)
+			if status != tt.status || apiErr.Code != tt.code || apiErr.Field != tt.field {
+				t.Errorf("%d %s %q, want %d %s %q", status, apiErr.Code, apiErr.Field, tt.status, tt.code, tt.field)
+			}
+		})
+	}
+	if _, out, _ = call(http.MethodGet, ""); out.DayStart != "05:30" || out.TipRule != "role_weight" {
+		t.Errorf("a refused update changed the rules: %+v", out)
+	}
+
+	t.Run("a cashier cannot read or change them", func(t *testing.T) {
+		cashier := w.asStaff(w.signIn(t, "2468").Token)
+		for _, method := range []string{http.MethodGet, http.MethodPut} {
+			if rec := send(w.handler, method, "/api/v1/settings/rules", body, cashier); rec.Code != http.StatusForbidden {
+				t.Errorf("%s: %d", method, rec.Code)
+			}
+		}
+	})
+	t.Run("another verb is not allowed", func(t *testing.T) {
+		if rec := send(w.handler, http.MethodDelete, "/api/v1/settings/rules", "", owner); rec.Code != http.StatusMethodNotAllowed {
+			t.Errorf("DELETE: %d", rec.Code)
 		}
 	})
 }

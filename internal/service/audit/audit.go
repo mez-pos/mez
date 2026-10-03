@@ -19,8 +19,8 @@ import (
 	"github.com/byjoellobo/mez/internal/db/gen"
 	"github.com/byjoellobo/mez/internal/domain/money"
 	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/shift"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
 // Kind is a kind of correction.
@@ -307,13 +307,17 @@ func rangeOf(ctx context.Context, q *gen.Queries, venueID int64, fromDay, toDay 
 	if err != nil {
 		return time.Time{}, time.Time{}, fmt.Errorf("audit: venue timezone %q: %w", v.Timezone, err)
 	}
+	dayStart, err := svcshift.DayStart(ctx, q, venueID)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("audit: %w", err)
+	}
+	h, m := int(dayStart/time.Hour), int(dayStart%time.Hour/time.Minute)
 	start := func(day string) (time.Time, error) {
 		d, err := time.Parse("2006-01-02", day)
 		if err != nil {
 			return time.Time{}, fmt.Errorf("%w: %q is not a day like 2026-10-01", ErrBadFilter, day)
 		}
-		h := int(shift.DefaultDayStart / time.Hour)
-		return time.Date(d.Year(), d.Month(), d.Day(), h, 0, 0, 0, loc), nil
+		return time.Date(d.Year(), d.Month(), d.Day(), h, m, 0, 0, loc), nil
 	}
 	from, err := start(fromDay)
 	if err != nil {

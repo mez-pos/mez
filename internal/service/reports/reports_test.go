@@ -14,6 +14,7 @@ import (
 	"github.com/byjoellobo/mez/internal/domain/order"
 	"github.com/byjoellobo/mez/internal/domain/report"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
 var kolkata, _ = time.LoadLocation("Asia/Kolkata")
@@ -30,6 +31,7 @@ func (c clock) Now() time.Time { return *c.now }
 func inr(minor int64) money.Amount { return money.Amount{Minor: minor, Currency: "INR"} }
 
 type fixture struct {
+	db     *db.DB
 	s      *Service
 	orders *svcorder.Service
 	now    *time.Time
@@ -49,7 +51,7 @@ func newFixture(t *testing.T) fixture {
 		t.Fatal(err)
 	}
 	now := ist(1, 9, 0)
-	f := fixture{now: &now}
+	f := fixture{db: d, now: &now}
 	err = d.WriteTx(ctx, func(q *gen.Queries) error {
 		if _, err := q.CreateVenue(ctx, gen.CreateVenueParams{
 			PublicID: "ven_REPORT01", Name: "Cafe", Currency: "INR", Timezone: "Asia/Kolkata",
@@ -226,5 +228,63 @@ func TestABadRange(t *testing.T) {
 		if _, err := f.s.Sales(context.Background(), 1, q); !errors.Is(err, ErrBadRange) {
 			t.Errorf("%+v: err %v, want ErrBadRange", q, err)
 		}
+	}
+}
+
+// setDayStart is the venue's setting for when the trading day begins.
+func (f fixture) setDayStart(t *testing.T, value string) {
+	t.Helper()
+	ctx := context.Background()
+	err := f.db.WriteTx(ctx, func(q *gen.Queries) error {
+		return q.SetSetting(ctx, gen.SetSettingParams{VenueID: 1, Key: svcshift.SettingDayStart, Value: value, UpdatedAt: ist(1, 9, 0)})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestTheRangeFollowsTheVenuesDayStart: Coffee was rung up at 01:30 on the
+// Friday. At the default four it is Thursday's trade; with the day starting at
+// 01:00 it is Friday's.
+func TestTheRangeFollowsTheVenuesDayStart(t *testing.T) {
+	tests := []struct {
+		name     string
+		dayStart string // "" leaves it unset
+		bills    [3]int64
+	}{
+		{"unset: the default four", "", [3]int64{2, 0, 1}},
+		{"02:00: still Thursday's", "02:00", [3]int64{2, 0, 1}},
+		{"01:00: Friday's", "01:00", [3]int64{1, 1, 1}},
+		{"01:30 exactly begins Friday", "01:30", [3]int64{1, 1, 1}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := newFixture(t)
+			f.threeDays(t)
+			if tt.dayStart != "" {
+				f.setDayStart(t, tt.dayStart)
+			}
+			got, err := f.s.Sales(context.Background(), 1, Query{From: "2026-10-01", To: "2026-10-03"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(got.Series) != len(tt.bills) {
+				t.Fatalf("series %+v", got.Series)
+			}
+			for i, p := range got.Series {
+				if p.Sales.Bills != tt.bills[i] {
+					t.Errorf("%s: %d bills, want %d", p.Start, p.Sales.Bills, tt.bills[i])
+				}
+			}
+		})
+	}
+}
+
+func TestADayStartThatIsNotATimeRefusesTheRange(t *testing.T) {
+	f := newFixture(t)
+	f.setDayStart(t, "dawn")
+	_, err := f.s.Sales(context.Background(), 1, Query{From: "2026-10-01", To: "2026-10-01"})
+	if !errors.Is(err, svcshift.ErrVenueConfig) {
+		t.Fatalf("err = %v, want ErrVenueConfig", err)
 	}
 }

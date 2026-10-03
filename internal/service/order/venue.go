@@ -257,8 +257,9 @@ func creditSeriesFor(row gen.Venue, settings map[string]string, invoices invoice
 	return s, nil
 }
 
-// defaultLateAfter is how long a ticket runs before it shows as late.
-const defaultLateAfter = 20 * time.Minute
+// DefaultLateMinutes is how long a ticket runs before it shows as late, for a
+// venue that has set none. The settings registry takes its default from here.
+const DefaultLateMinutes = 20
 
 // lateAfter reads SettingTicketLateMinutes. A value that is not a whole
 // number of minutes from 1 to 600 falls back to the default rather than
@@ -266,7 +267,7 @@ const defaultLateAfter = 20 * time.Minute
 func lateAfter(v string) time.Duration {
 	n, err := strconv.Atoi(strings.TrimSpace(v))
 	if err != nil || n < 1 || n > 600 {
-		return defaultLateAfter
+		return DefaultLateMinutes * time.Minute
 	}
 	return time.Duration(n) * time.Minute
 }

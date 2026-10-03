@@ -134,9 +134,6 @@ func TestNewRefusals(t *testing.T) {
 	if _, err := New(Options{}); err == nil {
 		t.Error("no database: want an error")
 	}
-	if _, err := New(Options{DB: openDB(t), DayStart: 25 * time.Hour}); !errors.Is(err, shift.ErrInvalidDayStart) {
-		t.Errorf("a day start past midnight: err = %v, want ErrInvalidDayStart", err)
-	}
 }
 
 func TestAShiftFromOpenToClose(t *testing.T) {

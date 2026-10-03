@@ -58,6 +58,35 @@ const dayFormat = "2006-01-02"
 // ErrInvalidDayStart refuses a day start outside the day.
 var ErrInvalidDayStart = errors.New("the trading day must start within the day")
 
+// ParseDayStart reads a day start as a venue writes it: a 24 hour time of
+// day, "04:00", with two digits each side. A refusal unwraps to
+// ErrInvalidDayStart.
+func ParseDayStart(s string) (time.Duration, error) {
+	if len(s) != 5 || s[2] != ':' {
+		return 0, fmt.Errorf("%w: %q is not a time like 04:00", ErrInvalidDayStart, s)
+	}
+	digit := func(i int) (int, bool) { return int(s[i] - '0'), s[i] >= '0' && s[i] <= '9' }
+	var n [4]int
+	for i, at := range []int{0, 1, 3, 4} {
+		d, ok := digit(at)
+		if !ok {
+			return 0, fmt.Errorf("%w: %q is not a time like 04:00", ErrInvalidDayStart, s)
+		}
+		n[i] = d
+	}
+	h, m := n[0]*10+n[1], n[2]*10+n[3]
+	if h > 23 || m > 59 {
+		return 0, fmt.Errorf("%w: %q is not a time of day", ErrInvalidDayStart, s)
+	}
+	return time.Duration(h)*time.Hour + time.Duration(m)*time.Minute, nil
+}
+
+// FormatDayStart writes a day start as ParseDayStart reads it. Seconds are
+// dropped: a venue's day starts on a minute.
+func FormatDayStart(d time.Duration) string {
+	return fmt.Sprintf("%02d:%02d", int(d/time.Hour), int(d%time.Hour/time.Minute))
+}
+
 // TradingDay is the trading day a shift opened at openedAt belongs to: the
 // venue's local date then, or the date before when it opened ahead of
 // dayStart. It is decided once, at opening, and stored, so a bar that

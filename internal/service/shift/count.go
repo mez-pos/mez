@@ -153,12 +153,12 @@ func closingOf(ctx context.Context, q *gen.Queries, shiftID int64) (gen.DrawerCo
 	return gen.DrawerCountsForShiftRow{}, fmt.Errorf("%w: shift %d", ErrNotCounted, shiftID)
 }
 
-// varianceThreshold reads the venue's threshold: 0, the strictest, when
-// unset.
+// varianceThreshold reads the venue's threshold: DefaultVarianceThreshold, the
+// strictest, when unset.
 func varianceThreshold(ctx context.Context, q *gen.Queries, venueID int64, currency string) (money.Amount, error) {
 	row, err := q.Setting(ctx, gen.SettingParams{VenueID: venueID, Key: SettingVarianceThreshold})
 	if errors.Is(err, sql.ErrNoRows) {
-		return money.New(0, currency)
+		return money.New(DefaultVarianceThreshold, currency)
 	}
 	if err != nil {
 		return money.Amount{}, fmt.Errorf("reading %s: %w", SettingVarianceThreshold, err)

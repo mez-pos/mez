@@ -21,6 +21,7 @@ import (
 	"github.com/byjoellobo/mez/internal/domain/shift"
 	"github.com/byjoellobo/mez/internal/domain/zreport"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
 // ErrBadRange is a range the reports cannot be read over.
@@ -71,7 +72,11 @@ func (s *Service) Sales(ctx context.Context, venueID int64, qy Query) (Sales, er
 	if qy.Every == "" {
 		qy.Every = report.Day
 	}
-	rg := report.Range{From: qy.From, To: qy.To, Every: qy.Every, Loc: loc, DayStart: shift.DefaultDayStart}
+	dayStart, err := svcshift.DayStart(ctx, q, venueID)
+	if err != nil {
+		return Sales{}, fmt.Errorf("reports: %w", err)
+	}
+	rg := report.Range{From: qy.From, To: qy.To, Every: qy.Every, Loc: loc, DayStart: dayStart}
 	periods, err := rg.Periods()
 	if err != nil {
 		return Sales{}, err

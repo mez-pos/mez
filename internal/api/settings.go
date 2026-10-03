@@ -19,6 +19,8 @@ type Settings interface {
 	UpdateTax(ctx context.Context, venueID int64, in settings.TaxInput) error
 	Numbering(ctx context.Context, venueID int64) (settings.Numbering, error)
 	UpdateNumbering(ctx context.Context, venueID int64, in settings.NumberingInput) error
+	Rules(ctx context.Context, venueID int64) (settings.Rules, error)
+	UpdateRules(ctx context.Context, venueID int64, in settings.RulesInput) error
 	CreateTaxClass(ctx context.Context, venueID int64, in settings.TaxClassInput) (int64, error)
 	UpdateTaxClass(ctx context.Context, venueID, id int64, in settings.TaxClassInput) error
 	SetTaxClassActive(ctx context.Context, venueID, id int64, active bool) error
@@ -88,6 +90,7 @@ func (s *Server) mountSettings(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/settings/venue", s.methodNotAllowed)
 	s.mountTaxSettings(mux)
 	s.mountNumberingSettings(mux)
+	s.mountRulesSettings(mux)
 }
 
 func (s *Server) readVenueName(w http.ResponseWriter, r *http.Request) {

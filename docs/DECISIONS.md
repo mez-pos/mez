@@ -3753,3 +3753,46 @@ Because: a repeated invoice number is a compliance incident and a refused
 sale; both are cheaper to refuse here.
 Cost: a venue that mis-set its financial year after trading cannot fix it
 from the back office.
+
+## ADR-133 - Shift and tip rules: one route, and the day start as a setting
+2026-10 · Status: accepted.
+Decision: `GET` and `PUT /api/v1/settings/rules` (`settings.edit`) edit the
+trading day's start, the variance threshold, the tip rule and its role
+weights, and the minutes before a ticket is late. The values are checked
+together, then saved through `settings.Service.Set`, all or none.
+  - **The day start is a venue key, `shift.day_start`, written "04:00"**
+    (24 hour, two digits each side; `shift.ParseDayStart`). Unset is
+    `shift.DefaultDayStart`. `shift.DayStart(ctx, q, venueID)` reads it,
+    and a value that is not a time is `ErrVenueConfig`, like the other
+    shift keys. Every place that used the constant reads it now: a shift
+    opening (the `Options.DayStart` option is gone), the range reports,
+    the audit trail and its file, and "sold out until tomorrow".
+  - **A change reaches the next shift opened.** A shift stores its trading
+    day when it opens and never changes it, so the one running keeps its
+    day. The reports, the audit trail and the CSV place events by their
+    time, as they are asked: after a change they bucket the past by the
+    new start too, so a range read before and after can differ for events
+    between the two times. Sold out keeps the time it was marked with.
+    The response carries `open_shift_day` so the screen can say so.
+  - **Weights must name real roles**, by exact name (that is how a pool
+    looks them up), each from 1 to 100. The rule `role_weight` with no
+    weights is refused: every role would weigh 1 and the rule would be
+    `even` under another name. Weights saved while the rule is another are
+    kept. They are stored with sorted keys, so the same weights are the
+    same text.
+  - **A value equal to its default is not stored**, as in ADR-132, so the
+    key reads as unset. The registry's defaults for these keys come from
+    the readers' own constants (`order.DefaultLateMinutes`,
+    `shift.DefaultVarianceThreshold`, `tips.Even`,
+    `shift.DefaultDayStart`): the registry imports the services, so the
+    readers cannot import it, and the constants are the one copy.
+  - **One route, not four**, as the numbering route is one: the five values
+    are saved together or not at all, and the screen (6i) is one section.
+  - **Reading refuses a stored value nothing could use**, as numbering
+    does; a save through the route still repairs it.
+Because: the day start decided where a late night's sales landed, and the
+only way to change it was a rebuild; the others were settings with no way
+to set them but the database.
+Cost: a renamed role orphans its weight (the pool reads the old name and
+ignores it; no check runs on a role rename). Re-bucketing the past on a
+day start change, as above.

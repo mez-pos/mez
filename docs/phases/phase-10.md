@@ -171,7 +171,7 @@ Phase 09.
     template must parse and fit the profile's length limit; no change
     may ever make an issued number come round again. Go tests, in
     `internal/domain/invoice` where the rule lives.
-  - [ ] **Task 6d: Shift and tip rules.** Server. The trading day's start
+  - [x] **Task 6d: Shift and tip rules.** Server. The trading day's start
     becomes a venue setting, read by every place that uses the constant
     today (shifts, reports, audit, sold out); a change takes effect from
     the next shift opened. The variance threshold, the tip rule and its

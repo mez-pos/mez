@@ -8,6 +8,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/domain/export"
 	"github.com/byjoellobo/mez/internal/domain/shift"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
 // kindWords is each kind as the file says it.
@@ -40,12 +41,16 @@ func (s *Service) Table(ctx context.Context, venueID int64, f Filter) (export.Ta
 		Header: []string{"Trading day", "At", "Kind", "Order", "Item", "Qty", "Amount (" + v.Currency + ")", "Reason", "By", "Authorised by"},
 		Rows:   [][]string{},
 	}
+	dayStart, err := svcshift.DayStart(ctx, q, venueID)
+	if err != nil {
+		return export.Table{}, fmt.Errorf("audit: %w", err)
+	}
 	entries, err := s.everything(ctx, q, ask)
 	if err != nil {
 		return export.Table{}, err
 	}
 	for _, e := range entries {
-		row, err := rowOf(e, loc)
+		row, err := rowOf(e, loc, dayStart)
 		if err != nil {
 			return export.Table{}, err
 		}
@@ -55,8 +60,8 @@ func (s *Service) Table(ctx context.Context, venueID int64, f Filter) (export.Ta
 }
 
 // rowOf is one correction as the file's cells.
-func rowOf(e Entry, loc *time.Location) ([]string, error) {
-	day, err := shift.TradingDay(e.At, loc, shift.DefaultDayStart)
+func rowOf(e Entry, loc *time.Location, dayStart time.Duration) ([]string, error) {
+	day, err := shift.TradingDay(e.At, loc, dayStart)
 	if err != nil {
 		return nil, fmt.Errorf("audit: the trading day of entry %d: %w", e.ID, err)
 	}

@@ -13,33 +13,24 @@ export a bookkeeper would use) is still owed, so it stays unticked below.
 
 ## Last completed task
 
-**Phase 10, Task 6c: invoice numbering, financial year and rounding.**
-Server only (ADR-132). `GET` and `PUT /api/v1/settings/numbering`
-(`internal/service/settings/numbering.go`): series codes, prefixes, the
-shared template, financial year start, cash rounding step; the response
-carries the next invoice and credit note numbers for the screen's
-preview. `invoice.CheckNumbering` refuses a template with no year or no
-prefix, one prefix or code for both series; a series whose next number
-is already issued is refused; the financial year start locks once a
-number is issued. Before it, 6a (ADR-130), 6b (ADR-131), the split
-(ADR-129).
+**Phase 10, Task 6d: shift and tip rules.** Server only (ADR-133).
+`GET` and `PUT /api/v1/settings/rules` (`internal/service/settings/rules.go`):
+the trading day's start (new key `shift.day_start`, "04:00"), variance
+threshold, tip rule, role weights (must name real roles; `role_weight`
+needs at least one), late ticket minutes; the response lists the roles and
+the open shift's day. The day start is read by shift opening, reports,
+audit and its CSV, and sold out through `shift.DayStart`; the `DayStart`
+option and the constant's uses are gone. A shift keeps its day when the
+start changes. Before it, 6c (ADR-132), 6b (ADR-131), 6a (ADR-130), the
+split (ADR-129).
 
 ## Next task
 
-**Phase 10, Task 6d: Shift and tip rules.** Server. The trading day's
-start becomes a venue setting (a new key in
-`internal/service/settings/keys.go`, with a check: a time of day) read by
-every place that uses `shift.DefaultDayStart` today:
-`internal/service/shift/shift.go` (the `DayStart` option, constant),
-`service/reports/reports.go`, `service/audit/audit.go` and `csv.go`,
-`service/menus/menus.go` (sold out). A change takes effect from the next
-shift opened: an open shift keeps its trading day. Also routes for the
-variance threshold (`shift.variance_threshold_minor`, minor units), the
-tip rule and role weights (`tips.rule`, `tips.role_weights`, weights keyed
-by role name: check they name real roles), and the minutes before a
-ticket is late (`terminal.ticket_late_minutes`); check them together and
-save through `settings.Service.Set`. Make the readers use the registry's
-defaults. Go tests. Route pattern as `internal/api/settings_numbering.go`.
+**Phase 10, Task 6e: Stations and courses.** Server. Create, rename,
+order and retire stations and courses, through the menu's write path
+(`internal/service/menus`) so the version bumps and tills hear of it. A
+station with items or a printer mapped cannot be retired without saying
+where they go. Go tests. See the phase file for the rest of 6.
 
 ## Known broken / in progress
 
@@ -61,6 +52,11 @@ defaults. Go tests. Route pattern as `internal/api/settings_numbering.go`.
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 
+- Rules (ADR-133): no screen yet (6i). A renamed role orphans its tip
+  weight, and nothing checks. A day start change re-buckets past days in
+  the reports, audit trail and CSV (events are placed by time); only
+  shifts keep the day they opened under. Not tried in a browser: server
+  only, Go tests and the HTTP round trip.
 - Numbering (ADR-132): the cash rounding step is saved but no sale or
   payment applies it yet (a payment path owes that). The financial year
   start cannot move once a number is issued. A tax profile change does
@@ -87,7 +83,7 @@ defaults. Go tests. Route pattern as `internal/api/settings_numbering.go`.
 - Reports (ADR-118): the screen lacks 5d to 5f. A range projects every order
   it touches from its first event; a year at a busy venue may take seconds.
   Items and categories are named as the menu stands now. The day start is
-  the shift's constant.
+  the venue's setting as it stands when asked (ADR-133).
 - Stock cost (ADR-124): movements from before migration 00028 have no
   cost. Nothing shows a cost's history; a new cost is for stock moved
   from then on.
@@ -146,17 +142,17 @@ defaults. Go tests. Route pattern as `internal/api/settings_numbering.go`.
   way round that short of fixing the data.
 - Tips (ADR-101, ADR-102): hours are typed in at pooling (no timesheets
   until phase 10); a pool is once per shift with no correction; the rule
-  and weights have no back office setting (phase 10). The browser run had
+  and weights are set through the rules route (ADR-133), with no screen yet (6i). The browser run had
   one staff member, so a multi-person or by-hours pool was tested in Go
   and vitest, not by hand; staff can now be added (Task 4a).
 - Shifts (ADR-093 to ADR-096): terminals learn of a shift opening,
   counted or closed by polling every 30 seconds, not the stream. Opening
   and closing need shift.manage: a cashier is told to ask a manager, with
   no override sheet. No till screen for cash in or out yet (the API has
-  it). The day start is a constant. A payout larger than the drawer is
+  it). The day start is a venue setting (ADR-133). A payout larger than the drawer is
   not refused. Closing leaves open tickets to carry into the next shift.
-  A counted drawer cannot be recounted. The variance threshold has no
-  back office setting yet (phase 10); set it in `settings`. Denomination
+  A counted drawer cannot be recounted. The variance threshold is set
+  through the rules route (ADR-133), with no screen yet (6i). Denomination
   tables exist for INR, USD, EUR and GBP only; others count one total.
 - `AddLine` is not checked against the menu (price, tax, modifier min/max);
   the menu is now written over HTTP (ADR-106), so this matters more. GST place of supply is always

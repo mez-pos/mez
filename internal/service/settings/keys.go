@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/byjoellobo/mez/internal/domain/invoice"
+	"github.com/byjoellobo/mez/internal/domain/shift"
 	"github.com/byjoellobo/mez/internal/domain/tips"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
 	svcshift "github.com/byjoellobo/mez/internal/service/shift"
@@ -37,8 +38,9 @@ var keys = []key{
 	{Name: svcorder.SettingInvoiceTemplate, Default: svcorder.DefaultTemplate, Check: template},
 	{Name: svcorder.SettingCreditSeries, Default: svcorder.DefaultCreditSeries, Check: seriesCode},
 	{Name: svcorder.SettingCreditPrefix, Check: prefix},
-	{Name: svcorder.SettingTicketLateMinutes, Default: "20", Check: wholeNumber(1, 600, "minutes")},
-	{Name: svcshift.SettingVarianceThreshold, Default: "0", Check: wholeNumber(0, 1_000_000_00, "minor units")},
+	{Name: svcorder.SettingTicketLateMinutes, Default: strconv.Itoa(svcorder.DefaultLateMinutes), Check: wholeNumber(1, 600, "minutes")},
+	{Name: svcshift.SettingDayStart, Default: shift.FormatDayStart(shift.DefaultDayStart), Check: timeOfDay},
+	{Name: svcshift.SettingVarianceThreshold, Default: strconv.FormatInt(svcshift.DefaultVarianceThreshold, 10), Check: wholeNumber(0, 1_000_000_00, "minor units")},
 	{Name: svcshift.SettingTipRule, Default: string(tips.Even), Check: tipRule},
 	{Name: svcshift.SettingTipRoleWeights, Check: roleWeights},
 }
@@ -114,6 +116,14 @@ func prefix(v string) string {
 func template(v string) string {
 	if _, err := invoice.ParseTemplate(v); err != nil {
 		return "That is not a number format: " + err.Error() + "."
+	}
+	return ""
+}
+
+// timeOfDay is a 24 hour time like 04:00: when the trading day begins.
+func timeOfDay(v string) string {
+	if _, err := shift.ParseDayStart(v); err != nil {
+		return "Enter a time of day like 04:00, on the 24 hour clock."
 	}
 	return ""
 }

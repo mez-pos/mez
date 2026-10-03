@@ -26,6 +26,7 @@ import (
 	"github.com/byjoellobo/mez/internal/domain/shift"
 	"github.com/byjoellobo/mez/internal/domain/tax"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
 // The refusals. The API maps them to codes; Invalid carries the field.
@@ -262,7 +263,11 @@ func (s *Service) SetItemSoldOut(ctx context.Context, venueID, id int64, soldOut
 			if err != nil {
 				return fmt.Errorf("menus: venue %d timezone %q: %w", venueID, venue.Timezone, err)
 			}
-			next, err := shift.NextDayStart(s.now(), loc, shift.DefaultDayStart)
+			dayStart, err := svcshift.DayStart(ctx, q, venueID)
+			if err != nil {
+				return fmt.Errorf("menus: %w", err)
+			}
+			next, err := shift.NextDayStart(s.now(), loc, dayStart)
 			if err != nil {
 				return fmt.Errorf("menus: the next trading day: %w", err)
 			}

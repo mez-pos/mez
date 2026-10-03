@@ -13,6 +13,7 @@ import (
 	"github.com/byjoellobo/mez/internal/db/gen"
 	"github.com/byjoellobo/mez/internal/domain/money"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
 var now = time.Date(2026, 9, 30, 6, 30, 0, 0, time.UTC)
@@ -539,5 +540,37 @@ func TestSoldOutForToday(t *testing.T) {
 	other := w.create(t, gst, w.item(gst, w.elseCat, "Thali", 25000, "996331"))
 	if _, err := w.s.SetItemSoldOut(ctx, plain, other, true); !errors.Is(err, ErrItemNotFound) {
 		t.Errorf("another venue's item: %v", err)
+	}
+}
+
+// Sold out lasts until the venue's own trading day starts: at 05:30 IST the
+// fixture's 12:00 sells out until 05:30 tomorrow, which is 00:00 UTC.
+func TestSoldOutLastsUntilTheVenuesDayStart(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	cat := w.category(t, plain, "Food")
+	dosa := w.create(t, plain, w.item(plain, cat, "Dosa", 12000, ""))
+	set := func(value string) {
+		t.Helper()
+		err := w.d.WriteTx(ctx, func(q *gen.Queries) error {
+			return q.SetSetting(ctx, gen.SetSettingParams{VenueID: plain, Key: svcshift.SettingDayStart, Value: value, UpdatedAt: time.Date(2026, 9, 30, 6, 30, 0, 0, time.UTC)})
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	set("05:30")
+	until, err := w.s.SetItemSoldOut(ctx, plain, dosa, true)
+	if want := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC); err != nil || until == nil || !until.Equal(want) {
+		t.Fatalf("until = %v, %v; want %s", until, err, want)
+	}
+
+	set("dawn")
+	if _, err := w.s.SetItemSoldOut(ctx, plain, dosa, true); !errors.Is(err, svcshift.ErrVenueConfig) {
+		t.Errorf("a day start that is not a time: err = %v, want ErrVenueConfig", err)
+	}
+	if _, err := w.s.SetItemSoldOut(ctx, plain, dosa, false); err != nil {
+		t.Errorf("putting it back on sale needs no day start: %v", err)
 	}
 }

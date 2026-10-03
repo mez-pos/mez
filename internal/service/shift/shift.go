@@ -51,20 +51,17 @@ func (systemClock) Now() time.Time { return time.Now() }
 type Options struct {
 	DB    *db.DB
 	Clock Clock
-	// DayStart is when the venue's trading day begins, local time. Zero
-	// means shift.DefaultDayStart; there is no venue setting for it yet.
-	DayStart time.Duration
 	// OnChange is told a venue's shift changed, after it is committed.
 	OnChange func(venueID int64)
 	// Prints, when set, is woken after a Z-report is queued to print.
 	Prints PrintQueue
 }
 
-// Service is a venue's shifts.
+// Service is a venue's shifts. When its trading day begins is the venue's
+// setting (SettingDayStart), read as each shift opens.
 type Service struct {
 	db       *db.DB
 	clock    Clock
-	dayStart time.Duration
 	onChange func(venueID int64)
 	prints   PrintQueue
 }
@@ -77,16 +74,10 @@ func New(o Options) (*Service, error) {
 	if o.Clock == nil {
 		o.Clock = systemClock{}
 	}
-	if o.DayStart == 0 {
-		o.DayStart = shift.DefaultDayStart
-	}
-	if o.DayStart < 0 || o.DayStart >= 24*time.Hour {
-		return nil, fmt.Errorf("shift: %w: %s", shift.ErrInvalidDayStart, o.DayStart)
-	}
 	if o.OnChange == nil {
 		o.OnChange = func(int64) {}
 	}
-	return &Service{db: o.DB, clock: o.Clock, dayStart: o.DayStart, onChange: o.OnChange, prints: o.Prints}, nil
+	return &Service{db: o.DB, clock: o.Clock, onChange: o.OnChange, prints: o.Prints}, nil
 }
 
 // Meta is who is doing it, where, and the request's idempotency key.
@@ -148,7 +139,11 @@ func (s *Service) Open(ctx context.Context, meta Meta, float shift.Count) (Shift
 		case !errors.Is(err, sql.ErrNoRows):
 			return fmt.Errorf("reading the open shift: %w", err)
 		}
-		day, err := shift.TradingDay(now, v.location, s.dayStart)
+		dayStart, err := DayStart(ctx, q, meta.VenueID)
+		if err != nil {
+			return err
+		}
+		day, err := shift.TradingDay(now, v.location, dayStart)
 		if err != nil {
 			return err
 		}

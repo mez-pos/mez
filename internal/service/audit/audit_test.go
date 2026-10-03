@@ -13,6 +13,7 @@ import (
 	"github.com/byjoellobo/mez/internal/domain/money"
 	"github.com/byjoellobo/mez/internal/domain/order"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 )
 
 // 12:00 in Kolkata on 1 October: trading day 2026-10-01.
@@ -25,6 +26,7 @@ func (clock) Now() time.Time { return now }
 func inr(minor int64) money.Amount { return money.Amount{Minor: minor, Currency: "INR"} }
 
 type fixture struct {
+	db     *db.DB
 	s      *Service
 	orders *svcorder.Service
 	asha   int64 // a cashier
@@ -42,7 +44,7 @@ func newFixture(t *testing.T) fixture {
 	if err := d.Migrate(ctx); err != nil {
 		t.Fatal(err)
 	}
-	var f fixture
+	f := fixture{db: d}
 	err = d.WriteTx(ctx, func(q *gen.Queries) error {
 		if _, err := q.CreateVenue(ctx, gen.CreateVenueParams{
 			PublicID: "ven_AUDIT001", Name: "Cafe", Currency: "INR", Timezone: "Asia/Kolkata",
@@ -364,5 +366,58 @@ func TestAnEmptyDayCountsEveryKindAsNone(t *testing.T) {
 		if n, ok := page.Counts[k]; !ok || n != 0 {
 			t.Errorf("%s = %d (present %v), want 0", k, n, ok)
 		}
+	}
+}
+
+// setDayStart is the venue's setting for when the trading day begins.
+func (f fixture) setDayStart(t *testing.T, value string) {
+	t.Helper()
+	ctx := context.Background()
+	err := f.db.WriteTx(ctx, func(q *gen.Queries) error {
+		return q.SetSetting(ctx, gen.SetSettingParams{VenueID: 1, Key: svcshift.SettingDayStart, Value: value, UpdatedAt: now})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestTheTrailFollowsTheVenuesDayStart: the day's corrections happen at 12:00
+// in Kolkata. With the trading day starting at 13:00 they are the day before's,
+// in the trail and in the file's trading day column.
+func TestTheTrailFollowsTheVenuesDayStart(t *testing.T) {
+	f := newFixture(t)
+	f.aDay(t)
+	f.setDayStart(t, "13:00")
+	ctx := context.Background()
+
+	for _, tt := range []struct {
+		day  string
+		want int
+	}{{"2026-10-01", 0}, {"2026-09-30", 8}} {
+		page, err := f.s.Trail(ctx, 1, day(tt.day, tt.day))
+		if err != nil || len(page.Entries) != tt.want {
+			t.Errorf("%s: %d entries, err %v; want %d", tt.day, len(page.Entries), err, tt.want)
+		}
+	}
+	table, err := f.s.Table(ctx, 1, day("2026-09-30", "2026-09-30"))
+	if err != nil || len(table.Rows) != 8 {
+		t.Fatalf("the table of the 30th: %d rows, err %v; want 8", len(table.Rows), err)
+	}
+	for _, row := range table.Rows {
+		if row[0] != "2026-09-30" {
+			t.Errorf("trading day %q, want 2026-09-30", row[0])
+		}
+	}
+}
+
+func TestADayStartThatIsNotATimeRefusesTheTrail(t *testing.T) {
+	f := newFixture(t)
+	f.setDayStart(t, "dawn")
+	ctx := context.Background()
+	if _, err := f.s.Trail(ctx, 1, day("2026-10-01", "2026-10-01")); !errors.Is(err, svcshift.ErrVenueConfig) {
+		t.Errorf("the trail: err = %v, want ErrVenueConfig", err)
+	}
+	if _, err := f.s.Table(ctx, 1, day("2026-10-01", "2026-10-01")); !errors.Is(err, svcshift.ErrVenueConfig) {
+		t.Errorf("the table: err = %v, want ErrVenueConfig", err)
 	}
 }
