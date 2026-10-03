@@ -3,7 +3,6 @@ module github.com/byjoellobo/mez
 go 1.23.0
 
 require (
-	github.com/byjoellobo/nofiltr-pos v0.0.0-20260917095229-369c75e3121d
 	github.com/coder/websocket v1.8.15
 	github.com/pressly/goose/v3 v3.26.0
 	golang.org/x/crypto v0.40.0
