@@ -159,17 +159,10 @@ func (s *Service) OrderCategories(ctx context.Context, venueID int64, ids []int6
 		if err != nil {
 			return fmt.Errorf("menus: reading categories: %w", err)
 		}
-		if !samePermutation(have, ids) {
-			return ErrStaleOrder
-		}
 		now := s.now()
-		for i, id := range ids {
-			n, err := q.SetCategorySort(ctx, gen.SetCategorySortParams{SortOrder: int64(i), Now: now, VenueID: venueID, ID: id})
-			if err := oneRow(n, err, ErrCategoryNotFound); err != nil {
-				return err
-			}
-		}
-		return nil
+		return resort(have, ids, ErrCategoryNotFound, func(id, sort int64) (int64, error) {
+			return q.SetCategorySort(ctx, gen.SetCategorySortParams{SortOrder: sort, Now: now, VenueID: venueID, ID: id})
+		})
 	})
 }
 
@@ -306,17 +299,10 @@ func (s *Service) OrderItems(ctx context.Context, venueID, categoryID int64, ids
 		if err != nil {
 			return fmt.Errorf("menus: reading items: %w", err)
 		}
-		if !samePermutation(have, ids) {
-			return ErrStaleOrder
-		}
 		now := s.now()
-		for i, id := range ids {
-			n, err := q.SetItemSort(ctx, gen.SetItemSortParams{SortOrder: int64(i), Now: now, VenueID: venueID, ID: id})
-			if err := oneRow(n, err, ErrItemNotFound); err != nil {
-				return err
-			}
-		}
-		return nil
+		return resort(have, ids, ErrItemNotFound, func(id, sort int64) (int64, error) {
+			return q.SetItemSort(ctx, gen.SetItemSortParams{SortOrder: sort, Now: now, VenueID: venueID, ID: id})
+		})
 	})
 }
 
@@ -457,6 +443,22 @@ func cleanName(name string) (string, error) {
 // samePermutation reports whether want names exactly the ids in have, each
 // once. have is distinct (a table's ids), so equal sorted lists leave no
 // room for a repeat in want.
+// resort gives each of ids its place in the list as its sort order, once ids
+// is checked to name exactly the rows in have. set writes one row and
+// answers how many it touched; none is notFound.
+func resort(have, ids []int64, notFound error, set func(id, sort int64) (int64, error)) error {
+	if !samePermutation(have, ids) {
+		return ErrStaleOrder
+	}
+	for i, id := range ids {
+		n, err := set(id, int64(i))
+		if err := oneRow(n, err, notFound); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func samePermutation(have, want []int64) bool {
 	a, b := slices.Clone(have), slices.Clone(want)
 	slices.Sort(a)

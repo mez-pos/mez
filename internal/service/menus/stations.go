@@ -89,17 +89,10 @@ func (s *Service) OrderStations(ctx context.Context, venueID int64, ids []int64)
 		if err != nil {
 			return fmt.Errorf("menus: reading stations: %w", err)
 		}
-		if !samePermutation(have, ids) {
-			return ErrStaleOrder
-		}
 		now := s.now()
-		for i, id := range ids {
-			n, err := q.SetStationSort(ctx, gen.SetStationSortParams{SortOrder: int64(i), Now: now, VenueID: venueID, ID: id})
-			if err := oneRow(n, err, ErrStationNotFound); err != nil {
-				return err
-			}
-		}
-		return nil
+		return resort(have, ids, ErrStationNotFound, func(id, sort int64) (int64, error) {
+			return q.SetStationSort(ctx, gen.SetStationSortParams{SortOrder: sort, Now: now, VenueID: venueID, ID: id})
+		})
 	})
 }
 

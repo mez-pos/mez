@@ -16,18 +16,19 @@ type inner struct {
 }
 
 type sample struct {
-	ID         int64            `json:"id"`
-	Name       string           `json:"name"`
-	Colour     colour           `json:"colour"`
-	Fine       bool             `json:"fine"`
-	When       time.Time        `json:"when"`
-	Maybe      *inner           `json:"maybe,omitempty"`
-	OrNothing  *inner           `json:"or_nothing"`
-	Many       []inner          `json:"many"`
-	ByName     map[string]int64 `json:"by_name"`
-	Anything   any              `json:"anything"`
-	Skipped    string           `json:"-"`
-	unexported string           //nolint:unused // it must not be emitted
+	ID        int64            `json:"id"`
+	Name      string           `json:"name"`
+	Colour    colour           `json:"colour"`
+	Fine      bool             `json:"fine"`
+	When      time.Time        `json:"when"`
+	Maybe     *inner           `json:"maybe,omitempty"`
+	OrNothing *inner           `json:"or_nothing"`
+	Many      []inner          `json:"many"`
+	ByName    map[string]int64 `json:"by_name"`
+	Anything  any              `json:"anything"`
+	Skipped   string           `json:"-"`
+	//lint:ignore U1000 it exists to prove an unexported field is not emitted
+	unexported string
 	NoTag      int
 }
 

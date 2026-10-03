@@ -217,13 +217,7 @@ func (c *conn) run(ctx context.Context) error {
 		if err := c.drain(ctx); err != nil {
 			return err
 		}
-		if err := c.checkMenu(ctx); err != nil {
-			return err
-		}
-		if err := c.checkPrint(ctx); err != nil {
-			return err
-		}
-		if err := c.checkFloor(ctx); err != nil {
+		if err := c.checkVersions(ctx); err != nil {
 			return err
 		}
 		select {
@@ -325,55 +319,41 @@ func (c *conn) drain(ctx context.Context) error {
 	}
 }
 
-// checkMenu tells the client when the venue's menu has moved on. It runs
-// after every drain, so like an event, a change whose nudge was missed is
-// caught on the next ping.
-func (c *conn) checkMenu(ctx context.Context) error {
-	version, err := c.hub.source.MenuVersion(ctx, c.client.VenueID)
-	if err != nil {
+// checkVersions tells the client when the venue's menu, print jobs or floor
+// have moved on. It runs after every drain, so like an event, a change whose
+// nudge was missed is caught on the next ping.
+func (c *conn) checkVersions(ctx context.Context) error {
+	src := c.hub.source
+	if err := c.checkVersion(ctx, &c.menu, src.MenuVersion, func(v int64) any {
+		return MenuChangedMessage{Type: MsgMenuChanged, Version: v}
+	}); err != nil {
 		return err
 	}
-	if version == c.menu {
-		return nil
-	}
-	if err := c.hub.writeJSON(ctx, c.ws, MenuChangedMessage{Type: MsgMenuChanged, Version: version}); err != nil {
+	if err := c.checkVersion(ctx, &c.print, src.PrintVersion, func(v int64) any {
+		return PrintChangedMessage{Type: MsgPrintChanged, Version: v}
+	}); err != nil {
 		return err
 	}
-	c.menu = version
-	return nil
+	return c.checkVersion(ctx, &c.floor, src.FloorVersion, func(v int64) any {
+		return FloorChangedMessage{Type: MsgFloorChanged, Version: v}
+	})
 }
 
-// checkPrint tells the client when the venue's print jobs have moved, as
-// checkMenu does for the menu.
-func (c *conn) checkPrint(ctx context.Context) error {
-	version, err := c.hub.source.PrintVersion(ctx, c.client.VenueID)
+// checkVersion reads one of the venue's versions and, if it differs from the
+// one the client was last told, tells it and remembers the new one in told.
+func (c *conn) checkVersion(ctx context.Context, told *int64,
+	read func(context.Context, int64) (int64, error), message func(int64) any) error {
+	version, err := read(ctx, c.client.VenueID)
 	if err != nil {
 		return err
 	}
-	if version == c.print {
+	if version == *told {
 		return nil
 	}
-	if err := c.hub.writeJSON(ctx, c.ws, PrintChangedMessage{Type: MsgPrintChanged, Version: version}); err != nil {
+	if err := c.hub.writeJSON(ctx, c.ws, message(version)); err != nil {
 		return err
 	}
-	c.print = version
-	return nil
-}
-
-// checkFloor tells the client when the venue's floor has changed, as
-// checkMenu does for the menu.
-func (c *conn) checkFloor(ctx context.Context) error {
-	version, err := c.hub.source.FloorVersion(ctx, c.client.VenueID)
-	if err != nil {
-		return err
-	}
-	if version == c.floor {
-		return nil
-	}
-	if err := c.hub.writeJSON(ctx, c.ws, FloorChangedMessage{Type: MsgFloorChanged, Version: version}); err != nil {
-		return err
-	}
-	c.floor = version
+	*told = version
 	return nil
 }
 

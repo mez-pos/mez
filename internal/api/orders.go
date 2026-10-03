@@ -257,13 +257,7 @@ func (s *Server) openOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) addLine(w http.ResponseWriter, r *http.Request) {
-	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
-		var req addLineRequest
-		if !s.decode(w, r, &req) {
-			return svcorder.Result{}, errAnswered
-		}
-		return s.orders.AddLine(r.Context(), meta, orderID, req)
-	})
+	bodyCommand(s, w, r, s.orders.AddLine)
 }
 
 func (s *Server) changeQty(w http.ResponseWriter, r *http.Request) {
@@ -361,13 +355,7 @@ func (s *Server) applyDiscount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) addNote(w http.ResponseWriter, r *http.Request) {
-	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
-		var req addNoteRequest
-		if !s.decode(w, r, &req) {
-			return svcorder.Result{}, errAnswered
-		}
-		return s.orders.AddNote(r.Context(), meta, orderID, req)
-	})
+	bodyCommand(s, w, r, s.orders.AddNote)
 }
 
 type (
@@ -377,33 +365,15 @@ type (
 )
 
 func (s *Server) moveTable(w http.ResponseWriter, r *http.Request) {
-	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
-		var req moveTableRequest
-		if !s.decode(w, r, &req) {
-			return svcorder.Result{}, errAnswered
-		}
-		return s.orders.MoveTable(r.Context(), meta, orderID, req)
-	})
+	bodyCommand(s, w, r, s.orders.MoveTable)
 }
 
 func (s *Server) joinTables(w http.ResponseWriter, r *http.Request) {
-	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
-		var req joinTablesRequest
-		if !s.decode(w, r, &req) {
-			return svcorder.Result{}, errAnswered
-		}
-		return s.orders.JoinTables(r.Context(), meta, orderID, req)
-	})
+	bodyCommand(s, w, r, s.orders.JoinTables)
 }
 
 func (s *Server) partTables(w http.ResponseWriter, r *http.Request) {
-	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
-		var req partTablesRequest
-		if !s.decode(w, r, &req) {
-			return svcorder.Result{}, errAnswered
-		}
-		return s.orders.PartTables(r.Context(), meta, orderID, req)
-	})
+	bodyCommand(s, w, r, s.orders.PartTables)
 }
 
 func (s *Server) sendOrder(w http.ResponseWriter, r *http.Request) {
@@ -423,23 +393,11 @@ func (s *Server) fireCourse(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) sendTicket(w http.ResponseWriter, r *http.Request) {
-	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
-		var req sendTicketRequest
-		if !s.decode(w, r, &req) {
-			return svcorder.Result{}, errAnswered
-		}
-		return s.orders.SendTicket(r.Context(), meta, orderID, req)
-	})
+	bodyCommand(s, w, r, s.orders.SendTicket)
 }
 
 func (s *Server) tenderPayment(w http.ResponseWriter, r *http.Request) {
-	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
-		var req tenderRequest
-		if !s.decode(w, r, &req) {
-			return svcorder.Result{}, errAnswered
-		}
-		return s.orders.TenderPayment(r.Context(), meta, orderID, req)
-	})
+	bodyCommand(s, w, r, s.orders.TenderPayment)
 }
 
 func (s *Server) voidPayment(w http.ResponseWriter, r *http.Request) {
@@ -519,6 +477,20 @@ func (s *Server) command(w http.ResponseWriter, r *http.Request, run func(orderI
 		return
 	}
 	s.writeCommand(w, r, res, err, http.StatusOK)
+}
+
+// bodyCommand is command for an endpoint whose one input is its JSON body,
+// handed to the service as decoded. Go has no generic methods, hence the
+// function taking the server.
+func bodyCommand[T any](s *Server, w http.ResponseWriter, r *http.Request,
+	call func(context.Context, svcorder.Meta, int64, T) (svcorder.Result, error)) {
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		var req T
+		if !s.decode(w, r, &req) {
+			return svcorder.Result{}, errAnswered
+		}
+		return call(r.Context(), meta, orderID, req)
+	})
 }
 
 // writeCommand encodes a service result, or maps its error.

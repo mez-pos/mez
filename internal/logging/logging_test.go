@@ -2,6 +2,7 @@ package logging
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log/slog"
 	"os"
@@ -177,7 +178,7 @@ func TestSetupAddsSourceOnlyAtDebug(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Setup: %v", err)
 			}
-			log.Log(nil, tt.level, "sold") //nolint:staticcheck // nil ctx is fine here
+			log.Log(context.Background(), tt.level, "sold")
 			closer.Close()
 
 			if got := strings.Contains(stdout.String(), slog.SourceKey); got != tt.want {
