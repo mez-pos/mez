@@ -27,11 +27,8 @@ paired with it, the list after, rename, revoke and Revoked. Before it, 6j
 
 ## Next task
 
-**Nothing buildable is left in Phase 10 but Task 6l (Backup configuration), which
-waits for phase 12, Task 4 (Litestream).** The human decides (Open questions,
-first item): build it after phase 12's Task 4, or move it into phase 12 so
-phase 10 can be ticked. Until they answer, do not guess. If it moves: edit
-`docs/phases/phase-10.md` and `phase-12.md`, tick Task 6, then read
+**Phase 11, Task 1.** Phase 10's tasks are all done: Task 6l (Backup
+configuration) moved into phase 12, Task 4 (ADR-141). Read
 `docs/phases/phase-11.md` and start its first task. Phase 10's done-when (a new
 venue configured end to end from the back office and traded a full day) is a
 human check, as phase 09's is, and stays unticked below.
@@ -238,11 +235,6 @@ human check, as phase 09's is, and stays unticked below.
 
 ## Open questions for the human
 
-- Backup configuration (Task 6l) has nothing to configure until phase
-  12, Task 4 brings Litestream. Build it after that task, or move it
-  into phase 12 so phase 10 can be ticked? (ADR-129)
-- The GitHub repository is still `nofiltr-pos`; the module path is now
-  `github.com/byjoellobo/mez` (ADR-127). Rename the repository to match.
 - A data directory from before the rename: move it to the new default
   and rename `nofiltr.db` to `mez.db`. Paired browsers pair again.
 

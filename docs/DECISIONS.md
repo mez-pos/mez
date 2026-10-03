@@ -4112,3 +4112,14 @@ Cost: an open live stream of a revoked device is not closed: it authenticates wh
 it connects, so it is refused at its next connect, while every request it makes
 is refused at once and it can sell nothing; its name in the hub is the one it
 connected with until it does.
+
+## ADR-141 - Backup configuration moves to phase 12, Task 4
+2026-10 · Status: accepted (decided by the human).
+Decision: phase 10's Task 6l (backup configuration) is built inside phase 12's
+Task 4 (Litestream), which already asks for backups "configured in back office".
+Phase 10's Task 6 is ticked with 6l marked moved.
+Because: there is nothing to configure until Litestream is in the binary, and a
+settings screen over a feature that does not exist would be guessed twice.
+Cost: phase 10 ends without a Backups section in settings; a venue has no
+backups until phase 12.
+---

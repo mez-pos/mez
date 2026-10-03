@@ -140,11 +140,11 @@ Phase 09.
     - [x] **Task 5f3: The closing stock section.** Spec first. A section
       of the Sales screen over 5f2, with its CSV.
 
-- [ ] **Task 6 — Settings.**
+- [x] **Task 6 — Settings.**
   Venue details, tax profile selection and configuration, invoice series,
   currency and rounding rule, timezone, financial year start, printers and
   station mapping, device management, receipt templates, shift and tip rules,
-  backup configuration.
+  backup configuration (moved to phase 12, Task 4: see 6l).
 
   Split into twelve (the write paths on the server first, then the
   screens over them). Printers and their station mapping, and the floor
@@ -206,9 +206,9 @@ Phase 09.
     when it was last seen; rename, revoke, and issue a pairing code for
     a kind. A back office cannot revoke itself. `device.manage`. Split
     it again if the server half fills a session.
-  - [ ] **Task 6l: Backup configuration.** Waits for phase 12, Task 4:
-    there is nothing to configure until Litestream is in the binary.
-    Build it after that task, or move it there (ADR-129).
+  - [x] **Task 6l: Backup configuration.** Moved to phase 12, Task 4 by
+    the human (ADR-141): there is nothing to configure until Litestream is
+    in the binary, and that task already asks for its back office screen.
 
 ## Done when
 A new venue can be configured end to end from back office — menu, tax, printers,

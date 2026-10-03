@@ -29,7 +29,10 @@ Phase 11.
 
 - [ ] **Task 4 — Backups.**
   Litestream integrated: continuous replication to S3, R2 or a local folder,
-  configured in back office. A manual "back up now" button. A documented,
+  configured in back office (this is phase 10's Task 6l, moved here,
+  ADR-141: a Backups section of the back office settings screen, over a
+  server write path in the settings service, `settings.edit`; it also
+  covers `<data dir>/photos/`, ADR-110). A manual "back up now" button. A documented,
   tested restore procedure — **actually restore from a backup and verify it**,
   do not just write the docs.
 
