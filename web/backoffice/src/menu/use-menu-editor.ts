@@ -77,7 +77,7 @@ export function useMenuEditor(): MenuEditorApi {
   };
   const done = (p: Promise<number>) => p.then(() => undefined);
   // The same, for an edit that answers with more than an id.
-  const refreshing = async <T,>(send: () => Promise<T>): Promise<T> => {
+  const refreshing = async <T>(send: () => Promise<T>): Promise<T> => {
     try {
       return await send();
     } finally {
@@ -95,25 +95,19 @@ export function useMenuEditor(): MenuEditorApi {
     refetch: () => void query.refetch(),
     createCategory: (n) => edit(() => store.api.post<MenuEditResponse>("/api/v1/menu/categories", name(n))),
     renameCategory: (id, n) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/categories/${id}`, name(n)))),
-    setCategoryActive: (id, active) =>
-      done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/categories/${id}/${active ? "restore" : "retire"}`))),
+    setCategoryActive: (id, active) => done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/categories/${id}/${active ? "restore" : "retire"}`))),
     orderCategories: (ids) => done(edit(() => store.api.put<MenuEditResponse>("/api/v1/menu/categories/order", order(ids)))),
     createItem: (input) => edit(() => store.api.post<MenuEditResponse>("/api/v1/menu/items", input)),
     updateItem: (id, input) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/items/${id}`, input))),
-    setItemActive: (id, active) =>
-      done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/items/${id}/${active ? "restore" : "retire"}`))),
-    orderItems: (categoryId, ids) =>
-      done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/categories/${categoryId}/items/order`, order(ids)))),
+    setItemActive: (id, active) => done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/items/${id}/${active ? "restore" : "retire"}`))),
+    orderItems: (categoryId, ids) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/categories/${categoryId}/items/order`, order(ids)))),
     setItemGroups: (itemId, ids) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/items/${itemId}/groups`, order(ids)))),
     createGroup: (input) => edit(() => store.api.post<MenuEditResponse>("/api/v1/menu/groups", input)),
     updateGroup: (id, input) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/groups/${id}`, input))),
-    setGroupActive: (id, active) =>
-      done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/groups/${id}/${active ? "restore" : "retire"}`))),
-    setItemSoldOut: (id, soldOut) =>
-      done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/items/${id}/${soldOut ? "sold-out" : "on-sale"}`))),
+    setGroupActive: (id, active) => done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/groups/${id}/${active ? "restore" : "retire"}`))),
+    setItemSoldOut: (id, soldOut) => done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/items/${id}/${soldOut ? "sold-out" : "on-sale"}`))),
     // A photo can take longer than a small edit over a venue's wifi.
-    setItemPhoto: (id, photo) =>
-      done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/items/${id}/photo`, photo, { timeoutMs: 30_000 }))),
+    setItemPhoto: (id, photo) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/items/${id}/photo`, photo, { timeoutMs: 30_000 }))),
     clearItemPhoto: (id) => done(edit(() => store.api.del<MenuEditResponse>(`/api/v1/menu/items/${id}/photo`))),
     createStation: (input) => edit(() => store.api.post<MenuEditResponse>("/api/v1/menu/stations", input)),
     renameStation: (id, n) => done(edit(() => store.api.put<MenuEditResponse>(`/api/v1/menu/stations/${id}`, { code: "", name: n } satisfies StationInput))),

@@ -57,9 +57,7 @@ export function allDay(tickets: readonly KitchenTicketResponse[]): AllDay[] {
       counts.set(l.name, (counts.get(l.name) ?? 0) + l.qty);
     }
   }
-  return [...counts]
-    .map(([name, qty]) => ({ name, qty }))
-    .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name));
+  return [...counts].map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name));
 }
 
 /** The ticket Recall brings back: the one bumped last, still in the window. */

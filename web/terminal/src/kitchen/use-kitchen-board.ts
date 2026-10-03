@@ -38,11 +38,9 @@ export function useKitchenBoard(station: string): KitchenBoardApi {
 
   const move = (verb: "bump" | "recall") => (t: KitchenTicketResponse) =>
     store.api
-      .post<KitchenBoardResponse>(
-        `/api/v1/kitchen/orders/${encodeURIComponent(t.order_id)}/tickets/${t.ticket_seq}/${verb}`,
-        undefined,
-        { idempotencyKey: newKey() },
-      )
+      .post<KitchenBoardResponse>(`/api/v1/kitchen/orders/${encodeURIComponent(t.order_id)}/tickets/${t.ticket_seq}/${verb}`, undefined, {
+        idempotencyKey: newKey(),
+      })
       .then((next) => {
         queryClient.setQueryData(key, next);
       });

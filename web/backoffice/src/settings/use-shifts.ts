@@ -4,14 +4,7 @@
 // holds and not what was typed.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-  ReceiptPreviewRequest,
-  ReceiptPreviewResponse,
-  ReceiptRequest,
-  ReceiptResponse,
-  RulesRequest,
-  RulesResponse,
-} from "../../../shared/api-types";
+import type { ReceiptPreviewRequest, ReceiptPreviewResponse, ReceiptRequest, ReceiptResponse, RulesRequest, RulesResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 
 export const rulesKey = ["settings", "rules"] as const;

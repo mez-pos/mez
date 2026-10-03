@@ -16,11 +16,7 @@ import { costMeasures, problemOf, type HandKind } from "./stock-logic";
 import { StockItemModal } from "./StockItemModal";
 import { useStock, type StockApi } from "./use-stock";
 
-type Open =
-  | { kind: "add" }
-  | { kind: "edit"; item: StockItem }
-  | { kind: "move"; item: StockItem; move: HandKind }
-  | { kind: "history"; item: StockItem };
+type Open = { kind: "add" } | { kind: "edit"; item: StockItem } | { kind: "move"; item: StockItem; move: HandKind } | { kind: "history"; item: StockItem };
 
 type View = "items" | "recipes";
 

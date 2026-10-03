@@ -5,7 +5,10 @@ import { orderQueryKey } from "./use-ticket";
 
 const history = (timeZone: string): HistoryResponse => ({
   events: [],
-  staff: [{ id: 1, name: "Asha" }, { id: 2, name: "Ravi" }],
+  staff: [
+    { id: 1, name: "Asha" },
+    { id: 2, name: "Ravi" },
+  ],
   devices: [{ id: 3, name: "Counter 1" }],
   time_zone: timeZone,
 });

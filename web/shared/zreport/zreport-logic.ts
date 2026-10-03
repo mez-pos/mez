@@ -7,7 +7,9 @@ import { formatMoney } from "../money";
 /** A tax rate, thousandths of a percent, as "2.5%": by string, never a float. */
 export function rateText(rate: number): string {
   const whole = Math.trunc(rate / 1000);
-  const frac = String(Math.abs(rate % 1000)).padStart(3, "0").replace(/0+$/, "");
+  const frac = String(Math.abs(rate % 1000))
+    .padStart(3, "0")
+    .replace(/0+$/, "");
   return frac === "" ? `${whole}%` : `${whole}.${frac}%`;
 }
 

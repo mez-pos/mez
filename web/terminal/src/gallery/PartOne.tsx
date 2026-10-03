@@ -38,7 +38,6 @@ const chips: ChipStatus[] = [
   { kind: "line", status: "comped" },
 ];
 
-
 function Buttons() {
   return (
     <div className="flex flex-col gap-3">

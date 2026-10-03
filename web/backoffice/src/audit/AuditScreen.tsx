@@ -54,7 +54,9 @@ export function AuditScreen() {
           <select className={inputClass} value={filter.staff} onChange={(e) => set({ staff: e.target.value })}>
             <option value="">Anyone</option>
             {/* Opened on someone not on the list (deactivated since): say the trail is filtered. */}
-            {filter.staff !== "" && staff.data && !staff.data.some((s) => s.id === filter.staff) && <option value={filter.staff}>Someone no longer active</option>}
+            {filter.staff !== "" && staff.data && !staff.data.some((s) => s.id === filter.staff) && (
+              <option value={filter.staff}>Someone no longer active</option>
+            )}
             {staff.data?.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -68,13 +70,7 @@ export function AuditScreen() {
         {kinds.map((k) => {
           const on = filter.kind === k;
           return (
-            <button
-              key={k}
-              type="button"
-              aria-pressed={on}
-              onClick={() => set({ kind: on ? null : k })}
-              className={pillClass(on)}
-            >
+            <button key={k} type="button" aria-pressed={on} onClick={() => set({ kind: on ? null : k })} className={pillClass(on)}>
               {kindWords[k].many}
               <span className="font-mono tabular-nums">{counts ? counts[k] : "·"}</span>
             </button>
@@ -86,7 +82,9 @@ export function AuditScreen() {
       {trail.error && (
         <EmptyState
           icon={<InboxIcon />}
-          line={trail.error instanceof ApiError && !trail.error.unreachable ? trail.error.message : "Can't reach the mez server. Check this computer's connection."}
+          line={
+            trail.error instanceof ApiError && !trail.error.unreachable ? trail.error.message : "Can't reach the mez server. Check this computer's connection."
+          }
           action={{ label: "Try again", onClick: () => void trail.refetch() }}
         />
       )}
@@ -110,7 +108,11 @@ function Trail({ entries, empty }: { entries: readonly AuditEntry[]; empty: stri
     {
       id: "when",
       header: "When",
-      cell: (e) => <span className="whitespace-nowrap font-mono tabular-nums">{new Date(e.at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>,
+      cell: (e) => (
+        <span className="whitespace-nowrap font-mono tabular-nums">
+          {new Date(e.at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+        </span>
+      ),
     },
     {
       id: "what",

@@ -14,9 +14,7 @@ export type Selection = ReadonlyMap<number, readonly number[]>;
  */
 export function initialSelection(groups: readonly ModifierGroupResponse[], current?: readonly LineModifier[]): Selection {
   const had = current ? new Set(current.map((m) => m.modifier_id)) : null;
-  return new Map(
-    groups.map((g) => [g.id, g.modifiers.filter((m) => (had ? had.has(m.id) : m.is_default)).map((m) => m.id)]),
-  );
+  return new Map(groups.map((g) => [g.id, g.modifiers.filter((m) => (had ? had.has(m.id) : m.is_default)).map((m) => m.id)]));
 }
 
 /**

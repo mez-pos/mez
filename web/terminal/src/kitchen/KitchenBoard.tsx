@@ -80,9 +80,7 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
 
       <div className="flex-1 overflow-y-auto p-6">
         {board.loading && <p className="text-kitchen text-fg-muted">Loading the tickets</p>}
-        {!board.loading && board.error !== null && !board.data && (
-          <p className="text-kitchen text-danger">{failureOf(board.error)}</p>
-        )}
+        {!board.loading && board.error !== null && !board.data && <p className="text-kitchen text-danger">{failureOf(board.error)}</p>}
         {board.data && tickets.length === 0 && <p className="py-20 text-center font-serif text-display text-fg-muted">All clear.</p>}
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] items-start gap-4">
           {tickets.map((t) => {
@@ -143,9 +141,7 @@ function TicketCard({ ticket: t, now, lateAfter, busy, disabled, onBump }: Ticke
           </span>
         </div>
       </header>
-      {t.notes.length > 0 && (
-        <p className="border-b border-line bg-chip-warning-bg px-4 py-2 text-kitchen text-chip-warning-fg">{t.notes.join(" · ")}</p>
-      )}
+      {t.notes.length > 0 && <p className="border-b border-line bg-chip-warning-bg px-4 py-2 text-kitchen text-chip-warning-fg">{t.notes.join(" · ")}</p>}
       <ul className="flex flex-col gap-2 px-4 py-3">
         {t.lines.map((l) => (
           <li key={l.id} className={cx(l.status === "voided" && "text-fg-muted line-through")}>

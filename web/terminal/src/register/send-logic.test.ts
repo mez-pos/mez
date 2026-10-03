@@ -15,15 +15,7 @@ describe("sendPlan", () => {
   });
 
   it("sends what was added to a fired course, and offers the next course", () => {
-    const plan = sendPlan(
-      order([
-        line(2, 1, { sent: true, course_fired: true }),
-        line(3, 2),
-        line(4, 1, { course_fired: true }),
-        line(5, 3),
-        line(6, 2),
-      ]),
-    );
+    const plan = sendPlan(order([line(2, 1, { sent: true, course_fired: true }), line(3, 2), line(4, 1, { course_fired: true }), line(5, 3), line(6, 2)]));
     expect(plan).toEqual({ waiting: 1, firing: null, next: { course: 2, lines: 2 } });
   });
 

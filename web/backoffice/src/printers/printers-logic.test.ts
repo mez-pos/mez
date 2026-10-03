@@ -4,7 +4,15 @@ import type { PrinterResponse } from "../../../shared/api-types";
 import { agoText, connectionText, emptyForm, formFrom, problemOf, stationsText, toSettings } from "./printers-logic";
 
 const printer = (extra: Partial<PrinterResponse> = {}): PrinterResponse => ({
-  id: 1, name: "Counter", transport: "tcp", address: "10.0.0.5", paper_mm: 80, active: true, is_receipt: false, stations: [], ...extra,
+  id: 1,
+  name: "Counter",
+  transport: "tcp",
+  address: "10.0.0.5",
+  paper_mm: 80,
+  active: true,
+  is_receipt: false,
+  stations: [],
+  ...extra,
 });
 
 describe("connectionText", () => {
@@ -22,7 +30,10 @@ describe("connectionText", () => {
 });
 
 describe("stationsText", () => {
-  const stations = [{ code: "kitchen", name: "Kitchen" }, { code: "bar", name: "Bar" }];
+  const stations = [
+    { code: "kitchen", name: "Kitchen" },
+    { code: "bar", name: "Bar" },
+  ];
   it("names the stations, in the printer's order", () => {
     expect(stationsText(printer({ stations: ["bar", "kitchen"] }), stations)).toBe("Bar, Kitchen");
     expect(stationsText(printer(), stations)).toBe("No stations");

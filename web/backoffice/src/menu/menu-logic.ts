@@ -3,16 +3,7 @@
 // the request the server checks.
 
 import { ApiError } from "../../../shared/api";
-import type {
-  EditorCategory,
-  EditorCourse,
-  EditorItem,
-  EditorStation,
-  EditorTaxClass,
-  MenuEditor,
-  MenuItemInput,
-  Money,
-} from "../../../shared/api-types";
+import type { EditorCategory, EditorCourse, EditorItem, EditorStation, EditorTaxClass, MenuEditor, MenuItemInput, Money } from "../../../shared/api-types";
 import { amountInputText, parseAmount } from "../../../shared/money";
 
 /** The items of one category, in their order. */
@@ -66,7 +57,9 @@ export function moved(ids: readonly number[], index: number, delta: -1 | 1): num
  */
 export function rateText(rate: number): string {
   const whole = Math.trunc(rate / 1000);
-  const rest = String(rate % 1000).padStart(3, "0").replace(/0+$/, "");
+  const rest = String(rate % 1000)
+    .padStart(3, "0")
+    .replace(/0+$/, "");
   return rest ? `${whole}.${rest}%` : `${whole}%`;
 }
 

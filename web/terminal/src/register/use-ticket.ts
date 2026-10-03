@@ -100,8 +100,7 @@ export function useTicket(): Ticket {
           commands: {
             openOrder: (open, key) => store.api.post<CommandResponse>("/api/v1/orders", open, { idempotencyKey: key }),
             addLine: (id, command, key) => store.api.post<CommandResponse>(url(id, "/lines"), command, { idempotencyKey: key }),
-            modifyLine: (id, lineId, change, key) =>
-              store.api.post<CommandResponse>(url(id, `/lines/${lineId}/modifiers`), change, { idempotencyKey: key }),
+            modifyLine: (id, lineId, change, key) => store.api.post<CommandResponse>(url(id, `/lines/${lineId}/modifiers`), change, { idempotencyKey: key }),
           },
           newKey: () => newKey(),
           onOrder: (order) => {
@@ -151,11 +150,7 @@ export function useTicket(): Ticket {
   });
 
   const post = (suffix: string, body: unknown, on = queue, key?: string) =>
-    on.run(
-      (id, sent) =>
-        store.api.post<CommandResponse>(`/api/v1/orders/${encodeURIComponent(id)}${suffix}`, body, { idempotencyKey: sent }),
-      key,
-    );
+    on.run((id, sent) => store.api.post<CommandResponse>(`/api/v1/orders/${encodeURIComponent(id)}${suffix}`, body, { idempotencyKey: sent }), key);
 
   return {
     order: orderId ? order.data : undefined,

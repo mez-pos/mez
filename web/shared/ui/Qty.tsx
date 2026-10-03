@@ -24,10 +24,15 @@ export function Qty({ value, onChange, bounds = defaultQtyBounds, label, classNa
   }
 
   const step = (by: 1 | -1) => () => onChange(stepQty(value, by, bounds));
-  const button = "inline-flex size-tap items-center justify-center rounded-pill text-xl hover:bg-raised-high outline-line-focus focus-visible:outline-2 disabled:opacity-40";
+  const button =
+    "inline-flex size-tap items-center justify-center rounded-pill text-xl hover:bg-raised-high outline-line-focus focus-visible:outline-2 disabled:opacity-40";
 
   return (
-    <span role="group" aria-label={label ? `Quantity of ${label}` : "Quantity"} className={cx("inline-flex items-center rounded-pill border border-line-strong bg-raised", className)}>
+    <span
+      role="group"
+      aria-label={label ? `Quantity of ${label}` : "Quantity"}
+      className={cx("inline-flex items-center rounded-pill border border-line-strong bg-raised", className)}
+    >
       <button type="button" aria-label="Decrease" className={cx(button, "text-fg")} onClick={step(-1)} disabled={!canStep(value, -1, bounds)}>
         {"−"}
       </button>

@@ -21,13 +21,7 @@ export interface StatusChipProps {
 export function StatusChip({ status, className }: StatusChipProps) {
   const { tone, word, struck } = chipSpec(status);
   return (
-    <span
-      className={cx(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border px-3 py-1 text-sm font-semibold",
-        tones[tone],
-        className,
-      )}
-    >
+    <span className={cx("inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border px-3 py-1 text-sm font-semibold", tones[tone], className)}>
       <span aria-hidden="true" className="size-1.5 shrink-0 rounded-round bg-current" />
       <span className={struck ? "line-through" : undefined}>{word}</span>
     </span>

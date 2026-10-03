@@ -63,9 +63,7 @@ export function lineActions(line: LineResponse, paid: boolean): LineActions {
 }
 
 /** A discount as typed: basis points (1250 is 12.5%) or an amount in minor units. */
-export type DiscountEntry =
-  | { readonly kind: "pct"; readonly basisPoints: number }
-  | { readonly kind: "amount"; readonly minor: number };
+export type DiscountEntry = { readonly kind: "pct"; readonly basisPoints: number } | { readonly kind: "amount"; readonly minor: number };
 
 /**
  * Why a discount cannot be sent yet, in the till's words, or null. `worth`

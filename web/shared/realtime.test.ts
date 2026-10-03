@@ -35,7 +35,12 @@ class FakeSocket implements SocketLike {
 }
 
 const welcome = (from: number, latest: number) => ({
-  type: "welcome", venue_id: 1, device_id: 2, from_event_id: from, latest_event_id: latest, topics: ["venue"],
+  type: "welcome",
+  venue_id: 1,
+  device_id: 2,
+  from_event_id: from,
+  latest_event_id: latest,
+  topics: ["venue"],
 });
 const event = (id: number) => ({ type: "event", id, order_id: `o${id}`, order_status: "open", event: { type: "order.opened" } });
 
@@ -78,7 +83,10 @@ function harness(overrides: Partial<RealtimeOptions> = {}): Harness {
   conn.onNotice((n) => notices.push(n));
 
   return {
-    conn, sockets, notices, probes,
+    conn,
+    sockets,
+    notices,
+    probes,
     latest: () => {
       const s = sockets.at(-1);
       if (!s) throw new Error("no socket was opened");

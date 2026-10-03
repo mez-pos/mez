@@ -1,0 +1,6 @@
+# Built output and dependencies.
+dist/
+node_modules/
+# Written by the Go generator (make generate), not by hand.
+shared/api-types.ts
+package-lock.json

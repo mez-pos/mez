@@ -5,7 +5,14 @@ import { failureOf } from "./order-messages";
 import { TicketQueue, type TicketCommands } from "./ticket-queue";
 
 const line = (name: string): AddLine => ({
-  item_id: 1, name, qty: 1, unit_price: { minor: 6000, currency: "INR" }, modifiers: [], course: 1, station: "bar", tax_rate: 5000,
+  item_id: 1,
+  name,
+  qty: 1,
+  unit_price: { minor: 6000, currency: "INR" },
+  modifiers: [],
+  course: 1,
+  station: "bar",
+  tax_rate: 5000,
 });
 
 const answer = (id: string, lines = 0): CommandResponse => ({
@@ -107,9 +114,7 @@ describe("TicketQueue", () => {
     server.failWith(unreachable());
     const key = q.ringUp(line("Latte"));
     await q.settled();
-    expect(q.current().pending).toEqual([
-      { key, command: line("Latte"), status: "failed", error: "Not sent: the server can't be reached." },
-    ]);
+    expect(q.current().pending).toEqual([{ key, command: line("Latte"), status: "failed", error: "Not sent: the server can't be reached." }]);
 
     q.retry(key);
     expect(q.current().pending[0]?.status).toBe("adding");
@@ -169,7 +174,10 @@ describe("TicketQueue", () => {
   it("opens as the ticket was started: at a table, with covers", async () => {
     const server = fakeServer();
     const q = new TicketQueue({
-      commands: server.commands, newKey: () => "k", onOrder: () => {}, remember: () => {},
+      commands: server.commands,
+      newKey: () => "k",
+      onOrder: () => {},
+      remember: () => {},
       open: { channel: "counter", table_id: 4, covers: 2 },
     });
     q.ringUp(line("Latte"));

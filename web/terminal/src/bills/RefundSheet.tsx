@@ -37,8 +37,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
 
   const preview = useQuery({
     queryKey: [...orderQueryKey(order.id), "credit-preview", order.last_seq, selection],
-    queryFn: ({ signal }) =>
-      store.api.post<CreditPlanResponse>(`/api/v1/orders/${encodeURIComponent(order.id)}/credit-notes/preview`, selection, { signal }),
+    queryFn: ({ signal }) => store.api.post<CreditPlanResponse>(`/api/v1/orders/${encodeURIComponent(order.id)}/credit-notes/preview`, selection, { signal }),
     enabled: selection !== null,
     staleTime: Infinity,
     retry: false,

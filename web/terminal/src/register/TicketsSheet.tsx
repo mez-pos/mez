@@ -91,9 +91,7 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
                       <Money amount={t.total} />
                       <span className="flex items-center gap-2">
                         {time.late && <StatusChip status={{ kind: "kitchen", status: "late" }} />}
-                        <span className={cx("font-mono text-sm tabular-nums", time.late ? "text-attention-text" : "text-fg-muted")}>
-                          {time.text}
-                        </span>
+                        <span className={cx("font-mono text-sm tabular-nums", time.late ? "text-attention-text" : "text-fg-muted")}>{time.text}</span>
                       </span>
                     </span>
                   </button>

@@ -7,11 +7,7 @@
 import { useEffect, useState } from "react";
 import { problemWith } from "./problem";
 
-export type Preview<T> =
-  | { state: "idle" }
-  | { state: "loading" }
-  | { state: "ok"; value: T }
-  | { state: "error"; message: string };
+export type Preview<T> = { state: "idle" } | { state: "loading" } | { state: "ok"; value: T } | { state: "error"; message: string };
 
 /** How long typing must pause before the server is asked. */
 export const PREVIEW_DELAY_MS = 350;

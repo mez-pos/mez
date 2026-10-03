@@ -121,7 +121,13 @@ describe("the item form", () => {
     expect(newItemForm(menu, 11)).toEqual({ name: "", categoryId: 11, price: "", hsn: "", taxClassId: 1, stationId: 2, courseId: 1 });
   });
   it("offers the courses in service, and a retired one only to an item that has it", () => {
-    const withRetired = { ...menu, courses: [{ id: 1, number: 1, name: "Mains", active: false }, { id: 2, number: 2, name: "Desserts", active: true }] };
+    const withRetired = {
+      ...menu,
+      courses: [
+        { id: 1, number: 1, name: "Mains", active: false },
+        { id: 2, number: 2, name: "Desserts", active: true },
+      ],
+    };
     expect(newItemForm(withRetired, 10).courseId).toBe(2);
     expect(choices(withRetired.courses, 2).map((c) => c.name)).toEqual(["Desserts"]);
     expect(choices(withRetired.courses, 1).map((c) => c.name)).toEqual(["Mains", "Desserts"]);
@@ -190,13 +196,7 @@ describe("problemOf", () => {
 describe("namesById", () => {
   it("names each column's id, marking a retired station", () => {
     const n = namesById(menu);
-    expect([n.taxClass(1), n.station(1), n.station(2), n.course(1), n.course(9)]).toEqual([
-      "Food, 5%",
-      "Bar (retired)",
-      "Kitchen",
-      "1 Mains",
-      "Unknown",
-    ]);
+    expect([n.taxClass(1), n.station(1), n.station(2), n.course(1), n.course(9)]).toEqual(["Food, 5%", "Bar (retired)", "Kitchen", "1 Mains", "Unknown"]);
   });
 });
 

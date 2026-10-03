@@ -113,7 +113,15 @@ describe("the timezone suggestions", () => {
     expect(timezoneNames({ supportedValuesOf: () => ["Asia/Kolkata", "UTC"] })).toEqual(["Asia/Kolkata", "UTC"]);
   });
   it("fall back to a short list where it has none, or it throws", () => {
-    for (const intl of [{}, { supportedValuesOf: () => [] }, { supportedValuesOf: () => { throw new RangeError("no"); } }]) {
+    for (const intl of [
+      {},
+      { supportedValuesOf: () => [] },
+      {
+        supportedValuesOf: () => {
+          throw new RangeError("no");
+        },
+      },
+    ]) {
       const names = timezoneNames(intl);
       expect(names).toContain("Asia/Kolkata");
       expect(names.length).toBeGreaterThan(5);

@@ -44,7 +44,13 @@ export function formatMoney(amount: Money, locale?: string): string {
     // Not a code Intl accepts. Say what it is rather than fail a till.
     return `${sign}${major}${exponent > 0 ? `.${fraction}` : ""} ${currency}`;
   }
-  return sign + format.formatToParts(BigInt(major)).map((part) => (part.type === "fraction" ? fraction : part.value)).join("");
+  return (
+    sign +
+    format
+      .formatToParts(BigInt(major))
+      .map((part) => (part.type === "fraction" ? fraction : part.value))
+      .join("")
+  );
 }
 
 /** 12345 at exponent 2 is "123" and "45"; 5 is "0" and "05". */

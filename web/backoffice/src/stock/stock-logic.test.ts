@@ -17,8 +17,28 @@ import {
   toParts,
 } from "./stock-logic";
 
-const beans: StockItem = { id: 1, name: "Beans", unit: "g", low_level: 2_000_000, active: true, on_hand: 4_750_000, low: false, count_at_close: true, cost: { minor: 125000, currency: "INR" } };
-const milk: StockItem = { id: 2, name: "Milk", unit: "ml", low_level: 0, active: true, on_hand: 0, low: false, count_at_close: false, cost: { minor: 0, currency: "INR" } };
+const beans: StockItem = {
+  id: 1,
+  name: "Beans",
+  unit: "g",
+  low_level: 2_000_000,
+  active: true,
+  on_hand: 4_750_000,
+  low: false,
+  count_at_close: true,
+  cost: { minor: 125000, currency: "INR" },
+};
+const milk: StockItem = {
+  id: 2,
+  name: "Milk",
+  unit: "ml",
+  low_level: 0,
+  active: true,
+  on_hand: 0,
+  low: false,
+  count_at_close: false,
+  cost: { minor: 0, currency: "INR" },
+};
 
 describe("toMovementInput", () => {
   it("sends a delivery in thousandths, with no reason", () => {
@@ -77,7 +97,9 @@ describe("the item form", () => {
   });
   it("treats an empty cost as not known, and reads one in the venue currency", () => {
     expect(itemFormFrom(milk).cost).toBe("");
-    expect(toItemInput({ ...emptyItemForm(), name: "Milk", unit: "ml", cost: " 60 " }, "INR")).toMatchObject({ input: { cost: { minor: 6000, currency: "INR" } } });
+    expect(toItemInput({ ...emptyItemForm(), name: "Milk", unit: "ml", cost: " 60 " }, "INR")).toMatchObject({
+      input: { cost: { minor: 6000, currency: "INR" } },
+    });
     expect(toItemInput({ ...emptyItemForm(), name: "Yen", cost: "60" }, "JPY")).toMatchObject({ input: { cost: { minor: 60, currency: "JPY" } } });
   });
   it("refuses a cost it cannot read", () => {
@@ -98,7 +120,15 @@ describe("recipes", () => {
     [2, milk],
   ]);
   it("words what a recipe takes", () => {
-    expect(recipeText([{ stock_item_id: 1, qty: 18_000 }, { stock_item_id: 2, qty: 200_000 }], stock)).toBe("Beans 18 g, Milk 200 ml");
+    expect(
+      recipeText(
+        [
+          { stock_item_id: 1, qty: 18_000 },
+          { stock_item_id: 2, qty: 200_000 },
+        ],
+        stock,
+      ),
+    ).toBe("Beans 18 g, Milk 200 ml");
     expect(recipeText([], stock)).toBe("");
   });
   it("reads a recipe into rows and back", () => {

@@ -85,11 +85,7 @@ export interface ApiClientConfig {
   onCredentialFailure?: (code: CredentialFailure) => void;
 }
 
-export function createApiClient({
-  credentials,
-  fetch: fetchFn = globalThis.fetch.bind(globalThis),
-  onCredentialFailure,
-}: ApiClientConfig): ApiClient {
+export function createApiClient({ credentials, fetch: fetchFn = globalThis.fetch.bind(globalThis), onCredentialFailure }: ApiClientConfig): ApiClient {
   const request = async <T>(method: string, path: string, body: unknown, options: RequestOptions = {}): Promise<T> => {
     try {
       return await send<T>(fetchFn, method, path, body, headersFor(credentials, body, options), options);
@@ -121,14 +117,7 @@ function headersFor(credentials: Credentials, body: unknown, options: RequestOpt
   return headers;
 }
 
-async function send<T>(
-  fetchFn: typeof fetch,
-  method: string,
-  path: string,
-  body: unknown,
-  headers: Headers,
-  options: RequestOptions,
-): Promise<T> {
+async function send<T>(fetchFn: typeof fetch, method: string, path: string, body: unknown, headers: Headers, options: RequestOptions): Promise<T> {
   const deadline = withDeadline(options.signal, options.timeoutMs ?? defaultTimeoutMs);
   let response: Response;
   try {

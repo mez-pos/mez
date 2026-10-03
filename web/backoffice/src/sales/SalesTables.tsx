@@ -97,7 +97,14 @@ export function Sold({ report, itemsCsv, categoriesCsv, staffCsv }: SoldProps) {
         <GroupTable label="Sales by category" heading="Category" qty="Qty" groups={t.by_category} name={(g) => g.name} figures={soldFigures} />
       </Section>
       <Section title="Who sold it" csv={staffCsv}>
-        <GroupTable label="Sales by who opened the bill" heading="Opened by" qty="Bills" groups={t.by_staff} name={(g) => g.name || "A guest"} figures={staffFigures} />
+        <GroupTable
+          label="Sales by who opened the bill"
+          heading="Opened by"
+          qty="Bills"
+          groups={t.by_staff}
+          name={(g) => g.name || "A guest"}
+          figures={staffFigures}
+        />
       </Section>
     </>
   );

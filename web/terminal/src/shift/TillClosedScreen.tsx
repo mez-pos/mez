@@ -25,11 +25,7 @@ export function TillClosedScreen({ currency, state, lastZ, onViewZ }: TillClosed
 
   if (state.shift === undefined) {
     return state.error ? (
-      <EmptyState
-        icon={<InboxIcon />}
-        line="Can't reach the mez server to check the till."
-        action={{ label: "Try again", onClick: state.retry }}
-      />
+      <EmptyState icon={<InboxIcon />} line="Can't reach the mez server to check the till." action={{ label: "Try again", onClick: state.retry }} />
     ) : (
       <p className="m-auto text-base text-fg-muted">Checking the till</p>
     );

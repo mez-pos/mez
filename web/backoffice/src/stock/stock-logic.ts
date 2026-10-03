@@ -3,15 +3,7 @@
 // turns the forms into the requests the server checks.
 
 import { ApiError } from "../../../shared/api";
-import type {
-  RecipePart,
-  StockItem,
-  StockItemInput,
-  StockMovement,
-  StockMovementInput,
-  StockUnit,
-  WasteReason,
-} from "../../../shared/api-types";
+import type { RecipePart, StockItem, StockItemInput, StockMovement, StockMovementInput, StockUnit, WasteReason } from "../../../shared/api-types";
 import { amountInputText, parseAmount } from "../../../shared/money";
 import { formatQty, parseQty, qtyInputText } from "../../../shared/stock-qty";
 

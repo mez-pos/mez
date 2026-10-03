@@ -37,7 +37,7 @@ const words: Partial<Record<ErrorCode, string>> = {
   not_invoiced: "This bill has no invoice yet. Void or comp the item instead.",
   over_credit: "That's more than is left to credit on this bill.",
   over_refund: "That payment has less left to refund than this. Choose another payment, or refund less.",
-  refunds_mismatch:"The refunds must add up to the credit exactly.",
+  refunds_mismatch: "The refunds must add up to the credit exactly.",
   split_invalid: "That split doesn't work. Check the number of payers.",
   split_over_allocated: "Those amounts come to more than is owed.",
   split_unassigned: "Every item needs someone to pay for it.",

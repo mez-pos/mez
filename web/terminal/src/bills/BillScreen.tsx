@@ -122,9 +122,7 @@ export function BillScreen({ orderId, onBack, onTakeBalance }: BillScreenProps) 
             </Button>
           )}
           {!canRefund && !owed && (
-            <p className="text-sm text-fg-muted">
-              {invoice ? "Everything on this bill has been credited." : "This bill has no invoice."}
-            </p>
+            <p className="text-sm text-fg-muted">{invoice ? "Everything on this bill has been credited." : "This bill has no invoice."}</p>
           )}
           <Button disabled={!invoice} onClick={() => setOpen({ kind: "reprint" })}>
             Reprint
@@ -164,8 +162,7 @@ function InvoiceFor({ order, seq }: { order: OrderResponse; seq: number }) {
   const latest = order.invoices.find((i) => i.seq === seq);
   const invoice = useQuery({
     queryKey: [...orderQueryKey(order.id), "invoice", seq, latest?.reprints, order.last_seq],
-    queryFn: ({ signal }) =>
-      store.api.get<IssuedInvoiceResponse>(`/api/v1/orders/${encodeURIComponent(order.id)}/invoices/${seq}`, { signal }),
+    queryFn: ({ signal }) => store.api.get<IssuedInvoiceResponse>(`/api/v1/orders/${encodeURIComponent(order.id)}/invoices/${seq}`, { signal }),
     staleTime: Infinity,
   });
   if (invoice.isError) return <p className="text-base text-danger">{failureOf(invoice.error)}</p>;

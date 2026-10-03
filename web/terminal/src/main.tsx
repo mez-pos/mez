@@ -31,9 +31,7 @@ const kitchen = window.location.pathname === "/kitchen" || window.location.pathn
 if (kitchen) document.documentElement.dataset.surface = "ink";
 const durable = browserStorage("local");
 const station = kitchen ? readStation(durable) : null;
-const { store, realtime } = kitchen
-  ? createAppAuth("kitchen", station ? [`station:${station}`] : [])
-  : createAppAuth("terminal");
+const { store, realtime } = kitchen ? createAppAuth("kitchen", station ? [`station:${station}`] : []) : createAppAuth("terminal");
 
 /** Keeps the display's station and starts again, subscribed to it alone. */
 function chooseStation(code: string | null) {

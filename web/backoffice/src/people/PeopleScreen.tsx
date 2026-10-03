@@ -242,9 +242,7 @@ function DeactivateConfirm({ person, api, onClose }: { person: Person; api: Peop
           .catch((err: unknown) => setProblem(problemOf(err).message));
       }}
     >
-      <p className="text-base">
-        They leave the sign-in screen and are signed out now. Their name stays on everything they did. You can bring them back.
-      </p>
+      <p className="text-base">They leave the sign-in screen and are signed out now. Their name stays on everything they did. You can bring them back.</p>
       {problem && (
         <p role="alert" className="mt-3 text-base text-danger">
           {problem}

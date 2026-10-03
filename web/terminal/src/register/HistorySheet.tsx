@@ -21,8 +21,7 @@ export function HistorySheet({ orderId, onClose }: HistorySheetProps) {
   const store = useAuthStore();
   const history = useQuery({
     queryKey: historyKey(orderId),
-    queryFn: ({ signal }) =>
-      store.api.get<HistoryResponse>(`/api/v1/orders/${encodeURIComponent(orderId)}/events`, { signal }).then(withNames),
+    queryFn: ({ signal }) => store.api.get<HistoryResponse>(`/api/v1/orders/${encodeURIComponent(orderId)}/events`, { signal }).then(withNames),
     staleTime: Infinity,
   });
 

@@ -66,12 +66,7 @@ export function FloorGrid({ cells, chosen, moving, onCell, onTable, onDrop }: Fl
 
   return (
     <div className="overflow-x-auto rounded border border-line bg-sunken p-2">
-      <div
-        role="grid"
-        aria-label="Floor plan"
-        className="grid gap-1"
-        style={{ gridTemplateColumns: `repeat(${columns}, minmax(3.5rem, 1fr))` }}
-      >
+      <div role="grid" aria-label="Floor plan" className="grid gap-1" style={{ gridTemplateColumns: `repeat(${columns}, minmax(3.5rem, 1fr))` }}>
         {cells.map((row, y) => (
           <div role="row" key={y} className="contents">
             {row.map((cell) => {

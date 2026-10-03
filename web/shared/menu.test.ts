@@ -5,8 +5,14 @@ import { indexMenu, isMenuStale, isSoldOut, photoUrl } from "./menu";
 const rupees = (r: number) => ({ minor: r * 100, currency: "INR" });
 
 const item = (id: number, category: number, groups: number[] = []): MenuItemResponse => ({
-  id, category_id: category, name: `item ${id}`, price: rupees(100), station: "bar", course: 1,
-  tax_rate: 5000, modifier_groups: groups,
+  id,
+  category_id: category,
+  name: `item ${id}`,
+  price: rupees(100),
+  station: "bar",
+  course: 1,
+  tax_rate: 5000,
+  modifier_groups: groups,
 });
 
 const menu: MenuResponse = {
@@ -14,7 +20,10 @@ const menu: MenuResponse = {
   currency: "INR",
   stations: [{ id: 1, code: "bar", name: "Bar" }],
   courses: [{ id: 1, number: 1, name: "First" }],
-  categories: [{ id: 10, name: "Coffee" }, { id: 20, name: "Cakes" }],
+  categories: [
+    { id: 10, name: "Coffee" },
+    { id: 20, name: "Cakes" },
+  ],
   items: [item(1, 10, [300, 100]), item(2, 20), item(3, 10, [999])],
   modifier_groups: [
     { id: 100, name: "Milk", min_select: 1, max_select: 1, modifiers: [] },

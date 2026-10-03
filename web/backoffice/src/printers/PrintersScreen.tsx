@@ -51,9 +51,7 @@ export function PrintersScreen() {
         <PrinterFormModal
           title={editing.kind === "add" ? "Add a printer" : `Edit ${editing.printer.name}`}
           initial={editing.kind === "add" ? emptyForm() : formFrom(editing.printer)}
-          onSave={(form) =>
-            editing.kind === "add" ? api.create(toSettings(form)) : api.update(editing.printer.id, toSettings(form))
-          }
+          onSave={(form) => (editing.kind === "add" ? api.create(toSettings(form)) : api.update(editing.printer.id, toSettings(form)))}
           onClose={() => setEditing(null)}
         />
       )}
@@ -145,9 +143,7 @@ function Routing({ data, api }: { data: PrintersResponse; api: PrinterSettingsAp
       {data.stations.length === 0 && <p className="text-base text-fg-muted">No stations yet. They are added in the menu, with the items made at each.</p>}
       {data.stations.map((s) => {
         const current = s.printer_id !== undefined && active.some((p) => p.id === s.printer_id) ? s.printer_id : null;
-        return (
-          <Assign key={s.code} label={`${s.name} tickets`} value={current} printers={active} onChange={(id) => api.setStation(s.code, id)} />
-        );
+        return <Assign key={s.code} label={`${s.name} tickets`} value={current} printers={active} onChange={(id) => api.setStation(s.code, id)} />;
       })}
       {mayEditMenu && (
         <p className="text-sm text-fg-muted">

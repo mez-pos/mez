@@ -5,13 +5,7 @@
 // version: the stream tells the menu editor, which reads again.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-  NumberingRequest,
-  NumberingResponse,
-  TaxClassRequest,
-  TaxSettingsRequest,
-  TaxSettingsResponse,
-} from "../../../shared/api-types";
+import type { NumberingRequest, NumberingResponse, TaxClassRequest, TaxSettingsRequest, TaxSettingsResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 
 export const taxKey = ["settings", "tax"] as const;
@@ -49,10 +43,26 @@ export function useTax(): TaxApi {
     error: query.error,
     refetch: () => void query.refetch(),
     save: (input) => store.api.put<TaxSettingsResponse>("/api/v1/settings/tax", input).then(keep),
-    createClass: (input) => store.api.post<TaxSettingsResponse>("/api/v1/settings/tax-classes", input).then(keep).then(() => undefined),
-    updateClass: (id, input) => store.api.put<TaxSettingsResponse>(`/api/v1/settings/tax-classes/${id}`, input).then(keep).then(() => undefined),
-    retireClass: (id) => store.api.post<TaxSettingsResponse>(`/api/v1/settings/tax-classes/${id}/retire`).then(keep).then(() => undefined),
-    restoreClass: (id) => store.api.post<TaxSettingsResponse>(`/api/v1/settings/tax-classes/${id}/restore`).then(keep).then(() => undefined),
+    createClass: (input) =>
+      store.api
+        .post<TaxSettingsResponse>("/api/v1/settings/tax-classes", input)
+        .then(keep)
+        .then(() => undefined),
+    updateClass: (id, input) =>
+      store.api
+        .put<TaxSettingsResponse>(`/api/v1/settings/tax-classes/${id}`, input)
+        .then(keep)
+        .then(() => undefined),
+    retireClass: (id) =>
+      store.api
+        .post<TaxSettingsResponse>(`/api/v1/settings/tax-classes/${id}/retire`)
+        .then(keep)
+        .then(() => undefined),
+    restoreClass: (id) =>
+      store.api
+        .post<TaxSettingsResponse>(`/api/v1/settings/tax-classes/${id}/restore`)
+        .then(keep)
+        .then(() => undefined),
   };
 }
 

@@ -16,8 +16,7 @@ function fakeFetch(respond: (call: Call) => Response | Promise<Response>) {
   return { fetch: fn as unknown as typeof fetch, calls };
 }
 
-const json = (status: number, body: unknown) =>
-  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
 const signedIn: Credentials = { deviceToken: () => "nfd_device", staffToken: () => "nfs_staff" };
 
@@ -108,7 +107,9 @@ describe("createApiClient", () => {
   for (const tt of failures) {
     it(tt.name, async () => {
       const { fetch } = fakeFetch(tt.respond);
-      const err = await createApiClient({ credentials: signedIn, fetch }).get("/x").catch((e: unknown) => e);
+      const err = await createApiClient({ credentials: signedIn, fetch })
+        .get("/x")
+        .catch((e: unknown) => e);
 
       expect(err).toBeInstanceOf(ApiError);
       const apiErr = err as ApiError;
@@ -118,8 +119,7 @@ describe("createApiClient", () => {
 
   it("times out a server that never answers", async () => {
     const { fetch } = fakeFetch(
-      ({ init }) =>
-        new Promise((_, reject) => init.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))),
+      ({ init }) => new Promise((_, reject) => init.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))),
     );
     const err = await createApiClient({ credentials: signedIn, fetch })
       .get("/x", { timeoutMs: 20 })
@@ -132,10 +132,11 @@ describe("createApiClient", () => {
   it("passes a caller's cancel through untouched", async () => {
     const controller = new AbortController();
     const { fetch } = fakeFetch(
-      ({ init }) =>
-        new Promise((_, reject) => init.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))),
+      ({ init }) => new Promise((_, reject) => init.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))),
     );
-    const pending = createApiClient({ credentials: signedIn, fetch }).get("/x", { signal: controller.signal }).catch((e: unknown) => e);
+    const pending = createApiClient({ credentials: signedIn, fetch })
+      .get("/x", { signal: controller.signal })
+      .catch((e: unknown) => e);
     controller.abort();
 
     const err = await pending;
@@ -149,7 +150,9 @@ describe("lockouts and credential failures", () => {
     const { fetch } = fakeFetch(
       () => new Response(JSON.stringify({ error: { code: "locked_out", message: "locked" } }), { status: 429, headers: { "Retry-After": "240" } }),
     );
-    const err = (await createApiClient({ credentials: signedIn, fetch }).post("/api/v1/sessions", {}).catch((e: unknown) => e)) as ApiError;
+    const err = (await createApiClient({ credentials: signedIn, fetch })
+      .post("/api/v1/sessions", {})
+      .catch((e: unknown) => e)) as ApiError;
     expect([err.code, err.retryAfterMs]).toEqual(["locked_out", 240_000]);
   });
 
@@ -174,7 +177,9 @@ describe("lockouts and credential failures", () => {
   it("does not report a 403, whatever its code", async () => {
     const { fetch } = fakeFetch(() => json(403, { error: { code: "unauthenticated", message: "no" } }));
     const seen: string[] = [];
-    await createApiClient({ credentials: signedIn, fetch, onCredentialFailure: (c) => seen.push(c) }).get("/x").catch(() => undefined);
+    await createApiClient({ credentials: signedIn, fetch, onCredentialFailure: (c) => seen.push(c) })
+      .get("/x")
+      .catch(() => undefined);
     expect(seen).toEqual([]);
   });
 });

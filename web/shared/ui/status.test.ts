@@ -1,14 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  chipSpec,
-  kitchenStatuses,
-  lineStatuses,
-  orderStatuses,
-  paymentStatuses,
-  printStatuses,
-  tableStatuses,
-  type ChipSpec,
-} from "./status";
+import { chipSpec, kitchenStatuses, lineStatuses, orderStatuses, paymentStatuses, printStatuses, tableStatuses, type ChipSpec } from "./status";
 
 const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   kitchen: kitchenStatuses,

@@ -68,8 +68,7 @@ export function TenderScreen({ order, ticket, label, onBack }: TenderScreenProps
   // A share is paid whole: card and UPI take exactly it, cash at least it.
   const target = share ? share.amount.minor : due;
   const whole = share !== undefined;
-  const amountShown =
-    entered === null || (whole && method !== "cash") ? target : method === "cash" ? entered : Math.min(entered, target);
+  const amountShown = entered === null || (whole && method !== "cash") ? target : method === "cash" ? entered : Math.min(entered, target);
   const plan = stale
     ? { amount: 0, change: 0, charge: 0, problem: "Split the bill again before taking payment." }
     : planTender({ method, entered: amountShown, tip, due: target, whole });
@@ -168,10 +167,10 @@ export function TenderScreen({ order, ticket, label, onBack }: TenderScreenProps
   const message = splitting
     ? null
     : error
-    ? { text: error, tone: "error" as const }
-    : !paid && plan.problem
-      ? { text: plan.problem, tone: "hint" as const }
-      : null;
+      ? { text: error, tone: "error" as const }
+      : !paid && plan.problem
+        ? { text: plan.problem, tone: "hint" as const }
+        : null;
 
   return (
     <div className="flex min-w-0 flex-1">
@@ -271,14 +270,10 @@ export function TenderScreen({ order, ticket, label, onBack }: TenderScreenProps
 
               <div className="rounded-card border border-line bg-chrome shadow-rest p-5">
                 {method === "cash" ? (
-                  <p className="text-base text-fg-muted">
-                    Key what the guest hands over. A tip comes out of the change; it is never part of the bill.
-                  </p>
+                  <p className="text-base text-fg-muted">Key what the guest hands over. A tip comes out of the change; it is never part of the bill.</p>
                 ) : (
                   <label className="flex flex-col gap-2">
-                    <span className="text-meta font-semibold uppercase text-fg-muted">
-                      {method === "card" ? "Slip reference" : "UPI transaction ID"}
-                    </span>
+                    <span className="text-meta font-semibold uppercase text-fg-muted">{method === "card" ? "Slip reference" : "UPI transaction ID"}</span>
                     <input
                       value={reference}
                       onChange={(e) => {

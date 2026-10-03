@@ -30,11 +30,7 @@ export function InvoicePanel({ order, ticket, onError }: InvoicePanelProps) {
   // Keyed by the reprint count, so a reprint redraws "Reprinted 1 time".
   const invoice = useQuery({
     queryKey: [...orderQueryKey(order.id), "invoice", latest?.seq, latest?.reprints],
-    queryFn: ({ signal }) =>
-      store.api.get<IssuedInvoiceResponse>(
-        `/api/v1/orders/${encodeURIComponent(order.id)}/invoices/${latest?.seq ?? 0}`,
-        { signal },
-      ),
+    queryFn: ({ signal }) => store.api.get<IssuedInvoiceResponse>(`/api/v1/orders/${encodeURIComponent(order.id)}/invoices/${latest?.seq ?? 0}`, { signal }),
     enabled: latest !== undefined,
     staleTime: Infinity,
   });

@@ -1,20 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
-import {
-  areaToShow,
-  countsText,
-  idle,
-  modeText,
-  startingCovers,
-  stepMode,
-  tableNames,
-  tapFor,
-  tileText,
-  tilesOf,
-} from "./floor-logic";
+import { areaToShow, countsText, idle, modeText, startingCovers, stepMode, tableNames, tapFor, tileText, tilesOf } from "./floor-logic";
 
 const tile = (extra: Partial<LiveTableResponse> = {}): LiveTableResponse => ({
-  id: 1, area_id: 10, name: "T1", seats: 4, shape: "square", x: 0, y: 0, status: "free", covers: 0, orders: [], ...extra,
+  id: 1,
+  area_id: 10,
+  name: "T1",
+  seats: 4,
+  shape: "square",
+  x: 0,
+  y: 0,
+  status: "free",
+  covers: 0,
+  orders: [],
+  ...extra,
 });
 
 const floor = (tables: LiveTableResponse[]): LiveFloorResponse => ({
@@ -50,13 +49,7 @@ describe("areaToShow", () => {
 
 describe("countsText", () => {
   it("counts in turn order, in the floor's words", () => {
-    const tables = [
-      tile({ status: "dirty" }),
-      tile({ status: "free" }),
-      tile({ status: "settling" }),
-      tile({ status: "free" }),
-      tile({ status: "seated" }),
-    ];
+    const tables = [tile({ status: "dirty" }), tile({ status: "free" }), tile({ status: "settling" }), tile({ status: "free" }), tile({ status: "seated" })];
     expect(countsText(tables)).toBe("2 free · 1 seated · 1 paying · 1 to clear");
     expect(countsText([])).toBe("");
   });
@@ -65,8 +58,14 @@ describe("countsText", () => {
 describe("tapFor", () => {
   const cases: [Partial<LiveTableResponse>, ReturnType<typeof tapFor>][] = [
     [{ status: "free" }, { kind: "seat" }],
-    [{ status: "ordered", orders: ["ord_1"] }, { kind: "ticket", orderId: "ord_1" }],
-    [{ status: "settling", orders: ["ord_1"] }, { kind: "ticket", orderId: "ord_1" }],
+    [
+      { status: "ordered", orders: ["ord_1"] },
+      { kind: "ticket", orderId: "ord_1" },
+    ],
+    [
+      { status: "settling", orders: ["ord_1"] },
+      { kind: "ticket", orderId: "ord_1" },
+    ],
     [{ status: "ordered", orders: ["ord_1", "ord_2"] }, { kind: "sheet" }],
     [{ status: "seated", orders: ["ord_1"] }, { kind: "sheet" }],
     [{ status: "dirty" }, { kind: "sheet" }],

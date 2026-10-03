@@ -54,9 +54,7 @@ export function InvoicePreview({ invoice }: { invoice: IssuedInvoiceResponse }) 
                   </span>
                   <Money amount={l.gross} />
                 </div>
-                {l.modifiers && l.modifiers.length > 0 && (
-                  <p className="text-sm text-fg-muted">{l.modifiers.map((m) => m.name).join(", ")}</p>
-                )}
+                {l.modifiers && l.modifiers.length > 0 && <p className="text-sm text-fg-muted">{l.modifiers.map((m) => m.name).join(", ")}</p>}
                 {l.hsn && <p className="font-mono text-sm text-fg-muted">HSN/SAC {l.hsn}</p>}
                 {l.discount.minor > 0 && (
                   <p className="flex justify-between text-sm text-fg-muted">
@@ -89,9 +87,7 @@ export function InvoicePreview({ invoice }: { invoice: IssuedInvoiceResponse }) 
           </div>
         </>
       ) : (
-        <p className="mt-4 text-sm text-fg-2">
-          Issued before invoices kept their prices; the lines are on the order&apos;s history.
-        </p>
+        <p className="mt-4 text-sm text-fg-2">Issued before invoices kept their prices; the lines are on the order&apos;s history.</p>
       )}
 
       {payments.length > 0 && (

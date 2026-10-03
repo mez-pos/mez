@@ -19,8 +19,20 @@ const report: ClosingStockReport = {
   to: "2026-09-30",
   currency: "INR",
   shifts: [
-    { shift_id: "shf_A", trading_day: "2026-09-29", lines: [line(2, "Beans", { unit: "g" }), line(1, "Milk", { cost: inr(6000), value: inr(-3000) })], value: inr(-3000), uncosted: 1 },
-    { shift_id: "shf_B", trading_day: "2026-09-30", lines: [line(2, "Beans", { unit: "g" }), line(1, "Milk", { cost: inr(6400), value: inr(640) })], value: inr(640), uncosted: 1 },
+    {
+      shift_id: "shf_A",
+      trading_day: "2026-09-29",
+      lines: [line(2, "Beans", { unit: "g" }), line(1, "Milk", { cost: inr(6000), value: inr(-3000) })],
+      value: inr(-3000),
+      uncosted: 1,
+    },
+    {
+      shift_id: "shf_B",
+      trading_day: "2026-09-30",
+      lines: [line(2, "Beans", { unit: "g" }), line(1, "Milk", { cost: inr(6400), value: inr(640) })],
+      value: inr(640),
+      uncosted: 1,
+    },
   ],
   items: [],
   value: inr(-2360),

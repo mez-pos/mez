@@ -38,9 +38,7 @@ function Stations({ station, onStation }: KitchenAppProps) {
       {menu.isError && !menu.data && (
         <EmptyState icon={<InboxIcon />} line="Can't reach the mez server." action={{ label: "Try again", onClick: () => void menu.refetch() }} />
       )}
-      {menu.data && stations.length === 0 && (
-        <p className="text-kitchen text-fg-muted">This venue has no stations yet. Add them with the menu.</p>
-      )}
+      {menu.data && stations.length === 0 && <p className="text-kitchen text-fg-muted">This venue has no stations yet. Add them with the menu.</p>}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
         {stations.map((s: StationResponse) => (
           <button

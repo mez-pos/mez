@@ -8,20 +8,7 @@ import type { NumberingRequest, NumberingResponse } from "../../../shared/api-ty
 import { majorText, parseMajor } from "./money-text";
 import { problemWith, type Problem } from "./problem";
 
-export const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-] as const;
+export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] as const;
 
 export interface NumberingForm {
   invoiceSeries: string;
@@ -60,13 +47,7 @@ export function parseStep(text: string, maxStep: number): number | null {
 export const stepRange = (maxStep: number): string => `from ${stepText(1, maxStep)} to ${stepText(maxStep, maxStep)}`;
 
 export type NumberingField =
-  | "invoice_series"
-  | "credit_series"
-  | "invoice_prefix"
-  | "credit_prefix"
-  | "template"
-  | "financial_year_start_month"
-  | "cash_rounding_step";
+  "invoice_series" | "credit_series" | "invoice_prefix" | "credit_prefix" | "template" | "financial_year_start_month" | "cash_rounding_step";
 
 const numberingFields: readonly NumberingField[] = [
   "invoice_series",

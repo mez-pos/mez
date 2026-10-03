@@ -4,7 +4,14 @@ import { TicketBook } from "./ticket-book";
 import { TicketQueue, type TicketCommands } from "./ticket-queue";
 
 const line = (name: string): AddLine => ({
-  item_id: 1, name, qty: 1, unit_price: { minor: 6000, currency: "INR" }, modifiers: [], course: 1, station: "bar", tax_rate: 5000,
+  item_id: 1,
+  name,
+  qty: 1,
+  unit_price: { minor: 6000, currency: "INR" },
+  modifiers: [],
+  course: 1,
+  station: "bar",
+  tax_rate: 5000,
 });
 const answer = (id: string): CommandResponse => ({ order: { id, lines: [] } as unknown as OrderResponse, events: [] });
 
@@ -34,7 +41,9 @@ function world(initialOrderId: string | null = null) {
     initialOrderId,
   });
   return {
-    book, calls, remembered,
+    book,
+    calls,
+    remembered,
     holdOpens: () => {
       let release!: () => void;
       gate = new Promise((r) => (release = r));

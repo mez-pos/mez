@@ -4,9 +4,19 @@ import { currentCursor, firstPage, nextPage, nextSort, pageNumber, previousPage 
 describe("nextSort", () => {
   const tests = [
     { name: "first tap sorts ascending", current: null, column: "total", want: { column: "total", direction: "asc" } },
-    { name: "same column flips to descending", current: { column: "total", direction: "asc" as const }, column: "total", want: { column: "total", direction: "desc" } },
+    {
+      name: "same column flips to descending",
+      current: { column: "total", direction: "asc" as const },
+      column: "total",
+      want: { column: "total", direction: "desc" },
+    },
     { name: "and back", current: { column: "total", direction: "desc" as const }, column: "total", want: { column: "total", direction: "asc" } },
-    { name: "another column starts ascending", current: { column: "total", direction: "desc" as const }, column: "opened", want: { column: "opened", direction: "asc" } },
+    {
+      name: "another column starts ascending",
+      current: { column: "total", direction: "desc" as const },
+      column: "opened",
+      want: { column: "opened", direction: "asc" },
+    },
   ];
   for (const tt of tests) {
     it(tt.name, () => expect(nextSort(tt.current, tt.column)).toEqual(tt.want));

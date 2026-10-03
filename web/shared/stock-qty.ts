@@ -37,7 +37,9 @@ export function qtyInputText(q: number): string {
   const sign = q < 0 ? "-" : "";
   const abs = Math.abs(q);
   const whole = Math.trunc(abs / perUnit);
-  const fraction = String(abs % perUnit).padStart(3, "0").replace(/0+$/, "");
+  const fraction = String(abs % perUnit)
+    .padStart(3, "0")
+    .replace(/0+$/, "");
   return fraction ? `${sign}${whole}.${fraction}` : `${sign}${whole}`;
 }
 
@@ -46,7 +48,9 @@ export function formatQty(q: number, unit: StockUnit): string {
   const sign = q < 0 ? "−" : "";
   const abs = Math.abs(q);
   const whole = Math.trunc(abs / perUnit).toLocaleString("en-US");
-  const fraction = String(abs % perUnit).padStart(3, "0").replace(/0+$/, "");
+  const fraction = String(abs % perUnit)
+    .padStart(3, "0")
+    .replace(/0+$/, "");
   return `${sign}${fraction ? `${whole}.${fraction}` : whole} ${unitText[unit]}`;
 }
 

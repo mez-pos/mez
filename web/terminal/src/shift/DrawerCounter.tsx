@@ -73,7 +73,13 @@ export function DrawerCounter({ title, currency, value, onChange, disabled = fal
           <p className="min-w-72 flex-1 text-base text-fg-muted">Type the total counted on the pad.</p>
         )}
         <div className="flex flex-col gap-tap-gap">
-          <NumPad layout="amount" size="lg" label={picked !== null && rows.length > 0 ? "Count of this note" : "Total counted"} onKey={key} disabled={disabled} />
+          <NumPad
+            layout="amount"
+            size="lg"
+            label={picked !== null && rows.length > 0 ? "Count of this note" : "Total counted"}
+            onKey={key}
+            disabled={disabled}
+          />
           {rows.length > 0 && (
             <Button disabled={disabled || picked === null} onClick={() => picked !== null && setPicked(nextFace(rows, picked))}>
               Next

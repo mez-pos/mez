@@ -51,11 +51,7 @@ interface Context {
   readonly staff: StaffName;
 }
 
-export function timelineEntries(
-  events: readonly OrderEvent[],
-  staff: StaffName = () => undefined,
-  device: DeviceName = () => undefined,
-): TimelineEntry[] {
+export function timelineEntries(events: readonly OrderEvent[], staff: StaffName = () => undefined, device: DeviceName = () => undefined): TimelineEntry[] {
   const ctx: Context = { lines: new Map(), payments: new Map(), staff };
   return events.map((event) => {
     remember(ctx, event);
@@ -118,9 +114,19 @@ function describe(event: OrderEvent, ctx: Context): Described {
       return { title: `Changed ${line(event.payload.line_id)}`, detail: `${names(event.payload.from)} → ${names(event.payload.to)}` };
     }
     case "line.voided":
-      return { title: `Voided ${line(event.payload.line_id)}`, detail: humanise(event.payload.reason_code), tone: "danger", authorisedBy: event.payload.authorised_by };
+      return {
+        title: `Voided ${line(event.payload.line_id)}`,
+        detail: humanise(event.payload.reason_code),
+        tone: "danger",
+        authorisedBy: event.payload.authorised_by,
+      };
     case "line.comped":
-      return { title: `Comped ${line(event.payload.line_id)}`, detail: humanise(event.payload.reason_code), tone: "info", authorisedBy: event.payload.authorised_by };
+      return {
+        title: `Comped ${line(event.payload.line_id)}`,
+        detail: humanise(event.payload.reason_code),
+        tone: "info",
+        authorisedBy: event.payload.authorised_by,
+      };
     case "discount.applied":
       return discount(event.payload, line);
     case "note.added":
@@ -182,7 +188,9 @@ function discount(p: DiscountApplied, line: (id: number) => string): Described {
 /** Basis points as a percentage, by string, so 1250 is "12.5%" with no float. */
 export function percent(basisPoints: number): string {
   const whole = Math.trunc(basisPoints / 100);
-  const rest = String(Math.abs(basisPoints % 100)).padStart(2, "0").replace(/0+$/, "");
+  const rest = String(Math.abs(basisPoints % 100))
+    .padStart(2, "0")
+    .replace(/0+$/, "");
   return rest ? `${whole}.${rest}%` : `${whole}%`;
 }
 

@@ -19,9 +19,7 @@ export function cellsOf(plan: FloorResponse, areaId: number): Cell[][] {
   for (const t of plan.tables) {
     if (t.active && t.area_id === areaId) at.set(`${t.x},${t.y}`, t);
   }
-  return Array.from({ length: plan.grid.rows }, (_, y) =>
-    Array.from({ length: plan.grid.columns }, (_, x) => ({ x, y, table: at.get(`${x},${y}`) ?? null })),
-  );
+  return Array.from({ length: plan.grid.rows }, (_, y) => Array.from({ length: plan.grid.columns }, (_, x) => ({ x, y, table: at.get(`${x},${y}`) ?? null })));
 }
 
 /** The retired tables of an area, by name. */

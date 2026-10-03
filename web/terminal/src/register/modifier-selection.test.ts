@@ -1,20 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { ModifierGroupResponse } from "../../../shared/api-types";
-import {
-  firstUnmet,
-  groupState,
-  initialSelection,
-  sameModifiers,
-  toggle,
-  toModifiers,
-  unitPrice,
-  type Selection,
-} from "./modifier-selection";
+import { firstUnmet, groupState, initialSelection, sameModifiers, toggle, toModifiers, unitPrice, type Selection } from "./modifier-selection";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
 const milk: ModifierGroupResponse = {
-  id: 1, name: "Milk", min_select: 1, max_select: 1,
+  id: 1,
+  name: "Milk",
+  min_select: 1,
+  max_select: 1,
   modifiers: [
     { id: 10, name: "Dairy", price: inr(0), is_default: true },
     { id: 11, name: "Oat", price: inr(5000), is_default: false },
@@ -22,7 +16,10 @@ const milk: ModifierGroupResponse = {
   ],
 };
 const extras: ModifierGroupResponse = {
-  id: 2, name: "Extras", min_select: 0, max_select: 2,
+  id: 2,
+  name: "Extras",
+  min_select: 0,
+  max_select: 2,
   modifiers: [
     { id: 20, name: "Shot", price: inr(3000), is_default: false },
     { id: 21, name: "Vanilla", price: inr(2500), is_default: false },
@@ -30,11 +27,17 @@ const extras: ModifierGroupResponse = {
   ],
 };
 const ice: ModifierGroupResponse = {
-  id: 3, name: "Ice cream", min_select: 0, max_select: 1,
+  id: 3,
+  name: "Ice cream",
+  min_select: 0,
+  max_select: 1,
   modifiers: [{ id: 30, name: "Scoop", price: inr(6000), is_default: false }],
 };
 const syrup: ModifierGroupResponse = {
-  id: 4, name: "Syrup", min_select: 1, max_select: 1,
+  id: 4,
+  name: "Syrup",
+  min_select: 1,
+  max_select: 1,
   modifiers: [{ id: 40, name: "Maple", price: inr(0), is_default: false }],
 };
 const groups = [milk, extras];

@@ -175,7 +175,12 @@ describe("AuthStore sign-in and sign-out", () => {
 
   it("locks on sign-out even when the server cannot be told", async () => {
     const { auth, store } = setup(
-      (m, p) => (p === "/api/v1/devices/me" ? json(200, till) : p === "/api/v1/sessions/current" && m === "GET" ? json(200, { staff: asha, expires_at: "x" }) : Promise.reject(new TypeError("offline"))),
+      (m, p) =>
+        p === "/api/v1/devices/me"
+          ? json(200, till)
+          : p === "/api/v1/sessions/current" && m === "GET"
+            ? json(200, { staff: asha, expires_at: "x" })
+            : Promise.reject(new TypeError("offline")),
       { device: true, staff: true },
     );
     await auth.boot();
@@ -186,7 +191,12 @@ describe("AuthStore sign-in and sign-out", () => {
 
   it("locks, saying so, when any later request finds the session expired", async () => {
     const { auth } = setup(
-      (m, p) => (p === "/api/v1/devices/me" ? json(200, till) : p === "/api/v1/sessions/current" && m === "GET" ? json(200, { staff: asha, expires_at: "x" }) : refuse("sign_in_required")),
+      (m, p) =>
+        p === "/api/v1/devices/me"
+          ? json(200, till)
+          : p === "/api/v1/sessions/current" && m === "GET"
+            ? json(200, { staff: asha, expires_at: "x" })
+            : refuse("sign_in_required"),
       { device: true, staff: true },
     );
     await auth.boot();

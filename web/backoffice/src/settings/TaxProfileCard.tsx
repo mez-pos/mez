@@ -62,9 +62,7 @@ export function TaxProfileCard({ tax, onSave, onDirty }: TaxProfileCardProps) {
         </p>
       )}
 
-      {form.profile === "sales_tax_us" && (
-        <p className="text-base text-fg-2">Tax is always added on top of the price under US sales tax.</p>
-      )}
+      {form.profile === "sales_tax_us" && <p className="text-base text-fg-2">Tax is always added on top of the price under US sales tax.</p>}
       {(form.profile === "gst_in" || form.profile === "vat_uk") && (
         <Choice label="Prices" value={form.pricing} options={PRICINGS} onChange={(pricing) => set({ pricing })} error={d.on("pricing")} />
       )}
@@ -89,11 +87,7 @@ export function TaxProfileCard({ tax, onSave, onDirty }: TaxProfileCardProps) {
         </Field>
       )}
       {form.profile === "gst_in" && (
-        <Field
-          label="Place of supply"
-          hint="The two digit state code, like 29. Empty takes the first two digits of the GSTIN."
-          error={d.on("state_code")}
-        >
+        <Field label="Place of supply" hint="The two digit state code, like 29. Empty takes the first two digits of the GSTIN." error={d.on("state_code")}>
           {(id) => (
             <input
               id={id}
@@ -109,12 +103,7 @@ export function TaxProfileCard({ tax, onSave, onDirty }: TaxProfileCardProps) {
         </Field>
       )}
       {form.profile === "sales_tax_us" && (
-        <Jurisdiction
-          rows={form.jurisdiction}
-          disabled={busy}
-          error={d.on("jurisdiction")}
-          onChange={(jurisdiction) => set({ jurisdiction })}
-        />
+        <Jurisdiction rows={form.jurisdiction} disabled={busy} error={d.on("jurisdiction")} onChange={(jurisdiction) => set({ jurisdiction })} />
       )}
 
       {showWithoutHSN(tax, form.profile) && <WithoutHSN tax={tax} />}
@@ -187,9 +176,7 @@ function WithoutHSN({ tax }: { tax: TaxSettingsResponse }) {
   const n = tax.items_without_hsn.length;
   return (
     <div role="status" className="rounded border border-line bg-sunken p-4">
-      <p className="text-base font-semibold">
-        {n === 1 ? "1 item has" : `${n} items have`} no HSN or SAC code
-      </p>
+      <p className="text-base font-semibold">{n === 1 ? "1 item has" : `${n} items have`} no HSN or SAC code</p>
       <p className="mt-1 text-sm text-fg-2">They still sell, but their invoices fall short until each is edited.</p>
       <ul className="mt-3 flex flex-wrap gap-2">
         {shown.map((it) => (

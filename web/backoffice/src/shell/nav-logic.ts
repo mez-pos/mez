@@ -5,18 +5,7 @@
 
 import type { Permission } from "../../../shared/api-types";
 
-export type SectionId =
-  | "dashboard"
-  | "menu"
-  | "stock"
-  | "people"
-  | "zreports"
-  | "audit"
-  | "sales"
-  | "floor"
-  | "printers"
-  | "settings"
-  | "devices";
+export type SectionId = "dashboard" | "menu" | "stock" | "people" | "zreports" | "audit" | "sales" | "floor" | "printers" | "settings" | "devices";
 
 export interface Section {
   readonly id: SectionId;
@@ -43,9 +32,7 @@ export interface NavGroup {
 export const NAV: readonly NavGroup[] = [
   {
     label: null,
-    sections: [
-      { id: "dashboard", label: "Dashboard", path: "/", needs: null, key: "d", built: true, description: "Today at a glance." },
-    ],
+    sections: [{ id: "dashboard", label: "Dashboard", path: "/", needs: null, key: "d", built: true, description: "Today at a glance." }],
   },
   {
     label: "Run the venue",
@@ -68,17 +55,57 @@ export const NAV: readonly NavGroup[] = [
         built: true,
         description: "Every closed day, its exports and its tips.",
       },
-      { id: "audit", label: "Audit", path: "/audit", needs: "reports.view", key: "a", built: true, description: "Every void, comp, discount and refund, who and why." },
-      { id: "sales", label: "Sales reports", path: "/sales", needs: "reports.view", key: "s", built: true, description: "Sales over time, how it was paid and where it came from." },
+      {
+        id: "audit",
+        label: "Audit",
+        path: "/audit",
+        needs: "reports.view",
+        key: "a",
+        built: true,
+        description: "Every void, comp, discount and refund, who and why.",
+      },
+      {
+        id: "sales",
+        label: "Sales reports",
+        path: "/sales",
+        needs: "reports.view",
+        key: "s",
+        built: true,
+        description: "Sales over time, how it was paid and where it came from.",
+      },
     ],
   },
   {
     label: "Settings",
     sections: [
       { id: "floor", label: "Floor plan", path: "/floor", needs: "settings.edit", key: "f", built: true, description: "Areas and tables." },
-      { id: "printers", label: "Printers", path: "/printers", needs: "settings.edit", key: "t", built: true, description: "Receipt and kitchen printers, and where each ticket prints." },
-      { id: "settings", label: "Venue settings", path: "/settings", needs: "settings.edit", key: "v", built: true, description: "Tax, invoice series, currency, shift and tip rules." },
-      { id: "devices", label: "Devices", path: "/devices", needs: "device.manage", key: "e", built: true, description: "Tills, kitchen displays and back offices paired here." },
+      {
+        id: "printers",
+        label: "Printers",
+        path: "/printers",
+        needs: "settings.edit",
+        key: "t",
+        built: true,
+        description: "Receipt and kitchen printers, and where each ticket prints.",
+      },
+      {
+        id: "settings",
+        label: "Venue settings",
+        path: "/settings",
+        needs: "settings.edit",
+        key: "v",
+        built: true,
+        description: "Tax, invoice series, currency, shift and tip rules.",
+      },
+      {
+        id: "devices",
+        label: "Devices",
+        path: "/devices",
+        needs: "device.manage",
+        key: "e",
+        built: true,
+        description: "Tills, kitchen displays and back offices paired here.",
+      },
     ],
   },
 ];
@@ -99,9 +126,7 @@ export function canOpen(s: Section, held: readonly Permission[]): boolean {
 
 /** The navigation as this staff member sees it: no entry they cannot open, no empty group. */
 export function visibleNav(held: readonly Permission[]): NavGroup[] {
-  return NAV.map((g) => ({ label: g.label, sections: g.sections.filter((s) => canOpen(s, held)) })).filter(
-    (g) => g.sections.length > 0,
-  );
+  return NAV.map((g) => ({ label: g.label, sections: g.sections.filter((s) => canOpen(s, held)) })).filter((g) => g.sections.length > 0);
 }
 
 /** The section a path belongs to, or null for a path that is none of them. */

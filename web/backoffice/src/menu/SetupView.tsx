@@ -8,21 +8,10 @@ import { useToast } from "../../../shared/ui";
 import { moved } from "./menu-logic";
 import { SetupCard } from "./SetupCard";
 import { NameModal, RetireModal } from "./SetupModals";
-import {
-  courseRetiredText,
-  courseRows,
-  setupProblemOf,
-  stationRetiredText,
-  stationRows,
-  type SetupKind,
-  type SetupRow,
-} from "./setup-logic";
+import { courseRetiredText, courseRows, setupProblemOf, stationRetiredText, stationRows, type SetupKind, type SetupRow } from "./setup-logic";
 import type { MenuEditorApi } from "./use-menu-editor";
 
-type Editing =
-  | { what: SetupKind; action: "add" }
-  | { what: SetupKind; action: "rename"; row: SetupRow }
-  | { what: SetupKind; action: "retire"; row: SetupRow };
+type Editing = { what: SetupKind; action: "add" } | { what: SetupKind; action: "rename"; row: SetupRow } | { what: SetupKind; action: "retire"; row: SetupRow };
 
 interface SetupViewProps {
   menu: MenuEditor;
@@ -65,11 +54,7 @@ export function SetupView({ menu, api, onProblem }: SetupViewProps) {
     <div className="flex max-w-4xl flex-col gap-6">
       <SetupCard
         title="Stations"
-        description={
-          <>
-            Where an item is made: each station has its own kitchen display, and prints on the printer you set for it under Printers.
-          </>
-        }
+        description={<>Where an item is made: each station has its own kitchen display, and prints on the printer you set for it under Printers.</>}
         addLabel="Add a station"
         empty="No stations yet. Add the first, then the items made there."
         rows={stations}

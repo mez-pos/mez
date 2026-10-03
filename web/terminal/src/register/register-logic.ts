@@ -8,7 +8,10 @@ export function fold(text: string): string {
   return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }
 
-const words = (text: string): string[] => fold(text).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+const words = (text: string): string[] =>
+  fold(text)
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
 
 /**
  * Items whose name has a word starting with every word of the query, in menu

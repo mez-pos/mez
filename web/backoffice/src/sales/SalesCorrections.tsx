@@ -17,7 +17,8 @@ import { Section, count } from "./SalesSections";
 import { analysisCsvPath, analysisPath, type SalesRange } from "./sales-logic";
 import { useCsvDownload } from "./use-csv-download";
 
-const linkClass = "font-semibold text-fg underline decoration-line-strong underline-offset-2 outline-offset-2 outline-line-focus hover:decoration-fg focus-visible:outline-2";
+const linkClass =
+  "font-semibold text-fg underline decoration-line-strong underline-offset-2 outline-offset-2 outline-line-focus hover:decoration-fg focus-visible:outline-2";
 
 export function Corrections({ range }: { range: SalesRange }) {
   const store = useAuthStore();
@@ -46,7 +47,11 @@ export function Corrections({ range }: { range: SalesRange }) {
       {analysis.error && (
         <EmptyState
           icon={<InboxIcon />}
-          line={analysis.error instanceof ApiError && !analysis.error.unreachable ? analysis.error.message : "Can't reach the mez server. Check this computer's connection."}
+          line={
+            analysis.error instanceof ApiError && !analysis.error.unreachable
+              ? analysis.error.message
+              : "Can't reach the mez server. Check this computer's connection."
+          }
           action={{ label: "Try again", onClick: () => void analysis.refetch() }}
         />
       )}
@@ -74,7 +79,8 @@ export function Corrections({ range }: { range: SalesRange }) {
             </Section>
           </div>
           <p className="text-sm text-fg-3">
-            A name opens the audit trail on that person. The trail finds what they did and what they authorised, so it may list more than the count beside the name.
+            A name opens the audit trail on that person. The trail finds what they did and what they authorised, so it may list more than the count beside the
+            name.
           </p>
         </>
       )}

@@ -7,9 +7,7 @@
 const hex = (b: number) => b.toString(16).padStart(2, "0");
 
 /** 128 random bits as 32 hex characters. */
-export function newKey(
-  random: (bytes: Uint8Array<ArrayBuffer>) => Uint8Array = (b) => crypto.getRandomValues(b),
-): string {
+export function newKey(random: (bytes: Uint8Array<ArrayBuffer>) => Uint8Array = (b) => crypto.getRandomValues(b)): string {
   return Array.from(random(new Uint8Array(16)), hex).join("");
 }
 

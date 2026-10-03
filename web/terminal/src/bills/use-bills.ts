@@ -5,14 +5,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
-import type {
-  CommandResponse,
-  CreditPlanResponse,
-  CreditSelection,
-  OrderResponse,
-  Override,
-  PastBillsResponse,
-} from "../../../shared/api-types";
+import type { CommandResponse, CreditPlanResponse, CreditSelection, OrderResponse, Override, PastBillsResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { failureOf } from "../register/order-messages";
@@ -25,8 +18,7 @@ export function usePastBills(query: string) {
   const store = useAuthStore();
   return useQuery({
     queryKey: pastBillsKey(query),
-    queryFn: ({ signal }) =>
-      store.api.get<PastBillsResponse>(`/api/v1/orders/closed?q=${encodeURIComponent(query)}`, { signal }),
+    queryFn: ({ signal }) => store.api.get<PastBillsResponse>(`/api/v1/orders/closed?q=${encodeURIComponent(query)}`, { signal }),
     staleTime: 30_000,
   });
 }

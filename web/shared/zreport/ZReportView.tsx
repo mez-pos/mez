@@ -30,7 +30,11 @@ export function ZReportView({ z, actions }: ZReportViewProps) {
           <h1 className="font-serif text-total">Z-report {z.number}</h1>
           <Meta
             className="mt-1"
-            items={[z.shift.trading_day, `Opened ${clockText(z.shift.opened_at)}, closed ${clockText(z.shift.closed_at)}`, `Closed by ${who(z.shift.closed_by)}`]}
+            items={[
+              z.shift.trading_day,
+              `Opened ${clockText(z.shift.opened_at)}, closed ${clockText(z.shift.closed_at)}`,
+              `Closed by ${who(z.shift.closed_by)}`,
+            ]}
           />
         </div>
         {actions && <div className="flex flex-wrap gap-tap-gap">{actions}</div>}

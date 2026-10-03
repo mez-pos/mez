@@ -82,9 +82,7 @@ function ReportRow({ z }: { z: ZSummary }) {
       <span className="flex min-w-0 flex-col gap-1">
         <span className="flex items-center gap-2 text-base font-semibold">
           {z.trading_day}
-          {z.correction && (
-            <span className="rounded border border-warning px-2 py-0.5 text-meta font-semibold uppercase text-warning">Correction</span>
-          )}
+          {z.correction && <span className="rounded border border-warning px-2 py-0.5 text-meta font-semibold uppercase text-warning">Correction</span>}
         </span>
         <span className="truncate font-mono text-sm text-fg-muted">{z.shift_public_id}</span>
       </span>

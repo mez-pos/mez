@@ -60,7 +60,9 @@ export function ItemsTable({ menu, category, api, onEdit, onProblem }: ItemsTabl
     },
     { id: "price", header: "Price", align: "right", cell: (i) => <Money amount={i.price} tone={i.active ? "default" : "muted"} /> },
     { id: "tax", header: "Tax", cell: (i) => names.taxClass(i.tax_class_id) },
-    ...(menu.needs_hsn ? [{ id: "hsn", header: "HSN", align: "right" as const, cell: (i: EditorItem) => <span className="font-mono tabular-nums">{i.hsn}</span> }] : []),
+    ...(menu.needs_hsn
+      ? [{ id: "hsn", header: "HSN", align: "right" as const, cell: (i: EditorItem) => <span className="font-mono tabular-nums">{i.hsn}</span> }]
+      : []),
     { id: "station", header: "Made at", cell: (i) => names.station(i.station_id) },
     { id: "course", header: "Course", cell: (i) => names.course(i.course_id) },
     {
@@ -96,9 +98,7 @@ export function ItemsTable({ menu, category, api, onEdit, onProblem }: ItemsTabl
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
-      {!category.active && (
-        <p className="text-sm text-fg-2">This category is retired: none of its items are on the till.</p>
-      )}
+      {!category.active && <p className="text-sm text-fg-2">This category is retired: none of its items are on the till.</p>}
       <DataTable
         label={`Items in ${category.name}`}
         columns={columns}

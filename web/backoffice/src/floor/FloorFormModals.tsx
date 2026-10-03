@@ -89,9 +89,7 @@ export function TableFormModal({ title, initial, areas, columns, rows, onSave, o
           {(id) => <input id={id} className={inputClass} value={form.name} maxLength={20} onChange={(e) => set({ name: e.target.value })} />}
         </Field>
         <Field label="Seats" error={state.on("seats")}>
-          {(id) => (
-            <input id={id} className={numberClass} inputMode="numeric" value={form.seats} onChange={(e) => set({ seats: e.target.value })} />
-          )}
+          {(id) => <input id={id} className={numberClass} inputMode="numeric" value={form.seats} onChange={(e) => set({ seats: e.target.value })} />}
         </Field>
         <Choice
           label="Shape"
@@ -118,9 +116,7 @@ export function TableFormModal({ title, initial, areas, columns, rows, onSave, o
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Column" hint={`1 to ${columns}, from the left`} error={state.on("x")}>
-            {(id) => (
-              <input id={id} className={numberClass} inputMode="numeric" value={form.column} onChange={(e) => set({ column: e.target.value })} />
-            )}
+            {(id) => <input id={id} className={numberClass} inputMode="numeric" value={form.column} onChange={(e) => set({ column: e.target.value })} />}
           </Field>
           <Field label="Row" hint={`1 to ${rows}, from the top`} error={state.on("y")}>
             {(id) => <input id={id} className={numberClass} inputMode="numeric" value={form.row} onChange={(e) => set({ row: e.target.value })} />}

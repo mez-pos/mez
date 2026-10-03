@@ -57,8 +57,7 @@ export function useStock(): StockApi {
     recipes,
     createItem: (input) => after(store.api.post<StockEditResponse>("/api/v1/stock/items", input)).then((r) => r.id),
     updateItem: (id, input) => after(store.api.put<StockEditResponse>(`/api/v1/stock/items/${id}`, input)).then(() => undefined),
-    setActive: (id, active) =>
-      after(store.api.post<StockEditResponse>(`/api/v1/stock/items/${id}/${active ? "restore" : "retire"}`)).then(() => undefined),
+    setActive: (id, active) => after(store.api.post<StockEditResponse>(`/api/v1/stock/items/${id}/${active ? "restore" : "retire"}`)).then(() => undefined),
     record: (id, input) => after(store.api.post<StockRecorded>(`/api/v1/stock/items/${id}/movements`, input), [[...historyKey(id)]]),
     setItemRecipe: (itemId, req) =>
       after(store.api.put<StockEditResponse>(`/api/v1/stock/recipes/items/${itemId}`, req), [[...recipesKey]]).then(() => undefined),

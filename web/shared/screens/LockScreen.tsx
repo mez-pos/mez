@@ -179,7 +179,10 @@ function StaffTiles({ query, selected, onChoose }: StaffTilesProps) {
                 chosen ? "border-chip-accent-border bg-chip-accent-bg" : "border-line bg-raised hover:border-line-strong",
               )}
             >
-              <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-round border border-line-strong bg-raised-high text-sm font-semibold">
+              <span
+                aria-hidden="true"
+                className="flex size-9 shrink-0 items-center justify-center rounded-round border border-line-strong bg-raised-high text-sm font-semibold"
+              >
                 {initials(member.name)}
               </span>
               <span className="min-w-0 truncate text-base">{member.name}</span>

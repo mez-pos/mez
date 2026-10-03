@@ -92,9 +92,7 @@ describe("retiring", () => {
     expect(stationRetiredText("Bar", { name: "Kitchen" }, { id: 2, items_moved: 7, printer_moved: true })).toBe(
       "Bar retired. 7 items moved to Kitchen. Its printer now serves Kitchen.",
     );
-    expect(stationRetiredText("Bar", { name: "Kitchen" }, { id: 2, items_moved: 1, printer_moved: false })).toBe(
-      "Bar retired. 1 item moved to Kitchen.",
-    );
+    expect(stationRetiredText("Bar", { name: "Kitchen" }, { id: 2, items_moved: 1, printer_moved: false })).toBe("Bar retired. 1 item moved to Kitchen.");
     expect(stationRetiredText("Pastry", null, { id: 3, items_moved: 0, printer_moved: false })).toBe("Pastry retired.");
     expect(courseRetiredText("Cheese", { name: "Mains" }, { id: 12, items_moved: 4 })).toBe("Cheese retired. 4 items moved to Mains.");
     expect(courseRetiredText("Cheese", null, { id: 12, items_moved: 0 })).toBe("Cheese retired.");

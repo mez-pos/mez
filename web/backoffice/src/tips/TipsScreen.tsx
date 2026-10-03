@@ -50,11 +50,7 @@ export function TipsScreen({ shiftId, onBack }: TipsScreenProps) {
         <Money amount={pool.data.total} variant="total" />
       </p>
       {pool.data.total.minor === 0 && <p className="text-base text-fg-muted">No tips were taken in this shift.</p>}
-      {pool.data.pooled ? (
-        <Pooled pool={pool.data} />
-      ) : (
-        <Choose shiftId={shiftId} pool={pool.data} staffList={staff.data.staff} commit={commit} />
-      )}
+      {pool.data.pooled ? <Pooled pool={pool.data} /> : <Choose shiftId={shiftId} pool={pool.data} staffList={staff.data.staff} commit={commit} />}
     </div>
   );
 }
@@ -147,9 +143,7 @@ function Choose({ shiftId, pool, staffList, commit }: ChooseProps) {
                 <td className="py-2 text-right">
                   <Money amount={tookOf(r.staffId)} tone="muted" />
                 </td>
-                <td className="py-2 text-right">
-                  {r.inPool && share ? <Money amount={share} /> : <span className="font-mono text-fg-muted">–</span>}
-                </td>
+                <td className="py-2 text-right">{r.inPool && share ? <Money amount={share} /> : <span className="font-mono text-fg-muted">–</span>}</td>
               </tr>
             );
           })}
@@ -160,12 +154,7 @@ function Choose({ shiftId, pool, staffList, commit }: ChooseProps) {
           {error ?? problem}
         </p>
       )}
-      <Button
-        variant="primary"
-        size="charge"
-        disabled={busy || problem !== null || !preview.data || preview.isFetching}
-        onClick={() => setConfirming(true)}
-      >
+      <Button variant="primary" size="charge" disabled={busy || problem !== null || !preview.data || preview.isFetching} onClick={() => setConfirming(true)}>
         Pool the tips
       </Button>
       <Confirm
@@ -239,9 +228,7 @@ function Pooled({ pool }: { pool: TipPoolResponse }) {
           ))}
         </tbody>
       </table>
-      <p className="text-sm text-fg-muted">
-        Pooled{pool.pooled_at ? ` at ${clockText(pool.pooled_at)}` : ""}. It can't be changed.
-      </p>
+      <p className="text-sm text-fg-muted">Pooled{pool.pooled_at ? ` at ${clockText(pool.pooled_at)}` : ""}. It can't be changed.</p>
     </section>
   );
 }

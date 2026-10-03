@@ -16,19 +16,7 @@ import { tableStatuses } from "../../../shared/ui/status";
 import { failureOf } from "../register/order-messages";
 import { elapsed, ticketLabel } from "../register/ticket-time";
 import type { Ticket } from "../register/use-ticket";
-import {
-  areaToShow,
-  countsText,
-  idle,
-  modeText,
-  startingCovers,
-  stepMode,
-  tableNames,
-  tapFor,
-  tileText,
-  tilesOf,
-  type Mode,
-} from "./floor-logic";
+import { areaToShow, countsText, idle, modeText, startingCovers, stepMode, tableNames, tapFor, tileText, tilesOf, type Mode } from "./floor-logic";
 import type { LiveFloorApi } from "./use-live-floor";
 
 interface FloorViewProps {
@@ -132,7 +120,9 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
               onClick={() => setAreaChoice(a.id)}
               className={cx(
                 "min-h-tap rounded-pill border px-5 text-base outline-offset-2 outline-attention focus-visible:outline-3",
-                a.id === areaId ? "border-accent bg-accent font-semibold text-accent-fg" : "border-line-strong bg-raised font-medium text-fg hover:bg-raised-high",
+                a.id === areaId
+                  ? "border-accent bg-accent font-semibold text-accent-fg"
+                  : "border-line-strong bg-raised font-medium text-fg hover:bg-raised-high",
               )}
             >
               {a.name}
@@ -153,9 +143,7 @@ export function FloorView({ floor, ticket, onRegister }: FloorViewProps) {
       {data && data.tables.length === 0 && (
         <EmptyState icon={<InboxIcon />} line="No tables yet. Lay out the floor in the back office." action={{ label: "Register", onClick: onRegister }} />
       )}
-      {data && areaId !== null && (
-        <Grid data={data} areaId={areaId} now={now} names={names} picked={picked?.id ?? null} onTap={tap} />
-      )}
+      {data && areaId !== null && <Grid data={data} areaId={areaId} now={now} names={names} picked={picked?.id ?? null} onTap={tap} />}
 
       {open?.kind === "seat" && (
         <SeatSheet
@@ -383,15 +371,11 @@ function TableSheet({ table: t, tickets, names, now, lateAfter, floor, onTicket,
                   >
                     <span className="flex flex-col gap-1">
                       <span className="text-base font-semibold">Open ticket: {ticketLabel(o, names)}</span>
-                      <span className="text-sm text-fg-muted">
-                        {o.lines === 0 ? "Nothing ordered yet" : `${o.lines} ${o.lines === 1 ? "item" : "items"}`}
-                      </span>
+                      <span className="text-sm text-fg-muted">{o.lines === 0 ? "Nothing ordered yet" : `${o.lines} ${o.lines === 1 ? "item" : "items"}`}</span>
                     </span>
                     <span className="flex flex-col items-end gap-1">
                       <Money amount={o.total} />
-                      <span className={cx("font-mono text-sm tabular-nums", time.late ? "text-attention-text" : "text-fg-muted")}>
-                        {time.text}
-                      </span>
+                      <span className={cx("font-mono text-sm tabular-nums", time.late ? "text-attention-text" : "text-fg-muted")}>{time.text}</span>
                     </span>
                   </button>
                 </li>

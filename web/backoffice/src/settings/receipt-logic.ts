@@ -70,7 +70,10 @@ export const receiptProblemOf = (err: unknown): Problem<ReceiptField> => problem
 
 /** What can be refused without asking the server: too many lines, a line too long. */
 export function receiptProblem(f: ReceiptForm, limits: { maxLines: number; maxChars: number }): Problem<ReceiptField> | null {
-  for (const [field, text] of [["header", f.header], ["footer", f.footer]] as const) {
+  for (const [field, text] of [
+    ["header", f.header],
+    ["footer", f.footer],
+  ] as const) {
     const lines = linesOf(text);
     if (lines.length > limits.maxLines) return { field, message: `Use at most ${limits.maxLines} lines.` };
     const long = lines.findIndex((l) => [...l].length > limits.maxChars);

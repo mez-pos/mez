@@ -10,8 +10,29 @@ const at = (minute: number) => `2026-09-21T07:${String(minute).padStart(2, "0")}
 
 export const sampleEvents: OrderEvent[] = [
   { ...base, seq: 1, at: at(2), type: "order.opened", payload: { channel: "counter", currency: "INR", table_id: 4, covers: 2, opened_by: 1 } },
-  { ...base, seq: 2, at: at(3), type: "line.added", payload: { item_id: 9, name: "Cappuccino", qty: 2, unit_price: inr(18_000), modifiers: [{ modifier_id: 1, name: "Oat milk", price: inr(4_000) }], course: 1, station: "bar", tax_rate: 500 } },
-  { ...base, seq: 3, at: at(3), type: "line.added", payload: { item_id: 3, name: "Avocado toast", qty: 1, unit_price: inr(56_000), modifiers: [], course: 1, station: "kitchen", tax_rate: 500 } },
+  {
+    ...base,
+    seq: 2,
+    at: at(3),
+    type: "line.added",
+    payload: {
+      item_id: 9,
+      name: "Cappuccino",
+      qty: 2,
+      unit_price: inr(18_000),
+      modifiers: [{ modifier_id: 1, name: "Oat milk", price: inr(4_000) }],
+      course: 1,
+      station: "bar",
+      tax_rate: 500,
+    },
+  },
+  {
+    ...base,
+    seq: 3,
+    at: at(3),
+    type: "line.added",
+    payload: { item_id: 3, name: "Avocado toast", qty: 1, unit_price: inr(56_000), modifiers: [], course: 1, station: "kitchen", tax_rate: 500 },
+  },
   { ...base, seq: 4, at: at(5), type: "line.voided", actor_id: 2, payload: { line_id: 3, reason_code: "wrong_item", authorised_by: 1 } },
   { ...base, seq: 5, at: at(5), type: "ticket.sent", payload: { station: "bar", line_ids: [2] } },
   { ...base, seq: 6, at: at(18), type: "discount.applied", payload: { scope: "order", kind: "pct", basis_points: 1000, reason: "Regular" } },

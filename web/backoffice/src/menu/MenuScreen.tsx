@@ -64,9 +64,7 @@ export function MenuScreen() {
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <div>
           <h1 className="font-serif text-total">Menu</h1>
-          <p className="mt-1 text-sm text-fg-3">
-            Changes reach every till at once. Tickets already open keep the prices they were rung up at.
-          </p>
+          <p className="mt-1 text-sm text-fg-3">Changes reach every till at once. Tickets already open keep the prices they were rung up at.</p>
         </div>
         {view === "items" ? (
           <div className="flex flex-wrap gap-tap-gap">
@@ -110,9 +108,7 @@ export function MenuScreen() {
       {!api.loading && api.error !== null && (
         <EmptyState icon={<InboxIcon />} line={problemOf(api.error).message} action={{ label: "Try again", onClick: api.refetch }} />
       )}
-      {menu && view === "choices" && (
-        <GroupsView menu={menu} api={api} onEdit={(group) => setEditing({ kind: "edit-group", group })} onProblem={setProblem} />
-      )}
+      {menu && view === "choices" && <GroupsView menu={menu} api={api} onEdit={(group) => setEditing({ kind: "edit-group", group })} onProblem={setProblem} />}
       {menu && view === "setup" && <SetupView menu={menu} api={api} onProblem={setProblem} />}
       {menu && view === "items" && !category && <EmptyState icon={<InboxIcon />} line="No menu yet. Add a category, then the items in it." />}
       {menu && view === "items" && category && (

@@ -34,10 +34,7 @@ export function useLiveFloor(): LiveFloorApi {
     staleTime: Infinity,
   });
   useRealtimeNotices((notice) => {
-    const moved =
-      notice.kind === "floor" ||
-      notice.kind === "resync" ||
-      (notice.kind === "event" && (notice.message.table_id ?? 0) > 0);
+    const moved = notice.kind === "floor" || notice.kind === "resync" || (notice.kind === "event" && (notice.message.table_id ?? 0) > 0);
     if (moved) void queryClient.invalidateQueries({ queryKey: liveFloorKey });
   });
 

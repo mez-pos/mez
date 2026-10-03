@@ -37,7 +37,10 @@ export function SectionCard({ title, description, dirty, busy, saved, error, onS
         <div className="mt-6 flex max-w-xl flex-col gap-5">{children}</div>
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
           <div className="flex min-h-tap flex-col justify-center">
-            <p role="status" className={saved && !dirty && !busy ? "flex items-center gap-1.5 text-base font-semibold text-accent-text" : "text-base text-fg-2"}>
+            <p
+              role="status"
+              className={saved && !dirty && !busy ? "flex items-center gap-1.5 text-base font-semibold text-accent-text" : "text-base text-fg-2"}
+            >
               {saved && !dirty && !busy && <Check />}
               {state}
             </p>
@@ -63,7 +66,17 @@ export function SectionCard({ title, description, dirty, busy, saved, error, onS
 
 function Check() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M5 12.5l4.5 4.5L19 7.5" />
     </svg>
   );

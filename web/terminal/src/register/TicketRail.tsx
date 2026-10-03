@@ -128,9 +128,7 @@ export function TicketRail(props: TicketRailProps) {
             Hold
           </Button>
         </div>
-        {totals && (totals.line_discounts.minor > 0 || totals.order_discounts.minor > 0) && (
-          <TotalRow label="Items" amount={totals.gross} />
-        )}
+        {totals && (totals.line_discounts.minor > 0 || totals.order_discounts.minor > 0) && <TotalRow label="Items" amount={totals.gross} />}
         {totals && totals.line_discounts.minor > 0 && <TotalRow label="Line discounts" amount={negate(totals.line_discounts)} />}
         {orderDiscounts.map((d) => (
           <TotalRow key={d.seq} label={`Discount · ${discountLabel(d)}`} amount={negate(d.value)} />

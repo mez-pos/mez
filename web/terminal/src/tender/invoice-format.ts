@@ -4,7 +4,9 @@
 /** A tax rate in thousandths of a percent (tax.Rate, ADR-049) as text, by string: no float. */
 export function rateText(rate: number): string {
   const whole = Math.trunc(rate / 1000);
-  const rest = String(Math.abs(rate % 1000)).padStart(3, "0").replace(/0+$/, "");
+  const rest = String(Math.abs(rate % 1000))
+    .padStart(3, "0")
+    .replace(/0+$/, "");
   return rest ? `${whole}.${rest}%` : `${whole}%`;
 }
 

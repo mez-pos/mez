@@ -46,8 +46,7 @@ export function PairScreen({ app }: { app: AppKind }) {
           <Meta items={[appNames[app], "Pairing"]} />
           <h1 className="mt-3 font-serif text-total">Pair this {appNames[app]}</h1>
           <p className="mt-3 text-base text-fg-2">
-            Enter the eight-character code from <span className="font-mono">mez setup</span>, or ask a manager for one. A code lasts 10
-            minutes and works once.
+            Enter the eight-character code from <span className="font-mono">mez setup</span>, or ask a manager for one. A code lasts 10 minutes and works once.
           </p>
         </div>
 

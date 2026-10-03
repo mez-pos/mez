@@ -21,14 +21,7 @@
 //   request tells "server unreachable" apart from "this device was unpaired".
 
 import { backoffDelay, defaultBackoff, type Backoff } from "./backoff";
-import type {
-  ClientMessage,
-  EventMessage,
-  FloorChangedMessage,
-  MenuChangedMessage,
-  PrintChangedMessage,
-  WelcomeMessage,
-} from "./api-types";
+import type { ClientMessage, EventMessage, FloorChangedMessage, MenuChangedMessage, PrintChangedMessage, WelcomeMessage } from "./api-types";
 
 export const streamPath = "/api/v1/stream";
 const subprotocol = "mez.v1"; // hub.Subprotocol

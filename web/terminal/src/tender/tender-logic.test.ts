@@ -20,16 +20,8 @@ describe("quickTenders", () => {
 
 describe("planTender", () => {
   const cases: [string, Parameters<typeof planTender>[0], ReturnType<typeof planTender>][] = [
-    [
-      "cash, exact",
-      { method: "cash", entered: 45000, tip: 0, due: 45000 },
-      { amount: 45000, change: 0, charge: 45000, problem: null },
-    ],
-    [
-      "cash, a ₹500 note for ₹450",
-      { method: "cash", entered: 50000, tip: 0, due: 45000 },
-      { amount: 45000, change: 5000, charge: 45000, problem: null },
-    ],
+    ["cash, exact", { method: "cash", entered: 45000, tip: 0, due: 45000 }, { amount: 45000, change: 0, charge: 45000, problem: null }],
+    ["cash, a ₹500 note for ₹450", { method: "cash", entered: 50000, tip: 0, due: 45000 }, { amount: 45000, change: 5000, charge: 45000, problem: null }],
     [
       "cash, a tip comes out of the change, never into the amount",
       { method: "cash", entered: 50000, tip: 2000, due: 45000 },
@@ -55,31 +47,19 @@ describe("planTender", () => {
       { method: "cash", entered: 2000, tip: 2000, due: 45000 },
       { amount: 0, change: 0, charge: 0, problem: "Enter the cash handed over." },
     ],
-    [
-      "cash, nothing entered",
-      { method: "cash", entered: 0, tip: 0, due: 45000 },
-      { amount: 0, change: 0, charge: 0, problem: "Enter the cash handed over." },
-    ],
+    ["cash, nothing entered", { method: "cash", entered: 0, tip: 0, due: 45000 }, { amount: 0, change: 0, charge: 0, problem: "Enter the cash handed over." }],
     [
       "card, the balance with a tip: the card is charged both, the amount is the bill",
       { method: "card", entered: 45000, tip: 4500, due: 45000 },
       { amount: 45000, change: 0, charge: 49500, problem: null },
     ],
-    [
-      "UPI, part of the balance",
-      { method: "upi", entered: 15000, tip: 0, due: 45000 },
-      { amount: 15000, change: 0, charge: 15000, problem: null },
-    ],
+    ["UPI, part of the balance", { method: "upi", entered: 15000, tip: 0, due: 45000 }, { amount: 15000, change: 0, charge: 15000, problem: null }],
     [
       "card, more than the balance (it moved on another till)",
       { method: "card", entered: 45000, tip: 0, due: 30000 },
       { amount: 30000, change: 0, charge: 30000, problem: null },
     ],
-    [
-      "card, nothing entered",
-      { method: "card", entered: 0, tip: 0, due: 45000 },
-      { amount: 0, change: 0, charge: 0, problem: "Enter the amount." },
-    ],
+    ["card, nothing entered", { method: "card", entered: 0, tip: 0, due: 45000 }, { amount: 0, change: 0, charge: 0, problem: "Enter the amount." }],
     [
       "a share in cash: more than the share, change back",
       { method: "cash", entered: 50000, tip: 0, due: 35100, whole: true },
@@ -95,11 +75,7 @@ describe("planTender", () => {
       { method: "card", entered: 100, tip: 500, due: 35100, whole: true },
       { amount: 35100, change: 0, charge: 35600, problem: null },
     ],
-    [
-      "nothing owed",
-      { method: "cash", entered: 50000, tip: 0, due: 0 },
-      { amount: 0, change: 0, charge: 0, problem: "Nothing is owed on this ticket." },
-    ],
+    ["nothing owed", { method: "cash", entered: 50000, tip: 0, due: 0 }, { amount: 0, change: 0, charge: 0, problem: "Nothing is owed on this ticket." }],
   ];
   it.each(cases)("%s", (_name, input, want) => {
     expect(planTender(input)).toEqual(want);
@@ -154,8 +130,7 @@ describe("chargeBlock", () => {
 });
 
 describe("chargeLabel", () => {
-  const order = (balance: number, invoiced = false) =>
-    ({ status: "settling", invoiced, totals: { balance_due: inr(balance) } }) as OrderResponse;
+  const order = (balance: number, invoiced = false) => ({ status: "settling", invoiced, totals: { balance_due: inr(balance) } }) as OrderResponse;
   it("charges while money is owed, finishes once paid", () => {
     expect(chargeLabel(order(100))).toBe("Charge");
     expect(chargeLabel(order(0))).toBe("Invoice and close");

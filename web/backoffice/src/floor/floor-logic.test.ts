@@ -1,21 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
 import type { FloorResponse, TableResponse } from "../../../shared/api-types";
-import {
-  areaToShow,
-  cellsOf,
-  emptyTableForm,
-  moveTo,
-  placeText,
-  problemOf,
-  retiredIn,
-  seatsText,
-  tableFormFrom,
-  toTableSettings,
-} from "./floor-logic";
+import { areaToShow, cellsOf, emptyTableForm, moveTo, placeText, problemOf, retiredIn, seatsText, tableFormFrom, toTableSettings } from "./floor-logic";
 
 const table = (extra: Partial<TableResponse> = {}): TableResponse => ({
-  id: 1, area_id: 10, name: "T1", seats: 4, shape: "round", x: 0, y: 0, active: true, ...extra,
+  id: 1,
+  area_id: 10,
+  name: "T1",
+  seats: 4,
+  shape: "round",
+  x: 0,
+  y: 0,
+  active: true,
+  ...extra,
 });
 
 const plan = (tables: TableResponse[]): FloorResponse => ({
@@ -56,7 +53,18 @@ describe("areaToShow", () => {
     expect(areaToShow(p, 20)).toBe(20);
     expect(areaToShow(p, 99)).toBe(10);
     expect(areaToShow(p, null)).toBe(10);
-    expect(areaToShow({ ...p, areas: [{ id: 5, name: "Old", active: false }, { id: 6, name: "New", active: true }] }, null)).toBe(6);
+    expect(
+      areaToShow(
+        {
+          ...p,
+          areas: [
+            { id: 5, name: "Old", active: false },
+            { id: 6, name: "New", active: true },
+          ],
+        },
+        null,
+      ),
+    ).toBe(6);
     expect(areaToShow({ ...p, areas: [{ id: 5, name: "Old", active: false }] }, null)).toBe(5);
     expect(areaToShow({ ...p, areas: [] }, null)).toBeNull();
   });

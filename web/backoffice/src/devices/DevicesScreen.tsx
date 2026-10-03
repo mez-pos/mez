@@ -38,12 +38,16 @@ export function DevicesScreen() {
             <h2 className="font-serif text-xl">In service</h2>
             <ul className="flex flex-col divide-y divide-line-soft">
               {list.inService.map((d) => (
-                <InService key={d.id} device={d} now={now} onRename={() => setEditing({ kind: "rename", device: d })} onRevoke={() => setEditing({ kind: "revoke", device: d })} />
+                <InService
+                  key={d.id}
+                  device={d}
+                  now={now}
+                  onRename={() => setEditing({ kind: "rename", device: d })}
+                  onRevoke={() => setEditing({ kind: "revoke", device: d })}
+                />
               ))}
             </ul>
-            {list.inService.length <= 1 && (
-              <p className="pt-2 text-base text-fg-muted">Pair a till, a kitchen display or another back office to start.</p>
-            )}
+            {list.inService.length <= 1 && <p className="pt-2 text-base text-fg-muted">Pair a till, a kitchen display or another back office to start.</p>}
           </Card>
 
           {api.data.waiting.length > 0 && (
@@ -80,9 +84,7 @@ export function DevicesScreen() {
         </>
       )}
 
-      {editing?.kind === "pair" && (
-        <PairModal onPair={(name, kind) => api.pair({ name, kind })} onClose={() => setEditing(null)} />
-      )}
+      {editing?.kind === "pair" && <PairModal onPair={(name, kind) => api.pair({ name, kind })} onClose={() => setEditing(null)} />}
       {editing?.kind === "rename" && (
         <RenameModal
           device={editing.device}

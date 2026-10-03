@@ -3,12 +3,23 @@ import type { KitchenBoardResponse, KitchenTicketResponse } from "../../../share
 import { allDay, lastBumped, readStation, timerText, timerTone, toMake, whereText } from "./kitchen-logic";
 
 const ticket = (extra: Partial<KitchenTicketResponse> = {}): KitchenTicketResponse => ({
-  order_id: "ord_NMRNWWW1", ticket_seq: 3, station: "kitchen", status: "fired", sent_at: "2026-09-28T12:00:00Z",
-  channel: "counter", covers: 2, notes: [], lines: [], ...extra,
+  order_id: "ord_NMRNWWW1",
+  ticket_seq: 3,
+  station: "kitchen",
+  status: "fired",
+  sent_at: "2026-09-28T12:00:00Z",
+  channel: "counter",
+  covers: 2,
+  notes: [],
+  lines: [],
+  ...extra,
 });
 
 const board = (tickets: KitchenTicketResponse[]): KitchenBoardResponse => ({
-  station: "kitchen", tickets, recall_minutes: 30, late_after_minutes: 20,
+  station: "kitchen",
+  tickets,
+  recall_minutes: 30,
+  late_after_minutes: 20,
 });
 
 describe("timers", () => {
@@ -51,7 +62,13 @@ describe("the board", () => {
 describe("allDay", () => {
   it("counts what is still to make, most first, voids and bumped tickets aside", () => {
     const line = (name: string, qty: number, status: "active" | "voided" | "comped" = "active") => ({
-      id: 1, name, qty, course: 1, modifiers: [], notes: [], status,
+      id: 1,
+      name,
+      qty,
+      course: 1,
+      modifiers: [],
+      notes: [],
+      status,
     });
     const counts = allDay([
       ticket({ lines: [line("Masala dosa", 2), line("Upma", 1), line("Idli vada", 1, "voided")] }),
@@ -71,6 +88,12 @@ describe("readStation", () => {
     expect(readStation(store("kitchen"))).toBe("kitchen");
     expect(readStation(store("<script>"))).toBeNull();
     expect(readStation(null)).toBeNull();
-    expect(readStation({ getItem: () => { throw new Error("blocked"); } })).toBeNull();
+    expect(
+      readStation({
+        getItem: () => {
+          throw new Error("blocked");
+        },
+      }),
+    ).toBeNull();
   });
 });

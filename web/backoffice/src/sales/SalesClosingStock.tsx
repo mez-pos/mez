@@ -65,7 +65,11 @@ export function ClosingStock({ range }: { range: SalesRange }) {
         {report.error && (
           <EmptyState
             icon={<InboxIcon />}
-            line={report.error instanceof ApiError && !report.error.unreachable ? report.error.message : "Can't reach the mez server. Check this computer's connection."}
+            line={
+              report.error instanceof ApiError && !report.error.unreachable
+                ? report.error.message
+                : "Can't reach the mez server. Check this computer's connection."
+            }
             action={{ label: "Try again", onClick: () => void report.refetch() }}
           />
         )}
@@ -109,7 +113,9 @@ function ByItem({ items }: { items: readonly ClosingStockItemTotal[] }) {
 }
 
 function ByShift({ rows }: { rows: readonly ClosingRow[] }) {
-  const qty = (pick: (r: ClosingRow) => number) => (r: ClosingRow) => <span className="whitespace-nowrap font-mono tabular-nums">{formatQty(pick(r), r.line.unit)}</span>;
+  const qty = (pick: (r: ClosingRow) => number) => (r: ClosingRow) => (
+    <span className="whitespace-nowrap font-mono tabular-nums">{formatQty(pick(r), r.line.unit)}</span>
+  );
   const columns: Column<ClosingRow>[] = [
     { id: "day", header: "Day", cell: (r) => <span className="whitespace-nowrap font-mono tabular-nums">{dayText(r.tradingDay)}</span> },
     { id: "item", header: "Item", cell: (r) => r.line.name },
@@ -129,7 +135,12 @@ function ByShift({ rows }: { rows: readonly ClosingRow[] }) {
           notCosted
         ),
     },
-    { id: "value", header: "At cost", align: "right", cell: (r) => (r.line.value ? <Worth amount={r.line.value} /> : <span className="sr-only">Not costed</span>) },
+    {
+      id: "value",
+      header: "At cost",
+      align: "right",
+      cell: (r) => (r.line.value ? <Worth amount={r.line.value} /> : <span className="sr-only">Not costed</span>),
+    },
   ];
   return (
     <div className="max-h-96 overflow-y-auto">

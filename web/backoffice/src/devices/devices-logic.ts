@@ -49,8 +49,7 @@ export function isStale(d: Pick<DeviceRecordResponse, "last_seen_at">, now: Date
   return d.last_seen_at !== undefined && now.getTime() - Date.parse(d.last_seen_at) >= DAY_MS;
 }
 
-export const revokedText = (d: Pick<DeviceRecordResponse, "revoked_at">): string =>
-  d.revoked_at ? `Revoked ${dateText(d.revoked_at)}` : "Revoked";
+export const revokedText = (d: Pick<DeviceRecordResponse, "revoked_at">): string => (d.revoked_at ? `Revoked ${dateText(d.revoked_at)}` : "Revoked");
 
 /** The devices in service, then the revoked ones, each in the order the server sent. */
 export function split(devices: readonly DeviceRecordResponse[]): { inService: DeviceRecordResponse[]; revoked: DeviceRecordResponse[] } {

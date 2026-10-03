@@ -29,8 +29,7 @@ export function useZReports(before: number) {
   const store = useAuthStore();
   return useQuery({
     queryKey: zReportsKey(before),
-    queryFn: ({ signal }) =>
-      store.api.get<ZReportsResponse>(before > 0 ? `/api/v1/z-reports?before=${before}` : "/api/v1/z-reports", { signal }),
+    queryFn: ({ signal }) => store.api.get<ZReportsResponse>(before > 0 ? `/api/v1/z-reports?before=${before}` : "/api/v1/z-reports", { signal }),
     staleTime: 30_000,
   });
 }

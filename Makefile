@@ -40,7 +40,7 @@ WEB_BUILT := $(foreach a,$(WEB_APPS),$(wildcard web/$(a)/dist/index.html))
 TAGS      := $(if $(filter 3,$(words $(WEB_BUILT))),frontend,)
 
 .DEFAULT_GOAL := check
-.PHONY: check fmt vet test typecheck build build-web run generate migrate migrate-new clean dist help
+.PHONY: check fmt fmt-web vet test typecheck build build-web run generate migrate migrate-new clean dist help
 
 ## check: fmt, vet, test, typecheck and build. The gate. CI runs this.
 check: fmt vet test typecheck build
@@ -94,10 +94,15 @@ else
 	fi
 endif
 
-## build-web: test, typecheck and build the three frontends into web/*/dist, then
-##            fail if the guest bundle is over 60 KB gzipped. Needs Node 22.
+## build-web: check formatting, test, typecheck and build the three frontends
+##            into web/*/dist, then fail if the guest bundle is over 60 KB
+##            gzipped. Needs Node 22.
 build-web: web/node_modules/.package-lock.json
-	@cd web && npm test --silent && npm run build --silent && npm run size --silent
+	@cd web && npm run format:check --silent && npm test --silent && npm run build --silent && npm run size --silent
+
+## fmt-web: format the frontends with Prettier (web/.prettierrc.json)
+fmt-web: web/node_modules/.package-lock.json
+	@cd web && npm run format --silent
 
 # npm rewrites this file on every install, so it is newer than the lockfile
 # exactly when node_modules is current.

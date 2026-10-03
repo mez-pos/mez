@@ -33,10 +33,7 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
 function SectionNav({ current }: { current: Section | null }) {
   const groups = visibleNav(usePermissions());
   return (
-    <nav
-      aria-label="Sections"
-      className="shrink-0 border-b border-line bg-chrome px-3 py-4 md:w-60 md:overflow-y-auto md:border-r md:border-b-0"
-    >
+    <nav aria-label="Sections" className="shrink-0 border-b border-line bg-chrome px-3 py-4 md:w-60 md:overflow-y-auto md:border-r md:border-b-0">
       {groups.map((g) => (
         <div key={g.label ?? "top"} className="mb-4 last:mb-0">
           {g.label && <h2 className="px-3 pb-1.5 text-meta font-semibold uppercase text-fg-faint">{g.label}</h2>}
@@ -70,9 +67,7 @@ function NavEntry({ section: s, active }: { section: Section; active: boolean })
       href={s.path}
       aria-current={active ? "page" : undefined}
       className={
-        active
-          ? `${entry} bg-attention font-semibold text-attention-fg`
-          : `${entry} text-fg-2 hover:bg-attention-tint focus-visible:bg-attention-tint`
+        active ? `${entry} bg-attention font-semibold text-attention-fg` : `${entry} text-fg-2 hover:bg-attention-tint focus-visible:bg-attention-tint`
       }
     >
       {s.label}

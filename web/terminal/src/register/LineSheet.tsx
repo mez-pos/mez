@@ -67,8 +67,7 @@ export function LineSheet({ line, notes, hasChoices, paid, onSave, onRemove, onA
             <Qty value={qty} onChange={setQty} label={line.name} />
           ) : (
             <p className="text-base text-fg-2">
-              <span className="font-mono tabular-nums">{line.qty}</span> ×{" "}
-              {line.status === "active" ? "with the kitchen: void to change" : line.status}
+              <span className="font-mono tabular-nums">{line.qty}</span> × {line.status === "active" ? "with the kitchen: void to change" : line.status}
             </p>
           )}
           <Money amount={line.gross} />

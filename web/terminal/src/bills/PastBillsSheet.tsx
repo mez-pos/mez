@@ -29,10 +29,7 @@ export function PastBillsSheet({ onPick, onClose }: PastBillsSheetProps) {
           </p>
         )}
         {bills.data && bills.data.bills.length === 0 && (
-          <EmptyState
-            icon={query ? <SearchIcon /> : <InboxIcon />}
-            line={query ? `No bill with the number "${query}".` : "No bills have been closed yet."}
-          />
+          <EmptyState icon={query ? <SearchIcon /> : <InboxIcon />} line={query ? `No bill with the number "${query}".` : "No bills have been closed yet."} />
         )}
         <ol>
           {bills.data?.bills.map((b) => (

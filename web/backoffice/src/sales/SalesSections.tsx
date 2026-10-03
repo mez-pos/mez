@@ -160,7 +160,13 @@ export function Mixes({ report, paymentsCsv, channelsCsv }: { report: SalesRepor
         />
       </Section>
       <Section title="Where it came from" csv={channelsCsv}>
-        <DataTable label="Sales by channel" columns={channelColumns} rows={channels} rowKey={(c) => c.key} empty={<EmptyState icon={<InboxIcon />} line="No bills." />} />
+        <DataTable
+          label="Sales by channel"
+          columns={channelColumns}
+          rows={channels}
+          rowKey={(c) => c.key}
+          empty={<EmptyState icon={<InboxIcon />} line="No bills." />}
+        />
       </Section>
     </div>
   );

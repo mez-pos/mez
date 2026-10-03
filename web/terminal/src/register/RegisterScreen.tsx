@@ -66,8 +66,7 @@ export function RegisterScreen() {
   const [bill, setBill] = useState<string | null>(null);
   const [pastBillsOpen, setPastBillsOpen] = useState(false);
   const toast = useToast();
-  const fail = (what: string) => (err: unknown) =>
-    toast(`${what}: ${err instanceof Error ? err.message : String(err)}`, { tone: "warning" });
+  const fail = (what: string) => (err: unknown) => toast(`${what}: ${err instanceof Error ? err.message : String(err)}`, { tone: "warning" });
   // One sheet at a time: opening one closes the other.
   const setSheet = (next: SheetState | null) => {
     setSheetState(next);
@@ -90,10 +89,7 @@ export function RegisterScreen() {
   const category = chosen ?? categories[0]?.id ?? null;
   const searching = query !== "";
 
-  const counts = useMemo(
-    () => new Map(categories.map((c) => [c.id, index?.itemsIn(c.id).length ?? 0])),
-    [categories, index],
-  );
+  const counts = useMemo(() => new Map(categories.map((c) => [c.id, index?.itemsIn(c.id).length ?? 0])), [categories, index]);
   const shown = useMemo(() => {
     if (!index) return [];
     if (searching) return searchItems(index.menu.items, query);
@@ -263,9 +259,7 @@ export function RegisterScreen() {
         }}
       />
 
-      {historyOpen && ticket.orderId && (
-        <HistorySheet key={ticket.orderId} orderId={ticket.orderId} onClose={() => setHistoryOpen(false)} />
-      )}
+      {historyOpen && ticket.orderId && <HistorySheet key={ticket.orderId} orderId={ticket.orderId} onClose={() => setHistoryOpen(false)} />}
 
       {ticketsOpen && (
         <TicketsSheet
@@ -365,23 +359,11 @@ interface MenuBodyProps {
 function MenuBody({ state, empty, searching, query, onRetry, onClearSearch, children }: MenuBodyProps) {
   if (state === "loading") return <p className="py-12 text-center text-base text-fg-muted">Loading the menu</p>;
   if (state === "error") {
-    return (
-      <EmptyState
-        icon={<InboxIcon />}
-        line="Can't reach the mez server to load the menu."
-        action={{ label: "Try again", onClick: onRetry }}
-      />
-    );
+    return <EmptyState icon={<InboxIcon />} line="Can't reach the mez server to load the menu." action={{ label: "Try again", onClick: onRetry }} />;
   }
   if (empty) return <EmptyState icon={<InboxIcon />} line="No items on the menu yet. Add them in the back office." />;
   if (searching && !hasChildren(children)) {
-    return (
-      <EmptyState
-        icon={<SearchIcon />}
-        line={`Nothing matches "${query}".`}
-        action={{ label: "Clear search", onClick: onClearSearch }}
-      />
-    );
+    return <EmptyState icon={<SearchIcon />} line={`Nothing matches "${query}".`} action={{ label: "Clear search", onClick: onClearSearch }} />;
   }
   return <>{children}</>;
 }

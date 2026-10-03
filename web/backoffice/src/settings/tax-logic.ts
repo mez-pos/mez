@@ -48,7 +48,9 @@ export function parsePercent(text: string): number | null {
 
 /** A rate as the owner types it: 2500 is "2.5", 5000 is "5". */
 export function percentInput(rate: number): string {
-  const rest = String(rate % 1000).padStart(3, "0").replace(/0+$/, "");
+  const rest = String(rate % 1000)
+    .padStart(3, "0")
+    .replace(/0+$/, "");
   return rest === "" ? String(Math.trunc(rate / 1000)) : `${Math.trunc(rate / 1000)}.${rest}`;
 }
 
@@ -135,10 +137,7 @@ export function toTaxInput(f: TaxForm): TaxSettingsRequest {
     registration_id: registrationLabel(f.profile) ? f.registrationId.trim() : "",
     pricing: f.profile === "none" || f.profile === "sales_tax_us" ? "" : f.pricing,
     state_code: f.profile === "gst_in" ? f.stateCode.trim() : "",
-    jurisdiction:
-      f.profile === "sales_tax_us"
-        ? f.jurisdiction.map((j) => ({ name: j.name.trim(), rate: parsePercent(j.rate) ?? 0 }))
-        : [],
+    jurisdiction: f.profile === "sales_tax_us" ? f.jurisdiction.map((j) => ({ name: j.name.trim(), rate: parsePercent(j.rate) ?? 0 })) : [],
   };
 }
 

@@ -36,7 +36,10 @@ export const deviceKindFor: Readonly<Record<AppKind, DeviceKind>> = {
 /** A code redeemed for the wrong app: the device exists, but not for this screen. */
 export class WrongDeviceKind extends Error {
   override readonly name = "WrongDeviceKind";
-  constructor(readonly got: DeviceKind, readonly want: DeviceKind) {
+  constructor(
+    readonly got: DeviceKind,
+    readonly want: DeviceKind,
+  ) {
     super(`this code pairs a ${got} device, and this is the ${want} app`);
   }
 }

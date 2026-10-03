@@ -53,18 +53,36 @@ export function SalesScreen() {
       <div role="group" aria-label="Range" className="flex flex-wrap items-end gap-4">
         <div role="group" aria-label="Quick ranges" className="flex flex-wrap gap-tap-gap">
           {quickRanges.map((q) => (
-            <button key={q.id} type="button" aria-pressed={quick === q.id} className={toggleClass(quick === q.id)} onClick={() => setRange(quickRange(q.id, new Date()))}>
+            <button
+              key={q.id}
+              type="button"
+              aria-pressed={quick === q.id}
+              className={toggleClass(quick === q.id)}
+              onClick={() => setRange(quickRange(q.id, new Date()))}
+            >
               {q.label}
             </button>
           ))}
         </div>
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
           From
-          <input type="date" className={cx(inputClass, "font-mono")} value={range.from} max={range.to} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} />
+          <input
+            type="date"
+            className={cx(inputClass, "font-mono")}
+            value={range.from}
+            max={range.to}
+            onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))}
+          />
         </label>
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
           To
-          <input type="date" className={cx(inputClass, "font-mono")} value={range.to} min={range.from} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} />
+          <input
+            type="date"
+            className={cx(inputClass, "font-mono")}
+            value={range.to}
+            min={range.from}
+            onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))}
+          />
         </label>
         <div role="group" aria-label="By" className="flex flex-col gap-1.5 text-sm font-semibold">
           By
@@ -83,7 +101,11 @@ export function SalesScreen() {
       {picked && report.error && (
         <EmptyState
           icon={<InboxIcon />}
-          line={report.error instanceof ApiError && !report.error.unreachable ? report.error.message : "Can't reach the mez server. Check this computer's connection."}
+          line={
+            report.error instanceof ApiError && !report.error.unreachable
+              ? report.error.message
+              : "Can't reach the mez server. Check this computer's connection."
+          }
           action={{ label: "Try again", onClick: () => void report.refetch() }}
         />
       )}

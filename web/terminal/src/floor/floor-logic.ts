@@ -15,9 +15,7 @@ export function tilesOf(floor: LiveFloorResponse, areaId: number): Tile[][] {
   for (const t of floor.tables) {
     if (t.area_id === areaId) at.set(`${t.x},${t.y}`, t);
   }
-  const rows = Array.from({ length: floor.grid.rows }, (_, y) =>
-    Array.from({ length: floor.grid.columns }, (_, x) => at.get(`${x},${y}`) ?? null),
-  );
+  const rows = Array.from({ length: floor.grid.rows }, (_, y) => Array.from({ length: floor.grid.columns }, (_, x) => at.get(`${x},${y}`) ?? null));
   // Rows and columns with no table in any area of this floor would only
   // push the tiles apart: trim the empty edges, keep the gaps between.
   return trim(rows);
@@ -176,9 +174,7 @@ export function modeText(mode: Mode): string | null {
     case "move":
       return mode.from ? `Tap a free table for ${mode.from.name}'s party` : "Move: tap the table the party is at";
     case "join":
-      return mode.to
-        ? `Tap free tables to join to ${mode.to.name}. Tap a joined one to let it go.`
-        : "Join: tap the party's table";
+      return mode.to ? `Tap free tables to join to ${mode.to.name}. Tap a joined one to let it go.` : "Join: tap the party's table";
     case "part":
       return "Part: tap a joined table to let it go";
   }

@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { OrderResponse } from "../../../shared/api-types";
 import { newer } from "./use-ticket";
 
-const order = (id: string, lastSeq: number, status: OrderResponse["status"]) =>
-  ({ id, last_seq: lastSeq, status }) as OrderResponse;
+const order = (id: string, lastSeq: number, status: OrderResponse["status"]) => ({ id, last_seq: lastSeq, status }) as OrderResponse;
 
 describe("newer", () => {
   it("keeps the later copy, whichever arrives last", () => {

@@ -50,9 +50,7 @@ export function usePrinters(): PrinterSettingsApi {
     retire: (id) => store.api.post<PrintersResponse>(`/api/v1/printers/${id}/retire`).then(keep),
     restore: (id) => store.api.post<PrintersResponse>(`/api/v1/printers/${id}/restore`).then(keep),
     setReceipt: (id) => store.api.put<PrintersResponse>("/api/v1/printers/receipt", assign(id)).then(keep),
-    setStation: (code, id) =>
-      store.api.put<PrintersResponse>(`/api/v1/stations/${encodeURIComponent(code)}/printer`, assign(id)).then(keep),
-    testPage: (id) =>
-      store.api.post(`/api/v1/printers/${id}/test`).then(() => queryClient.invalidateQueries({ queryKey: printersKey })),
+    setStation: (code, id) => store.api.put<PrintersResponse>(`/api/v1/stations/${encodeURIComponent(code)}/printer`, assign(id)).then(keep),
+    testPage: (id) => store.api.post(`/api/v1/printers/${id}/test`).then(() => queryClient.invalidateQueries({ queryKey: printersKey })),
   };
 }

@@ -133,7 +133,8 @@ export function ReceiptCard({ receipt, api, onDirty }: ReceiptCardProps) {
           {preview.state === "error" && <p className="text-base text-fg-2">No preview yet: {preview.message}</p>}
         </div>
         <p className="text-sm text-fg-muted">
-          A sample bill laid out by the same code that prints a real one. The venue's name, tax details and next invoice number are real; the items and amounts are made up.
+          A sample bill laid out by the same code that prints a real one. The venue's name, tax details and next invoice number are real; the items and amounts
+          are made up.
         </p>
       </div>
     </SectionCard>

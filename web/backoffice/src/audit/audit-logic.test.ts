@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { AuditEntry } from "../../../shared/api-types";
-import { auditLink, auditQuery, authorisedText, dayText, filterFromSearch, itemText, kinds, kindWords, kindsText, lastDays, reasonWords, tradingDay } from "./audit-logic";
+import {
+  auditLink,
+  auditQuery,
+  authorisedText,
+  dayText,
+  filterFromSearch,
+  itemText,
+  kinds,
+  kindWords,
+  kindsText,
+  lastDays,
+  reasonWords,
+  tradingDay,
+} from "./audit-logic";
 
 const entry = (over: Partial<AuditEntry>): AuditEntry => ({ id: 1, kind: "void", at: "2026-10-01T06:30:00Z", order_id: "ord_1", ...over });
 
@@ -70,7 +83,11 @@ describe("opening on an address", () => {
   const tests: { name: string; search: string; want: ReturnType<typeof filterFromSearch> }[] = [
     { name: "no address", search: "", want: { ...week, staff: "", kind: null } },
     { name: "a kind alone keeps the default days", search: "?kind=refund", want: { ...week, staff: "", kind: "refund" } },
-    { name: "a kind we do not have", search: "?from=2026-09-01&to=2026-09-30&kind=theft", want: { from: "2026-09-01", to: "2026-09-30", staff: "", kind: null } },
+    {
+      name: "a kind we do not have",
+      search: "?from=2026-09-01&to=2026-09-30&kind=theft",
+      want: { from: "2026-09-01", to: "2026-09-30", staff: "", kind: null },
+    },
     { name: "a day that is not one", search: "?from=yesterday&to=2026-09-30", want: { ...week, staff: "", kind: null } },
     { name: "one day missing", search: "?from=2026-09-01", want: { ...week, staff: "", kind: null } },
     { name: "backwards", search: "?from=2026-09-30&to=2026-09-01", want: { ...week, staff: "", kind: null } },

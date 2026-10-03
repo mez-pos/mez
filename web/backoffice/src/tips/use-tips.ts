@@ -33,8 +33,7 @@ export function useTipPreview(shiftId: number, members: PoolMember[] | null, ena
   const store = useAuthStore();
   return useQuery({
     queryKey: [...tipsKey(shiftId), "preview", members],
-    queryFn: ({ signal }) =>
-      store.api.post<TipPoolResponse>(`/api/v1/shift/${shiftId}/tips/preview`, { members: members ?? [] }, { signal }),
+    queryFn: ({ signal }) => store.api.post<TipPoolResponse>(`/api/v1/shift/${shiftId}/tips/preview`, { members: members ?? [] }, { signal }),
     enabled: enabled && members !== null && members.length > 0,
     placeholderData: keepPreviousData,
     retry: false,

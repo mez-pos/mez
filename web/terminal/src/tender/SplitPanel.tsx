@@ -36,8 +36,7 @@ export function SplitPanel({ order, onUse, onCancel }: SplitPanelProps) {
   // are always the server's for the bill as it is now.
   const split = useQuery({
     queryKey: [...orderQueryKey(order.id), "split", order.last_seq, request],
-    queryFn: ({ signal }) =>
-      store.api.post<SplitResponse>(`/api/v1/orders/${encodeURIComponent(order.id)}/split`, request, { signal }),
+    queryFn: ({ signal }) => store.api.post<SplitResponse>(`/api/v1/orders/${encodeURIComponent(order.id)}/split`, request, { signal }),
     enabled: request !== null,
     staleTime: Infinity,
     retry: false,
@@ -97,9 +96,7 @@ export function SplitPanel({ order, onUse, onCancel }: SplitPanelProps) {
                   label={draft.kind === "guest" ? "Guests" : "Payers"}
                 />
               </div>
-              {(draft.kind === "item" || draft.kind === "guest") && (
-                <LineChooser draft={draft} order={order} onDraft={set} />
-              )}
+              {(draft.kind === "item" || draft.kind === "guest") && <LineChooser draft={draft} order={order} onDraft={set} />}
             </>
           )}
         </div>

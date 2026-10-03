@@ -60,9 +60,7 @@ export function PrinterFormModal({ title, initial, onSave, onClose }: PrinterFor
           </p>
         )}
         <Field label="Name" error={on("name")}>
-          {(id) => (
-            <input id={id} className={inputClass} value={form.name} maxLength={40} onChange={(e) => set({ name: e.target.value })} />
-          )}
+          {(id) => <input id={id} className={inputClass} value={form.name} maxLength={40} onChange={(e) => set({ name: e.target.value })} />}
         </Field>
         <Choice
           label="How it connects"

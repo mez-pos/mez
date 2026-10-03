@@ -1,21 +1,26 @@
 import { describe, expect, it } from "vitest";
 import type { LineResponse } from "../../../shared/api-types";
 import { humanise } from "../../../shared/ui/timeline-entries";
-import {
-  compReasons,
-  discountProblem,
-  discountReasons,
-  discountRequest,
-  lineActions,
-  voidReasons,
-} from "./cart-logic";
+import { compReasons, discountProblem, discountReasons, discountRequest, lineActions, voidReasons } from "./cart-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 const override = { authorised_by: "stf_MGR00001", pin: "2468" };
 
 const line = (extra: Partial<LineResponse> = {}): LineResponse => ({
-  id: 2, item_id: 1, name: "Flat white", qty: 1, unit_price: inr(21000), status: "active",
-  course_fired: false, sent: false, gross: inr(21000), discount: inr(0), tax: inr(1000), due: inr(21000), credited_qty: 0, credited: inr(0),
+  id: 2,
+  item_id: 1,
+  name: "Flat white",
+  qty: 1,
+  unit_price: inr(21000),
+  status: "active",
+  course_fired: false,
+  sent: false,
+  gross: inr(21000),
+  discount: inr(0),
+  tax: inr(1000),
+  due: inr(21000),
+  credited_qty: 0,
+  credited: inr(0),
   ...extra,
 });
 
@@ -64,13 +69,22 @@ describe("discountProblem", () => {
 describe("discountRequest", () => {
   it("builds a line percentage", () => {
     expect(discountRequest({ lineId: 2 }, { kind: "pct", basisPoints: 1000 }, "INR", "regular", override)).toEqual({
-      ...override, scope: "line", line_id: 2, kind: "pct", basis_points: 1000, reason: "regular",
+      ...override,
+      scope: "line",
+      line_id: 2,
+      kind: "pct",
+      basis_points: 1000,
+      reason: "regular",
     });
   });
 
   it("builds an order amount, in the order's currency", () => {
     expect(discountRequest("order", { kind: "amount", minor: 5000 }, "INR", "complaint", override)).toEqual({
-      ...override, scope: "order", kind: "amount", amount: inr(5000), reason: "complaint",
+      ...override,
+      scope: "order",
+      kind: "amount",
+      amount: inr(5000),
+      reason: "complaint",
     });
   });
 });

@@ -7,7 +7,10 @@
  * ADR-054); this only makes what is on screen match what is on the paper.
  */
 export function formatPairingCode(input: string): string {
-  const symbols = input.toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 8);
+  const symbols = input
+    .toUpperCase()
+    .replace(/[^0-9A-Z]/g, "")
+    .slice(0, 8);
   return symbols.length > 4 ? `${symbols.slice(0, 4)}-${symbols.slice(4)}` : symbols;
 }
 

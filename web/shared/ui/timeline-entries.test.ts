@@ -10,8 +10,27 @@ const base = { at, actor_id: 1, device_id: 1 };
 // paid again, invoiced, refunded, closed, and a copy of the invoice reprinted.
 const events: OrderEvent[] = [
   { ...base, seq: 1, type: "order.opened", payload: { channel: "counter", currency: "INR", table_id: 4, covers: 2, opened_by: 1 } },
-  { ...base, seq: 2, type: "line.added", payload: { item_id: 9, name: "Cappuccino", qty: 2, unit_price: inr(18_000), modifiers: [{ modifier_id: 1, name: "Oat milk", price: inr(4_000) }], course: 1, station: "bar", tax_rate: 500 } },
-  { ...base, seq: 3, type: "line.added", payload: { item_id: 3, name: "Avocado toast", qty: 1, unit_price: inr(56_000), modifiers: [], course: 1, station: "kitchen", tax_rate: 500 } },
+  {
+    ...base,
+    seq: 2,
+    type: "line.added",
+    payload: {
+      item_id: 9,
+      name: "Cappuccino",
+      qty: 2,
+      unit_price: inr(18_000),
+      modifiers: [{ modifier_id: 1, name: "Oat milk", price: inr(4_000) }],
+      course: 1,
+      station: "bar",
+      tax_rate: 500,
+    },
+  },
+  {
+    ...base,
+    seq: 3,
+    type: "line.added",
+    payload: { item_id: 3, name: "Avocado toast", qty: 1, unit_price: inr(56_000), modifiers: [], course: 1, station: "kitchen", tax_rate: 500 },
+  },
   { ...base, seq: 4, type: "line.qty_changed", payload: { line_id: 2, from: 2, to: 3 } },
   { ...base, seq: 5, type: "line.voided", actor_id: 2, payload: { line_id: 3, reason_code: "wrong_item", authorised_by: 1 } },
   { ...base, seq: 6, type: "discount.applied", payload: { scope: "order", kind: "pct", basis_points: 1250, reason: "Regular" } },
@@ -27,8 +46,15 @@ const events: OrderEvent[] = [
     seq: 14,
     type: "credit_note.issued",
     payload: {
-      credit_no: "CN/26-27/000001", series: "CN", against_invoice_no: "CAF/26-27/000042", reason: "cold_food", authorised_by: 2,
-      lines: [], taxable: inr(4_762), tax: inr(238), total: inr(5_000),
+      credit_no: "CN/26-27/000001",
+      series: "CN",
+      against_invoice_no: "CAF/26-27/000042",
+      reason: "cold_food",
+      authorised_by: 2,
+      lines: [],
+      taxable: inr(4_762),
+      tax: inr(238),
+      total: inr(5_000),
     },
   },
 ];
@@ -117,7 +143,12 @@ describe("timelineEntries: a line changed before the kitchen had it", () => {
       [
         events[0]!,
         events[1]!,
-        { ...base, seq: 3, type: "line.modified", payload: { line_id: 2, from: [{ modifier_id: 1, name: "Oat milk", price: inr(4_000) }], to: [{ modifier_id: 2, name: "Dairy", price: inr(0) }] } },
+        {
+          ...base,
+          seq: 3,
+          type: "line.modified",
+          payload: { line_id: 2, from: [{ modifier_id: 1, name: "Oat milk", price: inr(4_000) }], to: [{ modifier_id: 2, name: "Dairy", price: inr(0) }] },
+        },
         { ...base, seq: 4, type: "line.modified", payload: { line_id: 2, from: [{ modifier_id: 2, name: "Dairy", price: inr(0) }], to: [] } },
       ],
       (id) => names[id],

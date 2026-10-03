@@ -39,7 +39,16 @@ function Overlays() {
       <Button onClick={() => toast("Ticket sent to bar", { tone: "success" })}>Toast</Button>
       <Button onClick={() => toast("Printer is warming up", { tone: "warning" })}>Warning toast</Button>
 
-      <Modal open={modal} onClose={() => setModal(false)} title="Add a note" footer={<Button variant="primary" onClick={() => setModal(false)}>Save note</Button>}>
+      <Modal
+        open={modal}
+        onClose={() => setModal(false)}
+        title="Add a note"
+        footer={
+          <Button variant="primary" onClick={() => setModal(false)}>
+            Save note
+          </Button>
+        }
+      >
         Escape closes this. So does the close control. A tap on the scrim does not.
       </Modal>
       <Confirm
@@ -55,10 +64,17 @@ function Overlays() {
       >
         The line stays on the order, struck through, with your name on it.
       </Confirm>
-      <Sheet open={sheet} onClose={() => setSheet(false)} title="Table 4" footer={<Button variant="primary" size="charge">Charge <Money amount={inr(1_48_940)} /></Button>}>
-        <p className="text-fg-2">
-          From the bottom on a touch screen, from the right with a mouse. Escape, the close control or a tap on the scrim closes it.
-        </p>
+      <Sheet
+        open={sheet}
+        onClose={() => setSheet(false)}
+        title="Table 4"
+        footer={
+          <Button variant="primary" size="charge">
+            Charge <Money amount={inr(1_48_940)} />
+          </Button>
+        }
+      >
+        <p className="text-fg-2">From the bottom on a touch screen, from the right with a mouse. Escape, the close control or a tap on the scrim closes it.</p>
         <Timeline events={sampleEvents} staffName={(id) => staffNames[id]} className="mt-4" />
       </Sheet>
     </div>
@@ -99,9 +115,7 @@ const columns: Column<SampleOrder>[] = [
 // A stand-in for the server: sorts and slices, and hands back a cursor.
 function fetchPage(sort: Sort | null, cursor: string | null, size = 8) {
   const key = (o: SampleOrder) => (sort?.column === "total" ? o.total.minor : sort?.column === "opened" ? o.opened : o.table);
-  const sorted = sort
-    ? [...sampleOrders].sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0) * (sort.direction === "asc" ? 1 : -1))
-    : sampleOrders;
+  const sorted = sort ? [...sampleOrders].sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0) * (sort.direction === "asc" ? 1 : -1)) : sampleOrders;
   const start = cursor ? Number(cursor) : 0;
   return { rows: sorted.slice(start, start + size), next: start + size < sorted.length ? String(start + size) : null };
 }

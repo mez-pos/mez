@@ -27,10 +27,7 @@ import { FloorGrid } from "./FloorGrid";
 import { useFloor, type FloorApi } from "./use-floor";
 
 type Editing =
-  | { kind: "add-table"; form: TableForm }
-  | { kind: "edit-table"; table: TableResponse }
-  | { kind: "add-area" }
-  | { kind: "rename-area"; area: AreaResponse };
+  { kind: "add-table"; form: TableForm } | { kind: "edit-table"; table: TableResponse } | { kind: "add-area" } | { kind: "rename-area"; area: AreaResponse };
 
 interface Message {
   text: string;
@@ -65,19 +62,8 @@ export function FloorScreen() {
       {!api.loading && api.error !== null && (
         <EmptyState icon={<InboxIcon />} line={problemOf(api.error).message} action={{ label: "Try again", onClick: api.refetch }} />
       )}
-      {data && areaId === null && (
-        <EmptyState icon={<InboxIcon />} line="No areas yet. Add one for each room or terrace, then place its tables." />
-      )}
-      {data && areaId !== null && (
-        <AreaView
-          key={areaId}
-          data={data}
-          areaId={areaId}
-          api={api}
-          onChooseArea={setAreaChoice}
-          onEdit={setEditing}
-        />
-      )}
+      {data && areaId === null && <EmptyState icon={<InboxIcon />} line="No areas yet. Add one for each room or terrace, then place its tables." />}
+      {data && areaId !== null && <AreaView key={areaId} data={data} areaId={areaId} api={api} onChooseArea={setAreaChoice} onEdit={setEditing} />}
 
       {editing && data && (editing.kind === "add-table" || editing.kind === "edit-table") && (
         <TableFormModal
@@ -86,9 +72,7 @@ export function FloorScreen() {
           areas={data.areas}
           columns={data.grid.columns}
           rows={data.grid.rows}
-          onSave={(form) =>
-            editing.kind === "add-table" ? api.createTable(toTableSettings(form)) : api.updateTable(editing.table.id, toTableSettings(form))
-          }
+          onSave={(form) => (editing.kind === "add-table" ? api.createTable(toTableSettings(form)) : api.updateTable(editing.table.id, toTableSettings(form)))}
           onClose={() => setEditing(null)}
         />
       )}
@@ -182,9 +166,7 @@ function AreaView({ data, areaId, api, onChooseArea, onEdit }: AreaViewProps) {
           </Button>
         </div>
       )}
-      {cells.every((row) => row.every((c) => c.table === null)) && area.active && (
-        <p className="text-base text-fg-muted">Tap a cell to place a table.</p>
-      )}
+      {cells.every((row) => row.every((c) => c.table === null)) && area.active && <p className="text-base text-fg-muted">Tap a cell to place a table.</p>}
       <FloorGrid
         cells={cells}
         chosen={chosen?.id ?? null}
