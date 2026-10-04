@@ -112,6 +112,19 @@ func TradingDay(openedAt time.Time, loc *time.Location, dayStart time.Duration) 
 	return day.Format(dayFormat), nil
 }
 
+// DayStartAt is the moment the trading day at now began: dayStart on the
+// venue's wall clock, on now's trading day. "Today's orders" are those since
+// then, so a bar still serving at 01:30 lists the night it is in.
+func DayStartAt(now time.Time, loc *time.Location, dayStart time.Duration) (time.Time, error) {
+	next, err := NextDayStart(now, loc, dayStart)
+	if err != nil {
+		return time.Time{}, err
+	}
+	// The same wall clock a calendar day earlier, not 24 hours: a
+	// daylight-saving night is 23 or 25 hours long.
+	return time.Date(next.Year(), next.Month(), next.Day()-1, next.Hour(), next.Minute(), next.Second(), 0, loc), nil
+}
+
 // NextDayStart is the moment the trading day after the one at now begins:
 // dayStart on the venue's wall clock, on the day after now's trading day.
 // Something good "for today" is good until then: sold out at 23:00, or at

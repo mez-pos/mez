@@ -218,7 +218,19 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   receipt choices, the success panel with New Order.
 - [x] **Task 9 - Split and UPI or card states.** (ADR-159) D08a, D08b.
 - [ ] **Task 10 - Orders and refund.** D09. Past bills and the print queue
-  move here.
+  move here. Split on 2026-10-05: the design lists the day's orders, open and
+  paid together, with their type, items and status, and the server had no
+  such list (ADR-160).
+  - [x] 10a. The day's orders from the server: `GET /api/v1/orders/today`,
+    every order of the trading day and any still open, each with its status
+    (open, paid, refunded, voided), type, table, items and totals, and what
+    they collected. Go tests.
+  - [ ] 10b. The Orders screen: the title and counts, the status tabs, the
+    search, the table of orders and the selected order's panel (people,
+    payment, items, totals, Reprint, Refund, Void). `/orders/:id` and the
+    past bills sheet fold into it.
+  - [ ] 10c. The refund as D09's modal (selected items or the whole bill,
+    the reason, the manager's PIN), and the print queue under Orders.
 - [ ] **Task 11 - Waiter home.** T01.
 - [ ] **Task 12 - Waiter order taking.** T02, T04 (KOT preview).
 - [ ] **Task 13 - Waiter table detail, transfer and merge.** T03, T06.

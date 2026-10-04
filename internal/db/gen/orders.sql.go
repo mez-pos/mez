@@ -362,6 +362,52 @@ func (q *Queries) OrdersByDocument(ctx context.Context, arg OrdersByDocumentPara
 	return items, nil
 }
 
+const ordersOfDay = `-- name: OrdersOfDay :many
+SELECT id, public_id
+FROM orders
+WHERE venue_id = ?1
+  AND (status != 'closed' OR opened_at >= ?2 OR closed_at >= ?2)
+ORDER BY opened_at DESC, id DESC
+LIMIT ?3
+`
+
+type OrdersOfDayParams struct {
+	VenueID int64
+	Since   time.Time
+	Max     int64
+}
+
+type OrdersOfDayRow struct {
+	ID       int64
+	PublicID string
+}
+
+// The till's orders list (rebuild Task 10a): every order opened or closed
+// since the trading day began, and any still open from before it, newest
+// first. A day at a busy counter is hundreds of orders, so it is capped.
+func (q *Queries) OrdersOfDay(ctx context.Context, arg OrdersOfDayParams) ([]OrdersOfDayRow, error) {
+	rows, err := q.db.QueryContext(ctx, ordersOfDay, arg.VenueID, arg.Since, arg.Max)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []OrdersOfDayRow{}
+	for rows.Next() {
+		var i OrdersOfDayRow
+		if err := rows.Scan(&i.ID, &i.PublicID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const saveOrderSnapshot = `-- name: SaveOrderSnapshot :exec
 INSERT INTO order_snapshots (order_id, seq, basis, state)
 VALUES (?, ?, ?, ?)

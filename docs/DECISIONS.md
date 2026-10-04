@@ -4753,3 +4753,32 @@ confirmed card (a payment in the order's answer carries none).
 Cost: a card or UPI payment is two taps where it was one. A line shared by some guests
 and not others takes "Share" and then a cross for each guest who did not have it.
 ---
+
+## ADR-160 - The orders list is the trading day's, from one route; Task 10 is three tasks
+2026-10 · Status: accepted. Rebuild Task 10a.
+Context: D09 lists the day's orders in one table (open, paid, refunded, voided), with
+each order's type and items, and "86 orders today · collected". The server had the
+open tickets (`GET /orders`) and the last thirty closed bills (`GET /orders/closed`),
+neither with a service type or item names, and no total.
+Decision:
+  - **`GET /api/v1/orders/today`.** Every order opened or closed since the trading day
+    began, and any still open from before it, newest first, capped at 500. The day is
+    the venue's (its timezone and `shift.day_start`), so a bar at 01:30 lists the night
+    it is in. Each order is projected, as the other two lists do: no figure is kept
+    twice.
+  - **`DayStatus` is four words,** read from the projection: open (anything not
+    closed), refunded (closed with a credit note), voided (closed with every line
+    voided), paid (the rest). It is the list's vocabulary, not a fifth order status.
+  - **Collected is the server's sum** of what those orders kept (payments less
+    refunds), tips apart. The tabs' counts are the screen's to count.
+  - **The key `shift.day_start` is declared in the order service** and the shift
+    service names it from there: that package imports this one, and a second copy of
+    the string could drift.
+  - **Task 10 is 10a (this), 10b (the screen) and 10c (the refund modal, the print
+    queue).** The split was made before starting, in the same session as 10a.
+Rejected: widening `/orders/closed` (it is a search by number over all time, and the
+list is a day); a status column kept on `orders` (a projection would then have a
+second home).
+Cost: one more list that loads every order it names. Search by guest, as the design's
+box offers, has nothing to search: an order carries no guest's name.
+---

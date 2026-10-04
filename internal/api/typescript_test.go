@@ -237,6 +237,7 @@ func generate() (*ts.Generator, error) {
 		}},
 		{"PaymentMethod", order.PaymentCash, paymentMethods()},
 		{"SplitKind", svcorder.SplitByEvenly, asStrings(svcorder.SplitKinds())},
+		{"DayStatus", svcorder.DayOpen, asStrings(svcorder.DayStatuses())},
 		{"PrintJobState", printjob.Queued, asStrings(printjob.Machine().States())},
 		{"PrintJobKind", printjob.Receipt, asStrings(printjob.Kinds())},
 		{"PrinterTransport", printers.Network, asStrings(printers.Transports())},
@@ -354,6 +355,7 @@ func generate() (*ts.Generator, error) {
 		// Credit notes.
 		creditPreviewRequest{}, creditRequest{}, creditPlanResponse{}, creditResponse{},
 		pastBillResponse{}, pastBillsResponse{},
+		dayOrderItem{}, dayOrderResponse{}, dayOrdersResponse{},
 		// The menu.
 		stationResponse{}, courseResponse{}, categoryResponse{}, modifierResponse{},
 		modifierGroupResponse{}, menuItemResponse{}, menuResponse{},

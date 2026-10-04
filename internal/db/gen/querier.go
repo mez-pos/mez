@@ -277,6 +277,10 @@ type Querier interface {
 	// scanned from a receipt, or whose invoice has the sequence number seq in
 	// any series or year ("42" for INV/26-27/000042). Newest first.
 	OrdersByDocument(ctx context.Context, arg OrdersByDocumentParams) ([]OrdersByDocumentRow, error)
+	// The till's orders list (rebuild Task 10a): every order opened or closed
+	// since the trading day began, and any still open from before it, newest
+	// first. A day at a busy counter is hundreds of orders, so it is capped.
+	OrdersOfDay(ctx context.Context, arg OrdersOfDayParams) ([]OrdersOfDayRow, error)
 	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)
 	PrintJobByID(ctx context.Context, id int64) (PrintJobByIDRow, error)
 	// The queue as staff see it: every job not yet printed, and what printed

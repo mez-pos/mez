@@ -14,30 +14,33 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 9: Split, and UPI or card states** (ADR-159). The Split Bill step is
-D08a: `SplitPanel.tsx` makes a split (By item, Equally, Custom amounts down the left, a
-card for each guest, "Assigned X of Y", Back and Complete split), `SplitShares.tsx` is
-the same cards once it is in use (Paid or Pending, Collect), and `SplitParts.tsx` is
-what both are drawn from. `PayStates.tsx` is D08b: a card or UPI payment waits to be
-marked paid, a refusal offers another method or the same again, and money that leaves
-some owed is confirmed before the next. Seen in a browser at 1366x768 as the manager
-(the draft at 1920 too): items given and shared, a split completed, a share in cash
-with change, the next by card with a refusal forced and retried, Equally, Custom
-amounts, a UPI part payment, and By item shut once something is paid. Tests:
-`requestFor`, `unassigned`, `assign`, `looseShare`, `splitBlock`, `payView`,
-`elapsedClock`. `make check` and `make build-web` pass. The owner has not yet looked.
+**Rebuild, Task 10a: the day's orders from the server** (ADR-160). Task 10 was split in
+three before starting: D09 lists the day's orders, open and paid together, and the
+server had only open tickets and the last thirty closed bills. `GET /api/v1/orders/today`
+answers every order opened or closed since the trading day began and any still open
+from before it, newest first, capped at 500: each with its status (`DayStatus`: open,
+paid, refunded, voided), type, table, guests, times, invoice number, items and totals,
+and what they collected (payments less refunds, tips apart). `shift.DayStartAt` is when
+the trading day began. Server only: no screen reads it yet. Tests: `DayStartAt`,
+`DayStatusOf`, `DayOrders` across two days and a moved day start, and the HTTP round
+trip. `make check` passes.
 
-Before it: Task 8 (ADR-156, payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the
-item modal; 6b, ADR-154), Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the
+Before it: Task 9 (ADR-159, split and the card and UPI states; the owner has not yet
+looked), Task 8 (ADR-156, payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item
+modal; 6b, ADR-154), Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the
 shift; `shift.open`, ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148),
 Task 1 (ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 10** (orders and refund): D09 (line 790 of `mez Desktop POS.dc.html`).
-Past bills and the print queue move there. Read `docs/design/tokens.md` and that screen
-only. Phase 11 waits for this phase. Phase 10's tasks are all done (6l moved to
-phase 12, ADR-141); its done-when is a human check and stays unticked below.
+**Rebuild, Task 10b** (the Orders screen): D09 (line 790 of `mez Desktop POS.dc.html`),
+down to the refund modal at line 877, which is 10c's. It reads `/api/v1/orders/today`
+(`DayOrdersResponse` in `api-types.ts`) for the table and its tabs, and an order by its
+id for the panel. `/orders/:id` (`BillScreen.tsx`) and `PastBillsSheet.tsx` fold into
+it; a bill from before today is still found by its number through `/orders/closed?q=`.
+Read `docs/design/tokens.md` and that screen only. Phase 11 waits for this phase.
+Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human
+check and stays unticked below.
 
 Agreed and built on 2026-10-05 (ADR-158): a free table has "Seat N guests" and "Seat
 and order"; the totals name each tax (CGST, SGST) on the rail, the table panel and the
@@ -49,6 +52,11 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- The day's orders (ADR-160): the list projects every order it names on each ask, as
+  the open tickets list does; a day of several hundred orders has not been timed. It has
+  no cashier or waiter names and no payment method (the panel reads the order itself).
+  An order closed with every line voided reads "voided"; no command voids an order as
+  such. The day start is read as it stands when asked.
 - Split and the payment states (ADR-159): not seen by eye are a stale split, a guest
   with nothing to pay, taking a guest away, a tip on a card payment's waiting card, and
   a server's own refusal (the one seen was a dropped connection). At 768px high the

@@ -144,3 +144,14 @@ WHERE st.venue_id = sqlc.arg(venue_id) AND st.station = sqlc.arg(station)
   AND (st.status = 'fired' OR (st.status = 'ready' AND st.ready_at >= sqlc.arg(ready_since)))
 ORDER BY st.sent_at, st.order_id, st.ticket_seq
 LIMIT sqlc.arg(max_tickets);
+
+-- name: OrdersOfDay :many
+-- The till's orders list (rebuild Task 10a): every order opened or closed
+-- since the trading day began, and any still open from before it, newest
+-- first. A day at a busy counter is hundreds of orders, so it is capped.
+SELECT id, public_id
+FROM orders
+WHERE venue_id = sqlc.arg(venue_id)
+  AND (status != 'closed' OR opened_at >= sqlc.arg(since) OR closed_at >= sqlc.arg(since))
+ORDER BY opened_at DESC, id DESC
+LIMIT sqlc.arg(max);

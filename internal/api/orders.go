@@ -25,6 +25,7 @@ type Orders interface {
 	Reprint(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ReprintInvoice) (svcorder.Result, error)
 	PlanCredit(ctx context.Context, venueID, orderID int64, req order.CreditRequest) (order.CreditPlan, error)
 	PastBills(ctx context.Context, venueID int64, query string) ([]svcorder.Result, error)
+	DayOrders(ctx context.Context, venueID int64) (svcorder.Day, error)
 	Credit(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.IssueCredit) (svcorder.Result, error)
 	Hold(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
 	MoveTable(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.MoveTable) (svcorder.Result, error)
@@ -78,6 +79,9 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	// The literal path wins over {id}: an order's id is never "closed".
 	mux.Handle("GET /api/v1/orders/closed", s.requireDevice(s.requireStaff(
 		s.requirePermission(auth.PermOrderOpen, http.HandlerFunc(s.listPastBills)))))
+	// As is "today": the orders list of the trading day (rebuild Task 10a).
+	mux.Handle("GET /api/v1/orders/today", s.requireDevice(s.requireStaff(
+		s.requirePermission(auth.PermOrderOpen, http.HandlerFunc(s.listDayOrders)))))
 	mux.Handle("GET /api/v1/orders/{id}", s.requireDevice(s.requireStaff(
 		s.requirePermission(auth.PermOrderOpen, http.HandlerFunc(s.readOrder)))))
 	mux.Handle("POST /api/v1/orders", s.requireDevice(s.requireStaff(

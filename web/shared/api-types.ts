@@ -179,6 +179,12 @@ export type SplitKind =
   | 'item'
   | 'guest';
 
+export type DayStatus =
+  | 'open'
+  | 'paid'
+  | 'refunded'
+  | 'voided';
+
 export type PrintJobState =
   | 'queued'
   | 'printing'
@@ -2140,6 +2146,32 @@ export interface PastBillResponse {
 
 export interface PastBillsResponse {
   bills: PastBillResponse[];
+}
+
+export interface DayOrderItem {
+  qty: number;
+  name: string;
+}
+
+export interface DayOrderResponse {
+  id: string;
+  invoice_no?: string;
+  status: DayStatus;
+  service: ServiceType;
+  table_id?: number;
+  covers: number;
+  opened_at: string;
+  closed_at?: string;
+  items: DayOrderItem[];
+  total: Money;
+  credited: Money;
+  balance_due: Money;
+}
+
+export interface DayOrdersResponse {
+  day: string;
+  collected: Money;
+  orders: DayOrderResponse[];
 }
 
 export interface StationResponse {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/db/gen"
 	"github.com/byjoellobo/mez/internal/domain/shift"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // SettingDayStart is the venue setting for when the trading day begins, local
@@ -18,7 +19,7 @@ import (
 // A shift keeps the trading day it was opened under, so a change reaches the
 // next shift opened and not the one running. The reports, the audit trail and
 // "sold out until tomorrow" read it as it stands when they are asked.
-const SettingDayStart = "shift.day_start"
+const SettingDayStart = svcorder.SettingDayStart
 
 // DefaultVarianceThreshold is the variance threshold of a venue that has set
 // none, in minor units: any variance at all needs a reason.
