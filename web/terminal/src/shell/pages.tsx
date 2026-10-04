@@ -11,7 +11,7 @@ import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { useMenu } from "../../../shared/use-menu";
 import { useVenue } from "../../../shared/use-venue";
 import { ZReportScreen } from "../../../shared/zreport/ZReportScreen";
-import { BillScreen } from "../bills/BillScreen";
+import { OrdersScreen } from "../bills/OrdersScreen";
 import { railTitle } from "../register/rail-logic";
 import { CloseDayScreen } from "../shift/CloseDayScreen";
 import { OpenShiftScreen } from "../shift/OpenShiftScreen";
@@ -65,17 +65,26 @@ export function PayPage({ orderId }: { orderId: string }) {
   return <PayScreen order={ticket.order} ticket={ticket} title={railTitle(ticket.order, ticket.order.service, names)} onBack={() => navigate(route.order)} />;
 }
 
-/** "/orders/:id": a settled bill, with its refunds and reprints. */
-export function BillPage({ orderId }: { orderId: string }) {
-  const { ticket } = useTerminal();
+/** "/orders" and "/orders/:id": the day's orders, and the one picked in the panel. */
+export function OrdersPage({ orderId }: { orderId: string | null }) {
+  const { ticket, names } = useTerminal();
   const [, navigate] = useLocation();
   return (
-    <BillScreen
-      orderId={orderId}
-      onBack={() => navigate(route.order)}
-      onTakeBalance={(id) => {
-        ticket.switchTo(id);
-        navigate(route.pay(id));
+    <OrdersScreen
+      selectedId={orderId}
+      names={names}
+      // Picking another row replaces this one in the history: Back leaves the screen.
+      onSelect={(id) => navigate(route.bill(id), { replace: orderId !== null })}
+      onNewOrder={() => navigate(route.order)}
+      onOpenOrder={(order) => {
+        // A held order is resumed, as the orders sheet does.
+        if (order.status === "held") void ticket.resume(order.id);
+        else ticket.switchTo(order.id);
+        navigate(route.order);
+      }}
+      onPay={(order) => {
+        ticket.switchTo(order.id);
+        navigate(route.pay(order.id));
       }}
     />
   );

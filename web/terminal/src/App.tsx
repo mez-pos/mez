@@ -11,7 +11,7 @@ import { PairScreen } from "../../shared/screens/PairScreen";
 import { Splash } from "../../shared/screens/Splash";
 import { TablesScreen } from "./floor/TablesScreen";
 import { OrderScreen } from "./register/OrderScreen";
-import { BillPage, Landing, LeaveForKitchen, PayPage, ShiftClosePage, ShiftPage, ZReportPage } from "./shell/pages";
+import { OrdersPage, Landing, LeaveForKitchen, PayPage, ShiftClosePage, ShiftPage, ZReportPage } from "./shell/pages";
 import { route } from "./shell/routes";
 import { ShiftGate } from "./shell/ShiftGate";
 import { TerminalProvider } from "./shell/terminal-context";
@@ -61,11 +61,8 @@ function Screens() {
       <Route path={route.waiter}>
         <Redirect to={route.tables} replace />
       </Route>
-      <Route path={`${route.orders}/:id`}>{(params) => <BillPage key={params.id} orderId={params.id} />}</Route>
-      {/* The order history: the order screen with the past bills open over it. */}
-      <Route path={route.orders}>
-        <OrderScreen key="history" pastBills />
-      </Route>
+      {/* One route for the list and the order picked on it, so the tab and the search stay as rows are picked. */}
+      <Route path={`${route.orders}/:id?`}>{(params) => <OrdersPage orderId={params.id ?? null} />}</Route>
       <Route path="/pay/:id">{(params) => <PayPage key={params.id} orderId={params.id} />}</Route>
       <Route path={route.shift}>
         <ShiftPage />

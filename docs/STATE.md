@@ -14,33 +14,36 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 10a: the day's orders from the server** (ADR-160). Task 10 was split in
-three before starting: D09 lists the day's orders, open and paid together, and the
-server had only open tickets and the last thirty closed bills. `GET /api/v1/orders/today`
-answers every order opened or closed since the trading day began and any still open
-from before it, newest first, capped at 500: each with its status (`DayStatus`: open,
-paid, refunded, voided), type, table, guests, times, invoice number, items and totals,
-and what they collected (payments less refunds, tips apart). `shift.DayStartAt` is when
-the trading day began. Server only: no screen reads it yet. Tests: `DayStartAt`,
-`DayStatusOf`, `DayOrders` across two days and a moved day start, and the HTTP round
-trip. `make check` passes.
+**Rebuild, Task 10b: the Orders screen** (ADR-161). `/orders` is `OrdersScreen.tsx`, D09:
+the title with the day's count and what it collected, New Order, the five status tabs
+with their counts, a search (invoice number, order id, table), the table of the day's
+orders, and the order picked down the right (`OrderPanel.tsx`, at `/orders/:id`): what
+it is, how it was paid, items, totals, payments, credit notes, and Reprint receipt,
+Invoice, History, Refund, Void; an open order has Open order and Pay. A search also
+finds settled bills from before today by their number. `BillScreen.tsx` and
+`PastBillsSheet.tsx` are gone; "Past bills" on the order screen goes to `/orders`. Seen
+in a browser at 1366x768 and 1920 as the manager: the list, a paid bill and an open
+order in the panel, the tabs, a search by table and one that finds nothing, the void
+chooser, the invoice, the refund sheet opening, Open order and Back. Tests:
+`orders-logic.ts`. `make check` and `make build-web` pass. The owner has not yet looked.
 
-Before it: Task 9 (ADR-159, split and the card and UPI states; the owner has not yet
-looked), Task 8 (ADR-156, payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item
-modal; 6b, ADR-154), Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the
-shift; `shift.open`, ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148),
-Task 1 (ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143).
+Before it: Task 10a (ADR-160, the day's orders from the server), Task 9 (ADR-159, split
+and the card and UPI states; the owner has not yet looked), Task 8 (ADR-156, payment),
+Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154), Task 5
+(ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`, ADR-152,
+migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to ADR-147),
+Task 0 (ADR-144), the plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 10b** (the Orders screen): D09 (line 790 of `mez Desktop POS.dc.html`),
-down to the refund modal at line 877, which is 10c's. It reads `/api/v1/orders/today`
-(`DayOrdersResponse` in `api-types.ts`) for the table and its tabs, and an order by its
-id for the panel. `/orders/:id` (`BillScreen.tsx`) and `PastBillsSheet.tsx` fold into
-it; a bill from before today is still found by its number through `/orders/closed?q=`.
-Read `docs/design/tokens.md` and that screen only. Phase 11 waits for this phase.
-Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human
-check and stays unticked below.
+**Rebuild, Task 10c** (the refund modal, and the print queue under Orders): D09 from
+line 877 of `mez Desktop POS.dc.html` (the modal over the screen). It redraws
+`RefundSheet.tsx`, which `OrderPanel.tsx` opens, as the design's modal: selected items
+or the whole bill, the reason, the manager's PIN. And it gives the print queue
+(`PrintQueueSheet.tsx`, today behind the "Not printed" pill in the shell) its place on
+the Orders screen. Read `docs/design/tokens.md` and that block only. Phase 11 waits for
+this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its
+done-when is a human check and stays unticked below.
 
 Agreed and built on 2026-10-05 (ADR-158): a free table has "Seat N guests" and "Seat
 and order"; the totals name each tax (CGST, SGST) on the rail, the table panel and the
@@ -52,6 +55,13 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- The Orders screen (ADR-161): not seen by eye are a refunded or voided row, a bill
+  from before today found by its number, a reopened bill and Take the balance, a void
+  or a reprint carried through, a held order opened from here, a day with no orders,
+  and a failed read. A bill paid and invoiced but not yet closed (New Order not tapped)
+  reads "Open". No cashier or waiter names, no Filters, no Export, no Email (left out).
+  An order from before 04:00 shows its date and wraps in the Time column. The list
+  asks again on every order event from any till.
 - The day's orders (ADR-160): the list projects every order it names on each ask, as
   the open tickets list does; a day of several hundred orders has not been timed. It has
   no cashier or waiter names and no payment method (the panel reads the order itself).

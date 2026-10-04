@@ -5,7 +5,15 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
-import type { CommandResponse, CreditPlanResponse, CreditSelection, OrderResponse, Override, PastBillsResponse } from "../../../shared/api-types";
+import type {
+  CommandResponse,
+  CreditPlanResponse,
+  CreditSelection,
+  DayOrdersResponse,
+  OrderResponse,
+  Override,
+  PastBillsResponse,
+} from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { failureOf } from "../register/order-messages";
@@ -14,9 +22,30 @@ import { newer, orderQueryKey } from "../register/use-ticket";
 
 export const pastBillsKey = (q: string) => ["orders", "closed", q] as const;
 
-export function usePastBills(query: string) {
+export const dayOrdersKey = ["orders", "today"] as const;
+
+/**
+ * The trading day's orders (D09), kept current: any order's event, on this
+ * till or another, asks for the list again.
+ */
+export function useDayOrders() {
+  const store = useAuthStore();
+  const queryClient = useQueryClient();
+  useRealtimeNotices((notice) => {
+    if (notice.kind === "resync" || notice.kind === "event") void queryClient.invalidateQueries({ queryKey: dayOrdersKey });
+  });
+  return useQuery({
+    queryKey: dayOrdersKey,
+    queryFn: ({ signal }) => store.api.get<DayOrdersResponse>("/api/v1/orders/today", { signal }),
+    staleTime: 15_000,
+  });
+}
+
+/** Closed bills an invoice or credit note number finds, from any day. Asks nothing for an empty query when told not to. */
+export function usePastBills(query: string, enabled = true) {
   const store = useAuthStore();
   return useQuery({
+    enabled,
     queryKey: pastBillsKey(query),
     queryFn: ({ signal }) => store.api.get<PastBillsResponse>(`/api/v1/orders/closed?q=${encodeURIComponent(query)}`, { signal }),
     staleTime: 30_000,
@@ -70,6 +99,7 @@ export function useBill(orderId: string): { order: OrderResponse | undefined; er
       keys.done();
       queryClient.setQueryData<OrderResponse>(orderQueryKey(orderId), (cached) => newer(cached, res.order));
       void queryClient.invalidateQueries({ queryKey: ["orders", "closed"] });
+      void queryClient.invalidateQueries({ queryKey: dayOrdersKey });
       return res;
     } catch (err) {
       throw new Error(failureOf(err), { cause: err });

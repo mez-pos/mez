@@ -6,7 +6,7 @@
 // added in Go fails the TypeScript build here until it has a tone and a word.
 // Tones follow docs/design/tokens.md: terracotta (accent) is for "Late" alone.
 
-import type { LineStatus, OrderStatus, PaymentStatus, PrintJobState, TableStatus } from "../api-types";
+import type { DayStatus, LineStatus, OrderStatus, PaymentStatus, PrintJobState, TableStatus } from "../api-types";
 
 export type ChipTone = "neutral" | "success" | "warning" | "danger" | "accent" | "info";
 
@@ -73,6 +73,15 @@ export const tableStatuses: Readonly<Record<TableStatus, ChipSpec>> = {
   dirty: { tone: "neutral", word: "To clear" },
 };
 
+// An order on the day's list (D09), in the list's four words. Open is the
+// pending mustard: it still wants its bill.
+export const dayStatuses: Readonly<Record<DayStatus, ChipSpec>> = {
+  open: { tone: "warning", word: "Open" },
+  paid: { tone: "success", word: "Paid" },
+  refunded: { tone: "danger", word: "Refunded" },
+  voided: { tone: "neutral", word: "Voided", struck: true },
+};
+
 /** What a StatusChip is given: which vocabulary, and a value from it. */
 export type ChipStatus =
   | { readonly kind: "kitchen"; readonly status: KitchenStatus }
@@ -80,7 +89,8 @@ export type ChipStatus =
   | { readonly kind: "payment"; readonly status: PaymentStatus }
   | { readonly kind: "line"; readonly status: LineStatus }
   | { readonly kind: "print"; readonly status: PrintJobState }
-  | { readonly kind: "table"; readonly status: TableStatus };
+  | { readonly kind: "table"; readonly status: TableStatus }
+  | { readonly kind: "day"; readonly status: DayStatus };
 
 export function chipSpec(chip: ChipStatus): ChipSpec {
   switch (chip.kind) {
@@ -96,5 +106,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
       return printStatuses[chip.status];
     case "table":
       return tableStatuses[chip.status];
+    case "day":
+      return dayStatuses[chip.status];
   }
 }

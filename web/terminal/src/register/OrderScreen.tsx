@@ -13,7 +13,6 @@ import { indexMenu, isSoldOut } from "../../../shared/menu";
 import { EmptyState, InboxIcon, SearchIcon, useToast } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
 import { useMenu } from "../../../shared/use-menu";
-import { PastBillsSheet } from "../bills/PastBillsSheet";
 import { route } from "../shell/routes";
 import { useTerminal } from "../shell/terminal-context";
 import { CategorySidebar } from "./CategorySidebar";
@@ -40,15 +39,10 @@ import {
 import { TicketPanels, type Panel } from "./TicketPanels";
 import { TicketsSheet } from "./TicketsSheet";
 
-interface OrderScreenProps {
-  /** Opens with the past-bills sheet: this is /orders, the order history (ADR-148). */
-  pastBills?: boolean;
-}
-
-export function OrderScreen({ pastBills = false }: OrderScreenProps) {
+export function OrderScreen() {
   const menu = useMenu();
   const { ticket, names } = useTerminal();
-  const [path, navigate] = useLocation();
+  const [, navigate] = useLocation();
   const index = useMemo(() => (menu.data ? indexMenu(menu.data) : null), [menu.data]);
   // Once a minute, so a dish sold out yesterday is back when the trading day turns.
   const now = useClock(60_000);
@@ -60,8 +54,6 @@ export function OrderScreen({ pastBills = false }: OrderScreenProps) {
   const [panel, setPanelState] = useState<Panel | null>(null);
   const [ordersOpen, setOrdersOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  // The sheet that finds a settled bill; picking one goes to /orders/:id.
-  const [pastBillsOpen, setPastBillsOpen] = useState(pastBills);
   const toast = useToast();
   const fail = (what: string) => (err: unknown) => toast(`${what}: ${err instanceof Error ? err.message : String(err)}`, { tone: "warning" });
   // One sheet at a time: opening one closes the other.
@@ -193,7 +185,7 @@ export function OrderScreen({ pastBills = false }: OrderScreenProps) {
         onDiscount={() => setPanel({ kind: "discount", lineId: null })}
         onOrders={() => setOrdersOpen(true)}
         onHistory={() => setHistoryOpen(true)}
-        onPastBills={() => setPastBillsOpen(true)}
+        onPastBills={() => navigate(route.orders)}
         onTables={() => navigate(route.tables)}
         onPay={() => {
           if (ticket.orderId) navigate(route.pay(ticket.orderId));
@@ -219,24 +211,10 @@ export function OrderScreen({ pastBills = false }: OrderScreenProps) {
             setPanel(null);
             ticket.startNew(opening);
           }}
-          onPastBills={() => setPastBillsOpen(true)}
+          onPastBills={() => navigate(route.orders)}
           onFloor={() => navigate(route.tables)}
           onCloseDay={() => navigate(route.shiftClose)}
           onClose={() => setOrdersOpen(false)}
-        />
-      )}
-
-      {pastBillsOpen && (
-        <PastBillsSheet
-          onPick={(b) => {
-            setPastBillsOpen(false);
-            navigate(route.bill(b.id));
-          }}
-          onClose={() => {
-            setPastBillsOpen(false);
-            // Closing the history leaves /orders for the order screen it opened over.
-            if (path === route.orders) navigate(route.order);
-          }}
         />
       )}
 

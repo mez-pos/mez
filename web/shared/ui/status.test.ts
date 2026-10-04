@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chipSpec, kitchenStatuses, lineStatuses, orderStatuses, paymentStatuses, printStatuses, tableStatuses, type ChipSpec } from "./status";
+import { chipSpec, dayStatuses, kitchenStatuses, lineStatuses, orderStatuses, paymentStatuses, printStatuses, tableStatuses, type ChipSpec } from "./status";
 
 const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   kitchen: kitchenStatuses,
@@ -8,6 +8,7 @@ const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   line: lineStatuses,
   print: printStatuses,
   table: tableStatuses,
+  day: dayStatuses,
 };
 
 describe("status vocabularies", () => {
@@ -34,7 +35,7 @@ describe("status vocabularies", () => {
         .filter(([, spec]) => spec.struck)
         .map(([status]) => `${kind}.${status}`),
     );
-    expect(struck).toEqual(["kitchen.void", "payment.voided", "line.voided"]);
+    expect(struck).toEqual(["kitchen.void", "payment.voided", "line.voided", "day.voided"]);
   });
 
   it("gives every table state its own tone, so the floor reads at a glance", () => {

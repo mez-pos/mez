@@ -225,7 +225,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     every order of the trading day and any still open, each with its status
     (open, paid, refunded, voided), type, table, items and totals, and what
     they collected. Go tests.
-  - [ ] 10b. The Orders screen: the title and counts, the status tabs, the
+  - [x] 10b. (ADR-161) The Orders screen: the title and counts, the status tabs, the
     search, the table of orders and the selected order's panel (people,
     payment, items, totals, Reprint, Refund, Void). `/orders/:id` and the
     past bills sheet fold into it.

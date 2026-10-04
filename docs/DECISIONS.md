@@ -4782,3 +4782,32 @@ second home).
 Cost: one more list that loads every order it names. Search by guest, as the design's
 box offers, has nothing to search: an order carries no guest's name.
 ---
+
+## ADR-161 - The Orders screen is D09: the day's table, and the order picked beside it
+2026-10 · Status: accepted. Rebuild Task 10b. Replaces the past bills sheet over the
+order screen (ADR-148) and the bill's own screen (ADR-084).
+Decision:
+  - **One route, `/orders/:id?`.** The table and the panel are one screen; the id in the
+    path is the order in the panel, so a reload or a link lands on it, and the tab and
+    the search stay as rows are picked. Picking another row replaces the path, so Back
+    leaves the screen in one step.
+  - **The table reads the day's list (ADR-160); the panel reads the order itself,**
+    through `useBill`, which already keeps it current and carries the refund, void and
+    reprint commands with their keys.
+  - **A row is one button.** The design's per-row action is drawn as "View" inside it:
+    one target a row high, not a small one at its end.
+  - **The search is over what can be read off a receipt or the floor:** the invoice
+    number, the order id (four letters or more, since an id is random), the table. It
+    also asks for settled bills from before today by their number, listed under
+    "Before today".
+  - **Void acts on a payment,** as it always has: with several, a sheet asks which.
+    There is no command that voids an order.
+  - **Kept and placed (rule 4):** the invoice as issued (Invoice) and the order's
+    history (History), in the row where the design has "Email to guest". An open order
+    has Open order and Pay.
+Left out, and why (rule 3): Filters (the tabs are the filters there are), Export (the
+till exports nothing; the back office does), Email to guest, the cashier's and
+waiter's names (an order names its people by an id this screen has no list for), the
+date picker (the list is the trading day's). New Order stands where Export is drawn.
+Cost: the on-screen invoice is a tap away, where the old bill screen showed it at once.
+---
