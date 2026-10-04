@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { OpenOrder } from "../../../shared/api-types";
-import { guestsText, needsTable, railTitle, serviceLocked, serviceOf } from "./rail-logic";
+import { amountOwed, guestsText, needsTable, railTitle, serviceLocked, serviceOf } from "./rail-logic";
 
 const opening = (extra: Partial<OpenOrder> = {}): OpenOrder => ({ channel: "counter", covers: 0, ...extra });
+
+describe("amountOwed", () => {
+  const inr = (minor: number) => ({ minor, currency: "INR" });
+  it("is the total until something is paid, then the balance", () => {
+    expect(amountOwed({ total: inr(93000), paid: inr(0), balance_due: inr(93000) }, "INR")).toEqual(inr(93000));
+    expect(amountOwed({ total: inr(93000), paid: inr(50000), balance_due: inr(43000) }, "INR")).toEqual(inr(43000));
+  });
+  it("is zero in the venue's currency before there is an order", () => {
+    expect(amountOwed(undefined, "EUR")).toEqual({ minor: 0, currency: "EUR" });
+  });
+});
 
 describe("serviceOf", () => {
   it("reads it off an order", () => {

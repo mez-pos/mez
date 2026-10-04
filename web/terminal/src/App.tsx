@@ -9,8 +9,9 @@ import { Gate } from "../../shared/auth/Gate";
 import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { Splash } from "../../shared/screens/Splash";
+import { TablesScreen } from "./floor/TablesScreen";
 import { OrderScreen } from "./register/OrderScreen";
-import { BillPage, Landing, LeaveForKitchen, PayPage, ShiftClosePage, ShiftPage, TablesPage, ZReportPage } from "./shell/pages";
+import { BillPage, Landing, LeaveForKitchen, PayPage, ShiftClosePage, ShiftPage, ZReportPage } from "./shell/pages";
 import { route } from "./shell/routes";
 import { ShiftGate } from "./shell/ShiftGate";
 import { TerminalProvider } from "./shell/terminal-context";
@@ -54,7 +55,7 @@ function Screens() {
         <OrderScreen key="order" />
       </Route>
       <Route path={route.tables}>
-        <TablesPage />
+        <TablesScreen />
       </Route>
       {/* A waiter's own tables arrive in Task 11; until then they are the floor. */}
       <Route path={route.waiter}>

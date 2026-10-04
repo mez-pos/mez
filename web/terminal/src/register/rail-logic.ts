@@ -1,7 +1,16 @@
 // What the order rail says about the order in front, without React: how it is
 // served, where, and who is at it (D03).
 
-import type { OpenOrder, ServiceType } from "../../../shared/api-types";
+import type { Money, OpenOrder, ServiceType, TotalsResponse } from "../../../shared/api-types";
+
+/**
+ * What the order still asks for: its total, or the balance once any of it is
+ * paid. Zero in the venue's currency before there is an order.
+ */
+export function amountOwed(totals: Pick<TotalsResponse, "total" | "paid" | "balance_due"> | undefined, currency: string): Money {
+  if (!totals) return { minor: 0, currency };
+  return totals.paid.minor > 0 ? totals.balance_due : totals.total;
+}
 
 /**
  * How the order in front is served. An order says so itself; a ticket not yet

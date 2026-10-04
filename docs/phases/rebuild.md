@@ -210,7 +210,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   quantity, "Add to Order" with the price.
   - [x] 6b (ADR-154). The card opens the modal when there is anything to choose;
     its "+" adds with the defaults.
-- [ ] **Task 7 - Tables.** D05, and the table list from D06. Areas, the
+- [x] **Task 7 - Tables.** (ADR-155) D05, and the table list from D06. Areas, the
   five states, the selected table's panel: Add Items, Send to Kitchen, More
   Actions, Settle Bill. Reservations and the waitlist are out of scope.
 - [ ] **Task 8 - Payment.** D07. Three steps (Payment, Split Bill,

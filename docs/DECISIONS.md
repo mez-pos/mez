@@ -4560,3 +4560,58 @@ and put a second tap on every plain coffee, at a venue where most items have cho
 Cost: a tap meant for the "+" that lands on the card opens a modal to cancel; a screen
 reader meets two buttons per item, the card unnamed beyond its text.
 ---
+
+## ADR-155 - The tables screen is D05: a tap picks a table, the panel acts on it
+2026-10 · Status: accepted. Replaces the floor's sheets (ADR-087) and where Move, Join
+and Part start (ADR-088); the modes themselves stand.
+Decision: `/tables` is `TablesScreen.tsx`, three regions as drawn: a 240px sidebar
+(Floor Plan, Table List, Order History), the floor in the middle with area pills and a
+legend, and a 400px panel for the table picked. `FloorView.tsx` and its two sheets are
+gone.
+  - **A tap picks, it does not act.** The old floor jumped to the order screen or opened
+    a sheet (`tapFor`). Now `panelFor` says what the panel shows: a free table seats a
+    party, one to clear is cleared, one with an order shows it, one with several asks
+    which. A joined table picks its party's own table (`partyTable`).
+  - **The panel's order is read beside the order in front** (`use-table-order.ts`), by
+    the same cache key, so looking at a table does not take the cashier's own order out
+    of their hands. Send to Kitchen and Fire post to that order directly. Add Items is
+    what brings it to the front (off hold if it was held) and goes to the order screen;
+    Settle Bill goes to `/pay/:id`.
+  - **Seating stays on the floor.** The old sheet seated a party and went to the menu.
+    Now the table turns Seated and the panel offers Add Items: a host seats, a waiter
+    orders later. It costs the "seat and order at once" case one tap; the owner's call.
+  - **More Actions** holds what the design draws no button for: Move to another table,
+    Join tables, Part tables (only for a joined party), Fire course N, Order history,
+    and Guests left (only while seated with nothing ordered). Move and Join start from
+    the table in the panel, its first tap already made (`beginMode`); after a move the
+    panel follows the party.
+  - **The plan packs out empty tracks** (`packed`). The back office lays tables on a
+    12 by 8 grid; drawn to scale the demo floor was narrow tiles, wide gaps and two
+    scrollbars. Each table keeps its place among the others, and the tiles share the
+    room. A round table's inner fill is round.
+  - **All Areas** stacks each area under its name: areas share one grid's coordinates,
+    so they cannot be drawn as one picture.
+  - **The table list** is ours: D06 is the reservations screen and only names a table
+    list in its sidebar. It is the same tables as rows (table, area, guests, status,
+    time, balance) under D06's "Table availability" bars, one per state.
+  - **Words:** "covers" on a tile is now "guests"; "Charge" here is "Settle Bill". A
+    paid order still open keeps the order screen's words on the button.
+  - **Totals** are `OrderTotals.tsx`, taken out of `RailFooter.tsx`, so the rail and the
+    panel cannot disagree. In the panel they scroll with the lines, as drawn; the
+    amount is on Settle Bill, which does not scroll.
+  - **Left out, because nothing does them:** Reservations, Waitlist, Customers and
+    Settings in the sidebar; the Reserved state; zoom; the entrance and bar strips (a
+    floor has no such data); Edit Layout and Add Table (the back office's floor
+    editor); the bell; the panel's "..." (More Actions is the one menu); the waiter's
+    name (an order keeps who opened it as a number, the staff list as a string id); the
+    Guests tab (an order keeps a count, not guests); a line's photo thumbnail; CGST and
+    SGST as two rows (the rail shows one Tax row, and so does this); the status bar's
+    table counts (they sit beside the area pills).
+  - **Sizes:** tiles hold four lines down to 92px wide, so six columns fit beside the
+    panel at 1366px; a wider floor scrolls sideways. The table name is `text-total`.
+Because: the owner rejected the floor as the old layout recoloured; D05 is a different
+flow, not a different skin.
+Cost: seating and ordering is two taps more than before (pick, seat, Add Items); a
+floor of seven or more columns scrolls at 1366px; the tile shows no shape but round or
+square.
+---

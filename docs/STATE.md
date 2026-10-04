@@ -14,33 +14,33 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 6: The item modal** (ADR-153). `ItemModal.tsx` is D04 and replaces
-`ModifierSheet.tsx`: a centred dialog with the photo or category icon on the left and,
-on the right, the name and price, radio tiles for a choose-one group and checkbox tiles
-for a choose-several, the course, a kitchen note, and quantity, Cancel and "Add to
-Order" with the line's price. A new line's note rides the outbox as a second command
-on the line the add made. Changing a line saves its choices, quantity and a note.
-Seen in a browser at 1920 and 1366x768 as the cashier: a required choice, quantity 2
-with a note, and a line changed (choices, quantity 3, note). Tests: the queue's note,
-`groupHint`, `lineTotal`, `addLineFor`. Task 6b (ADR-154): an item card is two targets,
-the card opening the modal when there is anything to choose and its "+" adding with
-the defaults; seen in a browser, tested as `ringsUpWith`. `make check` and
-`make build-web` pass. The owner has not yet looked.
+**Rebuild, Task 7: Tables** (ADR-155). `/tables` is `TablesScreen.tsx`, D05: a sidebar
+(Floor Plan, Table List, Order History), the floor with area pills ("All Areas" too)
+and a legend, and a 400px panel for the table picked. A tap picks a table; the panel
+seats a party, shows the order (read beside the order in front, `use-table-order.ts`),
+and has Add Items, Send to Kitchen, More Actions (move, join, part, fire, history,
+guests left) and Settle Bill. The table list is the same tables as rows under
+availability bars. `FloorView.tsx` is gone; `OrderTotals.tsx` is shared with the rail.
+Seen in a browser at 1920 and 1366x768 as the manager: seat four, Add Items, three
+lines, Send to Kitchen, move the party, the list, Settle Bill reaching `/pay`. Tests:
+`packed`, `panelFor`, `partyTable`, `panelTitle`, `areasShown`, `availability`,
+`listRows`, `beginMode`, `amountOwed`. `make check` and `make build-web` pass. The
+owner has not yet looked.
 
-Before it: Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; a
-cashier opens it with `shift.open`, ADR-152, migration 00033, and closing is
-`shift.manage`), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to ADR-147),
-Task 0 (ADR-144), the plan (ADR-143).
+Before it: Task 6 (ADR-153, the item modal; 6b, ADR-154), Task 5 (ADR-151, the order
+screen), Task 4 (ADR-150, Open the shift; a cashier opens it with `shift.open`,
+ADR-152, migration 00033, and closing is `shift.manage`), Task 3 (ADR-149), Task 2
+(ADR-148), Task 1 (ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 7** (tables): D05 (line 363 of `mez Desktop POS.dc.html`) and the
-table list from D06 (line 478). Areas, the five states, the selected table's panel:
-Add Items, Send to Kitchen, More Actions, Settle Bill. Reservations and the waitlist
-are out of scope. It rebuilds `FloorView.tsx` at `/tables`. Read
-`docs/design/tokens.md` and those screens only. Phase 11 waits for this phase. Phase 10's
-tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human check and
-stays unticked below.
+**Rebuild, Task 8** (payment): D07 (line 574 of `mez Desktop POS.dc.html`). Three
+steps (Payment, Split Bill, Complete), method tiles, amount received with quick
+amounts, change, tip, receipt choices, the success panel with New Order. It rebuilds
+`TenderScreen.tsx` at `/pay/:id`; split and the UPI and card states are Task 9. Read
+`docs/design/tokens.md` and that screen only. Phase 11 waits for this phase. Phase
+10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human
+check and stays unticked below.
 
 ## Known broken / in progress
 
@@ -209,7 +209,7 @@ stays unticked below.
 - `orders.table_id` has no foreign key (ADR-085). Guests left closes and
   clears in two steps, not one transaction; a retry repairs it (ADR-087).
 - Nothing stops seating a dirty table over the API; the floor only offers
-  Seat on a free one. The floor has no URL of its own (ADR-087).
+  Seat on a free one. The plan and the list share `/tables`: a reload returns to the plan.
 - A table with two tickets cannot be moved from the floor; the timeline
   names tables by number (ADR-088).
 - Never swept: idempotency keys, expired staff sessions, sign-in attempts.
@@ -238,6 +238,15 @@ stays unticked below.
   in the browser, sign in as the owner or a demo person and count a float to
   open the till. A code for the wrong app is refused but its device stays
   (ADR-068).
+- The tables screen (ADR-155): not seen by eye are clearing a table, Guests left, join
+  and part, a table with two orders, the paying and to-clear states, a held order, the
+  Notes tab with notes, a refusal, and the Terrace. Seating no longer goes to the menu.
+  A floor of seven or more columns scrolls sideways at 1366px.
+  After the review: Seat waits for the floor, the order is read again each time its
+  table is picked, and Send waits while this till still has items going to that order;
+  those three and the tabs' arrow keys were typechecked, not tried in a browser. A move
+  or join keeps the party's table as it was when the mode began. A tile's spoken name
+  leaves out what it owes.
 - The item modal (ADR-153, ADR-154): a note refused after its line was added is lost
   with a toast. A tap meant for a card's "+" that lands on the card opens the modal. Not seen by eye: a photo, the Popular pill, a refusal, a screen under 1024px.
 - The order screen (ADR-151): not seen by eye are a photo card, a sold-out card, a

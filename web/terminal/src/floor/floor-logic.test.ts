@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest";
 import type { LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
-import { areaToShow, countsText, idle, modeText, startingCovers, stepMode, tableNames, tapFor, tileText, tilesOf } from "./floor-logic";
+import {
+  areaToShow,
+  areasShown,
+  availability,
+  beginMode,
+  countsText,
+  idle,
+  listRows,
+  modeText,
+  packed,
+  panelFor,
+  panelTitle,
+  partyTable,
+  startingCovers,
+  stepMode,
+  tableNames,
+  tileText,
+  tilesOf,
+} from "./floor-logic";
 
 const tile = (extra: Partial<LiveTableResponse> = {}): LiveTableResponse => ({
   id: 1,
@@ -37,6 +55,14 @@ describe("tilesOf", () => {
   it("is empty for an area with no tables", () => {
     expect(tilesOf(floor([tile({ area_id: 20 })]), 10)).toEqual([]);
   });
+  it("packs out the rows and columns nobody sits in", () => {
+    const rows = tilesOf(floor([tile({ id: 1, x: 0, y: 0 }), tile({ id: 2, x: 4, y: 0 }), tile({ id: 3, x: 2, y: 2 })]), 10);
+    expect(packed(rows).map((r) => r.map((t) => t?.id ?? 0))).toEqual([
+      [1, 0, 2],
+      [0, 3, 0],
+    ]);
+    expect(packed([])).toEqual([]);
+  });
 });
 
 describe("areaToShow", () => {
@@ -55,23 +81,73 @@ describe("countsText", () => {
   });
 });
 
-describe("tapFor", () => {
-  const cases: [Partial<LiveTableResponse>, ReturnType<typeof tapFor>][] = [
-    [{ status: "free" }, { kind: "seat" }],
-    [
-      { status: "ordered", orders: ["ord_1"] },
-      { kind: "ticket", orderId: "ord_1" },
-    ],
-    [
-      { status: "settling", orders: ["ord_1"] },
-      { kind: "ticket", orderId: "ord_1" },
-    ],
-    [{ status: "ordered", orders: ["ord_1", "ord_2"] }, { kind: "sheet" }],
-    [{ status: "seated", orders: ["ord_1"] }, { kind: "sheet" }],
-    [{ status: "dirty" }, { kind: "sheet" }],
+describe("areasShown", () => {
+  it("is the one chosen, the first when none is, or every one", () => {
+    expect(areasShown(floor([]), 20).map((a) => a.id)).toEqual([20]);
+    expect(areasShown(floor([]), null).map((a) => a.id)).toEqual([10]);
+    expect(areasShown(floor([]), 99).map((a) => a.id)).toEqual([10]);
+    expect(areasShown(floor([]), "all").map((a) => a.id)).toEqual([10, 20]);
+  });
+});
+
+describe("partyTable", () => {
+  it("picks the party's own table for a joined one", () => {
+    const host = tile({ id: 4, status: "ordered", orders: ["ord_1"] });
+    const joined = tile({ id: 7, status: "ordered", joined_to: 4 });
+    expect(partyTable(joined, [host, joined])).toBe(host);
+    expect(partyTable(host, [host, joined])).toBe(host);
+    // A floor read mid-change may not have the host: the table stands for itself.
+    expect(partyTable(joined, [joined])).toBe(joined);
+  });
+  it("heads the panel with every table the party is at", () => {
+    const host = tile({ id: 4, name: "T4", status: "ordered", orders: ["ord_1"] });
+    const joined = tile({ id: 7, name: "T7", status: "ordered", joined_to: 4 });
+    expect(panelTitle(host, [host, joined, tile({ id: 9, name: "T9" })])).toBe("Table T4 + T7");
+    expect(panelTitle(host, [host])).toBe("Table T4");
+  });
+});
+
+describe("panelFor", () => {
+  const cases: [Partial<LiveTableResponse>, string | null, ReturnType<typeof panelFor>][] = [
+    [{ status: "free" }, null, { kind: "seat" }],
+    [{ status: "dirty" }, null, { kind: "clear" }],
+    [{ status: "seated", orders: ["ord_1"] }, null, { kind: "order", orderId: "ord_1" }],
+    [{ status: "settling", orders: ["ord_1"] }, null, { kind: "order", orderId: "ord_1" }],
+    [{ status: "ordered", orders: ["ord_1", "ord_2"] }, null, { kind: "choose", orders: ["ord_1", "ord_2"] }],
+    [{ status: "ordered", orders: ["ord_1", "ord_2"] }, "ord_2", { kind: "order", orderId: "ord_2" }],
+    // An order picked and since closed is no longer the table's.
+    [{ status: "ordered", orders: ["ord_1", "ord_2"] }, "ord_9", { kind: "choose", orders: ["ord_1", "ord_2"] }],
+    [{ status: "ordered", orders: [] }, null, { kind: "nothing" }],
+    [{ status: "free", orders: [] }, "ord_1", { kind: "seat" }],
   ];
-  it.each(cases)("%o taps to %o", (extra, want) => {
-    expect(tapFor(tile(extra))).toEqual(want);
+  it.each(cases)("%o with %o picked shows %o", (extra, picked, want) => {
+    expect(panelFor(tile(extra), picked)).toEqual(want);
+  });
+});
+
+describe("availability", () => {
+  it("counts every state, in turn order, with its share of the floor", () => {
+    const tables = [tile(), tile(), tile({ status: "ordered" }), tile({ status: "dirty" })];
+    expect(availability(tables)).toEqual([
+      { status: "free", count: 2, share: 50 },
+      { status: "seated", count: 0, share: 0 },
+      { status: "ordered", count: 1, share: 25 },
+      { status: "settling", count: 0, share: 0 },
+      { status: "dirty", count: 1, share: 25 },
+    ]);
+  });
+  it("is all zero for an empty floor", () => {
+    expect(availability([]).every((a) => a.count === 0 && a.share === 0)).toBe(true);
+  });
+});
+
+describe("listRows", () => {
+  it("goes area by area, and by name the way people count", () => {
+    const data = floor([tile({ id: 1, name: "T10" }), tile({ id: 2, name: "P1", area_id: 20 }), tile({ id: 3, name: "T2" }), tile({ id: 4, name: "T1" })]);
+    expect(listRows(data, data.areas).map((t) => t.name)).toEqual(["T1", "T2", "T10", "P1"]);
+    expect(listRows(data, data.areas.slice(1)).map((t) => t.name)).toEqual(["P1"]);
+    // The floor's own list is left as it was.
+    expect(data.tables.map((t) => t.name)).toEqual(["T10", "P1", "T2", "T1"]);
   });
 });
 
@@ -79,8 +155,8 @@ describe("tileText", () => {
   const now = Date.parse("2026-09-27T12:42:00Z");
   it("words each state", () => {
     expect(tileText(tile({ seats: 1 }), now)).toEqual({ people: "1 seat", time: null });
-    expect(tileText(tile({ status: "ordered", covers: 3, since: "2026-09-27T12:00:00Z" }), now)).toEqual({ people: "3 covers", time: "42m" });
-    expect(tileText(tile({ status: "seated", covers: 1, since: "2026-09-27T12:40:00Z" }), now)).toEqual({ people: "1 cover", time: "2m" });
+    expect(tileText(tile({ status: "ordered", covers: 3, since: "2026-09-27T12:00:00Z" }), now)).toEqual({ people: "3 guests", time: "42m" });
+    expect(tileText(tile({ status: "seated", covers: 1, since: "2026-09-27T12:40:00Z" }), now)).toEqual({ people: "1 guest", time: "2m" });
     expect(tileText(tile({ status: "seated", covers: 0, since: "2026-09-27T12:40:00Z" }), now).people).toBe("Seated");
     expect(tileText(tile({ status: "dirty", since: "2026-09-27T12:36:00Z" }), now)).toEqual({ people: "Needs clearing", time: "6m" });
   });
@@ -146,6 +222,13 @@ describe("stepMode", () => {
     const mode = { kind: "part" } as const;
     expect(stepMode(mode, joined, names)).toEqual({ mode, action: { kind: "part", orderId: "ord_1", table: 7 } });
     expect(stepMode(mode, party, names).refused).toBe("T4 isn't joined to another table.");
+  });
+
+  it("begins a move or a join from the table picked in the panel", () => {
+    expect(beginMode("move", party, names)).toEqual({ mode: { kind: "move", from: party } });
+    expect(beginMode("join", party, names)).toEqual({ mode: { kind: "join", to: party } });
+    expect(beginMode("move", free, names).refused).toMatch(/nobody at it/);
+    expect(beginMode("move", free, names).mode).toEqual({ kind: "move", from: null });
   });
 
   it("says what to do next", () => {

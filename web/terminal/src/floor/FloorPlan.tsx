@@ -1,0 +1,131 @@
+// The floor plan (D05): the tables of an area where the back office drew them,
+// each a tile with its name, who is at it, its state in colour and a word, and
+// how long and how much. A tap picks the table for the panel beside it; while
+// moving or joining a party, a tap is a step of that instead (ADR-088).
+
+import { UsersIcon } from "lucide-react";
+import type { AreaResponse, LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
+import { Money, StatusChip } from "../../../shared/ui";
+import { cx } from "../../../shared/ui/cx";
+import { tableStatuses } from "../../../shared/ui/status";
+import { packed, tileText, tilesOf, turnOrder } from "./floor-logic";
+import { tableTone } from "./tones";
+
+interface FloorPlanProps {
+  data: LiveFloorResponse;
+  areas: readonly AreaResponse[];
+  now: number;
+  names: ReadonlyMap<number, string>;
+  /** The table in the panel, or the party's table while moving or joining. */
+  picked: number | null;
+  onTap: (t: LiveTableResponse) => void;
+}
+
+export function FloorPlan({ data, areas, now, names, picked, onTap }: FloorPlanProps) {
+  return (
+    <div className="min-h-0 flex-1 overflow-auto rounded-card border border-line-strong bg-sunken p-3 2xl:p-6">
+      <div className="flex min-h-full flex-col gap-6">
+        {areas.map((area) => (
+          <section key={area.id} aria-label={area.name} className="flex flex-1 flex-col gap-3">
+            {areas.length > 1 && <h2 className="text-meta uppercase text-fg-faint">{area.name}</h2>}
+            <AreaGrid data={data} areaId={area.id} now={now} names={names} picked={picked} onTap={onTap} />
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface AreaGridProps extends Omit<FloorPlanProps, "areas"> {
+  areaId: number;
+}
+
+function AreaGrid({ data, areaId, now, names, picked, onTap }: AreaGridProps) {
+  const rows = packed(tilesOf(data, areaId));
+  if (rows.length === 0) return <p className="text-base text-fg-muted">No tables in this area.</p>;
+  const columns = rows[0]?.length ?? 0;
+  return (
+    <ul
+      aria-label="Tables"
+      className="grid flex-1 gap-2 2xl:gap-5"
+      // The tiles share the room they are given, as drawn: no smaller than
+      // holds their four lines (a floor too big for that scrolls), and no
+      // taller than a tile should be when the area has only a row or two.
+      style={{
+        gridTemplateColumns: `repeat(${columns}, minmax(5.75rem, 1fr))`,
+        gridTemplateRows: `repeat(${rows.length}, minmax(9.25rem, 1fr))`,
+        maxHeight: `${rows.length * 17}rem`,
+      }}
+    >
+      {rows.flatMap((row, y) =>
+        row.map((t, x) =>
+          t === null ? (
+            <li key={`${x},${y}`} aria-hidden="true" />
+          ) : (
+            <li key={t.id}>
+              <TableTile table={t} now={now} names={names} picked={picked === t.id} onTap={() => onTap(t)} />
+            </li>
+          ),
+        ),
+      )}
+    </ul>
+  );
+}
+
+interface TableTileProps {
+  table: LiveTableResponse;
+  now: number;
+  names: ReadonlyMap<number, string>;
+  picked: boolean;
+  onTap: () => void;
+}
+
+function TableTile({ table: t, now, names, picked, onTap }: TableTileProps) {
+  const text = tileText(t, now, names);
+  const tone = tableTone(t.status);
+  const owes = t.balance !== undefined && t.balance.minor !== 0;
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      aria-pressed={picked}
+      aria-label={`Table ${t.name}, ${tableStatuses[t.status].word}, ${text.people}${text.time ? `, ${text.time}` : ""}`}
+      className={cx(
+        "relative flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-card border-2 bg-raised p-1.5 shadow-rest 2xl:p-3",
+        "outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3",
+        tone.border,
+        picked && "outline outline-3",
+      )}
+    >
+      {/* The table itself, in its state's colour: round if it is a round one. */}
+      <span aria-hidden="true" className={cx("absolute inset-2 opacity-40 2xl:inset-3", tone.fill, t.shape === "round" ? "rounded-round" : "rounded")} />
+      <span className="relative max-w-full truncate font-serif text-total leading-none">{t.name}</span>
+      <span className="relative inline-flex max-w-full items-center gap-1.5 text-sm text-fg">
+        <UsersIcon aria-hidden="true" size={15} className="shrink-0" />
+        <span className="truncate">{text.people}</span>
+      </span>
+      <StatusChip status={{ kind: "table", status: t.status }} className="relative max-2xl:px-2" />
+      {(text.time || owes) && (
+        <span className="relative flex items-center gap-1.5 font-mono text-sm tabular-nums text-fg-2">
+          {text.time}
+          {text.time && owes && <span aria-hidden="true">·</span>}
+          {owes && t.balance && <Money amount={t.balance} />}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** The five states, a dot and a word each, under the floor (D05). */
+export function FloorLegend() {
+  return (
+    <ul aria-label="Table states" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-fg">
+      {turnOrder.map((status) => (
+        <li key={status} className="flex items-center gap-2">
+          <span aria-hidden="true" className={cx("size-3 rounded-round", tableTone(status).dot)} />
+          {tableStatuses[status].word}
+        </li>
+      ))}
+    </ul>
+  );
+}

@@ -64,6 +64,16 @@ export function failureOf(err: unknown): string {
 }
 
 /**
+ * The words for a failure that may already be in words: a server refusal by
+ * its code, or the words the order queue chose (it rejects with an Error in
+ * those words).
+ */
+export function wordsOf(err: unknown): string {
+  if (err instanceof ApiError || !(err instanceof Error)) return failureOf(err);
+  return err.message;
+}
+
+/**
  * Words for a refused manager approval. `err` is what TicketQueue.run
  * rejected with; the server's error is its cause. `who` is the name chosen.
  */

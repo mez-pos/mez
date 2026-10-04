@@ -47,18 +47,31 @@ export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onO
           aria-label="More actions"
           className="absolute right-0 top-full z-20 mt-2 w-64 rounded-card border border-line bg-raised p-2 shadow-card"
         >
-          <Item icon={ListOrderedIcon} label="Orders" detail={String(orderCount)} onClick={pick(onOrders)} />
-          <Item icon={ClockIcon} label="Order history" disabled={!hasOrder} onClick={pick(onHistory)} />
-          <Item icon={PercentIcon} label="Discount the order" disabled={!canDiscount} onClick={pick(onDiscount)} />
-          {nextCourse !== null && <Item icon={FlameIcon} label={`Fire course ${nextCourse}`} onClick={pick(() => onFire(nextCourse))} />}
-          <Item icon={ReceiptTextIcon} label="Past bills" onClick={pick(onPastBills)} />
+          <ActionItem icon={ListOrderedIcon} label="Orders" detail={String(orderCount)} onClick={pick(onOrders)} />
+          <ActionItem icon={ClockIcon} label="Order history" disabled={!hasOrder} onClick={pick(onHistory)} />
+          <ActionItem icon={PercentIcon} label="Discount the order" disabled={!canDiscount} onClick={pick(onDiscount)} />
+          {nextCourse !== null && <ActionItem icon={FlameIcon} label={`Fire course ${nextCourse}`} onClick={pick(() => onFire(nextCourse))} />}
+          <ActionItem icon={ReceiptTextIcon} label="Past bills" onClick={pick(onPastBills)} />
         </div>
       )}
     </div>
   );
 }
 
-function Item({ icon: Icon, label, detail, disabled, onClick }: { icon: LucideIcon; label: string; detail?: string; disabled?: boolean; onClick: () => void }) {
+/** One row of a "More Actions" menu: an icon, what it does, and a count if it has one. */
+export function ActionItem({
+  icon: Icon,
+  label,
+  detail,
+  disabled,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  detail?: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"

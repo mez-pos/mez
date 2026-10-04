@@ -1,8 +1,8 @@
-// What the floor works out (terminal-floor.md): an area as rows of tiles,
-// what a tap on a tile does, the counts in the header, and each tile's
-// small print. The tables and their states are the server's (ADR-086).
+// What the tables screen works out (D05): an area as rows of tiles, what the
+// panel shows for the table picked, the counts, the table list's rows and each
+// tile's small print. The tables and their states are the server's (ADR-086).
 
-import type { LiveFloorResponse, LiveTableResponse, TableStatus } from "../../../shared/api-types";
+import type { AreaResponse, LiveFloorResponse, LiveTableResponse, TableStatus } from "../../../shared/api-types";
 import { tableStatuses } from "../../../shared/ui/status";
 import { elapsed } from "../register/ticket-time";
 
@@ -36,39 +36,106 @@ function trim(rows: Tile[][]): Tile[][] {
   return kept.map((row) => row.slice(left, right + 1));
 }
 
+/**
+ * The rows with every empty row and column taken out: each table keeps its
+ * place among the others, and the tiles share the room instead of the gaps the
+ * layout grid left between them (D05).
+ */
+export function packed(rows: Tile[][]): Tile[][] {
+  const kept = rows.filter((row) => row.some((t) => t !== null));
+  const width = kept[0]?.length ?? 0;
+  const used = Array.from({ length: width }, (_, x) => kept.some((row) => row[x] !== null));
+  return kept.map((row) => row.filter((_, x) => used[x]));
+}
+
 /** The area to show: the one chosen if it is still there, else the first. */
 export function areaToShow(floor: LiveFloorResponse, chosen: number | null): number | null {
   if (chosen !== null && floor.areas.some((a) => a.id === chosen)) return chosen;
   return floor.areas[0]?.id ?? null;
 }
 
-const order: readonly TableStatus[] = ["free", "seated", "ordered", "settling", "dirty"];
+/** The areas to draw: the one chosen, or every one under "All Areas". */
+export type AreaChoice = number | "all" | null;
+
+export function areasShown(floor: LiveFloorResponse, choice: AreaChoice): readonly AreaResponse[] {
+  if (choice === "all") return floor.areas;
+  const id = areaToShow(floor, choice);
+  return floor.areas.filter((a) => a.id === id);
+}
+
+/** A table's five states, in the order a table goes through them. */
+export const turnOrder: readonly TableStatus[] = ["free", "seated", "ordered", "settling", "dirty"];
 
 /** "3 free · 4 seated · 1 paying · 2 to clear": every state there is, in turn order. */
 export function countsText(tables: readonly LiveTableResponse[]): string {
   const counts = new Map<TableStatus, number>();
   for (const t of tables) counts.set(t.status, (counts.get(t.status) ?? 0) + 1);
-  return order
+  return turnOrder
     .filter((s) => counts.has(s))
     .map((s) => `${counts.get(s)} ${tableStatuses[s].word.toLowerCase()}`)
     .join(" · ");
 }
 
 /**
- * What a tap on a table does. A free table seats a party; a table with one
- * ticket being eaten or paid for opens it; anything with a choice in it (a
- * seated party who may leave, a table to clear, two tickets) opens a sheet.
+ * The table a tap picks. A table joined to a party stands for the party's own
+ * table: that is where its order and its guests are.
  */
-export type Tap = { kind: "seat" } | { kind: "ticket"; orderId: string } | { kind: "sheet" };
-
-export function tapFor(t: LiveTableResponse): Tap {
-  if (t.status === "free") return { kind: "seat" };
-  const only = t.orders.length === 1 ? t.orders[0] : undefined;
-  if ((t.status === "ordered" || t.status === "settling") && only) return { kind: "ticket", orderId: only };
-  return { kind: "sheet" };
+export function partyTable(t: LiveTableResponse, tables: readonly LiveTableResponse[]): LiveTableResponse {
+  return (t.joined_to ? tables.find((o) => o.id === t.joined_to) : undefined) ?? t;
 }
 
-/** The covers a seat sheet starts at: the table's seats, within 1 to 12. */
+/** The panel's heading: "Table T4", or "Table T4 + T7" for a party over joined tables. */
+export function panelTitle(t: LiveTableResponse, tables: readonly LiveTableResponse[]): string {
+  return `Table ${[t, ...tables.filter((o) => o.joined_to === t.id)].map((o) => o.name).join(" + ")}`;
+}
+
+/**
+ * What the panel shows for the table picked: a free table seats a party, a
+ * table to clear is cleared, a table with one order shows it, and one with
+ * several asks which, until one is picked.
+ */
+export type PanelView =
+  | { readonly kind: "seat" }
+  | { readonly kind: "clear" }
+  | { readonly kind: "order"; readonly orderId: string }
+  | { readonly kind: "choose"; readonly orders: readonly string[] }
+  | { readonly kind: "nothing" };
+
+export function panelFor(t: LiveTableResponse, picked: string | null = null): PanelView {
+  if (t.status === "free") return { kind: "seat" };
+  if (t.status === "dirty") return { kind: "clear" };
+  if (picked !== null && t.orders.includes(picked)) return { kind: "order", orderId: picked };
+  const [first, ...rest] = t.orders;
+  if (first === undefined) return { kind: "nothing" };
+  return rest.length === 0 ? { kind: "order", orderId: first } : { kind: "choose", orders: t.orders };
+}
+
+/** How many tables are in a state, and the share of the floor that is, for a bar. */
+export interface Availability {
+  readonly status: TableStatus;
+  readonly count: number;
+  /** 0 to 100. */
+  readonly share: number;
+}
+
+export function availability(tables: readonly LiveTableResponse[]): Availability[] {
+  return turnOrder.map((status) => {
+    const count = tables.filter((t) => t.status === status).length;
+    return { status, count, share: tables.length === 0 ? 0 : Math.round((count / tables.length) * 100) };
+  });
+}
+
+/**
+ * The table list's rows: area by area as the floor lists them, and within an
+ * area by name the way people count, "T2" before "T10".
+ */
+export function listRows(floor: LiveFloorResponse, areas: readonly AreaResponse[]): LiveTableResponse[] {
+  const place = new Map(areas.map((a, i) => [a.id, i]));
+  const at = (t: LiveTableResponse) => place.get(t.area_id) ?? 0;
+  return floor.tables.filter((t) => place.has(t.area_id)).sort((a, b) => at(a) - at(b) || a.name.localeCompare(b.name, undefined, { numeric: true }));
+}
+
+/** The guests a free table's panel starts at: the table's seats, within 1 to 12. */
 export function startingCovers(seats: number): number {
   return Math.min(Math.max(seats, 1), 12);
 }
@@ -89,7 +156,7 @@ export function tileText(t: LiveTableResponse, now: number, names: ReadonlyMap<n
       return { people: "Needs clearing", time };
     default:
       if (t.joined_to) return { people: `With ${names.get(t.joined_to) ?? `table ${t.joined_to}`}`, time };
-      return { people: t.covers > 0 ? count(t.covers, "cover", "covers") : "Seated", time };
+      return { people: t.covers > 0 ? count(t.covers, "guest", "guests") : "Seated", time };
   }
 }
 
@@ -99,8 +166,8 @@ export function tableNames(floor: LiveFloorResponse | undefined): ReadonlyMap<nu
 }
 
 /**
- * Moving and joining on the floor (ADR-088): a mode the header turns on,
- * then taps on tiles. Move takes a party's table, then a free one. Join
+ * Moving and joining on the floor (ADR-088): a mode the panel's More Actions
+ * turns on, then taps on tiles. Move takes a party's table, then a free one. Join
  * takes a party's table, then any number of free ones; tapping a table
  * already joined lets it go. Part lets joined tables go, one tap each.
  */
@@ -164,6 +231,14 @@ export function stepMode(mode: Mode, t: LiveTableResponse, names: ReadonlyMap<nu
       return { mode, action: { kind: "part", orderId, table: t.id } };
     }
   }
+}
+
+/**
+ * Starts a move or a join from the table picked in the panel: the first tap
+ * is already made. Refused, in words, when that table has no one party.
+ */
+export function beginMode(kind: "move" | "join", t: LiveTableResponse, names: ReadonlyMap<number, string>): Step {
+  return stepMode(kind === "move" ? { kind: "move", from: null } : { kind: "join", to: null }, t, names);
 }
 
 /** The banner while a mode is on. */

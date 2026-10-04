@@ -12,7 +12,6 @@ import { useMenu } from "../../../shared/use-menu";
 import { useVenue } from "../../../shared/use-venue";
 import { ZReportScreen } from "../../../shared/zreport/ZReportScreen";
 import { BillScreen } from "../bills/BillScreen";
-import { FloorView } from "../floor/FloorView";
 import { ticketLabel } from "../register/ticket-time";
 import { CloseDayScreen } from "../shift/CloseDayScreen";
 import { OpenShiftScreen } from "../shift/OpenShiftScreen";
@@ -42,12 +41,6 @@ export function LeaveForKitchen() {
     window.location.assign(route.kitchen);
   }, []);
   return <p className="m-auto text-base text-fg-muted">Opening the kitchen display</p>;
-}
-
-export function TablesPage() {
-  const { floor, ticket } = useTerminal();
-  const [, navigate] = useLocation();
-  return <FloorView floor={floor} ticket={ticket} onRegister={() => navigate(route.order)} />;
 }
 
 /** "/pay/:id": the tender screen, on the order named. */

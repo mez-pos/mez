@@ -17,6 +17,8 @@ export interface LiveFloorApi {
   loading: boolean;
   error: unknown;
   refetch: () => void;
+  /** Reads the floor again and resolves once it is the new one. */
+  refresh: () => Promise<void>;
   /** Marks a dirty table cleared. */
   clear: (tableId: number) => Promise<void>;
   /** Lets guests go who ordered nothing: their empty ticket closes, the table is free. */
@@ -46,6 +48,7 @@ export function useLiveFloor(): LiveFloorApi {
     loading: query.isPending,
     error: query.error,
     refetch: () => void query.refetch(),
+    refresh: () => queryClient.invalidateQueries({ queryKey: liveFloorKey }),
     clear: (id) => store.api.post<LiveFloorResponse>(`/api/v1/floor/tables/${id}/clear`).then(keep),
     release: (id) => store.api.post<LiveFloorResponse>(`/api/v1/floor/tables/${id}/release`).then(keep),
     act: async (action) => {
