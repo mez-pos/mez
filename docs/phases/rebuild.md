@@ -206,7 +206,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   filter chips, item cards with "+", the 400px order rail: table picker,
   service type, guests, lines with steppers and delete, order note, totals,
   Save Order, Pay.
-- [ ] **Task 6 - The item modal.** D04. Choices, add-ons, note, course,
+- [x] **Task 6 - The item modal.** (ADR-153) D04. Choices, add-ons, note, course,
   quantity, "Add to Order" with the price.
 - [ ] **Task 7 - Tables.** D05, and the table list from D06. Areas, the
   five states, the selected table's panel: Add Items, Send to Kitchen, More

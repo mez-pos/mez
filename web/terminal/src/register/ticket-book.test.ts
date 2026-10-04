@@ -32,6 +32,7 @@ function world(initialOrderId: string | null = null) {
       return answer(orderId);
     },
     modifyLine: async (orderId) => answer(orderId),
+    addNote: async (orderId) => answer(orderId),
   };
   const remembered: (string | null)[] = [];
   let n = 0;

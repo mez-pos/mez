@@ -1,4 +1,4 @@
-// What a ModifierSheet has chosen, and the rules for choosing, without React.
+// What the item modal has chosen, and the rules for choosing, without React.
 // A group's bounds are min_select and max_select from the menu; the domain
 // takes the result as the line's modifiers, in group then menu order.
 
@@ -59,6 +59,19 @@ export function groupState(group: ModifierGroupResponse, selection: Selection): 
   return { count, satisfied: count >= min && count <= max, full: count >= max, rule };
 }
 
+/**
+ * What a group asks for, beside its name (D04): "Required" for the plain
+ * choose-one, "Select multiple" when every choice may be taken, and the rule
+ * in words where neither says enough.
+ */
+export function groupHint(group: ModifierGroupResponse): string {
+  const { min_select: min, max_select: max } = group;
+  const rule = groupState(group, new Map()).rule;
+  if (min > 0) return min === 1 && max === 1 ? "Required" : `Required · ${rule}`;
+  if (max === 1) return "Optional";
+  return max >= group.modifiers.length ? "Select multiple" : rule;
+}
+
 /** The first group still short of its minimum, which is what the sheet names. */
 export function firstUnmet(groups: readonly ModifierGroupResponse[], selection: Selection): ModifierGroupResponse | null {
   return groups.find((g) => !groupState(g, selection).satisfied) ?? null;
@@ -78,6 +91,11 @@ export function toModifiers(groups: readonly ModifierGroupResponse[], selection:
  */
 export function unitPrice(base: Money, modifiers: readonly LineModifier[]): Money {
   return { currency: base.currency, minor: modifiers.reduce((sum, m) => sum + m.price.minor, base.minor) };
+}
+
+/** The whole line as the item modal's button shows it: one of it, times how many. Display only. */
+export function lineTotal(base: Money, modifiers: readonly LineModifier[], qty: number): Money {
+  return { currency: base.currency, minor: unitPrice(base, modifiers).minor * qty };
 }
 
 /** Whether two modifier lists are the same choice, in the same order. */

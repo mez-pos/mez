@@ -14,27 +14,29 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 5: The order screen** (ADR-151). `/pos` is D03: a 240px category
-sidebar (All Items, Popular, categories, with icons and counts), the dietary filters
-and search over finished-looking item cards, and a 400px order rail: where and how
-many guests, Dine-in / Takeaway / Delivery (locked once the order opens), lines with
-a stepper and a bin, totals, Save Order and Pay. Send to Kitchen sits above them while
-something waits. Orders, history, order discount, Fire course and past bills are under
-the "...". Words: Pay, Save Order, Orders, Send to Kitchen. Seen in a browser at 1920
-and 1366x768: ringing up, stepping, removing, saving, the service control, the "..."
-menu, the diet filters and Popular. Tests: filter, sidebar, icon and rail logic.
-`make check` and `make build-web` pass. The owner has not yet looked.
+**Rebuild, Task 6: The item modal** (ADR-153). `ItemModal.tsx` is D04 and replaces
+`ModifierSheet.tsx`: a centred dialog with the photo or category icon on the left and,
+on the right, the name and price, radio tiles for a choose-one group and checkbox tiles
+for a choose-several, the course, a kitchen note, and quantity, Cancel and "Add to
+Order" with the line's price. A new line's note rides the outbox as a second command
+on the line the add made. Changing a line saves its choices, quantity and a note.
+Seen in a browser at 1920 and 1366x768 as the cashier: a required choice, quantity 2
+with a note, and a line changed (choices, quantity 3, note). Tests: the queue's note,
+`groupHint`, `lineTotal`, `addLineFor`. `make check` and `make build-web` pass. The
+owner has not yet looked.
 
-Before it: Task 4 (ADR-150, Open the shift), Task 3 (ADR-149), Task 2 (ADR-148), Task 1
-(ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143). A cashier opens the
-shift with the new `shift.open` (ADR-152, migration 00033); closing is `shift.manage`.
+Before it: Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; a
+cashier opens it with `shift.open`, ADR-152, migration 00033, and closing is
+`shift.manage`), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to ADR-147),
+Task 0 (ADR-144), the plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 6** (the item modal): D04 (line 293 of `mez Desktop POS.dc.html`).
-Choices, add-ons, note, course, quantity, "Add to Order" with the price. It replaces
-`ModifierSheet.tsx`, opened from the order screen's `ringUp` and a line's Modify. Read
-`docs/design/tokens.md` and that screen only. Phase 11 waits for this phase. Phase 10's
+**Rebuild, Task 7** (tables): D05 (line 363 of `mez Desktop POS.dc.html`) and the
+table list from D06 (line 478). Areas, the five states, the selected table's panel:
+Add Items, Send to Kitchen, More Actions, Settle Bill. Reservations and the waitlist
+are out of scope. It rebuilds `FloorView.tsx` at `/tables`. Read
+`docs/design/tokens.md` and those screens only. Phase 11 waits for this phase. Phase 10's
 tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human check and
 stays unticked below.
 
@@ -234,6 +236,10 @@ stays unticked below.
   in the browser, sign in as the owner or a demo person and count a float to
   open the till. A code for the wrong app is refused but its device stays
   (ADR-068).
+- The item modal (ADR-153): one tap still rings up an item whose defaults satisfy its
+  groups, so its modal is reached from the line's Modify; say if every item with
+  choices should open it. A note refused after its line was added is lost with a
+  toast. Not seen by eye: a photo, the Popular pill, a refusal, a screen under 1024px.
 - The order screen (ADR-151): not seen by eye are a photo card, a sold-out card, a
   held order's banner, a delivery order, a discounted order's totals and a line the
   kitchen has seen (its bin and plain quantity). The diet filters reset on a reload.

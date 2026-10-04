@@ -4,7 +4,7 @@
 // current (Task 5, ADR-074).
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ApiError } from "../../../shared/api";
 import type {
   AddLine,
@@ -19,6 +19,7 @@ import type {
 } from "../../../shared/api-types";
 import { browserStorage } from "../../../shared/auth/storage";
 import { useAuthStore } from "../../../shared/auth/use-auth";
+import { useToast } from "../../../shared/ui";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { TicketBook } from "./ticket-book";
 import { newKey, ticketMemory } from "./ticket-key";
@@ -46,7 +47,8 @@ export interface Ticket {
   opening: OpenOrder;
   /** Every unclosed ticket at the venue, oldest first; undefined until read. */
   open: OpenTicketsResponse | undefined;
-  ringUp: (command: AddLine) => void;
+  /** Rings a line up, with a kitchen note for it if one was written (ADR-153). */
+  ringUp: (command: AddLine, note?: string) => void;
   retry: (key: string) => void;
   remove: (key: string) => void;
   startNew: (open: OpenOrder) => void;
@@ -89,6 +91,10 @@ const counterSale: OpenOrder = { channel: "counter", covers: 0 };
 export function useTicket(): Ticket {
   const store = useAuthStore();
   const queryClient = useQueryClient();
+  const toast = useToast();
+  // The book is made once; what it says when a note is lost follows the render.
+  const noteLost = useRef<(name: string, why: string) => void>(() => undefined);
+  noteLost.current = (name, why) => toast(`${name} is on the order, but its note is not. ${why}`, { tone: "warning" });
 
   const [book] = useState(() => {
     const memory = ticketMemory(browserStorage("session"));
@@ -101,7 +107,9 @@ export function useTicket(): Ticket {
             openOrder: (open, key) => store.api.post<CommandResponse>("/api/v1/orders", open, { idempotencyKey: key }),
             addLine: (id, command, key) => store.api.post<CommandResponse>(url(id, "/lines"), command, { idempotencyKey: key }),
             modifyLine: (id, lineId, change, key) => store.api.post<CommandResponse>(url(id, `/lines/${lineId}/modifiers`), change, { idempotencyKey: key }),
+            addNote: (id, note, key) => store.api.post<CommandResponse>(url(id, "/notes"), note, { idempotencyKey: key }),
           },
+          onNoteLost: (name, why) => noteLost.current(name, why),
           newKey: () => newKey(),
           onOrder: (order) => {
             queryClient.setQueryData<OrderResponse>(orderQueryKey(order.id), (cached) => newer(cached, order));
@@ -159,7 +167,7 @@ export function useTicket(): Ticket {
     loading: orderId !== null && order.isPending,
     opening: queue.opening,
     open: open.data,
-    ringUp: (command) => queue.ringUp(command),
+    ringUp: (command, note) => queue.ringUp(command, note),
     retry: (key) => queue.retry(key),
     remove: (key) => queue.remove(key),
     startNew: (opening) => book.startNew(opening),

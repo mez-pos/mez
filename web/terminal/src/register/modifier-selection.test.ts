@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { ModifierGroupResponse } from "../../../shared/api-types";
-import { firstUnmet, groupState, initialSelection, sameModifiers, toggle, toModifiers, unitPrice, type Selection } from "./modifier-selection";
+import {
+  firstUnmet,
+  groupHint,
+  groupState,
+  initialSelection,
+  lineTotal,
+  sameModifiers,
+  toggle,
+  toModifiers,
+  unitPrice,
+  type Selection,
+} from "./modifier-selection";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -143,5 +154,28 @@ describe("sameModifiers", () => {
     expect(sameModifiers([oat], [oat, shot])).toBe(false);
     expect(sameModifiers([shot, oat], [oat, shot])).toBe(false);
     expect(sameModifiers(undefined, [])).toBe(true);
+  });
+});
+
+describe("groupHint", () => {
+  it.each([
+    ["a group one must be chosen from", milk, "Required"],
+    ["a group several may be chosen from", extras, "Up to 2"],
+    ["an optional pick-one", ice, "Optional"],
+    ["a group every choice of which may be taken", { ...extras, max_select: 3 }, "Select multiple"],
+    ["a group that needs more than one", { ...extras, min_select: 2, max_select: 3 }, "Required · Choose 2 to 3"],
+  ])("words %s", (_, group, want) => {
+    expect(groupHint(group)).toBe(want);
+  });
+});
+
+describe("lineTotal", () => {
+  it("is the item with its choices, times how many, in whole minor units", () => {
+    const chosen = [
+      { modifier_id: 11, name: "Oat", price: inr(5000) },
+      { modifier_id: 20, name: "Shot", price: inr(3000) },
+    ];
+    expect(lineTotal(inr(18000), chosen, 3)).toEqual(inr(78000));
+    expect(lineTotal(inr(18000), [], 1)).toEqual(inr(18000));
   });
 });

@@ -4495,3 +4495,48 @@ Cost: a cashier who opens with a wrong float is found out only at the close; a v
 that wants only managers to open must untick it for the cashier role; a venue that
 renamed its cashier role gets nothing from the migration.
 ---
+
+## ADR-153 - The item modal is D04, and a new line can carry its kitchen note
+2026-10 · Status: accepted
+Decision: `ItemModal.tsx` replaces `ModifierSheet.tsx`. It is a centred dialog 1020px
+wide, not a side sheet: on the left a 400px panel with the item's photo, or its
+category's icon where there is none, and a "Popular" pill; on the right the diet mark,
+name, description and price, each group of choices, the course, a kitchen note, and
+along the bottom the quantity, Cancel and "Add to Order" with what the line will cost
+(the item and its choices, times how many).
+  - **When it opens is unchanged.** One tap still rings an item up when its defaults
+    satisfy every group; the modal opens when someone has to choose, and from a
+    line's Modify. Opening it for every item with choices would be the design's flow
+    to the letter and a second tap on every coffee; that is `ringUp` in
+    `OrderScreen.tsx` and the owner's call.
+  - **Groups.** A choose-one group is radio tiles, three to a row, with the extra
+    price under the name; a choose-several group is checkbox tiles, two to a row, with
+    the price on the right. Beside the name: "Required" (in brick, as drawn),
+    "Optional", "Select multiple", or the rule in words (`groupHint`). The design's
+    "Spice level" is a group like any other, so it wears a radio too.
+  - **Quantity and course go on `AddLine`,** which always took both. The course is a
+    plain select of the venue's courses, shown only for a new line and only when
+    there is more than one: nothing moves a line between courses once it is added.
+    The modal's quantity stops at 99.
+  - **The kitchen note of a new line** is a second command. A line's id is the `seq`
+    of its `line.added` event, which the add's answer carries, so the outbox
+    (`TicketQueue`) writes the note on that line straight after the add, under an
+    idempotency key made at the tap. If the note is refused the line stays and a toast
+    says the note is missing: taking the line back is not the till's to decide.
+  - **Changing a line** saves what differs, in turn: the choices, the quantity, a
+    note. If one fails after another was saved the modal closes and a toast says only
+    part was saved, because the modal then holds an old copy of the line. A quantity
+    changed on another till now also shuts the modal's button.
+  - **Left out, because nothing does them:** "Also ordered with" (nothing records
+    what sells together), a size's "10 inch" (a choice has a name and a price), and
+    the first choice's own price (the header has the item's).
+  - **Sizes:** the title and price are `text-total` (32px), group names `text-xl`,
+    tiles 48px or taller, the two buttons 56px, the note and course 16px (ADR-014).
+    Below 1024px wide the left panel is dropped; on a 768px-high screen the middle
+    scrolls and the footer stays.
+Because: the old sheet could only choose; "two, no onions, with the mains" took three
+trips to the line's sheet.
+Cost: a note can be lost while its line is kept; a scrim tap does not close the modal
+(a half-written note is not lost to a stray tap, as with `Modal`); not seen by eye are
+a photo, the Popular pill, a refusal, and a narrow screen.
+---

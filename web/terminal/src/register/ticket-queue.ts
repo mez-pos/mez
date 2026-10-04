@@ -8,12 +8,14 @@
 // key too, kept until an order exists.
 
 import { failureOf } from "./order-messages";
-import type { AddLine, CommandResponse, LineModifier, OpenOrder, OrderResponse } from "../../../shared/api-types";
+import type { AddLine, AddNote, CommandResponse, LineModifier, OpenOrder, OrderResponse } from "../../../shared/api-types";
 
 export interface PendingLine {
   readonly key: string;
   readonly command: AddLine;
   readonly status: "adding" | "failed";
+  /** A kitchen note to write on the line once it exists, with the key it is sent under. */
+  readonly note?: { readonly text: string; readonly key: string };
   /** Why the server refused it, or why it could not be asked. */
   readonly error?: string;
 }
@@ -28,6 +30,7 @@ export interface TicketCommands {
   openOrder(open: OpenOrder, key: string): Promise<CommandResponse>;
   addLine(orderId: string, command: AddLine, key: string): Promise<CommandResponse>;
   modifyLine(orderId: string, lineId: number, change: ModifyLine, key: string): Promise<CommandResponse>;
+  addNote(orderId: string, note: AddNote, key: string): Promise<CommandResponse>;
 }
 
 /** A line's modifiers, from what the till showed to what was chosen. */
@@ -41,6 +44,11 @@ export interface TicketQueueOptions {
   newKey: () => string;
   /** Every order the server answers with, for the cache. */
   onOrder: (order: OrderResponse) => void;
+  /**
+   * A line went on the order and the note rung up with it did not. The line
+   * stays: taking it back is the person's call, and so is writing it again.
+   */
+  onNoteLost?: (lineName: string, why: string) => void;
   /** Where the current order's id is kept across a reload. */
   remember: (orderId: string | null) => void;
   initialOrderId?: string | null;
@@ -67,10 +75,16 @@ export class TicketQueue {
 
   current = (): TicketState => this.state;
 
-  /** Rings a line up. Returns its key, which Retry and Remove take. */
-  ringUp(command: AddLine): string {
+  /**
+   * Rings a line up, with a kitchen note if one was written. Returns its key,
+   * which Retry and Remove take. The note has a key of its own from the start,
+   * so a retry cannot write it twice.
+   */
+  ringUp(command: AddLine, note = ""): string {
     const key = this.opts.newKey();
-    this.update({ pending: [...this.state.pending, { key, command, status: "adding" }] });
+    const text = note.trim();
+    const line: PendingLine = { key, command, status: "adding", ...(text ? { note: { text, key: this.opts.newKey() } } : {}) };
+    this.update({ pending: [...this.state.pending, line] });
     this.enqueue(key);
     return key;
   }
@@ -79,7 +93,7 @@ export class TicketQueue {
   retry(key: string): void {
     const line = this.state.pending.find((p) => p.key === key);
     if (!line || line.status !== "failed") return;
-    this.replace(key, { key, command: line.command, status: "adding" });
+    this.replace(key, { key, command: line.command, status: "adding", ...(line.note ? { note: line.note } : {}) });
     this.enqueue(key);
   }
 
@@ -151,13 +165,36 @@ export class TicketQueue {
   private async send(key: string): Promise<void> {
     const line = this.state.pending.find((p) => p.key === key);
     if (!line) return;
+    let orderId: string;
+    let res: CommandResponse;
     try {
-      const orderId = await this.ensureOrder();
-      const res = await this.opts.commands.addLine(orderId, line.command, key);
-      this.opts.onOrder(res.order);
-      this.update({ pending: this.state.pending.filter((p) => p.key !== key) });
+      orderId = await this.ensureOrder();
+      res = await this.opts.commands.addLine(orderId, line.command, key);
     } catch (err) {
-      this.replace(key, { key, command: line.command, status: "failed", error: failureOf(err) });
+      this.replace(key, { ...line, status: "failed", error: failureOf(err) });
+      return;
+    }
+    this.opts.onOrder(res.order);
+    this.update({ pending: this.state.pending.filter((p) => p.key !== key) });
+    if (line.note) await this.sendNote(orderId, line.command.name, line.note, res);
+  }
+
+  /**
+   * The note of a line just added. A line's id is the sequence of the event
+   * that added it (docs/02-domain.md), which the answer carries. The line is
+   * on the order whatever happens here, so a failure is said, not retried.
+   */
+  private async sendNote(orderId: string, name: string, note: NonNullable<PendingLine["note"]>, added: CommandResponse): Promise<void> {
+    const lineId = added.events.find((e) => e.type === "line.added")?.seq;
+    if (lineId === undefined) {
+      this.opts.onNoteLost?.(name, "The server did not say which line it added.");
+      return;
+    }
+    try {
+      const res = await this.opts.commands.addNote(orderId, { scope: "line", line_id: lineId, text: note.text }, note.key);
+      this.opts.onOrder(res.order);
+    } catch (err) {
+      this.opts.onNoteLost?.(name, failureOf(err));
     }
   }
 

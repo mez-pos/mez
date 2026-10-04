@@ -21,7 +21,7 @@ export function isMenuStale(notice: RealtimeNotice, cached: Pick<MenuResponse, "
   return notice.kind === "menu" && cached !== undefined && cached.version !== notice.version;
 }
 
-/** The menu, indexed for the register and the modifier sheet. */
+/** The menu, indexed for the register and the item modal. */
 export interface MenuIndex {
   readonly menu: MenuResponse;
   /** Items of a category, in menu order; empty for an unknown category. */

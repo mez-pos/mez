@@ -1,14 +1,14 @@
 // The order screen (D03): categories down the left, the menu in the middle, the
 // order on the right. One tap on an item rings it up with its default choices,
-// or opens the choices sheet when someone has to choose; the total never leaves
-// the screen. Pay goes to /pay on the same order, the floor is /tables, a
+// or opens the item modal (D04) when someone has to choose; the total never
+// leaves the screen. Pay goes to /pay on the same order, the floor is /tables, a
 // settled bill is /orders/:id, and with no shift open the whole terminal waits
 // at /shift (ADR-148): each is a route of its own, and the order in front lives
 // above them all (terminal-context). ADR-151 records what this screen draws.
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
-import type { LineModifier, LineResponse, MenuItemResponse } from "../../../shared/api-types";
+import type { LineResponse, MenuItemResponse } from "../../../shared/api-types";
 import { indexMenu, isSoldOut } from "../../../shared/menu";
 import { EmptyState, InboxIcon, SearchIcon, useToast } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
@@ -19,8 +19,8 @@ import { useTerminal } from "../shell/terminal-context";
 import { CategorySidebar } from "./CategorySidebar";
 import { HistorySheet } from "./HistorySheet";
 import { ItemGrid } from "./ItemGrid";
+import { ItemModal, type ItemChoice } from "./ItemModal";
 import { MenuHeader } from "./MenuHeader";
-import { ModifierSheet } from "./ModifierSheet";
 import { sameModifiers } from "./modifier-selection";
 import { OrderRail } from "./OrderRail";
 import {
@@ -109,22 +109,40 @@ export function OrderScreen({ pastBills = false }: OrderScreenProps) {
     return item && index.groupsFor(item).length > 0 ? item : null;
   };
 
-  const confirm = async (state: SheetState, modifiers: LineModifier[]) => {
+  const confirm = async (state: SheetState, choice: ItemChoice) => {
     if (state.kind === "add") {
-      ticket.ringUp(addLineFor(state.item, modifiers));
+      ticket.ringUp(addLineFor(state.item, choice.modifiers, { qty: choice.qty, course: choice.course }), choice.note);
       setSheet(null);
       return;
     }
-    if (sameModifiers(state.line.modifiers, modifiers)) {
+    // A line being changed: each thing that differs is its own event, in turn.
+    const { line } = state;
+    const steps = [
+      ...(sameModifiers(line.modifiers, choice.modifiers) ? [] : [() => ticket.modify(line.id, { from: line.modifiers ?? [], to: choice.modifiers })]),
+      ...(choice.qty === line.qty ? [] : [() => ticket.changeQty(line.id, line.qty, choice.qty)]),
+      ...(choice.note === "" ? [] : [() => ticket.addNote({ scope: "line", line_id: line.id, text: choice.note })]),
+    ];
+    if (steps.length === 0) {
       setSheet(null);
       return;
     }
     setSheet({ ...state, busy: true, error: null });
+    let saved = 0;
     try {
-      await ticket.modify(state.line.id, { from: state.line.modifiers ?? [], to: modifiers });
+      for (const step of steps) {
+        await step();
+        saved += 1;
+      }
       setSheet(null);
     } catch (err) {
-      setSheet({ ...state, busy: false, error: err instanceof Error ? err.message : String(err) });
+      // Once part of it is saved the modal shows an old copy of the line: close
+      // it and say what is missing, so the rest is done from the line as it is.
+      if (saved > 0) {
+        setSheet(null);
+        fail("Only part of the change was saved")(err);
+      } else {
+        setSheet({ ...state, busy: false, error: err instanceof Error ? err.message : String(err) });
+      }
     }
   };
 
@@ -233,15 +251,17 @@ export function OrderScreen({ pastBills = false }: OrderScreenProps) {
       />
 
       {sheet && index && (
-        <ModifierSheet
+        <ItemModal
           key={sheet.kind === "edit" ? `line-${sheet.line.id}` : `item-${sheet.item.id}`}
           item={sheet.item}
           groups={index.groupsFor(sheet.item)}
-          current={sheet.kind === "edit" ? (sheet.line.modifiers ?? []) : undefined}
+          courses={index.menu.courses}
+          icon={iconFor(sheet.item)}
+          line={sheet.kind === "edit" ? sheet.line : undefined}
           error={sheet.error}
           blocked={sheet.kind === "edit" && !sheet.busy ? movedOn(sheet.line, ticket.order?.lines) : null}
           busy={sheet.busy}
-          onConfirm={(mods) => void confirm(sheet, mods)}
+          onConfirm={(choice) => void confirm(sheet, choice)}
           onClose={() => setSheet(null)}
         />
       )}
@@ -250,20 +270,20 @@ export function OrderScreen({ pastBills = false }: OrderScreenProps) {
 }
 
 /**
- * Why a line being edited can no longer be saved as the sheet shows it:
+ * Why a line being edited can no longer be saved as the modal shows it:
  * the stream has brought a newer version of it. Null while it still can.
  */
 function movedOn(opened: LineResponse, lines: readonly LineResponse[] | undefined): string | null {
   const live = lines?.find((l) => l.id === opened.id);
   if (!live || live.status !== "active") return "This line has been voided or comped. Close this.";
   if (live.sent || live.course_fired) return "This has gone to the kitchen. Void it and add it again.";
-  if (!sameModifiers(live.modifiers, opened.modifiers)) {
+  if (!sameModifiers(live.modifiers, opened.modifiers) || live.qty !== opened.qty) {
     return "This line was changed on another till. Close this and look again.";
   }
   return null;
 }
 
-/** What the choices sheet is doing: ringing up a new line, or changing one. */
+/** What the item modal is doing: ringing up a new line, or changing one. */
 type SheetState =
   | { kind: "add"; item: MenuItemResponse; error: string | null; busy: boolean }
   | { kind: "edit"; item: MenuItemResponse; line: LineResponse; error: string | null; busy: boolean };

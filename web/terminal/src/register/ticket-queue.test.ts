@@ -15,10 +15,13 @@ const line = (name: string): AddLine => ({
   tax_rate: 5000,
 });
 
-const answer = (id: string, lines = 0): CommandResponse => ({
+const answer = (id: string, lines = 0, events: CommandResponse["events"] = []): CommandResponse => ({
   order: { id, lines: Array.from({ length: lines }) } as unknown as OrderResponse,
-  events: [],
+  events,
 });
+
+/** The event an added line comes back with: its seq is the line's id. */
+const added = (seq: number) => [{ seq, type: "line.added" }] as unknown as CommandResponse["events"];
 
 /** A server in memory: records every call, fails when told to. */
 function fakeServer() {
@@ -26,9 +29,13 @@ function fakeServer() {
   let failNext: Error | null = null;
   let lines = 0;
   let opened = 0;
+  let failLater: Error | null = null;
+  let silent = false;
   const fail = () => {
     const e = failNext;
-    failNext = null;
+    // A failure set for the call after this one moves up as this one passes.
+    failNext = failLater;
+    failLater = null;
     if (e) throw e;
   };
   const commands: TicketCommands = {
@@ -42,25 +49,33 @@ function fakeServer() {
       calls.push(`add ${orderId} ${cmd.name} ${key}`);
       fail();
       lines += 1;
-      return answer(orderId, lines);
+      // Line ids are event sequences: 10, 20, 30 here, so none is a count.
+      return answer(orderId, lines, silent ? [] : added(lines * 10));
     },
     modifyLine: async () => answer("unused"),
+    addNote: async (orderId, note, key) => {
+      calls.push(`note ${orderId} line ${note.line_id} "${note.text}" ${key}`);
+      fail();
+      return answer(orderId, lines);
+    },
   };
-  return { calls, commands, failWith: (e: Error) => (failNext = e) };
+  return { calls, commands, failWith: (e: Error) => (failNext = e), failAfter: (e: Error) => (failLater = e), answerWithoutEvents: () => (silent = true) };
 }
 
 function queue(server: ReturnType<typeof fakeServer>, initialOrderId: string | null = null) {
   let n = 0;
   const orders: OrderResponse[] = [];
   const remembered: (string | null)[] = [];
+  const lost: string[] = [];
   const q = new TicketQueue({
+    onNoteLost: (name, why) => lost.push(`${name}: ${why}`),
     commands: server.commands,
     newKey: () => `k${++n}`,
     onOrder: (o) => orders.push(o),
     remember: (id) => remembered.push(id),
     initialOrderId,
   });
-  return { q, orders, remembered };
+  return { q, orders, remembered, lost };
 }
 
 const unreachable = () => new ApiError("network", "Failed to fetch");
@@ -271,5 +286,60 @@ describe("TicketQueue.run", () => {
     await q.run(send, "pay-1");
     await q.run(send);
     expect(keys).toEqual(["pay-1", "pay-1", "k1"]);
+  });
+});
+
+describe("TicketQueue, a line rung up with a kitchen note", () => {
+  it("writes the note on the line the add made, after it, with a key of its own", async () => {
+    const server = fakeServer();
+    const { q, lost } = queue(server, "ord_1");
+    q.ringUp(line("Upma"));
+    q.ringUp(line("Pizza"), "cut into 8");
+    q.ringUp(line("Tea"));
+    await q.settled();
+    expect(server.calls).toEqual(["add ord_1 Upma k1", "add ord_1 Pizza k2", 'note ord_1 line 20 "cut into 8" k3', "add ord_1 Tea k4"]);
+    expect(q.current().pending).toEqual([]);
+    expect(lost).toEqual([]);
+  });
+
+  it("writes no note for a line with none, or with only spaces", async () => {
+    const server = fakeServer();
+    const { q } = queue(server, "ord_1");
+    q.ringUp(line("Upma"), "   ");
+    await q.settled();
+    expect(server.calls).toEqual(["add ord_1 Upma k1"]);
+  });
+
+  it("keeps the line and says the note was lost when the note is refused", async () => {
+    const server = fakeServer();
+    const { q, lost } = queue(server, "ord_1");
+    server.failAfter(unreachable());
+    q.ringUp(line("Pizza"), "no basil");
+    await q.settled();
+    // The line is on the order: it must not sit in pending to be added again.
+    expect(q.current().pending).toEqual([]);
+    expect(lost).toEqual([`Pizza: ${failureOf(unreachable())}`]);
+  });
+
+  it("says the note was lost when the answer does not name the line", async () => {
+    const server = fakeServer();
+    const { q, lost } = queue(server, "ord_1");
+    server.answerWithoutEvents();
+    q.ringUp(line("Pizza"), "no basil");
+    await q.settled();
+    expect(server.calls).toEqual(["add ord_1 Pizza k1"]);
+    expect(lost).toHaveLength(1);
+  });
+
+  it("keeps the note with a refused line, and a retry sends both with the same keys", async () => {
+    const server = fakeServer();
+    const { q } = queue(server, "ord_1");
+    server.failWith(unreachable());
+    const key = q.ringUp(line("Pizza"), "no basil");
+    await q.settled();
+    expect(q.current().pending[0]).toMatchObject({ status: "failed", note: { text: "no basil" } });
+    q.retry(key);
+    await q.settled();
+    expect(server.calls).toEqual(["add ord_1 Pizza k1", "add ord_1 Pizza k1", 'note ord_1 line 10 "no basil" k2']);
   });
 });

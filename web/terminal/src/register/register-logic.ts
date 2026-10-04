@@ -30,7 +30,7 @@ export function searchItems(items: readonly MenuItemResponse[], query: string): 
 /**
  * The modifiers an item rings up with when nobody chooses: each group's
  * defaults. Null when the defaults do not satisfy a group's bounds, which
- * means somebody has to choose, on the modifier sheet.
+ * means somebody has to choose, in the item modal.
  */
 export function defaultModifiers(groups: readonly ModifierGroupResponse[]): LineModifier[] | null {
   const chosen: LineModifier[] = [];
@@ -42,15 +42,18 @@ export function defaultModifiers(groups: readonly ModifierGroupResponse[]): Line
   return chosen;
 }
 
-/** The AddLine command for one of an item, with its snapshot facts copied. */
-export function addLineFor(item: MenuItemResponse, modifiers: readonly LineModifier[]): AddLine {
+/**
+ * The AddLine command for an item, with its snapshot facts copied: one of it
+ * on its own course, unless the item modal chose how many and which course.
+ */
+export function addLineFor(item: MenuItemResponse, modifiers: readonly LineModifier[], chosen: { qty?: number; course?: number } = {}): AddLine {
   return {
     item_id: item.id,
     name: item.name,
-    qty: 1,
+    qty: chosen.qty ?? 1,
     unit_price: item.price,
     modifiers: [...modifiers],
-    course: item.course,
+    course: chosen.course ?? item.course,
     station: item.station,
     tax_rate: item.tax_rate,
     ...(item.hsn ? { hsn: item.hsn } : {}),

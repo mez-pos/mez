@@ -22,7 +22,7 @@ interface TicketPanelsProps {
   ticket: Ticket;
   /** Whether a line's item has choices, so it can be modified. */
   hasChoices: (line: LineResponse) => boolean;
-  /** Opens the modifier sheet on a line. */
+  /** Opens the item modal on a line. */
   onModify: (line: LineResponse) => void;
 }
 

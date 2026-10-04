@@ -96,6 +96,12 @@ describe("addLineFor", () => {
     });
   });
 
+  it("takes how many and which course when the item modal says", () => {
+    const line = addLineFor(item(1, "Flat white", { course: 2 }), [], { qty: 3, course: 1 });
+    expect(line.qty).toBe(3);
+    expect(line.course).toBe(1);
+  });
+
   it("marks an exempt item, and leaves out what is not there", () => {
     const line = addLineFor(item(2, "Water", { tax_exempt: true, tax_rate: 0 }), []);
     expect(line.tax_exempt).toBe(true);
