@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OrderResponse, TenderPayment } from "../../../shared/api-types";
-import { attemptKey, chargeBlock, chargeLabel, planTender, quickTenders } from "./tender-logic";
+import { attemptKey, chargeBlock, chargeLabel, collectOf, payStep, planTender, quickTenders, tipFor } from "./tender-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -136,5 +136,43 @@ describe("chargeLabel", () => {
     expect(chargeLabel(order(0))).toBe("Invoice and close");
     expect(chargeLabel(order(0, true))).toBe("Close order");
     expect(chargeLabel(undefined)).toBe("Pay");
+  });
+});
+
+describe("tipFor", () => {
+  const cases: [string, number, number, string, number][] = [
+    ["rounds to a whole rupee", 105300, 5, "INR", 5300],
+    ["ten percent", 105300, 10, "INR", 10500],
+    ["fifteen percent", 105300, 15, "INR", 15800],
+    ["a small bill can round to nothing", 900, 5, "INR", 0],
+    ["a currency with no minor unit", 1053, 10, "JPY", 105],
+    ["nothing owed", 0, 10, "INR", 0],
+    ["a credit", -500, 10, "INR", 0],
+  ];
+  it.each(cases)("%s", (_name, bill, percent, currency, want) => {
+    expect(tipFor(bill, percent, currency)).toBe(want);
+  });
+});
+
+describe("payStep", () => {
+  it("is payment, then split while splitting, and complete once paid", () => {
+    expect(payStep(false, false)).toBe("payment");
+    expect(payStep(false, true)).toBe("split");
+    expect(payStep(true, false)).toBe("complete");
+    expect(payStep(true, true)).toBe("complete");
+  });
+});
+
+describe("collectOf", () => {
+  it("is what settles the bill plus the tip", () => {
+    const plan = planTender({ method: "cash", entered: 120000, tip: 10500, due: 105300 });
+    expect(collectOf(plan, 105300, 10500)).toBe(115800);
+    const part = planTender({ method: "card", entered: 50000, tip: 0, due: 105300 });
+    expect(collectOf(part, 105300, 0)).toBe(50000);
+  });
+  it("is the whole of what is being paid before an amount is keyed", () => {
+    const plan = planTender({ method: "cash", entered: 0, tip: 0, due: 105300 });
+    expect(plan.problem).not.toBeNull();
+    expect(collectOf(plan, 105300, 5300)).toBe(110600);
   });
 });

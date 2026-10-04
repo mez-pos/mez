@@ -213,7 +213,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
 - [x] **Task 7 - Tables.** (ADR-155) D05, and the table list from D06. Areas, the
   five states, the selected table's panel: Add Items, Send to Kitchen, More
   Actions, Settle Bill. Reservations and the waitlist are out of scope.
-- [ ] **Task 8 - Payment.** D07. Three steps (Payment, Split Bill,
+- [x] **Task 8 - Payment.** (ADR-156) D07. Three steps (Payment, Split Bill,
   Complete), method tiles, amount received with quick amounts, change, tip,
   receipt choices, the success panel with New Order.
 - [ ] **Task 9 - Split and UPI or card states.** D08a, D08b.

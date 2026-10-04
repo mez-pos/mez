@@ -4615,3 +4615,52 @@ Cost: seating and ordering is two taps more than before (pick, seat, Add Items);
 floor of seven or more columns scrolls at 1366px; the tile shows no shape but round or
 square.
 ---
+
+## ADR-156 - The payment screen is D07: three steps, and the paid panel only at the last
+2026-10 · Status: accepted. Replaces the tender screen's layout (terminal-tender.md);
+its sums and its idempotency (ADR-062, `tender-logic.ts`) stand.
+Decision: `/pay/:id` is `PayScreen.tsx`. The order is down the left in 400px (Back to
+Order, where and how it is served, its lines, `OrderTotals`, payments taken, Add
+Discount, Add order note). The middle is the three steps: Payment, Split Bill,
+Complete. `TenderScreen.tsx` and `TenderSummary.tsx` are gone.
+  - **The design draws four moments in one picture** (method, tip, change, success). A
+    payment is in one step at a time, so the 400px "Payment Successful" panel is drawn
+    only at Complete, beside the invoice. That is also what lets the amount and tip
+    cards fit at 1366px.
+  - **Payment** is method tiles (Cash, Card, UPI), an amount card (Amount to collect,
+    Amount received, the quick amounts and Custom, Change to return; for card and UPI
+    the amount and its reference), and a tip card (5, 10 and 15%, a custom amount, and
+    Bill, Tip, To collect). "Complete payment" with the sum stays at the foot and does
+    not scroll.
+  - **A tip percentage is of the balance or the share being paid, to a whole unit of the
+    currency** (`tipFor`): 5% of ₹1,053.00 is ₹53.00, as drawn. A second tap takes it
+    off. It is still kept apart from the bill, and for cash it still comes out of what
+    was handed over: a cash payment that then falls short of the bill is taken as a
+    part payment, and the foot says how much stays owed before it is taken.
+  - **The keypad stays** (rule 4). The design has typed fields and no keypad; a touch
+    till has no keyboard. An amount field is drawn as the design's input and keyed as a
+    till keys money: digits shift in from the right in minor units, from a keyboard
+    while it has focus or from the keypad while it is the active field. It is a third
+    column at 1920px and sits under the cards at 1366px, where the middle scrolls.
+  - **Split Bill** opens the split panel as it was; Task 9 redraws it. The step buttons
+    are how to move between paying and splitting. Complete is never a button.
+  - **New Order** closes the order (`ticket.close`), which starts the next ticket and
+    returns to the order screen. It waits for the invoice, as Close ticket did.
+  - **Add Discount and Add order note** open the order screen's own sheets
+    (`TicketPanels`), until the bill is paid or invoiced.
+  - **`Money` has two more variants,** `heading` (serif, 22px) and `display` (serif,
+    44px), so a serif figure never needs a second font-size class fighting the first.
+  - **Left out, because nothing does them:** the Wallet tile; "Print receipt" as a
+    choice (a receipt is queued with the settling payment, always) and "Send receipt
+    to customer"; "Send via SMS / Email"; the mascot art and the leaf; CGST and SGST as
+    two rows on the left (they are on the invoice); the line photo thumbnails; "100% of
+    tips go to the floor and kitchen team" (who shares a tip is the venue's rule,
+    ADR-101, not this screen's to promise).
+  - **Changed from the drawing:** "Payment Successful!" is the serif, not script: a
+    status is never script (tokens.md). The script line is the thank-you under it.
+    "Charge" in the tip card is "To collect".
+Because: the owner rejected the tender screen as the old layout recoloured, and "Charge"
+as kitchen-till jargon.
+Cost: at 1366x768 the payment step scrolls to reach the tip summary and the keypad; a
+reprint is still the invoice panel's button, not the paid panel's.
+---

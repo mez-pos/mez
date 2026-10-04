@@ -12,12 +12,12 @@ import { useMenu } from "../../../shared/use-menu";
 import { useVenue } from "../../../shared/use-venue";
 import { ZReportScreen } from "../../../shared/zreport/ZReportScreen";
 import { BillScreen } from "../bills/BillScreen";
-import { ticketLabel } from "../register/ticket-time";
+import { railTitle } from "../register/rail-logic";
 import { CloseDayScreen } from "../shift/CloseDayScreen";
 import { OpenShiftScreen } from "../shift/OpenShiftScreen";
 import { soldOutNames, soldOutNotice } from "../shift/open-shift-logic";
 import { ShiftNotOpen } from "../shift/ShiftNotOpen";
-import { TenderScreen } from "../tender/TenderScreen";
+import { PayScreen } from "../tender/PayScreen";
 import { landingFor } from "./landing";
 import { backOffice } from "./nav-logic";
 import { route } from "./routes";
@@ -43,7 +43,7 @@ export function LeaveForKitchen() {
   return <p className="m-auto text-base text-fg-muted">Opening the kitchen display</p>;
 }
 
-/** "/pay/:id": the tender screen, on the order named. */
+/** "/pay/:id": the payment screen, on the order named. */
 export function PayPage({ orderId }: { orderId: string }) {
   const { ticket, names } = useTerminal();
   const [, navigate] = useLocation();
@@ -62,7 +62,7 @@ export function PayPage({ orderId }: { orderId: string }) {
 
   if (behind) return asked.current ? <Redirect to={route.order} replace /> : <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
   if (!ticket.order) return <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
-  return <TenderScreen order={ticket.order} ticket={ticket} label={ticketLabel(ticket.order, names)} onBack={() => navigate(route.order)} />;
+  return <PayScreen order={ticket.order} ticket={ticket} title={railTitle(ticket.order, ticket.order.service, names)} onBack={() => navigate(route.order)} />;
 }
 
 /** "/orders/:id": a settled bill, with its refunds and reprints. */

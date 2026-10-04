@@ -15,7 +15,7 @@ import { ReasonPicker } from "../register/ReasonPicker";
 import { orderQueryKey } from "../register/use-ticket";
 import { InvoicePreview } from "../tender/InvoicePreview";
 import { ReprintSheet } from "../tender/InvoicePanel";
-import { methodNames } from "../tender/TenderSummary";
+import { methodNames } from "../tender/tender-logic";
 import { anythingLeft, paymentVoidReasons, refundReasonText, voidable } from "./bills-logic";
 import { RefundSheet } from "./RefundSheet";
 import { useBill } from "./use-bills";

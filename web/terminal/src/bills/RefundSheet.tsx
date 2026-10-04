@@ -12,7 +12,7 @@ import { ApprovalSheet } from "../register/ApprovalSheet";
 import { failureOf } from "../register/order-messages";
 import { ReasonPicker } from "../register/ReasonPicker";
 import { orderQueryKey } from "../register/use-ticket";
-import { methodNames } from "../tender/TenderSummary";
+import { methodNames } from "../tender/tender-logic";
 import { rateText } from "../tender/invoice-format";
 import { refundReasons, refundable, selectionOf, unitsLeft, type RefundDraft } from "./bills-logic";
 import type { BillCommands } from "./use-bills";

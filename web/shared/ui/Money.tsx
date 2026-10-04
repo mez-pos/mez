@@ -10,13 +10,24 @@ import { cx } from "./cx";
 
 export interface MoneyProps {
   amount: Amount;
-  /** `figure` for rows and columns; `total` for the one total on a screen. */
-  variant?: "figure" | "total";
+  /**
+   * `figure` for rows and columns; `total` for the one total on a screen. The
+   * payment screen's sum to collect is `display`, and a serif figure at a
+   * section title's size is `heading` (D07).
+   */
+  variant?: "figure" | "total" | "heading" | "display";
   /** Tone for a figure that means something: a refund, an amount due, change to hand back. */
   tone?: "default" | "muted" | "accent" | "danger" | "success";
   locale?: string;
   className?: string;
 }
+
+const variants = {
+  figure: "font-mono",
+  total: "font-serif text-total",
+  heading: "font-serif text-xl",
+  display: "font-serif text-display",
+} as const;
 
 const tones = {
   default: "",
@@ -41,15 +52,7 @@ export function Money({ amount, variant = "figure", tone = "default", locale, cl
   }
 
   return (
-    <data
-      value={String(amount.minor)}
-      className={cx(
-        "inline-block whitespace-nowrap text-right tabular-nums",
-        variant === "total" ? "font-serif text-total" : "font-mono",
-        tones[tone],
-        className,
-      )}
-    >
+    <data value={String(amount.minor)} className={cx("inline-block whitespace-nowrap text-right tabular-nums", variants[variant], tones[tone], className)}>
       {text}
     </data>
   );

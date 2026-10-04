@@ -14,36 +14,56 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 7: Tables** (ADR-155). `/tables` is `TablesScreen.tsx`, D05: a sidebar
-(Floor Plan, Table List, Order History), the floor with area pills ("All Areas" too)
-and a legend, and a 400px panel for the table picked. A tap picks a table; the panel
-seats a party, shows the order (read beside the order in front, `use-table-order.ts`),
-and has Add Items, Send to Kitchen, More Actions (move, join, part, fire, history,
-guests left) and Settle Bill. The table list is the same tables as rows under
-availability bars. `FloorView.tsx` is gone; `OrderTotals.tsx` is shared with the rail.
-Seen in a browser at 1920 and 1366x768 as the manager: seat four, Add Items, three
-lines, Send to Kitchen, move the party, the list, Settle Bill reaching `/pay`. Tests:
-`packed`, `panelFor`, `partyTable`, `panelTitle`, `areasShown`, `availability`,
-`listRows`, `beginMode`, `amountOwed`. `make check` and `make build-web` pass. The
-owner has not yet looked.
+**Rebuild, Task 8: Payment** (ADR-156). `/pay/:id` is `PayScreen.tsx`, D07: the order
+down the left (Back to Order, lines, totals, payments taken, Add Discount, Add order
+note), and three steps in the middle. Payment is method tiles, the amount received with
+quick amounts and the change, and a tip card (5, 10, 15% or a custom amount). Split
+Bill opens the split panel as it was. Complete is the invoice, with the paid panel and
+New Order on the right. `TenderScreen.tsx` and `TenderSummary.tsx` are gone. Seen in a
+browser at 1920 and 1366x768 as the manager: cash with a 10% tip and change, a part
+payment's warning, the card view, the split step, the discount sheet, Complete with its
+invoice, New Order back to the order screen. Tests: `tipFor`, `payStep`, `collectOf`.
+`make check` and `make build-web` pass. The owner has not yet looked.
 
-Before it: Task 6 (ADR-153, the item modal; 6b, ADR-154), Task 5 (ADR-151, the order
-screen), Task 4 (ADR-150, Open the shift; a cashier opens it with `shift.open`,
-ADR-152, migration 00033, and closing is `shift.manage`), Task 3 (ADR-149), Task 2
-(ADR-148), Task 1 (ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143).
+Before it: Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154),
+Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
+ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
+ADR-147), Task 0 (ADR-144), the plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 8** (payment): D07 (line 574 of `mez Desktop POS.dc.html`). Three
-steps (Payment, Split Bill, Complete), method tiles, amount received with quick
-amounts, change, tip, receipt choices, the success panel with New Order. It rebuilds
-`TenderScreen.tsx` at `/pay/:id`; split and the UPI and card states are Task 9. Read
-`docs/design/tokens.md` and that screen only. Phase 11 waits for this phase. Phase
-10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human
+**Fix first: stale reads after a cancelled request** (the first item under Known
+broken). It is a server bug that loses sales-floor trust, and it is Go, so it is its
+own task with a test. Then **Rebuild, Task 9** (split, and UPI or card states): D08a
+(line 700 of `mez Desktop POS.dc.html`) and D08b (line 751). It redraws
+`SplitPanel.tsx` and `SplitShares.tsx` inside the payment screen's Split Bill step.
+Read `docs/design/tokens.md` and those screens only. Phase 11 waits for this phase.
+Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human
 check and stays unticked below.
 
 ## Known broken / in progress
 
+- **Stale reads after a cancelled request (found 2026-10-05, not fixed).** In the dev
+  server, after requests were cancelled mid-query (a page reload aborts its fetches;
+  the log shows "context canceled"), reads began to miss rows just written: the same
+  `GET /api/v1/orders/:id` answered 404 then 200 milliseconds apart, an invoice just
+  issued was "not on this ticket", `GET /api/v1/orders` was a 500 with "db: no such
+  order: 3", and the floor a 500 with "a closed order is not open at the table". A
+  restart cured it. The guess, not proven: a query cancelled in `modernc.org/sqlite`
+  v1.39.0 leaves a statement open on a pooled read connection (`internal/db/open.go`,
+  the read pool), which then stays on its old WAL snapshot. Reproduce with a test that
+  cancels a read mid-rows, writes, and reads on every pooled connection.
+
+- The payment screen (ADR-156): not seen by eye are a card or UPI payment taken, a
+  part payment taken and its row, a split in use, a tip keyed on the keypad, a refusal,
+  a discount given from here, a table order's title with a joined table, and "Issue the
+  invoice first". At 1366x768 the payment step scrolls to reach the keypad.
+  After the review: the quick amounts count the tip ("exact" is the bill and the tip),
+  a tip is cleared when a split is taken or another share picked, and an amount field
+  is named with its amount; typechecked and unit-tested, not tried in a browser. Left:
+  on a tiny bill two tip percentages can round to the same amount and the lower one
+  shows pressed; the last change shown stays until the next cash is keyed; tapping the
+  method already chosen clears what was keyed (as before).
 - Audit (2026-10-03): `FormModal` was typechecked and tested, not tried in a
   browser; look at one save, one refusal and Enter in a two-field modal. `mez
   setup` pairs a till by default, so a venue set up with defaults reaches the

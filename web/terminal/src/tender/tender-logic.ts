@@ -24,6 +24,34 @@ export function quickTenders(due: number, currency: string): number[] {
   return [...new Set([due, ...above])];
 }
 
+export const methodNames: Readonly<Record<PaymentMethod, string>> = {
+  cash: "Cash",
+  card: "Card",
+  upi: "UPI",
+  other: "Other",
+};
+
+/** The tips the payment screen offers in one tap (D07). */
+export const tipPercents: readonly number[] = [5, 10, 15];
+
+/**
+ * A tip of so many percent of the bill, to the nearest whole unit of the
+ * currency: 5% of ₹1,053.00 is ₹53.00, not ₹52.65. Nobody tips in paise.
+ */
+export function tipFor(bill: number, percent: number, currency: string): number {
+  if (bill <= 0 || percent <= 0) return 0;
+  const unit = 10 ** exponentOf(currency);
+  return Math.round((bill * percent) / (100 * unit)) * unit;
+}
+
+/** Where a payment is, for the three steps along the top (D07). */
+export type PayStep = "payment" | "split" | "complete";
+
+export function payStep(paid: boolean, splitting: boolean): PayStep {
+  if (paid) return "complete";
+  return splitting ? "split" : "payment";
+}
+
 export interface TenderInput {
   method: PaymentMethod;
   /** Cash: what the guest handed over. Card and UPI: the amount to take. */
@@ -111,4 +139,13 @@ export function chargeBlock(order: OrderResponse | undefined, pending: number): 
 export function chargeLabel(order: OrderResponse | undefined): string {
   if (!order || order.totals.balance_due.minor !== 0 || order.status === "closed") return "Pay";
   return order.invoiced ? "Close order" : "Invoice and close";
+}
+
+/**
+ * What the guest hands over in all for this payment: the part of the bill it
+ * settles and the tip. Before an amount is keyed it is the whole of what is
+ * being paid, so the button names the sum to ask for.
+ */
+export function collectOf(plan: TenderPlan, target: number, tip: number): number {
+  return (plan.problem === null ? plan.amount : Math.max(target, 0)) + tip;
 }
