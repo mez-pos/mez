@@ -3,7 +3,7 @@
 // an order shows it (TableOrderView), and one with several asks which. With no
 // table picked it says so: nothing here acts on a table nobody chose.
 
-import { ArmchairIcon, ChevronLeftIcon, TimerIcon, UsersIcon } from "lucide-react";
+import { ArmchairIcon, ArrowRightIcon, ChevronLeftIcon, TimerIcon, UsersIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { LiveTableResponse, TicketSummary } from "../../../shared/api-types";
 import { Button, EmptyState, Money, Qty, StatusChip } from "../../../shared/ui";
@@ -23,7 +23,8 @@ export interface TablePanelProps {
   lateAfter: number;
   /** The venue's open orders, to describe a table's when it has several. */
   tickets: readonly TicketSummary[];
-  onSeat: (table: LiveTableResponse, covers: number) => Promise<void>;
+  /** Seats a party. With `thenOrder` it goes on to the menu, the order in front. */
+  onSeat: (table: LiveTableResponse, covers: number, thenOrder: boolean) => Promise<void>;
   onClear: (table: LiveTableResponse) => Promise<void>;
   onRelease: (table: LiveTableResponse) => Promise<void>;
   onAddItems: (orderId: string, held: boolean) => Promise<void>;
@@ -127,9 +128,16 @@ function Picked({
         <Body
           failure={failure}
           footer={
-            <Button variant="primary" size="charge" className="w-full" disabled={busy} onClick={() => run(() => onSeat(t, covers))}>
-              {busy ? "Seating" : `Seat ${covers} ${covers === 1 ? "guest" : "guests"}`}
-            </Button>
+            // A host seats and leaves the order for later; a waiter seats and takes it.
+            <div className="flex flex-col gap-3">
+              <Button variant="primary" size="charge" className="w-full" disabled={busy} onClick={() => run(() => onSeat(t, covers, false))}>
+                {busy ? "Seating" : `Seat ${covers} ${covers === 1 ? "guest" : "guests"}`}
+              </Button>
+              <Button className="w-full" disabled={busy} onClick={() => run(() => onSeat(t, covers, true))}>
+                Seat and order
+                <ArrowRightIcon aria-hidden="true" size={17} />
+              </Button>
+            </div>
           }
         >
           <p className="text-base text-fg-2">This table is free.</p>

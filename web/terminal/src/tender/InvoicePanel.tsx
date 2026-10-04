@@ -1,6 +1,6 @@
-// What the tender screen shows once the bill is paid (Task 3): the invoice
-// the settling payment issued, Close ticket, and Reprint. A reprint is a
-// manager's call, logged on the order, and never a new number.
+// What the payment screen shows once the bill is paid: the invoice the
+// settling payment issued. The paid panel beside it has Print receipt, which is
+// a reprint: a manager's call, logged on the order, and never a new number.
 
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -16,7 +16,7 @@ import { InvoicePreview } from "./InvoicePreview";
 
 interface InvoicePanelProps {
   order: OrderResponse;
-  ticket: Pick<Ticket, "issueInvoice" | "reprint">;
+  ticket: Pick<Ticket, "issueInvoice">;
   /** Says why issuing a late invoice failed. */
   onError: (message: string) => void;
 }
@@ -25,7 +25,6 @@ export function InvoicePanel({ order, ticket, onError }: InvoicePanelProps) {
   const store = useAuthStore();
   const latest = order.invoices.at(-1);
   const [issuing, setIssuing] = useState(false);
-  const [reprinting, setReprinting] = useState(false);
 
   // Keyed by the reprint count, so a reprint redraws "Reprinted 1 time".
   const invoice = useQuery({
@@ -59,10 +58,7 @@ export function InvoicePanel({ order, ticket, onError }: InvoicePanelProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center gap-4 overflow-y-auto">
-      <div className="flex w-88 max-w-full items-baseline justify-between">
-        <p className="font-serif text-xl">Paid in full</p>
-        <Button onClick={() => setReprinting(true)}>Reprint</Button>
-      </div>
+      <p className="w-88 max-w-full font-serif text-xl">Paid in full</p>
       {invoice.isPending && <p className="text-base text-fg-muted">Loading the invoice</p>}
       {invoice.isError && (
         <p role="alert" className="text-base text-danger">
@@ -71,15 +67,8 @@ export function InvoicePanel({ order, ticket, onError }: InvoicePanelProps) {
       )}
       {invoice.data && <InvoicePreview invoice={invoice.data} />}
       <p className="w-88 max-w-full text-sm text-fg-faint">
-        The receipt went to the print queue with the payment. A reprint prints a copy marked DUPLICATE and keeps the number.
+        The receipt went to the print queue with the payment. Print receipt prints a copy marked DUPLICATE and keeps the number.
       </p>
-      {reprinting && (
-        <ReprintSheet
-          invoiceNo={latest.invoice_no}
-          onSubmit={(reason, approval) => ticket.reprint(latest.seq, reason, approval)}
-          onClose={() => setReprinting(false)}
-        />
-      )}
     </div>
   );
 }

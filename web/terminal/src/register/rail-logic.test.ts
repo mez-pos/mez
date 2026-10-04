@@ -1,8 +1,36 @@
 import { describe, expect, it } from "vitest";
-import type { OpenOrder } from "../../../shared/api-types";
-import { amountOwed, guestsText, needsTable, railTitle, serviceLocked, serviceOf } from "./rail-logic";
+import type { OpenOrder, OrderResponse } from "../../../shared/api-types";
+import { amountOwed, guestsText, needsTable, railTitle, serviceLocked, serviceOf, taxRows } from "./rail-logic";
 
 const opening = (extra: Partial<OpenOrder> = {}): OpenOrder => ({ channel: "counter", covers: 0, ...extra });
+
+describe("taxRows", () => {
+  const inr = (minor: number) => ({ minor, currency: "INR" });
+  const totals = { tax: inr(1572) } as OrderResponse["totals"];
+  const component = (name: string, rate: number, minor: number) => ({ name, rate, taxable: inr(31428), amount: inr(minor) });
+  it("names each tax the server worked out, with its rate", () => {
+    const tax = {
+      profile: "gst_in",
+      pricing: "inclusive",
+      components: [component("CGST", 2500, 786), component("SGST", 2500, 786)],
+      taxable: inr(31428),
+      tax: inr(1572),
+      total: inr(33000),
+    } as NonNullable<OrderResponse["tax"]>;
+    expect(taxRows({ tax, totals }, "INR")).toEqual([
+      { label: "CGST 2.5%", amount: inr(786) },
+      { label: "SGST 2.5%", amount: inr(786) },
+    ]);
+  });
+  it("is one row when the server names no components", () => {
+    expect(taxRows({ totals }, "INR")).toEqual([{ label: "Tax", amount: inr(1572) }]);
+    const none = { components: [] } as unknown as NonNullable<OrderResponse["tax"]>;
+    expect(taxRows({ tax: none, totals }, "INR")).toEqual([{ label: "Tax", amount: inr(1572) }]);
+  });
+  it("is zero in the venue's currency before there is an order", () => {
+    expect(taxRows(undefined, "EUR")).toEqual([{ label: "Tax", amount: { minor: 0, currency: "EUR" } }]);
+  });
+});
 
 describe("amountOwed", () => {
   const inr = (minor: number) => ({ minor, currency: "INR" });

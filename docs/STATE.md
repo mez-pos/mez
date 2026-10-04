@@ -38,6 +38,10 @@ inside the payment screen's Split Bill step. Read `docs/design/tokens.md` and th
 screens only. Phase 11 waits for this phase. Phase 10's tasks are all done (6l moved to
 phase 12, ADR-141); its done-when is a human check and stays unticked below.
 
+Agreed and built on 2026-10-05 (ADR-158): a free table has "Seat N guests" and "Seat
+and order"; the totals name each tax (CGST, SGST) on the rail, the table panel and the
+payment screen; Print receipt is on the paid panel. Seen in a browser at 1366x768.
+
 Fixed on 2026-10-05, between Tasks 8 and 9 (ADR-157): a cancelled read left a pooled
 read connection on an old snapshot, so reads missed rows just written until a restart.
 The SQLite driver is now v1.46.1 and the module needs Go 1.24.
@@ -250,7 +254,7 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   (ADR-068).
 - The tables screen (ADR-155): not seen by eye are clearing a table, Guests left, join
   and part, a table with two orders, the paying and to-clear states, a held order, the
-  Notes tab with notes, a refusal, and the Terrace. Seating no longer goes to the menu.
+  Notes tab with notes, a refusal, and the Terrace.
   A floor of seven or more columns scrolls sideways at 1366px.
   After the review: Seat waits for the floor, the order is read again each time its
   table is picked, and Send waits while this till still has items going to that order;

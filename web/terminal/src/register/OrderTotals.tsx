@@ -5,7 +5,7 @@
 import type { DiscountResponse, Money as Amount, OrderResponse } from "../../../shared/api-types";
 import { Money } from "../../../shared/ui";
 import { humanise } from "../../../shared/ui/timeline-entries";
-import { amountOwed } from "./rail-logic";
+import { amountOwed, taxRows } from "./rail-logic";
 
 interface OrderTotalsProps {
   order: OrderResponse | undefined;
@@ -30,7 +30,9 @@ export function OrderTotals({ order, currency }: OrderTotalsProps) {
           <TotalRow key={d.seq} label={`Discount · ${discountLabel(d)}`} amount={negate(d.value)} tone="danger" />
         ))}
         <TotalRow label="Subtotal" amount={totals?.subtotal ?? zero} />
-        <TotalRow label="Tax" amount={totals?.tax ?? zero} />
+        {taxRows(order, currency).map((row) => (
+          <TotalRow key={row.label} label={row.label} amount={row.amount} />
+        ))}
         {totals && paid && <TotalRow label="Paid" amount={negate(totals.net_paid)} />}
       </div>
       <div className="mt-3 flex items-baseline justify-between border-t border-line-strong pt-3">

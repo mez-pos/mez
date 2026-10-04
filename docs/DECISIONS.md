@@ -4693,3 +4693,29 @@ cannot know to restart the server.
 Cost: Go 1.24 is now the least a contributor needs; the test takes about a second; the
 driver's own SQLite moved forward with it, checked only by the existing suite.
 ---
+
+## ADR-158 - Seat and order, the tax split in the totals, Print receipt in the paid panel
+2026-10 · Status: accepted. The owner agreed these on 2026-10-05. Changes ADR-155's
+"seating stays on the floor" and ADR-156's "a reprint is still the invoice panel's
+button"; ADR-151's single Tax row.
+Decision:
+  - **A free table has two buttons.** "Seat N guests" seats the party and stays on the
+    floor, for a host. "Seat and order" seats it and goes to the menu with its order in
+    front, for whoever takes the order at once. The green one is the plain seat: it is
+    the one that cannot surprise.
+  - **The totals name each tax** (`taxRows` in `rail-logic.ts`): "CGST 2.5%" and "SGST
+    2.5%" as the server worked them out, where there was one "Tax" row. With no
+    components (nothing on the order yet, a profile with one tax) it is still "Tax".
+    `OrderTotals` is shared, so the order rail, the table's panel and the payment
+    screen all show it. The amounts are the server's; nothing is summed here.
+  - **Print receipt is on the paid panel,** where D07 draws it, above New Order. It is
+    the reprint: a manager's approval and a reason, a copy marked DUPLICATE, the same
+    number. The invoice panel's own Reprint button is gone.
+Kept as they were, and why: the plan packs out empty rows and columns (it fits 1366px);
+the keypad stays on the payment screen (a touch till has no keyboard); the paid panel
+is drawn only at Complete (it does not fit beside the form, and it should not say
+"successful" before the payment); "Payment successful" is the serif (a status is never
+script, tokens.md).
+Cost: two more rows in the rail's totals on a GST venue; a cashier who taps Print
+receipt meets a manager's PIN, since the first copy was printed with the payment.
+---

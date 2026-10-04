@@ -16,7 +16,7 @@ import { TicketPanels, type Panel } from "../register/TicketPanels";
 import { newKey } from "../register/ticket-key";
 import type { Ticket } from "../register/use-ticket";
 import { AmountCard } from "./AmountCard";
-import { InvoicePanel } from "./InvoicePanel";
+import { InvoicePanel, ReprintSheet } from "./InvoicePanel";
 import { PaidPanel } from "./PaidPanel";
 import { MethodTiles, PaySteps } from "./PaySteps";
 import { PaySummary } from "./PaySummary";
@@ -64,6 +64,8 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
   const [splitting, setSplitting] = useState(false);
   const [inUse, setInUse] = useState<SplitInUse | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
+  const [reprinting, setReprinting] = useState(false);
+  const invoice = order.invoices.at(-1);
 
   const paid = due <= 0;
   const step = payStep(paid, splitting);
@@ -323,7 +325,16 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
           change={lastChange !== null ? money(lastChange) : null}
           busy={busy}
           message={error ? { text: error, tone: "error" } : !order.invoiced ? { text: "Issue the invoice first.", tone: "hint" } : null}
+          onPrint={invoice ? () => setReprinting(true) : null}
           onNewOrder={closeOrder}
+        />
+      )}
+
+      {reprinting && invoice && (
+        <ReprintSheet
+          invoiceNo={invoice.invoice_no}
+          onSubmit={(reason, approval) => ticket.reprint(invoice.seq, reason, approval)}
+          onClose={() => setReprinting(false)}
         />
       )}
 

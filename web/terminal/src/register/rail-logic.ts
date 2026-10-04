@@ -1,7 +1,26 @@
 // What the order rail says about the order in front, without React: how it is
 // served, where, and who is at it (D03).
 
-import type { Money, OpenOrder, ServiceType, TotalsResponse } from "../../../shared/api-types";
+import type { Money, OpenOrder, OrderResponse, ServiceType, TotalsResponse } from "../../../shared/api-types";
+import { rateText } from "../tender/invoice-format";
+
+/** One row of tax in the totals: "CGST 2.5%" and what it comes to. */
+export interface TaxRow {
+  readonly label: string;
+  readonly amount: Money;
+}
+
+/**
+ * The tax rows of an order's totals: each component the server worked out
+ * ("CGST 2.5%", "SGST 2.5%"), or one row, "Tax", when it names none (an order
+ * with nothing on it yet, a profile with a single tax). The amounts are the
+ * server's.
+ */
+export function taxRows(order: Pick<OrderResponse, "tax" | "totals"> | undefined, currency: string): TaxRow[] {
+  const components = order?.tax?.components ?? [];
+  if (components.length === 0) return [{ label: "Tax", amount: order?.totals.tax ?? { minor: 0, currency } }];
+  return components.map((c) => ({ label: `${c.name} ${rateText(c.rate)}`, amount: c.amount }));
+}
 
 /**
  * What the order still asks for: its total, or the balance once any of it is

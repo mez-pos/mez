@@ -2,10 +2,10 @@
 // change still to hand back, and New Order, which closes this order and starts
 // the next. The design heads it in script; a status is never script (tokens.md),
 // so the heading is the serif and the script is the thank-you under it. The
-// receipt is printed with the payment and reprinted from the invoice beside
-// this; sending one by SMS or email does not exist.
+// receipt is printed with the payment; Print receipt here prints a copy, which
+// is a reprint and a manager's call. Sending one by SMS or email does not exist.
 
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon, PrinterIcon } from "lucide-react";
 import type { Money as Amount, OrderResponse } from "../../../shared/api-types";
 import { Button, Money } from "../../../shared/ui";
 import { serviceLabels } from "../register/rail-logic";
@@ -19,10 +19,12 @@ interface PaidPanelProps {
   busy: boolean;
   /** Why New Order failed, or what it waits for. */
   message: { text: string; tone: "hint" | "error" } | null;
+  /** Prints a copy of the receipt, with a manager's approval. Null until there is an invoice. */
+  onPrint: (() => void) | null;
   onNewOrder: () => void;
 }
 
-export function PaidPanel({ order, title, change, busy, message, onNewOrder }: PaidPanelProps) {
+export function PaidPanel({ order, title, change, busy, message, onPrint, onNewOrder }: PaidPanelProps) {
   const methods = [...new Set(order.tenders.filter((t) => t.status !== "voided").map((t) => methodNames[t.method]))].join(" + ");
   return (
     <aside aria-label="Payment complete" className="flex w-100 shrink-0 flex-col overflow-y-auto border-l border-line bg-sunken px-6 py-7">
@@ -51,6 +53,12 @@ export function PaidPanel({ order, title, change, busy, message, onNewOrder }: P
       </div>
 
       <div className="mt-7 grid gap-2.5">
+        {onPrint && (
+          <Button disabled={busy} onClick={onPrint}>
+            <PrinterIcon aria-hidden="true" size={18} />
+            Print receipt
+          </Button>
+        )}
         <Button
           variant="attention"
           size="charge"

@@ -139,12 +139,14 @@ export function TablesScreen() {
         now={now}
         lateAfter={ticket.open?.late_after_minutes ?? 20}
         tickets={ticket.open?.orders ?? []}
-        onSeat={async (t, covers) => {
-          // The party is seated and the floor stays: Add Items takes the order.
-          // Waiting for the floor keeps Seat shut until the table reads seated:
-          // a second tap would open a second order at it.
+        onSeat={async (t, covers, thenOrder) => {
+          // Seating puts the party's order in front. "Seat and order" goes on
+          // to the menu with it; plain Seat stays on the floor, and waits for
+          // the floor so Seat is shut until the table reads seated: a second
+          // tap would open a second order at it.
           await ticket.seat({ channel: "counter", table_id: t.id, covers });
-          await floor.refresh();
+          if (thenOrder) navigate(route.order);
+          else await floor.refresh();
         }}
         onClear={(t) => floor.clear(t.id)}
         onRelease={(t) => floor.release(t.id)}
