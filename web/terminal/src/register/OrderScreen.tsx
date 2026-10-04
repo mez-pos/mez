@@ -1,40 +1,50 @@
-// The order screen (docs/design/screens/terminal-register.md): the menu on the
-// left, the ticket on the right. One tap on an item rings it up with its
-// default modifiers, or opens the modifier sheet when someone has to choose;
-// the ticket's total never leaves the screen. Charge goes to /pay on the same
-// ticket, the floor is /tables, a settled bill is /orders/:id, and with no
-// shift open the whole terminal waits at /shift (ADR-148): each is a route of
-// its own, and the ticket in front lives above them all (terminal-context).
+// The order screen (D03): categories down the left, the menu in the middle, the
+// order on the right. One tap on an item rings it up with its default choices,
+// or opens the choices sheet when someone has to choose; the total never leaves
+// the screen. Pay goes to /pay on the same order, the floor is /tables, a
+// settled bill is /orders/:id, and with no shift open the whole terminal waits
+// at /shift (ADR-148): each is a route of its own, and the order in front lives
+// above them all (terminal-context). ADR-151 records what this screen draws.
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import type { LineModifier, LineResponse, MenuItemResponse } from "../../../shared/api-types";
 import { indexMenu, isSoldOut } from "../../../shared/menu";
-import { EmptyState, InboxIcon, SearchField, SearchIcon, useToast } from "../../../shared/ui";
+import { EmptyState, InboxIcon, SearchIcon, useToast } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
 import { useMenu } from "../../../shared/use-menu";
-import { CategoryRail } from "./CategoryRail";
-import { ItemGrid } from "./ItemGrid";
-import { ModifierSheet } from "./ModifierSheet";
-import { sameModifiers } from "./modifier-selection";
-import { addLineFor, defaultModifiers, searchItems } from "./register-logic";
-import { TicketPanels, type Panel } from "./TicketPanels";
-import { TicketRail } from "./TicketRail";
-import { TicketsSheet } from "./TicketsSheet";
-import { HistorySheet } from "./HistorySheet";
 import { PastBillsSheet } from "../bills/PastBillsSheet";
-import { chargeBlock, chargeLabel } from "../tender/tender-logic";
-import { sendPlan } from "./send-logic";
-import { ticketLabel } from "./ticket-time";
 import { route } from "../shell/routes";
 import { useTerminal } from "../shell/terminal-context";
+import { CategorySidebar } from "./CategorySidebar";
+import { HistorySheet } from "./HistorySheet";
+import { ItemGrid } from "./ItemGrid";
+import { MenuHeader } from "./MenuHeader";
+import { ModifierSheet } from "./ModifierSheet";
+import { sameModifiers } from "./modifier-selection";
+import { OrderRail } from "./OrderRail";
+import {
+  addLineFor,
+  categoryIconKey,
+  defaultModifiers,
+  dietFilterActive,
+  filterItems,
+  itemsForView,
+  noDietFilter,
+  searchItems,
+  sidebarEntries,
+  type DietFilter,
+  type MenuView,
+} from "./register-logic";
+import { TicketPanels, type Panel } from "./TicketPanels";
+import { TicketsSheet } from "./TicketsSheet";
 
-interface RegisterScreenProps {
+interface OrderScreenProps {
   /** Opens with the past-bills sheet: this is /orders, the order history (ADR-148). */
   pastBills?: boolean;
 }
 
-export function RegisterScreen({ pastBills = false }: RegisterScreenProps) {
+export function OrderScreen({ pastBills = false }: OrderScreenProps) {
   const menu = useMenu();
   const { ticket, names } = useTerminal();
   const [path, navigate] = useLocation();
@@ -42,11 +52,12 @@ export function RegisterScreen({ pastBills = false }: RegisterScreenProps) {
   // Once a minute, so a dish sold out yesterday is back when the trading day turns.
   const now = useClock(60_000);
 
-  const [chosen, setChosen] = useState<number | null>(null);
+  const [view, setView] = useState<MenuView>("all");
   const [query, setQuery] = useState("");
+  const [diet, setDiet] = useState<DietFilter>(noDietFilter);
   const [sheet, setSheetState] = useState<SheetState | null>(null);
   const [panel, setPanelState] = useState<Panel | null>(null);
-  const [ticketsOpen, setTicketsOpen] = useState(false);
+  const [ordersOpen, setOrdersOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   // The sheet that finds a settled bill; picking one goes to /orders/:id.
   const [pastBillsOpen, setPastBillsOpen] = useState(pastBills);
@@ -68,20 +79,21 @@ export function RegisterScreen({ pastBills = false }: RegisterScreenProps) {
     setSearchKey((k) => k + 1);
   };
 
-  const categories = index?.menu.categories ?? [];
-  // The first category is chosen until someone picks another, so the most
-  // common items are one tap from the moment the screen opens.
-  const category = chosen ?? categories[0]?.id ?? null;
+  const categories = useMemo(() => index?.menu.categories ?? [], [index]);
+  const items = useMemo(() => index?.menu.items ?? [], [index]);
+  const entries = useMemo(() => sidebarEntries(categories, items), [categories, items]);
   const searching = query !== "";
-
-  const counts = useMemo(() => new Map(categories.map((c) => [c.id, index?.itemsIn(c.id).length ?? 0])), [categories, index]);
   const shown = useMemo(() => {
-    if (!index) return [];
-    if (searching) return searchItems(index.menu.items, query);
-    return category === null ? [] : [...index.itemsIn(category)];
-  }, [index, searching, query, category]);
+    const base = searching ? searchItems(items, query) : itemsForView(view, items);
+    return filterItems(base, diet);
+  }, [items, searching, query, view, diet]);
+  const filtering = dietFilterActive(diet);
+  const title = searching ? "Search results" : (entries.find((e) => e.view === view)?.label ?? "All Items");
 
-  const stations = useMemo(() => new Map(index?.menu.stations.map((s) => [s.code, s.name])), [index]);
+  const iconFor = useMemo(() => {
+    const byCategory = new Map(categories.map((c) => [c.id, categoryIconKey(c.name)]));
+    return (item: MenuItemResponse) => byCategory.get(item.category_id) ?? "utensils";
+  }, [categories]);
 
   const ringUp = (item: MenuItemResponse) => {
     if (!index) return;
@@ -116,86 +128,69 @@ export function RegisterScreen({ pastBills = false }: RegisterScreenProps) {
     }
   };
 
-  const block = chargeBlock(ticket.order, ticket.pending.length);
-  const label = ticketLabel(ticket.order ?? ticket.opening, names);
-
   return (
     <div className="flex min-w-0 flex-1">
-      <section aria-label="Menu" className="flex min-w-0 flex-1 flex-col">
-        <div className="flex flex-wrap items-start gap-tap-gap px-6 pt-4">
-          <CategoryRail
-            categories={categories}
-            counts={counts}
-            chosen={searching ? null : category}
-            onChoose={(id) => {
-              setChosen(id);
-              clearSearch();
-            }}
-          />
-          <SearchField key={searchKey} label="Search the menu" onSearch={setQuery} className="ml-auto w-64" />
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-4">
+      <CategorySidebar
+        entries={entries}
+        chosen={searching ? null : view}
+        onChoose={(next) => {
+          setView(next);
+          clearSearch();
+        }}
+      />
+      <section aria-label="Menu" className="flex min-w-0 flex-1 flex-col px-6 pt-5">
+        <MenuHeader title={title} filter={diet} onFilter={setDiet} searchKey={searchKey} onSearch={setQuery} />
+        <div className="min-h-0 flex-1 overflow-y-auto pb-6 pt-5">
           <MenuBody
             state={menu.isPending ? "loading" : menu.isError && !menu.data ? "error" : "ready"}
-            empty={index?.menu.items.length === 0}
+            empty={items.length === 0}
+            shown={shown.length}
             searching={searching}
+            filtering={filtering}
             query={query}
             onRetry={() => void menu.refetch()}
             onClearSearch={clearSearch}
+            onClearFilter={() => setDiet(noDietFilter)}
           >
-            {shown.length > 0 && (
-              <ItemGrid
-                items={shown}
-                groupsFor={(item) => index?.groupsFor(item) ?? []}
-                stationName={(code) => stations.get(code) ?? code}
-                onTap={ringUp}
-                soldOut={(item) => isSoldOut(item, new Date(now))}
-              />
-            )}
-            {shown.length === 0 && !searching && categories.length > 0 && (
-              <p className="py-12 text-center text-base text-fg-muted">Nothing in this category yet.</p>
-            )}
+            <ItemGrid
+              items={shown}
+              groupsFor={(item) => index?.groupsFor(item) ?? []}
+              iconFor={iconFor}
+              onTap={ringUp}
+              soldOut={(item) => isSoldOut(item, new Date(now))}
+            />
           </MenuBody>
         </div>
       </section>
 
-      <TicketRail
-        order={ticket.order}
-        orderId={ticket.orderId}
-        pending={ticket.pending}
+      <OrderRail
+        ticket={ticket}
         currency={index?.menu.currency ?? "INR"}
-        label={label}
-        ticketCount={Math.max(ticket.open?.orders.length ?? 0, ticket.orderId ? 1 : 0)}
-        onTickets={() => setTicketsOpen(true)}
-        onHistory={() => setHistoryOpen(true)}
-        onHold={() => ticket.hold().catch(fail("Couldn't hold"))}
-        onResume={() => {
-          if (ticket.orderId) ticket.resume(ticket.orderId).catch(fail("Couldn't resume"));
-        }}
+        names={names}
+        dietFor={(line) => index?.item(line.item_id)?.diet}
         onOpenLine={(line) => setPanel({ kind: "line", lineId: line.id })}
-        onOrderDiscount={() => setPanel({ kind: "discount", lineId: null })}
-        onOrderNote={() => setPanel({ kind: "note" })}
-        onRetry={ticket.retry}
-        onRemove={ticket.remove}
-        sendPlan={sendPlan(ticket.order)}
-        onSend={() => ticket.send().catch(fail("Couldn't send"))}
-        onFire={(course) => ticket.fire(course).catch(fail(`Couldn't fire course ${course}`))}
-        chargeBlock={block}
-        chargeLabel={chargeLabel(ticket.order)}
-        onCharge={() => {
+        onVoidLine={(line) => setPanel({ kind: "void", lineId: line.id })}
+        onNote={() => setPanel({ kind: "note" })}
+        onDiscount={() => setPanel({ kind: "discount", lineId: null })}
+        onOrders={() => setOrdersOpen(true)}
+        onHistory={() => setHistoryOpen(true)}
+        onPastBills={() => setPastBillsOpen(true)}
+        onTables={() => navigate(route.tables)}
+        onPay={() => {
           if (ticket.orderId) navigate(route.pay(ticket.orderId));
         }}
+        onFail={fail}
       />
 
       {historyOpen && ticket.orderId && <HistorySheet key={ticket.orderId} orderId={ticket.orderId} onClose={() => setHistoryOpen(false)} />}
 
-      {ticketsOpen && (
+      {ordersOpen && (
         <TicketsSheet
           open={ticket.open}
           currentId={ticket.orderId}
           names={names}
           onPick={(t) => {
-            // A sheet about a line on the ticket being left must not stay open.
+            // A sheet about a line on the order being left must not stay open.
             setPanel(null);
             setSheet(null);
             setHistoryOpen(false);
@@ -208,7 +203,7 @@ export function RegisterScreen({ pastBills = false }: RegisterScreenProps) {
           onPastBills={() => setPastBillsOpen(true)}
           onFloor={() => navigate(route.tables)}
           onCloseDay={() => navigate(route.shiftClose)}
-          onClose={() => setTicketsOpen(false)}
+          onClose={() => setOrdersOpen(false)}
         />
       )}
 
@@ -268,7 +263,7 @@ function movedOn(opened: LineResponse, lines: readonly LineResponse[] | undefine
   return null;
 }
 
-/** What the modifier sheet is doing: ringing up a new line, or changing one. */
+/** What the choices sheet is doing: ringing up a new line, or changing one. */
 type SheetState =
   | { kind: "add"; item: MenuItemResponse; error: string | null; busy: boolean }
   | { kind: "edit"; item: MenuItemResponse; line: LineResponse; error: string | null; busy: boolean };
@@ -276,25 +271,29 @@ type SheetState =
 interface MenuBodyProps {
   state: "loading" | "error" | "ready";
   empty: boolean;
+  /** How many items the view, search and filters leave. */
+  shown: number;
   searching: boolean;
+  filtering: boolean;
   query: string;
   onRetry: () => void;
   onClearSearch: () => void;
+  onClearFilter: () => void;
   children: ReactNode;
 }
 
-function MenuBody({ state, empty, searching, query, onRetry, onClearSearch, children }: MenuBodyProps) {
+function MenuBody({ state, empty, shown, searching, filtering, query, onRetry, onClearSearch, onClearFilter, children }: MenuBodyProps) {
   if (state === "loading") return <p className="py-12 text-center text-base text-fg-muted">Loading the menu</p>;
   if (state === "error") {
     return <EmptyState icon={<InboxIcon />} line="Can't reach the mez server to load the menu." action={{ label: "Try again", onClick: onRetry }} />;
   }
   if (empty) return <EmptyState icon={<InboxIcon />} line="No items on the menu yet. Add them in the back office." />;
-  if (searching && !hasChildren(children)) {
+  if (shown === 0 && filtering) {
+    return <EmptyState icon={<SearchIcon />} line="Nothing here matches the filters." action={{ label: "Clear filters", onClick: onClearFilter }} />;
+  }
+  if (shown === 0 && searching) {
     return <EmptyState icon={<SearchIcon />} line={`Nothing matches "${query}".`} action={{ label: "Clear search", onClick: onClearSearch }} />;
   }
+  if (shown === 0) return <p className="py-12 text-center text-base text-fg-muted">Nothing in this category yet.</p>;
   return <>{children}</>;
-}
-
-function hasChildren(children: ReactNode): boolean {
-  return Array.isArray(children) ? children.some(Boolean) : Boolean(children);
 }

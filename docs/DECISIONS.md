@@ -4424,3 +4424,46 @@ Cost: with the default roles a cashier cannot open the shift; the sold-out card
 was not seen by eye (the venue had nothing sold out); `GET /api/v1/shift` costs
 one more read per poll while the till is closed.
 ---
+
+## ADR-151 - The order screen is D03
+2026-10 · Status: accepted
+Decision: `/pos` is rebuilt from D03 as three columns. A 240px sidebar of All
+Items, Popular (only when something is popular) and each category, each with an
+icon and a count. In the middle the title of the view, the four dietary filters
+(Veg, Non-Veg, Vegan, Gluten Free, which add up as `filterItems` says) and the
+search, over the item cards. On the right a 400px order rail: where it is and how
+many guests, how it is served, the lines, the totals, Save Order and Pay.
+  - **Cards look finished with no photo.** A tinted block wears the category's icon
+    (`categoryIconKey` guesses it from the words in the name, with a fork and knife
+    when it cannot). A diet mark, the name, the description, the number of choices,
+    the price, a round "+" and a crown on a popular item. Sold out stays in place.
+  - **How it is served** (Dine-in, Takeaway, Delivery) is chosen before the order
+    opens. After that it is written on the opening event and moves only by seating
+    (ADR-146), so the others are dimmed. A ticket with no table says Takeaway, which
+    is what the server makes of it. A dine-in order with no table shows "Pick a
+    table", which goes to the floor, where it is seated; the floor is rebuilt in
+    Task 7. Guests are shown, not set here: they are counted when a party is seated.
+  - **Lines** take a stepper and a bin where the kitchen has not seen the line. A
+    line it has seen shows its quantity plain, and its bin asks a manager to void it.
+    Tapping the name still opens the line's sheet (note, modify, discount, comp).
+  - **Words:** Pay for Charge, Save Order for Hold, Orders for Tickets, Send to
+    Kitchen for Send. The choices sheet and the payment screen keep their words until
+    Tasks 6 and 8.
+  - **Send to Kitchen is added to the design,** as a button over Save Order and Pay,
+    only while something waits to go. The design draws it on the tables screen, and a
+    counter order has no other way to reach a station.
+  - **Under the "...":** Orders (every open order, to bring one forward or start
+    one), Order history, Discount the order, Fire course N when one is held, and Past
+    bills. All were on the old rail; none is drawn in D03. The menu is
+    `useDisclosure`, taken out of the profile menu so both behave alike.
+  - **Left out, because nothing does them:** the sort and list/grid switches, the
+    bell (phase 11), Ctrl+K for search, the table and service controls in the top bar
+    (they are in the rail, once, because the top bar carries the navigation), a
+    thumbnail on each line, the CGST and SGST split (the projection has one tax
+    figure), a removable discount chip, and the sidebar's script and leaf.
+Because: the old screen had Charge, Hold and Tickets for a cashier who thinks in
+orders, and nothing to tell dine-in from takeaway.
+Cost: a counter sale's order cannot be moved to a table from here; the rail is 400px
+at 1366 wide and leaves two card columns; the diet filters are in memory only and
+reset on a reload; Popular appears only once the owner marks items.
+---

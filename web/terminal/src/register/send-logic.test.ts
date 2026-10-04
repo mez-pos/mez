@@ -11,7 +11,7 @@ describe("sendPlan", () => {
   it("fires the first course while nothing has gone", () => {
     const plan = sendPlan(order([line(2, 1), line(3, 2), line(4, 1, { station: "bar" })]));
     expect(plan).toEqual({ waiting: 2, firing: 1, next: null });
-    expect(sendLabel(plan)).toBe("Send 2");
+    expect(sendLabel(plan)).toBe("Send to Kitchen");
   });
 
   it("sends what was added to a fired course, and offers the next course", () => {

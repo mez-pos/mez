@@ -14,30 +14,26 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 4: Open the shift** (ADR-150). `/shift` is D02: "Step 1 of 2", a card
-per note and coin with a count box, the counted float in a green panel, Cancel (back
-to sign-in) and "Open shift & start selling", with "Tonight's shift" beside it and a
-sold-out card when something is. The count stays blind: the design's "expected from
-last close" is left out. Anyone without `shift.manage` sees "The shift isn't open
-yet" and who can open it (`GET /api/v1/shift` gains `openers`, `StaffAuth.WithPermission`).
-Seen in a browser at 1920 and 1366x768 as the waiter (names Arjun and Priya) and the
-owner (counted 7,400.00, opened, landed on the order screen). Tests: the count and
-sold-out logic, the closed till's openers over HTTP, `WithPermission`. `make check`
-and `make build-web` pass. The owner has not yet looked.
+**Rebuild, Task 5: The order screen** (ADR-151). `/pos` is D03: a 240px category
+sidebar (All Items, Popular, categories, with icons and counts), the dietary filters
+and search over finished-looking item cards, and a 400px order rail: where and how
+many guests, Dine-in / Takeaway / Delivery (locked once the order opens), lines with
+a stepper and a bin, totals, Save Order and Pay. Send to Kitchen sits above them while
+something waits. Orders, history, order discount, Fire course and past bills are under
+the "...". Words: Pay, Save Order, Orders, Send to Kitchen. Seen in a browser at 1920
+and 1366x768: ringing up, stepping, removing, saving, the service control, the "..."
+menu, the diet filters and Popular. Tests: filter, sidebar, icon and rail logic.
+`make check` and `make build-web` pass. The owner has not yet looked.
 
-**Decision for the owner:** the default cashier role lacks `shift.manage`, so Meera
-sees "who can open it", not D02. Grant it in Roles (the cashier then also closes,
-pools tips and corrects Z-reports), or ask for a narrower `shift.open` (ADR-150).
-
-Before it: Task 3 (ADR-149, Staff Login), Task 2 (ADR-148, the shell), Task 1
-(ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143).
+Before it: Task 4 (ADR-150, Open the shift), Task 3 (ADR-149), Task 2 (ADR-148), Task 1
+(ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143). The default cashier role
+cannot open the shift (ADR-150): grant `shift.manage` or ask for `shift.open`.
 
 ## Next task
 
-**Rebuild, Task 5** (the order screen): D03 (line 175 of `mez Desktop POS.dc.html`):
-240px category sidebar with icons, filter chips, item cards with "+", the 400px order
-rail (table picker, service type, guests, lines with steppers, note, totals, Save
-Order, Pay). `/pos` is the route; `RegisterScreen.tsx` is what it replaces. Read
+**Rebuild, Task 6** (the item modal): D04 (line 293 of `mez Desktop POS.dc.html`).
+Choices, add-ons, note, course, quantity, "Add to Order" with the price. It replaces
+`ModifierSheet.tsx`, opened from the order screen's `ringUp` and a line's Modify. Read
 `docs/design/tokens.md` and that screen only. Phase 11 waits for this phase. Phase 10's
 tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human check and
 stays unticked below.
@@ -238,6 +234,9 @@ stays unticked below.
   in the browser, sign in as the owner or a demo person and count a float to
   open the till. A code for the wrong app is refused but its device stays
   (ADR-068).
+- The order screen (ADR-151): not seen by eye are a photo card, a sold-out card, a
+  held order's banner, a delivery order, a discounted order's totals and a line the
+  kitchen has seen (its bin and plain quantity). The diet filters reset on a reload.
 - The open-shift screen's sold-out card was not seen by eye, and its float panel and
   buttons sit below the fold at 768px high (ADR-150).
 - `go test -race` needs cgo, which is banned; `make check` runs without it.

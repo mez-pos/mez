@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { MenuItemResponse, ModifierGroupResponse } from "../../../shared/api-types";
-import { addLineFor, choiceCount, defaultModifiers, fold, searchItems } from "./register-logic";
+import {
+  addLineFor,
+  categoryIconKey,
+  choiceCount,
+  defaultModifiers,
+  dietFilterActive,
+  filterItems,
+  fold,
+  itemsForView,
+  noDietFilter,
+  popularItems,
+  searchItems,
+  sidebarEntries,
+} from "./register-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -93,5 +106,91 @@ describe("addLineFor", () => {
 describe("choiceCount", () => {
   it("counts every modifier across groups", () => {
     expect(choiceCount([group(1, 1, [true, false]), group(0, 3, [false, false, false])])).toBe(5);
+  });
+});
+
+describe("filterItems", () => {
+  const menu = [
+    item(1, "Paneer", { diet: "veg" }),
+    item(2, "Chicken", { diet: "non_veg" }),
+    item(3, "Tofu bowl", { diet: "vegan", gluten_free: true }),
+    item(4, "Plain toast"),
+    item(5, "Veg rice", { diet: "veg", gluten_free: true }),
+  ];
+  const names = (f: Partial<typeof noDietFilter>) => filterItems(menu, { ...noDietFilter, ...f }).map((i) => i.name);
+
+  it("shows everything with nothing on", () => {
+    expect(names({})).toHaveLength(5);
+    expect(dietFilterActive(noDietFilter)).toBe(false);
+  });
+  it("adds the diets up", () => {
+    expect(names({ veg: true })).toEqual(["Paneer", "Veg rice"]);
+    expect(names({ veg: true, vegan: true })).toEqual(["Paneer", "Tofu bowl", "Veg rice"]);
+    expect(names({ nonVeg: true })).toEqual(["Chicken"]);
+  });
+  it("narrows by gluten free", () => {
+    expect(names({ glutenFree: true })).toEqual(["Tofu bowl", "Veg rice"]);
+    expect(names({ glutenFree: true, veg: true })).toEqual(["Veg rice"]);
+  });
+  it("leaves an item with no diet out of any diet filter, but not out of none", () => {
+    expect(names({ veg: true, nonVeg: true, vegan: true })).not.toContain("Plain toast");
+    expect(dietFilterActive({ ...noDietFilter, glutenFree: true })).toBe(true);
+  });
+});
+
+describe("popularItems", () => {
+  it("keeps the popular ones in menu order", () => {
+    const menu = [item(1, "A", { popular: true }), item(2, "B"), item(3, "C", { popular: true })];
+    expect(popularItems(menu).map((i) => i.name)).toEqual(["A", "C"]);
+    expect(popularItems([item(1, "A")])).toEqual([]);
+  });
+});
+
+describe("categoryIconKey", () => {
+  const tests = [
+    { name: "Pizzas", want: "pizza" },
+    { name: "Burgers & Sandwiches", want: "burger" },
+    { name: "Salads", want: "salad" },
+    { name: "Hot Beverages", want: "coffee" },
+    { name: "Tea", want: "coffee" },
+    { name: "Steak", want: "utensils" },
+    { name: "Desserts", want: "dessert" },
+    { name: "Ice Cream", want: "dessert" },
+    { name: "Main Course", want: "soup" },
+    { name: "Starters", want: "leaf" },
+    { name: "Café Specials", want: "utensils" },
+    { name: "", want: "utensils" },
+  ];
+  for (const tt of tests) {
+    it(`${JSON.stringify(tt.name)} is ${tt.want}`, () => {
+      expect(categoryIconKey(tt.name)).toBe(tt.want);
+    });
+  }
+});
+
+describe("sidebarEntries and itemsForView", () => {
+  const categories = [
+    { id: 1, name: "Starters" },
+    { id: 2, name: "Beverages" },
+  ];
+  const menu = [item(1, "Fries", { category_id: 1, popular: true }), item(2, "Chai", { category_id: 2 }), item(3, "Soup", { category_id: 1 })];
+
+  it("lists All Items, Popular and the categories with their counts", () => {
+    expect(sidebarEntries(categories, menu).map((e) => [e.view, e.label, e.count])).toEqual([
+      ["all", "All Items", 3],
+      ["popular", "Popular", 1],
+      [1, "Starters", 2],
+      [2, "Beverages", 1],
+    ]);
+  });
+  it("leaves Popular out when nothing is popular", () => {
+    const plain = menu.map((i) => ({ ...i, popular: false }));
+    expect(sidebarEntries(categories, plain).map((e) => e.view)).toEqual(["all", 1, 2]);
+  });
+  it("shows each view's items in menu order", () => {
+    expect(itemsForView("all", menu).map((i) => i.id)).toEqual([1, 2, 3]);
+    expect(itemsForView("popular", menu).map((i) => i.id)).toEqual([1]);
+    expect(itemsForView(1, menu).map((i) => i.id)).toEqual([1, 3]);
+    expect(itemsForView(9, menu)).toEqual([]);
   });
 });

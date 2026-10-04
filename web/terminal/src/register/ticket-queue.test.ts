@@ -202,7 +202,7 @@ describe("TicketQueue", () => {
 describe("failureOf", () => {
   it("words each kind of failure", () => {
     expect(failureOf(new ApiError("timeout", "x"))).toBe("Not sent: the server can't be reached.");
-    expect(failureOf(new ApiError("order_closed", "db: order is closed"))).toBe("This ticket is closed.");
+    expect(failureOf(new ApiError("order_closed", "db: order is closed"))).toBe("This order is closed.");
     expect(failureOf(new ApiError("modifiers_mismatch", "db: in transaction: projecting line.modified at seq 6"))).toBe(
       "This line was changed on another till. Close this and look again.",
     );

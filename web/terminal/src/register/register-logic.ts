@@ -1,7 +1,7 @@
 // What the register decides without React: which items a search finds, and
 // what ringing an item up sends (docs/design/screens/terminal-register.md).
 
-import type { AddLine, LineModifier, MenuItemResponse, ModifierGroupResponse } from "../../../shared/api-types";
+import type { AddLine, CategoryResponse, LineModifier, MenuItemResponse, ModifierGroupResponse } from "../../../shared/api-types";
 
 /** Lowercase, accents stripped: "Café" and "cafe" are the same word. */
 export function fold(text: string): string {
@@ -61,4 +61,89 @@ export function addLineFor(item: MenuItemResponse, modifiers: readonly LineModif
 /** How many choices an item offers, for its tile. */
 export function choiceCount(groups: readonly ModifierGroupResponse[]): number {
   return groups.reduce((n, g) => n + g.modifiers.length, 0);
+}
+
+/** The dietary filters on the order screen; any combination may be on. */
+export interface DietFilter {
+  readonly veg: boolean;
+  readonly nonVeg: boolean;
+  readonly vegan: boolean;
+  readonly glutenFree: boolean;
+}
+
+export const noDietFilter: DietFilter = { veg: false, nonVeg: false, vegan: false, glutenFree: false };
+
+export function dietFilterActive(f: DietFilter): boolean {
+  return f.veg || f.nonVeg || f.vegan || f.glutenFree;
+}
+
+/**
+ * The items a filter lets through. Veg, Non-Veg and Vegan add up (veg and vegan
+ * on shows both); Gluten Free narrows whatever they leave. Nothing on shows all.
+ */
+export function filterItems(items: readonly MenuItemResponse[], f: DietFilter): MenuItemResponse[] {
+  const diets = f.veg || f.nonVeg || f.vegan;
+  return items.filter((item) => {
+    if (f.glutenFree && !item.gluten_free) return false;
+    if (!diets) return true;
+    return (f.veg && item.diet === "veg") || (f.nonVeg && item.diet === "non_veg") || (f.vegan && item.diet === "vegan");
+  });
+}
+
+/** The items marked popular, in menu order: the sidebar's Popular. */
+export function popularItems(items: readonly MenuItemResponse[]): MenuItemResponse[] {
+  return items.filter((item) => item.popular);
+}
+
+export type CategoryIconKey = "utensils" | "star" | "leaf" | "soup" | "pizza" | "burger" | "salad" | "coffee" | "dessert";
+
+/**
+ * Which icon a category's name earns in the sidebar, from the words in it. The
+ * menu is the venue's own, so this guesses and a plain fork and knife answers
+ * for what it cannot place.
+ */
+export function categoryIconKey(name: string): CategoryIconKey {
+  // By word, from its start: "tea" is a drink and "steak" is not.
+  const named = words(name);
+  const has = (...parts: string[]) => parts.some((p) => named.some((w) => w.startsWith(p)));
+  if (has("pizza")) return "pizza";
+  if (has("burger", "sandwich", "wrap", "grill")) return "burger";
+  if (has("salad")) return "salad";
+  if (has("coffee", "tea", "chai", "beverage", "drink", "juice", "shake", "smoothie", "mocktail")) return "coffee";
+  if (has("dessert", "sweet", "cake", "bakery", "pastry", "cream")) return "dessert";
+  if (has("soup", "main", "curry", "rice", "noodle", "pasta", "biryani", "meal")) return "soup";
+  if (has("starter", "snack", "appetizer", "appetiser", "bite", "side")) return "leaf";
+  return "utensils";
+}
+
+/** What the order screen's menu is showing: everything, the popular items, or one category. */
+export type MenuView = "all" | "popular" | number;
+
+export interface SidebarEntry {
+  readonly view: MenuView;
+  readonly label: string;
+  readonly icon: CategoryIconKey;
+  readonly count: number;
+}
+
+/** All Items, Popular when anything is popular, then each category in menu order. */
+export function sidebarEntries(categories: readonly CategoryResponse[], items: readonly MenuItemResponse[]): SidebarEntry[] {
+  const popular = popularItems(items).length;
+  return [
+    { view: "all", label: "All Items", icon: "utensils", count: items.length },
+    ...(popular > 0 ? [{ view: "popular" as const, label: "Popular", icon: "star" as const, count: popular }] : []),
+    ...categories.map((c) => ({
+      view: c.id,
+      label: c.name,
+      icon: categoryIconKey(c.name),
+      count: items.filter((i) => i.category_id === c.id).length,
+    })),
+  ];
+}
+
+/** The items a view shows, in menu order. */
+export function itemsForView(view: MenuView, items: readonly MenuItemResponse[]): MenuItemResponse[] {
+  if (view === "all") return [...items];
+  if (view === "popular") return popularItems(items);
+  return items.filter((i) => i.category_id === view);
 }

@@ -9,7 +9,7 @@ import { Gate } from "../../shared/auth/Gate";
 import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { Splash } from "../../shared/screens/Splash";
-import { RegisterScreen } from "./register/RegisterScreen";
+import { OrderScreen } from "./register/OrderScreen";
 import { BillPage, Landing, LeaveForKitchen, PayPage, ShiftClosePage, ShiftPage, TablesPage, ZReportPage } from "./shell/pages";
 import { route } from "./shell/routes";
 import { ShiftGate } from "./shell/ShiftGate";
@@ -51,7 +51,7 @@ function Screens() {
   return (
     <Switch>
       <Route path={route.order}>
-        <RegisterScreen key="order" />
+        <OrderScreen key="order" />
       </Route>
       <Route path={route.tables}>
         <TablesPage />
@@ -63,7 +63,7 @@ function Screens() {
       <Route path={`${route.orders}/:id`}>{(params) => <BillPage key={params.id} orderId={params.id} />}</Route>
       {/* The order history: the order screen with the past bills open over it. */}
       <Route path={route.orders}>
-        <RegisterScreen key="history" pastBills />
+        <OrderScreen key="history" pastBills />
       </Route>
       <Route path="/pay/:id">{(params) => <PayPage key={params.id} orderId={params.id} />}</Route>
       <Route path={route.shift}>

@@ -43,7 +43,7 @@ export function readyLines(order: OrderResponse | undefined): ReadonlySet<number
   return ready;
 }
 
-/** "Send 3", "Send", or "Sent" when nothing is waiting. */
+/** "Send to Kitchen", or "Sent" when nothing is waiting. */
 export function sendLabel(plan: SendPlan): string {
-  return plan.waiting > 0 ? `Send ${plan.waiting}` : "Sent";
+  return plan.waiting > 0 ? "Send to Kitchen" : "Sent";
 }

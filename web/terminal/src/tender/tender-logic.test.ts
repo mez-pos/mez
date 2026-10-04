@@ -116,13 +116,13 @@ describe("chargeBlock", () => {
   const cases: [string, OrderResponse | undefined, number, string | null][] = [
     ["an open ticket with a balance", order({}), 0, null],
     ["part paid", order({ status: "settling" }), 0, null],
-    ["no ticket yet", undefined, 0, "Nothing to charge yet."],
-    ["only voided lines", order({ lines: [{ status: "voided" }] as OrderResponse["lines"] }), 0, "Nothing to charge yet."],
+    ["no order yet", undefined, 0, "Nothing to pay yet."],
+    ["only voided lines", order({ lines: [{ status: "voided" }] as OrderResponse["lines"] }), 0, "Nothing to pay yet."],
     ["lines still adding", order({}), 1, "Wait for every item to be added."],
-    ["held", order({ status: "held" }), 0, "Resume this ticket to charge it."],
-    ["paid in full, still open: Charge finishes it", order({ totals: { balance_due: inr(0) } as OrderResponse["totals"] }), 0, null],
+    ["held", order({ status: "held" }), 0, "Resume this order to pay it."],
+    ["paid in full, still open: Pay finishes it", order({ totals: { balance_due: inr(0) } as OrderResponse["totals"] }), 0, null],
     ["owing the guest", order({ totals: { balance_due: inr(-100) } as OrderResponse["totals"] }), 0, "The guest is owed money back. Refunds come with Task 6."],
-    ["closed", order({ status: "closed" }), 0, "This ticket is closed."],
+    ["closed", order({ status: "closed" }), 0, "This order is closed."],
   ];
   it.each(cases)("%s", (_name, o, pending, want) => {
     expect(chargeBlock(o, pending)).toBe(want);
@@ -132,9 +132,9 @@ describe("chargeBlock", () => {
 describe("chargeLabel", () => {
   const order = (balance: number, invoiced = false) => ({ status: "settling", invoiced, totals: { balance_due: inr(balance) } }) as OrderResponse;
   it("charges while money is owed, finishes once paid", () => {
-    expect(chargeLabel(order(100))).toBe("Charge");
+    expect(chargeLabel(order(100))).toBe("Pay");
     expect(chargeLabel(order(0))).toBe("Invoice and close");
-    expect(chargeLabel(order(0, true))).toBe("Close ticket");
-    expect(chargeLabel(undefined)).toBe("Charge");
+    expect(chargeLabel(order(0, true))).toBe("Close order");
+    expect(chargeLabel(undefined)).toBe("Pay");
   });
 });

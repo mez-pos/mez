@@ -47,15 +47,15 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
   };
 
   return (
-    <Sheet open onClose={onClose} title="Tickets">
+    <Sheet open onClose={onClose} title="Orders">
       <div className="flex flex-col gap-6">
         {error && (
           <p role="alert" className="text-sm text-danger">
             {error}
           </p>
         )}
-        {!open && <p className="text-sm text-fg-muted">Loading tickets</p>}
-        {open && open.orders.length === 0 && <p className="text-base text-fg-muted">No open tickets.</p>}
+        {!open && <p className="text-sm text-fg-muted">Loading orders</p>}
+        {open && open.orders.length === 0 && <p className="text-base text-fg-muted">No open orders.</p>}
         {open && open.orders.length > 0 && (
           <ul className="flex flex-col gap-tap-gap">
             {open.orders.map((t) => {
@@ -125,8 +125,8 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
           <p className="text-sm text-fg-muted">Count the drawer and end the shift.</p>
         </section>
 
-        <section aria-label="New ticket" className="flex flex-col gap-4 border-t border-line pt-6">
-          <h3 className="text-lg font-semibold">New ticket</h3>
+        <section aria-label="New order" className="flex flex-col gap-4 border-t border-line pt-6">
+          <h3 className="text-lg font-semibold">New order</h3>
           <Button onClick={() => start({ channel: "counter", covers: 0 })}>Counter sale</Button>
           <Button
             onClick={() => {

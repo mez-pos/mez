@@ -18,7 +18,7 @@ const words: Partial<Record<ErrorCode, string>> = {
   variance_unexplained: "Say why the drawer is over or short before closing.",
   already_explained: "A reason has already been given.",
   order_not_found: "This ticket isn't on the server any more.",
-  order_closed: "This ticket is closed.",
+  order_closed: "This order is closed.",
   line_not_found: "That line isn't on this ticket.",
   line_not_active: "That line has been voided or comped.",
   modifiers_mismatch: "This line was changed on another till. Close this and look again.",
