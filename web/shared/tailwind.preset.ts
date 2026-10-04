@@ -103,6 +103,7 @@ const preset = {
       total: v("text-total"),
       kitchen: v("text-kitchen"),
       display: v("text-display"),
+      hero: v("text-hero"),
     },
 
     borderRadius: {

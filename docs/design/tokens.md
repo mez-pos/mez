@@ -142,7 +142,8 @@ script line per screen region at most.
 | `--text-xl` | `22px` | Section titles (serif) |
 | `--text-total` | `32px` | Page titles, the one total on a screen (serif) |
 | `--text-kitchen` | `26px` | The kitchen display's lines (ADR-091) |
-| `--text-display` | `44px` | The kitchen display's table and timer |
+| `--text-display` | `44px` | The kitchen display's table and timer; the login title |
+| `--text-hero` | `66px` | The login screen's headline, from 1536px wide (D01) |
 
 Kept from before, because the reasons have not changed (ADR-014):
 nothing renders below 11px, sentence-case text is 13px or larger, every

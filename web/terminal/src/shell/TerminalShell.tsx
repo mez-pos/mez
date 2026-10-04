@@ -12,6 +12,7 @@ import { useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { Logo } from "../../../shared/ui";
+import { useServerVersion, useVenue } from "../../../shared/use-venue";
 import { PrintQueueSheet } from "../print/PrintQueueSheet";
 import { trouble } from "../print/print-queue";
 import { usePrintJobs } from "../print/use-print-jobs";
@@ -22,7 +23,6 @@ import { ProfileMenu } from "./ProfileMenu";
 import { route } from "./routes";
 import { StatusBar } from "./StatusBar";
 import { useTerminal } from "./terminal-context";
-import { useServerVersion, useVenue } from "./use-venue";
 
 export function TerminalShell({ children }: { children: ReactNode }) {
   const auth = useAuth();

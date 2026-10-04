@@ -7,7 +7,8 @@ import { WifiIcon, WifiOffIcon } from "lucide-react";
 import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { useRealtime } from "../../../shared/use-realtime";
-import { clockText, connectionText, versionText } from "./status-logic";
+import { clockText, versionText } from "../../../shared/venue-text";
+import { connectionText } from "./status-logic";
 
 interface StatusBarProps {
   version: string | null;

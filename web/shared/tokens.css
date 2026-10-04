@@ -103,6 +103,7 @@
   --text-total: 32px;
   --text-kitchen: 26px; /* the kitchen display's lines, read from three metres */
   --text-display: 44px; /* the kitchen display's table and timer */
+  --text-hero: 66px; /* the login screen's headline, on a wide screen (D01) */
   --tracking-meta: 0.16em;
   --tracking-serif: -0.02em;
 

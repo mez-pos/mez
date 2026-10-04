@@ -26,6 +26,12 @@ export function initials(name: string): string {
   return (first + last).toUpperCase();
 }
 
+/** A role's name as a person reads it: "manager" is "Manager", "head chef" is "Head chef". */
+export function roleText(role: string): string {
+  const text = role.trim();
+  return text === "" ? "" : text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 /** A wait as m:ss, rounded up so it never shows 0:00 while still locked. */
 export function formatWait(ms: number): string {
   const total = Math.max(0, Math.ceil(ms / 1000));

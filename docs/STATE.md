@@ -14,31 +14,30 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 2: the shell** (ADR-148). The terminal is routes now (`/pos`,
-`/tables`, `/orders`, `/pay/:id`, `/shift`, `/shift/close`, `/shift/z/:n`,
-`/waiter`, `/kitchen`), with the ticket, floor and shift held above them in a
-provider, a shift gate, and `/` landing by role. The frame is the design's: a
-72px top bar (nav pills, avatar with name and role and a menu of Lock, Close the
-shift, Print queue) and a 40px status bar (version, Online, venue, the venue's
-date and time). `lucide-react` is in the terminal. The back office shares the
-terminal's pairing and session, so Menu and Reports open signed in. Seen in a
-browser at 1920 and 1366: shell, Tables, order screen, profile menu, landing as
-owner, manager, cashier, waiter and kitchen, a ticket kept across Tables and
-back, and the manager reaching the back office menu. Tests: landing, nav,
-status wording, the shift gate, shared credentials. `make check` and `make
-build-web` pass. Not done: the design screenshots were not set beside mine (the
-design files need a renderer I did not run); the owner has not yet looked.
+**Rebuild, Task 3: Staff Login** (ADR-149). The lock screen is D01, shared by the
+terminal and the back office: a brand panel, profiles (initials, name, role; four
+a page and a More), PIN dots in a well, a keypad with Login as the twelfth key,
+the venue and its clock along the bottom. A new `text-hero` size; keys scale with
+the screen's height down to 48px. The clock, version text and venue hooks moved to
+`shared/`, and `initials` and `roleText` are one each (the terminal's duplicates
+are gone). `lucide-react` is declared in the back office too. Seen in a browser at
+1920 and 1366x768 beside the rendered D01: paging, a wrong PIN, a right one, and
+the back office's sign-in. Tests: the tile paging, the shared text helpers.
+`make check` and `make build-web` pass. The design's illustration and dark script
+card are left out (placeholders for artwork). The owner has not yet looked.
 
-Before it: Task 1 (ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143).
+Before it: Task 2 (ADR-148, the shell), Task 1 (ADR-145 to ADR-147), Task 0
+(ADR-144), the plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 3** (login): D01 (line 36 of `mez Desktop POS.dc.html`): a left
-panel with the brand, profile tiles with avatar initials, name and role (the
-server sends the role now), PIN dots, keypad, Login. Read `docs/design/tokens.md`
-and that screen only. Then Task 4 (open the shift, D02). Phase 11 waits for this
-phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its
-done-when is a human check and stays unticked below.
+**Rebuild, Task 4** (open the shift): D02 (line 106 of `mez Desktop POS.dc.html`),
+a step in the cashier's flow with "Tonight's shift" beside it, not a wall; a waiter
+who signs in with no shift open is told who can open it. `/shift` is the route
+(`shift-gate.ts` sends everyone there while no shift is open). Read `docs/design/tokens.md`
+and that screen only. Phase 11 waits for this phase. Phase 10's tasks are all done
+(6l moved to phase 12, ADR-141); its done-when is a human check and stays unticked
+below.
 
 ## Known broken / in progress
 

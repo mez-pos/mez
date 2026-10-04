@@ -197,7 +197,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   an ADR. Decide and record how a manager on a terminal reaches Menu and
   Reports (one pairing should be enough for one browser).
 
-- [ ] **Task 3 - Login.** D01. Left panel with the brand, right with profile
+- [x] **Task 3 - Login.** (ADR-149) D01. Left panel with the brand, right with profile
   tiles (avatar initials, name, role), PIN dots, keypad, Login.
 - [ ] **Task 4 - Open the shift.** D02. A step in the cashier's flow with
   "Tonight's shift" beside it, not a wall. A waiter who signs in with no

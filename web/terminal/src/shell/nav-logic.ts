@@ -36,18 +36,3 @@ export function activeNav(path: string): NavId | null {
   if (path === route.tables) return "tables";
   return null;
 }
-
-/** Up to two letters for the avatar: the first and the last word's. */
-export function initialsOf(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "?";
-  const first = words[0]!;
-  const last = words.length > 1 ? words[words.length - 1]! : "";
-  return (first.charAt(0) + last.charAt(0)).toUpperCase();
-}
-
-/** A role's name as a person reads it: "manager" is "Manager". */
-export function roleText(role: string): string {
-  const text = role.trim();
-  return text === "" ? "" : text.charAt(0).toUpperCase() + text.slice(1);
-}

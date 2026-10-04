@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPairingCode, formatWait, initials, isCompletePairingCode } from "./format";
+import { formatPairingCode, formatWait, initials, isCompletePairingCode, roleText } from "./format";
 
 describe("formatPairingCode", () => {
   const tests = [
@@ -46,4 +46,12 @@ describe("formatWait", () => {
   for (const tt of tests) {
     it(`${tt.ms}ms`, () => expect(formatWait(tt.ms)).toBe(tt.want));
   }
+});
+
+describe("roleText", () => {
+  it("capitalises the first letter and leaves the rest", () => {
+    expect(roleText("manager")).toBe("Manager");
+    expect(roleText("head chef")).toBe("Head chef");
+    expect(roleText("  ")).toBe("");
+  });
 });

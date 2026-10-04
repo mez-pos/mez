@@ -4339,3 +4339,39 @@ Cost: kitchen staff on a terminal hit a pairing screen until Task 15; a back
 office lock locks the terminal too (one session, one device); `/waiter` is the
 floor until its screen exists.
 ---
+
+## ADR-149 - Staff Login is D01, one screen for the terminal and the back office
+2026-10 · Status: accepted
+Decision: the lock screen is rebuilt from D01 and stays one shared screen: a
+brand panel on the left (the logo, "Great Food Brighter Days", the script line,
+the version) and on the right "Staff Login", the profiles, the PIN dots and the
+keypad. It serves the terminal and the back office alike, as the flow map says
+("one sign-in for everyone"); where a person lands after it is their role's.
+  - **Profiles** are a round avatar of the person's initials, their name, and
+    their role under it (the server sends the role, ADR-145). Four to a page and a
+    More that goes to the next page and round again. The selected one is ringed in
+    terracotta, as the design draws it. The design's photographs do not exist.
+  - **The keypad** is 1 to 9, delete, 0, and a green Login as the twelfth key where
+    a Clear was. A wrong PIN still clears the dots. The keyboard still works.
+    The chosen person's name sits in the dots well (the design has none there),
+    because paging away from their tile leaves no tile ringed and a sighted person
+    must still see whose PIN this is. Enter on a focused tile, More or Try again is
+    that control's own click; Enter elsewhere signs in. The chosen person is held
+    by id, so someone removed or deactivated while the screen is open stops being
+    chosen and what was typed goes.
+  - **Left out:** the design's illustration of a chef at the pass and the dark
+    script card beside it. Both are placeholders for artwork nobody has made, and
+    a labelled grey box is not a screen. The panel can take them when they exist.
+  - **Sizes:** a new token, `text-hero` (66px), for the headline from 1536px wide,
+    and 44px below. Keys are `clamp(48px, 7vh, 76px)`: 76 on the design's 1080,
+    54 on a 768 laptop, never under the 48px floor (ADR-014). The brand panel is
+    hidden below 1024px, where a tablet upright has no room.
+  - The venue's name and the date and time (in the venue's zone) are along the
+    bottom, and the connection indicator keeps its place, with its retry. The
+    clock, the version text and the venue hooks moved to `shared/` for it.
+Because: one screen for every role is the point of the rebuild, and the lock
+screen is the first thing anyone sees on a shift.
+Cost: the avatar is initials, not a face; the device's name ("Counter 1") is no
+longer on the sign-in screen, as the design has none; the older screen spec
+`terminal-lock.md` is wrong until Task 17 rewrites it.
+---

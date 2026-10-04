@@ -1,25 +1,35 @@
-// The staff lock: tap your name, enter your PIN (docs/design/screens/terminal-lock.md).
-// The first screen anyone sees on a shift, on the terminal (ink) and as the
-// back office sign-in (paper).
+// Staff Login (D01): tap your profile, enter your PIN. The first screen anyone
+// sees on a shift, on the terminal and as the back office sign-in, one screen for
+// everyone; where they land after it depends on their role (ADR-148).
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { CircleHelpIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { StaffListResponse, StaffResponse } from "../api-types";
-import { formatWait, initials } from "../auth/format";
+import { formatWait } from "../auth/format";
 import { signInError, unreachableMessage } from "../auth/messages";
 import { useAuth, useAuthStore } from "../auth/use-auth";
 import { ConnectionIndicator } from "../ConnectionIndicator";
-import { applyPinKey, Button, EmptyState, InboxIcon, Logo, Meta, NumPad, type NumKey } from "../ui";
-import { cx } from "../ui/cx";
+import { applyPinKey, Button, EmptyState, InboxIcon, Logo, type NumKey } from "../ui";
 import { keyFromKeyboard } from "../ui/numpad-keys";
-import { minPin, PinDots } from "./PinDots";
+import { useClock } from "../use-clock";
+import { useServerVersion, useVenue } from "../use-venue";
+import { clockText } from "../venue-text";
+import { BrandPanel } from "./login/BrandPanel";
+import { LoginPad } from "./login/LoginPad";
+import { ProfileTiles } from "./login/ProfileTiles";
+import { pageOf } from "./login/login-logic";
+import { minPin } from "./PinDots";
 
 const maxPin = 8;
 
 export function LockScreen() {
   const status = useAuth();
   const store = useAuthStore();
-  const [selected, setSelected] = useState<StaffResponse | null>(null);
+  // The person chosen, by id: the list is read afresh, and someone removed or
+  // deactivated meanwhile must stop being chosen, not linger as a stale copy.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
@@ -36,10 +46,21 @@ export function LockScreen() {
     refetchOnMount: "always",
   });
 
-  // One name on the list: nothing to choose, so it is chosen.
+  const people = staff.data;
+  const selected = useMemo(() => people?.find((p) => p.id === selectedId) ?? null, [people, selectedId]);
+
+  // One name on the list: nothing to choose, so it is chosen. A person chosen
+  // who is no longer on the list is no longer chosen, and what was typed goes.
   useEffect(() => {
-    if (staff.data?.length === 1 && !selected) setSelected(staff.data[0] ?? null);
-  }, [staff.data, selected]);
+    if (!people) return;
+    const only = people.length === 1 ? people[0] : undefined;
+    if (only && selectedId !== only.id) {
+      setSelectedId(only.id);
+    } else if (selectedId !== null && !people.some((p) => p.id === selectedId)) {
+      setSelectedId(null);
+      setPin("");
+    }
+  }, [people, selectedId]);
 
   useEffect(() => {
     if (lockedUntil !== null && lockedUntil <= now) {
@@ -75,12 +96,14 @@ export function LockScreen() {
     [canType, locked],
   );
 
-  // A keyboard anywhere on the screen types into the PIN; the pad itself
-  // handles keys when it has focus, and says so with defaultPrevented.
+  // A keyboard anywhere on the screen types into the PIN. Enter signs in, except
+  // on a focused button or link, where it is that control's own click: a tile it
+  // chooses, More it pages, Try again it retries.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.target instanceof HTMLInputElement) return;
       if (event.key === "Enter") {
+        if (event.target instanceof HTMLButtonElement || event.target instanceof HTMLAnchorElement) return;
         event.preventDefault();
         void submit();
         return;
@@ -96,102 +119,95 @@ export function LockScreen() {
   }, [key, submit]);
 
   const choose = (member: StaffResponse) => {
-    setSelected(member);
+    setSelectedId(member.id);
+    setPage(pageOf(people ?? [], member.id));
     setPin("");
     if (!locked) setError(null);
   };
 
-  const device = status.kind === "locked" || status.kind === "signed_in" ? status.device : null;
   const notice = status.kind === "locked" && status.notice === "expired" ? "Your session ended. Sign in again to carry on." : null;
+  const clock = useClock(15_000);
+  const venue = useVenue();
+  const version = useServerVersion();
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-canvas p-6 text-fg lg:p-8">
-      <div className="absolute right-4 top-4">
-        <ConnectionIndicator />
-      </div>
+    <main className="flex min-h-screen bg-canvas text-fg">
+      <BrandPanel version={version} />
 
-      <div className="grid w-full max-w-4xl items-center gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <section aria-labelledby="lock-title">
-          <Logo className="mb-6 h-12" />
-          <Meta items={["Sign in"]} />
-          <h1 id="lock-title" className="mt-3 font-serif text-total">
-            {device?.name ?? "This device"}
-          </h1>
-          <p className="mt-3 max-w-md text-base text-fg-2">Tap your name, then enter your PIN.</p>
-          {notice && (
-            <p role="status" className="mt-4 max-w-md rounded border border-chip-warning-border bg-chip-warning-bg px-4 py-3 text-base text-chip-warning-fg">
-              {notice}
-            </p>
-          )}
-          <StaffTiles query={staff} selected={selected} onChoose={choose} />
-        </section>
-
-        <section aria-label="PIN" className="rounded-card border border-line bg-chrome p-6 shadow-card">
-          <p className="min-h-6 text-base font-semibold">{selected ? selected.name : "Choose your name"}</p>
-          <PinDots length={pin.length} />
-          <NumPad layout="pin" size="lg" label="PIN" onKey={key} disabled={!canType} className="mt-4" />
-          <Button variant="primary" className="mt-4 w-full" disabled={!canSubmit} onClick={() => void submit()}>
-            {busy ? "Signing in…" : "Sign in"}
-          </Button>
-          <p role="alert" className="mt-3 min-h-6 text-base text-danger">
-            {error}
-            {locked && lockedUntil !== null && ` Try again in ${formatWait(lockedUntil - now)}.`}
+      <section aria-labelledby="lock-title" className="relative flex min-w-0 flex-1 flex-col p-10 2xl:px-18 2xl:py-14 [@media(max-height:800px)]:py-6">
+        <p
+          aria-hidden="true"
+          className="absolute right-10 top-10 hidden text-right font-script text-total leading-tight text-fg-2 md:block 2xl:right-14 2xl:top-14"
+        >
+          Good Teams,
+          <br />
+          Great Service ♡
+        </p>
+        <Logo className="mb-6 h-10 lg:hidden" />
+        <h1 id="lock-title" className="font-serif text-display">
+          Staff Login
+        </h1>
+        <p className="mt-2 text-lg text-fg-muted">Select your profile and enter your PIN</p>
+        {notice && (
+          <p role="status" className="mt-4 max-w-md rounded border border-chip-warning-border bg-chip-warning-bg px-4 py-3 text-base text-chip-warning-fg">
+            {notice}
           </p>
-          <p className="mt-1 text-sm text-fg-muted">Forgot your PIN? Ask a manager to reset it.</p>
-        </section>
-      </div>
+        )}
+        <StaffPicker query={staff} selected={selected} page={page} onChoose={choose} onPage={setPage} />
+        <p className="sr-only" aria-live="polite">
+          {selected ? `${selected.name} is chosen. Enter your PIN.` : "Choose your profile."}
+        </p>
+
+        <LoginPad
+          name={selected?.name ?? null}
+          length={pin.length}
+          disabled={!canType}
+          canSubmit={canSubmit}
+          busy={busy}
+          onKey={key}
+          onSubmit={() => void submit()}
+        />
+        <p role="alert" className="mt-2 min-h-6 text-base text-danger">
+          {error}
+          {locked && lockedUntil !== null && ` Try again in ${formatWait(lockedUntil - now)}.`}
+        </p>
+        <p className="flex items-center gap-2 text-sm text-fg-muted">
+          <CircleHelpIcon aria-hidden="true" size={17} />
+          Forgot your PIN? Ask a manager to reset it.
+        </p>
+
+        <footer className="mt-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-6 text-sm text-fg-muted">
+          <span>{venue?.name ?? ""}</span>
+          <ConnectionIndicator />
+          <span className="font-mono tabular-nums">{clockText(new Date(clock), venue?.timezone ?? null)}</span>
+        </footer>
+      </section>
     </main>
   );
 }
 
-interface StaffTilesProps {
+interface StaffPickerProps {
   query: UseQueryResult<StaffResponse[]>;
   selected: StaffResponse | null;
+  page: number;
   onChoose: (member: StaffResponse) => void;
+  onPage: (page: number) => void;
 }
 
-function StaffTiles({ query, selected, onChoose }: StaffTilesProps) {
-  if (query.isPending) return <p className="mt-6 text-base text-fg-muted">Loading staff&hellip;</p>;
+function StaffPicker({ query, selected, page, onChoose, onPage }: StaffPickerProps) {
+  if (query.isPending) return <p className="mt-10 text-base text-fg-muted">Loading staff&hellip;</p>;
   if (query.isError) {
     return (
-      <div role="alert" className="mt-6 flex max-w-md flex-col items-start gap-3">
+      <div role="alert" className="mt-10 flex max-w-md flex-col items-start gap-3">
         <p className="text-base text-danger">{unreachableMessage(window.location.host)}</p>
         <Button onClick={() => void query.refetch()}>Try again</Button>
       </div>
     );
   }
   if (query.data.length === 0) {
-    return <EmptyState icon={<InboxIcon />} line="Nobody can sign in here yet. Add staff in the back office." className="mt-6 items-start px-0 text-left" />;
+    return <EmptyState icon={<InboxIcon />} line="Nobody can sign in here yet. Add staff in the back office." className="mt-10 items-start px-0 text-left" />;
   }
-  return (
-    <ul className="mt-6 grid max-w-xl grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-2.5">
-      {query.data.map((member) => {
-        const chosen = selected?.id === member.id;
-        return (
-          <li key={member.id}>
-            <button
-              type="button"
-              aria-pressed={chosen}
-              onClick={() => onChoose(member)}
-              className={cx(
-                "flex min-h-tap w-full items-center gap-3 rounded border px-3.5 py-2.5 text-left",
-                "outline-offset-2 outline-line-focus focus-visible:outline-2",
-                chosen ? "border-chip-accent-border bg-chip-accent-bg" : "border-line bg-raised hover:border-line-strong",
-              )}
-            >
-              <span
-                aria-hidden="true"
-                className="flex size-9 shrink-0 items-center justify-center rounded-round border border-line-strong bg-raised-high text-sm font-semibold"
-              >
-                {initials(member.name)}
-              </span>
-              <span className="min-w-0 truncate text-base">{member.name}</span>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
-  );
+  return <ProfileTiles people={query.data} selectedId={selected?.id ?? null} page={page} onChoose={onChoose} onPage={onPage} />;
 }
 
 // The clock, once a second, while a lockout countdown is showing.

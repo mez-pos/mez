@@ -7,7 +7,7 @@
 import { ChevronDownIcon, DoorClosedIcon, LockIcon, PrinterIcon, type LucideIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FocusEvent } from "react";
 import { cx } from "../../../shared/ui/cx";
-import { initialsOf, roleText } from "./nav-logic";
+import { initials, roleText } from "../../../shared/auth/format";
 
 interface ProfileMenuProps {
   name: string;
@@ -72,7 +72,7 @@ export function ProfileMenu({ name, role, canCloseShift, onLock, onCloseShift, o
         className="flex min-h-tap items-center gap-2.5 rounded-pill pl-1 pr-3 outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
       >
         <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-round bg-accent-tint text-sm font-bold text-accent">
-          {initialsOf(name)}
+          {initials(name) || "?"}
         </span>
         <span className="text-left leading-tight">
           <span className="block text-base font-bold">{name}</span>

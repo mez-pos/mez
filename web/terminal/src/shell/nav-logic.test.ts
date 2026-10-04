@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeNav, initialsOf, navItems, roleText } from "./nav-logic";
+import { activeNav, navItems } from "./nav-logic";
 
 describe("navItems", () => {
   it("gives a floor role Orders and Tables only", () => {
@@ -27,26 +27,5 @@ describe("activeNav", () => {
   });
   it("presses nothing elsewhere, and does not mistake a longer word for a route", () => {
     for (const path of ["/", "/shift", "/shift/close", "/order", "/orderly", "/tablesaw", "/posx"]) expect(activeNav(path)).toBeNull();
-  });
-});
-
-describe("initialsOf", () => {
-  it("takes the first and last words' letters", () => {
-    expect(initialsOf("Aditi Sharma")).toBe("AS");
-    expect(initialsOf("  maya  devi  rao ")).toBe("MR");
-  });
-  it("takes one letter of a single name", () => {
-    expect(initialsOf("Priya")).toBe("P");
-  });
-  it("has something to show for a name with nothing in it", () => {
-    expect(initialsOf("   ")).toBe("?");
-  });
-});
-
-describe("roleText", () => {
-  it("capitalises the first letter and leaves the rest", () => {
-    expect(roleText("manager")).toBe("Manager");
-    expect(roleText("head chef")).toBe("Head chef");
-    expect(roleText("  ")).toBe("");
   });
 });

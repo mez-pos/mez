@@ -1,4 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
+import { LucideProvider } from "lucide-react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createAppAuth } from "../../shared/auth/app-auth";
@@ -22,9 +23,12 @@ createRoot(root).render(
     <QueryClientProvider client={queryClient}>
       <RealtimeProvider connection={realtime}>
         <AuthProvider store={store} realtime={realtime}>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
+          {/* The design's line icons: 1.75px strokes (tokens.md, Icons). */}
+          <LucideProvider strokeWidth={1.75}>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </LucideProvider>
         </AuthProvider>
       </RealtimeProvider>
     </QueryClientProvider>
