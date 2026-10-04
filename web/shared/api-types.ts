@@ -78,6 +78,7 @@ export type ErrorCode =
   | 'table_already_at'
   | 'table_not_joined'
   | 'no_table'
+  | 'service_no_table'
   | 'ticket_not_found'
   | 'no_open_shift'
   | 'shift_open'
@@ -143,6 +144,11 @@ export type OrderChannel =
   | 'web'
   | 'kiosk'
   | 'aggregator';
+
+export type ServiceType =
+  | 'dine_in'
+  | 'takeaway'
+  | 'delivery';
 
 export type LineStatus =
   | 'active'
@@ -392,6 +398,7 @@ export const defaultCurrencyExponent = 2;
 export interface OrderOpened {
   channel: OrderChannel;
   currency: string;
+  service?: ServiceType;
   table_id?: number;
   covers: number;
   opened_by: number;
@@ -739,6 +746,7 @@ export interface MoneyInput {
 
 export interface OpenOrder {
   channel: OrderChannel;
+  service?: ServiceType;
   table_id?: number;
   covers: number;
 }
@@ -943,6 +951,7 @@ export interface OrderResponse {
   status: OrderStatus;
   channel: OrderChannel;
   currency: string;
+  service: ServiceType;
   table_id?: number;
   joined?: number[];
   covers: number;
@@ -985,6 +994,7 @@ export interface TicketSummary {
   id: string;
   status: OrderStatus;
   channel: OrderChannel;
+  service: ServiceType;
   table_id?: number;
   joined?: number[];
   covers: number;
@@ -2055,6 +2065,7 @@ export interface KitchenTicketResponse {
   sent_at: string;
   ready_at?: string;
   channel: OrderChannel;
+  service: ServiceType;
   table_id?: number;
   table?: string;
   covers: number;

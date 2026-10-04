@@ -50,7 +50,10 @@ const (
 type State struct {
 	Channel  Channel
 	Currency string
-	TableID  int64
+	// Service is how the order is served (ADR-146). Seating a takeaway at a
+	// table makes it dine-in, so it never disagrees with the table.
+	Service ServiceType
+	TableID int64
 	// Joined are the tables joined to TableID for one party (ADR-088), in
 	// the order they were joined. Nil when the party is at one table.
 	Joined   []int64

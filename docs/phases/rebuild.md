@@ -177,7 +177,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 1a (ADR-145). A `waiter` role (take orders, send, see own tables; no refunds, no
     shift close). `GET /api/v1/staff` returns each person's role name, so
     the login can show it.
-  - 1b. Service type on an order: dine-in, takeaway, delivery. A new field
+  - [x] 1b (ADR-146). Service type on an order: dine-in, takeaway, delivery. A new field
     on the opening event, not a change to old events; old orders read as
     dine-in when they have a table and takeaway when not. Guest count on a
     seated order if the events do not carry it yet. Shown on the Z-report

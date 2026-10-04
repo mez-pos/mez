@@ -45,11 +45,14 @@ type (
 )
 
 // OpenOrder opens an order. The currency is the venue's and the opener is
-// the caller, so neither is the client's to say.
+// the caller, so neither is the client's to say. A Service left out is
+// dine-in at a table and takeaway with none (ADR-146); the event always
+// records the one that was meant.
 type OpenOrder struct {
-	Channel order.Channel `json:"channel"`
-	TableID int64         `json:"table_id,omitempty"`
-	Covers  int64         `json:"covers"`
+	Channel order.Channel     `json:"channel"`
+	Service order.ServiceType `json:"service,omitempty"`
+	TableID int64             `json:"table_id,omitempty"`
+	Covers  int64             `json:"covers"`
 }
 
 // SendTicket sends lines to a station. With no LineIDs it sends every line
@@ -78,13 +81,19 @@ func (s *Service) Open(ctx context.Context, meta Meta, cmd OpenOrder) (Result, e
 	if err != nil {
 		return Result{}, err
 	}
+	// Defaulted before the fingerprint, so a request that says dine-in and
+	// one that leaves it to the table are the same open under one key.
+	if cmd.Service == "" {
+		cmd.Service = order.DefaultService(cmd.TableID)
+	}
+	service := cmd.Service
 	fp, err := fingerprint("open", 0, cmd)
 	if err != nil {
 		return Result{}, err
 	}
 	at := s.clock.Now().UTC()
 	opened := order.NewEvent(1, at, meta.ActorID, meta.DeviceID, order.OrderOpened{
-		Channel: cmd.Channel, Currency: v.Currency, TableID: cmd.TableID, Covers: cmd.Covers, OpenedBy: meta.ActorID,
+		Channel: cmd.Channel, Currency: v.Currency, Service: service, TableID: cmd.TableID, Covers: cmd.Covers, OpenedBy: meta.ActorID,
 	})
 
 	for range maxPublicIDDraws {

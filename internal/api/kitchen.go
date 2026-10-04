@@ -44,6 +44,7 @@ type kitchenTicketResponse struct {
 	SentAt    time.Time             `json:"sent_at"`
 	ReadyAt   *time.Time            `json:"ready_at,omitempty"`
 	Channel   order.Channel         `json:"channel"`
+	Service   order.ServiceType     `json:"service"` // dine_in, takeaway or delivery: what the pass boxes up
 	TableID   int64                 `json:"table_id,omitempty"`
 	Table     string                `json:"table,omitempty"` // its name, and any joined to it: "T4 + T7"
 	Covers    int64                 `json:"covers"`
@@ -146,7 +147,7 @@ func kitchenTicket(bt svcorder.BoardTicket, tables map[int64]string) kitchenTick
 	t, o := bt.Ticket, bt.Order
 	out := kitchenTicketResponse{
 		OrderID: bt.PublicID, TicketSeq: t.Seq, Station: t.Station, Status: t.Status, SentAt: t.At.UTC(),
-		Channel: o.Channel, TableID: o.TableID, Covers: o.Covers, Notes: []string{}, Lines: []kitchenLineResponse{},
+		Channel: o.Channel, Service: o.Service, TableID: o.TableID, Covers: o.Covers, Notes: []string{}, Lines: []kitchenLineResponse{},
 	}
 	if !t.ReadyAt.IsZero() {
 		ready := t.ReadyAt.UTC()

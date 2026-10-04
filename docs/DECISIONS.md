@@ -4216,3 +4216,33 @@ Cost: the shift's count route is guarded by payment.take, so a waiter can count
 a drawer; Task 4 decides whether that stays. The migration's list and
 `DefaultRoles` are two copies of one list, each held by a test.
 ---
+
+## ADR-146 - Service type on an order: dine-in, takeaway, delivery
+2026-10 · Status: accepted
+Decision: `order.opened` gains `service` (`dine_in`, `takeaway`, `delivery`).
+The service always writes it: a client that leaves it out gets dine-in with a
+table and takeaway without. An event stored without it reads the same way, at
+projection, so no stored event changes. `State.Service` carries it, and
+`ProjectionVersion` moves 6 to 7. The order, the open-ticket list and the
+kitchen ticket responses carry `service`.
+  - Takeaway and delivery with a table are refused (`invalid_payload`). Dine-in
+    may open with no table.
+  - Seating a takeaway (`order.table_changed` from 0) makes it dine-in. A
+    delivery cannot be seated: `ErrServiceNoTable`, 409 `service_no_table`. So
+    the service and the table never disagree, with no event to change a
+    service.
+  - Guests were already `covers` on the opening event, so 1b adds nothing for
+    them. Nothing changes covers after open; a screen that needs it adds an
+    event then.
+  - Not done: the Z-report does not split sales by service (the task allowed
+    that unless it was free, and it was not looked into further), and a kitchen
+    ticket prints the table or nothing, not "Takeaway" or "Delivery". The
+    kitchen display response has the field.
+Because: the order screen's rail (D03) and the kitchen board draw how an order
+is served, and the old model could only say "has a table".
+Cost: an order's service can change only by seating it. A dine-in order may be
+priced, invoiced and closed without ever being seated, and a takeaway can be
+seated after its bill is issued (table moves are allowed then): nothing here
+forbids either. A guest who turns a
+dine-in into a takeaway needs a new order, or an event this does not add.
+---

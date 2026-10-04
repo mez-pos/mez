@@ -20,6 +20,38 @@ const (
 	ChannelAggregator Channel = "aggregator"
 )
 
+// ServiceType is how an order is served to the guest: at a table, to take
+// away, or delivered (ADR-146). Channel is where the order came from and this
+// is where it goes, so a counter order may be any of the three.
+type ServiceType string
+
+// The service types. Takeaway and delivery have no table; dine-in may have
+// one, or still be waiting for it to be picked.
+const (
+	ServiceDineIn   ServiceType = "dine_in"
+	ServiceTakeaway ServiceType = "takeaway"
+	ServiceDelivery ServiceType = "delivery"
+)
+
+// DefaultService is what an order opened without a service type is: dine-in
+// when it has a table and takeaway when it has none. It is how orders opened
+// before the field existed read, and what the service writes when a client
+// leaves it out.
+func DefaultService(tableID int64) ServiceType {
+	if tableID != 0 {
+		return ServiceDineIn
+	}
+	return ServiceTakeaway
+}
+
+func validService(s ServiceType) bool {
+	switch s {
+	case ServiceDineIn, ServiceTakeaway, ServiceDelivery:
+		return true
+	}
+	return false
+}
+
 // Scope says whether a discount or note applies to one line or the whole
 // order.
 type Scope string
@@ -58,9 +90,13 @@ const (
 type OrderOpened struct {
 	Channel  Channel `json:"channel"`
 	Currency string  `json:"currency"`
-	TableID  int64   `json:"table_id,omitempty"` // 0 for an order with no table
-	Covers   int64   `json:"covers"`
-	OpenedBy int64   `json:"opened_by"`
+	// Service is how it is served. Empty on an order opened before the field
+	// existed: it reads as DefaultService of the table, and the event on disk
+	// is not touched.
+	Service  ServiceType `json:"service,omitempty"`
+	TableID  int64       `json:"table_id,omitempty"` // 0 for an order with no table
+	Covers   int64       `json:"covers"`
+	OpenedBy int64       `json:"opened_by"`
 }
 
 // Modifier is one modifier on a line, snapshotted when the line was added.

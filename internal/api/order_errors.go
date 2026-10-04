@@ -47,6 +47,8 @@ const (
 	CodeTableAlreadyAt ErrorCode = "table_already_at"
 	CodeTableNotJoined ErrorCode = "table_not_joined"
 	CodeNoTable        ErrorCode = "no_table"
+	// A delivery is not seated at a table (ADR-146).
+	CodeServiceNoTable ErrorCode = "service_no_table"
 
 	// The kitchen display (ADR-090).
 	CodeTicketNotFound ErrorCode = "ticket_not_found"
@@ -94,6 +96,7 @@ var orderErrors = []struct {
 	{order.ErrTableAlreadyAt, http.StatusConflict, CodeTableAlreadyAt},
 	{order.ErrTableNotJoined, http.StatusConflict, CodeTableNotJoined},
 	{order.ErrNoTable, http.StatusConflict, CodeNoTable},
+	{order.ErrServiceNoTable, http.StatusConflict, CodeServiceNoTable},
 	{order.ErrLineNotFound, http.StatusConflict, CodeLineNotFound},
 	{order.ErrLineNotActive, http.StatusConflict, CodeLineNotActive},
 	{order.ErrPaymentNotFound, http.StatusConflict, CodePaymentNotFound},

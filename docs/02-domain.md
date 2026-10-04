@@ -48,7 +48,7 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 
 | Type | Payload |
 |---|---|
-| `order.opened` | channel, table, covers, opened_by |
+| `order.opened` | channel, service (dine_in, takeaway, delivery), table, covers, opened_by |
 | `line.added` | item_id, qty, unit_price, modifiers[], course, station |
 | `line.qty_changed` | line_id, from, to: only before the line reaches the kitchen |
 | `line.modified` | line_id, from[], to[]: modifiers, only before the line reaches the kitchen |
@@ -180,6 +180,22 @@ referencing the old one.
 `counter`, `qr_table`, `web`, `kiosk`, `aggregator`. Channel affects routing,
 prepay requirements and reporting — **not** the shape of an order. One ticket
 model, regardless of origin. This is the core product promise; do not fork it.
+
+## Service type
+
+How an order is served is its **service type**: `dine_in`, `takeaway` or
+`delivery` (ADR-146). It is not the channel: a counter order may be any of
+the three. It is a field of `order.opened`, always written by the service.
+
+- An order opened before the field existed reads as `dine_in` when it has a
+  table and `takeaway` when it has none. The events on disk are not touched.
+- Takeaway and delivery have no table. A dine-in order may open with none, the
+  table still to be picked.
+- Seating a takeaway (`order.table_changed` from 0) makes it dine-in, so the
+  service never disagrees with the table. A delivery cannot be seated
+  (`ErrServiceNoTable`).
+- Guests are `covers` on the same event. There is no event to change them
+  after the order opens.
 
 ## States
 

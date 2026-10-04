@@ -25,6 +25,9 @@ var (
 	// ErrNoTable means a join on an order with no table of its own: seat it
 	// at one first.
 	ErrNoTable = errors.New("the order has no table to join others to")
+	// ErrServiceNoTable means a seating on a delivery order: it is not eaten
+	// at a table (ADR-146).
+	ErrServiceNoTable = errors.New("a delivery order has no table")
 )
 
 // OrderTableChanged moves the order from one table to another. From is where
@@ -70,6 +73,12 @@ func (p *projector) changeTable(pl OrderTableChanged) error {
 	if pl.To == p.s.TableID || slices.Contains(p.s.Joined, pl.To) {
 		return fmt.Errorf("%w: %d", ErrTableAlreadyAt, pl.To)
 	}
+	// A seating is the guest deciding to eat in: a takeaway becomes dine-in.
+	// A delivery cannot be seated.
+	if p.s.Service == ServiceDelivery {
+		return ErrServiceNoTable
+	}
+	p.s.Service = ServiceDineIn
 	p.s.TableID = pl.To
 	return nil
 }

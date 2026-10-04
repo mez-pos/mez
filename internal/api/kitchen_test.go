@@ -9,6 +9,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/domain/kitchen"
+	"github.com/byjoellobo/mez/internal/domain/order"
 )
 
 // TestKitchenOverHTTP: a kitchen display, with no one signed in, reads its
@@ -50,7 +51,7 @@ func TestKitchenOverHTTP(t *testing.T) {
 		t.Fatalf("kitchen board: %d %+v", status, out)
 	}
 	tk := out.Tickets[0]
-	if tk.Table != "4" || tk.Status != kitchen.TicketFired || tk.Covers != 2 || len(tk.Lines) != 1 ||
+	if tk.Table != "4" || tk.Service != order.ServiceDineIn || tk.Status != kitchen.TicketFired || tk.Covers != 2 || len(tk.Lines) != 1 ||
 		tk.Lines[0].Name != "Masala dosa" || tk.Lines[0].Qty != 2 || tk.Lines[0].Modifiers[0] != "Extra chutney" || tk.Lines[0].Notes[0] != "no onion" {
 		t.Errorf("ticket = %+v", tk)
 	}

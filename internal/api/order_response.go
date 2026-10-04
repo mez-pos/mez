@@ -15,17 +15,19 @@ import (
 // orderResponse is an order as every screen reads it: the projection, not
 // the events. A terminal redraws the bill from this and nothing else.
 type orderResponse struct {
-	ID        string        `json:"id"`
-	Status    order.Status  `json:"status"`
-	Channel   order.Channel `json:"channel"`
-	Currency  string        `json:"currency"`
-	TableID   int64         `json:"table_id,omitempty"`
-	Joined    []int64       `json:"joined,omitempty"` // tables joined for one party (ADR-088)
-	Covers    int64         `json:"covers"`
-	OpenedBy  int64         `json:"opened_by,omitempty"`
-	OpenedAt  time.Time     `json:"opened_at"`
-	ClosedAt  *time.Time    `json:"closed_at,omitempty"`
-	UpdatedAt time.Time     `json:"updated_at"`
+	ID       string        `json:"id"`
+	Status   order.Status  `json:"status"`
+	Channel  order.Channel `json:"channel"`
+	Currency string        `json:"currency"`
+	// Service is how it is served: dine_in, takeaway or delivery (ADR-146).
+	Service   order.ServiceType `json:"service"`
+	TableID   int64             `json:"table_id,omitempty"`
+	Joined    []int64           `json:"joined,omitempty"` // tables joined for one party (ADR-088)
+	Covers    int64             `json:"covers"`
+	OpenedBy  int64             `json:"opened_by,omitempty"`
+	OpenedAt  time.Time         `json:"opened_at"`
+	ClosedAt  *time.Time        `json:"closed_at,omitempty"`
+	UpdatedAt time.Time         `json:"updated_at"`
 
 	// LastSeq is the order's last event. A client sends it back on a
 	// WebSocket reconnect to be told what it missed.
@@ -181,7 +183,7 @@ func toCommandResponse(res svcorder.Result) commandResponse {
 func toOrderResponse(res svcorder.Result) orderResponse {
 	s := res.State
 	out := orderResponse{
-		ID: res.PublicID, Status: s.Status, Channel: s.Channel, Currency: s.Currency,
+		ID: res.PublicID, Status: s.Status, Channel: s.Channel, Currency: s.Currency, Service: s.Service,
 		TableID: s.TableID, Joined: s.Joined, Covers: s.Covers, OpenedBy: s.OpenedBy, OpenedAt: s.OpenedAt.UTC(),
 		UpdatedAt: s.UpdatedAt.UTC(), LastSeq: s.LastSeq, Reopens: s.Reopens, Invoiced: s.Invoiced,
 		Totals: totalsResponse(s.Totals),
@@ -261,18 +263,19 @@ func toTaxResponse(t tax.TaxResult) *taxResponse {
 // ticketSummary is one open ticket, for the till's ticket list: enough to
 // tell tickets apart and see which is late, not the bill itself.
 type ticketSummary struct {
-	ID         string        `json:"id"`
-	Status     order.Status  `json:"status"`
-	Channel    order.Channel `json:"channel"`
-	TableID    int64         `json:"table_id,omitempty"`
-	Joined     []int64       `json:"joined,omitempty"`
-	Covers     int64         `json:"covers"`
-	OpenedBy   int64         `json:"opened_by,omitempty"`
-	OpenedAt   time.Time     `json:"opened_at"`
-	UpdatedAt  time.Time     `json:"updated_at"`
-	Lines      int64         `json:"lines"` // active lines
-	Total      money.Amount  `json:"total"`
-	BalanceDue money.Amount  `json:"balance_due"`
+	ID         string            `json:"id"`
+	Status     order.Status      `json:"status"`
+	Channel    order.Channel     `json:"channel"`
+	Service    order.ServiceType `json:"service"`
+	TableID    int64             `json:"table_id,omitempty"`
+	Joined     []int64           `json:"joined,omitempty"`
+	Covers     int64             `json:"covers"`
+	OpenedBy   int64             `json:"opened_by,omitempty"`
+	OpenedAt   time.Time         `json:"opened_at"`
+	UpdatedAt  time.Time         `json:"updated_at"`
+	Lines      int64             `json:"lines"` // active lines
+	Total      money.Amount      `json:"total"`
+	BalanceDue money.Amount      `json:"balance_due"`
 }
 
 // openTicketsResponse is every ticket not yet closed, oldest first.
@@ -297,7 +300,7 @@ func toOpenTicketsResponse(open svcorder.OpenTickets) openTicketsResponse {
 			}
 		}
 		out.Orders[i] = ticketSummary{
-			ID: r.PublicID, Status: st.Status, Channel: st.Channel, TableID: st.TableID, Joined: st.Joined, Covers: st.Covers,
+			ID: r.PublicID, Status: st.Status, Channel: st.Channel, Service: st.Service, TableID: st.TableID, Joined: st.Joined, Covers: st.Covers,
 			OpenedBy: st.OpenedBy, OpenedAt: st.OpenedAt.UTC(), UpdatedAt: st.UpdatedAt.UTC(), Lines: active,
 			Total: st.Totals.Total, BalanceDue: st.Totals.BalanceDue,
 		}

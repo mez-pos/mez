@@ -165,6 +165,15 @@ func (p *projector) open(e Event, pl OrderOpened) error {
 	if pl.Covers < 0 || pl.TableID < 0 {
 		return invalid("covers and table must not be negative")
 	}
+	service := pl.Service
+	switch {
+	case service == "":
+		service = DefaultService(pl.TableID)
+	case !validService(service):
+		return invalid("unknown service type %q", pl.Service)
+	case service != ServiceDineIn && pl.TableID != 0:
+		return invalid("a %s order has no table", service)
+	}
 	if p.taxes.Profile != nil && p.taxes.Venue.Currency != pl.Currency {
 		return fmt.Errorf("%w: the venue is taxed in %q, the order is in %q", ErrTaxConfig, p.taxes.Venue.Currency, pl.Currency)
 	}
@@ -172,6 +181,7 @@ func (p *projector) open(e Event, pl OrderOpened) error {
 	p.s = State{
 		Channel:  pl.Channel,
 		Currency: pl.Currency,
+		Service:  service,
 		TableID:  pl.TableID,
 		Covers:   pl.Covers,
 		OpenedBy: pl.OpenedBy,

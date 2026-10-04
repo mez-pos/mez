@@ -14,26 +14,28 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 1a: the waiter role and role names** (ADR-145). `waiter` is a
-default role (order.open, order.edit, payment.take, kitchen.view); migration
-00031 gives it to existing venues. `GET /api/v1/staff` and sessions carry
-`role`. The demo venue has Kabir (waiter, 5555). The web auth store drops a
-session saved before roles were named. Tests: the role's permissions, role names
-on every auth path, the migration (once, and not beside the owner's own
-"waiter"), the stored-session drop. `make check` and `make build-web` pass.
-Not tried in a browser: no screen shows a role yet (Task 3).
+**Rebuild, Task 1b: service type on an order** (ADR-146). `order.opened`
+carries `service` (dine_in, takeaway, delivery); the service always writes it,
+and an old event reads as dine-in with a table, takeaway without. Seating a
+takeaway makes it dine-in, a delivery cannot be seated (409
+`service_no_table`). `ProjectionVersion` is 7. The order, open-ticket and
+kitchen ticket responses carry `service`. Tests: the domain (defaults,
+refusals, seating, resume, decoding an old payload), the service (recorded on
+the event, refused combinations, idempotency), HTTP. `make check` and `make
+build-web` pass. Guests are the existing `covers`; the Z-report does not split
+by service and the kitchen ticket print does not show it (both in ADR-146).
+No screen draws it yet.
 
-Before it: Task 0 (ADR-144), `mez pair`, a demo cafe and `make dev`. Before that,
-the rebuild plan (ADR-143, `docs/phases/rebuild.md`).
+Before it: Task 1a (ADR-145, the waiter role and role names), Task 0 (ADR-144,
+`mez pair`, a demo cafe, `make dev`), the rebuild plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 1b** (service type on an order: dine-in, takeaway, delivery, a
-new field on the opening event; guest count if the events lack it), then 1c
-(item description, dietary mark, popular flag). 1b moves
-`order.ProjectionVersion`. Then Task 2 (the shell) and Task 3 (login). Phase 11
-waits for this phase. Phase 10's tasks are all done (6l moved to phase 12,
-ADR-141); its done-when is a human check and stays unticked below.
+**Rebuild, Task 1c** (item description, a dietary mark - veg, non-veg, vegan,
+gluten free - and a popular flag, with plain menu editor form fields), then
+Task 2 (the shell) and Task 3 (login). Phase 11 waits for this phase. Phase
+10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is a
+human check and stays unticked below.
 
 ## Known broken / in progress
 

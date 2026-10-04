@@ -37,6 +37,11 @@ type PartTables struct {
 // MoveTable moves an order to another table, which must be free.
 func (s *Service) MoveTable(ctx context.Context, meta Meta, orderID int64, cmd MoveTable) (Result, error) {
 	return s.run(ctx, meta, orderID, "move_table", cmd, func(ctx context.Context, tx *db.OrderTx, _ venue, _ time.Time) ([]order.Payload, error) {
+		// Said before the table is looked at, so a delivery gets the same
+		// answer whichever table it was sent to (ADR-146).
+		if tx.State.Service == order.ServiceDelivery {
+			return nil, order.ErrServiceNoTable
+		}
 		if err := tableFree(ctx, tx.Queries(), meta.VenueID, cmd.To); err != nil {
 			return nil, err
 		}

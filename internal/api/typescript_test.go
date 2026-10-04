@@ -124,7 +124,7 @@ var errorCodes = []ErrorCode{
 	CodeNotInvoiced, CodeOverCredit, CodeRefundsMismatch,
 	CodeAreaNotFound, CodeAreaRetired, CodeAreaInUse, CodeTableNotFound, CodeCellTaken, CodeFloorNameTaken, CodeInvalidFloor,
 	CodeTableOccupied, CodeTableNotEmpty,
-	CodeTableTaken, CodeTableMoved, CodeTableAlreadyAt, CodeTableNotJoined, CodeNoTable,
+	CodeTableTaken, CodeTableMoved, CodeTableAlreadyAt, CodeTableNotJoined, CodeNoTable, CodeServiceNoTable,
 	CodeTicketNotFound,
 	CodeNoOpenShift, CodeShiftOpen, CodeShiftClosed, CodeShiftUnknown, CodeInvalidCount, CodeInvalidCash,
 	CodeAlreadyCounted, CodeNotCounted, CodeDrawerCounted, CodeVarianceUnexplained, CodeAlreadyExplained,
@@ -220,6 +220,9 @@ func generate() (*ts.Generator, error) {
 		{"OrderChannel", order.ChannelCounter, []string{
 			string(order.ChannelCounter), string(order.ChannelQRTable), string(order.ChannelWeb),
 			string(order.ChannelKiosk), string(order.ChannelAggregator),
+		}},
+		{"ServiceType", order.ServiceDineIn, []string{
+			string(order.ServiceDineIn), string(order.ServiceTakeaway), string(order.ServiceDelivery),
 		}},
 		{"LineStatus", order.LineStatusActive, []string{
 			string(order.LineStatusActive), string(order.LineStatusVoided), string(order.LineStatusComped),
