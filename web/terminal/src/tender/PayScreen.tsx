@@ -1,8 +1,10 @@
 // The payment screen (D07): the order down the left, and in the middle the
 // three steps. Payment is a method, the amount received with the change to
 // return, and a tip kept apart from the bill. Split Bill hands the bill out in
-// shares, each then one payment. Complete is the invoice, with the paid panel
-// on the right and New Order. ADR-156 records what this screen draws.
+// shares, each then one payment (D08a). A card or UPI payment waits to be
+// marked paid, and one that leaves some owed is confirmed (D08b). Complete is
+// the invoice, with the paid panel on the right and New Order. ADR-156 and
+// ADR-159 record what this screen draws.
 //
 // Every figure is the server's but the change, the part of a cash payment that
 // settles the bill, and a tip offered as a percentage, which tender-logic.ts
@@ -18,12 +20,13 @@ import type { Ticket } from "../register/use-ticket";
 import { AmountCard } from "./AmountCard";
 import { InvoicePanel, ReprintSheet } from "./InvoicePanel";
 import { PaidPanel } from "./PaidPanel";
+import { ReceivedCard, RefusedCard, WaitingCard, type Received } from "./PayStates";
 import { MethodTiles, PaySteps } from "./PaySteps";
 import { PaySummary } from "./PaySummary";
-import { nextShare, splitStale } from "./split-logic";
+import { nextShare, payerLabel, splitStale, type SplitDraft } from "./split-logic";
 import { SplitPanel } from "./SplitPanel";
-import { SplitShares } from "./SplitShares";
-import { attemptKey, collectOf, payStep, planTender, quickTenders, type Attempt } from "./tender-logic";
+import { ShareStrip, SplitShares } from "./SplitShares";
+import { attemptKey, collectOf, methodNames, payStep, payView, planTender, quickTenders, type Attempt } from "./tender-logic";
 import { TipCard } from "./TipCard";
 
 interface PayScreenProps {
@@ -63,6 +66,18 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
   const [lastChange, setLastChange] = useState<number | null>(null);
   const [splitting, setSplitting] = useState(false);
   const [inUse, setInUse] = useState<SplitInUse | null>(null);
+  // The split being made is kept here, so a look at the payment step does not
+  // lose it. By item is the design's first mode; the server divides the lines
+  // only while nothing is paid.
+  const [draft, setDraft] = useState<SplitDraft>(() => ({
+    kind: order.totals.net_paid.minor === 0 ? "item" : "evenly",
+    ways: 2,
+    amounts: [],
+    payers: {},
+  }));
+  // When a card or UPI payment began to be taken, away from the till.
+  const [waiting, setWaiting] = useState<number | null>(null);
+  const [received, setReceived] = useState<Received | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [reprinting, setReprinting] = useState(false);
   const invoice = order.invoices.at(-1);
@@ -81,6 +96,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
     : planTender({ method, entered: amountShown, tip, due: target, whole });
   const money = (minor: number): Amount => ({ minor, currency });
   const collect = collectOf(plan, target, tip);
+  const view = payView({ paid, received: received !== null, waiting: waiting !== null, failed: error !== null });
 
   const choose = (next: PaymentMethod) => {
     setMethod(next);
@@ -92,8 +108,8 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
   };
 
   const takeSplit = (split: SplitResponse, amountsKeyed: number) => {
+    // The cards stay up, now with Collect on each.
     setInUse({ split, amountsKeyed, paid: new Set(), current: 0 });
-    setSplitting(false);
     // A tip keyed against the whole bill is not the first share's.
     setTip(0);
     setEntered(cash ? 0 : null);
@@ -131,6 +147,19 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
     try {
       await tender(body, next.key);
       setAttempt(null);
+      setWaiting(null);
+      // Money that leaves some owed is confirmed here; the paid panel says the rest.
+      if (plan.amount < due) {
+        setReceived({
+          method,
+          amount: body.amount,
+          tip: body.tip,
+          change: money(cash ? plan.change : 0),
+          reference: body.reference ?? "",
+          who: inUse && inUse.current !== null ? payerLabel(inUse.split.kind, inUse.current, inUse.amountsKeyed) : null,
+          left: money(due - plan.amount),
+        });
+      }
       if (inUse && inUse.current !== null) {
         const paidShares = new Set(inUse.paid).add(inUse.current);
         setInUse({ ...inUse, paid: paidShares, current: nextShare(inUse.split, paidShares) });
@@ -180,7 +209,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-5 pt-5 2xl:px-7 2xl:pt-6">
           <PaySteps
             step={step}
-            disabled={busy}
+            disabled={busy || view !== "entry"}
             onPayment={() => setSplitting(false)}
             onSplit={() => {
               setSplitting(true);
@@ -189,8 +218,38 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
           />
 
           {step === "split" && (
-            <div className="mt-6">
-              <SplitPanel order={order} onUse={takeSplit} onCancel={() => setSplitting(false)} />
+            <div className="mt-5 flex min-h-0 flex-1 flex-col">
+              {inUse ? (
+                <SplitShares
+                  order={order}
+                  title={title}
+                  split={inUse.split}
+                  amountsKeyed={inUse.amountsKeyed}
+                  paid={inUse.paid}
+                  current={inUse.current}
+                  stale={stale}
+                  disabled={busy}
+                  onCollect={(payer) => {
+                    setInUse({ ...inUse, current: payer });
+                    setEntered(cash ? 0 : null);
+                    setTip(0);
+                    setField(cash ? "amount" : "tip");
+                    // Another share is another payment: it never reuses a failed one's key.
+                    setAttempt(null);
+                    setError(null);
+                    setSplitting(false);
+                  }}
+                  onClear={() => {
+                    setInUse(null);
+                    setEntered(cash ? 0 : null);
+                    setTip(0);
+                    setField("amount");
+                  }}
+                  onBack={() => setSplitting(false)}
+                />
+              ) : (
+                <SplitPanel order={order} title={title} draft={draft} onDraft={setDraft} onUse={takeSplit} onBack={() => setSplitting(false)} />
+              )}
             </div>
           )}
 
@@ -200,31 +259,63 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
             </div>
           )}
 
-          {step === "payment" && (
+          {step === "payment" && view === "waiting" && waiting !== null && (
+            <div className="mt-6">
+              <WaitingCard
+                method={method}
+                charge={money(plan.charge)}
+                tip={money(tip)}
+                reference={reference}
+                since={waiting}
+                busy={busy}
+                onReference={setReference}
+                onCancel={() => setWaiting(null)}
+                onPaid={() => void send()}
+              />
+            </div>
+          )}
+
+          {step === "payment" && view === "refused" && (
+            <div className="mt-6">
+              <RefusedCard
+                method={method}
+                reason={error ?? ""}
+                busy={busy}
+                onOther={() => {
+                  setWaiting(null);
+                  setError(null);
+                }}
+                onRetry={() => void send()}
+              />
+            </div>
+          )}
+
+          {step === "payment" && view === "received" && received && (
+            <div className="mt-6">
+              <ReceivedCard
+                received={received}
+                next={inUse ? "Next share" : "Next payment"}
+                onNext={() => {
+                  setReceived(null);
+                  // Back to the guests' cards, to see who has paid and collect the next.
+                  if (inUse) setSplitting(true);
+                }}
+              />
+            </div>
+          )}
+
+          {step === "payment" && view === "entry" && (
             <>
               {inUse && (
                 <div className="mt-5">
-                  <SplitShares
+                  <ShareStrip
                     split={inUse.split}
                     amountsKeyed={inUse.amountsKeyed}
                     paid={inUse.paid}
                     current={inUse.current}
                     stale={stale}
                     disabled={busy}
-                    onPick={(payer) => {
-                      setInUse({ ...inUse, current: payer });
-                      setEntered(cash ? 0 : null);
-                      setTip(0);
-                      // Another share is another payment: it never reuses a failed one's key.
-                      setAttempt(null);
-                      setError(null);
-                    }}
-                    onClear={() => {
-                      setInUse(null);
-                      setEntered(cash ? 0 : null);
-                      setTip(0);
-                      setField("amount");
-                    }}
+                    onShares={() => setSplitting(true)}
                   />
                 </div>
               )}
@@ -243,7 +334,6 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                   // The tip comes out of the cash: "exact" is the bill and the tip.
                   quick={cash ? quickTenders(target + tip, currency) : []}
                   change={change}
-                  reference={reference}
                   busy={busy}
                   onActivate={() => setField("amount")}
                   onKey={(k) => keyIn("amount", k)}
@@ -255,10 +345,6 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                   onCustom={() => {
                     setEntered(0);
                     setField("amount");
-                    setError(null);
-                  }}
-                  onReference={(text) => {
-                    setReference(text);
                     setError(null);
                   }}
                 />
@@ -291,7 +377,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
           )}
         </div>
 
-        {step === "payment" && (
+        {step === "payment" && view === "entry" && (
           <div className="flex shrink-0 items-center gap-5 border-t border-line bg-canvas px-6 py-3.5 2xl:px-7">
             <p
               role={message?.tone === "error" ? "alert" : undefined}
@@ -304,8 +390,20 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                 </>
               )}
             </p>
-            <Button variant="primary" size="charge" disabled={busy || plan.problem !== null} onClick={() => void send()}>
-              {busy ? "Sending" : "Complete payment"}
+            <Button
+              variant="primary"
+              size="charge"
+              disabled={busy || plan.problem !== null}
+              onClick={() => {
+                // Cash is in the hand; a card or UPI payment is taken first, then marked paid.
+                if (cash) void send();
+                else {
+                  setError(null);
+                  setWaiting(Date.now());
+                }
+              }}
+            >
+              {busy ? "Sending" : cash ? "Complete payment" : `Collect by ${methodNames[method]}`}
               {!busy && (
                 <>
                   <span aria-hidden="true">·</span>

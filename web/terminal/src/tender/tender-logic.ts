@@ -149,3 +149,34 @@ export function chargeLabel(order: OrderResponse | undefined): string {
 export function collectOf(plan: TenderPlan, target: number, tip: number): number {
   return (plan.problem === null ? plan.amount : Math.max(target, 0)) + tip;
 }
+
+/**
+ * What the payment step shows (D08b). Cash is keyed and taken in one go. A
+ * card or UPI payment is taken on the venue's own machine or code, so the
+ * till waits for the cashier to say it went through; a refusal is the
+ * server's, there. Money taken that leaves some owed is confirmed before the
+ * next payment. A bill paid in full needs none of these: the paid panel says it.
+ */
+export type PayView = "entry" | "waiting" | "refused" | "received";
+
+export interface PayViewInput {
+  paid: boolean;
+  /** A payment was just taken and has not been acknowledged. */
+  received: boolean;
+  /** A card or UPI payment is being taken away from the till. */
+  waiting: boolean;
+  failed: boolean;
+}
+
+export function payView({ paid, received, waiting, failed }: PayViewInput): PayView {
+  if (paid) return "entry";
+  if (received) return "received";
+  if (waiting) return failed ? "refused" : "waiting";
+  return "entry";
+}
+
+/** How long a payment has been waited for, as the design writes it: 0:24. */
+export function elapsedClock(ms: number): string {
+  const seconds = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}

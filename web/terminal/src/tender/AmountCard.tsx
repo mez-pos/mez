@@ -1,7 +1,7 @@
 // The amount card (D07): what is to be collected, what was handed over, the
 // round sums a guest is likely to hand over, and the change to give back. Card
-// and UPI have no change: there the amount follows the balance, and the slip or
-// transaction reference takes the place of the quick amounts.
+// and UPI have no change: there the amount follows the balance, and the payment
+// is taken on the venue's own machine or code after Collect (PayStates.tsx).
 
 import { BanknoteIcon } from "lucide-react";
 import type { Money as Amount, PaymentMethod } from "../../../shared/api-types";
@@ -22,21 +22,19 @@ interface AmountCardProps {
   quick: readonly number[];
   /** Cash to hand back, or null when there is none to show. */
   change: Amount | null;
-  reference: string;
   busy: boolean;
   onActivate: () => void;
   onKey: (key: NumKey) => void;
   onQuick: (minor: number) => void;
   /** Clears the amount for one that is none of the quick ones. */
   onCustom: () => void;
-  onReference: (text: string) => void;
 }
 
 const chip =
   "flex min-h-tap items-center justify-center rounded border px-2 text-base outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40";
 
 export function AmountCard(props: AmountCardProps) {
-  const { method, target, share, amount, active, quick, change, reference, busy, onActivate, onKey, onQuick, onCustom, onReference } = props;
+  const { method, target, share, amount, active, quick, change, busy, onActivate, onKey, onQuick, onCustom } = props;
   const cash = method === "cash";
   const money = (minor: number): Amount => ({ minor, currency: target.currency });
 
@@ -82,19 +80,13 @@ export function AmountCard(props: AmountCardProps) {
           </button>
         </div>
       ) : (
-        <label className="mt-4 flex flex-col gap-2">
-          <span className="text-base font-semibold text-fg">{method === "card" ? "Slip reference" : "UPI transaction ID"}</span>
-          <input
-            value={reference}
-            onChange={(e) => onReference(e.target.value)}
-            disabled={busy}
-            maxLength={40}
-            autoComplete="off"
-            spellCheck={false}
-            className="min-h-tap rounded border border-line-strong bg-raised px-4 font-mono text-lg text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
-          />
-          <span className="text-sm text-fg-muted">Optional. Kept with the payment for reconciling.</span>
-        </label>
+        <p className="mt-4 text-sm text-fg-muted">
+          {method === "card"
+            ? "Collect, take it on the card machine, then mark it paid."
+            : method === "upi"
+              ? "Collect, let the guest pay by UPI, then mark it paid."
+              : "Collect, take the payment, then mark it paid."}
+        </p>
       )}
 
       {cash && (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OrderResponse, TenderPayment } from "../../../shared/api-types";
-import { attemptKey, chargeBlock, chargeLabel, collectOf, payStep, planTender, quickTenders, tipFor } from "./tender-logic";
+import { attemptKey, chargeBlock, chargeLabel, collectOf, elapsedClock, payStep, payView, planTender, quickTenders, tipFor } from "./tender-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -174,5 +174,33 @@ describe("collectOf", () => {
     const plan = planTender({ method: "cash", entered: 0, tip: 0, due: 105300 });
     expect(plan.problem).not.toBeNull();
     expect(collectOf(plan, 105300, 5300)).toBe(110600);
+  });
+});
+
+describe("payView", () => {
+  const base = { paid: false, received: false, waiting: false, failed: false };
+  const cases: [string, Partial<typeof base>, string][] = [
+    ["keying a payment", {}, "entry"],
+    ["a cash refusal stays where it was keyed", { failed: true }, "entry"],
+    ["a card being taken on its machine", { waiting: true }, "waiting"],
+    ["a card payment the server refused", { waiting: true, failed: true }, "refused"],
+    ["money taken, more owed", { received: true }, "received"],
+    ["money taken and the bill paid: the paid panel says it", { received: true, paid: true }, "entry"],
+  ];
+  it.each(cases)("%s", (_n, extra, want) => {
+    expect(payView({ ...base, ...extra })).toBe(want);
+  });
+});
+
+describe("elapsedClock", () => {
+  const cases: [number, string][] = [
+    [0, "0:00"],
+    [24_900, "0:24"],
+    [61_000, "1:01"],
+    [600_000, "10:00"],
+    [-5, "0:00"],
+  ];
+  it.each(cases)("%d ms is %s", (ms, want) => {
+    expect(elapsedClock(ms)).toBe(want);
   });
 });

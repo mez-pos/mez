@@ -4719,3 +4719,37 @@ script, tokens.md).
 Cost: two more rows in the rail's totals on a GST venue; a cashier who taps Print
 receipt meets a manager's PIN, since the first copy was printed with the payment.
 ---
+
+## ADR-159 - Split is D08a inside the Split Bill step; card and UPI wait to be marked paid (D08b)
+2026-10 · Status: accepted. Rebuild Task 9. Changes ADR-077's four split tabs and
+ADR-156's "Complete payment records a card at once".
+Decision:
+  - **Three modes, as drawn:** By item, Equally, Custom amounts. The till no longer
+    offers the server's by guest: a line can have several guests, which covers a
+    shared plate. The route and the domain keep it.
+  - **By item starts with every item unassigned.** A guest's card is picked, an item
+    tapped goes to them; "Share" gives it to every guest, and the cross on a card
+    takes that guest off it. The server refuses a line with no payer, so loose lines
+    ride on one payer past the guests (`requestFor`): each Due and "Assigned X of Y"
+    are the server's figures while the split is still being made. Nothing here
+    divides money. By item therefore takes 19 guests, not 20.
+  - **"Complete split" fixes the shares; it does not end the paying.** The same cards
+    then carry Paid or Pending and "Collect", which goes to the payment step for that
+    share alone. The design shows Collect beside unassigned items; a share cannot be
+    paid while the split can still change under it.
+  - **A card or UPI payment waits.** "Collect by Card" commits the amount; the waiting
+    card shows it, counts the wait, takes the slip or UPI reference, and "Mark as
+    paid" records it. Cash is still one tap.
+  - **A refusal is the server's.** "Try again" resends with the same idempotency key;
+    "Try another method" goes back to the tiles.
+  - **Money that leaves some owed is confirmed** (cash too, with its change), then
+    "Next share" returns to the cards or "Next payment" to the tiles. A bill paid in
+    full goes to Complete as before.
+Left out, and why (rule 3): the QR (no UPI ID is kept, and no encoder is in the till),
+the terminal's name and "Connected", "Retry terminal" (no card machine is driven from
+here, and a sale must finish offline); "Share of tax" on a card (a line's figure
+already has its tax in it); "Receipt sent to the guest's phone"; the time on the
+confirmed card (a payment in the order's answer carries none).
+Cost: a card or UPI payment is two taps where it was one. A line shared by some guests
+and not others takes "Share" and then a cross for each guest who did not have it.
+---

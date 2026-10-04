@@ -14,28 +14,29 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 8: Payment** (ADR-156). `/pay/:id` is `PayScreen.tsx`, D07: the order
-down the left (Back to Order, lines, totals, payments taken, Add Discount, Add order
-note), and three steps in the middle. Payment is method tiles, the amount received with
-quick amounts and the change, and a tip card (5, 10, 15% or a custom amount). Split
-Bill opens the split panel as it was. Complete is the invoice, with the paid panel and
-New Order on the right. `TenderScreen.tsx` and `TenderSummary.tsx` are gone. Seen in a
-browser at 1920 and 1366x768 as the manager: cash with a 10% tip and change, a part
-payment's warning, the card view, the split step, the discount sheet, Complete with its
-invoice, New Order back to the order screen. Tests: `tipFor`, `payStep`, `collectOf`.
-`make check` and `make build-web` pass. The owner has not yet looked.
+**Rebuild, Task 9: Split, and UPI or card states** (ADR-159). The Split Bill step is
+D08a: `SplitPanel.tsx` makes a split (By item, Equally, Custom amounts down the left, a
+card for each guest, "Assigned X of Y", Back and Complete split), `SplitShares.tsx` is
+the same cards once it is in use (Paid or Pending, Collect), and `SplitParts.tsx` is
+what both are drawn from. `PayStates.tsx` is D08b: a card or UPI payment waits to be
+marked paid, a refusal offers another method or the same again, and money that leaves
+some owed is confirmed before the next. Seen in a browser at 1366x768 as the manager
+(the draft at 1920 too): items given and shared, a split completed, a share in cash
+with change, the next by card with a refusal forced and retried, Equally, Custom
+amounts, a UPI part payment, and By item shut once something is paid. Tests:
+`requestFor`, `unassigned`, `assign`, `looseShare`, `splitBlock`, `payView`,
+`elapsedClock`. `make check` and `make build-web` pass. The owner has not yet looked.
 
-Before it: Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154),
-Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
-ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
-ADR-147), Task 0 (ADR-144), the plan (ADR-143).
+Before it: Task 8 (ADR-156, payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the
+item modal; 6b, ADR-154), Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the
+shift; `shift.open`, ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148),
+Task 1 (ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 9** (split, and UPI or card states): D08a (line 700 of `mez Desktop
-POS.dc.html`) and D08b (line 751). It redraws `SplitPanel.tsx` and `SplitShares.tsx`
-inside the payment screen's Split Bill step. Read `docs/design/tokens.md` and those
-screens only. Phase 11 waits for this phase. Phase 10's tasks are all done (6l moved to
+**Rebuild, Task 10** (orders and refund): D09 (line 790 of `mez Desktop POS.dc.html`).
+Past bills and the print queue move there. Read `docs/design/tokens.md` and that screen
+only. Phase 11 waits for this phase. Phase 10's tasks are all done (6l moved to
 phase 12, ADR-141); its done-when is a human check and stays unticked below.
 
 Agreed and built on 2026-10-05 (ADR-158): a free table has "Seat N guests" and "Seat
@@ -48,9 +49,14 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
-- The payment screen (ADR-156): not seen by eye are a card or UPI payment taken, a
-  part payment taken and its row, a split in use, a tip keyed on the keypad, a refusal,
-  a discount given from here, a table order's title with a joined table, and "Issue the
+- Split and the payment states (ADR-159): not seen by eye are a stale split, a guest
+  with nothing to pay, taking a guest away, a tip on a card payment's waiting card, and
+  a server's own refusal (the one seen was a dropped connection). At 768px high the
+  unassigned items sit below the fold of the mode column, which scrolls. Two lines of
+  the same item have the same spoken name on their "Give" buttons. A split made and its
+  shares paid are lost on a reload, as before. No QR and no card machine (left out).
+- The payment screen (ADR-156): not seen by eye are a tip keyed on the keypad, a cash
+  refusal, a discount given from here, a table order's title with a joined table, and "Issue the
   invoice first". At 1366x768 the payment step scrolls to reach the keypad.
   After the review: the quick amounts count the tip ("exact" is the bill and the tip),
   a tip is cleared when a split is taken or another share picked, and an amount field

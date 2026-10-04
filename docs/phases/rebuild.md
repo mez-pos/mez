@@ -216,7 +216,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
 - [x] **Task 8 - Payment.** (ADR-156) D07. Three steps (Payment, Split Bill,
   Complete), method tiles, amount received with quick amounts, change, tip,
   receipt choices, the success panel with New Order.
-- [ ] **Task 9 - Split and UPI or card states.** D08a, D08b.
+- [x] **Task 9 - Split and UPI or card states.** (ADR-159) D08a, D08b.
 - [ ] **Task 10 - Orders and refund.** D09. Past bills and the print queue
   move here.
 - [ ] **Task 11 - Waiter home.** T01.
