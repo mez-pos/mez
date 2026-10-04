@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/domain/menu"
 	"github.com/byjoellobo/mez/internal/domain/money"
 	"github.com/byjoellobo/mez/internal/domain/tax"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
@@ -97,6 +98,11 @@ type Item struct {
 	SoldOutUntil *time.Time `json:"sold_out_until,omitempty"`
 	// Photo is the stored photo's name, or empty (ADR-110).
 	Photo string `json:"photo,omitempty"`
+	// What the card shows (ADR-147).
+	Description string    `json:"description"`
+	Diet        menu.Diet `json:"diet"`
+	GlutenFree  bool      `json:"gluten_free"`
+	Popular     bool      `json:"popular"`
 }
 
 // Editor reads the venue's menu for editing.
@@ -150,6 +156,7 @@ func (s *Service) Editor(ctx context.Context, venueID int64) (Editor, error) {
 			Price: money.Amount{Minor: r.Price, Currency: venue.Currency}, HSN: r.Hsn,
 			TaxClassID: r.TaxClassID, StationID: r.StationID, CourseID: r.CourseID, Active: r.Active,
 			ModifierGroups: linked, Photo: r.Photo,
+			Description: r.Description, Diet: menu.Diet(r.Diet), GlutenFree: r.GlutenFree, Popular: r.Popular,
 		}
 		if r.SoldOutUntil.Valid {
 			until := r.SoldOutUntil.Time.UTC()

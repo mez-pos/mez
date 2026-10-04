@@ -172,7 +172,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   role with known PINs printed by setup. `make dev` starts the three
   processes above. Go tests for both.
 
-- [ ] **Task 1 - What the design needs from the server.** Split into
+- [x] **Task 1 - What the design needs from the server.** Split into
   sub-tasks before starting; each is domain code with tests.
   - [x] 1a (ADR-145). A `waiter` role (take orders, send, see own tables; no refunds, no
     shift close). `GET /api/v1/staff` returns each person's role name, so
@@ -182,7 +182,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     dine-in when they have a table and takeaway when not. Guest count on a
     seated order if the events do not carry it yet. Shown on the Z-report
     only if that is free; otherwise note it.
-  - 1c. Item fields the cards show: a short description, a dietary mark
+  - [x] 1c (ADR-147). Item fields the cards show: a short description, a dietary mark
     (veg, non-veg, vegan, gluten free), a "popular" flag. Menu editor form
     fields for them, plain, until Task 16 rebuilds that screen.
   Check first what exists: `internal/domain/order/payloads.go` has a

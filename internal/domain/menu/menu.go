@@ -48,6 +48,28 @@ type Category struct {
 	Name string
 }
 
+// Diet is the mark on an item's card: a vegetarian dot, a non-vegetarian one,
+// or vegan. DietNone is no mark, which is what an item has until someone says
+// (ADR-147). Gluten free is a flag of its own, not a fifth mark.
+type Diet string
+
+// The marks. The strings are what is stored and sent.
+const (
+	DietNone   Diet = ""
+	DietVeg    Diet = "veg"
+	DietNonVeg Diet = "non_veg"
+	DietVegan  Diet = "vegan"
+)
+
+// Valid reports whether d is one of the marks, or none.
+func (d Diet) Valid() bool {
+	switch d {
+	case DietNone, DietVeg, DietNonVeg, DietVegan:
+		return true
+	}
+	return false
+}
+
 // Item is one thing on sale.
 type Item struct {
 	ID         int64
@@ -66,6 +88,13 @@ type Item struct {
 	SoldOutUntil *time.Time
 	// Photo is the stored photo's name, or empty (ADR-110).
 	Photo string
+	// What the card shows (ADR-147): one line of description, a dietary mark,
+	// whether it is gluten free, and whether it is among the venue's popular
+	// items. All of it optional.
+	Description string
+	Diet        Diet
+	GlutenFree  bool
+	Popular     bool
 }
 
 // ModifierGroup is a set of choices with bounds on how many to pick.

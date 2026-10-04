@@ -7,11 +7,14 @@ import { useState, type ReactNode } from "react";
 import type { EditorItem, MenuEditor, MenuItemInput } from "../../../shared/api-types";
 import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
-import { Field, inputClass } from "../FormFields";
+import { CheckField, Choice, Field, inputClass } from "../FormFields";
 import { FormModal } from "../FormModal";
 import { ItemGroupsField } from "./ItemGroupsField";
 import { ItemPhotoField, type PhotoChange } from "./ItemPhotoField";
-import { choices, courseText, priceChange, problemOf, taxClassText, toItemInput, type ItemForm, type Problem } from "./menu-logic";
+import { choices, courseText, dietOptions, priceChange, problemOf, taxClassText, toItemInput, type ItemForm, type Problem } from "./menu-logic";
+
+/** The longest description the server takes, in characters (menus.MaxDescriptionLength). */
+const MAX_DESCRIPTION = 140;
 
 interface ItemFormModalProps {
   menu: MenuEditor;
@@ -148,6 +151,21 @@ export function ItemFormModal({ menu, item, initial, onSave, onClose }: ItemForm
           </Select>
         )}
       </Field>
+      <Field label="Description" hint="One line on the item's card. Optional." error={on("description")}>
+        {(id) => (
+          <input
+            id={id}
+            className={inputClass}
+            value={form.description}
+            maxLength={MAX_DESCRIPTION}
+            autoComplete="off"
+            onChange={(e) => set({ description: e.target.value })}
+          />
+        )}
+      </Field>
+      <Choice label="Mark on the card" value={form.diet} options={dietOptions} onChange={(diet) => set({ diet })} error={on("diet")} />
+      <CheckField label="Gluten free" checked={form.glutenFree} onChange={(glutenFree) => set({ glutenFree })} />
+      <CheckField label="Popular" hint="For the Popular tab on the order screen." checked={form.popular} onChange={(popular) => set({ popular })} />
       <ItemPhotoField
         current={item?.photo ?? ""}
         change={photo}

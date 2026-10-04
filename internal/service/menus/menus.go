@@ -17,6 +17,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/byjoellobo/mez/internal/db"
@@ -107,6 +108,13 @@ type ItemInput struct {
 	TaxClassID int64        `json:"tax_class_id"`
 	StationID  int64        `json:"station_id"`
 	CourseID   int64        `json:"course_id"`
+
+	// What the card shows (ADR-147). A save is the whole item, so a field
+	// left out is cleared.
+	Description string    `json:"description"`
+	Diet        menu.Diet `json:"diet"`
+	GlutenFree  bool      `json:"gluten_free"`
+	Popular     bool      `json:"popular"`
 }
 
 // CreateCategory adds a category at the end of the list.
@@ -183,6 +191,7 @@ func (s *Service) CreateItem(ctx context.Context, venueID int64, in ItemInput) (
 			VenueID: venueID, CategoryID: item.CategoryID, Name: item.Name, Price: item.Price.Minor, Hsn: item.HSN,
 			TaxClassID: item.TaxClassID, StationID: item.StationID, CourseID: item.CourseID, SortOrder: next,
 			CreatedAt: now, UpdatedAt: now,
+			Description: item.Description, Diet: string(item.Diet), GlutenFree: item.GlutenFree, Popular: item.Popular,
 		})
 		return err
 	})
@@ -215,6 +224,7 @@ func (s *Service) UpdateItem(ctx context.Context, venueID, id int64, in ItemInpu
 			CategoryID: item.CategoryID, Name: item.Name, Price: item.Price.Minor, Hsn: item.HSN,
 			TaxClassID: item.TaxClassID, StationID: item.StationID, CourseID: item.CourseID, SortOrder: sort,
 			Now: s.now(), VenueID: venueID, ID: id,
+			Description: item.Description, Diet: string(item.Diet), GlutenFree: item.GlutenFree, Popular: item.Popular,
 		})
 		return oneRow(n, err, ErrItemNotFound)
 	})
@@ -342,6 +352,9 @@ func (s *Service) checkItem(ctx context.Context, q *gen.Queries, venueID int64, 
 		return ItemInput{}, &Invalid{"price", "Give a price of zero or more."}
 	}
 	in.Price = price
+	if err := cleanCard(&in); err != nil {
+		return ItemInput{}, err
+	}
 
 	taxes, err := svcorder.VenueTaxes(ctx, q, venueID)
 	if err != nil {
@@ -356,6 +369,32 @@ func (s *Service) checkItem(ctx context.Context, q *gen.Queries, venueID int64, 
 	}
 
 	return in, s.checkRefs(ctx, q, venueID, in)
+}
+
+// MaxDescriptionLength is the longest an item's description may be, in
+// characters: one line on a card.
+const MaxDescriptionLength = 140
+
+// isLineBreak is a control character or a Unicode line or paragraph
+// separator. Format characters are left alone: the zero-width joiners that
+// Devanagari and Malayalam need are among them.
+func isLineBreak(r rune) bool {
+	return unicode.IsControl(r) || unicode.Is(unicode.Zl, r) || unicode.Is(unicode.Zp, r)
+}
+
+// cleanCard checks what an item's card shows. The description is trimmed and
+// held to one line; the mark is one the menu knows.
+func cleanCard(in *ItemInput) error {
+	in.Description = strings.TrimSpace(in.Description)
+	switch {
+	case utf8.RuneCountInString(in.Description) > MaxDescriptionLength:
+		return &Invalid{"description", fmt.Sprintf("Keep the description to %d characters: it is one line on the item's card.", MaxDescriptionLength)}
+	case strings.ContainsFunc(in.Description, isLineBreak):
+		return &Invalid{"description", "The description is one line: take out the line breaks."}
+	case !in.Diet.Valid():
+		return &Invalid{"diet", "Choose veg, non-veg, vegan, or no mark."}
+	}
+	return nil
 }
 
 // checkRefs checks the category, tax class, station and course an item

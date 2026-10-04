@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/domain/menu"
 	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
@@ -20,7 +21,10 @@ const sacRestaurant = "996331"
 // ring up a sale in its first minute, and so the terminal has a realistic
 // menu to be designed against: required and optional modifiers, defaults,
 // a free choice, two stations and two courses. No modifier costs less than
-// nothing: order.LineAdded refuses a negative modifier price (ADR-071).
+// nothing: order.LineAdded refuses a negative modifier price (ADR-071). Every
+// item has the description and dietary mark its card shows, with a few marked
+// popular and gluten free, so a screen built on the demo looks finished with no
+// photo (ADR-147).
 func demoMenu() db.MenuSpec {
 	const food, bar, kitchen = "Restaurant service 5%", "bar", "kitchen"
 	item := func(name string, rupees int64, station string, course int64, groups ...string) db.ItemSpec {
@@ -29,6 +33,14 @@ func demoMenu() db.MenuSpec {
 			Station: station, Course: course, Groups: groups,
 		}
 	}
+	// dish dresses an item with what its card shows.
+	dish := func(it db.ItemSpec, description string, diet menu.Diet, glutenFree, popular bool) db.ItemSpec {
+		it.Description, it.Diet, it.GlutenFree, it.Popular = description, diet, glutenFree, popular
+		return it
+	}
+	const (
+		veg, vegan, nonVeg = menu.DietVeg, menu.DietVegan, menu.DietNonVeg
+	)
 	return db.MenuSpec{
 		Stations: []db.StationSpec{{Code: bar, Name: "Bar"}, {Code: kitchen, Name: "Kitchen"}},
 		Courses:  []db.CourseSpec{{Number: 1, Name: "First"}, {Number: 2, Name: "Dessert"}},
@@ -64,30 +76,30 @@ func demoMenu() db.MenuSpec {
 		},
 		Categories: []db.CategorySpec{
 			{Name: "Coffee", Items: []db.ItemSpec{
-				item("Filter coffee", 60, bar, 1, "Size", "Sugar"),
-				item("Espresso", 120, bar, 1, "Extras"),
-				item("Americano", 150, bar, 1, "Size", "Extras"),
-				item("Cappuccino", 190, bar, 1, "Size", "Milk", "Extras"),
-				item("Flat white", 210, bar, 1, "Milk", "Extras"),
-				item("Latte", 200, bar, 1, "Size", "Milk", "Extras"),
+				dish(item("Filter coffee", 60, bar, 1, "Size", "Sugar"), "Strong South Indian decoction with frothed milk.", veg, true, true),
+				dish(item("Espresso", 120, bar, 1, "Extras"), "A short, intense double shot.", vegan, true, false),
+				dish(item("Americano", 150, bar, 1, "Size", "Extras"), "Espresso lengthened with hot water.", vegan, true, false),
+				dish(item("Cappuccino", 190, bar, 1, "Size", "Milk", "Extras"), "Espresso under steamed milk and a deep foam.", veg, true, true),
+				dish(item("Flat white", 210, bar, 1, "Milk", "Extras"), "Two shots, silky milk, no foam to speak of.", veg, true, false),
+				dish(item("Latte", 200, bar, 1, "Size", "Milk", "Extras"), "A gentle shot in a lot of steamed milk.", veg, true, false),
 			}},
 			{Name: "Tea and cold", Items: []db.ItemSpec{
-				item("Masala chai", 70, bar, 1, "Size", "Sugar"),
-				item("Iced tea", 160, bar, 1, "Sugar"),
-				item("Cold coffee", 220, bar, 1, "Milk", "Sugar", "Extras"),
-				item("Fresh lime soda", 120, bar, 1, "Sugar"),
+				dish(item("Masala chai", 70, bar, 1, "Size", "Sugar"), "Ginger, cardamom and strong tea simmered in milk.", veg, true, true),
+				dish(item("Iced tea", 160, bar, 1, "Sugar"), "Black tea over ice with lemon.", vegan, true, false),
+				dish(item("Cold coffee", 220, bar, 1, "Milk", "Sugar", "Extras"), "Blended with milk and ice, thick and sweet.", veg, true, false),
+				dish(item("Fresh lime soda", 120, bar, 1, "Sugar"), "Lime, soda and a pinch of salt, sweet or salted.", vegan, true, false),
 			}},
 			{Name: "Breakfast", Items: []db.ItemSpec{
-				item("Idli vada", 110, kitchen, 1, "Add on"),
-				item("Masala dosa", 140, kitchen, 1, "Add on"),
-				item("Upma", 90, kitchen, 1, "Add on"),
-				item("Egg bhurji toast", 180, kitchen, 1),
-				item("Avocado toast", 320, kitchen, 1, "Bread"),
+				dish(item("Idli vada", 110, kitchen, 1, "Add on"), "Soft idlis and a crisp vada, with sambar and chutney.", veg, true, true),
+				dish(item("Masala dosa", 140, kitchen, 1, "Add on"), "A crisp rice crepe around spiced potato.", veg, true, true),
+				dish(item("Upma", 90, kitchen, 1, "Add on"), "Roasted semolina with mustard, curry leaf and cashew.", veg, false, false),
+				dish(item("Egg bhurji toast", 180, kitchen, 1), "Spiced scrambled eggs on buttered toast.", nonVeg, false, false),
+				dish(item("Avocado toast", 320, kitchen, 1, "Bread"), "Smashed avocado, chilli and lime on your choice of bread.", vegan, false, false),
 			}},
 			{Name: "Cakes", Items: []db.ItemSpec{
-				item("Chocolate brownie", 150, kitchen, 2, "Ice cream"),
-				item("Banana walnut cake", 170, kitchen, 2),
-				item("Lemon tart", 190, kitchen, 2),
+				dish(item("Chocolate brownie", 150, kitchen, 2, "Ice cream"), "Dense, warm and not too sweet.", veg, false, true),
+				dish(item("Banana walnut cake", 170, kitchen, 2), "Ripe banana, toasted walnut, a spiced crumb.", veg, false, false),
+				dish(item("Lemon tart", 190, kitchen, 2), "Sharp lemon curd in a buttery shell.", veg, false, false),
 			}},
 		},
 	}

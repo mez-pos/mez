@@ -186,6 +186,7 @@ func assembleItem(currency string, row gen.ActiveItemsRow, station string,
 	return menu.Item{
 		ID: row.ID, CategoryID: row.CategoryID, Name: row.Name, Price: price, HSN: row.Hsn,
 		TaxRate: tax.Rate(class.Rate), TaxExempt: class.Exempt, Station: station, Course: course,
+		Description: row.Description, Diet: menu.Diet(row.Diet), GlutenFree: row.GlutenFree, Popular: row.Popular,
 	}, nil
 }
 

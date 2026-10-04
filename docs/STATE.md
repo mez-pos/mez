@@ -14,28 +14,29 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 1b: service type on an order** (ADR-146). `order.opened`
-carries `service` (dine_in, takeaway, delivery); the service always writes it,
-and an old event reads as dine-in with a table, takeaway without. Seating a
-takeaway makes it dine-in, a delivery cannot be seated (409
-`service_no_table`). `ProjectionVersion` is 7. The order, open-ticket and
-kitchen ticket responses carry `service`. Tests: the domain (defaults,
-refusals, seating, resume, decoding an old payload), the service (recorded on
-the event, refused combinations, idempotency), HTTP. `make check` and `make
-build-web` pass. Guests are the existing `covers`; the Z-report does not split
-by service and the kitchen ticket print does not show it (both in ADR-146).
-No screen draws it yet.
+**Rebuild, Task 1c: what an item card shows** (ADR-147), which closes Task 1.
+Items carry a description (140 characters), a dietary mark (veg, non_veg,
+vegan, or none), a gluten-free flag and a popular flag (migration 00032). They
+reach the editor, the terminal's menu and `db.ItemSpec`; the back office item
+form has plain fields for them, tried in a browser against a real server (open,
+edit, save, reopen). The demo menu gives every item a description and a mark.
+Tests: the columns and their limits, the editor service, HTTP, the demo menu,
+the form logic. `make check` and `make build-web` pass. Nothing reads `popular`
+yet (Task 5), and the guest menu and the kitchen print do not carry the new
+fields.
 
-Before it: Task 1a (ADR-145, the waiter role and role names), Task 0 (ADR-144,
-`mez pair`, a demo cafe, `make dev`), the rebuild plan (ADR-143).
+Before it: Task 1b (ADR-146, service type), 1a (ADR-145, the waiter role),
+Task 0 (ADR-144, `mez pair`, a demo cafe, `make dev`), the plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 1c** (item description, a dietary mark - veg, non-veg, vegan,
-gluten free - and a popular flag, with plain menu editor form fields), then
-Task 2 (the shell) and Task 3 (login). Phase 11 waits for this phase. Phase
-10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is a
-human check and stays unticked below.
+**Rebuild, Task 2** (the shell): routes in the terminal app instead of state
+flags in `RegisterScreen.tsx`, the 72px top navigation and 40px status bar from
+D05, landing by role, the icon decision (an ADR), and how a manager on a
+terminal reaches Menu and Reports. Read `docs/design/tokens.md` first, and
+D05 only (line 363). Then Task 3 (login). Phase 11 waits for this phase.
+Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is
+a human check and stays unticked below.
 
 ## Known broken / in progress
 

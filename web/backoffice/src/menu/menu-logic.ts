@@ -3,7 +3,17 @@
 // the request the server checks.
 
 import { ApiError } from "../../../shared/api";
-import type { EditorCategory, EditorCourse, EditorItem, EditorStation, EditorTaxClass, MenuEditor, MenuItemInput, Money } from "../../../shared/api-types";
+import type {
+  Diet,
+  EditorCategory,
+  EditorCourse,
+  EditorItem,
+  EditorStation,
+  EditorTaxClass,
+  MenuEditor,
+  MenuItemInput,
+  Money,
+} from "../../../shared/api-types";
 import { amountInputText, parseAmount } from "../../../shared/money";
 
 /** The items of one category, in their order. */
@@ -95,7 +105,21 @@ export interface ItemForm {
   taxClassId: number;
   stationId: number;
   courseId: number;
+  /** One line on the item's card; optional. */
+  description: string;
+  /** The mark on the card: none, veg, non-veg or vegan. */
+  diet: Diet;
+  glutenFree: boolean;
+  popular: boolean;
 }
+
+/** The marks, in the order the form offers them: none first, which is what an item has until someone says. */
+export const dietOptions: readonly { value: Diet; label: string }[] = [
+  { value: "", label: "No mark" },
+  { value: "veg", label: "Veg" },
+  { value: "non_veg", label: "Non-veg" },
+  { value: "vegan", label: "Vegan" },
+];
 
 /** A new item's form: in the given category, with the first station, course and tax class chosen. */
 export function newItemForm(menu: MenuEditor, categoryId: number): ItemForm {
@@ -107,6 +131,10 @@ export function newItemForm(menu: MenuEditor, categoryId: number): ItemForm {
     taxClassId: menu.tax_classes.find((t) => t.active)?.id ?? 0,
     stationId: menu.stations.find((s) => s.active)?.id ?? 0,
     courseId: menu.courses.find((c) => c.active)?.id ?? 0,
+    description: "",
+    diet: "",
+    glutenFree: false,
+    popular: false,
   };
 }
 
@@ -119,10 +147,14 @@ export function itemFormFrom(item: EditorItem): ItemForm {
     taxClassId: item.tax_class_id,
     stationId: item.station_id,
     courseId: item.course_id,
+    description: item.description,
+    diet: item.diet,
+    glutenFree: item.gluten_free,
+    popular: item.popular,
   };
 }
 
-export type ItemField = "name" | "category_id" | "price" | "hsn" | "tax_class_id" | "station_id" | "course_id" | "photo";
+export type ItemField = "name" | "category_id" | "price" | "hsn" | "tax_class_id" | "station_id" | "course_id" | "photo" | "description" | "diet";
 
 /** A refusal as the form shows it: under its field, or over the form. */
 export interface Problem {
@@ -145,6 +177,10 @@ export function toItemInput(form: ItemForm, currency: string): { input: MenuItem
       tax_class_id: form.taxClassId,
       station_id: form.stationId,
       course_id: form.courseId,
+      description: form.description.trim(),
+      diet: form.diet,
+      gluten_free: form.glutenFree,
+      popular: form.popular,
     },
   };
 }
@@ -161,7 +197,7 @@ export function priceChange(saved: EditorItem | null, typed: string): { was: Mon
   return { was: saved.price, now: { minor, currency: saved.price.currency } };
 }
 
-const itemFields: readonly string[] = ["name", "category_id", "price", "hsn", "tax_class_id", "station_id", "course_id", "ids", "photo"];
+const itemFields: readonly string[] = ["name", "category_id", "price", "hsn", "tax_class_id", "station_id", "course_id", "ids", "photo", "description", "diet"];
 
 export function problemOf(err: unknown): Problem {
   if (err instanceof ApiError) {

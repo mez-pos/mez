@@ -135,6 +135,10 @@ type Item struct {
 	UpdatedAt    time.Time
 	SoldOutUntil sql.NullTime
 	Photo        string
+	Description  string
+	Diet         string
+	GlutenFree   bool
+	Popular      bool
 }
 
 type ItemModifierGroup struct {

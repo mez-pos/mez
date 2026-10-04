@@ -145,6 +145,12 @@ export type OrderChannel =
   | 'kiosk'
   | 'aggregator';
 
+export type Diet =
+  | ''
+  | 'veg'
+  | 'non_veg'
+  | 'vegan';
+
 export type ServiceType =
   | 'dine_in'
   | 'takeaway'
@@ -1289,6 +1295,10 @@ export interface MenuItemInput {
   tax_class_id: number;
   station_id: number;
   course_id: number;
+  description: string;
+  diet: Diet;
+  gluten_free: boolean;
+  popular: boolean;
 }
 
 export interface MenuOrderRequest {
@@ -1352,6 +1362,10 @@ export interface EditorItem {
   modifier_groups: number[];
   sold_out_until?: string;
   photo?: string;
+  description: string;
+  diet: Diet;
+  gluten_free: boolean;
+  popular: boolean;
 }
 
 export interface EditorGroup {
@@ -2170,6 +2184,10 @@ export interface MenuItemResponse {
   modifier_groups: number[];
   sold_out_until?: string;
   photo?: string;
+  description?: string;
+  diet?: Diet;
+  gluten_free?: boolean;
+  popular?: boolean;
 }
 
 export interface MenuResponse {

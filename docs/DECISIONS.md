@@ -4246,3 +4246,37 @@ seated after its bill is issued (table moves are allowed then): nothing here
 forbids either. A guest who turns a
 dine-in into a takeaway needs a new order, or an event this does not add.
 ---
+
+## ADR-147 - What an item card shows: description, dietary mark, gluten free, popular
+2026-10 · Status: accepted
+Decision: an item gains four optional fields, migration 00032, all empty or
+false for every existing item.
+  - `description`: one line, at most 140 characters (counted as characters,
+    checked in the table and in the editor), trimmed, no line breaks.
+  - `diet`: `veg`, `non_veg`, `vegan`, or `''` for no mark.
+  - `gluten_free` and `popular`: flags.
+They flow through the editor (`ItemInput`, `Item`), the terminal's menu
+(`menu.Item`, left out of the JSON when empty so an old reader sees the item as
+before) and `db.ItemSpec`. The back office item form gets a description box, a
+choice for the mark, and two ticks, plain until Task 16. `-demo-menu` gives
+every item a description and a mark, with some popular and gluten free, so a
+card looks finished with no photo.
+  - **Gluten free is a flag, not a fifth mark.** The design's filter chips list
+    Veg, Non-Veg, Vegan and Gluten Free as peers, but a dish can be vegetarian
+    and gluten free, and one column could not say both. The chips can still be
+    four: Veg should include vegan items, which is the screen's rule (Task 5).
+  - A save is the whole item, as it was: a client that leaves a field out
+    clears it. The back office sends all four every time.
+  - Nothing reads `popular` yet: the order screen's Popular tab is Task 5.
+    The form's hint says only that.
+Because: the order screen's item cards (D03), the item modal (D04) and the
+guest phone draw these, and a card with only a name and a price looks
+unfinished.
+Cost: no screen reads them yet; the back office form was tried in a browser
+against a real server (open, edit, save, reopen). `db.ItemSpec` (setup, tests)
+is not run through the editor's checks; only the table's constraints guard it.
+The line-break check refuses controls and Unicode line or paragraph separators,
+not format characters, which Indic scripts use. Not done:
+the guest menu (phase 11) does not carry them, and the kitchen ticket does not
+print the mark.
+---

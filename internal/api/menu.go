@@ -122,6 +122,12 @@ type menuItemResponse struct {
 	SoldOutUntil *time.Time `json:"sold_out_until,omitempty"`
 	// Photo is a stored photo's name, served at /api/v1/menu/photos/{name}.
 	Photo string `json:"photo,omitempty"`
+	// What the card shows (ADR-147). Left out of the JSON when there is
+	// nothing to show, so an item that says none reads as before.
+	Description string    `json:"description,omitempty"`
+	Diet        menu.Diet `json:"diet,omitempty"`
+	GlutenFree  bool      `json:"gluten_free,omitempty"`
+	Popular     bool      `json:"popular,omitempty"`
 }
 
 // modifierGroupResponse is a group of choices. A group with min_select
@@ -170,6 +176,7 @@ func toMenuResponse(m menu.Menu) menuResponse {
 			ID: it.ID, CategoryID: it.CategoryID, Name: it.Name, Price: it.Price,
 			Station: it.Station, Course: it.Course, TaxRate: it.TaxRate, HSN: it.HSN,
 			TaxExempt: it.TaxExempt, ModifierGroups: groups, SoldOutUntil: it.SoldOutUntil, Photo: it.Photo,
+			Description: it.Description, Diet: it.Diet, GlutenFree: it.GlutenFree, Popular: it.Popular,
 		}
 	}
 	for i, g := range m.Groups {

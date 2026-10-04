@@ -51,7 +51,8 @@ ORDER BY sort_order, id;
 -- "Breakfast" at noon takes every breakfast item off the till with it.
 SELECT
     i.id, i.category_id, i.name, i.price, i.hsn,
-    i.tax_class_id, i.station_id, i.course_id, i.sort_order, i.sold_out_until, i.photo
+    i.tax_class_id, i.station_id, i.course_id, i.sort_order, i.sold_out_until, i.photo,
+    i.description, i.diet, i.gluten_free, i.popular
 FROM items i
 JOIN categories c ON c.venue_id = i.venue_id AND c.id = i.category_id
 WHERE i.venue_id = ? AND i.active = 1 AND c.active = 1
@@ -98,8 +99,9 @@ RETURNING id;
 -- name: CreateItem :one
 INSERT INTO items (
     venue_id, category_id, name, price, hsn,
-    tax_class_id, station_id, course_id, sort_order, created_at, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    tax_class_id, station_id, course_id, sort_order, created_at, updated_at,
+    description, diet, gluten_free, popular
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id;
 
 -- name: CreateModifierGroup :one
@@ -141,7 +143,8 @@ ORDER BY sort_order, id;
 -- name: EditorItems :many
 SELECT
     id, category_id, name, price, hsn,
-    tax_class_id, station_id, course_id, sort_order, active, sold_out_until, photo
+    tax_class_id, station_id, course_id, sort_order, active, sold_out_until, photo,
+    description, diet, gluten_free, popular
 FROM items
 WHERE venue_id = ?
 ORDER BY category_id, sort_order, id;
@@ -220,7 +223,9 @@ WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
 UPDATE items
 SET category_id = sqlc.arg(category_id), name = sqlc.arg(name), price = sqlc.arg(price),
     hsn = sqlc.arg(hsn), tax_class_id = sqlc.arg(tax_class_id), station_id = sqlc.arg(station_id),
-    course_id = sqlc.arg(course_id), sort_order = sqlc.arg(sort_order), updated_at = sqlc.arg(now)
+    course_id = sqlc.arg(course_id), sort_order = sqlc.arg(sort_order), updated_at = sqlc.arg(now),
+    description = sqlc.arg(description), diet = sqlc.arg(diet), gluten_free = sqlc.arg(gluten_free),
+    popular = sqlc.arg(popular)
 WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
 
 -- name: SetItemActive :execrows

@@ -15,6 +15,7 @@ import (
 	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/codegen/ts"
 	"github.com/byjoellobo/mez/internal/domain/kitchen"
+	"github.com/byjoellobo/mez/internal/domain/menu"
 	"github.com/byjoellobo/mez/internal/domain/money"
 	"github.com/byjoellobo/mez/internal/domain/order"
 	"github.com/byjoellobo/mez/internal/domain/printjob"
@@ -220,6 +221,9 @@ func generate() (*ts.Generator, error) {
 		{"OrderChannel", order.ChannelCounter, []string{
 			string(order.ChannelCounter), string(order.ChannelQRTable), string(order.ChannelWeb),
 			string(order.ChannelKiosk), string(order.ChannelAggregator),
+		}},
+		{"Diet", menu.DietVeg, []string{
+			string(menu.DietNone), string(menu.DietVeg), string(menu.DietNonVeg), string(menu.DietVegan),
 		}},
 		{"ServiceType", order.ServiceDineIn, []string{
 			string(order.ServiceDineIn), string(order.ServiceTakeaway), string(order.ServiceDelivery),

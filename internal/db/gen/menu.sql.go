@@ -63,7 +63,8 @@ func (q *Queries) ActiveCourseCount(ctx context.Context, venueID int64) (int64, 
 const activeItems = `-- name: ActiveItems :many
 SELECT
     i.id, i.category_id, i.name, i.price, i.hsn,
-    i.tax_class_id, i.station_id, i.course_id, i.sort_order, i.sold_out_until, i.photo
+    i.tax_class_id, i.station_id, i.course_id, i.sort_order, i.sold_out_until, i.photo,
+    i.description, i.diet, i.gluten_free, i.popular
 FROM items i
 JOIN categories c ON c.venue_id = i.venue_id AND c.id = i.category_id
 WHERE i.venue_id = ? AND i.active = 1 AND c.active = 1
@@ -82,6 +83,10 @@ type ActiveItemsRow struct {
 	SortOrder    int64
 	SoldOutUntil sql.NullTime
 	Photo        string
+	Description  string
+	Diet         string
+	GlutenFree   bool
+	Popular      bool
 }
 
 // An item in a retired category is not on sale either: retiring
@@ -107,6 +112,10 @@ func (q *Queries) ActiveItems(ctx context.Context, venueID int64) ([]ActiveItems
 			&i.SortOrder,
 			&i.SoldOutUntil,
 			&i.Photo,
+			&i.Description,
+			&i.Diet,
+			&i.GlutenFree,
+			&i.Popular,
 		); err != nil {
 			return nil, err
 		}
@@ -544,23 +553,28 @@ func (q *Queries) CreateCourse(ctx context.Context, arg CreateCourseParams) (int
 const createItem = `-- name: CreateItem :one
 INSERT INTO items (
     venue_id, category_id, name, price, hsn,
-    tax_class_id, station_id, course_id, sort_order, created_at, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    tax_class_id, station_id, course_id, sort_order, created_at, updated_at,
+    description, diet, gluten_free, popular
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id
 `
 
 type CreateItemParams struct {
-	VenueID    int64
-	CategoryID int64
-	Name       string
-	Price      int64
-	Hsn        string
-	TaxClassID int64
-	StationID  int64
-	CourseID   int64
-	SortOrder  int64
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	VenueID     int64
+	CategoryID  int64
+	Name        string
+	Price       int64
+	Hsn         string
+	TaxClassID  int64
+	StationID   int64
+	CourseID    int64
+	SortOrder   int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Description string
+	Diet        string
+	GlutenFree  bool
+	Popular     bool
 }
 
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (int64, error) {
@@ -576,6 +590,10 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (int64, 
 		arg.SortOrder,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.Description,
+		arg.Diet,
+		arg.GlutenFree,
+		arg.Popular,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -804,7 +822,8 @@ func (q *Queries) EditorCourses(ctx context.Context, venueID int64) ([]EditorCou
 const editorItems = `-- name: EditorItems :many
 SELECT
     id, category_id, name, price, hsn,
-    tax_class_id, station_id, course_id, sort_order, active, sold_out_until, photo
+    tax_class_id, station_id, course_id, sort_order, active, sold_out_until, photo,
+    description, diet, gluten_free, popular
 FROM items
 WHERE venue_id = ?
 ORDER BY category_id, sort_order, id
@@ -823,6 +842,10 @@ type EditorItemsRow struct {
 	Active       bool
 	SoldOutUntil sql.NullTime
 	Photo        string
+	Description  string
+	Diet         string
+	GlutenFree   bool
+	Popular      bool
 }
 
 func (q *Queries) EditorItems(ctx context.Context, venueID int64) ([]EditorItemsRow, error) {
@@ -847,6 +870,10 @@ func (q *Queries) EditorItems(ctx context.Context, venueID int64) ([]EditorItems
 			&i.Active,
 			&i.SoldOutUntil,
 			&i.Photo,
+			&i.Description,
+			&i.Diet,
+			&i.GlutenFree,
+			&i.Popular,
 		); err != nil {
 			return nil, err
 		}
@@ -1956,22 +1983,28 @@ const updateItem = `-- name: UpdateItem :execrows
 UPDATE items
 SET category_id = ?1, name = ?2, price = ?3,
     hsn = ?4, tax_class_id = ?5, station_id = ?6,
-    course_id = ?7, sort_order = ?8, updated_at = ?9
-WHERE venue_id = ?10 AND id = ?11
+    course_id = ?7, sort_order = ?8, updated_at = ?9,
+    description = ?10, diet = ?11, gluten_free = ?12,
+    popular = ?13
+WHERE venue_id = ?14 AND id = ?15
 `
 
 type UpdateItemParams struct {
-	CategoryID int64
-	Name       string
-	Price      int64
-	Hsn        string
-	TaxClassID int64
-	StationID  int64
-	CourseID   int64
-	SortOrder  int64
-	Now        time.Time
-	VenueID    int64
-	ID         int64
+	CategoryID  int64
+	Name        string
+	Price       int64
+	Hsn         string
+	TaxClassID  int64
+	StationID   int64
+	CourseID    int64
+	SortOrder   int64
+	Now         time.Time
+	Description string
+	Diet        string
+	GlutenFree  bool
+	Popular     bool
+	VenueID     int64
+	ID          int64
 }
 
 // A line already rung up keeps the name, price and tax it copied
@@ -1988,6 +2021,10 @@ func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) (int64, 
 		arg.CourseID,
 		arg.SortOrder,
 		arg.Now,
+		arg.Description,
+		arg.Diet,
+		arg.GlutenFree,
+		arg.Popular,
 		arg.VenueID,
 		arg.ID,
 	)

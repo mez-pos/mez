@@ -43,6 +43,10 @@ const item = (id: number, groups: number[]): EditorItem => ({
   course_id: 1,
   active: id !== 3,
   modifier_groups: groups,
+  description: "",
+  diet: "",
+  gluten_free: false,
+  popular: false,
 });
 
 const menu = {

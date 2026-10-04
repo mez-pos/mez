@@ -3,6 +3,7 @@ import { ApiError } from "../../../shared/api";
 import type { EditorItem, MenuEditor } from "../../../shared/api-types";
 import {
   choices,
+  dietOptions,
   itemFormFrom,
   itemFromSearch,
   itemsOf,
@@ -33,6 +34,10 @@ const item = (id: number, category: number, name: string, price: number, extra: 
   course_id: 1,
   active: true,
   modifier_groups: [],
+  description: "",
+  diet: "",
+  gluten_free: false,
+  popular: false,
   ...extra,
 });
 
@@ -118,7 +123,19 @@ describe("choices", () => {
 
 describe("the item form", () => {
   it("starts a new item in the category, with the first usable choices", () => {
-    expect(newItemForm(menu, 11)).toEqual({ name: "", categoryId: 11, price: "", hsn: "", taxClassId: 1, stationId: 2, courseId: 1 });
+    expect(newItemForm(menu, 11)).toEqual({
+      name: "",
+      categoryId: 11,
+      price: "",
+      hsn: "",
+      taxClassId: 1,
+      stationId: 2,
+      courseId: 1,
+      description: "",
+      diet: "",
+      glutenFree: false,
+      popular: false,
+    });
   });
   it("offers the courses in service, and a retired one only to an item that has it", () => {
     const withRetired = {
@@ -143,8 +160,48 @@ describe("the item form", () => {
     const form = itemFormFrom(latte);
     expect(form.price).toBe("180.00");
     expect(toItemInput(form, "INR")).toEqual({
-      input: { category_id: 10, name: "Latte", price: inr(18000), hsn: "", tax_class_id: 1, station_id: 2, course_id: 1 },
+      input: {
+        category_id: 10,
+        name: "Latte",
+        price: inr(18000),
+        hsn: "",
+        tax_class_id: 1,
+        station_id: 2,
+        course_id: 1,
+        description: "",
+        diet: "",
+        gluten_free: false,
+        popular: false,
+      },
     });
+  });
+  it("carries what the card shows, in and out", () => {
+    const dosa = item(5, 10, "Masala dosa", 14000, { description: "A crisp rice crepe.", diet: "veg", gluten_free: true, popular: true });
+    const form = itemFormFrom(dosa);
+    expect(form).toMatchObject({ description: "A crisp rice crepe.", diet: "veg", glutenFree: true, popular: true });
+    expect(toItemInput(form, "INR")).toMatchObject({
+      input: { description: "A crisp rice crepe.", diet: "veg", gluten_free: true, popular: true },
+    });
+  });
+  it("trims the description and sends a blank one as none", () => {
+    const base = { ...newItemForm(menu, 10), name: "Chai", price: "60" };
+    expect(toItemInput({ ...base, description: "  Spiced, in milk.  " }, "INR")).toMatchObject({ input: { description: "Spiced, in milk." } });
+    expect(toItemInput({ ...base, description: "   " }, "INR")).toMatchObject({ input: { description: "" } });
+  });
+  it("words the marks, with no mark first", () => {
+    expect(dietOptions.map((o) => [o.value, o.label])).toEqual([
+      ["", "No mark"],
+      ["veg", "Veg"],
+      ["non_veg", "Non-veg"],
+      ["vegan", "Vegan"],
+    ]);
+  });
+  it("shows the server's refusal of a mark or a description under its field", () => {
+    expect(problemOf(new ApiError("invalid_menu", "Choose veg, non-veg, vegan, or no mark.", 422, "diet"))).toEqual({
+      field: "diet",
+      message: "Choose veg, non-veg, vegan, or no mark.",
+    });
+    expect(problemOf(new ApiError("invalid_menu", "Too long.", 422, "description"))).toMatchObject({ field: "description" });
   });
   it("trims the name and the HSN", () => {
     const form = { ...newItemForm(menu, 10), name: "  Chai ", price: "60", hsn: " 996331 " };

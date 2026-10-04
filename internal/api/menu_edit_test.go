@@ -86,6 +86,46 @@ func (m *editorTill) editor(t *testing.T) menus.Editor {
 	return e
 }
 
+// TestItemCardFieldsOverHTTP: the description, dietary mark and flags the
+// owner saves reach the editor and the terminal's menu (ADR-147), and a bad
+// one is refused on its own field.
+func TestItemCardFieldsOverHTTP(t *testing.T) {
+	m := newEditorTill(t)
+	food := m.edit(t, http.MethodPost, "/api/v1/menu/categories", `{"name":"Food"}`, http.StatusCreated)
+	body := fmt.Sprintf(`{"category_id":%d,"name":"Masala dosa","price":{"minor":14000,"currency":"INR"},"hsn":"","tax_class_id":%d,`+
+		`"station_id":%d,"course_id":%d,"description":"Crisp rice crepe.","diet":"veg","gluten_free":true,"popular":true}`,
+		food, m.taxClass, m.station, m.course)
+	id := m.edit(t, http.MethodPost, "/api/v1/menu/items", body, http.StatusCreated)
+
+	editor := m.editor(t)
+	if len(editor.Items) != 1 || editor.Items[0].Description != "Crisp rice crepe." || editor.Items[0].Diet != "veg" ||
+		!editor.Items[0].GlutenFree || !editor.Items[0].Popular {
+		t.Fatalf("editor items = %+v", editor.Items)
+	}
+	rec := send(m.handler, http.MethodGet, "/api/v1/menu", "", m.asDevice())
+	var till menuResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &till); err != nil {
+		t.Fatal(err)
+	}
+	if len(till.Items) != 1 || till.Items[0].Description != "Crisp rice crepe." || till.Items[0].Diet != "veg" ||
+		!till.Items[0].GlutenFree || !till.Items[0].Popular {
+		t.Errorf("till items = %+v", till.Items)
+	}
+
+	bad := []struct{ name, from, to, field string }{
+		{"a mark that does not exist", `"diet":"veg"`, `"diet":"keto"`, "diet"},
+		{"a description past 140", `"description":"Crisp rice crepe."`, `"description":"` + strings.Repeat("a", 141) + `"`, "description"},
+	}
+	for _, tt := range bad {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := send(m.handler, http.MethodPut, fmt.Sprintf("/api/v1/menu/items/%d", id), strings.Replace(body, tt.from, tt.to, 1), m.owner)
+			if got := errorOf(t, rec); rec.Code != http.StatusUnprocessableEntity || got.Code != CodeInvalidMenu || got.Field != tt.field {
+				t.Errorf("%d %+v, want 422 invalid_menu on %q", rec.Code, got, tt.field)
+			}
+		})
+	}
+}
+
 // TestMenuEditorOverHTTP: the owner builds a menu, the terminal's menu
 // follows at a new version, and a retired item leaves it.
 func TestMenuEditorOverHTTP(t *testing.T) {

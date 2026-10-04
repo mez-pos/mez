@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/menu"
 	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
@@ -75,6 +76,12 @@ type ItemSpec struct {
 	Station  string
 	Course   int64
 	Groups   []string
+
+	// What the card shows (ADR-147); all optional.
+	Description string
+	Diet        menu.Diet
+	GlutenFree  bool
+	Popular     bool
 }
 
 // CreateMenu adds a menu to a venue in one transaction and bumps the menu
@@ -243,6 +250,7 @@ func (w *menuWriter) writeItem(ctx context.Context, categoryID int64, it ItemSpe
 		VenueID: w.venueID, CategoryID: categoryID, Name: it.Name, Price: it.Price, Hsn: it.HSN,
 		TaxClassID: class, StationID: station, CourseID: course, SortOrder: order,
 		CreatedAt: w.now, UpdatedAt: w.now,
+		Description: it.Description, Diet: string(it.Diet), GlutenFree: it.GlutenFree, Popular: it.Popular,
 	})
 	if err != nil {
 		return err
