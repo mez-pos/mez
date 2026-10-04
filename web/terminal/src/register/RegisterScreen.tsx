@@ -1,16 +1,16 @@
-// The register (docs/design/screens/terminal-register.md): the menu on the
+// The order screen (docs/design/screens/terminal-register.md): the menu on the
 // left, the ticket on the right. One tap on an item rings it up with its
 // default modifiers, or opens the modifier sheet when someone has to choose;
-// the ticket's total never leaves the screen. Charge swaps it for the tender
-// screen (terminal-tender.md) on the same ticket, and Floor swaps it for the
-// dining room (terminal-floor.md), where a party is seated or a table's
-// ticket found. With no shift open the till is closed (terminal-close.md),
-// and a counted shift shows its close until it is closed.
+// the ticket's total never leaves the screen. Charge goes to /pay on the same
+// ticket, the floor is /tables, a settled bill is /orders/:id, and with no
+// shift open the whole terminal waits at /shift (ADR-148): each is a route of
+// its own, and the ticket in front lives above them all (terminal-context).
 
 import { useMemo, useState, type ReactNode } from "react";
+import { useLocation } from "wouter";
 import type { LineModifier, LineResponse, MenuItemResponse } from "../../../shared/api-types";
 import { indexMenu, isSoldOut } from "../../../shared/menu";
-import { Button, EmptyState, InboxIcon, SearchField, SearchIcon, useToast } from "../../../shared/ui";
+import { EmptyState, InboxIcon, SearchField, SearchIcon, useToast } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
 import { useMenu } from "../../../shared/use-menu";
 import { CategoryRail } from "./CategoryRail";
@@ -22,33 +22,22 @@ import { TicketPanels, type Panel } from "./TicketPanels";
 import { TicketRail } from "./TicketRail";
 import { TicketsSheet } from "./TicketsSheet";
 import { HistorySheet } from "./HistorySheet";
-import { BillScreen } from "../bills/BillScreen";
 import { PastBillsSheet } from "../bills/PastBillsSheet";
-import { TenderScreen } from "../tender/TenderScreen";
 import { chargeBlock, chargeLabel } from "../tender/tender-logic";
 import { sendPlan } from "./send-logic";
 import { ticketLabel } from "./ticket-time";
-import { useTicket } from "./use-ticket";
-import { FloorView } from "../floor/FloorView";
-import { tableNames } from "../floor/floor-logic";
-import { useLiveFloor } from "../floor/use-live-floor";
-import { CloseDayScreen } from "../shift/CloseDayScreen";
-import { TillClosedScreen } from "../shift/TillClosedScreen";
-import { useShift } from "../shift/use-shift";
-import { ZReportScreen } from "../../../shared/zreport/ZReportScreen";
+import { route } from "../shell/routes";
+import { useTerminal } from "../shell/terminal-context";
 
-export function RegisterScreen() {
+interface RegisterScreenProps {
+  /** Opens with the past-bills sheet: this is /orders, the order history (ADR-148). */
+  pastBills?: boolean;
+}
+
+export function RegisterScreen({ pastBills = false }: RegisterScreenProps) {
   const menu = useMenu();
-  const ticket = useTicket();
-  const floor = useLiveFloor();
-  const shift = useShift();
-  // The shift being closed, by id: a new shift is not.
-  const [closing, setClosing] = useState<number | null>(null);
-  // The Z-report this till's close issued, and whether it is on screen.
-  const [lastZ, setLastZ] = useState<number | null>(null);
-  const [viewingZ, setViewingZ] = useState(false);
-  const names = useMemo(() => tableNames(floor.data), [floor.data]);
-  const [floorOpen, setFloorOpen] = useState(false);
+  const { ticket, names } = useTerminal();
+  const [path, navigate] = useLocation();
   const index = useMemo(() => (menu.data ? indexMenu(menu.data) : null), [menu.data]);
   // Once a minute, so a dish sold out yesterday is back when the trading day turns.
   const now = useClock(60_000);
@@ -59,12 +48,8 @@ export function RegisterScreen() {
   const [panel, setPanelState] = useState<Panel | null>(null);
   const [ticketsOpen, setTicketsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  // The ticket being charged. Kept by id, so the tender screen goes away if
-  // another ticket comes to the front.
-  const [charging, setCharging] = useState<string | null>(null);
-  // A settled bill on screen (Task 6b), and the sheet that finds one.
-  const [bill, setBill] = useState<string | null>(null);
-  const [pastBillsOpen, setPastBillsOpen] = useState(false);
+  // The sheet that finds a settled bill; picking one goes to /orders/:id.
+  const [pastBillsOpen, setPastBillsOpen] = useState(pastBills);
   const toast = useToast();
   const fail = (what: string) => (err: unknown) => toast(`${what}: ${err instanceof Error ? err.message : String(err)}`, { tone: "warning" });
   // One sheet at a time: opening one closes the other.
@@ -134,64 +119,10 @@ export function RegisterScreen() {
   const block = chargeBlock(ticket.order, ticket.pending.length);
   const label = ticketLabel(ticket.order ?? ticket.opening, names);
 
-  const currency = index?.menu.currency ?? "INR";
-  if (!shift.shift) {
-    if (viewingZ && lastZ) {
-      return <ZReportScreen number={lastZ} backLabel="Back" onBack={() => setViewingZ(false)} />;
-    }
-    return <TillClosedScreen currency={currency} state={shift} lastZ={lastZ} onViewZ={() => setViewingZ(true)} />;
-  }
-  if (shift.shift.counted || closing === shift.shift.id) {
-    return (
-      <CloseDayScreen
-        shift={shift.shift}
-        currency={currency}
-        commands={shift.commands}
-        onBack={() => setClosing(null)}
-        onClosed={(z) => {
-          setLastZ(z);
-          setViewingZ(false);
-        }}
-      />
-    );
-  }
-
-  if (floorOpen) {
-    return <FloorView floor={floor} ticket={ticket} onRegister={() => setFloorOpen(false)} />;
-  }
-
-  if (bill) {
-    return (
-      <BillScreen
-        orderId={bill}
-        onBack={() => setBill(null)}
-        onTakeBalance={(id) => {
-          setBill(null);
-          ticket.switchTo(id);
-          setCharging(id);
-        }}
-      />
-    );
-  }
-
-  if (charging && ticket.order && charging === ticket.orderId) {
-    return <TenderScreen order={ticket.order} ticket={ticket} label={label} onBack={() => setCharging(null)} />;
-  }
-
   return (
     <div className="flex min-w-0 flex-1">
       <section aria-label="Menu" className="flex min-w-0 flex-1 flex-col">
         <div className="flex flex-wrap items-start gap-tap-gap px-6 pt-4">
-          <Button
-            onClick={() => {
-              setPanel(null);
-              setSheet(null);
-              setHistoryOpen(false);
-              setFloorOpen(true);
-            }}
-          >
-            Floor
-          </Button>
           <CategoryRail
             categories={categories}
             counts={counts}
@@ -252,10 +183,7 @@ export function RegisterScreen() {
         chargeBlock={block}
         chargeLabel={chargeLabel(ticket.order)}
         onCharge={() => {
-          setPanel(null);
-          setSheet(null);
-          setHistoryOpen(false);
-          setCharging(ticket.orderId);
+          if (ticket.orderId) navigate(route.pay(ticket.orderId));
         }}
       />
 
@@ -278,13 +206,8 @@ export function RegisterScreen() {
             ticket.startNew(opening);
           }}
           onPastBills={() => setPastBillsOpen(true)}
-          onFloor={() => setFloorOpen(true)}
-          onCloseDay={() => {
-            setPanel(null);
-            setSheet(null);
-            setHistoryOpen(false);
-            setClosing(shift.shift?.id ?? null);
-          }}
+          onFloor={() => navigate(route.tables)}
+          onCloseDay={() => navigate(route.shiftClose)}
           onClose={() => setTicketsOpen(false)}
         />
       )}
@@ -293,9 +216,13 @@ export function RegisterScreen() {
         <PastBillsSheet
           onPick={(b) => {
             setPastBillsOpen(false);
-            setBill(b.id);
+            navigate(route.bill(b.id));
           }}
-          onClose={() => setPastBillsOpen(false)}
+          onClose={() => {
+            setPastBillsOpen(false);
+            // Closing the history leaves /orders for the order screen it opened over.
+            if (path === route.orders) navigate(route.order);
+          }}
         />
       )}
 

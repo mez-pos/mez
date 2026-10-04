@@ -1132,6 +1132,7 @@ export interface VenueDetailsRequest {
 
 export interface VenueNameResponse {
   name: string;
+  timezone: string;
 }
 
 export interface SettingsVenueResponse {

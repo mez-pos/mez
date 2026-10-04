@@ -14,29 +14,31 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 1c: what an item card shows** (ADR-147), which closes Task 1.
-Items carry a description (140 characters), a dietary mark (veg, non_veg,
-vegan, or none), a gluten-free flag and a popular flag (migration 00032). They
-reach the editor, the terminal's menu and `db.ItemSpec`; the back office item
-form has plain fields for them, tried in a browser against a real server (open,
-edit, save, reopen). The demo menu gives every item a description and a mark.
-Tests: the columns and their limits, the editor service, HTTP, the demo menu,
-the form logic. `make check` and `make build-web` pass. Nothing reads `popular`
-yet (Task 5), and the guest menu and the kitchen print do not carry the new
-fields.
+**Rebuild, Task 2: the shell** (ADR-148). The terminal is routes now (`/pos`,
+`/tables`, `/orders`, `/pay/:id`, `/shift`, `/shift/close`, `/shift/z/:n`,
+`/waiter`, `/kitchen`), with the ticket, floor and shift held above them in a
+provider, a shift gate, and `/` landing by role. The frame is the design's: a
+72px top bar (nav pills, avatar with name and role and a menu of Lock, Close the
+shift, Print queue) and a 40px status bar (version, Online, venue, the venue's
+date and time). `lucide-react` is in the terminal. The back office shares the
+terminal's pairing and session, so Menu and Reports open signed in. Seen in a
+browser at 1920 and 1366: shell, Tables, order screen, profile menu, landing as
+owner, manager, cashier, waiter and kitchen, a ticket kept across Tables and
+back, and the manager reaching the back office menu. Tests: landing, nav,
+status wording, the shift gate, shared credentials. `make check` and `make
+build-web` pass. Not done: the design screenshots were not set beside mine (the
+design files need a renderer I did not run); the owner has not yet looked.
 
-Before it: Task 1b (ADR-146, service type), 1a (ADR-145, the waiter role),
-Task 0 (ADR-144, `mez pair`, a demo cafe, `make dev`), the plan (ADR-143).
+Before it: Task 1 (ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 2** (the shell): routes in the terminal app instead of state
-flags in `RegisterScreen.tsx`, the 72px top navigation and 40px status bar from
-D05, landing by role, the icon decision (an ADR), and how a manager on a
-terminal reaches Menu and Reports. Read `docs/design/tokens.md` first, and
-D05 only (line 363). Then Task 3 (login). Phase 11 waits for this phase.
-Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is
-a human check and stays unticked below.
+**Rebuild, Task 3** (login): D01 (line 36 of `mez Desktop POS.dc.html`): a left
+panel with the brand, profile tiles with avatar initials, name and role (the
+server sends the role now), PIN dots, keypad, Login. Read `docs/design/tokens.md`
+and that screen only. Then Task 4 (open the shift, D02). Phase 11 waits for this
+phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its
+done-when is a human check and stays unticked below.
 
 ## Known broken / in progress
 
@@ -234,8 +236,8 @@ a human check and stays unticked below.
   in the browser, sign in as the owner or a demo person and count a float to
   open the till. A code for the wrong app is refused but its device stays
   (ADR-068).
-- No endpoint returns the venue's name or a staff member's role; the lock
-  screen shows the device name and no roles until one does.
+- The lock screen still shows the device name and no roles: the server sends both
+  the venue's name and each person's role now (ADR-145, ADR-148); Task 3 draws them.
 - `go test -race` needs cgo, which is banned; `make check` runs without it.
 - The domain import test checks direct imports only (ADR-016).
 - Tooling: `make` needs `sh` (Git Bash; GnuWin32 make 3.81 works, at

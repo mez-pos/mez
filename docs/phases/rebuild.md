@@ -188,7 +188,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   Check first what exists: `internal/domain/order/payloads.go` has a
   `Channel`, which is where the order came from, not how it is served.
 
-- [ ] **Task 2 - The shell.** Routes in the terminal app instead of state
+- [x] **Task 2 - The shell.** (ADR-148) Routes in the terminal app instead of state
   flags in `RegisterScreen.tsx`: `/order`, `/tables`, `/orders`, `/pay/:id`,
   `/shift`, `/waiter`, `/kitchen`. The 72px top navigation and 40px status
   bar from D05. Landing by role. Icons: the design uses lucide; add the

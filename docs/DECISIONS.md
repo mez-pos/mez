@@ -4280,3 +4280,62 @@ not format characters, which Indic scripts use. Not done:
 the guest menu (phase 11) does not carry them, and the kitchen ticket does not
 print the mark.
 ---
+
+## ADR-148 - The terminal's shell: routes, landing by role, one frame, one pairing
+2026-10 · Status: accepted. Amends ADR-145's "landing follows permissions".
+Decision: the terminal is routes, not state flags in one component.
+`/pos` (the order screen), `/tables`, `/orders` (history) and `/orders/:id` (a
+settled bill), `/pay/:id`, `/shift`, `/shift/close`, `/shift/z/:n`, `/waiter`,
+`/kitchen`; `/` lands a person by role. Each existing screen is carried behind a
+path unchanged; the screens are rebuilt from the design in the tasks after.
+  - **Not `/order`.** The server gives `/order/` to the guest app, so a reload on
+    `/order` loaded the guest app (the plan's name for the route, and the one
+    mistake a walk through the screens by link does not show). The order screen
+    is `/pos`; `routes.test.ts` keeps every terminal path out of the other apps'
+    mounts, and the static tests reload each of them.
+  - **One provider above the routes.** The ticket in front, the floor, the shift
+    and the Z-report just issued are hooks with state of their own; `TerminalProvider`
+    holds them once, so going to Tables and back keeps the ticket (tried: a
+    60.00 ticket survived the round trip).
+  - **The shift gate.** No shift open: every screen waits at `/shift`. A counted
+    drawer: the close is the only way on. A pure function, `shiftGate`.
+  - **Landing by role.** Owner, manager, cashier: `/order`. Waiter: `/waiter`,
+    which is `/tables` until Task 11. Kitchen: `/kitchen`, a page load into the
+    kitchen display, which is another app of the bundle paired as a kitchen
+    device, so a cook signing in on a terminal is asked for a kitchen pairing
+    until Task 15 rebuilds it around a signed-in cook. The role's name decides
+    for the default roles, because waiter and cashier hold the same permissions
+    (ADR-145); any other role is landed by what it can do.
+  - **The frame.** A 72px top bar (logo, Orders, Tables, Menu, Reports, then
+    the name, role and avatar, which open Lock, Close the shift, Print queue) and
+    a 40px status bar (version, Online or what is wrong, the venue, the date and
+    time in the venue's zone). Pills are 48px, not the design's 44 (ADR-014). A
+    screen's own header controls come after the navigation when it is rebuilt.
+    Menu and Reports are shown to those whose role can use them (`menu.edit`,
+    `reports.view`), as the back office does, so a manager sees Reports and not Menu.
+  - **Left out, because nothing does them:** the bell (phase 11), Keyboard
+    Shortcuts and Open Cash Drawer in the status bar. The date and time are in the
+    status bar (D03), not the top bar (D05), so there is one of them.
+  - **Icons: `lucide-react` 1.51.0, exact, in the terminal and the back office
+    only, never the guest bundle** (its own `ui/icons.tsx` stays dependency
+    free). The design is drawn with lucide's names and the screens ahead need
+    dozens of them. `LucideProvider` sets the design's 1.75px stroke once. ISC
+    licence. The terminal bundle grew by about 5 KB gzipped.
+  - **The venue's name and zone** come from the existing `GET /api/v1/venue`,
+    which gains `timezone`: the clock is the venue's, not a tablet's own.
+  - **One pairing per browser.** The back office shares the terminal's device
+    pairing when it has none of its own. While it does, the device's session slot
+    is one slot (the server ties a session to its device): a sign-in or a lock at
+    either app is one at both, and a revoked device is forgotten for both. Menu
+    and Reports open the back office signed in as whoever is at the till. A back
+    office paired of its own uses its own keys alone, as before. Staff
+    permissions still gate everything: what a till's browser gains is the back
+    office's sign-in, not access.
+  - **The profile menu is a disclosure**, not an ARIA menu: plain buttons, focus
+    moved in on opening, back to the button on Escape, closed by Tab leaving it.
+Because: a screen cannot be rebuilt around a flow that lives in one component's
+state, and a manager should not pair a browser twice to reach two apps.
+Cost: kitchen staff on a terminal hit a pairing screen until Task 15; a back
+office lock locks the terminal too (one session, one device); `/waiter` is the
+floor until its screen exists.
+---

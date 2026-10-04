@@ -96,7 +96,7 @@ export class AuthStore {
 
     const device = await this.check(() => this.api.get<DeviceResponse>("/api/v1/devices/me"), stored.device);
     if (device === "refused") return; // credentialFailed has already moved us to unpaired
-    this.store.saveDevice({ ...stored, device });
+    this.store.refreshDevice({ ...stored, device });
 
     const staff = this.store.staff();
     if (!staff) return this.set({ kind: "locked", device, notice: null });

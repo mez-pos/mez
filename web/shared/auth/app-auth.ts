@@ -5,7 +5,8 @@ import { AuthStore } from "./auth-store";
 import { browserStorage, credentialStore, type AppKind } from "./storage";
 
 export function createAppAuth(app: AppKind, topics: readonly string[] = []) {
-  const store = new AuthStore(app, credentialStore(app, browserStorage("local"), browserStorage("session")));
+  // The back office shares the terminal's pairing: one pairing per browser (ADR-148).
+  const store = new AuthStore(app, credentialStore(app, browserStorage("local"), browserStorage("session"), app === "backoffice" ? "terminal" : undefined));
   const realtime = createRealtime(store.credentials, topics);
   return { store, realtime };
 }

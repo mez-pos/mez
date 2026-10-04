@@ -1,5 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { lazy, StrictMode, Suspense } from "react";
+import { LucideProvider } from "lucide-react";
 import { createRoot } from "react-dom/client";
 import { createAppAuth } from "../../shared/auth/app-auth";
 import { browserStorage } from "../../shared/auth/storage";
@@ -61,9 +62,12 @@ createRoot(root).render(
     <QueryClientProvider client={queryClient}>
       <RealtimeProvider connection={realtime}>
         <AuthProvider store={store} realtime={realtime}>
-          <ToastProvider>
-            <Screen />
-          </ToastProvider>
+          {/* The design's line icons: 1.75px strokes (tokens.md, Icons). */}
+          <LucideProvider strokeWidth={1.75}>
+            <ToastProvider>
+              <Screen />
+            </ToastProvider>
+          </LucideProvider>
         </AuthProvider>
       </RealtimeProvider>
     </QueryClientProvider>

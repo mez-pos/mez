@@ -13,7 +13,7 @@ import (
 // *settings.Service is the implementation.
 type Settings interface {
 	Read(ctx context.Context, venueID int64) (settings.Overview, error)
-	VenueName(ctx context.Context, venueID int64) (string, error)
+	Identity(ctx context.Context, venueID int64) (settings.Identity, error)
 	UpdateDetails(ctx context.Context, venueID int64, in settings.Details) error
 	Tax(ctx context.Context, venueID int64) (settings.TaxSetup, error)
 	UpdateTax(ctx context.Context, venueID int64, in settings.TaxInput) error
@@ -49,9 +49,11 @@ type venueDetailsRequest struct {
 	Timezone  string `json:"timezone"`
 }
 
-// venueNameResponse is what a paired device may know of the venue.
+// venueNameResponse is what a paired device may know of the venue: its name,
+// and the IANA zone its clock reads in, which a tablet's own may have wrong.
 type venueNameResponse struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	Timezone string `json:"timezone"`
 }
 
 type settingsVenueResponse struct {
@@ -99,12 +101,12 @@ func (s *Server) mountSettings(mux *http.ServeMux) {
 }
 
 func (s *Server) readVenueName(w http.ResponseWriter, r *http.Request) {
-	name, err := s.settings.VenueName(r.Context(), Meta(r).VenueID)
+	id, err := s.settings.Identity(r.Context(), Meta(r).VenueID)
 	if err != nil {
 		s.writeSettingsError(w, r, err)
 		return
 	}
-	writeJSON(w, s.log, http.StatusOK, venueNameResponse{Name: name})
+	writeJSON(w, s.log, http.StatusOK, venueNameResponse{Name: id.Name, Timezone: id.Timezone})
 }
 
 func (s *Server) readSettings(w http.ResponseWriter, r *http.Request) {

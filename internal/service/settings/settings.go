@@ -130,16 +130,24 @@ func (s *Service) Read(ctx context.Context, venueID int64) (Overview, error) {
 	return out, nil
 }
 
-// VenueName is the venue's name and nothing else, for a lock screen.
-func (s *Service) VenueName(ctx context.Context, venueID int64) (string, error) {
+// Identity is what a paired device may know of its venue, signed in or not:
+// the name, for a lock screen, and the IANA zone its clock reads in, for the
+// status bar (ADR-148). Nothing here is private; both are on every receipt.
+type Identity struct {
+	Name     string
+	Timezone string
+}
+
+// Identity reads the venue's name and timezone and nothing else.
+func (s *Service) Identity(ctx context.Context, venueID int64) (Identity, error) {
 	v, err := s.db.Queries().VenueByID(ctx, venueID)
 	if errors.Is(err, sql.ErrNoRows) {
-		return "", ErrNoVenue
+		return Identity{}, ErrNoVenue
 	}
 	if err != nil {
-		return "", fmt.Errorf("reading venue %d: %w", venueID, err)
+		return Identity{}, fmt.Errorf("reading venue %d: %w", venueID, err)
 	}
-	return v.Name, nil
+	return Identity{Name: v.Name, Timezone: v.Timezone}, nil
 }
 
 // clean trims the details and refuses what cannot be used.

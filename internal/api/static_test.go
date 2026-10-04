@@ -73,6 +73,20 @@ func TestDeepRoutesReachTheApp(t *testing.T) {
 		want string
 	}{
 		{"a terminal route", "/tables/12", "terminal"},
+		// Every path the terminal's own router uses (web/terminal/src/shell/routes.ts).
+		// A reload on any of them must be the terminal: /order/ is the guest app's,
+		// which is why the order screen is /pos.
+		{"the order screen", "/pos", "terminal"},
+		{"the floor", "/tables", "terminal"},
+		{"order history", "/orders", "terminal"},
+		{"a settled bill", "/orders/ord_ABC12345", "terminal"},
+		{"paying", "/pay/ord_ABC12345", "terminal"},
+		{"opening the shift", "/shift", "terminal"},
+		{"closing the shift", "/shift/close", "terminal"},
+		{"a Z-report", "/shift/z/12", "terminal"},
+		{"a waiter's tables", "/waiter", "terminal"},
+		{"signing in", "/lock", "terminal"},
+		{"pairing", "/pair", "terminal"},
 		{"a back office route", "/backoffice/reports/z", "backoffice"},
 		{"a guest route", "/order/table/7", "guest"},
 		{"a mount without its trailing slash", "/order", "guest"},

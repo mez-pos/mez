@@ -248,12 +248,14 @@ func TestSetIsAllOrNothingAndClears(t *testing.T) {
 	}
 }
 
-func TestVenueName(t *testing.T) {
+// TestVenueIdentity: what a paired device may know of the venue is its name,
+// for the lock screen, and the zone its clock reads in, for the status bar.
+func TestVenueIdentity(t *testing.T) {
 	s, _ := newService(t)
-	if n, err := s.VenueName(context.Background(), 1); err != nil || n != "Cafe" {
-		t.Fatalf("%q, %v", n, err)
+	if id, err := s.Identity(context.Background(), 1); err != nil || id != (Identity{Name: "Cafe", Timezone: "Asia/Kolkata"}) {
+		t.Fatalf("%+v, %v", id, err)
 	}
-	if _, err := s.VenueName(context.Background(), 99); !errors.Is(err, ErrNoVenue) {
+	if _, err := s.Identity(context.Background(), 99); !errors.Is(err, ErrNoVenue) {
 		t.Fatalf("an unknown venue: %v", err)
 	}
 }
