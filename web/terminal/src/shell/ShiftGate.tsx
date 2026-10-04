@@ -15,9 +15,9 @@ export function ShiftGate({ children }: { children: ReactNode }) {
   if (gate.kind === "go") return <Redirect to={gate.to} replace />;
   if (gate.kind === "wait") {
     return shift.error ? (
-      <EmptyState icon={<InboxIcon />} line="Can't reach the mez server to check the till." action={{ label: "Try again", onClick: shift.retry }} />
+      <EmptyState icon={<InboxIcon />} line="Can't reach the mez server to check the shift." action={{ label: "Try again", onClick: shift.retry }} />
     ) : (
-      <p className="m-auto text-base text-fg-muted">Checking the till</p>
+      <p className="m-auto text-base text-fg-muted">Checking the shift</p>
     );
   }
   return <>{children}</>;

@@ -4375,3 +4375,52 @@ Cost: the avatar is initials, not a face; the device's name ("Counter 1") is no
 longer on the sign-in screen, as the design has none; the older screen spec
 `terminal-lock.md` is wrong until Task 17 rewrites it.
 ---
+
+## ADR-150 - Open the shift is D02, and a closed till names who can open it
+2026-10 · Status: accepted. Builds on ADR-094 (the shift's permissions).
+Decision: `/shift` is rebuilt from D02. Someone who may open the shift sees
+"Step 1 of 2, Open the shift": a card for each note and coin with a box for how
+many and its value, the counted float in a green panel, Cancel and "Open shift &
+start selling", and beside it "Tonight's shift" (outlet, terminal, the person and
+their role). Anyone else sees "The shift isn't open yet" and who can open it.
+  - **The permission is unchanged: `shift.manage`.** The flow map says a cashier
+    opens the shift, but the default cashier role does not hold `shift.manage`
+    (ADR-094: opening and closing are the manager's, and the same permission also
+    pools tips, corrects Z-reports and closes stock). So with the default roles a
+    cashier sees the "who can open it" page, and a manager or the owner sees D02.
+    The owner can give the cashier role `shift.manage` in Roles to get the design's
+    flow, at the price of the cashier closing as well. A narrower `shift.open` is
+    the alternative and is the owner's call; nothing here prevents it.
+  - **Who can open it** comes from `GET /api/v1/shift`, which gains `openers`
+    (id, name, role of each active person whose role grants `shift.manage`) and
+    only while no shift is open. It sits there and not on the staff list because
+    that list is open to any paired device and carries no permissions (ADR-105).
+    `auth.StaffAuth.WithPermission` builds it from the roles as the permission
+    check does, so a role the code cannot read grants nothing. If building it
+    fails, the till is still reported closed, the failure is logged, and the page
+    says "Ask the owner or a manager." A close re-reads the shift so the list is
+    there at once.
+  - **The count is still blind.** The design shows "Expected from last close" and
+    "Matches" beside the counted float. They are left out: an expected figure
+    anywhere near the counter is what ADR-094 refuses, at the open as at the close.
+  - **Left out, because the server has nothing behind them:** the note for the
+    manager (an opening count carries no note), the shift window, "Staff on floor"
+    and "Kitchen" (who is signed in is not recorded), the low-stock count and
+    "Review inventory" (stock figures need `stock.manage` and the shift screen
+    has no business with them), and the chef artwork (as in ADR-149). What is
+    shown from the menu is what is sold out now, with a "Review the menu" link for
+    those who may edit it. A currency with no table of notes gets one box for the
+    whole amount.
+  - **Cancel** goes back to the sign-in screen, which is the step before this one.
+  - **Sizes:** the count boxes are 48px high and 17px, not the design's 44px and
+    16px (ADR-014); the title is `text-total`, not the design's 40px. Below 1280px
+    the right column drops under the card, and the float panel and the buttons are
+    below the fold on a 768px-high screen.
+  - The screen's words say "shift", not "till" (the till is "the order screen",
+    ADR-143), in the gate's waiting line and in the server's two refusals.
+Because: a cashier's day starts here, and a waiter who finds the till shut should
+be told who to fetch, not shown a count they cannot submit.
+Cost: with the default roles a cashier cannot open the shift; the sold-out card
+was not seen by eye (the venue had nothing sold out); `GET /api/v1/shift` costs
+one more read per poll while the till is closed.
+---

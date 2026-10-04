@@ -14,30 +14,33 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 3: Staff Login** (ADR-149). The lock screen is D01, shared by the
-terminal and the back office: a brand panel, profiles (initials, name, role; four
-a page and a More), PIN dots in a well, a keypad with Login as the twelfth key,
-the venue and its clock along the bottom. A new `text-hero` size; keys scale with
-the screen's height down to 48px. The clock, version text and venue hooks moved to
-`shared/`, and `initials` and `roleText` are one each (the terminal's duplicates
-are gone). `lucide-react` is declared in the back office too. Seen in a browser at
-1920 and 1366x768 beside the rendered D01: paging, a wrong PIN, a right one, and
-the back office's sign-in. Tests: the tile paging, the shared text helpers.
-`make check` and `make build-web` pass. The design's illustration and dark script
-card are left out (placeholders for artwork). The owner has not yet looked.
+**Rebuild, Task 4: Open the shift** (ADR-150). `/shift` is D02: "Step 1 of 2", a card
+per note and coin with a count box, the counted float in a green panel, Cancel (back
+to sign-in) and "Open shift & start selling", with "Tonight's shift" beside it and a
+sold-out card when something is. The count stays blind: the design's "expected from
+last close" is left out. Anyone without `shift.manage` sees "The shift isn't open
+yet" and who can open it (`GET /api/v1/shift` gains `openers`, `StaffAuth.WithPermission`).
+Seen in a browser at 1920 and 1366x768 as the waiter (names Arjun and Priya) and the
+owner (counted 7,400.00, opened, landed on the order screen). Tests: the count and
+sold-out logic, the closed till's openers over HTTP, `WithPermission`. `make check`
+and `make build-web` pass. The owner has not yet looked.
 
-Before it: Task 2 (ADR-148, the shell), Task 1 (ADR-145 to ADR-147), Task 0
-(ADR-144), the plan (ADR-143).
+**Decision for the owner:** the default cashier role lacks `shift.manage`, so Meera
+sees "who can open it", not D02. Grant it in Roles (the cashier then also closes,
+pools tips and corrects Z-reports), or ask for a narrower `shift.open` (ADR-150).
+
+Before it: Task 3 (ADR-149, Staff Login), Task 2 (ADR-148, the shell), Task 1
+(ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143).
 
 ## Next task
 
-**Rebuild, Task 4** (open the shift): D02 (line 106 of `mez Desktop POS.dc.html`),
-a step in the cashier's flow with "Tonight's shift" beside it, not a wall; a waiter
-who signs in with no shift open is told who can open it. `/shift` is the route
-(`shift-gate.ts` sends everyone there while no shift is open). Read `docs/design/tokens.md`
-and that screen only. Phase 11 waits for this phase. Phase 10's tasks are all done
-(6l moved to phase 12, ADR-141); its done-when is a human check and stays unticked
-below.
+**Rebuild, Task 5** (the order screen): D03 (line 175 of `mez Desktop POS.dc.html`):
+240px category sidebar with icons, filter chips, item cards with "+", the 400px order
+rail (table picker, service type, guests, lines with steppers, note, totals, Save
+Order, Pay). `/pos` is the route; `RegisterScreen.tsx` is what it replaces. Read
+`docs/design/tokens.md` and that screen only. Phase 11 waits for this phase. Phase 10's
+tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human check and
+stays unticked below.
 
 ## Known broken / in progress
 
@@ -235,8 +238,8 @@ below.
   in the browser, sign in as the owner or a demo person and count a float to
   open the till. A code for the wrong app is refused but its device stays
   (ADR-068).
-- The lock screen still shows the device name and no roles: the server sends both
-  the venue's name and each person's role now (ADR-145, ADR-148); Task 3 draws them.
+- The open-shift screen's sold-out card was not seen by eye, and its float panel and
+  buttons sit below the fold at 768px high (ADR-150).
 - `go test -race` needs cgo, which is banned; `make check` runs without it.
 - The domain import test checks direct imports only (ADR-016).
 - Tooling: `make` needs `sh` (Git Bash; GnuWin32 make 3.81 works, at

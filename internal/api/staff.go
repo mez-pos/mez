@@ -20,6 +20,7 @@ const HeaderStaffToken = "X-Staff-Token"
 // *auth.StaffAuth is the implementation.
 type Staff interface {
 	ActiveStaff(ctx context.Context, venueID int64) ([]auth.Staff, error)
+	WithPermission(ctx context.Context, venueID int64, p auth.Permission) ([]auth.Staff, error)
 	SignIn(ctx context.Context, dev auth.Device, staffRef, pin string) (auth.SignedIn, error)
 	Session(ctx context.Context, dev auth.Device, token string) (auth.Session, error)
 	SignOut(ctx context.Context, s auth.Session) error

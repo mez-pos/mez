@@ -172,6 +172,33 @@ func (a *StaffAuth) ActiveStaff(ctx context.Context, venueID int64) ([]Staff, er
 	return out, nil
 }
 
+// WithPermission is the active staff of a venue whose role grants p, by name.
+// A till with no shift open uses it to say who can open one (ADR-150). Each
+// role is read once, however many people hold it.
+func (a *StaffAuth) WithPermission(ctx context.Context, venueID int64, p Permission) ([]Staff, error) {
+	active, err := a.ActiveStaff(ctx, venueID)
+	if err != nil {
+		return nil, err
+	}
+	grants := map[int64]bool{}
+	out := make([]Staff, 0, len(active))
+	for _, member := range active {
+		held, seen := grants[member.RoleID]
+		if !seen {
+			set, err := a.Permissions(ctx, member.RoleID)
+			if err != nil {
+				return nil, err
+			}
+			held = set.Has(p)
+			grants[member.RoleID] = held
+		}
+		if held {
+			out = append(out, member)
+		}
+	}
+	return out, nil
+}
+
 // SignIn checks a staff member's PIN on a device and opens a session.
 //
 // Every attempt is recorded, whatever its outcome. The checks run in an order

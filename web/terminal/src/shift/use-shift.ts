@@ -4,12 +4,14 @@
 // Idempotency-Key kept across retries of the same body.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CountRequest, CurrentShiftResponse, ShiftResponse } from "../../../shared/api-types";
+import type { CountRequest, CurrentShiftResponse, ShiftResponse, StaffResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useAttemptKeys } from "../bills/use-bills";
 import { failureOf } from "../register/order-messages";
 
 export const shiftKey = ["shift"] as const;
+
+const noOpeners: readonly StaffResponse[] = [];
 
 export interface ShiftCommands {
   open: (float: CountRequest) => Promise<ShiftResponse>;
@@ -21,6 +23,8 @@ export interface ShiftCommands {
 export interface ShiftState {
   /** The open shift, null when the till is closed, undefined until known. */
   shift: ShiftResponse | null | undefined;
+  /** Who can open a shift, while none is open: for a person who cannot (ADR-150). */
+  openers: readonly StaffResponse[];
   error: unknown;
   retry: () => void;
   commands: ShiftCommands;
@@ -42,6 +46,8 @@ export function useShift(): ShiftState {
       const res = await store.api.post<ShiftResponse>(path, body, { idempotencyKey: keys.keyFor({ path, body }) });
       keys.done();
       queryClient.setQueryData<CurrentShiftResponse>(shiftKey, { shift: closes ? null : res });
+      // A closed till names who can open the next one, which only the server knows.
+      if (closes) void queryClient.invalidateQueries({ queryKey: shiftKey });
       return res;
     } catch (err) {
       // Another till may have moved the shift on: read it again either way.
@@ -52,6 +58,7 @@ export function useShift(): ShiftState {
 
   return {
     shift: query.data?.shift,
+    openers: query.data?.openers ?? noOpeners,
     error: query.error,
     retry: () => void query.refetch(),
     commands: {

@@ -1934,6 +1934,7 @@ export interface ShiftResponse {
 
 export interface CurrentShiftResponse {
   shift: ShiftResponse | null;
+  openers?: StaffResponse[];
 }
 
 export interface ZNameResponse {

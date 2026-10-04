@@ -7,8 +7,8 @@ import type { ErrorCode } from "../../../shared/api-types";
 
 const words: Partial<Record<ErrorCode, string>> = {
   forbidden: "You don't have permission to do that. Ask a manager.",
-  no_open_shift: "The till isn't open. A manager needs to open the shift first.",
-  shift_open: "The till is already open.",
+  no_open_shift: "The shift isn't open. Someone who can open it needs to count the drawer first.",
+  shift_open: "The shift is already open.",
   shift_closed: "This shift is already closed.",
   shift_not_found: "That shift isn't on the server.",
   invalid_count: "The notes and coins don't add up. Count them again.",

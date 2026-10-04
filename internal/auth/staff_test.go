@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -330,6 +331,53 @@ func TestActiveStaffAndOptions(t *testing.T) {
 	custom, err := NewStaffAuth(StaffOptions{DB: w.db, SessionTTL: time.Hour, StaffLockout: LockoutPolicy{MaxFailures: 2, Window: time.Minute}})
 	if err != nil || custom.ttl != time.Hour || custom.staffLockout.MaxFailures != 2 || custom.deviceLockout != DefaultDeviceLockout {
 		t.Errorf("options not applied: %+v, %v", custom, err)
+	}
+}
+
+// TestWithPermissionNamesWhoHoldsIt: the people a screen can point to when
+// someone else must do the thing. Active, at this venue, by what their role
+// grants now.
+func TestWithPermissionNamesWhoHoldsIt(t *testing.T) {
+	w := newStaffWorld(t)
+	ctx := context.Background()
+	names := func(venue int64, p Permission) []string {
+		t.Helper()
+		got, err := w.auth.WithPermission(ctx, venue, p)
+		if err != nil {
+			t.Fatalf("WithPermission(%v): %v", p, err)
+		}
+		out := []string{}
+		for _, s := range got {
+			out = append(out, s.Name)
+		}
+		return out
+	}
+	same := func(got, want []string) bool { return slices.Equal(got, want) }
+
+	if got := names(1, PermShiftManage); !same(got, []string{}) {
+		t.Errorf("before any grant: %v, want nobody", got)
+	}
+	grant(t, w, w.ravi.RoleID, PermShiftManage, PermOrderOpen)
+	if got := names(1, PermShiftManage); !same(got, []string{"Ravi"}) {
+		t.Errorf("after the manager's role is granted: %v, want Ravi", got)
+	}
+	if got := names(1, PermStaffManage); !same(got, []string{}) {
+		t.Errorf("a permission nobody holds: %v, want nobody", got)
+	}
+	if got := names(2, PermShiftManage); !same(got, []string{}) {
+		t.Errorf("another venue's people: %v, want nobody", got)
+	}
+
+	grant(t, w, w.asha.RoleID, PermShiftManage)
+	if got := names(1, PermShiftManage); !same(got, []string{"Asha", "Ravi"}) {
+		t.Errorf("two roles: %v, want both, by name", got)
+	}
+
+	if _, err := w.db.Writer().ExecContext(ctx, `UPDATE staff SET active = 0 WHERE id = ?`, w.ravi.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := names(1, PermShiftManage); !same(got, []string{"Asha"}) {
+		t.Errorf("a deactivated person: %v, want only Asha", got)
 	}
 }
 

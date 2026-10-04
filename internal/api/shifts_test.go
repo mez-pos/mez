@@ -201,6 +201,37 @@ func TestAShiftOverHTTP(t *testing.T) {
 	w.refused(t, w.cashier, http.MethodPost, "/api/v1/orders", openOrderBody, http.StatusConflict, CodeNoOpenShift)
 }
 
+// TestAClosedTillNamesWhoCanOpenIt: a cashier who cannot open the shift is
+// told who can, and only while it is closed (ADR-150).
+func TestAClosedTillNamesWhoCanOpenIt(t *testing.T) {
+	w := newShiftTill(t)
+	read := func() currentShiftResponse {
+		t.Helper()
+		status, raw := w.do(w.cashier, http.MethodGet, "/api/v1/shift", "", "")
+		if status != http.StatusOK {
+			t.Fatalf("GET shift: %d %s", status, raw)
+		}
+		var out currentShiftResponse
+		if err := json.Unmarshal(raw, &out); err != nil {
+			t.Fatal(err)
+		}
+		return out
+	}
+
+	closed := read()
+	if closed.Shift != nil || len(closed.Openers) != 1 {
+		t.Fatalf("a closed till answers %+v, want no shift and one opener", closed)
+	}
+	if got := closed.Openers[0]; got.ID != "stf_PRIYA001" || got.Name != "Priya" || got.Role == "" {
+		t.Errorf("the opener is %+v, want Priya with her role", got)
+	}
+
+	w.shift(t, w.owner, http.MethodPost, "/api/v1/shift/open", `{"total":{"minor":0,"currency":"INR"}}`, http.StatusCreated)
+	if open := read(); open.Shift == nil || len(open.Openers) != 0 {
+		t.Errorf("an open shift answers %+v, want the shift and no openers", open)
+	}
+}
+
 // TestAFloatTypedInWhole: a float with no notes and coins, and one of
 // nothing, are both a float.
 func TestAFloatTypedInWhole(t *testing.T) {

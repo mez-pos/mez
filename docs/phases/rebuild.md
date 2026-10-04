@@ -199,7 +199,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
 
 - [x] **Task 3 - Login.** (ADR-149) D01. Left panel with the brand, right with profile
   tiles (avatar initials, name, role), PIN dots, keypad, Login.
-- [ ] **Task 4 - Open the shift.** D02. A step in the cashier's flow with
+- [x] **Task 4 - Open the shift.** (ADR-150) D02. A step in the cashier's flow with
   "Tonight's shift" beside it, not a wall. A waiter who signs in with no
   shift open is told who can open it.
 - [ ] **Task 5 - The order screen.** D03. 240px category sidebar with icons,

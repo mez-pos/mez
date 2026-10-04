@@ -441,6 +441,9 @@ type brokenStaff struct{}
 func (brokenStaff) ActiveStaff(context.Context, int64) ([]auth.Staff, error) {
 	return nil, errDiskGone
 }
+func (brokenStaff) WithPermission(context.Context, int64, auth.Permission) ([]auth.Staff, error) {
+	return nil, errDiskGone
+}
 func (brokenStaff) SignIn(context.Context, auth.Device, string, string) (auth.SignedIn, error) {
 	return auth.SignedIn{}, errDiskGone
 }

@@ -142,6 +142,9 @@ type shiftResponse struct {
 // none. No shift is not an error; it is how every venue starts the day.
 type currentShiftResponse struct {
 	Shift *shiftResponse `json:"shift"`
+	// Openers is who can open a shift, named only while none is open, for a
+	// till whose person cannot (ADR-150).
+	Openers []staffResponse `json:"openers,omitempty"`
 }
 
 func (s *Server) mountShifts(mux *http.ServeMux) {
@@ -167,7 +170,17 @@ func (s *Server) mountShifts(mux *http.ServeMux) {
 func (s *Server) currentShift(w http.ResponseWriter, r *http.Request) {
 	sh, err := s.shifts.Current(r.Context(), Meta(r).VenueID)
 	if errors.Is(err, svcshift.ErrNoOpenShift) {
-		writeJSON(w, s.log, http.StatusOK, currentShiftResponse{})
+		openers, err := s.staff.WithPermission(r.Context(), Meta(r).VenueID, auth.PermShiftManage)
+		if err != nil {
+			// The till is closed whether or not we can say who to ask: say
+			// the first, log the second.
+			s.log.Error("listing who can open the shift failed", "request_id", RequestID(r.Context()), "error", err)
+		}
+		out := make([]staffResponse, len(openers))
+		for i, member := range openers {
+			out[i] = toStaffResponse(member)
+		}
+		writeJSON(w, s.log, http.StatusOK, currentShiftResponse{Openers: out})
 		return
 	}
 	if err != nil {

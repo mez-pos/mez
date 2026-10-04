@@ -6,16 +6,21 @@
 
 import { useEffect, useRef } from "react";
 import { Redirect, useLocation } from "wouter";
-import { useAuth } from "../../../shared/auth/use-auth";
+import { roleText } from "../../../shared/auth/format";
+import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { useMenu } from "../../../shared/use-menu";
+import { useVenue } from "../../../shared/use-venue";
 import { ZReportScreen } from "../../../shared/zreport/ZReportScreen";
 import { BillScreen } from "../bills/BillScreen";
 import { FloorView } from "../floor/FloorView";
 import { ticketLabel } from "../register/ticket-time";
 import { CloseDayScreen } from "../shift/CloseDayScreen";
-import { TillClosedScreen } from "../shift/TillClosedScreen";
+import { OpenShiftScreen } from "../shift/OpenShiftScreen";
+import { soldOutNames, soldOutNotice } from "../shift/open-shift-logic";
+import { ShiftNotOpen } from "../shift/ShiftNotOpen";
 import { TenderScreen } from "../tender/TenderScreen";
 import { landingFor } from "./landing";
+import { backOffice } from "./nav-logic";
 import { route } from "./routes";
 import { useTerminal } from "./terminal-context";
 
@@ -83,19 +88,42 @@ export function BillPage({ orderId }: { orderId: string }) {
   );
 }
 
-/** "/shift": the till is closed until the float is counted in. */
+/**
+ * "/shift": no shift is open, so nothing can be rung up until the float is
+ * counted in. Someone who may open it sees D02; anyone else is told who can.
+ */
 export function ShiftPage() {
+  const auth = useAuth();
+  const store = useAuthStore();
   const { shift, lastZ } = useTerminal();
   const [, navigate] = useLocation();
   const menu = useMenu();
+  const venue = useVenue();
+  if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
+
+  const details = [
+    ...(venue ? [{ label: "Outlet", value: venue.name }] : []),
+    { label: "Terminal", value: auth.device.name },
+    { label: roleText(auth.staff.role), value: auth.staff.name },
+  ];
+  const soldOut = soldOutNotice(soldOutNames(menu.data?.items ?? [], new Date()));
+  const lockOut = () => void store.signOut();
+
+  if (!auth.permissions.includes("shift.manage")) {
+    return <ShiftNotOpen openers={shift.openers} details={details} soldOut={soldOut} onLock={lockOut} />;
+  }
   return (
-    <TillClosedScreen
+    <OpenShiftScreen
       currency={menu.data?.currency ?? "INR"}
-      state={shift}
+      open={shift.commands.open}
+      details={details}
+      soldOut={soldOut}
+      menuHref={auth.permissions.includes("menu.edit") ? backOffice.menu : null}
       lastZ={lastZ}
       onViewZ={() => {
         if (lastZ) navigate(route.zReport(lastZ));
       }}
+      onCancel={lockOut}
     />
   );
 }
