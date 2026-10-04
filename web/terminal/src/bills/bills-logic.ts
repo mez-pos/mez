@@ -38,10 +38,35 @@ export function anythingLeft(order: OrderResponse): boolean {
   return order.lines.some((l) => l.status === "active" && l.credited.minor < l.due.minor);
 }
 
-/** What the refund sheet asks the server to plan, or null while it asks for nothing. */
-export type RefundDraft = { kind: "items"; units: Readonly<Record<number, number>> } | { kind: "amount"; minor: number };
+/** Everything on the bill not yet credited, as a selection; null when nothing is left. */
+export function fullSelection(lines: readonly Pick<LineResponse, "id" | "qty" | "credited_qty" | "status">[]): CreditSelection | null {
+  const left = lines.map((l) => ({ line_id: l.id, qty: unitsLeft(l) })).filter((l) => l.qty > 0);
+  return left.length > 0 ? { lines: left } : null;
+}
 
-export function selectionOf(draft: RefundDraft, currency: string): CreditSelection | null {
+/** "1 × Iced Latte, 2 × Masala dosa": the units chosen for a partial refund. */
+export function unitsText(units: Readonly<Record<number, number>>, lines: readonly Pick<LineResponse, "id" | "name">[]): string {
+  return lines
+    .filter((l) => (units[l.id] ?? 0) > 0)
+    .map((l) => `${units[l.id]} × ${l.name}`)
+    .join(", ");
+}
+
+/** What a payment can still give back, in minor units. */
+export function leftOn(t: Pick<TenderResponse, "amount" | "refunded">): number {
+  return t.amount.minor - t.refunded.minor;
+}
+
+/** What the refund asks the server to plan: chosen items, the whole bill, or an amount. */
+export type RefundDraft = { kind: "items"; units: Readonly<Record<number, number>> } | { kind: "full" } | { kind: "amount"; minor: number };
+
+/** The selection for a draft, or null while it asks for nothing. The whole bill needs its lines. */
+export function selectionOf(
+  draft: RefundDraft,
+  currency: string,
+  billLines: readonly Pick<LineResponse, "id" | "qty" | "credited_qty" | "status">[] = [],
+): CreditSelection | null {
+  if (draft.kind === "full") return fullSelection(billLines);
   if (draft.kind === "amount") {
     return draft.minor > 0 ? { amount: { minor: draft.minor, currency } } : null;
   }

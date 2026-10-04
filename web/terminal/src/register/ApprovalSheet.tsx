@@ -8,14 +8,14 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { Override, StaffListResponse, StaffResponse } from "../../../shared/api-types";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { minPin, PinDots } from "../../../shared/screens/PinDots";
-import { applyPinKey, Button, NumPad, Sheet, type NumKey } from "../../../shared/ui";
+import { applyPinKey, Button, Modal, NumPad, Sheet, type NumKey } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { approvalFailure } from "./order-messages";
 
 interface ApprovalSheetProps {
   title: string;
   /** "Void", "Comp", "Apply discount": the last button. */
-  action: string;
+  action: ReactNode;
   /** The first step: the reason, and for a discount its size. */
   children: ReactNode;
   /** Whether the first step is complete. */
@@ -27,9 +27,11 @@ interface ApprovalSheetProps {
   onClose: () => void;
   /** Tone of the last button: a void is danger, the rest are the accent. */
   danger?: boolean;
+  /** Drawn in the middle of the screen, as D09 draws the refund, with a mark over its title. */
+  modal?: { icon: ReactNode };
 }
 
-export function ApprovalSheet({ title, action, children, ready, problem, onSubmit, onClose, danger }: ApprovalSheetProps) {
+export function ApprovalSheet({ title, action, children, ready, problem, onSubmit, onClose, danger, modal }: ApprovalSheetProps) {
   const [step, setStep] = useState<"what" | "who">("what");
   const [approver, setApprover] = useState<StaffResponse | null>(null);
   const [pin, setPin] = useState("");
@@ -56,9 +58,16 @@ export function ApprovalSheet({ title, action, children, ready, problem, onSubmi
         <p className="min-h-6 text-sm text-fg-muted" role="status">
           {problem}
         </p>
-        <Button variant="primary" size="charge" className="w-full" disabled={!ready} onClick={() => setStep("who")}>
-          Continue to approval
-        </Button>
+        <div className="flex gap-tap-gap">
+          {modal && (
+            <Button size="charge" className="flex-1" onClick={onClose}>
+              Cancel
+            </Button>
+          )}
+          <Button variant="primary" size="charge" className="flex-1" disabled={!ready} onClick={() => setStep("who")}>
+            Continue to approval
+          </Button>
+        </div>
       </div>
     ) : (
       <div className="flex flex-col gap-2">
@@ -82,24 +91,35 @@ export function ApprovalSheet({ title, action, children, ready, problem, onSubmi
       </div>
     );
 
+  const body =
+    step === "what" ? (
+      children
+    ) : (
+      <Approver
+        approver={approver}
+        onChoose={(s) => {
+          setApprover(s);
+          setPin("");
+          setError(null);
+        }}
+        pin={pin}
+        // Functional: taps quicker than a render must each count.
+        onKey={(k) => setPin((p) => applyPinKey(p, k))}
+        disabled={busy}
+      />
+    );
+
+  if (modal) {
+    return (
+      <Modal open onClose={onClose} title={title} size="lg" icon={modal.icon}>
+        {body}
+        <div className="mt-5">{footer}</div>
+      </Modal>
+    );
+  }
   return (
     <Sheet open onClose={onClose} title={title} footer={footer}>
-      {step === "what" ? (
-        children
-      ) : (
-        <Approver
-          approver={approver}
-          onChoose={(s) => {
-            setApprover(s);
-            setPin("");
-            setError(null);
-          }}
-          pin={pin}
-          // Functional: taps quicker than a render must each count.
-          onKey={(k) => setPin((p) => applyPinKey(p, k))}
-          disabled={busy}
-        />
-      )}
+      {body}
     </Sheet>
   );
 }

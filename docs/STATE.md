@@ -14,36 +14,34 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 10b: the Orders screen** (ADR-161). `/orders` is `OrdersScreen.tsx`, D09:
-the title with the day's count and what it collected, New Order, the five status tabs
-with their counts, a search (invoice number, order id, table), the table of the day's
-orders, and the order picked down the right (`OrderPanel.tsx`, at `/orders/:id`): what
-it is, how it was paid, items, totals, payments, credit notes, and Reprint receipt,
-Invoice, History, Refund, Void; an open order has Open order and Pay. A search also
-finds settled bills from before today by their number. `BillScreen.tsx` and
-`PastBillsSheet.tsx` are gone; "Past bills" on the order screen goes to `/orders`. Seen
-in a browser at 1366x768 and 1920 as the manager: the list, a paid bill and an open
-order in the panel, the tabs, a search by table and one that finds nothing, the void
-chooser, the invoice, the refund sheet opening, Open order and Back. Tests:
-`orders-logic.ts`. `make check` and `make build-web` pass. The owner has not yet looked.
+**Rebuild, Task 10c: the refund modal, and the print queue on Orders** (ADR-162). Task
+10 is done. `RefundSheet.tsx` is D09's modal: the mark and "Refund INV...?", three
+choices each with the server's figure (selected items, the whole bill, an amount), the
+credit note's figures, the payment it goes back to, the reason, the note about the
+Z-report and the audit trail, then the manager's PIN in the same modal
+(`ApprovalSheet` takes `modal`; `Modal` has a `lg` size and an `icon`). The Orders
+header has Print queue, loud while anything has not printed. Seen in a browser at
+1366x768 and 1920 as the manager: a partial refund carried through to credit note
+CN/26-27/000001, the row turning Refunded and the tab counting it, a full refund
+refused against a payment too small for it, and the queue opened from Orders. Tests:
+`fullSelection`, `unitsText`, `leftOn`. `make check` and `make build-web` pass. The
+owner has not yet looked.
 
-Before it: Task 10a (ADR-160, the day's orders from the server), Task 9 (ADR-159, split
-and the card and UPI states; the owner has not yet looked), Task 8 (ADR-156, payment),
-Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154), Task 5
-(ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`, ADR-152,
-migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to ADR-147),
-Task 0 (ADR-144), the plan (ADR-143).
+Before it: Task 10b (ADR-161, the Orders screen), Task 10a (ADR-160, the day's orders
+from the server), Task 9 (ADR-159, split and the card and UPI states), Task 8 (ADR-156,
+payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154),
+Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
+ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
+ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b
+or 10c.
 
 ## Next task
 
-**Rebuild, Task 10c** (the refund modal, and the print queue under Orders): D09 from
-line 877 of `mez Desktop POS.dc.html` (the modal over the screen). It redraws
-`RefundSheet.tsx`, which `OrderPanel.tsx` opens, as the design's modal: selected items
-or the whole bill, the reason, the manager's PIN. And it gives the print queue
-(`PrintQueueSheet.tsx`, today behind the "Not printed" pill in the shell) its place on
-the Orders screen. Read `docs/design/tokens.md` and that block only. Phase 11 waits for
-this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its
-done-when is a human check and stays unticked below.
+**Rebuild, Task 11** (waiter home): T01 (line 36 of `mez Tablet Waiter.dc.html`, drawn
+at 1366x1024). `/waiter` redirects to the floor today (`App.tsx`); a waiter lands there
+by role (`landing.ts`). Read `docs/design/tokens.md` and that screen only. Phase 11
+waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
+its done-when is a human check and stays unticked below.
 
 Agreed and built on 2026-10-05 (ADR-158): a free table has "Seat N guests" and "Seat
 and order"; the totals name each tax (CGST, SGST) on the rail, the table panel and the
@@ -55,6 +53,12 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- The refund modal (ADR-162): not seen by eye are a refund by amount, a full refund
+  carried through, a bill with one payment, a wrong PIN, and a bill with nothing left.
+  At 768px high the modal scrolls to reach Continue. As a refund is issued the modal
+  asks for one more preview, which the server refuses (409) as it closes: nothing shows,
+  but it is a wasted request. A refund larger than any one payment is made in parts
+  (ADR-084); the modal says so and does not split it itself.
 - The Orders screen (ADR-161): not seen by eye are a refunded or voided row, a bill
   from before today found by its number, a reopened bill and Take the balance, a void
   or a reprint carried through, a held order opened from here, a day with no orders,

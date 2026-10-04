@@ -6,15 +6,19 @@
 // settled bills from before today, which the day's list does not hold.
 //
 // The design's Filters and Export are left out: the tabs are the filters there
-// are, and the till exports nothing (the back office does). In Export's place
-// is New Order, the way back to the order screen.
+// are, and the till exports nothing (the back office does). In their places
+// are the print queue, which belongs with the bills it prints, and New Order,
+// the way back to the order screen.
 
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, PrinterIcon } from "lucide-react";
 import { useState } from "react";
 import type { DayStatus, Money as Amount, OrderResponse } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, Money, SearchField, SearchIcon, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
+import { trouble } from "../print/print-queue";
+import { PrintQueueSheet } from "../print/PrintQueueSheet";
+import { usePrintJobs } from "../print/use-print-jobs";
 import { failureOf } from "../register/order-messages";
 import { serviceLabels } from "../register/rail-logic";
 import { OrderPanel } from "./OrderPanel";
@@ -40,6 +44,9 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
   // Bills from before today are found by their number alone.
   const past = usePastBills(query, query !== "");
   const now = new Date();
+  const queue = usePrintJobs();
+  const [printOpen, setPrintOpen] = useState(false);
+  const unprinted = trouble(queue.jobs);
 
   const orders = day.data?.orders ?? [];
   const counts = tabCounts(orders);
@@ -65,10 +72,18 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
               )}
             </p>
           </div>
-          <Button variant="attention" onClick={onNewOrder}>
-            <PlusIcon aria-hidden="true" size={18} />
-            New Order
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            {/* Loud while a receipt has not come out, as the pill in the header is. */}
+            <Button variant={unprinted > 0 ? "danger" : "secondary"} onClick={() => setPrintOpen(true)}>
+              <PrinterIcon aria-hidden="true" size={18} />
+              Print queue
+              {unprinted > 0 && <span className="font-mono">({unprinted} not printed)</span>}
+            </Button>
+            <Button variant="attention" onClick={onNewOrder}>
+              <PlusIcon aria-hidden="true" size={18} />
+              New Order
+            </Button>
+          </div>
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-2.5">
@@ -158,6 +173,8 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
           </div>
         </div>
       </section>
+
+      {printOpen && <PrintQueueSheet queue={queue} onClose={() => setPrintOpen(false)} />}
 
       {selectedId ? (
         <OrderPanel key={selectedId} orderId={selectedId} names={names} onOpenOrder={onOpenOrder} onPay={onPay} />

@@ -15,12 +15,14 @@ export interface ModalProps {
   children: ReactNode;
   /** Actions, right-aligned under the body. */
   footer?: ReactNode;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
+  /** A round mark over the title, for a modal that asks something serious. */
+  icon?: ReactNode;
 }
 
-const widths = { sm: "max-w-sm", md: "max-w-lg" } as const;
+const widths = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl" } as const;
 
-export function Modal({ open, onClose, title, children, footer, size = "sm" }: ModalProps) {
+export function Modal({ open, onClose, title, children, footer, size = "sm", icon }: ModalProps) {
   const ref = useDialog(open, onClose);
   const titleId = useId();
 
@@ -33,9 +35,16 @@ export function Modal({ open, onClose, title, children, footer, size = "sm" }: M
       {open && (
         <div className="flex flex-col gap-4 p-6">
           <div className="flex items-start justify-between gap-4">
-            <h2 id={titleId} className="pt-2.5 font-serif text-xl">
-              {title}
-            </h2>
+            <div className="min-w-0">
+              {icon && (
+                <span aria-hidden="true" className="mb-3 flex size-14 items-center justify-center rounded-round bg-danger-tint text-danger">
+                  {icon}
+                </span>
+              )}
+              <h2 id={titleId} className={icon ? "font-serif text-xl 2xl:text-total" : "pt-2.5 font-serif text-xl"}>
+                {title}
+              </h2>
+            </div>
             <Button variant="ghost" aria-label="Close" onClick={onClose} className="-mr-2 -mt-1 shrink-0">
               <CloseIcon />
             </Button>

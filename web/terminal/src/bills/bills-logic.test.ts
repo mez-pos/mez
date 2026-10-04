@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { LineResponse, OrderResponse, TenderResponse } from "../../../shared/api-types";
-import { anythingLeft, closedText, refundReasonText, refundable, selectionOf, unitsLeft, voidable, whereOf } from "./bills-logic";
+import {
+  anythingLeft,
+  closedText,
+  fullSelection,
+  leftOn,
+  refundReasonText,
+  refundable,
+  selectionOf,
+  unitsLeft,
+  unitsText,
+  voidable,
+  whereOf,
+} from "./bills-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -40,6 +52,42 @@ describe("selectionOf", () => {
   it("asks for an amount, and nothing for zero", () => {
     expect(selectionOf({ kind: "amount", minor: 10000 }, "INR")).toEqual({ amount: inr(10000) });
     expect(selectionOf({ kind: "amount", minor: 0 }, "INR")).toBeNull();
+  });
+});
+
+describe("fullSelection", () => {
+  const lines = [line({ id: 2 }), line({ id: 3, credited_qty: 2 }), line({ id: 4, status: "voided" }), line({ id: 5, credited_qty: 3 })];
+  it("is every unit not yet credited, on the lines still standing", () => {
+    expect(fullSelection(lines)).toEqual({
+      lines: [
+        { line_id: 2, qty: 3 },
+        { line_id: 3, qty: 1 },
+      ],
+    });
+    expect(selectionOf({ kind: "full" }, "INR", lines)).toEqual(fullSelection(lines));
+  });
+  it("is nothing when nothing is left", () => {
+    expect(fullSelection([line({ credited_qty: 3 })])).toBeNull();
+    expect(selectionOf({ kind: "full" }, "INR")).toBeNull();
+  });
+});
+
+describe("unitsText", () => {
+  const lines = [
+    { id: 2, name: "Masala dosa" },
+    { id: 3, name: "Iced latte" },
+  ];
+  it("names what was chosen, in the bill's order", () => {
+    expect(unitsText({ 3: 1, 2: 2 }, lines)).toBe("2 × Masala dosa, 1 × Iced latte");
+    expect(unitsText({ 3: 1, 2: 0 }, lines)).toBe("1 × Iced latte");
+    expect(unitsText({}, lines)).toBe("");
+  });
+});
+
+describe("leftOn", () => {
+  it("is what a payment has not given back", () => {
+    expect(leftOn(tender({}))).toBe(12600);
+    expect(leftOn(tender({ refunded: inr(2600) }))).toBe(10000);
   });
 });
 

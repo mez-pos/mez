@@ -4811,3 +4811,29 @@ waiter's names (an order names its people by an id this screen has no list for),
 date picker (the list is the trading day's). New Order stands where Export is drawn.
 Cost: the on-screen invoice is a tap away, where the old bill screen showed it at once.
 ---
+
+## ADR-162 - The refund is D09's modal, in two steps; the print queue is on Orders too
+2026-10 · Status: accepted. Rebuild Task 10c. Changes ADR-084's refund sheet.
+Decision:
+  - **The refund is a modal over the Orders screen,** as drawn: a brick mark, "Refund
+    INV...?", the choices as radio cards with what each comes to, the reason, the note
+    about the Z-report and the audit trail, Cancel and the way on.
+  - **Three choices.** Selected items and the whole bill are the design's; an amount
+    is the till's own and is kept (rule 4). The whole bill's figure is asked of the
+    server as the modal opens, so its card shows it before it is chosen.
+  - **The manager's PIN is the modal's second step,** not a line of text: "Continue to
+    approval", then who approves and their PIN, then "Refund" with the amount. It is
+    `ApprovalSheet` drawn as a modal, so a refund is approved exactly as a void is.
+  - **The last button is the tinted danger button,** not the design's filled brick:
+    tokens.md keeps a filled button for the one that moves a sale forward.
+  - **Reasons are tiles, not a dropdown:** five reasons fit, and a tile is one tap.
+  - **A refund goes back to one payment** (ADR-084). When what is chosen is more than
+    the payment picked has left, the modal says so before the PIN is asked for.
+  - **Print queue is a button in the Orders header,** where the design has Filters, and
+    stays in the shell (the "Not printed" pill and the profile menu, ADR-081): a
+    receipt that did not print must be seen from any screen.
+Left out, and why: "the kitchen and the guest are both notified" (neither is), and
+"including tip" on the full refund (a credit note takes nothing off a tip).
+Cost: `Modal` and `ApprovalSheet` each grew a prop. A refund is two screens of one
+modal where the design draws one.
+---
