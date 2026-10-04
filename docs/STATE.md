@@ -32,27 +32,17 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143).
 
 ## Next task
 
-**Fix first: stale reads after a cancelled request** (the first item under Known
-broken). It is a server bug that loses sales-floor trust, and it is Go, so it is its
-own task with a test. Then **Rebuild, Task 9** (split, and UPI or card states): D08a
-(line 700 of `mez Desktop POS.dc.html`) and D08b (line 751). It redraws
-`SplitPanel.tsx` and `SplitShares.tsx` inside the payment screen's Split Bill step.
-Read `docs/design/tokens.md` and those screens only. Phase 11 waits for this phase.
-Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human
-check and stays unticked below.
+**Rebuild, Task 9** (split, and UPI or card states): D08a (line 700 of `mez Desktop
+POS.dc.html`) and D08b (line 751). It redraws `SplitPanel.tsx` and `SplitShares.tsx`
+inside the payment screen's Split Bill step. Read `docs/design/tokens.md` and those
+screens only. Phase 11 waits for this phase. Phase 10's tasks are all done (6l moved to
+phase 12, ADR-141); its done-when is a human check and stays unticked below.
+
+Fixed on 2026-10-05, between Tasks 8 and 9 (ADR-157): a cancelled read left a pooled
+read connection on an old snapshot, so reads missed rows just written until a restart.
+The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
-
-- **Stale reads after a cancelled request (found 2026-10-05, not fixed).** In the dev
-  server, after requests were cancelled mid-query (a page reload aborts its fetches;
-  the log shows "context canceled"), reads began to miss rows just written: the same
-  `GET /api/v1/orders/:id` answered 404 then 200 milliseconds apart, an invoice just
-  issued was "not on this ticket", `GET /api/v1/orders` was a 500 with "db: no such
-  order: 3", and the floor a 500 with "a closed order is not open at the table". A
-  restart cured it. The guess, not proven: a query cancelled in `modernc.org/sqlite`
-  v1.39.0 leaves a statement open on a pooled read connection (`internal/db/open.go`,
-  the read pool), which then stays on its old WAL snapshot. Reproduce with a test that
-  cancels a read mid-rows, writes, and reads on every pooled connection.
 
 - The payment screen (ADR-156): not seen by eye are a card or UPI payment taken, a
   part payment taken and its row, a split in use, a tip keyed on the keypad, a refusal,

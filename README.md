@@ -81,7 +81,7 @@ data lives, and what to do when it will not start.
 
 ## Building from source
 
-You need Go 1.23 or newer, Node 22.12 or newer, and a shell with `sh` and
+You need Go 1.24 or newer, Node 22.12 or newer, and a shell with `sh` and
 `make` (on Windows, Git Bash with GNU Make, or WSL).
 
 ```sh

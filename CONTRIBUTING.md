@@ -41,7 +41,7 @@ You need:
 
 | Tool | Version | For |
 |---|---|---|
-| Go | 1.23 or newer | The server |
+| Go | 1.24 or newer | The server |
 | Node | 22.12 or newer | The three web apps |
 | GNU Make and a POSIX shell | any | The build. On Windows: Git Bash plus GNU Make, or WSL |
 | sqlc | 1.31 | Only if you change SQL (`make generate`) |

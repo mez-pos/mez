@@ -34,7 +34,7 @@ a VPS are the same artifact. Windows install and self-host are not two products.
 
 | Layer | Choice |
 |---|---|
-| Server | Go 1.23+, single static binary, `CGO_ENABLED=0` |
+| Server | Go 1.24+, single static binary, `CGO_ENABLED=0` |
 | Database | SQLite, WAL mode, `modernc.org/sqlite` |
 | Queries | `sqlc` — SQL in, type-safe Go out |
 | Migrations | `goose`, embedded via `embed.FS` |

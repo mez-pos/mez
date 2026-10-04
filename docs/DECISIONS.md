@@ -4664,3 +4664,32 @@ as kitchen-till jargon.
 Cost: at 1366x768 the payment step scrolls to reach the tip summary and the keypad; a
 reprint is still the invoice panel's button, not the paid panel's.
 ---
+
+## ADR-157 - The SQLite driver is v1.46.1: a cancelled read left a connection on an old snapshot
+2026-10 · Status: accepted. Changes the version ADR-036 pinned; the driver is the same.
+Decision: `modernc.org/sqlite` goes from v1.39.0 to v1.46.1, and the module's Go
+version from 1.23 to 1.24, which that release needs.
+  - **What was wrong.** A read whose context was cancelled while its query was in
+    flight (a browser reloading cancels its requests) could leave a pooled read
+    connection holding its old WAL snapshot. Every later read on that connection then
+    answered from the past, with no error: an order just opened was "not found", an
+    invoice just issued was "not on this ticket", the open-orders list failed on an
+    order one query had seen and the next had not. Requests landed on a good or a bad
+    connection by chance, so the same read gave 404 and then 200. Only a restart
+    cleared it.
+  - **It is the driver, not our SQL.** Plain queries and read transactions both did it,
+    and only when the cancellation raced a query; a query cancelled before or after it
+    ran did not. Fixed upstream in v1.41.0.
+  - **Why v1.46.1.** It is the newest release that builds with Go 1.24; v1.47.0 and
+    later need 1.25, and the newest (v1.60.1) needs 1.26. One step of Go is the least
+    this fix costs. CI reads the Go version from `go.mod`; the Docker build already
+    uses 1.26.
+  - **The test** is `TestCancelledReadsLeaveNoReadConnectionOnAnOldSnapshot` in
+    `internal/db/stale_read_test.go`: sixteen goroutines read with random deadlines,
+    then every connection of the read pool is asked for a row written afterwards. On
+    v1.39.0 it fails within five rounds of forty; on v1.46.1 it passes.
+Because: a till that cannot find the order it just opened loses the sale, and the venue
+cannot know to restart the server.
+Cost: Go 1.24 is now the least a contributor needs; the test takes about a second; the
+driver's own SQLite moved forward with it, checked only by the existing suite.
+---
