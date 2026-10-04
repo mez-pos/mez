@@ -1,8 +1,8 @@
-// The item cards (D03). The whole card is the target, and it looks finished
-// with no photo: a tinted block wearing its category's icon stands where the
-// photo would be. A diet mark and the name lead; a description, how many
-// choices it has, and the price follow, with a round "+" that says what a tap
-// does. A popular item wears a crown. A sold-out item stays in its place, says
+// The item cards (D03). A card looks finished with no photo: a tinted block
+// wearing its category's icon stands where the photo would be. A diet mark and
+// the name lead; a description, how many choices it has, and the price follow.
+// It is two targets (ADR-154): the card opens the item modal when there is
+// anything to choose, and the round "+" adds it with its defaults at once. A popular item wears a crown. A sold-out item stays in its place, says
 // so in words, and cannot be rung up (ADR-109): staff can tell a guest it is gone.
 
 import { CrownIcon, PlusIcon, WheatOffIcon } from "lucide-react";
@@ -11,13 +11,13 @@ import { photoUrl } from "../../../shared/menu";
 import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { CategoryIcon } from "./CategoryIcon";
-import { choiceCount, type CategoryIconKey } from "./register-logic";
+import { choiceCount, type CardTap, type CategoryIconKey } from "./register-logic";
 
 interface ItemGridProps {
   items: readonly MenuItemResponse[];
   groupsFor: (item: MenuItemResponse) => readonly ModifierGroupResponse[];
   iconFor: (item: MenuItemResponse) => CategoryIconKey;
-  onTap: (item: MenuItemResponse) => void;
+  onTap: (item: MenuItemResponse, tap: CardTap) => void;
   soldOut: (item: MenuItemResponse) => boolean;
 }
 
@@ -28,10 +28,10 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut }: ItemGrid
         const choices = choiceCount(groupsFor(item));
         const gone = soldOut(item);
         return (
-          <li key={item.id}>
+          <li key={item.id} className="relative">
             <button
               type="button"
-              onClick={() => onTap(item)}
+              onClick={() => onTap(item, "card")}
               disabled={gone}
               aria-label={gone ? `${item.name}, sold out` : undefined}
               className={cx(
@@ -72,17 +72,23 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut }: ItemGrid
                 {choices > 0 && !gone && <span className="text-sm text-fg-muted">{choices} choices</span>}
                 <span className="mt-auto flex items-center justify-between pt-2">
                   <Money amount={item.price} className="text-lg font-semibold text-fg-heading" />
-                  <span
-                    aria-hidden="true"
-                    className={cx(
-                      "flex size-10 items-center justify-center rounded-round",
-                      gone ? "bg-sunken text-fg-muted" : "bg-attention text-attention-fg",
-                    )}
-                  >
-                    <PlusIcon size={20} strokeWidth={2.4} />
-                  </span>
+                  {/* Holds the place of the "+", which is a button of its own over this corner. */}
+                  <span aria-hidden="true" className="size-tap shrink-0" />
                 </span>
               </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onTap(item, "plus")}
+              disabled={gone}
+              aria-label={`Add ${item.name}`}
+              className={cx(
+                "absolute bottom-3.5 right-3.5 flex size-tap items-center justify-center rounded-round",
+                "outline-offset-2 outline-line-focus focus-visible:outline-2",
+                gone ? "cursor-not-allowed bg-sunken text-fg-muted opacity-60" : "bg-attention text-attention-fg hover:bg-attention-hover",
+              )}
+            >
+              <PlusIcon aria-hidden="true" size={20} strokeWidth={2.4} />
             </button>
           </li>
         );

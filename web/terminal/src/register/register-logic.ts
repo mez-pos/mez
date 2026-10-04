@@ -42,6 +42,21 @@ export function defaultModifiers(groups: readonly ModifierGroupResponse[]): Line
   return chosen;
 }
 
+/** Where an item card was tapped: the card itself, or its round "+". */
+export type CardTap = "card" | "plus";
+
+/**
+ * What a tap on an item card does (ADR-154): the modifiers to ring it up with
+ * at once, or null to open the item modal. The "+" adds with the defaults,
+ * for the plain order in a rush; the card opens the modal whenever there is
+ * anything to choose. An item with no choices is rung up either way, and one
+ * whose defaults leave a choice to make opens the modal either way.
+ */
+export function ringsUpWith(groups: readonly ModifierGroupResponse[], tap: CardTap): LineModifier[] | null {
+  if (tap === "card" && groups.length > 0) return null;
+  return defaultModifiers(groups);
+}
+
 /**
  * The AddLine command for an item, with its snapshot facts copied: one of it
  * on its own course, unless the item modal chose how many and which course.

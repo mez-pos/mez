@@ -11,6 +11,7 @@ import {
   itemsForView,
   noDietFilter,
   popularItems,
+  ringsUpWith,
   searchItems,
   sidebarEntries,
 } from "./register-logic";
@@ -77,6 +78,33 @@ describe("defaultModifiers", () => {
   ];
   it.each(refused)("needs a choice for %s", (_, g) => {
     expect(defaultModifiers([g])).toBeNull();
+  });
+});
+
+describe("ringsUpWith", () => {
+  const withDefault = group(1, 1, [true, false]);
+  const optional = group(0, 3, [false, false]);
+  const mustChoose = group(1, 1, [false, false]);
+  const milk = [{ modifier_id: 10, name: "m0", price: inr(0) }];
+
+  it("rings up an item with no choices from either tap", () => {
+    expect(ringsUpWith([], "card")).toEqual([]);
+    expect(ringsUpWith([], "plus")).toEqual([]);
+  });
+
+  it("opens the modal from the card, and adds the defaults from the plus", () => {
+    expect(ringsUpWith([withDefault, optional], "card")).toBeNull();
+    expect(ringsUpWith([withDefault, optional], "plus")).toEqual(milk);
+  });
+
+  it("opens the modal from the card even when every choice is optional", () => {
+    expect(ringsUpWith([optional], "card")).toBeNull();
+    expect(ringsUpWith([optional], "plus")).toEqual([]);
+  });
+
+  it("opens the modal from both when somebody has to choose", () => {
+    expect(ringsUpWith([mustChoose], "card")).toBeNull();
+    expect(ringsUpWith([mustChoose], "plus")).toBeNull();
   });
 });
 

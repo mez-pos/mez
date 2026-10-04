@@ -22,8 +22,10 @@ Order" with the line's price. A new line's note rides the outbox as a second com
 on the line the add made. Changing a line saves its choices, quantity and a note.
 Seen in a browser at 1920 and 1366x768 as the cashier: a required choice, quantity 2
 with a note, and a line changed (choices, quantity 3, note). Tests: the queue's note,
-`groupHint`, `lineTotal`, `addLineFor`. `make check` and `make build-web` pass. The
-owner has not yet looked.
+`groupHint`, `lineTotal`, `addLineFor`. Task 6b (ADR-154): an item card is two targets,
+the card opening the modal when there is anything to choose and its "+" adding with
+the defaults; seen in a browser, tested as `ringsUpWith`. `make check` and
+`make build-web` pass. The owner has not yet looked.
 
 Before it: Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; a
 cashier opens it with `shift.open`, ADR-152, migration 00033, and closing is
@@ -236,10 +238,8 @@ stays unticked below.
   in the browser, sign in as the owner or a demo person and count a float to
   open the till. A code for the wrong app is refused but its device stays
   (ADR-068).
-- The item modal (ADR-153): one tap still rings up an item whose defaults satisfy its
-  groups, so its modal is reached from the line's Modify; say if every item with
-  choices should open it. A note refused after its line was added is lost with a
-  toast. Not seen by eye: a photo, the Popular pill, a refusal, a screen under 1024px.
+- The item modal (ADR-153, ADR-154): a note refused after its line was added is lost
+  with a toast. A tap meant for a card's "+" that lands on the card opens the modal. Not seen by eye: a photo, the Popular pill, a refusal, a screen under 1024px.
 - The order screen (ADR-151): not seen by eye are a photo card, a sold-out card, a
   held order's banner, a delivery order, a discounted order's totals and a line the
   kitchen has seen (its bin and plain quantity). The diet filters reset on a reload.

@@ -1,7 +1,7 @@
 // The order screen (D03): categories down the left, the menu in the middle, the
-// order on the right. One tap on an item rings it up with its default choices,
-// or opens the item modal (D04) when someone has to choose; the total never
-// leaves the screen. Pay goes to /pay on the same order, the floor is /tables, a
+// order on the right. A card's "+" rings the item up with its default choices;
+// the card itself opens the item modal (D04) when there is anything to choose
+// (ADR-154); the total never leaves the screen. Pay goes to /pay on the same order, the floor is /tables, a
 // settled bill is /orders/:id, and with no shift open the whole terminal waits
 // at /shift (ADR-148): each is a route of its own, and the order in front lives
 // above them all (terminal-context). ADR-151 records what this screen draws.
@@ -26,13 +26,14 @@ import { OrderRail } from "./OrderRail";
 import {
   addLineFor,
   categoryIconKey,
-  defaultModifiers,
   dietFilterActive,
   filterItems,
   itemsForView,
   noDietFilter,
+  ringsUpWith,
   searchItems,
   sidebarEntries,
+  type CardTap,
   type DietFilter,
   type MenuView,
 } from "./register-logic";
@@ -95,9 +96,9 @@ export function OrderScreen({ pastBills = false }: OrderScreenProps) {
     return (item: MenuItemResponse) => byCategory.get(item.category_id) ?? "utensils";
   }, [categories]);
 
-  const ringUp = (item: MenuItemResponse) => {
+  const ringUp = (item: MenuItemResponse, tap: CardTap) => {
     if (!index) return;
-    const modifiers = defaultModifiers(index.groupsFor(item));
+    const modifiers = ringsUpWith(index.groupsFor(item), tap);
     if (modifiers) ticket.ringUp(addLineFor(item, modifiers));
     else setSheet({ kind: "add", item, error: null, busy: false });
   };

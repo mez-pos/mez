@@ -4540,3 +4540,23 @@ Cost: a note can be lost while its line is kept; a scrim tap does not close the 
 (a half-written note is not lost to a stray tap, as with `Modal`); not seen by eye are
 a photo, the Popular pill, a refusal, and a narrow screen.
 ---
+
+## ADR-154 - An item card is two targets: the card opens the modal, the "+" adds
+2026-10 · Status: accepted. Changes ADR-153's "when it opens is unchanged" and
+ADR-151's "the whole card is the target". The owner chose it on 2026-10-04.
+Decision: a tap on an item card opens the item modal whenever the item has anything
+to choose; a tap on its round "+" rings it up at once with its defaults
+(`ringsUpWith` in `register-logic.ts`).
+  - An item with no choices is rung up by either tap.
+  - An item whose defaults leave a choice to make (a required group with no default)
+    opens the modal from either tap, as before.
+  - The "+" is a button of its own laid over the card's corner, since a button cannot
+    hold a button; a spacer in the card keeps its place. It is 48px, not the 40px it
+    was drawn at while it was only a picture (ADR-014), and is named "Add <item>".
+  - A sold-out item shuts both.
+Because: with one target, "an oat latte with an extra shot" was the tap, the line, its
+sheet, Modify, the choices and Save. Opening the modal on every tap would fix that
+and put a second tap on every plain coffee, at a venue where most items have choices.
+Cost: a tap meant for the "+" that lands on the card opens a modal to cancel; a screen
+reader meets two buttons per item, the card unnamed beyond its text.
+---
