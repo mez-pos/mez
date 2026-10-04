@@ -54,7 +54,7 @@ closing takes a manager under three minutes with a full drawer.
 - `GET /api/v1/shift`, key `["shift"]`: `{shift: null}` or the open
   shift. Read on the register's start and every 30 seconds (the stream
   does not carry shifts), and after every command below.
-- `POST /api/v1/shift/open` `{total, denominations}`: needs shift.manage.
+- `POST /api/v1/shift/open` `{total, denominations}`: needs shift.open (ADR-152).
 - `POST /api/v1/shift/{id}/count` `{total, denominations}`: the answer is
   the first place `reconciliation` appears.
 - `POST /api/v1/shift/{id}/reason` `{reason}`.

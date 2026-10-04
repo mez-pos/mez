@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -114,7 +115,6 @@ func TestAShiftOverHTTP(t *testing.T) {
 	w.refused(t, w.cashier, http.MethodPost, "/api/v1/orders", openOrderBody, http.StatusConflict, CodeNoOpenShift)
 
 	float := `{"total":{"minor":110000,"currency":"INR"},"denominations":[{"face":1000,"count":10},{"face":50000,"count":2}]}`
-	w.refused(t, w.cashier, http.MethodPost, "/api/v1/shift/open", float, http.StatusForbidden, CodeForbidden)
 	w.refused(t, w.owner, http.MethodPost, "/api/v1/shift/open",
 		`{"total":{"minor":100000,"currency":"INR"},"denominations":[{"face":50000,"count":1}]}`,
 		http.StatusUnprocessableEntity, CodeInvalidCount)
@@ -201,10 +201,45 @@ func TestAShiftOverHTTP(t *testing.T) {
 	w.refused(t, w.cashier, http.MethodPost, "/api/v1/orders", openOrderBody, http.StatusConflict, CodeNoOpenShift)
 }
 
-// TestAClosedTillNamesWhoCanOpenIt: a cashier who cannot open the shift is
-// told who can, and only while it is closed (ADR-150).
+// setRole moves Asha to another of the venue's default roles.
+func (w *shiftTill) setRole(t *testing.T, role string) {
+	t.Helper()
+	res, err := w.db.Writer().ExecContext(context.Background(),
+		`UPDATE staff SET role_id = (SELECT id FROM roles WHERE name = ?) WHERE public_id = 'stf_ASHA0001'`, role)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, err := res.RowsAffected(); err != nil || n != 1 {
+		t.Fatalf("moving Asha to %s: %d rows, %v", role, n, err)
+	}
+}
+
+// TestACashierOpensTheShiftAndAWaiterCannot: opening is shift.open, which
+// the cashier holds and the waiter does not; closing is still shift.manage,
+// which neither holds (ADR-152).
+func TestACashierOpensTheShiftAndAWaiterCannot(t *testing.T) {
+	w := newShiftTill(t)
+	float := `{"total":{"minor":50000,"currency":"INR"}}`
+
+	w.setRole(t, "waiter")
+	w.refused(t, w.cashier, http.MethodPost, "/api/v1/shift/open", float, http.StatusForbidden, CodeForbidden)
+	if got := w.current(t); got != nil {
+		t.Fatalf("a refused open left a shift: %+v", got)
+	}
+
+	w.setRole(t, "cashier")
+	opened := w.shift(t, w.cashier, http.MethodPost, "/api/v1/shift/open", float, http.StatusCreated)
+	if opened.Status != shift.StatusOpen || opened.Float.Minor != 50000 {
+		t.Errorf("opened = %+v", opened)
+	}
+	w.refused(t, w.cashier, http.MethodPost, fmt.Sprintf("/api/v1/shift/%d/close", opened.ID), "", http.StatusForbidden, CodeForbidden)
+}
+
+// TestAClosedTillNamesWhoCanOpenIt: a waiter, who cannot open the shift, is
+// told who can, and only while it is closed (ADR-150, ADR-152).
 func TestAClosedTillNamesWhoCanOpenIt(t *testing.T) {
 	w := newShiftTill(t)
+	w.setRole(t, "waiter")
 	read := func() currentShiftResponse {
 		t.Helper()
 		status, raw := w.do(w.cashier, http.MethodGet, "/api/v1/shift", "", "")

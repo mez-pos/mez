@@ -26,8 +26,8 @@ menu, the diet filters and Popular. Tests: filter, sidebar, icon and rail logic.
 `make check` and `make build-web` pass. The owner has not yet looked.
 
 Before it: Task 4 (ADR-150, Open the shift), Task 3 (ADR-149), Task 2 (ADR-148), Task 1
-(ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143). The default cashier role
-cannot open the shift (ADR-150): grant `shift.manage` or ask for `shift.open`.
+(ADR-145 to ADR-147), Task 0 (ADR-144), the plan (ADR-143). A cashier opens the
+shift with the new `shift.open` (ADR-152, migration 00033); closing is `shift.manage`.
 
 ## Next task
 
@@ -192,8 +192,8 @@ stays unticked below.
   and vitest, not by hand; staff can now be added (Task 4a).
 - Shifts (ADR-093 to ADR-096): terminals learn of a shift opening,
   counted or closed by polling every 30 seconds, not the stream. Opening
-  and closing need shift.manage: a cashier is told to ask a manager, with
-  no override sheet. No till screen for cash in or out yet (the API has
+  needs shift.open (ADR-152) and closing shift.manage: a cashier who cannot
+  close is told to ask a manager, with no override sheet. No till screen for cash in or out yet (the API has
   it). The day start is a venue setting (ADR-133). A payout larger than the drawer is
   not refused. Closing leaves open tickets to carry into the next shift.
   A counted drawer cannot be recounted. The variance threshold is set

@@ -1,5 +1,5 @@
 // The shift is not open and this person cannot open it (ADR-150): a waiter, or
-// anyone whose role lacks `shift.manage`. They are told who can, and given the
+// anyone whose role lacks `shift.open` (ADR-152). They are told who can, and given the
 // one thing they can do, which is to lock the screen so that person can sign in.
 
 import { LockIcon } from "lucide-react";

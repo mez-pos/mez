@@ -4467,3 +4467,31 @@ Cost: a counter sale's order cannot be moved to a table from here; the rail is 4
 at 1366 wide and leaves two card columns; the diet filters are in memory only and
 reset on a reload; Popular appears only once the owner marks items.
 ---
+
+## ADR-152 - Opening the shift is `shift.open`, and the cashier holds it
+2026-10 · Status: accepted. Settles the question ADR-150 left to the owner; narrows
+ADR-094 (`shift.manage` was both open and close).
+Decision: a new permission, `shift.open`, is what `POST /api/v1/shift/open` asks
+for. `shift.manage` keeps the rest: closing, pooling tips, correcting a Z-report and
+the closing stock count. The default owner, manager and cashier hold `shift.open`;
+the waiter and the kitchen do not.
+  - **Why not give the cashier `shift.manage`.** The flow map puts D02 in the
+    cashier's path, and with the old defaults a cashier could never see it. But
+    `shift.manage` also closes the shift and issues the Z-report, which ADR-094
+    keeps with a manager. Opening is the safe half: the count is blind, it moves no
+    money, and a wrong float shows as a variance at the close, under the opener's name.
+  - **Existing venues** (migration 00033): every role holding `shift.manage` gains
+    `shift.open`, whatever it is called, so nobody who could open loses it; and a
+    role still named `cashier` gains it, once, as 00016 did for owner and manager. A
+    renamed cashier role is left alone and the owner ticks the box in Roles.
+  - **Who can open it** (`openers` on `GET /api/v1/shift`, ADR-150) is now everyone
+    whose role grants `shift.open`. The terminal shows D02 to the same people.
+  - **In Roles** the two read "Open the shift" and "Close the shift".
+  - `shift.manage` is not renamed: a permission's string is what roles store
+    (`permissions.go`), so it keeps its key and narrows in meaning only.
+Because: a cashier's day starts at D02 in the design, and a cafe with one person on
+the morning shift should not need the manager's PIN to start selling.
+Cost: a cashier who opens with a wrong float is found out only at the close; a venue
+that wants only managers to open must untick it for the cashier role; a venue that
+renamed its cashier role gets nothing from the migration.
+---

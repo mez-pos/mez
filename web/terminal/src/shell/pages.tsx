@@ -109,7 +109,7 @@ export function ShiftPage() {
   const soldOut = soldOutNotice(soldOutNames(menu.data?.items ?? [], new Date()));
   const lockOut = () => void store.signOut();
 
-  if (!auth.permissions.includes("shift.manage")) {
+  if (!auth.permissions.includes("shift.open")) {
     return <ShiftNotOpen openers={shift.openers} details={details} soldOut={soldOut} onLock={lockOut} />;
   }
   return (

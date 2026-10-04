@@ -269,6 +269,7 @@ export type Permission =
   | 'order.reopen'
   | 'invoice.reprint'
   | 'kitchen.view'
+  | 'shift.open'
   | 'shift.manage'
   | 'cash.move'
   | 'device.manage'

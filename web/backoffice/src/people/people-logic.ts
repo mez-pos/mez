@@ -19,7 +19,8 @@ export const permissionWords: Readonly<Record<Permission, string>> = {
   "refund.give": "Give refunds",
   "order.reopen": "Reopen closed bills",
   "invoice.reprint": "Reprint invoices",
-  "shift.manage": "Open and close the shift",
+  "shift.open": "Open the shift",
+  "shift.manage": "Close the shift",
   "cash.move": "Move cash in and out of the drawer",
   "menu.edit": "Edit the menu",
   "stock.manage": "Keep the stock",
@@ -42,7 +43,7 @@ export const permissionGroups: readonly PermissionGroup[] = [
     note: "Others ask for these at the till.",
     permissions: ["line.void", "line.comp", "discount.give", "payment.void", "refund.give", "order.reopen", "invoice.reprint"],
   },
-  { title: "Shift and cash", permissions: ["shift.manage", "cash.move"] },
+  { title: "Shift and cash", permissions: ["shift.open", "shift.manage", "cash.move"] },
   {
     title: "Back office",
     permissions: ["menu.edit", "stock.manage", "staff.manage", "reports.view", "settings.edit", "device.manage"],

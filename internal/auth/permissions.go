@@ -26,7 +26,8 @@ const (
 	PermOrderReopen    Permission = "order.reopen"    // reopen a closed order
 	PermInvoiceReprint Permission = "invoice.reprint" // print a copy of an issued invoice
 	PermKitchenView    Permission = "kitchen.view"    // see and bump the kitchen display
-	PermShiftManage    Permission = "shift.manage"    // open and close the shift
+	PermShiftOpen      Permission = "shift.open"      // count the float in and open the shift (ADR-152)
+	PermShiftManage    Permission = "shift.manage"    // close the shift, pool its tips, correct its Z-report
 	PermCashMove       Permission = "cash.move"       // authorise cash into or out of the drawer
 
 	// The back office.
@@ -43,7 +44,7 @@ const (
 var all = []Permission{
 	PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
 	PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView,
-	PermShiftManage, PermCashMove,
+	PermShiftOpen, PermShiftManage, PermCashMove,
 	PermDeviceManage, PermStaffManage, PermMenuEdit, PermSettingsEdit, PermReportsView, PermStockManage,
 }
 
@@ -162,18 +163,21 @@ func DefaultRoles() []RoleTemplate {
 	manager := []Permission{
 		PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
 		PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView,
-		PermShiftManage, PermCashMove,
+		PermShiftOpen, PermShiftManage, PermCashMove,
 		PermStaffManage, PermReportsView, PermStockManage,
 	}
 	return []RoleTemplate{
 		{Name: "owner", Permissions: Permissions()},
 		{Name: "manager", Permissions: manager},
+		// A cashier counts the float in and opens the shift (ADR-152); closing
+		// it stays with shift.manage. Migration 00033 gives shift.open to the
+		// cashiers, and to whoever could already open, of venues that exist.
 		{Name: "cashier", Permissions: []Permission{
-			PermOrderOpen, PermOrderEdit, PermPaymentTake, PermKitchenView,
+			PermOrderOpen, PermOrderEdit, PermPaymentTake, PermKitchenView, PermShiftOpen,
 		}},
 		// A waiter works a tablet: takes orders, sends them to the kitchen and
-		// settles the bill at the table (ADR-145). The same permissions as the
-		// cashier today; what differs is where they land after signing in.
+		// settles the bill at the table (ADR-145). The cashier's permissions
+		// less opening the shift; they also land elsewhere after signing in.
 		// Migration 00031 gives this role to venues that already exist.
 		{Name: "waiter", Permissions: []Permission{
 			PermOrderOpen, PermOrderEdit, PermPaymentTake, PermKitchenView,

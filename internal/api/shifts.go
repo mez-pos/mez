@@ -156,7 +156,9 @@ func (s *Server) mountShifts(mux *http.ServeMux) {
 	}
 	// Anyone who sells needs to know whether the till is open.
 	handle("GET /api/v1/shift", auth.PermOrderOpen, s.currentShift)
-	handle("POST /api/v1/shift/open", auth.PermShiftManage, s.openShift)
+	// Opening is its own permission, so a cashier can start the day without
+	// being able to close it (ADR-152).
+	handle("POST /api/v1/shift/open", auth.PermShiftOpen, s.openShift)
 	// Whoever takes payments handles the drawer; the movement itself is
 	// authorised by a manager's override for cash.move.
 	handle("POST /api/v1/shift/{id}/cash", auth.PermPaymentTake, s.moveCash)
@@ -170,7 +172,7 @@ func (s *Server) mountShifts(mux *http.ServeMux) {
 func (s *Server) currentShift(w http.ResponseWriter, r *http.Request) {
 	sh, err := s.shifts.Current(r.Context(), Meta(r).VenueID)
 	if errors.Is(err, svcshift.ErrNoOpenShift) {
-		openers, err := s.staff.WithPermission(r.Context(), Meta(r).VenueID, auth.PermShiftManage)
+		openers, err := s.staff.WithPermission(r.Context(), Meta(r).VenueID, auth.PermShiftOpen)
 		if err != nil {
 			// The till is closed whether or not we can say who to ask: say
 			// the first, log the second.
