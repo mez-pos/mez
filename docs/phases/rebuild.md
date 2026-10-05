@@ -294,12 +294,12 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   states go with the shell's status bar if Task 2 did not cover them.
   Split on 2026-10-05, a screen each, with the frame every one of them sits
   in ahead of them. D21 is out of scope, so D17 is its staff half only.
-  - [ ] 16a. The back office's frame (D12's bar and sidebar): the 72px bar
+  - [x] 16a. (ADR-182) The back office's frame (D12's bar and sidebar): the 72px bar
     with the logo, the date and time, the connection (D14's word) and who is
     signed in, whose menu holds Sign out; the 240px sidebar with an icon on
     every entry. The sections the design does not draw keep their places
     (rule 4). Search and the bell are left out: nothing answers them.
-  - [ ] 16b. The dashboard (D12): today's sales, orders, active tables and
+  - [x] 16b. (ADR-183) The dashboard (D12): today's sales, orders, active tables and
     average order beside yesterday's; sales through the day; top selling
     items; active tables; staff; low stock; quick actions. Each card only for
     whoever may read what is in it.

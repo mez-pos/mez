@@ -14,7 +14,24 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 15f: Coming next** (ADR-181). Task 15 is done. Where D10 draws
+**Rebuild, Task 16b: the dashboard** (ADR-183). Task 16 is split in ten (16a to 16j,
+`rebuild.md`). `/backoffice/` is D12 (`dashboard/Dashboard.tsx` and its parts,
+`dashboard-logic.ts`): today's sales, orders, active tables and average order beside
+yesterday's, sales by the hour, top selling items, active tables, staff, low stock and
+quick actions, each card for whoever may read it. No new endpoint; the sales report now
+carries `roles` beside `names`. Seen in a browser as Priya at 1920x1080 and 1366x768
+against the dev venue. Go test for the roles; vitest for `change`, `occupancy`,
+`activeTables`, `topItems`, `staffRows`, `hourChart`, `axisTop`, `lowRows`,
+`formatMoneyCompact`. `make check` and `make build-web` pass.
+
+Before it, **Rebuild, Task 16a: the back office's frame** (ADR-182). The 72px bar (logo,
+Online, the venue's date and time, who is signed in with Sign out under the name) and
+the 240px sidebar with an icon on every entry (`shell/BackOfficeShell.tsx`,
+`shell/SectionNav.tsx`). `ConnectionWord`, `ProfileMenu`, `use-disclosure` and
+`status-logic` moved to `web/shared/shell`; `SignedInShell` is deleted. Seen in a
+browser: the menu under the name, and Menu opened from the sidebar.
+
+Before it, **Rebuild, Task 15f: Coming next** (ADR-181). Task 15 is done. Where D10 draws
 "Upcoming", the board lists what the station will be sent when a later course is
 fired: `order.Held` (`internal/domain/order/route.go`), `coming` and `coming_more` on
 the board's response, and a card under Today's stats (`kitchen/BoardStats.tsx`,
@@ -152,18 +169,16 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c) or 15 (b to f).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a, b).
 
 ## Next task
 
-**Rebuild, Task 16** (back office): split it into one sub-task per screen before
-starting, as the phase file says: D12 dashboard, D15 to D17 reports, D18 menu, D19
-inventory, D20 staff and roles, D22 settings, D23 Z-report (`mez Desktop
-Management.dc.html`, and D12 in `mez Desktop KDS and Dashboard.dc.html`). Commit the
-split, then build the first. Read `docs/design/tokens.md` and one screen at a time.
-The kitchen's screens are not yet looked at by the owner. Phase 11
-waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
-its done-when is a human check and stays unticked below.
+**Rebuild, Task 16c: Sales reports** (D15, `mez Desktop Management.dc.html` line 36).
+Read `docs/design/tokens.md` and that one screen. The screens inside the new frame are
+still the old layouts until their own tasks (16c to 16j). The owner has not yet looked
+at the kitchen's screens, the frame or the dashboard. Phase 11 waits for this phase.
+Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human
+check and stays unticked below.
 
 Agreed and built on 2026-10-05 (ADR-158): a free table has "Seat N guests" and "Seat
 and order"; the totals name each tax (CGST, SGST) on the rail, the table panel and the
@@ -175,6 +190,15 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- The dashboard (ADR-183): bars are one colour (the report's hours are not cut by
+  service type); "Total orders" is paid bills, not open orders; today so far is
+  compared with the whole of yesterday; a table to clear counts as active. Not seen by eye: a low
+  or out-of-stock row, more than five rows in a list, a day with nothing sold, a failed
+  read, a manager's or a cashier's dashboard (cards by permission), a bill after 10 PM,
+  and a width under 1280px.
+- The back office's frame (ADR-182): no search, no bell. Not seen by eye: the bar
+  with the server down, Sign out carried through, a `g` chord, a width under 768px
+  (the sidebar as a row), and a screen 900px tall or more at 1366 wide.
 - The board's foot (ADR-177): no Auto advance, no Mark all complete, no Settings
   screen. The chime was not heard (the check was by eye): try it on a real display,
   and after the tab has been idle. The dev server missed a file change once (Vite on

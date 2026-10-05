@@ -53,6 +53,32 @@ export function formatMoney(amount: Money, locale?: string): string {
   );
 }
 
+/**
+ * An amount in short, for a chart's axis: "₹4K", "₹1.5L", "$250". The minor
+ * units are dropped, so this is a label for a round tick and never a figure
+ * anyone is charged: every figure goes through formatMoney.
+ */
+export function formatMoneyCompact(amount: Money, locale?: string): string {
+  const { minor, currency } = amount;
+  if (!Number.isSafeInteger(minor)) {
+    throw new RangeError(`money must be a safe integer of minor units, got ${minor} ${currency}`);
+  }
+  const { major } = split(Math.abs(minor), exponentOf(currency));
+  const sign = minor < 0 ? minus : "";
+  try {
+    const format = new Intl.NumberFormat(locale ?? localeByCurrency[currency] ?? "en", {
+      style: "currency",
+      currency,
+      notation: "compact",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    });
+    return sign + format.format(BigInt(major));
+  } catch {
+    return `${sign}${major} ${currency}`;
+  }
+}
+
 /** 12345 at exponent 2 is "123" and "45"; 5 is "0" and "05". */
 function split(absMinor: number, exponent: number): { major: string; fraction: string } {
   const digits = String(absMinor).padStart(exponent + 1, "0");

@@ -134,10 +134,10 @@ export function sortGroups(groups: readonly Group[], sort: Sort): Group[] {
 }
 
 /** The hour a trading day starts, as the server counts it (shift.DefaultDayStart). */
-const dayStartHour = 4;
+export const dayStartHour = 4;
 
 /** Where an hour of the clock falls in the trading day: 0 for 04:00, 23 for 03:00. */
-const slotOf = (hour: number): number => (hour - dayStartHour + 24) % 24;
+export const slotOf = (hour: number): number => (hour - dayStartHour + 24) % 24;
 
 const weekdayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 

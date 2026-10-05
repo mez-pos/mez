@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { chipSpec, dayStatuses, kitchenStatuses, lineStatuses, orderStatuses, paymentStatuses, printStatuses, tableStatuses, type ChipSpec } from "./status";
+import {
+  chipSpec,
+  dayStatuses,
+  kitchenStatuses,
+  lineStatuses,
+  orderStatuses,
+  paymentStatuses,
+  printStatuses,
+  stockLevels,
+  tableStatuses,
+  type ChipSpec,
+} from "./status";
 
 const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   kitchen: kitchenStatuses,
@@ -9,6 +20,7 @@ const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   print: printStatuses,
   table: tableStatuses,
   day: dayStatuses,
+  stock: stockLevels,
 };
 
 describe("status vocabularies", () => {

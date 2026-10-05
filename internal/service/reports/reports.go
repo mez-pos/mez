@@ -56,6 +56,9 @@ type Sales struct {
 	report.Result
 	// Names are the staff the report mentions, by ID, as they are named now.
 	Names map[int64]string `json:"names"`
+	// Roles are the role each of them holds now, by the same ID. Someone no
+	// longer on record has none.
+	Roles map[int64]string `json:"roles"`
 }
 
 // Sales reads a range's reports.
@@ -102,11 +105,11 @@ func (s *Service) Sales(ctx context.Context, venueID int64, qy Query) (Sales, er
 	if err != nil {
 		return Sales{}, fmt.Errorf("reports: %s to %s: %w", qy.From, qy.To, err)
 	}
-	names, err := staffNames(ctx, q, venueID)
+	staff, err := staffOf(ctx, q, venueID)
 	if err != nil {
 		return Sales{}, err
 	}
-	return named(res, names), nil
+	return named(res, staff), nil
 }
 
 // SalesTable is one of a range's reports as a table, for a CSV download
@@ -179,29 +182,35 @@ func itemCategories(ctx context.Context, q *gen.Queries, venueID int64) (map[int
 	return out, nil
 }
 
-func staffNames(ctx context.Context, q *gen.Queries, venueID int64) (map[int64]string, error) {
+// person is a staff member as a report shows them: their name and their role's.
+type person struct {
+	name, role string
+}
+
+// staffOf is everyone at the venue, inactive too, by ID.
+func staffOf(ctx context.Context, q *gen.Queries, venueID int64) (map[int64]person, error) {
 	rows, err := q.StaffForVenue(ctx, venueID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("reports: reading staff: %w", err)
 	}
-	out := make(map[int64]string, len(rows))
+	out := make(map[int64]person, len(rows))
 	for _, r := range rows {
-		out[r.ID] = r.Name
+		out[r.ID] = person{name: r.Name, role: r.RoleName}
 	}
 	return out, nil
 }
 
 // named puts names to the staff the report mentions: each staff group is
-// named, and Names holds everyone it mentions, removed lines included.
-func named(res report.Result, all map[int64]string) Sales {
-	names := map[int64]string{}
+// named, and Names and Roles hold everyone it mentions, removed lines included.
+func named(res report.Result, all map[int64]person) Sales {
+	names, roles := map[int64]string{}, map[int64]string{}
 	mention := func(id int64) string {
-		name, ok := all[id]
+		p, ok := all[id]
 		if !ok {
-			name = "Someone no longer on record"
+			p = person{name: "Someone no longer on record"}
 		}
-		names[id] = name
-		return name
+		names[id], roles[id] = p.name, p.role
+		return p.name
 	}
 	byStaff := slices.Clone(res.Totals.ByStaff)
 	for i, g := range byStaff {
@@ -213,5 +222,5 @@ func named(res report.Result, all map[int64]string) Sales {
 		mention(r.StaffID)
 	}
 	res.Totals.ByStaff = byStaff
-	return Sales{Result: res, Names: names}
+	return Sales{Result: res, Names: names, Roles: roles}
 }

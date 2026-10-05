@@ -152,6 +152,9 @@ func TestARange(t *testing.T) {
 	if got.Names[f.asha] != "Asha" {
 		t.Errorf("names %+v", got.Names)
 	}
+	if got.Roles[f.asha] != "owner" || len(got.Roles) != len(got.Names) {
+		t.Errorf("roles %+v, want a role for everyone named", got.Roles)
+	}
 	if len(got.Hours) != 3 {
 		t.Errorf("hours %+v, want three cells", got.Hours)
 	}

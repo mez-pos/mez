@@ -5269,3 +5269,63 @@ Cost: every open order is projected on each board read to find what it holds (th
 open orders list does the same; a venue has tens open, not thousands). A venue that
 never uses courses sees "Nothing is waiting for a later course" and no more.
 ---
+
+## ADR-182 - The back office's frame is D12's: a 72px bar and a sidebar with icons
+2026-10 · Status: accepted. Rebuild Task 16a (D12, D14); over ADR-105 and ADR-148.
+Context: the back office sat in `SignedInShell`, the pre-design header (logo, section
+and device, a Sign out button). D12 draws the frame every management screen sits in.
+Decision:
+  - **The bar** is 72px: the logo, whether the server is there (D14's word, the
+    terminal's `ConnectionWord`), the venue's date and time in a pill, and who is signed
+    in, whose menu holds Sign out. The script line shows from 1536px wide.
+  - **The sidebar** is 240px, an icon on every entry, 48px each, the current one
+    terracotta. The design draws nine entries in one run; the back office has eleven, so
+    they keep their groups and labels, and their `g` chords (rule 4). Its script line is
+    drawn only on a screen 900px tall or more, so the entries never scroll at 768.
+  - **Shared with the terminal:** `ConnectionWord`, `status-logic`, `use-disclosure` and
+    `ProfileMenu` moved to `web/shared/shell`. `ProfileMenu` takes its choices as a list:
+    the terminal gives it Lock, Close the shift and Print queue, the back office Sign out.
+    `SignedInShell` had no other user and is deleted.
+  - **Left out, because nothing answers them:** the search and the bell. Orders, Tables
+    and Customers are not in the sidebar: the first two are the terminal's screens and a
+    back office pairing does not open them; Customers is out of v1.
+  - Sections keep their names (Stock, People, Venue settings) until their own screens are
+    rebuilt (16f to 16i), so a title and its entry never disagree.
+Because: one frame for both apps' top bars, and the pieces that say who and whether the
+server is there are now the same code on both.
+Cost: the section and device name are no longer in the bar; the sidebar says where you
+are and Devices names the device. `docs/design/screens/backoffice-shell.md` describes
+the old frame until Task 17.
+---
+
+## ADR-183 - The dashboard is today, from the reports that already exist
+2026-10 · Status: accepted. Rebuild Task 16b (D12); over ADR-118, ADR-111 and ADR-086.
+Context: D12 is today at a glance: four figures, sales through the day, top items,
+active tables, staff, low stock, quick actions. The old dashboard was a list of links.
+Decision:
+  - **No new endpoint.** The sales report for one trading day gives the totals, the
+    hours, the items and the staff; it is asked for today and again for yesterday, so
+    "12% up on all of yesterday" compares two server figures and nothing is summed in
+    the browser. Today so far is set against the whole of yesterday, and says so: a
+    morning reads as down. The floor in service gives the tables, the stock list what is low. Each is
+    read again every minute.
+  - **The report now says each named person's role** (`roles`, beside `names`). It names
+    staff by number and the staff list by public id, so the browser could not join them.
+  - **Each card is for whoever may read it:** sales cards need `reports.view`, tables
+    `order.open`, stock `stock.manage`; a shortcut shows to whoever may open its section.
+  - **"Total orders" is the day's bills,** as the report counts them: an order still open
+    is not in it. The average is the total over the bills.
+  - **Sales overview is one green bar an hour,** 8 AM to 10 PM or wider when a bill fell
+    outside, on a round axis (`axisTop`). The design stacks dine-in, takeaway and
+    delivery; the report's hours are not cut by service, so there is no legend.
+  - **Money keeps its minor units** ("₹800.00", where the design draws "₹24,580"). The
+    axis alone is short ("₹4K"), through `formatMoneyCompact`, for round ticks only.
+  - **Left out:** the "Today" pickers (the dashboard is today; Sales reports has ranges),
+    item photos in the list, "View floor" (the floor is the terminal's), the spot art.
+    "Add menu item" reads "Edit the menu", because that is where it goes.
+  - Low stock is a chip vocabulary of its own (`stock`: Low, Out), not free text.
+Because: a dashboard that adds up its own figures would one day disagree with the
+report beside it.
+Cost: two report reads a minute, each projecting the day's orders (ADR-118's cost,
+small for a day). Staff are ranked by the bills they opened, not the tables they served.
+---

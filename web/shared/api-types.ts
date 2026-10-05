@@ -1708,6 +1708,7 @@ export interface SalesReport {
   series: SalesPoint[];
   hours: SalesHour[];
   names: Record<number, string>;
+  roles: Record<number, string>;
 }
 
 export interface Report {

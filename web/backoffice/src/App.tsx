@@ -13,7 +13,7 @@ import { PrintersScreen } from "./printers/PrintersScreen";
 import { ZReportsScreen } from "./reports/ZReportsScreen";
 import { ExportsPanel } from "./reports/ExportsPanel";
 import { BackOfficeShell } from "./shell/BackOfficeShell";
-import { Dashboard } from "./shell/Dashboard";
+import { Dashboard } from "./dashboard/Dashboard";
 import { SectionGate } from "./shell/SectionGate";
 import { AuditScreen } from "./audit/AuditScreen";
 import { PeopleScreen } from "./people/PeopleScreen";

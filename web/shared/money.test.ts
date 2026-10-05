@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amountInputText, exponentOf, formatMoney, parseAmount } from "./money";
+import { amountInputText, exponentOf, formatMoney, formatMoneyCompact, parseAmount } from "./money";
 
 describe("formatMoney", () => {
   // Intl joins a currency code to its number with a no-break space (U+00A0),
@@ -104,4 +104,22 @@ describe("amountInputText", () => {
       if (tt.minor >= 0) expect(parseAmount(text, tt.currency)).toBe(tt.minor);
     });
   }
+});
+
+describe("formatMoneyCompact", () => {
+  const tests: { name: string; minor: number; currency: string; want: string }[] = [
+    { name: "thousands of rupees", minor: 400_000, currency: "INR", want: "₹4K" },
+    { name: "a lakh and a half", minor: 15_000_000, currency: "INR", want: "₹1.5L" },
+    { name: "under a thousand stays whole", minor: 25_000, currency: "INR", want: "₹250" },
+    { name: "nothing", minor: 0, currency: "INR", want: "₹0" },
+    { name: "dollars", minor: 250_000, currency: "USD", want: "$2.5K" },
+    { name: "a currency with no minor unit", minor: 4000, currency: "JPY", want: "¥4K" },
+  ];
+  for (const tt of tests) {
+    it(tt.name, () => expect(formatMoneyCompact({ minor: tt.minor, currency: tt.currency })).toBe(tt.want));
+  }
+
+  it("refuses an amount that is not a safe integer", () => {
+    expect(() => formatMoneyCompact({ minor: 1.5, currency: "INR" })).toThrow(RangeError);
+  });
 });

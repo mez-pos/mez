@@ -82,6 +82,15 @@ export const dayStatuses: Readonly<Record<DayStatus, ChipSpec>> = {
   voided: { tone: "neutral", word: "Voided", struck: true },
 };
 
+// A stock item at or under its level (D12, D19). Low is the pending mustard;
+// none left is the alarm.
+export type StockLevel = "low" | "out";
+
+export const stockLevels: Readonly<Record<StockLevel, ChipSpec>> = {
+  low: { tone: "warning", word: "Low" },
+  out: { tone: "danger", word: "Out" },
+};
+
 /** What a StatusChip is given: which vocabulary, and a value from it. */
 export type ChipStatus =
   | { readonly kind: "kitchen"; readonly status: KitchenStatus }
@@ -90,7 +99,8 @@ export type ChipStatus =
   | { readonly kind: "line"; readonly status: LineStatus }
   | { readonly kind: "print"; readonly status: PrintJobState }
   | { readonly kind: "table"; readonly status: TableStatus }
-  | { readonly kind: "day"; readonly status: DayStatus };
+  | { readonly kind: "day"; readonly status: DayStatus }
+  | { readonly kind: "stock"; readonly status: StockLevel };
 
 export function chipSpec(chip: ChipStatus): ChipSpec {
   switch (chip.kind) {
@@ -108,5 +118,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
       return tableStatuses[chip.status];
     case "day":
       return dayStatuses[chip.status];
+    case "stock":
+      return stockLevels[chip.status];
   }
 }
