@@ -5,16 +5,17 @@
 // orders, the items' "Rohan" and "QR" tabs and chips (a line does not say who
 // rang it up), and the bell. Also left out: Preferences, Split Bill and Print
 // KOT (nothing does them from here), Mark as Served (ADR-090 has no such step),
-// and the pencil on the table's name. Transfer and Merge come with T06.
+// and the pencil on the table's name. Transfer and Merge open T06 (MoveTable).
 
-import { GitMergeIcon, InfoIcon, PlusIcon, ReceiptTextIcon, SendIcon, StickyNoteIcon, UsersIcon, UtensilsIcon } from "lucide-react";
+import { ArrowLeftRightIcon, GitMergeIcon, InfoIcon, PlusIcon, ReceiptTextIcon, SendIcon, StickyNoteIcon, UsersIcon, UtensilsIcon } from "lucide-react";
 import { useState } from "react";
-import type { LiveTableResponse } from "../../../shared/api-types";
+import type { LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
 import { Button } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { useMenu } from "../../../shared/use-menu";
 import { useVenue } from "../../../shared/use-venue";
+import type { FloorAction } from "../floor/floor-logic";
 import { toneClasses } from "../floor/tones";
 import { useTableOrder } from "../floor/use-table-order";
 import { ConfirmSend } from "../register/ConfirmSend";
@@ -25,6 +26,8 @@ import { OrderTotals } from "../register/OrderTotals";
 import { courseNamer, guestsText, serviceLabels } from "../register/rail-logic";
 import { sendPlan } from "../register/send-logic";
 import { chargeBlock, chargeLabel } from "../tender/tender-logic";
+import type { MoveMode } from "./move-logic";
+import { MoveTable } from "./MoveTable";
 import { OrderProgress } from "./OrderProgress";
 import { startedText } from "./table-logic";
 import { TableItems } from "./TableItems";
@@ -39,17 +42,21 @@ interface TableDetailOrderProps {
   /** Brings the order to the front on the order screen, off hold if it was held. */
   onAddItems: (held: boolean) => Promise<void>;
   onBill: () => void;
+  /** The floor, to move the party or join tables to it (T06). */
+  floor: LiveFloorResponse;
+  act: (action: FloorAction) => Promise<void>;
+  onMoving: (to: number | null) => void;
 }
 
 const tile =
   "flex min-h-charge items-center justify-center gap-2 rounded px-3 text-base font-semibold outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40";
 
-export function TableDetailOrder({ table, title, orderId, sendWaits, onAddItems, onBill }: TableDetailOrderProps) {
+export function TableDetailOrder({ table, title, orderId, sendWaits, onAddItems, onBill, floor, act, onMoving }: TableDetailOrderProps) {
   const { order, loading, error, refetch, send, fire, addNote } = useTableOrder(orderId);
   const menu = useMenu();
   const venue = useVenue();
   const now = useClock(30_000);
-  const [sheet, setSheet] = useState<"note" | "history" | "send" | null>(null);
+  const [sheet, setSheet] = useState<"note" | "history" | "send" | MoveMode | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -163,6 +170,14 @@ export function TableDetailOrder({ table, title, orderId, sendWaits, onAddItems,
             <InfoIcon aria-hidden="true" size={17} />
             Details
           </button>
+          <button type="button" onClick={() => setSheet("transfer")} className={cx(tile, "border border-line-strong bg-raised hover:bg-raised-high")}>
+            <ArrowLeftRightIcon aria-hidden="true" size={17} />
+            Transfer
+          </button>
+          <button type="button" onClick={() => setSheet("merge")} className={cx(tile, "border border-line-strong bg-raised hover:bg-raised-high")}>
+            <GitMergeIcon aria-hidden="true" size={17} />
+            Merge
+          </button>
         </div>
         {block && order.lines.length > 0 && <p className="-mt-1 text-sm text-fg-muted">{block}</p>}
 
@@ -189,6 +204,9 @@ export function TableDetailOrder({ table, title, orderId, sendWaits, onAddItems,
 
       {sheet === "note" && <NoteSheet onSave={(text) => addNote({ scope: "order", text }).then(() => setSheet(null))} onClose={() => setSheet(null)} />}
       {sheet === "history" && <HistorySheet orderId={order.id} onClose={() => setSheet(null)} />}
+      {(sheet === "transfer" || sheet === "merge") && (
+        <MoveTable floor={floor} party={table} title={title} order={order} startIn={sheet} act={act} onMoving={onMoving} onClose={() => setSheet(null)} />
+      )}
       {sheet === "send" && (
         <ConfirmSend
           order={order}

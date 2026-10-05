@@ -2,6 +2,7 @@
 // order. A table with none to show (free, to clear, or with several orders) is
 // the floor's: its panel seats, clears and asks which order.
 
+import { useState } from "react";
 import { Redirect, useLocation } from "wouter";
 import { EmptyState, InboxIcon } from "../../../shared/ui";
 import { panelTitle, partyTable } from "../floor/floor-logic";
@@ -14,6 +15,8 @@ import { TableDetailOrder } from "./TableDetailOrder";
 export function TableDetail({ tableId }: { tableId: number }) {
   const { floor, ticket } = useTerminal();
   const [, navigate] = useLocation();
+  // Where a transfer under way is taking the party: this screen follows it there.
+  const [movingTo, setMovingTo] = useState<number | null>(null);
 
   if (floor.loading) return <p className="m-auto text-base text-fg-muted">Opening the table</p>;
   if (!floor.data) {
@@ -33,7 +36,7 @@ export function TableDetail({ tableId }: { tableId: number }) {
   }
   const table = partyTable(found, tables);
   const orderId = detailOrder(table);
-  if (!orderId) return <Redirect to={route.table(table.id)} replace />;
+  if (!orderId) return <Redirect to={movingTo !== null ? route.waiterTable(movingTo) : route.table(table.id)} replace />;
 
   return (
     <TableDetailOrder
@@ -49,6 +52,9 @@ export function TableDetail({ tableId }: { tableId: number }) {
         navigate(route.order);
       }}
       onBill={() => navigate(route.pay(orderId))}
+      floor={floor.data}
+      act={floor.act}
+      onMoving={setMovingTo}
     />
   );
 }

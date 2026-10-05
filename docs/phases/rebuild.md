@@ -243,12 +243,12 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     already, the ticket as the kitchen will read it, Back and "Send N items".
   - [x] 12c. (ADR-167) Course View: the rail's second tab, the order by course, with what has
     gone, what is held, and firing the next one.
-- [ ] **Task 13 - Waiter table detail, transfer and merge.** T03, T06. Split on
+- [x] **Task 13 - Waiter table detail, transfer and merge.** T03, T06. Split on
   2026-10-05, a screen each.
   - [x] 13a. (ADR-169) The table's own screen (T03): the table and how long it has sat, its
     notes, its items by course, where the order stands with the kitchen, the
     totals, Add Item, the bill, and Send to Kitchen. A waiter's card leads here.
-  - [ ] 13b. Transfer and merge (T06): a modal from the table's screen that moves
+  - [x] 13b. (ADR-170) Transfer and merge (T06): a modal from the table's screen that moves
     the party to a free table or joins free tables to it.
 - [ ] **Task 14 - Waiter bill and shift summary.** T05, T08.
 - [ ] **Task 15 - Kitchen display.** D10 and D11.

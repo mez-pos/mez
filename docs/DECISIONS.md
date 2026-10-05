@@ -4980,3 +4980,23 @@ line does not say who rang it up; phase 11), Preferences, Split Bill and Print K
 the thumbnails and the per-item menu. Request Bill is "Bill and pay" and opens payment.
 Cost: seating a party is on another screen from the table's own.
 ---
+
+## ADR-170 - A party is moved and tables are joined from the table's screen, in a modal
+2026-10 · Status: accepted. Rebuild Task 13b. Task 13 is done.
+Decision:
+  - **Transfer and Merge on the table's screen open T06,** a modal: what the party has
+    (items, total, guests), the two modes, the other tables as tiles, Cancel and a
+    button that says what it will do ("Move to T5", "Join T3", "Let go T7").
+  - **The rules are the floor's (ADR-088),** asked of the same routes: a party moves to
+    a free table; free tables are joined to it; a joined one is let go. Merge takes
+    any number of picks and sends them in turn.
+  - **A table that cannot be taken is drawn dimmed with why** (Needs Bill, To Clear,
+    Occupied), not hidden, so a waiter sees the floor is full rather than short.
+  - **After a transfer the screen follows the party** to its new table.
+  - **The floor's own move and join modes stay** (Floor plan under More): they are the
+    cashier's, and the only way for a table with several orders.
+Left out, and why (rule 3): "Guest QR sessions follow the table" (phase 11) and
+"Notify the kitchen of the new table number" (the kitchen reads the table from the
+order, so it follows untold).
+Cost: two ways to move a party, one per screen.
+---

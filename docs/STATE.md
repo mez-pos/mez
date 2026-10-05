@@ -14,7 +14,16 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 13a: the table's own screen** (ADR-169). Task 13 is split in two.
+**Rebuild, Task 13b: transfer and merge** (ADR-170). Task 13 is done. Transfer and
+Merge on the table's screen open T06 as a modal (`waiter/MoveTable.tsx`,
+`move-logic.ts`): the party's items, total and guests, the two modes, every other
+table as a tile (free ones can be taken, the rest say why not), and a button that says
+what it will do. Seen in a browser at 1366x1024 as Kabir: T3 joined to T2 ("Table T2 +
+T3", Merged), let go again, and the party moved to T5 with the screen following it.
+Tests: `moveTiles`, `pickTile`, `moveLabel`, `moveActions`. `make check` and `make
+build-web` pass.
+
+Before it, **Task 13a: the table's own screen** (ADR-169). Task 13 is split in two.
 `/waiter/table/:id` is T03 (`waiter/TableDetail.tsx`, `TableDetailOrder.tsx`,
 `TableItems.tsx`, `OrderProgress.tsx`, `table-logic.ts`): the table with its guests and
 how long it has sat, its notes and Add note, its items by course with each one's state
@@ -56,14 +65,15 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c) or 13a.
+10c, 11, 12 (a, b, c) or 13 (a, b).
 
 ## Next task
 
-**Rebuild, Task 13b** (transfer and merge): T06 (line 489 of `mez Tablet
-Waiter.dc.html`), a modal from the table's screen. A party is moved and tables are
-joined on the floor today (Floor plan under More; `floor.act`, `floor-logic.ts`).
-Read `docs/design/tokens.md` and that screen only. Phase 11
+**Rebuild, Task 14** (waiter bill and shift summary): T05 (line 425 of `mez Tablet
+Waiter.dc.html`) and T08 (line 552). A waiter's "Bill and pay" (the table's screen, the
+rail's "...") opens the desktop payment screen (`/pay/:id`, `tender/PayScreen.tsx`)
+today. Two screens: split it before starting. Read `docs/design/tokens.md` and those
+two only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -77,9 +87,12 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Transfer and merge (ADR-170): a merge of several tables is one request each, in
+  turn; if one is refused the ones before it stand. No note about QR sessions, no
+  "Notify the kitchen". Not seen by eye: a refusal, several tables joined at once, join
+  and let go in one go, a floor of more than sixteen other tables (the tiles scroll).
 - The table's screen (ADR-169): a free table, one to clear and one with several orders
-  are the floor's, so seating a party is still done there. No Transfer or Merge until
-  13b. Notes carry no time or name (a note keeps neither). Every course wears the same
+  are the floor's, so seating a party is still done there. Notes carry no time or name (a note keeps neither). Every course wears the same
   icon. Bill and pay opens the desktop payment screen until T05 (Task 14). The order
   screen's back arrow returns to the tables, not to this screen. Not seen by eye: a
   joined table ("Merged"), a saved order, a held course's Fire, a Ready item, a refusal,
