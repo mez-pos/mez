@@ -10,8 +10,10 @@ import { ArmchairIcon, ChevronDownIcon, UsersIcon } from "lucide-react";
 import { useState } from "react";
 import type { Diet, LineResponse } from "../../../shared/api-types";
 import { Button, Confirm, StatusChip } from "../../../shared/ui";
+import { cx } from "../../../shared/ui/cx";
 import { clearableLines } from "./cart-logic";
 import { ConfirmSend } from "./ConfirmSend";
+import { CourseView } from "./CourseView";
 import { MoreActions } from "./MoreActions";
 import { RailFooter } from "./RailFooter";
 import { RailLines } from "./RailLines";
@@ -41,8 +43,8 @@ interface OrderRailProps {
   onFail: (what: string) => (err: unknown) => void;
   /** The waiter's rail (T02). */
   waiter?: boolean;
-  /** A line's course in words; the waiter's rail shows it. */
-  courseName?: (line: LineResponse) => string | null;
+  /** A course's name by its number; the waiter's rail shows it. */
+  courseName?: (course: number | undefined) => string | null;
   /** After Save has parked the order. */
   onSaved?: () => void;
 }
@@ -52,6 +54,7 @@ export function OrderRail(props: OrderRailProps) {
   const { waiter = false, courseName, onSaved } = props;
   const [clearing, setClearing] = useState(false);
   const [confirmingSend, setConfirmingSend] = useState(false);
+  const [tab, setTab] = useState<"order" | "courses">("order");
   const { order, orderId, opening } = ticket;
   const plan = planFor(order);
   const service = serviceOf(order, opening);
@@ -139,21 +142,56 @@ export function OrderRail(props: OrderRailProps) {
         </div>
       )}
 
-      <RailLines
-        order={order}
-        pending={ticket.pending}
-        ready={readyLines(order)}
-        dietFor={dietFor}
-        onOpenLine={onOpenLine}
-        onVoidLine={onVoidLine}
-        onRemoveLine={(line) => ticket.removeLine(line.id).catch(onFail(`Couldn't remove ${line.name}`))}
-        onQty={(line, next) => ticket.changeQty(line.id, line.qty, next).catch(onFail(`Couldn't change ${line.name}`))}
-        onRetry={ticket.retry}
-        onDrop={ticket.remove}
-        onNote={onNote}
-        {...(waiter && courseName ? { courseName } : {})}
-        {...(waiter && !held ? { clear: { count: clearable.length, onClear: () => setClearing(true) } } : {})}
-      />
+      {waiter && (
+        <div role="tablist" aria-label="Order views" className="flex gap-6 border-b border-line px-5">
+          {(
+            [
+              ["order", `Current Order (${order?.lines.filter((l) => l.status !== "voided").length ?? 0})`],
+              ["courses", "Course View"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className={cx(
+                "min-h-tap border-b-3 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
+                tab === id ? "border-attention font-bold text-attention-text" : "border-transparent text-fg-muted hover:text-fg",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {waiter && tab === "courses" ? (
+        <CourseView
+          order={order}
+          courseName={courseName ?? (() => null)}
+          ready={readyLines(order)}
+          canFire={!held}
+          onFire={(course) => ticket.fire(course).catch(onFail("Couldn't fire the course"))}
+        />
+      ) : (
+        <RailLines
+          order={order}
+          pending={ticket.pending}
+          ready={readyLines(order)}
+          dietFor={dietFor}
+          onOpenLine={onOpenLine}
+          onVoidLine={onVoidLine}
+          onRemoveLine={(line) => ticket.removeLine(line.id).catch(onFail(`Couldn't remove ${line.name}`))}
+          onQty={(line, next) => ticket.changeQty(line.id, line.qty, next).catch(onFail(`Couldn't change ${line.name}`))}
+          onRetry={ticket.retry}
+          onDrop={ticket.remove}
+          onNote={onNote}
+          {...(waiter && courseName ? { courseName: (line: LineResponse) => courseName(line.course) } : {})}
+          {...(waiter && !held ? { clear: { count: clearable.length, onClear: () => setClearing(true) } } : {})}
+        />
+      )}
 
       <RailFooter
         order={order}
@@ -178,7 +216,7 @@ export function OrderRail(props: OrderRailProps) {
           order={order}
           title={title}
           service={serviceLabels[service]}
-          courseName={courseName ?? (() => null)}
+          courseName={(line) => courseName?.(line.course) ?? null}
           onSend={ticket.send}
           onClose={() => setConfirmingSend(false)}
         />

@@ -4926,3 +4926,20 @@ where it goes), "Notify me when items are ready" and Undo (nothing does either),
 the KOT number (given when the ticket is made).
 Cost: one more tap for every send a waiter makes.
 ---
+
+## ADR-167 - Course View is the order by course, and where a waiter fires the next one
+2026-10 · Status: accepted. Rebuild Task 12c. Task 12 is done.
+Decision:
+  - **A waiter's rail has T02's two tabs:** Current Order, with its count of lines not
+    voided, and Course View. The cashier's rail has none (D03 draws none).
+  - **Course View groups the lines by course,** lines with no course first. A course is
+    "With the kitchen" when nothing in it waits, "To send" when the next Send takes
+    some of it, "Held" when it waits to be fired. Each line says its own state, and
+    Ready once the kitchen has bumped it.
+  - **Fire is a button on the next course held,** named for the course. It is the same
+    command as "Fire course N" under the "...", which stays for the cashier.
+  - **Nothing else changes there:** quantities, removal and notes are Current Order's.
+T02 names the tab and draws nothing under it, so this layout is ours, made from the
+states the server already keeps (ADR-089).
+Cost: two places to fire a course on a waiter's rail.
+---

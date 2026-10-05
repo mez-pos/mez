@@ -205,7 +205,7 @@ export function OrderScreen() {
         }}
         onFail={fail}
         waiter={waiter}
-        courseName={(line) => courseName(line.course)}
+        courseName={courseName}
         {...(waiter ? { onSaved: () => navigate(route.waiter) } : {})}
       />
 

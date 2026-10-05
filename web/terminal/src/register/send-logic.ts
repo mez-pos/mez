@@ -75,3 +75,30 @@ export function sendPreview(order: OrderResponse | undefined): SendPreview {
     held: held.length - first.length,
   };
 }
+
+/**
+ * One course of the order, for Course View (T02): its lines, and where it
+ * stands. "sent" is all of it with the kitchen, "waiting" goes with the next
+ * Send, "held" stays until its course is fired.
+ */
+export interface CourseGroup {
+  readonly course: number;
+  readonly name: string;
+  readonly lines: readonly LineResponse[];
+  readonly state: "sent" | "waiting" | "held";
+  /** This is the next course held back: Fire sends it. */
+  readonly canFire: boolean;
+}
+
+export function courseGroups(order: OrderResponse | undefined, courseName: (course: number | undefined) => string | null): CourseGroup[] {
+  const lines = (order?.lines ?? []).filter((l) => l.status !== "voided");
+  const going = new Set(sendPreview(order).going.map((l) => l.id));
+  const next = sendPlan(order).next?.course ?? null;
+  const numbers = [...new Set(lines.map(course))].sort((a, b) => a - b);
+  return numbers.map((number) => {
+    const mine = lines.filter((l) => course(l) === number);
+    const unsent = mine.filter(pending);
+    const state = unsent.length === 0 ? "sent" : unsent.some((l) => going.has(l.id)) ? "waiting" : "held";
+    return { course: number, name: courseName(number) ?? "No course", lines: mine, state, canFire: number === next };
+  });
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LineResponse, OrderResponse } from "../../../shared/api-types";
-import { readyLines, sendLabel, sendPlan, sendPreview } from "./send-logic";
+import { courseGroups, readyLines, sendLabel, sendPlan, sendPreview } from "./send-logic";
 
 const line = (id: number, course: number, extra: Partial<LineResponse> = {}): LineResponse =>
   ({ id, course, station: "kitchen", status: "active", sent: false, course_fired: false, ...extra }) as LineResponse;
@@ -78,5 +78,41 @@ describe("sendPreview", () => {
     ];
     for (const o of orders) expect(sendPreview(o).going).toHaveLength(sendPlan(o).waiting);
     expect(sendPreview(undefined)).toEqual({ going: [], gone: 0, held: 0 });
+  });
+});
+
+describe("courseGroups", () => {
+  const name = (course: number | undefined) => (course ? `Course ${course}` : null);
+  const shape = (o: OrderResponse) => courseGroups(o, name).map((g) => [g.name, g.state, g.canFire, g.lines.map((l) => l.id)]);
+
+  it("groups the lines by course in course order, lines with no course first", () => {
+    expect(shape(order([line(2, 2), line(3, 1), line(4, 0), line(5, 1)]))).toEqual([
+      ["No course", "waiting", false, [4]],
+      ["Course 1", "waiting", false, [3, 5]],
+      ["Course 2", "held", false, [2]],
+    ]);
+  });
+
+  it("says a course is with the kitchen once all of it has gone, and offers the next one to fire", () => {
+    const o = order([line(2, 1, { sent: true, course_fired: true }), line(3, 2), line(4, 3)]);
+    expect(shape(o)).toEqual([
+      ["Course 1", "sent", false, [2]],
+      ["Course 2", "held", true, [3]],
+      ["Course 3", "held", false, [4]],
+    ]);
+  });
+
+  it("says a fired course is waiting again when something is added to it", () => {
+    const o = order([line(2, 1, { sent: true, course_fired: true }), line(3, 1, { course_fired: true })]);
+    expect(shape(o)).toEqual([["Course 1", "waiting", false, [2, 3]]]);
+  });
+
+  it("leaves out voided lines, and a course with nothing left in it", () => {
+    expect(shape(order([line(2, 1, { status: "voided" }), line(3, 2)]))).toEqual([["Course 2", "waiting", false, [3]]]);
+    expect(courseGroups(undefined, name)).toEqual([]);
+  });
+
+  it("reads a line with nowhere to go as with the kitchen: there is nothing to send", () => {
+    expect(shape(order([line(2, 0, { station: "" })]))).toEqual([["No course", "sent", false, [2]]]);
   });
 });

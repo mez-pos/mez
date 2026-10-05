@@ -14,7 +14,15 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 12b: confirm and send** (ADR-166). A waiter's Send to Kitchen opens
+**Rebuild, Task 12c: Course View** (ADR-167). Task 12 is done. A waiter's rail has
+two tabs, Current Order (n) and Course View (`register/CourseView.tsx`, `courseGroups`
+in `send-logic.ts`): the order by course, each course with the kitchen, to send or
+held, each line's own state, and "Fire <course>" on the next one held. Seen in a
+browser at 1366x1024 as Kabir: a first course with the kitchen, a Dessert held, fired
+from the tab, then with the kitchen. Tests: `courseGroups`. `make check` and `make
+build-web` pass.
+
+Before it, **Task 12b: confirm and send** (ADR-166). A waiter's Send to Kitchen opens
 T04 as a modal (`register/ConfirmSend.tsx`, `sendPreview` in `send-logic.ts`): how many
 items go, how many the kitchen has already, how many wait for their course, the ticket
 as the kitchen will read it, Back and "Send N items to kitchen"; then a toast. Seen in
@@ -41,14 +49,15 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12a or 12b.
+10c, 11 or 12 (a, b, c).
 
 ## Next task
 
-**Rebuild, Task 12c** (Course View): the second tab of the waiter's rail in T02
-(line 153 of `mez Tablet Waiter.dc.html`): the order by course, what has gone, what
-is held, and firing the next one (today "Fire course N" under the rail's "...").
-Read `docs/design/tokens.md` and T02 only. Phase 11
+**Rebuild, Task 13** (waiter table detail, transfer and merge): T03 (line 247 of
+`mez Tablet Waiter.dc.html`) and T06 (line 489). A waiter's card leads to the floor
+with its table picked today (`route.table`, ADR-163), and Floor plan under More is
+where a party is moved and tables joined. Two screens: split it before starting if
+either is more than a session. Read `docs/design/tokens.md` and those two only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -62,12 +71,14 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Course View (ADR-167): the design draws the tab's name and nothing under it, so its
+  layout is ours. Fire is also still under the rail's "...". Not seen by eye: a line
+  with no course, a course "To send", a Ready line, three courses, a saved order.
 - Confirm and send (ADR-166): no ticket number (the server gives it on sending), no
   choice of printer or screen, no "Notify me", no Undo. The ticket's face is Archivo,
   not a monospace. Not seen by eye: a held later course's line, an order note, a line's
   note and choices on the ticket, a refusal, and a ticket longer than the modal.
-- The waiter's order screen (ADR-165): no tabs on the rail until Course View is built
-  (12c), and no Add More (the menu is beside the rail). The item modal is D04's, not
+- The waiter's order screen (ADR-165): no Add More (the menu is beside the rail). The item modal is D04's, not
   T02's sheet with a photo on top. The card's "+" is terracotta, as on D03. A cleared
   line stays on the rail struck through, as a removed one does. Save parks the order
   (hold): a saved table order must be resumed before anything is added. Not seen by
