@@ -348,7 +348,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     (`terminal-lock.md`), the frame, the navigation and where each role lands
     (`terminal-shell.md`, new), Open the shift (`terminal-open-shift.md`,
     new), Close the day (`terminal-close.md`).
-  - [ ] 17b. The order screen and the item modal (`terminal-register.md`),
+  - [x] 17b. The order screen and the item modal (`terminal-register.md`),
     Tables (`terminal-floor.md`).
   - [ ] 17c. Payment and split (`terminal-tender.md`), Orders and refunds
     (`terminal-past-bills.md`), the print queue (`terminal-print-queue.md`).

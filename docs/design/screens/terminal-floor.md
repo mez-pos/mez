@@ -1,62 +1,76 @@
-# Terminal: Floor
+# Terminal: Tables
 
-The dining room at a glance: every table in service, where it is in its
-turn, how many sit at it, how long, and what they owe. Where a party is
-seated, where a table's ticket is found, and where a table is cleared.
-Built in phase 08 Task 2b (ADR-087); Move, Join and Part in Task 2c
-(ADR-088).
+The dining room at a glance: every table in service, where it is in its turn,
+how many sit at it, how long, and what they owe; and beside it the table
+picked, with its order. Built in phase 08 (ADR-087, ADR-088) and rebuilt from
+D05 in the rebuild's Task 7 (ADR-155, ADR-158). `web/terminal/src/floor/`:
+`TablesScreen.tsx`, `TablesSidebar.tsx`, `FloorPlan.tsx`, `TableList.tsx`,
+`TablePanel.tsx`, `TableOrderView.tsx`, `TableActions.tsx`, `floor-logic.ts`,
+`tones.ts`. At `/tables`; `/tables?table=7` opens with that table picked.
+
+Laying the floor out is the back office's (`backoffice-floor.md`).
 
 ## Purpose
 
-Seat the next party at the right table in one tap, and see which tables
-need something now: a bill to take, a table to clear.
+Seat the next party at the right table in two taps, and see which tables need
+something now: an order to send, a bill to take, a table to clear.
 
 ## Layout
 
-Paper surface, inside the register's `SignedInShell`; it replaces the
-register's body as the bill and tender screens do, so the tickets on this
-till are kept while it shows.
+Three columns inside the frame (`terminal-shell.md`).
 
-- **Header row:** "Floor" in the serif; **Register** on the right
-  (back to the ticket in front). A count per state in words: "3 free · 4
-  seated · 1 paying · 2 to clear".
-- **Areas**, a row of 48px tabs when the venue has more than one.
-- **The grid**: the area as the back office laid it out
-  (`backoffice-floor.md`), `grid.columns` by `grid.rows`, empty cells
-  blank and empty rows and columns at the edges dropped. Each **tile** is
-  88 to 144px square (a round table drawn round), and shows:
-  - the table's name (xl, semibold) and its shape's outline
-  - its state as a `StatusChip`: **colour and the word**, always
-  - occupied: covers ("3 covers", tabular number), the time since seated
-    ("42m", tabular), and the balance (`Money`, tabular, right-aligned)
-  - dirty: the time since the bill closed ("6m")
-  - free: its seats ("4 seats")
-  The tile's border takes the state's tone; its fill stays the surface, so
-  the word stays readable.
-- **Seat sheet** (`Sheet`): "Seat table 4", covers as a `Qty` (1 to 99,
-  starting at the table's seats, capped at 12), **Seat** (primary).
-- **Table sheet** (`Sheet`), for a table that needs a choice:
-  - seated with nothing ordered: **Open ticket** (primary), **Guests left**
-  - dirty: **Clear table** (primary)
-  - two tickets at one table: each ticket, tap to open
+- **Sidebar, 240px, chrome:** **Floor Plan** and **Table List**, two ways to
+  look at the same tables, the chosen one the terracotta fill; **Order
+  History**, which opens the day's orders; a script line at the foot.
+- **The floor, the rest:**
+  - **Areas** as 48px pills when the venue has more than one, the chosen one
+    terracotta, with **All Areas** last. At the right, "9 tables · 3 free · 4
+    seated · 1 paying · 1 to clear".
+  - **The banner**, while moving or joining: what to tap next, and **Done**.
+  - The error line.
+  - **Floor Plan:** the area as the back office drew it, on the sunken ground
+    in a card. Empty rows and columns are taken out, so the tiles share the
+    room. A tile is at least 92px by 148px and grows to fill; a floor too big
+    for that scrolls. Each tile: the table's shape faint in its state's
+    colour (round if it is round), its name in the serif, who is at it ("4
+    seats", "3 guests", "Seated", "With T4", "Needs clearing"), its state as
+    a chip, and how long with what is owed ("42m · ₹930.00"). The border is
+    the state's tone; the picked tile has the terracotta outline. Under
+    "All Areas" each area has its name over its grid.
+  - **The legend** under the plan: a dot and a word for each of the five
+    states.
+  - **Table List:** a card, **Table availability**, with a count and a bar
+    for each state; then a table of rows: Table, Area, Guests, Status, Time,
+    Balance. Area by area, and within one by name the way people count ("T2"
+    before "T10"). The picked row has the green tint.
+- **The panel, 400px, chrome:** the table picked. With none: "Pick a table to
+  see its order."
+  - **The head:** "Table T4", or "Table T4 + T7" for a joined party, in the
+    serif; the state chip; how long as a pill, terracotta once late; and the
+    guests, or the seats of a table with nobody at it.
+  - **A free table:** "This table is free.", **Guests** on a stepper (it
+    starts at the table's seats, 12 at most; 1 to 99), **Seat 4 guests** (the
+    primary, 56px) and **Seat and order**.
+  - **A table to clear:** "The guests have paid and gone. Clear it once it is
+    laid again, and it is free." and **Clear table**.
+  - **A table with one order:** two tabs, **Current Order** and **Notes**
+    (with a count). Current Order is the lines, each with its quantity, name,
+    choices, a Ready, Void or Comped chip and what it comes to, then the totals as
+    on the order screen, tax by tax. Notes lists each note under what it is
+    about, an item or "The order". A saved order says "Saved. Add Items
+    brings it back."
+  - **The foot of an order:** **Add Items** and **Send to Kitchen**; then
+    **More Actions** and **Settle Bill** with what is owed (the primary). A
+    paid order still open reads **Invoice and close** or **Close order**.
+    Under them, why Settle Bill is shut when it is.
+  - **A table with several orders:** "2 orders are open at this table. Pick
+    one.", each with its id, item count, total and age; once one is picked,
+    "All 2 orders at this table" leads back.
 
-## Move, Join and Part (Task 2c)
-
-Three header buttons, 48px, beside Register. Each turns on a mode with a
-banner saying what to tap next and **Done** (primary) to end it; taps on
-tiles then do the mode's work instead of their usual one.
-
-- **Move**: tap the party's table, then a free one. The ticket moves;
-  the mode ends. Tapping the party's table again picks another.
-- **Join**: tap the party's table, then free tables, one tap each, until
-  Done. Tapping a table already joined lets it go.
-- **Part**: tap joined tables to let them go.
-
-A **joined table** shows the party's state and "With T4"; its covers and
-balance are shown only at the party's own table. The ticket reads "Table
-T4 + T7 · 6 covers". Refusals are said under the banner in words: "T5 isn't
-free. Tap a free table.", "T7 is joined to T4. Tap that one.", and a table
-with two tickets cannot be moved from the floor.
+**More Actions** opens upward: **Move to another table**, **Join tables**,
+**Part tables** for a joined party, **Fire course N** when one is held back,
+**Order history**, and **Guests left** for a table seated with nothing
+ordered.
 
 ## States and their words
 
@@ -68,49 +82,115 @@ with two tickets cannot be moved from the floor.
 | settling | warning (mustard) | Paying |
 | dirty | neutral (the cleaning grey) | To clear |
 
-Five states, five tones (tokens.md). Terracotta stays for "Late", on
-tickets: a table is never terracotta.
+Five states, five tones (tokens.md), always the colour and the word.
+Terracotta is for what is picked and what is late: a table's state is never
+terracotta.
 
-## Interactions
+## Move, Join and Part (ADR-088)
 
-| Action | Does | Then |
-|---|---|---|
-| Tap a free table | Seat sheet | |
-| Seat | Opens an order at the table with the covers, now, not on the first item | The register, on the new ticket, labelled "Table 4 · 3 covers" |
-| Tap an ordered or paying table (one ticket) | Brings its ticket to the front (resumes it if held) | The register |
-| Tap a seated table | Table sheet | Open ticket, or Guests left |
-| Guests left | Closes the empty ticket and clears the table in one step | The tile turns Free |
-| Tap a dirty table, Clear table | Clears it | The tile turns Free |
-| Register | Back to the register | |
-| Tickets sheet, **Seat a table** | Opens the floor | Replaces typing a table number |
+Started from More Actions on the table in the panel, so the party's table is
+already chosen. A banner says what to tap next; taps on tiles then do the
+mode's work until **Done**.
+
+- **Move:** "Tap a free table for T4's party". One tap moves the order; the
+  mode ends and the panel follows the party.
+- **Join:** "Tap free tables to join to T4. Tap a joined one to let it go."
+  One tap each, until Done.
+- **Part:** "Part: tap a joined table to let it go".
+
+A joined table shows the party's state and "With T4"; its guests and balance
+show only at the party's own table, and tapping it picks that table.
+Refusals are a line of words: "T5 has nobody at it. Tap a table with
+guests.", "T7 is joined to T4. Tap that one.", and a table with two orders
+cannot be moved from here.
 
 ## Data
 
-- `GET /api/v1/floor/live` (`order.open`): `grid`, `areas[]`, `tables[]`
-  (id, area_id, name, seats, shape, x, y, status, covers, since?,
-  balance?, orders[]). React Query key `["floor", "live"]`, refetched on
-  the stream's `floor_changed`, on any order event, and on a resync.
-- Seat: `POST /api/v1/orders` `{ channel: "counter", table_id, covers }`,
-  through the ticket queue, so it is the ticket in front.
-- `POST /api/v1/floor/tables/{id}/clear`, `.../release` (Guests left).
+- `GET /api/v1/floor/live` (`order.open`), key `["floor", "live"]`: `grid`,
+  `areas[]`, `tables[]` (id, area_id, name, seats, shape, x, y, status,
+  covers, since, balance, orders[], joined_to). Read again on the stream's
+  `floor_changed`, on any order event, and on a resync. Held above the
+  routes, so the order screen names tables from the same read.
+- `GET /api/v1/orders/{id}` for the order in the panel, read afresh each
+  time its table is picked.
+- `GET /api/v1/orders`: the open orders, to describe a table with several,
+  and `late_after_minutes`.
+- Seat: `POST /api/v1/orders` `{table_id, covers}`, through the order queue,
+  so the new order is the one in front.
+- `POST /api/v1/floor/tables/{id}/clear`, and `.../release` (Guests left).
   Both answer with the live floor.
-- Move: `POST /api/v1/orders/{id}/table` `{ from, to }`; Join and Part:
-  `POST /api/v1/orders/{id}/tables/join` and `.../part` `{ tables }`.
-  A joined table carries `joined_to` in the live floor.
-- Ticket labels use the table's name from this read ("Table T4"), not its
-  id.
+- Move: `POST /api/v1/orders/{id}/table` `{from, to}`. Join and Part:
+  `POST /api/v1/orders/{id}/tables/join` and `.../part` `{tables}`.
+- Send and Fire: the order's `.../send` and its course's fire.
+- The clock ticks every 30 seconds for the ages.
+
+## Interactions
+
+| Action | Does | Emits | Then |
+|---|---|---|---|
+| Tap a tile or a row | Picks the table, or the party's own table if it is joined | | The panel shows it |
+| Seat 4 guests | Opens an order at the table | `order.opened` | Stays on Tables; the button waits until the tile reads Seated, so a second tap cannot open a second order |
+| Seat and order | The same, then the order screen | `order.opened` | The order screen, on the new order |
+| Add Items | Brings the order to the front, off hold if it was saved | `order.resumed` if saved | The order screen |
+| Send to Kitchen | Sends what waits | `ticket.sent`, `course.fired` | "Sent". Shut while this device still has items on their way to that order |
+| Settle Bill | Opens `/pay/:id` | | `terminal-tender.md` |
+| Guests left | Closes the empty order and frees the table | `order.closed` | The tile turns Free |
+| Clear table | | | The tile turns Free |
+| Move, then a free table | | `order.table_changed` | The panel follows |
+| Join, then free tables | | `order.tables_joined` | "Table T4 + T7" |
+| A joined table, in Join or Part | Lets it go | `order.tables_parted` | |
+| Order history | Opens the order's history sheet | | |
+| Order History (sidebar) | Opens `/orders` | | |
+
+The lines are read here and changed on the order screen, where Add Items
+goes.
 
 ## States
 
+- **Loading:** "Loading the floor".
 - **No tables:** "No tables yet. Lay out the floor in the back office."
-  with Register.
-- **Loading / offline:** the words in place of the grid; the grid last
-  read stays, marked by the shell's connection chip.
-- **Refused:** the server's words in the sheet ("Something is on this
-  table's ticket: void it or take the payment first.").
+- **Error:** the server's words where the floor goes, with **Try again**. A
+  floor already read stays on screen while the server is away.
+- **An area with no tables:** "No tables in this area."
+- **The order will not open:** "Opening the order", then why, with Try
+  again.
+- **Refused:** the server's words in the panel, over its buttons
+  ("Something is on this table's ticket: void it or take the payment
+  first.").
+- **Settle Bill is shut:** the same words as Pay on the order screen.
+- **Permission denied:** the floor needs `order.open`, which everyone who
+  reaches this screen holds.
 
 ## Constraints
 
-- Colour and a word on every tile, never colour alone.
-- Tiles at least 88px, every button 48px; numbers tabular.
-- No drag, no long press: every action is a tap and a sheet.
+- Colour and a word on every tile and row, never colour alone.
+- Every button is 48px; Seat and Settle Bill are 56px; numbers are tabular.
+- No drag and no long press: every action is a tap.
+- The plan holds together down to 1366 wide; a floor of seven or more columns
+  scrolls sideways there.
+- A move or a join works on one party at a time, and the server decides: the
+  mode only chooses what to ask.
+
+## Reference
+
+`mez Desktop POS.dc.html`, D05 Floor Plan (line 363), and for Table List the
+"Table availability" card of D06 (line 478). Left out, and why:
+
+- **Reservations, Waitlist, Customers** in the sidebar, and a Reserved
+  state: out of v1's scope. **Settings** there: it is the back office's.
+- **Edit Layout, Add Table and the zoom:** the floor is drawn in the back
+  office, and the plan fits the room it is given.
+- **The walls, ENTRANCE and BAR:** the back office's grid has tables only.
+- **The waiter's name** in the panel: no table is assigned to anyone.
+- **The Guests tab:** an order keeps a count of guests, not who they are.
+  Notes is drawn because notes are kept.
+
+Changed: the design's states are Free, Occupied, Needs Bill, Reserved and
+Cleaning; a table here goes Free, Seated, Ordered, Paying, To clear, the
+five the server knows. The counts sit beside the areas, not in the status
+bar.
+
+Kept, though not drawn (rule 4): Seat and Seat and order on a free table
+(ADR-158); Clear table; Move, Join, Part, Fire course, Order history and
+Guests left under More Actions; the choice between several orders at one
+table.

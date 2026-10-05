@@ -1,219 +1,234 @@
-# Terminal: Register
+# Terminal: the order screen, and the item modal
 
-The till's main screen: find an item, ring it up, see the ticket and its
-total. Built in phase 06: the menu side and the ticket rail in Task 2,
-modifiers in Task 3, cart editing in Task 4, open tickets and hold in Task 5.
-Charge arrived in phase 07 Task 1 and opens the tender screen
-(`terminal-tender.md`).
+Where an order is taken: find a dish, add it, see the order and its total, and
+go on to Save or Pay. Built in phase 06 and rebuilt from D03 and D04 in the
+rebuild's Tasks 5 and 6 (ADR-151, ADR-153, ADR-154). `web/terminal/src/
+register/`: `OrderScreen.tsx`, `CategorySidebar.tsx`, `MenuHeader.tsx`,
+`ItemGrid.tsx`, `OrderRail.tsx` with `RailLines.tsx`, `RailFooter.tsx`,
+`OrderTotals.tsx`, `ServiceControl.tsx` and `MoreActions.tsx`,
+`ItemModal.tsx`, and the sheets. At `/pos`.
+
+A waiter's is the same screen rearranged (T02): `waiter-order.md`.
 
 ## Purpose
 
-Ring up what the guest asked for in as few taps as the item allows, with the
-ticket's total in view the whole time.
+Take what the guest asked for in as few taps as the dish allows, with the
+order's total in view the whole time.
 
 ## Layout
 
-Two columns inside `SignedInShell`, filling the screen below its header.
-Nothing but the item grid and the line list scrolls.
+Three columns inside the frame (`terminal-shell.md`). Only the item cards and
+the order's lines scroll.
 
-- **Menu column** (flexible):
-  - Top, fixed: the **category rail**, one 48px chip per category with its
-    item count in the numeral face, wrapping onto a second row rather than scrolling
-    sideways. The chosen category is the raised-high surface with a strong
-    border; the rest are raised. Right of the chips, the **search field**.
-  - Below, scrolling: the **item grid**, `repeat(auto-fill, minmax(10.5rem,
-    1fr))`, gap 10px. A tile is at least 7rem tall: the name (base, semibold,
-    wraps), the station as metadata, and the price in the numeral face at the bottom,
-    right-aligned. An item with modifier groups says how many choices it has.
-- **Ticket rail** (26rem, chrome surface, hairline on the left):
-  - Top, fixed: the metadata trail (`TICKET · TABLE 4 · 2 COVERS`), then
-    the order id in the numeral face, as written: the trail uppercases, and `ord_` ids
-    are case sensitive. On the right, **Tickets** with the count of open
-    tickets, and **History** under it. A held ticket shows "Held · On hold: nothing can be added"
-    and **Resume** under the header.
-  - Middle, scrolling: the **lines**. Quantity in the numeral face, the name, the chosen
-    modifiers under it in muted text, the line's amount in the numeral face on the right.
-    Each line is one tap target that opens its **LineSheet**. A voided line
-    stays, struck through, with a "Void" chip and its reason; a comped one
-    has a "Comped" chip; a line discount shows under the line. Notes show
-    under their line, and order notes above the lines. Lines still on their
-    way to the server are shown faint with "Adding".
-    A line the server refused stays, in danger, with **Retry** and
-    **Remove**.
-  - Bottom, fixed, never scrolls: **Discount**, **Note** and **Hold** for
-    the whole order, then, when there are discounts, **Items**, **Line discounts** and
-    one row per order discount; then **Subtotal**, **Tax**, and **Total** in
-    the serif at `--text-total` via `Money variant="total"`. Once
-    anything is paid, **Paid** and **Balance** under it. Last, **Charge**,
-    56px and primary, with why it is disabled under it when it is
-    (nothing on the ticket, held, lines still Adding, nothing owed).
-- **TicketsSheet**: every ticket not closed, oldest first: where it is
-  ("Table 4 · 2 covers" or "Counter"), a Held or Settling chip, the order
-  id, its item count, its total, and how long it has run in the numeral face ("12m",
-  "1h 05m"). Past the venue's threshold (`terminal.ticket_late_minutes`,
-  20 by default) the time turns terracotta with a "Late" chip: now. The
-  ticket in front says "On screen". Below: **Counter sale**, and a table
-  number on the pad with a covers stepper, **Start table 4, 2 covers**.
-- **HistorySheet** (Task 6, read-only): the order's events, oldest first,
-  through the `Timeline` primitive. Each entry: the time in the numeral face in the
-  venue's time zone, a dot in the event's tone, what happened, its detail
-  (a void or comp reason, a discount's reason, a note, a modifier change as
-  "Dairy → Oat"), and who did it, "authorised by" when someone else
-  approved it, and on which till. It refreshes as the order moves.
-- **LineSheet**: quantity stepper and a note, saved together; Modify,
-  Discount, Comp and Void. A line the kitchen has seen shows its quantity
-  without a stepper.
-- **ApprovalSheet** (void, comp, discount): first what and why (a reason
-  from a fixed list, and a discount's percentage or amount on the pad),
-  then who approves: staff names, the signed-in person chosen already, and
-  their PIN on the pad.
-- **ModifierSheet** (`Sheet`: bottom on touch, side panel on desktop): the
-  item's name, then each group with "Required · Choose 1" or "Optional · Up
-  to 3" on the right, its choices two to a row, 48px, a price delta in the numeral face
-  where there is one. Fixed at the bottom: a reserved message line and the
-  56px primary button, "Add to ticket" or "Save changes", carrying the
-  price of one of the item with the choices made, live.
+- **Categories, 240px, chrome:** **All Items**, **Popular** when the menu
+  marks anything popular, then each category in menu order. Each is 48px: an
+  icon guessed from the category's name, the name, and its count in the
+  numeral face. The chosen one is the terracotta fill. They stack and scroll
+  down, never sideways.
+- **The menu, the rest:**
+  - **The head:** what is showing in the serif ("All Items", a category's
+    name, "Search results"); the dietary filters as pills, **Veg**,
+    **Non-Veg**, **Vegan**, **Gluten Free**, each its own tone with a tick
+    when on; and the search field at the right.
+  - **The cards**, `repeat(auto-fill, minmax(15rem, 1fr))`, gap 16px. A card
+    has a 112px block on top, the photo or, with none, its category's icon on
+    the sunken ground; a crown top right when popular. Under it: the diet
+    mark, the name in the serif, a gluten-free mark, up to two lines of
+    description, "6 choices" when it has any, the price, and a round
+    terracotta **+**, 48px, bottom right.
+- **The order rail, 400px, chrome:**
+  - **The head:** where the order is in the serif ("Table T4", "Table T4 +
+    T7", "Takeaway", "Delivery"), or **Pick a table** for a dine-in order with
+    none; the order's id under it in the numeral face; "4 guests" as a pill;
+    and the round **...**.
+  - **How it is served:** Dine-in, Takeaway, Delivery as one segmented
+    control, the chosen one green.
+  - **A saved order**, on hold: the Held chip, "Saved: nothing can be
+    added." and **Resume**.
+  - **The lines**, scrolling. Each: the diet mark and the name, what it comes
+    to, its choices in muted text, its notes, a line discount; at the right a
+    stepper for how many and a bin. A line the kitchen has seen shows "×2"
+    and no stepper. A Ready chip when its ticket is on the pass. A voided
+    line stays, struck through, with its chip and reason. A line still on its
+    way to the server is faint with "Adding"; one the server refused is in
+    danger with "Not added", **Retry** and **Remove**.
+  - Under the lines: each note on the order, and **Add a note to this
+    order**.
+  - **The foot, never scrolls:** **Send to Kitchen**, only while something
+    waits to go; the totals; then **Save Order** and **Pay** with what is owed
+    and an arrow (the one primary, 56px). Under them, why Pay is shut when it
+    is.
+
+**The totals** (`OrderTotals`, shared with Tables): with discounts, Items,
+Line discounts and a row per order discount with its reason; Subtotal; a row
+for each tax the server names ("CGST 2.5%", "SGST 2.5%"), or one "Tax"; Paid,
+once anything is; then a rule and **Total**, or **Balance**, in the serif as
+the one total on the screen.
+
+**The "..." menu** holds what the design draws no button for: **Orders** with
+the count open, **Order history**, **Discount the order**, **Fire course N**
+when a course is held back, **Past bills**.
+
+## The item modal (D04)
+
+A dialog across the middle, up to 1020px wide.
+
+- **Left, 400px, from 1024px wide:** the photo, or the category's icon; a
+  **Popular** pill top left.
+- **Right:**
+  - The diet mark and the name in the serif, the description, and at the
+    right the price as a total and a round close button.
+  - **Each group of choices**, its name in the serif and what it asks at the
+    right: "Required" in danger, "Required · Choose 2", "Optional", "Select
+    multiple", "Up to 3". Where one is chosen, radio tiles three across;
+    where several may be, checkbox tiles two across. A choice with a price
+    shows "+₹30". The chosen tile is the green tint.
+  - **Course**, a select, for a new line on a menu with more than one course.
+  - **Kitchen note**, up to 200 characters.
+  - **The foot:** a reserved line for what is in the way; the stepper (1 to
+    99); **Cancel**; and **Add to Order · ₹240.00**, or **Save changes ·
+    ₹240.00** for a line being changed, with the line's price live.
+
+## Sheets
+
+Side panels on a desktop, bottom sheets on touch; one at a time.
+
+- **A line** (tap it): the stepper, or "2 × with the kitchen: void to
+  change"; its notes and a field to add one; **Modify** (opens the item
+  modal on the line), **Discount**, **Comp**, and **Remove (rung up by
+  mistake)** before the kitchen has it, **Void** after. **Save**, or **Done**
+  when nothing changed.
+- **Void, Comp, Discount** (`ApprovalSheet`): first what and why, a reason
+  from a fixed list, and for a discount Percentage or Amount keyed on the
+  pad; then "Who is approving this?", a person and their PIN.
+- **Note on the order:** "Everyone working this order sees it", up to 200
+  characters, **Add note**.
+- **Orders:** every order not closed, oldest first: where it is, a Held or
+  Settling chip, its id, its item count, its total, and how long it has run; a
+  Late chip and terracotta time past the venue's limit (20 minutes by
+  default); "On screen" on the one in front. Under them **Past bills**,
+  **Close the day**, and **New order**: **Counter sale** and **Seat a
+  table**.
+- **History:** the order's events, oldest first, through `Timeline`: the time
+  in the venue's zone, what happened and why, who did it, who approved it,
+  and on which device. Read-only.
 
 ## Data
 
-- `GET /api/v1/menu`, through `useMenu()`: cached for good, refetched only
-  when the stream names another menu version (ADR-069). Read through
-  `indexMenu()`.
-- `POST /api/v1/orders` `{ channel: "counter", covers: 0 }` on the first item
-  of a ticket, then `POST /api/v1/orders/{id}/lines` with the item's snapshot
-  (`AddLine`: name, price, modifiers, station, course, tax rate, HSN). Each
-  tap carries its own `Idempotency-Key`, reused by Retry, so a retry after a
-  lost answer never rings an item twice.
-- `GET /api/v1/orders/{id}`: the ticket, React Query key `["order", id]`. A
-  command's answer replaces the cached order, so the rail redraws from the
-  server's projection and never from local arithmetic.
-- The current ticket's public id is kept in `sessionStorage`
-  (`mez.terminal.ticket`), so a reload comes back to it.
-- `POST /api/v1/orders/{id}/lines/{line}/modifiers` `{ from, to }`: change
-  a line's modifiers (`line.modified`, ADR-071), sent through the same
-  ordered queue as taps, with its own `Idempotency-Key`.
-- `.../lines/{line}/qty` `{ from, to }`, `.../notes` `{ scope, line_id?,
-  text }`, `.../lines/{line}/void` and `/comp` `{ authorised_by, pin,
-  reason_code }`, `.../discounts` `{ authorised_by, pin, scope, line_id?,
-  kind, basis_points | amount, reason }`: every one through the ordered
-  queue with its own key. `GET /api/v1/staff` for the approver's name.
-- `GET /api/v1/orders/{id}/events`: the order's events and the names of
-  every staff member and device the venue has had (inactive and revoked
-  included), plus its time zone. Key `["order", id, "events"]`, under the
-  order's key, so the order's invalidation refreshes it.
-- `GET /api/v1/orders`: the open tickets and `late_after_minutes`, key
-  `["orders", "open"]`, refetched on any event in the stream.
-  `POST .../hold` and `.../resume` park and unpark a ticket.
-- WebSocket: an `event` for the current order, or a `resync`, invalidates
-  `["order", id]`, so a line added or changed on another till appears here.
+- `GET /api/v1/menu`, through `useMenu()`: kept for good, read again only
+  when the stream names another menu version (ADR-069).
+- `POST /api/v1/orders` on the first item of an order (the service type, and
+  the table and guests if it has them), then `POST /api/v1/orders/{id}/lines`
+  with the item's snapshot: name, price, choices, station, course, tax rate,
+  HSN. Each tap has its own `Idempotency-Key`, reused by Retry.
+- `GET /api/v1/orders/{id}`, key `["order", id]`. A command's answer replaces
+  the cached order, so the rail redraws from the server's projection.
+- The order in front is kept in `sessionStorage` (`mez.terminal.ticket`) and
+  above the routes, so a reload or another screen comes back to it.
+- On a line: `.../lines/{line}/modifiers` `{from, to}`, `.../qty` `{from,
+  to}`, `.../void` and `/comp` with the approval, and a remove, which is a
+  void needing no manager (ADR-073). On the order: `.../notes`,
+  `.../discounts`, `.../send`, a course's fire, `.../hold`, `.../resume`. All
+  go through one ordered queue, one at a time.
+- `GET /api/v1/orders`, key `["orders", "open"]`: the open orders and
+  `late_after_minutes`, read again on any order event.
+- `GET /api/v1/orders/{id}/events`: the history, with the names of every
+  person and device the venue has had.
+- `GET /api/v1/staff`: who can approve.
+- WebSocket: an event for the order in front, or a resync, reads it again, so
+  a line added on another device appears here.
 
 ## Interactions
 
 | Action | Does | Emits | Then |
 |---|---|---|---|
-| Tap a category | Shows its items; clears the search | | Grid scrolls to the top |
-| Type in search | Matches items in every category by word prefix, ignoring case and accents | | Category chips show none chosen; an empty query goes back to the chosen category |
-| Tap an item whose required groups all have defaults | Rings it up with the defaults | `order.opened` (first item only), `line.added` | The line appears faint, then settles when the server answers; the total moves |
-| Tap an item with a required group and no default | Opens the ModifierSheet, defaults chosen | | Add is disabled, and the message line names the first group still to choose |
-| Tap a choice | Pick-one groups swap; an optional pick-one clears on a second tap; a full pick-several group refuses another | | The live price moves |
-| Add to ticket | Rings the item up with the choices | `line.added` | The sheet closes |
-| Modify on a line | Opens the sheet with the line's own choices | | "Save changes" |
-| Save changes | Sends from and to | `line.modified` | Closes on success; a refusal stays in the message line |
-| The line moves on while the sheet is open (another till, sent, voided) | Seen through the stream | | Save disabled, with why |
-| Tap a line | Opens its LineSheet | | |
-| Tickets, then a ticket | Brings it to the front; a held one is resumed as it comes | `order.resumed` if held | Any sheet on the old ticket closes; lines still sending there keep going to it |
-| Tickets, New: counter or a table | A new ticket in front; the order opens with the table and covers on its first item | `order.opened` | |
-| Hold | Parks the ticket, and a counter ticket takes its place | `order.held` | Listed as Held |
-| Resume on a held ticket | | `order.resumed` | The banner goes |
-| Change quantity or write a note, Save | Sends the quantity, then the note | `line.qty_changed`, `note.added` | |
-| Void or Comp, reason, approver and PIN | Sends it with the approval | `line.voided` / `line.comped` | Struck through / marked, and off the total |
-| Discount (line or order), size, reason, approver and PIN | Sends it | `discount.applied` | A row under the line, or in the totals |
-| A wrong PIN | | | "That PIN isn't right. Try again." The PIN clears; the choices stay |
-| Note on the order | | `note.added` | Shown above the lines |
-| Retry on a refused line | Sends the same command with the same key | `line.added` | |
-| Remove on a refused line | Forgets it locally | | Nothing was recorded, so nothing is voided |
-| Charge | Opens the tender screen on this ticket | | Any sheet closes; Back to ticket returns here |
+| Tap a category | Shows its items; empties the search | | |
+| Type in search | Finds items in every category whose name has a word starting with each word typed, ignoring case and accents | | "Search results"; no category shows chosen |
+| A filter pill | Toggles it. Veg, Non-Veg and Vegan add up; Gluten Free narrows what they leave | | |
+| **+** on a card | Adds one with its default choices | `order.opened` (first item), `line.added` | The line appears faint, then settles. If the defaults leave a required choice open, the modal opens instead |
+| Tap a card | With choices: opens the item modal, defaults chosen. Without: adds it | | |
+| Tap a choice | One-of groups swap; an optional one-of clears on a second tap; a full group refuses another | | The button's price moves |
+| Add to Order | Adds the line with its choices, quantity and course, then its note | `line.added`, `note.added` | The modal closes |
+| Save changes | Sends what differs, in turn | `line.modified`, `line.qty_changed`, `note.added` | Closes. If only part was saved it closes and a toast says so |
+| Stepper on a line | Changes how many | `line.qty_changed` | |
+| Bin on a line | Before the kitchen has it, takes it off; after, opens Void | `line.voided` | Struck through, and off the total |
+| Void or Comp, reason, approver, PIN | | `line.voided`, `line.comped` | Struck through, or marked |
+| Discount, size, reason, approver, PIN | | `discount.applied` | A row under the line, or in the totals |
+| Pick a table | Opens Tables | | Seating there puts the order in front |
+| Dine-in, Takeaway, Delivery | Before the order opens, starts it as that | | Once open, the other two are dimmed: "Set when the order started" |
+| Send to Kitchen | Sends what waits, each station its own items, and fires the first course while none has gone | `ticket.sent`, `course.fired` | The button goes until something else waits |
+| Fire course N | Fires the next course held back | `course.fired` | |
+| Save Order | Parks the order | `order.held` | A new order takes its place; this one is under Orders |
+| Resume | | `order.resumed` | The banner goes |
+| Orders, then an order | Brings it to the front, off hold if it was saved | `order.resumed` if saved | Any sheet on the order left closes |
+| Pay | Opens `/pay/:id` on this order | | `terminal-tender.md` |
 
-**Taps to add a common item: one.** Filter coffee is the first item of the
-first category, which is chosen when the screen opens; one tap rings it up
-with Regular size and Regular sugar. An item whose options must be chosen
-takes three: the item, the choice, Add. Changing a default (oat, not dairy)
-takes the item, Modify, the choice, Save.
+**Taps to add a common dish: one**, the "+" on its card. A dish whose choices
+must be made takes three: the card, the choice, Add to Order.
 
 ## States
 
-- **Loading:** the grid shows "Loading the menu"; the rail is already
-  usable and empty.
-- **Empty menu:** "No items on the menu yet. Add them in the back office."
-  A category with no items says so in the grid.
-- **No search match:** "Nothing matches "latte"." with Clear search.
-- **Menu error:** says the server could not be reached, with Try again. A
-  menu already cached keeps working while the server is away.
-- **Empty ticket:** "No items yet" in the serif, "Tap the menu
-  to start a ticket". Totals show zero.
+- **Loading:** "Loading the menu" where the cards go; the rail is there and
+  empty.
+- **Empty menu:** "No items on the menu yet. Add them in the back office." A
+  category with nothing in it: "Nothing in this category yet."
+- **No match:** "Nothing matches "latte"." with **Clear search**; "Nothing
+  here matches the filters." with **Clear filters**.
+- **Menu error:** "Can't reach the mez server to load the menu." with **Try
+  again**. A menu already read keeps working while the server is away.
+- **Empty order:** "No items yet" in the serif, "Tap a dish to start the
+  order". The totals show zero.
 - **Offline:** a tap still shows its line as Adding; when the command fails
-  it becomes a refused line with Retry, never a silent loss. The connection
-  indicator in the shell header says why.
-- **Permission denied:** `order.open` is needed to ring up; a refusal shows
-  on the line as its reason.
-- **Sold out** (phase 10, Task 2d1, ADR-109): the tile stays in its place,
-  its name struck and muted, "SOLD OUT" under it in the warning colour, and
-  it cannot be tapped (a screen reader hears "Latte, sold out"). The till
-  compares the item's `sold_out_until` with its own clock once a minute, so
-  the tile comes back by itself when the trading day turns.
-- **Photo** (phase 10, Task 2d2, ADR-110): an item with a photo shows it
-  as an 80px strip across the top of its tile, above the name, loaded
-  lazily; greyed when sold out. It carries no meaning of its own (empty
-  alt): the name is the label.
+  it becomes "Not added" with Retry, never a silent loss.
+- **Sold out** (ADR-109): the card stays in its place, faded, its name
+  struck, "Sold out" in the warning colour, and neither it nor its "+" can be
+  tapped. A screen reader hears "Latte, sold out". The clock is checked once
+  a minute, so it comes back when the trading day turns.
+- **A line moved on while its modal is open:** saving is shut, with why:
+  "This has gone to the kitchen. Void it and add it again."
+- **Pay is shut:** "Nothing to pay yet.", "Resume this order to pay it.",
+  "Wait for every item to be added." A paid order still open reads **Invoice
+  and close** or **Close order** in place of Pay.
+- **A wrong approval PIN:** "That PIN isn't right. Try again." The PIN
+  clears; the choices stay.
+- **Permission denied:** a refusal shows on the line as its reason, or as a
+  toast naming what was tried.
 
 ## Constraints
 
-- The total block never scrolls away. It is outside the scrolling line list.
-- Every target is 48px or more: category chips, item tiles (7rem), Retry and
-  Remove.
-- Every number is tabular and right-aligned: counts, prices, quantities, totals.
-- Green commits: the Charge button, and the chosen category's pill, which
-  says where you are. The total is the heading ink, not green. Tiles and
-  the ticket id do not use it.
-- A tap on a tile must never be lost to a slow server: the line appears at
-  once as Adding, and taps are sent in order, one at a time, so the first
-  item's order exists before the second item is added to it.
+- The totals and the two buttons never scroll away.
+- Every target is 48px or more: categories, filters, the "+", the bin, the
+  stepper. Save Order and Pay are 56px.
+- Every number is tabular and right-aligned.
+- Green is the one commit, Pay. Terracotta says where you are (the category)
+  and what to tap next (the "+"). The total is the heading ink.
+- A card looks finished with no photo.
+- A tap is never lost to a slow server: the line shows at once, and taps go
+  in order, so the order exists before its second item.
+- Quantity and choices change only until the kitchen has the line (ADR-071,
+  ADR-072); after that it is voided and added again.
+- No negative choice prices: the orders domain refuses them (ADR-071).
 
 ## Reference
 
-The layout was first drawn from the Nofiltr archive
-(`docs/design/reference/Nofiltr Terminal.dc.html`, block `s_register`),
-kept as history. Its look is now `docs/design/tokens.md` and
-`docs/design/reference/mez/mez Desktop POS.dc.html`. Departures from the
-first:
+`mez Desktop POS.dc.html`, D03 POS Order (line 175) and D04 Item Modal (line
+293). Left out, and why:
 
-- **Search replaces "Open items" and "Favourites"** in the top right. Neither
-  has a backing feature yet; search is what the task asks for.
-- **The rail is 26rem, not 392px.** Labels are 15px here (ADR-014), and
-  the design's 11px actions would wrap at 392px.
-- **No item note line or coloured top border** on tiles. The menu has no
-  descriptions or item tags; the station stands in as metadata.
-- **Send and Fire** (phase 08 Task 3, ADR-089) sit over Discount, Note and
-  Hold. **Send N** sends what is waiting, each station only its own items,
-  and fires the first course while none has gone; **Fire course 2** fires
-  the next course held back. A line under them says which course Send
-  fires, or what is held.
-- **No "Guest" picker** in the rail header: there are no customers until
-  phase 10.
-- **The ticket id is not coloured.** The first design coloured `#ticket`
-  and the total both.
-- **Line actions live in a sheet, not on the line.** The design puts
-  34px `−`, `+`, Modify and Void buttons, in 11px type, on every line. Under
-  the 48px and 15px rules that doubles each line's height, and puts Void a
-  thumb's width from `+`. One tap on the line opens them instead.
-- **Quantity only until the kitchen has the line** (ADR-072); after that,
-  void and ring up again.
-- **Discount, Note and Hold sit over the totals**, under Send and Fire.
-- **Open tickets are a sheet, not a rail.** The design has no ticket list
-  on the register; the Orders screen (`s_orders`) is the full list with
-  history, and arrives with it.
-- **Modify only until the kitchen has the line.** The design shows Modify on
-  every line. After a line is sent or its course fired, a change is a void
-  and a new line (Task 4), which needs a manager.
-- **No negative price deltas** ("no milk, less 20"): the orders domain
-  refuses them, so the menu does too (ADR-071).
+- **"Sort: Popular" and the list or grid switch** over the cards: nothing
+  does either. Popular is a category instead.
+- **Search in the top bar, with Ctrl + K:** the search is in the menu's head,
+  beside what it searches, and has no shortcut.
+- **"Also ordered with"** in the modal: nothing records what sells together.
+- **The modal's photo in an arch:** a plain block, so a card and its modal
+  match with no photo.
+- **Spice level** is not a section of its own: it is a group of choices if
+  the menu has one.
+
+Changed: the design's "Bestseller" pill reads **Popular**, the word the menu
+uses. "Add Note" at the rail's head is the row under the lines only.
+**Send to Kitchen** on this screen is ours: the design draws it on Tables,
+and a counter order has no other way to reach the kitchen (ADR-151).
+
+Kept, though not drawn (rule 4): Orders, Order history, Discount the order,
+Fire course and Past bills under "..."; the line's sheet, with Comp and Void;
+the approval by a second person's PIN.

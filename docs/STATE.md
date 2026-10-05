@@ -14,7 +14,14 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 17a: the specs for the way in and the frame** (ADR-196). Task 17 is
+**Rebuild, Task 17b: the specs for the order screen and Tables.** Written from the
+code as it stands (ADR-196): `terminal-register.md` (the order screen, D03, its sheets,
+and the item modal, D04) and `terminal-floor.md` (Tables, D05: the plan, the list, the
+panel, and Move, Join and Part). Each lists what the design draws and the screen leaves
+out, checked against the design file's own words. Docs only: no code changed. `make
+check` passes.
+
+Before it, **Rebuild, Task 17a: the specs for the way in and the frame** (ADR-196). Task 17 is
 split in eight (17a to 17h, `rebuild.md`): seven of specs, then the walk. Written from
 the code as it stands: `terminal-lock.md` (Staff Login and pairing, D01),
 `terminal-shell.md` (new: where each role lands, the desktop's and the waiter's frame,
@@ -281,12 +288,12 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 17b: the specs for the order screen and Tables.** Rewrite
-`terminal-register.md` (the order screen, D03, and the item modal, D04) and
-`terminal-floor.md` (Tables, D05, and the table list) from `register/` and `floor/` as
-they stand, the way 17a did (ADR-196): layout, data, interactions, states, and under
-Reference what the design draws that the screen leaves out. The waiter's variant of the
-order screen is 17d's. Then 17c to 17g, and the walk as each role is 17h. The owner has
+**Rebuild, Task 17c: the specs for payment, Orders and the print queue.** Rewrite
+`terminal-tender.md` (Payment, D07, split, D08a, and the card and UPI states, D08b),
+`terminal-past-bills.md` (Orders and the refund modal, D09) and
+`terminal-print-queue.md` from `tender/`, `bills/` and `print/` as they stand, the way
+17a and 17b did (ADR-196). The waiter's bill is 17d's. Then 17d to 17g, and the walk
+as each role is 17h. The owner has
 not yet looked at the kitchen's screens or anything of Task 16. Floor plan and Tips
 are still their old layouts (ADR-195). Phase 11 waits for this phase. Phase 10's tasks are
 all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
@@ -302,6 +309,16 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Old words still on screen, found writing the specs (17b), for the walk (17h) to
+  fix: Pay's refusal for a bill owed money back says "Refunds come with Task 6."
+  (`tender-logic.ts`, `chargeBlock`); "changed on another till" in the item modal
+  (`OrderScreen.tsx`, `movedOn`); "has 2 tickets" on a move and "this table's ticket"
+  on Guests left (`floor-logic.ts`, `order-messages.ts`, `internal/api/floor.go`). The
+  Orders sheet under the order screen's "..." still offers Close the day to anyone,
+  beside the profile menu's Close the shift, which asks for `shift.manage`. The count
+  itself needs only `payment.take`, so a cashier can submit it from there, and the
+  shift gate then holds every device at the close until a manager closes. Decide in
+  17h whether that door stays.
 - Printers, Devices and Audit (ADR-195): the dev venue now has three printers that
   go nowhere (127.0.0.1:9197 to 9199), one retired and one set for receipts, so a
   receipt there queues and retries. Not seen by eye: a revoked or a quiet device,
