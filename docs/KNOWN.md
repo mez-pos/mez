@@ -10,6 +10,12 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **A guest's order** (ADR-210): a waiting request is a row in `guest_rounds`
+  that no screen shows and nothing ends, until 4b. Rounds onto an open ticket are
+  limited only by 300 requests a minute an address, until Task 6; the limiter has
+  one bucket an address for every limit, so a tighter limit on ordering needs its
+  own. The guest app does not call the endpoint yet. Not run through the relay or
+  from a phone. A table with two tickets open gives a guest's round to the older.
 - **What the walk found and left, for the owner to decide** (ADR-199):
   - The manager role a venue starts with has no `menu.edit`, `settings.edit` or
     `device.manage`: Arjun has no Menu pill and the back office refuses him Menu. The

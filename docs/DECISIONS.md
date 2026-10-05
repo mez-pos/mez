@@ -6218,3 +6218,72 @@ nobody notices is a guest waiting. A counter-service venue with nobody on the fl
 should require prepayment. Someone at the table can still order for a table they are
 not at once the sitting is accepted, until the bill closes; the per-table limit is
 what bounds that.
+
+## ADR-210 - A guest's order is a round: on the table's open ticket, or kept as a request
+2026-10 · Status: accepted. Phase 11, Task 4a.
+Context: Task 4 is guest checkout, and is several sessions. Its first piece is the
+one the rest stand on: what the server does when a phone says "these dishes, at this
+table". ADR-209 had already said the first order of a sitting is a request.
+Decision:
+  - **Task 4 is split in seven**, listed in the phase file: 4a this, 4b the request
+    on the terminal, 4c Place Order on the phone, 4d how the venue is paid, 4e UPI,
+    4f the gateway adapter, 4g splitting. 4c onward was cut before reading M08 and
+    M09 and may move.
+  - **`POST /order/api/t/{code}/orders`** takes lines of `item_id`, `modifier_ids`
+    and `qty`, and nothing else: a body with a price in it is refused, as any
+    unknown field is.
+  - **The server rings each line up from the menu** (`menu.Menu.Ring`, pure, in
+    `internal/domain/menu`): the name, the price, each choice, the station, course
+    and tax facts, as a till would have sent them. It enforces what the phone's
+    sheet enforces (a group's bounds, no choice twice, none from another dish), plus
+    sold out by the server's clock, and 1 to 20 of a dish. A round is 1 to 50 lines.
+    These are the cart's own bounds (ADR-208).
+  - **Each placement is a round**, a row in `guest_rounds` (migration 00039) with a
+    public id `rnd_...`, the lines as priced, and the key it came with.
+  - **A table's guests share one ticket.** With a ticket open at the table (its own
+    or one it is joined to, the oldest if there are several) the round's lines are
+    appended to it and sent to their stations in one command, with the round's row
+    written in the same transaction. Staff opened that ticket, by seating the table
+    or by accepting a request, so someone is there. One table, one ticket, one bill;
+    who pays what is 4g.
+  - **With no ticket open the round is a request** and stays a row: no order, no
+    event, nothing in the kitchen. Accepting it (4b) is what makes it an order. So a
+    request made from a photograph of the sticker, or one nobody answers, never
+    reaches the order stream, the voids on the Z-report, or an invoice number.
+  - **An accepted request appends the lines as they were priced when the guest
+    asked**, which is why the row keeps them: the figure the guest was shown is the
+    figure on the bill, whatever the menu did in between.
+  - **Only the round's own lines are sent**, as a ticket for each station they
+    belong to. `order.ToSend` would also send a waiter's lines still being rung up
+    on the same ticket. A guest's lines go whatever course they are in: holding a
+    course back is a waiter's tool, and nobody is holding this one.
+  - **The guest is nobody**: actor 0 on device 0, which `Meta` already allowed for.
+    The timeline shows a guest's lines as nobody's.
+  - **An open shift is required, by the rule that already exists** (ADR-094): a
+    line cannot be appended without one, and a request is refused the same way,
+    since a request with nobody there to accept it is a guest waiting for nothing.
+  - **The idempotency key is required**, where the staff API only accepts one. A
+    phone on a poor connection sends again, and a second round in the kitchen is
+    food nobody asked for. The key is unique in `guest_rounds`, not in
+    `idempotency_keys`: a waiting round has no events for that table to point at.
+    Two of the same key at once both try to write; the unique index refuses one,
+    its whole transaction rolls back with its events, and it answers with the
+    other's round. The same key with another cart is refused.
+  - **At most five requests wait at one table.** Past that, staff have enough to
+    decline.
+  - **Refusals are in the guest's words**, each with its own code:
+    `dish_unavailable`, `choices_invalid`, `table_not_ordering` (the ticket is on
+    hold or invoiced), `requests_waiting`, `no_open_shift`. The domain's own wording
+    names seqs and ids and is not shown.
+  - **The answer** is the round's id, `waiting` or `sent`, each line as priced, and
+    the subtotal before tax. It names no order, table or venue id.
+Because: the acceptance in ADR-209 exists to keep strangers out of the kitchen, and
+an order row with voided lines for every declined stranger would put them in the
+books instead.
+Cost: a second place where a key is remembered. A waiting round is a row nobody
+sees until 4b builds the terminal's half, and it never lapses. Nothing limits how
+often a table with an open ticket can send rounds to the kitchen, except 300
+requests a minute an address, until Task 6. The limiter counts by address across
+every limit, so a tighter one for placing orders would be spent by reading the
+menu; it needs its own bucket first. The guest app does not call this yet (4c), and
+it was not run through the relay or from a phone: the Go tests are the proof.

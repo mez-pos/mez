@@ -91,6 +91,23 @@ type FloorVersion struct {
 	Version int64
 }
 
+type GuestRound struct {
+	ID             int64
+	PublicID       string
+	VenueID        int64
+	TableID        int64
+	Status         string
+	OrderID        sql.NullInt64
+	Lines          string
+	SubtotalMinor  int64
+	Currency       string
+	IdempotencyKey string
+	Fingerprint    string
+	CreatedAt      time.Time
+	DecidedAt      sql.NullTime
+	DecidedBy      sql.NullInt64
+}
+
 type IdempotencyKey struct {
 	VenueID     int64
 	Key         string

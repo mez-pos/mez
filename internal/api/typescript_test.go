@@ -256,6 +256,7 @@ func generate() (*ts.Generator, error) {
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
 		{"TunnelState", TunnelOff, asStrings(TunnelStates())},
+		{"GuestRoundStatus", svcorder.RoundWaiting, asStrings(svcorder.RoundStatuses())},
 		{"DeviceKind", auth.KindTerminal, asStrings([]auth.DeviceKind{
 			auth.KindTerminal, auth.KindKitchen, auth.KindBackOffice, auth.KindGuest,
 		})},
@@ -304,7 +305,7 @@ func generate() (*ts.Generator, error) {
 		Error{}, errorBody{}, pairRequest{}, deviceResponse{}, pairResponse{},
 		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{}, tunnelResponse{},
 		// The guest's API.
-		guestTableResponse{}, guestMenuResponse{},
+		guestTableResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{},
 		// Staff.
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},
 		// Orders: what is sent.

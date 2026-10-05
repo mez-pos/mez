@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 3b: the guest's landing and menu** (ADR-207), `web/guest/src`: the
+**Phase 11, Task 3c: a dish with its choices, and the cart** (ADR-208). The sheet
+uses the till's own rules (`web/shared/modifier-selection.ts`, moved). The cart is ids
+and counts in `localStorage` by table code, priced from the menu each time. Nothing is
+sent. Then photo frames once any dish has a photo, and the decision that a phone order
+is a request staff accept (ADR-209). 36.1 KB of 60.
+
+Before it, **Phase 11, Task 3b: the guest's landing and menu** (ADR-207), `web/guest/src`: the
 table and venue, then every dish with a search, categories and diet filters, and a
 screen for a code that leads nowhere or a venue that cannot be reached. No router:
 the code is read from the end of the path and the screen is the hash. Specs:

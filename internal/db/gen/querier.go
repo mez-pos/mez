@@ -85,6 +85,7 @@ type Querier interface {
 	// cost when it was counted, 0 for not known (ADR-124).
 	ClosingCountsInRange(ctx context.Context, arg ClosingCountsInRangeParams) ([]ClosingCountsInRangeRow, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
+	CountWaitingGuestRounds(ctx context.Context, tableID int64) (int64, error)
 	CourseForEdit(ctx context.Context, arg CourseForEditParams) (CourseForEditRow, error)
 	CourseIDsByNumber(ctx context.Context, venueID int64) ([]int64, error)
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
@@ -94,6 +95,9 @@ type Querier interface {
 	CreateCreditNote(ctx context.Context, arg CreateCreditNoteParams) (int64, error)
 	CreateDrawerCount(ctx context.Context, arg CreateDrawerCountParams) error
 	CreateExport(ctx context.Context, arg CreateExportParams) error
+	// A guest's rounds (ADR-210). Written only inside the transaction that
+	// decides where a round goes; see internal/service/order.
+	CreateGuestRound(ctx context.Context, arg CreateGuestRoundParams) (int64, error)
 	CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (int64, error)
 	CreateItem(ctx context.Context, arg CreateItemParams) (int64, error)
 	CreateModifier(ctx context.Context, arg CreateModifierParams) (int64, error)
@@ -195,6 +199,8 @@ type Querier interface {
 	FirstSoldByDish(ctx context.Context, venueID int64) ([]time.Time, error)
 	FloorVersion(ctx context.Context, venueID int64) (int64, error)
 	GroupForEdit(ctx context.Context, arg GroupForEditParams) (GroupForEditRow, error)
+	// The round a key was first sent with, as it stands now.
+	GuestRoundByKey(ctx context.Context, arg GuestRoundByKeyParams) (GuestRoundByKeyRow, error)
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
@@ -455,6 +461,9 @@ type Querier interface {
 	TaxClassesForVenue(ctx context.Context, venueID int64) ([]TaxClassesForVenueRow, error)
 	TipPool(ctx context.Context, shiftID int64) (TipPool, error)
 	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
+	// The ticket open at a table, its own or one it is joined to, the oldest if
+	// there is more than one: where a guest's round goes.
+	UnclosedOrderAtTable(ctx context.Context, arg UnclosedOrderAtTableParams) (int64, error)
 	//
 	// The tickets a till can switch between: everything not closed, oldest
 	// first. It is a working set, tens of orders, not history, so it is capped

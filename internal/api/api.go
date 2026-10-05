@@ -11,37 +11,38 @@ import (
 
 // Server holds what the handlers need and builds the routing tree once.
 type Server struct {
-	cfg        config.Config
-	log        *slog.Logger
-	build      BuildInfo
-	now        func() time.Time
-	started    time.Time
-	bundles    map[string]fs.FS
-	dbCheck    func() string
-	tunnel     func() TunnelStatus
-	guests     Guests
-	guestMount string
-	devices    Devices
-	staff      Staff
-	orders     Orders
-	menus      Menus
-	stream     Stream
-	prints     Prints
-	printers   Printers
-	settings   Settings
-	menuEditor MenuEditor
-	stock      Stock
-	people     People
-	audit      Audit
-	reports    Reports
-	floor      Floor
-	shifts     Shifts
-	zreports   ZReports
-	tips       Tips
-	myShifts   MyShifts
-	exports    Exports
-	limiter    *limiter
-	handler    http.Handler
+	cfg         config.Config
+	log         *slog.Logger
+	build       BuildInfo
+	now         func() time.Time
+	started     time.Time
+	bundles     map[string]fs.FS
+	dbCheck     func() string
+	tunnel      func() TunnelStatus
+	guests      Guests
+	guestMount  string
+	guestOrders GuestOrders
+	devices     Devices
+	staff       Staff
+	orders      Orders
+	menus       Menus
+	stream      Stream
+	prints      Prints
+	printers    Printers
+	settings    Settings
+	menuEditor  MenuEditor
+	stock       Stock
+	people      People
+	audit       Audit
+	reports     Reports
+	floor       Floor
+	shifts      Shifts
+	zreports    ZReports
+	tips        Tips
+	myShifts    MyShifts
+	exports     Exports
+	limiter     *limiter
+	handler     http.Handler
 }
 
 // Option adjusts a Server at construction.

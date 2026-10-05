@@ -307,6 +307,7 @@ func run() (err error) {
 		api.WithFloor(floorPlan),
 		api.WithShifts(shifts),
 		api.WithGuests(guestCodes, web.MountGuest),
+		api.WithGuestOrders(orders),
 	)
 
 	if cfg.RelayEnabled() {

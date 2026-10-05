@@ -267,6 +267,11 @@ export type TunnelState =
   | 'replaced'
   | 'stopped';
 
+export type GuestRoundStatus =
+  | 'waiting'
+  | 'sent'
+  | 'declined';
+
 export type DeviceKind =
   | 'terminal'
   | 'kitchen'
@@ -809,6 +814,31 @@ export interface ModifierResponse {
   name: string;
   price: Money;
   is_default: boolean;
+}
+
+export interface GuestOrderRequest {
+  lines: GuestOrderLineRequest[];
+}
+
+export interface GuestOrderLineRequest {
+  item_id: number;
+  modifier_ids: number[];
+  qty: number;
+}
+
+export interface GuestRoundResponse {
+  id: string;
+  status: GuestRoundStatus;
+  lines: GuestRoundLineResponse[];
+  subtotal: Money;
+}
+
+export interface GuestRoundLineResponse {
+  item_id: number;
+  name: string;
+  qty: number;
+  choices: string[];
+  total: Money;
 }
 
 export interface StaffResponse {

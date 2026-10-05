@@ -59,6 +59,29 @@ Phase 10.
   closed; a table staff have seated, and a prepaid order, need no acceptance.
   The terminal must say a request is waiting, with a sound.
 
+  Split in seven (ADR-210). 4c onward is a first cut, made before reading M08
+  and M09: read them at 4c and move the seams if they are in the wrong place.
+  - [x] **4a.** A guest's cart becomes an order, on the server.
+    `POST /order/api/t/{code}/orders`, priced from the menu, with an
+    `Idempotency-Key`. At a table with a ticket open the lines join it and go
+    to the kitchen; at one with none the order is kept as a request.
+  - [ ] **4b.** The request on the terminal: it shows, with a sound, and
+    arrives over the stream. Accept opens the ticket with the lines as priced
+    and sends them; Decline turns it down. Decide what Accept does with the
+    table's other waiting requests, and when an unanswered one lapses.
+  - [ ] **4c.** Place Order on the phone: the cart's foot, the design's words
+    back ("Start Ordering", "Add to order"), special instructions, and what
+    the guest sees next: waiting, sent or declined, and each refusal.
+  - [ ] **4d.** How the venue is paid: a setting, prepay or pay at the table,
+    and the bill on the phone with its tax as the server works it out.
+  - [ ] **4e.** UPI: the intent link and the dynamic QR. A confirmed payment
+    is `payment.tendered`; a prepaid order needs no acceptance. Decide who
+    closes a bill nobody on staff touched (a sold stock movement needs a
+    real staff id, see KNOWN.md).
+  - [ ] **4f.** The gateway adapter: one interface, with Razorpay, Cashfree
+    and Stripe behind it.
+  - [ ] **4g.** Splitting the bill among the guests at a table.
+
 - [ ] **Task 5 — Order tracking and e-receipt.**
   The guest sees real kitchen events — accepted, firing, ready — not a fake
   timer. Pickup code for web pickup orders. E-receipt with the same invoice

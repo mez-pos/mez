@@ -7,29 +7,28 @@
 
 ## Current phase
 
-**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3 done.
-(The rebuild, 09 and 10 still owe the owner's walk.)
+**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3 and
+4a done. (The rebuild, 09 and 10 still owe the owner's walk.)
 
 ## Last completed task
 
-**Phase 11, Task 3c: a dish with its choices, and the cart** (ADR-208). The sheet
-uses the till's own rules (`web/shared/modifier-selection.ts`, moved). The cart is ids
-and counts in `localStorage` by table code, priced from the menu each time. Nothing is
-sent yet. Then photo frames once any dish has a photo (ADR-209). 36.1 KB of 60.
+**Phase 11, Task 4a: a guest's cart becomes an order, on the server** (ADR-210).
+`POST /order/api/t/{code}/orders` with ids, counts and a required `Idempotency-Key`;
+`menu.Menu.Ring` prices each line. A "round" (`guest_rounds`, migration 00039,
+`svcorder.PlaceRound`) joins the table's open ticket and is sent, or with none open
+is kept as a request: no order and no event. Task 4 is split in seven.
 
 ## Next task
 
-**Phase 11, Task 4: guest checkout.** It is several sessions: split it first. Read
-`docs/02-domain.md`, ADR-206 and ADR-208, and M04's checkout, M08 and M09.
-- First sub-task: a guest's cart becomes an order. `POST /order/api/t/{code}/orders`
-  with the cart's lines (dish id, choice ids, count) and an `Idempotency-Key`; the
-  server prices it from the menu, never from the phone, and it is the same order,
-  events and kitchen ticket as a counter sale. Decide who the actor is, how an open
-  shift is required, and whether a table's guests share one order.
-- **Decided (ADR-209):** a table's first order in a sitting is a request staff accept
-  on the terminal, which must sound. A seated table and a prepaid order need none.
-- The cart's foot becomes Place Order; "See the menu" and "Add to cart" go back to the
-  design's words; decide special instructions. Then payment, UPI, the gateway, splits.
+**Phase 11, Task 4b: the request on the terminal.** Read ADR-209 and ADR-210,
+`terminal-floor.md` and `terminal-shell.md`, and the design's D13 only if needed.
+- A waiting round has to show on the terminal with a sound (ADR-209), and arrive
+  over the stream: a hub message, as `MsgFloorChanged` is one.
+- Accept: open a `qr_table` ticket at the table, append the round's lines as stored
+  (not priced again), send them as `sendRound` does, mark the round `sent`, in one
+  transaction. Decline: `declined`, with who and when (`decided_by`, `decided_at`).
+- Decide: a permission for it; what Accept does with the table's other waiting
+  rounds; when an unanswered round lapses. Split it if it is two sessions.
 
 ## Known broken / in progress
 
@@ -55,5 +54,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3 and 4a done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs
