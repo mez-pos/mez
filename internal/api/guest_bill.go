@@ -57,6 +57,10 @@ type guestBillResponse struct {
 	// UPI is how to pay what is left by UPI, when the venue takes it and
 	// something is owed. Absent otherwise.
 	UPI *guestUPIResponse `json:"upi,omitempty"`
+	// PaidTold is true while a guest at the table has said they have paid
+	// and staff have still to look (ADR-218). The bill is no more paid for
+	// it: Paid and BalanceDue say what staff have recorded.
+	PaidTold bool `json:"paid_told,omitempty"`
 }
 
 // guestUPIResponse is a UPI payment of the bill's balance to the venue
@@ -98,6 +102,12 @@ func (s *Server) guestBill(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	bill.UPI = s.guestUPI(r, table.VenueID, table.TableName, bill.BalanceDue)
+	if bill.BalanceDue.Minor > 0 {
+		// Not worth failing the bill for: unsaid, the guest can say it again.
+		if bill.PaidTold, err = s.guestOrders.PaidTold(r.Context(), res.OrderID); err != nil {
+			s.log.Error("reading a bill's paid notice failed", "request_id", RequestID(r.Context()), "order", res.PublicID, "error", err)
+		}
+	}
 	writeJSON(w, s.log, http.StatusOK, bill)
 }
 

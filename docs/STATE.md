@@ -8,28 +8,29 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4d and 4e1 to 4e3 done. (The rebuild, 09 and 10 still owe the owner's walk.)
+4a to 4d, 4e1 to 4e3 and 4e4a done. (The rebuild, 09 and 10 still owe the walk.)
 
 ## Last completed task
 
-**Phase 11, Task 4e3: the QR on the phone's bill** (ADR-217).
-`GET /order/api/t/{code}/bill/upi.svg` draws the bill's UPI link as a QR code, by
-an encoder of our own (`internal/domain/qr`, no dependency), checked module for
-module against python-qrcode and read back by a decoder. The phone shows it under
-"Pay from another phone". No phone has scanned one yet.
+**Phase 11, Task 4e4a: "I have paid", on the server** (ADR-218).
+`POST /order/api/t/{code}/bill/paid` keeps a notice (`paid_notices`, migration
+00040): a message to staff, never a payment. The bill says `paid_told`. Notices
+ride on `GET /api/v1/guest-requests` as `paid`; staff put one away with
+`POST /api/v1/paid-notices/{id}/seen`, and a recorded payment puts it away itself.
 
 ## Next task
 
-**Phase 11, Task 4e4: "I have paid".** Read ADR-209, ADR-211, ADR-212, ADR-215,
-`terminal-requests.md`, `guest-bill.md`. Likely server then screens: split if so.
-- A guest who paid by UPI taps "I have paid" on the bill. The terminal says so, as
-  it says a request is waiting (the same pill, sheet and chime, or beside them),
-  with the table and the amount, and leads staff to that table's payment.
-- It records nothing as paid: staff check their own phone and record the UPI
-  payment on the tender screen, as now (ADR-215). Say that on both screens.
-- Decide where the notice is kept (a row, as `guest_rounds` is, or on it), how one
-  is cleared (the payment recorded, the bill closed, or dismissed), and what
-  stops a guest tapping it forty times.
+**Phase 11, Task 4e4b: "I have paid" on the screens.** Read ADR-212, ADR-215,
+ADR-218, `guest-bill.md`, `terminal-requests.md`, `docs/design/tokens.md`.
+- The phone: under Pay by UPI, a button "I have paid", then "Staff have been told"
+  from the bill's `paid_told`, not from the phone's own memory. Say again there
+  that the bill is marked paid once staff have seen the payment.
+- The terminal: the notices in the requests pill, sheet and chime
+  (`web/terminal/src/requests/`, `GuestRequestsResponse.paid`): the table, the
+  amount said, what is owed now when it differs, how long ago. **Take payment**
+  goes to `/pay/{order_id}`; **No payment found** calls `seen`, asked twice.
+- Words on both: staff check the venue's own phone; nothing is paid until recorded.
+- Update both specs. Then 4e5, the prepay mode.
 
 ## Known broken / in progress
 
@@ -55,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e3 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e3, 4e4a done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

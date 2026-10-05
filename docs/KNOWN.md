@@ -14,7 +14,8 @@
   400 wide, for a venue not in rupees, or with its read failing. **No phone
   has scanned the QR (ADR-217) or opened the link**: it agrees with another
   encoder and a decoder reads it back. Nothing tells staff a guest has
-  paid until 4e4. Two guests can each pay the whole balance.
+  paid until 4e4b: the server takes and lists the notice (ADR-218), no screen
+  sends or shows one. Two guests can each pay the whole balance.
   Not seen: a UPI app opening on the link, on any phone.
 - **The bill on the phone** (ADR-214): anyone with a table's code can read
   that table's bill from anywhere. A table with two tickets shows the older.

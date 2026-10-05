@@ -138,7 +138,8 @@ export type ErrorCode =
   | 'request_not_found'
   | 'request_decided'
   | 'request_lapsed'
-  | 'nothing_to_pay';
+  | 'nothing_to_pay'
+  | 'notice_not_found';
 
 export type OrderStatus =
   | 'open'
@@ -860,6 +861,7 @@ export interface GuestBillResponse {
   paid: Money;
   balance_due: Money;
   upi?: GuestUPIResponse;
+  paid_told?: boolean;
 }
 
 export interface GuestBillLineResponse {
@@ -883,6 +885,11 @@ export interface GuestUPIResponse {
   amount: Money;
 }
 
+export interface GuestPaidResponse {
+  told: boolean;
+  amount: Money;
+}
+
 export interface PaymentSettingsRequest {
   upi_address: string;
   upi_payee: string;
@@ -898,6 +905,7 @@ export interface PaymentSettingsResponse {
 
 export interface GuestRequestsResponse {
   requests: GuestRequestResponse[];
+  paid: PaidNoticeResponse[];
 }
 
 export interface GuestRequestResponse {
@@ -907,6 +915,16 @@ export interface GuestRequestResponse {
   placed_at: string;
   lines: GuestRoundLineResponse[];
   subtotal: Money;
+}
+
+export interface PaidNoticeResponse {
+  id: string;
+  table_id: number;
+  table_name: string;
+  order_id: string;
+  amount: Money;
+  due: Money;
+  told_at: string;
 }
 
 export interface GuestDecisionResponse {

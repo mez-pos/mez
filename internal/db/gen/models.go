@@ -247,6 +247,20 @@ type OrderTable struct {
 	ClosedAt sql.NullTime
 }
 
+type PaidNotice struct {
+	ID          int64
+	PublicID    string
+	VenueID     int64
+	TableID     int64
+	OrderID     int64
+	AmountMinor int64
+	Currency    string
+	Status      string
+	CreatedAt   time.Time
+	SeenAt      sql.NullTime
+	SeenBy      sql.NullInt64
+}
+
 type PairingCode struct {
 	ID         int64
 	VenueID    int64

@@ -33,6 +33,8 @@ type GuestOrders interface {
 	PlaceRound(ctx context.Context, meta svcorder.Meta, cmd svcorder.PlaceRound) (svcorder.Round, error)
 	TableTicket(ctx context.Context, venueID, tableID int64) (svcorder.Result, bool, error)
 	UPIAccount(ctx context.Context, venueID int64) (payment.UPIAccount, error)
+	TellPaid(ctx context.Context, venueID, tableID int64) (svcorder.PaidNotice, error)
+	PaidTold(ctx context.Context, orderID int64) (bool, error)
 }
 
 // WithGuestOrders lets a guest place an order. It needs WithGuests.

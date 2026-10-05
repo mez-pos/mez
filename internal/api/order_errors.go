@@ -88,6 +88,7 @@ var orderErrors = []struct {
 	{svcorder.ErrRoundDecided, http.StatusConflict, CodeRequestDecided},
 	{svcorder.ErrRoundLapsed, http.StatusConflict, CodeRequestLapsed},
 	{svcorder.ErrTableBusy, http.StatusConflict, CodeTableNotOrdering},
+	{svcorder.ErrNoticeNotFound, http.StatusNotFound, CodeNoticeNotFound},
 
 	// How a bill divides (order_split.go).
 	{svcorder.ErrSplitAfterPayment, http.StatusConflict, CodeSplitAfterPayment},

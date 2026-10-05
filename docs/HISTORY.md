@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4e2: the UPI address in the back office** (ADR-216). A card,
+**Phase 11, Task 4e3: the QR on the phone's bill** (ADR-217).
+`GET /order/api/t/{code}/bill/upi.svg` draws the bill's UPI link as a QR code, by
+an encoder of our own (`internal/domain/qr`, no dependency), checked module for
+module against python-qrcode and read back by a decoder. The phone shows it under
+"Pay from another phone". No phone has scanned one.
+
+Before it, **Phase 11, Task 4e2: the UPI address in the back office** (ADR-216). A card,
 "Paid from a phone", under the venue's details on Settings: the address, the name
 a guest sees, a standing warning that mez cannot check the address, and what a
 guest's bill now offers. `web/backoffice/src/settings/PaymentsCard.tsx`.

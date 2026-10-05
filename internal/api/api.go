@@ -121,6 +121,7 @@ func (s *Server) routes() http.Handler {
 	s.mountStaff(mux)
 	s.mountOrders(mux)
 	s.mountGuestRequests(mux)
+	s.mountPaidNotices(mux)
 	s.mountMenu(mux)
 	s.mountStream(mux)
 	s.mountPrints(mux)

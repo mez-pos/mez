@@ -108,6 +108,9 @@ type Querier interface {
 	// caller: it keeps the orders row, the events and the snapshot in step inside
 	// one transaction, which a handler calling these directly would not.
 	CreateOrder(ctx context.Context, arg CreateOrderParams) (int64, error)
+	// Guests' "I have paid" notices (ADR-218). A notice is a message to staff,
+	// never a payment; see internal/service/order.
+	CreatePaidNotice(ctx context.Context, arg CreatePaidNoticeParams) (int64, error)
 	CreatePairedDevice(ctx context.Context, arg CreatePairedDeviceParams) (int64, error)
 	// Devices and the codes they pair with. internal/auth is the only caller.
 	CreatePairingCode(ctx context.Context, arg CreatePairingCodeParams) (int64, error)
@@ -246,6 +249,9 @@ type Querier interface {
 	// order at it closed, joined tables included (ADR-088): what a table's turn
 	// is derived from, with its orders.
 	LiveTables(ctx context.Context, venueID int64) ([]LiveTablesRow, error)
+	// Only an open notice can be dealt with, so of two tills doing it at once
+	// one writes nothing.
+	MarkPaidNoticeSeen(ctx context.Context, arg MarkPaidNoticeSeenParams) (int64, error)
 	MarkReceiptPrinter(ctx context.Context, arg MarkReceiptPrinterParams) (int64, error)
 	MenuItemForRecipe(ctx context.Context, arg MenuItemForRecipeParams) (int64, error)
 	// The menu. Reads return active rows only, in the order a terminal shows
@@ -277,6 +283,11 @@ type Querier interface {
 	// transaction that closes a shift or issues a correction.
 	// Moves the venue's counter on and returns the number taken.
 	NextZNumber(ctx context.Context, venueID int64) (int64, error)
+	// The notice staff have still to deal with on a ticket, if there is one.
+	OpenPaidNoticeForOrder(ctx context.Context, orderID int64) (OpenPaidNoticeForOrderRow, error)
+	// Every notice staff have still to deal with, oldest first, with its table
+	// by name and its ticket by public id.
+	OpenPaidNotices(ctx context.Context, venueID int64) ([]OpenPaidNoticesRow, error)
 	// Codes made and not yet used or expired, without the codes themselves: only
 	// their hashes are kept. The screen says a device is waiting to be paired.
 	OpenPairingCodes(ctx context.Context, arg OpenPairingCodesParams) ([]OpenPairingCodesRow, error)
@@ -306,6 +317,7 @@ type Querier interface {
 	// since the trading day began, and any still open from before it, newest
 	// first. A day at a busy counter is hundreds of orders, so it is capped.
 	OrdersOfDay(ctx context.Context, arg OrdersOfDayParams) ([]OrdersOfDayRow, error)
+	PaidNoticeByPublicID(ctx context.Context, publicID string) (PaidNoticeByPublicIDRow, error)
 	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)
 	PrintJobByID(ctx context.Context, id int64) (PrintJobByIDRow, error)
 	// The queue as staff see it: every job not yet printed, and what printed

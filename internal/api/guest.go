@@ -59,6 +59,7 @@ func (s *Server) mountGuests(mux *http.ServeMux) {
 		handle("POST "+base+"t/{code}/orders", s.guestPlaceOrder)
 		handle("GET "+base+"t/{code}/bill", s.guestBill)
 		handle("GET "+base+"t/{code}/bill/upi.svg", s.guestBillQR)
+		handle("POST "+base+"t/{code}/bill/paid", s.guestTellPaid)
 	}
 	if s.menuEditor != nil {
 		// A photo is on the menu the guest was shown, and named by its

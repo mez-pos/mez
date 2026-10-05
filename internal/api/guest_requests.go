@@ -32,6 +32,8 @@ type GuestRequests interface {
 	WaitingRounds(ctx context.Context, venueID int64) ([]svcorder.Request, error)
 	AcceptRound(ctx context.Context, meta svcorder.Meta, publicID string) (svcorder.Decision, error)
 	DeclineRound(ctx context.Context, meta svcorder.Meta, publicID string) (svcorder.Decision, error)
+	PaidNotices(ctx context.Context, venueID int64) ([]svcorder.PaidNotice, error)
+	SeePaidNotice(ctx context.Context, meta svcorder.Meta, publicID string) error
 }
 
 // WithGuestRequests lets staff see and answer guests' requests.
@@ -67,9 +69,13 @@ type guestRequestResponse struct {
 	Subtotal money.Amount `json:"subtotal"`
 }
 
-// guestRequestsResponse is GET /api/v1/guest-requests.
+// guestRequestsResponse is GET /api/v1/guest-requests: what guests have
+// asked for and nobody has answered, and who says they have paid and nobody
+// has looked (ADR-218). Two lists, since one is answered and the other is
+// checked against the venue's own phone.
 type guestRequestsResponse struct {
 	Requests []guestRequestResponse `json:"requests"`
+	Paid     []paidNoticeResponse   `json:"paid"`
 }
 
 // guestDecisionResponse is a request once answered. OrderID is the ticket
@@ -99,6 +105,12 @@ func (s *Server) listGuestRequests(w http.ResponseWriter, r *http.Request) {
 			Lines: round.Lines, Subtotal: round.Subtotal,
 		}
 	}
+	notices, err := s.guestRequests.PaidNotices(r.Context(), Meta(r).VenueID)
+	if err != nil {
+		s.writeOrderError(w, r, err)
+		return
+	}
+	out.Paid = toPaidNoticeResponses(notices)
 	writeJSON(w, s.log, http.StatusOK, out)
 }
 

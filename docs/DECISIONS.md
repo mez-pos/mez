@@ -6644,3 +6644,49 @@ too. The code and the sentence under it can disagree for up to 15 seconds after 
 balance moves, until the bill is read again. **No phone has scanned one**: the
 checks are an encoder that agrees with another and a decoder that reads it back,
 which is strong evidence and not the same as a UPI app opening on it.
+
+## ADR-218 - "I have paid" is a message to staff, kept apart from every payment
+2026-10 · Status: accepted. Phase 11, Task 4e4a.
+Context: a guest pays by UPI from the phone (ADR-215), and nothing tells the venue.
+Staff confirm a payment by seeing it; what was missing is anything telling them to
+look. That is a server and two screens, so it is two sessions.
+Decision:
+  - **Task 4e4 is split.** 4e4a is the server, this. 4e4b is the phone's button and
+    the terminal's notice.
+  - **A notice is a row, `paid_notices` (migration 00040), and nothing else.** It
+    appends no event, settles no bill, and no report or Z-report reads it. A test
+    holds the ticket's last seq, tenders and balance before and after. The only
+    payment is still `payment.tendered`, recorded by a member of staff.
+  - **`POST /order/api/t/{code}/bill/paid`** takes no body. It is refused,
+    `nothing_to_pay`, when the table has no ticket, nothing is owed, or the venue
+    takes no UPI: the same test the bill's pay link passes.
+  - **It keeps what was owed when the guest said so**, which is the figure to look
+    for on the venue's phone. The list also gives what is owed now, so a round
+    added since shows as a difference and not as a mystery.
+  - **One open notice a ticket**, by a unique index. Said forty times, or forty
+    times at once, it is said once and the terminals are nudged once. This is the
+    whole of the limit: no counter and no timer.
+  - **The bill tells the phone staff have been told**, `paid_told`, read from the
+    server each time, so it survives a reload and shows on every phone at the
+    table. It changes no figure on the bill.
+  - **Recording the payment puts the notice away without anyone doing so.** The
+    list leaves out a notice whose ticket is settled or closed. Nothing is written
+    for that: the row stays `open` and is never listed again.
+  - **Staff can also put one away**, `POST /api/v1/paid-notices/{id}/seen`, when
+    they looked and no money had come. It asks `payment.take`, records who and
+    when, and changes nothing on the bill. After it the guest may say so again,
+    and the bill no longer says staff were told.
+  - **The notices ride on `GET /api/v1/guest-requests`**, as a second list, `paid`.
+    They reach the same people by the same nudge, the floor version (ADR-211), and
+    the terminal already reads that endpoint on it. Two lists and not one,
+    because a request is answered and a notice is checked against a phone.
+  - **A table's code is enough to say it.** Anyone holding a code can tell staff
+    that table says it has paid. It costs staff a look at their phone, which is
+    what they would do anyway before letting a table go.
+Because: the dangerous version of this feature is the one where a tap on a guest's
+phone marks a bill paid. Keeping the notice in a table no money code reads makes
+that a thing that cannot happen by accident later.
+Cost: a second table for guests' messages, beside `guest_rounds`. A notice whose
+ticket closes stays `open` in the table for good. The listing projects each
+notice's ticket to read what is owed now, a handful at most. Until 4e4b no screen
+sends or shows one.
