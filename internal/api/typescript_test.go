@@ -254,6 +254,7 @@ func generate() (*ts.Generator, error) {
 		{"DiscountScope", order.ScopeLine, []string{string(order.ScopeLine), string(order.ScopeOrder)}},
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
+		{"TunnelState", TunnelOff, asStrings(TunnelStates())},
 		{"DeviceKind", auth.KindTerminal, asStrings([]auth.DeviceKind{
 			auth.KindTerminal, auth.KindKitchen, auth.KindBackOffice, auth.KindGuest,
 		})},
@@ -300,7 +301,7 @@ func generate() (*ts.Generator, error) {
 	roots := []any{
 		// Errors and pairing.
 		Error{}, errorBody{}, pairRequest{}, deviceResponse{}, pairResponse{},
-		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{},
+		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{}, tunnelResponse{},
 		// Staff.
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},
 		// Orders: what is sent.

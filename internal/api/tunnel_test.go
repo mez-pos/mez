@@ -162,11 +162,13 @@ func TestTheCounterSellsWhileTheRelayIsDown(t *testing.T) {
 	r.rebuild(t,
 		WithOrders(orders),
 		WithStatic(map[string]fs.FS{"/order/": guestApp}),
-		WithTunnelCheck(func() string {
-			if guests.Status().State == tunnel.StateConnected {
-				return CheckOK
+		WithTunnel(func() TunnelStatus {
+			st := guests.Status()
+			state := TunnelWaiting
+			if st.State == tunnel.StateConnected {
+				state = TunnelConnected
 			}
-			return CheckFailing
+			return TunnelStatus{State: state, Since: st.Since, RetryAt: st.RetryAt, Detail: st.LastError}
 		}),
 	)
 
@@ -252,5 +254,121 @@ func TestTheCounterSellsWhileTheRelayIsDown(t *testing.T) {
 	body, _ := io.ReadAll(resp.Body)
 	if strings.Contains(string(body), `"orders"`) {
 		t.Errorf("a guest holding staff credentials read the open orders through the relay: %s", body)
+	}
+}
+
+func (r *register) tunnel(t *testing.T, owner map[string]string) (int, tunnelResponse) {
+	t.Helper()
+	rec := send(r.handler, http.MethodGet, "/api/v1/tunnel", "", owner)
+	var body tunnelResponse
+	if rec.Code == http.StatusOK {
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatalf("GET /tunnel: %v in %s", err, rec.Body)
+		}
+	}
+	return rec.Code, body
+}
+
+// TestTunnelForTheBackOffice: what the Devices screen reads (phase 11,
+// Task 2b). More than health's one word: the state, since when, when it
+// tries next, and why it failed.
+func TestTunnelForTheBackOffice(t *testing.T) {
+	since := time.Date(2026, 10, 5, 12, 0, 0, 0, time.FixedZone("IST", 19800))
+	retry := since.Add(40 * time.Second)
+
+	tests := []struct {
+		name       string
+		status     *TunnelStatus // nil: no relay configured
+		want       tunnelResponse
+		wantHealth string
+	}{
+		{"no relay configured is off, and nothing more", nil,
+			tunnelResponse{State: TunnelOff}, CheckUnknown},
+		{"off as reported carries nothing either", &TunnelStatus{State: TunnelOff, Since: since, Detail: "x"},
+			tunnelResponse{State: TunnelOff}, CheckUnknown},
+		{"connected says since when, and no old error", &TunnelStatus{State: TunnelConnected, Since: since, Detail: "the failure before"},
+			tunnelResponse{State: TunnelConnected, Since: utc(since)}, CheckOK},
+		{"waiting says why and when next", &TunnelStatus{State: TunnelWaiting, Since: since, RetryAt: retry, Detail: "dialling the relay: no such host"},
+			tunnelResponse{State: TunnelWaiting, Since: utc(since), RetryAt: utc(retry), Detail: "dialling the relay: no such host"}, CheckFailing},
+		{"refused", &TunnelStatus{State: TunnelRefused, Since: since, RetryAt: retry, Detail: "the relay refused this venue's key"},
+			tunnelResponse{State: TunnelRefused, Since: utc(since), RetryAt: utc(retry), Detail: "the relay refused this venue's key"}, CheckFailing},
+		{"replaced", &TunnelStatus{State: TunnelReplaced, Since: since},
+			tunnelResponse{State: TunnelReplaced, Since: utc(since)}, CheckFailing},
+		{"connecting", &TunnelStatus{State: TunnelConnecting, Since: since},
+			tunnelResponse{State: TunnelConnecting, Since: utc(since)}, CheckFailing},
+		{"a word outside the vocabulary is stopped", &TunnelStatus{State: "exploded", Since: since},
+			tunnelResponse{State: TunnelStopped, Since: utc(since)}, CheckFailing},
+	}
+	r := newRegister(t)
+	owner := r.asStaff(r.signInAs(t, "stf_PRIYA001", "2468").Token)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var opts []Option
+			if tt.status != nil {
+				opts = append(opts, WithTunnel(func() TunnelStatus { return *tt.status }))
+			}
+			r.rebuild(t, opts...)
+			status, got := r.tunnel(t, owner)
+			if status != http.StatusOK {
+				t.Fatalf("status = %d", status)
+			}
+			if got.State != tt.want.State || got.Detail != tt.want.Detail ||
+				!sameTime(got.Since, tt.want.Since) || !sameTime(got.RetryAt, tt.want.RetryAt) {
+				t.Errorf("got %+v, want %+v", got, tt.want)
+			}
+			if h := r.tunnelHealth(t); h != tt.wantHealth {
+				t.Errorf("health says %q, want %q", h, tt.wantHealth)
+			}
+		})
+	}
+
+	t.Run("times are UTC on the wire", func(t *testing.T) {
+		r.rebuild(t, WithTunnel(func() TunnelStatus { return TunnelStatus{State: TunnelConnected, Since: since} }))
+		rec := send(r.handler, http.MethodGet, "/api/v1/tunnel", "", owner)
+		if !strings.Contains(rec.Body.String(), `"since":"2026-10-05T06:30:00Z"`) {
+			t.Errorf("body = %s", rec.Body)
+		}
+		if rec.Header().Get("Cache-Control") != "no-store" {
+			t.Error("the tunnel's state may be cached")
+		}
+	})
+}
+
+func utc(at time.Time) *time.Time {
+	u := at.UTC()
+	return &u
+}
+
+func sameTime(a, b *time.Time) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.Equal(*b)
+}
+
+// TestTunnelIsForWhoeverManagesDevices: it says how the venue reaches the
+// outside, so it is not for a device with nobody signed in, nor for a role
+// that cannot manage devices.
+func TestTunnelIsForWhoeverManagesDevices(t *testing.T) {
+	r := newRegister(t)
+	owner := r.asStaff(r.signInAs(t, "stf_PRIYA001", "2468").Token)
+	tests := []struct {
+		name   string
+		method string
+		header map[string]string
+		want   int
+	}{
+		{"no device", http.MethodGet, nil, http.StatusUnauthorized},
+		{"a device with nobody signed in", http.MethodGet, r.asDevice(), http.StatusUnauthorized},
+		{"a cashier, who does not manage devices", http.MethodGet, r.asStaff(r.staffToken), http.StatusForbidden},
+		{"the owner", http.MethodGet, owner, http.StatusOK},
+		{"it is read, not written", http.MethodPost, owner, http.StatusMethodNotAllowed},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if rec := send(r.handler, tt.method, "/api/v1/tunnel", "", tt.header); rec.Code != tt.want {
+				t.Errorf("status = %d, want %d: %s", rec.Code, tt.want, rec.Body)
+			}
+		})
 	}
 }

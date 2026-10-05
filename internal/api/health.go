@@ -68,7 +68,7 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 			DB:      check(s.dbCheck),
 			Disk:    CheckUnknown,
 			Printer: CheckUnknown,
-			Tunnel:  check(s.tunnelCheck),
+			Tunnel:  s.tunnelCheck(),
 		},
 	})
 }

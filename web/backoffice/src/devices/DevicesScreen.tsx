@@ -1,5 +1,6 @@
 // The venue's paired devices (docs/design/screens/backoffice-devices.md): who is
 // in service and when each was last heard from, and pair, rename and revoke.
+// Over the list, the venue's own link to the outside: ordering from phones.
 
 import { PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -8,6 +9,7 @@ import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
 import { Panel } from "../dashboard/Panel";
 import { PairModal, RenameModal, RevokeModal } from "./DeviceModals";
 import { DeviceTable } from "./DeviceTable";
+import { TunnelCard } from "./TunnelCard";
 import { actionProblemOf, devicesSummary, kindWords, listed, runsOutText, split } from "./devices-logic";
 import { useDevices } from "./use-devices";
 
@@ -33,6 +35,8 @@ export function DevicesScreen() {
           Pair a device
         </Button>
       </div>
+
+      <TunnelCard />
 
       {api.loading && <p className="text-base text-fg-muted">Loading the devices</p>}
       {!api.loading && api.error !== null && data === undefined && (

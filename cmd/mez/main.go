@@ -283,7 +283,7 @@ func run() (err error) {
 	srv := api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
-		api.WithTunnelCheck(func() string { return tunnelCheck(cfg.RelayEnabled(), guests) }),
+		api.WithTunnel(func() api.TunnelStatus { return tunnelStatus(guests) }),
 		api.WithDevices(devices),
 		api.WithStaff(staff),
 		api.WithOrders(orders),
@@ -323,18 +323,40 @@ func run() (err error) {
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
 }
 
-// tunnelCheck puts the tunnel's state into the health endpoint's three
-// words. With no relay configured there is nothing to fail, so it is
-// unknown; with one, anything short of connected is failing, because a guest
-// scanning a table's code right now would be turned away.
-func tunnelCheck(enabled bool, guests *tunnel.Client) string {
-	if !enabled || guests == nil {
-		return api.CheckUnknown
+// tunnelStatus puts the tunnel client's status into the API's words.
+//
+// The two packages name the same states, and this is the one place allowed
+// to know both, so the mapping is written out and not left to the strings
+// happening to match. internal/api must not import internal/tunnel. A venue
+// with no relay has no client, and is off.
+func tunnelStatus(guests *tunnel.Client) api.TunnelStatus {
+	if guests == nil {
+		return api.TunnelStatus{State: api.TunnelOff}
 	}
-	if guests.Status().State == tunnel.StateConnected {
-		return api.CheckOK
+	st := guests.Status()
+	return api.TunnelStatus{
+		State:   translateTunnelState(st.State),
+		Since:   st.Since,
+		RetryAt: st.RetryAt,
+		Detail:  st.LastError,
 	}
-	return api.CheckFailing
+}
+
+func translateTunnelState(state tunnel.State) api.TunnelState {
+	switch state {
+	case tunnel.StateConnecting:
+		return api.TunnelConnecting
+	case tunnel.StateConnected:
+		return api.TunnelConnected
+	case tunnel.StateWaiting:
+		return api.TunnelWaiting
+	case tunnel.StateRefused:
+		return api.TunnelRefused
+	case tunnel.StateReplaced:
+		return api.TunnelReplaced
+	default:
+		return api.TunnelStopped
+	}
 }
 
 // publisher adapts the order service's publisher to the hub.

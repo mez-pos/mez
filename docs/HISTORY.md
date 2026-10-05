@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 1b: a hostname per venue** (ADR-203). `RELAY_VENUE_DOMAIN` serves
+**Phase 11, Task 1c: the relay is live** (ADR-204) at `https://relay.jskin.in`, venues
+at `<venue>.jskin.in`: the owner's Hetzner server (wiped, renamed `mez`) behind
+Cloudflare, Caddy for TLS with one wildcard certificate, the files in `build/relay/`.
+Proved with `bin/mez` on the owner's PC and a guest page fetched over the internet.
+`jskin.in` is for testing; the owner will buy `mez.ac` for production.
+
+Before it, **Phase 11, Task 1b: a hostname per venue** (ADR-203). `RELAY_VENUE_DOMAIN` serves
 each venue at `<venue>.<domain>`, the whole path its own, and stops serving
 `/v/<venue>/`. Venues dial `relay.<domain>`. Reserved names are never venues. Unset,
 the relay routes by path as before.

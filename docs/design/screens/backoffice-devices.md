@@ -19,6 +19,26 @@ Inside the frame (`backoffice-shell.md`).
 
 - **The head:** "Devices" in the serif, a line of counts under it, and
   **Pair a device** at the right.
+- **Ordering from phones**, a card over the list (phase 11, Task 2b,
+  ADR-205; `TunnelCard.tsx`, `tunnel-logic.ts`, `use-tunnel.ts`): whether a
+  guest's phone can reach the venue. Its title in the serif, a chip at the
+  right, and under them:
+  - a sentence saying what the state means for guests, and for the two states
+    waiting will not mend, what to do;
+  - **Trying again in 20 s** (or "in 4 min", or "now"), when an attempt is due;
+  - "What it said:" and the client's own account of the last failure, small
+    and muted, for whoever is helping the owner.
+
+  | State | Chip | The sentence |
+  |---|---|---|
+  | `off` | **Not set up**, neutral | "Guests order at the counter. Ordering from a phone needs a relay address and key in this venue's settings file." |
+  | `connecting` | **Connecting**, info | "Reaching the relay. Guests cannot order from their phones until it answers." |
+  | `connected` | **Connected**, success | "Guests can order from their phones. Connected since 14:02." |
+  | `waiting` | **Reconnecting**, warning | "The relay cannot be reached, so guests cannot order from their phones. The counter is not affected." |
+  | `refused` | **Key refused**, danger | "The relay does not accept this venue's key, ... Check the relay key in the settings file, or ask whoever runs the relay for a new one." |
+  | `replaced` | **In use elsewhere**, danger | "Another computer is connected with this venue's key, and guests reach that one. Only one can be: stop the other, or give this one a key of its own." |
+  | `stopped` | **Stopped**, neutral | "The link to the relay is stopped. It starts again when mez does." |
+
 - A line over the table for what an action was refused for.
 - **The table**, in a card: those in service first, in the order paired,
   the revoked at the foot.
@@ -62,6 +82,11 @@ Inside the frame (`backoffice-shell.md`).
 - `POST /api/v1/devices/{id}/rename` `{name}` and `POST
   /api/v1/devices/{id}/revoke`: each answers with the list as it now stands.
 
+- `GET /api/v1/tunnel`, key `["tunnel"]`, `device.manage`: `state`, and when
+  there is one `since`, `retry_at` and `detail`. Read again every 5 seconds
+  while connecting or reconnecting, every 30 once settled, and every 5
+  minutes when off, which cannot change under an open page.
+
 ## Interactions
 
 | Action | Does | Then |
@@ -79,6 +104,9 @@ Inside the frame (`backoffice-shell.md`).
   of 1 to 64 characters is needed").
 - **Not allowed:** the frame's "That is not yours to open".
 
+- **Ordering from phones** loads and fails on its own: "Loading", or the
+  reason with **Try again**, in its card. The list under it is not held up.
+
 ## Constraints
 
 - No green primary on the list; Make a code is the modal's own. Revoke is
@@ -92,6 +120,10 @@ Inside the frame (`backoffice-shell.md`).
 - Revoking does not close a device's open live stream; it is refused at its
   next connect, and every request it makes is refused at once.
 - A pairing code lasts 10 minutes and works once.
+
+- The card for ordering from phones changes nothing. The relay's address
+  and key are in the venue's settings file and are read at start. It never
+  shows the key. A venue with no relay is "Not set up", never a fault.
 
 ## Reference
 

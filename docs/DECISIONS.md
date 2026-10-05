@@ -6022,3 +6022,36 @@ venue. `jskin.in` is on every table's code once printed. A test key for `democaf
 exists and is harmless; revoke it before real venues join. Cloudflare's addresses in
 `Caddyfile` and the firewall are a copy and will need refreshing if they change. The
 zone's SSL mode could not be read with the token; it must be Full (strict).
+
+## ADR-205 - The tunnel in the back office: a card on Devices, and one status for health and the screen
+2026-10 · Status: accepted. Phase 11, Task 2b. Task 2 is done.
+Context: health says the tunnel is `ok`, `failing` or `unknown`. An owner whose guests
+cannot order needs to know which kind of not working, and whether waiting will fix it.
+Decision:
+  - **`GET /api/v1/tunnel`**, for `device.manage`: `state` (`off`, `connecting`,
+    `connected`, `waiting`, `refused`, `replaced`, `stopped`), and when there is one
+    `since`, `retry_at` and `detail`, the client's own account of the last failure.
+    `TunnelState` is generated into TypeScript.
+  - **One source for both.** `api.WithTunnel(func() TunnelStatus)` replaces
+    `WithTunnelCheck`; health's word is derived from the same status. `internal/api`
+    still does not import `internal/tunnel`: `cmd/mez` maps one vocabulary to the
+    other, written out, and a state it does not know is `stopped`.
+  - **It is a card on Devices**, "Ordering from phones", over the list. Devices is
+    where the owner looks for what is connected to the venue, and the permission is
+    the same. Settings was the other candidate; nothing here can be set from a
+    screen, and a Settings section that only reports would be the odd one out.
+  - **Each state is a chip with a word and a sentence saying what guests can do.**
+    Reconnecting says the counter is not affected. The two states waiting will not
+    mend, a refused key and a second machine with the same key, say what will.
+  - **`off` is "Not set up", neutral**, and is shown: it is how an owner learns the
+    feature exists. It is never worded as a fault.
+  - **The card reads on its own**, every 5 s while the state is moving and seldom
+    once it has settled, and does not hold up the list under it.
+Because: "failing" is one word for four situations with four different answers, and
+the owner is the one who has to act on two of them.
+Cost: the relay's address and key are still set in a file; the card can only say so.
+`detail` is a Go error string, shown small for whoever is helping, not for the owner.
+The card does not yet show the venue's public address, since mez does not know the
+relay's venue domain: Task 6 needs it for the QR codes and should add it then. Seen by
+eye in `waiting` and `connected` at 1366 and 400 wide; the other five states are
+covered by the logic's tests only.

@@ -7,28 +7,28 @@
 
 ## Current phase
 
-**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Task 1 (with 1b,
-1c) and 2a done. Started before the owner's walk: the rebuild, 09 and 10 still owe it.
+**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 and 2 done.
+Started before the owner's walk: the rebuild, 09 and 10 still owe it.
 
 ## Last completed task
 
-**Phase 11, Task 1c: the relay is live** (ADR-204) at `https://relay.jskin.in`, venues
-at `<venue>.jskin.in`: the owner's Hetzner server behind Cloudflare, Caddy for TLS,
-the files in `build/relay/`. Proved with `bin/mez` on the owner's PC and a guest page
-fetched over the internet. Update it with `build/relay/deploy.sh` (see its README).
+**Phase 11, Task 2b: the tunnel in the back office** (ADR-205). `GET /api/v1/tunnel`
+and a card on Devices, "Ordering from phones": a chip, a sentence saying what guests
+can do, when it tries next and why it failed. Health reads the same status. Seen in
+the browser reconnecting and connected (to the live relay), at 1366 and 400 wide.
 
 ## Next task
 
-**Phase 11, Task 2b: tunnel status in back office.** `tunnel.Client.Status()` has the
-state, since when, the last error and the next retry.
-- Add an endpoint returning it (`make generate` for the types), for an owner or
-  manager. No relay set is not a fault. States: `connecting`, `connected`, `waiting`,
-  `refused` (wrong key), `replaced` (another machine has the key), `stopped`.
-- Show it where the owner looks (`docs/design/screens/README.md`: Settings or
-  Devices), as colour plus a word.
-- Task 3: mount what guests need under `/order/`. The guest bundle names
-  `/order/assets/...`, which the tunnel maps to `/order/order/assets/...`: fix one end.
-  A venue is now the root of its own hostname; there is no path prefix.
+**Phase 11, Task 3: guest menu and cart**, `web/guest`. Read `phase-11.md`, ADR-202 and
+ADR-203 first. What the tasks before it settled:
+- The relay is live: `https://relay.jskin.in`, a venue at `<venue>.jskin.in`
+  (`build/relay/README.md`). A venue is the root of its own hostname.
+- A guest reaches only what is under `/order/` on the server. Mount the guest API
+  there, for example `/order/api/...`; it then works on the venue's wifi too.
+- The guest bundle names `/order/assets/...`, which the tunnel maps to
+  `/order/order/assets/...`: build it with relative URLs, or fix the tunnel's end.
+- A request by the tunnel is not marked as one, and a LAN device can send
+  `X-Forwarded-*` too. No specs exist for M01 to M11: write this task's first.
 
 ## Known broken / in progress
 
@@ -45,7 +45,7 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 4. Tax-inclusive totals read as if the rows add up. Say "incl." on the tax rows?
 5. The desktop's cash quick amounts never offer ₹500. Show it?
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
-7. `jskin.in` is on every table's code once printed. Is it the permanent domain?
+7. Answered: `jskin.in` is for testing, `mez.ac` for production. Move before codes print.
 
 ---
 
@@ -55,5 +55,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (1 and 2a done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 and 2 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

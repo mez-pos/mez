@@ -21,7 +21,7 @@ Phase 10.
   - [x] **1c.** Deploy it: the owner's VPS behind Cloudflare and Caddy, at
     `relay.jskin.in` and `*.jskin.in`, with the files to do it again in `build/`.
 
-- [ ] **Task 2 — The tunnel client.**
+- [x] **Task 2 — The tunnel client.**
   `internal/tunnel`. Outbound connection with exponential backoff, heartbeat,
   and clean reconnect. Tunnel status surfaced in `/api/v1/health` and visibly in
   back office. **The tunnel being down must not affect any local operation** —
@@ -31,7 +31,7 @@ Phase 10.
   Split in two, since the back office half is a screen of its own:
   - [x] **2a.** The client, `relay_key`, the wiring in `cmd/mez`, the tunnel in
     `/api/v1/health`, and the test that kills the relay mid-service.
-  - [ ] **2b.** Tunnel status visibly in back office: an endpoint that says more
+  - [x] **2b.** Tunnel status visibly in back office: an endpoint that says more
     than health's one word (state, since when, last error, next retry), and
     where the owner sees it.
 

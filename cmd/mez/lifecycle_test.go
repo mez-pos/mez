@@ -117,10 +117,13 @@ func quietLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
 }
 
-// TestTunnelCheck: the tunnel in the health endpoint's three words. Off is
-// unknown, not failing, since most venues never set a relay; set and not
-// connected is failing, because a guest scanning a code would be turned away.
-func TestTunnelCheck(t *testing.T) {
+// TestTunnelStatus: the tunnel client's states in the API's words. A venue
+// with no relay has no client and is off, which is not a fault.
+func TestTunnelStatus(t *testing.T) {
+	if got := tunnelStatus(nil); got.State != api.TunnelOff || !got.Since.IsZero() {
+		t.Errorf("no relay configured: %+v, want off", got)
+	}
+
 	idle, err := tunnel.New(tunnel.Options{
 		RelayURL: "wss://relay.example",
 		Key:      "mzr_cafe.0123456789ab.sig",
@@ -131,21 +134,25 @@ func TestTunnelCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if got := tunnelStatus(idle); got.State != api.TunnelStopped || got.Since.IsZero() {
+		t.Errorf("a client not started: %+v, want stopped, with when", got)
+	}
+
 	tests := []struct {
-		name    string
-		enabled bool
-		guests  *tunnel.Client
-		want    string
+		in   tunnel.State
+		want api.TunnelState
 	}{
-		{"no relay configured", false, nil, api.CheckUnknown},
-		{"configured, before the client exists", true, nil, api.CheckUnknown},
-		{"configured and not connected", true, idle, api.CheckFailing},
+		{tunnel.StateConnecting, api.TunnelConnecting},
+		{tunnel.StateConnected, api.TunnelConnected},
+		{tunnel.StateWaiting, api.TunnelWaiting},
+		{tunnel.StateRefused, api.TunnelRefused},
+		{tunnel.StateReplaced, api.TunnelReplaced},
+		{tunnel.StateStopped, api.TunnelStopped},
+		{tunnel.State("a state added later and not mapped"), api.TunnelStopped},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tunnelCheck(tt.enabled, tt.guests); got != tt.want {
-				t.Errorf("tunnelCheck = %q, want %q", got, tt.want)
-			}
-		})
+		if got := translateTunnelState(tt.in); got != tt.want {
+			t.Errorf("translateTunnelState(%q) = %q, want %q", tt.in, got, tt.want)
+		}
 	}
 }

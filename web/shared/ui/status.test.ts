@@ -12,6 +12,7 @@ import {
   staffStates,
   stockLevels,
   tableStatuses,
+  tunnelStates,
   type ChipSpec,
 } from "./status";
 
@@ -27,6 +28,7 @@ const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   menu: menuItemStates,
   staff: staffStates,
   device: deviceStates,
+  tunnel: tunnelStates,
 };
 
 describe("status vocabularies", () => {

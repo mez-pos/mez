@@ -6,7 +6,7 @@
 // added in Go fails the TypeScript build here until it has a tone and a word.
 // Tones follow docs/design/tokens.md: terracotta (accent) is for "Late" alone.
 
-import type { DayStatus, LineStatus, OrderStatus, PaymentStatus, PrintJobState, TableStatus } from "../api-types";
+import type { DayStatus, LineStatus, OrderStatus, PaymentStatus, PrintJobState, TableStatus, TunnelState } from "../api-types";
 
 export type ChipTone = "neutral" | "success" | "warning" | "danger" | "accent" | "info";
 
@@ -121,6 +121,19 @@ export const deviceStates: Readonly<Record<DeviceState, ChipSpec>> = {
   revoked: { tone: "neutral", word: "Revoked" },
 };
 
+// The venue's link to the relay, which is how a guest's phone reaches it.
+// Off is a venue that has not set one up, which is most of them and no
+// fault. Refused and replaced are the two that will not mend by waiting.
+export const tunnelStates: Readonly<Record<TunnelState, ChipSpec>> = {
+  off: { tone: "neutral", word: "Not set up" },
+  connecting: { tone: "info", word: "Connecting" },
+  connected: { tone: "success", word: "Connected" },
+  waiting: { tone: "warning", word: "Reconnecting" },
+  refused: { tone: "danger", word: "Key refused" },
+  replaced: { tone: "danger", word: "In use elsewhere" },
+  stopped: { tone: "neutral", word: "Stopped" },
+};
+
 /** What a StatusChip is given: which vocabulary, and a value from it. */
 export type ChipStatus =
   | { readonly kind: "kitchen"; readonly status: KitchenStatus }
@@ -133,7 +146,8 @@ export type ChipStatus =
   | { readonly kind: "stock"; readonly status: StockLevel }
   | { readonly kind: "menu"; readonly status: MenuItemState }
   | { readonly kind: "staff"; readonly status: StaffState }
-  | { readonly kind: "device"; readonly status: DeviceState };
+  | { readonly kind: "device"; readonly status: DeviceState }
+  | { readonly kind: "tunnel"; readonly status: TunnelState };
 
 export function chipSpec(chip: ChipStatus): ChipSpec {
   switch (chip.kind) {
@@ -159,5 +173,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
       return staffStates[chip.status];
     case "device":
       return deviceStates[chip.status];
+    case "tunnel":
+      return tunnelStates[chip.status];
   }
 }

@@ -257,6 +257,15 @@ export type TaxPricing =
   | 'inclusive'
   | 'exclusive';
 
+export type TunnelState =
+  | 'off'
+  | 'connecting'
+  | 'connected'
+  | 'waiting'
+  | 'refused'
+  | 'replaced'
+  | 'stopped';
+
 export type DeviceKind =
   | 'terminal'
   | 'kitchen'
@@ -736,6 +745,13 @@ export interface DeviceListResponse {
 
 export interface RenameDeviceRequest {
   name: string;
+}
+
+export interface TunnelResponse {
+  state: TunnelState;
+  since?: string;
+  retry_at?: string;
+  detail?: string;
 }
 
 export interface StaffResponse {
