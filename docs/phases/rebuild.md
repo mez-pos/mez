@@ -355,7 +355,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 17d. The waiter's screens, none of which has a spec: home, the order
     screen's waiter variant with confirm and Course View, the table, transfer
     and merge, the bill, the shift summary (`waiter-*.md`, new).
-  - [ ] 17e. The kitchen: the board, its foot and stats, Coming next, and a
+  - [x] 17e. The kitchen: the board, its foot and stats, Coming next, and a
     cook signed in on a terminal (`kitchen-display.md`).
   - [x] 17f. The back office's frame (`backoffice-shell.md`), the dashboard
     (`backoffice-dashboard.md`, new), the three report tabs

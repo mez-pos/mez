@@ -14,7 +14,22 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 17d: the specs for the waiter's screens.** Five new files, written
+**Rebuild, Task 17f: the specs for the back office's frame, the dashboard, the
+reports and Audit.** Written from the code as it stands (ADR-196): `backoffice-shell.md`
+(the bar, the grouped sidebar, who sees what, the `g` chords, the guard),
+`backoffice-dashboard.md` (new, D12), `backoffice-reports.md` (the shared range and
+Export, then Sales, D15, Items and inventory, D16, and Staff, D17, each with what sits
+under "In detail") and `backoffice-audit.md`. Each Reference was checked against the
+design file's own words. Docs only: no code changed. `make check` passes.
+
+Before it, **Rebuild, Task 17e: the spec for the kitchen.** `kitchen-display.md`: the one
+board and its two ways in (the wall display at `/kitchen`, a cook on a terminal at
+`/pass`), the three columns and the ticket card, the all-day strip, today's stats,
+Coming next, the foot's switches, espresso night, and who may move a ticket (D10, D11).
+Its commit left this file and the phase file's tick behind; both were put right with
+17f.
+
+Before it, **Rebuild, Task 17d: the specs for the waiter's screens.** Five new files, written
 from the code as it stands (ADR-196): `waiter-home.md` (T01, with seating and clearing
 from a card), `waiter-order.md` (T02, Confirm and send, T04, and Course View; only what
 differs from `terminal-register.md`), `waiter-table.md` (T03, with Transfer and merge,
@@ -302,13 +317,16 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 17e: the spec for the kitchen.** Rewrite `kitchen-display.md` from
-`web/terminal/src/kitchen/` as it stands (ADR-196): the wall display at `/kitchen`
-with its own pairing and station (D10), espresso night (D11), the three columns and
-the ticket card, the all-day strip, the foot's switches, today's stats, Coming next,
-and the same board for a cook signed in on a terminal at `/pass`. Check its Reference
-against `mez Desktop KDS and Dashboard.dc.html`, lines 36 and 158. Then 17f and 17g,
-and the walk as each role is 17h. The owner has
+**Rebuild, Task 17g: the specs for the rest of the back office.** From
+`web/backoffice/src/` and `web/shared/zreport/` as they stand (ADR-196): rewrite
+`backoffice-menu.md` (D18, with Choices and Stations and courses), `backoffice-stock.md`
+(Inventory, D19, with Recipes), `backoffice-people.md` (Staff and roles, D20),
+`backoffice-settings.md` (D22's frame and its sections), `backoffice-printers.md`,
+`backoffice-devices.md`, `backoffice-floor.md`, `tips.md` and `zreport.md` (D23's
+report and slip, in both apps, with the Z-reports list and its exports). Check each
+Reference against `mez Desktop Management.dc.html` lines 286, 428, 507, 602 and 707.
+Then rewrite `screens/README.md` to list every spec against its design screen. It is
+nine specs: split it if it will not fit one session. The walk as each role is 17h. The owner has
 not yet looked at the kitchen's screens or anything of Task 16. Floor plan and Tips
 are still their old layouts (ADR-195). Phase 11 waits for this phase. Phase 10's tasks are
 all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
@@ -337,6 +355,10 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 - Found writing the specs (17c): `print/PrintStatus.tsx` is used by nothing since
   the frame drew its own Not printed pill; delete it in 17h. A payment that cannot be
   taken says "Nothing is owed on this ticket." (`planTender`), an old word.
+- Found writing the spec (17e): `lastBumped` in `kitchen/kitchen-logic.ts` is used
+  by nothing but its test since Recall moved onto each ready card; delete it in 17h.
+  The board's clock and the time a ticket was sent are read in the device's zone, not
+  the venue's.
 - Printers, Devices and Audit (ADR-195): the dev venue now has three printers that
   go nowhere (127.0.0.1:9197 to 9199), one retired and one set for receipts, so a
   receipt there queues and retries. Not seen by eye: a revoked or a quiet device,
