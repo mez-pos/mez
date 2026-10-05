@@ -6402,3 +6402,62 @@ a floor tile. Not seen: the waiter's card and frame, the Table List's row, the
 sheet on touch, a refusal's words, the 30 second repeat, two requests from one
 table, anything at 1536 or wider, and the sound itself, which was counted and not
 heard.
+
+## ADR-213 - Place Order on the phone: one key for one cart, the answer kept, and asked again while it waits
+2026-10 · Status: accepted. Phase 11, Task 4c. Amends ADR-207 and ADR-208.
+Context: the server takes a guest's order (ADR-210) and staff can answer a request
+(ADR-211, ADR-212). The guest app still said "show this list to a member of staff".
+Decision:
+  - **The cart's foot is Place Order**, with the cart's own total on it. It sends
+    the lines the cart shows, as dish ids, choice ids and counts.
+  - **One key for one cart.** A key is drawn the first time a cart is sent and
+    kept in `localStorage` with exactly what was sent. The same cart sent again,
+    after a dropped connection or a reload, goes with the same key and is the
+    same order. A cart that changed gets another key, since the server refuses a
+    key that returns with something else in it. The key is forgotten once the
+    venue has the order. A second tap while placing sends nothing.
+  - **The cart is emptied only when the venue has the order.** Refused, it stays
+    as it was, with why above the button.
+  - **The answer is kept on the phone**, by table code: the key, what was sent and
+    what came back. It is what the next screen shows, so a reload or a locked
+    screen loses nothing. It is forgotten after three hours, and what is read back
+    is not trusted. One order is remembered, the latest.
+  - **A new screen, `#order`,** says how it stands in the venue's real answer:
+    waiting to be accepted, with the kitchen, or not accepted. It never says an
+    order nobody accepted is being made. Task 5's tracking takes it over.
+  - **A waiting order asks again every 8 seconds** with its own key, and when the
+    phone comes back from a locked screen, not while the page is hidden. The
+    server answers a key with the order as it stands, so no new endpoint was
+    needed. It stops at an answer.
+  - **A strip over the menu and the cart** says how the remembered order stands
+    and leads back to it, so a guest who went on browsing is still told.
+  - **Each refusal in words a guest can act on.** Where the server wrote the
+    sentence for a guest it is shown as written. A dish or choices that moved also
+    reads the menu again, and the cart, held against the menu as before, takes the
+    dish out and says so. A failure to reach the venue, by the phone or the relay,
+    is said on the phone. Anything else names the counter, and nothing of the
+    server's insides is shown.
+  - **The design's words are back** (ADR-207, ADR-208): "Start Ordering" on the
+    landing and "Add to order" on the sheet.
+  - **No special instructions.** A guest's note would need a place on the kitchen
+    ticket and the display, and an allergy typed into a phone that nobody reads is
+    worse than none. The cart says "Allergies or a special request? Please tell a
+    member of staff." It can be its own task once the kitchen shows notes from
+    guests.
+  - **"Your order is secure" is left out**: nothing is paid here.
+  - No mutation library: one `fetch` behind the shared client. The bundle is 37.9
+    KB gzipped of 60, with 22.1 left for paying and tracking.
+Because: the phone's side of ordering is mostly about not sending twice and not
+losing what was sent, and both come down to keeping the key with the thing it was
+drawn for.
+Cost: asking again is a POST every 8 seconds for each waiting phone, against the
+300 a minute an address allows; Task 5 should replace it. A phone that places a
+second order while its first still waits stops hearing about the first. With
+storage refused, a retry after a reload is a second request, which staff see and
+decline. The total on the button is the menu's arithmetic until the answer comes.
+Seen by eye at 390 wide on a demo venue: the landing's button, the cart with Place
+Order, the waiting screen, the phone turning to "with the kitchen" by itself after
+the request was accepted, a second round going straight through, and the strip over
+the menu. Not seen: a declined order, any refusal, placing over a slow or dropped
+connection, a reload while waiting, the screens on a real phone or through the
+relay.

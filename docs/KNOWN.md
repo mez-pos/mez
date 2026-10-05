@@ -10,6 +10,11 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Place Order on the phone** (ADR-213): no special instructions. A waiting
+  order is asked about by sending it again every 8 seconds; Task 5 should
+  replace that. A second order placed while the first waits loses word of the
+  first. Not seen by eye: a declined order, any refusal, a slow or dropped
+  connection, a reload while waiting, a real phone, the relay.
 - **Table requests** (ADR-212): the chime cannot be turned off, and a terminal
   reloaded and not touched since is silent. Not seen by eye: the waiter's card
   and frame, the Table List's row, the sheet on touch, a refusal's words, the

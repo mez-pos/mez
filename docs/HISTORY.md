@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4b1: answering a guest's request, on the server** (ADR-211).
+**Phase 11, Task 4b2: the request on the terminal** (ADR-212). A pill in the top
+bar on every screen while a request waits, a sheet with Accept and send and
+Decline, the kitchen's chime on arrival and every 30 seconds, and a mark on the
+table. `web/terminal/src/requests/`, spec `terminal-requests.md`. Task 4b done.
+
+Before it, **Phase 11, Task 4b1: answering a guest's request, on the server** (ADR-211).
 `GET /api/v1/guest-requests`, and `POST .../{id}/accept` and `.../decline`, asking
 `order.open`. Accept finds or opens the table's ticket and appends the lines as
 stored. A request arriving or answered moves the floor version, so terminals hear

@@ -7,29 +7,29 @@
 
 ## Current phase
 
-**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a and 4b done. (The rebuild, 09 and 10 still owe the owner's walk.)
+**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3
+and 4a to 4c done. (The rebuild, 09 and 10 still owe the owner's walk.)
 
 ## Last completed task
 
-**Phase 11, Task 4b2: the request on the terminal** (ADR-212). A pill in the top
-bar on every screen while a request waits, a sheet with Accept and send and
-Decline, the kitchen's chime on arrival and every 30 seconds, and a mark on the
-table. `web/terminal/src/requests/`, spec `terminal-requests.md`. Task 4b is done.
+**Phase 11, Task 4c: Place Order on the phone** (ADR-213). The cart sends itself
+with one key for one cart; the answer is kept by table code and shown at `#order`
+as waiting, with the kitchen, or not accepted; a waiting order asks again every 8
+seconds. `web/guest/src/order-logic.ts`, `use-order.ts`, `Order.tsx`; spec
+`guest-order.md`. A guest can now order from a phone, end to end, unpaid.
 
 ## Next task
 
-**Phase 11, Task 4c: Place Order on the phone.** Read ADR-207 to ADR-211,
-`guest-cart.md`, `guest-item.md`, and M04's checkout in the design.
-- The cart's foot becomes Place Order: `POST /order/api/t/{code}/orders` with a key
-  made once for each cart and kept with it, so a retry is the same order.
-- What the guest sees next: waiting, sent or declined. Until Task 5 the phone
-  learns the answer by sending the same round again with its key (ADR-211).
-- Each refusal in its own words (`dish_unavailable`, `choices_invalid`,
-  `table_not_ordering`, `requests_waiting`, `no_open_shift`); the first two mean
-  read the menu again.
-- "See the menu" and "Add to cart" go back to the design's words. Decide special
-  instructions: the server takes none yet. 36.1 KB of 60 before this.
+**Phase 11, Task 4d: how the venue is paid.** Read `docs/02-domain.md`, ADR-209 to
+ADR-213, the settings service's rules (`internal/service/settings/rules.go`), and
+M08 in the design. It is likely two sessions: split it first.
+- A venue setting: prepay required, or pay at the table. Where the owner sets it.
+- The bill on the phone, with its tax as the server works it out: the guest's menu
+  carries no tax rates, so this needs the table's ticket projected, read by code.
+  Decide what one guest may see of a ticket the whole table shares.
+- In a prepay venue a round is not sent until paid (ADR-209): decide what a round
+  is between Place Order and payment, since 4e brings the payment itself.
+- 37.9 KB of 60 in the guest bundle before this.
 
 ## Known broken / in progress
 
@@ -55,5 +55,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a and 4b done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3 and 4a to 4c done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

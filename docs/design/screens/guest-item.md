@@ -29,7 +29,7 @@ dimmed behind it.
     the choice's name, and what it adds ("+₹40.00"), takes off ("−₹10.00")
     or nothing when it costs the same. A chosen row is the green tint with
     a green border.
-- **The foot,** which stays: how many (1 to 20), and **Add to cart ·
+- **The foot,** which stays: how many (1 to 20), and **Add to order ·
   ₹200.00**, the primary button, with the figure for the dish, its choices
   and the count.
 
@@ -45,7 +45,7 @@ its defaults. Nothing is sent.
 | A choice in a choose-one group | Swaps to it | Tapping the chosen one clears it only if the group is optional |
 | A choice in a choose-several group | Adds or removes it | When the group is full the others are dimmed until one is let go |
 | − and + | Changes how many | The button's figure follows |
-| Add to cart | Adds the line and closes | Onto the line with the same dish and choices, if the cart has one |
+| Add to order | Adds the line to the cart and closes | Onto the line with the same dish and choices, if the cart has one |
 | Close, the scrim, Escape | Closes | Nothing is added |
 
 ## States
@@ -71,16 +71,14 @@ its defaults. Nothing is sent.
 190).
 
 **Left out:**
-- **Special instructions.** An order line has no note the kitchen would
-  see until Task 4 says how a guest's order is sent. A field that goes
-  nowhere is worse than none.
+- **Special instructions.** The kitchen has nowhere to read a guest's note
+  yet (ADR-213), and a field that goes nowhere is worse than none. The cart
+  says to tell a member of staff.
 - "Chef's Special", the star rating and the script line over the photo:
   the menu records none of them.
 - The cart icon on the button, and the drag handle.
 
 **Changed:**
-- **Add to cart**, where the design says "Add to order": nothing is
-  ordered by it.
 - Choices are full-width rows, one under another, where the design sets
   sizes three across and extras two across: a row holds a long name and a
   price at 48px, and a third of a phone's width does not.

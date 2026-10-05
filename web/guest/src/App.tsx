@@ -1,15 +1,17 @@
 // The guest's app: a table's code in the path, and the landing, the menu or
-// the cart in the hash (route.ts). Placing the order arrives with Task 4.
+// the cart or the order placed in the hash (route.ts).
 
 import { useEffect, useState } from "react";
 import { Cart } from "./Cart";
 import { Landing } from "./Landing";
 import { Menu } from "./Menu";
+import { Order, OrderStrip } from "./Order";
 import { problemOf } from "./menu-logic";
 import { Problem } from "./Problem";
 import { hashFor, tableCodeFrom, viewFrom, type View } from "./route";
 import { useCart } from "./use-cart";
 import { useGuestMenu, useTable } from "./use-guest";
+import { useOrder } from "./use-order";
 
 export function App() {
   const code = tableCodeFrom(window.location.pathname);
@@ -25,6 +27,7 @@ function Table({ code }: { code: string }) {
   // time the guest has read the landing and tapped.
   const menu = useGuestMenu(code, table.data !== undefined);
   const cart = useCart(code, menu.data);
+  const order = useOrder(code, cart);
 
   if (table.data === undefined) {
     if (table.isPending) return <Waiting line="Finding your table" />;
@@ -32,14 +35,30 @@ function Table({ code }: { code: string }) {
     return <Problem kind={kind} onRetry={kind === "unknown_code" ? undefined : () => void table.refetch()} />;
   }
   if (view === "landing") return <Landing table={table.data} onStart={() => go("menu")} />;
+  // The order placed is the server's answer, kept on the phone: it shows
+  // with or without the menu.
+  if (view === "order" && order.placed) return <Order table={table.data} placed={order.placed} onMenu={() => go("menu")} />;
 
   if (menu.data === undefined) {
     if (menu.isPending) return <Waiting line="Loading the menu" />;
     const kind = problemOf(menu.error);
     return <Problem kind={kind} onRetry={kind === "unknown_code" ? undefined : () => void menu.refetch()} />;
   }
-  if (view === "cart") return <Cart table={table.data} cart={cart} onBack={() => go("menu")} />;
-  return <Menu table={table.data} menu={menu.data} cart={cart} onViewCart={() => go("cart")} />;
+  const strip = order.placed && <OrderStrip placed={order.placed} venue={table.data.venue.name} onOpen={() => go("order")} />;
+  if (view === "cart") {
+    return (
+      <>
+        {strip}
+        <Cart cart={cart} order={order} onBack={() => go("menu")} onPlaced={() => go("order")} />
+      </>
+    );
+  }
+  return (
+    <>
+      {strip}
+      <Menu table={table.data} menu={menu.data} cart={cart} onViewCart={() => go("cart")} />
+    </>
+  );
 }
 
 function Waiting({ line }: { line: string }) {

@@ -47,7 +47,7 @@ export function ItemSheet({ menu, item, onAdd, onClose }: ItemSheetProps) {
     <div className="flex items-center gap-3">
       <Qty value={qty} onChange={setQty} bounds={{ min: 1, max: MAX_QTY }} label={item.name} />
       <Button variant="primary" className="min-w-0 flex-1" disabled={unmet !== null} onClick={add}>
-        {unmet ? `Choose ${unmet.name.toLowerCase()}` : `Add to cart · ${formatMoney(lineTotal(item.price, modifiers, qty))}`}
+        {unmet ? `Choose ${unmet.name.toLowerCase()}` : `Add to order · ${formatMoney(lineTotal(item.price, modifiers, qty))}`}
       </Button>
     </div>
   );

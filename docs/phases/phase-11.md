@@ -74,7 +74,7 @@ Phase 10.
     - [x] **4b2.** The terminal: what is waiting, on every screen, with a
       sound; Accept and Decline; and the table on the floor saying it wants
       to order.
-  - [ ] **4c.** Place Order on the phone: the cart's foot, the design's words
+  - [x] **4c.** Place Order on the phone: the cart's foot, the design's words
     back ("Start Ordering", "Add to order"), special instructions, and what
     the guest sees next: waiting, sent or declined, and each refusal.
   - [ ] **4d.** How the venue is paid: a setting, prepay or pay at the table,

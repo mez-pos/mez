@@ -35,7 +35,7 @@ export function Landing({ table, onStart }: LandingProps) {
 
       <div className="mt-auto pt-8">
         <Button variant="primary" size="charge" className="w-full" onClick={onStart}>
-          See the menu
+          Start Ordering
           <svg
             aria-hidden="true"
             viewBox="0 0 24 24"

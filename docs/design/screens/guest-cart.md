@@ -3,7 +3,7 @@
 What the guest has chosen and what it comes to. Built in phase 11 Task 3c
 (ADR-208). `web/guest/src/`: `Cart.tsx`, `cart-logic.ts`, `use-cart.ts`,
 `Notice.tsx`. The hash `#cart` on a table's path. It is the phone's own
-list: nothing here is sent anywhere until Task 4.
+list until **Place Order**, which Task 4c added (ADR-213, `guest-order.md`).
 
 ## Purpose
 
@@ -23,8 +23,13 @@ each, how many, and the total.
 - **Add more dishes,** a green-tint row back to the menu.
 - **The total,** a card: "Total (3 items)", the figure in the serif, and
   "Before any taxes and charges, which are on the bill."
-- **How to order,** for now: "To order, show this list to a member of
-  staff at Table T4, or order at the counter."
+- "Allergies or a special request? Please tell a member of staff."
+- **Why it was not placed,** when it was not, in the danger tint.
+- **Place Order · ₹530.00**, the primary button, 58px, full width. While it
+  is being sent it reads "Placing your order" and is off, and Clear is
+  hidden.
+- **The strip** over the screen while the phone remembers an order placed
+  (`guest-order.md`).
 
 ## Data
 
@@ -46,6 +51,7 @@ each, how many, and the total.
 | Clear | Arms: the button reads "Tap again to clear" for four seconds | A second tap empties the cart |
 | Add more dishes, Back | The menu | The cart's bar is at its foot |
 | OK on a notice | Dismisses it | |
+| Place Order | Sends the cart as ids and counts | The order placed, and the cart is empty; refused, the cart stays and says why |
 
 The same dish with the same choices is one line, however many times it is
 added; with other choices it is another.
@@ -63,8 +69,9 @@ added; with other choices it is another.
 
 ## Constraints
 
-- **Nothing on this screen says it sends anything.** There is no Place
-  Order until Task 4 builds one.
+- **The figure on Place Order is the menu's arithmetic**, as the total is.
+  What the venue will bill is in its answer, on the next screen.
+- The cart is emptied only once the venue has the order.
 - Money is integer minor units from the menu to the total, never a float.
 - What is in storage is not trusted: anything that is not a line is left
   out, a count is held to 20 and a cart to 50 lines.
@@ -78,16 +85,14 @@ added; with other choices it is another.
 `docs/design/reference/mez/mez Mobile Customer.dc.html`, M04 (lines 194 to
 250) and M11a (line 524).
 
-**Left out, all of it Task 4's:**
-- **Place Order**, "Your order is secure", the tip, and paying at the
-  table or the counter.
+**Left out, for 4d and after:**
+- "Your order is secure", the tip, and paying at the table or the counter.
 - CGST and SGST in the summary: the tax is worked out when the order is.
 - The photo thumbnail on each line, and M11a's chef illustration.
 
 **Changed:**
 - The summary is one figure and a sentence about tax, where the design
   itemises a bill.
-- Where Place Order is, a sentence telling the guest how to order today.
 - Clear is asked twice, on the button itself. The design asks nothing.
 - − at one removes the line; the design draws no way to remove a dish.
 

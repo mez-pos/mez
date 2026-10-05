@@ -4,7 +4,7 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { createApiClient, noCredentials } from "../../shared/api";
-import type { GuestMenuResponse, GuestTableResponse } from "../../shared/api-types";
+import type { GuestMenuResponse, GuestOrderRequest, GuestRoundResponse, GuestTableResponse } from "../../shared/api-types";
 
 // A guest is nobody: no device, no session. The code in the path is all
 // there is to present.
@@ -15,6 +15,18 @@ const base = (code: string) => `/order/api/t/${encodeURIComponent(code)}`;
 /** How often the menu is read again: what is sold out turns on the kitchen's clock. */
 const MENU_REFRESH_MS = 60_000;
 
+export function menuKey(code: string): readonly string[] {
+  return ["guest", "menu", code];
+}
+
+/**
+ * Places an order, or asks how one placed with this key stands: the server
+ * answers the same key with the same order, as it is now (ADR-210).
+ */
+export function sendOrder(code: string, request: GuestOrderRequest, key: string): Promise<GuestRoundResponse> {
+  return api.post<GuestRoundResponse>(`${base(code)}/orders`, request, { idempotencyKey: key });
+}
+
 export function useTable(code: string): UseQueryResult<GuestTableResponse> {
   return useQuery({
     queryKey: ["guest", "table", code],
@@ -24,7 +36,7 @@ export function useTable(code: string): UseQueryResult<GuestTableResponse> {
 
 export function useGuestMenu(code: string, enabled: boolean): UseQueryResult<GuestMenuResponse> {
   return useQuery({
-    queryKey: ["guest", "menu", code],
+    queryKey: menuKey(code),
     queryFn: ({ signal }) => api.get<GuestMenuResponse>(`${base(code)}/menu`, { signal }),
     enabled,
     refetchInterval: MENU_REFRESH_MS,

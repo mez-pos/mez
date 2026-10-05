@@ -1,25 +1,32 @@
 // M04's cart and M11a (docs/design/screens/guest-cart.md): what the guest has
-// chosen, how many of each, and what it comes to. It is the phone's own
-// list. Nothing here sends anything: placing the order is Task 4.
+// chosen, how many of each, what it comes to, and Place Order. The list is
+// the phone's own until then; what is sent is ids and counts, and the venue
+// prices it (ADR-210, ADR-213).
 
 import { useEffect, useState } from "react";
-import type { GuestTableResponse } from "../../shared/api-types";
 import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { DietMark } from "../../shared/ui/DietMark";
 import { Qty } from "../../shared/ui/Qty";
 import { MAX_QTY, itemsText } from "./cart-logic";
-import { tableLabel } from "./Landing";
 import { Notice } from "./Notice";
 import type { CartApi } from "./use-cart";
+import type { OrderApi } from "./use-order";
 
 interface CartProps {
-  table: GuestTableResponse;
   cart: CartApi;
+  order: OrderApi;
   onBack: () => void;
+  /** The venue has the order: on to how it stands. */
+  onPlaced: () => void;
 }
 
-export function Cart({ table, cart, onBack }: CartProps) {
+export function Cart({ cart, order, onBack, onPlaced }: CartProps) {
+  const place = () => {
+    void order.place().then((ok) => {
+      if (ok) onPlaced();
+    });
+  };
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas text-fg">
       <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-line bg-chrome px-2">
@@ -44,7 +51,7 @@ export function Cart({ table, cart, onBack }: CartProps) {
         </button>
         <h1 className="font-serif text-xl">Your cart</h1>
         {cart.count > 0 && <p className="rounded-pill bg-accent-tint px-3 py-1 text-sm font-bold text-accent-text">{itemsText(cart.count)}</p>}
-        {cart.count > 0 && <ClearButton onClear={cart.clear} />}
+        {cart.count > 0 && !order.placing && <ClearButton onClear={cart.clear} />}
       </header>
 
       <main className="flex flex-1 flex-col px-4 pb-8">
@@ -104,9 +111,16 @@ export function Cart({ table, cart, onBack }: CartProps) {
               <p className="mt-1 text-sm text-fg-muted">Before any taxes and charges, which are on the bill.</p>
             </section>
 
-            <p className="mt-4 rounded-card border border-line bg-sunken p-4 text-center text-base text-fg-2">
-              To order, show this list to a member of staff at {tableLabel(table.table.name)}, or order at the counter.
-            </p>
+            <p className="mt-4 text-center text-sm text-fg-muted">Allergies or a special request? Please tell a member of staff.</p>
+
+            {order.error && (
+              <p role="alert" className="mt-4 rounded-card border border-line bg-danger-tint p-4 text-base text-danger">
+                {order.error}
+              </p>
+            )}
+            <Button variant="primary" size="charge" className="mt-4 w-full" disabled={order.placing} onClick={place}>
+              {order.placing ? "Placing your order" : `Place Order · ${formatMoney(cart.total)}`}
+            </Button>
           </>
         )}
       </main>

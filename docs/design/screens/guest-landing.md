@@ -20,7 +20,7 @@ One column, at most a phone and a half wide, on parchment.
   in green ("Table T4"; a table already named "Window table" is left as it
   is), a hairline, "Welcome to <venue>" in the serif, "The whole menu, at
   your table.", and one script line, "A small place for big moments ♡".
-- **See the menu**, the primary button, full width, at the foot of the
+- **Start Ordering**, the primary button, full width, at the foot of the
   screen where a thumb is.
 
 ## Data
@@ -36,7 +36,7 @@ One column, at most a phone and a half wide, on parchment.
 
 | Action | Does | Then |
 |---|---|---|
-| See the menu | Sets the hash to `#menu` | The menu, from the top |
+| Start Ordering | Sets the hash to `#menu` | The menu, from the top |
 | The phone's Back, on the menu | Clears the hash | This screen |
 
 ## States
@@ -80,9 +80,9 @@ One column, at most a phone and a half wide, on parchment.
 **Changed:**
 - "Welcome!" is "Welcome to <venue>": the design shows only mez's name, and a
   guest should see whose table they are at.
-- "Start Ordering" is **See the menu**, and "Scan. Order. Relax." is "The
-  whole menu, at your table.": until Task 4 a guest can read and not yet
-  order. Both go back to the design's words when ordering lands.
+- "Scan. Order. Relax." is "The whole menu, at your table." The button was
+  "See the menu" until a guest could order (Task 4c), and is the design's
+  "Start Ordering" since.
 - M11d's "Session ended" is "This code does not lead to a table": there are
   no sessions, and that is what happened.
 
