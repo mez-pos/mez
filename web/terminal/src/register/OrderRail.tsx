@@ -11,6 +11,7 @@ import { useState } from "react";
 import type { Diet, LineResponse } from "../../../shared/api-types";
 import { Button, Confirm, StatusChip } from "../../../shared/ui";
 import { clearableLines } from "./cart-logic";
+import { ConfirmSend } from "./ConfirmSend";
 import { MoreActions } from "./MoreActions";
 import { RailFooter } from "./RailFooter";
 import { RailLines } from "./RailLines";
@@ -50,6 +51,7 @@ export function OrderRail(props: OrderRailProps) {
   const { ticket, currency, names, dietFor, onOpenLine, onVoidLine, onNote, onDiscount, onOrders, onHistory, onPastBills, onTables, onPay, onFail } = props;
   const { waiter = false, courseName, onSaved } = props;
   const [clearing, setClearing] = useState(false);
+  const [confirmingSend, setConfirmingSend] = useState(false);
   const { order, orderId, opening } = ticket;
   const plan = planFor(order);
   const service = serviceOf(order, opening);
@@ -159,7 +161,8 @@ export function OrderRail(props: OrderRailProps) {
         sendPlan={plan}
         chargeBlock={chargeBlock}
         chargeLabel={chargeLabel}
-        onSend={() => ticket.send().catch(onFail("Couldn't send"))}
+        // A waiter reads what will go before it goes (T04).
+        onSend={waiter ? () => setConfirmingSend(true) : () => ticket.send().catch(onFail("Couldn't send"))}
         onSave={() =>
           ticket
             .hold()
@@ -169,6 +172,17 @@ export function OrderRail(props: OrderRailProps) {
         onPay={onPay}
         waiter={waiter}
       />
+
+      {confirmingSend && order && (
+        <ConfirmSend
+          order={order}
+          title={title}
+          service={serviceLabels[service]}
+          courseName={courseName ?? (() => null)}
+          onSend={ticket.send}
+          onClose={() => setConfirmingSend(false)}
+        />
+      )}
 
       <Confirm open={clearing} onClose={() => setClearing(false)} onConfirm={() => void clear()} title="Clear the order?" confirmLabel="Clear" tone="danger">
         {clearable.length === 1 ? "The 1 item" : `The ${clearable.length} items`} the kitchen has not seen will be taken off. Anything already sent stays.

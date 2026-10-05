@@ -14,7 +14,14 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 12a: the waiter's order screen** (ADR-165). Task 12 is split in three.
+**Rebuild, Task 12b: confirm and send** (ADR-166). A waiter's Send to Kitchen opens
+T04 as a modal (`register/ConfirmSend.tsx`, `sendPreview` in `send-logic.ts`): how many
+items go, how many the kitchen has already, how many wait for their course, the ticket
+as the kitchen will read it, Back and "Send N items to kitchen"; then a toast. Seen in
+a browser at 1366x1024 as Kabir: two new items beside one already sent, sent, the toast
+and the button reading "Sent". Tests: `sendPreview`.
+
+Before it, **Task 12a: the waiter's order screen** (ADR-165). Task 12 is split in three.
 For a waiter `/pos` is T02, the order screen rearranged (`OrderScreen` and its parts
 take a waiter's variant; `useWaiterFrame` says who): the top bar is the order's
 (`waiter/WaiterOrderBar.tsx`: the way back, the table, the guests, how it is served),
@@ -34,14 +41,14 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11 or 12a.
+10c, 11, 12a or 12b.
 
 ## Next task
 
-**Rebuild, Task 12b** (confirm and send): T04 (line 377 of `mez Tablet
-Waiter.dc.html`, drawn 660px wide). A waiter's Send to Kitchen sends at once today
-(`OrderRail`, `send-logic.ts`). Then 12c, Course View, the rail's second tab. Read
-`docs/design/tokens.md` and that screen only. Phase 11
+**Rebuild, Task 12c** (Course View): the second tab of the waiter's rail in T02
+(line 153 of `mez Tablet Waiter.dc.html`): the order by course, what has gone, what
+is held, and firing the next one (today "Fire course N" under the rail's "...").
+Read `docs/design/tokens.md` and T02 only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -55,6 +62,10 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Confirm and send (ADR-166): no ticket number (the server gives it on sending), no
+  choice of printer or screen, no "Notify me", no Undo. The ticket's face is Archivo,
+  not a monospace. Not seen by eye: a held later course's line, an order note, a line's
+  note and choices on the ticket, a refusal, and a ticket longer than the modal.
 - The waiter's order screen (ADR-165): no tabs on the rail until Course View is built
   (12c), and no Add More (the menu is beside the rail). The item modal is D04's, not
   T02's sheet with a photo on top. The card's "+" is terracotta, as on D03. A cleared

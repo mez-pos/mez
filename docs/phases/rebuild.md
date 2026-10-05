@@ -239,7 +239,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     table, the guests and how it is served; the search sits over the categories;
     the rail has the table with its chips, each line's course, Clear, the totals,
     Save and Send to Kitchen. Pay moves under the rail's "...".
-  - [ ] 12b. Confirm and send (T04): what will go to the kitchen and what has gone
+  - [x] 12b. (ADR-166) Confirm and send (T04): what will go to the kitchen and what has gone
     already, the ticket as the kitchen will read it, Back and "Send N items".
   - [ ] 12c. Course View: the rail's second tab, the order by course, with what has
     gone, what is held, and firing the next one.

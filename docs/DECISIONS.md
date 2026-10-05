@@ -4909,3 +4909,20 @@ D04's: T02's sheet with a photo on top is the same choices in another order.
 Cost: five components carry a `waiter` branch. The sidebar is 224px, not 212, so the
 search's placeholder fits.
 ---
+
+## ADR-166 - A waiter reads what goes to the kitchen before it goes
+2026-10 · Status: accepted. Rebuild Task 12b.
+Decision:
+  - **A waiter's Send to Kitchen opens T04 as a modal** over the order screen: a
+    banner, the ticket, Back and "Send N items to kitchen". The cashier's Send still
+    sends at once (D03 draws no step between).
+  - **The preview is the plan read line by line** (`sendPreview`): what one Send takes,
+    what the kitchen already has, what waits for a later course. It is the client's
+    reading of the same rule the button's label uses; the server decides.
+  - **Items are counted as lines,** as the design counts them.
+  - **After sending: a toast, and the order stays in front,** so more can be added.
+Left out, and why (rule 3): Kitchen printer or KDS screen (each item's station decides
+where it goes), "Notify me when items are ready" and Undo (nothing does either), and
+the KOT number (given when the ticket is made).
+Cost: one more tap for every send a waiter makes.
+---

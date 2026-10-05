@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LineResponse, OrderResponse } from "../../../shared/api-types";
-import { readyLines, sendLabel, sendPlan } from "./send-logic";
+import { readyLines, sendLabel, sendPlan, sendPreview } from "./send-logic";
 
 const line = (id: number, course: number, extra: Partial<LineResponse> = {}): LineResponse =>
   ({ id, course, station: "kitchen", status: "active", sent: false, course_fired: false, ...extra }) as LineResponse;
@@ -45,5 +45,38 @@ describe("readyLines", () => {
     } as unknown as OrderResponse;
     expect([...readyLines(o)]).toEqual([2]);
     expect(readyLines(undefined).size).toBe(0);
+  });
+});
+
+describe("sendPreview", () => {
+  const ids = (lines: readonly LineResponse[]) => lines.map((l) => l.id);
+
+  it("lists what one Send would send, in the order's order, and counts what stays", () => {
+    const preview = sendPreview(order([line(2, 2), line(3, 1), line(4, 0), line(5, 3), line(6, 1)]));
+    expect(ids(preview.going)).toEqual([3, 4, 6]);
+    expect(preview).toMatchObject({ gone: 0, held: 2 });
+  });
+
+  it("sends only what was added to a course already fired, once one has gone", () => {
+    const preview = sendPreview(order([line(2, 1, { sent: true, course_fired: true }), line(3, 1, { course_fired: true }), line(4, 2), line(5, 0)]));
+    expect(ids(preview.going)).toEqual([3, 5]);
+    expect(preview).toMatchObject({ gone: 1, held: 1 });
+  });
+
+  it("does not count a voided line as with the kitchen, or a stationless one as going", () => {
+    const preview = sendPreview(order([line(2, 1, { sent: true, status: "voided" }), line(3, 1, { station: "" }), line(4, 1)]));
+    expect(ids(preview.going)).toEqual([4]);
+    expect(preview).toMatchObject({ gone: 0, held: 0 });
+  });
+
+  it("agrees with the plan about how many go", () => {
+    const orders = [
+      order([line(2, 1), line(3, 2), line(4, 1, { station: "bar" })]),
+      order([line(2, 1, { sent: true, course_fired: true }), line(3, 2), line(4, 1, { course_fired: true }), line(5, 3)]),
+      order([line(2, 0), line(3, 2)]),
+      order([]),
+    ];
+    for (const o of orders) expect(sendPreview(o).going).toHaveLength(sendPlan(o).waiting);
+    expect(sendPreview(undefined)).toEqual({ going: [], gone: 0, held: 0 });
   });
 });
