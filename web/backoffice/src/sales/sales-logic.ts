@@ -2,8 +2,8 @@
 // Every figure is the server's (ADR-118); this builds the queries, picks how
 // a range is cut, and turns figures into a bar's height or a share.
 
-import type { AuditAnalysisSheet, Group, Money, ReportEvery, ReportSheet, SalesHour, SalesPoint } from "../../../shared/api-types";
-import { formatMoney } from "../../../shared/money";
+import type { AuditAnalysisSheet, Group, ReportEvery, ReportSheet, SalesHour, SalesPoint } from "../../../shared/api-types";
+import { averageMoney, formatMoney } from "../../../shared/money";
 import type { Sort } from "../../../shared/ui/table-state";
 import { dayText, lastDays, tradingDay } from "../audit/audit-logic";
 
@@ -98,10 +98,7 @@ export function shares(minors: readonly number[]): number[] | null {
 }
 
 /** The average bill: the total over the bills, to the nearest minor unit; null with no bills. */
-export function averageBill(total: Money, bills: number): Money | null {
-  if (bills <= 0) return null;
-  return { ...total, minor: Math.round(total.minor / bills) };
-}
+export const averageBill = averageMoney;
 
 /** The columns a table of groups sorts by. */
 export type GroupSortColumn = "name" | "qty" | "total";

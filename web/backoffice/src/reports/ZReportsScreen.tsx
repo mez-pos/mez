@@ -13,11 +13,11 @@ export function ZReportsScreen() {
   const [pages, setPages] = useState<number[]>([0]);
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6">
-      <Link href="/" className="-mb-4 inline-flex min-h-tap items-center self-start text-base text-fg-2 underline">
-        Back office
-      </Link>
-      <h1 className="font-serif text-total">Z-reports</h1>
+    <div className="flex max-w-4xl flex-col gap-4">
+      <div>
+        <h1 className="font-serif text-total">Z-reports</h1>
+        <p className="mt-1 text-base text-fg-muted">One is issued each time a shift closes. Newest first.</p>
+      </div>
       <ol aria-label="Z-reports" className="flex flex-col gap-tap-gap">
         {pages.map((before, i) => (
           <Page key={before} before={before} last={i === pages.length - 1} onMore={(next) => setPages((p) => [...p, next])} />

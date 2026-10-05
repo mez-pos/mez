@@ -14,7 +14,17 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16i: Settings** (ADR-193). `/backoffice/settings/*` has D22's frame
+**Rebuild, Task 16j: the Z-report and the close** (ADR-194). Task 16 is done. The
+Z-report (`shared/zreport/ZReportView.tsx`, `ZPaper.tsx`, both apps) has D23's slip
+beside the report in full, with "By how it was served", tips by who took the payment
+and covers where a report has them. Close the day (`terminal/src/shift/
+CloseDayScreen.tsx`) is two steps: count the drawer, then the Cash reconciliation card
+and Close the day. Seen in a browser as Priya at 1920x1080: the count, the
+reconciliation over its limit, the note, the close, and Z-report 1 on the order
+screen's app and in the back office. Tests: `averageMoney`, `stampText`,
+`serviceName`, `toleranceText`. `make check` and `make build-web` pass.
+
+Before it, **Rebuild, Task 16i: Settings** (ADR-193). `/backoffice/settings/*` has D22's frame
 (`settings/SettingsScreen.tsx`): the title, the rail as a card with icons, links out to
 Printers, Devices and Tables and floor plan, the version box, and the section's cards
 across the rest. A section still saves itself. Venue's fields are two across. Seen in a
@@ -251,18 +261,17 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to i).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to j).
 
 ## Next task
 
-**Rebuild, Task 16j: The Z-report** (D23, `mez Desktop Management.dc.html` line 707).
-It is the last of Task 16. A Z-report built from now on also carries `by_service`,
-`covers` and `tips_by` (ADR-184, ADR-188): decide whether D23 shows them.
-Read `docs/design/tokens.md` and that one screen. The screens inside the new frame are
-still the old layouts until their own tasks (16c to 16j). The owner has not yet looked
-at the kitchen's screens, the frame or the dashboard. Phase 11 waits for this phase.
-Phase 10's tasks are all done (6l moved to phase 12, ADR-141); its done-when is a human
-check and stays unticked below.
+**Rebuild, Task 17: Close.** Rewrite `docs/design/screens/*.md` from what was built, and
+walk register, kitchen, payment, invoice and Z-report as each role. The owner has not
+yet looked at the kitchen's screens or anything of Task 16. The back office screens the
+design draws nothing for (Audit, Floor plan, Printers, Devices, Tips) are still their
+old layouts inside the new frame. Phase 11 waits for this phase. Phase 10's tasks are
+all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
+unticked below.
 
 Agreed and built on 2026-10-05 (ADR-158): a free table has "Seat N guests" and "Seat
 and order"; the totals name each tax (CGST, SGST) on the rail, the table panel and the
@@ -274,6 +283,12 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- The Z-report and the close (ADR-194): the dev venue's first shift is now closed
+  (Z-report 1, ₹282.00 over, counted by hand to try it) and a second is open with a
+  ₹10,000.00 float. Not seen by eye: a width under 1920 (the slip under the report),
+  a balanced drawer and one within its limit, a closing stock count on step two, a
+  correction, a report from before the new figures, Print a copy carried through,
+  and the Z-reports list.
 - Settings (ADR-193): the Printers, Devices and Floor plan screens inside are still
   their old layouts (the design draws no screen for them). Not seen by eye: a width
   under 1920, a save, Leave carried through, the rail for someone without

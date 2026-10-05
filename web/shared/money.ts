@@ -79,6 +79,16 @@ export function formatMoneyCompact(amount: Money, locale?: string): string {
   }
 }
 
+/**
+ * A total over a count, to the nearest minor unit: the average bill. Null
+ * with nothing to divide by. The one figure a screen works out from two the
+ * server sent; whole numbers in, a whole number out.
+ */
+export function averageMoney(total: Money, count: number): Money | null {
+  if (count <= 0) return null;
+  return { ...total, minor: Math.round(total.minor / count) };
+}
+
 /** 12345 at exponent 2 is "123" and "45"; 5 is "0" and "05". */
 function split(absMinor: number, exponent: number): { major: string; fraction: string } {
   const digits = String(absMinor).padStart(exponent + 1, "0");

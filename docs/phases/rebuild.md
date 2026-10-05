@@ -288,7 +288,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     fired (the lines waiting for their course, by order), under Today's stats
     where the design draws Upcoming. Check first what the order knows of a
     held course; if nothing useful, record that and leave it out.
-- [ ] **Task 16 - Back office.** Split into one sub-task per screen before
+- [x] **Task 16 - Back office.** Split into one sub-task per screen before
   starting: D12 dashboard, D15 to D17 reports, D18 menu, D19 inventory,
   D20 staff and roles, D22 settings, D23 Z-report. D14's offline and sync
   states go with the shell's status bar if Task 2 did not cover them.
@@ -331,7 +331,9 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 16g. (ADR-191) Inventory (D19).
   - [x] 16h. (ADR-192) Staff and roles (D20).
   - [x] 16i. (ADR-193) Settings (D22).
-  - [ ] 16j. The Z-report (D23).
+  - [x] 16j. (ADR-194) The Z-report (D23). The design is the close and the report
+    side by side; built as the two screens they are: Close the day in two steps on
+    the order screen's app, and the Z-report with its slip in both apps.
 - [ ] **Task 17 - Close.** Rewrite `docs/design/screens/*.md` from what was
   built. Walk register, kitchen, payment, invoice and Z-report as each role.
 

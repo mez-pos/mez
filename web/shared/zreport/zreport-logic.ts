@@ -51,6 +51,19 @@ export function clockText(iso: string): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
+/** A slip's date line: the trading day and when the shift closed, "2026-10-05 · 23:38". */
+export function stampText(tradingDay: string, closedAt: string): string {
+  const at = clockText(closedAt);
+  return at ? `${tradingDay} · ${at}` : tradingDay;
+}
+
+const services: Readonly<Record<string, string>> = { dine_in: "Dine-in", takeaway: "Takeaway", delivery: "Delivery" };
+
+/** How an order was served, for a person. */
+export function serviceName(key: string): string {
+  return services[key] ?? key;
+}
+
 /** The error a report screen shows, in words. */
 export function reportProblem(status: number | undefined, number?: number): string {
   if (status === 403) return "You don't have permission to see reports. Ask a manager.";

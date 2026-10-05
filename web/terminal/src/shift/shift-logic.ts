@@ -78,6 +78,20 @@ export function reasonOwed(rec: ReconciliationResponse, explained: boolean): str
   return `${formatMoney(absolute(rec.variance))} is more than the ${formatMoney(rec.threshold)} allowed. Say why before closing.`;
 }
 
+/**
+ * What to say under a variance when no reason is still owed: that it
+ * balanced, that it is within what the venue allows, or, once a reason for a
+ * larger one is saved, that it is over and explained.
+ */
+export function toleranceText(rec: ReconciliationResponse, explained: boolean): string {
+  if (!rec.short && !rec.over) return "The drawer is what was expected.";
+  const allowed = formatMoney(rec.threshold);
+  if (rec.reason_required) return `More than the ${allowed} allowed. The reason is saved with the count.`;
+  return explained
+    ? `Within the ${allowed} allowed. The note is saved with the count.`
+    : `Within the ${allowed} allowed. Add a note for the manager if there is one.`;
+}
+
 function absolute(m: Money): Money {
   return { ...m, minor: Math.abs(m.minor) };
 }

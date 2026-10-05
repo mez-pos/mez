@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { channelName, differenceWords, methodName, rateText, reportProblem, staffName } from "./zreport-logic";
+import { channelName, differenceWords, methodName, rateText, reportProblem, staffName, serviceName, stampText } from "./zreport-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -41,5 +41,18 @@ describe("reportProblem", () => {
     expect(reportProblem(403)).toMatch(/permission/);
     expect(reportProblem(404, 99)).toBe("There is no Z-report 99.");
     expect(reportProblem(undefined)).toMatch(/Can't reach/);
+  });
+});
+
+describe("a slip's words", () => {
+  it("stamps the trading day and the close", () => {
+    expect(stampText("2026-10-05", "not a time")).toBe("2026-10-05");
+    expect(stampText("2026-10-05", "2026-10-05T18:02:00Z")).toMatch(/^2026-10-05 · \d{2}:\d{2}$/);
+  });
+  it("names how an order was served, and leaves another as it came", () => {
+    expect(serviceName("dine_in")).toBe("Dine-in");
+    expect(serviceName("takeaway")).toBe("Takeaway");
+    expect(serviceName("delivery")).toBe("Delivery");
+    expect(serviceName("drive_through")).toBe("drive_through");
   });
 });

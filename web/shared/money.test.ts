@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amountInputText, exponentOf, formatMoney, formatMoneyCompact, parseAmount } from "./money";
+import { amountInputText, averageMoney, exponentOf, formatMoney, formatMoneyCompact, parseAmount } from "./money";
 
 describe("formatMoney", () => {
   // Intl joins a currency code to its number with a no-break space (U+00A0),
@@ -121,5 +121,19 @@ describe("formatMoneyCompact", () => {
 
   it("refuses an amount that is not a safe integer", () => {
     expect(() => formatMoneyCompact({ minor: 1.5, currency: "INR" })).toThrow(RangeError);
+  });
+});
+
+describe("averageMoney", () => {
+  const inr = (minor: number) => ({ minor, currency: "INR" });
+  it("is the total over the count, to the nearest minor unit", () => {
+    expect(averageMoney(inr(260_000), 9)).toEqual(inr(28_889));
+    expect(averageMoney(inr(80_000), 2)).toEqual(inr(40_000));
+    expect(averageMoney(inr(100), 3)).toEqual(inr(33));
+    expect(averageMoney(inr(200), 3)).toEqual(inr(67));
+  });
+  it("is nothing with nothing to divide by", () => {
+    expect(averageMoney(inr(100), 0)).toBeNull();
+    expect(averageMoney(inr(100), -1)).toBeNull();
   });
 });

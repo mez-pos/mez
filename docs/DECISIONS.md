@@ -5626,3 +5626,39 @@ the frame and one place to find every setting.
 Cost: Printers, Devices and Floor plan are in two places, the sidebar and this rail.
 `docs/design/screens/backoffice-settings.md` describes the old frame until Task 17.
 ---
+
+## ADR-194 - D23 is two screens: Close the day in two steps, then the Z-report with its slip
+2026-10 · Status: accepted. Rebuild Task 16j (D23); over ADR-093 to ADR-100.
+Context: D23 draws the close ("Step 2 of 2": the cash reconciliation, a note, Print,
+Close day) with the Z-report as a slip of paper beside it. The close was a counter and
+a reveal beside a rail; the Z-report was a column of cards.
+Decision:
+  - **Close the day is two steps** on the order screen's app: "Step 1 of 2" counts the
+    drawer, "Step 2 of 2" is the Cash reconciliation card (the opening float, Expected
+    in drawer, Counted, how it came out in a tinted notice, the note), then Close the
+    day. The buttons are under the step, as drawn; the shift's facts sit in a rail.
+  - **The count stays blind** (ADR-093). The design shows the expected figure above the
+    count; here it is on step two only, once the count is in.
+  - **The slip is on the Z-report, not beside the close.** There is no report until the
+    shift is closed, and a slip of figures still moving would be a guess. The close
+    lands where it did, and the report it issued opens with the slip.
+  - **The Z-report** (`shared/zreport`, both apps) has the slip beside the report in
+    full: gross, discounts, net, each tax, total and tips; payments by method; orders,
+    covers, the average order, refunds and voids; expected, counted and the variance
+    in words; who closed it. The full sections are kept (rule 4).
+  - **The new figures are shown where a report has them** (ADR-184, ADR-188): "By how it
+    was served" among the groups, tips by who took the payment under Payments, covers
+    on the slip. A report issued before them shows none of the three.
+  - `averageMoney` is in `shared/money`: the average order is the one figure a screen
+    works out, a total over a count, and both apps now use the same one.
+  - **Left out:** cash sales, refunds and paid out as rows of the reconciliation (the
+    count's answer carries the expected figure, not its parts; they are on the
+    Z-report's Cash drawer); Print before the close (there is nothing to print); "lock
+    terminal" (closing does not sign anyone out); the slip's monospace face (the sheet
+    has none: figures are Archivo).
+Because: the design's one screen mixes a step that has not happened with the paper it
+produces. Two screens say the same things in the order they become true.
+Cost: the slip is a second reading of figures the cards beside it already give.
+`docs/design/screens/zreport.md` and `terminal-close.md` describe the old screens
+until Task 17.
+---

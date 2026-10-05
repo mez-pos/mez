@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ReconciliationResponse } from "../../../shared/api-types";
-import { countRequest, facesFor, keyCount, maxPieces, nextFace, reasonOwed, tallyTotal, varianceWords } from "./shift-logic";
+import { countRequest, facesFor, keyCount, maxPieces, nextFace, reasonOwed, tallyTotal, toleranceText, varianceWords } from "./shift-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -104,5 +104,22 @@ describe("reasonOwed", () => {
   });
   it("asks for none within it", () => {
     expect(reasonOwed(rec({ variance: inr(-100), short: true, threshold: inr(500) }), false)).toBeNull();
+  });
+});
+
+describe("toleranceText", () => {
+  it("says a balanced drawer is what was expected", () => {
+    expect(toleranceText(rec({}), false)).toBe("The drawer is what was expected.");
+  });
+  it("says a small variance is within what is allowed, short or over", () => {
+    expect(toleranceText(rec({ variance: inr(-5000), short: true, threshold: inr(10000) }), false)).toMatch(/^Within the .*100\.00 allowed\. Add a note/);
+    expect(toleranceText(rec({ variance: inr(5000), over: true, threshold: inr(10000) }), false)).toMatch(/^Within the .*100\.00 allowed\./);
+  });
+  it("does not ask for a note that is already saved", () => {
+    expect(toleranceText(rec({ variance: inr(5000), over: true, threshold: inr(10000) }), true)).toMatch(/The note is saved with the count\.$/);
+  });
+  it("never calls a variance past the limit within it, once its reason is saved", () => {
+    const past = rec({ variance: inr(28200), over: true, threshold: inr(0), reason_required: true });
+    expect(toleranceText(past, true)).toMatch(/^More than the .*0\.00 allowed\. The reason is saved/);
   });
 });
