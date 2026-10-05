@@ -250,7 +250,16 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     totals, Add Item, the bill, and Send to Kitchen. A waiter's card leads here.
   - [x] 13b. (ADR-170) Transfer and merge (T06): a modal from the table's screen that moves
     the party to a free table or joins free tables to it.
-- [ ] **Task 14 - Waiter bill and shift summary.** T05, T08.
+- [ ] **Task 14 - Waiter bill and shift summary.** T05, T08. Split on
+  2026-10-05, a screen each.
+  - [ ] 14a. The waiter's bill (T05): a waiter's "Bill and pay" opens the bill
+    under the waiter's bar, not the desktop payment screen. The table and what
+    it owes, split equally, by item or by amount, each guest's share with
+    Collect, how the chosen share is paid, what has been collected so far,
+    Print bill and Close table. Over `tender-logic.ts` and `split-logic.ts`.
+  - [ ] 14b. The shift summary (T08): the waiter, how long they have been on,
+    what the server can count for them (tables, orders, sales, tips), Print
+    summary and End shift. Check first what the server can say per person.
 - [ ] **Task 15 - Kitchen display.** D10 and D11.
 - [ ] **Task 16 - Back office.** Split into one sub-task per screen before
   starting: D12 dashboard, D15 to D17 reports, D18 menu, D19 inventory,
