@@ -102,6 +102,15 @@ export const menuItemStates: Readonly<Record<MenuItemState, ChipSpec>> = {
   retired: { tone: "neutral", word: "Retired" },
 };
 
+// A staff member on the back office's list (D20). Deactivated is off the
+// sign-in screen until brought back; their name stays on what they did.
+export type StaffState = "active" | "off";
+
+export const staffStates: Readonly<Record<StaffState, ChipSpec>> = {
+  active: { tone: "success", word: "Active" },
+  off: { tone: "neutral", word: "Deactivated" },
+};
+
 /** What a StatusChip is given: which vocabulary, and a value from it. */
 export type ChipStatus =
   | { readonly kind: "kitchen"; readonly status: KitchenStatus }
@@ -112,7 +121,8 @@ export type ChipStatus =
   | { readonly kind: "table"; readonly status: TableStatus }
   | { readonly kind: "day"; readonly status: DayStatus }
   | { readonly kind: "stock"; readonly status: StockLevel }
-  | { readonly kind: "menu"; readonly status: MenuItemState };
+  | { readonly kind: "menu"; readonly status: MenuItemState }
+  | { readonly kind: "staff"; readonly status: StaffState };
 
 export function chipSpec(chip: ChipStatus): ChipSpec {
   switch (chip.kind) {
@@ -134,5 +144,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
       return stockLevels[chip.status];
     case "menu":
       return menuItemStates[chip.status];
+    case "staff":
+      return staffStates[chip.status];
   }
 }

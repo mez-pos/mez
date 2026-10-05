@@ -47,7 +47,15 @@ export const NAV: readonly NavGroup[] = [
         built: true,
         description: "Ingredients, recipes, wastage and counts.",
       },
-      { id: "people", label: "People", path: "/people", needs: "staff.manage", key: "p", built: true, description: "Staff, roles, PINs, and who voided what." },
+      {
+        id: "people",
+        label: "Staff",
+        path: "/people",
+        needs: "staff.manage",
+        key: "p",
+        built: true,
+        description: "Staff, their roles and PINs, and what each role may do.",
+      },
     ],
   },
   {

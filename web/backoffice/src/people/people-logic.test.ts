@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
-import type { Permission, Role } from "../../../shared/api-types";
+import type { Permission, Person, Role } from "../../../shared/api-types";
 import {
+  appliesText,
+  chosenRole,
   mayGive,
+  peopleSummary,
+  roleChanged,
+  staffRows,
   newStaffForm,
   permissionGroups,
   permissionWords,
   pinProblem,
   problemOf,
   roleFormFrom,
-  roleWords,
   staffFormFrom,
   toggled,
   toPersonInput,
@@ -29,13 +33,6 @@ describe("the permission words", () => {
     const grouped = permissionGroups.flatMap((g) => g.permissions);
     expect(new Set(grouped).size).toBe(grouped.length);
     expect([...grouped].sort()).toEqual(Object.keys(permissionWords).sort());
-  });
-  it("word a role by group, leaving empty groups out", () => {
-    expect(roleWords(["payment.take", "order.open", "reports.view"])).toEqual([
-      { title: "Selling", words: ["Take orders", "Take payment"] },
-      { title: "Back office", words: ["See reports"] },
-    ]);
-    expect(roleWords([])).toEqual([]);
   });
 });
 
@@ -103,5 +100,54 @@ describe("problemOf", () => {
     expect(problemOf(new ApiError("beyond_your_permissions", "Beyond.", 403))).toEqual({ field: null, message: "Beyond." });
     expect(problemOf(new ApiError("forbidden", "x", 403, "staff.manage")).message).toMatch(/manage staff/);
     expect(problemOf(new Error("boom")).message).toBe("Something went wrong. Try again.");
+  });
+});
+
+describe("the staff and roles screen", () => {
+  const person = (id: string, name: string, role_id: number, active = true): Person => ({
+    id,
+    name,
+    role_id,
+    role_name: "",
+    active,
+    since: "2026-09-01T00:00:00Z",
+  });
+  const staff = [person("a", "Priya", 1), person("b", "Kabir", 2), person("c", "Rohan", 2), person("d", "Old Sam", 2, false)];
+
+  it("counts the people, and the deactivated apart", () => {
+    expect(peopleSummary(staff)).toBe("3 people · 1 deactivated");
+    expect(peopleSummary(staff.slice(0, 1))).toBe("1 person");
+    expect(peopleSummary([])).toBe("0 people");
+  });
+  it("lists the active staff, and the deactivated last when asked", () => {
+    expect(staffRows(staff, false).map((p) => p.name)).toEqual(["Priya", "Kabir", "Rohan"]);
+    expect(staffRows(staff, true).map((p) => p.name)).toEqual(["Priya", "Kabir", "Rohan", "Old Sam"]);
+  });
+  it("says who a role applies to, from the active staff", () => {
+    expect(appliesText(staff, { id: 2, people: 3 })).toBe("Applies to Kabir and Rohan.");
+    expect(appliesText(staff, { id: 1, people: 1 })).toBe("Applies to Priya.");
+    expect(appliesText(staff, { id: 9, people: 0 })).toBe("Nobody has this role yet.");
+    expect(appliesText([person("z", "Old Sam", 9, false)], { id: 9, people: 1 })).toBe("Held only by deactivated staff, so it cannot be deleted.");
+    const many = ["A", "B", "C", "D", "E"].map((n) => person(n, n, 3));
+    expect(appliesText(many.slice(0, 3), { id: 3, people: 3 })).toBe("Applies to A, B and C.");
+    expect(appliesText(many, { id: 3, people: 5 })).toBe("Applies to A, B, C and 2 more.");
+  });
+  it("knows when a role's form differs from what is saved", () => {
+    const role: Role = { id: 2, name: "Waiter", permissions: ["order.open", "order.edit"], people: 2 };
+    expect(roleChanged(role, { name: "Waiter", permissions: ["order.edit", "order.open"] })).toBe(false);
+    expect(roleChanged(role, { name: " Waiter ", permissions: ["order.open", "order.edit"] })).toBe(false);
+    expect(roleChanged(role, { name: "Server", permissions: ["order.open", "order.edit"] })).toBe(true);
+    expect(roleChanged(role, { name: "Waiter", permissions: ["order.open"] })).toBe(true);
+    expect(roleChanged(role, { name: "Waiter", permissions: ["order.open", "order.edit", "payment.take"] })).toBe(true);
+  });
+  it("keeps the role asked for, falls back to the first, and to none", () => {
+    const roles: Role[] = [
+      { id: 1, name: "Owner", permissions: [], people: 1 },
+      { id: 2, name: "Waiter", permissions: [], people: 2 },
+    ];
+    expect(chosenRole(roles, 2)?.name).toBe("Waiter");
+    expect(chosenRole(roles, 99)?.name).toBe("Owner");
+    expect(chosenRole(roles, null)?.name).toBe("Owner");
+    expect(chosenRole([], 1)).toBeNull();
   });
 });

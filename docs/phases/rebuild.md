@@ -329,7 +329,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
       removed in error, the tips total; "Who sold it" moved here.
   - [x] 16f. (ADR-190) Menu (D18).
   - [x] 16g. (ADR-191) Inventory (D19).
-  - [ ] 16h. Staff and roles (D20).
+  - [x] 16h. (ADR-192) Staff and roles (D20).
   - [ ] 16i. Settings (D22).
   - [ ] 16j. The Z-report (D23).
 - [ ] **Task 17 - Close.** Rewrite `docs/design/screens/*.md` from what was

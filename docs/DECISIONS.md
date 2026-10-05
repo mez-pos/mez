@@ -5568,3 +5568,32 @@ Cost: three times the low level is our own rule for a full bar; nothing in the v
 sets it. `docs/design/screens/backoffice-stock.md` describes the old screen until Task
 17.
 ---
+
+## ADR-192 - Staff and roles is D20: the staff beside the role's switches
+2026-10 · Status: accepted. Rebuild Task 16h (D20); over ADR-115 and ADR-145.
+Context: D20 is the staff in a table (person, role, shift, state, PIN) with the picked
+person's role beside it as eight switches, Reset and Save role. The People screen had
+two views, a staff table and role cards, and a modal for a role.
+Decision:
+  - **One screen.** The staff table on the left; beside it the roles as pills and the
+    chosen role's permissions as switches, saved in place. Picking a person shows their
+    role and tints everyone who holds it.
+  - **Every permission is a switch,** in the groups the old form had: a role grants any
+    of the server's permissions, not the design's eight. A switch says On or Off as
+    well as showing it. One for a permission you do not hold cannot be moved (ADR-115).
+  - **The role's name is a field in the same card;** a role nobody holds can be deleted
+    from it. A new role is still a modal, then it is the one shown.
+  - **A row's actions are under its "..."**: Edit, New PIN, Deactivate or Bring back.
+    Nobody is offered Deactivate on themselves.
+  - **The section is called Staff** in the sidebar; the screen's title is the design's
+    "Staff & roles". The path stays `/people`.
+  - **Left out:** Roster and the Shift column (no timesheets), "on shift now", a phone
+    number, and the PIN column: a PIN is kept as a hash, so none of it can be shown. The
+    design's note that anything switched off asks for a manager's PIN is true of the
+    corrections only, and is said there.
+  - Deactivated staff are off the table unless "Show the N deactivated" is ticked.
+Because: a role is read far more often than it is changed, and the question on this
+screen is "what can this person do".
+Cost: a change to a role that is not saved is dropped when another role is picked.
+`docs/design/screens/backoffice-people.md` describes the old screen until Task 17.
+---

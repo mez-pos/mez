@@ -57,13 +57,6 @@ export function mayGive(held: readonly Permission[], grants: readonly Permission
   return grants.every((p) => held.includes(p));
 }
 
-/** A role's permissions in words, grouped as the form groups them; empty groups left out. */
-export function roleWords(grants: readonly Permission[]): { title: string; words: string[] }[] {
-  return permissionGroups
-    .map((g) => ({ title: g.title, words: g.permissions.filter((p) => grants.includes(p)).map((p) => permissionWords[p]) }))
-    .filter((g) => g.words.length > 0);
-}
-
 /** A refusal as a form shows it: under its field, or over the form. */
 export interface Problem {
   field: string | null;
@@ -131,4 +124,43 @@ export function problemOf(err: unknown): Problem {
     return { field: err.field, message: err.message };
   }
   return { field: null, message: "Something went wrong. Try again." };
+}
+
+/** The line under the title: "9 people", or "9 people · 2 deactivated". */
+export function peopleSummary(staff: readonly Pick<Person, "active">[]): string {
+  const active = staff.filter((p) => p.active).length;
+  const off = staff.length - active;
+  const people = active === 1 ? "1 person" : `${active} people`;
+  return off > 0 ? `${people} · ${off} deactivated` : people;
+}
+
+/** The table's rows: the active staff in the server's order, then the deactivated when asked for. */
+export function staffRows(staff: readonly Person[], showOff: boolean): Person[] {
+  const active = staff.filter((p) => p.active);
+  return showOff ? [...active, ...staff.filter((p) => !p.active)] : active;
+}
+
+/**
+ * Who a role applies to: "Applies to Rohan and Arjun.", from the active staff
+ * who hold it. A role only deactivated people hold says so: it cannot be
+ * deleted, and the table hides them until asked.
+ */
+export function appliesText(staff: readonly Person[], role: Pick<Role, "id" | "people">): string {
+  const names = staff.filter((p) => p.active && p.role_id === role.id).map((p) => p.name);
+  if (names.length === 0) return role.people > 0 ? "Held only by deactivated staff, so it cannot be deleted." : "Nobody has this role yet.";
+  if (names.length === 1) return `Applies to ${names[0]}.`;
+  if (names.length <= 4) return `Applies to ${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}.`;
+  return `Applies to ${names.slice(0, 3).join(", ")} and ${names.length - 3} more.`;
+}
+
+/** Whether the form differs from the saved role: its name, or what it grants, in any order. */
+export function roleChanged(role: Role, form: RoleForm): boolean {
+  if (form.name.trim() !== role.name) return true;
+  const saved = new Set(role.permissions);
+  return form.permissions.length !== saved.size || form.permissions.some((p) => !saved.has(p));
+}
+
+/** The role to show: the one asked for if it still exists, else the first. */
+export function chosenRole(roles: readonly Role[], wanted: number | null): Role | null {
+  return roles.find((r) => r.id === wanted) ?? roles[0] ?? null;
 }

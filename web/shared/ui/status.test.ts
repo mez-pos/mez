@@ -8,6 +8,7 @@ import {
   paymentStatuses,
   printStatuses,
   menuItemStates,
+  staffStates,
   stockLevels,
   tableStatuses,
   type ChipSpec,
@@ -23,6 +24,7 @@ const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   day: dayStatuses,
   stock: stockLevels,
   menu: menuItemStates,
+  staff: staffStates,
 };
 
 describe("status vocabularies", () => {

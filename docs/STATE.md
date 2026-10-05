@@ -14,7 +14,16 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16g: Inventory** (ADR-191). `/backoffice/stock` is D19, now called
+**Rebuild, Task 16h: Staff and roles** (ADR-192). `/backoffice/people` is D20, called
+Staff in the sidebar (`people/PeopleScreen.tsx`, `RolePanel.tsx`): the staff table
+with a state chip and a row menu, and beside it the roles as pills with the chosen
+one's permissions as switches, its name, Reset and Save role. The role cards and the
+role edit modal are gone. Seen in a browser as Priya at 1920x1080: a person picked, a
+permission switched on, reset, saved and put back, and the row menus. Tests:
+`peopleSummary`, `staffRows`, `appliesText`, `roleChanged`, `chosenRole`. `make check`
+and `make build-web` pass.
+
+Before it, **Rebuild, Task 16g: Inventory** (ADR-191). `/backoffice/stock` is D19, now called
 Inventory (`stock/StockScreen.tsx`, `StockLevels.tsx`, `WastageCard.tsx`,
 `levels-logic.ts`): the ingredients with what is in stock, the level each is low at,
 its cost, a level bar and a Healthy, Low or Out chip; a row's actions under its "...";
@@ -234,11 +243,11 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to g).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to h).
 
 ## Next task
 
-**Rebuild, Task 16h: Staff and roles** (D20, `mez Desktop Management.dc.html` line 507).
+**Rebuild, Task 16i: Settings** (D22, `mez Desktop Management.dc.html` line 602).
 Read `docs/design/tokens.md` and that one screen. The screens inside the new frame are
 still the old layouts until their own tasks (16c to 16j). The owner has not yet looked
 at the kitchen's screens, the frame or the dashboard. Phase 11 waits for this phase.
@@ -255,6 +264,13 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Staff and roles (ADR-192): no roster, shift column, phone or PIN column. An unsaved
+  change to a role is dropped when another role or person is picked. After changing
+  your own role the switches follow your old permissions until you sign in again.
+  Not seen by eye: a width
+  under 1920, a deactivated person shown and brought back, a person added, a new PIN,
+  a role added, renamed and deleted, a refusal, and a manager's view (switches they
+  cannot move).
 - Inventory (ADR-191): no purchase orders or suppliers. A full bar is three times the
   low level, our own rule. After a count or a write-off started from the buttons
   beside the title, focus does not return to that button. Not seen by eye: a width under 1920, a retired ingredient

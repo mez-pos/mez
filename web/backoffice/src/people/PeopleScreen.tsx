@@ -1,16 +1,25 @@
-// The People screen (docs/design/screens/backoffice-people.md): staff with
-// their roles, and the roles with what each may do, in words. What you may
-// give is what you hold (ADR-115): the server decides, the screen shows it.
+// Staff and roles (D20): the staff in a table, and beside it the role of
+// whoever is picked, with what it may do as switches. What you may give is
+// what you hold (ADR-115): the server decides, the screen shows it.
+//
+// Left out of the design: the roster and the Shift column (there are no
+// timesheets), "on shift now", a phone number, and the PIN column: a PIN is
+// kept as a hash and none of it can be shown. A new PIN is set from a row's
+// menu.
 
+import { UserPlusIcon } from "lucide-react";
 import { useState } from "react";
 import type { Person, Role } from "../../../shared/api-types";
+import { initials, roleText } from "../../../shared/auth/format";
 import { useAuth } from "../../../shared/auth/use-auth";
-import { Button, Card, Confirm, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
-import { DataTable, type Column } from "../../../shared/ui/DataTable";
+import { Button, Card, Confirm, EmptyState, InboxIcon, StatusChip, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { CheckField } from "../FormFields";
+import { RowMenu } from "../RowMenu";
 import { usePermissions } from "../shell/BackOfficeShell";
 import { PinModal, RoleModal, StaffModal } from "./PeopleForms";
-import { problemOf, roleWords } from "./people-logic";
+import { chosenRole, peopleSummary, problemOf, staffRows } from "./people-logic";
+import { RolePanel } from "./RolePanel";
 import { usePeople, type PeopleApi } from "./use-people";
 
 type Open =
@@ -18,42 +27,38 @@ type Open =
   | { kind: "edit-staff"; person: Person }
   | { kind: "pin"; person: Person }
   | { kind: "deactivate"; person: Person }
-  | { kind: "add-role" }
-  | { kind: "edit-role"; role: Role };
-
-type View = "staff" | "roles";
+  | { kind: "add-role" };
 
 export function PeopleScreen() {
   const api = usePeople();
-  const [view, setView] = useState<View>("staff");
+  const toast = useToast();
+  const held = usePermissions();
   const [open, setOpen] = useState<Open | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [wanted, setWanted] = useState<number | null>(null);
+  const [showOff, setShowOff] = useState(false);
   const data = api.list.data;
+  const role = data ? chosenRole(data.roles, wanted) : null;
+  const off = data ? data.staff.filter((p) => !p.active).length : 0;
 
   return (
-    <div className="flex max-w-6xl flex-col gap-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h1 className="font-serif text-total">People</h1>
-        <Button variant="primary" disabled={!data} onClick={() => setOpen({ kind: view === "staff" ? "add-staff" : "add-role" })}>
-          {view === "staff" ? "Add a person" : "Add a role"}
-        </Button>
-      </div>
-      <div role="group" aria-label="Show" className="flex gap-tap-gap">
-        {(["staff", "roles"] as const).map((v) => (
-          <Button
-            key={v}
-            size="md"
-            variant={view === v ? "primary" : "secondary"}
-            aria-pressed={view === v}
-            onClick={() => {
-              setView(v);
-              setProblem(null);
-            }}
-          >
-            {v === "staff" ? "Staff" : "Roles"}
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-total">Staff &amp; roles</h1>
+          <p className="mt-1 text-base text-fg-muted">{data ? peopleSummary(data.staff) : "Reading the staff"}</p>
+        </div>
+        <div className="flex flex-wrap gap-2.5">
+          <Button disabled={!data} onClick={() => setOpen({ kind: "add-role" })}>
+            Add a role
           </Button>
-        ))}
+          <Button variant="attention" disabled={!data} onClick={() => setOpen({ kind: "add-staff" })}>
+            <UserPlusIcon aria-hidden="true" size={18} />
+            Add staff
+          </Button>
+        </div>
       </div>
+
       {problem && (
         <p role="alert" className="text-base text-danger">
           {problem}
@@ -63,97 +68,155 @@ export function PeopleScreen() {
       {api.list.error && (
         <EmptyState icon={<InboxIcon />} line={problemOf(api.list.error).message} action={{ label: "Try again", onClick: () => void api.list.refetch() }} />
       )}
-      {data && view === "staff" && <StaffTable staff={data.staff} api={api} onOpen={setOpen} onProblem={setProblem} />}
-      {data && view === "roles" && <RoleCards roles={data.roles} api={api} onOpen={setOpen} onProblem={setProblem} />}
-      {data && open && <Opened open={open} roles={data.roles} api={api} onClose={() => setOpen(null)} />}
+      {data && (
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="flex min-w-0 flex-col gap-3">
+            <StaffTable staff={staffRows(data.staff, showOff)} roleId={role?.id ?? null} api={api} onRole={setWanted} onOpen={setOpen} onProblem={setProblem} />
+            {off > 0 && (
+              <div className="max-w-md">
+                <CheckField label={`Show the ${off} deactivated`} checked={showOff} onChange={setShowOff} />
+              </div>
+            )}
+          </div>
+          {role && (
+            <RolePanel
+              roles={data.roles}
+              role={role}
+              staff={data.staff}
+              held={held}
+              onRole={setWanted}
+              onSave={async (id, input) => {
+                await api.updateRole(id, input);
+                toast("Saved. It applies to everyone with this role from their next step.", { tone: "success" });
+              }}
+              onDelete={async (r) => {
+                await api.deleteRole(r.id);
+                setWanted(null);
+                toast(`Deleted the ${r.name} role.`, { tone: "success" });
+              }}
+            />
+          )}
+        </div>
+      )}
+      {data && open && <Opened open={open} roles={data.roles} api={api} onRole={setWanted} onClose={() => setOpen(null)} />}
     </div>
   );
 }
 
-interface ListProps {
+interface StaffTableProps {
+  staff: readonly Person[];
+  /** The role shown beside the table: its people are marked. */
+  roleId: number | null;
   api: PeopleApi;
+  onRole: (id: number) => void;
   onOpen: (o: Open) => void;
   onProblem: (message: string | null) => void;
 }
 
-function StaffTable({ staff, api, onOpen, onProblem }: ListProps & { staff: readonly Person[] }) {
+const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
+
+function StaffTable({ staff, roleId, api, onRole, onOpen, onProblem }: StaffTableProps) {
   const status = useAuth();
   const me = status.kind === "signed_in" ? status.staff.id : "";
   const bringBack = (p: Person) => {
     onProblem(null);
     api.setActive(p.id, true).catch((err: unknown) => onProblem(problemOf(err).message));
   };
-  const columns: Column<Person>[] = [
-    {
-      id: "name",
-      header: "Name",
-      cell: (p) => (
-        <span className="flex items-center gap-2">
-          <span className={cx("font-semibold", !p.active && "text-fg-muted line-through")}>{p.name}</span>
-          {p.id === me && <span className="text-fg-3">(you)</span>}
-          {!p.active && <span className="text-meta uppercase text-fg-faint">Deactivated</span>}
-        </span>
-      ),
-    },
-    { id: "role", header: "Role", cell: (p) => p.role_name },
-    { id: "since", header: "Since", align: "right", cell: (p) => <span className="font-mono tabular-nums">{p.since.slice(0, 10)}</span> },
-    {
-      id: "actions",
-      header: "",
-      align: "right",
-      cell: (p) => (
-        <span className="flex flex-wrap justify-end gap-tap-gap">
-          <Button onClick={() => onOpen({ kind: "edit-staff", person: p })}>Edit</Button>
-          {p.active && <Button onClick={() => onOpen({ kind: "pin", person: p })}>New PIN</Button>}
-          {p.active && p.id !== me && <Button onClick={() => onOpen({ kind: "deactivate", person: p })}>Deactivate</Button>}
-          {!p.active && <Button onClick={() => bringBack(p)}>Bring back</Button>}
-        </span>
-      ),
-    },
-  ];
-  return <DataTable label="Staff" columns={columns} rows={staff} rowKey={(p) => p.id} />;
-}
-
-function RoleCards({ roles, api, onOpen, onProblem }: ListProps & { roles: readonly Role[] }) {
-  const remove = (r: Role) => {
-    onProblem(null);
-    api.deleteRole(r.id).catch((err: unknown) => onProblem(problemOf(err).message));
-  };
+  if (staff.length === 0) {
+    return (
+      <Card>
+        <EmptyState icon={<InboxIcon />} line="Nobody is on the staff list." />
+      </Card>
+    );
+  }
   return (
-    <ul className="grid gap-4 md:grid-cols-2">
-      {roles.map((r) => {
-        const groups = roleWords(r.permissions);
-        return (
-          <li key={r.id}>
-            <Card className="flex h-full flex-col gap-3">
-              <div className="flex items-baseline justify-between gap-4">
-                <h2 className="text-lg font-semibold">{r.name}</h2>
-                <span className="text-sm text-fg-3">
-                  <span className="font-mono tabular-nums">{r.people}</span> {r.people === 1 ? "person" : "people"}
-                </span>
-              </div>
-              {groups.length === 0 && <p className="text-sm text-fg-muted">It grants nothing.</p>}
-              <dl className="flex flex-col gap-1.5 text-sm">
-                {groups.map((g) => (
-                  <div key={g.title}>
-                    <dt className="text-meta font-semibold uppercase text-fg-faint">{g.title}</dt>
-                    <dd className="text-fg-2">{g.words.join(", ")}</dd>
-                  </div>
-                ))}
-              </dl>
-              <div className="mt-auto flex gap-tap-gap">
-                <Button onClick={() => onOpen({ kind: "edit-role", role: r })}>Edit</Button>
-                {r.people === 0 && <Button onClick={() => remove(r)}>Delete</Button>}
-              </div>
-            </Card>
-          </li>
-        );
-      })}
-    </ul>
+    <Card padding="lg" className="min-w-0">
+      {/* Under 1280px it scrolls sideways; kept tall enough there for a row's menu to open inside. */}
+      <div className="min-h-80 overflow-x-auto xl:min-h-0 xl:overflow-visible">
+        <table aria-label="Staff" className="w-full min-w-[34rem] text-base">
+          <thead>
+            <tr className="border-b border-line text-left">
+              <th scope="col" className={head}>
+                Person
+              </th>
+              <th scope="col" className={head}>
+                Role
+              </th>
+              <th scope="col" className={head}>
+                State
+              </th>
+              <th scope="col" className={head}>
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {staff.map((p, row) => {
+              const shown = p.role_id === roleId;
+              return (
+                <tr key={p.id} className={cx("border-b border-line-soft last:border-b-0", shown && "bg-accent-tint")}>
+                  <td className="py-1">
+                    {/* The person is the button: picking them shows their role beside the table. */}
+                    <button
+                      type="button"
+                      onClick={() => onRole(p.role_id)}
+                      className="flex min-h-tap w-full items-center gap-3 rounded px-2 text-left outline-offset-2 outline-line-focus focus-visible:outline-2"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="flex size-10 shrink-0 items-center justify-center rounded-round bg-raised-high text-sm font-bold text-fg-2"
+                      >
+                        {initials(p.name) || "?"}
+                      </span>
+                      <span className="min-w-0">
+                        <strong className={cx("block truncate", !p.active && "font-semibold text-fg-muted")}>
+                          {p.name}
+                          {p.id === me && <span className="font-normal text-fg-muted"> (you)</span>}
+                        </strong>
+                        <span className="block font-mono text-sm tabular-nums text-fg-muted">Since {p.since.slice(0, 10)}</span>
+                        <span className="sr-only">{shown ? ". Their role is shown beside the table." : ". Show their role."}</span>
+                      </span>
+                    </button>
+                  </td>
+                  <td className="py-1 text-fg-2">{roleText(p.role_name)}</td>
+                  <td className="py-1">
+                    <StatusChip status={{ kind: "staff", status: p.active ? "active" : "off" }} />
+                  </td>
+                  <td className="py-1">
+                    <span className="flex justify-end">
+                      <RowMenu
+                        name={p.name}
+                        disabled={false}
+                        up={row >= 3 && row >= staff.length - 2}
+                        actions={[
+                          { label: "Edit", run: () => onOpen({ kind: "edit-staff", person: p }) },
+                          ...(p.active ? [{ label: "New PIN", run: () => onOpen({ kind: "pin", person: p }) }] : []),
+                          ...(p.active && p.id !== me ? [{ label: "Deactivate", run: () => onOpen({ kind: "deactivate", person: p }) }] : []),
+                          ...(!p.active ? [{ label: "Bring back", run: () => bringBack(p) }] : []),
+                        ]}
+                      />
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
 
-function Opened({ open, roles, api, onClose }: { open: Open; roles: readonly Role[]; api: PeopleApi; onClose: () => void }) {
+interface OpenedProps {
+  open: Open;
+  roles: readonly Role[];
+  api: PeopleApi;
+  /** Shows a role just made. */
+  onRole: (id: number) => void;
+  onClose: () => void;
+}
+
+function Opened({ open, roles, api, onRole, onClose }: OpenedProps) {
   const held = usePermissions();
   const toast = useToast();
   switch (open.kind) {
@@ -202,20 +265,8 @@ function Opened({ open, roles, api, onClose }: { open: Open; roles: readonly Rol
           role={null}
           held={held}
           onSave={async (input) => {
-            await api.addRole(input);
+            onRole(await api.addRole(input));
             toast(`Added the ${input.name} role.`, { tone: "success" });
-          }}
-          onClose={onClose}
-        />
-      );
-    case "edit-role":
-      return (
-        <RoleModal
-          role={open.role}
-          held={held}
-          onSave={async (input) => {
-            await api.updateRole(open.role.id, input);
-            toast("Saved. It applies to everyone with this role from their next step.", { tone: "success" });
           }}
           onClose={onClose}
         />
