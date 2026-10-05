@@ -107,14 +107,26 @@ func TestKitchenOverHTTP(t *testing.T) {
 		t.Errorf("a terminal with nobody signed in started a ticket: %d", rec.Code)
 	}
 
-	// Someone signed in on it who may see the kitchen reads the same board,
-	// and a ticket they start carries their name (ADR-179).
+	// A cashier signed in on it may see the kitchen (kitchen.view) and reads
+	// the same board, and may not move a ticket on it (ADR-180).
 	rec = send(r.handler, http.MethodGet, "/api/v1/kitchen/kitchen/tickets", "", r.asStaff(r.staffToken))
 	var seen kitchenBoardResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &seen); rec.Code != http.StatusOK || err != nil || len(seen.Tickets) != 1 || seen.Tickets[0].Status != kitchen.TicketFired {
-		t.Fatalf("a signed-in cook's board: %d %s", rec.Code, rec.Body.Bytes())
+		t.Fatalf("a cashier's sight of the board: %d %s", rec.Code, rec.Body.Bytes())
 	}
-	rec = send(r.handler, http.MethodPost, start, "", r.asStaff(r.staffToken))
+	for _, move := range []string{start, bump, recall} {
+		if rec := send(r.handler, http.MethodPost, move, "", r.asStaff(r.staffToken)); rec.Code != http.StatusForbidden || errorOf(t, rec).Code != CodeForbidden {
+			t.Errorf("a cashier moved a ticket with %s: %d", move, rec.Code)
+		}
+	}
+	if rec := send(r.handler, http.MethodGet, "/api/v1/kitchen/kitchen/tickets", "", r.asStaff(r.staffToken)); json.Unmarshal(rec.Body.Bytes(), &seen) != nil || seen.Tickets[0].Status != kitchen.TicketFired {
+		t.Errorf("a refused move changed the ticket: %s", rec.Body.Bytes())
+	}
+
+	// Someone who holds kitchen.work moves it, and the move carries their
+	// name (ADR-179).
+	cook := r.asStaff(r.signInAs(t, "stf_PRIYA001", "2468").Token)
+	rec = send(r.handler, http.MethodPost, start, "", cook)
 	if err := json.Unmarshal(rec.Body.Bytes(), &seen); rec.Code != http.StatusOK || err != nil || seen.Tickets[0].Status != kitchen.TicketInProgress {
 		t.Fatalf("a signed-in cook starts a ticket: %d %s", rec.Code, rec.Body.Bytes())
 	}

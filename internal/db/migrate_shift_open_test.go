@@ -38,8 +38,9 @@ func TestTheShiftOpenMigrationKeepsWhoCouldOpenAndAddsTheCashier(t *testing.T) {
 		}
 	}
 
-	if err := d.Migrate(ctx); err != nil {
-		t.Fatalf("migrating on: %v", err)
+	// To 33 and no further: later migrations give their own permissions.
+	if _, err := provider.UpTo(ctx, 33); err != nil {
+		t.Fatalf("migrating to 33: %v", err)
 	}
 
 	want := map[string]string{

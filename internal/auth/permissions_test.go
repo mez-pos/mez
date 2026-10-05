@@ -71,7 +71,7 @@ func TestDefaultRoles(t *testing.T) {
 	if slices.Contains(roles["cashier"], PermLineVoid) || slices.Contains(roles["cashier"], PermDiscountGive) {
 		t.Error("a cashier can void or discount without a manager")
 	}
-	if !slices.Equal(roles["kitchen"], []Permission{PermKitchenView}) {
+	if !slices.Equal(roles["kitchen"], []Permission{PermKitchenView, PermKitchenWork}) {
 		t.Errorf("the kitchen role = %v", roles["kitchen"])
 	}
 	// The waiter takes orders, sends them and settles the bill at the table
@@ -98,6 +98,22 @@ func TestDefaultRoles(t *testing.T) {
 	}
 	if slices.Contains(roles["cashier"], PermShiftManage) {
 		t.Error("a cashier can close the shift")
+	}
+	// The kitchen moves its tickets, and so may the owner and a manager; a
+	// cashier and a waiter see the board and no more (ADR-180). The same
+	// grants are in migration 00034, for venues that already exist.
+	for _, name := range []string{"owner", "manager", "kitchen"} {
+		if !slices.Contains(roles[name], PermKitchenWork) {
+			t.Errorf("the %s cannot move a ticket", name)
+		}
+	}
+	for _, name := range []string{"cashier", "waiter"} {
+		if slices.Contains(roles[name], PermKitchenWork) {
+			t.Errorf("a %s can move a ticket", name)
+		}
+		if !slices.Contains(roles[name], PermKitchenView) {
+			t.Errorf("a %s cannot see the kitchen's board", name)
+		}
 	}
 	// Every template is made of permissions this build knows.
 	for name, perms := range roles {

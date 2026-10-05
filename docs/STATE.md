@@ -14,7 +14,14 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 15e: a cook signed in on a terminal has the board** (ADR-179). The
+**A fix after 15e: moving a ticket is its own permission** (ADR-180, migration
+00034). `kitchen.work` starts, finishes and recalls tickets; `kitchen.view` only reads
+the board. The owner, the manager and the kitchen role hold it; a cashier and a waiter
+do not, and the kitchen's API refuses them a move. On `/pass` someone without it sees
+the board with no buttons. Seen in a browser: Ravi starting a ticket, Kabir's board
+without actions. Go tests for the routes, the default roles and the migration.
+
+Before it, **Rebuild, Task 15e: a cook signed in on a terminal has the board** (ADR-179). The
 kitchen role lands on `/pass` (`kitchen/CookBoard.tsx`): the wall display's board with
 the person's own session, outside the shell and the shift gate, with "Lock · name" in
 the foot. The kitchen's API now also lets in a person signed in on any device who
@@ -166,8 +173,9 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   and after the tab has been idle. The dev server missed a file change once (Vite on
   the I: drive): touch the file if a screen looks stale. Not seen by eye: grouping
   with two tables' tickets interleaved, and night at 1366 wide.
-- A cook's board (ADR-179): a cashier or waiter can move tickets through the API
-  (they hold `kitchen.view`); no screen of theirs offers it. Nothing leads from `/pass`
+- Moving tickets (ADR-180): a role the owner made that both sells and sees the
+  kitchen is not given `kitchen.work` by the migration; the owner ticks it on People.
+- A cook's board (ADR-179): nothing leads from `/pass`
   to the rest of the terminal, or back for a manager who opens it by its path. Not
   seen by eye: a role made by the owner landing there, a wall display and a signed-in
   cook at one station at once, and a manager at `/pass`.

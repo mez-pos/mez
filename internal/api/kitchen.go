@@ -89,24 +89,28 @@ func (s *Server) mountKitchen(mux *http.ServeMux) {
 	if s.devices == nil || s.orders == nil {
 		return
 	}
-	handle := func(pattern string, h http.HandlerFunc) {
-		mux.Handle(pattern, s.requireDevice(s.kitchenAccess(h)))
+	handle := func(pattern string, p auth.Permission, h http.HandlerFunc) {
+		mux.Handle(pattern, s.requireDevice(s.kitchenAccess(p, h)))
 	}
-	handle("GET /api/v1/kitchen/{station}/tickets", s.kitchenBoard)
-	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/start", s.kitchenMove(s.orders.Start))
-	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/bump", s.kitchenMove(s.orders.Bump))
-	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/recall", s.kitchenMove(s.orders.Recall))
+	// Seeing the board and moving its tickets are two permissions for a
+	// person (ADR-180); a kitchen display does both.
+	handle("GET /api/v1/kitchen/{station}/tickets", auth.PermKitchenView, s.kitchenBoard)
+	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/start", auth.PermKitchenWork, s.kitchenMove(s.orders.Start))
+	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/bump", auth.PermKitchenWork, s.kitchenMove(s.orders.Bump))
+	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/recall", auth.PermKitchenWork, s.kitchenMove(s.orders.Recall))
 }
 
 // kitchenAccess lets the kitchen's API be used two ways (ADR-090, ADR-179).
 // A device paired as a kitchen display gets in as it is: a screen on a wall
 // has nobody to sign in, and its moves carry the device and actor 0. Any
-// other device gets in for a person signed in on it who may see the kitchen
-// (kitchen.view): a cook at a shared tablet, whose moves carry their name.
-func (s *Server) kitchenAccess(next http.HandlerFunc) http.Handler {
+// other device gets in for a person signed in on it who holds p: a cook at a
+// shared tablet, whose moves carry their name. p is kitchen.view to read the
+// board and kitchen.work to move a ticket (ADR-180), so someone who sells
+// can look at the pass and cannot clear it.
+func (s *Server) kitchenAccess(p auth.Permission, next http.HandlerFunc) http.Handler {
 	var staffed http.Handler
 	if s.staff != nil {
-		staffed = s.requireStaff(s.requirePermission(auth.PermKitchenView, next))
+		staffed = s.requireStaff(s.requirePermission(p, next))
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		dev, ok := DeviceFrom(r.Context())

@@ -46,8 +46,8 @@ interface TicketCardProps {
   busy: boolean;
   /** Any action is on its way: one at a time. */
   disabled: boolean;
-  /** Start preparing, Mark ready, or Recall: what this column does. */
-  onAct: () => void;
+  /** Start preparing, Mark ready, or Recall: what this column does. Null for someone who may only look (ADR-180). */
+  onAct: (() => void) | null;
 }
 
 export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, onAct }: TicketCardProps) {
@@ -121,19 +121,19 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
         </div>
       )}
 
-      {stage === "fresh" && (
+      {onAct && stage === "fresh" && (
         <button type="button" disabled={disabled} onClick={onAct} className={cx(action, "bg-accent text-accent-fg hover:bg-accent-hover")}>
           <PlayIcon aria-hidden="true" size={22} strokeWidth={2.2} />
           {busy ? "Starting" : "Start preparing"}
         </button>
       )}
-      {stage === "preparing" && (
+      {onAct && stage === "preparing" && (
         <button type="button" disabled={disabled} onClick={onAct} className={cx(action, "border border-line-strong bg-raised hover:bg-raised-high")}>
           <CheckIcon aria-hidden="true" size={22} strokeWidth={2.4} />
           {busy ? "Marking" : "Mark ready"}
         </button>
       )}
-      {ready && (
+      {onAct && ready && (
         <button type="button" disabled={disabled} onClick={onAct} className={cx(action, "bg-accent-tint text-accent-text hover:bg-raised-high")}>
           <Undo2Icon aria-hidden="true" size={22} strokeWidth={2.2} />
           {busy ? "Recalling" : "Recall"}

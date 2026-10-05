@@ -11,7 +11,8 @@ export const permissionWords: Readonly<Record<Permission, string>> = {
   "order.open": "Take orders",
   "order.edit": "Change orders on the ticket",
   "payment.take": "Take payment",
-  "kitchen.view": "Use the kitchen display",
+  "kitchen.view": "See the kitchen board",
+  "kitchen.work": "Start tickets and mark them ready",
   "line.void": "Void items",
   "line.comp": "Comp items",
   "discount.give": "Give discounts",
@@ -38,6 +39,7 @@ export interface PermissionGroup {
 
 export const permissionGroups: readonly PermissionGroup[] = [
   { title: "Selling", permissions: ["order.open", "order.edit", "payment.take", "kitchen.view"] },
+  { title: "Kitchen", note: "A kitchen display on the wall needs neither: it is paired, not signed in.", permissions: ["kitchen.work"] },
   {
     title: "Corrections",
     note: "Others ask for these at the till.",

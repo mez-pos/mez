@@ -17,6 +17,8 @@ export interface SignedIn {
   name: string;
   /** Signs them out: the terminal goes back to the sign-in screen. */
   onLock: () => void;
+  /** They may move tickets (kitchen.work, ADR-180); without it the board is to look at. */
+  canWork: boolean;
 }
 
 interface BoardFootProps {

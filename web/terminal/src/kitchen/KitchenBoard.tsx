@@ -71,6 +71,8 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
   };
   const counts = allDay([...cols.fresh, ...cols.preparing]);
   const lateAfter = board.data?.late_after_minutes ?? 20;
+  // A wall display moves its tickets; a person needs kitchen.work (ADR-180).
+  const canWork = signedIn?.canWork ?? true;
   const stats = board.data ? statRows(board.data.stats) : null;
   const acts: Readonly<Record<CardStage, (t: KitchenTicketResponse) => Promise<void>>> = { fresh: board.start, preparing: board.bump, ready: board.recall };
 
@@ -119,6 +121,12 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
 
       {stats && <StatsLine rows={stats} />}
 
+      {!canWork && (
+        <p className="shrink-0 border-b border-line bg-chrome px-7 py-2 text-lg text-fg-muted">
+          You can see the board. Starting and finishing tickets is the kitchen&apos;s.
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="shrink-0 px-7 pt-3 text-xl text-danger">
           {error}
@@ -148,7 +156,7 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
                       lateAfter={lateAfter}
                       busy={busy === id}
                       disabled={busy !== null}
-                      onAct={() => run(id, () => acts[col.stage](t))}
+                      onAct={canWork ? () => run(id, () => acts[col.stage](t)) : null}
                     />
                   </li>
                 );

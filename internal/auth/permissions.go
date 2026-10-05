@@ -25,7 +25,8 @@ const (
 	PermRefundGive     Permission = "refund.give"     // refund against a tender
 	PermOrderReopen    Permission = "order.reopen"    // reopen a closed order
 	PermInvoiceReprint Permission = "invoice.reprint" // print a copy of an issued invoice
-	PermKitchenView    Permission = "kitchen.view"    // see and bump the kitchen display
+	PermKitchenView    Permission = "kitchen.view"    // see the kitchen's board
+	PermKitchenWork    Permission = "kitchen.work"    // start a ticket, mark it ready, recall it (ADR-180)
 	PermShiftOpen      Permission = "shift.open"      // count the float in and open the shift (ADR-152)
 	PermShiftManage    Permission = "shift.manage"    // close the shift, pool its tips, correct its Z-report
 	PermCashMove       Permission = "cash.move"       // authorise cash into or out of the drawer
@@ -43,7 +44,7 @@ const (
 // them: the register first, then the office.
 var all = []Permission{
 	PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
-	PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView,
+	PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView, PermKitchenWork,
 	PermShiftOpen, PermShiftManage, PermCashMove,
 	PermDeviceManage, PermStaffManage, PermMenuEdit, PermSettingsEdit, PermReportsView, PermStockManage,
 }
@@ -162,7 +163,7 @@ type RoleTemplate struct {
 func DefaultRoles() []RoleTemplate {
 	manager := []Permission{
 		PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
-		PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView,
+		PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView, PermKitchenWork,
 		PermShiftOpen, PermShiftManage, PermCashMove,
 		PermStaffManage, PermReportsView, PermStockManage,
 	}
@@ -182,6 +183,9 @@ func DefaultRoles() []RoleTemplate {
 		{Name: "waiter", Permissions: []Permission{
 			PermOrderOpen, PermOrderEdit, PermPaymentTake, PermKitchenView,
 		}},
-		{Name: "kitchen", Permissions: []Permission{PermKitchenView}},
+		// The kitchen sees its board and moves the tickets on it. A cashier
+		// and a waiter see it and no more: the pass is not theirs to clear
+		// (ADR-180). Migration 00034 gives kitchen.work to venues that exist.
+		{Name: "kitchen", Permissions: []Permission{PermKitchenView, PermKitchenWork}},
 	}
 }

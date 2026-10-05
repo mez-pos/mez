@@ -5222,3 +5222,27 @@ A terminal at the board hears every order event at the venue and reads the board
 each. The night, sound and grouping choices on a shared tablet are the tablet's, not
 the cook's.
 ---
+
+## ADR-180 - Moving a ticket is `kitchen.work`; `kitchen.view` is seeing the board
+2026-10 · Status: accepted. A fix after rebuild Task 15e; changes ADR-179 and ADR-145.
+Context: ADR-179 let a person signed in on a terminal use the kitchen's API with
+`kitchen.view`. Every seller holds `kitchen.view` (ADR-145 gave the waiter the
+cashier's permissions), so a cashier or a waiter could start, finish and recall the
+kitchen's tickets by asking the API. Until then only a kitchen display could.
+Decision:
+  - **`kitchen.work`** is new: start a ticket, mark it ready, recall it. The three
+    POST routes ask a person for it. Reading the board still asks for `kitchen.view`.
+  - **A kitchen display is unchanged:** it is paired, not signed in, and does both.
+  - **Who holds it:** the owner, the manager and the kitchen role. A cashier and a
+    waiter keep `kitchen.view` alone.
+  - **Migration 00034** gives it to roles named owner or manager, and to every role
+    that holds `kitchen.view` and not `order.open`, whatever it is called: those are
+    the people who land on the board (ADR-179). A role that sells is not touched.
+  - **Someone who may only look gets the board without its buttons,** and a line
+    saying why. The server refuses the move whatever the screen shows.
+  - The back office's role form has it under "Kitchen".
+Because: a permission must mean one thing. "See the kitchen" had quietly become
+"clear the pass" for everyone at the till.
+Cost: an owner-made role that both sells and cooks (a "Runner" with `order.open` and
+`kitchen.view`) is not given `kitchen.work` by the migration: the owner ticks it.
+---

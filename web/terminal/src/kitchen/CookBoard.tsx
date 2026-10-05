@@ -1,7 +1,8 @@
 // "/pass": the kitchen's board for someone signed in on a terminal (ADR-179).
 // The flow map lands the kitchen role here. It is the wall display's board
 // (D10), read through the same API with the person's own session, so a ticket
-// they start carries their name. The station is kept on the device, as the
+// they start carries their name. Moving a ticket needs kitchen.work (ADR-180):
+// someone who only sees the kitchen gets the board without its buttons. The station is kept on the device, as the
 // wall display keeps its own; here changing it needs no reload, because a
 // terminal's stream is not narrowed to one station.
 
@@ -28,5 +29,6 @@ export function CookBoard() {
     setStation(code);
   };
 
-  return <StationBoard station={station} onStation={choose} signedIn={{ name: auth.staff.name, onLock: () => void store.signOut() }} />;
+  const signedIn = { name: auth.staff.name, onLock: () => void store.signOut(), canWork: auth.permissions.includes("kitchen.work") };
+  return <StationBoard station={station} onStation={choose} signedIn={signedIn} />;
 }
