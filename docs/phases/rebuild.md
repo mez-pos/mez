@@ -292,6 +292,25 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   starting: D12 dashboard, D15 to D17 reports, D18 menu, D19 inventory,
   D20 staff and roles, D22 settings, D23 Z-report. D14's offline and sync
   states go with the shell's status bar if Task 2 did not cover them.
+  Split on 2026-10-05, a screen each, with the frame every one of them sits
+  in ahead of them. D21 is out of scope, so D17 is its staff half only.
+  - [ ] 16a. The back office's frame (D12's bar and sidebar): the 72px bar
+    with the logo, the date and time, the connection (D14's word) and who is
+    signed in, whose menu holds Sign out; the 240px sidebar with an icon on
+    every entry. The sections the design does not draw keep their places
+    (rule 4). Search and the bell are left out: nothing answers them.
+  - [ ] 16b. The dashboard (D12): today's sales, orders, active tables and
+    average order beside yesterday's; sales through the day; top selling
+    items; active tables; staff; low stock; quick actions. Each card only for
+    whoever may read what is in it.
+  - [ ] 16c. Sales reports (D15).
+  - [ ] 16d. Item and inventory reports (D16).
+  - [ ] 16e. Staff reports (D17, without the customers).
+  - [ ] 16f. Menu (D18).
+  - [ ] 16g. Inventory (D19).
+  - [ ] 16h. Staff and roles (D20).
+  - [ ] 16i. Settings (D22).
+  - [ ] 16j. The Z-report (D23).
 - [ ] **Task 17 - Close.** Rewrite `docs/design/screens/*.md` from what was
   built. Walk register, kitchen, payment, invoice and Z-report as each role.
 
