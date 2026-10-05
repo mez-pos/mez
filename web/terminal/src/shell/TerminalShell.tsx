@@ -8,9 +8,9 @@
 // navigation, when the screens are rebuilt.
 //
 // A waiter's frame is T01's: an 88px bar with the tall tiles of their own
-// navigation, and no status bar, on every screen they reach. The way to try the
-// server again and the "Not printed" pill stay in the bar, so a tablet that has
-// lost the server still says so.
+// navigation, and no status bar, on every screen they reach. Their bar says
+// whether the server is there in the status bar's own words (ADR-164), beside
+// the way to try it again and the "Not printed" pill.
 
 import { PrinterIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -23,6 +23,7 @@ import { PrintQueueSheet } from "../print/PrintQueueSheet";
 import { trouble } from "../print/print-queue";
 import { usePrintJobs } from "../print/use-print-jobs";
 import { ConnectionRetry } from "./ConnectionRetry";
+import { ConnectionWord } from "./ConnectionWord";
 import { landingFor } from "./landing";
 import { activeNav, activeWaiterNav, navItems } from "./nav-logic";
 import { NavPills } from "./NavPills";
@@ -57,7 +58,8 @@ export function TerminalShell({ children }: { children: ReactNode }) {
         ) : (
           <NavPills items={navItems(auth.permissions)} active={activeNav(path)} />
         )}
-        <div className="ml-auto flex items-center gap-5">
+        <div className="ml-auto flex items-center gap-5 whitespace-nowrap">
+          {waiter && <ConnectionWord brief className="text-sm" />}
           <ConnectionRetry />
           {failing > 0 && (
             <button

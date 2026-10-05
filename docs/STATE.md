@@ -59,8 +59,9 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   is assigned to anyone), so the line reads "the tables", not "your tables". No bell,
   Table Requests, QR Orders (phase 11) or Reserved (out of scope). Active Orders counts
   every open order at the venue and opens the day's orders. A waiter has no status
-  bar: no clock, venue or version on screen, and "Offline" shows only as Retry now in
-  the top bar. The other screens a waiter reaches are still the desktop's, under the
+  bar: no clock, venue or version on screen; the top bar says Online or what is wrong
+  (ADR-164), without the retry countdown; seen by eye Online and with the server
+  stopped. The other screens a waiter reaches are still the desktop's, under the
   waiter's bar (Tasks 12 to 14). Not seen by eye: a joined table's card, a floor of more
   than twelve tables (the cards scroll), a failed read, a width under 1280px (three
   columns, then two), the evening greeting, and Print queue opened from More.

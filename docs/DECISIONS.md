@@ -4868,3 +4868,17 @@ assigned to a waiter.
 Cost: a waiter has no clock, venue name or version on screen, and sees the link is
 down only by Retry now. Two vocabularies for a table's state, one per screen.
 ---
+
+## ADR-164 - A waiter's top bar says whether the server is there
+2026-10 · Status: accepted. After rebuild Task 11; changes ADR-163's cost.
+Decision: the status bar's connection word ("Online", "Reconnecting", "No network",
+with its icon and detail) is one component, `ConnectionWord`, drawn in the status bar
+on a desktop and in the top bar of a waiter's frame, which has no status bar. T01
+does not draw it; offline is the default state and a waiter must not have to infer it
+from Retry now.
+Also settled, with the owner: More, To Clear and "the tables" stay as ADR-163 has
+them; one vocabulary for a table's state is decided in Task 17, after D05's own words
+are read again.
+Cost: one more thing in a bar the design keeps bare. Still no clock, venue name or
+version on a waiter's screen.
+---
