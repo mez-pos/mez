@@ -310,17 +310,18 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     - [x] 16c2. (ADR-185) The screen: the range and Export beside the title, four
       figures against the days before, the trend, sales by category, top sellers,
       orders by type and payments; the old reports kept under "In detail".
-  - [ ] 16d. Item and inventory reports (D16). Split on 2026-10-05: the design
+  - [x] 16d. Item and inventory reports (D16). Split on 2026-10-05: the design
     draws wastage and what each item cost, and the server could say neither.
     - [x] 16d1. (ADR-186) What was written off over a range, by stock item and by
       reason, at the cost it had then. `GET /api/v1/reports/wastage`. Go tests.
     - [x] 16d2. (ADR-187) The screen, a tab beside Sales: item performance against
       the days before, wastage, stock health; what sold in full and the closing
       stock moved here from Sales reports.
-    - [ ] 16d3. What an item cost to make and its margin (D16's Cost and Margin
-      columns). Decide first what "cost" is: today's recipe at today's cost, or
-      what the ledger moved for the orders that sold it. Domain code with tests,
-      then the two columns.
+    - [x] 16d3. (ADR-189) What an item cost to make and its margin. The owner
+      chose the ledger over today's recipe: a sold movement keeps its dish, the
+      ledger keeps how many of a dish it costed, and a margin is given only when
+      it costed every unit sold. `GET /api/v1/reports/items`; the Cost and Margin
+      columns.
   - [x] 16e. (ADR-188) Staff reports (D17, without the customers). Split on
     2026-10-05: the report had one tips total and the design a tips column.
     - [x] 16e1. Tips by who took the payment, on the report (`tips_by`). Go tests.

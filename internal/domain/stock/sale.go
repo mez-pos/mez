@@ -103,6 +103,57 @@ func SaleDeltas(usage, deducted map[Use]Qty) []SaleDelta {
 	return out
 }
 
+// DishUnits is how many of each dish the lines sold that used stock: the
+// units a dish's cost in the ledger covers (ADR-189). A dish counts when its
+// own recipe, or the recipe of a modifier chosen on it, uses anything. A
+// dish with no recipe is left out: nothing costed it.
+func DishUnits(lines []SoldLine, r Recipes) map[int64]int64 {
+	out := map[int64]int64{}
+	for _, l := range lines {
+		if l.Qty <= 0 {
+			continue
+		}
+		used := len(r.Items[l.ItemID]) > 0
+		for _, m := range l.ModifierIDs {
+			used = used || len(r.Modifiers[m]) > 0
+		}
+		if used {
+			out[l.ItemID] += l.Qty
+		}
+	}
+	return out
+}
+
+// UnitDelta is a change to how many of a dish an order's closes have
+// accounted for.
+type UnitDelta struct {
+	ItemID int64
+	Delta  int64
+}
+
+// UnitDeltas is what to record so an order's dish units add up to now:
+// now less what its earlier closes recorded, per dish, in dish order. Like
+// SaleDeltas it makes a close idempotent.
+func UnitDeltas(now, recorded map[int64]int64) []UnitDelta {
+	ids := make([]int64, 0, len(now)+len(recorded))
+	for id := range now {
+		ids = append(ids, id)
+	}
+	for id := range recorded {
+		if _, ok := now[id]; !ok {
+			ids = append(ids, id)
+		}
+	}
+	slices.Sort(ids)
+	var out []UnitDelta
+	for _, id := range ids {
+		if d := now[id] - recorded[id]; d != 0 {
+			out = append(out, UnitDelta{ItemID: id, Delta: d})
+		}
+	}
+	return out
+}
+
 // RecipeProblem checks a recipe as the back office would save it: each
 // stock item once, each amount above zero and in range. Field names the
 // row, as "parts.2.qty".

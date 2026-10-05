@@ -3,7 +3,19 @@
 // Every figure is the server's (ADR-118, ADR-186); these are rows, heights
 // and words.
 
-import type { Diet, Group, MenuItemResponse, Money, StockItem, WasteItem, WasteReasonTotal, WasteReport } from "../../../shared/api-types";
+import type {
+  Diet,
+  Group,
+  ItemMargin,
+  ItemsReport,
+  MenuItemResponse,
+  Money,
+  StockItem,
+  WasteItem,
+  WasteReasonTotal,
+  WasteReport,
+} from "../../../shared/api-types";
+import { dayText } from "../audit/audit-logic";
 import { change, type Change } from "../dashboard/dashboard-logic";
 import { reasons } from "../stock/stock-logic";
 import type { SalesRange } from "./sales-logic";
@@ -14,38 +26,70 @@ export interface ItemRow {
   /** "" for an item the menu no longer has, or one with no mark. */
   diet: Diet;
   qty: number;
-  total: Money;
+  /** Its sales after discounts and before tax: what its margin is against. */
+  net: Money;
   /**
    * How many sold beside the days before; null when it did not sell then,
    * and undefined while those days are not read.
    */
   trend: Change | null | undefined;
+  /** What it cost to make and what was left, from the server; undefined while that is not read. */
+  margin: ItemMargin | undefined;
 }
 
 /**
- * The items that took most, each with its mark from the menu as it stands
- * and how many sold beside the same number of days before.
+ * The items that took most, each with its mark from the menu as it stands,
+ * how many sold beside the same number of days before, and its cost and
+ * margin as the server worked them out (ADR-189).
  */
 export function itemRows(
   items: readonly Group[],
   before: readonly Group[] | null,
   menu: readonly Pick<MenuItemResponse, "id" | "diet">[],
+  margins: readonly ItemMargin[] | null,
   limit: number,
 ): ItemRow[] {
   const diets = new Map(menu.map((m) => [String(m.id), m.diet]));
   const then = before ? new Map(before.map((g) => [g.key, g.qty])) : null;
+  const costed = new Map((margins ?? []).map((m) => [m.key, m]));
   return [...items]
     .filter((g) => g.qty > 0)
-    .sort((a, b) => b.total.minor - a.total.minor || b.qty - a.qty || a.name.localeCompare(b.name))
+    .sort((a, b) => b.net.minor - a.net.minor || b.qty - a.qty || a.name.localeCompare(b.name))
     .slice(0, limit)
     .map((g) => ({
       key: g.key,
       name: g.name,
       diet: diets.get(g.key) ?? "",
       qty: g.qty,
-      total: g.total,
+      net: g.net,
       trend: then ? change(g.qty, then.get(g.key) ?? 0) : undefined,
+      margin: costed.get(g.key),
     }));
+}
+
+/** A margin as a percentage with one decimal, from hundredths of a percent: 8433 is "84.3%". */
+export function marginText(bp: number): string {
+  const tenths = Math.round(Math.abs(bp) / 10);
+  return `${bp < 0 && tenths > 0 ? "−" : ""}${Math.floor(tenths / 10)}.${tenths % 10}%`;
+}
+
+/**
+ * What to say under the table about how far the costs can be trusted, or ""
+ * when every dish in these days is costed from the ledger.
+ */
+export function costingNote(report: Pick<ItemsReport, "kept_from" | "short">): string {
+  if (!report.kept_from) {
+    return "No dish has a cost yet. Give a dish a recipe and its stock a cost, and its sales from then on are costed.";
+  }
+  if (report.short) {
+    return `Costs by dish are kept from ${dayText(report.kept_from)}. These days reach back before that, so costs here are part of the whole and margins are not shown.`;
+  }
+  return "";
+}
+
+/** The path a range's items are read from, with their cost and margin. */
+export function itemsPath(range: SalesRange): string {
+  return `/api/v1/reports/items?${new URLSearchParams({ from: range.from, to: range.to }).toString()}`;
 }
 
 export interface WasteBar {

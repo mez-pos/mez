@@ -130,7 +130,10 @@ type Items struct {
 
 // Items reads a range's items with their cost and margin (rebuild Task
 // 16d3, ADR-189). The sales are the sales report's own; the cost is what the
-// stock ledger moved for each dish, at the cost it had then.
+// stock ledger moved for each dish, at the cost it had then. The two are
+// read one after the other, not in one snapshot: an order closing between
+// them shows as units that do not match, and so as no margin, until the
+// next read.
 func (s *Service) Items(ctx context.Context, venueID int64, qy Query) (Items, error) {
 	sales, err := s.Sales(ctx, venueID, qy)
 	if err != nil {
@@ -161,7 +164,7 @@ func (s *Service) Items(ctx context.Context, venueID int64, qy Query) (Items, er
 	}
 	byKey := make(map[string]report.DishCost, len(costs.Dishes))
 	for id, c := range costs.Dishes {
-		byKey[strconv.FormatInt(id, 10)] = report.DishCost{Cost: c.Cost, Movements: c.Movements, Uncosted: c.Uncosted}
+		byKey[strconv.FormatInt(id, 10)] = report.DishCost{Cost: c.Cost, Movements: c.Movements, Uncosted: c.Uncosted, Units: c.Units, PutBack: c.PutBack}
 	}
 	short := costs.NoDish > 0
 	return Items{

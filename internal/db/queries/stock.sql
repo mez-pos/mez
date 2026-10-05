@@ -182,3 +182,26 @@ FROM stock_movements
 WHERE venue_id = ? AND kind = 'sold' AND menu_item_id != 0
 ORDER BY created_at, id
 LIMIT 1;
+
+-- Dish units (rebuild Task 16d3, ADR-189).
+
+-- name: DishUnitsForOrder :many
+--
+-- How many of each dish an order's closes have accounted for so far.
+SELECT menu_item_id, CAST(SUM(qty) AS INTEGER) AS units
+FROM stock_dish_sales
+WHERE venue_id = ? AND order_id = ?
+GROUP BY menu_item_id;
+
+-- name: InsertDishSale :exec
+INSERT INTO stock_dish_sales (venue_id, order_id, menu_item_id, qty, created_at)
+VALUES (?, ?, ?, ?, ?);
+
+-- name: DishUnitsBetween :many
+--
+-- The dish units accounted for between two instants, oldest first.
+SELECT menu_item_id, qty, created_at
+FROM stock_dish_sales
+WHERE venue_id = sqlc.arg(venue_id)
+  AND created_at >= sqlc.arg(from_at) AND created_at < sqlc.arg(to_at)
+ORDER BY created_at, id;

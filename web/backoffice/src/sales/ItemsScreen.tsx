@@ -3,13 +3,14 @@
 // tables the design does not draw (rebuild.md, rule 4): what sold by item and
 // by category, and the closing stock counts.
 //
-// The design's Cost and Margin columns are not drawn: nothing yet says what an
-// item cost to make. Nor is "Raise purchase order": purchasing is out of v1.
+// Cost and Margin are the server's (ADR-189): what the stock ledger moved for
+// each dish, at the cost it had then. "Raise purchase order" is not drawn:
+// purchasing is out of v1.
 
 import { useQuery } from "@tanstack/react-query";
 import { CheckIcon, CircleXIcon, MinusIcon, PackageIcon, TrendingDownIcon, TrendingUpIcon, TriangleAlertIcon, type LucideIcon } from "lucide-react";
 import { Link } from "wouter";
-import type { ReportSheet, SalesReport, WasteReport } from "../../../shared/api-types";
+import type { ItemMargin, ItemsReport, ReportSheet, SalesReport, WasteReport } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { formatQty } from "../../../shared/stock-qty";
 import { Money } from "../../../shared/ui";
@@ -20,7 +21,21 @@ import { changeText, type Change } from "../dashboard/dashboard-logic";
 import { Nothing, Panel, ReadState } from "../dashboard/Panel";
 import { usePermissions } from "../shell/BackOfficeShell";
 import { useStockItems } from "../stock/use-stock";
-import { entriesText, itemRows, itemsText, namesText, reasonName, stockHealth, wasteBars, wasteLeftOut, wastePath, worstReason } from "./items-logic";
+import {
+  entriesText,
+  itemRows,
+  itemsText,
+  namesText,
+  reasonName,
+  stockHealth,
+  wasteBars,
+  wasteLeftOut,
+  wastePath,
+  worstReason,
+  costingNote,
+  itemsPath,
+  marginText,
+} from "./items-logic";
 import { beforeText } from "./overview-logic";
 import { useReportRange } from "./report-range";
 import { ReportState } from "./ReportState";
@@ -132,49 +147,106 @@ interface ItemPerformanceProps {
 }
 
 function ItemPerformance({ report, prior, against, failed }: ItemPerformanceProps) {
+  const store = useAuthStore();
   const menu = useMenu();
-  const rows = itemRows(report.totals.by_item, prior?.totals.by_item ?? null, menu.data?.items ?? [], performanceRows);
+  const range = { from: report.from, to: report.to };
+  // What each item cost to make and what was left, worked out by the server (ADR-189).
+  const costs = useQuery({
+    queryKey: ["items-report", range],
+    queryFn: ({ signal }) => store.api.get<ItemsReport>(itemsPath(range), { signal }),
+  });
+  const rows = itemRows(report.totals.by_item, prior?.totals.by_item ?? null, menu.data?.items ?? [], costs.data?.items ?? null, performanceRows);
   if (rows.length === 0) return <Nothing>Nothing sold in these days.</Nothing>;
+  const note = costs.data ? costingNote(costs.data) : "";
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[32rem] text-base">
-        <thead>
-          <tr className="border-b border-line text-left">
-            <th scope="col" className={head}>
-              Item
-            </th>
-            <th scope="col" className={cx(head, "text-right")}>
-              Qty
-            </th>
-            <th scope="col" className={cx(head, "text-right")}>
-              Revenue
-            </th>
-            <th scope="col" className={cx(head, "pl-6")}>
-              Trend
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.key} className="border-b border-line-soft last:border-b-0">
-              <td className="py-2.5">
-                <span className="flex items-center gap-2.5">
-                  <DietMark diet={r.diet} className="" />
-                  <strong>{r.name}</strong>
-                </span>
-              </td>
-              <td className="py-2.5 text-right font-mono tabular-nums">{r.qty}</td>
-              <td className="py-2.5 text-right">
-                <Money amount={r.total} className="font-bold" />
-              </td>
-              <td className="w-56 py-2.5 pl-6">
-                <Trend change={r.trend} against={against} failed={failed} />
-              </td>
+    <div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[46rem] text-base">
+          <thead>
+            <tr className="border-b border-line text-left">
+              <th scope="col" className={head}>
+                Item
+              </th>
+              <th scope="col" className={cx(head, "text-right")}>
+                Qty
+              </th>
+              <th scope="col" className={cx(head, "text-right")}>
+                Net sales
+              </th>
+              <th scope="col" className={cx(head, "text-right")}>
+                Cost
+              </th>
+              <th scope="col" className={cx(head, "text-right")}>
+                Margin
+              </th>
+              <th scope="col" className={cx(head, "pl-6")}>
+                Trend
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.key} className="border-b border-line-soft last:border-b-0">
+                <td className="py-2.5">
+                  <span className="flex items-center gap-2.5">
+                    <DietMark diet={r.diet} className="" />
+                    <strong>{r.name}</strong>
+                  </span>
+                </td>
+                <td className="py-2.5 text-right font-mono tabular-nums">{r.qty}</td>
+                <td className="py-2.5 text-right">
+                  <Money amount={r.net} className="font-bold" />
+                </td>
+                <td className="py-2.5 text-right">
+                  <Cost margin={r.margin} failed={costs.isError} />
+                </td>
+                <td className="py-2.5 text-right">
+                  <Margin margin={r.margin} />
+                </td>
+                <td className="w-44 py-2.5 pl-6">
+                  <Trend change={r.trend} against={against} failed={failed} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="pt-3 text-sm text-fg-muted">
+        Net sales are after discounts and before tax. Cost is what the stock ledger moved for the dish, at what the stock cost then.
+        {note && <> {note}</>}
+      </p>
     </div>
+  );
+}
+
+const quiet = "text-sm text-fg-muted";
+
+/** What a dish cost to make: the figure, the figure marked as short of the whole, or why there is none. */
+function Cost({ margin, failed }: { margin: ItemMargin | undefined; failed: boolean }) {
+  if (!margin) return failed ? <span className={quiet}>Not read</span> : null;
+  if (margin.costing === "none" || !margin.cost) return <span className={quiet}>Not costed</span>;
+  if (margin.costing === "part") {
+    // The cost covers fewer units than sold when the dish also sold before it had a recipe.
+    const covers = margin.costed_qty !== margin.qty ? `${margin.costed_qty} of ${margin.qty} costed` : "Part costed";
+    return (
+      <span className="flex flex-col items-end">
+        <Money amount={margin.cost} className="text-fg-2" />
+        <span className={quiet}>{covers}</span>
+      </span>
+    );
+  }
+  return <Money amount={margin.cost} className="text-fg-2" />;
+}
+
+/** What was left: the amount and its share of net sales, in green above zero and brick below, with the sign as well. */
+function Margin({ margin }: { margin: ItemMargin | undefined }) {
+  if (!margin?.margin) return null;
+  const ink = margin.margin.minor < 0 ? "text-danger" : "text-success";
+  return (
+    <span className="flex flex-col items-end">
+      <Money amount={margin.margin} className={cx("font-bold", ink)} />
+      {margin.margin_bp !== undefined && <span className={cx("font-mono text-sm tabular-nums", ink)}>{marginText(margin.margin_bp)}</span>}
+    </span>
   );
 }
 

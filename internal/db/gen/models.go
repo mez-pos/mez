@@ -375,6 +375,15 @@ type StationTicket struct {
 	ReadyAt   sql.NullTime
 }
 
+type StockDishSale struct {
+	ID         int64
+	VenueID    int64
+	OrderID    int64
+	MenuItemID int64
+	Qty        int64
+	CreatedAt  time.Time
+}
+
 type StockItem struct {
 	ID           int64
 	VenueID      int64

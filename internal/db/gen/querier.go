@@ -155,6 +155,13 @@ type Querier interface {
 	// and who was. A guest session is not a device, and a row with no pairing is
 	// not one either.
 	DevicesForVenue(ctx context.Context, venueID int64) ([]DevicesForVenueRow, error)
+	//
+	// The dish units accounted for between two instants, oldest first.
+	DishUnitsBetween(ctx context.Context, arg DishUnitsBetweenParams) ([]DishUnitsBetweenRow, error)
+	// Dish units (rebuild Task 16d3, ADR-189).
+	//
+	// How many of each dish an order's closes have accounted for so far.
+	DishUnitsForOrder(ctx context.Context, arg DishUnitsForOrderParams) ([]DishUnitsForOrderRow, error)
 	DrawerCountsForShift(ctx context.Context, shiftID int64) ([]DrawerCountsForShiftRow, error)
 	// The next job for each printer, if it is due: the oldest job not yet done
 	// or dead. A printer's jobs print one at a time and in order, because a job
@@ -190,6 +197,7 @@ type Querier interface {
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
+	InsertDishSale(ctx context.Context, arg InsertDishSaleParams) error
 	//
 	// unit_cost is the item's cost as it stands, read here so no caller can
 	// forget it and none can pass another (ADR-124).

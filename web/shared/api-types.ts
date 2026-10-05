@@ -1859,6 +1859,7 @@ export interface ItemMargin {
   net: Money;
   costing: Costing;
   cost?: Money;
+  costed_qty: number;
   margin?: Money;
   margin_bp?: number;
 }

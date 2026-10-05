@@ -1,12 +1,26 @@
 import { describe, expect, it } from "vitest";
-import type { Group, StockItem, WasteItem, WasteReasonTotal } from "../../../shared/api-types";
-import { entriesText, itemRows, itemsText, namesText, reasonName, stockHealth, wasteBars, wasteLeftOut, wastePath, worstReason } from "./items-logic";
+import type { Group, ItemMargin, StockItem, WasteItem, WasteReasonTotal } from "../../../shared/api-types";
+import {
+  entriesText,
+  itemRows,
+  itemsText,
+  namesText,
+  reasonName,
+  stockHealth,
+  wasteBars,
+  wasteLeftOut,
+  wastePath,
+  worstReason,
+  costingNote,
+  itemsPath,
+  marginText,
+} from "./items-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
-function group(key: string, name: string, qty: number, total: number): Group {
+function group(key: string, name: string, qty: number, net: number): Group {
   const z = inr(0);
-  return { key, name, qty, gross: z, discounts: z, net: z, tax: z, total: inr(total) };
+  return { key, name, qty, gross: inr(net), discounts: z, net: inr(net), tax: z, total: inr(net) };
 }
 
 describe("itemRows", () => {
@@ -16,24 +30,57 @@ describe("itemRows", () => {
     { id: 2, diet: "non_veg" as const },
   ];
 
-  it("orders by what they took and gives each its mark from the menu", () => {
-    expect(itemRows(items, null, menu, 8).map((r) => [r.name, r.diet])).toEqual([
-      ["Butter chicken", "non_veg"],
-      ["Chai", "veg"],
-      ["Naan", ""],
+  it("orders by net sales and gives each its mark from the menu", () => {
+    expect(itemRows(items, null, menu, null, 8).map((r) => [r.name, r.diet, r.net.minor])).toEqual([
+      ["Butter chicken", "non_veg", 210_000],
+      ["Chai", "veg", 60_000],
+      ["Naan", "", 50_000],
     ]);
   });
   it("sets how many sold beside the days before", () => {
     const before = [group("1", "Chai", 10, 30_000), group("2", "Butter chicken", 10, 420_000)];
-    const rows = itemRows(items, before, menu, 8);
+    const rows = itemRows(items, before, menu, null, 8);
     expect(rows.map((r) => r.trend)).toEqual([{ direction: "down", percent: 50 }, { direction: "up", percent: 100 }, null]);
   });
   it("has no trend while the days before are not read", () => {
-    expect(itemRows(items, null, menu, 8).every((r) => r.trend === undefined)).toBe(true);
+    expect(itemRows(items, null, menu, null, 8).every((r) => r.trend === undefined)).toBe(true);
+  });
+  it("gives each item the cost and margin the server worked out", () => {
+    const margins: ItemMargin[] = [
+      { key: "2", name: "Butter chicken", qty: 5, net: inr(210_000), costing: "full", cost: inr(90_000), costed_qty: 5, margin: inr(120_000), margin_bp: 5714 },
+      { key: "3", name: "Naan", qty: 10, net: inr(50_000), costing: "none", costed_qty: 0 },
+    ];
+    const rows = itemRows(items, null, menu, margins, 8);
+    expect(rows.map((r) => r.margin?.costing)).toEqual(["full", undefined, "none"]);
+    expect(rows[0]?.margin?.margin).toEqual(inr(120_000));
   });
   it("keeps to its limit and leaves the server's rows alone", () => {
-    expect(itemRows(items, null, menu, 2)).toHaveLength(2);
+    expect(itemRows(items, null, menu, null, 2)).toHaveLength(2);
     expect(items[0]?.name).toBe("Chai");
+  });
+});
+
+describe("cost and margin in words", () => {
+  const tests: [number, string][] = [
+    [8433, "84.3%"],
+    [10000, "100.0%"],
+    [0, "0.0%"],
+    [5, "0.1%"],
+    [4, "0.0%"],
+    [-2500, "−25.0%"],
+    [-4, "0.0%"],
+    [9999, "100.0%"],
+  ];
+  for (const [bp, want] of tests) {
+    it(`${bp} is ${want}`, () => expect(marginText(bp)).toBe(want));
+  }
+  it("says how far the costs can be trusted", () => {
+    expect(costingNote({ kept_from: "2026-10-05", short: false })).toBe("");
+    expect(costingNote({ short: false })).toMatch(/^No dish has a cost yet\./);
+    expect(costingNote({ kept_from: "2026-10-05", short: true })).toMatch(/^Costs by dish are kept from 5 Oct\. .* margins are not shown\.$/);
+  });
+  it("builds the path for a range", () => {
+    expect(itemsPath({ from: "2026-10-01", to: "2026-10-05" })).toBe("/api/v1/reports/items?from=2026-10-01&to=2026-10-05");
   });
 });
 

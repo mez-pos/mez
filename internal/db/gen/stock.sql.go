@@ -235,6 +235,94 @@ func (q *Queries) CreateStockItem(ctx context.Context, arg CreateStockItemParams
 	return id, err
 }
 
+const dishUnitsBetween = `-- name: DishUnitsBetween :many
+SELECT menu_item_id, qty, created_at
+FROM stock_dish_sales
+WHERE venue_id = ?1
+  AND created_at >= ?2 AND created_at < ?3
+ORDER BY created_at, id
+`
+
+type DishUnitsBetweenParams struct {
+	VenueID int64
+	FromAt  time.Time
+	ToAt    time.Time
+}
+
+type DishUnitsBetweenRow struct {
+	MenuItemID int64
+	Qty        int64
+	CreatedAt  time.Time
+}
+
+// The dish units accounted for between two instants, oldest first.
+func (q *Queries) DishUnitsBetween(ctx context.Context, arg DishUnitsBetweenParams) ([]DishUnitsBetweenRow, error) {
+	rows, err := q.db.QueryContext(ctx, dishUnitsBetween, arg.VenueID, arg.FromAt, arg.ToAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DishUnitsBetweenRow{}
+	for rows.Next() {
+		var i DishUnitsBetweenRow
+		if err := rows.Scan(&i.MenuItemID, &i.Qty, &i.CreatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const dishUnitsForOrder = `-- name: DishUnitsForOrder :many
+
+SELECT menu_item_id, CAST(SUM(qty) AS INTEGER) AS units
+FROM stock_dish_sales
+WHERE venue_id = ? AND order_id = ?
+GROUP BY menu_item_id
+`
+
+type DishUnitsForOrderParams struct {
+	VenueID int64
+	OrderID int64
+}
+
+type DishUnitsForOrderRow struct {
+	MenuItemID int64
+	Units      int64
+}
+
+// Dish units (rebuild Task 16d3, ADR-189).
+//
+// How many of each dish an order's closes have accounted for so far.
+func (q *Queries) DishUnitsForOrder(ctx context.Context, arg DishUnitsForOrderParams) ([]DishUnitsForOrderRow, error) {
+	rows, err := q.db.QueryContext(ctx, dishUnitsForOrder, arg.VenueID, arg.OrderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DishUnitsForOrderRow{}
+	for rows.Next() {
+		var i DishUnitsForOrderRow
+		if err := rows.Scan(&i.MenuItemID, &i.Units); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const firstSoldByDish = `-- name: FirstSoldByDish :many
 SELECT created_at
 FROM stock_movements
@@ -266,6 +354,30 @@ func (q *Queries) FirstSoldByDish(ctx context.Context, venueID int64) ([]time.Ti
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertDishSale = `-- name: InsertDishSale :exec
+INSERT INTO stock_dish_sales (venue_id, order_id, menu_item_id, qty, created_at)
+VALUES (?, ?, ?, ?, ?)
+`
+
+type InsertDishSaleParams struct {
+	VenueID    int64
+	OrderID    int64
+	MenuItemID int64
+	Qty        int64
+	CreatedAt  time.Time
+}
+
+func (q *Queries) InsertDishSale(ctx context.Context, arg InsertDishSaleParams) error {
+	_, err := q.db.ExecContext(ctx, insertDishSale,
+		arg.VenueID,
+		arg.OrderID,
+		arg.MenuItemID,
+		arg.Qty,
+		arg.CreatedAt,
+	)
+	return err
 }
 
 const insertStockMovement = `-- name: InsertStockMovement :one

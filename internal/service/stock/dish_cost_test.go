@@ -118,13 +118,13 @@ func TestWhatEachDishCostToMake(t *testing.T) {
 	}
 	// Three lattes: 3 x 28.20 = 84.60, in two movements a stock item an order.
 	l := got.Dishes[k.latte]
-	if l.Cost != inr(8460) || l.Uncosted != 0 || l.Movements != 4 {
-		t.Errorf("latte = %+v; want 84.60 over 4 movements, all costed", l)
+	if l.Cost != inr(8460) || l.Uncosted != 0 || l.Movements != 4 || l.Units != 3 || l.PutBack != 0 {
+		t.Errorf("latte = %+v; want 84.60 for 3 over 4 movements, all costed", l)
 	}
 	// One vanilla latte: 16.20 of beans, and the syrup has no cost.
 	v := got.Dishes[k.vanillaLatte]
-	if v.Cost != inr(1620) || v.Uncosted != 1 || v.Movements != 2 {
-		t.Errorf("vanilla latte = %+v; want 16.20 over 2 movements, 1 not costed", v)
+	if v.Cost != inr(1620) || v.Uncosted != 1 || v.Movements != 2 || v.Units != 1 {
+		t.Errorf("vanilla latte = %+v; want 16.20 for 1 over 2 movements, 1 not costed", v)
 	}
 	if len(got.Dishes) != 2 {
 		t.Errorf("dishes %+v, want two", got.Dishes)
@@ -139,8 +139,8 @@ func TestStockPutBackComesOffTheDishsCost(t *testing.T) {
 	k.sell(t, 1, "2026-09-29T08:00:00Z", stock.SoldLine{ItemID: k.latte, Qty: 1})
 
 	l := k.costs(t, "2026-09-29", "2026-09-29").Dishes[k.latte]
-	if l.Cost != inr(2820) || l.Movements != 4 {
-		t.Errorf("latte = %+v; want 28.20 after one of two went back, over 4 movements", l)
+	if l.Cost != inr(2820) || l.Movements != 4 || l.Units != 1 || l.PutBack != 2 {
+		t.Errorf("latte = %+v; want 28.20 for 1 after one of two went back, over 4 movements, 2 of them put back", l)
 	}
 }
 
@@ -187,5 +187,31 @@ func TestADishIsCostedOnTheTradingDayItSold(t *testing.T) {
 	}
 	if got := k.costs(t, "2026-09-30", "2026-09-30"); len(got.Dishes) != 0 {
 		t.Errorf("30 Sept: %+v, want nothing", got.Dishes)
+	}
+}
+
+// A dish sold before it had a recipe took no stock: the ledger costed none of
+// it. Sold again once it has one, the cost covers that unit alone, and Units
+// says so, so nobody sets one unit's cost against two units' sales.
+func TestUnitsAreOnlyThoseTheLedgerCosted(t *testing.T) {
+	k := newKitchen(t)
+	ctx := context.Background()
+	if err := k.s.SetItemRecipe(ctx, 1, k.latte, nil); err != nil {
+		t.Fatal(err)
+	}
+	k.sell(t, 1, "2026-09-29T06:00:00Z", stock.SoldLine{ItemID: k.latte, Qty: 1})
+	if err := k.s.SetItemRecipe(ctx, 1, k.latte, []RecipePart{{StockItemID: k.beans, Qty: 18000}, {StockItemID: k.milk, Qty: 200000}}); err != nil {
+		t.Fatal(err)
+	}
+	k.sell(t, 2, "2026-09-29T07:00:00Z", stock.SoldLine{ItemID: k.latte, Qty: 1})
+
+	l := k.costs(t, "2026-09-29", "2026-09-29").Dishes[k.latte]
+	if l.Units != 1 || l.Cost != inr(2820) {
+		t.Errorf("latte = %+v; want 28.20 covering 1 unit of the 2 sold", l)
+	}
+	// Closing the second order again records nothing more.
+	k.sell(t, 2, "2026-09-29T09:00:00Z", stock.SoldLine{ItemID: k.latte, Qty: 1})
+	if again := k.costs(t, "2026-09-29", "2026-09-29").Dishes[k.latte]; again.Units != 1 || again.Movements != l.Movements {
+		t.Errorf("after closing again: %+v, want no change from %+v", again, l)
 	}
 }

@@ -141,3 +141,49 @@ func TestRecipeProblem(t *testing.T) {
 		})
 	}
 }
+
+func TestDishUnits(t *testing.T) {
+	tests := []struct {
+		name  string
+		lines []SoldLine
+		want  map[int64]int64
+	}{
+		{"a dish with a recipe counts its units", []SoldLine{{ItemID: 10, Qty: 2}}, map[int64]int64{10: 2}},
+		{"lines of one dish add up", []SoldLine{{ItemID: 10, Qty: 2}, {ItemID: 10, ModifierIDs: []int64{100}, Qty: 1}}, map[int64]int64{10: 3}},
+		{"a dish with no recipe is not counted: nothing costed it", []SoldLine{{ItemID: 11, Qty: 5}, {ItemID: 10, Qty: 1}}, map[int64]int64{10: 1}},
+		{"a dish with no recipe of its own, whose choice uses stock, is counted", []SoldLine{{ItemID: 11, ModifierIDs: []int64{102}, Qty: 2}},
+			map[int64]int64{11: 2}},
+		{"a choice with no recipe does not make a dish counted", []SoldLine{{ItemID: 11, ModifierIDs: []int64{999}, Qty: 2}}, map[int64]int64{}},
+		{"a line of none counts nothing", []SoldLine{{ItemID: 10, Qty: 0}}, map[int64]int64{}},
+		{"no lines", nil, map[int64]int64{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := DishUnits(tt.lines, cafe); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DishUnits = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestUnitDeltas(t *testing.T) {
+	tests := []struct {
+		name          string
+		now, recorded map[int64]int64
+		want          []UnitDelta
+	}{
+		{"the first close records them all, by dish", map[int64]int64{12: 1, 10: 2}, nil, []UnitDelta{{10, 2}, {12, 1}}},
+		{"a second close with the same lines writes nothing", map[int64]int64{10: 2}, map[int64]int64{10: 2}, nil},
+		{"a line added after a reopen records the rest", map[int64]int64{10: 3}, map[int64]int64{10: 2}, []UnitDelta{{10, 1}}},
+		{"a line voided after a reopen takes its units back", map[int64]int64{10: 1}, map[int64]int64{10: 2}, []UnitDelta{{10, -1}}},
+		{"a dish no longer on the order goes back whole", nil, map[int64]int64{10: 2}, []UnitDelta{{10, -2}}},
+		{"nothing sold, nothing recorded", nil, nil, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := UnitDeltas(tt.now, tt.recorded); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("UnitDeltas = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

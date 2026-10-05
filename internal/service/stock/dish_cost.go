@@ -20,6 +20,14 @@ type DishCost struct {
 	// many of them had no cost, and so are not in Cost.
 	Movements int64
 	Uncosted  int64
+	// Units is how many of the dish the ledger accounted for over the range:
+	// what Cost covers. A dish sold before it had a recipe adds none.
+	Units int64
+	// PutBack is how many of the movements put stock back: a line voided, or
+	// a recipe changed, between two closes of an order. Each is valued at the
+	// cost of the day it went back, which need not be the cost it was taken
+	// at, so a dish with any is not taken as wholly costed.
+	PutBack int64
 }
 
 // DishCosts is what the dishes sold over a range cost to make (rebuild Task
@@ -95,6 +103,9 @@ func CostByDish(ctx context.Context, q *gen.Queries, r DishRange) (DishCosts, er
 			d.Cost = money.Amount{Currency: r.Currency}
 		}
 		d.Movements++
+		if row.Delta > 0 {
+			d.PutBack++
+		}
 		if row.UnitCost <= 0 {
 			d.Uncosted++
 		} else {
@@ -106,6 +117,27 @@ func CostByDish(ctx context.Context, q *gen.Queries, r DishRange) (DishCosts, er
 			}
 			d.Cost.Minor += worth
 		}
+		out.Dishes[row.MenuItemID] = d
+	}
+	units, err := q.DishUnitsBetween(ctx, gen.DishUnitsBetweenParams{
+		VenueID: r.VenueID, FromAt: from.AddDate(0, 0, -1).UTC(), ToAt: to.AddDate(0, 0, 2).UTC(),
+	})
+	if err != nil {
+		return DishCosts{}, fmt.Errorf("stock: reading the dish units from %s to %s: %w", r.From, r.To, err)
+	}
+	for _, row := range units {
+		day, err := shift.TradingDay(row.CreatedAt, r.Loc, r.DayStart)
+		if err != nil {
+			return DishCosts{}, fmt.Errorf("stock: placing a dish's units: %w", err)
+		}
+		if day < r.From || day > r.To {
+			continue
+		}
+		d, ok := out.Dishes[row.MenuItemID]
+		if !ok {
+			d.Cost = money.Amount{Currency: r.Currency}
+		}
+		d.Units += row.Qty
 		out.Dishes[row.MenuItemID] = d
 	}
 	return out, nil

@@ -13,8 +13,10 @@ type Costing string
 const (
 	// CostFull: every movement its sales made had a cost. Its margin is given.
 	CostFull Costing = "full"
-	// CostPart: some of it is known. A stock item it uses has no cost, or
-	// the range reaches back before the ledger kept dishes.
+	// CostPart: some of it is known. A stock item it uses has no cost, the
+	// ledger costed other than the units it sold (it sold some before it had
+	// a recipe), stock was put back for it after a reopen, or the range
+	// reaches back before the ledger kept dishes.
 	CostPart Costing = "part"
 	// CostNone: its sales took no stock under its name: it has no recipe,
 	// or it sold only before the ledger kept dishes.
@@ -31,6 +33,10 @@ type DishCost struct {
 	Movements int64
 	// Uncosted is how many of the movements had no cost and are not in Cost.
 	Uncosted int64
+	// Units is how many of the dish the ledger accounted for: what Cost covers.
+	Units int64
+	// PutBack is how many of the movements put stock back.
+	PutBack int64
 }
 
 // ItemMargin is one menu item over a range: what it sold, what it cost to
@@ -44,8 +50,10 @@ type ItemMargin struct {
 	Net     money.Amount `json:"net"`
 	Costing Costing      `json:"costing"`
 	// Cost is what the ledger knows of its cost; absent when it knows none.
-	// With CostPart it is short of the whole.
-	Cost *money.Amount `json:"cost,omitempty"`
+	// With CostPart it is short of the whole. CostedQty is how many units it
+	// covers: fewer than Qty when the dish also sold before it had a recipe.
+	Cost      *money.Amount `json:"cost,omitempty"`
+	CostedQty int64         `json:"costed_qty"`
 	// Margin is Net less Cost, and MarginBP that as hundredths of a percent
 	// of Net. Both only with CostFull; MarginBP only when Net is above zero.
 	Margin   *money.Amount `json:"margin,omitempty"`
@@ -67,7 +75,12 @@ func Margins(items []zreport.Group, costs map[string]DishCost, short bool) []Ite
 		}
 		cost := c.Cost
 		m.Cost = &cost
-		if short || c.Uncosted > 0 {
+		m.CostedQty = c.Units
+		// A cost that covers other than the units sold is not this row's cost:
+		// the dish sold some before it had a recipe, or closed on another day.
+		// Nor is one with stock put back: that is valued at the cost of the day
+		// it went back, which need not be the cost it was taken at.
+		if short || c.Uncosted > 0 || c.Units != g.Qty || c.PutBack > 0 {
 			m.Costing = CostPart
 			out = append(out, m)
 			continue

@@ -152,6 +152,9 @@ func DeductSale(ctx context.Context, q *gen.Queries, sale Sale) error {
 	for _, r := range rows {
 		taken[stock.Use{StockItemID: r.StockItemID, ItemID: r.MenuItemID}] = stock.Qty(r.Taken)
 	}
+	if err := recordDishUnits(ctx, q, sale, recipes); err != nil {
+		return err
+	}
 	deltas := stock.SaleDeltas(stock.Usage(sale.Lines, recipes), taken)
 	if len(deltas) == 0 {
 		return nil
@@ -166,6 +169,28 @@ func DeductSale(ctx context.Context, q *gen.Queries, sale Sale) error {
 			StaffID: sale.StaffID, ShiftID: shiftID, OrderID: sale.OrderID, CreatedAt: sale.At.UTC(), MenuItemID: d.ItemID,
 		}); err != nil {
 			return fmt.Errorf("stock: recording what order %d used of %d: %w", sale.OrderID, d.StockItemID, err)
+		}
+	}
+	return nil
+}
+
+// recordDishUnits writes how many of each dish this close accounts for,
+// less what the order's earlier closes recorded (ADR-189): the units a
+// dish's cost in the ledger covers.
+func recordDishUnits(ctx context.Context, q *gen.Queries, sale Sale, recipes stock.Recipes) error {
+	rows, err := q.DishUnitsForOrder(ctx, gen.DishUnitsForOrderParams{VenueID: sale.VenueID, OrderID: sale.OrderID})
+	if err != nil {
+		return fmt.Errorf("stock: reading the dish units of order %d: %w", sale.OrderID, err)
+	}
+	recorded := make(map[int64]int64, len(rows))
+	for _, r := range rows {
+		recorded[r.MenuItemID] = r.Units
+	}
+	for _, d := range stock.UnitDeltas(stock.DishUnits(sale.Lines, recipes), recorded) {
+		if err := q.InsertDishSale(ctx, gen.InsertDishSaleParams{
+			VenueID: sale.VenueID, OrderID: sale.OrderID, MenuItemID: d.ItemID, Qty: d.Delta, CreatedAt: sale.At.UTC(),
+		}); err != nil {
+			return fmt.Errorf("stock: recording %d of dish %d for order %d: %w", d.Delta, d.ItemID, sale.OrderID, err)
 		}
 	}
 	return nil

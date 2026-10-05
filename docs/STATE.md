@@ -14,7 +14,17 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16e: Staff reports** (ADR-188). `/backoffice/sales/staff` is D17's staff
+**Rebuild, Task 16d3: an item's cost and margin** (ADR-189). Task 16d is done. The owner
+chose the ledger over today's recipe. A sold stock movement keeps its dish (migration
+00035) and the ledger keeps how many of a dish it costed (`stock_dish_sales`, 00036);
+`GET /api/v1/reports/items` gives each item's net sales, cost and margin, and a margin
+only when the ledger costed every unit sold. Item performance has Net sales, Cost and
+Margin (`sales/ItemsScreen.tsx`). Seen in a browser as Priya at 1920x1080: a dish fully
+costed with its margin, one part costed, several not costed, and a trend arrow. Go
+tests in the domain, both services and over HTTP; vitest for the rows and words. `make
+check` and `make build-web` pass.
+
+Before it, **Rebuild, Task 16e: Staff reports** (ADR-188). `/backoffice/sales/staff` is D17's staff
 half (`sales/StaffScreen.tsx`, `staff-logic.ts`), the third report tab: staff
 performance (role, orders, sales, average, tips), Removed in error, the tips total, and
 "Who sold it" in full, moved from Sales reports. The report carries `tips_by`, tips by
@@ -208,8 +218,7 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 ## Next task
 
 **Rebuild, Task 16f: Menu** (D18, `mez Desktop Management.dc.html` line 286). The
-reports (16c to 16e) are done but for 16d3, an item's cost and margin, which waits on
-the owner: today's recipe at today's cost, or what the ledger moved for the orders.
+reports (16c to 16e) are done.
 Read `docs/design/tokens.md` and that one screen. The screens inside the new frame are
 still the old layouts until their own tasks (16c to 16j). The owner has not yet looked
 at the kitchen's screens, the frame or the dashboard. Phase 11 waits for this phase.
@@ -226,12 +235,18 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- An item's cost and margin (ADR-189): sales from before migration 00035 are never
+  costed by dish; a dish with no recipe reads "Not costed". No CSV has cost. The dev
+  venue now has recipes for Espresso, Cappuccino, Americano and Lemon tart and two
+  orders rung up through the API on 2026-10-05; its Espresso and Cappuccino read "0
+  of 2 costed" because one sale fell between the two migrations. Not seen by eye: a
+  margin below zero, a range reaching before costs were kept (the note), a dish whose
+  line was voided after a reopen, a failed read.
 - Staff reports (ADR-188): no ratings, no customers. Tips are those taken, not the
   pool's shares. A tipped payment from before the days, voided in them, shows as a
   row below zero (it keeps the rows equal to the total). Not seen by eye: a guest's row, someone who only took payments, someone no longer
   on record, a range with nobody, a failed read, a width under 1920.
-- Items and inventory (ADR-187): no Cost or Margin (16d3), no purchase orders, no
-  CSV for wastage. The dev venue now has four stock items and four write-offs keyed
+- Items and inventory (ADR-187): no purchase orders, no CSV for wastage. The dev venue now has four stock items and four write-offs keyed
   on 2026-10-05 to show the cards. Not seen by eye: a trend arrow (every item was new
   in its days), more than five write-offs, a day with none, the screen without
   `stock.manage` (no stock health card), a failed read, a width under 1920.

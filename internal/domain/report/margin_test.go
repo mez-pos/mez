@@ -24,8 +24,8 @@ func TestMargins(t *testing.T) {
 	}{
 		{
 			name: "a dish fully costed has its margin", item: item("10", "Latte", 3, 54000),
-			cost: &DishCost{Cost: inr(8460), Movements: 4},
-			want: ItemMargin{Key: "10", Name: "Latte", Qty: 3, Net: inr(54000), Costing: CostFull, Cost: amount(8460), Margin: amount(45540), MarginBP: bp(8433)},
+			cost: &DishCost{Cost: inr(8460), Movements: 4, Units: 3},
+			want: ItemMargin{Key: "10", Name: "Latte", Qty: 3, Net: inr(54000), Costing: CostFull, Cost: amount(8460), CostedQty: 3, Margin: amount(45540), MarginBP: bp(8433)},
 		},
 		{
 			name: "a dish with no recipe has no cost", item: item("11", "Water", 5, 10000),
@@ -33,28 +33,45 @@ func TestMargins(t *testing.T) {
 		},
 		{
 			name: "an ingredient with no cost leaves the cost short and the margin unsaid", item: item("12", "Vanilla latte", 1, 20000),
-			cost: &DishCost{Cost: inr(1620), Movements: 2, Uncosted: 1},
-			want: ItemMargin{Key: "12", Name: "Vanilla latte", Qty: 1, Net: inr(20000), Costing: CostPart, Cost: amount(1620)},
+			cost: &DishCost{Cost: inr(1620), Movements: 2, Uncosted: 1, Units: 1},
+			want: ItemMargin{Key: "12", Name: "Vanilla latte", Qty: 1, Net: inr(20000), Costing: CostPart, Cost: amount(1620), CostedQty: 1},
 		},
 		{
 			name: "a range reaching before dishes were kept trusts no cost", item: item("10", "Latte", 3, 54000),
-			cost: &DishCost{Cost: inr(2820), Movements: 2}, short: true,
-			want: ItemMargin{Key: "10", Name: "Latte", Qty: 3, Net: inr(54000), Costing: CostPart, Cost: amount(2820)},
+			cost: &DishCost{Cost: inr(2820), Movements: 2, Units: 3}, short: true,
+			want: ItemMargin{Key: "10", Name: "Latte", Qty: 3, Net: inr(54000), Costing: CostPart, Cost: amount(2820), CostedQty: 3},
+		},
+		{
+			name: "a dish costed for fewer than it sold has no margin: one unit's cost is not two units'", item: item("16", "Cappuccino", 2, 38000),
+			cost: &DishCost{Cost: inr(2520), Movements: 2, Units: 1},
+			want: ItemMargin{Key: "16", Name: "Cappuccino", Qty: 2, Net: inr(38000), Costing: CostPart, Cost: amount(2520), CostedQty: 1},
+		},
+		{
+			name: "nor one costed for more than it sold in these days", item: item("17", "Mocha", 1, 20000),
+			cost: &DishCost{Cost: inr(6000), Movements: 4, Units: 2},
+			want: ItemMargin{Key: "17", Name: "Mocha", Qty: 1, Net: inr(20000), Costing: CostPart, Cost: amount(6000), CostedQty: 2},
+		},
+		{
+			// Stock put back is valued at the cost of the day it went back, which
+			// need not be the cost it was taken at: the sum is not to be trusted.
+			name: "a dish with stock put back has no margin", item: item("18", "Latte", 1, 18000),
+			cost: &DishCost{Cost: inr(2820), Movements: 4, Units: 1, PutBack: 2},
+			want: ItemMargin{Key: "18", Name: "Latte", Qty: 1, Net: inr(18000), Costing: CostPart, Cost: amount(2820), CostedQty: 1},
 		},
 		{
 			name: "a dish that cost more than it took has a margin below zero", item: item("13", "Offer thali", 1, 10000),
-			cost: &DishCost{Cost: inr(12500), Movements: 3},
-			want: ItemMargin{Key: "13", Name: "Offer thali", Qty: 1, Net: inr(10000), Costing: CostFull, Cost: amount(12500), Margin: amount(-2500), MarginBP: bp(-2500)},
+			cost: &DishCost{Cost: inr(12500), Movements: 3, Units: 1},
+			want: ItemMargin{Key: "13", Name: "Offer thali", Qty: 1, Net: inr(10000), Costing: CostFull, Cost: amount(12500), CostedQty: 1, Margin: amount(-2500), MarginBP: bp(-2500)},
 		},
 		{
 			name: "a dish given away has a margin and no percentage", item: item("14", "Comped chai", 2, 0),
-			cost: &DishCost{Cost: inr(900), Movements: 2},
-			want: ItemMargin{Key: "14", Name: "Comped chai", Qty: 2, Net: inr(0), Costing: CostFull, Cost: amount(900), Margin: amount(-900)},
+			cost: &DishCost{Cost: inr(900), Movements: 2, Units: 2},
+			want: ItemMargin{Key: "14", Name: "Comped chai", Qty: 2, Net: inr(0), Costing: CostFull, Cost: amount(900), CostedQty: 2, Margin: amount(-900)},
 		},
 		{
 			name: "stock all put back is a cost of nothing, fully known", item: item("15", "Toast", 1, 5000),
-			cost: &DishCost{Cost: inr(0), Movements: 2},
-			want: ItemMargin{Key: "15", Name: "Toast", Qty: 1, Net: inr(5000), Costing: CostFull, Cost: amount(0), Margin: amount(5000), MarginBP: bp(10000)},
+			cost: &DishCost{Cost: inr(0), Movements: 2, Units: 1},
+			want: ItemMargin{Key: "15", Name: "Toast", Qty: 1, Net: inr(5000), Costing: CostFull, Cost: amount(0), CostedQty: 1, Margin: amount(5000), MarginBP: bp(10000)},
 		},
 	}
 	for _, tt := range tests {
@@ -70,7 +87,7 @@ func TestMargins(t *testing.T) {
 			g, w := got[0], tt.want
 			same := func(a, b *money.Amount) bool { return (a == nil) == (b == nil) && (a == nil || *a == *b) }
 			sameBP := (g.MarginBP == nil) == (w.MarginBP == nil) && (g.MarginBP == nil || *g.MarginBP == *w.MarginBP)
-			if g.Key != w.Key || g.Name != w.Name || g.Qty != w.Qty || g.Net != w.Net || g.Costing != w.Costing ||
+			if g.Key != w.Key || g.Name != w.Name || g.Qty != w.Qty || g.Net != w.Net || g.Costing != w.Costing || g.CostedQty != w.CostedQty ||
 				!same(g.Cost, w.Cost) || !same(g.Margin, w.Margin) || !sameBP {
 				t.Errorf("got  %s\nwant %s", show(g), show(w))
 			}

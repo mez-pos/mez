@@ -5458,3 +5458,44 @@ Cost: tips taken is not tips paid: a pooled shift shares its tips out by the ven
 rule, and that is on the shift's Z-report. A waiter whose tables the cashier opened
 shows less than they served (ADR-173's cost, unchanged).
 ---
+
+## ADR-189 - A dish's cost is what the ledger moved for it; a margin only when that is whole
+2026-10 · Status: accepted. Rebuild Task 16d3 (D16, Cost and Margin); over ADR-112,
+ADR-124 and ADR-187. The owner chose this over "today's recipe at today's cost".
+Context: D16 draws what each item cost and its margin. A sold movement carried its
+order and the cost of the stock then, and not the dish: a sale added the whole order's
+usage up by stock item before it wrote anything.
+Decision:
+  - **A sold movement keeps its dish** (`stock_movements.menu_item_id`, migration
+    00035). `stock.Usage` and `stock.SaleDeltas` are by stock item and dish; a
+    modifier's stock goes to its line's dish. 0 is "no dish": every movement that is
+    not a sale, and every sale from before.
+  - **The ledger also keeps how many of a dish it costed** (`stock_dish_sales`,
+    migration 00036, append-only): a row a close, the units of each dish that used
+    stock, less what the order's earlier closes recorded. A dish with no recipe adds
+    none.
+  - **Cost** is the dish's sold movements over the range, each at the cost it carried
+    (ADR-124), stock put back taken off. Never today's recipe, never today's cost.
+  - **`GET /api/v1/reports/items`** (`reports.view`) sets each item's net sales beside
+    its cost and says how far the cost goes: `full`, `part` or `none`.
+  - **A margin is given only for `full`:** every movement had a cost, the range has no
+    sales from before dishes were kept, no stock was put back for the dish (a put-back
+    is valued at the cost of the day it went back, not the day it was taken), and the
+    units the ledger costed are the units sold. Anything else shows what cost is known and no margin: a dish that sold once
+    before it had a recipe and once after would otherwise set one unit's cost against
+    two units' sales. A walk through the dev venue showed exactly that, at 93%.
+  - **Margin is net sales less cost,** net being after discounts and before tax, and a
+    percentage of net in hundredths of a percent, worked out on the server in whole
+    numbers. The screen's Revenue column became Net sales so the three agree.
+  - An order closed before 00035 and closed again after has its stock put back under
+    no dish and taken under its dishes: the stock on hand does not move.
+Because: the closing stock and the wastage are valued at the cost of their day; a
+margin that moved when someone edited a recipe would be the one figure here that could
+not be trusted for the decision it is for.
+Cost: nothing from before the migration is ever costed by dish, and the screen says
+from which day costs are kept. A movement is placed on the day its order closed and a
+sale on the day it was invoiced; where those differ at a day's edge the units do not
+match and the row reads `part`, which is the safe side. So does a dish whose line was
+voided after a reopen, even when its cost had not changed. Migration 00037 indexes the
+ledger by kind and time for these reads. No CSV carries cost yet.
+---
