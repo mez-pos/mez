@@ -7,6 +7,7 @@ import type { LiveTableResponse, OrderResponse } from "../../../shared/api-types
 import { clockText } from "../../../shared/venue-text";
 import { readyLines } from "../register/send-logic";
 import { elapsed } from "../register/ticket-time";
+import { route } from "../shell/routes";
 
 /**
  * The order the table's screen shows: the one order of a table with guests.
@@ -79,4 +80,23 @@ export function timeText(at: string, timezone: string | null): string {
 export function startedText(since: string | undefined, now: number, timezone: string | null): string | null {
   if (!since) return null;
   return `Started ${timeText(since, timezone)} · ${elapsed(since, now, 0).text}`;
+}
+
+/**
+ * What a tap on a table's card does on the waiter's home (ADR-171): a table with
+ * one order opens its own screen, a free one is seated and one to clear is
+ * cleared right there, and anything else (several orders at one table) is the
+ * floor's, whose panel asks which.
+ */
+export type CardOpens = "detail" | "seat" | "clear" | "floor";
+
+export function cardOpens(t: LiveTableResponse): CardOpens {
+  if (t.status === "free") return "seat";
+  if (t.status === "dirty") return "clear";
+  return detailOrder(t) ? "detail" : "floor";
+}
+
+/** Where the order screen's back arrow leads a waiter: the order's table, or the tables. */
+export function backFromOrder(where: { readonly table_id?: number }): { readonly href: string; readonly label: string } {
+  return where.table_id ? { href: route.waiterTable(where.table_id), label: "Back to the table" } : { href: route.waiter, label: "Back to the tables" };
 }

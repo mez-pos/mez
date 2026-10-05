@@ -5000,3 +5000,16 @@ Left out, and why (rule 3): "Guest QR sessions follow the table" (phase 11) and
 order, so it follows untold).
 Cost: two ways to move a party, one per screen.
 ---
+
+## ADR-171 - A waiter seats and clears from their own home, and Back returns to the table
+2026-10 · Status: accepted. After rebuild Task 13; changes ADR-163, ADR-165 and ADR-169.
+Decision:
+  - **A free table's card opens "Seat Table N":** the guests, "Seat and order" in green
+    (it goes on to the menu with the table's order in front) and "Seat N guests". The
+    floor's panel has the same two; a waiter's usual one leads here.
+  - **A card to clear asks "Clear Table N?"** and clears it.
+  - **A table with several orders is still the floor's,** whose panel asks which.
+  - **The order screen's back arrow returns to the order's table** (its own screen),
+    and to the tables for an order with none.
+Cost: seating is in two places, the waiter's home and the floor's panel.
+---

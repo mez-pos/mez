@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LineResponse, LiveTableResponse, OrderResponse, TicketResponse } from "../../../shared/api-types";
-import { detailOrder, orderProgress, startedText } from "./table-logic";
+import { backFromOrder, cardOpens, detailOrder, orderProgress, startedText } from "./table-logic";
 
 const table = (extra: Partial<LiveTableResponse> = {}): LiveTableResponse => ({
   id: 1,
@@ -92,5 +92,29 @@ describe("startedText", () => {
   });
   it("says nothing for a table with no time", () => {
     expect(startedText(undefined, now, "Asia/Kolkata")).toBeNull();
+  });
+});
+
+describe("cardOpens", () => {
+  it("opens the table's own screen for a table with one order", () => {
+    expect(cardOpens(table())).toBe("detail");
+    expect(cardOpens(table({ status: "seated" }))).toBe("detail");
+  });
+  it("seats a free table and clears one to clear, where the waiter stands", () => {
+    expect(cardOpens(table({ status: "free", orders: [] }))).toBe("seat");
+    expect(cardOpens(table({ status: "dirty", orders: [] }))).toBe("clear");
+  });
+  it("leaves a table with several orders, or none where one should be, to the floor", () => {
+    expect(cardOpens(table({ orders: ["ord_A", "ord_B"] }))).toBe("floor");
+    expect(cardOpens(table({ orders: [] }))).toBe("floor");
+  });
+});
+
+describe("backFromOrder", () => {
+  it("goes back to the table's own screen for an order at a table", () => {
+    expect(backFromOrder({ table_id: 4 })).toEqual({ href: "/waiter/table/4", label: "Back to the table" });
+  });
+  it("goes back to the tables for an order with no table", () => {
+    expect(backFromOrder({})).toEqual({ href: "/waiter", label: "Back to the tables" });
   });
 });

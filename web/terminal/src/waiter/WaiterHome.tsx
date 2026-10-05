@@ -1,8 +1,8 @@
 // The waiter's home (T01): a greeting, the tables as cards under a row of
 // pills that sort them by what they want, and a bar along the bottom with the
 // orders still open and New Order. A card with guests at it leads to the table's
-// own screen (T03); a free table, or one to clear, leads to the floor, where its
-// panel seats and clears.
+// own screen (T03); a free table is seated and one to clear is cleared right
+// here (ADR-171); a table with several orders is the floor's.
 //
 // Left out, as nothing rings them before the guest channel (phase 11): the bell,
 // Table Requests and QR Orders. Reserved is not a state a table has (D06 is out
@@ -12,17 +12,19 @@ import { LayoutGridIcon, LeafIcon, PlusIcon, TimerIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "../../../shared/auth/use-auth";
-import { Button, EmptyState, InboxIcon, SearchField } from "../../../shared/ui";
+import type { LiveTableResponse } from "../../../shared/api-types";
+import { Button, Confirm, EmptyState, InboxIcon, SearchField, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { useVenue } from "../../../shared/use-venue";
 import { partyTable } from "../floor/floor-logic";
 import { toneClasses } from "../floor/tones";
-import { failureOf } from "../register/order-messages";
+import { failureOf, wordsOf } from "../register/order-messages";
 import { route } from "../shell/routes";
 import { useTerminal } from "../shell/terminal-context";
+import { SeatTable } from "./SeatTable";
 import { TableCard } from "./TableCard";
-import { detailOrder } from "./table-logic";
+import { cardOpens } from "./table-logic";
 import { filterCounts, firstName, greeting, groupOrder, hourIn, tableGroups, tablesShown, type TableFilter } from "./waiter-logic";
 
 export function WaiterHome() {
@@ -32,6 +34,8 @@ export function WaiterHome() {
   const [, navigate] = useLocation();
   const [filter, setFilter] = useState<TableFilter>("all");
   const [query, setQuery] = useState("");
+  const [asking, setAsking] = useState<{ kind: "seat" | "clear"; table: LiveTableResponse } | null>(null);
+  const toast = useToast();
   const now = useClock(60_000);
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
 
@@ -58,7 +62,10 @@ export function WaiterHome() {
               onOpen={(table) => {
                 // A table joined to a party stands for the party's own table.
                 const party = partyTable(table, tables);
-                navigate(detailOrder(party) ? route.waiterTable(party.id) : route.table(table.id));
+                const opens = cardOpens(party);
+                if (opens === "detail") navigate(route.waiterTable(party.id));
+                else if (opens === "floor") navigate(route.table(table.id));
+                else setAsking({ kind: opens, table: party });
               }}
             />
           </li>
@@ -120,6 +127,36 @@ export function WaiterHome() {
 
         <div className="relative mt-5">{body()}</div>
       </div>
+
+      {asking?.kind === "seat" && (
+        <SeatTable
+          key={asking.table.id}
+          table={asking.table}
+          onClose={() => setAsking(null)}
+          onSeat={async (covers, thenOrder) => {
+            // Seating puts the party's order in front, as on the floor (ADR-158).
+            await ticket.seat({ channel: "counter", table_id: asking.table.id, covers });
+            if (thenOrder) navigate(route.order);
+            else {
+              await floor.refresh();
+              setAsking(null);
+            }
+          }}
+        />
+      )}
+      <Confirm
+        open={asking?.kind === "clear"}
+        onClose={() => setAsking(null)}
+        onConfirm={() => {
+          const table = asking?.table;
+          setAsking(null);
+          if (table) floor.clear(table.id).catch((err: unknown) => toast(`Couldn't clear ${table.name}: ${wordsOf(err)}`, { tone: "warning" }));
+        }}
+        title={`Clear Table ${asking?.table.name ?? ""}?`}
+        confirmLabel="Clear table"
+      >
+        The guests have paid and gone. Clear it once it is laid again, and it is free.
+      </Confirm>
 
       <footer className="flex h-24 shrink-0 items-center gap-3.5 border-t border-line bg-chrome px-7">
         <Link

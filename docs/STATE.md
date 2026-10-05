@@ -91,10 +91,10 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   turn; if one is refused the ones before it stand. No note about QR sessions, no
   "Notify the kitchen". Not seen by eye: a refusal, several tables joined at once, join
   and let go in one go, a floor of more than sixteen other tables (the tiles scroll).
-- The table's screen (ADR-169): a free table, one to clear and one with several orders
-  are the floor's, so seating a party is still done there. Notes carry no time or name (a note keeps neither). Every course wears the same
+- The table's screen (ADR-169): a table with several orders is the floor's; a free
+  one is seated and one to clear is cleared from the waiter's home (ADR-171). Notes carry no time or name (a note keeps neither). Every course wears the same
   icon. Bill and pay opens the desktop payment screen until T05 (Task 14). The order
-  screen's back arrow returns to the tables, not to this screen. Not seen by eye: a
+  screen's back arrow returns here for an order at a table (ADR-171). Not seen by eye: a
   joined table ("Merged"), a saved order, a held course's Fire, a Ready item, a refusal,
   a table gone from the floor, and an order paid from here.
 - Course View (ADR-167): the design draws the tab's name and nothing under it, so its
