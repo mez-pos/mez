@@ -232,7 +232,17 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 10c. (ADR-162) The refund as D09's modal (selected items or the whole bill,
     the reason, the manager's PIN), and the print queue under Orders.
 - [x] **Task 11 - Waiter home.** (ADR-163) T01.
-- [ ] **Task 12 - Waiter order taking.** T02, T04 (KOT preview).
+- [ ] **Task 12 - Waiter order taking.** T02, T04 (KOT preview). Split on
+  2026-10-05: T02 is the order screen (D03) rearranged, and the preview and the
+  course view are each a piece of their own.
+  - [ ] 12a. The waiter's order screen (T02): the top bar carries the way back, the
+    table, the guests and how it is served; the search sits over the categories;
+    the rail has the table with its chips, each line's course, Clear, the totals,
+    Save and Send to Kitchen. Pay moves under the rail's "...".
+  - [ ] 12b. Confirm and send (T04): what will go to the kitchen and what has gone
+    already, the ticket as the kitchen will read it, Back and "Send N items".
+  - [ ] 12c. Course View: the rail's second tab, the order by course, with what has
+    gone, what is held, and firing the next one.
 - [ ] **Task 13 - Waiter table detail, transfer and merge.** T03, T06.
 - [ ] **Task 14 - Waiter bill and shift summary.** T05, T08.
 - [ ] **Task 15 - Kitchen display.** D10 and D11.
