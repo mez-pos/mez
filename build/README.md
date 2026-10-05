@@ -7,6 +7,7 @@ Packaging and distribution inputs. Nothing here is imported by the Go module.
 |---|---|---|
 | `Dockerfile` | Here | Builds mez from source with the apps embedded, onto a distroless image (about 30 MB) running as a non-root user, data in `/data` |
 | `docker-compose.yml` | Here | The image with a named volume, a restart policy and the timezone |
+| `relay.Dockerfile` | Here | The optional relay alone: one static binary with no frontends and no database, configured by `RELAY_*` variables (`relay help` lists them) |
 | Inno Setup script | Phase 12, Task 2 | The Windows installer |
 | systemd unit | Phase 12, Task 5 | Shipped with releases; [`docs/deploy.md`](../docs/deploy.md#linux) has one to copy today |
 | goreleaser config | Phase 12, Task 6 | Tagged releases with checksums |

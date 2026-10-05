@@ -8,7 +8,15 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Rebuild, Task 17h2: the walk** (ADR-199). On a fresh demo venue run from the current
+**Rebuild, Task 17h3: STATE.md after the walk** (ADR-200). Task 17 is done: 28 screen
+specs written from the code (`docs/design/screens/README.md`), the old words off the
+screens, one door for closing the day, and a walk as each role (ADR-196 to ADR-199).
+`STATE.md` is short again: each task's history moved here and the known-broken list to
+`docs/KNOWN.md`, whole. There, "not seen by eye" lost only what the walk saw, in
+fifteen places, and three statements no longer true. The owner started phase 11
+before the walk; the rebuild and phases 09 and 10 still owe their human checks.
+
+Before it, **Rebuild, Task 17h2: the walk** (ADR-199). On a fresh demo venue run from the current
 build (the embedded bundles), at 1920x1080 and for the waiter 1366x1024: Meera opened
 the shift and took a counter order through cash, a tip and its invoice; the wall
 display started and readied its tickets; Kabir seated T3, ordered over two courses,

@@ -79,7 +79,7 @@ else
 	@go test ./...
 endif
 
-## build: compile the server to bin/
+## build: compile the server, and the optional relay, to bin/
 build:
 ifeq ($(strip $(PKGS)),)
 	@echo "  build skipped (no packages yet)"
@@ -87,7 +87,9 @@ else
 	@if [ -d "$(CMD)" ]; then \
 		mkdir -p bin && \
 		go build -trimpath -tags "$(TAGS)" -ldflags "$(LDFLAGS)" -o bin/$(BIN) $(CMD) && \
-		echo "  build bin/$(BIN) ($(if $(TAGS),real,placeholder) frontends)"; \
+		echo "  build bin/$(BIN) ($(if $(TAGS),real,placeholder) frontends)" && \
+		go build -trimpath -ldflags "$(LDFLAGS)" -o bin/relay ./cmd/relay && \
+		echo "  build bin/relay"; \
 	else \
 		go build ./... && \
 		echo "  build ok (no $(CMD) yet)"; \

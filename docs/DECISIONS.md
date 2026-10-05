@@ -5832,3 +5832,66 @@ them.
 Cost: two more files to keep. `CLAUDE.md`'s table of what to read does not name them
 yet; `STATE.md`'s own header does. The owner may want a row for each there.
 ---
+
+## ADR-201 - The relay: frames on one socket, signed venue keys, a path per venue
+2026-10 · Status: accepted. Phase 11, Task 1.
+Context: ADR-008 settled that a venue dials out to a stateless relay and guests reach
+it there. It left open what is spoken on the socket, how a relay that stores nothing
+knows a venue, and how a guest's URL names one.
+Decision:
+  - **Where it lives.** `internal/relay` is the server, `internal/relay/wire` the
+    framing, `cmd/relay` the binary. `wire` is its own package so the tunnel client
+    (Task 2) imports the protocol and not the server. Neither imports `internal/db` or
+    `internal/api`: the binary is 6.7 MB with no SQLite in it. No new dependency.
+  - **Frames.** One WebSocket binary message is one frame: a type byte, an 8-byte
+    stream id, a payload. A stream is one HTTP exchange. The relay sends `Request`
+    (JSON head), `Body` pieces and `End`; the venue answers `Response` (JSON head),
+    `Body` and `End`; either side abandons a stream with `Reset`. Bodies are raw bytes,
+    32 KB a frame at most, so nothing is inflated on the way to a phone. The type
+    numbers are a contract with installed venues: add, never renumber.
+  - **A venue key is signed, not stored.** `mzr_<venue>.<key id>.<mac>`, the mac an
+    HMAC-SHA256 over the other two under `RELAY_SECRET`. `relay issue-key VENUE_ID`
+    prints one. `RELAY_REVOKED` lists venue ids and key ids to refuse, which is the one
+    way to turn a key off, and takes a restart. Every refusal is the same 401.
+  - **A guest's URL is `/v/<venue>/...`.** The relay strips the prefix and forwards the
+    rest byte for byte, with `X-Forwarded-Prefix: /v/<venue>`, `X-Forwarded-For`,
+    `-Host`, `-Proto` and `X-Request-Id` set by the relay and a guest's own copies of
+    them dropped. So a table's QR code says `order.<domain>/v/<venue>/t/<code>`, not
+    ADR-008's `/t/<table>`: with no table of venues, the venue has to be in the URL. A
+    venue id is 1 to 63 of `a-z`, `0-9` and `-`.
+  - **Every venue shares one origin, so the relay keeps each to its prefix.** A cookie
+    is rewritten to `Path=/v/<venue><its path>` and loses any `Domain`; a redirect to
+    `/x` becomes `/v/<venue>/x`; `Service-Worker-Allowed` and `Clear-Site-Data` are
+    refused. The venue's headers are made canonical before any of this, since they
+    arrive as JSON spelled as the venue likes. A venue writes paths as if at the root,
+    and its pages use relative URLs.
+  - **The rate limit is per venue**, a token bucket held on the venue's socket: 1200 a
+    minute, 300 at once, by `RELAY_VENUE_RPM` and `RELAY_VENUE_BURST`. It protects the
+    venue's machine, which is also the counter. The per-table limit is the venue's
+    (Task 6), where a table is a known thing.
+  - **Limits that keep one guest from hurting the rest.** 256 streams a venue, a 1 MiB
+    request body, 30 s for the venue to start answering (504), and a 32-frame queue per
+    guest: one who falls further behind loses the request, so the socket is never left
+    unread. A response cut after its head ends the connection (`http.ErrAbortHandler`)
+    so a broken download cannot read as a whole one.
+  - **The newest connection for a venue wins**, and the old one is closed with 4001
+    (`wire.CloseReplaced`) so a client can tell and not fight for the socket. The
+    relay pings every 20 s to find a line that dropped without a close.
+  - **Configured by the environment, serving plain HTTP.** TLS is the proxy's in front,
+    and `RELAY_TRUST_PROXY=true` says there is one, which is the only time
+    `X-Forwarded-For` is believed, and then only its last entry.
+  - **A guest the relay cannot serve gets a page staff can explain** ("Ordering is
+    offline ... order at the counter") when it asks for HTML, and the API's error
+    envelope otherwise, with codes of the relay's own (`venue_offline`,
+    `relay_rate_limited`). A venue that is not connected and one that does not exist
+    get the same 503.
+Because: the relay is the one part of this that strangers reach and that serves many
+venues at once, so each choice is the one that needs nothing kept and lets one party
+hurt only itself.
+Cost: local storage is still shared between venues on one relay, since it is per
+origin and no header changes that; a subdomain per venue would end it and needs a
+wildcard certificate (open question in `STATE.md`). Revoking a key takes a restart.
+The request body is sent before the response is read, so there is no full-duplex
+streaming, and a guest cannot open a WebSocket through the relay: order tracking
+(Task 5) is server-sent events or polling. `go test -race` could not be run here (no
+cgo), so the concurrency was checked by reading and by repeating the tests.

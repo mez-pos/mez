@@ -9,7 +9,7 @@ Phase 10.
 
 ## Tasks
 
-- [ ] **Task 1 — The relay service.**
+- [x] **Task 1 — The relay service.**
   `cmd/relay`. Stateless. Venue agents connect outbound over WSS with a venue
   key; the relay maps `venue_id → socket`. Guest HTTP requests are framed and
   forwarded down the socket, responses streamed back. Auth, per-venue rate

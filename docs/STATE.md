@@ -7,34 +7,33 @@
 
 ## Current phase
 
-**Rebuild - the screens follow the mez design** (ADR-143), `docs/phases/rebuild.md`.
-Every task is done. What is left is its done-when, which is the owner's walk.
-Phases 09 and 10 still owe their human done-when checks too.
+**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Task 1 of 6 done.
+Started before the owner's walk: the rebuild, 09 and 10 still owe their human checks.
 
 ## Last completed task
 
-**Rebuild, Task 17h3: this file after the walk.** Task 17 is done: 28 screen specs
-written from the code (`docs/design/screens/README.md`), the old words off the
-screens, one door for closing the day, and a walk as each role (ADR-196 to ADR-199).
-This file is short again: each task's history is in `docs/HISTORY.md` and the
-known-broken list in `docs/KNOWN.md`, moved whole. There, "not seen by eye" lost
-only what the walk saw, in fifteen places, and three statements no longer true.
+**Phase 11, Task 1: the relay service** (ADR-201). `cmd/relay` over `internal/relay`:
+a venue dials `GET /agent` with a signed key, guests reach it at `/v/<venue>/...`, and
+requests ride one socket as frames (`internal/relay/wire`). It stores nothing. `make
+build` makes `bin/relay` too. Tested over real sockets; nothing in mez talks to it yet.
 
 ## Next task
 
-**The owner's walk, then phase 11.** `make dev`, sign in as Meera (3333), Kabir
-(5555), Ravi (4444) and Arjun (2222), take an order from each side through to a
-paid bill and a Z-report, and say whether each screen matches its design
-(`rebuild.md`, "Done when"). The questions below come first: the first two change
-what that walk sees. On a yes, tick the phase and start `phase-11.md`, Task 1.
+**Phase 11, Task 2: the tunnel client**, `internal/tunnel`. What Task 1 leaves it:
+- Speak `internal/relay/wire`: dial `/agent` with `Authorization: Bearer <key>`, read
+  limit `wire.MaxFrame`, body pieces of `wire.MaxChunk` or less. A 401 is a wrong key
+  and 4001 another machine with the same one: back off for long on both.
+- Config has `relay_url` and no key yet: add one (a secret, env or file, never logged)
+  and hold `venue_id` to `relay.ValidVenueID` when a relay is set.
+- **The client chooses what a guest may reach.** Forward guest routes only, never the
+  staff API under `/api/v1`. Paths arrive without the `/v/<venue>` prefix; it is in
+  `X-Forwarded-Prefix`. Guest pages must use relative URLs.
 
 ## Known broken / in progress
 
 - A dev server may be running from an old binary: a Go change needs `make dev` run
   again, and `make check` cannot rebuild `bin/mez` while one runs from it.
-- The walk saw each role's spine once, at 1920x1080 and 1366x1024. Not walked: card
-  payment on the desktop, split by item, voids, comps, discounts, transfer and
-  merge, delivery, reprints, tips, and Menu, Inventory, Staff and Settings.
+- The relay has had no load test and no run behind a real TLS proxy.
 
 ## Open questions for the human
 
@@ -46,6 +45,7 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 4. Tax-inclusive totals read as if the rows add up. Say "incl." on the tax rows?
 5. The desktop's cash quick amounts never offer ₹500. Show it?
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
+7. Relay (ADR-201): venues share one origin. A subdomain each on the hosted relay?
 
 ---
 
@@ -55,5 +55,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Task 1 of 6 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs
