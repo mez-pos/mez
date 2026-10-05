@@ -72,7 +72,8 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 | `order.tables_joined` | tables[]: one party spread over more tables, still one order and one bill |
 | `order.tables_parted` | tables[]: joined tables let go again |
 | `ticket.bumped` | ticket_seq, station: on the pass, ready; allowed after a close and on hold |
-| `ticket.recalled` | ticket_seq, station: a bump undone, back in the kitchen |
+| `ticket.recalled` | ticket_seq, station: a bump undone, back in the kitchen as new |
+| `ticket.started` | ticket_seq, station: a cook has picked it up, in progress; allowed after a close and on hold |
 
 Two consequences worth naming: the **order timeline** screen in the design is
 just this list rendered, and **voids are visible forever**, which is exactly what

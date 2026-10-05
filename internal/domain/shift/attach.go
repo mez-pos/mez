@@ -17,6 +17,7 @@ var ErrNoOpenShift = errors.New("no shift is open")
 var outsideShift = map[order.Type]bool{
 	order.TypeTicketBumped:     true,
 	order.TypeTicketRecalled:   true,
+	order.TypeTicketStarted:    true,
 	order.TypeInvoiceReprinted: true,
 }
 

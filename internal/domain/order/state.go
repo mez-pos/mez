@@ -162,10 +162,13 @@ type Ticket struct {
 	Station string
 	LineIDs []int64
 	At      time.Time
-	// Status is where it is at the station: fired when sent, ready once
-	// bumped (ADR-090). ReadyAt is when it was bumped, zero otherwise.
-	Status  kitchen.TicketStatus
-	ReadyAt time.Time
+	// Status is where it is at the station: fired when sent, in progress
+	// once a cook starts it (ADR-175), ready once bumped (ADR-090). StartedAt
+	// and ReadyAt are when, zero otherwise; a ticket bumped without being
+	// started has no StartedAt.
+	Status    kitchen.TicketStatus
+	StartedAt time.Time
+	ReadyAt   time.Time
 }
 
 // Tender is one payment.tendered and what has happened to it since.

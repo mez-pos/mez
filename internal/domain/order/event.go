@@ -42,6 +42,8 @@ const (
 	// A ticket at its station (ADR-090).
 	TypeTicketBumped   Type = "ticket.bumped"
 	TypeTicketRecalled Type = "ticket.recalled"
+	// A cook has picked the ticket up (ADR-175).
+	TypeTicketStarted Type = "ticket.started"
 )
 
 // Payload is the type-specific body of an event. Each payload type knows its
@@ -81,6 +83,7 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 
 	TypeTicketBumped:   decodeAs[TicketBumped],
 	TypeTicketRecalled: decodeAs[TicketRecalled],
+	TypeTicketStarted:  decodeAs[TicketStarted],
 }
 
 // Types lists every event type this build knows, sorted, for tests and for

@@ -14,7 +14,15 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 14c: the shift summary** (ADR-174). Task 14 is done. `/waiter/shift`
+**Rebuild, Task 15a: "Start preparing", from the server** (ADR-175). Task 15 is
+split in five. A ticket a cook has picked up is in progress: `ticket.started`, `POST
+/api/v1/kitchen/orders/{id}/tickets/{seq}/start`, and the board's tickets carry
+`started_at`. A bump still works from fired; a recall puts a ticket back as new.
+`ProjectionVersion` is 8. No migration. Server only: the display has no Start button
+yet, and keeps showing a started ticket as one to make. Go tests in the domain, the
+service, the hub and over HTTP. `make check` passes.
+
+Before it, **Rebuild, Task 14c: the shift summary** (ADR-174). Task 14 is done. `/waiter/shift`
 is T08 (`waiter/ShiftSummary.tsx`, `shift-summary-logic.ts`), under More, "Your shift":
 who is signed in and how long they have been on, tables served, orders taken, sales
 handled, tips collected, tips by table as bars, and End shift, which signs them out.
@@ -96,11 +104,14 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 15** (kitchen display): D10 (line 36) and D11 (line 158) of `mez
-Desktop KDS and Dashboard.dc.html`. Two screens: see whether one layout serves both
-surfaces before splitting. `/kitchen` is another app of the bundle with its own
-pairing (`shell/pages.tsx`, `LeaveForKitchen`). Read `docs/design/tokens.md` and those
-two only. Phase 11
+**Rebuild, Task 15b** (the kitchen board as drawn): D10 (line 36 of `mez Desktop
+KDS and Dashboard.dc.html`), on paper. The header; three columns, New Orders (fired,
+"Start preparing"), Preparing (in progress, "Mark ready") and Ready for pickup (bumped,
+within the recall window); each card with where it goes, when it was placed, how long
+it has waited and its lines. Keep Recall and Change station (rule 4), the timer tones
+and the 26px lines (ADR-091). `kitchen/KitchenBoard.tsx`, `kitchen-logic.ts`,
+`use-kitchen-board.ts` (add `start`). The stats column is 15d and night 15c: leave
+room, draw neither. Read `docs/design/tokens.md` and that screen only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -114,6 +125,9 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Start preparing (ADR-175): no button yet (15b). The ticket index cannot say what
+  is in progress without the orders. Nobody is named as the one who started a ticket.
+  Not tried against the dev server, only in Go tests.
 - The shift summary (ADR-174): no ratings, no Print summary, no area. Not seen by
   eye: several tables' bars, "No table", a table gone from the floor, a failed read,
   someone who has done nothing, and End shift carried through.

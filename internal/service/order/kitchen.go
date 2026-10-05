@@ -38,6 +38,17 @@ func (s *Service) Bump(ctx context.Context, meta Meta, orderID int64, cmd BumpTi
 	})
 }
 
+// Start marks a ticket as picked up by a cook: in progress (ADR-175).
+func (s *Service) Start(ctx context.Context, meta Meta, orderID int64, cmd BumpTicket) (Result, error) {
+	return s.run(ctx, meta, orderID, "start", cmd, func(_ context.Context, tx *db.OrderTx, _ venue, _ time.Time) ([]order.Payload, error) {
+		station, err := stationOfTicket(tx.State, cmd.TicketSeq)
+		if err != nil {
+			return nil, err
+		}
+		return []order.Payload{order.TicketStarted{TicketSeq: cmd.TicketSeq, Station: station}}, nil
+	})
+}
+
 // Recall puts a bumped ticket back in the kitchen.
 func (s *Service) Recall(ctx context.Context, meta Meta, orderID int64, cmd BumpTicket) (Result, error) {
 	return s.run(ctx, meta, orderID, "recall", cmd, func(_ context.Context, tx *db.OrderTx, _ venue, _ time.Time) ([]order.Payload, error) {

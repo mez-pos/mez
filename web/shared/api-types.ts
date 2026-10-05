@@ -358,7 +358,8 @@ export type OrderEventType =
   | 'order.tables_joined'
   | 'order.tables_parted'
   | 'ticket.bumped'
-  | 'ticket.recalled';
+  | 'ticket.recalled'
+  | 'ticket.started';
 
 export type StreamMessageType =
   | 'hello'
@@ -628,6 +629,11 @@ export interface TicketRecalled {
   station: string;
 }
 
+export interface TicketStarted {
+  ticket_seq: number;
+  station: string;
+}
+
 export interface OrderEventOf<T extends OrderEventType, P> {
   seq: number;
   type: T;
@@ -663,7 +669,8 @@ export type OrderEvent =
   | OrderEventOf<'order.tables_joined', TablesJoined>
   | OrderEventOf<'order.tables_parted', TablesParted>
   | OrderEventOf<'ticket.bumped', TicketBumped>
-  | OrderEventOf<'ticket.recalled', TicketRecalled>;
+  | OrderEventOf<'ticket.recalled', TicketRecalled>
+  | OrderEventOf<'ticket.started', TicketStarted>;
 
 export interface ApiError {
   code: ErrorCode;
@@ -2102,6 +2109,7 @@ export interface KitchenTicketResponse {
   station: string;
   status: TicketStatus;
   sent_at: string;
+  started_at?: string;
   ready_at?: string;
   channel: OrderChannel;
   service: ServiceType;

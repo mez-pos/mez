@@ -16,6 +16,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/db/gen"
 	"github.com/byjoellobo/mez/internal/domain/invoice"
+	"github.com/byjoellobo/mez/internal/domain/kitchen"
 	"github.com/byjoellobo/mez/internal/domain/order"
 	"github.com/byjoellobo/mez/internal/domain/shift"
 )
@@ -542,21 +543,34 @@ func syncTables(ctx context.Context, q *gen.Queries, orderID int64, prev, next o
 	return nil
 }
 
+// indexed is a ticket's status as station_tickets keeps it.
+func indexed(s kitchen.TicketStatus) kitchen.TicketStatus {
+	if s == kitchen.TicketInProgress {
+		return kitchen.TicketFired
+	}
+	return s
+}
+
 // syncTickets brings station_tickets up to the projection: a row for every
 // ticket sent, with where it is at its station (ADR-090). Only tickets that
 // are new or moved are written.
+//
+// The index knows two states, in the kitchen ("fired") and on the pass
+// ("ready"): a ticket a cook has started is still in the kitchen (ADR-175).
+// Which of the two it is, the board reads from the order.
 func syncTickets(ctx context.Context, q *gen.Queries, orderID, venueID int64, prev, next order.State) error {
 	before := make(map[int64]order.Ticket, len(prev.Tickets))
 	for _, t := range prev.Tickets {
 		before[t.Seq] = t
 	}
 	for _, t := range next.Tickets {
-		if b, ok := before[t.Seq]; ok && b.Status == t.Status && b.ReadyAt.Equal(t.ReadyAt) {
+		status := indexed(t.Status)
+		if b, ok := before[t.Seq]; ok && indexed(b.Status) == status && b.ReadyAt.Equal(t.ReadyAt) {
 			continue
 		}
 		err := q.UpsertStationTicket(ctx, gen.UpsertStationTicketParams{
 			OrderID: orderID, TicketSeq: t.Seq, VenueID: venueID, Station: t.Station,
-			Status: string(t.Status), SentAt: t.At, ReadyAt: nullTime(t.ReadyAt),
+			Status: string(status), SentAt: t.At, ReadyAt: nullTime(t.ReadyAt),
 		})
 		if err != nil {
 			return fmt.Errorf("order %d: writing ticket %d: %w", orderID, t.Seq, err)

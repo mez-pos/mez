@@ -35,6 +35,7 @@ func TestWhichEventsNeedAShift(t *testing.T) {
 		order.TypeInvoiceReprinted:  false,
 		order.TypeTicketBumped:      false,
 		order.TypeTicketRecalled:    false,
+		order.TypeTicketStarted:     false,
 	}
 	for _, typ := range order.Types() {
 		expected, ok := want[typ]

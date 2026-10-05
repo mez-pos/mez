@@ -5088,3 +5088,28 @@ Left out, and why (rule 3): guest ratings (phase 11), the area beside the role (
 is assigned an area), Print summary (nothing prints one).
 Cost: "End shift" does less than its name on the desktop, where the shift is closed.
 ---
+
+## ADR-175 - A cook starts a ticket: `ticket.started`, and the board has three states
+2026-10 · Status: accepted. Rebuild Task 15a, for D10 and D11; extends ADR-090.
+Context: the design's kitchen board has three columns, New Orders, Preparing and
+Ready for pickup, with "Start preparing" and "Mark ready". The server knew a ticket
+as fired or ready. `internal/domain/kitchen` already had `in_progress` between them.
+Decision:
+  - **`ticket.started` `{ticket_seq, station}`** moves a ticket from fired to in
+    progress, and records when. `POST /api/v1/kitchen/orders/{id}/tickets/{seq}/start`,
+    for a kitchen display only, answers with the board, as bump and recall do.
+  - **Starting is optional.** A bump still takes a ticket straight from fired to
+    ready (ADR-090): a venue that never taps Start loses nothing.
+  - **A recall puts a ticket back as new** (fired), not in progress, and forgets
+    when it was started: whoever takes it up again starts it again.
+  - **It needs no open shift and is taken by a closed or held order,** as a bump is:
+    the kitchen works after the bill.
+  - **No migration.** `station_tickets` keeps two states, in the kitchen and on the
+    pass; a started ticket is written there as `fired`. The board reads which it is
+    from the order, as it reads the lines. Its CHECK stays as it was.
+  - **`ProjectionVersion` is 8:** a ticket carries `StartedAt`.
+  - The board's tickets carry `started_at`.
+Left for 15d: who started it (the display has no one signed in) and the day's
+figures, which the times now allow (sent to started, started to ready).
+Cost: the index cannot be asked "what is in progress" without the orders.
+---

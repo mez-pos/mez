@@ -368,12 +368,13 @@ var scenarios = []struct {
 			closed,
 			TicketBumped{TicketSeq: 3, Station: "bar"},
 			TicketRecalled{TicketSeq: 3, Station: "bar"},
+			TicketStarted{TicketSeq: 3, Station: "bar"},
 			TicketBumped{TicketSeq: 3, Station: "bar"},
 		},
 		want:   figures{gross: 22000, total: 22000, paid: 22000},
 		status: StatusClosed,
 		check: func(t *testing.T, s State) {
-			if tk := s.Tickets[0]; tk.Status != kitchen.TicketReady || tk.ReadyAt.IsZero() {
+			if tk := s.Tickets[0]; tk.Status != kitchen.TicketReady || tk.ReadyAt.IsZero() || tk.StartedAt.IsZero() {
 				t.Errorf("ticket = %+v", tk)
 			}
 		},

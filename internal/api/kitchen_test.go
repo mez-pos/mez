@@ -70,6 +70,23 @@ func TestKitchenOverHTTP(t *testing.T) {
 	if _, out, _ = board(http.MethodPost, recall); out.Tickets[0].Status != kitchen.TicketFired || out.Tickets[0].ReadyAt != nil {
 		t.Errorf("after the recall: %+v", out.Tickets[0])
 	}
+	// Start preparing: in progress, with when; then ready from there.
+	start := fmt.Sprintf("/api/v1/kitchen/orders/%s/tickets/%d/start", id, tk.TicketSeq)
+	if _, out, _ = board(http.MethodPost, start); out.Tickets[0].Status != kitchen.TicketInProgress || out.Tickets[0].StartedAt == nil {
+		t.Errorf("after the start: %+v", out.Tickets[0])
+	}
+	if status, _, apiErr := board(http.MethodPost, start); status != http.StatusConflict || apiErr.Code != CodeInvalidTransition {
+		t.Errorf("started twice: %d %s", status, apiErr.Code)
+	}
+	if _, out, _ = board(http.MethodPost, bump); out.Tickets[0].Status != kitchen.TicketReady || out.Tickets[0].StartedAt == nil {
+		t.Errorf("ready from in progress: %+v", out.Tickets[0])
+	}
+	if _, out, _ = board(http.MethodPost, recall); out.Tickets[0].Status != kitchen.TicketFired || out.Tickets[0].StartedAt != nil {
+		t.Errorf("recalled, new again: %+v", out.Tickets[0])
+	}
+	if rec := send(r.handler, http.MethodPost, start, "", r.asStaff(r.staffToken)); rec.Code != http.StatusForbidden {
+		t.Errorf("a terminal started a ticket: %d", rec.Code)
+	}
 	if status, _, apiErr := board(http.MethodPost, fmt.Sprintf("/api/v1/kitchen/orders/%s/tickets/99/bump", id)); status != http.StatusNotFound || apiErr.Code != CodeTicketNotFound {
 		t.Errorf("no such ticket: %d %s", status, apiErr.Code)
 	}

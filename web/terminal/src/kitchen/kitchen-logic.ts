@@ -27,11 +27,14 @@ export function timerText(elapsedMs: number): string {
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
 }
 
+/** In the kitchen: new on the board, or picked up by a cook (ADR-175). Not yet on the pass. */
+export function inKitchen(t: KitchenTicketResponse): boolean {
+  return t.status === "fired" || t.status === "in_progress";
+}
+
 /** The tickets still to make, oldest first. */
 export function toMake(board: KitchenBoardResponse | undefined): KitchenTicketResponse[] {
-  return (board?.tickets ?? [])
-    .filter((t) => t.status === "fired")
-    .sort((a, b) => Date.parse(a.sent_at) - Date.parse(b.sent_at) || a.ticket_seq - b.ticket_seq);
+  return (board?.tickets ?? []).filter(inKitchen).sort((a, b) => Date.parse(a.sent_at) - Date.parse(b.sent_at) || a.ticket_seq - b.ticket_seq);
 }
 
 /** Where a ticket goes: "T4", "T4 + T7", or "Counter · NMRN" for a counter order. */
@@ -51,7 +54,7 @@ export interface AllDay {
 export function allDay(tickets: readonly KitchenTicketResponse[]): AllDay[] {
   const counts = new Map<string, number>();
   for (const t of tickets) {
-    if (t.status !== "fired") continue;
+    if (!inKitchen(t)) continue;
     for (const l of t.lines) {
       if (l.status === "voided") continue;
       counts.set(l.name, (counts.get(l.name) ?? 0) + l.qty);

@@ -103,6 +103,7 @@ var eventTypes = []struct {
 	{order.TypeTablesParted, order.TablesParted{}, "TablesParted"},
 	{order.TypeTicketBumped, order.TicketBumped{}, "TicketBumped"},
 	{order.TypeTicketRecalled, order.TicketRecalled{}, "TicketRecalled"},
+	{order.TypeTicketStarted, order.TicketStarted{}, "TicketStarted"},
 }
 
 // errorCodes is every code the API answers with. A client switches on

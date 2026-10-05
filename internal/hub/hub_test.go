@@ -421,7 +421,14 @@ func TestTopicsDecideWhatIsSent(t *testing.T) {
 	if got := c.eventIDs(); len(got) != 1 || got[0] != wanted {
 		t.Fatalf("station topic gave %v, want only %d", got, wanted)
 	}
-	// A bump and a recall at the bar are the bar's too (ADR-090).
+	// A start at the bar is the bar's too (ADR-175).
+	started := w.src.append("ord_AAAA1111", 4, order.TicketStarted{TicketSeq: 3, Station: "bar"})
+	w.src.append("ord_AAAA1111", 4, order.TicketStarted{TicketSeq: 5, Station: "kitchen"})
+	w.hub.Notify(1)
+	if got := c.eventIDs(); len(got) != 1 || got[0] != started {
+		t.Fatalf("the bar's start gave %v, want only %d", got, started)
+	}
+	// And so are a bump and a recall there (ADR-090).
 	bumped := w.src.append("ord_AAAA1111", 4, order.TicketBumped{TicketSeq: 3, Station: "bar"})
 	w.src.append("ord_AAAA1111", 4, order.TicketBumped{TicketSeq: 5, Station: "kitchen"})
 	recalled := w.src.append("ord_AAAA1111", 4, order.TicketRecalled{TicketSeq: 3, Station: "bar"})

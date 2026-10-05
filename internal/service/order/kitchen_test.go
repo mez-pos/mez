@@ -59,6 +59,25 @@ func TestTheKitchenBoard(t *testing.T) {
 	if tk := board("kitchen").Tickets[0].Ticket; tk.Status != kitchen.TicketFired {
 		t.Errorf("after the recall: %s", tk.Status)
 	}
+	// A cook picks it up: in progress, still on the board, and bumped from there.
+	started := must(t)(s.Start(ctx, kds, id, BumpTicket{TicketSeq: seq}))
+	if started.Events[0].Type != order.TypeTicketStarted || started.Events[0].DeviceID != 9 {
+		t.Errorf("start = %+v", started.Events[0])
+	}
+	if b := board("kitchen"); len(b.Tickets) != 1 || b.Tickets[0].Ticket.Status != kitchen.TicketInProgress || b.Tickets[0].Ticket.StartedAt.IsZero() {
+		t.Errorf("after the start: %+v", b.Tickets)
+	}
+	if _, err := s.Start(ctx, kds, id, BumpTicket{TicketSeq: seq}); err == nil {
+		t.Error("started twice")
+	}
+	must(t)(s.Bump(ctx, kds, id, BumpTicket{TicketSeq: seq}))
+	if tk := board("kitchen").Tickets[0].Ticket; tk.Status != kitchen.TicketReady {
+		t.Errorf("bumped from in progress: %s", tk.Status)
+	}
+	must(t)(s.Recall(ctx, kds, id, BumpTicket{TicketSeq: seq}))
+	if _, err := s.Start(ctx, kds, id, BumpTicket{TicketSeq: 99}); !errors.Is(err, order.ErrTicketNotFound) {
+		t.Errorf("starting a ticket that is not there: %v", err)
+	}
 	if _, err := s.Bump(ctx, kds, id, BumpTicket{TicketSeq: 99}); !errors.Is(err, order.ErrTicketNotFound) {
 		t.Errorf("bumped no ticket: %v", err)
 	}

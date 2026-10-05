@@ -268,7 +268,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   design is a board of three columns (New Orders, Preparing, Ready for pickup)
   with the day's figures beside it, and the server knew a ticket only as sent
   or bumped.
-  - [ ] 15a. "Start preparing", from the server: a ticket a cook has picked up
+  - [x] 15a. (ADR-175) "Start preparing", from the server: a ticket a cook has picked up
     is in progress (`ticket.started`), and is marked ready from there. `POST
     .../tickets/{seq}/start`; the board carries it. Go tests.
   - [ ] 15b. The board as drawn (D10), on paper: the header, the three columns,

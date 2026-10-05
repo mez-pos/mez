@@ -46,6 +46,12 @@ describe("the board", () => {
   it("makes the fired tickets, oldest first", () => {
     expect(toMake(board([ticket(), bumped, older])).map((t) => t.ticket_seq)).toEqual([5, 3]);
     expect(toMake(undefined)).toEqual([]);
+    // A ticket a cook has started is still to make: it stays on the board.
+    const started = ticket({ ticket_seq: 8, status: "in_progress", sent_at: "2026-09-28T12:01:00Z", started_at: "2026-09-28T12:03:00Z" });
+    expect(toMake(board([started, bumped])).map((t) => t.ticket_seq)).toEqual([8]);
+    expect(allDay([{ ...started, lines: [{ id: 1, name: "Upma", qty: 2, course: 1, modifiers: [], notes: [], status: "active" }] }])).toEqual([
+      { name: "Upma", qty: 2 },
+    ]);
   });
 
   it("recalls the ticket bumped last", () => {

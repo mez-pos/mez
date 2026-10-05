@@ -143,6 +143,8 @@ func (p *projector) apply(e Event) error {
 		return p.joinTables(pl)
 	case TablesParted:
 		return p.partTables(pl)
+	case TicketStarted:
+		return p.start(e, pl)
 	case TicketBumped:
 		return p.bump(e, pl)
 	case TicketRecalled:

@@ -105,6 +105,8 @@ function describe(event: OrderEvent, ctx: Context): Described {
       return { title: `Joined ${tablesText(event.payload.tables)}` };
     case "order.tables_parted":
       return { title: `Let go ${tablesText(event.payload.tables)}` };
+    case "ticket.started":
+      return { title: `Started at the ${event.payload.station}` };
     case "ticket.bumped":
       return { title: `Ready at the ${event.payload.station}`, tone: "success" };
     case "ticket.recalled":

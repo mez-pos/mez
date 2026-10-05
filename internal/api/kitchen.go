@@ -22,6 +22,7 @@ import (
 type Kitchen interface {
 	Bump(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.BumpTicket) (svcorder.Result, error)
 	Recall(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.BumpTicket) (svcorder.Result, error)
+	Start(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.BumpTicket) (svcorder.Result, error)
 	Board(ctx context.Context, venueID int64, station string) (svcorder.Board, error)
 }
 
@@ -42,6 +43,7 @@ type kitchenTicketResponse struct {
 	Station   string                `json:"station"`
 	Status    kitchen.TicketStatus  `json:"status"`
 	SentAt    time.Time             `json:"sent_at"`
+	StartedAt *time.Time            `json:"started_at,omitempty"` // when a cook picked it up, if one has
 	ReadyAt   *time.Time            `json:"ready_at,omitempty"`
 	Channel   order.Channel         `json:"channel"`
 	Service   order.ServiceType     `json:"service"` // dine_in, takeaway or delivery: what the pass boxes up
@@ -69,8 +71,9 @@ func (s *Server) mountKitchen(mux *http.ServeMux) {
 		mux.Handle(pattern, s.requireDevice(requireKind(s, auth.KindKitchen, h)))
 	}
 	handle("GET /api/v1/kitchen/{station}/tickets", s.kitchenBoard)
-	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/bump", s.kitchenMove(true))
-	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/recall", s.kitchenMove(false))
+	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/start", s.kitchenMove(s.orders.Start))
+	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/bump", s.kitchenMove(s.orders.Bump))
+	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/recall", s.kitchenMove(s.orders.Recall))
 }
 
 // requireKind lets through only a device of the kind named.
@@ -88,9 +91,9 @@ func (s *Server) kitchenBoard(w http.ResponseWriter, r *http.Request) {
 	s.writeBoard(w, r, r.PathValue("station"))
 }
 
-// kitchenMove bumps a ticket, or recalls it, and answers with its
-// station's board as it now stands.
-func (s *Server) kitchenMove(bump bool) http.HandlerFunc {
+// kitchenMove starts a ticket, bumps it or recalls it, and answers with
+// its station's board as it now stands.
+func (s *Server) kitchenMove(move func(context.Context, svcorder.Meta, int64, svcorder.BumpTicket) (svcorder.Result, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		orderID, ok := s.resolveOrder(w, r)
 		if !ok {
@@ -100,14 +103,7 @@ func (s *Server) kitchenMove(bump bool) http.HandlerFunc {
 		if !ok {
 			return
 		}
-		cmd := svcorder.BumpTicket{TicketSeq: seq}
-		var res svcorder.Result
-		var err error
-		if bump {
-			res, err = s.orders.Bump(r.Context(), Meta(r), orderID, cmd)
-		} else {
-			res, err = s.orders.Recall(r.Context(), Meta(r), orderID, cmd)
-		}
+		res, err := move(r.Context(), Meta(r), orderID, svcorder.BumpTicket{TicketSeq: seq})
 		if err != nil {
 			s.writeOrderError(w, r, err)
 			return
@@ -148,6 +144,10 @@ func kitchenTicket(bt svcorder.BoardTicket, tables map[int64]string) kitchenTick
 	out := kitchenTicketResponse{
 		OrderID: bt.PublicID, TicketSeq: t.Seq, Station: t.Station, Status: t.Status, SentAt: t.At.UTC(),
 		Channel: o.Channel, Service: o.Service, TableID: o.TableID, Covers: o.Covers, Notes: []string{}, Lines: []kitchenLineResponse{},
+	}
+	if !t.StartedAt.IsZero() {
+		started := t.StartedAt.UTC()
+		out.StartedAt = &started
 	}
 	if !t.ReadyAt.IsZero() {
 		ready := t.ReadyAt.UTC()
