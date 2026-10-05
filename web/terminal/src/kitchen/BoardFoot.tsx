@@ -8,20 +8,29 @@
 // Mark all complete: no ticket is "complete" on this board (a ready one waits
 // to be collected, ADR-090), and one tap that clears a pass has no undo.
 
-import { Settings2Icon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import { LockIcon, Settings2Icon, Volume2Icon, VolumeXIcon } from "lucide-react";
 import { cx } from "../../../shared/ui/cx";
 import type { BoardPrefs } from "./board-prefs";
+
+/** Who is at the board, on a terminal they signed in on (ADR-179). */
+export interface SignedIn {
+  name: string;
+  /** Signs them out: the terminal goes back to the sign-in screen. */
+  onLock: () => void;
+}
 
 interface BoardFootProps {
   prefs: BoardPrefs;
   onPrefs: (prefs: BoardPrefs) => void;
   onChangeStation: () => void;
+  /** Absent on the wall display, which nobody signs in on. */
+  signedIn?: SignedIn | undefined;
 }
 
 const plain =
   "inline-flex min-h-tap items-center gap-2.5 rounded-pill px-4 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-4";
 
-export function BoardFoot({ prefs, onPrefs, onChangeStation }: BoardFootProps) {
+export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFootProps) {
   const Sound = prefs.sound ? Volume2Icon : VolumeXIcon;
   return (
     <footer className="flex min-h-19 shrink-0 flex-wrap items-center gap-x-5 gap-y-1 border-t border-line bg-chrome px-7 py-2">
@@ -35,9 +44,16 @@ export function BoardFoot({ prefs, onPrefs, onChangeStation }: BoardFootProps) {
       </button>
       <Switch label="Group by table" on={prefs.groupByTable} onChange={(groupByTable) => onPrefs({ ...prefs, groupByTable })} />
       <Switch label="Night mode" on={prefs.night} onChange={(night) => onPrefs({ ...prefs, night })} />
-      <p aria-hidden="true" className="ml-auto hidden font-script text-xl text-fg-2 xl:block">
-        Great Food, Happier People ♡
-      </p>
+      {signedIn ? (
+        <button type="button" onClick={signedIn.onLock} className={cx(plain, "ml-auto border border-line-strong")}>
+          <LockIcon aria-hidden="true" size={19} strokeWidth={1.85} />
+          Lock · {signedIn.name}
+        </button>
+      ) : (
+        <p aria-hidden="true" className="ml-auto hidden font-script text-xl text-fg-2 xl:block">
+          Great Food, Happier People ♡
+        </p>
+      )}
     </footer>
   );
 }

@@ -26,7 +26,7 @@ import { Logo } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { clockText } from "../../../shared/venue-text";
 import { failureOf } from "../register/order-messages";
-import { BoardFoot } from "./BoardFoot";
+import { BoardFoot, type SignedIn } from "./BoardFoot";
 import { BoardStats, StatsLine } from "./BoardStats";
 import { groupByTable, readPrefs, surfaceOf, ticketId, writePrefs, type BoardPrefs } from "./board-prefs";
 import { allDay, boardColumns, statRows } from "./kitchen-logic";
@@ -37,6 +37,8 @@ import { useKitchenBoard } from "./use-kitchen-board";
 interface KitchenBoardProps {
   station: StationResponse;
   onChangeStation: () => void;
+  /** Who is signed in, on a terminal; the wall display has nobody. */
+  signedIn?: SignedIn | undefined;
 }
 
 const columns: readonly { stage: CardStage; title: string; icon: LucideIcon; band: string; empty: string }[] = [
@@ -45,7 +47,7 @@ const columns: readonly { stage: CardStage; title: string; icon: LucideIcon; ban
   { stage: "ready", title: "Ready for pickup", icon: UtensilsIcon, band: "bg-accent text-accent-fg", empty: "The pass is clear." },
 ];
 
-export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
+export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoardProps) {
   const board = useKitchenBoard(station.code);
   const now = useTick(1000);
   const [busy, setBusy] = useState<string | null>(null);
@@ -55,8 +57,13 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
   useChime(prefs.sound, board.data ? cols.fresh : undefined);
 
   // Night is the page's surface, so every token under it turns (tokens.md).
+  // Leaving the board gives the page back to paper: on a terminal the next
+  // screen is the sign-in, which is never dark.
   useEffect(() => {
     document.documentElement.dataset.surface = surfaceOf(prefs);
+    return () => {
+      document.documentElement.dataset.surface = "paper";
+    };
   }, [prefs]);
   const keep = (next: BoardPrefs) => {
     setPrefs(next);
@@ -152,7 +159,7 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
         {stats && <BoardStats rows={stats} />}
       </div>
 
-      <BoardFoot prefs={prefs} onPrefs={keep} onChangeStation={onChangeStation} />
+      <BoardFoot prefs={prefs} onPrefs={keep} onChangeStation={onChangeStation} signedIn={signedIn} />
     </main>
   );
 }

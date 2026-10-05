@@ -9,6 +9,7 @@ import { PairScreen } from "../../../shared/screens/PairScreen";
 import { Splash } from "../../../shared/screens/Splash";
 import { EmptyState, InboxIcon } from "../../../shared/ui";
 import { useMenu } from "../../../shared/use-menu";
+import type { SignedIn } from "./BoardFoot";
 import { KitchenBoard } from "./KitchenBoard";
 
 interface KitchenAppProps {
@@ -22,14 +23,20 @@ export function KitchenApp({ station, onStation }: KitchenAppProps) {
   const status = useAuth();
   if (status.kind === "checking") return <Splash />;
   if (status.kind === "unpaired") return <PairScreen app="kitchen" />;
-  return <Stations station={station} onStation={onStation} />;
+  return <StationBoard station={station} onStation={onStation} />;
 }
 
-function Stations({ station, onStation }: KitchenAppProps) {
+interface StationBoardProps extends KitchenAppProps {
+  /** Who is signed in, on a terminal: the wall display has nobody. */
+  signedIn?: SignedIn | undefined;
+}
+
+/** The board of the station chosen, or the choice of one. */
+export function StationBoard({ station, onStation, signedIn }: StationBoardProps) {
   const menu = useMenu();
   const stations = menu.data?.stations ?? [];
   const chosen = stations.find((s) => s.code === station);
-  if (chosen) return <KitchenBoard station={chosen} onChangeStation={() => onStation(null)} />;
+  if (chosen) return <KitchenBoard station={chosen} onChangeStation={() => onStation(null)} signedIn={signedIn} />;
 
   return (
     <main className="flex min-h-screen flex-col gap-8 bg-canvas px-8 py-10 text-fg">

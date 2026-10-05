@@ -27,6 +27,10 @@ export const route = {
   waiterTable: (tableId: number) => `/waiter/table/${tableId}`,
   /** What the person signed in did in the open shift (T08). */
   waiterShift: "/waiter/shift",
-  /** The kitchen display: another app of the same bundle. */
-  kitchen: "/kitchen",
+  /**
+   * The kitchen's board for someone signed in on a terminal (ADR-179). Not
+   * "/kitchen": that path is the wall display's, another app of this bundle
+   * with a pairing of its own (main.tsx).
+   */
+  pass: "/pass",
 } as const;

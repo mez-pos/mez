@@ -5190,3 +5190,35 @@ later course is a list the app could make, and is rebuild 15f.
 Cost: the day is read whole on each board read, capped at 2000 tickets. A ticket sent
 before the display existed is in no index and no figure (ADR-090).
 ---
+
+## ADR-179 - A cook signed in on a terminal has the board at /pass; the wall display stays as it is
+2026-10 · Status: accepted. Rebuild Task 15e; extends ADR-090 and ADR-091, changes ADR-148.
+Context: the flow map lands the kitchen role on the board after sign-in. `/kitchen`
+is the wall display, another app of the bundle that pairs as a kitchen device and
+has no one signed in; its API let in only that kind of device. So a cook who signed
+in on a terminal was sent to `/kitchen` and asked that browser to pair again.
+Decision:
+  - **The kitchen's API is used two ways** (`kitchenAccess`). A device paired as a
+    kitchen display gets in as before, with no session. Any other device gets in for
+    a person signed in on it who holds `kitchen.view`. Nobody signed in is 401.
+  - **A move made by a person carries their name:** the event's actor is theirs, not
+    0. A wall display's moves are still the device's.
+  - **`/pass` is the board inside the terminal app** (`kitchen/CookBoard.tsx`), the
+    same `KitchenBoard` with the person's session. It sits outside the shell and the
+    shift gate: D10 has its own header and foot, and the kitchen works with no shift
+    open (ADR-094). The kitchen role, and a role with `kitchen.view` and no
+    `order.open`, land there.
+  - **Not `/kitchen`:** `main.tsx` gives that path to the wall display before the
+    terminal starts, so the two cannot share it.
+  - **The foot has "Lock · name"** for someone signed in, in place of the script
+    line. Leaving the board puts the page back on paper: the sign-in is never dark.
+  - **The station is kept on the device** here too, under the same key, and changing
+    it needs no reload: a terminal's stream is not narrowed to one station.
+Because: one pairing per browser was the rule for the back office (ADR-148), and a
+kitchen that shares a tablet with the floor should not need a second.
+Cost: every seller holds `kitchen.view` (ADR-145), so a cashier or a waiter can now
+move tickets from a terminal by asking the API, though no screen of theirs offers it.
+A terminal at the board hears every order event at the venue and reads the board on
+each. The night, sound and grouping choices on a shared tablet are the tablet's, not
+the cook's.
+---

@@ -32,19 +32,6 @@ export function Landing() {
   return <Redirect to={landingFor(auth.staff.role, auth.permissions)} replace />;
 }
 
-/**
- * "/kitchen" for a person signed in on a terminal: the kitchen display is
- * another app of this bundle, paired and listening as a kitchen device of its
- * own, so reaching it is a page load, not a route. Until the kitchen's screen is
- * rebuilt around a signed-in cook (Task 15) it asks for its own pairing here.
- */
-export function LeaveForKitchen() {
-  useEffect(() => {
-    window.location.assign(route.kitchen);
-  }, []);
-  return <p className="m-auto text-base text-fg-muted">Opening the kitchen display</p>;
-}
-
 /** "/pay/:id": the payment screen, on the order named. A waiter's is the bill at the table (T05). */
 export function PayPage({ orderId }: { orderId: string }) {
   const { ticket, names } = useTerminal();

@@ -14,7 +14,17 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 15d: today's stats** (ADR-178). The board's response carries
+**Rebuild, Task 15e: a cook signed in on a terminal has the board** (ADR-179). The
+kitchen role lands on `/pass` (`kitchen/CookBoard.tsx`): the wall display's board with
+the person's own session, outside the shell and the shift gate, with "Lock · name" in
+the foot. The kitchen's API now also lets in a person signed in on any device who
+holds `kitchen.view` (`kitchenAccess` in `internal/api/kitchen.go`), and their moves
+carry their name. `/kitchen` is still the wall display with its own pairing. Seen in a
+browser as Ravi: sign-in, the station chosen, a ticket started, night, and Lock back to
+a paper sign-in. Go test over HTTP; `landingFor` in vitest. `make check` and `make
+build-web` pass.
+
+Before it, **Rebuild, Task 15d: today's stats** (ADR-178). The board's response carries
 `stats` for the station's trading day: tickets sent, in the kitchen and ready, the
 mean time from sent to ready, and the slowest by its dish (`kitchen.Stats` in
 `internal/domain/kitchen/day.go`, the `StationDay` query, `Service.Board`). The board
@@ -127,16 +137,17 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c) or 15 (b, c, d).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c) or 15 (b, c, d, e).
 
 ## Next task
 
-**Rebuild, Task 15e** (a cook who signs in on a terminal reaches the board): the
-flow map sends the kitchen role to D10. Today `/kitchen` is another app of the bundle
-with its own pairing (`shell/pages.tsx`, `LeaveForKitchen`; ADR-090, ADR-091), and the
-kitchen API lets in only a device of kind kitchen. Decide and record how a signed-in
-cook with `kitchen.view` on a terminal sees the board (the API taking a staff session
-too is one way), then build it. 15f (Coming next) follows. Phase 11
+**Rebuild, Task 15f** (Coming next on the kitchen board): where D10 draws
+"Upcoming", what a station will be sent when a later course is fired: the lines
+waiting for their course, by order. Check first what the order knows of a held course
+(`sendPlan` and `courseGroups` in `register/send-logic.ts`, `CourseFired` on a line,
+`ticket.sent`); the board reads only tickets sent, so this needs the server. If nothing
+useful can be said, record that in an ADR, tick it as left out, and Task 15 is done.
+Then Task 16 (back office), which is split into one sub-task per screen first. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -155,6 +166,11 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   and after the tab has been idle. The dev server missed a file change once (Vite on
   the I: drive): touch the file if a screen looks stale. Not seen by eye: grouping
   with two tables' tickets interleaved, and night at 1366 wide.
+- A cook's board (ADR-179): a cashier or waiter can move tickets through the API
+  (they hold `kitchen.view`); no screen of theirs offers it. Nothing leads from `/pass`
+  to the rest of the terminal, or back for a manager who opens it by its path. Not
+  seen by eye: a role made by the owner landing there, a wall display and a signed-in
+  cook at one station at once, and a manager at `/pass`.
 - Today's stats (ADR-178): no Upcoming (15f). The day is read whole on each board
   read; a busy station has not been timed. Not seen by eye: the one-line version
   under 1536px (the browser would not resize), the column on night, a day with no

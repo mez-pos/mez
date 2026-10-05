@@ -10,8 +10,8 @@
 
 import type { Permission } from "../../../shared/api-types";
 
-/** The first screen of a role: a path of the terminal, or the kitchen display's. */
-export type Landing = "/pos" | "/waiter" | "/kitchen";
+/** The first screen of a role: a path of the terminal. */
+export type Landing = "/pos" | "/waiter" | "/pass";
 
 // A Map, because the key is a name the owner may choose: "constructor" must not
 // find something on Object's prototype.
@@ -20,13 +20,13 @@ const byRoleName: ReadonlyMap<string, Landing> = new Map<string, Landing>([
   ["manager", "/pos"],
   ["cashier", "/pos"],
   ["waiter", "/waiter"],
-  ["kitchen", "/kitchen"],
+  ["kitchen", "/pass"],
 ]);
 
 export function landingFor(role: string, permissions: readonly Permission[]): Landing {
   const known = byRoleName.get(role.trim().toLowerCase());
   if (known) return known;
   if (permissions.includes("order.open")) return "/pos";
-  if (permissions.includes("kitchen.view")) return "/kitchen";
+  if (permissions.includes("kitchen.view")) return "/pass";
   return "/pos";
 }

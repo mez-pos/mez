@@ -7,7 +7,7 @@ describe("landingFor", () => {
     expect(landingFor("manager", ["order.open"])).toBe("/pos");
     expect(landingFor("cashier", ["order.open", "payment.take"])).toBe("/pos");
     expect(landingFor("waiter", ["order.open", "order.edit", "payment.take", "kitchen.view"])).toBe("/waiter");
-    expect(landingFor("kitchen", ["kitchen.view"])).toBe("/kitchen");
+    expect(landingFor("kitchen", ["kitchen.view"])).toBe("/pass");
   });
 
   it("tells the waiter from the cashier by the role, since their permissions are the same", () => {
@@ -17,12 +17,12 @@ describe("landingFor", () => {
 
   it("reads the role's name without regard to case or spaces", () => {
     expect(landingFor("  Waiter ", [])).toBe("/waiter");
-    expect(landingFor("KITCHEN", [])).toBe("/kitchen");
+    expect(landingFor("KITCHEN", [])).toBe("/pass");
   });
 
   it("lands a role the owner made by what it can do", () => {
     expect(landingFor("Bar lead", ["order.open", "line.void"])).toBe("/pos");
-    expect(landingFor("Head chef", ["kitchen.view"])).toBe("/kitchen");
+    expect(landingFor("Head chef", ["kitchen.view"])).toBe("/pass");
     expect(landingFor("Observer", ["reports.view"])).toBe("/pos");
     expect(landingFor("Nobody", [])).toBe("/pos");
   });

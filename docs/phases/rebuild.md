@@ -282,7 +282,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     on the board's response, then the column beside the board. Split on
     2026-10-05: the design's Upcoming is orders not yet sent, which nothing
     knows.
-  - [ ] 15e. A cook who signs in on a terminal reaches the board (the flow
+  - [x] 15e. (ADR-179) A cook who signs in on a terminal reaches the board (the flow
     map): today `/kitchen` asks that browser for a pairing of its own.
   - [ ] 15f. Coming next: what a station will be sent when a later course is
     fired (the lines waiting for their course, by order), under Today's stats

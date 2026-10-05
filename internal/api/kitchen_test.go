@@ -88,9 +88,6 @@ func TestKitchenOverHTTP(t *testing.T) {
 	if _, out, _ = board(http.MethodPost, recall); out.Tickets[0].Status != kitchen.TicketFired || out.Tickets[0].StartedAt != nil {
 		t.Errorf("recalled, new again: %+v", out.Tickets[0])
 	}
-	if rec := send(r.handler, http.MethodPost, start, "", r.asStaff(r.staffToken)); rec.Code != http.StatusForbidden {
-		t.Errorf("a terminal started a ticket: %d", rec.Code)
-	}
 	if status, _, apiErr := board(http.MethodPost, fmt.Sprintf("/api/v1/kitchen/orders/%s/tickets/99/bump", id)); status != http.StatusNotFound || apiErr.Code != CodeTicketNotFound {
 		t.Errorf("no such ticket: %d %s", status, apiErr.Code)
 	}
@@ -102,8 +99,32 @@ func TestKitchenOverHTTP(t *testing.T) {
 		t.Errorf("order tickets = %+v (%v)", read.Tickets, err)
 	}
 
-	// A terminal is not a kitchen display.
-	if rec := send(r.handler, http.MethodGet, "/api/v1/kitchen/kitchen/tickets", "", r.asStaff(r.staffToken)); rec.Code != http.StatusForbidden {
-		t.Errorf("a terminal read the board: %d", rec.Code)
+	// A terminal with nobody signed in is not a kitchen display.
+	if rec := send(r.handler, http.MethodGet, "/api/v1/kitchen/kitchen/tickets", "", r.asDevice()); rec.Code != http.StatusUnauthorized {
+		t.Errorf("a terminal with nobody signed in read the board: %d", rec.Code)
+	}
+	if rec := send(r.handler, http.MethodPost, start, "", r.asDevice()); rec.Code != http.StatusUnauthorized {
+		t.Errorf("a terminal with nobody signed in started a ticket: %d", rec.Code)
+	}
+
+	// Someone signed in on it who may see the kitchen reads the same board,
+	// and a ticket they start carries their name (ADR-179).
+	rec = send(r.handler, http.MethodGet, "/api/v1/kitchen/kitchen/tickets", "", r.asStaff(r.staffToken))
+	var seen kitchenBoardResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &seen); rec.Code != http.StatusOK || err != nil || len(seen.Tickets) != 1 || seen.Tickets[0].Status != kitchen.TicketFired {
+		t.Fatalf("a signed-in cook's board: %d %s", rec.Code, rec.Body.Bytes())
+	}
+	rec = send(r.handler, http.MethodPost, start, "", r.asStaff(r.staffToken))
+	if err := json.Unmarshal(rec.Body.Bytes(), &seen); rec.Code != http.StatusOK || err != nil || seen.Tickets[0].Status != kitchen.TicketInProgress {
+		t.Fatalf("a signed-in cook starts a ticket: %d %s", rec.Code, rec.Body.Bytes())
+	}
+	var history historyResponse
+	rec = send(r.handler, http.MethodGet, "/api/v1/orders/"+id+"/events", "", r.asStaff(r.staffToken))
+	if err := json.Unmarshal(rec.Body.Bytes(), &history); err != nil || len(history.Events) == 0 {
+		t.Fatalf("the order's events: %v %s", err, rec.Body.Bytes())
+	}
+	last := history.Events[len(history.Events)-1]
+	if last.Type != order.TypeTicketStarted || last.ActorID == 0 {
+		t.Errorf("the start is by %d, type %s: want a person's", last.ActorID, last.Type)
 	}
 }

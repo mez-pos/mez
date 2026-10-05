@@ -13,7 +13,8 @@ import (
 )
 
 // The kitchen display's API (phase 08, Task 4, ADR-090): a station's board,
-// and bump and recall. A device paired as a kitchen display uses it with no
+// and bump and recall. A person signed in on a terminal who may see the
+// kitchen uses it too (ADR-179). A device paired as a kitchen display uses it with no
 // staff sign-in, since a wall-mounted screen has nobody to type a PIN; the
 // events it appends carry the device, and actor 0.
 
@@ -89,7 +90,7 @@ func (s *Server) mountKitchen(mux *http.ServeMux) {
 		return
 	}
 	handle := func(pattern string, h http.HandlerFunc) {
-		mux.Handle(pattern, s.requireDevice(requireKind(s, auth.KindKitchen, h)))
+		mux.Handle(pattern, s.requireDevice(s.kitchenAccess(h)))
 	}
 	handle("GET /api/v1/kitchen/{station}/tickets", s.kitchenBoard)
 	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/start", s.kitchenMove(s.orders.Start))
@@ -97,14 +98,26 @@ func (s *Server) mountKitchen(mux *http.ServeMux) {
 	handle("POST /api/v1/kitchen/orders/{id}/tickets/{seq}/recall", s.kitchenMove(s.orders.Recall))
 }
 
-// requireKind lets through only a device of the kind named.
-func requireKind(s *Server, kind auth.DeviceKind, next http.HandlerFunc) http.Handler {
+// kitchenAccess lets the kitchen's API be used two ways (ADR-090, ADR-179).
+// A device paired as a kitchen display gets in as it is: a screen on a wall
+// has nobody to sign in, and its moves carry the device and actor 0. Any
+// other device gets in for a person signed in on it who may see the kitchen
+// (kitchen.view): a cook at a shared tablet, whose moves carry their name.
+func (s *Server) kitchenAccess(next http.HandlerFunc) http.Handler {
+	var staffed http.Handler
+	if s.staff != nil {
+		staffed = s.requireStaff(s.requirePermission(auth.PermKitchenView, next))
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if dev, ok := DeviceFrom(r.Context()); !ok || dev.Kind != kind {
+		dev, ok := DeviceFrom(r.Context())
+		switch {
+		case ok && dev.Kind == auth.KindKitchen:
+			next(w, r)
+		case ok && staffed != nil:
+			staffed.ServeHTTP(w, r)
+		default:
 			writeError(w, s.log, http.StatusForbidden, CodeForbidden, "This is for a device paired as a kitchen display.")
-			return
 		}
-		next(w, r)
 	})
 }
 

@@ -10,8 +10,9 @@ import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { Splash } from "../../shared/screens/Splash";
 import { TablesScreen } from "./floor/TablesScreen";
+import { CookBoard } from "./kitchen/CookBoard";
 import { OrderScreen } from "./register/OrderScreen";
-import { OrdersPage, Landing, LeaveForKitchen, PayPage, ShiftClosePage, ShiftPage, ZReportPage } from "./shell/pages";
+import { OrdersPage, Landing, PayPage, ShiftClosePage, ShiftPage, ZReportPage } from "./shell/pages";
 import { route } from "./shell/routes";
 import { ShiftGate } from "./shell/ShiftGate";
 import { TerminalProvider } from "./shell/terminal-context";
@@ -30,8 +31,9 @@ export function App() {
         <Route path="/lock">
           <LockScreen />
         </Route>
-        <Route path={route.kitchen}>
-          <LeaveForKitchen />
+        {/* The kitchen's board has its own header and foot (D10): no shell, and no shift to wait for. */}
+        <Route path={route.pass}>
+          <CookBoard />
         </Route>
         <Route path="/">
           <Landing />
