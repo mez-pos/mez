@@ -328,7 +328,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     - [x] 16e2. The screen, a third report tab: staff performance with tips,
       removed in error, the tips total; "Who sold it" moved here.
   - [x] 16f. (ADR-190) Menu (D18).
-  - [ ] 16g. Inventory (D19).
+  - [x] 16g. (ADR-191) Inventory (D19).
   - [ ] 16h. Staff and roles (D20).
   - [ ] 16i. Settings (D22).
   - [ ] 16j. The Z-report (D23).

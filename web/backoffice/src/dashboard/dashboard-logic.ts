@@ -193,10 +193,14 @@ export interface LowRow {
   level: StockLevel;
 }
 
-/** What is at or under its level, anything with none left first; the rest in the server's order. */
+/**
+ * What is at or under its level, or has none left whether or not it has a
+ * level (as the Inventory screen counts "out"), anything with none left
+ * first; the rest in the server's order.
+ */
 export function lowRows(items: readonly StockItem[], limit: number): { rows: LowRow[]; more: number } {
   const low = items
-    .filter((it) => it.active && it.low)
+    .filter((it) => it.active && (it.low || it.on_hand <= 0))
     .map((item): LowRow => ({ item, level: item.on_hand <= 0 ? "out" : "low" }))
     .sort((a, b) => (a.level === "out" ? 0 : 1) - (b.level === "out" ? 0 : 1));
   const rows = low.slice(0, limit);

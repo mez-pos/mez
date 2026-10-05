@@ -5534,3 +5534,37 @@ Cost: opening another item, or leaving the screen, drops what was typed and not 
 without asking. `docs/design/screens/backoffice-menu.md` describes the old screen until
 Task 17.
 ---
+
+## ADR-191 - Inventory is D19: the stock table with its levels, and the week's wastage
+2026-10 · Status: accepted. Rebuild Task 16g (D19); over ADR-111 to ADR-114, ADR-124
+and ADR-186.
+Context: D19 is a table of ingredients (in stock, reorder at, unit cost, supplier, a
+level bar, a status) with purchase orders and the week's wastage beside it, and tabs
+for purchase orders, suppliers and a wastage log. The Stock screen was a table with
+five buttons a row.
+Decision:
+  - **The section is called Inventory,** the design's word, in the sidebar and on the
+    screen. Its path stays `/stock`, and the code's word stays stock.
+  - **The table** has Ingredient, In stock, Low at, Unit cost, Stock level and Status.
+    The bar is on hand against three times the low level, so an ingredient at its level
+    reads a third full; one with no level has no bar. The chip is Healthy, Low or Out:
+    out is none left, whether or not a level is set.
+  - **A row's actions are under its "..."** (Receive, Log wastage, Count, History,
+    Edit), the same menu as the menu's list (`RowMenu`, shared).
+  - **Stock count and Log wastage beside the title** ask which ingredient, then open
+    the form the row's menu opens.
+  - **Wastage this week** beside the table is ADR-186's report for the last seven
+    trading days, by ingredient, with the total set against the seven days before. Less
+    waste is the good direction, so a fall wears the green. It needs `reports.view`;
+    without it the table has the whole width.
+  - **Retired ingredients are off the table** unless "Show the N retired" is ticked.
+  - **Left out:** New purchase order, Open purchase orders, and the Purchase orders
+    and Suppliers tabs (purchasing is out of v1); the Supplier column; the Wastage log
+    tab (the report is on Items and inventory). The terracotta button is Add ingredient.
+  - Recipes stays a view of its own, as a pill beside Stock levels (rule 4).
+Because: the table answers "what do I need to buy" at a glance, which the old one did
+not: its only signal was the word Low.
+Cost: three times the low level is our own rule for a full bar; nothing in the venue
+sets it. `docs/design/screens/backoffice-stock.md` describes the old screen until Task
+17.
+---

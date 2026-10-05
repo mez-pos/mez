@@ -14,7 +14,17 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16f: Menu management** (ADR-190). `/backoffice/menu` is D18
+**Rebuild, Task 16g: Inventory** (ADR-191). `/backoffice/stock` is D19, now called
+Inventory (`stock/StockScreen.tsx`, `StockLevels.tsx`, `WastageCard.tsx`,
+`levels-logic.ts`): the ingredients with what is in stock, the level each is low at,
+its cost, a level bar and a Healthy, Low or Out chip; a row's actions under its "...";
+Stock count and Log wastage beside the title; the week's wastage beside the table.
+Recipes is still a view of its own. Seen in a browser as Priya at 1920x1080: the
+table, Log wastage asking which ingredient, a row's menu, and stock received. Tests:
+`levelOf`, `levelPercent`, `summary`, `tableRows`. `make check` and `make build-web`
+pass.
+
+Before it, **Rebuild, Task 16f: Menu management** (ADR-190). `/backoffice/menu` is D18
 (`menu/MenuScreen.tsx`, `CategoryRail.tsx`, `ItemList.tsx`, `ItemEditor.tsx`,
 `browse-logic.ts`): categories with counts, the items with a chip for where each
 stands, and the item open in an inline editor with its photo and tags beside it; the
@@ -224,11 +234,11 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to f).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to g).
 
 ## Next task
 
-**Rebuild, Task 16g: Inventory** (D19, `mez Desktop Management.dc.html` line 428).
+**Rebuild, Task 16h: Staff and roles** (D20, `mez Desktop Management.dc.html` line 507).
 Read `docs/design/tokens.md` and that one screen. The screens inside the new frame are
 still the old layouts until their own tasks (16c to 16j). The owner has not yet looked
 at the kitchen's screens, the frame or the dashboard. Phase 11 waits for this phase.
@@ -245,6 +255,13 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Inventory (ADR-191): no purchase orders or suppliers. A full bar is three times the
+  low level, our own rule. After a count or a write-off started from the buttons
+  beside the title, focus does not return to that button. Not seen by eye: a width under 1920, a retired ingredient
+  shown, a count and a write-off carried through from the new buttons, History and
+  Edit from a row's menu, the week's change against the week before (the dev venue
+  has one week), the screen without `reports.view`, and the Recipes view after the
+  change.
 - Menu management (ADR-190): opening another item or leaving the screen drops an
   unsaved edit without asking, and an item changed on another screen while it is open
   is saved over. The list no longer shows each item's tax class, station, course or

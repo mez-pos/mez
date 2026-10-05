@@ -239,6 +239,9 @@ describe("lowRows", () => {
       [3, "low"],
     ]);
   });
+  it("lists what has run out even with no low level set", () => {
+    expect(lowRows([item(1, 0, { low: false, low_level: 0 })], 5).rows.map((r) => r.level)).toEqual(["out"]);
+  });
   it("leaves out what is not low and what is retired", () => {
     expect(lowRows([item(1, 5000, { low: false }), item(2, 0, { active: false })], 5).rows).toEqual([]);
   });

@@ -1,52 +1,86 @@
-// The Stock screen (docs/design/screens/backoffice-stock.md): stock items
-// with what the ledger says is on hand, the forms that move it, each
-// item's history, and the recipes that make sales take stock.
+// The Inventory screen (D19): the ingredients with what the ledger says is
+// on hand, the forms that move it, each one's history, the week's wastage
+// beside the table, and the recipes that make sales take stock.
+//
+// Left out of the design: purchase orders and suppliers, which are out of v1.
+// "New purchase order" is Add ingredient, and the Purchase orders and
+// Suppliers tabs are not drawn. The wastage log is the report on Items and
+// inventory. Recipes are a view of their own here (rebuild.md, rule 4).
 
+import { ClipboardListIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import type { StockItem, StockRecorded } from "../../../shared/api-types";
-import { Button, EmptyState, InboxIcon, Money, useToast } from "../../../shared/ui";
-import { DataTable, type Column } from "../../../shared/ui/DataTable";
-import { cx } from "../../../shared/ui/cx";
-import { useMenu } from "../../../shared/use-menu";
-import { HistoryModal } from "./HistoryModal";
-import { MovementModal } from "./MovementModal";
 import { formatDelta, formatQty } from "../../../shared/stock-qty";
+import { Button, EmptyState, InboxIcon, Modal, useToast } from "../../../shared/ui";
+import { pillClass } from "../../../shared/ui/pill";
+import { useMenu } from "../../../shared/use-menu";
+import { CheckField } from "../FormFields";
+import { usePermissions } from "../shell/BackOfficeShell";
+import { HistoryModal } from "./HistoryModal";
+import { retiredCount, summary, summaryText, tableRows } from "./levels-logic";
+import { MovementModal } from "./MovementModal";
 import { RecipesView } from "./RecipesView";
-import { costMeasures, problemOf, type HandKind } from "./stock-logic";
+import { problemOf, type HandKind } from "./stock-logic";
 import { StockItemModal } from "./StockItemModal";
+import { StockLevels } from "./StockLevels";
 import { useStock, type StockApi } from "./use-stock";
+import { WastageCard } from "./WastageCard";
 
-type Open = { kind: "add" } | { kind: "edit"; item: StockItem } | { kind: "move"; item: StockItem; move: HandKind } | { kind: "history"; item: StockItem };
+type Open =
+  | { kind: "add" }
+  | { kind: "edit"; item: StockItem }
+  | { kind: "move"; item: StockItem; move: HandKind }
+  | { kind: "history"; item: StockItem }
+  /** Which ingredient a count or a write-off is of, asked from the buttons beside the title. */
+  | { kind: "pick"; move: "counted" | "wasted" };
 
-type View = "items" | "recipes";
+type View = "levels" | "recipes";
+const views: readonly { id: View; label: string }[] = [
+  { id: "levels", label: "Stock levels" },
+  { id: "recipes", label: "Recipes" },
+];
 
 export function StockScreen() {
   const api = useStock();
   const menu = useMenu();
   const toast = useToast();
-  const [view, setView] = useState<View>("items");
+  const held = usePermissions();
+  const [view, setView] = useState<View>("levels");
   const [open, setOpen] = useState<Open | null>(null);
+  const [showRetired, setShowRetired] = useState(false);
   const items = api.items.data?.items;
+  const hasActive = items?.some((it) => it.active) ?? false;
+  // The week's wastage is a report: without reports.view the card is not drawn.
+  const canReport = held.includes("reports.view");
 
   return (
-    <div className="flex max-w-6xl flex-col gap-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-4">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-total">Stock</h1>
-          <p className="mt-1 text-sm text-fg-3">On hand is what was received, less what was sold, wasted and corrected. A count records the difference.</p>
+          <h1 className="font-serif text-total">Inventory</h1>
+          <p className="mt-1 text-base text-fg-muted">{items ? summaryText(summary(items)) : "Reading the stock"}</p>
         </div>
-        {view === "items" && (
-          <Button variant="primary" onClick={() => setOpen({ kind: "add" })}>
-            Add a stock item
+        <div className="flex flex-wrap gap-2.5">
+          <Button disabled={!hasActive} onClick={() => setOpen({ kind: "pick", move: "counted" })}>
+            <ClipboardListIcon aria-hidden="true" size={17} />
+            Stock count
           </Button>
-        )}
+          <Button disabled={!hasActive} onClick={() => setOpen({ kind: "pick", move: "wasted" })}>
+            <Trash2Icon aria-hidden="true" size={17} />
+            Log wastage
+          </Button>
+          <Button variant="attention" onClick={() => setOpen({ kind: "add" })}>
+            <PlusIcon aria-hidden="true" size={18} />
+            Add ingredient
+          </Button>
+        </div>
       </div>
 
-      <div role="group" aria-label="Show" className="flex gap-tap-gap">
-        {(["items", "recipes"] as const).map((v) => (
-          <Button key={v} size="md" variant={view === v ? "primary" : "secondary"} aria-pressed={view === v} onClick={() => setView(v)}>
-            {v === "items" ? "Items" : "Recipes"}
-          </Button>
+      <div role="group" aria-label="Show" className="flex flex-wrap gap-2">
+        {views.map((v) => (
+          <button key={v.id} type="button" aria-pressed={view === v.id} className={pillClass(view === v.id)} onClick={() => setView(v.id)}>
+            {v.label}
+          </button>
         ))}
       </div>
 
@@ -54,88 +88,48 @@ export function StockScreen() {
       {api.items.error && (
         <EmptyState icon={<InboxIcon />} line={problemOf(api.items.error).message} action={{ label: "Try again", onClick: () => void api.items.refetch() }} />
       )}
-      {items && view === "items" && <ItemsTable items={items} onOpen={setOpen} />}
+      {items && view === "levels" && (
+        <div
+          className={
+            canReport ? "grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] min-[1700px]:grid-cols-[minmax(0,1fr)_400px]" : ""
+          }
+        >
+          <div className="flex min-w-0 flex-col gap-3">
+            <StockLevels
+              rows={tableRows(items, showRetired)}
+              allRetired={items.length > 0 && !hasActive}
+              onAction={(item, action) => setOpen(action.kind === "move" ? { kind: "move", item, move: action.move } : { kind: action.kind, item })}
+            />
+            {retiredCount(items) > 0 && (
+              <div className="max-w-md">
+                <CheckField label={`Show the ${retiredCount(items)} retired`} checked={showRetired} onChange={setShowRetired} />
+              </div>
+            )}
+            <p className="text-sm text-fg-muted">
+              In stock is what was received, less what was sold, wasted and corrected. A count records the difference. The bar is full at three times the low
+              level.
+            </p>
+          </div>
+          {canReport && <WastageCard />}
+        </div>
+      )}
       {items && view === "recipes" && menu.data && (
-        <RecipesView menu={menu.data} stock={items} api={api} onSaved={(name) => toast(`Saved what ${name} takes.`, { tone: "success" })} />
+        <div className="max-w-6xl">
+          <RecipesView menu={menu.data} stock={items} api={api} onSaved={(name) => toast(`Saved what ${name} takes.`, { tone: "success" })} />
+        </div>
       )}
       {items && view === "recipes" && !menu.data && <p className="text-base text-fg-muted">Loading the menu</p>}
 
-      {open && api.items.data && <Opened open={open} currency={api.items.data.currency} api={api} onOpen={setOpen} onClose={() => setOpen(null)} />}
+      {open && api.items.data && (
+        <Opened open={open} items={api.items.data.items} currency={api.items.data.currency} api={api} onOpen={setOpen} onClose={() => setOpen(null)} />
+      )}
     </div>
-  );
-}
-
-function ItemsTable({ items, onOpen }: { items: readonly StockItem[]; onOpen: (o: Open) => void }) {
-  const columns: Column<StockItem>[] = [
-    {
-      id: "name",
-      header: "Item",
-      cell: (it) => (
-        <span className="flex items-center gap-2">
-          <span className={cx("font-semibold", !it.active && "text-fg-muted line-through")}>{it.name}</span>
-          {!it.active && <span className="text-meta uppercase text-fg-faint">Retired</span>}
-          {it.low && <span className="text-meta font-semibold uppercase text-warning">Low</span>}
-          {it.active && it.count_at_close && <span className="text-meta uppercase text-fg-faint">At close</span>}
-        </span>
-      ),
-    },
-    {
-      id: "on-hand",
-      header: "On hand",
-      align: "right",
-      cell: (it) => <span className={cx("font-mono tabular-nums", it.on_hand < 0 && "text-danger")}>{formatQty(it.on_hand, it.unit)}</span>,
-    },
-    {
-      id: "low",
-      header: "Low at",
-      align: "right",
-      cell: (it) =>
-        it.low_level === 0 ? <span className="text-fg-muted">None</span> : <span className="font-mono tabular-nums">{formatQty(it.low_level, it.unit)}</span>,
-    },
-    {
-      id: "cost",
-      header: "Cost",
-      align: "right",
-      cell: (it) =>
-        it.cost.minor === 0 ? (
-          <span className="text-fg-muted">Not set</span>
-        ) : (
-          <span className="whitespace-nowrap">
-            <Money amount={it.cost} /> <span className="text-fg-3">/ {costMeasures[it.unit].short}</span>
-          </span>
-        ),
-    },
-    {
-      id: "actions",
-      header: "",
-      align: "right",
-      cell: (it) => (
-        <span className="flex flex-wrap justify-end gap-tap-gap">
-          {it.active &&
-            (["received", "wasted", "counted"] as const).map((move) => (
-              <Button key={move} onClick={() => onOpen({ kind: "move", item: it, move })}>
-                {move === "received" ? "Receive" : move === "wasted" ? "Waste" : "Count"}
-              </Button>
-            ))}
-          <Button onClick={() => onOpen({ kind: "history", item: it })}>History</Button>
-          <Button onClick={() => onOpen({ kind: "edit", item: it })}>Edit</Button>
-        </span>
-      ),
-    },
-  ];
-  return (
-    <DataTable
-      label="Stock items"
-      columns={columns}
-      rows={items}
-      rowKey={(it) => String(it.id)}
-      empty={<EmptyState icon={<InboxIcon />} line="No stock yet. Add what you keep: beans, milk, batter." />}
-    />
   );
 }
 
 interface OpenedProps {
   open: Open;
+  items: readonly StockItem[];
   /** The venue currency, which stock is costed in. */
   currency: string;
   api: StockApi;
@@ -143,7 +137,7 @@ interface OpenedProps {
   onClose: () => void;
 }
 
-function Opened({ open, currency, api, onOpen, onClose }: OpenedProps) {
+function Opened({ open, items, currency, api, onOpen, onClose }: OpenedProps) {
   const toast = useToast();
   switch (open.kind) {
     case "add":
@@ -186,6 +180,27 @@ function Opened({ open, currency, api, onOpen, onClose }: OpenedProps) {
       );
     case "history":
       return <HistoryModal item={open.item} onClose={onClose} />;
+    case "pick":
+      return (
+        <Modal open onClose={onClose} title={open.move === "counted" ? "Count which ingredient?" : "Log wastage of which ingredient?"} size="sm">
+          <ul className="grid max-h-[60vh] gap-1 overflow-y-auto">
+            {items
+              .filter((it) => it.active)
+              .map((it) => (
+                <li key={it.id}>
+                  <button
+                    type="button"
+                    onClick={() => onOpen({ kind: "move", item: it, move: open.move })}
+                    className="flex min-h-tap w-full items-center justify-between gap-3 rounded px-4 text-left text-base outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+                  >
+                    <span className="min-w-0 truncate font-semibold">{it.name}</span>
+                    <span className="shrink-0 font-mono text-sm tabular-nums text-fg-muted">{formatQty(it.on_hand, it.unit)}</span>
+                  </button>
+                </li>
+              ))}
+          </ul>
+        </Modal>
+      );
   }
 }
 

@@ -349,7 +349,7 @@ function StockHealthCard({ health }: { health: ReturnType<typeof stockHealth> })
         className="mt-6 inline-flex min-h-tap items-center justify-center gap-2 rounded-pill bg-attention px-5 text-base font-semibold text-attention-fg outline-offset-2 outline-attention hover:bg-attention-hover focus-visible:outline-3"
       >
         <PackageIcon aria-hidden="true" size={17} />
-        Go to stock
+        Go to inventory
       </Link>
       <p aria-hidden="true" className="mt-auto pt-5 text-center font-script text-xl leading-tight text-fg-2">
         Great Food,

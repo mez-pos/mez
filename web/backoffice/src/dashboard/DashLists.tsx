@@ -113,7 +113,7 @@ export function StaffPerformance({ report }: { report: SalesReport }) {
   );
 }
 
-const inks = { low: "text-warning", out: "text-danger" } as const;
+const inks = { ok: "text-fg-2", low: "text-warning", out: "text-danger" } as const;
 
 export function LowStock({ items }: { items: readonly StockItem[] }) {
   const { rows, more } = lowRows(items, listRows);

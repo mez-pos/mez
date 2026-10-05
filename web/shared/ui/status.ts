@@ -82,11 +82,12 @@ export const dayStatuses: Readonly<Record<DayStatus, ChipSpec>> = {
   voided: { tone: "neutral", word: "Voided", struck: true },
 };
 
-// A stock item at or under its level (D12, D19). Low is the pending mustard;
-// none left is the alarm.
-export type StockLevel = "low" | "out";
+// Where a stock item stands (D12, D19). Low, at or under its level, is the
+// pending mustard; none left is the alarm.
+export type StockLevel = "ok" | "low" | "out";
 
 export const stockLevels: Readonly<Record<StockLevel, ChipSpec>> = {
+  ok: { tone: "success", word: "Healthy" },
   low: { tone: "warning", word: "Low" },
   out: { tone: "danger", word: "Out" },
 };
