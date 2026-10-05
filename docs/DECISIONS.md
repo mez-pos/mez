@@ -5113,3 +5113,30 @@ Left for 15d: who started it (the display has no one signed in) and the day's
 figures, which the times now allow (sent to started, started to ready).
 Cost: the index cannot be asked "what is in progress" without the orders.
 ---
+
+## ADR-176 - The kitchen's board is three columns on paper, in the pass's type sizes
+2026-10 · Status: accepted. Rebuild Task 15b (D10); over ADR-175, changes ADR-091.
+Decision:
+  - **Three columns a ticket crosses:** New Orders (sent, untouched, "Start
+    preparing"), Preparing (a cook has it, "Mark ready", with a bar filling towards
+    the venue's late time) and Ready for pickup (on the pass, while it can be
+    recalled, the one just called on top). Each band has its count.
+  - **A card is the design's:** an icon for how it is served, where it goes, guests
+    and service, when it was placed, the timer, the order's notes, the lines.
+  - **The type is the pass's, not the design's.** D10 draws 20px titles and 16px
+    lines; a pass is read from three metres (ADR-091). Where it goes is 32px, a line
+    26px, an action 64px tall.
+  - **The column colours the card; the timer keeps its own tone** and word (calm,
+    Waiting, Late), so a late ticket reads late in whichever column it sits.
+  - **The board is on paper.** `main.tsx` no longer sets espresso night: D10 is the
+    default, and night comes back as a choice on the device (15c).
+  - **`--on-mustard` (`#40320D`)**, role `highlight-fg`, is new on the sheet: the ink
+    on the Preparing band.
+Kept where D10 draws nothing (rule 4): the station's name and Change station in the
+header, the all-day counts in a strip under it, and Recall, now on each ready card
+(it was one button for the last ticket bumped).
+Left out, and why (rule 3): "Called Rohan" (nothing calls anyone, and the display
+knows no waiter) and the spot art. Today's stats and Upcoming are 15d, the foot 15c.
+Cost: until 15c the kitchen has no dark screen. A new ticket cannot be marked ready
+from the board without Start first (the server would take it).
+---

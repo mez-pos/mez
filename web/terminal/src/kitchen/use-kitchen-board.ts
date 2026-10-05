@@ -18,6 +18,8 @@ export interface KitchenBoardApi {
   loading: boolean;
   error: unknown;
   refetch: () => void;
+  /** A cook has picked it up: in progress (ADR-175). */
+  start: (t: KitchenTicketResponse) => Promise<void>;
   bump: (t: KitchenTicketResponse) => Promise<void>;
   recall: (t: KitchenTicketResponse) => Promise<void>;
 }
@@ -36,7 +38,7 @@ export function useKitchenBoard(station: string): KitchenBoardApi {
     if (notice.kind === "event" || notice.kind === "resync") void queryClient.invalidateQueries({ queryKey: key });
   });
 
-  const move = (verb: "bump" | "recall") => (t: KitchenTicketResponse) =>
+  const move = (verb: "start" | "bump" | "recall") => (t: KitchenTicketResponse) =>
     store.api
       .post<KitchenBoardResponse>(`/api/v1/kitchen/orders/${encodeURIComponent(t.order_id)}/tickets/${t.ticket_seq}/${verb}`, undefined, {
         idempotencyKey: newKey(),
@@ -50,6 +52,7 @@ export function useKitchenBoard(station: string): KitchenBoardApi {
     loading: query.isPending,
     error: query.error,
     refetch: () => void query.refetch(),
+    start: move("start"),
     bump: move("bump"),
     recall: move("recall"),
   };

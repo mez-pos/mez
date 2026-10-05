@@ -37,6 +37,47 @@ export function toMake(board: KitchenBoardResponse | undefined): KitchenTicketRe
   return (board?.tickets ?? []).filter(inKitchen).sort((a, b) => Date.parse(a.sent_at) - Date.parse(b.sent_at) || a.ticket_seq - b.ticket_seq);
 }
 
+/**
+ * The board's three columns (D10, ADR-175): new tickets nobody has started,
+ * those a cook is making, and those on the pass. The first two are oldest
+ * first, as they should be made; the pass has the latest on top, since that
+ * is the one a runner has just been called for.
+ */
+export interface BoardColumns {
+  fresh: KitchenTicketResponse[];
+  preparing: KitchenTicketResponse[];
+  ready: KitchenTicketResponse[];
+}
+
+export function boardColumns(board: KitchenBoardResponse | undefined): BoardColumns {
+  const making = toMake(board);
+  const ready = (board?.tickets ?? [])
+    .filter((t) => t.status === "ready")
+    .sort((a, b) => Date.parse(b.ready_at ?? b.sent_at) - Date.parse(a.ready_at ?? a.sent_at) || b.ticket_seq - a.ticket_seq);
+  return { fresh: making.filter((t) => t.status === "fired"), preparing: making.filter((t) => t.status === "in_progress"), ready };
+}
+
+/** How far a ticket is towards late, 0 to 100: the bar under a ticket being made. */
+export function latePercent(elapsedMs: number, lateAfterMinutes: number): number {
+  const late = Math.max(lateAfterMinutes, 1) * 60_000;
+  return Math.min(100, Math.max(0, Math.round((elapsedMs * 100) / late)));
+}
+
+const serviceWords = { dine_in: "Dine-in", takeaway: "Takeaway", delivery: "Delivery" } as const;
+
+/** "4 guests · Dine-in", "Takeaway": who it is for and how it leaves the pass. */
+export function metaText(t: KitchenTicketResponse): string {
+  const guests = t.covers > 0 ? `${t.covers} ${t.covers === 1 ? "guest" : "guests"}` : null;
+  return [guests, serviceWords[t.service]].filter(Boolean).join(" · ");
+}
+
+/** "now", "2m", "1h 05m": how long ago, for a ticket on the pass. */
+export function agoText(elapsedMs: number): string {
+  const minutes = Math.max(0, Math.floor(elapsedMs / 60_000));
+  if (minutes === 0) return "now";
+  return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
+}
+
 /** Where a ticket goes: "T4", "T4 + T7", or "Counter · NMRN" for a counter order. */
 export function whereText(t: KitchenTicketResponse): string {
   if (t.table) return t.table;

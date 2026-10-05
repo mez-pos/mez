@@ -80,6 +80,7 @@ and a 3px terracotta outline on a button. On night: `--night-line`
 | `--mustard` | `#E7A83A` | `highlight` | Bestseller, ratings, the logo's top. Never text on a light ground |
 | `--brick` | `#A33A28` | `danger`, `danger-fill` | Void, refund, delete, errors |
 | `--on-fill` | `#FFFDF8` | `accent-fg`, `attention-fg` | Text on a green, terracotta or brick fill |
+| `--on-mustard` | `#40320D` | `highlight-fg` | Text on a mustard fill: the kitchen's Preparing band. 7.4:1 |
 
 Brick has a tint for the destructive button: `--brick-tint` `#FBEDE9`,
 hover `#F6DDD6`, border `--brick-line` `#E7C3B9`.

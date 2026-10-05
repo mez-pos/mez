@@ -51,6 +51,7 @@
   --brick-tint-press: #f6ddd6;
   --brick-line: #e7c3b9;
   --on-fill: #fffdf8;
+  --on-mustard: #40320d; /* text on a mustard fill: the kitchen's Preparing band (D10) */
 
   /* Status on paper: a pastel fill and a darkened ink, 4.5:1 or better */
   --free-fill: #dde8d3;
@@ -179,6 +180,7 @@
   --status-danger: var(--brick);
   --status-info: var(--info-ink);
   --highlight: var(--mustard);
+  --highlight-fg: var(--on-mustard);
 
   --chip-neutral-bg: var(--cleaning-fill);
   --chip-neutral-border: var(--cleaning-fill);
@@ -256,6 +258,7 @@
   --status-danger: var(--night-brick-ink);
   --status-info: var(--night-info-ink);
   --highlight: var(--mustard);
+  --highlight-fg: var(--on-mustard);
 
   --chip-neutral-bg: var(--night-raised-high);
   --chip-neutral-border: var(--night-line-strong);

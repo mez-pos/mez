@@ -1,14 +1,27 @@
-// A station's board (docs/design/screens/kitchen-display.md): the tickets
-// still to make as cards in large type, oldest first, each with a timer that
-// turns mustard and then terracotta, and a Bump big enough for a wet thumb; the
-// all-day counts; Recall for the ticket bumped last.
+// A station's board (D10): a header, and three columns a ticket crosses from
+// left to right. New Orders are sent and untouched, with Start preparing;
+// Preparing are the ones a cook has, with Mark ready; Ready for pickup are on
+// the pass, for as long as they can be recalled. ADR-175 gave the server the
+// middle column; ADR-176 records what this screen draws.
+//
+// Kept, where D10 draws nothing (rule 4): the station's name and Change
+// station in the header, the all-day counts in a strip under it, and Recall
+// on each ready card. A new ticket is started before it is marked ready here;
+// the server would take a bump from new too (ADR-175).
+//
+// Not here yet: Today's stats and Upcoming (15d), and the foot with Night mode
+// and Sound (15c).
 
-import { useEffect, useState } from "react";
+import { BellIcon, ChefHatIcon, UtensilsIcon, type LucideIcon } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { KitchenTicketResponse, StationResponse } from "../../../shared/api-types";
 import { ConnectionIndicator } from "../../../shared/ConnectionIndicator";
+import { Logo } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { clockText } from "../../../shared/venue-text";
 import { failureOf } from "../register/order-messages";
-import { allDay, lastBumped, timerText, timerTone, toMake, toneWord, whereText, type TimerTone } from "./kitchen-logic";
+import { allDay, boardColumns } from "./kitchen-logic";
+import { TicketCard, type CardStage } from "./TicketCard";
 import { useKitchenBoard } from "./use-kitchen-board";
 
 interface KitchenBoardProps {
@@ -16,15 +29,21 @@ interface KitchenBoardProps {
   onChangeStation: () => void;
 }
 
+const columns: readonly { stage: CardStage; title: string; icon: LucideIcon; band: string; empty: string }[] = [
+  { stage: "fresh", title: "New Orders", icon: BellIcon, band: "bg-attention text-attention-fg", empty: "Nothing new." },
+  { stage: "preparing", title: "Preparing", icon: ChefHatIcon, band: "bg-highlight text-highlight-fg", empty: "Nothing on the go." },
+  { stage: "ready", title: "Ready for pickup", icon: UtensilsIcon, band: "bg-accent text-accent-fg", empty: "The pass is clear." },
+];
+
 export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
   const board = useKitchenBoard(station.code);
   const now = useTick(1000);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const tickets = toMake(board.data);
-  const counts = allDay(tickets);
-  const recallable = lastBumped(board.data);
+  const cols = boardColumns(board.data);
+  const counts = allDay([...cols.fresh, ...cols.preparing]);
   const lateAfter = board.data?.late_after_minutes ?? 20;
+  const acts: Readonly<Record<CardStage, (t: KitchenTicketResponse) => Promise<void>>> = { fresh: board.start, preparing: board.bump, ready: board.recall };
 
   const run = (id: string, fn: () => Promise<void>) => {
     setBusy(id);
@@ -35,143 +54,107 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-canvas text-fg">
-      <header className="flex flex-wrap items-center gap-4 border-b border-line bg-chrome px-6 py-3">
-        <h1 className="font-serif text-display leading-none">{station.name}</h1>
-        <span className="font-mono text-kitchen tabular-nums text-fg-2">{clockText(now)}</span>
-        <ConnectionIndicator />
-        <div className="ml-auto flex flex-wrap gap-3">
-          {recallable && (
-            <button
-              type="button"
-              disabled={busy !== null}
-              onClick={() => run(`recall-${recallable.order_id}-${recallable.ticket_seq}`, () => board.recall(recallable))}
-              className="min-h-18 rounded-pill border-2 border-line-strong bg-raised px-8 text-kitchen font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4 disabled:opacity-50"
-            >
-              Recall {whereText(recallable)}
-            </button>
-          )}
+    <main className="flex h-screen flex-col overflow-hidden bg-canvas text-fg">
+      <header className="flex min-h-23 shrink-0 items-center gap-6 border-b border-line bg-chrome px-7 py-2">
+        <Logo className="h-9 shrink-0" />
+        <div className="min-w-0 flex-1 text-center">
+          <h1 className="flex items-center justify-center gap-3 font-serif text-total leading-tight">
+            <ChefHatIcon aria-hidden="true" size={30} strokeWidth={1.7} className="shrink-0 text-attention" />
+            Kitchen Display
+          </h1>
+          <p className="truncate text-base text-fg-muted">{station.name} · Fresh orders. Happy people.</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-4">
+          <span className="hidden font-mono text-base font-semibold tabular-nums xl:block">{clockText(new Date(now), null)}</span>
+          <ConnectionIndicator />
           <button
             type="button"
             onClick={onChangeStation}
-            className="min-h-14 rounded-pill border border-line-strong px-6 text-lg text-fg-2 outline-offset-2 outline-line-focus focus-visible:outline-4"
+            className="min-h-tap rounded-pill border border-line-strong px-5 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-4"
           >
             Change station
           </button>
+          <p aria-hidden="true" className="hidden text-right font-script text-xl leading-tight text-fg-2 2xl:block">
+            Good Food,
+            <br />
+            Brighter Days ♡
+          </p>
         </div>
       </header>
 
       {counts.length > 0 && (
-        <section aria-label="All day" className="flex flex-wrap gap-x-6 gap-y-2 border-b border-line px-6 py-3 text-kitchen">
+        <section aria-label="All day" className="flex shrink-0 flex-wrap gap-x-6 gap-y-1 border-b border-line bg-chrome px-7 py-2 text-xl">
           <span className="text-fg-muted">All day</span>
           {counts.map((c) => (
             <span key={c.name}>
-              <span className="font-mono font-semibold tabular-nums text-highlight">{c.qty}</span> {c.name}
+              <span className="font-mono font-bold tabular-nums text-attention-text">{c.qty}</span> {c.name}
             </span>
           ))}
         </section>
       )}
 
       {error && (
-        <p role="alert" className="px-6 pt-3 text-kitchen text-danger">
+        <p role="alert" className="shrink-0 px-7 pt-3 text-xl text-danger">
           {error}
         </p>
       )}
+      {board.loading && <p className="px-7 pt-3 text-xl text-fg-muted">Loading the tickets</p>}
+      {!board.loading && board.error !== null && !board.data && (
+        <p role="alert" className="px-7 pt-3 text-xl text-danger">
+          {failureOf(board.error)}
+        </p>
+      )}
 
-      <div className="flex-1 overflow-y-auto p-6">
-        {board.loading && <p className="text-kitchen text-fg-muted">Loading the tickets</p>}
-        {!board.loading && board.error !== null && !board.data && <p className="text-kitchen text-danger">{failureOf(board.error)}</p>}
-        {board.data && tickets.length === 0 && <p className="py-20 text-center font-serif text-display text-fg-muted">All clear.</p>}
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] items-start gap-4">
-          {tickets.map((t) => {
-            const id = `${t.order_id}-${t.ticket_seq}`;
-            return (
-              <li key={id}>
-                <TicketCard
-                  ticket={t}
-                  now={now}
-                  lateAfter={lateAfter}
-                  busy={busy === id}
-                  disabled={busy !== null}
-                  onBump={() => run(id, () => board.bump(t))}
-                />
-              </li>
-            );
-          })}
-        </ul>
+      <div className="grid min-h-0 flex-1 grid-cols-3 gap-4 px-5 py-4">
+        {columns.map((col) => {
+          const tickets = cols[col.stage];
+          return (
+            <Column key={col.stage} title={col.title} icon={col.icon} band={col.band} count={tickets.length}>
+              {board.data && tickets.length === 0 && <p className="py-10 text-center text-xl text-fg-muted">{col.empty}</p>}
+              {tickets.map((t) => {
+                const id = `${t.order_id}-${t.ticket_seq}`;
+                return (
+                  <li key={id}>
+                    <TicketCard
+                      ticket={t}
+                      stage={col.stage}
+                      now={now}
+                      lateAfter={lateAfter}
+                      busy={busy === id}
+                      disabled={busy !== null}
+                      onAct={() => run(id, () => acts[col.stage](t))}
+                    />
+                  </li>
+                );
+              })}
+            </Column>
+          );
+        })}
       </div>
     </main>
   );
 }
 
-// A timer's tone as the rule down the card's left and the timer's pill:
-// mustard while it waits, the late red once it is late (tokens.md).
-const toneClass: Readonly<Record<TimerTone, { rule: string; pill: string }>> = {
-  calm: { rule: "border-l-fg-muted", pill: "bg-chip-neutral-bg text-fg" },
-  waiting: { rule: "border-l-highlight", pill: "bg-chip-warning-bg text-chip-warning-fg" },
-  late: { rule: "border-l-danger-line", pill: "bg-chip-danger-bg text-chip-danger-fg" },
-};
-
-interface TicketCardProps {
-  ticket: KitchenTicketResponse;
-  now: number;
-  lateAfter: number;
-  busy: boolean;
-  disabled: boolean;
-  onBump: () => void;
+interface ColumnProps {
+  title: string;
+  icon: LucideIcon;
+  /** The band's fill and ink. */
+  band: string;
+  count: number;
+  children: ReactNode;
 }
 
-function TicketCard({ ticket: t, now, lateAfter, busy, disabled, onBump }: TicketCardProps) {
-  const elapsed = now - Date.parse(t.sent_at);
-  const tone = timerTone(elapsed, lateAfter);
-  const word = toneWord[tone];
+function Column({ title, icon: Icon, band, count, children }: ColumnProps) {
   return (
-    <article
-      aria-label={`${whereText(t)}, ${timerText(elapsed)}${word ? `, ${word}` : ""}`}
-      className={cx("flex flex-col overflow-hidden rounded-card border border-l-8 border-line-strong bg-raised shadow-card", toneClass[tone].rule)}
-    >
-      <header className="flex flex-col gap-1 border-b border-line px-4 py-3">
-        {/* Where it goes on a line of its own: it is what a runner reads first. */}
-        <p className="break-words font-serif text-display leading-tight">{whereText(t)}</p>
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="text-lg text-fg-2">{t.covers > 0 ? `${t.covers} ${t.covers === 1 ? "cover" : "covers"}` : ""}</span>
-          <span className={cx("flex items-baseline gap-2 rounded-pill px-4 py-1.5", toneClass[tone].pill)}>
-            {word && <span className="text-lg font-semibold uppercase">{word}</span>}
-            <span className="font-mono text-display font-semibold leading-none tabular-nums">{timerText(elapsed)}</span>
-          </span>
-        </div>
+    <section aria-label={`${title}, ${count}`} className="flex min-h-0 flex-col overflow-hidden rounded-card border border-line bg-chrome">
+      <header className={cx("flex min-h-16 shrink-0 items-center gap-3 px-5", band)}>
+        <Icon aria-hidden="true" size={24} strokeWidth={1.9} />
+        <h2 className="font-serif text-xl text-current">{title}</h2>
+        <span className="ml-auto flex size-10 items-center justify-center rounded-round bg-current/20 font-mono text-lg font-bold tabular-nums">{count}</span>
       </header>
-      {t.notes.length > 0 && <p className="border-b border-line bg-chip-warning-bg px-4 py-2 text-kitchen text-chip-warning-fg">{t.notes.join(" · ")}</p>}
-      <ul className="flex flex-col gap-2 px-4 py-3">
-        {t.lines.map((l) => (
-          <li key={l.id} className={cx(l.status === "voided" && "text-fg-muted line-through")}>
-            <p className="text-kitchen font-semibold">
-              <span className={cx("font-mono tabular-nums", l.status !== "voided" && "text-highlight")}>{l.qty}</span> × {l.name}
-              {l.status === "voided" && <span className="ml-2 text-lg no-underline">Void</span>}
-            </p>
-            {l.modifiers.length > 0 && <p className="text-lg text-fg-2">{l.modifiers.join(", ")}</p>}
-            {l.notes.map((n, i) => (
-              <p key={i} className="text-lg text-chip-warning-fg">
-                {n}
-              </p>
-            ))}
-          </li>
-        ))}
-      </ul>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onBump}
-        className="m-4 mt-auto min-h-18 rounded-pill bg-accent text-display font-semibold text-accent-fg outline-offset-2 outline-line-focus hover:bg-accent-hover focus-visible:outline-4 disabled:opacity-50"
-      >
-        {busy ? "Bumping" : "Bump"}
-      </button>
-    </article>
+      <ul className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto p-3.5">{children}</ul>
+    </section>
   );
-}
-
-function clockText(now: number): string {
-  return new Date(now).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 /** The time, every `every` ms: timers move by the second. */

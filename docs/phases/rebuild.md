@@ -271,7 +271,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 15a. (ADR-175) "Start preparing", from the server: a ticket a cook has picked up
     is in progress (`ticket.started`), and is marked ready from there. `POST
     .../tickets/{seq}/start`; the board carries it. Go tests.
-  - [ ] 15b. The board as drawn (D10), on paper: the header, the three columns,
+  - [x] 15b. (ADR-176) The board as drawn (D10), on paper: the header, the three columns,
     each card with where it goes, when it was placed, how long it has waited,
     its lines and its one action. Recall and Change station kept (rule 4).
   - [ ] 15c. Espresso night (D11) and the foot: Night mode kept on the device,

@@ -14,7 +14,15 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 15a: "Start preparing", from the server** (ADR-175). Task 15 is
+**Rebuild, Task 15b: the kitchen's board** (ADR-176). `/kitchen` is D10 on paper
+(`kitchen/KitchenBoard.tsx`, `TicketCard.tsx`, `boardColumns` in `kitchen-logic.ts`):
+the header, the all-day strip, and three columns, New Orders with Start preparing,
+Preparing with Mark ready and a bar towards late, Ready for pickup with Recall. Seen
+in a browser as a kitchen display at 1920x1080 and 1366x768 against the dev venue: a
+ticket started, marked ready and recalled. Tests: `boardColumns`, `metaText`,
+`latePercent`, `agoText`. `make check` and `make build-web` pass.
+
+Before it, **Rebuild, Task 15a: "Start preparing", from the server** (ADR-175). Task 15 is
 split in five. A ticket a cook has picked up is in progress: `ticket.started`, `POST
 /api/v1/kitchen/orders/{id}/tickets/{seq}/start`, and the board's tickets carry
 `started_at`. A bump still works from fired; a recall puts a ticket back as new.
@@ -100,18 +108,16 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) or 14 (a, c).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c) or 15b.
 
 ## Next task
 
-**Rebuild, Task 15b** (the kitchen board as drawn): D10 (line 36 of `mez Desktop
-KDS and Dashboard.dc.html`), on paper. The header; three columns, New Orders (fired,
-"Start preparing"), Preparing (in progress, "Mark ready") and Ready for pickup (bumped,
-within the recall window); each card with where it goes, when it was placed, how long
-it has waited and its lines. Keep Recall and Change station (rule 4), the timer tones
-and the 26px lines (ADR-091). `kitchen/KitchenBoard.tsx`, `kitchen-logic.ts`,
-`use-kitchen-board.ts` (add `start`). The stats column is 15d and night 15c: leave
-room, draw neither. Read `docs/design/tokens.md` and that screen only. Phase 11
+**Rebuild, Task 15c** (espresso night and the board's foot): D11 (line 158 of `mez
+Desktop KDS and Dashboard.dc.html`) and the foot of D10 (Settings, Sound on, Auto
+advance, Group by table, Night mode, Mark all complete). Night mode is a choice kept on
+the device (`data-surface="ink"`; `main.tsx` set it before 15b). Check each band, chip
+and `highlight-fg` on ink. Draw only the foot's controls something does: say which are
+left out. Read `docs/design/tokens.md` and D11 only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -125,9 +131,15 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
-- Start preparing (ADR-175): no button yet (15b). The ticket index cannot say what
-  is in progress without the orders. Nobody is named as the one who started a ticket.
-  Not tried against the dev server, only in Go tests.
+- The kitchen's board (ADR-176): no night screen until 15c, no stats or Upcoming
+  (15d), no foot. A new ticket has no Mark ready of its own. The clock is the device's
+  zone, not the venue's. `docs/design/screens/kitchen-display.md` describes the old
+  board (Task 17 rewrites it). Not seen by eye: takeaway and delivery icons, a counter
+  order, a voided line, a line's choices and notes, a calm and a Waiting timer (the dev
+  venue's tickets were all late), a failed action, a column long enough to scroll at
+  1080p, and two displays at one station.
+- Start preparing (ADR-175): the ticket index cannot say what is in progress without
+  the orders. Nobody is named as the one who started a ticket.
 - The shift summary (ADR-174): no ratings, no Print summary, no area. Not seen by
   eye: several tables' bars, "No table", a table gone from the floor, a failed read,
   someone who has done nothing, and End shift carried through.

@@ -62,7 +62,7 @@ const preset = {
         tint: v("attention-tint"),
       },
 
-      highlight: v("highlight"),
+      highlight: { DEFAULT: v("highlight"), fg: v("highlight-fg") },
       // The logo's arches and wordmark; its top is `highlight`.
       logo: v("logo-ink"),
 

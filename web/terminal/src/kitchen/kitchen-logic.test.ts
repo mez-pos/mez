@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { KitchenBoardResponse, KitchenTicketResponse } from "../../../shared/api-types";
-import { allDay, lastBumped, readStation, timerText, timerTone, toMake, whereText } from "./kitchen-logic";
+import { agoText, allDay, boardColumns, lastBumped, latePercent, metaText, readStation, timerText, timerTone, toMake, whereText } from "./kitchen-logic";
 
 const ticket = (extra: Partial<KitchenTicketResponse> = {}): KitchenTicketResponse => ({
   order_id: "ord_NMRNWWW1",
@@ -52,6 +52,35 @@ describe("the board", () => {
     expect(allDay([{ ...started, lines: [{ id: 1, name: "Upma", qty: 2, course: 1, modifiers: [], notes: [], status: "active" }] }])).toEqual([
       { name: "Upma", qty: 2 },
     ]);
+  });
+
+  it("sorts the board into new, preparing and ready", () => {
+    const started = ticket({ ticket_seq: 8, status: "in_progress", sent_at: "2026-09-28T11:40:00Z", started_at: "2026-09-28T11:45:00Z" });
+    const cols = boardColumns(board([ticket(), bumped, older, started, bumpedLater]));
+    // To make: oldest first. On the pass: the one just called first.
+    expect(cols.fresh.map((t) => t.ticket_seq)).toEqual([5, 3]);
+    expect(cols.preparing.map((t) => t.ticket_seq)).toEqual([8]);
+    expect(cols.ready.map((t) => t.ticket_seq)).toEqual([9, 7]);
+    expect(boardColumns(undefined)).toEqual({ fresh: [], preparing: [], ready: [] });
+  });
+
+  it("says who a ticket is for and how it leaves", () => {
+    expect(metaText(ticket())).toBe("2 guests · Dine-in");
+    expect(metaText(ticket({ covers: 1 }))).toBe("1 guest · Dine-in");
+    expect(metaText(ticket({ covers: 0, service: "takeaway" }))).toBe("Takeaway");
+  });
+
+  it("fills the bar towards late and no further", () => {
+    expect(latePercent(0, 20)).toBe(0);
+    expect(latePercent(5 * 60_000, 20)).toBe(25);
+    expect(latePercent(45 * 60_000, 20)).toBe(100);
+    expect(latePercent(-1000, 20)).toBe(0);
+  });
+
+  it("says how long a ticket has been on the pass", () => {
+    expect(agoText(30_000)).toBe("now");
+    expect(agoText(4 * 60_000)).toBe("4m");
+    expect(agoText(65 * 60_000)).toBe("1h 05m");
   });
 
   it("recalls the ticket bumped last", () => {
