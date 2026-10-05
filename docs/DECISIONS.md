@@ -5888,9 +5888,16 @@ Decision:
 Because: the relay is the one part of this that strangers reach and that serves many
 venues at once, so each choice is the one that needs nothing kept and lets one party
 hurt only itself.
-Cost: local storage is still shared between venues on one relay, since it is per
-origin and no header changes that; a subdomain per venue would end it and needs a
-wildcard certificate (open question in `STATE.md`). Revoking a key takes a restart.
+Cost: **the prefix rules are tidiness, not isolation.** Venues on one relay are one
+origin to a browser, so a script served by one venue can fetch another venue's pages
+as the guest, cookies attached whatever their `Path`, and read the answer; local
+storage is shared too. On a relay with one venue, or venues that trust each other,
+that is nothing. On a hosted relay with strangers it is cross-tenant script access,
+and it must be closed before one is run: a subdomain per venue (a wildcard
+certificate), or a sandboxing `Content-Security-Policy` on proxied pages, which
+would also take cookies and storage away from the guest app. Until then guest
+cookies must be `HttpOnly` and nothing a guest's script can read should be worth
+stealing (open question 7 in `STATE.md`). Revoking a key takes a restart.
 The request body is sent before the response is read, so there is no full-duplex
 streaming, and a guest cannot open a WebSocket through the relay: order tracking
 (Task 5) is server-sent events or polling. `go test -race` could not be run here (no

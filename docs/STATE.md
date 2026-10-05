@@ -33,7 +33,7 @@ build` makes `bin/relay` too. Tested over real sockets; nothing in mez talks to 
 
 - A dev server may be running from an old binary: a Go change needs `make dev` run
   again, and `make check` cannot rebuild `bin/mez` while one runs from it.
-- The relay has had no load test and no run behind a real TLS proxy.
+- The relay has had no load test, no run behind a real TLS proxy, and question 7.
 
 ## Open questions for the human
 
@@ -45,7 +45,8 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 4. Tax-inclusive totals read as if the rows add up. Say "incl." on the tax rows?
 5. The desktop's cash quick amounts never offer ₹500. Show it?
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
-7. Relay (ADR-201): venues share one origin. A subdomain each on the hosted relay?
+7. Relay (ADR-201): venues share one origin, so one venue's script can act as another's
+   guest. Unsafe for a hosted relay as is. A subdomain each? Decide before Task 3.
 
 ---
 
