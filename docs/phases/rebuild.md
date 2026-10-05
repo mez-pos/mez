@@ -357,7 +357,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     and merge, the bill, the shift summary (`waiter-*.md`, new).
   - [ ] 17e. The kitchen: the board, its foot and stats, Coming next, and a
     cook signed in on a terminal (`kitchen-display.md`).
-  - [ ] 17f. The back office's frame (`backoffice-shell.md`), the dashboard
+  - [x] 17f. The back office's frame (`backoffice-shell.md`), the dashboard
     (`backoffice-dashboard.md`, new), the three report tabs
     (`backoffice-reports.md`), Audit (`backoffice-audit.md`).
   - [ ] 17g. The rest of the back office: Menu, Inventory, Staff, Settings,

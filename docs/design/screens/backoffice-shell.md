@@ -1,111 +1,134 @@
-# Back office: Shell
+# Back office: the frame
 
-The frame every back office screen sits in: where you are, where else you
-can go, and only the places you are allowed to go. Built in phase 10 Task 1
-(ADR-105). Replaces the row of buttons that was the back office home.
+What is around every back office screen: where you are, where else you can
+go, and only the places you are allowed to go. Built in phase 10 (ADR-105) and
+rebuilt from D12's frame in the rebuild's Task 16a (ADR-182).
+`web/backoffice/src/App.tsx` and `shell/`: `BackOfficeShell.tsx`,
+`SectionNav.tsx`, `SectionGate.tsx`, `nav-logic.ts`; the profile menu and the
+connection word are `web/shared/shell/`. Under `/backoffice`.
 
 ## Purpose
 
-An owner or manager at a laptop moves between menu, stock, people, reports
-and settings without hunting, and never lands on a page that will only
-answer "you do not have permission".
+An owner or manager at a laptop moves between menu, stock, people, reports and
+settings without hunting, and never lands on a page that will only answer
+"you do not have permission".
 
 ## Rules for this surface
 
-The back office is not the till. It is paper, dense and keyboard-driven,
-and that is correct:
+The back office is not the order screen. It is paper, dense and
+keyboard-driven, and that is correct:
 
-- Rows and tables are `--text-sm` where the terminal is `--text-base`.
 - Every section is reachable from the keyboard (see Keys). Focus is always
   visible.
 - Controls stay 48px: the back office is used on a tablet as often as a
   laptop. Density comes from text size and rhythm, not from small targets.
 - Numbers tabular and right-aligned, as everywhere.
+- A list of things the venue owns is a table in a card, with a chip for
+  where each stands and what can be done to it under the row's "..."
+  (`RowMenu`). The page head is the title, a line of counts, and the action
+  at the right.
 
 ## Layout
 
-Paper surface, inside `SignedInShell` (header: the logo, then `<section> ·
-<device>`, the connection, the staff member, **Sign out**).
+The frame is the height of the screen and never scrolls; the sidebar and the
+screen each scroll on their own.
 
-- **Navigation**, a column 240px wide on the left of the page, scrolling on
-  its own; above the content as a wrapped row on a narrow screen.
-  Grouped, each group under a meta label:
+- **The bar, 72px, chrome:** the logo; at the right the connection as a word
+  ("Online", or what is wrong); the venue's date and time in a pill, to the
+  second, in the venue's zone, from 1024px; the profile (initials, name,
+  role), whose menu is **Sign out**; and a script line from 1536px.
+- **The sidebar, 240px, chrome:** an icon and a name on every entry, each
+  48px, with its key chord at the right, faint, in the numeral face: `g m`.
+  The current one is the terracotta fill. Grouped, each group under a
+  small-caps label:
   - (no label) **Dashboard**
-  - **Run the venue**: Menu, Stock, People
-  - **Reports**: Z-reports, Sales reports
-  - **Settings**: Floor plan, Printers, Venue settings, Devices
-- Each entry is 48px, sentence case, with its key chord on the right in
-  tabular, faint: `g m`. The current one has `aria-current="page"`, the
-  terracotta fill and semibold text, as a pill. Terracotta is the
-  sidebar's voice (tokens.md); green is kept for the action that commits.
-- An entry whose screen is not built yet is muted, carries a faint
-  uppercase **SOON** label, and is not a link. Not a `StatusChip`: "not
-  built" is not a status of anything the venue owns. Its task sets
-  `built: true` in `nav-logic.ts`.
-- **Content** fills the rest and scrolls on its own, padded 32px.
+  - **Run the venue:** Menu, Inventory, Staff
+  - **Reports:** Z-reports, Audit, Sales reports
+  - **Settings:** Floor plan, Printers, Settings, Devices
+  - A script line at the foot, on a screen 900px tall or more.
+  - Under 768px the sidebar is a wrapped row above the screen.
+- **The screen** fills the rest, padded 24px.
+
+Sign-in and pairing are the terminal's screens (`terminal-lock.md`), on a
+device paired as a back office.
 
 ## Who sees what
 
-| Entry | Path | Needs | Built in |
+| Entry | Path | Needs | Keys |
 |---|---|---|---|
-| Dashboard | `/` | signed in | this task |
-| Menu | `/menu` | `menu.edit` | Task 2 |
-| Stock | `/stock` | `stock.manage` (ADR-111) | Task 3 |
-| People | `/people` | `staff.manage` | Task 4 |
-| Z-reports | `/reports` | `reports.view` | phase 09 |
-| Audit | `/audit` | `reports.view` | phase 10, Task 4d |
-| Sales reports | `/sales` | `reports.view` | Task 5 |
-| Floor plan | `/floor` | `settings.edit` | phase 08 |
-| Printers | `/printers` | `settings.edit` | phase 07 |
-| Venue settings | `/settings` | `settings.edit` | Task 6g |
-| Devices | `/devices` | `device.manage` | Task 6k |
+| Dashboard | `/` | signed in | `g d` |
+| Menu | `/menu` | `menu.edit` | `g m` |
+| Inventory | `/stock` | `stock.manage` (ADR-111) | `g k` |
+| Staff | `/people` | `staff.manage` | `g p` |
+| Z-reports | `/reports`, `/reports/:n`, `/shifts/:id/tips` | `reports.view` | `g r` |
+| Audit | `/audit` | `reports.view` | `g a` |
+| Sales reports | `/sales`, `/sales/items`, `/sales/staff` | `reports.view` | `g s` |
+| Floor plan | `/floor` | `settings.edit` | `g f` |
+| Printers | `/printers` | `settings.edit` | `g t` |
+| Settings | `/settings/:section` | `settings.edit` | `g v` |
+| Devices | `/devices` | `device.manage` | `g e` |
 
 - An entry you lack the permission for is **not shown**. A group with no
-  entries left is not shown either. A cashier signed in here sees
-  Dashboard alone.
+  entries left is not shown either.
 - Typing the path of a section you may not open shows **"That is not yours
-  to open"**, the permission it needs in the numeral face, and **Back to the
-  dashboard**. The screen's own requests are not made.
-- The permissions are the ones the server sent with the session
-  (`GET /api/v1/sessions/current`, `POST /api/v1/sessions`). Hiding is a
+  to open"**, the permission it needs in the numeral face, "Ask the owner to
+  add it to your role.", and **Back to the dashboard**. The screen
+  underneath never mounts, so none of its requests are made only to be
+  refused.
+- The permissions are the ones the server sent with the session. Hiding is a
   courtesy: every endpoint still checks for itself.
-
-## Dashboard
-
-The skeleton the reports task fills.
-
-- The title "Back office" (the serif), and under it the signed-in
-  name: "Signed in as Asha".
-- **Today**: a `Card` saying "Sales, covers and open tickets for today
-  arrive with reports." No placeholder numbers: a dash that looks like a
-  zero is a lie on a money screen.
-- **Low stock** (phase 10, Task 3d): for whoever has `stock.manage`,
-  what is at or under its level (`backoffice-stock.md`).
-- **Your sections**: one `Card` per group you can see, each entry with a
-  one-line description and a link to it. The same list as the navigation,
-  so the two never disagree.
+- The sidebar, the dashboard's shortcuts, the chords and the guard all read
+  one list (`NAV` in `nav-logic.ts`), so they cannot disagree.
+- Any other path goes to the dashboard.
 
 ## Keys
 
 | Keys | Does |
 |---|---|
-| `g` then a letter | Go to that section: `d` Dashboard, `m` Menu, `k` Stock, `p` People, `r` Z-reports, `a` Audit, `s` Sales reports, `f` Floor plan, `t` Printers, `v` Venue settings, `e` Devices |
-| `Tab` | Moves through the navigation, then the content |
+| `g` then a letter | Goes to that section, by the table above |
+| `Tab` | Moves through the sidebar, then the screen |
 
 - The second key must come within 1.5 seconds of `g`, or the `g` is
   forgotten.
 - Ignored while typing: in an input, a select, a textarea or anything
   editable, and whenever Ctrl, Alt or Meta is held.
-- A chord for a section you cannot see or that is not built does nothing.
+- A chord for a section you cannot see does nothing.
+
+## Data
+
+- The signed-in person and their permissions, from the auth store.
+- `GET /api/v1/venue`, for the zone the clock is read in.
+- The app's stream, for the connection word.
+- The range the three report screens share is held here, above the routes
+  (`ReportRangeProvider`), so the days picked on one are the days on the
+  next.
 
 ## States
 
-- **Loading, offline:** the shell stays; each screen says its own words.
-- **Permissions changed mid-session** (a role edited in Task 4): the shell
-  learns at the next sign-in or reload, and until then the server refuses
-  as usual.
+- **Loading, offline:** the frame stays; each screen says its own words. The
+  bar says "Server unreachable" or "Reconnecting" in its colour and its
+  word.
+- **Permissions changed mid-session** (a role edited on Staff): the frame
+  learns at the next sign-in or reload, and until then the server refuses as
+  usual.
+- **A draft left by a sidebar link:** Settings asks first ("Leave without
+  saving?"); the other screens drop it without asking.
 
 ## Reference
 
-Built from the primitives in `docs/design/components.md` and the paper
-tokens. The archive was not consulted for this task.
+`mez Desktop KDS and Dashboard.dc.html`, D12 Dashboard (line 280), for the
+bar and the sidebar. Left out, and why:
+
+- **Search in the bar, with Ctrl + K, and the bell:** nothing answers
+  either.
+- **Orders and Tables in the sidebar:** they are the terminal's screens,
+  another app with its own pairing.
+- **Customers:** out of v1.
+
+Changed: the design draws nine entries in one run. The back office has
+eleven, so they keep their groups, each under its label. Its "Menu
+Management" is **Menu**.
+
+Kept, though not drawn (rule 4): Z-reports, Audit, Floor plan, Printers and
+Devices as entries of their own; the key chords; the guard's "That is not
+yours to open".
