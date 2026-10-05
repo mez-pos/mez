@@ -3,27 +3,12 @@
 // the request the server checks.
 
 import { ApiError } from "../../../shared/api";
-import type {
-  Diet,
-  EditorCategory,
-  EditorCourse,
-  EditorItem,
-  EditorStation,
-  EditorTaxClass,
-  MenuEditor,
-  MenuItemInput,
-  Money,
-} from "../../../shared/api-types";
+import type { Diet, EditorCourse, EditorItem, EditorTaxClass, MenuEditor, MenuItemInput, Money } from "../../../shared/api-types";
 import { amountInputText, parseAmount } from "../../../shared/money";
 
 /** The items of one category, in their order. */
 export function itemsOf(menu: MenuEditor, categoryId: number): EditorItem[] {
   return menu.items.filter((i) => i.category_id === categoryId);
-}
-
-/** The category to show: the one asked for if it still exists, else the first. */
-export function selectedCategory(menu: MenuEditor, wanted: number | null): EditorCategory | null {
-  return menu.categories.find((c) => c.id === wanted) ?? menu.categories[0] ?? null;
 }
 
 /** The three views of the menu editor. */
@@ -210,20 +195,4 @@ export function problemOf(err: unknown): Problem {
     return { field, message: err.message };
   }
   return { field: null, message: "Something went wrong. Try again." };
-}
-
-/** Names by id, for the table's columns. */
-export function namesById(menu: MenuEditor): {
-  taxClass: (id: number) => string;
-  station: (id: number) => string;
-  course: (id: number) => string;
-} {
-  const tax = new Map(menu.tax_classes.map((t) => [t.id, taxClassText(t)]));
-  const stations = new Map(menu.stations.map((s: EditorStation) => [s.id, s.active ? s.name : `${s.name} (retired)`]));
-  const courses = new Map(menu.courses.map((c) => [c.id, courseText(c)]));
-  return {
-    taxClass: (id) => tax.get(id) ?? "Unknown",
-    station: (id) => stations.get(id) ?? "Unknown",
-    course: (id) => courses.get(id) ?? "Unknown",
-  };
 }

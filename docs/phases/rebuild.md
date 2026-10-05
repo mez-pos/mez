@@ -327,7 +327,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     - [x] 16e1. Tips by who took the payment, on the report (`tips_by`). Go tests.
     - [x] 16e2. The screen, a third report tab: staff performance with tips,
       removed in error, the tips total; "Who sold it" moved here.
-  - [ ] 16f. Menu (D18).
+  - [x] 16f. (ADR-190) Menu (D18).
   - [ ] 16g. Inventory (D19).
   - [ ] 16h. Staff and roles (D20).
   - [ ] 16i. Settings (D22).

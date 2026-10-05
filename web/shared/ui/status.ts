@@ -91,6 +91,16 @@ export const stockLevels: Readonly<Record<StockLevel, ChipSpec>> = {
   out: { tone: "danger", word: "Out" },
 };
 
+// A menu item in the back office's list (D18). Sold out is for the rest of
+// the trading day (ADR-109); retired is off every till until brought back.
+export type MenuItemState = "active" | "sold_out" | "retired";
+
+export const menuItemStates: Readonly<Record<MenuItemState, ChipSpec>> = {
+  active: { tone: "success", word: "Active" },
+  sold_out: { tone: "warning", word: "Sold out" },
+  retired: { tone: "neutral", word: "Retired" },
+};
+
 /** What a StatusChip is given: which vocabulary, and a value from it. */
 export type ChipStatus =
   | { readonly kind: "kitchen"; readonly status: KitchenStatus }
@@ -100,7 +110,8 @@ export type ChipStatus =
   | { readonly kind: "print"; readonly status: PrintJobState }
   | { readonly kind: "table"; readonly status: TableStatus }
   | { readonly kind: "day"; readonly status: DayStatus }
-  | { readonly kind: "stock"; readonly status: StockLevel };
+  | { readonly kind: "stock"; readonly status: StockLevel }
+  | { readonly kind: "menu"; readonly status: MenuItemState };
 
 export function chipSpec(chip: ChipStatus): ChipSpec {
   switch (chip.kind) {
@@ -120,5 +131,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
       return dayStatuses[chip.status];
     case "stock":
       return stockLevels[chip.status];
+    case "menu":
+      return menuItemStates[chip.status];
   }
 }

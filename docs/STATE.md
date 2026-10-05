@@ -14,7 +14,18 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16d3: an item's cost and margin** (ADR-189). Task 16d is done. The owner
+**Rebuild, Task 16f: Menu management** (ADR-190). `/backoffice/menu` is D18
+(`menu/MenuScreen.tsx`, `CategoryRail.tsx`, `ItemList.tsx`, `ItemEditor.tsx`,
+`browse-logic.ts`): categories with counts, the items with a chip for where each
+stands, and the item open in an inline editor with its photo and tags beside it; the
+modal form and the table are gone. Search, a filter and an order on the list. Choices
+and Stations and courses are still views of their own. Seen in a browser as Priya at
+1920x1080 and 1366x768: an item edited and saved, a search, Sold out today and back
+from a row's menu, a new item refused for its HSN and then added, and retired. Tests:
+`scopeRows`, `itemState`, `listItems`, `canReorder`, `emptyLine`. `make check` and
+`make build-web` pass.
+
+Before it, **Rebuild, Task 16d3: an item's cost and margin** (ADR-189). Task 16d is done. The owner
 chose the ledger over today's recipe. A sold stock movement keeps its dish (migration
 00035) and the ledger keeps how many of a dish it costed (`stock_dish_sales`, 00036);
 `GET /api/v1/reports/items` gives each item's net sales, cost and margin, and a margin
@@ -213,12 +224,11 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to e).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to f).
 
 ## Next task
 
-**Rebuild, Task 16f: Menu** (D18, `mez Desktop Management.dc.html` line 286). The
-reports (16c to 16e) are done.
+**Rebuild, Task 16g: Inventory** (D19, `mez Desktop Management.dc.html` line 428).
 Read `docs/design/tokens.md` and that one screen. The screens inside the new frame are
 still the old layouts until their own tasks (16c to 16j). The owner has not yet looked
 at the kitchen's screens, the frame or the dashboard. Phase 11 waits for this phase.
@@ -235,6 +245,14 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Menu management (ADR-190): opening another item or leaving the screen drops an
+  unsaved edit without asking, and an item changed on another screen while it is open
+  is saved over. The list no longer shows each item's tax class, station, course or
+  HSN (they are in the editor). No cost price, combos or drag to reorder. The dev
+  venue has a retired "Test biscotti" in Cakes from the browser check. Not seen by
+  eye: a photo chosen and saved, choices added to an item, Move up and down, a
+  category added, renamed and retired, the Kitchen and tax tab's refusal, the
+  Choices and Stations views after the change, and a link to `/menu?item=N`.
 - An item's cost and margin (ADR-189): sales from before migration 00035 are never
   costed by dish; a dish with no recipe reads "Not costed". No CSV has cost. The dev
   venue now has recipes for Espresso, Cappuccino, Americano and Lemon tart and two

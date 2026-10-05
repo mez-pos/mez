@@ -5499,3 +5499,38 @@ match and the row reads `part`, which is the safe side. So does a dish whose lin
 voided after a reopen, even when its cost had not changed. Migration 00037 indexes the
 ledger by kind and time for these reads. No CSV carries cost yet.
 ---
+
+## ADR-190 - Menu management is D18: categories, the items, and the editor side by side
+2026-10 · Status: accepted. Rebuild Task 16f (D18); over ADR-106 to ADR-110 and ADR-147.
+Context: D18 is four columns: categories, the menu's items, the item being edited, and
+its photo, tags and Save. The screen from phase 10 was a table of one category with a
+modal form.
+Decision:
+  - **The item form is inline,** beside the list. Picking an item opens it; Add New Item
+    opens the same form empty, in the category shown. The modal is gone.
+  - **Categories** lists All items and Popular ahead of the categories, each with its
+    count, and "+" adds one. Rename, move and retire sit under the list for the chosen
+    category (rule 4).
+  - **The list** has each item's photo or a plain tile, name, price and where it stands
+    (a chip: Active, Sold out, Retired), and "..." for Sold out today, Retire and, in a
+    single category in menu order, Move up and down. Its order is the menu's, A to Z or
+    by price.
+  - **Search** looks through every category by name; the filter beside it is by where
+    an item stands. Both are the browser's: the editor already has the whole menu.
+  - **The editor's tabs** are Choices and Kitchen and tax (the station and the course).
+    A refusal for a field on the other tab switches to it. The HSN code is with the
+    main fields where the venue needs one: every new item would be refused without it.
+  - **Photo and tags** are beside the form from 1700px wide and under it below. Tags
+    are the mark on the card, Gluten free and Popular (ADR-147).
+  - **Left out:** Cost price (a dish's cost is its recipe's, ADR-189); Show in online
+    ordering and Happy-hour pricing (neither exists); Nutrition; stock per menu item
+    (stock is by ingredient); combos; drag to reorder. "Delete item" is Retire item: an
+    item with sales is never deleted. Categories wear one icon: nothing says which
+    picture a category is.
+  - Choices and Stations and courses stay as views of their own, as pills (rule 4).
+Because: editing a menu is going down a list and fixing each line; a modal a row made
+that two clicks and a wait every time.
+Cost: opening another item, or leaving the screen, drops what was typed and not saved,
+without asking. `docs/design/screens/backoffice-menu.md` describes the old screen until
+Task 17.
+---

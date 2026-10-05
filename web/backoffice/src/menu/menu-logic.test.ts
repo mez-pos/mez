@@ -8,12 +8,10 @@ import {
   itemFromSearch,
   itemsOf,
   moved,
-  namesById,
   newItemForm,
   priceChange,
   problemOf,
   rateText,
-  selectedCategory,
   taxClassText,
   toItemInput,
   unreadablePrice,
@@ -63,16 +61,10 @@ const menu: MenuEditor = {
   modifier_groups: [],
 };
 
-describe("itemsOf and selectedCategory", () => {
+describe("itemsOf", () => {
   it("lists a category's items in order", () => {
     expect(itemsOf(menu, 10).map((i) => i.name)).toEqual(["Latte", "Mocha"]);
     expect(itemsOf(menu, 99)).toEqual([]);
-  });
-  it("keeps the chosen category, falls back to the first, and to none", () => {
-    expect(selectedCategory(menu, 11)?.name).toBe("Breakfast");
-    expect(selectedCategory(menu, 99)?.name).toBe("Coffee");
-    expect(selectedCategory(menu, null)?.name).toBe("Coffee");
-    expect(selectedCategory({ ...menu, categories: [] }, 10)).toBeNull();
   });
 });
 
@@ -247,13 +239,6 @@ describe("problemOf", () => {
     expect(problemOf(refusal("menu_order_stale")).message).toMatch(/changed on another screen/);
     expect(problemOf(refusal("forbidden", "menu.edit"))).toEqual({ field: null, message: "Only someone who can edit the menu can do this." });
     expect(problemOf(new Error("boom")).message).toBe("Something went wrong. Try again.");
-  });
-});
-
-describe("namesById", () => {
-  it("names each column's id, marking a retired station", () => {
-    const n = namesById(menu);
-    expect([n.taxClass(1), n.station(1), n.station(2), n.course(1), n.course(9)]).toEqual(["Food, 5%", "Bar (retired)", "Kitchen", "1 Mains", "Unknown"]);
   });
 });
 

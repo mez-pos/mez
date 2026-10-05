@@ -1,29 +1,37 @@
-// The menu editor (docs/design/screens/backoffice-menu.md): categories down
-// the side, the selected one's items in a table, and the forms that add and
-// change them. Every change reaches the tills at once; tickets already open
-// keep what they were rung up at.
+// The menu editor (D18): the categories, the items of the one chosen, and
+// the item open in its editor, side by side. Every change reaches the order
+// screens at once; orders already open keep what they were rung up at.
+//
+// The design's one screen is the Items view. The back office also has the
+// groups of choices and the stations and courses (rebuild.md, rule 4): they
+// are the two other views, as pills under the title.
 
+import { PlusIcon, SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { EditorGroup, EditorItem, MenuEditor, MenuItemInput } from "../../../shared/api-types";
-import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
-import { CategoryFormModal, CategoryPanel } from "./CategoryPanel";
+import type { EditorGroup, MenuEditor } from "../../../shared/api-types";
+import { Button, Card, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
+import { cx } from "../../../shared/ui/cx";
+import { pillClass } from "../../../shared/ui/pill";
+import { useClock } from "../../../shared/use-clock";
+import { inputClass } from "../FormFields";
+import { itemState, showOptions, validScope, type ListFilter, type Scope, type Show } from "./browse-logic";
+import { CategoryFormModal } from "./CategoryPanel";
+import { CategoryRail } from "./CategoryRail";
 import { emptyGroupForm, groupFormFrom, groupsChanged, usedBy } from "./group-logic";
 import { GroupFormModal } from "./GroupFormModal";
 import { GroupsView } from "./GroupsView";
-import { ItemFormModal } from "./ItemFormModal";
+import { ItemEditor } from "./ItemEditor";
+import { ItemList } from "./ItemList";
 import type { PhotoChange } from "./ItemPhotoField";
-import { ItemsTable } from "./ItemsTable";
-import { itemFormFrom, itemFromSearch, newItemForm, problemOf, selectedCategory, viewFromSearch, viewWords, type MenuView } from "./menu-logic";
+import { itemFormFrom, itemFromSearch, newItemForm, problemOf, viewFromSearch, viewWords, type MenuView } from "./menu-logic";
 import { SetupView } from "./SetupView";
 import { useMenuEditor, type MenuEditorApi } from "./use-menu-editor";
 
 type Editing =
-  | { kind: "add-category" }
-  | { kind: "rename-category"; id: number; name: string }
-  | { kind: "add-item"; categoryId: number }
-  | { kind: "edit-item"; item: EditorItem }
-  | { kind: "add-group" }
-  | { kind: "edit-group"; group: EditorGroup };
+  { kind: "add-category" } | { kind: "rename-category"; id: number; name: string } | { kind: "add-group" } | { kind: "edit-group"; group: EditorGroup };
+
+/** What the editor has open: a saved item, a new one in a category, or nothing. */
+type Open = { kind: "item"; id: number } | { kind: "new"; categoryId: number; nth: number } | null;
 
 /** Does what the item form asked for its photo, after the item is saved. */
 function applyPhoto(api: MenuEditorApi, id: number, change: PhotoChange): Promise<void> {
@@ -39,63 +47,125 @@ function applyPhoto(api: MenuEditorApi, id: number, change: PhotoChange): Promis
 
 export function MenuScreen() {
   const api = useMenuEditor();
-  const [wanted, setWanted] = useState<number | null>(null);
+  const toast = useToast();
+  const now = new Date(useClock(60_000));
+  const [view, setView] = useState<MenuView>(() => viewFromSearch(window.location.search));
+  const [filter, setFilter] = useState<ListFilter>({ scope: "all", search: "", show: "all", order: "menu" });
+  const [open, setOpen] = useState<Open>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  const [view, setView] = useState<MenuView>(() => viewFromSearch(window.location.search));
+  const [busy, setBusy] = useState(false);
+  const made = useRef(0);
   const menu = api.data;
-  const category = menu ? selectedCategory(menu, wanted) : null;
 
   // A link that names an item (`/menu?item=12`, from the tax settings) opens
-  // its form once, as soon as the menu is read.
+  // it once, as soon as the menu is read.
   const asked = useRef(false);
   useEffect(() => {
     if (!menu || asked.current) return;
     asked.current = true;
     const item = itemFromSearch(window.location.search, menu);
     if (item) {
-      setWanted(item.category_id);
-      setEditing({ kind: "edit-item", item });
+      setFilter((f) => ({ ...f, scope: item.category_id }));
+      setOpen({ kind: "item", id: item.id });
     }
   }, [menu]);
 
+  const scope = menu ? validScope(menu, filter.scope) : filter.scope;
+  const shown: ListFilter = { ...filter, scope };
+  const item = menu && open?.kind === "item" ? (menu.items.find((i) => i.id === open.id) ?? null) : null;
+  const newIn = menu && open?.kind === "new" ? (menu.categories.find((c) => c.id === open.categoryId) ?? menu.categories[0] ?? null) : null;
+
+  const pick = (patch: Partial<ListFilter>) => {
+    setFilter((f) => ({ ...f, ...patch }));
+    setProblem(null);
+  };
+  // A refusal is shown over the columns and as a toast: the list can be a
+  // screen tall, and the line over it out of sight.
+  const refused = (message: string) => {
+    setProblem(message);
+    toast(message, { tone: "warning" });
+  };
+  const act = (fn: () => Promise<void>) => {
+    setBusy(true);
+    setProblem(null);
+    fn()
+      .catch((err: unknown) => refused(problemOf(err).message))
+      .finally(() => setBusy(false));
+  };
+  const addItem = (m: MenuEditor) => {
+    // In the category shown, or the first active one from All items or Popular.
+    const into = typeof scope === "number" ? scope : (m.categories.find((c) => c.active)?.id ?? m.categories[0]?.id);
+    if (into === undefined) {
+      setEditing({ kind: "add-category" });
+      return;
+    }
+    made.current += 1;
+    setOpen({ kind: "new", categoryId: into, nth: made.current });
+    setProblem(null);
+  };
+
   return (
-    <div className="flex max-w-6xl flex-col gap-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-4">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-total">Menu</h1>
-          <p className="mt-1 text-sm text-fg-3">Changes reach every till at once. Tickets already open keep the prices they were rung up at.</p>
+          <h1 className="font-serif text-total">Menu Management</h1>
+          <p className="mt-1 text-base text-fg-muted">Create and manage items, categories and their choices. Changes reach every order screen at once.</p>
         </div>
         {view === "items" ? (
-          <div className="flex flex-wrap gap-tap-gap">
-            <Button disabled={!menu} onClick={() => setEditing({ kind: "add-category" })}>
-              Add a category
-            </Button>
-            <Button variant="primary" disabled={!category} onClick={() => category && setEditing({ kind: "add-item", categoryId: category.id })}>
-              Add an item
+          <div className="flex flex-wrap items-center gap-2.5">
+            <label className="relative block">
+              <span className="sr-only">Search menu items</span>
+              <SearchIcon aria-hidden="true" size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-muted" />
+              <input
+                type="search"
+                className={cx(inputClass, "w-72 max-w-full rounded-pill pl-11")}
+                placeholder="Search menu items"
+                value={filter.search}
+                onChange={(e) => pick({ search: e.target.value })}
+              />
+            </label>
+            <div className="w-40 shrink-0">
+              <select
+                aria-label="Show"
+                className={cx(inputClass, "rounded-pill font-semibold")}
+                value={filter.show}
+                onChange={(e) => pick({ show: e.target.value as Show })}
+              >
+                {showOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button variant="attention" disabled={!menu} onClick={() => menu && addItem(menu)}>
+              <PlusIcon aria-hidden="true" size={18} />
+              Add New Item
             </Button>
           </div>
         ) : view === "choices" ? (
-          <Button variant="primary" disabled={!menu} onClick={() => setEditing({ kind: "add-group" })}>
+          <Button variant="attention" disabled={!menu} onClick={() => setEditing({ kind: "add-group" })}>
+            <PlusIcon aria-hidden="true" size={18} />
             Add a group of choices
           </Button>
         ) : null}
       </div>
 
-      <div role="group" aria-label="Show" className="flex gap-tap-gap">
+      <div role="group" aria-label="Show" className="flex flex-wrap gap-2">
         {(["items", "choices", "setup"] as const).map((v) => (
-          <Button
+          <button
             key={v}
-            size="md"
-            variant={view === v ? "primary" : "secondary"}
+            type="button"
             aria-pressed={view === v}
+            className={pillClass(view === v)}
             onClick={() => {
               setView(v);
               setProblem(null);
             }}
           >
             {viewWords[v]}
-          </Button>
+          </button>
         ))}
       </div>
 
@@ -108,27 +178,109 @@ export function MenuScreen() {
       {!api.loading && api.error !== null && (
         <EmptyState icon={<InboxIcon />} line={problemOf(api.error).message} action={{ label: "Try again", onClick: api.refetch }} />
       )}
-      {menu && view === "choices" && <GroupsView menu={menu} api={api} onEdit={(group) => setEditing({ kind: "edit-group", group })} onProblem={setProblem} />}
-      {menu && view === "setup" && <SetupView menu={menu} api={api} onProblem={setProblem} />}
-      {menu && view === "items" && !category && <EmptyState icon={<InboxIcon />} line="No menu yet. Add a category, then the items in it." />}
-      {menu && view === "items" && category && (
-        <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-start">
-          <CategoryPanel
+      {menu && view === "choices" && (
+        <div className="max-w-6xl">
+          <GroupsView menu={menu} api={api} onEdit={(group) => setEditing({ kind: "edit-group", group })} onProblem={setProblem} />
+        </div>
+      )}
+      {menu && view === "setup" && (
+        <div className="max-w-6xl">
+          <SetupView menu={menu} api={api} onProblem={setProblem} />
+        </div>
+      )}
+      {menu && view === "items" && (
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_300px_minmax(0,1fr)] min-[1700px]:grid-cols-[230px_340px_minmax(0,1fr)]">
+          <CategoryRail
             menu={menu}
-            selected={category}
-            onSelect={(id) => {
-              setWanted(id);
+            scope={scope}
+            onScope={(s: Scope) => pick({ scope: s, search: "" })}
+            api={api}
+            onAdd={() => setEditing({ kind: "add-category" })}
+            onRename={(id, name) => setEditing({ kind: "rename-category", id, name })}
+            onProblem={refused}
+          />
+          <ItemList
+            menu={menu}
+            filter={shown}
+            onOrder={(order) => pick({ order })}
+            openId={item?.id ?? null}
+            onOpen={(i) => {
+              setOpen({ kind: "item", id: i.id });
               setProblem(null);
             }}
             api={api}
-            onRename={() => setEditing({ kind: "rename-category", id: category.id, name: category.name })}
-            onProblem={setProblem}
+            onProblem={refused}
           />
-          <ItemsTable menu={menu} category={category} api={api} onEdit={(item) => setEditing({ kind: "edit-item", item })} onProblem={setProblem} />
+          <div className="min-w-0 lg:col-span-2 xl:col-span-1">
+            {item ? (
+              <ItemEditor
+                // A different item is a different form; the same item saved again keeps what is typed.
+                key={item.id}
+                menu={menu}
+                item={item}
+                state={itemState(item, now)}
+                soldOutUntil={item.sold_out_until ?? null}
+                initial={itemFormFrom(item)}
+                busy={busy}
+                onCancel={() => setOpen(null)}
+                onSoldOut={(soldOut) => act(() => api.setItemSoldOut(item.id, soldOut))}
+                onActive={(active) => act(() => api.setItemActive(item.id, active))}
+                onSave={async (input, groups, photo) => {
+                  await api.updateItem(item.id, input);
+                  if (groupsChanged(item, groups)) await api.setItemGroups(item.id, groups);
+                  await applyPhoto(api, item.id, photo);
+                  // Moved to another category: the list follows, so the open item stays in it.
+                  if (typeof scope === "number" && scope !== input.category_id) pick({ scope: input.category_id });
+                  const repriced = input.price.minor !== item.price.minor;
+                  toast(repriced ? "Saved. Orders already open keep their prices." : "Saved.", { tone: "success" });
+                }}
+              />
+            ) : newIn && open?.kind === "new" ? (
+              <ItemEditor
+                key={`new-${open.nth}`}
+                menu={menu}
+                item={null}
+                state={null}
+                soldOutUntil={null}
+                initial={newItemForm(menu, newIn.id)}
+                busy={busy}
+                onCancel={() => setOpen(null)}
+                onSoldOut={() => undefined}
+                onActive={() => undefined}
+                onSave={async (input, groups, photo) => {
+                  const id = await api.createItem(input);
+                  // The item is saved now. Its choices and photo are written before
+                  // it is opened as itself, so the editor starts from what was kept
+                  // and a later Save cannot clear choices it never saw. A failure
+                  // here still opens it: Save on this form again would add it twice.
+                  const missing: string[] = [];
+                  if (groups.length > 0) await api.setItemGroups(id, groups).catch(() => missing.push("its choices"));
+                  await applyPhoto(api, id, photo).catch(() => missing.push("its photo"));
+                  setOpen({ kind: "item", id });
+                  pick({ scope: input.category_id, search: "" });
+                  if (missing.length > 0) {
+                    toast(`${input.name} is saved, but ${missing.join(" and ")} did not. Set them again and save.`, { tone: "warning" });
+                    return;
+                  }
+                  toast("Saved.", { tone: "success" });
+                }}
+              />
+            ) : (
+              <Card padding="lg">
+                <EmptyState
+                  icon={<InboxIcon />}
+                  line={menu.items.length === 0 ? "No items yet. Add the first one." : "Pick an item to edit it, or add a new one."}
+                  action={{ label: "Add New Item", onClick: () => addItem(menu) }}
+                />
+              </Card>
+            )}
+          </div>
         </div>
       )}
 
-      {menu && editing && <EditingModal menu={menu} editing={editing} api={api} onSelect={setWanted} onClose={() => setEditing(null)} />}
+      {menu && editing && (
+        <EditingModal menu={menu} editing={editing} api={api} onCategory={(id) => pick({ scope: id, search: "" })} onClose={() => setEditing(null)} />
+      )}
     </div>
   );
 }
@@ -137,11 +289,12 @@ interface EditingModalProps {
   menu: MenuEditor;
   editing: Editing;
   api: MenuEditorApi;
-  onSelect: (categoryId: number) => void;
+  /** Shows a category just made. */
+  onCategory: (id: number) => void;
   onClose: () => void;
 }
 
-function EditingModal({ menu, editing, api, onSelect, onClose }: EditingModalProps) {
+function EditingModal({ menu, editing, api, onCategory, onClose }: EditingModalProps) {
   const toast = useToast();
   switch (editing.kind) {
     case "add-category":
@@ -150,7 +303,7 @@ function EditingModal({ menu, editing, api, onSelect, onClose }: EditingModalPro
           title="Add a category"
           initial=""
           onSave={async (name) => {
-            onSelect(await api.createCategory(name));
+            onCategory(await api.createCategory(name));
             toast("Saved.", { tone: "success" });
           }}
           onClose={onClose}
@@ -168,46 +321,6 @@ function EditingModal({ menu, editing, api, onSelect, onClose }: EditingModalPro
           onClose={onClose}
         />
       );
-    case "add-item":
-      return (
-        <ItemFormModal
-          menu={menu}
-          item={null}
-          initial={newItemForm(menu, editing.categoryId)}
-          onSave={async (input, groups, photo) => {
-            const id = await api.createItem(input);
-            onSelect(input.category_id);
-            // The item is saved now: a failure here must not leave the form
-            // open, where Save again would add it twice.
-            const missing: string[] = [];
-            if (groups.length > 0) await api.setItemGroups(id, groups).catch(() => missing.push("its choices"));
-            await applyPhoto(api, id, photo).catch(() => missing.push("its photo"));
-            if (missing.length > 0) {
-              toast(`${input.name} is saved, but ${missing.join(" and ")} did not. Edit it to try again.`, { tone: "warning" });
-              return;
-            }
-            toast("Saved.", { tone: "success" });
-          }}
-          onClose={onClose}
-        />
-      );
-    case "edit-item":
-      return (
-        <ItemFormModal
-          menu={menu}
-          item={editing.item}
-          initial={itemFormFrom(editing.item)}
-          onSave={async (input: MenuItemInput, groups, photo) => {
-            await api.updateItem(editing.item.id, input);
-            if (groupsChanged(editing.item, groups)) await api.setItemGroups(editing.item.id, groups);
-            await applyPhoto(api, editing.item.id, photo);
-            onSelect(input.category_id);
-            const repriced = input.price.minor !== editing.item.price.minor;
-            toast(repriced ? "Saved. Tickets already open keep their prices." : "Saved.", { tone: "success" });
-          }}
-          onClose={onClose}
-        />
-      );
     case "add-group":
       return (
         <GroupFormModal
@@ -217,7 +330,7 @@ function EditingModal({ menu, editing, api, onSelect, onClose }: EditingModalPro
           usedBy={0}
           onSave={async (input) => {
             await api.createGroup(input);
-            toast("Saved. Offer it on items from each item's form.", { tone: "success" });
+            toast("Saved. Offer it on items from each item's editor.", { tone: "success" });
           }}
           onClose={onClose}
         />
@@ -231,7 +344,7 @@ function EditingModal({ menu, editing, api, onSelect, onClose }: EditingModalPro
           usedBy={usedBy(menu, editing.group.id)}
           onSave={async (input) => {
             await api.updateGroup(editing.group.id, input);
-            toast("Saved. Tickets already open keep their choices.", { tone: "success" });
+            toast("Saved. Orders already open keep their choices.", { tone: "success" });
           }}
           onClose={onClose}
         />
