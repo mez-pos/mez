@@ -137,7 +137,8 @@ export type ErrorCode =
   | 'requests_waiting'
   | 'request_not_found'
   | 'request_decided'
-  | 'request_lapsed';
+  | 'request_lapsed'
+  | 'nothing_to_pay';
 
 export type OrderStatus =
   | 'open'

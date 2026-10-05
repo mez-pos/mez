@@ -6594,3 +6594,53 @@ by eye at 1366 wide: the card under Venue, a bad address refused under its field
 a good one saved, the payee's name carried into the warning, and the standing
 line. Not seen: the card at 400 wide, a venue not in rupees, the read failing, and
 the leave prompt with this card's draft.
+
+## ADR-217 - The QR code is drawn on the server, by an encoder of our own
+2026-10 · Status: accepted. Phase 11, Task 4e3.
+Context: a guest may want someone else's phone to pay, or the phone showing the bill
+may be the one that would have to scan. That needs the pay link as a QR code. The
+guest's bundle has a 60 KB budget with 39.1 used; mez's rule on dependencies is that
+each needs a case.
+Decision:
+  - **The server draws it.** `GET /order/api/t/{code}/bill/upi.svg` answers with an
+    SVG of the bill's own link, for the balance as it stands. The phone shows it as
+    a picture. The bundle gains an `<img>` and no encoder: 39.4 KB.
+  - **The encoder is ours, `internal/domain/qr`, about 400 lines, no dependency.**
+    Bytes in, level M, versions 1 to 40, the mask that scores best. A QR code is a
+    standard that will not change, the code is small enough to read whole, and a Go
+    dependency is a thing an owner's antivirus may flag and we must keep current. A
+    JavaScript library was set aside for the budget and because it would be tested
+    less well than Go in this repository.
+  - **It was checked against another encoder, module for module**: 178 codes
+    against python-qrcode, every version from 1 to 40 full to the byte, a byte
+    short, half full and nearly empty, and every mask. All matched.
+    `TestAgainstAReferenceEncoder` does this when `QR_REFERENCE` names a program,
+    and skips otherwise, so the build needs no Python.
+  - **The build pins ten of those codes** by a fingerprint of the matrix
+    (`golden_test.go`), chosen where the format changes: the smallest, one filled
+    to the byte, version 7 (the first with a version number), 10 (a sixteen bit
+    count), 14 (blocks of two lengths), 32 (the odd alignment spacing), 40. One
+    code is kept whole, to read. The Reed-Solomon step is tested against the
+    standard's own worked example, and the byte capacities against its table.
+  - **A code the server drew was read back by a decoder**: the SVG from a running
+    server, painted from its own rectangles and decoded by OpenCV, gave exactly the
+    bill's link.
+  - **Level M**, about 15% recoverable: the level a phone screen needs, and a
+    smaller code than Q or H for the same link. A typical link is version 5, 37
+    modules; the longest a venue's name allows is under version 20.
+  - **The picture is only a picture**: one path of rectangles on a white ground
+    with the standard's four module quiet band, served `image/svg+xml`, `nosniff`,
+    with a content security policy that allows nothing, and never cached.
+  - **The amount in the picture's address is for the browser only**, so the picture
+    is fetched again when the balance moves. The server ignores it and draws the
+    balance it has.
+  - **The code is closed until the guest asks for it**, "Pay from another phone". A
+    code left showing on a table is one a neighbour can scan, and it pays this bill.
+  - **Nothing to pay is a 404**, `nothing_to_pay`: no ticket, no address, nothing
+    owed, or not rupees.
+Because: the cheapest byte in a 60 KB bundle is the one the server keeps.
+Cost: four hundred lines we own. A picture is one more request, through the relay
+too. The code and the sentence under it can disagree for up to 15 seconds after the
+balance moves, until the bill is read again. **No phone has scanned one**: the
+checks are an encoder that agrees with another and a decoder that reads it back,
+which is strong evidence and not the same as a UPI app opening on it.

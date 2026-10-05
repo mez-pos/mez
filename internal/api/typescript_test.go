@@ -141,7 +141,7 @@ var errorCodes = []ErrorCode{
 	CodeNumberingLocked, CodeNumberTaken, CodeCourseNotFound, CodeDeviceNotFound, CodeCannotRevokeSelf, CodeDeviceUnpaired,
 	CodeTableCodeUnknown,
 	CodeDishUnavailable, CodeChoicesInvalid, CodeTableNotOrdering, CodeRequestsWaiting,
-	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed,
+	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed, CodeNothingToPay,
 }
 
 // generate builds the whole file.

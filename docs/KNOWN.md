@@ -11,9 +11,10 @@
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
 - **Paying by UPI** (ADR-215, ADR-216): the back office card was not seen at
-  400 wide, for a venue not in rupees, or with its read failing. Nothing tells
-  staff a guest has
-  paid until 4e4. No QR until 4e3. Two guests can each pay the whole balance.
+  400 wide, for a venue not in rupees, or with its read failing. **No phone
+  has scanned the QR (ADR-217) or opened the link**: it agrees with another
+  encoder and a decoder reads it back. Nothing tells staff a guest has
+  paid until 4e4. Two guests can each pay the whole balance.
   Not seen: a UPI app opening on the link, on any phone.
 - **The bill on the phone** (ADR-214): anyone with a table's code can read
   that table's bill from anywhere. A table with two tickets shows the older.

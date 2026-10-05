@@ -62,3 +62,13 @@ export function useBill(code: string): UseQueryResult<GuestBillResponse> {
     gcTime: 0,
   });
 }
+
+/**
+ * Where the bill's UPI payment is drawn as a QR code (ADR-217). The amount
+ * is in the address only so the picture is asked for again when it
+ * changes: the server draws the balance as it stands and reads no amount
+ * from a phone.
+ */
+export function upiQrUrl(code: string, amountMinor: number): string {
+  return `${base(code)}/bill/upi.svg?am=${amountMinor}`;
+}

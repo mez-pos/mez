@@ -87,8 +87,9 @@ Phase 10.
       left on the phone's bill.
     - [x] **4e2.** Where the owner sets it: a card under the venue's details
       on the back office's Settings (ADR-216).
-    - [ ] **4e3.** The QR on the bill, for paying from another phone, inside
-      the 60 KB budget.
+    - [x] **4e3.** The QR on the bill, for paying from another phone: drawn
+      on the server (`internal/domain/qr`, no dependency), so the bundle
+      carries no encoder (ADR-217).
     - [ ] **4e4.** "I have paid": the guest tells the terminal, which says so
       as it does a request, and staff record the payment from there.
     - [ ] **4e5.** The mode, prepay or pay at the table, and in a prepay

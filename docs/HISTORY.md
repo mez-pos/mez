@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4e1: a UPI pay link on the phone's bill** (ADR-215). The venue's
+**Phase 11, Task 4e2: the UPI address in the back office** (ADR-216). A card,
+"Paid from a phone", under the venue's details on Settings: the address, the name
+a guest sees, a standing warning that mez cannot check the address, and what a
+guest's bill now offers. `web/backoffice/src/settings/PaymentsCard.tsx`.
+
+Before it, **Phase 11, Task 4e1: a UPI pay link on the phone's bill** (ADR-215). The venue's
 UPI address is a setting (`GET`/`PUT /api/v1/settings/payments`). The server builds
 the `upi://pay` link for the balance (`payment.UPIAccount.Link`) and the bill
 carries it; the phone shows "Pay by UPI". Staff confirm the payment on the

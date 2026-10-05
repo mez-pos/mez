@@ -9,7 +9,7 @@ import { cx } from "../../shared/ui/cx";
 import { billState, payLine, summaryRows, upiAfter, upiLinkOf } from "./bill-logic";
 import { tableLabel } from "./Landing";
 import { problemOf } from "./menu-logic";
-import { useBill } from "./use-guest";
+import { upiQrUrl, useBill } from "./use-guest";
 
 interface BillProps {
   code: string;
@@ -120,7 +120,7 @@ export function Bill({ code, table, onBack }: BillProps) {
               </section>
             )}
 
-            <PayByUPI bill={bill} />
+            <PayByUPI bill={bill} code={code} />
             <p className="mt-4 rounded-card border border-line bg-sunken p-4 text-center text-base text-fg-2">
               {payLine(billState(bill), upiLinkOf(bill) !== null)}
             </p>
@@ -137,7 +137,7 @@ export function Bill({ code, table, onBack }: BillProps) {
  * button: the phone hands it to its UPI app, and this page learns nothing
  * of what happens there.
  */
-function PayByUPI({ bill }: { bill: GuestBillResponse }) {
+function PayByUPI({ bill, code }: { bill: GuestBillResponse; code: string }) {
   const link = upiLinkOf(bill);
   if (link === null || !bill.upi) return null;
   return (
@@ -152,6 +152,21 @@ function PayByUPI({ bill }: { bill: GuestBillResponse }) {
         To {bill.upi.payee}, <span className="font-mono break-all">{bill.upi.address}</span>
       </p>
       <p className="mt-2 text-base text-fg-2">{upiAfter}</p>
+      {/* For paying from another phone. Closed until asked for: a code on screen invites a scan by the next table. */}
+      <details className="mt-3 border-t border-line-soft pt-3 text-left">
+        <summary className="flex min-h-tap cursor-pointer items-center justify-center text-base font-semibold text-accent-text outline-line-focus focus-visible:outline-2">
+          Pay from another phone
+        </summary>
+        <img
+          src={upiQrUrl(code, bill.upi.amount.minor)}
+          alt={`QR code to pay ${formatMoney(bill.upi.amount)} to ${bill.upi.payee} by UPI`}
+          width={232}
+          height={232}
+          loading="lazy"
+          className="mx-auto mt-2 block size-58 rounded bg-white"
+        />
+        <p className="mt-2 text-center text-sm text-fg-muted">Scan with any UPI app. It pays {formatMoney(bill.upi.amount)}, what is left on this bill now.</p>
+      </details>
     </section>
   );
 }
