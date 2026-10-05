@@ -91,3 +91,13 @@ export function courseNamer(courses: readonly { readonly number: number; readonl
   const names = new Map(courses.map((c) => [c.number, c.name]));
   return (course) => (course ? (names.get(course) ?? `Course ${course}`) : null);
 }
+
+/**
+ * Whether Save parks the order (hold). A waiter's order at a table is kept at
+ * that table as it stands, so Save only leaves it; holding it would shut it to
+ * new items until someone resumed it. Any other order is parked, which is how
+ * it is found again (ADR-168).
+ */
+export function saveParks(waiter: boolean, where: { readonly table_id?: number }): boolean {
+  return !(waiter && Boolean(where.table_id));
+}

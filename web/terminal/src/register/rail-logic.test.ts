@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OpenOrder, OrderResponse } from "../../../shared/api-types";
-import { amountOwed, courseNamer, guestsText, needsTable, railTitle, serviceLocked, serviceOf, taxRows } from "./rail-logic";
+import { amountOwed, courseNamer, guestsText, needsTable, railTitle, saveParks, serviceLocked, serviceOf, taxRows } from "./rail-logic";
 
 const opening = (extra: Partial<OpenOrder> = {}): OpenOrder => ({ channel: "counter", covers: 0, ...extra });
 
@@ -121,5 +121,18 @@ describe("courseNamer", () => {
   it("says nothing for a line with no course", () => {
     expect(name(undefined)).toBeNull();
     expect(name(0)).toBeNull();
+  });
+});
+
+describe("saveParks", () => {
+  it("parks a cashier's order, table or not, as Save Order always has", () => {
+    expect(saveParks(false, { table_id: 4 })).toBe(true);
+    expect(saveParks(false, {})).toBe(true);
+  });
+  it("leaves a waiter's table order open: it is kept at its table already", () => {
+    expect(saveParks(true, { table_id: 4 })).toBe(false);
+  });
+  it("parks a waiter's order with no table, so it is found again under Orders", () => {
+    expect(saveParks(true, {})).toBe(true);
   });
 });

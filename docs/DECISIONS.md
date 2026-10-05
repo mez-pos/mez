@@ -4943,3 +4943,15 @@ T02 names the tab and draws nothing under it, so this layout is ours, made from 
 states the server already keeps (ADR-089).
 Cost: two places to fire a course on a waiter's rail.
 ---
+
+## ADR-168 - A waiter's Save leaves a table order open; a waiter fires from Course View
+2026-10 · Status: accepted. After rebuild Task 12; changes ADR-165 and ADR-167.
+Decision:
+  - **Save on a waiter's table order holds nothing.** The order is kept at its table
+    line by line already, so Save returns to the tables and the order stays open. An
+    order with no table (takeaway, delivery) is still parked, which is how it is found
+    again under Orders. The cashier's Save Order is unchanged (`saveParks`).
+  - **"Fire course N" is not in a waiter's "..." menu.** Course View has the button, on
+    the course it fires, by name. The cashier, who has no Course View, keeps it.
+Cost: Save says nothing about items added and not sent; they wait on the order.
+---

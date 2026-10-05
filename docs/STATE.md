@@ -72,7 +72,7 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 ## Known broken / in progress
 
 - Course View (ADR-167): the design draws the tab's name and nothing under it, so its
-  layout is ours. Fire is also still under the rail's "...". Not seen by eye: a line
+  layout is ours. A waiter fires only from here (ADR-168). Not seen by eye: a line
   with no course, a course "To send", a Ready line, three courses, a saved order.
 - Confirm and send (ADR-166): no ticket number (the server gives it on sending), no
   choice of printer or screen, no "Notify me", no Undo. The ticket's face is Archivo,
@@ -80,8 +80,9 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   note and choices on the ticket, a refusal, and a ticket longer than the modal.
 - The waiter's order screen (ADR-165): no Add More (the menu is beside the rail). The item modal is D04's, not
   T02's sheet with a photo on top. The card's "+" is terracotta, as on D03. A cleared
-  line stays on the rail struck through, as a removed one does. Save parks the order
-  (hold): a saved table order must be resumed before anything is added. Not seen by
+  line stays on the rail struck through, as a removed one does. Save leaves a table
+  order open and returns to the tables; only an order with no table is parked (ADR-168).
+  Items added and not sent stay unsent after Save, and the table's card does not say so. Not seen by
   eye: a new order with no table ("Pick a table"), takeaway and delivery chosen in the
   bar, a joined table's title, a failed Clear, a menu with nothing popular, the bar
   with the server down, and "Bill and pay" carried through.

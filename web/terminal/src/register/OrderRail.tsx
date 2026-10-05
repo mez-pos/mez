@@ -17,7 +17,7 @@ import { CourseView } from "./CourseView";
 import { MoreActions } from "./MoreActions";
 import { RailFooter } from "./RailFooter";
 import { RailLines } from "./RailLines";
-import { guestsText, needsTable, railTitle, serviceLabels, serviceLocked, serviceOf } from "./rail-logic";
+import { guestsText, needsTable, railTitle, saveParks, serviceLabels, serviceLocked, serviceOf } from "./rail-logic";
 import { ServiceControl } from "./ServiceControl";
 import { readyLines, sendPlan as planFor } from "./send-logic";
 import { chargeBlock as blockFor, chargeLabel as labelFor } from "../tender/tender-logic";
@@ -117,7 +117,8 @@ export function OrderRail(props: OrderRailProps) {
           orderCount={Math.max(ticket.open?.orders.length ?? 0, orderId ? 1 : 0)}
           hasOrder={orderId !== null}
           canDiscount={live && !held && !order?.invoiced}
-          nextCourse={!held && plan.next ? plan.next.course : null}
+          // A waiter fires from Course View, where the course is named.
+          nextCourse={!waiter && !held && plan.next ? plan.next.course : null}
           onOrders={onOrders}
           onHistory={onHistory}
           onDiscount={onDiscount}
@@ -201,12 +202,16 @@ export function OrderRail(props: OrderRailProps) {
         chargeLabel={chargeLabel}
         // A waiter reads what will go before it goes (T04).
         onSend={waiter ? () => setConfirmingSend(true) : () => ticket.send().catch(onFail("Couldn't send"))}
-        onSave={() =>
+        onSave={() => {
+          if (!saveParks(waiter, where)) {
+            onSaved?.();
+            return;
+          }
           ticket
             .hold()
             .then(() => onSaved?.())
-            .catch(onFail("Couldn't save"))
-        }
+            .catch(onFail("Couldn't save"));
+        }}
         onPay={onPay}
         waiter={waiter}
       />
