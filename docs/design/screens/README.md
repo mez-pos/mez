@@ -85,6 +85,16 @@ draws nothing for it.
 | `backoffice-settings.md` | Settings: Venue, Tax and numbering, Shift, tips and receipt | `/settings/:section` | D22 |
 | `backoffice-devices.md` | Devices | `/devices` | Ours |
 
+### Guest
+
+The guest's phone, `web/guest`, under `/order/` (phase 11). The design file is
+`mez Mobile Customer.dc.html`.
+
+| Spec | Screen | Path | Design |
+|---|---|---|---|
+| `guest-landing.md` | The landing, and when the venue cannot be shown | `/order/t/<code>` | M01, M11d, M11e |
+| `guest-menu.md` | The menu | `/order/t/<code>#menu` | M02, M11c |
+
 ## Design screens with no spec
 
 Not built, and why (`docs/phases/rebuild.md`, "Not in this phase"):
@@ -97,7 +107,8 @@ Not built, and why (`docs/phases/rebuild.md`, "Not in this phase"):
   connection ("Online", or what is wrong) is in each app's frame
   (`terminal-shell.md`, `backoffice-shell.md`).
 - **D24** setup wizard: phase 12.
-- **M01 to M11**, the guest's phone: phase 11, built from the mez file then.
+- **M03 to M10, M11a and M11b**, the rest of the guest's phone: phase 11,
+  each built from the mez file in its task.
 
 ## Naming
 

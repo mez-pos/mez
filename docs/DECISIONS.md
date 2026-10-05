@@ -6101,3 +6101,39 @@ anywhere, which is harmless, and will be able to order from anywhere once Task 4
 lands unless the venue limits it: Task 6's per-table limit, and whatever ties an
 order to someone being at the table, are still to be decided. The per-address limit
 counts every guest behind one mobile carrier address together.
+
+## ADR-207 - The guest's landing and menu: no router, the venue's name, and no words ahead of the feature
+2026-10 · Status: accepted. Phase 11, Task 3b.
+Context: M01 and M02 of the mez design, built on Task 3a's API, inside a 60 KB budget
+and before a guest can order anything.
+Decision:
+  - **No router.** The table's code is the last segment of the path after `/t/`, so
+    the same bundle works at `/order/t/<code>` and `/t/<code>`; the screen is the
+    hash, so the phone's Back goes from the menu to the landing and a reload stays.
+  - **The shared API client with no credentials**, and React Query as in the other
+    apps: one way of saying a request failed. `problemOf` sorts a failure into the
+    code leading nowhere, the venue not reached (including the relay's 502, 503, 504
+    and a 429), or anything else, and every one of those screens names the counter.
+  - **The filtering is pure and tested** (`menu-logic.ts`): a category, a search
+    where every word must be in the name or description, and diets that narrow
+    together, veg including vegan. Sold-out dishes sink to the end. A category or a
+    diet nothing satisfies is not offered.
+  - **The landing says whose table it is**: "Welcome to <venue>". The design shows
+    only mez's name.
+  - **Words do not run ahead of the feature.** The button is "See the menu" and not
+    "Start Ordering" until Task 4. The cards have no Add and there is no cart bar
+    until 3c. The bottom navigation waits for the screens it names.
+  - **Claims are the venue's.** "Freshly made", "Fresh ingredients. Great taste." and
+    the three boasts on the landing are left out; the green band carries the venue's
+    name where the design has "Fresh flavours daily".
+  - **A dish with no photo has no frame**, since most venues start with none.
+  - **Prices are in full**, `formatMoney`, as the bill will show them.
+  - **Imports are by file**, not from `shared/ui`'s index. The bundle is 31.9 KB
+    gzipped of 60, with 28.1 left for the item, the cart, checkout and tracking.
+Because: a guest who taps "Start Ordering" and cannot order has been told something
+untrue by a screen the staff then have to explain.
+Cost: the copy changes twice, now and when ordering lands; the specs say which words
+go back to the design's. Seen by eye at 390 wide on the demo menu: the landing, the
+whole menu, a category with a diet, and a code that leads nowhere. Not seen: a dish
+with a photo, a sold-out dish, the search, the unreachable and failed states, and
+anything on a real phone or through the relay with this build.

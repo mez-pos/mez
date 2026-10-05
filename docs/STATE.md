@@ -7,29 +7,29 @@
 
 ## Current phase
 
-**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. 1, 2 and 3a done.
+**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. 1, 2, 3a, 3b done.
 (The rebuild, 09 and 10 still owe the owner's walk.)
 
 ## Last completed task
 
-**Phase 11, Task 3a: the guest's way in** (ADR-206). Each table has a code
-(`internal/service/tablecodes`, migration 00038, `mez table-codes`). The guest API is
-under `/order/api/` (`t/{code}`, `t/{code}/menu`, `photos/{name}`), with no device or
-session. The bundle's files now load through the relay; proved at `democafe.jskin.in`.
+**Phase 11, Task 3b: the guest's landing and menu** (ADR-207), `web/guest/src`: the
+table and venue, then every dish with a search, categories and diet filters, and a
+screen for a code that leads nowhere or a venue that cannot be reached. Specs:
+`guest-landing.md`, `guest-menu.md`. 31.9 KB gzipped of 60.
 
 ## Next task
 
-**Phase 11, Task 3b: the landing and the menu**, `web/guest`, M01 and M02 of
-`docs/design/reference/mez/mez Mobile Customer.dc.html` (this task says to read it).
-- Write `docs/design/screens/guest-landing.md` and `guest-menu.md` first, and add
-  them to that folder's README. Read `docs/design/tokens.md`.
-- The app is at `/order/t/<code>` on wifi and `/t/<code>` or `/order/t/<code>` through
-  the relay: read the code from the last path segment. Call the API by its absolute
-  path, `/order/api/t/<code>/menu`. Types are in `web/shared/api-types.ts` (`Guest*`).
-- 60 KB gzipped, 36.6 left. No shadcn, no icon pack, no router library: check what
-  `web/shared/ui` costs before importing from it. Photos lazy; fonts must not block.
-- A code that leads nowhere is a 404 `table_code_unknown`: a screen of its own (M11d).
-- To try it: `mez setup -demo-menu`, `mez table-codes`, then `build/relay/README.md`.
+**Phase 11, Task 3c: an item with its choices, and the cart**, M03, M04's cart and M11a
+of `docs/design/reference/mez/mez Mobile Customer.dc.html` (lines 142 to 250, 524).
+- Write `guest-item.md` and `guest-cart.md` first; add them to the screens README and
+  update `guest-menu.md` (Add on a card, the View Cart bar: both listed as left out).
+- The menu's `modifier_groups` have `min_select`, `max_select` and `is_default`. The
+  till's rules for choices are in `web/shared/menu.ts`: read it before writing any.
+- The cart is the phone's own (no server until Task 4): keep it by table code, in
+  `localStorage`, and drop lines whose dish has gone or is sold out when the menu is
+  read again. Money stays integer minor units; total with `shared/money.ts`.
+- 28.1 KB left. Import by file, not from `shared/ui`'s index; check `Sheet`'s cost.
+- Not ordering yet: the cart's button must not say it sends anything (Task 4).
 
 ## Known broken / in progress
 
@@ -55,5 +55,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (1, 2 and 3a done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (1, 2, 3a and 3b done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

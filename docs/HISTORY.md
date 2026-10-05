@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 2b: the tunnel in the back office** (ADR-205). `GET /api/v1/tunnel`
+**Phase 11, Task 3a: the guest's way in** (ADR-206). Each table has a code
+(`internal/service/tablecodes`, migration 00038, `mez table-codes`). The guest API is
+under `/order/api/` (`t/{code}`, `t/{code}/menu`, `photos/{name}`), with no device or
+session, 300 requests a minute an address. The tunnel leaves `/order/...` paths alone,
+so the bundle's files load through the relay; proved at `democafe.jskin.in`.
+
+Before it, **Phase 11, Task 2b: the tunnel in the back office** (ADR-205). `GET /api/v1/tunnel`
 and a card on Devices, "Ordering from phones": a chip, a sentence saying what guests
 can do, when it tries next and why it failed. Health reads the same status
 (`api.WithTunnel`). Seen in the browser reconnecting and connected, at 1366 and 400
