@@ -25,6 +25,8 @@ export const route = {
   waiter: "/waiter",
   /** One table's own screen, for a waiter (T03). */
   waiterTable: (tableId: number) => `/waiter/table/${tableId}`,
+  /** What the person signed in did in the open shift (T08). */
+  waiterShift: "/waiter/shift",
   /** The kitchen display: another app of the same bundle. */
   kitchen: "/kitchen",
 } as const;

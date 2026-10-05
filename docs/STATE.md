@@ -14,7 +14,15 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 14b: one person's shift, from the server** (ADR-173). 14b was split
+**Rebuild, Task 14c: the shift summary** (ADR-174). Task 14 is done. `/waiter/shift`
+is T08 (`waiter/ShiftSummary.tsx`, `shift-summary-logic.ts`), under More, "Your shift":
+who is signed in and how long they have been on, tables served, orders taken, sales
+handled, tips collected, tips by table as bars, and End shift, which signs them out.
+Seen in a browser at 1366x1024 as Kabir against the dev venue: the figures after the
+bills of 14a, then a card payment with a tip at T3 and its bar. Tests: `shiftSpan`,
+`onShiftText`, `tipBars`. `make check` and `make build-web` pass.
+
+Before it, **Rebuild, Task 14b: one person's shift, from the server** (ADR-173). 14b was split
 again: the server could say nothing per person. `GET /api/v1/shift/mine` answers for
 whoever asks, in the open shift: the orders they opened, how many ended at a table,
 what their payments settled, the tips on them, those tips by table, and when they first
@@ -84,17 +92,15 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) or 14a.
+10c, 11, 12 (a, b, c), 13 (a, b) or 14 (a, c).
 
 ## Next task
 
-**Rebuild, Task 14c** (the shift summary screen): T08 (line 552 of `mez Tablet
-Waiter.dc.html`), over `GET /api/v1/shift/mine`. A route of its own, reached from the
-waiter's bar (More) or the profile menu. The server gives no hours on shift (use
-`first_at`, else the shift's `opened_at`), no ratings (leave them out) and nothing
-that prints a summary. "End shift" for a waiter is signing out: they cannot close the
-shift. Table names come from the floor; table 0 is "No table". Read
-`docs/design/tokens.md` and that screen only. Phase 11
+**Rebuild, Task 15** (kitchen display): D10 (line 36) and D11 (line 158) of `mez
+Desktop KDS and Dashboard.dc.html`. Two screens: see whether one layout serves both
+surfaces before splitting. `/kitchen` is another app of the bundle with its own
+pairing (`shell/pages.tsx`, `LeaveForKitchen`). Read `docs/design/tokens.md` and those
+two only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -108,14 +114,17 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
-- One person's shift (ADR-173): no screen yet (14c). Read whole from the shift's
+- The shift summary (ADR-174): no ratings, no Print summary, no area. Not seen by
+  eye: several tables' bars, "No table", a table gone from the floor, a failed read,
+  someone who has done nothing, and End shift carried through.
+- One person's shift (ADR-173): read whole from the shift's
   orders on each ask; a busy shift has not been timed. A refund is not taken off
   "sales". A table the cashier opened counts for the cashier, not the waiter who
-  served it. Not tried against the dev venue's data, only in Go tests.
+  served it.
 - The waiter's bill (ADR-172): no Print bill before payment, no QR, no Wallet, no
   keyed tip. A toast sits over the foot's buttons for its few seconds. Not seen by eye:
-  By item and Custom carried through from here, Change the split, a stale split, a
-  card payment, a tip, the keypad for cash, a refusal, Print receipt, an order with
+  By item and Custom carried through from here, Change the split, a stale split,
+  the keypad for cash, a refusal, Print receipt, an order with
   no table ("Close order"), and three or more shares (the column scrolls).
 - Transfer and merge (ADR-170): a merge of several tables is one request each, in
   turn; if one is refused the ones before it stand. No note about QR sessions, no

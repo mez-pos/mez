@@ -16,6 +16,7 @@ import { route } from "./shell/routes";
 import { ShiftGate } from "./shell/ShiftGate";
 import { TerminalProvider } from "./shell/terminal-context";
 import { TerminalShell } from "./shell/TerminalShell";
+import { ShiftSummary } from "./waiter/ShiftSummary";
 import { TableDetail } from "./waiter/TableDetail";
 import { WaiterHome } from "./waiter/WaiterHome";
 
@@ -61,6 +62,9 @@ function Screens() {
       </Route>
       <Route path={route.waiter}>
         <WaiterHome />
+      </Route>
+      <Route path={route.waiterShift}>
+        <ShiftSummary />
       </Route>
       <Route path="/waiter/table/:id">
         {(params) =>

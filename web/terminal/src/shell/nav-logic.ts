@@ -56,11 +56,11 @@ export const waiterNav: readonly WaiterNavItem[] = [
   { id: "menu", label: "Menu", href: route.order },
 ];
 
-/** The waiter's tile to show pressed: Menu covers taking an order and paying it, More the floor plan. */
+/** The waiter's tile to show pressed: Menu covers taking an order and paying it, More the floor plan and the shift summary. */
 export function activeWaiterNav(path: string): WaiterNavId | null {
   if (path === route.waiter) return "home";
   if (path === route.orders || path.startsWith(`${route.orders}/`)) return "orders";
   if (path === route.order || path.startsWith("/pay/")) return "menu";
-  if (path === route.tables) return "more";
+  if (path === route.tables || path === route.waiterShift) return "more";
   return null;
 }

@@ -1,10 +1,10 @@
 // The waiter's navigation (T01): tall tiles, an icon over a word, for a tablet
 // held in one hand. Home, Orders and Menu are screens; More opens a menu of what
-// the app has and T01 does not draw: the floor plan (where a party is moved and
-// tables are joined, until T06 is built) and the print queue. The label is 15px,
+// the app has and T01 does not draw: the floor plan, the shift summary (T08) and
+// the print queue. The label is 15px,
 // not the design's 12.5: the floor for anything tapped (ADR-014).
 
-import { EllipsisIcon, HouseIcon, LayoutGridIcon, PrinterIcon, ReceiptTextIcon, UtensilsIcon, type LucideIcon } from "lucide-react";
+import { ClockIcon, EllipsisIcon, HouseIcon, LayoutGridIcon, PrinterIcon, ReceiptTextIcon, UtensilsIcon, type LucideIcon } from "lucide-react";
 import { Link } from "wouter";
 import { cx } from "../../../shared/ui/cx";
 import { waiterNav, type WaiterNavId } from "./nav-logic";
@@ -62,6 +62,10 @@ export function WaiterNav({ active, onPrintQueue }: WaiterNavProps) {
             <Link href={route.tables} onClick={pick(() => undefined)} className={row}>
               <LayoutGridIcon aria-hidden="true" size={18} />
               Floor plan
+            </Link>
+            <Link href={route.waiterShift} onClick={pick(() => undefined)} className={row}>
+              <ClockIcon aria-hidden="true" size={18} />
+              Your shift
             </Link>
             <button type="button" onClick={pick(onPrintQueue)} className={row}>
               <PrinterIcon aria-hidden="true" size={18} />

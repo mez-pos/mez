@@ -5069,3 +5069,22 @@ shift (no timesheets; `first_at` is when they first touched an order).
 Cost: a busy shift is read whole on each ask. A waiter whose tables are all opened
 by the cashier reads "0 tables".
 ---
+
+## ADR-174 - The shift summary is the person's own, and End shift signs them out
+2026-10 · Status: accepted. Rebuild Task 14c (T08); over ADR-173.
+Decision:
+  - **`/waiter/shift` is T08,** one column like the bill's: who is signed in, how long
+    they have been on, tables served, orders taken, sales handled, tips, and tips by
+    table as bars against the largest. It is under More, "Your shift", in the waiter's
+    bar. It is asked afresh each time it is opened.
+  - **"Tips collected", not the design's "Tips earned".** The figure is the tips on
+    the payments they took; the pool shares tips out after the close (ADR-101), so what
+    they earn may differ. A line under the figures says what each one counts.
+  - **"On shift" runs from the first order they touched,** or from the shift's opening
+    before that. Nobody clocks in.
+  - **End shift signs the person out.** Closing the shift needs the drawer count and
+    `shift.manage`; a waiter has neither. The foot says so.
+Left out, and why (rule 3): guest ratings (phase 11), the area beside the role (no one
+is assigned an area), Print summary (nothing prints one).
+Cost: "End shift" does less than its name on the desktop, where the shift is closed.
+---

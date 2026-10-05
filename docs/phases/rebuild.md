@@ -250,7 +250,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     totals, Add Item, the bill, and Send to Kitchen. A waiter's card leads here.
   - [x] 13b. (ADR-170) Transfer and merge (T06): a modal from the table's screen that moves
     the party to a free table or joins free tables to it.
-- [ ] **Task 14 - Waiter bill and shift summary.** T05, T08. Split on
+- [x] **Task 14 - Waiter bill and shift summary.** T05, T08. Split on
   2026-10-05, a screen each.
   - [x] 14a. (ADR-172) The waiter's bill (T05): a waiter's "Bill and pay" opens the bill
     under the waiter's bar, not the desktop payment screen. The table and what
@@ -261,7 +261,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     2026-10-05: the server could say nothing per person). `GET /api/v1/shift/mine`:
     the orders they opened, how many were at a table, what their payments
     settled, the tips on them, and those tips by table. Go tests.
-  - [ ] 14c. The shift summary (T08) over it: the waiter, how long they have
+  - [x] 14c. (ADR-174) The shift summary (T08) over it: the waiter, how long they have
     been on, the four figures, tips by table, Print summary if anything can
     print it, and End shift. Guest ratings are left out (phase 11).
 - [ ] **Task 15 - Kitchen display.** D10 and D11.

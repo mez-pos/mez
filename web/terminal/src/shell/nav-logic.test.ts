@@ -42,6 +42,9 @@ describe("the waiter's navigation", () => {
     expect(activeWaiterNav("/waiter")).toBe("home");
     expect(activeWaiterNav("/waiters")).toBeNull();
   });
+  it("presses More on the shift summary", () => {
+    expect(activeWaiterNav("/waiter/shift")).toBe("more");
+  });
   it("presses Orders on the day's orders, and Menu while an order is taken or paid", () => {
     for (const path of ["/orders", "/orders/ord_ABC"]) expect(activeWaiterNav(path)).toBe("orders");
     for (const path of ["/pos", "/pay/ord_ABC"]) expect(activeWaiterNav(path)).toBe("menu");
