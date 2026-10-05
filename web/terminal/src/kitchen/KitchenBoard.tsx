@@ -4,24 +4,30 @@
 // the pass, for as long as they can be recalled. ADR-175 gave the server the
 // middle column; ADR-176 records what this screen draws.
 //
-// Kept, where D10 draws nothing (rule 4): the station's name and Change
-// station in the header, the all-day counts in a strip under it, and Recall
-// on each ready card. A new ticket is started before it is marked ready here;
+// Kept, where D10 draws nothing (rule 4): the station's name in the header,
+// the all-day counts in a strip under it, and Recall on each ready card. A new ticket is started before it is marked ready here;
 // the server would take a bump from new too (ADR-175).
 //
-// Not here yet: Today's stats and Upcoming (15d), and the foot with Night mode
-// and Sound (15c).
+// The foot holds what the display is set to: its station, the chime, a
+// table's tickets together, and espresso night (D11), which is the same board
+// on the ink surface (BoardFoot.tsx, ADR-177).
+//
+// Not here yet: Today's stats and Upcoming (15d).
 
 import { BellIcon, ChefHatIcon, UtensilsIcon, type LucideIcon } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { KitchenTicketResponse, StationResponse } from "../../../shared/api-types";
+import { browserStorage } from "../../../shared/auth/storage";
 import { ConnectionIndicator } from "../../../shared/ConnectionIndicator";
 import { Logo } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { clockText } from "../../../shared/venue-text";
 import { failureOf } from "../register/order-messages";
+import { BoardFoot } from "./BoardFoot";
+import { groupByTable, readPrefs, surfaceOf, ticketId, writePrefs, type BoardPrefs } from "./board-prefs";
 import { allDay, boardColumns } from "./kitchen-logic";
 import { TicketCard, type CardStage } from "./TicketCard";
+import { useChime } from "./use-chime";
 import { useKitchenBoard } from "./use-kitchen-board";
 
 interface KitchenBoardProps {
@@ -40,7 +46,18 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
   const now = useTick(1000);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const cols = boardColumns(board.data);
+  const [prefs, setPrefs] = useState<BoardPrefs>(() => readPrefs(browserStorage("local")));
+  const cols = useMemo(() => boardColumns(board.data), [board.data]);
+  useChime(prefs.sound, board.data ? cols.fresh : undefined);
+
+  // Night is the page's surface, so every token under it turns (tokens.md).
+  useEffect(() => {
+    document.documentElement.dataset.surface = surfaceOf(prefs);
+  }, [prefs]);
+  const keep = (next: BoardPrefs) => {
+    setPrefs(next);
+    writePrefs(browserStorage("local"), next);
+  };
   const counts = allDay([...cols.fresh, ...cols.preparing]);
   const lateAfter = board.data?.late_after_minutes ?? 20;
   const acts: Readonly<Record<CardStage, (t: KitchenTicketResponse) => Promise<void>>> = { fresh: board.start, preparing: board.bump, ready: board.recall };
@@ -62,18 +79,13 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
             <ChefHatIcon aria-hidden="true" size={30} strokeWidth={1.7} className="shrink-0 text-attention" />
             Kitchen Display
           </h1>
-          <p className="truncate text-base text-fg-muted">{station.name} · Fresh orders. Happy people.</p>
+          <p className="truncate text-base text-fg-muted">
+            {station.name} · {prefs.night ? "Espresso night" : "Fresh orders. Happy people."}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-4">
           <span className="hidden font-mono text-base font-semibold tabular-nums xl:block">{clockText(new Date(now), null)}</span>
           <ConnectionIndicator />
-          <button
-            type="button"
-            onClick={onChangeStation}
-            className="min-h-tap rounded-pill border border-line-strong px-5 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-4"
-          >
-            Change station
-          </button>
           <p aria-hidden="true" className="hidden text-right font-script text-xl leading-tight text-fg-2 2xl:block">
             Good Food,
             <br />
@@ -107,12 +119,12 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
 
       <div className="grid min-h-0 flex-1 grid-cols-3 gap-4 px-5 py-4">
         {columns.map((col) => {
-          const tickets = cols[col.stage];
+          const tickets = prefs.groupByTable ? groupByTable(cols[col.stage]) : cols[col.stage];
           return (
             <Column key={col.stage} title={col.title} icon={col.icon} band={col.band} count={tickets.length}>
               {board.data && tickets.length === 0 && <p className="py-10 text-center text-xl text-fg-muted">{col.empty}</p>}
               {tickets.map((t) => {
-                const id = `${t.order_id}-${t.ticket_seq}`;
+                const id = ticketId(t);
                 return (
                   <li key={id}>
                     <TicketCard
@@ -131,6 +143,8 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
           );
         })}
       </div>
+
+      <BoardFoot prefs={prefs} onPrefs={keep} onChangeStation={onChangeStation} />
     </main>
   );
 }

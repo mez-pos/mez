@@ -5140,3 +5140,28 @@ knows no waiter) and the spot art. Today's stats and Upcoming are 15d, the foot 
 Cost: until 15c the kitchen has no dark screen. A new ticket cannot be marked ready
 from the board without Start first (the server would take it).
 ---
+
+## ADR-177 - Night, sound and grouping are the kitchen display's own choices
+2026-10 · Status: accepted. Rebuild Task 15c (D11, and the foot of D10); over ADR-176.
+Decision:
+  - **Espresso night is the same board on the ink surface,** chosen with the foot's
+    Night mode. There is one layout: every colour on it is a role, and the roles turn
+    with `data-surface`. `main.tsx` sets the surface before anything is drawn.
+  - **The foot holds what a display is set to:** Change station (it left the header),
+    Sound, Group by table and Night mode. They are kept on the device
+    (`mez.kitchen.prefs` in `localStorage`), as its station is: a screen on a wall has
+    no one signed in to keep them for. A display starts on paper, silent, ungrouped.
+  - **Sound is two notes from the browser's own oscillator** when a ticket arrives in
+    New Orders: no file, so it needs no internet and adds nothing to the bundle. A
+    display turned on to a full board stays quiet. Turning Sound on is the tap a
+    browser asks for before a page may make a sound.
+  - **Group by table keeps an order's tickets together** in each column, at the
+    place of its first. The columns are otherwise as they were.
+  - **A switch says On or Off beside it,** not only by its colour and knob.
+Left out, and why: Settings as a screen (a display has no other setting; the button
+says "Change station"). Auto advance (nothing here should move a ticket on its own: a
+ticket that left the board unmade is a lost dish). Mark all complete (no ticket is
+"complete" on this board, ADR-090, and one tap that clears a pass has no undo).
+Cost: a display's choices are lost with its browser's storage, and a second display
+at the same station chooses for itself.
+---

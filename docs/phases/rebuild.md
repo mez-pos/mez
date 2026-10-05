@@ -274,7 +274,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 15b. (ADR-176) The board as drawn (D10), on paper: the header, the three columns,
     each card with where it goes, when it was placed, how long it has waited,
     its lines and its one action. Recall and Change station kept (rule 4).
-  - [ ] 15c. Espresso night (D11) and the foot: Night mode kept on the device,
+  - [x] 15c. (ADR-177) Espresso night (D11) and the foot: Night mode kept on the device,
     Sound, and whichever of Auto advance, Group by table and Mark all complete
     the server can do.
   - [ ] 15d. Today's stats and Upcoming: what the server can say for a station

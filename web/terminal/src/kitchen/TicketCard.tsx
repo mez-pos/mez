@@ -22,7 +22,7 @@ const serviceIcons: Readonly<Record<ServiceType, LucideIcon>> = { dine_in: Utens
 
 // The column's colour: the rule down the card's left, its border and its icon tile.
 const stageClass: Readonly<Record<CardStage, { card: string; tile: string; qty: string }>> = {
-  fresh: { card: "border-chip-danger-border border-l-danger", tile: "bg-chip-danger-bg text-chip-danger-fg", qty: "text-attention-text" },
+  fresh: { card: "border-chip-danger-border border-l-attention", tile: "bg-chip-danger-bg text-chip-danger-fg", qty: "text-attention-text" },
   preparing: { card: "border-chip-warning-border border-l-highlight", tile: "bg-chip-warning-bg text-chip-warning-fg", qty: "text-attention-text" },
   ready: { card: "border-chip-success-border border-l-accent", tile: "bg-chip-success-bg text-chip-success-fg", qty: "text-chip-success-fg" },
 };

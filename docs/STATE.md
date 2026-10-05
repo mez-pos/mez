@@ -14,7 +14,16 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 15b: the kitchen's board** (ADR-176). `/kitchen` is D10 on paper
+**Rebuild, Task 15c: espresso night and the board's foot** (ADR-177). The board
+has a foot (`kitchen/BoardFoot.tsx`): Change station, Sound, Group by table and Night
+mode, each kept on the device (`board-prefs.ts`, `mez.kitchen.prefs`). Night is the
+same board on the ink surface (D11). Sound is a two-note chime for a new ticket
+(`use-chime.ts`). Seen in a browser as a kitchen display at 1920x1080: night on and
+off, the switches, and the choices kept across a reload. Tests: `readPrefs`,
+`writePrefs`, `surfaceOf`, `groupByTable`, `arrivals`. `make check` and `make
+build-web` pass.
+
+Before it, **Rebuild, Task 15b: the kitchen's board** (ADR-176). `/kitchen` is D10 on paper
 (`kitchen/KitchenBoard.tsx`, `TicketCard.tsx`, `boardColumns` in `kitchen-logic.ts`):
 the header, the all-day strip, and three columns, New Orders with Start preparing,
 Preparing with Mark ready and a bar towards late, Ready for pickup with Recall. Seen
@@ -108,16 +117,17 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c) or 15b.
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c) or 15 (b, c).
 
 ## Next task
 
-**Rebuild, Task 15c** (espresso night and the board's foot): D11 (line 158 of `mez
-Desktop KDS and Dashboard.dc.html`) and the foot of D10 (Settings, Sound on, Auto
-advance, Group by table, Night mode, Mark all complete). Night mode is a choice kept on
-the device (`data-surface="ink"`; `main.tsx` set it before 15b). Check each band, chip
-and `highlight-fg` on ink. Draw only the foot's controls something does: say which are
-left out. Read `docs/design/tokens.md` and D11 only. Phase 11
+**Rebuild, Task 15d** (today's stats and Upcoming): the column beside the board in
+D10 (from "Today's stats", about line 118 of `mez Desktop KDS and Dashboard.dc.html`).
+Server first: what a station can say for today (tickets sent, in progress, completed,
+average and slowest time from sent to ready; `started_at` and `ready_at` are on a
+ticket, ADR-175), with Go tests; then the column. "Upcoming" may be the tickets held
+for a later course: check what the order knows. If it is two sessions, split it. Read
+`docs/design/tokens.md` and that column only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -131,8 +141,12 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
-- The kitchen's board (ADR-176): no night screen until 15c, no stats or Upcoming
-  (15d), no foot. A new ticket has no Mark ready of its own. The clock is the device's
+- The board's foot (ADR-177): no Auto advance, no Mark all complete, no Settings
+  screen. The chime was not heard (the check was by eye): try it on a real display,
+  and after the tab has been idle. The dev server missed a file change once (Vite on
+  the I: drive): touch the file if a screen looks stale. Not seen by eye: grouping
+  with two tables' tickets interleaved, and night at 1366 wide.
+- The kitchen's board (ADR-176): no stats or Upcoming (15d). A new ticket has no Mark ready of its own. The clock is the device's
   zone, not the venue's. `docs/design/screens/kitchen-display.md` describes the old
   board (Task 17 rewrites it). Not seen by eye: takeaway and delivery icons, a counter
   order, a voided line, a line's choices and notes, a calm and a Waiting timer (the dev

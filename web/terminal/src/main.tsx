@@ -10,6 +10,7 @@ import { ToastProvider } from "../../shared/ui";
 import { RealtimeProvider } from "../../shared/use-realtime";
 import { App } from "./App";
 import { KitchenApp } from "./kitchen/KitchenApp";
+import { readPrefs, surfaceOf } from "./kitchen/board-prefs";
 import { readStation, stationKey } from "./kitchen/kitchen-logic";
 import "./index.css";
 
@@ -28,9 +29,10 @@ const queryClient = createQueryClient();
 // own device, paired as kitchen, listening to its station alone.
 const kitchen = window.location.pathname === "/kitchen" || window.location.pathname.startsWith("/kitchen/");
 // The kitchen's board is drawn on paper (D10), as index.html says of every
-// screen. Espresso night (D11) is a choice kept on the device, and comes back
-// with rebuild Task 15c.
+// screen. Espresso night (D11) is a choice kept on the device (ADR-177): set
+// here, before anything is drawn, so a dark pass is never lit by a flash.
 const durable = browserStorage("local");
+if (kitchen) document.documentElement.dataset.surface = surfaceOf(readPrefs(durable));
 const station = kitchen ? readStation(durable) : null;
 const { store, realtime } = kitchen ? createAppAuth("kitchen", station ? [`station:${station}`] : []) : createAppAuth("terminal");
 
