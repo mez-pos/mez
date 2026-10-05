@@ -58,6 +58,9 @@ func NewKeys(secret string, revoked []string) (*Keys, error) {
 
 // Issue draws a new key for a venue. random is crypto/rand.Reader outside tests.
 func (k *Keys) Issue(random io.Reader, venueID string) (string, error) {
+	if Reserved(venueID) {
+		return "", fmt.Errorf("relay: venue id %q is reserved: it would be a hostname the relay or its operator needs", venueID)
+	}
 	if !ValidVenueID(venueID) {
 		return "", fmt.Errorf("relay: venue id %q: use 1 to 63 of a-z, 0-9 and '-', not starting with '-'", venueID)
 	}
@@ -101,6 +104,20 @@ func (k *Keys) mac(venueID, keyID string) string {
 	// the newline keeps "ab"+"c" from signing the same bytes as "a"+"bc".
 	h.Write([]byte("mez-relay-key-v1\n" + venueID + "\n" + keyID))
 	return base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+}
+
+// reserved are names no venue may have. With a hostname per venue a venue id
+// is a label under the operator's domain, and these are the ones the relay
+// itself, or anyone running a domain, expects to mean something else.
+var reserved = map[string]struct{}{
+	"relay": {}, "www": {}, "api": {}, "admin": {}, "app": {}, "mail": {},
+	"smtp": {}, "ns1": {}, "ns2": {}, "status": {}, "support": {}, "order": {},
+}
+
+// Reserved reports whether id is a name kept back from venues.
+func Reserved(id string) bool {
+	_, ok := reserved[id]
+	return ok
 }
 
 // ValidVenueID reports whether id can name a venue on the relay. It is a URL

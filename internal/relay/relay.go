@@ -15,6 +15,7 @@ package relay
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -43,6 +44,13 @@ type Options struct {
 	// guest's own claim about itself and are ignored.
 	TrustProxy bool
 
+	// VenueDomain, when set, gives each venue a hostname: <venue>.<domain>.
+	// Venues are then reached only that way, and /v/<venue>/ is not served,
+	// since a path every venue shares is the thing a hostname each replaces.
+	// Empty means path routing, which is right for one venue or venues that
+	// trust each other.
+	VenueDomain string
+
 	// Version is reported by the health endpoint.
 	Version string
 
@@ -61,6 +69,7 @@ type Server struct {
 	keys        *Keys
 	limit       Limit
 	trustProxy  bool
+	venueDomain string
 	version     string
 	log         *slog.Logger
 	now         func() time.Time
@@ -95,7 +104,12 @@ func New(opts Options) (*Server, error) {
 	if opts.HeadTimeout <= 0 {
 		opts.HeadTimeout = defaultHeadTimeout
 	}
+	domain := strings.Trim(strings.ToLower(strings.TrimSpace(opts.VenueDomain)), ".")
+	if domain != "" && !validDomain(domain) {
+		return nil, fmt.Errorf("relay: venue domain %q is not a domain name", opts.VenueDomain)
+	}
 	return &Server{
+		venueDomain: domain,
 		keys:        opts.Keys,
 		limit:       opts.Limit,
 		trustProxy:  opts.TrustProxy,
@@ -112,9 +126,26 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /agent", s.handleAgent)
-	mux.HandleFunc(guestPrefix+"{venue}", s.handleBareVenue)
-	mux.HandleFunc(guestPrefix+"{venue}/{rest...}", s.handleGuest)
-	return s.requestID(s.accessLog(mux))
+	if s.venueDomain == "" {
+		mux.HandleFunc(guestPrefix+"{venue}", s.handleBareVenue)
+		mux.HandleFunc(guestPrefix+"{venue}/{rest...}", s.handleGuest)
+	}
+	return s.requestID(s.accessLog(s.byHost(mux)))
+}
+
+// validDomain accepts a plain dotted name: labels of letters, digits and
+// hyphens. It is compared with Host headers, so it is held to what one of
+// those can be.
+func validDomain(domain string) bool {
+	if len(domain) > 253 || !strings.Contains(domain, ".") {
+		return false
+	}
+	for label := range strings.SplitSeq(domain, ".") {
+		if !ValidVenueID(label) || strings.HasSuffix(label, "-") {
+			return false
+		}
+	}
+	return true
 }
 
 // Close disconnects every venue and waits for their goroutines. Guest

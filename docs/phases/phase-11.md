@@ -16,6 +16,11 @@ Phase 10.
   limiting, structured logs, health endpoint. Deployable as its own small
   binary or container. It stores nothing.
 
+  - [x] **1b.** A hostname per venue: `RELAY_VENUE_DOMAIN` serves each venue at
+    `<venue>.<domain>` and stops serving `/v/<venue>/` (ADR-203).
+  - [ ] **1c.** Deploy it: the owner's VPS behind Cloudflare and Caddy, at
+    `relay.jskin.in` and `*.jskin.in`, with the files to do it again in `build/`.
+
 - [ ] **Task 2 — The tunnel client.**
   `internal/tunnel`. Outbound connection with exponential backoff, heartbeat,
   and clean reconnect. Tunnel status surfaced in `/api/v1/health` and visibly in

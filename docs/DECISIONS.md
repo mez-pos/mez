@@ -5960,3 +5960,31 @@ Cost: no streamed uploads from guests. The built guest bundle names its assets a
 `/v/<venue>/` prefix: Task 3 has to build it with relative URLs. A request arriving by
 the tunnel is not yet marked as such for the handler; `X-Forwarded-Prefix` is there
 but a device on the LAN could send it too, so Task 3 must not treat it as proof.
+
+## ADR-203 - A hostname per venue on a shared relay
+2026-10 · Status: accepted. Phase 11, Task 1b. Answers open question 7; amends ADR-201.
+Context: ADR-201 gave every venue a path on one hostname and said plainly that this is
+not isolation: to a browser one hostname is one site, so one venue's script could act
+as another venue's guest. The owner chose a hostname per venue for the hosted relay.
+Decision:
+  - **`RELAY_VENUE_DOMAIN=example.com` serves each venue at `<venue>.example.com`.** The
+    venue is read from the Host header: one label under the domain, a valid venue id,
+    not a reserved name. The whole path is the venue's and is forwarded untouched, with
+    no `X-Forwarded-Prefix`. A table's QR code says `https://<venue>.<domain>/t/<code>`.
+  - **With a venue domain set, `/v/<venue>/` is not served at all.** Leaving it would
+    put every venue back on one origin, at the relay's own hostname.
+  - **Every other hostname is the relay's own**: `/agent` and `/healthz` answer there,
+    so venues dial `relay.<domain>`. On a venue's hostname those paths are the venue's.
+  - **Without a venue domain nothing changes**: path routing, with ADR-201's rules. That
+    is for one venue, or venues that trust each other, where no wildcard is wanted.
+  - **Reserved names** (`relay`, `www`, `api`, `admin`, `app`, `mail`, `smtp`, `ns1`,
+    `ns2`, `status`, `support`, `order`) are never venues, and `issue-key` refuses them.
+  - **A cookie still loses its `Domain`**, since `cafe.example.com` could otherwise set
+    one for all of `example.com`. Its path and a redirect are left alone, and
+    `Service-Worker-Allowed` and `Clear-Site-Data` pass: the origin is the venue's own.
+Because: the browser's same-origin rule is the only isolation between tenants that does
+not depend on the relay getting every header right.
+Cost: a wildcard DNS record and certificate. The domain is printed on every table, so
+changing it later reprints every code. Cookies set with `Domain` by a venue's own
+script (not a header) are the browser's to refuse, which it does only if the domain is
+on the Public Suffix List; guest sessions should be `HttpOnly` and host-only.

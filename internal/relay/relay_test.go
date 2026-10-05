@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1041,4 +1042,143 @@ func TestCloseDisconnectsVenues(t *testing.T) {
 		t.Error("a venue registered after Close")
 	}
 	f.srv.Close()
+}
+
+func TestVenueFromHost(t *testing.T) {
+	tests := []struct {
+		host string
+		want string // empty: not a venue
+	}{
+		{"cafe.jskin.in", "cafe"},
+		{"cafe.jskin.in:443", "cafe"},
+		{"CAFE.JSkin.IN.", "cafe"},
+		{"blue-tokai-12.jskin.in", "blue-tokai-12"},
+		{"jskin.in", ""},
+		{"relay.jskin.in", ""},
+		{"www.jskin.in", ""},
+		{"a.b.jskin.in", ""},
+		{"-x.jskin.in", ""},
+		{"cafe.jskin.in.evil.example", ""},
+		{"cafejskin.in", ""},
+		{"evil.example", ""},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		got, ok := venueFromHost(tt.host, "jskin.in")
+		if got != tt.want || ok != (tt.want != "") {
+			t.Errorf("venueFromHost(%q) = %q, %v; want %q", tt.host, got, ok, tt.want)
+		}
+	}
+}
+
+func TestNewRefusesAVenueDomainThatIsNotOne(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	for _, domain := range []string{"localhost", "jskin .in", "https://jskin.in", "jskin.in/x", "-a.in", "a-.in"} {
+		if _, err := New(Options{Keys: mustKeys(t, testSecret), Log: log, VenueDomain: domain}); err == nil {
+			t.Errorf("New accepted venue domain %q", domain)
+		}
+	}
+	if _, err := New(Options{Keys: mustKeys(t, testSecret), Log: log, VenueDomain: " JSkin.in. "}); err != nil {
+		t.Errorf("New refused a domain that only needed tidying: %v", err)
+	}
+}
+
+func TestIssueRefusesAReservedName(t *testing.T) {
+	keys := mustKeys(t, testSecret)
+	for _, name := range []string{"relay", "www", "admin"} {
+		if _, err := keys.Issue(rand.Reader, name); err == nil {
+			t.Errorf("Issue made a key for %q, which would be a hostname the operator needs", name)
+		}
+	}
+}
+
+// TestAHostnamePerVenue: with a venue domain set, a venue is its hostname
+// and the whole path is its own.
+func TestAHostnamePerVenue(t *testing.T) {
+	f := newFixture(t, func(o *Options) { o.VenueDomain = "jskin.in" })
+	ws := f.connect("cafe")
+	got := make(chan exchange, 8)
+	serve(t, ws, func(ex exchange) answer {
+		got <- ex
+		return answer{status: http.StatusOK, body: []byte("cafe says hello"), header: http.Header{
+			"Set-Cookie":      {"sid=1; Path=/t; Domain=jskin.in", "b=2"},
+			"Location":        {"/t/abc"},
+			"Clear-Site-Data": {`"storage"`},
+		}}
+	})
+
+	as := func(host, path string) *http.Response {
+		t.Helper()
+		req, err := http.NewRequest("GET", f.http.URL+path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Host = host
+		client := &http.Client{Timeout: testTimeout, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("GET %s%s: %v", host, path, err)
+		}
+		t.Cleanup(func() { _ = resp.Body.Close() })
+		return resp
+	}
+
+	resp := as("cafe.jskin.in", "/t/a%2Fb?seat=2")
+	if body := readAll(t, resp); resp.StatusCode != http.StatusOK || body != "cafe says hello" {
+		t.Fatalf("status %d, body %q", resp.StatusCode, body)
+	}
+	ex := <-got
+	if ex.head.Path != "/t/a%2Fb?seat=2" {
+		t.Errorf("path = %q, want it whole and as sent", ex.head.Path)
+	}
+	if ex.head.Header.Get("X-Forwarded-Host") != "cafe.jskin.in" || ex.head.Header.Get("X-Forwarded-Prefix") != "" {
+		t.Errorf("forwarded headers = %v", ex.head.Header)
+	}
+	// Paths are the venue's own, so nothing is moved; but a cookie still
+	// may not claim the whole domain, which every other venue shares.
+	if cookies := resp.Header.Values("Set-Cookie"); len(cookies) != 2 || cookies[0] != "sid=1; Path=/t" || cookies[1] != "b=2; Path=/" {
+		t.Errorf("Set-Cookie = %q", cookies)
+	}
+	if loc := resp.Header.Get("Location"); loc != "/t/abc" {
+		t.Errorf("Location = %q, want it untouched", loc)
+	}
+	if resp.Header.Get("Clear-Site-Data") == "" {
+		t.Error("a venue on its own hostname could not clear its own site data")
+	}
+
+	// Paths that mean something on the relay's own hostname are the
+	// venue's on the venue's.
+	for _, path := range []string{"/healthz", "/agent", "/v/bar/t/abc"} {
+		if body := readAll(t, as("cafe.jskin.in", path)); body != "cafe says hello" {
+			t.Errorf("cafe.jskin.in%s was answered by the relay: %q", path, body)
+		}
+		if ex := <-got; ex.head.Path != path {
+			t.Errorf("the venue saw %q for %s", ex.head.Path, path)
+		}
+	}
+
+	tests := []struct {
+		name, host, path string
+		want             int
+	}{
+		{"a venue that is not connected", "bar.jskin.in", "/t/abc", http.StatusServiceUnavailable},
+		{"the relay's own hostname still answers health", "relay.jskin.in", "/healthz", http.StatusOK},
+		{"a reserved name is not a venue", "www.jskin.in", "/t/abc", http.StatusNotFound},
+		{"the bare domain is not a venue", "jskin.in", "/t/abc", http.StatusNotFound},
+		{"a venue by path is gone: it would put every venue back on one origin", "relay.jskin.in", "/v/cafe/t/abc", http.StatusNotFound},
+		{"and by path on its own hostname's sibling", "jskin.in", "/v/cafe/", http.StatusNotFound},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if resp := as(tt.host, tt.path); resp.StatusCode != tt.want {
+				t.Errorf("status = %d, want %d", resp.StatusCode, tt.want)
+			}
+		})
+	}
+
+	// A venue still connects at the relay's hostname, whatever it is.
+	serve(t, f.connect("bar"), func(exchange) answer { return answer{status: http.StatusOK, body: []byte("bar")} })
+	if body := readAll(t, as("bar.jskin.in", "/t/abc")); body != "bar" {
+		t.Errorf("a second venue at its hostname answered %q", body)
+	}
 }

@@ -8,7 +8,15 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 1: the relay service** (ADR-201). `cmd/relay` over `internal/relay`:
+**Phase 11, Task 2a: the tunnel client** (ADR-202). `internal/tunnel` dials the relay
+with the new `relay_key`, serves guests through the server's own handler, reconnects
+with backoff (1 s to 60 s, 5 minutes after a refused key or a replaced socket) and a
+heartbeat, and is `checks.tunnel` in health. Every guest path lands under `/order/`,
+out of reach of the staff API. `TestTheCounterSellsWhileTheRelayIsDown` kills a real
+relay mid-service; also done by hand with both binaries. Task 2 was split: 2b is the
+back office view.
+
+Before it, **Phase 11, Task 1: the relay service** (ADR-201). `cmd/relay` over `internal/relay`:
 a venue dials `GET /agent` with a signed key (`relay issue-key`, an HMAC under
 `RELAY_SECRET`, nothing stored), guests reach it at `/v/<venue>/...`, and requests
 ride one socket as frames (`internal/relay/wire`). Per-venue token bucket, 256

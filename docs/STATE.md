@@ -7,34 +7,33 @@
 
 ## Current phase
 
-**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 and 2a done.
+**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. 1, 1b and 2a done.
 Started before the owner's walk: the rebuild, 09 and 10 still owe their human checks.
 
 ## Last completed task
 
-**Phase 11, Task 2a: the tunnel client** (ADR-202). `internal/tunnel` dials the relay
-with `relay_key`, serves guests through the server's own handler, reconnects with
-backoff and a heartbeat, and is `checks.tunnel` in health. Every guest path lands under
-`/order/`, out of reach of the staff API. Proved by a test that kills the relay
-mid-service (`internal/api/tunnel_test.go`) and by hand with both binaries.
+**Phase 11, Task 1b: a hostname per venue** (ADR-203). `RELAY_VENUE_DOMAIN=jskin.in`
+serves each venue at `<venue>.jskin.in`, the whole path its own, and stops serving
+`/v/<venue>/`. Venues dial `relay.<domain>`. Reserved names are never venues. Without
+the setting the relay routes by path as before.
 
 ## Next task
 
-**Phase 11, Task 2b: tunnel status in back office.** `tunnel.Client.Status()` already
-has the state, since when, the last error and the next retry.
-- Add an endpoint that returns it (`make generate` for the types), for an owner or
-  manager. No relay set is not a fault. States: `connecting`, `connected`, `waiting`,
-  `refused` (wrong key), `replaced` (another machine has the key), `stopped`.
-- Show it where the owner looks (`docs/design/screens/README.md`: Settings or
-  Devices), as colour plus a word.
-- Task 3: mount what guests need under `/order/`, and build the guest bundle with
-  relative URLs (it names `/order/assets/...`, wrong behind `/v/<venue>/`).
+**Phase 11, Task 1c: deploy the relay**, when the owner hands over access. The owner's
+Hetzner server "Gatezzy" (wipe, rename `mez`), `jskin.in` on Cloudflare (proxied,
+`relay` and `*`), Caddy in front, the relay from `build/relay.Dockerfile` with
+`RELAY_VENUE_DOMAIN=jskin.in` and `RELAY_TRUST_PROXY=true`. Commit the files that do it
+to `build/`. No secret goes in the repo or the log. Then **Task 2b**:
+- An endpoint returning `tunnel.Client.Status()` (`make generate`), owner or manager.
+  No relay set is not a fault. Show it in back office as colour plus a word.
+- Task 3: mount what guests need under `/order/`. The guest bundle names
+  `/order/assets/...`, which the tunnel maps to `/order/order/assets/...`: fix one end.
 
 ## Known broken / in progress
 
 - A dev server may be running from an old binary: a Go change needs `make dev` run
   again, and `make check` cannot rebuild `bin/mez` while one runs from it.
-- The relay: no load test, no run behind a real TLS proxy, and open question 7.
+- The relay: no load test and no run behind a real TLS proxy yet (Task 1c).
 
 ## Open questions for the human
 
@@ -45,7 +44,7 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 4. Tax-inclusive totals read as if the rows add up. Say "incl." on the tax rows?
 5. The desktop's cash quick amounts never offer ₹500. Show it?
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
-7. Relay (ADR-201): venues share one origin, unsafe for a hosted relay. A subdomain each?
+7. `jskin.in` is on every table's code once printed. Is it the permanent domain?
 
 ---
 
@@ -55,5 +54,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 and 2a done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (1, 1b and 2a done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

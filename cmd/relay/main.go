@@ -40,13 +40,14 @@ var version = "dev"
 // under a process manager, where the environment is the one thing every one
 // of them can set, and a file would be the only thing it kept on disk.
 const (
-	envListen     = "RELAY_LISTEN_ADDR" // default ":8080"
-	envSecret     = "RELAY_SECRET"      // signs venue keys; required
-	envRevoked    = "RELAY_REVOKED"     // comma-separated venue ids and key ids to refuse
-	envTrustProxy = "RELAY_TRUST_PROXY" // "true" when the operator's own proxy sits in front
-	envVenueRPM   = "RELAY_VENUE_RPM"   // requests a minute each venue may receive
-	envVenueBurst = "RELAY_VENUE_BURST" // requests each venue may receive at once
-	envLogLevel   = "RELAY_LOG_LEVEL"   // debug, info, warn or error
+	envListen     = "RELAY_LISTEN_ADDR"  // default ":8080"
+	envSecret     = "RELAY_SECRET"       // signs venue keys; required
+	envRevoked    = "RELAY_REVOKED"      // comma-separated venue ids and key ids to refuse
+	envTrustProxy = "RELAY_TRUST_PROXY"  // "true" when the operator's own proxy sits in front
+	envDomain     = "RELAY_VENUE_DOMAIN" // gives each venue the hostname <venue>.<domain>
+	envVenueRPM   = "RELAY_VENUE_RPM"    // requests a minute each venue may receive
+	envVenueBurst = "RELAY_VENUE_BURST"  // requests each venue may receive at once
+	envLogLevel   = "RELAY_LOG_LEVEL"    // debug, info, warn or error
 
 	defaultListen = ":8080"
 )
@@ -62,6 +63,7 @@ Environment:
   RELAY_LISTEN_ADDR   address to listen on (default :8080)
   RELAY_REVOKED       comma-separated venue ids and key ids to refuse
   RELAY_TRUST_PROXY   true when your own proxy sets X-Forwarded-For
+  RELAY_VENUE_DOMAIN  serve each venue at <venue>.<this domain>, not /v/<venue>/
   RELAY_VENUE_RPM     requests a minute per venue (default 1200)
   RELAY_VENUE_BURST   requests at once per venue (default 300)
   RELAY_LOG_LEVEL     debug, info, warn or error (default info)
@@ -162,11 +164,12 @@ func serve(ctx context.Context, env func(string) string, stdout io.Writer, liste
 	}
 
 	srv, err := relay.New(relay.Options{
-		Keys:       keys,
-		Limit:      limit,
-		TrustProxy: trustProxy,
-		Version:    version,
-		Log:        log,
+		Keys:        keys,
+		Limit:       limit,
+		TrustProxy:  trustProxy,
+		VenueDomain: env(envDomain),
+		Version:     version,
+		Log:         log,
 	})
 	if err != nil {
 		return err
@@ -194,6 +197,7 @@ func serve(ctx context.Context, env func(string) string, stdout io.Writer, liste
 		"addr", ln.Addr().String(),
 		"version", version,
 		"trust_proxy", trustProxy,
+		"venue_domain", env(envDomain),
 		"venue_rpm", limit.PerMinute,
 		"venue_burst", limit.Burst)
 	if listening != nil {

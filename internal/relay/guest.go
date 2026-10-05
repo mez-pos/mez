@@ -4,6 +4,7 @@ import (
 	"errors"
 	"html"
 	"io"
+	"net"
 	"net/http"
 	"net/textproto"
 	"strconv"
@@ -66,8 +67,7 @@ func (s *Server) handleBareVenue(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, target, http.StatusPermanentRedirect)
 }
 
-// handleGuest forwards one guest request to its venue and streams the answer
-// back.
+// handleGuest is a guest request for a venue named in the path.
 func (s *Server) handleGuest(w http.ResponseWriter, r *http.Request) {
 	venueID := r.PathValue("venue")
 	prefix := guestPrefix + venueID
@@ -79,6 +79,48 @@ func (s *Server) handleGuest(w http.ResponseWriter, r *http.Request) {
 		s.refuseNotFound(w, r)
 		return
 	}
+	s.forward(w, r, venueID, prefix, path)
+}
+
+// byHost serves a venue at its own hostname, <venue>.<domain>, and hands
+// every other request to next.
+//
+// A hostname each is what keeps venues apart in a guest's browser: to it,
+// two hostnames are two sites, with their own cookies, storage and service
+// workers, where two paths on one hostname are one site (ADR-203).
+func (s *Server) byHost(next http.Handler) http.Handler {
+	if s.venueDomain == "" {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		venueID, ok := venueFromHost(r.Host, s.venueDomain)
+		if !ok {
+			next.ServeHTTP(w, r)
+			return
+		}
+		// The whole path is the venue's: there is no prefix to take off.
+		s.forward(w, r, venueID, "", r.URL.EscapedPath())
+	})
+}
+
+// venueFromHost reads the venue out of a Host header. Only one label under
+// the domain names a venue, and never a reserved one.
+func venueFromHost(host, domain string) (string, bool) {
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	host = strings.TrimSuffix(strings.ToLower(host), ".")
+	label, ok := strings.CutSuffix(host, "."+domain)
+	if !ok || !ValidVenueID(label) || Reserved(label) {
+		return "", false
+	}
+	return label, true
+}
+
+// forward sends one guest request to venueID and streams the answer back.
+// prefix is what was taken off the front of the guest's path to get path;
+// it is empty for a venue served at its own hostname.
+func (s *Server) forward(w http.ResponseWriter, r *http.Request, venueID, prefix, path string) {
 	noteVenue(r, venueID)
 
 	a := s.agentFor(venueID)
@@ -152,7 +194,9 @@ func (s *Server) requestHeader(r *http.Request, prefix string) http.Header {
 	h.Set("X-Forwarded-For", s.clientIP(r))
 	h.Set("X-Forwarded-Host", r.Host)
 	h.Set("X-Forwarded-Proto", s.scheme(r))
-	h.Set("X-Forwarded-Prefix", prefix)
+	if prefix != "" {
+		h.Set("X-Forwarded-Prefix", prefix)
+	}
 	h.Set(headerRequestID, requestIDFrom(r.Context()))
 	return h
 }
@@ -196,8 +240,11 @@ func copyResponseHeader(dst, venue http.Header, prefix string) {
 		}
 	}
 	stripHop(src)
-	for _, name := range originHeaders {
-		src.Del(name)
+	if prefix != "" {
+		// With a hostname of its own a venue's origin is its own to manage.
+		for _, name := range originHeaders {
+			src.Del(name)
+		}
 	}
 	for name, values := range src {
 		switch name {
@@ -224,7 +271,9 @@ func scopeCookie(line, prefix string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	// No Domain: the cookie belongs to this host and no sibling of it.
+	// No Domain, with a prefix or without: the cookie belongs to this host.
+	// A venue at cafe.example may otherwise set one for all of example,
+	// which every other venue's guests would then send.
 	c.Domain = ""
 	if strings.HasPrefix(c.Path, "/") {
 		c.Path = prefix + c.Path
