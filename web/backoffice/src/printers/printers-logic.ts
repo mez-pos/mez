@@ -13,11 +13,19 @@ export function connectionText(p: Pick<PrinterResponse, "transport" | "address">
   return p.address.includes(":") ? `[${p.address}]:9100` : `${p.address}:9100`;
 }
 
-/** The stations a printer prints for, by name. */
-export function stationsText(p: Pick<PrinterResponse, "stations">, stations: readonly StationPrinterResponse[]): string {
-  if (p.stations.length === 0) return "No stations";
+/** The line under the title: "2 printers", or "3 printers, 1 retired". */
+export function printersSummary(printers: readonly Pick<PrinterResponse, "active">[]): string {
+  if (printers.length === 0) return "None yet";
+  const retired = printers.filter((p) => !p.active).length;
+  const count = printers.length === 1 ? "1 printer" : `${printers.length} printers`;
+  return retired === 0 ? count : `${count}, ${retired} retired`;
+}
+
+/** What a printer prints, as its row says it: receipts, and each station's tickets. */
+export function printsText(p: Pick<PrinterResponse, "is_receipt" | "stations">, stations: readonly StationPrinterResponse[]): string {
   const names = new Map(stations.map((s) => [s.code, s.name]));
-  return p.stations.map((code) => names.get(code) ?? code).join(", ");
+  const parts = [...(p.is_receipt ? ["Receipts"] : []), ...p.stations.map((code) => `${names.get(code) ?? code} tickets`)];
+  return parts.length === 0 ? "Nothing yet" : parts.join(", ");
 }
 
 /** "just now", "12 min ago", "3 h ago", or the date. */

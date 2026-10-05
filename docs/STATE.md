@@ -14,7 +14,16 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16j: the Z-report and the close** (ADR-194). Task 16 is done. The
+**Rebuild, Task 16k: Printers, Devices and Audit on Task 16's patterns** (ADR-195).
+Asked for by the owner before Task 17. Printers (`printers/PrinterTable.tsx`,
+`PrinterRouting.tsx`) and Devices (`devices/DeviceTable.tsx`) are tables in a card
+with a chip and a row menu; Audit has the reports' head and the range pill, now
+`sales/RangePill.tsx`. Layout only: no server change. Seen in a browser as Priya at
+1920x1080, and Printers at 1100. Tests: `printsText`, `printersSummary`, `stateOf`,
+`listed`, `devicesSummary`, the `device` chips. `make check` and `make build-web`
+pass.
+
+Before it, **Rebuild, Task 16j: the Z-report and the close** (ADR-194). Task 16 is done. The
 Z-report (`shared/zreport/ZReportView.tsx`, `ZPaper.tsx`, both apps) has D23's slip
 beside the report in full, with "By how it was served", tips by who took the payment
 and covers where a report has them. Close the day (`terminal/src/shift/
@@ -268,8 +277,8 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 **Rebuild, Task 17: Close.** Rewrite `docs/design/screens/*.md` from what was built, and
 walk register, kitchen, payment, invoice and Z-report as each role. The owner has not
 yet looked at the kitchen's screens or anything of Task 16. The back office screens the
-design draws nothing for (Audit, Floor plan, Printers, Devices, Tips) are still their
-old layouts inside the new frame. Phase 11 waits for this phase. Phase 10's tasks are
+design draws nothing for: Printers, Devices and Audit were brought onto Task 16's
+patterns (ADR-195); Floor plan and Tips are still their old layouts. Phase 11 waits for this phase. Phase 10's tasks are
 all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
 unticked below.
 
@@ -283,6 +292,10 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Printers, Devices and Audit (ADR-195): the dev venue now has three printers that
+  go nowhere (127.0.0.1:9197 to 9199), one retired and one set for receipts, so a
+  receipt there queues and retries. Not seen by eye: a revoked or a quiet device,
+  a refusal over the printers table, and Devices and Audit under 1280px.
 - The Z-report and the close (ADR-194): the dev venue's first shift is now closed
   (Z-report 1, ₹282.00 over, counted by hand to try it) and a second is open with a
   ₹10,000.00 float. Not seen by eye: a width under 1920 (the slip under the report),

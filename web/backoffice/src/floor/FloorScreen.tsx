@@ -3,7 +3,6 @@
 // and the retired tables waiting to come back.
 
 import { useState } from "react";
-import { Link } from "wouter";
 import type { AreaResponse, FloorResponse, TableResponse } from "../../../shared/api-types";
 import { Button, Card, EmptyState, InboxIcon } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
@@ -43,9 +42,6 @@ export function FloorScreen() {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <Link href="/" className="-mb-4 inline-flex min-h-tap items-center self-start text-base text-fg-2 underline">
-        Back office
-      </Link>
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="font-serif text-total">Floor plan</h1>
         <div className="flex flex-wrap gap-tap-gap">

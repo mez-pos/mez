@@ -5662,3 +5662,33 @@ Cost: the slip is a second reading of figures the cards beside it already give.
 `docs/design/screens/zreport.md` and `terminal-close.md` describe the old screens
 until Task 17.
 ---
+
+## ADR-195 - Printers, Devices and Audit take Task 16's patterns; Floor plan and Tips do not
+2026-10 · Status: accepted. Rebuild Task 16k, a pass before Task 17.
+Context: the design draws nothing for Audit, Floor plan, Printers, Devices or Tips, so
+Task 16 left them as they were inside the new frame. Printers and Devices were lists of
+cards with a row of buttons each, centred in the page; Audit had its days as two fields
+in a row. Beside Inventory and Staff they read as another app.
+Decision:
+  - **Printers and Devices are tables in a card**, as Inventory and Staff are: a chip
+    for where a thing stands, and what can be done to it under the row's "...". The
+    page head is the shared one (title, a line of counts, the action at the right).
+    Nothing a screen could do was taken away, and nothing was added.
+  - **Devices is one table**: in service first, the revoked at the foot with nothing
+    left to do to them. A new chip vocabulary, `device`: In service, Quiet (not heard
+    from for a day), Revoked. "Quiet", not "Offline": the server knows when a device
+    last asked for something, not whether it is switched on.
+  - **A printer has no chip of its own.** The server cannot tell whether a printer is
+    reachable; its last job is the evidence, so the row shows the print chip for it.
+  - **What an action answered is a toast; what it was refused for is a line over the
+    table**, named for the printer, as Staff does it.
+  - **Audit has the reports' head**: the title block, and the days in the range pill.
+    The pill is `sales/RangePill.tsx`, given its range: the reports share
+    one, Audit keeps its own, since it is opened on a filter from a link.
+  - **Floor plan and Tips are left alone**, but for the stray "Back office" link over
+    the title on Floor plan and Printers. Floor plan is a grid editor, not a list;
+    Tips is a section of Settings and already in its frame.
+Because: these are the screens an owner sets a venue up on, on the first day.
+Cost: `docs/design/screens/backoffice-printers.md`, `backoffice-devices.md` and
+`backoffice-audit.md` describe the old layouts until Task 17.
+---

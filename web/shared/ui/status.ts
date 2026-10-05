@@ -111,6 +111,16 @@ export const staffStates: Readonly<Record<StaffState, ChipSpec>> = {
   off: { tone: "neutral", word: "Deactivated" },
 };
 
+// A paired device on the back office's list. Quiet is one not heard from
+// for a day: a till in a drawer, or one that is off. Revoked is for good.
+export type DeviceState = "in_service" | "quiet" | "revoked";
+
+export const deviceStates: Readonly<Record<DeviceState, ChipSpec>> = {
+  in_service: { tone: "success", word: "In service" },
+  quiet: { tone: "warning", word: "Quiet" },
+  revoked: { tone: "neutral", word: "Revoked" },
+};
+
 /** What a StatusChip is given: which vocabulary, and a value from it. */
 export type ChipStatus =
   | { readonly kind: "kitchen"; readonly status: KitchenStatus }
@@ -122,7 +132,8 @@ export type ChipStatus =
   | { readonly kind: "day"; readonly status: DayStatus }
   | { readonly kind: "stock"; readonly status: StockLevel }
   | { readonly kind: "menu"; readonly status: MenuItemState }
-  | { readonly kind: "staff"; readonly status: StaffState };
+  | { readonly kind: "staff"; readonly status: StaffState }
+  | { readonly kind: "device"; readonly status: DeviceState };
 
 export function chipSpec(chip: ChipStatus): ChipSpec {
   switch (chip.kind) {
@@ -146,5 +157,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
       return menuItemStates[chip.status];
     case "staff":
       return staffStates[chip.status];
+    case "device":
+      return deviceStates[chip.status];
   }
 }

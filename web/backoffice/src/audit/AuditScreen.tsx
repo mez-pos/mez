@@ -12,6 +12,7 @@ import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
 import { inputClass } from "../FormFields";
+import { RangePill } from "../sales/RangePill";
 import { auditQuery, authorisedText, dayText, filterFromSearch, itemText, kinds, kindWords, reasonWords, type AuditFilter } from "./audit-logic";
 
 export function AuditScreen() {
@@ -34,21 +35,20 @@ export function AuditScreen() {
   const set = (patch: Partial<AuditFilter>) => setFilter((f) => ({ ...f, ...patch }));
 
   return (
-    <div className="flex max-w-6xl flex-col gap-6">
-      <div>
-        <h1 className="font-serif text-total">Audit</h1>
-        <p className="mt-1 text-sm text-fg-3">Every correction to a bill, from the record. Amounts are what the bill itself used.</p>
+    <div className="flex max-w-6xl flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-total">Audit</h1>
+          <p className="mt-1 text-base text-fg-muted">Every correction to a bill, from the record. Amounts are what the bill itself used.</p>
+        </div>
+        <RangePill
+          range={{ from: filter.from, to: filter.to }}
+          onChange={(range) => set(range)}
+          note="Both are trading days. A trading day runs 04:00 to 04:00."
+        />
       </div>
 
       <div role="group" aria-label="Filter" className="flex flex-wrap items-end gap-4">
-        <label className="flex flex-col gap-1.5 text-sm font-semibold">
-          From
-          <input type="date" className={cx(inputClass, "font-mono")} value={filter.from} max={filter.to} onChange={(e) => set({ from: e.target.value })} />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-semibold">
-          To
-          <input type="date" className={cx(inputClass, "font-mono")} value={filter.to} min={filter.from} onChange={(e) => set({ to: e.target.value })} />
-        </label>
         <label className="flex min-w-56 flex-col gap-1.5 text-sm font-semibold">
           Person
           <select className={inputClass} value={filter.staff} onChange={(e) => set({ staff: e.target.value })}>

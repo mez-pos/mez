@@ -6,15 +6,17 @@ import {
   PAIRABLE,
   actionProblemOf,
   dateText,
+  devicesSummary,
   isStale,
   kindWords,
+  listed,
   lastSeenText,
   nameProblem,
   pairProblemOf,
-  pairedText,
   revokedText,
   runsOutText,
   split,
+  stateOf,
 } from "./devices-logic";
 
 const now = new Date("2026-10-03T12:00:00Z");
@@ -66,7 +68,6 @@ describe("when a device was last heard from", () => {
 describe("dates", () => {
   it("are written as people write them", () => {
     expect(dateText("2026-10-03T12:00:00Z")).toBe("3 Oct 2026");
-    expect(pairedText(device({ paired_at: "2026-09-28T12:00:00Z" }))).toBe("Paired 28 Sep 2026");
     expect(dateText("2026-01-05T12:00:00Z")).toBe("5 Jan 2026");
     expect(dateText("2026-12-31T12:00:00Z")).toBe("31 Dec 2026");
     expect(revokedText(device({ revoked_at: "2026-10-02T12:00:00Z" }))).toBe("Revoked 2 Oct 2026");
@@ -124,5 +125,36 @@ describe("a failed request", () => {
     expect(actionProblemOf(new ApiError("cannot_revoke_self", "You are using this device.", 409))).toBe("You are using this device.");
     expect(actionProblemOf(new ApiError("device_unpaired", "That device has been revoked.", 409))).toBe("That device has been revoked.");
     expect(actionProblemOf(new ApiError("network", "down"))).toMatch(/Can't reach/);
+  });
+});
+
+describe("where a device stands", () => {
+  it("is in service when heard from within a day, or not yet heard from", () => {
+    expect(stateOf(device({ last_seen_at: ago(23 * HOUR) }), now)).toBe("in_service");
+    expect(stateOf(device(), now)).toBe("in_service");
+  });
+  it("is quiet once a day has passed without a word", () => {
+    expect(stateOf(device({ last_seen_at: ago(24 * HOUR) }), now)).toBe("quiet");
+  });
+  it("is revoked whatever it was last heard", () => {
+    expect(stateOf(device({ last_seen_at: ago(40 * HOUR), revoked_at: ago(HOUR) }), now)).toBe("revoked");
+    expect(stateOf(device({ last_seen_at: ago(MIN), revoked_at: ago(20_000) }), now)).toBe("revoked");
+  });
+});
+
+describe("the list as the table shows it", () => {
+  it("has the devices in service first, then the revoked", () => {
+    const rows = listed([device({ id: "a", revoked_at: ago(HOUR) }), device({ id: "b" }), device({ id: "c", revoked_at: ago(HOUR) }), device({ id: "d" })]);
+    expect(rows.map((d) => d.id)).toEqual(["b", "d", "a", "c"]);
+  });
+});
+
+describe("the line under the title", () => {
+  it("counts the devices in service, the quiet among them, and the revoked", () => {
+    expect(devicesSummary([device(), device({ last_seen_at: ago(MIN) })], now)).toBe("2 in service");
+    expect(devicesSummary([device(), device({ last_seen_at: ago(30 * HOUR) }), device({ revoked_at: ago(HOUR) })], now)).toBe(
+      "2 in service, 1 quiet for a day or more, 1 revoked",
+    );
+    expect(devicesSummary([], now)).toBe("0 in service");
   });
 });

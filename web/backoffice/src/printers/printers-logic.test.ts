@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
 import type { PrinterResponse } from "../../../shared/api-types";
-import { agoText, connectionText, emptyForm, formFrom, problemOf, stationsText, toSettings } from "./printers-logic";
+import { agoText, connectionText, emptyForm, formFrom, printersSummary, printsText, problemOf, toSettings } from "./printers-logic";
 
 const printer = (extra: Partial<PrinterResponse> = {}): PrinterResponse => ({
   id: 1,
@@ -29,14 +29,15 @@ describe("connectionText", () => {
   });
 });
 
-describe("stationsText", () => {
-  const stations = [
-    { code: "kitchen", name: "Kitchen" },
-    { code: "bar", name: "Bar" },
+describe("printersSummary", () => {
+  const cases: [boolean[], string][] = [
+    [[], "None yet"],
+    [[true], "1 printer"],
+    [[true, true], "2 printers"],
+    [[true, false, false], "3 printers, 2 retired"],
   ];
-  it("names the stations, in the printer's order", () => {
-    expect(stationsText(printer({ stations: ["bar", "kitchen"] }), stations)).toBe("Bar, Kitchen");
-    expect(stationsText(printer(), stations)).toBe("No stations");
+  it.each(cases)("%o is %s", (actives, want) => {
+    expect(printersSummary(actives.map((active) => ({ active })))).toBe(want);
   });
 });
 
@@ -67,5 +68,22 @@ describe("problemOf", () => {
     expect(problemOf(new ApiError("network", "x")).message).toMatch(/server/);
     expect(problemOf(new ApiError("forbidden", "x", 403)).message).toMatch(/settings/);
     expect(problemOf(new Error("x")).field).toBeNull();
+  });
+});
+
+describe("printsText", () => {
+  const stations = [
+    { code: "kitchen", name: "Kitchen" },
+    { code: "bar", name: "Bar" },
+  ];
+  const cases: [Partial<PrinterResponse>, string][] = [
+    [{}, "Nothing yet"],
+    [{ is_receipt: true }, "Receipts"],
+    [{ stations: ["bar"] }, "Bar tickets"],
+    [{ is_receipt: true, stations: ["bar", "kitchen"] }, "Receipts, Bar tickets, Kitchen tickets"],
+    [{ stations: ["grill"] }, "grill tickets"],
+  ];
+  it.each(cases)("%o prints %s", (extra, want) => {
+    expect(printsText(printer(extra), stations)).toBe(want);
   });
 });

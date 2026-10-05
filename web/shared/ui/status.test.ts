@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   chipSpec,
   dayStatuses,
+  deviceStates,
   kitchenStatuses,
   lineStatuses,
   orderStatuses,
@@ -25,6 +26,7 @@ const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   stock: stockLevels,
   menu: menuItemStates,
   staff: staffStates,
+  device: deviceStates,
 };
 
 describe("status vocabularies", () => {

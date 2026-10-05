@@ -6,17 +6,17 @@
 // filters are not drawn: a venue is one outlet, and the server does not
 // filter a report by how it was served.
 
-import { CalendarRangeIcon, ChevronDownIcon, DownloadIcon } from "lucide-react";
+import { DownloadIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "wouter";
 import type { ReportEvery, ReportSheet } from "../../../shared/api-types";
 import { useDisclosure } from "../../../shared/shell/use-disclosure";
 import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
-import { inputClass } from "../FormFields";
-import { insightText, rangeText } from "./overview-logic";
+import { insightText } from "./overview-logic";
+import { RangePill, headPanel, headPill } from "./RangePill";
 import { useReportRange } from "./report-range";
-import { everyWords, quickRange, quickRanges } from "./sales-logic";
+import { everyWords } from "./sales-logic";
 import type { CsvFile } from "./use-csv-download";
 
 const everys = Object.keys(everyWords) as ReportEvery[];
@@ -65,89 +65,23 @@ export function ReportHead({ tab, title, cut = false, children }: ReportHeadProp
   );
 }
 
-const headPill =
-  "inline-flex min-h-tap items-center gap-2 whitespace-nowrap rounded-pill px-5 text-base font-semibold outline-offset-2 outline-attention focus-visible:outline-3";
-const panelClass = "absolute right-0 top-full z-20 mt-2 rounded-card border border-line bg-raised p-4 shadow-card";
-
 function RangeMenu({ cut }: { cut: boolean }) {
-  const { range, setRange, every, setEvery, quick, picked } = useReportRange();
-  const { open, toggle, box, trigger, panel, panelId, leaves } = useDisclosure();
-
+  const { range, setRange, every, setEvery } = useReportRange();
   return (
-    <div ref={box} onBlur={leaves} className="relative">
-      <button
-        ref={trigger}
-        type="button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={toggle}
-        className={cx(headPill, "border border-line-strong bg-raised hover:bg-raised-high")}
-      >
-        <CalendarRangeIcon aria-hidden="true" size={17} />
-        <span className="font-mono tabular-nums">{picked ? rangeText(range) : "Pick the days"}</span>
-        <ChevronDownIcon aria-hidden="true" size={16} className={cx("text-fg-muted transition-transform", open && "rotate-180")} />
-      </button>
-      {open && (
-        // tabIndex: a click on the panel itself keeps focus inside it, so it does not close.
-        <div
-          ref={panel}
-          id={panelId}
-          tabIndex={-1}
-          role="group"
-          aria-label="Range"
-          className={cx(panelClass, "flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-4")}
-        >
-          <div role="group" aria-label="Quick ranges" className="flex flex-wrap gap-tap-gap">
-            {quickRanges.map((q) => (
-              <button
-                key={q.id}
-                type="button"
-                aria-pressed={quick === q.id}
-                className={pillClass(quick === q.id)}
-                onClick={() => setRange(quickRange(q.id, new Date()))}
-              >
-                {q.label}
+    <RangePill range={range} onChange={setRange} note="A sale counts on the trading day its bill was invoiced. A trading day runs 04:00 to 04:00.">
+      {cut && (
+        <div role="group" aria-label="By" className="flex flex-col gap-1.5 text-sm font-semibold">
+          By
+          <div className="flex gap-tap-gap">
+            {everys.map((e) => (
+              <button key={e} type="button" aria-pressed={every === e} className={pillClass(every === e)} onClick={() => setEvery(e)}>
+                {everyWords[e]}
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1.5 text-sm font-semibold">
-              From
-              <input
-                type="date"
-                className={cx(inputClass, "font-mono")}
-                value={range.from}
-                max={range.to}
-                onChange={(e) => setRange({ ...range, from: e.target.value })}
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 text-sm font-semibold">
-              To
-              <input
-                type="date"
-                className={cx(inputClass, "font-mono")}
-                value={range.to}
-                min={range.from}
-                onChange={(e) => setRange({ ...range, to: e.target.value })}
-              />
-            </label>
-          </div>
-          {cut && (
-            <div role="group" aria-label="By" className="flex flex-col gap-1.5 text-sm font-semibold">
-              By
-              <div className="flex gap-tap-gap">
-                {everys.map((e) => (
-                  <button key={e} type="button" aria-pressed={every === e} className={pillClass(every === e)} onClick={() => setEvery(e)}>
-                    {everyWords[e]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <p className="text-sm text-fg-3">A sale counts on the trading day its bill was invoiced. A trading day runs 04:00 to 04:00.</p>
         </div>
       )}
-    </div>
+    </RangePill>
   );
 }
 
@@ -195,7 +129,7 @@ export function ExportMenu({ file, files, disabled }: ExportMenuProps) {
         {busy ? "Downloading" : "Export"}
       </button>
       {open && (
-        <div ref={panel} id={panelId} role="group" aria-label="Download as CSV" className={cx(panelClass, "w-64 p-2")}>
+        <div ref={panel} id={panelId} role="group" aria-label="Download as CSV" className={cx(headPanel, "w-64 p-2")}>
           <p className="px-4 pb-1 pt-2 text-meta font-bold uppercase text-fg-faint">Download as CSV</p>
           {files.map((f) => (
             <button

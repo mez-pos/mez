@@ -334,6 +334,10 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 16j. (ADR-194) The Z-report (D23). The design is the close and the report
     side by side; built as the two screens they are: Close the day in two steps on
     the order screen's app, and the Z-report with its slip in both apps.
+  - [x] 16k. (ADR-195) A pass over the screens the design draws nothing for:
+    Printers and Devices as tables in a card, Audit with the reports' head and
+    range pill, and the stray "Back office" link gone. Floor plan and Tips are
+    left as they are.
 - [ ] **Task 17 - Close.** Rewrite `docs/design/screens/*.md` from what was
   built. Walk register, kitchen, payment, invoice and Z-report as each role.
 

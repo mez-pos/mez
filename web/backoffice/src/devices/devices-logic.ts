@@ -3,6 +3,7 @@
 // No React in this file, so all of it is tested directly.
 
 import type { DeviceKind, DeviceRecordResponse } from "../../../shared/api-types";
+import type { DeviceState } from "../../../shared/ui/status";
 import { agoText } from "../printers/printers-logic";
 import { problemWith, type Problem } from "../settings/problem";
 
@@ -34,8 +35,6 @@ export function dateText(iso: string): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-export const pairedText = (d: Pick<DeviceRecordResponse, "paired_at">): string => `Paired ${dateText(d.paired_at)}`;
-
 /** When a device was last heard from, in words: "Seen 12 min ago", or that it never was. */
 export function lastSeenText(d: Pick<DeviceRecordResponse, "last_seen_at">, now: Date): string {
   if (!d.last_seen_at) return "Not heard from since it was paired";
@@ -57,6 +56,30 @@ export function split(devices: readonly DeviceRecordResponse[]): { inService: De
     inService: devices.filter((d) => !d.revoked_at),
     revoked: devices.filter((d) => d.revoked_at),
   };
+}
+
+/** The list as the table shows it: the devices in service, then the revoked. */
+export function listed(devices: readonly DeviceRecordResponse[]): DeviceRecordResponse[] {
+  const { inService, revoked } = split(devices);
+  return [...inService, ...revoked];
+}
+
+/** Where a device stands, for its chip: revoked, quiet for a day, or in service. */
+export function stateOf(d: Pick<DeviceRecordResponse, "last_seen_at" | "revoked_at">, now: Date): DeviceState {
+  if (d.revoked_at) return "revoked";
+  return isStale(d, now) ? "quiet" : "in_service";
+}
+
+/** The line under the title: "4 in service", with how many are quiet and how many revoked when any are. */
+export function devicesSummary(devices: readonly Pick<DeviceRecordResponse, "last_seen_at" | "revoked_at">[], now: Date): string {
+  const count = (state: DeviceState) => devices.filter((d) => stateOf(d, now) === state).length;
+  const quiet = count("quiet");
+  const revoked = count("revoked");
+  return [
+    `${count("in_service") + quiet} in service`,
+    ...(quiet > 0 ? [`${quiet} quiet for a day or more`] : []),
+    ...(revoked > 0 ? [`${revoked} revoked`] : []),
+  ].join(", ");
 }
 
 /** "runs out in 7 min", "runs out in under a minute", or that it has run out. */
