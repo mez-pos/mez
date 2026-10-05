@@ -102,3 +102,65 @@ func TestTheKitchenBoard(t *testing.T) {
 		t.Errorf("the coffee, never bumped, left the bar board: %+v", b.Tickets)
 	}
 }
+
+// TestAStationsDay: the board carries the station's trading day so far: the
+// tickets it was sent, those still in the kitchen and those on the pass, and
+// how long from sent to ready, with the slowest named by its dish. A ticket
+// sent before the trading day began is not in it.
+func TestAStationsDay(t *testing.T) {
+	s, d, _ := newService(t)
+	ctx := context.Background()
+	m := cashier("")
+	kds := Meta{VenueID: 1, DeviceID: 9}
+	at := func(after time.Duration) *Service {
+		t.Helper()
+		svc, err := New(Options{DB: d, Clock: laterClock{now.Add(after)}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return svc
+	}
+
+	board := func(svc *Service, station string) Board {
+		t.Helper()
+		b, err := svc.Board(ctx, 1, station)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b
+	}
+
+	id := open(t, s).OrderID
+	must(t)(s.AddLine(ctx, m, id, dosa(1)))   // 2, kitchen
+	must(t)(s.AddLine(ctx, m, id, coffee(1))) // 3, bar
+	second := dosa(2)
+	second.Name = "Upma"
+	must(t)(s.AddLine(ctx, m, id, second)) // 4, kitchen
+	must(t)(s.Send(ctx, m, id))
+
+	b := board(s, "kitchen")
+	if day := b.Day; day.Sent != 1 || day.InKitchen != 1 || day.Ready != 0 || day.Average != 0 || day.Slowest != nil || day.SlowestDish != nil {
+		t.Fatalf("a ticket sent and not made: %+v", day)
+	}
+	seq := b.Tickets[0].Ticket.Seq
+
+	// Seven minutes on, it goes on the pass.
+	must(t)(at(7*time.Minute).Bump(ctx, kds, id, BumpTicket{TicketSeq: seq}))
+	day := board(at(8*time.Minute), "kitchen").Day
+	if day.Sent != 1 || day.InKitchen != 0 || day.Ready != 1 || day.Average != 7*time.Minute {
+		t.Errorf("after the bump: %+v", day.DayStats)
+	}
+	if slow := day.SlowestDish; slow == nil || slow.Name != "Masala dosa" || slow.More != 1 || slow.Took != 7*time.Minute {
+		t.Errorf("the slowest: %+v", slow)
+	}
+
+	// The bar's day is its own.
+	if bar := board(s, "bar").Day; bar.Sent != 1 || bar.InKitchen != 1 || bar.Ready != 0 {
+		t.Errorf("the bar's day: %+v", bar.DayStats)
+	}
+
+	// Tomorrow, after the day has turned, yesterday's tickets are not today's.
+	if next := board(at(26*time.Hour), "kitchen").Day; next.Sent != 0 || next.Ready != 0 || next.SlowestDish != nil {
+		t.Errorf("the next trading day: %+v", next)
+	}
+}

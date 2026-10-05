@@ -4,11 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/kitchen"
 	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/shift"
 )
 
 // The kitchen's side of an order (phase 08, Task 4, ADR-090): a station's
@@ -21,6 +24,9 @@ const RecallWindow = 30 * time.Minute
 // maxBoard caps a station's board: a station with more tickets than this in
 // the kitchen at once has a problem a longer list will not solve.
 const maxBoard = 100
+
+// maxDayTickets caps the tickets a station's day is added up from.
+const maxDayTickets = 2000
 
 // BumpTicket names a ticket on an order: the seq of its ticket.sent.
 type BumpTicket struct {
@@ -86,6 +92,25 @@ type Board struct {
 	// LateAfter is the venue's threshold for a late ticket, which the
 	// display's timers escalate to.
 	LateAfter time.Duration
+	// Day is the station's trading day so far (ADR-178).
+	Day BoardDay
+}
+
+// BoardDay is a station's figures for the trading day: how many tickets it
+// was sent, how many are still in the kitchen and how many went on the pass,
+// and how long from sent to ready, on average and at worst.
+type BoardDay struct {
+	kitchen.DayStats
+	// SlowestDish names the slowest ticket by its first dish, with how many
+	// more dishes were on it. Nil until a ticket is ready.
+	SlowestDish *SlowDish
+}
+
+// SlowDish is the day's slowest ticket as a cook would name it.
+type SlowDish struct {
+	Name string
+	More int64 // the other dishes on the same ticket
+	Took time.Duration
 }
 
 // Board reads a station's tickets for its display.
@@ -107,6 +132,9 @@ func (s *Service) Board(ctx context.Context, venueID int64, station string) (Boa
 		return Board{}, fmt.Errorf("reading the tables: %w", err)
 	}
 	out := Board{Tickets: make([]BoardTicket, 0, len(rows)), Tables: make(map[int64]string, len(tables)), LateAfter: v.LateAfter}
+	if out.Day.DayStats, err = s.stationDay(ctx, q, v, venueID, station); err != nil {
+		return Board{}, err
+	}
 	for _, t := range tables {
 		out.Tables[t.ID] = t.Name
 	}
@@ -125,5 +153,72 @@ func (s *Service) Board(ctx context.Context, venueID int64, station string) (Boa
 			}
 		}
 	}
+	if slow := out.Day.Slowest; slow != nil {
+		state, ok := orders[slow.OrderID]
+		if !ok {
+			if state, err = s.db.LoadOrder(ctx, slow.OrderID, v.Taxes); err != nil {
+				return Board{}, err
+			}
+		}
+		out.Day.SlowestDish = slowDish(state, *slow)
+	}
 	return out, nil
+}
+
+// stationDay adds up the tickets a station was sent since the trading day
+// began, from the ticket index alone.
+func (s *Service) stationDay(ctx context.Context, q *gen.Queries, v venue, venueID int64, station string) (kitchen.DayStats, error) {
+	dayStart, err := dayStartOf(ctx, q, venueID)
+	if err != nil {
+		return kitchen.DayStats{}, err
+	}
+	since, err := shift.DayStartAt(s.clock.Now(), v.Location, dayStart)
+	if err != nil {
+		return kitchen.DayStats{}, fmt.Errorf("the trading day of venue %d: %w", venueID, err)
+	}
+	// Timestamps are stored in UTC and compared as text.
+	rows, err := q.StationDay(ctx, gen.StationDayParams{VenueID: venueID, Station: station, Since: since.UTC(), MaxTickets: maxDayTickets})
+	if err != nil {
+		return kitchen.DayStats{}, fmt.Errorf("reading the %q station's day: %w", station, err)
+	}
+	tickets := make([]kitchen.DayTicket, len(rows))
+	for i, r := range rows {
+		tickets[i] = kitchen.DayTicket{OrderID: r.OrderID, Seq: r.TicketSeq, SentAt: r.SentAt}
+		if r.ReadyAt.Valid {
+			tickets[i].ReadyAt = r.ReadyAt.Time
+		}
+	}
+	return kitchen.Stats(tickets), nil
+}
+
+// slowDish names a ticket by the first dish on it that was not voided. A
+// ticket whose every dish was voided is named by its first.
+func slowDish(state order.State, slow kitchen.SlowTicket) *SlowDish {
+	out := &SlowDish{Took: slow.Took}
+	for _, t := range state.Tickets {
+		if t.Seq != slow.Seq {
+			continue
+		}
+		var first string
+		for _, l := range state.Lines {
+			if !slices.Contains(t.LineIDs, l.ID) {
+				continue
+			}
+			if first == "" {
+				first = l.Name
+			}
+			if l.Status == order.LineStatusVoided {
+				continue
+			}
+			if out.Name == "" {
+				out.Name = l.Name
+			} else {
+				out.More++
+			}
+		}
+		if out.Name == "" {
+			out.Name = first
+		}
+	}
+	return out
 }

@@ -12,7 +12,10 @@
 // table's tickets together, and espresso night (D11), which is the same board
 // on the ink surface (BoardFoot.tsx, ADR-177).
 //
-// Not here yet: Today's stats and Upcoming (15d).
+// Beside the columns, from 1536px wide, is Today's stats: the station's
+// trading day so far, from the server (ADR-178). On a narrower display the
+// same figures are one line under the all-day strip. The design's Upcoming
+// list is not drawn: see BoardStats.tsx.
 
 import { BellIcon, ChefHatIcon, UtensilsIcon, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -24,8 +27,9 @@ import { cx } from "../../../shared/ui/cx";
 import { clockText } from "../../../shared/venue-text";
 import { failureOf } from "../register/order-messages";
 import { BoardFoot } from "./BoardFoot";
+import { BoardStats, StatsLine } from "./BoardStats";
 import { groupByTable, readPrefs, surfaceOf, ticketId, writePrefs, type BoardPrefs } from "./board-prefs";
-import { allDay, boardColumns } from "./kitchen-logic";
+import { allDay, boardColumns, statRows } from "./kitchen-logic";
 import { TicketCard, type CardStage } from "./TicketCard";
 import { useChime } from "./use-chime";
 import { useKitchenBoard } from "./use-kitchen-board";
@@ -60,6 +64,7 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
   };
   const counts = allDay([...cols.fresh, ...cols.preparing]);
   const lateAfter = board.data?.late_after_minutes ?? 20;
+  const stats = board.data ? statRows(board.data.stats) : null;
   const acts: Readonly<Record<CardStage, (t: KitchenTicketResponse) => Promise<void>>> = { fresh: board.start, preparing: board.bump, ready: board.recall };
 
   const run = (id: string, fn: () => Promise<void>) => {
@@ -105,6 +110,8 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
         </section>
       )}
 
+      {stats && <StatsLine rows={stats} />}
+
       {error && (
         <p role="alert" className="shrink-0 px-7 pt-3 text-xl text-danger">
           {error}
@@ -117,7 +124,7 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
         </p>
       )}
 
-      <div className="grid min-h-0 flex-1 grid-cols-3 gap-4 px-5 py-4">
+      <div className="grid min-h-0 flex-1 grid-cols-3 gap-4 px-5 py-4 2xl:grid-cols-[repeat(3,minmax(0,1fr))_21.25rem]">
         {columns.map((col) => {
           const tickets = prefs.groupByTable ? groupByTable(cols[col.stage]) : cols[col.stage];
           return (
@@ -142,6 +149,7 @@ export function KitchenBoard({ station, onChangeStation }: KitchenBoardProps) {
             </Column>
           );
         })}
+        {stats && <BoardStats rows={stats} />}
       </div>
 
       <BoardFoot prefs={prefs} onPrefs={keep} onChangeStation={onChangeStation} />

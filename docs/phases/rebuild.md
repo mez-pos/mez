@@ -277,11 +277,17 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 15c. (ADR-177) Espresso night (D11) and the foot: Night mode kept on the device,
     Sound, and whichever of Auto advance, Group by table and Mark all complete
     the server can do.
-  - [ ] 15d. Today's stats and Upcoming: what the server can say for a station
-    today (orders, in progress, completed, average and slowest time), then the
-    column beside the board.
+  - [x] 15d. (ADR-178) Today's stats: what the server can say for a station
+    today (tickets sent, in progress, completed, average and slowest time),
+    on the board's response, then the column beside the board. Split on
+    2026-10-05: the design's Upcoming is orders not yet sent, which nothing
+    knows.
   - [ ] 15e. A cook who signs in on a terminal reaches the board (the flow
     map): today `/kitchen` asks that browser for a pairing of its own.
+  - [ ] 15f. Coming next: what a station will be sent when a later course is
+    fired (the lines waiting for their course, by order), under Today's stats
+    where the design draws Upcoming. Check first what the order knows of a
+    held course; if nothing useful, record that and leave it out.
 - [ ] **Task 16 - Back office.** Split into one sub-task per screen before
   starting: D12 dashboard, D15 to D17 reports, D18 menu, D19 inventory,
   D20 staff and roles, D22 settings, D23 Z-report. D14's offline and sync

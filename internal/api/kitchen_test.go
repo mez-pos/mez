@@ -81,6 +81,10 @@ func TestKitchenOverHTTP(t *testing.T) {
 	if _, out, _ = board(http.MethodPost, bump); out.Tickets[0].Status != kitchen.TicketReady || out.Tickets[0].StartedAt == nil {
 		t.Errorf("ready from in progress: %+v", out.Tickets[0])
 	}
+	// The board carries the station's day: one ticket sent, and it is on the pass.
+	if st := out.Stats; st.Sent != 1 || st.InKitchen != 0 || st.Ready != 1 || st.Slowest == nil || st.Slowest.Name != "Masala dosa" || st.Slowest.More != 0 {
+		t.Errorf("the day's stats: %+v, slowest %+v", st, st.Slowest)
+	}
 	if _, out, _ = board(http.MethodPost, recall); out.Tickets[0].Status != kitchen.TicketFired || out.Tickets[0].StartedAt != nil {
 		t.Errorf("recalled, new again: %+v", out.Tickets[0])
 	}

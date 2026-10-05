@@ -145,6 +145,17 @@ WHERE st.venue_id = sqlc.arg(venue_id) AND st.station = sqlc.arg(station)
 ORDER BY st.sent_at, st.order_id, st.ticket_seq
 LIMIT sqlc.arg(max_tickets);
 
+-- name: StationDay :many
+-- Every ticket a station was sent since a time, in the order they were sent:
+-- what its day's figures are added up from (ADR-178). A busy station is a
+-- few hundred a day, so it is capped.
+SELECT st.order_id, st.ticket_seq, st.status, st.sent_at, st.ready_at
+FROM station_tickets st
+WHERE st.venue_id = sqlc.arg(venue_id) AND st.station = sqlc.arg(station)
+  AND st.sent_at >= sqlc.arg(since)
+ORDER BY st.sent_at, st.order_id, st.ticket_seq
+LIMIT sqlc.arg(max_tickets);
+
 -- name: OrdersOfDay :many
 -- The till's orders list (rebuild Task 10a): every order opened or closed
 -- since the trading day began, and any still open from before it, newest

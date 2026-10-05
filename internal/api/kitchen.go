@@ -54,9 +54,30 @@ type kitchenTicketResponse struct {
 	Lines     []kitchenLineResponse `json:"lines"`
 }
 
+// kitchenStatsResponse is a station's trading day so far (D10, "Today's
+// stats"): the tickets it was sent, those still in the kitchen and those put
+// on the pass, and how long from sent to ready.
+type kitchenStatsResponse struct {
+	Sent      int64 `json:"sent"`
+	InKitchen int64 `json:"in_kitchen"`
+	Ready     int64 `json:"ready"`
+	// AverageSeconds is the mean from sent to ready. Zero until one is ready.
+	AverageSeconds int64 `json:"average_seconds"`
+	// Slowest is the ready ticket that took longest, named by its first dish.
+	Slowest *kitchenSlowestResponse `json:"slowest,omitempty"`
+}
+
+type kitchenSlowestResponse struct {
+	Name    string `json:"name"`
+	More    int64  `json:"more"` // the other dishes on the same ticket
+	Seconds int64  `json:"seconds"`
+}
+
 type kitchenBoardResponse struct {
 	Station string                  `json:"station"`
 	Tickets []kitchenTicketResponse `json:"tickets"`
+	// Stats is the station's trading day so far.
+	Stats kitchenStatsResponse `json:"stats"`
 	// RecallMinutes is how long a bumped ticket stays to be recalled.
 	RecallMinutes int64 `json:"recall_minutes"`
 	// LateAfterMinutes is when a ticket is late: its timer turns vermilion.
@@ -135,6 +156,11 @@ func (s *Server) writeBoard(w http.ResponseWriter, r *http.Request, station stri
 	}
 	for _, bt := range board.Tickets {
 		out.Tickets = append(out.Tickets, kitchenTicket(bt, board.Tables))
+	}
+	day := board.Day
+	out.Stats = kitchenStatsResponse{Sent: day.Sent, InKitchen: day.InKitchen, Ready: day.Ready, AverageSeconds: int64(day.Average / time.Second)}
+	if slow := day.SlowestDish; slow != nil {
+		out.Stats.Slowest = &kitchenSlowestResponse{Name: slow.Name, More: slow.More, Seconds: int64(slow.Took / time.Second)}
 	}
 	writeJSON(w, s.log, http.StatusOK, out)
 }

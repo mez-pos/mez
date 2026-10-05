@@ -3,7 +3,7 @@
 // all-day counts, and which ticket Recall would bring back. The board is
 // the server's (ADR-090); this only reads it.
 
-import type { KitchenBoardResponse, KitchenTicketResponse } from "../../../shared/api-types";
+import type { KitchenBoardResponse, KitchenStatsResponse, KitchenTicketResponse } from "../../../shared/api-types";
 
 /** A ticket's timer: calm, then waiting from half the late time, then late. */
 export type TimerTone = "calm" | "waiting" | "late";
@@ -76,6 +76,38 @@ export function agoText(elapsedMs: number): string {
   const minutes = Math.max(0, Math.floor(elapsedMs / 60_000));
   if (minutes === 0) return "now";
   return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
+}
+
+/** "11 min", or "under 1 min": a time from sent to ready, to the nearest minute. */
+export function minutesText(seconds: number): string {
+  if (seconds < 60) return "under 1 min";
+  return `${Math.round(seconds / 60)} min`;
+}
+
+export interface StatRow {
+  label: string;
+  /** "28", "11 min", "Biryani · 19 min"; "Not yet" where there is nothing to say. */
+  value: string;
+  /** The two times sit under a rule, apart from the three counts. */
+  timing: boolean;
+}
+
+/**
+ * Today's stats (D10), in the design's order and words. The figures are the
+ * server's for the station's trading day (ADR-178); "In progress" is every
+ * ticket not yet on the pass, new or being made. The counts are of tickets,
+ * which is what a station is sent: an order sent to twice is two.
+ */
+export function statRows(stats: KitchenStatsResponse): StatRow[] {
+  const slowest = stats.slowest;
+  const dish = slowest ? (slowest.more > 0 ? `${slowest.name} +${slowest.more}` : slowest.name) : null;
+  return [
+    { label: "Total tickets", value: String(stats.sent), timing: false },
+    { label: "In progress", value: String(stats.in_kitchen), timing: false },
+    { label: "Completed", value: String(stats.ready), timing: false },
+    { label: "Avg. prep time", value: stats.ready > 0 ? minutesText(stats.average_seconds) : "Not yet", timing: true },
+    { label: "Slowest today", value: slowest && dish ? `${dish} · ${minutesText(slowest.seconds)}` : "Not yet", timing: true },
+  ];
 }
 
 /** Where a ticket goes: "T4", "T4 + T7", or "Counter · NMRN" for a counter order. */

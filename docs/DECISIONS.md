@@ -5165,3 +5165,28 @@ ticket that left the board unmade is a lost dish). Mark all complete (no ticket 
 Cost: a display's choices are lost with its browser's storage, and a second display
 at the same station chooses for itself.
 ---
+
+## ADR-178 - A station's day is added up from its ticket index, and rides on the board
+2026-10 · Status: accepted. Rebuild Task 15d (D10, "Today's stats"); over ADR-090, ADR-175.
+Decision:
+  - **The board's response carries `stats`:** tickets sent, in the kitchen, ready,
+    the mean seconds from sent to ready, and the slowest ticket by its first dish
+    (`kitchen.Stats`, `Service.Board`). No route of its own: the display reads the
+    board on every event at its station, so the figures are always the board's.
+  - **A day is the venue's trading day** (`shift.day_start`), as on the Orders screen,
+    read from `station_tickets` by one new query, `StationDay`. Only the slowest
+    ticket's order is loaded, for its dish.
+  - **Time runs from sent, not from started.** It is the guest's wait, and a display
+    that never taps Start still has it. A ticket recalled and put back counts once.
+  - **The counts are of tickets,** which is what a station is sent: an order sent to
+    twice is two. The screen says "Total tickets", not the design's "Total orders".
+  - **"In progress" is every ticket not yet on the pass,** new or being made: the
+    index does not tell the two apart (ADR-175).
+  - **The column shows from 1536px wide;** under that the same figures are one line
+    under the all-day strip, so three columns keep their width at 1366.
+Left out, and why (rule 3): "Upcoming (next 5)". The design lists orders about to
+arrive with minutes to go; nothing knows when an order will be sent. What waits for a
+later course is a list the app could make, and is rebuild 15f.
+Cost: the day is read whole on each board read, capped at 2000 tickets. A ticket sent
+before the display existed is in no index and no figure (ADR-090).
+---

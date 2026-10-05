@@ -2120,9 +2120,24 @@ export interface KitchenTicketResponse {
   lines: KitchenLineResponse[];
 }
 
+export interface KitchenSlowestResponse {
+  name: string;
+  more: number;
+  seconds: number;
+}
+
+export interface KitchenStatsResponse {
+  sent: number;
+  in_kitchen: number;
+  ready: number;
+  average_seconds: number;
+  slowest?: KitchenSlowestResponse;
+}
+
 export interface KitchenBoardResponse {
   station: string;
   tickets: KitchenTicketResponse[];
+  stats: KitchenStatsResponse;
   recall_minutes: number;
   late_after_minutes: number;
 }

@@ -393,6 +393,10 @@ type Querier interface {
 	// A station's tickets still in the kitchen, oldest first, and those bumped
 	// since a time, for the display's recall.
 	StationBoard(ctx context.Context, arg StationBoardParams) ([]StationBoardRow, error)
+	// Every ticket a station was sent since a time, in the order they were sent:
+	// what its day's figures are added up from (ADR-178). A busy station is a
+	// few hundred a day, so it is capped.
+	StationDay(ctx context.Context, arg StationDayParams) ([]StationDayRow, error)
 	StationForEdit(ctx context.Context, arg StationForEditParams) (StationForEditRow, error)
 	StationIDs(ctx context.Context, venueID int64) ([]int64, error)
 	// The printer a station's tickets go to, if it has one in service.

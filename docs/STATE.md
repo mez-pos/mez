@@ -14,7 +14,17 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 15c: espresso night and the board's foot** (ADR-177). The board
+**Rebuild, Task 15d: today's stats** (ADR-178). The board's response carries
+`stats` for the station's trading day: tickets sent, in the kitchen and ready, the
+mean time from sent to ready, and the slowest by its dish (`kitchen.Stats` in
+`internal/domain/kitchen/day.go`, the `StationDay` query, `Service.Board`). The board
+shows them in a column from 1536px wide (`kitchen/BoardStats.tsx`), and as one line
+under that. Seen in a browser as a kitchen display at 1920 wide against the dev venue.
+Go tests in the domain, the service and over HTTP; `statRows` and `minutesText` in
+vitest. `make check` and `make build-web` pass. The design's Upcoming is left out and
+split off as 15f.
+
+Before it, **Rebuild, Task 15c: espresso night and the board's foot** (ADR-177). The board
 has a foot (`kitchen/BoardFoot.tsx`): Change station, Sound, Group by table and Night
 mode, each kept on the device (`board-prefs.ts`, `mez.kitchen.prefs`). Night is the
 same board on the ink surface (D11). Sound is a two-note chime for a new ticket
@@ -117,17 +127,16 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c) or 15 (b, c).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c) or 15 (b, c, d).
 
 ## Next task
 
-**Rebuild, Task 15d** (today's stats and Upcoming): the column beside the board in
-D10 (from "Today's stats", about line 118 of `mez Desktop KDS and Dashboard.dc.html`).
-Server first: what a station can say for today (tickets sent, in progress, completed,
-average and slowest time from sent to ready; `started_at` and `ready_at` are on a
-ticket, ADR-175), with Go tests; then the column. "Upcoming" may be the tickets held
-for a later course: check what the order knows. If it is two sessions, split it. Read
-`docs/design/tokens.md` and that column only. Phase 11
+**Rebuild, Task 15e** (a cook who signs in on a terminal reaches the board): the
+flow map sends the kitchen role to D10. Today `/kitchen` is another app of the bundle
+with its own pairing (`shell/pages.tsx`, `LeaveForKitchen`; ADR-090, ADR-091), and the
+kitchen API lets in only a device of kind kitchen. Decide and record how a signed-in
+cook with `kitchen.view` on a terminal sees the board (the API taking a staff session
+too is one way), then build it. 15f (Coming next) follows. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -146,7 +155,11 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   and after the tab has been idle. The dev server missed a file change once (Vite on
   the I: drive): touch the file if a screen looks stale. Not seen by eye: grouping
   with two tables' tickets interleaved, and night at 1366 wide.
-- The kitchen's board (ADR-176): no stats or Upcoming (15d). A new ticket has no Mark ready of its own. The clock is the device's
+- Today's stats (ADR-178): no Upcoming (15f). The day is read whole on each board
+  read; a busy station has not been timed. Not seen by eye: the one-line version
+  under 1536px (the browser would not resize), the column on night, a day with no
+  ticket ready ("Not yet"), and a slowest ticket with several dishes.
+- The kitchen's board (ADR-176): a new ticket has no Mark ready of its own. The clock is the device's
   zone, not the venue's. `docs/design/screens/kitchen-display.md` describes the old
   board (Task 17 rewrites it). Not seen by eye: takeaway and delivery icons, a counter
   order, a voided line, a line's choices and notes, a calm and a Waiting timer (the dev

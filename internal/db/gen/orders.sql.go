@@ -495,6 +495,67 @@ func (q *Queries) StationBoard(ctx context.Context, arg StationBoardParams) ([]S
 	return items, nil
 }
 
+const stationDay = `-- name: StationDay :many
+SELECT st.order_id, st.ticket_seq, st.status, st.sent_at, st.ready_at
+FROM station_tickets st
+WHERE st.venue_id = ?1 AND st.station = ?2
+  AND st.sent_at >= ?3
+ORDER BY st.sent_at, st.order_id, st.ticket_seq
+LIMIT ?4
+`
+
+type StationDayParams struct {
+	VenueID    int64
+	Station    string
+	Since      time.Time
+	MaxTickets int64
+}
+
+type StationDayRow struct {
+	OrderID   int64
+	TicketSeq int64
+	Status    string
+	SentAt    time.Time
+	ReadyAt   sql.NullTime
+}
+
+// Every ticket a station was sent since a time, in the order they were sent:
+// what its day's figures are added up from (ADR-178). A busy station is a
+// few hundred a day, so it is capped.
+func (q *Queries) StationDay(ctx context.Context, arg StationDayParams) ([]StationDayRow, error) {
+	rows, err := q.db.QueryContext(ctx, stationDay,
+		arg.VenueID,
+		arg.Station,
+		arg.Since,
+		arg.MaxTickets,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StationDayRow{}
+	for rows.Next() {
+		var i StationDayRow
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.TicketSeq,
+			&i.Status,
+			&i.SentAt,
+			&i.ReadyAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const unclosedOrdersForVenue = `-- name: UnclosedOrdersForVenue :many
 SELECT id, public_id
 FROM orders

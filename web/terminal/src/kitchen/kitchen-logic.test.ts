@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 import type { KitchenBoardResponse, KitchenTicketResponse } from "../../../shared/api-types";
-import { agoText, allDay, boardColumns, lastBumped, latePercent, metaText, readStation, timerText, timerTone, toMake, whereText } from "./kitchen-logic";
+import {
+  agoText,
+  allDay,
+  boardColumns,
+  lastBumped,
+  latePercent,
+  metaText,
+  minutesText,
+  readStation,
+  statRows,
+  timerText,
+  timerTone,
+  toMake,
+  whereText,
+} from "./kitchen-logic";
 
 const ticket = (extra: Partial<KitchenTicketResponse> = {}): KitchenTicketResponse => ({
   order_id: "ord_NMRNWWW1",
@@ -19,6 +33,7 @@ const ticket = (extra: Partial<KitchenTicketResponse> = {}): KitchenTicketRespon
 const board = (tickets: KitchenTicketResponse[]): KitchenBoardResponse => ({
   station: "kitchen",
   tickets,
+  stats: { sent: 0, in_kitchen: 0, ready: 0, average_seconds: 0 },
   recall_minutes: 30,
   late_after_minutes: 20,
 });
@@ -92,6 +107,35 @@ describe("the board", () => {
     expect(whereText(ticket({ table: "T4 + T7", table_id: 4 }))).toBe("T4 + T7");
     expect(whereText(ticket({ table_id: 4 }))).toBe("Table 4");
     expect(whereText(ticket())).toBe("Counter · NMRN");
+  });
+});
+
+describe("today's stats", () => {
+  it("writes a time to the nearest minute", () => {
+    expect(minutesText(0)).toBe("under 1 min");
+    expect(minutesText(59)).toBe("under 1 min");
+    expect(minutesText(60)).toBe("1 min");
+    expect(minutesText(11 * 60 + 29)).toBe("11 min");
+    expect(minutesText(11 * 60 + 30)).toBe("12 min");
+  });
+  it("lists the day in the design's order, with the slowest by its dish", () => {
+    const rows = statRows({ sent: 28, in_kitchen: 3, ready: 22, average_seconds: 660, slowest: { name: "Biryani", more: 0, seconds: 19 * 60 } });
+    expect(rows.map((r) => [r.label, r.value])).toEqual([
+      ["Total tickets", "28"],
+      ["In progress", "3"],
+      ["Completed", "22"],
+      ["Avg. prep time", "11 min"],
+      ["Slowest today", "Biryani · 19 min"],
+    ]);
+    expect(rows.filter((r) => r.timing).map((r) => r.label)).toEqual(["Avg. prep time", "Slowest today"]);
+  });
+  it("counts the other dishes on the slowest ticket", () => {
+    const rows = statRows({ sent: 1, in_kitchen: 0, ready: 1, average_seconds: 420, slowest: { name: "Masala dosa", more: 2, seconds: 420 } });
+    expect(rows.at(-1)?.value).toBe("Masala dosa +2 · 7 min");
+  });
+  it("has no times to give until a ticket is ready", () => {
+    const rows = statRows({ sent: 2, in_kitchen: 2, ready: 0, average_seconds: 0 });
+    expect(rows.slice(3).map((r) => r.value)).toEqual(["Not yet", "Not yet"]);
   });
 });
 
