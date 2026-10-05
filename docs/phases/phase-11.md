@@ -99,13 +99,28 @@ Phase 10.
         a payment.
       - [x] **4e4b.** The screens: "I have paid" on the phone's bill, and the
         notice on the terminal, leading to that table's payment.
-    - [ ] **4e5.** The mode, prepay or pay at the table, and in a prepay
-      venue a round held until staff have recorded its payment, then sent
-      with no further acceptance (ADR-209). Decide who closes a bill nobody
-      on staff touched (a sold stock movement needs a real staff id, see
-      KNOWN.md).
+    - [ ] **4e5.** The mode, prepay or pay at the table. **After 4f**
+      (ADR-220): prepay wants a payment that confirms itself, which is a
+      gateway's. In a prepay venue a round is held until its charge is paid,
+      then sent with no acceptance (ADR-209). Decide who closes a bill
+      nobody on staff touched (a sold stock movement needs a real staff id,
+      see KNOWN.md).
   - [ ] **4f.** The gateway adapter: one interface, with Razorpay, Cashfree
-    and Stripe behind it.
+    and Stripe behind it. Split in six (ADR-220):
+    - [x] **4f1.** The interface (`internal/gateway`), and the service that
+      starts a charge and turns a gateway's "paid" into one
+      `payment.tendered` (`internal/service/charges`), against a fake
+      gateway. No provider, no API, nothing wired.
+    - [ ] **4f2.** The first real adapter, Razorpay, and where its keys are
+      kept. A sweeper that settles open charges on a timer.
+    - [ ] **4f3.** The guest's API and the phone: pay online from the bill,
+      the gateway's page, and coming back.
+    - [ ] **4f4.** Unapplied charges on the terminal: money a gateway took
+      that no bill could, for a person to refund or record.
+    - [ ] **4f5.** The gateway's webhook, through the relay, so a payment
+      lands without waiting for the sweep.
+    - [ ] **4f6.** Cashfree and Stripe, and the owner choosing a gateway in
+      the back office.
   - [ ] **4g.** Splitting the bill among the guests at a table.
 
 - [ ] **Task 5 — Order tracking and e-receipt.**

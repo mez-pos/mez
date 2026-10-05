@@ -6734,3 +6734,67 @@ screen, and No payment found armed and confirmed. Not seen: the amount differing
 from what is owed, a refusal on either screen, the waiter's frame, the chime for a
 notice, and a payment recorded on the tender screen clearing the notice (the Go
 tests cover that).
+
+## ADR-220 - A gateway is two questions, and a charge becomes a payment exactly once
+2026-10 · Status: accepted, the order of work by the owner. Phase 11, Task 4f1.
+Context: Task 4 asks for "a pluggable gateway adapter (Razorpay/Cashfree/Stripe)
+behind one interface", with a confirmed payment as the counter's own
+`payment.tendered`. ADR-215 left UPI confirmed by staff, because a UPI link tells the
+venue nothing. A gateway can tell it. The owner chose to build 4f before the prepay
+mode, 4e5, which wants a payment that confirms itself.
+Decision:
+  - **4e5 follows 4f. Task 4f is split in six**, listed in the phase file: 4f1 the
+    interface and the service, this; 4f2 Razorpay, its keys and a sweeper; 4f3 the
+    guest's API and the phone; 4f4 unapplied charges on the terminal; 4f5 the
+    webhook; 4f6 Cashfree, Stripe and the owner's choice.
+  - **The interface is two questions** (`internal/gateway`): `Start` a charge and
+    get the page to send the guest to, and ask a charge's `Status`. Hosted pages
+    only: mez never sees a card. A provider's API, keys and names are inside its
+    adapter, and nothing outside one names a provider.
+  - **Only the provider's own answer says a charge was paid.** `Status` is asked
+    by the server. Nothing a guest's browser carries back is believed, and the
+    return address says nothing of whether they paid.
+  - **A charge is a row, `gateway_charges` (migration 00041), not a payment.** The
+    payment is the `payment.tendered` the charge puts on the ticket, by the order
+    service's own `TenderPayment`, as actor 0 on device 0. So the invoice issued
+    when a tender settles the bill, the receipt, the shift and the Z-report are the
+    counter's, with nothing new to keep in step.
+  - **Exactly once, by the tender's idempotency key**, `charge:<id>`. The order
+    service already refuses to apply a key twice. How the charge was paid (method
+    and the provider's payment id) is written to the row first, once, and the
+    tender is made from the row: asked again, with whatever the provider says the
+    second time, it is the same command under the same key. Twenty settles at once
+    leave one tender; a test does it.
+  - **Money the bill cannot take is kept, not forced on and not lost.** A charge
+    is `unapplied`, with why in words, when the provider took another amount or
+    currency than was asked, when the bill no longer owes that much (paid another
+    way meanwhile), or when the bill is closed. It is logged as an error, listed by
+    `Unapplied`, and never tried again: a person refunds it at the provider or
+    records it by hand. 4f4 puts it in front of them.
+  - **What may pass is tried again.** No shift open, a ticket on hold, a busy
+    database, an unreachable provider: `Settle` returns the error, the charge stays
+    `open`, and the next `Settle` or `Sweep` tries again. A payment that arrives
+    after the close lands in the next shift, where it is recorded.
+  - **A round added after a charge was started is simply still owed.** The charge
+    goes on as a part payment.
+  - **Starting again is the same charge** while one is open for the same ticket,
+    provider and amount, and the provider is not asked. A table owing a different
+    amount gets a new charge and the old is left open, since its page may still be
+    on a phone; if both are paid the second is unapplied.
+  - **`Sweep` settles every open charge**, so a guest who paid and closed the page
+    is still recorded. 4f2 runs it on a timer.
+  - **Nobody closes the bill for the guest.** A paid ticket is settled and
+    invoiced and stays open for staff to close, as after a tender at the till. That
+    leaves the stock movement of a close with a real staff id (KNOWN.md), and the
+    table for a person to clear.
+  - **A fake gateway for tests** (`internal/gateway/gatewaytest`), which does what
+    a test says a provider did. Nothing here calls the internet.
+Because: the two failures that cost a venue money are a payment recorded twice and
+a payment recorded never. One is closed by a key the order service already checks,
+the other by keeping every charge the provider took until a person has dealt with it.
+Cost: a third table beside `guest_rounds` and `paid_notices`. A gateway needs the
+internet at the venue, the one part of mez that does; it is for guests only, and the
+till never touches it. Opening a charge and saving its row are not one transaction:
+a charge can exist at the provider with no row, which nobody was given the page of.
+A venue that changes provider with a charge open cannot ask the old one. Nothing is
+wired: no provider, no key, no route and no screen until 4f2 and 4f3.

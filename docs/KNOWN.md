@@ -10,6 +10,10 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Paying through a gateway** (ADR-220): nothing is wired. There is no
+  provider, key, route, screen or sweeper yet, only the interface and the
+  service, tested against a fake. An unapplied charge is logged and listed
+  by `charges.Unapplied`, and no screen shows it until 4f4.
 - **Paying by UPI** (ADR-215, ADR-216): the back office card was not seen at
   400 wide, for a venue not in rupees, or with its read failing. **No phone
   has scanned the QR (ADR-217) or opened the link**: it agrees with another

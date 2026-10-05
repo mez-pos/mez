@@ -97,6 +97,9 @@ type Querier interface {
 	CreateCreditNote(ctx context.Context, arg CreateCreditNoteParams) (int64, error)
 	CreateDrawerCount(ctx context.Context, arg CreateDrawerCountParams) error
 	CreateExport(ctx context.Context, arg CreateExportParams) error
+	// Charges asked of guests through a payment gateway (ADR-220). See
+	// internal/service/charges.
+	CreateGatewayCharge(ctx context.Context, arg CreateGatewayChargeParams) (int64, error)
 	// A guest's rounds (ADR-210). Written only inside the transaction that
 	// decides where a round goes; see internal/service/order.
 	CreateGuestRound(ctx context.Context, arg CreateGuestRoundParams) (int64, error)
@@ -206,6 +209,10 @@ type Querier interface {
 	// or no row for a venue that has none yet.
 	FirstSoldByDish(ctx context.Context, venueID int64) ([]time.Time, error)
 	FloorVersion(ctx context.Context, venueID int64) (int64, error)
+	GatewayChargeByPublicID(ctx context.Context, publicID string) (GatewayCharge, error)
+	// A venue's charges in a status, oldest first: the open ones to ask the
+	// provider about, the unapplied ones a person must deal with.
+	GatewayChargesByStatus(ctx context.Context, arg GatewayChargesByStatusParams) ([]GatewayCharge, error)
 	GroupForEdit(ctx context.Context, arg GroupForEditParams) (GroupForEditRow, error)
 	// The round a key was first sent with, as it stands now.
 	GuestRoundByKey(ctx context.Context, arg GuestRoundByKeyParams) (GuestRoundByKeyRow, error)
@@ -283,6 +290,9 @@ type Querier interface {
 	// transaction that closes a shift or issues a correction.
 	// Moves the venue's counter on and returns the number taken.
 	NextZNumber(ctx context.Context, venueID int64) (int64, error)
+	// A charge still open for a ticket at a provider for an amount: asked for
+	// again, it is the same charge.
+	OpenGatewayChargeForOrder(ctx context.Context, arg OpenGatewayChargeForOrderParams) (GatewayCharge, error)
 	// The notice staff have still to deal with on a ticket, if there is one.
 	OpenPaidNoticeForOrder(ctx context.Context, orderID int64) (OpenPaidNoticeForOrderRow, error)
 	// Every notice staff have still to deal with, oldest first, with its table
@@ -367,6 +377,9 @@ type Querier interface {
 	SetCategorySort(ctx context.Context, arg SetCategorySortParams) (int64, error)
 	SetCourseActive(ctx context.Context, arg SetCourseActiveParams) (int64, error)
 	SetCourseNumber(ctx context.Context, arg SetCourseNumberParams) (int64, error)
+	// Writes how an open charge was paid, once. Whoever is second finds it
+	// written and writes nothing.
+	SetGatewayChargePayment(ctx context.Context, arg SetGatewayChargePaymentParams) (int64, error)
 	SetItemActive(ctx context.Context, arg SetItemActiveParams) (int64, error)
 	//
 	// The file is written before this runs; '' takes the photo off. A file no
@@ -398,6 +411,9 @@ type Querier interface {
 	// Per-venue settings the schema has no opinion about. Anything the database
 	// must constrain or compute with is a column on venues instead.
 	SettingsForVenue(ctx context.Context, venueID int64) ([]Setting, error)
+	// Closes an open charge: paid, unapplied or failed. Only an open one can
+	// be closed.
+	SettleGatewayCharge(ctx context.Context, arg SettleGatewayChargeParams) (int64, error)
 	ShiftByID(ctx context.Context, id int64) (Shift, error)
 	ShiftEventByKey(ctx context.Context, arg ShiftEventByKeyParams) (ShiftEventByKeyRow, error)
 	ShiftEvents(ctx context.Context, shiftID int64) ([]ShiftEventsRow, error)

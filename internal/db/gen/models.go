@@ -91,6 +91,25 @@ type FloorVersion struct {
 	Version int64
 }
 
+type GatewayCharge struct {
+	ID          int64
+	PublicID    string
+	VenueID     int64
+	TableID     int64
+	OrderID     int64
+	Gateway     string
+	GatewayID   string
+	CheckoutUrl string
+	AmountMinor int64
+	Currency    string
+	Status      string
+	Method      sql.NullString
+	Reference   sql.NullString
+	Problem     sql.NullString
+	CreatedAt   time.Time
+	SettledAt   sql.NullTime
+}
+
 type GuestRound struct {
 	ID             int64
 	PublicID       string

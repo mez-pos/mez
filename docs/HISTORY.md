@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4e4a: "I have paid", on the server** (ADR-218).
+**Phase 11, Task 4e4b: "I have paid" on the screens** (ADR-219). The phone's bill
+has the button, and says staff were told from the bill's `paid_told`. The
+terminal's pill, sheet ("From the tables") and chime carry the notice, with Take
+payment opening `/pay/{order}` and No payment found putting it away.
+
+Before it, **Phase 11, Task 4e4a: "I have paid", on the server** (ADR-218).
 `POST /order/api/t/{code}/bill/paid` keeps a notice (`paid_notices`, migration
 00040): a message to staff, never a payment. The bill says `paid_told`. Notices
 ride on `GET /api/v1/guest-requests` as `paid`; staff put one away with

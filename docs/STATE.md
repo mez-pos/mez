@@ -8,27 +8,28 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4d and 4e1 to 4e4 done. (The rebuild, 09 and 10 still owe the walk.)
+4a to 4d, 4e1 to 4e4 and 4f1 done. 4e5 waits for 4f. (The walks are still owed.)
 
 ## Last completed task
 
-**Phase 11, Task 4e4b: "I have paid" on the screens** (ADR-219). The phone's bill
-has the button, and says staff were told from the bill's `paid_told`. The
-terminal's pill, sheet ("From the tables") and chime carry the notice, with Take
-payment opening `/pay/{order}` and No payment found putting it away.
+**Phase 11, Task 4f1: the gateway interface, and a charge becoming one payment**
+(ADR-220). `internal/gateway` is two questions, Start and Status.
+`internal/service/charges` starts a charge for what a table owes and, when the
+gateway says paid, tenders it once (`charge:<id>` as the key); money a bill cannot
+take is kept as `unapplied`. Tested against a fake. Nothing is wired.
 
 ## Next task
 
-**Phase 11, Task 4e5: the prepay mode.** Several sessions: split it first. Read
-`docs/02-domain.md`, ADR-209, ADR-210, ADR-211, ADR-215, ADR-218.
-- A venue setting, prepay or pay at the table, beside the UPI address on Settings.
-- In a prepay venue a round is not sent until paid (ADR-209). With staff
-  confirming payments (ADR-215) there is no ticket to tender against before a
-  round is accepted: decide whether Accept in a prepay venue opens the ticket and
-  takes the payment in one step, or whether prepay waits for 4f's gateway, which
-  can confirm by itself. Write the case in the ADR before building either.
-- Decide who closes a bill nobody on staff touched: a sold stock movement needs a
-  real staff id (KNOWN.md, Stock).
+**Phase 11, Task 4f2: Razorpay, its keys, and the sweeper.** Read ADR-220,
+`internal/gateway/gateway.go`, `internal/config`, and Razorpay's Payment Links API
+from its own documentation (Context7 or the vendor's pages), not from memory.
+- An adapter, `internal/gateway/razorpay`, on `net/http` with timeouts: Start makes
+  a payment link with our reference; Status reads it. Test it against an
+  `httptest` server speaking Razorpay's JSON; no call to the real one in a test.
+- Where the key id and secret are kept: config and environment (as `relay_key` is)
+  or the settings table. Say why. Never in a log, an error or an API answer.
+- A sweeper owned by a struct with `Close`, calling `charges.Sweep`, wired in
+  `cmd/mez`. It must fail quietly. Split in two (adapter; keys and sweeper) if so.
 
 ## Known broken / in progress
 
@@ -54,5 +55,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e4 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e4, 4f1 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs
