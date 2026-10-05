@@ -2,11 +2,11 @@
 // what it comes to, with its tax, as the venue works it out. Paying from the
 // phone is 4e; until then this says where to pay.
 
-import type { GuestTableResponse } from "../../shared/api-types";
+import type { GuestBillResponse, GuestTableResponse } from "../../shared/api-types";
 import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
-import { billState, payLine, summaryRows } from "./bill-logic";
+import { billState, payLine, summaryRows, upiAfter, upiLinkOf } from "./bill-logic";
 import { tableLabel } from "./Landing";
 import { problemOf } from "./menu-logic";
 import { useBill } from "./use-guest";
@@ -120,11 +120,38 @@ export function Bill({ code, table, onBack }: BillProps) {
               </section>
             )}
 
-            <p className="mt-4 rounded-card border border-line bg-sunken p-4 text-center text-base text-fg-2">{payLine(billState(bill))}</p>
+            <PayByUPI bill={bill} />
+            <p className="mt-4 rounded-card border border-line bg-sunken p-4 text-center text-base text-fg-2">
+              {payLine(billState(bill), upiLinkOf(bill) !== null)}
+            </p>
             <p className="mt-3 text-center text-sm text-fg-muted">This is the whole table's bill, whoever ordered.</p>
           </>
         )}
       </main>
     </div>
+  );
+}
+
+/**
+ * Pay what is left by UPI, when the venue takes it. A link and not a
+ * button: the phone hands it to its UPI app, and this page learns nothing
+ * of what happens there.
+ */
+function PayByUPI({ bill }: { bill: GuestBillResponse }) {
+  const link = upiLinkOf(bill);
+  if (link === null || !bill.upi) return null;
+  return (
+    <section aria-label="Pay by UPI" className="mt-4 rounded-card border border-line bg-raised p-4 text-center">
+      <a
+        href={link}
+        className="flex min-h-charge w-full items-center justify-center rounded-pill bg-accent px-5 text-lg font-bold text-accent-fg shadow-action outline-offset-2 outline-attention hover:bg-accent-hover focus-visible:outline-3"
+      >
+        Pay {formatMoney(bill.upi.amount)} by UPI
+      </a>
+      <p className="mt-3 text-sm text-fg-muted">
+        To {bill.upi.payee}, <span className="font-mono break-all">{bill.upi.address}</span>
+      </p>
+      <p className="mt-2 text-base text-fg-2">{upiAfter}</p>
+    </section>
   );
 }

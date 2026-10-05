@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4c: Place Order on the phone** (ADR-213). The cart sends itself
+**Phase 11, Task 4d: the bill on the phone** (ADR-214).
+`GET /order/api/t/{code}/bill` is the table's open ticket with the till's parts
+taken out; `#bill` shows its lines, tax, total, paid and left to pay.
+`web/guest/src/Bill.tsx`, `bill-logic.ts`; spec `guest-bill.md`. The prepay setting
+moved to 4e.
+
+Before it, **Phase 11, Task 4c: Place Order on the phone** (ADR-213). The cart sends itself
 with one key for one cart; the answer is kept by table code and shown at `#order`
 as waiting, with the kitchen, or not accepted; a waiting order asks again every 8
 seconds. `web/guest/src/order-logic.ts`, `use-order.ts`, `Order.tsx`; spec

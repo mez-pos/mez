@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GuestBillResponse } from "../../shared/api-types";
-import { billState, itemsLabel, payLine, summaryRows } from "./bill-logic";
+import { billState, itemsLabel, payLine, summaryRows, upiAfter, upiLinkOf } from "./bill-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -66,7 +66,26 @@ describe("billState and payLine", () => {
   it("sends a guest to staff or the counter while anything is owed, and promises no payment the phone cannot take", () => {
     expect(payLine("due")).toBe("To pay, ask a member of staff or pay at the counter.");
     expect(payLine("part_paid")).toBe(payLine("due"));
+    expect(payLine("due", true)).toBe("Or pay a member of staff, or at the counter.");
+    expect(payLine("paid", true)).toBe(payLine("paid"));
     expect(payLine("paid")).toContain("paid");
     expect(payLine("none")).toContain("once it is accepted");
+  });
+});
+
+describe("upiLinkOf", () => {
+  const upi = (link: string) => ({ upi: { link, address: "cafe@okbank", payee: "Cafe", amount: inr(52500) } });
+  it("is the server's link when it is a UPI payment", () => {
+    const link = "upi://pay?am=525.00&cu=INR&pa=cafe%40okbank";
+    expect(upiLinkOf(upi(link))).toBe(link);
+  });
+  it("is nothing when the venue takes no UPI", () => {
+    expect(upiLinkOf({})).toBeNull();
+  });
+  it.each(["https://example.com/pay", "javascript:alert(1)", "upi://mandate?pa=x@y", "", " upi://pay?pa=x@y"])("follows no other link: %s", (link) => {
+    expect(upiLinkOf(upi(link))).toBeNull();
+  });
+  it("tells the guest the bill does not mark itself paid", () => {
+    expect(upiAfter).toContain("show the payment to a member of staff");
   });
 });

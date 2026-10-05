@@ -858,6 +858,7 @@ export interface GuestBillResponse {
   total: Money;
   paid: Money;
   balance_due: Money;
+  upi?: GuestUPIResponse;
 }
 
 export interface GuestBillLineResponse {
@@ -872,6 +873,26 @@ export interface GuestBillTaxResponse {
   name: string;
   rate: number;
   amount: Money;
+}
+
+export interface GuestUPIResponse {
+  link: string;
+  address: string;
+  payee: string;
+  amount: Money;
+}
+
+export interface PaymentSettingsRequest {
+  upi_address: string;
+  upi_payee: string;
+}
+
+export interface PaymentSettingsResponse {
+  upi_address: string;
+  upi_payee: string;
+  venue_name: string;
+  currency: string;
+  max_payee: number;
 }
 
 export interface GuestRequestsResponse {

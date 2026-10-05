@@ -7,6 +7,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/domain/menu"
 	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/payment"
 	"github.com/byjoellobo/mez/internal/domain/shift"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
@@ -31,6 +32,7 @@ const (
 type GuestOrders interface {
 	PlaceRound(ctx context.Context, meta svcorder.Meta, cmd svcorder.PlaceRound) (svcorder.Round, error)
 	TableTicket(ctx context.Context, venueID, tableID int64) (svcorder.Result, bool, error)
+	UPIAccount(ctx context.Context, venueID int64) (payment.UPIAccount, error)
 }
 
 // WithGuestOrders lets a guest place an order. It needs WithGuests.

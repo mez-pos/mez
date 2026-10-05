@@ -6509,3 +6509,56 @@ a demo venue with no tax: a ticket's lines, the items row, the total, and where 
 pay. Not seen: tax rows of either kind, a discount, On the house, Paid and Left to
 pay, the bill with nothing open, and the failures; the Go and vitest tests cover
 the figures and the words for all of them.
+
+## ADR-215 - Paying by UPI from the phone: a link the server builds, and staff confirm the payment
+2026-10 · Status: accepted. Phase 11, Task 4e1.
+Context: Task 4 asks for a UPI intent link and a dynamic QR, and that a confirmed
+payment be the same `payment.tendered` as at the counter. A UPI link carries the
+venue's address and an amount. It moves no money by itself, and when the guest's
+bank pays the venue's bank nothing tells the venue's server.
+Decision:
+  - **Staff confirm a UPI payment**, as they already do at the till, where the
+    cashier takes UPI on the venue's own code and taps Mark as paid. The guest pays
+    from the phone, shows it, and a member of staff records `payment.tendered` on
+    the terminal. Nothing new records a payment, so nothing new can record a false
+    one. Knowing by itself that a payment arrived needs a gateway's callback, which
+    is 4f, and which needs the internet the rest of mez does not.
+  - **Task 4e is split in five**, listed in the phase file: 4e1 this, 4e2 the back
+    office card, 4e3 the QR, 4e4 "I have paid" reaching the terminal, 4e5 the
+    prepay mode.
+  - **The venue's UPI address is a setting**, `payment.upi_address`, with
+    `payment.upi_payee` for the name a guest's app shows, the venue's own when
+    unset. `GET` and `PUT /api/v1/settings/payments`, asking `settings.edit`, on
+    the settings service's own key registry.
+  - **An address is checked for its shape only**: a handle, an "@", a bank's name,
+    in the characters NPCI allows. Nothing offline can say whether it exists, and
+    the back office card (4e2) must say so beside the field. A pay link pasted
+    whole, or anything carrying "&" or "?", is refused.
+  - **The link is built on the server, in the domain** (`payment.UPIAccount.Link`,
+    pure): `upi://pay` with `pa`, `pn`, `am`, `cu=INR` and `tn` ("Table T5"). The
+    amount is written from minor units, never through a float. Every value is
+    encoded, so a payee's name or a note cannot add a parameter or change the
+    address or the amount; a test tries.
+  - **The bill carries it**, as `upi`: the link, the address, the payee and the
+    amount, which is exactly the balance due. It is absent when the venue has no
+    address, nothing is owed, or the bill is not in rupees. A failure to read the
+    address costs the guest the link and not the bill.
+  - **The phone shows a link drawn as the primary button**, "Pay ₹540.00 by UPI",
+    the payee and address under it to check or type, and "After paying, show the
+    payment to a member of staff. This bill is marked paid once they have seen
+    it." It follows the server's link only if it begins `upi://pay?`.
+  - **No secret and no network.** A UPI address is printed on every venue's
+    counter. Nothing here needs the internet on the venue's side.
+  - The guest's bundle is 39.1 KB gzipped of 60.
+Because: it is what a cafe with a UPI sticker already does, with the amount and the
+address filled in so neither is mistyped.
+Cost: a guest can pay and leave before anyone has seen it; staff are in the same
+position as with the sticker today, and 4e4 is what tells them to look. A guest
+who pays twice, or pays a stale amount after another round was added, is put right
+at the counter: the link is for the balance as of the last read, every 15 seconds.
+Two guests at a table can each pay the whole balance; splitting is 4g. Until 4e2
+the address is set only through the API. An address that is well shaped and wrong
+sends guests' money to a stranger, and only a first small payment finds that out.
+Seen by eye at 390 wide on a demo venue: the card with the button, the payee and
+address, both sentences, and the link's text. Not seen: a UPI app opening on it, on
+any phone; a phone with no UPI app; and the bill turning paid after staff record it.

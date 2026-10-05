@@ -51,6 +51,8 @@ var keys = []key{
 	{Name: printing.SettingReceiptHideBarcode, Default: "false", Check: oneOf("true", "false")},
 	{Name: printing.SettingReceiptHideOrderRef, Default: "false", Check: oneOf("true", "false")},
 	{Name: printing.SettingReceiptHideModifiers, Default: "false", Check: oneOf("true", "false")},
+	{Name: svcorder.SettingUPIAddress, Check: upiAddress},
+	{Name: svcorder.SettingUPIPayee, Check: upiPayee},
 }
 
 // find is the key named name.

@@ -25,8 +25,18 @@ anyone brings it: so the figure at the counter is no surprise.
     muted, so nobody adds it to a total that already has it.
   - a hairline, then "Bill total" and the figure in the serif
   - "Paid" and "Left to pay", only once something has been paid
+- **Pay by UPI,** a card, only when the venue has given its UPI address,
+  the bill is in rupees and something is owed (ADR-215):
+  - **Pay ₹540.00 by UPI**, a link drawn as the primary button, 58px, for
+    exactly what is left. It opens the phone's UPI app with the venue's
+    address and the amount filled in.
+  - "To Demo Cafe, democafe@okbank", small, so the guest can check who is
+    being paid, or type it in.
+  - "After paying, show the payment to a member of staff. This bill is
+    marked paid once they have seen it."
 - **How to pay,** on the sunken ground:
-  - owed: "To pay, ask a member of staff or pay at the counter."
+  - owed: "To pay, ask a member of staff or pay at the counter.", or under
+    the UPI card "Or pay a member of staff, or at the counter."
   - settled: "This bill is paid. Thank you."
   - nothing open: "Nothing is on this table's bill yet. What you order
     appears here once it is accepted."
@@ -42,6 +52,9 @@ anyone brings it: so the figure at the counter is no surprise.
   which rows to draw and adds nothing up.
 - With no ticket at the table the answer is a bill with nothing on it, not
   an error.
+- `upi` in the answer: the link, the address, the payee and the amount.
+  The link is the server's, built from the balance. The phone follows it
+  only if it begins `upi://pay?`.
 
 ## Interactions
 
@@ -51,6 +64,7 @@ anyone brings it: so the figure at the counter is no surprise.
 | See the table's bill, on an empty cart | Opens this screen | A table staff seated, whose guest ordered nothing by phone, can still read it |
 | Back, the phone's Back | The menu | |
 | Try again | Reads the bill again | |
+| Pay by UPI | Hands the link to the phone's UPI app | This page learns nothing of it. The bill changes when staff record the payment, at the next read |
 
 ## States
 
@@ -69,11 +83,15 @@ anyone brings it: so the figure at the counter is no surprise.
 - No figure on this screen is worked out on the phone.
 - Money is integer minor units, and a rate is words from an integer, never
   a float.
-- Nothing here says a guest can pay from the phone until 4e builds it.
+- **Paying by UPI does not mark the bill paid, and the screen says so.**
+  UPI tells the venue's server nothing; a member of staff records the
+  payment on the terminal as they would one made at the counter.
+- A phone with no UPI app does nothing on the tap: the address is there to
+  read, and the counter is named under it.
 - One guest sees the whole table's bill. The table's code is the table's,
   a paper bill would show the same, and nothing records whose phone
   ordered which dish.
-- The guest's bundle is 38.8 KB gzipped of 60.
+- The guest's bundle is 39.1 KB gzipped of 60.
 
 ## Reference
 
@@ -81,7 +99,9 @@ anyone brings it: so the figure at the counter is no surprise.
 436).
 
 **Left out:**
-- **Pay**, UPI, card, wallet, and the QR: 4e and 4f.
+- The QR, for paying from another phone: 4e3. Card and wallet: 4f.
+- "Waiting for payment" and a bill that turns paid by itself: that needs a
+  gateway (4f). Until then staff confirm.
 - **Split the bill**, evenly or by item: 4g.
 - The bill's number: an open bill has none; an invoice number comes with
   the payment that settles it.

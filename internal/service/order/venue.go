@@ -13,6 +13,7 @@ import (
 	"github.com/byjoellobo/mez/internal/db/gen"
 	"github.com/byjoellobo/mez/internal/domain/invoice"
 	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/payment"
 	"github.com/byjoellobo/mez/internal/domain/tax"
 )
 
@@ -54,6 +55,13 @@ const (
 	// They use the invoice template. Defaults: "CN", and the code.
 	SettingCreditSeries = "credit_note.series"
 	SettingCreditPrefix = "credit_note.prefix"
+
+	// SettingUPIAddress is the venue's UPI address, "cafe@okbank": where a
+	// guest paying from a phone is sent (ADR-215). Unset, no bill offers
+	// UPI. SettingUPIPayee is the name the guest's app shows; unset, it is
+	// the venue's.
+	SettingUPIAddress = "payment.upi_address"
+	SettingUPIPayee   = "payment.upi_payee"
 
 	// GSTMaxInvoiceNo is the longest invoice number GST allows.
 	GSTMaxInvoiceNo = 16
@@ -286,4 +294,32 @@ func SeriesOf(row gen.Venue, settings map[string]string) (invoices, credits invo
 		return invoice.Series{}, invoice.Series{}, err
 	}
 	return invoices, credits, nil
+}
+
+// UPIAccount is where the venue is paid by UPI, or an account with no
+// address when it has not said. The payee is the venue's name unless the
+// owner gave another.
+func (s *Service) UPIAccount(ctx context.Context, venueID int64) (payment.UPIAccount, error) {
+	q := s.db.Queries()
+	row, err := q.VenueByID(ctx, venueID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return payment.UPIAccount{}, fmt.Errorf("%w: no venue %d", ErrVenueConfig, venueID)
+	}
+	if err != nil {
+		return payment.UPIAccount{}, fmt.Errorf("reading venue %d: %w", venueID, err)
+	}
+	rows, err := q.SettingsForVenue(ctx, venueID)
+	if err != nil {
+		return payment.UPIAccount{}, fmt.Errorf("reading the settings of venue %d: %w", venueID, err)
+	}
+	account := payment.UPIAccount{Payee: row.Name}
+	for _, r := range rows {
+		switch value := strings.TrimSpace(r.Value); {
+		case r.Key == SettingUPIAddress:
+			account.Address = value
+		case r.Key == SettingUPIPayee && value != "":
+			account.Payee = value
+		}
+	}
+	return account, nil
 }

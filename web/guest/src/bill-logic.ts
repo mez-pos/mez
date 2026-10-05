@@ -48,8 +48,24 @@ export function billState(bill: GuestBillResponse): BillState {
   return bill.paid.minor > 0 ? "part_paid" : "due";
 }
 
-/** What to do about it, until a guest can pay from the phone (4e). */
-export function payLine(state: BillState): string {
+/**
+ * Whether a UPI link from the server is one to follow. The app follows no
+ * link it was handed that is not a UPI payment: what a tap opens is money.
+ */
+export function upiLinkOf(bill: Pick<GuestBillResponse, "upi">): string | null {
+  const link = bill.upi?.link ?? "";
+  return link.startsWith("upi://pay?") ? link : null;
+}
+
+/**
+ * What a guest does after paying by UPI. The link tells the venue nothing,
+ * so the bill here does not change until a member of staff has seen the
+ * payment and recorded it (ADR-215).
+ */
+export const upiAfter = "After paying, show the payment to a member of staff. This bill is marked paid once they have seen it.";
+
+/** What to do about the bill. With a UPI link above it, the other ways to pay. */
+export function payLine(state: BillState, upi = false): string {
   switch (state) {
     case "none":
       return "Nothing is on this table's bill yet. What you order appears here once it is accepted.";
@@ -57,6 +73,6 @@ export function payLine(state: BillState): string {
       return "This bill is paid. Thank you.";
     case "due":
     case "part_paid":
-      return "To pay, ask a member of staff or pay at the counter.";
+      return upi ? "Or pay a member of staff, or at the counter." : "To pay, ask a member of staff or pay at the counter.";
   }
 }

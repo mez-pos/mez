@@ -80,14 +80,22 @@ Phase 10.
   - [x] **4d.** The bill on the phone, with its tax as the server works it
     out: `GET /order/api/t/{code}/bill` and the screen (ADR-214). The setting
     for how the venue is paid moved to 4e, where it first means something.
-  - [ ] **4e.** Paying from the phone by UPI. It is several sessions: split
-    it first. The venue's UPI address and its mode, prepay or pay at the
-    table, as settings the owner edits; the intent link and the dynamic QR
-    on the bill; how a payment is confirmed, and by whom, when UPI itself
-    tells the venue nothing; a confirmed payment as `payment.tendered`; in a
-    prepay venue a round held until paid and then sent with no acceptance
-    (ADR-209). Decide who closes a bill nobody on staff touched (a sold
-    stock movement needs a real staff id, see KNOWN.md).
+  - [ ] **4e.** Paying from the phone by UPI. Staff confirm a payment, as at
+    the till, until 4f's gateway can (ADR-215). Split in five:
+    - [x] **4e1.** The venue's UPI address as a setting
+      (`GET`/`PUT /api/v1/settings/payments`), and a pay link for what is
+      left on the phone's bill.
+    - [ ] **4e2.** Where the owner sets it: a card on the back office's
+      Settings. Until then it is set through the API only.
+    - [ ] **4e3.** The QR on the bill, for paying from another phone, inside
+      the 60 KB budget.
+    - [ ] **4e4.** "I have paid": the guest tells the terminal, which says so
+      as it does a request, and staff record the payment from there.
+    - [ ] **4e5.** The mode, prepay or pay at the table, and in a prepay
+      venue a round held until staff have recorded its payment, then sent
+      with no further acceptance (ADR-209). Decide who closes a bill nobody
+      on staff touched (a sold stock movement needs a real staff id, see
+      KNOWN.md).
   - [ ] **4f.** The gateway adapter: one interface, with Razorpay, Cashfree
     and Stripe behind it.
   - [ ] **4g.** Splitting the bill among the guests at a table.

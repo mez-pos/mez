@@ -54,6 +54,20 @@ type guestBillResponse struct {
 	Total       money.Amount           `json:"total"`
 	Paid        money.Amount           `json:"paid"`
 	BalanceDue  money.Amount           `json:"balance_due"`
+	// UPI is how to pay what is left by UPI, when the venue takes it and
+	// something is owed. Absent otherwise.
+	UPI *guestUPIResponse `json:"upi,omitempty"`
+}
+
+// guestUPIResponse is a UPI payment of the bill's balance to the venue
+// (ADR-215). Link opens the phone's UPI app with the address and the amount
+// filled in. It moves no money by itself and tells the venue nothing: a
+// member of staff records the payment once they have seen it arrive.
+type guestUPIResponse struct {
+	Link    string       `json:"link"`
+	Address string       `json:"address"`
+	Payee   string       `json:"payee"`
+	Amount  money.Amount `json:"amount"`
 }
 
 func (s *Server) guestBill(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +97,24 @@ func (s *Server) guestBill(w http.ResponseWriter, r *http.Request) {
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
+	bill.UPI = s.guestUPI(r, table.VenueID, table.TableName, bill.BalanceDue)
 	writeJSON(w, s.log, http.StatusOK, bill)
+}
+
+// guestUPI is the UPI payment of due, or nil when there is none to offer:
+// the venue has no address, nothing is owed, or the bill is not in rupees.
+// A failure to read the address costs the guest the link and not the bill.
+func (s *Server) guestUPI(r *http.Request, venueID int64, tableName string, due money.Amount) *guestUPIResponse {
+	account, err := s.guestOrders.UPIAccount(r.Context(), venueID)
+	if err != nil {
+		s.log.Error("reading the venue's UPI address failed", "request_id", RequestID(r.Context()), "venue_id", venueID, "error", err)
+		return nil
+	}
+	link, err := account.Link(due, "Table "+tableName)
+	if err != nil {
+		return nil
+	}
+	return &guestUPIResponse{Link: link, Address: account.Address, Payee: account.Payee, Amount: due}
 }
 
 func toGuestBillResponse(res svcorder.Result) (guestBillResponse, error) {
