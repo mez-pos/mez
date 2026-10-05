@@ -8,15 +8,17 @@ import type { Group, Money as Amount, Payment, SalesPoint, SalesReport } from ".
 import { Card, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { channelName, methodName } from "../../../shared/zreport/zreport-logic";
-import { dayText } from "../audit/audit-logic";
-import { averageBill, barHeights, periodText, shares } from "./sales-logic";
+import { averageBill, periodText, shares } from "./sales-logic";
 
 export const count = (n: number) => <span className="font-mono tabular-nums">{n}</span>;
 
-/** A titled part of the screen. `csv` is its Download CSV button, or null for a part with no file. */
-export function Section({ title, csv, children }: { title: string; csv: ReactNode; children: ReactNode }) {
+/**
+ * A titled part of the screen. `csv` is its Download CSV button, or null for a
+ * part with no file. `id` is for a link from higher up the screen.
+ */
+export function Section({ title, csv, id, children }: { title: string; csv: ReactNode; id?: string; children: ReactNode }) {
   return (
-    <section aria-label={title} className="flex min-w-0 flex-col gap-3">
+    <section id={id} aria-label={title} className="flex min-w-0 scroll-mt-4 flex-col gap-3">
       <div className="flex min-h-9 flex-wrap items-center justify-between gap-4">
         <h2 className="font-serif text-xl">{title}</h2>
         {csv}
@@ -74,11 +76,8 @@ export function Headline({ report, csv }: { report: SalesReport; csv: ReactNode 
   );
 }
 
+/** Each period's figures. The trend above is the picture of this table (D15). */
 export function OverTime({ report, csv }: { report: SalesReport; csv: ReactNode }) {
-  const heights = barHeights(report.series);
-  const quiet = heights.every((h) => h === 0);
-  const first = report.series[0];
-  const last = report.series[report.series.length - 1];
   const columns: Column<SalesPoint>[] = [
     { id: "period", header: "Period", cell: (p) => <span className="whitespace-nowrap">{periodText(p)}</span> },
     { id: "bills", header: "Bills", align: "right", cell: (p) => count(p.sales.bills) },
@@ -88,29 +87,6 @@ export function OverTime({ report, csv }: { report: SalesReport; csv: ReactNode 
   ];
   return (
     <Section title="Sales over time" csv={csv}>
-      {quiet ? (
-        <Card>
-          <EmptyState icon={<InboxIcon />} line={`No sales between ${dayText(report.from)} and ${dayText(report.to)}.`} />
-        </Card>
-      ) : (
-        // A picture of the table below, so hidden from screen readers.
-        <Card aria-hidden>
-          <div className="flex h-32 items-end gap-0.5 border-b border-line">
-            {report.series.map((p, i) => (
-              <div key={p.start} className="flex h-full min-w-0 flex-1 items-end">
-                {/* The one inline style: a height that is data. */}
-                <div className="min-h-px w-full rounded-tight bg-accent" style={{ height: `${heights[i] ?? 0}%` }} />
-              </div>
-            ))}
-          </div>
-          {first && last && (
-            <div className="mt-1.5 flex justify-between text-meta uppercase text-fg-faint">
-              <span>{periodText(first)}</span>
-              {last !== first && <span>{periodText(last)}</span>}
-            </div>
-          )}
-        </Card>
-      )}
       <div className="max-h-96 overflow-y-auto">
         <DataTable label="Sales by period" columns={columns} rows={report.series} rowKey={(p) => p.start} />
       </div>

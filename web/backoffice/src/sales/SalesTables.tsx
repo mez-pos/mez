@@ -90,7 +90,7 @@ export function Sold({ report, itemsCsv, categoriesCsv, staffCsv }: SoldProps) {
   const t = report.totals;
   return (
     <>
-      <Section title="What sold" csv={itemsCsv}>
+      <Section title="What sold" csv={itemsCsv} id="what-sold">
         <GroupTable label="Sales by item" heading="Item" qty="Qty" groups={t.by_item} name={(g) => g.name} figures={soldFigures} />
       </Section>
       <Section title="By category" csv={categoriesCsv}>

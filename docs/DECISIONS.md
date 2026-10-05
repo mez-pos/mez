@@ -5329,3 +5329,53 @@ report beside it.
 Cost: two report reads a minute, each projecting the day's orders (ADR-118's cost,
 small for a day). Staff are ranked by the bills they opened, not the tables they served.
 ---
+
+## ADR-184 - The sales report says how it was served, and counts its guests
+2026-10 · Status: accepted. Rebuild Task 16c1 (D15); over ADR-118 and ADR-146.
+Context: D15 stacks its trend by dine-in, takeaway and delivery, draws orders by type
+and a "Total guests" figure. The report grouped by channel (where an order came from),
+not by service (how it is served), and counted no guests.
+Decision:
+  - **`by_service`** on the report: the bills by `order.State.Service`, grouped as the
+    channels are. It is on the range's totals and on each period of the series.
+  - **`sales.covers`**: the guests on the bills invoiced, as each order counted them.
+  - Both are in `zreport.Report`, which a Z-report shares, so a Z-report built from now
+    on carries them too. One issued before has no `by_service` and zero covers; the
+    Z-report screen reads neither yet (16j decides whether to show them).
+  - The hours of the heatmap are still not cut by service; the dashboard's bars stay one
+    colour (ADR-183).
+Because: the order has known how it is served since ADR-146 and nothing added it up.
+Cost: no CSV sheet for service types yet. A party nobody counted adds no guests, so
+"Total guests" undercounts a venue that does not key covers.
+---
+
+## ADR-185 - Sales reports is D15 on top, with the old reports under "In detail"
+2026-10 · Status: accepted. Rebuild Task 16c2 (D15); over ADR-118 to ADR-123.
+Context: D15 is a picture of a range: four figures, a trend, two rings, top sellers and
+payments. The screen built in phase 10 was a column of tables, each with its CSV.
+Decision:
+  - **The top is the design's.** The title with the days counted under it; the range
+    as one pill; Export; Total sales, Total orders, Average order value and Total
+    guests; Sales trend stacked by service; Sales by category; Top selling items; Order
+    type breakdown; Sales by payment method.
+  - **The range pill opens what the old screen laid out in a row:** the quick ranges,
+    From and To, and By (day, week, month). It starts at seven days, as before.
+  - **Export lists every report's CSV** (ADR-119). The tables below keep their own
+    Download CSV buttons.
+  - **Each figure is set against the same number of days just before,** a second read
+    of the report: "Up 12% on the 7 days before". Whole days against whole days, unlike
+    the dashboard's today so far (ADR-183).
+  - **A ring's percentages are whole and come to 100** (largest remainder); beyond six
+    categories the rest are "Others". Orders by type is by bills. The ring's centre
+    shows the total short ("₹2.6K"); the exact total is the first tile.
+  - **Kept under "In detail" (rule 4):** the range's figures, each period, payments and
+    channels, items, categories and staff in full, the heatmap, corrections and closing
+    stock. Items, categories and closing stock move to 16d, staff to 16e.
+  - **Left out:** All Outlets (a venue is one outlet), the order type filter (the
+    server does not filter a report), item photos, and the QR codes card (phase 11).
+  - The old bar chart over "Sales over time" is gone; the trend is that chart.
+Because: the owner reads the picture first and the tables when a figure looks wrong.
+Cost: two report reads per range. Chart colours beyond green, terracotta and mustard
+are the sheet's quieter inks (the warning ink, faint, the strong hairline), by CSS
+variable in a style, since a conic gradient cannot be a class.
+---

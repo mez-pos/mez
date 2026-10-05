@@ -22,11 +22,14 @@ export function change(today: number, yesterday: number): Change | null {
   return { direction: today > yesterday ? "up" : "down", percent };
 }
 
-/** A change in words: "Up 12% on all of yesterday". Today is the day so far; yesterday is whole. */
-export function changeText(c: Change | null): string {
-  if (!c) return "Nothing yesterday to compare";
-  if (c.direction === "same") return "Same as all of yesterday";
-  return `${c.direction === "up" ? "Up" : "Down"} ${c.percent}% on all of yesterday`;
+/** What the dashboard compares today so far with: the whole of the day before. */
+export const yesterday = "all of yesterday";
+
+/** A change in words: "Up 12% on all of yesterday", "Down 4% on the 7 days before". */
+export function changeText(c: Change | null, against: string = yesterday): string {
+  if (!c) return "Nothing before to compare";
+  if (c.direction === "same") return `Same as ${against}`;
+  return `${c.direction === "up" ? "Up" : "Down"} ${c.percent}% on ${against}`;
 }
 
 export interface Occupancy {

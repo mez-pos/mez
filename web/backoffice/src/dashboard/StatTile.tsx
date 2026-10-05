@@ -5,7 +5,7 @@
 import { LeafIcon, MinusIcon, TrendingDownIcon, TrendingUpIcon, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cx } from "../../../shared/ui/cx";
-import { changeText, type Change } from "./dashboard-logic";
+import { changeText, yesterday, type Change } from "./dashboard-logic";
 
 const rounds = {
   success: "bg-chip-success-bg text-accent",
@@ -53,20 +53,23 @@ const trends = {
 } as const;
 
 /**
- * Today so far beside the whole of yesterday: an arrow, the percentage and the
- * words. Never the colour alone.
+ * A figure beside the one before it (today so far beside the whole of yesterday,
+ * unless told otherwise): an arrow, the percentage and the words. Never the
+ * colour alone.
  */
-export function ChangeNote({ change }: { change: Change | null }) {
-  if (!change || change.direction === "same") return <span>{changeText(change)}</span>;
+export function ChangeNote({ change, against = yesterday }: { change: Change | null; against?: string }) {
+  if (!change || change.direction === "same") return <span>{changeText(change, against)}</span>;
   const { icon: Icon, ink } = trends[change.direction];
   return (
     <span className="flex items-center gap-1.5">
-      <span className="sr-only">{changeText(change)}</span>
+      <span className="sr-only">{changeText(change, against)}</span>
       <span aria-hidden="true" className={cx("flex items-center gap-1.5 font-bold", ink)}>
         <Icon size={14} strokeWidth={2.4} />
         {change.percent}%
       </span>
-      <span aria-hidden="true">{change.direction === "up" ? "up on" : "down on"} all of yesterday</span>
+      <span aria-hidden="true">
+        {change.direction === "up" ? "up on" : "down on"} {against}
+      </span>
     </span>
   );
 }

@@ -7,12 +7,14 @@ import { useAuthStore } from "../../../shared/auth/use-auth";
 import { Button, useToast } from "../../../shared/ui";
 import { saveFile } from "../save-file";
 
-/**
- * Returns the button for a file's path. One download at a time per caller.
- * `stale` turns it off while the figures on screen are not the path's: a
- * file must match its screen.
- */
-export function useCsvDownload(): (path: string, stale: boolean) => ReactNode {
+export interface CsvFile {
+  /** The path being downloaded, or null. One download at a time per caller. */
+  busy: string | null;
+  download: (path: string) => Promise<void>;
+}
+
+/** Reads a report's CSV as the signed-in client and hands it to the browser to save. */
+export function useCsvFile(): CsvFile {
   const store = useAuthStore();
   const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
@@ -28,6 +30,18 @@ export function useCsvDownload(): (path: string, stale: boolean) => ReactNode {
       setBusy(null);
     }
   };
+  return { busy, download };
+}
+
+/**
+ * Returns the button for a file's path. One download at a time per caller,
+ * or across everything that shares `shared` (the screen's Export menu).
+ * `stale` turns it off while the figures on screen are not the path's: a
+ * file must match its screen.
+ */
+export function useCsvDownload(shared?: CsvFile): (path: string, stale: boolean) => ReactNode {
+  const own = useCsvFile();
+  const { busy, download } = shared ?? own;
 
   return (path, stale) => (
     <Button size="md" disabled={busy !== null || stale} onClick={() => void download(path)}>

@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { Group, Money, SalesHour, SalesPoint } from "../../../shared/api-types";
+import type { Group, Money, SalesHour } from "../../../shared/api-types";
 import type { Sort } from "../../../shared/ui/table-state";
 import {
   analysisCsvPath,
   analysisPath,
   averageBill,
-  barHeights,
   cellText,
   csvPath,
   daysIn,
@@ -25,12 +24,6 @@ import {
 } from "./sales-logic";
 
 const inr = (minor: number): Money => ({ minor, currency: "INR" });
-const point = (start: string, end: string, total: number): SalesPoint => ({
-  start,
-  end,
-  sales: { bills: 0, gross: inr(0), discounts: inr(0), net: inr(0), taxable: inr(0), tax: inr(0), total: inr(total), net_of_credits: inr(0) },
-});
-
 // Noon on Saturday 3 October 2026.
 const now = new Date(2026, 9, 3, 12, 0);
 
@@ -89,19 +82,6 @@ describe("periods", () => {
   it("words a day and a longer period", () => {
     expect(periodText({ start: "2026-10-01", end: "2026-10-01" })).toMatch(/^1 Oct$/);
     expect(periodText({ start: "2026-09-28", end: "2026-10-04" })).toMatch(/^28 Sep\w* to 4 Oct$/);
-  });
-});
-
-describe("bars", () => {
-  it("are a share of the tallest", () => {
-    expect(barHeights([point("a", "a", 20000), point("b", "b", 0), point("c", "c", 5000)])).toEqual([100, 0, 25]);
-  });
-  it("show a small period as a sliver, not as nothing", () => {
-    expect(barHeights([point("a", "a", 1000000), point("b", "b", 1)])).toEqual([100, 1]);
-  });
-  it("are flat for a quiet range and for none", () => {
-    expect(barHeights([point("a", "a", 0), point("b", "b", 0)])).toEqual([0, 0]);
-    expect(barHeights([])).toEqual([]);
   });
 });
 

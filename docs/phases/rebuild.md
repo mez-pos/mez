@@ -303,7 +303,13 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     average order beside yesterday's; sales through the day; top selling
     items; active tables; staff; low stock; quick actions. Each card only for
     whoever may read what is in it.
-  - [ ] 16c. Sales reports (D15).
+  - [x] 16c. Sales reports (D15). Split on 2026-10-05: the design cuts sales by how
+    they were served and counts guests, and the report did neither.
+    - [x] 16c1. (ADR-184) The report by service type, on the range and on each
+      period, and the guests on its bills. Go tests.
+    - [x] 16c2. (ADR-185) The screen: the range and Export beside the title, four
+      figures against the days before, the trend, sales by category, top sellers,
+      orders by type and payments; the old reports kept under "In detail".
   - [ ] 16d. Item and inventory reports (D16).
   - [ ] 16e. Staff reports (D17, without the customers).
   - [ ] 16f. Menu (D18).

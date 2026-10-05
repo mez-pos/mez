@@ -34,7 +34,7 @@ describe("change", () => {
     { name: "the same", today: 100, yesterday: 100, want: { direction: "same", percent: 0 }, text: "Same as all of yesterday" },
     { name: "a change too small to show", today: 1001, yesterday: 1000, want: { direction: "same", percent: 0 }, text: "Same as all of yesterday" },
     { name: "nothing yet today", today: 0, yesterday: 100, want: { direction: "down", percent: 100 }, text: "Down 100% on all of yesterday" },
-    { name: "nothing yesterday", today: 100, yesterday: 0, want: null, text: "Nothing yesterday to compare" },
+    { name: "nothing yesterday", today: 100, yesterday: 0, want: null, text: "Nothing before to compare" },
     { name: "more than double", today: 350, yesterday: 100, want: { direction: "up", percent: 250 }, text: "Up 250% on all of yesterday" },
   ];
   for (const tt of tests) {
@@ -44,6 +44,10 @@ describe("change", () => {
       expect(changeText(got)).toBe(tt.text);
     });
   }
+  it("names what a range is compared with", () => {
+    expect(changeText({ direction: "down", percent: 4 }, "the 7 days before")).toBe("Down 4% on the 7 days before");
+    expect(changeText({ direction: "same", percent: 0 }, "the day before")).toBe("Same as the day before");
+  });
 });
 
 describe("occupancy", () => {

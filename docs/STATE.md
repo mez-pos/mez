@@ -14,7 +14,20 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16b: the dashboard** (ADR-183). Task 16 is split in ten (16a to 16j,
+**Rebuild, Task 16c2: Sales reports** (ADR-185). Task 16c is done. `/backoffice/sales` is
+D15 (`sales/SalesScreen.tsx`, `SalesCharts.tsx`, `SalesHead.tsx`, `overview-logic.ts`):
+the title with the range pill and Export, four figures against the same number of days
+before, the trend stacked by service, sales by category and orders by type as rings,
+top sellers and payments; the old tables sit under "In detail". Seen in a browser as
+Priya at 1920x1080 and 1366x768: seven days, Today picked from the range pill, the
+Export list. Tests: `previousRange`, `rangeText`, `trend`, `namedBars`, `slices`,
+`ringGradient`. `make check` and `make build-web` pass.
+
+Before it, **Rebuild, Task 16c1: the report by service type** (ADR-184). `by_service` on the
+sales report's totals and on each period, and `sales.covers`, the guests on the bills.
+Server only. Go tests in the domain.
+
+Before it, **Rebuild, Task 16b: the dashboard** (ADR-183). Task 16 is split in ten (16a to 16j,
 `rebuild.md`). `/backoffice/` is D12 (`dashboard/Dashboard.tsx` and its parts,
 `dashboard-logic.ts`): today's sales, orders, active tables and average order beside
 yesterday's, sales by the hour, top selling items, active tables, staff, low stock and
@@ -169,11 +182,14 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a, b).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a, b, c).
 
 ## Next task
 
-**Rebuild, Task 16c: Sales reports** (D15, `mez Desktop Management.dc.html` line 36).
+**Rebuild, Task 16d: Item and inventory reports** (D16, `mez Desktop Management.dc.html`
+line 176). Items, categories and closing stock move there from "In detail" on Sales
+reports; decide first how the reports' own sub-navigation (D15's sidebar: Sales, Item
+reports, Inventory, Staff) sits beside the back office's sidebar.
 Read `docs/design/tokens.md` and that one screen. The screens inside the new frame are
 still the old layouts until their own tasks (16c to 16j). The owner has not yet looked
 at the kitchen's screens, the frame or the dashboard. Phase 11 waits for this phase.
@@ -190,6 +206,14 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Sales reports (ADR-185): no outlet or order type filter, no CSV for service types.
+  "Total guests" counts only parties someone counted. Not seen by eye: a range of
+  more than seven periods (the named bars), delivery on the trend, more than six
+  categories ("Others"), a method that refunded more than it took, a failed read, a
+  download carried through, From and To typed by hand, and "View all" scrolling to
+  the items table. The range is not in the URL: a reload returns to seven days.
+  In Safari and Firefox on a Mac a click on a pill may not focus it, and the shared
+  disclosure can close a menu before the click lands; tried in Chromium only.
 - The dashboard (ADR-183): bars are one colour (the report's hours are not cut by
   service type); "Total orders" is paid bills, not open orders; today so far is
   compared with the whole of yesterday; a table to clear counts as active. Not seen by eye: a low

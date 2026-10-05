@@ -87,15 +87,6 @@ export function periodText(p: Pick<SalesPoint, "start" | "end">): string {
 }
 
 /**
- * Each period's bar as a percentage of the tallest, 0 to 100. A height on
- * screen, not money: nothing is added up or rounded into a figure here.
- */
-export function barHeights(series: readonly SalesPoint[]): number[] {
-  const top = Math.max(0, ...series.map((p) => p.sales.total.minor));
-  return series.map((p) => (top > 0 && p.sales.total.minor > 0 ? Math.max(1, Math.round((p.sales.total.minor * 100) / top)) : 0));
-}
-
-/**
  * Each row's share of the rows' sum as a whole percentage, or null when
  * there is nothing sensible to divide: no sum, or a negative row (a method
  * that refunded more than it took).

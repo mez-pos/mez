@@ -9,13 +9,16 @@ import { cx } from "../../../shared/ui/cx";
 
 interface PanelProps {
   title: string;
-  /** The screen that has the whole of it. */
-  more?: { label: string; href: string };
+  /** The screen that has the whole of it, or a way to the rest of it further down this one. */
+  more?: { label: string; href: string } | { label: string; onClick: () => void };
   /** Something beside the title: the chart's own note. */
   aside?: ReactNode;
   className?: string;
   children: ReactNode;
 }
+
+const moreClass =
+  "-my-3 inline-flex min-h-tap shrink-0 items-center rounded-tight text-base font-bold text-attention-text outline-offset-2 outline-line-focus hover:underline focus-visible:outline-2";
 
 export function Panel({ title, more, aside, className, children }: PanelProps) {
   return (
@@ -23,13 +26,15 @@ export function Panel({ title, more, aside, className, children }: PanelProps) {
       <div className="flex items-center justify-between gap-4">
         <h2 className="font-serif text-xl">{title}</h2>
         {aside}
-        {more && (
-          <Link
-            href={more.href}
-            className="-my-3 inline-flex min-h-tap shrink-0 items-center rounded-tight text-base font-bold text-attention-text outline-offset-2 outline-line-focus hover:underline focus-visible:outline-2"
-          >
+        {more && "href" in more && (
+          <Link href={more.href} className={moreClass}>
             {more.label}
           </Link>
+        )}
+        {more && "onClick" in more && (
+          <button type="button" onClick={more.onClick} className={moreClass}>
+            {more.label}
+          </button>
         )}
       </div>
       <div className="mt-3 min-w-0 flex-1">{children}</div>
