@@ -1,91 +1,92 @@
 # Back office: Printers
 
-Where an owner sets up the venue's receipt and kitchen printers, says which
-prints receipts and which prints each station's tickets, and checks each
-one works. Built in phase 07 Task 5c (ADR-082). The back office's first
-real screen.
+The venue's printers, and where receipts and each station's tickets print.
+Built in phase 07 (ADR-080, ADR-081) and laid out again on Task 16's patterns
+in the rebuild's Task 16k (ADR-195). `web/backoffice/src/printers/`:
+`PrintersScreen.tsx`, `PrinterTable.tsx`, `PrinterRouting.tsx`,
+`PrinterFormModal.tsx`, `printers-logic.ts`, `use-printers.ts`. Section
+**Printers**, path `/printers`, `settings.edit`, keys `g t`. Settings links
+here from its rail.
 
 ## Purpose
 
-Get every ticket and receipt onto the right paper before service, and see
-at a glance which printer is failing during it.
+Tell the venue which printer is where, send a test page, and know from the
+last job whether each one is working.
 
 ## Layout
 
-Paper surface, inside `SignedInShell`. The back office home links here
-("Printers") until the menu editor and reports arrive in phase 10.
+Inside the frame (`backoffice-shell.md`).
 
-- **Header row:** the title "Printers" in the serif, and **Add a
-  printer** on the right.
-- **Printers**, one `Card` each, in the order added:
-  - the name (lg, semibold); a "Receipts" chip when it prints receipts, and
-    a "Retired" chip (struck) when retired
-  - how it is reached, in the numeral face: `10.0.0.5:9100`, or `USB: EPSON TM-T82`
-    for a printer this computer drives through Windows; the paper, "80mm"
-    or "58mm"
-  - the stations whose tickets it prints: "Kitchen, Bar", or "No stations"
-  - its **last result**: the newest job's state as a `StatusChip`, its
-    label and when; or "Nothing printed yet"
-  - **Test page**, **Edit**, and **Retire** (or **Bring back** when retired),
-    48px
-- **Where things print** (a `Card`; for a person who may edit the menu, ending
-  with "Stations are added, renamed and retired in the menu" and a link to
-  `/menu?view=setup`, ADR-139): the receipt printer, then one row per
-  active station, each a native select of the active printers plus "None".
-  A change saves at once and says "Saved".
-- **Add / Edit** (`Modal`): name; **How it connects**: "Network (IP
-  address)" or "USB, on this computer (Windows)"; the address or the
-  Windows printer's name; paper 80mm or 58mm; Save. Errors under the field
-  they belong to.
+- **The head:** "Printers" in the serif, a line of counts under it ("3
+  printers, 1 retired", or "None yet"), and **Add a printer** at the right.
+- A line over the table for what an action was refused for, named for the
+  printer.
+- **The table**, in a card, in the order added:
+
+  | Column | Shows |
+  |---|---|
+  | Printer | its name, and how it is reached in the numeral face: `10.0.0.5:9100`, or `USB: EPSON TM-T82` for one this computer drives through Windows |
+  | Paper | "80mm" or "58mm" |
+  | Prints | "Receipts", and each station's tickets ("Kitchen, Bar"); "Retired" muted for a retired one |
+  | Last print | the newest job's state as a chip, with when ("12 min ago"); or "Nothing printed yet" |
+  | | **...**: Test page, Edit, and Retire or Bring back |
+
+- **Where things print**, a card beside it: **Receipts**, then a row per
+  station ("Kitchen tickets"), each a select of the printers in service and
+  **None**. A change saves at once and says "Saved". With no stations: "No
+  stations yet. They are added in the menu, with the items made at each."
+- **Add, Edit** (a modal): **Name**; **How it connects**, "Network (IP
+  address)" or "USB, on this computer (Windows)"; the **IP address** ("Like
+  192.168.1.50. Port 9100 unless you add another.") or **The printer's name
+  in Windows**; **Paper**, 80mm or 58mm; **Save**. Errors under their field.
 
 ## Data
 
-- `GET /api/v1/printers`: `printers[]` (id, name, transport, address,
-  paper_mm, active, is_receipt, stations[], last_job?) and `stations[]`
-  (code, name, printer_id?). React Query key `["printers"]`, invalidated
-  after every change and on the stream's `print_changed`, so a test page
-  or a failing receipt moves the last result live.
-- `POST /api/v1/printers` `{ name, transport, address, paper_mm }`,
-  `PUT /api/v1/printers/{id}` with the same, `POST .../{id}/retire`,
-  `POST .../{id}/restore`.
-- `PUT /api/v1/printers/receipt` `{ printer_id }` (null: none) and
-  `PUT /api/v1/stations/{code}/printer` `{ printer_id }`.
-- `POST /api/v1/printers/{id}/test`: a test page (`escpos.TestPage` at the
-  printer's paper width) through the print queue, so it retries and shows
-  on the terminals' queue like any other job.
-- Every call needs `settings.edit`.
+- `GET /api/v1/printers`, key `["printers"]`: `printers[]` (id, name,
+  transport, address, paper_mm, active, is_receipt, stations[], last_job)
+  and `stations[]`. Read again after every change and on the stream's print
+  notice, so a test page or a failing receipt moves Last print live.
+- `POST /api/v1/printers`, `PUT /api/v1/printers/{id}`, `POST
+  .../{id}/retire`, `.../restore`.
+- `PUT /api/v1/printers/receipt` `{printer_id}` and `PUT
+  /api/v1/stations/{code}/printer` `{printer_id}`; null is none.
+- `POST /api/v1/printers/{id}/test`: a test page through the print queue, so
+  it retries and shows on the terminals' queue like any other job.
 
 ## Interactions
 
 | Action | Does | Then |
 |---|---|---|
-| Add a printer, Save | Creates it | The card appears; set where it prints below |
-| Edit, Save | Changes name, connection or paper | Jobs already queued keep their bytes (ADR-080) |
-| Test page | Queues a test page | Last result: Waiting, then Printed or Retrying |
-| Retire | Stops sending to it | Its queued jobs go dead with "retired"; it stops printing receipts; its stations print nowhere until given another |
-| Bring back | Makes it active again | It does not take back the receipts or stations |
-| Receipt printer select | Sets the one receipt printer | "Saved" |
-| A station's select | Sets that station's printer | "Saved" |
+| Add a printer, Save | Creates it | Its row appears; set what it prints beside |
+| Edit, Save | Changes its name, connection or paper | Jobs already queued keep their bytes (ADR-080) |
+| Test page | Queues one | A toast, "Test page queued. Check the printer."; Last print follows it |
+| Retire | Stops sending to it | "Counter retired." Its queued jobs are given up on; it stops printing receipts; its stations print nowhere until given another |
+| Bring back | Puts it in service | "Counter is back in service." It does not take back the receipts or stations |
+| A select under Where things print | Sets that printer | "Saved" |
 
 ## States
 
-- **No printers:** "No printers yet. Add the receipt printer first, then
-  one for each station that needs tickets."
-- **A retired printer** stays listed, struck chip, out of the selects.
-- **Refused:** the server's words under the field or the select: "A
-  printer with that name already exists", "Give the IP address, like
-  192.168.1.50", "Choose 80mm or 58mm".
-- **Loading / offline:** the words in place of the list.
+- **Loading:** "Loading the printers".
+- **None:** "No printers yet. Add the receipt printer first, then one for
+  each station that needs tickets."
+- **Error:** the server's words, with **Try again**.
+- **Refused:** a line over the table, or under the field in the form.
+- **Not allowed:** the frame's "That is not yours to open".
 
 ## Constraints
 
-- One primary: **Add a printer** is the primary button; nothing else is
-  green.
-- Every control 48px on this screen too: it is used on a tablet as often as
-  a laptop.
-- Addresses and paper widths in the numeral face.
+- No green primary: nothing here moves money. The form's Save is its own.
+- A printer has no chip of its own. The server cannot tell whether a printer
+  is reachable; its last job is the evidence, so the row shows that job's
+  chip.
+- What an action answered is a toast; what it was refused for is a line over
+  the table.
+- Retire has no confirm: it is one click back.
+- Printing is ASCII only (ADR-079); a non-Latin name prints as "?".
 
 ## Reference
 
-The archived back office design has no printer settings; this screen is
-new, built from the primitives in `docs/design/components.md`.
+The design draws no printers screen: D22 lists "Printers & devices" as a
+section of Settings and draws nothing under it. This one is ours, kept under
+rule 4, on the table pattern of D19 and D20 so it reads as the same app
+(ADR-195).

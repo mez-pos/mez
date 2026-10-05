@@ -14,7 +14,17 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 17g1: the specs for Menu, Inventory and Staff.** Task 17g is split in
+**Rebuild, Task 17g2: the specs for Settings, Printers, Devices, Floor plan, Tips and
+the Z-report.** Task 17g is done, and with it every spec: 28 files in
+`docs/design/screens/`, each written from the code as it stands (ADR-196).
+`backoffice-settings.md` (D22's frame and its three sections), `backoffice-printers.md`
+and `backoffice-devices.md` (Task 16k's tables), `backoffice-floor.md` and `tips.md`
+(their layouts were left as they were, ADR-195), and `zreport.md` (D23's report and
+slip in both apps, the list and its exports). `screens/README.md` lists every spec
+against its screen, path and design screen, and the design screens that have none.
+Docs only: no code changed. `make check` passes.
+
+Before it, **Rebuild, Task 17g1: the specs for Menu, Inventory and Staff.** Task 17g is split in
 two (`rebuild.md`). Written from the code as it stands (ADR-196): `backoffice-menu.md`
 (D18: the categories, the list and the inline editor, with the Choices and Stations and
 courses views), `backoffice-stock.md` (Inventory, D19: the levels table, the forms, the
@@ -326,15 +336,16 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 17g2: the specs for Settings, Printers, Devices, Floor plan, Tips and
-the Z-report.** From `web/backoffice/src/` and `web/shared/zreport/` as they stand
-(ADR-196): rewrite `backoffice-settings.md` (D22's frame and its sections: Venue, Tax
-and numbering, Shift, tips and receipt), `backoffice-printers.md`, `backoffice-devices.md`
-(both on Task 16k's table pattern, ADR-195), `backoffice-floor.md`, `tips.md`, and
-`zreport.md` (D23's report and slip in both apps, the Z-reports list and its exports).
-Check Settings against `mez Desktop Management.dc.html` line 602 and the Z-report
-against line 707. Then rewrite `screens/README.md` to list every spec against its
-design screen. The walk as each role is 17h. The owner has
+**Rebuild, Task 17h: the walk.** The last part of Task 17, and the first with code in
+it. In the dev server (`make dev`; `rebuild.md`, "How to see it"), as Meera the cashier,
+Kabir the waiter, Ravi in the kitchen and Arjun the manager, take an order from each
+side through to a paid bill, an invoice and a Z-report, reading each screen against its
+spec. Before walking: fix the "Found writing the specs" entries under Known broken
+(old words on screen, `PrintStatus.tsx` and `lastBumped` unused), and decide with the
+owner whether a cashier keeps the Close the day door on the Orders sheet. After: cut
+the "not seen by eye" lists below to what is still unseen, and bring this file back
+under 60 lines by moving the "Before it" history out. It may need splitting by role.
+The phase's done-when is the owner's own walk. The owner has
 not yet looked at the kitchen's screens or anything of Task 16. Floor plan and Tips
 are still their old layouts (ADR-195). Phase 11 waits for this phase. Phase 10's tasks are
 all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
@@ -373,6 +384,12 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   till" on a new PIN and "Others ask for these at the till" (`people/`), "Change
   orders on the ticket" (`people-logic.ts`), and "on the till as each shift closes"
   (`stock/StockItemModal.tsx`).
+- Found writing the specs (17g2): more old words, for 17h: the settings card
+  "Shifts, tips and tickets", its "A ticket is late after (minutes)", and "refused
+  while any ticket is open" on the tax profile and the tax classes
+  (`settings/RulesCard.tsx`, `TaxProfileCard.tsx`, `TaxClassesCard.tsx`); a device's
+  kind reads "Till" (`devices/`), on the table, in Pair a device and in "Pair a till, a
+  kitchen display or another back office to start."
 - Printers, Devices and Audit (ADR-195): the dev venue now has three printers that
   go nowhere (127.0.0.1:9197 to 9199), one retired and one set for receipts, so a
   receipt there queues and retries. Not seen by eye: a revoked or a quiet device,
