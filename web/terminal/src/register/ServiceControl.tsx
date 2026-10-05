@@ -18,9 +18,11 @@ interface ServiceControlProps {
   value: ServiceType;
   locked: boolean;
   onChange: (next: ServiceType) => void;
+  /** Wider buttons, for a bar with room: the waiter's top bar (T02). */
+  roomy?: boolean;
 }
 
-export function ServiceControl({ value, locked, onChange }: ServiceControlProps) {
+export function ServiceControl({ value, locked, onChange, roomy = false }: ServiceControlProps) {
   return (
     <div role="group" aria-label="How it is served" className="flex rounded-pill bg-sunken p-1">
       {options.map(({ value: option, icon: Icon }) => {
@@ -34,7 +36,8 @@ export function ServiceControl({ value, locked, onChange }: ServiceControlProps)
             title={locked && !on ? "Set when the order started" : undefined}
             onClick={() => onChange(option)}
             className={cx(
-              "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-pill px-2 text-base outline-offset-2 outline-attention focus-visible:outline-3",
+              "flex flex-1 items-center justify-center rounded-pill text-base outline-offset-2 outline-attention focus-visible:outline-3",
+              roomy ? "min-h-tap gap-2 whitespace-nowrap px-4" : "min-h-11 gap-1.5 px-2",
               on ? "bg-accent font-semibold text-accent-fg" : "text-fg-2 hover:bg-raised-high disabled:opacity-40 disabled:hover:bg-transparent",
             )}
           >

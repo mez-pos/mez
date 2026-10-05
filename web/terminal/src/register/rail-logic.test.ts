@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OpenOrder, OrderResponse } from "../../../shared/api-types";
-import { amountOwed, guestsText, needsTable, railTitle, serviceLocked, serviceOf, taxRows } from "./rail-logic";
+import { amountOwed, courseNamer, guestsText, needsTable, railTitle, serviceLocked, serviceOf, taxRows } from "./rail-logic";
 
 const opening = (extra: Partial<OpenOrder> = {}): OpenOrder => ({ channel: "counter", covers: 0, ...extra });
 
@@ -103,5 +103,23 @@ describe("serviceLocked", () => {
   it("locks once the order exists", () => {
     expect(serviceLocked(null)).toBe(false);
     expect(serviceLocked("ord_1")).toBe(true);
+  });
+});
+
+describe("courseNamer", () => {
+  const name = courseNamer([
+    { number: 1, name: "Starter" },
+    { number: 2, name: "Main Course" },
+  ]);
+  it("names a line's course by its number", () => {
+    expect(name(1)).toBe("Starter");
+    expect(name(2)).toBe("Main Course");
+  });
+  it("says a course the menu no longer has by its number", () => {
+    expect(name(5)).toBe("Course 5");
+  });
+  it("says nothing for a line with no course", () => {
+    expect(name(undefined)).toBeNull();
+    expect(name(0)).toBeNull();
   });
 });

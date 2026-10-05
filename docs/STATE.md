@@ -14,34 +14,34 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 11: the waiter's home** (ADR-163). `/waiter` is T01
-(`waiter/WaiterHome.tsx`, `TableCard.tsx`, `waiter-logic.ts`): the greeting by the
-venue's clock, the pills (All Tables, Occupied, Available, Needs Bill, To Clear) with
-their counts, the search, the tables as cards four across, and the bottom bar with
-Active Orders and New Order. A waiter's frame is T01's on every screen they reach
-(`TerminalShell` picks it by where the role lands): an 88px bar with Home, Orders,
-Menu and More (`shell/WaiterNav.tsx`), and no status bar. A card leads to
-`/tables?table=N`, the floor with that table picked. Seen in a browser at 1366x1024 as
-Kabir, beside the design: the cards in four states, a pill, the search and its empty
-line, More, a card through to the floor's panel, and a table seated and ordered from
-there showing Occupied with its balance. Tests: `waiter-logic`, `activeWaiterNav`,
-`tableInSearch`. `make check` and `make build-web` pass. The owner has not yet looked.
+**Rebuild, Task 12a: the waiter's order screen** (ADR-165). Task 12 is split in three.
+For a waiter `/pos` is T02, the order screen rearranged (`OrderScreen` and its parts
+take a waiter's variant; `useWaiterFrame` says who): the top bar is the order's
+(`waiter/WaiterOrderBar.tsx`: the way back, the table, the guests, how it is served),
+the search sits over the categories, Popular is where it starts, three cards across,
+and the rail has the table with its chips, each line's course, Clear, the totals,
+Save and Send to Kitchen. Pay is "Bill and pay" under the rail's "...". Seen in a
+browser at 1366x1024 as Kabir, beside the design: a seated table's order, items added,
+Clear confirmed and carried through, Send, the "..." menu, and Save returning to the
+tables. Tests: `clearableLines`, `courseNamer`. `make check` and `make build-web` pass.
+The owner has not yet looked.
 
-Before it: Task 10c (ADR-162, the refund modal and the print queue on Orders), Task
+Before it: Task 11 (ADR-163, the waiter's home; ADR-164, the connection word in a
+waiter's bar), Task 10c (ADR-162, the refund modal and the print queue on Orders), Task
 10b (ADR-161, the Orders screen), Task 10a (ADR-160, the day's orders
 from the server), Task 9 (ADR-159, split and the card and UPI states), Task 8 (ADR-156,
 payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154),
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c or 11.
+10c, 11 or 12a.
 
 ## Next task
 
-**Rebuild, Task 12** (waiter order taking): T02 (line 101 of `mez Tablet
-Waiter.dc.html`, drawn at 1366x1024) and T04, the KOT preview (line 377). A waiter's
-Menu tile and New Order open the desktop order screen (`/pos`) today, inside the
-waiter's frame. Read `docs/design/tokens.md` and those two screens only. Phase 11
+**Rebuild, Task 12b** (confirm and send): T04 (line 377 of `mez Tablet
+Waiter.dc.html`, drawn 660px wide). A waiter's Send to Kitchen sends at once today
+(`OrderRail`, `send-logic.ts`). Then 12c, Course View, the rail's second tab. Read
+`docs/design/tokens.md` and that screen only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -55,6 +55,14 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- The waiter's order screen (ADR-165): no tabs on the rail until Course View is built
+  (12c), and no Add More (the menu is beside the rail). The item modal is D04's, not
+  T02's sheet with a photo on top. The card's "+" is terracotta, as on D03. A cleared
+  line stays on the rail struck through, as a removed one does. Save parks the order
+  (hold): a saved table order must be resumed before anything is added. Not seen by
+  eye: a new order with no table ("Pick a table"), takeaway and delivery chosen in the
+  bar, a joined table's title, a failed Clear, a menu with nothing popular, the bar
+  with the server down, and "Bill and pay" carried through.
 - The waiter's home (ADR-163): every table is listed, not the waiter's own (no table
   is assigned to anyone), so the line reads "the tables", not "your tables". No bell,
   Table Requests, QR Orders (phase 11) or Reserved (out of scope). Active Orders counts

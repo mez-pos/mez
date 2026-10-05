@@ -3,7 +3,7 @@
 // another to the front or start one), the history of this order, a discount on
 // the whole of it, firing the next course, and past bills (ADR-151).
 
-import { ClockIcon, EllipsisIcon, ListOrderedIcon, PercentIcon, ReceiptTextIcon, FlameIcon, type LucideIcon } from "lucide-react";
+import { ClockIcon, EllipsisIcon, ListOrderedIcon, PercentIcon, ReceiptTextIcon, FlameIcon, WalletIcon, type LucideIcon } from "lucide-react";
 import { cx } from "../../../shared/ui/cx";
 import { useDisclosure } from "../shell/use-disclosure";
 
@@ -19,9 +19,11 @@ export interface MoreActionsProps {
   onDiscount: () => void;
   onFire: (course: number) => void;
   onPastBills: () => void;
+  /** The way to the bill, for a rail with no Pay button: the waiter's, until T05 is built. */
+  pay?: { readonly label: string; readonly blocked: boolean; readonly onPay: () => void };
 }
 
-export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onOrders, onHistory, onDiscount, onFire, onPastBills }: MoreActionsProps) {
+export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onOrders, onHistory, onDiscount, onFire, onPastBills, pay }: MoreActionsProps) {
   const { open, toggle, box, trigger, panel, panelId, pick, leaves } = useDisclosure();
   return (
     <div ref={box} onBlur={leaves} className="relative">
@@ -47,6 +49,7 @@ export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onO
           aria-label="More actions"
           className="absolute right-0 top-full z-20 mt-2 w-64 rounded-card border border-line bg-raised p-2 shadow-card"
         >
+          {pay && <ActionItem icon={WalletIcon} label={pay.label} disabled={pay.blocked} onClick={pick(pay.onPay)} />}
           <ActionItem icon={ListOrderedIcon} label="Orders" detail={String(orderCount)} onClick={pick(onOrders)} />
           <ActionItem icon={ClockIcon} label="Order history" disabled={!hasOrder} onClick={pick(onHistory)} />
           <ActionItem icon={PercentIcon} label="Discount the order" disabled={!canDiscount} onClick={pick(onDiscount)} />

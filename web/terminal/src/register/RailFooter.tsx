@@ -3,8 +3,11 @@
 // takes it to the payment screen, in the one green. Send to Kitchen is added
 // above them only while something waits to go: the design draws it on the tables
 // screen, and a counter order has no other way to reach the kitchen (ADR-151).
+//
+// A waiter's foot (T02) is Save and Send to Kitchen: sending is the one green
+// there, and the bill is reached from the rail's "..." until T05 is built.
 
-import { ArrowRightIcon, SendIcon } from "lucide-react";
+import { ArrowRightIcon, BookmarkIcon, SendIcon } from "lucide-react";
 import type { OrderResponse } from "../../../shared/api-types";
 import { Button, Money } from "../../../shared/ui";
 import { OrderTotals } from "./OrderTotals";
@@ -23,16 +26,36 @@ interface RailFooterProps {
   onSend: () => void;
   onSave: () => void;
   onPay: () => void;
+  waiter?: boolean;
 }
 
-export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel, onSend, onSave, onPay }: RailFooterProps) {
+export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel, onSend, onSave, onPay, waiter = false }: RailFooterProps) {
   const live = order?.lines.some((l) => l.status === "active") ?? false;
   const held = order?.status === "held";
   const owed = amountOwed(order?.totals, currency);
+  const canSend = live && !held && sendPlan.waiting > 0;
+
+  if (waiter) {
+    return (
+      <footer className="border-t border-line px-5 pb-5 pt-4">
+        <OrderTotals order={order} currency={currency} />
+        <div className="mt-4 flex gap-3">
+          <Button size="charge" className="w-32 shrink-0" disabled={order?.status !== "open"} onClick={onSave}>
+            <BookmarkIcon aria-hidden="true" size={17} />
+            Save
+          </Button>
+          <Button variant="primary" size="charge" className="flex-1" disabled={!canSend} onClick={onSend}>
+            <SendIcon aria-hidden="true" size={19} />
+            {live ? sendLabel(sendPlan) : "Send to Kitchen"}
+          </Button>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className="border-t border-line px-5 pb-5 pt-4">
-      {live && !held && sendPlan.waiting > 0 && (
+      {canSend && (
         <Button className="mb-3 w-full" onClick={onSend}>
           <SendIcon aria-hidden="true" size={17} />
           {sendLabel(sendPlan)}

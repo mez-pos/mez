@@ -15,6 +15,8 @@ interface MenuHeaderProps {
   /** Bumped to empty the search box: SearchField keeps what is typed in it. */
   searchKey: number;
   onSearch: (query: string) => void;
+  /** The search is drawn elsewhere: over the categories, for a waiter (T02). */
+  searchElsewhere?: boolean;
 }
 
 const chips: readonly { key: keyof DietFilter; label: string; icon: LucideIcon; tone: string }[] = [
@@ -24,7 +26,7 @@ const chips: readonly { key: keyof DietFilter; label: string; icon: LucideIcon; 
   { key: "glutenFree", label: "Gluten Free", icon: WheatOffIcon, tone: "border-chip-warning-border bg-chip-warning-bg text-chip-warning-fg" },
 ];
 
-export function MenuHeader({ title, filter, onFilter, searchKey, onSearch }: MenuHeaderProps) {
+export function MenuHeader({ title, filter, onFilter, searchKey, onSearch, searchElsewhere = false }: MenuHeaderProps) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
       <h1 className="font-serif text-total">{title}</h1>
@@ -49,7 +51,7 @@ export function MenuHeader({ title, filter, onFilter, searchKey, onSearch }: Men
           );
         })}
       </div>
-      <SearchField key={searchKey} label="Search the menu" onSearch={onSearch} className="ml-auto w-full sm:w-64" />
+      {!searchElsewhere && <SearchField key={searchKey} label="Search the menu" onSearch={onSearch} className="ml-auto w-full sm:w-64" />}
     </div>
   );
 }

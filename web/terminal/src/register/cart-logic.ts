@@ -2,7 +2,7 @@
 // still allows, the reasons a manager picks from, and what a discount entry
 // means before it is sent.
 
-import type { DiscountRequest, LineResponse, Money, Override } from "../../../shared/api-types";
+import type { DiscountRequest, LineResponse, Money, OrderResponse, Override } from "../../../shared/api-types";
 
 export interface Reason {
   readonly code: string;
@@ -60,6 +60,16 @@ export function lineActions(line: LineResponse, paid: boolean): LineActions {
   const active = line.status === "active";
   const unseen = active && !line.sent && !line.course_fired;
   return { change: unseen, note: true, remove: unseen && !paid, void: active, comp: active, discount: active };
+}
+
+/**
+ * The lines Clear takes off (T02): every one the kitchen has not seen, each
+ * removed as its own bin would remove it. None once money is on the order.
+ */
+export function clearableLines(order: Pick<OrderResponse, "lines" | "tenders"> | undefined): LineResponse[] {
+  if (!order) return [];
+  const paid = order.tenders.some((t) => t.status !== "voided");
+  return order.lines.filter((l) => lineActions(l, paid).remove);
 }
 
 /** A discount as typed: basis points (1250 is 12.5%) or an amount in minor units. */

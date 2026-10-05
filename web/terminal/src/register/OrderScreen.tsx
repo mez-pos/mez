@@ -5,16 +5,22 @@
 // settled bill is /orders/:id, and with no shift open the whole terminal waits
 // at /shift (ADR-148): each is a route of its own, and the order in front lives
 // above them all (terminal-context). ADR-151 records what this screen draws.
+//
+// A waiter's is T02, the same screen rearranged (ADR-165): the search over the
+// categories, Popular first, three cards across, and a rail that ends in Save
+// and Send to Kitchen. The table, the guests and how it is served are in the
+// top bar (WaiterOrderBar).
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import type { LineResponse, MenuItemResponse } from "../../../shared/api-types";
 import { indexMenu, isSoldOut } from "../../../shared/menu";
-import { EmptyState, InboxIcon, SearchIcon, useToast } from "../../../shared/ui";
+import { EmptyState, InboxIcon, SearchField, SearchIcon, useToast } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
 import { useMenu } from "../../../shared/use-menu";
 import { route } from "../shell/routes";
 import { useTerminal } from "../shell/terminal-context";
+import { useWaiterFrame } from "../shell/use-waiter-frame";
 import { CategorySidebar } from "./CategorySidebar";
 import { HistorySheet } from "./HistorySheet";
 import { ItemGrid } from "./ItemGrid";
@@ -22,6 +28,7 @@ import { ItemModal, type ItemChoice } from "./ItemModal";
 import { MenuHeader } from "./MenuHeader";
 import { sameModifiers } from "./modifier-selection";
 import { OrderRail } from "./OrderRail";
+import { courseNamer } from "./rail-logic";
 import {
   addLineFor,
   categoryIconKey,
@@ -47,7 +54,8 @@ export function OrderScreen() {
   // Once a minute, so a dish sold out yesterday is back when the trading day turns.
   const now = useClock(60_000);
 
-  const [view, setView] = useState<MenuView>("all");
+  const waiter = useWaiterFrame();
+  const [picked, setView] = useState<MenuView>(waiter ? "popular" : "all");
   const [query, setQuery] = useState("");
   const [diet, setDiet] = useState<DietFilter>(noDietFilter);
   const [sheet, setSheetState] = useState<SheetState | null>(null);
@@ -75,6 +83,9 @@ export function OrderScreen() {
   const categories = useMemo(() => index?.menu.categories ?? [], [index]);
   const items = useMemo(() => index?.menu.items ?? [], [index]);
   const entries = useMemo(() => sidebarEntries(categories, items), [categories, items]);
+  // Popular is where a waiter starts (T02), on a menu that marks anything popular.
+  const view = picked === "popular" && !entries.some((e) => e.view === "popular") ? "all" : picked;
+  const courseName = useMemo(() => courseNamer(index?.menu.courses ?? []), [index]);
   const searching = query !== "";
   const shown = useMemo(() => {
     const base = searching ? searchItems(items, query) : itemsForView(view, items);
@@ -148,9 +159,10 @@ export function OrderScreen() {
           setView(next);
           clearSearch();
         }}
+        search={waiter ? <SearchField key={searchKey} label="Search menu" onSearch={setQuery} /> : undefined}
       />
       <section aria-label="Menu" className="flex min-w-0 flex-1 flex-col px-6 pt-5">
-        <MenuHeader title={title} filter={diet} onFilter={setDiet} searchKey={searchKey} onSearch={setQuery} />
+        <MenuHeader title={title} filter={diet} onFilter={setDiet} searchKey={searchKey} onSearch={setQuery} searchElsewhere={waiter} />
         <div className="min-h-0 flex-1 overflow-y-auto pb-6 pt-5">
           <MenuBody
             state={menu.isPending ? "loading" : menu.isError && !menu.data ? "error" : "ready"}
@@ -169,6 +181,7 @@ export function OrderScreen() {
               iconFor={iconFor}
               onTap={ringUp}
               soldOut={(item) => isSoldOut(item, new Date(now))}
+              dense={waiter}
             />
           </MenuBody>
         </div>
@@ -191,6 +204,9 @@ export function OrderScreen() {
           if (ticket.orderId) navigate(route.pay(ticket.orderId));
         }}
         onFail={fail}
+        waiter={waiter}
+        courseName={(line) => courseName(line.course)}
+        {...(waiter ? { onSaved: () => navigate(route.waiter) } : {})}
       />
 
       {historyOpen && ticket.orderId && <HistorySheet key={ticket.orderId} orderId={ticket.orderId} onClose={() => setHistoryOpen(false)} />}

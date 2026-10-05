@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { LineResponse } from "../../../shared/api-types";
 import { humanise } from "../../../shared/ui/timeline-entries";
-import { compReasons, discountProblem, discountReasons, discountRequest, lineActions, voidReasons } from "./cart-logic";
+import { clearableLines, compReasons, discountProblem, discountReasons, discountRequest, lineActions, voidReasons } from "./cart-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 const override = { authorised_by: "stf_MGR00001", pin: "2468" };
@@ -86,5 +86,20 @@ describe("discountRequest", () => {
       amount: inr(5000),
       reason: "complaint",
     });
+  });
+});
+
+describe("clearableLines", () => {
+  const tender = (status: "captured" | "voided") => ({ status }) as never;
+  it("takes every line the kitchen has not seen, and leaves the rest", () => {
+    const lines = [line({ id: 1 }), line({ id: 2, sent: true }), line({ id: 3, course_fired: true }), line({ id: 4, status: "voided" }), line({ id: 5 })];
+    expect(clearableLines({ lines, tenders: [] }).map((l) => l.id)).toEqual([1, 5]);
+  });
+  it("takes nothing once money is on the order: that is a manager's void", () => {
+    expect(clearableLines({ lines: [line()], tenders: [tender("captured")] })).toEqual([]);
+    expect(clearableLines({ lines: [line()], tenders: [tender("voided")] })).toHaveLength(1);
+  });
+  it("takes nothing from no order", () => {
+    expect(clearableLines(undefined)).toEqual([]);
   });
 });

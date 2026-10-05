@@ -4882,3 +4882,30 @@ are read again.
 Cost: one more thing in a bar the design keeps bare. Still no clock, venue name or
 version on a waiter's screen.
 ---
+
+## ADR-165 - A waiter's order screen is the order screen rearranged, not a second one
+2026-10 · Status: accepted. Rebuild Task 12a. Task 12 is three tasks.
+Decision:
+  - **T02 is D03 with its parts moved,** so `OrderScreen`, the sidebar, the grid, the
+    rail and its foot each take a waiter's variant. One ticket, one item modal, one
+    set of line rules for both.
+  - **The top bar is the order's while an order is taken:** an arrow back to the
+    tables (the design has no way back; a waiter needs one), the table, the guests and
+    how it is served. The table leads to the floor, where one is picked or the party
+    is moved.
+  - **The rail ends in Save and Send to Kitchen.** Sending is the waiter's one green.
+    Pay is "Bill and pay" under the rail's "..." until T05 is built (rule 4).
+  - **Save parks the order and returns to the tables.** It is hold, as Save Order is.
+  - **Clear removes every line the kitchen has not seen,** each as its own bin would,
+    after a confirm. It is not drawn when it would take nothing off, and it takes
+    nothing once money is on the order.
+  - **Each line says its course** by the menu's name for it.
+  - **Popular is where a waiter starts,** on a menu that marks anything popular; All
+    Items stays in the list.
+  - **Split in three:** 12a this screen, 12b confirm and send (T04), 12c Course View.
+Left out, and why (rule 3): Add More (the menu is beside the rail), the rail's tabs
+until 12c gives the second one something to show, and the bell. The item modal stays
+D04's: T02's sheet with a photo on top is the same choices in another order.
+Cost: five components carry a `waiter` branch. The sidebar is 224px, not 212, so the
+search's placeholder fits.
+---

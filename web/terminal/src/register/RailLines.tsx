@@ -28,13 +28,17 @@ interface RailLinesProps {
   onRetry: (key: string) => void;
   onDrop: (key: string) => void;
   onNote: () => void;
+  /** A line's course in words, where the rail shows it (T02). */
+  courseName?: (line: LineResponse) => string | null;
+  /** Clear, and how many lines it would take off; not drawn when it would take none. */
+  clear?: { readonly count: number; readonly onClear: () => void };
 }
 
 const negate = (a: Amount): Amount => ({ ...a, minor: -a.minor });
 const modifierText = (mods: readonly { name: string }[] | undefined): string => (mods ?? []).map((m) => m.name).join(", ");
 
 export function RailLines(props: RailLinesProps) {
-  const { order, pending, ready, dietFor, onOpenLine, onVoidLine, onRemoveLine, onQty, onRetry, onDrop, onNote } = props;
+  const { order, pending, ready, dietFor, onOpenLine, onVoidLine, onRemoveLine, onQty, onRetry, onDrop, onNote, courseName, clear } = props;
   const empty = (order?.lines.length ?? 0) === 0 && pending.length === 0;
   const orderNotes = order?.notes.filter((n) => n.scope === "order") ?? [];
   const paid = order?.tenders.some((t) => t.status !== "voided") ?? false;
@@ -53,6 +57,7 @@ export function RailLines(props: RailLinesProps) {
               key={line.id}
               line={line}
               diet={dietFor(line)}
+              course={courseName?.(line) ?? null}
               notes={order.notes}
               ready={ready.has(line.id)}
               paid={paid}
@@ -66,6 +71,18 @@ export function RailLines(props: RailLinesProps) {
             <PendingRow key={p.key} line={p} onRetry={onRetry} onDrop={onDrop} />
           ))}
         </ol>
+      )}
+      {clear && clear.count > 0 && (
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={clear.onClear}
+            className="inline-flex min-h-tap items-center gap-2 rounded-pill bg-danger-tint px-4 text-base font-semibold text-danger outline-offset-2 outline-line-focus hover:bg-danger-tint-hover focus-visible:outline-2"
+          >
+            <Trash2Icon aria-hidden="true" size={16} />
+            Clear
+          </button>
+        </div>
       )}
       {orderNotes.map((n) => (
         <p key={n.seq} className="mt-3 rounded border border-line bg-sunken p-3 text-sm text-fg-2">
@@ -87,6 +104,7 @@ export function RailLines(props: RailLinesProps) {
 interface OrderLineProps {
   line: LineResponse;
   diet: Diet | undefined;
+  course: string | null;
   notes: readonly NoteResponse[];
   ready: boolean;
   paid: boolean;
@@ -96,7 +114,7 @@ interface OrderLineProps {
   onQty: (next: number) => void;
 }
 
-function OrderLine({ line, diet, notes, ready, paid, onOpen, onVoid, onRemove, onQty }: OrderLineProps) {
+function OrderLine({ line, diet, course, notes, ready, paid, onOpen, onVoid, onRemove, onQty }: OrderLineProps) {
   const can = lineActions(line, paid);
   const voided = line.status === "voided";
   const mine = notes.filter((n) => n.scope === "line" && n.line_id === line.id);
@@ -129,6 +147,7 @@ function OrderLine({ line, diet, notes, ready, paid, onOpen, onVoid, onRemove, o
         {line.modifiers && line.modifiers.length > 0 && (
           <span className={cx("mt-1 block text-sm text-fg-muted", voided && "line-through")}>{modifierText(line.modifiers)}</span>
         )}
+        {course && <span className="mt-1 block text-sm font-semibold text-attention-text">{course}</span>}
         {mine.map((n) => (
           <span key={n.seq} className="mt-1 block text-sm text-fg-2">
             Note: {n.text}

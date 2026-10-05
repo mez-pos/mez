@@ -24,13 +24,14 @@ import { trouble } from "../print/print-queue";
 import { usePrintJobs } from "../print/use-print-jobs";
 import { ConnectionRetry } from "./ConnectionRetry";
 import { ConnectionWord } from "./ConnectionWord";
-import { landingFor } from "./landing";
 import { activeNav, activeWaiterNav, navItems } from "./nav-logic";
 import { NavPills } from "./NavPills";
 import { ProfileMenu } from "./ProfileMenu";
 import { route } from "./routes";
 import { StatusBar } from "./StatusBar";
 import { useTerminal } from "./terminal-context";
+import { useWaiterFrame } from "./use-waiter-frame";
+import { WaiterOrderBar } from "../waiter/WaiterOrderBar";
 import { WaiterNav } from "./WaiterNav";
 
 export function TerminalShell({ children }: { children: ReactNode }) {
@@ -42,18 +43,20 @@ export function TerminalShell({ children }: { children: ReactNode }) {
   const version = useServerVersion();
   const queue = usePrintJobs();
   const [printOpen, setPrintOpen] = useState(false);
+  const waiter = useWaiterFrame();
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
 
   const failing = trouble(queue.jobs);
   const canCloseShift = auth.permissions.includes("shift.manage") && Boolean(shift.shift);
-  // Whoever lands on the waiter's home works from the waiter's frame.
-  const waiter = landingFor(auth.staff.role, auth.permissions) === route.waiter;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas text-fg">
       <header className={cx("flex shrink-0 items-center gap-6 border-b border-line bg-chrome px-7", waiter ? "h-22" : "h-18")}>
         <Logo className="h-9" />
-        {waiter ? (
+        {waiter && path === route.order ? (
+          // Taking an order, the bar is the order's: where, how many, how served (T02).
+          <WaiterOrderBar />
+        ) : waiter ? (
           <WaiterNav active={activeWaiterNav(path)} onPrintQueue={() => setPrintOpen(true)} />
         ) : (
           <NavPills items={navItems(auth.permissions)} active={activeNav(path)} />

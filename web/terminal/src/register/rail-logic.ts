@@ -81,3 +81,13 @@ export function needsTable(order: { readonly table_id?: number } | undefined, op
 export function serviceLocked(orderId: string | null): boolean {
   return orderId !== null;
 }
+
+/**
+ * A line's course in words, for its small print (T02): the menu's name for the
+ * number, "Course 5" for one the menu no longer has, nothing for a line with no
+ * course.
+ */
+export function courseNamer(courses: readonly { readonly number: number; readonly name: string }[]): (course: number | undefined) => string | null {
+  const names = new Map(courses.map((c) => [c.number, c.name]));
+  return (course) => (course ? (names.get(course) ?? `Course ${course}`) : null);
+}

@@ -235,7 +235,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
 - [ ] **Task 12 - Waiter order taking.** T02, T04 (KOT preview). Split on
   2026-10-05: T02 is the order screen (D03) rearranged, and the preview and the
   course view are each a piece of their own.
-  - [ ] 12a. The waiter's order screen (T02): the top bar carries the way back, the
+  - [x] 12a. (ADR-165) The waiter's order screen (T02): the top bar carries the way back, the
     table, the guests and how it is served; the search sits over the categories;
     the rail has the table with its chips, each line's course, Clear, the totals,
     Save and Send to Kitchen. Pay moves under the rail's "...".

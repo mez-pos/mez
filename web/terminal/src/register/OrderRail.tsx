@@ -1,14 +1,20 @@
 // The 400px order rail (D03): where the order is and how many are at it, how it
 // is served, its lines, its totals, and Save Order and Pay. Everything the
 // design does not draw a button for is under the "..." (MoreActions).
+//
+// A waiter's rail (T02): how it is served is chosen in the top bar and shown
+// here as a chip, each line says its course, Clear takes off what the kitchen
+// has not seen, and the foot is Save and Send to Kitchen.
 
 import { ArmchairIcon, ChevronDownIcon, UsersIcon } from "lucide-react";
+import { useState } from "react";
 import type { Diet, LineResponse } from "../../../shared/api-types";
-import { Button, StatusChip } from "../../../shared/ui";
+import { Button, Confirm, StatusChip } from "../../../shared/ui";
+import { clearableLines } from "./cart-logic";
 import { MoreActions } from "./MoreActions";
 import { RailFooter } from "./RailFooter";
 import { RailLines } from "./RailLines";
-import { guestsText, needsTable, railTitle, serviceLocked, serviceOf } from "./rail-logic";
+import { guestsText, needsTable, railTitle, serviceLabels, serviceLocked, serviceOf } from "./rail-logic";
 import { ServiceControl } from "./ServiceControl";
 import { readyLines, sendPlan as planFor } from "./send-logic";
 import { chargeBlock as blockFor, chargeLabel as labelFor } from "../tender/tender-logic";
@@ -32,10 +38,18 @@ interface OrderRailProps {
   onPay: () => void;
   /** Says why an action the screen started was refused. */
   onFail: (what: string) => (err: unknown) => void;
+  /** The waiter's rail (T02). */
+  waiter?: boolean;
+  /** A line's course in words; the waiter's rail shows it. */
+  courseName?: (line: LineResponse) => string | null;
+  /** After Save has parked the order. */
+  onSaved?: () => void;
 }
 
 export function OrderRail(props: OrderRailProps) {
   const { ticket, currency, names, dietFor, onOpenLine, onVoidLine, onNote, onDiscount, onOrders, onHistory, onPastBills, onTables, onPay, onFail } = props;
+  const { waiter = false, courseName, onSaved } = props;
+  const [clearing, setClearing] = useState(false);
   const { order, orderId, opening } = ticket;
   const plan = planFor(order);
   const service = serviceOf(order, opening);
@@ -44,7 +58,21 @@ export function OrderRail(props: OrderRailProps) {
   const guests = guestsText(where.covers);
   const held = order?.status === "held";
   const live = order?.lines.some((l) => l.status === "active") ?? false;
-  const pickTable = needsTable(order, opening, service);
+  // The waiter's top bar is where a table is picked; the rail only says where.
+  const pickTable = !waiter && needsTable(order, opening, service);
+  const chargeBlock = blockFor(order, ticket.pending.length);
+  const chargeLabel = labelFor(order);
+  const clearable = clearableLines(order);
+
+  /** Clear: each line the kitchen has not seen, taken off in turn as its own bin would. */
+  const clear = async () => {
+    setClearing(false);
+    try {
+      for (const line of clearable) await ticket.removeLine(line.id);
+    } catch (err) {
+      onFail("Couldn't clear the order")(err);
+    }
+  };
 
   const chooseService = (next: ServiceType) => {
     if (next !== service) ticket.startNew({ ...opening, service: next });
@@ -75,6 +103,11 @@ export function OrderRail(props: OrderRailProps) {
             {guests}
           </span>
         )}
+        {waiter && (
+          <span className="inline-flex min-h-8 items-center rounded-pill bg-chip-success-bg px-3 text-sm font-bold text-chip-success-fg">
+            {serviceLabels[service]}
+          </span>
+        )}
         <MoreActions
           orderCount={Math.max(ticket.open?.orders.length ?? 0, orderId ? 1 : 0)}
           hasOrder={orderId !== null}
@@ -85,12 +118,15 @@ export function OrderRail(props: OrderRailProps) {
           onDiscount={onDiscount}
           onFire={(course) => ticket.fire(course).catch(onFail(`Couldn't fire course ${course}`))}
           onPastBills={onPastBills}
+          {...(waiter ? { pay: { label: chargeLabel === "Pay" ? "Bill and pay" : chargeLabel, blocked: chargeBlock !== null, onPay } } : {})}
         />
       </header>
 
-      <div className="border-b border-line px-5 py-3.5">
-        <ServiceControl value={service} locked={serviceLocked(orderId)} onChange={chooseService} />
-      </div>
+      {!waiter && (
+        <div className="border-b border-line px-5 py-3.5">
+          <ServiceControl value={service} locked={serviceLocked(orderId)} onChange={chooseService} />
+        </div>
+      )}
 
       {held && (
         <div role="status" className="flex items-center justify-between gap-3 border-b border-line bg-raised px-5 py-3">
@@ -113,18 +149,30 @@ export function OrderRail(props: OrderRailProps) {
         onRetry={ticket.retry}
         onDrop={ticket.remove}
         onNote={onNote}
+        {...(waiter && courseName ? { courseName } : {})}
+        {...(waiter && !held ? { clear: { count: clearable.length, onClear: () => setClearing(true) } } : {})}
       />
 
       <RailFooter
         order={order}
         currency={currency}
         sendPlan={plan}
-        chargeBlock={blockFor(order, ticket.pending.length)}
-        chargeLabel={labelFor(order)}
+        chargeBlock={chargeBlock}
+        chargeLabel={chargeLabel}
         onSend={() => ticket.send().catch(onFail("Couldn't send"))}
-        onSave={() => ticket.hold().catch(onFail("Couldn't save"))}
+        onSave={() =>
+          ticket
+            .hold()
+            .then(() => onSaved?.())
+            .catch(onFail("Couldn't save"))
+        }
         onPay={onPay}
+        waiter={waiter}
       />
+
+      <Confirm open={clearing} onClose={() => setClearing(false)} onConfirm={() => void clear()} title="Clear the order?" confirmLabel="Clear" tone="danger">
+        {clearable.length === 1 ? "The 1 item" : `The ${clearable.length} items`} the kitchen has not seen will be taken off. Anything already sent stays.
+      </Confirm>
     </aside>
   );
 }

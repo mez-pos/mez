@@ -19,11 +19,13 @@ interface ItemGridProps {
   iconFor: (item: MenuItemResponse) => CategoryIconKey;
   onTap: (item: MenuItemResponse, tap: CardTap) => void;
   soldOut: (item: MenuItemResponse) => boolean;
+  /** Narrower cards, so three fit beside the waiter's rail at 1366 wide (T02). */
+  dense?: boolean;
 }
 
-export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut }: ItemGridProps) {
+export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = false }: ItemGridProps) {
   return (
-    <ul className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-4">
+    <ul className={cx("grid gap-4", dense ? "grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]" : "grid-cols-[repeat(auto-fill,minmax(15rem,1fr))]")}>
       {items.map((item) => {
         const choices = choiceCount(groupsFor(item));
         const gone = soldOut(item);
