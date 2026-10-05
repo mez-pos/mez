@@ -1,6 +1,7 @@
 package stock
 
 import (
+	"cmp"
 	"slices"
 	"strconv"
 )
@@ -30,62 +31,73 @@ type Recipes struct {
 	Modifiers map[int64][]Part
 }
 
-// Usage is how much of each stock item the lines used, by stock item id.
+// Use is a stock item used for a dish. ItemID is the menu item the stock
+// went into; a modifier's stock is its line's item's. Zero is "no dish":
+// stock taken before the ledger kept the dish (rebuild Task 16d3, ADR-189).
+type Use struct {
+	StockItemID int64
+	ItemID      int64
+}
+
+// Usage is how much of each stock item the lines used, and for which dish.
 // An item or modifier with no recipe uses nothing.
-func Usage(lines []SoldLine, r Recipes) map[int64]Qty {
-	out := map[int64]Qty{}
-	add := func(parts []Part, n int64) {
-		for _, p := range parts {
-			out[p.StockItemID] += p.Qty * Qty(n)
-		}
-	}
+func Usage(lines []SoldLine, r Recipes) map[Use]Qty {
+	out := map[Use]Qty{}
 	for _, l := range lines {
 		if l.Qty <= 0 {
 			continue
 		}
-		add(r.Items[l.ItemID], l.Qty)
+		add := func(parts []Part) {
+			for _, p := range parts {
+				out[Use{StockItemID: p.StockItemID, ItemID: l.ItemID}] += p.Qty * Qty(l.Qty)
+			}
+		}
+		add(r.Items[l.ItemID])
 		for _, m := range l.ModifierIDs {
-			add(r.Modifiers[m], l.Qty)
+			add(r.Modifiers[m])
 		}
 	}
-	for id, q := range out {
+	for u, q := range out {
 		if q == 0 {
-			delete(out, id)
+			delete(out, u)
 		}
 	}
 	return out
 }
 
 // SaleDelta is one sold movement to write: the ledger delta for a stock
-// item, negative when the sale used more.
+// item on account of a dish, negative when the sale used more.
 type SaleDelta struct {
 	StockItemID int64
+	ItemID      int64
 	Delta       Qty
 }
 
 // SaleDeltas is what to write so an order's sold movements add up to its
-// usage: usage less what was already deducted for it, per stock item,
-// in stock item order. deducted is the stock already taken by the order's
-// earlier sold movements, as a positive amount.
+// usage: usage less what was already deducted for it, per stock item and
+// dish, in stock item order and then by dish. deducted is the stock already
+// taken by the order's earlier sold movements, as a positive amount.
 //
 // It makes closing an order idempotent: a second close with the same lines
 // writes nothing, and a close after a reopen that voided a line writes a
 // positive delta that puts its stock back.
-func SaleDeltas(usage, deducted map[int64]Qty) []SaleDelta {
-	ids := make([]int64, 0, len(usage)+len(deducted))
-	for id := range usage {
-		ids = append(ids, id)
+func SaleDeltas(usage, deducted map[Use]Qty) []SaleDelta {
+	uses := make([]Use, 0, len(usage)+len(deducted))
+	for u := range usage {
+		uses = append(uses, u)
 	}
-	for id := range deducted {
-		if _, ok := usage[id]; !ok {
-			ids = append(ids, id)
+	for u := range deducted {
+		if _, ok := usage[u]; !ok {
+			uses = append(uses, u)
 		}
 	}
-	slices.Sort(ids)
+	slices.SortFunc(uses, func(a, b Use) int {
+		return cmp.Or(cmp.Compare(a.StockItemID, b.StockItemID), cmp.Compare(a.ItemID, b.ItemID))
+	})
 	var out []SaleDelta
-	for _, id := range ids {
-		if d := deducted[id] - usage[id]; d != 0 {
-			out = append(out, SaleDelta{StockItemID: id, Delta: d})
+	for _, u := range uses {
+		if d := deducted[u] - usage[u]; d != 0 {
+			out = append(out, SaleDelta{StockItemID: u.StockItemID, ItemID: u.ItemID, Delta: d})
 		}
 	}
 	return out

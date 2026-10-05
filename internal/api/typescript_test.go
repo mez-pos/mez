@@ -200,6 +200,7 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(audit.PersonTally{}):       "AuditPersonTally",
 			reflect.TypeOf(audit.Analysis{}):          "AuditAnalysis",
 			reflect.TypeOf(reports.Sales{}):           "SalesReport",
+			reflect.TypeOf(reports.Items{}):           "ItemsReport",
 			reflect.TypeOf(report.Point{}):            "SalesPoint",
 			reflect.TypeOf(report.Hour{}):             "SalesHour",
 			reflect.TypeOf(order.CreditRequest{}):     "CreditSelection",
@@ -264,6 +265,7 @@ func generate() (*ts.Generator, error) {
 		{"AuditAnalysisSheet", audit.SheetReason, asStrings(audit.AnalysisSheets())},
 		{"ReportEvery", report.Day, asStrings(report.Everys())},
 		{"ReportSheet", report.SheetSummary, asStrings(report.Sheets())},
+		{"Costing", report.CostFull, asStrings(report.Costings())},
 		{"OrderEventType", order.TypeOrderOpened, eventTypeNames()},
 		{"StreamMessageType", hub.MsgHello, asStrings([]hub.MessageType{
 			hub.MsgHello, hub.MsgSubscribe, hub.MsgWelcome, hub.MsgEvent, hub.MsgCaughtUp,
@@ -335,7 +337,7 @@ func generate() (*ts.Generator, error) {
 		// The audit trail.
 		audit.Person{}, audit.Entry{}, audit.Page{}, audit.Analysis{},
 		// The range reports.
-		reports.Sales{},
+		reports.Sales{}, reports.Items{},
 		// The floor plan.
 		areaRequest{}, tableRequest{}, gridResponse{}, areaResponse{}, tableResponse{}, floorResponse{},
 		liveTableResponse{}, liveFloorResponse{},

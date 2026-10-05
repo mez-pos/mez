@@ -51,10 +51,11 @@ WHERE venue_id = ? AND stock_item_id = ?;
 -- forget it and none can pass another (ADR-124).
 INSERT INTO stock_movements (
     venue_id, stock_item_id, kind, delta, counted, reason, note, staff_id, shift_id, order_id, closing, created_at,
-    unit_cost
+    menu_item_id, unit_cost
 ) VALUES (
     sqlc.arg(venue_id), sqlc.arg(stock_item_id), sqlc.arg(kind), sqlc.arg(delta), sqlc.arg(counted), sqlc.arg(reason),
     sqlc.arg(note), sqlc.arg(staff_id), sqlc.arg(shift_id), sqlc.arg(order_id), sqlc.arg(closing), sqlc.arg(created_at),
+    sqlc.arg(menu_item_id),
     (SELECT i.cost FROM stock_items i WHERE i.venue_id = sqlc.arg(venue_id) AND i.id = sqlc.arg(stock_item_id))
 )
 RETURNING id;
@@ -107,12 +108,13 @@ SELECT id FROM modifiers WHERE venue_id = ? AND id = ?;
 
 -- name: SoldForOrder :many
 --
--- What an order's sold movements have taken so far, per stock item, as a
--- positive amount.
-SELECT stock_item_id, CAST(-SUM(delta) AS INTEGER) AS taken
+-- What an order's sold movements have taken so far, per stock item and
+-- the dish it went into (0 for stock taken before the dish was kept,
+-- ADR-189), as a positive amount.
+SELECT stock_item_id, menu_item_id, CAST(-SUM(delta) AS INTEGER) AS taken
 FROM stock_movements
 WHERE venue_id = ? AND order_id = ? AND kind = 'sold'
-GROUP BY stock_item_id;
+GROUP BY stock_item_id, menu_item_id;
 
 -- Closing stock (Task 3d, ADR-114).
 
@@ -157,3 +159,26 @@ JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
 WHERE m.venue_id = sqlc.arg(venue_id) AND m.kind = 'wasted'
   AND m.created_at >= sqlc.arg(from_at) AND m.created_at < sqlc.arg(to_at)
 ORDER BY m.created_at, m.id;
+
+-- name: SoldBetween :many
+--
+-- The stock sales took between two instants (rebuild Task 16d3, ADR-189),
+-- oldest first: the dish it went into (0 when the ledger did not keep it),
+-- the delta (below zero for stock taken, above for stock put back) and the
+-- cost the stock had then, 0 for not known (ADR-124).
+SELECT m.menu_item_id, i.unit, m.delta, m.unit_cost, m.created_at
+FROM stock_movements m
+JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
+WHERE m.venue_id = sqlc.arg(venue_id) AND m.kind = 'sold'
+  AND m.created_at >= sqlc.arg(from_at) AND m.created_at < sqlc.arg(to_at)
+ORDER BY m.created_at, m.id;
+
+-- name: FirstSoldByDish :many
+--
+-- When the ledger first kept the dish on a sale: the oldest such movement,
+-- or no row for a venue that has none yet.
+SELECT created_at
+FROM stock_movements
+WHERE venue_id = ? AND kind = 'sold' AND menu_item_id != 0
+ORDER BY created_at, id
+LIMIT 1;

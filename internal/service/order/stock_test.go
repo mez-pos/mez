@@ -174,6 +174,21 @@ func TestACloseTakesWhatTheOrderUsed(t *testing.T) {
 		}
 	}
 
+	// Each movement keeps the dish its stock went into, a choice's stock
+	// going to its line's dish (ADR-189): batter to the dosa, the rest to
+	// the coffee.
+	dishOf := map[string]int64{"batter": k.dosa, "powder": k.coffee, "milk": k.coffee, "oat milk": k.coffee}
+	for name, dish := range dishOf {
+		var got int64
+		if err := k.d.Writer().QueryRowContext(ctx,
+			`SELECT menu_item_id FROM stock_movements WHERE order_id = ? AND stock_item_id = ?`, id, k.stock[name]).Scan(&got); err != nil {
+			t.Fatal(err)
+		}
+		if got != dish {
+			t.Errorf("%s went to dish %d, want %d", name, got, dish)
+		}
+	}
+
 	// Reopened and closed again with the same lines: nothing more is taken.
 	must(t)(k.s.Reopen(ctx, k.m, id, Reopen{Reason: "wrong tender", AuthorisedBy: k.staffID}))
 	must(t)(k.s.Close(ctx, k.m, id))

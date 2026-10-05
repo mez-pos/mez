@@ -137,7 +137,8 @@ type Sale struct {
 // equal its usage, inside q's transaction: the order service calls it as
 // the order closes, so the stock goes with the close or not at all
 // (ADR-112). It reads the recipes as they are now. Closing again with the
-// same lines writes nothing; a line voided after a reopen is put back.
+// same lines writes nothing; a line voided after a reopen is put back. Each
+// movement keeps the dish its stock went into (ADR-189).
 func DeductSale(ctx context.Context, q *gen.Queries, sale Sale) error {
 	recipes, err := readRecipes(ctx, q, sale.VenueID)
 	if err != nil {
@@ -147,9 +148,9 @@ func DeductSale(ctx context.Context, q *gen.Queries, sale Sale) error {
 	if err != nil {
 		return fmt.Errorf("stock: reading what order %d has taken: %w", sale.OrderID, err)
 	}
-	taken := make(map[int64]stock.Qty, len(rows))
+	taken := make(map[stock.Use]stock.Qty, len(rows))
 	for _, r := range rows {
-		taken[r.StockItemID] = stock.Qty(r.Taken)
+		taken[stock.Use{StockItemID: r.StockItemID, ItemID: r.MenuItemID}] = stock.Qty(r.Taken)
 	}
 	deltas := stock.SaleDeltas(stock.Usage(sale.Lines, recipes), taken)
 	if len(deltas) == 0 {
@@ -162,7 +163,7 @@ func DeductSale(ctx context.Context, q *gen.Queries, sale Sale) error {
 	for _, d := range deltas {
 		if _, err := q.InsertStockMovement(ctx, gen.InsertStockMovementParams{
 			VenueID: sale.VenueID, StockItemID: d.StockItemID, Kind: string(stock.Sold), Delta: int64(d.Delta),
-			StaffID: sale.StaffID, ShiftID: shiftID, OrderID: sale.OrderID, CreatedAt: sale.At.UTC(),
+			StaffID: sale.StaffID, ShiftID: shiftID, OrderID: sale.OrderID, CreatedAt: sale.At.UTC(), MenuItemID: d.ItemID,
 		}); err != nil {
 			return fmt.Errorf("stock: recording what order %d used of %d: %w", sale.OrderID, d.StockItemID, err)
 		}

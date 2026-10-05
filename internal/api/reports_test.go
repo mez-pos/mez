@@ -98,3 +98,45 @@ func TestTheSalesReportsOverHTTP(t *testing.T) {
 		})
 	}
 }
+
+func TestTheItemsReportOverHTTP(t *testing.T) {
+	w := newTill(t)
+	rs, err := reports.New(w.db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.rebuild(t, WithReports(rs))
+	owner := w.asStaff(w.signInAs(t, "stf_PRIYA001", "2468").Token)
+	const base = "/api/v1/reports/items"
+
+	rec := send(w.handler, http.MethodGet, base+"?from=2026-09-01&to=2026-09-30", "", owner)
+	var got reports.Items
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &got) != nil {
+		t.Fatalf("items: %d %s", rec.Code, rec.Body)
+	}
+	if got.From != "2026-09-01" || got.To != "2026-09-30" || got.Currency != "INR" || got.Items == nil || got.Short || got.KeptFrom != "" {
+		t.Errorf("a quiet September: %s", rec.Body)
+	}
+	if rec.Header().Get("Cache-Control") != "no-store" {
+		t.Error("the report may be cached")
+	}
+
+	refusals := []struct {
+		name, path string
+		headers    map[string]string
+		status     int
+		code       ErrorCode
+	}{
+		{"no range", base, owner, http.StatusBadRequest, CodeInvalidFilter},
+		{"backwards", base + "?from=2026-09-30&to=2026-09-01", owner, http.StatusBadRequest, CodeInvalidFilter},
+		{"nobody signed in", base + "?from=2026-09-01&to=2026-09-30", nil, http.StatusUnauthorized, CodeUnauthenticated},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := send(w.handler, http.MethodGet, tt.path, "", tt.headers)
+			if rec.Code != tt.status || errorOf(t, rec).Code != tt.code {
+				t.Errorf("%d %s, want %d %s", rec.Code, rec.Body, tt.status, tt.code)
+			}
+		})
+	}
+}

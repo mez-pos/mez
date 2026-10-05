@@ -181,6 +181,10 @@ type Querier interface {
 	ExportsForShift(ctx context.Context, shiftID int64) ([]ExportsForShiftRow, error)
 	// Records how a send went. Only a job still printing can finish.
 	FinishPrintJob(ctx context.Context, arg FinishPrintJobParams) (int64, error)
+	//
+	// When the ledger first kept the dish on a sale: the oldest such movement,
+	// or no row for a venue that has none yet.
+	FirstSoldByDish(ctx context.Context, venueID int64) ([]time.Time, error)
 	FloorVersion(ctx context.Context, venueID int64) (int64, error)
 	GroupForEdit(ctx context.Context, arg GroupForEditParams) (GroupForEditRow, error)
 	// Idempotency keys. Read and written only inside the transaction that
@@ -365,8 +369,15 @@ type Querier interface {
 	// Which shift each of an order's events was recorded in, by seq.
 	ShiftOfOrderEvents(ctx context.Context, orderID int64) ([]ShiftOfOrderEventsRow, error)
 	//
-	// What an order's sold movements have taken so far, per stock item, as a
-	// positive amount.
+	// The stock sales took between two instants (rebuild Task 16d3, ADR-189),
+	// oldest first: the dish it went into (0 when the ledger did not keep it),
+	// the delta (below zero for stock taken, above for stock put back) and the
+	// cost the stock had then, 0 for not known (ADR-124).
+	SoldBetween(ctx context.Context, arg SoldBetweenParams) ([]SoldBetweenRow, error)
+	//
+	// What an order's sold movements have taken so far, per stock item and
+	// the dish it went into (0 for stock taken before the dish was kept,
+	// ADR-189), as a positive amount.
 	SoldForOrder(ctx context.Context, arg SoldForOrderParams) ([]SoldForOrderRow, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
 	StaffCountByRole(ctx context.Context, venueID int64) ([]StaffCountByRoleRow, error)

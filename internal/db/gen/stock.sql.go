@@ -235,13 +235,47 @@ func (q *Queries) CreateStockItem(ctx context.Context, arg CreateStockItemParams
 	return id, err
 }
 
+const firstSoldByDish = `-- name: FirstSoldByDish :many
+SELECT created_at
+FROM stock_movements
+WHERE venue_id = ? AND kind = 'sold' AND menu_item_id != 0
+ORDER BY created_at, id
+LIMIT 1
+`
+
+// When the ledger first kept the dish on a sale: the oldest such movement,
+// or no row for a venue that has none yet.
+func (q *Queries) FirstSoldByDish(ctx context.Context, venueID int64) ([]time.Time, error) {
+	rows, err := q.db.QueryContext(ctx, firstSoldByDish, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []time.Time{}
+	for rows.Next() {
+		var created_at time.Time
+		if err := rows.Scan(&created_at); err != nil {
+			return nil, err
+		}
+		items = append(items, created_at)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertStockMovement = `-- name: InsertStockMovement :one
 INSERT INTO stock_movements (
     venue_id, stock_item_id, kind, delta, counted, reason, note, staff_id, shift_id, order_id, closing, created_at,
-    unit_cost
+    menu_item_id, unit_cost
 ) VALUES (
     ?1, ?2, ?3, ?4, ?5, ?6,
     ?7, ?8, ?9, ?10, ?11, ?12,
+    ?13,
     (SELECT i.cost FROM stock_items i WHERE i.venue_id = ?1 AND i.id = ?2)
 )
 RETURNING id
@@ -260,6 +294,7 @@ type InsertStockMovementParams struct {
 	OrderID     int64
 	Closing     bool
 	CreatedAt   time.Time
+	MenuItemID  int64
 }
 
 // unit_cost is the item's cost as it stands, read here so no caller can
@@ -278,6 +313,7 @@ func (q *Queries) InsertStockMovement(ctx context.Context, arg InsertStockMoveme
 		arg.OrderID,
 		arg.Closing,
 		arg.CreatedAt,
+		arg.MenuItemID,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -454,11 +490,67 @@ func (q *Queries) SetStockItemActive(ctx context.Context, arg SetStockItemActive
 	return result.RowsAffected()
 }
 
+const soldBetween = `-- name: SoldBetween :many
+SELECT m.menu_item_id, i.unit, m.delta, m.unit_cost, m.created_at
+FROM stock_movements m
+JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
+WHERE m.venue_id = ?1 AND m.kind = 'sold'
+  AND m.created_at >= ?2 AND m.created_at < ?3
+ORDER BY m.created_at, m.id
+`
+
+type SoldBetweenParams struct {
+	VenueID int64
+	FromAt  time.Time
+	ToAt    time.Time
+}
+
+type SoldBetweenRow struct {
+	MenuItemID int64
+	Unit       string
+	Delta      int64
+	UnitCost   int64
+	CreatedAt  time.Time
+}
+
+// The stock sales took between two instants (rebuild Task 16d3, ADR-189),
+// oldest first: the dish it went into (0 when the ledger did not keep it),
+// the delta (below zero for stock taken, above for stock put back) and the
+// cost the stock had then, 0 for not known (ADR-124).
+func (q *Queries) SoldBetween(ctx context.Context, arg SoldBetweenParams) ([]SoldBetweenRow, error) {
+	rows, err := q.db.QueryContext(ctx, soldBetween, arg.VenueID, arg.FromAt, arg.ToAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SoldBetweenRow{}
+	for rows.Next() {
+		var i SoldBetweenRow
+		if err := rows.Scan(
+			&i.MenuItemID,
+			&i.Unit,
+			&i.Delta,
+			&i.UnitCost,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const soldForOrder = `-- name: SoldForOrder :many
-SELECT stock_item_id, CAST(-SUM(delta) AS INTEGER) AS taken
+SELECT stock_item_id, menu_item_id, CAST(-SUM(delta) AS INTEGER) AS taken
 FROM stock_movements
 WHERE venue_id = ? AND order_id = ? AND kind = 'sold'
-GROUP BY stock_item_id
+GROUP BY stock_item_id, menu_item_id
 `
 
 type SoldForOrderParams struct {
@@ -468,11 +560,13 @@ type SoldForOrderParams struct {
 
 type SoldForOrderRow struct {
 	StockItemID int64
+	MenuItemID  int64
 	Taken       int64
 }
 
-// What an order's sold movements have taken so far, per stock item, as a
-// positive amount.
+// What an order's sold movements have taken so far, per stock item and
+// the dish it went into (0 for stock taken before the dish was kept,
+// ADR-189), as a positive amount.
 func (q *Queries) SoldForOrder(ctx context.Context, arg SoldForOrderParams) ([]SoldForOrderRow, error) {
 	rows, err := q.db.QueryContext(ctx, soldForOrder, arg.VenueID, arg.OrderID)
 	if err != nil {
@@ -482,7 +576,7 @@ func (q *Queries) SoldForOrder(ctx context.Context, arg SoldForOrderParams) ([]S
 	items := []SoldForOrderRow{}
 	for rows.Next() {
 		var i SoldForOrderRow
-		if err := rows.Scan(&i.StockItemID, &i.Taken); err != nil {
+		if err := rows.Scan(&i.StockItemID, &i.MenuItemID, &i.Taken); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

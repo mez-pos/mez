@@ -22,6 +22,7 @@ import (
 	"github.com/byjoellobo/mez/internal/domain/zreport"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
 	svcshift "github.com/byjoellobo/mez/internal/service/shift"
+	svcstock "github.com/byjoellobo/mez/internal/service/stock"
 )
 
 // ErrBadRange is a range the reports cannot be read over.
@@ -110,6 +111,63 @@ func (s *Service) Sales(ctx context.Context, venueID int64, qy Query) (Sales, er
 		return Sales{}, err
 	}
 	return named(res, staff), nil
+}
+
+// Items is what each item sold over a range and what it cost to make.
+type Items struct {
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Currency string `json:"currency"`
+	// Items are the report's items, the largest sales first.
+	Items []report.ItemMargin `json:"items"`
+	// KeptFrom is the trading day the stock ledger first kept the dish on a
+	// sale, or "" when it never has: before it no dish has a cost.
+	KeptFrom string `json:"kept_from,omitempty"`
+	// Short says the range has sales from before then, so no cost in it is
+	// taken as whole and no margin is given.
+	Short bool `json:"short"`
+}
+
+// Items reads a range's items with their cost and margin (rebuild Task
+// 16d3, ADR-189). The sales are the sales report's own; the cost is what the
+// stock ledger moved for each dish, at the cost it had then.
+func (s *Service) Items(ctx context.Context, venueID int64, qy Query) (Items, error) {
+	sales, err := s.Sales(ctx, venueID, qy)
+	if err != nil {
+		return Items{}, err
+	}
+	q := s.db.Queries()
+	v, err := q.VenueByID(ctx, venueID)
+	if err != nil {
+		return Items{}, fmt.Errorf("reports: reading venue %d: %w", venueID, err)
+	}
+	loc, err := time.LoadLocation(v.Timezone)
+	if err != nil {
+		return Items{}, fmt.Errorf("reports: venue timezone %q: %w", v.Timezone, err)
+	}
+	dayStart, err := svcshift.DayStart(ctx, q, venueID)
+	if err != nil {
+		return Items{}, fmt.Errorf("reports: %w", err)
+	}
+	costs, err := svcstock.CostByDish(ctx, q, svcstock.DishRange{
+		VenueID: venueID, From: sales.From, To: sales.To, Loc: loc, DayStart: dayStart, Currency: v.Currency,
+	})
+	if errors.Is(err, svcstock.ErrBadRange) {
+		// The sales report takes a longer range than the stock ledger is read over.
+		return Items{}, fmt.Errorf("%w: %v", ErrBadRange, err)
+	}
+	if err != nil {
+		return Items{}, fmt.Errorf("reports: %w", err)
+	}
+	byKey := make(map[string]report.DishCost, len(costs.Dishes))
+	for id, c := range costs.Dishes {
+		byKey[strconv.FormatInt(id, 10)] = report.DishCost{Cost: c.Cost, Movements: c.Movements, Uncosted: c.Uncosted}
+	}
+	short := costs.NoDish > 0
+	return Items{
+		From: sales.From, To: sales.To, Currency: v.Currency,
+		Items: report.Margins(sales.Totals.ByItem, byKey, short), KeptFrom: costs.KeptFrom, Short: short,
+	}, nil
 }
 
 // SalesTable is one of a range's reports as a table, for a CSV download

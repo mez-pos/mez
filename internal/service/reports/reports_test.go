@@ -13,8 +13,10 @@ import (
 	"github.com/byjoellobo/mez/internal/domain/money"
 	"github.com/byjoellobo/mez/internal/domain/order"
 	"github.com/byjoellobo/mez/internal/domain/report"
+	"github.com/byjoellobo/mez/internal/domain/stock"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
 	svcshift "github.com/byjoellobo/mez/internal/service/shift"
+	svcstock "github.com/byjoellobo/mez/internal/service/stock"
 )
 
 var kolkata, _ = time.LoadLocation("Asia/Kolkata")
@@ -289,5 +291,59 @@ func TestADayStartThatIsNotATimeRefusesTheRange(t *testing.T) {
 	_, err := f.s.Sales(context.Background(), 1, Query{From: "2026-10-01", To: "2026-10-01"})
 	if !errors.Is(err, svcshift.ErrVenueConfig) {
 		t.Fatalf("err = %v, want ErrVenueConfig", err)
+	}
+}
+
+// An item's cost is what the stock ledger moved for it, and its margin its
+// net sales less that (ADR-189). A dosa uses 150 g of batter at 80.00 a kg:
+// 12.00 each.
+func TestItemsWithTheirCostAndMargin(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	if _, err := f.db.CreateMenu(ctx, 1, db.MenuSpec{
+		Stations:   []db.StationSpec{{Code: "kitchen", Name: "Kitchen"}},
+		Courses:    []db.CourseSpec{{Number: 1, Name: "Mains"}},
+		TaxClasses: []db.TaxClassSpec{{Name: "Food", Rate: 0}},
+		Categories: []db.CategorySpec{{Name: "Tiffin", Items: []db.ItemSpec{{Name: "Dosa", Price: 12000, TaxClass: "Food", Station: "kitchen", Course: 1}}}},
+	}, *f.now); err != nil {
+		t.Fatal(err)
+	}
+	st, err := svcstock.New(f.db, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	batter, err := st.CreateItem(ctx, 1, svcstock.ItemInput{Name: "Batter", Unit: stock.Gram, Cost: inr(8000)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.SetItemRecipe(ctx, 1, 1, []svcstock.RecipePart{{StockItemID: batter, Qty: 150 * stock.PerUnit}}); err != nil {
+		t.Fatal(err)
+	}
+	f.sell(t, ist(1, 12, 0), f.asha, order.ChannelCounter, "Dosa", 12000)
+	f.sell(t, ist(1, 13, 0), f.asha, order.ChannelCounter, "Dosa", 12000)
+
+	got, err := f.s.Items(ctx, 1, Query{From: "2026-10-01", To: "2026-10-01"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.KeptFrom != "2026-10-01" || got.Short || got.Currency != "INR" || len(got.Items) != 1 {
+		t.Fatalf("items %+v", got)
+	}
+	it := got.Items[0]
+	if it.Costing != report.CostFull || it.Qty != 2 || it.Net != inr(24000) || it.Cost == nil || *it.Cost != inr(2400) ||
+		it.Margin == nil || *it.Margin != inr(21600) || it.MarginBP == nil || *it.MarginBP != 9000 {
+		t.Errorf("dosa = %+v (cost %v, margin %v); want 240.00 net, 24.00 cost, 216.00 margin at 90%%", it, it.Cost, it.Margin)
+	}
+
+	// A day with no sales has no items, and still says from when dishes are kept.
+	quiet, err := f.s.Items(ctx, 1, Query{From: "2026-10-03", To: "2026-10-03"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if quiet.Items == nil || len(quiet.Items) != 0 || quiet.KeptFrom != "2026-10-01" {
+		t.Errorf("a quiet day: %+v", quiet)
+	}
+	if _, err := f.s.Items(ctx, 1, Query{From: "2026-10-03", To: "2026-10-01"}); !errors.Is(err, ErrBadRange) {
+		t.Errorf("a backwards range: %v", err)
 	}
 }

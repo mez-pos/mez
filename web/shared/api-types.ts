@@ -334,6 +334,11 @@ export type ReportSheet =
   | 'taxes'
   | 'hours';
 
+export type Costing =
+  | 'full'
+  | 'part'
+  | 'none';
+
 export type OrderEventType =
   | 'order.opened'
   | 'line.added'
@@ -1836,6 +1841,26 @@ export interface SalesHour {
   hour: number;
   bills: number;
   total: Money;
+}
+
+export interface ItemsReport {
+  from: string;
+  to: string;
+  currency: string;
+  items: ItemMargin[];
+  kept_from?: string;
+  short: boolean;
+}
+
+export interface ItemMargin {
+  key: string;
+  name: string;
+  qty: number;
+  net: Money;
+  costing: Costing;
+  cost?: Money;
+  margin?: Money;
+  margin_bp?: number;
 }
 
 export interface AreaSettings {

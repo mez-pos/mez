@@ -16,6 +16,7 @@ import (
 type Reports interface {
 	Sales(ctx context.Context, venueID int64, q reports.Query) (reports.Sales, error)
 	SalesTable(ctx context.Context, venueID int64, q reports.Query, sheet report.Sheet) (export.Table, error)
+	Items(ctx context.Context, venueID int64, q reports.Query) (reports.Items, error)
 }
 
 // WithReports mounts the range reports. It needs WithDevices and WithStaff,
@@ -29,6 +30,7 @@ func (s *Server) mountReports(mux *http.ServeMux) {
 		return
 	}
 	mux.Handle("GET /api/v1/reports/sales", s.requireDevice(s.requireStaff(s.requirePermission(auth.PermReportsView, http.HandlerFunc(s.readSales)))))
+	mux.Handle("GET /api/v1/reports/items", s.requireDevice(s.requireStaff(s.requirePermission(auth.PermReportsView, http.HandlerFunc(s.readItems)))))
 	mux.Handle("GET /api/v1/reports/sales/csv", s.requireDevice(s.requireStaff(s.requirePermission(auth.PermReportsView, http.HandlerFunc(s.readSalesCSV)))))
 }
 
@@ -47,6 +49,24 @@ func (s *Server) readSales(w http.ResponseWriter, r *http.Request) {
 		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
 	case err != nil:
 		s.log.Error("reading the sales reports failed", "request_id", RequestID(r.Context()), "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+	default:
+		w.Header().Set("Cache-Control", "no-store")
+		writeJSON(w, s.log, http.StatusOK, res)
+	}
+}
+
+// readItems answers ?from=2026-10-01&to=2026-10-07, both trading days and
+// required, with each item sold in them beside what it cost to make and
+// its margin (rebuild Task 16d3, ADR-189). Bounded by the menu, so whole.
+func (s *Server) readItems(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	res, err := s.reports.Items(r.Context(), Meta(r).VenueID, reports.Query{From: q.Get("from"), To: q.Get("to"), Every: report.Month})
+	switch {
+	case errors.Is(err, reports.ErrBadRange):
+		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
+	case err != nil:
+		s.log.Error("reading the items report failed", "request_id", RequestID(r.Context()), "error", err)
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 	default:
 		w.Header().Set("Cache-Control", "no-store")

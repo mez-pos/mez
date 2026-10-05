@@ -403,6 +403,7 @@ type StockMovement struct {
 	CreatedAt   time.Time
 	Closing     bool
 	UnitCost    int64
+	MenuItemID  int64
 }
 
 type Table struct {
