@@ -57,10 +57,11 @@ type Period struct {
 	End   string `json:"end"`
 }
 
-// Point is a period's sales.
+// Point is a period's sales, and those sales by how they were served.
 type Point struct {
 	Period
-	Sales zreport.Sales `json:"sales"`
+	Sales     zreport.Sales   `json:"sales"`
+	ByService []zreport.Group `json:"by_service"`
 }
 
 // Hour is one cell of the heatmap: the bills invoiced on one weekday of
@@ -124,7 +125,8 @@ func Build(in Input) (Result, error) {
 
 	out := Result{From: r.From, To: r.To, Every: r.Every, Totals: reports[totalKey], Series: make([]Point, 0, len(periods)), Hours: []Hour{}}
 	for _, p := range periods {
-		out.Series = append(out.Series, Point{Period: p, Sales: reports[periodKey(p.Start)].Sales})
+		period := reports[periodKey(p.Start)]
+		out.Series = append(out.Series, Point{Period: p, Sales: period.Sales, ByService: period.ByService})
 	}
 	for wd := 1; wd <= 7; wd++ {
 		for h := range 24 {

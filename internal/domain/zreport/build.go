@@ -204,6 +204,7 @@ func (b *builder) sale(p order.InvoiceIssued, st order.State) error {
 	}
 	s := &b.r.Sales
 	s.Bills++
+	s.Covers += st.Covers
 	b.add(&s.Gross, bill.Gross)
 	b.add(&s.Discounts, bill.Discounts)
 	b.add(&s.Taxable, st.Totals.Taxable)
@@ -213,6 +214,7 @@ func (b *builder) sale(p order.InvoiceIssued, st order.State) error {
 	staff := strconv.FormatInt(st.OpenedBy, 10)
 	for _, g := range []*Group{
 		b.group(b.channels, string(st.Channel), string(st.Channel)),
+		b.group(b.services, string(st.Service), string(st.Service)),
 		b.group(b.staff, staff, staff),
 	} {
 		g.Qty++

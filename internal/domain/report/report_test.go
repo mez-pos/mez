@@ -278,3 +278,36 @@ func TestBadRanges(t *testing.T) {
 		})
 	}
 }
+
+// Each period says how its sales were served, and the ways come to the
+// period's own total: the trend chart stacks them (D15).
+func TestSeriesByService(t *testing.T) {
+	r := build(t, Day, week(t))
+	sold := 0
+	for _, p := range r.Series {
+		sum, bills := int64(0), int64(0)
+		for _, g := range p.ByService {
+			sum += g.Total.Minor
+			bills += g.Qty
+		}
+		if sum != p.Sales.Total.Minor || bills != p.Sales.Bills {
+			t.Errorf("%s: by service %d over %d bills; the period is %s over %d", p.Start, sum, bills, p.Sales.Total, p.Sales.Bills)
+		}
+		if p.ByService == nil {
+			t.Errorf("%s: by_service is null; a quiet period is an empty list", p.Start)
+		}
+		if p.Sales.Bills > 0 {
+			sold++
+		}
+	}
+	if sold == 0 {
+		t.Fatal("the week sold nothing: the test proves nothing")
+	}
+	total := int64(0)
+	for _, g := range r.Totals.ByService {
+		total += g.Total.Minor
+	}
+	if total != r.Totals.Sales.Total.Minor {
+		t.Errorf("the range by service comes to %d, its sales to %s", total, r.Totals.Sales.Total)
+	}
+}

@@ -1718,6 +1718,7 @@ export interface Report {
   by_category: Group[];
   by_item: Group[];
   by_channel: Group[];
+  by_service: Group[];
   by_staff: Group[];
   discounts: Tally;
   comps: Tally;
@@ -1741,6 +1742,7 @@ export interface Sales {
   tax: Money;
   total: Money;
   net_of_credits: Money;
+  covers: number;
 }
 
 export interface Invoices {
@@ -1797,6 +1799,7 @@ export interface SalesPoint {
   start: string;
   end: string;
   sales: Sales;
+  by_service: Group[];
 }
 
 export interface SalesHour {

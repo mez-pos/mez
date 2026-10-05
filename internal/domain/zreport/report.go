@@ -32,7 +32,10 @@ type Report struct {
 	ByCategory []Group `json:"by_category"`
 	ByItem     []Group `json:"by_item"`
 	ByChannel  []Group `json:"by_channel"`
-	ByStaff    []Group `json:"by_staff"` // by who opened the bill
+	// ByService is the bills by how they were served: dine-in, takeaway or
+	// delivery (ADR-146). A report issued before it was counted has none.
+	ByService []Group `json:"by_service"`
+	ByStaff   []Group `json:"by_staff"` // by who opened the bill
 
 	Discounts   Tally        `json:"discounts"`    // on the bills invoiced
 	Comps       Tally        `json:"comps"`        // lines given away, at their gross
@@ -63,6 +66,9 @@ type Sales struct {
 	Total     money.Amount `json:"total"`
 	// NetOfCredits is Total less the credit notes issued in the shift.
 	NetOfCredits money.Amount `json:"net_of_credits"`
+	// Covers is the guests on those bills, as counted when each was opened
+	// or seated. A takeaway or a party nobody counted adds none.
+	Covers int64 `json:"covers"`
 }
 
 // Invoices is the run of invoice numbers issued in the shift.
@@ -72,8 +78,8 @@ type Invoices struct {
 	Last  string `json:"last,omitempty"`
 }
 
-// Group is sales under one heading: a category, an item, a channel, a
-// staff member. Qty is units for a category or item and bills otherwise.
+// Group is sales under one heading: a category, an item, a channel, a way
+// of serving, a staff member. Qty is units for a category or item and bills otherwise.
 type Group struct {
 	Key       string       `json:"key"`
 	Name      string       `json:"name"`

@@ -21,11 +21,11 @@ type builder struct {
 	err  error
 	r    Report
 
-	categories, items, channels, staff map[string]*Group
-	removed                            map[int64]*StaffTally
-	payments                           map[order.PaymentMethod]*Payment
-	taxes                              map[taxKey]*TaxLine
-	invoices                           []string
+	categories, items, channels, services, staff map[string]*Group
+	removed                                      map[int64]*StaffTally
+	payments                                     map[order.PaymentMethod]*Payment
+	taxes                                        map[taxKey]*TaxLine
+	invoices                                     []string
 }
 
 type taxKey struct {
@@ -51,6 +51,7 @@ func newBuilder(in Input, zero money.Amount) *builder {
 		categories: map[string]*Group{},
 		items:      map[string]*Group{},
 		channels:   map[string]*Group{},
+		services:   map[string]*Group{},
 		staff:      map[string]*Group{},
 		removed:    map[int64]*StaffTally{},
 		payments:   map[order.PaymentMethod]*Payment{},
@@ -120,6 +121,7 @@ func (b *builder) finish() (Report, error) {
 	r.ByCategory = b.groups(b.categories)
 	r.ByItem = b.groups(b.items)
 	r.ByChannel = b.groups(b.channels)
+	r.ByService = b.groups(b.services)
 	r.ByStaff = b.groups(b.staff)
 
 	r.Removed = []StaffTally{}

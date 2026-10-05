@@ -152,6 +152,7 @@ func TestAHandComputedDayBalancesToThePaisa(t *testing.T) {
 	want := Sales{
 		Bills: 3, Gross: inr(79000), Discounts: inr(3500), Net: inr(75500),
 		Taxable: inr(75500), Tax: inr(5530), Total: inr(81030), NetOfCredits: inr(61080),
+		Covers: 6, // three bills, each opened for two at a table
 	}
 	if r.Sales != want {
 		t.Errorf("sales = %+v\n want %+v", r.Sales, want)
@@ -230,6 +231,9 @@ func TestAHandComputedDayBalancesToThePaisa(t *testing.T) {
 			{Key: "counter", Name: "counter", Qty: 2, Gross: inr(39000), Discounts: inr(1500), Net: inr(37500), Tax: inr(3630), Total: inr(41130)},
 			{Key: "qr_table", Name: "qr_table", Qty: 1, Gross: inr(40000), Discounts: inr(2000), Net: inr(38000), Tax: inr(1900), Total: inr(39900)},
 		}},
+		{"services", r.ByService, []Group{
+			{Key: "dine_in", Name: "dine_in", Qty: 3, Gross: inr(79000), Discounts: inr(3500), Net: inr(75500), Tax: inr(5530), Total: inr(81030)},
+		}},
 		{"staff", r.ByStaff, []Group{
 			{Key: "3", Name: "3", Qty: 2, Gross: inr(39000), Discounts: inr(1500), Net: inr(37500), Tax: inr(3630), Total: inr(41130)},
 			{Key: "5", Name: "5", Qty: 1, Gross: inr(40000), Discounts: inr(2000), Net: inr(38000), Tax: inr(1900), Total: inr(39900)},
@@ -240,7 +244,7 @@ func TestAHandComputedDayBalancesToThePaisa(t *testing.T) {
 			t.Errorf("%s = %+v\n want %+v", g.name, g.got, g.want)
 		}
 	}
-	for _, heading := range [][]Group{r.ByCategory, r.ByItem, r.ByChannel, r.ByStaff} {
+	for _, heading := range [][]Group{r.ByCategory, r.ByItem, r.ByChannel, r.ByService, r.ByStaff} {
 		sum := int64(0)
 		for _, g := range heading {
 			sum += g.Total.Minor
