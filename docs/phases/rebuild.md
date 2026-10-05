@@ -352,7 +352,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     Tables (`terminal-floor.md`).
   - [x] 17c. Payment and split (`terminal-tender.md`), Orders and refunds
     (`terminal-past-bills.md`), the print queue (`terminal-print-queue.md`).
-  - [ ] 17d. The waiter's screens, none of which has a spec: home, the order
+  - [x] 17d. The waiter's screens, none of which has a spec: home, the order
     screen's waiter variant with confirm and Course View, the table, transfer
     and merge, the bill, the shift summary (`waiter-*.md`, new).
   - [ ] 17e. The kitchen: the board, its foot and stats, Coming next, and a

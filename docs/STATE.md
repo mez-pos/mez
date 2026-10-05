@@ -14,7 +14,14 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 17c: the specs for payment, Orders and the print queue.** Written
+**Rebuild, Task 17d: the specs for the waiter's screens.** Five new files, written
+from the code as it stands (ADR-196): `waiter-home.md` (T01, with seating and clearing
+from a card), `waiter-order.md` (T02, Confirm and send, T04, and Course View; only what
+differs from `terminal-register.md`), `waiter-table.md` (T03, with Transfer and merge,
+T06), `waiter-bill.md` (T05) and `waiter-shift.md` (T08). Each Reference was checked
+against the design file's own words. Docs only: no code changed. `make check` passes.
+
+Before it, **Rebuild, Task 17c: the specs for payment, Orders and the print queue.** Written
 from the code as it stands (ADR-196): `terminal-tender.md` (Payment, D07; Split Bill,
 D08a; the waiting, not recorded and received cards, D08b; the invoice and the paid
 panel), `terminal-past-bills.md` (Orders and the refund modal, D09, with void, reprint
@@ -295,14 +302,13 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 17d: the specs for the waiter's screens.** None has one. Write, from
-`waiter/`, `shell/WaiterNav.tsx` and the waiter's variant in `register/` as they stand
-(ADR-196): `waiter-home.md` (T01), `waiter-order.md` (T02, with Confirm and send, T04,
-and Course View; it says only what differs from `terminal-register.md`),
-`waiter-table.md` (T03, with Transfer and merge, T06), `waiter-bill.md` (T05) and
-`waiter-shift.md` (T08). `terminal-shell.md`, `terminal-register.md` and
-`terminal-tender.md` already point at these names. Then 17e to 17g, and the walk as
-each role is 17h. The owner has
+**Rebuild, Task 17e: the spec for the kitchen.** Rewrite `kitchen-display.md` from
+`web/terminal/src/kitchen/` as it stands (ADR-196): the wall display at `/kitchen`
+with its own pairing and station (D10), espresso night (D11), the three columns and
+the ticket card, the all-day strip, the foot's switches, today's stats, Coming next,
+and the same board for a cook signed in on a terminal at `/pass`. Check its Reference
+against `mez Desktop KDS and Dashboard.dc.html`, lines 36 and 158. Then 17f and 17g,
+and the walk as each role is 17h. The owner has
 not yet looked at the kitchen's screens or anything of Task 16. Floor plan and Tips
 are still their old layouts (ADR-195). Phase 11 waits for this phase. Phase 10's tasks are
 all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
