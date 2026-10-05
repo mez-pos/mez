@@ -117,7 +117,7 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
 
       {stage === "preparing" && (
         <div aria-hidden="true" className="mt-4 h-2 rounded-pill bg-sunken">
-          <div className={cx("h-2 rounded-pill", tone === "late" ? "bg-danger" : "bg-highlight")} style={{ width: `${latePercent(elapsed, lateAfter)}%` }} />
+          <div className={cx("h-2 rounded-pill", tone === "late" ? "bg-attention" : "bg-highlight")} style={{ width: `${latePercent(elapsed, lateAfter)}%` }} />
         </div>
       )}
 

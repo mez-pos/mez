@@ -111,3 +111,43 @@ func TestToSend(t *testing.T) {
 		}
 	})
 }
+
+func TestHeld(t *testing.T) {
+	mains := []HeldCourse{{Course: 2, LineIDs: []int64{4, 8}}}
+	tests := []struct {
+		name    string
+		then    []Payload
+		station string
+		want    []HeldCourse
+	}{
+		{name: "nothing sent yet: a basket, not a course held back", station: "kitchen"},
+		{name: "the starters have gone: the mains are coming", then: Fire(dinner(t), 1), station: "kitchen", want: mains},
+		{name: "the bar has nothing behind its first round", then: Fire(dinner(t), 1), station: "bar"},
+		{name: "no station is nobody's", then: Fire(dinner(t), 1), station: ""},
+		{
+			name:    "the mains fired too: nothing is held",
+			then:    append(Fire(dinner(t), 1), CourseFired{Course: 2}, TicketSent{Station: "kitchen", LineIDs: []int64{4, 8}}),
+			station: "kitchen",
+		},
+		{
+			name:    "a held dish voided is not coming",
+			then:    append(Fire(dinner(t), 1), LineVoided{LineID: 4, ReasonCode: "wrong_item", AuthorisedBy: 1}),
+			station: "kitchen",
+			want:    []HeldCourse{{Course: 2, LineIDs: []int64{8}}},
+		},
+		{
+			name:    "a dessert rung up later is held behind the mains, lowest course first",
+			then:    append(Fire(dinner(t), 1), routed("Kulfi", "kitchen", 3), routed("Naan", "kitchen", 2)),
+			station: "kitchen",
+			want:    []HeldCourse{{Course: 2, LineIDs: []int64{4, 8, 13}}, {Course: 3, LineIDs: []int64{12}}},
+		},
+		{name: "a parked order is not about to be fired", then: append(Fire(dinner(t), 1), OrderHeld{}), station: "kitchen"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Held(dinner(t, tt.then...), tt.station); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Held = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}

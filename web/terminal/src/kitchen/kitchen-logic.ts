@@ -3,7 +3,7 @@
 // all-day counts, and which ticket Recall would bring back. The board is
 // the server's (ADR-090); this only reads it.
 
-import type { KitchenBoardResponse, KitchenStatsResponse, KitchenTicketResponse } from "../../../shared/api-types";
+import type { KitchenBoardResponse, KitchenComingResponse, KitchenStatsResponse, KitchenTicketResponse } from "../../../shared/api-types";
 
 /** A ticket's timer: calm, then waiting from half the late time, then late. */
 export type TimerTone = "calm" | "waiting" | "late";
@@ -78,6 +78,31 @@ export function agoText(elapsedMs: number): string {
   return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
 }
 
+export interface ComingRow {
+  /** The order and its course: a list key. */
+  id: string;
+  /** "T4", or "Counter · NMRN". */
+  where: string;
+  /** "Mains", or "Course 2" for a course the menu no longer names. */
+  course: string;
+  /** "1 × Butter chicken, 2 × Dal". */
+  items: string;
+}
+
+/**
+ * Coming next (ADR-181): the courses held back for this station, as the
+ * server lists them, worded. Which course it is tells a cook what the
+ * waiter will fire; the dishes tell them what to have ready.
+ */
+export function comingRows(coming: readonly KitchenComingResponse[], courseName: (course: number) => string | null): ComingRow[] {
+  return coming.map((c) => ({
+    id: `${c.order_id}-${c.course}`,
+    where: whereText(c),
+    course: courseName(c.course) ?? `Course ${c.course}`,
+    items: c.lines.map((l) => `${l.qty} × ${l.name}`).join(", "),
+  }));
+}
+
 /** "11 min", or "under 1 min": a time from sent to ready, to the nearest minute. */
 export function minutesText(seconds: number): string {
   if (seconds < 60) return "under 1 min";
@@ -111,7 +136,7 @@ export function statRows(stats: KitchenStatsResponse): StatRow[] {
 }
 
 /** Where a ticket goes: "T4", "T4 + T7", or "Counter · NMRN" for a counter order. */
-export function whereText(t: KitchenTicketResponse): string {
+export function whereText(t: Pick<KitchenTicketResponse, "table" | "table_id" | "order_id">): string {
   if (t.table) return t.table;
   if (t.table_id) return `Table ${t.table_id}`;
   const short = t.order_id.replace(/^ord_/, "").slice(0, 4);

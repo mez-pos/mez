@@ -352,7 +352,7 @@ func generate() (*ts.Generator, error) {
 		// Reports as CSV.
 		csvResponse{},
 		// The kitchen display.
-		kitchenLineResponse{}, kitchenTicketResponse{}, kitchenSlowestResponse{}, kitchenStatsResponse{}, kitchenBoardResponse{},
+		kitchenLineResponse{}, kitchenTicketResponse{}, kitchenSlowestResponse{}, kitchenStatsResponse{}, kitchenComingLine{}, kitchenComingResponse{}, kitchenBoardResponse{},
 		// Credit notes.
 		creditPreviewRequest{}, creditRequest{}, creditPlanResponse{}, creditResponse{},
 		pastBillResponse{}, pastBillsResponse{},

@@ -4,6 +4,7 @@ import {
   agoText,
   allDay,
   boardColumns,
+  comingRows,
   lastBumped,
   latePercent,
   metaText,
@@ -34,6 +35,8 @@ const board = (tickets: KitchenTicketResponse[]): KitchenBoardResponse => ({
   station: "kitchen",
   tickets,
   stats: { sent: 0, in_kitchen: 0, ready: 0, average_seconds: 0 },
+  coming: [],
+  coming_more: 0,
   recall_minutes: 30,
   late_after_minutes: 20,
 });
@@ -136,6 +139,37 @@ describe("today's stats", () => {
   it("has no times to give until a ticket is ready", () => {
     const rows = statRows({ sent: 2, in_kitchen: 2, ready: 0, average_seconds: 0 });
     expect(rows.slice(3).map((r) => r.value)).toEqual(["Not yet", "Not yet"]);
+  });
+});
+
+describe("coming next", () => {
+  const names = (course: number) => (course === 2 ? "Mains" : null);
+  it("says where, which course and what is on it", () => {
+    const rows = comingRows(
+      [
+        {
+          order_id: "ord_NMRNWWW1",
+          service: "dine_in",
+          table_id: 4,
+          table: "T4",
+          covers: 2,
+          course: 2,
+          lines: [
+            { name: "Butter chicken", qty: 1 },
+            { name: "Dal", qty: 2 },
+          ],
+        },
+        { order_id: "ord_ZZZZ2222", service: "takeaway", covers: 0, course: 3, lines: [{ name: "Kulfi", qty: 1 }] },
+      ],
+      names,
+    );
+    expect(rows).toEqual([
+      { id: "ord_NMRNWWW1-2", where: "T4", course: "Mains", items: "1 × Butter chicken, 2 × Dal" },
+      { id: "ord_ZZZZ2222-3", where: "Counter · ZZZZ", course: "Course 3", items: "1 × Kulfi" },
+    ]);
+  });
+  it("is empty when nothing is held back", () => {
+    expect(comingRows([], names)).toEqual([]);
   });
 });
 

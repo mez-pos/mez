@@ -164,3 +164,51 @@ func TestAStationsDay(t *testing.T) {
 		t.Errorf("the next trading day: %+v", next)
 	}
 }
+
+// TestWhatIsComing: once an order's starters have gone, the board lists the
+// mains held back for the station; firing them takes them off the list and
+// puts them on the board as a ticket. The bar is told nothing of the
+// kitchen's, and an order nothing has been sent from holds nothing.
+func TestWhatIsComing(t *testing.T) {
+	s, _, _ := newService(t)
+	ctx := context.Background()
+	m := cashier("")
+	board := func(station string) Board {
+		t.Helper()
+		b, err := s.Board(ctx, 1, station)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b
+	}
+	coursed := func(name string, course int64) AddLine {
+		l := dosa(1)
+		l.Name, l.Course = name, course
+		return l
+	}
+
+	id := open(t, s).OrderID                                     // table 4
+	must(t)(s.AddLine(ctx, m, id, coursed("Samosa", 1)))         // 2
+	must(t)(s.AddLine(ctx, m, id, coursed("Butter chicken", 2))) // 3
+	must(t)(s.AddLine(ctx, m, id, coursed("Dal", 2)))            // 4
+	if b := board("kitchen"); len(b.Coming) != 0 || b.ComingMore != 0 {
+		t.Fatalf("nothing sent yet, and something is coming: %+v", b.Coming)
+	}
+
+	must(t)(s.Send(ctx, m, id)) // fires course 1
+	b := board("kitchen")
+	if len(b.Tickets) != 1 || len(b.Coming) != 1 {
+		t.Fatalf("after the starters: %d tickets, coming %+v", len(b.Tickets), b.Coming)
+	}
+	if c := b.Coming[0]; c.Course != 2 || len(c.LineIDs) != 2 || c.Order.TableID != 4 || c.PublicID == "" {
+		t.Errorf("the mains held back: course %d, lines %v, table %d", c.Course, c.LineIDs, c.Order.TableID)
+	}
+	if bar := board("bar"); len(bar.Coming) != 0 {
+		t.Errorf("the bar is told of the kitchen's mains: %+v", bar.Coming)
+	}
+
+	must(t)(s.FireCourse(ctx, m, id, FireCourse{Course: 2}))
+	if b := board("kitchen"); len(b.Coming) != 0 || len(b.Tickets) != 2 {
+		t.Errorf("after the mains are fired: %d tickets, coming %+v", len(b.Tickets), b.Coming)
+	}
+}

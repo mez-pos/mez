@@ -14,8 +14,8 @@
 //
 // Beside the columns, from 1536px wide, is Today's stats: the station's
 // trading day so far, from the server (ADR-178). On a narrower display the
-// same figures are one line under the all-day strip. The design's Upcoming
-// list is not drawn: see BoardStats.tsx.
+// same figures are one line under the all-day strip. Under it is Coming
+// next, what the station is sent when a later course is fired (ADR-181).
 
 import { BellIcon, ChefHatIcon, UtensilsIcon, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -25,11 +25,13 @@ import { ConnectionIndicator } from "../../../shared/ConnectionIndicator";
 import { Logo } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { clockText } from "../../../shared/venue-text";
+import { useMenu } from "../../../shared/use-menu";
 import { failureOf } from "../register/order-messages";
+import { courseNamer } from "../register/rail-logic";
 import { BoardFoot, type SignedIn } from "./BoardFoot";
 import { BoardStats, StatsLine } from "./BoardStats";
 import { groupByTable, readPrefs, surfaceOf, ticketId, writePrefs, type BoardPrefs } from "./board-prefs";
-import { allDay, boardColumns, statRows } from "./kitchen-logic";
+import { allDay, boardColumns, comingRows, statRows } from "./kitchen-logic";
 import { TicketCard, type CardStage } from "./TicketCard";
 import { useChime } from "./use-chime";
 import { useKitchenBoard } from "./use-kitchen-board";
@@ -74,6 +76,9 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
   // A wall display moves its tickets; a person needs kitchen.work (ADR-180).
   const canWork = signedIn?.canWork ?? true;
   const stats = board.data ? statRows(board.data.stats) : null;
+  const menu = useMenu();
+  const coming = comingRows(board.data?.coming ?? [], courseNamer(menu.data?.courses ?? []));
+  const comingMore = board.data?.coming_more ?? 0;
   const acts: Readonly<Record<CardStage, (t: KitchenTicketResponse) => Promise<void>>> = { fresh: board.start, preparing: board.bump, ready: board.recall };
 
   const run = (id: string, fn: () => Promise<void>) => {
@@ -119,7 +124,7 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
         </section>
       )}
 
-      {stats && <StatsLine rows={stats} />}
+      {stats && <StatsLine rows={stats} coming={coming} comingMore={comingMore} />}
 
       {!canWork && (
         <p className="shrink-0 border-b border-line bg-chrome px-7 py-2 text-lg text-fg-muted">
@@ -164,7 +169,7 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
             </Column>
           );
         })}
-        {stats && <BoardStats rows={stats} />}
+        {stats && <BoardStats rows={stats} coming={coming} comingMore={comingMore} />}
       </div>
 
       <BoardFoot prefs={prefs} onPrefs={keep} onChangeStation={onChangeStation} signedIn={signedIn} />

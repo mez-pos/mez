@@ -2135,10 +2135,27 @@ export interface KitchenStatsResponse {
   slowest?: KitchenSlowestResponse;
 }
 
+export interface KitchenComingLine {
+  name: string;
+  qty: number;
+}
+
+export interface KitchenComingResponse {
+  order_id: string;
+  service: ServiceType;
+  table_id?: number;
+  table?: string;
+  covers: number;
+  course: number;
+  lines: KitchenComingLine[];
+}
+
 export interface KitchenBoardResponse {
   station: string;
   tickets: KitchenTicketResponse[];
   stats: KitchenStatsResponse;
+  coming: KitchenComingResponse[];
+  coming_more: number;
   recall_minutes: number;
   late_after_minutes: number;
 }

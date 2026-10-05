@@ -14,7 +14,15 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**A fix after 15e: moving a ticket is its own permission** (ADR-180, migration
+**Rebuild, Task 15f: Coming next** (ADR-181). Task 15 is done. Where D10 draws
+"Upcoming", the board lists what the station will be sent when a later course is
+fired: `order.Held` (`internal/domain/order/route.go`), `coming` and `coming_more` on
+the board's response, and a card under Today's stats (`kitchen/BoardStats.tsx`,
+`comingRows`). Seen in a browser at 1920 wide, on night: T2's starter sent and its
+dessert listed as coming. Go tests in the domain, the service and over HTTP;
+`comingRows` in vitest. `make check` and `make build-web` pass.
+
+Before it, **A fix after 15e: moving a ticket is its own permission** (ADR-180, migration
 00034). `kitchen.work` starts, finishes and recalls tickets; `kitchen.view` only reads
 the board. The owner, the manager and the kitchen role hold it; a cashier and a waiter
 do not, and the kitchen's API refuses them a move. On `/pass` someone without it sees
@@ -144,17 +152,16 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c) or 15 (b, c, d, e).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c) or 15 (b to f).
 
 ## Next task
 
-**Rebuild, Task 15f** (Coming next on the kitchen board): where D10 draws
-"Upcoming", what a station will be sent when a later course is fired: the lines
-waiting for their course, by order. Check first what the order knows of a held course
-(`sendPlan` and `courseGroups` in `register/send-logic.ts`, `CourseFired` on a line,
-`ticket.sent`); the board reads only tickets sent, so this needs the server. If nothing
-useful can be said, record that in an ADR, tick it as left out, and Task 15 is done.
-Then Task 16 (back office), which is split into one sub-task per screen first. Phase 11
+**Rebuild, Task 16** (back office): split it into one sub-task per screen before
+starting, as the phase file says: D12 dashboard, D15 to D17 reports, D18 menu, D19
+inventory, D20 staff and roles, D22 settings, D23 Z-report (`mez Desktop
+Management.dc.html`, and D12 in `mez Desktop KDS and Dashboard.dc.html`). Commit the
+split, then build the first. Read `docs/design/tokens.md` and one screen at a time.
+The kitchen's screens are not yet looked at by the owner. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -179,7 +186,11 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   to the rest of the terminal, or back for a manager who opens it by its path. Not
   seen by eye: a role made by the owner landing there, a wall display and a signed-in
   cook at one station at once, and a manager at `/pass`.
-- Today's stats (ADR-178): no Upcoming (15f). The day is read whole on each board
+- Coming next (ADR-181): every open order is projected on each board read; not
+  timed with many open. Not seen by eye: more than five (the "more behind these"
+  line), an order with no table, two courses held on one order, and the list going
+  when a course is fired.
+- Today's stats (ADR-178). The day is read whole on each board
   read; a busy station has not been timed. Not seen by eye: the one-line version
   under 1536px (the browser would not resize), the column on night, a day with no
   ticket ready ("Not yet"), and a slowest ticket with several dishes.

@@ -74,11 +74,32 @@ type kitchenSlowestResponse struct {
 	Seconds int64  `json:"seconds"`
 }
 
+// kitchenComingResponse is a course a station has not been sent yet, on an
+// order that has already sent it something: what is coming (ADR-181).
+type kitchenComingResponse struct {
+	OrderID string              `json:"order_id"`
+	Service order.ServiceType   `json:"service"`
+	TableID int64               `json:"table_id,omitempty"`
+	Table   string              `json:"table,omitempty"`
+	Covers  int64               `json:"covers"`
+	Course  int64               `json:"course"`
+	Lines   []kitchenComingLine `json:"lines"`
+}
+
+type kitchenComingLine struct {
+	Name string `json:"name"`
+	Qty  int64  `json:"qty"`
+}
+
 type kitchenBoardResponse struct {
 	Station string                  `json:"station"`
 	Tickets []kitchenTicketResponse `json:"tickets"`
 	// Stats is the station's trading day so far.
 	Stats kitchenStatsResponse `json:"stats"`
+	// Coming is the next few courses held back for the station, from the
+	// orders open longest; ComingMore is how many more wait behind them.
+	Coming     []kitchenComingResponse `json:"coming"`
+	ComingMore int64                   `json:"coming_more"`
 	// RecallMinutes is how long a bumped ticket stays to be recalled.
 	RecallMinutes int64 `json:"recall_minutes"`
 	// LateAfterMinutes is when a ticket is late: its timer turns vermilion.
@@ -174,12 +195,42 @@ func (s *Server) writeBoard(w http.ResponseWriter, r *http.Request, station stri
 	for _, bt := range board.Tickets {
 		out.Tickets = append(out.Tickets, kitchenTicket(bt, board.Tables))
 	}
+	out.Coming, out.ComingMore = make([]kitchenComingResponse, 0, len(board.Coming)), board.ComingMore
+	for _, c := range board.Coming {
+		coming := kitchenComingResponse{
+			OrderID: c.PublicID, Service: c.Order.Service, TableID: c.Order.TableID, Table: tableNames(c.Order, board.Tables),
+			Covers: c.Order.Covers, Course: c.Course, Lines: []kitchenComingLine{},
+		}
+		for _, l := range c.Order.Lines {
+			if slices.Contains(c.LineIDs, l.ID) {
+				coming.Lines = append(coming.Lines, kitchenComingLine{Name: l.Name, Qty: l.Qty})
+			}
+		}
+		out.Coming = append(out.Coming, coming)
+	}
 	day := board.Day
 	out.Stats = kitchenStatsResponse{Sent: day.Sent, InKitchen: day.InKitchen, Ready: day.Ready, AverageSeconds: int64(day.Average / time.Second)}
 	if slow := day.SlowestDish; slow != nil {
 		out.Stats.Slowest = &kitchenSlowestResponse{Name: slow.Name, More: slow.More, Seconds: int64(slow.Took / time.Second)}
 	}
 	writeJSON(w, s.log, http.StatusOK, out)
+}
+
+// tableNames is where an order sits, by name, with any tables joined to
+// it: "T4 + T7". Empty for an order with no table.
+func tableNames(o order.State, tables map[int64]string) string {
+	var out string
+	for i, id := range o.Tables() {
+		name := tables[id]
+		if name == "" {
+			continue
+		}
+		if i > 0 {
+			out += " + "
+		}
+		out += name
+	}
+	return out
 }
 
 func kitchenTicket(bt svcorder.BoardTicket, tables map[int64]string) kitchenTicketResponse {
@@ -196,16 +247,7 @@ func kitchenTicket(bt svcorder.BoardTicket, tables map[int64]string) kitchenTick
 		ready := t.ReadyAt.UTC()
 		out.ReadyAt = &ready
 	}
-	for i, id := range o.Tables() {
-		name := tables[id]
-		if name == "" {
-			continue
-		}
-		if i > 0 {
-			out.Table += " + "
-		}
-		out.Table += name
-	}
+	out.Table = tableNames(o, tables)
 	for _, n := range o.Notes {
 		if n.Scope == order.ScopeOrder {
 			out.Notes = append(out.Notes, n.Text)

@@ -264,7 +264,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 14c. (ADR-174) The shift summary (T08) over it: the waiter, how long they have
     been on, the four figures, tips by table, Print summary if anything can
     print it, and End shift. Guest ratings are left out (phase 11).
-- [ ] **Task 15 - Kitchen display.** D10 and D11. Split on 2026-10-05: the
+- [x] **Task 15 - Kitchen display.** D10 and D11. Split on 2026-10-05: the
   design is a board of three columns (New Orders, Preparing, Ready for pickup)
   with the day's figures beside it, and the server knew a ticket only as sent
   or bumped.
@@ -284,7 +284,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     knows.
   - [x] 15e. (ADR-179) A cook who signs in on a terminal reaches the board (the flow
     map): today `/kitchen` asks that browser for a pairing of its own.
-  - [ ] 15f. Coming next: what a station will be sent when a later course is
+  - [x] 15f. (ADR-181) Coming next: what a station will be sent when a later course is
     fired (the lines waiting for their course, by order), under Today's stats
     where the design draws Upcoming. Check first what the order knows of a
     held course; if nothing useful, record that and leave it out.

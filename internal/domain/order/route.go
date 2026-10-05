@@ -1,6 +1,9 @@
 package order
 
-import "slices"
+import (
+	"cmp"
+	"slices"
+)
 
 // Station routing (phase 08, Task 3, ADR-089). Every line carries its
 // station and its course from the item it was rung up from. A course's
@@ -86,4 +89,38 @@ func firstWaiting(s State) (int64, bool) {
 		}
 	}
 	return first, found
+}
+
+// HeldCourse is a course of an order a station has not been sent yet, and
+// the lines of it that are the station's.
+type HeldCourse struct {
+	Course  int64
+	LineIDs []int64
+}
+
+// Held is what a station will be sent when the order's later courses are
+// fired: its lines waiting behind a course that has already gone, by
+// course, lowest first. It is what a kitchen sees coming (ADR-181).
+//
+// An order with nothing fired holds nothing: its lines are a basket still
+// being rung up, and Send takes the first course of it. An order that is
+// parked or closed holds nothing either: nobody is about to fire it.
+func Held(s State, station string) []HeldCourse {
+	if station == "" || s.Status != StatusOpen || len(s.FiredCourses) == 0 {
+		return nil
+	}
+	var out []HeldCourse
+	for _, l := range s.Lines {
+		if l.Station != station || l.Sent || l.CourseFired || l.Course < 1 || l.Status == LineStatusVoided {
+			continue
+		}
+		i := slices.IndexFunc(out, func(h HeldCourse) bool { return h.Course == l.Course })
+		if i < 0 {
+			out = append(out, HeldCourse{Course: l.Course})
+			i = len(out) - 1
+		}
+		out[i].LineIDs = append(out[i].LineIDs, l.ID)
+	}
+	slices.SortFunc(out, func(a, b HeldCourse) int { return cmp.Compare(a.Course, b.Course) })
+	return out
 }

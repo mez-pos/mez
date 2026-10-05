@@ -5246,3 +5246,26 @@ Because: a permission must mean one thing. "See the kitchen" had quietly become
 Cost: an owner-made role that both sells and cooks (a "Runner" with `order.open` and
 `kitchen.view`) is not given `kitchen.work` by the migration: the owner ticks it.
 ---
+
+## ADR-181 - "Coming next" is the courses held back for a station
+2026-10 · Status: accepted. Rebuild Task 15f (D10, "Upcoming"); over ADR-089 and ADR-178.
+Context: D10 lists "Upcoming (next 5)": orders about to arrive, each with minutes to
+go. Nothing knows when an order will be sent. The order does know what it holds back:
+lines in a course not yet fired, on an order whose earlier course has gone.
+Decision:
+  - **`order.Held(state, station)`** is a station's lines waiting behind a fired
+    course, by course, lowest first. An order with nothing fired holds nothing (it is
+    a basket still being rung up); neither does one that is parked or closed.
+  - **The board's response carries `coming`,** the first five from the orders open
+    longest, and `coming_more`, how many wait behind them. Each has where it is, the
+    course and the dishes.
+  - **The card says the course where the design has minutes:** "T4 · Mains · 1 ×
+    Butter chicken". Which course tells a cook what the waiter will fire next; no
+    time is promised.
+  - It sits under Today's stats from 1536px wide; under that the one line has its count.
+Because: a list of guesses would be worse than none on a pass. This one is exact, and
+it is the thing a kitchen asks a waiter for: what is behind this table's starters.
+Cost: every open order is projected on each board read to find what it holds (the
+open orders list does the same; a venue has tens open, not thousands). A venue that
+never uses courses sees "Nothing is waiting for a later course" and no more.
+---

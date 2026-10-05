@@ -28,6 +28,9 @@ const maxBoard = 100
 // maxDayTickets caps the tickets a station's day is added up from.
 const maxDayTickets = 2000
 
+// maxComing is how many held courses a board lists: the next five (D10).
+const maxComing = 5
+
 // BumpTicket names a ticket on an order: the seq of its ticket.sent.
 type BumpTicket struct {
 	TicketSeq int64 `json:"ticket_seq"`
@@ -94,6 +97,20 @@ type Board struct {
 	LateAfter time.Duration
 	// Day is the station's trading day so far (ADR-178).
 	Day BoardDay
+	// Coming is what the station will be sent when later courses are fired:
+	// the first few, from the orders open longest (ADR-181). ComingMore is
+	// how many more there are behind them.
+	Coming     []ComingCourse
+	ComingMore int64
+}
+
+// ComingCourse is one course of an open order that a station has not been
+// sent yet: the mains behind the starters that have gone.
+type ComingCourse struct {
+	PublicID string
+	Order    order.State
+	Course   int64
+	LineIDs  []int64
 }
 
 // BoardDay is a station's figures for the trading day: how many tickets it
@@ -153,6 +170,9 @@ func (s *Service) Board(ctx context.Context, venueID int64, station string) (Boa
 			}
 		}
 	}
+	if err := s.coming(ctx, q, v, venueID, station, orders, &out); err != nil {
+		return Board{}, err
+	}
 	if slow := out.Day.Slowest; slow != nil {
 		state, ok := orders[slow.OrderID]
 		if !ok {
@@ -163,6 +183,34 @@ func (s *Service) Board(ctx context.Context, venueID int64, station string) (Boa
 		out.Day.SlowestDish = slowDish(state, *slow)
 	}
 	return out, nil
+}
+
+// coming fills the board with what the station's open orders hold back for
+// it. Every open order is projected to find out, as the open orders list
+// does: a venue has tens of them, not thousands, and the snapshot makes each
+// a short read.
+func (s *Service) coming(ctx context.Context, q *gen.Queries, v venue, venueID int64, station string, orders map[int64]order.State, out *Board) error {
+	rows, err := q.UnclosedOrdersForVenue(ctx, gen.UnclosedOrdersForVenueParams{VenueID: venueID, Limit: maxOpenTickets})
+	if err != nil {
+		return fmt.Errorf("listing the open orders of venue %d: %w", venueID, err)
+	}
+	for _, r := range rows {
+		state, ok := orders[r.ID]
+		if !ok {
+			if state, err = s.db.LoadOrder(ctx, r.ID, v.Taxes); err != nil {
+				return err
+			}
+			orders[r.ID] = state
+		}
+		for _, held := range order.Held(state, station) {
+			if len(out.Coming) == maxComing {
+				out.ComingMore++
+				continue
+			}
+			out.Coming = append(out.Coming, ComingCourse{PublicID: r.PublicID, Order: state, Course: held.Course, LineIDs: held.LineIDs})
+		}
+	}
+	return nil
 }
 
 // stationDay adds up the tickets a station was sent since the trading day
