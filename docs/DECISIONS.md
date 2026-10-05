@@ -5433,3 +5433,28 @@ Because: one entry in the sidebar, one range, and each report a tab away.
 Cost: the tab is not in the sidebar's `g` chords. The stock health card is today's
 stock whatever days are picked.
 ---
+
+## ADR-188 - Staff reports is D17's table; tips are by who took the payment
+2026-10 · Status: accepted. Rebuild Task 16e (D17); over ADR-101, ADR-173 and ADR-187.
+Context: D17 is "Staff performance" (orders, sales, tips, rating) over customers,
+regulars and feedback. The report had bills by who opened them and one tips total.
+Decision:
+  - **`tips_by` on the report:** each person's tips on the payments they took, the
+    most first; a voided payment takes its tip back. The same rule as a waiter's own
+    shift summary (ADR-173). It is in `zreport.Report`, so a Z-report built from now on
+    carries it; one issued before has none.
+  - **Staff is the third report tab** (`/sales/staff`), sharing the range (ADR-187).
+  - **The table** is everyone who opened a bill or took a tip: role, orders (the bills
+    they opened), sales, average bill and tips, the largest sales first. Someone who
+    only took payments has tips and no bills: a bill counts for whoever opened it.
+  - **"Removed in error"** beside it: the lines each person rang up by mistake and took
+    off, which the report already had. **Tips** is the range's total.
+  - **"Who sold it" moved here** from Sales reports, with its CSV.
+  - **Left out:** Rating (nothing rates anyone until the guest channel, phase 11);
+    Customers, Top regulars, Feedback themes and Rating spread (out of v1, D21).
+    "Tips are paid out weekly" is not said: a pool is per shift (ADR-101).
+Because: what an owner asks of this screen is who sold what and who is owed which tips.
+Cost: tips taken is not tips paid: a pooled shift shares its tips out by the venue's
+rule, and that is on the shift's Z-report. A waiter whose tables the cashier opened
+shows less than they served (ADR-173's cost, unchanged).
+---

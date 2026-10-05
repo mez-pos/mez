@@ -85,3 +85,32 @@ func TestSomeoneWhoseOnlyTipWasVoidedIsNotListed(t *testing.T) {
 		t.Errorf("tips by = %+v, want an empty list", r.TipsBy)
 	}
 }
+
+// A report counts the events of its own shift. A tipped payment taken in one
+// shift and voided in the next takes the tip back in the next: that shift's
+// tips, and that person's, go below zero, as its payments do. The two shifts
+// together come to nothing.
+func TestATipVoidedInALaterShiftIsTakenBackThere(t *testing.T) {
+	b := newBill(t, 1, order.ChannelCounter, 3)
+	b.line(2, "Espresso", 1, 12000, gst5)
+	id := b.as(3, order.PaymentTendered{Method: order.PaymentCash, Amount: inr(12600), Tip: inr(1500), TenderedBy: 3})
+	b.in(2).as(2, order.PaymentVoided{PaymentID: id, Reason: "wrong bill", AuthorisedBy: 2})
+	in := func(shiftID int64) Input {
+		return Input{ShiftID: shiftID, Currency: "INR", Taxes: gstCafe, Categories: menu, Orders: [][]shift.StampedEvent{b.events}}
+	}
+
+	first, err := Build(in(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []StaffTally{{StaffID: 3, Tally: Tally{Count: 1, Amount: inr(1500)}}}; !equalSlices(first.TipsBy, want) || first.Tips != inr(1500) {
+		t.Errorf("the first shift: tips %s by %+v, want 15.00 by %+v", first.Tips, first.TipsBy, want)
+	}
+	second, err := Build(in(2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []StaffTally{{StaffID: 3, Tally: Tally{Count: -1, Amount: inr(-1500)}}}; !equalSlices(second.TipsBy, want) || second.Tips != inr(-1500) {
+		t.Errorf("the second shift: tips %s by %+v, want -15.00 by %+v", second.Tips, second.TipsBy, want)
+	}
+}

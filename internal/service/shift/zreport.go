@@ -178,6 +178,9 @@ func name(ctx context.Context, q *gen.Queries, venueID int64, doc *ZDocument) er
 	for _, t := range doc.Report.Removed {
 		mention(t.StaffID)
 	}
+	for _, t := range doc.Report.TipsBy {
+		mention(t.StaffID)
+	}
 	for _, id := range []int64{doc.Shift.OpenedBy, doc.Shift.ClosedBy, doc.Drawer.CountedBy, doc.GeneratedBy} {
 		mention(id)
 	}

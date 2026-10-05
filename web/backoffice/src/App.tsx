@@ -20,6 +20,7 @@ import { PeopleScreen } from "./people/PeopleScreen";
 import { ItemsScreen } from "./sales/ItemsScreen";
 import { ReportRangeProvider } from "./sales/report-range";
 import { SalesScreen } from "./sales/SalesScreen";
+import { StaffScreen } from "./sales/StaffScreen";
 import { SettingsScreen } from "./settings/SettingsScreen";
 import { StockScreen } from "./stock/StockScreen";
 import { TipsScreen } from "./tips/TipsScreen";
@@ -69,6 +70,11 @@ function SignedInRoutes() {
       <Route path="/sales/items">
         <SectionGate id="sales">
           <ItemsScreen />
+        </SectionGate>
+      </Route>
+      <Route path="/sales/staff">
+        <SectionGate id="sales">
+          <StaffScreen />
         </SectionGate>
       </Route>
       <Route path="/sales">

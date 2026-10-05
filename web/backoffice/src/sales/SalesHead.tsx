@@ -22,11 +22,11 @@ import type { CsvFile } from "./use-csv-download";
 const everys = Object.keys(everyWords) as ReportEvery[];
 
 // The design's four tabs are Item, Inventory, Staff and Customer. Items and
-// inventory are one screen (D16 draws them as one); Staff comes with its own
-// screen (16e); customers are out of v1.
+// inventory are one screen (D16 draws them as one); customers are out of v1.
 const tabs = [
   { id: "sales", label: "Sales", href: "/sales" },
   { id: "items", label: "Items and inventory", href: "/sales/items" },
+  { id: "staff", label: "Staff", href: "/sales/staff" },
 ] as const;
 
 export type ReportTab = (typeof tabs)[number]["id"];
@@ -157,7 +157,6 @@ export const sheets: readonly { id: ReportSheet; label: string }[] = [
   { id: "over_time", label: "Sales over time" },
   { id: "payments", label: "Payments" },
   { id: "channels", label: "Channels" },
-  { id: "staff", label: "Staff" },
   { id: "taxes", label: "Taxes" },
   { id: "hours", label: "Hours" },
 ];

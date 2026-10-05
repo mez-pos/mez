@@ -94,7 +94,7 @@ export function SoldItems({ report, itemsCsv, categoriesCsv }: { report: SalesRe
   );
 }
 
-/** Sales by who opened the bill. It stays on Sales reports until the staff reports have their screen (16e). */
+/** Sales by who opened the bill, in full (D17, under the staff performance card). */
 export function WhoSold({ report, csv }: { report: SalesReport; csv: ReactNode }) {
   return (
     <Section title="Who sold it" csv={csv}>

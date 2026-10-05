@@ -14,7 +14,15 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16d2: Items and inventory** (ADR-187). `/backoffice/sales/items` is D16
+**Rebuild, Task 16e: Staff reports** (ADR-188). `/backoffice/sales/staff` is D17's staff
+half (`sales/StaffScreen.tsx`, `staff-logic.ts`), the third report tab: staff
+performance (role, orders, sales, average, tips), Removed in error, the tips total, and
+"Who sold it" in full, moved from Sales reports. The report carries `tips_by`, tips by
+who took the payment (16e1, server). Seen in a browser as Priya at 1920x1080 over seven
+days. Go tests in the domain; vitest for `staffLines` and `removedLines`. `make check`
+and `make build-web` pass.
+
+Before it, **Rebuild, Task 16d2: Items and inventory** (ADR-187). `/backoffice/sales/items` is D16
 (`sales/ItemsScreen.tsx`, `items-logic.ts`), a tab beside Sales: item performance with a
 trend against the days before, wastage as bars with its total, stock health, and under
 "In detail" what sold in full and the closing stock, moved from Sales reports. The range
@@ -195,14 +203,13 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to d).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to e).
 
 ## Next task
 
-**Rebuild, Task 16e: Staff reports** (D17, `mez Desktop Management.dc.html` line 224,
-without the customers). It becomes a third report tab; "Who sold it" moves there from
-Sales reports. 16d3 (an item's cost and margin) is open and can wait: it needs a
-decision on what "cost" is before any code.
+**Rebuild, Task 16f: Menu** (D18, `mez Desktop Management.dc.html` line 286). The
+reports (16c to 16e) are done but for 16d3, an item's cost and margin, which waits on
+the owner: today's recipe at today's cost, or what the ledger moved for the orders.
 Read `docs/design/tokens.md` and that one screen. The screens inside the new frame are
 still the old layouts until their own tasks (16c to 16j). The owner has not yet looked
 at the kitchen's screens, the frame or the dashboard. Phase 11 waits for this phase.
@@ -219,6 +226,10 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Staff reports (ADR-188): no ratings, no customers. Tips are those taken, not the
+  pool's shares. A tipped payment from before the days, voided in them, shows as a
+  row below zero (it keeps the rows equal to the total). Not seen by eye: a guest's row, someone who only took payments, someone no longer
+  on record, a range with nobody, a failed read, a width under 1920.
 - Items and inventory (ADR-187): no Cost or Margin (16d3), no purchase orders, no
   CSV for wastage. The dev venue now has four stock items and four write-offs keyed
   on 2026-10-05 to show the cards. Not seen by eye: a trend arrow (every item was new

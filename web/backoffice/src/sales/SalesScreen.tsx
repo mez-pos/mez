@@ -4,9 +4,9 @@
 // how it was served, sales by category, the top sellers, orders by type and
 // how it was paid. Under "In detail" are the reports the design does not
 // draw and the back office has (rebuild.md, rule 4): the range's figures,
-// each period, the channels, who sold it, the heatmap and the corrections,
-// each with its CSV (ADR-119). What sold, in full, and the stock are on Items
-// and inventory (D16).
+// each period, the channels, the heatmap and the corrections, each with its
+// CSV (ADR-119). What sold, in full, and the stock are on Items and inventory
+// (D16); who sold it is on Staff (D17).
 
 import { BanknoteIcon, ReceiptTextIcon, TagIcon, UsersIcon } from "lucide-react";
 import type { ReportSheet, SalesReport } from "../../../shared/api-types";
@@ -22,7 +22,7 @@ import { CategoryRing, OrderTypes, PaymentBars, SalesTrend, ServiceLegend, TopSe
 import { Corrections } from "./SalesCorrections";
 import { ExportMenu, ReportHead, sheets } from "./SalesHead";
 import { Headline, Mixes, OverTime } from "./SalesSections";
-import { Heatmap, WhoSold } from "./SalesTables";
+import { Heatmap } from "./SalesTables";
 import { useCsvDownload, useCsvFile } from "./use-csv-download";
 import { useRangeSales } from "./use-range-sales";
 import { averageBill, csvPath } from "./sales-logic";
@@ -77,7 +77,6 @@ export function SalesScreen() {
             <Headline report={shown} csv={csv("summary")} />
             <OverTime report={shown} csv={csv("over_time")} />
             <Mixes report={shown} paymentsCsv={csv("payments")} channelsCsv={csv("channels")} />
-            <WhoSold report={shown} csv={csv("staff")} />
             <Heatmap report={shown} csv={csv("hours")} />
           </div>
         </div>

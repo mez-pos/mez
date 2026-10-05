@@ -321,7 +321,11 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
       columns). Decide first what "cost" is: today's recipe at today's cost, or
       what the ledger moved for the orders that sold it. Domain code with tests,
       then the two columns.
-  - [ ] 16e. Staff reports (D17, without the customers).
+  - [x] 16e. (ADR-188) Staff reports (D17, without the customers). Split on
+    2026-10-05: the report had one tips total and the design a tips column.
+    - [x] 16e1. Tips by who took the payment, on the report (`tips_by`). Go tests.
+    - [x] 16e2. The screen, a third report tab: staff performance with tips,
+      removed in error, the tips total; "Who sold it" moved here.
   - [ ] 16f. Menu (D18).
   - [ ] 16g. Inventory (D19).
   - [ ] 16h. Staff and roles (D20).
