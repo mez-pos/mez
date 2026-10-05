@@ -68,7 +68,7 @@ export function ItemList({ menu, filter, onOrder, openId, onOpen, api, onProblem
       {items.length === 0 ? (
         <p className="p-4 text-sm text-fg-2">{emptyLine(menu, filter)}</p>
       ) : (
-        <ul aria-label="Menu items" className="flex max-h-[70vh] min-h-64 flex-col gap-1.5 overflow-y-auto p-2.5 [scrollbar-width:thin]">
+        <ul aria-label="Menu items" className="flex max-h-[70vh] min-h-64 flex-col gap-1.5 overflow-y-auto p-2.5 scrollbar-thin">
           {items.map((item, row) => {
             const state = itemState(item, now);
             const at = order ? order.indexOf(item.id) : -1;

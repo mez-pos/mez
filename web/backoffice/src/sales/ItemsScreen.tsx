@@ -161,7 +161,7 @@ function ItemPerformance({ report, prior, against, failed }: ItemPerformanceProp
   return (
     <div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[46rem] text-base">
+        <table className="w-full min-w-184 text-base">
           <thead>
             <tr className="border-b border-line text-left">
               <th scope="col" className={head}>

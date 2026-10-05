@@ -48,7 +48,7 @@ export function SectionNav({ current, held }: SectionNavProps) {
   return (
     <nav
       aria-label="Sections"
-      className="flex shrink-0 flex-col border-b border-line bg-chrome px-3.5 py-4 md:w-60 md:overflow-y-auto md:border-r md:border-b-0 md:[scrollbar-width:thin]"
+      className="flex shrink-0 flex-col border-b border-line bg-chrome px-3.5 py-4 md:w-60 md:overflow-y-auto md:border-r md:border-b-0 md:scrollbar-thin"
     >
       {groups.map((g) => (
         <div key={g.label ?? "top"} className="mb-1 last:mb-0">

@@ -79,7 +79,7 @@ function Performance({ report }: { report: SalesReport }) {
   if (rows.length === 0) return <Nothing>Nobody opened a bill or took a tip in these days.</Nothing>;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[40rem] text-base">
+      <table className="w-full min-w-160 text-base">
         <thead>
           <tr className="border-b border-line text-left">
             <th scope="col" className={cx(head, "w-8")}>

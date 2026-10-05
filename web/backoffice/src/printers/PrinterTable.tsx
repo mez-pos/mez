@@ -40,7 +40,7 @@ export function PrinterTable({ printers, stations, api, onEdit, onProblem }: Pri
     <Card padding="lg" className="min-w-0">
       {/* Under 1280px it scrolls sideways; kept tall enough there for a row's menu to open inside. */}
       <div className="min-h-80 overflow-x-auto xl:min-h-0 xl:overflow-visible">
-        <table aria-label="Printers" className="w-full min-w-[42rem] text-base">
+        <table aria-label="Printers" className="w-full min-w-168 text-base">
           <thead>
             <tr className="border-b border-line text-left">
               <th scope="col" className={head}>

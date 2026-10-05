@@ -27,7 +27,7 @@ export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTablePro
     <Card padding="lg" className="min-w-0">
       {/* Under 1280px it scrolls sideways; kept tall enough there for a row's menu to open inside. */}
       <div className="min-h-80 overflow-x-auto xl:min-h-0 xl:overflow-visible">
-        <table aria-label="Devices" className="w-full min-w-[44rem] text-base">
+        <table aria-label="Devices" className="w-full min-w-176 text-base">
           <thead>
             <tr className="border-b border-line text-left">
               <th scope="col" className={head}>
