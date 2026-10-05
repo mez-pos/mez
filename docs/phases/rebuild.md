@@ -340,6 +340,35 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     left as they are.
 - [ ] **Task 17 - Close.** Rewrite `docs/design/screens/*.md` from what was
   built. Walk register, kitchen, payment, invoice and Z-report as each role.
+  Split on 2026-10-05 (ADR-196): about thirty screens, a third of them with no
+  spec at all, and then four people to walk as. A spec is written from the
+  screen's code as it stands, keeps its file name where code cites it, and
+  lists under Reference what the design draws and the screen leaves out.
+  - [x] 17a. The way in and the frame: sign-in and pairing
+    (`terminal-lock.md`), the frame, the navigation and where each role lands
+    (`terminal-shell.md`, new), Open the shift (`terminal-open-shift.md`,
+    new), Close the day (`terminal-close.md`).
+  - [ ] 17b. The order screen and the item modal (`terminal-register.md`),
+    Tables (`terminal-floor.md`).
+  - [ ] 17c. Payment and split (`terminal-tender.md`), Orders and refunds
+    (`terminal-past-bills.md`), the print queue (`terminal-print-queue.md`).
+  - [ ] 17d. The waiter's screens, none of which has a spec: home, the order
+    screen's waiter variant with confirm and Course View, the table, transfer
+    and merge, the bill, the shift summary (`waiter-*.md`, new).
+  - [ ] 17e. The kitchen: the board, its foot and stats, Coming next, and a
+    cook signed in on a terminal (`kitchen-display.md`).
+  - [ ] 17f. The back office's frame (`backoffice-shell.md`), the dashboard
+    (`backoffice-dashboard.md`, new), the three report tabs
+    (`backoffice-reports.md`), Audit (`backoffice-audit.md`).
+  - [ ] 17g. The rest of the back office: Menu, Inventory, Staff, Settings,
+    Printers, Devices, Floor plan, Tips, and the Z-report in both apps
+    (`backoffice-menu.md`, `-stock.md`, `-people.md`, `-settings.md`,
+    `-printers.md`, `-devices.md`, `-floor.md`, `tips.md`, `zreport.md`).
+    `screens/README.md` lists every spec against its design screen.
+  - [ ] 17h. The walk, in the dev server: a cashier, a waiter, the kitchen and
+    a manager each take an order through to a paid bill, an invoice and a
+    Z-report. What breaks is fixed or written into `STATE.md`; the "not seen
+    by eye" lists there are cut to what is still unseen.
 
 ## Not in this phase
 

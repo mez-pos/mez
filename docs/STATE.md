@@ -14,7 +14,14 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16k: Printers, Devices and Audit on Task 16's patterns** (ADR-195).
+**Rebuild, Task 17a: the specs for the way in and the frame** (ADR-196). Task 17 is
+split in eight (17a to 17h, `rebuild.md`): seven of specs, then the walk. Written from
+the code as it stands: `terminal-lock.md` (Staff Login and pairing, D01),
+`terminal-shell.md` (new: where each role lands, the desktop's and the waiter's frame,
+the paths, the shift gate), `terminal-open-shift.md` (new, D02) and `terminal-close.md`
+(Close the day in two steps, D23). Docs only: no code changed. `make check` passes.
+
+Before it, **Rebuild, Task 16k: Printers, Devices and Audit on Task 16's patterns** (ADR-195).
 Asked for by the owner before Task 17. Printers (`printers/PrinterTable.tsx`,
 `PrinterRouting.tsx`) and Devices (`devices/DeviceTable.tsx`) are tables in a card
 with a chip and a row menu; Audit has the reports' head and the range pill, now
@@ -274,11 +281,14 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 17: Close.** Rewrite `docs/design/screens/*.md` from what was built, and
-walk register, kitchen, payment, invoice and Z-report as each role. The owner has not
-yet looked at the kitchen's screens or anything of Task 16. The back office screens the
-design draws nothing for: Printers, Devices and Audit were brought onto Task 16's
-patterns (ADR-195); Floor plan and Tips are still their old layouts. Phase 11 waits for this phase. Phase 10's tasks are
+**Rebuild, Task 17b: the specs for the order screen and Tables.** Rewrite
+`terminal-register.md` (the order screen, D03, and the item modal, D04) and
+`terminal-floor.md` (Tables, D05, and the table list) from `register/` and `floor/` as
+they stand, the way 17a did (ADR-196): layout, data, interactions, states, and under
+Reference what the design draws that the screen leaves out. The waiter's variant of the
+order screen is 17d's. Then 17c to 17g, and the walk as each role is 17h. The owner has
+not yet looked at the kitchen's screens or anything of Task 16. Floor plan and Tips
+are still their old layouts (ADR-195). Phase 11 waits for this phase. Phase 10's tasks are
 all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
 unticked below.
 

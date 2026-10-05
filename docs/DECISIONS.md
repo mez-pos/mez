@@ -5692,3 +5692,32 @@ Because: these are the screens an owner sets a venue up on, on the first day.
 Cost: `docs/design/screens/backoffice-printers.md`, `backoffice-devices.md` and
 `backoffice-audit.md` describe the old layouts until Task 17.
 ---
+
+## ADR-196 - Task 17 is split in eight, and a spec is written from the screen's code
+2026-10 · Status: accepted. Rebuild Task 17.
+Context: Task 17 asks for `docs/design/screens/*.md` rewritten from what was built,
+and a walk as each role. There are about thirty screens. Twenty-one have a spec, all
+describing the layouts the rebuild replaced; the waiter's six screens, the dashboard,
+Open the shift and the terminal's frame have none. One session cannot read them all.
+Decision:
+  - **Eight parts**, 17a to 17h in `rebuild.md`: seven of specs, grouped by who uses
+    the screens, and the walk last, so it is made against specs that are true.
+  - **A spec is written from the code as it stands**, not from the design file and
+    not from the spec before it. The design is cited under Reference by its screen
+    and line, with what it draws that the screen leaves out and why, and what the
+    screen keeps that the design does not draw (rule 4).
+  - **A spec keeps its file name** where code cites it (`terminal-close.md` is named
+    in five source files), even where the screen's own name has changed. New files
+    are for screens that never had one.
+  - **The frame has a spec of its own**, `terminal-shell.md`: where each role lands,
+    the two frames, the paths and the shift gate. It was nowhere but in ADRs.
+  - **Open the shift leaves `terminal-close.md`** for `terminal-open-shift.md`: they
+    are two screens for two people at two ends of the day.
+  - **No code changes in 17a to 17g.** What a spec's writing shows to be wrong goes
+    into `STATE.md` for the walk.
+Because: the specs are what the next phase reads before it touches a screen, and a
+spec that describes the old layout is worse than none.
+Cost: until 17g is done, `docs/design/screens/` is part old and part new;
+`rebuild.md` says which. Comments in `shift/` still cite `terminal-close.md` for the
+opening float.
+---
