@@ -104,7 +104,7 @@ export function FloorGrid({ cells, chosen, moving, onCell, onTable, onDrop }: Fl
                       className={cx(
                         "absolute inset-0 flex touch-none select-none items-center justify-center outline-offset-2 outline-line-focus focus-visible:outline-2",
                         dragged && "pointer-events-none z-10 opacity-80",
-                        chosen === t.id && "outline outline-2",
+                        chosen === t.id && "outline-2",
                       )}
                     >
                       <TableShapeTile table={t} />

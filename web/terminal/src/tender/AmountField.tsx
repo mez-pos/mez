@@ -50,7 +50,7 @@ export function AmountField({ label, amount, active, placeholder, disabled = fal
         className={cx(
           "flex min-h-charge w-full items-center rounded border bg-raised px-4 text-left outline-offset-0 disabled:opacity-60",
           // A field's focus is green, with a soft halo (tokens.md).
-          active && !disabled ? "border-accent outline outline-3 outline-accent-tint" : "border-line-strong",
+          active && !disabled ? "border-accent outline-3 outline-accent-tint" : "border-line-strong",
         )}
       >
         {empty ? <span className="text-base text-fg-muted">{placeholder}</span> : <Money amount={amount} className="text-xl font-bold" />}

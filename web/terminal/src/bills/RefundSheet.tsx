@@ -132,7 +132,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
 
         {draft.kind === "amount" && (
           <div className="mx-auto flex w-full max-w-80 flex-col gap-3">
-            <div className="flex min-h-charge items-center justify-end rounded border border-accent bg-raised px-4 outline outline-3 outline-accent-tint">
+            <div className="flex min-h-charge items-center justify-end rounded border border-accent bg-raised px-4 outline-3 outline-accent-tint">
               <Money amount={{ minor: draft.minor, currency: order.currency }} className="text-xl font-bold" />
             </div>
             <NumPad

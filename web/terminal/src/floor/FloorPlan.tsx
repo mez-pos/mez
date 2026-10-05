@@ -94,7 +94,7 @@ function TableTile({ table: t, now, names, picked, onTap }: TableTileProps) {
         "relative flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-card border-2 bg-raised p-1.5 shadow-rest 2xl:p-3",
         "outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3",
         tone.border,
-        picked && "outline outline-3",
+        picked && "outline-3",
       )}
     >
       {/* The table itself, in its state's colour: round if it is a round one. */}

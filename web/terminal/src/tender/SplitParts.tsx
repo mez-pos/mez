@@ -94,7 +94,7 @@ export function GuestCard({ seat, name, paid, lines, due, settling = false, sele
   return (
     <article
       aria-label={name}
-      className={cx("flex flex-col rounded-card border bg-raised p-4", selected ? "border-accent outline outline-3 outline-accent-tint" : "border-line")}
+      className={cx("flex flex-col rounded-card border bg-raised p-4", selected ? "border-accent outline-3 outline-accent-tint" : "border-line")}
     >
       <div className="flex items-center gap-2.5">
         {onSelect ? (

@@ -286,7 +286,7 @@ function AmountChooser({ guest, keyed, full, onKey, onAdd }: AmountChooserProps)
   return (
     <div className="flex flex-col gap-3">
       <ColumnHeading>Guest {guest} pays</ColumnHeading>
-      <div className="-mt-1 flex min-h-charge items-center justify-end rounded border border-accent bg-raised px-4 outline outline-3 outline-accent-tint">
+      <div className="-mt-1 flex min-h-charge items-center justify-end rounded border border-accent bg-raised px-4 outline-3 outline-accent-tint">
         <Money amount={keyed} className="text-xl font-bold" />
       </div>
       <NumPad layout="amount" label={`What guest ${guest} pays`} onKey={onKey} />
