@@ -14,7 +14,15 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16h: Staff and roles** (ADR-192). `/backoffice/people` is D20, called
+**Rebuild, Task 16i: Settings** (ADR-193). `/backoffice/settings/*` has D22's frame
+(`settings/SettingsScreen.tsx`): the title, the rail as a card with icons, links out to
+Printers, Devices and Tables and floor plan, the version box, and the section's cards
+across the rest. A section still saves itself. Venue's fields are two across. Seen in a
+browser as Priya at 1920x1080: the three sections, a draft and the "Leave without
+saving?" prompt from a link out, Discard. Test: `relatedScreens`. `make check` and
+`make build-web` pass.
+
+Before it, **Rebuild, Task 16h: Staff and roles** (ADR-192). `/backoffice/people` is D20, called
 Staff in the sidebar (`people/PeopleScreen.tsx`, `RolePanel.tsx`): the staff table
 with a state chip and a row menu, and beside it the roles as pills with the chosen
 one's permissions as switches, its name, Reset and Save role. The role cards and the
@@ -243,11 +251,13 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to h).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to i).
 
 ## Next task
 
-**Rebuild, Task 16i: Settings** (D22, `mez Desktop Management.dc.html` line 602).
+**Rebuild, Task 16j: The Z-report** (D23, `mez Desktop Management.dc.html` line 707).
+It is the last of Task 16. A Z-report built from now on also carries `by_service`,
+`covers` and `tips_by` (ADR-184, ADR-188): decide whether D23 shows them.
 Read `docs/design/tokens.md` and that one screen. The screens inside the new frame are
 still the old layouts until their own tasks (16c to 16j). The owner has not yet looked
 at the kitchen's screens, the frame or the dashboard. Phase 11 waits for this phase.
@@ -264,6 +274,10 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Settings (ADR-193): the Printers, Devices and Floor plan screens inside are still
+  their old layouts (the design draws no screen for them). Not seen by eye: a width
+  under 1920, a save, Leave carried through, the rail for someone without
+  `device.manage`, and the Tax and Shift sections' cards beyond their headings.
 - Staff and roles (ADR-192): no roster, shift column, phone or PIN column. An unsaved
   change to a role is dropped when another role or person is picked. After changing
   your own role the switches follow your old permissions until you sign in again.

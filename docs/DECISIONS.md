@@ -5597,3 +5597,32 @@ screen is "what can this person do".
 Cost: a change to a role that is not saved is dropped when another role is picked.
 `docs/design/screens/backoffice-people.md` describes the old screen until Task 17.
 ---
+
+## ADR-193 - Settings is D22's frame around the sections that exist
+2026-10 · Status: accepted. Rebuild Task 16i (D22); over ADR-129 and ADR-136 to ADR-140.
+Context: D22 is a 290px rail (Outlet, Taxes & charges, Printers & devices, Tables & QR
+codes, Integrations, Language & theme, Backup & restore) beside every section's card on
+one screen, with one Discard and Save. Settings was already a rail beside one section,
+each section saving itself (ADR-129).
+Decision:
+  - **The frame is the design's:** the title "Settings", the rail as a card with an icon
+    on every entry, the current one terracotta, and the version and licence in a box at
+    its foot. The section's cards fill the rest of the width.
+  - **A section is still a page that saves itself.** One Save for everything would make
+    a refusal about one form hold back another, and ADR-129's reasons stand.
+  - **The rail links out to the settings that are screens of their own:** Printers,
+    Devices, and Tables and floor plan, each shown to whoever may open it. Leaving a
+    section with unsaved changes by one of these asks first, as moving between sections
+    does.
+  - **Venue's fields are two across,** as the design lays out an outlet's details.
+  - **The sidebar's entry is Settings,** not Venue settings.
+  - **Left out:** Integrations (there are none); Language & theme (one language, and
+    night is the kitchen display's own switch); QR codes (phase 11); the outlet picker
+    in the bar (a venue is one outlet); an address, a phone and service hours (the
+    venue keeps none); a service charge and the tax switches (tax is a profile and its
+    classes, ADR-131). Backup stays "Soon" until phase 12.
+Because: the sections were built to the right shape already; what the design adds is
+the frame and one place to find every setting.
+Cost: Printers, Devices and Floor plan are in two places, the sidebar and this rail.
+`docs/design/screens/backoffice-settings.md` describes the old frame until Task 17.
+---

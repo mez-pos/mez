@@ -18,10 +18,12 @@ export interface SectionCardProps {
   error: string | null;
   onSave: () => void;
   onDiscard: () => void;
+  /** Two fields across from 640px, as D22 lays out a venue's details; one otherwise. */
+  columns?: 1 | 2;
   children: ReactNode;
 }
 
-export function SectionCard({ title, description, dirty, busy, saved, error, onSave, onDiscard, children }: SectionCardProps) {
+export function SectionCard({ title, description, dirty, busy, saved, error, onSave, onDiscard, columns = 1, children }: SectionCardProps) {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (dirty && !busy) onSave();
@@ -34,7 +36,7 @@ export function SectionCard({ title, description, dirty, busy, saved, error, onS
       <form onSubmit={submit} noValidate>
         <h2 className="font-serif text-xl">{title}</h2>
         <p className="mt-1 text-base text-fg-2">{description}</p>
-        <div className="mt-6 flex max-w-xl flex-col gap-5">{children}</div>
+        <div className={columns === 2 ? "mt-6 grid max-w-4xl gap-5 sm:grid-cols-2" : "mt-6 flex max-w-xl flex-col gap-5"}>{children}</div>
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
           <div className="flex min-h-tap flex-col justify-center">
             <p

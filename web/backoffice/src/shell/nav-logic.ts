@@ -106,7 +106,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         id: "settings",
-        label: "Venue settings",
+        label: "Settings",
         path: "/settings",
         needs: "settings.edit",
         key: "v",

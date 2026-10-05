@@ -2,7 +2,8 @@
 // which sections there are, the venue details form and its checks, and how a
 // refusal reads. No React here, so all of it is tested directly.
 
-import type { SettingsVenueResponse, VenueDetailsRequest } from "../../../shared/api-types";
+import type { Permission, SettingsVenueResponse, VenueDetailsRequest } from "../../../shared/api-types";
+import { canOpen, section } from "../shell/nav-logic";
 import { problemWith, type Problem as FieldProblem } from "./problem";
 
 export type SettingsSectionId = "venue" | "tax" | "shifts" | "backup";
@@ -22,6 +23,30 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   { id: "shifts", label: "Shift, tips and receipt", path: "/settings/shifts", built: true },
   { id: "backup", label: "Backup", path: "/settings/backup", built: false },
 ];
+
+export interface RelatedScreen {
+  readonly id: "printers" | "devices" | "floor";
+  readonly label: string;
+  readonly path: string;
+}
+
+/**
+ * The settings that are screens of their own, as the rail names them. The
+ * design's rail lists "Printers & devices" and "Tables & QR codes" as
+ * sections; here they are built screens, so the rail links out to them.
+ * Where each goes and who may open it is the navigation's own (nav-logic.ts),
+ * so the rail and the route's gate cannot disagree.
+ */
+const RELATED: readonly { id: RelatedScreen["id"]; label: string }[] = [
+  { id: "printers", label: "Printers" },
+  { id: "devices", label: "Devices" },
+  { id: "floor", label: "Tables and floor plan" },
+];
+
+/** The related screens this staff member may open. */
+export function relatedScreens(held: readonly Permission[]): RelatedScreen[] {
+  return RELATED.filter((r) => canOpen(section(r.id), held)).map((r) => ({ ...r, path: section(r.id).path }));
+}
 
 /** Where `/settings` and a path that is no section go. */
 export const DEFAULT_SECTION = SETTINGS_SECTIONS[0]!;

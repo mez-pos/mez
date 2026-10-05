@@ -330,7 +330,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 16f. (ADR-190) Menu (D18).
   - [x] 16g. (ADR-191) Inventory (D19).
   - [x] 16h. (ADR-192) Staff and roles (D20).
-  - [ ] 16i. Settings (D22).
+  - [x] 16i. (ADR-193) Settings (D22).
   - [ ] 16j. The Z-report (D23).
 - [ ] **Task 17 - Close.** Rewrite `docs/design/screens/*.md` from what was
   built. Walk register, kitchen, payment, invoice and Z-report as each role.

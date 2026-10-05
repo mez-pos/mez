@@ -6,6 +6,7 @@ import {
   MAX_NAME,
   SETTINGS_SECTIONS,
   builtSectionFor,
+  relatedScreens,
   problemOf,
   timezoneNames,
   toVenueInput,
@@ -126,5 +127,13 @@ describe("the timezone suggestions", () => {
       expect(names).toContain("Asia/Kolkata");
       expect(names.length).toBeGreaterThan(5);
     }
+  });
+});
+
+describe("the screens the rail links out to", () => {
+  it("lists those the staff member may open", () => {
+    expect(relatedScreens(["settings.edit", "device.manage"]).map((r) => r.path)).toEqual(["/printers", "/devices", "/floor"]);
+    expect(relatedScreens(["settings.edit"]).map((r) => r.id)).toEqual(["printers", "floor"]);
+    expect(relatedScreens([])).toEqual([]);
   });
 });

@@ -40,6 +40,7 @@ export function VenueSection({ venue, onSave, onDirty }: VenueSectionProps) {
       error={d.footerError}
       onSave={d.save}
       onDiscard={d.discard}
+      columns={2}
     >
       <Field label="Venue name" hint="Shown on the lock screen and on receipts." error={d.on("name")}>
         {(id) => (
