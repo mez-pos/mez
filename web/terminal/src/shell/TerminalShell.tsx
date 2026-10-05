@@ -59,7 +59,7 @@ export function TerminalShell({ children }: { children: ReactNode }) {
           <WaiterOrderBar />
         ) : waiter && path.startsWith(`${route.waiter}/table/`) ? (
           <WaiterBack />
-        ) : waiter ? (
+        ) : waiter && path.startsWith("/pay/") ? null : waiter ? ( // The bill carries its own way back (T05).
           <WaiterNav active={activeWaiterNav(path)} onPrintQueue={() => setPrintOpen(true)} />
         ) : (
           <NavPills items={navItems(auth.permissions)} active={activeNav(path)} />

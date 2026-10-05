@@ -18,10 +18,12 @@ import { OpenShiftScreen } from "../shift/OpenShiftScreen";
 import { soldOutNames, soldOutNotice } from "../shift/open-shift-logic";
 import { ShiftNotOpen } from "../shift/ShiftNotOpen";
 import { PayScreen } from "../tender/PayScreen";
+import { WaiterBill } from "../waiter/WaiterBill";
 import { landingFor } from "./landing";
 import { backOffice } from "./nav-logic";
 import { route } from "./routes";
 import { useTerminal } from "./terminal-context";
+import { useWaiterFrame } from "./use-waiter-frame";
 
 /** "/": a person's own first screen, by their role. */
 export function Landing() {
@@ -43,11 +45,12 @@ export function LeaveForKitchen() {
   return <p className="m-auto text-base text-fg-muted">Opening the kitchen display</p>;
 }
 
-/** "/pay/:id": the payment screen, on the order named. */
+/** "/pay/:id": the payment screen, on the order named. A waiter's is the bill at the table (T05). */
 export function PayPage({ orderId }: { orderId: string }) {
   const { ticket, names } = useTerminal();
   const [, navigate] = useLocation();
   const asked = useRef(false);
+  const waiter = useWaiterFrame();
 
   // Arriving by a link, the order named may not be the one in front: bring it
   // there, once. If the ticket moves on after that (the bill was paid and
@@ -60,8 +63,14 @@ export function PayPage({ orderId }: { orderId: string }) {
     }
   }, [behind, orderId, ticket]);
 
-  if (behind) return asked.current ? <Redirect to={route.order} replace /> : <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
+  // A waiter whose bill is closed is back at the tables, where the table is cleared.
+  if (behind)
+    return asked.current ? <Redirect to={waiter ? route.waiter : route.order} replace /> : <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
   if (!ticket.order) return <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
+  if (waiter) {
+    const title = railTitle(ticket.order, ticket.order.service, names);
+    return <WaiterBill order={ticket.order} ticket={ticket} title={title} onClosed={() => navigate(route.waiter)} />;
+  }
   return <PayScreen order={ticket.order} ticket={ticket} title={railTitle(ticket.order, ticket.order.service, names)} onBack={() => navigate(route.order)} />;
 }
 

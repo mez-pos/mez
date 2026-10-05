@@ -5013,3 +5013,34 @@ Decision:
     and to the tables for an order with none.
 Cost: seating is in two places, the waiter's home and the floor's panel.
 ---
+
+## ADR-172 - The waiter's bill is one column, and a payment settles the split
+2026-10 · Status: accepted. Rebuild Task 14a (T05); builds on ADR-156 and ADR-159.
+Context: T05 draws the bill as one 660px column: the split, a row per guest with
+Collect, how the chosen share is paid, and Close table. It has no "Complete split"
+step, a QR made for the share, a Wallet tile and "Print bill".
+Decision:
+  - **`/pay/:id` is `WaiterBill` for whoever works from the waiter's frame,** and the
+    desktop payment screen for everyone else. Same route, same ticket, same commands.
+    The top bar there is bare: the bill has its own way back, to the table.
+  - **The bill starts whole:** "Split between 1 guest", one row, "Whole bill". Most
+    tables pay as one, and a bill must not arrive already divided by its covers.
+  - **An equal split is live until a payment begins.** The server is asked again as the
+    guests are counted. The first "Mark as paid" or "Cash received" settles the shares
+    before the money is sent, and they stay settled if the answer is lost: a payment
+    recorded unseen then shows as a bill that changed, not as shares divided again.
+  - **By item and Custom open the desktop's split panel,** which takes the screen;
+    what it completes comes back as the column's rows. T05 draws neither mode.
+  - **A share is paid whole, in one payment,** as on the desktop. A part payment is a
+    Custom split.
+  - **UPI and card have no waiting step of their own.** The tablet is at the table:
+    choosing the method is the wait, and "Mark as paid" records it (no gateway, ADR-159).
+  - **A tip is one of three percentages or none.** A keyed tip stays the desktop's.
+  - **Close table closes the order and returns to the tables,** where the table is
+    cleared (ADR-171). It is offered only on a bill paid in full.
+Left out, and why (rule 3): "Print bill" before payment (no bill prints until it is
+paid and numbered, ADR-078; "Print receipt" appears with the invoice and is a copy
+with a manager's approval), the QR, the Wallet tile, and the time a share was paid.
+Cost: two payment screens over one set of logic. A split and who has paid are lost
+on a reload, as on the desktop (ADR-077).
+---

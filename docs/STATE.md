@@ -14,7 +14,18 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 13b: transfer and merge** (ADR-170). Task 13 is done. Transfer and
+**Rebuild, Task 14a: the waiter's bill** (ADR-172). Task 14 is split in two. For a
+waiter `/pay/:id` is T05 (`waiter/WaiterBill.tsx`, `BillShares.tsx`, `BillCollect.tsx`,
+`bill-logic.ts`): one column with the table and its total, Split equally with the
+guests counted (it starts at one, "Whole bill"), a row for each share, the share being
+collected by UPI, card or cash with a tip, what has been collected, Print receipt once
+there is an invoice, and Close table, which returns to the tables. By item and Custom
+open the desktop's split panel. Seen in a browser at 1366x1024 as Kabir: T5 split in
+two, one share by UPI, one by cash with change, Paid in full, and Close table leaving
+T5 to clear; and a bill already paid. Tests: `shareName`, `eachShare`, `shareRows`,
+`tablePays`, `closeBlock`. `make check` and `make build-web` pass.
+
+Before it, **Task 13b: transfer and merge** (ADR-170). Task 13 is done. Transfer and
 Merge on the table's screen open T06 as a modal (`waiter/MoveTable.tsx`,
 `move-logic.ts`): the party's items, total and guests, the two modes, every other
 table as a tile (free ones can be taken, the rest say why not), and a button that says
@@ -65,15 +76,14 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c) or 13 (a, b).
+10c, 11, 12 (a, b, c), 13 (a, b) or 14a.
 
 ## Next task
 
-**Rebuild, Task 14** (waiter bill and shift summary): T05 (line 425 of `mez Tablet
-Waiter.dc.html`) and T08 (line 552). A waiter's "Bill and pay" (the table's screen, the
-rail's "...") opens the desktop payment screen (`/pay/:id`, `tender/PayScreen.tsx`)
-today. Two screens: split it before starting. Read `docs/design/tokens.md` and those
-two only. Phase 11
+**Rebuild, Task 14b** (the shift summary): T08 (line 552 of `mez Tablet
+Waiter.dc.html`). Check first what the server can say for one person (tables, orders,
+sales, tips): the design's ratings and "Tips by table" may have nothing behind them.
+Read `docs/design/tokens.md` and that screen only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -87,13 +97,18 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- The waiter's bill (ADR-172): no Print bill before payment, no QR, no Wallet, no
+  keyed tip. A toast sits over the foot's buttons for its few seconds. Not seen by eye:
+  By item and Custom carried through from here, Change the split, a stale split, a
+  card payment, a tip, the keypad for cash, a refusal, Print receipt, an order with
+  no table ("Close order"), and three or more shares (the column scrolls).
 - Transfer and merge (ADR-170): a merge of several tables is one request each, in
   turn; if one is refused the ones before it stand. No note about QR sessions, no
   "Notify the kitchen". Not seen by eye: a refusal, several tables joined at once, join
   and let go in one go, a floor of more than sixteen other tables (the tiles scroll).
 - The table's screen (ADR-169): a table with several orders is the floor's; a free
   one is seated and one to clear is cleared from the waiter's home (ADR-171). Notes carry no time or name (a note keeps neither). Every course wears the same
-  icon. Bill and pay opens the desktop payment screen until T05 (Task 14). The order
+  icon. The order
   screen's back arrow returns here for an order at a table (ADR-171). Not seen by eye: a
   joined table ("Merged"), a saved order, a held course's Fire, a Ready item, a refusal,
   a table gone from the floor, and an order paid from here.

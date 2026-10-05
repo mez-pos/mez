@@ -252,7 +252,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     the party to a free table or joins free tables to it.
 - [ ] **Task 14 - Waiter bill and shift summary.** T05, T08. Split on
   2026-10-05, a screen each.
-  - [ ] 14a. The waiter's bill (T05): a waiter's "Bill and pay" opens the bill
+  - [x] 14a. (ADR-172) The waiter's bill (T05): a waiter's "Bill and pay" opens the bill
     under the waiter's bar, not the desktop payment screen. The table and what
     it owes, split equally, by item or by amount, each guest's share with
     Collect, how the chosen share is paid, what has been collected so far,
