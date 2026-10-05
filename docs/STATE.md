@@ -14,7 +14,20 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 16c2: Sales reports** (ADR-185). Task 16c is done. `/backoffice/sales` is
+**Rebuild, Task 16d2: Items and inventory** (ADR-187). `/backoffice/sales/items` is D16
+(`sales/ItemsScreen.tsx`, `items-logic.ts`), a tab beside Sales: item performance with a
+trend against the days before, wastage as bars with its total, stock health, and under
+"In detail" what sold in full and the closing stock, moved from Sales reports. The range
+is shared by the report tabs (`report-range.tsx`, `use-range-sales.ts`). Seen in a
+browser as Priya at 1920x1080: seven days and Today, the tabs keeping the days, four
+write-offs keyed into the dev venue. Tests: `itemRows`, `wasteBars`, `stockHealth`.
+`make check` and `make build-web` pass. Cost and Margin are split off as 16d3.
+
+Before it, **Rebuild, Task 16d1: the wastage report** (ADR-186). `GET
+/api/v1/reports/wastage`: write-offs over a range of trading days by stock item and by
+reason, at the cost each had. Go tests in the service and over HTTP.
+
+Before it, **Rebuild, Task 16c2: Sales reports** (ADR-185). Task 16c is done. `/backoffice/sales` is
 D15 (`sales/SalesScreen.tsx`, `SalesCharts.tsx`, `SalesHead.tsx`, `overview-logic.ts`):
 the title with the range pill and Export, four figures against the same number of days
 before, the trend stacked by service, sales by category and orders by type as rings,
@@ -182,14 +195,14 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a, b, c).
+10c, 11, 12 (a, b, c), 13 (a, b) 14 (a, c), 15 (b to f) or 16 (a to d).
 
 ## Next task
 
-**Rebuild, Task 16d: Item and inventory reports** (D16, `mez Desktop Management.dc.html`
-line 176). Items, categories and closing stock move there from "In detail" on Sales
-reports; decide first how the reports' own sub-navigation (D15's sidebar: Sales, Item
-reports, Inventory, Staff) sits beside the back office's sidebar.
+**Rebuild, Task 16e: Staff reports** (D17, `mez Desktop Management.dc.html` line 224,
+without the customers). It becomes a third report tab; "Who sold it" moves there from
+Sales reports. 16d3 (an item's cost and margin) is open and can wait: it needs a
+decision on what "cost" is before any code.
 Read `docs/design/tokens.md` and that one screen. The screens inside the new frame are
 still the old layouts until their own tasks (16c to 16j). The owner has not yet looked
 at the kitchen's screens, the frame or the dashboard. Phase 11 waits for this phase.
@@ -206,6 +219,11 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- Items and inventory (ADR-187): no Cost or Margin (16d3), no purchase orders, no
+  CSV for wastage. The dev venue now has four stock items and four write-offs keyed
+  on 2026-10-05 to show the cards. Not seen by eye: a trend arrow (every item was new
+  in its days), more than five write-offs, a day with none, the screen without
+  `stock.manage` (no stock health card), a failed read, a width under 1920.
 - Sales reports (ADR-185): no outlet or order type filter, no CSV for service types.
   "Total guests" counts only parties someone counted. Not seen by eye: a range of
   more than seven periods (the named bars), delivery on the trend, more than six

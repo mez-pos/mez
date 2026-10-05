@@ -4,96 +4,52 @@
 // how it was served, sales by category, the top sellers, orders by type and
 // how it was paid. Under "In detail" are the reports the design does not
 // draw and the back office has (rebuild.md, rule 4): the range's figures,
-// each period, the channels, the full tables, the heatmap, the corrections
-// and the closing stock, each with its CSV (ADR-119).
+// each period, the channels, who sold it, the heatmap and the corrections,
+// each with its CSV (ADR-119). What sold, in full, and the stock are on Items
+// and inventory (D16).
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { BanknoteIcon, ReceiptTextIcon, TagIcon, UsersIcon } from "lucide-react";
-import { useState } from "react";
-import type { ReportEvery, ReportSheet, SalesReport } from "../../../shared/api-types";
-import { ApiError } from "../../../shared/api";
-import { useAuthStore } from "../../../shared/auth/use-auth";
-import { EmptyState, InboxIcon, Money } from "../../../shared/ui";
+import type { ReportSheet, SalesReport } from "../../../shared/api-types";
+import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { change } from "../dashboard/dashboard-logic";
 import { Panel } from "../dashboard/Panel";
 import { ChangeNote, StatTile } from "../dashboard/StatTile";
-import { beforeText, insightText, previousRange, usable } from "./overview-logic";
+import { beforeText } from "./overview-logic";
+import { useReportRange } from "./report-range";
+import { ReportState } from "./ReportState";
 import { CategoryRing, OrderTypes, PaymentBars, SalesTrend, ServiceLegend, TopSelling } from "./SalesCharts";
-import { ClosingStock } from "./SalesClosingStock";
 import { Corrections } from "./SalesCorrections";
-import { ExportMenu, RangeMenu } from "./SalesHead";
+import { ExportMenu, ReportHead, sheets } from "./SalesHead";
 import { Headline, Mixes, OverTime } from "./SalesSections";
-import { Heatmap, Sold } from "./SalesTables";
+import { Heatmap, WhoSold } from "./SalesTables";
 import { useCsvDownload, useCsvFile } from "./use-csv-download";
-import { averageBill, csvPath, everyFor, quickRange, quickRangeOf, salesPath, type SalesRange } from "./sales-logic";
+import { useRangeSales } from "./use-range-sales";
+import { averageBill, csvPath } from "./sales-logic";
 
 // Three across from 1280px, as the dashboard's rows are; at the design's
 // width the two cards beside the wide one are its 420px.
 const row = "grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,2fr)] min-[1800px]:grid-cols-[minmax(0,1fr)_420px_420px]";
 
 export function SalesScreen() {
-  const store = useAuthStore();
+  const { range, every, picked } = useReportRange();
+  const { report, shown, prior, stale } = useRangeSales();
   // One download at a time, whether from Export or a table's own button.
   const file = useCsvFile();
   const button = useCsvDownload(file);
-  const [range, setRange] = useState<SalesRange>(() => quickRange("week", new Date()));
-  // Null until chosen by hand: until then the cut follows the range.
-  const [chosen, setChosen] = useState<ReportEvery | null>(null);
-  const every = chosen ?? everyFor(range);
-  const quick = quickRangeOf(range, new Date());
-  const picked = usable(range);
-  const before = picked ? previousRange(range) : null;
-
-  const report = useQuery({
-    queryKey: ["sales", range, every],
-    queryFn: ({ signal }) => store.api.get<SalesReport>(salesPath(range, every), { signal }),
-    enabled: picked,
-    // The last range's figures stay, dimmed, while the next is read.
-    placeholderData: keepPreviousData,
-  });
-  // The same number of days just before, for "up on the 7 days before". Its
-  // totals alone are read, so it is cut as coarsely as the server allows.
-  const prior = useQuery({
-    queryKey: ["sales", before, "month"],
-    queryFn: ({ signal }) => store.api.get<SalesReport>(salesPath(before ?? range, "month"), { signal }),
-    enabled: before !== null,
-  });
-
   // Not while the figures shown are the last range's: a file must match its screen.
-  const csv = (sheet: ReportSheet) => button(csvPath(range, every, sheet), report.isPlaceholderData);
-  const shown = picked && report.data && !report.error ? report.data : null;
+  const csv = (sheet: ReportSheet) => button(csvPath(range, every, sheet), stale);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-total">Sales Reports</h1>
-          <p className="mt-1 text-base text-fg-muted">{insightText(range)}</p>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          <RangeMenu range={range} quick={quick} every={every} onRange={setRange} onEvery={setChosen} />
-          <ExportMenu file={file} path={(sheet) => csvPath(range, every, sheet)} disabled={!shown || report.isPlaceholderData} />
-        </div>
-      </div>
+      <ReportHead tab="sales" title="Sales Reports" cut>
+        <ExportMenu file={file} files={sheets.map((s) => ({ label: s.label, path: csvPath(range, every, s.id) }))} disabled={!shown || stale} />
+      </ReportHead>
 
-      {!picked && <p className="text-base text-fg-muted">Pick a first and a last day.</p>}
-      {picked && report.isPending && <p className="text-base text-fg-muted">Adding up the range</p>}
-      {picked && report.error && (
-        <EmptyState
-          icon={<InboxIcon />}
-          line={
-            report.error instanceof ApiError && !report.error.unreachable
-              ? report.error.message
-              : "Can't reach the mez server. Check this computer's connection."
-          }
-          action={{ label: "Try again", onClick: () => void report.refetch() }}
-        />
-      )}
+      <ReportState picked={picked} pending={report.isPending} error={report.error} onRetry={() => void report.refetch()} />
       {shown && (
-        <div aria-busy={report.isPlaceholderData} className={cx("flex flex-col gap-4", report.isPlaceholderData && "opacity-40")}>
-          {/* The days before are compared only once the range on screen is the one asked for. */}
-          <Figures report={shown} prior={report.isPlaceholderData ? null : (prior.data ?? null)} against={beforeText(range)} />
+        <div aria-busy={stale} className={cx("flex flex-col gap-4", stale && "opacity-40")}>
+          <Figures report={shown} prior={prior} against={beforeText(range)} />
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,29rem)]">
             <Panel title="Sales trend" aside={<ServiceLegend />}>
@@ -105,11 +61,7 @@ export function SalesScreen() {
           </div>
 
           <div className={row}>
-            <Panel
-              title="Top selling items"
-              more={{ label: "View all", onClick: () => document.getElementById("what-sold")?.scrollIntoView({ behavior: "smooth" }) }}
-              className="lg:col-span-2 xl:col-span-1"
-            >
+            <Panel title="Top selling items" more={{ label: "View all", href: "/sales/items" }} className="lg:col-span-2 xl:col-span-1">
               <TopSelling report={shown} />
             </Panel>
             <Panel title="Order type breakdown">
@@ -125,16 +77,17 @@ export function SalesScreen() {
             <Headline report={shown} csv={csv("summary")} />
             <OverTime report={shown} csv={csv("over_time")} />
             <Mixes report={shown} paymentsCsv={csv("payments")} channelsCsv={csv("channels")} />
-            <Sold report={shown} itemsCsv={csv("items")} categoriesCsv={csv("categories")} staffCsv={csv("staff")} />
+            <WhoSold report={shown} csv={csv("staff")} />
             <Heatmap report={shown} csv={csv("hours")} />
           </div>
         </div>
       )}
-      {/* Their own reads, so the sales above show while they add up. */}
-      <div className="flex max-w-6xl flex-col gap-6">
-        {picked && <Corrections range={range} />}
-        {picked && <ClosingStock range={range} />}
-      </div>
+      {/* Its own read, so the sales above show while it adds up. */}
+      {picked && (
+        <div className="flex max-w-6xl flex-col gap-6">
+          <Corrections range={range} />
+        </div>
+      )}
     </div>
   );
 }

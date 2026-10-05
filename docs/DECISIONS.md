@@ -5379,3 +5379,57 @@ Cost: two report reads per range. Chart colours beyond green, terracotta and mus
 are the sheet's quieter inks (the warning ink, faint, the strong hairline), by CSS
 variable in a style, since a conic gradient cannot be a class.
 ---
+
+## ADR-186 - A wastage report: what was written off over a range, at cost
+2026-10 · Status: accepted. Rebuild Task 16d1 (D16); over ADR-111, ADR-124 and ADR-125.
+Context: D16 draws "Wastage this week". Write-offs were in the ledger with a reason and
+the cost they had then, and nothing added them up.
+Decision:
+  - **`GET /api/v1/reports/wastage?from=&to=`** (`reports.view`, as the closing stock
+    report): the wasted movements keyed in a range of trading days, by stock item and
+    by reason, the largest loss first, with the total.
+  - **Each entry is valued at the cost it carried** (ADR-124), never today's. An entry
+    with no cost is counted in `uncosted` and left out of every value, so a total is
+    never read as the whole of it.
+  - **An entry belongs to the trading day it was keyed in,** by the venue's zone and day
+    start, placed with `shift.TradingDay`. Not the shift's day: stock written off by
+    hand after the close has no shift.
+  - By item, not by category as the design draws: a stock item has no category.
+Because: the figure an owner wants from wastage is rupees, and the ledger already had
+them.
+Cost: the day start is read as it stands now, so a changed day start re-places old
+entries at a day's edge. The stock service reads that setting by its key itself: the
+order service imports stock, so stock cannot import the services that own the key
+(a test moves the day start and watches an entry change days). No CSV yet.
+---
+
+## ADR-187 - Items and inventory is D16; the reports share their days
+2026-10 · Status: accepted. Rebuild Task 16d2 (D16); over ADR-185.
+Context: D16 is a tabbed panel (Item, Inventory, Staff, Customer) with item
+performance, wastage and stock health. D15's own sidebar lists the same reports. The
+back office has one sidebar, with one "Sales reports" entry.
+Decision:
+  - **The reports are tabs under that one entry:** pills above the title, Sales
+    (`/sales`) and Items and inventory (`/sales/items`). D16 draws items and inventory
+    on one screen, so they are one tab. Staff joins with its screen (16e); Customer is
+    out of v1.
+  - **The days are picked once.** The range lives above the routes (`report-range.tsx`),
+    and both screens read the sales report through `use-range-sales.ts`, so moving
+    between tabs keeps the days and asks the server nothing new.
+  - **Item performance** is the eight items that took most: the diet mark from the menu
+    as it stands, quantity, revenue, and how many sold beside the same number of days
+    before. An item that did not sell then reads "New in these days".
+  - **Cost and Margin are not drawn.** Nothing says what an item cost to make: a sold
+    movement is tied to an order, not a dish, and a recipe is today's. Split off as 16d3.
+  - **Wastage** is ADR-186's report as bars by stock item, with the total, the reason
+    that cost most, and how many entries had no cost.
+  - **Stock health** counts the active stock items: healthy, low (at or under the level
+    with some left) and out (none left), for whoever holds `stock.manage`. "Raise
+    purchase order" is "Go to stock": purchasing is out of v1.
+  - **Moved here from Sales reports' "In detail":** what sold by item and by category,
+    and the closing stock. Who sold it stays on Sales until 16e.
+  - `DietMark` moved to `web/shared/ui`, for the terminal and the back office both.
+Because: one entry in the sidebar, one range, and each report a tab away.
+Cost: the tab is not in the sidebar's `g` chords. The stock health card is today's
+stock whatever days are picked.
+---

@@ -12,7 +12,7 @@ import { Button, Money, Qty, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { humanise } from "../../../shared/ui/timeline-entries";
 import { lineActions } from "./cart-logic";
-import { DietMark } from "./ItemGrid";
+import { DietMark } from "../../../shared/ui/DietMark";
 import type { PendingLine } from "./ticket-queue";
 
 interface RailLinesProps {

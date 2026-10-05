@@ -6,10 +6,11 @@
 // so in words, and cannot be rung up (ADR-109): staff can tell a guest it is gone.
 
 import { CrownIcon, PlusIcon, WheatOffIcon } from "lucide-react";
-import type { Diet, MenuItemResponse, ModifierGroupResponse } from "../../../shared/api-types";
+import type { MenuItemResponse, ModifierGroupResponse } from "../../../shared/api-types";
 import { photoUrl } from "../../../shared/menu";
 import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { DietMark } from "../../../shared/ui/DietMark";
 import { CategoryIcon } from "./CategoryIcon";
 import { choiceCount, type CardTap, type CategoryIconKey } from "./register-logic";
 
@@ -96,23 +97,5 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
         );
       })}
     </ul>
-  );
-}
-
-const dietWords: Record<Exclude<Diet, "">, string> = { veg: "Vegetarian", non_veg: "Non-vegetarian", vegan: "Vegan" };
-
-/** The square-and-dot mark: green for veg and vegan, brick for non-veg. A word for a screen reader. */
-export function DietMark({ diet }: { diet: Diet | undefined }) {
-  if (!diet) return null;
-  const tone = diet === "non_veg" ? "border-danger text-danger" : "border-success text-success";
-  return (
-    <span
-      role="img"
-      aria-label={dietWords[diet]}
-      title={dietWords[diet]}
-      className={cx("mt-1 flex size-4 shrink-0 items-center justify-center rounded-[3px] border-2", tone)}
-    >
-      <span className="size-1.5 rounded-round bg-current" />
-    </span>
   );
 }

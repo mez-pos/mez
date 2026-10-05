@@ -79,14 +79,8 @@ const staffFigures: Column<Group>[] = [
   },
 ];
 
-export interface SoldProps {
-  report: SalesReport;
-  itemsCsv: ReactNode;
-  categoriesCsv: ReactNode;
-  staffCsv: ReactNode;
-}
-
-export function Sold({ report, itemsCsv, categoriesCsv, staffCsv }: SoldProps) {
+/** What sold, by item and by category, in full (D16, under the item performance card). */
+export function SoldItems({ report, itemsCsv, categoriesCsv }: { report: SalesReport; itemsCsv: ReactNode; categoriesCsv: ReactNode }) {
   const t = report.totals;
   return (
     <>
@@ -96,17 +90,23 @@ export function Sold({ report, itemsCsv, categoriesCsv, staffCsv }: SoldProps) {
       <Section title="By category" csv={categoriesCsv}>
         <GroupTable label="Sales by category" heading="Category" qty="Qty" groups={t.by_category} name={(g) => g.name} figures={soldFigures} />
       </Section>
-      <Section title="Who sold it" csv={staffCsv}>
-        <GroupTable
-          label="Sales by who opened the bill"
-          heading="Opened by"
-          qty="Bills"
-          groups={t.by_staff}
-          name={(g) => g.name || "A guest"}
-          figures={staffFigures}
-        />
-      </Section>
     </>
+  );
+}
+
+/** Sales by who opened the bill. It stays on Sales reports until the staff reports have their screen (16e). */
+export function WhoSold({ report, csv }: { report: SalesReport; csv: ReactNode }) {
+  return (
+    <Section title="Who sold it" csv={csv}>
+      <GroupTable
+        label="Sales by who opened the bill"
+        heading="Opened by"
+        qty="Bills"
+        groups={report.totals.by_staff}
+        name={(g) => g.name || "A guest"}
+        figures={staffFigures}
+      />
+    </Section>
   );
 }
 

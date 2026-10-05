@@ -14,7 +14,7 @@ import { Button, CloseIcon, Money, Qty } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useDialog } from "../../../shared/ui/use-dialog";
 import { CategoryIcon } from "./CategoryIcon";
-import { DietMark } from "./ItemGrid";
+import { DietMark } from "../../../shared/ui/DietMark";
 import { firstUnmet, groupHint, groupState, initialSelection, lineTotal, toggle, toModifiers, type GroupState } from "./modifier-selection";
 import type { CategoryIconKey } from "./register-logic";
 

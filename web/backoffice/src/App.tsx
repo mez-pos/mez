@@ -17,6 +17,8 @@ import { Dashboard } from "./dashboard/Dashboard";
 import { SectionGate } from "./shell/SectionGate";
 import { AuditScreen } from "./audit/AuditScreen";
 import { PeopleScreen } from "./people/PeopleScreen";
+import { ItemsScreen } from "./sales/ItemsScreen";
+import { ReportRangeProvider } from "./sales/report-range";
 import { SalesScreen } from "./sales/SalesScreen";
 import { SettingsScreen } from "./settings/SettingsScreen";
 import { StockScreen } from "./stock/StockScreen";
@@ -38,7 +40,10 @@ export function App() {
           </Route>
           <Route>
             <BackOfficeShell>
-              <SignedInRoutes />
+              {/* Above the routes, so the days picked on one report are the days on the next. */}
+              <ReportRangeProvider>
+                <SignedInRoutes />
+              </ReportRangeProvider>
             </BackOfficeShell>
           </Route>
         </Switch>
@@ -59,6 +64,11 @@ function SignedInRoutes() {
       <Route path="/audit">
         <SectionGate id="audit">
           <AuditScreen />
+        </SectionGate>
+      </Route>
+      <Route path="/sales/items">
+        <SectionGate id="sales">
+          <ItemsScreen />
         </SectionGate>
       </Route>
       <Route path="/sales">

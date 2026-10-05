@@ -310,7 +310,17 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     - [x] 16c2. (ADR-185) The screen: the range and Export beside the title, four
       figures against the days before, the trend, sales by category, top sellers,
       orders by type and payments; the old reports kept under "In detail".
-  - [ ] 16d. Item and inventory reports (D16).
+  - [ ] 16d. Item and inventory reports (D16). Split on 2026-10-05: the design
+    draws wastage and what each item cost, and the server could say neither.
+    - [x] 16d1. (ADR-186) What was written off over a range, by stock item and by
+      reason, at the cost it had then. `GET /api/v1/reports/wastage`. Go tests.
+    - [x] 16d2. (ADR-187) The screen, a tab beside Sales: item performance against
+      the days before, wastage, stock health; what sold in full and the closing
+      stock moved here from Sales reports.
+    - [ ] 16d3. What an item cost to make and its margin (D16's Cost and Margin
+      columns). Decide first what "cost" is: today's recipe at today's cost, or
+      what the ledger moved for the orders that sold it. Domain code with tests,
+      then the two columns.
   - [ ] 16e. Staff reports (D17, without the customers).
   - [ ] 16f. Menu (D18).
   - [ ] 16g. Inventory (D19).
