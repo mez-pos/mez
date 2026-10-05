@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 3c: a dish with its choices, and the cart** (ADR-208). The sheet
+**Phase 11, Task 4a: a guest's cart becomes an order, on the server** (ADR-210).
+`POST /order/api/t/{code}/orders` with ids, counts and a required `Idempotency-Key`;
+`menu.Menu.Ring` prices each line. A "round" (`guest_rounds`, migration 00039,
+`svcorder.PlaceRound`) joins the table's open ticket and is sent, or with none open
+is kept as a request: no order and no event. Task 4 split in seven.
+
+Before it, **Phase 11, Task 3c: a dish with its choices, and the cart** (ADR-208). The sheet
 uses the till's own rules (`web/shared/modifier-selection.ts`, moved). The cart is ids
 and counts in `localStorage` by table code, priced from the menu each time. Nothing is
 sent. Then photo frames once any dish has a photo, and the decision that a phone order

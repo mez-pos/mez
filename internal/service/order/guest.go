@@ -228,23 +228,28 @@ func (s *Service) requestRound(ctx context.Context, meta Meta, draft roundDraft,
 		if err := tableInService(ctx, q, meta.VenueID, draft.tableID); err != nil {
 			return err
 		}
-		if _, err := q.OpenShiftIDForVenue(ctx, meta.VenueID); isNoRows(err) {
-			return fmt.Errorf("%w: a guest's order at venue %d", shift.ErrNoOpenShift, meta.VenueID)
-		} else if err != nil {
-			return fmt.Errorf("reading venue %d's open shift: %w", meta.VenueID, err)
+		since, err := takingRequestsSince(ctx, q, meta.VenueID)
+		if err != nil {
+			return err
 		}
-		waiting, err := q.CountWaitingGuestRounds(ctx, draft.tableID)
+		waiting, err := q.CountWaitingGuestRounds(ctx, gen.CountWaitingGuestRoundsParams{TableID: draft.tableID, Since: since})
 		if err != nil {
 			return fmt.Errorf("counting the requests at table %d: %w", draft.tableID, err)
 		}
 		if waiting >= maxWaitingRounds {
 			return fmt.Errorf("%w: table %d has %d", ErrTooManyWaiting, draft.tableID, waiting)
 		}
-		return saveRound(ctx, q, meta, draft, publicID, RoundWaiting, 0, at)
+		if err := saveRound(ctx, q, meta, draft, publicID, RoundWaiting, 0, at); err != nil {
+			return err
+		}
+		// A table wanting to order is the floor changed, with no order
+		// event to say so: the version is what tells the terminals.
+		return q.BumpFloorVersion(ctx, meta.VenueID)
 	})
 	if err != nil {
 		return err
 	}
+	s.onChange(meta.VenueID)
 	s.log.Info("a guest's order is waiting to be accepted", "venue_id", meta.VenueID, "table_id", draft.tableID, "round", publicID)
 	return nil
 }
@@ -260,22 +265,48 @@ func (s *Service) sendRound(ctx context.Context, meta Meta, orderID int64, draft
 		if tx.State.Status == order.StatusClosed || !slices.Contains(tx.State.Tables(), draft.tableID) {
 			return nil, errTableChanged
 		}
-		payloads := make([]order.Payload, 0, len(draft.lines)+2)
-		for _, l := range draft.lines {
-			payloads = append(payloads, l)
-		}
-		for _, t := range roundTickets(draft.lines, tx.State.LastSeq+1) {
-			payloads = append(payloads, t)
-		}
 		if err := saveRound(ctx, tx.Queries(), meta, draft, publicID, RoundSent, tx.OrderID, at); err != nil {
 			return nil, err
 		}
-		return payloads, nil
+		return roundPayloads(draft.lines, tx.State.LastSeq+1), nil
 	})
+	return busy(err)
+}
+
+// busy says a ticket on hold or invoiced in the round's own terms.
+func busy(err error) error {
 	if errors.Is(err, order.ErrOrderHeld) || errors.Is(err, order.ErrOrderInvoiced) {
 		return fmt.Errorf("%w: %v", ErrTableBusy, err)
 	}
 	return err
+}
+
+// roundPayloads is what a round appends: its lines, then their tickets. The
+// first line's event is at seq first.
+func roundPayloads(lines []order.LineAdded, first int64) []order.Payload {
+	payloads := make([]order.Payload, 0, len(lines)+2)
+	for _, l := range lines {
+		payloads = append(payloads, l)
+	}
+	for _, t := range roundTickets(lines, first) {
+		payloads = append(payloads, t)
+	}
+	return payloads
+}
+
+// takingRequestsSince is when the venue's open shift opened: a request is
+// taken only while one is open, and one from before it has lapsed.
+func takingRequestsSince(ctx context.Context, q *gen.Queries, venueID int64) (time.Time, error) {
+	if _, err := q.OpenShiftIDForVenue(ctx, venueID); isNoRows(err) {
+		return time.Time{}, fmt.Errorf("%w: a guest's order at venue %d", shift.ErrNoOpenShift, venueID)
+	} else if err != nil {
+		return time.Time{}, fmt.Errorf("reading venue %d's open shift: %w", venueID, err)
+	}
+	open, err := q.OpenShiftForVenue(ctx, venueID)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("reading venue %d's open shift: %w", venueID, err)
+	}
+	return open.OpenedAt.UTC(), nil
 }
 
 // roundTickets is a ticket for each station with lines in the round,

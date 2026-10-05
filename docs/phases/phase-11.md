@@ -65,10 +65,15 @@ Phase 10.
     `POST /order/api/t/{code}/orders`, priced from the menu, with an
     `Idempotency-Key`. At a table with a ticket open the lines join it and go
     to the kitchen; at one with none the order is kept as a request.
-  - [ ] **4b.** The request on the terminal: it shows, with a sound, and
-    arrives over the stream. Accept opens the ticket with the lines as priced
-    and sends them; Decline turns it down. Decide what Accept does with the
-    table's other waiting requests, and when an unanswered one lapses.
+  - [ ] **4b.** The request on the terminal. Split in two (ADR-211):
+    - [x] **4b1.** The server: `GET /api/v1/guest-requests`, and `accept` and
+      `decline` on one. Accept opens the table's ticket if it has none, and
+      appends the lines as priced and sends them. A request arriving or
+      answered moves the floor version, so it reaches terminals as
+      `floor_changed`.
+    - [ ] **4b2.** The terminal: what is waiting, on every screen, with a
+      sound; Accept and Decline; and the table on the floor saying it wants
+      to order.
   - [ ] **4c.** Place Order on the phone: the cart's foot, the design's words
     back ("Start Ordering", "Add to order"), special instructions, and what
     the guest sees next: waiting, sent or declined, and each refusal.

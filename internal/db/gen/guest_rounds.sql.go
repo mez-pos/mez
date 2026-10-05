@@ -12,11 +12,19 @@ import (
 )
 
 const countWaitingGuestRounds = `-- name: CountWaitingGuestRounds :one
-SELECT count(*) FROM guest_rounds WHERE table_id = ? AND status = 'waiting'
+SELECT count(*) FROM guest_rounds
+WHERE table_id = ? AND status = 'waiting' AND created_at >= ?2
 `
 
-func (q *Queries) CountWaitingGuestRounds(ctx context.Context, tableID int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countWaitingGuestRounds, tableID)
+type CountWaitingGuestRoundsParams struct {
+	TableID int64
+	Since   time.Time
+}
+
+// The requests waiting at a table since the shift opened. One left over
+// from a shift before has lapsed, and does not count.
+func (q *Queries) CountWaitingGuestRounds(ctx context.Context, arg CountWaitingGuestRoundsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countWaitingGuestRounds, arg.TableID, arg.Since)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -65,6 +73,38 @@ func (q *Queries) CreateGuestRound(ctx context.Context, arg CreateGuestRoundPara
 	return id, err
 }
 
+const decideGuestRound = `-- name: DecideGuestRound :execrows
+UPDATE guest_rounds
+SET status = ?1, order_id = ?2, decided_at = ?3, decided_by = ?4
+WHERE id = ?5 AND venue_id = ?6 AND status = 'waiting'
+`
+
+type DecideGuestRoundParams struct {
+	Status    string
+	OrderID   sql.NullInt64
+	DecidedAt sql.NullTime
+	DecidedBy sql.NullInt64
+	ID        int64
+	VenueID   int64
+}
+
+// Answers a request: sent, onto a ticket, or declined. Only a waiting one
+// can be answered, so of two tills answering at once one writes nothing.
+func (q *Queries) DecideGuestRound(ctx context.Context, arg DecideGuestRoundParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, decideGuestRound,
+		arg.Status,
+		arg.OrderID,
+		arg.DecidedAt,
+		arg.DecidedBy,
+		arg.ID,
+		arg.VenueID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const guestRoundByKey = `-- name: GuestRoundByKey :one
 SELECT id, public_id, table_id, status, order_id, lines, subtotal_minor, currency, fingerprint
 FROM guest_rounds
@@ -106,6 +146,47 @@ func (q *Queries) GuestRoundByKey(ctx context.Context, arg GuestRoundByKeyParams
 	return i, err
 }
 
+const guestRoundByPublicID = `-- name: GuestRoundByPublicID :one
+SELECT r.id, r.public_id, r.venue_id, r.table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
+       CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id
+FROM guest_rounds r
+LEFT JOIN orders o ON o.id = r.order_id
+WHERE r.public_id = ?
+`
+
+type GuestRoundByPublicIDRow struct {
+	ID            int64
+	PublicID      string
+	VenueID       int64
+	TableID       int64
+	Status        string
+	OrderID       sql.NullInt64
+	Lines         string
+	SubtotalMinor int64
+	Currency      string
+	CreatedAt     time.Time
+	OrderPublicID string
+}
+
+func (q *Queries) GuestRoundByPublicID(ctx context.Context, publicID string) (GuestRoundByPublicIDRow, error) {
+	row := q.db.QueryRowContext(ctx, guestRoundByPublicID, publicID)
+	var i GuestRoundByPublicIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.VenueID,
+		&i.TableID,
+		&i.Status,
+		&i.OrderID,
+		&i.Lines,
+		&i.SubtotalMinor,
+		&i.Currency,
+		&i.CreatedAt,
+		&i.OrderPublicID,
+	)
+	return i, err
+}
+
 const unclosedOrderAtTable = `-- name: UnclosedOrderAtTable :one
 SELECT o.id
 FROM order_tables ot
@@ -127,4 +208,62 @@ func (q *Queries) UnclosedOrderAtTable(ctx context.Context, arg UnclosedOrderAtT
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const waitingGuestRounds = `-- name: WaitingGuestRounds :many
+SELECT r.id, r.public_id, r.table_id, t.name AS table_name, r.lines, r.subtotal_minor, r.currency, r.created_at
+FROM guest_rounds r
+JOIN tables t ON t.id = r.table_id
+WHERE r.venue_id = ? AND r.status = 'waiting' AND r.created_at >= ?2
+ORDER BY r.created_at, r.id
+`
+
+type WaitingGuestRoundsParams struct {
+	VenueID int64
+	Since   time.Time
+}
+
+type WaitingGuestRoundsRow struct {
+	ID            int64
+	PublicID      string
+	TableID       int64
+	TableName     string
+	Lines         string
+	SubtotalMinor int64
+	Currency      string
+	CreatedAt     time.Time
+}
+
+// The requests staff have still to answer, oldest first, with each one's
+// table by name.
+func (q *Queries) WaitingGuestRounds(ctx context.Context, arg WaitingGuestRoundsParams) ([]WaitingGuestRoundsRow, error) {
+	rows, err := q.db.QueryContext(ctx, waitingGuestRounds, arg.VenueID, arg.Since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []WaitingGuestRoundsRow{}
+	for rows.Next() {
+		var i WaitingGuestRoundsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.TableID,
+			&i.TableName,
+			&i.Lines,
+			&i.SubtotalMinor,
+			&i.Currency,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

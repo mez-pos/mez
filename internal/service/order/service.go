@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/byjoellobo/mez/internal/db"
@@ -77,6 +78,10 @@ type Options struct {
 	// the same transaction (ADR-081), and is woken once they commit. Nil
 	// prints nothing, which is what most tests want.
 	Prints PrintQueue
+	// OnChange is told a venue has something no order event shows, once it
+	// is committed: a guest's request arrived or was answered (ADR-211). It
+	// is the hub's Notify, so terminals read the requests again.
+	OnChange func(venueID int64)
 }
 
 // PrintQueue is the print queue as the order service needs it: woken after
@@ -92,6 +97,10 @@ type Service struct {
 	publisher Publisher
 	log       *slog.Logger
 	prints    PrintQueue
+	onChange  func(venueID int64)
+	// accepting is held while a request is accepted, so two tills
+	// accepting at one table cannot each open it a ticket.
+	accepting sync.Mutex
 }
 
 // New returns a Service.
@@ -105,7 +114,10 @@ func New(opts Options) (*Service, error) {
 	if opts.Log == nil {
 		opts.Log = slog.New(slog.NewTextHandler(io.Discard, nil))
 	}
-	return &Service{db: opts.DB, clock: opts.Clock, publisher: opts.Publisher, log: opts.Log, prints: opts.Prints}, nil
+	if opts.OnChange == nil {
+		opts.OnChange = func(int64) {}
+	}
+	return &Service{db: opts.DB, clock: opts.Clock, publisher: opts.Publisher, log: opts.Log, prints: opts.Prints, onChange: opts.OnChange}, nil
 }
 
 // Meta is who is asking, from where, and the idempotency key if they sent

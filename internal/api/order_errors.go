@@ -83,6 +83,12 @@ var orderErrors = []struct {
 	{svcorder.ErrRefundsMismatch, http.StatusUnprocessableEntity, CodeRefundsMismatch},
 	{svcorder.ErrInvalidCommand, http.StatusBadRequest, CodeInvalidRequest},
 
+	// Answering a guest's request (guest_requests.go).
+	{svcorder.ErrRoundNotFound, http.StatusNotFound, CodeRequestNotFound},
+	{svcorder.ErrRoundDecided, http.StatusConflict, CodeRequestDecided},
+	{svcorder.ErrRoundLapsed, http.StatusConflict, CodeRequestLapsed},
+	{svcorder.ErrTableBusy, http.StatusConflict, CodeTableNotOrdering},
+
 	// How a bill divides (order_split.go).
 	{svcorder.ErrSplitAfterPayment, http.StatusConflict, CodeSplitAfterPayment},
 	{payment.ErrOverAllocated, http.StatusUnprocessableEntity, CodeSplitOverAllocated},

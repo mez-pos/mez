@@ -841,6 +841,26 @@ export interface GuestRoundLineResponse {
   total: Money;
 }
 
+export interface GuestRequestsResponse {
+  requests: GuestRequestResponse[];
+}
+
+export interface GuestRequestResponse {
+  id: string;
+  table_id: number;
+  table_name: string;
+  placed_at: string;
+  lines: GuestRoundLineResponse[];
+  subtotal: Money;
+}
+
+export interface GuestDecisionResponse {
+  id: string;
+  status: GuestRoundStatus;
+  table_id: number;
+  order_id?: string;
+}
+
 export interface StaffResponse {
   id: string;
   name: string;

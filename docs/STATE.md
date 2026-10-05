@@ -7,28 +7,30 @@
 
 ## Current phase
 
-**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3 and
-4a done. (The rebuild, 09 and 10 still owe the owner's walk.)
+**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
+4a and 4b1 done. (The rebuild, 09 and 10 still owe the owner's walk.)
 
 ## Last completed task
 
-**Phase 11, Task 4a: a guest's cart becomes an order, on the server** (ADR-210).
-`POST /order/api/t/{code}/orders` with ids, counts and a required `Idempotency-Key`;
-`menu.Menu.Ring` prices each line. A "round" (`guest_rounds`, migration 00039,
-`svcorder.PlaceRound`) joins the table's open ticket and is sent, or with none open
-is kept as a request: no order and no event. Task 4 is split in seven.
+**Phase 11, Task 4b1: answering a guest's request, on the server** (ADR-211).
+`GET /api/v1/guest-requests`, and `POST .../{id}/accept` and `.../decline`, asking
+`order.open`. Accept finds or opens the table's ticket and appends the lines as
+stored. A request arriving or answered moves the floor version, so terminals hear
+`floor_changed`. A request lasts as long as its shift.
 
 ## Next task
 
-**Phase 11, Task 4b: the request on the terminal.** Read ADR-209 and ADR-210,
-`terminal-floor.md` and `terminal-shell.md`, and the design's D13 only if needed.
-- A waiting round has to show on the terminal with a sound (ADR-209), and arrive
-  over the stream: a hub message, as `MsgFloorChanged` is one.
-- Accept: open a `qr_table` ticket at the table, append the round's lines as stored
-  (not priced again), send them as `sendRound` does, mark the round `sent`, in one
-  transaction. Decline: `declined`, with who and when (`decided_by`, `decided_at`).
-- Decide: a permission for it; what Accept does with the table's other waiting
-  rounds; when an unanswered round lapses. Split it if it is two sessions.
+**Phase 11, Task 4b2: the request on the terminal.** Read ADR-209 and ADR-211,
+`docs/design/tokens.md`, `terminal-shell.md` and `terminal-floor.md`, and the
+design's D13 only if the shell has nowhere for it.
+- What is waiting has to show on every terminal screen, not only Tables, with a
+  sound when one arrives (ADR-209): the shell is where. Read
+  `GET /api/v1/guest-requests` with React Query and read it again on
+  `floor_changed`. Types are generated (`GuestRequestsResponse`).
+- Accept and Decline, each request on its own, with its table, lines, subtotal and
+  how long it has waited. `request_decided` and `request_lapsed` mean read again.
+- The table on the floor says it wants to order; the waiter's home too, or say why not.
+- A browser plays no sound before the page is touched: decide what then. Write the spec.
 
 ## Known broken / in progress
 
@@ -54,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3 and 4a done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a and 4b1 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

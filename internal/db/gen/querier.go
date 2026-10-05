@@ -85,7 +85,9 @@ type Querier interface {
 	// cost when it was counted, 0 for not known (ADR-124).
 	ClosingCountsInRange(ctx context.Context, arg ClosingCountsInRangeParams) ([]ClosingCountsInRangeRow, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
-	CountWaitingGuestRounds(ctx context.Context, tableID int64) (int64, error)
+	// The requests waiting at a table since the shift opened. One left over
+	// from a shift before has lapsed, and does not count.
+	CountWaitingGuestRounds(ctx context.Context, arg CountWaitingGuestRoundsParams) (int64, error)
 	CourseForEdit(ctx context.Context, arg CourseForEditParams) (CourseForEditRow, error)
 	CourseIDsByNumber(ctx context.Context, venueID int64) ([]int64, error)
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
@@ -141,6 +143,9 @@ type Querier interface {
 	// Staff are deactivated, never deleted: their name is on every order they took
 	// and on every void they authorised, and a tax audit expects to find them.
 	DeactivateStaff(ctx context.Context, arg DeactivateStaffParams) error
+	// Answers a request: sent, onto a ticket, or declined. Only a waiting one
+	// can be answered, so of two tills answering at once one writes nothing.
+	DecideGuestRound(ctx context.Context, arg DecideGuestRoundParams) (int64, error)
 	// The order's rows in order_tables, before they are written again from its
 	// projection (ADR-088).
 	DeleteOrderTables(ctx context.Context, orderID int64) error
@@ -201,6 +206,7 @@ type Querier interface {
 	GroupForEdit(ctx context.Context, arg GroupForEditParams) (GroupForEditRow, error)
 	// The round a key was first sent with, as it stands now.
 	GuestRoundByKey(ctx context.Context, arg GuestRoundByKeyParams) (GuestRoundByKeyRow, error)
+	GuestRoundByPublicID(ctx context.Context, publicID string) (GuestRoundByPublicIDRow, error)
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
@@ -507,6 +513,9 @@ type Querier interface {
 	// The cast is what gives sqlc an int64 rather than an any: coalesce over an
 	// aggregate has no column to take a type from.
 	VenueLastEventID(ctx context.Context, venueID int64) (int64, error)
+	// The requests staff have still to answer, oldest first, with each one's
+	// table by name.
+	WaitingGuestRounds(ctx context.Context, arg WaitingGuestRoundsParams) ([]WaitingGuestRoundsRow, error)
 	//
 	// What was written off between two instants (rebuild Task 16d1, ADR-186),
 	// oldest first. delta is below zero; unit_cost is the item's cost when it

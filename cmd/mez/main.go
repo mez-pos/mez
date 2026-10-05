@@ -222,7 +222,7 @@ func run() (err error) {
 	}
 	running.push("print queue", prints.Close)
 
-	orders, err := svcorder.New(svcorder.Options{DB: database, Log: log, Publisher: publisher(events), Prints: prints})
+	orders, err := svcorder.New(svcorder.Options{DB: database, Log: log, Publisher: publisher(events), Prints: prints, OnChange: events.Notify})
 	if err != nil {
 		return err
 	}
@@ -308,6 +308,7 @@ func run() (err error) {
 		api.WithShifts(shifts),
 		api.WithGuests(guestCodes, web.MountGuest),
 		api.WithGuestOrders(orders),
+		api.WithGuestRequests(orders),
 	)
 
 	if cfg.RelayEnabled() {

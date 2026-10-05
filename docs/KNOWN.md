@@ -10,8 +10,9 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **A guest's order** (ADR-210): a waiting request is a row in `guest_rounds`
-  that no screen shows and nothing ends, until 4b. Rounds onto an open ticket are
+- **A guest's order** (ADR-210, ADR-211): no screen shows a waiting request
+  until 4b2; the API to list and answer them is there. A request staff ignore
+  stays listed until the shift closes. Rounds onto an open ticket are
   limited only by 300 requests a minute an address, until Task 6; the limiter has
   one bucket an address for every limit, so a tighter limit on ordering needs its
   own. The guest app does not call the endpoint yet. Not run through the relay or

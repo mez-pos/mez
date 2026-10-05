@@ -6287,3 +6287,62 @@ requests a minute an address, until Task 6. The limiter counts by address across
 every limit, so a tighter one for placing orders would be spent by reading the
 menu; it needs its own bucket first. The guest app does not call this yet (4c), and
 it was not run through the relay or from a phone: the Go tests are the proof.
+
+## ADR-211 - Answering a guest's request: each on its own, on the floor's version, for as long as the shift
+2026-10 · Status: accepted. Phase 11, Task 4b1.
+Context: ADR-210 left a waiting request as a row nobody sees. Task 4b is the staff's
+half: seeing it, hearing it, and accepting or declining it. That is a server and a
+screen, so it is two sessions.
+Decision:
+  - **Task 4b is split.** 4b1 is the server, this. 4b2 is the terminal's screen and
+    its sound.
+  - **Three routes on the staff API**: `GET /api/v1/guest-requests` (what is
+    waiting, oldest first, each with its table by name, its lines and subtotal),
+    and `POST .../{id}/accept` and `.../{id}/decline`. They ask `order.open`:
+    accepting opens a ticket and adds to it, which is what that permission is. No
+    new permission, so every role that can seat a table can answer one.
+  - **Each request is answered on its own.** Accepting one says someone is at the
+    table; it does not say every phone that asked is theirs. The table's other
+    requests stay waiting, and accepting one of those adds to the same ticket.
+  - **Accept finds the table's ticket or opens one**, on the `qr_table` channel,
+    dine-in, and appends the request's lines **as stored**, with a ticket for each
+    station, marking the request `sent` in the transaction that appends them. A
+    menu price changed since the guest asked does not reach the bill.
+  - **Opening and appending are two commands, not one transaction.** The order
+    store opens an order with one event. If the second command never happens the
+    table is seated with an empty ticket and the request is still waiting;
+    accepting it again finishes on that ticket. Nothing is lost and nothing is
+    sent twice.
+  - **An accepted request's events are the staff member's**, not actor 0: they let
+    it into the kitchen, and the timeline should name a person. A round that goes
+    straight onto an open ticket is still nobody's (ADR-210). The channel of a
+    ticket a guest's request opened is `qr_table`; a guest's round on a ticket a
+    waiter opened leaves it `counter`.
+  - **Decline marks the request**, with who and when. Nothing is voided, because
+    nothing was an order.
+  - **Answered twice is answered once.** Accepting an accepted request, or declining
+    a declined one, returns the first answer. The other way round is refused,
+    `request_decided`. Of two tills answering at once, the update that finds the
+    request no longer waiting writes nothing and reports what the other did. Accepts
+    are also taken one at a time in the process, so two tills cannot each open the
+    table a ticket.
+  - **A request lasts as long as its shift.** Nothing ends it at the close. One
+    made before the open shift opened is not listed, does not count toward the
+    table's five, and cannot be accepted (`request_lapsed`); it can be declined. A
+    timer was set aside: how long a guest will wait is the venue's to judge, and
+    the screen can show how long it has been.
+  - **A request arriving or answered moves the floor version**, in its transaction,
+    and nudges the hub (`svcorder.Options.OnChange`). Terminals already hear
+    `floor_changed`; a table wanting to order is the floor changed in a way no
+    order event shows, which is what that message is for. A fourth version and
+    message were set aside as plumbing with nothing to add.
+  - **The guest's phone learns the answer by its own key**: sending the round again
+    returns it as `sent` or `declined`. Task 5 gives it something better to ask.
+Because: the smallest thing that lets a request become a ticket, built from the
+commands the till already uses, with the screen left to be built on an API that is
+already tested.
+Cost: a terminal that hears `floor_changed` reads the floor and the requests both,
+whichever moved. A request staff ignore sits in the list until the shift closes.
+Until 4b2 nothing on any screen shows a request, so a guest at an unseated table
+who places an order is waiting on nobody. The lock is this process's: a second
+process on the same file is not guarded, and mez does not run two.

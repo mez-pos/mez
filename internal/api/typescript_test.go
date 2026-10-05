@@ -306,6 +306,7 @@ func generate() (*ts.Generator, error) {
 		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{}, tunnelResponse{},
 		// The guest's API.
 		guestTableResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{},
+		guestRequestsResponse{}, guestDecisionResponse{},
 		// Staff.
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},
 		// Orders: what is sent.
