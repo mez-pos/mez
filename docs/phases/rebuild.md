@@ -257,9 +257,13 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     it owes, split equally, by item or by amount, each guest's share with
     Collect, how the chosen share is paid, what has been collected so far,
     Print bill and Close table. Over `tender-logic.ts` and `split-logic.ts`.
-  - [ ] 14b. The shift summary (T08): the waiter, how long they have been on,
-    what the server can count for them (tables, orders, sales, tips), Print
-    summary and End shift. Check first what the server can say per person.
+  - [ ] 14b. What one person did in the shift, from the server (split again on
+    2026-10-05: the server could say nothing per person). `GET /api/v1/shift/mine`:
+    the orders they opened, how many were at a table, what their payments
+    settled, the tips on them, and those tips by table. Go tests.
+  - [ ] 14c. The shift summary (T08) over it: the waiter, how long they have
+    been on, the four figures, tips by table, Print summary if anything can
+    print it, and End shift. Guest ratings are left out (phase 11).
 - [ ] **Task 15 - Kitchen display.** D10 and D11.
 - [ ] **Task 16 - Back office.** Split into one sub-task per screen before
   starting: D12 dashboard, D15 to D17 reports, D18 menu, D19 inventory,
