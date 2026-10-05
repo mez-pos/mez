@@ -1596,6 +1596,34 @@ export interface ClosingStockItemTotal {
   uncosted: number;
 }
 
+export interface WasteReport {
+  from: string;
+  to: string;
+  currency: string;
+  items: WasteItem[];
+  reasons: WasteReasonTotal[];
+  entries: number;
+  value: Money;
+  uncosted: number;
+}
+
+export interface WasteItem {
+  stock_item_id: number;
+  name: string;
+  unit: StockUnit;
+  qty: number;
+  entries: number;
+  value: Money;
+  uncosted: number;
+}
+
+export interface WasteReasonTotal {
+  reason: WasteReason;
+  entries: number;
+  value: Money;
+  uncosted: number;
+}
+
 export interface PersonInput {
   name: string;
   role_id: number;

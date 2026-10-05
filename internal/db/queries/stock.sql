@@ -145,3 +145,15 @@ JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
 WHERE m.venue_id = sqlc.arg(venue_id) AND m.closing = 1
   AND sh.trading_day >= sqlc.arg(from_day) AND sh.trading_day <= sqlc.arg(to_day)
 ORDER BY sh.trading_day, sh.id, i.name COLLATE NOCASE, i.id;
+
+-- name: WastedBetween :many
+--
+-- What was written off between two instants (rebuild Task 16d1, ADR-186),
+-- oldest first. delta is below zero; unit_cost is the item's cost when it
+-- was written off, 0 for not known (ADR-124).
+SELECT m.stock_item_id, i.name, i.unit, m.delta, m.reason, m.unit_cost, m.created_at
+FROM stock_movements m
+JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
+WHERE m.venue_id = sqlc.arg(venue_id) AND m.kind = 'wasted'
+  AND m.created_at >= sqlc.arg(from_at) AND m.created_at < sqlc.arg(to_at)
+ORDER BY m.created_at, m.id;

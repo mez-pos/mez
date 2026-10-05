@@ -329,7 +329,7 @@ func generate() (*ts.Generator, error) {
 		stock.Recorded{}, stock.Movement{}, movementsResponse{},
 		stock.RecipePart{}, stock.Recipe{}, stock.RecipeBook{}, recipeRequest{},
 		stock.ClosingItem{}, stock.ClosingResult{}, stock.ClosingSheet{}, stock.ClosingCountInput{}, closingCountRequest{},
-		stock.ClosingReport{},
+		stock.ClosingReport{}, stock.WasteReport{},
 		// People.
 		staffRequest{}, roleRequest{}, pinRequest{}, people.Person{}, people.Role{}, peopleResponse{}, staffAddedResponse{}, roleEditResponse{},
 		// The audit trail.

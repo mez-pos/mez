@@ -28,6 +28,7 @@ type Stock interface {
 	RecordClosingCount(ctx context.Context, venueID, staffID, shiftID int64, counts []stock.ClosingCountInput) (stock.ClosingSheet, error)
 	ClosingReport(ctx context.Context, venueID int64, from, to string) (stock.ClosingReport, error)
 	ClosingTable(ctx context.Context, venueID int64, from, to string) (export.Table, error)
+	WasteReport(ctx context.Context, venueID int64, from, to string) (stock.WasteReport, error)
 }
 
 // WithStock mounts the stock routes. They need WithDevices and WithStaff,
@@ -113,6 +114,7 @@ func (s *Server) mountStock(mux *http.ServeMux) {
 	}
 	report("GET /api/v1/reports/closing-stock", s.readClosingReport)
 	report("GET /api/v1/reports/closing-stock/csv", s.readClosingReportCSV)
+	report("GET /api/v1/reports/wastage", s.readWasteReport)
 }
 
 // readClosingReport answers ?from=2026-10-01&to=2026-10-07, both trading
@@ -122,6 +124,25 @@ func (s *Server) mountStock(mux *http.ServeMux) {
 func (s *Server) readClosingReport(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	rep, err := s.stock.ClosingReport(r.Context(), Meta(r).VenueID, q.Get("from"), q.Get("to"))
+	if errors.Is(err, stock.ErrBadRange) {
+		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
+		return
+	}
+	if err != nil {
+		s.writeStockError(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, s.log, http.StatusOK, rep)
+}
+
+// readWasteReport answers ?from=2026-10-01&to=2026-10-07, both trading days
+// and required, with what was written off in them, by item and by reason, at
+// the cost each entry had (rebuild Task 16d1, ADR-186). Bounded by the stock
+// items and the five reasons, so whole.
+func (s *Server) readWasteReport(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	rep, err := s.stock.WasteReport(r.Context(), Meta(r).VenueID, q.Get("from"), q.Get("to"))
 	if errors.Is(err, stock.ErrBadRange) {
 		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
 		return

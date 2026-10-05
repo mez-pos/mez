@@ -720,3 +720,62 @@ func (q *Queries) UpdateStockItem(ctx context.Context, arg UpdateStockItemParams
 	}
 	return result.RowsAffected()
 }
+
+const wastedBetween = `-- name: WastedBetween :many
+SELECT m.stock_item_id, i.name, i.unit, m.delta, m.reason, m.unit_cost, m.created_at
+FROM stock_movements m
+JOIN stock_items i ON i.venue_id = m.venue_id AND i.id = m.stock_item_id
+WHERE m.venue_id = ?1 AND m.kind = 'wasted'
+  AND m.created_at >= ?2 AND m.created_at < ?3
+ORDER BY m.created_at, m.id
+`
+
+type WastedBetweenParams struct {
+	VenueID int64
+	FromAt  time.Time
+	ToAt    time.Time
+}
+
+type WastedBetweenRow struct {
+	StockItemID int64
+	Name        string
+	Unit        string
+	Delta       int64
+	Reason      string
+	UnitCost    int64
+	CreatedAt   time.Time
+}
+
+// What was written off between two instants (rebuild Task 16d1, ADR-186),
+// oldest first. delta is below zero; unit_cost is the item's cost when it
+// was written off, 0 for not known (ADR-124).
+func (q *Queries) WastedBetween(ctx context.Context, arg WastedBetweenParams) ([]WastedBetweenRow, error) {
+	rows, err := q.db.QueryContext(ctx, wastedBetween, arg.VenueID, arg.FromAt, arg.ToAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []WastedBetweenRow{}
+	for rows.Next() {
+		var i WastedBetweenRow
+		if err := rows.Scan(
+			&i.StockItemID,
+			&i.Name,
+			&i.Unit,
+			&i.Delta,
+			&i.Reason,
+			&i.UnitCost,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

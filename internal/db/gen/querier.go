@@ -470,6 +470,11 @@ type Querier interface {
 	// The cast is what gives sqlc an int64 rather than an any: coalesce over an
 	// aggregate has no column to take a type from.
 	VenueLastEventID(ctx context.Context, venueID int64) (int64, error)
+	//
+	// What was written off between two instants (rebuild Task 16d1, ADR-186),
+	// oldest first. delta is below zero; unit_cost is the item's cost when it
+	// was written off, 0 for not known (ADR-124).
+	WastedBetween(ctx context.Context, arg WastedBetweenParams) ([]WastedBetweenRow, error)
 	ZReportByID(ctx context.Context, id int64) (ZReport, error)
 	ZReportByNumber(ctx context.Context, arg ZReportByNumberParams) (ZReport, error)
 	// A page of the venue's reports, newest first, below a number: the

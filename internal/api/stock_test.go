@@ -308,3 +308,43 @@ func TestTheClosingStockReportOverHTTP(t *testing.T) {
 		})
 	}
 }
+
+func TestTheWasteReportOverHTTP(t *testing.T) {
+	w, owner := newStockTill(t)
+	const base = "/api/v1/reports/wastage"
+
+	rec := send(w.handler, http.MethodGet, base+"?from=2026-09-01&to=2026-09-30", "", owner)
+	var got stock.WasteReport
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &got) != nil {
+		t.Fatalf("report: %d %s", rec.Code, rec.Body)
+	}
+	if got.From != "2026-09-01" || got.To != "2026-09-30" || got.Currency != "INR" || got.Items == nil || got.Reasons == nil || got.Entries != 0 {
+		t.Errorf("a quiet September: %s", rec.Body)
+	}
+	if rec.Header().Get("Cache-Control") != "no-store" {
+		t.Error("the report may be cached")
+	}
+
+	// It is a report: a cashier, who cannot read the Z-report, cannot read it.
+	cashier := w.asStaff(w.signIn(t, "2468").Token)
+	refusals := []struct {
+		name, path string
+		headers    map[string]string
+		status     int
+		code       ErrorCode
+	}{
+		{"no range", base, owner, http.StatusBadRequest, CodeInvalidFilter},
+		{"backwards", base + "?from=2026-09-30&to=2026-09-01", owner, http.StatusBadRequest, CodeInvalidFilter},
+		{"over a year", base + "?from=2025-01-01&to=2026-09-01", owner, http.StatusBadRequest, CodeInvalidFilter},
+		{"a cashier", base + "?from=2026-09-01&to=2026-09-30", cashier, http.StatusForbidden, CodeForbidden},
+		{"nobody signed in", base + "?from=2026-09-01&to=2026-09-30", nil, http.StatusUnauthorized, CodeUnauthenticated},
+	}
+	for _, tt := range refusals {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := send(w.handler, http.MethodGet, tt.path, "", tt.headers)
+			if rec.Code != tt.status || errorOf(t, rec).Code != tt.code {
+				t.Errorf("%d %s, want %d %s", rec.Code, rec.Body, tt.status, tt.code)
+			}
+		})
+	}
+}
