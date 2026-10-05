@@ -1,13 +1,24 @@
-// The frame around every back office screen: the shared signed-in header,
-// the section navigation on the left, and the `g` chords that move between
-// sections (docs/design/screens/backoffice-shell.md).
+// The frame around every back office screen (D12): a 72px bar with the logo,
+// the venue's date and time, whether the server is there and who is signed in;
+// the section navigation on the left; and the `g` chords that move between
+// sections. Each screen fills the rest and scrolls inside itself.
+//
+// The design's bar also draws a search and a bell. Nothing answers either, and
+// a control that does nothing is not drawn (rebuild.md, rule 3).
 
+import { CalendarIcon, LogOutIcon } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import type { Permission } from "../../../shared/api-types";
-import { useAuth } from "../../../shared/auth/use-auth";
-import { SignedInShell } from "../../../shared/screens/SignedInShell";
-import { chord, sectionForPath, visibleNav, type ChordState, type Section } from "./nav-logic";
+import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
+import { ConnectionWord } from "../../../shared/shell/ConnectionWord";
+import { ProfileMenu } from "../../../shared/shell/ProfileMenu";
+import { Logo } from "../../../shared/ui";
+import { useClock } from "../../../shared/use-clock";
+import { useVenue } from "../../../shared/use-venue";
+import { clockText } from "../../../shared/venue-text";
+import { chord, sectionForPath, type ChordState } from "./nav-logic";
+import { SectionNav } from "./SectionNav";
 
 /** The signed-in staff member's permissions; none while not signed in. */
 export function usePermissions(): readonly Permission[] {
@@ -16,65 +27,44 @@ export function usePermissions(): readonly Permission[] {
 }
 
 export function BackOfficeShell({ children }: { children: ReactNode }) {
+  const auth = useAuth();
+  const store = useAuthStore();
   const [path] = useLocation();
-  const current = sectionForPath(path);
   useChords();
+  if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
 
   return (
-    <SignedInShell area={current?.label ?? "Back office"} exitLabel="Sign out" fill>
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
-        <SectionNav current={current} />
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-8">{children}</div>
-      </div>
-    </SignedInShell>
-  );
-}
-
-function SectionNav({ current }: { current: Section | null }) {
-  const groups = visibleNav(usePermissions());
-  return (
-    <nav aria-label="Sections" className="shrink-0 border-b border-line bg-chrome px-3 py-4 md:w-60 md:overflow-y-auto md:border-r md:border-b-0">
-      {groups.map((g) => (
-        <div key={g.label ?? "top"} className="mb-4 last:mb-0">
-          {g.label && <h2 className="px-3 pb-1.5 text-meta font-semibold uppercase text-fg-faint">{g.label}</h2>}
-          <ul className="flex flex-wrap gap-1 md:flex-col">
-            {g.sections.map((s) => (
-              <li key={s.id}>
-                <NavEntry section={s} active={current?.id === s.id} />
-              </li>
-            ))}
-          </ul>
+    <div className="flex h-screen flex-col overflow-hidden bg-canvas text-fg">
+      <header className="flex h-18 shrink-0 items-center gap-6 border-b border-line bg-chrome px-7">
+        <Logo className="h-9" />
+        <div className="ml-auto flex items-center gap-5 whitespace-nowrap">
+          <ConnectionWord brief className="text-sm" />
+          <VenueClock />
+          <ProfileMenu name={auth.staff.name} role={auth.staff.role} actions={[{ icon: LogOutIcon, label: "Sign out", onClick: () => void store.signOut() }]} />
+          <p className="hidden text-right font-script text-xl leading-tight text-fg-2 2xl:block" aria-hidden="true">
+            Good Food,
+            <br />
+            Happier People ♡
+          </p>
         </div>
-      ))}
-    </nav>
+      </header>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
+        <SectionNav current={sectionForPath(path)} held={auth.permissions} />
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-6">{children}</main>
+      </div>
+    </div>
   );
 }
 
-// The active section is the terracotta fill, the design's sidebar voice.
-const entry = "flex min-h-10 items-center justify-between gap-3 rounded-pill px-4 text-base";
-
-function NavEntry({ section: s, active }: { section: Section; active: boolean }) {
-  if (!s.built) {
-    return (
-      <span className={`${entry} text-fg-muted`}>
-        {s.label}
-        <span className="text-meta font-semibold uppercase text-fg-faint">Soon</span>
-      </span>
-    );
-  }
+/** The date and time in the venue's zone, so the bar is right on a laptop set to another. */
+function VenueClock() {
+  const venue = useVenue();
+  const now = useClock(1000);
   return (
-    <Link
-      href={s.path}
-      aria-current={active ? "page" : undefined}
-      className={
-        active ? `${entry} bg-attention font-semibold text-attention-fg` : `${entry} text-fg-2 hover:bg-attention-tint focus-visible:bg-attention-tint`
-      }
-    >
-      {s.label}
-      <kbd aria-label={`Keys: g then ${s.key}`} className={active ? "font-mono text-meta" : "font-mono text-meta text-fg-faint"}>
-        g {s.key}
-      </kbd>
-    </Link>
+    <span className="hidden h-11 items-center gap-2 rounded-pill bg-sunken px-4 font-mono text-sm font-semibold tabular-nums lg:inline-flex">
+      <CalendarIcon aria-hidden="true" size={17} />
+      {clockText(new Date(now), venue?.timezone ?? null)}
+    </span>
   );
 }
 

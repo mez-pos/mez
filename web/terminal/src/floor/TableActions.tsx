@@ -6,7 +6,7 @@
 import { ArrowRightLeftIcon, ChevronDownIcon, ClockIcon, FlameIcon, LinkIcon, LogOutIcon, UnlinkIcon } from "lucide-react";
 import { cx } from "../../../shared/ui/cx";
 import { ActionItem } from "../register/MoreActions";
-import { useDisclosure } from "../shell/use-disclosure";
+import { useDisclosure } from "../../../shared/shell/use-disclosure";
 
 interface TableActionsProps {
   /** The party is over more than one table. */

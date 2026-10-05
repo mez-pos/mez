@@ -12,7 +12,7 @@
 // whether the server is there in the status bar's own words (ADR-164), beside
 // the way to try it again and the "Not printed" pill.
 
-import { PrinterIcon } from "lucide-react";
+import { DoorClosedIcon, LockIcon, PrinterIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
@@ -23,10 +23,10 @@ import { PrintQueueSheet } from "../print/PrintQueueSheet";
 import { trouble } from "../print/print-queue";
 import { usePrintJobs } from "../print/use-print-jobs";
 import { ConnectionRetry } from "./ConnectionRetry";
-import { ConnectionWord } from "./ConnectionWord";
+import { ConnectionWord } from "../../../shared/shell/ConnectionWord";
 import { activeNav, activeWaiterNav, navItems } from "./nav-logic";
 import { NavPills } from "./NavPills";
-import { ProfileMenu } from "./ProfileMenu";
+import { ProfileMenu, type ProfileAction } from "../../../shared/shell/ProfileMenu";
 import { route } from "./routes";
 import { StatusBar } from "./StatusBar";
 import { useTerminal } from "./terminal-context";
@@ -48,7 +48,13 @@ export function TerminalShell({ children }: { children: ReactNode }) {
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
 
   const failing = trouble(queue.jobs);
+  // Closing the shift needs shift.manage and a shift to close.
   const canCloseShift = auth.permissions.includes("shift.manage") && Boolean(shift.shift);
+  const account: ProfileAction[] = [
+    { icon: LockIcon, label: "Lock", onClick: () => void store.signOut() },
+    ...(canCloseShift ? [{ icon: DoorClosedIcon, label: "Close the shift", onClick: () => navigate(route.shiftClose) }] : []),
+    { icon: PrinterIcon, label: "Print queue", onClick: () => setPrintOpen(true) },
+  ];
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas text-fg">
@@ -78,14 +84,7 @@ export function TerminalShell({ children }: { children: ReactNode }) {
               Not printed <span className="font-mono tabular-nums">{failing}</span>
             </button>
           )}
-          <ProfileMenu
-            name={auth.staff.name}
-            role={auth.staff.role}
-            canCloseShift={canCloseShift}
-            onLock={() => void store.signOut()}
-            onCloseShift={() => navigate(route.shiftClose)}
-            onPrintQueue={() => setPrintOpen(true)}
-          />
+          <ProfileMenu name={auth.staff.name} role={auth.staff.role} actions={account} />
           <p className="hidden text-right font-script text-xl leading-tight text-fg-2 2xl:block" aria-hidden="true">
             A better table for
             <br />

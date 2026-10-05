@@ -2,8 +2,8 @@
 // what is wrong). A function of its inputs, so every wording is tested without
 // rendering anything. The date and the version are in shared/venue-text.ts.
 
-import { describeConnection, type ConnectionDescription } from "../../../shared/connection-status";
-import type { RealtimeStatus } from "../../../shared/realtime";
+import { describeConnection, type ConnectionDescription } from "../connection-status";
+import type { RealtimeStatus } from "../realtime";
 
 /**
  * The connection as the bar words it: "Online" while the stream is live, and

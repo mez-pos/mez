@@ -5,7 +5,7 @@
 
 import { ClockIcon, EllipsisIcon, ListOrderedIcon, PercentIcon, ReceiptTextIcon, FlameIcon, WalletIcon, type LucideIcon } from "lucide-react";
 import { cx } from "../../../shared/ui/cx";
-import { useDisclosure } from "../shell/use-disclosure";
+import { useDisclosure } from "../../../shared/shell/use-disclosure";
 
 export interface MoreActionsProps {
   /** Open orders at the venue, this one included. */

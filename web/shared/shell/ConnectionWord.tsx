@@ -4,9 +4,9 @@
 // alone (tokens.md).
 
 import { WifiIcon, WifiOffIcon } from "lucide-react";
-import { cx } from "../../../shared/ui/cx";
-import { useClock } from "../../../shared/use-clock";
-import { useRealtime } from "../../../shared/use-realtime";
+import { cx } from "../ui/cx";
+import { useClock } from "../use-clock";
+import { useRealtime } from "../use-realtime";
 import { connectionText } from "./status-logic";
 
 const toneClass = {

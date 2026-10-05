@@ -1,23 +1,27 @@
-// Who is signed in, and what they may do about it (flow map): Lock, Close the
-// shift, Print queue. The avatar and name are the button; the choices open under
-// it, as a disclosure (use-disclosure.ts).
+// Who is signed in, and what they may do about it. The avatar and name are the
+// button; the choices open under it, as a disclosure (use-disclosure.ts). The
+// terminal gives it Lock, Close the shift and Print queue (flow map); the back
+// office gives it Sign out (D12).
 
-import { ChevronDownIcon, DoorClosedIcon, LockIcon, PrinterIcon, type LucideIcon } from "lucide-react";
-import { cx } from "../../../shared/ui/cx";
-import { initials, roleText } from "../../../shared/auth/format";
+import { ChevronDownIcon, type LucideIcon } from "lucide-react";
+import { initials, roleText } from "../auth/format";
+import { cx } from "../ui/cx";
 import { useDisclosure } from "./use-disclosure";
+
+export interface ProfileAction {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+}
 
 interface ProfileMenuProps {
   name: string;
   role: string;
-  /** Closing the shift needs shift.manage and a shift to close. */
-  canCloseShift: boolean;
-  onLock: () => void;
-  onCloseShift: () => void;
-  onPrintQueue: () => void;
+  /** The choices, in the order they are listed. */
+  actions: readonly ProfileAction[];
 }
 
-export function ProfileMenu({ name, role, canCloseShift, onLock, onCloseShift, onPrintQueue }: ProfileMenuProps) {
+export function ProfileMenu({ name, role, actions }: ProfileMenuProps) {
   const { open, toggle, box, trigger, panel, panelId, pick, leaves } = useDisclosure();
 
   return (
@@ -47,9 +51,9 @@ export function ProfileMenu({ name, role, canCloseShift, onLock, onCloseShift, o
           aria-label="Your account"
           className="absolute right-0 top-full z-20 mt-2 w-64 rounded-card border border-line bg-raised p-2 shadow-card"
         >
-          <Item icon={LockIcon} label="Lock" onClick={pick(onLock)} />
-          {canCloseShift && <Item icon={DoorClosedIcon} label="Close the shift" onClick={pick(onCloseShift)} />}
-          <Item icon={PrinterIcon} label="Print queue" onClick={pick(onPrintQueue)} />
+          {actions.map((a) => (
+            <Item key={a.label} icon={a.icon} label={a.label} onClick={pick(a.onClick)} />
+          ))}
         </div>
       )}
     </div>

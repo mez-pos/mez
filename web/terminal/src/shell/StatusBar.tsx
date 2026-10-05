@@ -5,7 +5,7 @@
 
 import { useClock } from "../../../shared/use-clock";
 import { clockText, versionText } from "../../../shared/venue-text";
-import { ConnectionWord } from "./ConnectionWord";
+import { ConnectionWord } from "../../../shared/shell/ConnectionWord";
 
 interface StatusBarProps {
   version: string | null;

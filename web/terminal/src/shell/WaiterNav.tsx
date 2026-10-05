@@ -9,7 +9,7 @@ import { Link } from "wouter";
 import { cx } from "../../../shared/ui/cx";
 import { waiterNav, type WaiterNavId } from "./nav-logic";
 import { route } from "./routes";
-import { useDisclosure } from "./use-disclosure";
+import { useDisclosure } from "../../../shared/shell/use-disclosure";
 
 const icons: Record<Exclude<WaiterNavId, "more">, LucideIcon> = {
   home: HouseIcon,
