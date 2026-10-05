@@ -14,7 +14,14 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 17b: the specs for the order screen and Tables.** Written from the
+**Rebuild, Task 17c: the specs for payment, Orders and the print queue.** Written
+from the code as it stands (ADR-196): `terminal-tender.md` (Payment, D07; Split Bill,
+D08a; the waiting, not recorded and received cards, D08b; the invoice and the paid
+panel), `terminal-past-bills.md` (Orders and the refund modal, D09, with void, reprint
+and bills from before today) and `terminal-print-queue.md`. Each Reference was checked
+against the design file's own words. Docs only: no code changed. `make check` passes.
+
+Before it, **Rebuild, Task 17b: the specs for the order screen and Tables.** Written from the
 code as it stands (ADR-196): `terminal-register.md` (the order screen, D03, its sheets,
 and the item modal, D04) and `terminal-floor.md` (Tables, D05: the plan, the list, the
 panel, and Move, Join and Part). Each lists what the design draws and the screen leaves
@@ -288,12 +295,14 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 17c: the specs for payment, Orders and the print queue.** Rewrite
-`terminal-tender.md` (Payment, D07, split, D08a, and the card and UPI states, D08b),
-`terminal-past-bills.md` (Orders and the refund modal, D09) and
-`terminal-print-queue.md` from `tender/`, `bills/` and `print/` as they stand, the way
-17a and 17b did (ADR-196). The waiter's bill is 17d's. Then 17d to 17g, and the walk
-as each role is 17h. The owner has
+**Rebuild, Task 17d: the specs for the waiter's screens.** None has one. Write, from
+`waiter/`, `shell/WaiterNav.tsx` and the waiter's variant in `register/` as they stand
+(ADR-196): `waiter-home.md` (T01), `waiter-order.md` (T02, with Confirm and send, T04,
+and Course View; it says only what differs from `terminal-register.md`),
+`waiter-table.md` (T03, with Transfer and merge, T06), `waiter-bill.md` (T05) and
+`waiter-shift.md` (T08). `terminal-shell.md`, `terminal-register.md` and
+`terminal-tender.md` already point at these names. Then 17e to 17g, and the walk as
+each role is 17h. The owner has
 not yet looked at the kitchen's screens or anything of Task 16. Floor plan and Tips
 are still their old layouts (ADR-195). Phase 11 waits for this phase. Phase 10's tasks are
 all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
@@ -319,6 +328,9 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   itself needs only `payment.take`, so a cashier can submit it from there, and the
   shift gate then holds every device at the close until a manager closes. Decide in
   17h whether that door stays.
+- Found writing the specs (17c): `print/PrintStatus.tsx` is used by nothing since
+  the frame drew its own Not printed pill; delete it in 17h. A payment that cannot be
+  taken says "Nothing is owed on this ticket." (`planTender`), an old word.
 - Printers, Devices and Audit (ADR-195): the dev venue now has three printers that
   go nowhere (127.0.0.1:9197 to 9199), one retired and one set for receipts, so a
   receipt there queues and retries. Not seen by eye: a revoked or a quiet device,
