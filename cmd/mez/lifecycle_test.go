@@ -5,8 +5,13 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/byjoellobo/mez/internal/api"
+	"github.com/byjoellobo/mez/internal/tunnel"
+	"github.com/byjoellobo/mez/web"
 )
 
 // TestShutdownRunsInReverse is the whole contract. The logger is opened first
@@ -110,4 +115,37 @@ func TestShutdownPassesItsDeadline(t *testing.T) {
 
 func quietLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
+}
+
+// TestTunnelCheck: the tunnel in the health endpoint's three words. Off is
+// unknown, not failing, since most venues never set a relay; set and not
+// connected is failing, because a guest scanning a code would be turned away.
+func TestTunnelCheck(t *testing.T) {
+	idle, err := tunnel.New(tunnel.Options{
+		RelayURL: "wss://relay.example",
+		Key:      "mzr_cafe.0123456789ab.sig",
+		Handler:  http.NotFoundHandler(),
+		Mount:    web.MountGuest,
+		Log:      slog.New(slog.NewTextHandler(io.Discard, nil)),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name    string
+		enabled bool
+		guests  *tunnel.Client
+		want    string
+	}{
+		{"no relay configured", false, nil, api.CheckUnknown},
+		{"configured, before the client exists", true, nil, api.CheckUnknown},
+		{"configured and not connected", true, idle, api.CheckFailing},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tunnelCheck(tt.enabled, tt.guests); got != tt.want {
+				t.Errorf("tunnelCheck = %q, want %q", got, tt.want)
+			}
+		})
+	}
 }

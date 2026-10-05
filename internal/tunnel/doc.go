@@ -5,5 +5,11 @@
 // static IP, and it works behind CGNAT. When it is down the counter keeps
 // selling; see ADR-008.
 //
-// Imports: internal/config. Forwards framed requests into internal/api.
+// A guest's request arrives as frames (internal/relay/wire) and is served by
+// calling the server's own handler in this process, never by dialling it. A
+// guest reaches the guest app's mount and nothing else: every path is put
+// under it before the handler sees it. See ADR-202.
+//
+// Imports: internal/relay/wire. It is handed an http.Handler and does not
+// know what is behind it.
 package tunnel

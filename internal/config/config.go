@@ -41,6 +41,7 @@ const (
 	keyLogFormat  = "log_format"
 	keyVenueID    = "venue_id"
 	keyRelayURL   = "relay_url"
+	keyRelayKey   = "relay_key"
 	keyTimezone   = "timezone"
 	keyDevOrigin  = "dev_origin"
 )
@@ -63,6 +64,7 @@ var keys = []string{
 	keyLogFormat,
 	keyVenueID,
 	keyRelayURL,
+	keyRelayKey,
 	keyTimezone,
 	keyDevOrigin,
 }
@@ -74,6 +76,7 @@ var usage = map[string]string{
 	keyLogFormat:  "auto, json or text; auto is text on a terminal, json otherwise",
 	keyVenueID:    "identifier for this venue, used in logs and on the relay",
 	keyRelayURL:   "outbound relay endpoint; empty disables the relay",
+	keyRelayKey:   "this venue's key for the relay, from the relay's operator; a secret",
 	keyTimezone:   "IANA timezone for rendering, for example Asia/Kolkata",
 	keyDevOrigin:  "browser origin allowed to call the API cross-site; empty disables CORS",
 }
@@ -107,6 +110,12 @@ type Config struct {
 	// RelayURL is the outbound tunnel endpoint. Empty means no relay, which is
 	// the normal state: the register sells without it.
 	RelayURL string
+
+	// RelayKey is this venue's key for the relay. It is a secret: it is sent
+	// to the relay and must not be logged. Whether one is present when a
+	// relay is set is checked where the tunnel is built, not here, so that
+	// each key can still be set on its own.
+	RelayKey string
 
 	// Timezone is the venue's local time, used to render timestamps and to
 	// decide which business day a shift belongs to. Stored times stay UTC.
@@ -215,6 +224,7 @@ func defaults(lookup func(string) (string, bool), goos string) map[string]string
 		keyLogFormat:  LogFormatAuto,
 		keyVenueID:    "",
 		keyRelayURL:   "",
+		keyRelayKey:   "",
 		keyTimezone:   "Local",
 		keyDevOrigin:  "",
 	}
@@ -335,6 +345,7 @@ func build(raw map[string]string) (Config, error) {
 	cfg := Config{
 		VenueID:  strings.TrimSpace(raw[keyVenueID]),
 		RelayURL: strings.TrimSpace(raw[keyRelayURL]),
+		RelayKey: strings.TrimSpace(raw[keyRelayKey]),
 	}
 
 	var err error

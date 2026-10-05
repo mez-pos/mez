@@ -39,6 +39,7 @@ import (
 	"github.com/byjoellobo/mez/internal/service/settings"
 	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 	svcstock "github.com/byjoellobo/mez/internal/service/stock"
+	"github.com/byjoellobo/mez/internal/tunnel"
 	"github.com/byjoellobo/mez/web"
 )
 
@@ -273,9 +274,16 @@ func run() (err error) {
 		return err
 	}
 
+	// The tunnel serves guests by calling the server's handler, and the
+	// server reports the tunnel's health, so each needs the other. The
+	// server is built first and reads the tunnel through this, which is set
+	// before anything is served.
+	var guests *tunnel.Client
+
 	srv := api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
+		api.WithTunnelCheck(func() string { return tunnelCheck(cfg.RelayEnabled(), guests) }),
 		api.WithDevices(devices),
 		api.WithStaff(staff),
 		api.WithOrders(orders),
@@ -293,7 +301,40 @@ func run() (err error) {
 		api.WithShifts(shifts),
 	)
 
+	if cfg.RelayEnabled() {
+		// A relay that is set but cannot be used is a setting the owner
+		// believes took, so it stops the start (ADR-019). A relay that is
+		// merely unreachable stops nothing: Start returns at once and the
+		// counter opens whether or not the internet is there.
+		guests, err = tunnel.New(tunnel.Options{
+			RelayURL: cfg.RelayURL,
+			Key:      cfg.RelayKey,
+			Handler:  srv.Handler(),
+			Mount:    web.MountGuest,
+			Log:      log,
+		})
+		if err != nil {
+			return err
+		}
+		guests.Start()
+		running.push("tunnel", guests.Close)
+	}
+
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
+}
+
+// tunnelCheck puts the tunnel's state into the health endpoint's three
+// words. With no relay configured there is nothing to fail, so it is
+// unknown; with one, anything short of connected is failing, because a guest
+// scanning a table's code right now would be turned away.
+func tunnelCheck(enabled bool, guests *tunnel.Client) string {
+	if !enabled || guests == nil {
+		return api.CheckUnknown
+	}
+	if guests.Status().State == tunnel.StateConnected {
+		return api.CheckOK
+	}
+	return api.CheckFailing
 }
 
 // publisher adapts the order service's publisher to the hub.

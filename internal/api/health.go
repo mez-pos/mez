@@ -7,6 +7,7 @@ import (
 
 // Check results. Every check is unknown until the subsystem that answers it
 // exists: Phase 02 wires db and disk, Phase 07 the printer, Phase 11 the tunnel.
+// The tunnel stays unknown on a venue with no relay: there is nothing to fail.
 const (
 	CheckOK      = "ok"
 	CheckFailing = "failing"
@@ -67,7 +68,7 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 			DB:      check(s.dbCheck),
 			Disk:    CheckUnknown,
 			Printer: CheckUnknown,
-			Tunnel:  CheckUnknown,
+			Tunnel:  check(s.tunnelCheck),
 		},
 	})
 }

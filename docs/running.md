@@ -164,6 +164,7 @@ The full set of settings:
 | `log_format` | `-log-format` | `MEZ_LOG_FORMAT` | `auto` |
 | `venue_id` | `-venue-id` | `MEZ_VENUE_ID` | empty |
 | `relay_url` | `-relay-url` | `MEZ_RELAY_URL` | empty, so no relay |
+| `relay_key` | `-relay-key` | `MEZ_RELAY_KEY` | empty; a secret, needed when `relay_url` is set |
 | `timezone` | `-timezone` | `MEZ_TIMEZONE` | the machine's own |
 | `dev_origin` | `-dev-origin` | `MEZ_DEV_ORIGIN` | empty, so no CORS |
 | | `-config` | | `config.toml` beside the binary |

@@ -23,6 +23,13 @@ Phase 10.
   prove it with a test that kills the relay mid-service and asserts the terminal
   still sells.
 
+  Split in two, since the back office half is a screen of its own:
+  - [x] **2a.** The client, `relay_key`, the wiring in `cmd/mez`, the tunnel in
+    `/api/v1/health`, and the test that kills the relay mid-service.
+  - [ ] **2b.** Tunnel status visibly in back office: an endpoint that says more
+    than health's one word (state, since when, last error, next retry), and
+    where the owner sees it.
+
 - [ ] **Task 3 — Guest menu and cart.**
   `web/guest`. Table code resolves the venue and table. Menu, modifiers, cart.
   Under the 60 KB gzipped budget — no shadcn, no heavy date library, no icon

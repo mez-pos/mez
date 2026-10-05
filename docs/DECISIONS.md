@@ -5902,3 +5902,61 @@ The request body is sent before the response is read, so there is no full-duplex
 streaming, and a guest cannot open a WebSocket through the relay: order tracking
 (Task 5) is server-sent events or polling. `go test -race` could not be run here (no
 cgo), so the concurrency was checked by reading and by repeating the tests.
+
+## ADR-202 - The tunnel client: guests are served in process, under one mount, and nothing waits on it
+2026-10 · Status: accepted. Phase 11, Task 2a.
+Context: Task 1 left a relay and a protocol. The venue's side has to hold the socket
+open across a cafe's internet, serve guests from the same server that runs the
+counter, and never be the reason the counter stops.
+Decision:
+  - **Task 2 is split.** 2a is the client, `relay_key`, the wiring, health and the
+    test that kills the relay. 2b is the back office: a status endpoint that says
+    more than one word, and where the owner sees it.
+  - **A guest's request calls the server's handler in this process.** `internal/tunnel`
+    is handed an `http.Handler` and builds an `http.Request` from the frames; it does
+    not dial `localhost`. So a guest request goes through the same middleware, access
+    log and panic recovery as any other, and the tunnel imports neither `internal/api`
+    nor `internal/db`.
+  - **A guest reaches the guest app's mount and nothing else, by construction.** Every
+    guest path is put under `/order/`: `/t/abc` is `/order/t/abc`, and `/api/v1/orders`
+    is `/order/api/v1/orders`, which is not the staff API. There is no list of allowed
+    routes to keep in step. A path with `..`, `.`, an empty segment or a backslash,
+    encoded or not, is refused whole (404) and not cleaned. **What a guest needs from
+    the server (Task 3 on) is therefore mounted under `/order/`**, for example
+    `/order/api/...`, and works the same on the venue's own wifi.
+  - **`relay_key` is a new setting**, `MEZ_RELAY_KEY`. `relay_url` set with no key, or
+    with something that does not start `mzr_`, stops the start with a message (ADR-019);
+    the check is in `tunnel.New` and not in `internal/config`, which stays a leaf and
+    lets each key be set alone. The key is never logged, and no error repeats it.
+  - **`relay_url` is the relay's base**, and the client dials `<relay_url>/agent`.
+  - **Nothing waits on the tunnel.** `Start` returns at once; a venue with no internet
+    starts as fast as one with. A relay that cannot be reached is a log line and a
+    state, never an error from `run`.
+  - **Backoff** doubles from 1 s to 60 s, each wait drawn from the upper half of its
+    step so that venues on a restarted relay do not return in the same second. A
+    connection that lasted 30 s resets it. A 401, and close code 4001 (another machine
+    holds this venue), wait 5 minutes: retrying sooner changes nothing, and for 4001
+    would have two machines taking the venue from each other.
+  - **Heartbeat.** The client pings every 20 s with 10 s to answer, so a line that died
+    without a close is redialled and not left looking connected.
+  - **A request body is whole before the handler runs**, held in memory up to the
+    relay's 1 MiB; 256 requests at once, the relay's limit, enforced at this end too. A
+    guest who leaves cancels the request's context. A panic the server did not recover
+    resets that one stream.
+  - **Health.** `checks.tunnel` is `ok` when connected, `failing` when a relay is set
+    and it is not, and `unknown` when no relay is set: off is not a fault, and most
+    venues never set one. `status` stays `ok` either way.
+  - **The proof** is `TestTheCounterSellsWhileTheRelayIsDown` in `internal/api`: a real
+    database, order service and API behind the client and a real relay on a port. A
+    guest is served, the relay is killed, three sales go through on the same invoice
+    series, the relay comes back on its address and guests are served again. It was
+    also done by hand with `bin/relay` and `bin/mez`.
+Because: the invariant is that offline is the default state, so the tunnel is built as
+something the counter can ignore entirely, and the staff API is kept from guests by
+where requests can land, which cannot be forgotten, and not by a rule about which
+are allowed, which can.
+Cost: no streamed uploads from guests. The built guest bundle names its assets as
+`/order/assets/...`, which is right on the venue's wifi and wrong behind the relay's
+`/v/<venue>/` prefix: Task 3 has to build it with relative URLs. A request arriving by
+the tunnel is not yet marked as such for the handler; `X-Forwarded-Prefix` is there
+but a device on the LAN could send it too, so Task 3 must not treat it as proof.

@@ -425,6 +425,7 @@ func TestEveryKeyIsReachable(t *testing.T) {
 		keyLogFormat:  "text",
 		keyVenueID:    "blr-01",
 		keyRelayURL:   "wss://relay.example.com/v1",
+		keyRelayKey:   "mzr_blr-01.0123456789ab.c2lnbmF0dXJl",
 		keyTimezone:   "Asia/Kolkata",
 		keyDevOrigin:  "http://localhost:5173",
 	}
@@ -473,6 +474,8 @@ func assertKey(t *testing.T, key, want string, cfg Config, err error) {
 		equal(t, key, cfg.VenueID, want)
 	case keyRelayURL:
 		equal(t, key, cfg.RelayURL, want)
+	case keyRelayKey:
+		equal(t, key, cfg.RelayKey, want)
 	case keyTimezone:
 		equal(t, key, cfg.Timezone.String(), want)
 	case keyDevOrigin:

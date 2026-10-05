@@ -8,7 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Rebuild, Task 17h3: STATE.md after the walk** (ADR-200). Task 17 is done: 28 screen
+**Phase 11, Task 1: the relay service** (ADR-201). `cmd/relay` over `internal/relay`:
+a venue dials `GET /agent` with a signed key (`relay issue-key`, an HMAC under
+`RELAY_SECRET`, nothing stored), guests reach it at `/v/<venue>/...`, and requests
+ride one socket as frames (`internal/relay/wire`). Per-venue token bucket, 256
+streams, 1 MiB bodies, a slow guest cut before the socket goes unread, JSON logs in
+UTC, `/healthz`, `build/relay.Dockerfile`, and `make build` makes `bin/relay`. Venues
+share one origin: cookies and redirects are kept to the prefix, but that is not
+isolation (open question 7). Tests over real sockets, 92% of the package.
+
+Before it, **Rebuild, Task 17h3: STATE.md after the walk** (ADR-200). Task 17 is done: 28 screen
 specs written from the code (`docs/design/screens/README.md`), the old words off the
 screens, one door for closing the day, and a walk as each role (ADR-196 to ADR-199).
 `STATE.md` is short again: each task's history moved here and the known-broken list to
