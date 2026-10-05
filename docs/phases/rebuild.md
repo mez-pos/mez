@@ -264,7 +264,24 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 14c. (ADR-174) The shift summary (T08) over it: the waiter, how long they have
     been on, the four figures, tips by table, Print summary if anything can
     print it, and End shift. Guest ratings are left out (phase 11).
-- [ ] **Task 15 - Kitchen display.** D10 and D11.
+- [ ] **Task 15 - Kitchen display.** D10 and D11. Split on 2026-10-05: the
+  design is a board of three columns (New Orders, Preparing, Ready for pickup)
+  with the day's figures beside it, and the server knew a ticket only as sent
+  or bumped.
+  - [ ] 15a. "Start preparing", from the server: a ticket a cook has picked up
+    is in progress (`ticket.started`), and is marked ready from there. `POST
+    .../tickets/{seq}/start`; the board carries it. Go tests.
+  - [ ] 15b. The board as drawn (D10), on paper: the header, the three columns,
+    each card with where it goes, when it was placed, how long it has waited,
+    its lines and its one action. Recall and Change station kept (rule 4).
+  - [ ] 15c. Espresso night (D11) and the foot: Night mode kept on the device,
+    Sound, and whichever of Auto advance, Group by table and Mark all complete
+    the server can do.
+  - [ ] 15d. Today's stats and Upcoming: what the server can say for a station
+    today (orders, in progress, completed, average and slowest time), then the
+    column beside the board.
+  - [ ] 15e. A cook who signs in on a terminal reaches the board (the flow
+    map): today `/kitchen` asks that browser for a pairing of its own.
 - [ ] **Task 16 - Back office.** Split into one sub-task per screen before
   starting: D12 dashboard, D15 to D17 reports, D18 menu, D19 inventory,
   D20 staff and roles, D22 settings, D23 Z-report. D14's offline and sync
