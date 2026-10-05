@@ -59,7 +59,8 @@ added; with other choices it is another.
 ## States
 
 - **Empty** (M11a): "Your cart is empty. Add something delicious and it'll
-  show up right here." and **Browse the menu**.
+  show up right here.", **Browse the menu**, and **See the table's bill**
+  (`guest-bill.md`).
 - **A dish can no longer be ordered:** each time the menu is read the cart
   is held against it. A line is taken out when its dish is gone or sold
   out, a choice it was made with is gone, or its choices no longer satisfy

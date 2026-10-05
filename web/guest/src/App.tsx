@@ -1,7 +1,8 @@
 // The guest's app: a table's code in the path, and the landing, the menu or
-// the cart or the order placed in the hash (route.ts).
+// the cart, the order placed or the bill in the hash (route.ts).
 
 import { useEffect, useState } from "react";
+import { Bill } from "./Bill";
 import { Cart } from "./Cart";
 import { Landing } from "./Landing";
 import { Menu } from "./Menu";
@@ -37,7 +38,10 @@ function Table({ code }: { code: string }) {
   if (view === "landing") return <Landing table={table.data} onStart={() => go("menu")} />;
   // The order placed is the server's answer, kept on the phone: it shows
   // with or without the menu.
-  if (view === "order" && order.placed) return <Order table={table.data} placed={order.placed} onMenu={() => go("menu")} />;
+  if (view === "order" && order.placed) {
+    return <Order table={table.data} placed={order.placed} onMenu={() => go("menu")} onBill={() => go("bill")} />;
+  }
+  if (view === "bill") return <Bill code={code} table={table.data} onBack={() => go("menu")} />;
 
   if (menu.data === undefined) {
     if (menu.isPending) return <Waiting line="Loading the menu" />;
@@ -49,7 +53,7 @@ function Table({ code }: { code: string }) {
     return (
       <>
         {strip}
-        <Cart cart={cart} order={order} onBack={() => go("menu")} onPlaced={() => go("order")} />
+        <Cart cart={cart} order={order} onBack={() => go("menu")} onPlaced={() => go("order")} onBill={() => go("bill")} />
       </>
     );
   }

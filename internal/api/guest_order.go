@@ -30,6 +30,7 @@ const (
 // GuestOrders is what the API needs to take a guest's order.
 type GuestOrders interface {
 	PlaceRound(ctx context.Context, meta svcorder.Meta, cmd svcorder.PlaceRound) (svcorder.Round, error)
+	TableTicket(ctx context.Context, venueID, tableID int64) (svcorder.Result, bool, error)
 }
 
 // WithGuestOrders lets a guest place an order. It needs WithGuests.

@@ -848,6 +848,32 @@ export interface GuestRoundLineResponse {
   total: Money;
 }
 
+export interface GuestBillResponse {
+  open: boolean;
+  lines: GuestBillLineResponse[];
+  items: Money;
+  discounts: Money;
+  taxes: GuestBillTaxResponse[];
+  tax_included: boolean;
+  total: Money;
+  paid: Money;
+  balance_due: Money;
+}
+
+export interface GuestBillLineResponse {
+  name: string;
+  qty: number;
+  choices: string[];
+  amount: Money;
+  comped?: boolean;
+}
+
+export interface GuestBillTaxResponse {
+  name: string;
+  rate: number;
+  amount: Money;
+}
+
 export interface GuestRequestsResponse {
   requests: GuestRequestResponse[];
 }

@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4b2: the request on the terminal** (ADR-212). A pill in the top
+**Phase 11, Task 4c: Place Order on the phone** (ADR-213). The cart sends itself
+with one key for one cart; the answer is kept by table code and shown at `#order`
+as waiting, with the kitchen, or not accepted; a waiting order asks again every 8
+seconds. `web/guest/src/order-logic.ts`, `use-order.ts`, `Order.tsx`; spec
+`guest-order.md`.
+
+Before it, **Phase 11, Task 4b2: the request on the terminal** (ADR-212). A pill in the top
 bar on every screen while a request waits, a sheet with Accept and send and
 Decline, the kitchen's chime on arrival and every 30 seconds, and a mark on the
 table. `web/terminal/src/requests/`, spec `terminal-requests.md`. Task 4b done.

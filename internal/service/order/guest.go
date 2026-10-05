@@ -372,3 +372,22 @@ func deref(r *Round) Round {
 	}
 	return *r
 }
+
+// TableTicket is the ticket open at a table, as it stands, or false when
+// the table has none: what a guest's phone shows as the table's bill
+// (ADR-214). A table's code is a table's bill; whose phone ordered which
+// line is not kept, and a paper bill would not say either.
+func (s *Service) TableTicket(ctx context.Context, venueID, tableID int64) (Result, bool, error) {
+	orderID, err := s.db.Queries().UnclosedOrderAtTable(ctx, gen.UnclosedOrderAtTableParams{TableID: tableID, VenueID: venueID})
+	if isNoRows(err) {
+		return Result{}, false, nil
+	}
+	if err != nil {
+		return Result{}, false, fmt.Errorf("reading the ticket at table %d: %w", tableID, err)
+	}
+	res, err := s.Order(ctx, venueID, orderID)
+	if errors.Is(err, ErrOrderNotFound) {
+		return Result{}, false, nil
+	}
+	return res, err == nil, err
+}

@@ -29,7 +29,7 @@ describe("tableCodeFrom", () => {
   });
 });
 
-describe("the four screens", () => {
+describe("the five screens", () => {
   it("is the menu or the cart for their hashes and the landing for anything else", () => {
     expect(viewFrom("#menu")).toBe("menu");
     expect(viewFrom("#cart")).toBe("cart");
@@ -39,7 +39,7 @@ describe("the four screens", () => {
     expect(viewFrom("#MENU")).toBe("landing");
   });
 
-  it.each(["landing", "menu", "cart", "order"] as const)("round-trips %s", (view) => {
+  it.each(["landing", "menu", "cart", "order", "bill"] as const)("round-trips %s", (view) => {
     expect(viewFrom(hashFor(view))).toBe(view);
   });
 

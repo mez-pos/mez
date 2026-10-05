@@ -77,12 +77,17 @@ Phase 10.
   - [x] **4c.** Place Order on the phone: the cart's foot, the design's words
     back ("Start Ordering", "Add to order"), special instructions, and what
     the guest sees next: waiting, sent or declined, and each refusal.
-  - [ ] **4d.** How the venue is paid: a setting, prepay or pay at the table,
-    and the bill on the phone with its tax as the server works it out.
-  - [ ] **4e.** UPI: the intent link and the dynamic QR. A confirmed payment
-    is `payment.tendered`; a prepaid order needs no acceptance. Decide who
-    closes a bill nobody on staff touched (a sold stock movement needs a
-    real staff id, see KNOWN.md).
+  - [x] **4d.** The bill on the phone, with its tax as the server works it
+    out: `GET /order/api/t/{code}/bill` and the screen (ADR-214). The setting
+    for how the venue is paid moved to 4e, where it first means something.
+  - [ ] **4e.** Paying from the phone by UPI. It is several sessions: split
+    it first. The venue's UPI address and its mode, prepay or pay at the
+    table, as settings the owner edits; the intent link and the dynamic QR
+    on the bill; how a payment is confirmed, and by whom, when UPI itself
+    tells the venue nothing; a confirmed payment as `payment.tendered`; in a
+    prepay venue a round held until paid and then sent with no acceptance
+    (ADR-209). Decide who closes a bill nobody on staff touched (a sold
+    stock movement needs a real staff id, see KNOWN.md).
   - [ ] **4f.** The gateway adapter: one interface, with Razorpay, Cashfree
     and Stripe behind it.
   - [ ] **4g.** Splitting the bill among the guests at a table.

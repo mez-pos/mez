@@ -8,28 +8,29 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3
-and 4a to 4c done. (The rebuild, 09 and 10 still owe the owner's walk.)
+and 4a to 4d done. (The rebuild, 09 and 10 still owe the owner's walk.)
 
 ## Last completed task
 
-**Phase 11, Task 4c: Place Order on the phone** (ADR-213). The cart sends itself
-with one key for one cart; the answer is kept by table code and shown at `#order`
-as waiting, with the kitchen, or not accepted; a waiting order asks again every 8
-seconds. `web/guest/src/order-logic.ts`, `use-order.ts`, `Order.tsx`; spec
-`guest-order.md`. A guest can now order from a phone, end to end, unpaid.
+**Phase 11, Task 4d: the bill on the phone** (ADR-214).
+`GET /order/api/t/{code}/bill` is the table's open ticket with the till's parts
+taken out; `#bill` shows its lines, tax, total, paid and left to pay, and says to
+pay staff or at the counter. `web/guest/src/Bill.tsx`, `bill-logic.ts`; spec
+`guest-bill.md`. The prepay setting moved to 4e.
 
 ## Next task
 
-**Phase 11, Task 4d: how the venue is paid.** Read `docs/02-domain.md`, ADR-209 to
-ADR-213, the settings service's rules (`internal/service/settings/rules.go`), and
-M08 in the design. It is likely two sessions: split it first.
-- A venue setting: prepay required, or pay at the table. Where the owner sets it.
-- The bill on the phone, with its tax as the server works it out: the guest's menu
-  carries no tax rates, so this needs the table's ticket projected, read by code.
-  Decide what one guest may see of a ticket the whole table shares.
-- In a prepay venue a round is not sent until paid (ADR-209): decide what a round
-  is between Place Order and payment, since 4e brings the payment itself.
-- 37.9 KB of 60 in the guest bundle before this.
+**Phase 11, Task 4e: paying from the phone by UPI.** Several sessions: split it
+first, in the phase file, before building. Read `docs/02-domain.md`, ADR-209 to
+ADR-214, `internal/service/settings/rules.go`, `backoffice-settings.md`, M08.
+- First decide how a UPI payment is confirmed. A UPI intent link and a QR carry
+  the venue's address and the amount, and tell the venue nothing when paid: either
+  staff confirm it on the terminal (as the till's own UPI tender does), or it waits
+  for 4f's gateway. Read how the till tenders UPI (`terminal-tender.md`) first.
+- A likely first sub-task: the venue's UPI address as a setting the owner edits,
+  and the link and QR on `#bill` for the amount left to pay, with staff confirming.
+  A QR needs an encoder inside the 60 KB budget (38.8 used). Then the mode, and a
+  round held until paid.
 
 ## Known broken / in progress
 
@@ -55,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3 and 4a to 4c done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3 and 4a to 4d done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

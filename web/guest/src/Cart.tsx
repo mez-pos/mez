@@ -19,9 +19,10 @@ interface CartProps {
   onBack: () => void;
   /** The venue has the order: on to how it stands. */
   onPlaced: () => void;
+  onBill: () => void;
 }
 
-export function Cart({ cart, order, onBack, onPlaced }: CartProps) {
+export function Cart({ cart, order, onBack, onPlaced, onBill }: CartProps) {
   const place = () => {
     void order.place().then((ok) => {
       if (ok) onPlaced();
@@ -63,6 +64,9 @@ export function Cart({ cart, order, onBack, onPlaced }: CartProps) {
             <p className="mt-2 max-w-64 text-base text-fg-2">Add something delicious and it'll show up right here.</p>
             <Button variant="primary" className="mt-5" onClick={onBack}>
               Browse the menu
+            </Button>
+            <Button variant="ghost" className="mt-2" onClick={onBill}>
+              See the table's bill
             </Button>
           </div>
         ) : (

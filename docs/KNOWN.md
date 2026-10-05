@@ -10,6 +10,11 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The bill on the phone** (ADR-214): anyone with a table's code can read
+  that table's bill from anywhere. A table with two tickets shows the older.
+  Nothing is shown once a bill closes, until Task 5's receipt. Not seen by
+  eye: tax rows, a discount, On the house, Paid and Left to pay, nothing
+  open, the failures.
 - **Place Order on the phone** (ADR-213): no special instructions. A waiting
   order is asked about by sending it again every 8 seconds; Task 5 should
   replace that. A second order placed while the first waits loses word of the

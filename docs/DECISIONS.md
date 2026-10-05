@@ -6461,3 +6461,51 @@ the request was accepted, a second round going straight through, and the strip o
 the menu. Not seen: a declined order, any refusal, placing over a slow or dropped
 connection, a reload while waiting, the screens on a real phone or through the
 relay.
+
+## ADR-214 - The bill on the phone is the table's ticket, read by its code; and the payment mode waits for payment
+2026-10 · Status: accepted. Phase 11, Task 4d. Amends ADR-210's split.
+Context: 4d was cut as "how the venue is paid: a setting, prepay or pay at the table,
+and the bill on the phone". Read closely, the two halves do not belong together yet.
+Decision:
+  - **The setting moved to 4e.** Prepay means a round is held until it is paid,
+    and nothing can be paid from a phone until 4e. A setting the owner could turn
+    on today would hold every guest's order for a payment that cannot be made, or
+    would do nothing and say it did. It arrives with the thing it controls. Until
+    then every venue is pay at the table, which is what the code already does.
+  - **4d is the bill**: `GET /order/api/t/{code}/bill` and a screen at `#bill`.
+  - **The bill is the table's open ticket, projected, with the till's parts taken
+    out.** Each line that is on the bill (a voided one is not; a comped one is,
+    marked, with what it was worth), what the charged lines come to, discounts as
+    one figure, each tax component by name and rate, whether the prices already
+    hold the tax, the total, what has been paid net of refunds, and what is left.
+    No ids, stations, courses, reasons, staff or tenders.
+  - **Nothing is added up outside the projection**, in the handler or on the
+    phone, except line and order discounts into one figure with the money type's
+    own addition. The phone chooses rows and words.
+  - **Tax already in the prices is said as "Includes CGST (2.5%)"**, smaller, so
+    the rows are not read as adding up to the total. This is the walk's open
+    question 4 (ADR-199) answered for the guest's screen, where it is new; the
+    till's own totals are still the owner's to decide.
+  - **One guest sees the whole table's bill.** The code is the table's and so is
+    the bill; a paper one would show the same. Nothing records whose phone
+    ordered which line, and 4g, splitting, is where "mine" will mean something.
+  - **No ticket is a bill with nothing on it, 200, not an error.** A waiting
+    request is not on any bill, and the screen says so.
+  - **Read on opening, every 15 seconds while shown, and on return**, never from
+    an earlier look. Not on the stream: a guest has none.
+  - **Where to pay is said plainly**: staff or the counter. Nothing says a guest
+    can pay here.
+  - **Reached from the order placed, once it is sent, and from an empty cart**, so
+    a guest at a table staff seated, who ordered nothing by phone, can read it.
+  - The guest's bundle is 38.8 KB gzipped of 60.
+Because: a bill worked out twice is two bills. The ticket's projection is already
+what the till, the invoice and the Z-report agree on.
+Cost: 4e is now larger, and is to be split before it starts. Anyone holding a
+table's code can read what that table has ordered and owes, from anywhere, for as
+long as the code lives; ADR-206 already accepted that for the menu, and this is
+more. A table with two tickets open shows the older one's bill. Once a bill
+closes the phone shows nothing until Task 5's receipt. Seen by eye at 390 wide on
+a demo venue with no tax: a ticket's lines, the items row, the total, and where to
+pay. Not seen: tax rows of either kind, a discount, On the house, Paid and Left to
+pay, the bill with nothing open, and the failures; the Go and vitest tests cover
+the figures and the words for all of them.

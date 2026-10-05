@@ -20,9 +20,10 @@ interface OrderProps {
   table: GuestTableResponse;
   placed: Placed;
   onMenu: () => void;
+  onBill: () => void;
 }
 
-export function Order({ table, placed, onMenu }: OrderProps) {
+export function Order({ table, placed, onMenu, onBill }: OrderProps) {
   const { round } = placed;
   const words = statusWords(round.status, table.venue.name);
   const count = round.lines.reduce((sum, l) => sum + l.qty, 0);
@@ -63,10 +64,16 @@ export function Order({ table, placed, onMenu }: OrderProps) {
           <p className="mt-1 text-sm text-fg-muted">Before any taxes and charges, which are on the bill.</p>
         </section>
 
-        <div className="mt-auto pt-8">
+        <div className="mt-auto flex flex-col gap-3 pt-8">
           <Button variant={round.status === "sent" ? "primary" : "secondary"} size="charge" className="w-full" onClick={onMenu}>
             {round.status === "sent" ? "Order more" : "Back to the menu"}
           </Button>
+          {/* The bill has this order on it only once it is accepted. */}
+          {round.status === "sent" && (
+            <Button variant="secondary" className="w-full" onClick={onBill}>
+              See the table's bill
+            </Button>
+          )}
         </div>
       </main>
     </div>

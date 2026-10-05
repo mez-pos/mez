@@ -27,8 +27,9 @@ never "being prepared" for an order nobody has accepted.
   small print, and what it comes to.
 - **The total,** a card: "Total (3 items)", the figure, and "Before any
   taxes and charges, which are on the bill."
-- **At the foot:** **Order more**, the primary, once sent; **Back to the
-  menu**, secondary, while waiting or declined.
+- **At the foot:** **Order more**, the primary, once sent, with **See the
+  table's bill** under it (`guest-bill.md`); **Back to the menu**,
+  secondary, while waiting or declined.
 - **The strip,** over the menu and the cart while the phone remembers an
   order: "Your order: Waiting to be accepted", "Sent to the kitchen" or "Not
   accepted", in the state's tone, and **View**. The whole strip is the

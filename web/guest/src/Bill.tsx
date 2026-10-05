@@ -1,0 +1,130 @@
+// M08's bill (docs/design/screens/guest-bill.md): what the table has had and
+// what it comes to, with its tax, as the venue works it out. Paying from the
+// phone is 4e; until then this says where to pay.
+
+import type { GuestTableResponse } from "../../shared/api-types";
+import { formatMoney } from "../../shared/money";
+import { Button } from "../../shared/ui/Button";
+import { cx } from "../../shared/ui/cx";
+import { billState, payLine, summaryRows } from "./bill-logic";
+import { tableLabel } from "./Landing";
+import { problemOf } from "./menu-logic";
+import { useBill } from "./use-guest";
+
+interface BillProps {
+  code: string;
+  table: GuestTableResponse;
+  onBack: () => void;
+}
+
+export function Bill({ code, table, onBack }: BillProps) {
+  const query = useBill(code);
+  const bill = query.data;
+  return (
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas text-fg">
+      <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-line bg-chrome px-2">
+        <button
+          type="button"
+          aria-label="Back to the menu"
+          onClick={onBack}
+          className="flex size-tap items-center justify-center rounded-round outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M19 12H5M11 6l-6 6 6 6" />
+          </svg>
+        </button>
+        <h1 className="font-serif text-xl">The bill</h1>
+        <p className="mr-2 ml-auto text-sm text-fg-muted">{tableLabel(table.table.name)}</p>
+      </header>
+
+      <main className="flex flex-1 flex-col px-4 pb-8">
+        {bill === undefined ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
+            {query.isPending ? (
+              <p role="status" className="text-base text-fg-muted">
+                Reading the bill
+              </p>
+            ) : (
+              <>
+                <p role="alert" className="max-w-64 text-base text-fg-2">
+                  {problemOf(query.error) === "unreachable"
+                    ? "Can't reach the kitchen to read the bill. Check your connection and try again."
+                    : "The bill could not be read. Try again, or ask a member of staff."}
+                </p>
+                <Button variant="secondary" onClick={() => void query.refetch()}>
+                  Try again
+                </Button>
+              </>
+            )}
+          </div>
+        ) : (
+          <>
+            {bill.lines.length > 0 && (
+              <ul className="mt-4 rounded-card border border-line bg-raised px-4 shadow-rest">
+                {bill.lines.map((line, i) => (
+                  <li key={i} className="flex items-start justify-between gap-3 border-b border-line-soft py-3 last:border-b-0">
+                    <div className="min-w-0">
+                      <p className="text-base">
+                        <span className="font-mono tabular-nums">{line.qty}</span> × {line.name}
+                      </p>
+                      {line.choices.length > 0 && <p className="mt-0.5 text-sm text-fg-muted">{line.choices.join(", ")}</p>}
+                    </div>
+                    {line.comped ? (
+                      <p className="shrink-0 text-base font-semibold text-accent-text">On the house</p>
+                    ) : (
+                      <p className="shrink-0 font-mono text-base tabular-nums">{formatMoney(line.amount)}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {bill.open && (
+              <section aria-label="Summary" className="mt-4 rounded-card border border-line bg-raised p-4">
+                <dl>
+                  {summaryRows(bill).map((row) => (
+                    <div key={row.label} className={cx("flex items-baseline justify-between gap-3 py-1 text-base", row.within && "text-sm text-fg-muted")}>
+                      <dt>{row.label}</dt>
+                      <dd className="font-mono tabular-nums">
+                        {row.minus && "−"}
+                        {formatMoney(row.amount)}
+                      </dd>
+                    </div>
+                  ))}
+                  <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-line pt-3">
+                    <dt className="font-serif text-lg">Bill total</dt>
+                    <dd className="font-serif text-xl">{formatMoney(bill.total)}</dd>
+                  </div>
+                  {bill.paid.minor > 0 && (
+                    <>
+                      <div className="flex items-baseline justify-between gap-3 py-1 text-base">
+                        <dt>Paid</dt>
+                        <dd className="font-mono tabular-nums">{formatMoney(bill.paid)}</dd>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-3 py-1 text-base font-bold">
+                        <dt>Left to pay</dt>
+                        <dd className="font-mono tabular-nums">{formatMoney(bill.balance_due)}</dd>
+                      </div>
+                    </>
+                  )}
+                </dl>
+              </section>
+            )}
+
+            <p className="mt-4 rounded-card border border-line bg-sunken p-4 text-center text-base text-fg-2">{payLine(billState(bill))}</p>
+            <p className="mt-3 text-center text-sm text-fg-muted">This is the whole table's bill, whoever ordered.</p>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
