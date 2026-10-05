@@ -28,8 +28,10 @@ import {
   type SettingsSection,
   type SettingsSectionId,
 } from "./settings-logic";
+import { PaymentsCard } from "./PaymentsCard";
 import { ShiftsSection } from "./ShiftsSection";
 import { TaxSection } from "./TaxSection";
+import { usePayments } from "./use-payments";
 import { useSettings } from "./use-settings";
 import { VenueSection } from "./VenueSection";
 
@@ -57,6 +59,7 @@ function Frame({ section }: { section: SettingsSection }) {
     });
   }, []);
   const venueDirty = useCallback((d: boolean) => reportDirty("venue", d), [reportDirty]);
+  const paymentsDirty = useCallback((d: boolean) => reportDirty("payments", d), [reportDirty]);
 
   // The browser's own prompt when the tab is closed or reloaded on a draft.
   useEffect(() => {
@@ -89,6 +92,7 @@ function Frame({ section }: { section: SettingsSection }) {
                 <EmptyState icon={<InboxIcon />} line={problemOf(api.error).message} action={{ label: "Try again", onClick: api.refetch }} />
               )}
               {api.data && <VenueSection venue={api.data.venue} onSave={api.saveVenue} onDirty={venueDirty} />}
+              {api.data && <Payments onDirty={paymentsDirty} />}
             </>
           )}
           {section.id === "tax" && <TaxSection onDirty={reportDirty} />}
@@ -191,4 +195,13 @@ function Rail({ current, onGo }: { current: SettingsSection; onGo: (e: MouseEven
       </div>
     </Card>
   );
+}
+
+// Where the venue is paid from a guest's phone, under its details. It reads
+// and saves on its own, so a failure here leaves the venue's card usable.
+function Payments({ onDirty }: { onDirty: (dirty: boolean) => void }) {
+  const payments = usePayments();
+  if (payments.data) return <PaymentsCard payments={payments.data} onSave={payments.save} onDirty={onDirty} />;
+  if (payments.loading) return <p className="text-base text-fg-muted">Loading the payment settings</p>;
+  return <EmptyState icon={<InboxIcon />} line={problemOf(payments.error).message} action={{ label: "Try again", onClick: payments.refetch }} />;
 }

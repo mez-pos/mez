@@ -8,27 +8,27 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4d and 4e1 done. (The rebuild, 09 and 10 still owe the owner's walk.)
+4a to 4d, 4e1 and 4e2 done. (The rebuild, 09 and 10 still owe the owner's walk.)
 
 ## Last completed task
 
-**Phase 11, Task 4e1: a UPI pay link on the phone's bill** (ADR-215). The venue's
-UPI address is a setting (`GET`/`PUT /api/v1/settings/payments`,
-`payment.upi_address`). The server builds the `upi://pay` link for the balance
-(`payment.UPIAccount.Link`) and the bill carries it; the phone shows "Pay ₹540.00
-by UPI". Staff confirm the payment on the terminal, as at the till. 4e split in five.
+**Phase 11, Task 4e2: the UPI address in the back office** (ADR-216). A card,
+"Paid from a phone", under the venue's details on Settings: the address, the name
+a guest sees, a standing warning that mez cannot check the address, and what a
+guest's bill now offers. `web/backoffice/src/settings/PaymentsCard.tsx`.
 
 ## Next task
 
-**Phase 11, Task 4e2: where the owner sets the UPI address.** Read ADR-215,
-`backoffice-settings.md`, `docs/design/tokens.md`, and one existing card as the
-pattern (`web/backoffice/src/settings/ReceiptCard.tsx`, `use-section-draft.ts`).
-- A card on Settings: the UPI address and the payee name, saved with
-  `PUT /api/v1/settings/payments` (`PaymentSettingsResponse` is generated).
-- Say beside the field that the address cannot be checked: the owner should pay
-  it a rupee from their own phone before guests do.
-- A venue not in INR keeps the card and is told UPI pays in rupees only.
-- Update the spec in the same task. Then 4e3, the QR.
+**Phase 11, Task 4e3: the QR on the phone's bill.** Read ADR-215, `guest-bill.md`.
+- For paying from another phone: the same `upi://pay` link the bill already
+  carries, as a QR, under the Pay by UPI button.
+- The guest's bundle is 39.1 KB of 60. Measure before choosing: a small QR encoder
+  written for this (byte mode, one error level, versions enough for a 150
+  character link) against a library, by its gzipped cost. Or draw it on the
+  server as SVG, in Go with no dependency, and serve it with the bill: nothing is
+  added to the bundle, and the encoder gets Go tests. Say which and why in the ADR.
+- A QR that does not scan is worse than none: test the encoder against known
+  codes, and scan one with a real phone before calling it done, or say it was not.
 
 ## Known broken / in progress
 
@@ -54,5 +54,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d and 4e1 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 and 4e2 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

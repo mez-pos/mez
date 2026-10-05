@@ -57,6 +57,33 @@ two across.
 - **Currency**, read only: the code and "Cannot be changed: every amount
   recorded would change what it means."
 
+Under it, a card of its own, **Paid from a phone** (ADR-215, ADR-216;
+`PaymentsCard.tsx`, `payments-logic.ts`, `use-payments.ts`): "A guest reading
+their bill on their phone can pay it by UPI, straight to your account. They
+show you the payment, and you record it on the terminal as you would one
+made at the counter." It reads and saves on its own
+(`GET`/`PUT /api/v1/settings/payments`), so a failure to read it leaves the
+venue's card usable. Fields one across.
+
+- **UPI address**, in the monospace. "Like cafe@okbank: the one on your
+  counter's UPI sticker. Leave empty to offer no UPI on a guest's phone."
+  Refused unless it is written like one: "Enter a UPI address like
+  cafe@okbank: a name, an @, and the bank's handle."
+- **Name the guest sees**, 60 characters at most, the venue's name as its
+  placeholder. "What a guest's UPI app shows before they pay. Leave empty to
+  use the venue's name, Demo Cafe."
+- **A warning, always there**, in the warning tone: "mez cannot check this
+  address. It only checks that it is written like one. A wrong address sends
+  your guests' money to someone else. After saving, open a bill on your own
+  phone and pay it one rupee: your UPI app should show Filter Coffee, and
+  the rupee should arrive in your account." The name in it follows what is
+  typed.
+- **Where things stand**, from what is saved and not what is typed: "A
+  guest's bill offers "Pay by UPI" to cafe@okbank.", or "No address saved: a
+  guest's bill offers no UPI, and says to pay staff or at the counter.", or
+  for a venue not in rupees, "UPI pays in rupees only, and this venue trades
+  in USD: a guest's bill will not offer it, whatever is entered here."
+
 ### Tax and numbering
 
 Three cards. The profile and the numbering each save on their own; the tax

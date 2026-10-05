@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4d: the bill on the phone** (ADR-214).
+**Phase 11, Task 4e1: a UPI pay link on the phone's bill** (ADR-215). The venue's
+UPI address is a setting (`GET`/`PUT /api/v1/settings/payments`). The server builds
+the `upi://pay` link for the balance (`payment.UPIAccount.Link`) and the bill
+carries it; the phone shows "Pay by UPI". Staff confirm the payment on the
+terminal, as at the till. 4e split in five.
+
+Before it, **Phase 11, Task 4d: the bill on the phone** (ADR-214).
 `GET /order/api/t/{code}/bill` is the table's open ticket with the till's parts
 taken out; `#bill` shows its lines, tax, total, paid and left to pay.
 `web/guest/src/Bill.tsx`, `bill-logic.ts`; spec `guest-bill.md`. The prepay setting

@@ -85,8 +85,8 @@ Phase 10.
     - [x] **4e1.** The venue's UPI address as a setting
       (`GET`/`PUT /api/v1/settings/payments`), and a pay link for what is
       left on the phone's bill.
-    - [ ] **4e2.** Where the owner sets it: a card on the back office's
-      Settings. Until then it is set through the API only.
+    - [x] **4e2.** Where the owner sets it: a card under the venue's details
+      on the back office's Settings (ADR-216).
     - [ ] **4e3.** The QR on the bill, for paying from another phone, inside
       the 60 KB budget.
     - [ ] **4e4.** "I have paid": the guest tells the terminal, which says so

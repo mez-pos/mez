@@ -6562,3 +6562,35 @@ sends guests' money to a stranger, and only a first small payment finds that out
 Seen by eye at 390 wide on a demo venue: the card with the button, the payee and
 address, both sentences, and the link's text. Not seen: a UPI app opening on it, on
 any phone; a phone with no UPI app; and the bill turning paid after staff record it.
+
+## ADR-216 - The UPI address in the back office: under the venue's details, with the warning always there
+2026-10 · Status: accepted. Phase 11, Task 4e2.
+Context: ADR-215 made the venue's UPI address a setting with an API and no screen,
+and said the screen must tell the owner the address cannot be checked.
+Decision:
+  - **A card, "Paid from a phone", under the venue's details** on Settings, in the
+    Venue section. Where the venue is paid is a fact about who it is, like its
+    legal name, and the other sections are tax and shifts. A section of its own
+    was set aside for one card; the gateway (4f) and the mode (4e5) can make one.
+  - **It reads and saves on its own**, as the cards of the other sections do, on
+    the shared draft and frame (`useSectionDraft`, `SectionCard`): Save, Discard,
+    the words a refusal shows, and the leave-without-saving prompt come with them.
+    A failure to read it leaves the venue's card usable.
+  - **The warning is always there, not only on a change**: "mez cannot check this
+    address", why it matters, and what to do about it: pay a bill one rupee from
+    the owner's own phone and see it arrive. An owner reading the card a month on
+    should still be told the address was never verified by anything but that.
+  - **The address is checked for its shape before it is sent**, by the same
+    pattern as the server, which checks again. The message is the server's words.
+  - **Where things stand is read from what is saved**, not what is typed, so the
+    sentence never describes a draft. A venue not in rupees keeps the card and is
+    told UPI will not be offered, since the bill's currency decides (ADR-215).
+  - **No test payment from the card.** A button that opened a one rupee link on
+    the office computer would open nothing: UPI apps are on phones.
+Because: the one way this feature loses a venue money is a mistyped address, and
+the only test of an address is a payment.
+Cost: the warning is long and permanent on a screen the owner visits rarely. Seen
+by eye at 1366 wide: the card under Venue, a bad address refused under its field,
+a good one saved, the payee's name carried into the warning, and the standing
+line. Not seen: the card at 400 wide, a venue not in rupees, the read failing, and
+the leave prompt with this card's draft.
