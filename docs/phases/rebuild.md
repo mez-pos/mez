@@ -376,12 +376,17 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
       anyone walks: closing the day has one door; the old words still on
       screen and in the server's messages (till, ticket where an order is
       meant, "Refunds come with Task 6"); two pieces of code nothing used.
-    - [ ] 17h2. The walk, in the dev server: a cashier, a waiter, the kitchen
-      and a manager each take an order through to a paid bill, an invoice
-      and a Z-report, each screen read against its spec. What breaks is
-      fixed or written into `STATE.md`; the "not seen by eye" lists there
-      are cut to what is still unseen, and `STATE.md` is brought back under
-      60 lines. Split it by role if it will not fit one session.
+    - [x] 17h2. (ADR-199) The walk: a cashier, a waiter, the kitchen (the wall
+      display and a cook on a terminal) and a manager each took an order
+      through to a paid bill, an invoice and a Z-report, on a fresh demo venue
+      run from the current build. Two things it found are fixed (a refund
+      did not say who authorised it; the Z-report's Tax card did not say it is
+      after credit notes); the rest are in `STATE.md` for the owner.
+    - [ ] 17h3. `STATE.md` after the walk: cut the "not seen by eye" lists to
+      what is still unseen, and bring the file back under 60 lines by moving
+      the "Before it" history out. Split off on 2026-10-05: it is a careful
+      read of seven hundred lines, and the walk saw the spine, not every
+      state those lists name.
 
 ## Not in this phase
 

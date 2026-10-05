@@ -64,6 +64,16 @@ export function serviceName(key: string): string {
   return services[key] ?? key;
 }
 
+/**
+ * What the Tax card says under its rows when credit notes were issued in the
+ * shift: its rows are the tax invoiced less the tax credited, so they come to
+ * less than the Sales card's Tax, which is the tax invoiced. Null with none.
+ */
+export function taxNote(creditNotes: number): string | null {
+  if (creditNotes <= 0) return null;
+  return `After ${creditNotes} ${creditNotes === 1 ? "credit note" : "credit notes"}: the tax invoiced, less the tax credited.`;
+}
+
 /** The error a report screen shows, in words. */
 export function reportProblem(status: number | undefined, number?: number): string {
   if (status === 403) return "You don't have permission to see reports. Ask a manager.";

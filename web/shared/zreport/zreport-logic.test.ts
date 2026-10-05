@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { channelName, differenceWords, methodName, rateText, reportProblem, staffName, serviceName, stampText } from "./zreport-logic";
+import { channelName, differenceWords, methodName, rateText, reportProblem, staffName, serviceName, stampText, taxNote } from "./zreport-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -54,5 +54,13 @@ describe("a slip's words", () => {
     expect(serviceName("takeaway")).toBe("Takeaway");
     expect(serviceName("delivery")).toBe("Delivery");
     expect(serviceName("drive_through")).toBe("drive_through");
+  });
+});
+
+describe("the tax card's note", () => {
+  it("says the rows are after credit notes, only when there were any", () => {
+    expect(taxNote(0)).toBeNull();
+    expect(taxNote(1)).toBe("After 1 credit note: the tax invoiced, less the tax credited.");
+    expect(taxNote(3)).toBe("After 3 credit notes: the tax invoiced, less the tax credited.");
   });
 });

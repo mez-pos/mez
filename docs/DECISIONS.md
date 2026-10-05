@@ -5773,3 +5773,35 @@ Cost: the printed Z-report still labels its device "Till" (`escpos/zreport.go`);
 printed layout is its own change, with a printer to check it on. The dev-only gallery
 keeps its sample strings.
 ---
+
+## ADR-199 - The walk is made on a fresh venue from the current build; what it found
+2026-10 · Status: accepted. Rebuild Task 17h2.
+Context: Task 17 ends with a walk as each role. A dev server was already running, from
+a binary several commits old, on the dev venue with a day of test data in it.
+Decision:
+  - **The walk has its own venue**: `mez setup -demo-menu` into a scratch directory,
+    served by the binary `make check` builds (the embedded, production bundles) on its
+    own port. It starts where a day does, with no shift open, and leaves the dev venue
+    and its server alone.
+  - **Walked**, at 1920x1080 and for the waiter 1366x1024: pairing all three apps;
+    Meera opening the shift, a counter order by "+" and by the item modal, Send, cash
+    with a tip and change, the invoice, New Order; the wall display starting and
+    readying tickets, and night; Kabir seating a table, ordering over two courses,
+    Confirm and send, the table's screen, Fire, a bill split in two by UPI and cash,
+    Close table, Clear, his shift summary; Arjun refunding an item on Orders, the blind
+    count, a short drawer and its note, the close, Z-report 1; Ravi at `/pass`; and in
+    the back office the dashboard, Z-report 1 with its exports, Sales and Staff
+    reports, Audit, and the guard on Menu.
+  - **A refund says who authorised it.** `RefundIssued` was built without
+    `AuthorisedBy`, though its credit note carried it, so Audit read "Not recorded" for
+    every refund (against ADR-117). It carries it now. Refunds already stored keep
+    reading "Not recorded": events are not rewritten.
+  - **The Z-report's Tax card says it is after credit notes** (`taxNote`). The domain
+    is right and unchanged: Sales' Tax is the tax invoiced, the Tax card the tax
+    invoiced less the tax credited. Side by side with no words they read as an error.
+Because: a walk on stale code or on a venue full of test data proves little; and a
+figure on a money report that looks wrong is a problem even when it is right.
+Cost: the walk saw each role's spine once. It did not see card payments, a split by
+item, voids, comps, discounts, transfer and merge, delivery, a reprint, or any width
+under those two. `STATE.md` keeps what is still unseen.
+---

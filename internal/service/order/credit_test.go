@@ -67,6 +67,11 @@ func TestPartialRefundOnASplitBill(t *testing.T) {
 	if cn.CreditNo != "CN/26-27/000001" || cn.AgainstInvoiceNo != "INV/26-27/000001" || cn.Seller == nil || cn.Seller.Registration == "" {
 		t.Errorf("credit note = %+v", cn)
 	}
+	// The refund says who let it through, as its credit note does: the audit
+	// trail reads the refund (ADR-117).
+	if rf := res.Events[1].Payload.(order.RefundIssued); rf.AuthorisedBy != 7 || cn.AuthorisedBy != 7 {
+		t.Errorf("authorised by: the refund says %d, the credit note %d, want 7", rf.AuthorisedBy, cn.AuthorisedBy)
+	}
 	st := res.State
 	if st.Status != order.StatusClosed || len(st.Invoices) != 1 || st.Totals.Credited != inr(12600) ||
 		st.Totals.Refunded != inr(12600) || !st.Totals.BalanceDue.IsZero() || st.Tenders[1].Refunded != inr(12600) {

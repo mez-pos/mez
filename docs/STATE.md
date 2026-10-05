@@ -14,8 +14,21 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 17h1: the fixes before the walk** (ADR-197, ADR-198). Task 17h is split
-in two. What writing the specs found is fixed: the Orders sheet's Close the day is gone,
+**Rebuild, Task 17h2: the walk** (ADR-199). On a fresh demo venue run from the current
+build (the embedded bundles), at 1920x1080 and for the waiter 1366x1024: Meera opened
+the shift and took a counter order through cash, a tip and its invoice; the wall
+display started and readied its tickets; Kabir seated T3, ordered over two courses,
+sent, fired, split the bill by UPI and cash, closed and cleared the table; Arjun
+refunded an item, counted the drawer blind, explained ₹5.00 short, closed, and read
+Z-report 1; Ravi landed on `/pass`; the back office showed the day on the dashboard,
+the Z-report with its exports, the reports and Audit. Every figure agreed, the drawer
+to the rupee. Two things it found are fixed: a refund now says who authorised it (Go
+test), and the Z-report's Tax card says it is after credit notes (`taxNote`, vitest).
+17h1's fixes were seen: no Close the day on the Orders sheet, the new words. `make
+check`, vitest (1426) and `make build-web` pass.
+
+Before it, **Rebuild, Task 17h1: the fixes before the walk** (ADR-197, ADR-198). Task 17h is split
+in three. What writing the specs found is fixed: the Orders sheet's Close the day is gone,
 so closing has one door, under the profile, for `shift.manage`; about thirty messages
 still in the old words (till, ticket where an order is meant, "Refunds come with Task
 6.") now say order, order screen and terminal, five of them the server's; "ticket"
@@ -345,14 +358,13 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 17h2: the walk.** In the dev server (`make dev`; `rebuild.md`, "How to
-see it"), as Meera the cashier, Kabir the waiter, Ravi in the kitchen and Arjun the
-manager, take an order from each side through to a paid bill, an invoice and a
-Z-report, reading each screen against its spec (`screens/README.md` lists them). Fix
-what breaks, or write it under Known broken. Then cut the "not seen by eye" lists below
-to what is still unseen, and bring this file back under 60 lines by moving the "Before
-it" history out. Split it by role if it will not fit one session. The phase's done-when
-is the owner's own walk. The owner has
+**Rebuild, Task 17h3: this file after the walk.** Cut the "not seen by eye" lists
+under Known broken to what is still unseen (the walk's ADR-199 lists what it saw), and
+bring this file back under 60 lines by moving the "Before it" history out, to
+`docs/phases/rebuild.md` or a history file. No code. Then Task 17 is done, and the
+phase's done-when is the owner's own walk: `make dev`, sign in as each of the four,
+and say whether each screen matches its design. The findings below want the owner's
+word first. The owner has
 not yet looked at the kitchen's screens or anything of Task 16. Floor plan and Tips
 are still their old layouts (ADR-195). Phase 11 waits for this phase. Phase 10's tasks are
 all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
@@ -368,13 +380,39 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
-- After the fixes of 17h1 (ADR-197, ADR-198): typechecked, tested and built, none of
-  it tried in a browser. In the walk, look at the Orders sheet as Meera (no Close the
-  day), a refusal or two in the new words, Devices ("Terminal"), and the settings card
-  "Shifts, tips and orders". Left: `/shift/close` typed by hand still lets someone with
-  `payment.take` count; the printed Z-report labels its device "Till"
+- **What the walk found and left, for the owner to decide** (ADR-199):
+  - The manager role a venue starts with has no `menu.edit`, `settings.edit` or
+    `device.manage`: Arjun has no Menu pill and the back office refuses him Menu. The
+    flow map says a manager has Menu and Reports. Give the default manager
+    `menu.edit`, or change the flow map.
+  - "Not printed N" counts every kitchen ticket at a station with no printer. A venue
+    that runs on kitchen displays alone sees the pill on every screen, growing all
+    day. Should a station with no printer queue a job at all?
+  - The Z-report's slip (`ZPaper`, and the printout) has Net and Total before credit
+    notes and the taxes after them, with no credit-note line between. The report
+    beside it now says so on its Tax card; the slip does not.
+  - On tax-inclusive prices the totals read Subtotal ₹200.00, CGST ₹4.76, SGST
+    ₹4.76, Total ₹200.00, as if the rows added up. The invoice says "Taxable value".
+  - The desktop's cash quick amounts show four of five, so the ₹500 step is never
+    offered: a ₹200.00 bill offers ₹210.00 and not ₹500.00. The waiter's shows it.
+- **Small things the walk saw**: a build with no version number whose commit starts
+  with a digit reads "mez v8bfad97-dirty" (`versionText`); the connection is "Live" on
+  Staff Login and the kitchen board and "Online" everywhere else; the Orders sheet
+  names a takeaway order "Counter" where the rail says "Takeaway"; an approval lists
+  everyone, also those who cannot approve (the server refuses them); the kitchen
+  board has its script line twice at 1920 wide; refunds made before ADR-199 read
+  "Not recorded" in Audit for good.
+- **Not walked**: a card payment (the waiting card) on the desktop, a split by item
+  or by amounts, a void, comp or discount, transfer and merge, delivery, a reprint,
+  the tips pool, the Menu, Inventory, Staff and Settings screens (Arjun may not open
+  two of them; nobody signed in as Priya), any width but 1920x1080 and 1366x1024.
+- Left from 17h1 (ADR-197, ADR-198): `/shift/close` typed by hand still lets someone
+  with `payment.take` count; the printed Z-report labels its device "Till"
   (`escpos/zreport.go`); the kitchen board's clock and a ticket's sent time are read in
   the device's zone, not the venue's.
+- To walk again: the browser the earlier sessions used (Playwright's) was held by
+  another process, so this walk used the Chrome DevTools one. `make check` cannot
+  rebuild `bin/mez` while a server is running from it (Windows locks the file).
 - Printers, Devices and Audit (ADR-195): the dev venue now has three printers that
   go nowhere (127.0.0.1:9197 to 9199), one retired and one set for receipts, so a
   receipt there queues and retries. Not seen by eye: a revoked or a quiet device,

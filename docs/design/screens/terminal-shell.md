@@ -18,7 +18,8 @@ go from it one tap away, and can always see whether the server is there.
 
 | Role | Lands on | Frame |
 |---|---|---|
-| Owner, manager | `/pos`, the order screen | Desktop, with Menu and Reports in the navigation |
+| Owner | `/pos`, the order screen | Desktop, with Menu and Reports in the navigation |
+| Manager | `/pos`, the order screen | Desktop, with Reports. The manager role a venue starts with has no `menu.edit`, so no Menu, until the owner adds it |
 | Cashier | `/pos`, the order screen | Desktop |
 | Waiter | `/waiter`, the tables as cards | Waiter |
 | Kitchen | `/pass`, the board | None: the board has its own header and foot |

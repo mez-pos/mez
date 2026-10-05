@@ -11,7 +11,7 @@ import { useVenue } from "../use-venue";
 import { cx } from "../ui/cx";
 import { GroupTable, Pair, Row, Section } from "./ZTables";
 import { ZPaper } from "./ZPaper";
-import { channelName, clockText, differenceWords, methodName, rateText, serviceName, staffName } from "./zreport-logic";
+import { channelName, clockText, differenceWords, methodName, rateText, serviceName, staffName, taxNote } from "./zreport-logic";
 
 interface ZReportViewProps {
   z: ZReportResponse;
@@ -84,6 +84,7 @@ export function ZReportView({ z, actions }: ZReportViewProps) {
                 <Money amount={t.amount} className="min-w-28 text-right" />
               </div>
             ))}
+            {taxNote(r.credit_notes.count) && <p className="mt-2 text-sm text-fg-muted">{taxNote(r.credit_notes.count)}</p>}
           </Section>
         )}
 

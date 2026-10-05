@@ -36,7 +36,10 @@ the report scrolls. Under 1280px the slip sits under the report.
   Tax, then **Total**; with credit notes, "Less credit notes" and **Net
   sales**. Invoices issued, and "First to last" with the two numbers.
 - **Tax:** a row per component and rate ("CGST 2.5%"): taxable value and
-  tax.
+  tax. These rows are the tax invoiced less the tax credited, so with a
+  credit note in the shift they come to less than the Sales card's Tax, and
+  a line under them says so: "After 1 credit note: the tax invoiced, less
+  the tax credited."
 - **By category**, **By channel**, **By how it was served**, **By staff**: a
   table each: Name, Units or Bills, Gross, Discounts, Total. **By item** is
   the same, folded after ten rows.

@@ -75,7 +75,7 @@ func (s *Service) Credit(ctx context.Context, meta Meta, orderID int64, cmd Issu
 			Lines: p.Lines, Taxable: p.Taxable, Tax: p.Tax, Total: p.Total, Components: p.Components, Seller: &seller,
 		}}
 		for _, r := range cmd.Refunds {
-			payloads = append(payloads, order.RefundIssued{Amount: r.Amount, AgainstPaymentID: r.PaymentID, Reason: cmd.Reason})
+			payloads = append(payloads, order.RefundIssued{Amount: r.Amount, AgainstPaymentID: r.PaymentID, Reason: cmd.Reason, AuthorisedBy: cmd.AuthorisedBy})
 		}
 		return payloads, nil
 	})
