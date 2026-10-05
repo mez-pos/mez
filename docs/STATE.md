@@ -29,8 +29,7 @@ ADR-218, `guest-bill.md`, `terminal-requests.md`, `docs/design/tokens.md`.
   (`web/terminal/src/requests/`, `GuestRequestsResponse.paid`): the table, the
   amount said, what is owed now when it differs, how long ago. **Take payment**
   goes to `/pay/{order_id}`; **No payment found** calls `seen`, asked twice.
-- Words on both: staff check the venue's own phone; nothing is paid until recorded.
-- Update both specs. Then 4e5, the prepay mode.
+- Both say: staff check the venue's phone; nothing is paid until recorded. Then 4e5.
 
 ## Known broken / in progress
 
