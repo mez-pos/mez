@@ -24,6 +24,7 @@ import {
   noFilter,
   offeredDietFilters,
   photoUrl,
+  showsPhotoFrames,
   toggleDiet,
   visibleItems,
   type MenuFilter,
@@ -51,6 +52,7 @@ export function Menu({ table, menu, cart, onViewCart }: MenuProps) {
   const categories = categoriesWithItems(menu);
   const diets = offeredDietFilters(menu);
   const items = visibleItems(menu, filter);
+  const framed = showsPhotoFrames(menu);
   const filtered = filter.search.trim() !== "" || filter.diets.length > 0 || filter.category !== null;
 
   const clear = () => {
@@ -143,6 +145,7 @@ export function Menu({ table, menu, cart, onViewCart }: MenuProps) {
               <DishCard
                 key={item.id}
                 item={item}
+                framed={framed}
                 onOpen={() => setOpenId(item.id)}
                 // Nothing to choose: one tap adds one. Anything to choose opens it.
                 onAdd={() => (item.modifier_groups.length === 0 ? cart.add({ item_id: item.id, modifier_ids: [], qty: 1 }) : setOpenId(item.id))}
@@ -174,21 +177,27 @@ export function Menu({ table, menu, cart, onViewCart }: MenuProps) {
 
 interface DishCardProps {
   item: GuestItemResponse;
+  /** Whether cards have a frame for a photo: once any dish on the menu has one. */
+  framed: boolean;
   onOpen: () => void;
   onAdd: () => void;
 }
 
-function DishCard({ item, onOpen, onAdd }: DishCardProps) {
+function DishCard({ item, framed, onOpen, onAdd }: DishCardProps) {
   return (
     <li className={cx("flex flex-col overflow-hidden rounded-card border border-line bg-raised shadow-rest", item.sold_out && "opacity-60")}>
       {/* The whole of the card above the button opens the dish. */}
       <button type="button" onClick={onOpen} className="flex flex-1 flex-col text-left outline-offset-[-2px] outline-line-focus focus-visible:outline-2">
-        {item.photo && (
-          // A dish with no photo has no empty frame where one would be: most
-          // venues start with none. Below the fold on a slow link a photo is
-          // fetched when it is scrolled to, and decoded off the main thread.
-          <img src={photoUrl(item.photo)} alt="" loading="lazy" decoding="async" className="aspect-[4/3] w-full bg-sunken object-cover" />
-        )}
+        {framed &&
+          (item.photo ? (
+            // Below the fold on a slow link a photo is fetched when it is
+            // scrolled to, and decoded off the main thread.
+            <img src={photoUrl(item.photo)} alt="" loading="lazy" decoding="async" className="aspect-[4/3] w-full bg-sunken object-cover" />
+          ) : (
+            // The menu has photos and this dish has none yet: the frame is
+            // kept, empty, so the cards line up.
+            <span aria-hidden="true" className="block aspect-[4/3] w-full bg-sunken" />
+          ))}
         <span className="flex flex-1 flex-col p-3 pb-2">
           {item.popular && !item.sold_out && (
             <span className="mb-1.5 self-start rounded-pill bg-highlight px-2.5 py-0.5 text-sm font-bold text-highlight-fg">Popular</span>

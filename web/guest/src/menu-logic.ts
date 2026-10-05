@@ -90,6 +90,17 @@ export function countText(count: number): string {
   return count === 1 ? "1 dish" : `${count} dishes`;
 }
 
+/**
+ * Whether the cards have a frame for a photo. They do once any dish on the
+ * menu has one, so the grid is even; a menu with no photos at all has no
+ * frames, since most venues start with none and a wall of empty frames is
+ * not a menu. It is asked of the whole menu, not of what a filter left, so
+ * the cards do not change shape as a guest searches.
+ */
+export function showsPhotoFrames(menu: Pick<GuestMenuResponse, "items">): boolean {
+  return menu.items.some((it) => it.photo !== undefined && it.photo !== "");
+}
+
 /** Where a dish's photo is served to a guest. */
 export function photoUrl(name: string): string {
   return `/order/api/photos/${encodeURIComponent(name)}`;

@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../shared/api";
 import type { GuestItemResponse, GuestMenuResponse } from "../../shared/api-types";
-import { categoriesWithItems, countText, headingFor, noFilter, offeredDietFilters, photoUrl, problemOf, toggleDiet, visibleItems } from "./menu-logic";
+import {
+  categoriesWithItems,
+  countText,
+  headingFor,
+  noFilter,
+  offeredDietFilters,
+  photoUrl,
+  problemOf,
+  showsPhotoFrames,
+  toggleDiet,
+  visibleItems,
+} from "./menu-logic";
 
 const item = (id: number, name: string, patch: Partial<GuestItemResponse> = {}): GuestItemResponse => ({
   id,
@@ -108,6 +119,15 @@ describe("the words over the dishes", () => {
     expect(countText(0)).toBe("0 dishes");
     expect(countText(1)).toBe("1 dish");
     expect(countText(18)).toBe("18 dishes");
+  });
+
+  it("frames every card once any dish has a photo, and none before", () => {
+    expect(showsPhotoFrames(menu)).toBe(false);
+    expect(showsPhotoFrames({ items: [] })).toBe(false);
+    expect(showsPhotoFrames({ items: [item(1, "Tea", { photo: "" })] })).toBe(false);
+    expect(showsPhotoFrames({ items: [item(1, "Tea"), item(2, "Dosa", { photo: "ab12.jpg" })] })).toBe(true);
+    // Even when the one dish with a photo is sold out: the menu still has photos.
+    expect(showsPhotoFrames({ items: [item(1, "Tea"), item(2, "Dosa", { photo: "ab12.jpg", sold_out: true })] })).toBe(true);
   });
 
   it("points a photo at the guest's own API", () => {

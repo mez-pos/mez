@@ -14,8 +14,8 @@
 
 **Phase 11, Task 3c: a dish with its choices, and the cart** (ADR-208). The sheet
 uses the till's own rules (`web/shared/modifier-selection.ts`, moved). The cart is ids
-and counts in `localStorage` by table code, priced from the menu each time and held
-against it. Nothing is sent yet. Specs: `guest-item.md`, `guest-cart.md`. 36.1 KB of 60.
+and counts in `localStorage` by table code, priced from the menu each time. Nothing is
+sent yet. Then photo frames once any dish has a photo (ADR-209). 36.1 KB of 60.
 
 ## Next task
 
@@ -26,8 +26,8 @@ against it. Nothing is sent yet. Specs: `guest-item.md`, `guest-cart.md`. 36.1 K
   server prices it from the menu, never from the phone, and it is the same order,
   events and kitchen ticket as a counter sale. Decide who the actor is, how an open
   shift is required, and whether a table's guests share one order.
-- **Before guests can order, decide what ties an order to someone being at the
-  table** (ADR-206's cost): a photographed sticker works from anywhere.
+- **Decided (ADR-209):** a table's first order in a sitting is a request staff accept
+  on the terminal, which must sound. A seated table and a prepaid order need none.
 - The cart's foot becomes Place Order; "See the menu" and "Add to cart" go back to the
   design's words; decide special instructions. Then payment, UPI, the gateway, splits.
 

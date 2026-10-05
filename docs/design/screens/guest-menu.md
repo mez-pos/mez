@@ -28,8 +28,9 @@ One column, at most a phone and a half wide.
   is one, else the category, else "All dishes"; and the count at the right
   ("18 dishes").
 - **The dishes,** two to a row, each a card:
-  - its photo, 4 by 3, only when it has one: a dish without a photo has no
-    empty frame;
+  - a frame for its photo, 4 by 3, on every card once any dish on the menu
+    has a photo, so the grid is even; a dish without one has the frame
+    empty. A menu with no photos at all has no frames;
   - **Popular**, a mustard pill, when it is and is not sold out;
   - the diet mark and the name in the serif;
   - the description, two lines at most;
@@ -111,8 +112,9 @@ dish that does not say what it is is in no diet's list.
 **Changed:**
 - Prices show their paise ("₹60.00", where the design draws "₹249"): one
   figure on the menu and on the bill.
-- A dish with no photo has no frame, where the design draws a photo on every
-  card: most venues start with none.
+- A menu with no photos has no frames, where the design draws a photo on
+  every card: most venues start with none, and a wall of empty frames is
+  not a menu. From the first photo the venue adds, every card has one.
 - "GF" is "Gluten free", in words.
 
 **Kept that the design does not draw:** the count beside the title, the

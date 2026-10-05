@@ -6180,3 +6180,41 @@ fine pointer gets), adding with choices and a count, the cart's bar, the cart, a
 reload keeping it, removing a line, Clear, and the empty cart. Not seen: the sheet
 as a bottom sheet on a touch screen, a dish with a photo, a choose-several group
 filling up, the unmet-group button, or the notice for a dish taken out.
+
+## ADR-209 - A phone order is a request until staff accept it, once per sitting; and photo frames
+2026-10 · Status: accepted, by the owner. Phase 11, before Task 4. Amends ADR-207.
+Context: ADR-206 left open what ties a guest's order to someone being at the table. A
+table's code is on a sticker, a sticker can be photographed, and a photographed code
+works from anywhere. That is harmless for a menu and not for the kitchen.
+Decision:
+  - **The first order from a table in a sitting is a request.** It shows on the
+    terminal as that table wanting to order, with Accept and Decline, and nothing
+    reaches the kitchen until someone accepts it.
+  - **After it is accepted, the table's further rounds go straight through**, until
+    its bill is closed. The next sitting starts with a request again.
+  - **A table staff have already seated needs no acceptance**: staff have said
+    someone is there.
+  - **A prepaid order goes straight to the kitchen.** In a venue that requires
+    prepayment, paying is the tie.
+  - **The terminal has to say a request is waiting**, with a sound and something on
+    screen, or an unwatched terminal is an order that never happens. That is part of
+    Task 4 and not a later nicety (the design's notifications, D13, are unbuilt).
+  - **The guest sees it as it is**: "Waiting for the cafe to accept your order", then
+    accepted or declined, as real events (Task 5), and a declined request says to
+    ask a member of staff.
+  - Task 6's limit on how many requests a table may make still applies, and a code
+    can be renewed from the back office.
+  - Set aside: checking the phone's location or wifi (a guest on mobile data cannot
+    be checked, and the prompt is unreliable and intrusive); a PIN on a table card
+    changed daily (friction for every guest, a chore for staff); a rotating code on
+    a screen (hardware on every table).
+  - **Photo frames (amends ADR-207):** every card has a frame for a photo once any
+    dish on the menu has one, so the grid is even; a menu with no photos has none.
+    `showsPhotoFrames`, asked of the whole menu and not of what a filter left.
+Because: it uses what the venue already has, staff who can see whether a table is
+occupied, and asks nothing new of the guest.
+Cost: one tap for staff per sitting in a venue that does not prepay, and a request
+nobody notices is a guest waiting. A counter-service venue with nobody on the floor
+should require prepayment. Someone at the table can still order for a table they are
+not at once the sitting is accepted, until the bill closes; the per-table limit is
+what bounds that.

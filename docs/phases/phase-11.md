@@ -53,6 +53,12 @@ Phase 10.
   interface. Payment confirmation emits the same `payment.tendered` event as the
   counter. Bill splitting for guests at the same table.
 
+  Decided before it starts (ADR-209): the first order from a table in a sitting
+  is a request staff accept or decline on the terminal, and nothing reaches the
+  kitchen until they do; later rounds go straight through until the bill is
+  closed; a table staff have seated, and a prepaid order, need no acceptance.
+  The terminal must say a request is waiting, with a sound.
+
 - [ ] **Task 5 — Order tracking and e-receipt.**
   The guest sees real kitchen events — accepted, firing, ready — not a fake
   timer. Pickup code for web pickup orders. E-receipt with the same invoice
