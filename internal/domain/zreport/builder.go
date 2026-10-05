@@ -23,6 +23,7 @@ type builder struct {
 
 	categories, items, channels, services, staff map[string]*Group
 	removed                                      map[int64]*StaffTally
+	tips                                         map[int64]*StaffTally
 	payments                                     map[order.PaymentMethod]*Payment
 	taxes                                        map[taxKey]*TaxLine
 	invoices                                     []string
@@ -54,6 +55,7 @@ func newBuilder(in Input, zero money.Amount) *builder {
 		services:   map[string]*Group{},
 		staff:      map[string]*Group{},
 		removed:    map[int64]*StaffTally{},
+		tips:       map[int64]*StaffTally{},
 		payments:   map[order.PaymentMethod]*Payment{},
 		taxes:      map[taxKey]*TaxLine{},
 	}
@@ -129,6 +131,17 @@ func (b *builder) finish() (Report, error) {
 		r.Removed = append(r.Removed, *t)
 	}
 	slices.SortFunc(r.Removed, func(x, y StaffTally) int { return cmp.Compare(x.StaffID, y.StaffID) })
+
+	r.TipsBy = []StaffTally{}
+	for _, t := range b.tips {
+		// Someone whose every tipped payment was voided took no tips.
+		if t.Count > 0 || t.Amount.Minor != 0 {
+			r.TipsBy = append(r.TipsBy, *t)
+		}
+	}
+	slices.SortFunc(r.TipsBy, func(x, y StaffTally) int {
+		return cmp.Or(cmp.Compare(y.Amount.Minor, x.Amount.Minor), cmp.Compare(x.StaffID, y.StaffID))
+	})
 
 	r.Taxes = []TaxLine{}
 	for _, t := range b.taxes {

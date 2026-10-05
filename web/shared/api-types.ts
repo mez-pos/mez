@@ -1758,6 +1758,7 @@ export interface Report {
   taxes: TaxLine[];
   payments: Payment[];
   tips: Money;
+  tips_by: StaffTally[];
   balance: Balance;
 }
 

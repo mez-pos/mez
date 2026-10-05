@@ -50,6 +50,10 @@ type Report struct {
 
 	Payments []Payment    `json:"payments"` // by method, net of voids and refunds; tips apart
 	Tips     money.Amount `json:"tips"`     // owed to staff; never in sales or payments
+	// TipsBy is Tips by who took the payment, the most first; Count is their
+	// payments that carried a tip. A report issued before it was counted
+	// has none.
+	TipsBy []StaffTally `json:"tips_by"`
 
 	Balance Balance `json:"balance"`
 }

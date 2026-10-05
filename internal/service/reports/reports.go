@@ -201,7 +201,8 @@ func staffOf(ctx context.Context, q *gen.Queries, venueID int64) (map[int64]pers
 }
 
 // named puts names to the staff the report mentions: each staff group is
-// named, and Names and Roles hold everyone it mentions, removed lines included.
+// named, and Names and Roles hold everyone it mentions: those who removed
+// lines and those who took tips included.
 func named(res report.Result, all map[int64]person) Sales {
 	names, roles := map[int64]string{}, map[int64]string{}
 	mention := func(id int64) string {
@@ -220,6 +221,9 @@ func named(res report.Result, all map[int64]person) Sales {
 	}
 	for _, r := range res.Totals.Removed {
 		mention(r.StaffID)
+	}
+	for _, t := range res.Totals.TipsBy {
+		mention(t.StaffID)
 	}
 	res.Totals.ByStaff = byStaff
 	return Sales{Result: res, Names: names, Roles: roles}

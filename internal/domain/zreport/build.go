@@ -138,7 +138,13 @@ func (b *builder) event(e order.Event, before, after order.State) error {
 		}
 		pay := b.payment(t.Method)
 		b.add(&pay.Voided, t.Amount)
-		b.sub(&b.r.Tips, nonZero(t.Tip, b.zero))
+		tip := nonZero(t.Tip, b.zero)
+		b.sub(&b.r.Tips, tip)
+		if !tip.IsZero() {
+			by := b.tipsOf(t.TenderedBy)
+			by.Count--
+			b.sub(&by.Amount, tip)
+		}
 		return b.err
 	case order.RefundIssued:
 		t, err := tenderOf(before, p.AgainstPaymentID)
@@ -171,8 +177,24 @@ func (b *builder) tender(p order.PaymentTendered) error {
 	pay := b.payment(p.Method)
 	pay.Count++
 	b.add(&pay.Taken, p.Amount)
-	b.add(&b.r.Tips, nonZero(p.Tip, b.zero))
+	tip := nonZero(p.Tip, b.zero)
+	b.add(&b.r.Tips, tip)
+	if !tip.IsZero() {
+		by := b.tipsOf(p.TenderedBy)
+		by.Count++
+		b.add(&by.Amount, tip)
+	}
 	return b.err
+}
+
+// tipsOf is the tips tally of whoever took a payment.
+func (b *builder) tipsOf(staffID int64) *StaffTally {
+	t, ok := b.tips[staffID]
+	if !ok {
+		t = &StaffTally{StaffID: staffID, Tally: Tally{Amount: b.zero}}
+		b.tips[staffID] = t
+	}
+	return t
 }
 
 // credit counts a credit note: sales reversed, and its tax off the tax lines.
