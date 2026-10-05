@@ -338,7 +338,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     Printers and Devices as tables in a card, Audit with the reports' head and
     range pill, and the stray "Back office" link gone. Floor plan and Tips are
     left as they are.
-- [ ] **Task 17 - Close.** Rewrite `docs/design/screens/*.md` from what was
+- [x] **Task 17 - Close.** Rewrite `docs/design/screens/*.md` from what was
   built. Walk register, kitchen, payment, invoice and Z-report as each role.
   Split on 2026-10-05 (ADR-196): about thirty screens, a third of them with no
   spec at all, and then four people to walk as. A spec is written from the
@@ -370,7 +370,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
       (`tips.md`), and the Z-report in both apps with the Z-reports list
       (`zreport.md`). `screens/README.md` lists every spec against its
       design screen.
-  - [ ] 17h. The fixes, then the walk. Split on 2026-10-05: it is the first
+  - [x] 17h. The fixes, then the walk. Split on 2026-10-05: it is the first
     part with code in it.
     - [x] 17h1. (ADR-197, ADR-198) What writing the specs found, fixed before
       anyone walks: closing the day has one door; the old words still on
@@ -382,7 +382,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
       run from the current build. Two things it found are fixed (a refund
       did not say who authorised it; the Z-report's Tax card did not say it is
       after credit notes); the rest are in `STATE.md` for the owner.
-    - [ ] 17h3. `STATE.md` after the walk: cut the "not seen by eye" lists to
+    - [x] 17h3. (ADR-200) `STATE.md` after the walk: cut the "not seen by eye" lists to
       what is still unseen, and bring the file back under 60 lines by moving
       the "Before it" history out. Split off on 2026-10-05: it is a careful
       read of seven hundred lines, and the walk saw the spine, not every

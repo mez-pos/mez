@@ -5805,3 +5805,30 @@ Cost: the walk saw each role's spine once. It did not see card payments, a split
 item, voids, comps, discounts, transfer and merge, delivery, a reprint, or any width
 under those two. `STATE.md` keeps what is still unseen.
 ---
+
+## ADR-200 - STATE.md is short again: the history and the known-broken list are files of their own
+2026-10 · Status: accepted. Rebuild Task 17h3.
+Context: `STATE.md` says of itself that it is kept under 60 lines, since it is read
+first in every session. It had grown to 831: every task's summary kept under "Before
+it", and a known-broken list of some 430 lines, most of it lists of what nobody had
+yet seen in a browser. A session read all of it before doing anything.
+Decision:
+  - **`docs/HISTORY.md`** holds what each task did, newest first, moved whole. When a
+    task is done, the entry before it goes to the top of that file.
+  - **`docs/KNOWN.md`** holds what is broken, left out or not seen by eye, by screen
+    and by ADR, moved whole. A task edits its screen's entry there, and puts in
+    `STATE.md` only what the next task must know.
+  - **Neither is read at the start of a session.** `STATE.md` says where they are; a
+    task reads the one entry it needs, as it reads one phase file and one screen spec.
+  - **An item leaves a "not seen by eye" list only when someone has seen it.** The
+    walk of 17h2 struck what it saw, fifteen places, and three statements that were
+    no longer true (two about layouts since rebuilt, one about a spec since
+    rewritten). Nothing was struck for being old.
+  - **What wants the owner's word is in `STATE.md`**, under Open questions, a line
+    each, with the detail at the top of `KNOWN.md`.
+Because: the instruction in `CLAUDE.md` is that context spent on files a task does not
+need is the main way this build fails, and the handoff file had become the largest of
+them.
+Cost: two more files to keep. `CLAUDE.md`'s table of what to read does not name them
+yet; `STATE.md`'s own header does. The owner may want a row for each there.
+---
