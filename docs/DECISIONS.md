@@ -6055,3 +6055,49 @@ The card does not yet show the venue's public address, since mez does not know t
 relay's venue domain: Task 6 needs it for the QR codes and should add it then. Seen by
 eye in `waiting` and `connected` at 1366 and 400 wide; the other five states are
 covered by the logic's tests only.
+
+## ADR-206 - The guest's way in: a code on the table, an API under /order/api/, one bundle for wifi and relay
+2026-10 · Status: accepted. Phase 11, Task 3a.
+Context: Task 3 is the guest's menu and cart. Before a screen can be built the phone
+needs to know which table it is at, read the menu without being a paired device, and
+load the app's own files through the relay, which it could not (ADR-202's cost).
+Decision:
+  - **Task 3 is split.** 3a is this. 3b is the landing and the menu (M01, M02). 3c is
+    the item with its choices, and the cart (M03, M04's cart, M11a).
+  - **A table has a code**, twelve characters from `23456789abcdefghjkmnpqrstuvwxyz`
+    (no 0, 1, i, l, o), about 59 bits, drawn without bias from `crypto/rand`. It is
+    the guest's only credential. `table_codes` (migration 00038) keeps it as it is,
+    not hashed: the back office has to print it again, and it guards a menu.
+  - **A table has at most one live code.** `Renew` turns the old one off and makes
+    the new in one transaction. A revoked row stays, so the code is never drawn
+    again. A code for a table taken off the floor leads nowhere.
+  - **`internal/service/tablecodes`**: `Resolve`, `List`, `Renew`, `Ensure`. A string
+    that is not the shape of a code never reaches the database.
+  - **The guest API is under the guest app's mount**, `/order/api/`, not `/api/v1`:
+    `GET /order/api/t/{code}` (the venue's name and currency, the table's name),
+    `GET /order/api/t/{code}/menu`, and `GET /order/api/photos/{name}`. It needs no
+    device and no session. Every other path under `/order/api/` is a JSON 404, so a
+    mistyped call is never answered with the app's page.
+  - **The guest's menu is the till's with the till's parts taken out**: no stations,
+    courses, tax rates, HSN codes. `sold_out` is a yes or no by the server's clock;
+    the guest is not told until when. It is `no-store`, since sold out turns on the
+    clock and not on the menu's version.
+  - **One answer for a code that leads nowhere**, 404 `table_code_unknown`, whether it
+    was never made, was replaced, or its table is gone, in words a guest can act on.
+  - **300 requests a minute for each address** across the guest API.
+  - **The tunnel leaves a path already under `/order/` where it is.** The bundle
+    names its files and its API by the server's own paths, so the same build works on
+    the venue's wifi and through the relay, and the app needs to know nothing about
+    which it is in. `/t/abc` and `/order/t/abc` both reach the app.
+  - **`mez table-codes`** lists each table's code and path, making any that are
+    missing, run at the machine as `pair` is. It is the way to a code until Task 6
+    prints them from the back office.
+Because: a code under which every guest route sits is one thing to check and one
+thing to revoke, and a guest API that lives where the tunnel already confines
+guests cannot drift into the staff API.
+Cost: the code is in the URL, so it is in browser history and in the relay's log
+(the path, not the query). Anyone who photographs a sticker can read the menu from
+anywhere, which is harmless, and will be able to order from anywhere once Task 4
+lands unless the venue limits it: Task 6's per-table limit, and whatever ties an
+order to someone being at the table, are still to be decided. The per-address limit
+counts every guest behind one mobile carrier address together.

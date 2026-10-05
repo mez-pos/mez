@@ -18,7 +18,8 @@ var errNoSuchPath = errors.New("tunnel: not a path a guest can ask for")
 
 // guestRequest builds the request the server sees for a guest's frames.
 //
-// Every guest path is put under mount: "/t/abc" becomes "/order/t/abc", and
+// Every guest path is put under mount, unless it is there already: "/t/abc"
+// becomes "/order/t/abc", "/order/assets/app.js" stays as it is, and
 // "/api/v1/orders" becomes "/order/api/v1/orders", which is not the staff
 // API and never will be. There is no list of what a guest may reach, to be
 // kept in step with the routes: the guest app's mount is the whole of it,
@@ -28,11 +29,18 @@ func guestRequest(ctx context.Context, head wire.RequestHead, body []byte, mount
 	if err != nil || u.Host != "" || u.Scheme != "" || !climbsNowhere(u.Path) {
 		return nil, errNoSuchPath
 	}
-	base := strings.TrimSuffix(mount, "/")
-	if u.RawPath != "" {
-		u.RawPath = base + u.RawPath
+	// A path already under the mount is left there. The guest app names its
+	// own files and its API by the paths the server has them at, "/order/...",
+	// so that the same bundle works on the venue's wifi and through the
+	// relay; putting those under the mount again would look for
+	// "/order/order/...". Either way the request lands under the mount.
+	if !strings.HasPrefix(u.Path, mount) {
+		base := strings.TrimSuffix(mount, "/")
+		if u.RawPath != "" {
+			u.RawPath = base + u.RawPath
+		}
+		u.Path = base + u.Path
 	}
-	u.Path = base + u.Path
 
 	header := head.Header
 	if header == nil {

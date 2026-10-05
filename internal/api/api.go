@@ -19,6 +19,8 @@ type Server struct {
 	bundles    map[string]fs.FS
 	dbCheck    func() string
 	tunnel     func() TunnelStatus
+	guests     Guests
+	guestMount string
 	devices    Devices
 	staff      Staff
 	orders     Orders
@@ -113,6 +115,7 @@ func (s *Server) routes() http.Handler {
 
 	s.mountDevices(mux)
 	s.mountTunnel(mux)
+	s.mountGuests(mux)
 	s.mountStaff(mux)
 	s.mountOrders(mux)
 	s.mountMenu(mux)

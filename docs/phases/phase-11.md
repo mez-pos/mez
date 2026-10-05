@@ -41,6 +41,12 @@ Phase 10.
   pack. Optimise for a cold 3G load: inline critical CSS, lazy images, no
   blocking fonts.
 
+  Split in three (ADR-206):
+  - [x] **3a.** The way in: a code for each table, the guest API under
+    `/order/api/`, and the bundle loading through the relay.
+  - [ ] **3b.** The landing and the menu (M01, M02), with their specs.
+  - [ ] **3c.** An item with its choices, and the cart (M03, M04's cart, M11a).
+
 - [ ] **Task 4 — Guest checkout.**
   Prepay-required and pay-at-table modes, per venue. UPI intent link and dynamic
   QR, plus a pluggable gateway adapter (Razorpay/Cashfree/Stripe) behind one

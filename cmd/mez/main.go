@@ -39,6 +39,7 @@ import (
 	"github.com/byjoellobo/mez/internal/service/settings"
 	svcshift "github.com/byjoellobo/mez/internal/service/shift"
 	svcstock "github.com/byjoellobo/mez/internal/service/stock"
+	"github.com/byjoellobo/mez/internal/service/tablecodes"
 	"github.com/byjoellobo/mez/internal/tunnel"
 	"github.com/byjoellobo/mez/web"
 )
@@ -57,7 +58,7 @@ func main() {
 	// Two subcommands, read before the flags: each takes its own, and the
 	// server's parser refuses a positional argument.
 	if len(os.Args) > 1 {
-		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "pair": runPair}
+		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "pair": runPair, "table-codes": runTableCodes}
 		if command, ok := commands[os.Args[1]]; ok {
 			if err := command(os.Args[2:], os.Stdout); err != nil {
 				if errors.Is(err, flag.ErrHelp) {
@@ -93,6 +94,7 @@ func main() {
 		if errors.Is(err, flag.ErrHelp) {
 			fmt.Fprintf(os.Stdout, "mez %s\n\nUsage:\n%s\nSubcommands:\n  setup\tcreate the venue, its owner and the first pairing code\n"+
 				"  pair\tmake another pairing code at this machine (-device-kind, -device-name)\n"+
+				"  table-codes\tlist each table's code for guest ordering, making any that are missing\n"+
 				"  --test-print ADDRESS\tprint a test page on a receipt printer (-paper 58, -drawer, -save FILE)\n",
 				buildInfo().Version, config.Usage())
 			return
@@ -280,6 +282,11 @@ func run() (err error) {
 	// before anything is served.
 	var guests *tunnel.Client
 
+	guestCodes, err := tablecodes.New(database, nil, nil)
+	if err != nil {
+		return err
+	}
+
 	srv := api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
@@ -299,6 +306,7 @@ func run() (err error) {
 		api.WithReports(rangeReports),
 		api.WithFloor(floorPlan),
 		api.WithShifts(shifts),
+		api.WithGuests(guestCodes, web.MountGuest),
 	)
 
 	if cfg.RelayEnabled() {

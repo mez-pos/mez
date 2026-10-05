@@ -139,6 +139,7 @@ var errorCodes = []ErrorCode{
 	CodeInvalidFilter, CodeInvalidSetting, CodeVenueNotFound,
 	CodeTaxClassNotFound, CodeTaxClassNameTaken, CodeTaxClassInUse, CodeTicketsOpen,
 	CodeNumberingLocked, CodeNumberTaken, CodeCourseNotFound, CodeDeviceNotFound, CodeCannotRevokeSelf, CodeDeviceUnpaired,
+	CodeTableCodeUnknown,
 }
 
 // generate builds the whole file.
@@ -302,6 +303,8 @@ func generate() (*ts.Generator, error) {
 		// Errors and pairing.
 		Error{}, errorBody{}, pairRequest{}, deviceResponse{}, pairResponse{},
 		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{}, tunnelResponse{},
+		// The guest's API.
+		guestTableResponse{}, guestMenuResponse{},
 		// Staff.
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},
 		// Orders: what is sent.

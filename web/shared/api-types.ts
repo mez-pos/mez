@@ -129,7 +129,8 @@ export type ErrorCode =
   | 'course_not_found'
   | 'device_not_found'
   | 'cannot_revoke_self'
-  | 'device_unpaired';
+  | 'device_unpaired'
+  | 'table_code_unknown';
 
 export type OrderStatus =
   | 'open'
@@ -752,6 +753,62 @@ export interface TunnelResponse {
   since?: string;
   retry_at?: string;
   detail?: string;
+}
+
+export interface GuestTableResponse {
+  venue: GuestVenueResponse;
+  table: GuestTableNameResponse;
+}
+
+export interface GuestVenueResponse {
+  name: string;
+  currency: string;
+}
+
+export interface GuestTableNameResponse {
+  name: string;
+}
+
+export interface GuestMenuResponse {
+  version: number;
+  currency: string;
+  categories: CategoryResponse[];
+  items: GuestItemResponse[];
+  modifier_groups: ModifierGroupResponse[];
+}
+
+export interface CategoryResponse {
+  id: number;
+  name: string;
+}
+
+export interface GuestItemResponse {
+  id: number;
+  category_id: number;
+  name: string;
+  price: Money;
+  modifier_groups: number[];
+  sold_out?: boolean;
+  photo?: string;
+  description?: string;
+  diet?: Diet;
+  gluten_free?: boolean;
+  popular?: boolean;
+}
+
+export interface ModifierGroupResponse {
+  id: number;
+  name: string;
+  min_select: number;
+  max_select: number;
+  modifiers: ModifierResponse[];
+}
+
+export interface ModifierResponse {
+  id: number;
+  name: string;
+  price: Money;
+  is_default: boolean;
 }
 
 export interface StaffResponse {
@@ -2316,26 +2373,6 @@ export interface CourseResponse {
   id: number;
   number: number;
   name: string;
-}
-
-export interface CategoryResponse {
-  id: number;
-  name: string;
-}
-
-export interface ModifierResponse {
-  id: number;
-  name: string;
-  price: Money;
-  is_default: boolean;
-}
-
-export interface ModifierGroupResponse {
-  id: number;
-  name: string;
-  min_select: number;
-  max_select: number;
-  modifiers: ModifierResponse[];
 }
 
 export interface MenuItemResponse {

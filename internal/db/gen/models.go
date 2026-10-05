@@ -430,6 +430,15 @@ type Table struct {
 	ClearedAt sql.NullTime
 }
 
+type TableCode struct {
+	ID        int64
+	VenueID   int64
+	TableID   int64
+	Code      string
+	CreatedAt time.Time
+	RevokedAt sql.NullTime
+}
+
 type TaxClass struct {
 	ID        int64
 	VenueID   int64

@@ -122,6 +122,7 @@ type Querier interface {
 	// ledger, never a stored number.
 	CreateStockItem(ctx context.Context, arg CreateStockItemParams) (int64, error)
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
+	CreateTableCode(ctx context.Context, arg CreateTableCodeParams) error
 	CreateTaxClass(ctx context.Context, arg CreateTaxClassParams) (int64, error)
 	CreateTipPool(ctx context.Context, arg CreateTipPoolParams) error
 	CreateVarianceReason(ctx context.Context, arg CreateVarianceReasonParams) error
@@ -330,6 +331,8 @@ type Querier interface {
 	// Revoked rather than deleted, and the token hash kept, so a revoked token is
 	// recognised and refused as revoked rather than as unknown.
 	RevokeDevice(ctx context.Context, arg RevokeDeviceParams) (int64, error)
+	// Turns off whatever code a table has. A table has at most one live code.
+	RevokeTableCodes(ctx context.Context, arg RevokeTableCodesParams) error
 	RoleByID(ctx context.Context, id int64) (Role, error)
 	RoleForEdit(ctx context.Context, arg RoleForEditParams) (RoleForEditRow, error)
 	RolesForVenue(ctx context.Context, venueID int64) ([]Role, error)
@@ -434,7 +437,13 @@ type Querier interface {
 	// before, or 0 for the first page.
 	StockMovementsForItem(ctx context.Context, arg StockMovementsForItemParams) ([]StockMovementsForItemRow, error)
 	StockOnHand(ctx context.Context, arg StockOnHandParams) (int64, error)
+	// What a guest's code leads to. A revoked code, and a code for a table that
+	// has been taken off the floor, lead nowhere.
+	TableByCode(ctx context.Context, code string) (TableByCodeRow, error)
 	TableByID(ctx context.Context, id int64) (TableByIDRow, error)
+	// Every table on the floor with its live code, or an empty code when it has
+	// none yet.
+	TableCodesForVenue(ctx context.Context, venueID int64) ([]TableCodesForVenueRow, error)
 	// The table in service in a cell, if any, other than the one being placed.
 	TableInCell(ctx context.Context, arg TableInCellParams) (TableInCellRow, error)
 	// One table's turn: the orders at it not yet closed, its own or joined, the
