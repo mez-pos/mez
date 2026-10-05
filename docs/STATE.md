@@ -7,29 +7,29 @@
 
 ## Current phase
 
-**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. 1, 2, 3a, 3b done.
+**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3 done.
 (The rebuild, 09 and 10 still owe the owner's walk.)
 
 ## Last completed task
 
-**Phase 11, Task 3b: the guest's landing and menu** (ADR-207), `web/guest/src`: the
-table and venue, then every dish with a search, categories and diet filters, and a
-screen for a code that leads nowhere or a venue that cannot be reached. Specs:
-`guest-landing.md`, `guest-menu.md`. 31.9 KB gzipped of 60.
+**Phase 11, Task 3c: a dish with its choices, and the cart** (ADR-208). The sheet
+uses the till's own rules (`web/shared/modifier-selection.ts`, moved). The cart is ids
+and counts in `localStorage` by table code, priced from the menu each time and held
+against it. Nothing is sent yet. Specs: `guest-item.md`, `guest-cart.md`. 36.1 KB of 60.
 
 ## Next task
 
-**Phase 11, Task 3c: an item with its choices, and the cart**, M03, M04's cart and M11a
-of `docs/design/reference/mez/mez Mobile Customer.dc.html` (lines 142 to 250, 524).
-- Write `guest-item.md` and `guest-cart.md` first; add them to the screens README and
-  update `guest-menu.md` (Add on a card, the View Cart bar: both listed as left out).
-- The menu's `modifier_groups` have `min_select`, `max_select` and `is_default`. The
-  till's rules for choices are in `web/shared/menu.ts`: read it before writing any.
-- The cart is the phone's own (no server until Task 4): keep it by table code, in
-  `localStorage`, and drop lines whose dish has gone or is sold out when the menu is
-  read again. Money stays integer minor units; total with `shared/money.ts`.
-- 28.1 KB left. Import by file, not from `shared/ui`'s index; check `Sheet`'s cost.
-- Not ordering yet: the cart's button must not say it sends anything (Task 4).
+**Phase 11, Task 4: guest checkout.** It is several sessions: split it first. Read
+`docs/02-domain.md`, ADR-206 and ADR-208, and M04's checkout, M08 and M09.
+- First sub-task: a guest's cart becomes an order. `POST /order/api/t/{code}/orders`
+  with the cart's lines (dish id, choice ids, count) and an `Idempotency-Key`; the
+  server prices it from the menu, never from the phone, and it is the same order,
+  events and kitchen ticket as a counter sale. Decide who the actor is, how an open
+  shift is required, and whether a table's guests share one order.
+- **Before guests can order, decide what ties an order to someone being at the
+  table** (ADR-206's cost): a photographed sticker works from anywhere.
+- The cart's foot becomes Place Order; "See the menu" and "Add to cart" go back to the
+  design's words; decide special instructions. Then payment, UPI, the gateway, splits.
 
 ## Known broken / in progress
 
@@ -55,5 +55,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (1, 2, 3a and 3b done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

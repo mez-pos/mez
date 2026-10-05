@@ -26,7 +26,7 @@ import { HistorySheet } from "./HistorySheet";
 import { ItemGrid } from "./ItemGrid";
 import { ItemModal, type ItemChoice } from "./ItemModal";
 import { MenuHeader } from "./MenuHeader";
-import { sameModifiers } from "./modifier-selection";
+import { sameModifiers } from "../../../shared/modifier-selection";
 import { OrderRail } from "./OrderRail";
 import { courseNamer } from "./rail-logic";
 import {

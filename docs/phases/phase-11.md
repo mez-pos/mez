@@ -35,7 +35,7 @@ Phase 10.
     than health's one word (state, since when, last error, next retry), and
     where the owner sees it.
 
-- [ ] **Task 3 — Guest menu and cart.**
+- [x] **Task 3 — Guest menu and cart.**
   `web/guest`. Table code resolves the venue and table. Menu, modifiers, cart.
   Under the 60 KB gzipped budget — no shadcn, no heavy date library, no icon
   pack. Optimise for a cold 3G load: inline critical CSS, lazy images, no
@@ -45,7 +45,7 @@ Phase 10.
   - [x] **3a.** The way in: a code for each table, the guest API under
     `/order/api/`, and the bundle loading through the relay.
   - [x] **3b.** The landing and the menu (M01, M02), with their specs.
-  - [ ] **3c.** An item with its choices, and the cart (M03, M04's cart, M11a).
+  - [x] **3c.** An item with its choices, and the cart (M03, M04's cart, M11a).
 
 - [ ] **Task 4 — Guest checkout.**
   Prepay-required and pay-at-table modes, per venue. UPI intent link and dynamic

@@ -6137,3 +6137,46 @@ go back to the design's. Seen by eye at 390 wide on the demo menu: the landing, 
 whole menu, a category with a diet, and a code that leads nowhere. Not seen: a dish
 with a photo, a sold-out dish, the search, the unreachable and failed states, and
 anything on a real phone or through the relay with this build.
+
+## ADR-208 - The guest's cart: ids on the phone, priced from the menu, and the till's rules for choices
+2026-10 · Status: accepted. Phase 11, Task 3c. Task 3 is done.
+Context: M03 and the cart half of M04, before an order can be sent anywhere.
+Decision:
+  - **The rules for a dish's choices are shared.** `modifier-selection.ts` moved from
+    `web/terminal/src/register/` to `web/shared/`, unchanged, with its tests. The
+    guest's sheet and the till's modal call the same functions, so a guest can build
+    nothing a cashier could not.
+  - **A cart line is ids and a count**: the dish, the chosen choices, how many. Names
+    and prices are read from the menu each time the cart is shown. A stored price is
+    a price that can be wrong.
+  - **The cart is held against the menu each time the menu is read** (every minute,
+    and when the phone comes back). A line is taken out when its dish is gone or sold
+    out, a choice is gone, or its choices no longer satisfy a group; the guest is
+    told by name, in a notice that stays until dismissed.
+  - **It is kept in `localStorage` by table code**, so a reload keeps it and another
+    table's sticker starts clean. What is read back is not trusted: anything that is
+    not a line is left out, a count is held to 20 and a cart to 50 lines, and reading
+    cannot throw. With storage refused the cart lasts as long as the page.
+  - **The same dish with the same choices is one line.**
+  - **Money is integer minor units** from the menu to the total. The total is before
+    tax and says so: the guest's menu carries no tax rates, and the bill is the
+    venue's to work out when the order is placed.
+  - **Nothing says it sends anything.** The sheet's button is "Add to cart", not the
+    design's "Add to order". The cart has no Place Order; where it would be is "To
+    order, show this list to a member of staff at Table T4, or order at the
+    counter." So the cart is useful today, as a list to show.
+  - **Special instructions are left out** until Task 4 says how a line reaches the
+    kitchen. A field that goes nowhere is worse than none.
+  - **A dish with no choices is added from its card in one tap**; one with choices
+    opens. Down from one in the cart removes the line. Clear is asked twice, on the
+    button.
+  - The bundle is 36.1 KB gzipped of 60, with 23.9 left for Tasks 4 and 5.
+Because: the cart is the first thing in the guest app that holds state between
+visits, so it is the first place a guest can be shown something no longer true.
+Cost: Task 4 replaces the sentence at the cart's foot and decides the note field. The
+figure a guest sees is the menu's arithmetic, not the server's, until then. Seen by
+eye at 390 wide with a mouse pointer: the sheet (as a side panel, which is what a
+fine pointer gets), adding with choices and a count, the cart's bar, the cart, a
+reload keeping it, removing a line, Clear, and the empty cart. Not seen: the sheet
+as a bottom sheet on a touch screen, a dish with a photo, a choose-several group
+filling up, the unmet-group button, or the notice for a dish taken out.

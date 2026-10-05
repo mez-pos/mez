@@ -15,7 +15,7 @@ import { cx } from "../../../shared/ui/cx";
 import { useDialog } from "../../../shared/ui/use-dialog";
 import { CategoryIcon } from "./CategoryIcon";
 import { DietMark } from "../../../shared/ui/DietMark";
-import { firstUnmet, groupHint, groupState, initialSelection, lineTotal, toggle, toModifiers, type GroupState } from "./modifier-selection";
+import { firstUnmet, groupHint, groupState, initialSelection, lineTotal, toggle, toModifiers, type GroupState } from "../../../shared/modifier-selection";
 import type { CategoryIconKey } from "./register-logic";
 
 /** What the modal hands back: the line as the person wants it. */

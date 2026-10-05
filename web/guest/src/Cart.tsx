@@ -1,0 +1,133 @@
+// M04's cart and M11a (docs/design/screens/guest-cart.md): what the guest has
+// chosen, how many of each, and what it comes to. It is the phone's own
+// list. Nothing here sends anything: placing the order is Task 4.
+
+import { useEffect, useState } from "react";
+import type { GuestTableResponse } from "../../shared/api-types";
+import { formatMoney } from "../../shared/money";
+import { Button } from "../../shared/ui/Button";
+import { DietMark } from "../../shared/ui/DietMark";
+import { Qty } from "../../shared/ui/Qty";
+import { MAX_QTY, itemsText } from "./cart-logic";
+import { tableLabel } from "./Landing";
+import { Notice } from "./Notice";
+import type { CartApi } from "./use-cart";
+
+interface CartProps {
+  table: GuestTableResponse;
+  cart: CartApi;
+  onBack: () => void;
+}
+
+export function Cart({ table, cart, onBack }: CartProps) {
+  return (
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas text-fg">
+      <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-line bg-chrome px-2">
+        <button
+          type="button"
+          aria-label="Back to the menu"
+          onClick={onBack}
+          className="flex size-tap items-center justify-center rounded-round outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M19 12H5M11 6l-6 6 6 6" />
+          </svg>
+        </button>
+        <h1 className="font-serif text-xl">Your cart</h1>
+        {cart.count > 0 && <p className="rounded-pill bg-accent-tint px-3 py-1 text-sm font-bold text-accent-text">{itemsText(cart.count)}</p>}
+        {cart.count > 0 && <ClearButton onClear={cart.clear} />}
+      </header>
+
+      <main className="flex flex-1 flex-col px-4 pb-8">
+        <Notice text={cart.notice} onDismiss={cart.dismissNotice} />
+
+        {cart.count === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
+            <h2 className="font-serif text-xl">Your cart is empty</h2>
+            <p className="mt-2 max-w-64 text-base text-fg-2">Add something delicious and it'll show up right here.</p>
+            <Button variant="primary" className="mt-5" onClick={onBack}>
+              Browse the menu
+            </Button>
+          </div>
+        ) : (
+          <>
+            <ul className="mt-4 flex flex-col gap-3">
+              {cart.lines.map((line) => (
+                <li key={line.key} className="rounded-card border border-line bg-raised p-4 shadow-rest">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-1.5">
+                      <DietMark diet={line.item.diet} className="mt-1" />
+                      <h2 className="font-serif text-lg leading-snug">{line.item.name}</h2>
+                    </div>
+                    <p className="shrink-0 font-serif text-lg">{formatMoney(line.total)}</p>
+                  </div>
+                  {line.options && <p className="mt-1 text-sm text-fg-muted">{line.options}</p>}
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <p className="text-sm text-fg-muted">{line.qty > 1 ? `${formatMoney(line.unit)} each` : ""}</p>
+                    {/* Down from one takes the line out: there is no other way to remove a dish. */}
+                    <Qty value={line.qty} onChange={(qty) => cart.setQty(line.key, qty)} bounds={{ min: 0, max: MAX_QTY }} label={line.item.name} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              type="button"
+              onClick={onBack}
+              className="mt-3 flex min-h-tap items-center justify-between gap-3 rounded-card border border-line bg-accent-tint px-4 py-3 text-left outline-offset-2 outline-line-focus focus-visible:outline-2"
+            >
+              <span>
+                <span className="block text-base font-bold text-accent-text">Add more dishes</span>
+                <span className="block text-sm text-fg-2">Back to the menu</span>
+              </span>
+              <span aria-hidden="true" className="text-xl text-accent-text">
+                +
+              </span>
+            </button>
+
+            <section aria-label="Summary" className="mt-4 rounded-card border border-line bg-raised p-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="font-serif text-lg">
+                  Total <span className="font-sans text-sm font-normal text-fg-muted">({itemsText(cart.count)})</span>
+                </h2>
+                <p className="font-serif text-xl">{formatMoney(cart.total)}</p>
+              </div>
+              <p className="mt-1 text-sm text-fg-muted">Before any taxes and charges, which are on the bill.</p>
+            </section>
+
+            <p className="mt-4 rounded-card border border-line bg-sunken p-4 text-center text-base text-fg-2">
+              To order, show this list to a member of staff at {tableLabel(table.table.name)}, or order at the counter.
+            </p>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+/**
+ * Clear, asked twice: the first tap arms it and says so, a second within a
+ * few seconds empties the cart. No dialog for one question on a phone.
+ */
+function ClearButton({ onClear }: { onClear: () => void }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
+  return (
+    <Button variant="danger" size="md" className="mr-2 ml-auto" onClick={armed ? onClear : () => setArmed(true)}>
+      {armed ? "Tap again to clear" : "Clear"}
+    </Button>
+  );
+}

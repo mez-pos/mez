@@ -2,8 +2,8 @@
 
 Every dish the venue sells, as a guest reads it at the table. Built in phase
 11 Task 3b (ADR-207). `web/guest/src/`: `Menu.tsx`, `menu-logic.ts`,
-`use-guest.ts`. The hash `#menu` on a table's path (`guest-landing.md`).
-Reading only for now: a dish is opened and added in Task 3c.
+`use-guest.ts`. The hash `#menu` on a table's path (`guest-landing.md`). A
+dish opens in a sheet (`guest-item.md`); the cart is `guest-cart.md`.
 
 ## Purpose
 
@@ -34,8 +34,13 @@ One column, at most a phone and a half wide.
   - the diet mark and the name in the serif;
   - the description, two lines at most;
   - "Gluten free" when it is;
-  - the price in the serif, in full ("₹60.00"), and **Sold out** beside it
-    when it is. A sold-out card is faded.
+  - the price in the serif, in full ("₹60.00");
+  - **+ Add**, the green button, across the foot of the card, or **Sold
+    out** in its place. A sold-out card is faded.
+- **The cart's bar,** fixed to the foot while the cart has anything in it:
+  "View cart" and "3 items · ₹350.00", in green.
+- **A notice** over the dishes when a dish was taken out of the cart
+  (`guest-cart.md`, States).
 
 ## Data
 
@@ -55,6 +60,10 @@ One column, at most a phone and a half wide.
 | A diet | Switches it on or off | Dishes that are all of the chosen ones |
 | Typing in search | Narrows, 200 ms after the last key | Every word must be in the name or the description, in any order |
 | Show everything | Clears the search, the category and the diets | The whole menu |
+| A card, above its button | Opens the dish | `guest-item.md` |
+| + Add, on a dish with no choices | Adds one to the cart | The cart's bar counts it |
+| + Add, on a dish with choices | Opens the dish | The choices are made there |
+| View cart | The cart | `guest-cart.md` |
 
 Sold-out dishes are listed last, in the menu's order otherwise: a guest reads
 from the top, and the top should be what they can have. Veg includes vegan. A
@@ -84,7 +93,7 @@ dish that does not say what it is is in no diet's list.
 138), and M11c for sold out.
 
 **Left out:**
-- **Add** on each card, and the **View Cart** bar: the cart is Task 3c.
+- "Checkout" on the cart's bar: one button, to the cart. Checkout is Task 4.
 - The heart on each photo: favourites (M10) are not built.
 - The bottom navigation (Menu, Orders, Offers, Help) and the menu button in
   the bar: those screens do not exist yet. Each arrives with its screen.

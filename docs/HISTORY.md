@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 3a: the guest's way in** (ADR-206). Each table has a code
+**Phase 11, Task 3b: the guest's landing and menu** (ADR-207), `web/guest/src`: the
+table and venue, then every dish with a search, categories and diet filters, and a
+screen for a code that leads nowhere or a venue that cannot be reached. No router:
+the code is read from the end of the path and the screen is the hash. Specs:
+`guest-landing.md`, `guest-menu.md`.
+
+Before it, **Phase 11, Task 3a: the guest's way in** (ADR-206). Each table has a code
 (`internal/service/tablecodes`, migration 00038, `mez table-codes`). The guest API is
 under `/order/api/` (`t/{code}`, `t/{code}/menu`, `photos/{name}`), with no device or
 session, 300 requests a minute an address. The tunnel leaves `/order/...` paths alone,

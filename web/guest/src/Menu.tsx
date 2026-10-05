@@ -1,6 +1,7 @@
 // M02, the menu (docs/design/screens/guest-menu.md): every dish, narrowed by
-// a category, a search and the diets the menu has. Reading only: a dish is
-// opened and added in Task 3c.
+// a category, a search and the diets the menu has. A dish opens in a sheet
+// (ItemSheet.tsx); one with no choices to make is added straight from its
+// card. The cart's bar stays at the foot while there is anything in it.
 
 import { useState } from "react";
 import type { GuestItemResponse, GuestMenuResponse, GuestTableResponse } from "../../shared/api-types";
@@ -10,7 +11,11 @@ import { cx } from "../../shared/ui/cx";
 import { DietMark } from "../../shared/ui/DietMark";
 import { Logo } from "../../shared/ui/Logo";
 import { SearchField } from "../../shared/ui/SearchField";
+import { itemsText } from "./cart-logic";
+import { ItemSheet } from "./ItemSheet";
 import { tableLabel } from "./Landing";
+import { Notice } from "./Notice";
+import type { CartApi } from "./use-cart";
 import {
   categoriesWithItems,
   countText,
@@ -27,13 +32,19 @@ import {
 interface MenuProps {
   table: GuestTableResponse;
   menu: GuestMenuResponse;
+  cart: CartApi;
+  onViewCart: () => void;
 }
 
 const chip = "inline-flex min-h-tap shrink-0 items-center rounded-pill border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2";
 const chipOff = "border-line-strong bg-raised text-fg";
 const chipOn = "border-accent bg-accent font-semibold text-accent-fg";
 
-export function Menu({ table, menu }: MenuProps) {
+export function Menu({ table, menu, cart, onViewCart }: MenuProps) {
+  // The dish that is open, by id: read from the menu each time, so a sheet
+  // left open shows it sold out when it does.
+  const [openId, setOpenId] = useState<number | null>(null);
+  const open = openId === null ? undefined : menu.items.find((it) => it.id === openId);
   const [filter, setFilter] = useState<MenuFilter>(noFilter);
   // Clearing the search from outside the field means giving it a new one.
   const [searchKey, setSearchKey] = useState(0);
@@ -48,13 +59,14 @@ export function Menu({ table, menu }: MenuProps) {
   };
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-md bg-canvas pb-10 text-fg">
+    <div className={cx("mx-auto min-h-dvh w-full max-w-md bg-canvas text-fg", cart.count > 0 ? "pb-28" : "pb-10")}>
       <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-line bg-chrome px-4">
         <Logo className="h-6" />
         <p className="rounded-pill bg-attention-tint px-3.5 py-1.5 text-base font-bold text-attention-text">{tableLabel(table.table.name)}</p>
       </header>
 
       <main className="px-4">
+        <Notice text={cart.notice} onDismiss={cart.dismissNotice} />
         <div className="mt-3 flex items-center justify-between gap-3 rounded-card bg-accent px-5 py-4 text-accent-fg">
           <p aria-hidden="true" className="font-script text-xl leading-tight">
             Great food,
@@ -128,38 +140,76 @@ export function Menu({ table, menu }: MenuProps) {
         ) : (
           <ul className="mt-3 grid grid-cols-2 gap-3">
             {items.map((item) => (
-              <DishCard key={item.id} item={item} />
+              <DishCard
+                key={item.id}
+                item={item}
+                onOpen={() => setOpenId(item.id)}
+                // Nothing to choose: one tap adds one. Anything to choose opens it.
+                onAdd={() => (item.modifier_groups.length === 0 ? cart.add({ item_id: item.id, modifier_ids: [], qty: 1 }) : setOpenId(item.id))}
+              />
             ))}
           </ul>
         )}
       </main>
+
+      {cart.count > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-10 mx-auto w-full max-w-md px-3 pb-3">
+          <button
+            type="button"
+            onClick={onViewCart}
+            className="flex min-h-charge w-full items-center justify-between gap-3 rounded-card bg-accent px-5 text-accent-fg shadow-modal outline-offset-2 outline-line-focus focus-visible:outline-2"
+          >
+            <span className="text-lg font-bold">View cart</span>
+            <span aria-live="polite" className="text-base">
+              {itemsText(cart.count)} · {formatMoney(cart.total)}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {open && <ItemSheet key={open.id} menu={menu} item={open} onAdd={cart.add} onClose={() => setOpenId(null)} />}
     </div>
   );
 }
 
-function DishCard({ item }: { item: GuestItemResponse }) {
+interface DishCardProps {
+  item: GuestItemResponse;
+  onOpen: () => void;
+  onAdd: () => void;
+}
+
+function DishCard({ item, onOpen, onAdd }: DishCardProps) {
   return (
     <li className={cx("flex flex-col overflow-hidden rounded-card border border-line bg-raised shadow-rest", item.sold_out && "opacity-60")}>
-      {item.photo && (
-        // A dish with no photo has no empty frame where one would be: most
-        // venues start with none. Below the fold on a slow link a photo is
-        // fetched when it is scrolled to, and decoded off the main thread.
-        <img src={photoUrl(item.photo)} alt="" loading="lazy" decoding="async" className="aspect-[4/3] w-full bg-sunken object-cover" />
-      )}
-      <div className="flex flex-1 flex-col p-3">
-        {item.popular && !item.sold_out && (
-          <p className="mb-1.5 self-start rounded-pill bg-highlight px-2.5 py-0.5 text-sm font-bold text-highlight-fg">Popular</p>
+      {/* The whole of the card above the button opens the dish. */}
+      <button type="button" onClick={onOpen} className="flex flex-1 flex-col text-left outline-offset-[-2px] outline-line-focus focus-visible:outline-2">
+        {item.photo && (
+          // A dish with no photo has no empty frame where one would be: most
+          // venues start with none. Below the fold on a slow link a photo is
+          // fetched when it is scrolled to, and decoded off the main thread.
+          <img src={photoUrl(item.photo)} alt="" loading="lazy" decoding="async" className="aspect-[4/3] w-full bg-sunken object-cover" />
         )}
-        <div className="flex items-start gap-1.5">
-          <DietMark diet={item.diet} className="mt-0.5" />
-          <h2 className="font-serif text-base leading-snug">{item.name}</h2>
-        </div>
-        {item.description && <p className="mt-1 line-clamp-2 text-sm text-fg-muted">{item.description}</p>}
-        {item.gluten_free && <p className="mt-1 text-sm font-semibold text-fg-2">Gluten free</p>}
-        <div className="mt-auto flex items-center justify-between gap-2 pt-2">
-          <p className="font-serif text-lg">{formatMoney(item.price)}</p>
-          {item.sold_out && <span className="rounded-pill bg-sunken px-2.5 py-0.5 text-sm font-semibold text-fg-2">Sold out</span>}
-        </div>
+        <span className="flex flex-1 flex-col p-3 pb-2">
+          {item.popular && !item.sold_out && (
+            <span className="mb-1.5 self-start rounded-pill bg-highlight px-2.5 py-0.5 text-sm font-bold text-highlight-fg">Popular</span>
+          )}
+          <span className="flex items-start gap-1.5">
+            <DietMark diet={item.diet} className="mt-0.5" />
+            <span className="font-serif text-base leading-snug">{item.name}</span>
+          </span>
+          {item.description && <span className="mt-1 line-clamp-2 text-sm text-fg-muted">{item.description}</span>}
+          {item.gluten_free && <span className="mt-1 text-sm font-semibold text-fg-2">Gluten free</span>}
+          <span className="mt-auto block pt-2 font-serif text-lg">{formatMoney(item.price)}</span>
+        </span>
+      </button>
+      <div className="px-3 pb-3">
+        {item.sold_out ? (
+          <p className="flex min-h-tap items-center justify-center rounded-pill bg-sunken text-base font-semibold text-fg-2">Sold out</p>
+        ) : (
+          <Button variant="primary" className="w-full" aria-label={`Add ${item.name}`} onClick={onAdd}>
+            + Add
+          </Button>
+        )}
       </div>
     </li>
   );

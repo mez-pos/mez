@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ModifierGroupResponse } from "../../../shared/api-types";
+import type { ModifierGroupResponse } from "./api-types";
 import {
   firstUnmet,
   groupHint,

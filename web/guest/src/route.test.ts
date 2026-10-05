@@ -29,17 +29,21 @@ describe("tableCodeFrom", () => {
   });
 });
 
-describe("the two screens", () => {
-  it("is the menu for the menu's hash and the landing for anything else", () => {
+describe("the three screens", () => {
+  it("is the menu or the cart for their hashes and the landing for anything else", () => {
     expect(viewFrom("#menu")).toBe("menu");
+    expect(viewFrom("#cart")).toBe("cart");
     expect(viewFrom("")).toBe("landing");
     expect(viewFrom("#")).toBe("landing");
-    expect(viewFrom("#cart")).toBe("landing");
+    expect(viewFrom("#checkout")).toBe("landing");
+    expect(viewFrom("#MENU")).toBe("landing");
   });
 
-  it("round-trips", () => {
-    expect(viewFrom(hashFor("menu"))).toBe("menu");
-    expect(viewFrom(hashFor("landing"))).toBe("landing");
+  it.each(["landing", "menu", "cart"] as const)("round-trips %s", (view) => {
+    expect(viewFrom(hashFor(view))).toBe(view);
+  });
+
+  it("gives the landing no hash, so Back from the menu returns to it", () => {
     expect(hashFor("landing")).toBe("");
   });
 });

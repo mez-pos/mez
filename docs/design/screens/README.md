@@ -94,6 +94,8 @@ The guest's phone, `web/guest`, under `/order/` (phase 11). The design file is
 |---|---|---|---|
 | `guest-landing.md` | The landing, and when the venue cannot be shown | `/order/t/<code>` | M01, M11d, M11e |
 | `guest-menu.md` | The menu | `/order/t/<code>#menu` | M02, M11c |
+| `guest-item.md` | A dish, opened: its choices and how many | a sheet over the menu | M03 |
+| `guest-cart.md` | The cart | `/order/t/<code>#cart` | M04 (the cart), M11a |
 
 ## Design screens with no spec
 
@@ -107,8 +109,8 @@ Not built, and why (`docs/phases/rebuild.md`, "Not in this phase"):
   connection ("Online", or what is wrong) is in each app's frame
   (`terminal-shell.md`, `backoffice-shell.md`).
 - **D24** setup wizard: phase 12.
-- **M03 to M10, M11a and M11b**, the rest of the guest's phone: phase 11,
-  each built from the mez file in its task.
+- **M04's checkout, M05 to M10 and M11b**, the rest of the guest's phone:
+  phase 11, each built from the mez file in its task.
 
 ## Naming
 

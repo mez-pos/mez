@@ -1,12 +1,14 @@
-// The guest's app: a table's code in the path, and the landing or the menu
-// in the hash (route.ts). The cart and the rest arrive with Task 3c on.
+// The guest's app: a table's code in the path, and the landing, the menu or
+// the cart in the hash (route.ts). Placing the order arrives with Task 4.
 
 import { useEffect, useState } from "react";
+import { Cart } from "./Cart";
 import { Landing } from "./Landing";
 import { Menu } from "./Menu";
 import { problemOf } from "./menu-logic";
 import { Problem } from "./Problem";
 import { hashFor, tableCodeFrom, viewFrom, type View } from "./route";
+import { useCart } from "./use-cart";
 import { useGuestMenu, useTable } from "./use-guest";
 
 export function App() {
@@ -22,6 +24,7 @@ function Table({ code }: { code: string }) {
   // Asked for as soon as the table is known, so the menu is there by the
   // time the guest has read the landing and tapped.
   const menu = useGuestMenu(code, table.data !== undefined);
+  const cart = useCart(code, menu.data);
 
   if (table.data === undefined) {
     if (table.isPending) return <Waiting line="Finding your table" />;
@@ -35,7 +38,8 @@ function Table({ code }: { code: string }) {
     const kind = problemOf(menu.error);
     return <Problem kind={kind} onRetry={kind === "unknown_code" ? undefined : () => void menu.refetch()} />;
   }
-  return <Menu table={table.data} menu={menu.data} />;
+  if (view === "cart") return <Cart table={table.data} cart={cart} onBack={() => go("menu")} />;
+  return <Menu table={table.data} menu={menu.data} cart={cart} onViewCart={() => go("cart")} />;
 }
 
 function Waiting({ line }: { line: string }) {

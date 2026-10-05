@@ -1,8 +1,9 @@
-// What the item modal has chosen, and the rules for choosing, without React.
+// What an item sheet has chosen, and the rules for choosing, without React:
+// the till's item modal and the guest's item sheet use the same ones.
 // A group's bounds are min_select and max_select from the menu; the domain
 // takes the result as the line's modifiers, in group then menu order.
 
-import type { LineModifier, Money, ModifierGroupResponse } from "../../../shared/api-types";
+import type { LineModifier, Money, ModifierGroupResponse } from "./api-types";
 
 /** Chosen modifier ids per group id, each list in the menu's order. */
 export type Selection = ReadonlyMap<number, readonly number[]>;

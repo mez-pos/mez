@@ -1,5 +1,5 @@
 // Where the guest is, read from the address. There is no router: the app has
-// a table's code in its path and one of two screens in its hash.
+// a table's code in its path and one of three screens in its hash.
 //
 // The path is /order/t/<code> on the venue's wifi and /t/<code> (or the same
 // /order/t/<code>) through the relay, so the code is read from the end and
@@ -17,16 +17,18 @@ export function tableCodeFrom(pathname: string): string | null {
   return code;
 }
 
-export type View = "landing" | "menu";
+export type View = "landing" | "menu" | "cart";
 
-const MENU_HASH = "#menu";
+const hashes: Readonly<Record<View, string>> = { landing: "", menu: "#menu", cart: "#cart" };
 
-/** The screen a hash names. Anything but the menu's is the landing. */
+/** The screen a hash names. Anything that is not the menu's or the cart's is the landing. */
 export function viewFrom(hash: string): View {
-  return hash === MENU_HASH ? "menu" : "landing";
+  if (hash === hashes.menu) return "menu";
+  if (hash === hashes.cart) return "cart";
+  return "landing";
 }
 
 /** The hash for a screen. The landing has none, so Back from the menu returns to it. */
 export function hashFor(view: View): string {
-  return view === "menu" ? MENU_HASH : "";
+  return hashes[view];
 }
