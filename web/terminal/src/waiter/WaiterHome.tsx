@@ -1,7 +1,8 @@
 // The waiter's home (T01): a greeting, the tables as cards under a row of
 // pills that sort them by what they want, and a bar along the bottom with the
-// orders still open and New Order. A card leads to its table on the floor, where
-// its panel seats, orders, sends and settles, until T03 is built (Task 13).
+// orders still open and New Order. A card with guests at it leads to the table's
+// own screen (T03); a free table, or one to clear, leads to the floor, where its
+// panel seats and clears.
 //
 // Left out, as nothing rings them before the guest channel (phase 11): the bell,
 // Table Requests and QR Orders. Reserved is not a state a table has (D06 is out
@@ -15,11 +16,13 @@ import { Button, EmptyState, InboxIcon, SearchField } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { useVenue } from "../../../shared/use-venue";
+import { partyTable } from "../floor/floor-logic";
 import { toneClasses } from "../floor/tones";
 import { failureOf } from "../register/order-messages";
 import { route } from "../shell/routes";
 import { useTerminal } from "../shell/terminal-context";
 import { TableCard } from "./TableCard";
+import { detailOrder } from "./table-logic";
 import { filterCounts, firstName, greeting, groupOrder, hourIn, tableGroups, tablesShown, type TableFilter } from "./waiter-logic";
 
 export function WaiterHome() {
@@ -49,7 +52,15 @@ export function WaiterHome() {
         {shown.map((t) => (
           // Ivory under the card's wash, so the leaf behind does not show through it.
           <li key={t.id} className="rounded-card bg-raised">
-            <TableCard table={t} names={names} onOpen={(table) => navigate(route.table(table.id))} />
+            <TableCard
+              table={t}
+              names={names}
+              onOpen={(table) => {
+                // A table joined to a party stands for the party's own table.
+                const party = partyTable(table, tables);
+                navigate(detailOrder(party) ? route.waiterTable(party.id) : route.table(table.id));
+              }}
+            />
           </li>
         ))}
       </ul>

@@ -245,7 +245,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     gone, what is held, and firing the next one.
 - [ ] **Task 13 - Waiter table detail, transfer and merge.** T03, T06. Split on
   2026-10-05, a screen each.
-  - [ ] 13a. The table's own screen (T03): the table and how long it has sat, its
+  - [x] 13a. (ADR-169) The table's own screen (T03): the table and how long it has sat, its
     notes, its items by course, where the order stands with the kitchen, the
     totals, Add Item, the bill, and Send to Kitchen. A waiter's card leads here.
   - [ ] 13b. Transfer and merge (T06): a modal from the table's screen that moves

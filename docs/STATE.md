@@ -14,13 +14,20 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 12c: Course View** (ADR-167). Task 12 is done. A waiter's rail has
+**Rebuild, Task 13a: the table's own screen** (ADR-169). Task 13 is split in two.
+`/waiter/table/:id` is T03 (`waiter/TableDetail.tsx`, `TableDetailOrder.tsx`,
+`TableItems.tsx`, `OrderProgress.tsx`, `table-logic.ts`): the table with its guests and
+how long it has sat, its notes and Add note, its items by course with each one's state
+and Fire, Order Status in four steps, Bill and pay, Details, the totals and Send to
+Kitchen (n), which opens the confirm. The top bar there is Back. A waiter's card with
+guests at it leads here; a free table or one to clear still leads to the floor. Seen in
+a browser at 1366x1024 as Kabir: the screen, a note added, Details, a send confirmed,
+the list ungrouped, Add Item, and a free table's card. Tests: `detailOrder`,
+`orderProgress`, `startedText`.
+
+Before it, **Task 12c: Course View** (ADR-167). Task 12 is done. A waiter's rail has
 two tabs, Current Order (n) and Course View (`register/CourseView.tsx`, `courseGroups`
-in `send-logic.ts`): the order by course, each course with the kitchen, to send or
-held, each line's own state, and "Fire <course>" on the next one held. Seen in a
-browser at 1366x1024 as Kabir: a first course with the kitchen, a Dessert held, fired
-from the tab, then with the kitchen. Tests: `courseGroups`. `make check` and `make
-build-web` pass.
+in `send-logic.ts`).
 
 Before it, **Task 12b: confirm and send** (ADR-166). A waiter's Send to Kitchen opens
 T04 as a modal (`register/ConfirmSend.tsx`, `sendPreview` in `send-logic.ts`): how many
@@ -49,15 +56,14 @@ payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
 ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
-10c, 11 or 12 (a, b, c).
+10c, 11, 12 (a, b, c) or 13a.
 
 ## Next task
 
-**Rebuild, Task 13** (waiter table detail, transfer and merge): T03 (line 247 of
-`mez Tablet Waiter.dc.html`) and T06 (line 489). A waiter's card leads to the floor
-with its table picked today (`route.table`, ADR-163), and Floor plan under More is
-where a party is moved and tables joined. Two screens: split it before starting if
-either is more than a session. Read `docs/design/tokens.md` and those two only. Phase 11
+**Rebuild, Task 13b** (transfer and merge): T06 (line 489 of `mez Tablet
+Waiter.dc.html`), a modal from the table's screen. A party is moved and tables are
+joined on the floor today (Floor plan under More; `floor.act`, `floor-logic.ts`).
+Read `docs/design/tokens.md` and that screen only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -71,6 +77,13 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- The table's screen (ADR-169): a free table, one to clear and one with several orders
+  are the floor's, so seating a party is still done there. No Transfer or Merge until
+  13b. Notes carry no time or name (a note keeps neither). Every course wears the same
+  icon. Bill and pay opens the desktop payment screen until T05 (Task 14). The order
+  screen's back arrow returns to the tables, not to this screen. Not seen by eye: a
+  joined table ("Merged"), a saved order, a held course's Fire, a Ready item, a refusal,
+  a table gone from the floor, and an order paid from here.
 - Course View (ADR-167): the design draws the tab's name and nothing under it, so its
   layout is ours. A waiter fires only from here (ADR-168). Not seen by eye: a line
   with no course, a course "To send", a Ready line, three courses, a saved order.

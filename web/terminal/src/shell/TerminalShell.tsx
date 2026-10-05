@@ -32,6 +32,7 @@ import { StatusBar } from "./StatusBar";
 import { useTerminal } from "./terminal-context";
 import { useWaiterFrame } from "./use-waiter-frame";
 import { WaiterOrderBar } from "../waiter/WaiterOrderBar";
+import { WaiterBack } from "./WaiterBack";
 import { WaiterNav } from "./WaiterNav";
 
 export function TerminalShell({ children }: { children: ReactNode }) {
@@ -56,6 +57,8 @@ export function TerminalShell({ children }: { children: ReactNode }) {
         {waiter && path === route.order ? (
           // Taking an order, the bar is the order's: where, how many, how served (T02).
           <WaiterOrderBar />
+        ) : waiter && path.startsWith(`${route.waiter}/table/`) ? (
+          <WaiterBack />
         ) : waiter ? (
           <WaiterNav active={activeWaiterNav(path)} onPrintQueue={() => setPrintOpen(true)} />
         ) : (

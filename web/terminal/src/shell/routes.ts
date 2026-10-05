@@ -23,6 +23,8 @@ export const route = {
   zReport: (number: number) => `/shift/z/${number}`,
   /** The waiter's home: the tables as cards (T01). */
   waiter: "/waiter",
+  /** One table's own screen, for a waiter (T03). */
+  waiterTable: (tableId: number) => `/waiter/table/${tableId}`,
   /** The kitchen display: another app of the same bundle. */
   kitchen: "/kitchen",
 } as const;

@@ -4955,3 +4955,28 @@ Decision:
     the course it fires, by name. The cashier, who has no Course View, keeps it.
 Cost: Save says nothing about items added and not sent; they wait on the order.
 ---
+
+## ADR-169 - A table has its own screen for a waiter, read beside the order in front
+2026-10 · Status: accepted. Rebuild Task 13a. Task 13 is two tasks. Changes ADR-163.
+Decision:
+  - **`/waiter/table/:id` is T03,** three columns: the table and its notes, its items,
+    and where the order stands with what to do next. The top bar there is Back.
+  - **It reads the table's order beside the order in front** (`useTableOrder`), as the
+    floor's panel does, so looking at a table takes nothing out of the waiter's hands.
+    Send, Fire and Add note act on it from here; Add Item brings it to the front.
+  - **A card leads here only for a table with one order.** A free table, one to clear
+    and one with several orders stay the floor's, whose panel seats, clears and asks
+    which.
+  - **Order Status is four steps counted from the lines and the kitchen's tickets:**
+    placed, sent, in preparation, ready. "Completed" is not drawn: an order that is
+    done has left this screen.
+  - **Items are grouped by course by default,** each course with its state and Fire on
+    the next one held; "Group by Course" turns that off. Each item wears its own state
+    where the design has who rang it up.
+  - **Send to Kitchen opens the confirm** (ADR-166), as on the order screen.
+Left out, and why (rule 3): Guest QR orders, the "Rohan" and "QR" tabs and chips (a
+line does not say who rang it up; phase 11), Preferences, Split Bill and Print KOT
+(nothing does them from here), Mark as Served (no such step, ADR-090), the pencil,
+the thumbnails and the per-item menu. Request Bill is "Bill and pay" and opens payment.
+Cost: seating a party is on another screen from the table's own.
+---

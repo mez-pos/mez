@@ -16,6 +16,7 @@ import { route } from "./shell/routes";
 import { ShiftGate } from "./shell/ShiftGate";
 import { TerminalProvider } from "./shell/terminal-context";
 import { TerminalShell } from "./shell/TerminalShell";
+import { TableDetail } from "./waiter/TableDetail";
 import { WaiterHome } from "./waiter/WaiterHome";
 
 export function App() {
@@ -60,6 +61,11 @@ function Screens() {
       </Route>
       <Route path={route.waiter}>
         <WaiterHome />
+      </Route>
+      <Route path="/waiter/table/:id">
+        {(params) =>
+          /^[1-9]\d{0,9}$/.test(params.id ?? "") ? <TableDetail key={params.id} tableId={Number(params.id)} /> : <Redirect to={route.waiter} replace />
+        }
       </Route>
       {/* One route for the list and the order picked on it, so the tab and the search stay as rows are picked. */}
       <Route path={`${route.orders}/:id?`}>{(params) => <OrdersPage orderId={params.id ?? null} />}</Route>

@@ -4,7 +4,7 @@
 // and the cache only moves forward (ADR-074).
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CommandResponse, OrderResponse } from "../../../shared/api-types";
+import type { AddNote, CommandResponse, OrderResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { failureOf } from "../register/order-messages";
@@ -21,6 +21,8 @@ export interface TableOrder {
   send: () => Promise<void>;
   /** Fires a course held back. Rejects with the words to show. */
   fire: (course: number) => Promise<void>;
+  /** Writes a note on the order. Rejects with the words to show. */
+  addNote: (note: AddNote) => Promise<void>;
 }
 
 export function useTableOrder(orderId: string): TableOrder {
@@ -47,9 +49,9 @@ export function useTableOrder(orderId: string): TableOrder {
     if (touched) void queryClient.invalidateQueries({ queryKey: orderQueryKey(orderId) });
   });
 
-  const post = async (suffix: string): Promise<void> => {
+  const post = async (suffix: string, body?: unknown): Promise<void> => {
     try {
-      const res = await store.api.post<CommandResponse>(url(suffix), undefined, { idempotencyKey: newKey() });
+      const res = await store.api.post<CommandResponse>(url(suffix), body, { idempotencyKey: newKey() });
       queryClient.setQueryData<OrderResponse>(orderQueryKey(res.order.id), (cached) => newer(cached, res.order));
       void queryClient.invalidateQueries({ queryKey: openTicketsKey });
       void queryClient.invalidateQueries({ queryKey: liveFloorKey });
@@ -65,5 +67,6 @@ export function useTableOrder(orderId: string): TableOrder {
     refetch: () => void query.refetch(),
     send: () => post("/send"),
     fire: (course) => post(`/courses/${course}/fire`),
+    addNote: (note) => post("/notes", note),
   };
 }
