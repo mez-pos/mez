@@ -160,6 +160,16 @@ export function tileText(t: LiveTableResponse, now: number, names: ReadonlyMap<n
   }
 }
 
+/**
+ * The table a link to the floor names ("?table=7"), or null: the waiter's card
+ * leads here with its table picked (routes.ts). Anything but a whole number
+ * above zero picks nothing.
+ */
+export function tableInSearch(search: string): number | null {
+  const value = new URLSearchParams(search).get("table") ?? "";
+  return /^[1-9]\d{0,9}$/.test(value) ? Number(value) : null;
+}
+
 /** Table names by id, for ticket labels. */
 export function tableNames(floor: LiveFloorResponse | undefined): ReadonlyMap<number, string> {
   return new Map((floor?.tables ?? []).map((t) => [t.id, t.name]));

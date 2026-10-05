@@ -8,6 +8,8 @@ export const route = {
    */
   order: "/pos",
   tables: "/tables",
+  /** The floor with one table picked: where a waiter's card leads until T03 is built. */
+  table: (tableId: number) => `/tables?table=${tableId}`,
   /** Order history; with an id, one settled bill. */
   orders: "/orders",
   bill: (orderId: string) => `/orders/${encodeURIComponent(orderId)}`,
@@ -19,7 +21,7 @@ export const route = {
   shiftClose: "/shift/close",
   /** A Z-report this till's close issued. */
   zReport: (number: number) => `/shift/z/${number}`,
-  /** A waiter's own tables. Until its screen is built it is the floor. */
+  /** The waiter's home: the tables as cards (T01). */
   waiter: "/waiter",
   /** The kitchen display: another app of the same bundle. */
   kitchen: "/kitchen",

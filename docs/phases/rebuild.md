@@ -231,7 +231,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     past bills sheet fold into it.
   - [x] 10c. (ADR-162) The refund as D09's modal (selected items or the whole bill,
     the reason, the manager's PIN), and the print queue under Orders.
-- [ ] **Task 11 - Waiter home.** T01.
+- [x] **Task 11 - Waiter home.** (ADR-163) T01.
 - [ ] **Task 12 - Waiter order taking.** T02, T04 (KOT preview).
 - [ ] **Task 13 - Waiter table detail, transfer and merge.** T03, T06.
 - [ ] **Task 14 - Waiter bill and shift summary.** T05, T08.

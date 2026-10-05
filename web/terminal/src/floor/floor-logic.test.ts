@@ -15,6 +15,7 @@ import {
   partyTable,
   startingCovers,
   stepMode,
+  tableInSearch,
   tableNames,
   tileText,
   tilesOf,
@@ -237,5 +238,17 @@ describe("stepMode", () => {
     expect(modeText({ kind: "move", from: party })).toBe("Tap a free table for T4's party");
     expect(modeText({ kind: "join", to: null })).toBe("Join: tap the party's table");
     expect(modeText({ kind: "part" })).toMatch(/joined table/);
+  });
+});
+
+describe("tableInSearch", () => {
+  it("reads the table a link names", () => {
+    expect(tableInSearch("table=7")).toBe(7);
+    expect(tableInSearch("?table=12&x=1")).toBe(12);
+  });
+  it("picks nothing for no table, or one that is no table's id", () => {
+    for (const search of ["", "table=", "table=0", "table=-3", "table=1.5", "table=abc", "table=99999999999", "other=4"]) {
+      expect(tableInSearch(search)).toBeNull();
+    }
   });
 });

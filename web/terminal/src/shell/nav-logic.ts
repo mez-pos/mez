@@ -36,3 +36,31 @@ export function activeNav(path: string): NavId | null {
   if (path === route.tables) return "tables";
   return null;
 }
+
+/**
+ * The waiter's navigation (T01): Home, Orders, Menu, and More. More is a menu,
+ * not a place: it holds what the app has and T01 does not draw (rebuild.md,
+ * rule 4), which today is the floor plan and the print queue.
+ */
+export type WaiterNavId = "home" | "orders" | "menu" | "more";
+
+export interface WaiterNavItem {
+  id: Exclude<WaiterNavId, "more">;
+  label: string;
+  href: string;
+}
+
+export const waiterNav: readonly WaiterNavItem[] = [
+  { id: "home", label: "Home", href: route.waiter },
+  { id: "orders", label: "Orders", href: route.orders },
+  { id: "menu", label: "Menu", href: route.order },
+];
+
+/** The waiter's tile to show pressed: Menu covers taking an order and paying it, More the floor plan. */
+export function activeWaiterNav(path: string): WaiterNavId | null {
+  if (path === route.waiter) return "home";
+  if (path === route.orders || path.startsWith(`${route.orders}/`)) return "orders";
+  if (path === route.order || path.startsWith("/pay/")) return "menu";
+  if (path === route.tables) return "more";
+  return null;
+}

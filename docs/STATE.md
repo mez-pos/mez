@@ -14,32 +14,34 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 10c: the refund modal, and the print queue on Orders** (ADR-162). Task
-10 is done. `RefundSheet.tsx` is D09's modal: the mark and "Refund INV...?", three
-choices each with the server's figure (selected items, the whole bill, an amount), the
-credit note's figures, the payment it goes back to, the reason, the note about the
-Z-report and the audit trail, then the manager's PIN in the same modal
-(`ApprovalSheet` takes `modal`; `Modal` has a `lg` size and an `icon`). The Orders
-header has Print queue, loud while anything has not printed. Seen in a browser at
-1366x768 and 1920 as the manager: a partial refund carried through to credit note
-CN/26-27/000001, the row turning Refunded and the tab counting it, a full refund
-refused against a payment too small for it, and the queue opened from Orders. Tests:
-`fullSelection`, `unitsText`, `leftOn`. `make check` and `make build-web` pass. The
-owner has not yet looked.
+**Rebuild, Task 11: the waiter's home** (ADR-163). `/waiter` is T01
+(`waiter/WaiterHome.tsx`, `TableCard.tsx`, `waiter-logic.ts`): the greeting by the
+venue's clock, the pills (All Tables, Occupied, Available, Needs Bill, To Clear) with
+their counts, the search, the tables as cards four across, and the bottom bar with
+Active Orders and New Order. A waiter's frame is T01's on every screen they reach
+(`TerminalShell` picks it by where the role lands): an 88px bar with Home, Orders,
+Menu and More (`shell/WaiterNav.tsx`), and no status bar. A card leads to
+`/tables?table=N`, the floor with that table picked. Seen in a browser at 1366x1024 as
+Kabir, beside the design: the cards in four states, a pill, the search and its empty
+line, More, a card through to the floor's panel, and a table seated and ordered from
+there showing Occupied with its balance. Tests: `waiter-logic`, `activeWaiterNav`,
+`tableInSearch`. `make check` and `make build-web` pass. The owner has not yet looked.
 
-Before it: Task 10b (ADR-161, the Orders screen), Task 10a (ADR-160, the day's orders
+Before it: Task 10c (ADR-162, the refund modal and the print queue on Orders), Task
+10b (ADR-161, the Orders screen), Task 10a (ADR-160, the day's orders
 from the server), Task 9 (ADR-159, split and the card and UPI states), Task 8 (ADR-156,
 payment), Task 7 (ADR-155, tables), Task 6 (ADR-153, the item modal; 6b, ADR-154),
 Task 5 (ADR-151, the order screen), Task 4 (ADR-150, Open the shift; `shift.open`,
 ADR-152, migration 00033), Task 3 (ADR-149), Task 2 (ADR-148), Task 1 (ADR-145 to
-ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b
-or 10c.
+ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 9, 10b,
+10c or 11.
 
 ## Next task
 
-**Rebuild, Task 11** (waiter home): T01 (line 36 of `mez Tablet Waiter.dc.html`, drawn
-at 1366x1024). `/waiter` redirects to the floor today (`App.tsx`); a waiter lands there
-by role (`landing.ts`). Read `docs/design/tokens.md` and that screen only. Phase 11
+**Rebuild, Task 12** (waiter order taking): T02 (line 101 of `mez Tablet
+Waiter.dc.html`, drawn at 1366x1024) and T04, the KOT preview (line 377). A waiter's
+Menu tile and New Order open the desktop order screen (`/pos`) today, inside the
+waiter's frame. Read `docs/design/tokens.md` and those two screens only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -53,6 +55,15 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- The waiter's home (ADR-163): every table is listed, not the waiter's own (no table
+  is assigned to anyone), so the line reads "the tables", not "your tables". No bell,
+  Table Requests, QR Orders (phase 11) or Reserved (out of scope). Active Orders counts
+  every open order at the venue and opens the day's orders. A waiter has no status
+  bar: no clock, venue or version on screen, and "Offline" shows only as Retry now in
+  the top bar. The other screens a waiter reaches are still the desktop's, under the
+  waiter's bar (Tasks 12 to 14). Not seen by eye: a joined table's card, a floor of more
+  than twelve tables (the cards scroll), a failed read, a width under 1280px (three
+  columns, then two), the evening greeting, and Print queue opened from More.
 - The refund modal (ADR-162): not seen by eye are a refund by amount, a full refund
   carried through, a bill with one payment, a wrong PIN, and a bill with nothing left.
   At 768px high the modal scrolls to reach Continue. As a refund is issued the modal

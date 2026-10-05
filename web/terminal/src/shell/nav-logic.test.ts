@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeNav, navItems } from "./nav-logic";
+import { activeNav, activeWaiterNav, navItems, waiterNav } from "./nav-logic";
 
 describe("navItems", () => {
   it("gives a floor role Orders and Tables only", () => {
@@ -27,5 +27,29 @@ describe("activeNav", () => {
   });
   it("presses nothing elsewhere, and does not mistake a longer word for a route", () => {
     for (const path of ["/", "/shift", "/shift/close", "/order", "/orderly", "/tablesaw", "/posx"]) expect(activeNav(path)).toBeNull();
+  });
+});
+
+describe("the waiter's navigation", () => {
+  it("is Home, Orders and Menu, each a screen of the terminal", () => {
+    expect(waiterNav.map((i) => [i.id, i.href])).toEqual([
+      ["home", "/waiter"],
+      ["orders", "/orders"],
+      ["menu", "/pos"],
+    ]);
+  });
+  it("presses Home on the waiter's tables only", () => {
+    expect(activeWaiterNav("/waiter")).toBe("home");
+    expect(activeWaiterNav("/waiters")).toBeNull();
+  });
+  it("presses Orders on the day's orders, and Menu while an order is taken or paid", () => {
+    for (const path of ["/orders", "/orders/ord_ABC"]) expect(activeWaiterNav(path)).toBe("orders");
+    for (const path of ["/pos", "/pay/ord_ABC"]) expect(activeWaiterNav(path)).toBe("menu");
+  });
+  it("presses More on the floor plan, which More opens", () => {
+    expect(activeWaiterNav("/tables")).toBe("more");
+  });
+  it("presses nothing elsewhere", () => {
+    for (const path of ["/", "/shift", "/posx", "/tablesaw"]) expect(activeWaiterNav(path)).toBeNull();
   });
 });

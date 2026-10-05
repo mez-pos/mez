@@ -5,7 +5,7 @@
 // into steps of that, until Done (ADR-088). ADR-155 records what this draws.
 
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import type { LiveTableResponse } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
@@ -14,7 +14,20 @@ import { failureOf, wordsOf } from "../register/order-messages";
 import { route } from "../shell/routes";
 import { useTerminal } from "../shell/terminal-context";
 import { FloorLegend, FloorPlan } from "./FloorPlan";
-import { areaToShow, areasShown, beginMode, countsText, idle, modeText, panelTitle, partyTable, stepMode, type AreaChoice, type Mode } from "./floor-logic";
+import {
+  areaToShow,
+  areasShown,
+  beginMode,
+  countsText,
+  idle,
+  modeText,
+  panelTitle,
+  partyTable,
+  stepMode,
+  tableInSearch,
+  type AreaChoice,
+  type Mode,
+} from "./floor-logic";
 import { TableList } from "./TableList";
 import type { PartyMode } from "./TableOrderView";
 import { TablePanel } from "./TablePanel";
@@ -24,8 +37,13 @@ export function TablesScreen() {
   const { floor, ticket, names } = useTerminal();
   const [, navigate] = useLocation();
   const [view, setView] = useState<TablesView>("plan");
-  const [areaChoice, setAreaChoice] = useState<AreaChoice>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  // A waiter's card leads here with its table named: it starts picked, in its
+  // own area (every area, if the floor has not been read yet).
+  const linked = tableInSearch(useSearch());
+  const [areaChoice, setAreaChoice] = useState<AreaChoice>(() =>
+    linked === null ? null : (floor.data?.tables.find((t) => t.id === linked)?.area_id ?? "all"),
+  );
+  const [selectedId, setSelectedId] = useState<number | null>(linked);
   const [mode, setMode] = useState<Mode>(idle);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

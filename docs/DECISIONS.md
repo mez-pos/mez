@@ -4837,3 +4837,34 @@ Left out, and why: "the kitchen and the guest are both notified" (neither is), a
 Cost: `Modal` and `ApprovalSheet` each grew a prop. A refund is two screens of one
 modal where the design draws one.
 ---
+
+## ADR-163 - The waiter's home is T01, and a waiter's frame goes with them to every screen
+2026-10 · Status: accepted. Rebuild Task 11.
+Decision:
+  - **`/waiter` is T01:** the greeting, the pills, the search, the tables as cards four
+    across, and a bottom bar with Active Orders and New Order.
+  - **A waiter sorts tables into four groups, not five states.** Seated and ordered are
+    both "Occupied", free is "Available", paying is "Needs Bill": the design's words.
+    The card's small print tells a seated table ("No order yet") from one with a
+    balance. The floor (D05) keeps its five words; the two screens answer different
+    questions.
+  - **The fifth pill is To Clear, where the design has Reserved.** Reservations are out
+    of scope (D06), and a table to clear is a state a waiter acts on.
+  - **The frame follows the person, not the path.** Whoever lands on `/waiter`
+    (`landingFor`) gets T01's 88px bar with Home, Orders, Menu and More on every
+    screen, and no status bar, as T01 draws none. Retry now and the "Not printed" pill
+    stay in the bar.
+  - **More is a menu** (rule 4): Floor plan, where a party is moved and tables are
+    joined until T06 is built, and Print queue.
+  - **A card leads to the floor with its table picked** (`/tables?table=N`), where the
+    panel seats, orders, sends and settles. Task 13 (T03) replaces where it leads.
+  - **New Order starts a fresh order and opens the order screen,** which asks for its
+    table and how it is served. Active Orders opens the day's orders.
+  - **The greeting reads the venue's clock,** and before 05:00 it is still the evening.
+Left out, and why (rule 3): the bell, Table Requests and QR Orders (nothing rings them
+before phase 11), Reserved, the logo's strapline (the `Logo` primitive has none), and
+the spot art (a leaf stands in its tile). "Your tables" is "the tables": no table is
+assigned to a waiter.
+Cost: a waiter has no clock, venue name or version on screen, and sees the link is
+down only by Retry now. Two vocabularies for a table's state, one per screen.
+---

@@ -16,6 +16,7 @@ import { route } from "./shell/routes";
 import { ShiftGate } from "./shell/ShiftGate";
 import { TerminalProvider } from "./shell/terminal-context";
 import { TerminalShell } from "./shell/TerminalShell";
+import { WaiterHome } from "./waiter/WaiterHome";
 
 export function App() {
   return (
@@ -57,9 +58,8 @@ function Screens() {
       <Route path={route.tables}>
         <TablesScreen />
       </Route>
-      {/* A waiter's own tables arrive in Task 11; until then they are the floor. */}
       <Route path={route.waiter}>
-        <Redirect to={route.tables} replace />
+        <WaiterHome />
       </Route>
       {/* One route for the list and the order picked on it, so the tab and the search stay as rows are picked. */}
       <Route path={`${route.orders}/:id?`}>{(params) => <OrdersPage orderId={params.id ?? null} />}</Route>
