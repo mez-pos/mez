@@ -14,7 +14,16 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 17g2: the specs for Settings, Printers, Devices, Floor plan, Tips and
+**Rebuild, Task 17h1: the fixes before the walk** (ADR-197, ADR-198). Task 17h is split
+in two. What writing the specs found is fixed: the Orders sheet's Close the day is gone,
+so closing has one door, under the profile, for `shift.manage`; about thirty messages
+still in the old words (till, ticket where an order is meant, "Refunds come with Task
+6.") now say order, order screen and terminal, five of them the server's; "ticket"
+stays for the kitchen's. `print/PrintStatus.tsx` and `lastBumped` are deleted. The
+specs that quote those words follow. Tests: seven assertions moved to the new words.
+`make check`, vitest (1425) and `make build-web` pass. Not tried in a browser.
+
+Before it, **Rebuild, Task 17g2: the specs for Settings, Printers, Devices, Floor plan, Tips and
 the Z-report.** Task 17g is done, and with it every spec: 28 files in
 `docs/design/screens/`, each written from the code as it stands (ADR-196).
 `backoffice-settings.md` (D22's frame and its three sections), `backoffice-printers.md`
@@ -336,16 +345,14 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 17h: the walk.** The last part of Task 17, and the first with code in
-it. In the dev server (`make dev`; `rebuild.md`, "How to see it"), as Meera the cashier,
-Kabir the waiter, Ravi in the kitchen and Arjun the manager, take an order from each
-side through to a paid bill, an invoice and a Z-report, reading each screen against its
-spec. Before walking: fix the "Found writing the specs" entries under Known broken
-(old words on screen, `PrintStatus.tsx` and `lastBumped` unused). The Orders sheet's
-Close the day door is already gone (ADR-197). After: cut
-the "not seen by eye" lists below to what is still unseen, and bring this file back
-under 60 lines by moving the "Before it" history out. It may need splitting by role.
-The phase's done-when is the owner's own walk. The owner has
+**Rebuild, Task 17h2: the walk.** In the dev server (`make dev`; `rebuild.md`, "How to
+see it"), as Meera the cashier, Kabir the waiter, Ravi in the kitchen and Arjun the
+manager, take an order from each side through to a paid bill, an invoice and a
+Z-report, reading each screen against its spec (`screens/README.md` lists them). Fix
+what breaks, or write it under Known broken. Then cut the "not seen by eye" lists below
+to what is still unseen, and bring this file back under 60 lines by moving the "Before
+it" history out. Split it by role if it will not fit one session. The phase's done-when
+is the owner's own walk. The owner has
 not yet looked at the kitchen's screens or anything of Task 16. Floor plan and Tips
 are still their old layouts (ADR-195). Phase 11 waits for this phase. Phase 10's tasks are
 all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
@@ -361,34 +368,13 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
-- Old words still on screen, found writing the specs (17b), for the walk (17h) to
-  fix: Pay's refusal for a bill owed money back says "Refunds come with Task 6."
-  (`tender-logic.ts`, `chargeBlock`); "changed on another till" in the item modal
-  (`OrderScreen.tsx`, `movedOn`); "has 2 tickets" on a move and "this table's ticket"
-  on Guests left (`floor-logic.ts`, `order-messages.ts`, `internal/api/floor.go`).
-- The Orders sheet's Close the day is gone (ADR-197): the profile menu's Close the
-  shift, for `shift.manage`, is the one way in. Typechecked and built, not tried in a
-  browser: look at the sheet as Meera in the walk. `/shift/close` typed by hand still
-  lets someone with `payment.take` count.
-- Found writing the specs (17c): `print/PrintStatus.tsx` is used by nothing since
-  the frame drew its own Not printed pill; delete it in 17h. A payment that cannot be
-  taken says "Nothing is owed on this ticket." (`planTender`), an old word.
-- Found writing the spec (17e): `lastBumped` in `kitchen/kitchen-logic.ts` is used
-  by nothing but its test since Recall moved onto each ready card; delete it in 17h.
-  The board's clock and the time a ticket was sent are read in the device's zone, not
-  the venue's.
-- Found writing the specs (17g1): old words in the back office, for 17h: "off every
-  till" on retiring a category (`menu/CategoryRail.tsx`), "Tickets already open keep
-  the choices" in the group form (`menu/GroupFormModal.tsx`), "signed out of every
-  till" on a new PIN and "Others ask for these at the till" (`people/`), "Change
-  orders on the ticket" (`people-logic.ts`), and "on the till as each shift closes"
-  (`stock/StockItemModal.tsx`).
-- Found writing the specs (17g2): more old words, for 17h: the settings card
-  "Shifts, tips and tickets", its "A ticket is late after (minutes)", and "refused
-  while any ticket is open" on the tax profile and the tax classes
-  (`settings/RulesCard.tsx`, `TaxProfileCard.tsx`, `TaxClassesCard.tsx`); a device's
-  kind reads "Till" (`devices/`), on the table, in Pair a device and in "Pair a till, a
-  kitchen display or another back office to start."
+- After the fixes of 17h1 (ADR-197, ADR-198): typechecked, tested and built, none of
+  it tried in a browser. In the walk, look at the Orders sheet as Meera (no Close the
+  day), a refusal or two in the new words, Devices ("Terminal"), and the settings card
+  "Shifts, tips and orders". Left: `/shift/close` typed by hand still lets someone with
+  `payment.take` count; the printed Z-report labels its device "Till"
+  (`escpos/zreport.go`); the kitchen board's clock and a ticket's sent time are read in
+  the device's zone, not the venue's.
 - Printers, Devices and Audit (ADR-195): the dev venue now has three printers that
   go nowhere (127.0.0.1:9197 to 9199), one retired and one set for receipts, so a
   receipt there queues and retries. Not seen by eye: a revoked or a quiet device,

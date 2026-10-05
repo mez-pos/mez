@@ -92,7 +92,7 @@ export function StockItemModal({ item, currency, onSave, onCorrect, onSetActive,
         <input type="checkbox" className="size-5" checked={form.countAtClose} onChange={(e) => set({ countAtClose: e.target.checked })} />
         <span>
           Count at close
-          <span className="block text-sm text-fg-muted">Counted, blind, on the till as each shift closes.</span>
+          <span className="block text-sm text-fg-muted">Counted, blind, on the terminal as each shift closes.</span>
         </span>
       </label>
       {item && (

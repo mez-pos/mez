@@ -36,11 +36,11 @@ beside it the roles.
   - **Permissions · Waiter**, and "Applies to Rohan and Arjun."
   - **Role name**, a field.
   - **Every permission as a switch that says On or Off**, in five groups:
-    - **Selling:** Take orders; Change orders on the ticket; Take payment;
+    - **Selling:** Take orders; Change what is on an order; Take payment;
       See the kitchen board.
     - **Kitchen:** Start tickets and mark them ready. "A kitchen display on
       the wall needs neither: it is paired, not signed in."
-    - **Corrections**, "Others ask for these at the till.": Void items;
+    - **Corrections**, "Others ask for these on the order screen.": Void items;
       Comp items; Give discounts; Void payments; Give refunds; Reopen
       closed bills; Reprint invoices.
     - **Shift and cash:** Open the shift; Close the shift; Move cash in and
@@ -54,7 +54,7 @@ beside it the roles.
 
 - **Add staff, Edit:** Name; Role (a select); on Add, a **PIN**, 4 to 8
   digits, and **The PIN again**.
-- **New PIN:** the PIN twice, and "They will be signed out of every till and
+- **New PIN:** the PIN twice, and "They will be signed out of every terminal and
   back office now."
 - **Add a role:** Name, and the permissions as on the panel.
 - **Deactivate** asks first: "They leave the sign-in screen and are signed
@@ -131,7 +131,7 @@ Changed: the design lists eight switches. A role here grants any of the
 server's twenty-one permissions, so they are all listed, in their groups.
 Its note, "Anything switched off asks for a manager PIN instead of being
 hidden", is true of the corrections, and sits with that group as "Others ask
-for these at the till."
+for these on the order screen."
 
 Kept, though not drawn (rule 4): Add a role, the role's name, Delete this
 role, and

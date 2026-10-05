@@ -370,10 +370,18 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
       (`tips.md`), and the Z-report in both apps with the Z-reports list
       (`zreport.md`). `screens/README.md` lists every spec against its
       design screen.
-  - [ ] 17h. The walk, in the dev server: a cashier, a waiter, the kitchen and
-    a manager each take an order through to a paid bill, an invoice and a
-    Z-report. What breaks is fixed or written into `STATE.md`; the "not seen
-    by eye" lists there are cut to what is still unseen.
+  - [ ] 17h. The fixes, then the walk. Split on 2026-10-05: it is the first
+    part with code in it.
+    - [x] 17h1. (ADR-197, ADR-198) What writing the specs found, fixed before
+      anyone walks: closing the day has one door; the old words still on
+      screen and in the server's messages (till, ticket where an order is
+      meant, "Refunds come with Task 6"); two pieces of code nothing used.
+    - [ ] 17h2. The walk, in the dev server: a cashier, a waiter, the kitchen
+      and a manager each take an order through to a paid bill, an invoice
+      and a Z-report, each screen read against its spec. What breaks is
+      fixed or written into `STATE.md`; the "not seen by eye" lists there
+      are cut to what is still unseen, and `STATE.md` is brought back under
+      60 lines. Split it by role if it will not fit one session.
 
 ## Not in this phase
 

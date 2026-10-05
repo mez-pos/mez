@@ -169,7 +169,7 @@ func Delta(d MovementDraft, onHand Qty) (Qty, MovementDraft, *Problem) {
 		}
 		return d.Qty - onHand, clean, nil
 	case Sold:
-		return 0, MovementDraft{}, &Problem{"kind", "Sales are recorded by the till, not by hand."}
+		return 0, MovementDraft{}, &Problem{"kind", "Sales are recorded as they are rung up, not by hand."}
 	}
 	return 0, MovementDraft{}, &Problem{"kind", "Choose received, adjusted, wasted or counted."}
 }

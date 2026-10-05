@@ -5743,3 +5743,33 @@ else out on the way, is worse than no door.
 Cost: someone with `payment.take` and not `shift.manage` can still reach
 `/shift/close` by typing its path, and count there. Nothing on screen leads to it.
 ---
+
+## ADR-198 - The old words are off the screens, and "ticket" is kept for the kitchen's
+2026-10 · Status: accepted. Rebuild Task 17h1; what writing the specs found (17b to 17g2).
+Context: the rebuild's Words table (till and register to the order screen, ticket to
+order, hold to save) was applied to each screen as it was rebuilt. The messages behind
+the screens were not on any screen's task: refusals in `order-messages.ts`, hints in the
+back office's forms, a role's permissions in words, five of the server's own messages.
+A sweep found about thirty still in the old words, one of them a note to ourselves
+("Refunds come with Task 6.") shown to a cashier.
+Decision:
+  - **An order is an order everywhere a person reads it.** "This ticket is on hold"
+    is "This order is saved"; "changed on another till" is "on another screen".
+  - **"Ticket" stays where it means the kitchen's.** What a station is sent, what a
+    cook starts and marks ready, what a kitchen printer prints: "Kitchen tickets",
+    "Total tickets", "Start tickets and mark them ready". Those are tickets.
+  - **The device is a terminal.** A device's kind reads "Terminal", as the pairing
+    screen already said ("Pair this terminal"). The order screen is what is on it.
+  - **A bill that owes the guest** says "A manager settles that on the Orders
+    screen.", as the waiter's bill already did.
+  - **Error codes, event types, routes, setting keys and file names keep their names**
+    (`tickets_open`, `ticket.sent`, `ticket_late_minutes`, `use-ticket.ts`). They are
+    stored or cited, and nobody reads them on a screen.
+  - **Two things nothing used are deleted:** `print/PrintStatus.tsx` (the frame draws
+    its own Not printed pill) and `lastBumped` (Recall is on each ready card).
+Because: a word that changes between a button and the refusal under it reads as two
+different things.
+Cost: the printed Z-report still labels its device "Till" (`escpos/zreport.go`); a
+printed layout is its own change, with a printer to check it on. The dev-only gallery
+keeps its sample strings.
+---

@@ -31,7 +31,7 @@ export function TaxClassesCard({ classes, api }: { classes: TaxClassResponse[]; 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="font-serif text-xl">Tax classes</h2>
-          <p className="mt-1 text-base text-fg-2">A rate that items share. A new rate is for lines rung up from then on: tickets already open keep theirs.</p>
+          <p className="mt-1 text-base text-fg-2">A rate that items share. A new rate is for lines rung up from then on: orders already open keep theirs.</p>
         </div>
         <Button onClick={() => setEditing({ kind: "add" })}>Add a tax class</Button>
       </div>

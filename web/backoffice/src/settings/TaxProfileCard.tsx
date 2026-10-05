@@ -58,7 +58,7 @@ export function TaxProfileCard({ tax, onSave, onDirty }: TaxProfileCardProps) {
       <Choice label="Tax" value={form.profile} options={PROFILES} onChange={(profile) => set({ profile })} error={d.on("profile")} />
       {form.profile !== saved.profile && (
         <p className="text-sm text-fg-2">
-          Changing the profile is refused while any ticket is open. Settle or void them first. Tickets already paid keep the tax they were charged.
+          Changing the profile is refused while any order is open. Settle or void them first. Orders already paid keep the tax they were charged.
         </p>
       )}
 

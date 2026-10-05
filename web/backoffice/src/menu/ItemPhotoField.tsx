@@ -71,7 +71,7 @@ export function ItemPhotoField({ current, change, onChange, error }: ItemPhotoFi
           )}
         </div>
       </div>
-      <p className="text-sm text-fg-muted">Shown on the till's tile. It is made smaller here before it is sent.</p>
+      <p className="text-sm text-fg-muted">Shown on the item's card on the order screen. It is made smaller here before it is sent.</p>
       {shownProblem && (
         <p role="alert" className="text-sm text-danger">
           {shownProblem}

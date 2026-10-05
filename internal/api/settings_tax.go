@@ -189,7 +189,7 @@ func (s *Server) writeSettingsRefusal(w http.ResponseWriter, err error) bool {
 		writeFieldError(w, s.log, http.StatusConflict, CodeNumberTaken, invalid.Message, invalid.Field)
 	case errors.Is(err, settings.ErrOpenOrders):
 		writeError(w, s.log, http.StatusConflict, CodeTicketsOpen,
-			"Tickets are still open. Settle or void them before changing the tax profile.")
+			"Orders are still open. Settle or void them before changing the tax profile.")
 	default:
 		return false
 	}

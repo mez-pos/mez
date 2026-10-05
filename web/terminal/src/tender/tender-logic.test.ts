@@ -75,7 +75,7 @@ describe("planTender", () => {
       { method: "card", entered: 100, tip: 500, due: 35100, whole: true },
       { amount: 35100, change: 0, charge: 35600, problem: null },
     ],
-    ["nothing owed", { method: "cash", entered: 50000, tip: 0, due: 0 }, { amount: 0, change: 0, charge: 0, problem: "Nothing is owed on this ticket." }],
+    ["nothing owed", { method: "cash", entered: 50000, tip: 0, due: 0 }, { amount: 0, change: 0, charge: 0, problem: "Nothing is owed on this order." }],
   ];
   it.each(cases)("%s", (_name, input, want) => {
     expect(planTender(input)).toEqual(want);
@@ -121,7 +121,12 @@ describe("chargeBlock", () => {
     ["lines still adding", order({}), 1, "Wait for every item to be added."],
     ["held", order({ status: "held" }), 0, "Resume this order to pay it."],
     ["paid in full, still open: Pay finishes it", order({ totals: { balance_due: inr(0) } as OrderResponse["totals"] }), 0, null],
-    ["owing the guest", order({ totals: { balance_due: inr(-100) } as OrderResponse["totals"] }), 0, "The guest is owed money back. Refunds come with Task 6."],
+    [
+      "owing the guest",
+      order({ totals: { balance_due: inr(-100) } as OrderResponse["totals"] }),
+      0,
+      "The guest is owed money back. A manager settles that on the Orders screen.",
+    ],
     ["closed", order({ status: "closed" }), 0, "This order is closed."],
   ];
   it.each(cases)("%s", (_name, o, pending, want) => {

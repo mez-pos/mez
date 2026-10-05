@@ -161,16 +161,6 @@ export function allDay(tickets: readonly KitchenTicketResponse[]): AllDay[] {
   return [...counts].map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name));
 }
 
-/** The ticket Recall brings back: the one bumped last, still in the window. */
-export function lastBumped(board: KitchenBoardResponse | undefined): KitchenTicketResponse | null {
-  let last: KitchenTicketResponse | null = null;
-  for (const t of board?.tickets ?? []) {
-    if (t.status !== "ready" || !t.ready_at) continue;
-    if (!last || Date.parse(t.ready_at) > Date.parse(last.ready_at ?? "")) last = t;
-  }
-  return last;
-}
-
 /** Where the station chosen on this device is kept: a display stays on its station. */
 export const stationKey = "mez.kitchen.station";
 

@@ -25,7 +25,7 @@ Inside the frame (`backoffice-shell.md`).
 
   | Column | Shows |
   |---|---|
-  | Device | its name, "This device" beside the one the back office is running on, and its kind in words under it: **Till**, **Kitchen display**, **Back office** |
+  | Device | its name, "This device" beside the one the back office is running on, and its kind in words under it: **Terminal**, **Kitchen display**, **Back office** |
   | Paired | the day ("3 Oct 2026") |
   | Last heard from | "just now", "12 min ago", "3 h ago", a date, or "Not heard from since it was paired" |
   | State | a chip: **In service**, **Quiet** (not heard from for a day), **Revoked** |
@@ -34,13 +34,13 @@ Inside the frame (`backoffice-shell.md`).
 - **Waiting to be paired**, a card, only when there are any: each code made
   and not yet used: the name it will have, its kind, and when it runs out.
   The code itself is not shown again.
-- With no device but this one: "Pair a till, a kitchen display or another
-  back office to start."
+- With no device but this one: "Pair a terminal, a kitchen display or
+  another back office to start."
 
 **The forms** (modals):
 
 - **Pair a device:** **Name** ("What the device will be called: Counter 1,
-  Pass, Office."); **What it is**, Till, Kitchen display or Back office;
+  Pass, Office."); **What it is**, Terminal, Kitchen display or Back office;
   **Make a code**. The code replaces the form: large, in the numeral face,
   in the groups it is read in (`7K3M-9QX2`), with "Enter this on the new
   device. It works once and runs out at 17:42." Closing the modal does not

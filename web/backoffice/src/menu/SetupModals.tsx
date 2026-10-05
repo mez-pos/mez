@@ -144,7 +144,7 @@ export function RetireModal({ kind, row, rows, onRetire, onClose }: RetireModalP
             <p className="text-base">
               {kind === "station"
                 ? "It stops taking new items and tickets. If it prints on a printer, the printer goes to the station you choose when that one has none."
-                : "It leaves the till. Tickets already rung up keep the course they copied."}{" "}
+                : "It leaves the order screen. Orders already rung up keep the course they copied."}{" "}
               {row.items > 0 ? `${itemsText(row.items)} ${row.items === 1 ? "is" : "are"} ${kind === "station" ? "made" : "served"} here.` : ""}
             </p>
             {asks && (

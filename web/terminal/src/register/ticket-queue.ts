@@ -119,7 +119,7 @@ export class TicketQueue {
   run(command: (orderId: string, key: string) => Promise<CommandResponse>, key = this.opts.newKey()): Promise<void> {
     const done = this.chain.then(async () => {
       const orderId = this.state.orderId;
-      if (!orderId) throw new Error("There is no ticket to change.");
+      if (!orderId) throw new Error("There is no order to change.");
       try {
         const res = await command(orderId, key);
         this.opts.onOrder(res.order);

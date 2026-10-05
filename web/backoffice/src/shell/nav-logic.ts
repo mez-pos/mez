@@ -120,7 +120,7 @@ export const NAV: readonly NavGroup[] = [
         needs: "device.manage",
         key: "e",
         built: true,
-        description: "Tills, kitchen displays and back offices paired here.",
+        description: "Terminals, kitchen displays and back offices paired here.",
       },
     ],
   },

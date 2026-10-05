@@ -272,7 +272,7 @@ function movedOn(opened: LineResponse, lines: readonly LineResponse[] | undefine
   if (!live || live.status !== "active") return "This line has been voided or comped. Close this.";
   if (live.sent || live.course_fired) return "This has gone to the kitchen. Void it and add it again.";
   if (!sameModifiers(live.modifiers, opened.modifiers) || live.qty !== opened.qty) {
-    return "This line was changed on another till. Close this and look again.";
+    return "This line was changed on another screen. Close this and look again.";
   }
   return null;
 }

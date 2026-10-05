@@ -124,7 +124,7 @@ export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onPro
           title={`Retire ${chosen.name}?`}
           confirmLabel="Retire"
         >
-          <p className="text-base">{count === 1 ? "Its one item comes" : `Its ${count} items come`} off every till. You can bring it back.</p>
+          <p className="text-base">{count === 1 ? "Its one item comes" : `Its ${count} items come`} off every order screen. You can bring it back.</p>
         </Confirm>
       )}
     </Card>

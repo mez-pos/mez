@@ -114,7 +114,7 @@ the editor drops below the other two.
 | Save changes | Saves the item, then its choices and photo | A toast: "Saved.", or "Saved. Orders already open keep their prices." when the price changed |
 | Sold out today, Back on sale | Marks it until the trading day turns | Every order screen learns at once |
 | Retire, Bring back (an item) | No confirm: it is one click back | |
-| Retire (a category) | Asks first: "Its 6 items come off every till. You can bring it back." | |
+| Retire (a category) | Asks first: "Its 6 items come off every order screen. You can bring it back." | |
 | Move up, Move down | Moves a row one place and saves at once | Offered on items only when the list is one category, in menu order, unfiltered |
 
 `/menu?item=<id>` opens that item in the editor as soon as the menu is read;

@@ -5,7 +5,6 @@ import {
   allDay,
   boardColumns,
   comingRows,
-  lastBumped,
   latePercent,
   metaText,
   minutesText,
@@ -99,11 +98,6 @@ describe("the board", () => {
     expect(agoText(30_000)).toBe("now");
     expect(agoText(4 * 60_000)).toBe("4m");
     expect(agoText(65 * 60_000)).toBe("1h 05m");
-  });
-
-  it("recalls the ticket bumped last", () => {
-    expect(lastBumped(board([bumped, bumpedLater, ticket()]))?.ticket_seq).toBe(9);
-    expect(lastBumped(board([ticket()]))).toBeNull();
   });
 
   it("says where each goes", () => {

@@ -39,8 +39,8 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
 
   return (
     <SectionCard
-      title="Shifts, tips and tickets"
-      description="When a day starts, what a short drawer needs, how tips are shared and when a ticket runs late."
+      title="Shifts, tips and orders"
+      description="When a day starts, what a short drawer needs, how tips are shared and when an order runs late."
       dirty={d.dirty}
       busy={busy}
       saved={d.done}
@@ -122,8 +122,8 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
       )}
 
       <Field
-        label="A ticket is late after (minutes)"
-        hint={`The till shows its time as late once it has been open this long. ${MIN_LATE_MINUTES} to ${MAX_LATE_MINUTES}.`}
+        label="An order is late after (minutes)"
+        hint={`The order screen shows its time as late once it has been open this long. ${MIN_LATE_MINUTES} to ${MAX_LATE_MINUTES}.`}
         error={d.on("ticket_late_minutes")}
       >
         {(id) => (

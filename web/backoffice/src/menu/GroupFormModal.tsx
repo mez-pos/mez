@@ -69,10 +69,10 @@ export function GroupFormModal({ title, currency, initial, usedBy, onSave, onClo
     >
       {usedBy > 0 && (
         <p className="text-sm text-fg-3">
-          {usedBy === 1 ? "One item offers" : `${usedBy} items offer`} these choices. Tickets already open keep the choices and prices they were rung up with.
+          {usedBy === 1 ? "One item offers" : `${usedBy} items offer`} these choices. Orders already open keep the choices and prices they were rung up with.
         </p>
       )}
-      <Field label="Name" hint="As staff see it on the till: Milk, Extras, Doneness." error={on("name")}>
+      <Field label="Name" hint="As staff see it on the order screen: Milk, Extras, Doneness." error={on("name")}>
         {(id) => <input id={id} className={inputClass} value={form.name} maxLength={60} autoFocus onChange={(e) => set({ name: e.target.value })} />}
       </Field>
       <div className="grid grid-cols-2 gap-4">

@@ -155,7 +155,7 @@ goes.
 - **The order will not open:** "Opening the order", then why, with Try
   again.
 - **Refused:** the server's words in the panel, over its buttons
-  ("Something is on this table's ticket: void it or take the payment
+  ("Something is on this table's order: void it or take the payment
   first.").
 - **Settle Bill is shut:** the same words as Pay on the order screen.
 - **Permission denied:** the floor needs `order.open`, which everyone who

@@ -9,7 +9,7 @@ import { problemWith, type Problem } from "../settings/problem";
 
 /** A device's kind in the words staff use, never the code. */
 export const kindWords: Record<DeviceKind, string> = {
-  terminal: "Till",
+  terminal: "Terminal",
   kitchen: "Kitchen display",
   back_office: "Back office",
   guest: "Guest",

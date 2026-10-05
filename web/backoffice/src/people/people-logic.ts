@@ -9,7 +9,7 @@ import type { Permission, Person, PersonInput, Role, RoleInput } from "../../../
 /** Each permission in words. A Record, so a permission added on the server fails the typecheck here until it has words. */
 export const permissionWords: Readonly<Record<Permission, string>> = {
   "order.open": "Take orders",
-  "order.edit": "Change orders on the ticket",
+  "order.edit": "Change what is on an order",
   "payment.take": "Take payment",
   "kitchen.view": "See the kitchen board",
   "kitchen.work": "Start tickets and mark them ready",
@@ -42,7 +42,7 @@ export const permissionGroups: readonly PermissionGroup[] = [
   { title: "Kitchen", note: "A kitchen display on the wall needs neither: it is paired, not signed in.", permissions: ["kitchen.work"] },
   {
     title: "Corrections",
-    note: "Others ask for these at the till.",
+    note: "Others ask for these on the order screen.",
     permissions: ["line.void", "line.comp", "discount.give", "payment.void", "refund.give", "order.reopen", "invoice.reprint"],
   },
   { title: "Shift and cash", permissions: ["shift.open", "shift.manage", "cash.move"] },

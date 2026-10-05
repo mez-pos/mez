@@ -219,11 +219,11 @@ describe("failureOf", () => {
     expect(failureOf(new ApiError("timeout", "x"))).toBe("Not sent: the server can't be reached.");
     expect(failureOf(new ApiError("order_closed", "db: order is closed"))).toBe("This order is closed.");
     expect(failureOf(new ApiError("modifiers_mismatch", "db: in transaction: projecting line.modified at seq 6"))).toBe(
-      "This line was changed on another till. Close this and look again.",
+      "This line was changed on another screen. Close this and look again.",
     );
     // A code with no words of its own still never shows the server's text.
     expect(failureOf(new ApiError("invalid_payload", "projecting line.added at seq 4: quantity 0"))).toBe(
-      "The server refused this. Check the ticket and try again.",
+      "The server refused this. Check the order and try again.",
     );
     expect(failureOf(new TypeError("boom"))).toBe("Not sent: something went wrong.");
   });
@@ -269,7 +269,7 @@ describe("TicketQueue.modify", () => {
   it("refuses when there is no ticket yet", async () => {
     const { server } = withModify();
     const { q } = queue(server);
-    await expect(q.modify(2, { from: [], to: oat })).rejects.toThrow("There is no ticket to change.");
+    await expect(q.modify(2, { from: [], to: oat })).rejects.toThrow("There is no order to change.");
   });
 });
 

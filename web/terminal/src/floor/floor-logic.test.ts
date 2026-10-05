@@ -203,7 +203,7 @@ describe("stepMode", () => {
     const start = { kind: "move", from: null } as const;
     expect(stepMode(start, free, names).refused).toMatch(/nobody at it/);
     expect(stepMode(start, joined, names).refused).toBe("T7 is joined to T4. Tap that one.");
-    expect(stepMode(start, { ...party, orders: ["a", "b"] }, names).refused).toMatch(/2 tickets/);
+    expect(stepMode(start, { ...party, orders: ["a", "b"] }, names).refused).toMatch(/2 orders/);
     expect(stepMode({ kind: "move", from: party }, busy, names).refused).toBe("T5 isn't free. Tap a free table.");
   });
 

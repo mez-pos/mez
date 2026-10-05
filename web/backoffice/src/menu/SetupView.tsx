@@ -67,7 +67,7 @@ export function SetupView({ menu, api, onProblem }: SetupViewProps) {
       />
       <SetupCard
         title="Courses"
-        description="When an item is fired: course 1 first, then the table asks for the next. Putting courses in a new order is refused while any ticket is open, since tickets keep the number they were rung up at."
+        description="When an item is fired: course 1 first, then the table asks for the next. Putting courses in a new order is refused while any order is open, since orders keep the number they were rung up at."
         addLabel="Add a course"
         empty="No courses yet. Add the first: every item sits in one."
         rows={courses}

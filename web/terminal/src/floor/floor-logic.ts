@@ -206,7 +206,7 @@ export const idle: Mode = { kind: "idle" };
 function notAParty(t: LiveTableResponse, names: ReadonlyMap<number, string>): string | null {
   if (t.status === "free" || t.status === "dirty") return `${t.name} has nobody at it. Tap a table with guests.`;
   if (t.joined_to) return `${t.name} is joined to ${names.get(t.joined_to) ?? "another table"}. Tap that one.`;
-  if (t.orders.length !== 1) return `${t.name} has ${t.orders.length} tickets: the floor can't tell which one to move.`;
+  if (t.orders.length !== 1) return `${t.name} has ${t.orders.length} orders: the floor can't tell which one to move.`;
   return null;
 }
 

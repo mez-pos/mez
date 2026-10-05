@@ -70,7 +70,7 @@ classes save at once.
   - US sales tax: **Rates where the venue is**, a row per authority (a name
     and a percentage), **Add a rate**.
   - A draft of another profile warns: "Changing the profile is refused
-    while any ticket is open. Settle or void them first."
+    while any order is open. Settle or void them first."
   - **Items without an HSN**, on a profile that prints one on every line:
     "3 items have no HSN or SAC code. They still sell, but their invoices
     fall short until each is edited.", each a link to `/menu?item=<id>`; at
@@ -94,7 +94,7 @@ classes save at once.
 
 Two cards, each saving on its own.
 
-- **Shifts, tips and tickets.**
+- **Shifts, tips and orders.**
   - **The trading day starts at**, a time. "Sales before this time belong
     to the day before." A shift keeps the day it opened under.
   - **A drawer may be out by (INR)**: "Over or short by more than this,
@@ -103,8 +103,8 @@ Two cards, each saving on its own.
   - **Tips are shared**: Shared evenly, By hours worked, By role weight.
     By role weight: **Weight of each role**, a whole number from 1 to 100;
     one left empty counts as 1.
-  - **A ticket is late after (minutes)**, 1 to 600: when an open order's
-    time turns late on the order screen.
+  - **An order is late after (minutes)**, 1 to 600: "The order screen
+    shows its time as late once it has been open this long."
 - **Receipt.**
   - **Under the venue's name** and **At the bottom**: up to four lines of 48
     characters each. The printer prints plain letters and digits; text it

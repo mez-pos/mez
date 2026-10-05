@@ -80,7 +80,7 @@ export interface TenderPlan {
 const refused = (problem: string): TenderPlan => ({ amount: 0, change: 0, charge: 0, problem });
 
 export function planTender({ method, entered, tip, due, whole = false }: TenderInput): TenderPlan {
-  if (due <= 0) return refused("Nothing is owed on this ticket.");
+  if (due <= 0) return refused("Nothing is owed on this order.");
   if (method === "cash") {
     // The tip is left out of the cash handed over; the rest pays the bill,
     // and what the bill does not need is change.
@@ -131,7 +131,7 @@ export function chargeBlock(order: OrderResponse | undefined, pending: number): 
   if (order.status === "closed") return "This order is closed.";
   if (order.status === "held") return "Resume this order to pay it.";
   if (pending > 0) return "Wait for every item to be added.";
-  if (order.totals.balance_due.minor < 0) return "The guest is owed money back. Refunds come with Task 6.";
+  if (order.totals.balance_due.minor < 0) return "The guest is owed money back. A manager settles that on the Orders screen.";
   return null;
 }
 

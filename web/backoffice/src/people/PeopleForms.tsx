@@ -152,7 +152,7 @@ export function PinModal({ person, onSave, onClose }: { person: Person; onSave: 
   };
   return (
     <Frame title={`New PIN for ${person.name}`} busy={s.busy} onSave={submit} onClose={onClose} problem={s.problem}>
-      <p className="text-base text-fg-2">They will be signed out of every till and back office now.</p>
+      <p className="text-base text-fg-2">They will be signed out of every terminal and back office now.</p>
       <PinFields
         pin={pins.pin}
         again={pins.again}

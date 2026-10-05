@@ -354,7 +354,7 @@ func (s *Server) writeMenuEditError(w http.ResponseWriter, r *http.Request, err 
 		writeError(w, s.log, http.StatusNotFound, CodeCourseNotFound, "No such course.")
 	case errors.Is(err, menus.ErrTicketsOpen):
 		writeError(w, s.log, http.StatusConflict, CodeTicketsOpen,
-			"Tickets are still open. Settle or void them before changing the order of the courses.")
+			"Orders are still open. Settle or void them before changing the order of the courses.")
 	case errors.Is(err, menus.ErrStaleOrder):
 		writeError(w, s.log, http.StatusConflict, CodeMenuOrderStale,
 			"The menu changed since you opened it. Reload and put it in order again.")

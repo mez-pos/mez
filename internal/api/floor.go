@@ -309,11 +309,11 @@ func (s *Server) writeFloorError(w http.ResponseWriter, r *http.Request, err err
 	case errors.Is(err, floor.ErrTableNotFound):
 		writeError(w, s.log, http.StatusNotFound, CodeTableNotFound, "No such table.")
 	case errors.Is(err, table.ErrOccupied):
-		writeError(w, s.log, http.StatusConflict, CodeTableOccupied, "Guests are still at this table: settle or move their ticket first.")
+		writeError(w, s.log, http.StatusConflict, CodeTableOccupied, "Guests are still at this table: settle or move their order first.")
 	case errors.Is(err, table.ErrNotEmpty):
-		writeError(w, s.log, http.StatusConflict, CodeTableNotEmpty, "Something is on this table's ticket: void it or take the payment first.")
+		writeError(w, s.log, http.StatusConflict, CodeTableNotEmpty, "Something is on this table's order: void it or take the payment first.")
 	case errors.Is(err, shift.ErrNoOpenShift):
-		writeError(w, s.log, http.StatusConflict, CodeNoOpenShift, "No shift is open: open the till first.")
+		writeError(w, s.log, http.StatusConflict, CodeNoOpenShift, "No shift is open: open the shift first.")
 	case errors.Is(err, floor.ErrAreaInUse):
 		writeError(w, s.log, http.StatusConflict, CodeAreaInUse, "Retire or move the tables in this area first.")
 	default:

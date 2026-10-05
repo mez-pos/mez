@@ -49,7 +49,7 @@ export function DevicesScreen() {
               onRevoke={(device) => setEditing({ kind: "revoke", device })}
             />
             {split(data.devices).inService.length <= 1 && (
-              <p className="text-base text-fg-muted">Pair a till, a kitchen display or another back office to start.</p>
+              <p className="text-base text-fg-muted">Pair a terminal, a kitchen display or another back office to start.</p>
             )}
           </div>
           {waiting.length > 0 && (

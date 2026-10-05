@@ -35,13 +35,13 @@ const device = (patch: Partial<DeviceRecordResponse> = {}): DeviceRecordResponse
 
 describe("a device's kind", () => {
   it("is said in the words staff use", () => {
-    expect(kindWords.terminal).toBe("Till");
+    expect(kindWords.terminal).toBe("Terminal");
     expect(kindWords.kitchen).toBe("Kitchen display");
     expect(kindWords.back_office).toBe("Back office");
   });
   it("is offered to pair for the three that can be", () => {
     expect(PAIRABLE.map((k) => k.value)).toEqual(["terminal", "kitchen", "back_office"]);
-    expect(PAIRABLE.map((k) => k.label)).toEqual(["Till", "Kitchen display", "Back office"]);
+    expect(PAIRABLE.map((k) => k.label)).toEqual(["Terminal", "Kitchen display", "Back office"]);
   });
 });
 

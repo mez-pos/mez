@@ -59,7 +59,7 @@ The table in a card, and beside it the week's wastage.
   ("Shown as low at or under this. Empty for never."); **Cost of a litre,
   in INR** ("What you pay for it. It values a count that comes up short or
   over. Empty for not known."); **Count at close** ("Counted, blind, on the
-  till as each shift closes."); and on an existing one **Correct**, and
+  terminal as each shift closes."); and on an existing one **Correct**, and
   **Retire** or **Bring back**.
 - **History:** the ingredient's movements, newest first: when, what
   (Received, Wasted: spilled, Counted 4,700 g, Sold, Corrected), the change
