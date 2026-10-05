@@ -3,7 +3,7 @@
 // being answered is, or the terminal reconnected.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { GuestDecisionResponse, GuestRequestResponse, GuestRequestsResponse } from "../../../shared/api-types";
+import type { GuestDecisionResponse, GuestRequestResponse, GuestRequestsResponse, PaidNoticeResponse } from "../../../shared/api-types";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { liveFloorKey } from "../floor/use-live-floor";
@@ -14,15 +14,20 @@ export const guestRequestsKey = ["guest-requests"] as const;
 
 export interface GuestRequests {
   requests: readonly GuestRequestResponse[];
+  /** Tables whose guest says they have paid, and nobody has looked (ADR-218). */
+  paid: readonly PaidNoticeResponse[];
   /** Undefined until the list has been read once. */
   loaded: boolean;
   error: string | null;
   /** Rejects with the terminal's words when the server refuses. */
   accept: (id: string) => Promise<GuestDecisionResponse>;
   decline: (id: string) => Promise<GuestDecisionResponse>;
+  /** Puts a paid notice away: staff looked and no payment had come. */
+  seen: (id: string) => Promise<void>;
 }
 
 const none: readonly GuestRequestResponse[] = [];
+const nonePaid: readonly PaidNoticeResponse[] = [];
 
 export function useGuestRequests(): GuestRequests {
   const store = useAuthStore();
@@ -58,9 +63,17 @@ export function useGuestRequests(): GuestRequests {
 
   return {
     requests: query.data?.requests ?? none,
+    paid: query.data?.paid ?? nonePaid,
     loaded: query.data !== undefined,
     error: query.isError ? failureOf(query.error) : null,
     accept: (id) => answer(id, "accept"),
     decline: (id) => answer(id, "decline"),
+    seen: (id) =>
+      store.api
+        .post<void>(`/api/v1/paid-notices/${encodeURIComponent(id)}/seen`)
+        .catch((err: unknown) => {
+          throw new Error(failureOf(err), { cause: err });
+        })
+        .finally(again),
   };
 }

@@ -8,28 +8,27 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4d, 4e1 to 4e3 and 4e4a done. (The rebuild, 09 and 10 still owe the walk.)
+4a to 4d and 4e1 to 4e4 done. (The rebuild, 09 and 10 still owe the walk.)
 
 ## Last completed task
 
-**Phase 11, Task 4e4a: "I have paid", on the server** (ADR-218).
-`POST /order/api/t/{code}/bill/paid` keeps a notice (`paid_notices`, migration
-00040): a message to staff, never a payment. The bill says `paid_told`. Notices
-ride on `GET /api/v1/guest-requests` as `paid`; staff put one away with
-`POST /api/v1/paid-notices/{id}/seen`, and a recorded payment puts it away itself.
+**Phase 11, Task 4e4b: "I have paid" on the screens** (ADR-219). The phone's bill
+has the button, and says staff were told from the bill's `paid_told`. The
+terminal's pill, sheet ("From the tables") and chime carry the notice, with Take
+payment opening `/pay/{order}` and No payment found putting it away.
 
 ## Next task
 
-**Phase 11, Task 4e4b: "I have paid" on the screens.** Read ADR-212, ADR-215,
-ADR-218, `guest-bill.md`, `terminal-requests.md`, `docs/design/tokens.md`.
-- The phone: under Pay by UPI, a button "I have paid", then "Staff have been told"
-  from the bill's `paid_told`, not from the phone's own memory. Say again there
-  that the bill is marked paid once staff have seen the payment.
-- The terminal: the notices in the requests pill, sheet and chime
-  (`web/terminal/src/requests/`, `GuestRequestsResponse.paid`): the table, the
-  amount said, what is owed now when it differs, how long ago. **Take payment**
-  goes to `/pay/{order_id}`; **No payment found** calls `seen`, asked twice.
-- Both say: staff check the venue's phone; nothing is paid until recorded. Then 4e5.
+**Phase 11, Task 4e5: the prepay mode.** Several sessions: split it first. Read
+`docs/02-domain.md`, ADR-209, ADR-210, ADR-211, ADR-215, ADR-218.
+- A venue setting, prepay or pay at the table, beside the UPI address on Settings.
+- In a prepay venue a round is not sent until paid (ADR-209). With staff
+  confirming payments (ADR-215) there is no ticket to tender against before a
+  round is accepted: decide whether Accept in a prepay venue opens the ticket and
+  takes the payment in one step, or whether prepay waits for 4f's gateway, which
+  can confirm by itself. Write the case in the ADR before building either.
+- Decide who closes a bill nobody on staff touched: a sold stock movement needs a
+  real staff id (KNOWN.md, Stock).
 
 ## Known broken / in progress
 
@@ -55,5 +54,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e3, 4e4a done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e4 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

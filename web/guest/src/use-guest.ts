@@ -5,7 +5,14 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { createApiClient, noCredentials } from "../../shared/api";
 import { BILL_REFRESH_MS } from "./bill-logic";
-import type { GuestBillResponse, GuestMenuResponse, GuestOrderRequest, GuestRoundResponse, GuestTableResponse } from "../../shared/api-types";
+import type {
+  GuestBillResponse,
+  GuestMenuResponse,
+  GuestOrderRequest,
+  GuestPaidResponse,
+  GuestRoundResponse,
+  GuestTableResponse,
+} from "../../shared/api-types";
 
 // A guest is nobody: no device, no session. The code in the path is all
 // there is to present.
@@ -51,9 +58,18 @@ export function useGuestMenu(code: string, enabled: boolean): UseQueryResult<Gue
  * The table's bill, read while its screen is shown and again every few
  * seconds: a round accepted or a payment taken moves it.
  */
+export function billKey(code: string): readonly string[] {
+  return ["guest", "bill", code];
+}
+
+/** Tells staff a guest at the table says they have paid (ADR-218). It pays nothing. */
+export function tellPaid(code: string): Promise<GuestPaidResponse> {
+  return api.post<GuestPaidResponse>(`${base(code)}/bill/paid`);
+}
+
 export function useBill(code: string): UseQueryResult<GuestBillResponse> {
   return useQuery({
-    queryKey: ["guest", "bill", code],
+    queryKey: billKey(code),
     queryFn: ({ signal }) => api.get<GuestBillResponse>(`${base(code)}/bill`, { signal }),
     refetchInterval: BILL_REFRESH_MS,
     refetchOnWindowFocus: true,

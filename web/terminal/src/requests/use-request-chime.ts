@@ -12,7 +12,7 @@ import type { GuestRequestResponse } from "../../../shared/api-types";
 import { audioContext, ring } from "../kitchen/use-chime";
 import { arrived, remindEveryMs } from "./request-logic";
 
-export function useRequestChime(requests: readonly GuestRequestResponse[], loaded: boolean): void {
+export function useRequestChime(requests: readonly Pick<GuestRequestResponse, "id">[], loaded: boolean): void {
   const ctx = useRef<AudioContext | null>(null);
   const seen = useRef<ReadonlySet<string> | null>(null);
 

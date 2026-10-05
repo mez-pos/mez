@@ -90,14 +90,14 @@ Phase 10.
     - [x] **4e3.** The QR on the bill, for paying from another phone: drawn
       on the server (`internal/domain/qr`, no dependency), so the bundle
       carries no encoder (ADR-217).
-    - [ ] **4e4.** "I have paid": the guest tells the terminal, which says so
+    - [x] **4e4.** "I have paid": the guest tells the terminal, which says so
       as it does a request, and staff record the payment from there. Split
       in two (ADR-218):
       - [x] **4e4a.** The server: `POST /order/api/t/{code}/bill/paid`, the
         notices on `GET /api/v1/guest-requests`, and
         `POST /api/v1/paid-notices/{id}/seen`. A notice is a message, never
         a payment.
-      - [ ] **4e4b.** The screens: "I have paid" on the phone's bill, and the
+      - [x] **4e4b.** The screens: "I have paid" on the phone's bill, and the
         notice on the terminal, leading to that table's payment.
     - [ ] **4e5.** The mode, prepay or pay at the table, and in a prepay
       venue a round held until staff have recorded its payment, then sent

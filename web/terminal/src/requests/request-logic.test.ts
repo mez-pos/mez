@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arrived, choicesOf, dishCount, pillLabel, waited, wantingTables } from "./request-logic";
+import { arrived, choicesOf, dishCount, owesOtherwise, pillLabel, saidAgo, waited, wantingTables } from "./request-logic";
 
 const ids = (...list: string[]) => list.map((id) => ({ id }));
 
@@ -29,6 +29,9 @@ describe("pillLabel", () => {
   it("agrees with the count", () => {
     expect(pillLabel(1)).toBe("table request");
     expect(pillLabel(2)).toBe("table requests");
+    expect(pillLabel(0, 1)).toBe("table says paid");
+    expect(pillLabel(0, 3)).toBe("tables say paid");
+    expect(pillLabel(2, 1)).toBe("from tables");
   });
 });
 
@@ -66,5 +69,25 @@ describe("choicesOf and dishCount", () => {
         ],
       }),
     ).toBe(3);
+  });
+});
+
+describe("owesOtherwise", () => {
+  const inr = (minor: number) => ({ minor, currency: "INR" });
+  it("is false while the table owes what the guest said they paid", () => {
+    expect(owesOtherwise({ amount: inr(54000), due: inr(54000) })).toBe(false);
+  });
+  it("is true once a round was added or part was recorded", () => {
+    expect(owesOtherwise({ amount: inr(54000), due: inr(84000) })).toBe(true);
+    expect(owesOtherwise({ amount: inr(54000), due: inr(20000) })).toBe(true);
+  });
+});
+
+describe("saidAgo", () => {
+  const at = "2026-10-06T10:00:00Z";
+  it("reads as a sentence at any age", () => {
+    expect(saidAgo(at, Date.parse(at) + 20_000)).toBe("Said just now");
+    expect(saidAgo(at, Date.parse(at) + 4 * 60_000)).toBe("Said 4 min ago");
+    expect(saidAgo(at, Date.parse(at) + 65 * 60_000)).toBe("Said 1 h 5 min ago");
   });
 });

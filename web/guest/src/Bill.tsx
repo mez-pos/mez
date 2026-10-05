@@ -6,10 +6,12 @@ import type { GuestBillResponse, GuestTableResponse } from "../../shared/api-typ
 import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
-import { billState, payLine, summaryRows, upiAfter, upiLinkOf } from "./bill-logic";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { billState, paidTold, payLine, summaryRows, tellFailure, upiAfter, upiLinkOf } from "./bill-logic";
 import { tableLabel } from "./Landing";
 import { problemOf } from "./menu-logic";
-import { upiQrUrl, useBill } from "./use-guest";
+import { billKey, tellPaid, upiQrUrl, useBill } from "./use-guest";
 
 interface BillProps {
   code: string;
@@ -151,7 +153,9 @@ function PayByUPI({ bill, code }: { bill: GuestBillResponse; code: string }) {
       <p className="mt-3 text-sm text-fg-muted">
         To {bill.upi.payee}, <span className="font-mono break-all">{bill.upi.address}</span>
       </p>
-      <p className="mt-2 text-base text-fg-2">{upiAfter}</p>
+      {/* Once staff are told, the green line under it says the same and more. */}
+      {bill.paid_told !== true && <p className="mt-2 text-base text-fg-2">{upiAfter}</p>}
+      <IHavePaid code={code} told={bill.paid_told === true} />
       {/* For paying from another phone. Closed until asked for: a code on screen invites a scan by the next table. */}
       <details className="mt-3 border-t border-line-soft pt-3 text-left">
         <summary className="flex min-h-tap cursor-pointer items-center justify-center text-base font-semibold text-accent-text outline-line-focus focus-visible:outline-2">
@@ -168,5 +172,44 @@ function PayByUPI({ bill, code }: { bill: GuestBillResponse; code: string }) {
         <p className="mt-2 text-center text-sm text-fg-muted">Scan with any UPI app. It pays {formatMoney(bill.upi.amount)}, what is left on this bill now.</p>
       </details>
     </section>
+  );
+}
+
+/**
+ * "I have paid": tells staff to look for the payment. Whether they have been
+ * told is the server's to say, on the bill, so it reads the same after a
+ * reload and on every phone at the table.
+ */
+function IHavePaid({ code, told }: { code: string; told: boolean }) {
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  if (told) {
+    return (
+      <p role="status" className="mt-3 rounded border border-line bg-accent-tint p-3 text-base font-semibold text-accent-text">
+        {paidTold}
+      </p>
+    );
+  }
+  const tell = () => {
+    setBusy(true);
+    setError("");
+    tellPaid(code)
+      .catch((err: unknown) => setError(tellFailure(err)))
+      // Told or refused, the bill is what says where things stand.
+      .then(() => queryClient.invalidateQueries({ queryKey: billKey(code) }))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <>
+      <Button variant="secondary" className="mt-3 w-full" disabled={busy} onClick={tell}>
+        {busy ? "Telling staff" : "I have paid"}
+      </Button>
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </>
   );
 }

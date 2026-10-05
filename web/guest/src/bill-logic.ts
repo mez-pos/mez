@@ -2,6 +2,7 @@
 // Every figure is the server's: this decides which rows to draw and what to
 // call them, and adds nothing up.
 
+import { ApiError } from "../../shared/api";
 import type { GuestBillResponse, Money } from "../../shared/api-types";
 import { rateText } from "../../shared/zreport/zreport-logic";
 
@@ -75,4 +76,20 @@ export function payLine(state: BillState, upi = false): string {
     case "part_paid":
       return upi ? "Or pay a member of staff, or at the counter." : "To pay, ask a member of staff or pay at the counter.";
   }
+}
+
+// "I have paid" (ADR-218). Saying so tells staff to look; it pays nothing.
+
+/** What the bill says once staff have been told, until they have looked. */
+export const paidTold = "Staff have been told you paid. This bill is marked paid once they have seen the payment.";
+
+/** Why staff could not be told, in words a guest can act on. */
+export function tellFailure(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.code === "nothing_to_pay") return "This bill has nothing left to pay by UPI. Pull down to read it again.";
+    if (error.unreachable || (error.status !== null && error.status >= 502 && error.status <= 504)) {
+      return "Can't reach the kitchen to tell staff. Show them the payment yourself.";
+    }
+  }
+  return "Staff could not be told from here. Show them the payment yourself.";
 }

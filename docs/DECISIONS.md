@@ -6690,3 +6690,47 @@ Cost: a second table for guests' messages, beside `guest_rounds`. A notice whose
 ticket closes stays `open` in the table for good. The listing projects each
 notice's ticket to read what is owed now, a handful at most. Until 4e4b no screen
 sends or shows one.
+
+## ADR-219 - "I have paid" on the screens: the server says who was told, and the terminal leads to the payment
+2026-10 · Status: accepted. Phase 11, Task 4e4b. Task 4e4 is done.
+Context: ADR-218 built the notice. This is the phone's button and the terminal's
+half, on the pill, sheet and chime of ADR-212.
+Decision:
+  - **The phone: "I have paid", a secondary button under Pay by UPI.** One tap: a
+    wrong tap costs staff a look at their phone, which they would take anyway.
+  - **Whether staff were told is read from the bill**, `paid_told`, never kept on
+    the phone. Told, the button and the sentence above it give way to "Staff have
+    been told you paid. This bill is marked paid once they have seen the payment."
+    It reads the same after a reload and on the other phones at the table, and
+    goes when staff put the notice away or record the payment.
+  - **No figure on the bill moves for it**, and both screens say that nothing is
+    paid until staff record it.
+  - **A failure to tell sends the guest to staff**: "Show them the payment
+    yourself." The feature exists to save that walk and must not hide it.
+  - **The terminal: the same pill, sheet and chime as a request.** The pill counts
+    both and words what it counts: "table request(s)", "table(s) say(s) paid", or
+    "from tables" for some of each. The sheet is retitled "From the tables", with
+    "Say they have paid" first, since a table waiting to leave is waiting on
+    staff, and "Want to order" under it.
+  - **A notice shows what the guest said they paid, and what the table owes now
+    only when it differs**, in terracotta: a round added after, or part recorded.
+  - **Take payment closes the sheet and opens that ticket's payment screen.** It
+    records nothing. The UPI tender staff make there is the payment, and when it
+    settles the bill the notice leaves the list by itself (ADR-218).
+  - **No payment found is asked twice**, on the button, and puts the notice away.
+    It needs `payment.take`; the list itself needs only `order.open`, so a waiter
+    without it sees the notice and is refused the dismissal in words.
+  - **No mark on the floor for it.** The table is already Ordered or Paying there,
+    and the mark of ADR-212 means a table with no ticket.
+  - The guest's bundle is 39.6 KB gzipped of 60.
+Because: every piece was already built for requests; the one new idea a member of
+staff has to hold is that this message is not money.
+Cost: the sheet's title and the pill's words changed a task after they were
+written. Take payment for a waiter opens the waiter's bill screen, which was not
+looked at. Seen by eye: on the phone at 390 wide, the button, the green line after
+it, and that line surviving a reload; on the terminal at 1366, the pill reading "2
+from tables", the sheet with both lists, Take payment opening the table's payment
+screen, and No payment found armed and confirmed. Not seen: the amount differing
+from what is owed, a refusal on either screen, the waiter's frame, the chime for a
+notice, and a payment recorded on the tender screen clearing the notice (the Go
+tests cover that).

@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4e3: the QR on the phone's bill** (ADR-217).
+**Phase 11, Task 4e4a: "I have paid", on the server** (ADR-218).
+`POST /order/api/t/{code}/bill/paid` keeps a notice (`paid_notices`, migration
+00040): a message to staff, never a payment. The bill says `paid_told`. Notices
+ride on `GET /api/v1/guest-requests` as `paid`; staff put one away with
+`POST /api/v1/paid-notices/{id}/seen`, and a recorded payment puts it away itself.
+
+Before it, **Phase 11, Task 4e3: the QR on the phone's bill** (ADR-217).
 `GET /order/api/t/{code}/bill/upi.svg` draws the bill's UPI link as a QR code, by
 an encoder of our own (`internal/domain/qr`, no dependency), checked module for
 module against python-qrcode and read back by a decoder. The phone shows it under

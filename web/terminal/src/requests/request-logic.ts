@@ -2,7 +2,7 @@
 // ADR-212). The requests are the server's; this words them, and says which
 // are new since the terminal last looked.
 
-import type { GuestRequestResponse, GuestRoundLineResponse } from "../../../shared/api-types";
+import type { GuestRequestResponse, GuestRoundLineResponse, PaidNoticeResponse } from "../../../shared/api-types";
 
 /** How often the chime repeats while a request waits unanswered. */
 export const remindEveryMs = 30_000;
@@ -21,9 +21,26 @@ export function wantingTables(requests: readonly Pick<GuestRequestResponse, "tab
   return new Set(requests.map((r) => r.table_id));
 }
 
-/** The pill's words: "1 table request", "3 table requests". */
-export function pillLabel(count: number): string {
-  return count === 1 ? "table request" : "table requests";
+/**
+ * The pill's words after its count: "table request(s)" when tables are only
+ * asking to order, "says paid" or "say paid" when they only say they have
+ * paid (ADR-218), and "from tables" for some of each.
+ */
+export function pillLabel(requests: number, paid = 0): string {
+  if (paid === 0) return requests === 1 ? "table request" : "table requests";
+  if (requests === 0) return paid === 1 ? "table says paid" : "tables say paid";
+  return "from tables";
+}
+
+/** A notice's amount differs from what the table owes now: a round was added, or part was paid. */
+export function owesOtherwise(notice: Pick<PaidNoticeResponse, "amount" | "due">): boolean {
+  return notice.amount.minor !== notice.due.minor;
+}
+
+/** When a guest said they had paid: "Said just now", "Said 4 min ago". */
+export function saidAgo(toldAt: string, now: number): string {
+  const ago = waited(toldAt, now);
+  return ago === "Just now" ? "Said just now" : `Said ${ago} ago`;
 }
 
 /** How long a request has waited: "Just now", "4 min", "1 h 5 min". */

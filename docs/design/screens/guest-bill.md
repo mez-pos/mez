@@ -34,6 +34,12 @@ anyone brings it: so the figure at the counter is no surprise.
     being paid, or type it in.
   - "After paying, show the payment to a member of staff. This bill is
     marked paid once they have seen it."
+  - **I have paid**, a secondary button, full width (ADR-218). It tells
+    staff to look for the payment and pays nothing. While it is being sent
+    it reads "Telling staff". Once staff are told, the button and the
+    sentence above it give way to one line in the green tint: "Staff have
+    been told you paid. This bill is marked paid once they have seen the
+    payment."
   - **Pay from another phone**, closed until tapped (ADR-217): the same
     payment as a QR code, 232px, black on white with its quiet band, and
     "Scan with any UPI app. It pays ₹540.00, what is left on this bill
@@ -59,6 +65,10 @@ anyone brings it: so the figure at the counter is no surprise.
 - `upi` in the answer: the link, the address, the payee and the amount.
   The link is the server's, built from the balance. The phone follows it
   only if it begins `upi://pay?`.
+- `POST /order/api/t/{code}/bill/paid`, with no body, for I have paid.
+  Whether staff have been told is `paid_told` on the bill, the server's to
+  say: it reads the same after a reload and on every phone at the table.
+  The bill is read again after telling, told or refused.
 - `GET /order/api/t/{code}/bill/upi.svg`: that link as a QR code, drawn on
   the server. Asked for only when Pay from another phone is opened. The
   amount is in its address so the picture is asked for again when the
@@ -72,6 +82,7 @@ anyone brings it: so the figure at the counter is no surprise.
 | See the table's bill, on an empty cart | Opens this screen | A table staff seated, whose guest ordered nothing by phone, can still read it |
 | Back, the phone's Back | The menu | |
 | Try again | Reads the bill again | |
+| I have paid | Tells the terminals | "Staff have been told you paid." Tapped on two phones, staff are told once |
 | Pay from another phone | Opens, and the code is fetched | Tapped again, it closes |
 | Pay by UPI | Hands the link to the phone's UPI app | This page learns nothing of it. The bill changes when staff record the payment, at the next read |
 
@@ -84,6 +95,12 @@ anyone brings it: so the figure at the counter is no surprise.
   staff." with **Try again**.
 - **Nothing open:** no lines and no summary, and the sentence above. A
   request nobody has accepted is not on any bill.
+- **Staff could not be told:** under the button, "Can't reach the kitchen
+  to tell staff. Show them the payment yourself.", or "Staff could not be
+  told from here. Show them the payment yourself.", or, when the bill was
+  settled meanwhile, "This bill has nothing left to pay by UPI."
+- **Staff looked and found no payment:** the green line goes and the button
+  is back. Nothing tells the guest why: staff do, at the table.
 - **The bill closed while it was shown:** at the next read it is "nothing
   open". Task 5's receipt is what a guest keeps.
 
@@ -92,6 +109,8 @@ anyone brings it: so the figure at the counter is no surprise.
 - No figure on this screen is worked out on the phone.
 - Money is integer minor units, and a rate is words from an integer, never
   a float.
+- **Saying "I have paid" does not mark the bill paid either.** No figure
+  on the bill moves until a member of staff records the payment.
 - **Paying by UPI does not mark the bill paid, and the screen says so.**
   UPI tells the venue's server nothing; a member of staff records the
   payment on the terminal as they would one made at the counter.
@@ -104,7 +123,7 @@ anyone brings it: so the figure at the counter is no surprise.
 - One guest sees the whole table's bill. The table's code is the table's,
   a paper bill would show the same, and nothing records whose phone
   ordered which dish.
-- The guest's bundle is 39.4 KB gzipped of 60. The QR encoder is on the
+- The guest's bundle is 39.6 KB gzipped of 60. The QR encoder is on the
   server and costs it nothing.
 
 ## Reference

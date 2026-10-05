@@ -13,7 +13,7 @@
 // the way to try it again and the "Not printed" pill.
 
 import { BellRingIcon, DoorClosedIcon, LockIcon, PrinterIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { Logo } from "../../../shared/ui";
@@ -48,12 +48,16 @@ export function TerminalShell({ children }: { children: ReactNode }) {
   const queue = usePrintJobs();
   const [printOpen, setPrintOpen] = useState(false);
   const [requestsOpen, setRequestsOpen] = useState(false);
-  useRequestChime(guests.requests, guests.loaded);
+  // One list for the chime: a table asking to order and a table saying it
+  // has paid both need a person, and their ids never collide.
+  const calling = useMemo(() => [...guests.requests, ...guests.paid], [guests.requests, guests.paid]);
+  useRequestChime(calling, guests.loaded);
   const waiter = useWaiterFrame();
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
 
   const failing = trouble(queue.jobs);
   const asking = guests.requests.length;
+  const paying = guests.paid.length;
   // Closing the shift needs shift.manage and a shift to close.
   const canCloseShift = auth.permissions.includes("shift.manage") && Boolean(shift.shift);
   const account: ProfileAction[] = [
@@ -79,15 +83,15 @@ export function TerminalShell({ children }: { children: ReactNode }) {
         <div className="ml-auto flex items-center gap-5 whitespace-nowrap">
           {waiter && <ConnectionWord brief className="text-sm" />}
           <ConnectionRetry />
-          {asking > 0 && (
+          {asking + paying > 0 && (
             <button
               type="button"
               onClick={() => setRequestsOpen(true)}
-              aria-label={`${asking} ${pillLabel(asking)} waiting`}
+              aria-label={`${asking + paying} ${pillLabel(asking, paying)}, waiting`}
               className="inline-flex min-h-tap items-center gap-2 rounded-pill bg-attention-tint px-4 text-base font-semibold text-attention-text outline-offset-2 outline-attention focus-visible:outline-3"
             >
               <BellRingIcon aria-hidden="true" size={17} />
-              <span className="font-mono tabular-nums">{asking}</span> {pillLabel(asking)}
+              <span className="font-mono tabular-nums">{asking + paying}</span> {pillLabel(asking, paying)}
             </button>
           )}
           {failing > 0 && (
@@ -112,7 +116,16 @@ export function TerminalShell({ children }: { children: ReactNode }) {
       <main className="flex min-h-0 flex-1">{children}</main>
       {!waiter && <StatusBar version={version} venueName={venue?.name ?? null} timezone={venue?.timezone ?? null} />}
       {printOpen && <PrintQueueSheet queue={queue} onClose={() => setPrintOpen(false)} />}
-      {requestsOpen && <RequestsSheet guests={guests} onClose={() => setRequestsOpen(false)} />}
+      {requestsOpen && (
+        <RequestsSheet
+          guests={guests}
+          onClose={() => setRequestsOpen(false)}
+          onTakePayment={(orderId) => {
+            setRequestsOpen(false);
+            navigate(route.pay(orderId));
+          }}
+        />
+      )}
     </div>
   );
 }

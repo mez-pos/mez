@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { GuestBillResponse } from "../../shared/api-types";
-import { billState, itemsLabel, payLine, summaryRows, upiAfter, upiLinkOf } from "./bill-logic";
+import { ApiError } from "../../shared/api";
+import { billState, itemsLabel, paidTold, payLine, summaryRows, tellFailure, upiAfter, upiLinkOf } from "./bill-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -87,5 +88,21 @@ describe("upiLinkOf", () => {
   });
   it("tells the guest the bill does not mark itself paid", () => {
     expect(upiAfter).toContain("show the payment to a member of staff");
+  });
+});
+
+describe("telling staff", () => {
+  it("never says the bill is paid because the guest said so", () => {
+    expect(paidTold).toContain("Staff have been told");
+    expect(paidTold).toContain("once they have seen the payment");
+  });
+  it("sends a guest to staff when staff cannot be told", () => {
+    expect(tellFailure(new ApiError("network", "offline"))).toContain("Show them the payment yourself");
+    expect(tellFailure(new ApiError("bad_response", "bad gateway", 503))).toContain("Can't reach the kitchen");
+    expect(tellFailure(new ApiError("internal", "pq: seq 4", 500))).toBe("Staff could not be told from here. Show them the payment yourself.");
+    expect(tellFailure("boom")).not.toContain("boom");
+  });
+  it("says so when there is nothing left to pay", () => {
+    expect(tellFailure(new ApiError("nothing_to_pay", "x", 409))).toContain("nothing left to pay");
   });
 });
