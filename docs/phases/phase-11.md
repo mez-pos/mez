@@ -18,7 +18,7 @@ Phase 10.
 
   - [x] **1b.** A hostname per venue: `RELAY_VENUE_DOMAIN` serves each venue at
     `<venue>.<domain>` and stops serving `/v/<venue>/` (ADR-203).
-  - [ ] **1c.** Deploy it: the owner's VPS behind Cloudflare and Caddy, at
+  - [x] **1c.** Deploy it: the owner's VPS behind Cloudflare and Caddy, at
     `relay.jskin.in` and `*.jskin.in`, with the files to do it again in `build/`.
 
 - [ ] **Task 2 — The tunnel client.**

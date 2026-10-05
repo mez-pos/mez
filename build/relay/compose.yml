@@ -1,0 +1,44 @@
+# The relay behind Caddy, for a server that sits behind Cloudflare.
+# build/relay/deploy.sh puts this in /opt/mez-relay and starts it; the
+# values it needs are in /opt/mez-relay/.env, which is made on the server
+# and never leaves it. See build/relay/README.md.
+
+services:
+  relay:
+    build:
+      context: ./src
+      dockerfile: build/relay.Dockerfile
+      args:
+        VERSION: ${RELAY_VERSION:-deployed}
+    restart: unless-stopped
+    environment:
+      RELAY_SECRET: ${RELAY_SECRET:?set in .env}
+      RELAY_VENUE_DOMAIN: ${RELAY_VENUE_DOMAIN:?set in .env}
+      RELAY_REVOKED: ${RELAY_REVOKED:-}
+      # Caddy is the proxy in front, and it tells the relay who the guest is.
+      RELAY_TRUST_PROXY: "true"
+    # Reached by Caddy on the compose network and by nothing else.
+    expose:
+      - "8080"
+
+  caddy:
+    build:
+      context: .
+      dockerfile: caddy.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - relay
+    ports:
+      - "443:443"
+    environment:
+      RELAY_VENUE_DOMAIN: ${RELAY_VENUE_DOMAIN:?set in .env}
+      CF_API_TOKEN: ${CF_API_TOKEN:?set in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # The certificate and its account key. Losing it costs a reissue.
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

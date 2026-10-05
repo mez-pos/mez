@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 2a: the tunnel client** (ADR-202). `internal/tunnel` dials the relay
+**Phase 11, Task 1b: a hostname per venue** (ADR-203). `RELAY_VENUE_DOMAIN` serves
+each venue at `<venue>.<domain>`, the whole path its own, and stops serving
+`/v/<venue>/`. Venues dial `relay.<domain>`. Reserved names are never venues. Unset,
+the relay routes by path as before.
+
+Before it, **Phase 11, Task 2a: the tunnel client** (ADR-202). `internal/tunnel` dials the relay
 with the new `relay_key`, serves guests through the server's own handler, reconnects
 with backoff (1 s to 60 s, 5 minutes after a refused key or a replaced socket) and a
 heartbeat, and is `checks.tunnel` in health. Every guest path lands under `/order/`,

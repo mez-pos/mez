@@ -5988,3 +5988,37 @@ Cost: a wildcard DNS record and certificate. The domain is printed on every tabl
 changing it later reprints every code. Cookies set with `Domain` by a venue's own
 script (not a header) are the browser's to refuse, which it does only if the domain is
 on the Public Suffix List; guest sessions should be `HttpOnly` and host-only.
+
+## ADR-204 - The relay is deployed at relay.jskin.in: one server, Cloudflare in front, Caddy for TLS
+2026-10 · Status: accepted. Phase 11, Task 1c.
+Context: the relay needed somewhere public to run, at the lowest cost. The owner had a
+dormant Hetzner server and a dormant domain, `jskin.in`, already on Cloudflare.
+Decision:
+  - **The owner's existing server**, wiped and rebuilt as Ubuntu 24.04 and renamed
+    `mez` (ARM, `cax21`). Key-only SSH, root's password locked, unattended upgrades.
+    A Cloudflare Worker was set aside: the relay holds sockets in memory, so a Worker
+    would be a second implementation in another language.
+  - **Cloudflare proxies `relay.jskin.in` and `*.jskin.in`** to it. The provider's
+    firewall lets 443 in from Cloudflare's addresses only, and 22 for SSH.
+  - **Caddy terminates TLS with one wildcard certificate**, proved over DNS with a
+    Cloudflare token that can edit that zone only. The token stays on the server for
+    renewals. Caddy takes the guest's address from `CF-Connecting-IP` and gives it to
+    the relay as `X-Forwarded-For`, which `RELAY_TRUST_PROXY=true` then believes.
+  - **`RELAY_VENUE_DOMAIN=jskin.in`**: a venue is `<venue>.jskin.in` (ADR-203).
+  - **The files are `build/relay/`**: `deploy.sh`, `compose.yml`, `Caddyfile`,
+    `caddy.Dockerfile` and a README. Only `cmd/relay` and `internal/relay` are sent to
+    the server and built there.
+  - **The signing secret is drawn on the server** into `/opt/mez-relay/.env` and is in
+    no repository, log or conversation.
+  - **Proved** with `bin/mez` on the owner's PC: `checks.tunnel` went `ok`, a guest
+    page loaded from `https://democafe.jskin.in/t/4` in under a second, the staff API
+    path returned the guest app, mez logged the guest's own address and not
+    Cloudflare's, and the venue read "offline" as soon as mez stopped.
+Because: it runs what is already built, on what is already paid for, and nothing on
+it is worth keeping: lose the server and a new one is one script away.
+Cost: one server is one point of failure for guest ordering, never for the counter.
+The secret has no backup: a rebuilt server without it means a new key for every
+venue. `jskin.in` is on every table's code once printed. A test key for `democafe`
+exists and is harmless; revoke it before real venues join. Cloudflare's addresses in
+`Caddyfile` and the firewall are a copy and will need refreshing if they change. The
+zone's SSL mode could not be read with the token; it must be Full (strict).
