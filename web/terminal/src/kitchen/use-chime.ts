@@ -9,7 +9,7 @@ import { arrivals, ticketId } from "./board-prefs";
 
 type AudioCtor = typeof AudioContext;
 
-function audioContext(): AudioContext | null {
+export function audioContext(): AudioContext | null {
   const Ctor = (window.AudioContext ?? (window as unknown as { webkitAudioContext?: AudioCtor }).webkitAudioContext) as AudioCtor | undefined;
   try {
     return Ctor ? new Ctor() : null;
@@ -19,7 +19,7 @@ function audioContext(): AudioContext | null {
 }
 
 /** Two rising notes, about a third of a second in all. */
-function ring(ctx: AudioContext) {
+export function ring(ctx: AudioContext): void {
   [660, 880].forEach((hz, i) => {
     const at = ctx.currentTime + i * 0.16;
     const osc = ctx.createOscillator();

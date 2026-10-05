@@ -34,7 +34,7 @@ import { TablePanel } from "./TablePanel";
 import { TablesSidebar, type TablesView } from "./TablesSidebar";
 
 export function TablesScreen() {
-  const { floor, ticket, names } = useTerminal();
+  const { floor, ticket, names, wanting } = useTerminal();
   const [, navigate] = useLocation();
   const [view, setView] = useState<TablesView>("plan");
   // A waiter's card leads here with its table named: it starts picked, in its
@@ -106,7 +106,7 @@ export function TablesScreen() {
     if (floor.loading) return <p className="py-12 text-center text-base text-fg-muted">Loading the floor</p>;
     if (!data) return <EmptyState icon={<InboxIcon />} line={failureOf(floor.error)} action={{ label: "Try again", onClick: floor.refetch }} />;
     if (tables.length === 0) return <EmptyState icon={<InboxIcon />} line="No tables yet. Lay out the floor in the back office." />;
-    const shared = { data, areas, now, names, picked, onTap: tap };
+    const shared = { data, areas, now, names, picked, onTap: tap, wanting };
     return view === "plan" ? <FloorPlan {...shared} /> : <TableList {...shared} />;
   };
 

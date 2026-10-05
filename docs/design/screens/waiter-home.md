@@ -27,7 +27,8 @@ does not. A faint leaf sits behind.
 - **The cards**, four across from 1280px, three from 1024px, two under it.
   Each is one button, 120px or taller, washed in its group's tone: a chair in
   an 80px block, the table's name in the serif, the group's word with its
-  dot, and a line of small print with what is owed after it: "No guests · 4
+  dot, "Wants to order" in terracotta while a guest's phone has asked
+  (`terminal-requests.md`), and a line of small print with what is owed after it: "No guests · 4
   seats", "3 guests · No order yet", "3 guests · ₹930.00", "With T4". A
   chevron at the right.
 - **The bar, 96px, chrome:** **Active Orders** with the count of open orders

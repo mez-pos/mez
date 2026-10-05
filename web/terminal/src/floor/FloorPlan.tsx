@@ -3,7 +3,7 @@
 // how long and how much. A tap picks the table for the panel beside it; while
 // moving or joining a party, a tap is a step of that instead (ADR-088).
 
-import { UsersIcon } from "lucide-react";
+import { BellRingIcon, UsersIcon } from "lucide-react";
 import type { AreaResponse, LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
 import { Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
@@ -19,16 +19,18 @@ interface FloorPlanProps {
   /** The table in the panel, or the party's table while moving or joining. */
   picked: number | null;
   onTap: (t: LiveTableResponse) => void;
+  /** The tables a guest's phone has asked to order at, unanswered. */
+  wanting?: ReadonlySet<number> | undefined;
 }
 
-export function FloorPlan({ data, areas, now, names, picked, onTap }: FloorPlanProps) {
+export function FloorPlan({ data, areas, now, names, picked, onTap, wanting }: FloorPlanProps) {
   return (
     <div className="min-h-0 flex-1 overflow-auto rounded-card border border-line-strong bg-sunken p-3 2xl:p-6">
       <div className="flex min-h-full flex-col gap-6">
         {areas.map((area) => (
           <section key={area.id} aria-label={area.name} className="flex flex-1 flex-col gap-3">
             {areas.length > 1 && <h2 className="text-meta uppercase text-fg-faint">{area.name}</h2>}
-            <AreaGrid data={data} areaId={area.id} now={now} names={names} picked={picked} onTap={onTap} />
+            <AreaGrid data={data} areaId={area.id} now={now} names={names} picked={picked} onTap={onTap} wanting={wanting} />
           </section>
         ))}
       </div>
@@ -40,7 +42,7 @@ interface AreaGridProps extends Omit<FloorPlanProps, "areas"> {
   areaId: number;
 }
 
-function AreaGrid({ data, areaId, now, names, picked, onTap }: AreaGridProps) {
+function AreaGrid({ data, areaId, now, names, picked, onTap, wanting }: AreaGridProps) {
   const rows = packed(tilesOf(data, areaId));
   if (rows.length === 0) return <p className="text-base text-fg-muted">No tables in this area.</p>;
   const columns = rows[0]?.length ?? 0;
@@ -63,7 +65,7 @@ function AreaGrid({ data, areaId, now, names, picked, onTap }: AreaGridProps) {
             <li key={`${x},${y}`} aria-hidden="true" />
           ) : (
             <li key={t.id}>
-              <TableTile table={t} now={now} names={names} picked={picked === t.id} onTap={() => onTap(t)} />
+              <TableTile table={t} now={now} names={names} picked={picked === t.id} wants={wanting?.has(t.id) ?? false} onTap={() => onTap(t)} />
             </li>
           ),
         ),
@@ -77,10 +79,11 @@ interface TableTileProps {
   now: number;
   names: ReadonlyMap<number, string>;
   picked: boolean;
+  wants: boolean;
   onTap: () => void;
 }
 
-function TableTile({ table: t, now, names, picked, onTap }: TableTileProps) {
+function TableTile({ table: t, now, names, picked, wants, onTap }: TableTileProps) {
   const text = tileText(t, now, names);
   const tone = tableTone(t.status);
   const owes = t.balance !== undefined && t.balance.minor !== 0;
@@ -89,7 +92,7 @@ function TableTile({ table: t, now, names, picked, onTap }: TableTileProps) {
       type="button"
       onClick={onTap}
       aria-pressed={picked}
-      aria-label={`Table ${t.name}, ${tableStatuses[t.status].word}, ${text.people}${text.time ? `, ${text.time}` : ""}`}
+      aria-label={`Table ${t.name}, ${tableStatuses[t.status].word}, ${text.people}${text.time ? `, ${text.time}` : ""}${wants ? ", wants to order" : ""}`}
       className={cx(
         "relative flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-card border-2 bg-raised p-1.5 shadow-rest 2xl:p-3",
         "outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3",
@@ -104,7 +107,8 @@ function TableTile({ table: t, now, names, picked, onTap }: TableTileProps) {
         <UsersIcon aria-hidden="true" size={15} className="shrink-0" />
         <span className="truncate">{text.people}</span>
       </span>
-      <StatusChip status={{ kind: "table", status: t.status }} className="relative max-2xl:px-2" />
+      {/* A phone asking to order here is what staff need to know of this table, more than that it is free. */}
+      {wants ? <WantsToOrder brief className="relative" /> : <StatusChip status={{ kind: "table", status: t.status }} className="relative max-2xl:px-2" />}
       {(text.time || owes) && (
         <span className="relative flex items-center gap-1.5 font-mono text-sm tabular-nums text-fg-2">
           {text.time}
@@ -127,5 +131,31 @@ export function FloorLegend() {
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * The mark on a table a guest's phone has asked to order at: a bell and a
+ * word. A tile on a small screen has room for one word, so `brief` says
+ * "Request" there and the whole of it from 1536px.
+ */
+export function WantsToOrder({ className, brief = false }: { className?: string; brief?: boolean }) {
+  return (
+    <span
+      className={cx(
+        "inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-pill bg-attention px-2 py-0.5 text-sm font-semibold text-attention-fg",
+        className,
+      )}
+    >
+      <BellRingIcon aria-hidden="true" size={13} className="shrink-0" />
+      {brief ? (
+        <>
+          <span className="2xl:hidden">Request</span>
+          <span className="max-2xl:hidden">Wants to order</span>
+        </>
+      ) : (
+        "Wants to order"
+      )}
+    </span>
   );
 }

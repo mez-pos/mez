@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4a: a guest's cart becomes an order, on the server** (ADR-210).
+**Phase 11, Task 4b1: answering a guest's request, on the server** (ADR-211).
+`GET /api/v1/guest-requests`, and `POST .../{id}/accept` and `.../decline`, asking
+`order.open`. Accept finds or opens the table's ticket and appends the lines as
+stored. A request arriving or answered moves the floor version, so terminals hear
+`floor_changed`. A request lasts as long as its shift.
+
+Before it, **Phase 11, Task 4a: a guest's cart becomes an order, on the server** (ADR-210).
 `POST /order/api/t/{code}/orders` with ids, counts and a required `Idempotency-Key`;
 `menu.Menu.Ring` prices each line. A "round" (`guest_rounds`, migration 00039,
 `svcorder.PlaceRound`) joins the table's open ticket and is sent, or with none open

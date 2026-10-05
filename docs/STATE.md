@@ -8,29 +8,28 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a and 4b1 done. (The rebuild, 09 and 10 still owe the owner's walk.)
+4a and 4b done. (The rebuild, 09 and 10 still owe the owner's walk.)
 
 ## Last completed task
 
-**Phase 11, Task 4b1: answering a guest's request, on the server** (ADR-211).
-`GET /api/v1/guest-requests`, and `POST .../{id}/accept` and `.../decline`, asking
-`order.open`. Accept finds or opens the table's ticket and appends the lines as
-stored. A request arriving or answered moves the floor version, so terminals hear
-`floor_changed`. A request lasts as long as its shift.
+**Phase 11, Task 4b2: the request on the terminal** (ADR-212). A pill in the top
+bar on every screen while a request waits, a sheet with Accept and send and
+Decline, the kitchen's chime on arrival and every 30 seconds, and a mark on the
+table. `web/terminal/src/requests/`, spec `terminal-requests.md`. Task 4b is done.
 
 ## Next task
 
-**Phase 11, Task 4b2: the request on the terminal.** Read ADR-209 and ADR-211,
-`docs/design/tokens.md`, `terminal-shell.md` and `terminal-floor.md`, and the
-design's D13 only if the shell has nowhere for it.
-- What is waiting has to show on every terminal screen, not only Tables, with a
-  sound when one arrives (ADR-209): the shell is where. Read
-  `GET /api/v1/guest-requests` with React Query and read it again on
-  `floor_changed`. Types are generated (`GuestRequestsResponse`).
-- Accept and Decline, each request on its own, with its table, lines, subtotal and
-  how long it has waited. `request_decided` and `request_lapsed` mean read again.
-- The table on the floor says it wants to order; the waiter's home too, or say why not.
-- A browser plays no sound before the page is touched: decide what then. Write the spec.
+**Phase 11, Task 4c: Place Order on the phone.** Read ADR-207 to ADR-211,
+`guest-cart.md`, `guest-item.md`, and M04's checkout in the design.
+- The cart's foot becomes Place Order: `POST /order/api/t/{code}/orders` with a key
+  made once for each cart and kept with it, so a retry is the same order.
+- What the guest sees next: waiting, sent or declined. Until Task 5 the phone
+  learns the answer by sending the same round again with its key (ADR-211).
+- Each refusal in its own words (`dish_unavailable`, `choices_invalid`,
+  `table_not_ordering`, `requests_waiting`, `no_open_shift`); the first two mean
+  read the menu again.
+- "See the menu" and "Add to cart" go back to the design's words. Decide special
+  instructions: the server takes none yet. 36.1 KB of 60 before this.
 
 ## Known broken / in progress
 
@@ -56,5 +55,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a and 4b1 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a and 4b done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

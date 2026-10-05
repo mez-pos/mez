@@ -34,7 +34,8 @@ Three columns inside the frame (`terminal-shell.md`).
     for that scrolls. Each tile: the table's shape faint in its state's
     colour (round if it is round), its name in the serif, who is at it ("4
     seats", "3 guests", "Seated", "With T4", "Needs clearing"), its state as
-    a chip, and how long with what is owed ("42m · ₹930.00"). The border is
+    a chip (or, while a guest's phone has asked to order there, the
+    terracotta "Request" mark of `terminal-requests.md`), and how long with what is owed ("42m · ₹930.00"). The border is
     the state's tone; the picked tile has the terracotta outline. Under
     "All Areas" each area has its name over its grid.
   - **The legend** under the plan: a dot and a word for each of the five

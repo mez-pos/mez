@@ -48,6 +48,10 @@ const words: Partial<Record<ErrorCode, string>> = {
   table_not_found: "That table isn't on the floor any more. Look at the floor again.",
   table_occupied: "Guests are still at this table: settle or move their order first.",
   table_not_empty: "Something is on this table's order: void it or take the payment first.",
+  request_not_found: "That request isn't there any more. Look at the requests again.",
+  request_decided: "Someone has already answered this request.",
+  request_lapsed: "This request is from an earlier shift. Decline it.",
+  table_not_ordering: "This table's ticket is on hold or already invoiced. Resume it, or decline the request.",
   rate_limited: "Too many requests. Wait a moment and retry.",
   internal: "The server hit a problem. Try again.",
 };

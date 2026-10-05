@@ -8,6 +8,7 @@ import { Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { tableStatuses } from "../../../shared/ui/status";
 import { availability, listRows, tileText } from "./floor-logic";
+import { WantsToOrder } from "./FloorPlan";
 import { tableTone } from "./tones";
 
 interface TableListProps {
@@ -17,11 +18,13 @@ interface TableListProps {
   names: ReadonlyMap<number, string>;
   picked: number | null;
   onTap: (t: LiveTableResponse) => void;
+  /** The tables a guest's phone has asked to order at, unanswered. */
+  wanting?: ReadonlySet<number> | undefined;
 }
 
 const columns = "grid grid-cols-[minmax(4rem,1fr)_minmax(5rem,1.2fr)_minmax(6rem,1.4fr)_7.5rem_4rem_6rem] items-center gap-4";
 
-export function TableList({ data, areas, now, names, picked, onTap }: TableListProps) {
+export function TableList({ data, areas, now, names, picked, onTap, wanting }: TableListProps) {
   const rows = listRows(data, areas);
   const areaNames = new Map(data.areas.map((a) => [a.id, a.name]));
   return (
@@ -57,9 +60,7 @@ export function TableList({ data, areas, now, names, picked, onTap }: TableListP
                     <span className="truncate font-serif text-xl">{t.name}</span>
                     <span className="truncate text-fg-2">{areaNames.get(t.area_id) ?? ""}</span>
                     <span className="truncate">{text.people}</span>
-                    <span>
-                      <StatusChip status={{ kind: "table", status: t.status }} />
-                    </span>
+                    <span>{wanting?.has(t.id) ? <WantsToOrder /> : <StatusChip status={{ kind: "table", status: t.status }} />}</span>
                     <span className="font-mono tabular-nums text-fg-2">{text.time ?? ""}</span>
                     <span className="text-right">{t.balance && t.balance.minor !== 0 && <Money amount={t.balance} />}</span>
                   </button>

@@ -29,7 +29,7 @@ import { filterCounts, firstName, greeting, groupOrder, hourIn, tableGroups, tab
 
 export function WaiterHome() {
   const auth = useAuth();
-  const { floor, ticket, names } = useTerminal();
+  const { floor, ticket, names, wanting } = useTerminal();
   const venue = useVenue();
   const [, navigate] = useLocation();
   const [filter, setFilter] = useState<TableFilter>("all");
@@ -59,6 +59,7 @@ export function WaiterHome() {
             <TableCard
               table={t}
               names={names}
+              wants={wanting.has(t.id)}
               onOpen={(table) => {
                 // A table joined to a party stands for the party's own table.
                 const party = partyTable(table, tables);

@@ -10,9 +10,13 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **A guest's order** (ADR-210, ADR-211): no screen shows a waiting request
-  until 4b2; the API to list and answer them is there. A request staff ignore
-  stays listed until the shift closes. Rounds onto an open ticket are
+- **Table requests** (ADR-212): the chime cannot be turned off, and a terminal
+  reloaded and not touched since is silent. Not seen by eye: the waiter's card
+  and frame, the Table List's row, the sheet on touch, a refusal's words, the
+  30 second repeat, two requests from one table, 1536px and wider, and the
+  sound itself (counted, not heard).
+- **A guest's order** (ADR-210, ADR-211): a request staff ignore stays listed
+  until the shift closes. Rounds onto an open ticket are
   limited only by 300 requests a minute an address, until Task 6; the limiter has
   one bucket an address for every limit, so a tighter limit on ordering needs its
   own. The guest app does not call the endpoint yet. Not run through the relay or

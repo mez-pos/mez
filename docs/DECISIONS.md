@@ -6346,3 +6346,59 @@ whichever moved. A request staff ignore sits in the list until the shift closes.
 Until 4b2 nothing on any screen shows a request, so a guest at an unseated table
 who places an order is waiting on nobody. The lock is this process's: a second
 process on the same file is not guarded, and mez does not run two.
+
+## ADR-212 - The request on the terminal: a pill, a sheet, a chime that repeats, and a mark on the table
+2026-10 · Status: accepted. Phase 11, Task 4b2. Task 4b is done.
+Context: ADR-209 says the terminal has to say a request is waiting, with a sound and
+something on screen, or an unwatched terminal is an order that never happens. ADR-211
+built the API. The design draws a bell in the top bar and a notifications screen.
+Decision:
+  - **A pill in the top bar, on every screen of both frames**, there only while a
+    request waits: a bell, the count and "table request(s)", in the terracotta
+    tint. It is built as Not printed is, beside it, so a waiter's frame has it too.
+  - **It opens a sheet**, the requests oldest first, each with its table, how long
+    it has waited, its lines, the subtotal before tax, **Accept and send** and
+    **Decline**. The sheet is the print queue's pattern.
+  - **A request never opens the sheet by itself.** It would land on top of a
+    payment being taken.
+  - **Decline is asked twice, on the button**, as the guest's Clear is: it tells a
+    guest no. Accept is not: it is the common answer, and a ticket opened by
+    mistake can be voided.
+  - **The sound is the kitchen's chime**, from the browser's oscillator: when a
+    request arrives, and **again every 30 seconds while any waits**. A single chime
+    in a loud room is missed, and a missed one is a guest waiting on nobody. A
+    terminal opened onto requests already waiting chimes for them, where the
+    kitchen's board stays quiet for a board already full.
+  - **An untouched page is silent, and the pill is what says so.** A browser plays
+    nothing before someone touches the page. The first tap or key anywhere is
+    taken as the touch, and nobody reaches the frame without signing in, which is
+    one. The case left is a terminal reloaded while signed in and not touched
+    since. A banner asking for a tap was set aside: it is one more thing on
+    every screen for a case that ends at the next tap.
+  - **No switch for the sound.** The kitchen has one because a board can be read
+    across a room; nobody is reading the till's top bar from across a room.
+  - **A table with a request waiting carries a terracotta mark, a bell and a
+    word, in place of its state chip**: on the floor plan ("Request" under 1536px,
+    where the full words overran the tile, "Wants to order" from there), in the
+    Table List, and on the waiter's card. Such a table has no ticket, so the chip
+    it replaces said Free or To clear, and that a guest is asking is the more
+    useful thing to know. The spoken label keeps both.
+  - **One list, held above the routes** (`TerminalProvider`), read on
+    `floor_changed` and on a resync. After any answer, accepted or refused, the
+    requests, the floor and the open tickets are read again: a refusal usually
+    means another terminal answered first.
+  - **Nothing is queued while offline.** An accept sent late could send food for
+    a guest who has gone.
+  - **The error codes a guest or a request can be refused with are in the
+    generated `ErrorCode` union**, which 4a and 4b1 had left out.
+Because: the pill, the sheet and the stream nudge all existed for print jobs, and a
+request is the same kind of thing: something that needs a person, on every screen,
+until someone deals with it.
+Cost: the chime cannot be silenced short of answering the requests. Seen by eye at
+1366 wide on a demo venue, with requests placed by curl: the pill arriving without
+a reload, the chime's notes starting, the sheet with two requests, Accept (the
+table reads Ordered), Decline armed and confirmed, the empty sheet, and the mark on
+a floor tile. Not seen: the waiter's card and frame, the Table List's row, the
+sheet on touch, a refusal's words, the 30 second repeat, two requests from one
+table, anything at 1536 or wider, and the sound itself, which was counted and not
+heard.

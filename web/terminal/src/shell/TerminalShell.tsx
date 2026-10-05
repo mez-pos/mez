@@ -12,7 +12,7 @@
 // whether the server is there in the status bar's own words (ADR-164), beside
 // the way to try it again and the "Not printed" pill.
 
-import { DoorClosedIcon, LockIcon, PrinterIcon } from "lucide-react";
+import { BellRingIcon, DoorClosedIcon, LockIcon, PrinterIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
@@ -22,6 +22,9 @@ import { useServerVersion, useVenue } from "../../../shared/use-venue";
 import { PrintQueueSheet } from "../print/PrintQueueSheet";
 import { trouble } from "../print/print-queue";
 import { usePrintJobs } from "../print/use-print-jobs";
+import { pillLabel } from "../requests/request-logic";
+import { RequestsSheet } from "../requests/RequestsSheet";
+import { useRequestChime } from "../requests/use-request-chime";
 import { ConnectionRetry } from "./ConnectionRetry";
 import { ConnectionWord } from "../../../shared/shell/ConnectionWord";
 import { activeNav, activeWaiterNav, navItems } from "./nav-logic";
@@ -39,15 +42,18 @@ export function TerminalShell({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const store = useAuthStore();
   const [path, navigate] = useLocation();
-  const { shift } = useTerminal();
+  const { shift, guests } = useTerminal();
   const venue = useVenue();
   const version = useServerVersion();
   const queue = usePrintJobs();
   const [printOpen, setPrintOpen] = useState(false);
+  const [requestsOpen, setRequestsOpen] = useState(false);
+  useRequestChime(guests.requests, guests.loaded);
   const waiter = useWaiterFrame();
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
 
   const failing = trouble(queue.jobs);
+  const asking = guests.requests.length;
   // Closing the shift needs shift.manage and a shift to close.
   const canCloseShift = auth.permissions.includes("shift.manage") && Boolean(shift.shift);
   const account: ProfileAction[] = [
@@ -73,6 +79,17 @@ export function TerminalShell({ children }: { children: ReactNode }) {
         <div className="ml-auto flex items-center gap-5 whitespace-nowrap">
           {waiter && <ConnectionWord brief className="text-sm" />}
           <ConnectionRetry />
+          {asking > 0 && (
+            <button
+              type="button"
+              onClick={() => setRequestsOpen(true)}
+              aria-label={`${asking} ${pillLabel(asking)} waiting`}
+              className="inline-flex min-h-tap items-center gap-2 rounded-pill bg-attention-tint px-4 text-base font-semibold text-attention-text outline-offset-2 outline-attention focus-visible:outline-3"
+            >
+              <BellRingIcon aria-hidden="true" size={17} />
+              <span className="font-mono tabular-nums">{asking}</span> {pillLabel(asking)}
+            </button>
+          )}
           {failing > 0 && (
             <button
               type="button"
@@ -95,6 +112,7 @@ export function TerminalShell({ children }: { children: ReactNode }) {
       <main className="flex min-h-0 flex-1">{children}</main>
       {!waiter && <StatusBar version={version} venueName={venue?.name ?? null} timezone={venue?.timezone ?? null} />}
       {printOpen && <PrintQueueSheet queue={queue} onClose={() => setPrintOpen(false)} />}
+      {requestsOpen && <RequestsSheet guests={guests} onClose={() => setRequestsOpen(false)} />}
     </div>
   );
 }

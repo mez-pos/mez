@@ -40,8 +40,9 @@ middle and scrolls inside itself, so an order's total never leaves the screen.
 - **Top bar, 72px:** the logo; the navigation as pills, each 48px with an
   icon, the pressed one the green fill: **Orders**, **Tables**, and for those
   who may open them **Menu** (`menu.edit`) and **Reports** (`reports.view`).
-  At the right: **Retry now** while the server is down; **Not printed N**
-  while a print job has failed; the profile (initials, name, role, a chevron);
+  At the right: **Retry now** while the server is down; **N table
+  requests** while a guest's request waits (`terminal-requests.md`); **Not
+  printed N** while a print job has failed; the profile (initials, name, role, a chevron);
   and from 1536px wide a script line.
 - **The screen.**
 - **Status bar, 40px:** the version ("mez v1.0.0"), the connection ("Online",
@@ -59,7 +60,7 @@ middle and scrolls inside itself, so an order's total never leaves the screen.
   - On a table's screen, **Back** alone.
   - On the bill, nothing: the bill carries its own way back.
 - At the right: the connection as a word ("Online", "Server unreachable"),
-  Retry now, Not printed, the profile.
+  Retry now, table requests, Not printed, the profile.
 - **No status bar.** The top bar says whether the server is there.
 
 **The profile menu** opens under the name: **Lock**; **Close the shift**, for
@@ -91,6 +92,7 @@ Anywhere else is landed again by role.
 - `GET /api/v1/shift`, key `["shift"]`, on start and every 30 seconds: the
   stream carries no shifts.
 - `GET /api/v1/print-jobs`, for the Not printed pill.
+- `GET /api/v1/guest-requests`, for the table requests pill and its chime.
 - Held above the routes (`TerminalProvider`), so moving between screens never
   starts a fresh order: the order in front, the live floor, the shift, table
   names by id, and the number of the Z-report this device's close last issued.
@@ -153,8 +155,8 @@ Every screen inside the frame waits on the shift (`shiftGate`, ADR-094):
 
 - **Keyboard Shortcuts and Open Cash Drawer** in the status bar: neither
   exists. The drawer opens with a settling receipt (ADR-081).
-- **The bell and Table Requests:** nothing rings until the guest channel
-  (phase 11).
+- **The bell and Table Requests** are built, as a pill that is there only
+  while a request waits (`terminal-requests.md`, ADR-212).
 - **Search in the top bar:** each screen that searches has its own.
 
 Kept, though the design does not draw it (rule 4): Lock, Close the shift and

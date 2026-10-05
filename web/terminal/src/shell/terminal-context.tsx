@@ -9,12 +9,18 @@ import { tableNames } from "../floor/floor-logic";
 import { useLiveFloor, type LiveFloorApi } from "../floor/use-live-floor";
 import type { Ticket } from "../register/use-ticket";
 import { useTicket } from "../register/use-ticket";
+import { wantingTables } from "../requests/request-logic";
+import { useGuestRequests, type GuestRequests } from "../requests/use-guest-requests";
 import { useShift, type ShiftState } from "../shift/use-shift";
 
 export interface Terminal {
   ticket: Ticket;
   floor: LiveFloorApi;
   shift: ShiftState;
+  /** What guests have asked for from their phones and nobody has answered. */
+  guests: GuestRequests;
+  /** The tables with a request waiting. */
+  wanting: ReadonlySet<number>;
   /** Table names by id, for labels. */
   names: ReadonlyMap<number, string>;
   /** The Z-report this till's last close issued, until the page is reloaded. */
@@ -28,11 +34,13 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
   const ticket = useTicket();
   const floor = useLiveFloor();
   const shift = useShift();
+  const guests = useGuestRequests();
+  const wanting = useMemo(() => wantingTables(guests.requests), [guests.requests]);
   const [lastZ, setLastZ] = useState<number | null>(null);
   const names = useMemo(() => tableNames(floor.data), [floor.data]);
   // Not memoised: each hook returns a fresh object every render, so a memo
   // here would never hold.
-  const value: Terminal = { ticket, floor, shift, names, lastZ, setLastZ };
+  const value: Terminal = { ticket, floor, shift, guests, wanting, names, lastZ, setLastZ };
   return <TerminalContext.Provider value={value}>{children}</TerminalContext.Provider>;
 }
 

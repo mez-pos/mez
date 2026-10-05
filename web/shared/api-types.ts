@@ -130,7 +130,14 @@ export type ErrorCode =
   | 'device_not_found'
   | 'cannot_revoke_self'
   | 'device_unpaired'
-  | 'table_code_unknown';
+  | 'table_code_unknown'
+  | 'dish_unavailable'
+  | 'choices_invalid'
+  | 'table_not_ordering'
+  | 'requests_waiting'
+  | 'request_not_found'
+  | 'request_decided'
+  | 'request_lapsed';
 
 export type OrderStatus =
   | 'open'

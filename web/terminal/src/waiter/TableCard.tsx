@@ -6,6 +6,7 @@ import { ArmchairIcon, ChevronRightIcon } from "lucide-react";
 import type { LiveTableResponse } from "../../../shared/api-types";
 import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { WantsToOrder } from "../floor/FloorPlan";
 import { toneClasses } from "../floor/tones";
 import { cardMeta, groupOf, tableGroups } from "./waiter-logic";
 
@@ -13,9 +14,11 @@ interface TableCardProps {
   table: LiveTableResponse;
   names: ReadonlyMap<number, string>;
   onOpen: (table: LiveTableResponse) => void;
+  /** A guest's phone has asked to order here, and nobody has answered. */
+  wants?: boolean;
 }
 
-export function TableCard({ table, names, onOpen }: TableCardProps) {
+export function TableCard({ table, names, onOpen, wants = false }: TableCardProps) {
   const group = tableGroups[groupOf(table.status)];
   const tone = toneClasses(group.tone);
   const owes = table.balance && table.balance.minor !== 0 ? table.balance : null;
@@ -38,6 +41,7 @@ export function TableCard({ table, names, onOpen }: TableCardProps) {
           <span aria-hidden="true" className={cx("size-2.5 shrink-0 rounded-round", tone.dot)} />
           {group.label}
         </span>
+        {wants && <WantsToOrder className="mt-1.5" />}
         <span className="mt-1.5 block truncate text-sm text-fg">
           {cardMeta(table, names)}
           {owes && (
