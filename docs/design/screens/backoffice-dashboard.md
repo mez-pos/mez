@@ -56,7 +56,7 @@ dashboard is left open, and nothing here is worth a stream of its own.
   turns the old figures go. The report carries each person's role beside
   their name.
 - `GET /api/v1/floor/live` (`order.open`).
-- The stock items, `GET /api/v1/stock/items` (`stock.manage`).
+- The stock items, `GET /api/v1/stock` (`stock.manage`).
 
 ## Interactions
 

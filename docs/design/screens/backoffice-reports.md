@@ -142,7 +142,7 @@ Discounts, Total, Average bill, and their share.
   margin.
 - `GET /api/v1/reports/wastage?from=&to=`: write-offs by stock item and by
   reason.
-- `GET /api/v1/stock/items`, for stock health.
+- `GET /api/v1/stock`, for stock health.
 - `GET /api/v1/reports/closing-stock?from=&to=`.
 - `GET /api/v1/audit/analysis?from=&to=`, for Corrections.
 - Downloads: `GET /api/v1/reports/sales/csv?from=&to=&every=&report=`

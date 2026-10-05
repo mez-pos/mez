@@ -360,11 +360,16 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
   - [x] 17f. The back office's frame (`backoffice-shell.md`), the dashboard
     (`backoffice-dashboard.md`, new), the three report tabs
     (`backoffice-reports.md`), Audit (`backoffice-audit.md`).
-  - [ ] 17g. The rest of the back office: Menu, Inventory, Staff, Settings,
-    Printers, Devices, Floor plan, Tips, and the Z-report in both apps
-    (`backoffice-menu.md`, `-stock.md`, `-people.md`, `-settings.md`,
-    `-printers.md`, `-devices.md`, `-floor.md`, `tips.md`, `zreport.md`).
-    `screens/README.md` lists every spec against its design screen.
+  - [ ] 17g. The rest of the back office. Split on 2026-10-05: nine specs over
+    about seven thousand lines of screens.
+    - [x] 17g1. Menu with Choices and Stations and courses (`backoffice-menu.md`),
+      Inventory with Recipes (`backoffice-stock.md`), Staff and roles
+      (`backoffice-people.md`).
+    - [ ] 17g2. Settings (`backoffice-settings.md`), Printers, Devices, Floor
+      plan (`backoffice-printers.md`, `-devices.md`, `-floor.md`), Tips
+      (`tips.md`), and the Z-report in both apps with the Z-reports list
+      (`zreport.md`). `screens/README.md` lists every spec against its
+      design screen.
   - [ ] 17h. The walk, in the dev server: a cashier, a waiter, the kitchen and
     a manager each take an order through to a paid bill, an invoice and a
     Z-report. What breaks is fixed or written into `STATE.md`; the "not seen

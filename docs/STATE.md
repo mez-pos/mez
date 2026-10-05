@@ -14,7 +14,16 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 17f: the specs for the back office's frame, the dashboard, the
+**Rebuild, Task 17g1: the specs for Menu, Inventory and Staff.** Task 17g is split in
+two (`rebuild.md`). Written from the code as it stands (ADR-196): `backoffice-menu.md`
+(D18: the categories, the list and the inline editor, with the Choices and Stations and
+courses views), `backoffice-stock.md` (Inventory, D19: the levels table, the forms, the
+week's wastage, and Recipes) and `backoffice-people.md` (Staff and roles, D20: the
+table, the role's switches, and what you may give). Each Reference was checked against
+the design file's own words. Two paths in 17f's specs were put right (the stock read is
+`GET /api/v1/stock`). Docs only: no code changed. `make check` passes.
+
+Before it, **Rebuild, Task 17f: the specs for the back office's frame, the dashboard, the
 reports and Audit.** Written from the code as it stands (ADR-196): `backoffice-shell.md`
 (the bar, the grouped sidebar, who sees what, the `g` chords, the guard),
 `backoffice-dashboard.md` (new, D12), `backoffice-reports.md` (the shared range and
@@ -317,16 +326,15 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 17g: the specs for the rest of the back office.** From
-`web/backoffice/src/` and `web/shared/zreport/` as they stand (ADR-196): rewrite
-`backoffice-menu.md` (D18, with Choices and Stations and courses), `backoffice-stock.md`
-(Inventory, D19, with Recipes), `backoffice-people.md` (Staff and roles, D20),
-`backoffice-settings.md` (D22's frame and its sections), `backoffice-printers.md`,
-`backoffice-devices.md`, `backoffice-floor.md`, `tips.md` and `zreport.md` (D23's
-report and slip, in both apps, with the Z-reports list and its exports). Check each
-Reference against `mez Desktop Management.dc.html` lines 286, 428, 507, 602 and 707.
-Then rewrite `screens/README.md` to list every spec against its design screen. It is
-nine specs: split it if it will not fit one session. The walk as each role is 17h. The owner has
+**Rebuild, Task 17g2: the specs for Settings, Printers, Devices, Floor plan, Tips and
+the Z-report.** From `web/backoffice/src/` and `web/shared/zreport/` as they stand
+(ADR-196): rewrite `backoffice-settings.md` (D22's frame and its sections: Venue, Tax
+and numbering, Shift, tips and receipt), `backoffice-printers.md`, `backoffice-devices.md`
+(both on Task 16k's table pattern, ADR-195), `backoffice-floor.md`, `tips.md`, and
+`zreport.md` (D23's report and slip in both apps, the Z-reports list and its exports).
+Check Settings against `mez Desktop Management.dc.html` line 602 and the Z-report
+against line 707. Then rewrite `screens/README.md` to list every spec against its
+design screen. The walk as each role is 17h. The owner has
 not yet looked at the kitchen's screens or anything of Task 16. Floor plan and Tips
 are still their old layouts (ADR-195). Phase 11 waits for this phase. Phase 10's tasks are
 all done (6l moved to phase 12, ADR-141); its done-when is a human check and stays
@@ -359,6 +367,12 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   by nothing but its test since Recall moved onto each ready card; delete it in 17h.
   The board's clock and the time a ticket was sent are read in the device's zone, not
   the venue's.
+- Found writing the specs (17g1): old words in the back office, for 17h: "off every
+  till" on retiring a category (`menu/CategoryRail.tsx`), "Tickets already open keep
+  the choices" in the group form (`menu/GroupFormModal.tsx`), "signed out of every
+  till" on a new PIN and "Others ask for these at the till" (`people/`), "Change
+  orders on the ticket" (`people-logic.ts`), and "on the till as each shift closes"
+  (`stock/StockItemModal.tsx`).
 - Printers, Devices and Audit (ADR-195): the dev venue now has three printers that
   go nowhere (127.0.0.1:9197 to 9199), one retired and one set for receipts, so a
   receipt there queues and retries. Not seen by eye: a revoked or a quiet device,
