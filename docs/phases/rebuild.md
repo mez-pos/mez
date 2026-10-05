@@ -257,7 +257,7 @@ One task per session. Tick it, update `STATE.md`, commit `rebuild/task-N`.
     it owes, split equally, by item or by amount, each guest's share with
     Collect, how the chosen share is paid, what has been collected so far,
     Print bill and Close table. Over `tender-logic.ts` and `split-logic.ts`.
-  - [ ] 14b. What one person did in the shift, from the server (split again on
+  - [x] 14b. (ADR-173) What one person did in the shift, from the server (split again on
     2026-10-05: the server could say nothing per person). `GET /api/v1/shift/mine`:
     the orders they opened, how many were at a table, what their payments
     settled, the tips on them, and those tips by table. Go tests.

@@ -341,7 +341,7 @@ func generate() (*ts.Generator, error) {
 		moveTableRequest{}, joinTablesRequest{}, partTablesRequest{},
 		// The shift.
 		shift.Denomination{}, countRequest{}, cashRequest{}, reasonRequest{}, shiftEventResponse{},
-		reconciliationResponse{}, varianceReasonResponse{}, shiftResponse{}, currentShiftResponse{},
+		reconciliationResponse{}, varianceReasonResponse{}, shiftResponse{}, currentShiftResponse{}, tableTipsResponse{}, myShiftResponse{},
 		// Z-reports.
 		zNameResponse{}, zReportResponse{}, zReportsResponse{}, correctRequest{},
 		// Tips.

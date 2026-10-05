@@ -24,6 +24,11 @@ type Shifts interface {
 	ExplainVariance(ctx context.Context, meta svcshift.Meta, shiftID int64, reason string) (svcshift.Shift, error)
 }
 
+// MyShifts says what one person did in the open shift (T08).
+type MyShifts interface {
+	Mine(ctx context.Context, venueID, staffID int64) (svcshift.MyShift, error)
+}
+
 // WithShifts mounts the shift endpoints. They need WithDevices and
 // WithStaff. A Shifts that also keeps Z-reports, as *shift.Service does,
 // mounts those too.
@@ -35,6 +40,9 @@ func WithShifts(sh Shifts) Option {
 		}
 		if t, ok := sh.(Tips); ok {
 			s.tips = t
+		}
+		if m, ok := sh.(MyShifts); ok {
+			s.myShifts = m
 		}
 		if e, ok := sh.(Exports); ok {
 			s.exports = e
@@ -147,6 +155,26 @@ type currentShiftResponse struct {
 	Openers []staffResponse `json:"openers,omitempty"`
 }
 
+// myShiftResponse is what the person asking did in the open shift: the
+// orders they opened, what their payments settled, and the tips on them.
+type myShiftResponse struct {
+	ShiftID  int64        `json:"shift_id"`
+	OpenedAt time.Time    `json:"opened_at"`
+	Orders   int64        `json:"orders"`
+	Tables   int64        `json:"tables"`
+	Sales    money.Amount `json:"sales"`
+	Tips     money.Amount `json:"tips"`
+	// TipsByTable is largest first. Table 0 is the orders with no table.
+	TipsByTable []tableTipsResponse `json:"tips_by_table"`
+	// FirstAt is when they first touched an order in the shift, if they have.
+	FirstAt *time.Time `json:"first_at,omitempty"`
+}
+
+type tableTipsResponse struct {
+	TableID int64        `json:"table_id"`
+	Tips    money.Amount `json:"tips"`
+}
+
 func (s *Server) mountShifts(mux *http.ServeMux) {
 	if s.devices == nil || s.staff == nil || s.shifts == nil {
 		return
@@ -167,6 +195,32 @@ func (s *Server) mountShifts(mux *http.ServeMux) {
 	handle("POST /api/v1/shift/{id}/count", auth.PermPaymentTake, s.countDrawer)
 	handle("POST /api/v1/shift/{id}/reason", auth.PermPaymentTake, s.explainVariance)
 	mux.HandleFunc("/api/v1/shift", s.methodNotAllowed)
+	if s.myShifts != nil {
+		// Anyone who sells may read their own shift, and only their own.
+		handle("GET /api/v1/shift/mine", auth.PermOrderOpen, s.myShift)
+		mux.HandleFunc("/api/v1/shift/mine", s.methodNotAllowed)
+	}
+}
+
+func (s *Server) myShift(w http.ResponseWriter, r *http.Request) {
+	m := Meta(r)
+	mine, err := s.myShifts.Mine(r.Context(), m.VenueID, m.ActorID)
+	if err != nil {
+		s.writeShiftError(w, r, err)
+		return
+	}
+	out := myShiftResponse{
+		ShiftID: mine.ShiftID, OpenedAt: mine.OpenedAt.UTC(), Orders: mine.Orders, Tables: mine.Tables,
+		Sales: mine.Sales, Tips: mine.Tips, TipsByTable: make([]tableTipsResponse, len(mine.ByTable)),
+	}
+	for i, t := range mine.ByTable {
+		out.TipsByTable[i] = tableTipsResponse{TableID: t.TableID, Tips: t.Tips}
+	}
+	if mine.First != nil {
+		at := mine.First.UTC()
+		out.FirstAt = &at
+	}
+	writeJSON(w, s.log, http.StatusOK, out)
 }
 
 func (s *Server) currentShift(w http.ResponseWriter, r *http.Request) {

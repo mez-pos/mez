@@ -35,6 +35,7 @@ type Server struct {
 	shifts     Shifts
 	zreports   ZReports
 	tips       Tips
+	myShifts   MyShifts
 	exports    Exports
 	limiter    *limiter
 	handler    http.Handler

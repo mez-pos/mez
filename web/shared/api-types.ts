@@ -1944,6 +1944,22 @@ export interface CurrentShiftResponse {
   openers?: StaffResponse[];
 }
 
+export interface TableTipsResponse {
+  table_id: number;
+  tips: Money;
+}
+
+export interface MyShiftResponse {
+  shift_id: number;
+  opened_at: string;
+  orders: number;
+  tables: number;
+  sales: Money;
+  tips: Money;
+  tips_by_table: TableTipsResponse[];
+  first_at?: string;
+}
+
 export interface ZNameResponse {
   id: number;
   name: string;

@@ -5044,3 +5044,28 @@ with a manager's approval), the QR, the Wallet tile, and the time a share was pa
 Cost: two payment screens over one set of logic. A split and who has paid are lost
 on a reload, as on the desktop (ADR-077).
 ---
+
+## ADR-173 - What one person did in a shift is added up from the order events
+2026-10 · Status: accepted. Rebuild Task 14b, for T08; builds on ADR-094 and ADR-101.
+Context: T08 shows a waiter their shift: tables served, orders taken, sales handled,
+tips earned, tips by table. The server could say none of it for one person.
+Decision:
+  - **`GET /api/v1/shift/mine`** answers for whoever asks, in the open shift, and for
+    nobody else. It needs only `order.open`. With no shift open it is 409.
+  - **An order is theirs if they opened it; money is theirs if they took it**
+    (`shift.MineOf`). One person may seat a table and another settle it: the order
+    counts for the first, the sale and the tip for the second.
+  - **Tables served is the orders they opened that ended at a table.** A table
+    seated twice counts twice.
+  - **Sales handled is what their payments settled,** less payments voided in the
+    shift. Tips are apart. A refund is not taken off: it is a manager's correction.
+  - **Tips are those on their own payments, before any pool** (ADR-101 shares them
+    out after the close). By table they follow the party to the table it ended at;
+    table 0 is the orders with no table.
+  - **Nothing is stored.** It is added up on each ask from the streams of the orders
+    the shift touched, as the tip report is.
+Left out: guest ratings (nothing collects them before phase 11) and the hours on
+shift (no timesheets; `first_at` is when they first touched an order).
+Cost: a busy shift is read whole on each ask. A waiter whose tables are all opened
+by the cashier reads "0 tables".
+---

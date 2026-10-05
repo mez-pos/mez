@@ -14,7 +14,15 @@ before any screen. Phases 09 and 10 still owe their human done-when checks.
 
 ## Last completed task
 
-**Rebuild, Task 14a: the waiter's bill** (ADR-172). Task 14 is split in two. For a
+**Rebuild, Task 14b: one person's shift, from the server** (ADR-173). 14b was split
+again: the server could say nothing per person. `GET /api/v1/shift/mine` answers for
+whoever asks, in the open shift: the orders they opened, how many ended at a table,
+what their payments settled, the tips on them, those tips by table, and when they first
+touched an order (`shift.MineOf` in `internal/domain/shift/mine.go`, `Service.Mine`,
+`MyShiftResponse` in `api-types.ts`). Server only, no screen. Go tests in the domain,
+the service and over HTTP. `make check` passes.
+
+Before it, **Task 14a: the waiter's bill** (ADR-172). Task 14 is split in two. For a
 waiter `/pay/:id` is T05 (`waiter/WaiterBill.tsx`, `BillShares.tsx`, `BillCollect.tsx`,
 `bill-logic.ts`): one column with the table and its total, Split equally with the
 guests counted (it starts at one, "Whole bill"), a row for each share, the share being
@@ -80,10 +88,13 @@ ADR-147), Task 0 (ADR-144), the plan (ADR-143). The owner has not yet looked at 
 
 ## Next task
 
-**Rebuild, Task 14b** (the shift summary): T08 (line 552 of `mez Tablet
-Waiter.dc.html`). Check first what the server can say for one person (tables, orders,
-sales, tips): the design's ratings and "Tips by table" may have nothing behind them.
-Read `docs/design/tokens.md` and that screen only. Phase 11
+**Rebuild, Task 14c** (the shift summary screen): T08 (line 552 of `mez Tablet
+Waiter.dc.html`), over `GET /api/v1/shift/mine`. A route of its own, reached from the
+waiter's bar (More) or the profile menu. The server gives no hours on shift (use
+`first_at`, else the shift's `opened_at`), no ratings (leave them out) and nothing
+that prints a summary. "End shift" for a waiter is signing out: they cannot close the
+shift. Table names come from the floor; table 0 is "No table". Read
+`docs/design/tokens.md` and that screen only. Phase 11
 waits for this phase. Phase 10's tasks are all done (6l moved to phase 12, ADR-141);
 its done-when is a human check and stays unticked below.
 
@@ -97,6 +108,10 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
 
 ## Known broken / in progress
 
+- One person's shift (ADR-173): no screen yet (14c). Read whole from the shift's
+  orders on each ask; a busy shift has not been timed. A refund is not taken off
+  "sales". A table the cashier opened counts for the cashier, not the waiter who
+  served it. Not tried against the dev venue's data, only in Go tests.
 - The waiter's bill (ADR-172): no Print bill before payment, no QR, no Wallet, no
   keyed tip. A toast sits over the foot's buttons for its few seconds. Not seen by eye:
   By item and Custom carried through from here, Change the split, a stale split, a

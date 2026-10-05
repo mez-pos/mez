@@ -377,6 +377,57 @@ func TestTipsOverHTTP(t *testing.T) {
 	w.refused(t, w.owner, http.MethodPost, path, `{"members":[{"staff_id":"stf_ASHA0001"}]}`, http.StatusConflict, CodeAlreadyPooled)
 }
 
+// TestMyShiftOverHTTP: anyone who sells reads what they did in the open
+// shift, each their own; with no shift open there is nothing to read.
+func TestMyShiftOverHTTP(t *testing.T) {
+	w := newShiftTill(t)
+	w.refused(t, w.cashier, http.MethodGet, "/api/v1/shift/mine", "", http.StatusConflict, CodeNoOpenShift)
+	opened := w.shift(t, w.owner, http.MethodPost, "/api/v1/shift/open", `{"total":{"minor":0,"currency":"INR"}}`, http.StatusCreated)
+
+	status, raw := w.do(w.cashier, http.MethodPost, "/api/v1/orders", `{"channel":"counter","covers":1}`, "mine-open")
+	var cmd struct {
+		Order struct {
+			ID string `json:"id"`
+		} `json:"order"`
+	}
+	if status != http.StatusCreated || json.Unmarshal(raw, &cmd) != nil || cmd.Order.ID == "" {
+		t.Fatalf("opening an order: %d %s", status, raw)
+	}
+	line := `{"item_id":1,"name":"Thali","qty":1,"unit_price":{"minor":20000,"currency":"INR"},"station":"kitchen"}`
+	if status, raw = w.do(w.cashier, http.MethodPost, "/api/v1/orders/"+cmd.Order.ID+"/lines", line, "mine-line"); status != http.StatusOK {
+		t.Fatalf("adding a line: %d %s", status, raw)
+	}
+	pay := `{"method":"upi","amount":{"minor":20000,"currency":"INR"},"tip":{"minor":1500,"currency":"INR"}}`
+	if status, raw = w.do(w.cashier, http.MethodPost, "/api/v1/orders/"+cmd.Order.ID+"/payments", pay, "mine-pay"); status != http.StatusOK {
+		t.Fatalf("taking a payment: %d %s", status, raw)
+	}
+
+	var mine myShiftResponse
+	status, raw = w.do(w.cashier, http.MethodGet, "/api/v1/shift/mine", "", "")
+	if status != http.StatusOK || json.Unmarshal(raw, &mine) != nil {
+		t.Fatalf("my shift: %d %s", status, raw)
+	}
+	if mine.ShiftID != opened.ID || mine.Orders != 1 || mine.Tables != 0 || mine.Sales.Minor != 20000 || mine.Tips.Minor != 1500 || mine.FirstAt == nil {
+		t.Errorf("the cashier's shift: %s", raw)
+	}
+	if len(mine.TipsByTable) != 1 || mine.TipsByTable[0].TableID != 0 || mine.TipsByTable[0].Tips.Minor != 1500 {
+		t.Errorf("tips by table: %s", raw)
+	}
+
+	var idle myShiftResponse
+	status, raw = w.do(w.owner, http.MethodGet, "/api/v1/shift/mine", "", "")
+	if status != http.StatusOK || json.Unmarshal(raw, &idle) != nil {
+		t.Fatalf("the owner's shift: %d %s", status, raw)
+	}
+	// An empty list, not null: the screen maps over it.
+	if idle.Orders != 0 || idle.Sales.Minor != 0 || idle.Tips.Minor != 0 || idle.TipsByTable == nil || len(idle.TipsByTable) != 0 || idle.FirstAt != nil {
+		t.Errorf("the owner did nothing: %s", raw)
+	}
+	if rec := send(w.handler, http.MethodGet, "/api/v1/shift/mine", "", w.asDevice()); rec.Code != http.StatusUnauthorized {
+		t.Errorf("signed out: status %d", rec.Code)
+	}
+}
+
 // TestExportsOverHTTP: a closed shift's three files are listed and read,
 // as JSON carrying the CSV; a cashier cannot see them.
 func TestExportsOverHTTP(t *testing.T) {
