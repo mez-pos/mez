@@ -22,12 +22,10 @@ interface TicketsSheetProps {
   onPastBills: () => void;
   /** Opens the floor, where a party is seated at a table. */
   onFloor: () => void;
-  /** Counts the drawer and ends the shift (terminal-close.md). */
-  onCloseDay: () => void;
   onClose: () => void;
 }
 
-export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBills, onFloor, onCloseDay, onClose }: TicketsSheetProps) {
+export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBills, onFloor, onClose }: TicketsSheetProps) {
   const now = useClock(15_000);
   const [error, setError] = useState<string | null>(null);
   const lateAfter = open?.late_after_minutes ?? 20;
@@ -111,18 +109,6 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
             Past bills
           </Button>
           <p className="text-sm text-fg-muted">Refund, void a payment or reprint a settled bill.</p>
-        </section>
-
-        <section aria-label="Close the day" className="flex flex-col gap-2 border-t border-line pt-6">
-          <Button
-            onClick={() => {
-              onCloseDay();
-              onClose();
-            }}
-          >
-            Close the day
-          </Button>
-          <p className="text-sm text-fg-muted">Count the drawer and end the shift.</p>
         </section>
 
         <section aria-label="New order" className="flex flex-col gap-4 border-t border-line pt-6">

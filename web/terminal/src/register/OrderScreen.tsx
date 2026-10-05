@@ -229,7 +229,6 @@ export function OrderScreen() {
           }}
           onPastBills={() => navigate(route.orders)}
           onFloor={() => navigate(route.tables)}
-          onCloseDay={() => navigate(route.shiftClose)}
           onClose={() => setOrdersOpen(false)}
         />
       )}

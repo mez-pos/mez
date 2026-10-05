@@ -107,8 +107,9 @@ Side panels on a desktop, bottom sheets on touch; one at a time.
   Settling chip, its id, its item count, its total, and how long it has run; a
   Late chip and terracotta time past the venue's limit (20 minutes by
   default); "On screen" on the one in front. Under them **Past bills**,
-  **Close the day**, and **New order**: **Counter sale** and **Seat a
-  table**.
+  and **New order**: **Counter sale** and **Seat a table**. Closing the
+  day is not here: it is under the profile, for someone with
+  `shift.manage` (ADR-197).
 - **History:** the order's events, oldest first, through `Timeline`: the time
   in the venue's zone, what happened and why, who did it, who approved it,
   and on which device. Read-only.

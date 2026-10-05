@@ -5721,3 +5721,25 @@ Cost: until 17g is done, `docs/design/screens/` is part old and part new;
 `rebuild.md` says which. Comments in `shift/` still cite `terminal-close.md` for the
 opening float.
 ---
+
+## ADR-197 - Closing the day has one door, under the profile, for whoever may close
+2026-10 · Status: accepted. Rebuild Task 17h, its first fix; found writing the specs (17b).
+Context: the Orders sheet under the order screen's "..." still offered **Close the
+day** to anyone, from before the rebuild. The flow map puts closing under the profile
+menu, and there it asks for `shift.manage`. The drawer count itself needs only
+`payment.take`, a submitted count cannot be changed, and since ADR-148 the shift gate
+holds every path on every device at the close once the drawer is counted. So a cashier
+could go through the sheet's door in the middle of service, submit a count, and stop
+the whole venue until someone who may close arrived.
+Decision:
+  - **The Orders sheet has no Close the day.** The profile menu's **Close the shift**
+    is the only way in, shown to someone with `shift.manage` while a shift is open.
+  - **The server is unchanged.** The count still needs `payment.take`. Whether a count
+    should need more is its own question; the screen no longer leads there.
+  - **A venue whose cashier closes alone** switches on "Close the shift" for that role
+    on Staff. It is then a choice the owner made.
+Because: a door that leads somewhere a person cannot finish, and that locks everyone
+else out on the way, is worse than no door.
+Cost: someone with `payment.take` and not `shift.manage` can still reach
+`/shift/close` by typing its path, and count there. Nothing on screen leads to it.
+---

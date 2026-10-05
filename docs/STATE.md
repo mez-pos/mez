@@ -341,8 +341,8 @@ it. In the dev server (`make dev`; `rebuild.md`, "How to see it"), as Meera the 
 Kabir the waiter, Ravi in the kitchen and Arjun the manager, take an order from each
 side through to a paid bill, an invoice and a Z-report, reading each screen against its
 spec. Before walking: fix the "Found writing the specs" entries under Known broken
-(old words on screen, `PrintStatus.tsx` and `lastBumped` unused), and decide with the
-owner whether a cashier keeps the Close the day door on the Orders sheet. After: cut
+(old words on screen, `PrintStatus.tsx` and `lastBumped` unused). The Orders sheet's
+Close the day door is already gone (ADR-197). After: cut
 the "not seen by eye" lists below to what is still unseen, and bring this file back
 under 60 lines by moving the "Before it" history out. It may need splitting by role.
 The phase's done-when is the owner's own walk. The owner has
@@ -365,12 +365,11 @@ The SQLite driver is now v1.46.1 and the module needs Go 1.24.
   fix: Pay's refusal for a bill owed money back says "Refunds come with Task 6."
   (`tender-logic.ts`, `chargeBlock`); "changed on another till" in the item modal
   (`OrderScreen.tsx`, `movedOn`); "has 2 tickets" on a move and "this table's ticket"
-  on Guests left (`floor-logic.ts`, `order-messages.ts`, `internal/api/floor.go`). The
-  Orders sheet under the order screen's "..." still offers Close the day to anyone,
-  beside the profile menu's Close the shift, which asks for `shift.manage`. The count
-  itself needs only `payment.take`, so a cashier can submit it from there, and the
-  shift gate then holds every device at the close until a manager closes. Decide in
-  17h whether that door stays.
+  on Guests left (`floor-logic.ts`, `order-messages.ts`, `internal/api/floor.go`).
+- The Orders sheet's Close the day is gone (ADR-197): the profile menu's Close the
+  shift, for `shift.manage`, is the one way in. Typechecked and built, not tried in a
+  browser: look at the sheet as Meera in the walk. `/shift/close` typed by hand still
+  lets someone with `payment.take` count.
 - Found writing the specs (17c): `print/PrintStatus.tsx` is used by nothing since
   the frame drew its own Not printed pill; delete it in 17h. A payment that cannot be
   taken says "Nothing is owed on this ticket." (`planTender`), an old word.
