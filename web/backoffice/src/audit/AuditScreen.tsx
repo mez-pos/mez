@@ -2,11 +2,12 @@
 // correction to a bill, from the record, with who did it, who let it
 // through, why and what it was worth (ADR-117).
 
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import type { AuditEntry, AuditPage, StaffListResponse } from "../../../shared/api-types";
-import { ApiError } from "../../../shared/api";
+import type { AuditEntry, AuditPage } from "../../../shared/api-types";
+import { wordsOf } from "../../../shared/api";
 import { useAuthStore } from "../../../shared/auth/use-auth";
+import { useStaffList } from "../../../shared/use-staff-list";
 import { Button, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
@@ -19,10 +20,7 @@ export function AuditScreen() {
   const store = useAuthStore();
   // The filter in the address, when the screen was opened on one (a link from the Sales reports).
   const [filter, setFilter] = useState<AuditFilter>(() => filterFromSearch(window.location.search, new Date()));
-  const staff = useQuery({
-    queryKey: ["staff"],
-    queryFn: () => store.api.get<StaffListResponse>("/api/v1/staff").then((r) => r.staff),
-  });
+  const staff = useStaffList();
   const trail = useInfiniteQuery({
     queryKey: ["audit", filter],
     initialPageParam: 0,
@@ -82,9 +80,7 @@ export function AuditScreen() {
       {trail.error && (
         <EmptyState
           icon={<InboxIcon />}
-          line={
-            trail.error instanceof ApiError && !trail.error.unreachable ? trail.error.message : "Can't reach the mez server. Check this computer's connection."
-          }
+          line={wordsOf(trail.error, "Can't reach the mez server. Check this computer's connection.")}
           action={{ label: "Try again", onClick: () => void trail.refetch() }}
         />
       )}

@@ -25,6 +25,7 @@ import { ConnectionIndicator } from "../../../shared/ConnectionIndicator";
 import { Logo } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { clockText } from "../../../shared/venue-text";
+import { useClock } from "../../../shared/use-clock";
 import { useMenu } from "../../../shared/use-menu";
 import { failureOf } from "../register/order-messages";
 import { courseNamer } from "../register/rail-logic";
@@ -51,7 +52,8 @@ const columns: readonly { stage: CardStage; title: string; icon: LucideIcon; ban
 
 export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoardProps) {
   const board = useKitchenBoard(station.code);
-  const now = useTick(1000);
+  // Timers move by the second.
+  const now = useClock(1000);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<BoardPrefs>(() => readPrefs(browserStorage("local")));
@@ -192,14 +194,4 @@ function Column({ title, icon: Icon, band, count, children }: ColumnProps) {
       <ul className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto p-3 xl:p-3.5">{children}</ul>
     </section>
   );
-}
-
-/** The time, every `every` ms: timers move by the second. */
-function useTick(every: number): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), every);
-    return () => clearInterval(id);
-  }, [every]);
-  return now;
 }

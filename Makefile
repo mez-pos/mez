@@ -24,7 +24,9 @@ LDFLAGS := -s -w \
 # The package list. `go list` exits 0 and prints nothing on an empty module,
 # unlike `go vet` and `go test`, which exit 1, so the recipes that would break
 # on an empty module guard on this; it costs nothing now the tree exists.
-PKGS := $(shell go list ./... 2>/dev/null)
+# web/node_modules is npm's, not ours: a package there can ship Go files
+# (flatted, under eslint, does), which ./... would vet and test as ours.
+PKGS := $(shell go list ./... 2>/dev/null | grep -v /node_modules/)
 
 # No cgo, ever. modernc.org/sqlite is pure Go and the build must cross-compile
 # from one machine. See ADR-003.
@@ -47,14 +49,18 @@ check: fmt vet test typecheck build
 	@echo "ok: check passed ($(VERSION))"
 
 ## typecheck: tsc --noEmit over the three frontends, so a type the Go
-##            structs changed cannot reach a screen unchecked. Needs Node 22.
+##            structs changed cannot reach a screen unchecked, then eslint's
+##            rules of hooks over them and shared (errors only: `npm run lint`
+##            in web also lists the warnings). Needs Node 22.
 typecheck: web/node_modules/.package-lock.json
 	@cd web && npm run typecheck --silent
 	@echo "  tsc   ok"
+	@cd web && npm run lint --silent -- --quiet
+	@echo "  lint  ok"
 
 ## fmt: fail if anything is not gofmt-clean
 fmt:
-	@out=$$(gofmt -l . 2>/dev/null); \
+	@out=$$(gofmt -l . 2>/dev/null | grep -v node_modules); \
 	if [ -n "$$out" ]; then \
 		echo "gofmt: not formatted:"; echo "$$out"; \
 		echo "fix with: gofmt -w ."; \
@@ -67,7 +73,7 @@ vet:
 ifeq ($(strip $(PKGS)),)
 	@echo "  vet   skipped (no packages yet)"
 else
-	@go vet ./...
+	@go vet $(PKGS)
 	@echo "  vet   ok"
 endif
 
@@ -76,7 +82,7 @@ test:
 ifeq ($(strip $(PKGS)),)
 	@echo "  test  skipped (no packages yet)"
 else
-	@go test ./...
+	@go test $(PKGS)
 endif
 
 ## build: compile the server, and the optional relay, to bin/

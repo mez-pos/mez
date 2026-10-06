@@ -30,7 +30,7 @@ Handed over, which closes the ticket. Task 5 is done. **Not seen in a browser.**
 
 ## Known broken / in progress
 
-- **Between phases (ADR-256, ADR-257): the first security review.** A till's
+- **Between phases (ADR-256 to ADR-258): the first security review.** A till's
   line is priced from the menu on the server; a relay must be TLS; revoking
   a device cuts its stream; a PIN is reset only from above; the log masks
   table codes; the toolchain is go1.26.8. Five findings are the owner's to

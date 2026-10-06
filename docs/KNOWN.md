@@ -40,7 +40,9 @@
   260 lines of wiring; the tender flow is written twice (`PayScreen.tsx` and
   `WaiterBill.tsx`); channel, payment-method and service labels and the rate
   formatter each exist in three to five copies that have drifted; the guest
-  app repeats its header and line list in three screens.
+  app repeats its header and line list in three screens. Ten eslint
+  warnings (ADR-258) stand, each a deliberate pattern: `npm run lint` in
+  `web` lists them.
 - **Orders to collect at the counter** (ADR-253, `terminal-past-bills.md`):
   **not seen in a browser at all**: the To collect tab, the code and the
   kitchen's word on a row, the Call out card in the panel, Handed over and

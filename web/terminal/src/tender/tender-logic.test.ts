@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
-import type { OrderResponse, TenderPayment } from "../../../shared/api-types";
-import { attemptKey, chargeBlock, chargeLabel, collectOf, elapsedClock, payStep, payView, planTender, quickTenders, tipFor } from "./tender-logic";
+import { ApiError } from "../../../shared/api";
+import type { OrderResponse, TenderPayment, TenderResponse } from "../../../shared/api-types";
+import {
+  afterFailure,
+  attemptKey,
+  chargeBlock,
+  chargeLabel,
+  collectOf,
+  elapsedClock,
+  payStep,
+  payView,
+  planTender,
+  quickTenders,
+  tenderFailure,
+  tenderOutcome,
+  tipFor,
+} from "./tender-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -183,7 +198,7 @@ describe("collectOf", () => {
 });
 
 describe("payView", () => {
-  const base = { paid: false, received: false, waiting: false, failed: false };
+  const base = { paid: false, received: false, waiting: false, failed: false, uncertain: false };
   const cases: [string, Partial<typeof base>, string][] = [
     ["keying a payment", {}, "entry"],
     ["a cash refusal stays where it was keyed", { failed: true }, "entry"],
@@ -191,6 +206,8 @@ describe("payView", () => {
     ["a card payment the server refused", { waiting: true, failed: true }, "refused"],
     ["money taken, more owed", { received: true }, "received"],
     ["money taken and the bill paid: the paid panel says it", { received: true, paid: true }, "entry"],
+    ["a cash payment whose answer was lost", { uncertain: true, failed: true }, "uncertain"],
+    ["a card payment whose answer was lost", { uncertain: true, waiting: true, failed: true }, "uncertain"],
   ];
   it.each(cases)("%s", (_n, extra, want) => {
     expect(payView({ ...base, ...extra })).toBe(want);
@@ -207,5 +224,65 @@ describe("elapsedClock", () => {
   ];
   it.each(cases)("%d ms is %s", (ms, want) => {
     expect(elapsedClock(ms)).toBe(want);
+  });
+});
+
+describe("tenderFailure", () => {
+  const cases: [string, unknown, string][] = [
+    ["no network: it may have been recorded", new ApiError("network", "x"), "uncertain"],
+    ["no answer in time", new ApiError("timeout", "x"), "uncertain"],
+    ["a gateway timeout", new ApiError("bad_response", "x", 504), "uncertain"],
+    ["a bad gateway", new ApiError("bad_response", "x", 502), "uncertain"],
+    ["the server failing after it may have written", new ApiError("internal", "x", 500), "uncertain"],
+    ["the queue's words around a lost answer", new Error("Not sent: the server can't be reached.", { cause: new ApiError("network", "x") }), "uncertain"],
+    ["something that is not the server's at all", new Error("boom"), "uncertain"],
+    ["more than is owed: a refusal", new ApiError("over_tender", "x", 409), "refused"],
+    ["a bad request: a refusal", new ApiError("invalid_request", "x", 422), "refused"],
+    ["a refusal wrapped by the queue", new Error("That's more than is owed now.", { cause: new ApiError("over_tender", "x", 409) }), "refused"],
+  ];
+  it.each(cases)("%s", (_name, err, want) => {
+    expect(tenderFailure(err)).toBe(want);
+  });
+});
+
+describe("afterFailure", () => {
+  const attempt = { key: "k1", body: { method: "cash" as const, amount: inr(45000), tip: inr(0) } };
+  it("keeps the attempt, key, method and amount, when the server was not reached", () => {
+    expect(afterFailure(attempt, new ApiError("network", "x"))).toBe(attempt);
+    expect(afterFailure(attempt, new ApiError("bad_response", "x", 503))).toBe(attempt);
+  });
+  it("lets it go on a definite refusal", () => {
+    expect(afterFailure(attempt, new ApiError("over_tender", "x", 409))).toBeNull();
+    expect(afterFailure(attempt, new ApiError("invalid_request", "x", 422))).toBeNull();
+  });
+});
+
+describe("tenderOutcome", () => {
+  const body: TenderPayment = { method: "card", amount: inr(45000), tip: inr(2000) };
+  const tender = (id: number, extra: Partial<TenderResponse> = {}): TenderResponse => ({
+    id,
+    method: "card",
+    amount: inr(45000),
+    tip: inr(2000),
+    status: "captured",
+    refunded: inr(0),
+    ...extra,
+  });
+  const order = (tenders: TenderResponse[]) => ({ tenders }) as unknown as OrderResponse;
+
+  it("is recorded when a new tender like it is on the order", () => {
+    expect(tenderOutcome([1], body, order([tender(1), tender(2)]))).toBe("recorded");
+  });
+  it("is absent when the order has no new tender", () => {
+    expect(tenderOutcome([1], body, order([tender(1)]))).toBe("absent");
+    expect(tenderOutcome([], body, order([]))).toBe("absent");
+  });
+  it("is absent when the only new tender is another payment, taken elsewhere", () => {
+    expect(tenderOutcome([1], body, order([tender(1), tender(2, { method: "cash" })]))).toBe("absent");
+    expect(tenderOutcome([1], body, order([tender(1), tender(2, { amount: inr(10000) })]))).toBe("absent");
+    expect(tenderOutcome([1], body, order([tender(1), tender(2, { tip: inr(0) })]))).toBe("absent");
+  });
+  it("does not count a tender already on the order before it was sent", () => {
+    expect(tenderOutcome([7], body, order([tender(7)]))).toBe("absent");
   });
 });

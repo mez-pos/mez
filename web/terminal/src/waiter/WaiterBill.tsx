@@ -26,7 +26,7 @@ import { orderQueryKey, type Ticket } from "../register/use-ticket";
 import { ReprintSheet } from "../tender/InvoicePanel";
 import { maxWays, splitStale, type SplitDraft, type TillSplit } from "../tender/split-logic";
 import { SplitPanel } from "../tender/SplitPanel";
-import { attemptKey, methodNames, planTender, quickTenders, type Attempt } from "../tender/tender-logic";
+import { afterFailure, attemptKey, methodNames, planTender, quickTenders, tenderOutcome, type Attempt } from "../tender/tender-logic";
 import { closeBlock, eachShare, shareName, shareRows, tablePays, type PaidShares } from "./bill-logic";
 import { BillCollect } from "./BillCollect";
 import { BillShares } from "./BillShares";
@@ -45,6 +45,19 @@ interface WaiterBillProps {
 interface Settled {
   split: SplitResponse;
   amountsKeyed: number;
+}
+
+/**
+ * A payment whose answer was lost: what it was, and the tenders on the order
+ * before it, to tell it apart when the order is read again.
+ */
+interface Unsettled {
+  before: readonly number[];
+  body: TenderPayment;
+  payer: number;
+  from: string;
+  /** Cash to hand back, or null for card and UPI. */
+  change: number | null;
 }
 
 /** The most the keypad types for cash: ₹10 crore, far past any bill. */
@@ -70,6 +83,9 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
+  // A payment that may have been recorded holds the share until the order says.
+  const [unsettled, setUnsettled] = useState<Unsettled | null>(null);
+  const [checking, setChecking] = useState(false);
   const [change, setChange] = useState<number | null>(null);
   const [reprinting, setReprinting] = useState(false);
 
@@ -115,12 +131,38 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
     fresh();
   };
 
+  /** A payment the server has: its share is paid and the next is collected. */
+  const recorded = (u: Unsettled) => {
+    setPaid((p) => new Map(p).set(u.payer, u.body.method));
+    setPicked(null);
+    setChange(u.change);
+    setUnsettled(null);
+    fresh();
+    toast(`${methodNames[u.body.method]} payment recorded · ${u.from}`);
+  };
+
+  /** Reads the order to see whether a payment whose answer was lost is on it. */
+  const check = async (u: Unsettled) => {
+    setChecking(true);
+    try {
+      const read = await ticket.reread();
+      // Not there: the failure stands, and another method may be tried.
+      if (tenderOutcome(u.before, u.body, read) === "recorded") recorded(u);
+      else setUnsettled(null);
+    } catch {
+      // Still not reached: the share says so and offers Check again.
+    } finally {
+      setChecking(false);
+    }
+  };
+
   const send = async () => {
-    if (!split || collecting === null || plan.problem || busy) return;
+    if (!split || collecting === null || plan.problem || busy || unsettled) return;
     const ref = reference.trim();
     const body: TenderPayment = { method, amount: money(plan.amount), tip: money(tip), ...(!cash && ref ? { reference: ref } : {}) };
     const next = attemptKey(attempt, body, () => newKey());
     const from = shareName(split.kind, collecting, amountsKeyed, split.shares.length);
+    const sent: Unsettled = { before: order.tenders.map((t) => t.id), body, payer: collecting, from, change: cash ? plan.change : null };
     setAttempt(next);
     setBusy(true);
     setError(null);
@@ -129,13 +171,17 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
     if (!settled) setSettled({ split, amountsKeyed: 0 });
     try {
       await ticket.tender(body, next.key);
-      setPaid(new Map(paid).set(collecting, method));
-      setPicked(null);
-      setChange(cash ? plan.change : null);
-      fresh();
-      toast(`${methodNames[method]} payment recorded · ${from}`);
+      recorded(sent);
     } catch (err) {
       setError(wordsOf(err));
+      // A refusal lets the attempt go; one that may have been recorded keeps
+      // its key, method and amount until the order is read again.
+      const kept = afterFailure(next, err);
+      setAttempt(kept);
+      if (kept) {
+        setUnsettled(sent);
+        void check(sent);
+      }
     } finally {
       setBusy(false);
     }
@@ -216,7 +262,7 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
                 rows={split ? shareRows(split, amountsKeyed, paid, collecting) : []}
                 each={each !== null ? money(each) : null}
                 settling={settling}
-                disabled={busy}
+                disabled={busy || unsettled !== null}
                 onWays={(ways) => {
                   setDraft({ ...draft, ways });
                   setPicked(null);
@@ -237,7 +283,7 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
               {stale && (
                 <div role="alert" className="mt-4 rounded bg-danger-tint p-4 text-base text-danger">
                   <p>The bill changed after it was split, or money was taken elsewhere. Split what is left again.</p>
-                  <Button disabled={busy} onClick={letGo} className="mt-3">
+                  <Button disabled={busy || unsettled !== null} onClick={letGo} className="mt-3">
                     Split it again
                   </Button>
                 </div>
@@ -264,6 +310,11 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
                   quick={cash ? quickTenders(target + tip, currency) : []}
                   busy={busy || settling}
                   error={error}
+                  uncertain={unsettled !== null}
+                  checking={checking}
+                  onCheck={() => {
+                    if (unsettled) void check(unsettled);
+                  }}
                   onMethod={(next) => {
                     setMethod(next);
                     fresh();

@@ -8477,3 +8477,54 @@ Left for the owner to decide, each written in `docs/KNOWN.md` under "Security":
 Because: a review before the first deploy is the cheapest one there will ever
 be, and each fix above is small; the five left open each change what the
 product does, which is the owner's call and not the reviewer's.
+
+## ADR-258 - The web apps after the first review: lost answers, one staff list, an error boundary, and the rules of hooks checked
+2026-10 · Status: accepted. Between phases 11 and 12, with ADR-257.
+Context: the review's audit of the three web apps found no unsafe HTML sink
+and no money in floats, and four things that could cost a venue money or a
+screen: a tender whose answer was lost was shown as "not recorded" and could
+be taken again under a new key; a refund's key was derived from a body that
+held the approver and PIN, so a retry approved by another manager was a new
+refund; an opening float that would not parse was sent as zero; and one React
+Query key held two shapes, so opening Tips after sign-in threw and blanked the
+back office. Nothing checked the rules of hooks.
+Decision:
+  - **A tender that may have been recorded holds the screen.** On an
+    unreachable answer or a 502 to 504 the attempt keeps its key, method and
+    amount, the screen says the payment may have been recorded, and the order
+    is read again: a tender not on it before, with that method, amount and
+    tip, is the one sent, and the bill moves on; none found releases the lock
+    and the cashier may try again, under the same key. A definite 4xx clears
+    the attempt. PayScreen, WaiterBill and BillCollect follow the one rule in
+    `tender-logic.ts`.
+  - **A refund, a payment void and a reprint are keyed on the command alone**
+    (`commandIdentity`): target, amount or selection, reason. Who approved
+    and with what PIN is not part of what the command is. The approval sheet
+    keeps a typed PIN when the server was not reached.
+  - **The opening float is `number | null` until it parses**, and Open is
+    disabled while it is null.
+  - **One `useStaffList()` in shared** owns the `["staff"]` key, with the one
+    shape the endpoint answers. The lock screen, the approval sheet, the
+    audit screen and the tips screen read it.
+  - **Each app has an error boundary at its root** with a Reload button, so a
+    render throw is a card and not a blank till.
+  - **The rules of hooks are checked in the gate.** `make typecheck` runs
+    eslint with `eslint-plugin-react-hooks` over the three apps and shared;
+    `rules-of-hooks` and `exhaustive-deps` are errors, the React Compiler
+    rules are warnings since this build has no compiler. typescript-eslint
+    does not yet support TypeScript 7, which the apps compile with, so it
+    lives in a fourth workspace, `web/lint`, with its own TypeScript 5.9 that
+    nothing else uses; `web/eslint.config.js` re-exports its config. The
+    Makefile filters `node_modules` out of the Go package list, since a
+    package there ships a Go file.
+  - **Smaller things:** a stock movement cannot be posted twice by a double
+    Enter (it is a FormModal now); the kitchen and request chimes share one
+    AudioContext instead of leaking one per mount; the one-second tick hooks
+    are the one `useClock`; the "server unreachable" test is `isUnreachable`
+    in shared and the server's words come through `wordsOf`; the tips screen
+    branches on the error code and not its text; six stale "future phase"
+    comments say what the code does.
+Cost: ten lint warnings remain (state reset in an effect, a ref read during
+render), each a deliberate pattern in a working screen, listed by `npm run
+lint`. The lint workspace adds 128 lockfile entries and a second TypeScript
+that only eslint loads.

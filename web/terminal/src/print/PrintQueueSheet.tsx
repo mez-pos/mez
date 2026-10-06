@@ -2,9 +2,10 @@
 // not printed yet and what printed lately, newest first, each with its
 // state as a chip and a word, what went wrong, and Retry or Cancel.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { PrintJobResponse } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, Sheet, StatusChip } from "../../../shared/ui";
+import { useClock } from "../../../shared/use-clock";
 import { actionsFor, detailOf } from "./print-queue";
 import type { PrintJobs } from "./use-print-jobs";
 
@@ -15,11 +16,7 @@ interface PrintQueueSheetProps {
 
 export function PrintQueueSheet({ queue, onClose }: PrintQueueSheetProps) {
   // "Next try in 8s" counts down while the sheet is open.
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
+  const now = new Date(useClock(1000));
 
   return (
     <Sheet open onClose={onClose} title="Print queue">

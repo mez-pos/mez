@@ -6,7 +6,7 @@ import { createAppAuth } from "../../shared/auth/app-auth";
 import { browserStorage } from "../../shared/auth/storage";
 import { AuthProvider } from "../../shared/auth/use-auth";
 import { createQueryClient } from "../../shared/query";
-import { ToastProvider } from "../../shared/ui";
+import { ErrorBoundary, ToastProvider } from "../../shared/ui";
 import { RealtimeProvider } from "../../shared/use-realtime";
 import { App } from "./App";
 import { KitchenApp } from "./kitchen/KitchenApp";
@@ -61,17 +61,19 @@ function Screen() {
 
 createRoot(root).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RealtimeProvider connection={realtime}>
-        <AuthProvider store={store} realtime={realtime}>
-          {/* The design's line icons: 1.75px strokes (tokens.md, Icons). */}
-          <LucideProvider strokeWidth={1.75}>
-            <ToastProvider>
-              <Screen />
-            </ToastProvider>
-          </LucideProvider>
-        </AuthProvider>
-      </RealtimeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <RealtimeProvider connection={realtime}>
+          <AuthProvider store={store} realtime={realtime}>
+            {/* The design's line icons: 1.75px strokes (tokens.md, Icons). */}
+            <LucideProvider strokeWidth={1.75}>
+              <ToastProvider>
+                <Screen />
+              </ToastProvider>
+            </LucideProvider>
+          </AuthProvider>
+        </RealtimeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );

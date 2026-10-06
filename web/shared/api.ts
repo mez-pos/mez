@@ -46,6 +46,33 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * The server's error, whether thrown as it is or as the cause of an error a
+ * screen put into its own words (TicketQueue does). Null for anything else.
+ */
+export function apiErrorOf(err: unknown): ApiError | null {
+  if (err instanceof ApiError) return err;
+  if (err instanceof Error && err.cause instanceof ApiError) return err.cause;
+  return null;
+}
+
+/**
+ * The server did not answer for itself: no network, no answer in time, or a
+ * relay or proxy saying 502, 503 or 504 because it could not reach the venue.
+ * Whatever was sent may or may not have been done.
+ */
+export function isUnreachable(err: unknown): boolean {
+  const api = apiErrorOf(err);
+  if (!api) return false;
+  return api.unreachable || (api.status !== null && api.status >= 502 && api.status <= 504);
+}
+
+/** The server's own words when it answered, or the fallback when it was not reached or the failure is not the server's. */
+export function wordsOf(err: unknown, fallback: string): string {
+  const api = apiErrorOf(err);
+  return api && !isUnreachable(api) ? api.message : fallback;
+}
+
 // Mirrors of internal/api's header constants.
 const headerStaffToken = "X-Staff-Token";
 const headerIdempotencyKey = "Idempotency-Key";

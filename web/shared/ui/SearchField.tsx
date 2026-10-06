@@ -7,7 +7,7 @@
 //   and leaves the field, which drops a tablet's on-screen keyboard.
 // - The input's text is 16px at least (tokens.css), so iOS does not zoom.
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { cx } from "./cx";
 import { debounce } from "./debounce";
 import { CloseIcon, SearchIcon } from "./icons";
@@ -25,7 +25,9 @@ export function SearchField({ onSearch, label, debounceMs = 200, initialQuery = 
   const [query, setQuery] = useState(initialQuery);
   const input = useRef<HTMLInputElement>(null);
   const latest = useRef(onSearch);
-  latest.current = onSearch;
+  useLayoutEffect(() => {
+    latest.current = onSearch;
+  });
 
   const report = useMemo(() => debounce((q: string) => latest.current(q.trim()), debounceMs), [debounceMs]);
   useEffect(() => () => report.cancel(), [report]);

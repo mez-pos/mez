@@ -4,9 +4,9 @@
 
 import { useState } from "react";
 import type { StockItem, StockMovementInput, StockRecorded } from "../../../shared/api-types";
-import { Button, Modal } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { Field, inputClass } from "../FormFields";
+import { FormModal } from "../FormModal";
 import { formatDelta, formatQty } from "../../../shared/stock-qty";
 import { countDelta, emptyMovementForm, problemOf, reasons, toMovementInput, type HandKind, type MovementForm, type Problem } from "./stock-logic";
 
@@ -34,6 +34,7 @@ export function MovementModal({ item, kind, onSave, onDone, onClose }: MovementM
     setProblem(null);
   };
   const save = async () => {
+    if (busy) return;
     const built = toMovementInput(kind, form);
     if ("problem" in built) {
       setProblem(built.problem);
@@ -53,80 +54,59 @@ export function MovementModal({ item, kind, onSave, onDone, onClose }: MovementM
   const c = copy[kind];
 
   return (
-    <Modal
-      open
-      onClose={onClose}
+    <FormModal
       title={`${c.title}: ${item.name}`}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" disabled={busy} onClick={() => void save()}>
-            {busy ? "Saving" : c.save}
-          </Button>
-        </>
-      }
+      busy={busy}
+      saveLabel={c.save}
+      onSave={() => void save()}
+      onClose={onClose}
+      refusal={problem && problem.field === null ? problem.message : null}
     >
-      <form
-        className="flex flex-col gap-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void save();
-        }}
-      >
-        {problem && problem.field === null && (
-          <p role="alert" className="text-base text-danger">
-            {problem.message}
-          </p>
+      <Field label={`${c.qty}, in ${item.unit}`} error={on("qty")}>
+        {(id) => (
+          <input
+            id={id}
+            className={cx(inputClass, "text-right font-mono tabular-nums")}
+            value={form.qty}
+            inputMode="decimal"
+            autoComplete="off"
+            autoFocus
+            onChange={(e) => set({ qty: e.target.value })}
+          />
         )}
-        <Field label={`${c.qty}, in ${item.unit}`} error={on("qty")}>
+      </Field>
+      {kind === "counted" && (
+        <p role="status" className="rounded border border-line bg-sunken px-3 py-2.5 text-sm text-fg-2">
+          The ledger says <span className="font-mono">{formatQty(item.on_hand, item.unit)}</span>.
+          {delta !== null && (
+            <>
+              {" "}
+              This records <span className="font-mono">{formatDelta(delta, item.unit)}</span>.
+            </>
+          )}
+        </p>
+      )}
+      {kind === "wasted" && (
+        <Field label="Why" error={on("reason")}>
           {(id) => (
-            <input
-              id={id}
-              className={cx(inputClass, "text-right font-mono tabular-nums")}
-              value={form.qty}
-              inputMode="decimal"
-              autoComplete="off"
-              autoFocus
-              onChange={(e) => set({ qty: e.target.value })}
-            />
+            <select id={id} className={inputClass} value={form.reason} onChange={(e) => set({ reason: e.target.value as MovementForm["reason"] })}>
+              <option value="">Choose a reason</option>
+              {reasons.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
           )}
         </Field>
-        {kind === "counted" && (
-          <p role="status" className="rounded border border-line bg-sunken px-3 py-2.5 text-sm text-fg-2">
-            The ledger says <span className="font-mono">{formatQty(item.on_hand, item.unit)}</span>.
-            {delta !== null && (
-              <>
-                {" "}
-                This records <span className="font-mono">{formatDelta(delta, item.unit)}</span>.
-              </>
-            )}
-          </p>
-        )}
-        {kind === "wasted" && (
-          <Field label="Why" error={on("reason")}>
-            {(id) => (
-              <select id={id} className={inputClass} value={form.reason} onChange={(e) => set({ reason: e.target.value as MovementForm["reason"] })}>
-                <option value="">Choose a reason</option>
-                {reasons.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-        )}
-        <Field
-          label={kind === "adjusted" || form.reason === "other" ? "Note" : "Note, if any"}
-          {...(kind === "adjusted" ? { hint: "Say why it is being corrected." } : {})}
-          error={on("note")}
-        >
-          {(id) => <input id={id} className={inputClass} value={form.note} maxLength={200} onChange={(e) => set({ note: e.target.value })} />}
-        </Field>
-        <button type="submit" hidden />
-      </form>
-    </Modal>
+      )}
+      <Field
+        label={kind === "adjusted" || form.reason === "other" ? "Note" : "Note, if any"}
+        {...(kind === "adjusted" ? { hint: "Say why it is being corrected." } : {})}
+        error={on("note")}
+      >
+        {(id) => <input id={id} className={inputClass} value={form.note} maxLength={200} onChange={(e) => set({ note: e.target.value })} />}
+      </Field>
+    </FormModal>
   );
 }

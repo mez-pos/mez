@@ -99,3 +99,19 @@ export function closedText(iso: string, now: Date): string {
   if (at.toDateString() === now.toDateString()) return hm;
   return `${at.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit" })} ${hm}`;
 }
+
+/** The fields that carry a manager's approval: who gave it and their PIN. */
+const approvalFields: ReadonlySet<string> = new Set(["authorised_by", "pin"]);
+
+/**
+ * What a bill command's idempotency key is kept for: where it goes (the bill,
+ * the payment, the invoice) and what it asks (the selection, the amount, the
+ * reason), never whose approval it carries. A refund whose answer was lost and
+ * that another manager approves again is the same refund, and must replay
+ * rather than be issued twice.
+ */
+export function commandIdentity(suffix: string, body: unknown): string {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) return JSON.stringify({ suffix, body: body ?? null });
+  const command = Object.fromEntries(Object.entries(body).filter(([field]) => !approvalFields.has(field)));
+  return JSON.stringify({ suffix, command });
+}

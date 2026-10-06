@@ -2,7 +2,7 @@
 // (docs/design/screens/guest-menu.md). Pure, so each rule is tested without
 // a phone.
 
-import { ApiError } from "../../shared/api";
+import { ApiError, isUnreachable } from "../../shared/api";
 import type { CategoryResponse, GuestItemResponse, GuestMenuResponse } from "../../shared/api-types";
 
 export type DietFilter = "veg" | "vegan" | "gluten_free";
@@ -119,7 +119,7 @@ export function problemOf(error: unknown): Problem {
   if (error.code === "pickup_off") return "collect_off";
   // The relay answers 502, 503 and 504 for a venue it cannot reach, and 429
   // for one that is busy: all of them pass, and all of them say try again.
-  if (error.unreachable || error.status === 429 || (error.status !== null && error.status >= 502 && error.status <= 504)) {
+  if (isUnreachable(error) || error.status === 429) {
     return "unreachable";
   }
   return "failed";

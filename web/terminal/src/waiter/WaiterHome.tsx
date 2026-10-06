@@ -4,9 +4,10 @@
 // own screen (T03); a free table is seated and one to clear is cleared right
 // here (ADR-171); a table with several orders is the floor's.
 //
-// Left out, as nothing rings them before the guest channel (phase 11): the bell,
-// Table Requests and QR Orders. Reserved is not a state a table has (D06 is out
-// of scope); the fifth pill is To Clear, which is one.
+// Guests' requests from their phones are the frame's: a pill in the header
+// whenever one waits, and its sheet (TerminalShell). So the design's bell,
+// Table Requests and QR Orders are not repeated here. Reserved is not a state a
+// table has (D06 is out of scope); the fifth pill is To Clear, which is one.
 
 import { LayoutGridIcon, LeafIcon, PlusIcon, TimerIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";

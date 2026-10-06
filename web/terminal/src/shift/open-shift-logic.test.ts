@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { joinNames, setFaceCount, soldOutNames, soldOutNotice } from "./open-shift-logic";
+import { floatRequest, joinNames, setFaceCount, soldOutNames, soldOutNotice, typedFloat } from "./open-shift-logic";
 import { maxPieces } from "./shift-logic";
 
 describe("setFaceCount", () => {
@@ -72,5 +72,33 @@ describe("joinNames", () => {
     expect(joinNames(["Arjun"])).toBe("Arjun");
     expect(joinNames(["Arjun", "Priya"])).toBe("Arjun and Priya");
     expect(joinNames(["Arjun", "Priya", "Meera"])).toBe("Arjun, Priya and Meera");
+  });
+});
+
+describe("typedFloat", () => {
+  const tests = [
+    { name: "an amount", text: "1500", want: 150000 },
+    { name: "an amount with paise", text: "1500.50", want: 150050 },
+    { name: "an empty box is none", text: "  ", want: 0 },
+    { name: "text that is not an amount is not zero", text: "15oo", want: null },
+    { name: "too many decimals", text: "1.234", want: null },
+    { name: "a sign", text: "-5", want: null },
+  ];
+  for (const tt of tests) {
+    it(tt.name, () => expect(typedFloat(tt.text, "INR")).toBe(tt.want));
+  }
+});
+
+describe("floatRequest", () => {
+  it("is nothing to send while the typed amount is not one", () => {
+    expect(floatRequest("XYZ", { tally: {}, typed: null })).toBeNull();
+  });
+  it("sends the typed amount for a currency with no notes", () => {
+    expect(floatRequest("XYZ", { tally: {}, typed: 0 })).toEqual({ total: { minor: 0, currency: "XYZ" } });
+    expect(floatRequest("XYZ", { tally: {}, typed: 4200 })).toEqual({ total: { minor: 4200, currency: "XYZ" } });
+  });
+  it("sends the notes counted, whatever was typed, for a currency with them", () => {
+    const req = floatRequest("INR", { tally: { 50000: 2 }, typed: null });
+    expect(req?.total).toEqual({ minor: 100000, currency: "INR" });
   });
 });

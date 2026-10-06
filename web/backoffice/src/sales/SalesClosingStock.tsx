@@ -4,7 +4,7 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ClosingStockItemTotal, ClosingStockReport, Money as Amount, StockUnit } from "../../../shared/api-types";
-import { ApiError } from "../../../shared/api";
+import { wordsOf } from "../../../shared/api";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { formatDelta, formatQty } from "../../../shared/stock-qty";
 import { Card, EmptyState, InboxIcon, Money } from "../../../shared/ui";
@@ -65,11 +65,7 @@ export function ClosingStock({ range }: { range: SalesRange }) {
         {report.error && (
           <EmptyState
             icon={<InboxIcon />}
-            line={
-              report.error instanceof ApiError && !report.error.unreachable
-                ? report.error.message
-                : "Can't reach the mez server. Check this computer's connection."
-            }
+            line={wordsOf(report.error, "Can't reach the mez server. Check this computer's connection.")}
             action={{ label: "Try again", onClick: () => void report.refetch() }}
           />
         )}

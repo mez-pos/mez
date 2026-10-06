@@ -53,7 +53,7 @@ export function usePreview<I, T>({ active, input, missing, key, ask }: PreviewOp
       clearTimeout(timer);
       controller.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- input and missing follow key, which changes exactly when they do
   }, [active, key, ask]);
 
   return preview;

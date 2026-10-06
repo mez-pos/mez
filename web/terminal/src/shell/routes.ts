@@ -8,7 +8,7 @@ export const route = {
    */
   order: "/pos",
   tables: "/tables",
-  /** The floor with one table picked: where a waiter's card leads until T03 is built. */
+  /** The floor with one table picked: where a waiter's card leads for a table with several orders, or none to open. */
   table: (tableId: number) => `/tables?table=${tableId}`,
   /** Order history; with an id, one settled bill. */
   orders: "/orders",

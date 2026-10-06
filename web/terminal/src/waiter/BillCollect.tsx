@@ -39,6 +39,14 @@ interface BillCollectProps {
   busy: boolean;
   /** Why the last try was not recorded. */
   error: string | null;
+  /**
+   * The last try was sent and its answer lost: it may have been recorded.
+   * The method and the amount stay as they were sent until the order says.
+   */
+  uncertain: boolean;
+  /** The order is being read again to see. */
+  checking: boolean;
+  onCheck: () => void;
   onMethod: (method: PaymentMethod) => void;
   onEntered: (minor: number) => void;
   onKey: (key: NumKey) => void;
@@ -48,7 +56,28 @@ interface BillCollectProps {
 }
 
 export function BillCollect(props: BillCollectProps) {
-  const { from, target, method, entered, tip, reference, plan, quick, busy, error, onMethod, onEntered, onKey, onTip, onReference, onSend } = props;
+  const {
+    from,
+    target,
+    method,
+    entered,
+    tip,
+    reference,
+    plan,
+    quick,
+    error,
+    uncertain,
+    checking,
+    onCheck,
+    onMethod,
+    onEntered,
+    onKey,
+    onTip,
+    onReference,
+    onSend,
+  } = props;
+  // Nothing is changed while a payment that may have been recorded is unresolved.
+  const busy = props.busy || uncertain;
   const [pad, setPad] = useState(false);
   const money = (minor: number): Amount => ({ minor, currency: target.currency });
   const cash = method === "cash";
@@ -167,7 +196,12 @@ export function BillCollect(props: BillCollectProps) {
           </div>
         )}
 
-        {error ? (
+        {uncertain ? (
+          <p role="alert" className="mt-3 rounded bg-chip-warning-bg p-3 text-base text-chip-warning-fg">
+            The payment may have been recorded.{" "}
+            {checking ? "Checking..." : "The server could not be reached to check. Take nothing else for this share until it answers."}
+          </p>
+        ) : error ? (
           <p role="alert" className="mt-3 text-base text-danger">
             {error} Trying again sends the same payment, so it cannot be recorded twice.
           </p>
@@ -198,9 +232,15 @@ export function BillCollect(props: BillCollectProps) {
               className="min-h-charge min-w-0 flex-1 rounded border border-line-strong bg-raised px-4 text-base text-fg outline-accent-tint placeholder:text-fg-muted focus-visible:border-accent focus-visible:outline-3"
             />
           )}
-          <Button variant="primary" size="charge" disabled={busy || plan.problem !== null} onClick={onSend} className="w-52 shrink-0">
-            {busy ? "Recording" : error ? "Try again" : cash ? "Cash received" : "Mark as paid"}
-          </Button>
+          {uncertain ? (
+            <Button variant="primary" size="charge" disabled={checking} onClick={onCheck} className="w-52 shrink-0">
+              {checking ? "Checking" : "Check again"}
+            </Button>
+          ) : (
+            <Button variant="primary" size="charge" disabled={busy || plan.problem !== null} onClick={onSend} className="w-52 shrink-0">
+              {busy ? "Recording" : error ? "Try again" : cash ? "Cash received" : "Mark as paid"}
+            </Button>
+          )}
         </div>
       </div>
     </section>

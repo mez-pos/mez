@@ -3,6 +3,7 @@ import type { LineResponse, OrderResponse, TenderResponse } from "../../../share
 import {
   anythingLeft,
   closedText,
+  commandIdentity,
   fullSelection,
   leftOn,
   refundReasonText,
@@ -116,5 +117,40 @@ describe("words", () => {
     expect(refundReasonText("wrong_item")).toBe("Dish was wrong");
     expect(refundReasonText("stale_code")).toBe("Stale code");
     expect(refundReasonText("")).toBe("");
+  });
+});
+
+describe("commandIdentity", () => {
+  const refund = (approval: { authorised_by: string; pin: string }, extra: Record<string, unknown> = {}) => ({
+    ...approval,
+    credit: { lines: [{ line_id: 2, qty: 1 }] },
+    refunds: [{ payment_id: 3, amount: inr(12600) }],
+    reason: "wrong_item",
+    ...extra,
+  });
+  const asha = { authorised_by: "asha", pin: "1234" };
+  const ravi = { authorised_by: "ravi", pin: "9876" };
+
+  it("is the same for a retry another manager approves, so it cannot refund twice", () => {
+    expect(commandIdentity("/credit-notes", refund(ravi))).toBe(commandIdentity("/credit-notes", refund(asha)));
+    expect(commandIdentity("/payments/3/void", { ...ravi, reason: "charged_twice" })).toBe(
+      commandIdentity("/payments/3/void", { ...asha, reason: "charged_twice" }),
+    );
+  });
+  it("is the same when a PIN is typed again", () => {
+    expect(commandIdentity("/invoices/4/reprint", { ...asha, reason: "x" })).toBe(
+      commandIdentity("/invoices/4/reprint", { authorised_by: "asha", pin: "0000", reason: "x" }),
+    );
+  });
+  it("differs when the command does", () => {
+    const first = commandIdentity("/credit-notes", refund(asha));
+    expect(commandIdentity("/credit-notes", refund(asha, { reason: "goodwill" }))).not.toBe(first);
+    expect(commandIdentity("/credit-notes", refund(asha, { refunds: [{ payment_id: 3, amount: inr(100) }] }))).not.toBe(first);
+    expect(commandIdentity("/credit-notes", refund(asha, { refunds: [{ payment_id: 5, amount: inr(12600) }] }))).not.toBe(first);
+    expect(commandIdentity("/payments/3/void", { reason: "x" })).not.toBe(commandIdentity("/payments/4/void", { reason: "x" }));
+  });
+  it("takes a command with no body", () => {
+    expect(commandIdentity("/close", undefined)).toBe(commandIdentity("/close", undefined));
+    expect(commandIdentity("/close", undefined)).not.toBe(commandIdentity("/hold", undefined));
   });
 });

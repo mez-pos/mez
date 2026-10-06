@@ -4,7 +4,7 @@
 // current (Task 5, ADR-074).
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ApiError } from "../../../shared/api";
 import type {
   AddLine,
@@ -78,6 +78,12 @@ export interface Ticket {
    * same tender, so a lost answer cannot charge twice (terminal-tender.md).
    */
   tender: (payment: TenderPayment, key: string) => Promise<void>;
+  /**
+   * Reads the order again from the server, past the cache: after a payment
+   * whose answer was lost, to see whether it was recorded. Rejects when the
+   * server cannot be reached.
+   */
+  reread: () => Promise<OrderResponse>;
   /** Issues the invoice for a bill paid before invoices came with the payment. */
   issueInvoice: () => Promise<void>;
   /** Closes the ticket; the register then starts a counter ticket. */
@@ -94,7 +100,9 @@ export function useTicket(): Ticket {
   const toast = useToast();
   // The book is made once; what it says when a note is lost follows the render.
   const noteLost = useRef<(name: string, why: string) => void>(() => undefined);
-  noteLost.current = (name, why) => toast(`${name} is on the order, but its note is not. ${why}`, { tone: "warning" });
+  useLayoutEffect(() => {
+    noteLost.current = (name, why) => toast(`${name} is on the order, but its note is not. ${why}`, { tone: "warning" });
+  });
 
   const [book] = useState(() => {
     const memory = ticketMemory(browserStorage("session"));
@@ -188,6 +196,11 @@ export function useTicket(): Ticket {
     compLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/comp`, { ...approval, reason_code: reasonCode }),
     discount: (request) => post("/discounts", request),
     tender: (payment, key) => post("/payments", payment, queue, key),
+    reread: async () => {
+      const read = await order.refetch({ throwOnError: true });
+      if (!read.data) throw new Error("There is no order to read.");
+      return read.data;
+    },
     issueInvoice: () => post("/invoice", undefined),
     close: () => post("/close", undefined),
     reprint: (invoiceSeq, reason, approval) => post(`/invoices/${invoiceSeq}/reprint`, { ...approval, reason }),

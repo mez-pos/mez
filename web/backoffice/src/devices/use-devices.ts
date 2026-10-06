@@ -14,6 +14,8 @@ export const REFRESH_MS = 30_000;
 
 export interface DevicesApi {
   data: DeviceListResponse | undefined;
+  /** When the list was last read, in epoch milliseconds; 0 before it has been. */
+  readAt: number;
   loading: boolean;
   error: unknown;
   refetch: () => void;
@@ -37,6 +39,7 @@ export function useDevices(): DevicesApi {
 
   return {
     data: query.data,
+    readAt: query.dataUpdatedAt,
     loading: query.isPending,
     error: query.error,
     refetch: () => void query.refetch(),

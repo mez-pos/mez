@@ -2,7 +2,7 @@
 // the app and handed to RealtimeProvider; components read it with
 // useRealtime() and listen with useRealtimeNotices().
 
-import { createContext, useContext, useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { ApiError, createApiClient, type Credentials } from "./api";
 import { RealtimeConnection, streamPath, type ProbeResult, type RealtimeNotice, type RealtimeStatus } from "./realtime";
 
@@ -76,6 +76,8 @@ export function useRealtime(): Realtime {
 export function useRealtimeNotices(listener: (notice: RealtimeNotice) => void): void {
   const connection = useConnection();
   const latest = useRef(listener);
-  latest.current = listener;
+  useLayoutEffect(() => {
+    latest.current = listener;
+  });
   useEffect(() => connection.onNotice((notice) => latest.current(notice)), [connection]);
 }

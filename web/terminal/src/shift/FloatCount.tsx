@@ -6,16 +6,15 @@
 // A currency with no table of notes is one box for the whole amount.
 
 import { useState } from "react";
-import { amountInputText, formatMoney, parseAmount } from "../../../shared/money";
+import { amountInputText, formatMoney } from "../../../shared/money";
 import { Money } from "../../../shared/ui";
-import { setFaceCount } from "./open-shift-logic";
-import type { Counted } from "./DrawerCounter";
+import { setFaceCount, typedFloat, type FloatCounted } from "./open-shift-logic";
 import { facesFor, tallyTotal } from "./shift-logic";
 
 interface FloatCountProps {
   currency: string;
-  value: Counted;
-  onChange: (next: Counted) => void;
+  value: FloatCounted;
+  onChange: (next: FloatCounted) => void;
   disabled?: boolean;
 }
 
@@ -25,7 +24,8 @@ const boxClass =
 
 export function FloatCount({ currency, value, onChange, disabled = false }: FloatCountProps) {
   const faces = facesFor(currency);
-  const total = faces.length > 0 ? tallyTotal(value.tally) : value.typed;
+  // Text that is not an amount counts as nothing here, and the screen will not send it.
+  const total = faces.length > 0 ? tallyTotal(value.tally) : (value.typed ?? 0);
 
   return (
     <section aria-label="Opening float" className="flex flex-col gap-6">
@@ -70,9 +70,19 @@ export function FloatCount({ currency, value, onChange, disabled = false }: Floa
 }
 
 /** The whole amount, for a currency with no notes and coins to count. */
-function TotalBox({ currency, typed, disabled, onTyped }: { currency: string; typed: number; disabled: boolean; onTyped: (minor: number) => void }) {
-  const [text, setText] = useState(typed === 0 ? "" : amountInputText({ minor: typed, currency }));
-  const bad = text.trim() !== "" && parseAmount(text, currency) === null;
+function TotalBox({
+  currency,
+  typed,
+  disabled,
+  onTyped,
+}: {
+  currency: string;
+  typed: number | null;
+  disabled: boolean;
+  onTyped: (minor: number | null) => void;
+}) {
+  const [text, setText] = useState(typed === null || typed === 0 ? "" : amountInputText({ minor: typed, currency }));
+  const bad = typedFloat(text, currency) === null;
   return (
     <label className="col-span-full flex flex-col gap-2 rounded border border-line p-3.5 sm:col-span-2">
       <span className="text-sm text-fg-muted">Total counted ({currency})</span>
@@ -86,7 +96,7 @@ function TotalBox({ currency, typed, disabled, onTyped }: { currency: string; ty
         onFocus={(e) => e.currentTarget.select()}
         onChange={(e) => {
           setText(e.target.value);
-          onTyped(parseAmount(e.target.value, currency) ?? 0);
+          onTyped(typedFloat(e.target.value, currency));
         }}
         className={boxClass}
       />

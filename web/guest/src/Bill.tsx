@@ -1,6 +1,7 @@
 // M08's bill (docs/design/screens/guest-bill.md): what the table has had and
-// what it comes to, with its tax, as the venue works it out. Paying from the
-// phone is 4e; until then this says where to pay.
+// what it comes to, with its tax, as the venue works it out, and how to pay
+// what is left: online where the venue has a gateway, by UPI to the venue's
+// own address where it takes UPI, and otherwise where to pay in person.
 
 import type { GuestBillResponse, GuestTableResponse } from "../../shared/api-types";
 import { formatMoney } from "../../shared/money";

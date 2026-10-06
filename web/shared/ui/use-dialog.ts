@@ -3,16 +3,18 @@
 // focus in and back out, and turns Escape into a "cancel" event. Modal and
 // Sheet are both built on this.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 export function useDialog(open: boolean, onClose: () => void) {
   const ref = useRef<HTMLDialogElement>(null);
   const latest = useRef(onClose);
-  latest.current = onClose;
   // What the owner last said. The browser fires "close" a task later, even
   // for a close this hook made, so the event alone cannot say who closed it.
   const wanted = useRef(open);
-  wanted.current = open;
+  useLayoutEffect(() => {
+    latest.current = onClose;
+    wanted.current = open;
+  });
 
   useEffect(() => {
     const dialog = ref.current;

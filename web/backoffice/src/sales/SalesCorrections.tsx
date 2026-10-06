@@ -7,7 +7,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { Link } from "wouter";
 import type { AuditAnalysis, AuditKindTally, AuditPersonTally, AuditReasonTally } from "../../../shared/api-types";
-import { ApiError } from "../../../shared/api";
+import { wordsOf } from "../../../shared/api";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { Card, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
@@ -47,11 +47,7 @@ export function Corrections({ range }: { range: SalesRange }) {
       {analysis.error && (
         <EmptyState
           icon={<InboxIcon />}
-          line={
-            analysis.error instanceof ApiError && !analysis.error.unreachable
-              ? analysis.error.message
-              : "Can't reach the mez server. Check this computer's connection."
-          }
+          line={wordsOf(analysis.error, "Can't reach the mez server. Check this computer's connection.")}
           action={{ label: "Try again", onClick: () => void analysis.refetch() }}
         />
       )}

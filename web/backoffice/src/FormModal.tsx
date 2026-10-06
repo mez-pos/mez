@@ -14,10 +14,12 @@ export interface FormModalProps {
   onClose: () => void;
   /** The refusal that belongs to no one field, shown above them all. */
   refusal?: string | null;
+  /** The save button's words, when "Save" is not what it does. */
+  saveLabel?: string;
   children: ReactNode;
 }
 
-export function FormModal({ title, size = "sm", busy, onSave, onClose, refusal, children }: FormModalProps) {
+export function FormModal({ title, size = "sm", busy, onSave, onClose, refusal, saveLabel = "Save", children }: FormModalProps) {
   return (
     <Modal
       open
@@ -30,7 +32,7 @@ export function FormModal({ title, size = "sm", busy, onSave, onClose, refusal, 
             Cancel
           </Button>
           <Button variant="primary" disabled={busy} onClick={onSave}>
-            {busy ? "Saving" : "Save"}
+            {busy ? "Saving" : saveLabel}
           </Button>
         </>
       }

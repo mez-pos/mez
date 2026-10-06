@@ -18,8 +18,7 @@ export function useRequestChime(requests: readonly Pick<GuestRequestResponse, "i
 
   useEffect(() => {
     const touch = () => {
-      ctx.current ??= audioContext();
-      void ctx.current?.resume().catch(() => undefined);
+      ctx.current = audioContext();
     };
     window.addEventListener("pointerdown", touch);
     window.addEventListener("keydown", touch);

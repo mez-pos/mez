@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import type { ChargeResolution, GuestRequestResponse, PaidNoticeResponse, UnappliedChargeResponse } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, Money, Sheet } from "../../../shared/ui";
+import { useClock } from "../../../shared/use-clock";
 import { choicesOf, dishCount, gatewayName, methodWord, owesOtherwise, saidAgo, waited } from "./request-logic";
 import type { GuestRequests } from "./use-guest-requests";
 
@@ -17,11 +18,7 @@ interface RequestsSheetProps {
 
 export function RequestsSheet({ guests, onClose, onTakePayment }: RequestsSheetProps) {
   // "4 min" moves on while the sheet is open.
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 15_000);
-    return () => clearInterval(t);
-  }, []);
+  const now = useClock(15_000);
 
   return (
     <Sheet open onClose={onClose} title="From the tables">

@@ -11,10 +11,9 @@ import { UnlockIcon } from "lucide-react";
 import { useState } from "react";
 import { formatMoney } from "../../../shared/money";
 import { Button, Card, useToast } from "../../../shared/ui";
-import { emptyCount, type Counted } from "./DrawerCounter";
 import { FloatCount } from "./FloatCount";
+import { emptyFloat, floatRequest, type FloatCounted } from "./open-shift-logic";
 import { ShiftDetailsCard, ShiftStage, SoldOutCard, type DetailRow } from "./ShiftStage";
-import { countRequest } from "./shift-logic";
 import type { ShiftCommands } from "./use-shift";
 
 interface OpenShiftScreenProps {
@@ -32,13 +31,15 @@ interface OpenShiftScreenProps {
 }
 
 export function OpenShiftScreen({ currency, open, details, soldOut, menuHref, lastZ, onViewZ, onCancel }: OpenShiftScreenProps) {
-  const [counted, setCounted] = useState<Counted>(emptyCount);
+  const [counted, setCounted] = useState<FloatCounted>(emptyFloat);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
 
-  const float = countRequest(currency, counted.tally, counted.typed);
+  // Null while the amount typed is not one: nothing is sent as a guessed zero.
+  const float = floatRequest(currency, counted);
   const submit = async () => {
+    if (!float) return;
     setBusy(true);
     setError(null);
     try {
@@ -78,7 +79,7 @@ export function OpenShiftScreen({ currency, open, details, soldOut, menuHref, la
             <Button size="charge" className="sm:w-48" disabled={busy} onClick={onCancel}>
               Cancel
             </Button>
-            <Button variant="primary" size="charge" className="flex-1" disabled={busy} onClick={() => void submit()}>
+            <Button variant="primary" size="charge" className="flex-1" disabled={busy || float === null} onClick={() => void submit()}>
               <UnlockIcon aria-hidden="true" size={19} />
               Open shift &amp; start selling
             </Button>

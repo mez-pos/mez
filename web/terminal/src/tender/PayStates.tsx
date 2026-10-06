@@ -8,7 +8,7 @@
 // what records it. So there is no QR, no terminal name and no "Retry
 // terminal" here, and a refusal is the server's, not a bank's.
 
-import { ArrowRightIcon, CheckIcon, CreditCardIcon, QrCodeIcon, XIcon } from "lucide-react";
+import { ArrowRightIcon, CheckIcon, CreditCardIcon, QrCodeIcon, RefreshCwIcon, XIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Money as Amount, PaymentMethod } from "../../../shared/api-types";
 import { Button, Money } from "../../../shared/ui";
@@ -125,6 +125,43 @@ export function RefusedCard({ method, reason, busy, onOther, onRetry }: RefusedC
           {busy ? "Recording" : "Try again"}
         </Button>
       </div>
+    </section>
+  );
+}
+
+interface UncertainCardProps {
+  method: PaymentMethod;
+  /** What was sent: the bill's part. */
+  amount: Amount;
+  /** The order is being read again. */
+  checking: boolean;
+  onCheck: () => void;
+}
+
+/**
+ * A payment was sent and the answer lost: the server may have recorded it.
+ * Nothing else can be taken until the order says whether it did, so the
+ * method and the amount stay as they were sent and no other is offered.
+ */
+export function UncertainCard({ method, amount, checking, onCheck }: UncertainCardProps) {
+  return (
+    <section role="alert" aria-label="Payment may have been recorded" className={cx(card, "border-chip-warning-border bg-chip-warning-bg")}>
+      <p className={cx(eyebrow, "text-chip-warning-fg")}>
+        {methodNames[method]} · <Money amount={amount} />
+      </p>
+      <Outcome
+        mark={
+          <Mark className="bg-highlight text-highlight-fg">
+            <RefreshCwIcon size={22} strokeWidth={2.4} className={checking ? "motion-safe:animate-spin" : undefined} />
+          </Mark>
+        }
+        title="The payment may have been recorded"
+      >
+        {checking ? "Checking..." : "The server could not be reached to check. Take nothing else for this bill until it answers."}
+      </Outcome>
+      <Button variant="primary" disabled={checking} onClick={onCheck} className="mt-5 w-full">
+        {checking ? "Checking" : "Check again"}
+      </Button>
     </section>
   );
 }

@@ -19,7 +19,7 @@ export interface MoreActionsProps {
   onDiscount: () => void;
   onFire: (course: number) => void;
   onPastBills: () => void;
-  /** The way to the bill, for a rail with no Pay button: the waiter's, until T05 is built. */
+  /** The way to the bill (T05), for a rail with no Pay button: the waiter's. */
   pay?: { readonly label: string; readonly blocked: boolean; readonly onPay: () => void };
 }
 

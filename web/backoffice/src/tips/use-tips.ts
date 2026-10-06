@@ -3,8 +3,9 @@
 // and pooling.
 
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { PoolMember, StaffListResponse, TipPoolResponse } from "../../../shared/api-types";
+import type { PoolMember, TipPoolResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
+import { useStaffList } from "../../../shared/use-staff-list";
 
 export const tipsKey = (shiftId: number) => ["tips", shiftId] as const;
 
@@ -15,11 +16,7 @@ export function useTips(shiftId: number) {
     queryKey: tipsKey(shiftId),
     queryFn: ({ signal }) => store.api.get<TipPoolResponse>(`/api/v1/shift/${shiftId}/tips`, { signal }),
   });
-  const staff = useQuery({
-    queryKey: ["staff"],
-    queryFn: ({ signal }) => store.api.get<StaffListResponse>("/api/v1/staff", { signal }),
-    staleTime: 60_000,
-  });
+  const staff = useStaffList({ staleTime: 60_000 });
   const commit = async (members: PoolMember[]) => {
     const res = await store.api.post<TipPoolResponse>(`/api/v1/shift/${shiftId}/tips`, { members });
     queryClient.setQueryData(tipsKey(shiftId), res);

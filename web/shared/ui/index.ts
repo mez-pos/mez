@@ -7,6 +7,7 @@
 export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from "./Button";
 export { Card, type CardProps } from "./Card";
 export { EmptyState, type EmptyStateProps } from "./EmptyState";
+export { ErrorBoundary } from "./ErrorBoundary";
 export { Logo, type LogoProps } from "./Logo";
 export { Meta, type MetaProps } from "./Meta";
 export { Confirm, Modal, type ConfirmProps, type ModalProps } from "./Modal";

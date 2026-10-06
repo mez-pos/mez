@@ -1,7 +1,7 @@
 // Past bills and the commands on one (terminal-past-bills.md). A bill is
 // read like any order, kept current by the stream; every command carries an
-// Idempotency-Key kept across retries of the same request, so a refund whose
-// answer was lost is never issued twice.
+// Idempotency-Key kept across retries of the same command, whoever approves
+// the retry, so a refund whose answer was lost is never issued twice.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
@@ -17,6 +17,7 @@ import type {
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { failureOf } from "../register/order-messages";
+import { commandIdentity } from "./bills-logic";
 import { newKey } from "../register/ticket-key";
 import { newer, orderQueryKey } from "../register/use-ticket";
 
@@ -97,7 +98,7 @@ export function useBill(orderId: string): { order: OrderResponse | undefined; er
 
   const post = async (suffix: string, body: unknown): Promise<CommandResponse> => {
     try {
-      const res = await store.api.post<CommandResponse>(path + suffix, body, { idempotencyKey: keys.keyFor({ suffix, body }) });
+      const res = await store.api.post<CommandResponse>(path + suffix, body, { idempotencyKey: keys.keyFor(commandIdentity(suffix, body)) });
       keys.done();
       queryClient.setQueryData<OrderResponse>(orderQueryKey(orderId), (cached) => newer(cached, res.order));
       void queryClient.invalidateQueries({ queryKey: ["orders", "closed"] });

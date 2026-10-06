@@ -3,9 +3,10 @@
 // Over the list, the venue's own link to the outside: ordering from phones.
 
 import { PlusIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { DeviceRecordResponse } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
+import { useClock } from "../../../shared/use-clock";
 import { Panel } from "../dashboard/Panel";
 import { PairModal, RenameModal, RevokeModal } from "./DeviceModals";
 import { DeviceTable } from "./DeviceTable";
@@ -18,7 +19,10 @@ type Editing = { kind: "pair" } | { kind: "rename"; device: DeviceRecordResponse
 export function DevicesScreen() {
   const api = useDevices();
   const toast = useToast();
-  const now = useNow(api.data);
+  // "12 min ago" and "runs out in 7 min" move on each half minute, and the time
+  // is the list's own when it was read later, so a code made a moment ago does
+  // not read a half minute older than it is.
+  const now = new Date(Math.max(useClock(30_000), api.readAt));
   const [editing, setEditing] = useState<Editing | null>(null);
   const data = api.data;
   const waiting = data?.waiting ?? [];
@@ -96,19 +100,4 @@ export function DevicesScreen() {
       )}
     </div>
   );
-}
-
-/**
- * The time, for "12 min ago" and "runs out in 7 min": moving on each 30 seconds,
- * and taken again whenever the list is, so a code made a moment ago does not
- * read a half minute older than it is.
- */
-function useNow(data: unknown): Date {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(t);
-  }, []);
-  useEffect(() => setNow(new Date()), [data]);
-  return now;
 }

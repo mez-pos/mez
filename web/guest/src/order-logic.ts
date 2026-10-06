@@ -3,7 +3,7 @@
 // once, what it remembers of the order it placed, and the words for each
 // answer. The prices in the answer are the server's; nothing here adds up.
 
-import { ApiError } from "../../shared/api";
+import { ApiError, isUnreachable } from "../../shared/api";
 import type { GuestOrderRequest, GuestRoundProgress, GuestRoundResponse, GuestRoundStatus, Money } from "../../shared/api-types";
 import type { PricedLine } from "./cart-logic";
 
@@ -314,7 +314,7 @@ export interface Refusal {
  */
 export function refusalOf(error: unknown): Refusal {
   if (!(error instanceof ApiError)) return { text: "Something went wrong and your order was not placed. Try again, or order at the counter.", readMenu: false };
-  if (error.unreachable || (error.status !== null && error.status >= 502 && error.status <= 504)) {
+  if (isUnreachable(error)) {
     return { text: "Can't reach the kitchen, so your order was not placed. Check your connection and try again.", readMenu: false };
   }
   if (error.status === 429) return { text: "Too many orders at once. Wait a moment and try again.", readMenu: false };

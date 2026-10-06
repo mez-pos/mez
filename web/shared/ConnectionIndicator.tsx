@@ -2,8 +2,8 @@
 // and a "retry now" control while it is down: a full tap target, because the
 // person who wants it has a tray in the other hand.
 
-import { useEffect, useState } from "react";
 import { describeConnection, type Tone } from "./connection-status";
+import { useClock } from "./use-clock";
 import { useRealtime } from "./use-realtime";
 
 const toneClass: Record<Tone, string> = {
@@ -15,7 +15,8 @@ const toneClass: Record<Tone, string> = {
 
 export function ConnectionIndicator() {
   const { status, reconnectNow } = useRealtime();
-  const now = useSecondTick(status.state === "reconnecting");
+  // Once a second while a countdown is showing, and not otherwise.
+  const now = useClock(1000, status.state === "reconnecting");
   const { tone, word, detail, retryable } = describeConnection(status, now);
 
   const body = (
@@ -39,16 +40,4 @@ export function ConnectionIndicator() {
       )}
     </div>
   );
-}
-
-// Re-render once a second while a countdown is showing, and not otherwise.
-function useSecondTick(active: boolean): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!active) return;
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [active]);
-  return now;
 }

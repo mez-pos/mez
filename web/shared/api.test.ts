@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ApiError, createApiClient, noCredentials, retryAfter, type Credentials } from "./api";
+import { ApiError, apiErrorOf, createApiClient, isUnreachable, noCredentials, retryAfter, wordsOf, type Credentials } from "./api";
 
 interface Call {
   path: string;
@@ -197,4 +197,45 @@ describe("retryAfter", () => {
   for (const tt of tests) {
     it(tt.name, () => expect(retryAfter(tt.header, now)).toBe(tt.want));
   }
+});
+
+describe("isUnreachable", () => {
+  const cases: [string, unknown, boolean][] = [
+    ["no network", new ApiError("network", "x"), true],
+    ["a timeout", new ApiError("timeout", "x"), true],
+    ["a relay with no venue behind it: 502", new ApiError("bad_response", "x", 502), true],
+    ["503", new ApiError("internal", "x", 503), true],
+    ["504", new ApiError("bad_response", "x", 504), true],
+    ["a refusal", new ApiError("over_tender", "x", 409), false],
+    ["a 500 is an answer", new ApiError("internal", "x", 500), false],
+    ["the cause of a wrapped error", new Error("Not sent", { cause: new ApiError("network", "x") }), true],
+    ["something that is not an API error", new Error("x"), false],
+    ["not an error at all", "x", false],
+  ];
+  it.each(cases)("%s", (_name, err, want) => {
+    expect(isUnreachable(err)).toBe(want);
+  });
+});
+
+describe("apiErrorOf", () => {
+  it("finds the server's error itself or as a cause", () => {
+    const api = new ApiError("forbidden", "no", 403);
+    expect(apiErrorOf(api)).toBe(api);
+    expect(apiErrorOf(new Error("words", { cause: api }))).toBe(api);
+    expect(apiErrorOf(new Error("words"))).toBeNull();
+    expect(apiErrorOf(null)).toBeNull();
+  });
+});
+
+describe("wordsOf", () => {
+  const fallback = "Can't reach the mez server.";
+  it("is the server's message when it answered", () => {
+    expect(wordsOf(new ApiError("forbidden", "Not allowed", 403), fallback)).toBe("Not allowed");
+  });
+  it("is the fallback when it did not", () => {
+    expect(wordsOf(new ApiError("network", "the server could not be reached"), fallback)).toBe(fallback);
+    expect(wordsOf(new ApiError("bad_response", "bad gateway", 502), fallback)).toBe(fallback);
+    expect(wordsOf(new Error("boom"), fallback)).toBe(fallback);
+    expect(wordsOf(undefined, fallback)).toBe(fallback);
+  });
 });

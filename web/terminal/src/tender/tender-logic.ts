@@ -3,6 +3,7 @@
 // hand back, the part of a cash payment that settles the bill, and the
 // round amounts a guest is likely to hand over. All in integer minor units.
 
+import { apiErrorOf } from "../../../shared/api";
 import type { OrderResponse, PaymentMethod, TenderPayment } from "../../../shared/api-types";
 import { exponentOf } from "../../../shared/money";
 
@@ -123,6 +124,47 @@ function sameTender(a: TenderPayment, b: TenderPayment): boolean {
 }
 
 /**
+ * How a tender that failed stands. A definite refusal is the server saying no
+ * (a 4xx): nothing was recorded. Anything else, the network down, no answer
+ * in time, a gateway giving up or the server failing part way, may have been
+ * recorded with only the answer lost.
+ */
+export type TenderFailure = "refused" | "uncertain";
+
+export function tenderFailure(err: unknown): TenderFailure {
+  const status = apiErrorOf(err)?.status ?? null;
+  return status !== null && status >= 400 && status < 500 ? "refused" : "uncertain";
+}
+
+/**
+ * The attempt to keep after a failure. One that may have been recorded keeps
+ * its key, method and amount until the order says it is not there, so a
+ * second try can only replay it; a refusal lets it go.
+ */
+export function afterFailure(attempt: Attempt, err: unknown): Attempt | null {
+  return tenderFailure(err) === "refused" ? null : attempt;
+}
+
+/**
+ * Whether a tender whose answer was lost reached the order: a tender that
+ * was not on it when this one was sent (`before`, its ids then), with the
+ * same method, amount and tip. The server keeps no key on a tender, so these
+ * are what identify it.
+ */
+export function tenderOutcome(before: readonly number[], body: TenderPayment, order: OrderResponse): "recorded" | "absent" {
+  const known = new Set(before);
+  const found = order.tenders.some(
+    (t) =>
+      !known.has(t.id) &&
+      t.method === body.method &&
+      t.amount.minor === body.amount.minor &&
+      t.amount.currency === body.amount.currency &&
+      t.tip.minor === body.tip.minor,
+  );
+  return found ? "recorded" : "absent";
+}
+
+/**
  * Why Pay is disabled on the order screen, or null when it is not. A paid
  * order still open is not blocked: Pay then finishes it (chargeLabel).
  */
@@ -155,9 +197,11 @@ export function collectOf(plan: TenderPlan, target: number, tip: number): number
  * card or UPI payment is taken on the venue's own machine or code, so the
  * till waits for the cashier to say it went through; a refusal is the
  * server's, there. Money taken that leaves some owed is confirmed before the
- * next payment. A bill paid in full needs none of these: the paid panel says it.
+ * next payment. A payment whose answer was lost holds the screen until the
+ * order says whether it was recorded. A bill paid in full needs none of
+ * these: the paid panel says it.
  */
-export type PayView = "entry" | "waiting" | "refused" | "received";
+export type PayView = "entry" | "waiting" | "refused" | "received" | "uncertain";
 
 export interface PayViewInput {
   paid: boolean;
@@ -166,10 +210,13 @@ export interface PayViewInput {
   /** A card or UPI payment is being taken away from the till. */
   waiting: boolean;
   failed: boolean;
+  /** A payment was sent and its answer lost: it may have been recorded. */
+  uncertain: boolean;
 }
 
-export function payView({ paid, received, waiting, failed }: PayViewInput): PayView {
+export function payView({ paid, received, waiting, failed, uncertain }: PayViewInput): PayView {
   if (paid) return "entry";
+  if (uncertain) return "uncertain";
   if (received) return "received";
   if (waiting) return failed ? "refused" : "waiting";
   return "entry";

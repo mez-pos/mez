@@ -2,10 +2,10 @@
 // sees on a shift, on the terminal and as the back office sign-in, one screen for
 // everyone; where they land after it depends on their role (ADR-148).
 
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import type { UseQueryResult } from "@tanstack/react-query";
 import { CircleHelpIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { StaffListResponse, StaffResponse } from "../api-types";
+import type { StaffResponse } from "../api-types";
 import { formatWait } from "../auth/format";
 import { signInError, unreachableMessage } from "../auth/messages";
 import { useAuth, useAuthStore } from "../auth/use-auth";
@@ -13,6 +13,7 @@ import { ConnectionIndicator } from "../ConnectionIndicator";
 import { applyPinKey, Button, EmptyState, InboxIcon, Logo, type NumKey } from "../ui";
 import { keyFromKeyboard } from "../ui/numpad-keys";
 import { useClock } from "../use-clock";
+import { useStaffList } from "../use-staff-list";
 import { useServerVersion, useVenue } from "../use-venue";
 import { clockText } from "../venue-text";
 import { BrandPanel } from "./login/BrandPanel";
@@ -34,17 +35,14 @@ export function LockScreen() {
   const [error, setError] = useState<string | null>(null);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
-  const now = useNow(lockedUntil !== null);
+  // The clock, once a second, while a lockout countdown is showing.
+  const now = useClock(1000, lockedUntil !== null);
   const locked = lockedUntil !== null && lockedUntil > now;
 
   // Read afresh every time the lock screen shows: it is where someone is
   // about to sign in, and the back office may have just added, renamed or
   // deactivated them (ADR-115). A cached list hid a new person until reload.
-  const staff = useQuery({
-    queryKey: ["staff"],
-    queryFn: () => store.api.get<StaffListResponse>("/api/v1/staff").then((r) => r.staff),
-    refetchOnMount: "always",
-  });
+  const staff = useStaffList({ refetchOnMount: "always" });
 
   const people = staff.data;
   const selected = useMemo(() => people?.find((p) => p.id === selectedId) ?? null, [people, selectedId]);
@@ -208,16 +206,4 @@ function StaffPicker({ query, selected, page, onChoose, onPage }: StaffPickerPro
     return <EmptyState icon={<InboxIcon />} line="Nobody can sign in here yet. Add staff in the back office." className="mt-10 items-start px-0 text-left" />;
   }
   return <ProfileTiles people={query.data} selectedId={selected?.id ?? null} page={page} onChoose={onChoose} onPage={onPage} />;
-}
-
-// The clock, once a second, while a lockout countdown is showing.
-function useNow(ticking: boolean): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!ticking) return;
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [ticking]);
-  return now;
 }

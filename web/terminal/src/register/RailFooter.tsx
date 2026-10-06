@@ -5,7 +5,7 @@
 // screen, and a counter order has no other way to reach the kitchen (ADR-151).
 //
 // A waiter's foot (T02) is Save and Send to Kitchen: sending is the one green
-// there, and the bill is reached from the rail's "..." until T05 is built.
+// there, and the bill (T05) is reached from the rail's "...", as Bill and pay.
 
 import { ArrowRightIcon, BookmarkIcon, SendIcon } from "lucide-react";
 import type { OrderResponse } from "../../../shared/api-types";

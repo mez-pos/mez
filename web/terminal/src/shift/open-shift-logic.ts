@@ -1,8 +1,33 @@
 // The words and arithmetic behind the open-shift screen (D02), apart from the
 // components so they are tested without rendering.
 
+import type { CountRequest } from "../../../shared/api-types";
 import { isSoldOut } from "../../../shared/menu";
-import { maxPieces, type Tally } from "./shift-logic";
+import { parseAmount } from "../../../shared/money";
+import { countRequest, facesFor, maxPieces, type Tally } from "./shift-logic";
+
+/**
+ * The float as counted: by note, or for a currency with no table of notes as
+ * one amount typed, null while what is typed is not an amount.
+ */
+export interface FloatCounted {
+  tally: Tally;
+  typed: number | null;
+}
+
+export const emptyFloat: FloatCounted = { tally: {}, typed: 0 };
+
+/** One amount typed for the whole float. An empty box is none; text that is not an amount is null, never zero. */
+export function typedFloat(text: string, currency: string): number | null {
+  if (text.trim() === "") return 0;
+  return parseAmount(text, currency);
+}
+
+/** The opening float to send, or null while the amount typed is not one: the shift is not opened on a guess. */
+export function floatRequest(currency: string, counted: FloatCounted): CountRequest | null {
+  if (facesFor(currency).length === 0 && counted.typed === null) return null;
+  return countRequest(currency, counted.tally, counted.typed ?? 0);
+}
 
 /**
  * The tally after a count typed into one note's box. Digits only: anything

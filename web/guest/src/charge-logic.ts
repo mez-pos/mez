@@ -4,7 +4,7 @@
 // which charge it started, so it can ask. Whether it was paid is never the
 // phone's to say.
 
-import { ApiError } from "../../shared/api";
+import { ApiError, isUnreachable } from "../../shared/api";
 import type { ChargeStatus, GuestRoundStatus } from "../../shared/api-types";
 
 /** How often an open charge is asked about while the bill is on screen. */
@@ -155,7 +155,7 @@ export function roundStartFailure(error: unknown): string {
       case "gateway_unavailable":
         return error.message;
     }
-    if (error.unreachable || (error.status !== null && error.status >= 502 && error.status <= 504)) {
+    if (isUnreachable(error)) {
       return "Can't reach the kitchen to start the payment. Check your connection and try again.";
     }
   }
@@ -186,7 +186,7 @@ export function startFailure(error: unknown): string {
     if (error.code === "bill_claimed") return "Others at the table are paying that part of the bill. Look at what is left, and choose again.";
     if (error.code === "bill_moved") return "The bill changed just now. Look at it again, then pay.";
     if (error.code === "gateway_unavailable") return error.message;
-    if (error.unreachable || (error.status !== null && error.status >= 502 && error.status <= 504)) {
+    if (isUnreachable(error)) {
       return "Can't reach the kitchen to start the payment. Check your connection, or pay a member of staff.";
     }
   }

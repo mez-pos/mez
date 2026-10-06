@@ -2,7 +2,7 @@
 // their hours when the rule needs them, each share as the server works it
 // out, and pooling once. Every share on screen is the server's.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { TipPoolResponse } from "../../../shared/api-types";
 import { Button, Confirm, EmptyState, InboxIcon, Meta, Money, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
@@ -50,7 +50,7 @@ export function TipsScreen({ shiftId, onBack }: TipsScreenProps) {
         <Money amount={pool.data.total} variant="total" />
       </p>
       {pool.data.total.minor === 0 && <p className="text-base text-fg-muted">No tips were taken in this shift.</p>}
-      {pool.data.pooled ? <Pooled pool={pool.data} /> : <Choose shiftId={shiftId} pool={pool.data} staffList={staff.data.staff} commit={commit} />}
+      {pool.data.pooled ? <Pooled pool={pool.data} /> : <Choose shiftId={shiftId} pool={pool.data} staffList={staff.data} commit={commit} />}
     </div>
   );
 }
@@ -70,9 +70,11 @@ function Choose({ shiftId, pool, staffList, commit }: ChooseProps) {
   const toast = useToast();
   const members = membersOf(rows);
   const preview = useTipPreview(shiftId, members, true);
-  useEffect(() => setError(null), [rows]);
-
-  const set = (i: number, next: Partial<Row>) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...next } : r)));
+  // A change to who is in, or their hours, is a new try: the last refusal goes.
+  const set = (i: number, next: Partial<Row>) => {
+    setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...next } : r)));
+    setError(null);
+  };
   const shareOf = (id: string) => preview.data?.members.find((m) => m.staff_id === id && m.in_pool)?.share;
   const tookOf = (id: string) => pool.members.find((m) => m.staff_id === id)?.taken ?? { ...pool.total, minor: 0 };
   const hours = pool.rule === "hours";

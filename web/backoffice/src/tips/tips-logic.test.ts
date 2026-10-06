@@ -64,7 +64,11 @@ describe("words", () => {
     const refused = (code: ErrorCode, message = "") => new ApiError(code, message, 409);
     expect(tipProblem(refused("already_pooled"), "even")).toMatch(/already pooled/);
     expect(tipProblem(refused("invalid_tip_pool", "invalid tip pool: staff 3 has no hours"), "hours")).toBe("Enter hours for everyone in the pool.");
-    expect(tipProblem(refused("invalid_tip_pool", "invalid tip pool: nobody is in it"), "hours")).toBe("Put at least one person in the pool.");
+    // The code decides, not the server's developer words: an empty pool is caught before it is sent.
+    expect(tipProblem(refused("invalid_tip_pool", "invalid tip pool: nobody is in it"), "hours")).toBe("Enter hours for everyone in the pool.");
+    expect(tipProblem(refused("invalid_tip_pool", "invalid tip pool: nobody is in it"), "even")).toBe("These people can't be pooled. Check who is in.");
+    expect(tipProblem(new ApiError("bad_response", "bad gateway", 502), "even")).toBe("Can't reach the mez server to load the tips.");
+    expect(tipProblem(new ApiError("network", "x"), "even")).toBe("Can't reach the mez server to load the tips.");
     expect(tipProblem(refused("forbidden"), "even")).toMatch(/permission/);
   });
 });

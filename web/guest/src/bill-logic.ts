@@ -2,7 +2,7 @@
 // Every figure is the server's: this decides which rows to draw and what to
 // call them, and adds nothing up.
 
-import { ApiError } from "../../shared/api";
+import { ApiError, isUnreachable } from "../../shared/api";
 import type { GuestBillResponse, Money } from "../../shared/api-types";
 import { rateText } from "../../shared/zreport/zreport-logic";
 
@@ -87,7 +87,7 @@ export const paidTold = "Staff have been told you paid. This bill is marked paid
 export function tellFailure(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.code === "nothing_to_pay") return "This bill has nothing left to pay by UPI. Pull down to read it again.";
-    if (error.unreachable || (error.status !== null && error.status >= 502 && error.status <= 504)) {
+    if (isUnreachable(error)) {
       return "Can't reach the kitchen to tell staff. Show them the payment yourself.";
     }
   }

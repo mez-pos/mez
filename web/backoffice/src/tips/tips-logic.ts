@@ -3,7 +3,7 @@
 // here is hours and minutes into minutes.
 
 import type { PoolMember, StaffResponse, TipPoolResponse, TipRule } from "../../../shared/api-types";
-import { ApiError } from "../../../shared/api";
+import { ApiError, isUnreachable } from "../../../shared/api";
 
 const rules: Readonly<Record<TipRule, string>> = {
   even: "Split evenly",
@@ -69,7 +69,7 @@ export function membersOf(rows: readonly Row[]): PoolMember[] | null {
 /** Why the server would not split or pool, in words. */
 export function tipProblem(err: unknown, rule: TipRule): string {
   if (err instanceof ApiError) {
-    if (err.unreachable) return "Can't reach the mez server to load the tips.";
+    if (isUnreachable(err)) return "Can't reach the mez server to load the tips.";
     switch (err.code) {
       case "forbidden":
         return "You don't have permission to do that. Ask a manager.";
@@ -77,8 +77,8 @@ export function tipProblem(err: unknown, rule: TipRule): string {
         return "This shift's tips are already pooled.";
       case "shift_still_open":
         return "The shift is still open. Tips are pooled after it closes.";
+      // An empty pool never reaches the server: the screen says so first.
       case "invalid_tip_pool":
-        if (/nobody/.test(err.message)) return "Put at least one person in the pool.";
         if (rule === "hours") return "Enter hours for everyone in the pool.";
         return "These people can't be pooled. Check who is in.";
     }

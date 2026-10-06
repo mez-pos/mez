@@ -4,7 +4,7 @@
 // so it can ask for that bill's receipt once the table's code has moved on
 // to the next. Every figure is the server's.
 
-import { ApiError } from "../../shared/api";
+import { ApiError, isUnreachable } from "../../shared/api";
 import type { GuestReceiptResponse, PaymentMethod } from "../../shared/api-types";
 import { clockText } from "../../shared/venue-text";
 import { rateText } from "../../shared/zreport/zreport-logic";
@@ -93,7 +93,7 @@ export type ReceiptProblem = "none_yet" | "unreachable" | "failed";
 export function receiptProblem(error: unknown): ReceiptProblem {
   if (error instanceof ApiError) {
     if (error.code === "receipt_not_found" || error.code === "table_code_unknown") return "none_yet";
-    if (error.unreachable || (error.status !== null && error.status >= 502 && error.status <= 504)) return "unreachable";
+    if (isUnreachable(error)) return "unreachable";
   }
   return "failed";
 }

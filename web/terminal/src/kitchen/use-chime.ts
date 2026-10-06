@@ -9,13 +9,23 @@ import { arrivals, ticketId } from "./board-prefs";
 
 type AudioCtor = typeof AudioContext;
 
+// One context for the page, made the first time sound is wanted. A browser
+// caps how many a page may hold, and each keeps an audio thread alive, so a
+// screen that mounts again reuses this one rather than making another.
+let shared: AudioContext | null = null;
+
+/** The page's audio context, resumed: made on first use, after a touch. Null where there is no audio. */
 export function audioContext(): AudioContext | null {
-  const Ctor = (window.AudioContext ?? (window as unknown as { webkitAudioContext?: AudioCtor }).webkitAudioContext) as AudioCtor | undefined;
-  try {
-    return Ctor ? new Ctor() : null;
-  } catch {
-    return null;
+  if (!shared || shared.state === "closed") {
+    const Ctor = (window.AudioContext ?? (window as unknown as { webkitAudioContext?: AudioCtor }).webkitAudioContext) as AudioCtor | undefined;
+    try {
+      shared = Ctor ? new Ctor() : null;
+    } catch {
+      shared = null;
+    }
   }
+  void shared?.resume().catch(() => undefined);
+  return shared;
 }
 
 /** Two rising notes, about a third of a second in all. */
@@ -46,9 +56,7 @@ export function useChime(on: boolean, fresh: readonly KitchenTicketResponse[] | 
 
   // Made when sound is turned on, which is a tap: the browser allows it then.
   useEffect(() => {
-    if (!on) return;
-    ctx.current ??= audioContext();
-    void ctx.current?.resume().catch(() => undefined);
+    if (on) ctx.current = audioContext();
   }, [on]);
 
   useEffect(() => {

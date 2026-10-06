@@ -28,7 +28,8 @@ export function useTunnel(): TunnelApi {
     data: query.data,
     loading: query.isPending,
     error: query.error,
-    readAt: new Date(query.dataUpdatedAt || Date.now()),
+    // Read only with data, which is when it has been read.
+    readAt: new Date(query.dataUpdatedAt),
     refetch: () => void query.refetch(),
   };
 }

@@ -3,9 +3,10 @@
 // edit, retire or bring back) is under the row's "...".
 
 import { PrinterIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { PrinterResponse, StationPrinterResponse } from "../../../shared/api-types";
 import { Card, StatusChip, useToast } from "../../../shared/ui";
+import { useClock } from "../../../shared/use-clock";
 import { cx } from "../../../shared/ui/cx";
 import { RowMenu } from "../RowMenu";
 import { agoText, connectionText, printsText, problemOf } from "./printers-logic";
@@ -24,7 +25,8 @@ const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
 
 export function PrinterTable({ printers, stations, api, onEdit, onProblem }: PrinterTableProps) {
   const toast = useToast();
-  const now = useNow();
+  // "12 min ago" moves on each half minute.
+  const now = new Date(useClock(30_000));
   // The printer an action is running on: its menu waits for the answer.
   const [busy, setBusy] = useState<number | null>(null);
   const run = (p: PrinterResponse, what: () => Promise<void>, done: string) => {
@@ -114,14 +116,4 @@ export function PrinterTable({ printers, stations, api, onEdit, onProblem }: Pri
       </div>
     </Card>
   );
-}
-
-/** The time, moving on each half minute, for "12 min ago". */
-function useNow(): Date {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(t);
-  }, []);
-  return now;
 }

@@ -3,13 +3,14 @@
 // then who approves it and their PIN. The server checks that person's PIN
 // and permission; the cashier's own session is not enough (ADR-072).
 
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import type { Override, StaffListResponse, StaffResponse } from "../../../shared/api-types";
-import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
+import { isUnreachable } from "../../../shared/api";
+import type { Override, StaffResponse } from "../../../shared/api-types";
+import { useAuth } from "../../../shared/auth/use-auth";
 import { minPin, PinDots } from "../../../shared/screens/PinDots";
 import { applyPinKey, Button, Modal, NumPad, Sheet, type NumKey } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useStaffList } from "../../../shared/use-staff-list";
 import { approvalFailure } from "./order-messages";
 
 interface ApprovalSheetProps {
@@ -47,7 +48,8 @@ export function ApprovalSheet({ title, action, children, ready, problem, onSubmi
       onClose();
     } catch (err) {
       setError(approvalFailure(err, approver.name));
-      setPin("");
+      // A refusal needs the PIN again; a server not reached keeps it for the retry.
+      if (!isUnreachable(err)) setPin("");
       setBusy(false);
     }
   };
@@ -133,13 +135,9 @@ interface ApproverProps {
 }
 
 function Approver({ approver, onChoose, pin, onKey, disabled }: ApproverProps) {
-  const store = useAuthStore();
   const status = useAuth();
   const me = status.kind === "signed_in" ? status.staff.id : null;
-  const staff = useQuery({
-    queryKey: ["staff"],
-    queryFn: () => store.api.get<StaffListResponse>("/api/v1/staff").then((r) => r.staff),
-  });
+  const staff = useStaffList();
 
   // The person signed in is the likeliest approver: a manager voiding their
   // own mistake. A cashier taps the manager's name instead.
