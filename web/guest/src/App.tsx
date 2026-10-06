@@ -11,6 +11,7 @@ import { problemOf } from "./menu-logic";
 import { Problem } from "./Problem";
 import { hashFor, tableCodeFrom, viewFrom, type View } from "./route";
 import { useCart } from "./use-cart";
+import { hasStartedCharge } from "./use-charge";
 import { useGuestMenu, useTable } from "./use-guest";
 import { useOrder } from "./use-order";
 
@@ -23,6 +24,12 @@ export function App() {
 
 function Table({ code }: { code: string }) {
   const [view, go] = useView();
+  // Back from a payment gateway's page, the address is the table's alone:
+  // a guest who went to pay comes back to the bill, not the landing.
+  useEffect(() => {
+    if (viewFrom(window.location.hash) === "landing" && hasStartedCharge(code)) go("bill");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arriving
+  }, []);
   const table = useTable(code);
   // Asked for as soon as the table is known, so the menu is there by the
   // time the guest has read the landing and tapped.

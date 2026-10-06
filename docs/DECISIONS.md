@@ -6853,3 +6853,62 @@ A link's address is on Razorpay's domain, `rzp.io`. Thirty minutes is a guess at
 how long a guest takes. A venue with a gateway set asks Razorpay every 20 seconds
 for as long as any charge is open. Nothing starts a charge yet: no route and no
 screen until 4f3.
+
+## ADR-222 - Paying online from the phone: the venue's server asks the gateway, and the return address is the venue's own
+2026-10 · Status: accepted. Phase 11, Task 4f3.
+Context: ADR-220 and ADR-221 built the charge and the first gateway with nothing to
+start one. This is the guest's API and the phone.
+Decision:
+  - **Two routes under the table's code**: `POST .../bill/charge` starts a charge
+    for what is owed and answers the gateway's page; `GET .../bill/charge/{id}`
+    settles it and answers how it stands. The bill says `online` when the venue has
+    a gateway and something is owed. With no gateway the routes are not mounted and
+    no bill mentions it.
+  - **The return address is never taken from a request.** A charge is shared by a
+    table: started again for the same amount, it is the same charge. If its return
+    address came from the Host a request claims, one phone could start a charge
+    naming an address of its choosing and the next phone at the table, paying that
+    charge, would be sent there afterwards, to be told its payment failed and to
+    pay again. So the address is `public_url`, a new setting, the venue's own
+    account of where guests reach it, and the table's path. A test sends forged
+    Host, X-Forwarded-Host, Origin and Referer and reads what the gateway was given.
+  - **With `public_url` unset there is no return address**: the gateway shows its
+    own page and the guest goes back to the bill themselves, where it has turned
+    paid. Nothing breaks; it is one tap more.
+  - **The return address has no fragment**, since a gateway adds its own words to
+    the end of an address. The app, arriving at a table's bare address with a
+    charge it started, opens on the bill.
+  - **What a gateway adds to the return address is not read.** Whether a charge was
+    paid is asked of the gateway by the venue's server (ADR-220), each time the
+    phone asks how it stands.
+  - **A charge is asked about by its own table's code and no other**, before the
+    gateway is troubled: another table's code is a 404.
+  - **A settle that decides nothing answers the charge as it was**, 200 and open:
+    the gateway out of reach, or no shift open. The phone asks again; so does the
+    sweep.
+  - **The phone is told four things**: open, paid, failed, or taken and not on the
+    bill. For the last it is told to show staff. Why the bill could not take it is
+    the venue's business and is not sent.
+  - **A gateway that refuses to start a charge is the owner's problem and says so
+    in the log, as an error**: it is nearly always the keys. The guest is told
+    paying online is not working, and to pay staff.
+  - **The phone keeps which charge it started, and nothing else**, by table code,
+    for 45 minutes. It asks every 4 seconds while that charge is open and the bill
+    is on screen. With storage refused it forgets on leaving the page, and the
+    sweep still puts the payment on the bill.
+  - **Pay online is not offered while a charge this phone started is open**: a
+    second payment for one bill is money to refund. "Open the payment page again"
+    is offered instead.
+  - **It follows a payment page's address only if it is https.**
+  - **One primary on the bill**: Pay online where offered, and Pay by UPI drawn as
+    the secondary under it.
+  - The guest's bundle is 40.7 KB gzipped of 60.
+Because: the one new way to lose a guest's money here was a redirect after paying,
+and it is closed by a setting and not by trusting a header.
+Cost: one more setting to get right, and a venue reached at more than one address
+names one. **A real charge has still not been made.** The real binary was run with
+Razorpay set and made-up keys: the bill offered Pay online, the adapter reached the
+real Razorpay, was refused, and the phone and the log each said the right thing,
+with no secret in the log. Seen by eye at 390 wide: the button, the line under it,
+and that refusal. Not seen: the gateway's page, coming back, waiting, paid, failed,
+or taken and not on the bill; the Go and vitest tests cover each against a fake.

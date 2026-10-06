@@ -115,8 +115,9 @@ Phase 10.
       (`internal/gateway/razorpay`); its keys in the configuration and the
       environment, not the database; and a sweeper that settles open charges
       every 20 seconds (ADR-221).
-    - [ ] **4f3.** The guest's API and the phone: pay online from the bill,
-      the gateway's page, and coming back.
+    - [x] **4f3.** The guest's API and the phone: pay online from the bill,
+      the gateway's page, and coming back (ADR-222). `public_url` is where a
+      gateway sends a guest back.
     - [ ] **4f4.** Unapplied charges on the terminal: money a gateway took
       that no bill could, for a person to refund or record.
     - [ ] **4f5.** The gateway's webhook, through the relay, so a payment

@@ -25,10 +25,33 @@ anyone brings it: so the figure at the counter is no surprise.
     muted, so nobody adds it to a total that already has it.
   - a hairline, then "Bill total" and the figure in the serif
   - "Paid" and "Left to pay", only once something has been paid
+- **Pay online,** a card, first, only at a venue with a payment gateway and
+  with something owed (ADR-222):
+  - **Pay ₹540.00 online**, the primary button, 58px. It starts a charge
+    and leaves for the payment provider's own page. While that is being
+    asked for it reads "Opening the payment page".
+  - "Card, UPI and more, on the payment provider's own page. This bill is
+    marked paid by itself."
+  - **How a payment this phone started stands,** over the button, in the
+    state's tone, with the amount, announced when it changes:
+    - waiting, in the warning tone: "Waiting for your payment. If you have
+      paid, this will say so in a moment. If you closed the payment page,
+      you can open it again.", with **Open the payment page again**. The
+      button is not offered while one waits.
+    - paid, in the green tint: "Payment received. It is on this bill. Thank
+      you."
+    - failed, in the danger tint: "That payment did not go through. Nothing
+      was taken. Try again, or pay a member of staff."
+    - taken and not on the bill, in the danger tint: "Your payment was
+      taken, and is not on this bill. Please show this to a member of
+      staff. They will put it right."
+    Once answered it has **OK**, which puts it away.
+  - Why it could not be started, in danger, under the button.
 - **Pay by UPI,** a card, only when the venue has given its UPI address,
   the bill is in rupees and something is owed (ADR-215):
-  - **Pay ₹540.00 by UPI**, a link drawn as the primary button, 58px, for
-    exactly what is left. It opens the phone's UPI app with the venue's
+  - **Pay ₹540.00 by UPI**, a link drawn as the primary button, 58px, or as
+    the secondary where Pay online is offered above it, for exactly what is
+    left. It opens the phone's UPI app with the venue's
     address and the amount filled in.
   - "To Demo Cafe, democafe@okbank", small, so the guest can check who is
     being paid, or type it in.
@@ -65,6 +88,14 @@ anyone brings it: so the figure at the counter is no surprise.
 - `upi` in the answer: the link, the address, the payee and the amount.
   The link is the server's, built from the balance. The phone follows it
   only if it begins `upi://pay?`.
+- `online` on the bill: whether what is left can be paid online.
+  `POST /order/api/t/{code}/bill/charge` starts a charge and answers the
+  page to pay it at; `GET .../bill/charge/{id}` answers how it stands, as
+  the venue's server found out from the gateway. The phone keeps which
+  charge it started under `mez.charge.<code>`, for 45 minutes, and nothing
+  else about it. It asks every 4 seconds while the charge is open and the
+  bill is shown, and reads the bill again at an answer.
+- The phone follows the payment page's address only if it is `https`.
 - `POST /order/api/t/{code}/bill/paid`, with no body, for I have paid.
   Whether staff have been told is `paid_told` on the bill, the server's to
   say: it reads the same after a reload and on every phone at the table.
@@ -82,6 +113,9 @@ anyone brings it: so the figure at the counter is no surprise.
 | See the table's bill, on an empty cart | Opens this screen | A table staff seated, whose guest ordered nothing by phone, can still read it |
 | Back, the phone's Back | The menu | |
 | Try again | Reads the bill again | |
+| Pay online | Starts a charge and leaves for the provider's page | Back at the table's address, the app opens on the bill and says how the payment stands |
+| Open the payment page again | The same page | |
+| OK, on an answered payment | Puts it away | Pay online is offered again if anything is owed |
 | I have paid | Tells the terminals | "Staff have been told you paid." Tapped on two phones, staff are told once |
 | Pay from another phone | Opens, and the code is fetched | Tapped again, it closes |
 | Pay by UPI | Hands the link to the phone's UPI app | This page learns nothing of it. The bill changes when staff record the payment, at the next read |
@@ -95,6 +129,13 @@ anyone brings it: so the figure at the counter is no surprise.
   staff." with **Try again**.
 - **Nothing open:** no lines and no summary, and the sentence above. A
   request nobody has accepted is not on any bill.
+- **Paying online could not be started:** the server's sentence when the
+  gateway is not working ("Paying online can't be reached right now. Try
+  again, or pay a member of staff."), or one that names staff or the
+  counter.
+- **The phone forgot its charge** (storage refused, or another phone paid):
+  the bill still turns paid at its next read. The venue's own sweep puts
+  the payment on the bill whether or not any phone asks.
 - **Staff could not be told:** under the button, "Can't reach the kitchen
   to tell staff. Show them the payment yourself.", or "Staff could not be
   told from here. Show them the payment yourself.", or, when the bill was
@@ -109,6 +150,10 @@ anyone brings it: so the figure at the counter is no surprise.
 - No figure on this screen is worked out on the phone.
 - Money is integer minor units, and a rate is words from an integer, never
   a float.
+- **Whether an online payment was made is never the phone's to say.** What
+  a gateway adds to the address it sends a guest back to is not read.
+- **One primary on the screen:** Pay online where it is offered, else Pay
+  by UPI.
 - **Saying "I have paid" does not mark the bill paid either.** No figure
   on the bill moves until a member of staff records the payment.
 - **Paying by UPI does not mark the bill paid, and the screen says so.**
@@ -123,7 +168,7 @@ anyone brings it: so the figure at the counter is no surprise.
 - One guest sees the whole table's bill. The table's code is the table's,
   a paper bill would show the same, and nothing records whose phone
   ordered which dish.
-- The guest's bundle is 39.6 KB gzipped of 60. The QR encoder is on the
+- The guest's bundle is 40.7 KB gzipped of 60. The QR encoder is on the
   server and costs it nothing.
 
 ## Reference
@@ -132,9 +177,9 @@ anyone brings it: so the figure at the counter is no surprise.
 436).
 
 **Left out:**
-- Card and wallet: 4f.
-- "Waiting for payment" and a bill that turns paid by itself: that needs a
-  gateway (4f). Until then staff confirm.
+- A choice of card, UPI or wallet on this screen: the provider's page asks.
+- A bill that turns paid by itself needs a gateway; without one, staff
+  confirm a UPI payment.
 - **Split the bill**, evenly or by item: 4g.
 - The bill's number: an open bill has none; an invoice number comes with
   the payment that settles it.

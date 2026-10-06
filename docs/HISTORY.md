@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4f1: the gateway interface, and a charge becoming one payment**
+**Phase 11, Task 4f2: Razorpay, its keys, and the sweeper** (ADR-221).
+`internal/gateway/razorpay` uses payment links. `gateway`, `gateway_key_id` and
+`gateway_key_secret` are configuration (`MEZ_GATEWAY_KEY_SECRET`), not settings.
+`charges.Sweeper` settles open charges every 20 seconds.
+
+Before it, **Phase 11, Task 4f1: the gateway interface, and a charge becoming one payment**
 (ADR-220). `internal/gateway` is two questions, Start and Status.
 `internal/service/charges` starts a charge for what a table owes and, when the
 gateway says paid, tenders it once (`charge:<id>` as the key); money a bill cannot

@@ -27,6 +27,7 @@ import (
 	"github.com/byjoellobo/mez/internal/domain/tips"
 	"github.com/byjoellobo/mez/internal/hub"
 	"github.com/byjoellobo/mez/internal/service/audit"
+	"github.com/byjoellobo/mez/internal/service/charges"
 	"github.com/byjoellobo/mez/internal/service/floor"
 	"github.com/byjoellobo/mez/internal/service/menus"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
@@ -141,7 +142,7 @@ var errorCodes = []ErrorCode{
 	CodeNumberingLocked, CodeNumberTaken, CodeCourseNotFound, CodeDeviceNotFound, CodeCannotRevokeSelf, CodeDeviceUnpaired,
 	CodeTableCodeUnknown,
 	CodeDishUnavailable, CodeChoicesInvalid, CodeTableNotOrdering, CodeRequestsWaiting,
-	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed, CodeNothingToPay, CodeNoticeNotFound,
+	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed, CodeNothingToPay, CodeNoticeNotFound, CodeGatewayUnavailable, CodeChargeNotFound,
 }
 
 // generate builds the whole file.
@@ -259,6 +260,7 @@ func generate() (*ts.Generator, error) {
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
 		{"TunnelState", TunnelOff, asStrings(TunnelStates())},
 		{"GuestRoundStatus", svcorder.RoundWaiting, asStrings(svcorder.RoundStatuses())},
+		{"ChargeStatus", charges.Open, asStrings(charges.Statuses())},
 		{"DeviceKind", auth.KindTerminal, asStrings([]auth.DeviceKind{
 			auth.KindTerminal, auth.KindKitchen, auth.KindBackOffice, auth.KindGuest,
 		})},
@@ -307,7 +309,7 @@ func generate() (*ts.Generator, error) {
 		Error{}, errorBody{}, pairRequest{}, deviceResponse{}, pairResponse{},
 		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{}, tunnelResponse{},
 		// The guest's API.
-		guestTableResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{},
+		guestTableResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{}, guestChargeResponse{},
 		paymentSettingsRequest{}, paymentSettingsResponse{},
 		guestRequestsResponse{}, guestDecisionResponse{},
 		// Staff.

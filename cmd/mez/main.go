@@ -290,6 +290,28 @@ func run() (err error) {
 		return err
 	}
 
+	// Guests paying online (ADR-220, ADR-221). With no gateway set, which is
+	// the normal state, nothing here exists and nothing calls the internet.
+	var payOnline api.Charges // nil with no gateway: no route, and no bill offers it
+	if cfg.GatewayEnabled() {
+		// A gateway that is set but cannot be used stops the start, as a
+		// relay does (ADR-019): the owner believes guests can pay.
+		provider, err := newGateway(cfg)
+		if err != nil {
+			return err
+		}
+		online, err := charges.New(charges.Options{
+			DB: database, Orders: orders, Log: log,
+			Gateways: func(context.Context, int64) (gateway.Gateway, error) { return provider, nil },
+		})
+		if err != nil {
+			return err
+		}
+		payOnline = online
+		running.push("charges", online.StartSweeper(charges.DefaultSweepEvery).Close)
+		log.Info("guests can pay online", "gateway", provider.Name())
+	}
+
 	srv := api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
@@ -312,27 +334,8 @@ func run() (err error) {
 		api.WithGuests(guestCodes, web.MountGuest),
 		api.WithGuestOrders(orders),
 		api.WithGuestRequests(orders),
+		api.WithCharges(payOnline, cfg.PublicURL),
 	)
-
-	// Guests paying online (ADR-220, ADR-221). With no gateway set, which is
-	// the normal state, nothing here exists and nothing calls the internet.
-	if cfg.GatewayEnabled() {
-		// A gateway that is set but cannot be used stops the start, as a
-		// relay does (ADR-019): the owner believes guests can pay.
-		provider, err := newGateway(cfg)
-		if err != nil {
-			return err
-		}
-		online, err := charges.New(charges.Options{
-			DB: database, Orders: orders, Log: log,
-			Gateways: func(context.Context, int64) (gateway.Gateway, error) { return provider, nil },
-		})
-		if err != nil {
-			return err
-		}
-		running.push("charges", online.StartSweeper(charges.DefaultSweepEvery).Close)
-		log.Info("guests can pay online", "gateway", provider.Name())
-	}
 
 	if cfg.RelayEnabled() {
 		// A relay that is set but cannot be used is a setting the owner

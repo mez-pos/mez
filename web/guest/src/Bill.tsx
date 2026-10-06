@@ -11,6 +11,8 @@ import { useState } from "react";
 import { billState, paidTold, payLine, summaryRows, tellFailure, upiAfter, upiLinkOf } from "./bill-logic";
 import { tableLabel } from "./Landing";
 import { problemOf } from "./menu-logic";
+import { chargeOpen, chargeWords, checkoutUrlOf } from "./charge-logic";
+import { useCharge, type ChargeApi } from "./use-charge";
 import { billKey, tellPaid, upiQrUrl, useBill } from "./use-guest";
 
 interface BillProps {
@@ -21,6 +23,7 @@ interface BillProps {
 
 export function Bill({ code, table, onBack }: BillProps) {
   const query = useBill(code);
+  const online = useCharge(code);
   const bill = query.data;
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas text-fg">
@@ -122,7 +125,8 @@ export function Bill({ code, table, onBack }: BillProps) {
               </section>
             )}
 
-            <PayByUPI bill={bill} code={code} />
+            <PayOnline bill={bill} online={online} />
+            <PayByUPI bill={bill} code={code} quiet={bill.online === true} />
             <p className="mt-4 rounded-card border border-line bg-sunken p-4 text-center text-base text-fg-2">
               {payLine(billState(bill), upiLinkOf(bill) !== null)}
             </p>
@@ -139,14 +143,22 @@ export function Bill({ code, table, onBack }: BillProps) {
  * button: the phone hands it to its UPI app, and this page learns nothing
  * of what happens there.
  */
-function PayByUPI({ bill, code }: { bill: GuestBillResponse; code: string }) {
+// One primary on the screen: where paying online is offered it is that, and
+// this is drawn as the secondary.
+const upiLoud = "bg-accent text-accent-fg shadow-action hover:bg-accent-hover";
+const upiQuiet = "border border-line-strong bg-raised text-fg hover:bg-raised-high";
+
+function PayByUPI({ bill, code, quiet }: { bill: GuestBillResponse; code: string; quiet: boolean }) {
   const link = upiLinkOf(bill);
   if (link === null || !bill.upi) return null;
   return (
     <section aria-label="Pay by UPI" className="mt-4 rounded-card border border-line bg-raised p-4 text-center">
       <a
         href={link}
-        className="flex min-h-charge w-full items-center justify-center rounded-pill bg-accent px-5 text-lg font-bold text-accent-fg shadow-action outline-offset-2 outline-attention hover:bg-accent-hover focus-visible:outline-3"
+        className={cx(
+          "flex min-h-charge w-full items-center justify-center rounded-pill px-5 text-lg font-bold outline-offset-2 outline-attention focus-visible:outline-3",
+          quiet ? upiQuiet : upiLoud,
+        )}
       >
         Pay {formatMoney(bill.upi.amount)} by UPI
       </a>
@@ -211,5 +223,60 @@ function IHavePaid({ code, told }: { code: string; told: boolean }) {
         </p>
       )}
     </>
+  );
+}
+
+const chargeTones = {
+  waiting: "border-chip-warning-border bg-chip-warning-bg text-chip-warning-fg",
+  good: "border-line bg-accent-tint text-accent-text",
+  bad: "border-line bg-danger-tint text-danger",
+} as const;
+
+/**
+ * Pay what is left online, through the venue's gateway, and how a payment
+ * this phone started stands. The gateway's page is another site: the phone
+ * leaves for it, and the bill says what happened when it is back. Whether
+ * it was paid is the venue's server's to say, never this page's.
+ */
+function PayOnline({ bill, online }: { bill: GuestBillResponse; online: ChargeApi }) {
+  const charge = online.charge;
+  const words = charge ? chargeWords(charge.status) : null;
+  const again = charge && chargeOpen(charge.status) ? checkoutUrlOf(charge.url) : null;
+  if (!charge && !bill.online) return null;
+  return (
+    <section aria-label="Pay online" className="mt-4 rounded-card border border-line bg-raised p-4 text-center">
+      {charge && words && (
+        <div role="status" aria-live="polite" className={cx("rounded border p-3", chargeTones[words.tone])}>
+          <p className="text-base font-semibold">
+            {words.title} · {formatMoney(charge.amount)}
+          </p>
+          <p className="mt-1 text-base">{words.line}</p>
+          {again && (
+            <a href={again} className="mt-2 inline-flex min-h-tap items-center font-semibold underline outline-line-focus focus-visible:outline-2">
+              Open the payment page again
+            </a>
+          )}
+          {!chargeOpen(charge.status) && (
+            <Button variant="ghost" className="mt-1" onClick={online.dismiss}>
+              OK
+            </Button>
+          )}
+        </div>
+      )}
+      {/* Not offered while one is open: a second payment for the same bill is money to refund. */}
+      {bill.online && !(charge && chargeOpen(charge.status)) && (
+        <>
+          <Button variant="primary" size="charge" className={cx("w-full", charge && "mt-3")} disabled={online.starting} onClick={online.pay}>
+            {online.starting ? "Opening the payment page" : `Pay ${formatMoney(bill.balance_due)} online`}
+          </Button>
+          <p className="mt-2 text-sm text-fg-muted">Card, UPI and more, on the payment provider's own page. This bill is marked paid by itself.</p>
+        </>
+      )}
+      {online.error && (
+        <p role="alert" className="mt-2 text-sm text-danger">
+          {online.error}
+        </p>
+      )}
+    </section>
   );
 }

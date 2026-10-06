@@ -48,6 +48,7 @@ const (
 	keyGateway          = "gateway"
 	keyGatewayKeyID     = "gateway_key_id"
 	keyGatewayKeySecret = "gateway_key_secret"
+	keyPublicURL        = "public_url"
 )
 
 // GatewayRazorpay is the one payment gateway this build can use. The name
@@ -79,6 +80,7 @@ var keys = []string{
 	keyGateway,
 	keyGatewayKeyID,
 	keyGatewayKeySecret,
+	keyPublicURL,
 }
 
 var usage = map[string]string{
@@ -95,6 +97,7 @@ var usage = map[string]string{
 	keyGateway:          "payment gateway for guests paying online: razorpay, or empty for none",
 	keyGatewayKeyID:     "the gateway's key id for this venue's account",
 	keyGatewayKeySecret: "the gateway's key secret; a secret, best set in the environment",
+	keyPublicURL:        "the address guests reach this venue at, https://cafe.example; where a gateway sends them back",
 }
 
 // Config is the resolved, validated server configuration.
@@ -155,6 +158,13 @@ type Config struct {
 	// where the gateway is built, so that each can still be set on its own.
 	GatewayKeyID     string
 	GatewayKeySecret string
+
+	// PublicURL is the address guests reach this venue at from outside:
+	// its address at the relay, "https://cafe.example". It is where a
+	// payment gateway sends a guest back after paying. It is the venue's to
+	// say and never read from a request (ADR-222). Empty, the gateway shows
+	// its own page and the guest returns to the bill themselves.
+	PublicURL string
 }
 
 // GatewayEnabled reports whether a payment gateway is configured.
@@ -263,6 +273,7 @@ func defaults(lookup func(string) (string, bool), goos string) map[string]string
 		keyGateway:          "",
 		keyGatewayKeyID:     "",
 		keyGatewayKeySecret: "",
+		keyPublicURL:        "",
 	}
 }
 
@@ -412,6 +423,9 @@ func build(raw map[string]string) (Config, error) {
 	if cfg.Gateway, err = validGateway(raw[keyGateway]); err != nil {
 		return Config{}, err
 	}
+	if cfg.PublicURL, err = validPublicURL(raw[keyPublicURL]); err != nil {
+		return Config{}, err
+	}
 	return cfg, nil
 }
 
@@ -532,4 +546,25 @@ func validGateway(v string) (string, error) {
 	default:
 		return "", fmt.Errorf("%s %q: the gateways are %s, or empty for none", keyGateway, v, GatewayRazorpay)
 	}
+}
+
+// validPublicURL accepts nothing, or an http or https address with a host
+// and no path, query or fragment: guests' paths are added to it.
+func validPublicURL(v string) (string, error) {
+	v = strings.TrimRight(strings.TrimSpace(v), "/")
+	if v == "" {
+		return "", nil
+	}
+	u, err := url.Parse(v)
+	switch {
+	case err != nil:
+		return "", fmt.Errorf("%s %q: %w", keyPublicURL, v, err)
+	case u.Scheme != "http" && u.Scheme != "https":
+		return "", fmt.Errorf("%s %q: scheme must be http or https", keyPublicURL, v)
+	case u.Host == "":
+		return "", fmt.Errorf("%s %q: missing host", keyPublicURL, v)
+	case u.Path != "" || u.RawQuery != "" || u.Fragment != "" || u.User != nil:
+		return "", fmt.Errorf("%s %q: give the address alone, with no path after it", keyPublicURL, v)
+	}
+	return v, nil
 }

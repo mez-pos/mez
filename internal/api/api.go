@@ -23,6 +23,8 @@ type Server struct {
 	guestMount    string
 	guestOrders   GuestOrders
 	guestRequests GuestRequests
+	charges       Charges
+	publicURL     string
 	devices       Devices
 	staff         Staff
 	orders        Orders

@@ -7,6 +7,7 @@ import { createApiClient, noCredentials } from "../../shared/api";
 import { BILL_REFRESH_MS } from "./bill-logic";
 import type {
   GuestBillResponse,
+  GuestChargeResponse,
   GuestMenuResponse,
   GuestOrderRequest,
   GuestPaidResponse,
@@ -87,4 +88,14 @@ export function useBill(code: string): UseQueryResult<GuestBillResponse> {
  */
 export function upiQrUrl(code: string, amountMinor: number): string {
   return `${base(code)}/bill/upi.svg?am=${amountMinor}`;
+}
+
+/** Starts paying what the table owes through the venue's gateway (ADR-222). */
+export function startCharge(code: string): Promise<GuestChargeResponse> {
+  return api.post<GuestChargeResponse>(`${base(code)}/bill/charge`);
+}
+
+/** How a charge this table started stands, as the venue's server found out from the gateway. */
+export function readCharge(code: string, id: string, signal: AbortSignal): Promise<GuestChargeResponse> {
+  return api.get<GuestChargeResponse>(`${base(code)}/bill/charge/${encodeURIComponent(id)}`, { signal });
 }

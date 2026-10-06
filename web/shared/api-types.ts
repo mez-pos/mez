@@ -139,7 +139,9 @@ export type ErrorCode =
   | 'request_decided'
   | 'request_lapsed'
   | 'nothing_to_pay'
-  | 'notice_not_found';
+  | 'notice_not_found'
+  | 'gateway_unavailable'
+  | 'charge_not_found';
 
 export type OrderStatus =
   | 'open'
@@ -280,6 +282,12 @@ export type GuestRoundStatus =
   | 'waiting'
   | 'sent'
   | 'declined';
+
+export type ChargeStatus =
+  | 'open'
+  | 'paid'
+  | 'unapplied'
+  | 'failed';
 
 export type DeviceKind =
   | 'terminal'
@@ -862,6 +870,7 @@ export interface GuestBillResponse {
   balance_due: Money;
   upi?: GuestUPIResponse;
   paid_told?: boolean;
+  online?: boolean;
 }
 
 export interface GuestBillLineResponse {
@@ -888,6 +897,13 @@ export interface GuestUPIResponse {
 export interface GuestPaidResponse {
   told: boolean;
   amount: Money;
+}
+
+export interface GuestChargeResponse {
+  id: string;
+  status: ChargeStatus;
+  amount: Money;
+  url?: string;
 }
 
 export interface PaymentSettingsRequest {

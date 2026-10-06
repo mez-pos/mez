@@ -432,6 +432,7 @@ func TestEveryKeyIsReachable(t *testing.T) {
 		keyGateway:          "razorpay",
 		keyGatewayKeyID:     "rzp_test_AbCdEf123456",
 		keyGatewayKeySecret: "not-a-real-secret",
+		keyPublicURL:        "https://cafe.example",
 	}
 	if len(sample) != len(keys) {
 		t.Fatalf("sample covers %d keys, the package has %d: add the new one here", len(sample), len(keys))
@@ -490,6 +491,8 @@ func assertKey(t *testing.T, key, want string, cfg Config, err error) {
 		equal(t, key, cfg.GatewayKeyID, want)
 	case keyGatewayKeySecret:
 		equal(t, key, cfg.GatewayKeySecret, want)
+	case keyPublicURL:
+		equal(t, key, cfg.PublicURL, want)
 	default:
 		t.Fatalf("key %q has no assertion: add one", key)
 	}
@@ -577,5 +580,33 @@ func TestGateway(t *testing.T) {
 	_, err = load(nil, lookupFrom(map[string]string{"MEZ_GATEWAY": "paypal", "MEZ_GATEWAY_KEY_SECRET": "hunter2"}), t.TempDir(), "linux")
 	if err == nil || strings.Contains(err.Error(), "hunter2") {
 		t.Errorf("the secret is in the error: %v", err)
+	}
+}
+
+// TestPublicURL: the address alone. Anything after it, or anything that is
+// not an address, stops the start.
+func TestPublicURL(t *testing.T) {
+	tests := []struct {
+		in   string
+		want string
+		ok   bool
+	}{
+		{"", "", true},
+		{"https://cafe.example", "https://cafe.example", true},
+		{" https://cafe.example/ ", "https://cafe.example", true},
+		{"http://192.168.1.20:7777", "http://192.168.1.20:7777", true},
+		{"cafe.example", "", false},
+		{"ftp://cafe.example", "", false},
+		{"https://", "", false},
+		{"https://cafe.example/order", "", false},
+		{"https://cafe.example?x=1", "", false},
+		{"https://cafe.example#bill", "", false},
+		{"https://user:pass@cafe.example", "", false},
+	}
+	for _, tt := range tests {
+		cfg, err := load(nil, lookupFrom(map[string]string{"MEZ_PUBLIC_URL": tt.in}), t.TempDir(), "linux")
+		if (err == nil) != tt.ok || (tt.ok && cfg.PublicURL != tt.want) {
+			t.Errorf("public_url %q: got %q, %v; want %q, ok %v", tt.in, cfg.PublicURL, err, tt.want, tt.ok)
+		}
 	}
 }

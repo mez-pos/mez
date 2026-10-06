@@ -61,6 +61,9 @@ type guestBillResponse struct {
 	// and staff have still to look (ADR-218). The bill is no more paid for
 	// it: Paid and BalanceDue say what staff have recorded.
 	PaidTold bool `json:"paid_told,omitempty"`
+	// Online is true when what is left can be paid online, through the
+	// venue's gateway (ADR-222): the venue has one, and something is owed.
+	Online bool `json:"online,omitempty"`
 }
 
 // guestUPIResponse is a UPI payment of the bill's balance to the venue
@@ -102,6 +105,7 @@ func (s *Server) guestBill(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	bill.UPI = s.guestUPI(r, table.VenueID, table.TableName, bill.BalanceDue)
+	bill.Online = s.charges != nil && bill.BalanceDue.Minor > 0
 	if bill.BalanceDue.Minor > 0 {
 		// Not worth failing the bill for: unsaid, the guest can say it again.
 		if bill.PaidTold, err = s.guestOrders.PaidTold(r.Context(), res.OrderID); err != nil {
