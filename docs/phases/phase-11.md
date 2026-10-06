@@ -181,8 +181,18 @@ Phase 10.
   - [ ] **5d.** The e-receipt on the server: what a guest may read of a bill
     once it is settled, with its invoice number, and by what they ask.
   - [ ] **5e.** The receipt on the phone, and ordering the same again.
-  - [ ] **5f.** A pickup code. **Waits on the owner**: a guest can order
-    only from a table, and there is no pickup channel to give a code to.
+  - [ ] **5f.** Ordering for pickup, and its code (ADR-237, by the owner).
+    After 5e, and beside Task 6, which makes and revokes the venue's code.
+    Paid first, always, so only where a gateway is set. Split in four:
+    - [ ] **5f1.** In the services: a venue's pickup code, a pickup round
+      with no table, held unpaid, and paid, a ticket of its own on the
+      `web` channel with a pickup code of three or four characters.
+    - [ ] **5f2.** The guest's API: the menu and an order by the venue's
+      code, paying for it, and tracking it with its code.
+    - [ ] **5f3.** The phone: the way in with no table, pay, and the
+      order's screen with the code in large type.
+    - [ ] **5f4.** The counter: the pickup orders out and ready on the
+      terminal, by code, to call out and hand over.
 
 - [ ] **Task 6 — QR codes and table codes.**
   Generate per-table QR codes from back office, printable as a sheet. Codes are

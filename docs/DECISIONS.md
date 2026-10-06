@@ -7506,3 +7506,42 @@ it was sent. A round of dishes made at no station is `accepted` for good. There 
 no event for food reaching the table, so `ready` is where it ends. The tracking
 reads and projects the whole ticket for each ask; 5b's route will be asked every
 few seconds by every phone with an order out, which is the read to watch.
+
+## ADR-237 - Ordering for pickup: one code for the venue, paid first, and a code to call out
+2026-10 · Status: accepted, by the owner. Phase 11, before Task 5f.
+Context: Task 5 asks for a "pickup code for web pickup orders". A guest can order
+only from a table (ADR-206), so there was no order to give a code to, and ADR-236
+left 5f waiting. The owner was asked whether to build ordering for pickup, and
+said yes to what follows.
+Decision:
+  - **Pickup is built, as 5f, after the receipt (5e) and beside Task 6.** It is a
+    new way to order and not a finish on tracking, so it does not hold up the
+    order's screen or the receipt. It is split in four, in the phase file.
+  - **One code for the whole venue**, on the counter, the door or a flyer, leading
+    to the same menu with no table. Task 6 is where it is made, printed and
+    revoked, with the tables' codes.
+  - **Paid first, always.** A table's order is tied to the venue by staff seeing
+    someone there (ADR-209); a pickup order has nothing like that, and payment is
+    the tie, as it already is for a prepaid round. So pickup is offered only where
+    a gateway is set, whatever the venue's mode for its tables.
+  - **A pickup code of three or four characters**, given once the order is paid,
+    to be called out when it is ready, as `docs/02-domain.md` has it.
+  - **A ticket of its own for each order, on the `web` channel**, which the domain
+    already names. It settles into the same invoice series and Z-report as a
+    counter sale.
+  - **Tracked as a table's order is** (ADR-236), with the code on the screen.
+  - **The counter terminal lists the pickup orders out and ready, by code.** The
+    kitchen display's pass shows a ticket is up; someone at the counter has to
+    know whose it is.
+  - **Left out of the first cut:** ordering ahead for a time, which needs a
+    kitchen schedule that does not exist; paying on collection, which lets anyone
+    with a photo of the code send the kitchen food nobody collects; a name or a
+    phone number, since mez asks a guest for nothing; and delivery.
+Because: nearly all of it is built. Paying first, sending a paid round, the
+gateway, tracking and the channel are there. What is new is a code with no table,
+a ticket with no table, the pickup code, and where staff see it.
+Cost: a venue with no gateway has no pickup. A code for the whole venue is more
+exposed than a sticker on a table: paying first is most of the answer, and Task
+6's rate limit and revoking are the rest, so the two should land together. A
+ticket with no table is new to the floor, the terminal's lists and the reports,
+and 5f1 has to find every place that assumes one.

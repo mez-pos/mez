@@ -46,7 +46,6 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
 7. `jskin.in` is for testing, `mez.ac` for production: move before codes are printed.
 8. Cashfree needs each payer's phone number (ADR-230). Ask guests for one, or leave it out?
-9. A pickup code (5f) needs guests ordering for pickup, away from a table. Build that channel?
 
 ---
 
