@@ -37,14 +37,14 @@ export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel
 
   if (waiter) {
     return (
-      <footer className="border-t border-line px-5 pb-5 pt-4">
+      <footer className="border-t border-line px-4 pb-4 pt-3 2xl:px-5 2xl:pb-5 2xl:pt-4">
         <OrderTotals order={order} currency={currency} />
-        <div className="mt-4 flex gap-3">
-          <Button size="charge" className="w-32 shrink-0" disabled={order?.status !== "open"} onClick={onSave}>
+        <div className="mt-3 flex gap-3 2xl:mt-4">
+          <Button size="charge" className="shrink-0 px-4 2xl:w-32 2xl:px-7" disabled={order?.status !== "open"} onClick={onSave}>
             <BookmarkIcon aria-hidden="true" size={17} />
             Save
           </Button>
-          <Button variant="primary" size="charge" className="flex-1" disabled={!canSend} onClick={onSend}>
+          <Button variant="primary" size="charge" className="min-w-0 flex-1 px-4 2xl:px-7" disabled={!canSend} onClick={onSend}>
             <SendIcon aria-hidden="true" size={19} />
             {live ? sendLabel(sendPlan) : "Send to Kitchen"}
           </Button>
@@ -54,7 +54,7 @@ export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel
   }
 
   return (
-    <footer className="border-t border-line px-5 pb-5 pt-4">
+    <footer className="border-t border-line px-4 pb-4 pt-3 2xl:px-5 2xl:pb-5 2xl:pt-4">
       {canSend && (
         <Button className="mb-3 w-full" onClick={onSend}>
           <SendIcon aria-hidden="true" size={17} />
@@ -62,8 +62,8 @@ export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel
         </Button>
       )}
       <OrderTotals order={order} currency={currency} />
-      <div className="mt-4 flex gap-3">
-        <Button size="charge" className="w-32 shrink-0" disabled={order?.status !== "open"} onClick={onSave}>
+      <div className="mt-3 flex gap-3 2xl:mt-4">
+        <Button size="charge" className="shrink-0 px-4 2xl:w-32 2xl:px-7" disabled={order?.status !== "open"} onClick={onSave}>
           Save Order
         </Button>
         <Button
@@ -72,7 +72,7 @@ export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel
           disabled={chargeBlock !== null}
           onClick={onPay}
           aria-describedby={chargeBlock ? "pay-block" : undefined}
-          className="flex-1"
+          className="min-w-0 flex-1 px-4 2xl:px-7"
         >
           {chargeLabel}
           {chargeLabel === "Pay" && <Money amount={owed} className="text-lg" />}

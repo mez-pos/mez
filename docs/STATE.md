@@ -30,6 +30,13 @@ Handed over, which closes the ticket. Task 5 is done. **Not seen in a browser.**
 
 ## Known broken / in progress
 
+- **Between phases (ADR-255): the screens now fit 1024 to 2560 wide and 768
+  tall.** Fluid `w-side`, `w-rail`, `w-panel` widths, auto-fill card grids, a
+  `short:` variant, script lines out of the working chrome (tokens.md,
+  "Layout"). Checked in a browser at 1024, 1366, 1920 and 2560 on the main
+  screens; the back office's menu, stock, settings, people and printers
+  screens were not walked at 1024 and may still show a tight column.
+
 - A dev server left running blocks `make check` from rebuilding `bin/mez`: stop it first.
 - The relay: no load test, no backup of its signing secret, a `democafe` test key. Its
   1200 a minute per venue is under what a full room's phones ask (ADR-246).

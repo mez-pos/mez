@@ -130,6 +130,10 @@ const preset = {
         tap: v("tap-min"),
         charge: v("tap-charge"),
         "tap-gap": v("tap-gap"),
+        // Fluid layout widths (tokens.md, "Layout"): w-side, w-rail, w-panel.
+        side: v("side"),
+        rail: v("rail"),
+        panel: v("panel"),
       },
     },
   },

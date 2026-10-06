@@ -34,6 +34,7 @@ export function TableActions({ joined, nextCourse, canRelease, disabled, onMove,
         disabled={disabled}
         aria-expanded={open}
         aria-controls={panelId}
+        aria-label="More actions"
         onClick={toggle}
         className={cx(
           "inline-flex min-h-charge items-center justify-center gap-2 whitespace-nowrap rounded-pill border border-line-strong bg-raised px-4 text-base font-semibold",
@@ -41,7 +42,9 @@ export function TableActions({ joined, nextCourse, canRelease, disabled, onMove,
           open && "bg-raised-high",
         )}
       >
-        More Actions
+        {/* "More" where the rail is narrow: the chevron says the rest. */}
+        <span className="hidden 2xl:inline">More Actions</span>
+        <span className="2xl:hidden">More</span>
         <ChevronDownIcon aria-hidden="true" size={16} className={cx(open && "rotate-180")} />
       </button>
       {open && (

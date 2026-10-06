@@ -48,7 +48,9 @@ interface OrdersScreenProps {
   onPay: (order: OrderResponse) => void;
 }
 
-const columns = "grid grid-cols-[9.5rem_4.5rem_4rem_5.5rem_minmax(0,1fr)_6.5rem_7.5rem_4.5rem] items-center gap-3 2xl:gap-4";
+// Eight columns in 640px at the least; the panel beside them is the `panel`
+// width, so a 1024 tablet scrolls the table sideways and nothing wider does.
+const columns = "grid grid-cols-[8.5rem_4.5rem_4rem_5rem_minmax(0,1fr)_6rem_7rem_4rem] items-center gap-3 2xl:gap-4";
 
 export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOrder, onPay }: OrdersScreenProps) {
   const day = useDayOrders();
@@ -70,7 +72,7 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
 
   return (
     <div className="flex min-w-0 flex-1">
-      <section aria-label="Orders" className="flex min-w-0 flex-1 flex-col px-6 pb-5 pt-5 2xl:px-7 2xl:pt-6">
+      <section aria-label="Orders" className="flex min-w-0 flex-1 flex-col px-4 pb-4 pt-4 xl:px-6 xl:pb-5 xl:pt-5 2xl:px-7 2xl:pt-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="font-serif text-total leading-tight">Orders</h1>
@@ -115,12 +117,12 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
               </button>
             ))}
           </div>
-          <SearchField label="Search order #, table or pickup code" onSearch={setQuery} className="ml-auto w-72 2xl:w-80" />
+          <SearchField label="Search order #, table or pickup code" onSearch={setQuery} className="ml-auto w-60 xl:w-72 2xl:w-80" />
         </div>
 
         <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-raised">
           <div className="overflow-x-auto overflow-y-auto">
-            <div className="min-w-184 px-2">
+            <div className="min-w-160 px-2">
               <div className={cx(columns, "border-b border-line px-3 py-3.5 text-meta font-bold uppercase text-fg-muted")}>
                 <span>Order #</span>
                 <span>Time</span>
@@ -210,7 +212,7 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
           onPay={onPay}
         />
       ) : (
-        <aside aria-label="Order" className="flex w-96 shrink-0 items-center justify-center border-l border-line bg-chrome p-6 2xl:w-110">
+        <aside aria-label="Order" className="flex w-panel shrink-0 items-center justify-center border-l border-line bg-chrome p-6">
           <EmptyState icon={<InboxIcon />} line="Pick an order to see it." />
         </aside>
       )}

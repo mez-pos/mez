@@ -37,11 +37,12 @@ export function ServiceControl({ value, locked, onChange, roomy = false }: Servi
             onClick={() => onChange(option)}
             className={cx(
               "flex flex-1 items-center justify-center rounded-pill text-base outline-offset-2 outline-attention focus-visible:outline-3",
-              roomy ? "min-h-tap gap-2 whitespace-nowrap px-4" : "min-h-11 gap-1.5 px-2",
+              roomy ? "min-h-tap gap-2 whitespace-nowrap px-4" : "min-h-11 gap-1.5 whitespace-nowrap px-1.5 2xl:px-2",
               on ? "bg-accent font-semibold text-accent-fg" : "text-fg-2 hover:bg-raised-high disabled:opacity-40 disabled:hover:bg-transparent",
             )}
           >
-            <Icon aria-hidden="true" size={16} />
+            {/* In the rail the icon gives way to the word below 1536 wide: three words fit a narrow rail, three words and icons do not. */}
+            <Icon aria-hidden="true" size={16} className={roomy ? undefined : "hidden 2xl:block"} />
             {serviceLabels[option]}
           </button>
         );

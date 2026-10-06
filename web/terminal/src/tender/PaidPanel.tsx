@@ -27,7 +27,7 @@ interface PaidPanelProps {
 export function PaidPanel({ order, title, change, busy, message, onPrint, onNewOrder }: PaidPanelProps) {
   const methods = [...new Set(order.tenders.filter((t) => t.status !== "voided").map((t) => methodNames[t.method]))].join(" + ");
   return (
-    <aside aria-label="Payment complete" className="flex w-100 shrink-0 flex-col overflow-y-auto border-l border-line bg-sunken px-6 py-7">
+    <aside aria-label="Payment complete" className="flex w-rail shrink-0 flex-col overflow-y-auto border-l border-line bg-sunken px-5 py-6 2xl:px-6 2xl:py-7">
       <div className="text-center" aria-live="polite">
         <h2 className="font-serif text-total text-attention-text">Payment successful</h2>
         <Money amount={order.totals.net_paid} variant="display" tone="accent" className="mt-5 block text-center leading-tight" />

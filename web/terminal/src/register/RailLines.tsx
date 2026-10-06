@@ -44,7 +44,7 @@ export function RailLines(props: RailLinesProps) {
   const paid = order?.tenders.some((t) => t.status !== "voided") ?? false;
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
+    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 2xl:px-5">
       {empty ? (
         <div className="py-12 text-center">
           <p className="font-serif text-xl text-fg-muted">No items yet</p>

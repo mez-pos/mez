@@ -161,9 +161,9 @@ export function OrderScreen() {
         }}
         search={waiter ? <SearchField key={searchKey} label="Search menu" onSearch={setQuery} /> : undefined}
       />
-      <section aria-label="Menu" className="flex min-w-0 flex-1 flex-col px-6 pt-5">
+      <section aria-label="Menu" className="flex min-w-0 flex-1 flex-col px-4 pt-4 2xl:px-6 2xl:pt-5">
         <MenuHeader title={title} filter={diet} onFilter={setDiet} searchKey={searchKey} onSearch={setQuery} searchElsewhere={waiter} />
-        <div className="min-h-0 flex-1 overflow-y-auto pb-6 pt-5">
+        <div className="min-h-0 flex-1 overflow-y-auto pb-4 pt-4 2xl:pb-6 2xl:pt-5">
           <MenuBody
             state={menu.isPending ? "loading" : menu.isError && !menu.data ? "error" : "ready"}
             empty={items.length === 0}

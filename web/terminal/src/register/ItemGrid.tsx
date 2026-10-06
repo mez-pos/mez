@@ -24,9 +24,21 @@ interface ItemGridProps {
   dense?: boolean;
 }
 
+// The grid is auto-fill: as many cards as the width holds, never a fixed
+// count. A card's photo band and padding give way on a short screen (the
+// `short:` variant, tokens.md), so a 1366x768 laptop shows three rows of
+// cards, not one and a half.
+
 export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = false }: ItemGridProps) {
   return (
-    <ul className={cx("grid gap-4", dense ? "grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]" : "grid-cols-[repeat(auto-fill,minmax(15rem,1fr))]")}>
+    <ul
+      className={cx(
+        "grid gap-3 2xl:gap-4",
+        dense
+          ? "grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] 2xl:grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]"
+          : "grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))] 2xl:grid-cols-[repeat(auto-fill,minmax(14rem,1fr))]",
+      )}
+    >
       {items.map((item) => {
         const choices = choiceCount(groupsFor(item));
         const gone = soldOut(item);
@@ -43,7 +55,7 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
                 gone ? "cursor-not-allowed opacity-60" : "hover:bg-raised-high active:bg-raised-high",
               )}
             >
-              <span className="relative flex h-28 w-full items-center justify-center bg-sunken text-fg-faint">
+              <span className="relative flex h-28 w-full items-center justify-center bg-sunken text-fg-faint short:h-16">
                 {item.photo ? (
                   // The name is under it, so the photo says nothing a reader needs.
                   <img src={photoUrl(item.photo)} alt="" loading="lazy" decoding="async" className={cx("size-full object-cover", gone && "grayscale")} />
@@ -60,7 +72,7 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
                   </span>
                 )}
               </span>
-              <span className="flex flex-1 flex-col gap-1 p-3.5">
+              <span className="flex flex-1 flex-col gap-1 p-3.5 short:p-3">
                 <span className="flex items-start gap-2">
                   <DietMark diet={item.diet} />
                   <span className={cx("font-serif text-lg leading-snug text-fg-heading", gone && "line-through")}>{item.name}</span>
@@ -70,7 +82,7 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
                     </span>
                   )}
                 </span>
-                {item.description && <span className="line-clamp-2 text-sm text-fg-muted">{item.description}</span>}
+                {item.description && <span className="line-clamp-2 text-sm text-fg-muted short:line-clamp-1">{item.description}</span>}
                 {gone && <span className="text-meta font-semibold uppercase text-warning">Sold out</span>}
                 {choices > 0 && !gone && <span className="text-sm text-fg-muted">{choices} choices</span>}
                 <span className="mt-auto flex items-center justify-between pt-2">

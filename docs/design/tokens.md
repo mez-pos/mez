@@ -152,6 +152,47 @@ interactive label is 15px, and form controls are 16px minimum so mobile
 Safari does not zoom. The design draws small buttons at 13 and 14px; the
 15px floor wins.
 
+## Layout
+
+The screens were drawn at 1920 by 1080. A cafe's PC is as often 1366 by
+768, a tablet 1024 by 768, and an owner's monitor 2560 wide. Every screen
+must work at all of them without a fixed count of anything (ADR-255).
+
+| Token | Value | Class | Drawn as | For |
+|---|---|---|---|---|
+| `--side` | `clamp(11.5rem, 14vw, 15rem)` | `w-side` | 240px | A sidebar of categories or views |
+| `--rail` | `clamp(20rem, 26vw, 25rem)` | `w-rail` | 400px | The order, table and payment rails |
+| `--panel` | `clamp(17rem, 23vw, 27.5rem)` | `w-panel` | 384 to 440px | The Orders screen's panel |
+
+Each is a share of the viewport, held between a floor at which its content
+still fits and the drawn width. The middle of a screen is what gives.
+
+**Rules:**
+
+- **No fixed-width rail or sidebar in a `.tsx` file.** A column beside the
+  screen's content takes one of the three widths above. A new kind of
+  column adds a token here first.
+- **Grids of cards are `auto-fill`**, never a fixed column count: as many
+  as the width holds, with a `minmax` floor the card still reads at.
+- **A row of columns within a page stacks below `xl` (1280px)** unless
+  every column still fits at 1024.
+- **Chrome gives way before content.** Padding, gaps, a photo band and a
+  header's height step down on a small screen; text sizes never do.
+- **`short:`** is a variant for a screen 820px tall or less: the laptops
+  and tablets most venues have, where the shells never scroll and every
+  fixed height is paid out of the list in the middle. It trims chrome
+  (a header's height, a card's photo band, a footer's padding) and never
+  text.
+- **Decoration is for screens that wait, not screens that work.** The
+  script lines live on the login screen, the waiter's greeting, the paid
+  panel's thank-you and the dashboard's brand card. The terminal's chrome,
+  sidebars and rails carry none, so a 1024 tablet spends every pixel on
+  the order.
+
+Tailwind's own breakpoints are used as drawn: `xl` (1280) is where a
+screen gains a second column, `2xl` (1536) is where it takes the full
+drawn spacing. Nothing is tuned to one resolution.
+
 ## Touch sizing
 
 | Token | Value | Rule |

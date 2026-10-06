@@ -27,7 +27,7 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
   const lines = order.lines.filter((l) => l.status !== "voided");
 
   return (
-    <aside aria-label="Order" className="flex w-100 shrink-0 flex-col border-r border-line bg-chrome">
+    <aside aria-label="Order" className="flex w-rail shrink-0 flex-col border-r border-line bg-chrome">
       <header className="px-5 pb-4 pt-5">
         <Button disabled={busy} onClick={onBack} className="w-full justify-start">
           <ArrowLeftIcon aria-hidden="true" size={18} />
@@ -105,12 +105,6 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
           </div>
         )}
       </div>
-
-      <p aria-hidden="true" className="hidden px-5 pb-5 font-script text-total leading-tight text-fg-2 2xl:block">
-        Good Food,
-        <br />
-        Happier People ♡
-      </p>
     </aside>
   );
 }

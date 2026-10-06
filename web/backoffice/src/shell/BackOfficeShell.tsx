@@ -35,22 +35,17 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas text-fg">
-      <header className="flex h-18 shrink-0 items-center gap-6 border-b border-line bg-chrome px-7">
+      <header className="flex h-18 shrink-0 items-center gap-6 border-b border-line bg-chrome px-5 short:h-15 2xl:px-7">
         <Logo className="h-9" />
         <div className="ml-auto flex items-center gap-5 whitespace-nowrap">
           <ConnectionWord brief className="text-sm" />
           <VenueClock />
           <ProfileMenu name={auth.staff.name} role={auth.staff.role} actions={[{ icon: LogOutIcon, label: "Sign out", onClick: () => void store.signOut() }]} />
-          <p className="hidden text-right font-script text-xl leading-tight text-fg-2 2xl:block" aria-hidden="true">
-            Good Food,
-            <br />
-            Happier People ♡
-          </p>
         </div>
       </header>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
         <SectionNav current={sectionForPath(path)} held={auth.permissions} />
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 xl:p-6">{children}</main>
       </div>
     </div>
   );

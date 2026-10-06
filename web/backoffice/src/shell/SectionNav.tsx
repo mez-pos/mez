@@ -1,8 +1,8 @@
-// The back office's sidebar (D12): 240px, an icon and a name on every entry,
-// the current one filled terracotta. The design draws nine entries in one run;
-// the back office has eleven, so they keep their groups, each under its label
-// (rebuild.md, rule 4). Under 768px it is a wrapped row above the screen. The
-// script line at the foot is drawn only where the screen is tall enough for it.
+// The back office's sidebar (D12): 240px from 1280 wide and 208px under, an
+// icon and a name on every entry, the current one filled terracotta. The
+// design draws nine entries in one run; the back office has eleven, so they
+// keep their groups, each under its label (rebuild.md, rule 4). Under 768px it
+// is a wrapped row above the screen.
 
 import {
   ArmchairIcon,
@@ -48,7 +48,7 @@ export function SectionNav({ current, held }: SectionNavProps) {
   return (
     <nav
       aria-label="Sections"
-      className="flex shrink-0 flex-col border-b border-line bg-chrome px-3.5 py-4 md:w-60 md:overflow-y-auto md:border-r md:border-b-0 md:scrollbar-thin"
+      className="flex shrink-0 flex-col border-b border-line bg-chrome px-3 py-4 md:w-52 md:overflow-y-auto md:border-r md:border-b-0 md:scrollbar-thin xl:w-60 xl:px-3.5"
     >
       {groups.map((g) => (
         <div key={g.label ?? "top"} className="mb-1 last:mb-0">
@@ -62,13 +62,6 @@ export function SectionNav({ current, held }: SectionNavProps) {
           </ul>
         </div>
       ))}
-      <p aria-hidden="true" className="mt-auto hidden px-2 pt-6 font-script text-total leading-tight text-fg-2 [@media(min-height:900px)]:md:block">
-        Good Food
-        <br />
-        Happier
-        <br />
-        People ♡
-      </p>
     </nav>
   );
 }

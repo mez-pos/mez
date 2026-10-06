@@ -116,7 +116,7 @@ export function TableOrderView({ table, orderId, onAddItems, onSettle, onMode, o
         )}
       </div>
 
-      <footer className="border-t border-line px-5 pb-5 pt-4">
+      <footer className="border-t border-line px-4 pb-4 pt-3 2xl:px-5 2xl:pb-5 2xl:pt-4">
         {failure && (
           <p role="alert" className="mb-3 text-base text-danger">
             {failure}
@@ -154,7 +154,7 @@ export function TableOrderView({ table, orderId, onAddItems, onSettle, onMode, o
             onClick={() => onSettle(order.id)}
           >
             {finishing ?? "Settle Bill"}
-            {finishing === null && order.lines.length > 0 && <Money amount={amountOwed(order.totals, order.currency)} className="text-lg" />}
+            {finishing === null && order.lines.length > 0 && <Money amount={amountOwed(order.totals, order.currency)} className="text-base 2xl:text-lg" />}
             <ArrowRightIcon aria-hidden="true" size={19} className="shrink-0" />
           </Button>
         </div>

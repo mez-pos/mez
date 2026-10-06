@@ -64,21 +64,22 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
       aria-label={ready ? `${whereText(t)}, ready` : `${whereText(t)}, ${timerText(elapsed)}${word ? `, ${word}` : ""}`}
       className={cx("rounded-card border border-l-8 bg-raised p-4 shadow-rest", look.card)}
     >
-      <header className="flex items-start gap-3">
+      {/* The timer wraps under the title where a column is too narrow for both: a 1024 display has three columns of 300px. */}
+      <header className="flex flex-wrap items-start gap-3">
         <span aria-hidden="true" className={cx("flex size-12 shrink-0 items-center justify-center rounded", look.tile)}>
           <Icon size={24} strokeWidth={1.9} />
         </span>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-32 flex-1">
           {/* Where it goes: what a runner reads first. */}
           <h3 className="break-words font-serif text-total leading-tight">{whereText(t)}</h3>
           <p className="text-lg text-fg-muted">{metaText(t)}</p>
         </div>
         {ready ? (
-          <span className="inline-flex min-h-10 shrink-0 items-center rounded-pill bg-chip-success-bg px-4 text-lg font-bold text-chip-success-fg">
+          <span className="ml-auto inline-flex min-h-10 shrink-0 items-center rounded-pill bg-chip-success-bg px-4 text-lg font-bold text-chip-success-fg">
             Ready{t.ready_at ? ` · ${agoText(now - Date.parse(t.ready_at))}` : ""}
           </span>
         ) : (
-          <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <div className="ml-auto flex shrink-0 flex-col items-end gap-1.5">
             <span className="font-mono text-base tabular-nums text-fg-muted">{placed}</span>
             <span className={cx("inline-flex min-h-10 items-center gap-2 rounded-pill px-4 font-bold", tonePill[tone])}>
               <TimerIcon aria-hidden="true" size={18} strokeWidth={2.2} />

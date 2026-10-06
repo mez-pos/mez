@@ -114,7 +114,7 @@ export function TablesScreen() {
     <div className="flex min-w-0 flex-1">
       <TablesSidebar view={view} onView={setView} />
 
-      <section aria-label="Floor" className="flex min-w-0 flex-1 flex-col gap-4 px-6 py-5">
+      <section aria-label="Floor" className="flex min-w-0 flex-1 flex-col gap-4 px-4 py-4 2xl:px-6 2xl:py-5">
         {data && tables.length > 0 && (
           <div className="flex flex-wrap items-center gap-2.5">
             {data.areas.length > 1 && (

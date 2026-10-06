@@ -42,7 +42,7 @@ type Open =
   { kind: "refund" } | { kind: "pick" } | { kind: "void"; tender: TenderResponse } | { kind: "reprint" } | { kind: "invoice" } | { kind: "history" } | null;
 
 const negate = (a: Amount): Amount => ({ ...a, minor: -a.minor });
-const shell = "flex w-96 shrink-0 flex-col border-l border-line bg-chrome 2xl:w-110";
+const shell = "flex w-panel shrink-0 flex-col border-l border-line bg-chrome";
 
 export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, onPay }: OrderPanelProps) {
   const { order, error, commands } = useBill(orderId);
@@ -82,7 +82,7 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
 
   return (
     <aside aria-label="Order" className={shell}>
-      <div className="min-h-0 flex-1 overflow-y-auto p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 xl:p-5 2xl:p-6">
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="break-words font-serif text-xl 2xl:text-total">{invoice?.invoice_no ?? order.id}</h2>
@@ -190,7 +190,7 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
         )}
       </div>
 
-      <footer className="grid shrink-0 gap-2.5 border-t border-line p-6 pt-4">
+      <footer className="grid shrink-0 gap-2.5 border-t border-line p-4 pt-3 xl:p-5 xl:pt-4 2xl:p-6 2xl:pt-4">
         {owed && order.status === "reopened" && (
           <Button variant="primary" onClick={() => onPay(order)}>
             Take the balance

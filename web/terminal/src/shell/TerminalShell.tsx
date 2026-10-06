@@ -71,7 +71,12 @@ export function TerminalShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas text-fg">
-      <header className={cx("flex shrink-0 items-center gap-6 border-b border-line bg-chrome px-7", waiter ? "h-22" : "h-18")}>
+      <header
+        className={cx(
+          "flex shrink-0 items-center gap-4 border-b border-line bg-chrome px-5 2xl:gap-6 2xl:px-7",
+          waiter ? "h-22 short:h-18" : "h-18 short:h-15",
+        )}
+      >
         <Logo className="h-9" />
         {waiter && path === route.order ? (
           // Taking an order, the bar is the order's: where, how many, how served (T02).
@@ -112,11 +117,6 @@ export function TerminalShell({ children }: { children: ReactNode }) {
             </button>
           )}
           <ProfileMenu name={auth.staff.name} role={auth.staff.role} actions={account} />
-          <p className="hidden text-right font-script text-xl leading-tight text-fg-2 2xl:block" aria-hidden="true">
-            A better table for
-            <br />
-            brighter days ♡
-          </p>
         </div>
       </header>
       <main className="flex min-h-0 flex-1">{children}</main>

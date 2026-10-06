@@ -1,6 +1,9 @@
-// The 400px order rail (D03): where the order is and how many are at it, how it
-// is served, its lines, its totals, and Save Order and Pay. Everything the
-// design does not draw a button for is under the "..." (MoreActions).
+// The order rail (D03): where the order is and how many are at it, how it is
+// served, its lines, its totals, and Save Order and Pay. Everything the design
+// does not draw a button for is under the "..." (MoreActions). Its width is
+// the `rail` token (tokens.md, "Layout"): the drawing's 400px on a wide
+// screen, a share of the width on a smaller one, never less than the totals
+// and the two buttons need.
 //
 // A waiter's rail (T02): how it is served is chosen in the top bar and shown
 // here as a chip, each line says its course, Clear takes off what the kitchen
@@ -84,8 +87,8 @@ export function OrderRail(props: OrderRailProps) {
   };
 
   return (
-    <aside aria-label="Order" className="flex w-100 shrink-0 flex-col border-l border-line bg-chrome">
-      <header className="flex items-center gap-3 border-b border-line px-5 py-4">
+    <aside aria-label="Order" className="flex w-rail shrink-0 flex-col border-l border-line bg-chrome">
+      <header className="flex items-center gap-3 border-b border-line px-4 py-3 2xl:px-5 2xl:py-4">
         <div className="min-w-0 flex-1">
           {pickTable ? (
             <button
@@ -129,7 +132,7 @@ export function OrderRail(props: OrderRailProps) {
       </header>
 
       {!waiter && (
-        <div className="border-b border-line px-5 py-3.5">
+        <div className="border-b border-line px-4 py-3 2xl:px-5 2xl:py-3.5">
           <ServiceControl value={service} locked={serviceLocked(orderId)} onChange={chooseService} />
         </div>
       )}

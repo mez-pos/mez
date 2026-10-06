@@ -206,7 +206,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
       />
 
       <section aria-label="Payment" className="flex min-w-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-5 pt-5 2xl:px-7 2xl:pt-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4 pt-4 xl:px-6 xl:pb-5 xl:pt-5 2xl:px-7 2xl:pt-6">
           <PaySteps
             step={step}
             disabled={busy || view !== "entry"}
@@ -324,7 +324,8 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                 <MethodTiles method={method} disabled={busy} onChoose={choose} />
               </div>
 
-              <div className="mt-5 grid grid-cols-[minmax(0,1fr)_20rem] items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_23.75rem_19rem]">
+              {/* One column on a tablet, the tip beside the amount from 1280, the pad beside both from 1536. */}
+              <div className="mt-5 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_20rem] 2xl:grid-cols-[minmax(0,1fr)_23.75rem_19rem]">
                 <AmountCard
                   method={method}
                   target={money(target)}
@@ -364,7 +365,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                   }}
                 />
                 {/* The keypad the design leaves to a keyboard: a touch till has none (rule 4). */}
-                <div className="col-span-2 max-w-80 rounded-card border border-line bg-raised p-4 2xl:col-span-1 2xl:max-w-none">
+                <div className="max-w-80 rounded-card border border-line bg-raised p-4 xl:col-span-2 2xl:col-span-1 2xl:max-w-none">
                   <NumPad
                     layout="amount"
                     label={field === "tip" ? "Tip" : cash ? "Amount received" : "Amount"}

@@ -105,11 +105,6 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
         <div className="flex shrink-0 items-center gap-4">
           <span className="hidden font-mono text-base font-semibold tabular-nums xl:block">{clockText(new Date(now), null)}</span>
           <ConnectionIndicator />
-          <p aria-hidden="true" className="hidden text-right font-script text-xl leading-tight text-fg-2 2xl:block">
-            Good Food,
-            <br />
-            Brighter Days ♡
-          </p>
         </div>
       </header>
 
@@ -144,7 +139,7 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
         </p>
       )}
 
-      <div className="grid min-h-0 flex-1 grid-cols-3 gap-4 px-5 py-4 2xl:grid-cols-[repeat(3,minmax(0,1fr))_21.25rem]">
+      <div className="grid min-h-0 flex-1 grid-cols-3 gap-3 px-4 py-3 xl:gap-4 xl:px-5 xl:py-4 2xl:grid-cols-[repeat(3,minmax(0,1fr))_21.25rem]">
         {columns.map((col) => {
           const tickets = prefs.groupByTable ? groupByTable(cols[col.stage]) : cols[col.stage];
           return (
@@ -194,7 +189,7 @@ function Column({ title, icon: Icon, band, count, children }: ColumnProps) {
         <h2 className="font-serif text-xl text-current">{title}</h2>
         <span className="ml-auto flex size-10 items-center justify-center rounded-round bg-current/20 font-mono text-lg font-bold tabular-nums">{count}</span>
       </header>
-      <ul className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto p-3.5">{children}</ul>
+      <ul className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto p-3 xl:p-3.5">{children}</ul>
     </section>
   );
 }

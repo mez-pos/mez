@@ -1,4 +1,4 @@
-// The 400px panel of the tables screen (D05): the table picked, and what can be
+// The panel of the tables screen (D05, the `rail` width): the table picked, and what can be
 // done with it. A free table seats a party, one to clear is cleared, one with
 // an order shows it (TableOrderView), and one with several asks which. With no
 // table picked it says so: nothing here acts on a table nobody chose.
@@ -36,7 +36,7 @@ export interface TablePanelProps {
 
 export function TablePanel(props: TablePanelProps) {
   return (
-    <aside aria-label="Table" className="flex w-100 shrink-0 flex-col border-l border-line bg-chrome">
+    <aside aria-label="Table" className="flex w-rail shrink-0 flex-col border-l border-line bg-chrome">
       {props.table ? (
         // Keyed by the table: the guests counted and the order picked are its own.
         <Picked key={props.table.id} {...props} table={props.table} />

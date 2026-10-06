@@ -1,4 +1,4 @@
-// The 240px sidebar of the tables screen (D05): Floor Plan and Table List, the
+// The sidebar of the tables screen (D05, the `side` width): Floor Plan and Table List, the
 // two ways to look at the same tables, and Order History. The one chosen is
 // terracotta, as the order screen's categories are. The design also lists
 // Reservations, Waitlist, Customers and Settings: none exists in v1, and a
@@ -21,11 +21,11 @@ const views: readonly { view: TablesView; label: string; icon: LucideIcon }[] = 
   { view: "list", label: "Table List", icon: ListIcon },
 ];
 
-const entry = "flex min-h-tap w-full items-center gap-3 rounded px-4 text-left text-base outline-offset-2 outline-attention focus-visible:outline-3";
+const entry = "flex min-h-tap w-full items-center gap-3 rounded px-3 text-left text-base outline-offset-2 outline-attention focus-visible:outline-3 2xl:px-4";
 
 export function TablesSidebar({ view, onView }: TablesSidebarProps) {
   return (
-    <nav aria-label="Tables" className="flex w-60 shrink-0 flex-col gap-1 overflow-y-auto border-r border-line bg-chrome px-3.5 py-4">
+    <nav aria-label="Tables" className="flex w-side shrink-0 flex-col gap-1 overflow-y-auto border-r border-line bg-chrome px-3 py-4 2xl:px-3.5">
       {views.map(({ view: v, label, icon: Icon }) => {
         const active = v === view;
         return (
@@ -45,13 +45,6 @@ export function TablesSidebar({ view, onView }: TablesSidebarProps) {
         <HistoryIcon aria-hidden="true" size={19} className="shrink-0" />
         Order History
       </Link>
-      <p aria-hidden="true" className="mt-auto px-2 pt-6 font-script text-total leading-tight text-fg-2">
-        Good Food
-        <br />
-        Happier
-        <br />
-        People ♡
-      </p>
     </nav>
   );
 }

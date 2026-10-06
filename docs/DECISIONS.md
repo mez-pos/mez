@@ -8260,3 +8260,52 @@ Cost: a venue that has a Cashfree account and no other cannot take payments
 online with mez until it opens one with Razorpay or Stripe. If Cashfree ever
 takes a payment with no phone number, the adapter is one package behind the
 interface of ADR-220, and this is the ADR to supersede.
+
+## ADR-255 - The screens fit any resolution: fluid rails, auto-fill grids, a short variant, no decoration in working chrome
+2026-10 · Status: accepted, by the owner. Between phases 11 and 12.
+Context: the screens were rebuilt from a design drawn at 1920 by 1080, and read
+well there. The owner found them limited to one or two resolutions. A walk at
+1366 by 768 (the commonest cafe PC), 1024 by 768 (a tablet) and 2560 by 1440 found:
+the order screen showed two columns and one and a half rows of items at 1366, and
+one column at 1024, beside a rail fixed at 400px; the kitchen's tickets overflowed
+their columns at 1024; the payment screen's three columns did not fit at 1024; the
+dashboard's tiles wrapped their notes word by word; and the sidebars, rails and
+headers were fixed widths from the drawing, so the middle of every screen was what
+shrank. The owner also asked whether the script lines in the chrome look
+unprofessional.
+Decision:
+  - **Three fluid widths replace every fixed rail and sidebar** (`--side`,
+    `--rail`, `--panel` in tokens.css; `w-side`, `w-rail`, `w-panel`). Each is a
+    share of the viewport, clamped between a floor its content still fits at and
+    the drawn width. The content in the middle is what gives, never the rail.
+  - **Grids of cards are auto-fill** with a minmax floor, never a fixed count: the
+    item cards, the dashboard's shortcuts. A 1366 laptop shows three columns, a
+    1024 tablet two, a 2560 monitor eight.
+  - **A `short:` variant** (`@custom-variant`, 820px tall or less) trims chrome:
+    the headers lose 12px, a card's photo band drops from 112 to 64px, a card's
+    description to one line, footers their padding. It never shrinks text: the
+    type floors of ADR-014 stand.
+  - **Page columns stack below `xl`**: the payment screen's amount, tip and
+    keypad are one column on a tablet. The kitchen's tickets wrap the timer under
+    the title where a column is narrow. The orders table keeps its eight columns
+    at a 640px minimum and scrolls sideways on a tablet.
+  - **Decoration leaves the working chrome.** The script lines are gone from the
+    terminal's header, the kitchen's header, the back office's header and
+    sidebar, the category and tables sidebars, the payment summary and the close-
+    the-day rail. They stay on the login screen, the waiter's greeting, the paid
+    panel's thank-you and the dashboard's brand card: screens that wait, not
+    screens that work. That is the answer to the owner's question: a slogan in
+    the chrome of a till is not unprofessional on a wide screen, but it is the
+    first thing a 1024 tablet cannot afford, and a rule that depends on the
+    width is no rule. tokens.md says where script may live.
+  - **Nothing is tuned to one resolution.** Tailwind's `xl` and `2xl` stand for
+    "room for a second column" and "room for the full drawn spacing".
+Because: the alternative, a root font-size that scales with the viewport, would
+have shrunk every spacing class at once, including the 48px tap targets and the
+15px labels that ADR-014 fixed for a reason. Widths that scale and text that does
+not is the rule a till wants.
+Cost: the drawing's exact pixel widths hold only from 1536 wide. The floor plan
+is positional and still scrolls sideways on a tablet when an area has more
+columns than fit; scaling it is left for a venue that asks. Checked in a browser
+at 1024, 1366, 1920 and 2560 wide on the order, tables, orders, payment, close the
+day, kitchen, waiter and dashboard screens.

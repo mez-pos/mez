@@ -27,7 +27,7 @@ export function QuickActions({ held }: { held: readonly Permission[] }) {
   return (
     <Card padding="lg">
       <h2 className="font-serif text-xl">Quick actions</h2>
-      <ul className="mt-3 grid grid-cols-2 gap-2.5">
+      <ul className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-2.5">
         {actions.map(({ id, label, icon: Icon }) => (
           <li key={id}>
             <Link

@@ -122,7 +122,7 @@ export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: 
         </div>
       </section>
 
-      <aside aria-label="The shift" className="hidden w-88 shrink-0 flex-col gap-4 border-l border-line bg-chrome p-5 lg:flex">
+      <aside aria-label="The shift" className="hidden w-rail shrink-0 flex-col gap-4 border-l border-line bg-chrome p-5 lg:flex">
         <p className="text-meta font-bold uppercase text-fg-faint">The shift</p>
         <dl className="grid gap-3 text-base">
           <Fact label="Trading day" value={shift.trading_day} />
@@ -143,11 +143,6 @@ export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: 
             </div>
           )}
         </dl>
-        <p aria-hidden="true" className="mt-auto text-center font-script text-xl leading-tight text-fg-2">
-          Good Teams,
-          <br />
-          Great Service ♡
-        </p>
       </aside>
 
       <Confirm
