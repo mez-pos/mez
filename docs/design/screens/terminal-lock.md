@@ -127,5 +127,8 @@ Departures:
   for eight digits.
 - **A connection indicator in the foot.** The design has none here, but a PIN
   refused by a server that is not there reads as a wrong PIN otherwise.
-- **Pair is ours.** The design draws no pairing; D24's setup wizard is phase
-  12's.
+- **Pair is ours.** The design draws no pairing. While the venue is not made
+  (`GET /api/v1/setup` says `needed`) Pair has no code field: the terminal
+  on the server's own machine goes to the wizard (`setup-wizard.md`), the
+  back office there links to it, and any other device is told to go to that
+  computer, with Check again.

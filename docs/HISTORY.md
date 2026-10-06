@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 2: the installer** (ADR-265). `build/installer/mez.iss`, by
+**Phase 12, Task 3a: first run over HTTP** (ADR-266). `internal/service/
+firstrun` is the one place a venue is made; `GET` and `POST /api/v1/setup`,
+the post only for a browser on the server's own machine. Seen with curl.
+
+Before it, **Phase 12, Task 2: the installer** (ADR-265). `build/installer/mez.iss`, by
 `make dist && make installer` (Inno Setup 6). It calls `mez service` for
 everything about the service, opens the firewall for the program, makes the
 kiosk shortcut, and keeps the data on uninstall. Installed, upgraded and

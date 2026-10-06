@@ -7,28 +7,27 @@
 
 ## Current phase
 
-**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2 and 3a
-built. Task 3 is split into 3a to 3d. Phase 11 has nothing left to build
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2, 3a and
+3b built; 3c and 3d are left of Task 3. Phase 11 has nothing left to build
 (Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 3a: first run over HTTP** (ADR-266). `internal/service/
-firstrun` is the one place a venue is made; `mez setup` calls it. `GET
-/api/v1/setup` answers `{needed, here}`; `POST /api/v1/setup` makes the
-venue and answers with the first pairing code, only for a browser on the
-server's own machine (`atThisMachine`, `internal/api/setup.go`). Seen with
-curl against the built binary; **no screen yet, so not seen in a browser**.
+**Phase 12, Task 3b: the wizard's questions** (ADR-267, `setup-wizard.md`).
+`web/shared/screens/setup/`, at the terminal's `/setup`, outside the guard.
+Three steps (venue; taxes and invoices; you), then Create: make the venue,
+pair, sign in, set the prefix, each stage resumable. Pair sends a new
+machine there. Walked in a browser from an empty data directory at 1366
+and 1024: the owner lands on Open the shift.
 
 ## Next task
 
-**Phase 12, Task 3b: the wizard's questions (D24).** Write
-`docs/design/screens/setup-wizard.md` first, from D24
-(`mez Desktop Management.dc.html`, line 770). The types are in
-`api-types.ts` (`SetupRequest`, `SetupResponse`, `SetupStatusResponse`).
-The wizard posts 3a, pairs with the code, signs the owner in, then sets
-the invoice prefix through the settings API. Until it exists the
-installer's last page still opens a till with no venue.
+**Phase 12, Task 3c: printer discovery and a test print.** A search of the
+LAN for port 9100 and of Windows' printers behind the printers API, and a
+Printer step after Create (add a step to `steps` in `setup-logic.ts`; the
+wizard is signed in by then, so it uses the API that exists). Skippable.
+`make check` embeds whatever `web/*/dist` holds: run `make build-web`
+before walking a screen against `bin/mez`.
 
 Still owed from phase 11, its human check and:
 - **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay

@@ -1,12 +1,20 @@
 // First run: redeem a pairing code for a device token (docs/phases/phase-05.md,
 // Task 6). The same screen pairs a terminal on ink and a back office on paper.
+//
+// A venue that is not made yet has no codes to redeem. Then the terminal on
+// the server's own machine goes to the setup wizard, and anything else is told
+// where the wizard is (ADR-267).
 
 import { useState, type FormEvent } from "react";
+import { Redirect } from "wouter";
 import { formatPairingCode, isCompletePairingCode } from "../auth/format";
 import { pairingError } from "../auth/messages";
 import type { AppKind } from "../auth/storage";
 import { useAuth, useAuthStore } from "../auth/use-auth";
 import { Button, Logo, Meta } from "../ui";
+import { setupPath } from "./setup/setup-path";
+import { useSetupStatus } from "./setup/use-setup-status";
+import { Splash } from "./Splash";
 
 const appNames: Record<AppKind, string> = { terminal: "terminal", backoffice: "back office", kitchen: "kitchen display" };
 
@@ -16,6 +24,54 @@ const notices = {
 } as const;
 
 export function PairScreen({ app }: { app: AppKind }) {
+  const setup = useSetupStatus();
+  // The first answer is waited for, so the wizard's own machine never sees
+  // this form flash by. A server that does not answer is not waited on: the
+  // form says it cannot be reached when a code is tried.
+  if (setup.isPending && setup.failureCount === 0) return <Splash />;
+  if (setup.data?.needed) {
+    // Only the terminal has the wizard among its routes; the others link to it.
+    if (setup.data.here && app === "terminal") return <Redirect to={setupPath} replace />;
+    return <NotSetUp here={setup.data.here} onCheck={() => void setup.refetch()} />;
+  }
+  return <PairForm app={app} />;
+}
+
+/** What a device sees while the venue has not been made. */
+function NotSetUp({ here, onCheck }: { here: boolean; onCheck: () => void }) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-canvas p-6 text-fg">
+      <div className="flex w-full max-w-md flex-col gap-6">
+        <div>
+          <Logo className="mb-6 h-12" />
+          <Meta items={["First run"]} />
+          <h1 className="mt-3 font-serif text-total">This venue is not set up yet</h1>
+          <p className="mt-3 text-base text-fg-2">
+            {here
+              ? "It takes a few minutes, and it is done once, here."
+              : "Setting up is done on the computer mez is installed on. Open mez there, from its shortcut or at localhost in a browser, then pair this device with a code from it."}
+          </p>
+        </div>
+        {here ? (
+          // A plain link: the wizard is the terminal's, outside this app's own routes.
+          <a
+            href={setupPath}
+            className="inline-flex min-h-tap items-center justify-center rounded-pill bg-accent px-5 text-base font-semibold text-accent-fg shadow-action outline-offset-2 outline-attention hover:bg-accent-hover focus-visible:outline-3"
+          >
+            Set up this venue
+          </a>
+        ) : (
+          <Button onClick={onCheck} className="w-full">
+            Check again
+          </Button>
+        )}
+        <Meta items={["Server", window.location.host]} />
+      </div>
+    </main>
+  );
+}
+
+function PairForm({ app }: { app: AppKind }) {
   const status = useAuth();
   const store = useAuthStore();
   const [code, setCode] = useState("");

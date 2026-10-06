@@ -1,6 +1,8 @@
-// The terminal's routes (ADR-148). Every path goes through the Gate, which
-// sends an unpaired device to /pair and a locked one to /lock
-// (shared/auth/route.ts). Signed in, "/" lands a person on their own work by
+// The terminal's routes (ADR-148). Every path but the setup wizard's goes
+// through the Gate, which sends an unpaired device to /pair and a locked one
+// to /lock (shared/auth/route.ts). The wizard is outside it (ADR-267): it
+// starts on a device that is not paired and ends on one that is signed in, and
+// the Gate would move it on at each change. Signed in, "/" lands a person on their own work by
 // role, and every other screen is inside the shell, with the ticket, the floor
 // and the shift above it, and behind the shift gate: no shift, no screens.
 
@@ -8,6 +10,8 @@ import { Redirect, Route, Switch } from "wouter";
 import { Gate } from "../../shared/auth/Gate";
 import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
+import { setupPath } from "../../shared/screens/setup/setup-path";
+import { SetupWizard } from "../../shared/screens/setup/SetupWizard";
 import { Splash } from "../../shared/screens/Splash";
 import { TablesScreen } from "./floor/TablesScreen";
 import { CookBoard } from "./kitchen/CookBoard";
@@ -22,6 +26,20 @@ import { TableDetail } from "./waiter/TableDetail";
 import { WaiterHome } from "./waiter/WaiterHome";
 
 export function App() {
+  return (
+    <Switch>
+      <Route path={setupPath}>
+        <SetupWizard />
+      </Route>
+      <Route>
+        <Gated />
+      </Route>
+    </Switch>
+  );
+}
+
+/** Everything behind the guard. */
+function Gated() {
   return (
     <Gate splash={<Splash />}>
       <Switch>

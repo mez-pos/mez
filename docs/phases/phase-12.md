@@ -42,7 +42,7 @@ Phase 11.
     `POST /api/v1/setup` makes it and answers with the first pairing code.
     Only a browser on the server's own machine may post; ADR-058 gives way
     that far and no further. No screen.
-  - [ ] **Task 3b - The wizard's questions (D24).**
+  - [x] **Task 3b - The wizard's questions (D24).**
     A spec first (`docs/design/screens/setup-wizard.md`). The till opens on
     the wizard while there is no venue: venue name, currency, timezone, tax
     profile and registration, financial year start, invoice series prefix,

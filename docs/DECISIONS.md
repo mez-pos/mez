@@ -9103,3 +9103,55 @@ with every permission; neither the PIN nor the code in the log. **Not
 seen**: from a browser, since there is no screen until 3b; under the
 service's account; a real rebinding or cross-site page.
 ---
+
+## ADR-267 - The setup wizard is the terminal's, outside the guard, and Create is four stages
+2026-10 · Status: accepted. Phase 12, Task 3b.
+Decision: `web/shared/screens/setup/`, served by the terminal at `/setup`.
+  - **Outside the Gate.** Every other path is guarded by the auth state.
+    The wizard begins unpaired and ends signed in, and the guard would move
+    it on at each change, so its route sits beside the guard, not under it.
+    It shows questions only while `GET /api/v1/setup` says `needed` and
+    `here`; otherwise it leaves for `/`, or says to go to the computer.
+  - **Pair is how a new machine gets there.** With no venue Pair has no
+    code to take: the terminal on the server's own machine redirects to
+    the wizard, the back office links to it, any other device is told
+    where it is. So the installer's shortcut, which opens `/`, opens the
+    wizard with no change to the installer.
+  - **Three steps, not D24's five**: venue; taxes and invoices; you. D24's
+    tables and menu import are not in the phase's list. Printer (3c) and
+    the last screen (3d) add steps after Create.
+  - **Nothing is sent until the last step.** Each step checks its own
+    fields; the server judges everything again, and a refusal that names a
+    field goes back to that field's step.
+  - **Create is four stages, each done once**: `POST /api/v1/setup`, pair
+    with the code, sign in with the PIN just typed, set the invoice prefix
+    through the numbering settings. `finishSetup` never throws; a failure
+    comes back with the stage it stopped at and Try again resumes there,
+    so no retry makes a second venue or redeems the code twice.
+  - **The prefix is the only thing asked that first run does not take.**
+    It is written after sign-in, by the API the back office uses, and only
+    when it is not the venue's own. If that fails the venue is still
+    ready, and the wizard says so and goes on.
+  - **A guess, shown, for the tax profile**: from the browser's time zone
+    (Kolkata, London, the Americas), and the profile sets the currency,
+    the year's first month and how prices are quoted unless the owner has
+    set them by hand. Chrome's old zone names are given their present ones.
+  - The wizard has its own form fields. The back office's are in its app,
+    and a shared screen cannot import from one.
+Because: the phase's test is an owner with no terminal and no
+documentation. Keeping every write after the first on the existing,
+permissioned API is what ADR-266 asked of the wizard.
+Cost: the answers live in the page, so a reload before Create starts
+again, and a reload between Create's stages leaves a venue this browser
+cannot pair without `mez pair` (the PIN and the code are in memory only,
+on purpose). The steps' checks restate some of the server's (name
+lengths, a GSTIN's shape, a PIN's length) and can drift from it; the
+server's refusal still lands on the field. Two sets of form fields. The
+currency list is ten long. A `make check` does not rebuild the bundles,
+and the first walk of this task was of a stale one. No independent
+review of the screens: they were walked, and the endpoint under them was
+reviewed in 3a. **Seen on 2026-10-07** in a browser against the built
+binary, from an empty data directory, at 1366 and 1024 wide (`KNOWN.md`
+lists it). **Not seen**: a failed stage, a narrow or touch-only screen,
+the installer's shortcut.
+---

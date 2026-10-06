@@ -36,6 +36,7 @@ draws nothing for it.
 
 | Spec | Screen | Path | Design |
 |---|---|---|---|
+| `setup-wizard.md` | The setup wizard, on a machine with no venue | `/setup` | D24 |
 | `terminal-lock.md` | Staff Login, and pairing | `/lock`, `/pair` | D01 |
 | `terminal-shell.md` | The frame: navigation, where each role lands, the shift gate | every path | D03, D05, T01 |
 | `terminal-open-shift.md` | Open the shift | `/shift` | D02 |
@@ -108,7 +109,6 @@ Not built, and why (`docs/phases/rebuild.md`, "Not in this phase"):
 - **D14** offline sync is not a screen of its own: its word for the
   connection ("Online", or what is wrong) is in each app's frame
   (`terminal-shell.md`, `backoffice-shell.md`).
-- **D24** setup wizard: phase 12.
 - **M04's checkout, M05 to M10 and M11b**, the rest of the guest's phone:
   phase 11, each built from the mez file in its task.
 

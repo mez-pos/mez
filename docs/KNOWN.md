@@ -10,6 +10,23 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The setup wizard** (ADR-267; phase 12 Task 3b; `setup-wizard.md`).
+  Seen on 2026-10-07 in a browser against the built binary and an empty
+  data directory, at 1366 and 1024 wide: `/` going to the wizard; each
+  step's own refusals; the tax profile moving the currency and the year;
+  Create landing the owner on Open the shift with the prefix set; the
+  back office then open on the same pairing; a device by the LAN address
+  told to go to the computer, and offered Pair once the venue exists.
+  **Not seen**: any failed stage of Create (the server refusing an answer
+  the step let through, a lost reply, an expired code, a refused prefix),
+  which are tested as logic only; a screen under 1024 wide; a touch
+  screen with no keyboard; the installer's shortcut opening it. Left out:
+  what is typed is lost on a reload; a reload after Create needs `mez
+  pair`; no preview of the first invoice number; ten currencies in the
+  list; D24's tables and menu import; a US venue leaves with no rates set
+  and cannot sell until Settings has them; Pair and the installer still
+  name `mez setup` (3d).
+
 - **First run over HTTP** (ADR-266; phase 12 Task 3a). Seen on 2026-10-07
   with curl against the built binary: the status, the refusals by LAN
   address, foreign `Host`, foreign `Origin` and text/plain, a venue made,
