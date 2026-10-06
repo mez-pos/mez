@@ -8,7 +8,7 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 and 6 done. (Walks owed.)
+4 (Cashfree left out, ADR-254), 5 and 6: all built. (Walks owed.)
 
 ## Last completed task
 
@@ -18,15 +18,15 @@ Handed over, which closes the ticket. Task 5 is done. **Not seen in a browser.**
 
 ## Next task
 
-**Phase 11 has nothing left to build but 4f6b**, Cashfree, which waits on
-question 8. It owes its human check, the phase file's "Done when", and:
+**Phase 11 has nothing left to build.** Cashfree is left out by the owner
+(ADR-254). It owes its human check, the phase file's "Done when", and:
 - **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
   online on a bill, a share from two phones, and Pay on an order paid first.
 - **Ordering to collect, end to end, with a gateway's test keys**: make the code
   on the Floor plan, scan it, order, pay, see the code, find it under To collect,
   Handed over. None of 5f2 to 5f4 has been seen against the real binary.
 
-**If question 8 is not answered: Phase 12, Task 1.** Read `docs/phases/phase-12.md`.
+**To build next: Phase 12, Task 1.** Read `docs/phases/phase-12.md`.
 
 ## Known broken / in progress
 
@@ -44,7 +44,6 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 5. The desktop's cash quick amounts never offer ₹500. Show it?
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
 7. `jskin.in` is for testing, `mez.ac` for production: move before codes are printed.
-8. Cashfree needs each payer's phone number (ADR-230). Ask guests for one, or leave it out?
 
 ---
 
@@ -54,5 +53,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built but for 4f6b; owes its human check)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

@@ -8234,3 +8234,29 @@ presses Handed over still runs out of codes (ADR-249), and nothing here warns
 of it. Not seen in a browser: the real binary cannot make a paid order to
 collect without a gateway. Checked by the type checker, the tests of its logic
 and the server's.
+
+## ADR-254 - Cashfree is left out: a guest is not asked for a phone number
+2026-10 · Status: accepted, by the owner. Phase 11, Task 4f6b.
+Context: ADR-230 built Stripe and left Cashfree waiting on the owner. Cashfree's
+payment links and orders require `customer_details.customer_phone`, and mez asks a
+guest for nothing. The choices were to ask every guest for a number before they
+pay, to send Cashfree a made-up one, or to leave Cashfree out. It stood as
+question 8 in STATE.
+Decision:
+  - **Cashfree is not built.** The owner, on 2026-10-06: "I don't want the
+    customers to share their phone numbers."
+  - **A guest is asked for no phone number, by any part of mez.** This is the
+    rule the decision rests on, and it is wider than Cashfree: a gateway, a
+    receipt by message, a "we will text you when it is ready", each would ask
+    for one. An order to collect is called by its code for the same reason
+    (ADR-249).
+  - **A made-up number is not sent to anyone.** It was never a choice.
+  - **Task 4f6b is struck, not deferred**: the phase file says left out, and
+    Task 4 is done. The gateways are Razorpay and Stripe.
+Because: Razorpay already takes UPI and cards for a venue in India, so Cashfree
+would add a second way to the same payments and no new one. The cost was the one
+thing a guest is never asked for.
+Cost: a venue that has a Cashfree account and no other cannot take payments
+online with mez until it opens one with Razorpay or Stripe. If Cashfree ever
+takes a payment with no phone number, the adapter is one package behind the
+interface of ADR-220, and this is the ADR to supersede.

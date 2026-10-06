@@ -47,7 +47,7 @@ Phase 10.
   - [x] **3b.** The landing and the menu (M01, M02), with their specs.
   - [x] **3c.** An item with its choices, and the cart (M03, M04's cart, M11a).
 
-- [ ] **Task 4 — Guest checkout.**
+- [x] **Task 4 — Guest checkout.**
   Prepay-required and pay-at-table modes, per venue. UPI intent link and dynamic
   QR, plus a pluggable gateway adapter (Razorpay/Cashfree/Stripe) behind one
   interface. Payment confirmation emits the same `payment.tendered` event as the
@@ -119,7 +119,7 @@ Phase 10.
         (ADR-228). Seen at 390 wide in every state but a real payment.
       - [x] **4e5d.** The owner's choice of mode in the back office, beside
         the UPI address, saying when it is in effect (ADR-229).
-  - [ ] **4f.** The gateway adapter: one interface, with Razorpay, Cashfree
+  - [x] **4f.** The gateway adapter: one interface, with Razorpay, Cashfree
     and Stripe behind it. Split in six (ADR-220):
     - [x] **4f1.** The interface (`internal/gateway`), and the service that
       starts a charge and turns a gateway's "paid" into one
@@ -138,13 +138,13 @@ Phase 10.
     - [x] **4f5.** The gateway's webhook, through the relay, so a payment
       lands without waiting for the sweep: `POST /order/api/hook/{gateway}`,
       a hint to ask the gateway now and never proof (ADR-224).
-    - [ ] **4f6.** Cashfree and Stripe, and the owner choosing a gateway in
+    - [x] **4f6.** Cashfree and Stripe, and the owner choosing a gateway in
       the back office. Split in three (ADR-230):
       - [x] **4f6a.** Stripe (`internal/gateway/stripe`): Checkout Sessions,
         its webhook, and `gateway = stripe` in the configuration.
-      - [ ] **4f6b.** Cashfree. **Waits on the owner**: its payment links
-        need the payer's phone number, and mez asks a guest for nothing.
-        See STATE.md's open questions.
+      - **4f6b.** Cashfree. **Left out by the owner** (ADR-254): its
+        payment links need the payer's phone number, and a guest is not
+        asked for one. Not built, and not owed.
       - [x] **4f6c.** The back office saying which gateway is set and whether
         it has taken a payment (ADR-231). Not choosing one: the keys are
         configuration and not the database (ADR-221).

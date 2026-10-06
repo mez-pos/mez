@@ -147,7 +147,8 @@
 - **Stripe** (ADR-230): no charge has been made and no webhook received. It
   was tested against a stand-in written from Stripe's documentation, and the
   real API only as far as it refusing a made-up key. Currencies without two
-  decimals are refused. No API version is pinned. Cashfree is not built.
+  decimals are refused. No API version is pinned. Cashfree is not built, and will not be while
+  it needs a guest's phone number (ADR-254).
 - **Paying first** (ADR-225 to ADR-227): in effect where a gateway is set
   and the owner chose "Before the order is sent" on the payments card
   (ADR-229; seen at 1366 with and without a gateway, saved once, never at
