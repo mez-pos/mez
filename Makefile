@@ -42,7 +42,7 @@ WEB_BUILT := $(foreach a,$(WEB_APPS),$(wildcard web/$(a)/dist/index.html))
 TAGS      := $(if $(filter 3,$(words $(WEB_BUILT))),frontend,)
 
 .DEFAULT_GOAL := check
-.PHONY: check fmt fmt-web vet test typecheck build build-web run dev generate migrate migrate-new clean dist help
+.PHONY: check fmt fmt-web vet test typecheck build build-web run dev generate migrate migrate-new clean dist installer help
 
 ## check: fmt, vet, test, typecheck and build. The gate. CI runs this.
 check: fmt vet test typecheck build
@@ -203,6 +203,20 @@ dist: build-web
 		GOOS=$$os GOARCH=$$arch go build -trimpath -tags frontend -ldflags "$(LDFLAGS)" -o "$$out" $(CMD); \
 	done
 	@echo "  dist ok ($(VERSION))"
+
+## installer: the Windows installer, dist/mez_<version>_windows_amd64_setup.exe,
+##            around the binary `make dist` built. Needs Inno Setup 6: pass
+##            ISCC=/path/to/ISCC.exe if it is not on PATH. Signed when
+##            MEZ_SIGNTOOL is a signtool command ending in $$f (ADR-265).
+ISCC ?= ISCC
+installer:
+	@win="dist/$(BIN)_$(VERSION)_windows_amd64.exe"; \
+	if [ ! -f "$$win" ]; then echo "no $$win: run 'make dist' first"; exit 1; fi; \
+	MSYS2_ARG_CONV_EXCL='*' "$(ISCC)" /Q "/DVersion=$(VERSION)" \
+		'/DBinary=..\..\dist\$(BIN)_$(VERSION)_windows_amd64.exe' \
+		$(if $(MEZ_SIGNTOOL),'/Ssigntool=$(MEZ_SIGNTOOL)' /DSign,) \
+		build/installer/mez.iss
+	@echo "  installer dist/$(BIN)_$(VERSION)_windows_amd64_setup.exe"
 
 ## help: list targets
 help:

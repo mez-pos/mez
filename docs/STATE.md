@@ -7,21 +7,23 @@
 
 ## Current phase
 
-**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 and 1b built. Phase
-11 has nothing left to build (Cashfree left out, ADR-254) and owes its walks.
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b and 2 built.
+Phase 11 has nothing left to build (Cashfree left out, ADR-254) and owes its
+walks.
 
 ## Last completed task
 
-**Phase 12, Task 1b: the service's own account** (ADR-264). The service runs
-as `NT SERVICE\mez`, which `fsperm.Restrict` always names; install hands it
-the data directory; restarts wait 5 seconds, 30, then 5 minutes. **Neither
-Task 1 nor 1b has run under the Service Control Manager**: no administrator's
-terminal in either session. `docs/KNOWN.md` lists what to see, first.
+**Phase 12, Task 2: the installer** (ADR-265). `build/installer/mez.iss`, by
+`make dist && make installer` (Inno Setup 6). It calls `mez service` for
+everything about the service, opens the firewall for the program, makes the
+kiosk shortcut, and keeps the data on uninstall. Installed, upgraded and
+removed silently on the developer's PC; **the pages, the shortcut and a clean
+machine are not seen by eye** (`docs/KNOWN.md`, first entry). Not signed.
 
 ## Next task
 
-**Phase 12, Task 2: the installer.** Inno Setup. It calls `mez service
-install` and `mez service start`, and `uninstall` on the way out.
+**Phase 12, Task 3: the first-run wizard.** Until it exists the installer's
+last page opens a till with no venue, and `mez setup` is still a terminal.
 
 Still owed from phase 11, its human check and:
 - **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
@@ -70,6 +72,7 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 5. The desktop's cash quick amounts never offer ₹500. Show it?
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
 7. `jskin.in` is for testing, `mez.ac` for production: move before codes are printed.
+8. The firewall rule is for Private and Domain networks (ADR-265). Public too?
 
 ---
 

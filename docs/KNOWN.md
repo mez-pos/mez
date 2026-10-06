@@ -10,21 +10,23 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **The Windows service** (ADR-263, ADR-264; phase 12 Tasks 1 and 1b):
-  **never run under the Service Control Manager.** To see, in an
-  Administrator PowerShell, with `mez.exe` in `C:\mez`: `mez service
-  install`, then `start`, and the till opening on :7777; in Services, mez
-  logging on as `NT SERVICE\mez`, and on its Recovery tab three restarts;
-  in Event Viewer, Application, source mez, "mez is starting."; a test
-  print on the venue's printer, LAN and USB; end `mez.exe` in Task Manager
-  and see it back within ten seconds; start a second copy on the same port
-  by hand first and see "stopped on its own" in the event log at 5 seconds,
-  30, then 5 minutes; restart the PC and see it up before sign-in; `mez
-  pair` in the same terminal still reading the database; `stop`,
-  `uninstall`, and `C:\ProgramData\mez` still there. Not built: a check
+- **The Windows service and installer** (ADR-263 to ADR-265; phase 12
+  Tasks 1, 1b and 2). Seen on 2026-10-07 by silent install on the
+  developer's PC: the service running as `NT SERVICE\mez` with its database
+  open, the event log's "mez is starting.", the three restart delays, the
+  firewall rule, both shortcuts, an upgrade in place, a silent uninstall
+  that kept the data. **Not seen by eye**, on a clean machine, from the
+  downloaded installer: the SmartScreen box and the installer's pages; the
+  shortcut opening the till full screen; a test print on the venue's
+  printer, LAN and USB, as the service's account; `mez.exe` ended in Task
+  Manager coming back within ten seconds; a second copy holding the port
+  and "stopped on its own" at 5 seconds, 30, then 5 minutes; the PC
+  restarted and mez up before sign-in; `mez pair` in an administrator's
+  terminal still reading the database; Uninstall asking about the data
+  twice, keeping it on No and deleting it on Yes, Yes. Not built: a check
   that a `-user` account can write the data directory or log on as a
-  service; a warning when `mez.exe` is somewhere the service's account
-  cannot read.
+  service; a firewall rule for a network marked Public; a shortcut that
+  follows a changed port; signing (no certificate).
 
 - **Security, left for the owner** (ADR-257, the first review): five things
   the review found that change what the product does, and so were not changed

@@ -18,7 +18,7 @@ Phase 11.
   LocalSystem; the data directory's ACL names that account; the restarts
   wait 5 seconds, 30 seconds, then 5 minutes each time.
 
-- [ ] **Task 2 — Installer.**
+- [x] **Task 2 — Installer.**
   Inno Setup. Installs the binary, registers the service, creates a desktop
   shortcut launching Edge or Chrome with `--app=http://localhost:7777 --kiosk`,
   opens the firewall port for LAN devices, and runs a first-run setup wizard.

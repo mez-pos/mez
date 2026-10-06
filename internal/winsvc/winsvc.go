@@ -178,17 +178,12 @@ func (s *Service) Stop() error {
 	return nil
 }
 
-// Status reports whether the service is installed and running.
+// Status reports whether the service is installed and running. Anyone may
+// ask.
 func (s *Service) Status() (Status, error) {
-	st, err := s.svc.Status()
-	switch {
-	case errors.Is(err, service.ErrNotInstalled):
-		return StatusNotInstalled, nil
-	case err != nil:
+	st, err := s.status()
+	if err != nil {
 		return "", fmt.Errorf("asking after the service: %w", err)
-	case st == service.StatusRunning:
-		return StatusRunning, nil
-	default:
-		return StatusStopped, nil
 	}
+	return st, nil
 }

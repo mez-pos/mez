@@ -8,8 +8,8 @@ internet connection.
 the same kitchen display, the same invoice series, the same night's Z-report.
 
 > **Status: alpha.** The till, kitchen display, payments, invoices, shifts,
-> Z-reports and the back office are built and tested. The guest QR ordering
-> app (phase 11) and the Windows installer, Windows service and automatic
+> Z-reports, the back office, guest QR ordering, the Windows service and the
+> Windows installer are built and tested. The first-run wizard and automatic
 > backups (phase 12) are not built yet. Not yet recommended for a venue's only
 > till. [`docs/STATE.md`](docs/STATE.md) says exactly where the build is.
 
@@ -65,6 +65,37 @@ Check a receipt printer before service, with no setup needed:
 ```sh
 ./mez --test-print 192.168.1.50
 ```
+
+## The Windows installer, and the warning Windows shows
+
+`make dist && make installer` builds `mez_<version>_windows_amd64_setup.exe`
+(it needs [Inno Setup 6](https://jrsoftware.org/isinfo.php)). Run it on the
+venue's PC: it copies mez to `C:\Program Files\mez`, sets it to start with
+Windows as a service under its own account, lets tablets on the same network
+through the firewall, puts a full-screen **mez** shortcut on the desktop and
+starts it. Removing it (Settings, Apps) asks whether to keep the venue's
+data, and keeps it unless you say otherwise twice.
+
+**The installer is not signed, and Windows will warn you.** When you run it,
+a blue box says "Windows protected your PC" and "Microsoft Defender
+SmartScreen prevented an unrecognized app from starting", with only a
+**Don't run** button in sight. Click **More info**, then **Run anyway**.
+Your browser may also say the download "isn't commonly downloaded"; choose
+to keep it.
+
+What that warning means: Windows has not seen this file often, and it does
+not carry a publisher's certificate. It does not mean Windows found anything
+in it. A certificate that removes the warning is bought yearly from a
+certificate authority, and this project does not have one. You are being
+asked to trust a file from the internet, which is a fair thing to be asked
+twice about, so:
+
+- Download it only from this repository's releases page.
+- Or build it yourself from the source, which is what the commands above do.
+
+If a certificate is ever in use, the installer and its uninstaller are
+signed by the same `make installer` (`MEZ_SIGNTOOL`), and this section will
+say so.
 
 ## Ways to run it
 

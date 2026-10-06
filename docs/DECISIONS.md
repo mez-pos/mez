@@ -8967,3 +8967,54 @@ SHA-1 is in the code because the SID is defined by it. **Not run under the
 Service Control Manager**, as ADR-263 was not: that the account starts,
 opens the database, prints and writes the event log is unseen.
 ---
+
+## ADR-265 - The Windows installer does what `mez service` does, and no more of its own
+2026-10 · Status: accepted. Phase 12, Task 2.
+Decision: `build/installer/mez.iss`, Inno Setup 6, built by `make installer`
+from the binary `make dist` made.
+  - **The installer calls `mez.exe`.** `service install`, `service start`
+    and `service uninstall` are run by the installed binary and their
+    words shown if they fail. The installer knows nothing about accounts,
+    ACLs or recovery, so it cannot disagree with a terminal.
+  - **An upgrade removes the old service with the old binary** before the
+    files are replaced, and registers it again with the new one. The data
+    directory is not touched.
+  - **No questions an owner cannot answer.** The folder is
+    `C:\Program Files\mez`; there is no folder page and no Start menu page.
+    Two boxes, both ticked: the desktop shortcut, and the firewall.
+  - **The firewall rule names the program, not the port**, on Private and
+    Domain networks only. A port changed in `config.toml` is still let
+    through; a network Windows calls Public keeps other devices out.
+  - **The shortcut is Edge, then Chrome, as an app in kiosk mode** at
+    `http://localhost:7777`, with mez's icon; with neither, the address is
+    handed to Windows. The installer waits up to twenty seconds for
+    `/api/v1/health` before its last page offers to open it.
+  - **Uninstalling keeps the data unless told twice.** Both questions
+    default to No, and a silent uninstall never deletes.
+  - **Not signed.** `MEZ_SIGNTOOL` signs the installer and uninstaller when
+    there is a certificate; there is none, and the README says what the
+    SmartScreen warning is and is not.
+  - `mez service status` asks with the one right it takes, so it answers
+    without an administrator. The library asked for the rights to start
+    and stop as well, and was refused once a service existed.
+Because: the phase's test is a clean machine selling in ten minutes with
+no terminal. Each thing the installer did for itself would be a second
+place to get the service wrong.
+Cost: Inno Setup is one more tool to build a release, and only on Windows.
+The shortcut and the wait assume port 7777; a venue that changes it edits
+the shortcut. A venue whose network is marked Public finds its tablets
+cannot connect, and nothing says why until Task 7's troubleshooting. A
+`data_dir` set in `config.toml` is not the directory the uninstaller offers
+to delete. Edge already running may open the till as a window and not full
+screen. Until Task 3 the last page opens a till with no venue in it.
+**Seen on 2026-10-07**, on the developer's Windows 11, by silent install
+(the session meant only to see it refuse without an administrator, and
+Windows raised it): the service as `NT SERVICE\mez`, automatic, its
+database open and health ok; "mez is starting." in the event log; restarts
+at 5, 30 and 300 seconds; the firewall rule; both shortcuts with Edge's
+kiosk arguments; a second install over the first, the new binary serving;
+a silent uninstall leaving nothing but the data directory. **Not seen**:
+the pages by eye, the shortcut opening, the two questions about the data,
+a restart after a kill, the start at boot, a print as the service's
+account, a clean machine, the SmartScreen box itself, a signed build.
+---

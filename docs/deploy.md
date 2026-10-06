@@ -122,8 +122,36 @@ Then start the server and finish in the browser:
 
 ## Windows
 
-What works today is the `.exe` itself, run by hand or as a Windows service.
-The installer and kiosk shortcut are the rest of phase 12.
+**With the installer.** Run `mez_<version>_windows_amd64_setup.exe` and say
+yes to Windows's question. It is not signed, so Windows first shows
+"Windows protected your PC": choose **More info**, then **Run anyway** (the
+[README](../README.md#the-windows-installer-and-the-warning-windows-shows)
+says what that warning does and does not mean). The installer:
+
+- copies `mez.exe` to `C:\Program Files\mez`;
+- registers the service (below), running as `NT SERVICE\mez`, and starts it;
+- adds a firewall rule named `mez` for the program, on networks Windows
+  calls Private or Domain. On a network marked **Public** tablets are kept
+  out: set the venue's network to Private in Windows settings;
+- puts a **mez** shortcut on the desktop and in the Start menu, which opens
+  the till full screen in Edge (or Chrome). Alt+F4 leaves it.
+
+Running a newer installer over an older one upgrades in place and keeps the
+data. Removing mez (Settings, Apps, mez, Uninstall) stops and removes the
+service and the firewall rule, then asks whether to delete the data in
+`C:\ProgramData\mez`; it is kept unless you answer Yes twice. A
+`config.toml` you put beside `mez.exe` is left where it is.
+
+Until the first-run wizard is built (phase 12, Task 3), a new venue is still
+created from a terminal opened as administrator:
+
+```powershell
+& "C:\Program Files\mez\mez.exe" setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata `
+        -device-kind back_office -device-name "Office"
+```
+
+The rest of this section is the same thing done by hand, with the `.exe`
+alone.
 
 **Install.** Make a folder such as `C:\mez`, put
 `mez_<version>_windows_amd64.exe` in it, and rename it `mez.exe`. In

@@ -9,7 +9,7 @@ Packaging and distribution inputs. Nothing here is imported by the Go module.
 | `docker-compose.yml` | Here | The image with a named volume, a restart policy and the timezone |
 | `relay.Dockerfile` | Here | The optional relay alone: one static binary with no frontends and no database, configured by `RELAY_*` variables (`relay help` lists them) |
 | `relay/` | Here | Deploying the relay to a server behind Cloudflare: a script, compose file and Caddyfile ([`relay/README.md`](relay/README.md)) |
-| Inno Setup script | Phase 12, Task 2 | The Windows installer |
+| `installer/mez.iss` | Here | The Windows installer (Inno Setup 6): `make dist && make installer`. `installer/mez.ico` is made from `web/shared/brand/mez-app-icon.svg` |
 | systemd unit | Phase 12, Task 5 | Shipped with releases; [`docs/deploy.md`](../docs/deploy.md#linux) has one to copy today |
 | goreleaser config | Phase 12, Task 6 | Tagged releases with checksums |
 

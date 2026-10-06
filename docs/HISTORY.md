@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 1: the Windows service** (ADR-263). `mez service
+**Phase 12, Task 1b: the service's own account** (ADR-264). The service runs
+as `NT SERVICE\mez`, which `fsperm.Restrict` always names; install hands it the
+data directory; restarts wait 5 seconds, 30, then 5 minutes.
+
+Before it, **Phase 12, Task 1: the Windows service** (ADR-263). `mez service
 install|uninstall|start|stop|status` over `internal/winsvc`; restart after it
 dies; warnings and errors to the event log. Not run under the Service Control
 Manager.
