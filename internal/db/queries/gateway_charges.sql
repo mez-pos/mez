@@ -2,24 +2,25 @@
 -- internal/service/charges.
 
 -- name: CreateGatewayCharge :one
-INSERT INTO gateway_charges (public_id, venue_id, table_id, order_id, round_public_id, gateway, gateway_id, checkout_url,
-                             amount_minor, currency, status, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
+INSERT INTO gateway_charges (public_id, venue_id, table_id, order_id, round_public_id, payer, gateway, gateway_id,
+                             checkout_url, amount_minor, currency, status, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
 RETURNING id;
 
 -- name: GatewayChargeByPublicID :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
 FROM gateway_charges
 WHERE public_id = ?;
 
 -- name: OpenGatewayChargeForOrder :one
--- A charge still open for a ticket's balance at a provider for an amount:
--- asked for again, it is the same charge. A round's charge is not one.
+-- A charge still open for the whole of what a ticket owes at a provider, for
+-- an amount: asked for again, it is the same charge, whichever phone asks. A
+-- round's charge is not one, and neither is a guest's share.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
 FROM gateway_charges
-WHERE order_id = ? AND round_public_id IS NULL AND gateway = ? AND amount_minor = ? AND currency = ?
+WHERE order_id = ? AND round_public_id IS NULL AND payer IS NULL AND gateway = ? AND amount_minor = ? AND currency = ?
   AND status = 'open'
 ORDER BY created_at DESC, id DESC
 LIMIT 1;
@@ -28,7 +29,7 @@ LIMIT 1;
 -- A venue's charges in a status, oldest first: the open ones to ask the
 -- provider about, the unapplied ones a person must deal with.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
 FROM gateway_charges
 WHERE venue_id = ? AND status = ?
 ORDER BY created_at, id
@@ -75,7 +76,7 @@ WHERE public_id = sqlc.arg(public_id) AND venue_id = sqlc.arg(venue_id) AND stat
 -- name: GatewayChargeByGatewayID :one
 -- The charge a provider's notice is about, by the provider's own id.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
 FROM gateway_charges
 WHERE gateway = ? AND gateway_id = ?;
 
@@ -83,7 +84,7 @@ WHERE gateway = ? AND gateway_id = ?;
 -- The charge still open for a round at a provider: asked for again, it is
 -- the same charge. A round asks for one amount, so there is at most one.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
 FROM gateway_charges
 WHERE round_public_id = ? AND gateway = ? AND status = 'open';
 
@@ -99,3 +100,28 @@ SELECT settled_at FROM gateway_charges
 WHERE venue_id = ? AND gateway = ? AND status = 'paid'
 ORDER BY settled_at DESC, id DESC
 LIMIT 1;
+
+-- name: OpenGatewayChargeForShare :one
+-- The share a phone already has open on a ticket for an amount: asked for
+-- again, it is the same charge. Another phone's share of the same amount is
+-- another charge.
+SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+FROM gateway_charges
+WHERE order_id = ? AND payer = ? AND gateway = ? AND amount_minor = ? AND currency = ? AND status = 'open';
+
+-- name: OpenSharesOnOrder :one
+-- What guests are paying of a ticket in shares, now: every share still open.
+-- A charge for the whole of what is left asks for the balance less this.
+SELECT CAST(coalesce(sum(amount_minor), 0) AS INTEGER) AS claimed
+FROM gateway_charges
+WHERE order_id = ? AND round_public_id IS NULL AND payer IS NOT NULL AND status = 'open';
+
+-- name: OpenClaimsOfOthers :one
+-- What others are paying of a ticket, now, as one phone sees it: every open
+-- charge on the bill but that phone's own shares. A share fits in the
+-- balance less this.
+SELECT CAST(coalesce(sum(amount_minor), 0) AS INTEGER) AS claimed
+FROM gateway_charges
+WHERE order_id = sqlc.arg(order_id) AND round_public_id IS NULL AND status = 'open'
+  AND (payer IS NULL OR payer <> sqlc.arg(payer));

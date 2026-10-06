@@ -10,6 +10,13 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Splitting the bill** (ADR-232): in the services only, with no route and
+  no screen, so no guest can pay a share yet. A page a guest opened and left
+  holds its part of the bill until the gateway expires it, about half an
+  hour, and nothing lets a guest give it up. A share under the gateway's
+  smallest charge is refused by the gateway, and says only that paying
+  online could not be reached. `POST .../bill/charge` answers a server error
+  if the bill moves three times while a charge starts.
 - **Paying online on the payments card** (ADR-231): seen at 1366 with no
   gateway, with one never paid through, and with a paid charge written into
   the database by hand; never at 1920. The time is in the browser's zone.

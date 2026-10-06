@@ -8,13 +8,13 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4e, 4f1 to 4f5, 4f6a and 4f6c done. (The walks are owed.)
+4a to 4e, 4f1 to 4f5, 4f6a, 4f6c and 4g1 done. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 4f6c: the back office says how paying online stands** (ADR-231).
-The "Paid from a phone" card names the gateway, when a payment last landed through
-it, whether it calls back, and where guests return to. Read only; never a key.
+**Phase 11, Task 4g1: a share of the bill, in the services** (ADR-232).
+`charges.StartShare` is a charge for part of what a table owes, for one phone. An
+open page is a claim; nothing is given past what is unclaimed. Migration 00045.
 
 ## Next task
 
@@ -22,13 +22,14 @@ it, whether it calls back, and where guests return to. Read only; never a key.
 keys, then on a phone Pay online on a bill, and Pay on an order with paying
 first chosen. The payments card now says so itself, in the warning tone.
 
-**Phase 11, Task 4g: splitting the bill among the guests at a table.** Read
-ADR-214, ADR-220, ADR-226, `docs/02-domain.md` on split payment,
-`docs/design/screens/guest-bill.md`. Larger than a session: split it first.
-- Decide what a share is: an amount of the balance (equal parts, or a figure the
-  guest types), not lines. The bill does not know whose phone ordered what.
-- A share is a charge for part of the balance: `charges.Start` asks for all of
-  it today. Two phones paying at once must not over-pay. 4f6b waits on question 8.
+**Phase 11, Task 4g2: a share over the guest API.** Read ADR-232, ADR-222,
+`internal/api/guest_charge.go`, `guest_bill.go`. No screen: that is 4g3.
+- The bill's answer gains what this phone can still ask for (`charges.Claims`)
+  and its equal part among N (`charges.EqualPart`, of the bill's total).
+- `POST .../bill/charge` takes a body: the phone's name for itself, and an amount
+  or a number of people. No body is the rest, as now. The server works out the part.
+- Codes for `ErrOverClaim`, `ErrBadShare`, `ErrBillMoved`: `Start` answers two today.
+- Decide whether a guest can give up an open page. 4f6b waits on question 8.
 
 ## Known broken / in progress
 
@@ -55,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4e, 4f1 to 4f5, 4f6a, 4f6c done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4e, 4f1 to 4f5, 4f6a, 4f6c, 4g1 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

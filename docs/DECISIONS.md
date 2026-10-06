@@ -7284,3 +7284,61 @@ Cost: the time shown is read in the browser's zone and not the venue's, which
 differ only when the back office is opened from elsewhere. Keys that were right and
 have since been revoked still show the last payment they took; the log and the
 first refused charge say so, and this card does not.
+
+## ADR-232 - A share of the bill is an amount for one phone, and an open payment page is a claim
+2026-10 · Status: accepted. Phase 11, Task 4g1.
+Context: Task 4 ends with "bill splitting for guests at the same table". A charge
+(ADR-220) asked for all a table owes, and two phones asking were given one charge.
+STATE asked what a share is, and that two phones paying at once must not over-pay.
+Decision:
+  - **Task 4g is split in three**: 4g1 the services, this; 4g2 the guest's API; 4g3
+    the phone. Nothing here has a route, so no guest can pay a share yet.
+  - **A share is an amount of what is owed, never lines.** Nothing records whose
+    phone ordered which dish (ADR-214), and a bill split by item is a second way
+    for the parts not to add up. Evenly, or a figure the guest types.
+  - **A share names its phone** (`payer`, migration 00045): a name the phone makes
+    up and keeps, which says nothing of who holds it. Two guests paying 56.00 each
+    are two charges; the same phone asking again for the same amount is one, and a
+    unique index makes a double tap one. A charge for the whole of what is left
+    has no payer and is still one charge for every phone, as before.
+  - **A page that can still be paid is a claim on that much of the bill.** A share
+    is given only if it fits in the balance less what others are claiming, or it
+    is `ErrOverClaim` and the gateway is not asked. So every page there is can be
+    paid, and the bill is not over-paid by guests paying at once.
+  - **The check that counts is in the transaction that saves the charge.** SQLite
+    has one writer, so two phones cannot both be given the same part. The page is
+    opened at the gateway before that, as it always was (ADR-220), so the same
+    transaction also checks the ticket's `last_seq` against the one the balance
+    was read at: if a payment landed in between, the charge is started again
+    against the bill as it is, three times at most, then `ErrBillMoved`.
+  - **A claim lasts as long as its page**: until the gateway says paid, failed or
+    expired, which is half an hour at Razorpay and Stripe. No shorter hold: a
+    claim let go while its page can still be paid is the over-payment this is
+    here to stop.
+  - **A phone's own open shares do not stand in its own way.** A guest who backed
+    out of a page and chose another figure cannot close the first. If they pay
+    both, the second is more than the bill owes and is unapplied, for a person
+    (ADR-220): their own doing, and not lost.
+  - **"Pay online" is now the rest.** `charges.Start` asks for the balance less
+    every open share, and `ErrOverClaim` when shares cover it all. With no shares
+    it is what it was. A charge for the whole bill counts against every share,
+    and not against another such charge: that case is still ADR-220's.
+  - **An equal part is the largest-remainder split of the bill's total**
+    (`charges.EqualPart` over `money.SplitEvenly`), each guest offered the first
+    part that what is paid or claimed does not cover, and never more than is
+    unclaimed. Guests paying in turn pay 333.34, 333.33, 333.33 of a thousand, as
+    `docs/02-domain.md` asks. If two take the larger part in the same moment the
+    last is offered a paisa less, and the bill is still paid exactly.
+  - **Of the total and not of what is left**, so the second of three is not
+    offered a third of two thirds.
+Because: an over-payment at a gateway is money a member of staff has to refund by
+hand, and with three phones at one table it would stop being rare. Refusing the
+fourth share before it has a page costs nobody anything.
+Cost: a page opened and abandoned holds its part of the bill for up to half an
+hour, and nothing lets a guest give it up; the table can always pay staff. Whether
+a guest can let go of a page is 4g2's to decide. A try that the bill moved under
+leaves a page at the gateway that nobody was given. For a moment between a
+share's tender and its charge closing it is counted twice, and a share that fits
+may be refused; asked again it is given. A share smaller than the gateway's own
+minimum is refused by the gateway, not here. The bill charge's route does not yet
+know `ErrOverClaim` or `ErrBillMoved`.

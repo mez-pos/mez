@@ -112,6 +112,7 @@ type GatewayCharge struct {
 	ResolvedAt    sql.NullTime
 	ResolvedBy    sql.NullInt64
 	RoundPublicID sql.NullString
+	Payer         sql.NullString
 }
 
 type GuestRound struct {

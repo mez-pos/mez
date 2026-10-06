@@ -148,7 +148,18 @@ Phase 10.
       - [x] **4f6c.** The back office saying which gateway is set and whether
         it has taken a payment (ADR-231). Not choosing one: the keys are
         configuration and not the database (ADR-221).
-  - [ ] **4g.** Splitting the bill among the guests at a table.
+  - [ ] **4g.** Splitting the bill among the guests at a table. A share is an
+    amount of what is owed, not lines. Split in three (ADR-232):
+    - [x] **4g1.** In the services: `charges.StartShare`, a charge for part
+      of the bill for one phone; an open page is a claim, and no charge is
+      given for more than is unclaimed (`Claims`, `EqualPart`). Migration
+      00045. No route and no screen.
+    - [ ] **4g2.** The guest's API: what is unclaimed and an equal part on
+      the bill, a share on `POST /order/api/t/{code}/bill/charge`, the
+      phone's name for itself, and codes for a share that does not fit and a
+      bill that moved.
+    - [ ] **4g3.** The phone: Split the bill on the bill's screen, among how
+      many or a figure typed, and its spec.
 
 - [ ] **Task 5 — Order tracking and e-receipt.**
   The guest sees real kitchen events — accepted, firing, ready — not a fake

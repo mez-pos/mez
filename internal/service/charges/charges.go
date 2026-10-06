@@ -98,7 +98,10 @@ type Charge struct {
 	OrderID int64
 	// Round is the round this pays for, by public id, when it is a round's
 	// charge and not a bill's.
-	Round       string
+	Round string
+	// Payer is the phone a share of the bill is for, by the name it gave
+	// itself (ADR-232). A charge for the whole of what is left has none.
+	Payer       string
 	Gateway     string
 	CheckoutURL string
 	Amount      money.Amount
@@ -177,47 +180,32 @@ func New(o Options) (*Service, error) {
 // where the guest pays. Asked again while that charge is open and the
 // table owes the same, it is the same charge and the gateway is not asked.
 //
+// What guests are paying in shares is not asked for again (ADR-232): with
+// shares open it is a charge for the rest, and ErrOverClaim when there is
+// no rest.
+//
 // A table that owes a different amount than an open charge asked for gets
 // a new charge. The old one is left open: its page may still be on a
 // phone, and if it is paid, Settle finds that out and deals with it.
 func (s *Service) Start(ctx context.Context, venueID, tableID int64, description, returnURL string) (Charge, error) {
-	ticket, open, err := s.orders.TableTicket(ctx, venueID, tableID)
-	if err != nil {
-		return Charge{}, err
-	}
-	if !open {
-		return Charge{}, fmt.Errorf("%w: table %d has no ticket", ErrNothingToPay, tableID)
-	}
-	due := ticket.State.Totals.BalanceDue
-	if due.Minor <= 0 {
-		return Charge{}, fmt.Errorf("%w: nothing is owed at table %d", ErrNothingToPay, tableID)
-	}
-	gw, err := s.gateways(ctx, venueID)
-	if err != nil {
-		return Charge{}, err
-	}
-
-	return s.open(ctx, gw, asking{
-		venueID: venueID, tableID: tableID, orderID: ticket.OrderID, due: due, description: description, returnURL: returnURL,
-		prior: func() (gen.GatewayCharge, error) {
-			return s.db.Queries().OpenGatewayChargeForOrder(ctx, gen.OpenGatewayChargeForOrderParams{
-				OrderID: sql.NullInt64{Int64: ticket.OrderID, Valid: true}, Gateway: gw.Name(), AmountMinor: due.Minor, Currency: due.Currency,
-			})
-		},
-	})
+	return s.onBill(ctx, venueID, tableID, part{}, description, returnURL)
 }
 
 // asking is a charge about to be asked of the gateway: for a ticket's
-// balance, or for a round. prior finds the charge already open for the same
-// thing, or sql.ErrNoRows.
+// balance or a share of it, or for a round. prior finds the charge already
+// open for the same thing, or sql.ErrNoRows. fits, when there is one, has
+// the last word on whether the charge may be saved, in the transaction that
+// saves it.
 type asking struct {
 	venueID, tableID int64
 	orderID          int64
 	round            string
+	payer            string
 	due              money.Amount
 	description      string
 	returnURL        string
 	prior            func() (gen.GatewayCharge, error)
+	fits             func(q *gen.Queries) error
 }
 
 // open answers the charge already open for what is asked, or asks the
@@ -250,18 +238,27 @@ func (s *Service) open(ctx context.Context, gw gateway.Gateway, a asking) (Charg
 			return Charge{}, fmt.Errorf("starting a charge at %s: %w", gw.Name(), err)
 		}
 		err = s.db.WriteTx(ctx, func(q *gen.Queries) error {
+			if a.fits != nil {
+				// Refused here, the charge just opened at the gateway is one
+				// nobody is given the page of.
+				if err := a.fits(q); err != nil {
+					return err
+				}
+			}
 			_, err := q.CreateGatewayCharge(ctx, gen.CreateGatewayChargeParams{
 				PublicID: publicID, VenueID: a.venueID, TableID: a.tableID,
 				OrderID:       sql.NullInt64{Int64: a.orderID, Valid: a.orderID != 0},
 				RoundPublicID: sql.NullString{String: a.round, Valid: a.round != ""},
+				Payer:         sql.NullString{String: a.payer, Valid: a.payer != ""},
 				Gateway:       gw.Name(), GatewayID: checkout.ID, CheckoutUrl: checkout.URL,
 				AmountMinor: a.due.Minor, Currency: a.due.Currency, CreatedAt: at,
 			})
 			return err
 		})
 		if db.IsUniqueViolation(err) {
-			// Another phone asked for the same round at the same moment, and
-			// its charge is the one. Otherwise the public id collided. Either
+			// Another phone asked for the same round at the same moment, or
+			// this one asked twice for the same share, and that charge is
+			// the one. Otherwise the public id collided. Either
 			// way the charge just opened at the gateway is one nobody was
 			// given the page of, so nobody pays it.
 			if c, ok, rerr := replay(); rerr != nil || ok {
@@ -272,9 +269,9 @@ func (s *Service) open(ctx context.Context, gw gateway.Gateway, a asking) (Charg
 		if err != nil {
 			return Charge{}, fmt.Errorf("saving charge %s: %w", publicID, err)
 		}
-		s.log.Info("a charge was started", "venue_id", a.venueID, "order_id", a.orderID, "round", a.round, "charge", publicID, "gateway", gw.Name(), "amount_minor", a.due.Minor)
+		s.log.Info("a charge was started", "venue_id", a.venueID, "order_id", a.orderID, "round", a.round, "share", a.payer != "", "charge", publicID, "gateway", gw.Name(), "amount_minor", a.due.Minor)
 		return Charge{
-			PublicID: publicID, TableID: a.tableID, OrderID: a.orderID, Round: a.round, Gateway: gw.Name(),
+			PublicID: publicID, TableID: a.tableID, OrderID: a.orderID, Round: a.round, Payer: a.payer, Gateway: gw.Name(),
 			CheckoutURL: checkout.URL, Amount: a.due, Status: Open,
 		}, nil
 	}
@@ -560,7 +557,8 @@ func (s *Service) row(ctx context.Context, venueID int64, publicID string) (gen.
 
 func toCharge(r gen.GatewayCharge) Charge {
 	return Charge{
-		PublicID: r.PublicID, TableID: r.TableID, OrderID: r.OrderID.Int64, Round: r.RoundPublicID.String, Gateway: r.Gateway, CheckoutURL: r.CheckoutUrl,
+		PublicID: r.PublicID, TableID: r.TableID, OrderID: r.OrderID.Int64, Round: r.RoundPublicID.String, Payer: r.Payer.String,
+		Gateway: r.Gateway, CheckoutURL: r.CheckoutUrl,
 		Amount: money.Amount{Minor: r.AmountMinor, Currency: r.Currency}, Status: Status(r.Status), Problem: r.Problem.String,
 	}
 }

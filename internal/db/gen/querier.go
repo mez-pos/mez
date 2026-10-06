@@ -299,12 +299,21 @@ type Querier interface {
 	// transaction that closes a shift or issues a correction.
 	// Moves the venue's counter on and returns the number taken.
 	NextZNumber(ctx context.Context, venueID int64) (int64, error)
-	// A charge still open for a ticket's balance at a provider for an amount:
-	// asked for again, it is the same charge. A round's charge is not one.
+	// What others are paying of a ticket, now, as one phone sees it: every open
+	// charge on the bill but that phone's own shares. A share fits in the
+	// balance less this.
+	OpenClaimsOfOthers(ctx context.Context, arg OpenClaimsOfOthersParams) (int64, error)
+	// A charge still open for the whole of what a ticket owes at a provider, for
+	// an amount: asked for again, it is the same charge, whichever phone asks. A
+	// round's charge is not one, and neither is a guest's share.
 	OpenGatewayChargeForOrder(ctx context.Context, arg OpenGatewayChargeForOrderParams) (GatewayCharge, error)
 	// The charge still open for a round at a provider: asked for again, it is
 	// the same charge. A round asks for one amount, so there is at most one.
 	OpenGatewayChargeForRound(ctx context.Context, arg OpenGatewayChargeForRoundParams) (GatewayCharge, error)
+	// The share a phone already has open on a ticket for an amount: asked for
+	// again, it is the same charge. Another phone's share of the same amount is
+	// another charge.
+	OpenGatewayChargeForShare(ctx context.Context, arg OpenGatewayChargeForShareParams) (GatewayCharge, error)
 	// The notice staff have still to deal with on a ticket, if there is one.
 	OpenPaidNoticeForOrder(ctx context.Context, orderID int64) (OpenPaidNoticeForOrderRow, error)
 	// Every notice staff have still to deal with, oldest first, with its table
@@ -313,6 +322,9 @@ type Querier interface {
 	// Codes made and not yet used or expired, without the codes themselves: only
 	// their hashes are kept. The screen says a device is waiting to be paired.
 	OpenPairingCodes(ctx context.Context, arg OpenPairingCodesParams) ([]OpenPairingCodesRow, error)
+	// What guests are paying of a ticket in shares, now: every share still open.
+	// A charge for the whole of what is left asks for the balance less this.
+	OpenSharesOnOrder(ctx context.Context, orderID sql.NullInt64) (int64, error)
 	OpenShiftForVenue(ctx context.Context, venueID int64) (Shift, error)
 	// The shift an order event is recorded in, read inside the appending
 	// transaction so a close cannot slip between the read and the write. A
