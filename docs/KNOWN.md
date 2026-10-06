@@ -10,17 +10,20 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **Splitting the bill** (ADR-232 to ADR-234): in the services and the
-  guest's API, with no screen, so no guest can pay a share or give a page up
-  yet. Until the phone gives pages up, one a guest opened and left holds its
-  part of the bill until the gateway expires it, about half an hour. A page
-  given up can still be paid; if the bill no longer owes it, that is an
-  unapplied charge for staff. A share under the gateway's smallest charge
-  is refused by the gateway, and says only that paying online could not be
-  reached. The phone's bill still says "Pay (the balance) online" where
-  `split.rest` is what it would be asked for.
-  `docs/design/screens/guest-bill.md` has neither `split` nor `let_go`. No
-  share has been paid at a real gateway.
+- **Splitting the bill** (ADR-232 to ADR-235): seen at 390 wide in the real
+  binary with a made-up Razorpay key: the three choices, the stepper, a typed
+  figure and each refusal of one, a waiting payment with "I am not paying
+  this", giving it up, and the rest with another guest's share (written
+  into the database by hand) taken off. **No share has been paid at a real
+  gateway, and two real phones have not split a bill.** Not seen: a paid or
+  failed share's line, `bill_claimed` and `bill_moved` on screen, a phone
+  with storage refused, a keyboard or a screen reader. A page given up can
+  still be paid; if the bill no longer owes it, that is an unapplied charge
+  for staff. A share under the gateway's smallest charge is refused by the
+  gateway, and says only that paying online is not working. A phone that
+  cleared its storage has a new name, and its old open shares count against
+  it until they expire. Paying by UPI is always for the whole of what is
+  left: a share is online only. The split is not by item.
 - **Paying online on the payments card** (ADR-231): seen at 1366 with no
   gateway, with one never paid through, and with a paid charge written into
   the database by hand; never at 1920. The time is in the browser's zone.

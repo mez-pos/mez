@@ -167,10 +167,24 @@ export function chargeOpen(status: ChargeStatus | undefined): boolean {
   return status === "open";
 }
 
+/**
+ * Whether a charge the phone started is one to forget: the table gave its
+ * page up (ADR-234) and it has not been paid. It holds nothing and is not
+ * waited for. Paid after all, it is kept, to say so.
+ */
+export function chargeGivenUp(charge: { status: ChargeStatus; let_go?: boolean } | undefined): boolean {
+  return charge !== undefined && charge.let_go === true && chargeOpen(charge.status);
+}
+
+/** Why a payment page could not be given up. Nothing was taken by trying. */
+export const letGoFailure = "That could not be done just now. Try again, or pay a member of staff.";
+
 /** Why paying online could not be started, in words a guest can act on. */
 export function startFailure(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.code === "nothing_to_pay") return "There is nothing left to pay on this bill.";
+    if (error.code === "bill_claimed") return "Others at the table are paying that part of the bill. Look at what is left, and choose again.";
+    if (error.code === "bill_moved") return "The bill changed just now. Look at it again, then pay.";
     if (error.code === "gateway_unavailable") return error.message;
     if (error.unreachable || (error.status !== null && error.status >= 502 && error.status <= 504)) {
       return "Can't reach the kitchen to start the payment. Check your connection, or pay a member of staff.";

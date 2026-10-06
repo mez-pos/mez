@@ -12,8 +12,10 @@ import type {
   GuestOrderRequest,
   GuestPaidResponse,
   GuestRoundResponse,
+  GuestShareRequest,
   GuestTableResponse,
 } from "../../shared/api-types";
+import { newPhoneName, PHONE_STORAGE_KEY, phoneNameOf } from "./split-logic";
 
 // A guest is nobody: no device, no session. The code in the path is all
 // there is to present.
@@ -68,10 +70,43 @@ export function tellPaid(code: string): Promise<GuestPaidResponse> {
   return api.post<GuestPaidResponse>(`${base(code)}/bill/paid`);
 }
 
+/** The name for the life of the page, when storage will not keep one. */
+let unkept: string | null = null;
+
+/**
+ * The name this phone gave itself (ADR-233), made once and kept: how the
+ * venue tells one guest's share from another's of the same amount. Null
+ * where the browser can make no random name; the phone then pays the rest
+ * of a bill and no share of it.
+ */
+export function phoneName(): string | null {
+  if (unkept !== null) return unkept;
+  try {
+    const kept = phoneNameOf(window.localStorage.getItem(PHONE_STORAGE_KEY));
+    if (kept !== null) return kept;
+  } catch {
+    // Storage refused: a name is made below and lasts until the page goes.
+  }
+  let made: string;
+  try {
+    made = newPhoneName(crypto.getRandomValues(new Uint8Array(16)));
+  } catch {
+    return null;
+  }
+  try {
+    window.localStorage.setItem(PHONE_STORAGE_KEY, made);
+  } catch {
+    unkept = made;
+  }
+  return made;
+}
+
 export function useBill(code: string): UseQueryResult<GuestBillResponse> {
+  const phone = phoneName();
+  const who = phone === null ? "" : `?phone=${encodeURIComponent(phone)}`;
   return useQuery({
     queryKey: billKey(code),
-    queryFn: ({ signal }) => api.get<GuestBillResponse>(`${base(code)}/bill`, { signal }),
+    queryFn: ({ signal }) => api.get<GuestBillResponse>(`${base(code)}/bill${who}`, { signal }),
     refetchInterval: BILL_REFRESH_MS,
     refetchOnWindowFocus: true,
     // Never shown from an earlier look without asking again.
@@ -90,9 +125,17 @@ export function upiQrUrl(code: string, amountMinor: number): string {
   return `${base(code)}/bill/upi.svg?am=${amountMinor}`;
 }
 
-/** Starts paying what the table owes through the venue's gateway (ADR-222). */
-export function startCharge(code: string): Promise<GuestChargeResponse> {
-  return api.post<GuestChargeResponse>(`${base(code)}/bill/charge`);
+/**
+ * Starts paying through the venue's gateway (ADR-222): with no share, the
+ * rest of what the table owes; with one, this phone's part of it (ADR-233).
+ */
+export function startCharge(code: string, share: GuestShareRequest | null = null): Promise<GuestChargeResponse> {
+  return api.post<GuestChargeResponse>(`${base(code)}/bill/charge`, share ?? undefined);
+}
+
+/** Gives up a payment page this table opened, so it holds no part of the bill (ADR-234). */
+export function letGoCharge(code: string, id: string): Promise<GuestChargeResponse> {
+  return api.post<GuestChargeResponse>(`${base(code)}/bill/charge/${encodeURIComponent(id)}/let-go`);
 }
 
 /** Starts paying for an order the venue is holding until it is paid (ADR-227). */

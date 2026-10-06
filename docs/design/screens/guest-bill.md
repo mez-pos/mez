@@ -27,17 +27,35 @@ anyone brings it: so the figure at the counter is no surprise.
   - "Paid" and "Left to pay", only once something has been paid
 - **Pay online,** a card, first, only at a venue with a payment gateway and
   with something owed (ADR-222):
-  - **Pay ₹540.00 online**, the primary button, 58px. It starts a charge
-    and leaves for the payment provider's own page. While that is being
-    asked for it reads "Opening the payment page".
+  - **Split the bill** (ADR-235), a heading in the serif and three choices
+    in a row, 48px, one chosen, in the green tint:
+    - **All of it**, the choice to begin with: what is left on the bill. It
+      reads **The rest** once some of the bill is paid, or being paid by
+      someone else at the table.
+    - **Split evenly**: under the row, minus and plus either side of "Among
+      3 people", from 2 to 20.
+    - **An amount**: under the row, "The amount you are paying, up to
+      ₹540.00" over a field for figures, right aligned in the mono.
+    Drawn only where this phone can take a share: it has a name, and
+    something is left that nobody else is paying.
+  - **Pay ₹540.00 online**, the primary button, 58px, with the figure of
+    the choice above it: the rest, the part, or what was typed. It starts a
+    charge and leaves for the payment provider's own page. While that is
+    being asked for it reads "Opening the payment page".
+  - In the button's place, when the choice asks for nothing that can be
+    paid: "Type the amount you are paying.", "That is not an amount. Type
+    it in figures, like 250 or 250.50.", "That is more than the ₹540.00
+    left to pay.", or "Others at the table are paying the rest of this
+    bill."
   - "Card, UPI and more, on the payment provider's own page. This bill is
     marked paid by itself."
   - **How a payment this phone started stands,** over the button, in the
     state's tone, with the amount, announced when it changes:
     - waiting, in the warning tone: "Waiting for your payment. If you have
       paid, this will say so in a moment. If you closed the payment page,
-      you can open it again.", with **Open the payment page again**. The
-      button is not offered while one waits.
+      you can open it again.", with **Open the payment page again** and
+      **I am not paying this**, a secondary button, full width (ADR-234).
+      Neither the choices nor Pay is offered while one waits.
     - paid, in the green tint: "Payment received. It is on this bill. Thank
       you."
     - failed, in the danger tint: "That payment did not go through. Nothing
@@ -95,6 +113,24 @@ anyone brings it: so the figure at the counter is no surprise.
   charge it started under `mez.charge.<code>`, for 45 minutes, and nothing
   else about it. It asks every 4 seconds while the charge is open and the
   bill is shown, and reads the bill again at an answer.
+- `split` on the bill, wherever `online` is: `rest`, what Pay asks for
+  with no share; `unclaimed`, the most this phone can take; and `parts`,
+  an equal part for each number of people. The bill is asked for with
+  `?phone=`, the name this phone gave itself, so its own open payments do
+  not count against it. Every figure on the choices is one of these.
+- The phone's name is made once from random bytes and kept under
+  `mez.phone`. It says nothing of who holds the phone. With storage refused
+  it lasts until the page goes; where no random name can be made, the phone
+  pays the rest and is offered no split.
+- A share is the body of `POST .../bill/charge`: the phone's name, and
+  `people` or `amount`. The rest is the same request with no body. For
+  `people` the server works the figure out again, and the charge's own
+  amount is what the waiting line says.
+- `POST .../bill/charge/{id}/let-go` gives a waiting payment's page up. The
+  answer is the charge as it stands. Given up and not paid (`let_go`, and
+  still open), the phone forgets it and reads the bill again; paid after
+  all, it says so. A charge another phone gave up is forgotten the same
+  way, at the next ask.
 - The phone follows the payment page's address only if it is `https`.
 - `POST /order/api/t/{code}/bill/paid`, with no body, for I have paid.
   Whether staff have been told is `paid_told` on the bill, the server's to
@@ -116,6 +152,9 @@ anyone brings it: so the figure at the counter is no surprise.
 | Pay online | Starts a charge and leaves for the provider's page | Back at the table's address, the app opens on the bill and says how the payment stands |
 | Open the payment page again | The same page | |
 | OK, on an answered payment | Puts it away | Pay online is offered again if anything is owed |
+| All of it, Split evenly, An amount | Chooses what Pay asks for | The figure on Pay changes. Nothing is sent |
+| Minus, plus | One person fewer or more | Stops at 2 and at 20 |
+| I am not paying this | Gives the page up | The choices and Pay are back. That part of the bill is free for the table |
 | I have paid | Tells the terminals | "Staff have been told you paid." Tapped on two phones, staff are told once |
 | Pay from another phone | Opens, and the code is fetched | Tapped again, it closes |
 | Pay by UPI | Hands the link to the phone's UPI app | This page learns nothing of it. The bill changes when staff record the payment, at the next read |
@@ -133,6 +172,13 @@ anyone brings it: so the figure at the counter is no surprise.
   gateway is not working ("Paying online can't be reached right now. Try
   again, or pay a member of staff."), or one that names staff or the
   counter.
+- **Others are paying that part** (two phones chose at once): under Pay,
+  "Others at the table are paying that part of the bill. Look at what is
+  left, and choose again.", and the bill is read again.
+- **The bill moved while paying started:** "The bill changed just now.
+  Look at it again, then pay."
+- **The page could not be given up:** "That could not be done just now. Try
+  again, or pay a member of staff."
 - **The phone forgot its charge** (storage refused, or another phone paid):
   the bill still turns paid at its next read. The venue's own sweep puts
   the payment on the bill whether or not any phone asks.
@@ -154,6 +200,11 @@ anyone brings it: so the figure at the counter is no surprise.
   a gateway adds to the address it sends a guest back to is not read.
 - **One primary on the screen:** Pay online where it is offered, else Pay
   by UPI.
+- **A share is never worked out on the phone.** The phone reads what a
+  guest typed and compares it with `unclaimed`; every other figure is the
+  server's.
+- **A share is paid online only.** Pay by UPI is for all that is left: a
+  UPI link tells the venue nothing, so it cannot be held as anyone's part.
 - **Saying "I have paid" does not mark the bill paid either.** No figure
   on the bill moves until a member of staff records the payment.
 - **Paying by UPI does not mark the bill paid, and the screen says so.**
@@ -168,7 +219,7 @@ anyone brings it: so the figure at the counter is no surprise.
 - One guest sees the whole table's bill. The table's code is the table's,
   a paper bill would show the same, and nothing records whose phone
   ordered which dish.
-- The guest's bundle is 40.7 KB gzipped of 60. The QR encoder is on the
+- The guest's bundle is 43.3 KB gzipped of 60. The QR encoder is on the
   server and costs it nothing.
 
 ## Reference
@@ -180,7 +231,10 @@ anyone brings it: so the figure at the counter is no surprise.
 - A choice of card, UPI or wallet on this screen: the provider's page asks.
 - A bill that turns paid by itself needs a gateway; without one, staff
   confirm a UPI payment.
-- **Split the bill**, evenly or by item: 4g.
+- **Split by item**: nothing records whose phone ordered which dish
+  (ADR-232).
+- "Split 2" and "Split 3" with their figures on the choices: any number
+  from 2 to 20 is chosen with the stepper, and the figure is on Pay.
 - The bill's number: an open bill has none; an invoice number comes with
   the payment that settles it.
 - "Request bill", a call to staff: there is no call-waiter yet (M07).

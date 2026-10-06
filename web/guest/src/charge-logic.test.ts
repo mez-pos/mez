@@ -6,6 +6,7 @@ import {
   canPayRound,
   paymentStuck,
   stuckWords,
+  chargeGivenUp,
   chargeOpen,
   chargeStorageKey,
   chargeWords,
@@ -161,5 +162,18 @@ describe("an order's charge", () => {
       expect(said).toContain("member of staff");
       expect(said).not.toMatch(/seq|boom/);
     }
+  });
+});
+
+describe("a share that is refused, and a page given up", () => {
+  it("says what to do when others are paying that part, or the bill moved", () => {
+    expect(startFailure(new ApiError("bill_claimed", "x", 409))).toContain("Others at the table");
+    expect(startFailure(new ApiError("bill_moved", "x", 409))).toContain("changed just now");
+  });
+  it("forgets a charge given up and not paid, and keeps one paid after all", () => {
+    expect(chargeGivenUp({ status: "open", let_go: true })).toBe(true);
+    expect(chargeGivenUp({ status: "open" })).toBe(false);
+    expect(chargeGivenUp({ status: "paid", let_go: true })).toBe(false);
+    expect(chargeGivenUp(undefined)).toBe(false);
   });
 });

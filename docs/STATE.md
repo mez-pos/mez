@@ -8,28 +8,27 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4e, 4f1 to 4f5, 4f6a, 4f6c, 4g1, 4g2 and 4g2b done. (The walks are owed.)
+and 4 but for 4f6b (Cashfree, question 8), done. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 4g2b: giving up a payment page** (ADR-234). `charges.LetGo` and
-`POST .../bill/charge/{id}/let-go`: the charge stays open and payable, and is no
-claim on the bill. A charge's answer says `let_go`. Migration 00046.
+**Phase 11, Task 4g3: splitting the bill on the phone** (ADR-235). In the bill's
+Pay online card: the rest, evenly among so many, or a figure typed; and "I am not
+paying this" on a waiting payment. Seen at 390 wide. 4g is done.
 
 ## Next task
 
 **No real charge has been made yet**, at Razorpay (ADR-221) or at Stripe: test
-keys, then on a phone Pay online on a bill, and Pay on an order with paying
-first chosen. The payments card now says so itself, in the warning tone.
+keys, then on a phone Pay online on a bill, a share of one from two phones, and
+Pay on an order with paying first chosen. The payments card says so itself.
 
-**Phase 11, Task 4g3: splitting the bill on the phone.** Read ADR-232 to ADR-234,
-`docs/design/screens/guest-bill.md`, `docs/design/tokens.md`, and M08 in the
-reference (lines 389 to 436). `web/guest/src/`: `Bill.tsx`, `charge-logic.ts`,
-`use-charge.ts`. Budget 60 KB gzipped. If it is large, split it first.
-- The phone makes its name once and keeps it; `?phone=` on the bill.
-- Pay online asks `split.rest`. Split: among how many (`split.parts`), or a figure.
-- A waiting payment gains a way to give it up (`let-go`); `let_go` is not waiting.
-- `bill_claimed`, `bill_moved` in words. `split`, `let_go` into the spec. (4f6b: question 8.)
+**Phase 11, Task 5: order tracking and e-receipt.** Read the phase file's Task 5,
+ADR-209, ADR-214, `docs/02-domain.md` on invoices, and
+`docs/design/screens/guest-bill.md` ("The bill closed while it was shown").
+Larger than a session: split it first.
+- The guest sees real kitchen events (accepted, firing, ready), not a timer.
+- An e-receipt with the counter's own invoice number, and one-tap re-order.
+- A pickup code for web pickup orders: there is no pickup channel for guests yet.
 
 ## Known broken / in progress
 
@@ -56,5 +55,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4e, 4f1 to 4f5, 4f6a, 4f6c, 4g1 to 4g2b done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Task 4 done but for 4f6b)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

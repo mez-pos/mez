@@ -12,8 +12,9 @@ import { billState, paidTold, payLine, summaryRows, tellFailure, upiAfter, upiLi
 import { tableLabel } from "./Landing";
 import { problemOf } from "./menu-logic";
 import { chargeOpen, chargeWords, checkoutUrlOf } from "./charge-logic";
+import { askingOf, canSplit, peopleRange, restLabel, startingChoice, stepPeople, type SplitChoice, type SplitWay } from "./split-logic";
 import { useCharge, type ChargeApi } from "./use-charge";
-import { billKey, tellPaid, upiQrUrl, useBill } from "./use-guest";
+import { billKey, phoneName, tellPaid, upiQrUrl, useBill } from "./use-guest";
 
 interface BillProps {
   code: string;
@@ -239,6 +240,10 @@ export const chargeTones = {
  * it was paid is the venue's server's to say, never this page's.
  */
 function PayOnline({ bill, online }: { bill: GuestBillResponse; online: ChargeApi }) {
+  const [choice, setChoice] = useState<SplitChoice>(startingChoice);
+  const phone = phoneName();
+  const splits = canSplit(bill, phone);
+  const asking = askingOf(bill, splits ? choice : startingChoice, phone);
   const charge = online.charge;
   const words = charge ? chargeWords(charge.status) : null;
   const again = charge && chargeOpen(charge.status) ? checkoutUrlOf(charge.url) : null;
@@ -256,6 +261,12 @@ function PayOnline({ bill, online }: { bill: GuestBillResponse; online: ChargeAp
               Open the payment page again
             </a>
           )}
+          {/* Until it is given up, an open page holds its part of the bill and nobody else can pay it (ADR-234). */}
+          {chargeOpen(charge.status) && (
+            <Button variant="secondary" className="mt-2 w-full" disabled={online.lettingGo} onClick={online.letGo}>
+              {online.lettingGo ? "One moment" : "I am not paying this"}
+            </Button>
+          )}
           {!chargeOpen(charge.status) && (
             <Button variant="ghost" className="mt-1" onClick={online.dismiss}>
               OK
@@ -266,9 +277,22 @@ function PayOnline({ bill, online }: { bill: GuestBillResponse; online: ChargeAp
       {/* Not offered while one is open: a second payment for the same bill is money to refund. */}
       {bill.online && !(charge && chargeOpen(charge.status)) && (
         <>
-          <Button variant="primary" size="charge" className={cx("w-full", charge && "mt-3")} disabled={online.starting} onClick={online.pay}>
-            {online.starting ? "Opening the payment page" : `Pay ${formatMoney(bill.balance_due)} online`}
-          </Button>
+          {splits && <SplitChooser bill={bill} choice={choice} onChoose={setChoice} gap={charge !== undefined} />}
+          {asking.ok ? (
+            <Button
+              variant="primary"
+              size="charge"
+              className={cx("w-full", (charge || splits) && "mt-3")}
+              disabled={online.starting}
+              onClick={() => online.pay(asking.request)}
+            >
+              {online.starting ? "Opening the payment page" : `Pay ${formatMoney(asking.amount)} online`}
+            </Button>
+          ) : (
+            <p role="status" className={cx("text-base text-fg-2", (charge || splits) && "mt-3")}>
+              {asking.why}
+            </p>
+          )}
           <p className="mt-2 text-sm text-fg-muted">Card, UPI and more, on the payment provider's own page. This bill is marked paid by itself.</p>
         </>
       )}
@@ -278,5 +302,82 @@ function PayOnline({ bill, online }: { bill: GuestBillResponse; online: ChargeAp
         </p>
       )}
     </section>
+  );
+}
+
+const ways: readonly { way: SplitWay; label: string }[] = [
+  { way: "rest", label: "" },
+  { way: "even", label: "Split evenly" },
+  { way: "amount", label: "An amount" },
+];
+
+interface SplitChooserProps {
+  bill: GuestBillResponse;
+  choice: SplitChoice;
+  onChoose: (choice: SplitChoice) => void;
+  /** Whether something is drawn above it in the card. */
+  gap: boolean;
+}
+
+/**
+ * What of the bill this guest pays (M08's Split the bill, ADR-235): all
+ * that is left, an equal part among so many, or a figure they type. The
+ * figures are the server's; the button under it says the one chosen.
+ */
+function SplitChooser({ bill, choice, onChoose, gap }: SplitChooserProps) {
+  const range = peopleRange(bill);
+  return (
+    <fieldset className={cx("text-left", gap && "mt-3")}>
+      <legend className="font-serif text-lg">Split the bill</legend>
+      <div className="mt-2 grid grid-cols-3 gap-2">
+        {ways.map(({ way, label }) => (
+          <label
+            key={way}
+            className={cx(
+              "flex min-h-tap cursor-pointer items-center justify-center rounded border px-2 text-center text-base font-semibold",
+              "has-focus-visible:outline-2 has-focus-visible:outline-line-focus",
+              choice.way === way ? "border-accent bg-accent-tint text-accent-text" : "border-line-strong bg-raised text-fg",
+            )}
+          >
+            <input type="radio" name="split" className="sr-only" checked={choice.way === way} onChange={() => onChoose({ ...choice, way })} />
+            {way === "rest" ? restLabel(bill) : label}
+          </label>
+        ))}
+      </div>
+      {choice.way === "even" && range && (
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <Button
+            aria-label="One fewer person"
+            disabled={choice.people <= range.min}
+            onClick={() => onChoose({ ...choice, people: stepPeople(bill, choice.people, -1) })}
+          >
+            −
+          </Button>
+          <p role="status" className="text-base">
+            Among <span className="font-mono tabular-nums">{choice.people}</span> people
+          </p>
+          <Button
+            aria-label="One more person"
+            disabled={choice.people >= range.max}
+            onClick={() => onChoose({ ...choice, people: stepPeople(bill, choice.people, 1) })}
+          >
+            +
+          </Button>
+        </div>
+      )}
+      {choice.way === "amount" && bill.split && (
+        <label className="mt-3 block text-base">
+          The amount you are paying, up to {formatMoney(bill.split.unclaimed)}
+          <input
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            value={choice.typed}
+            onChange={(e) => onChoose({ ...choice, typed: e.target.value })}
+            className="mt-1 block min-h-tap w-full rounded border border-line-strong bg-raised px-3 text-right font-mono text-lg tabular-nums outline-line-focus focus-visible:outline-2"
+          />
+        </label>
+      )}
+    </fieldset>
   );
 }

@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4g2: a share over the guest API** (ADR-233). The bill answers
+**Phase 11, Task 4g2b: giving up a payment page** (ADR-234). `charges.LetGo` and
+`POST .../bill/charge/{id}/let-go`: the charge stays open and payable, and is no
+claim on the bill. A charge's answer says `let_go`. Migration 00046.
+
+Before it, **Phase 11, Task 4g2: a share over the guest API** (ADR-233). The bill answers
 `split` (the rest, what this phone can take, equal parts); a body on
 `POST .../bill/charge` is a share, by amount or among N people. No screen.
 

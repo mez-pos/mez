@@ -5,10 +5,12 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import type { GuestChargeResponse } from "../../shared/api-types";
+import type { GuestChargeResponse, GuestShareRequest } from "../../shared/api-types";
 import {
   CHARGE_ASK_MS,
+  chargeGivenUp,
   chargeOpen,
+  letGoFailure,
   chargeStorageKey,
   checkoutUrlOf,
   parseStarted,
@@ -18,7 +20,7 @@ import {
   startFailure,
   type StartedCharge,
 } from "./charge-logic";
-import { billKey, readCharge, startCharge, startRoundCharge } from "./use-guest";
+import { billKey, letGoCharge, readCharge, startCharge, startRoundCharge } from "./use-guest";
 
 /** What is being paid for: the bill, or one order by its id. */
 export interface ChargeFor {
@@ -33,8 +35,14 @@ export interface ChargeApi {
   starting: boolean;
   /** Why paying online could not be started, or empty. */
   error: string;
-  /** Starts paying what is owed, and leaves for the gateway's page. */
-  pay: () => void;
+  /**
+   * Starts paying, and leaves for the gateway's page: the rest of what is
+   * owed, or with a share this phone's part of the bill (ADR-233).
+   */
+  pay: (share?: GuestShareRequest | null) => void;
+  /** Gives up the open payment's page, so it holds no part of the bill (ADR-234). */
+  letGo: () => void;
+  lettingGo: boolean;
   /** Puts an answered charge away, so the bill can offer paying again. */
   dismiss: () => void;
 }
@@ -74,6 +82,7 @@ export function useCharge(code: string, of?: ChargeFor): ChargeApi {
   const round = of?.round;
   const [started, setStarted] = useState<StartedCharge | null>(() => load(code, round));
   const [starting, setStarting] = useState(false);
+  const [lettingGo, setLettingGo] = useState(false);
   const [error, setError] = useState("");
 
   const query = useQuery({
@@ -97,19 +106,22 @@ export function useCharge(code: string, of?: ChargeFor): ChargeApi {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- told once for each answer
   }, [status, code, queryClient]);
 
-  // A charge the venue no longer knows is forgotten here too.
+  // A charge the venue no longer knows is forgotten here too, and so is
+  // one whose page the table gave up: this phone, or another at the table.
+  const givenUp = chargeGivenUp(query.data);
   useEffect(() => {
-    if (query.isError) {
+    if (query.isError || givenUp) {
       save(code, null, round);
       setStarted(null);
+      if (givenUp) void queryClient.invalidateQueries({ queryKey: billKey(code) });
     }
-  }, [query.isError, code, round]);
+  }, [query.isError, givenUp, code, round, queryClient]);
 
-  const pay = () => {
+  const pay = (share: GuestShareRequest | null = null) => {
     if (starting) return;
     setStarting(true);
     setError("");
-    (round === undefined ? startCharge(code) : startRoundCharge(code, round))
+    (round === undefined ? startCharge(code, share) : startRoundCharge(code, round))
       .then((c) => {
         const url = checkoutUrlOf(c.url);
         const next: StartedCharge = round === undefined ? { id: c.id, at: Date.now() } : { id: c.id, at: Date.now(), round };
@@ -121,10 +133,23 @@ export function useCharge(code: string, of?: ChargeFor): ChargeApi {
       })
       .catch((err: unknown) => {
         setError(round === undefined ? startFailure(err) : roundStartFailure(err));
-        // Refused because it is paid already, or gone: the order says which.
+        // Refused because it is paid already, or gone: the order says which,
+        // and the bill what is left of it.
         of?.onAnswered();
+        if (round === undefined) void queryClient.invalidateQueries({ queryKey: billKey(code) });
       })
       .finally(() => setStarting(false));
+  };
+
+  const letGo = () => {
+    if (lettingGo || started === null) return;
+    setLettingGo(true);
+    setError("");
+    letGoCharge(code, started.id)
+      // The answer is the charge as it stands: given up, or paid after all.
+      .then((c) => queryClient.setQueryData(["guest", "charge", code, started.id], c))
+      .catch(() => setError(letGoFailure))
+      .finally(() => setLettingGo(false));
   };
 
   const dismiss = () => {
@@ -132,5 +157,5 @@ export function useCharge(code: string, of?: ChargeFor): ChargeApi {
     setStarted(null);
   };
 
-  return { charge: started === null ? undefined : query.data, starting, error, pay, dismiss };
+  return { charge: started === null || givenUp ? undefined : query.data, starting, error, pay, dismiss, letGo, lettingGo };
 }

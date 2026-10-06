@@ -135,7 +135,7 @@ function PayForOrder({ placed, online }: { placed: Placed; online: ChargeApi }) 
       {/* Not offered while a payment may yet land, or has: a second one is money to refund. */}
       {canPayRound(round.status, charge?.status) && due !== null && (
         <>
-          <Button variant="primary" size="charge" className={cx("w-full", charge && "mt-3")} disabled={online.starting} onClick={online.pay}>
+          <Button variant="primary" size="charge" className={cx("w-full", charge && "mt-3")} disabled={online.starting} onClick={() => online.pay()}>
             {online.starting ? "Opening the payment page" : `Pay ${formatMoney(due)}`}
           </Button>
           <p className="mt-2 text-sm text-fg-muted">Card, UPI and more, on the payment provider's own page. Your order is sent as soon as it is paid.</p>

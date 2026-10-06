@@ -7425,3 +7425,46 @@ page another is paying; with shares then taken, the late payment is more than th
 bill owes and is an unapplied charge for staff to refund. That is the over-payment
 ADR-232 prevents, let back in only by someone saying they would not pay. The phone
 does not call this yet: 4g3.
+
+## ADR-235 - Splitting on the phone: three choices in the Pay online card, and the figure on the button
+2026-10 · Status: accepted. Phase 11, Task 4g3.
+Context: ADR-232 to ADR-234 built a share, its API and giving a page up. M08 draws
+"Split the bill" as three tiles, Pay all, Split 2 and Split 3, each with its
+figure, and "or split by item".
+Decision:
+  - **Split the bill is in the Pay online card, over the button**, since a share
+    is paid online and nowhere else. Three choices: All of it, Split evenly, An
+    amount. One is always chosen, All of it to begin with, so a guest who wants
+    none of this taps Pay as before.
+  - **The figure is on the button and nowhere else.** M08 puts a figure on each
+    tile; with any number of people and a typed figure there is no fixed set of
+    tiles to put them on. "Pay 420.00 online" changes as the choice does, and it
+    is the one thing a guest must read before tapping.
+  - **Evenly is a stepper from 2 to 20**, not tiles for 2 and 3: a table of five
+    is as common as a table of two. Its figure is the server's part for that
+    number, from the bill's `split.parts`.
+  - **A typed figure is the only thing the phone works out**, and only as far as
+    reading it and comparing it with `unclaimed`. More than is left is refused
+    here in words, and again by the server.
+  - **"All of it" reads "The rest"** once some of the bill is paid or being paid
+    by others, since it then is not all of it.
+  - **"I am not paying this"** on a waiting payment gives its page up (ADR-234).
+    Until then the choices are not drawn: one payment at a time from one phone.
+    Given up, the phone forgets the charge. If it was paid after all, the answer
+    says so and the phone keeps it to say so.
+  - **A charge another phone gave up is forgotten too**: the rest of the bill is
+    one charge for every phone (ADR-220), and a phone still waiting on a page the
+    table has let go of would be waiting for nothing.
+  - **The phone names itself** with 16 random bytes, kept under `mez.phone`. Where
+    it cannot, it is offered no split and pays the rest, which needs no name.
+  - **No split by item**, as ADR-232 has it, and nothing on the screen offers it.
+  - **Paying by UPI stays the whole of what is left.** It tells the venue nothing
+    (ADR-215), so it cannot be anyone's part.
+Because: a guest splitting a bill is standing up to leave. Three taps at most, and
+the amount they will be charged in the largest type on the card.
+Cost: a guest cannot see every part before choosing a number, as M08's tiles
+would show; they step and read the button. The bundle is 43.3 KB gzipped of 60,
+up 2.6. Seen at 390 wide in the real binary with a made-up gateway key, which
+refuses to start a charge as it should; so the screen has been seen as far as the
+gateway's page, with waiting payments written into the database by hand, and
+never through a payment.
