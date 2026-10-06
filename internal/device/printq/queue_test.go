@@ -163,7 +163,7 @@ func TestRetriesWithBackoff(t *testing.T) {
 
 	f.pass(t)
 	j := f.job(t, id)
-	if j.State != "failed" || j.Attempts != 1 || j.LastError != "connection refused" || !j.NextAttemptAt.Equal(start.Add(2*time.Second)) {
+	if j.State != "failed" || j.Attempts != 1 || j.LastError != Unreachable || !j.NextAttemptAt.Equal(start.Add(2*time.Second)) {
 		t.Fatalf("after one failure: %+v", j)
 	}
 	// Not due yet: nothing is tried.
@@ -196,7 +196,7 @@ func TestGoesDead(t *testing.T) {
 		f.pass(t)
 		f.clock.add(10 * time.Minute)
 	}
-	if j := f.job(t, id); j.State != "dead" || j.Attempts != printjob.MaxAttempts || j.LastError != "paper out" {
+	if j := f.job(t, id); j.State != "dead" || j.Attempts != printjob.MaxAttempts || j.LastError != Unreachable {
 		t.Errorf("after every try: %+v", j)
 	}
 	f.pass(t)

@@ -21,10 +21,11 @@
   bounds it and does not prevent it. **The PIN lockout never escalates**:
   five tries a quarter hour, for ever, is 480 a day against a four-digit
   PIN. **Tips are unbounded** and need no authorisation, and the pool pays
-  them out. **A printer's address may be any host and port**, or any
-  Windows printer name including a UNC path, with an owner's session. **On
-  Windows the data directory and `config.toml` are readable by every local
-  account**: the permission bits in the code mean nothing there.
+  them out. (The printer address and the Windows data directory, also left
+  here by ADR-257, are fixed by ADR-259; what remains: a printer saved with
+  a hostname or public address before ADR-259 keeps it until next edited,
+  the send does not re-check the address, and the binary's own folder, such
+  as `C:\mez`, is not restricted until phase 12's installer.)
 - **Quality, noted and not changed** (ADR-257): the menu allows a negative
   modifier price and the projection refuses it, so "no cheese, less 20" can
   never be rung up; the cash rounding step is validated and stored and never

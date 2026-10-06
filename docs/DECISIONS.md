@@ -8528,3 +8528,80 @@ Cost: ten lint warnings remain (state reset in an effect, a ref read during
 render), each a deliberate pattern in a working screen, listed by `npm run
 lint`. The lint workspace adds 128 lockfile entries and a second TypeScript
 that only eslint loads.
+
+## ADR-259 - Printers live on the LAN, and the data directory is the owner's on Windows
+2026-10 · Status: accepted. Between phases 11 and 12, with ADR-257, which left
+both open.
+Context: ADR-257 left two findings for the owner. A printer's address could be
+any host and port, so an owner's session (or a stolen one) could point the
+server's print sends at the internet, at a name that resolves somewhere else
+tomorrow, or at a port on another machine, and read what came back: the queue
+screen and the printers list showed the raw dial error, which names the
+address and says whether it refused, timed out or had no route, the result of
+a port scan in a sentence. A USB printer's name went to `OpenPrinterW` as
+typed, and that call takes more than a local printer: `\PC\share` makes the
+server connect to another computer over SMB, offering the account's
+credentials, and a comma opens a port or monitor handle. Separately, on
+Windows the data directory's 0750 means nothing: a directory made under
+`C:\ProgramData` inherits an ACL that lets every local user read it, so
+another account on the counter PC could copy `mez.db` and work the PIN hashes
+offline, and `config.toml` beside the binary can hold the relay key and a
+gateway secret.
+Decision:
+  - **A network printer's address is an IP literal on this network**:
+    10/8, 172.16/12, 192.168/16, 169.254/16, 127/8, fc00::/7, fe80::/10 or
+    ::1 (an IPv4-mapped IPv6 address is judged as the IPv4 it holds), alone
+    or with a port 1 to 65535 written plainly; alone, the send adds 9100 as
+    before. No hostname, not even `printer.local`: what a name resolves to
+    can change after it is saved. A zone is accepted only on a link-local
+    address. The refusal reads "A printer's address is its IP on this
+    network, such as 192.168.1.50, with :port after it if the port is not
+    9100." The check is in `printers.Settings.clean`, with the rest of the
+    printer's settings.
+  - **A Windows printer's name is a local printer's name**: at most 128
+    characters, no control characters, and not a share (`\` or `//` at the
+    start), a link or a path (`:/`), a backslash or a comma. Windows printer
+    names contain neither of the last two, so no real printer is refused.
+  - **A failed send is "Could not reach the printer" to every client.**
+    `printq.Reason` decides what a job is kept with: the text of an error
+    the queue or the spooler wrote itself (a retired printer, a transport
+    this build lacks, no printer by that name on this computer, the spooler
+    off Windows), marked `shown`, or the fixed `printq.Unreachable`. What the
+    transport said goes to the log, at Warn while the job will be retried and
+    at Error once it is dead, with the job, venue and printer. `last_error`
+    on `GET /api/v1/print-jobs` and `last_job.error` on `GET
+    /api/v1/printers` read the stored reason, so both get the fixed text.
+  - **The data directory is restricted at startup and by setup**
+    (`internal/fsperm`, `Restrict`). On Windows its DACL is replaced with
+    full control for SYSTEM, BUILTIN\Administrators, the account running the
+    process and the directory's owner, inherited by everything beneath it,
+    and protected so the parent's ACEs stop flowing in; Windows passes the
+    new ACEs down to what is already there. The owner is included because
+    the server usually runs as SYSTEM (deploy.md's scheduled task) after
+    the owner ran setup from their own account: without it the next server
+    start would lock the owner out of `mez pair`. Elsewhere it is mode 0700.
+    The server restricts it before opening the logs, so they inherit it.
+  - **`config.toml` beside the binary is restricted on Windows**, file only,
+    when it exists. On Linux it is the administrator's file, in a directory
+    the service cannot write (deploy.md), and its mode is theirs.
+  - **A failure to restrict never stops the server.** It is logged at Warn
+    with the path, and the server carries on: a till that will not start
+    mid-service costs the venue more than a directory another account could
+    read.
+  - `golang.org/x/sys` moves from an indirect dependency to a direct one, for
+    the Windows security calls. It was already in the build, through the
+    SQLite driver; no cgo, and linux/amd64 and windows/amd64 still
+    cross-compile with `CGO_ENABLED=0`.
+Cost: a printer already saved with a hostname or a public address keeps
+printing to it until its settings are next saved, when the new rule refuses
+it; the send itself does not re-check (a dialer `Control` hook in
+`escpos.Send` would, and would also catch a hostname that resolves off the
+LAN). A printer reached only by name, or across a routed network on public
+addresses, cannot be set up. A printer shared from another Windows computer
+cannot be used; install it locally or reach it by IP. Old jobs keep the raw
+error they were stored with until they are retried. The DACL is rewritten,
+and propagated, on every start, which walks the directory; a venue's photos
+and logs are hundreds of files, not millions. The binary's own folder (for
+example `C:\mez`) is not restricted: under `C:\` it inherits Authenticated
+Users: Modify, so another account could replace `mez.exe`; phase 12's
+installer, putting it under `C:\Program Files`, is the fix.

@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/device/escpos"
 	"github.com/byjoellobo/mez/internal/device/printq"
+	"github.com/byjoellobo/mez/internal/fsperm"
 	"github.com/byjoellobo/mez/internal/gateway"
 	"github.com/byjoellobo/mez/internal/gateway/razorpay"
 	"github.com/byjoellobo/mez/internal/gateway/stripe"
@@ -122,11 +124,20 @@ func run() (err error) {
 	if err := os.MkdirAll(cfg.DataDir, 0o750); err != nil {
 		return fmt.Errorf("creating data directory %s: %w", cfg.DataDir, err)
 	}
+	// The mode above means nothing on Windows, where the directory inherits
+	// an ACL that lets any user read it (ADR-259). Restricted before the
+	// logs are opened, so they inherit the restriction; a failure is said
+	// once there is a log to say it in, and the server starts regardless.
+	restricted := fsperm.Restrict(cfg.DataDir)
 
 	log, logFile, err := logging.Setup(cfg, os.Stdout)
 	if err != nil {
 		return err
 	}
+	if restricted != nil {
+		log.Warn("could not restrict the data directory to its owner", "path", cfg.DataDir, "error", restricted)
+	}
+	restrictConfig(log, runtime.GOOS, binaryDir())
 
 	var running stack
 

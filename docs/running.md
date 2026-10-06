@@ -123,6 +123,9 @@ sits in one directory:
 | Windows | `C:\ProgramData\mez` |
 | Linux and macOS | `./data`, beside wherever you started it from |
 
+The server keeps that directory to itself: on Windows only administrators
+and the account that ran setup can open it, and elsewhere it is mode 0700.
+
 Inside it: `mez.db` (with `mez.db-wal` and `mez.db-shm` while it runs),
 `photos/` for menu photos, and `logs/`. Back up that directory and you have
 backed up the venue; [`deploy.md`](deploy.md#backups) says how to copy it

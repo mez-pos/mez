@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -99,7 +100,7 @@ func TestSettingsAreChecked(t *testing.T) {
 			}
 		})
 	}
-	for _, addr := range []string{"192.168.1.50", "192.168.1.50:9101", "printer.local", "[fe80::1]:9100", "fe80::1"} {
+	for _, addr := range []string{"192.168.1.50", "192.168.1.50:9101", "[fe80::1]:9100", "fe80::1"} {
 		in := good
 		in.Name, in.Address = addr, addr
 		if _, err := s.Create(ctx, 1, in); err != nil {
@@ -109,6 +110,135 @@ func TestSettingsAreChecked(t *testing.T) {
 	usb := Settings{Name: "USB", Transport: "windows", Address: "EPSON TM-T82 Receipt", PaperMM: 58}
 	if _, err := s.Create(ctx, 1, usb); err != nil {
 		t.Errorf("a Windows printer: %v", err)
+	}
+}
+
+// TestNetworkAddressIsOnTheLAN: a network printer is an IP on this network
+// (ADR-259). A hostname, a public address, or anything with a scheme or a
+// path is refused, so the printers screen cannot point the server's sends
+// at the internet or at a name that resolves there later.
+func TestNetworkAddressIsOnTheLAN(t *testing.T) {
+	tests := []struct {
+		addr string
+		ok   bool
+	}{
+		{"192.168.1.50", true},
+		{"192.168.1.50:9100", true},
+		{"192.168.1.50:9101", true},
+		{"10.0.0.5", true},
+		{"10.255.255.254:65535", true},
+		{"172.16.0.1", true},
+		{"172.31.255.255", true},
+		{"169.254.10.20", true},
+		{"127.0.0.1", true},
+		{"127.0.0.1:1", true},
+		{"fc00::1", true},
+		{"fd12:3456::50", true},
+		{"[fd12:3456::50]:9100", true},
+		{"[fd12:3456::50]", true},
+		{"fe80::1", true},
+		{"[fe80::1]:9100", true},
+		{"fe80::1%eth0", true},
+		{"::1", true},
+		{"[::1]:9100", true},
+		{"::ffff:192.168.1.50", true},
+
+		{"", false},
+		{"printer.local", false},
+		{"printer.local:9100", false},
+		{"localhost", false},
+		{"kitchen", false},
+		{"8.8.8.8", false},
+		{"8.8.8.8:9100", false},
+		{"1.1.1.1", false},
+		{"172.15.255.255", false},
+		{"172.32.0.1", false},
+		{"192.169.0.1", false},
+		{"100.64.0.1", false},
+		{"0.0.0.0", false},
+		{"255.255.255.255", false},
+		{"224.0.0.1", false},
+		{"2001:4860:4860::8888", false},
+		{"[2001:4860:4860::8888]:9100", false},
+		{"::", false},
+		{"::ffff:8.8.8.8", false},
+		{"ff02::1", false},
+		{"fd12::1%eth0", false},
+		{"http://192.168.1.50", false},
+		{"192.168.1.50/24", false},
+		{"192.168.1.50:", false},
+		{"192.168.1.50:0", false},
+		{"192.168.1.50:65536", false},
+		{"192.168.1.50:09100", false},
+		{"192.168.1.50:+9100", false},
+		{"192.168.1.50:print", false},
+		{"192.168.1.50 9100", false},
+		{"192.168.1", false},
+		{"0x0a.0.0.1", false},
+		{"010.0.0.1", false},
+		{"[192.168.1.50]:9100", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.addr, func(t *testing.T) {
+			in := Settings{Name: "Counter", Transport: Network, Address: tt.addr, PaperMM: 80}
+			_, err := in.clean()
+			var inv *Invalid
+			switch {
+			case tt.ok && err != nil:
+				t.Errorf("refused: %v", err)
+			case !tt.ok && (!errors.As(err, &inv) || inv.Field != "address"):
+				t.Errorf("err = %v, want Invalid on address", err)
+			case !tt.ok && inv.Message != lanAddress:
+				t.Errorf("message = %q, want %q", inv.Message, lanAddress)
+			}
+		})
+	}
+}
+
+// TestWindowsPrinterName: a USB printer's address is a name the spooler
+// opens. A share on another computer, a URL, or a name with control
+// characters in it is refused before it reaches OpenPrinterW (ADR-259).
+func TestWindowsPrinterName(t *testing.T) {
+	tests := []struct {
+		name string
+		addr string
+		ok   bool
+	}{
+		{"a name as Windows shows it", "EPSON TM-T82 Receipt", true},
+		{"a name with punctuation", "POS-80C (copy 1)", true},
+		{"a name in another script", "प्रिंटर रसोई", true},
+		{"128 characters", strings.Repeat("x", 128), true},
+		{"128 characters, not bytes", strings.Repeat("é", 128), true},
+
+		{"nothing", "", false},
+		{"spaces only", "   ", false},
+		{"129 characters", strings.Repeat("x", 129), false},
+		{"a share on another computer", `\FRONTPC\EPSON`, false},
+		{"a share by IP", `\203.0.113.9\print`, false},
+		{"a share with forward slashes", "//FRONTPC/EPSON", false},
+		{"a URL", "http://203.0.113.9/printers/x", false},
+		{"a file URL", "file:/C:/x", false},
+		{"a drive path", `C:\Windows\x`, false},
+		{"a backslash", `EPSON\TM`, false},
+		{"a comma, which opens a port monitor", "EPSON,XcvMonitor Local Port", false},
+		{"a NUL", "EPSON\x00TM", false},
+		{"a newline", "EPSON\nTM", false},
+		{"a tab", "EPSON\tTM", false},
+		{"a DEL", "EPSON\x7fTM", false},
+		{"a C1 control", "EPSON\u0085TM", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			in := Settings{Name: "USB", Transport: USB, Address: tt.addr, PaperMM: 80}
+			_, err := in.clean()
+			var inv *Invalid
+			switch {
+			case tt.ok && err != nil:
+				t.Errorf("refused: %v", err)
+			case !tt.ok && (!errors.As(err, &inv) || inv.Field != "address"):
+				t.Errorf("err = %v, want Invalid on address", err)
+			}
+		})
 	}
 }
 

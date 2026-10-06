@@ -9,8 +9,12 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/netip"
+	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/db/gen"
@@ -105,11 +109,11 @@ func (s Settings) clean() (Settings, error) {
 	switch s.Transport {
 	case Network:
 		if !validNetworkAddress(s.Address) {
-			return s, &Invalid{"address", "Give the IP address, like 192.168.1.50, or 192.168.1.50:9100."}
+			return s, &Invalid{"address", lanAddress}
 		}
 	case USB:
-		if s.Address == "" || strings.ContainsAny(s.Address, "\x00\r\n") {
-			return s, &Invalid{"address", "Give the printer's name as Windows shows it, like EPSON TM-T82."}
+		if problem := windowsNameProblem(s.Address); problem != "" {
+			return s, &Invalid{"address", problem}
 		}
 	default:
 		return s, &Invalid{"transport", "Choose network or USB."}
@@ -117,26 +121,75 @@ func (s Settings) clean() (Settings, error) {
 	return s, nil
 }
 
-// validNetworkAddress accepts a host, or a host and a port 1 to 65535.
+// lanAddress is what a network printer's address must be, said the way the
+// printers screen says it.
+const lanAddress = "A printer's address is its IP on this network, such as 192.168.1.50, with :port after it if the port is not 9100."
+
+// validNetworkAddress accepts an IP on this network, alone or with a port 1
+// to 65535; alone, the send adds 9100 (escpos.DefaultPort). A hostname is
+// refused, because what it resolves to can change after it is saved, and so
+// is any address outside the private, link-local and loopback ranges: a
+// printer is on the venue's LAN, and an address anywhere else would let
+// the printers screen aim the server's sends at the internet (ADR-259).
 func validNetworkAddress(addr string) bool {
 	if addr == "" || strings.ContainsAny(addr, " /\\") {
 		return false
 	}
 	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		// No port: the whole thing is the host.
-		host, port = strings.Trim(addr, "[]"), ""
-	}
-	if host == "" {
-		return false
-	}
-	if port != "" {
-		var n int
-		if _, err := fmt.Sscanf(port, "%d", &n); err != nil || n < 1 || n > 65535 || fmt.Sprint(n) != port {
+	switch {
+	case err == nil:
+		if !validPort(port) {
 			return false
 		}
+	case strings.HasPrefix(addr, "[") && strings.HasSuffix(addr, "]"):
+		host = addr[1 : len(addr)-1] // an IPv6 address in brackets, no port
+	default:
+		host = addr
 	}
-	return true
+	ip, err := netip.ParseAddr(host)
+	if err != nil {
+		return false // a hostname, or not an address at all
+	}
+	if strings.HasPrefix(addr, "[") && !ip.Is6() {
+		return false // brackets are for IPv6
+	}
+	if ip.Zone() != "" && !ip.IsLinkLocalUnicast() {
+		return false // a zone names the interface a link-local address is on
+	}
+	ip = ip.Unmap()
+	return ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLoopback()
+}
+
+// validPort accepts 1 to 65535, written plainly.
+func validPort(port string) bool {
+	n, err := strconv.Atoi(port)
+	return err == nil && n >= 1 && n <= 65535 && strconv.Itoa(n) == port
+}
+
+// maxWindowsName bounds a Windows printer's name. Windows allows longer;
+// no receipt printer's name comes close.
+const maxWindowsName = 128
+
+// windowsNameProblem says what is wrong with a Windows printer's name, or
+// returns "". The name goes to OpenPrinterW, which takes more than a local
+// printer's name: "\PC\Printer" makes the server connect to another
+// computer, and a comma opens a port or monitor handle instead of a
+// printer. Windows printer names contain neither a backslash nor a comma,
+// so refusing them costs no real printer anything (ADR-259).
+func windowsNameProblem(name string) string {
+	switch {
+	case name == "":
+		return "Give the printer's name as Windows shows it, like EPSON TM-T82."
+	case utf8.RuneCountInString(name) > maxWindowsName:
+		return fmt.Sprintf("Keep the printer's name to %d characters.", maxWindowsName)
+	case strings.IndexFunc(name, unicode.IsControl) >= 0 || !utf8.ValidString(name):
+		return "Give the printer's name as Windows shows it, on one line."
+	case strings.HasPrefix(name, `\`) || strings.HasPrefix(name, "//"):
+		return "Give the name of a printer plugged into this computer. A printer shared from another computer cannot be used."
+	case strings.Contains(name, ":/") || strings.ContainsAny(name, `\,`):
+		return "Give the printer's name as Windows shows it, like EPSON TM-T82, not a path or a link."
+	}
+	return ""
 }
 
 // Overview is everything the printers screen shows.

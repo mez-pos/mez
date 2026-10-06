@@ -58,7 +58,7 @@ func sendSpooler(ctx context.Context, printer string, data []byte) error {
 	var h syscall.Handle
 	if ok, _, errno := procOpenPrinterW.Call(uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(&h)), 0); ok == 0 {
 		if errors.Is(errno, errInvalidPrinterName) {
-			return fmt.Errorf("spooler: no printer named %q on this computer: %w", printer, printjob.ErrPermanent)
+			return shown(fmt.Errorf("no printer named %q on this computer: %w", printer, printjob.ErrPermanent))
 		}
 		return fmt.Errorf("spooler: opening %q: %w", printer, errno)
 	}

@@ -236,6 +236,9 @@ func (q *Queue) send(ctx context.Context, job gen.DuePrintJobsRow) {
 	record, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cancel()
 	out := printjob.After(attempt, err, q.clock.Now().UTC())
+	if err != nil {
+		out.Error = Reason(err) // the detail goes to the log below, not to the screens
+	}
 	if err := q.finish(record, job.VenueID, job.ID, out); err != nil {
 		q.log.Error("print queue: recording a send", "job_id", job.ID, "error", err)
 		return
@@ -244,9 +247,9 @@ func (q *Queue) send(ctx context.Context, job gen.DuePrintJobsRow) {
 	attrs := []any{"job_id", job.ID, "venue_id", job.VenueID, "printer", job.PrinterName, "kind", job.Kind, "attempt", attempt}
 	switch out.State {
 	case printjob.Failed:
-		q.log.Warn("print job failed, will retry", append(attrs, "error", out.Error, "retry_at", out.Next)...)
+		q.log.Warn("print job failed, will retry", append(attrs, "error", err, "retry_at", out.Next)...)
 	case printjob.Dead:
-		q.log.Error("print job dead, needs a person", append(attrs, "error", out.Error)...)
+		q.log.Error("print job dead, needs a person", append(attrs, "error", err)...)
 	default:
 		q.log.Info("printed", attrs...)
 		// The printer's next job may be waiting behind this one.
@@ -256,11 +259,11 @@ func (q *Queue) send(ctx context.Context, job gen.DuePrintJobsRow) {
 
 func (q *Queue) transmit(ctx context.Context, job gen.DuePrintJobsRow) error {
 	if !job.PrinterActive {
-		return fmt.Errorf("printer %q has been retired: %w", job.PrinterName, printjob.ErrPermanent)
+		return shown(fmt.Errorf("printer %q has been retired: %w", job.PrinterName, printjob.ErrPermanent))
 	}
 	t, ok := q.transports[job.Transport]
 	if !ok {
-		return fmt.Errorf("no %q transport in this build: %w", job.Transport, printjob.ErrPermanent)
+		return shown(fmt.Errorf("no %q transport in this build: %w", job.Transport, printjob.ErrPermanent))
 	}
 	sendCtx, cancel := context.WithTimeout(ctx, q.sendTimeout)
 	defer cancel()

@@ -3,9 +3,12 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/byjoellobo/mez/internal/db/gen"
 	"github.com/byjoellobo/mez/internal/device/printq"
@@ -103,6 +106,9 @@ func TestPrintersOverHTTP(t *testing.T) {
 	}{
 		{"no name", http.MethodPost, "/api/v1/printers", `{"name":"","transport":"tcp","address":"10.0.0.5","paper_mm":80}`, 422, CodeInvalidPrinter, "name"},
 		{"a URL", http.MethodPost, "/api/v1/printers", `{"name":"X","transport":"tcp","address":"http://x","paper_mm":80}`, 422, CodeInvalidPrinter, "address"},
+		{"a hostname", http.MethodPost, "/api/v1/printers", `{"name":"X","transport":"tcp","address":"printer.example.com","paper_mm":80}`, 422, CodeInvalidPrinter, "address"},
+		{"a public address", http.MethodPost, "/api/v1/printers", `{"name":"X","transport":"tcp","address":"203.0.113.9:9100","paper_mm":80}`, 422, CodeInvalidPrinter, "address"},
+		{"a printer shared from another computer", http.MethodPost, "/api/v1/printers", `{"name":"X","transport":"windows","address":"\\\\FRONTPC\\EPSON","paper_mm":80}`, 422, CodeInvalidPrinter, "address"},
 		{"a name taken", http.MethodPost, "/api/v1/printers", `{"name":"Front","transport":"tcp","address":"10.0.0.6","paper_mm":80}`, 409, CodePrinterNameTaken, "name"},
 		{"no such printer", http.MethodPut, "/api/v1/printers/999", `{"name":"X","transport":"tcp","address":"10.0.0.6","paper_mm":80}`, 404, CodePrinterNotFound, ""},
 		{"no such station", http.MethodPut, "/api/v1/stations/pastry/printer", fmt.Sprintf(`{"printer_id":%d}`, id), 404, CodeStationNotFound, ""},
@@ -124,5 +130,68 @@ func TestPrintersOverHTTP(t *testing.T) {
 	cashier := w.asStaff(w.signIn(t, "2468").Token)
 	if rec := send(w.handler, http.MethodGet, "/api/v1/printers", "", cashier); rec.Code != http.StatusForbidden {
 		t.Errorf("a cashier read the printer settings: %d", rec.Code)
+	}
+}
+
+// TestSendErrorIsNotShown: a printer that does not answer is "Could not
+// reach the printer" on the printers list and the queue. What the dial
+// said, which names the address and how the network answered, stays in the
+// server's log (ADR-259).
+func TestSendErrorIsNotShown(t *testing.T) {
+	w := newTill(t)
+	ctx := context.Background()
+	dialErr := errors.New("escpos: connecting to the printer at 10.0.0.7:9100: dial tcp 10.0.0.7:9100: connect: connection refused")
+	refuse := printq.TransportFunc(func(context.Context, string, []byte) error { return dialErr })
+	q, err := printq.New(printq.Options{DB: w.db, Poll: 10 * time.Millisecond, Transports: map[string]printq.Transport{printq.TCP: refuse}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc, err := printers.New(w.db, q, nil, "1.2.3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.rebuild(t, WithPrinters(svc), WithPrints(q))
+	owner := w.asStaff(w.signInAs(t, "stf_PRIYA001", "2468").Token)
+
+	rec := send(w.handler, http.MethodPost, "/api/v1/printers", `{"name":"Counter","transport":"tcp","address":"10.0.0.7","paper_mm":80}`, owner)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create: %d %s", rec.Code, rec.Body)
+	}
+	if rec := send(w.handler, http.MethodPost, "/api/v1/printers/1/test", "", owner); rec.Code != http.StatusAccepted {
+		t.Fatalf("test page: %d %s", rec.Code, rec.Body)
+	}
+	if err := q.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = q.Close(context.Background()) })
+
+	var jobs printJobsResponse
+	for deadline := time.Now().Add(5 * time.Second); ; {
+		rec := send(w.handler, http.MethodGet, "/api/v1/print-jobs", "", owner)
+		if err := json.Unmarshal(rec.Body.Bytes(), &jobs); err != nil {
+			t.Fatalf("print jobs: %v: %s", err, rec.Body)
+		}
+		if len(jobs.Jobs) == 1 && jobs.Jobs[0].State == printjob.Failed {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("the send was never tried: %+v", jobs)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if got := jobs.Jobs[0].LastError; got != printq.Unreachable {
+		t.Errorf("print-jobs last_error = %q, want %q", got, printq.Unreachable)
+	}
+
+	rec = send(w.handler, http.MethodGet, "/api/v1/printers", "", owner)
+	var list printersResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &list); err != nil {
+		t.Fatal(err)
+	}
+	if lj := list.Printers[0].LastJob; lj == nil || lj.Error != printq.Unreachable {
+		t.Errorf("printers last_job = %+v, want error %q", lj, printq.Unreachable)
+	}
+	if body := rec.Body.String(); strings.Contains(body, "connection refused") || strings.Contains(body, "dial tcp") {
+		t.Errorf("the dial error reached the client: %s", body)
 	}
 }
