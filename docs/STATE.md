@@ -8,13 +8,13 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4e, 4f1 to 4f5, 4f6a, 4f6c and 4g1 done. (The walks are owed.)
+4a to 4e, 4f1 to 4f5, 4f6a, 4f6c, 4g1 and 4g2 done. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 4g1: a share of the bill, in the services** (ADR-232).
-`charges.StartShare` is a charge for part of what a table owes, for one phone. An
-open page is a claim; nothing is given past what is unclaimed. Migration 00045.
+**Phase 11, Task 4g2: a share over the guest API** (ADR-233). The bill answers
+`split` (the rest, what this phone can take, equal parts); a body on
+`POST .../bill/charge` is a share, by amount or among N people. No screen.
 
 ## Next task
 
@@ -22,14 +22,14 @@ open page is a claim; nothing is given past what is unclaimed. Migration 00045.
 keys, then on a phone Pay online on a bill, and Pay on an order with paying
 first chosen. The payments card now says so itself, in the warning tone.
 
-**Phase 11, Task 4g2: a share over the guest API.** Read ADR-232, ADR-222,
-`internal/api/guest_charge.go`, `guest_bill.go`. No screen: that is 4g3.
-- The bill's answer gains what this phone can still ask for (`charges.Claims`)
-  and its equal part among N (`charges.EqualPart`, of the bill's total).
-- `POST .../bill/charge` takes a body: the phone's name for itself, and an amount
-  or a number of people. No body is the rest, as now. The server works out the part.
-- Codes for `ErrOverClaim`, `ErrBadShare`, `ErrBillMoved`: `Start` answers two today.
-- Decide whether a guest can give up an open page. 4f6b waits on question 8.
+**Phase 11, Task 4g2b: giving up a payment page.** Read ADR-232, ADR-233,
+`internal/service/charges/share.go`. A guest who looks at Pay online and comes
+back holds the whole bill for half an hour, so nobody can take a share.
+- Letting go is a mark on the charge, not its end: the page can still be paid,
+  and then it settles as any charge does (unapplied if the bill cannot take it).
+- A charge let go is no claim. Who may let go: the table, by the charge's id.
+- A charge for the rest is shared by phones: one letting go lets go for all.
+Then 4g3, the phone. 4f6b waits on question 8.
 
 ## Known broken / in progress
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4e, 4f1 to 4f5, 4f6a, 4f6c, 4g1 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4e, 4f1 to 4f5, 4f6a, 4f6c, 4g1, 4g2 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

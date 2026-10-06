@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4f6c: the back office says how paying online stands** (ADR-231).
+**Phase 11, Task 4g1: a share of the bill, in the services** (ADR-232).
+`charges.StartShare` is a charge for part of what a table owes, for one phone. An
+open page is a claim; nothing is given past what is unclaimed. Migration 00045.
+
+Before it, **Phase 11, Task 4f6c: the back office says how paying online stands** (ADR-231).
 The "Paid from a phone" card names the gateway, when a payment last landed through
 it, whether it calls back, and where guests return to. Read only; never a key.
 

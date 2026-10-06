@@ -18,7 +18,9 @@ import (
 
 // A guest pays online (phase 11, Task 4f3, ADR-222):
 //
-//	POST /order/api/t/{code}/bill/charge            start paying what is owed
+//	POST /order/api/t/{code}/bill/charge            start paying what is owed,
+//	                                                or with a body a share
+//	                                                of it (guest_share.go)
 //	POST /order/api/t/{code}/orders/{round}/charge  start paying for a round
 //	                                                held until it is paid
 //	GET  /order/api/t/{code}/bill/charge/{id}       how either payment stands
@@ -41,6 +43,8 @@ const (
 // *charges.Service is it.
 type Charges interface {
 	Start(ctx context.Context, venueID, tableID int64, description, returnURL string) (charges.Charge, error)
+	StartShare(ctx context.Context, venueID, tableID int64, payer string, amount money.Amount, description, returnURL string) (charges.Charge, error)
+	Claims(ctx context.Context, venueID, tableID int64, payer string) (charges.Claims, error)
 	StartRound(ctx context.Context, venueID, tableID int64, round, description, returnURL string) (charges.Charge, error)
 	Settle(ctx context.Context, venueID int64, publicID string) (charges.Charge, error)
 	Charge(ctx context.Context, venueID int64, publicID string) (charges.Charge, error)
@@ -98,12 +102,19 @@ func (s *Server) guestStartCharge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
-	c, err := s.charges.Start(r.Context(), table.VenueID, table.TableID, "Table "+table.TableName+", "+table.VenueName, s.guestReturnURL(r))
-	if errors.Is(err, charges.ErrNothingToPay) {
-		writeError(w, s.log, http.StatusConflict, CodeNothingToPay, "There is nothing left to pay on this bill.")
+	description := "Table " + table.TableName + ", " + table.VenueName
+	// No body is the rest of the bill, as it was before a bill could be
+	// split. A body is one phone's share of it.
+	if r.ContentLength == 0 {
+		c, err := s.charges.Start(r.Context(), table.VenueID, table.TableID, description, s.guestReturnURL(r))
+		s.writeBillCharge(w, r, table.VenueID, c, err)
 		return
 	}
-	s.writeStartedCharge(w, r, table.VenueID, c, err)
+	c, written, err := s.guestStartShare(w, r, table, description)
+	if written {
+		return
+	}
+	s.writeBillCharge(w, r, table.VenueID, c, err)
 }
 
 // guestStartRoundCharge starts paying for a round held until it is paid.

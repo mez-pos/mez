@@ -154,10 +154,13 @@ Phase 10.
       of the bill for one phone; an open page is a claim, and no charge is
       given for more than is unclaimed (`Claims`, `EqualPart`). Migration
       00045. No route and no screen.
-    - [ ] **4g2.** The guest's API: what is unclaimed and an equal part on
-      the bill, a share on `POST /order/api/t/{code}/bill/charge`, the
-      phone's name for itself, and codes for a share that does not fit and a
-      bill that moved.
+    - [x] **4g2.** The guest's API (ADR-233): `split` on the bill (the rest,
+      what this phone can take, an equal part for 2 to 20 people), a share
+      as the body of `POST /order/api/t/{code}/bill/charge`, the phone's
+      name for itself, and `bill_claimed` and `bill_moved`.
+    - [ ] **4g2b.** Giving up a page: a guest who opened a payment page and
+      came back lets go of its claim, so the table is not held for half an
+      hour. In the services and over the API.
     - [ ] **4g3.** The phone: Split the bill on the bill's screen, among how
       many or a figure typed, and its spec.
 

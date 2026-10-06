@@ -64,6 +64,9 @@ type guestBillResponse struct {
 	// Online is true when what is left can be paid online, through the
 	// venue's gateway (ADR-222): the venue has one, and something is owed.
 	Online bool `json:"online,omitempty"`
+	// Split is how what is left can be paid online in parts (ADR-233).
+	// Present wherever Online is, unless it could not be read.
+	Split *guestSplitResponse `json:"split,omitempty"`
 }
 
 // guestUPIResponse is a UPI payment of the bill's balance to the venue
@@ -80,6 +83,11 @@ type guestUPIResponse struct {
 func (s *Server) guestBill(w http.ResponseWriter, r *http.Request) {
 	table, ok := s.guestTableFor(w, r)
 	if !ok {
+		return
+	}
+	phone, ok := guestPhone(r)
+	if !ok {
+		writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, "phone is the name this phone gave itself: 8 to 64 letters, digits, - or _.", "phone")
 		return
 	}
 	res, open, err := s.guestOrders.TableTicket(r.Context(), table.VenueID, table.TableID)
@@ -106,6 +114,13 @@ func (s *Server) guestBill(w http.ResponseWriter, r *http.Request) {
 	}
 	bill.UPI = s.guestUPI(r, table.VenueID, table.TableName, bill.BalanceDue)
 	bill.Online = s.charges != nil && bill.BalanceDue.Minor > 0
+	if bill.Online {
+		// Not worth failing the bill for: without it the phone offers the
+		// whole bill, and a share that does not fit is refused when asked for.
+		if bill.Split, err = s.guestSplit(r, table.VenueID, table.TableID, phone, bill.Total); err != nil {
+			s.log.Error("reading how a bill splits failed", "request_id", RequestID(r.Context()), "order", res.PublicID, "error", err)
+		}
+	}
 	if bill.BalanceDue.Minor > 0 {
 		// Not worth failing the bill for: unsaid, the guest can say it again.
 		if bill.PaidTold, err = s.guestOrders.PaidTold(r.Context(), res.OrderID); err != nil {

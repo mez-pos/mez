@@ -142,7 +142,9 @@ export type ErrorCode =
   | 'notice_not_found'
   | 'gateway_unavailable'
   | 'charge_not_found'
-  | 'charge_not_waiting';
+  | 'charge_not_waiting'
+  | 'bill_claimed'
+  | 'bill_moved';
 
 export type OrderStatus =
   | 'open'
@@ -882,6 +884,7 @@ export interface GuestBillResponse {
   upi?: GuestUPIResponse;
   paid_told?: boolean;
   online?: boolean;
+  split?: GuestSplitResponse;
 }
 
 export interface GuestBillLineResponse {
@@ -905,6 +908,17 @@ export interface GuestUPIResponse {
   amount: Money;
 }
 
+export interface GuestSplitResponse {
+  rest: Money;
+  unclaimed: Money;
+  parts: GuestSplitPartResponse[];
+}
+
+export interface GuestSplitPartResponse {
+  people: number;
+  amount: Money;
+}
+
 export interface GuestPaidResponse {
   told: boolean;
   amount: Money;
@@ -916,6 +930,17 @@ export interface GuestChargeResponse {
   amount: Money;
   url?: string;
   round?: string;
+}
+
+export interface GuestShareRequest {
+  phone: string;
+  amount?: MoneyInput;
+  people?: number;
+}
+
+export interface MoneyInput {
+  minor: number;
+  currency: string;
 }
 
 export interface ResolveChargeRequest {
@@ -1017,11 +1042,6 @@ export interface SessionResponse {
 export interface Override {
   authorised_by: string;
   pin: string;
-}
-
-export interface MoneyInput {
-  minor: number;
-  currency: string;
 }
 
 export interface OpenOrder {

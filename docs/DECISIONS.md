@@ -7342,3 +7342,47 @@ share's tender and its charge closing it is counted twice, and a share that fits
 may be refused; asked again it is given. A share smaller than the gateway's own
 minimum is refused by the gateway, not here. The bill charge's route does not yet
 know `ErrOverClaim` or `ErrBillMoved`.
+
+## ADR-233 - A share over the guest API: the phone names itself, and the server works out every part
+2026-10 · Status: accepted. Phase 11, Task 4g2.
+Context: ADR-232 built a share in the services with no route. The phone's screen is
+4g3; this is what it will talk to.
+Decision:
+  - **A share is the body of the route that was already there.**
+    `POST /order/api/t/{code}/bill/charge` with no body is the rest of the bill,
+    as before, so a phone that has not been reloaded still pays. With a body it is
+    a share: `phone`, and either `amount` or `people`, never both. The answer is a
+    charge's, and how it stands is asked at the same route as any other.
+  - **`people` is worked out here and not on the phone.** The server takes the
+    bill's total and what this phone can still claim, and asks for
+    `charges.EqualPart` of them. Three phones each sending `people: 3` are asked
+    for 146.67, 146.67 and 146.66 of 440.00. A test pays all three.
+  - **The bill answers `split`** wherever it answers `online`: `rest`, what paying
+    with no body would ask for; `unclaimed`, the most this phone can take; and
+    `parts`, an equal part for each number of people from 2 to 20. So the phone
+    shows a figure for every choice without adding anything up, and without a
+    request for each tap. It costs under a kilobyte a read.
+  - **A phone names itself**, 8 to 64 letters, digits, `-` or `_`: in the share's
+    body, and as `?phone=` on the bill so `unclaimed` leaves its own open shares
+    out. With no name the bill answers the rest for both. A name that is not one
+    is a 400 on either route: it is a bug in the phone, not a guest's mistake.
+  - **The name is not a secret and is not identity.** Whoever has it and the
+    table's code can be given the same open page again, which pays the same
+    share. It never leaves the server in an answer.
+  - **Two new codes, both 409**: `bill_claimed`, others are paying that part;
+    `bill_moved`, the bill changed while the charge was starting. The route for
+    the rest answers them too, where it answered a server error. A share of a
+    paid bill is `nothing_to_pay`, as the rest is.
+  - **Nothing in the body says where to send the guest back.** Unknown fields are
+    refused, and the return address is still the venue's own (ADR-222).
+  - **A guest will be able to give up a page, and that is its own task, 4g2b.**
+    Looking at Pay online and coming back holds the whole bill for half an hour
+    (ADR-232), which is the commonest way a table would arrive at splitting. It
+    touches the service, a migration and a route, and is not this task.
+Because: every figure a guest is shown or asked for comes from one place, and the
+old request means what it meant.
+Cost: the bill is read up to three times to answer one bill, for the ticket and
+the two sets of claims. The parts are of the bill as it stands at that read; the
+figure asked for is worked out again at the tap and can differ by the time it is
+made, and the charge's own amount is what the phone must show. Until 4g2b an
+abandoned page blocks shares, and until 4g3 nothing can ask for one.
