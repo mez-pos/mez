@@ -15,7 +15,8 @@ SELECT e.type, COUNT(*) AS n
 FROM order_events e
 JOIN orders o ON o.id = e.order_id
 WHERE o.venue_id = ?1
-  AND e.type IN ('line.voided', 'line.comped', 'discount.applied', 'refund.issued', 'payment.voided', 'order.reopened')
+  AND (e.type IN ('line.voided', 'line.comped', 'discount.applied', 'refund.issued', 'payment.voided', 'order.reopened')
+       OR (e.type = 'payment.tendered' AND COALESCE(json_extract(e.payload, '$.authorised_by'), 0) <> 0))
   AND e.at >= ?2 AND e.at < ?3
   AND (?4 = 0 OR e.actor_id = ?4
        OR json_extract(e.payload, '$.authorised_by') = ?4)
@@ -69,7 +70,8 @@ SELECT e.id, e.order_id, o.public_id AS order_public_id, e.seq, e.type, e.payloa
 FROM order_events e
 JOIN orders o ON o.id = e.order_id
 WHERE o.venue_id = ?1
-  AND e.type IN ('line.voided', 'line.comped', 'discount.applied', 'refund.issued', 'payment.voided', 'order.reopened')
+  AND (e.type IN ('line.voided', 'line.comped', 'discount.applied', 'refund.issued', 'payment.voided', 'order.reopened')
+       OR (e.type = 'payment.tendered' AND COALESCE(json_extract(e.payload, '$.authorised_by'), 0) <> 0))
   AND e.at >= ?2 AND e.at < ?3
   AND (?4 = '' OR e.type = ?4)
   AND (?5 = 0 OR e.actor_id = ?5
@@ -102,7 +104,8 @@ type AuditEventsRow struct {
 
 // The audit trail (phase 10, Task 4c, ADR-117): corrections read straight
 // from the order events. staff_id 0 is anyone; otherwise it matches the
-// person who did it or the person who authorised it.
+// person who did it or the person who authorised it. A payment is one only
+// when a manager let its tip through over the venue's ceiling (ADR-261).
 //
 // Newest first, a page at a time: before_id is the last id of the page
 // before, or 0 for the first page.

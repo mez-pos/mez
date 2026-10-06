@@ -399,15 +399,25 @@ type SignInAttempt struct {
 }
 
 type Staff struct {
+	ID           int64
+	PublicID     string
+	VenueID      int64
+	RoleID       int64
+	Name         string
+	PinHash      string
+	Active       bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	LockedAt     sql.NullTime
+	LockedReason string
+}
+
+type StaffLockout struct {
 	ID        int64
-	PublicID  string
 	VenueID   int64
-	RoleID    int64
-	Name      string
-	PinHash   string
-	Active    bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	StaffID   int64
+	At        time.Time
+	ClearedAt sql.NullTime
 }
 
 type StaffSession struct {

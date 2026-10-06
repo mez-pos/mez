@@ -47,6 +47,20 @@ var (
 	DefaultDeviceLockout = LockoutPolicy{MaxFailures: 20, Window: 15 * time.Minute}
 )
 
+// The hard lock (ADR-260). The window's lock lifts by itself, so on its own
+// it only slows a guesser down: five tries a quarter hour is still hundreds
+// a day. A person whose PIN completes the window's limit HardLockAfter times
+// within HardLockWindow is locked until someone who can manage staff clears
+// it, and is refused as a deactivated person is: whatever PIN is typed, it
+// reads as a wrong one.
+const (
+	HardLockAfter  = 3
+	HardLockWindow = 24 * time.Hour
+)
+
+// HardLockReason is what a hard lock records as its reason.
+const HardLockReason = "too many failed PIN attempts"
+
 // DefaultSessionTTL is how long a staff session lasts: a long shift. The
 // terminal locks itself sooner; this is the backstop.
 const DefaultSessionTTL = 12 * time.Hour
@@ -313,10 +327,14 @@ func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string
 		return gen.Staff{}, locked
 	}
 
+	// A hard-locked person is refused as a deactivated one is: their PIN
+	// is compared, so the answer takes as long as any other, and whatever
+	// it was, the attempt fails and reads as a wrong PIN.
 	hash, outcome := a.dummy, outcomeUnknownStaff
+	hardLocked := known && row.LockedAt.Valid
 	if known {
 		hash, outcome = row.PinHash, outcomeInactiveStaff
-		if row.Active {
+		if row.Active && !hardLocked {
 			outcome = outcomeInvalidPIN
 		}
 	}
@@ -333,7 +351,13 @@ func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string
 		if err := a.record(ctx, attempt); err != nil {
 			return gen.Staff{}, err
 		}
-		a.log.Warn("PIN refused", "venue_id", dev.VenueID, "device_id", dev.ID, "actor_id", row.ID, "outcome", outcome)
+		a.log.Warn("PIN refused", "venue_id", dev.VenueID, "device_id", dev.ID, "actor_id", row.ID,
+			"outcome", outcome, "hard_locked", hardLocked)
+		if outcome == outcomeInvalidPIN {
+			if err := a.countLockout(ctx, dev, row, now); err != nil {
+				return gen.Staff{}, err
+			}
+		}
 		return gen.Staff{}, ErrInvalidPIN
 	}
 
@@ -416,13 +440,27 @@ func (a *StaffAuth) locked(ctx context.Context, dev Device, staffID int64, known
 		return nil, nil
 	}
 
+	wait, err := a.staffLock(ctx, staffID, now)
+	if err != nil {
+		return nil, err
+	}
+	if wait > 0 {
+		return &LockedError{Scope: "staff", RetryAfter: wait}, nil
+	}
+	return nil, nil
+}
+
+// staffLock is how long a staff member's own lock has left. A success
+// resets the count, and so does a manager clearing a hard lock: only wrong
+// PINs since the later of the two hold a lock.
+func (a *StaffAuth) staffLock(ctx context.Context, staffID int64, now time.Time) (time.Duration, error) {
+	q := a.db.Queries()
 	verdicts, err := q.RecentStaffVerdicts(ctx, gen.RecentStaffVerdictsParams{
 		StaffID: sql.NullInt64{Int64: staffID, Valid: true}, Limit: int64(a.staffLockout.MaxFailures),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("auth: reading sign-in attempts: %w", err)
+		return 0, fmt.Errorf("auth: reading sign-in attempts: %w", err)
 	}
-	// A success resets the count: only failures since the last one matter.
 	var since []time.Time
 	for _, v := range verdicts {
 		if v.Outcome == outcomeSuccess {
@@ -430,10 +468,67 @@ func (a *StaffAuth) locked(ctx context.Context, dev Device, staffID int64, known
 		}
 		since = append(since, v.At)
 	}
-	if wait := lockRemaining(since, a.staffLockout, now); wait > 0 {
-		return &LockedError{Scope: "staff", RetryAfter: wait}, nil
+	wait := lockRemaining(since, a.staffLockout, now)
+	if wait == 0 {
+		return 0, nil
 	}
-	return nil, nil
+	// Read only when there is a lock to lift: almost every attempt has none.
+	cleared, err := q.LastStaffLockClear(ctx, staffID)
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && !cleared.Valid) {
+		return wait, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("auth: reading when a lock was cleared: %w", err)
+	}
+	var after []time.Time
+	for _, at := range since {
+		if !at.After(cleared.Time) {
+			break
+		}
+		after = append(after, at)
+	}
+	return lockRemaining(after, a.staffLockout, now), nil
+}
+
+// countLockout runs after a wrong PIN for someone who could have signed in.
+// If that PIN locked them for the window, it is a lockout, and the
+// HardLockAfter-th within HardLockWindow hard-locks them and ends their
+// sessions, in one transaction: whoever was guessing may have been at a
+// till they had left signed in.
+func (a *StaffAuth) countLockout(ctx context.Context, dev Device, row gen.Staff, now time.Time) error {
+	wait, err := a.staffLock(ctx, row.ID, now)
+	if err != nil || wait == 0 {
+		return err
+	}
+	var lockouts int64
+	hard := false
+	err = a.db.WriteTx(ctx, func(q *gen.Queries) error {
+		if err := q.RecordStaffLockout(ctx, gen.RecordStaffLockoutParams{VenueID: row.VenueID, StaffID: row.ID, At: now}); err != nil {
+			return err
+		}
+		lockouts, err = q.CountStaffLockoutsSince(ctx, gen.CountStaffLockoutsSinceParams{StaffID: row.ID, Since: now.Add(-HardLockWindow)})
+		if err != nil || lockouts < HardLockAfter {
+			return err
+		}
+		n, err := q.SetStaffHardLock(ctx, gen.SetStaffHardLockParams{
+			LockedAt: sql.NullTime{Time: now, Valid: true}, Reason: HardLockReason, ID: row.ID,
+		})
+		if err != nil || n == 0 {
+			return err
+		}
+		hard = true
+		return q.EndSessionsOfStaff(ctx, gen.EndSessionsOfStaffParams{Now: sql.NullTime{Time: now, Valid: true}, StaffID: row.ID})
+	})
+	if err != nil {
+		return fmt.Errorf("auth: counting a lockout: %w", err)
+	}
+	a.log.Warn("staff locked out", "venue_id", dev.VenueID, "device_id", dev.ID, "staff_id", row.ID,
+		"lockouts_today", lockouts, "retry_after_s", int(wait.Seconds()))
+	if hard {
+		a.log.Warn("staff hard-locked until a manager clears it", "venue_id", row.VenueID, "device_id", dev.ID,
+			"staff_id", row.ID, "lockouts", lockouts, "reason", HardLockReason)
+	}
+	return nil
 }
 
 // lockRemaining is how long a lock has left, given failures newest first: if

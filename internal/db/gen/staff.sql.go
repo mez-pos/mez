@@ -17,7 +17,7 @@ SELECT
     s.created_at, s.updated_at
 FROM staff s
 JOIN roles r ON r.id = s.role_id
-WHERE s.venue_id = ? AND s.active = 1
+WHERE s.venue_id = ? AND s.active = 1 AND s.locked_at IS NULL
 ORDER BY s.name
 `
 
@@ -35,7 +35,9 @@ type ActiveStaffForVenueRow struct {
 }
 
 // The index on (venue_id, active) is what this reads down, which is why it
-// exists. The role's name rides along for the sign-in screen.
+// exists. The role's name rides along for the sign-in screen. Someone
+// hard-locked is left out, as someone deactivated is (ADR-260): their tile
+// would only take PINs it refuses.
 func (q *Queries) ActiveStaffForVenue(ctx context.Context, venueID int64) ([]ActiveStaffForVenueRow, error) {
 	rows, err := q.db.QueryContext(ctx, activeStaffForVenue, venueID)
 	if err != nil {
@@ -68,6 +70,61 @@ func (q *Queries) ActiveStaffForVenue(ctx context.Context, venueID int64) ([]Act
 		return nil, err
 	}
 	return items, nil
+}
+
+const clearStaffHardLock = `-- name: ClearStaffHardLock :execrows
+UPDATE staff
+SET locked_at = NULL, locked_reason = '', updated_at = ?1
+WHERE venue_id = ?2 AND id = ?3
+`
+
+type ClearStaffHardLockParams struct {
+	Now     time.Time
+	VenueID int64
+	ID      int64
+}
+
+func (q *Queries) ClearStaffHardLock(ctx context.Context, arg ClearStaffHardLockParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, clearStaffHardLock, arg.Now, arg.VenueID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const clearStaffLockouts = `-- name: ClearStaffLockouts :exec
+UPDATE staff_lockouts
+SET cleared_at = ?1
+WHERE staff_id = ?2 AND cleared_at IS NULL
+`
+
+type ClearStaffLockoutsParams struct {
+	Now     sql.NullTime
+	StaffID int64
+}
+
+func (q *Queries) ClearStaffLockouts(ctx context.Context, arg ClearStaffLockoutsParams) error {
+	_, err := q.db.ExecContext(ctx, clearStaffLockouts, arg.Now, arg.StaffID)
+	return err
+}
+
+const countStaffLockoutsSince = `-- name: CountStaffLockoutsSince :one
+SELECT COUNT(*) AS n
+FROM staff_lockouts
+WHERE staff_id = ?1 AND at > ?2 AND cleared_at IS NULL
+`
+
+type CountStaffLockoutsSinceParams struct {
+	StaffID int64
+	Since   time.Time
+}
+
+// The lockouts of a person since a moment that no manager has cleared.
+func (q *Queries) CountStaffLockoutsSince(ctx context.Context, arg CountStaffLockoutsSinceParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countStaffLockoutsSince, arg.StaffID, arg.Since)
+	var n int64
+	err := row.Scan(&n)
+	return n, err
 }
 
 const createRole = `-- name: CreateRole :one
@@ -117,7 +174,7 @@ INSERT INTO staff (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING
     id, public_id, venue_id, role_id, name, pin_hash, active,
-    created_at, updated_at
+    created_at, updated_at, locked_at, locked_reason
 `
 
 type CreateStaffParams struct {
@@ -153,6 +210,8 @@ func (q *Queries) CreateStaff(ctx context.Context, arg CreateStaffParams) (Staff
 		&i.Active,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LockedAt,
+		&i.LockedReason,
 	)
 	return i, err
 }
@@ -210,6 +269,43 @@ type EndSessionsOfStaffParams struct {
 // should not stay signed in with it.
 func (q *Queries) EndSessionsOfStaff(ctx context.Context, arg EndSessionsOfStaffParams) error {
 	_, err := q.db.ExecContext(ctx, endSessionsOfStaff, arg.Now, arg.StaffID)
+	return err
+}
+
+const lastStaffLockClear = `-- name: LastStaffLockClear :one
+SELECT cleared_at
+FROM staff_lockouts
+WHERE staff_id = ? AND cleared_at IS NOT NULL
+ORDER BY cleared_at DESC
+LIMIT 1
+`
+
+// When a manager last cleared a person's lock. The wrong PINs before it no
+// longer count toward a lockout.
+func (q *Queries) LastStaffLockClear(ctx context.Context, staffID int64) (sql.NullTime, error) {
+	row := q.db.QueryRowContext(ctx, lastStaffLockClear, staffID)
+	var cleared_at sql.NullTime
+	err := row.Scan(&cleared_at)
+	return cleared_at, err
+}
+
+const recordStaffLockout = `-- name: RecordStaffLockout :exec
+
+INSERT INTO staff_lockouts (venue_id, staff_id, at)
+VALUES (?, ?, ?)
+`
+
+type RecordStaffLockoutParams struct {
+	VenueID int64
+	StaffID int64
+	At      time.Time
+}
+
+// The hard lock (ADR-260). A lockout is recorded at the wrong PIN that locks
+// a person for the window; the third in a day locks them until someone who
+// can manage staff clears it.
+func (q *Queries) RecordStaffLockout(ctx context.Context, arg RecordStaffLockoutParams) error {
+	_, err := q.db.ExecContext(ctx, recordStaffLockout, arg.VenueID, arg.StaffID, arg.At)
 	return err
 }
 
@@ -318,6 +414,26 @@ func (q *Queries) SetStaffActive(ctx context.Context, arg SetStaffActiveParams) 
 	return result.RowsAffected()
 }
 
+const setStaffHardLock = `-- name: SetStaffHardLock :execrows
+UPDATE staff
+SET locked_at = ?1, locked_reason = ?2, updated_at = ?1
+WHERE id = ?3 AND locked_at IS NULL
+`
+
+type SetStaffHardLockParams struct {
+	LockedAt sql.NullTime
+	Reason   string
+	ID       int64
+}
+
+func (q *Queries) SetStaffHardLock(ctx context.Context, arg SetStaffHardLockParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setStaffHardLock, arg.LockedAt, arg.Reason, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const setStaffPIN = `-- name: SetStaffPIN :execrows
 UPDATE staff
 SET pin_hash = ?1, updated_at = ?2
@@ -347,7 +463,7 @@ func (q *Queries) SetStaffPIN(ctx context.Context, arg SetStaffPINParams) (int64
 const staffByPublicID = `-- name: StaffByPublicID :one
 SELECT
     id, public_id, venue_id, role_id, name, pin_hash, active,
-    created_at, updated_at
+    created_at, updated_at, locked_at, locked_reason
 FROM staff
 WHERE public_id = ?
 `
@@ -365,6 +481,8 @@ func (q *Queries) StaffByPublicID(ctx context.Context, publicID string) (Staff, 
 		&i.Active,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LockedAt,
+		&i.LockedReason,
 	)
 	return i, err
 }
@@ -430,7 +548,7 @@ func (q *Queries) StaffForEdit(ctx context.Context, arg StaffForEditParams) (Sta
 
 const staffForVenue = `-- name: StaffForVenue :many
 
-SELECT s.id, s.public_id, s.name, s.role_id, r.name AS role_name, s.active, s.created_at
+SELECT s.id, s.public_id, s.name, s.role_id, r.name AS role_name, s.active, s.created_at, s.locked_at
 FROM staff s
 JOIN roles r ON r.id = s.role_id
 WHERE s.venue_id = ?
@@ -445,6 +563,7 @@ type StaffForVenueRow struct {
 	RoleName  string
 	Active    bool
 	CreatedAt time.Time
+	LockedAt  sql.NullTime
 }
 
 // The People screen (phase 10, Task 4a, ADR-115). Every query is scoped by
@@ -468,6 +587,7 @@ func (q *Queries) StaffForVenue(ctx context.Context, venueID int64) ([]StaffForV
 			&i.RoleName,
 			&i.Active,
 			&i.CreatedAt,
+			&i.LockedAt,
 		); err != nil {
 			return nil, err
 		}

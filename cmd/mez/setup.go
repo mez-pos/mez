@@ -110,6 +110,13 @@ func runSetup(args []string, stdout io.Writer) error {
 
 	ctx := context.Background()
 	log := logging.Bootstrap()
+	// Made here rather than by db.Open so that it is restricted before the
+	// database is in it (ADR-259): the venue's data is for the account
+	// running setup and the administrators, not every user on the computer.
+	if err := os.MkdirAll(cfg.DataDir, 0o750); err != nil {
+		return fmt.Errorf("creating data directory %s: %w", cfg.DataDir, err)
+	}
+	restrict(log, "data directory", cfg.DataDir)
 	database, err := db.Open(ctx, db.Options{Path: filepath.Join(cfg.DataDir, db.FileName), Log: log})
 	if err != nil {
 		return err
@@ -152,7 +159,7 @@ func parseSetupFlags(args []string, out io.Writer) (setupOptions, error) {
 	set.StringVar(&o.TaxRegistration, "tax-registration", "", "GSTIN or VAT number, required by those profiles")
 	set.StringVar(&o.TaxPricing, "tax-pricing", "", "inclusive or exclusive (default: the profile's own)")
 	set.StringVar(&o.OwnerName, "owner", "Owner", "the owner's name")
-	set.StringVar(&o.OwnerPIN, "owner-pin", "", "the owner's PIN, 4 to 8 digits (default: MEZ_OWNER_PIN, or one is drawn and printed)")
+	set.StringVar(&o.OwnerPIN, "owner-pin", "", "the owner's PIN, 6 to 8 digits (default: MEZ_OWNER_PIN, or one is drawn and printed)")
 	set.StringVar(&o.DeviceName, "device-name", "Counter 1", "what the first device will be called")
 	kind := set.String("device-kind", string(auth.KindTerminal), "terminal, kitchen or back_office")
 	set.BoolVar(&o.DemoMenu, "demo-menu", false, "make this a demo cafe: a menu priced in rupees, twelve tables and a person for each role (public PINs: never for a real venue)")
@@ -185,6 +192,9 @@ func setUp(ctx context.Context, database *db.DB, devices *auth.Devices, o setupO
 	res, params, err := checkSetup(o, now)
 	if err != nil {
 		return setupResult{}, err
+	}
+	if err := checkOwnerPIN(res.OwnerPIN); err != nil {
+		return setupResult{}, fmt.Errorf("setup: owner PIN: %w", err)
 	}
 	pinHash, err := auth.HashPIN(res.OwnerPIN)
 	if err != nil {
@@ -388,6 +398,17 @@ func writeSettings(ctx context.Context, q *gen.Queries, venueID int64, o setupOp
 		}
 	}
 	return nil
+}
+
+// checkOwnerPIN holds the owner's PIN to the rule the back office holds
+// every PIN to (ADR-260): the owner holds every permission, staff.manage
+// among them, so theirs is six to eight digits.
+func checkOwnerPIN(pin string) error {
+	owner := auth.PermissionSet{}
+	for _, p := range auth.Permissions() {
+		owner[p] = struct{}{}
+	}
+	return auth.CheckPINFor(pin, owner)
 }
 
 // drawPIN draws a PIN from crypto/rand. Every digit is equally likely, and

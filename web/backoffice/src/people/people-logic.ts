@@ -5,6 +5,9 @@
 
 import { ApiError } from "../../../shared/api";
 import type { Permission, Person, PersonInput, Role, RoleInput } from "../../../shared/api-types";
+import type { StaffState } from "../../../shared/ui/status";
+import { dateText } from "../devices/devices-logic";
+import { agoText } from "../printers/printers-logic";
 
 /** Each permission in words. A Record, so a permission added on the server fails the typecheck here until it has words. */
 export const permissionWords: Readonly<Record<Permission, string>> = {
@@ -63,11 +66,41 @@ export interface Problem {
   message: string;
 }
 
+/** What makes a role's PIN need six digits (ADR-260): the server's list, in internal/auth/pin.go. */
+const POWERFUL: readonly Permission[] = ["staff.manage", "device.manage", "settings.edit"];
+
+/** The shortest PIN a role allows: six for one that manages staff, devices or settings, else four. */
+export function minPinLength(perms: readonly Permission[]): number {
+  return perms.some((p) => POWERFUL.includes(p)) ? 6 : 4;
+}
+
+/** The hint under a PIN field, for a role's shortest PIN. */
+export function pinHint(min: number): string {
+  return min > 4 ? `${min} to 8 digits: this role manages staff, devices or settings.` : "4 to 8 digits.";
+}
+
 /** Why a PIN typed twice cannot be sent, or null. The server checks it again. */
-export function pinProblem(pin: string, again: string): Problem | null {
+export function pinProblem(pin: string, again: string, min = 4): Problem | null {
   if (!/^\d{4,8}$/.test(pin)) return { field: "pin", message: "A PIN is 4 to 8 digits." };
+  if (pin.length < min) return { field: "pin", message: `A PIN for a role that manages staff, devices or settings is ${min} to 8 digits.` };
   if (pin !== again) return { field: "again", message: "The two PINs are not the same." };
   return null;
+}
+
+/** The shortest PIN for a role, by its id; four for one not listed. */
+export function minPinLengthOf(roles: readonly Role[], roleId: number): number {
+  return minPinLength(roles.find((r) => r.id === roleId)?.permissions ?? []);
+}
+
+/**
+ * The hint when a person moves to a role that needs a longer PIN than the
+ * one they had, or null. Their PIN is kept as a hash, so how long it is
+ * cannot be known: they are asked to set a new one (ADR-260).
+ */
+export function roleChangePinHint(roles: readonly Role[], fromRoleId: number, toRoleId: number): string | null {
+  const to = minPinLengthOf(roles, toRoleId);
+  if (to <= minPinLengthOf(roles, fromRoleId)) return null;
+  return `This role needs a PIN of ${to} digits or more. Ask them to set a ${to}-digit PIN.`;
 }
 
 export interface StaffForm {
@@ -87,11 +120,11 @@ export function staffFormFrom(p: Person): StaffForm {
   return { name: p.name, roleId: p.role_id, pin: "", again: "" };
 }
 
-/** The request for a staff form; a PIN only when adding. */
-export function toPersonInput(form: StaffForm, adding: boolean): { input: PersonInput } | { problem: Problem } {
+/** The request for a staff form; a PIN only when adding, long enough for the role chosen. */
+export function toPersonInput(form: StaffForm, adding: boolean, roles: readonly Role[] = []): { input: PersonInput } | { problem: Problem } {
   const base: PersonInput = { name: form.name.trim(), role_id: form.roleId };
   if (!adding) return { input: base };
-  const problem = pinProblem(form.pin, form.again);
+  const problem = pinProblem(form.pin, form.again, minPinLengthOf(roles, form.roleId));
   return problem ? { problem } : { input: { ...base, pin: form.pin } };
 }
 
@@ -126,12 +159,12 @@ export function problemOf(err: unknown): Problem {
   return { field: null, message: "Something went wrong. Try again." };
 }
 
-/** The line under the title: "9 people", or "9 people · 2 deactivated". */
+/** The line under the title: "9 people", or "9 people Â· 2 deactivated". */
 export function peopleSummary(staff: readonly Pick<Person, "active">[]): string {
   const active = staff.filter((p) => p.active).length;
   const off = staff.length - active;
   const people = active === 1 ? "1 person" : `${active} people`;
-  return off > 0 ? `${people} · ${off} deactivated` : people;
+  return off > 0 ? `${people} Â· ${off} deactivated` : people;
 }
 
 /** The table's rows: the active staff in the server's order, then the deactivated when asked for. */
@@ -163,4 +196,24 @@ export function roleChanged(role: Role, form: RoleForm): boolean {
 /** The role to show: the one asked for if it still exists, else the first. */
 export function chosenRole(roles: readonly Role[], wanted: number | null): Role | null {
   return roles.find((r) => r.id === wanted) ?? roles[0] ?? null;
+}
+
+/** A person's chip: deactivated first, then a hard lock (ADR-260), else active. */
+export function staffStateOf(p: Pick<Person, "active" | "locked_at">): StaffState {
+  if (!p.active) return "off";
+  return p.locked_at ? "locked" : "active";
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Under a locked person's chip: why, and when. Null for someone not locked. */
+export function lockedNote(p: Pick<Person, "locked_at">, now: Date): string | null {
+  if (!p.locked_at) return null;
+  const when = now.getTime() - Date.parse(p.locked_at) >= DAY_MS ? `on ${dateText(p.locked_at)}` : agoText(p.locked_at, now);
+  return `Too many wrong PINs, ${when}`;
+}
+
+/** Whether a row offers Unlock: someone locked, and not you. The server checks you may reach them. */
+export function mayUnlock(p: Pick<Person, "id" | "locked_at">, me: string): boolean {
+  return p.locked_at !== null && p.id !== me;
 }

@@ -85,3 +85,44 @@ func TestKeyedMutexForgetsIdleKeys(t *testing.T) {
 		t.Errorf("%d keys held after every unlock, want 0", len(k.locks))
 	}
 }
+
+// TestPINLengthByRole: a role that manages staff, devices or settings needs
+// six digits; any other keeps four as the floor. Eight is the ceiling for
+// both, and a PIN of letters is a format error whatever the role.
+func TestPINLengthByRole(t *testing.T) {
+	set := func(perms ...Permission) PermissionSet {
+		out := PermissionSet{}
+		for _, p := range perms {
+			out[p] = struct{}{}
+		}
+		return out
+	}
+	tests := []struct {
+		name string
+		pin  string
+		role PermissionSet
+		want error
+	}{
+		{"a cashier with four", "2468", set(PermOrderOpen, PermPaymentTake), nil},
+		{"a role with nothing, four", "2468", set(), nil},
+		{"staff.manage with four", "2468", set(PermStaffManage), ErrPINTooShortForRole},
+		{"device.manage with five", "24680", set(PermDeviceManage), ErrPINTooShortForRole},
+		{"settings.edit with five", "24680", set(PermSettingsEdit, PermOrderOpen), ErrPINTooShortForRole},
+		{"staff.manage with six", "246802", set(PermStaffManage), nil},
+		{"everything with eight", "24680246", set(Permissions()...), nil},
+		{"everything with nine", "246802468", set(Permissions()...), ErrPINFormat},
+		{"a cashier with three", "246", set(PermOrderOpen), ErrPINFormat},
+		{"staff.manage with letters", "abcdef", set(PermStaffManage), ErrPINFormat},
+		{"reports and menu are not powerful", "2468", set(PermReportsView, PermMenuEdit, PermLineVoid), nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CheckPINFor(tt.pin, tt.role); !errors.Is(err, tt.want) || (tt.want == nil && err != nil) {
+				t.Errorf("CheckPINFor(%q) = %v, want %v", tt.pin, err, tt.want)
+			}
+		})
+	}
+	if MinPINLengthFor(set(PermStaffManage)) != MinPowerfulPINLength || MinPINLengthFor(set(PermOrderOpen)) != MinPINLength {
+		t.Error("MinPINLengthFor does not follow the role")
+	}
+}

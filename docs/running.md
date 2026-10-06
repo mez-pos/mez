@@ -83,6 +83,15 @@ the machine, with no sign-in:
 optional. Run it as often as needed; each code lasts ten minutes and pairs one
 device. It takes `-data-dir` as the server does, and works while the server runs.
 
+A PIN that keeps failing locks the person until someone who manages staff
+clears it on the **People** screen (ADR-260). If every such person is locked,
+`mez unlock` clears one at the machine, with no sign-in, by the id the People
+screen shows:
+
+```sh
+./mez unlock -staff stf_A1B2C3D4
+```
+
 `-demo-menu` makes the venue a demo cafe for trying it out: a menu, twelve
 tables in two areas, and a person for each role (a manager, a cashier, a
 waiter and a kitchen cook) with PINs that `setup` prints. Those PINs are public, so never

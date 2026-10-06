@@ -64,7 +64,7 @@ func main() {
 	// The subcommands are read before the flags: each takes its own, and
 	// the server's parser refuses a positional argument.
 	if len(os.Args) > 1 {
-		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "pair": runPair, "table-codes": runTableCodes}
+		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "pair": runPair, "table-codes": runTableCodes, "unlock": runUnlock}
 		if command, ok := commands[os.Args[1]]; ok {
 			if err := command(os.Args[2:], os.Stdout); err != nil {
 				if errors.Is(err, flag.ErrHelp) {

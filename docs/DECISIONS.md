@@ -8605,3 +8605,84 @@ and logs are hundreds of files, not millions. The binary's own folder (for
 example `C:\mez`) is not restricted: under `C:\` it inherits Authenticated
 Users: Modify, so another account could replace `mez.exe`; phase 12's
 installer, putting it under `C:\Program Files`, is the fix.
+
+## ADR-260 - A PIN that keeps failing locks until a manager clears it, and powerful roles have six digits
+2026-10 · Status: accepted. Between phases 11 and 12, after ADR-257.
+Context: a staff member's lock (five wrong PINs in a quarter hour) lifts
+by itself and never escalates, so it slows a guesser and no more: at five
+tries a quarter hour, 480 a day against a four-digit PIN, about ten days to
+have even odds of anyone's. Every role could have four
+digits, the owner's and a manager's too, though their PIN adds staff, pairs
+devices and changes the tax.
+Decision:
+  - **The third lockout in a day is a hard lock.** A lockout is the wrong
+    PIN after which the person is locked for the window, at a sign-in or at
+    a manager's override (both run `verify`). `HardLockAfter = 3` within
+    `HardLockWindow = 24h`, beside `LockoutPolicy` in `internal/auth`. At the
+    third, `staff.locked_at` is set with `locked_reason` "too many failed PIN
+    attempts", the person's sessions are ended, and both happen in the
+    transaction that records the lockout. It is logged at Warn with the
+    venue, device and staff id; each lockout before it is logged at Warn too.
+  - **Lockouts are counted in a small table, `staff_lockouts`**, not derived
+    from `sign_in_attempts`. Which wrong PIN completed a window depends on
+    the policy in force and the last success at that moment; deriving it
+    later would replay the sliding window over a day of attempts in SQL. The
+    row is written when `verify`, after recording a wrong PIN, finds the
+    person now locked; refusals during a lock are not compared, so each row
+    is a new lock. Migration 00051 adds `staff.locked_at` (TIMESTAMP with
+    the house GLOB check, not DATETIME: the conventions' type for a
+    `time.Time`), `staff.locked_reason` and the table. Queries:
+    `RecordStaffLockout`, `CountStaffLockoutsSince`, `LastStaffLockClear`,
+    `SetStaffHardLock`, `ClearStaffHardLock`, `ClearStaffLockouts`.
+  - **A hard-locked person is refused as a deactivated one is.** Their PIN
+    is still compared, so the answer takes as long as any other; the
+    attempt is recorded as `inactive_staff` and the client gets the generic
+    `invalid_pin`, whether the PIN was right or not. The person at the
+    keypad cannot tell a hard lock from a wrong PIN, and a guesser learns
+    nothing from a right guess. The sign-in tiles (`ActiveStaffForVenue`)
+    leave them out, as they leave out the deactivated, so the real person
+    sees their tile gone and asks a manager rather than typing a right PIN
+    into a refusal; anyone at the till learns only that this person is not
+    available now, which the window's lock already told them.
+  - **A manager clears it from People.** `people.ClearLock` needs
+    `staff.manage` (checked in the service as well as by the route) and the
+    person's role within what the one clearing holds (`mayReach`); nobody
+    clears their own. It clears `locked_at` and marks the person's lockouts
+    `cleared_at`, so they count no more, and the wrong PINs before the clear
+    no longer hold the window's lock either: the right PIN works at once.
+    Clearing someone not locked is no error, so a retry is harmless. `POST
+    /api/v1/people/staff/{id}/unlock` mounts it with the other people
+    routes' guards, and `GET /api/v1/people` carries `locked_at` (a time or
+    null) on each person. The screen shows a **Locked** chip with "Too many
+    wrong PINs, 12 min ago", and **Unlock** in the row's menu, confirmed.
+  - **A role that manages staff, devices or settings needs six digits.**
+    `auth.MinPINLengthFor` and `auth.CheckPINFor` hold the rule: six to
+    eight digits when the role holds `staff.manage`, `device.manage` or
+    `settings.edit`, four to eight otherwise. `people.AddStaff` and
+    `people.ResetPIN` check it against the target's role inside their
+    transaction (the Argon2 hash is still made before it); the refusal is
+    "A PIN for a role that manages staff, devices or settings is 6 to 8
+    digits." Setup holds the owner's PIN to it, and a drawn PIN was already
+    six digits, the demo manager's included. The dev script and
+    CONTRIBUTING use a six-digit owner PIN.
+  - **A move to such a role keeps the PIN.** A hash does not say how long a
+    PIN is, and nothing new is stored to say it, so `UpdateStaff` cannot
+    refuse. The Edit form says "This role needs a PIN of 6 digits or more.
+    Ask them to set a 6-digit PIN." when the new role needs a longer PIN
+    than the old one.
+Cost: the window slides, so after the first lock lifts, one wrong PIN can
+lock again: the hard lock can fall at the seventh wrong PIN, a quarter hour
+or so apart, which is harsh on someone who has truly forgotten theirs (they
+needed a manager for a new PIN anyway). A guesser who knows the rule and
+keeps to four tries a quarter hour never trips a lockout at all: 384 a day,
+which is why the powerful roles have six digits (three and a half years for
+even odds) while a cashier's four stays guessable in under two weeks. Anyone at a till can
+lock a named colleague out, the owner included, with seven wrong PINs; if
+every person who can manage staff is locked, no screen can clear it: `mez
+unlock -staff stf_...` at the machine clears one lock, on the same trust as
+`mez pair`, that being sat at the computer is the owner's. Who cleared a
+lock is not recorded, only when. A
+hard-locked attempt is recorded as `inactive_staff` (a new outcome would
+mean building `sign_in_attempts` again for its CHECK); the log says
+`hard_locked`. Managers and owners who already have four- or five-digit
+PINs keep them until they are next set.

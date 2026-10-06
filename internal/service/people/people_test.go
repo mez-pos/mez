@@ -2,6 +2,7 @@ package people
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"path/filepath"
 	"slices"
@@ -375,18 +376,18 @@ func TestAPINIsResetOnlyFromAbove(t *testing.T) {
 	ctx := context.Background()
 	owner := f.cafe.people["Priya"].id
 	meera := f.cafe.people["Meera"]
-	other, err := f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "Rohan", RoleID: f.cafe.roles["manager"], PIN: "5678"})
+	other, err := f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "Rohan", RoleID: f.cafe.roles["manager"], PIN: "567890"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := f.s.ResetPIN(ctx, f.cafe.id, meera.id, other, "1111"); !errors.Is(err, ErrPeerPIN) {
+	if err := f.s.ResetPIN(ctx, f.cafe.id, meera.id, other, "111111"); !errors.Is(err, ErrPeerPIN) {
 		t.Errorf("a manager resetting a manager's PIN: err = %v, want ErrPeerPIN", err)
 	}
-	if err := f.s.ResetPIN(ctx, f.cafe.id, owner, other, "2222"); err != nil {
+	if err := f.s.ResetPIN(ctx, f.cafe.id, owner, other, "222222"); err != nil {
 		t.Errorf("the owner resetting a manager's PIN: %v", err)
 	}
-	if err := f.s.ResetPIN(ctx, f.cafe.id, meera.id, meera.publicID, "3333"); err != nil {
+	if err := f.s.ResetPIN(ctx, f.cafe.id, meera.id, meera.publicID, "333333"); err != nil {
 		t.Errorf("a manager changing their own PIN: %v", err)
 	}
 	if err := f.s.ResetPIN(ctx, f.cafe.id, meera.id, f.cafe.people["Asha"].publicID, "4444"); err != nil {
@@ -422,5 +423,169 @@ func TestDeactivationEndsTheSessions(t *testing.T) {
 	}
 	if open != 0 {
 		t.Errorf("%d sessions open again after a deactivation and a return", open)
+	}
+}
+
+// TestPINLengthFollowsTheRole: a role that manages staff, devices or
+// settings needs six digits, at an add and at a reset; any other keeps four.
+func TestPINLengthFollowsTheRole(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	owner := f.cafe.people["Priya"].id
+	meera := f.cafe.people["Meera"]
+	const tooShort = "A PIN for a role that manages staff, devices or settings is 6 to 8 digits."
+
+	tests := []struct {
+		name    string
+		err     error
+		message string // empty: no refusal
+	}{
+		{"a manager with four", ignore(f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "Rohan", RoleID: f.cafe.roles["manager"], PIN: "1357"})), tooShort},
+		{"an owner with five", ignore(f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "Dev", RoleID: f.cafe.roles["owner"], PIN: "13579"})), tooShort},
+		{"a manager with six", ignore(f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "Rohan", RoleID: f.cafe.roles["manager"], PIN: "135791"})), ""},
+		{"a cashier with four", ignore(f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "Kiran", RoleID: f.cafe.roles["cashier"], PIN: "1357"})), ""},
+		{"a manager with nine", ignore(f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "Zoya", RoleID: f.cafe.roles["manager"], PIN: "135791357"})), "A PIN is 4 to 8 digits."},
+		{"a reset of a manager's to four", f.s.ResetPIN(ctx, f.cafe.id, owner, meera.publicID, "2468"), tooShort},
+		{"a manager's own to five", f.s.ResetPIN(ctx, f.cafe.id, meera.id, meera.publicID, "24680"), tooShort},
+		{"a reset of a manager's to six", f.s.ResetPIN(ctx, f.cafe.id, owner, meera.publicID, "246802"), ""},
+		{"a reset of a cashier's to four", f.s.ResetPIN(ctx, f.cafe.id, meera.id, f.cafe.people["Asha"].publicID, "2468"), ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var invalid *Invalid
+			switch {
+			case tt.message == "" && tt.err != nil:
+				t.Errorf("err = %v, want none", tt.err)
+			case tt.message != "" && (!errors.As(tt.err, &invalid) || invalid.Field != "pin" || invalid.Message != tt.message):
+				t.Errorf("err = %v, want %q on pin", tt.err, tt.message)
+			}
+		})
+	}
+}
+
+// hardLock locks a person as auth does at the third lockout, with the
+// lockouts that caused it.
+func hardLock(t *testing.T, f fixture, staffID int64, at time.Time) {
+	t.Helper()
+	ctx := context.Background()
+	err := f.d.WriteTx(ctx, func(q *gen.Queries) error {
+		for i := range auth.HardLockAfter {
+			lockout := gen.RecordStaffLockoutParams{VenueID: f.cafe.id, StaffID: staffID, At: at.Add(time.Duration(i-auth.HardLockAfter) * time.Minute)}
+			if err := q.RecordStaffLockout(ctx, lockout); err != nil {
+				return err
+			}
+		}
+		_, err := q.SetStaffHardLock(ctx, gen.SetStaffHardLockParams{LockedAt: sql.NullTime{Time: at, Valid: true}, Reason: auth.HardLockReason, ID: staffID})
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestClearingALock: a hard lock shows on the person, and only someone who
+// can manage staff, and reaches them, clears it; nobody clears their own.
+func TestClearingALock(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	owner := f.cafe.people["Priya"].id
+	meera := f.cafe.people["Meera"]
+	asha := f.cafe.people["Asha"]
+	kiran, err := f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "Kiran", RoleID: f.cafe.roles["cashier"], PIN: "1357"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	lockedAt := now.Add(-time.Minute)
+	hardLock(t, f, asha.id, lockedAt)
+	hardLock(t, f, meera.id, lockedAt)
+	if p := f.person(t, f.cafe, asha.publicID); p.LockedAt == nil || !p.LockedAt.Equal(lockedAt) || p.LockedAt.Location() != time.UTC {
+		t.Fatalf("a locked person = %+v, want locked at %v in UTC", p, lockedAt)
+	}
+	if p := f.person(t, f.cafe, kiran); p.LockedAt != nil {
+		t.Errorf("an unlocked person shows a lock: %+v", p)
+	}
+
+	refused := []struct {
+		name  string
+		err   error
+		is    error
+		field string
+	}{
+		{"a cashier clears a cashier", f.s.ClearLock(ctx, f.cafe.id, asha.id, kiran), ErrBeyondYou, ""},
+		{"a manager clears their own", f.s.ClearLock(ctx, f.cafe.id, meera.id, meera.publicID), nil, "locked"},
+		{"a manager clears the owner", f.s.ClearLock(ctx, f.cafe.id, meera.id, f.cafe.people["Priya"].publicID), ErrBeyondYou, ""},
+		{"another venue's person", f.s.ClearLock(ctx, f.cafe.id, owner, f.solo.people["Ravi"].publicID), ErrStaffNotFound, ""},
+	}
+	for _, tt := range refused {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.is != nil && !errors.Is(tt.err, tt.is) {
+				t.Errorf("err = %v, want %v", tt.err, tt.is)
+			}
+			if tt.is == nil && fieldOf(tt.err) != tt.field {
+				t.Errorf("err = %v, want a refusal on %q", tt.err, tt.field)
+			}
+		})
+	}
+	if p := f.person(t, f.cafe, meera.publicID); p.LockedAt == nil {
+		t.Error("a refused clear cleared Meera's lock")
+	}
+
+	if err := f.s.ClearLock(ctx, f.cafe.id, owner, meera.publicID); err != nil {
+		t.Fatalf("the owner clears a manager: %v", err)
+	}
+	if err := f.s.ClearLock(ctx, f.cafe.id, owner, meera.publicID); err != nil {
+		t.Errorf("clearing a lock already cleared: %v", err)
+	}
+	if p := f.person(t, f.cafe, meera.publicID); p.LockedAt != nil {
+		t.Errorf("after the clear: %+v", p)
+	}
+	var left int
+	if err := f.d.Writer().QueryRowContext(ctx, `SELECT COUNT(*) FROM staff_lockouts WHERE staff_id = ? AND cleared_at IS NULL`, meera.id).Scan(&left); err != nil || left != 0 {
+		t.Errorf("%d lockouts still count after the clear (%v)", left, err)
+	}
+}
+
+// TestAClearedPersonSignsInAgain runs the whole of it through auth: three
+// lockouts hard-lock Asha, the right PIN is refused, a manager clears the
+// lock, and the right PIN signs her in at once, inside the window of the
+// wrong PINs that caused it.
+func TestAClearedPersonSignsInAgain(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	asha := f.cafe.people["Asha"]
+	if _, err := f.d.Writer().ExecContext(ctx, `INSERT INTO devices (id, public_id, venue_id, name, kind, created_at)
+		VALUES (9, 'dev_PEOPLE03', ?, 'Till', 'terminal', '2026-10-01 05:00:00+00:00')`, f.cafe.id); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.ResetPIN(ctx, f.cafe.id, f.cafe.people["Meera"].id, asha.publicID, "2468"); err != nil {
+		t.Fatal(err)
+	}
+	// The wrong PINs end a few seconds before now, when the clear is.
+	at := now.Add(-time.Duration(auth.HardLockAfter-1)*auth.DefaultStaffLockout.Window - time.Minute)
+	a, err := auth.NewStaffAuth(auth.StaffOptions{DB: f.d, Now: func() time.Time { return at }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	till := auth.Device{ID: 9, VenueID: f.cafe.id, Kind: auth.KindTerminal}
+	for lockout := range auth.HardLockAfter {
+		for range auth.DefaultStaffLockout.MaxFailures {
+			at = at.Add(time.Second)
+			if _, err := a.SignIn(ctx, till, asha.publicID, "0000"); err != auth.ErrInvalidPIN {
+				t.Fatalf("lockout %d: err = %v", lockout+1, err)
+			}
+		}
+		if lockout < auth.HardLockAfter-1 {
+			at = at.Add(auth.DefaultStaffLockout.Window)
+		}
+	}
+	at = now.Add(time.Second)
+	if _, err := a.SignIn(ctx, till, asha.publicID, "2468"); err == nil {
+		t.Fatal("a hard-locked person signed in")
+	}
+	if err := f.s.ClearLock(ctx, f.cafe.id, f.cafe.people["Meera"].id, asha.publicID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.SignIn(ctx, till, asha.publicID, "2468"); err != nil {
+		t.Errorf("after the clear, the right PIN: %v", err)
 	}
 }

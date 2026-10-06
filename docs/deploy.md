@@ -89,7 +89,7 @@ mez setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata \
 | `-name` | required | The venue's name, as staff and guests see it |
 | `-legal-name` | the name | The registered name printed on invoices |
 | `-owner` | `Owner` | The owner's name |
-| `-owner-pin` | `MEZ_OWNER_PIN`, else drawn and printed | The owner's PIN, 4 to 8 digits; prefer the environment variable, which the shell does not remember |
+| `-owner-pin` | `MEZ_OWNER_PIN`, else drawn and printed | The owner's PIN, 6 to 8 digits; prefer the environment variable, which the shell does not remember |
 | `-timezone` | required | An IANA name such as `Asia/Kolkata` or `Europe/London`; the machine's own zone is refused |
 | `-currency` | `INR` | ISO 4217: `INR`, `GBP`, `USD`, ... It cannot be changed later |
 | `-fy-start-month` | `4` | The month the financial year starts: 4 in India, 1 in most places |

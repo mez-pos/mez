@@ -83,7 +83,7 @@ To do it by hand, create a throwaway venue with a sample menu, pairing the
 back office first, then start the server:
 
 ```sh
-go run ./cmd/mez setup -data-dir ./data -name "Dev Cafe" -owner Dev -owner-pin 1234 \
+go run ./cmd/mez setup -data-dir ./data -name "Dev Cafe" -owner Dev -owner-pin 246813 \
    -timezone Asia/Kolkata -device-kind back_office -device-name "Dev office" -demo-menu
 MEZ_DATA_DIR=./data make run
 ```
@@ -102,7 +102,7 @@ npm run dev -w guest        # http://localhost:5175/order/
 ```
 
 Enter the pairing code `setup` printed in the back office, sign in with PIN
-`1234`, and pair a till from **Devices**. [`web/README.md`](web/README.md) has
+`246813`, and pair a till from **Devices**. [`web/README.md`](web/README.md) has
 more on the three apps.
 
 A receipt printer is not needed: `./mez --test-print <ip> -save test.bin`

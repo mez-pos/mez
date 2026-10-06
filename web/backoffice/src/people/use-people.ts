@@ -33,6 +33,7 @@ export function usePeople() {
       const body: PinRequest = { pin };
       return after(store.api.put<StaffAddedResponse>(`${staff(id)}/pin`, body)).then(() => undefined);
     },
+    unlock: (id: string) => after(store.api.post<StaffAddedResponse>(`${staff(id)}/unlock`)).then(() => undefined),
     addRole: (input: RoleInput) => after(store.api.post<RoleEditResponse>("/api/v1/people/roles", input)).then((r) => r.id),
     updateRole: (id: number, input: RoleInput) => after(store.api.put<RoleEditResponse>(`/api/v1/people/roles/${id}`, input)).then(() => undefined),
     deleteRole: (id: number) => after(store.api.del<RoleEditResponse>(`/api/v1/people/roles/${id}`)).then(() => undefined),

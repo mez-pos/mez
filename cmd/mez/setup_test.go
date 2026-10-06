@@ -188,6 +188,7 @@ func TestSetupRefusals(t *testing.T) {
 		{"a first device that is a guest", []string{"-device-kind", "guest"}, "cannot be a"},
 		{"a PIN with letters in it", []string{"-owner-pin", "12a4"}, "PIN"},
 		{"a PIN too short", []string{"-owner-pin", "123"}, "PIN"},
+		{"an owner PIN of four digits", []string{"-owner-pin", "1234"}, "6 to 8 digits"},
 		{"an argument that is not a flag", []string{"today"}, "unexpected argument"},
 		{"the rupee demo menu in pounds", []string{"-currency", "GBP", "-demo-menu"}, "demo menu is priced in INR"},
 	}

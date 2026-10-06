@@ -25,8 +25,8 @@ beside it the roles.
   |---|---|
   | Person | initials in a round mark, the name, "(you)" after your own, and "Since 2026-09-12" under it |
   | Role | the role's name |
-  | State | a chip: **Active**, or **Deactivated** |
-  | | **...**: Edit, New PIN, Deactivate, or Bring back for someone deactivated |
+  | State | a chip: **Active**, **Locked** (and under it "Too many wrong PINs, 12 min ago"), or **Deactivated** |
+  | | **...**: Unlock for someone locked, Edit, New PIN, Deactivate, or Bring back for someone deactivated |
 
   A row picks its person, and the panel beside shows their role. "Show the 2
   deactivated" under the table adds them. Your own row has no Deactivate.
@@ -53,13 +53,20 @@ beside it the roles.
 **The forms** (modals):
 
 - **Add staff, Edit:** Name; Role (a select); on Add, a **PIN**, 4 to 8
-  digits, and **The PIN again**.
-- **New PIN:** the PIN twice, and "They will be signed out of every terminal and
-  back office now."
+  digits, or 6 to 8 for a role that manages staff, devices or settings, and
+  **The PIN again**. On Edit, moving someone to a role that needs the longer
+  PIN says "This role needs a PIN of 6 digits or more. Ask them to set a
+  6-digit PIN."
+- **New PIN:** the PIN twice, with the length the person's role needs, and
+  "They will be signed out of every terminal and back office now."
 - **Add a role:** Name, and the permissions as on the panel.
 - **Deactivate** asks first: "They leave the sign-in screen and are signed
   out now. Their name stays on everything they did. You can bring them
   back."
+- **Unlock** asks first: "Their PIN was typed wrong too many times, so they
+  were signed out and cannot sign in. Unlocked, they are back on the sign-in
+  screen with the PIN they have. If it was not them typing, give them a new
+  PIN as well."
 
 ## What you may give is what you hold (ADR-115)
 
@@ -70,6 +77,19 @@ beside it the roles.
 - A role you could not give is listed for a person as "Waiter (not yours
   to give)", and cannot be chosen.
 - The screen mirrors the server's rule; the server decides.
+
+## A PIN that keeps failing (ADR-260)
+
+Five wrong PINs in a quarter hour lock a person for the rest of it. The third
+such lockout in a day, at sign-in or at a manager's override, locks them until
+someone who can manage staff unlocks them here. Locked, they leave the
+sign-in tiles and are signed out everywhere; a PIN typed for them anyway is
+refused as a wrong one, whether it is right or not, so the person at the
+keypad learns nothing from it. Their row says **Locked**, why and when, and
+its menu offers **Unlock**: "Kabir is unlocked." Nobody unlocks themselves.
+Unlocked, the right PIN works at once; if the wrong PINs were not theirs,
+give them a new one too. A role that manages staff, devices or settings
+needs a PIN of six digits or more.
 
 ## Data
 
@@ -91,6 +111,7 @@ beside it the roles.
 | Add staff | Adds the person | "Added Kabir." They are on the sign-in screen at once |
 | New PIN | Replaces it | "Kabir has a new PIN and is signed out." |
 | Deactivate, Bring back | | "Kabir is deactivated." |
+| Unlock | Clears a hard lock | "Kabir is unlocked." They are on the sign-in screen again |
 
 ## States
 
@@ -98,7 +119,9 @@ beside it the roles.
 - **Error:** the server's words, with **Try again**.
 - **Nobody:** "Nobody is on the staff list."
 - **Refused:** the server's words under the field or over the form: a role
-  name taken; a PIN not 4 to 8 digits; "That reaches permissions you don't
+  name taken; a PIN not 4 to 8 digits; "A PIN for a role that manages
+  staff, devices or settings is 6 to 8 digits."; "You can't clear your own
+  lock"; "That reaches permissions you don't
   have"; "Nobody would be left who can manage staff"; a role people still
   hold.
 - **A role only deactivated people hold:** says so. It cannot be deleted,

@@ -23,7 +23,7 @@ if [ ! -f "$DATA/mez.db" ]; then
 	# Setup creates the database file before it checks anything, so a setup
 	# that fails would leave a file with no venue, which the next run would
 	# take for a finished one.
-	if ! "$BIN" setup -data-dir "$DATA" -name "Dev Cafe" -owner Priya -owner-pin 1234 \
+	if ! "$BIN" setup -data-dir "$DATA" -name "Dev Cafe" -owner Priya -owner-pin 246813 \
 		-timezone Asia/Kolkata -tax-profile gst_in -tax-registration 29ABCDE1234F1Z5 \
 		-demo-menu; then
 		rm -f "$DATA"/mez.db "$DATA"/mez.db-shm "$DATA"/mez.db-wal
@@ -93,7 +93,7 @@ echo ""
 echo "  server       $ORIGIN"
 echo "  terminal     http://localhost:5173   (kitchen display: /kitchen)"
 echo "  back office  http://localhost:5174/backoffice/"
-echo "  sign in as Priya, PIN 1234; the demo staff and their PINs are above on a first run"
+echo "  sign in as Priya, PIN 246813; the demo staff and their PINs are above on a first run"
 echo ""
 
 wait

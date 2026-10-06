@@ -18,9 +18,12 @@
   credential**: a past diner with the URL in their history can, through the
   relay, order to the kitchen on whoever has the table now, read their bill
   and start or let go of a charge; the limit of twenty orders in ten minutes
-  bounds it and does not prevent it. **The PIN lockout never escalates**:
-  five tries a quarter hour, for ever, is 480 a day against a four-digit
-  PIN. **Tips are unbounded** and need no authorisation, and the pool pays
+  bounds it and does not prevent it. (The PIN lockout, also left here, is
+  fixed by ADR-260: a third lockout in a day locks until a manager clears
+  it, and powerful roles have six digits; what remains: a colleague can be
+  locked out on purpose with seven wrong PINs, and a guesser pacing four
+  tries a quarter hour never trips a lockout, which the six digits answer.)
+  **Tips are unbounded** and need no authorisation, and the pool pays
   them out. (The printer address and the Windows data directory, also left
   here by ADR-257, are fixed by ADR-259; what remains: a printer saved with
   a hostname or public address before ADR-259 keeps it until next edited,

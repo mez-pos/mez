@@ -24,7 +24,9 @@ type Querier interface {
 	ActiveModifiers(ctx context.Context, venueID int64) ([]ActiveModifiersRow, error)
 	//
 	// The index on (venue_id, active) is what this reads down, which is why it
-	// exists. The role's name rides along for the sign-in screen.
+	// exists. The role's name rides along for the sign-in screen. Someone
+	// hard-locked is left out, as someone deactivated is (ADR-260): their tile
+	// would only take PINs it refuses.
 	ActiveStaffForVenue(ctx context.Context, venueID int64) ([]ActiveStaffForVenueRow, error)
 	ActiveStationCount(ctx context.Context, venueID int64) (int64, error)
 	ActiveStations(ctx context.Context, venueID int64) ([]ActiveStationsRow, error)
@@ -42,7 +44,8 @@ type Querier interface {
 	AuditCounts(ctx context.Context, arg AuditCountsParams) ([]AuditCountsRow, error)
 	// The audit trail (phase 10, Task 4c, ADR-117): corrections read straight
 	// from the order events. staff_id 0 is anyone; otherwise it matches the
-	// person who did it or the person who authorised it.
+	// person who did it or the person who authorised it. A payment is one only
+	// when a manager let its tip through over the venue's ceiling (ADR-261).
 	//
 	// Newest first, a page at a time: before_id is the last id of the page
 	// before, or 0 for the first page.
@@ -73,6 +76,8 @@ type Querier interface {
 	ClearItemRecipe(ctx context.Context, arg ClearItemRecipeParams) error
 	ClearModifierRecipe(ctx context.Context, arg ClearModifierRecipeParams) error
 	ClearReceiptPrinter(ctx context.Context, arg ClearReceiptPrinterParams) error
+	ClearStaffHardLock(ctx context.Context, arg ClearStaffHardLockParams) (int64, error)
+	ClearStaffLockouts(ctx context.Context, arg ClearStaffLockoutsParams) error
 	ClearTable(ctx context.Context, arg ClearTableParams) (int64, error)
 	CloseShift(ctx context.Context, arg CloseShiftParams) (int64, error)
 	// The till's past bills: the latest closed, newest first (Task 6b).
@@ -91,6 +96,9 @@ type Querier interface {
 	// one, so the two cannot be mistaken for each other on a sticker.
 	CodeIsATables(ctx context.Context, code string) (int64, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
+	//
+	// The lockouts of a person since a moment that no manager has cleared.
+	CountStaffLockoutsSince(ctx context.Context, arg CountStaffLockoutsSinceParams) (int64, error)
 	// The rounds at a table waiting to be paid, placed since a moment ago. One
 	// nobody paid in that time has been walked away from, and does not count.
 	CountUnpaidGuestRounds(ctx context.Context, arg CountUnpaidGuestRoundsParams) (int64, error)
@@ -271,6 +279,10 @@ type Querier interface {
 	ItemsToCountAtClose(ctx context.Context, venueID int64) ([]ItemsToCountAtCloseRow, error)
 	// When a payment through a provider last landed on a bill at a venue.
 	LastPaidGatewayCharge(ctx context.Context, arg LastPaidGatewayChargeParams) (sql.NullTime, error)
+	//
+	// When a manager last cleared a person's lock. The wrong PINs before it no
+	// longer count toward a lockout.
+	LastStaffLockClear(ctx context.Context, staffID int64) (sql.NullTime, error)
 	// The shift's report as it now stands: the last correction, or the original.
 	LatestZReportForShift(ctx context.Context, shiftID int64) (ZReport, error)
 	// Marks an open charge on a bill as given up, once: it is no longer a claim
@@ -406,6 +418,10 @@ type Querier interface {
 	RecentStaffVerdicts(ctx context.Context, arg RecentStaffVerdictsParams) ([]RecentStaffVerdictsRow, error)
 	// Staff sessions and sign-in attempts. internal/auth is the only caller.
 	RecordSignInAttempt(ctx context.Context, arg RecordSignInAttemptParams) error
+	// The hard lock (ADR-260). A lockout is recorded at the wrong PIN that locks
+	// a person for the window; the third in a day locks them until someone who
+	// can manage staff clears it.
+	RecordStaffLockout(ctx context.Context, arg RecordStaffLockoutParams) error
 	// Only an unredeemed code changes, so two redeemers cannot both succeed.
 	RedeemPairingCode(ctx context.Context, arg RedeemPairingCodeParams) (int64, error)
 	RenameArea(ctx context.Context, arg RenameAreaParams) (int64, error)
@@ -469,6 +485,7 @@ type Querier interface {
 	// two columns that change.
 	SetSetting(ctx context.Context, arg SetSettingParams) error
 	SetStaffActive(ctx context.Context, arg SetStaffActiveParams) (int64, error)
+	SetStaffHardLock(ctx context.Context, arg SetStaffHardLockParams) (int64, error)
 	SetStaffPIN(ctx context.Context, arg SetStaffPINParams) (int64, error)
 	SetStationActive(ctx context.Context, arg SetStationActiveParams) (int64, error)
 	SetStationPrinter(ctx context.Context, arg SetStationPrinterParams) (int64, error)

@@ -2019,6 +2019,7 @@ export interface Person {
   role_name: string;
   active: boolean;
   since: string;
+  locked_at: string | null;
 }
 
 export interface Role {

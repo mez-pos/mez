@@ -5,7 +5,7 @@
 // Left out of the design: the roster and the Shift column (there are no
 // timesheets), "on shift now", a phone number, and the PIN column: a PIN is
 // kept as a hash and none of it can be shown. A new PIN is set from a row's
-// menu.
+// menu, and so is Unlock for someone too many wrong PINs locked (ADR-260).
 
 import { UserPlusIcon } from "lucide-react";
 import { useState } from "react";
@@ -14,11 +14,12 @@ import { initials, roleText } from "../../../shared/auth/format";
 import { useAuth } from "../../../shared/auth/use-auth";
 import { Button, Card, Confirm, EmptyState, InboxIcon, StatusChip, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useClock } from "../../../shared/use-clock";
 import { CheckField } from "../FormFields";
 import { RowMenu } from "../RowMenu";
 import { usePermissions } from "../shell/BackOfficeShell";
 import { PinModal, RoleModal, StaffModal } from "./PeopleForms";
-import { chosenRole, peopleSummary, problemOf, staffRows } from "./people-logic";
+import { chosenRole, lockedNote, mayUnlock, peopleSummary, problemOf, staffRows, staffStateOf } from "./people-logic";
 import { RolePanel } from "./RolePanel";
 import { usePeople, type PeopleApi } from "./use-people";
 
@@ -27,6 +28,7 @@ type Open =
   | { kind: "edit-staff"; person: Person }
   | { kind: "pin"; person: Person }
   | { kind: "deactivate"; person: Person }
+  | { kind: "unlock"; person: Person }
   | { kind: "add-role" };
 
 export function PeopleScreen() {
@@ -40,6 +42,7 @@ export function PeopleScreen() {
   const data = api.list.data;
   const role = data ? chosenRole(data.roles, wanted) : null;
   const off = data ? data.staff.filter((p) => !p.active).length : 0;
+  const now = new Date(useClock(30_000));
 
   return (
     <div className="flex flex-col gap-4">
@@ -71,7 +74,15 @@ export function PeopleScreen() {
       {data && (
         <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="flex min-w-0 flex-col gap-3">
-            <StaffTable staff={staffRows(data.staff, showOff)} roleId={role?.id ?? null} api={api} onRole={setWanted} onOpen={setOpen} onProblem={setProblem} />
+            <StaffTable
+              staff={staffRows(data.staff, showOff)}
+              roleId={role?.id ?? null}
+              now={now}
+              api={api}
+              onRole={setWanted}
+              onOpen={setOpen}
+              onProblem={setProblem}
+            />
             {off > 0 && (
               <div className="max-w-md">
                 <CheckField label={`Show the ${off} deactivated`} checked={showOff} onChange={setShowOff} />
@@ -107,6 +118,8 @@ interface StaffTableProps {
   staff: readonly Person[];
   /** The role shown beside the table: its people are marked. */
   roleId: number | null;
+  /** For how long ago a lock fell. */
+  now: Date;
   api: PeopleApi;
   onRole: (id: number) => void;
   onOpen: (o: Open) => void;
@@ -115,7 +128,7 @@ interface StaffTableProps {
 
 const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
 
-function StaffTable({ staff, roleId, api, onRole, onOpen, onProblem }: StaffTableProps) {
+function StaffTable({ staff, roleId, now, api, onRole, onOpen, onProblem }: StaffTableProps) {
   const status = useAuth();
   const me = status.kind === "signed_in" ? status.staff.id : "";
   const bringBack = (p: Person) => {
@@ -153,6 +166,7 @@ function StaffTable({ staff, roleId, api, onRole, onOpen, onProblem }: StaffTabl
           <tbody>
             {staff.map((p, row) => {
               const shown = p.role_id === roleId;
+              const lock = lockedNote(p, now);
               return (
                 <tr key={p.id} className={cx("border-b border-line-soft last:border-b-0", shown && "bg-accent-tint")}>
                   <td className="py-1">
@@ -180,7 +194,8 @@ function StaffTable({ staff, roleId, api, onRole, onOpen, onProblem }: StaffTabl
                   </td>
                   <td className="py-1 text-fg-2">{roleText(p.role_name)}</td>
                   <td className="py-1">
-                    <StatusChip status={{ kind: "staff", status: p.active ? "active" : "off" }} />
+                    <StatusChip status={{ kind: "staff", status: staffStateOf(p) }} />
+                    {lock && <span className="mt-1 block text-sm text-fg-muted">{lock}</span>}
                   </td>
                   <td className="py-1">
                     <span className="flex justify-end">
@@ -189,6 +204,7 @@ function StaffTable({ staff, roleId, api, onRole, onOpen, onProblem }: StaffTabl
                         disabled={false}
                         up={row >= 3 && row >= staff.length - 2}
                         actions={[
+                          ...(mayUnlock(p, me) ? [{ label: "Unlock", run: () => onOpen({ kind: "unlock", person: p }) }] : []),
                           { label: "Edit", run: () => onOpen({ kind: "edit-staff", person: p }) },
                           ...(p.active ? [{ label: "New PIN", run: () => onOpen({ kind: "pin", person: p }) }] : []),
                           ...(p.active && p.id !== me ? [{ label: "Deactivate", run: () => onOpen({ kind: "deactivate", person: p }) }] : []),
@@ -250,6 +266,7 @@ function Opened({ open, roles, api, onRole, onClose }: OpenedProps) {
       return (
         <PinModal
           person={open.person}
+          roles={roles}
           onSave={async (pin) => {
             await api.resetPIN(open.person.id, pin);
             toast(`${open.person.name} has a new PIN and is signed out.`, { tone: "success" });
@@ -259,6 +276,8 @@ function Opened({ open, roles, api, onRole, onClose }: OpenedProps) {
       );
     case "deactivate":
       return <DeactivateConfirm person={open.person} api={api} onClose={onClose} />;
+    case "unlock":
+      return <UnlockConfirm person={open.person} api={api} onClose={onClose} />;
     case "add-role":
       return (
         <RoleModal
@@ -294,6 +313,38 @@ function DeactivateConfirm({ person, api, onClose }: { person: Person; api: Peop
       }}
     >
       <p className="text-base">They leave the sign-in screen and are signed out now. Their name stays on everything they did. You can bring them back.</p>
+      {problem && (
+        <p role="alert" className="mt-3 text-base text-danger">
+          {problem}
+        </p>
+      )}
+    </Confirm>
+  );
+}
+
+function UnlockConfirm({ person, api, onClose }: { person: Person; api: PeopleApi; onClose: () => void }) {
+  const toast = useToast();
+  const [problem, setProblem] = useState<string | null>(null);
+  return (
+    <Confirm
+      open
+      title={`Unlock ${person.name}?`}
+      confirmLabel="Unlock"
+      onClose={onClose}
+      onConfirm={() => {
+        api
+          .unlock(person.id)
+          .then(() => {
+            toast(`${person.name} is unlocked.`, { tone: "success" });
+            onClose();
+          })
+          .catch((err: unknown) => setProblem(problemOf(err).message));
+      }}
+    >
+      <p className="text-base">
+        Their PIN was typed wrong too many times, so they were signed out and cannot sign in. Unlocked, they are back on the sign-in screen with the PIN they
+        have. If it was not them typing, give them a new PIN as well.
+      </p>
       {problem && (
         <p role="alert" className="mt-3 text-base text-danger">
           {problem}

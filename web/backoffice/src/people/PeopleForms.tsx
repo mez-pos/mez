@@ -8,11 +8,14 @@ import { Field, inputClass } from "../FormFields";
 import { FormModal } from "../FormModal";
 import {
   mayGive,
+  minPinLengthOf,
   newStaffForm,
   permissionGroups,
   permissionWords,
+  pinHint,
   pinProblem,
   problemOf,
+  roleChangePinHint,
   roleFormFrom,
   staffFormFrom,
   toggled,
@@ -69,18 +72,21 @@ function Frame({
 function PinFields({
   pin,
   again,
+  min,
   onChange,
   on,
 }: {
   pin: string;
   again: string;
+  /** The shortest PIN the role allows. */
+  min: number;
   onChange: (p: { pin?: string; again?: string }) => void;
   on: (f: string) => string | null;
 }) {
   const props = { type: "password", inputMode: "numeric" as const, autoComplete: "new-password", maxLength: 8, className: `${inputClass} font-mono` };
   return (
     <>
-      <Field label="PIN" hint="4 to 8 digits." error={on("pin")}>
+      <Field label="PIN" hint={pinHint(min)} error={on("pin")}>
         {(id) => <input id={id} {...props} value={pin} onChange={(e) => onChange({ pin: e.target.value })} />}
       </Field>
       <Field label="The PIN again" error={on("again")}>
@@ -106,7 +112,7 @@ export function StaffModal({ person, roles, held, onSave, onClose }: StaffModalP
     s.setProblem(null);
   };
   const submit = () => {
-    const built = toPersonInput(form, person === null);
+    const built = toPersonInput(form, person === null, roles);
     if ("problem" in built) {
       s.setProblem(built.problem);
       return;
@@ -134,16 +140,35 @@ export function StaffModal({ person, roles, held, onSave, onClose }: StaffModalP
           </select>
         )}
       </Field>
-      {!person && <PinFields pin={form.pin} again={form.again} onChange={set} on={s.on} />}
+      {person && <RoleChangeHint hint={roleChangePinHint(roles, person.role_id, form.roleId)} />}
+      {!person && <PinFields pin={form.pin} again={form.again} min={minPinLengthOf(roles, form.roleId)} onChange={set} on={s.on} />}
     </Frame>
   );
 }
 
-export function PinModal({ person, onSave, onClose }: { person: Person; onSave: (pin: string) => Promise<void>; onClose: () => void }) {
+/** Under the role, when the move needs a longer PIN than the person may have (ADR-260). */
+function RoleChangeHint({ hint }: { hint: string | null }) {
+  if (!hint) return null;
+  return (
+    <p role="status" className="text-base text-fg-2">
+      {hint}
+    </p>
+  );
+}
+
+interface PinModalProps {
+  person: Person;
+  roles: readonly Role[];
+  onSave: (pin: string) => Promise<void>;
+  onClose: () => void;
+}
+
+export function PinModal({ person, roles, onSave, onClose }: PinModalProps) {
   const [pins, setPins] = useState({ pin: "", again: "" });
   const s = useSave(onClose);
+  const min = minPinLengthOf(roles, person.role_id);
   const submit = () => {
-    const problem = pinProblem(pins.pin, pins.again);
+    const problem = pinProblem(pins.pin, pins.again, min);
     if (problem) {
       s.setProblem(problem);
       return;
@@ -156,6 +181,7 @@ export function PinModal({ person, onSave, onClose }: { person: Person; onSave: 
       <PinFields
         pin={pins.pin}
         again={pins.again}
+        min={min}
         onChange={(p) => {
           setPins((x) => ({ ...x, ...p }));
           s.setProblem(null);

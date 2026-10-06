@@ -18,6 +18,15 @@ const (
 	MaxPINLength = 8
 )
 
+// MinPowerfulPINLength is the shortest PIN for a role that manages staff,
+// devices or settings (ADR-260). Whoever holds one can add a person, pair a
+// device or change the tax, so their PIN is worth a hundred times the
+// guessing a cashier's is: with the lockouts, months rather than days.
+const MinPowerfulPINLength = 6
+
+// powerfulPermissions are what make a role's PIN need MinPowerfulPINLength.
+var powerfulPermissions = []Permission{PermStaffManage, PermDeviceManage, PermSettingsEdit}
+
 // argonParams are Argon2id's cost settings. They are written into every hash,
 // so raising them later affects new PINs only and old ones still verify.
 type argonParams struct {
@@ -41,6 +50,11 @@ var (
 	// ErrPINFormat means a PIN that is not 4 to 8 digits.
 	ErrPINFormat = fmt.Errorf("a PIN is %d to %d digits", MinPINLength, MaxPINLength)
 
+	// ErrPINTooShortForRole means a PIN of the right form that is too short
+	// for a role that manages staff, devices or settings.
+	ErrPINTooShortForRole = fmt.Errorf("a PIN for a role that manages staff, devices or settings is %d to %d digits",
+		MinPowerfulPINLength, MaxPINLength)
+
 	// errHashFormat means a stored hash this package cannot read.
 	errHashFormat = errors.New("auth: stored PIN hash is not an argon2id hash")
 )
@@ -54,6 +68,30 @@ func checkPIN(pin string) error {
 		if pin[i] < '0' || pin[i] > '9' {
 			return ErrPINFormat
 		}
+	}
+	return nil
+}
+
+// MinPINLengthFor is the shortest PIN a role's permissions allow.
+func MinPINLengthFor(role PermissionSet) int {
+	for _, p := range powerfulPermissions {
+		if role.Has(p) {
+			return MinPowerfulPINLength
+		}
+	}
+	return MinPINLength
+}
+
+// CheckPINFor checks a PIN for someone holding a role: its form first
+// (ErrPINFormat), then its length against what the role can do
+// (ErrPINTooShortForRole). A hash says nothing of a PIN's length, so this
+// is checked where a PIN is set and nowhere else.
+func CheckPINFor(pin string, role PermissionSet) error {
+	if err := checkPIN(pin); err != nil {
+		return err
+	}
+	if len(pin) < MinPINLengthFor(role) {
+		return ErrPINTooShortForRole
 	}
 	return nil
 }

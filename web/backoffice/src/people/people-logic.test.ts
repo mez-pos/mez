@@ -4,7 +4,13 @@ import type { Permission, Person, Role } from "../../../shared/api-types";
 import {
   appliesText,
   chosenRole,
+  lockedNote,
   mayGive,
+  mayUnlock,
+  minPinLength,
+  pinHint,
+  roleChangePinHint,
+  staffStateOf,
   peopleSummary,
   roleChanged,
   staffRows,
@@ -68,7 +74,7 @@ describe("the staff form", () => {
     expect(toPersonInput({ ...form, again: "" }, true)).toMatchObject({ problem: { field: "again" } });
   });
   it("reads a person in", () => {
-    expect(staffFormFrom({ id: "stf_1", name: "Asha", role_id: 3, role_name: "cashier", active: true, since: "x" })).toEqual({
+    expect(staffFormFrom({ id: "stf_1", name: "Asha", role_id: 3, role_name: "cashier", active: true, since: "x", locked_at: null })).toEqual({
       name: "Asha",
       roleId: 3,
       pin: "",
@@ -111,6 +117,7 @@ describe("the staff and roles screen", () => {
     role_name: "",
     active,
     since: "2026-09-01T00:00:00Z",
+    locked_at: null,
   });
   const staff = [person("a", "Priya", 1), person("b", "Kabir", 2), person("c", "Rohan", 2), person("d", "Old Sam", 2, false)];
 
@@ -149,5 +156,62 @@ describe("the staff and roles screen", () => {
     expect(chosenRole(roles, 99)?.name).toBe("Owner");
     expect(chosenRole(roles, null)?.name).toBe("Owner");
     expect(chosenRole([], 1)).toBeNull();
+  });
+});
+
+describe("a PIN long enough for the role (ADR-260)", () => {
+  const short = "A PIN for a role that manages staff, devices or settings is 6 to 8 digits.";
+  it("wants six digits for a role that manages staff, devices or settings", () => {
+    expect(minPinLength(manager)).toBe(6);
+    expect(minPinLength(["device.manage"])).toBe(6);
+    expect(minPinLength(["settings.edit", "order.open"])).toBe(6);
+    expect(minPinLength(["order.open", "payment.take", "reports.view", "menu.edit"])).toBe(4);
+    expect(minPinLength([])).toBe(4);
+  });
+  it("words the shorter PIN apart from one of the wrong form", () => {
+    expect(pinProblem("1357", "1357", 6)).toEqual({ field: "pin", message: short });
+    expect(pinProblem("135791", "135791", 6)).toBeNull();
+    expect(pinProblem("12a4", "12a4", 6)).toEqual({ field: "pin", message: "A PIN is 4 to 8 digits." });
+    expect(pinHint(4)).toBe("4 to 8 digits.");
+    expect(pinHint(6)).toBe("6 to 8 digits: this role manages staff, devices or settings.");
+  });
+  it("checks a new person's PIN against the role chosen", () => {
+    const form = { name: "Rohan", roleId: 2, pin: "1357", again: "1357" };
+    expect(toPersonInput(form, true, roles)).toEqual({ problem: { field: "pin", message: short } });
+    expect(toPersonInput({ ...form, roleId: 3 }, true, roles)).toEqual({ input: { name: "Rohan", role_id: 3, pin: "1357" } });
+    expect(toPersonInput({ ...form, pin: "135791", again: "135791" }, true, roles)).toMatchObject({ input: { pin: "135791" } });
+  });
+  it("asks for a longer PIN when someone moves to a role that needs one", () => {
+    expect(roleChangePinHint(roles, 3, 2)).toBe("This role needs a PIN of 6 digits or more. Ask them to set a 6-digit PIN.");
+    expect(roleChangePinHint(roles, 2, 1)).toBeNull();
+    expect(roleChangePinHint(roles, 2, 3)).toBeNull();
+    expect(roleChangePinHint(roles, 3, 3)).toBeNull();
+    expect(roleChangePinHint(roles, 3, 99)).toBeNull();
+  });
+});
+
+describe("a hard lock (ADR-260)", () => {
+  const now = new Date("2026-10-03T10:00:00Z");
+  const base: Person = { id: "a", name: "Asha", role_id: 3, role_name: "cashier", active: true, since: "2026-09-01T00:00:00Z", locked_at: null };
+  const locked = (at: string, extra: Partial<Person> = {}): Person => ({ ...base, locked_at: at, ...extra });
+
+  it("puts the lock in the state chip, after a deactivation", () => {
+    expect(staffStateOf(base)).toBe("active");
+    expect(staffStateOf(locked("2026-10-03T09:48:00Z"))).toBe("locked");
+    expect(staffStateOf(locked("2026-10-03T09:48:00Z", { active: false }))).toBe("off");
+    expect(staffStateOf({ ...base, active: false })).toBe("off");
+  });
+  it("says why and when", () => {
+    expect(lockedNote(base, now)).toBeNull();
+    expect(lockedNote(locked("2026-10-03T09:59:40Z"), now)).toBe("Too many wrong PINs, just now");
+    expect(lockedNote(locked("2026-10-03T09:48:00Z"), now)).toBe("Too many wrong PINs, 12 min ago");
+    expect(lockedNote(locked("2026-10-03T07:00:00Z"), now)).toBe("Too many wrong PINs, 3 h ago");
+    expect(lockedNote(locked("2026-10-01T12:00:00Z"), now)).toBe("Too many wrong PINs, on 1 Oct 2026");
+  });
+  it("offers Unlock for someone else who is locked", () => {
+    expect(mayUnlock(locked("2026-10-03T09:48:00Z"), "b")).toBe(true);
+    expect(mayUnlock(locked("2026-10-03T09:48:00Z"), "a")).toBe(false);
+    expect(mayUnlock(base, "b")).toBe(false);
+    expect(mayUnlock(locked("2026-10-03T09:48:00Z", { active: false }), "b")).toBe(true);
   });
 });

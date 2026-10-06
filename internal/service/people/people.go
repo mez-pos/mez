@@ -89,6 +89,10 @@ type Person struct {
 	RoleName string    `json:"role_name"`
 	Active   bool      `json:"active"`
 	Since    time.Time `json:"since"`
+	// LockedAt is when a hard lock fell (ADR-260): too many wrong PINs, and
+	// they cannot sign in until someone who can manage staff clears it.
+	// Null when there is none.
+	LockedAt *time.Time `json:"locked_at"`
 }
 
 // Role is a role with what it grants and how many active people hold it.
@@ -122,6 +126,10 @@ func (s *Service) People(ctx context.Context, venueID int64) ([]Person, error) {
 	out := make([]Person, len(rows))
 	for i, r := range rows {
 		out[i] = Person{ID: r.PublicID, Name: r.Name, RoleID: r.RoleID, RoleName: r.RoleName, Active: r.Active, Since: r.CreatedAt.UTC()}
+		if r.LockedAt.Valid {
+			at := r.LockedAt.Time.UTC()
+			out[i].LockedAt = &at
+		}
 	}
 	return out, nil
 }
@@ -148,7 +156,8 @@ func (s *Service) Roles(ctx context.Context, venueID int64) ([]Role, error) {
 	return out, nil
 }
 
-// AddStaff adds a person with a role and a PIN, returning their id.
+// AddStaff adds a person with a role and a PIN, returning their id. A role
+// that manages staff, devices or settings needs a PIN of six digits or more.
 func (s *Service) AddStaff(ctx context.Context, venueID, actorID int64, in StaffInput) (string, error) {
 	name, err := cleanName(in.Name)
 	if err != nil {
@@ -161,6 +170,9 @@ func (s *Service) AddStaff(ctx context.Context, venueID, actorID int64, in Staff
 	var publicID string
 	err = s.change(ctx, venueID, actorID, func(q *gen.Queries, mine auth.PermissionSet, now time.Time) error {
 		if err := mayGiveRole(ctx, q, venueID, in.RoleID, mine); err != nil {
+			return err
+		}
+		if err := pinFitsRole(ctx, q, venueID, in.RoleID, in.PIN); err != nil {
 			return err
 		}
 		// Public ids are random; the unique index decides, and a clash
@@ -183,7 +195,10 @@ func (s *Service) AddStaff(ctx context.Context, venueID, actorID int64, in Staff
 	return publicID, err
 }
 
-// UpdateStaff renames a person or moves them to another role.
+// UpdateStaff renames a person or moves them to another role. Moved to a
+// role that needs a longer PIN, they keep the one they have: a hash does
+// not say how long a PIN is, so the screen asks for a new one instead
+// (ADR-260).
 func (s *Service) UpdateStaff(ctx context.Context, venueID, actorID int64, staffID string, in StaffInput) error {
 	name, err := cleanName(in.Name)
 	if err != nil {
@@ -253,14 +268,15 @@ func (s *Service) ResetPIN(ctx context.Context, venueID, actorID int64, staffID,
 		if err != nil {
 			return err
 		}
-		if target.ID != actorID && !mine.Everything() {
-			theirs, err := rolePerms(ctx, q, venueID, target.RoleID)
-			if err != nil {
-				return err
-			}
-			if theirs.Covers(mine) {
-				return ErrPeerPIN
-			}
+		theirs, err := rolePerms(ctx, q, venueID, target.RoleID)
+		if err != nil {
+			return err
+		}
+		if target.ID != actorID && !mine.Everything() && theirs.Covers(mine) {
+			return ErrPeerPIN
+		}
+		if err := checkPINFor(pin, theirs); err != nil {
+			return err
 		}
 		n, err := q.SetStaffPIN(ctx, gen.SetStaffPINParams{PinHash: hash, Now: now, VenueID: venueID, ID: target.ID})
 		if err := oneRow(n, err, ErrStaffNotFound); err != nil {
@@ -268,6 +284,35 @@ func (s *Service) ResetPIN(ctx context.Context, venueID, actorID int64, staffID,
 		}
 		if err := q.EndSessionsOfStaff(ctx, gen.EndSessionsOfStaffParams{Now: sql.NullTime{Time: now, Valid: true}, StaffID: target.ID}); err != nil {
 			return fmt.Errorf("people: signing %s out: %w", staffID, err)
+		}
+		return nil
+	})
+}
+
+// ClearLock lifts a person's hard lock (ADR-260): the right PIN signs them
+// in again at once, and the lockouts before it no longer count. It needs
+// staff.manage, which the API's route checks too, and the person's role
+// within what the one clearing holds. Nobody clears their own: a lock on
+// you is what someone else must look at. Clearing a person who is not
+// locked changes nothing and is not an error, so a retry is harmless.
+func (s *Service) ClearLock(ctx context.Context, venueID, actorID int64, staffID string) error {
+	return s.change(ctx, venueID, actorID, func(q *gen.Queries, mine auth.PermissionSet, now time.Time) error {
+		if !mine.Has(auth.PermStaffManage) {
+			return ErrBeyondYou
+		}
+		target, err := mayReach(ctx, q, venueID, staffID, mine)
+		if err != nil {
+			return err
+		}
+		if target.ID == actorID {
+			return &Invalid{Field: "locked", Message: "You can't clear your own lock. Ask someone else who can manage staff."}
+		}
+		n, err := q.ClearStaffHardLock(ctx, gen.ClearStaffHardLockParams{Now: now, VenueID: venueID, ID: target.ID})
+		if err := oneRow(n, err, ErrStaffNotFound); err != nil {
+			return err
+		}
+		if err := q.ClearStaffLockouts(ctx, gen.ClearStaffLockoutsParams{Now: sql.NullTime{Time: now, Valid: true}, StaffID: target.ID}); err != nil {
+			return fmt.Errorf("people: clearing the lockouts of %s: %w", staffID, err)
 		}
 		return nil
 	})
@@ -441,12 +486,38 @@ func cleanRole(in RoleInput) (string, auth.PermissionSet, error) {
 	return name, set, nil
 }
 
+// pinHash checks a PIN's form and hashes it, before any transaction: the
+// hash is the slow part. Its length against the role is checked inside the
+// transaction, by checkPINFor, where the role is read.
 func pinHash(pin string) (string, error) {
 	hash, err := auth.HashPIN(pin)
 	if errors.Is(err, auth.ErrPINFormat) {
 		return "", &Invalid{Field: "pin", Message: fmt.Sprintf("A PIN is %d to %d digits.", auth.MinPINLength, auth.MaxPINLength)}
 	}
 	return hash, err
+}
+
+// pinFitsRole checks a PIN is long enough for a role, read by its id.
+func pinFitsRole(ctx context.Context, q *gen.Queries, venueID, roleID int64, pin string) error {
+	role, err := rolePerms(ctx, q, venueID, roleID)
+	if err != nil {
+		return err
+	}
+	return checkPINFor(pin, role)
+}
+
+// checkPINFor checks a PIN is long enough for what a role can do (ADR-260):
+// six digits for one that manages staff, devices or settings.
+func checkPINFor(pin string, role auth.PermissionSet) error {
+	err := auth.CheckPINFor(pin, role)
+	switch {
+	case errors.Is(err, auth.ErrPINTooShortForRole):
+		return &Invalid{Field: "pin", Message: fmt.Sprintf(
+			"A PIN for a role that manages staff, devices or settings is %d to %d digits.", auth.MinPowerfulPINLength, auth.MaxPINLength)}
+	case errors.Is(err, auth.ErrPINFormat):
+		return &Invalid{Field: "pin", Message: fmt.Sprintf("A PIN is %d to %d digits.", auth.MinPINLength, auth.MaxPINLength)}
+	}
+	return err
 }
 
 func roleNameTaken(err error) error {

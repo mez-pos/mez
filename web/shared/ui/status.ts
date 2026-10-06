@@ -104,11 +104,14 @@ export const menuItemStates: Readonly<Record<MenuItemState, ChipSpec>> = {
 
 // A staff member on the back office's list (D20). Deactivated is off the
 // sign-in screen until brought back; their name stays on what they did.
-export type StaffState = "active" | "off";
+// Locked is too many wrong PINs (ADR-260): off the sign-in screen too, until
+// someone who can manage staff unlocks them.
+export type StaffState = "active" | "off" | "locked";
 
 export const staffStates: Readonly<Record<StaffState, ChipSpec>> = {
   active: { tone: "success", word: "Active" },
   off: { tone: "neutral", word: "Deactivated" },
+  locked: { tone: "danger", word: "Locked" },
 };
 
 // A paired device on the back office's list. Quiet is one not heard from

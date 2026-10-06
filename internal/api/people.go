@@ -19,6 +19,7 @@ type People interface {
 	UpdateStaff(ctx context.Context, venueID, actorID int64, staffID string, in people.StaffInput) error
 	SetStaffActive(ctx context.Context, venueID, actorID int64, staffID string, active bool) error
 	ResetPIN(ctx context.Context, venueID, actorID int64, staffID, pin string) error
+	ClearLock(ctx context.Context, venueID, actorID int64, staffID string) error
 	AddRole(ctx context.Context, venueID, actorID int64, in people.RoleInput) (int64, error)
 	UpdateRole(ctx context.Context, venueID, actorID, roleID int64, in people.RoleInput) error
 	DeleteRole(ctx context.Context, venueID, actorID, roleID int64) error
@@ -78,6 +79,7 @@ func (s *Server) mountPeople(mux *http.ServeMux) {
 	handle("POST /api/v1/people/staff/{id}/deactivate", s.activateStaff(false))
 	handle("POST /api/v1/people/staff/{id}/reactivate", s.activateStaff(true))
 	handle("PUT /api/v1/people/staff/{id}/pin", s.resetPIN)
+	handle("POST /api/v1/people/staff/{id}/unlock", s.unlockStaff)
 	handle("POST /api/v1/people/roles", s.addRole)
 	handle("PUT /api/v1/people/roles/{id}", s.updateRole)
 	handle("DELETE /api/v1/people/roles/{id}", s.deleteRole)
@@ -148,6 +150,17 @@ func (s *Server) resetPIN(w http.ResponseWriter, r *http.Request) {
 	}
 	id := r.PathValue("id")
 	if err := s.people.ResetPIN(r.Context(), Meta(r).VenueID, actor(r), id, req.PIN); err != nil {
+		s.writePeopleError(w, r, err)
+		return
+	}
+	writeJSON(w, s.log, http.StatusOK, staffAddedResponse{ID: id})
+}
+
+// unlockStaff clears a hard lock (ADR-260). A person not locked is no
+// error: the request is safe to retry.
+func (s *Server) unlockStaff(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if err := s.people.ClearLock(r.Context(), Meta(r).VenueID, actor(r), id); err != nil {
 		s.writePeopleError(w, r, err)
 		return
 	}
