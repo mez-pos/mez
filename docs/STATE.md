@@ -14,15 +14,14 @@
 
 **Phase 11, Task 4f4: unapplied charges on the terminal** (ADR-223). Money a
 gateway took that no bill could is first in the terminal's sheet, in danger, and
-turns the pill red, until a person says they refunded it or recorded it
-(`POST /api/v1/charges/{id}/resolve`, migration 00042). It moves no money.
+turns the pill red, until a person says they refunded or recorded it
+(`POST /api/v1/charges/{id}/resolve`). It moves no money.
 
 ## Next task
 
 **The owner should first make one real charge**, which nothing has yet: Razorpay
 test keys in `MEZ_GATEWAY_KEY_ID` and `MEZ_GATEWAY_KEY_SECRET`, `MEZ_GATEWAY=razorpay`,
-a table with something owed, Pay online on a phone, a test card. If it does not
-land on the bill, that is the next task.
+Pay online on a phone, a test card. If it does not land, that is the next task.
 
 **Then Phase 11, Task 4f5: the gateway's webhook, through the relay.** Read
 ADR-201 to ADR-203, ADR-220 to ADR-222, and Razorpay's webhook documentation
