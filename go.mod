@@ -6,6 +6,7 @@ toolchain go1.26.8
 
 require (
 	github.com/coder/websocket v1.8.15
+	github.com/kardianos/service v1.3.0
 	github.com/pressly/goose/v3 v3.26.0
 	golang.org/x/crypto v0.40.0
 	golang.org/x/sys v0.37.0

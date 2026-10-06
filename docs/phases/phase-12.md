@@ -8,7 +8,7 @@ Phase 11.
 
 ## Tasks
 
-- [ ] **Task 1 — Windows Service.**
+- [x] **Task 1 — Windows Service.**
   `kardianos/service` wrapping the server. Install, uninstall, start, stop as
   subcommands. Auto-start on boot, restart on crash. Logs to the Windows event
   log as well as the file log. Runs under an account that can reach the printer.

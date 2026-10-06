@@ -10,6 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The Windows service** (ADR-263, phase 12 Task 1): **never run under the
+  Service Control Manager.** To see, in an Administrator PowerShell: `mez
+  service install`, then `start`, and the till opening on :7777; in Event
+  Viewer, Application, source mez, "mez is starting."; end `mez.exe` in Task
+  Manager and see it back within ten seconds; start a second copy on the
+  same port by hand first and see "stopped on its own" in the event log,
+  every five seconds; restart the PC and see it up before sign-in; `stop`,
+  `uninstall`, and `C:\ProgramData\mez` still there. Not built: a lesser
+  account than LocalSystem; a check that a `-user` account can write the
+  data directory or log on as a service; a limit on restarts of a server
+  that can never start.
+
 - **Security, left for the owner** (ADR-257, the first review): five things
   the review found that change what the product does, and so were not changed
   by it. **The LAN is plain HTTP**: device tokens, staff tokens and PINs

@@ -122,8 +122,8 @@ Then start the server and finish in the browser:
 
 ## Windows
 
-What works today is the `.exe` itself. The installer, Windows service and
-kiosk shortcut are phase 12.
+What works today is the `.exe` itself, run by hand or as a Windows service.
+The installer and kiosk shortcut are the rest of phase 12.
 
 **Install.** Make a folder such as `C:\mez`, put
 `mez_<version>_windows_amd64.exe` in it, and rename it `mez.exe`. In
@@ -150,15 +150,41 @@ Set the venue's network to **Private** in Windows settings, and give the PC a
 fixed address (a DHCP reservation in the router) so tablets can always find
 it.
 
-**Start it with Windows.** Until phase 12's service, use Task Scheduler, as
-administrator:
+**Start it with Windows.** Register it as a Windows service. In a PowerShell
+opened with **Run as administrator**, in that folder:
 
 ```powershell
-$action  = New-ScheduledTaskAction -Execute "C:\mez\mez.exe" -WorkingDirectory "C:\mez"
-$trigger = New-ScheduledTaskTrigger -AtStartup
-$settings = New-ScheduledTaskSettingsSet -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit 0
-Register-ScheduledTask -TaskName "mez" -Action $action -Trigger $trigger -Settings $settings -User "SYSTEM" -RunLevel Highest
+.\mez.exe service install
+.\mez.exe service start
 ```
+
+It then starts with the computer, before anyone signs in, and Windows starts
+it again five seconds after it dies. `mez service status` says whether it is
+running, `mez service stop` stops it (requests in flight finish first), and
+`mez service uninstall` removes it and leaves the data. Flags given to
+`install` are the ones the service starts with, for example
+`.\mez.exe service install -listen-addr :8080`; a `config.toml` beside the
+binary is read as before.
+
+Warnings and errors go to the Windows event log as well as to
+`C:\ProgramData\mez\logs\mez.log`: in Event Viewer, **Windows Logs**,
+**Application**, source **mez**. If the till does not open after a start,
+look there first: a port already in use is said in words.
+
+The service runs as LocalSystem, which reaches a printer on the LAN and a
+USB printer installed on the PC. A printer that only one Windows user can
+see (a shared printer connected under their account) needs the service to
+run as them:
+
+```powershell
+$env:MEZ_SERVICE_PASSWORD = "their password"
+.\mez.exe service install -user ".\cafe"
+Remove-Item Env:MEZ_SERVICE_PASSWORD
+```
+
+That account must be able to write `C:\ProgramData\mez` and must hold the
+Windows right **Log on as a service** (Local Security Policy, Local
+Policies, User Rights Assignment); install checks neither.
 
 **A till on the same PC.** A full-screen browser window with no address bar:
 
@@ -371,7 +397,7 @@ Paired devices stay paired across an upgrade.
 ## What phase 12 adds
 
 [`phases/phase-12.md`](phases/phase-12.md) is the plan. In short: a Windows
-installer (Inno Setup) that registers a Windows service, opens the firewall
+installer (Inno Setup) that registers the Windows service, opens the firewall
 and creates the kiosk shortcut; a first-run wizard in place of `mez setup`;
 Litestream backups configured in the back office; a systemd unit and image
 published with each release; and release automation with checksums.

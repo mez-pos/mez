@@ -7,26 +7,28 @@
 
 ## Current phase
 
-**Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 (Cashfree left out, ADR-254), 5 and 6: all built. (Walks owed.)
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Task 1 built. Phase 11 has
+nothing left to build (Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 11, Task 5f4: orders to collect at the counter** (ADR-253). The Orders
-screen has a To collect tab, the pickup code on the row and in the panel, and
-Handed over, which closes the ticket. Task 5 is done. **Not seen in a browser.**
+**Phase 12, Task 1: the Windows service** (ADR-263). `mez service
+install|uninstall|start|stop|status` over `internal/winsvc`; LocalSystem
+unless `-user`; restart five seconds after it dies; warnings and errors to
+the event log. **Not run under the Service Control Manager**: no
+administrator's terminal in the session. `docs/KNOWN.md` lists what to see.
 
 ## Next task
 
-**Phase 11 has nothing left to build.** Cashfree is left out by the owner
-(ADR-254). It owes its human check, the phase file's "Done when", and:
+**Phase 12, Task 2: the installer.** Inno Setup. It calls `mez service
+install` and `mez service start`, and `uninstall` on the way out.
+
+Still owed from phase 11, its human check and:
 - **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
   online on a bill, a share from two phones, and Pay on an order paid first.
 - **Ordering to collect, end to end, with a gateway's test keys**: make the code
   on the Floor plan, scan it, order, pay, see the code, find it under To collect,
   Handed over. None of 5f2 to 5f4 has been seen against the real binary.
-
-**To build next: Phase 12, Task 1.** Read `docs/phases/phase-12.md`.
 
 ## Known broken / in progress
 
@@ -68,6 +70,7 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 5. The desktop's cash quick amounts never offer ₹500. Show it?
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
 7. `jskin.in` is for testing, `mez.ac` for production: move before codes are printed.
+8. The service runs as LocalSystem (ADR-263). Is that right, or a lesser account?
 
 ---
 

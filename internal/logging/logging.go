@@ -34,10 +34,15 @@ const (
 // handler is also one format decision rather than two that can drift.
 //
 // The returned Closer flushes and closes the file. stdout may be nil, which
-// means os.Stdout.
-func Setup(cfg config.Config, stdout io.Writer) (*slog.Logger, io.Closer, error) {
+// means os.Stdout. A Windows service has no console and must pass io.Discard:
+// a write to the stdout it was given fails, and the file is written after it.
+func Setup(cfg config.Config, stdout io.Writer, opts ...Option) (*slog.Logger, io.Closer, error) {
 	if stdout == nil {
 		stdout = os.Stdout
+	}
+	var o options
+	for _, opt := range opts {
+		opt(&o)
 	}
 
 	file, err := newRotatingFile(cfg.LogDir(), FileName, MaxFileBytes, KeepFiles)
@@ -45,7 +50,7 @@ func Setup(cfg config.Config, stdout io.Writer) (*slog.Logger, io.Closer, error)
 		return nil, nil, err
 	}
 
-	opts := &slog.HandlerOptions{
+	handlerOpts := &slog.HandlerOptions{
 		Level: cfg.LogLevel,
 		// At debug someone is hunting something, and the file and line are
 		// most of the answer. At info they are noise on every line.
@@ -55,9 +60,13 @@ func Setup(cfg config.Config, stdout io.Writer) (*slog.Logger, io.Closer, error)
 
 	var handler slog.Handler
 	if useJSON(cfg.LogFormat, stdout) {
-		handler = slog.NewJSONHandler(io.MultiWriter(stdout, file), opts)
+		handler = slog.NewJSONHandler(io.MultiWriter(stdout, file), handlerOpts)
 	} else {
-		handler = slog.NewTextHandler(io.MultiWriter(stdout, file), opts)
+		handler = slog.NewTextHandler(io.MultiWriter(stdout, file), handlerOpts)
+	}
+
+	if o.system != nil {
+		handler = newSystemHandler(handler, o.system)
 	}
 
 	log := slog.New(handler)

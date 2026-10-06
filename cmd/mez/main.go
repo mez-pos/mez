@@ -64,7 +64,7 @@ func main() {
 	// The subcommands are read before the flags: each takes its own, and
 	// the server's parser refuses a positional argument.
 	if len(os.Args) > 1 {
-		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "pair": runPair, "table-codes": runTableCodes, "unlock": runUnlock}
+		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "pair": runPair, "table-codes": runTableCodes, "unlock": runUnlock, "service": runService}
 		if command, ok := commands[os.Args[1]]; ok {
 			if err := command(os.Args[2:], os.Stdout); err != nil {
 				if errors.Is(err, flag.ErrHelp) {
@@ -90,7 +90,10 @@ func main() {
 		return
 	}
 
-	if err := run(); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	err := run(ctx, os.Args[1:], runOptions{stdout: os.Stdout})
+	stop()
+	if err != nil {
 		// -h is a question, not a failure. The flag package's own output is
 		// captured so that a bad flag comes back as an error rather than being
 		// printed from inside a library, which means the usage text has to be
@@ -101,6 +104,7 @@ func main() {
 			fmt.Fprintf(os.Stdout, "mez %s\n\nUsage:\n%s\nSubcommands:\n  setup\tcreate the venue, its owner and the first pairing code\n"+
 				"  pair\tmake another pairing code at this machine (-device-kind, -device-name)\n"+
 				"  table-codes\tlist each table's code for guest ordering, making any that are missing\n"+
+				"  service\trun as a Windows service: install, uninstall, start, stop, status\n"+
 				"  --test-print ADDRESS\tprint a test page on a receipt printer (-paper 58, -drawer, -save FILE)\n",
 				buildInfo().Version, config.Usage())
 			return
@@ -110,10 +114,22 @@ func main() {
 	}
 }
 
+// runOptions is what differs between the server a person starts in a
+// terminal and the one the Service Control Manager starts.
+type runOptions struct {
+	// stdout takes the log beside the file. A service has no console and
+	// passes io.Discard.
+	stdout io.Writer
+	// system is the operating system's log, the Windows event log under a
+	// service, or nil.
+	system logging.SystemLog
+}
+
 // run is main with errors instead of exits, so every path below unwinds through
-// the same shutdown.
-func run() (err error) {
-	cfg, err := config.Load()
+// the same shutdown. It serves until ctx is cancelled: by Ctrl-C in a
+// terminal, by a stop from the Service Control Manager under a service.
+func run(ctx context.Context, args []string, opts runOptions) (err error) {
+	cfg, err := config.LoadArgs(args)
 	if err != nil {
 		return err
 	}
@@ -130,7 +146,7 @@ func run() (err error) {
 	// once there is a log to say it in, and the server starts regardless.
 	restricted := fsperm.Restrict(cfg.DataDir)
 
-	log, logFile, err := logging.Setup(cfg, os.Stdout)
+	log, logFile, err := logging.Setup(cfg, opts.stdout, logging.WithSystemLog(opts.system))
 	if err != nil {
 		return err
 	}
@@ -175,9 +191,6 @@ func run() (err error) {
 	if err != nil {
 		return fmt.Errorf("listening on %s: %w", cfg.ListenAddr, err)
 	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	// The database opens before anything is served. A file that cannot be
 	// opened is a startup failure with a human watching, which is a far better

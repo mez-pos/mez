@@ -8869,3 +8869,58 @@ first sent. An approved tip adds to the audit analysis's total, which mixes
 kinds of money already. Migration 00053 is numbered after 00052, which
 another change in flight takes; until that lands the numbering test sees a
 gap.
+
+## ADR-263 - The Windows service: `mez service`, LocalSystem, and a process that dies to be restarted
+2026-10 · Status: accepted. Phase 12, Task 1. Builds on ADR-142 and ADR-020.
+Decision: the server registers itself with Windows through
+`github.com/kardianos/service` v1.3.0, wrapped in `internal/winsvc`, the only
+package that imports it. The library is on the allowed list in
+`03-conventions.md`; this is its line here.
+  - **`mez service install|uninstall|start|stop|status`**, and `mez service
+    run`, which is what the manager starts. One word groups them, so `mez
+    start` is not mistaken for starting the server in a terminal. On Linux
+    the subcommand refuses and points at the systemd unit in `deploy.md`: a
+    unit the library generated would have none of its hardening.
+  - **The flags given to install are the flags the service starts with.**
+    They are checked by `config.LoadArgs` first, so a flag the server
+    refuses is refused to the person typing it and not at every start.
+    `-config` and `-data-dir` are made absolute against the terminal's
+    directory, because a service starts in `system32`.
+  - **It runs as LocalSystem unless told otherwise.** That account reaches a
+    LAN printer and a USB printer installed on the PC, writes
+    `C:\ProgramData\mez` under the ACL of ADR-259, and needs no password.
+    `-user ACCOUNT` runs it as another, for a printer only that user can
+    see; the password is read from `MEZ_SERVICE_PASSWORD`, never a flag,
+    which the shell's history and the task list would keep.
+  - **Automatic start; restart five seconds after it dies.** Windows runs a
+    service's recovery action only for a process that ends without
+    reporting that it stopped. So a server that stops when nobody asked
+    (its port taken, its listener lost) is logged and the process exits 1
+    from the wrapper; a stop the manager asked for goes through the
+    server's own drain, bounded at 25 seconds, and is reported stopped.
+  - **The event log gets warnings and errors, not every line.**
+    `logging.Setup` takes `WithSystemLog`, a handler that passes each record
+    on and copies those at Warn and above to the event log as "message
+    key=value". The wrapper adds starting, stopped and "stopped on its
+    own". The source is `mez`, registered by install.
+  - **A service is given `io.Discard` for stdout.** It has no console, a
+    write to its stdout fails, and `io.MultiWriter` stops at the first
+    writer that fails: the file would have had nothing in it.
+  - `run()` now takes its context, its arguments and these two sinks, so
+    the terminal and the service start the same server.
+Because: a venue's computer comes back from a power cut with nobody signed
+in, and the till has to be there. Task Scheduler, which `deploy.md` used
+until now, restarts three times and then gives up.
+Cost: LocalSystem is the most powerful account on the computer, and this
+server takes guests' requests through the relay; a lesser account
+(LocalService) would need the data directory's ACL to name it and is not
+done. A server that cannot start is started again every five seconds for
+ever, writing an event each time. An account given with `-user` must
+already be able to write the data directory and to log on as a service;
+install checks neither. The password passes through the environment of the
+installing process. **Not run under the Service Control Manager yet**: the
+session that built it had no administrator's terminal, so install, the
+start at boot, the restart after a kill and the event log entries are
+unseen; `service run` by hand, `status`, and the refusals were run against
+the real binary.
+---

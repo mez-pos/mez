@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 5f3b: the pickup code in the back office** (ADR-252). In the Floor
+**Phase 11, Task 5f4: orders to collect at the counter** (ADR-253). The Orders
+screen has a To collect tab, the pickup code on the row and in the panel, and
+Handed over, which closes the ticket. Task 5 is done. Not seen in a browser.
+
+Before it, **Phase 11, Task 5f3b: the pickup code in the back office** (ADR-252). In the Floor
 plan's codes card: make, show, renew, turn off; a warning where no gateway is
 set; and the door's card first on the sheet. Not seen in a browser.
 
