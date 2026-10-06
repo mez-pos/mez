@@ -10,14 +10,21 @@ import (
 
 	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/shift"
 	"github.com/byjoellobo/mez/internal/gateway"
 	"github.com/byjoellobo/mez/internal/service/charges"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // A guest pays online (phase 11, Task 4f3, ADR-222):
 //
-//	POST /order/api/t/{code}/bill/charge        start paying what is owed
-//	GET  /order/api/t/{code}/bill/charge/{id}   how that payment stands
+//	POST /order/api/t/{code}/bill/charge            start paying what is owed
+//	POST /order/api/t/{code}/orders/{round}/charge  start paying for a round
+//	                                                held until it is paid
+//	GET  /order/api/t/{code}/bill/charge/{id}       how either payment stands
+//
+// Where guests pay first (ADR-225, ADR-226) a round's charge is what sends
+// the round: paid, its lines are on the table's ticket and with the kitchen.
 //
 // The phone is given the gateway's page to go to, and afterwards asks how
 // the charge stands. The answer is the gateway's, asked by this server: the
@@ -34,6 +41,7 @@ const (
 // *charges.Service is it.
 type Charges interface {
 	Start(ctx context.Context, venueID, tableID int64, description, returnURL string) (charges.Charge, error)
+	StartRound(ctx context.Context, venueID, tableID int64, round, description, returnURL string) (charges.Charge, error)
 	Settle(ctx context.Context, venueID int64, publicID string) (charges.Charge, error)
 	Charge(ctx context.Context, venueID int64, publicID string) (charges.Charge, error)
 	Waiting(ctx context.Context, venueID int64) ([]charges.UnappliedCharge, error)
@@ -63,15 +71,20 @@ func WithCharges(c Charges, publicURL string) Option {
 //	failed     not paid, and it will not be: nothing was taken
 //	unapplied  the gateway took it and the bill could not: staff must sort
 //	           it out, and the guest is told to show them
+//
+// round is the round it pays for, when it is a round's charge. Paid, that
+// round has been sent to the kitchen; in any other status it has not been
+// sent by this payment.
 type guestChargeResponse struct {
 	ID     string         `json:"id"`
 	Status charges.Status `json:"status"`
 	Amount money.Amount   `json:"amount"`
 	URL    string         `json:"url,omitempty"`
+	Round  string         `json:"round,omitempty"`
 }
 
 func toGuestChargeResponse(c charges.Charge) guestChargeResponse {
-	out := guestChargeResponse{ID: c.PublicID, Status: c.Status, Amount: c.Amount}
+	out := guestChargeResponse{ID: c.PublicID, Status: c.Status, Amount: c.Amount, Round: c.Round}
 	if c.Status == charges.Open {
 		out.URL = c.CheckoutURL
 	}
@@ -84,31 +97,67 @@ func (s *Server) guestStartCharge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
-	back := ""
-	if s.publicURL != "" {
-		// The guest's own table, with no fragment: a gateway adds its own
-		// words to the end of the address, and the app finds its way to the
-		// bill by itself.
-		back = s.publicURL + s.guestMount + "t/" + r.PathValue("code")
-	}
-	c, err := s.charges.Start(r.Context(), table.VenueID, table.TableID, "Table "+table.TableName+", "+table.VenueName, back)
-	switch {
-	case err == nil:
-	case errors.Is(err, charges.ErrNothingToPay):
+	c, err := s.charges.Start(r.Context(), table.VenueID, table.TableID, "Table "+table.TableName+", "+table.VenueName, s.guestReturnURL(r))
+	if errors.Is(err, charges.ErrNothingToPay) {
 		writeError(w, s.log, http.StatusConflict, CodeNothingToPay, "There is nothing left to pay on this bill.")
 		return
+	}
+	s.writeStartedCharge(w, r, table.VenueID, c, err)
+}
+
+// guestStartRoundCharge starts paying for a round held until it is paid.
+// The round is the table's own or it is not found: a table's code says
+// nothing of another table's rounds.
+func (s *Server) guestStartRoundCharge(w http.ResponseWriter, r *http.Request) {
+	table, ok := s.guestTableFor(w, r)
+	if !ok {
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	c, err := s.charges.StartRound(r.Context(), table.VenueID, table.TableID, r.PathValue("round"),
+		"Order at table "+table.TableName+", "+table.VenueName, s.guestReturnURL(r))
+	switch {
+	case errors.Is(err, svcorder.ErrRoundNotFound):
+		writeError(w, s.log, http.StatusNotFound, CodeRequestNotFound, "That order is not one of this table's waiting to be paid.")
+	case errors.Is(err, charges.ErrNothingToPay):
+		writeError(w, s.log, http.StatusConflict, CodeNothingToPay, "That order is already paid for and with the kitchen.")
+	case errors.Is(err, svcorder.ErrRoundLapsed):
+		writeError(w, s.log, http.StatusConflict, CodeRequestLapsed, "That order is from an earlier day. Place it again.")
+	case errors.Is(err, shift.ErrNoOpenShift):
+		writeError(w, s.log, http.StatusConflict, CodeNoOpenShift, "Ordering is closed right now. Ask a member of staff.")
+	default:
+		s.writeStartedCharge(w, r, table.VenueID, c, err)
+	}
+}
+
+// guestReturnURL is where a gateway sends a guest back: their own table at
+// the venue's configured address, or nowhere. It has no fragment: a gateway
+// adds its own words to the end of the address, and the app finds its own
+// way from there.
+func (s *Server) guestReturnURL(r *http.Request) string {
+	if s.publicURL == "" {
+		return ""
+	}
+	return s.publicURL + s.guestMount + "t/" + r.PathValue("code")
+}
+
+// writeStartedCharge answers a charge just started, or why the gateway did
+// not start one.
+func (s *Server) writeStartedCharge(w http.ResponseWriter, r *http.Request, venueID int64, c charges.Charge, err error) {
+	switch {
+	case err == nil:
 	case errors.Is(err, gateway.ErrRefused):
 		// The venue's keys, or its account: the owner's to fix, and loud.
 		s.log.Error("the payment gateway refused to start a charge: check the venue's gateway keys",
-			"request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
+			"request_id", RequestID(r.Context()), "venue_id", venueID, "error", err)
 		writeError(w, s.log, http.StatusBadGateway, CodeGatewayUnavailable, "Paying online is not working right now. Pay a member of staff, or at the counter.")
 		return
 	case errors.Is(err, gateway.ErrUnavailable):
-		s.log.Warn("the payment gateway could not be reached to start a charge", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
+		s.log.Warn("the payment gateway could not be reached to start a charge", "request_id", RequestID(r.Context()), "venue_id", venueID, "error", err)
 		writeError(w, s.log, http.StatusServiceUnavailable, CodeGatewayUnavailable, "Paying online can't be reached right now. Try again, or pay a member of staff.")
 		return
 	default:
-		s.log.Error("starting a guest's charge failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
+		s.log.Error("starting a guest's charge failed", "request_id", RequestID(r.Context()), "venue_id", venueID, "error", err)
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}

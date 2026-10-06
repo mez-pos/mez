@@ -7108,3 +7108,34 @@ is an unapplied charge with a bill owing, which staff settle by recording it. A
 charge that cannot be applied for a reason that never passes (the table taken out
 of service) stays open and is retried by every sweep, with only the log to say
 so. A paid ticket nobody on staff opened stays open until someone closes it.
+
+## ADR-227 - Paying for a round over the guest API, and the mode in effect before the phone can pay
+2026-10 · Status: accepted. Phase 11, Task 4e5b2.
+Context: ADR-226 left a round's charge with no route to start it and `CanCharge`
+unwired. The phone's flow is the next task, 4e5c.
+Decision:
+  - **`POST /order/api/t/{code}/orders/{round}/charge`** starts a round's charge,
+    beside the bill's `POST .../bill/charge` and answering the same shape. The
+    round is in the path because it is the round that is paid for, not the bill.
+    The return address is the venue's `public_url` and never the request's, by the
+    same helper the bill's charge uses (ADR-222).
+  - **How it stands is the bill charge's route**, `GET .../bill/charge/{id}`, which
+    already asks a charge by its table. A charge's answer gains `round`, the round
+    it pays for. Paid means that round was sent: the two are one settle. No other
+    status sends it, so the phone needs no second question.
+  - **No new error codes.** A round that is not the table's, is a request, or is
+    not there is `request_not_found`; one from a closed shift `request_lapsed`;
+    one already paid for `nothing_to_pay`; the venue shut `no_open_shift`. The
+    words are a guest's; the codes are the ones staff's side of a round has.
+  - **`CanCharge` is the gateway being configured** (`cfg.GatewayEnabled()`), set
+    where the order service is built. A gateway that is set but cannot start still
+    stops the start, as before (ADR-221), so it is never true with no charges.
+  - **The mode is now in effect in the binary, one task before the phone can
+    pay.** It was checked in the real binary: with a gateway set and
+    `payment.mode` on `prepay`, a round at a seated table was held unpaid and its
+    charge reached the gateway. The mode is off by default and can be turned on
+    only through the API until 4e5d, so no owner meets the gap by accident.
+Because: the phone's task should be the phone's alone, built against a server that
+already does the whole of it.
+Cost: an owner who sets `prepay` through the API today gets phones that say "Pay
+to send your order" with nothing to press, until 4e5c.

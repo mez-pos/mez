@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4e5a: a round held until it is paid** (ADR-225). `payment.mode`
+**Phase 11, Task 4e5b1: a round's charge** (ADR-226). `charges.StartRound` asks
+the gateway for a held round's `Due`. Paid, `Settle` sends the round
+(`order.SendPaidRound`) and then tenders what was charged. Migration 00044.
+
+Before it, **Phase 11, Task 4e5a: a round held until it is paid** (ADR-225). `payment.mode`
 is `pay_at_table` or `prepay`. Where guests pay first and can, `PlaceRound` keeps
 the round `unpaid` with `Due`, what it adds to the bill by `order.Adding`.
 

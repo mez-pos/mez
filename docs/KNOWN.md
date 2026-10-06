@@ -10,9 +10,11 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **Paying first** (ADR-225, ADR-226): not in effect anywhere but tests:
-  `CanCharge` is not wired in `cmd/mez` until 4e5b2, and no route starts a
-  round's charge. `payment.mode` can be set only through the API. Nothing
+- **Paying first** (ADR-225 to ADR-227): in effect where a gateway is set
+  and `payment.mode` is `prepay`, which can be set only through the API. **The
+  phone cannot pay for a round until 4e5c**: it says "Pay to send your order"
+  with nothing to press. Checked in the real binary as far as a gateway
+  refusing made-up keys; no round has been paid for at a real gateway. Nothing
   ends an unpaid round. A round's charge that can never be applied (its table
   out of service) stays open and is retried by every sweep, with only the log
   to say so. A paid ticket no staff opened waits for someone to close it. No

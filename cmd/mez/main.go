@@ -225,7 +225,12 @@ func run() (err error) {
 	}
 	running.push("print queue", prints.Close)
 
-	orders, err := svcorder.New(svcorder.Options{DB: database, Log: log, Publisher: publisher(events), Prints: prints, OnChange: events.Notify})
+	orders, err := svcorder.New(svcorder.Options{
+		DB: database, Log: log, Publisher: publisher(events), Prints: prints, OnChange: events.Notify,
+		// Where the owner says guests pay first, they do only if there is a
+		// gateway for them to pay through (ADR-225).
+		CanCharge: cfg.GatewayEnabled(),
+	})
 	if err != nil {
 		return err
 	}

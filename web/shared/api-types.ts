@@ -915,6 +915,7 @@ export interface GuestChargeResponse {
   status: ChargeStatus;
   amount: Money;
   url?: string;
+  round?: string;
 }
 
 export interface ResolveChargeRequest {

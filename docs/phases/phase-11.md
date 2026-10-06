@@ -106,15 +106,15 @@ Phase 10.
       - [x] **4e5a.** The setting, `payment.mode`, and a round held unpaid:
         priced with its tax by the bill's own projection (`order.Adding`),
         no order and nothing for staff. Not yet in effect in `cmd/mez`.
-      - [ ] **4e5b.** A charge for an unpaid round, and the round becoming
+      - [x] **4e5b.** A charge for an unpaid round, and the round becoming
         lines on a ticket, sent, and paid for, when the gateway says paid.
         Split in two (ADR-226):
         - [x] **4e5b1.** In the services: `charges.StartRound`, and a paid
           round's charge sending the round (`SendPaidRound`) and then
           tendering. `gateway_charges` rebuilt so a charge can be for a round.
-        - [ ] **4e5b2.** The guest's route to start a round's charge, its
-          status, and `CanCharge` wired in `cmd/mez`, which is what puts the
-          mode in effect.
+        - [x] **4e5b2.** `POST /order/api/t/{code}/orders/{round}/charge`
+          (ADR-227); its status is the bill charge's route. `CanCharge` wired
+          in `cmd/mez`: the mode is in effect where a gateway is set.
       - [ ] **4e5c.** The phone: Place Order, pay, and back to an order sent.
       - [ ] **4e5d.** The owner's choice of mode in the back office, beside
         the UPI address, saying when it is in effect.
