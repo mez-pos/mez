@@ -85,6 +85,11 @@ type tableCodesResponse struct {
 type pickupCodeResponse struct {
 	Code string `json:"code"`
 	URL  string `json:"url"`
+	// Ordering is whether an order to collect can be placed at this venue:
+	// only where guests can pay online (ADR-250). Where it is false the
+	// code leads to a page that says so, and the back office says that
+	// before anyone prints it.
+	Ordering bool `json:"ordering"`
 }
 
 // tableCodeQRResponse is a table's address drawn as a QR code. The picture
@@ -145,7 +150,7 @@ func (s *Server) writeTableCodes(w http.ResponseWriter, r *http.Request, list []
 		return
 	}
 	address := s.tableAddress()
-	out := tableCodesResponse{Address: address, Tables: make([]tableCodeResponse, len(list)), Pickup: pickupCodeResponse{Code: pickup}}
+	out := tableCodesResponse{Address: address, Tables: make([]tableCodeResponse, len(list)), Pickup: pickupCodeResponse{Code: pickup, Ordering: s.pickupOn()}}
 	if pickup != "" && s.pickupAddress() != "" {
 		out.Pickup.URL = s.pickupAddress() + pickup
 	}
@@ -325,8 +330,13 @@ type pickupCodeQRResponse struct {
 // tableCodeSheetResponse is every table that has a code, each with its
 // address drawn, for the sheet an owner prints and cuts up. A table with no
 // code is not on it: there is nothing to stick on that table.
+//
+// Pickup is the card for the door: the venue's pickup code, drawn (ADR-252).
+// It is absent when the venue has no pickup code, and where orders to
+// collect are not taken: a poster that leads to a refusal is not printed.
 type tableCodeSheetResponse struct {
 	Tables []tableCodeQRResponse `json:"tables"`
+	Pickup *pickupCodeQRResponse `json:"pickup,omitempty"`
 }
 
 // tableCodeSheet draws them all in one answer: a sheet of thirty is one
@@ -359,8 +369,25 @@ func (s *Server) tableCodeSheet(w http.ResponseWriter, r *http.Request) {
 		}
 		out.Tables = append(out.Tables, tableCodeQRResponse{TableID: c.TableID, TableName: c.TableName, URL: address + c.Code, SVG: drawn.SVG(qrQuiet)})
 	}
+	if s.pickupOn() {
+		pickup, err := s.tableCodes.Pickup(r.Context(), dev.VenueID)
+		if err != nil {
+			s.writeTableCodeError(w, r, err)
+			return
+		}
+		if pickup != "" {
+			url := s.pickupAddress() + pickup
+			drawn, err := qr.Encode([]byte(url))
+			if err != nil {
+				s.log.Error("drawing the pickup code as a QR failed", "request_id", RequestID(r.Context()), "venue_id", dev.VenueID, "error", err)
+				writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+				return
+			}
+			out.Pickup = &pickupCodeQRResponse{URL: url, SVG: drawn.SVG(qrQuiet)}
+		}
+	}
 	// Every code the venue has leaves the screen at once: worth a line.
-	s.log.Info("the tables' codes were drawn to print", "venue_id", dev.VenueID, "actor_id", session.Staff.ID, "device_id", dev.ID, "tables", len(out.Tables))
+	s.log.Info("the tables' codes were drawn to print", "venue_id", dev.VenueID, "actor_id", session.Staff.ID, "device_id", dev.ID, "tables", len(out.Tables), "pickup", out.Pickup != nil)
 	writeJSON(w, s.log, http.StatusOK, out)
 }
 

@@ -8143,3 +8143,48 @@ remembers one order: ordering something else before collecting forgets the
 first one's code, and the counter then has only the ticket. Seen at 390 wide in
 a headless browser with the API mocked: never against the real binary, a real
 gateway, the relay, or on a phone.
+
+## ADR-252 - The pickup code is in the tables' card, says whether it leads to ordering, and is the sheet's first card only where it does
+2026-10 · Status: accepted. Phase 11, Task 5f3b.
+Context: 6e made the venue's pickup code over the staff API and gave it no
+screen, since a code to print for a poster that led nowhere is one an owner
+would put on a door (ADR-247). Since 5f3a it leads to ordering to collect, but
+only where a gateway is set (ADR-250): elsewhere it leads to "Not taking orders
+to collect online".
+Decision:
+  - **In the Floor plan's "Ordering from the table" card**, under the tables and
+    a hairline, and not a card of its own or a place in Settings. It is a code
+    guests scan, made, renewed, turned off and printed with the tables', by the
+    same role, and an owner looking for one looks where the other is.
+  - **Buttons, not a row's menu.** The tables are a list and each row has a
+    "...". This is one thing, and what can be done to it is three buttons.
+  - **The list says `ordering`** on `pickup`: whether an order to collect can be
+    placed here. It is the server's own test (`pickupOn`), the one the guest's
+    routes use, so the back office and a phone cannot disagree. The payment
+    settings say `can_charge`, which is nearly the same thing and a second
+    request for a role that may not read it.
+  - **A code that takes no orders is said in the warning tone**, with what to
+    set. It can still be made, shown and renewed: an owner sets up the door
+    before the gateway as often as after.
+  - **The sheet's first card is the door's, only where orders are taken.** With
+    no gateway there is none: ADR-247's reason, a poster that leads to a
+    refusal, still holds for that venue. The server leaves it out, so no screen
+    has to remember to.
+  - **The door's card is the size of a table's**, on the same sheet. It says
+    "Order to collect" where a table's name is and "Scan to order and pay, then
+    collect at the counter". A card on a counter is what most venues will use;
+    a poster is a thing a venue designs for itself, from the QR.
+  - **The confirms say what becomes of guests who have paid.** They keep the
+    code they are called by, on the phone and on the ticket (ADR-251); their
+    phones can no longer follow the order. An owner renewing mid-service should
+    know it costs that and no more.
+  - **Making the first code asks nothing**, as giving a table one does not.
+Because: the code existed and led somewhere, and the only way to make one was
+the API. This is the last thing between a venue and a guest ordering to collect.
+Cost: the door's card is cut from a sheet of table cards: put on a table by
+mistake it takes orders with no table. The modal says so and the paper does
+not, beyond "Order to collect". No poster size. An owner at a venue with no
+gateway can show the QR on the screen and photograph it; the warning is all
+that stops them. The card is long at a venue with thirty tables, and this is at
+the foot of it. Not seen in a browser: checked by the type checker, the logic's
+tests and the server's, and nothing was printed.

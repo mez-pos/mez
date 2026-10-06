@@ -77,6 +77,44 @@ Inside the frame (`backoffice-shell.md`).
       ordering from it now loses their place."
     - **Give it a code**, the only thing a table with none can do. It asks
       nothing: it stops nothing.
+  - **Ordering to collect** (ADR-252), under the tables and a hairline, in
+    the same card: the venue's one pickup code, which is no table's.
+    - "Ordering to collect" in the serif, a size under the card's heading;
+      "One code for the venue, for the door or the counter. A guest scans
+      it, orders and pays on their phone, and collects at the counter when
+      the code they are given is called. Anyone who has it can order:
+      nothing is made until it is paid for."
+    - With no code: "No code: nobody can order to collect by phone.", muted,
+      and **Make a code**, which asks nothing.
+    - With one: the code in groups of four, its address small under it, and
+      as buttons, not a menu, since there is one row: **Show the QR code**
+      (not with no `public_url`), **Renew the code**, **Turn the code off**.
+    - Where guests cannot pay online (`ordering` false), with a code, in
+      the warning tone: "Guests cannot pay online here, so this code leads
+      to a page that says the venue is not taking orders to collect. Set a
+      payment gateway in the venue's configuration and restart mez. Until
+      then it is not on the sheet to print."
+    - **Renew**, behind a confirm in the danger tone: "Renew the code for
+      ordering to collect? The code on the door stops working at once, and
+      so does any photo of it. A guest in the middle of ordering loses
+      their place. Guests who have already paid keep the code they are
+      called by, but their phones can no longer follow the order. Print the
+      new code and replace the one on the door."
+    - **Turn off**, behind a confirm: "Turn off ordering to collect? Nobody
+      can order to collect by phone until you make a code again. The code
+      on the door stops working at once.", and the same sentence about
+      guests who have paid.
+    - **The QR** is the tables' modal: "The code for ordering to collect",
+      and "Scan it with a phone to check it opens the menu with no table."
+  - **On the sheet,** where orders to collect are taken and the venue has a
+    pickup code: one more card, the first, the size of a table's. "Scan to
+    order and pay, then collect at the counter" where a table's says "Scan
+    to see the menu and order", and **Order to collect** where the table's
+    name is. The print modal counts it, "12 cards on 2 pages of A4, one of
+    them for the door.", and says "The first card says "Order to collect":
+    it is for the door or the counter, and not for a table. Anyone who
+    scans it can order and pay, with no table." Print the codes is offered
+    for the door's card alone, at a venue with no table codes.
 
 ## Moving a table: three ways, drag never the only one
 
@@ -108,8 +146,14 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
 - `POST /api/v1/table-codes` makes the missing ones;
   `POST /api/v1/tables/{id}/code/renew` and `.../revoke`. Each answers the
   whole list, which replaces the cache.
+- `pickup` on the same answer: the venue's pickup code, its address, and
+  `ordering`, whether guests can pay online here and so order to collect.
+  `POST /api/v1/pickup-code/renew` makes or renews it and `.../revoke` turns
+  it off, each answering the whole list; `GET /api/v1/pickup-code/qr` draws
+  it, never kept.
 - `GET /api/v1/table-codes/sheet` when Print the codes is opened: every
-  table that has a code, each with its address drawn, in one answer. Never
+  table that has a code, each with its address drawn, in one answer, and
+  `pickup`, the door's card, where there is one to print. Never
   kept. The venue's name on the cards is the status bar's (`use-venue.ts`).
 - `GET /api/v1/tables/{id}/code/qr` when Show the QR code is opened, and
   never kept: the picture is an SVG in the answer, shown as an image and
@@ -132,7 +176,10 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
 | Renew the code, confirmed | A new code; the old one stops | "T4 has a new code. Print it and replace the one on the table." |
 | Turn the code off, confirmed | No code | "T4 takes no orders by phone." |
 | Give it a code | A code for a table with none | "T4 has a code." |
-| Print the codes | Draws every table's card | The modal, with how many pages |
+| Make a code, for collecting | The venue's pickup code | "Ordering to collect has a code." |
+| Renew it, confirmed | A new code; the one on the door stops | "Ordering to collect has a new code. Print it and replace the one on the door." |
+| Turn it off, confirmed | No code | "Nobody can order to collect by phone." |
+| Print the codes | Draws every table's card, and the door's | The modal, with how many pages |
 | Print | The browser's print | Only the sheet is on the paper |
 
 ## States

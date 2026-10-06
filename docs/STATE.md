@@ -8,27 +8,27 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 but 5f3b on, and 6 done. (Walks owed.)
+4 but 4f6b (Cashfree, question 8), 5 but 5f4, and 6 done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 5f3a: ordering to collect on the phone** (ADR-251). 5f3 split in
-two. `/order/p/<code>` is the table's screens with a `collect` flag, and the
-pickup code in large type on the order. `guest-collect.md`. Seen with a mocked API.
+**Phase 11, Task 5f3b: the pickup code in the back office** (ADR-252). In the Floor
+plan's codes card: make, show, renew, turn off; a warning where no gateway is
+set; and the door's card first on the sheet. **Not seen in a browser.**
 
 ## Next task
 
 **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
 online on a bill, a share from two phones, and Pay on an order paid first.
 
-**Phase 11, Task 5f3b: the pickup code in the back office.** Read ADR-247,
-ADR-244, ADR-245, `backoffice-floor.md`, `internal/api/table_codes.go`.
-- On the Floor plan's "Ordering from the table" card: the venue's pickup code
-  and address (`pickup` on `GET /api/v1/table-codes`), Show the QR code
-  (`/api/v1/pickup-code/qr`), Renew and Turn off behind a confirm, Make one.
-- On the sheet to print: a card for the door. Say where no gateway is set that
-  the code leads to "not taking orders" (`can_charge` on the payment settings).
-- After a renew a paid guest keeps their code but cannot ask how the order stands.
+**Phase 11, Task 5f4: orders to collect at the counter.** Read ADR-249, ADR-251,
+the "An order to collect" entry in `KNOWN.md`, and the terminal's ticket list.
+- A paid order to collect is a ticket on the `web` channel with no table. The
+  terminal shows it as a counter ticket: nothing says its code or "to collect".
+- Wanted: the orders out and ready, by pickup code, to call out and hand over.
+  Handing over closes the ticket, which frees the code (ADR-249).
+- The code is on `guest_rounds`, not the order: decide how the terminal reads it.
+  Split first if the list and the handing over are more than a session.
 
 ## Known broken / in progress
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f3b, 5f4; 6 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f4; 6 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

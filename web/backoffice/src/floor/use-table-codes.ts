@@ -3,7 +3,7 @@
 // The list follows the floor: a table added or retired changes it.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { TableCodeQRResponse, TableCodeSheetResponse, TableCodesResponse } from "../../../shared/api-types";
+import type { PickupCodeQRResponse, TableCodeQRResponse, TableCodeSheetResponse, TableCodesResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 
@@ -22,6 +22,11 @@ export interface TableCodesApi {
   qr: (tableId: number) => Promise<TableCodeQRResponse>;
   /** Every table's code drawn, to print. Never kept, for the same reason. */
   sheet: () => Promise<TableCodeSheetResponse>;
+  /** Gives the venue a pickup code, new or its first, and turns off the one it had (ADR-247). */
+  renewPickup: () => Promise<void>;
+  revokePickup: () => Promise<void>;
+  /** The pickup code's address drawn as a QR code. Never kept. */
+  pickupQr: () => Promise<PickupCodeQRResponse>;
 }
 
 export function useTableCodes(): TableCodesApi {
@@ -58,5 +63,8 @@ export function useTableCodes(): TableCodesApi {
     revoke: (id) => post(`/api/v1/tables/${id}/code/revoke`),
     qr: (id) => store.api.get<TableCodeQRResponse>(`/api/v1/tables/${id}/code/qr`),
     sheet: () => store.api.get<TableCodeSheetResponse>("/api/v1/table-codes/sheet"),
+    renewPickup: () => post("/api/v1/pickup-code/renew"),
+    revokePickup: () => post("/api/v1/pickup-code/revoke"),
+    pickupQr: () => store.api.get<PickupCodeQRResponse>("/api/v1/pickup-code/qr"),
   };
 }

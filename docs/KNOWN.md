@@ -10,6 +10,15 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The pickup code in the back office** (ADR-252, `backoffice-floor.md`):
+  **not seen in a browser at all**, at any width: the section under the
+  tables, its three buttons, the warning, both confirms, the QR modal and
+  the print modal's new lines. Checked by the type checker and the tests of
+  its words and of the server. Nothing was printed, so the door's card on
+  paper is unseen. The door's card is the size of a table's and is cut from
+  the same sheet: put on a table by mistake it takes orders with no table.
+  There is no poster size. At a venue with no gateway the code can still be
+  shown as a QR and photographed; only the warning says not to.
 - **Ordering to collect on the phone** (ADR-251, `guest-collect.md`): seen at
   390 wide in a headless browser with the API mocked: the landing, the menu,
   the cart, the order unpaid, paying, sent with its code, the strip, "not
@@ -19,8 +28,7 @@
   cancelled states, or with a screen reader. The phone remembers one order:
   ordering something else before collecting forgets the first one's code.
   The cart still says "Please tell a member of staff" about allergies, to
-  someone who may not be in the venue yet. Nothing in the back office shows
-  the code or its QR until 5f3b: it is made through the API.
+  someone who may not be in the venue yet.
 - **Ordering to collect over the guest API** (ADR-250): asked by tests and a
   mocked browser only, never in the real binary, through the relay, or with
   a real gateway. A guest who paid has no receipt on the phone: a
@@ -47,8 +55,7 @@
   00050 build `guest_rounds` and `gateway_charges` again: tested on seeded
   databases, never run on the deployed one. Back the database up first.
 - **The venue's pickup code** (ADR-247): in the services and the staff API
-  only. No screen shows it. Made through the API it now leads to the
-  guest's routes (ADR-250), which no screen asks until 5f3.
+  and, since ADR-252, the Floor plan's codes card.
 - **Limits on guests** (ADR-246): tested through the handlers with the
   limits lowered; never against a room of real phones. **The relay limits a
   whole venue to 1200 requests a minute (`relay.DefaultLimit`), which about

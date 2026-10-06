@@ -1021,6 +1021,7 @@ export interface TableCodeResponse {
 export interface PickupCodeResponse {
   code: string;
   url: string;
+  ordering: boolean;
 }
 
 export interface TableCodeQRResponse {
@@ -1032,6 +1033,7 @@ export interface TableCodeQRResponse {
 
 export interface TableCodeSheetResponse {
   tables: TableCodeQRResponse[];
+  pickup?: PickupCodeQRResponse;
 }
 
 export interface PickupCodeQRResponse {

@@ -3,7 +3,7 @@
 // credential, so the words here are careful about what stops working.
 
 import { ApiError } from "../../../shared/api";
-import type { TableCodeResponse, TableCodesResponse } from "../../../shared/api-types";
+import type { PickupCodeResponse, TableCodeResponse, TableCodesResponse } from "../../../shared/api-types";
 
 /** How many tables guests cannot order from: no code on them. */
 export function missingCount(list: Pick<TableCodesResponse, "tables">): number {
@@ -45,11 +45,13 @@ export function printableCount(list: Pick<TableCodesResponse, "tables">): number
   return list.tables.length - missingCount(list);
 }
 
-/** "12 cards on 2 pages.", for the print dialog. */
-export function sheetSummary(count: number): string {
+/** "12 cards on 2 pages.", for the print dialog. count is every card, the door's among them when there is one. */
+export function sheetSummary(count: number, door = false): string {
   if (count === 0) return "No table has a code to print.";
   const pages = Math.ceil(count / CARDS_PER_PAGE);
-  return `${count} ${count === 1 ? "card" : "cards"} on ${pages} ${pages === 1 ? "page" : "pages"} of A4.`;
+  const paper = `${count} ${count === 1 ? "card" : "cards"} on ${pages} ${pages === 1 ? "page" : "pages"} of A4`;
+  if (!door) return `${paper}.`;
+  return count === 1 ? `${paper}: the one for the door.` : `${paper}, one of them for the door.`;
 }
 
 /**
@@ -68,6 +70,46 @@ export function hostOf(url: string): string {
 
 /** What a row can do. A table with no code can only be given one. */
 export type CodeAction = "show" | "renew" | "revoke" | "give";
+
+/**
+ * How ordering to collect stands (ADR-252): no code; a code guests can
+ * order by; or a code that leads to "not taking orders", at a venue where
+ * guests cannot pay online.
+ */
+export type PickupState = "none" | "on" | "no_orders";
+
+export function pickupState(pickup: Pick<PickupCodeResponse, "code" | "ordering">): PickupState {
+  if (pickup.code === "") return "none";
+  return pickup.ordering ? "on" : "no_orders";
+}
+
+/** What the card says of a pickup code at a venue with no way to pay online. */
+export const pickupOffWords =
+  "Guests cannot pay online here, so this code leads to a page that says the venue is not taking orders to collect. Set a payment gateway in the venue's configuration and restart mez. Until then it is not on the sheet to print.";
+
+/**
+ * What renewing or turning off the pickup code asks first. It stops the code
+ * on the door. A guest who has paid keeps the code they are called by: it is
+ * on their phone and on the ticket. What they lose is the phone following
+ * the order.
+ */
+export function pickupConfirmWords(action: "renew" | "revoke"): ConfirmWords {
+  const paid = "Guests who have already paid keep the code they are called by, but their phones can no longer follow the order.";
+  if (action === "renew") {
+    return {
+      title: "Renew the code for ordering to collect?",
+      body: `The code on the door stops working at once, and so does any photo of it. A guest in the middle of ordering loses their place. ${paid} Print the new code and replace the one on the door.`,
+      confirm: "Renew the code",
+      done: "Ordering to collect has a new code. Print it and replace the one on the door.",
+    };
+  }
+  return {
+    title: "Turn off ordering to collect?",
+    body: `Nobody can order to collect by phone until you make a code again. The code on the door stops working at once. ${paid}`,
+    confirm: "Turn the code off",
+    done: "Nobody can order to collect by phone.",
+  };
+}
 
 export function actionsFor(table: Pick<TableCodeResponse, "code">, printable: boolean): CodeAction[] {
   if (table.code === "") return ["give"];

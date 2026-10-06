@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 5f2: ordering to collect over the guest API** (ADR-250). Six
+**Phase 11, Task 5f3a: ordering to collect on the phone** (ADR-251). 5f3 split in
+two. `/order/p/<code>` is the table's screens with a `collect` flag, and the
+pickup code in large type on the order. `guest-collect.md`. Seen with a mocked API.
+
+Before it, **Phase 11, Task 5f2: ordering to collect over the guest API** (ADR-250). Six
 routes under `/order/api/p/{code}`, in `internal/api/guest_pickup.go`. Limits by
 address and then by venue. With no gateway the venue answers `ordering: false`.
 

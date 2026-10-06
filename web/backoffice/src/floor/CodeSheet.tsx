@@ -1,5 +1,6 @@
 // The sheet of codes to print (backoffice-floor.md, ADR-245): one card for
-// each table, to cut out and stick on it. The cards are drawn once, outside
+// each table, to cut out and stick on it, and before them one for the door,
+// where the venue takes orders to collect (ADR-252). The cards are drawn once, outside
 // the app's own tree, and shown only on paper (index.css): what prints is
 // the sheet and nothing of the back office around it.
 
@@ -29,7 +30,8 @@ export function CodeSheet({ venueName, read, onClose }: CodeSheetProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- read once, when it is opened
   }, []);
-  const count = sheet?.tables.length ?? 0;
+  const door = sheet?.pickup;
+  const count = (sheet?.tables.length ?? 0) + (door ? 1 : 0);
 
   return (
     <>
@@ -55,7 +57,7 @@ export function CodeSheet({ venueName, read, onClose }: CodeSheetProps) {
         {sheet && (
           <div className="flex flex-col gap-3 text-base">
             <p role="status" className="font-semibold">
-              {sheetSummary(count)}
+              {sheetSummary(count, door !== undefined)}
             </p>
             {count > 0 && (
               <>
@@ -63,6 +65,12 @@ export function CodeSheet({ venueName, read, onClose }: CodeSheetProps) {
                   Each card has the table's name on it. Cut along the dashed lines and put each on its own table: a card on the wrong table sends that table's
                   orders to another.
                 </p>
+                {door && (
+                  <p className="text-fg-2">
+                    The first card says "Order to collect": it is for the door or the counter, and not for a table. Anyone who scans it can order and pay, with
+                    no table.
+                  </p>
+                )}
                 <p className="text-fg-2">These are the codes as they are now. Renew a code after printing and its card stops working.</p>
               </>
             )}
@@ -73,6 +81,15 @@ export function CodeSheet({ venueName, read, onClose }: CodeSheetProps) {
         count > 0 &&
         createPortal(
           <div className="code-sheet">
+            {door && (
+              <section className="code-sheet-card">
+                <p className="code-sheet-venue">{venueName}</p>
+                <p className="code-sheet-ask">Scan to order and pay, then collect at the counter</p>
+                <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(door.svg)}`} alt="" className="code-sheet-qr" />
+                <p className="code-sheet-table">Order to collect</p>
+                <p className="code-sheet-url">{hostOf(door.url)}</p>
+              </section>
+            )}
             {sheet.tables.map((t) => (
               <section key={t.table_id} className="code-sheet-card">
                 <p className="code-sheet-venue">{venueName}</p>

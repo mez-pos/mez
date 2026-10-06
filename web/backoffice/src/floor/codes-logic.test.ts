@@ -12,6 +12,9 @@ import {
   hostOf,
   missingCount,
   noAddressWords,
+  pickupConfirmWords,
+  pickupOffWords,
+  pickupState,
   printableCount,
   sheetSummary,
 } from "./codes-logic";
@@ -114,5 +117,50 @@ describe("the sheet", () => {
     expect(hostOf("https://cafe.example:8443/order/t/x")).toBe("cafe.example:8443");
     expect(hostOf("not an address")).toBe("");
     expect(hostOf("")).toBe("");
+  });
+});
+
+describe("the venue's pickup code", () => {
+  const pickup = (code: string, ordering: boolean) => ({ code, url: code === "" ? "" : `https://cafe.example/order/p/${code}`, ordering });
+
+  it("says how ordering to collect stands", () => {
+    expect(pickupState(pickup("", true))).toBe("none");
+    expect(pickupState(pickup("", false))).toBe("none");
+    expect(pickupState(pickup("sptdem4x7abc", true))).toBe("on");
+    // A code where guests cannot pay online leads to a page that takes no orders.
+    expect(pickupState(pickup("sptdem4x7abc", false))).toBe("no_orders");
+  });
+
+  it("can make a code where there is none, and show, renew and turn off the one there is", () => {
+    expect(actionsFor(pickup("", true), true)).toEqual(["give"]);
+    expect(actionsFor(pickup("sptdem4x7abc", true), true)).toEqual(["show", "renew", "revoke"]);
+    expect(actionsFor(pickup("sptdem4x7abc", true), false)).toEqual(["renew", "revoke"]);
+  });
+
+  it("says a renewed code stops the one on the door, and what becomes of guests who have paid", () => {
+    const words = pickupConfirmWords("renew");
+    expect(words.body).toContain("stops working at once");
+    expect(words.body).toContain("keep the code they are called by");
+    expect(words.body).toContain("door");
+    expect(words.done).toContain("Print it");
+    expect(`${words.title} ${words.body} ${words.done}`).not.toMatch(/table/i);
+  });
+
+  it("says a code turned off takes no orders until one is made again", () => {
+    const words = pickupConfirmWords("revoke");
+    expect(words.body).toContain("until you make a code again");
+    expect(words.body).toContain("keep the code they are called by");
+    expect(`${words.title} ${words.body} ${words.done}`).not.toMatch(/table/i);
+  });
+
+  it("says what to set where guests cannot pay online", () => {
+    expect(pickupOffWords).toContain("payment gateway");
+    expect(pickupOffWords).toContain("not taking orders");
+  });
+
+  it("counts the door's card on the sheet, and says it is there", () => {
+    expect(sheetSummary(1, true)).toBe("1 card on 1 page of A4: the one for the door.");
+    expect(sheetSummary(CARDS_PER_PAGE + 1, true)).toBe(`${CARDS_PER_PAGE + 1} cards on 2 pages of A4, one of them for the door.`);
+    expect(sheetSummary(0, false)).toBe("No table has a code to print.");
   });
 });
