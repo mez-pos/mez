@@ -7,25 +7,32 @@ import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { billState, paidTold, payLine, summaryRows, tellFailure, upiAfter, upiLinkOf } from "./bill-logic";
 import { tableLabel } from "./Landing";
 import { problemOf } from "./menu-logic";
 import { chargeOpen, chargeWords, checkoutUrlOf } from "./charge-logic";
 import { askingOf, canSplit, peopleRange, restLabel, startingChoice, stepPeople, type SplitChoice, type SplitWay } from "./split-logic";
+import { offersReceipt } from "./receipt-logic";
 import { useCharge, type ChargeApi } from "./use-charge";
+import { keepBill, keptBill } from "./use-receipt";
 import { billKey, phoneName, tellPaid, upiQrUrl, useBill } from "./use-guest";
 
 interface BillProps {
   code: string;
   table: GuestTableResponse;
   onBack: () => void;
+  onReceipt: () => void;
 }
 
-export function Bill({ code, table, onBack }: BillProps) {
+export function Bill({ code, table, onBack, onReceipt }: BillProps) {
   const query = useBill(code);
   const online = useCharge(code);
   const bill = query.data;
+  // The bill names itself while it is open. Kept, it is what the receipt is
+  // asked for by once the table's code means the next bill (ADR-240).
+  const named = bill?.bill;
+  useEffect(() => keepBill(code, named), [code, named]);
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas text-fg">
       <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-line bg-chrome px-2">
@@ -131,6 +138,11 @@ export function Bill({ code, table, onBack }: BillProps) {
             <p className="mt-4 rounded-card border border-line bg-sunken p-4 text-center text-base text-fg-2">
               {payLine(billState(bill), upiLinkOf(bill) !== null)}
             </p>
+            {offersReceipt(billState(bill), keptBill(code)) && (
+              <Button variant={bill.online || upiLinkOf(bill) !== null ? "secondary" : "primary"} size="charge" className="mt-4 w-full" onClick={onReceipt}>
+                See your receipt
+              </Button>
+            )}
             <p className="mt-3 text-center text-sm text-fg-muted">This is the whole table's bill, whoever ordered.</p>
           </>
         )}

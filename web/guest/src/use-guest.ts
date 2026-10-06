@@ -11,6 +11,7 @@ import type {
   GuestMenuResponse,
   GuestOrderRequest,
   GuestPaidResponse,
+  GuestReceiptResponse,
   GuestRoundResponse,
   GuestShareRequest,
   GuestTableResponse,
@@ -41,6 +42,11 @@ export function sendOrder(code: string, request: GuestOrderRequest, key: string)
 /** How an order placed at this table stands, and once sent how far the kitchen has come (ADR-238). */
 export function trackOrder(code: string, round: string): Promise<GuestRoundResponse> {
   return api.get<GuestRoundResponse>(`${base(code)}/orders/${encodeURIComponent(round)}`);
+}
+
+/** A settled bill's receipt: the counter's own invoice, by the table's code and the bill's id (ADR-240). */
+export function readReceipt(code: string, bill: string, signal: AbortSignal): Promise<GuestReceiptResponse> {
+  return api.get<GuestReceiptResponse>(`${base(code)}/receipts/${encodeURIComponent(bill)}`, { signal });
 }
 
 export function useTable(code: string): UseQueryResult<GuestTableResponse> {

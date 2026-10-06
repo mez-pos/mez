@@ -8,13 +8,13 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but for 4f6b (Cashfree, question 8), and 5a to 5d done. (The walks are owed.)
+4 but for 4f6b (Cashfree, question 8), and 5a to 5e1 done. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 5d: the e-receipt on the server** (ADR-240).
-`GET /order/api/t/{code}/receipts/{bill}`: the counter's own invoice, by the
-table's code and the bill's id. The open bill and a tracked order say `bill`.
+**Phase 11, Task 5e1: the receipt on the phone** (ADR-241). `#receipt`: the
+invoice as issued, offered on the bill once it is paid or gone. The phone keeps
+which bill was its table's (`mez.bill.<code>`). Seen at 390 wide.
 
 ## Next task
 
@@ -22,14 +22,14 @@ table's code and the bill's id. The open bill and a tracked order say `bill`.
 keys, then on a phone Pay online on a bill, a share of one from two phones, and
 Pay on an order with paying first chosen. The payments card says so itself.
 
-**Phase 11, Task 5e: the receipt on the phone, and ordering the same again.**
-Read ADR-240, ADR-239, `docs/design/screens/guest-bill.md`, `guest-order.md`,
-`docs/design/tokens.md`, and M09 in the reference. Likely two: split it first.
-- The phone keeps `bill` from the bill and from a tracked order, and when the bill
-  reads "nothing open" or paid, offers the receipt. A screen of its own, and a spec.
-- Times in the venue's `time_zone`, not the phone's. No figure worked out here.
-- Re-order puts an order's dishes back in the cart from its own stored request,
-  held against today's menu, as the cart already does. It places nothing.
+**Phase 11, Task 5e2: ordering the same again.** Read ADR-239, ADR-241,
+`docs/design/screens/guest-order.md`, `docs/design/tokens.md`.
+`web/guest/src/`: `order-logic.ts`, `cart-logic.ts`, `use-cart.ts`, `Order.tsx`.
+- "Order this again" on the order's screen puts that order's dishes in the cart,
+  from the request the phone kept (`Placed.request`): ids and counts, no prices.
+- The cart already holds itself against today's menu and says what it took out.
+  A dish gone, or its choices changed, must end up said and not silently dropped.
+- It places nothing. Decide whether it adds to a cart with things in it, or asks.
 
 ## Known broken / in progress
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Task 4 but for 4f6b, 5a to 5d done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Task 4 but for 4f6b, 5a to 5e1 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

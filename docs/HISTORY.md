@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 5c: the order's screen follows the kitchen** (ADR-239). With the
+**Phase 11, Task 5d: the e-receipt on the server** (ADR-240).
+`GET /order/api/t/{code}/receipts/{bill}`: the counter's own invoice, by the
+table's code and the bill's id. The open bill and a tracked order say `bill`.
+
+Before it, **Phase 11, Task 5c: the order's screen follows the kitchen** (ADR-239). With the
 kitchen, being made, ready, as the kitchen does each, on the screen and the
 strip, asked at the order's own address. Seen at 390 wide in the real binary.
 

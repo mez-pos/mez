@@ -20,6 +20,7 @@ import {
 } from "./order-logic";
 import type { CartApi } from "./use-cart";
 import { menuKey, sendOrder, trackOrder } from "./use-guest";
+import { keepBill } from "./use-receipt";
 
 export interface OrderApi {
   /** The order this phone last placed at this table, if it still remembers one. */
@@ -62,6 +63,8 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
 
   const keep = (next: Placed) => {
     setPlaced(next);
+    // A sent order says which bill it is on: remembered for the receipt.
+    keepBill(code, next.round.bill);
     save(placedStorageKey(code), JSON.stringify(next));
   };
 

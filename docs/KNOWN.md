@@ -10,13 +10,17 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **A guest's receipt** (ADR-240): in the services and the guest's API,
-  with no screen, and not asked in the real binary. A phone that neither
-  opened the bill nor tracked an order while the bill was open has nothing
-  to ask for a receipt by. It is given for 45 days from its invoice, a
-  figure nobody chose but this task. A renewed table code ends every
-  receipt asked for by the old one. A credit note shows only as an amount:
-  its number and its lines are not on the receipt. A tip is not on it.
+- **A guest's receipt** (ADR-240, ADR-241): seen at 390 wide in the real
+  binary, a bill paid by UPI through the staff API, with its real invoice
+  number and the time in the venue's zone. Not seen: a discount, tax not in
+  the prices, two payments, a credit note or a refund, a legal name that
+  differs, the states with no receipt, a long invoice number wrapping, a
+  screen reader. A phone that neither opened the bill nor tracked an order
+  while the bill was open has nothing to ask by. The phone remembers one
+  bill for a table, the last it saw. 45 days is a figure nobody chose but
+  Task 5d. A renewed table code ends every receipt asked for by the old
+  one. A credit note shows only as an amount. A tip is not on it. Keeping
+  it is a screenshot: nothing prints, saves or sends it.
 - **Tracking an order** (ADR-236, ADR-238, ADR-239): seen at 390 wide in
   the real binary, one order at a seated table moved by the kitchen's own
   API: with the kitchen, being made, ready. Not seen: accepted (a dish made

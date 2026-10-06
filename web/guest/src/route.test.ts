@@ -39,7 +39,7 @@ describe("the five screens", () => {
     expect(viewFrom("#MENU")).toBe("landing");
   });
 
-  it.each(["landing", "menu", "cart", "order", "bill"] as const)("round-trips %s", (view) => {
+  it.each(["landing", "menu", "cart", "order", "bill", "receipt"] as const)("round-trips %s", (view) => {
     expect(viewFrom(hashFor(view))).toBe(view);
   });
 

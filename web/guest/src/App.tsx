@@ -1,5 +1,5 @@
 // The guest's app: a table's code in the path, and the landing, the menu or
-// the cart, the order placed or the bill in the hash (route.ts).
+// the cart, the order placed, the bill or its receipt in the hash (route.ts).
 
 import { useEffect, useState } from "react";
 import { Bill } from "./Bill";
@@ -9,11 +9,13 @@ import { Menu } from "./Menu";
 import { Order, OrderStrip } from "./Order";
 import { problemOf } from "./menu-logic";
 import { Problem } from "./Problem";
+import { Receipt } from "./Receipt";
 import { hashFor, tableCodeFrom, viewFrom, type View } from "./route";
 import { useCart } from "./use-cart";
 import { hasStartedCharge, hasStartedRoundCharge } from "./use-charge";
 import { useGuestMenu, useTable } from "./use-guest";
 import { useOrder } from "./use-order";
+import { keptBill } from "./use-receipt";
 
 export function App() {
   const code = tableCodeFrom(window.location.pathname);
@@ -61,7 +63,8 @@ function Table({ code }: { code: string }) {
       />
     );
   }
-  if (view === "bill") return <Bill code={code} table={table.data} onBack={() => go("menu")} />;
+  if (view === "bill") return <Bill code={code} table={table.data} onBack={() => go("menu")} onReceipt={() => go("receipt")} />;
+  if (view === "receipt") return <Receipt code={code} table={table.data} bill={keptBill(code)?.id ?? null} onBack={() => go("bill")} />;
 
   if (menu.data === undefined) {
     if (menu.isPending) return <Waiting line="Loading the menu" />;

@@ -185,6 +185,12 @@ Phase 10.
     with the till's parts taken out, asked for by the table's code and the
     bill's own id, which the open bill and a tracked order now say.
   - [ ] **5e.** The receipt on the phone, and ordering the same again.
+    Split in two (ADR-241):
+    - [x] **5e1.** The receipt: `#receipt`, the invoice as issued, offered
+      on the bill once it is paid or gone. The phone keeps which bill was
+      its table's. Its spec, `guest-receipt.md`.
+    - [ ] **5e2.** Ordering the same again: an order's dishes back in the
+      cart, held against today's menu. It places nothing.
   - [ ] **5f.** Ordering for pickup, and its code (ADR-237, by the owner).
     After 5e, and beside Task 6, which makes and revokes the venue's code.
     Paid first, always, so only where a gateway is set. Split in four:

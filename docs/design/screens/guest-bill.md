@@ -91,6 +91,9 @@ anyone brings it: so the figure at the counter is no surprise.
   - settled: "This bill is paid. Thank you."
   - nothing open: "Nothing is on this table's bill yet. What you order
     appears here once it is accepted."
+- **See your receipt,** a button, 58px, once the bill is paid or there is
+  none open, and the phone remembers a bill (ADR-241). The primary where
+  nothing else on the screen is; the secondary under Pay.
 - "This is the whole table's bill, whoever ordered."
 
 ## Data
@@ -103,6 +106,8 @@ anyone brings it: so the figure at the counter is no surprise.
   which rows to draw and adds nothing up.
 - With no ticket at the table the answer is a bill with nothing on it, not
   an error.
+- `bill` in the answer, while a bill is open: its own id. The phone keeps
+  the latest under `mez.bill.<code>`, for the receipt (`guest-receipt.md`).
 - `upi` in the answer: the link, the address, the payee and the amount.
   The link is the server's, built from the balance. The phone follows it
   only if it begins `upi://pay?`.
@@ -149,6 +154,7 @@ anyone brings it: so the figure at the counter is no surprise.
 | See the table's bill, on an empty cart | Opens this screen | A table staff seated, whose guest ordered nothing by phone, can still read it |
 | Back, the phone's Back | The menu | |
 | Try again | Reads the bill again | |
+| See your receipt | The receipt | Of the bill this phone last saw open at this table |
 | Pay online | Starts a charge and leaves for the provider's page | Back at the table's address, the app opens on the bill and says how the payment stands |
 | Open the payment page again | The same page | |
 | OK, on an answered payment | Puts it away | Pay online is offered again if anything is owed |
@@ -189,7 +195,7 @@ anyone brings it: so the figure at the counter is no surprise.
 - **Staff looked and found no payment:** the green line goes and the button
   is back. Nothing tells the guest why: staff do, at the table.
 - **The bill closed while it was shown:** at the next read it is "nothing
-  open". Task 5's receipt is what a guest keeps.
+  open", and See your receipt is under it.
 
 ## Constraints
 

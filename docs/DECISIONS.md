@@ -7662,3 +7662,44 @@ days, and both can be had by sitting at the table while the bill is open, which 
 what a paper receipt left on the table gives as well. A phone that never read the
 bill or tracked an order while it was open has no id to ask by. A credit note is
 only an amount here. Nothing on the phone uses any of it until 5e.
+
+## ADR-241 - The receipt on the phone: the invoice shown, and the phone remembers which bill was its table's
+2026-10 · Status: accepted. Phase 11, Task 5e1.
+Context: ADR-240 answers a settled bill's receipt to whoever has the table's code
+and the bill's id. M09 draws "Payment successful!", a rating, and "Get receipt".
+Decision:
+  - **Task 5e is split in two**: 5e1 the receipt, this; 5e2 ordering the same
+    again.
+  - **The phone keeps one bill's id for a table**, under `mez.bill.<code>`: what
+    the open bill last named, or the bill an order it placed was on. That is all
+    it remembers of a bill. Kept 45 days, as long as the venue gives the receipt,
+    so the phone does not offer what will be refused.
+  - **An id from storage is checked to be a bill's before it is put in an
+    address**, as a charge's is (ADR-222).
+  - **The bill offers "See your receipt" once it is paid, or there is none
+    open.** While something is owed there is no receipt and no button. With no
+    bill open it is the last bill this phone saw here, which after a later visit
+    is the last visit's.
+  - **A screen of its own, `#receipt`**, drawn as a document: the venue's name,
+    its tax registration, the invoice number and when it was issued, the lines,
+    the tax, the total, and how it was paid. The bill's own rows and words where
+    the two say the same thing.
+  - **"Issued" is said in the venue's time**, from the zone the receipt carries. A
+    receipt read at home in another country says when the meal was.
+  - **Every reason there is no receipt is one sentence**, and it has no Try
+    again: the venue answers them all alike (ADR-240), and asking again changes
+    nothing. Not reached and failed do have it.
+  - **Keeping it is a screenshot, and the screen says so.** Nothing prints, saves
+    or sends: mez has no address for a guest, and a print button on a phone is a
+    promise about a printer.
+  - **Left out of M09**: the success screen (the bill already says a payment was
+    received), the rating and feedback (nothing in the venue takes it), and
+    favourites (M10, and no guest has an account).
+Because: the receipt exists so a guest can show what they paid, to an employer or
+to themselves. The invoice number and the tax registration are what make it one.
+Cost: a phone that never read the bill or tracked an order while the bill was open
+has no id, and is told there is no receipt. One bill is remembered for a table, so
+a guest back at the same table loses the offer of the earlier visit's once the new
+bill is seen. The page lasts 45 days and a screenshot is the only copy. The bundle
+is 45.3 KB gzipped of 60, up 1.3. Seen at 390 wide in the real binary: a bill paid
+by UPI through the staff API, its invoice number, and the time in the venue's zone.
