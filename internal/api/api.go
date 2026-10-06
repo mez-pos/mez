@@ -21,6 +21,7 @@ type Server struct {
 	tunnel        func() TunnelStatus
 	guests        Guests
 	guestMount    string
+	tableCodes    TableCodes
 	guestOrders   GuestOrders
 	guestRequests GuestRequests
 	charges       Charges
@@ -136,6 +137,7 @@ func (s *Server) routes() http.Handler {
 	s.mountAudit(mux)
 	s.mountReports(mux)
 	s.mountFloor(mux)
+	s.mountTableCodes(mux)
 	s.mountKitchen(mux)
 	s.mountShifts(mux)
 	s.mountZReports(mux)

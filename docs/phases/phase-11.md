@@ -210,6 +210,18 @@ Phase 10.
   non-guessable and revocable. Rate limit per table to stop a bored teenager
   opening forty tickets.
 
+  Codes are made, read and renewed already (ADR-206, `mez table-codes`).
+  Split in five (ADR-243):
+  - [x] **6a.** The staff API: `GET` and `POST /api/v1/table-codes`, renew
+    and revoke a table's code, and its address as a QR
+    (`/api/v1/tables/{id}/code/qr.svg`). `tablecodes.Revoke`. No screen.
+  - [ ] **6b.** The back office: the tables and their codes, renew, turn
+    off, and what it says with no `public_url`. Its spec.
+  - [ ] **6c.** The sheet: every table's code to print, cut and stick.
+  - [ ] **6d.** The limit: how often one table's code may place an order,
+    start a payment or be asked, without catching a phone that only tracks.
+  - [ ] **6e.** The venue's pickup code (ADR-237), ahead of 5f.
+
 ## Done when
 A phone on mobile data, with no access to the venue LAN, scans a table QR,
 orders, pays by UPI, and the ticket appears on the kitchen display and settles

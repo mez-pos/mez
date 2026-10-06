@@ -265,3 +265,76 @@ func TestWellFormed(t *testing.T) {
 		}
 	}
 }
+
+// TestRevokeTurnsACodeOffAndGivesNoOther: the sticker leads nowhere until
+// the table is given a code again, and then it is a new one.
+func TestRevokeTurnsACodeOffAndGivesNoOther(t *testing.T) {
+	d := openDB(t)
+	s := newService(t, d)
+	ctx := context.Background()
+	codes, err := s.Ensure(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := codes[0]
+
+	if err := s.Revoke(ctx, 1, old.TableID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Resolve(ctx, old.Code); !errors.Is(err, ErrUnknown) {
+		t.Errorf("the code turned off: %v", err)
+	}
+	after, err := s.List(ctx, 1)
+	if err != nil || after[0].Code != "" || after[1].Code != codes[1].Code {
+		t.Fatalf("after turning one off: %+v, %v", after, err)
+	}
+	// Twice is once.
+	if err := s.Revoke(ctx, 1, old.TableID); err != nil {
+		t.Errorf("turning off a table with no code: %v", err)
+	}
+
+	fresh, err := s.Renew(ctx, 1, old.TableID)
+	if err != nil || fresh == old.Code || !WellFormed(fresh) {
+		t.Fatalf("a code again: %q, %v", fresh, err)
+	}
+	if got, err := s.Resolve(ctx, fresh); err != nil || got.TableID != old.TableID {
+		t.Errorf("the new code: %+v, %v", got, err)
+	}
+	if _, err := s.Resolve(ctx, old.Code); !errors.Is(err, ErrUnknown) {
+		t.Errorf("the old code came back: %v", err)
+	}
+}
+
+// TestACodeIsOnlyForATableOnTheVenuesOwnFloor: another venue's table, one
+// that is not there, and one taken off the floor are all refused, and nothing
+// is written for them.
+func TestACodeIsOnlyForATableOnTheVenuesOwnFloor(t *testing.T) {
+	d := openDB(t)
+	s := newService(t, d)
+	ctx := context.Background()
+	if _, err := d.Writer().ExecContext(ctx, `UPDATE tables SET active = 0 WHERE id = 3`); err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name  string
+		table int64
+	}{
+		{"another venue's table", 4},
+		{"no such table", 99},
+		{"a table taken off the floor", 3},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := s.Renew(ctx, 1, tt.table); !errors.Is(err, ErrNoTable) {
+				t.Errorf("renewing: %v", err)
+			}
+			if err := s.Revoke(ctx, 1, tt.table); !errors.Is(err, ErrNoTable) {
+				t.Errorf("turning off: %v", err)
+			}
+		})
+	}
+	var n int
+	if err := d.Writer().QueryRowContext(ctx, `SELECT count(*) FROM table_codes`).Scan(&n); err != nil || n != 0 {
+		t.Errorf("%d codes were written, %v", n, err)
+	}
+}

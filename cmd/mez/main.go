@@ -344,6 +344,7 @@ func run() (err error) {
 		api.WithFloor(floorPlan),
 		api.WithShifts(shifts),
 		api.WithGuests(guestCodes, web.MountGuest),
+		api.WithTableCodes(guestCodes, cfg.PublicURL),
 		api.WithGuestOrders(orders),
 		api.WithGuestRequests(orders),
 		api.WithCharges(payOnline, cfg.PublicURL),

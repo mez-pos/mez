@@ -145,7 +145,8 @@ export type ErrorCode =
   | 'charge_not_waiting'
   | 'bill_claimed'
   | 'bill_moved'
-  | 'receipt_not_found';
+  | 'receipt_not_found'
+  | 'no_public_url';
 
 export type OrderStatus =
   | 'open'
@@ -993,6 +994,18 @@ export interface GuestReceiptPaymentResponse {
 
 export interface ResolveChargeRequest {
   how: ChargeResolution;
+}
+
+export interface TableCodesResponse {
+  address: string;
+  tables: TableCodeResponse[];
+}
+
+export interface TableCodeResponse {
+  table_id: number;
+  table_name: string;
+  code: string;
+  url: string;
 }
 
 export interface PaymentSettingsRequest {

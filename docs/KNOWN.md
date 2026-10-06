@@ -10,6 +10,12 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Table codes for the owner** (ADR-243): the staff API only, with no
+  screen, and not asked in the real binary. Renewing or turning off a code
+  ends, for that table, every receipt and order a phone could ask about
+  through the old one. A code turned off is said nowhere to a guest but
+  "This code does not lead to a table". Nothing records who renewed a code
+  but the log. There is no limit on guests' requests yet (6d).
 - **Ordering the same again** (ADR-242): seen at 390 wide in the real
   binary, one dish added onto a cart that had one of it. Not seen: a dish
   gone from the menu since, or its choices changed, being named in the

@@ -102,6 +102,20 @@ func (s *Service) List(ctx context.Context, venueID int64) ([]Coded, error) {
 	return out, nil
 }
 
+// ErrNoTable is a table that is not on the venue's floor: not there, another
+// venue's, or taken off the floor.
+var ErrNoTable = errors.New("tablecodes: no such table on this venue's floor")
+
+// onFloor refuses a table that is not the venue's own and in service. A code
+// for another venue's table would lead a guest of this one to that one.
+func onFloor(ctx context.Context, q *gen.Queries, venueID, tableID int64) error {
+	t, err := q.TableByID(ctx, tableID)
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && (t.VenueID != venueID || !t.Active)) {
+		return fmt.Errorf("%w: table %d", ErrNoTable, tableID)
+	}
+	return err
+}
+
 // Renew gives a table a new code and turns off the one it had, in one
 // transaction: there is never a moment with two live codes, or with none
 // after there was one.
@@ -112,6 +126,9 @@ func (s *Service) Renew(ctx context.Context, venueID, tableID int64) (string, er
 	}
 	at := s.now().UTC()
 	err = s.db.WriteTx(ctx, func(q *gen.Queries) error {
+		if err := onFloor(ctx, q, venueID, tableID); err != nil {
+			return err
+		}
 		if err := q.RevokeTableCodes(ctx, gen.RevokeTableCodesParams{
 			RevokedAt: sql.NullTime{Time: at, Valid: true}, VenueID: venueID, TableID: tableID,
 		}); err != nil {
@@ -123,6 +140,26 @@ func (s *Service) Renew(ctx context.Context, venueID, tableID int64) (string, er
 		return "", fmt.Errorf("tablecodes: renewing table %d's code: %w", tableID, err)
 	}
 	return code, nil
+}
+
+// Revoke turns off a table's code and gives it no other (phase 11, Task 6a,
+// ADR-243): the sticker on the table leads nowhere, and so does every photo
+// of it, until the table is given a code again. A table with no code is left
+// as it is.
+func (s *Service) Revoke(ctx context.Context, venueID, tableID int64) error {
+	at := s.now().UTC()
+	err := s.db.WriteTx(ctx, func(q *gen.Queries) error {
+		if err := onFloor(ctx, q, venueID, tableID); err != nil {
+			return err
+		}
+		return q.RevokeTableCodes(ctx, gen.RevokeTableCodesParams{
+			RevokedAt: sql.NullTime{Time: at, Valid: true}, VenueID: venueID, TableID: tableID,
+		})
+	})
+	if err != nil {
+		return fmt.Errorf("tablecodes: turning off table %d's code: %w", tableID, err)
+	}
+	return nil
 }
 
 // Ensure gives every table on the floor that has no code one, and returns

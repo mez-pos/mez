@@ -7735,3 +7735,40 @@ past orders are M10 and want an account or a longer memory than one order. Where
 the cart is both full and missing a dish, only the missing dish is said. The
 bundle is 45.6 KB gzipped of 60, up 0.3. Seen at 390 wide in the real binary: one
 dish added onto a cart that had one of it, the cart opening with two.
+
+## ADR-243 - The owner's side of table codes: read, renew, turn off and draw, for whoever may edit settings
+2026-10 · Status: accepted. Phase 11, Task 6a.
+Context: Task 6 asks for codes generated from the back office, printable as a
+sheet, non-guessable and revocable, with a rate limit per table. Codes are drawn
+(about 59 bits), read and renewed already (ADR-206), from the command line only.
+Decision:
+  - **Task 6 is split in five**, in the phase file: 6a the staff API, this; 6b the
+    back office; 6c the sheet to print; 6d the limit; 6e the venue's pickup code.
+  - **Five routes, all for `settings.edit`.** A code is a guest's only credential
+    (ADR-206): whoever can read one can order to that table. A cashier cannot.
+  - **`GET /api/v1/table-codes`** lists every table on the floor with its code
+    and the address its sticker says. It makes nothing: reading is not writing.
+    **`POST`** on the same gives each table without a code one, and keeps the
+    rest, so a sticker already on a table goes on working.
+  - **Renew and revoke are two things.** Renew gives a new code and stops the old
+    in one transaction, as before. Revoke (`tablecodes.Revoke`, new) stops the
+    code and gives no other: a table closed off, or a code that has got out,
+    takes no orders until someone decides it should. Both answer the whole list.
+  - **A code is only for a table on the venue's own floor.** Renew took any table
+    id; it now refuses another venue's table, one that is not there, and one taken
+    off the floor, and so does revoke.
+  - **The address on a sticker is the venue's `public_url` and never the
+    request's**, as a payment's return address is (ADR-222). With none set the
+    list has codes and no addresses, and the QR is refused, `no_public_url`: a
+    sticker that says an address only this network reaches works for nobody on
+    mobile data.
+  - **The QR is drawn on the server** by the encoder already there (ADR-217), an
+    SVG with the headers a guest's has. It needs the staff's headers, so a screen
+    fetches it; it is not an address to hand to an `<img>`.
+  - **A code is never logged.** Renewing and turning off are, by table and by who.
+Because: turning a code off is the only thing an owner can do about a photographed
+sticker, and it was a command on the venue's own machine.
+Cost: renewing or turning off a code cuts off everything asked through it: an order
+being tracked, a bill being read, a receipt (ADR-240). That is the point of it, and
+a guest mid-meal is told only that the code leads nowhere. Who renewed what is in
+the log and not in the audit trail the back office reads. No screen yet.
