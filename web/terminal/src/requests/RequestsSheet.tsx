@@ -3,9 +3,9 @@
 // for and how long it has waited, and Accept or Decline.
 
 import { useEffect, useState } from "react";
-import type { GuestRequestResponse, PaidNoticeResponse } from "../../../shared/api-types";
+import type { ChargeResolution, GuestRequestResponse, PaidNoticeResponse, UnappliedChargeResponse } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, Money, Sheet } from "../../../shared/ui";
-import { choicesOf, dishCount, owesOtherwise, saidAgo, waited } from "./request-logic";
+import { choicesOf, dishCount, gatewayName, methodWord, owesOtherwise, saidAgo, waited } from "./request-logic";
 import type { GuestRequests } from "./use-guest-requests";
 
 interface RequestsSheetProps {
@@ -32,8 +32,21 @@ export function RequestsSheet({ guests, onClose, onTakePayment }: RequestsSheetP
             {guests.error}
           </p>
         )}
-        {guests.loaded && guests.requests.length === 0 && guests.paid.length === 0 && (
+        {guests.loaded && guests.requests.length === 0 && guests.paid.length === 0 && guests.unapplied.length === 0 && (
           <EmptyState icon={<InboxIcon />} line="No table is waiting to order from a phone, and none says it has paid." />
+        )}
+        {guests.unapplied.length > 0 && (
+          <section aria-label="Paid online, and on no bill" className="mb-5 rounded-card border border-danger bg-danger-tint p-4">
+            <h3 className="text-meta font-bold uppercase text-danger">Paid online, and on no bill</h3>
+            <p className="mt-1 text-sm text-fg">
+              A guest's money was taken and the bill could not take it. Refund it at the payment provider, or record it on a bill by hand. Then say which, here.
+            </p>
+            <ol>
+              {guests.unapplied.map((charge) => (
+                <UnappliedRow key={charge.id} charge={charge} now={now} guests={guests} />
+              ))}
+            </ol>
+          </section>
         )}
         {guests.paid.length > 0 && (
           <section aria-label="Say they have paid">
@@ -46,7 +59,9 @@ export function RequestsSheet({ guests, onClose, onTakePayment }: RequestsSheetP
             </ol>
           </section>
         )}
-        {guests.paid.length > 0 && guests.requests.length > 0 && <h3 className="mt-5 text-meta font-bold uppercase text-fg-faint">Want to order</h3>}
+        {guests.paid.length + guests.unapplied.length > 0 && guests.requests.length > 0 && (
+          <h3 className="mt-5 text-meta font-bold uppercase text-fg-faint">Want to order</h3>
+        )}
         <ol>
           {guests.requests.map((request) => (
             <RequestRow key={request.id} request={request} now={now} guests={guests} />
@@ -174,6 +189,67 @@ function PaidRow({ notice, now, guests, onTakePayment }: PaidRowProps) {
         </Button>
         <Button variant="ghost" disabled={busy} onClick={() => (armed ? putAway() : setArmed(true))}>
           {armed ? "Tap again: no payment" : "No payment found"}
+        </Button>
+      </div>
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </li>
+  );
+}
+
+/**
+ * Money a payment gateway took that no bill could (ADR-223). Nothing here
+ * moves it: the refund is made at the provider, and a payment kept is
+ * recorded on a bill as any other. These two buttons only say which was
+ * done, by whom, so it stops being in front of everyone.
+ */
+function UnappliedRow({ charge, now, guests }: { charge: UnappliedChargeResponse; now: number; guests: GuestRequests }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Either answer takes it off every terminal for good: asked twice.
+  const [armed, setArmed] = useState<ChargeResolution | null>(null);
+  useEffect(() => {
+    if (armed === null) return;
+    const t = setTimeout(() => setArmed(null), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
+
+  const say = (how: ChargeResolution) => {
+    if (armed !== how) {
+      setArmed(how);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    guests
+      .resolve(charge.id, how)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setBusy(false));
+  };
+
+  return (
+    <li className="border-b border-danger/30 py-3 last:border-b-0">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="font-serif text-xl text-fg-heading">Table {charge.table_name}</p>
+        <p className="font-mono text-sm tabular-nums text-fg-2">{saidAgo(charge.at, now).replace(/^Said /, "")}</p>
+      </div>
+      <div className="mt-1 flex items-baseline justify-between gap-3 text-base font-semibold">
+        <span>Paid by {methodWord(charge.method)}</span>
+        <Money amount={charge.amount} />
+      </div>
+      <p className="mt-1 text-base text-fg">{charge.problem}</p>
+      <p className="mt-1 text-sm text-fg-2">
+        {gatewayName(charge.gateway)} payment <span className="font-mono break-all">{charge.reference || charge.gateway_id}</span>
+      </p>
+      <div className="mt-3 flex flex-wrap gap-tap-gap">
+        <Button disabled={busy} onClick={() => say("refunded")}>
+          {armed === "refunded" ? "Tap again: refunded" : "I refunded it"}
+        </Button>
+        <Button disabled={busy} onClick={() => say("recorded")}>
+          {armed === "recorded" ? "Tap again: recorded" : "I recorded it on a bill"}
         </Button>
       </div>
       {error && (

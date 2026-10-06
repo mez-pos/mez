@@ -54,7 +54,7 @@ func (q *Queries) CreateGatewayCharge(ctx context.Context, arg CreateGatewayChar
 
 const gatewayChargeByPublicID = `-- name: GatewayChargeByPublicID :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
 FROM gateway_charges
 WHERE public_id = ?
 `
@@ -79,13 +79,16 @@ func (q *Queries) GatewayChargeByPublicID(ctx context.Context, publicID string) 
 		&i.Problem,
 		&i.CreatedAt,
 		&i.SettledAt,
+		&i.Resolution,
+		&i.ResolvedAt,
+		&i.ResolvedBy,
 	)
 	return i, err
 }
 
 const gatewayChargesByStatus = `-- name: GatewayChargesByStatus :many
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
 FROM gateway_charges
 WHERE venue_id = ? AND status = ?
 ORDER BY created_at, id
@@ -126,6 +129,9 @@ func (q *Queries) GatewayChargesByStatus(ctx context.Context, arg GatewayCharges
 			&i.Problem,
 			&i.CreatedAt,
 			&i.SettledAt,
+			&i.Resolution,
+			&i.ResolvedAt,
+			&i.ResolvedBy,
 		); err != nil {
 			return nil, err
 		}
@@ -142,7 +148,7 @@ func (q *Queries) GatewayChargesByStatus(ctx context.Context, arg GatewayCharges
 
 const openGatewayChargeForOrder = `-- name: OpenGatewayChargeForOrder :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
 FROM gateway_charges
 WHERE order_id = ? AND gateway = ? AND amount_minor = ? AND currency = ? AND status = 'open'
 ORDER BY created_at DESC, id DESC
@@ -183,8 +189,41 @@ func (q *Queries) OpenGatewayChargeForOrder(ctx context.Context, arg OpenGateway
 		&i.Problem,
 		&i.CreatedAt,
 		&i.SettledAt,
+		&i.Resolution,
+		&i.ResolvedAt,
+		&i.ResolvedBy,
 	)
 	return i, err
+}
+
+const resolveGatewayCharge = `-- name: ResolveGatewayCharge :execrows
+UPDATE gateway_charges
+SET resolution = ?1, resolved_at = ?2, resolved_by = ?3
+WHERE public_id = ?4 AND venue_id = ?5 AND status = 'unapplied' AND resolved_at IS NULL
+`
+
+type ResolveGatewayChargeParams struct {
+	Resolution sql.NullString
+	ResolvedAt sql.NullTime
+	ResolvedBy sql.NullInt64
+	PublicID   string
+	VenueID    int64
+}
+
+// Says how an unapplied charge was dealt with, once. Whoever is second
+// writes nothing.
+func (q *Queries) ResolveGatewayCharge(ctx context.Context, arg ResolveGatewayChargeParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, resolveGatewayCharge,
+		arg.Resolution,
+		arg.ResolvedAt,
+		arg.ResolvedBy,
+		arg.PublicID,
+		arg.VenueID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const setGatewayChargePayment = `-- name: SetGatewayChargePayment :execrows
@@ -235,6 +274,75 @@ func (q *Queries) SettleGatewayCharge(ctx context.Context, arg SettleGatewayChar
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const unresolvedGatewayCharges = `-- name: UnresolvedGatewayCharges :many
+SELECT c.public_id, c.table_id, t.name AS table_name, o.public_id AS order_public_id, c.gateway, c.gateway_id,
+       c.amount_minor, c.currency, c.method, c.reference, c.problem, c.settled_at
+FROM gateway_charges c
+JOIN tables t ON t.id = c.table_id
+JOIN orders o ON o.id = c.order_id
+WHERE c.venue_id = ? AND c.status = 'unapplied' AND c.resolved_at IS NULL
+ORDER BY c.settled_at, c.id
+LIMIT ?
+`
+
+type UnresolvedGatewayChargesParams struct {
+	VenueID int64
+	Limit   int64
+}
+
+type UnresolvedGatewayChargesRow struct {
+	PublicID      string
+	TableID       int64
+	TableName     string
+	OrderPublicID string
+	Gateway       string
+	GatewayID     string
+	AmountMinor   int64
+	Currency      string
+	Method        sql.NullString
+	Reference     sql.NullString
+	Problem       sql.NullString
+	SettledAt     sql.NullTime
+}
+
+// Money a gateway took that no bill could, and nobody has dealt with yet:
+// oldest first, with its table by name and its ticket by public id.
+func (q *Queries) UnresolvedGatewayCharges(ctx context.Context, arg UnresolvedGatewayChargesParams) ([]UnresolvedGatewayChargesRow, error) {
+	rows, err := q.db.QueryContext(ctx, unresolvedGatewayCharges, arg.VenueID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UnresolvedGatewayChargesRow{}
+	for rows.Next() {
+		var i UnresolvedGatewayChargesRow
+		if err := rows.Scan(
+			&i.PublicID,
+			&i.TableID,
+			&i.TableName,
+			&i.OrderPublicID,
+			&i.Gateway,
+			&i.GatewayID,
+			&i.AmountMinor,
+			&i.Currency,
+			&i.Method,
+			&i.Reference,
+			&i.Problem,
+			&i.SettledAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const venuesWithOpenGatewayCharges = `-- name: VenuesWithOpenGatewayCharges :many

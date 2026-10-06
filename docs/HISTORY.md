@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4f2: Razorpay, its keys, and the sweeper** (ADR-221).
+**Phase 11, Task 4f3: paying online from the phone** (ADR-222).
+`POST /order/api/t/{code}/bill/charge` and `GET .../bill/charge/{id}`; the bill
+says `online`. The return address is `public_url`, a new setting, never a
+request's. The phone has Pay online (`charge-logic.ts`, `use-charge.ts`).
+
+Before it, **Phase 11, Task 4f2: Razorpay, its keys, and the sweeper** (ADR-221).
 `internal/gateway/razorpay` uses payment links. `gateway`, `gateway_key_id` and
 `gateway_key_secret` are configuration (`MEZ_GATEWAY_KEY_SECRET`), not settings.
 `charges.Sweeper` settles open charges every 20 seconds.

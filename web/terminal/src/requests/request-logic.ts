@@ -26,10 +26,27 @@ export function wantingTables(requests: readonly Pick<GuestRequestResponse, "tab
  * asking to order, "says paid" or "say paid" when they only say they have
  * paid (ADR-218), and "from tables" for some of each.
  */
-export function pillLabel(requests: number, paid = 0): string {
+export function pillLabel(requests: number, paid = 0, unapplied = 0): string {
+  if (unapplied > 0 && requests === 0 && paid === 0) return unapplied === 1 ? "payment to sort out" : "payments to sort out";
+  if (unapplied > 0) return "from tables";
   if (paid === 0) return requests === 1 ? "table request" : "table requests";
   if (requests === 0) return paid === 1 ? "table says paid" : "tables say paid";
   return "from tables";
+}
+
+/**
+ * How a guest paid online, as a word for staff. The gateway's own word for
+ * a method the bill has no name for is not kept, so that is "online".
+ */
+export function methodWord(method: string): string {
+  if (method === "upi") return "UPI";
+  if (method === "card") return "card";
+  return "online";
+}
+
+/** A gateway by the name staff know it by. */
+export function gatewayName(gateway: string): string {
+  return gateway === "razorpay" ? "Razorpay" : gateway;
 }
 
 /** A notice's amount differs from what the table owes now: a round was added, or part was paid. */

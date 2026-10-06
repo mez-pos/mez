@@ -6912,3 +6912,49 @@ real Razorpay, was refused, and the phone and the log each said the right thing,
 with no secret in the log. Seen by eye at 390 wide: the button, the line under it,
 and that refusal. Not seen: the gateway's page, coming back, waiting, paid, failed,
 or taken and not on the bill; the Go and vitest tests cover each against a fake.
+
+## ADR-223 - Money on no bill stays in front of staff until a person says what they did
+2026-10 · Status: accepted. Phase 11, Task 4f4.
+Context: ADR-220 keeps a charge as `unapplied` when a gateway has a guest's money and
+the bill could not take it, and until now only logged it. A log is read by nobody
+during service.
+Decision:
+  - **An unapplied charge is on every terminal**, in the pill, sheet and chime of
+    ADR-212, first in the sheet and in the danger colour: the pill turns to the
+    danger tint whatever else it counts. It is the one thing there that is a
+    guest's money gone astray.
+  - **It shows what a person needs to act**: the table, the amount, how it was
+    paid, why the bill could not take it in a sentence, and the gateway's id for
+    the payment, which is what its dashboard is searched for and what a refund
+    names.
+  - **A person says which of two things they did**, refunded it at the gateway or
+    recorded it on a bill by hand, and that is kept with who and when
+    (`resolution`, `resolved_at`, `resolved_by`, migration 00042). The charge
+    stays `unapplied`: that is what happened to it, and being dealt with is a
+    second fact.
+  - **Saying so moves no money and touches no bill.** mez does not refund at a
+    gateway: the interface is two questions (ADR-220) and a refund is a third,
+    with its own failures, for a later task if it is wanted. And it does not
+    guess which bill a stray payment belongs on. A test holds the bill unchanged.
+  - **Nothing else ever puts one away.** Not the shift closing, not the bill
+    closing, not time. Said twice, the second is refused.
+  - **Both answers are asked twice**, on the button: either takes it off every
+    terminal for good.
+  - **It asks `payment.take`** to say; anyone who can see requests can see it.
+  - **It reaches terminals by the floor version** (ADR-211), moved when a charge
+    becomes unapplied and when it is resolved, with the hub nudged
+    (`charges.Options.OnChange`). A charge that is simply paid or fails moves
+    nothing.
+  - **The list rides on `GET /api/v1/guest-requests`**, as `unapplied`, empty at a
+    venue with no gateway. `POST /api/v1/charges/{id}/resolve` takes `how`.
+Because: the worst outcome of paying online is a guest charged for a bill that
+shows unpaid, or charged twice. It cannot always be prevented, so it has to be
+impossible to miss and impossible to lose.
+Cost: the two buttons are a person's word and nothing checks it: "I refunded it"
+with no refund made leaves a guest out of pocket and mez none the wiser. Nothing
+reports resolved charges yet; they are in the table for whoever asks. A waiter
+without `payment.take` sees the red pill and cannot clear it. Seen by eye at 1366
+wide, on a charge put into a demo database by hand since no gateway works locally:
+the pill in danger, the card with its sentence and reference, "I refunded it" armed
+and confirmed, and the pill back to terracotta after. Not seen: a charge becoming
+unapplied through a real gateway, the chime for one, the waiter's frame, a refusal.

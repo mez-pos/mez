@@ -3,7 +3,14 @@
 // being answered is, or the terminal reconnected.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { GuestDecisionResponse, GuestRequestResponse, GuestRequestsResponse, PaidNoticeResponse } from "../../../shared/api-types";
+import type {
+  ChargeResolution,
+  GuestDecisionResponse,
+  GuestRequestResponse,
+  GuestRequestsResponse,
+  PaidNoticeResponse,
+  UnappliedChargeResponse,
+} from "../../../shared/api-types";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { liveFloorKey } from "../floor/use-live-floor";
@@ -16,6 +23,8 @@ export interface GuestRequests {
   requests: readonly GuestRequestResponse[];
   /** Tables whose guest says they have paid, and nobody has looked (ADR-218). */
   paid: readonly PaidNoticeResponse[];
+  /** Money a gateway took that no bill could, and nobody has dealt with (ADR-223). */
+  unapplied: readonly UnappliedChargeResponse[];
   /** Undefined until the list has been read once. */
   loaded: boolean;
   error: string | null;
@@ -24,10 +33,13 @@ export interface GuestRequests {
   decline: (id: string) => Promise<GuestDecisionResponse>;
   /** Puts a paid notice away: staff looked and no payment had come. */
   seen: (id: string) => Promise<void>;
+  /** Says what was done about an unapplied charge: refunded, or recorded on a bill. */
+  resolve: (id: string, how: ChargeResolution) => Promise<void>;
 }
 
 const none: readonly GuestRequestResponse[] = [];
 const nonePaid: readonly PaidNoticeResponse[] = [];
+const noneUnapplied: readonly UnappliedChargeResponse[] = [];
 
 export function useGuestRequests(): GuestRequests {
   const store = useAuthStore();
@@ -64,6 +76,7 @@ export function useGuestRequests(): GuestRequests {
   return {
     requests: query.data?.requests ?? none,
     paid: query.data?.paid ?? nonePaid,
+    unapplied: query.data?.unapplied ?? noneUnapplied,
     loaded: query.data !== undefined,
     error: query.isError ? failureOf(query.error) : null,
     accept: (id) => answer(id, "accept"),
@@ -71,6 +84,13 @@ export function useGuestRequests(): GuestRequests {
     seen: (id) =>
       store.api
         .post<void>(`/api/v1/paid-notices/${encodeURIComponent(id)}/seen`)
+        .catch((err: unknown) => {
+          throw new Error(failureOf(err), { cause: err });
+        })
+        .finally(again),
+    resolve: (id, how) =>
+      store.api
+        .post<void>(`/api/v1/charges/${encodeURIComponent(id)}/resolve`, { how })
         .catch((err: unknown) => {
           throw new Error(failureOf(err), { cause: err });
         })

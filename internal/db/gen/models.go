@@ -108,6 +108,9 @@ type GatewayCharge struct {
 	Problem     sql.NullString
 	CreatedAt   time.Time
 	SettledAt   sql.NullTime
+	Resolution  sql.NullString
+	ResolvedAt  sql.NullTime
+	ResolvedBy  sql.NullInt64
 }
 
 type GuestRound struct {

@@ -9,7 +9,7 @@ RETURNING id;
 
 -- name: GatewayChargeByPublicID :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
 FROM gateway_charges
 WHERE public_id = ?;
 
@@ -17,7 +17,7 @@ WHERE public_id = ?;
 -- A charge still open for a ticket at a provider for an amount: asked for
 -- again, it is the same charge.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
 FROM gateway_charges
 WHERE order_id = ? AND gateway = ? AND amount_minor = ? AND currency = ? AND status = 'open'
 ORDER BY created_at DESC, id DESC
@@ -27,7 +27,7 @@ LIMIT 1;
 -- A venue's charges in a status, oldest first: the open ones to ask the
 -- provider about, the unapplied ones a person must deal with.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
 FROM gateway_charges
 WHERE venue_id = ? AND status = ?
 ORDER BY created_at, id
@@ -50,3 +50,22 @@ WHERE id = sqlc.arg(id) AND status = 'open';
 -- name: VenuesWithOpenGatewayCharges :many
 -- The venues a sweep has anything to ask a provider about. Usually none.
 SELECT DISTINCT venue_id FROM gateway_charges WHERE status = 'open' ORDER BY venue_id;
+
+-- name: UnresolvedGatewayCharges :many
+-- Money a gateway took that no bill could, and nobody has dealt with yet:
+-- oldest first, with its table by name and its ticket by public id.
+SELECT c.public_id, c.table_id, t.name AS table_name, o.public_id AS order_public_id, c.gateway, c.gateway_id,
+       c.amount_minor, c.currency, c.method, c.reference, c.problem, c.settled_at
+FROM gateway_charges c
+JOIN tables t ON t.id = c.table_id
+JOIN orders o ON o.id = c.order_id
+WHERE c.venue_id = ? AND c.status = 'unapplied' AND c.resolved_at IS NULL
+ORDER BY c.settled_at, c.id
+LIMIT ?;
+
+-- name: ResolveGatewayCharge :execrows
+-- Says how an unapplied charge was dealt with, once. Whoever is second
+-- writes nothing.
+UPDATE gateway_charges
+SET resolution = sqlc.arg(resolution), resolved_at = sqlc.arg(resolved_at), resolved_by = sqlc.arg(resolved_by)
+WHERE public_id = sqlc.arg(public_id) AND venue_id = sqlc.arg(venue_id) AND status = 'unapplied' AND resolved_at IS NULL;

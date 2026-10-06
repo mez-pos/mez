@@ -1,7 +1,8 @@
 # Terminal: From the tables
 
-What guests have asked for from their phones and nobody has answered, and
-which tables say they have paid and nobody has looked (ADR-218). Built
+What guests have asked for from their phones and nobody has answered, which
+tables say they have paid and nobody has looked (ADR-218), and money a
+payment gateway took that is on no bill (ADR-223). Built
 in phase 11 Task 4b2 (ADR-209, ADR-211, ADR-212).
 `web/terminal/src/requests/`: `RequestsSheet.tsx`, `request-logic.ts`,
 `use-guest-requests.ts`, `use-request-chime.ts`. The pill is in
@@ -19,10 +20,24 @@ where staff hear of it, see what it asks for, and accept or decline it.
 - **Where it opens from:** a terracotta-tint pill in the top bar, a bell, a
   count and words, on every screen of both frames, only while something is
   waiting: "1 table request" or "3 table requests"; "1 table says paid" or
-  "2 tables say paid"; and "3 from tables" when there is some of each.
+  "2 tables say paid"; "1 payment to sort out"; and "3 from tables" when
+  there is some of more than one. **With a payment to sort out the pill is
+  in the danger tint**, whatever else it counts.
 - **The sheet** (`Sheet`: bottom on touch, a side panel with a mouse), titled
   "From the tables".
-- **Say they have paid,** first, when any table does. Under the heading:
+- **Paid online, and on no bill,** first, in a card with the danger border
+  and tint, at a venue with a gateway when there is one: "A guest's money
+  was taken and the bill could not take it. Refund it at the payment
+  provider, or record it on a bill by hand. Then say which, here." Each:
+  - "Table T5" in the serif, and at the right how long ago
+  - "Paid by UPI" (or card, or online) and the amount
+  - why the bill could not take it, in a sentence: "The bill no longer owes
+    this much: part or all of it was paid another way."
+  - "Razorpay payment pay_QwErTy12345678", small, the id in the monospace:
+    what to look for at the provider, and what a refund there names
+  - **I refunded it** and **I recorded it on a bill**
+  - an error line when the server refused
+- **Say they have paid,** next, when any table does. Under the heading:
   "Nothing is paid until you record it. Check the venue's phone for the
   payment first." Each:
   - "Table T5" in the serif, and at the right "Said 4 min ago"
@@ -51,7 +66,9 @@ where staff hear of it, see what it asks for, and accept or decline it.
 - `GET /api/v1/guest-requests`, key `["guest-requests"]`, read once and
   again on the stream's `floor_changed` and on a resync. Read only by
   someone with `order.open`.
-- The same answer carries `paid`, the tables that say they have paid.
+- The same answer carries `paid`, the tables that say they have paid, and
+  `unapplied`, the payments to sort out.
+- `POST /api/v1/charges/{id}/resolve` with `how`, `refunded` or `recorded`.
 - `POST /api/v1/guest-requests/{id}/accept` and `.../decline`, and
   `POST /api/v1/paid-notices/{id}/seen` for No payment found. After any of
   them, whatever the answer, the requests, the live floor and the open
@@ -70,14 +87,16 @@ where staff hear of it, see what it asks for, and accept or decline it.
 | Decline | Arms: the button reads "Tap again to decline" for four seconds | A second tap declines; the request leaves the list |
 | Take payment | Closes the sheet and opens `/pay/{order}` | The table's payment screen, where the UPI payment is recorded as any other. Recording what settles the bill takes the notice off the list |
 | No payment found | Arms: "Tap again: no payment" for four seconds | A second tap puts the notice away. Nothing on the bill changes, and the guest may say so again |
+| I refunded it, I recorded it on a bill | Arms: "Tap again: refunded" for four seconds | A second tap says so, with who and when. It leaves every terminal. Nothing is refunded or recorded by the tap: that is done at the provider, or on a bill |
 | Close | Closes the sheet | The pill stays while anything waits |
 
 Each request is answered on its own, also when two are from one table.
 
 ## The sound
 
-- The kitchen's chime, two rising notes, when a request or a table saying
-  it has paid arrives, and again every 30 seconds while either waits.
+- The kitchen's chime, two rising notes, when a request, a table saying it
+  has paid or a payment to sort out arrives, and again every 30 seconds
+  while any of them waits.
 - A terminal opened onto requests already waiting chimes for them.
 - A browser plays nothing until the page has been touched. The first tap or
   key anywhere is taken as that touch, and signing in is one. A page nobody
@@ -106,6 +125,12 @@ Each request is answered on its own, also when two are from one table.
 - A request never opens the sheet by itself: it would land on top of a
   payment being taken.
 - Decline is asked twice, on the button. It tells a guest no.
+- **A payment to sort out is never put away by anything but a person
+  saying what they did.** It is a guest's money on no bill. It outlasts the
+  shift, the bill and the table.
+- **The two buttons move no money.** The sheet says where the refund is
+  made and where a payment is recorded; mez does neither for this.
+- Saying which needs `payment.take`.
 - **A table saying it has paid changes nothing on its bill**, and the sheet
   says so above the list. Take payment records nothing: it goes to where a
   payment is recorded.

@@ -378,9 +378,10 @@ func TestMoneyTheBillCannotTakeIsKeptForAPerson(t *testing.T) {
 			if len(res.State.Tenders) != tt.tenders {
 				t.Errorf("%d tenders on the bill, want %d: the gateway's money was forced on", len(res.State.Tenders), tt.tenders)
 			}
-			list, err := w.s.Unapplied(ctx, 1)
-			if err != nil || len(list) != 1 || list[0].PublicID != c.PublicID || list[0].Amount != inr(16800) {
-				t.Errorf("unapplied = %+v, %v", list, err)
+			list, err := w.s.Waiting(ctx, 1)
+			if err != nil || len(list) != 1 || list[0].PublicID != c.PublicID || list[0].Amount != inr(16800) ||
+				list[0].TableName != "4" || list[0].Problem != got.Problem || list[0].Gateway != "test" || list[0].GatewayID != gatewayID(1) {
+				t.Errorf("waiting = %+v, %v", list, err)
 			}
 			// Asked again, it is still unapplied: it is not retried onto the bill.
 			if again, err := w.s.Settle(ctx, 1, c.PublicID); err != nil || again.Status != Unapplied {

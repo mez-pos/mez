@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arrived, choicesOf, dishCount, owesOtherwise, pillLabel, saidAgo, waited, wantingTables } from "./request-logic";
+import { arrived, choicesOf, dishCount, gatewayName, methodWord, owesOtherwise, pillLabel, saidAgo, waited, wantingTables } from "./request-logic";
 
 const ids = (...list: string[]) => list.map((id) => ({ id }));
 
@@ -32,6 +32,10 @@ describe("pillLabel", () => {
     expect(pillLabel(0, 1)).toBe("table says paid");
     expect(pillLabel(0, 3)).toBe("tables say paid");
     expect(pillLabel(2, 1)).toBe("from tables");
+    expect(pillLabel(0, 0, 1)).toBe("payment to sort out");
+    expect(pillLabel(0, 0, 2)).toBe("payments to sort out");
+    expect(pillLabel(1, 0, 1)).toBe("from tables");
+    expect(pillLabel(0, 2, 1)).toBe("from tables");
   });
 });
 
@@ -89,5 +93,18 @@ describe("saidAgo", () => {
     expect(saidAgo(at, Date.parse(at) + 20_000)).toBe("Said just now");
     expect(saidAgo(at, Date.parse(at) + 4 * 60_000)).toBe("Said 4 min ago");
     expect(saidAgo(at, Date.parse(at) + 65 * 60_000)).toBe("Said 1 h 5 min ago");
+  });
+});
+
+describe("methodWord and gatewayName", () => {
+  it("words a method for staff", () => {
+    expect(methodWord("upi")).toBe("UPI");
+    expect(methodWord("card")).toBe("card");
+    expect(methodWord("other")).toBe("online");
+    expect(methodWord("")).toBe("online");
+  });
+  it("names a gateway as staff know it, and leaves one it does not know as it is", () => {
+    expect(gatewayName("razorpay")).toBe("Razorpay");
+    expect(gatewayName("test")).toBe("test");
   });
 });

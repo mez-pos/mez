@@ -76,6 +76,9 @@ type guestRequestResponse struct {
 type guestRequestsResponse struct {
 	Requests []guestRequestResponse `json:"requests"`
 	Paid     []paidNoticeResponse   `json:"paid"`
+	// Unapplied is money a payment gateway took that no bill could, and
+	// nobody has dealt with (ADR-223). Empty at a venue with no gateway.
+	Unapplied []unappliedChargeResponse `json:"unapplied"`
 }
 
 // guestDecisionResponse is a request once answered. OrderID is the ticket
@@ -111,6 +114,15 @@ func (s *Server) listGuestRequests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out.Paid = toPaidNoticeResponses(notices)
+	out.Unapplied = []unappliedChargeResponse{}
+	if s.charges != nil {
+		waiting, err := s.charges.Waiting(r.Context(), Meta(r).VenueID)
+		if err != nil {
+			s.writeOrderError(w, r, err)
+			return
+		}
+		out.Unapplied = toUnappliedResponses(waiting)
+	}
 	writeJSON(w, s.log, http.StatusOK, out)
 }
 

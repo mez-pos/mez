@@ -117,6 +117,10 @@ type Options struct {
 	Gateways Gateways
 	Clock    Clock
 	Log      *slog.Logger
+	// OnChange is told a venue has an unapplied charge, or has one fewer,
+	// once it is committed: the hub's Notify, so terminals read again
+	// (ADR-223). Nil tells nobody.
+	OnChange func(venueID int64)
 }
 
 // Service starts charges and settles them.
@@ -126,6 +130,7 @@ type Service struct {
 	gateways Gateways
 	clock    Clock
 	log      *slog.Logger
+	onChange func(venueID int64)
 }
 
 // New returns a Service.
@@ -139,7 +144,10 @@ func New(o Options) (*Service, error) {
 	if o.Log == nil {
 		o.Log = slog.New(slog.NewTextHandler(io.Discard, nil))
 	}
-	return &Service{db: o.DB, orders: o.Orders, gateways: o.Gateways, clock: o.Clock, log: o.Log}, nil
+	if o.OnChange == nil {
+		o.OnChange = func(int64) {}
+	}
+	return &Service{db: o.DB, orders: o.Orders, gateways: o.Gateways, clock: o.Clock, log: o.Log, onChange: o.OnChange}, nil
 }
 
 // Start asks the venue's gateway for what the table owes now, and answers
@@ -323,15 +331,27 @@ func (s *Service) apply(ctx context.Context, row gen.GatewayCharge, st gateway.S
 // stands and is what is answered.
 func (s *Service) close(ctx context.Context, row gen.GatewayCharge, to Status, problem string) (Charge, error) {
 	at := s.clock.Now().UTC()
+	var changed int64
 	err := s.db.WriteTx(ctx, func(q *gen.Queries) error {
-		_, err := q.SettleGatewayCharge(ctx, gen.SettleGatewayChargeParams{
+		n, err := q.SettleGatewayCharge(ctx, gen.SettleGatewayChargeParams{
 			Status: string(to), Problem: sql.NullString{String: problem, Valid: problem != ""},
 			SettledAt: sql.NullTime{Time: at, Valid: true}, ID: row.ID,
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		if changed = n; n != 1 || to != Unapplied {
+			return nil
+		}
+		// Money on no bill is something every terminal has to say, and no
+		// order event says it: the floor's version does (ADR-211).
+		return q.BumpFloorVersion(ctx, row.VenueID)
 	})
 	if err != nil {
 		return Charge{}, fmt.Errorf("closing charge %s as %s: %w", row.PublicID, to, err)
+	}
+	if changed == 1 && to == Unapplied {
+		s.onChange(row.VenueID)
 	}
 	after, err := s.row(ctx, row.VenueID, row.PublicID)
 	if err != nil {
@@ -373,20 +393,6 @@ func (s *Service) Sweep(ctx context.Context, venueID int64) (int, error) {
 		}
 	}
 	return closed, first
-}
-
-// Unapplied is the charges a gateway took and no ticket could: what a
-// person has to refund or record by hand, oldest first.
-func (s *Service) Unapplied(ctx context.Context, venueID int64) ([]Charge, error) {
-	rows, err := s.db.Queries().GatewayChargesByStatus(ctx, gen.GatewayChargesByStatusParams{VenueID: venueID, Status: string(Unapplied), Limit: maxSweep})
-	if err != nil {
-		return nil, fmt.Errorf("listing the unapplied charges of venue %d: %w", venueID, err)
-	}
-	out := make([]Charge, len(rows))
-	for i, r := range rows {
-		out[i] = toCharge(r)
-	}
-	return out, nil
 }
 
 func (s *Service) row(ctx context.Context, venueID int64, publicID string) (gen.GatewayCharge, error) {

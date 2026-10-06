@@ -5,7 +5,9 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/domain/money"
 	"github.com/byjoellobo/mez/internal/gateway"
 	"github.com/byjoellobo/mez/internal/service/charges"
@@ -24,6 +26,7 @@ import (
 const (
 	CodeGatewayUnavailable ErrorCode = "gateway_unavailable"
 	CodeChargeNotFound     ErrorCode = "charge_not_found"
+	CodeChargeNotWaiting   ErrorCode = "charge_not_waiting"
 )
 
 // Charges is what the API needs to take a guest's payment online.
@@ -32,6 +35,8 @@ type Charges interface {
 	Start(ctx context.Context, venueID, tableID int64, description, returnURL string) (charges.Charge, error)
 	Settle(ctx context.Context, venueID int64, publicID string) (charges.Charge, error)
 	Charge(ctx context.Context, venueID int64, publicID string) (charges.Charge, error)
+	Waiting(ctx context.Context, venueID int64) ([]charges.UnappliedCharge, error)
+	Resolve(ctx context.Context, venueID, staffID int64, publicID string, how charges.Resolution) error
 }
 
 // WithCharges lets guests pay online. c is nil at a venue with no gateway,
@@ -143,4 +148,79 @@ func (s *Server) guestCharge(w http.ResponseWriter, r *http.Request) {
 		c = stored
 	}
 	writeJSON(w, s.log, http.StatusOK, toGuestChargeResponse(c))
+}
+
+// Unapplied charges, for staff (phase 11, Task 4f4, ADR-223):
+//
+//	POST /api/v1/charges/{id}/resolve    say how one was dealt with
+//
+// and the ones nobody has dealt with ride on GET /api/v1/guest-requests, as
+// the requests and the paid notices do.
+
+// unappliedChargeResponse is money a gateway took that no bill could, for
+// a person to refund at the gateway or record on a bill by hand. reference
+// is the gateway's id for the payment, which a refund there names.
+type unappliedChargeResponse struct {
+	ID        string       `json:"id"`
+	TableID   int64        `json:"table_id"`
+	TableName string       `json:"table_name"`
+	OrderID   string       `json:"order_id"`
+	Gateway   string       `json:"gateway"`
+	GatewayID string       `json:"gateway_id"`
+	Reference string       `json:"reference"`
+	Method    string       `json:"method"`
+	Amount    money.Amount `json:"amount"`
+	Problem   string       `json:"problem"`
+	At        time.Time    `json:"at"`
+}
+
+// resolveChargeRequest says what was done about an unapplied charge:
+// refunded at the gateway, or recorded on a bill by hand.
+type resolveChargeRequest struct {
+	How charges.Resolution `json:"how"`
+}
+
+func toUnappliedResponses(list []charges.UnappliedCharge) []unappliedChargeResponse {
+	out := make([]unappliedChargeResponse, len(list))
+	for i, c := range list {
+		out[i] = unappliedChargeResponse{
+			ID: c.PublicID, TableID: c.TableID, TableName: c.TableName, OrderID: c.OrderPublicID,
+			Gateway: c.Gateway, GatewayID: c.GatewayID, Reference: c.Reference, Method: c.Method,
+			Amount: c.Amount, Problem: c.Problem, At: c.At,
+		}
+	}
+	return out
+}
+
+// mountChargeResolution routes the staff's half. Saying a payment was
+// refunded or recorded is part of handling payments, and asks what taking
+// one asks.
+func (s *Server) mountChargeResolution(mux *http.ServeMux) {
+	if s.devices == nil || s.staff == nil || s.charges == nil {
+		return
+	}
+	mux.Handle("POST /api/v1/charges/{id}/resolve",
+		s.requireDevice(s.requireStaff(s.requirePermission(auth.PermPaymentTake, http.HandlerFunc(s.resolveCharge)))))
+}
+
+func (s *Server) resolveCharge(w http.ResponseWriter, r *http.Request) {
+	var req resolveChargeRequest
+	if !s.decode(w, r, &req) {
+		return
+	}
+	meta := Meta(r)
+	err := s.charges.Resolve(r.Context(), meta.VenueID, meta.ActorID, r.PathValue("id"), req.How)
+	switch {
+	case err == nil:
+		w.WriteHeader(http.StatusNoContent)
+	case errors.Is(err, charges.ErrResolution):
+		writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, "Say how it was dealt with: refunded or recorded.", "how")
+	case errors.Is(err, charges.ErrChargeNotFound):
+		writeError(w, s.log, http.StatusNotFound, CodeChargeNotFound, "That payment is not one of this venue's.")
+	case errors.Is(err, charges.ErrNotUnapplied):
+		writeError(w, s.log, http.StatusConflict, CodeChargeNotWaiting, "That payment is not waiting to be dealt with: someone may have done it already.")
+	default:
+		s.log.Error("resolving a charge failed", "request_id", RequestID(r.Context()), "venue_id", meta.VenueID, "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+	}
 }

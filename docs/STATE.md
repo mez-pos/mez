@@ -8,28 +8,29 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4d, 4e1 to 4e4 and 4f1 to 4f3 done. 4e5 waits for 4f. (The walks are owed.)
+4a to 4d, 4e1 to 4e4 and 4f1 to 4f4 done. 4e5 waits for 4f. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 4f3: paying online from the phone** (ADR-222).
-`POST /order/api/t/{code}/bill/charge` and `GET .../bill/charge/{id}`; the bill
-says `online`. The return address is `public_url`, a new setting, never a
-request's. The phone has Pay online (`charge-logic.ts`, `use-charge.ts`).
+**Phase 11, Task 4f4: unapplied charges on the terminal** (ADR-223). Money a
+gateway took that no bill could is first in the terminal's sheet, in danger, and
+turns the pill red, until a person says they refunded it or recorded it
+(`POST /api/v1/charges/{id}/resolve`, migration 00042). It moves no money.
 
 ## Next task
 
-**The owner should first make one real charge**: Razorpay test keys in
-`MEZ_GATEWAY_KEY_ID` and `MEZ_GATEWAY_KEY_SECRET`, `MEZ_GATEWAY=razorpay`, a table
-with something owed, Pay online on a phone, a test card. If it does not land on
-the bill, that is the next task, before anything else is built on the adapter.
+**The owner should first make one real charge**, which nothing has yet: Razorpay
+test keys in `MEZ_GATEWAY_KEY_ID` and `MEZ_GATEWAY_KEY_SECRET`, `MEZ_GATEWAY=razorpay`,
+a table with something owed, Pay online on a phone, a test card. If it does not
+land on the bill, that is the next task.
 
-**Then Phase 11, Task 4f4: unapplied charges on the terminal.** Read ADR-218 to
-ADR-220, `terminal-requests.md`.
-- `charges.Unapplied` is money a gateway took that no bill could. Put it in front
-  of staff, on the same pill and sheet, in danger: table, amount, reference, why.
-- A person refunds it or records it by hand, then marks it dealt with: who and
-  when. Needs a status and a route. Ask `payment.take`.
+**Then Phase 11, Task 4f5: the gateway's webhook, through the relay.** Read
+ADR-201 to ADR-203, ADR-220 to ADR-222, and Razorpay's webhook documentation
+(the events for a payment link, and how a webhook is signed), not from memory.
+- A webhook is a hint to settle now, not a fact: on one, call `charges.Settle`,
+  which asks the gateway itself. Verify the signature anyway, to refuse noise.
+- The path is under the guest mount, all the relay forwards. Its secret is
+  configuration. If the sweep's 20 seconds is good enough, say so and skip this.
 
 ## Known broken / in progress
 
@@ -55,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e4, 4f1 to 4f3 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e4, 4f1 to 4f4 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

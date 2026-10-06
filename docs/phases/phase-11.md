@@ -118,8 +118,9 @@ Phase 10.
     - [x] **4f3.** The guest's API and the phone: pay online from the bill,
       the gateway's page, and coming back (ADR-222). `public_url` is where a
       gateway sends a guest back.
-    - [ ] **4f4.** Unapplied charges on the terminal: money a gateway took
-      that no bill could, for a person to refund or record.
+    - [x] **4f4.** Unapplied charges on the terminal: money a gateway took
+      that no bill could, for a person to refund or record, and to say which
+      (ADR-223).
     - [ ] **4f5.** The gateway's webhook, through the relay, so a payment
       lands without waiting for the sweep.
     - [ ] **4f6.** Cashfree and Stripe, and the owner choosing a gateway in

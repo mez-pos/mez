@@ -10,8 +10,9 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **Paying through a gateway** (ADR-220 to ADR-222): **no real charge has
-  been made.** The real Razorpay was reached once, with made-up keys, and
+- **Paying through a gateway** (ADR-220 to ADR-223): "I refunded it" is a
+  person's word: mez makes no refund and checks none. Resolved charges are in
+  no report. **No real charge has been made.** The real Razorpay was reached once, with made-up keys, and
   refused them as it should. Not seen by eye: the gateway's page, coming
   back, and the waiting, paid, failed and taken-not-on-the-bill lines. The
   keys and `public_url` are set in the configuration or environment only. An unapplied charge is

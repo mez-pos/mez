@@ -358,6 +358,9 @@ type Querier interface {
 	// On start, jobs a crash left printing go back to queued. Whether their
 	// bytes reached the printer is unknown; printing twice beats never.
 	RequeueStalePrintJobs(ctx context.Context, now time.Time) (int64, error)
+	// Says how an unapplied charge was dealt with, once. Whoever is second
+	// writes nothing.
+	ResolveGatewayCharge(ctx context.Context, arg ResolveGatewayChargeParams) (int64, error)
 	RetireModifier(ctx context.Context, arg RetireModifierParams) (int64, error)
 	// A person's retry: a failed or dead job back to the queue with its tries
 	// restored, on the printer given (the one it had, or one set up since).
@@ -503,6 +506,9 @@ type Querier interface {
 	// first. It is a working set, tens of orders, not history, so it is capped
 	// rather than paginated (ADR-074).
 	UnclosedOrdersForVenue(ctx context.Context, arg UnclosedOrdersForVenueParams) ([]UnclosedOrdersForVenueRow, error)
+	// Money a gateway took that no bill could, and nobody has dealt with yet:
+	// oldest first, with its table by name and its ticket by public id.
+	UnresolvedGatewayCharges(ctx context.Context, arg UnresolvedGatewayChargesParams) ([]UnresolvedGatewayChargesRow, error)
 	// Orders that are not closed: a ticket open, held, being paid or reopened.
 	UnsettledOrderCount(ctx context.Context, venueID int64) (int64, error)
 	//

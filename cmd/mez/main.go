@@ -301,7 +301,7 @@ func run() (err error) {
 			return err
 		}
 		online, err := charges.New(charges.Options{
-			DB: database, Orders: orders, Log: log,
+			DB: database, Orders: orders, Log: log, OnChange: events.Notify,
 			Gateways: func(context.Context, int64) (gateway.Gateway, error) { return provider, nil },
 		})
 		if err != nil {

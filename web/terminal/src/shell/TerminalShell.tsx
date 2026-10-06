@@ -50,7 +50,7 @@ export function TerminalShell({ children }: { children: ReactNode }) {
   const [requestsOpen, setRequestsOpen] = useState(false);
   // One list for the chime: a table asking to order and a table saying it
   // has paid both need a person, and their ids never collide.
-  const calling = useMemo(() => [...guests.requests, ...guests.paid], [guests.requests, guests.paid]);
+  const calling = useMemo(() => [...guests.requests, ...guests.paid, ...guests.unapplied], [guests.requests, guests.paid, guests.unapplied]);
   useRequestChime(calling, guests.loaded);
   const waiter = useWaiterFrame();
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
@@ -58,6 +58,9 @@ export function TerminalShell({ children }: { children: ReactNode }) {
   const failing = trouble(queue.jobs);
   const asking = guests.requests.length;
   const paying = guests.paid.length;
+  // Money a gateway took that is on no bill: the pill is in danger for it.
+  const stray = guests.unapplied.length;
+  const waiting = asking + paying + stray;
   // Closing the shift needs shift.manage and a shift to close.
   const canCloseShift = auth.permissions.includes("shift.manage") && Boolean(shift.shift);
   const account: ProfileAction[] = [
@@ -83,15 +86,18 @@ export function TerminalShell({ children }: { children: ReactNode }) {
         <div className="ml-auto flex items-center gap-5 whitespace-nowrap">
           {waiter && <ConnectionWord brief className="text-sm" />}
           <ConnectionRetry />
-          {asking + paying > 0 && (
+          {waiting > 0 && (
             <button
               type="button"
               onClick={() => setRequestsOpen(true)}
-              aria-label={`${asking + paying} ${pillLabel(asking, paying)}, waiting`}
-              className="inline-flex min-h-tap items-center gap-2 rounded-pill bg-attention-tint px-4 text-base font-semibold text-attention-text outline-offset-2 outline-attention focus-visible:outline-3"
+              aria-label={`${waiting} ${pillLabel(asking, paying, stray)}, waiting`}
+              className={cx(
+                "inline-flex min-h-tap items-center gap-2 rounded-pill px-4 text-base font-semibold outline-offset-2 focus-visible:outline-3",
+                stray > 0 ? "bg-danger-tint text-danger outline-line-focus" : "bg-attention-tint text-attention-text outline-attention",
+              )}
             >
               <BellRingIcon aria-hidden="true" size={17} />
-              <span className="font-mono tabular-nums">{asking + paying}</span> {pillLabel(asking, paying)}
+              <span className="font-mono tabular-nums">{waiting}</span> {pillLabel(asking, paying, stray)}
             </button>
           )}
           {failing > 0 && (

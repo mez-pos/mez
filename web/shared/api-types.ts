@@ -141,7 +141,8 @@ export type ErrorCode =
   | 'nothing_to_pay'
   | 'notice_not_found'
   | 'gateway_unavailable'
-  | 'charge_not_found';
+  | 'charge_not_found'
+  | 'charge_not_waiting';
 
 export type OrderStatus =
   | 'open'
@@ -288,6 +289,10 @@ export type ChargeStatus =
   | 'paid'
   | 'unapplied'
   | 'failed';
+
+export type ChargeResolution =
+  | 'refunded'
+  | 'recorded';
 
 export type DeviceKind =
   | 'terminal'
@@ -906,6 +911,10 @@ export interface GuestChargeResponse {
   url?: string;
 }
 
+export interface ResolveChargeRequest {
+  how: ChargeResolution;
+}
+
 export interface PaymentSettingsRequest {
   upi_address: string;
   upi_payee: string;
@@ -922,6 +931,7 @@ export interface PaymentSettingsResponse {
 export interface GuestRequestsResponse {
   requests: GuestRequestResponse[];
   paid: PaidNoticeResponse[];
+  unapplied: UnappliedChargeResponse[];
 }
 
 export interface GuestRequestResponse {
@@ -941,6 +951,20 @@ export interface PaidNoticeResponse {
   amount: Money;
   due: Money;
   told_at: string;
+}
+
+export interface UnappliedChargeResponse {
+  id: string;
+  table_id: number;
+  table_name: string;
+  order_id: string;
+  gateway: string;
+  gateway_id: string;
+  reference: string;
+  method: string;
+  amount: Money;
+  problem: string;
+  at: string;
 }
 
 export interface GuestDecisionResponse {

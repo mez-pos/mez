@@ -142,7 +142,7 @@ var errorCodes = []ErrorCode{
 	CodeNumberingLocked, CodeNumberTaken, CodeCourseNotFound, CodeDeviceNotFound, CodeCannotRevokeSelf, CodeDeviceUnpaired,
 	CodeTableCodeUnknown,
 	CodeDishUnavailable, CodeChoicesInvalid, CodeTableNotOrdering, CodeRequestsWaiting,
-	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed, CodeNothingToPay, CodeNoticeNotFound, CodeGatewayUnavailable, CodeChargeNotFound,
+	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed, CodeNothingToPay, CodeNoticeNotFound, CodeGatewayUnavailable, CodeChargeNotFound, CodeChargeNotWaiting,
 }
 
 // generate builds the whole file.
@@ -261,6 +261,7 @@ func generate() (*ts.Generator, error) {
 		{"TunnelState", TunnelOff, asStrings(TunnelStates())},
 		{"GuestRoundStatus", svcorder.RoundWaiting, asStrings(svcorder.RoundStatuses())},
 		{"ChargeStatus", charges.Open, asStrings(charges.Statuses())},
+		{"ChargeResolution", charges.Refunded, asStrings(charges.Resolutions())},
 		{"DeviceKind", auth.KindTerminal, asStrings([]auth.DeviceKind{
 			auth.KindTerminal, auth.KindKitchen, auth.KindBackOffice, auth.KindGuest,
 		})},
@@ -309,7 +310,7 @@ func generate() (*ts.Generator, error) {
 		Error{}, errorBody{}, pairRequest{}, deviceResponse{}, pairResponse{},
 		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{}, tunnelResponse{},
 		// The guest's API.
-		guestTableResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{}, guestChargeResponse{},
+		guestTableResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{}, guestChargeResponse{}, resolveChargeRequest{},
 		paymentSettingsRequest{}, paymentSettingsResponse{},
 		guestRequestsResponse{}, guestDecisionResponse{},
 		// Staff.
