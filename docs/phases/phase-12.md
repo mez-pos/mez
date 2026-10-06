@@ -32,6 +32,36 @@ Phase 11.
   print. At the end: the LAN URL and a pairing code for a second device, on
   screen, in large type.
 
+  Split on 2026-10-07, before any of it was built: it is an endpoint that
+  goes around ADR-058, a screen with a design (D24), a search of the
+  network, and the installer's hand-off. Four sessions, not one.
+
+  - [ ] **Task 3a - First run over HTTP, from this computer only.**
+    What `mez setup` does, as a service both it and the API call:
+    `GET /api/v1/setup` says whether the venue is still to be made,
+    `POST /api/v1/setup` makes it and answers with the first pairing code.
+    Only a browser on the server's own machine may post; ADR-058 gives way
+    that far and no further. No screen.
+  - [ ] **Task 3b - The wizard's questions (D24).**
+    A spec first (`docs/design/screens/setup-wizard.md`). The till opens on
+    the wizard while there is no venue: venue name, currency, timezone, tax
+    profile and registration, financial year start, invoice series prefix,
+    the first admin and their PIN. It posts 3a, pairs this device with the
+    code, signs the admin in, and sets the prefix through the settings API.
+    D24's tables and menu import steps are not in this task's list and are
+    left out.
+  - [ ] **Task 3c - Printer discovery and a test print.**
+    A search of the LAN for port 9100 and of Windows' own printers, behind
+    `printers.manage`; the wizard's printer step adds the one chosen as the
+    receipt printer and prints a test page. Skippable: a venue with no
+    printer yet still finishes.
+  - [ ] **Task 3d - The last screen, and the hand-off.**
+    The LAN URL and a pairing code for a second device, in large type; the
+    back office paired on this machine (`docs/KNOWN.md`, ADR-144's entry).
+    The installer's last page and `PairScreen`'s words stop naming
+    `mez setup`; `running.md` and `deploy.md` say the wizard first. Walked in
+    a browser from an empty data directory.
+
 - [ ] **Task 4 — Backups.**
   Litestream integrated: continuous replication to S3, R2 or a local folder,
   configured in back office (this is phase 10's Task 6l, moved here,
