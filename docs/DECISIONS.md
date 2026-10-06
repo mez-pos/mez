@@ -8036,3 +8036,64 @@ opened and left empty until one is. The ticket has no table, which is new to the
 terminal's lists and the reports only in being on the `web` channel: they show it
 as a counter ticket, with no code, until 5f4. Nothing reaches any of this from a
 phone until 5f2.
+
+## ADR-250 - Ordering to collect is asked by the venue's code, counted by address and then by venue, and an order is known by its own id
+2026-10 · Status: accepted. Phase 11, Task 5f2.
+Context: 5f1 put ordering to collect in the services: placed and held unpaid
+(ADR-248), paid for and sent with a code (ADR-249). No route reached any of it.
+The venue's pickup code resolves to a venue and no table (ADR-247), and every
+limit on a guest was by table (ADR-246).
+Decision:
+  - **Six routes under `/order/api/p/{code}`**, "p" where a table's have "t", as
+    the app's own address has (ADR-247): the venue; `/menu`; `POST /orders`;
+    `GET /orders/{round}`; `POST /orders/{round}/charge`; `GET /charge/{id}`.
+    The cart, the round and the charge are the shapes a table's routes answer.
+  - **A table's code is kept by a table. This one is on a door.** So holding it
+    says nothing of anyone's order: an order and its payment are asked for by
+    their own ids, drawn at random and told to the phone that placed the order.
+    That id is the whole of what lets a phone see an order's pickup code.
+  - **The two codes say nothing of each other's.** By the venue's code a round or
+    a charge with a table is not found; by a table's, one with none is not found.
+    Each is the same 404 as one that is not there. A test asks every crossing.
+  - **`pickup_code` is on a round's answer**, once it is sent, from the order's
+    own route only. Its ticket's id is left out: a receipt is asked by a table's
+    code (ADR-240) and there is none to ask by.
+  - **Where no gateway is set the code still leads to the venue**, which answers
+    `ordering: false`. Every other route answers 409 `pickup_off`, "This venue is
+    not taking orders to collect online. Order at the counter." The routes are
+    mounted whatever the venue has, because a route that is absent can only say
+    404, which is what a wrong code says. A wrong code is still 404 first.
+  - **A wrong pickup code is `pickup_code_unknown`**, and is counted with the
+    wrong table codes from the same address (20 a minute, ADR-246): guessing is
+    guessing, whichever kind is tried.
+  - **Each limit is counted twice: by the address under the code, then by the
+    venue.** STATE asked for the venue alone. But the code is public, and a count
+    by the venue alone is one a single phone could use up for everybody. So an
+    address is stopped first, well short of the venue's, and what it is refused
+    is not counted against the venue.
+    - reads: 300 a minute by address, 1500 by venue;
+    - changes (an order, starting a payment): 30 by address, 120 by venue;
+    - orders, counted as well as a change: 5 in ten minutes by address, 60 by
+      venue.
+  - **The order limit guards no printer here.** Nothing unpaid reaches a kitchen.
+    It bounds what can be left lying: thirty may wait unpaid at a venue
+    (`MaxUnpaidPickups`, exported so the test can hold the figures to it), each
+    for half an hour. Five in ten minutes is fifteen in that half hour, so one
+    address fills half and no more.
+  - **A test holds the figures to a lunch queue**, as ADR-246's does for a table:
+    thirty phones tracking and paying at their fastest ask about 660 a minute.
+  - **The gateway sends the guest back to `<public_url>/order/p/<code>`**, from
+    the venue's configuration and never the request.
+  - **A table's words are not said to a guest with none**: the refusals here say
+    "at the counter" where a table's say "a member of staff", and a test fails on
+    the word "table".
+Because: the services already did the money. What the API had to decide was
+only who may ask, and under a public code the answer is the one who has the id.
+Cost: an order's id is about forty bits and is all that guards its pickup code:
+enough against guessing at these limits, and no guard against a guest who shows
+their screen. A wrong order id is not counted as a guess. Five addresses can
+still read the venue's count away, and three can fill the thirty: the limits
+bound it and nothing prevents it. Phones behind one carrier's shared address
+share its five orders. A guest who paid has no receipt on the phone. There is
+no way in with no table in the app until 5f3, so nothing but a test has asked
+these routes, and never in the real binary or through the relay.

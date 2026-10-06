@@ -147,7 +147,9 @@ export type ErrorCode =
   | 'bill_moved'
   | 'receipt_not_found'
   | 'no_public_url'
-  | 'no_pickup_code';
+  | 'no_pickup_code'
+  | 'pickup_code_unknown'
+  | 'pickup_off';
 
 export type OrderStatus =
   | 'open'
@@ -813,6 +815,11 @@ export interface GuestTableNameResponse {
   name: string;
 }
 
+export interface GuestPickupResponse {
+  venue: GuestVenueResponse;
+  ordering: boolean;
+}
+
 export interface GuestMenuResponse {
   version: number;
   currency: string;
@@ -873,6 +880,7 @@ export interface GuestRoundResponse {
   due?: Money;
   progress?: GuestRoundProgress;
   bill?: string;
+  pickup_code?: string;
 }
 
 export interface GuestRoundLineResponse {

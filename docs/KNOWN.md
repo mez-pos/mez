@@ -10,9 +10,22 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **An order to collect** (ADR-248, ADR-249): in the services only: placed,
-  paid for and sent, with a pickup code. No route places one and no screen
-  shows one. A sent one is a ticket with no table on the `web` channel: it
+- **Ordering to collect over the guest API** (ADR-250): asked by tests only,
+  never in the real binary, through the relay, or with a real gateway. No
+  screen asks it until 5f3. A guest who paid has no receipt on the phone: a
+  receipt is asked by a table's code. An order's id is all that guards its
+  pickup code. The limits are by address and then by venue, reckoned and not
+  measured: five addresses can read the venue's count away and three can
+  fill the thirty that may wait unpaid; phones behind one carrier's shared
+  address share its five orders in ten minutes. A wrong order id is not
+  counted as a guess. An address that changes (one IPv6 network has many)
+  is held only by the venue's counts, and can fill the thirty in minutes:
+  guests are then told to wait for up to half an hour. While a paid order
+  waits for a free pickup code (ADR-249) its payment still reads as open,
+  with the gateway's page: a guest could pay twice, and nobody is at a
+  table to notice.
+- **An order to collect** (ADR-248, ADR-249): placed, paid for and sent, with
+  a pickup code; no screen shows one. A sent one is a ticket with no table on the `web` channel: it
   shows on the terminal and in the reports as a counter ticket would, and
   nothing there says its code or that it is to collect (5f4). A paid ticket
   stays open, holding its code, until staff close it: a counter that never
@@ -23,9 +36,8 @@
   00050 build `guest_rounds` and `gateway_charges` again: tested on seeded
   databases, never run on the deployed one. Back the database up first.
 - **The venue's pickup code** (ADR-247): in the services and the staff API
-  only. No screen shows it and no guest route takes it: it can be made
-  today through the API and leads nowhere until 5f. It has no limit of its
-  own yet (ADR-246's are by table). Not asked in the real binary.
+  only. No screen shows it. Made through the API it now leads to the
+  guest's routes (ADR-250), which no screen asks until 5f3.
 - **Limits on guests** (ADR-246): tested through the handlers with the
   limits lowered; never against a room of real phones. **The relay limits a
   whole venue to 1200 requests a minute (`relay.DefaultLimit`), which about

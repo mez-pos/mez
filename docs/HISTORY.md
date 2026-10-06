@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 5f1a: an order to collect, held unpaid** (ADR-248). A round may
+**Phase 11, Task 5f1b: paying for an order to collect, and sending it** (ADR-249).
+A charge may have no table (migration 00050). Paid, the order is a ticket of its
+own on the `web` channel, sent, with a pickup code no order still out shares.
+
+Before it, **Phase 11, Task 5f1a: an order to collect, held unpaid** (ADR-248). A round may
 have no table (migration 00049); `PlacePickup` prices and holds one where a
 gateway is set. Nothing pays for one or sends one yet.
 

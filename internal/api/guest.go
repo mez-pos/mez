@@ -64,9 +64,11 @@ var (
 	guestOrderLimit = limit{requests: 20, per: 10 * time.Minute}
 )
 
-// Guests is what the API needs to read a table's code.
+// Guests is what the API needs to read a table's code, and the venue's
+// pickup code (ADR-247).
 type Guests interface {
 	Resolve(ctx context.Context, code string) (tablecodes.Table, error)
+	ResolvePickup(ctx context.Context, code string) (tablecodes.Venue, error)
 }
 
 // WithGuests mounts the guest API under the guest app's mount, which is
@@ -88,6 +90,7 @@ func (s *Server) mountGuests(mux *http.ServeMux) {
 		mux.Handle(pattern, s.rateLimit(guestLimit, h))
 	}
 	handle("GET "+base+"t/{code}", s.guestTable)
+	s.mountPickup(handle, base)
 	if s.menus != nil {
 		handle("GET "+base+"t/{code}/menu", s.guestMenu)
 	}
@@ -251,9 +254,15 @@ func (s *Server) guestMenu(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	m, err := s.menus.Menu(r.Context(), table.VenueID)
+	s.writeGuestMenu(w, r, table.VenueID)
+}
+
+// writeGuestMenu answers a venue's menu as a guest reads it, whichever code
+// led to the venue.
+func (s *Server) writeGuestMenu(w http.ResponseWriter, r *http.Request, venueID int64) {
+	m, err := s.menus.Menu(r.Context(), venueID)
 	if err != nil {
-		s.log.Error("reading the menu for a guest failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
+		s.log.Error("reading the menu for a guest failed", "request_id", RequestID(r.Context()), "venue_id", venueID, "error", err)
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}

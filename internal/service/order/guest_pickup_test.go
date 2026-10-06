@@ -118,7 +118,7 @@ func TestAnOrderToCollectThatIsRefused(t *testing.T) {
 func TestOrdersToCollectLeftUnpaidAreBounded(t *testing.T) {
 	w := newPrepayWorld(t, true, PayFirst)
 	ctx := context.Background()
-	for i := range maxUnpaidPickups {
+	for i := range MaxUnpaidPickups {
 		if _, err := w.s.PlacePickup(ctx, guest(fmt.Sprintf("p%d", i)), w.g.pickup()); err != nil {
 			t.Fatalf("order %d: %v", i+1, err)
 		}

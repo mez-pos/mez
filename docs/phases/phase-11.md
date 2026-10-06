@@ -205,8 +205,10 @@ Phase 10.
         with no table (migration 00050), and paid, a ticket of its own on
         the `web` channel, sent, with a pickup code of three characters
         that no order still out shares.
-    - [ ] **5f2.** The guest's API: the menu and an order by the venue's
-      code, paying for it, and tracking it with its code.
+    - [x] **5f2.** The guest's API (ADR-250): under `/order/api/p/{code}`,
+      the venue, the menu, an order, paying for it, and tracking it with
+      its `pickup_code`. Limited by address and then by venue. With no
+      gateway the venue says `ordering: false` and the rest `pickup_off`.
     - [ ] **5f3.** The phone: the way in with no table (`/order/p/<code>`),
       pay, and the order's screen with the code in large type. And the back
       office: the pickup code on the Floor plan's card and its sheet, which

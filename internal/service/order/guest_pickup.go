@@ -31,11 +31,11 @@ import (
 // online here, and an order to collect is always paid first.
 var ErrPickupOff = errors.New("the venue takes no orders to collect")
 
-// maxUnpaidPickups is how many orders to collect may wait at one venue for
+// MaxUnpaidPickups is how many orders to collect may wait at one venue for
 // their payment. A table is bounded by its own count; the venue's code is on
 // a door, so this is what bounds what a stranger can leave lying. It is high
 // enough for a lunch queue all paying at once.
-const maxUnpaidPickups = 30
+const MaxUnpaidPickups = 30
 
 // PlacePickup is a guest's order to collect: what they picked, and no table.
 type PlacePickup struct {
@@ -110,7 +110,7 @@ func (s *Service) PlacePickup(ctx context.Context, meta Meta, cmd PlacePickup) (
 			if err != nil {
 				return fmt.Errorf("counting the unpaid orders to collect at venue %d: %w", meta.VenueID, err)
 			}
-			if unpaid >= maxUnpaidPickups {
+			if unpaid >= MaxUnpaidPickups {
 				return fmt.Errorf("%w: venue %d has %d orders to collect unpaid", ErrTooManyWaiting, meta.VenueID, unpaid)
 			}
 			return saveRound(ctx, q, meta, draft, publicID, RoundUnpaid, 0, due, 0, at)

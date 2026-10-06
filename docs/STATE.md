@@ -8,27 +8,27 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 but 5f2 on, and 6 done. (Walks owed.)
+4 but 4f6b (Cashfree, question 8), 5 but 5f3 on, and 6 done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 5f1b: paying for an order to collect, and sending it** (ADR-249).
-A charge may have no table (migration 00050). Paid, the order is a ticket of its
-own on the `web` channel, sent, with a pickup code no order still out shares.
+**Phase 11, Task 5f2: ordering to collect over the guest API** (ADR-250). Six
+routes under `/order/api/p/{code}`, in `internal/api/guest_pickup.go`. Limits by
+address and then by venue. With no gateway the venue answers `ordering: false`.
 
 ## Next task
 
 **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
 online on a bill, a share from two phones, and Pay on an order paid first.
 
-**Phase 11, Task 5f2: ordering to collect over the guest API.** Read ADR-247 to
-ADR-249, ADR-246, `internal/api/guest.go`, `guest_order.go`, `guest_charge.go`.
-- Routes under the venue's pickup code, `/order/api/p/{code}/...`: the venue, the
-  menu, place an order (`PlacePickup`), pay for it (`StartRound` with no table),
-  how the charge stands, and track it with its `pickup_code`.
-- `tablecodes.ResolvePickup`. Offered only where a gateway is set: say so plainly.
-- Limits (ADR-246) are by table: key them by the venue here. The return address
-  after paying is `<public_url>/order/p/<code>`. A receipt (ADR-240) asks by a table.
+**Phase 11, Task 5f3: ordering to collect on the phone, and the code in the back
+office.** Two screens: split it first if it is more than a session. Read ADR-250,
+ADR-247, `internal/api/guest_pickup.go`, `guest-order.md`, `backoffice-floor.md`.
+- The phone: the way in at `/order/p/<code>` (`GuestPickupResponse`; `ordering:
+  false` and `pickup_off` said plainly), the menu and cart, Pay, and the order's
+  screen with `pickup_code` in large type. The gateway returns to that address.
+  It keeps the order's id, all that finds it again. No bill, receipt or "table".
+- The back office: the pickup code on the Floor plan's card and its sheet (6e).
 
 ## Known broken / in progress
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f; 6 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f3, 5f4; 6 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

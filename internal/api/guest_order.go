@@ -32,6 +32,7 @@ const (
 // GuestOrders is what the API needs to take a guest's order.
 type GuestOrders interface {
 	PlaceRound(ctx context.Context, meta svcorder.Meta, cmd svcorder.PlaceRound) (svcorder.Round, error)
+	PlacePickup(ctx context.Context, meta svcorder.Meta, cmd svcorder.PlacePickup) (svcorder.Round, error)
 	TrackRound(ctx context.Context, venueID, tableID int64, publicID string) (svcorder.Round, error)
 	Receipt(ctx context.Context, venueID, tableID int64, bill string) (svcorder.Receipt, error)
 	TableTicket(ctx context.Context, venueID, tableID int64) (svcorder.Result, bool, error)
@@ -89,6 +90,10 @@ type guestRoundResponse struct {
 	// asked for by once it is settled (ADR-240). Only the order's own
 	// route answers it.
 	Bill string `json:"bill,omitempty"`
+	// PickupCode is what an order to collect is called out by, once it is
+	// paid for and sent (ADR-249). Only that order's own route answers it:
+	// a round at a table has none.
+	PickupCode string `json:"pickup_code,omitempty"`
 }
 
 func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
@@ -133,7 +138,8 @@ func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
 func toGuestRoundResponse(round svcorder.Round) (guestRoundResponse, error) {
 	out := guestRoundResponse{
 		ID: round.PublicID, Status: round.Status, Subtotal: round.Subtotal, Progress: round.Progress, Bill: round.Bill,
-		Lines: make([]guestRoundLineResponse, len(round.Lines)),
+		PickupCode: round.PickupCode,
+		Lines:      make([]guestRoundLineResponse, len(round.Lines)),
 	}
 	if round.Status == svcorder.RoundUnpaid {
 		due := round.Due
