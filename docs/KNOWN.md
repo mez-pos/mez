@@ -10,6 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Limits on guests** (ADR-246): tested through the handlers with the
+  limits lowered; never against a room of real phones. **The relay limits a
+  whole venue to 1200 requests a minute (`relay.DefaultLimit`), which about
+  46 phones asking at their fastest reach: a full room through the relay
+  is told to wait by the relay before any limit here.** Raise
+  `RELAY_VENUE_RPM` on the relay, or make the screens ask
+  less often. The figures are reckoned from what the screens ask, not
+  measured. The counts are in memory: a restart forgets them. A table at
+  its limit is in the log and nowhere an owner looks. The phone has its own
+  words for an order refused this way and says nothing when a poll is: it
+  asks again. A table's staff-seated rounds can still reach the kitchen 20
+  times in ten minutes from one photographed code, until it is renewed.
 - **The sheet of codes** (ADR-245): seen in the real binary as the page
   under its print styles at A4's width, eleven cards for a floor of twelve
   with one code turned off. **Nothing was printed, and no card was scanned

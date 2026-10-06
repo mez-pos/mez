@@ -8,33 +8,33 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 but 5f, 6a to 6c done. (Walks owed.)
+4 but 4f6b (Cashfree, question 8), 5 but 5f, 6a to 6d done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 6c: the sheet of codes to print** (ADR-245). Print the codes on
-the Floor plan's card: a card for each table with a code, six to a page of A4.
-`GET /api/v1/table-codes/sheet`. Seen under its print styles; nothing printed.
+**Phase 11, Task 6d: limits on what a table's code may ask** (ADR-246). By table:
+reads, changes and orders, each counted apart. By address: wrong codes, and a
+ceiling a full room does not reach. Tested with the limits lowered.
 
 ## Next task
 
 **No real charge has been made yet**, at Razorpay (ADR-221) or at Stripe: test
-keys, then on a phone Pay online on a bill, a share of one from two phones, and
-Pay on an order with paying first chosen. The payments card says so itself.
+keys, then on a phone Pay online on a bill, a share from two phones, and Pay on
+an order with paying first chosen.
 
-**Phase 11, Task 6d: a limit on what one table's code may ask.** Read ADR-209,
-ADR-239, `internal/api/ratelimit.go`, `guest.go`, and `ErrTooManyWaiting`.
-- Through the relay every guest has the relay's address, so a limit by address
-  limits the venue. The key is the table's code, and for a wrong code the address.
-- Reads that a screen makes by itself must fit: tracking every 10 seconds
-  (ADR-239), the bill every 15, a charge every 4, times the phones at a table.
-- Hold tight: placing an order, starting a payment, "I have paid". The phone
-  already has words for 429. Wrong codes from one address are counted apart.
+**Phase 11, Task 6e: the venue's pickup code.** Read ADR-237, ADR-243, ADR-246,
+`internal/service/tablecodes`, `internal/api/table_codes.go`. No ordering: 5f.
+- A code that leads to the venue and no table: made, renewed and turned off as a
+  table's is, by the same role. Decide whether it is a row in `table_codes` with
+  no table (the table is NOT NULL today) or a table of its own.
+- It resolves to the venue with no table; the guest routes answer it as a code
+  that leads nowhere until 5f. On the Floor plan's card, apart, and on the sheet.
 
 ## Known broken / in progress
 
 - A dev server left running blocks `make check` from rebuilding `bin/mez`: stop it first.
 - The relay: no load test. Its signing secret has no backup. A `democafe` test key exists.
+- The relay's 1200 a minute per venue is under what a full room's phones ask (ADR-246).
 
 ## Open questions for the human
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f; 6a to 6c done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f; 6a to 6d done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

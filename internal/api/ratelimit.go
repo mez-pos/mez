@@ -63,6 +63,26 @@ func (l *limiter) allow(key string, lim limit) (bool, time.Duration) {
 	return false, w.started.Add(lim.per).Sub(now)
 }
 
+// within reports whether key is still under lim, without counting anything:
+// for a limit on something only some requests do, asked before it is known
+// whether this one does it.
+func (l *limiter) within(key string, lim limit) bool {
+	return l.wait(key, lim) == 0
+}
+
+// wait is how long until key may proceed under lim, and zero when it may
+// now. It counts nothing.
+func (l *limiter) wait(key string, lim limit) time.Duration {
+	now := l.now()
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	w := l.windows[key]
+	if w == nil || now.Sub(w.started) >= lim.per || w.count < lim.requests {
+		return 0
+	}
+	return w.started.Add(lim.per).Sub(now)
+}
+
 // prune drops windows that have turned over. It runs under the lock, and
 // only when the map is full.
 func (l *limiter) prune(now time.Time, per time.Duration) {

@@ -96,6 +96,11 @@ func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// Counted before the body is read, and whether or not the order is
+	// taken: it is the asking that reaches the kitchen's printer.
+	if !s.guestAllow(w, table, "o", guestOrderLimit, "This table has placed a lot of orders. Wait a few minutes, or ask a member of staff.") {
+		return
+	}
 	var req guestOrderRequest
 	if !s.decode(w, r, &req) {
 		return

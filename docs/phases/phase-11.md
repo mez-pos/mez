@@ -223,8 +223,10 @@ Phase 10.
   - [x] **6c.** The sheet (ADR-245): Print the codes on the card, a card
     for each table with a code, six to a page of A4, to cut and stick.
     `GET /api/v1/table-codes/sheet` draws them all in one answer.
-  - [ ] **6d.** The limit: how often one table's code may place an order,
-    start a payment or be asked, without catching a phone that only tracks.
+  - [x] **6d.** The limit (ADR-246): by table, what its code may read (600
+    a minute), change (30 a minute) and order (20 in ten minutes); by
+    address, 20 wrong codes a minute, and a ceiling of 1500 a minute that a
+    full room behind one address does not reach.
   - [ ] **6e.** The venue's pickup code (ADR-237), ahead of 5f.
 
 ## Done when

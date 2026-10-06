@@ -7851,3 +7851,56 @@ not scan cannot be typed in. The paper is plain: no logo, no colour, since a
 printed tint is the printer's and the owner's ink. Seen as the page under its
 print styles at A4's width; never through a real printer or a browser's preview,
 and no printed card has been scanned.
+
+## ADR-246 - Guests are limited by table, with the address as a ceiling and a count of wrong codes
+2026-10 · Status: accepted. Phase 11, Task 6d.
+Context: Task 6 asks for a "rate limit per table to stop a bored teenager opening
+forty tickets". The guest API had one limit, 300 requests a minute by address
+(ADR-206). STATE supposed every guest came from the relay's address; they do not:
+the relay carries the guest's own address and the tunnel puts it on the request.
+What is true is the other way about. A cafe's wifi is one address, every phone in
+the room is behind it, and since ADR-239 each one asks about its order every ten
+seconds. Eleven phones tracking, reading a bill and waiting on a payment are 300 a
+minute by themselves, so the limit there was would have stopped a busy room.
+Decision:
+  - **The real limits are by table**, counted by the table and not its code, so a
+    renewed code starts no new count:
+    - **reads, 600 a minute.** A table of eight with every screen asking at its
+      fastest is about 200.
+    - **changes, 30 a minute**: starting a payment, giving one up, "I have paid",
+      placing an order.
+    - **orders, 20 in ten minutes**, counted as well as a change. Past a sitting's
+      first, a table's rounds go straight to the kitchen (ADR-209): this is what
+      stands between a photographed sticker and forty tickets.
+  - **Reading and changing are counted apart.** A table that has read too much can
+    still pay, and one that has changed too much can still read its bill.
+  - **An order is counted when it is asked for, taken or not**, and an order sent
+    again with its key is asking. It is the asking that reaches the kitchen.
+  - **By address, wrong codes: 20 a minute.** A guest mistypes none, since a code
+    comes from a sticker. Past it the address waits whatever it sends, and a right
+    code among the wrong ones is not told apart. A good code is never counted as a
+    guess, so a table's own phones cannot use the guesses up.
+  - **By address, a ceiling of 1500 a minute**, up from 300: about fifty phones
+    asking at their fastest. It is for a flood and not for a meal.
+  - **The figures are reckoned from what the screens ask, and a test holds them to
+    it**: it works out what a table of eight and a room of fifty ask by
+    themselves and fails if a limit is under twice the one or under the other. A
+    screen made to ask more often breaks that test and not a venue.
+  - **A table over a limit is logged as a warning**, with the table: it is a guest
+    being refused, or a code that has got out and wants renewing.
+  - **Told in a guest's words, with Retry-After**, and `rate_limited` as before.
+  - **The gateway's webhook and the photos keep only the address's ceiling.** They
+    have no table.
+Because: a limit by address punishes the venue for being full, and a limit by
+table punishes only the table that is being abused.
+Cost: the counts are in memory and a restart forgets them. Twenty orders in ten
+minutes from one stolen code is still twenty tickets, until someone renews it
+(ADR-244): the limit bounds the harm and does not prevent it, and prepayment is
+what does (ADR-209). A table at its limit is in the log and nowhere an owner
+looks. Nothing here was measured against real phones. **The relay's own limit is
+lower than this one**: 1200 a minute for a whole venue (`relay.DefaultLimit`),
+which about 46 phones asking at their fastest reach. It was set before the phone
+tracked orders (ADR-239), and a full room through the relay meets it before any
+limit here. That is the relay's to change, or the screens' to ask less often, and
+neither is this task. The fixed window lets a table do twice its limit across a
+window's edge.

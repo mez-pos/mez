@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 6b: the codes in the back office** (ADR-244). "Ordering from the
+**Phase 11, Task 6c: the sheet of codes to print** (ADR-245). Print the codes on
+the Floor plan's card: a card for each table with a code, six to a page of A4.
+`GET /api/v1/table-codes/sheet`. Seen under its print styles; nothing printed.
+
+Before it, **Phase 11, Task 6b: the codes in the back office** (ADR-244). "Ordering from the
 table" on the Floor plan: each table's code and address, the QR, Renew and Turn
 off behind a confirm, Make the missing codes. Seen at 1366 and 1920.
 

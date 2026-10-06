@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/byjoellobo/mez/internal/domain/menu"
@@ -23,10 +24,45 @@ import (
 // CodeTableCodeUnknown is a table code that leads nowhere.
 const CodeTableCodeUnknown ErrorCode = "table_code_unknown"
 
-// guestLimit is what one address may ask of the guest API. A phone opening
-// the menu asks a handful of times; a table of six behind one address asks
-// a few dozen. It is far under what guessing a code would need.
-var guestLimit = limit{requests: 300, per: time.Minute}
+// What a guest may ask, and how often (phase 11, Task 6d, ADR-246). There
+// are two things to count by, and neither is enough alone.
+//
+// An address is who is asking, as far as anyone can tell: a phone on the
+// venue's own network has its own, and through the relay the guest's
+// address is carried to here (internal/tunnel). But a cafe's wifi is one
+// address to the relay, and every phone in the room is behind it, each
+// asking about its order every ten seconds (ADR-239). So the address has a
+// ceiling a full room does not reach, and the real limits are by table.
+//
+// A table is what a code can do harm to. What one table may read is a
+// multiple of what its phones ask by themselves; what it may change is
+// counted apart and held close; and orders closer still.
+var (
+	// guestLimit is the ceiling for one address over all of the guest API:
+	// about fifty phones each tracking an order, reading a bill and
+	// waiting on a payment at once. It is there for a flood, not a meal.
+	guestLimit = limit{requests: 1500, per: time.Minute}
+
+	// guestBadCodeLimit is how many codes that lead nowhere one address
+	// may try. A guest mistypes none: the code comes from a sticker. Past
+	// it the address is told to wait, whatever it sends, right or wrong.
+	guestBadCodeLimit = limit{requests: 20, per: time.Minute}
+
+	// guestReadLimit is what may be read by one table's code: a table of
+	// eight with every screen asking at its fastest is about two hundred a
+	// minute, and this is three times that.
+	guestReadLimit = limit{requests: 600, per: time.Minute}
+
+	// guestWriteLimit is what one table's code may change: start a
+	// payment, give one up, say "I have paid", place an order. A table
+	// paying in eight shares with a few second thoughts is under it.
+	guestWriteLimit = limit{requests: 30, per: time.Minute}
+
+	// guestOrderLimit is how many orders one table's code may place. Past
+	// the first, a table's rounds go straight to the kitchen (ADR-209), so
+	// this is what stands between a photographed sticker and forty tickets.
+	guestOrderLimit = limit{requests: 20, per: 10 * time.Minute}
+)
 
 // Guests is what the API needs to read a table's code.
 type Guests interface {
@@ -135,8 +171,17 @@ type guestItemResponse struct {
 // guestTableFor reads the code in the path, and answers for one that leads
 // nowhere.
 func (s *Server) guestTableFor(w http.ResponseWriter, r *http.Request) (tablecodes.Table, bool) {
+	// An address that has tried too many codes that lead nowhere waits,
+	// before any code it sends is looked at: a right one among the wrong
+	// ones is not told apart.
+	addr := remoteHost(r)
+	if !s.limiter.within("guest-bad:"+addr, guestBadCodeLimit) {
+		s.tooMany(w, "guest-bad:"+addr, guestBadCodeLimit, "Too many codes tried from here. Wait a minute, then scan the code on your table again.")
+		return tablecodes.Table{}, false
+	}
 	table, err := s.guests.Resolve(r.Context(), r.PathValue("code"))
 	if errors.Is(err, tablecodes.ErrUnknown) {
+		s.limiter.allow("guest-bad:"+addr, guestBadCodeLimit)
 		// One answer for a code never made, one turned off and one whose
 		// table is gone, and words a guest can act on.
 		writeError(w, s.log, http.StatusNotFound, CodeTableCodeUnknown,
@@ -151,7 +196,41 @@ func (s *Server) guestTableFor(w http.ResponseWriter, r *http.Request) (tablecod
 	if info := infoFrom(r.Context()); info != nil {
 		info.venueID = table.VenueID
 	}
+	// Counted by the table and not by its code: a renewed code is the same
+	// table, and starts no new count.
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		if !s.guestAllow(w, table, "r", guestReadLimit, "This table is asking too often. Wait a moment.") {
+			return tablecodes.Table{}, false
+		}
+		return table, true
+	}
+	if !s.guestAllow(w, table, "w", guestWriteLimit, "Too much is being done from this table at once. Wait a moment and try again, or ask a member of staff.") {
+		return tablecodes.Table{}, false
+	}
 	return table, true
+}
+
+// guestAllow counts one thing done by a table's code against a limit, and
+// has answered when it is over.
+func (s *Server) guestAllow(w http.ResponseWriter, table tablecodes.Table, kind string, lim limit, message string) bool {
+	key := "guest-" + kind + ":" + strconv.FormatInt(table.VenueID, 10) + ":" + strconv.FormatInt(table.TableID, 10)
+	ok, retryAfter := s.limiter.allow(key, lim)
+	if ok {
+		return true
+	}
+	// Worth a line: a table at its limit is a guest being refused, or a
+	// code that has got out and should be renewed.
+	s.log.Warn("a table's code is over its limit", "venue_id", table.VenueID, "table_id", table.TableID, "kind", kind, "limit", lim.requests, "per", lim.per.String())
+	w.Header().Set("Retry-After", strconv.Itoa(retryAfterSeconds(retryAfter)))
+	writeError(w, s.log, http.StatusTooManyRequests, CodeRateLimited, message)
+	return false
+}
+
+// tooMany answers a key that is already over its limit, without counting
+// the asking.
+func (s *Server) tooMany(w http.ResponseWriter, key string, lim limit, message string) {
+	w.Header().Set("Retry-After", strconv.Itoa(retryAfterSeconds(s.limiter.wait(key, lim))))
+	writeError(w, s.log, http.StatusTooManyRequests, CodeRateLimited, message)
 }
 
 func (s *Server) guestTable(w http.ResponseWriter, r *http.Request) {

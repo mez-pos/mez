@@ -202,21 +202,34 @@ func TestGuestAPIIsNotTheAppAndNotTheStaffAPI(t *testing.T) {
 	}
 }
 
-func TestGuestAPIIsRateLimitedByAddress(t *testing.T) {
+// TestGuessingCodesIsHeldToAFew: an address may try a handful of codes that
+// lead nowhere. Past that it waits, and a right code among the wrong ones is
+// not told apart from them.
+func TestGuessingCodesIsHeldToAFew(t *testing.T) {
 	g := newGuestWorld(t)
 	path := "/order/api/t/" + strings.Repeat("2", tablecodes.Length)
-	for i := range guestLimit.requests {
+	for i := range guestBadCodeLimit.requests {
 		if status, _, _ := g.guest(http.MethodGet, path); status != http.StatusNotFound {
 			t.Fatalf("guess %d: status %d", i+1, status)
 		}
 	}
 	status, header, body := g.guest(http.MethodGet, path)
-	if status != http.StatusTooManyRequests || header.Get("Retry-After") == "" {
+	if status != http.StatusTooManyRequests || header.Get("Retry-After") == "" || !strings.Contains(body, string(CodeRateLimited)) {
 		t.Fatalf("past the limit: status %d, Retry-After %q, %s", status, header.Get("Retry-After"), body)
 	}
-	// A good code is refused too: the limit is on the asking, not on being wrong.
 	if status, _, _ := g.guest(http.MethodGet, "/order/api/t/"+g.code); status != http.StatusTooManyRequests {
-		t.Errorf("a good code past the limit: %d", status)
+		t.Errorf("a good code from an address that has been guessing: %d", status)
+	}
+}
+
+// TestAGoodCodeIsNotCountedAsAGuess: a table's own phones, asking as often
+// as their screens do, never use up the guesses.
+func TestAGoodCodeIsNotCountedAsAGuess(t *testing.T) {
+	g := newGuestWorld(t)
+	for i := range guestBadCodeLimit.requests * 3 {
+		if status, _, body := g.guest(http.MethodGet, "/order/api/t/"+g.code); status != http.StatusOK {
+			t.Fatalf("read %d of a good code: %d %s", i+1, status, body)
+		}
 	}
 }
 
