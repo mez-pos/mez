@@ -5,7 +5,7 @@
 // phone's to say.
 
 import { ApiError } from "../../shared/api";
-import type { ChargeStatus } from "../../shared/api-types";
+import type { ChargeStatus, GuestRoundStatus } from "../../shared/api-types";
 
 /** How often an open charge is asked about while the bill is on screen. */
 export const CHARGE_ASK_MS = 4_000;
@@ -17,14 +17,22 @@ export interface StartedCharge {
   readonly id: string;
   /** When it was started, by the phone's clock. */
   readonly at: number;
+  /** The order it pays for, when it is an order's charge and not the bill's (ADR-227). */
+  readonly round?: string;
 }
 
 export function chargeStorageKey(code: string): string {
   return `mez.charge.${code}`;
 }
 
+/** Where the charge of an order held until paid is kept, apart from the bill's. */
+export function roundChargeStorageKey(code: string): string {
+  return `mez.round-charge.${code}`;
+}
+
 /** A charge id as the server draws one. What is in storage is not trusted. */
 const CHARGE_ID = /^chg_[0-9A-Z]{4,32}$/;
+const ROUND_ID = /^rnd_[0-9A-Z]{4,32}$/;
 
 export function parseStarted(text: string | null, now: number): StartedCharge | null {
   if (!text) return null;
@@ -35,10 +43,17 @@ export function parseStarted(text: string | null, now: number): StartedCharge | 
     return null;
   }
   if (typeof raw !== "object" || raw === null) return null;
-  const { id, at } = raw as { id?: unknown; at?: unknown };
+  const { id, at, round } = raw as { id?: unknown; at?: unknown; round?: unknown };
   if (typeof id !== "string" || !CHARGE_ID.test(id) || typeof at !== "number" || !Number.isFinite(at)) return null;
   if (now - at > CHARGE_REMEMBER_MS || at - now > CHARGE_REMEMBER_MS) return null;
-  return { id, at };
+  if (round === undefined) return { id, at };
+  return typeof round === "string" && ROUND_ID.test(round) ? { id, at, round } : null;
+}
+
+/** The stored charge of this order, or null: another order's is not this one's. */
+export function parseStartedFor(text: string | null, now: number, round: string): StartedCharge | null {
+  const started = parseStarted(text, now);
+  return started !== null && started.round === round ? started : null;
 }
 
 /**
@@ -81,6 +96,70 @@ export function chargeWords(status: ChargeStatus): ChargeWords {
         line: "Please show this to a member of staff. They will put it right.",
       };
   }
+}
+
+/**
+ * What the order's screen says of the charge the phone started for it. Paid
+ * is said only until the order itself reads sent, a moment later.
+ */
+export function roundChargeWords(status: ChargeStatus): ChargeWords {
+  switch (status) {
+    case "open":
+      return chargeWords("open");
+    case "paid":
+      return { tone: "good", title: "Payment received", line: "Your order is on its way to the kitchen." };
+    case "failed":
+      return { tone: "bad", title: "That payment did not go through", line: "Nothing was taken, and nothing was sent to the kitchen. You can try again." };
+    case "unapplied":
+      return {
+        tone: "bad",
+        title: "Your payment was taken, and something went wrong",
+        line: "Please show this to a member of staff. They will put it right. Do not pay again.",
+      };
+  }
+}
+
+/**
+ * Whether an order is held with its money taken: the gateway has the
+ * payment and the venue could not use it. The screen stops asking the guest
+ * to pay and sends them to staff.
+ */
+export function paymentStuck(round: GuestRoundStatus, charge: ChargeStatus | undefined): boolean {
+  return round === "unpaid" && charge === "unapplied";
+}
+
+/** What the order's screen says at its head when the payment is stuck. */
+export const stuckWords = {
+  title: "There is a problem with your payment",
+  line: "Your order has not been sent to the kitchen. Please show this to a member of staff.",
+} as const;
+
+/**
+ * Whether the order's screen offers paying: the order is still unpaid, and
+ * the phone has no charge for it that might yet be, or already was, paid.
+ */
+export function canPayRound(round: GuestRoundStatus, charge: ChargeStatus | undefined): boolean {
+  return round === "unpaid" && (charge === undefined || charge === "failed");
+}
+
+/** Why paying for an order could not be started, in words a guest can act on. */
+export function roundStartFailure(error: unknown): string {
+  if (error instanceof ApiError) {
+    switch (error.code) {
+      case "nothing_to_pay":
+        return "This order is already paid for.";
+      case "request_not_found":
+        return "This order can no longer be paid for. Place it again from the menu.";
+      case "request_lapsed":
+      case "no_open_shift":
+      case "gateway_unavailable":
+        return error.message;
+    }
+    if (error.unreachable || (error.status !== null && error.status >= 502 && error.status <= 504)) {
+      return "Can't reach the kitchen to start the payment. Check your connection and try again.";
+    }
+  }
+  return "Paying could not be started. Ask a member of staff.";
 }
 
 /** Whether a charge still has an answer to wait for. */

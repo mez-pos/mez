@@ -11,7 +11,7 @@ import { problemOf } from "./menu-logic";
 import { Problem } from "./Problem";
 import { hashFor, tableCodeFrom, viewFrom, type View } from "./route";
 import { useCart } from "./use-cart";
-import { hasStartedCharge } from "./use-charge";
+import { hasStartedCharge, hasStartedRoundCharge } from "./use-charge";
 import { useGuestMenu, useTable } from "./use-guest";
 import { useOrder } from "./use-order";
 
@@ -24,18 +24,21 @@ export function App() {
 
 function Table({ code }: { code: string }) {
   const [view, go] = useView();
-  // Back from a payment gateway's page, the address is the table's alone:
-  // a guest who went to pay comes back to the bill, not the landing.
-  useEffect(() => {
-    if (viewFrom(window.location.hash) === "landing" && hasStartedCharge(code)) go("bill");
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arriving
-  }, []);
   const table = useTable(code);
   // Asked for as soon as the table is known, so the menu is there by the
   // time the guest has read the landing and tapped.
   const menu = useGuestMenu(code, table.data !== undefined);
   const cart = useCart(code, menu.data);
   const order = useOrder(code, cart);
+  // Back from a payment gateway's page, the address is the table's alone:
+  // a guest who went to pay comes back to what they were paying for, the
+  // order or the bill, and not the landing.
+  useEffect(() => {
+    if (viewFrom(window.location.hash) !== "landing") return;
+    if (order.placed && hasStartedRoundCharge(code, order.placed.round.id)) go("order");
+    else if (hasStartedCharge(code)) go("bill");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arriving
+  }, []);
 
   if (table.data === undefined) {
     if (table.isPending) return <Waiting line="Finding your table" />;
@@ -46,7 +49,17 @@ function Table({ code }: { code: string }) {
   // The order placed is the server's answer, kept on the phone: it shows
   // with or without the menu.
   if (view === "order" && order.placed) {
-    return <Order table={table.data} placed={order.placed} onMenu={() => go("menu")} onBill={() => go("bill")} />;
+    return (
+      <Order
+        key={order.placed.round.id}
+        code={code}
+        table={table.data}
+        placed={order.placed}
+        onRefresh={order.refresh}
+        onMenu={() => go("menu")}
+        onBill={() => go("bill")}
+      />
+    );
   }
   if (view === "bill") return <Bill code={code} table={table.data} onBack={() => go("menu")} />;
 

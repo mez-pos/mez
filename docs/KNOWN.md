@@ -11,10 +11,14 @@
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
 - **Paying first** (ADR-225 to ADR-227): in effect where a gateway is set
-  and `payment.mode` is `prepay`, which can be set only through the API. **The
-  phone cannot pay for a round until 4e5c**: it says "Pay to send your order"
-  with nothing to press. Checked in the real binary as far as a gateway
-  refusing made-up keys; no round has been paid for at a real gateway. Nothing
+  and `payment.mode` is `prepay`, which can be set only through the API until
+  4e5d. The phone pays on the order's screen (ADR-228): seen at 390 wide, the
+  open, failed, taken and paid states with charges written into the database
+  by hand, and Pay itself as far as a gateway refusing made-up keys. **No
+  round has been paid for at a real gateway, and no real phone has gone to a
+  gateway's page and come back.** A phone that cleared its storage cannot pay
+  for the order it placed. The cart does not say, before Place Order, that
+  the order will have to be paid for. Nothing
   ends an unpaid round. A round's charge that can never be applied (its table
   out of service) stays open and is retried by every sweep, with only the log
   to say so. A paid ticket no staff opened waits for someone to close it. No

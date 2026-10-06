@@ -95,6 +95,11 @@ export function startCharge(code: string): Promise<GuestChargeResponse> {
   return api.post<GuestChargeResponse>(`${base(code)}/bill/charge`);
 }
 
+/** Starts paying for an order the venue is holding until it is paid (ADR-227). */
+export function startRoundCharge(code: string, round: string): Promise<GuestChargeResponse> {
+  return api.post<GuestChargeResponse>(`${base(code)}/orders/${encodeURIComponent(round)}/charge`);
+}
+
 /** How a charge this table started stands, as the venue's server found out from the gateway. */
 export function readCharge(code: string, id: string, signal: AbortSignal): Promise<GuestChargeResponse> {
   return api.get<GuestChargeResponse>(`${base(code)}/bill/charge/${encodeURIComponent(id)}`, { signal });

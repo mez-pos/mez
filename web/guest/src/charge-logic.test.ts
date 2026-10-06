@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../shared/api";
-import type { ChargeStatus } from "../../shared/api-types";
-import { CHARGE_REMEMBER_MS, chargeOpen, chargeWords, checkoutUrlOf, parseStarted, startFailure } from "./charge-logic";
+import type { ChargeStatus, GuestRoundStatus } from "../../shared/api-types";
+import {
+  CHARGE_REMEMBER_MS,
+  canPayRound,
+  paymentStuck,
+  stuckWords,
+  chargeOpen,
+  chargeStorageKey,
+  chargeWords,
+  checkoutUrlOf,
+  parseStarted,
+  parseStartedFor,
+  roundChargeStorageKey,
+  roundChargeWords,
+  roundStartFailure,
+  startFailure,
+} from "./charge-logic";
 
 describe("parseStarted", () => {
   const now = 1_800_000_000_000;
@@ -23,6 +38,8 @@ describe("parseStarted", () => {
     ["an id that reaches for another path", stored({ id: "chg_../../menu", at: now })],
     ["no time", stored({ id: "chg_7K3M9QX2" })],
     ["a time that is not a number", stored({ id: "chg_7K3M9QX2", at: "now" })],
+    ["an order's id that is not one", stored({ id: "chg_7K3M9QX2", at: now, round: "rnd_../bill" })],
+    ["an order's id that is not words", stored({ id: "chg_7K3M9QX2", at: now, round: 7 })],
   ])("is nothing for %s", (_name, text) => {
     expect(parseStarted(text, now)).toBeNull();
   });
@@ -79,6 +96,70 @@ describe("startFailure", () => {
       const text = startFailure(err);
       expect(text).toContain("Pay a member of staff");
       expect(text).not.toMatch(/seq|boom/);
+    }
+  });
+});
+
+describe("an order's charge", () => {
+  const now = 1_800_000_000_000;
+  const text = JSON.stringify({ id: "chg_7K3M9QX2", at: now - 1000, round: "rnd_YFMKJXT5" });
+
+  it("is kept apart from the bill's", () => {
+    expect(roundChargeStorageKey("abc")).not.toBe(chargeStorageKey("abc"));
+  });
+  it("is read back for its own order and no other", () => {
+    expect(parseStartedFor(text, now, "rnd_YFMKJXT5")).toEqual({ id: "chg_7K3M9QX2", at: now - 1000, round: "rnd_YFMKJXT5" });
+    expect(parseStartedFor(text, now, "rnd_ANOTHER1")).toBeNull();
+    expect(parseStartedFor(JSON.stringify({ id: "chg_7K3M9QX2", at: now }), now, "rnd_YFMKJXT5")).toBeNull();
+    expect(parseStartedFor(null, now, "rnd_YFMKJXT5")).toBeNull();
+  });
+
+  it("is offered only while the order is unpaid and no payment may yet land", () => {
+    const rounds: GuestRoundStatus[] = ["waiting", "sent", "declined"];
+    for (const r of rounds) expect(canPayRound(r, undefined)).toBe(false);
+    expect(canPayRound("unpaid", undefined)).toBe(true);
+    expect(canPayRound("unpaid", "failed")).toBe(true);
+    // Open: it may be paid any moment. Paid: the order is about to say so.
+    // Unapplied: the money was taken, and a second payment is a second refund.
+    expect(canPayRound("unpaid", "open")).toBe(false);
+    expect(canPayRound("unpaid", "paid")).toBe(false);
+    expect(canPayRound("unpaid", "unapplied")).toBe(false);
+  });
+
+  it("is stuck only when the money was taken and the order is still held", () => {
+    expect(paymentStuck("unpaid", "unapplied")).toBe(true);
+    expect(paymentStuck("unpaid", "open")).toBe(false);
+    expect(paymentStuck("unpaid", undefined)).toBe(false);
+    // Sent, the food went: the order says so, and staff have the rest.
+    expect(paymentStuck("sent", "unapplied")).toBe(false);
+    expect(stuckWords.line).toContain("not been sent");
+    expect(stuckWords.line).toContain("member of staff");
+  });
+
+  it("has words for every status, and never says paid of one that is open", () => {
+    const all: ChargeStatus[] = ["open", "paid", "failed", "unapplied"];
+    for (const status of all) {
+      expect(roundChargeWords(status).title).not.toBe("");
+      expect(roundChargeWords(status).line).not.toBe("");
+    }
+    expect(roundChargeWords("open").tone).toBe("waiting");
+    expect(roundChargeWords("paid").line).toContain("kitchen");
+    expect(roundChargeWords("failed").line).toContain("nothing was sent to the kitchen");
+    expect(roundChargeWords("unapplied").line).toContain("Do not pay again");
+  });
+
+  it("says why paying could not be started, in the server's words where it wrote them for a guest", () => {
+    expect(roundStartFailure(new ApiError("nothing_to_pay", "x", 409))).toBe("This order is already paid for.");
+    expect(roundStartFailure(new ApiError("request_not_found", "x", 404))).toContain("Place it again");
+    const lapsed = "That order is from an earlier day. Place it again.";
+    expect(roundStartFailure(new ApiError("request_lapsed", lapsed, 409))).toBe(lapsed);
+    const shut = "Ordering is closed right now. Ask a member of staff.";
+    expect(roundStartFailure(new ApiError("no_open_shift", shut, 409))).toBe(shut);
+    expect(roundStartFailure(new ApiError("network", "offline"))).toContain("Check your connection");
+    for (const err of [new ApiError("internal", "pq: seq 4", 500), new Error("boom"), "boom"]) {
+      const said = roundStartFailure(err);
+      expect(said).toContain("member of staff");
+      expect(said).not.toMatch(/seq|boom/);
     }
   });
 });

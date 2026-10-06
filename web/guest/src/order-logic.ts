@@ -4,7 +4,7 @@
 // answer. The prices in the answer are the server's; nothing here adds up.
 
 import { ApiError } from "../../shared/api";
-import type { GuestOrderRequest, GuestRoundResponse, GuestRoundStatus } from "../../shared/api-types";
+import type { GuestOrderRequest, GuestRoundResponse, GuestRoundStatus, Money } from "../../shared/api-types";
 import type { PricedLine } from "./cart-logic";
 
 /** How often a waiting order asks whether it has been answered. */
@@ -60,6 +60,21 @@ export interface Placed {
   readonly round: GuestRoundResponse;
   /** When it was placed, by the phone's clock. */
   readonly at: number;
+  /**
+   * The venue held it until it was paid for (ADR-225). Kept once seen, so
+   * an order that was paid first is not told it pays on leaving.
+   */
+  readonly paidFirst: boolean;
+}
+
+/** The order with the venue's newer answer in it. */
+export function withRound(placed: Omit<Placed, "round" | "paidFirst"> & { paidFirst?: boolean }, round: GuestRoundResponse): Placed {
+  return { key: placed.key, request: placed.request, at: placed.at, round, paidFirst: placed.paidFirst === true || round.status === "unpaid" };
+}
+
+/** What an unpaid order asks the guest to pay, as the server worked it out, or null. */
+export function dueOf(round: GuestRoundResponse): Money | null {
+  return round.status === "unpaid" && round.due !== undefined && round.due.minor > 0 ? round.due : null;
 }
 
 export function placedStorageKey(code: string): string {
@@ -81,7 +96,11 @@ export function parsePlaced(text: string | null, now: number): Placed | null {
   if (!isRecord(request) || !Array.isArray(request.lines)) return null;
   if (!isRecord(round) || typeof round.id !== "string" || !statuses.includes(round.status as GuestRoundStatus)) return null;
   if (!Array.isArray(round.lines) || !round.lines.every(isLine) || !isMoney(round.subtotal)) return null;
-  return { key: raw.key, request: request as unknown as GuestOrderRequest, round: round as unknown as GuestRoundResponse, at: raw.at };
+  if (round.due !== undefined && !isMoney(round.due)) return null;
+  return withRound(
+    { key: raw.key, request: request as unknown as GuestOrderRequest, at: raw.at, paidFirst: raw.paidFirst === true },
+    round as unknown as GuestRoundResponse,
+  );
 }
 
 function isLine(value: unknown): boolean {
@@ -129,7 +148,7 @@ export interface StatusWords {
   readonly brief: string;
 }
 
-export function statusWords(status: GuestRoundStatus, venue: string): StatusWords {
+export function statusWords(status: GuestRoundStatus, venue: string, paidFirst = false): StatusWords {
   switch (status) {
     case "waiting":
       return {
@@ -139,8 +158,10 @@ export function statusWords(status: GuestRoundStatus, venue: string): StatusWord
       };
     case "sent":
       return {
-        title: "Your order is with the kitchen",
-        line: "You can order more from the menu at any time. You pay when you are ready to leave.",
+        title: paidFirst ? "Paid, and with the kitchen" : "Your order is with the kitchen",
+        line: paidFirst
+          ? "You can order more from the menu at any time."
+          : "You can order more from the menu at any time. You pay when you are ready to leave.",
         brief: "Sent to the kitchen",
       };
     case "unpaid":

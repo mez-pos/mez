@@ -7139,3 +7139,38 @@ Because: the phone's task should be the phone's alone, built against a server th
 already does the whole of it.
 Cost: an owner who sets `prepay` through the API today gets phones that say "Pay
 to send your order" with nothing to press, until 4e5c.
+
+## ADR-228 - The phone pays for an order on the order's screen, and remembers that it paid first
+2026-10 · Status: accepted. Phase 11, Task 4e5c.
+Context: ADR-227 gave an unpaid round a charge to start. The bill's Pay online
+(ADR-222) already starts a charge, leaves for the gateway, and asks how it stands.
+Decision:
+  - **Paying is on the order's screen, not the bill's.** An unpaid order is on no
+    bill. The screen says what to pay, the server's `due`, and has the one primary,
+    **Pay**.
+  - **`useCharge` serves both**, told which it is for. An order's charge is kept
+    under its own key with the order's id, so the bill's charge and an order's do
+    not overwrite each other, and a charge kept for another order is not this
+    one's.
+  - **Pay is offered only with no charge, or a failed one.** While one is open it
+    may be paid any moment; paid, the order is about to say so; taken and not
+    usable, a second payment is a second refund.
+  - **A charge's answer makes the order ask at once**, with its key, and the order
+    reads sent. The order also asks every 8 seconds while unpaid, so a payment the
+    venue's sweep found shows on a phone that forgot its charge.
+  - **The phone remembers that an order was held for its payment** (`paidFirst`
+    on what it keeps), set whenever it sees `unpaid` and kept once sent. A paid
+    order reads "Paid, and with the kitchen" and is not told it pays on leaving.
+    The server's answer for a sent round does not say how it came to be sent, and
+    did not need to.
+  - **Money taken and the order still held is said at the head of the screen**,
+    in the danger tone, not left under "Pay to send your order": seen in the
+    browser, the two contradicted each other.
+  - **Back from the gateway, the app opens on the order** when this phone started
+    a payment for the order it remembers, and on the bill for a bill's charge.
+    Nothing the gateway puts in the address is read.
+Because: the guest's next step is always the one button on the screen they are
+already on, and a phone is believed about nothing to do with money.
+Cost: a phone that cleared its storage has no order to pay for; the round stays
+held until it lapses, and the guest places it again. Seen at 390 wide with charges
+written into the database by hand; no phone has paid a real gateway for an order.

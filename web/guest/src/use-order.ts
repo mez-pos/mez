@@ -17,6 +17,7 @@ import {
   placedStorageKey,
   refusalOf,
   toRequest,
+  withRound,
   type Placed,
 } from "./order-logic";
 import type { CartApi } from "./use-cart";
@@ -30,6 +31,8 @@ export interface OrderApi {
   error: string;
   /** Sends the cart. Resolves true once the venue has it. */
   place: () => Promise<boolean>;
+  /** Asks now how the order placed stands: its payment has just been answered. */
+  refresh: () => void;
 }
 
 // Storage can be refused. An order is then remembered for as long as the
@@ -73,7 +76,7 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
     const ask = () => {
       if (document.visibilityState === "hidden") return;
       sendOrder(code, placed.request, placed.key)
-        .then((round) => keep({ ...placed, round }))
+        .then((round) => keep(withRound(placed, round)))
         .catch(() => undefined);
     };
     const t = setInterval(ask, ASK_AGAIN_MS);
@@ -96,7 +99,7 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
     save(keyStorageKey(code), JSON.stringify(record));
     try {
       const round = await sendOrder(code, request, record.key);
-      keep({ key: record.key, request, round, at: Date.now() });
+      keep(withRound({ key: record.key, request, at: Date.now() }, round));
       save(keyStorageKey(code), null);
       cart.clear();
       return true;
@@ -113,5 +116,12 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
     }
   };
 
-  return { placed, placing, error, place };
+  const refresh = () => {
+    if (placed === null) return;
+    sendOrder(code, placed.request, placed.key)
+      .then((round) => keep(withRound(placed, round)))
+      .catch(() => undefined);
+  };
+
+  return { placed, placing, error, place, refresh };
 }

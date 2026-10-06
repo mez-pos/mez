@@ -115,7 +115,8 @@ Phase 10.
         - [x] **4e5b2.** `POST /order/api/t/{code}/orders/{round}/charge`
           (ADR-227); its status is the bill charge's route. `CanCharge` wired
           in `cmd/mez`: the mode is in effect where a gateway is set.
-      - [ ] **4e5c.** The phone: Place Order, pay, and back to an order sent.
+      - [x] **4e5c.** The phone: Place Order, pay, and back to an order sent
+        (ADR-228). Seen at 390 wide in every state but a real payment.
       - [ ] **4e5d.** The owner's choice of mode in the back office, beside
         the UPI address, saying when it is in effect.
   - [ ] **4f.** The gateway adapter: one interface, with Razorpay, Cashfree

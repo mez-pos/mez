@@ -226,7 +226,7 @@ function IHavePaid({ code, told }: { code: string; told: boolean }) {
   );
 }
 
-const chargeTones = {
+export const chargeTones = {
   waiting: "border-chip-warning-border bg-chip-warning-bg text-chip-warning-fg",
   good: "border-line bg-accent-tint text-accent-text",
   bad: "border-line bg-danger-tint text-danger",

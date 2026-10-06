@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4e5b1: a round's charge** (ADR-226). `charges.StartRound` asks
+**Phase 11, Task 4e5b2: a guest pays for a round** (ADR-227).
+`POST /order/api/t/{code}/orders/{round}/charge`; its status is the bill charge's
+route, which says `round`. `CanCharge` is wired to the gateway being set.
+
+Before it, **Phase 11, Task 4e5b1: a round's charge** (ADR-226). `charges.StartRound` asks
 the gateway for a held round's `Due`. Paid, `Settle` sends the round
 (`order.SendPaidRound`) and then tenders what was charged. Migration 00044.
 

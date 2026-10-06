@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../shared/api";
 import type { GuestOrderRequest, GuestRoundResponse } from "../../shared/api-types";
-import { REMEMBER_MS, awaitsAnswer, drawKey, keyFor, parseKey, parsePlaced, refusalOf, statusWords, toRequest, type Placed } from "./order-logic";
+import {
+  REMEMBER_MS,
+  awaitsAnswer,
+  drawKey,
+  dueOf,
+  keyFor,
+  parseKey,
+  parsePlaced,
+  refusalOf,
+  statusWords,
+  toRequest,
+  withRound,
+  type Placed,
+} from "./order-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -75,11 +88,23 @@ describe("drawKey", () => {
 
 describe("parsePlaced", () => {
   const now = 1_800_000_000_000;
-  const placed: Placed = { key: "k", request, round, at: now - 60_000 };
+  const placed: Placed = { key: "k", request, round, at: now - 60_000, paidFirst: false };
   const stored = (change: object = {}) => JSON.stringify({ ...placed, ...change });
 
   it("reads back an order placed this sitting", () => {
     expect(parsePlaced(stored(), now)).toEqual(placed);
+  });
+  it("reads an order written before paying first was known as one that was not", () => {
+    const { paidFirst: _dropped, ...older } = placed;
+    expect(parsePlaced(JSON.stringify(older), now)).toEqual(placed);
+  });
+  it("keeps that an order was held for its payment, and what it asks", () => {
+    const held = { ...round, status: "unpaid" as const, due: inr(58800) };
+    const back = parsePlaced(stored({ round: held }), now);
+    expect(back?.paidFirst).toBe(true);
+    expect(back && dueOf(back.round)).toEqual(inr(58800));
+    // Sent since, it is still an order that was paid first.
+    expect(parsePlaced(stored({ round, paidFirst: true }), now)?.paidFirst).toBe(true);
   });
   it("forgets one from another day, or from a clock far ahead", () => {
     expect(parsePlaced(stored({ at: now - REMEMBER_MS - 1 }), now)).toBeNull();
@@ -96,6 +121,7 @@ describe("parsePlaced", () => {
     ["a line with no name", stored({ round: { ...round, lines: [{ qty: 1, choices: [], total: inr(1) }] } })],
     ["a choice that is not words", stored({ round: { ...round, lines: [{ ...round.lines[0], choices: [3] }] } })],
     ["a subtotal that is not whole", stored({ round: { ...round, subtotal: { minor: 1.5, currency: "INR" } } })],
+    ["an amount to pay that is not money", stored({ round: { ...round, status: "unpaid", due: "588.00" } })],
   ])("is nothing for %s", (_name, text) => {
     expect(parsePlaced(text, now)).toBeNull();
   });
@@ -103,7 +129,7 @@ describe("parsePlaced", () => {
 
 describe("awaitsAnswer", () => {
   it("is true only while waiting", () => {
-    const of = (status: GuestRoundResponse["status"]): Placed => ({ key: "k", request, round: { ...round, status }, at: 0 });
+    const of = (status: GuestRoundResponse["status"]): Placed => ({ key: "k", request, round: { ...round, status }, at: 0, paidFirst: false });
     expect(awaitsAnswer(of("waiting"))).toBe(true);
     expect(awaitsAnswer(of("unpaid"))).toBe(true);
     expect(awaitsAnswer(of("sent"))).toBe(false);
@@ -120,6 +146,12 @@ describe("statusWords", () => {
     expect(statusWords("declined", "Demo Cafe").line).toContain("ask a member of staff");
     expect(statusWords("sent", "Demo Cafe").brief).toBe("Sent to the kitchen");
     expect(statusWords("unpaid", "Demo Cafe").line).toContain("until this order is paid for");
+  });
+  it("does not tell a guest who paid first that they pay on leaving", () => {
+    expect(statusWords("sent", "Demo Cafe").line).toContain("You pay when you are ready to leave");
+    const paid = statusWords("sent", "Demo Cafe", true);
+    expect(paid.title).toBe("Paid, and with the kitchen");
+    expect(paid.line).not.toContain("pay");
   });
 });
 
@@ -146,5 +178,27 @@ describe("refusalOf", () => {
       expect(text).toContain("order at the counter");
       expect(text).not.toMatch(/seq|boom/);
     }
+  });
+});
+
+describe("withRound and dueOf", () => {
+  const base = { key: "k", request, at: 5 };
+  it("marks an order held for its payment, and keeps the mark once it is sent", () => {
+    const held = withRound(base, { ...round, status: "unpaid", due: inr(58800) });
+    expect(held.paidFirst).toBe(true);
+    const sent = withRound(held, { ...round, status: "sent" });
+    expect(sent.paidFirst).toBe(true);
+    expect(sent.round.status).toBe("sent");
+    expect(sent.key).toBe("k");
+  });
+  it("leaves a request for staff unmarked", () => {
+    expect(withRound(base, { ...round, status: "waiting" }).paidFirst).toBe(false);
+    expect(withRound(withRound(base, { ...round, status: "waiting" }), { ...round, status: "sent" }).paidFirst).toBe(false);
+  });
+  it("asks for the server's figure, and only of an unpaid order", () => {
+    expect(dueOf({ ...round, status: "unpaid", due: inr(58800) })).toEqual(inr(58800));
+    expect(dueOf({ ...round, status: "unpaid" })).toBeNull();
+    expect(dueOf({ ...round, status: "unpaid", due: inr(0) })).toBeNull();
+    expect(dueOf({ ...round, status: "sent", due: inr(58800) })).toBeNull();
   });
 });

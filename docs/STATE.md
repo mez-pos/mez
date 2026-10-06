@@ -8,28 +8,28 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4d, 4e1 to 4e4, 4e5a, 4e5b and 4f1 to 4f5 done. (The walks are owed.)
+4a to 4d, 4e1 to 4e4, 4e5a to 4e5c and 4f1 to 4f5 done. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 4e5b2: a guest pays for a round** (ADR-227).
-`POST /order/api/t/{code}/orders/{round}/charge`; its status is the bill charge's
-route, which now says `round`. `CanCharge` is wired: paying first is in effect
-where a gateway is set and `payment.mode` is `prepay` (API only, off by default).
+**Phase 11, Task 4e5c: the phone pays for an order** (ADR-228). An unpaid order's
+screen shows what to pay and **Pay**; back from the gateway it asks how the charge
+stands and then reads "Paid, and with the kitchen". Guest bundle 41.7 KB of 60.
 
 ## Next task
 
-**No real charge has been made yet** (ADR-221): Razorpay test keys, Pay online on a
-phone, a test card. 4e5c is the last thing built on an adapter nobody has seen work.
+**No real charge has been made yet** (ADR-221): Razorpay test keys, then on a
+phone Pay online on a bill, and Pay on an order with `payment.mode` set to `prepay`.
 
-**Phase 11, Task 4e5c: the phone pays for a round.** Read ADR-213, ADR-222,
-ADR-227, `docs/design/screens/guest-order.md` and `guest-bill.md`, and
-`web/guest/src/Order.tsx`, `use-charge.ts`, `charge-logic.ts`, `Bill.tsx`.
-- An unpaid round shows its `due` and a Pay button: start the round's charge, go
-  to the gateway, and on return ask how it stands, as the bill's Pay online does.
-- Paid, the round reads sent. Failed, it can be tried again. Unapplied, show staff.
-- A phone that comes back to its unpaid round (the tab was closed) can still pay.
-- Hold the 60 KB budget. Update the screen spec. See it at 390 wide.
+**Phase 11, Task 4e5d: the owner's choice of mode in the back office.** Read
+ADR-216, ADR-225, `docs/design/screens/backoffice-settings.md`,
+`web/backoffice/src/settings/PaymentsCard.tsx`, `payments-logic.ts`.
+- Two choices beside the UPI address: pay at the table, or pay first. The server
+  takes `mode` on `PUT /api/v1/settings/payments` and answers `can_charge`.
+- With `can_charge` false, pay first is shown and says why it has no effect: no
+  gateway is set, which is the venue's configuration and not this screen's.
+- Say what pay first does to a guest: nothing reaches the kitchen until paid.
+- Then consider the cart saying so before Place Order (KNOWN.md).
 
 ## Known broken / in progress
 
@@ -55,5 +55,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4d, 4e1 to 4e4, 4e5a, 4e5b, 4f1 to 4f5 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4d, 4e1 to 4e4, 4e5a to 4e5c, 4f1 to 4f5 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs
