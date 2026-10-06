@@ -45,6 +45,49 @@ export function addLine(cart: Cart, line: CartLine): Cart {
   return [...cart, { item_id: line.item_id, modifier_ids: [...line.modifier_ids], qty }];
 }
 
+export interface Added {
+  readonly cart: Cart;
+  /** Not all of it went in: a line is at its most, or the cart is full. */
+  readonly short: boolean;
+}
+
+/**
+ * Adds several lines, as ordering the same again does (ADR-242): onto what
+ * is in the cart already, never in place of it. Says when the cart could
+ * not take all of them.
+ */
+export function addAll(cart: Cart, lines: readonly CartLine[]): Added {
+  let next = cart;
+  let asked = 0;
+  for (const line of lines) {
+    asked += Math.max(0, Math.trunc(line.qty));
+    next = addLine(next, line);
+  }
+  return { cart: next, short: countOf(next) - countOf(cart) < asked };
+}
+
+/**
+ * The lines of an order as it was sent, for the cart: dish ids, choice ids
+ * and counts, and nothing else. What the phone kept is not trusted, so
+ * anything that is not a line is left out.
+ */
+export function linesOfRequest(request: unknown): CartLine[] {
+  if (typeof request !== "object" || request === null) return [];
+  const { lines } = request as { lines?: unknown };
+  if (!Array.isArray(lines)) return [];
+  const out: CartLine[] = [];
+  for (const entry of lines.slice(0, MAX_LINES)) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const { item_id, modifier_ids, qty } = entry as { item_id?: unknown; modifier_ids?: unknown; qty?: unknown };
+    if (!isId(item_id) || !Array.isArray(modifier_ids) || !modifier_ids.every(isId) || !isId(qty)) continue;
+    out.push({ item_id, modifier_ids, qty });
+  }
+  return out;
+}
+
+/** What the cart says when it could not take all of an order added again. */
+export const cartFullText = "Your cart could not take all of that order: it holds 20 of one dish at most.";
+
 /** Sets how many of a line. None takes the line out. */
 export function setQty(cart: Cart, key: string, qty: number): Cart {
   const next = clampQty(qty);

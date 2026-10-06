@@ -10,6 +10,13 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Ordering the same again** (ADR-242): seen at 390 wide in the real
+  binary, one dish added onto a cart that had one of it. Not seen: a dish
+  gone from the menu since, or its choices changed, being named in the
+  cart; the cart at its most; a keyboard or a screen reader. Only the
+  phone's latest order can be ordered again: there is no list of past
+  orders (M10). If the cart is both full and missing a dish, only the
+  missing dish is said.
 - **A guest's receipt** (ADR-240, ADR-241): seen at 390 wide in the real
   binary, a bill paid by UPI through the staff API, with its real invoice
   number and the time in the venue's zone. Not seen: a discount, tax not in

@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 5d: the e-receipt on the server** (ADR-240).
+**Phase 11, Task 5e1: the receipt on the phone** (ADR-241). `#receipt`: the
+invoice as issued, offered on the bill once it is paid or gone. The phone keeps
+which bill was its table's (`mez.bill.<code>`). Seen at 390 wide.
+
+Before it, **Phase 11, Task 5d: the e-receipt on the server** (ADR-240).
 `GET /order/api/t/{code}/receipts/{bill}`: the counter's own invoice, by the
 table's code and the bill's id. The open bill and a tracked order say `bill`.
 

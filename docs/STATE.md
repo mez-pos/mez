@@ -8,13 +8,13 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but for 4f6b (Cashfree, question 8), and 5a to 5e1 done. (The walks are owed.)
+4 but for 4f6b (Cashfree, question 8), and 5 but for 5f, done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 5e1: the receipt on the phone** (ADR-241). `#receipt`: the
-invoice as issued, offered on the bill once it is paid or gone. The phone keeps
-which bill was its table's (`mez.bill.<code>`). Seen at 390 wide.
+**Phase 11, Task 5e2: ordering the same again** (ADR-242). "Order this again" on
+a sent order adds its dishes to the cart, held against today's menu, and opens
+the cart. It places nothing. Task 5 is done but for 5f, pickup.
 
 ## Next task
 
@@ -22,14 +22,14 @@ which bill was its table's (`mez.bill.<code>`). Seen at 390 wide.
 keys, then on a phone Pay online on a bill, a share of one from two phones, and
 Pay on an order with paying first chosen. The payments card says so itself.
 
-**Phase 11, Task 5e2: ordering the same again.** Read ADR-239, ADR-241,
-`docs/design/screens/guest-order.md`, `docs/design/tokens.md`.
-`web/guest/src/`: `order-logic.ts`, `cart-logic.ts`, `use-cart.ts`, `Order.tsx`.
-- "Order this again" on the order's screen puts that order's dishes in the cart,
-  from the request the phone kept (`Placed.request`): ids and counts, no prices.
-- The cart already holds itself against today's menu and says what it took out.
-  A dish gone, or its choices changed, must end up said and not silently dropped.
-- It places nothing. Decide whether it adds to a cart with things in it, or asks.
+**Phase 11, Task 6: QR codes and table codes.** Read the phase file's Task 6,
+ADR-206, ADR-237, `internal/service/tablecodes`, `internal/domain/qr`, and the
+back office's floor screen spec. Larger than a session: split it first.
+- Codes exist and renew (`tablecodes`); a QR is drawn on the server (`qr`).
+  What is missing is the owner's side: see, print as a sheet, renew, revoke.
+- A rate limit per table: guests' routes have none. Tracking asks every 10
+  seconds (ADR-239), so the limit must not catch a phone doing only that.
+- The venue's pickup code (ADR-237) is made here. Then 5f, which wants both.
 
 ## Known broken / in progress
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Task 4 but for 4f6b, 5a to 5e1 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4 and 5 done but for 4f6b and 5f)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

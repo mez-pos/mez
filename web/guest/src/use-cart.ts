@@ -4,7 +4,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { GuestMenuResponse, Money } from "../../shared/api-types";
 import {
+  addAll,
   addLine,
+  cartFullText,
   countOf,
   droppedText,
   emptyCart,
@@ -29,6 +31,8 @@ export interface CartApi {
   notice: string;
   dismissNotice: () => void;
   add: (line: CartLine) => void;
+  /** Adds an order's lines onto what is in the cart, and says if not all of it went in. */
+  addMany: (lines: readonly CartLine[]) => void;
   setQty: (key: string, qty: number) => void;
   clear: () => void;
 }
@@ -77,6 +81,13 @@ export function useCart(code: string, menu: GuestMenuResponse | undefined): Cart
     notice,
     dismissNotice: () => setNotice(""),
     add: (line) => setCart((c) => addLine(c, line)),
+    addMany: (lines) => {
+      const added = addAll(cart, lines);
+      setCart(added.cart);
+      // What the menu no longer has is said when the cart is next held
+      // against it, in the same place.
+      setNotice(added.short ? cartFullText : "");
+    },
     setQty: (lineKey, qty) => setCart((c) => setQty(c, lineKey, qty)),
     clear: () => setCart(emptyCart),
   };

@@ -3,6 +3,7 @@ import type { GuestItemResponse, GuestMenuResponse } from "../../shared/api-type
 import {
   MAX_LINES,
   MAX_QTY,
+  addAll,
   addLine,
   countOf,
   droppedText,
@@ -10,6 +11,7 @@ import {
   groupsFor,
   itemsText,
   lineKey,
+  linesOfRequest,
   parse,
   reconcile,
   serialize,
@@ -17,6 +19,7 @@ import {
   storageKey,
   totalOf,
   type Cart,
+  type CartLine,
 } from "./cart-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
@@ -261,5 +264,74 @@ describe("storage", () => {
 
   it("joins lines that are the same dish and choices", () => {
     expect(parse('[{"i":2,"m":[],"q":1},{"i":2,"m":[],"q":2}]')).toEqual([{ ...filter, qty: 3 }]);
+  });
+});
+
+describe("ordering the same again", () => {
+  const again: CartLine[] = [
+    { item_id: 1, modifier_ids: [11], qty: 2 },
+    { item_id: 2, modifier_ids: [], qty: 1 },
+  ];
+  it("adds an order's lines to an empty cart", () => {
+    const got = addAll(emptyCart, again);
+    expect(got.cart).toEqual(again);
+    expect(got.short).toBe(false);
+  });
+  it("adds onto what is in the cart, and never in place of it", () => {
+    const cart: Cart = [
+      { item_id: 9, modifier_ids: [], qty: 1 },
+      { item_id: 1, modifier_ids: [11], qty: 1 },
+    ];
+    const got = addAll(cart, again);
+    expect(got.cart).toEqual([
+      { item_id: 9, modifier_ids: [], qty: 1 },
+      { item_id: 1, modifier_ids: [11], qty: 3 },
+      { item_id: 2, modifier_ids: [], qty: 1 },
+    ]);
+    expect(got.short).toBe(false);
+    // The cart handed in is not changed.
+    expect(cart[1]?.qty).toBe(1);
+  });
+  it("says when a line is at its most and could not take it all", () => {
+    const got = addAll([{ item_id: 1, modifier_ids: [11], qty: MAX_QTY - 1 }], again);
+    expect(got.cart[0]?.qty).toBe(MAX_QTY);
+    expect(got.short).toBe(true);
+  });
+  it("adds nothing for no lines", () => {
+    expect(addAll(emptyCart, [])).toEqual({ cart: emptyCart, short: false });
+  });
+  it("reads an order's lines back as ids and counts", () => {
+    expect(linesOfRequest({ lines: [{ item_id: 1, modifier_ids: [11], qty: 2 }] })).toEqual([{ item_id: 1, modifier_ids: [11], qty: 2 }]);
+  });
+  it.each([
+    ["nothing", undefined],
+    ["not an order", "lines"],
+    ["no lines", {}],
+    ["lines that are not a list", { lines: 3 }],
+  ])("reads no lines from %s", (_name, request) => {
+    expect(linesOfRequest(request)).toEqual([]);
+  });
+  it("leaves out what is not a line, and never a price or a name", () => {
+    const got = linesOfRequest({
+      lines: [
+        { item_id: 1, modifier_ids: [], qty: 1, name: "Free lunch", unit_price: 0 },
+        { item_id: "1", modifier_ids: [], qty: 1 },
+        { item_id: 2, modifier_ids: [0], qty: 1 },
+        { item_id: 3, modifier_ids: [], qty: 0 },
+        { item_id: 4, modifier_ids: [], qty: 1.5 },
+        null,
+      ],
+    });
+    expect(got).toEqual([{ item_id: 1, modifier_ids: [], qty: 1 }]);
+  });
+  it("is held against today's menu like any cart, and names what is gone", () => {
+    const lines: CartLine[] = [
+      { item_id: 2, modifier_ids: [], qty: 1 },
+      { item_id: 3, modifier_ids: [], qty: 1 },
+      { item_id: 9999, modifier_ids: [], qty: 1 },
+    ];
+    const held = reconcile(addAll(emptyCart, lines).cart, menu);
+    expect(held.dropped).toEqual(["Brownie", "A dish"]);
+    expect(held.cart).toEqual([{ item_id: 2, modifier_ids: [], qty: 1 }]);
   });
 });

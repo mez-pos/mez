@@ -65,9 +65,10 @@ guess at how long, and never "being made" before a cook has started it.
   - taken and not usable, danger: "Your payment was taken, and something
     went wrong. Please show this to a member of staff. They will put it
     right. Do not pay again." No Pay button.
-- **At the foot:** **Order more**, the primary, once sent, with **See the
-  table's bill** under it (`guest-bill.md`); **Back to the menu**,
-  secondary, while waiting or declined.
+- **At the foot:** **Order more**, the primary, once sent; under it
+  **Order this again** (ADR-242), secondary, unless the order was
+  cancelled; and **See the table's bill** (`guest-bill.md`). **Back to the
+  menu**, secondary, while waiting or declined.
 - **The strip,** over the menu and the cart while the phone remembers an
   order: "Your order: Waiting to be accepted", "Sent to the kitchen",
   "Being made", "Ready", "Accepted", "Cancelled" or "Not accepted", in the
@@ -115,6 +116,7 @@ guess at how long, and never "being made" before a cook has started it.
 |---|---|---|
 | Place Order, on the cart | Sends the cart | This screen, as the venue answered |
 | Order more, Back to the menu | The menu | The strip stays over it |
+| Order this again | Adds this order's dishes to the cart | The cart, with them in it and anything it had before. Nothing is placed |
 | View, on the strip | This screen | |
 | The phone's Back | The cart, now empty, or the menu | |
 | Pay | Starts the order's charge | The gateway's page; then this screen |
@@ -140,6 +142,11 @@ guess at how long, and never "being made" before a cook has started it.
 - **Paying could not be started:** under the button. The gateway refusing
   or unreachable: the server's sentence. The order already paid, gone, or
   from a closed shift: said, and the order is asked about again.
+- **Ordered again, and a dish has gone from the menu or its choices have
+  changed:** the cart says so, by name, as it does for any cart: "Chocolate
+  brownie is no longer available and was taken out of your cart."
+- **Ordered again, and the cart cannot take it all:** the cart says "Your
+  cart could not take all of that order: it holds 20 of one dish at most."
 - **No order remembered:** `#order` shows the menu.
 - **Storage refused:** the order is remembered as long as the page.
 
@@ -154,10 +161,13 @@ guess at how long, and never "being made" before a cook has started it.
 - Money is integer minor units, never a float.
 - The same order is never sent as two: one key for one cart, and a second
   tap while placing does nothing.
+- Ordering again places nothing. It fills the cart from the ids and counts
+  the phone sent, never from a name or a price, and the guest places it
+  from the cart at today's prices.
 - Whether an order was paid for is the venue's server's to say. Nothing in
   the address a gateway sends a guest back with is read.
 - Pay is never offered while a payment may yet land, or has.
-- The guest's bundle is 44.0 KB gzipped of 60.
+- The guest's bundle is 45.6 KB gzipped of 60.
 
 ## Reference
 
@@ -173,7 +183,9 @@ Tracking, was not read: the steps here are the ones the kitchen records.
 - "Served", "on its way": no event says an order left the pass.
 - Each dish's own step: an order is one thing to wait for, ready when all
   of it is.
-- A pickup code, and a receipt: Task 5d to 5f.
+- A list of past orders to order again from (M10): the phone remembers
+  one order, the latest.
+- A pickup code: Task 5f. The receipt is `guest-receipt.md`.
 
 **Kept that the design does not draw:** the waiting and declined states
 (ADR-209), the strip, and every refusal.

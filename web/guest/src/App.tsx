@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { Bill } from "./Bill";
 import { Cart } from "./Cart";
+import { linesOfRequest } from "./cart-logic";
 import { Landing } from "./Landing";
 import { Menu } from "./Menu";
 import { Order, OrderStrip } from "./Order";
@@ -60,6 +61,10 @@ function Table({ code }: { code: string }) {
         onRefresh={order.refresh}
         onMenu={() => go("menu")}
         onBill={() => go("bill")}
+        onAgain={() => {
+          cart.addMany(linesOfRequest(order.placed?.request));
+          go("cart");
+        }}
       />
     );
   }

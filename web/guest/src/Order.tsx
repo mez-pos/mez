@@ -39,9 +39,11 @@ interface OrderProps {
   onRefresh: () => void;
   onMenu: () => void;
   onBill: () => void;
+  /** Puts this order's dishes in the cart again (ADR-242). It places nothing. */
+  onAgain: () => void;
 }
 
-export function Order({ code, table, placed, onRefresh, onMenu, onBill }: OrderProps) {
+export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain }: OrderProps) {
   const { round } = placed;
   // The charge this phone started for this order, if it started one. An
   // order the venue did not hold has none, and this asks nothing.
@@ -120,6 +122,12 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill }: OrderP
           <Button variant={round.status === "sent" ? "primary" : "secondary"} size="charge" className="w-full" onClick={onMenu}>
             {round.status === "sent" ? "Order more" : "Back to the menu"}
           </Button>
+          {/* The same again goes to the cart, to be read and placed from there. Not for an order the venue turned down or cancelled. */}
+          {round.status === "sent" && round.progress !== "cancelled" && (
+            <Button variant="secondary" className="w-full" onClick={onAgain}>
+              Order this again
+            </Button>
+          )}
           {/* The bill has this order on it only once it is accepted. */}
           {round.status === "sent" && (
             <Button variant="secondary" className="w-full" onClick={onBill}>

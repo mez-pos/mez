@@ -7703,3 +7703,35 @@ a guest back at the same table loses the offer of the earlier visit's once the n
 bill is seen. The page lasts 45 days and a screenshot is the only copy. The bundle
 is 45.3 KB gzipped of 60, up 1.3. Seen at 390 wide in the real binary: a bill paid
 by UPI through the staff API, its invoice number, and the time in the venue's zone.
+
+## ADR-242 - Ordering the same again fills the cart and places nothing
+2026-10 · Status: accepted. Phase 11, Task 5e2.
+Context: Task 5 asks for "one-tap re-order". The phone keeps the order it placed
+with the request it sent (ADR-213): dish ids, choice ids and counts.
+Decision:
+  - **"Order this again" is on the order's screen**, for an order that was sent
+    and not cancelled. Not on a declined one, which says to ask staff.
+  - **One tap fills the cart and opens it. It does not place the order.** The
+    brief says one tap; a tap that sent food to the kitchen at today's prices,
+    with no look at what or how much, is the tap a guest makes by mistake. The
+    second tap is Place Order, on the cart, where it has always been.
+  - **From the ids and counts the phone sent, never a name or a price.** The cart
+    prices from today's menu, as it always has, so a price that rose since is the
+    price shown before anything is placed.
+  - **Added onto what is in the cart, never in place of it**, and with no
+    question. Nothing a guest chose is lost, the cart shows all of it, and a
+    question on the way to a screen that already answers it is a tap for nothing.
+  - **What the menu no longer has is said by the cart, by name**, as for any
+    cart: it is held against the menu when the menu is read (`reconcile`). No
+    second way of saying so was written.
+  - **What is in storage is not trusted**: only lines that are ids and whole
+    counts are taken.
+  - **When the cart cannot take all of it** (twenty of one dish is its most), the
+    cart says so.
+Because: the fast path for a second round is the same dishes again, and the cart
+already knows how to check and price them.
+Cost: two taps and not one. Only the phone's latest order can be ordered again;
+past orders are M10 and want an account or a longer memory than one order. Where
+the cart is both full and missing a dish, only the missing dish is said. The
+bundle is 45.6 KB gzipped of 60, up 0.3. Seen at 390 wide in the real binary: one
+dish added onto a cart that had one of it, the cart opening with two.
