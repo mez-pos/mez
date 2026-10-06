@@ -58,6 +58,13 @@ export const steps = [
 
 export type StepKey = (typeof steps)[number]["key"];
 
+/**
+ * Every step the wizard shows: the questions, then what is done once the
+ * venue exists and the owner is signed in. Those are not questions: they act
+ * through the API as they go, and each can be skipped.
+ */
+export const allSteps = [...steps, { key: "printer", name: "Printer" }] as const;
+
 const fieldsOf: Readonly<Record<StepKey, readonly Field[]>> = {
   venue: ["name", "legal_name", "currency", "timezone", "device_name"],
   taxes: ["tax_profile", "tax_registration", "tax_pricing", "fy_start_month", "invoice_prefix"],

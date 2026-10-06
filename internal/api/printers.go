@@ -21,6 +21,7 @@ type Printers interface {
 	SetReceipt(ctx context.Context, venueID, id int64) error
 	SetStation(ctx context.Context, venueID int64, code string, id int64) error
 	TestPage(ctx context.Context, venueID, id int64) (int64, error)
+	Discover(ctx context.Context, venueID int64) (printers.Found, error)
 }
 
 // WithPrinters mounts the printer settings (phase 07, Task 5c). They need
@@ -36,7 +37,29 @@ const (
 	CodeStationNotFound  ErrorCode = "station_not_found"
 	CodePrinterNameTaken ErrorCode = "printer_name_taken"
 	CodeInvalidPrinter   ErrorCode = "invalid_printer"
+
+	// CodeNoPrinterSearch is a search for printers on a server that has no
+	// way to make one.
+	CodeNoPrinterSearch ErrorCode = "no_printer_search"
 )
+
+// discoverLimit is how often one address may search. A search dials every
+// address of the server's own networks, a few hundred connections; a
+// person looking for a printer they have just switched on needs a handful.
+var discoverLimit = limit{requests: 6, per: time.Minute}
+
+// discoverTimeout bounds a search, whatever the network does.
+const discoverTimeout = 20 * time.Second
+
+// discoverResponse is what a search for printers found (ADR-268): addresses
+// on the server's own networks that answer on the print port, and the
+// printers Windows has installed on the server's computer. `searched` is
+// the networks that were searched.
+type discoverResponse struct {
+	Network  []printers.Candidate `json:"network"`
+	USB      []printers.Candidate `json:"usb"`
+	Searched []string             `json:"searched"`
+}
 
 type printerRequest = printers.Settings
 
@@ -89,6 +112,13 @@ func (s *Server) mountPrinters(mux *http.ServeMux) {
 		mux.Handle(pattern, s.requireDevice(s.requireStaff(s.requirePermission(auth.PermSettingsEdit, h))))
 	}
 	handle("GET /api/v1/printers", s.listPrinters)
+	// A search makes the server dial its own LAN, so it is an action, it is
+	// limited, and it is behind the same permission as adding a printer.
+	mux.Handle("POST /api/v1/printers/discover", s.rateLimit(discoverLimit,
+		s.requireDevice(s.requireStaff(s.requirePermission(auth.PermSettingsEdit, http.HandlerFunc(s.discoverPrinters))))))
+	// Named by method: a pattern for every method here would be ambiguous
+	// with PUT /api/v1/printers/{id}, and the mux refuses to choose.
+	mux.HandleFunc("GET /api/v1/printers/discover", s.methodNotAllowed)
 	handle("POST /api/v1/printers", s.createPrinter)
 	mux.HandleFunc("/api/v1/printers", s.methodNotAllowed)
 	// The literal path wins over {id}: "receipt" is never a printer's id.
@@ -180,6 +210,24 @@ func (s *Server) testPage(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, s.log, http.StatusAccepted, testPageResponse{JobID: job})
 }
 
+// discoverPrinters searches for printers the venue could add.
+func (s *Server) discoverPrinters(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), discoverTimeout)
+	defer cancel()
+	found, err := s.printers.Discover(ctx, Meta(r).VenueID)
+	if err != nil {
+		s.writePrinterError(w, r, err)
+		return
+	}
+	if found.LocalErr != nil {
+		// The network's results stand; the log says why the list is short.
+		s.log.Warn("the installed printers could not be listed", "request_id", RequestID(r.Context()), "error", found.LocalErr)
+	}
+	s.log.Info("searched for printers", "request_id", RequestID(r.Context()), "venue_id", Meta(r).VenueID,
+		"networks", len(found.Searched), "network_found", len(found.Network), "usb_found", len(found.USB))
+	writeJSON(w, s.log, http.StatusOK, discoverResponse{Network: found.Network, USB: found.USB, Searched: found.Searched})
+}
+
 // writePrinters answers with the settings as they now stand, so a screen
 // redraws from the server after every change.
 func (s *Server) writePrinters(w http.ResponseWriter, r *http.Request, status int) {
@@ -227,6 +275,8 @@ func (s *Server) writePrinterError(w http.ResponseWriter, r *http.Request, err e
 		writeError(w, s.log, http.StatusNotFound, CodePrinterNotFound, "No such printer.")
 	case errors.Is(err, printers.ErrNoStation):
 		writeError(w, s.log, http.StatusNotFound, CodeStationNotFound, "No such station.")
+	case errors.Is(err, printers.ErrNoFinder):
+		writeError(w, s.log, http.StatusNotImplemented, CodeNoPrinterSearch, "This server cannot search for printers. Add one by its address.")
 	case errors.Is(err, printers.ErrRetired):
 		writeError(w, s.log, http.StatusConflict, CodePrinterRetired, "That printer is retired. Bring it back first.")
 	default:

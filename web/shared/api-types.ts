@@ -145,6 +145,7 @@ export type ErrorCode =
   | 'gateway_unavailable'
   | 'charge_not_found'
   | 'charge_not_waiting'
+  | 'no_printer_search'
   | 'setup_not_here'
   | 'already_set_up'
   | 'invalid_setup'
@@ -766,6 +767,17 @@ export interface DeviceResponse {
 export interface PairResponse {
   device: DeviceResponse;
   token: string;
+}
+
+export interface DiscoverResponse {
+  network: PrinterCandidate[];
+  usb: PrinterCandidate[];
+  searched: string[];
+}
+
+export interface PrinterCandidate {
+  address: string;
+  known: boolean;
 }
 
 export interface SetupStatusResponse {

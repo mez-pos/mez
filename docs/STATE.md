@@ -7,27 +7,30 @@
 
 ## Current phase
 
-**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2, 3a and
-3b built; 3c and 3d are left of Task 3. Phase 11 has nothing left to build
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2, 3a, 3b
+and 3c built; 3d is left of Task 3. Phase 11 has nothing left to build
 (Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 3b: the wizard's questions** (ADR-267, `setup-wizard.md`).
-`web/shared/screens/setup/`, at the terminal's `/setup`, outside the guard.
-Three steps (venue; taxes and invoices; you), then Create: make the venue,
-pair, sign in, set the prefix, each stage resumable. Pair sends a new
-machine there. Walked in a browser from an empty data directory at 1366
-and 1024: the owner lands on Open the shift.
+**Phase 12, Task 3c: printer discovery and a test print** (ADR-268).
+`internal/device/discover` searches the server's own private networks for
+port 9100 and lists Windows' installed printers; `POST /api/v1/printers/
+discover`, behind `settings.edit`. The wizard's fourth step, after Create,
+picks one, makes it the receipt printer and prints a test page. Walked in
+a browser against a stand-in printer on 127.0.0.1:9100; **no real printer
+has been found or printed on**.
 
 ## Next task
 
-**Phase 12, Task 3c: printer discovery and a test print.** A search of the
-LAN for port 9100 and of Windows' printers behind the printers API, and a
-Printer step after Create (add a step to `steps` in `setup-logic.ts`; the
-wizard is signed in by then, so it uses the API that exists). Skippable.
-`make check` embeds whatever `web/*/dist` holds: run `make build-web`
-before walking a screen against `bin/mez`.
+**Phase 12, Task 3d: the last screen, and the hand-off.** A fifth step
+after the printer (`allSteps` in `setup-logic.ts`): the LAN URL and a
+pairing code for a second device, in large type. The back office already
+shares the terminal's pairing (ADR-148). `PairScreen`'s words and the
+installer's last page stop naming `mez setup`; `running.md` and
+`deploy.md` say the wizard first. Decide question 9 (the setup token)
+before or in it. `make check` embeds whatever `web/*/dist` holds: run
+`make build-web` before walking a screen against `bin/mez`.
 
 Still owed from phase 11, its human check and:
 - **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay

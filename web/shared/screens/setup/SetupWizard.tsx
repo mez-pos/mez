@@ -10,8 +10,10 @@ import { paths } from "../../auth/route";
 import { useAuthStore } from "../../auth/use-auth";
 import { Button } from "../../ui";
 import { Splash } from "../Splash";
+import { PrinterStep } from "./PrinterStep";
 import { SetupFrame } from "./SetupFrame";
 import {
+  allSteps,
   browserTimezone,
   checkStep,
   finishSetup,
@@ -31,7 +33,7 @@ import {
 import { TaxesStep, VenueStep, YouStep } from "./steps";
 import { useSetupStatus } from "./use-setup-status";
 
-const lead = `${steps.length} steps. You can change everything later in Settings.`;
+const lead = `${allSteps.length} steps. You can change everything later in Settings.`;
 
 export function SetupWizard() {
   const status = useSetupStatus();
@@ -112,10 +114,8 @@ function Questions({ onBegin }: { onBegin: () => void }) {
     );
     setProgress(out.progress);
     setBusy(false);
-    if (out.progress.stage === "done") {
-      navigate(paths.home, { replace: true });
-      return;
-    }
+    // Done: the venue exists and the owner is signed in. What is left is the printer.
+    if (out.progress.stage === "done") return;
     const failed = out.failure;
     if (failed?.kind === "field" && failed.field) {
       // A refused answer: back to its step, with the server's words under it.
@@ -140,24 +140,27 @@ function Questions({ onBegin }: { onBegin: () => void }) {
     else setStep(step + 1);
   };
 
+  const leave = () => navigate(paths.home, { replace: true });
+
+  if (progress.stage === "done") {
+    return (
+      <SetupFrame lead="Your venue is ready. One thing more, if you have it to hand." steps={allSteps} current={steps.length}>
+        <PrinterStep api={store.api} onDone={leave} />
+      </SetupFrame>
+    );
+  }
+
   if (busy || created || failure) {
     return (
-      <SetupFrame lead={lead} steps={steps} current={steps.length}>
-        <Creating
-          progress={progress}
-          failure={failure}
-          busy={busy}
-          onRetry={() => void create()}
-          onLeave={() => navigate(paths.home, { replace: true })}
-          onEdit={() => setFailure(null)}
-        />
+      <SetupFrame lead={lead} steps={allSteps} current={steps.length - 1}>
+        <Creating progress={progress} failure={failure} busy={busy} onRetry={() => void create()} onLeave={leave} onEdit={() => setFailure(null)} />
       </SetupFrame>
     );
   }
 
   const stepProps = { answers, problems, onChange: change };
   return (
-    <SetupFrame lead={lead} steps={steps} current={step} onStep={setStep}>
+    <SetupFrame lead={lead} steps={allSteps} current={step} onStep={setStep}>
       <form onSubmit={submit} noValidate className="flex flex-1 flex-col">
         <h2 className="font-serif text-xl">{current.name}</h2>
         <p className="mt-1 text-sm text-fg-muted">{blurbs[current.key]}</p>
@@ -168,7 +171,7 @@ function Questions({ onBegin }: { onBegin: () => void }) {
         </div>
         <div className="mt-auto flex flex-wrap items-center gap-3 pt-6">
           <p className="text-sm text-fg-muted">
-            Step {step + 1} of {steps.length}
+            Step {step + 1} of {allSteps.length}
           </p>
           <div className="ml-auto flex gap-3">
             {step > 0 && (

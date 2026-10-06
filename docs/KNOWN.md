@@ -10,6 +10,25 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Printer discovery, and the wizard's printer step** (ADR-268; phase 12
+  Task 3c). Seen on 2026-10-07 in a browser against the built binary: the
+  step after Create; a real search of the developer's three networks
+  finding nothing and saying which it searched; a typed address refused
+  for its shape and by the server for not being on a LAN; a test page of
+  932 bytes arriving at a stand-in printer on 127.0.0.1:9100 and "Sent.
+  Did a page come out?"; a second address that refused, "Not printed" with
+  the queue's reason, and the first printer retired for it. The spooler's
+  list was read for real by a test (five printers, all virtual, all left
+  out). **Not seen**: a real printer found on a LAN or through Windows,
+  or printed on; a found printer's row on screen; the search under the
+  service's account; Continue without it retiring the printer (tested as
+  logic). Left out: the search walks a /24 around each card and at most
+  four cards, so a printer elsewhere on a larger network is typed in; it
+  searches virtual adapters too (WSL, Hyper-V); IPv6; mDNS and vendor
+  discovery; anything that tells a printer from another device with port
+  9100 open; the back office's Printers screen has no search button;
+  Linux and Docker list no installed printers.
+
 - **The setup wizard** (ADR-267; phase 12 Task 3b; `setup-wizard.md`).
   Seen on 2026-10-07 in a browser against the built binary and an empty
   data directory, at 1366 and 1024 wide: `/` going to the wizard; each

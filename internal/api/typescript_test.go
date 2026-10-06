@@ -143,7 +143,7 @@ var errorCodes = []ErrorCode{
 	CodeTableCodeUnknown, CodeGuestSessionRequired,
 	CodeDishUnavailable, CodeChoicesInvalid, CodeTableNotOrdering, CodeRequestsWaiting,
 	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed, CodeNothingToPay, CodeNoticeNotFound, CodeGatewayUnavailable, CodeChargeNotFound, CodeChargeNotWaiting,
-	CodeSetupNotHere, CodeAlreadySetUp, CodeInvalidSetup, CodeSetupNoCode,
+	CodeNoPrinterSearch, CodeSetupNotHere, CodeAlreadySetUp, CodeInvalidSetup, CodeSetupNoCode,
 	CodeBillClaimed, CodeBillMoved, CodeReceiptNotFound, CodeNoPublicURL, CodeNoPickupCode, CodePickupCodeUnknown, CodePickupOff,
 }
 
@@ -165,6 +165,7 @@ func generate() (*ts.Generator, error) {
 			reflect.TypeOf(money.Amount{}):            "Money",
 			reflect.TypeOf(order.Modifier{}):          "LineModifier",
 			reflect.TypeOf(printers.Settings{}):       "PrinterSettings",
+			reflect.TypeOf(printers.Candidate{}):      "PrinterCandidate",
 			reflect.TypeOf(menus.CategoryInput{}):     "MenuCategoryInput",
 			reflect.TypeOf(menus.ItemInput{}):         "MenuItemInput",
 			reflect.TypeOf(menus.Editor{}):            "MenuEditor",
@@ -312,7 +313,7 @@ func generate() (*ts.Generator, error) {
 	roots := []any{
 		// Errors and pairing.
 		Error{}, errorBody{}, pairRequest{}, deviceResponse{}, pairResponse{},
-		setupStatusResponse{}, setupRequest{}, setupResponse{},
+		discoverResponse{}, setupStatusResponse{}, setupRequest{}, setupResponse{},
 		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{}, tunnelResponse{},
 		// The guest's API.
 		guestTableResponse{}, guestPickupResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{}, guestChargeResponse{}, guestShareRequest{}, guestReceiptResponse{}, resolveChargeRequest{}, tableCodesResponse{}, tableCodeQRResponse{}, tableCodeSheetResponse{}, pickupCodeQRResponse{},

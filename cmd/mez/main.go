@@ -26,6 +26,7 @@ import (
 	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/config"
 	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/device/discover"
 	"github.com/byjoellobo/mez/internal/device/escpos"
 	"github.com/byjoellobo/mez/internal/device/printq"
 	"github.com/byjoellobo/mez/internal/fsperm"
@@ -276,7 +277,8 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		return err
 	}
 
-	printerSettings, err := printers.New(database, prints, nil, build.Version)
+	// It can look for printers: its own LAN and this computer (ADR-268).
+	printerSettings, err := printers.New(database, prints, nil, build.Version, printers.WithFinder(&discover.Finder{}))
 	if err != nil {
 		return err
 	}

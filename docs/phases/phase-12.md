@@ -50,7 +50,7 @@ Phase 11.
     code, signs the admin in, and sets the prefix through the settings API.
     D24's tables and menu import steps are not in this task's list and are
     left out.
-  - [ ] **Task 3c - Printer discovery and a test print.**
+  - [x] **Task 3c - Printer discovery and a test print.**
     A search of the LAN for port 9100 and of Windows' own printers, behind
     `printers.manage`; the wizard's printer step adds the one chosen as the
     receipt printer and prints a test page. Skippable: a venue with no

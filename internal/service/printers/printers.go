@@ -18,6 +18,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/device/discover"
 	"github.com/byjoellobo/mez/internal/device/escpos"
 	"github.com/byjoellobo/mez/internal/device/printq"
 	"github.com/byjoellobo/mez/internal/domain/printjob"
@@ -25,6 +26,9 @@ import (
 
 // The refusals. The API maps them to codes; Invalid carries the field.
 var (
+	// ErrNoFinder means this server was built with no way to look for
+	// printers.
+	ErrNoFinder  = errors.New("this server cannot search for printers")
 	ErrNotFound  = errors.New("no such printer at this venue")
 	ErrRetired   = errors.New("the printer is retired")
 	ErrNoStation = errors.New("no such station at this venue")
@@ -52,23 +56,43 @@ type systemClock struct{}
 
 func (systemClock) Now() time.Time { return time.Now() }
 
+// Finder looks for printers the server could print on. *discover.Finder
+// is the implementation.
+type Finder interface {
+	Find(ctx context.Context) (discover.Result, error)
+}
+
+// Option adjusts a Service at construction.
+type Option func(*Service)
+
+// WithFinder gives the service a way to look for printers (ADR-268).
+// Without one, Discover says it cannot.
+func WithFinder(f Finder) Option {
+	return func(s *Service) { s.finder = f }
+}
+
 // Service is the printer settings.
 type Service struct {
 	db      *db.DB
 	queue   Queue
 	clock   Clock
 	version string
+	finder  Finder
 }
 
 // New returns a Service. version is printed on the test page.
-func New(d *db.DB, q Queue, clock Clock, version string) (*Service, error) {
+func New(d *db.DB, q Queue, clock Clock, version string, opts ...Option) (*Service, error) {
 	if d == nil || q == nil {
 		return nil, errors.New("printers: a database and a queue are required")
 	}
 	if clock == nil {
 		clock = systemClock{}
 	}
-	return &Service{db: d, queue: q, clock: clock, version: version}, nil
+	s := &Service{db: d, queue: q, clock: clock, version: version}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s, nil
 }
 
 // Transport is how the server reaches a printer: its network address, or a

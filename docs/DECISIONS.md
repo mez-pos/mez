@@ -9155,3 +9155,54 @@ binary, from an empty data directory, at 1366 and 1024 wide (`KNOWN.md`
 lists it). **Not seen**: a failed stage, a narrow or touch-only screen,
 the installer's shortcut.
 ---
+
+## ADR-268 - Printers are found by asking the LAN's port 9100 and Windows' spooler, and nothing is sent to find them
+2026-10 · Status: accepted. Phase 12, Task 3c.
+Decision:
+  - **`internal/device/discover`** finds candidates two ways. On the
+    network: a TCP connection to port 9100 of every address of the
+    server's own private IPv4 networks, 64 at a time, 350ms each, closed
+    as soon as it opens. On the computer: `EnumPrintersW` for the printers
+    installed locally, by name, with Windows' virtual ones (PDF, XPS,
+    OneNote, Fax, remote desktop tools) left out by their names.
+  - **Only its own networks, and only a /24 of each.** A card on a /16 is
+    searched as the /24 around its own address; at most four networks.
+    Public, link-local and IPv6 addresses are not searched. This is the
+    rule ADR-259 holds a printer's address to, applied to looking for one.
+  - **Nothing is written to what answers.** A status query would tell a
+    printer from a thing that merely listens, and would also be bytes sent
+    to a device that may act on them. The test page is the proof, and the
+    owner chose to send it.
+  - **`POST /api/v1/printers/discover`**, behind `settings.edit` as adding
+    a printer is, six a minute per address, twenty seconds at most, one
+    search at a time. It answers with the addresses and names, each marked
+    `known` if the venue has it, and the networks searched. Everything it
+    offers is something `POST /api/v1/printers` takes as given.
+    `printers.New` takes the finder as an option; without one the endpoint
+    answers 501 `no_printer_search`.
+  - **The wizard's fourth step** comes after Create, signed in as the
+    owner, and uses the printers API as the back office does: add (or
+    reuse the venue's printer at that address), make it the receipt
+    printer, queue a test page, read the job from the printers list. It
+    is skippable, and leaving without a page that was sent retires what
+    it added, so no venue opens with a receipt printer that never worked.
+  - **"Sent" is not "printed".** The raw protocol has no acknowledgement,
+    so the screen says the page was sent and asks the owner whether it
+    came out.
+Because: a cafe's printer is either on its switch or plugged into the
+till, and those two places can be asked without any protocol the printer
+may not speak. mDNS and the vendors' own discovery were not tried: most
+cheap receipt printers answer neither, and each is a dependency or a
+packet format to maintain.
+Cost: the endpoint lets anyone who may edit settings learn which private
+addresses near the server have port 9100 open, and makes the server open
+a few hundred connections when asked. A printer outside the /24, on a
+VLAN or on IPv6 is not found and must be typed. Virtual adapters are
+searched like real ones. A device that is not a printer and listens on
+9100 is offered as one. The list of virtual printers is names, and will
+miss one. Off Windows nothing installed is listed. The back office's
+Printers screen was not given a search button. No independent review of
+this task's code. **Seen on 2026-10-07**: `KNOWN.md` lists it; a real
+search ran, and a test page reached a stand-in printer on loopback.
+**Not seen**: any real printer, found or printed on.
+---
