@@ -7904,3 +7904,42 @@ tracked orders (ADR-239), and a full room through the relay meets it before any
 limit here. That is the relay's to change, or the screens' to ask less often, and
 neither is this task. The fixed window lets a table do twice its limit across a
 window's edge.
+
+## ADR-247 - The venue's pickup code is a table of its own, at an address of its own, and has no screen until it leads somewhere
+2026-10 · Status: accepted. Phase 11, Task 6e.
+Context: ADR-237 gives a venue one code for ordering to collect, made and revoked
+with the tables' codes in Task 6, ahead of the ordering itself (5f). A table's
+code is a row of `table_codes`, whose `table_id` is NOT NULL.
+Decision:
+  - **`pickup_codes`, a table of its own** (migration 00048), and not a row of
+    `table_codes` with no table. Every reader of that table takes a row for a
+    table's; a row that is not would be a hole each of them had to remember. A
+    venue has at most one live, held by an index, and a revoked one stays so it
+    is never drawn again.
+  - **Drawn as a table's code is**, by the same draw: twelve from the same
+    alphabet, about 59 bits.
+  - **Never the same string as any table's code, or any pickup code, live or
+    revoked**, and a table is never given a string that was a pickup code. With
+    59 bits it does not happen; it is checked so that it cannot, since a poster
+    and a sticker that said the same thing would each lead to the other's place.
+    A source that draws only used codes is an error after five tries.
+  - **An address of its own: `<public_url>/order/p/<code>`**, "p" where a table's
+    has "t". The app is told which it was given by the address, and a pickup code
+    put where a table's goes leads nowhere, as any wrong code does.
+  - **`tablecodes.ResolvePickup` answers the venue and no table.** `Resolve`, the
+    one every guest route uses, does not know a pickup code. So nothing a guest
+    can ask takes it yet, and a test asks.
+  - **Over the staff API beside the tables' codes**: the list answers `pickup`,
+    its code and address; `POST /api/v1/pickup-code/renew` and `/revoke`; and
+    `GET /api/v1/pickup-code/qr`. For `settings.edit`, as the tables' are.
+  - **No screen, and it is not on the sheet.** STATE planned both for this task. A
+    card that offered a code to print, for a poster that leads nowhere until 5f is
+    built, is a thing an owner would print and put on a door. The back office
+    shows it in 5f3, with the way in it leads to. The phase file says so.
+  - **Not tied to a gateway here.** Pickup is paid first and needs one (ADR-237);
+    whether it is offered is the ordering's to decide in 5f, not the code's.
+Because: Task 6 is where codes are made and revoked, and the code's shape, its
+address and what it must never be confused with are decided here once.
+Cost: a pickup code can be made through the API today and does nothing. It has no
+limit of its own: ADR-246's are by table, and 5f has to key one for it. Two tables
+hold codes now, and "is this string a code that was ever used" asks both.

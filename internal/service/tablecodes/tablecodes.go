@@ -129,6 +129,14 @@ func (s *Service) Renew(ctx context.Context, venueID, tableID int64) (string, er
 		if err := onFloor(ctx, q, venueID, tableID); err != nil {
 			return err
 		}
+		// Never a string that was a venue's pickup code (ADR-247). It does
+		// not happen with 59 bits to a code; if it does, asking again draws
+		// another.
+		if n, err := q.CodeIsAPickups(ctx, code); err != nil {
+			return err
+		} else if n > 0 {
+			return errors.New("the code drawn was once a pickup code: try again")
+		}
 		if err := q.RevokeTableCodes(ctx, gen.RevokeTableCodesParams{
 			RevokedAt: sql.NullTime{Time: at, Valid: true}, VenueID: venueID, TableID: tableID,
 		}); err != nil {

@@ -338,3 +338,120 @@ func TestACodeIsOnlyForATableOnTheVenuesOwnFloor(t *testing.T) {
 		t.Errorf("%d codes were written, %v", n, err)
 	}
 }
+
+// TestAPickupCodeLeadsToTheVenueAndNoTable: it is made, renewed and turned
+// off as a table's is; it resolves to the venue; and it is never a table's
+// code, nor a table's code a pickup code.
+func TestAPickupCodeLeadsToTheVenueAndNoTable(t *testing.T) {
+	d := openDB(t)
+	s := newService(t, d)
+	ctx := context.Background()
+	tables, err := s.Ensure(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, err := s.Pickup(ctx, 1); err != nil || got != "" {
+		t.Fatalf("a venue with no pickup code: %q, %v", got, err)
+	}
+	first, err := s.RenewPickup(ctx, 1)
+	if err != nil || !WellFormed(first) {
+		t.Fatalf("the first pickup code: %q, %v", first, err)
+	}
+	if got, err := s.Pickup(ctx, 1); err != nil || got != first {
+		t.Errorf("the venue's pickup code: %q, %v; want %s", got, err, first)
+	}
+	v, err := s.ResolvePickup(ctx, first)
+	if err != nil || v != (Venue{VenueID: 1, VenueName: "Filter Coffee House", Currency: "INR"}) {
+		t.Errorf("what it leads to: %+v, %v", v, err)
+	}
+
+	// A table's code is not a pickup code, and a pickup code no table's.
+	if _, err := s.ResolvePickup(ctx, tables[0].Code); !errors.Is(err, ErrUnknown) {
+		t.Errorf("a table's code as a pickup code: %v", err)
+	}
+	if _, err := s.Resolve(ctx, first); !errors.Is(err, ErrUnknown) {
+		t.Errorf("a pickup code as a table's: %v", err)
+	}
+	// Nor is it another venue's.
+	if got, err := s.Pickup(ctx, 2); err != nil || got != "" {
+		t.Errorf("the other venue's pickup code: %q, %v", got, err)
+	}
+
+	second, err := s.RenewPickup(ctx, 1)
+	if err != nil || second == first {
+		t.Fatalf("renewed: %q, %v", second, err)
+	}
+	if _, err := s.ResolvePickup(ctx, first); !errors.Is(err, ErrUnknown) {
+		t.Errorf("the old pickup code after a renew: %v", err)
+	}
+
+	if err := s.RevokePickup(ctx, 1); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.Pickup(ctx, 1); got != "" {
+		t.Errorf("turned off, the venue's pickup code is %q", got)
+	}
+	if _, err := s.ResolvePickup(ctx, second); !errors.Is(err, ErrUnknown) {
+		t.Errorf("a pickup code turned off: %v", err)
+	}
+	if err := s.RevokePickup(ctx, 1); err != nil {
+		t.Errorf("turning off a venue with none: %v", err)
+	}
+	// The tables' codes were never touched.
+	after, err := s.List(ctx, 1)
+	if err != nil || after[0].Code != tables[0].Code {
+		t.Errorf("the tables' codes after all that: %+v, %v", after, err)
+	}
+
+	for _, bad := range []string{"", "short", strings.Repeat("!", Length)} {
+		if _, err := s.ResolvePickup(ctx, bad); !errors.Is(err, ErrUnknown) {
+			t.Errorf("ResolvePickup(%q): %v", bad, err)
+		}
+	}
+	if _, err := s.RenewPickup(ctx, 99); !errors.Is(err, ErrNoVenue) {
+		t.Errorf("a pickup code for a venue that is not there: %v", err)
+	}
+}
+
+// TestAPickupCodeIsNeverOneAlreadyUsed: a source that draws a table's code
+// first is drawn from again, and one that only ever draws used codes is an
+// error and not a loop.
+func TestAPickupCodeIsNeverOneAlreadyUsed(t *testing.T) {
+	d := openDB(t)
+	ctx := context.Background()
+	// Zero bytes draw the alphabet's first letter twelve times over.
+	same := func() *Service {
+		s, err := New(d, func() time.Time { return seededAt }, bytes.NewReader(make([]byte, Length*(maxPickupDraws+2))))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+	table, err := same().Renew(ctx, 1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := same().RenewPickup(ctx, 1); err == nil || !strings.Contains(err.Error(), "already used") {
+		t.Fatalf("a pickup code from a source that draws only %s: %v", table, err)
+	}
+	if got, _ := newService(t, d).Pickup(ctx, 1); got != "" {
+		t.Errorf("a pickup code was made anyway: %q", got)
+	}
+	// And a table is not given a string that was a pickup code.
+	pickup, err := newService(t, d).RenewPickup(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.Writer().ExecContext(ctx, `UPDATE pickup_codes SET code = ? WHERE code = ?`, strings.Repeat(string(alphabet[1]), Length), pickup); err != nil {
+		t.Fatal(err)
+	}
+	ones := bytes.Repeat([]byte{1}, Length)
+	s, err := New(d, func() time.Time { return seededAt }, bytes.NewReader(ones))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Renew(ctx, 1, 2); err == nil {
+		t.Error("a table was given a code that is the venue's pickup code")
+	}
+}

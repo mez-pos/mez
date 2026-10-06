@@ -85,6 +85,11 @@ type Querier interface {
 	// 5f2, ADR-125), by day, then shift, then item. unit_cost is the item's
 	// cost when it was counted, 0 for not known (ADR-124).
 	ClosingCountsInRange(ctx context.Context, arg ClosingCountsInRangeParams) ([]ClosingCountsInRangeRow, error)
+	// Whether a code was ever a venue's pickup code, live or not.
+	CodeIsAPickups(ctx context.Context, code string) (int64, error)
+	// Whether a code was ever a table's, live or not: a pickup code is never
+	// one, so the two cannot be mistaken for each other on a sticker.
+	CodeIsATables(ctx context.Context, code string) (int64, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
 	// The rounds at a table waiting to be paid, placed since a moment ago. One
 	// nobody paid in that time has been walked away from, and does not count.
@@ -122,6 +127,8 @@ type Querier interface {
 	CreatePairedDevice(ctx context.Context, arg CreatePairedDeviceParams) (int64, error)
 	// Devices and the codes they pair with. internal/auth is the only caller.
 	CreatePairingCode(ctx context.Context, arg CreatePairingCodeParams) (int64, error)
+	// A venue's pickup code (ADR-247). See internal/service/tablecodes.
+	CreatePickupCode(ctx context.Context, arg CreatePickupCodeParams) error
 	CreatePrintJob(ctx context.Context, arg CreatePrintJobParams) (int64, error)
 	// The print queue: printers and the jobs waiting for them (ADR-080).
 	CreatePrinter(ctx context.Context, arg CreatePrinterParams) (int64, error)
@@ -359,6 +366,8 @@ type Querier interface {
 	OrdersOfDay(ctx context.Context, arg OrdersOfDayParams) ([]OrdersOfDayRow, error)
 	PaidNoticeByPublicID(ctx context.Context, publicID string) (PaidNoticeByPublicIDRow, error)
 	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)
+	// The venue's live pickup code. No row when it has none.
+	PickupCodeForVenue(ctx context.Context, venueID int64) (string, error)
 	PrintJobByID(ctx context.Context, id int64) (PrintJobByIDRow, error)
 	// The queue as staff see it: every job not yet printed, and what printed
 	// since the given time, newest first. Payloads stay behind.
@@ -398,6 +407,8 @@ type Querier interface {
 	// Revoked rather than deleted, and the token hash kept, so a revoked token is
 	// recognised and refused as revoked rather than as unknown.
 	RevokeDevice(ctx context.Context, arg RevokeDeviceParams) (int64, error)
+	// Turns off whatever pickup code a venue has. A venue has at most one live.
+	RevokePickupCodes(ctx context.Context, arg RevokePickupCodesParams) error
 	// Turns off whatever code a table has. A table has at most one live code.
 	RevokeTableCodes(ctx context.Context, arg RevokeTableCodesParams) error
 	RoleByID(ctx context.Context, id int64) (Role, error)
@@ -572,6 +583,9 @@ type Querier interface {
 	UpsertStationTicket(ctx context.Context, arg UpsertStationTicketParams) error
 	VarianceReason(ctx context.Context, shiftID int64) (VarianceReason, error)
 	VenueByID(ctx context.Context, id int64) (Venue, error)
+	// What a pickup code leads to: the venue, and no table. A revoked code
+	// leads nowhere.
+	VenueByPickupCode(ctx context.Context, code string) (VenueByPickupCodeRow, error)
 	VenueByPublicID(ctx context.Context, publicID string) (Venue, error)
 	// The venue's events after a point in its stream, oldest first. This is what
 	// the hub reads, for a replay and for the live stream alike: order_events.id

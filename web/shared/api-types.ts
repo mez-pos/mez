@@ -146,7 +146,8 @@ export type ErrorCode =
   | 'bill_claimed'
   | 'bill_moved'
   | 'receipt_not_found'
-  | 'no_public_url';
+  | 'no_public_url'
+  | 'no_pickup_code';
 
 export type OrderStatus =
   | 'open'
@@ -999,11 +1000,17 @@ export interface ResolveChargeRequest {
 export interface TableCodesResponse {
   address: string;
   tables: TableCodeResponse[];
+  pickup: PickupCodeResponse;
 }
 
 export interface TableCodeResponse {
   table_id: number;
   table_name: string;
+  code: string;
+  url: string;
+}
+
+export interface PickupCodeResponse {
   code: string;
   url: string;
 }
@@ -1017,6 +1024,11 @@ export interface TableCodeQRResponse {
 
 export interface TableCodeSheetResponse {
   tables: TableCodeQRResponse[];
+}
+
+export interface PickupCodeQRResponse {
+  url: string;
+  svg: string;
 }
 
 export interface PaymentSettingsRequest {

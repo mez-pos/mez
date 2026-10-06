@@ -156,6 +156,9 @@ func TestTableCodesAreForWhoeverRunsTheVenue(t *testing.T) {
 		{http.MethodPost, "/api/v1/tables/4/code/revoke"},
 		{http.MethodGet, "/api/v1/tables/4/code/qr"},
 		{http.MethodGet, "/api/v1/table-codes/sheet"},
+		{http.MethodPost, "/api/v1/pickup-code/renew"},
+		{http.MethodPost, "/api/v1/pickup-code/revoke"},
+		{http.MethodGet, "/api/v1/pickup-code/qr"},
 	}
 	for _, rt := range routes {
 		if rec := send(o.handler, rt.method, rt.path, "", cashier); rec.Code != http.StatusForbidden {
@@ -217,6 +220,66 @@ func TestTheSheetIsEveryTableWithACode(t *testing.T) {
 		rec := send(o.handler, http.MethodGet, "/api/v1/table-codes/sheet", "", owner)
 		if rec.Code != http.StatusConflict || errorOf(t, rec).Code != CodeNoPublicURL {
 			t.Errorf("the sheet: %d %s", rec.Code, rec.Body)
+		}
+	})
+}
+
+// TestTheVenuesPickupCode: none to begin with; made, it leads to the venue at
+// an address of its own; renewed, the old one is gone; turned off, there is
+// none. No guest route takes it for a table's, and the tables' codes are
+// left as they were.
+func TestTheVenuesPickupCode(t *testing.T) {
+	o := newCodesWorld(t, "https://cafe.example")
+	owner := o.asStaff(o.signInAs(t, "stf_PRIYA001", "2468").Token)
+
+	before := decodeCodes(t, send(o.handler, http.MethodGet, "/api/v1/table-codes", "", owner))
+	if before.Pickup.Code != "" || before.Pickup.URL != "" {
+		t.Fatalf("a venue with no pickup code says %+v", before.Pickup)
+	}
+	if rec := send(o.handler, http.MethodGet, "/api/v1/pickup-code/qr", "", owner); rec.Code != http.StatusNotFound || errorOf(t, rec).Code != CodeNoPickupCode {
+		t.Errorf("the QR of no pickup code: %d %s", rec.Code, rec.Body)
+	}
+
+	made := decodeCodes(t, send(o.handler, http.MethodPost, "/api/v1/pickup-code/renew", "", owner))
+	first := made.Pickup
+	if first.Code == "" || first.URL != "https://cafe.example/order/p/"+first.Code {
+		t.Fatalf("the pickup code = %+v", first)
+	}
+	if four := codeOf(t, made, 4); four.Code != o.code {
+		t.Errorf("table 4's code changed with the pickup code: %+v", four)
+	}
+	// It is no table's code: every guest route answers it as one that leads nowhere.
+	if status, _, body := o.guest(http.MethodGet, "/order/api/t/"+first.Code); status != http.StatusNotFound || !strings.Contains(body, string(CodeTableCodeUnknown)) {
+		t.Errorf("a pickup code as a table's: %d %s", status, body)
+	}
+
+	rec := send(o.handler, http.MethodGet, "/api/v1/pickup-code/qr", "", owner)
+	var qr pickupCodeQRResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &qr); err != nil || rec.Code != http.StatusOK {
+		t.Fatalf("the QR: %d %s", rec.Code, rec.Body)
+	}
+	if qr.URL != first.URL || !strings.HasPrefix(qr.SVG, "<svg") || rec.Header().Get("Cache-Control") != "no-store" {
+		t.Errorf("the QR is of %q", qr.URL)
+	}
+
+	renewed := decodeCodes(t, send(o.handler, http.MethodPost, "/api/v1/pickup-code/renew", "", owner)).Pickup
+	if renewed.Code == first.Code || renewed.Code == "" {
+		t.Errorf("renewed = %+v, was %+v", renewed, first)
+	}
+	off := decodeCodes(t, send(o.handler, http.MethodPost, "/api/v1/pickup-code/revoke", "", owner)).Pickup
+	if off.Code != "" || off.URL != "" {
+		t.Errorf("turned off = %+v", off)
+	}
+
+	t.Run("with no public address it has a code and no address", func(t *testing.T) {
+		o := newCodesWorld(t, "")
+		owner := o.asStaff(o.signInAs(t, "stf_PRIYA001", "2468").Token)
+		got := decodeCodes(t, send(o.handler, http.MethodPost, "/api/v1/pickup-code/renew", "", owner)).Pickup
+		if got.Code == "" || got.URL != "" {
+			t.Errorf("pickup = %+v", got)
+		}
+		if rec := send(o.handler, http.MethodGet, "/api/v1/pickup-code/qr", "", owner); rec.Code != http.StatusConflict || errorOf(t, rec).Code != CodeNoPublicURL {
+			t.Errorf("the QR: %d %s", rec.Code, rec.Body)
 		}
 	})
 }

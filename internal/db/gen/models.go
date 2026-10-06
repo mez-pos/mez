@@ -302,6 +302,14 @@ type PairingCode struct {
 	DeviceID   sql.NullInt64
 }
 
+type PickupCode struct {
+	ID        int64
+	VenueID   int64
+	Code      string
+	CreatedAt time.Time
+	RevokedAt sql.NullTime
+}
+
 type PrintJob struct {
 	ID            int64
 	VenueID       int64

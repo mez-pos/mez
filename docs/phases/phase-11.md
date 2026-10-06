@@ -200,12 +200,14 @@ Phase 10.
       `web` channel with a pickup code of three or four characters.
     - [ ] **5f2.** The guest's API: the menu and an order by the venue's
       code, paying for it, and tracking it with its code.
-    - [ ] **5f3.** The phone: the way in with no table, pay, and the
-      order's screen with the code in large type.
+    - [ ] **5f3.** The phone: the way in with no table (`/order/p/<code>`),
+      pay, and the order's screen with the code in large type. And the back
+      office: the pickup code on the Floor plan's card and its sheet, which
+      6e left until the code leads somewhere (ADR-247).
     - [ ] **5f4.** The counter: the pickup orders out and ready on the
       terminal, by code, to call out and hand over.
 
-- [ ] **Task 6 — QR codes and table codes.**
+- [x] **Task 6 — QR codes and table codes.**
   Generate per-table QR codes from back office, printable as a sheet. Codes are
   non-guessable and revocable. Rate limit per table to stop a bored teenager
   opening forty tickets.
@@ -227,7 +229,10 @@ Phase 10.
     a minute), change (30 a minute) and order (20 in ten minutes); by
     address, 20 wrong codes a minute, and a ceiling of 1500 a minute that a
     full room behind one address does not reach.
-  - [ ] **6e.** The venue's pickup code (ADR-237), ahead of 5f.
+  - [x] **6e.** The venue's pickup code (ADR-237, ADR-247), ahead of 5f:
+    `pickup_codes` (migration 00048), made, renewed, turned off and
+    resolved in `tablecodes`, and over the staff API with its QR. No
+    screen: the back office shows it in 5f3, when it leads somewhere.
 
 ## Done when
 A phone on mobile data, with no access to the venue LAN, scans a table QR,

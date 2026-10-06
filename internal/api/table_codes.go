@@ -21,6 +21,9 @@ import (
 //	POST /api/v1/tables/{id}/code/revoke   no code: the sticker leads nowhere
 //	GET  /api/v1/tables/{id}/code/qr       the table's address as a QR code
 //	GET  /api/v1/table-codes/sheet         every table's, to print (ADR-245)
+//	POST /api/v1/pickup-code/renew         a new pickup code for the venue
+//	POST /api/v1/pickup-code/revoke        no pickup code
+//	GET  /api/v1/pickup-code/qr            its address as a QR code (ADR-247)
 //
 // A code is a guest's only credential (ADR-206), so all of this is for
 // someone who may change the venue's settings and for nobody else.
@@ -29,6 +32,9 @@ import (
 // no address to put on a table.
 const CodeNoPublicURL ErrorCode = "no_public_url"
 
+// CodeNoPickupCode: the venue has no pickup code.
+const CodeNoPickupCode ErrorCode = "no_pickup_code"
+
 // TableCodes is what the API needs of the table codes. *tablecodes.Service
 // is it.
 type TableCodes interface {
@@ -36,6 +42,9 @@ type TableCodes interface {
 	Ensure(ctx context.Context, venueID int64) ([]tablecodes.Coded, error)
 	Renew(ctx context.Context, venueID, tableID int64) (string, error)
 	Revoke(ctx context.Context, venueID, tableID int64) error
+	Pickup(ctx context.Context, venueID int64) (string, error)
+	RenewPickup(ctx context.Context, venueID int64) (string, error)
+	RevokePickup(ctx context.Context, venueID int64) error
 }
 
 // WithTableCodes lets the back office manage the codes on the tables. It
@@ -66,6 +75,16 @@ type tableCodeResponse struct {
 type tableCodesResponse struct {
 	Address string              `json:"address"`
 	Tables  []tableCodeResponse `json:"tables"`
+	// Pickup is the venue's code for ordering to collect (ADR-247). Its
+	// code and url are empty when the venue has none.
+	Pickup pickupCodeResponse `json:"pickup"`
+}
+
+// pickupCodeResponse is the venue's pickup code, and the address a poster
+// of it says. It leads to the venue and no table.
+type pickupCodeResponse struct {
+	Code string `json:"code"`
+	URL  string `json:"url"`
 }
 
 // tableCodeQRResponse is a table's address drawn as a QR code. The picture
@@ -93,6 +112,9 @@ func (s *Server) mountTableCodes(mux *http.ServeMux) {
 	handle("POST /api/v1/tables/{id}/code/renew", s.renewTableCode)
 	handle("POST /api/v1/tables/{id}/code/revoke", s.revokeTableCode)
 	handle("GET /api/v1/tables/{id}/code/qr", s.tableCodeQR)
+	handle("POST /api/v1/pickup-code/renew", s.renewPickupCode)
+	handle("POST /api/v1/pickup-code/revoke", s.revokePickupCode)
+	handle("GET /api/v1/pickup-code/qr", s.pickupCodeQR)
 }
 
 // tableAddress is where a table's code leads at the venue's public address,
@@ -104,9 +126,29 @@ func (s *Server) tableAddress() string {
 	return s.publicURL + s.guestMount + "t/"
 }
 
-func (s *Server) writeTableCodes(w http.ResponseWriter, list []tablecodes.Coded) {
+// pickupAddress is where the venue's pickup code leads at its public
+// address, before the code, or empty when the venue has set none. It is not
+// a table's address with another code in it: "p" and not "t", so the app
+// knows which it was given without asking.
+func (s *Server) pickupAddress() string {
+	if s.publicURL == "" {
+		return ""
+	}
+	return s.publicURL + s.guestMount + "p/"
+}
+
+func (s *Server) writeTableCodes(w http.ResponseWriter, r *http.Request, list []tablecodes.Coded) {
+	dev, _ := DeviceFrom(r.Context())
+	pickup, err := s.tableCodes.Pickup(r.Context(), dev.VenueID)
+	if err != nil {
+		s.writeTableCodeError(w, r, err)
+		return
+	}
 	address := s.tableAddress()
-	out := tableCodesResponse{Address: address, Tables: make([]tableCodeResponse, len(list))}
+	out := tableCodesResponse{Address: address, Tables: make([]tableCodeResponse, len(list)), Pickup: pickupCodeResponse{Code: pickup}}
+	if pickup != "" && s.pickupAddress() != "" {
+		out.Pickup.URL = s.pickupAddress() + pickup
+	}
 	for i, c := range list {
 		out.Tables[i] = tableCodeResponse{TableID: c.TableID, TableName: c.TableName, Code: c.Code}
 		if address != "" && c.Code != "" {
@@ -125,7 +167,7 @@ func (s *Server) listTableCodes(w http.ResponseWriter, r *http.Request) {
 		s.writeTableCodeError(w, r, err)
 		return
 	}
-	s.writeTableCodes(w, list)
+	s.writeTableCodes(w, r, list)
 }
 
 func (s *Server) ensureTableCodes(w http.ResponseWriter, r *http.Request) {
@@ -137,7 +179,7 @@ func (s *Server) ensureTableCodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.log.Info("codes were made for the tables without one", "venue_id", dev.VenueID, "actor_id", session.Staff.ID, "device_id", dev.ID)
-	s.writeTableCodes(w, list)
+	s.writeTableCodes(w, r, list)
 }
 
 // tableIDFrom reads the table in the path, and has answered when ok is false.
@@ -181,6 +223,57 @@ func (s *Server) revokeTableCode(w http.ResponseWriter, r *http.Request) {
 	s.listTableCodes(w, r)
 }
 
+func (s *Server) renewPickupCode(w http.ResponseWriter, r *http.Request) {
+	dev, _ := DeviceFrom(r.Context())
+	session, _ := SessionFrom(r.Context())
+	if _, err := s.tableCodes.RenewPickup(r.Context(), dev.VenueID); err != nil {
+		s.writeTableCodeError(w, r, err)
+		return
+	}
+	s.log.Info("the venue's pickup code was renewed", "venue_id", dev.VenueID, "actor_id", session.Staff.ID, "device_id", dev.ID)
+	s.listTableCodes(w, r)
+}
+
+func (s *Server) revokePickupCode(w http.ResponseWriter, r *http.Request) {
+	dev, _ := DeviceFrom(r.Context())
+	session, _ := SessionFrom(r.Context())
+	if err := s.tableCodes.RevokePickup(r.Context(), dev.VenueID); err != nil {
+		s.writeTableCodeError(w, r, err)
+		return
+	}
+	s.log.Info("the venue's pickup code was turned off", "venue_id", dev.VenueID, "actor_id", session.Staff.ID, "device_id", dev.ID)
+	s.listTableCodes(w, r)
+}
+
+// pickupCodeQR draws the pickup code's address as a QR code, the venue's
+// public address and no other, as a table's is drawn.
+func (s *Server) pickupCodeQR(w http.ResponseWriter, r *http.Request) {
+	dev, _ := DeviceFrom(r.Context())
+	w.Header().Set("Cache-Control", "no-store")
+	address := s.pickupAddress()
+	if address == "" {
+		writeError(w, s.log, http.StatusConflict, CodeNoPublicURL,
+			"The venue has not said where guests reach it. Set public_url in the venue's configuration, then print the code.")
+		return
+	}
+	code, err := s.tableCodes.Pickup(r.Context(), dev.VenueID)
+	if err != nil {
+		s.writeTableCodeError(w, r, err)
+		return
+	}
+	if code == "" {
+		writeError(w, s.log, http.StatusNotFound, CodeNoPickupCode, "The venue has no pickup code to draw.")
+		return
+	}
+	drawn, err := qr.Encode([]byte(address + code))
+	if err != nil {
+		s.log.Error("drawing the pickup code as a QR failed", "request_id", RequestID(r.Context()), "venue_id", dev.VenueID, "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
+	}
+	writeJSON(w, s.log, http.StatusOK, pickupCodeQRResponse{URL: address + code, SVG: drawn.SVG(qrQuiet)})
+}
+
 // tableCodeQR draws a table's address as a QR code: what is printed and
 // stuck to the table. It is the venue's public address and no other, since a
 // sticker saying an address only this network can reach is a sticker that
@@ -220,6 +313,13 @@ func (s *Server) tableCodeQR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, s.log, http.StatusOK, tableCodeQRResponse{TableID: id, TableName: name, URL: address + code, SVG: drawn.SVG(qrQuiet)})
+}
+
+// pickupCodeQRResponse is the pickup code's address drawn as a QR code, an
+// SVG in a field as a table's is.
+type pickupCodeQRResponse struct {
+	URL string `json:"url"`
+	SVG string `json:"svg"`
 }
 
 // tableCodeSheetResponse is every table that has a code, each with its

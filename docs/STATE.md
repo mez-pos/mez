@@ -8,13 +8,12 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 but 5f, 6a to 6d done. (Walks owed.)
+4 but 4f6b (Cashfree, question 8), 5 but 5f, and 6 done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 6d: limits on what a table's code may ask** (ADR-246). By table:
-reads, changes and orders, each counted apart. By address: wrong codes, and a
-ceiling a full room does not reach. Tested with the limits lowered.
+**Phase 11, Task 6e: the venue's pickup code** (ADR-247). `pickup_codes`
+(migration 00048), in `tablecodes` and over the staff API. No screen. Task 6 done.
 
 ## Next task
 
@@ -22,19 +21,20 @@ ceiling a full room does not reach. Tested with the limits lowered.
 keys, then on a phone Pay online on a bill, a share from two phones, and Pay on
 an order with paying first chosen.
 
-**Phase 11, Task 6e: the venue's pickup code.** Read ADR-237, ADR-243, ADR-246,
-`internal/service/tablecodes`, `internal/api/table_codes.go`. No ordering: 5f.
-- A code that leads to the venue and no table: made, renewed and turned off as a
-  table's is, by the same role. Decide whether it is a row in `table_codes` with
-  no table (the table is NOT NULL today) or a table of its own.
-- It resolves to the venue with no table; the guest routes answer it as a code
-  that leads nowhere until 5f. On the Floor plan's card, apart, and on the sheet.
+**Phase 11, Task 5f1: ordering for pickup, in the services.** Read ADR-237,
+ADR-247, ADR-225 to ADR-227, `internal/service/order/guest.go`, `guest_prepay.go`.
+Likely larger than a session: split it first.
+- A round with no table: `guest_rounds.table_id` is NOT NULL, and a round's ticket
+  is found by its table. Find every place that assumes one before choosing how.
+- Always held unpaid, whatever the venue's mode, and only where a gateway is set.
+- Paid, it opens its own ticket on the `web` channel, with no table, and is sent.
+- A pickup code of three or four characters (docs/02-domain.md), given once paid.
 
 ## Known broken / in progress
 
 - A dev server left running blocks `make check` from rebuilding `bin/mez`: stop it first.
-- The relay: no load test. Its signing secret has no backup. A `democafe` test key exists.
-- The relay's 1200 a minute per venue is under what a full room's phones ask (ADR-246).
+- The relay: no load test, no backup of its signing secret, a `democafe` test key. Its
+  1200 a minute per venue is under what a full room's phones ask (ADR-246).
 
 ## Open questions for the human
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f; 6a to 6d done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f; 6 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

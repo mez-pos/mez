@@ -10,6 +10,10 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The venue's pickup code** (ADR-247): in the services and the staff API
+  only. No screen shows it and no guest route takes it: it can be made
+  today through the API and leads nowhere until 5f. It has no limit of its
+  own yet (ADR-246's are by table). Not asked in the real binary.
 - **Limits on guests** (ADR-246): tested through the handlers with the
   limits lowered; never against a room of real phones. **The relay limits a
   whole venue to 1200 requests a minute (`relay.DefaultLimit`), which about

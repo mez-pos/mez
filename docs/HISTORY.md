@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 6c: the sheet of codes to print** (ADR-245). Print the codes on
+**Phase 11, Task 6d: limits on what a table's code may ask** (ADR-246). By table:
+reads, changes and orders, each counted apart. By address: wrong codes, and a
+ceiling a full room does not reach. Tested with the limits lowered.
+
+Before it, **Phase 11, Task 6c: the sheet of codes to print** (ADR-245). Print the codes on
 the Floor plan's card: a card for each table with a code, six to a page of A4.
 `GET /api/v1/table-codes/sheet`. Seen under its print styles; nothing printed.
 
