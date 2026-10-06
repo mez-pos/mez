@@ -261,6 +261,7 @@ func generate() (*ts.Generator, error) {
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
 		{"TunnelState", TunnelOff, asStrings(TunnelStates())},
 		{"GuestRoundStatus", svcorder.RoundWaiting, asStrings(svcorder.RoundStatuses())},
+		{"GuestRoundProgress", order.ProgressSent, asStrings(order.Progresses())},
 		{"ChargeStatus", charges.Open, asStrings(charges.Statuses())},
 		{"PayMode", svcorder.PayAtTable, asStrings(svcorder.PayModes())},
 		{"ChargeResolution", charges.Refunded, asStrings(charges.Resolutions())},

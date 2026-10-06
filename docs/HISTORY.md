@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4g3: splitting the bill on the phone** (ADR-235). In the bill's
+**Phase 11, Task 5a: a round is tracked through the kitchen, in the services**
+(ADR-236). A sent round knows its lines (`first_seq`, migration 00047);
+`order.State.Progress` and `TrackRound` read how far they have come. ADR-237, by
+the owner: ordering for pickup is 5f, paid first, one code for the venue.
+
+Before it, **Phase 11, Task 4g3: splitting the bill on the phone** (ADR-235). In the bill's
 Pay online card: the rest, evenly among so many, or a figure typed; and "I am not
 paying this" on a waiting payment. Seen at 390 wide. 4g is done.
 

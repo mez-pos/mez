@@ -287,6 +287,13 @@ export type GuestRoundStatus =
   | 'declined'
   | 'unpaid';
 
+export type GuestRoundProgress =
+  | 'accepted'
+  | 'sent'
+  | 'preparing'
+  | 'ready'
+  | 'cancelled';
+
 export type ChargeStatus =
   | 'open'
   | 'paid'
@@ -861,6 +868,7 @@ export interface GuestRoundResponse {
   lines: GuestRoundLineResponse[];
   subtotal: Money;
   due?: Money;
+  progress?: GuestRoundProgress;
 }
 
 export interface GuestRoundLineResponse {

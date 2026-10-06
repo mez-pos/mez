@@ -10,8 +10,9 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **Tracking an order** (ADR-236): in the services only, with no route and
-  no screen. A round sent before migration 00047 has no progress and is
+- **Tracking an order** (ADR-236, ADR-238): in the services and the guest's
+  API, with no screen: the phone still asks by sending the order again and
+  shows no progress. The route was not asked in the real binary. A round sent before migration 00047 has no progress and is
   told only that it was sent. A round whose every dish is made at no
   station stays "accepted" for good. Nothing says an order was taken to the
   table: no event records it, so "ready" is the last step.

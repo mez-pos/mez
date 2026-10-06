@@ -8,13 +8,13 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but for 4f6b (Cashfree, question 8), and 5a done. (The walks are owed.)
+4 but for 4f6b (Cashfree, question 8), 5a and 5b done. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 5a: a round is tracked through the kitchen, in the services**
-(ADR-236). A sent round knows its lines (`first_seq`, migration 00047);
-`order.State.Progress` and `TrackRound` read how far they have come.
+**Phase 11, Task 5b: tracking over the guest API** (ADR-238).
+`GET /order/api/t/{code}/orders/{round}` answers a round as it stands, with
+`progress` once it is sent. Another table's code finds nothing. No screen.
 
 ## Next task
 
@@ -22,13 +22,14 @@
 keys, then on a phone Pay online on a bill, a share of one from two phones, and
 Pay on an order with paying first chosen. The payments card says so itself.
 
-**Phase 11, Task 5b: tracking over the guest API.** Read ADR-236, ADR-210,
-`internal/api/guest_order.go`, `internal/service/order/guest_track.go`.
-- `GET /order/api/t/{code}/orders/{round}`: the round as `TrackRound` answers it,
-  in `guestRoundResponse` with `progress`. Not found for another table's.
-- `order.Progress` is a vocabulary: name it in the TypeScript generator's unions.
-- The phone asks today by sending the order again with its key (ADR-210). Leave
-  that working; 5c moves the order's screen to the new route.
+**Phase 11, Task 5c: the order's screen follows the kitchen.** Read ADR-236,
+ADR-238, `docs/design/screens/guest-order.md`, `docs/design/tokens.md`, and the
+reference only if the spec names lines. `web/guest/src/`: `Order.tsx`,
+`order-logic.ts`, `use-order.ts`. Budget 60 KB gzipped; it is at 43.3.
+- Ask the new route for a placed order, in place of sending it again (ADR-210).
+- Words for each `progress`, and for none: an order sent before 5a has none.
+- How often to ask, and when to stop: a recall takes `ready` back (ADR-238's cost).
+- See it at 390 wide, moving an order through the kitchen display.
 
 ## Known broken / in progress
 
@@ -55,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Task 4 but for 4f6b, and 5a, done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Task 4 but for 4f6b, 5a and 5b done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

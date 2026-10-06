@@ -7545,3 +7545,36 @@ exposed than a sticker on a table: paying first is most of the answer, and Task
 6's rate limit and revoking are the rest, so the two should land together. A
 ticket with no table is new to the floor, the terminal's lists and the reports,
 and 5f1 has to find every place that assumes one.
+
+## ADR-238 - An order is asked about at its own address, and answers its progress only there
+2026-10 · Status: accepted. Phase 11, Task 5b.
+Context: ADR-236 reads how far a round has come in the kitchen, with no route. The
+phone has asked how an order stands by sending it again under its key (ADR-210),
+which answers the round and nothing of the kitchen.
+Decision:
+  - **`GET /order/api/t/{code}/orders/{round}`** answers a round as
+    `TrackRound` reads it: the same shape as placing one, `guestRoundResponse`,
+    with `progress` added. One shape for an order however it was come by.
+  - **`progress` is answered only here**, and only for a sent order. Placing an
+    order does not answer it: at that moment it is at most just sent, and a field
+    that is sometimes worked out and sometimes not would be read as "nothing yet"
+    when it means "not asked". Absent means not sent, or sent before rounds knew
+    their lines.
+  - **By the table's own code, and no other.** Another table's code, and an order
+    that is not there, are the same 404, `request_not_found`, as paying for a
+    round answers (ADR-227). A table's code says nothing of another table's
+    orders.
+  - **`no-store`**, as the bill is. It moves when the kitchen does.
+  - **Sending an order again still answers it**, unchanged. A phone that has not
+    reloaded keeps working, and 5c moves the order's screen to this route.
+  - **`order.Progress` is a named vocabulary in the generated types**,
+    `GuestRoundProgress`, so a step added here fails the phone's build until it
+    has words for it.
+  - **Not rate limited here.** Task 6 limits a table.
+Because: an order has an id the phone already keeps. Asking for it by that id is
+the plain thing, and a GET can be asked as often as the screen needs without
+looking like an order being placed.
+Cost: each ask reads the round and projects its whole ticket. A phone asking every
+few seconds for an order out, times the phones in the room, is the most frequent
+read the guest's API has, and nothing has measured it, here or through the relay. 5c chooses how often to ask and when to stop.
+The route was tested through the handler and not asked in the real binary.

@@ -7,6 +7,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/domain/menu"
 	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/order"
 	"github.com/byjoellobo/mez/internal/domain/payment"
 	"github.com/byjoellobo/mez/internal/domain/shift"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
@@ -31,6 +32,7 @@ const (
 // GuestOrders is what the API needs to take a guest's order.
 type GuestOrders interface {
 	PlaceRound(ctx context.Context, meta svcorder.Meta, cmd svcorder.PlaceRound) (svcorder.Round, error)
+	TrackRound(ctx context.Context, venueID, tableID int64, publicID string) (svcorder.Round, error)
 	TableTicket(ctx context.Context, venueID, tableID int64) (svcorder.Result, bool, error)
 	UPIAccount(ctx context.Context, venueID int64) (payment.UPIAccount, error)
 	TellPaid(ctx context.Context, venueID, tableID int64) (svcorder.PaidNotice, error)
@@ -77,6 +79,11 @@ type guestRoundResponse struct {
 	// what it adds to the table's bill, taxes and all (ADR-225). Absent
 	// unless the status is unpaid.
 	Due *money.Amount `json:"due,omitempty"`
+	// Progress is how far the kitchen has come with a sent order, read off
+	// its own tickets (ADR-236). Only the order's own route answers it:
+	// absent from the answer to placing one, and for an order that is not
+	// sent.
+	Progress order.Progress `json:"progress,omitempty"`
 }
 
 func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +122,7 @@ func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
 
 func toGuestRoundResponse(round svcorder.Round) (guestRoundResponse, error) {
 	out := guestRoundResponse{
-		ID: round.PublicID, Status: round.Status, Subtotal: round.Subtotal,
+		ID: round.PublicID, Status: round.Status, Subtotal: round.Subtotal, Progress: round.Progress,
 		Lines: make([]guestRoundLineResponse, len(round.Lines)),
 	}
 	if round.Status == svcorder.RoundUnpaid {
