@@ -29,6 +29,7 @@ import (
 	"github.com/byjoellobo/mez/internal/device/printq"
 	"github.com/byjoellobo/mez/internal/gateway"
 	"github.com/byjoellobo/mez/internal/gateway/razorpay"
+	"github.com/byjoellobo/mez/internal/gateway/stripe"
 	"github.com/byjoellobo/mez/internal/hub"
 	"github.com/byjoellobo/mez/internal/logging"
 	"github.com/byjoellobo/mez/internal/service/audit"
@@ -498,6 +499,16 @@ func newGateway(cfg config.Config) (gateway.Gateway, error) {
 			return nil, errors.New("gateway is razorpay, and gateway_key_id and gateway_key_secret are not both set")
 		}
 		return razorpay.New(razorpay.Options{KeyID: cfg.GatewayKeyID, KeySecret: cfg.GatewayKeySecret, WebhookSecret: cfg.GatewayWebhookSecret})
+	case config.GatewayStripe:
+		if cfg.GatewayKeySecret == "" {
+			return nil, errors.New("gateway is stripe, and gateway_key_secret, its secret key, is not set")
+		}
+		// Stripe makes no payment page with nowhere to send the guest back
+		// to, so without this every charge would be refused.
+		if cfg.PublicURL == "" {
+			return nil, errors.New("gateway is stripe, and public_url is not set: stripe needs the address to send a guest back to")
+		}
+		return stripe.New(stripe.Options{SecretKey: cfg.GatewayKeySecret, WebhookSecret: cfg.GatewayWebhookSecret})
 	default:
 		return nil, fmt.Errorf("gateway %q: this build has no adapter for it", cfg.Gateway)
 	}

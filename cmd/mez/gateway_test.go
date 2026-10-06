@@ -18,6 +18,10 @@ func TestNewGateway(t *testing.T) {
 		ok   bool
 		says string
 	}{
+		{"stripe with its key and the venue's address", config.Config{Gateway: config.GatewayStripe, GatewayKeySecret: secret, PublicURL: "https://cafe.example"}, true, ""},
+		{"stripe with no key", config.Config{Gateway: config.GatewayStripe, PublicURL: "https://cafe.example"}, false, "gateway_key_secret"},
+		// Stripe makes no page with nowhere to send the guest back to.
+		{"stripe with no address to come back to", config.Config{Gateway: config.GatewayStripe, GatewayKeySecret: secret}, false, "public_url"},
 		{"razorpay with both keys", config.Config{Gateway: config.GatewayRazorpay, GatewayKeyID: "rzp_test_1", GatewayKeySecret: secret}, true, ""},
 		{"razorpay with no secret", config.Config{Gateway: config.GatewayRazorpay, GatewayKeyID: "rzp_test_1"}, false, "gateway_key_secret"},
 		{"razorpay with no key id", config.Config{Gateway: config.GatewayRazorpay, GatewayKeySecret: secret}, false, "gateway_key_id"},
@@ -38,7 +42,7 @@ func TestNewGateway(t *testing.T) {
 				}
 				return
 			}
-			if g.Name() != config.GatewayRazorpay {
+			if g.Name() != tt.cfg.Gateway {
 				t.Errorf("built %q", g.Name())
 			}
 		})

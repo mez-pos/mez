@@ -58,6 +58,14 @@ const (
 // import.
 const GatewayRazorpay = "razorpay"
 
+// GatewayStripe is Stripe, internal/gateway/stripe (ADR-230). It has no key
+// id: gateway_key_secret is its secret key.
+const GatewayStripe = "stripe"
+
+// gateways is every gateway this build has an adapter for, as said to an
+// owner who named another.
+const gateways = GatewayRazorpay + " and " + GatewayStripe
+
 // Log formats. Auto is text when stdout is a terminal and JSON otherwise, which
 // is the difference between a developer reading lines and a support engineer
 // grepping a file. internal/logging is what acts on these.
@@ -97,8 +105,8 @@ var usage = map[string]string{
 	keyTimezone:   "IANA timezone for rendering, for example Asia/Kolkata",
 	keyDevOrigin:  "browser origin allowed to call the API cross-site; empty disables CORS",
 
-	keyGateway:          "payment gateway for guests paying online: razorpay, or empty for none",
-	keyGatewayKeyID:     "the gateway's key id for this venue's account",
+	keyGateway:          "payment gateway for guests paying online: razorpay or stripe, or empty for none",
+	keyGatewayKeyID:     "the gateway's key id for this venue's account; stripe has none",
 	keyGatewayKeySecret: "the gateway's key secret; a secret, best set in the environment",
 	keyPublicURL:        "the address guests reach this venue at, https://cafe.example; where a gateway sends them back",
 
@@ -555,10 +563,10 @@ func validTimezone(v string) (*time.Location, error) {
 // taking payments, and is not, is worse than none.
 func validGateway(v string) (string, error) {
 	switch v = strings.ToLower(strings.TrimSpace(v)); v {
-	case "", GatewayRazorpay:
+	case "", GatewayRazorpay, GatewayStripe:
 		return v, nil
 	default:
-		return "", fmt.Errorf("%s %q: the gateways are %s, or empty for none", keyGateway, v, GatewayRazorpay)
+		return "", fmt.Errorf("%s %q: the gateways are %s, or empty for none", keyGateway, v, gateways)
 	}
 }
 

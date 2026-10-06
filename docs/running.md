@@ -167,11 +167,11 @@ The full set of settings:
 | `relay_key` | `-relay-key` | `MEZ_RELAY_KEY` | empty; a secret, needed when `relay_url` is set |
 | `timezone` | `-timezone` | `MEZ_TIMEZONE` | the machine's own |
 | `dev_origin` | `-dev-origin` | `MEZ_DEV_ORIGIN` | empty, so no CORS |
-| `gateway` | `-gateway` | `MEZ_GATEWAY` | empty, so no gateway; `razorpay` |
-| `gateway_key_id` | `-gateway-key-id` | `MEZ_GATEWAY_KEY_ID` | empty; needed when `gateway` is set |
-| `gateway_webhook_secret` | `-gateway-webhook-secret` | `MEZ_GATEWAY_WEBHOOK_SECRET` | empty, so no webhook is believed; a secret. Set it where the webhook is made at the gateway, for `<public_url>/order/api/hook/razorpay` and the payment link events |
-| `public_url` | `-public-url` | `MEZ_PUBLIC_URL` | empty; the address guests reach the venue at, `https://cafe.example`. A gateway sends a guest back to it after paying |
-| `gateway_key_secret` | `-gateway-key-secret` | `MEZ_GATEWAY_KEY_SECRET` | empty; a secret, needed when `gateway` is set. Prefer the environment: a flag is visible to anyone who can list this machine's processes |
+| `gateway` | `-gateway` | `MEZ_GATEWAY` | empty, so no gateway; `razorpay` or `stripe` |
+| `gateway_key_id` | `-gateway-key-id` | `MEZ_GATEWAY_KEY_ID` | empty; needed for `razorpay`. Stripe has none |
+| `gateway_webhook_secret` | `-gateway-webhook-secret` | `MEZ_GATEWAY_WEBHOOK_SECRET` | empty, so no webhook is believed; a secret. Set it where the webhook is made at the gateway: for Razorpay, `<public_url>/order/api/hook/razorpay` and the payment link events; for Stripe, `<public_url>/order/api/hook/stripe`, the `checkout.session.*` events, and the endpoint's signing secret (`whsec_`) |
+| `public_url` | `-public-url` | `MEZ_PUBLIC_URL` | empty; the address guests reach the venue at, `https://cafe.example`. A gateway sends a guest back to it after paying. **Needed for `stripe`**, which makes no payment page without it |
+| `gateway_key_secret` | `-gateway-key-secret` | `MEZ_GATEWAY_KEY_SECRET` | empty; a secret, needed when `gateway` is set: Razorpay's key secret, or Stripe's secret key (`sk_`). Prefer the environment: a flag is visible to anyone who can list this machine's processes |
 | | `-config` | | `config.toml` beside the binary |
 
 Notes on a few of them:

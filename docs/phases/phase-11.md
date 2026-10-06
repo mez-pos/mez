@@ -139,7 +139,15 @@ Phase 10.
       lands without waiting for the sweep: `POST /order/api/hook/{gateway}`,
       a hint to ask the gateway now and never proof (ADR-224).
     - [ ] **4f6.** Cashfree and Stripe, and the owner choosing a gateway in
-      the back office.
+      the back office. Split in three (ADR-230):
+      - [x] **4f6a.** Stripe (`internal/gateway/stripe`): Checkout Sessions,
+        its webhook, and `gateway = stripe` in the configuration.
+      - [ ] **4f6b.** Cashfree. **Waits on the owner**: its payment links
+        need the payer's phone number, and mez asks a guest for nothing.
+        See STATE.md's open questions.
+      - [ ] **4f6c.** The back office saying which gateway is set and whether
+        it has taken a payment. Not choosing one: the keys are configuration
+        and not the database (ADR-221), so there is nothing there to choose.
   - [ ] **4g.** Splitting the bill among the guests at a table.
 
 - [ ] **Task 5 — Order tracking and e-receipt.**

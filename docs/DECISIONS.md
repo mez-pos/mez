@@ -7202,3 +7202,54 @@ nothing and looks as if it took.
 Cost: the screen cannot say how to set a gateway up beyond where; that is the
 install guide's, in phase 12. The guest's cart still does not say, before Place
 Order, that the order will have to be paid for.
+
+## ADR-230 - A second gateway: Stripe by Checkout Sessions; Cashfree waits; the back office does not choose
+2026-10 · Status: accepted. Phase 11, Task 4f6a.
+Context: Task 4f6 asks for Cashfree and Stripe, and the owner choosing a gateway in
+the back office. Both vendors' API references were read before anything was written.
+Decision:
+  - **Task 4f6 is split in three**, listed in the phase file. This is Stripe.
+  - **A Stripe charge is a Checkout Session** (`internal/gateway/stripe`): Stripe's
+    own page, one line priced inline for the whole amount, `mode=payment`, good for
+    thirty-one minutes (Stripe's least is thirty). `Status` reads the session back
+    with its payment intent expanded, which is where Stripe says how it was paid.
+    The payment's reference is the intent's id, the one a refund names.
+  - **Complete is not paid.** Stripe calls a session complete when the guest is
+    done, and some ways of paying confirm later: only `payment_status` paid is
+    paid, and complete-and-unpaid is pending.
+  - **The charge's own id is the idempotency key**, so a charge asked of Stripe
+    twice is one session.
+  - **Only currencies of two decimals are taken, and not Stripe's exceptions.**
+    Stripe counts in the smallest unit, as mez does, but its zero-decimal and
+    three-decimal lists and its special cases (the forint, the krona, the ariary)
+    are its own, and a disagreement is a charge a hundred times off. The adapter
+    refuses those before Stripe is asked. The amount Stripe then reports is still
+    held against the amount asked, as for any gateway (ADR-220).
+  - **Stripe needs `public_url`.** It makes no payment page with nowhere to send
+    the guest back to. With `gateway = stripe` and no `public_url`, mez does not
+    start, as with a gateway whose key is missing (ADR-221).
+  - **Its webhook is checked as Stripe documents**: `Stripe-Signature` carries a
+    time and v1 signatures, each the HMAC-SHA256 of the time, a dot and the raw
+    body under the endpoint's own secret. Any one matching is enough (a secret
+    being rolled sends two); a notice more than five minutes from this clock is
+    refused. It is a hint to ask Stripe, as ADR-224 has it, and nothing more. The
+    test pins a signature computed outside Go.
+  - **Configuration**: `gateway = stripe`, `gateway_key_secret` its secret key,
+    `gateway_webhook_secret` the endpoint's signing secret. `gateway_key_id` is
+    not used. No API version is pinned: the fields read are old and stable, and a
+    version nobody tested against is worse than the account's own.
+  - **Cashfree is not built, and waits on the owner.** Its payment links require
+    `customer_details.customer_phone`, and so do its orders. mez asks a guest for
+    nothing: no name, no number. Building it means asking every guest for a phone
+    number before they can pay, and keeping it, or sending a made-up one, which is
+    lying to a payment provider. Neither is a choice to make in passing.
+  - **The back office will not choose a gateway.** The keys are configuration and
+    the environment and not the database (ADR-221), so one gateway is set per
+    venue, where its keys are. 4f6c is the back office saying which, read only.
+Because: a second adapter proves the interface of ADR-220 was the right size,
+and it was: nothing outside `internal/gateway/stripe`, the configuration and the
+one switch that builds a gateway changed.
+Cost: no Stripe charge has been made. The adapter was checked against a stand-in
+for Stripe's API written from its documentation, and the real API as far as it
+refusing a made-up key. Stripe's India accounts are by invitation, so for the
+venues mez is first for, Razorpay stays the one that matters.

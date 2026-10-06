@@ -576,8 +576,13 @@ func TestGateway(t *testing.T) {
 		t.Errorf("gateway = %q, %v", cfg.Gateway, err)
 	}
 
+	cfg, err = load(nil, lookupFrom(map[string]string{"MEZ_GATEWAY": "Stripe"}), t.TempDir(), "linux")
+	if err != nil || !cfg.GatewayEnabled() || cfg.Gateway != GatewayStripe {
+		t.Errorf("gateway = %q, %v", cfg.Gateway, err)
+	}
+
 	_, err = load(nil, lookupFrom(map[string]string{"MEZ_GATEWAY": "paypal"}), t.TempDir(), "linux")
-	if err == nil || !strings.Contains(err.Error(), "razorpay") {
+	if err == nil || !strings.Contains(err.Error(), "razorpay") || !strings.Contains(err.Error(), "stripe") {
 		t.Errorf("an unknown gateway: %v, want it refused and the known ones named", err)
 	}
 	// A refusal names the setting, never a key that happens to be set too.
