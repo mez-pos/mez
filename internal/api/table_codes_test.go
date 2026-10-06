@@ -155,6 +155,7 @@ func TestTableCodesAreForWhoeverRunsTheVenue(t *testing.T) {
 		{http.MethodPost, "/api/v1/tables/4/code/renew"},
 		{http.MethodPost, "/api/v1/tables/4/code/revoke"},
 		{http.MethodGet, "/api/v1/tables/4/code/qr"},
+		{http.MethodGet, "/api/v1/table-codes/sheet"},
 	}
 	for _, rt := range routes {
 		if rec := send(o.handler, rt.method, rt.path, "", cashier); rec.Code != http.StatusForbidden {
@@ -177,4 +178,45 @@ func TestTableCodesAreForWhoeverRunsTheVenue(t *testing.T) {
 	if rec := send(o.handler, http.MethodDelete, "/api/v1/table-codes", "", owner); rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("DELETE on the codes: %d", rec.Code)
 	}
+}
+
+// TestTheSheetIsEveryTableWithACode: one answer with each table's address
+// drawn, the venue's own, and no table that has no code to stick on it.
+func TestTheSheetIsEveryTableWithACode(t *testing.T) {
+	o := newCodesWorld(t, "https://cafe.example")
+	owner := o.asStaff(o.signInAs(t, "stf_PRIYA001", "2468").Token)
+	list := decodeCodes(t, send(o.handler, http.MethodGet, "/api/v1/table-codes", "", owner))
+	decodeCodes(t, send(o.handler, http.MethodPost, "/api/v1/tables/5/code/revoke", "", owner))
+
+	rec := send(o.handler, http.MethodGet, "/api/v1/table-codes/sheet", "", owner)
+	if rec.Code != http.StatusOK || rec.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("the sheet: %d %s", rec.Code, rec.Body)
+	}
+	var sheet tableCodeSheetResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &sheet); err != nil {
+		t.Fatal(err)
+	}
+	if len(sheet.Tables) != len(list.Tables)-1 {
+		t.Fatalf("%d tables on the sheet, want %d: every one but the table with no code", len(sheet.Tables), len(list.Tables)-1)
+	}
+	seen := map[string]bool{}
+	for _, tb := range sheet.Tables {
+		want := codeOf(t, list, tb.TableID)
+		if tb.TableID == 5 {
+			t.Error("the table with no code is on the sheet")
+		}
+		if tb.URL != want.URL || tb.TableName != want.TableName || !strings.HasPrefix(tb.SVG, "<svg") || seen[tb.SVG] {
+			t.Errorf("table %d on the sheet = %s, %q, a picture already seen: %v", tb.TableID, tb.URL, tb.TableName, seen[tb.SVG])
+		}
+		seen[tb.SVG] = true
+	}
+
+	t.Run("with no public address there is no sheet", func(t *testing.T) {
+		o := newCodesWorld(t, "")
+		owner := o.asStaff(o.signInAs(t, "stf_PRIYA001", "2468").Token)
+		rec := send(o.handler, http.MethodGet, "/api/v1/table-codes/sheet", "", owner)
+		if rec.Code != http.StatusConflict || errorOf(t, rec).Code != CodeNoPublicURL {
+			t.Errorf("the sheet: %d %s", rec.Code, rec.Body)
+		}
+	})
 }

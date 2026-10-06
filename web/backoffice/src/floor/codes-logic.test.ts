@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
 import type { TableCodeResponse } from "../../../shared/api-types";
-import { actionsFor, canPrint, codeText, codesProblem, codesSummary, confirmWords, missingCount, noAddressWords } from "./codes-logic";
+import {
+  CARDS_PER_PAGE,
+  actionsFor,
+  canPrint,
+  codeText,
+  codesProblem,
+  codesSummary,
+  confirmWords,
+  hostOf,
+  missingCount,
+  noAddressWords,
+  printableCount,
+  sheetSummary,
+} from "./codes-logic";
 
 const table = (id: number, code: string): TableCodeResponse => ({
   table_id: id,
@@ -79,5 +92,27 @@ describe("codesProblem", () => {
   it("shows nothing of the server's insides", () => {
     expect(codesProblem(new ApiError("internal", "pq: seq 4", 500))).toBe("That did not work. Try again.");
     expect(codesProblem(new Error("boom"))).toBe("That did not work. Try again.");
+  });
+});
+
+describe("the sheet", () => {
+  it("counts the tables that have a code to print", () => {
+    expect(printableCount({ tables: [table(1, ""), table(2, "ddddeeeeffff"), table(3, "gggghhhhjjjj")] })).toBe(2);
+    expect(printableCount({ tables: [] })).toBe(0);
+  });
+  it.each([
+    [0, "No table has a code to print."],
+    [1, "1 card on 1 page of A4."],
+    [CARDS_PER_PAGE, `${CARDS_PER_PAGE} cards on 1 page of A4.`],
+    [CARDS_PER_PAGE + 1, `${CARDS_PER_PAGE + 1} cards on 2 pages of A4.`],
+    [30, "30 cards on 5 pages of A4."],
+  ])("says how much paper %i cards take", (count, want) => {
+    expect(sheetSummary(count)).toBe(want);
+  });
+  it("says whose code it is by the venue's host, and nothing of the code", () => {
+    expect(hostOf("https://democafe.example/order/t/sptdem4x7abc")).toBe("democafe.example");
+    expect(hostOf("https://cafe.example:8443/order/t/x")).toBe("cafe.example:8443");
+    expect(hostOf("not an address")).toBe("");
+    expect(hostOf("")).toBe("");
   });
 });

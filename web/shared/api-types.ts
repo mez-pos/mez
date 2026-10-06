@@ -1015,6 +1015,10 @@ export interface TableCodeQRResponse {
   svg: string;
 }
 
+export interface TableCodeSheetResponse {
+  tables: TableCodeQRResponse[];
+}
+
 export interface PaymentSettingsRequest {
   upi_address: string;
   upi_payee: string;

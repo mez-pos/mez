@@ -37,6 +37,35 @@ export function codeText(code: string): string {
   return code.replace(/(.{4})(?=.)/g, "$1 ");
 }
 
+/** How many cards the sheet puts on a page of A4: two across, three down. */
+export const CARDS_PER_PAGE = 6;
+
+/** How many tables have a code to print. */
+export function printableCount(list: Pick<TableCodesResponse, "tables">): number {
+  return list.tables.length - missingCount(list);
+}
+
+/** "12 cards on 2 pages.", for the print dialog. */
+export function sheetSummary(count: number): string {
+  if (count === 0) return "No table has a code to print.";
+  const pages = Math.ceil(count / CARDS_PER_PAGE);
+  return `${count} ${count === 1 ? "card" : "cards"} on ${pages} ${pages === 1 ? "page" : "pages"} of A4.`;
+}
+
+/**
+ * Where a card says the code leads, for a guest to recognise: the venue's
+ * own host and nothing after it. The whole address is in the picture; this
+ * is so a guest can see whose it is before they scan. Empty for an address
+ * that is not one.
+ */
+export function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "";
+  }
+}
+
 /** What a row can do. A table with no code can only be given one. */
 export type CodeAction = "show" | "renew" | "revoke" | "give";
 

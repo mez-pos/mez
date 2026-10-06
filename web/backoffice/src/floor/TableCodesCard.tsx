@@ -6,6 +6,8 @@
 import { useEffect, useState } from "react";
 import type { TableCodeQRResponse, TableCodeResponse } from "../../../shared/api-types";
 import { Button, Card, Confirm, Modal, useToast } from "../../../shared/ui";
+import { useVenue } from "../../../shared/use-venue";
+import { CodeSheet } from "./CodeSheet";
 import { RowMenu } from "../RowMenu";
 import {
   actionLabels,
@@ -17,6 +19,7 @@ import {
   confirmWords,
   missingCount,
   noAddressWords,
+  printableCount,
   type CodeAction,
 } from "./codes-logic";
 import { useTableCodes, type TableCodesApi } from "./use-table-codes";
@@ -29,7 +32,9 @@ export function TableCodesCard() {
   const api = useTableCodes();
   const toast = useToast();
   const [asking, setAsking] = useState<Asking | null>(null);
+  const [printing, setPrinting] = useState(false);
   const [busy, setBusy] = useState(false);
+  const venue = useVenue();
   const data = api.data;
 
   const run = (fn: () => Promise<void>, done: string) => {
@@ -55,11 +60,19 @@ export function TableCodesCard() {
           </p>
           {data && <p className="mt-1 text-base text-fg-muted">{codesSummary(data)}</p>}
         </div>
-        {data && missingCount(data) > 0 && (
-          <Button disabled={busy} onClick={() => run(api.makeMissing, "Every table has a code.")}>
-            Make the missing codes
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-tap-gap">
+          {data && missingCount(data) > 0 && (
+            <Button disabled={busy} onClick={() => run(api.makeMissing, "Every table has a code.")}>
+              Make the missing codes
+            </Button>
+          )}
+          {/* Nothing to print without the venue's public address, or with no code. */}
+          {data && canPrint(data) && printableCount(data) > 0 && (
+            <Button disabled={busy} onClick={() => setPrinting(true)}>
+              Print the codes
+            </Button>
+          )}
+        </div>
       </div>
 
       {api.loading && <p className="text-base text-fg-muted">Reading the codes</p>}
@@ -134,6 +147,7 @@ export function TableCodesCard() {
         />
       )}
       {asking?.action === "show" && <QRModal table={asking.table} api={api} onClose={() => setAsking(null)} />}
+      {printing && <CodeSheet venueName={venue?.name ?? ""} read={api.sheet} onClose={() => setPrinting(false)} />}
     </Card>
   );
 }

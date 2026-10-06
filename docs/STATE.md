@@ -8,13 +8,13 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 but 5f, 6a and 6b done. (Walks owed.)
+4 but 4f6b (Cashfree, question 8), 5 but 5f, 6a to 6c done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 6b: the codes in the back office** (ADR-244). "Ordering from the
-table" on the Floor plan: each table's code and address, the QR, Renew and Turn
-off behind a confirm, Make the missing codes. Seen at 1366 and 1920.
+**Phase 11, Task 6c: the sheet of codes to print** (ADR-245). Print the codes on
+the Floor plan's card: a card for each table with a code, six to a page of A4.
+`GET /api/v1/table-codes/sheet`. Seen under its print styles; nothing printed.
 
 ## Next task
 
@@ -22,14 +22,14 @@ off behind a confirm, Make the missing codes. Seen at 1366 and 1920.
 keys, then on a phone Pay online on a bill, a share of one from two phones, and
 Pay on an order with paying first chosen. The payments card says so itself.
 
-**Phase 11, Task 6c: the sheet of codes to print.** Read ADR-243, ADR-244,
-`docs/design/tokens.md`, `web/backoffice/src/floor/TableCodesCard.tsx`, and how
-the Z-report or a receipt is printed from the back office, if anything is.
-- "Print the codes" on the card: every table with a code, each a QR, the table's
-  name, the venue's name and a line telling a guest what to do, sized to cut out.
-- `GET /api/v1/tables/{id}/code/qr` is one table: a sheet of thirty wants one
-  request, so add a route that answers them all, or the list with pictures.
-- Print styles: nothing of the shell on paper. No `public_url`, nothing to print.
+**Phase 11, Task 6d: a limit on what one table's code may ask.** Read ADR-209,
+ADR-239, `internal/api/ratelimit.go`, `guest.go`, and `ErrTooManyWaiting`.
+- Through the relay every guest has the relay's address, so a limit by address
+  limits the venue. The key is the table's code, and for a wrong code the address.
+- Reads that a screen makes by itself must fit: tracking every 10 seconds
+  (ADR-239), the bill every 15, a charge every 4, times the phones at a table.
+- Hold tight: placing an order, starting a payment, "I have paid". The phone
+  already has words for 429. Wrong codes from one address are counted apart.
 
 ## Known broken / in progress
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f; 6a, 6b done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f; 6a to 6c done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

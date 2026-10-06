@@ -7811,3 +7811,43 @@ Cost: a floor of fifty tables is a long card under the plan. Nothing prints yet,
 so a renewed code has nowhere to go but the screen until 6c. Who renewed a code is
 still only in the log. Seen at 1366 and 1920 in the real binary with `public_url`
 set; the card with none, and a refusal, were not seen.
+
+## ADR-245 - The codes print as a sheet of cards from the browser, drawn in one answer
+2026-10 · Status: accepted. Phase 11, Task 6c.
+Context: Task 6 asks for codes "printable as a sheet". The back office shows a
+table's QR one at a time (ADR-244), and nothing in mez prints from a browser: the
+receipt printer is ESC/POS over the network and is the wrong paper for a sticker.
+Decision:
+  - **Print the codes, on the card**, opens a modal that says how many cards and
+    pages, what to do with them, and that a code renewed afterwards kills its
+    card. Print in it is the browser's own print, to whatever printer the owner's
+    computer has.
+  - **`GET /api/v1/table-codes/sheet` draws every table's code in one answer.**
+    Thirty requests for thirty pictures is thirty moments, and a code renewed in
+    the middle is a sheet that is half stale. One answer is one moment. It is
+    logged, by who and how many: every code the venue has left the screen at once.
+  - **A table with no code has no card**, and with no `public_url` there is no
+    sheet at all, as for one QR (ADR-243).
+  - **The sheet is drawn outside the app's own tree and shown only on paper**: a
+    block under `body`, hidden on screen, and under print the only thing shown.
+    Nothing of the shell, the plan or the modal prints. No new window, no PDF and
+    no library.
+  - **Six cards to a page of A4, two across and three down, each inside a dashed
+    line to cut along**, in millimetres and black on white. A card never breaks
+    across a page.
+  - **On a card: the venue's name, "Scan to see the menu and order", the QR at
+    44mm, "Table T4" large, and the venue's host small.** The table's name is the
+    largest words on it because the one mistake that matters is a card on the
+    wrong table. The host is there so a guest can see whose code it is before
+    they scan a sticker on a table in a cafe.
+  - **The code is not printed in letters.** The address with the code in it is
+    forty characters nobody types; printed, it is also a code that can be read
+    off a card from across the room without a camera.
+Because: an owner with a printer and scissors can have every table ordering in ten
+minutes, and nothing was needed for it but a stylesheet.
+Cost: A4 only; on Letter the third row may fall to the next page. Reprinting one
+table's card means printing the sheet, or a screenshot of its QR. A card that will
+not scan cannot be typed in. The paper is plain: no logo, no colour, since a
+printed tint is the printer's and the owner's ink. Seen as the page under its
+print styles at A4's width; never through a real printer or a browser's preview,
+and no printed card has been scanned.

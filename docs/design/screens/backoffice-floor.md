@@ -45,6 +45,19 @@ Inside the frame (`backoffice-shell.md`).
     code can order to it."; and how things stand: "All 12 tables have a
     code.", "3 of 12 tables have no code."
   - **Make the missing codes**, secondary, only while a table has none.
+  - **Print the codes**, secondary, where the venue has a `public_url` and
+    a table has a code (ADR-245). A modal: "11 cards on 2 pages of A4.";
+    "Each card has the table's name on it. Cut along the dashed lines and
+    put each on its own table: a card on the wrong table sends that table's
+    orders to another."; "These are the codes as they are now. Renew a code
+    after printing and its card stops working."; **Close** and **Print**,
+    the primary, which opens the browser's own print.
+  - **The sheet**, on paper only: a card for each table with a code, two
+    across and three down on A4, each inside a dashed line to cut along.
+    On a card, centred, black on white: the venue's name in the serif;
+    "Scan to see the menu and order"; the QR, 44mm; "Table T4", large; and
+    the venue's host, small, so a guest can see whose code it is. A table
+    with no code has no card. Nothing else of the back office prints.
   - With no `public_url`, in the warning tone: "The venue has not said
     where guests reach it, so there is no address to print on a table. Set
     public_url in the venue's configuration and restart mez."
@@ -95,6 +108,9 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
 - `POST /api/v1/table-codes` makes the missing ones;
   `POST /api/v1/tables/{id}/code/renew` and `.../revoke`. Each answers the
   whole list, which replaces the cache.
+- `GET /api/v1/table-codes/sheet` when Print the codes is opened: every
+  table that has a code, each with its address drawn, in one answer. Never
+  kept. The venue's name on the cards is the status bar's (`use-venue.ts`).
 - `GET /api/v1/tables/{id}/code/qr` when Show the QR code is opened, and
   never kept: the picture is an SVG in the answer, shown as an image and
   never put in the page as markup.
@@ -116,6 +132,8 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
 | Renew the code, confirmed | A new code; the old one stops | "T4 has a new code. Print it and replace the one on the table." |
 | Turn the code off, confirmed | No code | "T4 takes no orders by phone." |
 | Give it a code | A code for a table with none | "T4 has a code." |
+| Print the codes | Draws every table's card | The modal, with how many pages |
+| Print | The browser's print | Only the sheet is on the paper |
 
 ## States
 
@@ -146,6 +164,8 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
   stops a working code happens without a confirm that says what stops.
 - The address on a sticker is the venue's `public_url`, the server's to
   say. The screen builds none.
+- The sheet is in millimetres and black on white: it is paper, and the
+  screen's tokens are for screens. It is never shown on a screen.
 
 ## Reference
 
@@ -153,4 +173,4 @@ The design draws no floor editor. D05's "Edit Layout" and "Add Table" on the
 terminal, and D22's "Tables & QR codes" in Settings, point at one; this
 screen is where they lead, and it is ours, kept under rule 4. D22's "Tables
 & QR codes" is the card here, since a code belongs to a table and this is
-where the tables are. The sheet to print is Task 6c.
+where the tables are.

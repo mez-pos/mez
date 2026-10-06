@@ -3,7 +3,7 @@
 // The list follows the floor: a table added or retired changes it.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { TableCodeQRResponse, TableCodesResponse } from "../../../shared/api-types";
+import type { TableCodeQRResponse, TableCodeSheetResponse, TableCodesResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 
@@ -20,6 +20,8 @@ export interface TableCodesApi {
   revoke: (tableId: number) => Promise<void>;
   /** A table's address drawn as a QR code. Never kept: a renew changes it. */
   qr: (tableId: number) => Promise<TableCodeQRResponse>;
+  /** Every table's code drawn, to print. Never kept, for the same reason. */
+  sheet: () => Promise<TableCodeSheetResponse>;
 }
 
 export function useTableCodes(): TableCodesApi {
@@ -55,5 +57,6 @@ export function useTableCodes(): TableCodesApi {
     renew: (id) => post(`/api/v1/tables/${id}/code/renew`),
     revoke: (id) => post(`/api/v1/tables/${id}/code/revoke`),
     qr: (id) => store.api.get<TableCodeQRResponse>(`/api/v1/tables/${id}/code/qr`),
+    sheet: () => store.api.get<TableCodeSheetResponse>("/api/v1/table-codes/sheet"),
   };
 }

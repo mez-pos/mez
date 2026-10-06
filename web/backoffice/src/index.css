@@ -3,3 +3,77 @@
 @config "../../shared/tailwind.preset.ts";
 /* Tailwind scans the app's own tree; shared components live outside it. */
 @source "../../shared";
+
+/*
+ * The sheet of table codes (docs/design/screens/backoffice-floor.md,
+ * ADR-245). It is on paper and nowhere else: off the screen, and when it is
+ * there to print, the only thing on the page. Black on white, in millimetres,
+ * since it is cut out and stuck to a table. Two cards across and three down
+ * on A4.
+ */
+.code-sheet {
+  display: none;
+}
+
+@media print {
+  body:has(> .code-sheet) > *:not(.code-sheet) {
+    display: none !important;
+  }
+
+  body:has(> .code-sheet) {
+    background: white;
+  }
+
+  .code-sheet {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6mm;
+    color: black;
+    background: white;
+    font-family: var(--font-sans, sans-serif);
+  }
+
+  .code-sheet-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 84mm;
+    padding: 5mm;
+    border: 0.3mm dashed black;
+    text-align: center;
+    break-inside: avoid;
+  }
+
+  .code-sheet-venue {
+    font-family: var(--font-serif, serif);
+    font-size: 16pt;
+    font-weight: 600;
+  }
+
+  .code-sheet-ask {
+    margin-top: 1mm;
+    font-size: 10pt;
+  }
+
+  .code-sheet-qr {
+    width: 44mm;
+    height: 44mm;
+    margin: 2mm 0;
+  }
+
+  .code-sheet-table {
+    font-size: 18pt;
+    font-weight: 700;
+  }
+
+  .code-sheet-url {
+    margin-top: 0.5mm;
+    font-size: 8pt;
+  }
+
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+}

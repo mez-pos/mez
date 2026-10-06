@@ -20,6 +20,7 @@ import (
 //	POST /api/v1/tables/{id}/code/renew    a new code; the old one stops working
 //	POST /api/v1/tables/{id}/code/revoke   no code: the sticker leads nowhere
 //	GET  /api/v1/tables/{id}/code/qr       the table's address as a QR code
+//	GET  /api/v1/table-codes/sheet         every table's, to print (ADR-245)
 //
 // A code is a guest's only credential (ADR-206), so all of this is for
 // someone who may change the venue's settings and for nobody else.
@@ -88,6 +89,7 @@ func (s *Server) mountTableCodes(mux *http.ServeMux) {
 	handle("GET /api/v1/table-codes", s.listTableCodes)
 	handle("POST /api/v1/table-codes", s.ensureTableCodes)
 	mux.HandleFunc("/api/v1/table-codes", s.methodNotAllowed)
+	handle("GET /api/v1/table-codes/sheet", s.tableCodeSheet)
 	handle("POST /api/v1/tables/{id}/code/renew", s.renewTableCode)
 	handle("POST /api/v1/tables/{id}/code/revoke", s.revokeTableCode)
 	handle("GET /api/v1/tables/{id}/code/qr", s.tableCodeQR)
@@ -218,6 +220,48 @@ func (s *Server) tableCodeQR(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, s.log, http.StatusOK, tableCodeQRResponse{TableID: id, TableName: name, URL: address + code, SVG: drawn.SVG(qrQuiet)})
+}
+
+// tableCodeSheetResponse is every table that has a code, each with its
+// address drawn, for the sheet an owner prints and cuts up. A table with no
+// code is not on it: there is nothing to stick on that table.
+type tableCodeSheetResponse struct {
+	Tables []tableCodeQRResponse `json:"tables"`
+}
+
+// tableCodeSheet draws them all in one answer: a sheet of thirty is one
+// request and one moment, so every code on the paper was live together.
+func (s *Server) tableCodeSheet(w http.ResponseWriter, r *http.Request) {
+	dev, _ := DeviceFrom(r.Context())
+	session, _ := SessionFrom(r.Context())
+	w.Header().Set("Cache-Control", "no-store")
+	address := s.tableAddress()
+	if address == "" {
+		writeError(w, s.log, http.StatusConflict, CodeNoPublicURL,
+			"The venue has not said where guests reach it. Set public_url in the venue's configuration, then print the codes.")
+		return
+	}
+	list, err := s.tableCodes.List(r.Context(), dev.VenueID)
+	if err != nil {
+		s.writeTableCodeError(w, r, err)
+		return
+	}
+	out := tableCodeSheetResponse{Tables: []tableCodeQRResponse{}}
+	for _, c := range list {
+		if c.Code == "" {
+			continue
+		}
+		drawn, err := qr.Encode([]byte(address + c.Code))
+		if err != nil {
+			s.log.Error("drawing a table's address as a QR failed", "request_id", RequestID(r.Context()), "venue_id", dev.VenueID, "error", err)
+			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+			return
+		}
+		out.Tables = append(out.Tables, tableCodeQRResponse{TableID: c.TableID, TableName: c.TableName, URL: address + c.Code, SVG: drawn.SVG(qrQuiet)})
+	}
+	// Every code the venue has leaves the screen at once: worth a line.
+	s.log.Info("the tables' codes were drawn to print", "venue_id", dev.VenueID, "actor_id", session.Staff.ID, "device_id", dev.ID, "tables", len(out.Tables))
+	writeJSON(w, s.log, http.StatusOK, out)
 }
 
 func (s *Server) writeTableCodeError(w http.ResponseWriter, r *http.Request, err error) {

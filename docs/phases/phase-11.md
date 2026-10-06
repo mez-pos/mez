@@ -220,7 +220,9 @@ Phase 10.
     card on the Floor plan: each table's code and address, Show the QR
     code, Renew and Turn off behind a confirm, Make the missing codes, and
     what it says with no `public_url`. In `backoffice-floor.md`.
-  - [ ] **6c.** The sheet: every table's code to print, cut and stick.
+  - [x] **6c.** The sheet (ADR-245): Print the codes on the card, a card
+    for each table with a code, six to a page of A4, to cut and stick.
+    `GET /api/v1/table-codes/sheet` draws them all in one answer.
   - [ ] **6d.** The limit: how often one table's code may place an order,
     start a payment or be asked, without catching a phone that only tracks.
   - [ ] **6e.** The venue's pickup code (ADR-237), ahead of 5f.

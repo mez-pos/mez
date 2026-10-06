@@ -10,6 +10,14 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The sheet of codes** (ADR-245): seen in the real binary as the page
+  under its print styles at A4's width, eleven cards for a floor of twelve
+  with one code turned off. **Nothing was printed, and no card was scanned
+  by a phone.** Not seen: the browser's own print preview and where its
+  pages break, a venue with a long name, a table with a long name, a printer
+  that is not A4. The sheet is A4 only. A card says the venue, the table and
+  the venue's host: not the code in letters, so a card that will not scan
+  cannot be typed in. Reprinting one table means printing the sheet.
 - **Table codes for the owner** (ADR-243, ADR-244): seen at 1366 and 1920
   in the real binary with `public_url` set: the list, Make the missing
   codes, the QR, Renew and Turn off with their confirms, a table with no

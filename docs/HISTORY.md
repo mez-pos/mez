@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 6a: table codes over the staff API** (ADR-243).
+**Phase 11, Task 6b: the codes in the back office** (ADR-244). "Ordering from the
+table" on the Floor plan: each table's code and address, the QR, Renew and Turn
+off behind a confirm, Make the missing codes. Seen at 1366 and 1920.
+
+Before it, **Phase 11, Task 6a: table codes over the staff API** (ADR-243).
 `/api/v1/table-codes`, renew and revoke a table's code, and its address as a QR,
 for whoever may edit settings. `tablecodes.Revoke`. No screen.
 
