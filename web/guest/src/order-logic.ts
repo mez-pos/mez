@@ -66,7 +66,7 @@ export function placedStorageKey(code: string): string {
   return `mez.placed.${code}`;
 }
 
-const statuses: readonly GuestRoundStatus[] = ["waiting", "sent", "declined"];
+const statuses: readonly GuestRoundStatus[] = ["waiting", "sent", "declined", "unpaid"];
 
 /**
  * Reads a stored order. What is in storage is not trusted, and an order
@@ -112,9 +112,12 @@ function json(text: string | null): unknown {
   }
 }
 
-/** Whether an order still has an answer to wait for. */
+/**
+ * Whether an order still has an answer to wait for: staff's, or, where
+ * guests pay first, its own payment (ADR-225).
+ */
 export function awaitsAnswer(placed: Placed | null): boolean {
-  return placed?.round.status === "waiting";
+  return placed?.round.status === "waiting" || placed?.round.status === "unpaid";
 }
 
 // Words.
@@ -139,6 +142,12 @@ export function statusWords(status: GuestRoundStatus, venue: string): StatusWord
         title: "Your order is with the kitchen",
         line: "You can order more from the menu at any time. You pay when you are ready to leave.",
         brief: "Sent to the kitchen",
+      };
+    case "unpaid":
+      return {
+        title: "Pay to send your order",
+        line: "Nothing is sent to the kitchen until this order is paid for.",
+        brief: "Waiting for payment",
       };
     case "declined":
       return {

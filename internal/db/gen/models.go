@@ -128,6 +128,8 @@ type GuestRound struct {
 	CreatedAt      time.Time
 	DecidedAt      sql.NullTime
 	DecidedBy      sql.NullInt64
+	Prepay         int64
+	DueMinor       sql.NullInt64
 }
 
 type IdempotencyKey struct {

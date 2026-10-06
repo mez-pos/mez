@@ -82,6 +82,11 @@ type Options struct {
 	// is committed: a guest's request arrived or was answered (ADR-211). It
 	// is the hub's Notify, so terminals read the requests again.
 	OnChange func(venueID int64)
+	// CanCharge is true when guests can pay online here: a payment gateway
+	// is set up. Paying first is in effect only then, whatever the venue's
+	// setting says: an order held for a payment nobody can make is an order
+	// that never happens (ADR-225).
+	CanCharge bool
 }
 
 // PrintQueue is the print queue as the order service needs it: woken after
@@ -98,6 +103,7 @@ type Service struct {
 	log       *slog.Logger
 	prints    PrintQueue
 	onChange  func(venueID int64)
+	canCharge bool
 	// accepting is held while a request is accepted, so two tills
 	// accepting at one table cannot each open it a ticket.
 	accepting sync.Mutex
@@ -117,7 +123,7 @@ func New(opts Options) (*Service, error) {
 	if opts.OnChange == nil {
 		opts.OnChange = func(int64) {}
 	}
-	return &Service{db: opts.DB, clock: opts.Clock, publisher: opts.Publisher, log: opts.Log, prints: opts.Prints, onChange: opts.OnChange}, nil
+	return &Service{db: opts.DB, clock: opts.Clock, publisher: opts.Publisher, log: opts.Log, prints: opts.Prints, onChange: opts.OnChange, canCharge: opts.CanCharge}, nil
 }
 
 // Meta is who is asking, from where, and the idempotency key if they sent

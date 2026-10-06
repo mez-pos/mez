@@ -85,8 +85,12 @@ type Querier interface {
 	// cost when it was counted, 0 for not known (ADR-124).
 	ClosingCountsInRange(ctx context.Context, arg ClosingCountsInRangeParams) ([]ClosingCountsInRangeRow, error)
 	CountActiveTablesInArea(ctx context.Context, areaID int64) (int64, error)
+	// The rounds at a table waiting to be paid, placed since a moment ago. One
+	// nobody paid in that time has been walked away from, and does not count.
+	CountUnpaidGuestRounds(ctx context.Context, arg CountUnpaidGuestRoundsParams) (int64, error)
 	// The requests waiting at a table since the shift opened. One left over
-	// from a shift before has lapsed, and does not count.
+	// from a shift before has lapsed, and does not count. A round waiting to be
+	// paid is not a request: staff have nothing to answer.
 	CountWaitingGuestRounds(ctx context.Context, arg CountWaitingGuestRoundsParams) (int64, error)
 	CourseForEdit(ctx context.Context, arg CourseForEditParams) (CourseForEditRow, error)
 	CourseIDsByNumber(ctx context.Context, venueID int64) ([]int64, error)

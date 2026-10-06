@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4f4: unapplied charges on the terminal** (ADR-223). Money a
+**Phase 11, Task 4f5: the gateway's webhook** (ADR-224).
+`POST /order/api/hook/{gateway}` takes a gateway's signed call as a hint to
+`Settle` now; what it says is never read. `gateway_webhook_secret` unset, it is 404.
+
+Before it, **Phase 11, Task 4f4: unapplied charges on the terminal** (ADR-223). Money a
 gateway took that no bill could is first in the terminal's sheet, in danger, and
 turns the pill red, until a person says they refunded or recorded it
 (`POST /api/v1/charges/{id}/resolve`). It moves no money.

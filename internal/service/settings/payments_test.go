@@ -95,3 +95,40 @@ func TestUpdatePaymentsRefuses(t *testing.T) {
 		t.Errorf("an unknown venue: %v", err)
 	}
 }
+
+// TestPayMode: pay at the table until the owner says otherwise; a save that
+// names no mode leaves it as it is; and a mode there is not is refused.
+func TestPayMode(t *testing.T) {
+	s, _ := newService(t)
+	ctx := context.Background()
+	if got, _ := s.Payments(ctx, 1); got.Mode != svcorder.PayAtTable {
+		t.Fatalf("a new venue's mode is %q", got.Mode)
+	}
+	if err := s.UpdatePayments(ctx, 1, PaymentsInput{UPIAddress: "cafe@okbank", Mode: svcorder.PayFirst}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.Payments(ctx, 1); got.Mode != svcorder.PayFirst {
+		t.Fatalf("mode = %q, want prepay", got.Mode)
+	}
+	// A form that does not show the mode saves the address and no mode.
+	if err := s.UpdatePayments(ctx, 1, PaymentsInput{UPIAddress: "other@okbank"}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.Payments(ctx, 1); got.Mode != svcorder.PayFirst || got.UPIAddress != "other@okbank" {
+		t.Errorf("after a save with no mode: %+v", got.PaymentsInput)
+	}
+	err := s.UpdatePayments(ctx, 1, PaymentsInput{UPIAddress: "other@okbank", Mode: "tab"})
+	var inv *Invalid
+	if !errors.As(err, &inv) || inv.Field != "mode" {
+		t.Errorf("a mode there is not: %v", err)
+	}
+	if got, _ := s.Payments(ctx, 1); got.Mode != svcorder.PayFirst {
+		t.Errorf("a refused update changed the mode to %q", got.Mode)
+	}
+	if err := s.UpdatePayments(ctx, 1, PaymentsInput{UPIAddress: "other@okbank", Mode: svcorder.PayAtTable}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.Payments(ctx, 1); got.Mode != svcorder.PayAtTable {
+		t.Errorf("mode = %q, want pay at the table", got.Mode)
+	}
+}

@@ -10,6 +10,9 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Paying first** (ADR-225): not in effect anywhere but tests: `CanCharge` is
+  not wired in `cmd/mez` until 4e5b. `payment.mode` can be set only through
+  the API. An unpaid round cannot be paid yet, and nothing ends one.
 - **The gateway's webhook** (ADR-224): no call from the real Razorpay has been
   received, and the path was not run through the relay. Set wrong, it fails
   quietly: a 401 and a warning each time, and payments land by the sweep.

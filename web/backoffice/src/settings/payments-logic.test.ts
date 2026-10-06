@@ -12,7 +12,14 @@ import {
   type PaymentsForm,
 } from "./payments-logic";
 
-const stored: PaymentSettingsResponse = { upi_address: "cafe@okbank", upi_payee: "", venue_name: "Demo Cafe", currency: "INR", max_payee: 60 };
+const stored: PaymentSettingsResponse = {
+  upi_address: "cafe@okbank",
+  upi_payee: "",
+  venue_name: "Demo Cafe",
+  currency: "INR",
+  max_payee: 60,
+  can_charge: false,
+};
 const form = (change: Partial<PaymentsForm> = {}): PaymentsForm => ({ address: "cafe@okbank", payee: "", ...change });
 
 describe("the form and what is sent", () => {

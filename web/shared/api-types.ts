@@ -282,13 +282,18 @@ export type TunnelState =
 export type GuestRoundStatus =
   | 'waiting'
   | 'sent'
-  | 'declined';
+  | 'declined'
+  | 'unpaid';
 
 export type ChargeStatus =
   | 'open'
   | 'paid'
   | 'unapplied'
   | 'failed';
+
+export type PayMode =
+  | 'pay_at_table'
+  | 'prepay';
 
 export type ChargeResolution =
   | 'refunded'
@@ -853,6 +858,7 @@ export interface GuestRoundResponse {
   status: GuestRoundStatus;
   lines: GuestRoundLineResponse[];
   subtotal: Money;
+  due?: Money;
 }
 
 export interface GuestRoundLineResponse {
@@ -918,14 +924,17 @@ export interface ResolveChargeRequest {
 export interface PaymentSettingsRequest {
   upi_address: string;
   upi_payee: string;
+  mode?: PayMode;
 }
 
 export interface PaymentSettingsResponse {
   upi_address: string;
   upi_payee: string;
+  mode?: PayMode;
   venue_name: string;
   currency: string;
   max_payee: number;
+  can_charge: boolean;
 }
 
 export interface GuestRequestsResponse {

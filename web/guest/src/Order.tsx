@@ -12,6 +12,7 @@ import { statusWords, type Placed } from "./order-logic";
 
 const tones: Readonly<Record<GuestRoundStatus, string>> = {
   waiting: "border-chip-warning-border bg-chip-warning-bg text-chip-warning-fg",
+  unpaid: "border-chip-warning-border bg-chip-warning-bg text-chip-warning-fg",
   sent: "border-line bg-accent-tint text-accent-text",
   declined: "border-line bg-danger-tint text-danger",
 };

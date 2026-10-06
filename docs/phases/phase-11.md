@@ -102,9 +102,16 @@ Phase 10.
     - [ ] **4e5.** The mode, prepay or pay at the table. **After 4f**
       (ADR-220): prepay wants a payment that confirms itself, which is a
       gateway's. In a prepay venue a round is held until its charge is paid,
-      then sent with no acceptance (ADR-209). Decide who closes a bill
-      nobody on staff touched (a sold stock movement needs a real staff id,
-      see KNOWN.md).
+      then sent with no acceptance (ADR-209). Split in four (ADR-225):
+      - [x] **4e5a.** The setting, `payment.mode`, and a round held unpaid:
+        priced with its tax by the bill's own projection (`order.Adding`),
+        no order and nothing for staff. Not yet in effect in `cmd/mez`.
+      - [ ] **4e5b.** A charge for an unpaid round, and the round becoming
+        lines on a ticket, sent, and paid for, when the gateway says paid.
+        `CanCharge` wired in `cmd/mez`, which is what puts the mode in effect.
+      - [ ] **4e5c.** The phone: Place Order, pay, and back to an order sent.
+      - [ ] **4e5d.** The owner's choice of mode in the back office, beside
+        the UPI address, saying when it is in effect.
   - [ ] **4f.** The gateway adapter: one interface, with Razorpay, Cashfree
     and Stripe behind it. Split in six (ADR-220):
     - [x] **4f1.** The interface (`internal/gateway`), and the service that

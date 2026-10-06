@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/byjoellobo/mez/internal/auth"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 	"github.com/byjoellobo/mez/internal/service/settings"
 )
 
@@ -14,6 +15,8 @@ import (
 type paymentSettingsRequest struct {
 	UPIAddress string `json:"upi_address"`
 	UPIPayee   string `json:"upi_payee"`
+	// Mode is pay_at_table or prepay (ADR-225). Left out, it is not changed.
+	Mode svcorder.PayMode `json:"mode,omitempty"`
 }
 
 // paymentSettingsResponse is the payment settings as they stand. venue_name
@@ -24,6 +27,9 @@ type paymentSettingsResponse struct {
 	VenueName string `json:"venue_name"`
 	Currency  string `json:"currency"`
 	MaxPayee  int    `json:"max_payee"`
+	// CanCharge is whether guests can pay online here: a payment gateway
+	// is set up. Paying first is in effect only with it, whatever mode says.
+	CanCharge bool `json:"can_charge"`
 }
 
 func (s *Server) mountPaymentSettings(mux *http.ServeMux) {
@@ -57,5 +63,6 @@ func (s *Server) writePaymentSettings(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, s.log, http.StatusOK, paymentSettingsResponse{
 		paymentSettingsRequest: paymentSettingsRequest(p.PaymentsInput),
 		VenueName:              p.VenueName, Currency: p.Currency, MaxPayee: p.MaxPayee,
+		CanCharge: s.charges != nil,
 	})
 }

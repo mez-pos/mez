@@ -105,6 +105,7 @@ describe("awaitsAnswer", () => {
   it("is true only while waiting", () => {
     const of = (status: GuestRoundResponse["status"]): Placed => ({ key: "k", request, round: { ...round, status }, at: 0 });
     expect(awaitsAnswer(of("waiting"))).toBe(true);
+    expect(awaitsAnswer(of("unpaid"))).toBe(true);
     expect(awaitsAnswer(of("sent"))).toBe(false);
     expect(awaitsAnswer(of("declined"))).toBe(false);
     expect(awaitsAnswer(null)).toBe(false);
@@ -118,6 +119,7 @@ describe("statusWords", () => {
     expect(waiting.line).toContain("Nothing is being made yet");
     expect(statusWords("declined", "Demo Cafe").line).toContain("ask a member of staff");
     expect(statusWords("sent", "Demo Cafe").brief).toBe("Sent to the kitchen");
+    expect(statusWords("unpaid", "Demo Cafe").line).toContain("until this order is paid for");
   });
 });
 

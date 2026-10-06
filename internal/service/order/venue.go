@@ -63,6 +63,10 @@ const (
 	SettingUPIAddress = "payment.upi_address"
 	SettingUPIPayee   = "payment.upi_payee"
 
+	// SettingPayMode is when a guest ordering from a phone pays: PayAtTable,
+	// the default, or PayFirst (ADR-225).
+	SettingPayMode = "payment.mode"
+
 	// GSTMaxInvoiceNo is the longest invoice number GST allows.
 	GSTMaxInvoiceNo = 16
 )
@@ -90,6 +94,7 @@ type venue struct {
 	Credits   invoice.Series // the credit note series
 	LateAfter time.Duration
 	Seller    order.InvoiceSeller // as an invoice issued now names the venue
+	PayMode   PayMode             // when a guest ordering from a phone pays
 }
 
 // VenueTaxes is how the venue's orders are taxed, read through q, the same
@@ -147,6 +152,7 @@ func venueFrom(row gen.Venue, settings map[string]string) (venue, error) {
 		ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, Series: series, Credits: credits,
 		LateAfter: lateAfter(settings[SettingTicketLateMinutes]),
 		Seller:    sellerFor(row, settings),
+		PayMode:   payModeOf(settings[SettingPayMode]),
 	}, nil
 }
 
@@ -322,4 +328,29 @@ func (s *Service) UPIAccount(ctx context.Context, venueID int64) (payment.UPIAcc
 		}
 	}
 	return account, nil
+}
+
+// PayMode is when a guest ordering from their phone pays.
+type PayMode string
+
+// The modes. The strings are what is stored and sent.
+const (
+	// PayAtTable: order now, pay when leaving. The first order of a
+	// sitting is a request staff accept (ADR-209).
+	PayAtTable PayMode = "pay_at_table"
+	// PayFirst: an order is sent to the kitchen once it is paid for, and
+	// needs no acceptance: paying is what says someone is there.
+	PayFirst PayMode = "prepay"
+)
+
+// PayModes is every mode, for the generated vocabulary.
+func PayModes() []PayMode { return []PayMode{PayAtTable, PayFirst} }
+
+// payModeOf reads the setting. Unset, or anything this build does not
+// know, is PayAtTable: the mode that holds nobody's order for a payment.
+func payModeOf(stored string) PayMode {
+	if PayMode(strings.TrimSpace(stored)) == PayFirst {
+		return PayFirst
+	}
+	return PayAtTable
 }

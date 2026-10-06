@@ -11,6 +11,7 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"github.com/byjoellobo/mez/internal/db/gen"
 	"github.com/byjoellobo/mez/internal/domain/order"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
@@ -254,5 +255,47 @@ func TestGuestOrdersNeedTheOption(t *testing.T) {
 	}
 	if strings.Contains(rec.Body.String(), "<title>") {
 		t.Error("the app's page answered an API call")
+	}
+}
+
+// TestGuestOrderWherePayingComesFirst: the answer says unpaid and what to
+// pay, tax and all, and nothing is in front of staff or on any bill.
+func TestGuestOrderWherePayingComesFirst(t *testing.T) {
+	g := newGuestWorld(t)
+	g.openTestShift(t)
+	ctx := context.Background()
+	if err := g.db.WriteTx(ctx, func(q *gen.Queries) error {
+		return q.SetSetting(ctx, gen.SetSettingParams{VenueID: 1, Key: svcorder.SettingPayMode, Value: string(svcorder.PayFirst), UpdatedAt: seededAt})
+	}); err != nil {
+		t.Fatal(err)
+	}
+	orders, err := svcorder.New(svcorder.Options{DB: g.db, CanCharge: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	g.rebuild(t, WithMenus(g.db), WithGuests(g.codes, "/order/"), WithGuestOrders(orders))
+	_, _, body := g.guest(http.MethodGet, "/order/api/t/"+g.code+"/menu")
+	var m guestMenuResponse
+	if err := json.Unmarshal([]byte(body), &m); err != nil {
+		t.Fatal(err)
+	}
+	o := &orderingWorld{guestWorld: g, orders: orders, white: m.Items[0].ID, oat: m.ModifierGroups[0].Modifiers[1].ID}
+
+	rec := o.place("k1", 2)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("status %d, body %s", rec.Code, rec.Body)
+	}
+	got := decodeRound(t, rec)
+	// 2 x (180 + 40) = 440.00 at an untaxed venue, so 440.00 to pay.
+	if got.Status != svcorder.RoundUnpaid || got.Due == nil || got.Due.Minor != 44000 || got.Subtotal.Minor != 44000 {
+		t.Errorf("round = %+v, due %v", got, got.Due)
+	}
+	if bill, _ := o.bill(t); bill.Open {
+		t.Error("an unpaid round is on the bill")
+	}
+	// Where guests do not pay first, the answer carries no due at all.
+	plain := newOrderingWorld(t)
+	if rec := plain.place("k1", 1); strings.Contains(rec.Body.String(), `"due"`) {
+		t.Errorf("a request carries a due: %s", rec.Body)
 	}
 }

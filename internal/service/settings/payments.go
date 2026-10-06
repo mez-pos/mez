@@ -19,6 +19,10 @@ type PaymentsInput struct {
 	// UPIPayee is the name a guest's UPI app shows for the payment. Empty
 	// takes the venue's name.
 	UPIPayee string `json:"upi_payee"`
+	// Mode is when a guest ordering from a phone pays: pay_at_table, or
+	// prepay (ADR-225). Empty leaves it as it is, so a form that does not
+	// show it cannot change it by saving.
+	Mode svcorder.PayMode `json:"mode,omitempty"`
 }
 
 // Payments is the payment settings as they stand, and what the screen needs
@@ -44,6 +48,7 @@ func (s *Service) Payments(ctx context.Context, venueID int64) (Payments, error)
 		PaymentsInput: PaymentsInput{
 			UPIAddress: strings.TrimSpace(stored[svcorder.SettingUPIAddress]),
 			UPIPayee:   strings.TrimSpace(stored[svcorder.SettingUPIPayee]),
+			Mode:       modeOf(stored[svcorder.SettingPayMode]),
 		},
 		VenueName: v.Name, Currency: v.Currency, MaxPayee: payment.MaxUPIPayee,
 	}, nil
@@ -56,10 +61,14 @@ func (s *Service) UpdatePayments(ctx context.Context, venueID int64, in Payments
 	if _, _, err := rawVenue(ctx, s.db.Queries(), venueID); err != nil {
 		return err
 	}
-	err := s.Set(ctx, venueID, map[string]string{
+	values := map[string]string{
 		svcorder.SettingUPIAddress: in.UPIAddress,
 		svcorder.SettingUPIPayee:   in.UPIPayee,
-	})
+	}
+	if in.Mode != "" {
+		values[svcorder.SettingPayMode] = string(in.Mode)
+	}
+	err := s.Set(ctx, venueID, values)
 	var inv *Invalid
 	if !errors.As(err, &inv) {
 		return err
@@ -69,6 +78,8 @@ func (s *Service) UpdatePayments(ctx context.Context, venueID int64, in Payments
 		return &Invalid{"upi_address", inv.Message}
 	case svcorder.SettingUPIPayee:
 		return &Invalid{"upi_payee", inv.Message}
+	case svcorder.SettingPayMode:
+		return &Invalid{"mode", "Choose pay at the table, or pay first."}
 	}
 	return err
 }
@@ -88,4 +99,13 @@ func upiPayee(v string) string {
 		return "The name is one line."
 	}
 	return ""
+}
+
+// modeOf is the stored mode as the order service reads it: unset, or
+// anything it does not know, is pay at the table.
+func modeOf(stored string) svcorder.PayMode {
+	if svcorder.PayMode(strings.TrimSpace(stored)) == svcorder.PayFirst {
+		return svcorder.PayFirst
+	}
+	return svcorder.PayAtTable
 }

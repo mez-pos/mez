@@ -8,28 +8,29 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4d, 4e1 to 4e4 and 4f1 to 4f5 done. 4e5 waits for 4f. (The walks are owed.)
+4a to 4d, 4e1 to 4e4, 4e5a and 4f1 to 4f5 done. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 4f5: the gateway's webhook** (ADR-224).
-`POST /order/api/hook/{gateway}` takes a gateway's signed call as a hint to
-`Settle` now; what it says is never read. `gateway_webhook_secret` unset, it is 404.
+**Phase 11, Task 4e5a: a round held until it is paid** (ADR-225). `payment.mode`
+is `pay_at_table` or `prepay`. Where guests pay first and can, `PlaceRound` keeps
+the round `unpaid` with `Due`, what it adds to the bill by `order.Adding`. It is no
+order and nothing for staff. **Not in effect in `cmd/mez`: `CanCharge` is unwired.**
 
 ## Next task
 
-**The owner should first make one real charge**, which nothing has yet: Razorpay
-test keys in `MEZ_GATEWAY_KEY_ID` and `MEZ_GATEWAY_KEY_SECRET`, `MEZ_GATEWAY=razorpay`,
-Pay online on a phone, a test card. If it does not land, that is the next task.
+**No real charge has been made yet** (ADR-221): Razorpay test keys, Pay online on a
+phone, a test card. Building 4e5b on an adapter nobody has seen work is a risk.
 
-**Then Phase 11, Task 4f6: Cashfree, Stripe, and the owner's choice.** Read
-ADR-220 to ADR-224 and each provider's own documentation, not memory.
-- Two more adapters behind `gateway.Gateway`, each tested against a stand-in as
-  Razorpay's is: a hosted page for one amount, and its status. `config.validGateway`
-  and `newGateway` in `cmd/mez` name them.
-- Three sessions at least: split first. Ask the owner whether both are wanted now:
-  one gateway with a real charge behind it is worth more than three without.
-  **4e5, the prepay mode, may come first.**
+**Phase 11, Task 4e5b: charging an unpaid round.** Read ADR-210, ADR-211, ADR-220,
+ADR-225, `internal/service/charges/charges.go`. Likely two sessions: split first.
+- A charge is for a ticket today (`gateway_charges.order_id NOT NULL`). It has to
+  be for a round too: a migration that rebuilds the table, a second way to start.
+- Applying: open the ticket if the table has none, append the round's lines as
+  stored and send them (as `AcceptRound` does), then tender. Each step idempotent.
+- Decide what is tendered when the bill moved since the round was priced and the
+  rise is a paisa off `due_minor`. Never tender more than was charged.
+- Then wire `CanCharge` in `cmd/mez`. Not before.
 
 ## Known broken / in progress
 
@@ -55,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e4, 4f1 to 4f5 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4d, 4e1 to 4e4, 4e5a, 4f1 to 4f5 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

@@ -3,21 +3,28 @@
 
 -- name: CreateGuestRound :one
 INSERT INTO guest_rounds (public_id, venue_id, table_id, status, order_id, lines, subtotal_minor, currency,
-                          idempotency_key, fingerprint, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          idempotency_key, fingerprint, created_at, prepay, due_minor)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id;
 
 -- name: GuestRoundByKey :one
 -- The round a key was first sent with, as it stands now.
-SELECT id, public_id, table_id, status, order_id, lines, subtotal_minor, currency, fingerprint
+SELECT id, public_id, table_id, status, order_id, lines, subtotal_minor, currency, fingerprint, prepay, due_minor
 FROM guest_rounds
 WHERE venue_id = ? AND idempotency_key = ?;
 
 -- name: CountWaitingGuestRounds :one
 -- The requests waiting at a table since the shift opened. One left over
--- from a shift before has lapsed, and does not count.
+-- from a shift before has lapsed, and does not count. A round waiting to be
+-- paid is not a request: staff have nothing to answer.
 SELECT count(*) FROM guest_rounds
-WHERE table_id = ? AND status = 'waiting' AND created_at >= sqlc.arg(since);
+WHERE table_id = ? AND status = 'waiting' AND prepay = 0 AND created_at >= sqlc.arg(since);
+
+-- name: CountUnpaidGuestRounds :one
+-- The rounds at a table waiting to be paid, placed since a moment ago. One
+-- nobody paid in that time has been walked away from, and does not count.
+SELECT count(*) FROM guest_rounds
+WHERE table_id = ? AND status = 'waiting' AND prepay = 1 AND created_at >= sqlc.arg(since);
 
 -- name: WaitingGuestRounds :many
 -- The requests staff have still to answer, oldest first, with each one's
@@ -25,11 +32,12 @@ WHERE table_id = ? AND status = 'waiting' AND created_at >= sqlc.arg(since);
 SELECT r.id, r.public_id, r.table_id, t.name AS table_name, r.lines, r.subtotal_minor, r.currency, r.created_at
 FROM guest_rounds r
 JOIN tables t ON t.id = r.table_id
-WHERE r.venue_id = ? AND r.status = 'waiting' AND r.created_at >= sqlc.arg(since)
+WHERE r.venue_id = ? AND r.status = 'waiting' AND r.prepay = 0 AND r.created_at >= sqlc.arg(since)
 ORDER BY r.created_at, r.id;
 
 -- name: GuestRoundByPublicID :one
 SELECT r.id, r.public_id, r.venue_id, r.table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
+       r.prepay, r.due_minor,
        CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id
 FROM guest_rounds r
 LEFT JOIN orders o ON o.id = r.order_id

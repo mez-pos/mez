@@ -258,7 +258,9 @@ func (s *Service) deciding(ctx context.Context, meta Meta, publicID string) (Met
 // round reads a request, if it is at the caller's venue.
 func (s *Service) round(ctx context.Context, venueID int64, publicID string) (gen.GuestRoundByPublicIDRow, error) {
 	row, err := s.db.Queries().GuestRoundByPublicID(ctx, publicID)
-	if isNoRows(err) || (err == nil && row.VenueID != venueID) {
+	// A round waiting to be paid is not a request: there is nothing for
+	// staff to accept or decline, and to them it is not there.
+	if isNoRows(err) || (err == nil && (row.VenueID != venueID || row.Prepay == 1)) {
 		return gen.GuestRoundByPublicIDRow{}, fmt.Errorf("%w: %q", ErrRoundNotFound, publicID)
 	}
 	if err != nil {

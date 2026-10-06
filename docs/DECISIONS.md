@@ -7005,3 +7005,58 @@ land by the sweep. The path was not run through the relay. The real binary was s
 a signed call (204) and a forged, an unsigned and a tampered one (401 each), with no
 secret in its log; **no call from the real Razorpay has been received**, so its
 payload's shape here is its documentation's.
+
+## ADR-225 - Paying first: a round held as a row, asked for the exact amount it adds to the bill
+2026-10 · Status: accepted. Phase 11, Task 4e5a.
+Context: Task 4 asks for "prepay-required and pay-at-table modes, per venue", and
+ADR-209 says a prepaid order goes straight to the kitchen with no acceptance. With a
+gateway (ADR-220) a payment can confirm itself, so a round can wait for its payment
+and for nothing else. The question STATE left was what a round is between Place
+Order and the payment.
+Decision:
+  - **Task 4e5 is split in four**, listed in the phase file: 4e5a the setting and
+    the held round, this; 4e5b charging it and turning it into an order; 4e5c the
+    phone; 4e5d the owner's control.
+  - **It is a row, as a request is, and not a ticket.** Putting the lines on the
+    ticket unsent, and charging the ticket's balance, would have reused the charge
+    as it is. But most rounds that are placed and never paid are a guest changing
+    their mind, and each would leave an open ticket on the floor and voided lines
+    in the Z-report to get rid of it. ADR-210 kept unaccepted requests out of the
+    books for that reason; an unpaid round is kept out for the same one.
+  - **It is stored as a waiting round marked `prepay`** (migration 00043), and told
+    as a status of its own, `unpaid`. The status column's check is not rebuilt.
+  - **What it asks for is exact, and is the bill's own figure.** `order.Adding`
+    projects the table's ticket with the round's lines added, or the lines as the
+    first on a ticket of their own, and answers what the total rises by. It is the
+    same projection that bills the lines when they are added, so there is one
+    calculation. A test shows why: 5% GST on 33.00 is two halves of 0.825 that each
+    round to 0.82, so the bill says 34.64 where any second sum would say 34.65.
+    The amount is kept on the round as `due_minor`.
+  - **A ticket that would not take the lines refuses the round before anyone is
+    asked for money**: on hold, or invoiced.
+  - **A seated table still pays first.** Where paying comes first it comes first
+    for every round, whoever opened the ticket.
+  - **An unpaid round is nothing to staff.** It is not listed, tells no terminal,
+    and cannot be accepted or declined: to them it is not there. Only its payment
+    moves it.
+  - **The mode is a setting, `payment.mode`**, `pay_at_table` by default or
+    `prepay`, on the payment settings beside the UPI address. A save that names no
+    mode leaves it, so the back office card of ADR-216, which does not show it yet,
+    cannot change it.
+  - **It is in effect only where guests can pay online** (`Options.CanCharge`): a
+    round held for a payment nobody can make is an order that never happens. The
+    setting on with no gateway is the venue as it was. The settings answer says
+    `can_charge`, for the card to explain.
+  - **`CanCharge` is not wired in `cmd/mez` yet.** Until 4e5b can charge a held
+    round, turning the mode on would hold every order unpayable. It is in effect
+    only in tests.
+  - **At most five unpaid rounds count against a table, for thirty minutes each.**
+    They are counted apart from requests, so neither crowds the other out.
+Because: the money a guest is asked for and the money the bill then shows must be
+the same number from the same code, and an order nobody paid for should leave no
+trace an owner has to explain.
+Cost: between the asking and the paying the table's ticket can change, and what the
+round adds may then differ by a paisa of rounding from what was paid; 4e5b has to
+decide what is tendered then, and say so. A held round is priced against the ticket
+as it stood, with a discount staff applied meanwhile not reaching it. Nothing ends
+an unpaid round; it stops counting after thirty minutes and is never listed.

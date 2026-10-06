@@ -73,6 +73,10 @@ type guestRoundResponse struct {
 	Lines  []guestRoundLineResponse `json:"lines"`
 	// Subtotal is before any taxes and charges, which are on the bill.
 	Subtotal money.Amount `json:"subtotal"`
+	// Due is what an unpaid round asks the guest to pay before it is sent:
+	// what it adds to the table's bill, taxes and all (ADR-225). Absent
+	// unless the status is unpaid.
+	Due *money.Amount `json:"due,omitempty"`
 }
 
 func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
@@ -113,6 +117,10 @@ func toGuestRoundResponse(round svcorder.Round) (guestRoundResponse, error) {
 	out := guestRoundResponse{
 		ID: round.PublicID, Status: round.Status, Subtotal: round.Subtotal,
 		Lines: make([]guestRoundLineResponse, len(round.Lines)),
+	}
+	if round.Status == svcorder.RoundUnpaid {
+		due := round.Due
+		out.Due = &due
 	}
 	for i, l := range round.Lines {
 		total, err := menu.LineValue(l)

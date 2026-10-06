@@ -11,9 +11,28 @@ import (
 	"time"
 )
 
+const countUnpaidGuestRounds = `-- name: CountUnpaidGuestRounds :one
+SELECT count(*) FROM guest_rounds
+WHERE table_id = ? AND status = 'waiting' AND prepay = 1 AND created_at >= ?2
+`
+
+type CountUnpaidGuestRoundsParams struct {
+	TableID int64
+	Since   time.Time
+}
+
+// The rounds at a table waiting to be paid, placed since a moment ago. One
+// nobody paid in that time has been walked away from, and does not count.
+func (q *Queries) CountUnpaidGuestRounds(ctx context.Context, arg CountUnpaidGuestRoundsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUnpaidGuestRounds, arg.TableID, arg.Since)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countWaitingGuestRounds = `-- name: CountWaitingGuestRounds :one
 SELECT count(*) FROM guest_rounds
-WHERE table_id = ? AND status = 'waiting' AND created_at >= ?2
+WHERE table_id = ? AND status = 'waiting' AND prepay = 0 AND created_at >= ?2
 `
 
 type CountWaitingGuestRoundsParams struct {
@@ -22,7 +41,8 @@ type CountWaitingGuestRoundsParams struct {
 }
 
 // The requests waiting at a table since the shift opened. One left over
-// from a shift before has lapsed, and does not count.
+// from a shift before has lapsed, and does not count. A round waiting to be
+// paid is not a request: staff have nothing to answer.
 func (q *Queries) CountWaitingGuestRounds(ctx context.Context, arg CountWaitingGuestRoundsParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countWaitingGuestRounds, arg.TableID, arg.Since)
 	var count int64
@@ -33,8 +53,8 @@ func (q *Queries) CountWaitingGuestRounds(ctx context.Context, arg CountWaitingG
 const createGuestRound = `-- name: CreateGuestRound :one
 
 INSERT INTO guest_rounds (public_id, venue_id, table_id, status, order_id, lines, subtotal_minor, currency,
-                          idempotency_key, fingerprint, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          idempotency_key, fingerprint, created_at, prepay, due_minor)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id
 `
 
@@ -50,6 +70,8 @@ type CreateGuestRoundParams struct {
 	IdempotencyKey string
 	Fingerprint    string
 	CreatedAt      time.Time
+	Prepay         int64
+	DueMinor       sql.NullInt64
 }
 
 // A guest's rounds (ADR-210). Written only inside the transaction that
@@ -67,6 +89,8 @@ func (q *Queries) CreateGuestRound(ctx context.Context, arg CreateGuestRoundPara
 		arg.IdempotencyKey,
 		arg.Fingerprint,
 		arg.CreatedAt,
+		arg.Prepay,
+		arg.DueMinor,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -106,7 +130,7 @@ func (q *Queries) DecideGuestRound(ctx context.Context, arg DecideGuestRoundPara
 }
 
 const guestRoundByKey = `-- name: GuestRoundByKey :one
-SELECT id, public_id, table_id, status, order_id, lines, subtotal_minor, currency, fingerprint
+SELECT id, public_id, table_id, status, order_id, lines, subtotal_minor, currency, fingerprint, prepay, due_minor
 FROM guest_rounds
 WHERE venue_id = ? AND idempotency_key = ?
 `
@@ -126,6 +150,8 @@ type GuestRoundByKeyRow struct {
 	SubtotalMinor int64
 	Currency      string
 	Fingerprint   string
+	Prepay        int64
+	DueMinor      sql.NullInt64
 }
 
 // The round a key was first sent with, as it stands now.
@@ -142,12 +168,15 @@ func (q *Queries) GuestRoundByKey(ctx context.Context, arg GuestRoundByKeyParams
 		&i.SubtotalMinor,
 		&i.Currency,
 		&i.Fingerprint,
+		&i.Prepay,
+		&i.DueMinor,
 	)
 	return i, err
 }
 
 const guestRoundByPublicID = `-- name: GuestRoundByPublicID :one
 SELECT r.id, r.public_id, r.venue_id, r.table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
+       r.prepay, r.due_minor,
        CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id
 FROM guest_rounds r
 LEFT JOIN orders o ON o.id = r.order_id
@@ -165,6 +194,8 @@ type GuestRoundByPublicIDRow struct {
 	SubtotalMinor int64
 	Currency      string
 	CreatedAt     time.Time
+	Prepay        int64
+	DueMinor      sql.NullInt64
 	OrderPublicID string
 }
 
@@ -182,6 +213,8 @@ func (q *Queries) GuestRoundByPublicID(ctx context.Context, publicID string) (Gu
 		&i.SubtotalMinor,
 		&i.Currency,
 		&i.CreatedAt,
+		&i.Prepay,
+		&i.DueMinor,
 		&i.OrderPublicID,
 	)
 	return i, err
@@ -214,7 +247,7 @@ const waitingGuestRounds = `-- name: WaitingGuestRounds :many
 SELECT r.id, r.public_id, r.table_id, t.name AS table_name, r.lines, r.subtotal_minor, r.currency, r.created_at
 FROM guest_rounds r
 JOIN tables t ON t.id = r.table_id
-WHERE r.venue_id = ? AND r.status = 'waiting' AND r.created_at >= ?2
+WHERE r.venue_id = ? AND r.status = 'waiting' AND r.prepay = 0 AND r.created_at >= ?2
 ORDER BY r.created_at, r.id
 `
 

@@ -261,6 +261,7 @@ func generate() (*ts.Generator, error) {
 		{"TunnelState", TunnelOff, asStrings(TunnelStates())},
 		{"GuestRoundStatus", svcorder.RoundWaiting, asStrings(svcorder.RoundStatuses())},
 		{"ChargeStatus", charges.Open, asStrings(charges.Statuses())},
+		{"PayMode", svcorder.PayAtTable, asStrings(svcorder.PayModes())},
 		{"ChargeResolution", charges.Refunded, asStrings(charges.Resolutions())},
 		{"DeviceKind", auth.KindTerminal, asStrings([]auth.DeviceKind{
 			auth.KindTerminal, auth.KindKitchen, auth.KindBackOffice, auth.KindGuest,
