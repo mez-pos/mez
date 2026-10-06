@@ -38,9 +38,14 @@ Handed over, which closes the ticket. Task 5 is done. **Not seen in a browser.**
   (259); a failing PIN hard-locks until a manager or `mez unlock` clears it,
   six digits for powerful roles (260); a tip over the venue's ceiling needs
   a manager (261); a guest's phone holds a session for the sitting (262).
-  Only the LAN's plain HTTP is left, for phase 12. **Not seen in a browser:**
-  the People screen's lock, the tip approval sheet, the guest app's session
-  handling and "ask staff" card. Walk them before phase 12.
+  Only the LAN's plain HTTP is left, for phase 12. Walked in a browser
+  against the dev venue on 2026-10-07: a first phone lands, orders, is
+  accepted and reads the bill; a second phone at the open table sees "Ask a
+  member of staff", its order is a "New phone at Table T3" request, and
+  acceptance hands it a session; Kabir hard-locked shows Locked on People
+  and Unlock lets him sign in; a ₹100 tip on ₹150 warns, opens the approval
+  sheet, Priya approves, the event carries her id and Audit lists it. No
+  console errors on any screen.
 
 - **Between phases (ADR-255): the screens now fit 1024 to 2560 wide and 768
   tall.** Fluid `w-side`, `w-rail`, `w-panel` widths, auto-fill card grids, a

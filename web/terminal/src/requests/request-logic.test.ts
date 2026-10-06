@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { arrived, choicesOf, dishCount, gatewayName, methodWord, owesOtherwise, pillLabel, requestHeading, saidAgo, waited, wantingTables } from "./request-logic";
+import {
+  arrived,
+  choicesOf,
+  dishCount,
+  gatewayName,
+  methodWord,
+  owesOtherwise,
+  pillLabel,
+  requestHeading,
+  saidAgo,
+  waited,
+  wantingTables,
+} from "./request-logic";
 
 const ids = (...list: string[]) => list.map((id) => ({ id }));
 

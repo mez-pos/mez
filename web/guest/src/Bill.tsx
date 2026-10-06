@@ -74,8 +74,8 @@ export function Bill({ code, table, onBack, onReceipt }: BillProps) {
                 <div role="status" className="w-full max-w-sm rounded-card border border-line bg-raised p-5 text-left shadow-rest">
                   <h2 className="font-serif text-lg">Ask a member of staff to accept your first order</h2>
                   <p className="mt-2 text-base text-fg-2">
-                    The table&apos;s bill shows on this phone once staff have let it join the table. Order from the menu and they will be asked, or ask
-                    them in person.
+                    The table&apos;s bill shows on this phone once staff have let it join the table. Order from the menu and they will be asked, or ask them in
+                    person.
                   </p>
                 </div>
                 <Button variant="secondary" onClick={() => void query.refetch()}>
