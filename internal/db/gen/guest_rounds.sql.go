@@ -257,6 +257,51 @@ func (q *Queries) GuestRoundByPublicID(ctx context.Context, publicID string) (Gu
 	return i, err
 }
 
+const pickupCodesOfDay = `-- name: PickupCodesOfDay :many
+SELECT o.id AS order_id, CAST(r.pickup_code AS TEXT) AS pickup_code
+FROM guest_rounds r
+JOIN orders o ON o.id = r.order_id
+WHERE r.venue_id = ?1 AND r.pickup_code IS NOT NULL
+  AND (o.status != 'closed' OR o.opened_at >= ?2 OR o.closed_at >= ?2)
+`
+
+type PickupCodesOfDayParams struct {
+	VenueID int64
+	Since   time.Time
+}
+
+type PickupCodesOfDayRow struct {
+	OrderID    int64
+	PickupCode string
+}
+
+// The pickup code of each order to collect on the till's list of the day
+// (OrdersOfDay): still out, or opened or closed since the day began. One
+// handed over keeps the code it was called by, though the code is then free
+// for another order (ADR-249).
+func (q *Queries) PickupCodesOfDay(ctx context.Context, arg PickupCodesOfDayParams) ([]PickupCodesOfDayRow, error) {
+	rows, err := q.db.QueryContext(ctx, pickupCodesOfDay, arg.VenueID, arg.Since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PickupCodesOfDayRow{}
+	for rows.Next() {
+		var i PickupCodesOfDayRow
+		if err := rows.Scan(&i.OrderID, &i.PickupCode); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const pickupCodesOut = `-- name: PickupCodesOut :many
 SELECT CAST(r.pickup_code AS TEXT) AS pickup_code
 FROM guest_rounds r

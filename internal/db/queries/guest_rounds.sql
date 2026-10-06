@@ -91,3 +91,14 @@ SELECT CAST(r.pickup_code AS TEXT) AS pickup_code
 FROM guest_rounds r
 JOIN orders o ON o.id = r.order_id
 WHERE r.venue_id = ? AND r.pickup_code IS NOT NULL AND o.status != 'closed';
+
+-- name: PickupCodesOfDay :many
+-- The pickup code of each order to collect on the till's list of the day
+-- (OrdersOfDay): still out, or opened or closed since the day began. One
+-- handed over keeps the code it was called by, though the code is then free
+-- for another order (ADR-249).
+SELECT o.id AS order_id, CAST(r.pickup_code AS TEXT) AS pickup_code
+FROM guest_rounds r
+JOIN orders o ON o.id = r.order_id
+WHERE r.venue_id = sqlc.arg(venue_id) AND r.pickup_code IS NOT NULL
+  AND (o.status != 'closed' OR o.opened_at >= sqlc.arg(since) OR o.closed_at >= sqlc.arg(since));

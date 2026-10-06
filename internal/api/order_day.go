@@ -31,6 +31,13 @@ type dayOrderResponse struct {
 	Total      money.Amount   `json:"total"`
 	Credited   money.Amount   `json:"credited"`
 	BalanceDue money.Amount   `json:"balance_due"`
+	// PickupCode is what an order to collect is called out by at the
+	// counter (ADR-249, ADR-253). Absent for every other order.
+	PickupCode string `json:"pickup_code,omitempty"`
+	// Progress is how far the kitchen has come with an order to collect,
+	// read off its tickets as a guest's phone is told it (ADR-236): when
+	// it is ready, it is called. Absent for every other order.
+	Progress order.Progress `json:"progress,omitempty"`
 }
 
 // dayOrdersResponse is the trading day's orders, newest first. Collected is
@@ -55,6 +62,16 @@ func toDayOrdersResponse(day svcorder.Day) dayOrdersResponse {
 			ID: r.PublicID, Status: svcorder.DayStatusOf(st), Service: st.Service, TableID: st.TableID, Covers: st.Covers,
 			OpenedAt: st.OpenedAt.UTC(), Items: items,
 			Total: st.Totals.Total, Credited: st.Totals.Credited, BalanceDue: st.Totals.BalanceDue,
+		}
+		if code := day.PickupCodes[r.OrderID]; code != "" {
+			o.PickupCode = code
+			// All of the ticket is the guest's to collect, whatever was
+			// added to it at the counter since.
+			ids := make([]int64, len(st.Lines))
+			for j, l := range st.Lines {
+				ids[j] = l.ID
+			}
+			o.Progress = st.Progress(ids)
 		}
 		if st.Status == order.StatusClosed {
 			at := st.ClosedAt.UTC()

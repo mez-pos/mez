@@ -22,7 +22,20 @@ import { usePrintJobs } from "../print/use-print-jobs";
 import { failureOf } from "../register/order-messages";
 import { serviceLabels } from "../register/rail-logic";
 import { OrderPanel } from "./OrderPanel";
-import { countText, filterOrders, itemsText, orderNumber, ordersTabs, pastStatus, tabCounts, tableText, timeText, type OrdersTab } from "./orders-logic";
+import {
+  collectWords,
+  countText,
+  filterOrders,
+  itemsText,
+  orderNumber,
+  ordersTabs,
+  pastStatus,
+  tabCounts,
+  tableText,
+  timeText,
+  toCollect,
+  type OrdersTab,
+} from "./orders-logic";
 import { useDayOrders, usePastBills } from "./use-bills";
 
 interface OrdersScreenProps {
@@ -52,6 +65,7 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
   const counts = tabCounts(orders);
   const rows = filterOrders(orders, tab, query, names);
   const today = new Set(orders.map((o) => o.id));
+  const picked = orders.find((o) => o.id === selectedId);
   const earlier = query === "" ? [] : (past.data?.bills ?? []).filter((b) => !today.has(b.id) && (tab === "all" || tab === pastStatus(b)));
 
   return (
@@ -101,7 +115,7 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
               </button>
             ))}
           </div>
-          <SearchField label="Search order # or table" onSearch={setQuery} className="ml-auto w-72 2xl:w-80" />
+          <SearchField label="Search order #, table or pickup code" onSearch={setQuery} className="ml-auto w-72 2xl:w-80" />
         </div>
 
         <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-raised">
@@ -131,11 +145,12 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
                     selected={o.id === selectedId}
                     number={orderNumber(o)}
                     time={timeText(o.opened_at, now)}
-                    table={tableText(o.table_id, names)}
-                    type={serviceLabels[o.service]}
+                    table={tableText(o.table_id, names, o.pickup_code)}
+                    type={o.pickup_code ? "To collect" : serviceLabels[o.service]}
                     items={itemsText(o.items)}
                     amount={o.total}
                     status={o.status}
+                    collect={toCollect(o) ? collectWords(o.progress) : undefined}
                     onPick={() => onSelect(o.id)}
                   />
                 ))}
@@ -166,7 +181,15 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
               {day.data && rows.length === 0 && earlier.length === 0 && (
                 <EmptyState
                   icon={query ? <SearchIcon /> : <InboxIcon />}
-                  line={query ? `No order matches "${query}".` : tab === "all" ? "No orders yet today." : "No orders here yet today."}
+                  line={
+                    query
+                      ? `No order matches "${query}".`
+                      : tab === "all"
+                        ? "No orders yet today."
+                        : tab === "collect"
+                          ? "No orders waiting to be collected."
+                          : "No orders here yet today."
+                  }
                 />
               )}
             </div>
@@ -177,7 +200,15 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
       {printOpen && <PrintQueueSheet queue={queue} onClose={() => setPrintOpen(false)} />}
 
       {selectedId ? (
-        <OrderPanel key={selectedId} orderId={selectedId} names={names} onOpenOrder={onOpenOrder} onPay={onPay} />
+        <OrderPanel
+          key={selectedId}
+          orderId={selectedId}
+          names={names}
+          pickupCode={picked?.pickup_code}
+          progress={picked?.progress}
+          onOpenOrder={onOpenOrder}
+          onPay={onPay}
+        />
       ) : (
         <aside aria-label="Order" className="flex w-96 shrink-0 items-center justify-center border-l border-line bg-chrome p-6 2xl:w-110">
           <EmptyState icon={<InboxIcon />} line="Pick an order to see it." />
@@ -196,11 +227,13 @@ interface OrderRowProps {
   items: string;
   amount: Amount;
   status: DayStatus;
+  /** An order to collect still out: what the kitchen has done with it, in place of "Open". */
+  collect?: { label: string; ready: boolean } | undefined;
   onPick: () => void;
 }
 
 /** A row is one button: the whole of it opens the order in the panel. */
-function OrderRow({ selected, number, time, table, type, items, amount, status, onPick }: OrderRowProps) {
+function OrderRow({ selected, number, time, table, type, items, amount, status, collect, onPick }: OrderRowProps) {
   return (
     <li className="border-b border-line-soft">
       <button
@@ -219,7 +252,20 @@ function OrderRow({ selected, number, time, table, type, items, amount, status, 
         <span className="truncate text-fg-2">{type}</span>
         <span className="truncate">{items}</span>
         <Money amount={amount} className="font-bold" />
-        <StatusChip status={{ kind: "day", status }} className="justify-self-start" />
+        {collect ? (
+          <span
+            className={cx(
+              "justify-self-start rounded-pill border px-2.5 py-1 text-sm font-bold",
+              collect.ready
+                ? "border-chip-success-border bg-chip-success-bg text-chip-success-fg"
+                : "border-chip-warning-border bg-chip-warning-bg text-chip-warning-fg",
+            )}
+          >
+            {collect.label}
+          </span>
+        ) : (
+          <StatusChip status={{ kind: "day", status }} className="justify-self-start" />
+        )}
         <span
           aria-hidden="true"
           className="flex h-9 items-center justify-center rounded-pill border border-line-strong bg-raised text-base font-semibold text-fg"

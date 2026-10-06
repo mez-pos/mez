@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 5f3a: ordering to collect on the phone** (ADR-251). 5f3 split in
+**Phase 11, Task 5f3b: the pickup code in the back office** (ADR-252). In the Floor
+plan's codes card: make, show, renew, turn off; a warning where no gateway is
+set; and the door's card first on the sheet. Not seen in a browser.
+
+Before it, **Phase 11, Task 5f3a: ordering to collect on the phone** (ADR-251). 5f3 split in
 two. `/order/p/<code>` is the table's screens with a `collect` flag, and the
 pickup code in large type on the order. `guest-collect.md`. Seen with a mocked API.
 

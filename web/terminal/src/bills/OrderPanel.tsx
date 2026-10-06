@@ -11,7 +11,7 @@
 
 import { BanIcon, FileTextIcon, HistoryIcon, PrinterIcon, RotateCcwIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import type { Money as Amount, OrderResponse, TenderResponse } from "../../../shared/api-types";
+import type { GuestRoundProgress, Money as Amount, OrderResponse, TenderResponse } from "../../../shared/api-types";
 import { Button, Money, StatusChip, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { HistorySheet } from "../register/HistorySheet";
@@ -21,13 +21,17 @@ import { ReprintSheet } from "../tender/InvoicePanel";
 import { methodNames } from "../tender/tender-logic";
 import { anythingLeft, refundReasonText } from "./bills-logic";
 import { InvoiceSheet, PickPaymentSheet, VoidSheet } from "./BillSheets";
-import { paymentText, statusOf, timeText, voidableTenders, whereText } from "./orders-logic";
+import { collectWords, paymentText, statusOf, timeText, voidableTenders, whereText } from "./orders-logic";
 import { RefundSheet } from "./RefundSheet";
 import { useBill } from "./use-bills";
 
 interface OrderPanelProps {
   orderId: string;
   names: ReadonlyMap<number, string>;
+  /** What an order to collect is called out by, from the day's list (ADR-253). The order itself does not say. */
+  pickupCode?: string | undefined;
+  /** How far the kitchen has come with an order to collect, from the same list. */
+  progress?: GuestRoundProgress | undefined;
   /** Brings an order still open to the order screen. */
   onOpenOrder: (order: OrderResponse) => void;
   /** Brings an order with money owed to the payment screen. */
@@ -40,9 +44,10 @@ type Open =
 const negate = (a: Amount): Amount => ({ ...a, minor: -a.minor });
 const shell = "flex w-96 shrink-0 flex-col border-l border-line bg-chrome 2xl:w-110";
 
-export function OrderPanel({ orderId, names, onOpenOrder, onPay }: OrderPanelProps) {
+export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, onPay }: OrderPanelProps) {
   const { order, error, commands } = useBill(orderId);
   const [open, setOpen] = useState<Open>(null);
+  const [handing, setHanding] = useState(false);
   const toast = useToast();
 
   if (!order) {
@@ -62,6 +67,18 @@ export function OrderPanel({ orderId, names, onOpenOrder, onPay }: OrderPanelPro
   const canVoid = voidableTenders(order.tenders);
   const totals = order.totals;
   const payment = paymentText(order.tenders);
+  // An order to collect that is paid and still out: the counter calls its
+  // code and hands it over, which closes its ticket and frees the code.
+  const collecting = pickupCode !== undefined && pickupCode !== "" && !closed;
+  const kitchen = collectWords(progress);
+  const handOver = () => {
+    setHanding(true);
+    commands
+      .close()
+      .then(() => toast(`${pickupCode} handed over.`, { tone: "success" }))
+      .catch((err: unknown) => toast(err instanceof Error ? err.message : "That did not work. Try again.", { tone: "warning" }))
+      .finally(() => setHanding(false));
+  };
 
   return (
     <aside aria-label="Order" className={shell}>
@@ -70,11 +87,24 @@ export function OrderPanel({ orderId, names, onOpenOrder, onPay }: OrderPanelPro
           <div className="min-w-0">
             <h2 className="break-words font-serif text-xl 2xl:text-total">{invoice?.invoice_no ?? order.id}</h2>
             <p className="mt-1 text-sm text-fg-muted">
-              {whereText(order, names)} · {timeText(order.closed_at ?? order.opened_at, new Date())}
+              {whereText(order, names, pickupCode)} · {timeText(order.closed_at ?? order.opened_at, new Date())}
             </p>
           </div>
           <StatusChip status={{ kind: "day", status: statusOf(order) }} className="shrink-0" />
         </header>
+
+        {collecting && (
+          <section
+            aria-label="Pickup code"
+            className={cx("mt-5 rounded-card border p-4 text-center", kitchen.ready ? "border-line bg-accent-tint" : "border-line bg-raised")}
+          >
+            <p className="text-meta font-bold uppercase text-fg-muted">Call out</p>
+            <p className="mt-1 font-mono text-display font-bold tracking-[.16em] text-accent-text">{pickupCode}</p>
+            <p role="status" className="mt-1 text-base font-semibold">
+              {kitchen.label}
+            </p>
+          </section>
+        )}
 
         <dl className="mt-5 grid gap-2.5 text-base">
           {invoice && <Fact label="Order">{order.id}</Fact>}
@@ -166,9 +196,14 @@ export function OrderPanel({ orderId, names, onOpenOrder, onPay }: OrderPanelPro
             Take the balance
           </Button>
         )}
+        {collecting && (
+          <Button variant="primary" size="charge" disabled={owed || handing} onClick={handOver}>
+            {handing ? "Handing over" : "Handed over"}
+          </Button>
+        )}
         {!closed && order.status !== "reopened" && (
           <div className="flex gap-2.5">
-            <Button variant="primary" onClick={() => onOpenOrder(order)} className="flex-1">
+            <Button variant={collecting ? "secondary" : "primary"} onClick={() => onOpenOrder(order)} className="flex-1">
               Open order
             </Button>
             <Button disabled={!owed || order.status === "held"} onClick={() => onPay(order)} className="flex-1">

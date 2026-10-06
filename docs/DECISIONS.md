@@ -8188,3 +8188,49 @@ gateway can show the QR on the screen and photograph it; the warning is all
 that stops them. The card is long at a venue with thirty tables, and this is at
 the foot of it. Not seen in a browser: checked by the type checker, the logic's
 tests and the server's, and nothing was printed.
+
+## ADR-253 - The counter finds orders to collect on the Orders screen, by code, and handing one over closes its ticket
+2026-10 · Status: accepted. Phase 11, Task 5f4.
+Context: a paid order to collect is a ticket on the `web` channel with no table,
+holding a pickup code until it is closed (ADR-249). The terminal showed it as a
+counter ticket: no code, and nothing to say it was a guest's to collect. The code
+is on the round, `guest_rounds`, and not on the order's events.
+Decision:
+  - **On the Orders screen, as a tab, and not a screen of its own.** The screen
+    already lists the day's orders and is kept current by every order's event.
+    An order to collect is one of them. A second list of the same tickets would
+    be a second place for a cashier to look and to be wrong.
+  - **The day's list carries `pickup_code` and `progress`**, for an order to
+    collect and no other. The code is read beside the orders, by one query over
+    the same orders the list has. It is not put on the order's events: an event
+    is what happened to a ticket, and the code was given to a round.
+  - **`progress` is the one a guest's phone is told** (ADR-236), over every line
+    on the ticket: what the counter calls and what the phone shows cannot
+    differ.
+  - **To collect is the orders still out**: a code, and the ticket not closed.
+    What is ready to call is first, then the longest waiting, since the list is
+    read from the top by whoever is calling. Every other tab keeps its order.
+  - **The row says the kitchen's step where "Open" would be.** An order to
+    collect is paid: "Open" on it reads as money owed. Out, it is With the
+    kitchen, Being made or Ready to call; made at no station, it is Paid.
+  - **Handed over closes the ticket**, by the close there already was
+    (`POST /orders/{id}/close`). Nothing new is recorded: the order is settled
+    and invoiced when it is paid, and closing is what frees its code. It is
+    offered whatever the kitchen has said, since a kitchen that does not bump
+    must not stop a guest being given their food.
+  - **A whole code in the search finds its order**, out or handed over. Part of
+    one finds nothing: three characters match too much by chance.
+  - **The panel is given the code by the row.** `GET /orders/{id}` does not say
+    it, and is not made to: one reader of the round is enough.
+Because: the counter needed three things, to see what is out, to know what to
+call, and to say it has gone. The first two are a column and a tab on a list
+that was there, and the third was a command that was there.
+Cost: an order opened by its address, with no row read yet, shows no code in the
+panel until the day's list has loaded. Handed over has no undo: a ticket closed
+by mistake is reopened only by voiding its payment. Nothing calls a code aloud
+or shows it on a screen guests can see: someone reads the list. The kitchen
+display shows the ticket as any takeaway, with no code. A venue that never
+presses Handed over still runs out of codes (ADR-249), and nothing here warns
+of it. Not seen in a browser: the real binary cannot make a paid order to
+collect without a gateway. Checked by the type checker, the tests of its logic
+and the server's.

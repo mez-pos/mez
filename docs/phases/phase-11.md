@@ -165,7 +165,7 @@ Phase 10.
       card, the rest, evenly among so many, or a figure typed; "I am not
       paying this" on a waiting payment; and the spec.
 
-- [ ] **Task 5 — Order tracking and e-receipt.**
+- [x] **Task 5 — Order tracking and e-receipt.**
   The guest sees real kitchen events — accepted, firing, ready — not a fake
   timer. Pickup code for web pickup orders. E-receipt with the same invoice
   number as the counter would produce, and one-tap re-order.
@@ -192,7 +192,7 @@ Phase 10.
     - [x] **5e2.** Ordering the same again (ADR-242): "Order this again"
       on a sent order adds its dishes to the cart, held against today's
       menu, and opens the cart. It places nothing.
-  - [ ] **5f.** Ordering for pickup, and its code (ADR-237, by the owner).
+  - [x] **5f.** Ordering for pickup, and its code (ADR-237, by the owner).
     After 5e, and beside Task 6, which makes and revokes the venue's code.
     Paid first, always, so only where a gateway is set. Split in four:
     - [x] **5f1.** In the services. The venue's code is 6e. Split in two
@@ -217,8 +217,9 @@ Phase 10.
         Floor plan's codes card, made, shown, renewed and turned off; said
         plainly where no gateway is set; and the door's card first on the
         sheet, where orders to collect are taken.
-    - [ ] **5f4.** The counter: the pickup orders out and ready on the
-      terminal, by code, to call out and hand over.
+    - [x] **5f4.** The counter (ADR-253): the Orders screen's To collect
+      tab, the orders out by pickup code with what the kitchen has done,
+      ready first, and Handed over, which closes the ticket.
 
 - [x] **Task 6 — QR codes and table codes.**
   Generate per-table QR codes from back office, printable as a sheet. Codes are

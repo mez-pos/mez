@@ -8,27 +8,25 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 but 5f4, and 6 done. (Walks owed.)
+4 but 4f6b (Cashfree, question 8), 5 and 6 done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 5f3b: the pickup code in the back office** (ADR-252). In the Floor
-plan's codes card: make, show, renew, turn off; a warning where no gateway is
-set; and the door's card first on the sheet. **Not seen in a browser.**
+**Phase 11, Task 5f4: orders to collect at the counter** (ADR-253). The Orders
+screen has a To collect tab, the pickup code on the row and in the panel, and
+Handed over, which closes the ticket. Task 5 is done. **Not seen in a browser.**
 
 ## Next task
 
-**No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
-online on a bill, a share from two phones, and Pay on an order paid first.
+**Phase 11 has nothing left to build but 4f6b**, Cashfree, which waits on
+question 8. It owes its human check, the phase file's "Done when", and:
+- **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
+  online on a bill, a share from two phones, and Pay on an order paid first.
+- **Ordering to collect, end to end, with a gateway's test keys**: make the code
+  on the Floor plan, scan it, order, pay, see the code, find it under To collect,
+  Handed over. None of 5f2 to 5f4 has been seen against the real binary.
 
-**Phase 11, Task 5f4: orders to collect at the counter.** Read ADR-249, ADR-251,
-the "An order to collect" entry in `KNOWN.md`, and the terminal's ticket list.
-- A paid order to collect is a ticket on the `web` channel with no table. The
-  terminal shows it as a counter ticket: nothing says its code or "to collect".
-- Wanted: the orders out and ready, by pickup code, to call out and hand over.
-  Handing over closes the ticket, which frees the code (ADR-249).
-- The code is on `guest_rounds`, not the order: decide how the terminal reads it.
-  Split first if the list and the handing over are more than a session.
+**If question 8 is not answered: Phase 12, Task 1.** Read `docs/phases/phase-12.md`.
 
 ## Known broken / in progress
 
@@ -56,5 +54,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f4; 6 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built but for 4f6b; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

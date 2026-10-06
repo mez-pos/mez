@@ -24,18 +24,32 @@ Tables, **Past bills** under the order screen's "...", and a waiter's
   - **Orders** in the serif, and under it "86 orders today · ₹24,580.00
     collected". At the right, **Print queue**, in danger with "(2 not
     printed)" while anything has failed, and **New Order** (terracotta).
-  - **The tabs**, as pills with their counts: **All**, **Open**, **Paid**,
-    **Refunded**, **Voided**. At the right, the search, "Search order # or
-    table".
+  - **The tabs**, as pills with their counts: **All**, **To collect**,
+    **Open**, **Paid**, **Refunded**, **Voided**. At the right, the search,
+    "Search order #, table or pickup code".
   - **The table**, in a card that scrolls: Order #, Time, Table, Type, Items,
     Amount, Status, and **View**. A row is one button, 56px; the picked one
     has the green tint. The number is the invoice's once there is one.
   - **Before today**, under the day's rows, when a search finds settled
     bills from earlier.
+  - **An order to collect** (ADR-253), paid for on a guest's phone: its
+    pickup code where a table's name would be, "To collect" as its type,
+    and while it has not been handed over, what the kitchen has done with
+    it where its status would be: **With the kitchen** or **Being made**
+    (mustard), **Ready to call** (green), **Paid** for one made at no
+    station, **Cancelled**. Handed over, it is a paid order like any other,
+    and keeps its code in the Table column.
+  - **To collect**, the tab: those still out, what is ready to call first
+    and then the longest waiting. Empty: "No orders waiting to be
+    collected."
 - **The order, 384px, 440px from 1536px, chrome.** With none picked: "Pick an
   order to see it."
   - **The head:** the invoice number, or the order's id, in the serif; where
     and when; and its status chip.
+  - For an order to collect, under the head: "To collect · B7K" where the
+    table and service are, and while it is out a card, tinted green once
+    it is ready: "Call out", the code at the display size in the numeral
+    face, and what the kitchen has done.
   - Order (its id, once there is an invoice), Guests, and **Payment**, the ways it
     was paid ("Cash + Card"), or "Not paid yet".
   - **Items:** each with its quantity, name, choices, "Voided" or "On the
@@ -45,7 +59,9 @@ Tables, **Past bills** under the order screen's "...", and a waiter's
   - **Payments:** each with its method, reference, a chip when it is not
     plainly taken, its amount, and what has gone back on it.
   - **Credit notes:** each with its number, reason and amount.
-  - **The foot:** for an order still open, **Open order** and **Pay**; for a
+  - **The foot:** for an order to collect still out, **Handed over**, the
+    primary, at the charge button's height, above the rest; Open order is
+    then secondary. For an order still open, **Open order** and **Pay**; for a
     reopened bill that owes, **Take the balance**; then **Reprint receipt**,
     **Invoice** and **History**, and **Refund** and **Void** as the danger
     pair.
@@ -103,6 +119,12 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
   number is the digits in `q` ("42" finds INV/26-27/000042 in any year). A
   barcode scanner types into the search: the receipt's barcode is the
   invoice number.
+- An order to collect has `pickup_code` and `progress` on the day's list,
+  and nowhere else: the panel is given them from the row. The list is read
+  again on any order's event, so a cook's bump moves the row.
+- `POST /api/v1/orders/{id}/close` for Handed over, with an
+  `Idempotency-Key`: the ticket is closed, and its code is free for another
+  order (ADR-249).
 - `GET /api/v1/orders/{id}` for the panel, kept current by the stream. Each
   line carries `credited_qty` and `due` from the server, so the steppers
   never count.
@@ -120,6 +142,9 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
 |---|---|---|---|
 | A tab | Narrows the rows by status | | |
 | Type or scan in the search | Filters the day's rows by number or table, and asks for earlier bills by number | | "Before today" under the rows |
+| To collect | The orders to collect still out, ready first | | |
+| Type a pickup code, whole | Finds that order, out or handed over | | |
+| Handed over | Closes the order's ticket | `order.closed` | A toast, "B7K handed over."; the row leaves To collect and reads Paid |
 | Tap a row | Opens it in the panel | | The path is `/orders/:id`; picking another replaces it, so Back leaves the screen |
 | New Order | Opens the order screen | | |
 | Open order | Brings it to the order screen, off hold if it was saved | `order.resumed` if saved | |
@@ -134,6 +159,8 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
 
 - **Loading:** "Loading today's orders" under the title; "Loading the order"
   in the panel.
+- **An order to collect that is not ready:** Handed over is still offered.
+  The kitchen may not bump, and the guest is at the counter.
 - **Empty:** "No orders yet today."; on a tab, "No orders here yet today.";
   on a search, "No order matches "42"."
 - **Error:** the server's words in the table, or in the panel.
@@ -156,7 +183,10 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
 - No arithmetic in the UI: every figure in the refund modal is the
   preview's.
 - Refund and Void are the danger button, brick on its tint. The one green
-  here is the way on for an order still open, or Take the balance.
+  here is the way on for an order still open, Take the balance, or Handed
+  over.
+- A pickup code is never the only thing that says an order is ready: the
+  words say it.
 - Every number is tabular and right-aligned; every target 48px, a row 56px.
 - A refund goes back to one payment per credit note; a larger one is made in
   parts.

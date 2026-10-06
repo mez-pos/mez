@@ -2,16 +2,21 @@
 // server's: the day's list, the collected total, an order's own totals. These
 // only count rows, filter them, and word them.
 
-import type { DayOrderItem, DayOrderResponse, DayStatus, OrderResponse, PastBillResponse, TenderResponse } from "../../../shared/api-types";
+import type { DayOrderItem, DayOrderResponse, DayStatus, GuestRoundProgress, OrderResponse, PastBillResponse, TenderResponse } from "../../../shared/api-types";
 import { serviceLabels } from "../register/rail-logic";
 import { methodNames } from "../tender/tender-logic";
 import { voidable } from "./bills-logic";
 
-/** The tabs over the table: every order, or those of one status. */
-export type OrdersTab = "all" | DayStatus;
+/**
+ * The tabs over the table: every order, those of one status, or the orders
+ * to collect that are still out (ADR-253), which is what a counter calls
+ * from.
+ */
+export type OrdersTab = "all" | "collect" | DayStatus;
 
 export const ordersTabs: readonly { id: OrdersTab; label: string }[] = [
   { id: "all", label: "All" },
+  { id: "collect", label: "To collect" },
   { id: "open", label: "Open" },
   { id: "paid", label: "Paid" },
   { id: "refunded", label: "Refunded" },
@@ -20,9 +25,42 @@ export const ordersTabs: readonly { id: OrdersTab; label: string }[] = [
 
 /** How many orders each tab holds. */
 export function tabCounts(orders: readonly DayOrderResponse[]): Record<OrdersTab, number> {
-  const counts: Record<OrdersTab, number> = { all: orders.length, open: 0, paid: 0, refunded: 0, voided: 0 };
-  for (const o of orders) counts[o.status] += 1;
+  const counts: Record<OrdersTab, number> = { all: orders.length, collect: 0, open: 0, paid: 0, refunded: 0, voided: 0 };
+  for (const o of orders) {
+    counts[o.status] += 1;
+    if (toCollect(o)) counts.collect += 1;
+  }
   return counts;
+}
+
+/**
+ * Whether an order is one to collect that is still out: paid for on a
+ * guest's phone, with a code, and not yet handed over. Handing it over
+ * closes its ticket, and it is then a paid order like any other.
+ */
+export function toCollect(o: Pick<DayOrderResponse, "pickup_code" | "status">): boolean {
+  return o.pickup_code !== undefined && o.pickup_code !== "" && o.status === "open";
+}
+
+/**
+ * What the kitchen has done with an order to collect, for whoever calls the
+ * codes. ready is the one to call. It is read off the kitchen's own tickets:
+ * an order made at no station never says ready, and is handed over when it
+ * is.
+ */
+export function collectWords(progress: GuestRoundProgress | undefined): { label: string; ready: boolean } {
+  switch (progress) {
+    case "sent":
+      return { label: "With the kitchen", ready: false };
+    case "preparing":
+      return { label: "Being made", ready: false };
+    case "ready":
+      return { label: "Ready to call", ready: true };
+    case "cancelled":
+      return { label: "Cancelled", ready: false };
+    default:
+      return { label: "Paid", ready: false };
+  }
 }
 
 /** What a row is called: its invoice number once it has one, else its order id. */
@@ -30,9 +68,9 @@ export function orderNumber(o: Pick<DayOrderResponse, "id" | "invoice_no">): str
   return o.invoice_no || o.id;
 }
 
-/** A row's table, by the floor's name for it; a dash when it has none. */
-export function tableText(tableId: number | undefined, names: ReadonlyMap<number, string>): string {
-  if (!tableId) return "–";
+/** A row's table, by the floor's name for it; an order to collect's code; a dash when it has neither. */
+export function tableText(tableId: number | undefined, names: ReadonlyMap<number, string>, pickupCode?: string): string {
+  if (!tableId) return pickupCode || "–";
   return names.get(tableId) ?? `Table ${tableId}`;
 }
 
@@ -45,21 +83,29 @@ export function itemsText(items: readonly DayOrderItem[]): string {
 /**
  * The rows a tab and a search leave. The search is over what a cashier can
  * read off a receipt or the floor: the invoice number, the order id, the
- * table's name. An order carries no guest's name to search.
+ * table's name, and the pickup code on a guest's phone, whole. An order
+ * carries no guest's name to search.
+ *
+ * To collect, what is ready to call comes first and then the longest
+ * waiting: the list is read from the top by whoever is calling.
  */
 export function filterOrders(orders: readonly DayOrderResponse[], tab: OrdersTab, query: string, names: ReadonlyMap<number, string>): DayOrderResponse[] {
   const q = query.trim().toLowerCase();
-  return orders.filter((o) => {
-    if (tab !== "all" && o.status !== tab) return false;
+  const rows = orders.filter((o) => {
+    if (tab === "collect" ? !toCollect(o) : tab !== "all" && o.status !== tab) return false;
     if (q === "") return true;
     const table = o.table_id ? tableText(o.table_id, names).toLowerCase() : "";
     return (
+      (o.pickup_code ?? "").toLowerCase() === q ||
       // An id is random letters: two of them would match a table's name by chance.
       (q.length >= 4 && o.id.toLowerCase().includes(q)) ||
       (o.invoice_no ?? "").toLowerCase().includes(q) ||
       (table !== "" && (table === q || table.includes(q) || `table ${table}` === q))
     );
   });
+  if (tab !== "collect") return rows;
+  const ready = (o: DayOrderResponse) => (collectWords(o.progress).ready ? 0 : 1);
+  return [...rows].sort((a, b) => ready(a) - ready(b) || a.opened_at.localeCompare(b.opened_at));
 }
 
 /**
@@ -90,8 +136,9 @@ export function statusOf(order: Pick<OrderResponse, "status" | "lines" | "totals
   return order.lines.some((l) => l.status !== "voided") ? "paid" : "voided";
 }
 
-/** "Table T4 · Dine-in": where and how, under the panel's title. */
-export function whereText(order: Pick<OrderResponse, "table_id" | "service">, names: ReadonlyMap<number, string>): string {
+/** "Table T4 · Dine-in": where and how, under the panel's title. "To collect · B7K" for an order with a pickup code. */
+export function whereText(order: Pick<OrderResponse, "table_id" | "service">, names: ReadonlyMap<number, string>, pickupCode?: string): string {
+  if (pickupCode) return `To collect · ${pickupCode}`;
   const how = serviceLabels[order.service];
   return order.table_id ? `${tableText(order.table_id, names)} · ${how}` : how;
 }

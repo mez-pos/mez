@@ -210,3 +210,43 @@ func TestWithEveryPickupCodeOutAPaidOrderWaits(t *testing.T) {
 		t.Errorf("its ticket has %d lines", len(ticket.State.Lines))
 	}
 }
+
+// TestTheDaysOrdersSayWhichAreToCollect: the till's list of the day names
+// the pickup code of each order to collect, still out or handed over, and of
+// no other order.
+func TestTheDaysOrdersSayWhichAreToCollect(t *testing.T) {
+	p := newPickupWorld(t)
+	ctx := context.Background()
+	s := p.with(t, drawing(t, "B7K", "M4Q"))
+	first := p.send(t, s, "p1")
+	second := p.send(t, s, "p2")
+	counter, err := s.Open(ctx, cashier("o1"), OpenOrder{Channel: order.ChannelCounter})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	day, err := s.DayOrders(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(day.Orders) != 3 || len(day.PickupCodes) != 2 {
+		t.Fatalf("%d orders, codes %v", len(day.Orders), day.PickupCodes)
+	}
+	if day.PickupCodes[first.OrderID] != "B7K" || day.PickupCodes[second.OrderID] != "M4Q" || day.PickupCodes[counter.OrderID] != "" {
+		t.Errorf("codes = %v", day.PickupCodes)
+	}
+
+	// Handed over, its ticket is closed. The list still says what it was
+	// called by: the code is free for another order, and this one keeps it.
+	must(t)(s.TenderPayment(ctx, cashier(""), first.OrderID, TenderPayment{Method: order.PaymentUPI, Amount: inr(58800)}))
+	if _, err := s.Close(ctx, cashier(""), first.OrderID); err != nil {
+		t.Fatal(err)
+	}
+	after, err := s.DayOrders(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after.PickupCodes[first.OrderID] != "B7K" || len(after.PickupCodes) != 2 {
+		t.Errorf("after handing one over: %v", after.PickupCodes)
+	}
+}

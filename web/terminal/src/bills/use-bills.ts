@@ -71,6 +71,8 @@ export interface BillCommands {
   credit: (selection: CreditSelection, paymentId: number, total: CreditPlanResponse["total"], reason: string, approval: Override) => Promise<string>;
   voidPayment: (paymentId: number, reason: string, approval: Override) => Promise<void>;
   reprint: (invoiceSeq: number, reason: string, approval: Override) => Promise<void>;
+  /** Closes a settled order: for one to collect, it has been handed over (ADR-253). */
+  close: () => Promise<void>;
 }
 
 /** One past bill, read and kept current, and what can be done to it. */
@@ -125,6 +127,9 @@ export function useBill(orderId: string): { order: OrderResponse | undefined; er
       },
       reprint: async (invoiceSeq, reason, approval) => {
         await post(`/invoices/${invoiceSeq}/reprint`, { ...approval, reason });
+      },
+      close: async () => {
+        await post("/close", undefined);
       },
     },
   };

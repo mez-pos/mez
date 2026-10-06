@@ -454,3 +454,44 @@ func TestTheLimitsFitALunchQueue(t *testing.T) {
 		t.Errorf("one address may change %d a minute, against %d orders and the venue's %d", pickupWriteByAddr.requests, pickupOrderByAddr.requests, pickupWriteLimit.requests)
 	}
 }
+
+// TestTheTillsListSaysWhatIsToCollect: a paid order to collect is on the
+// day's orders with the code it is called by and how far the kitchen has
+// come with it. A table's order has neither.
+func TestTheTillsListSaysWhatIsToCollect(t *testing.T) {
+	p := newPickupWorld(t, "")
+	ctx := context.Background()
+	round := p.held(t, "c1")
+	started := decodeCharge(t, p.post(p.base+"/orders/"+round+"/charge"))
+	p.gw.Pay("fake_0001", gateway.UPI)
+	if got := decodeCharge(t, p.get(p.base+"/charge/"+started.ID)); got.Status != charges.Paid {
+		t.Fatalf("the charge: %+v", got)
+	}
+	code := decodeRound(t, p.get(p.base+"/orders/"+round)).PickupCode
+	seated := p.seat(t)
+
+	day, err := p.orders.DayOrders(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	list := toDayOrdersResponse(day)
+	if len(list.Orders) != 2 {
+		t.Fatalf("%d orders today", len(list.Orders))
+	}
+	for _, o := range list.Orders {
+		if o.ID == seated.PublicID {
+			if o.PickupCode != "" || o.Progress != "" {
+				t.Errorf("table 4's order = %+v", o)
+			}
+			continue
+		}
+		// Paid, and not handed over: its ticket is still open.
+		if o.PickupCode != code || code == "" || o.Progress != order.ProgressSent || o.Status != svcorder.DayOpen || o.BalanceDue.Minor != 0 || o.TableID != 0 {
+			t.Errorf("the order to collect = %+v, want code %q", o, code)
+		}
+	}
+	body, err := json.Marshal(list)
+	if err != nil || !strings.Contains(string(body), `"pickup_code":"`+code+`"`) || strings.Count(string(body), "pickup_code") != 1 {
+		t.Errorf("the list as sent: %s, %v", body, err)
+	}
+}

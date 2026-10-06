@@ -373,6 +373,11 @@ type Querier interface {
 	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)
 	// The venue's live pickup code. No row when it has none.
 	PickupCodeForVenue(ctx context.Context, venueID int64) (string, error)
+	// The pickup code of each order to collect on the till's list of the day
+	// (OrdersOfDay): still out, or opened or closed since the day began. One
+	// handed over keeps the code it was called by, though the code is then free
+	// for another order (ADR-249).
+	PickupCodesOfDay(ctx context.Context, arg PickupCodesOfDayParams) ([]PickupCodesOfDayRow, error)
 	// The pickup codes of a venue's orders still out: sent, and their ticket not
 	// yet closed. A new order is given a code that is none of these, so two
 	// orders on the counter at once are never called by the same one.

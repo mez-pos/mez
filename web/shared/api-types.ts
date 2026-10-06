@@ -2650,6 +2650,8 @@ export interface DayOrderResponse {
   total: Money;
   credited: Money;
   balance_due: Money;
+  pickup_code?: string;
+  progress?: GuestRoundProgress;
 }
 
 export interface DayOrdersResponse {

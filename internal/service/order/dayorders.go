@@ -66,6 +66,10 @@ type Day struct {
 	Day       string // the trading day, 2026-10-05
 	Orders    []Result
 	Collected money.Amount
+	// PickupCodes is what each order to collect is called out by (ADR-249),
+	// by order id. An order that is not one is not in it. The code is the
+	// round's and not the ticket's, so it is read beside the orders.
+	PickupCodes map[int64]string
 }
 
 // DayOrders lists the venue's orders for the trading day it is now: every
@@ -106,6 +110,14 @@ func (s *Service) DayOrders(ctx context.Context, venueID int64) (Day, error) {
 			return Day{}, fmt.Errorf("adding up order %d: %w", r.ID, err)
 		}
 		out.Orders = append(out.Orders, Result{OrderID: r.ID, PublicID: r.PublicID, State: state})
+	}
+	codes, err := q.PickupCodesOfDay(ctx, gen.PickupCodesOfDayParams{VenueID: venueID, Since: since})
+	if err != nil {
+		return Day{}, fmt.Errorf("reading the day's pickup codes of venue %d: %w", venueID, err)
+	}
+	out.PickupCodes = make(map[int64]string, len(codes))
+	for _, c := range codes {
+		out.PickupCodes[c.OrderID] = c.PickupCode
 	}
 	return out, nil
 }

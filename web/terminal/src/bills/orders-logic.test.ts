@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DayOrderResponse, LineResponse, OrderResponse, TenderResponse } from "../../../shared/api-types";
 import {
+  collectWords,
   countText,
   filterOrders,
   itemsText,
@@ -11,6 +12,7 @@ import {
   tabCounts,
   tableText,
   timeText,
+  toCollect,
   voidableTenders,
   whereText,
 } from "./orders-logic";
@@ -29,7 +31,7 @@ const day = [
 
 describe("tabCounts", () => {
   it("counts every tab, the empty ones too", () => {
-    expect(tabCounts(day)).toEqual({ all: 3, open: 1, paid: 1, refunded: 1, voided: 0 });
+    expect(tabCounts(day)).toEqual({ all: 3, collect: 0, open: 1, paid: 1, refunded: 1, voided: 0 });
   });
 });
 
@@ -151,5 +153,61 @@ describe("voidableTenders", () => {
   it("keeps the payments taken with nothing refunded", () => {
     const got = voidableTenders([tender({ id: 1 }), tender({ id: 2, status: "voided" }), tender({ id: 3, refunded: inr(100) })]);
     expect(got.map((t) => t.id)).toEqual([1]);
+  });
+});
+
+describe("orders to collect", () => {
+  const at = (minute: number) => `2026-10-06T10:${String(minute).padStart(2, "0")}:00Z`;
+  const out = [
+    row({ id: "ord_NEW1", status: "open", service: "takeaway", pickup_code: "M4Q", progress: "sent", opened_at: at(30) }),
+    row({ id: "ord_RDY1", status: "open", service: "takeaway", pickup_code: "B7K", progress: "ready", opened_at: at(20) }),
+    row({ id: "ord_OLD1", status: "open", service: "takeaway", pickup_code: "X9Z", progress: "preparing", opened_at: at(10) }),
+    row({ id: "ord_RDY2", status: "open", service: "takeaway", pickup_code: "T2W", progress: "ready", opened_at: at(25) }),
+    row({ id: "ord_GONE", status: "paid", service: "takeaway", pickup_code: "H5N", progress: "ready", opened_at: at(5) }),
+    row({ id: "ord_TBL4", status: "open", table_id: 4, opened_at: at(1) }),
+  ];
+
+  it("are the ones with a code that have not been handed over", () => {
+    expect(out.filter(toCollect).map((o) => o.pickup_code)).toEqual(["M4Q", "B7K", "X9Z", "T2W"]);
+    expect(tabCounts(out).collect).toBe(4);
+    // Each is still counted under its own status as well.
+    expect(tabCounts(out).open).toBe(5);
+    expect(tabCounts(out).paid).toBe(1);
+  });
+
+  it("lists what is ready to call first, then the longest waiting", () => {
+    expect(filterOrders(out, "collect", "", names).map((o) => o.pickup_code)).toEqual(["B7K", "T2W", "X9Z", "M4Q"]);
+    // Every other tab keeps the server's order.
+    expect(filterOrders(out, "open", "", names).map((o) => o.id)).toEqual(["ord_NEW1", "ord_RDY1", "ord_OLD1", "ord_RDY2", "ord_TBL4"]);
+  });
+
+  it("is found by its code, as it is read off a guest's phone", () => {
+    expect(filterOrders(out, "all", "b7k", names).map((o) => o.id)).toEqual(["ord_RDY1"]);
+    expect(filterOrders(out, "all", " B7K ", names).map((o) => o.id)).toEqual(["ord_RDY1"]);
+    // One handed over is still found by what it was called.
+    expect(filterOrders(out, "all", "H5N", names).map((o) => o.id)).toEqual(["ord_GONE"]);
+    // Part of a code finds nothing: three characters match too much by chance.
+    expect(filterOrders(out, "all", "B7", names)).toEqual([]);
+  });
+
+  it("shows the code where a table's name would be", () => {
+    expect(tableText(undefined, names, "B7K")).toBe("B7K");
+    expect(tableText(4, names)).toBe("T4");
+    expect(tableText(undefined, names)).toBe("–");
+  });
+
+  it("says what the kitchen has done, in words for whoever is calling", () => {
+    expect(collectWords("sent")).toEqual({ label: "With the kitchen", ready: false });
+    expect(collectWords("preparing")).toEqual({ label: "Being made", ready: false });
+    expect(collectWords("ready")).toEqual({ label: "Ready to call", ready: true });
+    // Made at no station, or nothing known: it is paid, and that is all that is said.
+    expect(collectWords("accepted")).toEqual({ label: "Paid", ready: false });
+    expect(collectWords(undefined)).toEqual({ label: "Paid", ready: false });
+    expect(collectWords("cancelled")).toEqual({ label: "Cancelled", ready: false });
+  });
+
+  it("says where a collected order was, by its code", () => {
+    expect(whereText({ service: "takeaway" }, names, "B7K")).toBe("To collect · B7K");
+    expect(whereText({ service: "takeaway" }, names)).not.toContain("collect");
   });
 });

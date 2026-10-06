@@ -10,6 +10,15 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Orders to collect at the counter** (ADR-253, `terminal-past-bills.md`):
+  **not seen in a browser at all**: the To collect tab, the code and the
+  kitchen's word on a row, the Call out card in the panel, Handed over and
+  its toast. The real binary cannot make a paid order to collect without a
+  gateway's keys. Checked by the type checker and the tests of its logic and
+  of the server. Handed over has no undo. The panel shows no code for an
+  order opened by its address before the day's list has loaded. The kitchen
+  display shows the ticket as any takeaway, with no code. Nothing warns that
+  codes are running out at a counter that never presses Handed over.
 - **The pickup code in the back office** (ADR-252, `backoffice-floor.md`):
   **not seen in a browser at all**, at any width: the section under the
   tables, its three buttons, the warning, both confirms, the QR modal and
@@ -44,10 +53,10 @@
   with the gateway's page: a guest could pay twice, and nobody is at a
   table to notice.
 - **An order to collect** (ADR-248, ADR-249): placed, paid for and sent, with
-  a pickup code; no screen shows one. A sent one is a ticket with no table on the `web` channel: it
-  shows on the terminal and in the reports as a counter ticket would, and
-  nothing there says its code or that it is to collect (5f4). A paid ticket
-  stays open, holding its code, until staff close it: a counter that never
+  a pickup code. A sent one is a ticket with no table on the `web` channel:
+  it is on the terminal's Orders screen under To collect (ADR-253), and the
+  reports show it as a counter ticket would. A paid ticket stays open,
+  holding its code, until staff press Handed over: a counter that never
   closes them runs out of codes after a few thousand, and a paid order then
   waits, said in the log as an error. If no code is free a ticket is opened
   and left empty until one is. The code is three consonants or digits with a
