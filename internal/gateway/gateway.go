@@ -14,6 +14,7 @@ package gateway
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"github.com/byjoellobo/mez/internal/domain/money"
 )
@@ -98,4 +99,18 @@ type Status struct {
 	// Reference is the provider's id for the payment itself, the one a
 	// refund or a dispute names.
 	Reference string
+}
+
+// Notified is a gateway that can call the venue when a charge moves, and
+// whose calls can be told from a forgery. It is optional: a gateway with no
+// such thing, or a venue with it not set up, is asked by the sweep instead.
+type Notified interface {
+	// Notice checks that a call is the provider's and answers which charge
+	// it is about, by the provider's own id, or "" when it is about nothing
+	// mez started. It answers ErrRefused for a call that is not the
+	// provider's.
+	//
+	// It says which charge to ask about and nothing else. What the call
+	// claims about the charge is not believed: Status is.
+	Notice(header http.Header, body []byte) (string, error)
 }

@@ -69,3 +69,10 @@ LIMIT ?;
 UPDATE gateway_charges
 SET resolution = sqlc.arg(resolution), resolved_at = sqlc.arg(resolved_at), resolved_by = sqlc.arg(resolved_by)
 WHERE public_id = sqlc.arg(public_id) AND venue_id = sqlc.arg(venue_id) AND status = 'unapplied' AND resolved_at IS NULL;
+
+-- name: GatewayChargeByGatewayID :one
+-- The charge a provider's notice is about, by the provider's own id.
+SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
+FROM gateway_charges
+WHERE gateway = ? AND gateway_id = ?;

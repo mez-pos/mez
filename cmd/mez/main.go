@@ -300,8 +300,14 @@ func run() (err error) {
 		if err != nil {
 			return err
 		}
+		// With the webhook's secret set, the gateway's calls are taken as
+		// hints to ask it now (ADR-224). Without it, the sweep asks.
+		var notices gateway.Notified
+		if n, ok := provider.(gateway.Notified); ok && cfg.GatewayWebhookSecret != "" {
+			notices = n
+		}
 		online, err := charges.New(charges.Options{
-			DB: database, Orders: orders, Log: log, OnChange: events.Notify,
+			DB: database, Orders: orders, Log: log, OnChange: events.Notify, Notices: notices,
 			Gateways: func(context.Context, int64) (gateway.Gateway, error) { return provider, nil },
 		})
 		if err != nil {
@@ -486,7 +492,7 @@ func newGateway(cfg config.Config) (gateway.Gateway, error) {
 		if cfg.GatewayKeyID == "" || cfg.GatewayKeySecret == "" {
 			return nil, errors.New("gateway is razorpay, and gateway_key_id and gateway_key_secret are not both set")
 		}
-		return razorpay.New(razorpay.Options{KeyID: cfg.GatewayKeyID, KeySecret: cfg.GatewayKeySecret})
+		return razorpay.New(razorpay.Options{KeyID: cfg.GatewayKeyID, KeySecret: cfg.GatewayKeySecret, WebhookSecret: cfg.GatewayWebhookSecret})
 	default:
 		return nil, fmt.Errorf("gateway %q: this build has no adapter for it", cfg.Gateway)
 	}

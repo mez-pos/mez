@@ -49,6 +49,8 @@ const (
 	keyGatewayKeyID     = "gateway_key_id"
 	keyGatewayKeySecret = "gateway_key_secret"
 	keyPublicURL        = "public_url"
+
+	keyGatewayWebhookSecret = "gateway_webhook_secret"
 )
 
 // GatewayRazorpay is the one payment gateway this build can use. The name
@@ -81,6 +83,7 @@ var keys = []string{
 	keyGatewayKeyID,
 	keyGatewayKeySecret,
 	keyPublicURL,
+	keyGatewayWebhookSecret,
 }
 
 var usage = map[string]string{
@@ -98,6 +101,8 @@ var usage = map[string]string{
 	keyGatewayKeyID:     "the gateway's key id for this venue's account",
 	keyGatewayKeySecret: "the gateway's key secret; a secret, best set in the environment",
 	keyPublicURL:        "the address guests reach this venue at, https://cafe.example; where a gateway sends them back",
+
+	keyGatewayWebhookSecret: "the secret the gateway signs its webhooks with; a secret; empty takes no webhooks",
 }
 
 // Config is the resolved, validated server configuration.
@@ -165,6 +170,11 @@ type Config struct {
 	// say and never read from a request (ADR-222). Empty, the gateway shows
 	// its own page and the guest returns to the bill themselves.
 	PublicURL string
+
+	// GatewayWebhookSecret is the secret the gateway signs its calls to
+	// the venue with. It is a secret, and not the API's. Empty, no call is
+	// believed and the sweep alone finds out what was paid (ADR-224).
+	GatewayWebhookSecret string
 }
 
 // GatewayEnabled reports whether a payment gateway is configured.
@@ -274,6 +284,8 @@ func defaults(lookup func(string) (string, bool), goos string) map[string]string
 		keyGatewayKeyID:     "",
 		keyGatewayKeySecret: "",
 		keyPublicURL:        "",
+
+		keyGatewayWebhookSecret: "",
 	}
 }
 
@@ -396,6 +408,8 @@ func build(raw map[string]string) (Config, error) {
 
 		GatewayKeyID:     strings.TrimSpace(raw[keyGatewayKeyID]),
 		GatewayKeySecret: strings.TrimSpace(raw[keyGatewayKeySecret]),
+
+		GatewayWebhookSecret: strings.TrimSpace(raw[keyGatewayWebhookSecret]),
 	}
 
 	var err error

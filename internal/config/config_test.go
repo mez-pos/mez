@@ -433,6 +433,8 @@ func TestEveryKeyIsReachable(t *testing.T) {
 		keyGatewayKeyID:     "rzp_test_AbCdEf123456",
 		keyGatewayKeySecret: "not-a-real-secret",
 		keyPublicURL:        "https://cafe.example",
+
+		keyGatewayWebhookSecret: "not-a-real-webhook-secret",
 	}
 	if len(sample) != len(keys) {
 		t.Fatalf("sample covers %d keys, the package has %d: add the new one here", len(sample), len(keys))
@@ -493,6 +495,8 @@ func assertKey(t *testing.T, key, want string, cfg Config, err error) {
 		equal(t, key, cfg.GatewayKeySecret, want)
 	case keyPublicURL:
 		equal(t, key, cfg.PublicURL, want)
+	case keyGatewayWebhookSecret:
+		equal(t, key, cfg.GatewayWebhookSecret, want)
 	default:
 		t.Fatalf("key %q has no assertion: add one", key)
 	}

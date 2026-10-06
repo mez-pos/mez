@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4f3: paying online from the phone** (ADR-222).
+**Phase 11, Task 4f4: unapplied charges on the terminal** (ADR-223). Money a
+gateway took that no bill could is first in the terminal's sheet, in danger, and
+turns the pill red, until a person says they refunded or recorded it
+(`POST /api/v1/charges/{id}/resolve`). It moves no money.
+
+Before it, **Phase 11, Task 4f3: paying online from the phone** (ADR-222).
 `POST /order/api/t/{code}/bill/charge` and `GET .../bill/charge/{id}`; the bill
 says `online`. The return address is `public_url`, a new setting, never a
 request's. The phone has Pay online (`charge-logic.ts`, `use-charge.ts`).

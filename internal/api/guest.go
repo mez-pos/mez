@@ -65,6 +65,9 @@ func (s *Server) mountGuests(mux *http.ServeMux) {
 			handle("GET "+base+"t/{code}/bill/charge/{id}", s.guestCharge)
 		}
 	}
+	if s.charges != nil {
+		handle("POST "+base+"hook/{gateway}", s.gatewayHook)
+	}
 	if s.menuEditor != nil {
 		// A photo is on the menu the guest was shown, and named by its
 		// content: there is nothing to guard, and a cache may keep it.

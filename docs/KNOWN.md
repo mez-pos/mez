@@ -10,6 +10,9 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The gateway's webhook** (ADR-224): no call from the real Razorpay has been
+  received, and the path was not run through the relay. Set wrong, it fails
+  quietly: a 401 and a warning each time, and payments land by the sweep.
 - **Paying through a gateway** (ADR-220 to ADR-223): "I refunded it" is a
   person's word: mez makes no refund and checks none. Resolved charges are in
   no report. **No real charge has been made.** The real Razorpay was reached once, with made-up keys, and

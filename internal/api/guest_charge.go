@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -37,6 +38,7 @@ type Charges interface {
 	Charge(ctx context.Context, venueID int64, publicID string) (charges.Charge, error)
 	Waiting(ctx context.Context, venueID int64) ([]charges.UnappliedCharge, error)
 	Resolve(ctx context.Context, venueID, staffID int64, publicID string, how charges.Resolution) error
+	Notice(ctx context.Context, gateway string, header http.Header, body []byte) error
 }
 
 // WithCharges lets guests pay online. c is nil at a venue with no gateway,
@@ -221,6 +223,41 @@ func (s *Server) resolveCharge(w http.ResponseWriter, r *http.Request) {
 		writeError(w, s.log, http.StatusConflict, CodeChargeNotWaiting, "That payment is not waiting to be dealt with: someone may have done it already.")
 	default:
 		s.log.Error("resolving a charge failed", "request_id", RequestID(r.Context()), "venue_id", meta.VenueID, "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+	}
+}
+
+// A gateway calls the venue (phase 11, Task 4f5, ADR-224):
+//
+//	POST /order/api/hook/{gateway}
+//
+// It is under the guest's mount because that is all the relay forwards, and
+// a gateway reaches the venue the way a guest does. It needs no table code
+// and no session: the gateway's signature over the body is what is checked.
+
+// maxHookBytes bounds a gateway's notice. Razorpay's are a few kilobytes.
+const maxHookBytes = 256 << 10
+
+func (s *Server) gatewayHook(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxHookBytes))
+	if err != nil {
+		writeError(w, s.log, http.StatusRequestEntityTooLarge, CodeInvalidRequest, "the notice is too large")
+		return
+	}
+	err = s.charges.Notice(r.Context(), r.PathValue("gateway"), r.Header, body)
+	switch {
+	case err == nil:
+		// Taken, whether or not it was about a charge of ours: a gateway
+		// told no keeps calling, and stops calling a venue that says no
+		// too often.
+		w.WriteHeader(http.StatusNoContent)
+	case errors.Is(err, charges.ErrBadNotice):
+		s.log.Warn("a call to the gateway's hook was not the gateway's", "request_id", RequestID(r.Context()), "gateway", r.PathValue("gateway"))
+		writeError(w, s.log, http.StatusUnauthorized, CodeUnauthenticated, "not signed by the gateway")
+	case errors.Is(err, charges.ErrNoNotices):
+		writeError(w, s.log, http.StatusNotFound, CodeNotFound, "not found")
+	default:
+		s.log.Error("taking a gateway's notice failed", "request_id", RequestID(r.Context()), "error", err)
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 	}
 }

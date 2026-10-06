@@ -6958,3 +6958,50 @@ wide, on a charge put into a demo database by hand since no gateway works locall
 the pill in danger, the card with its sentence and reference, "I refunded it" armed
 and confirmed, and the pill back to terracotta after. Not seen: a charge becoming
 unapplied through a real gateway, the chime for one, the waiter's frame, a refusal.
+
+## ADR-224 - A gateway's webhook is a hint to ask it now, and never proof
+2026-10 · Status: accepted. Phase 11, Task 4f5.
+Context: a paid charge reaches the bill when the guest's phone asks (ADR-222) or the
+sweep does, up to 20 seconds later (ADR-221). A gateway can also call the venue the
+moment it is paid. The call arrives from the internet, through the relay.
+Decision:
+  - **`POST /order/api/hook/{gateway}`**, under the guest's mount, because that is
+    all the relay forwards: a gateway reaches the venue the way a guest does, at
+    `<public_url>/order/api/hook/razorpay`. It takes no table code and no session.
+  - **A notice is believed about one thing: which charge to go and ask about.**
+    `charges.Notice` checks the call is the gateway's, finds the charge it names,
+    and calls `Settle`, which asks the gateway itself (ADR-220). What the notice
+    says of the charge's state, amount or method is never read. So a notice can
+    make a payment land sooner and can make nothing land that would not have, and
+    a forged one that somehow passed would cost one call to the gateway.
+  - **The signature is checked anyway**, before any of the body is read, over the
+    body exactly as it arrived, in constant time. For Razorpay, from its own
+    documentation: `X-Razorpay-Signature` is the hex HMAC-SHA256 of the raw body
+    under the webhook's own secret, which is not the API's. Events named
+    `payment_link.*` name a link at `payload.payment_link.entity.id`; any other
+    event is taken and does nothing.
+  - **`gateway_webhook_secret` is configuration**, as the keys are (ADR-221).
+    **Unset, no notice is believed**: the route answers 404 and the sweep alone
+    finds out. A venue is no less correct without it, only up to 20 seconds slower
+    for a guest who closed the page.
+  - **An adapter may or may not take notices**: `gateway.Notified` is a second,
+    optional interface, so the two questions of ADR-220 stay two.
+  - **A notice that is the gateway's is answered 204 whatever came of it**: about
+    a charge mez never started, about nothing, sent twice, or with the gateway
+    then out of reach. A gateway told no keeps calling, and stops calling a venue
+    that says no too often. One that is not the gateway's is 401 and a warning in
+    the log.
+  - **A notice sent twice is one payment**, by the tender's key (ADR-220). The
+    event's id is not kept: there is nothing it would add.
+  - A notice is at most 256 KB, and is counted against the guest API's limit by
+    address like any other call there.
+Because: the webhook is the one way money-shaped data reaches mez from a stranger's
+address. Treating it as a doorbell and not a message means its contents cannot
+matter.
+Cost: a third secret to set, in two places that must agree (the gateway's dashboard
+and the venue's configuration), and a webhook address to enter at the gateway by
+hand. Wrong, it fails quietly: every call is a 401 and a warning, and payments still
+land by the sweep. The path was not run through the relay. The real binary was sent
+a signed call (204) and a forged, an unsigned and a tampered one (401 each), with no
+secret in its log; **no call from the real Razorpay has been received**, so its
+payload's shape here is its documentation's.

@@ -121,8 +121,9 @@ Phase 10.
     - [x] **4f4.** Unapplied charges on the terminal: money a gateway took
       that no bill could, for a person to refund or record, and to say which
       (ADR-223).
-    - [ ] **4f5.** The gateway's webhook, through the relay, so a payment
-      lands without waiting for the sweep.
+    - [x] **4f5.** The gateway's webhook, through the relay, so a payment
+      lands without waiting for the sweep: `POST /order/api/hook/{gateway}`,
+      a hint to ask the gateway now and never proof (ADR-224).
     - [ ] **4f6.** Cashfree and Stripe, and the owner choosing a gateway in
       the back office.
   - [ ] **4g.** Splitting the bill among the guests at a table.

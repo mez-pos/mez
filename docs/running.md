@@ -169,6 +169,7 @@ The full set of settings:
 | `dev_origin` | `-dev-origin` | `MEZ_DEV_ORIGIN` | empty, so no CORS |
 | `gateway` | `-gateway` | `MEZ_GATEWAY` | empty, so no gateway; `razorpay` |
 | `gateway_key_id` | `-gateway-key-id` | `MEZ_GATEWAY_KEY_ID` | empty; needed when `gateway` is set |
+| `gateway_webhook_secret` | `-gateway-webhook-secret` | `MEZ_GATEWAY_WEBHOOK_SECRET` | empty, so no webhook is believed; a secret. Set it where the webhook is made at the gateway, for `<public_url>/order/api/hook/razorpay` and the payment link events |
 | `public_url` | `-public-url` | `MEZ_PUBLIC_URL` | empty; the address guests reach the venue at, `https://cafe.example`. A gateway sends a guest back to it after paying |
 | `gateway_key_secret` | `-gateway-key-secret` | `MEZ_GATEWAY_KEY_SECRET` | empty; a secret, needed when `gateway` is set. Prefer the environment: a flag is visible to anyone who can list this machine's processes |
 | | `-config` | | `config.toml` beside the binary |

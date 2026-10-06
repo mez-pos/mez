@@ -52,6 +52,46 @@ func (q *Queries) CreateGatewayCharge(ctx context.Context, arg CreateGatewayChar
 	return id, err
 }
 
+const gatewayChargeByGatewayID = `-- name: GatewayChargeByGatewayID :one
+SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
+FROM gateway_charges
+WHERE gateway = ? AND gateway_id = ?
+`
+
+type GatewayChargeByGatewayIDParams struct {
+	Gateway   string
+	GatewayID string
+}
+
+// The charge a provider's notice is about, by the provider's own id.
+func (q *Queries) GatewayChargeByGatewayID(ctx context.Context, arg GatewayChargeByGatewayIDParams) (GatewayCharge, error) {
+	row := q.db.QueryRowContext(ctx, gatewayChargeByGatewayID, arg.Gateway, arg.GatewayID)
+	var i GatewayCharge
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.VenueID,
+		&i.TableID,
+		&i.OrderID,
+		&i.Gateway,
+		&i.GatewayID,
+		&i.CheckoutUrl,
+		&i.AmountMinor,
+		&i.Currency,
+		&i.Status,
+		&i.Method,
+		&i.Reference,
+		&i.Problem,
+		&i.CreatedAt,
+		&i.SettledAt,
+		&i.Resolution,
+		&i.ResolvedAt,
+		&i.ResolvedBy,
+	)
+	return i, err
+}
+
 const gatewayChargeByPublicID = `-- name: GatewayChargeByPublicID :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
        status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by

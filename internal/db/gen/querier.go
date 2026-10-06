@@ -209,6 +209,8 @@ type Querier interface {
 	// or no row for a venue that has none yet.
 	FirstSoldByDish(ctx context.Context, venueID int64) ([]time.Time, error)
 	FloorVersion(ctx context.Context, venueID int64) (int64, error)
+	// The charge a provider's notice is about, by the provider's own id.
+	GatewayChargeByGatewayID(ctx context.Context, arg GatewayChargeByGatewayIDParams) (GatewayCharge, error)
 	GatewayChargeByPublicID(ctx context.Context, publicID string) (GatewayCharge, error)
 	// A venue's charges in a status, oldest first: the open ones to ask the
 	// provider about, the unapplied ones a person must deal with.

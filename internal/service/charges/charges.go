@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/byjoellobo/mez/internal/db"
@@ -47,6 +48,13 @@ var (
 
 	// ErrChargeNotFound means no charge with that id at the caller's venue.
 	ErrChargeNotFound = errors.New("no such charge")
+
+	// ErrNoNotices means the venue takes no notices from a gateway, or
+	// none from the one named.
+	ErrNoNotices = errors.New("the venue takes no notices from that gateway")
+
+	// ErrBadNotice means a notice was not the gateway's own.
+	ErrBadNotice = errors.New("the notice is not the gateway's")
 )
 
 // chargePrefix is the public ID prefix of a charge: chg_7K3M9QX2.
@@ -121,6 +129,9 @@ type Options struct {
 	// once it is committed: the hub's Notify, so terminals read again
 	// (ADR-223). Nil tells nobody.
 	OnChange func(venueID int64)
+	// Notices is the venue's gateway as one that calls back, when it can
+	// and is set up to (ADR-224). Nil takes no notices.
+	Notices gateway.Notified
 }
 
 // Service starts charges and settles them.
@@ -131,6 +142,7 @@ type Service struct {
 	clock    Clock
 	log      *slog.Logger
 	onChange func(venueID int64)
+	notices  gateway.Notified
 }
 
 // New returns a Service.
@@ -147,7 +159,7 @@ func New(o Options) (*Service, error) {
 	if o.OnChange == nil {
 		o.OnChange = func(int64) {}
 	}
-	return &Service{db: o.DB, orders: o.Orders, gateways: o.Gateways, clock: o.Clock, log: o.Log, onChange: o.OnChange}, nil
+	return &Service{db: o.DB, orders: o.Orders, gateways: o.Gateways, clock: o.Clock, log: o.Log, onChange: o.OnChange, notices: o.Notices}, nil
 }
 
 // Start asks the venue's gateway for what the table owes now, and answers
@@ -424,4 +436,37 @@ func methodOf(m gateway.Method) order.PaymentMethod {
 	default:
 		return order.PaymentOther
 	}
+}
+
+// Notice takes a gateway's call that a charge has moved (ADR-224). It is a
+// hint and nothing more: the call is checked to be the gateway's, the
+// charge it names is found, and Settle asks the gateway itself. So a notice
+// can make a payment land sooner, and can make nothing land that would not
+// have.
+//
+// A notice about a charge mez does not know, or about nothing, is taken and
+// does nothing. A settle that decides nothing is not an error here either:
+// the gateway has done its part by calling, and the sweep will ask again.
+func (s *Service) Notice(ctx context.Context, name string, header http.Header, body []byte) error {
+	if s.notices == nil {
+		return ErrNoNotices
+	}
+	gatewayID, err := s.notices.Notice(header, body)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrBadNotice, err)
+	}
+	if gatewayID == "" {
+		return nil
+	}
+	row, err := s.db.Queries().GatewayChargeByGatewayID(ctx, gen.GatewayChargeByGatewayIDParams{Gateway: name, GatewayID: gatewayID})
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("reading the charge a notice is about: %w", err)
+	}
+	if _, err := s.Settle(ctx, row.VenueID, row.PublicID); err != nil {
+		s.log.Warn("a gateway's notice could not be acted on just now; the sweep will ask again", "charge", row.PublicID, "error", err)
+	}
+	return nil
 }

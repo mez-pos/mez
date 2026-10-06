@@ -57,6 +57,10 @@ const (
 type Options struct {
 	KeyID     string
 	KeySecret string
+	// WebhookSecret is the secret Razorpay signs its webhooks with, set
+	// where the webhook is, in Razorpay's dashboard. It is not the API's
+	// secret. Empty, no webhook is believed.
+	WebhookSecret string
 	// BaseURL is Razorpay's API, or a stand-in for a test. Empty is
 	// DefaultBaseURL.
 	BaseURL string
@@ -69,6 +73,7 @@ type Options struct {
 // Gateway is Razorpay.
 type Gateway struct {
 	keyID, keySecret string
+	webhookSecret    string
 	base             string
 	client           *http.Client
 	now              func() time.Time
@@ -95,7 +100,8 @@ func New(o Options) (*Gateway, error) {
 	}
 	return &Gateway{
 		keyID: strings.TrimSpace(o.KeyID), keySecret: strings.TrimSpace(o.KeySecret),
-		base: strings.TrimRight(o.BaseURL, "/"), client: o.Client, now: o.Now,
+		webhookSecret: strings.TrimSpace(o.WebhookSecret),
+		base:          strings.TrimRight(o.BaseURL, "/"), client: o.Client, now: o.Now,
 	}, nil
 }
 
