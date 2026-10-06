@@ -57,11 +57,13 @@ SELECT DISTINCT venue_id FROM gateway_charges WHERE status = 'open' ORDER BY ven
 -- name: UnresolvedGatewayCharges :many
 -- Money a gateway took that no bill could, and nobody has dealt with yet:
 -- oldest first, with its table by name and its ticket by public id. A
--- round's charge that never reached a ticket has none.
-SELECT c.public_id, c.table_id, t.name AS table_name, CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id,
+-- round's charge that never reached a ticket has none, and the charge for an
+-- order to collect has no table.
+SELECT c.public_id, CAST(coalesce(c.table_id, 0) AS INTEGER) AS table_id, CAST(coalesce(t.name, '') AS TEXT) AS table_name,
+       CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id,
        c.gateway, c.gateway_id, c.amount_minor, c.currency, c.method, c.reference, c.problem, c.settled_at
 FROM gateway_charges c
-JOIN tables t ON t.id = c.table_id
+LEFT JOIN tables t ON t.id = c.table_id
 LEFT JOIN orders o ON o.id = c.order_id
 WHERE c.venue_id = ? AND c.status = 'unapplied' AND c.resolved_at IS NULL
 ORDER BY c.settled_at, c.id

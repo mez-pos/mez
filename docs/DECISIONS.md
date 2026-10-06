@@ -7988,3 +7988,51 @@ Cost: an order to collect can be placed in the services and goes no further: no
 charge can be made for it, since a charge's table is NOT NULL as well, and nothing
 sends it. No route reaches `PlacePickup`. The migration is the largest yet to
 touch money's tables and has been run on a seeded database only.
+
+## ADR-249 - A paid order to collect is a ticket of its own, with a code no order still out shares
+2026-10 · Status: accepted. Phase 11, Task 5f1b.
+Context: ADR-248 holds an order to collect unpaid and refuses to send one. A
+charge (ADR-220) had a table, NOT NULL, and a paid round was put on its table's
+ticket (ADR-226).
+Decision:
+  - **A charge may have no table** (migration 00050): `gateway_charges` is built
+    again, as 00044 built it. Nothing refers to it, so nothing is deleted by it.
+    Only a round's charge may go without: a bill's is a table's, by a rule in the
+    table. Going back is refused while a charge has none.
+  - **`charges.StartRound` with no table charges an order to collect**, and
+    nothing else about a charge changed: one open charge to a round, the amount
+    the round asks, exactly once by the tender's key (ADR-220, ADR-226).
+  - **Paid, it is sent on a ticket of its own**: channel `web`, to take away, no
+    table, by nobody. Then tendered on that ticket as a table's round is, so it is
+    settled and invoiced in the counter's own series.
+  - **The ticket is opened under a key that is the round's.** Opening it and
+    appending to it are two steps, and a table's ticket is found again by its
+    table; this one has none to be found by. Opened again under the same key it is
+    the same ticket, so a settle that stopped between the two finishes on it and
+    opens no second.
+  - **A pickup code is given when it is sent**: three characters, digits and
+    consonants, no 0 or 1 and no vowels. With no vowel a code spells almost
+    nothing in any language, which is the profanity list docs/02-domain.md asks
+    for, kept by leaving letters out; a short list of bare consonant runs is
+    refused as well.
+  - **No two orders still out at a venue share a code.** "Out" is sent and its
+    ticket not closed. It is asked in the write that gives the code, and this
+    process is the only writer. It is not an index: 00049 made one over every code
+    ever given, which would have run out, and 00050 takes it off. A code is free
+    again when staff close the ticket.
+  - **Twenty short codes are tried, then twenty of four characters, then it
+    waits**: `ErrPickupCodesOut`. The charge stays open and is tried by every
+    sweep, and it is logged as an error each time: a guest has paid and is
+    standing there.
+  - **Money for an order to collect that no ticket can take is unapplied as any
+    is**, and is shown to staff as "To collect" where a table's name would be.
+  - **A table's code does nothing with one**: it cannot pay for it, track it, or
+    let its charge go.
+Because: the invoice, the Z-report and the shift already follow from a tender on a
+ticket. Making the order a ticket was the whole of putting pickup in the books.
+Cost: a paid ticket stays open, holding its code, until someone closes it
+(ADR-220): a counter that never does runs out. Where no code is free a ticket is
+opened and left empty until one is. The ticket has no table, which is new to the
+terminal's lists and the reports only in being on the `web` channel: they show it
+as a counter ticket, with no code, until 5f4. Nothing reaches any of this from a
+phone until 5f2.

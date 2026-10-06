@@ -68,27 +68,6 @@ func TestAnOrderToCollectIsHeldUntilItIsPaid(t *testing.T) {
 	}
 }
 
-// TestAPaidOrderToCollectIsNotPutOnATablesTicket: sending one is not built
-// yet. Until it is, a paid one is refused and never lands on whatever ticket
-// a table of nothing would find.
-func TestAPaidOrderToCollectIsNotPutOnATablesTicket(t *testing.T) {
-	w := newPrepayWorld(t, true, PayFirst)
-	ctx := context.Background()
-	got, err := w.s.PlacePickup(ctx, guest("p1"), w.g.pickup())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := w.s.SendPaidRound(ctx, 1, got.PublicID); !errors.Is(err, ErrPickupNotSent) {
-		t.Fatalf("sending it: %v", err)
-	}
-	if orderCount(t, w.d) != 0 {
-		t.Error("a ticket was opened for it")
-	}
-	if still, err := w.s.PayableRound(ctx, 1, 0, got.PublicID); err != nil || still.Status != RoundUnpaid {
-		t.Errorf("after the refusal it is %+v, %v", still, err)
-	}
-}
-
 // TestAnOrderToCollectThatIsRefused: with no way to pay, with the venue
 // shut, with a dish gone, with a key that was a table's round, or with
 // nothing in it.

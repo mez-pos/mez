@@ -92,7 +92,9 @@ func Statuses() []Status { return []Status{Open, Paid, Unapplied, Failed} }
 // Charge is a charge as it stands.
 type Charge struct {
 	PublicID string
-	TableID  int64
+	// TableID is the table it was started from, and 0 for the charge of an
+	// order to collect, which has none.
+	TableID int64
 	// OrderID is the ticket the payment goes on. It is 0 for a round's
 	// charge until the paid round is on a ticket.
 	OrderID int64
@@ -249,7 +251,9 @@ func (s *Service) open(ctx context.Context, gw gateway.Gateway, a asking) (Charg
 				}
 			}
 			_, err := q.CreateGatewayCharge(ctx, gen.CreateGatewayChargeParams{
-				PublicID: publicID, VenueID: a.venueID, TableID: a.tableID,
+				PublicID: publicID, VenueID: a.venueID,
+				// An order to collect has no table (ADR-249).
+				TableID:       sql.NullInt64{Int64: a.tableID, Valid: a.tableID != 0},
 				OrderID:       sql.NullInt64{Int64: a.orderID, Valid: a.orderID != 0},
 				RoundPublicID: sql.NullString{String: a.round, Valid: a.round != ""},
 				Payer:         sql.NullString{String: a.payer, Valid: a.payer != ""},
@@ -458,6 +462,13 @@ func (s *Service) sendRound(ctx context.Context, row gen.GatewayCharge) (gen.Gat
 	case errors.Is(err, svcorder.ErrRoundNotFound):
 		c, err = s.close(ctx, row, Unapplied, "The order it paid for is no longer there."+notSent)
 		return row, c, true, err
+	case errors.Is(err, svcorder.ErrPickupCodesOut):
+		// Every code is on the counter. It passes when an order is handed
+		// over and closed, so the charge stays open and is tried again, and
+		// it is said loudly: a guest has paid and is waiting.
+		s.log.Error("a paid order to collect has no pickup code to be given: close the orders already collected",
+			"venue_id", row.VenueID, "charge", row.PublicID, "round", row.RoundPublicID.String)
+		return row, Charge{}, false, fmt.Errorf("sending the round charge %s paid for: %w", row.PublicID, err)
 	case err != nil:
 		// No shift open, the table's ticket on hold or printed, the database
 		// busy: it may pass, so the charge stays open and is tried again.
@@ -560,7 +571,7 @@ func (s *Service) row(ctx context.Context, venueID int64, publicID string) (gen.
 
 func toCharge(r gen.GatewayCharge) Charge {
 	return Charge{
-		PublicID: r.PublicID, TableID: r.TableID, OrderID: r.OrderID.Int64, Round: r.RoundPublicID.String, Payer: r.Payer.String,
+		PublicID: r.PublicID, TableID: r.TableID.Int64, OrderID: r.OrderID.Int64, Round: r.RoundPublicID.String, Payer: r.Payer.String,
 		Gateway: r.Gateway, CheckoutURL: r.CheckoutUrl,
 		Amount: money.Amount{Minor: r.AmountMinor, Currency: r.Currency}, Status: Status(r.Status), Problem: r.Problem.String, LetGo: r.LetGoAt.Valid,
 	}

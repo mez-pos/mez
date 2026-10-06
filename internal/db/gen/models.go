@@ -95,7 +95,7 @@ type GatewayCharge struct {
 	ID            int64
 	PublicID      string
 	VenueID       int64
-	TableID       int64
+	TableID       sql.NullInt64
 	OrderID       sql.NullInt64
 	Gateway       string
 	GatewayID     string

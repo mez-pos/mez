@@ -10,12 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **An order to collect** (ADR-248): in the services only, and only as far
-  as being held unpaid. Nothing can pay for one (a charge needs a table) or
-  send one (`ErrPickupNotSent`), and no route places one. Thirty may wait
-  unpaid at a venue, a figure nobody measured. Migration 00049 builds
-  `guest_rounds` again and puts back the charges that dropping it deletes:
-  tested on a seeded database, never run on the deployed one.
+- **An order to collect** (ADR-248, ADR-249): in the services only: placed,
+  paid for and sent, with a pickup code. No route places one and no screen
+  shows one. A sent one is a ticket with no table on the `web` channel: it
+  shows on the terminal and in the reports as a counter ticket would, and
+  nothing there says its code or that it is to collect (5f4). A paid ticket
+  stays open, holding its code, until staff close it: a counter that never
+  closes them runs out of codes after a few thousand, and a paid order then
+  waits, said in the log as an error. If no code is free a ticket is opened
+  and left empty until one is. The code is three consonants or digits with a
+  short list refused; no list in the venue's language. Migrations 00049 and
+  00050 build `guest_rounds` and `gateway_charges` again: tested on seeded
+  databases, never run on the deployed one. Back the database up first.
 - **The venue's pickup code** (ADR-247): in the services and the staff API
   only. No screen shows it and no guest route takes it: it can be made
   today through the API and leads nowhere until 5f. It has no limit of its

@@ -373,6 +373,10 @@ type Querier interface {
 	PairingCodeByHash(ctx context.Context, codeHash string) (PairingCode, error)
 	// The venue's live pickup code. No row when it has none.
 	PickupCodeForVenue(ctx context.Context, venueID int64) (string, error)
+	// The pickup codes of a venue's orders still out: sent, and their ticket not
+	// yet closed. A new order is given a code that is none of these, so two
+	// orders on the counter at once are never called by the same one.
+	PickupCodesOut(ctx context.Context, venueID int64) ([]string, error)
 	PrintJobByID(ctx context.Context, id int64) (PrintJobByIDRow, error)
 	// The queue as staff see it: every job not yet printed, and what printed
 	// since the given time, newest first. Payloads stay behind.
@@ -421,6 +425,10 @@ type Querier interface {
 	RolesForVenue(ctx context.Context, venueID int64) ([]Role, error)
 	SaveIdempotencyKey(ctx context.Context, arg SaveIdempotencyKeyParams) error
 	SaveOrderSnapshot(ctx context.Context, arg SaveOrderSnapshotParams) error
+	// Puts a paid order to collect on its ticket, with the code it is called
+	// out by (ADR-249). Only one still waiting, with no table, can be sent, so
+	// of two settles at once one writes nothing.
+	SendPickupRound(ctx context.Context, arg SendPickupRoundParams) (int64, error)
 	SetAreaActive(ctx context.Context, arg SetAreaActiveParams) (int64, error)
 	SetCategoryActive(ctx context.Context, arg SetCategoryActiveParams) (int64, error)
 	SetCategorySort(ctx context.Context, arg SetCategorySortParams) (int64, error)
@@ -556,7 +564,8 @@ type Querier interface {
 	UnclosedOrdersForVenue(ctx context.Context, arg UnclosedOrdersForVenueParams) ([]UnclosedOrdersForVenueRow, error)
 	// Money a gateway took that no bill could, and nobody has dealt with yet:
 	// oldest first, with its table by name and its ticket by public id. A
-	// round's charge that never reached a ticket has none.
+	// round's charge that never reached a ticket has none, and the charge for an
+	// order to collect has no table.
 	UnresolvedGatewayCharges(ctx context.Context, arg UnresolvedGatewayChargesParams) ([]UnresolvedGatewayChargesRow, error)
 	// Orders that are not closed: a ticket open, held, being paid or reopened.
 	UnsettledOrderCount(ctx context.Context, venueID int64) (int64, error)

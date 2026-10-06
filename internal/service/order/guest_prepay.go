@@ -73,10 +73,10 @@ func (s *Service) SendPaidRound(ctx context.Context, venueID int64, publicID str
 	if err := s.inThisShift(ctx, venueID, row.CreatedAt, publicID); err != nil {
 		return Round{}, err
 	}
-	// An order to collect has no table to find a ticket by, and must never
-	// be put on one found by a table of 0.
+	// An order to collect has no table to find a ticket by: it is sent on a
+	// ticket of its own.
 	if isPickup(row.TableID) {
-		return Round{}, fmt.Errorf("%w: %s", ErrPickupNotSent, publicID)
+		return s.sendPaidPickup(ctx, row)
 	}
 	lines, err := decodeLines(row.PublicID, row.Lines)
 	if err != nil {
@@ -159,6 +159,7 @@ func heldRoundOf(row gen.GuestRoundByPublicIDRow) (Round, error) {
 	return Round{
 		PublicID: row.PublicID, Status: statusOf(row.Status, row.Prepay), TableID: row.TableID, OrderID: row.OrderID.Int64,
 		Lines: lines, Subtotal: money.Amount{Minor: row.SubtotalMinor, Currency: row.Currency},
-		Due: dueOf(row.Status, row.Prepay, row.DueMinor, row.Currency),
+		Due:        dueOf(row.Status, row.Prepay, row.DueMinor, row.Currency),
+		PickupCode: row.PickupCode,
 	}, nil
 }

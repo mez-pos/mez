@@ -161,7 +161,7 @@ func (q *Queries) DecideGuestRound(ctx context.Context, arg DecideGuestRoundPara
 
 const guestRoundByKey = `-- name: GuestRoundByKey :one
 SELECT id, public_id, CAST(coalesce(table_id, 0) AS INTEGER) AS table_id, status, order_id, lines, subtotal_minor, currency,
-       fingerprint, prepay, due_minor
+       fingerprint, prepay, due_minor, CAST(coalesce(pickup_code, '') AS TEXT) AS pickup_code
 FROM guest_rounds
 WHERE venue_id = ? AND idempotency_key = ?
 `
@@ -183,6 +183,7 @@ type GuestRoundByKeyRow struct {
 	Fingerprint   string
 	Prepay        int64
 	DueMinor      sql.NullInt64
+	PickupCode    string
 }
 
 // The round a key was first sent with, as it stands now.
@@ -201,13 +202,14 @@ func (q *Queries) GuestRoundByKey(ctx context.Context, arg GuestRoundByKeyParams
 		&i.Fingerprint,
 		&i.Prepay,
 		&i.DueMinor,
+		&i.PickupCode,
 	)
 	return i, err
 }
 
 const guestRoundByPublicID = `-- name: GuestRoundByPublicID :one
 SELECT r.id, r.public_id, r.venue_id, CAST(coalesce(r.table_id, 0) AS INTEGER) AS table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
-       r.prepay, r.due_minor, r.first_seq,
+       r.prepay, r.due_minor, r.first_seq, CAST(coalesce(r.pickup_code, '') AS TEXT) AS pickup_code,
        CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id
 FROM guest_rounds r
 LEFT JOIN orders o ON o.id = r.order_id
@@ -228,6 +230,7 @@ type GuestRoundByPublicIDRow struct {
 	Prepay        int64
 	DueMinor      sql.NullInt64
 	FirstSeq      sql.NullInt64
+	PickupCode    string
 	OrderPublicID string
 }
 
@@ -248,9 +251,77 @@ func (q *Queries) GuestRoundByPublicID(ctx context.Context, publicID string) (Gu
 		&i.Prepay,
 		&i.DueMinor,
 		&i.FirstSeq,
+		&i.PickupCode,
 		&i.OrderPublicID,
 	)
 	return i, err
+}
+
+const pickupCodesOut = `-- name: PickupCodesOut :many
+SELECT CAST(r.pickup_code AS TEXT) AS pickup_code
+FROM guest_rounds r
+JOIN orders o ON o.id = r.order_id
+WHERE r.venue_id = ? AND r.pickup_code IS NOT NULL AND o.status != 'closed'
+`
+
+// The pickup codes of a venue's orders still out: sent, and their ticket not
+// yet closed. A new order is given a code that is none of these, so two
+// orders on the counter at once are never called by the same one.
+func (q *Queries) PickupCodesOut(ctx context.Context, venueID int64) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, pickupCodesOut, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var pickup_code string
+		if err := rows.Scan(&pickup_code); err != nil {
+			return nil, err
+		}
+		items = append(items, pickup_code)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const sendPickupRound = `-- name: SendPickupRound :execrows
+UPDATE guest_rounds
+SET status = 'sent', order_id = ?1, decided_at = ?2, first_seq = ?3,
+    pickup_code = ?4
+WHERE id = ?5 AND venue_id = ?6 AND status = 'waiting' AND table_id IS NULL
+`
+
+type SendPickupRoundParams struct {
+	OrderID    sql.NullInt64
+	DecidedAt  sql.NullTime
+	FirstSeq   sql.NullInt64
+	PickupCode sql.NullString
+	ID         int64
+	VenueID    int64
+}
+
+// Puts a paid order to collect on its ticket, with the code it is called
+// out by (ADR-249). Only one still waiting, with no table, can be sent, so
+// of two settles at once one writes nothing.
+func (q *Queries) SendPickupRound(ctx context.Context, arg SendPickupRoundParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, sendPickupRound,
+		arg.OrderID,
+		arg.DecidedAt,
+		arg.FirstSeq,
+		arg.PickupCode,
+		arg.ID,
+		arg.VenueID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const unclosedOrderAtTable = `-- name: UnclosedOrderAtTable :one

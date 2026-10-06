@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
@@ -87,6 +88,9 @@ type Options struct {
 	// setting says: an order held for a payment nobody can make is an order
 	// that never happens (ADR-225).
 	CanCharge bool
+	// Random is where pickup codes are drawn from (ADR-249). Nil is
+	// crypto/rand.
+	Random io.Reader
 }
 
 // PrintQueue is the print queue as the order service needs it: woken after
@@ -104,6 +108,7 @@ type Service struct {
 	prints    PrintQueue
 	onChange  func(venueID int64)
 	canCharge bool
+	random    io.Reader
 	// accepting is held while a request is accepted, so two tills
 	// accepting at one table cannot each open it a ticket.
 	accepting sync.Mutex
@@ -123,7 +128,13 @@ func New(opts Options) (*Service, error) {
 	if opts.OnChange == nil {
 		opts.OnChange = func(int64) {}
 	}
-	return &Service{db: opts.DB, clock: opts.Clock, publisher: opts.Publisher, log: opts.Log, prints: opts.Prints, onChange: opts.OnChange, canCharge: opts.CanCharge}, nil
+	if opts.Random == nil {
+		opts.Random = rand.Reader
+	}
+	return &Service{
+		db: opts.DB, clock: opts.Clock, publisher: opts.Publisher, log: opts.Log, prints: opts.Prints, onChange: opts.OnChange,
+		canCharge: opts.CanCharge, random: opts.Random,
+	}, nil
 }
 
 // Meta is who is asking, from where, and the idempotency key if they sent

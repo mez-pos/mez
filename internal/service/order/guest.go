@@ -112,6 +112,9 @@ type Round struct {
 	// Bill is the public id of the ticket a sent round is on. Only
 	// TrackRound fills it.
 	Bill string
+	// PickupCode is what an order to collect is called out by, once it is
+	// paid and sent (ADR-249). Empty for a round at a table.
+	PickupCode string
 }
 
 // errTableChanged unwinds a round whose table gained or lost its ticket

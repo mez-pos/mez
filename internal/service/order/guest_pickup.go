@@ -2,8 +2,12 @@ package order
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"io"
+	"slices"
+	"time"
 
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/db/gen"
@@ -133,8 +137,89 @@ func (s *Service) PlacePickup(ctx context.Context, meta Meta, cmd PlacePickup) (
 // table.
 func isPickup(tableID int64) bool { return tableID == 0 }
 
-// ErrPickupNotSent means a paid order to collect could not be put on a
-// ticket: sending one is not built yet (Task 5f1b). It is an error and not a
-// guess at a ticket, so that money taken for one would stay in front of a
-// person and never be put on a table's bill by mistake.
-var ErrPickupNotSent = errors.New("an order to collect cannot be sent to the kitchen yet")
+// ErrPickupCodesOut means every pickup code is on an order still out. It
+// passes when one is handed over and its ticket closed.
+var ErrPickupCodesOut = errors.New("every pickup code is on an order still out")
+
+// pickupCodeDraws is how many short codes are drawn before a long one is,
+// and how many long ones before giving up. With a few thousand short codes
+// and a counter that holds a few dozen orders, the first draw is free.
+const pickupCodeDraws = 20
+
+// sendPaidPickup puts a paid order to collect on a ticket of its own, sends
+// it to the kitchen, and gives it the code it is called out by (ADR-249).
+//
+// The ticket is opened under a key that is the round's, so a call that
+// stopped after opening it finds the same ticket the next time and does not
+// open another: the caller has the money already, and this is safe to call
+// again. It is on the web channel, to take away, with no table, and it is
+// nobody's on staff.
+func (s *Service) sendPaidPickup(ctx context.Context, row gen.GuestRoundByPublicIDRow) (Round, error) {
+	publicID, venueID := row.PublicID, row.VenueID
+	lines, err := decodeLines(publicID, row.Lines)
+	if err != nil {
+		return Round{}, err
+	}
+	opened, err := s.Open(ctx, Meta{VenueID: venueID, IdempotencyKey: "pickup-ticket:" + publicID},
+		OpenOrder{Channel: order.ChannelWeb, Service: order.ServiceTakeaway})
+	if err != nil {
+		return Round{}, busy(err)
+	}
+	guest := Meta{VenueID: venueID}
+	_, err = s.run(ctx, guest, opened.OrderID, "paid_pickup", publicID, func(ctx context.Context, tx *db.OrderTx, _ venue, at time.Time) ([]order.Payload, error) {
+		if tx.State.Status == order.StatusClosed {
+			return nil, fmt.Errorf("%w: its ticket is closed", ErrRoundNotFound)
+		}
+		code, err := freePickupCode(ctx, tx.Queries(), s.random, venueID)
+		if err != nil {
+			return nil, err
+		}
+		first := tx.State.LastSeq + 1
+		n, err := tx.Queries().SendPickupRound(ctx, gen.SendPickupRoundParams{
+			OrderID: sql.NullInt64{Int64: tx.OrderID, Valid: true}, DecidedAt: sql.NullTime{Time: at, Valid: true},
+			FirstSeq: sql.NullInt64{Int64: first, Valid: true}, PickupCode: sql.NullString{String: code, Valid: true},
+			ID: row.ID, VenueID: venueID,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("sending order to collect %s: %w", publicID, err)
+		}
+		if n != 1 {
+			return nil, errRoundRaced
+		}
+		return roundPayloads(lines, first), nil
+	})
+	if err != nil && !errors.Is(err, errRoundRaced) {
+		return Round{}, busy(err)
+	}
+	after, err := s.heldRound(ctx, venueID, publicID)
+	if err != nil {
+		return Round{}, err
+	}
+	if RoundStatus(after.Status) != RoundSent {
+		return Round{}, fmt.Errorf("sending order to collect %s: it is %s", publicID, after.Status)
+	}
+	s.log.Info("a paid order to collect was sent", "venue_id", venueID, "round", publicID, "order_id", after.OrderID.Int64, "pickup_code", after.PickupCode)
+	return heldRoundOf(after)
+}
+
+// freePickupCode draws a code that no order still out at the venue is called
+// by. It is asked inside the write that gives the code, and this process is
+// the only writer, so two orders sent at once cannot be given the same one.
+func freePickupCode(ctx context.Context, q *gen.Queries, random io.Reader, venueID int64) (string, error) {
+	out, err := q.PickupCodesOut(ctx, venueID)
+	if err != nil {
+		return "", fmt.Errorf("reading the pickup codes out at venue %d: %w", venueID, err)
+	}
+	for _, length := range []int{order.PickupCodeLength, order.PickupCodeLong} {
+		for range pickupCodeDraws {
+			code, err := order.NewPickupCode(random, length)
+			if err != nil {
+				return "", err
+			}
+			if !slices.Contains(out, code) {
+				return code, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("%w: venue %d has %d out", ErrPickupCodesOut, venueID, len(out))
+}

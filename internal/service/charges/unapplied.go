@@ -61,6 +61,10 @@ type UnappliedCharge struct {
 	At time.Time
 }
 
+// ToCollect stands where a table's name would for the charge of an order to
+// collect (ADR-249).
+const ToCollect = "To collect"
+
 // Waiting is the unapplied charges nobody has dealt with, oldest first.
 func (s *Service) Waiting(ctx context.Context, venueID int64) ([]UnappliedCharge, error) {
 	rows, err := s.db.Queries().UnresolvedGatewayCharges(ctx, gen.UnresolvedGatewayChargesParams{VenueID: venueID, Limit: maxSweep})
@@ -69,6 +73,11 @@ func (s *Service) Waiting(ctx context.Context, venueID int64) ([]UnappliedCharge
 	}
 	out := make([]UnappliedCharge, len(rows))
 	for i, r := range rows {
+		// An order to collect has no table: staff are told what it was
+		// for, where a table's name would be.
+		if r.TableID == 0 {
+			r.TableName = ToCollect
+		}
 		out[i] = UnappliedCharge{
 			PublicID: r.PublicID, TableID: r.TableID, TableName: r.TableName, OrderPublicID: r.OrderPublicID,
 			Gateway: r.Gateway, GatewayID: r.GatewayID, Reference: r.Reference.String, Method: r.Method.String,

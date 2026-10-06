@@ -8,27 +8,27 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 but 5f1b on, and 6 done. (Walks owed.)
+4 but 4f6b (Cashfree, question 8), 5 but 5f2 on, and 6 done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 5f1a: an order to collect, held unpaid** (ADR-248). A round may
-have no table (migration 00049); `PlacePickup` prices and holds one where a
-gateway is set. Nothing pays for one or sends one yet.
+**Phase 11, Task 5f1b: paying for an order to collect, and sending it** (ADR-249).
+A charge may have no table (migration 00050). Paid, the order is a ticket of its
+own on the `web` channel, sent, with a pickup code no order still out shares.
 
 ## Next task
 
-**No real charge has been made yet**, at Razorpay (ADR-221) or at Stripe: test
-keys, then on a phone Pay online on a bill, a share from two phones, and Pay on
-an order with paying first chosen.
+**No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
+online on a bill, a share from two phones, and Pay on an order paid first.
 
-**Phase 11, Task 5f1b: paying for an order to collect, and sending it.** Read
-ADR-248, ADR-226, `internal/service/charges/charges.go` (`StartRound`, `apply`,
-`sendRound`), `internal/service/order/guest_prepay.go`, migration 00049.
-- `gateway_charges.table_id` is NOT NULL: build it again as 00044 did (the child).
-- `SendPaidRound` refuses a pickup (`ErrPickupNotSent`). Paid, it opens its own
-  ticket, channel `web`, no table, and sends. Find what assumes a ticket's table.
-- A pickup code of three or four characters, unique at the venue, given at send.
+**Phase 11, Task 5f2: ordering to collect over the guest API.** Read ADR-247 to
+ADR-249, ADR-246, `internal/api/guest.go`, `guest_order.go`, `guest_charge.go`.
+- Routes under the venue's pickup code, `/order/api/p/{code}/...`: the venue, the
+  menu, place an order (`PlacePickup`), pay for it (`StartRound` with no table),
+  how the charge stands, and track it with its `pickup_code`.
+- `tablecodes.ResolvePickup`. Offered only where a gateway is set: say so plainly.
+- Limits (ADR-246) are by table: key them by the venue here. The return address
+  after paying is `<public_url>/order/p/<code>`. A receipt (ADR-240) asks by a table.
 
 ## Known broken / in progress
 

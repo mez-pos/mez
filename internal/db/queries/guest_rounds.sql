@@ -15,7 +15,7 @@ RETURNING id;
 -- name: GuestRoundByKey :one
 -- The round a key was first sent with, as it stands now.
 SELECT id, public_id, CAST(coalesce(table_id, 0) AS INTEGER) AS table_id, status, order_id, lines, subtotal_minor, currency,
-       fingerprint, prepay, due_minor
+       fingerprint, prepay, due_minor, CAST(coalesce(pickup_code, '') AS TEXT) AS pickup_code
 FROM guest_rounds
 WHERE venue_id = ? AND idempotency_key = ?;
 
@@ -43,7 +43,7 @@ ORDER BY r.created_at, r.id;
 
 -- name: GuestRoundByPublicID :one
 SELECT r.id, r.public_id, r.venue_id, CAST(coalesce(r.table_id, 0) AS INTEGER) AS table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
-       r.prepay, r.due_minor, r.first_seq,
+       r.prepay, r.due_minor, r.first_seq, CAST(coalesce(r.pickup_code, '') AS TEXT) AS pickup_code,
        CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id
 FROM guest_rounds r
 LEFT JOIN orders o ON o.id = r.order_id
@@ -73,3 +73,21 @@ LIMIT 1;
 -- ago: what bounds how many a stranger with the venue's code can leave lying.
 SELECT count(*) FROM guest_rounds
 WHERE venue_id = ? AND table_id IS NULL AND status = 'waiting' AND prepay = 1 AND created_at >= sqlc.arg(since);
+
+-- name: SendPickupRound :execrows
+-- Puts a paid order to collect on its ticket, with the code it is called
+-- out by (ADR-249). Only one still waiting, with no table, can be sent, so
+-- of two settles at once one writes nothing.
+UPDATE guest_rounds
+SET status = 'sent', order_id = sqlc.arg(order_id), decided_at = sqlc.arg(decided_at), first_seq = sqlc.arg(first_seq),
+    pickup_code = sqlc.arg(pickup_code)
+WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id) AND status = 'waiting' AND table_id IS NULL;
+
+-- name: PickupCodesOut :many
+-- The pickup codes of a venue's orders still out: sent, and their ticket not
+-- yet closed. A new order is given a code that is none of these, so two
+-- orders on the counter at once are never called by the same one.
+SELECT CAST(r.pickup_code AS TEXT) AS pickup_code
+FROM guest_rounds r
+JOIN orders o ON o.id = r.order_id
+WHERE r.venue_id = ? AND r.pickup_code IS NOT NULL AND o.status != 'closed';

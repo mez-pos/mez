@@ -29,7 +29,7 @@ func (s *Service) LetGo(ctx context.Context, venueID, tableID int64, publicID st
 	if err != nil {
 		return Charge{}, err
 	}
-	if row.TableID != tableID || row.RoundPublicID.Valid {
+	if !row.TableID.Valid || row.TableID.Int64 != tableID || row.RoundPublicID.Valid {
 		return Charge{}, fmt.Errorf("%w: %q is not a charge on the bill at table %d", ErrChargeNotFound, publicID, tableID)
 	}
 	if Status(row.Status) == Open && !row.LetGoAt.Valid {
