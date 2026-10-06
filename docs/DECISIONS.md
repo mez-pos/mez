@@ -8417,6 +8417,23 @@ Decision:
     was on go1.26.1, which `govulncheck` shows carrying fourteen standard
     library advisories reached by this code, in `net/http`, `crypto/tls` and
     `crypto/x509` among them. CI reads the version from go.mod, so it moves too.
+  - **The demo venue's staff get drawn PINs**, printed once, as the owner does.
+    They were fixed in the code (2222, 3333, 4444, 5555) and so public: an
+    owner who tried `-demo-menu`, liked it and kept trading would have handed
+    a manager's PIN to anyone who had read the repository.
+  - **Every app page carries a Content-Security-Policy** (self only, inline
+    styles allowed for Tailwind and React, no framing, no other form target),
+    `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer` and a
+    Permissions-Policy. The three apps share one origin on the LAN and the
+    guest app is on the internet: a flaw in one page must stay on that page,
+    and a page under another site's frame must not take a tap on "I have
+    paid" or "Void".
+  - **The owner's PIN may come from `MEZ_OWNER_PIN`**, so it need not be on a
+    command line the shell remembers and the process list shows.
+  - **Setup refuses the machine's own timezone.** `time.Local` prints as
+    "Local", which the settings code already refused as "not a setting anyone
+    meant", and a venue that stored it would keep its days by whichever
+    machine or container ran the binary. An IANA name is required.
   - **Smaller things, each its own fix:** `recoverPanic` writes no 500 over a
     response already begun; the rate limiter keys each limit apart and prunes
     a window by its own length; `/api/v1/tunnel` is not mounted without its
@@ -8429,7 +8446,10 @@ Decision:
     relay says at startup when it runs every venue on one origin; the relay's
     deploy script refuses a tag or domain that could quote its way into the
     server's root shell; Caddy's admin API is off and both containers drop
-    their capabilities.
+    their capabilities; a failed close during log rotation still reopens the
+    log instead of failing every line for the rest of the process; the log
+    file is closed after shutdown's last line and not before it; the GSTIN is
+    trimmed once before it is checked.
 Left for the owner to decide, each written in `docs/KNOWN.md` under "Security":
   - **The LAN is plain HTTP.** Device tokens, staff tokens and PINs travel in
     clear on the cafe's wifi. ADR for phase 12's TLS story covers it; until
@@ -8448,6 +8468,12 @@ Left for the owner to decide, each written in `docs/KNOWN.md` under "Security":
   - **Tips are unbounded and need no authorisation**; the pool pays them out.
   - **A printer's address may be any host and port**, or any Windows printer
     name including a UNC path, with an owner's session.
+  - **On Windows the data directory and `config.toml` are readable by every
+    local account**: the permission bits in the code mean nothing there, and
+    `C:\ProgramData` is readable by Users. Another account on the counter PC
+    can copy the database and work the PIN hashes offline, or read a gateway
+    secret kept in the file. An ACL at creation, or the installer's, is the
+    fix; until then secrets belong in the environment.
 Because: a review before the first deploy is the cheapest one there will ever
 be, and each fix above is small; the five left open each change what the
 product does, which is the owner's call and not the reviewer's.

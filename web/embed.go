@@ -7,7 +7,7 @@ import "embed"
 // files holds the placeholder bundles. They are committed, tiny and always
 // present, which is what lets `go build ./...` work on a machine that has never
 // run npm. web/*/dist is build output and is gitignored, so embedding it
-// unconditionally would break a fresh clone and every CI run before Phase 05.
+// unconditionally would break a fresh clone and any CI run without Node.
 //
 //go:embed all:placeholder
 var files embed.FS

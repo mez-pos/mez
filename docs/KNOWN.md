@@ -22,7 +22,9 @@
   five tries a quarter hour, for ever, is 480 a day against a four-digit
   PIN. **Tips are unbounded** and need no authorisation, and the pool pays
   them out. **A printer's address may be any host and port**, or any
-  Windows printer name including a UNC path, with an owner's session.
+  Windows printer name including a UNC path, with an owner's session. **On
+  Windows the data directory and `config.toml` are readable by every local
+  account**: the permission bits in the code mean nothing there.
 - **Quality, noted and not changed** (ADR-257): the menu allows a negative
   modifier price and the projection refuses it, so "no cheese, less 20" can
   never be rung up; the cash rounding step is validated and stored and never
@@ -32,7 +34,13 @@
   every stream of the venue on every reconnect; the relay's reset of an
   overrun stream is sent from the reading goroutine; a public id collision
   in `db/orders.go` is told from other unique violations by the driver's
-  message text.
+  message text. In the web apps: the back office's "today" and quick ranges
+  take the trading day to start at 04:00 in the browser's zone while the
+  server honours the venue's `day_start`; `cmd/mez/main.go`'s `run` is some
+  260 lines of wiring; the tender flow is written twice (`PayScreen.tsx` and
+  `WaiterBill.tsx`); channel, payment-method and service labels and the rate
+  formatter each exist in three to five copies that have drifted; the guest
+  app repeats its header and line list in three screens.
 - **Orders to collect at the counter** (ADR-253, `terminal-past-bills.md`):
   **not seen in a browser at all**: the To collect tab, the code and the
   kitchen's word on a row, the Call out card in the panel, Handed over and

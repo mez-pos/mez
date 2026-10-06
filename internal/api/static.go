@@ -29,6 +29,13 @@ func (s *Server) spa(fsys fs.FS) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		name := requestedFile(r.URL.Path)
+		if name == indexFile {
+			// The page itself, asked for by its mount or by name: served
+			// by serveIndex so that it carries the page headers, which a
+			// file server would not put on it.
+			s.serveIndex(w, r, fsys)
+			return
+		}
 
 		info, err := fs.Stat(fsys, name)
 		switch {
@@ -68,6 +75,7 @@ func (s *Server) serveIndex(w http.ResponseWriter, r *http.Request, fsys fs.FS) 
 	}
 
 	setCacheControl(w, indexFile)
+	setPageSecurityHeaders(w)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(index); err != nil {
@@ -103,4 +111,30 @@ func (s *Server) mountStatic(mux *http.ServeMux) {
 		}
 		mux.Handle(mount, http.StripPrefix(strings.TrimSuffix(mount, "/"), handler))
 	}
+}
+
+// pageCSP is the Content-Security-Policy every app page is served with. The
+// bundles are self-contained: their scripts, styles, fonts and images are
+// their own files or data URLs (the QR codes), and they talk only to the
+// server that served them, over fetch and the WebSocket. So nothing from
+// another origin may run on a page, a page may not be framed by anyone, and
+// a form may not be sent anywhere else. Tailwind and React set styles
+// inline, which is what 'unsafe-inline' on style-src allows and nothing more.
+const pageCSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+	"img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' data: blob:; " +
+	"frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'self'"
+
+// setPageSecurityHeaders puts on an app page the headers that keep it from
+// being used by another page. On the LAN the three apps share one origin,
+// and the guest app is reached from the internet through the relay, so a
+// flaw in any one page must stay on that page: no framing (a tap on an
+// invisible "I have paid" or "Void" over another site), no script from
+// elsewhere, no referrer carrying a path that holds a table's code.
+func setPageSecurityHeaders(w http.ResponseWriter) {
+	h := w.Header()
+	h.Set("Content-Security-Policy", pageCSP)
+	h.Set("X-Frame-Options", "DENY")
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("Referrer-Policy", "no-referrer")
+	h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
 }

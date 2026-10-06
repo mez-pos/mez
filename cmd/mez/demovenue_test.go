@@ -27,8 +27,8 @@ func TestDemoVenueHasEveryRole(t *testing.T) {
 			t.Errorf("two demo people are called %s", p.Name)
 		}
 		names[p.Name] = true
-		if _, err := auth.HashPIN(p.PIN); err != nil {
-			t.Errorf("%s's PIN %q: %v", p.Name, p.PIN, err)
+		if p.PIN != "" {
+			t.Errorf("%s has a fixed PIN %q: demo PINs are drawn at setup, never written in the code", p.Name, p.PIN)
 		}
 	}
 	for _, r := range auth.DefaultRoles() {
@@ -87,8 +87,13 @@ func TestSetupDemoVenue(t *testing.T) {
 	if got := field(t, out, "Demo floor"); got != "12" {
 		t.Errorf("summary says %s tables, want 12", got)
 	}
-	if !strings.Contains(out, "PINs are public") {
-		t.Errorf("the summary does not say the demo PINs are public:\n%s", out)
+	if !strings.Contains(out, "PINs drawn now") {
+		t.Errorf("the summary does not say the demo PINs were drawn:\n%s", out)
+	}
+	for _, fixed := range []string{"2222", "3333", "4444", "5555"} {
+		if strings.Contains(out, "PIN "+fixed) {
+			t.Errorf("the summary shows the old fixed PIN %s:\n%s", fixed, out)
+		}
 	}
 
 	svc, err := floor.New(floor.Options{DB: d})

@@ -107,8 +107,11 @@ func (r *rotatingFile) Write(p []byte) (int, error) {
 // avoid.
 func (r *rotatingFile) rotate() error {
 	if err := r.file.Close(); err != nil {
+		// The handle is gone either way. Without a reopen here every later
+		// line would fail with "closed log file" for the life of the
+		// process, which is the one outcome rotation must never have.
 		r.file = nil
-		return fmt.Errorf("closing log for rotation: %w", err)
+		return r.reopenAfter(fmt.Errorf("closing log for rotation: %w", err))
 	}
 	r.file = nil
 

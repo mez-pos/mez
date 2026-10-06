@@ -21,9 +21,9 @@ LDFLAGS := -s -w \
 	-X main.commit=$(COMMIT) \
 	-X main.buildDate=$(DATE)
 
-# Empty until Phase 00 Task 5 creates the tree. `go list` exits 0 and prints
-# nothing on an empty module, unlike `go vet` and `go test`, which exit 1. Every
-# recipe that would break on an empty module guards on this.
+# The package list. `go list` exits 0 and prints nothing on an empty module,
+# unlike `go vet` and `go test`, which exit 1, so the recipes that would break
+# on an empty module guard on this; it costs nothing now the tree exists.
 PKGS := $(shell go list ./... 2>/dev/null)
 
 # No cgo, ever. modernc.org/sqlite is pure Go and the build must cross-compile

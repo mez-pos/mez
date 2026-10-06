@@ -13,8 +13,8 @@ import (
 // top-level key = value pairs, # comments, double-quoted strings and bare
 // numbers, booleans or words.
 //
-// It is hand-written rather than a dependency. The whole configuration is six
-// scalar settings, adding a TOML library would mean an ADR and a supply-chain
+// It is hand-written rather than a dependency. The whole configuration is a
+// short list of scalar settings; adding a TOML library would mean an ADR and a supply-chain
 // surface for a cafe owner's antivirus to object to, and the cost of not
 // supporting tables and arrays is a clearer error message rather than a missing
 // feature. See ADR-018.

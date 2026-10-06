@@ -59,8 +59,8 @@ const shutdownTimeout = 10 * time.Second
 const readHeaderTimeout = 10 * time.Second
 
 func main() {
-	// Two subcommands, read before the flags: each takes its own, and the
-	// server's parser refuses a positional argument.
+	// The subcommands are read before the flags: each takes its own, and
+	// the server's parser refuses a positional argument.
 	if len(os.Args) > 1 {
 		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "pair": runPair, "table-codes": runTableCodes}
 		if command, ok := commands[os.Args[1]]; ok {
@@ -117,8 +117,8 @@ func run() (err error) {
 	}
 
 	// The log directory is created by logging.Setup; this is the parent that
-	// the database and the backups will also want, and failing here names the
-	// path rather than waiting for Phase 02 to fail less clearly.
+	// the database and the backups also want, and failing here names the
+	// path rather than letting the database open fail less clearly.
 	if err := os.MkdirAll(cfg.DataDir, 0o750); err != nil {
 		return fmt.Errorf("creating data directory %s: %w", cfg.DataDir, err)
 	}
@@ -129,14 +129,19 @@ func run() (err error) {
 	}
 
 	var running stack
-	running.push("logging", func(context.Context) error { return logFile.Close() })
 
 	// Shutdown runs on the way out of every return below, including the
-	// failures, and its errors join whatever sent us here.
+	// failures, and its errors join whatever sent us here. The log file is
+	// closed last of all, after shutdown has written its final lines: on
+	// the stack it was closed first, and "subsystem closed" went to a
+	// closed file.
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 		err = errors.Join(err, running.shutdown(ctx, log))
+		if cerr := logFile.Close(); cerr != nil {
+			err = errors.Join(err, fmt.Errorf("closing the log: %w", cerr))
+		}
 	}()
 
 	build := buildInfo()

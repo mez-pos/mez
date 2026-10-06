@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/byjoellobo/mez/internal/auth"
@@ -20,15 +19,17 @@ type demoPerson struct {
 }
 
 // demoStaff is one person for every role but the owner, so a screen built for
-// a role can be signed into as that role. The PINs are fixed and printed:
-// they are public, which is why only -demo-menu makes them, and why the
-// summary says so. A role added to auth.DefaultRoles needs a person here
-// (TestDemoVenueHasEveryRole fails until it has one).
+// a role can be signed into as that role. Their PINs are drawn when the
+// venue is made and printed once, as the owner's is: a fixed PIN in an open
+// source repository is a password everyone knows, and a demo venue that an
+// owner liked and kept trading on would have handed a manager's PIN to
+// anyone who had read the code. A role added to auth.DefaultRoles needs a
+// person here (TestDemoVenueHasEveryRole fails until it has one).
 var demoStaff = []demoPerson{
-	{Name: "Arjun", Role: "manager", PIN: "2222"},
-	{Name: "Meera", Role: "cashier", PIN: "3333"},
-	{Name: "Kabir", Role: "waiter", PIN: "5555"},
-	{Name: "Ravi", Role: "kitchen", PIN: "4444"},
+	{Name: "Arjun", Role: "manager"},
+	{Name: "Meera", Role: "cashier"},
+	{Name: "Kabir", Role: "waiter"},
+	{Name: "Ravi", Role: "kitchen"},
 }
 
 // demoTable is a table of the demo floor, placed on the area's grid.
@@ -71,11 +72,18 @@ func countTables(floor []demoArea) int {
 // writeDemoVenue adds the demo floor and staff to a venue, inside the
 // transaction that creates it, so a venue never exists half demonstrated.
 func writeDemoVenue(ctx context.Context, q *gen.Queries, venueID int64, roles map[string]int64, now time.Time) ([]demoPerson, error) {
+	people := make([]demoPerson, 0, len(demoStaff))
 	for _, p := range demoStaff {
 		roleID, ok := roles[p.Role]
 		if !ok {
 			return nil, fmt.Errorf("the demo staff names a role %q the venue does not have", p.Role)
 		}
+		pin, err := drawPIN()
+		if err != nil {
+			return nil, fmt.Errorf("drawing a PIN for %s: %w", p.Name, err)
+		}
+		p.PIN = pin
+		people = append(people, p)
 		hash, err := auth.HashPIN(p.PIN)
 		if err != nil {
 			return nil, fmt.Errorf("demo PIN for %s: %w", p.Name, err)
@@ -110,5 +118,5 @@ func writeDemoVenue(ctx context.Context, q *gen.Queries, venueID int64, roles ma
 	if err := q.BumpFloorVersion(ctx, venueID); err != nil {
 		return nil, fmt.Errorf("the demo floor's version: %w", err)
 	}
-	return slices.Clone(demoStaff), nil
+	return people, nil
 }

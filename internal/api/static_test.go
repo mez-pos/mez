@@ -308,3 +308,33 @@ func TestNoPathEscapesTheBundle(t *testing.T) {
 		})
 	}
 }
+
+// TestAppPagesCarryTheSecurityHeaders: the three apps share one origin on
+// the LAN and the guest app is on the internet, so every page says it may
+// not be framed, may run nothing from elsewhere, and sends no referrer.
+func TestAppPagesCarryTheSecurityHeaders(t *testing.T) {
+	s := staticServer(t)
+	for _, path := range []string{"/", "/backoffice/", "/order/t/ABCDEFGHJKLM"} {
+		resp := get(t, s, path)
+		if resp.Code != http.StatusOK {
+			t.Fatalf("GET %s: %d", path, resp.Code)
+		}
+		h := resp.Header()
+		if csp := h.Get("Content-Security-Policy"); !strings.Contains(csp, "frame-ancestors 'none'") || !strings.Contains(csp, "default-src 'self'") {
+			t.Errorf("%s: Content-Security-Policy = %q", path, csp)
+		}
+		for key, want := range map[string]string{
+			"X-Frame-Options":        "DENY",
+			"X-Content-Type-Options": "nosniff",
+			"Referrer-Policy":        "no-referrer",
+		} {
+			if got := h.Get(key); got != want {
+				t.Errorf("%s: %s = %q, want %q", path, key, got, want)
+			}
+		}
+	}
+	// A hashed asset is not a page and carries no policy of its own.
+	if csp := get(t, s, "/assets/app-ab12cd.js").Header().Get("Content-Security-Policy"); csp != "" {
+		t.Errorf("an asset carries a CSP: %q", csp)
+	}
+}

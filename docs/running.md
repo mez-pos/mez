@@ -53,8 +53,10 @@ that works for ten minutes:
   Pairing code 6QG8-3BA9   (expires 09:44)
 ```
 
-Write the PIN down: it is shown here and never again. Pass `-owner-pin` to
-choose one instead, and it is not printed at all.
+Write the PIN down: it is shown here and never again. To choose one instead,
+set `MEZ_OWNER_PIN` in the environment for the setup command; it is then not
+printed at all. The `-owner-pin` flag does the same, but a PIN on a command
+line stays in the shell's history, so prefer the environment.
 
 A venue that charges tax says so here, since an invoice cannot be issued
 without it:
@@ -165,7 +167,7 @@ The full set of settings:
 | `venue_id` | `-venue-id` | `MEZ_VENUE_ID` | empty |
 | `relay_url` | `-relay-url` | `MEZ_RELAY_URL` | empty, so no relay |
 | `relay_key` | `-relay-key` | `MEZ_RELAY_KEY` | empty; a secret, needed when `relay_url` is set |
-| `timezone` | `-timezone` | `MEZ_TIMEZONE` | the machine's own |
+| `timezone` | `-timezone` | `MEZ_TIMEZONE` | the machine's own for the server; `setup` requires an IANA name |
 | `dev_origin` | `-dev-origin` | `MEZ_DEV_ORIGIN` | empty, so no CORS |
 | `gateway` | `-gateway` | `MEZ_GATEWAY` | empty, so no gateway; `razorpay` or `stripe` |
 | `gateway_key_id` | `-gateway-key-id` | `MEZ_GATEWAY_KEY_ID` | empty; needed for `razorpay`. Stripe has none |

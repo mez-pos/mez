@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -31,6 +32,11 @@ const generatedPINDigits = 6
 var ErrAlreadySetUp = errors.New("this database is already set up")
 
 // setupOptions is everything `mez setup` takes.
+// envOwnerPIN is the environment variable setup reads the owner's PIN from
+// when -owner-pin is not given, so the PIN need not be typed on a command
+// line that the shell remembers.
+const envOwnerPIN = "MEZ_OWNER_PIN"
+
 type setupOptions struct {
 	DataDir string
 
@@ -146,7 +152,7 @@ func parseSetupFlags(args []string, out io.Writer) (setupOptions, error) {
 	set.StringVar(&o.TaxRegistration, "tax-registration", "", "GSTIN or VAT number, required by those profiles")
 	set.StringVar(&o.TaxPricing, "tax-pricing", "", "inclusive or exclusive (default: the profile's own)")
 	set.StringVar(&o.OwnerName, "owner", "Owner", "the owner's name")
-	set.StringVar(&o.OwnerPIN, "owner-pin", "", "the owner's PIN, 4 to 8 digits (default: one is drawn and printed)")
+	set.StringVar(&o.OwnerPIN, "owner-pin", "", "the owner's PIN, 4 to 8 digits (default: MEZ_OWNER_PIN, or one is drawn and printed)")
 	set.StringVar(&o.DeviceName, "device-name", "Counter 1", "what the first device will be called")
 	kind := set.String("device-kind", string(auth.KindTerminal), "terminal, kitchen or back_office")
 	set.BoolVar(&o.DemoMenu, "demo-menu", false, "make this a demo cafe: a menu priced in rupees, twelve tables and a person for each role (public PINs: never for a real venue)")
@@ -157,6 +163,16 @@ func parseSetupFlags(args []string, out io.Writer) (setupOptions, error) {
 	if set.NArg() > 0 {
 		return setupOptions{}, fmt.Errorf("setup: unexpected argument %q", set.Arg(0))
 	}
+	// A PIN on the command line is in the shell's history and in the process
+	// list while setup runs. The environment is neither, so it is offered
+	// too; drawing one is better than both.
+	if o.OwnerPIN == "" {
+		o.OwnerPIN = os.Getenv(envOwnerPIN)
+	}
+	// Trimmed once, here, so every check and every write below sees the
+	// same value: a GSTIN with a leading space must not pass a length check
+	// and then yield a state code of " 2".
+	o.TaxRegistration = strings.TrimSpace(o.TaxRegistration)
 	o.DeviceKind = auth.DeviceKind(*kind)
 	return o, nil
 }
@@ -253,6 +269,12 @@ func checkSetup(o setupOptions, now time.Time) (setupResult, gen.CreateVenuePara
 	loc, err := time.LoadLocation(o.Timezone)
 	if err != nil {
 		return fail("timezone %q: %v", o.Timezone, err)
+	}
+	if o.Timezone == "" || loc.String() == "Local" {
+		// time.Local prints as "Local", which is not a zone: stored, the
+		// venue's days and invoice times would follow whichever machine or
+		// container ran the binary, and a browser cannot interpret it.
+		return fail("pass -timezone with an IANA name such as Asia/Kolkata (or set MEZ_TIMEZONE): the machine's own zone is not a setting a venue can keep")
 	}
 	if o.FYStartMonth < 1 || o.FYStartMonth > 12 {
 		return fail("the financial year cannot start in month %d", o.FYStartMonth)
@@ -403,13 +425,13 @@ func writeSetupSummary(w io.Writer, res setupResult) {
 	fmt.Fprintf(w, "Sign in as the owner to make more codes, or run `mez pair` at this machine.\n\n")
 }
 
-// writeDemoStaff lists the demo venue's people and their PINs. The PINs are
-// not secrets and the line says so: a demo venue must never sell for real.
+// writeDemoStaff lists the demo venue's people and the PINs drawn for them.
+// This is the one time they are shown, as with the owner's.
 func writeDemoStaff(w io.Writer, people []demoPerson) {
 	if len(people) == 0 {
 		return
 	}
-	fmt.Fprintf(w, "  Demo staff  (their PINs are public: this venue is for trying mez, not for selling)\n")
+	fmt.Fprintf(w, "  Demo staff  (PINs drawn now and shown once: write them down, or reset them in the back office)\n")
 	for _, p := range people {
 		fmt.Fprintf(w, "    %-9s %-8s PIN %s\n", p.Name, p.Role, p.PIN)
 	}
