@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 3b: the wizard's questions** (ADR-267, `setup-wizard.md`).
+**Phase 12, Task 3c: printer discovery and a test print** (ADR-268).
+`internal/device/discover` searches the server's private networks for port
+9100 and lists Windows' printers; `POST /api/v1/printers/discover`; the
+wizard's fourth step. Walked against a stand-in printer on loopback.
+
+Before it, **Phase 12, Task 3b: the wizard's questions** (ADR-267, `setup-wizard.md`).
 `web/shared/screens/setup/`, at the terminal's `/setup`, outside the guard.
 Three steps, then Create in four resumable stages. Pair sends a new machine
 there. Walked in a browser from an empty data directory.

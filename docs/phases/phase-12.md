@@ -26,7 +26,7 @@ Phase 11.
   certificate is available; if not, document the SmartScreen warning honestly in
   the README rather than letting users hit it cold.
 
-- [ ] **Task 3 — First-run wizard.**
+- [x] **Task 3 — First-run wizard.**
   Venue name, currency, timezone, tax profile, financial year start, invoice
   series prefix, first admin staff member and PIN, printer discovery and test
   print. At the end: the LAN URL and a pairing code for a second device, on
@@ -55,7 +55,7 @@ Phase 11.
     `printers.manage`; the wizard's printer step adds the one chosen as the
     receipt printer and prints a test page. Skippable: a venue with no
     printer yet still finishes.
-  - [ ] **Task 3d - The last screen, and the hand-off.**
+  - [x] **Task 3d - The last screen, and the hand-off.**
     The LAN URL and a pairing code for a second device, in large type; the
     back office paired on this machine (`docs/KNOWN.md`, ADR-144's entry).
     The installer's last page and `PairScreen`'s words stop naming

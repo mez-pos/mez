@@ -2,10 +2,12 @@
 
 The first thing a new venue sees: the questions that make the venue, asked
 once, on the computer mez runs on. Built from D24 in phase 12, Task 3b
-(ADR-267), its printer step in Task 3c (ADR-268).
+(ADR-267), its printer step in Task 3c (ADR-268) and its last in 3d
+(ADR-269).
 `web/shared/screens/setup/`: `SetupWizard.tsx`, `steps.tsx`,
-`PrinterStep.tsx`, `SetupFrame.tsx`, `fields.tsx`, `setup-logic.ts`,
-`printer-logic.ts` and `use-setup-status.ts`.
+`PrinterStep.tsx`, `ReadyStep.tsx`, `SetupFrame.tsx`, `fields.tsx`,
+`setup-logic.ts`, `printer-logic.ts`, `ready-logic.ts` and
+`use-setup-status.ts`.
 It is the terminal's, at `/setup`, outside the guard.
 
 ## Purpose
@@ -27,7 +29,7 @@ round behind the head. It scrolls as a page; nothing is fixed.
   one in hand is green with its number and its name in green; the rest are
   sunken.
 - **The card:** the step's title in the serif, a line under it, its fields,
-  and along the foot "Step 2 of 4", **Back** and the green **Continue**
+  and along the foot "Step 2 of 5", **Back** and the green **Continue**
   with its arrow (**Create the venue** on the last of the questions).
 - **Foot:** a script line, and where the wizard is being served from.
 
@@ -50,6 +52,16 @@ The steps:
    picked: **Paper**, 80mm or 58mm. Then what became of the test page. The
    foot has **Skip for now** and the green **Print a test page**; after a
    page is sent, **Print again** and the green **It printed**.
+5. **More devices.** "Add another device", as three numbered things to do
+   on it. **1. What is it?** Another till, Kitchen display or Back office,
+   as cards. **2. On that device, open** the server's address on the LAN
+   with that app's path, in the numeral face at the display size (the
+   total size under 768px wide), on a sunken band; any other addresses the
+   computer has under it, small; and what to check if it does not open.
+   **3. Enter this code there**: the terracotta **Show a pairing code**,
+   then the code at the same size on the same band, what it is for and
+   until when. The foot has **Another code** once one is shown, and the
+   green **Start selling**.
 
 ## Data
 
@@ -67,6 +79,9 @@ The steps:
   `GET /api/v1/printers` again every 600ms for up to 12 seconds to read
   the test page's job. `PUT /api/v1/printers/{id}`, `/restore` and
   `/retire` where a printer is reused or replaced.
+- The last step: `GET /api/v1/devices/addresses` on arriving (`{urls}`,
+  most likely first; none where the server listens on this computer
+  alone), and `POST /api/v1/devices/codes` `{name, kind}` for each code.
 
 Nothing is subscribed to. Nothing typed is kept anywhere but the page: the
 PIN is in memory until the wizard is left.
@@ -93,8 +108,14 @@ PIN is in memory until the wizard is left.
 - Picking another printer and printing again retires the one the first try
   added. **Skip for now** and **Continue without it** leave no printer
   behind: one that was added and never confirmed is retired.
-- **It printed**, and either way of leaving, go to `/`, where the owner is
-  signed in and lands as an owner does.
+- **It printed**, and either way of leaving the printer, go to the last
+  step.
+- **Show a pairing code** makes a code for one device of the kind chosen,
+  named Counter 2, Kitchen or Office until it is renamed. Choosing another
+  kind takes the code off the screen: a code pairs the kind it was made
+  for. No code is made until asked for, because it lasts ten minutes.
+- **Start selling** goes to `/`, where the owner is signed in and lands as
+  an owner does.
 
 ## States
 
@@ -121,6 +142,10 @@ PIN is in memory until the wizard is left.
   for the owner, who still has to press the button.
 - **A typed address** that is not an IP, or that the server refuses as not
   on this network, is said under the field.
+- **No address to show** (the server listens on this computer alone, or
+  could not read its own): says to find the computer's IP address in
+  Windows and gives the port and path to put after it.
+- **A code that could not be made** says why under the button.
 
 ## Constraints
 
@@ -131,8 +156,9 @@ PIN is in memory until the wizard is left.
 - Fields are 48px tall and 16px text; the buttons are `tap`.
 - Leaving or reloading the page before Create loses what was typed.
   Reloading after it leaves a venue: the device pairs with a new code.
-  Reloading on the printer step lands on the till; printers are then the
-  back office's Printers screen, which has no search of its own.
+  Reloading on the printer step or the last lands on the till; printers
+  are then the back office's Printers screen, which has no search of its
+  own, and codes its Devices screen.
 
 ## Reference
 
@@ -150,9 +176,11 @@ PIN is in memory until the wizard is left.
 
 **Changed:**
 
-- **Four steps, not five, and they are ours:** D24's Outlet and Taxes, its
-  Staff reduced to the one person who must exist, and a printer, which D24
-  does not draw. The last screen is Task 3d's.
+- **Five steps, as D24 has, and they are ours:** D24's Outlet and Taxes,
+  its Staff reduced to the one person who must exist, and a printer and a
+  second device, which D24 does not draw.
+- **No QR code for the address.** A tablet's camera would save typing it;
+  nothing in the terminal bundle draws one yet.
 - **"your venue", not "your restaurant":** a cafe and a bar are venues.
 - **The page scrolls.** D24 is a fixed 940 by 880 card; a 768px screen has
   no room for it.

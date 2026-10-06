@@ -34,9 +34,21 @@ that what you are about to run matches the source it claims to come from.
 
 ## Setting up, once
 
-Before the first run, create the venue, its owner and the code that pairs the
-first device. Do this on the machine itself: being sat at it is what the
-command trusts, because nothing else exists yet to authorise it.
+**In a browser.** Start `mez` and open `http://localhost:7777` in a browser **on that
+machine**. A machine with no venue opens on the setup wizard: the venue's
+name, currency and time zone; tax and invoice numbering; your name and a PIN;
+a receipt printer and a test page; and at the end the address and a pairing
+code for a second device. It ends with you signed in at the till. The wizard
+only works from the machine itself, at `localhost`: from any other device it
+says where to go.
+Reload the page before pressing **Create the venue** and what you typed is
+lost; nothing has been made until then.
+
+**From a terminal**, for a demo cafe, a script, or a server with no browser
+of its own (Docker, a headless box, one behind a proxy). Before the first
+run, create the venue, its owner and the code that pairs the first device.
+Do this on the machine itself: being sat at it is what the command trusts,
+because nothing else exists yet to authorise it.
 
 ```sh
 ./mez setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata
@@ -294,8 +306,8 @@ frontends. Build them (`make build-web`) and rebuild with `make build`, or use
 ## What is not here yet
 
 The guest QR ordering app and the relay that lets guests reach the venue
-from the internet are phase 11. The Windows installer and service, the
-first-run wizard and Litestream backups are phase 12; until then
+from the internet are phase 11. The Windows installer and service and
+the setup wizard are built; Litestream backups are phase 12, and until then
 [`deploy.md`](deploy.md) shows how to run it at startup and back it up by
 hand. [`STATE.md`](STATE.md) says where the build has got to and lists
 everything known to be missing or broken.

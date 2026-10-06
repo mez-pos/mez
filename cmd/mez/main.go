@@ -372,6 +372,8 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		api.WithTunnel(func() api.TunnelStatus { return tunnelStatus(guests) }),
 		api.WithDevices(devices),
 		api.WithFirstRun(firstRun),
+		// Where a second device opens this server, for whoever is pairing one.
+		api.WithAddresses(func() ([]string, error) { return (&discover.Addresser{}).URLs(listener.Addr().String()) }),
 		api.WithStaff(staff),
 		api.WithOrders(orders),
 		api.WithMenus(database),

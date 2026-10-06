@@ -63,7 +63,7 @@ export type StepKey = (typeof steps)[number]["key"];
  * venue exists and the owner is signed in. Those are not questions: they act
  * through the API as they go, and each can be skipped.
  */
-export const allSteps = [...steps, { key: "printer", name: "Printer" }] as const;
+export const allSteps = [...steps, { key: "printer", name: "Printer" }, { key: "ready", name: "More devices" }] as const;
 
 const fieldsOf: Readonly<Record<StepKey, readonly Field[]>> = {
   venue: ["name", "legal_name", "currency", "timezone", "device_name"],

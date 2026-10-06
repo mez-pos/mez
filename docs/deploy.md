@@ -67,8 +67,18 @@ builds a server that serves placeholder pages instead of the apps.
 
 ## First run, on any platform
 
-Setup runs once, on the machine itself, before the server starts. Pair the
-**back office** first: it is where every other device's pairing code is made.
+**Where the server has a browser of its own** (a Windows till, a desktop):
+start it and open `http://localhost:7777` on that machine. With no venue it
+opens on the setup wizard, which asks what `mez setup` takes as flags, finds
+a receipt printer, and ends with you signed in and a pairing code for a
+second device on screen. It works only from the machine itself, at
+`localhost` (ADR-266): not from another device, not through a proxy, and not
+into a container, where a published port does not arrive from loopback.
+
+**Everywhere else** (Docker, a headless Linux box, a server behind a proxy),
+and for a demo cafe: setup runs once, from a terminal on the machine itself,
+before the server starts. Pair the **back office** first: it is where every
+other device's pairing code is made.
 
 ```sh
 mez setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata \
@@ -142,8 +152,12 @@ service and the firewall rule, then asks whether to delete the data in
 `C:\ProgramData\mez`; it is kept unless you answer Yes twice. A
 `config.toml` you put beside `mez.exe` is left where it is.
 
-Until the first-run wizard is built (phase 12, Task 3), a new venue is still
-created from a terminal opened as administrator:
+When the installer finishes, **Open mez now** (or the desktop shortcut) opens
+the setup wizard: there is no venue yet, and the wizard makes it. Nothing
+needs a terminal.
+
+A venue can still be created from a terminal opened as administrator
+instead, before the shortcut is first opened:
 
 ```powershell
 & "C:\Program Files\mez\mez.exe" setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata `
@@ -434,6 +448,6 @@ Paired devices stay paired across an upgrade.
 
 [`phases/phase-12.md`](phases/phase-12.md) is the plan. In short: a Windows
 installer (Inno Setup) that registers the Windows service, opens the firewall
-and creates the kiosk shortcut; a first-run wizard in place of `mez setup`;
+and creates the kiosk shortcut; a setup wizard, so a new Windows venue needs no `mez setup` (built);
 Litestream backups configured in the back office; a systemd unit and image
 published with each release; and release automation with checksums.

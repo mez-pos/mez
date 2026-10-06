@@ -313,7 +313,7 @@ func generate() (*ts.Generator, error) {
 	roots := []any{
 		// Errors and pairing.
 		Error{}, errorBody{}, pairRequest{}, deviceResponse{}, pairResponse{},
-		discoverResponse{}, setupStatusResponse{}, setupRequest{}, setupResponse{},
+		discoverResponse{}, addressesResponse{}, setupStatusResponse{}, setupRequest{}, setupResponse{},
 		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{}, tunnelResponse{},
 		// The guest's API.
 		guestTableResponse{}, guestPickupResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{}, guestChargeResponse{}, guestShareRequest{}, guestReceiptResponse{}, resolveChargeRequest{}, tableCodesResponse{}, tableCodeQRResponse{}, tableCodeSheetResponse{}, pickupCodeQRResponse{},

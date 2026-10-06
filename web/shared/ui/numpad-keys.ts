@@ -28,7 +28,7 @@ export function applyAmountKey(minor: number, key: NumKey, max: number): number 
   }
 }
 
-/** A PIN after a key. PINs are 4 to 8 digits (mez setup); "00" is not a PIN key. */
+/** A PIN after a key. PINs are 4 to 8 digits (ADR-056); "00" is not a PIN key. */
 export function applyPinKey(pin: string, key: NumKey, maxLength = 8): string {
   switch (key) {
     case "back":

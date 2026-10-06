@@ -11,6 +11,7 @@ import { useAuthStore } from "../../auth/use-auth";
 import { Button } from "../../ui";
 import { Splash } from "../Splash";
 import { PrinterStep } from "./PrinterStep";
+import { ReadyStep } from "./ReadyStep";
 import { SetupFrame } from "./SetupFrame";
 import {
   allSteps,
@@ -84,6 +85,8 @@ function Questions({ onBegin }: { onBegin: () => void }) {
   const [problems, setProblems] = useState<Problems>({});
   const [progress, setProgress] = useState<Progress>(notStarted);
   const [failure, setFailure] = useState<Failure | null>(null);
+  // Which of the steps after Create is showing.
+  const [after, setAfter] = useState<"printer" | "ready">("printer");
   const [busy, setBusy] = useState(false);
 
   const current = steps[step] ?? steps[0];
@@ -144,8 +147,12 @@ function Questions({ onBegin }: { onBegin: () => void }) {
 
   if (progress.stage === "done") {
     return (
-      <SetupFrame lead="Your venue is ready. One thing more, if you have it to hand." steps={allSteps} current={steps.length}>
-        <PrinterStep api={store.api} onDone={leave} />
+      <SetupFrame
+        lead="Your venue is ready. Two things more, if you have them to hand."
+        steps={allSteps}
+        current={after === "printer" ? steps.length : steps.length + 1}
+      >
+        {after === "printer" ? <PrinterStep api={store.api} onDone={() => setAfter("ready")} /> : <ReadyStep api={store.api} onDone={leave} />}
       </SetupFrame>
     );
   }

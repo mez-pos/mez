@@ -46,6 +46,7 @@ type Server struct {
 	myShifts      MyShifts
 	exports       Exports
 	firstRun      FirstRun
+	addresses     func() ([]string, error)
 	limiter       *limiter
 	handler       http.Handler
 }

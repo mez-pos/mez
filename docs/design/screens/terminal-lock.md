@@ -40,8 +40,8 @@ plainly when that cannot happen, and send them on to their own work.
     date and time.
 
 **Pair**, one centred column, 28rem: the logo, the trail (`TERMINAL ·
-PAIRING`), "Pair this terminal" in the serif, what a code is and how long it
-lasts, a notice if the device was just unpaired, the code field (the numeral
+PAIRING`), "Pair this terminal" in the serif, where a code comes from (a
+manager, in the back office under Devices) and how long it lasts, a notice if the device was just unpaired, the code field (the numeral
 face, 20px, `XXXX-XXXX`), the error line, **Pair**, and the server's address.
 The words follow the app: terminal, back office, kitchen display.
 

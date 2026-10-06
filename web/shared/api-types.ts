@@ -780,6 +780,10 @@ export interface PrinterCandidate {
   known: boolean;
 }
 
+export interface AddressesResponse {
+  urls: string[];
+}
+
 export interface SetupStatusResponse {
   needed: boolean;
   here: boolean;

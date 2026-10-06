@@ -7,30 +7,29 @@
 
 ## Current phase
 
-**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2, 3a, 3b
-and 3c built; 3d is left of Task 3. Phase 11 has nothing left to build
-(Cashfree left out, ADR-254) and owes its walks.
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2 and 3 (3a
+to 3d) built. Phase 11 has nothing left to build (Cashfree left out,
+ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 3c: printer discovery and a test print** (ADR-268).
-`internal/device/discover` searches the server's own private networks for
-port 9100 and lists Windows' installed printers; `POST /api/v1/printers/
-discover`, behind `settings.edit`. The wizard's fourth step, after Create,
-picks one, makes it the receipt printer and prints a test page. Walked in
-a browser against a stand-in printer on 127.0.0.1:9100; **no real printer
-has been found or printed on**.
+**Phase 12, Task 3d: the wizard's last screen, and the hand-off** (ADR-269).
+A fifth step, More devices: what the second device is, the server's LAN
+address for it and a pairing code, both in large type (`GET /api/v1/
+devices/addresses`). Pair no longer names `mez setup`; the README,
+`running.md` and `deploy.md` say the wizard first. Walked in a browser from
+an empty data directory: the code on screen paired a second origin at the
+address on screen. **The setup token (question 9) was not built: it is
+still the owner's to decide.**
 
 ## Next task
 
-**Phase 12, Task 3d: the last screen, and the hand-off.** A fifth step
-after the printer (`allSteps` in `setup-logic.ts`): the LAN URL and a
-pairing code for a second device, in large type. The back office already
-shares the terminal's pairing (ADR-148). `PairScreen`'s words and the
-installer's last page stop naming `mez setup`; `running.md` and
-`deploy.md` say the wizard first. Decide question 9 (the setup token)
-before or in it. `make check` embeds whatever `web/*/dist` holds: run
-`make build-web` before walking a screen against `bin/mez`.
+**Phase 12, Task 4: backups.** Litestream, a Backups section of the back
+office's settings, "back up now", and a restore that is actually done and
+verified. Read ADR-141 and ADR-110 first (phase 10's Task 6l moved here).
+It is more than one session: split it before building. `make check` embeds
+whatever `web/*/dist` holds: run `make build-web` before walking a screen
+against `bin/mez`.
 
 Still owed from phase 11, its human check and:
 - **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay

@@ -9,8 +9,8 @@ the same kitchen display, the same invoice series, the same night's Z-report.
 
 > **Status: alpha.** The till, kitchen display, payments, invoices, shifts,
 > Z-reports, the back office, guest QR ordering, the Windows service and the
-> Windows installer are built and tested. The first-run wizard and automatic
-> backups (phase 12) are not built yet. Not yet recommended for a venue's only
+> Windows installer are built and tested, and so is the setup wizard a new venue
+> opens on. Automatic backups (phase 12) are not built yet. Not yet recommended for a venue's only
 > till. [`docs/STATE.md`](docs/STATE.md) says exactly where the build is.
 
 ## What it does
@@ -42,23 +42,35 @@ make dist        # binaries for Windows, Linux and macOS in dist/
 Then, on the machine that will run the venue:
 
 ```sh
-# 1. Create the venue and its owner, and pair the back office first.
-./mez setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata \
-            -device-kind back_office -device-name "Office" -demo-menu
-
-# 2. Start it.
 ./mez
 ```
 
-`setup` prints the owner's PIN (once, write it down) and a pairing code that
-works for ten minutes. Open `http://localhost:7777/backoffice`, enter the
-code, sign in with the PIN, and use **Devices** to pair each till and kitchen
-display. On a tablet, open `http://<this machine's address>:7777`.
+Start `mez` and open `http://localhost:7777` in a browser **on that
+machine**. A machine with no venue opens on the setup wizard: the venue's
+name, currency and time zone; tax and invoice numbering; your name and a PIN;
+a receipt printer and a test page; and at the end the address and a pairing
+code for a second device. It ends with you signed in at the till. The wizard
+only works from the machine itself, at `localhost`: from any other device it
+says where to go.
 
-Drop `-demo-menu` for a real venue: it adds a demo menu, tables and staff with
-public PINs. `./mez setup -h` lists the tax, currency and financial year
-options, and `./mez pair -device-kind kitchen` makes another pairing code at
-the machine.
+The back office is at `http://localhost:7777/backoffice` in the same browser,
+on the same pairing; its **Devices** screen pairs every further till and
+kitchen display.
+
+**To try it with a demo cafe**, or on a server with no browser of its own
+(Docker, a headless box), set the venue up from a terminal instead, before
+starting it:
+
+```sh
+./mez setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata \
+            -device-kind back_office -device-name "Office" -demo-menu
+```
+
+`setup` prints the owner's PIN (once, write it down) and a pairing code that
+works for ten minutes. `-demo-menu` adds a demo menu, tables and staff with
+PINs it prints: never use it for a real venue. `./mez setup -h` lists the
+tax, currency and financial year options, and `./mez pair -device-kind
+kitchen` makes another pairing code at the machine.
 
 Check a receipt printer before service, with no setup needed:
 

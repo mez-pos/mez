@@ -62,6 +62,40 @@ func (s *Server) mountDeviceManagement(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/devices", s.methodNotAllowed)
 	handle("POST /api/v1/devices/{id}/rename", s.renameDevice)
 	handle("POST /api/v1/devices/{id}/revoke", s.revokeDevice)
+	if s.addresses != nil {
+		handle("GET /api/v1/devices/addresses", s.serverAddresses)
+	}
+}
+
+// WithAddresses tells the API where on the venue's network this server is
+// (ADR-269): each address a second device could open, most likely first.
+// Without it the endpoint is not mounted.
+func WithAddresses(urls func() ([]string, error)) Option {
+	return func(s *Server) { s.addresses = urls }
+}
+
+// addressesResponse is where to point a device that is being paired: the
+// addresses this server can be opened at from the venue's network, most
+// likely first. Empty when it listens on this computer alone.
+type addressesResponse struct {
+	URLs []string `json:"urls"`
+}
+
+// serverAddresses answers whoever is pairing a device with where to open
+// it. It is behind device.manage with the code it goes beside.
+func (s *Server) serverAddresses(w http.ResponseWriter, r *http.Request) {
+	urls, err := s.addresses()
+	if err != nil {
+		// The code still pairs a device; only the address must be read off
+		// the computer instead. An empty list says that.
+		s.log.Warn("reading this server's addresses failed", "request_id", RequestID(r.Context()), "error", err)
+		urls = nil
+	}
+	if urls == nil {
+		urls = []string{}
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, s.log, http.StatusOK, addressesResponse{URLs: urls})
 }
 
 func (s *Server) listDevices(w http.ResponseWriter, r *http.Request) {

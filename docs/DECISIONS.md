@@ -9206,3 +9206,50 @@ this task's code. **Seen on 2026-10-07**: `KNOWN.md` lists it; a real
 search ran, and a test page reached a stand-in printer on loopback.
 **Not seen**: any real printer, found or printed on.
 ---
+
+## ADR-269 - The wizard ends on an address and a code, and the server works out its own address
+2026-10 · Status: accepted. Phase 12, Task 3d. Task 3 is done with it.
+Decision:
+  - **A fifth step, More devices**: what the second device is (another
+    till, a kitchen display, a back office), the address to open on it,
+    and a pairing code, the address and the code at the display size.
+  - **`GET /api/v1/devices/addresses`**, behind `device.manage` with the
+    code it goes beside, answers `{urls}`: where a device on the venue's
+    network can open this server, most likely first. `discover.Addresser`
+    works it out from the address the server is listening on. Bound to
+    one address, that one; bound to loopback, none; bound to every
+    address, each private IPv4 address the machine has, with the one its
+    traffic leaves by first. That one is found by connecting a UDP socket
+    to a documentation address and reading back the local address the
+    system chose: nothing is sent.
+  - **The code is asked for, not made on arrival.** It lasts ten minutes
+    and most owners will not have the tablet in hand; one made unasked
+    would be a live code nobody is using. It is the Devices screen's own
+    endpoint, as the owner.
+  - **Pair says where a code comes from** (a manager, in the back office
+    under Devices) and no longer names `mez setup`. The installer's last
+    page needed no change: it opens `/`, and `/` is the wizard on a new
+    machine (ADR-267).
+  - **The docs say the wizard first** (README, `running.md`,
+    `deploy.md`), and keep `mez setup` for a demo cafe, Docker, a headless
+    server and one behind a proxy, which the wizard cannot serve
+    (ADR-266).
+  - **The setup token ADR-266's review proposed is not built.** It was
+    put to the owner as question 9 and has not been answered; this task
+    did not decide it for them.
+Because: the phase asks for the LAN URL and a code on screen in large type
+at the end, and the address is the one thing in the product an owner
+cannot be expected to find: it is in Windows' network settings, and a PC
+with virtual adapters has several.
+Cost: the first address is a guess. A machine with two real cards shows
+the one its internet uses, and a venue whose tablets are on the other
+reads the smaller line. The address is plain HTTP, like the LAN it is on
+(ADR-257). There is no QR code for it. The screen can only tell the owner
+to check the firewall and the network's profile, not check them. Anyone
+with `device.manage` can read the server's private addresses, which they
+could also read off its screen. The steps after Create are lost to a
+reload. No independent review of this task's code. **Seen on 2026-10-07**
+in a browser against the built binary (`KNOWN.md` lists it): the code on
+screen paired a second origin opened at the address on screen. **Not
+seen**: a real second device, or the service's own port.
+---
