@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4g2b: giving up a payment page** (ADR-234). `charges.LetGo` and
+**Phase 11, Task 4g3: splitting the bill on the phone** (ADR-235). In the bill's
+Pay online card: the rest, evenly among so many, or a figure typed; and "I am not
+paying this" on a waiting payment. Seen at 390 wide. 4g is done.
+
+Before it, **Phase 11, Task 4g2b: giving up a payment page** (ADR-234). `charges.LetGo` and
 `POST .../bill/charge/{id}/let-go`: the charge stays open and payable, and is no
 claim on the bill. A charge's answer says `let_go`. Migration 00046.
 

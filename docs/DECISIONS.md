@@ -7468,3 +7468,41 @@ up 2.6. Seen at 390 wide in the real binary with a made-up gateway key, which
 refuses to start a charge as it should; so the screen has been seen as far as the
 gateway's page, with waiting payments written into the database by hand, and
 never through a payment.
+
+## ADR-236 - A guest's order is tracked by its own lines' tickets, and a round remembers where its lines begin
+2026-10 · Status: accepted. Phase 11, Task 5a.
+Context: Task 5 asks that a guest see "real kitchen events, accepted, firing,
+ready, not a fake timer", an e-receipt and re-ordering. A round (ADR-210) knew its
+status and its ticket, and nothing of which lines on that ticket were its own: a
+waiter and other guests add to the same one.
+Decision:
+  - **Task 5 is split in six**, listed in the phase file: 5a the services, this;
+    5b the guest's API; 5c the phone; 5d the e-receipt on the server; 5e the
+    receipt and re-order on the phone; 5f a pickup code, which waits on the owner.
+  - **A round remembers the seq of its first line** (`first_seq`, migration
+    00047), written in the transaction that appends its lines, in all three
+    places a round reaches a ticket: sent at a seated table, accepted by staff,
+    and sent once paid. A line's id is its event's seq and a round's lines are
+    appended together, so its lines are that seq and the ones after. No event
+    changed and no line gained a field: the order's stream is as it was.
+  - **Progress is a reading of the projection, not a thing stored**
+    (`order.State.Progress`): for some lines, off the tickets they were sent on.
+    Nothing of them with a station is `accepted`; fired and not started `sent`;
+    a cook has started one, or part is up and part is not, `preparing`; all of it
+    up `ready`; every line voided `cancelled`. A ticket recalled goes back.
+  - **A round sent to two stations is ready when both are.** A coffee waiting on
+    the pass for a dosa is not an order a guest should get up for.
+  - **A voided line is not waited for**, and a round with all of them voided says
+    so, instead of sitting at "sent" for good.
+  - **`TrackRound` answers a round by the table it was placed at**, and another
+    table's is not found, as with a charge (ADR-222). It reads the ticket even
+    once closed: a round that was ready stays ready.
+  - **Only a sent round has progress.** Waiting, declined and unpaid are the
+    round's own status and say all there is.
+Because: the kitchen display already records every one of these moves as an event
+on the order. Telling the guest is reading them, for the right lines.
+Cost: a round sent before the migration has no `first_seq` and is told only that
+it was sent. A round of dishes made at no station is `accepted` for good. There is
+no event for food reaching the table, so `ready` is where it ends. The tracking
+reads and projects the whole ticket for each ask; 5b's route will be asked every
+few seconds by every phone with an order out, which is the read to watch.

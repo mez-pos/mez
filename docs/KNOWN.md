@@ -10,6 +10,11 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Tracking an order** (ADR-236): in the services only, with no route and
+  no screen. A round sent before migration 00047 has no progress and is
+  told only that it was sent. A round whose every dish is made at no
+  station stays "accepted" for good. Nothing says an order was taken to the
+  table: no event records it, so "ready" is the last step.
 - **Splitting the bill** (ADR-232 to ADR-235): seen at 390 wide in the real
   binary with a made-up Razorpay key: the three choices, the stepper, a typed
   figure and each refusal of one, a waiting payment with "I am not paying

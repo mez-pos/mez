@@ -156,6 +156,7 @@ type Querier interface {
 	DeactivateStaff(ctx context.Context, arg DeactivateStaffParams) error
 	// Answers a request: sent, onto a ticket, or declined. Only a waiting one
 	// can be answered, so of two tills answering at once one writes nothing.
+	// first_seq is where a sent round's lines begin on its ticket (ADR-236).
 	DecideGuestRound(ctx context.Context, arg DecideGuestRoundParams) (int64, error)
 	// The order's rows in order_tables, before they are written again from its
 	// projection (ADR-088).

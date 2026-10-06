@@ -3,8 +3,8 @@
 
 -- name: CreateGuestRound :one
 INSERT INTO guest_rounds (public_id, venue_id, table_id, status, order_id, lines, subtotal_minor, currency,
-                          idempotency_key, fingerprint, created_at, prepay, due_minor)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          idempotency_key, fingerprint, created_at, prepay, due_minor, first_seq)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id;
 
 -- name: GuestRoundByKey :one
@@ -37,7 +37,7 @@ ORDER BY r.created_at, r.id;
 
 -- name: GuestRoundByPublicID :one
 SELECT r.id, r.public_id, r.venue_id, r.table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
-       r.prepay, r.due_minor,
+       r.prepay, r.due_minor, r.first_seq,
        CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id
 FROM guest_rounds r
 LEFT JOIN orders o ON o.id = r.order_id
@@ -46,8 +46,10 @@ WHERE r.public_id = ?;
 -- name: DecideGuestRound :execrows
 -- Answers a request: sent, onto a ticket, or declined. Only a waiting one
 -- can be answered, so of two tills answering at once one writes nothing.
+-- first_seq is where a sent round's lines begin on its ticket (ADR-236).
 UPDATE guest_rounds
-SET status = sqlc.arg(status), order_id = sqlc.arg(order_id), decided_at = sqlc.arg(decided_at), decided_by = sqlc.arg(decided_by)
+SET status = sqlc.arg(status), order_id = sqlc.arg(order_id), decided_at = sqlc.arg(decided_at), decided_by = sqlc.arg(decided_by),
+    first_seq = sqlc.arg(first_seq)
 WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id) AND status = 'waiting';
 
 -- name: UnclosedOrderAtTable :one

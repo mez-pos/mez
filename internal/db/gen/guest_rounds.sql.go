@@ -53,8 +53,8 @@ func (q *Queries) CountWaitingGuestRounds(ctx context.Context, arg CountWaitingG
 const createGuestRound = `-- name: CreateGuestRound :one
 
 INSERT INTO guest_rounds (public_id, venue_id, table_id, status, order_id, lines, subtotal_minor, currency,
-                          idempotency_key, fingerprint, created_at, prepay, due_minor)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          idempotency_key, fingerprint, created_at, prepay, due_minor, first_seq)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id
 `
 
@@ -72,6 +72,7 @@ type CreateGuestRoundParams struct {
 	CreatedAt      time.Time
 	Prepay         int64
 	DueMinor       sql.NullInt64
+	FirstSeq       sql.NullInt64
 }
 
 // A guest's rounds (ADR-210). Written only inside the transaction that
@@ -91,6 +92,7 @@ func (q *Queries) CreateGuestRound(ctx context.Context, arg CreateGuestRoundPara
 		arg.CreatedAt,
 		arg.Prepay,
 		arg.DueMinor,
+		arg.FirstSeq,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -99,8 +101,9 @@ func (q *Queries) CreateGuestRound(ctx context.Context, arg CreateGuestRoundPara
 
 const decideGuestRound = `-- name: DecideGuestRound :execrows
 UPDATE guest_rounds
-SET status = ?1, order_id = ?2, decided_at = ?3, decided_by = ?4
-WHERE id = ?5 AND venue_id = ?6 AND status = 'waiting'
+SET status = ?1, order_id = ?2, decided_at = ?3, decided_by = ?4,
+    first_seq = ?5
+WHERE id = ?6 AND venue_id = ?7 AND status = 'waiting'
 `
 
 type DecideGuestRoundParams struct {
@@ -108,18 +111,21 @@ type DecideGuestRoundParams struct {
 	OrderID   sql.NullInt64
 	DecidedAt sql.NullTime
 	DecidedBy sql.NullInt64
+	FirstSeq  sql.NullInt64
 	ID        int64
 	VenueID   int64
 }
 
 // Answers a request: sent, onto a ticket, or declined. Only a waiting one
 // can be answered, so of two tills answering at once one writes nothing.
+// first_seq is where a sent round's lines begin on its ticket (ADR-236).
 func (q *Queries) DecideGuestRound(ctx context.Context, arg DecideGuestRoundParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, decideGuestRound,
 		arg.Status,
 		arg.OrderID,
 		arg.DecidedAt,
 		arg.DecidedBy,
+		arg.FirstSeq,
 		arg.ID,
 		arg.VenueID,
 	)
@@ -176,7 +182,7 @@ func (q *Queries) GuestRoundByKey(ctx context.Context, arg GuestRoundByKeyParams
 
 const guestRoundByPublicID = `-- name: GuestRoundByPublicID :one
 SELECT r.id, r.public_id, r.venue_id, r.table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
-       r.prepay, r.due_minor,
+       r.prepay, r.due_minor, r.first_seq,
        CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id
 FROM guest_rounds r
 LEFT JOIN orders o ON o.id = r.order_id
@@ -196,6 +202,7 @@ type GuestRoundByPublicIDRow struct {
 	CreatedAt     time.Time
 	Prepay        int64
 	DueMinor      sql.NullInt64
+	FirstSeq      sql.NullInt64
 	OrderPublicID string
 }
 
@@ -215,6 +222,7 @@ func (q *Queries) GuestRoundByPublicID(ctx context.Context, publicID string) (Gu
 		&i.CreatedAt,
 		&i.Prepay,
 		&i.DueMinor,
+		&i.FirstSeq,
 		&i.OrderPublicID,
 	)
 	return i, err

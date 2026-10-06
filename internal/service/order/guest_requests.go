@@ -140,7 +140,8 @@ func (s *Service) AcceptRound(ctx context.Context, meta Meta, publicID string) (
 			n, err := tx.Queries().DecideGuestRound(ctx, gen.DecideGuestRoundParams{
 				Status: string(RoundSent), OrderID: sql.NullInt64{Int64: tx.OrderID, Valid: true},
 				DecidedAt: sql.NullTime{Time: at, Valid: true}, DecidedBy: sql.NullInt64{Int64: staff.ActorID, Valid: true},
-				ID: row.ID, VenueID: meta.VenueID,
+				FirstSeq: sql.NullInt64{Int64: tx.State.LastSeq + 1, Valid: true},
+				ID:       row.ID, VenueID: meta.VenueID,
 			})
 			if err != nil {
 				return nil, fmt.Errorf("accepting request %s: %w", publicID, err)

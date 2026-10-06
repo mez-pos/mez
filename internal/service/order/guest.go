@@ -105,6 +105,10 @@ type Round struct {
 	// add to the table's bill, tax and all. Zero unless unpaid.
 	Due      money.Amount
 	Replayed bool
+	// Progress is how far a sent round has come in the kitchen. Only
+	// TrackRound fills it; it is empty for a round that is not sent, or
+	// was sent before rounds knew their lines (ADR-236).
+	Progress order.Progress
 }
 
 // errTableChanged unwinds a round whose table gained or lost its ticket
@@ -266,7 +270,7 @@ func (s *Service) requestRound(ctx context.Context, meta Meta, draft roundDraft,
 		if waiting >= maxWaitingRounds {
 			return fmt.Errorf("%w: table %d has %d", ErrTooManyWaiting, draft.tableID, waiting)
 		}
-		if err := saveRound(ctx, q, meta, draft, publicID, RoundWaiting, 0, money.Amount{}, at); err != nil {
+		if err := saveRound(ctx, q, meta, draft, publicID, RoundWaiting, 0, money.Amount{}, 0, at); err != nil {
 			return err
 		}
 		// A table wanting to order is the floor changed, with no order
@@ -292,10 +296,11 @@ func (s *Service) sendRound(ctx context.Context, meta Meta, orderID int64, draft
 		if tx.State.Status == order.StatusClosed || !slices.Contains(tx.State.Tables(), draft.tableID) {
 			return nil, errTableChanged
 		}
-		if err := saveRound(ctx, tx.Queries(), meta, draft, publicID, RoundSent, tx.OrderID, money.Amount{}, at); err != nil {
+		first := tx.State.LastSeq + 1
+		if err := saveRound(ctx, tx.Queries(), meta, draft, publicID, RoundSent, tx.OrderID, money.Amount{}, first, at); err != nil {
 			return nil, err
 		}
-		return roundPayloads(draft.lines, tx.State.LastSeq+1), nil
+		return roundPayloads(draft.lines, first), nil
 	})
 	return busy(err)
 }
@@ -358,8 +363,10 @@ func roundTickets(lines []order.LineAdded, first int64) []order.TicketSent {
 }
 
 // saveRound writes a round. due is what an unpaid round asks for, and zero
-// for any other: an unpaid round is stored waiting, marked prepay.
-func saveRound(ctx context.Context, q *gen.Queries, meta Meta, draft roundDraft, publicID string, status RoundStatus, orderID int64, due money.Amount, at time.Time) error {
+// for any other: an unpaid round is stored waiting, marked prepay. first is
+// the seq of a sent round's first line on its ticket, and zero for a round
+// that is on none.
+func saveRound(ctx context.Context, q *gen.Queries, meta Meta, draft roundDraft, publicID string, status RoundStatus, orderID int64, due money.Amount, first int64, at time.Time) error {
 	stored, prepay := status, int64(0)
 	if status == RoundUnpaid {
 		stored, prepay = RoundWaiting, 1
@@ -370,6 +377,7 @@ func saveRound(ctx context.Context, q *gen.Queries, meta Meta, draft roundDraft,
 		Lines: draft.encoded, SubtotalMinor: draft.subtotal.Minor, Currency: draft.subtotal.Currency,
 		IdempotencyKey: draft.key, Fingerprint: draft.fingerprint, CreatedAt: at,
 		Prepay: prepay, DueMinor: sql.NullInt64{Int64: due.Minor, Valid: prepay == 1},
+		FirstSeq: sql.NullInt64{Int64: first, Valid: first != 0},
 	})
 	if err != nil {
 		return fmt.Errorf("saving a guest's round: %w", err)
@@ -493,7 +501,7 @@ func (s *Service) holdRound(ctx context.Context, meta Meta, v venue, orderID int
 		if unpaid >= maxWaitingRounds {
 			return fmt.Errorf("%w: table %d has %d unpaid", ErrTooManyWaiting, draft.tableID, unpaid)
 		}
-		return saveRound(ctx, q, meta, draft, publicID, RoundUnpaid, 0, due, at)
+		return saveRound(ctx, q, meta, draft, publicID, RoundUnpaid, 0, due, 0, at)
 	})
 	if err != nil {
 		return money.Amount{}, err

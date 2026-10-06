@@ -170,6 +170,20 @@ Phase 10.
   timer. Pickup code for web pickup orders. E-receipt with the same invoice
   number as the counter would produce, and one-tap re-order.
 
+  Split in six (ADR-236):
+  - [x] **5a.** A round knows its lines on the ticket (`first_seq`, migration
+    00047), `order.State.Progress` reads how far lines have come off their
+    tickets, and `TrackRound` answers a round with it. No route, no screen.
+  - [ ] **5b.** The guest's API: `GET /order/api/t/{code}/orders/{round}`,
+    a round as it stands with its progress.
+  - [ ] **5c.** The phone: the order's screen says accepted, with the
+    kitchen, being made and ready, as they happen, and its spec.
+  - [ ] **5d.** The e-receipt on the server: what a guest may read of a bill
+    once it is settled, with its invoice number, and by what they ask.
+  - [ ] **5e.** The receipt on the phone, and ordering the same again.
+  - [ ] **5f.** A pickup code. **Waits on the owner**: a guest can order
+    only from a table, and there is no pickup channel to give a code to.
+
 - [ ] **Task 6 — QR codes and table codes.**
   Generate per-table QR codes from back office, printable as a sheet. Codes are
   non-guessable and revocable. Rate limit per table to stop a bored teenager

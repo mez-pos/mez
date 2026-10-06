@@ -133,6 +133,7 @@ type GuestRound struct {
 	DecidedBy      sql.NullInt64
 	Prepay         int64
 	DueMinor       sql.NullInt64
+	FirstSeq       sql.NullInt64
 }
 
 type IdempotencyKey struct {

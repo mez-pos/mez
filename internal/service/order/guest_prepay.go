@@ -90,7 +90,8 @@ func (s *Service) SendPaidRound(ctx context.Context, venueID int64, publicID str
 			}
 			n, err := tx.Queries().DecideGuestRound(ctx, gen.DecideGuestRoundParams{
 				Status: string(RoundSent), OrderID: sql.NullInt64{Int64: tx.OrderID, Valid: true},
-				DecidedAt: sql.NullTime{Time: at, Valid: true}, ID: row.ID, VenueID: venueID,
+				DecidedAt: sql.NullTime{Time: at, Valid: true}, FirstSeq: sql.NullInt64{Int64: tx.State.LastSeq + 1, Valid: true},
+				ID: row.ID, VenueID: venueID,
 			})
 			if err != nil {
 				return nil, fmt.Errorf("sending paid round %s: %w", publicID, err)
