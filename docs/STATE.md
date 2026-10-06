@@ -28,9 +28,8 @@ ADR-225, `internal/service/charges/charges.go`. Likely two sessions: split first
   be for a round too: a migration that rebuilds the table, a second way to start.
 - Applying: open the ticket if the table has none, append the round's lines as
   stored and send them (as `AcceptRound` does), then tender. Each step idempotent.
-- Decide what is tendered when the bill moved since the round was priced and the
-  rise is a paisa off `due_minor`. Never tender more than was charged.
-- Then wire `CanCharge` in `cmd/mez`. Not before.
+- Decide what is tendered when the bill moved and the rise is off `due_minor`:
+  never more than was charged. Then, and not before, wire `CanCharge` in `cmd/mez`.
 
 ## Known broken / in progress
 
