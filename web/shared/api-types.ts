@@ -1008,6 +1008,13 @@ export interface TableCodeResponse {
   url: string;
 }
 
+export interface TableCodeQRResponse {
+  table_id: number;
+  table_name: string;
+  url: string;
+  svg: string;
+}
+
 export interface PaymentSettingsRequest {
   upi_address: string;
   upi_payee: string;

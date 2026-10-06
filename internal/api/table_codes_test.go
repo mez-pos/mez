@@ -83,7 +83,7 @@ func TestTheOwnerSeesRenewsAndTurnsOffCodes(t *testing.T) {
 	if status, _, _ := o.guest(http.MethodGet, "/order/api/t/"+renewed.Code); status != http.StatusNotFound {
 		t.Errorf("a code turned off still leads somewhere: %d", status)
 	}
-	if rec := send(o.handler, http.MethodGet, "/api/v1/tables/4/code/qr.svg", "", owner); rec.Code != http.StatusNotFound || errorOf(t, rec).Code != CodeTableNotFound {
+	if rec := send(o.handler, http.MethodGet, "/api/v1/tables/4/code/qr", "", owner); rec.Code != http.StatusNotFound || errorOf(t, rec).Code != CodeTableNotFound {
 		t.Errorf("the QR of a table with no code: %d %s", rec.Code, rec.Body)
 	}
 
@@ -107,18 +107,25 @@ func TestATablesCodeIsDrawnAsItsPublicAddress(t *testing.T) {
 	for k, v := range owner {
 		forged[k] = v
 	}
-	rec := send(o.handler, http.MethodGet, "/api/v1/tables/4/code/qr.svg", "", forged)
-	if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != "image/svg+xml" || rec.Header().Get("X-Content-Type-Options") != "nosniff" ||
-		!strings.Contains(rec.Header().Get("Content-Security-Policy"), "default-src 'none'") || rec.Header().Get("Cache-Control") != "no-store" {
-		t.Fatalf("the QR: %d %v", rec.Code, rec.Header())
+	rec := send(o.handler, http.MethodGet, "/api/v1/tables/4/code/qr", "", forged)
+	if rec.Code != http.StatusOK || rec.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("the QR: %d %s", rec.Code, rec.Body)
 	}
-	if !strings.HasPrefix(rec.Body.String(), "<svg") || strings.Contains(rec.Body.String(), "<script") {
-		t.Errorf("the picture is not a plain SVG: %.80s", rec.Body)
+	var got tableCodeQRResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.URL != "https://cafe.example/order/t/"+o.code || got.TableID != 4 || got.TableName == "" {
+		t.Errorf("the QR is of %+v, want the venue's own address", got)
+	}
+	if !strings.HasPrefix(got.SVG, "<svg") || strings.Contains(got.SVG, "<script") || strings.Contains(rec.Body.String(), "evil.example") {
+		t.Errorf("the picture is not a plain SVG of the venue's address: %.80s", got.SVG)
 	}
 	// Another table's picture is another picture: the code is in it.
-	other := send(o.handler, http.MethodGet, "/api/v1/tables/5/code/qr.svg", "", owner)
-	if other.Code != http.StatusOK || other.Body.String() == rec.Body.String() {
-		t.Errorf("table 5's picture: %d, the same as table 4's: %v", other.Code, other.Body.String() == rec.Body.String())
+	other := send(o.handler, http.MethodGet, "/api/v1/tables/5/code/qr", "", owner)
+	var five tableCodeQRResponse
+	if err := json.Unmarshal(other.Body.Bytes(), &five); err != nil || other.Code != http.StatusOK || five.SVG == got.SVG || five.SVG == "" {
+		t.Errorf("table 5's picture: %d, %v, the same as table 4's: %v", other.Code, err, five.SVG == got.SVG)
 	}
 
 	t.Run("with no public address there is nothing to print", func(t *testing.T) {
@@ -128,7 +135,7 @@ func TestATablesCodeIsDrawnAsItsPublicAddress(t *testing.T) {
 		if four := codeOf(t, list, 4); list.Address != "" || four.URL != "" || four.Code == "" {
 			t.Errorf("codes = %+v", list)
 		}
-		rec := send(o.handler, http.MethodGet, "/api/v1/tables/4/code/qr.svg", "", owner)
+		rec := send(o.handler, http.MethodGet, "/api/v1/tables/4/code/qr", "", owner)
 		if rec.Code != http.StatusConflict || errorOf(t, rec).Code != CodeNoPublicURL {
 			t.Errorf("the QR: %d %s", rec.Code, rec.Body)
 		}
@@ -147,7 +154,7 @@ func TestTableCodesAreForWhoeverRunsTheVenue(t *testing.T) {
 		{http.MethodPost, "/api/v1/table-codes"},
 		{http.MethodPost, "/api/v1/tables/4/code/renew"},
 		{http.MethodPost, "/api/v1/tables/4/code/revoke"},
-		{http.MethodGet, "/api/v1/tables/4/code/qr.svg"},
+		{http.MethodGet, "/api/v1/tables/4/code/qr"},
 	}
 	for _, rt := range routes {
 		if rec := send(o.handler, rt.method, rt.path, "", cashier); rec.Code != http.StatusForbidden {

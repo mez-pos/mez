@@ -19,7 +19,7 @@ import (
 //	POST /api/v1/table-codes               give each table without a code one
 //	POST /api/v1/tables/{id}/code/renew    a new code; the old one stops working
 //	POST /api/v1/tables/{id}/code/revoke   no code: the sticker leads nowhere
-//	GET  /api/v1/tables/{id}/code/qr.svg   the table's address as a QR code
+//	GET  /api/v1/tables/{id}/code/qr       the table's address as a QR code
 //
 // A code is a guest's only credential (ADR-206), so all of this is for
 // someone who may change the venue's settings and for nobody else.
@@ -67,6 +67,17 @@ type tableCodesResponse struct {
 	Tables  []tableCodeResponse `json:"tables"`
 }
 
+// tableCodeQRResponse is a table's address drawn as a QR code. The picture
+// is an SVG in a field, as a report's file is its text in one (ADR-119): the
+// staff's API is JSON throughout, and the back office reads it as it reads
+// everything else. A screen shows it as an image and never as markup.
+type tableCodeQRResponse struct {
+	TableID   int64  `json:"table_id"`
+	TableName string `json:"table_name"`
+	URL       string `json:"url"`
+	SVG       string `json:"svg"`
+}
+
 func (s *Server) mountTableCodes(mux *http.ServeMux) {
 	if s.tableCodes == nil || s.guests == nil {
 		return
@@ -79,7 +90,7 @@ func (s *Server) mountTableCodes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/table-codes", s.methodNotAllowed)
 	handle("POST /api/v1/tables/{id}/code/renew", s.renewTableCode)
 	handle("POST /api/v1/tables/{id}/code/revoke", s.revokeTableCode)
-	handle("GET /api/v1/tables/{id}/code/qr.svg", s.tableCodeQR)
+	handle("GET /api/v1/tables/{id}/code/qr", s.tableCodeQR)
 }
 
 // tableAddress is where a table's code leads at the venue's public address,
@@ -190,14 +201,13 @@ func (s *Server) tableCodeQR(w http.ResponseWriter, r *http.Request) {
 		s.writeTableCodeError(w, r, err)
 		return
 	}
-	code := ""
-	found := false
+	code, name := "", ""
 	for _, c := range list {
 		if c.TableID == id {
-			code, found = c.Code, true
+			code, name = c.Code, c.TableName
 		}
 	}
-	if !found || code == "" {
+	if code == "" {
 		writeError(w, s.log, http.StatusNotFound, CodeTableNotFound, "That table has no code to draw.")
 		return
 	}
@@ -207,15 +217,7 @@ func (s *Server) tableCodeQR(w http.ResponseWriter, r *http.Request) {
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
-	h := w.Header()
-	h.Set("Content-Type", "image/svg+xml")
-	// A picture and nothing else, whatever a browser is asked to do with it.
-	h.Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'")
-	h.Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write([]byte(drawn.SVG(qrQuiet))); err != nil {
-		s.log.Debug("writing a QR was cut short", "request_id", RequestID(r.Context()), "error", err)
-	}
+	writeJSON(w, s.log, http.StatusOK, tableCodeQRResponse{TableID: id, TableName: name, URL: address + code, SVG: drawn.SVG(qrQuiet)})
 }
 
 func (s *Server) writeTableCodeError(w http.ResponseWriter, r *http.Request, err error) {

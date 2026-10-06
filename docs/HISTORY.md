@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 5e2: ordering the same again** (ADR-242). "Order this again" on
+**Phase 11, Task 6a: table codes over the staff API** (ADR-243).
+`/api/v1/table-codes`, renew and revoke a table's code, and its address as a QR,
+for whoever may edit settings. `tablecodes.Revoke`. No screen.
+
+Before it, **Phase 11, Task 5e2: ordering the same again** (ADR-242). "Order this again" on
 a sent order adds its dishes to the cart, held against today's menu, and opens
 the cart. It places nothing. Task 5 is done but for 5f, pickup.
 

@@ -214,9 +214,12 @@ Phase 10.
   Split in five (ADR-243):
   - [x] **6a.** The staff API: `GET` and `POST /api/v1/table-codes`, renew
     and revoke a table's code, and its address as a QR
-    (`/api/v1/tables/{id}/code/qr.svg`). `tablecodes.Revoke`. No screen.
-  - [ ] **6b.** The back office: the tables and their codes, renew, turn
-    off, and what it says with no `public_url`. Its spec.
+    (`/api/v1/tables/{id}/code/qr`, the picture in JSON since 6b).
+    `tablecodes.Revoke`. No screen.
+  - [x] **6b.** The back office (ADR-244): "Ordering from the table", a
+    card on the Floor plan: each table's code and address, Show the QR
+    code, Renew and Turn off behind a confirm, Make the missing codes, and
+    what it says with no `public_url`. In `backoffice-floor.md`.
   - [ ] **6c.** The sheet: every table's code to print, cut and stick.
   - [ ] **6d.** The limit: how often one table's code may place an order,
     start a payment or be asked, without catching a phone that only tracks.

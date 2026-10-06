@@ -8,13 +8,13 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 but 5f, and 6a done. (Walks owed.)
+4 but 4f6b (Cashfree, question 8), 5 but 5f, 6a and 6b done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 6a: table codes over the staff API** (ADR-243).
-`/api/v1/table-codes`, renew and revoke a table's code, and its address as a QR,
-for whoever may edit settings. `tablecodes.Revoke`. No screen.
+**Phase 11, Task 6b: the codes in the back office** (ADR-244). "Ordering from the
+table" on the Floor plan: each table's code and address, the QR, Renew and Turn
+off behind a confirm, Make the missing codes. Seen at 1366 and 1920.
 
 ## Next task
 
@@ -22,14 +22,14 @@ for whoever may edit settings. `tablecodes.Revoke`. No screen.
 keys, then on a phone Pay online on a bill, a share of one from two phones, and
 Pay on an order with paying first chosen. The payments card says so itself.
 
-**Phase 11, Task 6b: the codes in the back office.** Read ADR-243, ADR-216 (the
-payments card, for where a card goes), `docs/design/tokens.md`, and the back
-office's settings screen spec and code (find them first: `web/backoffice/src`).
-- A card or screen listing each table, its code and address, with Renew and Turn
-  off, each behind a confirm: both stop a sticker already on a table.
-- "Make the missing codes". With no `public_url` (`address` empty), say so.
-- The QR needs the staff headers, so it is fetched and shown, not an `<img src>`.
-- See it at 1366 and 1920. The sheet to print is 6c.
+**Phase 11, Task 6c: the sheet of codes to print.** Read ADR-243, ADR-244,
+`docs/design/tokens.md`, `web/backoffice/src/floor/TableCodesCard.tsx`, and how
+the Z-report or a receipt is printed from the back office, if anything is.
+- "Print the codes" on the card: every table with a code, each a QR, the table's
+  name, the venue's name and a line telling a guest what to do, sized to cut out.
+- `GET /api/v1/tables/{id}/code/qr` is one table: a sheet of thirty wants one
+  request, so add a route that answers them all, or the list with pictures.
+- Print styles: nothing of the shell on paper. No `public_url`, nothing to print.
 
 ## Known broken / in progress
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f; 6a done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f; 6a, 6b done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

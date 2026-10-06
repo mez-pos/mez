@@ -38,6 +38,32 @@ Inside the frame (`backoffice-shell.md`).
 - **Add, Edit table** (a modal): name; seats; shape; area; **column** and
   **row** as numbers from 1. Errors under their field.
 - **Add, Rename area** (a modal): name.
+- **Ordering from the table**, a card under all of that, for the tables of
+  every area (ADR-244):
+  - "Ordering from the table" in the serif; "Each table has a code. A guest
+    scans it to see the menu and order to that table. Anyone with a table's
+    code can order to it."; and how things stand: "All 12 tables have a
+    code.", "3 of 12 tables have no code."
+  - **Make the missing codes**, secondary, only while a table has none.
+  - With no `public_url`, in the warning tone: "The venue has not said
+    where guests reach it, so there is no address to print on a table. Set
+    public_url in the venue's configuration and restart mez."
+  - A table of the tables: the table's name; its code in groups of four,
+    "sptd em4x 7abc", or "No code: no orders by phone", muted; the address
+    on its sticker, small; and a "..." with what can be done:
+    - **Show the QR code** (a modal): the picture, 240px, black on white;
+      the address under it; "Scan it with a phone to check it opens T4's
+      menu."; **Close**. Not offered with no `public_url`.
+    - **Renew the code**, behind a confirm in the danger tone: "Renew the
+      code for T4? The code on the table stops working at once, and so does
+      any photo of it. A guest ordering from that table now loses their
+      place. Print the new code and put it on the table."
+    - **Turn the code off**, behind a confirm: "Turn off the code for T4?
+      Nobody can order from this table by phone until you give it a code
+      again. The code on the table stops working at once, and a guest
+      ordering from it now loses their place."
+    - **Give it a code**, the only thing a table with none can do. It asks
+      nothing: it stops nothing.
 
 ## Moving a table: three ways, drag never the only one
 
@@ -62,6 +88,17 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
   .../tables/{id}`, `.../retire`, `.../restore`.
 - A change reaches every Tables screen through the stream's `floor_changed`.
 
+- `GET /api/v1/table-codes`, key `["table-codes"]`: every table in service
+  with its code and its address, and `address`, where guests reach the
+  venue. Read when the screen opens and never kept from an earlier visit:
+  they are credentials. Read again when the floor changes.
+- `POST /api/v1/table-codes` makes the missing ones;
+  `POST /api/v1/tables/{id}/code/renew` and `.../revoke`. Each answers the
+  whole list, which replaces the cache.
+- `GET /api/v1/tables/{id}/code/qr` when Show the QR code is opened, and
+  never kept: the picture is an SVG in the answer, shown as an image and
+  never put in the page as markup.
+
 ## Interactions
 
 | Action | Does | Then |
@@ -75,6 +112,11 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
 | Bring back a table | Puts it back in its cell | Refused if another table stands there now: move it first |
 | Retire an area | Hides it from Tables | Refused while it has tables in service |
 
+| Make the missing codes | Gives each table without a code one | "Every table has a code." The rest keep theirs |
+| Renew the code, confirmed | A new code; the old one stops | "T4 has a new code. Print it and replace the one on the table." |
+| Turn the code off, confirmed | No code | "T4 takes no orders by phone." |
+| Give it a code | A code for a table with none | "T4 has a code." |
+
 ## States
 
 - **Loading:** "Loading the floor plan".
@@ -85,6 +127,12 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
 - **Error:** the server's words, with **Try again**.
 - **Refused:** the server's words, under the field in a modal, or under the
   grid for a drag or a tap-move.
+- **The codes could not be read:** in the card, why, with **Try again**. The
+  plan above it is not affected.
+- **A code could not be changed:** a toast: "That table is no longer on the
+  floor. The list has been read again.", "Your role cannot change the
+  tables' codes.", "Can't reach the server. Check the connection and try
+  again.", or "That did not work. Try again."
 
 ## Constraints
 
@@ -93,10 +141,16 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
 - Every control 48px; every cell 56px. Seats, columns and rows tabular.
 - No hover-dependent behaviour: a drag is a shortcut, not the way.
 - The grid has tables only: no walls, doors or a bar, so Tables draws none.
+- **A code is a credential.** It is shown only to a role that may edit
+  settings, is never kept from one visit to the next, and nothing that
+  stops a working code happens without a confirm that says what stops.
+- The address on a sticker is the venue's `public_url`, the server's to
+  say. The screen builds none.
 
 ## Reference
 
 The design draws no floor editor. D05's "Edit Layout" and "Add Table" on the
 terminal, and D22's "Tables & QR codes" in Settings, point at one; this
-screen is where they lead, and it is ours, kept under rule 4. QR codes for
-tables are phase 11's.
+screen is where they lead, and it is ours, kept under rule 4. D22's "Tables
+& QR codes" is the card here, since a code belongs to a table and this is
+where the tables are. The sheet to print is Task 6c.

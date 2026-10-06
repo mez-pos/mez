@@ -7772,3 +7772,42 @@ Cost: renewing or turning off a code cuts off everything asked through it: an or
 being tracked, a bill being read, a receipt (ADR-240). That is the point of it, and
 a guest mid-meal is told only that the code leads nowhere. Who renewed what is in
 the log and not in the audit trail the back office reads. No screen yet.
+
+## ADR-244 - The tables' codes are a card on the Floor plan, and stopping a code asks first
+2026-10 · Status: accepted. Phase 11, Task 6b. Amends ADR-243.
+Context: ADR-243 gave the owner's side of table codes an API. The design's D22
+lists "Tables & QR codes" under Settings; the back office has a Floor plan screen
+(ours, the design draws none) where tables are added, moved and retired.
+Decision:
+  - **A card, "Ordering from the table", on the Floor plan**, under the plan, for
+    the tables of every area. A code belongs to a table, the screen needs the same
+    permission, `settings.edit`, and an owner who adds a table is on the screen
+    where it gets its code. Settings would be a second place to think about tables.
+  - **It reads on its own and fails on its own**: the plan above is usable if the
+    codes cannot be read.
+  - **A table: its name, its code, the address on its sticker, and what can be
+    done**, under the row's "...", as devices are. The code is shown in groups of
+    four, to be checked against a sticker or read down a phone.
+  - **Renew and Turn off each ask first, in the danger tone, and say what stops**:
+    the sticker on the table, any photo of it, and the place of a guest ordering
+    from it now. Renew also says what to do next: print the new one.
+  - **Give it a code asks nothing.** A table with no code has nothing to stop.
+    Make the missing codes is the same for all of them at once.
+  - **Make the missing codes is a secondary button.** The screen has one primary,
+    Add a table.
+  - **With no `public_url` the card says so, in the warning tone, with what to
+    set**, and offers no QR. The codes are still listed and can still be renewed:
+    they work on the venue's own network.
+  - **The QR's route now answers JSON with the SVG in a field** (amends ADR-243,
+    which answered the picture bare), as a report's file is its text in one
+    (ADR-119). The staff's API is JSON throughout and the back office's client
+    reads nothing else; a second way to fetch, for one picture, was not worth
+    having. It is shown as an image from a data address, never as markup.
+  - **The codes are never kept between visits to the screen**, and are read again
+    when the floor changes.
+Because: the two things an owner does with a code are stick it on a table and kill
+it when it has got out, and both start from the table.
+Cost: a floor of fifty tables is a long card under the plan. Nothing prints yet,
+so a renewed code has nowhere to go but the screen until 6c. Who renewed a code is
+still only in the log. Seen at 1366 and 1920 in the real binary with `public_url`
+set; the card with none, and a refusal, were not seen.

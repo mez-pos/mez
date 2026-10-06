@@ -10,12 +10,17 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **Table codes for the owner** (ADR-243): the staff API only, with no
-  screen, and not asked in the real binary. Renewing or turning off a code
-  ends, for that table, every receipt and order a phone could ask about
-  through the old one. A code turned off is said nowhere to a guest but
-  "This code does not lead to a table". Nothing records who renewed a code
-  but the log. There is no limit on guests' requests yet (6d).
+- **Table codes for the owner** (ADR-243, ADR-244): seen at 1366 and 1920
+  in the real binary with `public_url` set: the list, Make the missing
+  codes, the QR, Renew and Turn off with their confirms, a table with no
+  code and Give it a code. A renewed code was asked for as a guest and led
+  nowhere. Not seen: the card with no `public_url`, a refusal, a role
+  without `settings.edit`, a keyboard or a screen reader, a floor of fifty
+  tables. The QR was drawn and not scanned by a phone. Renewing or turning
+  off a code ends, for that table, every order and receipt a phone could
+  ask about through the old one, and the guest is told only that the code
+  leads nowhere. Who renewed a code is in the log and not in the audit
+  trail. Nothing prints yet (6c), and guests' requests have no limit (6d).
 - **Ordering the same again** (ADR-242): seen at 390 wide in the real
   binary, one dish added onto a cart that had one of it. Not seen: a dish
   gone from the menu since, or its choices changed, being named in the

@@ -23,6 +23,7 @@ import {
 } from "./floor-logic";
 import { AreaFormModal, TableFormModal } from "./FloorFormModals";
 import { FloorGrid } from "./FloorGrid";
+import { TableCodesCard } from "./TableCodesCard";
 import { useFloor, type FloorApi } from "./use-floor";
 
 type Editing =
@@ -60,6 +61,8 @@ export function FloorScreen() {
       )}
       {data && areaId === null && <EmptyState icon={<InboxIcon />} line="No areas yet. Add one for each room or terrace, then place its tables." />}
       {data && areaId !== null && <AreaView key={areaId} data={data} areaId={areaId} api={api} onChooseArea={setAreaChoice} onEdit={setEditing} />}
+      {/* The codes guests order by: for the tables of every area, under whichever is shown. */}
+      {data && <TableCodesCard />}
 
       {editing && data && (editing.kind === "add-table" || editing.kind === "edit-table") && (
         <TableFormModal
