@@ -209,10 +209,13 @@ Phase 10.
       the venue, the menu, an order, paying for it, and tracking it with
       its `pickup_code`. Limited by address and then by venue. With no
       gateway the venue says `ordering: false` and the rest `pickup_off`.
-    - [ ] **5f3.** The phone: the way in with no table (`/order/p/<code>`),
-      pay, and the order's screen with the code in large type. And the back
-      office: the pickup code on the Floor plan's card and its sheet, which
-      6e left until the code leads somewhere (ADR-247).
+    - [ ] **5f3.** The phone and the back office. Split in two (ADR-251):
+      - [x] **5f3a.** The phone: the way in with no table
+        (`/order/p/<code>`), the menu and cart, pay, and the order's
+        screen with the code in large type. Its spec, `guest-collect.md`.
+      - [ ] **5f3b.** The back office: the pickup code on the Floor plan's
+        card and its sheet, which 6e left until the code leads somewhere
+        (ADR-247).
     - [ ] **5f4.** The counter: the pickup orders out and ready on the
       terminal, by code, to call out and hand over.
 

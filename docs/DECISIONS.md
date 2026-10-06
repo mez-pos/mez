@@ -8097,3 +8097,49 @@ bound it and nothing prevents it. Phones behind one carrier's shared address
 share its five orders. A guest who paid has no receipt on the phone. There is
 no way in with no table in the app until 5f3, so nothing but a test has asked
 these routes, and never in the real binary or through the relay.
+
+## ADR-251 - Ordering to collect on the phone is the table's screens told there is no table
+2026-10 · Status: accepted. Phase 11, Task 5f3a.
+Context: 5f3 was the phone's way in with no table and the pickup code in the back
+office. The guest app is six screens written for a table: every call takes the
+table's code, every key in storage is under it, and its words say "your table".
+Decision:
+  - **Task 5f3 is split in two**: 5f3a the phone, this; 5f3b the back office's
+    card and sheet. They share no file.
+  - **No screens of its own.** The landing, the menu, the cart and the order take
+    a `collect` flag, and say what differs. A second set would be a second copy
+    of the cart, the key that makes two taps one order, and paying: the parts
+    that cost money when they drift.
+  - **The path says which code it is** (`wayFrom`): "p" or "t" before it.
+  - **Which API a code is asked under is said once, when the page opens**
+    (`enterCollect`), and kept in the module that asks. A page has one code for
+    its life, and a pickup code is never the same string as a table's (ADR-247),
+    so every call still takes the code alone and none had to change. The
+    alternative was a second argument through thirty call sites.
+  - **Where the code leads is one answer for both** (`useTable`'s `Where`): a
+    pickup code's has an empty table name, which `tableLabel` reads as "To
+    collect", and `ordering`.
+  - **The pickup code is shown at the display size**, 44px, in the numeral face:
+    it is read at arm's length and said aloud. Only three or four digits and
+    capitals are shown or kept; a stored order with anything else is forgotten.
+  - **The words change where a table's would be untrue**: ready is "Collect it
+    at the counter with your code.", and nothing says "table", "bill" or
+    "bring". A test holds the order's words to that.
+  - **No bill and no receipt.** Their buttons are gone and their hashes show the
+    menu.
+  - **`ordering: false` is its own screen**, "Not taking orders to collect
+    online. Please order at the counter.", and not the wrong-code one. An order
+    already placed still shows.
+  - **An order answered 404 is not asked about again**, for a table's as well.
+    Before, a phone asked every ten seconds for three hours about an order the
+    venue no longer found. What it remembers stays on the screen, the code with
+    it: a renewed pickup code must not take a paid guest's code off their phone.
+Because: what differs for a guest with no table is a dozen sentences and one
+card. The rest is the same order, and should be the same code.
+Cost: `enterCollect` is state outside React, set during render; it is the same
+value every render. A screen that forgets to pass `collect` says a table's words
+to someone at a door, and only the order's words have a test. The phone
+remembers one order: ordering something else before collecting forgets the
+first one's code, and the counter then has only the ticket. Seen at 390 wide in
+a headless browser with the API mocked: never against the real binary, a real
+gateway, the relay, or on a phone.

@@ -125,6 +125,26 @@ export function dueOf(round: GuestRoundResponse): Money | null {
   return round.status === "unpaid" && round.due !== undefined && round.due.minor > 0 ? round.due : null;
 }
 
+/** A pickup code as the venue gives one: three or four digits and capitals (ADR-249). */
+const PICKUP_CODE = /^[0-9A-Z]{3,4}$/;
+
+/**
+ * The code an order to collect is called out by, once it is paid for and
+ * sent, or null. Anything that is not the shape of one is not shown.
+ */
+export function pickupCodeOf(round: Pick<GuestRoundResponse, "pickup_code">): string | null {
+  return round.pickup_code !== undefined && PICKUP_CODE.test(round.pickup_code) ? round.pickup_code : null;
+}
+
+/**
+ * Whether asking about an order was answered "not found": the venue no
+ * longer finds it under this code, and asking again will say the same. A
+ * failure to reach the venue, or being told to wait, is not that.
+ */
+export function orderGone(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 404;
+}
+
 export function placedStorageKey(code: string): string {
   return `mez.placed.${code}`;
 }
@@ -147,6 +167,7 @@ export function parsePlaced(text: string | null, now: number): Placed | null {
   if (!Array.isArray(round.lines) || !round.lines.every(isLine) || !isMoney(round.subtotal)) return null;
   if (round.due !== undefined && !isMoney(round.due)) return null;
   if (round.progress !== undefined && !steps.includes(round.progress as GuestRoundProgress)) return null;
+  if (round.pickup_code !== undefined && (typeof round.pickup_code !== "string" || !PICKUP_CODE.test(round.pickup_code))) return null;
   return withRound(
     { key: raw.key, request: request as unknown as GuestOrderRequest, at: raw.at, paidFirst: raw.paidFirst === true, tracked: raw.tracked === true },
     round as unknown as GuestRoundResponse,
@@ -193,19 +214,29 @@ export interface StatusWords {
 /**
  * What a sent order says of the kitchen (ADR-236). Each is something a
  * person in the kitchen did, read from the venue: never a guess at how long.
+ * An order to collect is at no table: it is paid for, and fetched from the
+ * counter.
  */
-export function progressWords(progress: GuestRoundProgress): StatusWords {
+export function progressWords(progress: GuestRoundProgress, collect = false): StatusWords {
   switch (progress) {
     case "accepted":
-      return { title: "Your order is accepted", line: "It is on your table's bill.", brief: "Accepted" };
+      return { title: "Your order is accepted", line: collect ? "It is paid for." : "It is on your table's bill.", brief: "Accepted" };
     case "sent":
       return { title: "Your order is with the kitchen", line: "Nobody has started on it yet.", brief: "Sent to the kitchen" };
     case "preparing":
       return { title: "Your order is being made", line: "The kitchen has started on it.", brief: "Being made" };
     case "ready":
-      return { title: "Your order is ready", line: "A member of staff will bring it to your table.", brief: "Ready" };
+      return {
+        title: "Your order is ready",
+        line: collect ? "Collect it at the counter with your code." : "A member of staff will bring it to your table.",
+        brief: "Ready",
+      };
     case "cancelled":
-      return { title: "This order was cancelled", line: "Nothing in it is being made. Please ask a member of staff.", brief: "Cancelled" };
+      return {
+        title: "This order was cancelled",
+        line: collect ? "Nothing in it is being made. Please ask at the counter." : "Nothing in it is being made. Please ask a member of staff.",
+        brief: "Cancelled",
+      };
   }
 }
 
@@ -221,19 +252,20 @@ export function stepIndex(progress: GuestRoundProgress | undefined): number {
   return kitchenSteps.findIndex((s) => s.step === progress);
 }
 
-/** What a sent order is told under how it stands: ordering more, and when it pays. */
-export function sentNote(paidFirst: boolean): string {
+/** What a sent order is told under how it stands: ordering more, and when it pays. To collect, what its code is for. */
+export function sentNote(paidFirst: boolean, collect = false): string {
+  if (collect) return "Your code is called at the counter when your order is ready.";
   return paidFirst ? "You can order more from the menu at any time." : "You can order more from the menu at any time. You pay when you are ready to leave.";
 }
 
 /** The words for an order as it stands: its status, and once sent and tracked, the kitchen's step. */
-export function orderWords(placed: Pick<Placed, "round" | "paidFirst">, venue: string): StatusWords {
+export function orderWords(placed: Pick<Placed, "round" | "paidFirst">, venue: string, collect = false): StatusWords {
   const { status, progress } = placed.round;
   if (status !== "sent") return statusWords(status, venue, placed.paidFirst);
   // Sent, and nothing known of the kitchen: the note under the card says
   // the rest, so the card has no second line to repeat it.
   if (progress === undefined) return { ...statusWords(status, venue, placed.paidFirst), line: "" };
-  const words = progressWords(progress);
+  const words = progressWords(progress, collect);
   return placed.paidFirst && progress === "sent" ? { ...words, title: "Paid, and with the kitchen" } : words;
 }
 
@@ -294,6 +326,8 @@ export function refusalOf(error: unknown): Refusal {
     case "table_not_ordering":
     case "requests_waiting":
     case "table_code_unknown":
+    case "pickup_code_unknown":
+    case "pickup_off":
       return { text: error.message, readMenu: false };
     case "idempotency_key_reused":
       return { text: "Your cart changed while the order was being placed. Check it and place the order again.", readMenu: false };

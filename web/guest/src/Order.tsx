@@ -16,7 +16,7 @@ import { chargeTones } from "./Bill";
 import { itemsText } from "./cart-logic";
 import { canPayRound, chargeOpen, checkoutUrlOf, paymentStuck, roundChargeWords, stuckWords } from "./charge-logic";
 import { tableLabel } from "./Landing";
-import { dueOf, kitchenSteps, orderWords, sentNote, stepIndex, type Placed } from "./order-logic";
+import { dueOf, kitchenSteps, orderWords, pickupCodeOf, sentNote, stepIndex, type Placed } from "./order-logic";
 import { useCharge, type ChargeApi } from "./use-charge";
 
 const tones: Readonly<Record<GuestRoundStatus, string>> = {
@@ -41,15 +41,18 @@ interface OrderProps {
   onBill: () => void;
   /** Puts this order's dishes in the cart again (ADR-242). It places nothing. */
   onAgain: () => void;
+  /** An order to collect (guest-collect.md): no table and no bill, and a code to be called by. */
+  collect?: boolean;
 }
 
-export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain }: OrderProps) {
+export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain, collect = false }: OrderProps) {
   const { round } = placed;
   // The charge this phone started for this order, if it started one. An
   // order the venue did not hold has none, and this asks nothing.
   const online = useCharge(code, { round: round.id, onAnswered: onRefresh });
   const stuck = paymentStuck(round.status, online.charge?.status);
-  const words = stuck ? stuckWords : orderWords(placed, table.venue.name);
+  const words = stuck ? stuckWords : orderWords(placed, table.venue.name, collect);
+  const pickup = pickupCodeOf(round);
   const at = round.status === "sent" ? stepIndex(round.progress) : -1;
   const count = round.lines.reduce((sum, l) => sum + l.qty, 0);
   const due = dueOf(round);
@@ -83,7 +86,16 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain 
             </ol>
           )}
         </section>
-        {round.status === "sent" && round.progress !== "cancelled" && <p className="mt-3 text-center text-sm text-fg-muted">{sentNote(placed.paidFirst)}</p>}
+        {/* What the counter calls out. Large, since it is read at arm's length and said aloud. */}
+        {pickup !== null && round.progress !== "cancelled" && (
+          <section aria-label="Your pickup code" className="mt-4 rounded-card border border-line bg-raised p-5 text-center shadow-card">
+            <h2 className="text-base text-fg-muted">Your code</h2>
+            <p className="mt-1 font-mono text-display font-bold tracking-[.16em] text-accent-text">{pickup}</p>
+          </section>
+        )}
+        {round.status === "sent" && round.progress !== "cancelled" && (
+          <p className="mt-3 text-center text-sm text-fg-muted">{sentNote(placed.paidFirst, collect)}</p>
+        )}
 
         <ul className="mt-4 rounded-card border border-line bg-raised px-4 shadow-rest">
           {round.lines.map((line, i) => (
@@ -107,7 +119,9 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain 
             <p className="font-serif text-xl">{formatMoney(round.subtotal)}</p>
           </div>
           {due === null ? (
-            <p className="mt-1 text-sm text-fg-muted">Before any taxes and charges, which are on the bill.</p>
+            <p className="mt-1 text-sm text-fg-muted">
+              {collect ? "Before any taxes and charges, which were in what you paid." : "Before any taxes and charges, which are on the bill."}
+            </p>
           ) : (
             <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-line-soft pt-2">
               <p className="text-base">To pay, with taxes and charges</p>
@@ -120,7 +134,7 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain 
 
         <div className="mt-auto flex flex-col gap-3 pt-8">
           <Button variant={round.status === "sent" ? "primary" : "secondary"} size="charge" className="w-full" onClick={onMenu}>
-            {round.status === "sent" ? "Order more" : "Back to the menu"}
+            {round.status !== "sent" ? "Back to the menu" : collect ? "Order something else" : "Order more"}
           </Button>
           {/* The same again goes to the cart, to be read and placed from there. Not for an order the venue turned down or cancelled. */}
           {round.status === "sent" && round.progress !== "cancelled" && (
@@ -129,7 +143,7 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain 
             </Button>
           )}
           {/* The bill has this order on it only once it is accepted. */}
-          {round.status === "sent" && (
+          {round.status === "sent" && !collect && (
             <Button variant="secondary" className="w-full" onClick={onBill}>
               See the table's bill
             </Button>
@@ -188,8 +202,9 @@ function PayForOrder({ placed, online }: { placed: Placed; online: ChargeApi }) 
  * The order's state over the menu and the cart, so a guest who went back to
  * browse still sees it and can return to it.
  */
-export function OrderStrip({ placed, venue, onOpen }: { placed: Placed; venue: string; onOpen: () => void }) {
+export function OrderStrip({ placed, venue, onOpen, collect = false }: { placed: Placed; venue: string; onOpen: () => void; collect?: boolean }) {
   const { status, progress } = placed.round;
+  const pickup = pickupCodeOf(placed.round);
   return (
     <button
       type="button"
@@ -199,7 +214,10 @@ export function OrderStrip({ placed, venue, onOpen }: { placed: Placed; venue: s
         toneOf(status, progress),
       )}
     >
-      <span role="status">Your order: {orderWords(placed, venue).brief}</span>
+      <span role="status">
+        Your order: {orderWords(placed, venue, collect).brief}
+        {pickup !== null && <span className="font-mono"> · {pickup}</span>}
+      </span>
       <span className="shrink-0 underline">View</span>
     </button>
   );

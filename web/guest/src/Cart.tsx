@@ -19,10 +19,13 @@ interface CartProps {
   onBack: () => void;
   /** The venue has the order: on to how it stands. */
   onPlaced: () => void;
-  onBill: () => void;
+  /** Left out where there is no bill: an order to collect is paid for by itself. */
+  onBill?: (() => void) | undefined;
+  /** Ordering to collect: there is no bill, and it is paid for before it is sent. */
+  collect?: boolean;
 }
 
-export function Cart({ cart, order, onBack, onPlaced, onBill }: CartProps) {
+export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false }: CartProps) {
   const place = () => {
     void order.place().then((ok) => {
       if (ok) onPlaced();
@@ -65,9 +68,11 @@ export function Cart({ cart, order, onBack, onPlaced, onBill }: CartProps) {
             <Button variant="primary" className="mt-5" onClick={onBack}>
               Browse the menu
             </Button>
-            <Button variant="ghost" className="mt-2" onClick={onBill}>
-              See the table's bill
-            </Button>
+            {onBill && (
+              <Button variant="ghost" className="mt-2" onClick={onBill}>
+                See the table's bill
+              </Button>
+            )}
           </div>
         ) : (
           <>
@@ -112,7 +117,9 @@ export function Cart({ cart, order, onBack, onPlaced, onBill }: CartProps) {
                 </h2>
                 <p className="font-serif text-xl">{formatMoney(cart.total)}</p>
               </div>
-              <p className="mt-1 text-sm text-fg-muted">Before any taxes and charges, which are on the bill.</p>
+              <p className="mt-1 text-sm text-fg-muted">
+                {collect ? "Before any taxes and charges, which are added before you pay." : "Before any taxes and charges, which are on the bill."}
+              </p>
             </section>
 
             <p className="mt-4 text-center text-sm text-fg-muted">Allergies or a special request? Please tell a member of staff.</p>

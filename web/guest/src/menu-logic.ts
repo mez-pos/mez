@@ -111,11 +111,12 @@ export function photoUrl(name: string): string {
  * the code leads nowhere, the venue could not be reached, or it answered
  * with something else.
  */
-export type Problem = "unknown_code" | "unreachable" | "failed";
+export type Problem = "unknown_code" | "collect_off" | "unreachable" | "failed";
 
 export function problemOf(error: unknown): Problem {
   if (!(error instanceof ApiError)) return "failed";
-  if (error.code === "table_code_unknown") return "unknown_code";
+  if (error.code === "table_code_unknown" || error.code === "pickup_code_unknown") return "unknown_code";
+  if (error.code === "pickup_off") return "collect_off";
   // The relay answers 502, 503 and 504 for a venue it cannot reach, and 429
   // for one that is busy: all of them pass, and all of them say try again.
   if (error.unreachable || error.status === 429 || (error.status !== null && error.status >= 502 && error.status <= 504)) {

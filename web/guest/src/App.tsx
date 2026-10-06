@@ -1,5 +1,7 @@
 // The guest's app: a table's code in the path, and the landing, the menu or
 // the cart, the order placed, the bill or its receipt in the hash (route.ts).
+// With the venue's pickup code in the path it is the same screens with no
+// table: ordering to collect (guest-collect.md), which has no bill.
 
 import { useEffect, useState } from "react";
 import { Bill } from "./Bill";
@@ -11,21 +13,23 @@ import { Order, OrderStrip } from "./Order";
 import { problemOf } from "./menu-logic";
 import { Problem } from "./Problem";
 import { Receipt } from "./Receipt";
-import { hashFor, tableCodeFrom, viewFrom, type View } from "./route";
+import { hashFor, viewFrom, wayFrom, type View } from "./route";
 import { useCart } from "./use-cart";
 import { hasStartedCharge, hasStartedRoundCharge } from "./use-charge";
-import { useGuestMenu, useTable } from "./use-guest";
+import { enterCollect, useGuestMenu, useTable } from "./use-guest";
 import { useOrder } from "./use-order";
 import { keptBill } from "./use-receipt";
 
 export function App() {
-  const code = tableCodeFrom(window.location.pathname);
+  const way = wayFrom(window.location.pathname);
   // A path with no code in it was not written by a table's sticker.
-  if (code === null) return <Problem kind="unknown_code" />;
-  return <Table code={code} />;
+  if (way === null) return <Problem kind="unknown_code" />;
+  // Said before anything is asked: the code is asked under its own API.
+  if (way.collect) enterCollect(way.code);
+  return <Table code={way.code} collect={way.collect} />;
 }
 
-function Table({ code }: { code: string }) {
+function Table({ code, collect }: { code: string; collect: boolean }) {
   const [view, go] = useView();
   const table = useTable(code);
   // Asked for as soon as the table is known, so the menu is there by the
@@ -44,11 +48,13 @@ function Table({ code }: { code: string }) {
   }, []);
 
   if (table.data === undefined) {
-    if (table.isPending) return <Waiting line="Finding your table" />;
+    if (table.isPending) return <Waiting line={collect ? "Finding the menu" : "Finding your table"} />;
     const kind = problemOf(table.error);
-    return <Problem kind={kind} onRetry={kind === "unknown_code" ? undefined : () => void table.refetch()} />;
+    return <Problem kind={kind} collect={collect} onRetry={kind === "unknown_code" ? undefined : () => void table.refetch()} />;
   }
-  if (view === "landing") return <Landing table={table.data} onStart={() => go("menu")} />;
+  // An order already placed still shows, with its code: only a new one is refused.
+  if (!table.data.ordering && !(view === "order" && order.placed)) return <Problem kind="collect_off" onRetry={() => void table.refetch()} />;
+  if (view === "landing") return <Landing table={table.data} collect={collect} onStart={() => go("menu")} />;
   // The order placed is the server's answer, kept on the phone: it shows
   // with or without the menu.
   if (view === "order" && order.placed) {
@@ -65,23 +71,32 @@ function Table({ code }: { code: string }) {
           cart.addMany(linesOfRequest(order.placed?.request));
           go("cart");
         }}
+        collect={collect}
       />
     );
   }
-  if (view === "bill") return <Bill code={code} table={table.data} onBack={() => go("menu")} onReceipt={() => go("receipt")} />;
-  if (view === "receipt") return <Receipt code={code} table={table.data} bill={keptBill(code)?.id ?? null} onBack={() => go("bill")} />;
+  // To collect there is no bill and no receipt: their hashes show the menu.
+  if (view === "bill" && !collect) return <Bill code={code} table={table.data} onBack={() => go("menu")} onReceipt={() => go("receipt")} />;
+  if (view === "receipt" && !collect) return <Receipt code={code} table={table.data} bill={keptBill(code)?.id ?? null} onBack={() => go("bill")} />;
 
   if (menu.data === undefined) {
     if (menu.isPending) return <Waiting line="Loading the menu" />;
     const kind = problemOf(menu.error);
-    return <Problem kind={kind} onRetry={kind === "unknown_code" ? undefined : () => void menu.refetch()} />;
+    return <Problem kind={kind} collect={collect} onRetry={kind === "unknown_code" ? undefined : () => void menu.refetch()} />;
   }
-  const strip = order.placed && <OrderStrip placed={order.placed} venue={table.data.venue.name} onOpen={() => go("order")} />;
+  const strip = order.placed && <OrderStrip placed={order.placed} venue={table.data.venue.name} onOpen={() => go("order")} collect={collect} />;
   if (view === "cart") {
     return (
       <>
         {strip}
-        <Cart cart={cart} order={order} onBack={() => go("menu")} onPlaced={() => go("order")} onBill={() => go("bill")} />
+        <Cart
+          cart={cart}
+          order={order}
+          onBack={() => go("menu")}
+          onPlaced={() => go("order")}
+          onBill={collect ? undefined : () => go("bill")}
+          collect={collect}
+        />
       </>
     );
   }

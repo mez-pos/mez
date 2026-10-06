@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hashFor, tableCodeFrom, viewFrom } from "./route";
+import { hashFor, tableCodeFrom, viewFrom, wayFrom } from "./route";
 
 const code = "dpyyd3kcn5ev";
 
@@ -26,6 +26,30 @@ describe("tableCodeFrom", () => {
     ["an encoded character", `/t/${code.slice(0, 9)}%2F`],
   ])("finds no code in %s", (_, path) => {
     expect(tableCodeFrom(path)).toBeNull();
+  });
+});
+
+describe("wayFrom", () => {
+  it.each([
+    ["on the venue's wifi", `/order/p/${code}`],
+    ["through the relay", `/p/${code}`],
+    ["with a trailing slash", `/order/p/${code}/`],
+  ])("reads a pickup code %s", (_, path) => {
+    expect(wayFrom(path)).toEqual({ code, collect: true });
+    // It is no table's code, whatever reads the path.
+    expect(tableCodeFrom(path)).toBeNull();
+  });
+
+  it("reads a table's code as a table's", () => {
+    expect(wayFrom(`/order/t/${code}`)).toEqual({ code, collect: false });
+  });
+
+  it.each([
+    ["some other letter before the code", `/order/x/${code}`],
+    ["a pickup code a character short", `/p/${code.slice(1)}`],
+    ["something after the code", `/order/p/${code}/menu`],
+  ])("finds no code in %s", (_, path) => {
+    expect(wayFrom(path)).toBeNull();
   });
 });
 

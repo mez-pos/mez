@@ -10,9 +10,20 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **Ordering to collect over the guest API** (ADR-250): asked by tests only,
-  never in the real binary, through the relay, or with a real gateway. No
-  screen asks it until 5f3. A guest who paid has no receipt on the phone: a
+- **Ordering to collect on the phone** (ADR-251, `guest-collect.md`): seen at
+  390 wide in a headless browser with the API mocked: the landing, the menu,
+  the cart, the order unpaid, paying, sent with its code, the strip, "not
+  taking orders" and a wrong code. **Not seen:** against the real binary, a
+  real gateway's page and the way back from it, through the relay (whether
+  it carries `/p/<code>` is not checked), on a real phone, the ready and
+  cancelled states, or with a screen reader. The phone remembers one order:
+  ordering something else before collecting forgets the first one's code.
+  The cart still says "Please tell a member of staff" about allergies, to
+  someone who may not be in the venue yet. Nothing in the back office shows
+  the code or its QR until 5f3b: it is made through the API.
+- **Ordering to collect over the guest API** (ADR-250): asked by tests and a
+  mocked browser only, never in the real binary, through the relay, or with
+  a real gateway. A guest who paid has no receipt on the phone: a
   receipt is asked by a table's code. An order's id is all that guards its
   pickup code. The limits are by address and then by venue, reckoned and not
   measured: five addresses can read the venue's count away and three can

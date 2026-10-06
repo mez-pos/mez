@@ -11,6 +11,7 @@ import type {
   GuestMenuResponse,
   GuestOrderRequest,
   GuestPaidResponse,
+  GuestPickupResponse,
   GuestReceiptResponse,
   GuestRoundResponse,
   GuestShareRequest,
@@ -22,7 +23,18 @@ import { newPhoneName, PHONE_STORAGE_KEY, phoneNameOf } from "./split-logic";
 // there is to present.
 const api = createApiClient({ credentials: noCredentials });
 
-const base = (code: string) => `/order/api/t/${encodeURIComponent(code)}`;
+// The venue's pickup code, when that is what the page was opened with
+// (ADR-250). A page has one code for its life, and a pickup code is never
+// the same string as a table's (ADR-247), so the code itself says which API
+// it is asked under: "p" for this one, "t" for any other.
+let collecting: string | null = null;
+
+/** Says the page's code is the venue's pickup code. Called once, before anything is asked. */
+export function enterCollect(code: string): void {
+  collecting = code;
+}
+
+const base = (code: string) => `/order/api/${code === collecting ? "p" : "t"}/${encodeURIComponent(code)}`;
 
 /** How often the menu is read again: what is sold out turns on the kitchen's clock. */
 const MENU_REFRESH_MS = 60_000;
@@ -49,10 +61,25 @@ export function readReceipt(code: string, bill: string, signal: AbortSignal): Pr
   return api.get<GuestReceiptResponse>(`${base(code)}/receipts/${encodeURIComponent(bill)}`, { signal });
 }
 
-export function useTable(code: string): UseQueryResult<GuestTableResponse> {
+/**
+ * Where the page's code leads: a table at a venue, or for a pickup code the
+ * venue alone. With no table its name is empty, which the screens read as
+ * "to collect" (tableLabel).
+ */
+export interface Where extends GuestTableResponse {
+  readonly collect: boolean;
+  /** False where the venue takes no orders to collect: guests cannot pay online there. */
+  readonly ordering: boolean;
+}
+
+export function useTable(code: string): UseQueryResult<Where> {
   return useQuery({
     queryKey: ["guest", "table", code],
-    queryFn: ({ signal }) => api.get<GuestTableResponse>(base(code), { signal }),
+    queryFn: async ({ signal }): Promise<Where> => {
+      if (code !== collecting) return { ...(await api.get<GuestTableResponse>(base(code), { signal })), collect: false, ordering: true };
+      const venue = await api.get<GuestPickupResponse>(base(code), { signal });
+      return { venue: venue.venue, table: { name: "" }, collect: true, ordering: venue.ordering };
+    },
   });
 }
 
@@ -156,5 +183,6 @@ export function startRoundCharge(code: string, round: string): Promise<GuestChar
 
 /** How a charge this table started stands, as the venue's server found out from the gateway. */
 export function readCharge(code: string, id: string, signal: AbortSignal): Promise<GuestChargeResponse> {
-  return api.get<GuestChargeResponse>(`${base(code)}/bill/charge/${encodeURIComponent(id)}`, { signal });
+  // An order to collect has no bill: its payment is asked about beside it.
+  return api.get<GuestChargeResponse>(`${base(code)}/${code === collecting ? "" : "bill/"}charge/${encodeURIComponent(id)}`, { signal });
 }

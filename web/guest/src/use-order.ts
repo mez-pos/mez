@@ -10,6 +10,7 @@ import {
   drawKey,
   keyFor,
   keyStorageKey,
+  orderGone,
   parseKey,
   parsePlaced,
   placedStorageKey,
@@ -60,6 +61,10 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
   const busy = useRef(false);
+  // The id of an order the venue answered "not found" for: asking again
+  // would say the same, every few seconds, for hours. What the phone
+  // remembers of it stays on the screen.
+  const [gone, setGone] = useState<string | null>(null);
 
   const keep = (next: Placed) => {
     setPlaced(next);
@@ -73,16 +78,19 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
   // How often follows where it is, and it stops when nothing more is coming.
   // A failure to ask is not news; the next ask says. Not while the page is
   // hidden, and at once when it is shown again.
-  const every = askAfterMs(placed);
+  const lost = placed !== null && placed.round.id === gone;
+  const every = lost ? null : askAfterMs(placed);
   const ask = () => {
-    if (placed === null || document.visibilityState === "hidden") return;
+    if (placed === null || lost || document.visibilityState === "hidden") return;
     trackOrder(code, placed.round.id)
       .then((round) => keep(withRound(placed, round, true)))
-      .catch(() => undefined);
+      .catch((err: unknown) => {
+        if (orderGone(err)) setGone(placed.round.id);
+      });
   };
   // An order just sent has not been asked about at its own address yet:
   // ask now, and not at the next tick, for where it is in the kitchen.
-  const unasked = placed !== null && placed.round.status === "sent" && !placed.tracked;
+  const unasked = placed !== null && !lost && placed.round.status === "sent" && !placed.tracked;
   useEffect(() => {
     if (unasked) ask();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once for each order that becomes sent

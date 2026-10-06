@@ -12,6 +12,10 @@ const words: Record<Kind, { title: string; line: string }> = {
     title: "This code does not lead to a table",
     line: "Scan the code on your table again, or ask a member of staff.",
   },
+  collect_off: {
+    title: "Not taking orders to collect online",
+    line: "Please order at the counter.",
+  },
   unreachable: {
     title: "Can't reach the kitchen",
     line: "Check your connection and try again. You can always order at the counter.",
@@ -22,14 +26,22 @@ const words: Record<Kind, { title: string; line: string }> = {
   },
 };
 
+/** A pickup code that leads nowhere: nobody who scanned a poster is at a table. */
+const unknownCollect = {
+  title: "This code does not lead anywhere",
+  line: "Scan the code again, or order at the counter.",
+};
+
 interface ProblemProps {
   kind: Kind;
+  /** The code was a venue's pickup code, so nothing is said of a table. */
+  collect?: boolean;
   /** Asks the venue again. Left out when asking again cannot help: a code is wrong until it is scanned again. */
   onRetry?: (() => void) | undefined;
 }
 
-export function Problem({ kind, onRetry }: ProblemProps) {
-  const { title, line } = words[kind];
+export function Problem({ kind, collect = false, onRetry }: ProblemProps) {
+  const { title, line } = collect && kind === "unknown_code" ? unknownCollect : words[kind];
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-canvas p-6 text-center text-fg">
       <Logo className="h-10" />

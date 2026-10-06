@@ -185,7 +185,8 @@ Tracking, was not read: the steps here are the ones the kitchen records.
   of it is.
 - A list of past orders to order again from (M10): the phone remembers
   one order, the latest.
-- A pickup code: Task 5f. The receipt is `guest-receipt.md`.
+- The receipt is `guest-receipt.md`. An order to collect, with its pickup
+  code, is `guest-collect.md`.
 
 **Kept that the design does not draw:** the waiting and declined states
 (ADR-209), the strip, and every refusal.

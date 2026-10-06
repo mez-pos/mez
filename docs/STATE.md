@@ -8,27 +8,27 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 but 5f3 on, and 6 done. (Walks owed.)
+4 but 4f6b (Cashfree, question 8), 5 but 5f3b on, and 6 done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 5f2: ordering to collect over the guest API** (ADR-250). Six
-routes under `/order/api/p/{code}`, in `internal/api/guest_pickup.go`. Limits by
-address and then by venue. With no gateway the venue answers `ordering: false`.
+**Phase 11, Task 5f3a: ordering to collect on the phone** (ADR-251). 5f3 split in
+two. `/order/p/<code>` is the table's screens with a `collect` flag, and the
+pickup code in large type on the order. `guest-collect.md`. Seen with a mocked API.
 
 ## Next task
 
 **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
 online on a bill, a share from two phones, and Pay on an order paid first.
 
-**Phase 11, Task 5f3: ordering to collect on the phone, and the code in the back
-office.** Two screens: split it first if it is more than a session. Read ADR-250,
-ADR-247, `internal/api/guest_pickup.go`, `guest-order.md`, `backoffice-floor.md`.
-- The phone: the way in at `/order/p/<code>` (`GuestPickupResponse`; `ordering:
-  false` and `pickup_off` said plainly), the menu and cart, Pay, and the order's
-  screen with `pickup_code` in large type. The gateway returns to that address.
-  It keeps the order's id, all that finds it again. No bill, receipt or "table".
-- The back office: the pickup code on the Floor plan's card and its sheet (6e).
+**Phase 11, Task 5f3b: the pickup code in the back office.** Read ADR-247,
+ADR-244, ADR-245, `backoffice-floor.md`, `internal/api/table_codes.go`.
+- On the Floor plan's "Ordering from the table" card: the venue's pickup code
+  and address (`pickup` on `GET /api/v1/table-codes`), Show the QR code
+  (`/api/v1/pickup-code/qr`), Renew and Turn off behind a confirm, Make one.
+- On the sheet to print: a card for the door. Say where no gateway is set that
+  the code leads to "not taking orders" (`can_charge` on the payment settings).
+- After a renew a paid guest keeps their code but cannot ask how the order stands.
 
 ## Known broken / in progress
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f3, 5f4; 6 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 4, 5 but for 4f6b, 5f3b, 5f4; 6 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

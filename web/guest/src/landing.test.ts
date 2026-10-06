@@ -10,6 +10,7 @@ describe("tableLabel", () => {
     ["table 7", "table 7"],
     ["Window table", "Window table"],
     ["Tablet corner", "Table Tablet corner"],
+    ["", "To collect"],
   ])("calls a table named %s %s", (name, want) => {
     expect(tableLabel(name)).toBe(want);
   });

@@ -12,8 +12,10 @@ import {
   keyFor,
   parseKey,
   kitchenSteps,
+  orderGone,
   orderWords,
   parsePlaced,
+  pickupCodeOf,
   progressWords,
   refusalOf,
   sentNote,
@@ -291,5 +293,66 @@ describe("withRound and dueOf", () => {
     expect(dueOf({ ...round, status: "unpaid" })).toBeNull();
     expect(dueOf({ ...round, status: "unpaid", due: inr(0) })).toBeNull();
     expect(dueOf({ ...round, status: "sent", due: inr(58800) })).toBeNull();
+  });
+});
+
+describe("an order to collect", () => {
+  const all: GuestRoundProgress[] = ["accepted", "sent", "preparing", "ready", "cancelled"];
+  const now = 1_800_000_000_000;
+  const sent: GuestRoundResponse = { ...round, status: "sent", progress: "ready", pickup_code: "B7K" };
+  const stored = (r: object) => JSON.stringify({ key: "k", request, round: r, at: now - 60_000, paidFirst: true, tracked: true });
+
+  it("says nothing of a table, a bill, or of anything being brought", () => {
+    for (const p of all) {
+      const w = progressWords(p, true);
+      expect(`${w.title} ${w.line} ${w.brief}`).not.toMatch(/table|bill|bring|member of staff/i);
+      // The step is the kitchen's, whoever is waiting for it.
+      expect(w.title).toBe(progressWords(p).title);
+      expect(w.brief).toBe(progressWords(p).brief);
+    }
+    expect(sentNote(true, true)).not.toMatch(/table|bill|order more/i);
+    expect(sentNote(true, true)).toContain("code");
+  });
+
+  it("sends a ready order's guest to the counter", () => {
+    expect(progressWords("ready", true).line).toContain("counter");
+    expect(orderWords({ round: sent, paidFirst: true }, "Demo Cafe", true).line).toContain("counter");
+    // A table's is still brought to it.
+    expect(orderWords({ round: sent, paidFirst: true }, "Demo Cafe").line).toContain("your table");
+  });
+
+  it("is paid, and with the kitchen, until a cook starts it", () => {
+    expect(orderWords({ round: { ...sent, progress: "sent" }, paidFirst: true }, "Demo Cafe", true).title).toBe("Paid, and with the kitchen");
+  });
+
+  it.each(["B7K", "2222", "M4Q9"])("reads the pickup code %s", (code) => {
+    expect(pickupCodeOf({ ...sent, pickup_code: code })).toBe(code);
+  });
+
+  it.each([undefined, "", "b7k", "B7", "B7K2X", "B 7", "<b>"])("reads no pickup code in %s", (code) => {
+    expect(pickupCodeOf({ ...round, ...(code === undefined ? {} : { pickup_code: code }) })).toBeNull();
+  });
+
+  it("keeps the code with the order it remembers", () => {
+    expect(parsePlaced(stored(sent), now)?.round.pickup_code).toBe("B7K");
+  });
+
+  it.each([7, "<b>x</b>", "B7K2X"])("does not trust a stored code of %s", (code) => {
+    expect(parsePlaced(stored({ ...sent, pickup_code: code }), now)).toBeNull();
+  });
+
+  it("stops asking about an order the venue no longer finds, and not for a failure that may pass", () => {
+    expect(orderGone(new ApiError("request_not_found", "That order is not one placed to collect here.", 404))).toBe(true);
+    expect(orderGone(new ApiError("pickup_code_unknown", "This code does not lead anywhere.", 404))).toBe(true);
+    expect(orderGone(new ApiError("network", "offline"))).toBe(false);
+    expect(orderGone(new ApiError("rate_limited", "wait", 429))).toBe(false);
+    expect(orderGone(new ApiError("internal", "internal error", 500))).toBe(false);
+    expect(orderGone(new Error("anything"))).toBe(false);
+  });
+
+  it("uses the server's words when the venue stops taking orders to collect", () => {
+    const off = "This venue is not taking orders to collect online. Order at the counter.";
+    expect(refusalOf(new ApiError("pickup_off", off, 409))).toEqual({ text: off, readMenu: false });
+    expect(refusalOf(new ApiError("pickup_code_unknown", "This code does not lead anywhere.", 404)).text).toBe("This code does not lead anywhere.");
   });
 });
