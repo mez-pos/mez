@@ -7578,3 +7578,43 @@ Cost: each ask reads the round and projects its whole ticket. A phone asking eve
 few seconds for an order out, times the phones in the room, is the most frequent
 read the guest's API has, and nothing has measured it, here or through the relay. 5c chooses how often to ask and when to stop.
 The route was tested through the handler and not asked in the real binary.
+
+## ADR-239 - The order's screen follows the kitchen: three steps, asked at the order's own address, and never a time
+2026-10 · Status: accepted. Phase 11, Task 5c.
+Context: ADR-236 and ADR-238 read how far an order has come and answer it. The
+order's screen said "with the kitchen" for every sent order and asked how it stood
+by sending it again (ADR-210), which stopped once it was sent.
+Decision:
+  - **The card says what the kitchen last did**: with the kitchen and nobody has
+    started, being made, ready. Each is an event someone in the kitchen caused. No
+    sentence says how long, and a test refuses a digit or "soon" in any of them.
+  - **Three steps are drawn in the card**, With the kitchen, Being made, Ready,
+    as words under bars, filled up to where the order is. Accepted and cancelled
+    are on none of them and draw none.
+  - **Ready says "A member of staff will bring it to your table."** A guest who
+    ordered from a table is at a table. Pickup (ADR-237) will want other words.
+  - **Cancelled is drawn as declined is**, in the danger tint, and sends the guest
+    to staff: every dish in the order was voided, and why is the venue's to say.
+  - **The words about ordering more and paying moved under the card**, small, so
+    the card is only how the order stands.
+  - **Asked at the order's own address, and how often follows where it is**: 8
+    seconds while waiting or unpaid, at once when it is first sent, 10 seconds
+    with the kitchen or being made, 30 once ready, and not at all when cancelled,
+    declined, or sent with nothing said of the kitchen.
+  - **Ready is still asked, seldom**, because a recall takes it back, and a guest
+    told "ready" for a dish that went back on the screen is told wrong.
+  - **`tracked` is kept with the order**: that it was asked about at its own
+    address since it was sent. Without it, an order sent before rounds knew their
+    lines, which has no progress, would be asked about for three hours.
+  - **Sending the order again is now only how it is placed.** The phone no longer
+    uses it to ask.
+  - **The strip over the menu says the step too**, in a word.
+Because: the one thing a guest at a table wants from this screen is whether to
+keep waiting, and the kitchen display already knows.
+Cost: a phone with an order out asks every 10 seconds for as long as its page is
+shown, and every 30 once it is ready, until the order is forgotten at three hours;
+nothing has measured a full room. The phone remembers one order, so a table's
+earlier round stops being followed when a later one is placed. The words for ready
+assume table service. The bundle is 44.0 KB gzipped of 60, up 0.7. Seen at 390
+wide in the real binary: one order at a seated table, started and bumped through
+the kitchen's own API, changed on the phone within its 10 seconds each time.

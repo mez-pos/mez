@@ -4,11 +4,17 @@
 // answer. The prices in the answer are the server's; nothing here adds up.
 
 import { ApiError } from "../../shared/api";
-import type { GuestOrderRequest, GuestRoundResponse, GuestRoundStatus, Money } from "../../shared/api-types";
+import type { GuestOrderRequest, GuestRoundProgress, GuestRoundResponse, GuestRoundStatus, Money } from "../../shared/api-types";
 import type { PricedLine } from "./cart-logic";
 
 /** How often a waiting order asks whether it has been answered. */
 export const ASK_AGAIN_MS = 8_000;
+
+/** How often an order with the kitchen asks how far it has come. */
+export const TRACK_MS = 10_000;
+
+/** How often a ready order asks: only a recall moves it, and that is rare. */
+export const TRACK_READY_MS = 30_000;
 
 /** How long the phone remembers an order it placed: a meal, not a week. */
 export const REMEMBER_MS = 3 * 60 * 60 * 1000;
@@ -65,11 +71,53 @@ export interface Placed {
    * an order that was paid first is not told it pays on leaving.
    */
   readonly paidFirst: boolean;
+  /**
+   * The order has been asked about at its own address since it was sent
+   * (ADR-238), so what it says of the kitchen, or that it says nothing, is
+   * the venue's answer and not a question still to ask.
+   */
+  readonly tracked: boolean;
 }
 
-/** The order with the venue's newer answer in it. */
-export function withRound(placed: Omit<Placed, "round" | "paidFirst"> & { paidFirst?: boolean }, round: GuestRoundResponse): Placed {
-  return { key: placed.key, request: placed.request, at: placed.at, round, paidFirst: placed.paidFirst === true || round.status === "unpaid" };
+type Before = Omit<Placed, "round" | "paidFirst" | "tracked"> & { paidFirst?: boolean; tracked?: boolean };
+
+/**
+ * The order with the venue's newer answer in it. asked is true when the
+ * answer came from the order's own address, which is the only one that
+ * says how far the kitchen has come.
+ */
+export function withRound(placed: Before, round: GuestRoundResponse, asked = false): Placed {
+  return {
+    key: placed.key,
+    request: placed.request,
+    at: placed.at,
+    round,
+    paidFirst: placed.paidFirst === true || round.status === "unpaid",
+    tracked: round.status === "sent" && (asked || placed.tracked === true),
+  };
+}
+
+/**
+ * How long until an order is asked about again, or null when nothing more
+ * is coming: it was declined or cancelled, or it was sent before orders
+ * were tracked and the venue has said all it can.
+ */
+export function askAfterMs(placed: Placed | null): number | null {
+  if (placed === null) return null;
+  const { status, progress } = placed.round;
+  if (status === "waiting" || status === "unpaid") return ASK_AGAIN_MS;
+  if (status !== "sent") return null;
+  // Not asked yet since it was sent: ask soon, to learn where it is.
+  if (!placed.tracked) return ASK_AGAIN_MS;
+  switch (progress) {
+    case undefined:
+    case "cancelled":
+      return null;
+    case "ready":
+      return TRACK_READY_MS;
+    default:
+      return TRACK_MS;
+  }
 }
 
 /** What an unpaid order asks the guest to pay, as the server worked it out, or null. */
@@ -82,6 +130,7 @@ export function placedStorageKey(code: string): string {
 }
 
 const statuses: readonly GuestRoundStatus[] = ["waiting", "sent", "declined", "unpaid"];
+const steps: readonly GuestRoundProgress[] = ["accepted", "sent", "preparing", "ready", "cancelled"];
 
 /**
  * Reads a stored order. What is in storage is not trusted, and an order
@@ -97,8 +146,9 @@ export function parsePlaced(text: string | null, now: number): Placed | null {
   if (!isRecord(round) || typeof round.id !== "string" || !statuses.includes(round.status as GuestRoundStatus)) return null;
   if (!Array.isArray(round.lines) || !round.lines.every(isLine) || !isMoney(round.subtotal)) return null;
   if (round.due !== undefined && !isMoney(round.due)) return null;
+  if (round.progress !== undefined && !steps.includes(round.progress as GuestRoundProgress)) return null;
   return withRound(
-    { key: raw.key, request: request as unknown as GuestOrderRequest, at: raw.at, paidFirst: raw.paidFirst === true },
+    { key: raw.key, request: request as unknown as GuestOrderRequest, at: raw.at, paidFirst: raw.paidFirst === true, tracked: raw.tracked === true },
     round as unknown as GuestRoundResponse,
   );
 }
@@ -131,14 +181,6 @@ function json(text: string | null): unknown {
   }
 }
 
-/**
- * Whether an order still has an answer to wait for: staff's, or, where
- * guests pay first, its own payment (ADR-225).
- */
-export function awaitsAnswer(placed: Placed | null): boolean {
-  return placed?.round.status === "waiting" || placed?.round.status === "unpaid";
-}
-
 // Words.
 
 export interface StatusWords {
@@ -146,6 +188,53 @@ export interface StatusWords {
   readonly line: string;
   /** One or two words for the strip over the menu. */
   readonly brief: string;
+}
+
+/**
+ * What a sent order says of the kitchen (ADR-236). Each is something a
+ * person in the kitchen did, read from the venue: never a guess at how long.
+ */
+export function progressWords(progress: GuestRoundProgress): StatusWords {
+  switch (progress) {
+    case "accepted":
+      return { title: "Your order is accepted", line: "It is on your table's bill.", brief: "Accepted" };
+    case "sent":
+      return { title: "Your order is with the kitchen", line: "Nobody has started on it yet.", brief: "Sent to the kitchen" };
+    case "preparing":
+      return { title: "Your order is being made", line: "The kitchen has started on it.", brief: "Being made" };
+    case "ready":
+      return { title: "Your order is ready", line: "A member of staff will bring it to your table.", brief: "Ready" };
+    case "cancelled":
+      return { title: "This order was cancelled", line: "Nothing in it is being made. Please ask a member of staff.", brief: "Cancelled" };
+  }
+}
+
+/** The steps a sent order passes through, in order, for the row under its words. */
+export const kitchenSteps: readonly { step: GuestRoundProgress; label: string }[] = [
+  { step: "sent", label: "With the kitchen" },
+  { step: "preparing", label: "Being made" },
+  { step: "ready", label: "Ready" },
+];
+
+/** How far along the row an order is: the index of its step, or -1 when it is on none of them. */
+export function stepIndex(progress: GuestRoundProgress | undefined): number {
+  return kitchenSteps.findIndex((s) => s.step === progress);
+}
+
+/** What a sent order is told under how it stands: ordering more, and when it pays. */
+export function sentNote(paidFirst: boolean): string {
+  return paidFirst ? "You can order more from the menu at any time." : "You can order more from the menu at any time. You pay when you are ready to leave.";
+}
+
+/** The words for an order as it stands: its status, and once sent and tracked, the kitchen's step. */
+export function orderWords(placed: Pick<Placed, "round" | "paidFirst">, venue: string): StatusWords {
+  const { status, progress } = placed.round;
+  if (status !== "sent") return statusWords(status, venue, placed.paidFirst);
+  // Sent, and nothing known of the kitchen: the note under the card says
+  // the rest, so the card has no second line to repeat it.
+  if (progress === undefined) return { ...statusWords(status, venue, placed.paidFirst), line: "" };
+  const words = progressWords(progress);
+  return placed.paidFirst && progress === "sent" ? { ...words, title: "Paid, and with the kitchen" } : words;
 }
 
 export function statusWords(status: GuestRoundStatus, venue: string, paidFirst = false): StatusWords {

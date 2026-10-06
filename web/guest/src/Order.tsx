@@ -1,13 +1,14 @@
 // The order the guest placed (docs/design/screens/guest-order.md): how it
 // stands, in the venue's real answer and not a timer, and what was in it as
-// the server priced it. Task 5's tracking takes this screen over.
+// the server priced it. Once it is sent it follows the kitchen (ADR-236):
+// with the kitchen, being made, ready, as someone there does each.
 //
 // Where guests pay first (ADR-225 to ADR-228) an order is held until it is
 // paid for: the screen says what to pay, and Pay leaves for the gateway's
 // page. Whether it was paid is the venue's server's to say, never this
 // page's.
 
-import type { GuestRoundStatus, GuestTableResponse } from "../../shared/api-types";
+import type { GuestRoundProgress, GuestRoundStatus, GuestTableResponse } from "../../shared/api-types";
 import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
@@ -15,7 +16,7 @@ import { chargeTones } from "./Bill";
 import { itemsText } from "./cart-logic";
 import { canPayRound, chargeOpen, checkoutUrlOf, paymentStuck, roundChargeWords, stuckWords } from "./charge-logic";
 import { tableLabel } from "./Landing";
-import { dueOf, statusWords, type Placed } from "./order-logic";
+import { dueOf, kitchenSteps, orderWords, sentNote, stepIndex, type Placed } from "./order-logic";
 import { useCharge, type ChargeApi } from "./use-charge";
 
 const tones: Readonly<Record<GuestRoundStatus, string>> = {
@@ -24,6 +25,11 @@ const tones: Readonly<Record<GuestRoundStatus, string>> = {
   sent: "border-line bg-accent-tint text-accent-text",
   declined: "border-line bg-danger-tint text-danger",
 };
+
+/** The tone of an order as it stands: a cancelled one reads as a declined one does. */
+function toneOf(status: GuestRoundStatus, progress: GuestRoundProgress | undefined): string {
+  return status === "sent" && progress === "cancelled" ? tones.declined : tones[status];
+}
 
 interface OrderProps {
   code: string;
@@ -41,7 +47,8 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill }: OrderP
   // order the venue did not hold has none, and this asks nothing.
   const online = useCharge(code, { round: round.id, onAnswered: onRefresh });
   const stuck = paymentStuck(round.status, online.charge?.status);
-  const words = stuck ? stuckWords : statusWords(round.status, table.venue.name, placed.paidFirst);
+  const words = stuck ? stuckWords : orderWords(placed, table.venue.name);
+  const at = round.status === "sent" ? stepIndex(round.progress) : -1;
   const count = round.lines.reduce((sum, l) => sum + l.qty, 0);
   const due = dueOf(round);
   return (
@@ -52,10 +59,29 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill }: OrderP
       </header>
 
       <main className="flex flex-1 flex-col px-4 pb-8">
-        <section role="status" aria-live="polite" className={cx("mt-4 rounded-card border p-5 text-center", stuck ? tones.declined : tones[round.status])}>
+        <section
+          role="status"
+          aria-live="polite"
+          className={cx("mt-4 rounded-card border p-5 text-center", stuck ? tones.declined : toneOf(round.status, round.progress))}
+        >
           <h2 className="font-serif text-xl">{words.title}</h2>
-          <p className="mt-2 text-base">{words.line}</p>
+          {words.line !== "" && <p className="mt-2 text-base">{words.line}</p>}
+          {/* Where it is among the kitchen's steps: each is a word, and the one it is at is said as well as drawn. */}
+          {at >= 0 && (
+            <ol className="mt-4 grid grid-cols-3 gap-2 text-sm">
+              {kitchenSteps.map(({ step, label }, i) => (
+                <li
+                  key={step}
+                  aria-current={i === at ? "step" : undefined}
+                  className={cx("border-t-4 pt-2", i <= at ? "border-accent font-semibold" : "border-line-strong text-fg-muted")}
+                >
+                  {label}
+                </li>
+              ))}
+            </ol>
+          )}
         </section>
+        {round.status === "sent" && round.progress !== "cancelled" && <p className="mt-3 text-center text-sm text-fg-muted">{sentNote(placed.paidFirst)}</p>}
 
         <ul className="mt-4 rounded-card border border-line bg-raised px-4 shadow-rest">
           {round.lines.map((line, i) => (
@@ -155,17 +181,17 @@ function PayForOrder({ placed, online }: { placed: Placed; online: ChargeApi }) 
  * browse still sees it and can return to it.
  */
 export function OrderStrip({ placed, venue, onOpen }: { placed: Placed; venue: string; onOpen: () => void }) {
-  const status = placed.round.status;
+  const { status, progress } = placed.round;
   return (
     <button
       type="button"
       onClick={onOpen}
       className={cx(
         "mx-auto flex min-h-tap w-full max-w-md items-center justify-between gap-3 border-b px-4 py-2 text-left text-base font-semibold outline-offset-[-2px] outline-line-focus focus-visible:outline-2",
-        tones[status],
+        toneOf(status, progress),
       )}
     >
-      <span role="status">Your order: {statusWords(status, venue, placed.paidFirst).brief}</span>
+      <span role="status">Your order: {orderWords(placed, venue).brief}</span>
       <span className="shrink-0 underline">View</span>
     </button>
   );

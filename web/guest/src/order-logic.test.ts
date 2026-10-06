@@ -1,16 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../shared/api";
-import type { GuestOrderRequest, GuestRoundResponse } from "../../shared/api-types";
+import type { GuestOrderRequest, GuestRoundProgress, GuestRoundResponse } from "../../shared/api-types";
 import {
+  ASK_AGAIN_MS,
   REMEMBER_MS,
-  awaitsAnswer,
+  TRACK_MS,
+  TRACK_READY_MS,
+  askAfterMs,
   drawKey,
   dueOf,
   keyFor,
   parseKey,
+  kitchenSteps,
+  orderWords,
   parsePlaced,
+  progressWords,
   refusalOf,
+  sentNote,
   statusWords,
+  stepIndex,
   toRequest,
   withRound,
   type Placed,
@@ -88,15 +96,23 @@ describe("drawKey", () => {
 
 describe("parsePlaced", () => {
   const now = 1_800_000_000_000;
-  const placed: Placed = { key: "k", request, round, at: now - 60_000, paidFirst: false };
+  const placed: Placed = { key: "k", request, round, at: now - 60_000, paidFirst: false, tracked: false };
   const stored = (change: object = {}) => JSON.stringify({ ...placed, ...change });
 
   it("reads back an order placed this sitting", () => {
     expect(parsePlaced(stored(), now)).toEqual(placed);
   });
-  it("reads an order written before paying first was known as one that was not", () => {
-    const { paidFirst: _dropped, ...older } = placed;
+  it("reads an order written before paying first, or tracking, was known as one with neither", () => {
+    const { paidFirst: _dropped, tracked: _also, ...older } = placed;
     expect(parsePlaced(JSON.stringify(older), now)).toEqual(placed);
+  });
+  it("keeps how far the kitchen had come, and that it was asked", () => {
+    const sent = { ...round, status: "sent" as const, progress: "preparing" as const };
+    const back = parsePlaced(stored({ round: sent, tracked: true }), now);
+    expect(back?.round.progress).toBe("preparing");
+    expect(back?.tracked).toBe(true);
+    // An order that is not sent was never tracked, whatever storage says.
+    expect(parsePlaced(stored({ tracked: true }), now)?.tracked).toBe(false);
   });
   it("keeps that an order was held for its payment, and what it asks", () => {
     const held = { ...round, status: "unpaid" as const, due: inr(58800) };
@@ -122,19 +138,94 @@ describe("parsePlaced", () => {
     ["a choice that is not words", stored({ round: { ...round, lines: [{ ...round.lines[0], choices: [3] }] } })],
     ["a subtotal that is not whole", stored({ round: { ...round, subtotal: { minor: 1.5, currency: "INR" } } })],
     ["an amount to pay that is not money", stored({ round: { ...round, status: "unpaid", due: "588.00" } })],
+    ["a step the app does not know", stored({ round: { ...round, status: "sent", progress: "eaten" } })],
   ])("is nothing for %s", (_name, text) => {
     expect(parsePlaced(text, now)).toBeNull();
   });
 });
 
-describe("awaitsAnswer", () => {
-  it("is true only while waiting", () => {
-    const of = (status: GuestRoundResponse["status"]): Placed => ({ key: "k", request, round: { ...round, status }, at: 0, paidFirst: false });
-    expect(awaitsAnswer(of("waiting"))).toBe(true);
-    expect(awaitsAnswer(of("unpaid"))).toBe(true);
-    expect(awaitsAnswer(of("sent"))).toBe(false);
-    expect(awaitsAnswer(of("declined"))).toBe(false);
-    expect(awaitsAnswer(null)).toBe(false);
+describe("askAfterMs", () => {
+  const of = (status: GuestRoundResponse["status"], progress?: GuestRoundProgress, tracked = false): Placed => ({
+    key: "k",
+    request,
+    round: progress === undefined ? { ...round, status } : { ...round, status, progress },
+    at: 0,
+    paidFirst: false,
+    tracked,
+  });
+  it("asks while an order waits for staff or for its payment", () => {
+    expect(askAfterMs(of("waiting"))).toBe(ASK_AGAIN_MS);
+    expect(askAfterMs(of("unpaid"))).toBe(ASK_AGAIN_MS);
+  });
+  it("asks nothing of an order that was declined, or of none", () => {
+    expect(askAfterMs(of("declined"))).toBeNull();
+    expect(askAfterMs(null)).toBeNull();
+  });
+  it("asks soon of an order just sent, to learn where it is", () => {
+    expect(askAfterMs(of("sent"))).toBe(ASK_AGAIN_MS);
+  });
+  it("follows the kitchen while it has more to do, and slows once it is ready", () => {
+    expect(askAfterMs(of("sent", "accepted", true))).toBe(TRACK_MS);
+    expect(askAfterMs(of("sent", "sent", true))).toBe(TRACK_MS);
+    expect(askAfterMs(of("sent", "preparing", true))).toBe(TRACK_MS);
+    // A recall takes ready back, so it is still asked, and seldom.
+    expect(askAfterMs(of("sent", "ready", true))).toBe(TRACK_READY_MS);
+    expect(TRACK_READY_MS).toBeGreaterThan(TRACK_MS);
+  });
+  it("stops when nothing more is coming", () => {
+    expect(askAfterMs(of("sent", "cancelled", true))).toBeNull();
+    // Asked, and the venue says nothing of the kitchen: sent before orders were tracked.
+    expect(askAfterMs(of("sent", undefined, true))).toBeNull();
+  });
+});
+
+describe("withRound", () => {
+  const before = { key: "k", request, at: 0 };
+  it("marks an order tracked only by an answer from its own address, once it is sent", () => {
+    const sent = { ...round, status: "sent" as const };
+    expect(withRound(before, sent).tracked).toBe(false);
+    expect(withRound(before, sent, true).tracked).toBe(true);
+    expect(withRound(before, round, true).tracked).toBe(false);
+    expect(withRound({ ...before, tracked: true }, sent).tracked).toBe(true);
+  });
+});
+
+describe("the kitchen's steps", () => {
+  const all: GuestRoundProgress[] = ["accepted", "sent", "preparing", "ready", "cancelled"];
+  it("has words for every step the server can answer", () => {
+    for (const p of all) {
+      const w = progressWords(p);
+      expect(w.title).not.toBe("");
+      expect(w.line).not.toBe("");
+      expect(w.brief).not.toBe("");
+    }
+  });
+  it("never promises a time", () => {
+    for (const p of all) expect(`${progressWords(p).title} ${progressWords(p).line}`).not.toMatch(/minute|soon|shortly|\d/);
+  });
+  it("places an order on the row, and off it when it is on none of the steps", () => {
+    expect(kitchenSteps.map((s) => s.step)).toEqual(["sent", "preparing", "ready"]);
+    expect(stepIndex("sent")).toBe(0);
+    expect(stepIndex("ready")).toBe(2);
+    expect(stepIndex("accepted")).toBe(-1);
+    expect(stepIndex("cancelled")).toBe(-1);
+    expect(stepIndex(undefined)).toBe(-1);
+  });
+  it("says the kitchen's step for a sent order, and the order's status for any other", () => {
+    const of = (status: GuestRoundResponse["status"], progress?: GuestRoundProgress, paidFirst = false) => ({
+      round: progress === undefined ? { ...round, status } : { ...round, status, progress },
+      paidFirst,
+    });
+    expect(orderWords(of("sent", "preparing"), "Demo Cafe").title).toBe("Your order is being made");
+    expect(orderWords(of("sent", "ready"), "Demo Cafe").brief).toBe("Ready");
+    // Sent with nothing known of the kitchen: the title, and no line to repeat the note under it.
+    expect(orderWords(of("sent"), "Demo Cafe")).toEqual({ ...statusWords("sent", "Demo Cafe"), line: "" });
+    expect(orderWords(of("waiting", "ready"), "Demo Cafe")).toEqual(statusWords("waiting", "Demo Cafe"));
+    expect(orderWords(of("sent", "sent", true), "Demo Cafe").title).toBe("Paid, and with the kitchen");
+  });
+  it("tells an order that paid first nothing of paying on leaving", () => {
+    expect(sentNote(false)).toContain("You pay when you are ready to leave");
+    expect(sentNote(true)).not.toContain("pay");
   });
 });
 

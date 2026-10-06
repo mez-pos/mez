@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 5a: a round is tracked through the kitchen, in the services**
+**Phase 11, Task 5b: tracking over the guest API** (ADR-238).
+`GET /order/api/t/{code}/orders/{round}` answers a round as it stands, with
+`progress` once it is sent. Another table's code finds nothing. No screen.
+
+Before it, **Phase 11, Task 5a: a round is tracked through the kitchen, in the services**
 (ADR-236). A sent round knows its lines (`first_seq`, migration 00047);
 `order.State.Progress` and `TrackRound` read how far they have come. ADR-237, by
 the owner: ordering for pickup is 5f, paid first, one code for the venue.

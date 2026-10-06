@@ -1,14 +1,12 @@
 // Placing an order, and remembering the one placed (guest-order.md,
 // ADR-213). The phone sends its cart with a key, keeps the answer by table
-// code, and while the answer is "waiting" asks again with the same key,
-// which is how it learns the order was accepted or declined until Task 5
-// gives it something better to ask.
+// code, and asks about it at the order's own address (ADR-238): whether it
+// was accepted or declined, and once it is sent how far the kitchen has come.
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
-  ASK_AGAIN_MS,
-  awaitsAnswer,
+  askAfterMs,
   drawKey,
   keyFor,
   keyStorageKey,
@@ -21,7 +19,7 @@ import {
   type Placed,
 } from "./order-logic";
 import type { CartApi } from "./use-cart";
-import { menuKey, sendOrder } from "./use-guest";
+import { menuKey, sendOrder, trackOrder } from "./use-guest";
 
 export interface OrderApi {
   /** The order this phone last placed at this table, if it still remembers one. */
@@ -67,26 +65,35 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
     save(placedStorageKey(code), JSON.stringify(next));
   };
 
-  // A waiting order asks again, with the key it was sent with: the server
-  // answers with the same order as it stands now. A failure to ask is not
-  // news; the next ask says.
-  const waiting = awaitsAnswer(placed);
+  // An order with an answer still to come is asked about, at its own
+  // address: accepted or declined, then each thing the kitchen does with it.
+  // How often follows where it is, and it stops when nothing more is coming.
+  // A failure to ask is not news; the next ask says. Not while the page is
+  // hidden, and at once when it is shown again.
+  const every = askAfterMs(placed);
+  const ask = () => {
+    if (placed === null || document.visibilityState === "hidden") return;
+    trackOrder(code, placed.round.id)
+      .then((round) => keep(withRound(placed, round, true)))
+      .catch(() => undefined);
+  };
+  // An order just sent has not been asked about at its own address yet:
+  // ask now, and not at the next tick, for where it is in the kitchen.
+  const unasked = placed !== null && placed.round.status === "sent" && !placed.tracked;
   useEffect(() => {
-    if (!waiting || placed === null) return;
-    const ask = () => {
-      if (document.visibilityState === "hidden") return;
-      sendOrder(code, placed.request, placed.key)
-        .then((round) => keep(withRound(placed, round)))
-        .catch(() => undefined);
-    };
-    const t = setInterval(ask, ASK_AGAIN_MS);
+    if (unasked) ask();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once for each order that becomes sent
+  }, [unasked, code]);
+  useEffect(() => {
+    if (every === null) return;
+    const t = setInterval(ask, every);
     document.addEventListener("visibilitychange", ask);
     return () => {
       clearInterval(t);
       document.removeEventListener("visibilitychange", ask);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keep is stable in what it does
-  }, [code, waiting, placed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ask closes over the order as it stands
+  }, [code, every, placed]);
 
   const place = async (): Promise<boolean> => {
     // Two taps are one order: the second finds the first still going.
@@ -116,12 +123,7 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
     }
   };
 
-  const refresh = () => {
-    if (placed === null) return;
-    sendOrder(code, placed.request, placed.key)
-      .then((round) => keep(withRound(placed, round)))
-      .catch(() => undefined);
-  };
+  const refresh = ask;
 
   return { placed, placing, error, place, refresh };
 }

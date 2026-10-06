@@ -38,6 +38,11 @@ export function sendOrder(code: string, request: GuestOrderRequest, key: string)
   return api.post<GuestRoundResponse>(`${base(code)}/orders`, request, { idempotencyKey: key });
 }
 
+/** How an order placed at this table stands, and once sent how far the kitchen has come (ADR-238). */
+export function trackOrder(code: string, round: string): Promise<GuestRoundResponse> {
+  return api.get<GuestRoundResponse>(`${base(code)}/orders/${encodeURIComponent(round)}`);
+}
+
 export function useTable(code: string): UseQueryResult<GuestTableResponse> {
   return useQuery({
     queryKey: ["guest", "table", code],

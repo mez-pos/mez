@@ -10,12 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
-- **Tracking an order** (ADR-236, ADR-238): in the services and the guest's
-  API, with no screen: the phone still asks by sending the order again and
-  shows no progress. The route was not asked in the real binary. A round sent before migration 00047 has no progress and is
-  told only that it was sent. A round whose every dish is made at no
-  station stays "accepted" for good. Nothing says an order was taken to the
-  table: no event records it, so "ready" is the last step.
+- **Tracking an order** (ADR-236, ADR-238, ADR-239): seen at 390 wide in
+  the real binary, one order at a seated table moved by the kitchen's own
+  API: with the kitchen, being made, ready. Not seen: accepted (a dish made
+  at no station), cancelled, a recall, an order to two stations, the strip
+  over the menu at each step, an order that paid first, a screen reader.
+  A round sent before migration 00047 says "with the kitchen" and no more.
+  A round whose every dish is made at no station stays "accepted" for good.
+  Nothing says an order was taken to the table: no event records it, so
+  "ready" is the last step, and "A member of staff will bring it to your
+  table" is said whatever the venue does. The phone remembers one order,
+  the latest: an earlier round at the same table is not followed. How often
+  phones ask has not been measured against a full room or through the relay.
 - **Splitting the bill** (ADR-232 to ADR-235): seen at 390 wide in the real
   binary with a made-up Razorpay key: the three choices, the stepper, a typed
   figure and each refusal of one, a waiting payment with "I am not paying

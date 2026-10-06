@@ -8,13 +8,13 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but for 4f6b (Cashfree, question 8), 5a and 5b done. (The walks are owed.)
+4 but for 4f6b (Cashfree, question 8), and 5a to 5c done. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 5b: tracking over the guest API** (ADR-238).
-`GET /order/api/t/{code}/orders/{round}` answers a round as it stands, with
-`progress` once it is sent. Another table's code finds nothing. No screen.
+**Phase 11, Task 5c: the order's screen follows the kitchen** (ADR-239). With the
+kitchen, being made, ready, as the kitchen does each, on the screen and the
+strip, asked at the order's own address. Seen at 390 wide in the real binary.
 
 ## Next task
 
@@ -22,14 +22,14 @@
 keys, then on a phone Pay online on a bill, a share of one from two phones, and
 Pay on an order with paying first chosen. The payments card says so itself.
 
-**Phase 11, Task 5c: the order's screen follows the kitchen.** Read ADR-236,
-ADR-238, `docs/design/screens/guest-order.md`, `docs/design/tokens.md`, and the
-reference only if the spec names lines. `web/guest/src/`: `Order.tsx`,
-`order-logic.ts`, `use-order.ts`. Budget 60 KB gzipped; it is at 43.3.
-- Ask the new route for a placed order, in place of sending it again (ADR-210).
-- Words for each `progress`, and for none: an order sent before 5a has none.
-- How often to ask, and when to stop: a recall takes `ready` back (ADR-238's cost).
-- See it at 390 wide, moving an order through the kitchen display.
+**Phase 11, Task 5d: the e-receipt on the server.** Read the phase file's Task 5,
+ADR-214, ADR-236, `docs/02-domain.md` on invoices and credit notes,
+`internal/api/guest_bill.go`, and how the counter's receipt is built (find it
+first: `internal/domain/invoice`, `printjob`). No screen: that is 5e.
+- A settled bill reads "nothing open". Decide what a guest asks for a receipt by:
+  the table's code means another bill at the next sitting, so a handle of its own.
+- The same invoice number the counter prints, the seller's details, lines, tax.
+- What a guest must not be given: other bills, staff, tenders' references.
 
 ## Known broken / in progress
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Task 4 but for 4f6b, 5a and 5b done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Task 4 but for 4f6b, 5a to 5c done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

@@ -177,8 +177,9 @@ Phase 10.
   - [x] **5b.** The guest's API (ADR-238): `GET
     /order/api/t/{code}/orders/{round}`, a round as it stands with its
     `progress`, by its own table's code.
-  - [ ] **5c.** The phone: the order's screen says accepted, with the
-    kitchen, being made and ready, as they happen, and its spec.
+  - [x] **5c.** The phone (ADR-239): the order's screen and the strip say
+    with the kitchen, being made and ready as the kitchen does each, with
+    the three steps drawn, asked at the order's own address. Its spec.
   - [ ] **5d.** The e-receipt on the server: what a guest may read of a bill
     once it is settled, with its invoice number, and by what they ask.
   - [ ] **5e.** The receipt on the phone, and ordering the same again.
