@@ -1,11 +1,9 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/hub"
 )
 
@@ -49,22 +47,9 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request) {
 		s.unauthenticated(w, CodeUnauthenticated, "a device token is needed")
 		return
 	}
-	dev, err := s.devices.Authenticate(r.Context(), token)
-	switch {
-	case err == nil:
-	case isRevoked(err):
-		s.unauthenticated(w, CodeDeviceRevoked, "this device has been unpaired; pair it again")
+	dev, ok := s.authenticateDevice(w, r, token)
+	if !ok {
 		return
-	case isUnauthenticated(err):
-		s.unauthenticated(w, CodeUnauthenticated, "the device token is not valid")
-		return
-	default:
-		s.log.Error("authenticating a stream failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
-		return
-	}
-	if info := infoFrom(r.Context()); info != nil {
-		info.venueID, info.deviceID = dev.VenueID, dev.ID
 	}
 
 	s.stream.Serve(w, r, hub.Client{
@@ -83,6 +68,3 @@ func protocolToken(r *http.Request) (string, bool) {
 	}
 	return "", false
 }
-
-func isRevoked(err error) bool         { return errors.Is(err, auth.ErrDeviceRevoked) }
-func isUnauthenticated(err error) bool { return errors.Is(err, auth.ErrUnauthenticated) }

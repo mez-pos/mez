@@ -145,6 +145,11 @@ func one(p order.Payload) decider {
 }
 
 // AddLine adds a line, with the price and tax facts as they are now.
+//
+// The service records the line as given. The till is not trusted for money
+// (ADR-256): the API prices every line a till adds, and every change of
+// choices, from the menu with menu.Ring, and passes only that here. Anything
+// else that calls AddLine must price its line from the menu the same way.
 func (s *Service) AddLine(ctx context.Context, meta Meta, orderID int64, cmd AddLine) (Result, error) {
 	return s.run(ctx, meta, orderID, "add_line", cmd, one(order.LineAdded(cmd)))
 }

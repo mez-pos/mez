@@ -36,6 +36,10 @@ var (
 	// ErrBeyondYou is a change that would hand out, or reach, permissions
 	// the person acting does not hold.
 	ErrBeyondYou = errors.New("that is beyond what you may give")
+	// ErrPeerPIN is a reset of the PIN of someone who holds as much as the
+	// person acting: knowing a PIN is being that person, and between equals
+	// that is a way to act in a peer's name.
+	ErrPeerPIN = errors.New("only someone who holds more than they do may reset their PIN")
 	// ErrLastManager is a change that would leave nobody active who can
 	// manage staff.
 	ErrLastManager = errors.New("nobody would be left who can manage staff")
@@ -47,6 +51,7 @@ type Invalid struct {
 	Message string
 }
 
+// Error names the field and says what is wrong with it.
 func (e *Invalid) Error() string { return e.Field + ": " + e.Message }
 
 // MaxNameLength is the longest name of a person or a role, in characters.
@@ -208,16 +213,36 @@ func (s *Service) SetStaffActive(ctx context.Context, venueID, actorID int64, st
 			return err
 		}
 		if target.ID == actorID && !active {
-			return &Invalid{"active", "You can't deactivate yourself. Ask someone else who can manage staff."}
+			return &Invalid{Field: "active", Message: "You can't deactivate yourself. Ask someone else who can manage staff."}
 		}
 		n, err := q.SetStaffActive(ctx, gen.SetStaffActiveParams{Active: active, Now: now, VenueID: venueID, ID: target.ID})
-		return oneRow(n, err, ErrStaffNotFound)
+		if err := oneRow(n, err, ErrStaffNotFound); err != nil {
+			return err
+		}
+		if active {
+			return nil
+		}
+		// Ended, not merely hidden: a session only hidden by the person
+		// being inactive would work again the moment they were brought
+		// back, with no PIN asked. Someone brought back signs in afresh.
+		if err := q.EndSessionsOfStaff(ctx, gen.EndSessionsOfStaffParams{Now: sql.NullTime{Time: now, Valid: true}, StaffID: target.ID}); err != nil {
+			return fmt.Errorf("people: signing %s out: %w", staffID, err)
+		}
+		return nil
 	})
 }
 
 // ResetPIN gives a person a new PIN and signs them out everywhere, so
 // whoever knew the old one is not left signed in with it. A person may
 // change their own.
+//
+// Someone else's PIN may be reset only by a person who holds strictly more
+// than they do (ErrPeerPIN). Knowing a PIN is being that person: with it,
+// every override and every sale is in their name. Between equals, a reset
+// would be a way to act as a peer and have the record name the peer, so a
+// manager may reset a waiter's PIN and an owner a manager's, and nobody
+// but the owner may reset the owner's. Someone who holds every permission
+// is excepted: among owners there is no one above to turn to.
 func (s *Service) ResetPIN(ctx context.Context, venueID, actorID int64, staffID, pin string) error {
 	hash, err := pinHash(pin)
 	if err != nil {
@@ -227,6 +252,15 @@ func (s *Service) ResetPIN(ctx context.Context, venueID, actorID int64, staffID,
 		target, err := mayReach(ctx, q, venueID, staffID, mine)
 		if err != nil {
 			return err
+		}
+		if target.ID != actorID && !mine.Everything() {
+			theirs, err := rolePerms(ctx, q, venueID, target.RoleID)
+			if err != nil {
+				return err
+			}
+			if theirs.Covers(mine) {
+				return ErrPeerPIN
+			}
 		}
 		n, err := q.SetStaffPIN(ctx, gen.SetStaffPINParams{PinHash: hash, Now: now, VenueID: venueID, ID: target.ID})
 		if err := oneRow(n, err, ErrStaffNotFound); err != nil {
@@ -384,9 +418,9 @@ func cleanName(name string) (string, error) {
 	name = strings.TrimSpace(name)
 	switch {
 	case name == "":
-		return "", &Invalid{"name", "Give a name."}
+		return "", &Invalid{Field: "name", Message: "Give a name."}
 	case utf8.RuneCountInString(name) > MaxNameLength:
-		return "", &Invalid{"name", fmt.Sprintf("Keep the name to %d characters.", MaxNameLength)}
+		return "", &Invalid{Field: "name", Message: fmt.Sprintf("Keep the name to %d characters.", MaxNameLength)}
 	}
 	return name, nil
 }
@@ -402,7 +436,7 @@ func cleanRole(in RoleInput) (string, auth.PermissionSet, error) {
 	}
 	set, err := auth.NewPermissionSet(keys)
 	if err != nil {
-		return "", nil, &Invalid{"permissions", "One of those permissions does not exist."}
+		return "", nil, &Invalid{Field: "permissions", Message: "One of those permissions does not exist."}
 	}
 	return name, set, nil
 }
@@ -410,14 +444,14 @@ func cleanRole(in RoleInput) (string, auth.PermissionSet, error) {
 func pinHash(pin string) (string, error) {
 	hash, err := auth.HashPIN(pin)
 	if errors.Is(err, auth.ErrPINFormat) {
-		return "", &Invalid{"pin", fmt.Sprintf("A PIN is %d to %d digits.", auth.MinPINLength, auth.MaxPINLength)}
+		return "", &Invalid{Field: "pin", Message: fmt.Sprintf("A PIN is %d to %d digits.", auth.MinPINLength, auth.MaxPINLength)}
 	}
 	return hash, err
 }
 
 func roleNameTaken(err error) error {
 	if db.IsUniqueViolation(err) {
-		return fmt.Errorf("%w: %w", ErrRoleNameTaken, &Invalid{"name", "A role with that name already exists."})
+		return fmt.Errorf("%w: %w", ErrRoleNameTaken, &Invalid{Field: "name", Message: "A role with that name already exists."})
 	}
 	return err
 }

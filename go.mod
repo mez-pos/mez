@@ -2,6 +2,8 @@ module github.com/byjoellobo/mez
 
 go 1.24.0
 
+toolchain go1.26.8
+
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/pressly/goose/v3 v3.26.0

@@ -235,7 +235,19 @@ func TestLoadRejects(t *testing.T) {
 		{
 			name: "relay with a scheme we cannot dial",
 			env:  map[string]string{"MEZ_RELAY_URL": "ftp://relay.example.com"},
-			want: "scheme must be ws, wss, http or https",
+			want: "scheme must be wss or https",
+		},
+		{
+			// The venue's key is a bearer token on the dial; in clear it is
+			// anyone's on the path.
+			name: "relay over plain ws to another machine",
+			env:  map[string]string{"MEZ_RELAY_URL": "ws://relay.example.com"},
+			want: "must be wss or https",
+		},
+		{
+			name: "relay over plain http to another machine",
+			env:  map[string]string{"MEZ_RELAY_URL": "http://10.0.0.5:8080"},
+			want: "must be wss or https",
 		},
 		{
 			name: "relay without a host",

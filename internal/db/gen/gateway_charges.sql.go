@@ -418,6 +418,72 @@ func (q *Queries) OpenGatewayChargeForShare(ctx context.Context, arg OpenGateway
 	return i, err
 }
 
+const openGatewayChargesSince = `-- name: OpenGatewayChargesSince :many
+SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
+FROM gateway_charges
+WHERE venue_id = ? AND status = 'open' AND created_at >= ?2
+ORDER BY created_at, id
+LIMIT ?3
+`
+
+type OpenGatewayChargesSinceParams struct {
+	VenueID int64
+	Since   time.Time
+	Limit   int64
+}
+
+// A venue's open charges started since a moment, oldest first: the ones
+// the sweep asks the provider about. A charge older than that has lapsed
+// at the provider and can never be paid; left in the list it would hold a
+// place in every sweep for ever, and with enough of them the charges that
+// could still land would never be asked about.
+func (q *Queries) OpenGatewayChargesSince(ctx context.Context, arg OpenGatewayChargesSinceParams) ([]GatewayCharge, error) {
+	rows, err := q.db.QueryContext(ctx, openGatewayChargesSince, arg.VenueID, arg.Since, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GatewayCharge{}
+	for rows.Next() {
+		var i GatewayCharge
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.VenueID,
+			&i.TableID,
+			&i.OrderID,
+			&i.Gateway,
+			&i.GatewayID,
+			&i.CheckoutUrl,
+			&i.AmountMinor,
+			&i.Currency,
+			&i.Status,
+			&i.Method,
+			&i.Reference,
+			&i.Problem,
+			&i.CreatedAt,
+			&i.SettledAt,
+			&i.Resolution,
+			&i.ResolvedAt,
+			&i.ResolvedBy,
+			&i.RoundPublicID,
+			&i.Payer,
+			&i.LetGoAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const openSharesOnOrder = `-- name: OpenSharesOnOrder :one
 SELECT CAST(coalesce(sum(amount_minor), 0) AS INTEGER) AS claimed
 FROM gateway_charges

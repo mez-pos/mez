@@ -63,7 +63,11 @@ func TestAStoredHashCannotBeTrustedBlindly(t *testing.T) {
 			t.Errorf("verifyPIN(%q) = %v, %v; want no match and an error", h, ok, err)
 		}
 	}
-	if ok, err := verifyPIN(dummyHash(), "00000000"); err != nil || !ok {
+	dummy, err := dummyHash()
+	if err != nil {
+		t.Fatalf("dummyHash: %v", err)
+	}
+	if ok, err := verifyPIN(dummy, "00000000"); err != nil || !ok {
 		t.Errorf("the dummy hash does not verify its own PIN: %v, %v", ok, err)
 	}
 }

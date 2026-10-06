@@ -14,6 +14,8 @@ import (
 // its header says so, and is about the charge its body names.
 type teller struct{}
 
+func (teller) Name() string { return "test" }
+
 func (teller) Notice(header http.Header, body []byte) (string, error) {
 	if header.Get("X-Test-Signed") != "yes" {
 		return "", fmt.Errorf("%w: not signed", gateway.ErrRefused)
@@ -107,7 +109,6 @@ func TestNoticesThatAreTakenAndDoNothing(t *testing.T) {
 	}{
 		{"about a charge mez never started", "test", "fake_9999"},
 		{"about nothing", "test", ""},
-		{"about a charge at another gateway", "another", gatewayID(1)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -151,5 +152,25 @@ func TestNoNoticesWithoutASecret(t *testing.T) {
 	w := newWorld(t) // no Notices set
 	if err := w.s.Notice(context.Background(), "test", signed(), []byte(gatewayID(1))); !errors.Is(err, ErrNoNotices) {
 		t.Errorf("err = %v, want none taken", err)
+	}
+}
+
+// TestANoticeAtAnotherGatewaysAddressIsNotTaken: a notice signed by the
+// gateway that is set up but posted to another gateway's address passes
+// the signature check and then finds no charge, which would look like a
+// notice taken and done with. It is refused instead, so a misconfigured
+// webhook is seen and not silent.
+func TestANoticeAtAnotherGatewaysAddressIsNotTaken(t *testing.T) {
+	w := newWorld(t)
+	w.withNotices()
+	ctx := context.Background()
+	c := w.start(t)
+	w.gw.Pay(gatewayID(1), gateway.UPI)
+
+	if err := w.s.Notice(ctx, "stripe", signed(), []byte(gatewayID(1))); !errors.Is(err, ErrNoNotices) {
+		t.Errorf("err = %v, want ErrNoNotices", err)
+	}
+	if got, _ := w.s.Charge(ctx, 1, c.PublicID); got.Status != Open {
+		t.Errorf("charge is %s, want still open: nothing was asked", got.Status)
 	}
 }

@@ -8309,3 +8309,145 @@ is positional and still scrolls sideways on a tablet when an area has more
 columns than fit; scaling it is left for a venue that asks. Checked in a browser
 at 1024, 1366, 1920 and 2560 wide on the order, tables, orders, payment, close the
 day, kitchen, waiter and dashboard screens.
+
+## ADR-256 - A till's line is priced from the menu on the server
+2026-10 · Status: accepted. A security fix, between phases 11 and 12. Amends ADR-053,
+ADR-069 and ADR-210.
+Context: `POST /api/v1/orders/{id}/lines` took the whole `line.added` from the body:
+name, unit price, tax rate, HSN, tax exempt, station, and each modifier's name and
+price. `POST .../lines/{line}/modifiers` took the new modifiers the same way.
+ADR-053, ADR-069 and ADR-210 accepted that because "a paired terminal is trusted to
+read the menu". But the terminal is worked by the least privileged staff, and a
+device token and their own staff token are all the request needs. Any waiter with
+`order.open` could ring a ₹500 dish at ₹1, tax exempt, send a real ticket to the
+kitchen, and settle the bill at that price. A security review rated it HIGH.
+Decision:
+  - **The till is not trusted for money.** It says which item, which choices, how
+    many and the course. The API rings that through `menu.Ring` against the menu
+    as it stands and passes the result to the order service. Name, unit price,
+    modifier names and prices, station, tax rate, HSN and tax exempt are the
+    menu's, whatever the body says.
+  - **A stale price is overwritten, not refused.** A till that has not reloaded a
+    changed menu gets the current price, as a guest's phone does. The difference
+    is logged at Debug and nowhere louder.
+  - **Ring is called with a quantity of one** and the till's quantity put back on,
+    because Ring holds a pick to the guest's bound of 20. A till may ring up to 999
+    of one item on a line; more is a 400 on `qty`. The projection still refuses
+    fewer than one.
+  - **A change of choices is priced the same way.** The line's item is read from
+    the order, and the new modifier ids are rung against it, so a group's minimum
+    and maximum hold as they do when the line is added. `From` stays the till's:
+    it is the compare-and-swap guard the projection checks against the line, not
+    a price. A dish that sold out since it was rung can still have its choices
+    changed; one taken off the menu cannot, and has to be voided.
+  - **Refusals use the guest's codes**: `dish_unavailable` (422 for an item the
+    menu does not have, 409 for one sold out) and `choices_invalid` (422), each
+    with a message that tells the cashier to reload the menu.
+  - **Without a menu the two routes are not mounted**, as every other route is
+    left out when what it needs is missing.
+  - **The terminal is unchanged.** It still sends the whole line; the server
+    ignores the money in it. The service's `AddLine` is unchanged too, and its
+    doc comment says that whatever calls it must price the line from the menu.
+Because: pricing at the API keeps the order service's commands as they were
+(their tests build lines with made-up items, and the guest path already rings
+before it calls the service), and puts the check at the one door a till comes
+through.
+Cost: adding a line or changing its choices reads the whole menu once more. A
+retry under the same idempotency key after the menu has changed in between is
+priced again and refused as `idempotency_key_reused`, not replayed; a retry of a
+line whose item was taken off the menu in between is refused as
+`dish_unavailable`. Both need a menu edit to land within the seconds a retry
+takes.
+
+## ADR-257 - The first security review: what it found and what changed
+2026-10 · Status: accepted. Between phases 11 and 12, with ADR-256. Amends
+ADR-095, ADR-140 and ADR-205.
+Context: before anything is deployed the whole tree was read for security and
+for quality, area by area: authentication and the hub, the guest and payment
+surface, the relay and tunnel, the staff API and the database layer, the
+command line, config, build and the three web apps. The core held: no way past
+authentication, no SQL built from strings, no lookup that crosses a venue, no
+webhook believed, every tender once. What follows is what did not hold, each
+with its fix, so the next reader knows why the code is as it is.
+Decision:
+  - **A relay must be reached over TLS** (`relay_url` and the tunnel both refuse
+    `ws` and `http` for any host but loopback), and **the dial follows no
+    redirect**. The venue's key goes out as a bearer token on the first request
+    of every connection; in clear it is anyone's on the path, and with it they
+    hold the venue's address on the relay almost all the time, since the newest
+    connection wins and the displaced one waits five minutes.
+  - **A guest path with an encoded slash or backslash is refused.** The mount
+    check read the decoded path, net/http routes on the escaped one, so
+    `/order%2Fx` passed as under the mount and then fell to whatever is at `/`,
+    the terminal's page. No staff route was reachable, and now nothing but the
+    guest app is, by construction again (ADR-202).
+  - **Revoking a device cuts its stream** (`hub.Disconnect`, told by
+    `auth.Devices`). ADR-140 accepted that a revoked device's open socket went
+    on, because the device "can sell nothing"; it could still read every order,
+    payment and refund of the venue until the network dropped, which is the
+    thing revoking a stolen tablet is for. Amends ADR-140.
+  - **A PIN is reset only from above** (`ErrPeerPIN`): someone else's PIN may be
+    reset by a person who holds strictly more than they do, or by someone who
+    holds everything. Knowing a PIN is being that person, and between equal
+    managers a reset was a way to act in a peer's name and have the record say
+    the peer. One's own PIN is one's own to change.
+  - **Deactivating a person ends their sessions.** They were only hidden, and
+    came back with the person, with no PIN asked.
+  - **The log never carries a table's or the venue's pickup code.** The access
+    log wrote every guest path, and the path is the code (ADR-205). The matched
+    pattern names the segment and it is written as `[code]`; a path that matched
+    nothing is masked by its shape.
+  - **A client may not send an idempotency key in the system's namespace**
+    (`charge:` and `pickup-ticket:`), nor one over 128 characters or not
+    printable. A colliding key made a gateway's tender fail as a reuse and left
+    the charge open with nobody told.
+  - **A gateway's notice is taken only at its own address.** Signed by the
+    gateway that is set up but posted to another's path, it passed the
+    signature and found no charge, which looked like a notice taken.
+  - **The sweep asks only about charges under 48 hours old** (`MaxSweepAge`).
+    A checkout lapses at the provider well within that; older open charges held
+    their 200 places for ever and would in time have crowded out the ones that
+    could still land. They stay listed for a person to resolve.
+  - **The blind count and the variance reason need `shift.open`**, the
+    cashier's permission, and not `payment.take`, which ADR-145 gave every
+    waiter. The count is taken once, the reason written once, and a counted
+    shift takes no more orders: a cash control and a way to stop service, not
+    a sale. Amends ADR-095.
+  - **The Go toolchain is pinned** (`toolchain go1.26.8` in go.mod). The build
+    was on go1.26.1, which `govulncheck` shows carrying fourteen standard
+    library advisories reached by this code, in `net/http`, `crypto/tls` and
+    `crypto/x509` among them. CI reads the version from go.mod, so it moves too.
+  - **Smaller things, each its own fix:** `recoverPanic` writes no 500 over a
+    response already begun; the rate limiter keys each limit apart and prunes
+    a window by its own length; `/api/v1/tunnel` is not mounted without its
+    dependencies; the dummy PIN hash is built at startup and cannot panic under
+    a sign-in; a table code that collides is redrawn as a pickup code is;
+    `Ensure` builds a new list rather than writing into the one it was given; a
+    checkout the gateway opened but mez could not save is named in the log; the
+    device revoke is one transaction; the tunnel refuses a repeated stream id
+    and a text frame, and answers a refused path in the JSON envelope; the
+    relay says at startup when it runs every venue on one origin; the relay's
+    deploy script refuses a tag or domain that could quote its way into the
+    server's root shell; Caddy's admin API is off and both containers drop
+    their capabilities.
+Left for the owner to decide, each written in `docs/KNOWN.md` under "Security":
+  - **The LAN is plain HTTP.** Device tokens, staff tokens and PINs travel in
+    clear on the cafe's wifi. ADR for phase 12's TLS story covers it; until
+    then the till's network must not be the guests'.
+  - **A table's code is a lasting credential.** Whoever held it, a past diner
+    with the URL in their history say, can act on whoever sits there next from
+    anywhere, through the relay: order to the kitchen on an open ticket,
+    read the bill, start or let go of a charge. The limit bounds the damage
+    (ADR-209) and does not prevent it. The fix is a product decision: rounds
+    that arrive through the relay as requests staff accept, or a short-lived
+    session bound to the sitting, or codes renewed when a ticket closes.
+  - **The PIN lockout never escalates.** Five tries a quarter hour for ever is
+    480 a day against a four-digit PIN: weeks, not years. A hard lock after
+    repeated lockouts, surfaced in the back office, and six digits for roles
+    that manage staff, devices or settings.
+  - **Tips are unbounded and need no authorisation**; the pool pays them out.
+  - **A printer's address may be any host and port**, or any Windows printer
+    name including a UNC path, with an owner's session.
+Because: a review before the first deploy is the cheapest one there will ever
+be, and each fix above is small; the five left open each change what the
+product does, which is the owner's call and not the reviewer's.

@@ -366,3 +366,61 @@ func TestNewNeedsADatabase(t *testing.T) {
 		t.Error("New with no database must fail")
 	}
 }
+
+// TestAPINIsResetOnlyFromAbove: knowing a PIN is being that person, so a
+// peer may not reset a peer's. A manager resets a cashier's, the owner
+// resets anyone's, and nobody but the owner resets the owner's.
+func TestAPINIsResetOnlyFromAbove(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	owner := f.cafe.people["Priya"].id
+	meera := f.cafe.people["Meera"]
+	other, err := f.s.AddStaff(ctx, f.cafe.id, owner, StaffInput{Name: "Rohan", RoleID: f.cafe.roles["manager"], PIN: "5678"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f.s.ResetPIN(ctx, f.cafe.id, meera.id, other, "1111"); !errors.Is(err, ErrPeerPIN) {
+		t.Errorf("a manager resetting a manager's PIN: err = %v, want ErrPeerPIN", err)
+	}
+	if err := f.s.ResetPIN(ctx, f.cafe.id, owner, other, "2222"); err != nil {
+		t.Errorf("the owner resetting a manager's PIN: %v", err)
+	}
+	if err := f.s.ResetPIN(ctx, f.cafe.id, meera.id, meera.publicID, "3333"); err != nil {
+		t.Errorf("a manager changing their own PIN: %v", err)
+	}
+	if err := f.s.ResetPIN(ctx, f.cafe.id, meera.id, f.cafe.people["Asha"].publicID, "4444"); err != nil {
+		t.Errorf("a manager resetting a cashier's PIN: %v", err)
+	}
+}
+
+// TestDeactivationEndsTheSessions: a session merely hidden while the person
+// is inactive would work again, with no PIN, the moment they were brought
+// back. It is ended instead.
+func TestDeactivationEndsTheSessions(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	asha := f.cafe.people["Asha"]
+	w := f.d.Writer()
+	if _, err := w.ExecContext(ctx, `INSERT INTO devices (id, public_id, venue_id, name, kind, created_at)
+		VALUES (9, 'dev_PEOPLE02', ?, 'Till', 'terminal', '2026-10-01 06:00:00+00:00')`, f.cafe.id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.ExecContext(ctx, `INSERT INTO staff_sessions (token_hash, venue_id, staff_id, device_id, created_at, expires_at)
+		VALUES (?, ?, ?, 9, '2026-10-01 06:00:00+00:00', '2026-10-01 18:00:00+00:00')`, strings.Repeat("b", 64), f.cafe.id, asha.id); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.SetStaffActive(ctx, f.cafe.id, f.cafe.people["Priya"].id, asha.publicID, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.SetStaffActive(ctx, f.cafe.id, f.cafe.people["Priya"].id, asha.publicID, true); err != nil {
+		t.Fatal(err)
+	}
+	var open int
+	if err := w.QueryRowContext(ctx, `SELECT COUNT(*) FROM staff_sessions WHERE staff_id = ? AND ended_at IS NULL`, asha.id).Scan(&open); err != nil {
+		t.Fatal(err)
+	}
+	if open != 0 {
+		t.Errorf("%d sessions open again after a deactivation and a return", open)
+	}
+}

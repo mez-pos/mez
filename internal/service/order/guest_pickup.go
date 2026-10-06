@@ -160,7 +160,7 @@ func (s *Service) sendPaidPickup(ctx context.Context, row gen.GuestRoundByPublic
 	if err != nil {
 		return Round{}, err
 	}
-	opened, err := s.Open(ctx, Meta{VenueID: venueID, IdempotencyKey: "pickup-ticket:" + publicID},
+	opened, err := s.Open(ctx, Meta{VenueID: venueID, IdempotencyKey: PickupTicketKeyPrefix + publicID},
 		OpenOrder{Channel: order.ChannelWeb, Service: order.ServiceTakeaway})
 	if err != nil {
 		return Round{}, busy(err)

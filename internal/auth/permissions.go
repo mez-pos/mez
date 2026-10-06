@@ -103,6 +103,18 @@ func (s PermissionSet) Covers(other PermissionSet) bool {
 	return true
 }
 
+// Everything reports whether the set holds every permission this build
+// has: the owner's set. Nobody holds more, so some checks that look for
+// someone above are answered by this instead.
+func (s PermissionSet) Everything() bool {
+	for _, p := range all {
+		if !s.Has(p) {
+			return false
+		}
+	}
+	return true
+}
+
 // Keys is the set's permissions, in the canonical order.
 func (s PermissionSet) Keys() []Permission {
 	out := make([]Permission, 0, len(s))

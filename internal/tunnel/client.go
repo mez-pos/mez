@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand/v2"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -172,19 +173,37 @@ func orDefault(d, fallback time.Duration) time.Duration {
 
 // agentURL is the address to dial: the relay's URL with the agent path on
 // the end of whatever path it already has.
+//
+// The venue's key is sent on the dial, so the dial must be TLS. Plain ws
+// and http are accepted only for a relay on this machine; the config
+// package refuses the same thing earlier, and this check stands on its own
+// so that a Client built any other way cannot leak the key either.
 func agentURL(relayURL string) (string, error) {
 	u, err := url.Parse(relayURL)
 	if err != nil || u.Host == "" {
 		return "", fmt.Errorf("tunnel: relay url %q is not a url with a host", relayURL)
 	}
 	switch u.Scheme {
-	case "ws", "wss", "http", "https":
+	case "wss", "https":
+	case "ws", "http":
+		if !loopbackHost(u.Hostname()) {
+			return "", fmt.Errorf("tunnel: relay url %q: the venue's key travels on this connection, so the scheme must be wss or https", relayURL)
+		}
 	default:
-		return "", fmt.Errorf("tunnel: relay url %q: scheme must be ws, wss, http or https", relayURL)
+		return "", fmt.Errorf("tunnel: relay url %q: scheme must be wss or https", relayURL)
 	}
 	u.Path = strings.TrimSuffix(u.Path, "/") + agentPath
 	u.RawQuery, u.Fragment = "", ""
 	return u.String(), nil
+}
+
+// loopbackHost reports whether a hostname can only be this machine.
+func loopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // Start begins connecting, and returns at once. Nothing waits on the tunnel:
@@ -220,9 +239,11 @@ func (c *Client) Close(ctx context.Context) error {
 		c.wg.Wait()
 		close(done)
 	}()
+	// Stopped either way: Close was called, and whatever is still winding
+	// down is no longer serving anyone.
+	defer c.setStatus(Status{State: StateStopped})
 	select {
 	case <-done:
-		c.setStatus(Status{State: StateStopped})
 		return nil
 	case <-ctx.Done():
 		return fmt.Errorf("tunnel: closing: %w", ctx.Err())

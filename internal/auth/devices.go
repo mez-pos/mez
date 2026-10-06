@@ -105,15 +105,21 @@ type DevicesOptions struct {
 	Now     func() time.Time // nil is time.Now
 	Entropy io.Reader        // nil is crypto/rand; tests inject a fixed source
 	Log     *slog.Logger
+
+	// OnRevoke is told of every device revoked, after the revocation is
+	// written. The hub cuts the device's stream with it; nil is told
+	// nothing.
+	OnRevoke func(venueID, deviceID int64)
 }
 
 // Devices pairs and authenticates devices.
 type Devices struct {
-	db      *db.DB
-	now     func() time.Time
-	entropy io.Reader
-	ids     *id.Generator
-	log     *slog.Logger
+	db       *db.DB
+	now      func() time.Time
+	entropy  io.Reader
+	ids      *id.Generator
+	log      *slog.Logger
+	onRevoke func(venueID, deviceID int64)
 }
 
 // NewDevices returns a Devices.
@@ -131,7 +137,7 @@ func NewDevices(opts DevicesOptions) (*Devices, error) {
 		opts.Log = slog.New(slog.NewTextHandler(io.Discard, nil))
 	}
 	return &Devices{
-		db: opts.DB, now: opts.Now, entropy: opts.Entropy,
+		db: opts.DB, now: opts.Now, entropy: opts.Entropy, onRevoke: opts.OnRevoke,
 		ids: id.NewGenerator(opts.Entropy), log: opts.Log,
 	}, nil
 }
@@ -300,6 +306,9 @@ func (d *Devices) Revoke(ctx context.Context, venueID, deviceID int64) error {
 	}
 	if revoked == 1 {
 		d.log.Info("device revoked", "venue_id", venueID, "device_id", deviceID)
+		if d.onRevoke != nil {
+			d.onRevoke(venueID, deviceID)
+		}
 		return nil
 	}
 	row, err := d.db.Queries().DeviceByID(ctx, deviceID)

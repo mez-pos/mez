@@ -3,8 +3,11 @@
 #
 # Build from the repository root:
 #   docker build -f build/relay.Dockerfile -t mez-relay .
-# Run it behind something that terminates TLS:
-#   docker run -p 8080:8080 -e RELAY_SECRET=... -e RELAY_TRUST_PROXY=true mez-relay
+# Run it behind something that terminates TLS, bound to this machine only,
+# so that the proxy is the one thing that can reach it. RELAY_TRUST_PROXY
+# is for that proxy's word on who the guest is; set it only when a proxy is
+# in front, or a guest could name their own address and have it believed.
+#   docker run -p 127.0.0.1:8080:8080 -e RELAY_SECRET=... -e RELAY_TRUST_PROXY=true mez-relay
 # Make a key for a venue with the same secret:
 #   docker run --rm -e RELAY_SECRET=... mez-relay issue-key my-cafe
 

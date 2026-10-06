@@ -9,10 +9,12 @@ import (
 	"github.com/byjoellobo/mez/internal/domain/order"
 )
 
-// Ringing up from the menu (phase 11, Task 4a, ADR-210). A till sends a line
-// with its price already on it, because a paired terminal is trusted to read
-// the menu. A guest's phone is not: it says which dish, which choices and
-// how many, and the server works out the rest from the menu as it stands.
+// Ringing up from the menu (phase 11, Task 4a, ADR-210; ADR-256). Nothing
+// that asks for a line is trusted with money: not a guest's phone, and not a
+// till either, which is worked by the least privileged staff. Each says which
+// dish, which choices and how many, and the server works out the name, the
+// prices, the station and the tax facts from the menu as it stands. The API
+// rings every till line through Ring before the order service sees it.
 
 // MaxPickQty is the most of one dish a pick may ask for. It is the guest
 // cart's own bound (ADR-208): more than this is a conversation with staff.

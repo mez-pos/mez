@@ -151,7 +151,7 @@ func (s *Server) writeOrderError(w http.ResponseWriter, r *http.Request, err err
 		}
 	}
 	s.log.Error("an order command failed",
-		"request_id", RequestID(r.Context()), "method", r.Method, "path", r.URL.Path, "error", err)
+		"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
 	writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 }
 

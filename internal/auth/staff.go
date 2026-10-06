@@ -72,6 +72,7 @@ type LockedError struct {
 	RetryAfter time.Duration
 }
 
+// Error says what is locked and for how long.
 func (e *LockedError) Error() string {
 	return fmt.Sprintf("sign-in is locked for this %s for %s", e.Scope, e.RetryAfter.Round(time.Second))
 }
@@ -128,6 +129,9 @@ type StaffAuth struct {
 	staffLockout  LockoutPolicy
 	deviceLockout LockoutPolicy
 	locks         keyedMutex
+	// dummy is the hash compared against for a staff member who does not
+	// exist or cannot sign in, so that both take as long as a wrong PIN.
+	dummy string
 }
 
 // NewStaffAuth returns a StaffAuth.
@@ -153,9 +157,13 @@ func NewStaffAuth(opts StaffOptions) (*StaffAuth, error) {
 	if opts.DeviceLockout.MaxFailures < 1 || opts.DeviceLockout.Window <= 0 {
 		opts.DeviceLockout = DefaultDeviceLockout
 	}
+	dummy, err := dummyHash()
+	if err != nil {
+		return nil, err
+	}
 	return &StaffAuth{
 		db: opts.DB, now: opts.Now, entropy: opts.Entropy, log: opts.Log, ttl: opts.SessionTTL,
-		staffLockout: opts.StaffLockout, deviceLockout: opts.DeviceLockout,
+		staffLockout: opts.StaffLockout, deviceLockout: opts.DeviceLockout, dummy: dummy,
 	}, nil
 }
 
@@ -226,10 +234,11 @@ func (a *StaffAuth) SignIn(ctx context.Context, dev Device, staffRef, pin string
 		ExpiresAt: now.Add(a.ttl),
 	}
 	err = a.db.WriteTx(ctx, func(q *gen.Queries) error {
-		session.ID, err = q.CreateStaffSession(ctx, gen.CreateStaffSessionParams{
+		id, err := q.CreateStaffSession(ctx, gen.CreateStaffSessionParams{
 			TokenHash: hashed, VenueID: dev.VenueID, StaffID: row.ID, DeviceID: dev.ID,
 			CreatedAt: now, ExpiresAt: session.ExpiresAt,
 		})
+		session.ID = id
 		return err
 	})
 	if err != nil {
@@ -296,7 +305,7 @@ func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string
 			return gen.Staff{}, err
 		}
 		attempt.Outcome = outcomeLockedOut
-		if err := a.record(ctx, attempt, nil); err != nil {
+		if err := a.record(ctx, attempt); err != nil {
 			return gen.Staff{}, err
 		}
 		a.log.Warn("sign-in refused: locked out", "venue_id", dev.VenueID, "device_id", dev.ID,
@@ -304,7 +313,7 @@ func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string
 		return gen.Staff{}, locked
 	}
 
-	hash, outcome := dummyHash(), outcomeUnknownStaff
+	hash, outcome := a.dummy, outcomeUnknownStaff
 	if known {
 		hash, outcome = row.PinHash, outcomeInactiveStaff
 		if row.Active {
@@ -321,7 +330,7 @@ func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string
 	}
 	if !match || outcome != outcomeInvalidPIN {
 		attempt.Outcome = outcome
-		if err := a.record(ctx, attempt, nil); err != nil {
+		if err := a.record(ctx, attempt); err != nil {
 			return gen.Staff{}, err
 		}
 		a.log.Warn("PIN refused", "venue_id", dev.VenueID, "device_id", dev.ID, "actor_id", row.ID, "outcome", outcome)
@@ -332,7 +341,7 @@ func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string
 	// whatever the permission check makes of it. A manager who is refused
 	// here mistyped nothing, and must not count toward a lockout.
 	attempt.Outcome = outcomeSuccess
-	if err := a.record(ctx, attempt, nil); err != nil {
+	if err := a.record(ctx, attempt); err != nil {
 		return gen.Staff{}, err
 	}
 	if need != nil {
@@ -441,17 +450,12 @@ func lockRemaining(failures []time.Time, p LockoutPolicy, now time.Time) time.Du
 	return 0
 }
 
-// record writes an attempt, and on success the session with it, in one
-// transaction.
-func (a *StaffAuth) record(ctx context.Context, attempt gen.RecordSignInAttemptParams, also func(*gen.Queries) error) error {
+// record writes one sign-in attempt. It is its own transaction: the
+// attempt must stand whether or not what follows it (opening a session)
+// succeeds, since it is what the lockout counts.
+func (a *StaffAuth) record(ctx context.Context, attempt gen.RecordSignInAttemptParams) error {
 	err := a.db.WriteTx(ctx, func(q *gen.Queries) error {
-		if err := q.RecordSignInAttempt(ctx, attempt); err != nil {
-			return err
-		}
-		if also != nil {
-			return also(q)
-		}
-		return nil
+		return q.RecordSignInAttempt(ctx, attempt)
 	})
 	if err != nil {
 		return fmt.Errorf("auth: recording a sign-in attempt: %w", err)

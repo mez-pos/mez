@@ -51,6 +51,49 @@ type priorResult struct {
 	LastSeq  int64
 }
 
+// System keys. A payment that lands from a gateway and a ticket opened for
+// an order to collect are appended under keys of mez's own making, in the
+// same table as the keys clients send, so that each happens once. These
+// prefixes are the system's and a client may not send one: a client's key
+// that collided would make the gateway's tender fail as a reuse, and the
+// charge would stand open with nobody told why.
+const (
+	// ChargeKeyPrefix begins the key a gateway charge's tender is appended
+	// under; the rest is the charge's public id.
+	ChargeKeyPrefix = "charge:"
+	// PickupTicketKeyPrefix begins the key an order to collect is opened
+	// under; the rest is the round's public id.
+	PickupTicketKeyPrefix = "pickup-ticket:"
+
+	// MaxIdempotencyKeyLen bounds a client's key. A UUID is 36; nothing a
+	// client has reason to send is near this.
+	MaxIdempotencyKeyLen = 128
+)
+
+// ErrReservedIdempotencyKey is a client's key that is too long, not
+// printable, or begins like one of the system's own.
+var ErrReservedIdempotencyKey = errors.New("that idempotency key is not one a client may send")
+
+// CheckClientIdempotencyKey says whether a key a client sent may be used.
+// Empty is fine: it is no key at all.
+func CheckClientIdempotencyKey(key string) error {
+	if key == "" {
+		return nil
+	}
+	if len(key) > MaxIdempotencyKeyLen {
+		return fmt.Errorf("%w: longer than %d characters", ErrReservedIdempotencyKey, MaxIdempotencyKeyLen)
+	}
+	for _, r := range key {
+		if r < 0x21 || r > 0x7e {
+			return fmt.Errorf("%w: it has a character that is not printable ASCII", ErrReservedIdempotencyKey)
+		}
+	}
+	if strings.HasPrefix(key, ChargeKeyPrefix) || strings.HasPrefix(key, PickupTicketKeyPrefix) {
+		return fmt.Errorf("%w: that prefix is the system's", ErrReservedIdempotencyKey)
+	}
+	return nil
+}
+
 // findPrior looks up the request's key inside the command's transaction. No
 // key, or a key never used, is nil. A key used for another request is
 // ErrIdempotencyKeyReused.

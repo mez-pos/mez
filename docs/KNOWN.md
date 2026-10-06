@@ -10,6 +10,29 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Security, left for the owner** (ADR-257, the first review): five things
+  the review found that change what the product does, and so were not changed
+  by it. **The LAN is plain HTTP**: device tokens, staff tokens and PINs
+  travel in clear on the cafe's wifi until phase 12's TLS story; the till's
+  network must not be the guests'. **A table's code is a lasting
+  credential**: a past diner with the URL in their history can, through the
+  relay, order to the kitchen on whoever has the table now, read their bill
+  and start or let go of a charge; the limit of twenty orders in ten minutes
+  bounds it and does not prevent it. **The PIN lockout never escalates**:
+  five tries a quarter hour, for ever, is 480 a day against a four-digit
+  PIN. **Tips are unbounded** and need no authorisation, and the pool pays
+  them out. **A printer's address may be any host and port**, or any
+  Windows printer name including a UNC path, with an owner's session.
+- **Quality, noted and not changed** (ADR-257): the menu allows a negative
+  modifier price and the projection refuses it, so "no cheese, less 20" can
+  never be rung up; the cash rounding step is validated and stored and never
+  applied; releasing a table closes each order in its own transaction, so a
+  failure part way leaves some closed and the tables not cleared; one event
+  whose payload the running binary cannot decode (after a downgrade) ends
+  every stream of the venue on every reconnect; the relay's reset of an
+  overrun stream is sent from the reading goroutine; a public id collision
+  in `db/orders.go` is told from other unique violations by the driver's
+  message text.
 - **Orders to collect at the counter** (ADR-253, `terminal-past-bills.md`):
   **not seen in a browser at all**: the To collect tab, the code and the
   kitchen's word on a row, the Call out card in the panel, Handed over and

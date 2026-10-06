@@ -229,10 +229,23 @@ func TestAgentURL(t *testing.T) {
 		{"wss://relay.example.com/", "wss://relay.example.com/agent"},
 		{"https://relay.example.com/v1", "https://relay.example.com/v1/agent"},
 		{"http://127.0.0.1:8080/v1/?x=1#frag", "http://127.0.0.1:8080/v1/agent"},
+		{"ws://localhost:8080", "ws://localhost:8080/agent"},
+		{"ws://[::1]:8080", "ws://[::1]:8080/agent"},
 	}
 	for _, tt := range tests {
 		if got, err := agentURL(tt.in); err != nil || got != tt.want {
 			t.Errorf("agentURL(%q) = %q, %v; want %q", tt.in, got, err, tt.want)
+		}
+	}
+}
+
+// TestAgentURLRefusesClearTextOffTheMachine: the venue's key goes out on the
+// dial as a bearer token, so a relay anywhere but this machine must be
+// reached over TLS.
+func TestAgentURLRefusesClearTextOffTheMachine(t *testing.T) {
+	for _, in := range []string{"ws://relay.example.com", "http://relay.example.com:8080", "ws://192.168.1.5", "ftp://relay.example.com", "relay.example.com"} {
+		if got, err := agentURL(in); err == nil {
+			t.Errorf("agentURL(%q) = %q, want a refusal", in, got)
 		}
 	}
 }
@@ -291,6 +304,9 @@ func TestGuestRequestStaysUnderTheMount(t *testing.T) {
 		{"climbing out further in", "/t/../../api/v1/orders", "", ""},
 		{"climbing out, encoded", "/%2e%2e/api/v1/orders", "", ""},
 		{"climbing out behind an encoded slash", "/t%2f..%2f..%2fapi/v1/orders", "", ""},
+		{"an encoded slash that would route past the mount", "/order%2Fx", "", ""},
+		{"an encoded slash, lower case", "/order%2fapi/v1/orders", "", ""},
+		{"an encoded backslash", "/order%5Cx", "", ""},
 		{"a dot segment", "/./t/abc", "", ""},
 		{"an empty segment", "//api/v1/orders", "", ""},
 		{"a backslash", "/t\\..\\api", "", ""},
@@ -344,7 +360,7 @@ func TestGuestsReachTheGuestAppAndNothingElse(t *testing.T) {
 		}
 	}
 	// Raw, because a well-behaved client tidies these before sending them.
-	for _, path := range []string{"/../api/v1/orders", "/%2e%2e/api/v1/orders", "/t/..%2f..%2fapi/v1/orders", "//api/v1/orders"} {
+	for _, path := range []string{"/../api/v1/orders", "/%2e%2e/api/v1/orders", "/t/..%2f..%2fapi/v1/orders", "//api/v1/orders", "/order%2Fx", "/order%2fapi/v1/orders"} {
 		status, body := rawGuest(t, r.addr, "/v/cafe"+path)
 		if strings.Contains(body, "STAFF") || strings.Contains(body, "TERMINAL") {
 			t.Errorf("guest asking for %s got out from under the mount: %d %q", path, status, body)

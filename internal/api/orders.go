@@ -3,10 +3,12 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/domain/menu"
 	"github.com/byjoellobo/mez/internal/domain/money"
 	"github.com/byjoellobo/mez/internal/domain/order"
 	"github.com/byjoellobo/mez/internal/domain/payment"
@@ -97,10 +99,14 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 		s.requirePermission(auth.PermPaymentTake, http.HandlerFunc(s.readInvoice)))))
 	mux.HandleFunc("/api/v1/orders/{id}/invoices/{seq}", s.methodNotAllowed)
 
-	// What the cashier at the till may do on their own.
-	post("/api/v1/orders/{id}/lines", auth.PermOrderOpen, s.addLine)
+	// What the cashier at the till may do on their own. The two that put a
+	// price on the bill take it from the menu, never from the till
+	// (ADR-256), so without a menu to read they are not mounted at all.
+	if s.menus != nil {
+		post("/api/v1/orders/{id}/lines", auth.PermOrderOpen, s.addLine)
+		post("/api/v1/orders/{id}/lines/{line}/modifiers", auth.PermOrderEdit, s.modifyLine)
+	}
 	post("/api/v1/orders/{id}/lines/{line}/qty", auth.PermOrderEdit, s.changeQty)
-	post("/api/v1/orders/{id}/lines/{line}/modifiers", auth.PermOrderEdit, s.modifyLine)
 	post("/api/v1/orders/{id}/lines/{line}/remove", auth.PermOrderEdit, s.removeLine)
 	post("/api/v1/orders/{id}/notes", auth.PermOrderEdit, s.addNote)
 	post("/api/v1/orders/{id}/hold", auth.PermOrderEdit, s.holdOrder)
@@ -154,6 +160,7 @@ type changeQtyRequest struct {
 
 // modifyLineRequest replaces a line's modifiers. From is what the terminal
 // believes the line has; a stale one is refused with modifiers_mismatch.
+// Only the ids in To are read: the names and prices come from the menu.
 type modifyLineRequest struct {
 	From []order.Modifier `json:"from"`
 	To   []order.Modifier `json:"to"`
@@ -260,8 +267,21 @@ func (s *Server) openOrder(w http.ResponseWriter, r *http.Request) {
 	s.writeCommand(w, r, res, err, http.StatusCreated)
 }
 
+// addLine rings up a line. The till says which item, which choices, how
+// many and the course; the name, the prices, the station and the tax facts
+// are the menu's as it stands now, whatever the body says (ADR-256).
 func (s *Server) addLine(w http.ResponseWriter, r *http.Request) {
-	bodyCommand(s, w, r, s.orders.AddLine)
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		var req addLineRequest
+		if !s.decode(w, r, &req) {
+			return svcorder.Result{}, errAnswered
+		}
+		line, ok := s.priceLine(w, r, req)
+		if !ok {
+			return svcorder.Result{}, errAnswered
+		}
+		return s.orders.AddLine(r.Context(), meta, orderID, line)
+	})
 }
 
 func (s *Server) changeQty(w http.ResponseWriter, r *http.Request) {
@@ -284,10 +304,139 @@ func (s *Server) modifyLine(w http.ResponseWriter, r *http.Request) {
 		if !ok || !s.decode(w, r, &req) {
 			return svcorder.Result{}, errAnswered
 		}
+		to, err := s.priceChoices(r, orderID, lineID, req.To)
+		if err != nil {
+			s.writePickError(w, r, err, "to")
+			return svcorder.Result{}, errAnswered
+		}
 		return s.orders.ModifyLine(r.Context(), meta, orderID, svcorder.ModifyLine{
-			LineID: lineID, From: req.From, To: req.To,
+			LineID: lineID, From: req.From, To: to,
 		})
 	})
+}
+
+// maxTillQty is the most of one item a till may put on one line. The
+// guest's bound, menu.MaxPickQty, is a conversation with staff; a till is
+// staff, so this is only a guard against a slip on the keypad.
+const maxTillQty = 999
+
+// priceLine rings the till's line from the menu: the item and the choices
+// the till asked for, at the menu's prices and tax facts. How many and the
+// course stay the till's. A price that differs from the menu's is not an
+// error, only a till that has not yet reloaded a changed menu: the menu's
+// price is the one charged.
+func (s *Server) priceLine(w http.ResponseWriter, r *http.Request, req addLineRequest) (svcorder.AddLine, bool) {
+	if req.Qty > maxTillQty {
+		writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidRequest,
+			fmt.Sprintf("A line can hold at most %d of one item. Ring the rest on another line.", maxTillQty), "qty")
+		return svcorder.AddLine{}, false
+	}
+	m, err := s.menus.Menu(r.Context(), Meta(r).VenueID)
+	if err != nil {
+		s.menuFailed(w, r, err)
+		return svcorder.AddLine{}, false
+	}
+	// Rung as one, because Ring holds a pick to the guest's bound; the
+	// quantity goes back on below, for the projection to check.
+	rung, err := m.Ring(menu.Pick{ItemID: req.ItemID, ModifierIDs: modifierIDs(req.Modifiers), Qty: 1}, s.now())
+	if err != nil {
+		s.writePickError(w, r, err, "item_id")
+		return svcorder.AddLine{}, false
+	}
+	if req.UnitPrice != rung.UnitPrice || req.TaxRate != rung.TaxRate || req.TaxExempt != rung.TaxExempt {
+		s.log.Debug("a till's line was priced from the menu, not as sent",
+			"request_id", RequestID(r.Context()), "venue_id", Meta(r).VenueID, "item_id", rung.ItemID,
+			"sent_minor", req.UnitPrice.Minor, "menu_minor", rung.UnitPrice.Minor)
+	}
+	rung.Qty = req.Qty
+	rung.Course = req.Course
+	return svcorder.AddLine(rung), true
+}
+
+// priceChoices rings the choices a line is to have, for the item already on
+// it, and answers them with the menu's names and prices. A dish that sold
+// out since it was rung is on the bill already, so its choices can still
+// change; one taken off the menu cannot, and has to be voided instead.
+func (s *Server) priceChoices(r *http.Request, orderID, lineID int64, to []order.Modifier) ([]order.Modifier, error) {
+	venueID := Meta(r).VenueID
+	current, err := s.orders.Order(r.Context(), venueID, orderID)
+	if err != nil {
+		return nil, err
+	}
+	itemID, ok := lineItem(current.State, lineID)
+	if !ok {
+		return nil, fmt.Errorf("line %d: %w", lineID, order.ErrLineNotFound)
+	}
+	m, err := s.menus.Menu(r.Context(), venueID)
+	if err != nil {
+		return nil, fmt.Errorf("reading the menu: %w", err)
+	}
+	rung, err := onSale(m, itemID).Ring(menu.Pick{ItemID: itemID, ModifierIDs: modifierIDs(to), Qty: 1}, s.now())
+	if err != nil {
+		return nil, err
+	}
+	return rung.Modifiers, nil
+}
+
+// lineItem is the menu item a line was rung from.
+func lineItem(st order.State, lineID int64) (int64, bool) {
+	for _, l := range st.Lines {
+		if l.ID == lineID {
+			return l.ItemID, true
+		}
+	}
+	return 0, false
+}
+
+// onSale is the menu with one item on sale, whatever its sold-out mark. The
+// menu handed in is not changed.
+func onSale(m menu.Menu, itemID int64) menu.Menu {
+	items := make([]menu.Item, len(m.Items))
+	for i, it := range m.Items {
+		if it.ID == itemID {
+			it.SoldOutUntil = nil
+		}
+		items[i] = it
+	}
+	m.Items = items
+	return m
+}
+
+// modifierIDs are the ids of the choices a till sent. Their names and
+// prices are not read.
+func modifierIDs(mods []order.Modifier) []int64 {
+	ids := make([]int64, len(mods))
+	for i, mod := range mods {
+		ids[i] = mod.ModifierID
+	}
+	return ids
+}
+
+// writePickError answers a line the menu cannot ring, in words a cashier
+// can act on. Anything that is not the menu's refusal is the order path's.
+func (s *Server) writePickError(w http.ResponseWriter, r *http.Request, err error, field string) {
+	var pick *menu.PickError
+	if !errors.As(err, &pick) {
+		s.writeOrderError(w, r, err)
+		return
+	}
+	item := "That item"
+	if pick.Item != "" {
+		item = pick.Item
+	}
+	switch {
+	case errors.Is(err, menu.ErrNoSuchItem):
+		writeFieldError(w, s.log, http.StatusUnprocessableEntity, CodeDishUnavailable,
+			"That item is no longer on the menu. Reload the menu and try again.", "item_id")
+	case errors.Is(err, menu.ErrSoldOut):
+		writeFieldError(w, s.log, http.StatusConflict, CodeDishUnavailable,
+			item+" is sold out. Reload the menu to see what is on sale.", "item_id")
+	case errors.Is(err, menu.ErrChoices):
+		writeFieldError(w, s.log, http.StatusUnprocessableEntity, CodeChoicesInvalid,
+			"The choices for "+item+" do not match the menu. Reload the menu and choose again.", field)
+	default:
+		writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, pick.Error(), field)
+	}
 }
 
 // removeLine takes off a line rung up by mistake, before anything has

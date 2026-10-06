@@ -227,23 +227,21 @@ func (s *Service) writeRound(ctx context.Context, meta Meta, v venue, draft roun
 	if err != nil && !isNoRows(err) {
 		return Round{}, fmt.Errorf("reading the ticket at table %d: %w", draft.tableID, err)
 	}
+	hasTicket := err == nil
 	// Where guests pay first, a round waits for its payment whatever the
 	// table: seated or not, first round or fifth.
 	if s.paysFirst(v) {
 		ticket := int64(0)
-		if err == nil {
+		if hasTicket {
 			ticket = orderID
 		}
 		round.Status = RoundUnpaid
 		round.Due, err = s.holdRound(ctx, meta, v, ticket, draft, publicID)
 		return round, err
 	}
-	switch {
-	case isNoRows(err):
+	if !hasTicket {
 		round.Status = RoundWaiting
 		return round, s.requestRound(ctx, meta, draft, publicID)
-	case err != nil:
-		return Round{}, fmt.Errorf("reading the ticket at table %d: %w", draft.tableID, err)
 	}
 	round.Status, round.OrderID = RoundSent, orderID
 	return round, s.sendRound(ctx, meta, orderID, draft, publicID)

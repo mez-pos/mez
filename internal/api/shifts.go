@@ -191,9 +191,13 @@ func (s *Server) mountShifts(mux *http.ServeMux) {
 	// authorised by a manager's override for cash.move.
 	handle("POST /api/v1/shift/{id}/cash", auth.PermPaymentTake, s.moveCash)
 	handle("POST /api/v1/shift/{id}/close", auth.PermShiftManage, s.closeShift)
-	// Whoever closes the till counts it, blind, and explains the variance.
-	handle("POST /api/v1/shift/{id}/count", auth.PermPaymentTake, s.countDrawer)
-	handle("POST /api/v1/shift/{id}/reason", auth.PermPaymentTake, s.explainVariance)
+	// Whoever runs the till counts it, blind, and explains the variance.
+	// That is the cashier's permission (shift.open) and not payment.take,
+	// which every waiter holds: the count is taken once and the reason is
+	// written once, and a counted shift takes no more orders, so the pair
+	// is a cash control and a way to stop service, not a sale.
+	handle("POST /api/v1/shift/{id}/count", auth.PermShiftOpen, s.countDrawer)
+	handle("POST /api/v1/shift/{id}/reason", auth.PermShiftOpen, s.explainVariance)
 	mux.HandleFunc("/api/v1/shift", s.methodNotAllowed)
 	if s.myShifts != nil {
 		// Anyone who sells may read their own shift, and only their own.
@@ -415,6 +419,6 @@ func (s *Server) writeShiftError(w http.ResponseWriter, r *http.Request, err err
 		}
 	}
 	s.log.Error("a shift request failed",
-		"request_id", RequestID(r.Context()), "method", r.Method, "path", r.URL.Path, "error", err)
+		"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
 	writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 }

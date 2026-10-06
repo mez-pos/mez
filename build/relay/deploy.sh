@@ -19,6 +19,13 @@ ssh=${SSH:-ssh}
 [ -f go.mod ] && [ -d cmd/relay ] || { echo "run this from the repository root" >&2; exit 1; }
 version=$(git describe --tags --always --dirty 2>/dev/null || echo deployed)
 
+# Both values are pasted into commands run by a root shell on the server.
+# A tag or a domain is never anything but these characters; one that is
+# would be a quoting trick, and is refused before it gets near that shell.
+case "$version$domain" in
+	*[!A-Za-z0-9._-]*) echo "the version ($version) or the domain ($domain) has a character that is not a letter, digit, dot, hyphen or underscore" >&2; exit 1 ;;
+esac
+
 $ssh "$host" "umask 077 && mkdir -p $dir/src"
 
 if ! $ssh "$host" "test -f $dir/.env"; then

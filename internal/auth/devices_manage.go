@@ -23,6 +23,7 @@ type InvalidDevice struct {
 	Message string
 }
 
+// Error is ErrInvalidDevice's text followed by what was wrong.
 func (e *InvalidDevice) Error() string { return fmt.Sprintf("%s: %s", ErrInvalidDevice, e.Message) }
 
 // Is makes an InvalidDevice match ErrInvalidDevice.
@@ -138,16 +139,36 @@ func (d *Devices) Rename(ctx context.Context, venueID int64, publicID, name stri
 // the back office in use would leave nobody able to pair another. Revoking a
 // device already revoked is not an error.
 func (d *Devices) RevokeByPublicID(ctx context.Context, venueID int64, publicID string, actingID, by int64) error {
-	row, err := byPublicID(ctx, d.db.Queries(), venueID, publicID)
+	var (
+		deviceID int64
+		revoked  int64
+	)
+	// One transaction: the device looked up is the device revoked, and a
+	// device revoked between the two cannot be revoked again as news.
+	err := d.db.WriteTx(ctx, func(q *gen.Queries) error {
+		row, err := byPublicID(ctx, q, venueID, publicID)
+		if err != nil {
+			return err
+		}
+		if row.ID == actingID {
+			return fmt.Errorf("%w: %s", ErrRevokeSelf, publicID)
+		}
+		deviceID = row.ID
+		revoked, err = q.RevokeDevice(ctx, gen.RevokeDeviceParams{
+			RevokedAt: sql.NullTime{Time: d.now().UTC(), Valid: true}, ID: row.ID, VenueID: venueID,
+		})
+		return err
+	})
 	if err != nil {
 		return err
 	}
-	if row.ID == actingID {
-		return fmt.Errorf("%w: %s", ErrRevokeSelf, publicID)
+	if revoked == 0 {
+		// Already revoked: not an error, and nothing new to say or do.
+		return nil
 	}
-	if err := d.Revoke(ctx, venueID, row.ID); err != nil {
-		return err
+	d.log.Info("device revoked by staff", "venue_id", venueID, "device", publicID, "device_id", deviceID, "actor_id", by)
+	if d.onRevoke != nil {
+		d.onRevoke(venueID, deviceID)
 	}
-	d.log.Info("device revoked by staff", "venue_id", venueID, "device", publicID, "actor_id", by)
 	return nil
 }

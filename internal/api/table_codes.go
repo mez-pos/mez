@@ -396,6 +396,6 @@ func (s *Server) writeTableCodeError(w http.ResponseWriter, r *http.Request, err
 		writeError(w, s.log, http.StatusNotFound, CodeTableNotFound, "No such table on the floor.")
 		return
 	}
-	s.log.Error("a table code request failed", "request_id", RequestID(r.Context()), "path", r.URL.Path, "error", err)
+	s.log.Error("a table code request failed", "request_id", RequestID(r.Context()), "path", s.loggedPath(r), "error", err)
 	writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 }

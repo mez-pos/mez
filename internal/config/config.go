@@ -504,6 +504,12 @@ func validFormat(v string) (string, error) {
 	}
 }
 
+// validRelayURL accepts the address of a relay this venue may dial.
+//
+// The venue's key goes out as a bearer token on the first request of every
+// connection, so the connection must be TLS: only wss and https are allowed
+// for any host that is not this machine. Plain ws and http are kept for a
+// relay on loopback, which is how one is run while developing it.
 func validRelayURL(v string) error {
 	if v == "" {
 		return nil
@@ -512,15 +518,29 @@ func validRelayURL(v string) error {
 	if err != nil {
 		return fmt.Errorf("%s %q: %w", keyRelayURL, v, err)
 	}
-	switch u.Scheme {
-	case "ws", "wss", "http", "https":
-	default:
-		return fmt.Errorf("%s %q: scheme must be ws, wss, http or https", keyRelayURL, v)
-	}
 	if u.Host == "" {
 		return fmt.Errorf("%s %q: missing host", keyRelayURL, v)
 	}
+	switch u.Scheme {
+	case "wss", "https":
+	case "ws", "http":
+		if !loopbackHost(u.Hostname()) {
+			return fmt.Errorf("%s %q: the venue's key travels on this connection, so the scheme must be wss or https (plain %s is allowed only for a relay on this machine)",
+				keyRelayURL, v, u.Scheme)
+		}
+	default:
+		return fmt.Errorf("%s %q: scheme must be wss or https", keyRelayURL, v)
+	}
 	return nil
+}
+
+// loopbackHost reports whether a URL's hostname can only be this machine.
+func loopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // validOrigin checks that dev_origin is an origin and not a URL. Browsers

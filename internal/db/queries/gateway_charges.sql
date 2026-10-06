@@ -36,6 +36,19 @@ WHERE venue_id = ? AND status = ?
 ORDER BY created_at, id
 LIMIT ?;
 
+-- name: OpenGatewayChargesSince :many
+-- A venue's open charges started since a moment, oldest first: the ones
+-- the sweep asks the provider about. A charge older than that has lapsed
+-- at the provider and can never be paid; left in the list it would hold a
+-- place in every sweep for ever, and with enough of them the charges that
+-- could still land would never be asked about.
+SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
+FROM gateway_charges
+WHERE venue_id = ? AND status = 'open' AND created_at >= sqlc.arg(since)
+ORDER BY created_at, id
+LIMIT sqlc.arg('limit');
+
 -- name: SetGatewayChargePayment :execrows
 -- Writes how an open charge was paid, once. Whoever is second finds it
 -- written and writes nothing.

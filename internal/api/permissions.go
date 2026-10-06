@@ -24,7 +24,7 @@ func (s *Server) requirePermission(p auth.Permission, next http.Handler) http.Ha
 		if !ok {
 			// Only reachable by mounting this outside requireStaff, which
 			// would be a routing bug rather than a bad request.
-			s.log.Error("permission check with no staff session", "request_id", RequestID(r.Context()), "path", r.URL.Path)
+			s.log.Error("permission check with no staff session", "request_id", RequestID(r.Context()), "path", s.loggedPath(r))
 			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 			return
 		}
@@ -63,7 +63,7 @@ type Override struct {
 func (s *Server) authorise(w http.ResponseWriter, r *http.Request, o Override, p auth.Permission) (auth.Staff, bool) {
 	dev, ok := DeviceFrom(r.Context())
 	if !ok {
-		s.log.Error("override with no device", "request_id", RequestID(r.Context()), "path", r.URL.Path)
+		s.log.Error("override with no device", "request_id", RequestID(r.Context()), "path", s.loggedPath(r))
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 		return auth.Staff{}, false
 	}
@@ -88,6 +88,22 @@ func (s *Server) authorise(w http.ResponseWriter, r *http.Request, o Override, p
 		return auth.Staff{}, false
 	}
 	return by, true
+}
+
+// clientIdempotencyKey refuses a request whose Idempotency-Key is not one a
+// client may send: too long, not printable, or in the namespace the system
+// appends its own under (a gateway's tender, an order to collect). It runs
+// for every request so that no handler, present or future, can take one
+// unchecked.
+func (s *Server) clientIdempotencyKey(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := svcorder.CheckClientIdempotencyKey(r.Header.Get(HeaderIdempotencyKey)); err != nil {
+			writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidRequest,
+				"Idempotency-Key must be up to 128 printable characters and not begin with a system prefix.", HeaderIdempotencyKey)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // Meta is who a service command is from, taken from the request: the venue

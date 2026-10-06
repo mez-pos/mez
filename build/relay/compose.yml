@@ -11,6 +11,11 @@ services:
       args:
         VERSION: ${RELAY_VERSION:-deployed}
     restart: unless-stopped
+    # One static binary that writes nothing: it runs read-only, with no
+    # capabilities and no way to gain any.
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     environment:
       RELAY_SECRET: ${RELAY_SECRET:?set in .env}
       RELAY_VENUE_DOMAIN: ${RELAY_VENUE_DOMAIN:?set in .env}
@@ -28,6 +33,11 @@ services:
     restart: unless-stopped
     depends_on:
       - relay
+    # Caddy needs only to bind 443; everything else a root process could
+    # do is taken away.
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
     ports:
       - "443:443"
     environment:

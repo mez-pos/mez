@@ -130,6 +130,11 @@ type conn struct {
 	ws     *websocket.Conn
 	client Client
 
+	// cut ends the connection from outside its own loop: the hub calls it
+	// when the device is revoked, so a socket opened while the device was
+	// paired does not go on streaming after it is not.
+	cut context.CancelFunc
+
 	// woken has room for one nudge. More than one pending nudge says
 	// nothing extra: the reader will go to the database and find whatever
 	// is there.
@@ -156,7 +161,11 @@ func (c *conn) wake() {
 
 // run reads the client's hello, then streams until something ends it.
 func (c *conn) run(ctx context.Context) error {
-	hello, err := c.readHello(ctx)
+	// A client that connects and says nothing holds a slot for nothing;
+	// the hello has as long as a write does.
+	helloCtx, cancelHello := context.WithTimeout(ctx, c.hub.writeTimeout)
+	hello, err := c.readHello(helloCtx)
+	cancelHello()
 	if err != nil {
 		return err
 	}
@@ -262,6 +271,9 @@ func (c *conn) readLoop(ctx context.Context) error {
 		switch msg.Type {
 		case MsgSubscribe:
 			c.setTopics(msg.Topics)
+			// The versions are read by the writing goroutine only, so the
+			// reply carries none: a client compares versions on the
+			// messages that announce a change, not on this.
 			if err := c.hub.writeJSON(ctx, c.ws, WelcomeMessage{
 				Type: MsgWelcome, VenueID: c.client.VenueID, DeviceID: c.client.DeviceID,
 				From: c.at(), Latest: c.at(), Topics: c.topicList(),

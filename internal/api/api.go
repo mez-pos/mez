@@ -170,6 +170,7 @@ func (s *Server) middleware() []middleware {
 		s.accessLog,
 		s.recoverPanic,
 		s.cors,
+		s.clientIdempotencyKey,
 	}
 }
 

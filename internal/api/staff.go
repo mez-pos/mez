@@ -66,7 +66,7 @@ func (s *Server) requireStaff(next http.Handler) http.Handler {
 		if !ok {
 			// Only reachable by mounting this without requireDevice around
 			// it, which would be a routing bug rather than a bad request.
-			s.log.Error("staff check with no device", "request_id", RequestID(r.Context()), "path", r.URL.Path)
+			s.log.Error("staff check with no device", "request_id", RequestID(r.Context()), "path", s.loggedPath(r))
 			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 			return
 		}

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -112,8 +113,14 @@ func (s *Server) guestStartCharge(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	description := "Table " + table.TableName + ", " + table.VenueName
 	// No body is the rest of the bill, as it was before a bill could be
-	// split. A body is one phone's share of it.
-	if r.ContentLength == 0 {
+	// split. A body is one phone's share of it. The body itself is looked
+	// at and not Content-Length, which a chunked request does not carry.
+	empty, err := bodyIsEmpty(r)
+	if err != nil {
+		writeError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, "The request body could not be read.")
+		return
+	}
+	if empty {
 		c, err := s.charges.Start(r.Context(), table.VenueID, table.TableID, description, s.guestReturnURL(r))
 		s.writeBillCharge(w, r, table.VenueID, c, err)
 		return
@@ -351,4 +358,19 @@ func (s *Server) gatewayHook(w http.ResponseWriter, r *http.Request) {
 		s.log.Error("taking a gateway's notice failed", "request_id", RequestID(r.Context()), "error", err)
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 	}
+}
+
+// bodyIsEmpty reports whether a request carries no body, reading up to the
+// decoder's limit to find out. What was read is put back, so a decoder
+// after it sees the whole body.
+func bodyIsEmpty(r *http.Request) (bool, error) {
+	if r.Body == nil || r.Body == http.NoBody {
+		return true, nil
+	}
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxBodyBytes+1))
+	if err != nil {
+		return false, err
+	}
+	r.Body = io.NopCloser(bytes.NewReader(body))
+	return len(bytes.TrimSpace(body)) == 0, nil
 }

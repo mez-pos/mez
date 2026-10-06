@@ -143,6 +143,21 @@ func (h *Hub) Notify(venueID int64) {
 	}
 }
 
+// Disconnect cuts every connection a device holds. Revoking a device stops
+// its requests at once, since each one is authenticated afresh; a stream
+// is authenticated when it opens and would otherwise go on carrying every
+// order, payment and refund of the venue to a device the owner has just
+// turned away. The device may dial again, and is refused at the door.
+func (h *Hub) Disconnect(venueID, deviceID int64) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for c := range h.venues[venueID] {
+		if c.client.DeviceID == deviceID {
+			c.cut()
+		}
+	}
+}
+
 // Connections is how many devices are connected, for the health endpoint
 // and for tests.
 func (h *Hub) Connections() int {
@@ -214,15 +229,15 @@ func (h *Hub) Serve(w http.ResponseWriter, r *http.Request, client Client) {
 	}
 	ws.SetReadLimit(readLimit)
 
-	c := &conn{hub: h, ws: ws, client: client, woken: make(chan struct{}, 1), topics: map[string]struct{}{TopicVenue: {}}}
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	c := &conn{hub: h, ws: ws, client: client, cut: cancel, woken: make(chan struct{}, 1), topics: map[string]struct{}{TopicVenue: {}}}
 	if err := h.add(c); err != nil {
 		_ = ws.Close(websocket.StatusGoingAway, "server is shutting down")
 		return
 	}
 	defer h.remove(c)
-
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
 	go func() {
 		select {
 		case <-h.closing:

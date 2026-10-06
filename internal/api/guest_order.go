@@ -191,7 +191,7 @@ func (s *Server) writeGuestOrderError(w http.ResponseWriter, r *http.Request, er
 	case errors.Is(err, svcorder.ErrInvalidCommand):
 		refuse(http.StatusBadRequest, CodeInvalidRequest, err.Error())
 	default:
-		s.log.Error("a guest's order failed", "request_id", RequestID(r.Context()), "path", r.URL.Path, "error", err)
+		s.log.Error("a guest's order failed", "request_id", RequestID(r.Context()), "path", s.loggedPath(r), "error", err)
 		refuse(http.StatusInternalServerError, CodeInternal, "internal error")
 	}
 }

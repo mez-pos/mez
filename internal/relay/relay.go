@@ -2,8 +2,13 @@
 // phone can reach when the venue's own machine has none.
 //
 // A venue's tunnel client dials GET /agent with its venue key and holds the
-// WebSocket open. A guest request to /v/<venue>/... is framed, sent down that
-// socket and answered from it. The relay keeps a map of venue id to socket
+// WebSocket open. A guest request is framed, sent down that socket and
+// answered from it. The venue is named by the Host header, <venue>.<domain>,
+// when RELAY_VENUE_DOMAIN is set (ADR-203), which is how a shared relay runs:
+// each venue is its own browser origin. Without a domain the venue is the
+// first path segment, /v/<venue>/..., and every venue shares one origin,
+// which is for a relay serving one venue or for development. The relay
+// keeps a map of venue id to socket
 // in memory and nothing else: no database, no disk, no table of venues. Kill
 // it and start it again and every venue is back within its client's backoff.
 // See ADR-008 and ADR-201.

@@ -174,7 +174,6 @@ func serve(ctx context.Context, env func(string) string, stdout io.Writer, liste
 	if err != nil {
 		return err
 	}
-
 	addr := env(envListen)
 	if addr == "" {
 		addr = defaultListen

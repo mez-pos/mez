@@ -332,6 +332,12 @@ type Querier interface {
 	// again, it is the same charge. Another phone's share of the same amount is
 	// another charge.
 	OpenGatewayChargeForShare(ctx context.Context, arg OpenGatewayChargeForShareParams) (GatewayCharge, error)
+	// A venue's open charges started since a moment, oldest first: the ones
+	// the sweep asks the provider about. A charge older than that has lapsed
+	// at the provider and can never be paid; left in the list it would hold a
+	// place in every sweep for ever, and with enough of them the charges that
+	// could still land would never be asked about.
+	OpenGatewayChargesSince(ctx context.Context, arg OpenGatewayChargesSinceParams) ([]GatewayCharge, error)
 	// The notice staff have still to deal with on a ticket, if there is one.
 	OpenPaidNoticeForOrder(ctx context.Context, orderID int64) (OpenPaidNoticeForOrderRow, error)
 	// Every notice staff have still to deal with, oldest first, with its table

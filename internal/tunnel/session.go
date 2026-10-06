@@ -56,6 +56,7 @@ func (c *Client) session() (time.Duration, error) {
 
 	ws, resp, err := websocket.Dial(dialCtx, c.url, &websocket.DialOptions{
 		HTTPHeader: http.Header{"Authorization": {"Bearer " + c.key}},
+		HTTPClient: &http.Client{CheckRedirect: refuseRedirect},
 	})
 	if err != nil {
 		if resp != nil && resp.StatusCode == http.StatusUnauthorized {
@@ -108,9 +109,14 @@ func (s *session) read() error {
 	for {
 		// Not s.ctx: cancelling a read tears the socket down before Close
 		// has said goodbye. The socket closing is what ends this.
-		_, msg, err := s.ws.Read(context.Background())
+		kind, msg, err := s.ws.Read(context.Background())
 		if err != nil {
 			return err
+		}
+		if kind != websocket.MessageBinary {
+			// The wire is binary frames and nothing else, as the relay
+			// holds the venue to; this end holds the relay to the same.
+			return fmt.Errorf("%w: the relay sent a text message", wire.ErrMalformed)
 		}
 		f, err := wire.Decode(msg)
 		if err != nil {
@@ -140,7 +146,16 @@ func (s *session) begin(f wire.Frame) {
 	}
 	s.mu.Lock()
 	inFlight := len(s.active)
+	_, serving := s.active[f.Stream]
 	s.mu.Unlock()
+	if serving || s.pending[f.Stream] != nil {
+		// The relay numbers streams and never reuses one on a connection.
+		// A repeat would otherwise replace a request half arrived, or
+		// leave two goroutines sharing one cancel. Refused, and the
+		// earlier one goes on.
+		s.reset(f.Stream, "stream id in use")
+		return
+	}
 	if len(s.pending)+inFlight >= maxStreams {
 		s.reset(f.Stream, "too many requests")
 		return
@@ -220,7 +235,12 @@ func (s *session) serve(ctx context.Context, stream uint64, in *inbound) {
 
 	req, err := guestRequest(ctx, in.head, in.body.Bytes(), s.c.mount)
 	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		// In the server's own error envelope, so a guest app reading the
+		// answer sees the shape it expects everywhere else.
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-store")
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"error":{"code":"not_found","message":"no such page"}}`))
 		w.finish()
 		return
 	}
@@ -345,4 +365,13 @@ func (w *responseWriter) finish() {
 	if err == nil {
 		_ = w.s.send(msg)
 	}
+}
+
+// refuseRedirect stops the dial following a redirect. The venue's key has
+// already gone out with the first request; following to another scheme or
+// host would send it again to wherever the answer pointed, and a relay
+// reached only through a redirect is a misconfigured relay_url, not a
+// relay. The dial fails and the log says where it was pointed.
+func refuseRedirect(req *http.Request, _ []*http.Request) error {
+	return fmt.Errorf("the relay answered with a redirect to %s; relay_url must be the relay's own address", req.URL.Redacted())
 }

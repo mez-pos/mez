@@ -36,7 +36,11 @@ func newShiftTill(t *testing.T) *shiftTill {
 	if err != nil {
 		t.Fatal(err)
 	}
-	w.rebuild(t, WithOrders(orders), WithShifts(shifts))
+	// The thali the cashier rings in TestMyShiftOverHTTP, priced from here.
+	menu := newTillMenu()
+	menu.stopEcho()
+	menu.stock(menuItem(1, "Thali", 20000, "kitchen"))
+	w.rebuild(t, WithOrders(orders), WithShifts(shifts), WithMenus(menu))
 	return &shiftTill{
 		till:    w,
 		cashier: w.signIn(t, "2468").Token,
@@ -449,4 +453,21 @@ func TestExportsOverHTTP(t *testing.T) {
 		t.Fatalf("one: %d %s", status, raw)
 	}
 	w.refused(t, w.owner, http.MethodGet, "/api/v1/exports/999", "", http.StatusNotFound, CodeExportNotFound)
+}
+
+// TestAWaiterNeitherCountsNorExplains: the blind count is taken once and the
+// reason written once, and a counted till takes no more orders, so both
+// are the cashier's (shift.open) and not every waiter's (ADR-257).
+func TestAWaiterNeitherCountsNorExplains(t *testing.T) {
+	w := newShiftTill(t)
+	opened := w.shift(t, w.cashier, http.MethodPost, "/api/v1/shift/open", `{"total":{"minor":50000,"currency":"INR"}}`, http.StatusCreated)
+	countPath := fmt.Sprintf("/api/v1/shift/%d/count", opened.ID)
+	reasonPath := fmt.Sprintf("/api/v1/shift/%d/reason", opened.ID)
+
+	w.setRole(t, "waiter")
+	w.refused(t, w.cashier, http.MethodPost, countPath, `{"total":{"minor":50000,"currency":"INR"}}`, http.StatusForbidden, CodeForbidden)
+	w.refused(t, w.cashier, http.MethodPost, reasonPath, `{"reason":"change"}`, http.StatusForbidden, CodeForbidden)
+
+	w.setRole(t, "cashier")
+	w.shift(t, w.cashier, http.MethodPost, countPath, `{"total":{"minor":50000,"currency":"INR"}}`, http.StatusOK)
 }

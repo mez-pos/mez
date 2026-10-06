@@ -2,6 +2,10 @@
 # venue's goes to the relay, which tells them apart by Host (ADR-203).
 
 {
+	# Nothing drives Caddy at runtime: the Caddyfile is the configuration.
+	# The admin API is off so that no process in the container, however it
+	# got there, can turn Caddy against the relay.
+	admin off
 	servers {
 		# Cloudflare is the only thing that reaches this server (the firewall
 		# sees to that), so its word on who the guest is can be taken. These

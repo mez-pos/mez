@@ -208,12 +208,15 @@ func (s *Server) writePeopleError(w http.ResponseWriter, r *http.Request, err er
 	case errors.Is(err, people.ErrBeyondYou):
 		writeError(w, s.log, http.StatusForbidden, CodeBeyondYou,
 			"That reaches permissions you don't have. Only someone who holds them can give them or change those who do.")
+	case errors.Is(err, people.ErrPeerPIN):
+		writeError(w, s.log, http.StatusForbidden, CodeBeyondYou,
+			"Only someone with more permissions than they have can reset their PIN. They can change their own.")
 	case errors.Is(err, people.ErrLastManager):
 		writeError(w, s.log, http.StatusConflict, CodeLastManager,
 			"Nobody would be left who can manage staff. Give someone else that first.")
 	default:
 		s.log.Error("a people request failed",
-			"request_id", RequestID(r.Context()), "method", r.Method, "path", r.URL.Path, "error", err)
+			"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 	}
 }

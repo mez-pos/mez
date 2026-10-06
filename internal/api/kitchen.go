@@ -220,12 +220,12 @@ func (s *Server) writeBoard(w http.ResponseWriter, r *http.Request, station stri
 // it: "T4 + T7". Empty for an order with no table.
 func tableNames(o order.State, tables map[int64]string) string {
 	var out string
-	for i, id := range o.Tables() {
+	for _, id := range o.Tables() {
 		name := tables[id]
 		if name == "" {
 			continue
 		}
-		if i > 0 {
+		if out != "" {
 			out += " + "
 		}
 		out += name

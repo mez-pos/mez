@@ -20,6 +20,8 @@ import (
 // the charge it is about.
 type hookTeller struct{}
 
+func (hookTeller) Name() string { return "test" }
+
 func (hookTeller) Notice(header http.Header, body []byte) (string, error) {
 	if header.Get("X-Test-Signature") != "good" {
 		return "", fmt.Errorf("%w: not signed", gateway.ErrRefused)

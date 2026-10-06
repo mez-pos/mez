@@ -113,4 +113,8 @@ type Notified interface {
 	// It says which charge to ask about and nothing else. What the call
 	// claims about the charge is not believed: Status is.
 	Notice(header http.Header, body []byte) (string, error)
+	// Name is the provider's name, the same one its Gateway answers. A
+	// notice is listened for at the provider's own address and nowhere
+	// else.
+	Name() string
 }

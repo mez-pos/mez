@@ -202,10 +202,12 @@ func (g *Gateway) Status(ctx context.Context, id string) (gateway.Status, error)
 }
 
 // captured is the payment that paid a link: the last one captured. A link
-// is paid once here, so it is the only one.
+// is paid once here, so it is the only one. A payment that says no status
+// is not taken for captured: Razorpay always says, and what it says is the
+// only ground for naming a method and a reference on the bill.
 func captured(payments []payment) payment {
 	for i := len(payments) - 1; i >= 0; i-- {
-		if payments[i].Status == "captured" || payments[i].Status == "" {
+		if payments[i].Status == "captured" {
 			return payments[i]
 		}
 	}

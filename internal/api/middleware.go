@@ -10,7 +10,7 @@ import (
 	"net"
 	"net/http"
 	"runtime/debug"
-	"time"
+	"strings"
 )
 
 // HeaderRequestID carries the correlation id, in and out.
@@ -98,12 +98,10 @@ func usableRequestID(id string) bool {
 }
 
 func newRequestID() string {
+	// crypto/rand.Read never returns an error (Go 1.24+): it stops the
+	// program instead, which for a source of randomness is the right call.
 	var b [16]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		// crypto/rand does not fail in practice, and a request without an id is
-		// still a request worth serving. Degrade rather than refuse.
-		return fmt.Sprintf("t-%d", time.Now().UnixNano())
-	}
+	_, _ = rand.Read(b[:])
 	return hex.EncodeToString(b[:])
 }
 
@@ -125,7 +123,7 @@ func (s *Server) accessLog(next http.Handler) http.Handler {
 			fields := []any{
 				"request_id", RequestID(r.Context()),
 				"method", r.Method,
-				"path", r.URL.Path,
+				"path", s.loggedPath(r),
 				"status", rec.statusCode(),
 				"bytes", rec.written,
 				"duration_ms", s.now().Sub(started).Milliseconds(),
@@ -168,6 +166,11 @@ func remoteHost(r *http.Request) string {
 // to the log.
 func (s *Server) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Whether the handler got as far as a status line. After that a
+		// 500 cannot be written: the client has its headers, and on a
+		// hijacked connection (the stream) there is no response to write to.
+		rec := &recorder{ResponseWriter: w}
+		w = rec
 		defer func() {
 			recovered := recover()
 			if recovered == nil {
@@ -182,11 +185,13 @@ func (s *Server) recoverPanic(next http.Handler) http.Handler {
 			s.log.Error("handler panicked",
 				"request_id", RequestID(r.Context()),
 				"method", r.Method,
-				"path", r.URL.Path,
+				"path", s.loggedPath(r),
 				"panic", fmt.Sprint(recovered),
 				"stack", string(debug.Stack()),
 			)
-			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+			if rec.status == 0 {
+				writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+			}
 		}()
 
 		next.ServeHTTP(w, r)
@@ -284,4 +289,40 @@ func (r *recorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return nil, nil, fmt.Errorf("hijack: %T does not support it", r.ResponseWriter)
 	}
 	return h.Hijack()
+}
+
+// loggedPath is the request path as the log may carry it. A guest's path
+// holds the table's code, and a pickup path the venue's, and a code is the
+// credential (ADR-205): whoever reads the log must not come away holding
+// one. The matched route pattern says which segment it is, and that
+// segment is written as [code]. A path that matched no guest pattern, a
+// mistyped one say, is read by its shape instead: whatever follows the
+// guest API's t/ or c/ is masked, pattern or not, since a real code with a
+// wrong path after it is a real code all the same.
+func (s *Server) loggedPath(r *http.Request) string {
+	pattern := r.Pattern
+	if i := strings.IndexByte(pattern, ' '); i >= 0 {
+		pattern = pattern[i+1:]
+	}
+	pathSegs := strings.Split(r.URL.Path, "/")
+	masked := make([]string, len(pathSegs))
+	copy(masked, pathSegs)
+	changed := false
+	if strings.Contains(pattern, "{code}") {
+		for i, seg := range strings.Split(pattern, "/") {
+			if seg == "{code}" && i < len(masked) {
+				masked[i], changed = "[code]", true
+			}
+		}
+	}
+	if !changed && s.guestMount != "" && strings.HasPrefix(r.URL.Path, s.guestMount+"api/") {
+		// The segment after t/ or c/ is the code, whatever follows it.
+		for i := 0; i+1 < len(masked); i++ {
+			if (masked[i] == "t" || masked[i] == "c") && masked[i+1] != "" {
+				masked[i+1] = "[code]"
+				break
+			}
+		}
+	}
+	return strings.Join(masked, "/")
 }

@@ -123,8 +123,12 @@ zero dependency on any service you operate.
 - Staff PINs are short by necessity. Rate-limit hard, lock after failures, and
   store as Argon2id — never as plain or fast hashes.
 - The guest surface is anonymous and rate-limited per table.
-- The back office is the only surface allowed to touch prices, tax settings or
-  void history.
+- Prices, tax settings and void history are behind their own permissions
+  (menu.edit, settings.edit, the manager overrides), which in practice only
+  back office roles hold. The check is the permission, not the kind of
+  device: a terminal paired as a till cannot reach them by being a till, and
+  a line rung up at a till is priced from the menu on the server, never from
+  what the till sent.
 
 ## What we are deliberately not doing
 

@@ -2,12 +2,15 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/byjoellobo/mez/internal/service/tablecodes"
 )
 
 func TestRequestIDIsAlwaysPresent(t *testing.T) {
@@ -329,4 +332,99 @@ func withOrigin(t *testing.T, s *Server, origin string) *httptest.ResponseRecord
 		r.Header.Set("Origin", origin)
 	}
 	return do(t, s, r)
+}
+
+// TestAPanicAfterTheHeadersDoesNotWriteAgain: once a handler has begun its
+// response the 500 cannot be written, and trying would at best be noise in
+// the log and at worst a write to a hijacked connection.
+func TestAPanicAfterTheHeadersDoesNotWriteAgain(t *testing.T) {
+	s := newTestServer(t, testConfig())
+	s.handler = chain(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+		panic("after the headers")
+	}), s.middleware()...)
+
+	resp := get(t, s, "/api/v1/anything")
+	if resp.Code != http.StatusAccepted {
+		t.Errorf("status = %d, want the 202 the handler wrote first", resp.Code)
+	}
+	if strings.Contains(resp.Body.String(), string(CodeInternal)) {
+		t.Errorf("body = %q, want no error envelope written over a begun response", resp.Body)
+	}
+}
+
+// TestTheLogMasksAGuestsCode: a guest's path carries the table's code,
+// which is the credential, and the log must not hand it to whoever reads
+// the log.
+func TestTheLogMasksAGuestsCode(t *testing.T) {
+	tests := []struct {
+		pattern, path, want string
+	}{
+		{"GET /order/api/t/{code}/menu", "/order/api/t/ABCDEFGHJKLM/menu", "/order/api/t/[code]/menu"},
+		{"POST /order/api/t/{code}/orders", "/order/api/t/ABCDEFGHJKLM/orders", "/order/api/t/[code]/orders"},
+		{"GET /order/api/c/{code}", "/order/api/c/ABCDEFGHJKLM", "/order/api/c/[code]"},
+		{"GET /api/v1/orders/{id}", "/api/v1/orders/ord_1", "/api/v1/orders/ord_1"},
+		{"", "/order/api/t/ABCDEFGHJKLM/menux", "/order/api/t/[code]/menux"},
+		{"", "/order/api/c/ABCDEFGHJKLM", "/order/api/c/[code]"},
+		{"", "/order/t/ABCDEFGHJKLM", "/order/t/ABCDEFGHJKLM"},
+		{"", "/api/v1/t/x", "/api/v1/t/x"},
+	}
+	s := newTestServer(t, testConfig())
+	s.guestMount = "/order/"
+	for _, tt := range tests {
+		r := httptest.NewRequest(http.MethodGet, tt.path, nil)
+		r.Pattern = tt.pattern
+		if got := s.loggedPath(r); got != tt.want {
+			t.Errorf("loggedPath(%q, %q) = %q, want %q", tt.pattern, tt.path, got, tt.want)
+		}
+	}
+}
+
+// TestTheAccessLogCarriesNoTableCode goes through the real router: the
+// pattern is set by the mux, and the line must still not carry the code.
+func TestTheAccessLogCarriesNoTableCode(t *testing.T) {
+	log, lines := capturingLogger()
+	s := New(testConfig(), log, BuildInfo{Version: "test"}, WithGuests(stubGuests{}, "/order/"))
+	get(t, s, "/order/api/t/ABCDEFGHJKLM")
+	get(t, s, "/order/api/t/ABCDEFGHJKLM/no-such-thing")
+	if out := lines.String(); strings.Contains(out, "ABCDEFGHJKLM") {
+		t.Errorf("the access log carries the table code:\n%s", out)
+	} else if !strings.Contains(out, "[code]") {
+		t.Errorf("the access log does not show where the code was:\n%s", out)
+	}
+}
+
+// TestAClientMayNotSendASystemIdempotencyKey: the keys the system appends
+// under have a namespace of their own, and a client's key in it would make
+// a gateway's tender fail as a reuse.
+func TestAClientMayNotSendASystemIdempotencyKey(t *testing.T) {
+	s := newTestServer(t, testConfig())
+	for _, key := range []string{"charge:chg_1", "pickup-ticket:rnd_1", strings.Repeat("k", 129), "has space"} {
+		r := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
+		r.Header.Set(HeaderIdempotencyKey, key)
+		resp := httptest.NewRecorder()
+		s.Handler().ServeHTTP(resp, r)
+		if resp.Code != http.StatusBadRequest {
+			t.Errorf("key %q: status = %d, want 400", key, resp.Code)
+		}
+	}
+	r := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
+	r.Header.Set(HeaderIdempotencyKey, "5f1c2b1e-3a4d-4c9e-9f1a-2b3c4d5e6f70")
+	resp := httptest.NewRecorder()
+	s.Handler().ServeHTTP(resp, r)
+	if resp.Code != http.StatusOK {
+		t.Errorf("an ordinary key: status = %d, want 200", resp.Code)
+	}
+}
+
+// stubGuests is a Guests that knows no code, enough for the router to match
+// a guest pattern.
+type stubGuests struct{}
+
+func (stubGuests) Resolve(context.Context, string) (tablecodes.Table, error) {
+	return tablecodes.Table{}, tablecodes.ErrUnknown
+}
+
+func (stubGuests) ResolvePickup(context.Context, string) (tablecodes.Venue, error) {
+	return tablecodes.Venue{}, tablecodes.ErrUnknown
 }

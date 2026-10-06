@@ -94,6 +94,9 @@ type tunnelResponse struct {
 // venue's devices: it is the venue's connection to the outside, and it is
 // shown on that screen.
 func (s *Server) mountTunnel(mux *http.ServeMux) {
+	if s.devices == nil || s.staff == nil {
+		return
+	}
 	mux.Handle("GET /api/v1/tunnel",
 		s.requireDevice(s.requireStaff(s.requirePermission(auth.PermDeviceManage, http.HandlerFunc(s.showTunnel)))))
 	mux.HandleFunc("/api/v1/tunnel", s.methodNotAllowed)

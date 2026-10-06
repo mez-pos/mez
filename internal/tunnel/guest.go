@@ -26,7 +26,7 @@ var errNoSuchPath = errors.New("tunnel: not a path a guest can ask for")
 // and what a guest needs from the server is served from under there.
 func guestRequest(ctx context.Context, head wire.RequestHead, body []byte, mount string) (*http.Request, error) {
 	u, err := url.ParseRequestURI(head.Path)
-	if err != nil || u.Host != "" || u.Scheme != "" || !climbsNowhere(u.Path) {
+	if err != nil || u.Host != "" || u.Scheme != "" || !climbsNowhere(u.Path) || encodesSeparator(u.RawPath) {
 		return nil, errNoSuchPath
 	}
 	// A path already under the mount is left there. The guest app names its
@@ -82,6 +82,20 @@ func climbsNowhere(p string) bool {
 		}
 	}
 	return true
+}
+
+// encodesSeparator reports whether an escaped path hides a slash or a
+// backslash as %2F or %5C. The mount check below reads the decoded path,
+// but net/http routes on the escaped one, segment by segment, so
+// "/order%2Fx" would pass the check as "/order/x" and then miss every
+// pattern under the mount and fall to whatever is at "/". No guest URL
+// needs an encoded separator, so one is refused whole.
+func encodesSeparator(rawPath string) bool {
+	if rawPath == "" {
+		return false
+	}
+	upper := strings.ToUpper(rawPath)
+	return strings.Contains(upper, "%2F") || strings.Contains(upper, "%5C")
 }
 
 // remoteAddr is the guest's address as the relay reported it, in the form

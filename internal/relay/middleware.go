@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -78,10 +77,10 @@ func usableRequestID(id string) bool {
 }
 
 func (s *Server) newRequestID() string {
+	// crypto/rand.Read never returns an error (Go 1.24+): it stops the
+	// program instead, which for a source of randomness is the right call.
 	var b [16]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return fmt.Sprintf("t-%d", s.now().UnixNano())
-	}
+	_, _ = rand.Read(b[:])
 	return hex.EncodeToString(b[:])
 }
 

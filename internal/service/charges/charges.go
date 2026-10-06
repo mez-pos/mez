@@ -70,6 +70,15 @@ const maxDraws = 5
 // maxSweep is the most open charges one sweep asks the gateway about.
 const maxSweep = 200
 
+// MaxSweepAge is how long after it was started a charge is still asked
+// about. A checkout lapses at the provider well within a day (Stripe's in
+// 24 hours, Razorpay's sooner), so an older one can never be paid; left in
+// the sweep it would hold one of its maxSweep places for ever, and enough
+// of them would crowd out the charges that could still land. The charge
+// stays open in the record, where the back office lists it, until a person
+// resolves it.
+const MaxSweepAge = 48 * time.Hour
+
 // Status is where a charge stands.
 type Status string
 
@@ -262,12 +271,19 @@ func (s *Service) open(ctx context.Context, gw gateway.Gateway, a asking) (Charg
 			})
 			return err
 		})
+		if err != nil {
+			// The checkout just opened at the gateway is one nobody is given
+			// the page of, so nobody pays it, and it lapses there. It is
+			// named in the log so that one that was paid against the odds
+			// can be found at the gateway by hand; mez has no row for it and
+			// no sweep will.
+			s.log.Warn("a checkout opened at the gateway was not saved and will lapse unpaid",
+				"venue_id", a.venueID, "gateway", gw.Name(), "gateway_id", checkout.ID, "error", err)
+		}
 		if db.IsUniqueViolation(err) {
 			// Another phone asked for the same round at the same moment, or
 			// this one asked twice for the same share, and that charge is
-			// the one. Otherwise the public id collided. Either
-			// way the charge just opened at the gateway is one nobody was
-			// given the page of, so nobody pays it.
+			// the one. Otherwise the public id collided.
 			if c, ok, rerr := replay(); rerr != nil || ok {
 				return c, rerr
 			}
@@ -419,7 +435,7 @@ func (s *Service) apply(ctx context.Context, row gen.GatewayCharge, st gateway.S
 	_, err := s.orders.TenderPayment(ctx,
 		// The guest is nobody: no actor and no device. The key is the
 		// charge's own, so this tender happens once.
-		svcorder.Meta{VenueID: row.VenueID, IdempotencyKey: "charge:" + row.PublicID},
+		svcorder.Meta{VenueID: row.VenueID, IdempotencyKey: svcorder.ChargeKeyPrefix + row.PublicID},
 		row.OrderID.Int64,
 		svcorder.TenderPayment{Method: order.PaymentMethod(row.Method.String), Amount: asked, Reference: row.Reference.String},
 	)
@@ -537,7 +553,8 @@ func (s *Service) close(ctx context.Context, row gen.GatewayCharge, to Status, p
 // when the guest paid and closed the page without coming back. It answers
 // how many it closed, and the first error, having tried them all.
 func (s *Service) Sweep(ctx context.Context, venueID int64) (int, error) {
-	rows, err := s.db.Queries().GatewayChargesByStatus(ctx, gen.GatewayChargesByStatusParams{VenueID: venueID, Status: string(Open), Limit: maxSweep})
+	since := s.clock.Now().UTC().Add(-MaxSweepAge)
+	rows, err := s.db.Queries().OpenGatewayChargesSince(ctx, gen.OpenGatewayChargesSinceParams{VenueID: venueID, Since: since, Limit: maxSweep})
 	if err != nil {
 		return 0, fmt.Errorf("listing the open charges of venue %d: %w", venueID, err)
 	}
@@ -601,6 +618,13 @@ func methodOf(m gateway.Method) order.PaymentMethod {
 // the gateway has done its part by calling, and the sweep will ask again.
 func (s *Service) Notice(ctx context.Context, name string, header http.Header, body []byte) error {
 	if s.notices == nil {
+		return ErrNoNotices
+	}
+	if name != s.notices.Name() {
+		// A notice signed by one gateway but posted to another's address
+		// would pass the signature check and then find no charge, which
+		// looks like success. Only the gateway that is set up is listened
+		// to, at its own address.
 		return ErrNoNotices
 	}
 	gatewayID, err := s.notices.Notice(header, body)

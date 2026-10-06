@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -127,12 +126,13 @@ func decodeHash(s string) (argonParams, []byte, []byte, error) {
 
 // dummyHash is compared against when the staff member asked for does not
 // exist or cannot sign in, so that answer takes as long as a wrong PIN and
-// the timing says nothing about who works here.
-var dummyHash = sync.OnceValue(func() string {
+// the timing says nothing about who works here. It is made once, when a
+// StaffAuth is, so that the one thing that can fail in it (drawing a salt)
+// fails at startup and not under a sign-in.
+func dummyHash() (string, error) {
 	h, err := HashPIN("00000000")
 	if err != nil {
-		// crypto/rand failing is not something to carry on from.
-		panic(fmt.Sprintf("auth: building the dummy PIN hash: %v", err))
+		return "", fmt.Errorf("auth: building the dummy PIN hash: %w", err)
 	}
-	return h
-})
+	return h, nil
+}

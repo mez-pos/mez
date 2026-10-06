@@ -106,24 +106,37 @@ func (s *Server) requireDevice(next http.Handler) http.Handler {
 			s.unauthenticated(w, CodeUnauthenticated, "a device token is needed")
 			return
 		}
-		dev, err := s.devices.Authenticate(r.Context(), token)
-		switch {
-		case errors.Is(err, auth.ErrDeviceRevoked):
-			s.unauthenticated(w, CodeDeviceRevoked, "this device has been unpaired; pair it again")
+		dev, ok := s.authenticateDevice(w, r, token)
+		if !ok {
 			return
-		case errors.Is(err, auth.ErrUnauthenticated):
-			s.unauthenticated(w, CodeUnauthenticated, "the device token is not valid")
-			return
-		case err != nil:
-			s.log.Error("authenticating a device failed", "request_id", RequestID(r.Context()), "error", err)
-			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
-			return
-		}
-		if info := infoFrom(r.Context()); info != nil {
-			info.venueID, info.deviceID = dev.VenueID, dev.ID
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), deviceKey, dev)))
 	})
+}
+
+// authenticateDevice turns a device token into the device, answering the
+// request itself when it cannot: a revoked device, a token that opens
+// nothing, or a store that failed. It is the one place a token is judged,
+// for the routes behind requireDevice and for the stream, which reads its
+// token from the subprotocol and cannot sit behind the middleware.
+func (s *Server) authenticateDevice(w http.ResponseWriter, r *http.Request, token string) (auth.Device, bool) {
+	dev, err := s.devices.Authenticate(r.Context(), token)
+	switch {
+	case errors.Is(err, auth.ErrDeviceRevoked):
+		s.unauthenticated(w, CodeDeviceRevoked, "this device has been unpaired; pair it again")
+		return auth.Device{}, false
+	case errors.Is(err, auth.ErrUnauthenticated):
+		s.unauthenticated(w, CodeUnauthenticated, "the device token is not valid")
+		return auth.Device{}, false
+	case err != nil:
+		s.log.Error("authenticating a device failed", "request_id", RequestID(r.Context()), "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		return auth.Device{}, false
+	}
+	if info := infoFrom(r.Context()); info != nil {
+		info.venueID, info.deviceID = dev.VenueID, dev.ID
+	}
+	return dev, true
 }
 
 // bearer reads a bearer token. The scheme is case-insensitive, per RFC 9110.

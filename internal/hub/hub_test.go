@@ -589,3 +589,30 @@ func waitFor(t *testing.T, cond func() bool) {
 	}
 	t.Fatal("timed out waiting")
 }
+
+// TestARevokedDeviceIsCutOff: a stream is authenticated when it opens, so
+// revoking a device must reach the socket it already holds, or the device
+// goes on receiving every event of the venue for as long as it keeps the
+// connection alive.
+func TestARevokedDeviceIsCutOff(t *testing.T) {
+	w := newWorld(t)
+	c := w.dial(t)
+	c.hello(ClientMessage{})
+	if w.hub.Connections() != 1 {
+		t.Fatalf("%d connections, want 1", w.hub.Connections())
+	}
+
+	// Another device of the venue is left alone.
+	w.hub.Disconnect(1, 99)
+	if w.hub.Connections() != 1 {
+		t.Fatalf("cutting a device that is not connected dropped %d connections", 1-w.hub.Connections())
+	}
+
+	w.hub.Disconnect(1, 3)
+	waitFor(t, func() bool { return w.hub.Connections() == 0 })
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if _, _, err := c.ws.Read(ctx); err == nil {
+		t.Error("the revoked device's socket is still open")
+	}
+}

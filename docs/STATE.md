@@ -30,6 +30,13 @@ Handed over, which closes the ticket. Task 5 is done. **Not seen in a browser.**
 
 ## Known broken / in progress
 
+- **Between phases (ADR-256, ADR-257): the first security review.** A till's
+  line is priced from the menu on the server; a relay must be TLS; revoking
+  a device cuts its stream; a PIN is reset only from above; the log masks
+  table codes; the toolchain is go1.26.8. Five findings are the owner's to
+  decide and are in `docs/KNOWN.md` under "Security, left for the owner":
+  read that before phase 12's TLS task. Nothing seen in a browser changed.
+
 - **Between phases (ADR-255): the screens now fit 1024 to 2560 wide and 768
   tall.** Fluid `w-side`, `w-rail`, `w-panel` widths, auto-fill card grids, a
   `short:` variant, script lines out of the working chrome (tokens.md,

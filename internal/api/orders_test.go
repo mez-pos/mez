@@ -10,17 +10,20 @@ import (
 
 	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/internal/domain/menu"
 	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/byjoellobo/mez/internal/domain/tax"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // register is a till with an order service behind it: a GST cafe, a paired
-// terminal, Asha the cashier signed in, and Priya the owner to authorise
-// what Asha cannot do alone.
+// terminal, Asha the cashier signed in, Priya the owner to authorise what
+// Asha cannot do alone, and the menu the till rings from.
 type register struct {
 	*till
 	staffToken string
 	ownerPIN   string
+	menu       *tillMenu
 }
 
 func newRegister(t *testing.T) *register {
@@ -58,11 +61,17 @@ func newRegister(t *testing.T) *register {
 	if err != nil {
 		t.Fatal(err)
 	}
-	w.rebuild(t, WithOrders(orders))
-
-	r := &register{till: w, ownerPIN: "2468"}
+	r := &register{till: w, ownerPIN: "2468", menu: newTillMenu()}
+	r.rebuild(t, WithOrders(orders))
 	r.staffToken = w.signIn(t, "2468").Token
 	return r
+}
+
+// rebuild is the till's, with the register's menu always among the options:
+// a till's lines are priced from it, and without one they are not mounted.
+func (r *register) rebuild(t *testing.T, extra ...Option) {
+	t.Helper()
+	r.till.rebuild(t, append([]Option{WithMenus(r.menu)}, extra...)...)
 }
 
 // openTestShift opens the venue's shift behind the API's back: an order
@@ -115,6 +124,9 @@ func (r *register) callKeyed(t *testing.T, method, path, body, key string) (int,
 
 func (r *register) callWith(t *testing.T, method, path, body string, header map[string]string) (int, commandResponse, Error) {
 	t.Helper()
+	if isAddLine(method, path) {
+		r.menu.echoLine(body)
+	}
 	rec := send(r.handler, method, path, body, header)
 	if rec.Code >= 400 {
 		return rec.Code, commandResponse{}, errorOf(t, rec)
@@ -322,7 +334,7 @@ func TestEveryErrorShape(t *testing.T) {
 		{"a course fired twice", http.MethodPost, "/api/v1/orders/" + id + "/courses/1/fire", ``, http.StatusConflict, CodeCourseAlreadyFired},
 		{"a ticket for a station with nothing waiting", http.MethodPost, "/api/v1/orders/" + id + "/tickets", `{"station":"bar"}`, http.StatusConflict, CodeNothingToSend},
 		{"a payment in another currency", http.MethodPost, "/api/v1/orders/" + id + "/payments", `{"method":"cash","amount":{"minor":100,"currency":"GBP"}}`, http.StatusUnprocessableEntity, CodeInvalidPayload},
-		{"a line with no name", http.MethodPost, "/api/v1/orders/" + id + "/lines", `{"item_id":1,"qty":1,"unit_price":{"minor":100,"currency":"INR"}}`, http.StatusUnprocessableEntity, CodeInvalidPayload},
+		{"a line of none", http.MethodPost, "/api/v1/orders/" + id + "/lines", `{"item_id":1,"qty":0,"unit_price":{"minor":100,"currency":"INR"}}`, http.StatusUnprocessableEntity, CodeInvalidPayload},
 		{"a line id that is not a number", http.MethodPost, "/api/v1/orders/" + id + "/lines/abc/qty", `{"from":1,"to":2}`, http.StatusBadRequest, CodeInvalidRequest},
 		{"a body that is not JSON", http.MethodPost, "/api/v1/orders/" + id + "/notes", `{`, http.StatusBadRequest, CodeInvalidRequest},
 		{"a field the endpoint does not take", http.MethodPost, "/api/v1/orders/" + id + "/notes", `{"scope":"order","text":"x","colour":"red"}`, http.StatusBadRequest, CodeInvalidRequest},
@@ -497,6 +509,12 @@ func TestModifyALineOverHTTP(t *testing.T) {
 	id := r.openOrder(t)
 	const dairy = `{"modifier_id":3,"name":"Dairy","price":{"minor":0,"currency":"INR"}}`
 	const oat = `{"modifier_id":4,"name":"Oat","price":{"minor":5000,"currency":"INR"}}`
+	r.menu.stopEcho()
+	r.menu.stock(menu.Item{
+		ID: 5, Name: "Flat white", Price: inr(21000), Station: "bar", Course: 1, TaxRate: tax.RateFromBP(500), HSN: "996331", Groups: []int64{1},
+	}, menu.ModifierGroup{ID: 1, Name: "Milk", MaxSelect: 1, Modifiers: []menu.Modifier{
+		{ID: 3, Name: "Dairy", Price: inr(0)}, {ID: 4, Name: "Oat", Price: inr(5000)},
+	}})
 	r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/lines",
 		`{"item_id":5,"name":"Flat white","qty":2,"unit_price":{"minor":21000,"currency":"INR"},"modifiers":[`+dairy+`],"station":"bar","course":1,"tax_rate":5000,"hsn":"996331"}`)
 

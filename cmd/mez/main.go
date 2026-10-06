@@ -195,7 +195,18 @@ func run() (err error) {
 			"hint", "rebuild with -tags frontend once web/*/dist exists")
 	}
 
-	devices, err := auth.NewDevices(auth.DevicesOptions{DB: database, Log: log})
+	// The hub is a subsystem with goroutines of its own, so it shuts down
+	// with everything else rather than being left to the process exiting.
+	events, err := hub.New(hub.Options{Source: database, Log: log, Origins: cfg.StreamOrigins()})
+	if err != nil {
+		return err
+	}
+	running.push("hub", events.Close)
+
+	// A revoked device's stream is cut as it is revoked: a socket opened
+	// while it was paired would otherwise carry the venue's every event to
+	// it for as long as it stayed open.
+	devices, err := auth.NewDevices(auth.DevicesOptions{DB: database, Log: log, OnRevoke: events.Disconnect})
 	if err != nil {
 		return err
 	}
@@ -204,14 +215,6 @@ func run() (err error) {
 	if err != nil {
 		return err
 	}
-
-	// The hub is a subsystem with goroutines of its own, so it shuts down
-	// with everything else rather than being left to the process exiting.
-	events, err := hub.New(hub.Options{Source: database, Log: log, Origins: cfg.StreamOrigins()})
-	if err != nil {
-		return err
-	}
-	running.push("hub", events.Close)
 
 	// The print queue sends whatever is waiting, including what a crash left
 	// half printed, from the moment the server is up. It stops before the

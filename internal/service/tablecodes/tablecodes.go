@@ -120,34 +120,49 @@ func onFloor(ctx context.Context, q *gen.Queries, venueID, tableID int64) error 
 // transaction: there is never a moment with two live codes, or with none
 // after there was one.
 func (s *Service) Renew(ctx context.Context, venueID, tableID int64) (string, error) {
-	code, err := s.draw()
-	if err != nil {
-		return "", err
-	}
 	at := s.now().UTC()
-	err = s.db.WriteTx(ctx, func(q *gen.Queries) error {
-		if err := onFloor(ctx, q, venueID, tableID); err != nil {
-			return err
+	for range maxPickupDraws {
+		code, err := s.draw()
+		if err != nil {
+			return "", err
 		}
-		// Never a string that was a venue's pickup code (ADR-247). It does
-		// not happen with 59 bits to a code; if it does, asking again draws
-		// another.
-		if n, err := q.CodeIsAPickups(ctx, code); err != nil {
-			return err
-		} else if n > 0 {
-			return errors.New("the code drawn was once a pickup code: try again")
+		taken := false
+		err = s.db.WriteTx(ctx, func(q *gen.Queries) error {
+			if err := onFloor(ctx, q, venueID, tableID); err != nil {
+				return err
+			}
+			// Never a string that is, or was, any table's or a venue's
+			// pickup code (ADR-247): what a revoked code said must go on
+			// leading nowhere. With 59 bits to a code it does not happen;
+			// if it does, the next draw is another code, as RenewPickup
+			// does.
+			tables, err := q.CodeIsATables(ctx, code)
+			if err != nil {
+				return err
+			}
+			pickups, err := q.CodeIsAPickups(ctx, code)
+			if err != nil {
+				return err
+			}
+			if tables+pickups > 0 {
+				taken = true
+				return nil
+			}
+			if err := q.RevokeTableCodes(ctx, gen.RevokeTableCodesParams{
+				RevokedAt: sql.NullTime{Time: at, Valid: true}, VenueID: venueID, TableID: tableID,
+			}); err != nil {
+				return err
+			}
+			return q.CreateTableCode(ctx, gen.CreateTableCodeParams{VenueID: venueID, TableID: tableID, Code: code, CreatedAt: at})
+		})
+		if err != nil {
+			return "", fmt.Errorf("tablecodes: renewing table %d's code: %w", tableID, err)
 		}
-		if err := q.RevokeTableCodes(ctx, gen.RevokeTableCodesParams{
-			RevokedAt: sql.NullTime{Time: at, Valid: true}, VenueID: venueID, TableID: tableID,
-		}); err != nil {
-			return err
+		if !taken {
+			return code, nil
 		}
-		return q.CreateTableCode(ctx, gen.CreateTableCodeParams{VenueID: venueID, TableID: tableID, Code: code, CreatedAt: at})
-	})
-	if err != nil {
-		return "", fmt.Errorf("tablecodes: renewing table %d's code: %w", tableID, err)
 	}
-	return code, nil
+	return "", fmt.Errorf("tablecodes: renewing table %d's code: every code drawn was already used", tableID)
 }
 
 // Revoke turns off a table's code and gives it no other (phase 11, Task 6a,
@@ -178,17 +193,16 @@ func (s *Service) Ensure(ctx context.Context, venueID int64) ([]Coded, error) {
 	if err != nil {
 		return nil, err
 	}
+	out := make([]Coded, len(tables))
 	for i, t := range tables {
-		if t.Code != "" {
-			continue
+		if t.Code == "" {
+			if t.Code, err = s.Renew(ctx, venueID, t.TableID); err != nil {
+				return nil, err
+			}
 		}
-		code, err := s.Renew(ctx, venueID, t.TableID)
-		if err != nil {
-			return nil, err
-		}
-		tables[i].Code = code
+		out[i] = t
 	}
-	return tables, nil
+	return out, nil
 }
 
 // draw makes a code. Twelve characters from thirty-one is about 59 bits,
