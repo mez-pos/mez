@@ -10,6 +10,20 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **First run over HTTP** (ADR-266; phase 12 Task 3a). Seen on 2026-10-07
+  with curl against the built binary: the status, the refusals by LAN
+  address, foreign `Host`, foreign `Origin` and text/plain, a venue made,
+  the second attempt refused, the code pairing a device and the owner
+  signing in. **Not seen**: from a browser (no screen until 3b); under the
+  service's account; a real DNS rebinding or cross-site page. Left out:
+  any user or program on the server's computer, or a forwarder on it that
+  adds no header, can make the venue until the owner has (a setup token
+  would close it: `STATE.md`, question 9); Docker, a headless server and one behind a proxy cannot
+  use it and keep `mez setup`; a reply lost after the venue is written
+  leaves no code on screen (`mez pair`); no idempotency key; a US venue
+  still cannot finish; `PairScreen`, the installer's last page and
+  `running.md` still say `mez setup` (3d).
+
 - **The Windows service and installer** (ADR-263 to ADR-265; phase 12
   Tasks 1, 1b and 2). Seen on 2026-10-07 by silent install on the
   developer's PC: the service running as `NT SERVICE\mez` with its database

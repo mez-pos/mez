@@ -36,6 +36,7 @@ import (
 	"github.com/byjoellobo/mez/internal/logging"
 	"github.com/byjoellobo/mez/internal/service/audit"
 	"github.com/byjoellobo/mez/internal/service/charges"
+	"github.com/byjoellobo/mez/internal/service/firstrun"
 	"github.com/byjoellobo/mez/internal/service/floor"
 	"github.com/byjoellobo/mez/internal/service/menus"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
@@ -245,6 +246,13 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		return err
 	}
 
+	// The wizard's way to what `mez setup` does, from a browser on this
+	// machine and nowhere else (ADR-266).
+	firstRun, err := firstrun.New(database, devices, nil)
+	if err != nil {
+		return err
+	}
+
 	// The print queue sends whatever is waiting, including what a crash left
 	// half printed, from the moment the server is up. It stops before the
 	// database closes: the stack unwinds in reverse.
@@ -361,6 +369,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		api.WithDBCheck(dbCheck(database)),
 		api.WithTunnel(func() api.TunnelStatus { return tunnelStatus(guests) }),
 		api.WithDevices(devices),
+		api.WithFirstRun(firstRun),
 		api.WithStaff(staff),
 		api.WithOrders(orders),
 		api.WithMenus(database),

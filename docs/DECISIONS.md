@@ -9018,3 +9018,88 @@ the pages by eye, the shortcut opening, the two questions about the data,
 a restart after a kill, the start at boot, a print as the service's
 account, a clean machine, the SmartScreen box itself, a signed build.
 ---
+
+## ADR-266 - First run over HTTP, from a browser on the server's own machine only
+2026-10 · Status: accepted. Phase 12, Task 3a. Supersedes ADR-058 in part.
+Context: Task 3 is a wizard, and a wizard is a web page. ADR-058 made first
+run a command and refused it an endpoint, because being sat at the machine
+was the trust and an endpoint would be a way in. The phase's test is a clean
+machine selling with no terminal, so there has to be one. Task 3 was also
+four sessions of work and is split into 3a to 3d in the phase file.
+Decision:
+  - **One place makes a venue**: `internal/service/firstrun`. `Check` judges
+    the answers and names the field at fault, `Run` writes the venue, the
+    default roles, the owner and the tax settings in one transaction with
+    the no-venue check inside it, then makes the first pairing code. `mez
+    setup` is now its flags, a drawn PIN and the demo cafe (an `Extra`,
+    written inside the same transaction) around that. Its tax words are the
+    settings service's own constants.
+  - **`GET /api/v1/setup`** answers anyone with `{needed, here}`: is there
+    no venue yet, and is this caller where one can be made. A tablet asks it
+    too, to tell "pair me" from "go to the computer".
+  - **`POST /api/v1/setup`** takes what `mez setup` takes (no demo cafe) and
+    answers 201 with the venue's and the owner's public ids and the pairing
+    code. It never answers with the PIN and nothing logs it or the code.
+  - **The gate is `atThisMachine`, and all four parts are needed.** The
+    caller's address is loopback. The `Host` asked for is `localhost` or a
+    loopback address, so a site that points its own name at 127.0.0.1 (DNS
+    rebinding) is refused. No `Forwarded`, `Via`, `X-Forwarded-*`,
+    `X-Real-*`, `CF-Connecting-IP` or `True-Client-IP` is present, so a
+    proxy on the same machine that says it is one does not make the whole
+    internet local. An `Origin`, when the browser sends one, is the
+    server's own or the configured dev origin, and a `Sec-Fetch-Site` is
+    `same-origin` or `none`, so a page on another site cannot post blind.
+    Besides the gate: the body
+    must be `application/json`, which a cross-site form cannot send; ten
+    attempts a minute per address; and a guest's request through the tunnel
+    is always under `/order/`.
+  - **The answers are held to more than the command held them to**, since
+    they now come from a form: names are plain text with no control
+    characters (a receipt printer reads ESC and GS as commands) and no
+    longer than the back office allows; a GSTIN is fifteen capital letters
+    and digits beginning with the state's two, typed in either case.
+  - **Nothing else is opened.** The invoice prefix, the printer and the
+    second device's code are the wizard's to do through the API that
+    exists, signed in as the owner on the device the code paired.
+  - Refusals: 403 `setup_not_here`, 409 `already_set_up` (said before the
+    answers are judged), 422 `invalid_setup` with the field, 415 for a body
+    that is not JSON, 500 `setup_no_code` when the venue was made and its
+    code was not.
+Because: what ADR-058 protected was that only someone at the machine starts
+the venue. Loopback, with the browser's own evidence of who is asking, is
+that over HTTP; the LAN is not, since on day one it is whoever is on the
+cafe's wifi. Keeping the bootstrap to one endpoint that does exactly what
+the command does leaves one thing to review, and one service means a venue
+made either way cannot differ.
+Cost: "at the machine" was an administrator who could read the data
+directory (ADR-259); it is now any user or program on that computer, from
+the moment the service starts until the owner finishes the wizard. On a
+cafe's own till that is the owner, and after it the endpoint only refuses.
+The gate is a browser's evidence: a forwarder on the machine that adds no
+header (`ssh -R`, `netsh portproxy`, nginx as it comes) passes a caller
+from anywhere through it. A security review of this task said so and
+proposed a setup token, made at first start, kept in the data directory
+and handed to the browser by the installer in the address's fragment;
+that is a change to the installer and the wizard and is put to the owner
+(`STATE.md`, question 9), not built. If someone else does get there first
+the owner's wizard is refused with `already_set_up`, so it is seen. Every
+caller on the machine shares one address and so one limit of ten a
+minute. `dev_origin` must stay empty on a venue's machine: a page at that
+origin is taken as the server's own.
+A server with no browser of its own (Docker, where a published port
+arrives from the bridge and not loopback; a headless box; one behind a
+proxy) cannot use the wizard and keeps `mez setup`. A reply lost after the
+venue is written leaves a venue and no code on screen, and the way out is
+`mez pair` in a terminal: the endpoint keeps no idempotency key, because
+the answer it would replay is a pairing code. `GET /api/v1/setup` tells
+anyone on the LAN whether a venue exists. A US venue still cannot finish
+here (the jurisdiction's rates are a back office job). `-currency` now
+refuses three characters that are not letters. **Seen on 2026-10-07**
+against the built binary with curl: needed and here at localhost; 403 by
+the LAN address, with another site's `Host`, with another site's
+`Origin`; 415 for text/plain; 422 for a four digit PIN; 201, then 409;
+the code pairing a device from the LAN address and the owner signing in
+with every permission; neither the PIN nor the code in the log. **Not
+seen**: from a browser, since there is no screen until 3b; under the
+service's account; a real rebinding or cross-site page.
+---

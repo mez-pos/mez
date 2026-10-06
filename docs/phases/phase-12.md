@@ -36,7 +36,7 @@ Phase 11.
   goes around ADR-058, a screen with a design (D24), a search of the
   network, and the installer's hand-off. Four sessions, not one.
 
-  - [ ] **Task 3a - First run over HTTP, from this computer only.**
+  - [x] **Task 3a - First run over HTTP, from this computer only.**
     What `mez setup` does, as a service both it and the API call:
     `GET /api/v1/setup` says whether the venue is still to be made,
     `POST /api/v1/setup` makes it and answers with the first pairing code.

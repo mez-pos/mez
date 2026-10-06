@@ -7,23 +7,28 @@
 
 ## Current phase
 
-**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b and 2 built.
-Phase 11 has nothing left to build (Cashfree left out, ADR-254) and owes its
-walks.
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2 and 3a
+built. Task 3 is split into 3a to 3d. Phase 11 has nothing left to build
+(Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 2: the installer** (ADR-265). `build/installer/mez.iss`, by
-`make dist && make installer` (Inno Setup 6). It calls `mez service` for
-everything about the service, opens the firewall for the program, makes the
-kiosk shortcut, and keeps the data on uninstall. Installed, upgraded and
-removed silently on the developer's PC; **the pages, the shortcut and a clean
-machine are not seen by eye** (`docs/KNOWN.md`, first entry). Not signed.
+**Phase 12, Task 3a: first run over HTTP** (ADR-266). `internal/service/
+firstrun` is the one place a venue is made; `mez setup` calls it. `GET
+/api/v1/setup` answers `{needed, here}`; `POST /api/v1/setup` makes the
+venue and answers with the first pairing code, only for a browser on the
+server's own machine (`atThisMachine`, `internal/api/setup.go`). Seen with
+curl against the built binary; **no screen yet, so not seen in a browser**.
 
 ## Next task
 
-**Phase 12, Task 3: the first-run wizard.** Until it exists the installer's
-last page opens a till with no venue, and `mez setup` is still a terminal.
+**Phase 12, Task 3b: the wizard's questions (D24).** Write
+`docs/design/screens/setup-wizard.md` first, from D24
+(`mez Desktop Management.dc.html`, line 770). The types are in
+`api-types.ts` (`SetupRequest`, `SetupResponse`, `SetupStatusResponse`).
+The wizard posts 3a, pairs with the code, signs the owner in, then sets
+the invoice prefix through the settings API. Until it exists the
+installer's last page still opens a till with no venue.
 
 Still owed from phase 11, its human check and:
 - **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
@@ -73,6 +78,10 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
 7. `jskin.in` is for testing, `mez.ac` for production: move before codes are printed.
 8. The firewall rule is for Private and Domain networks (ADR-265). Public too?
+9. First run over HTTP trusts any program on the server's own computer
+   until the owner finishes the wizard (ADR-266). A setup token the
+   installer hands the browser would close that; it costs the installer a
+   step and Docker nothing. Build it in 3d? Recommended: yes.
 
 ---
 

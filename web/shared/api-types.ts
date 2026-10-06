@@ -145,6 +145,10 @@ export type ErrorCode =
   | 'gateway_unavailable'
   | 'charge_not_found'
   | 'charge_not_waiting'
+  | 'setup_not_here'
+  | 'already_set_up'
+  | 'invalid_setup'
+  | 'setup_no_code'
   | 'bill_claimed'
   | 'bill_moved'
   | 'receipt_not_found'
@@ -762,6 +766,33 @@ export interface DeviceResponse {
 export interface PairResponse {
   device: DeviceResponse;
   token: string;
+}
+
+export interface SetupStatusResponse {
+  needed: boolean;
+  here: boolean;
+}
+
+export interface SetupRequest {
+  name: string;
+  legal_name?: string;
+  currency: string;
+  timezone: string;
+  fy_start_month: number;
+  tax_profile: string;
+  tax_registration?: string;
+  tax_pricing?: string;
+  owner_name: string;
+  owner_pin: string;
+  device_name: string;
+  device_kind: DeviceKind;
+}
+
+export interface SetupResponse {
+  venue_id: string;
+  owner_id: string;
+  pairing_code: string;
+  expires_at: string;
 }
 
 export interface NewCodeRequest {

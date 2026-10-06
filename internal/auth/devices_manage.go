@@ -38,6 +38,14 @@ func cleanDeviceName(name string) (string, error) {
 	return name, nil
 }
 
+// CheckDeviceName reports whether a device may be called name, as
+// CreatePairingCode will judge it. First run asks before it writes the
+// venue, so that a name refused cannot leave a venue with no code.
+func CheckDeviceName(name string) error {
+	_, err := cleanDeviceName(name)
+	return err
+}
+
 // Record is a device as the back office lists it: who it is, when it was
 // paired and last heard from, and whether it has been revoked.
 type Record struct {

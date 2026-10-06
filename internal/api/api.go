@@ -45,6 +45,7 @@ type Server struct {
 	tips          Tips
 	myShifts      MyShifts
 	exports       Exports
+	firstRun      FirstRun
 	limiter       *limiter
 	handler       http.Handler
 }
@@ -118,6 +119,7 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("GET /api/v1/health", s.health)
 	mux.HandleFunc("/api/v1/health", s.methodNotAllowed)
 
+	s.mountSetup(mux)
 	s.mountDevices(mux)
 	s.mountTunnel(mux)
 	s.mountGuests(mux)

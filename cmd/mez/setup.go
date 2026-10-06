@@ -17,9 +17,8 @@ import (
 	"github.com/byjoellobo/mez/internal/config"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/id"
 	"github.com/byjoellobo/mez/internal/logging"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/byjoellobo/mez/internal/service/firstrun"
 )
 
 // generatedPINDigits is how long a PIN this command draws is. Six rather
@@ -29,7 +28,7 @@ const generatedPINDigits = 6
 
 // ErrAlreadySetUp means the database already has a venue. Setting up twice
 // would leave two venues on a machine that serves one.
-var ErrAlreadySetUp = errors.New("this database is already set up")
+var ErrAlreadySetUp = firstrun.ErrAlreadySetUp
 
 // setupOptions is everything `mez setup` takes.
 // envOwnerPIN is the environment variable setup reads the owner's PIN from
@@ -184,231 +183,87 @@ func parseSetupFlags(args []string, out io.Writer) (setupOptions, error) {
 	return o, nil
 }
 
-// setUp creates the venue, its roles, its owner and the first pairing code.
-//
-// Everything but the code is one transaction, and the check that no venue
-// exists is inside it, so two of these racing cannot both win.
+// setUp makes the venue through firstrun, the one place a venue is made
+// (ADR-266), adding what only this command has: a PIN drawn when none was
+// given, and the demo cafe.
 func setUp(ctx context.Context, database *db.DB, devices *auth.Devices, o setupOptions, now time.Time) (setupResult, error) {
-	res, params, err := checkSetup(o, now)
-	if err != nil {
-		return setupResult{}, err
+	res := setupResult{Device: o.DeviceKind, OwnerPIN: o.OwnerPIN}
+	if res.OwnerPIN == "" {
+		pin, err := drawPIN()
+		if err != nil {
+			return setupResult{}, fmt.Errorf("setup: %w", err)
+		}
+		res.OwnerPIN, res.PINGenerated = pin, true
 	}
-	if err := checkOwnerPIN(res.OwnerPIN); err != nil {
-		return setupResult{}, fmt.Errorf("setup: owner PIN: %w", err)
-	}
-	pinHash, err := auth.HashPIN(res.OwnerPIN)
+	answers, err := firstrun.Check(firstrun.Answers{
+		VenueName: o.VenueName, LegalName: o.LegalName, Currency: o.Currency, Timezone: o.Timezone,
+		FYStartMonth: o.FYStartMonth, TaxProfile: o.TaxProfile, TaxRegistration: o.TaxRegistration,
+		TaxPricing: o.TaxPricing, OwnerName: o.OwnerName, OwnerPIN: res.OwnerPIN,
+		DeviceName: o.DeviceName, DeviceKind: o.DeviceKind,
+	})
 	if err != nil {
-		return setupResult{}, fmt.Errorf("setup: owner PIN: %w", err)
+		return setupResult{}, setupError(err)
+	}
+	if o.DemoMenu && answers.Currency != demoMenuCurrency {
+		return setupResult{}, fmt.Errorf("setup: the demo menu is priced in %s, and this venue is in %s: leave out -demo-menu", demoMenuCurrency, answers.Currency)
+	}
+	// Check has already loaded it, so this cannot fail.
+	if res.Zone, err = time.LoadLocation(answers.Timezone); err != nil {
+		return setupResult{}, fmt.Errorf("setup: %w", err)
 	}
 
-	var ownerID, venueID int64
-	err = database.WriteTx(ctx, func(q *gen.Queries) error {
-		existing, err := q.ListVenues(ctx)
-		if err != nil {
-			return err
-		}
-		if len(existing) > 0 {
-			return fmt.Errorf("%w: it has %d venue(s) already", ErrAlreadySetUp, len(existing))
-		}
-		venue, err := q.CreateVenue(ctx, params)
-		if err != nil {
-			return err
-		}
-		venueID = venue.ID
-
-		roles, err := createRoles(ctx, q, venue.ID, now)
-		if err != nil {
-			return err
-		}
-		owner, err := q.CreateStaff(ctx, gen.CreateStaffParams{
-			PublicID: res.OwnerPublicID, VenueID: venue.ID, RoleID: roles["owner"],
-			Name: o.OwnerName, PinHash: pinHash, Active: true, CreatedAt: now.UTC(), UpdatedAt: now.UTC(),
-		})
-		if err != nil {
-			return err
-		}
-		ownerID = owner.ID
-		if err := writeSettings(ctx, q, venue.ID, o, now); err != nil {
-			return err
-		}
-		if o.DemoMenu {
+	var extras []firstrun.Extra
+	if o.DemoMenu {
+		extras = append(extras, func(ctx context.Context, q *gen.Queries, venueID int64, roles map[string]int64, now time.Time) error {
 			spec := demoMenu()
-			if _, err := db.WriteMenu(ctx, q, venue.ID, spec, now); err != nil {
+			if _, err := db.WriteMenu(ctx, q, venueID, spec, now); err != nil {
 				return fmt.Errorf("setup: the demo menu: %w", err)
 			}
 			res.MenuItems = countItems(spec)
-			if res.DemoStaff, err = writeDemoVenue(ctx, q, venue.ID, roles, now); err != nil {
+			var err error
+			if res.DemoStaff, err = writeDemoVenue(ctx, q, venueID, roles, now); err != nil {
 				return fmt.Errorf("setup: the demo venue: %w", err)
 			}
 			res.Tables = countTables(demoFloor)
-		}
-		return nil
-	})
+			return nil
+		})
+	}
+
+	first, err := firstrun.New(database, devices, fixedClock(now))
 	if err != nil {
 		return setupResult{}, err
 	}
-
-	code, err := devices.CreatePairingCode(ctx, auth.NewCode{
-		VenueID: venueID, CreatedBy: ownerID, DeviceName: o.DeviceName, DeviceKind: o.DeviceKind,
-	})
+	made, err := first.Run(ctx, answers, extras...)
 	if err != nil {
-		// The venue is set up; only the code failed. Saying so is better
-		// than implying nothing happened, because running setup again will
-		// now refuse.
-		return setupResult{}, fmt.Errorf("setup: the venue was created but its first pairing code was not: %w", err)
+		return setupResult{}, setupError(err)
 	}
-	res.Code = code
+	res.VenuePublicID, res.OwnerPublicID, res.Code = made.VenuePublicID, made.OwnerPublicID, made.Code
 	return res, nil
 }
 
-// checkSetup validates the options and settles what will be written.
-func checkSetup(o setupOptions, now time.Time) (setupResult, gen.CreateVenueParams, error) {
-	fail := func(format string, args ...any) (setupResult, gen.CreateVenueParams, error) {
-		return setupResult{}, gen.CreateVenueParams{}, fmt.Errorf("setup: "+format, args...)
-	}
-	if strings.TrimSpace(o.VenueName) == "" {
-		return fail("the venue needs a name: pass -name")
-	}
-	currency := strings.ToUpper(strings.TrimSpace(o.Currency))
-	if len(currency) != 3 {
-		return fail("currency %q is not a three letter code", o.Currency)
-	}
-	if o.DemoMenu && currency != demoMenuCurrency {
-		return fail("the demo menu is priced in %s, and this venue is in %s: leave out -demo-menu", demoMenuCurrency, currency)
-	}
-	loc, err := time.LoadLocation(o.Timezone)
-	if err != nil {
-		return fail("timezone %q: %v", o.Timezone, err)
-	}
-	if o.Timezone == "" || loc.String() == "Local" {
-		// time.Local prints as "Local", which is not a zone: stored, the
-		// venue's days and invoice times would follow whichever machine or
-		// container ran the binary, and a browser cannot interpret it.
-		return fail("pass -timezone with an IANA name such as Asia/Kolkata (or set MEZ_TIMEZONE): the machine's own zone is not a setting a venue can keep")
-	}
-	if o.FYStartMonth < 1 || o.FYStartMonth > 12 {
-		return fail("the financial year cannot start in month %d", o.FYStartMonth)
-	}
-	switch o.TaxProfile {
-	case "none":
-	case "gst_in":
-		if len(o.TaxRegistration) != 15 {
-			return fail("GST needs the venue's 15 character GSTIN: pass -tax-registration")
-		}
-	case "vat_uk":
-		if strings.TrimSpace(o.TaxRegistration) == "" {
-			return fail("VAT needs the venue's VAT number: pass -tax-registration")
-		}
-	case "sales_tax_us":
-		// The jurisdiction rates are a list, so they are set in the back
-		// office rather than squeezed onto a command line.
-	default:
-		return fail("tax profile %q is not one of none, gst_in, vat_uk, sales_tax_us", o.TaxProfile)
-	}
-	if o.TaxPricing != "" && o.TaxPricing != "inclusive" && o.TaxPricing != "exclusive" {
-		return fail("tax pricing %q is not inclusive or exclusive", o.TaxPricing)
-	}
-	switch o.DeviceKind {
-	case auth.KindTerminal, auth.KindKitchen, auth.KindBackOffice:
-	default:
-		return fail("a first device cannot be a %q", o.DeviceKind)
-	}
-	if strings.TrimSpace(o.OwnerName) == "" {
-		return fail("the owner needs a name: pass -owner")
-	}
+// fixedClock is the moment setup was run, as the clock firstrun reads.
+type fixedClock time.Time
 
-	var res setupResult
-	res.Device, res.Zone = o.DeviceKind, loc
-	res.OwnerPIN = o.OwnerPIN
-	if res.OwnerPIN == "" {
-		if res.OwnerPIN, err = drawPIN(); err != nil {
-			return fail("%v", err)
-		}
-		res.PINGenerated = true
-	}
-	if res.VenuePublicID, err = id.NewPublic("ven"); err != nil {
-		return fail("%v", err)
-	}
-	if res.OwnerPublicID, err = id.NewPublic("stf"); err != nil {
-		return fail("%v", err)
-	}
+func (c fixedClock) Now() time.Time { return time.Time(c) }
 
-	legal := o.LegalName
-	if legal == "" {
-		legal = o.VenueName
-	}
-	return res, gen.CreateVenueParams{
-		PublicID:                res.VenuePublicID,
-		Name:                    strings.TrimSpace(o.VenueName),
-		LegalName:               strings.TrimSpace(legal),
-		Currency:                currency,
-		Timezone:                loc.String(),
-		FinancialYearStartMonth: int64(o.FYStartMonth),
-		TaxProfile:              o.TaxProfile,
-		TaxRegistrationID:       strings.TrimSpace(o.TaxRegistration),
-		CashRoundingStepMinor:   1,
-		CreatedAt:               now.UTC(),
-		UpdatedAt:               now.UTC(),
-	}, nil
+// setupFlags names the flag behind each answer firstrun can refuse, so a
+// refusal at a terminal says what to type.
+var setupFlags = map[string]string{
+	"name": "-name", "currency": "-currency", "timezone": "-timezone (or set MEZ_TIMEZONE)",
+	"fy_start_month": "-fy-start-month", "tax_profile": "-tax-profile", "tax_registration": "-tax-registration",
+	"tax_pricing": "-tax-pricing", "owner_name": "-owner", "owner_pin": "-owner-pin",
+	"device_name": "-device-name", "device_kind": "-device-kind",
 }
 
-// createRoles writes the default roles and returns their IDs by name.
-func createRoles(ctx context.Context, q *gen.Queries, venueID int64, now time.Time) (map[string]int64, error) {
-	out := map[string]int64{}
-	for _, template := range auth.DefaultRoles() {
-		keys := make([]string, len(template.Permissions))
-		for i, p := range template.Permissions {
-			keys[i] = string(p)
-		}
-		set, err := auth.NewPermissionSet(keys)
-		if err != nil {
-			return nil, err
-		}
-		raw, err := set.JSON()
-		if err != nil {
-			return nil, err
-		}
-		role, err := q.CreateRole(ctx, gen.CreateRoleParams{
-			VenueID: venueID, Name: template.Name, Permissions: raw, CreatedAt: now.UTC(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		out[template.Name] = role.ID
-	}
-	return out, nil
-}
-
-// writeSettings stores what the order service reads beside the venue row:
-// how prices are quoted, and the GST state, which is the first two digits
-// of the GSTIN and so is never asked for twice.
-func writeSettings(ctx context.Context, q *gen.Queries, venueID int64, o setupOptions, now time.Time) error {
-	settings := map[string]string{}
-	if o.TaxPricing != "" {
-		settings[svcorder.SettingTaxPricing] = o.TaxPricing
-	}
-	if o.TaxProfile == "gst_in" {
-		settings[svcorder.SettingTaxStateCode] = o.TaxRegistration[:2]
-	}
-	for key, value := range settings {
-		if err := q.SetSetting(ctx, gen.SetSettingParams{
-			VenueID: venueID, Key: key, Value: value, UpdatedAt: now.UTC(),
-		}); err != nil {
-			return err
+// setupError puts firstrun's refusals into this command's words.
+func setupError(err error) error {
+	var invalid *firstrun.Invalid
+	if errors.As(err, &invalid) {
+		if flag, ok := setupFlags[invalid.Field]; ok {
+			return fmt.Errorf("setup: %w: pass %s", err, flag)
 		}
 	}
-	return nil
-}
-
-// checkOwnerPIN holds the owner's PIN to the rule the back office holds
-// every PIN to (ADR-260): the owner holds every permission, staff.manage
-// among them, so theirs is six to eight digits.
-func checkOwnerPIN(pin string) error {
-	owner := auth.PermissionSet{}
-	for _, p := range auth.Permissions() {
-		owner[p] = struct{}{}
-	}
-	return auth.CheckPINFor(pin, owner)
+	return fmt.Errorf("setup: %w", err)
 }
 
 // drawPIN draws a PIN from crypto/rand. Every digit is equally likely, and
