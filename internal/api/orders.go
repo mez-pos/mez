@@ -150,8 +150,20 @@ type (
 	addLineRequest    = svcorder.AddLine
 	addNoteRequest    = svcorder.AddNote
 	sendTicketRequest = svcorder.SendTicket
-	tenderRequest     = svcorder.TenderPayment
 )
+
+// tenderRequest is a payment. A tip over the venue's ceiling carries a
+// manager's override (ADR-261); with none, both fields are left out or empty.
+// It is not the service's command: the command's authoriser is a staff id
+// the API sets from a checked PIN, never one a body names.
+type tenderRequest struct {
+	Method       order.PaymentMethod `json:"method"`
+	Amount       money.Amount        `json:"amount"`
+	Tip          money.Amount        `json:"tip"`
+	Reference    string              `json:"reference,omitempty"`
+	AuthorisedBy string              `json:"authorised_by,omitempty"`
+	PIN          string              `json:"pin,omitempty"`
+}
 
 type changeQtyRequest struct {
 	From int64 `json:"from"`
@@ -549,8 +561,24 @@ func (s *Server) sendTicket(w http.ResponseWriter, r *http.Request) {
 	bodyCommand(s, w, r, s.orders.SendTicket)
 }
 
+// tenderPayment records a payment. An override, when one is sent, is
+// checked whatever the tip: a PIN that is wrong is refused, not ignored.
 func (s *Server) tenderPayment(w http.ResponseWriter, r *http.Request) {
-	bodyCommand(s, w, r, s.orders.TenderPayment)
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		var req tenderRequest
+		if !s.decode(w, r, &req) {
+			return svcorder.Result{}, errAnswered
+		}
+		cmd := svcorder.TenderPayment{Method: req.Method, Amount: req.Amount, Tip: req.Tip, Reference: req.Reference}
+		if req.AuthorisedBy != "" || req.PIN != "" {
+			by, ok := s.authorise(w, r, Override{AuthorisedBy: req.AuthorisedBy, PIN: req.PIN}, auth.PermTipApprove)
+			if !ok {
+				return svcorder.Result{}, errAnswered
+			}
+			cmd.AuthorisedBy = by.ID
+		}
+		return s.orders.TenderPayment(r.Context(), meta, orderID, cmd)
+	})
 }
 
 func (s *Server) voidPayment(w http.ResponseWriter, r *http.Request) {

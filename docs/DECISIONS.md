@@ -8790,3 +8790,82 @@ Staff can still accept a stranger's request, as under ADR-209; what they
 accept is shown, and the per-table limits still bound the rest. A round's
 charge and a receipt stay readable to whoever holds the code and that
 round's or bill's id, as tracking always was.
+
+## ADR-261 - A tip over the venue's ceiling needs a manager
+2026-10 · Status: accepted. Between phases 11 and 12. Amends ADR-101 and
+ADR-117.
+Context: a tip on a tender was checked only to be non-negative, and
+`POST /api/v1/orders/{id}/payments` needs only `payment.take`, which every
+waiter and cashier holds. A card or UPI tip is never reconciled against the
+drawer, and every tip is paid out through the pool (ADR-101). So a waiter
+could record a 5000-rupee tip on a 200-rupee card payment, nobody would see a
+drawer short, and the pool would owe it at the close. Voids, comps,
+discounts, refunds and reopens already take a manager's override; a tip had
+no control at all.
+Decision:
+  - **A venue setting, `tips.max_percent`.** A whole percent of the
+    payment's amount, 0 to 1000, 50 unless set; 0 asks for a manager on
+    every tip. It lives in the key-value `settings` table with the other
+    rules (`svcorder.SettingTipMaxPercent`, checked by the settings
+    registry), and the back office edits it on Shifts, tips and orders: "A
+    tip over this share of the payment needs a manager (%)". In
+    `PUT /api/v1/settings/rules` it is `tips_max_percent`, a pointer: left
+    out is the default, because 0 is a ceiling and cannot also mean "not
+    given", and a back office tab loaded before this build must not save
+    the strictest rule by leaving it out.
+  - **The ceiling is `ceil(amount × percent / 100)`, in integers.**
+    `order.TipCeiling` and `order.TipNeedsApproval` in the domain round up,
+    so a tip at the ceiling never needs a manager for a paisa a division
+    lost. The terminal's `tipCeiling` does the same sum.
+  - **The service enforces it, not the projection.** The projection does
+    not know the venue's rules, and an event recorded under one ceiling
+    must still project after the owner changes it. `TenderPayment` reads
+    the ceiling with the venue (`loadVenue`) and refuses a tip over it with
+    `ErrTipNeedsApproval` unless the command carries `AuthorisedBy`. A
+    payment the projection will refuse for itself (nothing, another
+    currency) is left to it, so it is refused for what is wrong with it.
+  - **`payment.tendered` carries `authorised_by`**, omitted when the tip
+    needed nobody, as the other overrides carry theirs. The tender in the
+    state keeps it.
+  - **A new permission, `tip.approve`.** The owner and the manager hold it
+    by default; the cashier, the waiter and the kitchen do not. Migration
+    00053 gives it to the owner and manager of venues that exist, and to
+    any role that may void a payment, so an existing owner still holds
+    every permission and every venue has someone to approve.
+  - **The payment request takes an optional override.** `TenderRequest` is
+    now the API's own type, with `authorised_by` (a public staff id) and
+    `pin`; it is no longer the service's command, whose `AuthorisedBy` is
+    an internal id the API sets from a checked PIN and never from a body.
+    When either field is sent, `authorise(..., tip.approve)` runs whatever
+    the tip: a wrong PIN is refused, not ignored. Refused for want of one,
+    the answer is a 403 `tip_needs_approval`, "A tip this large needs a
+    manager's approval.", on the field `tip`.
+  - **The till asks before the server refuses.** `GET /api/v1/venue`
+    carries `tips_max_percent`, so the payment screen and the waiter's bill
+    show "Over 50%: needs a manager" on the tip and open the approval
+    sheet from the paying button. Cash is sent with the approval. A card or
+    UPI payment carries it to Mark as paid, so the manager says yes before
+    the machine is keyed; the PIN is checked when the payment is recorded,
+    and an approval refused then is asked for again. A `tip_needs_approval`
+    answer opens the sheet too, for a till that had not read the ceiling.
+  - **The audit trail lists it.** Kind `tip_approved`, "Tip approved": a
+    `payment.tendered` that names who authorised it, worth the tip. It is
+    a filter pill, a column in the analysis and the CSVs, and counts in
+    what its approver authorised.
+  - **The Z-report counts them.** `tips_approved`, a count and an amount
+    within Tips; a payment voided takes its approved tip back. The screen
+    shows "Of them, approved by a manager over the ceiling" when there are
+    any. The printed Z-report does not carry it yet.
+Cost: one more permission for an owner to understand, and one more step at
+the till on a large tip; at 0 percent every tip waits for a manager, which a
+venue that sets it has chosen. The ceiling is a share of each payment, not
+of the bill: a guest paying a 2000-rupee bill in two parts can tip half of
+each part without anyone asked. The till learns a changed ceiling at its
+next reload, and until then the server's refusal is what asks. The server's
+idempotency fingerprint includes the approver, so a payment whose answer
+was lost, retried under the same key with a different manager, is refused
+as a reused key rather than replayed; the till retries with the approval it
+first sent. An approved tip adds to the audit analysis's total, which mixes
+kinds of money already. Migration 00053 is numbered after 00052, which
+another change in flight takes; until that lands the numbering test sees a
+gap.

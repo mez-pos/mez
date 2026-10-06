@@ -331,7 +331,8 @@ func TestRulesSettingsOverHTTP(t *testing.T) {
 
 	status, out, _ := call(http.MethodGet, "")
 	if status != http.StatusOK || out.DayStart != "04:00" || out.VarianceThreshold != 0 || out.TipRule != "even" ||
-		out.TicketLateMinutes != 20 || out.TipRoleWeights == nil || out.Currency != "INR" || out.OpenShiftDay != "" {
+		out.TicketLateMinutes != 20 || out.TipRoleWeights == nil || out.Currency != "INR" || out.OpenShiftDay != "" ||
+		out.TipsMaxPercent == nil || *out.TipsMaxPercent != 50 {
 		t.Fatalf("read: %d %+v", status, out)
 	}
 	if !slices.Contains(out.Roles, "owner") || !slices.Contains(out.Roles, "cashier") {
@@ -339,11 +340,18 @@ func TestRulesSettingsOverHTTP(t *testing.T) {
 	}
 
 	body := `{"day_start":"05:30","variance_threshold":5000,"tip_rule":"role_weight",` +
-		`"tip_role_weights":{"owner":3,"cashier":1},"ticket_late_minutes":12}`
+		`"tip_role_weights":{"owner":3,"cashier":1},"ticket_late_minutes":12,"tips_max_percent":0}`
 	status, out, _ = call(http.MethodPut, body)
 	if status != http.StatusOK || out.DayStart != "05:30" || out.VarianceThreshold != 5000 || out.TipRule != "role_weight" ||
-		out.TipRoleWeights["owner"] != 3 || out.TipRoleWeights["cashier"] != 1 || out.TicketLateMinutes != 12 {
+		out.TipRoleWeights["owner"] != 3 || out.TipRoleWeights["cashier"] != 1 || out.TicketLateMinutes != 12 ||
+		out.TipsMaxPercent == nil || *out.TipsMaxPercent != 0 {
 		t.Fatalf("saved: %d %+v", status, out)
+	}
+	// The till reads the ceiling with the venue's name (ADR-261).
+	rec := send(w.handler, http.MethodGet, "/api/v1/venue", "", w.asDevice())
+	var venue venueNameResponse
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &venue) != nil || venue.TipsMaxPercent != 0 {
+		t.Fatalf("the venue after a ceiling of 0: %d %s", rec.Code, rec.Body)
 	}
 
 	refusals := []struct {
@@ -358,6 +366,8 @@ func TestRulesSettingsOverHTTP(t *testing.T) {
 		{"a weight for a role that is not here", `{"tip_role_weights":{"barista":2},"ticket_late_minutes":20}`, 422, CodeInvalidSetting, "tip_role_weights"},
 		{"role weights with no weights", `{"tip_rule":"role_weight","ticket_late_minutes":20}`, 422, CodeInvalidSetting, "tip_role_weights"},
 		{"no minutes", `{}`, 422, CodeInvalidSetting, "ticket_late_minutes"},
+		{"a tip ceiling past 1000", `{"ticket_late_minutes":20,"tips_max_percent":1001}`, 422, CodeInvalidSetting, "tips_max_percent"},
+		{"a negative tip ceiling", `{"ticket_late_minutes":20,"tips_max_percent":-5}`, 422, CodeInvalidSetting, "tips_max_percent"},
 		{"an unknown field", `{"ticket_late_minutes":20,"currency":"USD"}`, 400, CodeInvalidRequest, ""},
 	}
 	for _, tt := range refusals {

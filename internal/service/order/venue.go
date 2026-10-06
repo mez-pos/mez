@@ -67,6 +67,11 @@ const (
 	// the default, or PayFirst (ADR-225).
 	SettingPayMode = "payment.mode"
 
+	// SettingTipMaxPercent is the largest tip a payment may carry without a
+	// manager, as a whole percent of the payment: 0 to MaxTipMaxPercent, 0
+	// meaning no tip without one. Default: DefaultTipMaxPercent. ADR-261.
+	SettingTipMaxPercent = "tips.max_percent"
+
 	// GSTMaxInvoiceNo is the longest invoice number GST allows.
 	GSTMaxInvoiceNo = 16
 )
@@ -95,6 +100,9 @@ type venue struct {
 	LateAfter time.Duration
 	Seller    order.InvoiceSeller // as an invoice issued now names the venue
 	PayMode   PayMode             // when a guest ordering from a phone pays
+	// TipMaxPercent is the tip ceiling: a tip over this percent of its
+	// payment needs a manager (ADR-261).
+	TipMaxPercent int64
 }
 
 // VenueTaxes is how the venue's orders are taxed, read through q, the same
@@ -153,6 +161,8 @@ func venueFrom(row gen.Venue, settings map[string]string) (venue, error) {
 		LateAfter: lateAfter(settings[SettingTicketLateMinutes]),
 		Seller:    sellerFor(row, settings),
 		PayMode:   payModeOf(settings[SettingPayMode]),
+
+		TipMaxPercent: int64(TipMaxPercentOf(settings[SettingTipMaxPercent])),
 	}, nil
 }
 
@@ -284,6 +294,25 @@ func lateAfter(v string) time.Duration {
 		return DefaultLateMinutes * time.Minute
 	}
 	return time.Duration(n) * time.Minute
+}
+
+// The tip ceiling's default and its bounds (ADR-261). Half the payment is a
+// generous tip that a slip of the keypad rarely reaches; ten times it is as
+// far as a venue may wave tips through.
+const (
+	DefaultTipMaxPercent = 50
+	MaxTipMaxPercent     = 1000
+)
+
+// TipMaxPercentOf reads SettingTipMaxPercent. Unset, or a value the settings
+// screen would have refused, is the default: the registry refuses a bad value
+// on the way in, and a ceiling must not stop the till selling.
+func TipMaxPercentOf(stored string) int {
+	n, err := strconv.Atoi(strings.TrimSpace(stored))
+	if err != nil || n < 0 || n > MaxTipMaxPercent {
+		return DefaultTipMaxPercent
+	}
+	return n
 }
 
 // SeriesOf is the series invoices and credit notes are issued in, read from a

@@ -24,6 +24,16 @@ Rules:
 - Every rounding operation that loses money records a `rounding_adjustment` on
   the order so the Z-report still balances to zero.
 
+### The tip ceiling
+
+A tip is never part of the bill, a card or UPI tip is never counted against
+the drawer, and every tip is paid out through the pool. So a tip over the
+venue's ceiling, `tips.max_percent` of the payment's amount (50 unless set,
+0 to 1000, 0 meaning every tip), rounded up to the next minor unit, is
+refused with `ErrTipNeedsApproval` unless a manager holding `tip.approve`
+let it through (ADR-261). The service enforces it, since the projection does
+not know the venue's rules; the approver is `authorised_by` on the event.
+
 ### The split-payment invariant
 
 The sum of all tenders must equal the order total exactly. When a three-way
@@ -58,7 +68,7 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 | `note.added` | scope, text |
 | `course.fired` | course number |
 | `ticket.sent` | station, line_ids[] |
-| `payment.tendered` | method, amount, tip, reference, tendered_by |
+| `payment.tendered` | method, amount, tip, reference, tendered_by, authorised_by: who let through a tip over the venue's ceiling (ADR-261) |
 | `payment.voided` | payment_id, reason, authorised_by |
 | `invoice.issued` | invoice_no, series, tax_snapshot, prices (seller, lines, totals at issue) |
 | `invoice.reprinted` | invoice_no, reason, authorised_by: a copy, never a new number; allowed after a close |

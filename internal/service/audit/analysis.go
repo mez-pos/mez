@@ -280,7 +280,7 @@ func (a Analysis) Table(sheet AnalysisSheet) (export.Table, error) {
 func peopleTable(heading, nobody string, people []PersonTally, amount string) export.Table {
 	t := export.Table{Header: []string{heading, "Count", amount}, Rows: [][]string{}}
 	for _, k := range Kinds() {
-		t.Header = append(t.Header, kindWords[k]+"s")
+		t.Header = append(t.Header, kindsWords[k])
 	}
 	for _, p := range people {
 		name := nobody

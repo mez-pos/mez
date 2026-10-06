@@ -217,6 +217,10 @@ type PaymentTendered struct {
 	Tip        money.Amount  `json:"tip"`
 	Reference  string        `json:"reference,omitempty"` // card slip, UPI ref
 	TenderedBy int64         `json:"tendered_by"`
+	// AuthorisedBy is the manager who let through a tip over the venue's
+	// ceiling (ADR-261); absent when the tip needed nobody. The service
+	// enforces the ceiling: the projection does not know the venue's rules.
+	AuthorisedBy int64 `json:"authorised_by,omitempty"`
 }
 
 // PaymentVoided cancels a tender before the order closed, such as a card

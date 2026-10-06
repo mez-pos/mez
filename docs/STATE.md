@@ -30,12 +30,17 @@ Handed over, which closes the ticket. Task 5 is done. **Not seen in a browser.**
 
 ## Known broken / in progress
 
-- **Between phases (ADR-256 to ADR-258): the first security review.** A till's
-  line is priced from the menu on the server; a relay must be TLS; revoking
-  a device cuts its stream; a PIN is reset only from above; the log masks
-  table codes; the toolchain is go1.26.8. Five findings are the owner's to
-  decide and are in `docs/KNOWN.md` under "Security, left for the owner":
-  read that before phase 12's TLS task. Nothing seen in a browser changed.
+- **Between phases (ADR-256 to ADR-262): the first security review and
+  what the owner decided.** A till's line is priced from the menu on the
+  server; a relay must be TLS; revoking a device cuts its stream; the log
+  masks table codes; the toolchain is go1.26.8 (ADR-256 to 258). Then:
+  printers on the LAN only and the data directory the owner's on Windows
+  (259); a failing PIN hard-locks until a manager or `mez unlock` clears it,
+  six digits for powerful roles (260); a tip over the venue's ceiling needs
+  a manager (261); a guest's phone holds a session for the sitting (262).
+  Only the LAN's plain HTTP is left, for phase 12. **Not seen in a browser:**
+  the People screen's lock, the tip approval sheet, the guest app's session
+  handling and "ask staff" card. Walk them before phase 12.
 
 - **Between phases (ADR-255): the screens now fit 1024 to 2560 wide and 768
   tall.** Fluid `w-side`, `w-rail`, `w-panel` widths, auto-fill card grids, a

@@ -25,14 +25,15 @@ func (p *projector) tender(e Event, pl PaymentTendered) error {
 		return fmt.Errorf("%w: tendered %d, balance due %d", ErrOverTender, pl.Amount.Minor, due.Minor)
 	}
 	p.s.Tenders = append(p.s.Tenders, Tender{
-		ID:         e.Seq,
-		Method:     pl.Method,
-		Amount:     pl.Amount,
-		Tip:        pl.Tip,
-		Reference:  pl.Reference,
-		TenderedBy: pl.TenderedBy,
-		Status:     PaymentStatusCaptured,
-		Refunded:   p.zero(),
+		ID:           e.Seq,
+		Method:       pl.Method,
+		Amount:       pl.Amount,
+		Tip:          pl.Tip,
+		Reference:    pl.Reference,
+		TenderedBy:   pl.TenderedBy,
+		AuthorisedBy: pl.AuthorisedBy,
+		Status:       PaymentStatusCaptured,
+		Refunded:     p.zero(),
 	})
 	return nil
 }

@@ -1,10 +1,11 @@
 // What the tender screen works out for itself (terminal-tender.md). Every
 // other figure on it is the server's. These are the only sums: the change to
-// hand back, the part of a cash payment that settles the bill, and the
-// round amounts a guest is likely to hand over. All in integer minor units.
+// hand back, the part of a cash payment that settles the bill, the round
+// amounts a guest is likely to hand over, and the tip ceiling, which the
+// server checks again. All in integer minor units.
 
 import { apiErrorOf } from "../../../shared/api";
-import type { OrderResponse, PaymentMethod, TenderPayment } from "../../../shared/api-types";
+import type { OrderResponse, PaymentMethod, TenderRequest } from "../../../shared/api-types";
 import { exponentOf } from "../../../shared/money";
 
 /**
@@ -43,6 +44,50 @@ export function tipFor(bill: number, percent: number, currency: string): number 
   if (bill <= 0 || percent <= 0) return 0;
   const unit = 10 ** exponentOf(currency);
   return Math.round((bill * percent) / (100 * unit)) * unit;
+}
+
+/**
+ * The largest tip a payment of `amount` may carry without a manager, at the
+ * venue's ceiling of `percent` of the payment (ADR-261): rounded up to the
+ * next minor unit, as the server rounds, so a tip at the ceiling is never
+ * sent to a manager for a paisa the division lost. Integers only.
+ */
+export function tipCeiling(amount: number, percent: number): number {
+  if (amount <= 0 || percent <= 0) return 0;
+  return Math.floor((amount * percent + 99) / 100);
+}
+
+/**
+ * Whether a tip needs a manager before it is sent. Null is a ceiling the till
+ * has not read, and nothing keyed yet has no ceiling to judge by: in both the
+ * server decides, and its refusal asks for the manager instead.
+ */
+export function tipNeedsApproval(tip: number, amount: number, percent: number | null): boolean {
+  if (percent === null || tip <= 0 || amount <= 0) return false;
+  return tip > tipCeiling(amount, percent);
+}
+
+/** What the tip card says of a tip over the ceiling, or null. */
+export function tipNote(tip: number, amount: number, percent: number | null): string | null {
+  if (!tipNeedsApproval(tip, amount, percent)) return null;
+  return percent === 0 ? "Any tip needs a manager" : `Over ${percent}%: needs a manager`;
+}
+
+/** Whether a refusal is the server asking for a manager to approve the tip. */
+export function tipApprovalAsked(err: unknown): boolean {
+  return apiErrorOf(err)?.code === "tip_needs_approval";
+}
+
+/**
+ * Whether a payment sent with a manager's approval was refused for the
+ * approval itself: a wrong PIN, someone who may not approve, or too many
+ * tries. The approval sheet then asks again; any other refusal is the
+ * payment's, and the screen says it as it says one without an approval.
+ */
+export function approvalRefused(err: unknown): boolean {
+  const e = apiErrorOf(err);
+  if (!e) return false;
+  return e.code === "invalid_pin" || e.code === "locked_out" || (e.code === "forbidden" && e.field === "authorised_by");
 }
 
 /** Where a payment is, for the three steps along the top (D07). */
@@ -99,7 +144,7 @@ export function planTender({ method, entered, tip, due, whole = false }: TenderI
 
 export interface Attempt {
   key: string;
-  body: TenderPayment;
+  body: TenderRequest;
 }
 
 /**
@@ -108,12 +153,12 @@ export interface Attempt {
  * change to the tender makes it a new one, which the server would otherwise
  * refuse as a reused key.
  */
-export function attemptKey(last: Attempt | null, body: TenderPayment, newKey: () => string): Attempt {
+export function attemptKey(last: Attempt | null, body: TenderRequest, newKey: () => string): Attempt {
   if (last && sameTender(last.body, body)) return last;
   return { key: newKey(), body };
 }
 
-function sameTender(a: TenderPayment, b: TenderPayment): boolean {
+function sameTender(a: TenderRequest, b: TenderRequest): boolean {
   return (
     a.method === b.method &&
     a.amount.minor === b.amount.minor &&
@@ -151,7 +196,7 @@ export function afterFailure(attempt: Attempt, err: unknown): Attempt | null {
  * same method, amount and tip. The server keeps no key on a tender, so these
  * are what identify it.
  */
-export function tenderOutcome(before: readonly number[], body: TenderPayment, order: OrderResponse): "recorded" | "absent" {
+export function tenderOutcome(before: readonly number[], body: TenderRequest, order: OrderResponse): "recorded" | "absent" {
   const known = new Set(before);
   const found = order.tenders.some(
     (t) =>

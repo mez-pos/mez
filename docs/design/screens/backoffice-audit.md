@@ -24,7 +24,9 @@ Inside the frame (`backoffice-shell.md`).
 - **Person**, a select: Anyone, or someone on the staff. It finds what they
   did and what they authorised.
 - **Kinds**, a pill each, with its count in the numeral face: **Voids**,
-  **Comps**, **Discounts**, **Refunds**, **Payment voids**, **Reopens**. A
+  **Comps**, **Discounts**, **Refunds**, **Payment voids**, **Reopens**,
+  **Tips approved** (a payment whose tip a manager let through over the
+  venue's ceiling, worth the tip, ADR-261). A
   pill is a toggle: pressed, the trail shows that kind only; pressed again,
   every kind. The counts cover the whole range, not the page.
 - **The trail**, a table, newest first:

@@ -9,11 +9,18 @@
 // Every figure is the server's but the change, the part of a cash payment that
 // settles the bill, and a tip offered as a percentage, which tender-logic.ts
 // works out. A split comes from the server too.
+//
+// A tip over the venue's ceiling needs a manager (ADR-261). The primary button
+// opens the approval first: cash is then sent with it; a card or UPI payment
+// carries it to Mark as paid, the approval given before the machine is keyed.
+// The server checks the ceiling and the PIN again, and when it asks for an
+// approval the till did not know it needed, the sheet opens then.
 
 import { useState } from "react";
-import type { Money as Amount, OrderResponse, PaymentMethod, SplitResponse, TenderPayment } from "../../../shared/api-types";
+import type { Money as Amount, OrderResponse, Override, PaymentMethod, SplitResponse, TenderRequest } from "../../../shared/api-types";
 import { Button, Money, NumPad, applyAmountKey, type NumKey } from "../../../shared/ui";
 import { ArrowRightIcon } from "lucide-react";
+import { useVenue } from "../../../shared/use-venue";
 import { TicketPanels, type Panel } from "../register/TicketPanels";
 import { newKey } from "../register/ticket-key";
 import type { Ticket } from "../register/use-ticket";
@@ -26,7 +33,22 @@ import { PaySummary } from "./PaySummary";
 import { nextShare, payerLabel, splitStale, type SplitDraft } from "./split-logic";
 import { SplitPanel } from "./SplitPanel";
 import { ShareStrip, SplitShares } from "./SplitShares";
-import { afterFailure, attemptKey, collectOf, methodNames, payStep, payView, planTender, quickTenders, tenderOutcome, type Attempt } from "./tender-logic";
+import {
+  afterFailure,
+  approvalRefused,
+  attemptKey,
+  collectOf,
+  methodNames,
+  payStep,
+  payView,
+  planTender,
+  quickTenders,
+  tenderOutcome,
+  tipApprovalAsked,
+  tipNote,
+  type Attempt,
+} from "./tender-logic";
+import { TipApprovalSheet } from "./TipApprovalSheet";
 import { TipCard } from "./TipCard";
 
 interface PayScreenProps {
@@ -44,7 +66,7 @@ type Field = "amount" | "tip";
 
 /** What a payment needs once it is known to be recorded, kept as it was sent: the order moves under it. */
 interface Sent {
-  body: TenderPayment;
+  body: TenderRequest;
   /** Cash to hand back. */
   change: number;
   /** The balance when it was sent. */
@@ -101,6 +123,13 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
   const [received, setReceived] = useState<Received | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [reprinting, setReprinting] = useState(false);
+  // The tip ceiling (ADR-261): null until the venue is read, and the server decides meanwhile.
+  const ceiling = useVenue()?.tips_max_percent ?? null;
+  // Which payment the server asked a manager for, and the approval given for
+  // which: each holds only while the method, the amount and the tip are as they were.
+  const [asked, setAsked] = useState<string | null>(null);
+  const [approval, setApproval] = useState<{ for: string; override: Override } | null>(null);
+  const [approving, setApproving] = useState(false);
   const invoice = order.invoices.at(-1);
 
   const paid = due <= 0;
@@ -117,6 +146,10 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
     : planTender({ method, entered: amountShown, tip, due: target, whole });
   const money = (minor: number): Amount => ({ minor, currency });
   const collect = collectOf(plan, target, tip);
+  const thisPayment = `${method}:${plan.amount}:${tip}`;
+  const approved = approval?.for === thisPayment ? approval.override : null;
+  const note = plan.problem === null ? (tipNote(tip, plan.amount, ceiling) ?? (asked === thisPayment ? "Needs a manager" : null)) : null;
+  const needsManager = note !== null && approved === null;
   const view = payView({ paid, received: received !== null, waiting: waiting !== null, failed: error !== null, uncertain: unsettled !== null });
 
   const choose = (next: PaymentMethod) => {
@@ -171,6 +204,8 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
         left: money(sent.due - body.amount.minor),
       });
     }
+    setApproval(null);
+    setAsked(null);
     const paidShare = sent.share;
     if (paidShare !== null) {
       setInUse((u) => {
@@ -205,14 +240,21 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
     }
   };
 
-  const send = async () => {
+  /**
+   * Sends the payment, with a manager's approval when one was given. A refusal
+   * of the approval itself rejects when the approval sheet sent it, for the
+   * sheet to say; anything else is said here, as a payment's failure always
+   * is, and an approval refused at Mark as paid is asked for again.
+   */
+  const send = async (override: Override | null = approved, fromSheet = false) => {
     if (plan.problem || busy || unsettled) return;
     const ref = reference.trim();
-    const body: TenderPayment = {
+    const body: TenderRequest = {
       method,
       amount: money(plan.amount),
       tip: money(tip),
       ...(!cash && ref ? { reference: ref } : {}),
+      ...(override ?? {}),
     };
     const next = attemptKey(attempt, body, () => newKey());
     const sent: Sent = {
@@ -230,11 +272,22 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
       await tender(body, next.key);
       recorded(sent);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
       // A refusal lets the attempt go; one that may have been recorded keeps
       // its key, method and amount until the order is read again.
       const kept = afterFailure(next, err);
       setAttempt(kept);
+      if (override && approvalRefused(err)) {
+        setApproval(null);
+        if (fromSheet) throw err;
+        setError("The manager's approval was not accepted. Approve the tip again.");
+        return;
+      }
+      setError(err instanceof Error ? err.message : String(err));
+      if (tipApprovalAsked(err)) {
+        // The till did not know this tip needed a manager: it does now.
+        setAsked(thisPayment);
+        setApproving(true);
+      }
       if (kept) {
         const u = { before, sent };
         setUnsettled(u);
@@ -339,7 +392,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                 busy={busy}
                 onReference={setReference}
                 onCancel={() => setWaiting(null)}
-                onPaid={() => void send()}
+                onPaid={() => (needsManager ? setApproving(true) : void send())}
               />
             </div>
           )}
@@ -354,7 +407,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                   setWaiting(null);
                   setError(null);
                 }}
-                onRetry={() => void send()}
+                onRetry={() => (needsManager ? setApproving(true) : void send())}
               />
             </div>
           )}
@@ -435,6 +488,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                   tip={money(tip)}
                   collect={money(collect)}
                   cash={cash}
+                  note={note}
                   active={field === "tip"}
                   busy={busy}
                   onActivate={() => setField("tip")}
@@ -476,8 +530,10 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
               size="charge"
               disabled={busy || plan.problem !== null}
               onClick={() => {
-                // Cash is in the hand; a card or UPI payment is taken first, then marked paid.
-                if (cash) void send();
+                // A tip over the ceiling is approved first. Cash is in the
+                // hand; a card or UPI payment is taken first, then marked paid.
+                if (needsManager) setApproving(true);
+                else if (cash) void send();
                 else {
                   setError(null);
                   setWaiting(Date.now());
@@ -506,6 +562,26 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
           message={error ? { text: error, tone: "error" } : !order.invoiced ? { text: "Issue the invoice first.", tone: "hint" } : null}
           onPrint={invoice ? () => setReprinting(true) : null}
           onNewOrder={closeOrder}
+        />
+      )}
+
+      {approving && (
+        <TipApprovalSheet
+          tip={money(tip)}
+          amount={money(plan.amount)}
+          ceiling={ceiling}
+          action={cash || waiting !== null ? "Approve and record" : "Approve"}
+          // Cash, or a card already taken on the machine, goes with the
+          // approval now. A card not yet taken carries it to Mark as paid:
+          // the manager says yes before the machine is keyed, and the server
+          // checks the PIN when the payment is recorded.
+          onSubmit={async (override) => {
+            if (cash || waiting !== null) return send(override, true);
+            setApproval({ for: thisPayment, override });
+            setError(null);
+            setWaiting(Date.now());
+          }}
+          onClose={() => setApproving(false)}
         />
       )}
 

@@ -12,21 +12,39 @@
 // Left out: Print bill before payment (no bill is printed until it is paid and
 // numbered, ADR-078), the QR and the Wallet tile (BillCollect.tsx). Print
 // receipt comes with the invoice, and is a copy with a manager's approval.
+//
+// A tip over the venue's ceiling needs a manager, as on the payment screen
+// (ADR-261): the payment button opens the approval, and the payment goes with
+// it. When the server asks for one the tablet did not know was needed, the
+// approval opens then.
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ArrowLeftIcon, ArrowRightIcon, CircleCheckIcon, PrinterIcon } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
-import type { Money as Amount, OrderResponse, PaymentMethod, SplitResponse, TenderPayment } from "../../../shared/api-types";
+import type { Money as Amount, OrderResponse, Override, PaymentMethod, SplitResponse, TenderRequest } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { Button, Money, applyAmountKey, useToast, type NumKey } from "../../../shared/ui";
+import { useVenue } from "../../../shared/use-venue";
 import { wordsOf } from "../register/order-messages";
 import { newKey } from "../register/ticket-key";
 import { orderQueryKey, type Ticket } from "../register/use-ticket";
 import { ReprintSheet } from "../tender/InvoicePanel";
 import { maxWays, splitStale, type SplitDraft, type TillSplit } from "../tender/split-logic";
 import { SplitPanel } from "../tender/SplitPanel";
-import { afterFailure, attemptKey, methodNames, planTender, quickTenders, tenderOutcome, type Attempt } from "../tender/tender-logic";
+import {
+  afterFailure,
+  approvalRefused,
+  attemptKey,
+  methodNames,
+  planTender,
+  quickTenders,
+  tenderOutcome,
+  tipApprovalAsked,
+  tipNote,
+  type Attempt,
+} from "../tender/tender-logic";
+import { TipApprovalSheet } from "../tender/TipApprovalSheet";
 import { closeBlock, eachShare, shareName, shareRows, tablePays, type PaidShares } from "./bill-logic";
 import { BillCollect } from "./BillCollect";
 import { BillShares } from "./BillShares";
@@ -53,7 +71,7 @@ interface Settled {
  */
 interface Unsettled {
   before: readonly number[];
-  body: TenderPayment;
+  body: TenderRequest;
   payer: number;
   from: string;
   /** Cash to hand back, or null for card and UPI. */
@@ -88,6 +106,11 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
   const [checking, setChecking] = useState(false);
   const [change, setChange] = useState<number | null>(null);
   const [reprinting, setReprinting] = useState(false);
+  // The tip ceiling (ADR-261): null until the venue is read, and the server decides meanwhile.
+  const ceiling = useVenue()?.tips_max_percent ?? null;
+  // Which payment the server asked a manager for: it holds while the method, amount and tip do.
+  const [asked, setAsked] = useState<string | null>(null);
+  const [approving, setApproving] = useState(false);
 
   // The equal split, asked again whenever the guests or the order move, as the
   // split panel asks. The last answer stays up, dimmed, while the next comes.
@@ -109,6 +132,8 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
   const target = share?.amount.minor ?? 0;
   const cash = method === "cash";
   const plan = planTender({ method, entered: cash ? entered : target, tip, due: target, whole: true });
+  const thisPayment = `${method}:${plan.amount}:${tip}`;
+  const note = plan.problem === null ? (tipNote(tip, plan.amount, ceiling) ?? (asked === thisPayment ? "Needs a manager" : null)) : null;
   const invoice = order.invoices.at(-1);
   const block = closeBlock(order);
   // While money is owed the rows say why the table stays open; any other reason is said.
@@ -137,6 +162,7 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
     setPicked(null);
     setChange(u.change);
     setUnsettled(null);
+    setAsked(null);
     fresh();
     toast(`${methodNames[u.body.method]} payment recorded · ${u.from}`);
   };
@@ -156,10 +182,21 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
     }
   };
 
-  const send = async () => {
+  /**
+   * Sends the payment, with a manager's approval for its tip when one was
+   * given. A refusal of the approval itself rejects, for the approval sheet
+   * to say; anything else is said on the share, as always.
+   */
+  const send = async (override: Override | null = null) => {
     if (!split || collecting === null || plan.problem || busy || unsettled) return;
     const ref = reference.trim();
-    const body: TenderPayment = { method, amount: money(plan.amount), tip: money(tip), ...(!cash && ref ? { reference: ref } : {}) };
+    const body: TenderRequest = {
+      method,
+      amount: money(plan.amount),
+      tip: money(tip),
+      ...(!cash && ref ? { reference: ref } : {}),
+      ...(override ?? {}),
+    };
     const next = attemptKey(attempt, body, () => newKey());
     const from = shareName(split.kind, collecting, amountsKeyed, split.shares.length);
     const sent: Unsettled = { before: order.tenders.map((t) => t.id), body, payer: collecting, from, change: cash ? plan.change : null };
@@ -173,11 +210,17 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
       await ticket.tender(body, next.key);
       recorded(sent);
     } catch (err) {
-      setError(wordsOf(err));
       // A refusal lets the attempt go; one that may have been recorded keeps
       // its key, method and amount until the order is read again.
       const kept = afterFailure(next, err);
       setAttempt(kept);
+      if (override && approvalRefused(err)) throw err;
+      setError(wordsOf(err));
+      if (tipApprovalAsked(err)) {
+        // The tablet did not know this tip needed a manager: it does now.
+        setAsked(thisPayment);
+        setApproving(true);
+      }
       if (kept) {
         setUnsettled(sent);
         void check(sent);
@@ -306,6 +349,7 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
                   tip={tip}
                   reference={reference}
                   plan={plan}
+                  note={note}
                   // The tip comes out of the cash: "exact" is the share and the tip.
                   quick={cash ? quickTenders(target + tip, currency) : []}
                   busy={busy || settling}
@@ -332,7 +376,8 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
                     setError(null);
                   }}
                   onReference={setReference}
-                  onSend={() => void send()}
+                  // A tip over the ceiling is approved first, and the payment goes with it.
+                  onSend={() => (note !== null ? setApproving(true) : void send())}
                 />
               )}
             </>
@@ -403,6 +448,17 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
           )}
         </footer>
       </section>
+
+      {approving && (
+        <TipApprovalSheet
+          tip={money(tip)}
+          amount={money(plan.amount)}
+          ceiling={ceiling}
+          action="Approve and record"
+          onSubmit={(override) => send(override)}
+          onClose={() => setApproving(false)}
+        />
+      )}
 
       {reprinting && invoice && (
         <ReprintSheet

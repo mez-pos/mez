@@ -35,8 +35,10 @@ describe("trading days", () => {
 
 describe("the words", () => {
   it("has words for every kind", () => {
-    expect(kinds).toEqual(["void", "comp", "discount", "refund", "payment_void", "reopen"]);
+    expect(kinds).toEqual(["void", "comp", "discount", "refund", "payment_void", "reopen", "tip_approved"]);
     expect(kindWords.payment_void.many).toBe("Payment voids");
+    // A tip a manager let through over the venue's ceiling (ADR-261).
+    expect(kindWords.tip_approved).toEqual({ one: "Tip approved", many: "Tips approved" });
   });
   it("words a reason code and leaves free text alone", () => {
     expect(reasonWords("wrong_item")).toBe("Wrong item");

@@ -114,3 +114,53 @@ func TestATipVoidedInALaterShiftIsTakenBackThere(t *testing.T) {
 		t.Errorf("the second shift: tips %s by %+v, want -15.00 by %+v", second.Tips, second.TipsBy, want)
 	}
 }
+
+// The tips a manager let through over the venue's ceiling are counted apart,
+// so the close of day shows how many needed one (ADR-261). A payment voided
+// takes its approved tip back with it.
+//
+//	Bill 1  card 126.00 with a 90.00 tip, approved by 2
+//	Bill 2  cash 126.00 with a 70.00 tip, approved by 2, voided; then
+//	        cash 126.00 with a 10.00 tip, needing nobody
+//	Bill 3  UPI 126.00 with a 5.00 tip, needing nobody
+func TestTipsThatNeededAManagerAreCountedApart(t *testing.T) {
+	paid := func(no string, steps func(b *bill)) []shift.StampedEvent {
+		b := newBill(t, 1, order.ChannelCounter, 3)
+		b.line(2, "Espresso", 1, 12000, gst5)
+		steps(b)
+		b.invoice(no)
+		return b.events
+	}
+	approved := func(method order.PaymentMethod, tip int64) order.PaymentTendered {
+		return order.PaymentTendered{Method: method, Amount: inr(12600), Tip: inr(tip), TenderedBy: 3, AuthorisedBy: 2}
+	}
+	r, err := Build(Input{ShiftID: 1, Currency: "INR", Taxes: gstCafe, Categories: menu, Orders: [][]shift.StampedEvent{
+		paid("INV/26-27/000001", func(b *bill) { b.as(3, approved(order.PaymentCard, 9000)) }),
+		paid("INV/26-27/000002", func(b *bill) {
+			id := b.as(3, approved(order.PaymentCash, 7000))
+			b.as(2, order.PaymentVoided{PaymentID: id, Reason: "wrong bill", AuthorisedBy: 2})
+			b.as(3, order.PaymentTendered{Method: order.PaymentCash, Amount: inr(12600), Tip: inr(1000), TenderedBy: 3})
+		}),
+		paid("INV/26-27/000003", func(b *bill) {
+			b.as(3, order.PaymentTendered{Method: order.PaymentUPI, Amount: inr(12600), Tip: inr(500), TenderedBy: 3})
+		}),
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Tips != inr(10500) {
+		t.Errorf("tips = %s, want 105.00", r.Tips)
+	}
+	if want := (Tally{Count: 1, Amount: inr(9000)}); r.TipsApproved != want {
+		t.Errorf("tips approved = %+v, want %+v", r.TipsApproved, want)
+	}
+
+	// A day with none still says so, in the venue's currency.
+	none, err := Build(tippedDay(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (Tally{Amount: inr(0)}); none.TipsApproved != want {
+		t.Errorf("tips approved on a day with none = %+v", none.TipsApproved)
+	}
+}

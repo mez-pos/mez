@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
-import type { OrderResponse, TenderPayment, TenderResponse } from "../../../shared/api-types";
+import type { OrderResponse, TenderRequest, TenderResponse } from "../../../shared/api-types";
 import {
   afterFailure,
   attemptKey,
@@ -14,7 +14,12 @@ import {
   quickTenders,
   tenderFailure,
   tenderOutcome,
+  approvalRefused,
+  tipApprovalAsked,
+  tipCeiling,
   tipFor,
+  tipNeedsApproval,
+  tipNote,
 } from "./tender-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
@@ -98,7 +103,7 @@ describe("planTender", () => {
 });
 
 describe("attemptKey", () => {
-  const body = (minor: number): TenderPayment => ({ method: "cash", amount: inr(minor), tip: inr(0) });
+  const body = (minor: number): TenderRequest => ({ method: "cash", amount: inr(minor), tip: inr(0) });
   let n = 0;
   const fresh = () => `k${++n}`;
 
@@ -258,7 +263,7 @@ describe("afterFailure", () => {
 });
 
 describe("tenderOutcome", () => {
-  const body: TenderPayment = { method: "card", amount: inr(45000), tip: inr(2000) };
+  const body: TenderRequest = { method: "card", amount: inr(45000), tip: inr(2000) };
   const tender = (id: number, extra: Partial<TenderResponse> = {}): TenderResponse => ({
     id,
     method: "card",
@@ -284,5 +289,60 @@ describe("tenderOutcome", () => {
   });
   it("does not count a tender already on the order before it was sent", () => {
     expect(tenderOutcome([7], body, order([tender(7)]))).toBe("absent");
+  });
+});
+
+describe("the tip ceiling (ADR-261)", () => {
+  it("is the payment's share at the venue's percent, rounded up to the next paisa", () => {
+    const cases: [amount: number, percent: number, want: number][] = [
+      [20000, 50, 10000],
+      [333, 50, 167], // 166.5 rounds up, as the server rounds
+      [1, 1, 1], // a hundredth of a paisa is a paisa
+      [1000, 10, 100],
+      [20000, 1000, 200000],
+      [20000, 0, 0], // no tip without a manager
+      [0, 50, 0],
+    ];
+    for (const [amount, percent, want] of cases) {
+      expect(tipCeiling(amount, percent), `${percent}% of ${amount}`).toBe(want);
+    }
+  });
+  it("needs a manager only over it", () => {
+    expect(tipNeedsApproval(10000, 20000, 50)).toBe(false); // at it
+    expect(tipNeedsApproval(10001, 20000, 50)).toBe(true);
+    expect(tipNeedsApproval(167, 333, 50)).toBe(false);
+    expect(tipNeedsApproval(168, 333, 50)).toBe(true);
+    expect(tipNeedsApproval(500000, 20000, 50)).toBe(true); // 5000 on 200
+  });
+  it("at zero percent needs one for any tip, and never for none", () => {
+    expect(tipNeedsApproval(1, 20000, 0)).toBe(true);
+    expect(tipNeedsApproval(0, 20000, 0)).toBe(false);
+  });
+  it("leaves it to the server before an amount is keyed, or when the till does not know the rule", () => {
+    expect(tipNeedsApproval(5000, 0, 50)).toBe(false);
+    expect(tipNeedsApproval(500000, 20000, null)).toBe(false);
+  });
+  it("says so on the tip card", () => {
+    expect(tipNote(10001, 20000, 50)).toBe("Over 50%: needs a manager");
+    expect(tipNote(1, 20000, 0)).toBe("Any tip needs a manager");
+    expect(tipNote(10000, 20000, 50)).toBeNull();
+    expect(tipNote(10001, 20000, null)).toBeNull();
+  });
+  it("hears the server ask for a manager, through the order queue too", () => {
+    const asked = new ApiError("tip_needs_approval", "A tip this large needs a manager's approval.", 403, "tip");
+    expect(tipApprovalAsked(asked)).toBe(true);
+    expect(tipApprovalAsked(new Error("refused", { cause: asked }))).toBe(true);
+    expect(tipApprovalAsked(new ApiError("forbidden", "x", 403))).toBe(false);
+    expect(tipApprovalAsked(new Error("down"))).toBe(false);
+  });
+  it("tells the approval refused from the payment refused", () => {
+    // The approver's PIN, the approver not allowed, too many tries: the sheet asks again.
+    expect(approvalRefused(new ApiError("invalid_pin", "x", 401))).toBe(true);
+    expect(approvalRefused(new Error("x", { cause: new ApiError("forbidden", "x", 403, "authorised_by") }))).toBe(true);
+    expect(approvalRefused(new ApiError("locked_out", "x", 429))).toBe(true);
+    // The cashier's own permission, or the payment itself: the foot says why.
+    expect(approvalRefused(new ApiError("forbidden", "x", 403, "payment.take"))).toBe(false);
+    expect(approvalRefused(new ApiError("over_tender", "x", 409))).toBe(false);
+    expect(approvalRefused(new Error("down"))).toBe(false);
   });
 });

@@ -48,6 +48,8 @@ func newBuilder(in Input, zero money.Amount) *builder {
 			CreditNotes: Tally{Amount: z},
 			Refunds:     Tally{Amount: z},
 			Tips:        z,
+
+			TipsApproved: Tally{Amount: z},
 		},
 		categories: map[string]*Group{},
 		items:      map[string]*Group{},

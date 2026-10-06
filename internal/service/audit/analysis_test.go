@@ -36,7 +36,7 @@ func TestTheDayAddedUp(t *testing.T) {
 	}
 	wantKinds := []KindTally{
 		{Void, tally(2, 15000)}, {Comp, tally(1, 5000)}, {Discount, tally(2, 7000)},
-		{Refund, tally(1, 5000)}, {PaymentVoid, tally(1, 1000)}, {Reopen, tally(1, 0)},
+		{Refund, tally(1, 5000)}, {PaymentVoid, tally(1, 1000)}, {Reopen, tally(1, 0)}, {TipApproved, tally(0, 0)},
 	}
 	if !slices.Equal(got.ByKind, wantKinds) {
 		t.Errorf("by kind %+v, want %+v", got.ByKind, wantKinds)
@@ -120,7 +120,7 @@ func TestTheAnalysisAsTables(t *testing.T) {
 	f.aDay(t)
 	ctx := context.Background()
 	all := day("2026-10-01", "2026-10-01")
-	people := []string{"Count", "Amount (INR)", "Voids", "Comps", "Discounts", "Refunds", "Payment voids", "Reopens"}
+	people := []string{"Count", "Amount (INR)", "Voids", "Comps", "Discounts", "Refunds", "Payment voids", "Reopens", "Tips approved"}
 	tests := []struct {
 		sheet  AnalysisSheet
 		header []string
@@ -132,11 +132,11 @@ func TestTheAnalysisAsTables(t *testing.T) {
 			{"Reopen", "wrong tender", "1", "0.00"},
 		}},
 		{SheetBy, append([]string{"By"}, people...), [][]string{
-			{"Asha", "8", "330.00", "2", "1", "2", "1", "1", "1"},
+			{"Asha", "8", "330.00", "2", "1", "2", "1", "1", "1", "0"},
 		}},
 		{SheetAuthorised, append([]string{"Authorised by"}, people...), [][]string{
-			{"Priya", "7", "320.00", "2", "1", "1", "1", "1", "1"},
-			{"Asha", "1", "10.00", "0", "0", "1", "0", "0", "0"},
+			{"Priya", "7", "320.00", "2", "1", "1", "1", "1", "1", "0"},
+			{"Asha", "1", "10.00", "0", "0", "1", "0", "0", "0", "0"},
 		}},
 	}
 	for _, tt := range tests {

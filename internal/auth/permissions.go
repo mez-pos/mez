@@ -23,6 +23,7 @@ const (
 	PermPaymentTake    Permission = "payment.take"    // tender a payment, issue the invoice, close
 	PermPaymentVoid    Permission = "payment.void"    // void a tender
 	PermRefundGive     Permission = "refund.give"     // refund against a tender
+	PermTipApprove     Permission = "tip.approve"     // let through a tip over the venue's ceiling (ADR-261)
 	PermOrderReopen    Permission = "order.reopen"    // reopen a closed order
 	PermInvoiceReprint Permission = "invoice.reprint" // print a copy of an issued invoice
 	PermKitchenView    Permission = "kitchen.view"    // see the kitchen's board
@@ -44,7 +45,7 @@ const (
 // them: the register first, then the office.
 var all = []Permission{
 	PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
-	PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView, PermKitchenWork,
+	PermPaymentTake, PermPaymentVoid, PermRefundGive, PermTipApprove, PermOrderReopen, PermInvoiceReprint, PermKitchenView, PermKitchenWork,
 	PermShiftOpen, PermShiftManage, PermCashMove,
 	PermDeviceManage, PermStaffManage, PermMenuEdit, PermSettingsEdit, PermReportsView, PermStockManage,
 }
@@ -173,9 +174,11 @@ type RoleTemplate struct {
 // starting point the owner edits, not a fixed hierarchy: the only rule the
 // code enforces is that the owner has everything.
 func DefaultRoles() []RoleTemplate {
+	// A manager lets through a tip over the venue's ceiling (ADR-261).
+	// Migration 00053 gives tip.approve to venues that exist.
 	manager := []Permission{
 		PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
-		PermPaymentTake, PermPaymentVoid, PermRefundGive, PermOrderReopen, PermInvoiceReprint, PermKitchenView, PermKitchenWork,
+		PermPaymentTake, PermPaymentVoid, PermRefundGive, PermTipApprove, PermOrderReopen, PermInvoiceReprint, PermKitchenView, PermKitchenWork,
 		PermShiftOpen, PermShiftManage, PermCashMove,
 		PermStaffManage, PermReportsView, PermStockManage,
 	}

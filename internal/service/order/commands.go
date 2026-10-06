@@ -65,12 +65,24 @@ type SendTicket struct {
 
 // TenderPayment records a payment. The tenderer is the caller. A tip left
 // out is no tip.
+//
+// AuthorisedBy is the manager who let through a tip over the venue's
+// ceiling (ADR-261), and the caller must have checked their PIN and
+// permission: the API sets it from a verified override, never from the
+// body. Zero is nobody, and a tip over the ceiling is then refused.
 type TenderPayment struct {
-	Method    order.PaymentMethod `json:"method"`
-	Amount    money.Amount        `json:"amount"`
-	Tip       money.Amount        `json:"tip"`
-	Reference string              `json:"reference,omitempty"`
+	Method       order.PaymentMethod `json:"method"`
+	Amount       money.Amount        `json:"amount"`
+	Tip          money.Amount        `json:"tip"`
+	Reference    string              `json:"reference,omitempty"`
+	AuthorisedBy int64               `json:"authorised_by,omitempty"`
 }
+
+// ErrTipNeedsApproval means a tip is over the venue's ceiling, a percent of
+// its payment, and no manager let it through (ADR-261). A card or UPI tip is
+// never counted against the drawer and is paid out of the tip pool, so a
+// large one is a manager's to approve.
+var ErrTipNeedsApproval = errors.New("a tip this large needs a manager's approval")
 
 // Open opens a new order at the caller's venue.
 func (s *Service) Open(ctx context.Context, meta Meta, cmd OpenOrder) (Result, error) {
@@ -284,8 +296,12 @@ func (s *Service) TenderPayment(ctx context.Context, meta Meta, orderID int64, c
 		if tip == (money.Amount{}) {
 			tip = money.Amount{Currency: v.Currency}
 		}
+		if err := checkTip(tip, cmd.Amount, v.TipMaxPercent, cmd.AuthorisedBy); err != nil {
+			return nil, err
+		}
 		tendered := order.PaymentTendered{
 			Method: cmd.Method, Amount: cmd.Amount, Tip: tip, Reference: cmd.Reference, TenderedBy: meta.ActorID,
+			AuthorisedBy: cmd.AuthorisedBy,
 		}
 		if !settles(tx.State, cmd.Amount) {
 			return []order.Payload{tendered}, nil
@@ -296,6 +312,24 @@ func (s *Service) TenderPayment(ctx context.Context, meta Meta, orderID int64, c
 		}
 		return []order.Payload{tendered, inv}, nil
 	})
+}
+
+// checkTip refuses a tip over the venue's ceiling that no manager let
+// through. A payment the projection will refuse for itself (nothing, less
+// than nothing, another currency) is left to it, so it is refused for what
+// is wrong with it rather than for its tip.
+func checkTip(tip, amount money.Amount, percent, authorisedBy int64) error {
+	if authorisedBy != 0 || amount.Minor <= 0 || tip.Currency != amount.Currency {
+		return nil
+	}
+	over, err := order.TipNeedsApproval(tip, amount, percent)
+	if err != nil {
+		return fmt.Errorf("checking the tip: %w", err)
+	}
+	if over {
+		return fmt.Errorf("%w: a tip of %d on %d is over %d%%", ErrTipNeedsApproval, tip.Minor, amount.Minor, percent)
+	}
+	return nil
 }
 
 // settles reports whether a tender of amount brings the bill to exactly

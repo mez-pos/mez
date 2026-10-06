@@ -166,6 +166,12 @@ Two cards, each saving on its own.
   - **Tips are shared**: Shared evenly, By hours worked, By role weight.
     By role weight: **Weight of each role**, a whole number from 1 to 100;
     one left empty counts as 1.
+  - **A tip over this share of the payment needs a manager (%)**, a whole
+    number from 0 to 1000, 50 to start: over it, a payment's tip waits for
+    someone holding `tip.approve` and their PIN, at the till and the
+    waiter's bill alike (ADR-261). 0 asks for a manager on every tip. A card
+    or UPI tip is never counted in the drawer and every tip is shared out,
+    which is why a large one is a manager's to let through.
   - **An order is late after (minutes)**, 1 to 600: "The order screen
     shows its time as late once it has been open this long."
 - **Receipt.**
@@ -212,7 +218,9 @@ All need `settings.edit`.
 - `GET` and `PUT /api/v1/settings/numbering`, and `POST
   /api/v1/settings/numbering/preview`, which saves nothing.
 - `GET` and `PUT /api/v1/settings/rules` (`day_start`, `variance_threshold`,
-  `tip_rule`, `tip_role_weights`, `ticket_late_minutes`).
+  `tip_rule`, `tip_role_weights`, `tips_max_percent`, `ticket_late_minutes`).
+  `tips_max_percent` left out of a `PUT` is the default, 50: 0 is a ceiling,
+  so it cannot also mean "not given".
 - `GET` and `PUT /api/v1/settings/receipt`, and `POST
   /api/v1/settings/receipt/preview` with `paper_mm`.
 - Each write answers with its section as it now stands, which replaces the

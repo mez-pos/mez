@@ -33,7 +33,10 @@ stay; the middle scrolls.
   - **Change the split**, once the shares are settled.
 - **Collect ₹815.00 from Guest 2:**
   - **UPI**, **Card**, **Cash** as three tiles.
-  - **Tip:** None, 5%, 10%, 15% as chips, each with what it comes to.
+  - **Tip:** None, 5%, 10%, 15% as chips, each with what it comes to. A tip
+    over the venue's ceiling says "Over 50%: needs a manager", and the
+    payment button opens the approval first, as on the payment screen
+    (ADR-261).
   - For UPI and card, a card: "Show the venue's UPI code to Guest 2" or "Key
     this on the card machine", the sum (and the tip in it), "Waiting for you
     to see it paid", a field for the reference, optional, and **Mark as

@@ -14,8 +14,13 @@ import (
 
 // stockRules is what a venue that has set none of them reads as.
 func stockRules() RulesInput {
-	return RulesInput{DayStart: "04:00", VarianceThreshold: 0, TipRule: "even", TipRoleWeights: map[string]int64{}, TicketLateMinutes: 20}
+	return RulesInput{
+		DayStart: "04:00", VarianceThreshold: 0, TipRule: "even", TipRoleWeights: map[string]int64{}, TicketLateMinutes: 20,
+		TipsMaxPercent: percent(50),
+	}
 }
+
+func percent(n int) *int { return &n }
 
 func rulesWith(f func(*RulesInput)) RulesInput {
 	in := stockRules()
@@ -74,6 +79,7 @@ func TestRuleDefaultsAreWhatTheReadersUse(t *testing.T) {
 		svcshift.SettingVarianceThreshold: "0",
 		svcshift.SettingTipRule:           "even",
 		"terminal.ticket_late_minutes":    "20",
+		"tips.max_percent":                "50",
 	}
 	for name, def := range want {
 		if got[name] != def {
@@ -89,6 +95,8 @@ func TestUpdateRulesSavesAndReadsBack(t *testing.T) {
 	in := RulesInput{
 		DayStart: "05:30", VarianceThreshold: 5000, TipRule: "role_weight",
 		TipRoleWeights: map[string]int64{"Manager": 3, "Cashier": 1}, TicketLateMinutes: 12,
+		// No tip at all without a manager: 0 is a ceiling, not "unset".
+		TipsMaxPercent: percent(0),
 	}
 	if err := s.UpdateRules(ctx, 1, in); err != nil {
 		t.Fatal(err)
@@ -115,6 +123,7 @@ func TestUpdateRulesSavesAndReadsBack(t *testing.T) {
 	wantStored := map[string]string{
 		"shift.day_start": "05:30", "shift.variance_threshold_minor": "5000", "tips.rule": "role_weight",
 		"tips.role_weights": `{"Cashier":1,"Manager":3}`, "terminal.ticket_late_minutes": "12",
+		"tips.max_percent": "0",
 	}
 	if !maps.Equal(stored, wantStored) {
 		t.Fatalf("stored %v, want %v", stored, wantStored)
@@ -127,7 +136,7 @@ func TestUpdateRulesBackToDefaultsClearsTheKeys(t *testing.T) {
 	ctx := context.Background()
 	if err := s.UpdateRules(ctx, 1, RulesInput{
 		DayStart: "05:30", VarianceThreshold: 5000, TipRule: "role_weight",
-		TipRoleWeights: map[string]int64{"Manager": 2}, TicketLateMinutes: 12,
+		TipRoleWeights: map[string]int64{"Manager": 2}, TicketLateMinutes: 12, TipsMaxPercent: percent(200),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +150,8 @@ func TestUpdateRulesBackToDefaultsClearsTheKeys(t *testing.T) {
 	}
 	for _, e := range o.Entries {
 		switch e.Key {
-		case "shift.day_start", "shift.variance_threshold_minor", "tips.rule", "tips.role_weights", "terminal.ticket_late_minutes":
+		case "shift.day_start", "shift.variance_threshold_minor", "tips.rule", "tips.role_weights", "terminal.ticket_late_minutes",
+			"tips.max_percent":
 			if e.Set {
 				t.Errorf("%s is still set to %q", e.Key, e.Value)
 			}
@@ -177,6 +187,12 @@ func TestUpdateRulesRefusals(t *testing.T) {
 		{"no minutes at all", rulesWith(func(in *RulesInput) { in.TicketLateMinutes = 0 }), "ticket_late_minutes"},
 		{"601 minutes", rulesWith(func(in *RulesInput) { in.TicketLateMinutes = 601 }), "ticket_late_minutes"},
 		{"a minute", rulesWith(func(in *RulesInput) { in.TicketLateMinutes = 1 }), ""},
+		// The tip ceiling (ADR-261): 0 is no tip without a manager, 1000 ten times the payment.
+		{"a tip ceiling of 0", rulesWith(func(in *RulesInput) { in.TipsMaxPercent = percent(0) }), ""},
+		{"a tip ceiling of 1000", rulesWith(func(in *RulesInput) { in.TipsMaxPercent = percent(1000) }), ""},
+		{"a tip ceiling left out takes the default", rulesWith(func(in *RulesInput) { in.TipsMaxPercent = nil }), ""},
+		{"a negative tip ceiling", rulesWith(func(in *RulesInput) { in.TipsMaxPercent = percent(-1) }), "tips_max_percent"},
+		{"a tip ceiling of 1001", rulesWith(func(in *RulesInput) { in.TipsMaxPercent = percent(1001) }), "tips_max_percent"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

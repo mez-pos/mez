@@ -115,6 +115,19 @@ func TestDefaultRoles(t *testing.T) {
 			t.Errorf("a %s cannot see the kitchen's board", name)
 		}
 	}
+	// A tip over the venue's ceiling is let through by a manager (ADR-261):
+	// the owner and the manager, never the people who take the tip. The same
+	// grants are in migration 00053, for venues that already exist.
+	for _, name := range []string{"owner", "manager"} {
+		if !slices.Contains(roles[name], PermTipApprove) {
+			t.Errorf("the %s cannot approve a tip", name)
+		}
+	}
+	for _, name := range []string{"cashier", "waiter", "kitchen"} {
+		if slices.Contains(roles[name], PermTipApprove) {
+			t.Errorf("a %s can approve their own tip", name)
+		}
+	}
 	// Every template is made of permissions this build knows.
 	for name, perms := range roles {
 		for _, p := range perms {

@@ -1,6 +1,7 @@
 // Package audit is the trail of corrections an owner reads (phase 10,
-// Task 4c, ADR-117): every void, comp, discount, refund, payment void and
-// reopen, with who did it, who authorised it, why, and what it was worth.
+// Task 4c, ADR-117): every void, comp, discount, refund, payment void,
+// reopen and tip a manager let through over the venue's ceiling (ADR-261),
+// with who did it, who authorised it, why, and what it was worth.
 //
 // The trail is the order events, read where they are: there is no second
 // copy to drift from them. What each was worth comes from its order's
@@ -26,7 +27,9 @@ import (
 // Kind is a kind of correction.
 type Kind string
 
-// The kinds, each one order event type.
+// The kinds, each one order event type. TipApproved is a payment whose tip
+// a manager let through (ADR-261): the queries take a payment.tendered only
+// when it names who authorised it.
 const (
 	Void        Kind = "void"
 	Comp        Kind = "comp"
@@ -34,15 +37,17 @@ const (
 	Refund      Kind = "refund"
 	PaymentVoid Kind = "payment_void"
 	Reopen      Kind = "reopen"
+	TipApproved Kind = "tip_approved"
 )
 
 var eventOf = map[Kind]order.Type{
 	Void: order.TypeLineVoided, Comp: order.TypeLineComped, Discount: order.TypeDiscountApplied,
 	Refund: order.TypeRefundIssued, PaymentVoid: order.TypePaymentVoided, Reopen: order.TypeOrderReopened,
+	TipApproved: order.TypePaymentTendered,
 }
 
 // Kinds is every kind, for the generated vocabulary.
-func Kinds() []Kind { return []Kind{Void, Comp, Discount, Refund, PaymentVoid, Reopen} }
+func Kinds() []Kind { return []Kind{Void, Comp, Discount, Refund, PaymentVoid, Reopen, TipApproved} }
 
 func kindOf(t string) Kind {
 	for k, et := range eventOf {
@@ -118,7 +123,8 @@ type Entry struct {
 	// Item is the line it was about, or empty for the whole bill.
 	Item string `json:"item,omitempty"`
 	Qty  int64  `json:"qty,omitempty"`
-	// Amount is what it was worth; absent for a reopen.
+	// Amount is what it was worth; absent for a reopen. For a tip approved
+	// it is the tip, not the payment.
 	Amount *money.Amount `json:"amount,omitempty"`
 }
 
@@ -291,6 +297,14 @@ func entryOf(r gen.AuditEventsRow, st order.State, staff people) (Entry, error) 
 			if t.ID == p.PaymentID {
 				amount := t.Amount
 				e.Amount = &amount
+			}
+		}
+	case TipApproved:
+		// The payment is the event itself: its id is the event's seq.
+		for _, t := range st.Tenders {
+			if t.ID == r.Seq {
+				tip := t.Tip
+				e.Amount = &tip
 			}
 		}
 	}

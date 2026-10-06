@@ -249,13 +249,23 @@ func TestSetIsAllOrNothingAndClears(t *testing.T) {
 }
 
 // TestVenueIdentity: what a paired device may know of the venue is its name,
-// for the lock screen, and the zone its clock reads in, for the status bar.
+// for the lock screen, the zone its clock reads in, for the status bar, and
+// the tip ceiling, so the payment screen asks for a manager before the
+// server has to refuse (ADR-261).
 func TestVenueIdentity(t *testing.T) {
-	s, _ := newService(t)
-	if id, err := s.Identity(context.Background(), 1); err != nil || id != (Identity{Name: "Cafe", Timezone: "Asia/Kolkata"}) {
+	s, d := newService(t)
+	ctx := context.Background()
+	if id, err := s.Identity(ctx, 1); err != nil || id != (Identity{Name: "Cafe", Timezone: "Asia/Kolkata", TipsMaxPercent: 50}) {
 		t.Fatalf("%+v, %v", id, err)
 	}
-	if _, err := s.Identity(context.Background(), 99); !errors.Is(err, ErrNoVenue) {
+	addRoles(t, d, "Manager")
+	if err := s.UpdateRules(ctx, 1, rulesWith(func(in *RulesInput) { in.TipsMaxPercent = percent(0) })); err != nil {
+		t.Fatal(err)
+	}
+	if id, err := s.Identity(ctx, 1); err != nil || id.TipsMaxPercent != 0 {
+		t.Fatalf("after a ceiling of 0: %+v, %v", id, err)
+	}
+	if _, err := s.Identity(ctx, 99); !errors.Is(err, ErrNoVenue) {
 		t.Fatalf("an unknown venue: %v", err)
 	}
 }

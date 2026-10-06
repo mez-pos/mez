@@ -15,6 +15,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/db/gen"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 )
 
 // ErrNoVenue means the venue does not exist.
@@ -136,9 +137,13 @@ func (s *Service) Read(ctx context.Context, venueID int64) (Overview, error) {
 type Identity struct {
 	Name     string
 	Timezone string
+	// TipsMaxPercent is the tip ceiling (ADR-261), so a till asks for a
+	// manager before the server has to refuse the payment.
+	TipsMaxPercent int
 }
 
-// Identity reads the venue's name and timezone and nothing else.
+// Identity reads the venue's name, its timezone and its tip ceiling, and
+// nothing else: what any paired device may know.
 func (s *Service) Identity(ctx context.Context, venueID int64) (Identity, error) {
 	v, err := s.db.Queries().VenueByID(ctx, venueID)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -147,7 +152,17 @@ func (s *Service) Identity(ctx context.Context, venueID int64) (Identity, error)
 	if err != nil {
 		return Identity{}, fmt.Errorf("reading venue %d: %w", venueID, err)
 	}
-	return Identity{Name: v.Name, Timezone: v.Timezone}, nil
+	rows, err := s.db.Queries().SettingsForVenue(ctx, venueID)
+	if err != nil {
+		return Identity{}, fmt.Errorf("reading the settings of venue %d: %w", venueID, err)
+	}
+	tipMax := ""
+	for _, r := range rows {
+		if r.Key == svcorder.SettingTipMaxPercent {
+			tipMax = r.Value
+		}
+	}
+	return Identity{Name: v.Name, Timezone: v.Timezone, TipsMaxPercent: svcorder.TipMaxPercentOf(tipMax)}, nil
 }
 
 // clean trims the details and refuses what cannot be used.

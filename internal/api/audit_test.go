@@ -72,7 +72,7 @@ func TestTheAnalysisOverHTTP(t *testing.T) {
 	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &got) != nil {
 		t.Fatalf("analysis: %d %s", rec.Code, rec.Body)
 	}
-	if got.From != "2026-09-01" || len(got.ByKind) != 6 || got.ByReason == nil || got.By == nil || got.AuthorisedBy == nil {
+	if got.From != "2026-09-01" || len(got.ByKind) != len(audit.Kinds()) || got.ByReason == nil || got.By == nil || got.AuthorisedBy == nil {
 		t.Errorf("a quiet September: %s", rec.Body)
 	}
 	if rec.Header().Get("Cache-Control") != "no-store" {
@@ -128,7 +128,7 @@ func TestTheAuditTrailOverHTTP(t *testing.T) {
 
 	rec := send(w.handler, http.MethodGet, "/api/v1/audit?from=2026-09-01&to=2026-09-30&kind=void&limit=10", "", owner)
 	var page audit.Page
-	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &page) != nil || page.Entries == nil || len(page.Counts) != 6 {
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &page) != nil || page.Entries == nil || len(page.Counts) != len(audit.Kinds()) {
 		t.Fatalf("trail: %d %s", rec.Code, rec.Body)
 	}
 	if rec.Header().Get("Cache-Control") != "no-store" {

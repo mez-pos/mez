@@ -1,7 +1,7 @@
 // The shift and tip rules as a form (docs/design/screens/backoffice-settings.md,
 // "Shift, tips and receipt"): when the trading day starts, how far a drawer may
-// be out before closing needs a reason, how tips are shared and what a ticket's
-// clock means. The server checks everything again, and a weight must name a
+// be out before closing needs a reason, how tips are shared, how large a tip
+// may be before a manager lets it through, and what a ticket's clock means. The server checks everything again, and a weight must name a
 // role it knows; what is checked here costs nothing. No React in this file.
 
 import type { RulesRequest, RulesResponse } from "../../../shared/api-types";
@@ -22,6 +22,10 @@ export const MIN_LATE_MINUTES = 1;
 export const MAX_LATE_MINUTES = 600;
 export const MIN_WEIGHT = 1;
 export const MAX_WEIGHT = 100;
+// The tip ceiling (ADR-261): a tip over this percent of its payment needs a
+// manager. The server's default is the one a response without it means.
+export const DEFAULT_TIP_MAX_PERCENT = 50;
+export const MAX_TIP_MAX_PERCENT = 1000;
 
 export interface RulesForm {
   /** "04:00", as a time input holds it. */
@@ -31,6 +35,8 @@ export interface RulesForm {
   tipRule: TipRule;
   /** By role name, as typed: empty counts as 1. Only roles the venue has. */
   weights: Record<string, string>;
+  /** A whole percent, as typed: "50". "0" asks for a manager on every tip. */
+  tipMax: string;
   lateMinutes: string;
 }
 
@@ -49,6 +55,7 @@ export function rulesFormFrom(r: RulesResponse): RulesForm {
     variance: majorText(r.variance_threshold, r.minor_per_major),
     tipRule: tipRuleIds.includes(r.tip_rule) ? (r.tip_rule as TipRule) : "even",
     weights,
+    tipMax: String(r.tips_max_percent ?? DEFAULT_TIP_MAX_PERCENT),
     lateMinutes: String(r.ticket_late_minutes),
   };
 }
@@ -69,6 +76,7 @@ export function toRulesInput(f: RulesForm, perMajor: number): RulesRequest {
     variance_threshold: parseMajor(f.variance, perMajor) ?? 0,
     tip_rule: f.tipRule,
     tip_role_weights: givenWeights(f),
+    tips_max_percent: Number(f.tipMax.trim()),
     ticket_late_minutes: Number(f.lateMinutes.trim()),
   };
 }
@@ -76,12 +84,19 @@ export function toRulesInput(f: RulesForm, perMajor: number): RulesRequest {
 /** Whether the draft differs from what the server has, ignoring stray spaces. */
 export function rulesChanged(draft: RulesForm, saved: RulesForm, perMajor: number): boolean {
   const norm = (f: RulesForm) =>
-    JSON.stringify([f.dayStart.trim(), parseMajor(f.variance, perMajor) ?? f.variance.trim(), f.tipRule, givenWeights(f), f.lateMinutes.trim()]);
+    JSON.stringify([
+      f.dayStart.trim(),
+      parseMajor(f.variance, perMajor) ?? f.variance.trim(),
+      f.tipRule,
+      givenWeights(f),
+      f.tipMax.trim(),
+      f.lateMinutes.trim(),
+    ]);
   return norm(draft) !== norm(saved);
 }
 
-export type RulesField = "day_start" | "variance_threshold" | "tip_rule" | "tip_role_weights" | "ticket_late_minutes";
-const rulesFields: readonly RulesField[] = ["day_start", "variance_threshold", "tip_rule", "tip_role_weights", "ticket_late_minutes"];
+export type RulesField = "day_start" | "variance_threshold" | "tip_rule" | "tip_role_weights" | "tips_max_percent" | "ticket_late_minutes";
+const rulesFields: readonly RulesField[] = ["day_start", "variance_threshold", "tip_rule", "tip_role_weights", "tips_max_percent", "ticket_late_minutes"];
 
 export const rulesProblemOf = (err: unknown): Problem<RulesField> => problemWith(err, rulesFields);
 
@@ -99,6 +114,10 @@ export function rulesProblem(f: RulesForm, perMajor: number): Problem<RulesField
   if (bad) return { field: "tip_role_weights", message: `Give ${bad[0]} a weight from ${MIN_WEIGHT} to ${MAX_WEIGHT}.` };
   if (f.tipRule === "role_weight" && weights.length === 0) {
     return { field: "tip_role_weights", message: "Give at least one role a weight, or choose another way to share tips." };
+  }
+  const tipMax = f.tipMax.trim();
+  if (!/^\d{1,4}$/.test(tipMax) || Number(tipMax) > MAX_TIP_MAX_PERCENT) {
+    return { field: "tips_max_percent", message: `Enter a whole percent from 0 to ${MAX_TIP_MAX_PERCENT}. 0 asks for a manager on every tip.` };
   }
   const late = f.lateMinutes.trim();
   if (!/^\d{1,3}$/.test(late) || Number(late) < MIN_LATE_MINUTES || Number(late) > MAX_LATE_MINUTES) {

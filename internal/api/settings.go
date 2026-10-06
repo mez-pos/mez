@@ -52,10 +52,13 @@ type venueDetailsRequest struct {
 }
 
 // venueNameResponse is what a paired device may know of the venue: its name,
-// and the IANA zone its clock reads in, which a tablet's own may have wrong.
+// the IANA zone its clock reads in, which a tablet's own may have wrong, and
+// the tip ceiling, a whole percent of a payment, over which a tip needs a
+// manager (ADR-261): the till asks for one before the server refuses.
 type venueNameResponse struct {
-	Name     string `json:"name"`
-	Timezone string `json:"timezone"`
+	Name           string `json:"name"`
+	Timezone       string `json:"timezone"`
+	TipsMaxPercent int    `json:"tips_max_percent"`
 }
 
 type settingsVenueResponse struct {
@@ -109,7 +112,7 @@ func (s *Server) readVenueName(w http.ResponseWriter, r *http.Request) {
 		s.writeSettingsError(w, r, err)
 		return
 	}
-	writeJSON(w, s.log, http.StatusOK, venueNameResponse{Name: id.Name, Timezone: id.Timezone})
+	writeJSON(w, s.log, http.StatusOK, venueNameResponse{Name: id.Name, Timezone: id.Timezone, TipsMaxPercent: id.TipsMaxPercent})
 }
 
 func (s *Server) readSettings(w http.ResponseWriter, r *http.Request) {

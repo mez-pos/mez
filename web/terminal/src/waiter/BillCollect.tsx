@@ -5,7 +5,8 @@
 // The tablet has no gateway and must not need one (PayStates.tsx says why): the
 // UPI code and the card machine are the venue's own, so the waiter says when
 // the money has come, and "Mark as paid" records it. Cash is keyed, or one of
-// the round sums tapped, and the change is said before it is taken.
+// the round sums tapped, and the change is said before it is taken. A tip over
+// the venue's ceiling says it needs a manager (ADR-261).
 
 import { BanknoteIcon, CreditCardIcon, QrCodeIcon, type LucideIcon } from "lucide-react";
 import { useState } from "react";
@@ -13,6 +14,7 @@ import type { Money as Amount, PaymentMethod } from "../../../shared/api-types";
 import { Button, Money, NumPad, type NumKey } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { AmountField } from "../tender/AmountField";
+import { TipNote } from "../tender/TipCard";
 import { methodNames, tipFor, tipPercents, type TenderPlan } from "../tender/tender-logic";
 import { billMethods } from "./bill-logic";
 
@@ -34,6 +36,8 @@ interface BillCollectProps {
   tip: number;
   reference: string;
   plan: TenderPlan;
+  /** "Over 50%: needs a manager" for a tip over the venue's ceiling, or null. */
+  note: string | null;
   /** Exact first, then the round sums above it. Cash only. */
   quick: readonly number[];
   busy: boolean;
@@ -64,6 +68,7 @@ export function BillCollect(props: BillCollectProps) {
     tip,
     reference,
     plan,
+    note,
     quick,
     error,
     uncertain,
@@ -142,6 +147,11 @@ export function BillCollect(props: BillCollectProps) {
               </button>
             );
           })}
+        </div>
+      )}
+      {note && (
+        <div className="mt-3">
+          <TipNote note={note} />
         </div>
       )}
 

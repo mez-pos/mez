@@ -54,6 +54,10 @@ type Report struct {
 	// payments that carried a tip. A report issued before it was counted
 	// has none.
 	TipsBy []StaffTally `json:"tips_by"`
+	// TipsApproved is the tips in Tips that were over the venue's ceiling
+	// and let through by a manager (ADR-261). A report issued before it was
+	// counted has none.
+	TipsApproved Tally `json:"tips_approved"`
 
 	Balance Balance `json:"balance"`
 }

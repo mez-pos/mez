@@ -5,6 +5,7 @@ import type { RulesRequest, RulesResponse } from "../../../shared/api-types";
 import { Choice, Field, inputClass } from "../FormFields";
 import {
   MAX_LATE_MINUTES,
+  MAX_TIP_MAX_PERCENT,
   MAX_WEIGHT,
   MIN_LATE_MINUTES,
   MIN_WEIGHT,
@@ -40,7 +41,7 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
   return (
     <SectionCard
       title="Shifts, tips and orders"
-      description="When a day starts, what a short drawer needs, how tips are shared and when an order runs late."
+      description="When a day starts, what a short drawer needs, how tips are shared, which tips need a manager and when an order runs late."
       dirty={d.dirty}
       busy={busy}
       saved={d.done}
@@ -120,6 +121,24 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
           )}
         </fieldset>
       )}
+
+      <Field
+        label="A tip over this share of the payment needs a manager (%)"
+        hint={`A card or UPI tip is never counted in the drawer, and every tip is shared out. 0 to ${MAX_TIP_MAX_PERCENT}; 0 asks for a manager on every tip.`}
+        error={d.on("tips_max_percent")}
+      >
+        {(id) => (
+          <input
+            id={id}
+            className={`${inputClass} max-w-28 font-mono`}
+            value={form.tipMax}
+            disabled={busy}
+            inputMode="numeric"
+            autoComplete="off"
+            onChange={(e) => set({ tipMax: e.target.value })}
+          />
+        )}
+      </Field>
 
       <Field
         label="An order is late after (minutes)"

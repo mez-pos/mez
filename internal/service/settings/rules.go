@@ -37,6 +37,11 @@ type RulesInput struct {
 	// TicketLateMinutes is how long an open ticket runs before the till shows
 	// its time as late.
 	TicketLateMinutes int `json:"ticket_late_minutes"`
+	// TipsMaxPercent is the tip ceiling (ADR-261): a tip over this percent of
+	// its payment needs a manager. 0 to 1000; 0 asks for a manager on every
+	// tip. Left out, it takes the default, as an empty DayStart does: 0 is a
+	// ceiling, so it cannot also mean "not given".
+	TipsMaxPercent *int `json:"tips_max_percent,omitempty"`
 }
 
 // Rules is the rules as they stand, and what the screen needs to edit them.
@@ -78,14 +83,14 @@ func (s *Service) Rules(ctx context.Context, venueID int64) (Rules, error) {
 	var out Rules
 	out.Currency = v.Currency
 	out.MinorPerMajor = maxRoundingStep(v.Currency)
-	var raw struct{ dayStart, variance, rule, weights, late string }
+	var raw struct{ dayStart, variance, rule, weights, late, tipMax string }
 	for _, f := range []struct {
 		into *string
 		name string
 	}{
 		{&raw.dayStart, svcshift.SettingDayStart}, {&raw.variance, svcshift.SettingVarianceThreshold},
 		{&raw.rule, svcshift.SettingTipRule}, {&raw.weights, svcshift.SettingTipRoleWeights},
-		{&raw.late, svcorder.SettingTicketLateMinutes},
+		{&raw.late, svcorder.SettingTicketLateMinutes}, {&raw.tipMax, svcorder.SettingTipMaxPercent},
 	} {
 		if *f.into, err = value(f.name); err != nil {
 			return Rules{}, err
@@ -95,6 +100,8 @@ func (s *Service) Rules(ctx context.Context, venueID int64) (Rules, error) {
 	// The checks above have passed these, so a parse cannot fail.
 	out.VarianceThreshold, _ = strconv.ParseInt(raw.variance, 10, 64)
 	out.TicketLateMinutes, _ = strconv.Atoi(raw.late)
+	tipMax, _ := strconv.Atoi(raw.tipMax)
+	out.TipsMaxPercent = &tipMax
 	out.TipRoleWeights = map[string]int64{}
 	if raw.weights != "" {
 		if err := json.Unmarshal([]byte(raw.weights), &out.TipRoleWeights); err != nil {
@@ -161,6 +168,10 @@ func cleanRules(in RulesInput, roles []string) (map[string]string, error) {
 	if in.TipRule == "" {
 		in.TipRule = string(tips.Even)
 	}
+	tipMax := strconv.Itoa(svcorder.DefaultTipMaxPercent)
+	if in.TipsMaxPercent != nil {
+		tipMax = strconv.Itoa(*in.TipsMaxPercent)
+	}
 	weights := ""
 	if len(in.TipRoleWeights) > 0 {
 		// A map marshals with its keys in order, so the same weights are
@@ -178,6 +189,7 @@ func cleanRules(in RulesInput, roles []string) (map[string]string, error) {
 		{"tip_rule", svcshift.SettingTipRule, in.TipRule},
 		{"tip_role_weights", svcshift.SettingTipRoleWeights, weights},
 		{"ticket_late_minutes", svcorder.SettingTicketLateMinutes, strconv.Itoa(in.TicketLateMinutes)},
+		{"tips_max_percent", svcorder.SettingTipMaxPercent, tipMax},
 	}
 	for _, c := range checks {
 		if c.value == "" {
@@ -209,5 +221,6 @@ func cleanRules(in RulesInput, roles []string) (map[string]string, error) {
 		svcshift.SettingTipRule:           ifNot(in.TipRule, string(tips.Even)),
 		svcshift.SettingTipRoleWeights:    weights,
 		svcorder.SettingTicketLateMinutes: ifNot(strconv.Itoa(in.TicketLateMinutes), strconv.Itoa(svcorder.DefaultLateMinutes)),
+		svcorder.SettingTipMaxPercent:     ifNot(tipMax, strconv.Itoa(svcorder.DefaultTipMaxPercent)),
 	}, nil
 }

@@ -9,13 +9,16 @@ import (
 
 // rulesRequest is how the venue runs its shifts and tips. day_start is a 24
 // hour time like "04:00"; variance_threshold is minor units; tip_role_weights
-// is keyed by role name.
+// is keyed by role name. tips_max_percent is the tip ceiling (ADR-261), 0 to
+// 1000, 0 asking for a manager on every tip; left out, it is the default,
+// and an answer always carries it.
 type rulesRequest struct {
 	DayStart          string           `json:"day_start"`
 	VarianceThreshold int64            `json:"variance_threshold"`
 	TipRule           string           `json:"tip_rule"`
 	TipRoleWeights    map[string]int64 `json:"tip_role_weights"`
 	TicketLateMinutes int              `json:"ticket_late_minutes"`
+	TipsMaxPercent    *int             `json:"tips_max_percent,omitempty"`
 }
 
 // rulesResponse is the rules as they stand. minor_per_major is how many minor

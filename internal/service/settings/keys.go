@@ -46,6 +46,7 @@ var keys = []key{
 	{Name: svcshift.SettingVarianceThreshold, Default: strconv.FormatInt(svcshift.DefaultVarianceThreshold, 10), Check: wholeNumber(0, 1_000_000_00, "minor units")},
 	{Name: svcshift.SettingTipRule, Default: string(tips.Even), Check: tipRule},
 	{Name: svcshift.SettingTipRoleWeights, Check: roleWeights},
+	{Name: svcorder.SettingTipMaxPercent, Default: strconv.Itoa(svcorder.DefaultTipMaxPercent), Check: tipCeiling},
 	{Name: printing.SettingReceiptHeader, Check: receiptLines},
 	{Name: printing.SettingReceiptFooter, Check: receiptLines},
 	{Name: printing.SettingReceiptHideBarcode, Default: "false", Check: oneOf("true", "false")},
@@ -168,6 +169,15 @@ func tipRule(v string) string {
 		}
 	}
 	return "Choose even, hours or role weight."
+}
+
+// tipCeiling is the largest tip without a manager, a whole percent of the
+// payment (ADR-261).
+func tipCeiling(v string) string {
+	if wholeNumber(0, svcorder.MaxTipMaxPercent, "percent")(v) != "" {
+		return fmt.Sprintf("Enter a whole percent from 0 to %d. 0 asks for a manager on every tip.", svcorder.MaxTipMaxPercent)
+	}
+	return ""
 }
 
 func roleWeights(v string) string {

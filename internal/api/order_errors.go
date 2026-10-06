@@ -26,6 +26,7 @@ const (
 	CodeModifiersMismatch    ErrorCode = "modifiers_mismatch"
 	CodeLineInKitchen        ErrorCode = "line_in_kitchen"
 	CodeNeedsApproval        ErrorCode = "needs_approval"
+	CodeTipNeedsApproval     ErrorCode = "tip_needs_approval"
 	CodeOrderHeld            ErrorCode = "order_held"
 	CodeOrderNotHeld         ErrorCode = "order_not_held"
 	CodeBalanceDue           ErrorCode = "balance_due"
@@ -79,6 +80,9 @@ var orderErrors = []struct {
 	{svcorder.ErrVenueConfig, http.StatusConflict, CodeVenueNotConfigured},
 	{svcorder.ErrNothingToSend, http.StatusConflict, CodeNothingToSend},
 	{svcorder.ErrNeedsApproval, http.StatusConflict, CodeNeedsApproval},
+	// A tip over the venue's ceiling with no manager (ADR-261): a 403, as a
+	// permission the cashier does not hold is, and the till asks for one.
+	{svcorder.ErrTipNeedsApproval, http.StatusForbidden, CodeTipNeedsApproval},
 	{svcorder.ErrInvoiceNotIssued, http.StatusNotFound, CodeInvoiceNotFound},
 	{svcorder.ErrRefundsMismatch, http.StatusUnprocessableEntity, CodeRefundsMismatch},
 	{svcorder.ErrInvalidCommand, http.StatusBadRequest, CodeInvalidRequest},
@@ -138,6 +142,13 @@ var orderErrors = []struct {
 	{order.ErrInvalidPayload, http.StatusUnprocessableEntity, CodeInvalidPayload},
 }
 
+// orderErrorWords are the refusals answered in words of their own rather
+// than the error's, and the field they are about: ones the till shows as
+// they are.
+var orderErrorWords = map[ErrorCode]struct{ message, field string }{
+	CodeTipNeedsApproval: {"A tip this large needs a manager's approval.", "tip"},
+}
+
 // writeOrderError answers a refusal from the order path.
 //
 // The message is the error's own: the domain's wording says what is wrong
@@ -146,7 +157,11 @@ var orderErrors = []struct {
 func (s *Server) writeOrderError(w http.ResponseWriter, r *http.Request, err error) {
 	for _, m := range orderErrors {
 		if errors.Is(err, m.err) {
-			writeFieldError(w, s.log, m.status, m.code, err.Error(), fieldOf(err))
+			message, field := err.Error(), fieldOf(err)
+			if said, ok := orderErrorWords[m.code]; ok {
+				message, field = said.message, said.field
+			}
+			writeFieldError(w, s.log, m.status, m.code, message, field)
 			return
 		}
 	}

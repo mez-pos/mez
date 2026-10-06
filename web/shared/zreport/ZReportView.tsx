@@ -11,7 +11,7 @@ import { useVenue } from "../use-venue";
 import { cx } from "../ui/cx";
 import { GroupTable, Pair, Row, Section } from "./ZTables";
 import { ZPaper } from "./ZPaper";
-import { channelName, clockText, differenceWords, methodName, rateText, serviceName, staffName, taxNote } from "./zreport-logic";
+import { approvedTips, channelName, clockText, differenceWords, methodName, rateText, serviceName, staffName, taxNote } from "./zreport-logic";
 
 interface ZReportViewProps {
   z: ZReportResponse;
@@ -30,6 +30,7 @@ export function ZReportView({ z, actions }: ZReportViewProps) {
   // A report issued before these were counted has neither (ADR-184, ADR-188).
   const byService = r.by_service ?? [];
   const tipsBy = r.tips_by ?? [];
+  const approved = approvedTips(r);
 
   return (
     <article aria-label={`Z-report ${z.number}`} className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -107,6 +108,7 @@ export function ZReportView({ z, actions }: ZReportViewProps) {
           {tipsBy.map((t) => (
             <Row key={t.staff_id} label={`Tips on payments taken by ${who(t.staff_id)}`} count={t.count} amount={t.amount} tone="muted" />
           ))}
+          {approved && <Row label="Of them, approved by a manager over the ceiling" count={approved.count} amount={approved.amount} tone="muted" />}
           {r.balance.difference.minor !== 0 && <Row label="Paid for bills of other shifts" amount={r.balance.difference} />}
         </Section>
 

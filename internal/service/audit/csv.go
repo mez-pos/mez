@@ -14,6 +14,13 @@ import (
 // kindWords is each kind as the file says it.
 var kindWords = map[Kind]string{
 	Void: "Void", Comp: "Comp", Discount: "Discount", Refund: "Refund", PaymentVoid: "Payment void", Reopen: "Reopen",
+	TipApproved: "Tip approved",
+}
+
+// kindsWords is each kind in the plural, for a column of them.
+var kindsWords = map[Kind]string{
+	Void: "Voids", Comp: "Comps", Discount: "Discounts", Refund: "Refunds", PaymentVoid: "Payment voids", Reopen: "Reopens",
+	TipApproved: "Tips approved",
 }
 
 // Table is everything the filter finds, newest first, as a table for a CSV

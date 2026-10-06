@@ -144,6 +144,10 @@ func (b *builder) event(e order.Event, before, after order.State) error {
 			by := b.tipsOf(t.TenderedBy)
 			by.Count--
 			b.sub(&by.Amount, tip)
+			if t.AuthorisedBy != 0 {
+				b.r.TipsApproved.Count--
+				b.sub(&b.r.TipsApproved.Amount, tip)
+			}
 		}
 		return b.err
 	case order.RefundIssued:
@@ -183,6 +187,10 @@ func (b *builder) tender(p order.PaymentTendered) error {
 		by := b.tipsOf(p.TenderedBy)
 		by.Count++
 		b.add(&by.Amount, tip)
+		if p.AuthorisedBy != 0 {
+			b.r.TipsApproved.Count++
+			b.add(&b.r.TipsApproved.Amount, tip)
+		}
 	}
 	return b.err
 }

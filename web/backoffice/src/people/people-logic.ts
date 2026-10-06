@@ -21,6 +21,7 @@ export const permissionWords: Readonly<Record<Permission, string>> = {
   "discount.give": "Give discounts",
   "payment.void": "Void payments",
   "refund.give": "Give refunds",
+  "tip.approve": "Approve a tip over the venue's ceiling",
   "order.reopen": "Reopen closed bills",
   "invoice.reprint": "Reprint invoices",
   "shift.open": "Open the shift",
@@ -46,7 +47,7 @@ export const permissionGroups: readonly PermissionGroup[] = [
   {
     title: "Corrections",
     note: "Others ask for these on the order screen.",
-    permissions: ["line.void", "line.comp", "discount.give", "payment.void", "refund.give", "order.reopen", "invoice.reprint"],
+    permissions: ["line.void", "line.comp", "discount.give", "payment.void", "refund.give", "tip.approve", "order.reopen", "invoice.reprint"],
   },
   { title: "Shift and cash", permissions: ["shift.open", "shift.manage", "cash.move"] },
   {
@@ -159,12 +160,12 @@ export function problemOf(err: unknown): Problem {
   return { field: null, message: "Something went wrong. Try again." };
 }
 
-/** The line under the title: "9 people", or "9 people Â· 2 deactivated". */
+/** The line under the title: "9 people", or "9 people · 2 deactivated". */
 export function peopleSummary(staff: readonly Pick<Person, "active">[]): string {
   const active = staff.filter((p) => p.active).length;
   const off = staff.length - active;
   const people = active === 1 ? "1 person" : `${active} people`;
-  return off > 0 ? `${people} Â· ${off} deactivated` : people;
+  return off > 0 ? `${people} · ${off} deactivated` : people;
 }
 
 /** The table's rows: the active staff in the server's order, then the deactivated when asked for. */

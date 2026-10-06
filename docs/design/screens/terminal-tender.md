@@ -133,8 +133,21 @@ middle, and once the bill is paid a panel on the right.
 - `POST .../invoice` for a bill paid with no invoice; `POST .../close`; a
   reprint with its approval.
 - The sums done here, and tested in `tender-logic.ts`: the change, the bill's
-  part of a cash payment, and a tip as a percentage, to the nearest whole
-  unit ("nobody tips in paise"). Every other figure is the server's.
+  part of a cash payment, a tip as a percentage, to the nearest whole unit
+  ("nobody tips in paise"), and the tip ceiling. Every other figure is the
+  server's.
+- **A tip over the venue's ceiling needs a manager** (ADR-261). The ceiling is
+  `tips_max_percent` of the payment's amount, rounded up to the paisa, read
+  with the venue (`GET /api/v1/venue`); 0 means every tip. Over it, the tip
+  card says "Over 50%: needs a manager" (a warning chip, the colour and the
+  words), and the paying button opens the approval sheet ("Approve the tip",
+  someone holding `tip.approve` and their PIN) before anything is sent. Cash
+  goes with the approval at once. A card or UPI payment carries it to **Mark
+  as paid**, so the manager says yes before the machine is keyed; the server
+  checks the PIN then, and a refused approval is asked for again. The body
+  gains `authorised_by` and `pin`. When the server answers
+  `tip_needs_approval` (403), because the till had not read the ceiling or
+  it changed, the sheet opens then. The waiter's bill does the same.
 
 ## Interactions
 
@@ -179,7 +192,7 @@ middle, and once the bill is paid a panel on the right.
 - **Moved on another device:** the balance redraws from the stream; a card
   amount above the new balance is lowered to it.
 - **Permission denied:** a payment needs `payment.take`; a reprint needs an
-  approver who may.
+  approver who may, and so does a tip over the ceiling (`tip.approve`).
 
 ## Constraints
 

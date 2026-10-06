@@ -12,6 +12,8 @@ export const kindWords: Readonly<Record<AuditKind, { one: string; many: string }
   refund: { one: "Refund", many: "Refunds" },
   payment_void: { one: "Payment void", many: "Payment voids" },
   reopen: { one: "Reopen", many: "Reopens" },
+  // A tip over the venue's ceiling that a manager let through (ADR-261); its amount is the tip.
+  tip_approved: { one: "Tip approved", many: "Tips approved" },
 };
 
 export const kinds = Object.keys(kindWords) as AuditKind[];

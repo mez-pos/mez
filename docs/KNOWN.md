@@ -25,8 +25,11 @@
   it, and powerful roles have six digits; what remains: a colleague can be
   locked out on purpose with seven wrong PINs, and a guesser pacing four
   tries a quarter hour never trips a lockout, which the six digits answer.)
-  **Tips are unbounded** and need no authorisation, and the pool pays
-  them out. (The printer address and the Windows data directory, also left
+  (Tips, also left here, are fixed by ADR-261: a tip over the venue's
+  ceiling, 50% of the payment unless set, needs a manager holding
+  tip.approve, and is listed in the audit trail; what remains: the ceiling
+  is per payment, not per bill, and the printed Z-report does not show
+  approved tips.) (The printer address and the Windows data directory, also left
   here by ADR-257, are fixed by ADR-259; what remains: a printer saved with
   a hostname or public address before ADR-259 keeps it until next edited,
   the send does not re-check the address, and the binary's own folder, such

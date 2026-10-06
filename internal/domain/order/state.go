@@ -179,9 +179,12 @@ type Tender struct {
 	Tip        money.Amount
 	Reference  string
 	TenderedBy int64
-	Status     PaymentStatus
-	Refunded   money.Amount // refunded against it so far
-	VoidReason string
+	// AuthorisedBy approved its tip over the venue's ceiling (ADR-261); zero
+	// when the tip needed nobody.
+	AuthorisedBy int64
+	Status       PaymentStatus
+	Refunded     money.Amount // refunded against it so far
+	VoidReason   string
 }
 
 // Refund is money given back against a tender.

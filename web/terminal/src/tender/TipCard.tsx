@@ -2,7 +2,8 @@
 // payment comes to with it. A tip is kept apart from the bill, always: it is
 // never part of what the invoice says was sold. The design's line about where
 // tips go is left out: who shares a tip is the venue's rule, not this screen's
-// to promise.
+// to promise. A tip over the venue's ceiling says it needs a manager, who
+// approves it when the payment is taken (ADR-261).
 
 import type { Money as Amount } from "../../../shared/api-types";
 import { Money } from "../../../shared/ui";
@@ -24,6 +25,8 @@ interface TipCardProps {
   collect: Amount;
   /** Tips come out of the cash handed over. */
   cash: boolean;
+  /** "Over 50%: needs a manager" for a tip over the venue's ceiling, or null (tipNote). */
+  note: string | null;
   active: boolean;
   busy: boolean;
   onActivate: () => void;
@@ -31,7 +34,7 @@ interface TipCardProps {
   onTip: (minor: number) => void;
 }
 
-export function TipCard({ bill, base, tip, collect, cash, active, busy, onActivate, onKey, onTip }: TipCardProps) {
+export function TipCard({ bill, base, tip, collect, cash, note, active, busy, onActivate, onKey, onTip }: TipCardProps) {
   const money = (minor: number): Amount => ({ minor, currency: bill.currency });
   const offers = tipPercents.map((percent) => ({ percent, minor: tipFor(base, percent, bill.currency) })).filter((o) => o.minor > 0);
   const chosen = offers.find((o) => o.minor === tip.minor);
@@ -81,11 +84,22 @@ export function TipCard({ bill, base, tip, collect, cash, active, busy, onActiva
           <span>{chosen ? `Tip (${chosen.percent}%)` : "Tip"}</span>
           <Money amount={tip} />
         </div>
+        {note && <TipNote note={note} />}
         <div className="mt-1 flex items-baseline justify-between">
           <span className="font-serif text-xl">To collect</span>
           <Money amount={collect} variant="heading" />
         </div>
       </div>
     </section>
+  );
+}
+
+/** A tip over the ceiling, as a status: the colour and the words. */
+export function TipNote({ note }: { note: string }) {
+  return (
+    <p role="status" className="flex items-center gap-2 rounded bg-chip-warning-bg px-3 py-1.5 text-sm font-semibold text-chip-warning-fg">
+      <span aria-hidden="true" className="size-2 shrink-0 rounded-round bg-highlight" />
+      {note}
+    </p>
   );
 }

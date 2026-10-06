@@ -28,6 +28,7 @@ export type ErrorCode =
   | 'modifiers_mismatch'
   | 'line_in_kitchen'
   | 'needs_approval'
+  | 'tip_needs_approval'
   | 'order_held'
   | 'order_not_held'
   | 'payment_not_captured'
@@ -329,6 +330,7 @@ export type Permission =
   | 'payment.take'
   | 'payment.void'
   | 'refund.give'
+  | 'tip.approve'
   | 'order.reopen'
   | 'invoice.reprint'
   | 'kitchen.view'
@@ -368,7 +370,8 @@ export type AuditKind =
   | 'discount'
   | 'refund'
   | 'payment_void'
-  | 'reopen';
+  | 'reopen'
+  | 'tip_approved';
 
 export type AuditAnalysisSheet =
   | 'reason'
@@ -555,6 +558,7 @@ export interface PaymentTendered {
   tip: Money;
   reference?: string;
   tendered_by: number;
+  authorised_by?: number;
 }
 
 export interface PaymentVoided {
@@ -1200,11 +1204,13 @@ export interface SendTicket {
   line_ids?: number[];
 }
 
-export interface TenderPayment {
+export interface TenderRequest {
   method: PaymentMethod;
   amount: Money;
   tip: Money;
   reference?: string;
+  authorised_by?: string;
+  pin?: string;
 }
 
 export interface VoidPaymentRequest {
@@ -1525,6 +1531,7 @@ export interface VenueDetailsRequest {
 export interface VenueNameResponse {
   name: string;
   timezone: string;
+  tips_max_percent: number;
 }
 
 export interface SettingsVenueResponse {
@@ -1621,6 +1628,7 @@ export interface RulesRequest {
   tip_rule: string;
   tip_role_weights: Record<string, number>;
   ticket_late_minutes: number;
+  tips_max_percent?: number;
 }
 
 export interface RulesResponse {
@@ -1629,6 +1637,7 @@ export interface RulesResponse {
   tip_rule: string;
   tip_role_weights: Record<string, number>;
   ticket_late_minutes: number;
+  tips_max_percent?: number;
   currency: string;
   minor_per_major: number;
   roles: string[];
@@ -2137,6 +2146,7 @@ export interface Report {
   payments: Payment[];
   tips: Money;
   tips_by: StaffTally[];
+  tips_approved: Tally;
   balance: Balance;
 }
 

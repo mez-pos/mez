@@ -1,8 +1,18 @@
 // Words for a Z-report on screen (docs/design/screens/zreport.md). Nothing
 // here adds money up: every figure is the stored report's.
 
-import type { Money, PaymentMethod, ZNameResponse } from "../api-types";
+import type { Money, PaymentMethod, Tally, ZNameResponse } from "../api-types";
 import { formatMoney } from "../money";
+
+/**
+ * The tips a manager let through over the venue's ceiling (ADR-261), or null
+ * when there were none. A report issued before they were counted has no
+ * such field, whatever the type says.
+ */
+export function approvedTips(r: { tips_approved?: Tally }): Tally | null {
+  const t = r.tips_approved;
+  return t && t.count > 0 ? t : null;
+}
 
 /** A tax rate, thousandths of a percent, as "2.5%": by string, never a float. */
 export function rateText(rate: number): string {

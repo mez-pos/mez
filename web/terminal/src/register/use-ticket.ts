@@ -15,7 +15,7 @@ import type {
   OpenTicketsResponse,
   OrderResponse,
   Override,
-  TenderPayment,
+  TenderRequest,
 } from "../../../shared/api-types";
 import { browserStorage } from "../../../shared/auth/storage";
 import { useAuthStore } from "../../../shared/auth/use-auth";
@@ -77,7 +77,7 @@ export interface Ticket {
    * Takes a payment. The key is the caller's, kept across retries of the
    * same tender, so a lost answer cannot charge twice (terminal-tender.md).
    */
-  tender: (payment: TenderPayment, key: string) => Promise<void>;
+  tender: (payment: TenderRequest, key: string) => Promise<void>;
   /**
    * Reads the order again from the server, past the cache: after a payment
    * whose answer was lost, to see whether it was recorded. Rejects when the

@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { channelName, differenceWords, methodName, rateText, reportProblem, staffName, serviceName, stampText, taxNote } from "./zreport-logic";
+import { approvedTips, channelName, differenceWords, methodName, rateText, reportProblem, staffName, serviceName, stampText, taxNote } from "./zreport-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
+
+describe("approvedTips", () => {
+  it("is the tips a manager let through over the ceiling, when there were any (ADR-261)", () => {
+    expect(approvedTips({ tips_approved: { count: 2, amount: inr(14000) } })).toEqual({ count: 2, amount: inr(14000) });
+    expect(approvedTips({ tips_approved: { count: 0, amount: inr(0) } })).toBeNull();
+  });
+  it("is nothing on a report issued before they were counted", () => {
+    expect(approvedTips({})).toBeNull();
+  });
+});
 
 describe("rateText", () => {
   it("writes thousandths of a percent without trailing zeros", () => {
