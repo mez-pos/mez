@@ -54,7 +54,7 @@ func TestWherePayingComesFirstARoundWaitsForItsPayment(t *testing.T) {
 	w := newPrepayWorld(t, true, PayFirst)
 	ctx := context.Background()
 
-	round, err := w.s.PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
+	round, err := party(t, w.s).PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func TestWherePayingComesFirstARoundWaitsForItsPayment(t *testing.T) {
 	}
 
 	// Sent again with its key, it is the same round, still asking the same.
-	again, err := w.s.PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
+	again, err := party(t, w.s).PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
 	if err != nil || !again.Replayed || again.PublicID != round.PublicID || again.Status != RoundUnpaid || again.Due != inr(58800) {
 		t.Errorf("again = %+v, %v", again, err)
 	}
@@ -96,7 +96,7 @@ func TestASeatedTableStillPaysFirst(t *testing.T) {
 	opened := must(t)(w.s.Open(ctx, cashier(""), OpenOrder{Channel: order.ChannelCounter, TableID: 4, Covers: 2}))
 	must(t)(w.s.AddLine(ctx, cashier(""), opened.OrderID, dosa(1)))
 
-	round, err := w.s.PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
+	round, err := party(t, w.s).PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestPayingFirstNeedsBothTheSettingAndAWay(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := newPrepayWorld(t, tt.canCharge, tt.mode)
-			round, err := w.s.PlaceRound(context.Background(), guest("k1"), w.g.twoOatAndABrownie(4))
+			round, err := party(t, w.s).PlaceRound(context.Background(), guest("k1"), w.g.twoOatAndABrownie(4))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -171,7 +171,7 @@ func TestAnUnpaidRoundIsRefused(t *testing.T) {
 		}, ErrTableBusy},
 		{"past the unpaid rounds a table may have", func(t *testing.T, w *prepayWorld) {
 			for i := range maxWaitingRounds {
-				if _, err := w.s.PlaceRound(context.Background(), guest("u"+string(rune('a'+i))), w.g.twoOatAndABrownie(4)); err != nil {
+				if _, err := party(t, w.s).PlaceRound(context.Background(), guest("u"+string(rune('a'+i))), w.g.twoOatAndABrownie(4)); err != nil {
 					t.Fatalf("round %d: %v", i, err)
 				}
 			}
@@ -181,7 +181,7 @@ func TestAnUnpaidRoundIsRefused(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := newPrepayWorld(t, true, PayFirst)
 			tt.prepare(t, w)
-			_, err := w.s.PlaceRound(context.Background(), guest("k"), w.g.twoOatAndABrownie(4))
+			_, err := party(t, w.s).PlaceRound(context.Background(), guest("k"), w.g.twoOatAndABrownie(4))
 			if err == nil || (tt.want != nil && !errors.Is(err, tt.want)) {
 				t.Fatalf("err = %v, want %v", err, tt.want)
 			}
@@ -198,7 +198,7 @@ func TestUnpaidRoundsDoNotCrowdOutRequests(t *testing.T) {
 	w := newPrepayWorld(t, true, PayFirst)
 	ctx := context.Background()
 	for i := range maxWaitingRounds {
-		if _, err := w.s.PlaceRound(ctx, guest("u"+string(rune('a'+i))), w.g.twoOatAndABrownie(4)); err != nil {
+		if _, err := party(t, w.s).PlaceRound(ctx, guest("u"+string(rune('a'+i))), w.g.twoOatAndABrownie(4)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -209,7 +209,7 @@ func TestUnpaidRoundsDoNotCrowdOutRequests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	round, err := w.s.PlaceRound(ctx, guest("r1"), w.g.twoOatAndABrownie(4))
+	round, err := party(t, w.s).PlaceRound(ctx, guest("r1"), w.g.twoOatAndABrownie(4))
 	if err != nil || round.Status != RoundWaiting {
 		t.Fatalf("round = %+v, %v", round, err)
 	}

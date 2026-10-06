@@ -106,6 +106,15 @@ anyone brings it: so the figure at the counter is no surprise.
   which rows to draw and adds nothing up.
 - With no ticket at the table the answer is a bill with nothing on it, not
   an error.
+- **Every call here is the sitting's** (ADR-262): the bill, its QR, I have
+  paid, paying online and giving a payment up send the phone's session as
+  `X-Guest-Session`, and are refused without one good for the table's open
+  ticket (401 `guest_session_required`). The phone then drops its session,
+  reads the landing again and asks once more if that gave it a new one. If
+  not, the table has a bill this phone is not part of, and the screen says
+  so (States). The QR is read as a picture with the session and shown from
+  memory, since an image cannot send a header. The receipt asks for none: it
+  is read weeks later, and the bill's id names it.
 - `bill` in the answer, while a bill is open: its own id. The phone keeps
   the latest under `mez.bill.<code>`, for the receipt (`guest-receipt.md`).
 - `upi` in the answer: the link, the address, the payee and the amount.
@@ -172,6 +181,11 @@ anyone brings it: so the figure at the counter is no surprise.
   connection and try again." with **Try again**.
 - **Failed:** "The bill could not be read. Try again, or ask a member of
   staff." with **Try again**.
+- **Not yet part of the table** (ADR-262: the table has a ticket and this
+  phone has no session for it): a card, "Ask a member of staff to accept
+  your first order", and "The table's bill shows on this phone once staff
+  have let it join the table. Order from the menu and they will be asked,
+  or ask them in person." with **Try again**.
 - **Nothing open:** no lines and no summary, and the sentence above. A
   request nobody has accepted is not on any bill.
 - **Paying online could not be started:** the server's sentence when the

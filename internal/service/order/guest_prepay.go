@@ -82,6 +82,12 @@ func (s *Service) SendPaidRound(ctx context.Context, venueID int64, publicID str
 	if err != nil {
 		return Round{}, err
 	}
+	// Drawn now, and used only if the round's phone has no session the
+	// ticket can bind (ADR-262).
+	fresh, err := drawSession()
+	if err != nil {
+		return Round{}, err
+	}
 
 	guest := Meta{VenueID: venueID}
 	for range maxRoundAttempts {
@@ -103,6 +109,11 @@ func (s *Service) SendPaidRound(ctx context.Context, venueID int64, publicID str
 			}
 			if n != 1 {
 				return nil, errRoundRaced
+			}
+			// Paying for the round lets its phone into the sitting, as
+			// accepting it would have.
+			if err := seatSession(ctx, tx.Queries(), venueID, row.TableID, row.ID, row.SessionID, tx.OrderID, fresh, at); err != nil {
+				return nil, err
 			}
 			return roundPayloads(lines, tx.State.LastSeq+1), nil
 		})

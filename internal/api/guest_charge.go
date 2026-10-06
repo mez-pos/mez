@@ -110,6 +110,10 @@ func (s *Server) guestStartCharge(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// The bill is the sitting's: only a phone of it pays it (ADR-262).
+	if _, ok := s.guestSessionFor(w, r, table); !ok {
+		return
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	description := "Table " + table.TableName + ", " + table.VenueName
 	// No body is the rest of the bill, as it was before a bill could be
@@ -135,6 +139,11 @@ func (s *Server) guestStartCharge(w http.ResponseWriter, r *http.Request) {
 // guestStartRoundCharge starts paying for a round held until it is paid.
 // The round is the table's own or it is not found: a table's code says
 // nothing of another table's rounds.
+//
+// It asks for no session (ADR-262): it pays for that round and nothing
+// else, the phone that placed it holds its id as it does to track it, and
+// where guests pay first a phone joining a table's ticket has no session
+// until its round is paid for. Whoever pays for a round has ordered it.
 func (s *Server) guestStartRoundCharge(w http.ResponseWriter, r *http.Request) {
 	table, ok := s.guestTableFor(w, r)
 	if !ok {
@@ -217,6 +226,13 @@ func (s *Server) guestCharge(w http.ResponseWriter, r *http.Request) {
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
+	// A payment of the bill is the sitting's; one of a round is asked about
+	// as the round is, by whoever placed it (ADR-262).
+	if stored.Round == "" {
+		if _, ok := s.guestSessionFor(w, r, table); !ok {
+			return
+		}
+	}
 	c, err := s.charges.Settle(r.Context(), table.VenueID, id)
 	if err != nil {
 		// Nothing was decided: the gateway was not reached, or the bill
@@ -234,6 +250,10 @@ func (s *Server) guestCharge(w http.ResponseWriter, r *http.Request) {
 func (s *Server) guestLetGoCharge(w http.ResponseWriter, r *http.Request) {
 	table, ok := s.guestTableFor(w, r)
 	if !ok {
+		return
+	}
+	// Giving up a part of the bill is the sitting's to do (ADR-262).
+	if _, ok := s.guestSessionFor(w, r, table); !ok {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")

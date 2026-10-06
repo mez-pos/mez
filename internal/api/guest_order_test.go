@@ -40,7 +40,7 @@ func newOrderingWorld(t *testing.T) *orderingWorld {
 	if err := json.Unmarshal([]byte(body), &m); err != nil {
 		t.Fatalf("reading the menu: %v", err)
 	}
-	return &orderingWorld{guestWorld: g, orders: orders, white: m.Items[0].ID, oat: m.ModifierGroups[0].Modifiers[1].ID}
+	return withPhones(t, &orderingWorld{guestWorld: g, orders: orders, white: m.Items[0].ID, oat: m.ModifierGroups[0].Modifiers[1].ID})
 }
 
 // place sends a cart of n oat flat whites from table 4.
@@ -54,7 +54,7 @@ func (o *orderingWorld) post(key, body string) *httptest.ResponseRecorder {
 	if key != "" {
 		header[HeaderIdempotencyKey] = key
 	}
-	return send(o.handler, http.MethodPost, "/order/api/t/"+o.code+"/orders", body, header)
+	return o.phoneSend(http.MethodPost, "/order/api/t/"+o.code+"/orders", body, header)
 }
 
 // seat opens a ticket at table 4 as staff would, behind the API's back.
@@ -191,7 +191,7 @@ func TestGuestOrderRefusals(t *testing.T) {
 		}, func(o *orderingWorld) *httptest.ResponseRecorder { return o.place("k", 1) },
 			http.StatusConflict, CodeTableNotOrdering, "Ask a member of staff"},
 		{"a code that leads nowhere", nil, func(o *orderingWorld) *httptest.ResponseRecorder {
-			return send(o.handler, http.MethodPost, "/order/api/t/abcdefghjkmn/orders", `{"lines":[]}`, map[string]string{HeaderIdempotencyKey: "k"})
+			return o.phoneSend(http.MethodPost, "/order/api/t/abcdefghjkmn/orders", `{"lines":[]}`, map[string]string{HeaderIdempotencyKey: "k"})
 		}, http.StatusNotFound, CodeTableCodeUnknown, ""},
 	}
 	for _, tt := range tests {
@@ -221,7 +221,7 @@ func TestGuestOrderWithTheVenueShut(t *testing.T) {
 		t.Fatal(err)
 	}
 	g.rebuild(t, WithMenus(g.db), WithGuests(g.codes, "/order/"), WithGuestOrders(orders))
-	o := &orderingWorld{guestWorld: g, orders: orders, white: 1, oat: 2}
+	o := withPhones(t, &orderingWorld{guestWorld: g, orders: orders, white: 1, oat: 2})
 
 	rec := o.place("k", 1)
 	got := errorOf(t, rec)
@@ -249,7 +249,7 @@ func TestGuestOrderPastTheWaitingLimit(t *testing.T) {
 // there, and the answer is the API's own 404 and not the app's page.
 func TestGuestOrdersNeedTheOption(t *testing.T) {
 	g := newGuestWorld(t)
-	rec := send(g.handler, http.MethodPost, "/order/api/t/"+g.code+"/orders", `{"lines":[]}`, nil)
+	rec := g.phoneSend(http.MethodPost, "/order/api/t/"+g.code+"/orders", `{"lines":[]}`, nil)
 	if rec.Code != http.StatusNotFound && rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("status %d, body %s", rec.Code, rec.Body)
 	}
@@ -279,7 +279,7 @@ func TestGuestOrderWherePayingComesFirst(t *testing.T) {
 	if err := json.Unmarshal([]byte(body), &m); err != nil {
 		t.Fatal(err)
 	}
-	o := &orderingWorld{guestWorld: g, orders: orders, white: m.Items[0].ID, oat: m.ModifierGroups[0].Modifiers[1].ID}
+	o := withPhones(t, &orderingWorld{guestWorld: g, orders: orders, white: m.Items[0].ID, oat: m.ModifierGroups[0].Modifiers[1].ID})
 
 	rec := o.place("k1", 2)
 	if rec.Code != http.StatusCreated {

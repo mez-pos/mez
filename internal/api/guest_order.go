@@ -39,6 +39,8 @@ type GuestOrders interface {
 	UPIAccount(ctx context.Context, venueID int64) (payment.UPIAccount, error)
 	TellPaid(ctx context.Context, venueID, tableID int64) (svcorder.PaidNotice, error)
 	PaidTold(ctx context.Context, orderID int64) (bool, error)
+	OpenGuestSession(ctx context.Context, venueID, tableID int64) (string, bool, error)
+	GuestSession(ctx context.Context, venueID, tableID int64, token string) (svcorder.GuestSession, error)
 }
 
 // WithGuestOrders lets a guest place an order. It needs WithGuests.
@@ -94,6 +96,10 @@ type guestRoundResponse struct {
 	// paid for and sent (ADR-249). Only that order's own route answers it:
 	// a round at a table has none.
 	PickupCode string `json:"pickup_code,omitempty"`
+	// Session is the session for the sitting made for this phone when staff
+	// let its order onto the table's ticket and it had none (ADR-262). Only
+	// the order's own route answers it, and only until the phone sends it.
+	Session string `json:"session,omitempty"`
 }
 
 func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +116,10 @@ func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
 	if !s.decode(w, r, &req) {
 		return
 	}
-	cmd := svcorder.PlaceRound{TableID: table.TableID, Picks: make([]menu.Pick, len(req.Lines))}
+	// The session is checked by the service, against the table as it finds
+	// it: with none, at a table with a ticket open, the order asks staff to
+	// let this phone join (ADR-262).
+	cmd := svcorder.PlaceRound{TableID: table.TableID, Picks: make([]menu.Pick, len(req.Lines)), Session: r.Header.Get(HeaderGuestSession)}
 	for i, l := range req.Lines {
 		cmd.Picks[i] = menu.Pick{ItemID: l.ItemID, ModifierIDs: l.ModifierIDs, Qty: l.Qty}
 	}
@@ -138,8 +147,8 @@ func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
 func toGuestRoundResponse(round svcorder.Round) (guestRoundResponse, error) {
 	out := guestRoundResponse{
 		ID: round.PublicID, Status: round.Status, Subtotal: round.Subtotal, Progress: round.Progress, Bill: round.Bill,
-		PickupCode: round.PickupCode,
-		Lines:      make([]guestRoundLineResponse, len(round.Lines)),
+		PickupCode: round.PickupCode, Session: round.Session,
+		Lines: make([]guestRoundLineResponse, len(round.Lines)),
 	}
 	if round.Status == svcorder.RoundUnpaid {
 		due := round.Due
@@ -171,6 +180,8 @@ func (s *Server) writeGuestOrderError(w http.ResponseWriter, r *http.Request, er
 		dish = pick.Item
 	}
 	switch {
+	case errors.Is(err, svcorder.ErrGuestSession):
+		writeGuestSessionRequired(w, s)
 	case errors.Is(err, menu.ErrNoSuchItem), errors.Is(err, menu.ErrSoldOut):
 		refuse(http.StatusConflict, CodeDishUnavailable, dish+" is no longer available. Take it out of your cart to order the rest.")
 	case errors.Is(err, menu.ErrChoices):

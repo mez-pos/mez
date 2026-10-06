@@ -12,7 +12,7 @@ import (
 )
 
 func (o *orderingWorld) track(code, round string) *httptest.ResponseRecorder {
-	return send(o.handler, http.MethodGet, "/order/api/t/"+code+"/orders/"+round, "", nil)
+	return o.phoneSend(http.MethodGet, "/order/api/t/"+code+"/orders/"+round, "", nil)
 }
 
 func (o *orderingWorld) tracked(t *testing.T, round string) guestRoundResponse {

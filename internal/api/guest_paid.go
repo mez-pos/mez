@@ -48,6 +48,10 @@ func (s *Server) guestTellPaid(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// Only a phone of the sitting says its bill is paid (ADR-262).
+	if _, ok := s.guestSessionFor(w, r, table); !ok {
+		return
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	notice, err := s.guestOrders.TellPaid(r.Context(), table.VenueID, table.TableID)
 	switch {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/domain/menu"
 	"github.com/byjoellobo/mez/internal/domain/money"
+	svcorder "github.com/byjoellobo/mez/internal/service/order"
 	"github.com/byjoellobo/mez/internal/service/tablecodes"
 )
 
@@ -18,11 +19,22 @@ import (
 // the one API a guest can reach through the relay, and the staff API is the
 // one they cannot. On the venue's own wifi it is the same paths.
 //
-// A guest is nobody: no device, no session. What they hold is the code on
-// their table, and every route here is under it.
+// A guest is nobody: no device and no staff session. What they hold is the
+// code on their table, and every route here is under it. The code says which
+// table and lasts for ever, so it opens only what any passer-by may see: the
+// landing, the menu, and an order or a receipt they already hold the id of.
+// The kitchen and the bill also need the phone's session for the sitting
+// (ADR-262), sent as X-Guest-Session.
 
 // CodeTableCodeUnknown is a table code that leads nowhere.
 const CodeTableCodeUnknown ErrorCode = "table_code_unknown"
+
+// CodeGuestSessionRequired is a phone without a session that is good for the
+// table's sitting now (ADR-262).
+const CodeGuestSessionRequired ErrorCode = "guest_session_required"
+
+// HeaderGuestSession carries a guest phone's session for the sitting.
+const HeaderGuestSession = "X-Guest-Session"
 
 // What a guest may ask, and how often (phase 11, Task 6d, ADR-246). There
 // are two things to count by, and neither is enough alone.
@@ -62,6 +74,11 @@ var (
 	// the first, a table's rounds go straight to the kitchen (ADR-209), so
 	// this is what stands between a photographed sticker and forty tickets.
 	guestOrderLimit = limit{requests: 20, per: 10 * time.Minute}
+
+	// guestSessionLimit is how many sessions one table may be handed: each
+	// is a row, and a phone that keeps its own asks for no other. A table
+	// of eight with every phone in a private tab is well under it.
+	guestSessionLimit = limit{requests: 60, per: 10 * time.Minute}
 )
 
 // Guests is what the API needs to read a table's code, and the venue's
@@ -140,6 +157,10 @@ type guestTableNameResponse struct {
 type guestTableResponse struct {
 	Venue guestVenueResponse     `json:"venue"`
 	Table guestTableNameResponse `json:"table"`
+	// Session is a new session for the sitting (ADR-262), handed out only
+	// while the table has no ticket open and the phone presented none that
+	// is still good. The phone sends it as X-Guest-Session from then on.
+	Session string `json:"session,omitempty"`
 }
 
 // guestMenuResponse is the venue's menu as a guest reads it: what there is,
@@ -243,10 +264,74 @@ func (s *Server) guestTable(w http.ResponseWriter, r *http.Request) {
 	}
 	// A code can be turned off at any moment: never from a cache.
 	w.Header().Set("Cache-Control", "no-store")
-	writeJSON(w, s.log, http.StatusOK, guestTableResponse{
+	resp := guestTableResponse{
 		Venue: guestVenueResponse{Name: table.VenueName, Currency: table.Currency},
 		Table: guestTableNameResponse{Name: table.TableName},
-	})
+	}
+	session, ok := s.guestOpenSession(w, r, table)
+	if !ok {
+		return
+	}
+	resp.Session = session
+	writeJSON(w, s.log, http.StatusOK, resp)
+}
+
+// guestOpenSession hands the phone a session for the sitting when it has
+// none that is good and the table has no ticket open (ADR-262), and has
+// answered when it could not.
+func (s *Server) guestOpenSession(w http.ResponseWriter, r *http.Request, table tablecodes.Table) (string, bool) {
+	if s.guestOrders == nil {
+		return "", true
+	}
+	if token := r.Header.Get(HeaderGuestSession); token != "" {
+		_, err := s.guestOrders.GuestSession(r.Context(), table.VenueID, table.TableID, token)
+		if err == nil {
+			return "", true
+		}
+		if !errors.Is(err, svcorder.ErrGuestSession) {
+			s.log.Error("checking a guest session failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
+			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+			return "", false
+		}
+	}
+	key := "guest-s:" + strconv.FormatInt(table.VenueID, 10) + ":" + strconv.FormatInt(table.TableID, 10)
+	if !s.limiter.within(key, guestSessionLimit) {
+		s.log.Warn("a table is over its limit of guest sessions", "venue_id", table.VenueID, "table_id", table.TableID)
+		s.tooMany(w, key, guestSessionLimit, "This table is asking too often. Wait a moment.")
+		return "", false
+	}
+	token, issued, err := s.guestOrders.OpenGuestSession(r.Context(), table.VenueID, table.TableID)
+	if err != nil {
+		s.log.Error("opening a guest session failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		return "", false
+	}
+	if issued {
+		s.limiter.allow(key, guestSessionLimit)
+	}
+	return token, true
+}
+
+// guestSessionFor checks the phone's session for the table's sitting, and
+// answers for one that is missing or no longer good, in words a guest can
+// act on: the app scans the landing again for a new one.
+func (s *Server) guestSessionFor(w http.ResponseWriter, r *http.Request, table tablecodes.Table) (svcorder.GuestSession, bool) {
+	session, err := s.guestOrders.GuestSession(r.Context(), table.VenueID, table.TableID, r.Header.Get(HeaderGuestSession))
+	if errors.Is(err, svcorder.ErrGuestSession) {
+		writeGuestSessionRequired(w, s)
+		return svcorder.GuestSession{}, false
+	}
+	if err != nil {
+		s.log.Error("checking a guest session failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		return svcorder.GuestSession{}, false
+	}
+	return session, true
+}
+
+func writeGuestSessionRequired(w http.ResponseWriter, s *Server) {
+	w.Header().Set("Cache-Control", "no-store")
+	writeError(w, s.log, http.StatusUnauthorized, CodeGuestSessionRequired, "Scan the code on your table again to continue.")
 }
 
 func (s *Server) guestMenu(w http.ResponseWriter, r *http.Request) {

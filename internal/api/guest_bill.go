@@ -89,6 +89,10 @@ func (s *Server) guestBill(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// The bill is the sitting's: only a phone of it reads it (ADR-262).
+	if _, ok := s.guestSessionFor(w, r, table); !ok {
+		return
+	}
 	phone, ok := guestPhone(r)
 	if !ok {
 		writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, "phone is the name this phone gave itself: 8 to 64 letters, digits, - or _.", "phone")

@@ -52,7 +52,7 @@ func newPrepayWorld(t *testing.T, publicURL string) *prepayWorld {
 	if err := json.Unmarshal([]byte(body), &m); err != nil {
 		t.Fatal(err)
 	}
-	o := &orderingWorld{guestWorld: g, orders: orders, white: m.Items[0].ID, oat: m.ModifierGroups[0].Modifiers[1].ID}
+	o := withPhones(t, &orderingWorld{guestWorld: g, orders: orders, white: m.Items[0].ID, oat: m.ModifierGroups[0].Modifiers[1].ID})
 	return &prepayWorld{orderingWorld: o, gw: gw}
 }
 
@@ -68,11 +68,11 @@ func (p *prepayWorld) hold(t *testing.T, key string) string {
 }
 
 func (p *prepayWorld) pay(code, round string, header map[string]string) *httptest.ResponseRecorder {
-	return send(p.handler, http.MethodPost, "/order/api/t/"+code+"/orders/"+round+"/charge", "", header)
+	return p.phoneSend(http.MethodPost, "/order/api/t/"+code+"/orders/"+round+"/charge", "", header)
 }
 
 func (p *prepayWorld) ask(id string) guestChargeResponse {
-	rec := send(p.handler, http.MethodGet, "/order/api/t/"+p.code+"/bill/charge/"+id, "", nil)
+	rec := p.phoneSend(http.MethodGet, "/order/api/t/"+p.code+"/bill/charge/"+id, "", nil)
 	var got guestChargeResponse
 	_ = json.Unmarshal(rec.Body.Bytes(), &got)
 	return got
@@ -191,13 +191,13 @@ func TestPayingForARoundIsRefused(t *testing.T) {
 func TestARequestIsNotPaidFor(t *testing.T) {
 	c := newChargeWorld(t, "")
 	other := "/order/api/t/" + c.tableCode(t, 5)
-	rec := send(c.handler, http.MethodPost, other+"/orders", `{"lines":[{"item_id":`+itoa(c.white)+`,"modifier_ids":[`+itoa(c.oat)+`],"qty":1}]}`,
+	rec := c.phoneSend(http.MethodPost, other+"/orders", `{"lines":[{"item_id":`+itoa(c.white)+`,"modifier_ids":[`+itoa(c.oat)+`],"qty":1}]}`,
 		map[string]string{"Content-Type": "application/json", HeaderIdempotencyKey: "r1"})
 	request := decodeRound(t, rec)
 	if rec.Code != http.StatusCreated || request.Status != svcorder.RoundWaiting {
 		t.Fatalf("request: %d %s", rec.Code, rec.Body)
 	}
-	paid := send(c.handler, http.MethodPost, other+"/orders/"+request.ID+"/charge", "", nil)
+	paid := c.phoneSend(http.MethodPost, other+"/orders/"+request.ID+"/charge", "", nil)
 	if paid.Code != http.StatusNotFound || errorOf(t, paid).Code != CodeRequestNotFound || len(c.gw.Started) != 0 {
 		t.Errorf("paying for a request: %d %s", paid.Code, paid.Body)
 	}
@@ -206,7 +206,7 @@ func TestARequestIsNotPaidFor(t *testing.T) {
 // TestWithNoGatewayARoundHasNoCharge: the route is not there.
 func TestWithNoGatewayARoundHasNoCharge(t *testing.T) {
 	o := newOrderingWorld(t)
-	rec := send(o.handler, http.MethodPost, "/order/api/t/"+o.code+"/orders/rnd_ANYTHING/charge", "", nil)
+	rec := o.phoneSend(http.MethodPost, "/order/api/t/"+o.code+"/orders/rnd_ANYTHING/charge", "", nil)
 	if rec.Code != http.StatusNotFound && rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("status %d, want the route absent", rec.Code)
 	}

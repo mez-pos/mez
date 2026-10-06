@@ -42,11 +42,14 @@ var (
 // someone else between the read and the write.
 var errRoundRaced = errors.New("the request was answered by someone else first")
 
-// Request is a round waiting for an answer, as staff see it.
+// Request is a round waiting for an answer, as staff see it. JoinsOpenTicket
+// is true when the table has a ticket open: the phone is not of that party
+// yet, and accepting it lets the phone onto the ticket (ADR-262).
 type Request struct {
 	Round
-	TableName string
-	PlacedAt  time.Time
+	TableName       string
+	PlacedAt        time.Time
+	JoinsOpenTicket bool
 }
 
 // Decision is a request once answered. OrderPublicID is the ticket its
@@ -84,7 +87,7 @@ func (s *Service) WaitingRounds(ctx context.Context, venueID int64) ([]Request, 
 				PublicID: r.PublicID, Status: RoundWaiting, TableID: r.TableID, Lines: lines,
 				Subtotal: money.Amount{Minor: r.SubtotalMinor, Currency: r.Currency},
 			},
-			TableName: r.TableName, PlacedAt: r.CreatedAt.UTC(),
+			TableName: r.TableName, PlacedAt: r.CreatedAt.UTC(), JoinsOpenTicket: r.JoinsOpenTicket == 1,
 		}
 	}
 	return out, nil
@@ -127,6 +130,12 @@ func (s *Service) AcceptRound(ctx context.Context, meta Meta, publicID string) (
 	if err != nil {
 		return Decision{}, err
 	}
+	// Drawn now, and used only if the round's phone has no session the
+	// ticket can bind (ADR-262).
+	fresh, err := drawSession()
+	if err != nil {
+		return Decision{}, err
+	}
 
 	for range maxRoundAttempts {
 		orderID, err := s.ticketAt(ctx, staff, row.TableID)
@@ -148,6 +157,10 @@ func (s *Service) AcceptRound(ctx context.Context, meta Meta, publicID string) (
 			}
 			if n != 1 {
 				return nil, errRoundRaced
+			}
+			// Accepting the round lets its phone into the sitting.
+			if err := seatSession(ctx, tx.Queries(), meta.VenueID, row.TableID, row.ID, row.SessionID, tx.OrderID, fresh, at); err != nil {
+				return nil, err
 			}
 			if err := tx.Queries().BumpFloorVersion(ctx, meta.VenueID); err != nil {
 				return nil, fmt.Errorf("accepting request %s: %w", publicID, err)

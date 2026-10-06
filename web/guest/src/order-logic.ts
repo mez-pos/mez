@@ -328,6 +328,7 @@ export function refusalOf(error: unknown): Refusal {
     case "table_code_unknown":
     case "pickup_code_unknown":
     case "pickup_off":
+    case "guest_session_required":
       return { text: error.message, readMenu: false };
     case "idempotency_key_reused":
       return { text: "Your cart changed while the order was being placed. Check it and place the order again.", readMenu: false };

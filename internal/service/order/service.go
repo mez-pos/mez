@@ -224,8 +224,12 @@ func (s *Service) run(ctx context.Context, meta Meta, orderID int64, name string
 					return err
 				}
 			}
-			// A close takes the order's stock, in this transaction (ADR-112).
+			// A close takes the order's stock, and ends the sitting's guest
+			// sessions, in this transaction (ADR-112, ADR-262).
 			if closes(appended) {
+				if err := endSessions(ctx, q, tx.OrderID, next.Tables(), at); err != nil {
+					return err
+				}
 				return svcstock.DeductSale(ctx, q, svcstock.Sale{
 					VenueID: meta.VenueID, OrderID: tx.OrderID, StaffID: meta.ActorID, Lines: soldLines(next), At: at,
 				})

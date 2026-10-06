@@ -50,6 +50,9 @@ type Querier interface {
 	// Newest first, a page at a time: before_id is the last id of the page
 	// before, or 0 for the first page.
 	AuditEvents(ctx context.Context, arg AuditEventsParams) ([]AuditEventsRow, error)
+	// Binds a session to the ticket its round went onto. One bound to it already
+	// counts as bound; one bound to another, ended or expired binds nothing.
+	BindGuestSession(ctx context.Context, arg BindGuestSessionParams) (int64, error)
 	// For a change that touches every venue at once: the requeue on start.
 	BumpAllPrintVersions(ctx context.Context) error
 	// Moves the venue's floor version on, in the transaction that changed it.
@@ -69,6 +72,8 @@ type Querier interface {
 	// an id from another venue matches nothing.
 	CategoryForEdit(ctx context.Context, arg CategoryForEditParams) (CategoryForEditRow, error)
 	CategoryIDs(ctx context.Context, venueID int64) ([]int64, error)
+	// The phone has presented a session it was handed: the clear copy goes.
+	ClaimGuestSession(ctx context.Context, id int64) error
 	// Moves a job the worker picked to printing, and counts the attempt. It
 	// matches only from the state the worker saw, so two claims of one job
 	// cannot both succeed.
@@ -124,8 +129,15 @@ type Querier interface {
 	// A guest's rounds (ADR-210). Written only inside the transaction that
 	// decides where a round goes; see internal/service/order.
 	// table_id is 0 for an order to collect, which has no table (ADR-248): it is
-	// stored as null, and read back as 0 by every query here.
+	// stored as null, and read back as 0 by every query here. session_id is the
+	// session it was placed with (ADR-262), and 0 for none.
 	CreateGuestRound(ctx context.Context, arg CreateGuestRoundParams) (int64, error)
+	// A guest's phone's session for the sitting (ADR-262). internal/service/order
+	// issues, checks, binds and ends them; internal/service/tablecodes ends a
+	// table's when its code changes.
+	// order_id is 0 for a session not yet bound to a ticket, and round_id 0 for
+	// one not made by accepting a round: both are stored as null.
+	CreateGuestSession(ctx context.Context, arg CreateGuestSessionParams) error
 	CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (int64, error)
 	CreateItem(ctx context.Context, arg CreateItemParams) (int64, error)
 	CreateModifier(ctx context.Context, arg CreateModifierParams) (int64, error)
@@ -221,11 +233,19 @@ type Querier interface {
 	// retired item can be brought back. db.DB.MenuEditor runs these in one read
 	// transaction with MenuVersion.
 	EditorStations(ctx context.Context, venueID int64) ([]EditorStationsRow, error)
+	// The table's code has been renewed or turned off: whoever held it, every
+	// session it gave is over.
+	EndGuestSessionsAtTable(ctx context.Context, arg EndGuestSessionsAtTableParams) error
+	// A ticket has closed: every session bound to it is over.
+	EndGuestSessionsOfOrder(ctx context.Context, arg EndGuestSessionsOfOrderParams) error
 	//
 	// A new PIN signs the person out everywhere: whoever knew the old one
 	// should not stay signed in with it.
 	EndSessionsOfStaff(ctx context.Context, arg EndSessionsOfStaffParams) error
 	EndStaffSession(ctx context.Context, arg EndStaffSessionParams) (int64, error)
+	// A ticket at the table has closed: the sessions handed out there before
+	// it opened, and never bound, belonged to that sitting or to nobody.
+	EndUnboundGuestSessionsAtTable(ctx context.Context, arg EndUnboundGuestSessionsAtTableParams) error
 	ExportByID(ctx context.Context, id int64) (ExportByIDRow, error)
 	ExportsForShift(ctx context.Context, shiftID int64) ([]ExportsForShiftRow, error)
 	// Records how a send went. Only a job still printing can finish.
@@ -245,6 +265,11 @@ type Querier interface {
 	// The round a key was first sent with, as it stands now.
 	GuestRoundByKey(ctx context.Context, arg GuestRoundByKeyParams) (GuestRoundByKeyRow, error)
 	GuestRoundByPublicID(ctx context.Context, publicID string) (GuestRoundByPublicIDRow, error)
+	// A presented session. Whether it is still good is the service's to say.
+	GuestSessionByTokenHash(ctx context.Context, tokenHash string) (GuestSessionByTokenHashRow, error)
+	// The session made for a round when it was accepted, in clear, while its
+	// phone has still to present it.
+	GuestSessionHandoff(ctx context.Context, arg GuestSessionHandoffParams) (string, error)
 	// Idempotency keys. Read and written only inside the transaction that
 	// appends a command's events; see internal/service/order.
 	IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) (IdempotencyKey, error)
@@ -408,6 +433,9 @@ type Querier interface {
 	PrinterByID(ctx context.Context, id int64) (PrinterByIDRow, error)
 	// The venue's printers with each one's newest job, for the back office.
 	PrintersForVenue(ctx context.Context, venueID int64) ([]PrintersForVenueRow, error)
+	// Sessions at a table that expired before a moment ago: no use to anyone,
+	// and a table hands out a few every sitting.
+	PruneGuestSessions(ctx context.Context, arg PruneGuestSessionsParams) error
 	// The venue's receipt printer, if it has one in service.
 	ReceiptPrinter(ctx context.Context, venueID int64) (ReceiptPrinterRow, error)
 	// The device's latest failed attempts, of any staff member, newest first.
@@ -639,7 +667,8 @@ type Querier interface {
 	// The venues a sweep has anything to ask a provider about. Usually none.
 	VenuesWithOpenGatewayCharges(ctx context.Context) ([]int64, error)
 	// The requests staff have still to answer, oldest first, with each one's
-	// table by name.
+	// table by name, and whether that table has a ticket open now: a request
+	// there is a phone asking to join it (ADR-262).
 	WaitingGuestRounds(ctx context.Context, arg WaitingGuestRoundsParams) ([]WaitingGuestRoundsRow, error)
 	//
 	// What was written off between two instants (rebuild Task 16d1, ADR-186),

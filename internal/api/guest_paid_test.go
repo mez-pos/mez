@@ -39,7 +39,7 @@ func newPaidWorld(t *testing.T) *paidWorld {
 }
 
 func (p *paidWorld) tell() *httptest.ResponseRecorder {
-	return send(p.handler, http.MethodPost, "/order/api/t/"+p.code+"/bill/paid", "", nil)
+	return p.phoneSend(http.MethodPost, "/order/api/t/"+p.code+"/bill/paid", "", nil)
 }
 
 func (p *paidWorld) notices(t *testing.T) []paidNoticeResponse {
@@ -178,12 +178,12 @@ func TestGuestCannotSayPaidWithNothingToPay(t *testing.T) {
 	if rec := o.place("k1", 1); rec.Code != http.StatusCreated {
 		t.Fatal(rec.Body)
 	}
-	rec := send(o.handler, http.MethodPost, "/order/api/t/"+o.code+"/bill/paid", "", nil)
+	rec := o.phoneSend(http.MethodPost, "/order/api/t/"+o.code+"/bill/paid", "", nil)
 	if rec.Code != http.StatusConflict || errorOf(t, rec).Code != CodeNothingToPay {
 		t.Errorf("with no UPI address: %d %s", rec.Code, rec.Body)
 	}
 	// A code that leads nowhere.
-	if rec := send(o.handler, http.MethodPost, "/order/api/t/abcdefghjkmn/bill/paid", "", nil); rec.Code != http.StatusNotFound {
+	if rec := o.phoneSend(http.MethodPost, "/order/api/t/abcdefghjkmn/bill/paid", "", nil); rec.Code != http.StatusNotFound {
 		t.Errorf("a code that leads nowhere: %d", rec.Code)
 	}
 }

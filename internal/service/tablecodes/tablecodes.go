@@ -1,7 +1,7 @@
 // Package tablecodes makes and reads the codes on a venue's tables (phase 11,
 // ADR-206). A code is what a table's QR sticker says and what a guest's phone
-// presents: it leads to the venue and the table, and it is the guest's only
-// credential.
+// presents: it leads to the venue and the table. It is not enough alone to
+// order or read a bill: a phone holds a session for the sitting (ADR-262).
 package tablecodes
 
 import (
@@ -148,9 +148,7 @@ func (s *Service) Renew(ctx context.Context, venueID, tableID int64) (string, er
 				taken = true
 				return nil
 			}
-			if err := q.RevokeTableCodes(ctx, gen.RevokeTableCodesParams{
-				RevokedAt: sql.NullTime{Time: at, Valid: true}, VenueID: venueID, TableID: tableID,
-			}); err != nil {
+			if err := revoke(ctx, q, venueID, tableID, at); err != nil {
 				return err
 			}
 			return q.CreateTableCode(ctx, gen.CreateTableCodeParams{VenueID: venueID, TableID: tableID, Code: code, CreatedAt: at})
@@ -175,14 +173,26 @@ func (s *Service) Revoke(ctx context.Context, venueID, tableID int64) error {
 		if err := onFloor(ctx, q, venueID, tableID); err != nil {
 			return err
 		}
-		return q.RevokeTableCodes(ctx, gen.RevokeTableCodesParams{
-			RevokedAt: sql.NullTime{Time: at, Valid: true}, VenueID: venueID, TableID: tableID,
-		})
+		return revoke(ctx, q, venueID, tableID, at)
 	})
 	if err != nil {
 		return fmt.Errorf("tablecodes: turning off table %d's code: %w", tableID, err)
 	}
 	return nil
+}
+
+// revoke turns off a table's code and ends every guest session it gave
+// (ADR-262): a code is renewed or turned off because it got out, and a
+// session drawn with it is as good as the code was.
+func revoke(ctx context.Context, q *gen.Queries, venueID, tableID int64, at time.Time) error {
+	if err := q.RevokeTableCodes(ctx, gen.RevokeTableCodesParams{
+		RevokedAt: sql.NullTime{Time: at, Valid: true}, VenueID: venueID, TableID: tableID,
+	}); err != nil {
+		return err
+	}
+	return q.EndGuestSessionsAtTable(ctx, gen.EndGuestSessionsAtTableParams{
+		EndedAt: sql.NullTime{Time: at, Valid: true}, VenueID: venueID, TableID: tableID,
+	})
 }
 
 // Ensure gives every table on the floor that has no code one, and returns

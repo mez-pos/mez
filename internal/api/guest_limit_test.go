@@ -47,7 +47,7 @@ func TestATablesOrdersAreHeldToAFew(t *testing.T) {
 	}
 
 	// Table 5 has its own count.
-	other := send(o.handler, http.MethodPost, "/order/api/t/"+o.tableCode(t, 5)+"/orders",
+	other := o.phoneSend(http.MethodPost, "/order/api/t/"+o.tableCode(t, 5)+"/orders",
 		fmt.Sprintf(`{"lines":[{"item_id":%d,"modifier_ids":[%d],"qty":1}]}`, o.white, o.oat),
 		map[string]string{"Content-Type": "application/json", HeaderIdempotencyKey: "t5"})
 	if other.Code != http.StatusCreated {
@@ -66,7 +66,7 @@ func TestWhatATableChangesIsCountedApartFromWhatItReads(t *testing.T) {
 
 	// One change used by the order. A second, then the third is refused.
 	paid := func() int {
-		return send(o.handler, http.MethodPost, "/order/api/t/"+o.code+"/bill/paid", "", nil).Code
+		return o.phoneSend(http.MethodPost, "/order/api/t/"+o.code+"/bill/paid", "", nil).Code
 	}
 	if code := paid(); code == http.StatusTooManyRequests {
 		t.Fatalf("the second change: %d", code)
@@ -88,12 +88,12 @@ func TestWhatATableChangesIsCountedApartFromWhatItReads(t *testing.T) {
 			t.Fatalf("read %d: %d %s", i+1, status, body)
 		}
 	}
-	rec := send(o.handler, http.MethodGet, five, "", nil)
+	rec := o.phoneSend(http.MethodGet, five, "", nil)
 	if rec.Code != http.StatusTooManyRequests || errorOf(t, rec).Code != CodeRateLimited || rec.Header().Get("Retry-After") == "" {
 		t.Errorf("the sixth read: %d %s", rec.Code, rec.Body)
 	}
 	// And it can still change things: a read too many does not stop a table paying.
-	if rec := send(o.handler, http.MethodPost, five+"/bill/paid", "", nil); rec.Code == http.StatusTooManyRequests {
+	if rec := o.phoneSend(http.MethodPost, five+"/bill/paid", "", nil); rec.Code == http.StatusTooManyRequests {
 		t.Errorf("a change at a table that has read too much: %d", rec.Code)
 	}
 }

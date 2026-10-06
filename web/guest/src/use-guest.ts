@@ -17,11 +17,96 @@ import type {
   GuestShareRequest,
   GuestTableResponse,
 } from "../../shared/api-types";
+import { recoveryOf, needsSession, SESSION_HEADER, sessionOf, sessionStorageKey, tableCodeOfPath } from "./session-logic";
 import { newPhoneName, PHONE_STORAGE_KEY, phoneNameOf } from "./split-logic";
 
-// A guest is nobody: no device, no session. The code in the path is all
-// there is to present.
-const api = createApiClient({ credentials: noCredentials });
+// A guest is nobody: no device and no staff session. The code in the path
+// says which table, and the phone's session for the sitting (ADR-262) goes
+// with every call under that table's code.
+
+/** Sessions for the life of the page, when storage will not keep one. */
+const unkeptSessions = new Map<string, string>();
+
+/** The session this phone holds for a table, if it has one. */
+export function sessionFor(code: string): string | null {
+  const unkept = unkeptSessions.get(code);
+  if (unkept !== undefined) return unkept;
+  try {
+    return sessionOf(window.localStorage.getItem(sessionStorageKey(code)));
+  } catch {
+    return null;
+  }
+}
+
+/** Keeps a session the venue handed out, or with null drops the one held. Anything that is not a session is ignored. */
+function keepSession(code: string, value: unknown): void {
+  const session = value === null ? null : sessionOf(value);
+  if (value !== null && session === null) return;
+  if (session === null) unkeptSessions.delete(code);
+  else unkeptSessions.set(code, session);
+  try {
+    if (session === null) window.localStorage.removeItem(sessionStorageKey(code));
+    else window.localStorage.setItem(sessionStorageKey(code), session);
+  } catch {
+    // Kept for as long as the page, then.
+  }
+}
+
+/** fetch, with the session of the table whose code is in the path. */
+const withSessionHeader: typeof fetch = (input, init) => {
+  const path = typeof input === "string" ? input : input instanceof URL ? input.pathname : input.url;
+  const code = tableCodeOfPath(path);
+  const session = code === null ? null : sessionFor(code);
+  if (session === null) return globalThis.fetch(input, init);
+  const headers = new Headers(init?.headers);
+  headers.set(SESSION_HEADER, session);
+  return globalThis.fetch(input, { ...init, headers });
+};
+
+const api = createApiClient({ credentials: noCredentials, fetch: withSessionHeader });
+
+/** One reading of the landing at a time for each table, however many calls were refused at once. */
+const relanding = new Map<string, Promise<string | null>>();
+
+/** Reads the landing again, for a new session; null when it gave none, the table having a ticket. */
+function reland(code: string): Promise<string | null> {
+  const going = relanding.get(code);
+  if (going) return going;
+  const read = api
+    .get<GuestTableResponse>(base(code))
+    .then((landing) => {
+      const fresh = sessionOf(landing.session);
+      if (fresh !== null) keepSession(code, fresh);
+      return fresh;
+    })
+    .finally(() => relanding.delete(code));
+  relanding.set(code, read);
+  return read;
+}
+
+/**
+ * Makes a call that needs the phone's session. Refused for want of one, the
+ * session held is dropped and the landing read again; the call is made once
+ * more with what it gave, or for an order with none, which asks staff to let
+ * the phone join. Otherwise the refusal stands, and the screen says to ask
+ * staff to accept the phone's first order.
+ */
+async function withSession<T>(code: string, call: () => Promise<T>, ordering = false): Promise<T> {
+  try {
+    return await call();
+  } catch (err) {
+    if (!needsSession(err)) throw err;
+    keepSession(code, null);
+    if (recoveryOf(await reland(code), ordering) === "ask_staff") throw err;
+    return call();
+  }
+}
+
+/** Keeps a session an order's answer handed over (ADR-262), and passes the answer on. */
+function handedOver(code: string, round: GuestRoundResponse): GuestRoundResponse {
+  if (round.session !== undefined) keepSession(code, round.session);
+  return round;
+}
 
 // The venue's pickup code, when that is what the page was opened with
 // (ADR-250). A page has one code for its life, and a pickup code is never
@@ -48,12 +133,17 @@ export function menuKey(code: string): readonly string[] {
  * answers the same key with the same order, as it is now (ADR-210).
  */
 export function sendOrder(code: string, request: GuestOrderRequest, key: string): Promise<GuestRoundResponse> {
-  return api.post<GuestRoundResponse>(`${base(code)}/orders`, request, { idempotencyKey: key });
+  const send = () => api.post<GuestRoundResponse>(`${base(code)}/orders`, request, { idempotencyKey: key });
+  return code === collecting ? send() : withSession(code, send, true).then((round) => handedOver(code, round));
 }
 
-/** How an order placed at this table stands, and once sent how far the kitchen has come (ADR-238). */
+/**
+ * How an order placed at this table stands, and once sent how far the
+ * kitchen has come (ADR-238). Accepted with no session of the phone's own,
+ * it hands one over (ADR-262), which is kept.
+ */
 export function trackOrder(code: string, round: string): Promise<GuestRoundResponse> {
-  return api.get<GuestRoundResponse>(`${base(code)}/orders/${encodeURIComponent(round)}`);
+  return api.get<GuestRoundResponse>(`${base(code)}/orders/${encodeURIComponent(round)}`).then((r) => handedOver(code, r));
 }
 
 /** A settled bill's receipt: the counter's own invoice, by the table's code and the bill's id (ADR-240). */
@@ -76,7 +166,12 @@ export function useTable(code: string): UseQueryResult<Where> {
   return useQuery({
     queryKey: ["guest", "table", code],
     queryFn: async ({ signal }): Promise<Where> => {
-      if (code !== collecting) return { ...(await api.get<GuestTableResponse>(base(code), { signal })), collect: false, ordering: true };
+      if (code !== collecting) {
+        const landing = await api.get<GuestTableResponse>(base(code), { signal });
+        // A session handed out here is the phone's for the sitting (ADR-262).
+        if (landing.session !== undefined) keepSession(code, landing.session);
+        return { ...landing, collect: false, ordering: true };
+      }
       const venue = await api.get<GuestPickupResponse>(base(code), { signal });
       return { venue: venue.venue, table: { name: "" }, collect: true, ordering: venue.ordering };
     },
@@ -105,7 +200,7 @@ export function billKey(code: string): readonly string[] {
 
 /** Tells staff a guest at the table says they have paid (ADR-218). It pays nothing. */
 export function tellPaid(code: string): Promise<GuestPaidResponse> {
-  return api.post<GuestPaidResponse>(`${base(code)}/bill/paid`);
+  return withSession(code, () => api.post<GuestPaidResponse>(`${base(code)}/bill/paid`));
 }
 
 /** The name for the life of the page, when storage will not keep one. */
@@ -144,7 +239,7 @@ export function useBill(code: string): UseQueryResult<GuestBillResponse> {
   const who = phone === null ? "" : `?phone=${encodeURIComponent(phone)}`;
   return useQuery({
     queryKey: billKey(code),
-    queryFn: ({ signal }) => api.get<GuestBillResponse>(`${base(code)}/bill${who}`, { signal }),
+    queryFn: ({ signal }) => withSession(code, () => api.get<GuestBillResponse>(`${base(code)}/bill${who}`, { signal })),
     refetchInterval: BILL_REFRESH_MS,
     refetchOnWindowFocus: true,
     // Never shown from an earlier look without asking again.
@@ -154,13 +249,16 @@ export function useBill(code: string): UseQueryResult<GuestBillResponse> {
 }
 
 /**
- * Where the bill's UPI payment is drawn as a QR code (ADR-217). The amount
- * is in the address only so the picture is asked for again when it
- * changes: the server draws the balance as it stands and reads no amount
- * from a phone.
+ * The bill's UPI payment drawn as a QR code (ADR-217), as a picture to show.
+ * It is read with the phone's session (ADR-262), which a plain image cannot
+ * send. The amount is in the address only so the picture is asked for again
+ * when it changes: the server draws the balance as it stands and reads no
+ * amount from a phone.
  */
-export function upiQrUrl(code: string, amountMinor: number): string {
-  return `${base(code)}/bill/upi.svg?am=${amountMinor}`;
+export async function readUpiQr(code: string, amountMinor: number, signal: AbortSignal): Promise<Blob> {
+  const response = await withSessionHeader(`${base(code)}/bill/upi.svg?am=${amountMinor}`, { signal });
+  if (!response.ok) throw new Error(`the QR code was not drawn: ${response.status}`);
+  return response.blob();
 }
 
 /**
@@ -168,12 +266,12 @@ export function upiQrUrl(code: string, amountMinor: number): string {
  * rest of what the table owes; with one, this phone's part of it (ADR-233).
  */
 export function startCharge(code: string, share: GuestShareRequest | null = null): Promise<GuestChargeResponse> {
-  return api.post<GuestChargeResponse>(`${base(code)}/bill/charge`, share ?? undefined);
+  return withSession(code, () => api.post<GuestChargeResponse>(`${base(code)}/bill/charge`, share ?? undefined));
 }
 
 /** Gives up a payment page this table opened, so it holds no part of the bill (ADR-234). */
 export function letGoCharge(code: string, id: string): Promise<GuestChargeResponse> {
-  return api.post<GuestChargeResponse>(`${base(code)}/bill/charge/${encodeURIComponent(id)}/let-go`);
+  return withSession(code, () => api.post<GuestChargeResponse>(`${base(code)}/bill/charge/${encodeURIComponent(id)}/let-go`));
 }
 
 /** Starts paying for an order the venue is holding until it is paid (ADR-227). */
@@ -184,5 +282,6 @@ export function startRoundCharge(code: string, round: string): Promise<GuestChar
 /** How a charge this table started stands, as the venue's server found out from the gateway. */
 export function readCharge(code: string, id: string, signal: AbortSignal): Promise<GuestChargeResponse> {
   // An order to collect has no bill: its payment is asked about beside it.
-  return api.get<GuestChargeResponse>(`${base(code)}/${code === collecting ? "" : "bill/"}charge/${encodeURIComponent(id)}`, { signal });
+  const read = () => api.get<GuestChargeResponse>(`${base(code)}/${code === collecting ? "" : "bill/"}charge/${encodeURIComponent(id)}`, { signal });
+  return code === collecting ? read() : withSession(code, read);
 }

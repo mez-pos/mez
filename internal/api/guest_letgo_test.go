@@ -10,7 +10,7 @@ import (
 )
 
 func (c *chargeWorld) letGo(code, id string) *httptest.ResponseRecorder {
-	return send(c.handler, http.MethodPost, "/order/api/t/"+code+"/bill/charge/"+id+"/let-go", "", nil)
+	return c.phoneSend(http.MethodPost, "/order/api/t/"+code+"/bill/charge/"+id+"/let-go", "", nil)
 }
 
 // TestGuestGivesUpAPaymentPage: a guest looked at Pay online and came back.

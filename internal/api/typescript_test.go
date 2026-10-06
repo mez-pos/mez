@@ -140,7 +140,7 @@ var errorCodes = []ErrorCode{
 	CodeInvalidFilter, CodeInvalidSetting, CodeVenueNotFound,
 	CodeTaxClassNotFound, CodeTaxClassNameTaken, CodeTaxClassInUse, CodeTicketsOpen,
 	CodeNumberingLocked, CodeNumberTaken, CodeCourseNotFound, CodeDeviceNotFound, CodeCannotRevokeSelf, CodeDeviceUnpaired,
-	CodeTableCodeUnknown,
+	CodeTableCodeUnknown, CodeGuestSessionRequired,
 	CodeDishUnavailable, CodeChoicesInvalid, CodeTableNotOrdering, CodeRequestsWaiting,
 	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed, CodeNothingToPay, CodeNoticeNotFound, CodeGatewayUnavailable, CodeChargeNotFound, CodeChargeNotWaiting,
 	CodeBillClaimed, CodeBillMoved, CodeReceiptNotFound, CodeNoPublicURL, CodeNoPickupCode, CodePickupCodeUnknown, CodePickupOff,

@@ -17,7 +17,8 @@ import { askingOf, canSplit, peopleRange, restLabel, startingChoice, stepPeople,
 import { offersReceipt } from "./receipt-logic";
 import { useCharge, type ChargeApi } from "./use-charge";
 import { keepBill, keptBill } from "./use-receipt";
-import { billKey, phoneName, tellPaid, upiQrUrl, useBill } from "./use-guest";
+import { needsSession } from "./session-logic";
+import { billKey, phoneName, readUpiQr, tellPaid, useBill } from "./use-guest";
 
 interface BillProps {
   code: string;
@@ -67,6 +68,20 @@ export function Bill({ code, table, onBack, onReceipt }: BillProps) {
               <p role="status" className="text-base text-fg-muted">
                 Reading the bill
               </p>
+            ) : needsSession(query.error) ? (
+              // The table has a bill this phone is not yet part of (ADR-262).
+              <>
+                <div role="status" className="w-full max-w-sm rounded-card border border-line bg-raised p-5 text-left shadow-rest">
+                  <h2 className="font-serif text-lg">Ask a member of staff to accept your first order</h2>
+                  <p className="mt-2 text-base text-fg-2">
+                    The table&apos;s bill shows on this phone once staff have let it join the table. Order from the menu and they will be asked, or ask
+                    them in person.
+                  </p>
+                </div>
+                <Button variant="secondary" onClick={() => void query.refetch()}>
+                  Try again
+                </Button>
+              </>
             ) : (
               <>
                 <p role="alert" className="max-w-64 text-base text-fg-2">
@@ -163,6 +178,8 @@ const upiLoud = "bg-accent text-accent-fg shadow-action hover:bg-accent-hover";
 const upiQuiet = "border border-line-strong bg-raised text-fg hover:bg-raised-high";
 
 function PayByUPI({ bill, code, quiet }: { bill: GuestBillResponse; code: string; quiet: boolean }) {
+  // The QR is read only once it is asked for.
+  const [shown, setShown] = useState(false);
   const link = upiLinkOf(bill);
   if (link === null || !bill.upi) return null;
   return (
@@ -183,22 +200,40 @@ function PayByUPI({ bill, code, quiet }: { bill: GuestBillResponse; code: string
       {bill.paid_told !== true && <p className="mt-2 text-base text-fg-2">{upiAfter}</p>}
       <IHavePaid code={code} told={bill.paid_told === true} />
       {/* For paying from another phone. Closed until asked for: a code on screen invites a scan by the next table. */}
-      <details className="mt-3 border-t border-line-soft pt-3 text-left">
+      <details className="mt-3 border-t border-line-soft pt-3 text-left" onToggle={(e) => setShown(e.currentTarget.open)}>
         <summary className="flex min-h-tap cursor-pointer items-center justify-center text-base font-semibold text-accent-text outline-line-focus focus-visible:outline-2">
           Pay from another phone
         </summary>
-        <img
-          src={upiQrUrl(code, bill.upi.amount.minor)}
-          alt={`QR code to pay ${formatMoney(bill.upi.amount)} to ${bill.upi.payee} by UPI`}
-          width={232}
-          height={232}
-          loading="lazy"
-          className="mx-auto mt-2 block size-58 rounded bg-white"
-        />
+        {shown && <UpiQr code={code} amountMinor={bill.upi.amount.minor} alt={`QR code to pay ${formatMoney(bill.upi.amount)} to ${bill.upi.payee} by UPI`} />}
         <p className="mt-2 text-center text-sm text-fg-muted">Scan with any UPI app. It pays {formatMoney(bill.upi.amount)}, what is left on this bill now.</p>
       </details>
     </section>
   );
+}
+
+/**
+ * The bill's UPI QR, read with the phone's session (ADR-262) and shown from
+ * memory. A blank square while it is read, or if it could not be: the link
+ * above still pays.
+ */
+function UpiQr({ code, amountMinor, alt }: { code: string; amountMinor: number; alt: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    const ask = new AbortController();
+    let shown: string | null = null;
+    readUpiQr(code, amountMinor, ask.signal)
+      .then((picture) => {
+        shown = URL.createObjectURL(picture);
+        setSrc(shown);
+      })
+      .catch(() => setSrc(null));
+    return () => {
+      ask.abort();
+      if (shown !== null) URL.revokeObjectURL(shown);
+    };
+  }, [code, amountMinor]);
+  if (src === null) return <div aria-hidden="true" className="mx-auto mt-2 block size-58 rounded bg-white" />;
+  return <img src={src} alt={alt} width={232} height={232} className="mx-auto mt-2 block size-58 rounded bg-white" />;
 }
 
 /**

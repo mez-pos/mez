@@ -14,11 +14,13 @@
   the review found that change what the product does, and so were not changed
   by it. **The LAN is plain HTTP**: device tokens, staff tokens and PINs
   travel in clear on the cafe's wifi until phase 12's TLS story; the till's
-  network must not be the guests'. **A table's code is a lasting
-  credential**: a past diner with the URL in their history can, through the
-  relay, order to the kitchen on whoever has the table now, read their bill
-  and start or let go of a charge; the limit of twenty orders in ten minutes
-  bounds it and does not prevent it. (The PIN lockout, also left here, is
+  network must not be the guests'. (A table's code as a lasting credential,
+  also left here, is fixed by ADR-262: ordering to the kitchen and the bill
+  need the phone's session for the sitting, which ends with the ticket;
+  what remains: every phone's first order of a sitting is a request staff
+  accept, staff can still accept a stranger's, and a round's charge and a
+  receipt are read by the code and that round's or bill's id.) (The PIN
+  lockout, also left here, is
   fixed by ADR-260: a third lockout in a day locks until a manager clears
   it, and powerful roles have six digits; what remains: a colleague can be
   locked out on purpose with seven wrong PINs, and a guesser pacing four
@@ -217,8 +219,8 @@
   seen with the amount differing from what is owed, with a refusal, in the
   waiter's frame, or clearing by a payment recorded on the tender screen. Two guests can each pay the whole balance.
   Not seen: a UPI app opening on the link, on any phone.
-- **The bill on the phone** (ADR-214): anyone with a table's code can read
-  that table's bill from anywhere. A table with two tickets shows the older.
+- **The bill on the phone** (ADR-214): a phone of the table's sitting reads
+  that table's bill from anywhere (ADR-262). A table with two tickets shows the older.
   Nothing is shown once a bill closes, until Task 5's receipt. Not seen by
   eye: tax rows, a discount, On the house, Paid and Left to pay, nothing
   open, the failures.

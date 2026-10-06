@@ -78,3 +78,16 @@ export function choicesOf(line: Pick<GuestRoundLineResponse, "choices">): string
 export function dishCount(request: Pick<GuestRequestResponse, "lines">): number {
   return request.lines.reduce((sum, l) => sum + l.qty, 0);
 }
+
+/**
+ * A request's heading, and when the table already has a ticket open, why
+ * staff are asked (ADR-262): a phone with no session for that sitting asks to
+ * join it, and accepting is saying it is with that party.
+ */
+export function requestHeading(request: Pick<GuestRequestResponse, "table_name" | "joins_open_ticket">): { title: string; note: string | null } {
+  if (request.joins_open_ticket !== true) return { title: `Table ${request.table_name}`, note: null };
+  return {
+    title: `New phone at Table ${request.table_name}`,
+    note: "Asks to join the table's open bill. Accept if it is with the party there.",
+  };
+}

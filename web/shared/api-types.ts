@@ -131,6 +131,7 @@ export type ErrorCode =
   | 'cannot_revoke_self'
   | 'device_unpaired'
   | 'table_code_unknown'
+  | 'guest_session_required'
   | 'dish_unavailable'
   | 'choices_invalid'
   | 'table_not_ordering'
@@ -804,6 +805,7 @@ export interface TunnelResponse {
 export interface GuestTableResponse {
   venue: GuestVenueResponse;
   table: GuestTableNameResponse;
+  session?: string;
 }
 
 export interface GuestVenueResponse {
@@ -881,6 +883,7 @@ export interface GuestRoundResponse {
   progress?: GuestRoundProgress;
   bill?: string;
   pickup_code?: string;
+  session?: string;
 }
 
 export interface GuestRoundLineResponse {
@@ -1078,6 +1081,7 @@ export interface GuestRequestResponse {
   placed_at: string;
   lines: GuestRoundLineResponse[];
   subtotal: Money;
+  joins_open_ticket?: boolean;
 }
 
 export interface PaidNoticeResponse {

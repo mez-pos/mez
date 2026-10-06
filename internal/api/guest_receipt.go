@@ -73,6 +73,9 @@ type guestReceiptResponse struct {
 	Refunded money.Amount `json:"refunded"`
 }
 
+// guestReceipt asks for no session (ADR-262): a receipt is read for weeks
+// after its sitting, long after the sitting's sessions ended, and the bill's
+// id, told only to the sitting's own phones, already names the one bill.
 func (s *Server) guestReceipt(w http.ResponseWriter, r *http.Request) {
 	table, ok := s.guestTableFor(w, r)
 	if !ok {

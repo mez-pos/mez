@@ -21,7 +21,7 @@ const (
 // share asks for a share of table 4's bill, with body as the JSON after the
 // phone's name: `"people":3`, or `"amount":{...}`.
 func (c *chargeWorld) share(phone, body string) *httptest.ResponseRecorder {
-	return send(c.handler, http.MethodPost, "/order/api/t/"+c.code+"/bill/charge", fmt.Sprintf(`{"phone":%q,%s}`, phone, body), nil)
+	return c.phoneSend(http.MethodPost, "/order/api/t/"+c.code+"/bill/charge", fmt.Sprintf(`{"phone":%q,%s}`, phone, body), nil)
 }
 
 func inrBody(minor int64) string {
@@ -203,7 +203,7 @@ func TestAShareThatIsRefused(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rec := send(c.handler, http.MethodPost, "/order/api/t/"+c.code+"/bill/charge", tt.body, nil)
+			rec := c.phoneSend(http.MethodPost, "/order/api/t/"+c.code+"/bill/charge", tt.body, nil)
 			if got := errorOf(t, rec); rec.Code != http.StatusBadRequest || got.Code != CodeInvalidRequest || got.Field != tt.field {
 				t.Errorf("%d %s, want 400 invalid_request on %q", rec.Code, rec.Body, tt.field)
 			}

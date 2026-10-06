@@ -33,6 +33,11 @@ func (s *Service) TrackRound(ctx context.Context, venueID, tableID int64, public
 	}
 	if round.Status == RoundSent {
 		round.Bill = row.OrderPublicID
+		// A phone let in by this round with no session of its own is told
+		// the one made for it, until it presents it (ADR-262).
+		if round.Session, err = s.handedSession(ctx, row.ID); err != nil {
+			return Round{}, err
+		}
 	}
 	if round.Status != RoundSent || !row.FirstSeq.Valid {
 		return round, nil

@@ -23,6 +23,9 @@ type guestWorld struct {
 	codes *tablecodes.Service
 	// code is table 4's.
 	code string
+	// sessionFor is the session a phone of the party at a table sends, by
+	// the table's code (withPhones), or nil for phones with none.
+	sessionFor func(code string) string
 }
 
 func newGuestWorld(t *testing.T) *guestWorld {
@@ -45,9 +48,10 @@ func newGuestWorld(t *testing.T) *guestWorld {
 	return &guestWorld{till: w, codes: codes, code: list[3].Code}
 }
 
-// guest asks as a phone does: no device, no session, nothing but the path.
+// guest asks as a phone does: no device, nothing but the path, and the
+// session of a phone of the party when the world has them (withPhones).
 func (g *guestWorld) guest(method, path string) (int, http.Header, string) {
-	rec := send(g.handler, method, path, "", nil)
+	rec := g.phoneSend(method, path, "", nil)
 	return rec.Code, rec.Header(), rec.Body.String()
 }
 

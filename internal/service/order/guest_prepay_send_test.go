@@ -14,7 +14,7 @@ import (
 
 func (w *prepayWorld) hold(t *testing.T, key string, tableID int64) Round {
 	t.Helper()
-	round, err := w.s.PlaceRound(context.Background(), guest(key), w.g.twoOatAndABrownie(tableID))
+	round, err := party(t, w.s).PlaceRound(context.Background(), guest(key), w.g.twoOatAndABrownie(tableID))
 	if err != nil || round.Status != RoundUnpaid {
 		t.Fatalf("holding a round: %+v, %v", round, err)
 	}
@@ -103,7 +103,7 @@ func TestAPaidRoundOpensATicketAndGoesToTheKitchen(t *testing.T) {
 		t.Errorf("a sent round is payable: %v", err)
 	}
 	// A phone asking after it with its key is told it is sent.
-	told, err := w.s.PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
+	told, err := party(t, w.s).PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
 	if err != nil || told.Status != RoundSent || told.OrderID != sent.OrderID || told.Due.Minor != 0 {
 		t.Errorf("told = %+v, %v", told, err)
 	}
@@ -199,7 +199,7 @@ func TestOnlyAHeldRoundIsPaidFor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	request, err := w.s.PlaceRound(ctx, guest("r1"), w.g.twoOatAndABrownie(6))
+	request, err := party(t, w.s).PlaceRound(ctx, guest("r1"), w.g.twoOatAndABrownie(6))
 	if err != nil || request.Status != RoundWaiting {
 		t.Fatalf("request = %+v, %v", request, err)
 	}

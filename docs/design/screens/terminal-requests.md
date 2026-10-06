@@ -12,8 +12,12 @@ in phase 11 Task 4b2 (ADR-209, ADR-211, ADR-212).
 ## Purpose
 
 A guest at a table nobody has seated places an order from their phone. It
-is a request until a member of staff says someone is really there. This is
-where staff hear of it, see what it asks for, and accept or decline it.
+is a request until a member of staff says someone is really there. So is an
+order from a phone at a table that has a ticket open, when that phone is
+not yet part of the party there (ADR-262): a table's code never expires, and
+whoever photographed it once must not order onto the next party's bill.
+This is where staff hear of it, see what it asks for, and accept or decline
+it.
 
 ## Layout
 
@@ -50,6 +54,11 @@ where staff hear of it, see what it asks for, and accept or decline it.
 - **Want to order,** the requests, oldest first, under that heading when
   both lists show. Each:
   - "Table T4" in the serif, and at the right "Waiting 4 min"
+  - **from a phone asking to join** (ADR-262: the table has a ticket open and
+    the phone holds no session for it), "New phone at Table T4" instead, and
+    under it "Asks to join the table's open bill. Accept if it is with the
+    party there." Accepting puts the lines on that ticket and lets the
+    phone order straight through from then on; declining leaves it out.
   - each line: the count, the dish, its choices in small print under it, and
     what the line comes to
   - "3 dishes, before tax" and the subtotal
@@ -68,6 +77,10 @@ where staff hear of it, see what it asks for, and accept or decline it.
   someone with `order.open`.
 - The same answer carries `paid`, the tables that say they have paid, and
   `unapplied`, the payments to sort out.
+- `joins_open_ticket` on a request: the table has a ticket open now, so the
+  request is a phone not yet of that party (ADR-262). It is read when the
+  list is, so a request made at an empty table that staff seated since
+  reads as joining too, which is what accepting it now does.
 - `POST /api/v1/charges/{id}/resolve` with `how`, `refunded` or `recorded`.
 - `POST /api/v1/guest-requests/{id}/accept` and `.../decline`, and
   `POST /api/v1/paid-notices/{id}/seen` for No payment found. After any of

@@ -39,7 +39,7 @@ func newRequestWorld(t *testing.T) *requestWorld {
 // ask places a request at a table and returns its id.
 func (w *requestWorld) ask(t *testing.T, key string, table int64) string {
 	t.Helper()
-	round, err := w.s.PlaceRound(context.Background(), guest(key), w.g.twoOatAndABrownie(table))
+	round, err := party(t, w.s).PlaceRound(context.Background(), guest(key), w.g.twoOatAndABrownie(table))
 	if err != nil {
 		t.Fatalf("placing %s: %v", key, err)
 	}
@@ -146,7 +146,7 @@ func TestAcceptingARequest(t *testing.T) {
 	if waiting, _ := w.s.WaitingRounds(ctx, 1); len(waiting) != 0 {
 		t.Errorf("%d still waiting", len(waiting))
 	}
-	again, err := w.s.PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
+	again, err := party(t, w.s).PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
 	if err != nil || again.Status != RoundSent || !again.Replayed {
 		t.Errorf("the guest's retry = %+v, %v", again, err)
 	}
@@ -272,7 +272,7 @@ func TestDecliningARequest(t *testing.T) {
 	if _, err := w.s.AcceptRound(ctx, cashier(""), id); !errors.Is(err, ErrRoundDecided) {
 		t.Errorf("accepting a declined request: %v", err)
 	}
-	again, err := w.s.PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
+	again, err := party(t, w.s).PlaceRound(ctx, guest("k1"), w.g.twoOatAndABrownie(4))
 	if err != nil || again.Status != RoundDeclined {
 		t.Errorf("the guest's retry = %+v, %v", again, err)
 	}

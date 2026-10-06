@@ -156,6 +156,12 @@ otherwise force a rewrite.
   across a noisy room.
 - Pickup codes are three or four characters and are called out loud. Filter a
   profanity list, in English and in the venue's language.
+- A secret that says who is asking is not a public ID: a device's token, a
+  staff session's, and a guest phone's session for the sitting (`gst_...`,
+  ADR-262) are 256 random bits, kept as their SHA-256. A table's code
+  says which table and lasts until it is renewed, so it opens the menu and
+  nothing that is the sitting's: ordering to the kitchen, the bill and paying
+  it need the phone's session too, which ends when its ticket closes.
 
 ## Shifts and the close of day
 

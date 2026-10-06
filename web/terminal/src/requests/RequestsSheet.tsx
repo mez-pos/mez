@@ -1,12 +1,13 @@
 // Guests' requests (docs/design/screens/terminal-requests.md): each order a
-// phone placed at a table nobody has seated, oldest first, with what it asks
-// for and how long it has waited, and Accept or Decline.
+// phone placed at a table nobody has seated, or from a phone asking to join a
+// table's open bill (ADR-262), oldest first, with what it asks for and how
+// long it has waited, and Accept or Decline.
 
 import { useEffect, useState } from "react";
 import type { ChargeResolution, GuestRequestResponse, PaidNoticeResponse, UnappliedChargeResponse } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, Money, Sheet } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
-import { choicesOf, dishCount, gatewayName, methodWord, owesOtherwise, saidAgo, waited } from "./request-logic";
+import { choicesOf, dishCount, gatewayName, methodWord, owesOtherwise, requestHeading, saidAgo, waited } from "./request-logic";
 import type { GuestRequests } from "./use-guest-requests";
 
 interface RequestsSheetProps {
@@ -88,15 +89,17 @@ function RequestRow({ request, now, guests }: { request: GuestRequestResponse; n
       .finally(() => setBusy(false));
   };
   const dishes = dishCount(request);
+  const heading = requestHeading(request);
 
   return (
     <li className="border-b border-line-soft py-4">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="font-serif text-xl text-fg-heading">Table {request.table_name}</p>
+        <p className="font-serif text-xl text-fg-heading">{heading.title}</p>
         <p className="text-sm text-fg-muted">
           Waiting <span className="font-mono tabular-nums">{waited(request.placed_at, now)}</span>
         </p>
       </div>
+      {heading.note && <p className="mt-1 text-sm text-fg-2">{heading.note}</p>}
       <ul className="mt-2">
         {request.lines.map((line, i) => (
           <li key={i} className="flex items-start justify-between gap-3 py-1 text-base">

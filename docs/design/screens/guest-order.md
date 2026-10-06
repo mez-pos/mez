@@ -79,6 +79,17 @@ guess at how long, and never "being made" before a cook has started it.
 - `POST /order/api/t/{code}/orders` with the cart as dish ids, choice ids
   and counts, and an `Idempotency-Key`. Everything shown here is from its
   answer: the names, the prices and the subtotal are the server's.
+- **The phone's session** (ADR-262) goes with it as `X-Guest-Session`. Only
+  an order from a phone whose session is bound to the table's open ticket
+  goes straight to the kitchen. With no session, at a table that has a
+  ticket, it is a request staff accept, and this screen is the waiting one
+  as for a table's first order. A session the venue refuses (401
+  `guest_session_required`: from an earlier sitting, another table, or none
+  at an empty table) is dropped, the landing read again, and the order sent
+  once more with what it gave, or with none. Once staff accept an order
+  from a phone that had no session, its own address answers `session` with
+  the one made for it, until the phone first sends it; the phone keeps it,
+  and its next order goes straight through.
 - **The key** is drawn the first time a cart is sent and kept with what was
   sent, in `localStorage` under `mez.order-key.<code>`. The same cart sent
   again goes with the same key and is the same order; a cart that changed

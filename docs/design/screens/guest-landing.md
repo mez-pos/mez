@@ -27,6 +27,14 @@ One column, at most a phone and a half wide, on parchment.
 
 - `GET /order/api/t/{code}`, key `["guest", "table", code]`: the venue's name
   and currency and the table's name.
+- **The phone's session for the sitting** (ADR-262). While the table has no
+  ticket open, the landing also answers `session`, a `gst_...` token, unless
+  the phone sent one that is still good. The phone keeps it by code
+  (`mez.session.<code>`, shape-checked, `session-logic.ts`) and sends it as
+  `X-Guest-Session` on every call under the code. At a table with a ticket
+  open it gets none: the code alone does not make a phone one of the party,
+  and its first order asks staff to let it join (`guest-order.md`). The
+  landing and the menu never need a session.
 - The menu is asked for as soon as the table is known, so it is there by the
   time the guest taps (`guest-menu.md`).
 - The code is the last segment of the path after `/t/`; the screen is the
@@ -83,8 +91,10 @@ One column, at most a phone and a half wide, on parchment.
 - "Scan. Order. Relax." is "The whole menu, at your table." The button was
   "See the menu" until a guest could order (Task 4c), and is the design's
   "Start Ordering" since.
-- M11d's "Session ended" is "This code does not lead to a table": there are
-  no sessions, and that is what happened.
+- M11d's "Session ended" is "This code does not lead to a table": that is
+  what happened. A session that has ended (ADR-262) is never a screen: the
+  app drops it and reads the landing again, which hands out another where it
+  can.
 
 **Kept that the design does not draw:** the "Finding your table" state, and
 the plain "Something went wrong".

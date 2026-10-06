@@ -21,12 +21,13 @@ import (
 // A guest's round (phase 11, Task 4a, ADR-210): one time a guest pressed
 // Place Order at a table. Where it goes turns on the table:
 //
-//   - A ticket is open there, because staff seated the table or accepted an
-//     earlier request: the round's lines go onto that ticket and to the
-//     kitchen in one command, as a waiter's would. One table, one ticket,
-//     one bill, whoever at it ordered.
-//   - No ticket is open: the round is a request (ADR-209). It is kept, priced,
-//     and is no order and no event until staff accept it.
+//   - A ticket is open there and the phone's session is bound to it (ADR-262),
+//     because staff accepted that phone's earlier request: the round's lines
+//     go onto that ticket and to the kitchen in one command, as a waiter's
+//     would. One table, one ticket, one bill, whoever at it ordered.
+//   - No ticket is open, or one is and the phone is not yet of its party: the
+//     round is a request (ADR-209). It is kept, priced, and is no order and
+//     no event until staff accept it.
 //
 // The guest is nobody: actor 0 on device 0. What they send is ids and
 // counts; every name, price and tax fact is the menu's.
@@ -89,6 +90,10 @@ const unpaidFor = 30 * time.Minute
 type PlaceRound struct {
 	TableID int64       `json:"table_id"`
 	Picks   []menu.Pick `json:"picks"`
+	// Session is the token of the session the phone presented, or empty
+	// for none (ADR-262). It is who is asking, not what is asked, so it is
+	// no part of what a key is checked against.
+	Session string `json:"-"`
 }
 
 // Round is a guest's round as it stands. OrderID is 0 until its lines are on
@@ -115,6 +120,10 @@ type Round struct {
 	// PickupCode is what an order to collect is called out by, once it is
 	// paid and sent (ADR-249). Empty for a round at a table.
 	PickupCode string
+	// Session is a session made for the phone when its round was let onto
+	// the table's ticket with none of its own, until the phone presents it
+	// (ADR-262). Only TrackRound fills it.
+	Session string
 }
 
 // errTableChanged unwinds a round whose table gained or lost its ticket
@@ -123,10 +132,13 @@ var errTableChanged = errors.New("the table changed under the round")
 
 // roundDraft is a round priced and ready to be written.
 type roundDraft struct {
-	tableID     int64
-	lines       []order.LineAdded
-	encoded     string
-	subtotal    money.Amount
+	tableID  int64
+	lines    []order.LineAdded
+	encoded  string
+	subtotal money.Amount
+	// session is the phone's, checked, or zero for none. Kept on the round
+	// as sessionID, so the ticket its round joins can bind it.
+	session     GuestSession
 	key         string
 	fingerprint string
 }
@@ -165,6 +177,14 @@ func (s *Service) PlaceRound(ctx context.Context, meta Meta, cmd PlaceRound) (Ro
 		return Round{}, err
 	}
 	draft.key, draft.fingerprint = meta.IdempotencyKey, fp
+	// A session presented is checked; one that is not good for this table
+	// now is refused, and the phone asks for another (ADR-262). None at
+	// all is a phone the table has not let in, which writeRound handles.
+	if cmd.Session != "" {
+		if draft.session, err = s.GuestSession(ctx, meta.VenueID, cmd.TableID, cmd.Session); err != nil {
+			return Round{}, err
+		}
+	}
 
 	for range maxRoundAttempts {
 		round, err := s.writeRound(ctx, meta, v, draft)
@@ -216,6 +236,12 @@ func priceRound(m menu.Menu, currency string, cmd PlaceRound, at time.Time) (rou
 
 // writeRound looks at the table and writes the round where it goes. The
 // look is outside the write, so each path checks it again inside.
+//
+// Only a phone whose session is bound to the table's open ticket orders
+// straight to the kitchen (ADR-262). A phone with none, or with one from
+// before the ticket opened, asks to join it, and staff accept or decline
+// as they do a table's first order (ADR-209). At a table with no ticket a
+// phone needs a session, which the landing hands out there freely.
 func (s *Service) writeRound(ctx context.Context, meta Meta, v venue, draft roundDraft) (Round, error) {
 	publicID, err := id.NewPublic(roundPrefix)
 	if err != nil {
@@ -223,13 +249,23 @@ func (s *Service) writeRound(ctx context.Context, meta Meta, v venue, draft roun
 	}
 	round := Round{PublicID: publicID, TableID: draft.tableID, Lines: draft.lines, Subtotal: draft.subtotal}
 
-	orderID, err := s.db.Queries().UnclosedOrderAtTable(ctx, gen.UnclosedOrderAtTableParams{TableID: draft.tableID, VenueID: meta.VenueID})
+	orderID, err := s.ticketOf(ctx, s.db.Queries(), meta.VenueID, draft.tableID)
 	if err != nil && !isNoRows(err) {
-		return Round{}, fmt.Errorf("reading the ticket at table %d: %w", draft.tableID, err)
+		return Round{}, err
 	}
 	hasTicket := err == nil
+	if !hasTicket && (draft.session.ID == 0 || draft.session.OrderID != 0) {
+		// No session, or one bound to a ticket that has closed since it
+		// was checked: the phone asks the landing for one. A table that is
+		// not there is said so first, as it would be anyway.
+		if err := tableInService(ctx, s.db.Queries(), meta.VenueID, draft.tableID); err != nil {
+			return Round{}, err
+		}
+		return Round{}, fmt.Errorf("%w: table %d has no ticket and the round no session", ErrGuestSession, draft.tableID)
+	}
 	// Where guests pay first, a round waits for its payment whatever the
-	// table: seated or not, first round or fifth.
+	// table: seated or not, first round or fifth. Paying is the tie, so no
+	// one is asked to accept it; its payment binds the phone's session.
 	if s.paysFirst(v) {
 		ticket := int64(0)
 		if hasTicket {
@@ -239,26 +275,27 @@ func (s *Service) writeRound(ctx context.Context, meta Meta, v venue, draft roun
 		round.Due, err = s.holdRound(ctx, meta, v, ticket, draft, publicID)
 		return round, err
 	}
-	if !hasTicket {
-		round.Status = RoundWaiting
-		return round, s.requestRound(ctx, meta, draft, publicID)
+	if hasTicket && draft.session.OrderID == orderID {
+		round.Status, round.OrderID = RoundSent, orderID
+		return round, s.sendRound(ctx, meta, orderID, draft, publicID)
 	}
-	round.Status, round.OrderID = RoundSent, orderID
-	return round, s.sendRound(ctx, meta, orderID, draft, publicID)
+	round.Status = RoundWaiting
+	return round, s.requestRound(ctx, meta, draft, publicID, hasTicket)
 }
 
-// requestRound keeps a round as a request at a table with no ticket open.
-// It is refused with the venue shut, as an order would be: a request nobody
-// is there to accept is a guest waiting for nothing.
-func (s *Service) requestRound(ctx context.Context, meta Meta, draft roundDraft, publicID string) error {
+// requestRound keeps a round as a request: at a table with no ticket open,
+// or with joins at one that has, from a phone not yet of its party. It is
+// refused with the venue shut, as an order would be: a request nobody is
+// there to accept is a guest waiting for nothing.
+func (s *Service) requestRound(ctx context.Context, meta Meta, draft roundDraft, publicID string, joins bool) error {
 	at := s.clock.Now().UTC()
 	err := s.db.WriteTx(ctx, func(q *gen.Queries) error {
-		_, err := q.UnclosedOrderAtTable(ctx, gen.UnclosedOrderAtTableParams{TableID: draft.tableID, VenueID: meta.VenueID})
-		if err == nil {
-			return errTableChanged
+		_, err := s.ticketOf(ctx, q, meta.VenueID, draft.tableID)
+		if err != nil && !isNoRows(err) {
+			return err
 		}
-		if !isNoRows(err) {
-			return fmt.Errorf("reading the ticket at table %d: %w", draft.tableID, err)
+		if hasTicket := err == nil; hasTicket != joins {
+			return errTableChanged
 		}
 		if err := tableInService(ctx, q, meta.VenueID, draft.tableID); err != nil {
 			return err
@@ -277,8 +314,9 @@ func (s *Service) requestRound(ctx context.Context, meta Meta, draft roundDraft,
 		if err := saveRound(ctx, q, meta, draft, publicID, RoundWaiting, 0, money.Amount{}, 0, at); err != nil {
 			return err
 		}
-		// A table wanting to order is the floor changed, with no order
-		// event to say so: the version is what tells the terminals.
+		// A table wanting to order, or a phone wanting to join it, is the
+		// floor changed, with no order event to say so: the version is
+		// what tells the terminals.
 		return q.BumpFloorVersion(ctx, meta.VenueID)
 	})
 	if err != nil {
@@ -381,7 +419,8 @@ func saveRound(ctx context.Context, q *gen.Queries, meta Meta, draft roundDraft,
 		Lines: draft.encoded, SubtotalMinor: draft.subtotal.Minor, Currency: draft.subtotal.Currency,
 		IdempotencyKey: draft.key, Fingerprint: draft.fingerprint, CreatedAt: at,
 		Prepay: prepay, DueMinor: sql.NullInt64{Int64: due.Minor, Valid: prepay == 1},
-		FirstSeq: sql.NullInt64{Int64: first, Valid: first != 0},
+		FirstSeq:  sql.NullInt64{Int64: first, Valid: first != 0},
+		SessionID: draft.session.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("saving a guest's round: %w", err)

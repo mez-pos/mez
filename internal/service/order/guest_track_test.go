@@ -108,11 +108,11 @@ func TestARoundIsTrackedApartFromTheRestOfItsTicket(t *testing.T) {
 	must(t)(s.AddLine(ctx, cashier(""), opened.OrderID, dosa(1)))
 	sentDosa := must(t)(s.Send(ctx, cashier(""), opened.OrderID))
 
-	first, err := s.PlaceRound(ctx, guest("k1"), g.twoOatAndABrownie(4))
+	first, err := party(t, s).PlaceRound(ctx, guest("k1"), g.twoOatAndABrownie(4))
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := s.PlaceRound(ctx, guest("k2"), g.twoOatAndABrownie(4))
+	second, err := party(t, s).PlaceRound(ctx, guest("k2"), g.twoOatAndABrownie(4))
 	if err != nil {
 		t.Fatal(err)
 	}

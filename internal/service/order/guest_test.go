@@ -94,7 +94,7 @@ func TestARoundAtAnEmptyTableWaits(t *testing.T) {
 	g := seedGuestMenu(t, d)
 	ctx := context.Background()
 
-	round, err := s.PlaceRound(ctx, guest("k1"), g.twoOatAndABrownie(4))
+	round, err := party(t, s).PlaceRound(ctx, guest("k1"), g.twoOatAndABrownie(4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestARoundAtASeatedTableGoesStraightThrough(t *testing.T) {
 	must(t)(s.AddLine(ctx, cashier(""), opened.OrderID, dosa(1)))
 	before := rec.count()
 
-	round, err := s.PlaceRound(ctx, guest("k1"), g.twoOatAndABrownie(4))
+	round, err := party(t, s).PlaceRound(ctx, guest("k1"), g.twoOatAndABrownie(4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,11 +186,11 @@ func TestARoundIsPlacedOnce(t *testing.T) {
 	ctx := context.Background()
 	opened := open(t, s)
 
-	first, err := s.PlaceRound(ctx, guest("k1"), g.twoOatAndABrownie(4))
+	first, err := party(t, s).PlaceRound(ctx, guest("k1"), g.twoOatAndABrownie(4))
 	if err != nil {
 		t.Fatal(err)
 	}
-	again, err := s.PlaceRound(ctx, guest("k1"), g.twoOatAndABrownie(4))
+	again, err := party(t, s).PlaceRound(ctx, guest("k1"), g.twoOatAndABrownie(4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,7 +209,7 @@ func TestARoundIsPlacedOnce(t *testing.T) {
 	// The key with something else is not the same request.
 	other := g.twoOatAndABrownie(4)
 	other.Picks[1].Qty = 2
-	if _, err := s.PlaceRound(ctx, guest("k1"), other); !errors.Is(err, ErrIdempotencyKeyReused) {
+	if _, err := party(t, s).PlaceRound(ctx, guest("k1"), other); !errors.Is(err, ErrIdempotencyKeyReused) {
 		t.Errorf("err = %v, want the key refused", err)
 	}
 }
@@ -230,7 +230,7 @@ func TestTheSameRoundTwiceAtOnce(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			rounds[i], errs[i] = s.PlaceRound(ctx, guest("same"), g.twoOatAndABrownie(4))
+			rounds[i], errs[i] = party(t, s).PlaceRound(ctx, guest("same"), g.twoOatAndABrownie(4))
 		}()
 	}
 	wg.Wait()
@@ -303,7 +303,7 @@ func TestARoundIsRefused(t *testing.T) {
 		}, ErrTableBusy},
 		{"past the requests a table may have waiting", func(t *testing.T, s *Service, _ *db.DB, g guestMenu) (Meta, PlaceRound) {
 			for i := range maxWaitingRounds {
-				if _, err := s.PlaceRound(context.Background(), guest("w"+string(rune('a'+i))), g.twoOatAndABrownie(4)); err != nil {
+				if _, err := party(t, s).PlaceRound(context.Background(), guest("w"+string(rune('a'+i))), g.twoOatAndABrownie(4)); err != nil {
 					t.Fatalf("request %d: %v", i, err)
 				}
 			}
@@ -315,7 +315,7 @@ func TestARoundIsRefused(t *testing.T) {
 			s, d, _ := newService(t)
 			g := seedGuestMenu(t, d)
 			meta, cmd := tt.prepare(t, s, d, g)
-			_, err := s.PlaceRound(context.Background(), meta, cmd)
+			_, err := party(t, s).PlaceRound(context.Background(), meta, cmd)
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("err = %v, want %v", err, tt.want)
 			}
@@ -341,7 +341,7 @@ func TestARoundAfterTheBillClosesIsARequestAgain(t *testing.T) {
 	must(t)(s.TenderPayment(ctx, cashier(""), id, TenderPayment{Method: order.PaymentCash, Amount: inr(4200)}))
 	must(t)(s.Close(ctx, cashier(""), id))
 
-	round, err := s.PlaceRound(ctx, guest("next"), g.twoOatAndABrownie(4))
+	round, err := party(t, s).PlaceRound(ctx, guest("next"), g.twoOatAndABrownie(4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -357,7 +357,7 @@ func TestARoundAtAnotherTableIsItsOwn(t *testing.T) {
 	g := seedGuestMenu(t, d)
 	open(t, s) // table 4
 
-	round, err := s.PlaceRound(context.Background(), guest("k"), g.twoOatAndABrownie(5))
+	round, err := party(t, s).PlaceRound(context.Background(), guest("k"), g.twoOatAndABrownie(5))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,7 +14,7 @@ import (
 )
 
 func (o *orderingWorld) receipt(code, bill string) *httptest.ResponseRecorder {
-	return send(o.handler, http.MethodGet, "/order/api/t/"+code+"/receipts/"+bill, "", nil)
+	return o.phoneSend(http.MethodGet, "/order/api/t/"+code+"/receipts/"+bill, "", nil)
 }
 
 var counterStaff = svcorder.Meta{VenueID: 1, ActorID: 1, DeviceID: 1}

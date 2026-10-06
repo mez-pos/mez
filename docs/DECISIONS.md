@@ -8686,3 +8686,107 @@ hard-locked attempt is recorded as `inactive_staff` (a new outcome would
 mean building `sign_in_attempts` again for its CHECK); the log says
 `hard_locked`. Managers and owners who already have four- or five-digit
 PINs keep them until they are next set.
+
+## ADR-262 - A guest's phone holds a session for the sitting, not the table for ever
+2026-10 · Status: accepted. Between phases 11 and 12, decided by the owner
+from what ADR-257 left open. Amends ADR-209.
+Context: a table's 12-character code was the guest's only credential and
+never expired. Whoever held it once, a past diner with the URL in their
+history or anyone who photographed the sticker, could through the relay and
+from anywhere order to the kitchen onto whoever sits there now, read their
+bill, start or let go of a charge and say "I have paid". The per-table
+limits (ADR-246) bound that and did not prevent it. ADR-257 named three
+fixes; the owner chose a short-lived session bound to the sitting.
+Decision:
+  - **A phone holds a session for the sitting** (`guest_sessions`, migration
+    00052): a `gst_` token of 256 bits from crypto/rand, kept as its
+    SHA-256 as a device's is, with a `gss_` public id for the log. It lasts
+    `GuestSessionTTL`, twelve hours, at the most. The service is in
+    `internal/service/order/guest_sessions.go`, beside the ticket it is
+    bound to.
+  - **The landing hands one out** (`GET /order/api/t/{code}` answers
+    `session`) only while the table has no ticket open, and only to a phone
+    that sent none still good. At most 60 a table in ten minutes; a table's
+    sessions lapsed for a day are deleted when it is next handed one.
+  - **A session is bound to the ticket its phone's round joins**: when staff
+    accept that round (`AcceptRound`) or, where guests pay first, when it is
+    paid for (`SendPaidRound`), in the same transaction. A round keeps the
+    session it was placed with (`guest_rounds.session_id`, no foreign key so
+    the column can be dropped going back). Two phones at an empty table each
+    get one and each is bound by its own accepted round; a phone that only
+    browsed is bound by nothing, and once the ticket opens it is not of the
+    party.
+  - **Good means:** found by its hash, the same venue and table, not ended,
+    not expired, and either bound to no ticket while the table has none, or
+    bound to the ticket open there now. A ticket moved to another table
+    takes its sessions' good with it: the old table's code no longer reads
+    that bill.
+  - **What needs one** (sent as `X-Guest-Session`): placing an order, the
+    bill, its UPI QR, I have paid, starting a bill's charge, asking about a
+    bill's charge, and letting one go. Missing or not good is 401
+    `guest_session_required`, "Scan the code on your table again to
+    continue.", checked by `guestSessionFor` in internal/api/guest.go.
+  - **What does not:** the landing and the menu, which anyone may read;
+    tracking an order, whose id only the phone that placed it holds; a
+    round's charge and asking about it, which pay for that round and nothing
+    else (whoever pays for a round has ordered it, and where guests pay
+    first a phone joining a ticket has no session until its round is paid);
+    and a receipt, which ADR-240 gives for 45 days, long after any session,
+    by the bill's id that only the sitting's phones are told.
+  - **A phone with no session at a table with a ticket asks to join.** Its
+    order is a request staff accept, though a ticket is open. This amends
+    ADR-209, where a seated table's rounds went straight through from any
+    phone: now only a phone of the party orders straight to the kitchen. A
+    session that is presented and not good is 401 even on an order: the app
+    drops it, reads the landing again and sends the order once more, with a
+    new session if it got one and with none if not, which makes it the
+    request. With no session at a table with no ticket the order is 401 too:
+    the landing hands one out there.
+  - **Staff accepting a phone that had no session hand it one.** The
+    acceptance makes a session bound to the ticket, and the round's own
+    address (`GET .../orders/{round}`) answers it as `session` until the
+    phone first presents it on any call; then the clear copy is gone. Told
+    until used rather than told once: an answer lost on a poor connection
+    is not a session lost and a phone made to ask staff again. The same
+    when the session a round was placed with can no longer be bound (ended,
+    expired, another sitting's). The token is kept in clear on the session's
+    row (`handoff`) for that time only, and cleared when the session ends.
+    Handing it out with the order's own answer instead was set aside: the
+    token would be no use until staff accepted, and the bill's 401 in the
+    meantime would have the app drop it.
+  - **Where guests pay first, nothing changes for the order:** a round is
+    held until it is paid whoever placed it, and staff are asked nothing.
+    The payment binds the session it was placed with, or hands one over as
+    an acceptance does, so the bill is the sitting's there too.
+  - **Sessions end with the sitting:** the close, in the transaction that
+    takes the order's stock (`run`), ends the ticket's sessions and those
+    handed out at its tables and never bound. Renewing or revoking a
+    table's code ends every session at that table (`tablecodes.revoke`).
+  - **The terminal says why it is asked:** a request carries
+    `joins_open_ticket` when its table has a ticket open now, read with the
+    list, and the sheet heads it "New phone at Table 5" with "Asks to join
+    the table's open bill. Accept if it is with the party there."
+  - **The guest app** keeps the session by code (`mez.session.<code>`,
+    shape-checked in `session-logic.ts`), sends it on every call under the
+    table's code through a fetch wrapper, takes one from the landing and
+    from an order's answer, and on `guest_session_required` drops it, reads
+    the landing again and retries once as above. The bill with no session
+    to be had shows a card, "Ask a member of staff to accept your first
+    order". The QR is fetched with the session and shown from a blob, since
+    an image cannot send a header (the page's CSP already allows `blob:`).
+    The bundle is 47.3 KB of its 60.
+  - **Ordering to collect is left as it is** (`/order/api/p/{code}`,
+    internal/api/guest_pickup.go): there is no table and no sitting to bind
+    to, every such order is paid for before it is sent (ADR-237), and the
+    payment is the tie, as here where guests pay first.
+Cost: every phone's first order of a sitting is a request, including at a
+table a waiter has seated: one more tap for staff per phone that orders,
+where before it was one per table. A phone that loses its storage, or opens
+in a private tab, is a new phone and is accepted again. A phone that only
+browsed before its party's ticket opened sees the "ask a member of staff"
+card on the bill until it orders. The handed-over token is in clear in the
+database for the minutes between acceptance and the phone's next call.
+Staff can still accept a stranger's request, as under ADR-209; what they
+accept is shown, and the per-table limits still bound the rest. A round's
+charge and a receipt stay readable to whoever holds the code and that
+round's or bill's id, as tracking always was.

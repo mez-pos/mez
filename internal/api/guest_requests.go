@@ -67,6 +67,10 @@ type guestRequestResponse struct {
 	Lines     []guestRoundLineResponse `json:"lines"`
 	// Subtotal is before tax: the ticket works the bill out once accepted.
 	Subtotal money.Amount `json:"subtotal"`
+	// JoinsOpenTicket is true when the table has a ticket open already: a
+	// phone not yet of that party asks to join it (ADR-262). Accepted, its
+	// lines go onto that ticket and the phone may order straight through.
+	JoinsOpenTicket bool `json:"joins_open_ticket,omitempty"`
 }
 
 // guestRequestsResponse is GET /api/v1/guest-requests: what guests have
@@ -105,7 +109,7 @@ func (s *Server) listGuestRequests(w http.ResponseWriter, r *http.Request) {
 		}
 		out.Requests[i] = guestRequestResponse{
 			ID: req.PublicID, TableID: req.TableID, TableName: req.TableName, PlacedAt: req.PlacedAt,
-			Lines: round.Lines, Subtotal: round.Subtotal,
+			Lines: round.Lines, Subtotal: round.Subtotal, JoinsOpenTicket: req.JoinsOpenTicket,
 		}
 	}
 	notices, err := s.guestRequests.PaidNotices(r.Context(), Meta(r).VenueID)

@@ -131,7 +131,7 @@ func TestOrdersToCollectLeftUnpaidAreBounded(t *testing.T) {
 		t.Errorf("one already placed, with the venue at its bound: %+v, %v", again, err)
 	}
 	// A table still orders.
-	if round, err := w.s.PlaceRound(ctx, guest("t4"), w.g.twoOatAndABrownie(4)); err != nil || round.Status != RoundUnpaid {
+	if round, err := party(t, w.s).PlaceRound(ctx, guest("t4"), w.g.twoOatAndABrownie(4)); err != nil || round.Status != RoundUnpaid {
 		t.Errorf("table 4 with the venue's pickups at their bound: %+v, %v", round, err)
 	}
 }

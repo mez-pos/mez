@@ -3,13 +3,14 @@
 
 -- name: CreateGuestRound :one
 -- table_id is 0 for an order to collect, which has no table (ADR-248): it is
--- stored as null, and read back as 0 by every query here.
+-- stored as null, and read back as 0 by every query here. session_id is the
+-- session it was placed with (ADR-262), and 0 for none.
 INSERT INTO guest_rounds (public_id, venue_id, table_id, status, order_id, lines, subtotal_minor, currency,
-                          idempotency_key, fingerprint, created_at, prepay, due_minor, first_seq)
+                          idempotency_key, fingerprint, created_at, prepay, due_minor, first_seq, session_id)
 VALUES (sqlc.arg(public_id), sqlc.arg(venue_id), nullif(CAST(sqlc.arg(table_id) AS INTEGER), 0), sqlc.arg(status),
         sqlc.arg(order_id), sqlc.arg(lines), sqlc.arg(subtotal_minor), sqlc.arg(currency),
         sqlc.arg(idempotency_key), sqlc.arg(fingerprint), sqlc.arg(created_at), sqlc.arg(prepay), sqlc.arg(due_minor),
-        sqlc.arg(first_seq))
+        sqlc.arg(first_seq), nullif(CAST(sqlc.arg(session_id) AS INTEGER), 0))
 RETURNING id;
 
 -- name: GuestRoundByKey :one
@@ -34,8 +35,10 @@ WHERE table_id = CAST(sqlc.arg(table_id) AS INTEGER) AND status = 'waiting' AND 
 
 -- name: WaitingGuestRounds :many
 -- The requests staff have still to answer, oldest first, with each one's
--- table by name.
-SELECT r.id, r.public_id, t.id AS table_id, t.name AS table_name, r.lines, r.subtotal_minor, r.currency, r.created_at
+-- table by name, and whether that table has a ticket open now: a request
+-- there is a phone asking to join it (ADR-262).
+SELECT r.id, r.public_id, t.id AS table_id, t.name AS table_name, r.lines, r.subtotal_minor, r.currency, r.created_at,
+       CAST(EXISTS (SELECT 1 FROM order_tables ot WHERE ot.table_id = r.table_id AND ot.closed_at IS NULL) AS INTEGER) AS joins_open_ticket
 FROM guest_rounds r
 JOIN tables t ON t.id = r.table_id
 WHERE r.venue_id = ? AND r.status = 'waiting' AND r.prepay = 0 AND r.created_at >= sqlc.arg(since)
@@ -44,7 +47,7 @@ ORDER BY r.created_at, r.id;
 -- name: GuestRoundByPublicID :one
 SELECT r.id, r.public_id, r.venue_id, CAST(coalesce(r.table_id, 0) AS INTEGER) AS table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
        r.prepay, r.due_minor, r.first_seq, CAST(coalesce(r.pickup_code, '') AS TEXT) AS pickup_code,
-       CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id
+       CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id, CAST(coalesce(r.session_id, 0) AS INTEGER) AS session_id
 FROM guest_rounds r
 LEFT JOIN orders o ON o.id = r.order_id
 WHERE r.public_id = ?;

@@ -49,11 +49,11 @@ func newChargeWorld(t *testing.T, publicURL string) *chargeWorld {
 }
 
 func (c *chargeWorld) start() *httptest.ResponseRecorder {
-	return send(c.handler, http.MethodPost, "/order/api/t/"+c.code+"/bill/charge", "", nil)
+	return c.phoneSend(http.MethodPost, "/order/api/t/"+c.code+"/bill/charge", "", nil)
 }
 
 func (c *chargeWorld) ask(id string) *httptest.ResponseRecorder {
-	return send(c.handler, http.MethodGet, "/order/api/t/"+c.code+"/bill/charge/"+id, "", nil)
+	return c.phoneSend(http.MethodGet, "/order/api/t/"+c.code+"/bill/charge/"+id, "", nil)
 }
 
 func decodeCharge(t *testing.T, rec *httptest.ResponseRecorder) guestChargeResponse {
@@ -130,7 +130,7 @@ func TestGuestPaysOnline(t *testing.T) {
 func TestTheReturnAddressIsNeverTheRequests(t *testing.T) {
 	for _, public := range []string{"https://cafe.example", ""} {
 		c := newChargeWorld(t, public)
-		rec := send(c.handler, http.MethodPost, "/order/api/t/"+c.code+"/bill/charge", "", map[string]string{
+		rec := c.phoneSend(http.MethodPost, "/order/api/t/"+c.code+"/bill/charge", "", map[string]string{
 			"Host": "evil.example", "X-Forwarded-Host": "evil.example", "X-Forwarded-Proto": "https", "Origin": "https://evil.example", "Referer": "https://evil.example/x",
 		})
 		if rec.Code != http.StatusCreated {
@@ -194,11 +194,11 @@ func TestGuestChargeWithTheGatewayDown(t *testing.T) {
 	if _, err := c.orders.Open(context.Background(), cashier, openAt(5)); err != nil {
 		t.Fatal(err)
 	}
-	if rec := send(c.handler, http.MethodPost, other+"/orders", `{"lines":[{"item_id":`+itoa(c.white)+`,"modifier_ids":[`+itoa(c.oat)+`],"qty":1}]}`,
+	if rec := c.phoneSend(http.MethodPost, other+"/orders", `{"lines":[{"item_id":`+itoa(c.white)+`,"modifier_ids":[`+itoa(c.oat)+`],"qty":1}]}`,
 		map[string]string{HeaderIdempotencyKey: "t5", "Content-Type": "application/json"}); rec.Code != http.StatusCreated {
 		t.Fatal(rec.Body)
 	}
-	rec := send(c.handler, http.MethodPost, other+"/bill/charge", "", nil)
+	rec := c.phoneSend(http.MethodPost, other+"/bill/charge", "", nil)
 	got := errorOf(t, rec)
 	if rec.Code != http.StatusServiceUnavailable || got.Code != CodeGatewayUnavailable || !strings.Contains(got.Message, "pay a member of staff") {
 		t.Errorf("starting with the gateway down: %d %+v", rec.Code, got)
@@ -214,7 +214,7 @@ func TestGuestChargeWithTheGatewayDown(t *testing.T) {
 func TestAChargeIsItsTablesOwn(t *testing.T) {
 	c := newChargeWorld(t, "")
 	id := decodeCharge(t, c.start()).ID
-	other := send(c.handler, http.MethodGet, "/order/api/t/"+c.tableCode(t, 5)+"/bill/charge/"+id, "", nil)
+	other := c.phoneSend(http.MethodGet, "/order/api/t/"+c.tableCode(t, 5)+"/bill/charge/"+id, "", nil)
 	if other.Code != http.StatusNotFound || errorOf(t, other).Code != CodeChargeNotFound {
 		t.Errorf("table 5 asking about table 4's charge: %d %s", other.Code, other.Body)
 	}
@@ -238,7 +238,7 @@ func TestNoGatewayNoOnlinePayment(t *testing.T) {
 	if bill.Online || strings.Contains(body, "online") {
 		t.Errorf("a venue with no gateway offers paying online: %s", body)
 	}
-	rec := send(o.handler, http.MethodPost, "/order/api/t/"+o.code+"/bill/charge", "", nil)
+	rec := o.phoneSend(http.MethodPost, "/order/api/t/"+o.code+"/bill/charge", "", nil)
 	if rec.Code != http.StatusNotFound && rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("the route is there: %d %s", rec.Code, rec.Body)
 	}

@@ -135,6 +135,21 @@ type GuestRound struct {
 	DueMinor       sql.NullInt64
 	FirstSeq       sql.NullInt64
 	PickupCode     sql.NullString
+	SessionID      sql.NullInt64
+}
+
+type GuestSession struct {
+	ID        int64
+	PublicID  string
+	VenueID   int64
+	TableID   int64
+	OrderID   sql.NullInt64
+	TokenHash string
+	RoundID   sql.NullInt64
+	Handoff   sql.NullString
+	CreatedAt time.Time
+	ExpiresAt time.Time
+	EndedAt   sql.NullTime
 }
 
 type IdempotencyKey struct {

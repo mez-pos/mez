@@ -28,6 +28,10 @@ func (s *Server) guestBillQR(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// The bill is the sitting's: only a phone of it reads it (ADR-262).
+	if _, ok := s.guestSessionFor(w, r, table); !ok {
+		return
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	res, open, err := s.guestOrders.TableTicket(r.Context(), table.VenueID, table.TableID)
 	if err != nil {

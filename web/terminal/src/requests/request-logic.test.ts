@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arrived, choicesOf, dishCount, gatewayName, methodWord, owesOtherwise, pillLabel, saidAgo, waited, wantingTables } from "./request-logic";
+import { arrived, choicesOf, dishCount, gatewayName, methodWord, owesOtherwise, pillLabel, requestHeading, saidAgo, waited, wantingTables } from "./request-logic";
 
 const ids = (...list: string[]) => list.map((id) => ({ id }));
 
@@ -106,5 +106,17 @@ describe("methodWord and gatewayName", () => {
   it("names a gateway as staff know it, and leaves one it does not know as it is", () => {
     expect(gatewayName("razorpay")).toBe("Razorpay");
     expect(gatewayName("test")).toBe("test");
+  });
+});
+
+describe("requestHeading", () => {
+  it("names the table for a table's first order", () => {
+    expect(requestHeading({ table_name: "5" })).toEqual({ title: "Table 5", note: null });
+    expect(requestHeading({ table_name: "5", joins_open_ticket: false })).toEqual({ title: "Table 5", note: null });
+  });
+  it("says a new phone asks to join a table that has a bill open", () => {
+    const heading = requestHeading({ table_name: "5", joins_open_ticket: true });
+    expect(heading.title).toBe("New phone at Table 5");
+    expect(heading.note).toContain("join the table's open bill");
   });
 });

@@ -259,6 +259,11 @@ describe("refusalOf", () => {
       text: "Ordering is closed right now. Ask a member of staff.",
       readMenu: false,
     });
+    // Still refused after the landing was read again and the order sent once more (ADR-262).
+    expect(refusalOf(new ApiError("guest_session_required", "Scan the code on your table again to continue.", 401))).toEqual({
+      text: "Scan the code on your table again to continue.",
+      readMenu: false,
+    });
   });
   it("says so when the kitchen cannot be reached, by the phone or by the relay", () => {
     expect(refusalOf(new ApiError("network", "offline")).text).toContain("Can't reach the kitchen");
