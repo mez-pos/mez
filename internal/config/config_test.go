@@ -428,6 +428,10 @@ func TestEveryKeyIsReachable(t *testing.T) {
 		keyRelayKey:   "mzr_blr-01.0123456789ab.c2lnbmF0dXJl",
 		keyTimezone:   "Asia/Kolkata",
 		keyDevOrigin:  "http://localhost:5173",
+
+		keyGateway:          "razorpay",
+		keyGatewayKeyID:     "rzp_test_AbCdEf123456",
+		keyGatewayKeySecret: "not-a-real-secret",
 	}
 	if len(sample) != len(keys) {
 		t.Fatalf("sample covers %d keys, the package has %d: add the new one here", len(sample), len(keys))
@@ -480,6 +484,12 @@ func assertKey(t *testing.T, key, want string, cfg Config, err error) {
 		equal(t, key, cfg.Timezone.String(), want)
 	case keyDevOrigin:
 		equal(t, key, cfg.DevOrigin, want)
+	case keyGateway:
+		equal(t, key, cfg.Gateway, want)
+	case keyGatewayKeyID:
+		equal(t, key, cfg.GatewayKeyID, want)
+	case keyGatewayKeySecret:
+		equal(t, key, cfg.GatewayKeySecret, want)
 	default:
 		t.Fatalf("key %q has no assertion: add one", key)
 	}
@@ -540,5 +550,32 @@ func TestUsageDocumentsEverySetting(t *testing.T) {
 	}
 	if !strings.Contains(text, "-config") {
 		t.Error("usage does not mention -config, the flag that points at the file")
+	}
+}
+
+// TestGateway: no gateway is the default and is fine; one this build has
+// no adapter for stops the start; and the name is not fussy about case.
+func TestGateway(t *testing.T) {
+	cfg, err := load(nil, lookupFrom(nil), t.TempDir(), "linux")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.GatewayEnabled() || cfg.Gateway != "" || cfg.GatewayKeyID != "" || cfg.GatewayKeySecret != "" {
+		t.Errorf("a machine with nothing set has a gateway: %q", cfg.Gateway)
+	}
+
+	cfg, err = load(nil, lookupFrom(map[string]string{"MEZ_GATEWAY": " Razorpay "}), t.TempDir(), "linux")
+	if err != nil || !cfg.GatewayEnabled() || cfg.Gateway != GatewayRazorpay {
+		t.Errorf("gateway = %q, %v", cfg.Gateway, err)
+	}
+
+	_, err = load(nil, lookupFrom(map[string]string{"MEZ_GATEWAY": "paypal"}), t.TempDir(), "linux")
+	if err == nil || !strings.Contains(err.Error(), "razorpay") {
+		t.Errorf("an unknown gateway: %v, want it refused and the known ones named", err)
+	}
+	// A refusal names the setting, never a key that happens to be set too.
+	_, err = load(nil, lookupFrom(map[string]string{"MEZ_GATEWAY": "paypal", "MEZ_GATEWAY_KEY_SECRET": "hunter2"}), t.TempDir(), "linux")
+	if err == nil || strings.Contains(err.Error(), "hunter2") {
+		t.Errorf("the secret is in the error: %v", err)
 	}
 }

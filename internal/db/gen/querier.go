@@ -541,6 +541,8 @@ type Querier interface {
 	// The cast is what gives sqlc an int64 rather than an any: coalesce over an
 	// aggregate has no column to take a type from.
 	VenueLastEventID(ctx context.Context, venueID int64) (int64, error)
+	// The venues a sweep has anything to ask a provider about. Usually none.
+	VenuesWithOpenGatewayCharges(ctx context.Context) ([]int64, error)
 	// The requests staff have still to answer, oldest first, with each one's
 	// table by name.
 	WaitingGuestRounds(ctx context.Context, arg WaitingGuestRoundsParams) ([]WaitingGuestRoundsRow, error)

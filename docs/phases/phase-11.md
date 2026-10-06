@@ -111,8 +111,10 @@ Phase 10.
       starts a charge and turns a gateway's "paid" into one
       `payment.tendered` (`internal/service/charges`), against a fake
       gateway. No provider, no API, nothing wired.
-    - [ ] **4f2.** The first real adapter, Razorpay, and where its keys are
-      kept. A sweeper that settles open charges on a timer.
+    - [x] **4f2.** The first real adapter, Razorpay
+      (`internal/gateway/razorpay`); its keys in the configuration and the
+      environment, not the database; and a sweeper that settles open charges
+      every 20 seconds (ADR-221).
     - [ ] **4f3.** The guest's API and the phone: pay online from the bill,
       the gateway's page, and coming back.
     - [ ] **4f4.** Unapplied charges on the terminal: money a gateway took

@@ -6798,3 +6798,58 @@ till never touches it. Opening a charge and saving its row are not one transacti
 a charge can exist at the provider with no row, which nobody was given the page of.
 A venue that changes provider with a charge open cannot ask the old one. Nothing is
 wired: no provider, no key, no route and no screen until 4f2 and 4f3.
+
+## ADR-221 - Razorpay by payment links, its keys outside the database, and a sweeper
+2026-10 · Status: accepted. Phase 11, Task 4f2.
+Context: ADR-220 left the interface with no provider behind it, no keys and nothing
+running. Razorpay is the first: it is what an Indian cafe is likeliest to have.
+Decision:
+  - **A charge at Razorpay is a payment link** (`internal/gateway/razorpay`), from
+    its Payment Links API as its own documentation gives it: `POST
+    /v1/payment_links/` and `GET /v1/payment_links/{id}`, basic auth with the key
+    id and secret. A link is Razorpay's hosted page at a short address, which is
+    all the interface asks for: no checkout script in the guest's bundle, and no
+    card anywhere near mez.
+  - **Each link is for the whole amount or nothing** (`accept_partial` false), with
+    our charge id as its `reference_id`, good for thirty minutes, and with
+    Razorpay's own SMS, email and reminders turned off: mez has no number or
+    address for a guest and must not have Razorpay invent a conversation.
+  - **Status maps as**: `created` pending; `paid` paid, with `amount_paid`, and
+    the method and id of the captured payment; `expired` and `cancelled` failed.
+    `partially_paid`, which no link of ours allows, is answered as paid for the
+    part that was, so the charge is flagged unapplied and not waited on. A status
+    word mez does not know decides nothing.
+  - **A method the bill has no name for is "other"**: net banking, a wallet, EMI,
+    a bank transfer.
+  - **Two kinds of failure, and the difference matters to what happens next.**
+    Not reached, a timeout, a 5xx or a 429 is `gateway.ErrUnavailable`: nothing is
+    known, ask again. A 401 or any other 4xx is `gateway.ErrRefused`, with
+    Razorpay's own words: asking again gets the same answer.
+  - **The keys are configuration, not settings**: `gateway`, `gateway_key_id` and
+    `gateway_key_secret` in `config.toml`, the environment (`MEZ_GATEWAY_KEY_SECRET`)
+    or a flag, as `relay_key` is. The settings table is in the database, the
+    database is what Litestream backs up and what an owner copies to a USB stick,
+    and the key secret is the key to the venue's money. The price is that the
+    owner cannot set it from the back office, and whoever installs mez must.
+  - **The secret goes to Razorpay as basic auth and nowhere else.** Tests hold
+    that it is in no error from the adapter, the configuration or the start, and
+    the real binary was run with one set and its output searched.
+  - **A gateway that is set and cannot be built stops the start**, as a relay does
+    (ADR-019): a name this build has no adapter for, or a key missing. Wrong keys
+    are not known until the first charge, since building the adapter calls nobody.
+  - **A sweeper** (`charges.Sweeper`, owned, with `Close`) settles open charges
+    every 20 seconds. With none open it runs one small query and makes no call to
+    the internet, which is every venue most of the time. A sweep that fails is
+    said once, as a warning, and again when it recovers: the internet being down
+    is not news to a venue.
+  - **The adapter is tested against a stand-in server** speaking Razorpay's JSON,
+    its documented examples among the answers. No test calls Razorpay.
+Because: a payment link is the smallest thing Razorpay offers that is a hosted page
+and can be asked about, and it needs nothing on the phone.
+Cost: **no call to the real Razorpay has been made.** The adapter is built from the
+documentation and agrees with a stand-in written from the same documentation; the
+first real charge, with test keys, is the check that matters and is still to do.
+A link's address is on Razorpay's domain, `rzp.io`. Thirty minutes is a guess at
+how long a guest takes. A venue with a gateway set asks Razorpay every 20 seconds
+for as long as any charge is open. Nothing starts a charge yet: no route and no
+screen until 4f3.

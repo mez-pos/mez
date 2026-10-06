@@ -44,7 +44,16 @@ const (
 	keyRelayKey   = "relay_key"
 	keyTimezone   = "timezone"
 	keyDevOrigin  = "dev_origin"
+
+	keyGateway          = "gateway"
+	keyGatewayKeyID     = "gateway_key_id"
+	keyGatewayKeySecret = "gateway_key_secret"
 )
+
+// GatewayRazorpay is the one payment gateway this build can use. The name
+// is also internal/gateway/razorpay's, which this package, a leaf, does not
+// import.
+const GatewayRazorpay = "razorpay"
 
 // Log formats. Auto is text when stdout is a terminal and JSON otherwise, which
 // is the difference between a developer reading lines and a support engineer
@@ -67,6 +76,9 @@ var keys = []string{
 	keyRelayKey,
 	keyTimezone,
 	keyDevOrigin,
+	keyGateway,
+	keyGatewayKeyID,
+	keyGatewayKeySecret,
 }
 
 var usage = map[string]string{
@@ -79,6 +91,10 @@ var usage = map[string]string{
 	keyRelayKey:   "this venue's key for the relay, from the relay's operator; a secret",
 	keyTimezone:   "IANA timezone for rendering, for example Asia/Kolkata",
 	keyDevOrigin:  "browser origin allowed to call the API cross-site; empty disables CORS",
+
+	keyGateway:          "payment gateway for guests paying online: razorpay, or empty for none",
+	keyGatewayKeyID:     "the gateway's key id for this venue's account",
+	keyGatewayKeySecret: "the gateway's key secret; a secret, best set in the environment",
 }
 
 // Config is the resolved, validated server configuration.
@@ -126,7 +142,23 @@ type Config struct {
 	// CORS headers at all: a shipped binary should not be reachable from a page
 	// the venue did not open. See ADR-023.
 	DevOrigin string
+
+	// Gateway is the payment gateway guests pay online through, or empty
+	// for none, which is the normal state: nothing at the till needs one.
+	Gateway string
+
+	// GatewayKeyID and GatewayKeySecret are this venue's keys at the
+	// gateway. The secret is a secret: it goes to the gateway and must not
+	// be logged. They are here and in the environment, not in the database,
+	// so a backup of a venue's sales does not carry the key to its money
+	// (ADR-221). Whether both are present when a gateway is set is checked
+	// where the gateway is built, so that each can still be set on its own.
+	GatewayKeyID     string
+	GatewayKeySecret string
 }
+
+// GatewayEnabled reports whether a payment gateway is configured.
+func (c Config) GatewayEnabled() bool { return c.Gateway != "" }
 
 // CORSEnabled reports whether a development origin is configured.
 func (c Config) CORSEnabled() bool { return c.DevOrigin != "" }
@@ -227,6 +259,10 @@ func defaults(lookup func(string) (string, bool), goos string) map[string]string
 		keyRelayKey:   "",
 		keyTimezone:   "Local",
 		keyDevOrigin:  "",
+
+		keyGateway:          "",
+		keyGatewayKeyID:     "",
+		keyGatewayKeySecret: "",
 	}
 }
 
@@ -346,6 +382,9 @@ func build(raw map[string]string) (Config, error) {
 		VenueID:  strings.TrimSpace(raw[keyVenueID]),
 		RelayURL: strings.TrimSpace(raw[keyRelayURL]),
 		RelayKey: strings.TrimSpace(raw[keyRelayKey]),
+
+		GatewayKeyID:     strings.TrimSpace(raw[keyGatewayKeyID]),
+		GatewayKeySecret: strings.TrimSpace(raw[keyGatewayKeySecret]),
 	}
 
 	var err error
@@ -368,6 +407,9 @@ func build(raw map[string]string) (Config, error) {
 		return Config{}, err
 	}
 	if cfg.DevOrigin, err = validOrigin(raw[keyDevOrigin]); err != nil {
+		return Config{}, err
+	}
+	if cfg.Gateway, err = validGateway(raw[keyGateway]); err != nil {
 		return Config{}, err
 	}
 	return cfg, nil
@@ -478,4 +520,16 @@ func validTimezone(v string) (*time.Location, error) {
 		return nil, fmt.Errorf("%s %q: unknown timezone, want an IANA name like Asia/Kolkata: %w", keyTimezone, v, err)
 	}
 	return loc, nil
+}
+
+// validGateway accepts no gateway or one this build has an adapter for. A
+// name it does not know stops the start: a gateway the owner believes is
+// taking payments, and is not, is worse than none.
+func validGateway(v string) (string, error) {
+	switch v = strings.ToLower(strings.TrimSpace(v)); v {
+	case "", GatewayRazorpay:
+		return v, nil
+	default:
+		return "", fmt.Errorf("%s %q: the gateways are %s, or empty for none", keyGateway, v, GatewayRazorpay)
+	}
 }

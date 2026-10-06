@@ -8,28 +8,29 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4d, 4e1 to 4e4 and 4f1 done. 4e5 waits for 4f. (The walks are still owed.)
+4a to 4d, 4e1 to 4e4, 4f1 and 4f2 done. 4e5 waits for 4f. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 4f1: the gateway interface, and a charge becoming one payment**
-(ADR-220). `internal/gateway` is two questions, Start and Status.
-`internal/service/charges` starts a charge for what a table owes and, when the
-gateway says paid, tenders it once (`charge:<id>` as the key); money a bill cannot
-take is kept as `unapplied`. Tested against a fake. Nothing is wired.
+**Phase 11, Task 4f2: Razorpay, its keys, and the sweeper** (ADR-221).
+`internal/gateway/razorpay` uses payment links. `gateway`, `gateway_key_id` and
+`gateway_key_secret` are configuration (`MEZ_GATEWAY_KEY_SECRET`), not settings.
+`charges.Sweeper` settles open charges every 20 seconds, wired in `cmd/mez`. No
+call to the real Razorpay has been made.
 
 ## Next task
 
-**Phase 11, Task 4f2: Razorpay, its keys, and the sweeper.** Read ADR-220,
-`internal/gateway/gateway.go`, `internal/config`, and Razorpay's Payment Links API
-from its own documentation (Context7 or the vendor's pages), not from memory.
-- An adapter, `internal/gateway/razorpay`, on `net/http` with timeouts: Start makes
-  a payment link with our reference; Status reads it. Test it against an
-  `httptest` server speaking Razorpay's JSON; no call to the real one in a test.
-- Where the key id and secret are kept: config and environment (as `relay_key` is)
-  or the settings table. Say why. Never in a log, an error or an API answer.
-- A sweeper owned by a struct with `Close`, calling `charges.Sweep`, wired in
-  `cmd/mez`. It must fail quietly. Split in two (adapter; keys and sweeper) if so.
+**Phase 11, Task 4f3: paying online from the phone.** Read ADR-214, ADR-215,
+ADR-220, ADR-221, `guest-bill.md`. Likely server then screen: split if so.
+- `charges.Service` reaches the API as an option, as the orders do. With no gateway
+  set the routes are not there and the bill says nothing of paying online.
+- `POST /order/api/t/{code}/bill/charge` starts a charge and answers its address;
+  the return address is the guest's own bill, built on the server from the
+  request's host, never taken from the phone.
+- `GET .../bill/charge/{id}` settles and answers how it stands. The bill says
+  whether the venue takes payment online, so the phone knows to offer it.
+- The phone: "Pay online", the gateway's page, and coming back to paid, waiting,
+  failed, or taken and not on the bill. Then try a real charge with test keys.
 
 ## Known broken / in progress
 
@@ -55,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e4, 4f1 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (Tasks 1 to 3, 4a to 4d, 4e1 to 4e4, 4f1, 4f2 done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

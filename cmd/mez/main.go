@@ -27,9 +27,12 @@ import (
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/device/escpos"
 	"github.com/byjoellobo/mez/internal/device/printq"
+	"github.com/byjoellobo/mez/internal/gateway"
+	"github.com/byjoellobo/mez/internal/gateway/razorpay"
 	"github.com/byjoellobo/mez/internal/hub"
 	"github.com/byjoellobo/mez/internal/logging"
 	"github.com/byjoellobo/mez/internal/service/audit"
+	"github.com/byjoellobo/mez/internal/service/charges"
 	"github.com/byjoellobo/mez/internal/service/floor"
 	"github.com/byjoellobo/mez/internal/service/menus"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
@@ -311,6 +314,26 @@ func run() (err error) {
 		api.WithGuestRequests(orders),
 	)
 
+	// Guests paying online (ADR-220, ADR-221). With no gateway set, which is
+	// the normal state, nothing here exists and nothing calls the internet.
+	if cfg.GatewayEnabled() {
+		// A gateway that is set but cannot be used stops the start, as a
+		// relay does (ADR-019): the owner believes guests can pay.
+		provider, err := newGateway(cfg)
+		if err != nil {
+			return err
+		}
+		online, err := charges.New(charges.Options{
+			DB: database, Orders: orders, Log: log,
+			Gateways: func(context.Context, int64) (gateway.Gateway, error) { return provider, nil },
+		})
+		if err != nil {
+			return err
+		}
+		running.push("charges", online.StartSweeper(charges.DefaultSweepEvery).Close)
+		log.Info("guests can pay online", "gateway", provider.Name())
+	}
+
 	if cfg.RelayEnabled() {
 		// A relay that is set but cannot be used is a setting the owner
 		// believes took, so it stops the start (ADR-019). A relay that is
@@ -449,4 +472,19 @@ func serve(ctx context.Context, log *slog.Logger, listener net.Listener, h http.
 
 	log.Info("stopped accepting requests")
 	return nil
+}
+
+// newGateway builds the payment gateway the configuration names. It calls
+// nobody: keys that are wrong are found out by the first charge. Nothing
+// it returns or says carries the secret.
+func newGateway(cfg config.Config) (gateway.Gateway, error) {
+	switch cfg.Gateway {
+	case config.GatewayRazorpay:
+		if cfg.GatewayKeyID == "" || cfg.GatewayKeySecret == "" {
+			return nil, errors.New("gateway is razorpay, and gateway_key_id and gateway_key_secret are not both set")
+		}
+		return razorpay.New(razorpay.Options{KeyID: cfg.GatewayKeyID, KeySecret: cfg.GatewayKeySecret})
+	default:
+		return nil, fmt.Errorf("gateway %q: this build has no adapter for it", cfg.Gateway)
+	}
 }

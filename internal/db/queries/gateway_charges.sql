@@ -46,3 +46,7 @@ WHERE id = sqlc.arg(id) AND status = 'open' AND reference IS NULL;
 UPDATE gateway_charges
 SET status = sqlc.arg(status), problem = sqlc.arg(problem), settled_at = sqlc.arg(settled_at)
 WHERE id = sqlc.arg(id) AND status = 'open';
+
+-- name: VenuesWithOpenGatewayCharges :many
+-- The venues a sweep has anything to ask a provider about. Usually none.
+SELECT DISTINCT venue_id FROM gateway_charges WHERE status = 'open' ORDER BY venue_id;

@@ -236,3 +236,31 @@ func (q *Queries) SettleGatewayCharge(ctx context.Context, arg SettleGatewayChar
 	}
 	return result.RowsAffected()
 }
+
+const venuesWithOpenGatewayCharges = `-- name: VenuesWithOpenGatewayCharges :many
+SELECT DISTINCT venue_id FROM gateway_charges WHERE status = 'open' ORDER BY venue_id
+`
+
+// The venues a sweep has anything to ask a provider about. Usually none.
+func (q *Queries) VenuesWithOpenGatewayCharges(ctx context.Context) ([]int64, error) {
+	rows, err := q.db.QueryContext(ctx, venuesWithOpenGatewayCharges)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int64{}
+	for rows.Next() {
+		var venue_id int64
+		if err := rows.Scan(&venue_id); err != nil {
+			return nil, err
+		}
+		items = append(items, venue_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

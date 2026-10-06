@@ -167,6 +167,9 @@ The full set of settings:
 | `relay_key` | `-relay-key` | `MEZ_RELAY_KEY` | empty; a secret, needed when `relay_url` is set |
 | `timezone` | `-timezone` | `MEZ_TIMEZONE` | the machine's own |
 | `dev_origin` | `-dev-origin` | `MEZ_DEV_ORIGIN` | empty, so no CORS |
+| `gateway` | `-gateway` | `MEZ_GATEWAY` | empty, so no gateway; `razorpay` |
+| `gateway_key_id` | `-gateway-key-id` | `MEZ_GATEWAY_KEY_ID` | empty; needed when `gateway` is set |
+| `gateway_key_secret` | `-gateway-key-secret` | `MEZ_GATEWAY_KEY_SECRET` | empty; a secret, needed when `gateway` is set. Prefer the environment: a flag is visible to anyone who can list this machine's processes |
 | | `-config` | | `config.toml` beside the binary |
 
 Notes on a few of them:

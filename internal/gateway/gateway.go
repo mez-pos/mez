@@ -23,6 +23,11 @@ import (
 // known about any charge from it, and asking again later is right.
 var ErrUnavailable = errors.New("gateway: could not reach the payment provider")
 
+// ErrRefused means the provider was reached and said no: the keys are
+// wrong, or it will not take this charge. Asking again with the same thing
+// gets the same answer.
+var ErrRefused = errors.New("gateway: the payment provider refused")
+
 // Gateway is a payment provider.
 type Gateway interface {
 	// Name is the provider's name as it is stored: "razorpay", "test".

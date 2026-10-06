@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4e4b: "I have paid" on the screens** (ADR-219). The phone's bill
+**Phase 11, Task 4f1: the gateway interface, and a charge becoming one payment**
+(ADR-220). `internal/gateway` is two questions, Start and Status.
+`internal/service/charges` starts a charge for what a table owes and, when the
+gateway says paid, tenders it once (`charge:<id>` as the key); money a bill cannot
+take is kept as `unapplied`. Tested against a fake.
+
+Before it, **Phase 11, Task 4e4b: "I have paid" on the screens** (ADR-219). The phone's bill
 has the button, and says staff were told from the bill's `paid_told`. The
 terminal's pill, sheet ("From the tables") and chime carry the notice, with Take
 payment opening `/pay/{order}` and No payment found putting it away.
