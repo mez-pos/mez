@@ -15,8 +15,7 @@
 **Phase 11, Task 4f2: Razorpay, its keys, and the sweeper** (ADR-221).
 `internal/gateway/razorpay` uses payment links. `gateway`, `gateway_key_id` and
 `gateway_key_secret` are configuration (`MEZ_GATEWAY_KEY_SECRET`), not settings.
-`charges.Sweeper` settles open charges every 20 seconds, wired in `cmd/mez`. No
-call to the real Razorpay has been made.
+`charges.Sweeper` settles open charges every 20 seconds. No real call made yet.
 
 ## Next task
 
