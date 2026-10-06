@@ -2,24 +2,25 @@
 -- internal/service/charges.
 
 -- name: CreateGatewayCharge :one
-INSERT INTO gateway_charges (public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url,
+INSERT INTO gateway_charges (public_id, venue_id, table_id, order_id, round_public_id, gateway, gateway_id, checkout_url,
                              amount_minor, currency, status, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
 RETURNING id;
 
 -- name: GatewayChargeByPublicID :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
 FROM gateway_charges
 WHERE public_id = ?;
 
 -- name: OpenGatewayChargeForOrder :one
--- A charge still open for a ticket at a provider for an amount: asked for
--- again, it is the same charge.
+-- A charge still open for a ticket's balance at a provider for an amount:
+-- asked for again, it is the same charge. A round's charge is not one.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
 FROM gateway_charges
-WHERE order_id = ? AND gateway = ? AND amount_minor = ? AND currency = ? AND status = 'open'
+WHERE order_id = ? AND round_public_id IS NULL AND gateway = ? AND amount_minor = ? AND currency = ?
+  AND status = 'open'
 ORDER BY created_at DESC, id DESC
 LIMIT 1;
 
@@ -27,7 +28,7 @@ LIMIT 1;
 -- A venue's charges in a status, oldest first: the open ones to ask the
 -- provider about, the unapplied ones a person must deal with.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
 FROM gateway_charges
 WHERE venue_id = ? AND status = ?
 ORDER BY created_at, id
@@ -53,12 +54,13 @@ SELECT DISTINCT venue_id FROM gateway_charges WHERE status = 'open' ORDER BY ven
 
 -- name: UnresolvedGatewayCharges :many
 -- Money a gateway took that no bill could, and nobody has dealt with yet:
--- oldest first, with its table by name and its ticket by public id.
-SELECT c.public_id, c.table_id, t.name AS table_name, o.public_id AS order_public_id, c.gateway, c.gateway_id,
-       c.amount_minor, c.currency, c.method, c.reference, c.problem, c.settled_at
+-- oldest first, with its table by name and its ticket by public id. A
+-- round's charge that never reached a ticket has none.
+SELECT c.public_id, c.table_id, t.name AS table_name, CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id,
+       c.gateway, c.gateway_id, c.amount_minor, c.currency, c.method, c.reference, c.problem, c.settled_at
 FROM gateway_charges c
 JOIN tables t ON t.id = c.table_id
-JOIN orders o ON o.id = c.order_id
+LEFT JOIN orders o ON o.id = c.order_id
 WHERE c.venue_id = ? AND c.status = 'unapplied' AND c.resolved_at IS NULL
 ORDER BY c.settled_at, c.id
 LIMIT ?;
@@ -73,6 +75,20 @@ WHERE public_id = sqlc.arg(public_id) AND venue_id = sqlc.arg(venue_id) AND stat
 -- name: GatewayChargeByGatewayID :one
 -- The charge a provider's notice is about, by the provider's own id.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
 FROM gateway_charges
 WHERE gateway = ? AND gateway_id = ?;
+
+-- name: OpenGatewayChargeForRound :one
+-- The charge still open for a round at a provider: asked for again, it is
+-- the same charge. A round asks for one amount, so there is at most one.
+SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
+FROM gateway_charges
+WHERE round_public_id = ? AND gateway = ? AND status = 'open';
+
+-- name: SetGatewayChargeOrder :execrows
+-- Writes the ticket a round's charge goes on, once the paid round is on it.
+UPDATE gateway_charges
+SET order_id = sqlc.arg(order_id)
+WHERE id = sqlc.arg(id) AND order_id IS NULL AND status = 'open';

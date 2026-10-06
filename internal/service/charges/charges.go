@@ -16,6 +16,10 @@
 //     another way meanwhile, or closed. Nothing is forced onto the bill;
 //     the charge is kept as unapplied, for a person to refund or record.
 //
+// A charge can also be for a round held until it is paid (ADR-226): then
+// the paid round is put on a ticket and sent to the kitchen first, and the
+// payment tendered on that ticket after.
+//
 // A charge the bill cannot take yet for a passing reason (no shift open,
 // the ticket on hold, the database busy) stays open and is tried again.
 package charges
@@ -87,9 +91,14 @@ func Statuses() []Status { return []Status{Open, Paid, Unapplied, Failed} }
 
 // Charge is a charge as it stands.
 type Charge struct {
-	PublicID    string
-	TableID     int64
-	OrderID     int64
+	PublicID string
+	TableID  int64
+	// OrderID is the ticket the payment goes on. It is 0 for a round's
+	// charge until the paid round is on a ticket.
+	OrderID int64
+	// Round is the round this pays for, by public id, when it is a round's
+	// charge and not a bill's.
+	Round       string
 	Gateway     string
 	CheckoutURL string
 	Amount      money.Amount
@@ -105,6 +114,8 @@ type Charge struct {
 type Orders interface {
 	TableTicket(ctx context.Context, venueID, tableID int64) (svcorder.Result, bool, error)
 	TenderPayment(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.TenderPayment) (svcorder.Result, error)
+	PayableRound(ctx context.Context, venueID, tableID int64, publicID string) (svcorder.Round, error)
+	SendPaidRound(ctx context.Context, venueID int64, publicID string) (svcorder.Round, error)
 }
 
 // Gateways finds a venue's payment gateway, or ErrNoGateway when it has
@@ -186,16 +197,46 @@ func (s *Service) Start(ctx context.Context, venueID, tableID int64, description
 		return Charge{}, err
 	}
 
-	prior, err := s.db.Queries().OpenGatewayChargeForOrder(ctx, gen.OpenGatewayChargeForOrderParams{
-		OrderID: ticket.OrderID, Gateway: gw.Name(), AmountMinor: due.Minor, Currency: due.Currency,
+	return s.open(ctx, gw, asking{
+		venueID: venueID, tableID: tableID, orderID: ticket.OrderID, due: due, description: description, returnURL: returnURL,
+		prior: func() (gen.GatewayCharge, error) {
+			return s.db.Queries().OpenGatewayChargeForOrder(ctx, gen.OpenGatewayChargeForOrderParams{
+				OrderID: sql.NullInt64{Int64: ticket.OrderID, Valid: true}, Gateway: gw.Name(), AmountMinor: due.Minor, Currency: due.Currency,
+			})
+		},
 	})
-	if err == nil {
+}
+
+// asking is a charge about to be asked of the gateway: for a ticket's
+// balance, or for a round. prior finds the charge already open for the same
+// thing, or sql.ErrNoRows.
+type asking struct {
+	venueID, tableID int64
+	orderID          int64
+	round            string
+	due              money.Amount
+	description      string
+	returnURL        string
+	prior            func() (gen.GatewayCharge, error)
+}
+
+// open answers the charge already open for what is asked, or asks the
+// gateway for a new one and saves it.
+func (s *Service) open(ctx context.Context, gw gateway.Gateway, a asking) (Charge, error) {
+	replay := func() (Charge, bool, error) {
+		prior, err := a.prior()
+		if errors.Is(err, sql.ErrNoRows) {
+			return Charge{}, false, nil
+		}
+		if err != nil {
+			return Charge{}, false, fmt.Errorf("reading the open charge at table %d: %w", a.tableID, err)
+		}
 		c := toCharge(prior)
 		c.Replayed = true
-		return c, nil
+		return c, true, nil
 	}
-	if !errors.Is(err, sql.ErrNoRows) {
-		return Charge{}, fmt.Errorf("reading the open charge of order %d: %w", ticket.OrderID, err)
+	if c, ok, err := replay(); err != nil || ok {
+		return c, err
 	}
 
 	at := s.clock.Now().UTC()
@@ -204,33 +245,71 @@ func (s *Service) Start(ctx context.Context, venueID, tableID int64, description
 		if err != nil {
 			return Charge{}, fmt.Errorf("drawing a charge id: %w", err)
 		}
-		checkout, err := gw.Start(ctx, gateway.Charge{Reference: publicID, Amount: due, Description: description, ReturnURL: returnURL})
+		checkout, err := gw.Start(ctx, gateway.Charge{Reference: publicID, Amount: a.due, Description: a.description, ReturnURL: a.returnURL})
 		if err != nil {
 			return Charge{}, fmt.Errorf("starting a charge at %s: %w", gw.Name(), err)
 		}
 		err = s.db.WriteTx(ctx, func(q *gen.Queries) error {
 			_, err := q.CreateGatewayCharge(ctx, gen.CreateGatewayChargeParams{
-				PublicID: publicID, VenueID: venueID, TableID: tableID, OrderID: ticket.OrderID,
-				Gateway: gw.Name(), GatewayID: checkout.ID, CheckoutUrl: checkout.URL,
-				AmountMinor: due.Minor, Currency: due.Currency, CreatedAt: at,
+				PublicID: publicID, VenueID: a.venueID, TableID: a.tableID,
+				OrderID:       sql.NullInt64{Int64: a.orderID, Valid: a.orderID != 0},
+				RoundPublicID: sql.NullString{String: a.round, Valid: a.round != ""},
+				Gateway:       gw.Name(), GatewayID: checkout.ID, CheckoutUrl: checkout.URL,
+				AmountMinor: a.due.Minor, Currency: a.due.Currency, CreatedAt: at,
 			})
 			return err
 		})
 		if db.IsUniqueViolation(err) {
-			// The public id collided. The charge just opened at the gateway
-			// is one nobody was given the page of, so nobody pays it.
+			// Another phone asked for the same round at the same moment, and
+			// its charge is the one. Otherwise the public id collided. Either
+			// way the charge just opened at the gateway is one nobody was
+			// given the page of, so nobody pays it.
+			if c, ok, rerr := replay(); rerr != nil || ok {
+				return c, rerr
+			}
 			continue
 		}
 		if err != nil {
 			return Charge{}, fmt.Errorf("saving charge %s: %w", publicID, err)
 		}
-		s.log.Info("a charge was started", "venue_id", venueID, "order_id", ticket.OrderID, "charge", publicID, "gateway", gw.Name(), "amount_minor", due.Minor)
+		s.log.Info("a charge was started", "venue_id", a.venueID, "order_id", a.orderID, "round", a.round, "charge", publicID, "gateway", gw.Name(), "amount_minor", a.due.Minor)
 		return Charge{
-			PublicID: publicID, TableID: tableID, OrderID: ticket.OrderID, Gateway: gw.Name(),
-			CheckoutURL: checkout.URL, Amount: due, Status: Open,
+			PublicID: publicID, TableID: a.tableID, OrderID: a.orderID, Round: a.round, Gateway: gw.Name(),
+			CheckoutURL: checkout.URL, Amount: a.due, Status: Open,
 		}, nil
 	}
-	return Charge{}, fmt.Errorf("saving a charge for table %d: it kept colliding", tableID)
+	return Charge{}, fmt.Errorf("saving a charge for table %d: it kept colliding", a.tableID)
+}
+
+// StartRound asks the venue's gateway for what a round held until it is
+// paid asks of the guest (ADR-226), and answers where they pay. Asked again
+// while that charge is open, it is the same charge.
+//
+// What is asked is the round's own figure, fixed when it was placed: what
+// its lines add to the bill. The table's balance has no part in it.
+func (s *Service) StartRound(ctx context.Context, venueID, tableID int64, round, description, returnURL string) (Charge, error) {
+	held, err := s.orders.PayableRound(ctx, venueID, tableID, round)
+	if errors.Is(err, svcorder.ErrRoundPaid) {
+		return Charge{}, fmt.Errorf("%w: %v", ErrNothingToPay, err)
+	}
+	if err != nil {
+		return Charge{}, err
+	}
+	if held.Due.Minor <= 0 {
+		return Charge{}, fmt.Errorf("%w: round %s asks for nothing", ErrNothingToPay, round)
+	}
+	gw, err := s.gateways(ctx, venueID)
+	if err != nil {
+		return Charge{}, err
+	}
+	return s.open(ctx, gw, asking{
+		venueID: venueID, tableID: tableID, round: held.PublicID, due: held.Due, description: description, returnURL: returnURL,
+		prior: func() (gen.GatewayCharge, error) {
+			return s.db.Queries().OpenGatewayChargeForRound(ctx, gen.OpenGatewayChargeForRoundParams{
+				RoundPublicID: sql.NullString{String: held.PublicID, Valid: true}, Gateway: gw.Name(),
+			})
+		},
+	})
 }
 
 // Charge reads a charge as it stands, without asking the gateway.
@@ -314,22 +393,41 @@ func (s *Service) apply(ctx context.Context, row gen.GatewayCharge, st gateway.S
 		}
 	}
 
+	// forRound is a round's charge; sent is whether its round is on a ticket.
+	forRound, sent := row.RoundPublicID.Valid, row.OrderID.Valid
 	if st.Amount != asked {
-		return s.close(ctx, row, Unapplied, fmt.Sprintf("The gateway took %s, and the charge was for %s.", st.Amount, asked))
+		problem := fmt.Sprintf("The gateway took %s, and the charge was for %s.", st.Amount, asked)
+		if forRound && !sent {
+			problem += notSent
+		}
+		return s.close(ctx, row, Unapplied, problem)
+	}
+
+	if forRound && !sent {
+		var done bool
+		var c Charge
+		var err error
+		if row, c, done, err = s.sendRound(ctx, row); err != nil || done {
+			return c, err
+		}
 	}
 
 	_, err := s.orders.TenderPayment(ctx,
 		// The guest is nobody: no actor and no device. The key is the
 		// charge's own, so this tender happens once.
 		svcorder.Meta{VenueID: row.VenueID, IdempotencyKey: "charge:" + row.PublicID},
-		row.OrderID,
+		row.OrderID.Int64,
 		svcorder.TenderPayment{Method: order.PaymentMethod(row.Method.String), Amount: asked, Reference: row.Reference.String},
 	)
 	switch {
 	case err == nil:
 		return s.close(ctx, row, Paid, "")
+	case errors.Is(err, order.ErrOverTender) && forRound:
+		return s.close(ctx, row, Unapplied, "The order is with the kitchen, and the bill owes less than this payment: it changed, or was paid another way.")
 	case errors.Is(err, order.ErrOverTender):
 		return s.close(ctx, row, Unapplied, "The bill no longer owes this much: part or all of it was paid another way.")
+	case (errors.Is(err, order.ErrOrderClosed) || errors.Is(err, svcorder.ErrOrderNotFound)) && forRound:
+		return s.close(ctx, row, Unapplied, "The order went to the kitchen, and its bill was closed before this payment was put on it.")
 	case errors.Is(err, order.ErrOrderClosed), errors.Is(err, svcorder.ErrOrderNotFound):
 		return s.close(ctx, row, Unapplied, "The bill was closed before this payment arrived.")
 	default:
@@ -337,6 +435,48 @@ func (s *Service) apply(ctx context.Context, row gen.GatewayCharge, st gateway.S
 		// pass, so the charge stays open and is tried again.
 		return Charge{}, fmt.Errorf("putting charge %s on its ticket: %w", row.PublicID, err)
 	}
+}
+
+// notSent ends the problem of a round's charge whose round never went to
+// the kitchen: staff reading it have a guest who paid and is waiting.
+const notSent = " The order was not sent to the kitchen."
+
+// sendRound puts the round a paid charge is for on a ticket and sends it,
+// and writes that ticket on the charge. done is true when the charge was
+// closed here instead, with nothing sent.
+//
+// It is a step of its own before the tender, and each is safe to do again:
+// a round already sent answers with its ticket, so a charge that stopped
+// between the two is finished by the next settle.
+func (s *Service) sendRound(ctx context.Context, row gen.GatewayCharge) (gen.GatewayCharge, Charge, bool, error) {
+	round, err := s.orders.SendPaidRound(ctx, row.VenueID, row.RoundPublicID.String)
+	var c Charge
+	switch {
+	case errors.Is(err, svcorder.ErrRoundLapsed):
+		c, err = s.close(ctx, row, Unapplied, "It paid for an order placed in a shift that has since closed."+notSent)
+		return row, c, true, err
+	case errors.Is(err, svcorder.ErrRoundNotFound):
+		c, err = s.close(ctx, row, Unapplied, "The order it paid for is no longer there."+notSent)
+		return row, c, true, err
+	case err != nil:
+		// No shift open, the table's ticket on hold or printed, the database
+		// busy: it may pass, so the charge stays open and is tried again.
+		return row, Charge{}, false, fmt.Errorf("sending the round charge %s paid for: %w", row.PublicID, err)
+	}
+	err = s.db.WriteTx(ctx, func(q *gen.Queries) error {
+		_, err := q.SetGatewayChargeOrder(ctx, gen.SetGatewayChargeOrderParams{OrderID: sql.NullInt64{Int64: round.OrderID, Valid: true}, ID: row.ID})
+		return err
+	})
+	if err != nil {
+		return row, Charge{}, false, fmt.Errorf("writing the ticket of charge %s: %w", row.PublicID, err)
+	}
+	if row, err = s.row(ctx, row.VenueID, row.PublicID); err != nil {
+		return row, Charge{}, false, err
+	}
+	if Status(row.Status) != Open {
+		return row, toCharge(row), true, nil // someone else finished it meanwhile
+	}
+	return row, Charge{}, false, nil
 }
 
 // close settles an open charge. If someone else closed it first, theirs
@@ -371,12 +511,12 @@ func (s *Service) close(ctx context.Context, row gen.GatewayCharge, to Status, p
 	}
 	switch Status(after.Status) {
 	case Paid:
-		s.log.Info("a charge was paid and is on its ticket", "venue_id", row.VenueID, "order_id", row.OrderID, "charge", row.PublicID)
+		s.log.Info("a charge was paid and is on its ticket", "venue_id", row.VenueID, "order_id", row.OrderID.Int64, "charge", row.PublicID)
 	case Unapplied:
 		// Money a guest paid that is on no bill. It is the loudest thing
 		// this package says.
 		s.log.Error("a charge was paid and could not be put on its ticket: refund it or record it by hand",
-			"venue_id", row.VenueID, "order_id", row.OrderID, "charge", row.PublicID, "gateway", row.Gateway,
+			"venue_id", row.VenueID, "order_id", row.OrderID.Int64, "charge", row.PublicID, "gateway", row.Gateway,
 			"gateway_id", row.GatewayID, "amount_minor", row.AmountMinor, "problem", after.Problem.String)
 	}
 	return toCharge(after), nil
@@ -420,7 +560,7 @@ func (s *Service) row(ctx context.Context, venueID int64, publicID string) (gen.
 
 func toCharge(r gen.GatewayCharge) Charge {
 	return Charge{
-		PublicID: r.PublicID, TableID: r.TableID, OrderID: r.OrderID, Gateway: r.Gateway, CheckoutURL: r.CheckoutUrl,
+		PublicID: r.PublicID, TableID: r.TableID, OrderID: r.OrderID.Int64, Round: r.RoundPublicID.String, Gateway: r.Gateway, CheckoutURL: r.CheckoutUrl,
 		Amount: money.Amount{Minor: r.AmountMinor, Currency: r.Currency}, Status: Status(r.Status), Problem: r.Problem.String,
 	}
 }

@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4f5: the gateway's webhook** (ADR-224).
+**Phase 11, Task 4e5a: a round held until it is paid** (ADR-225). `payment.mode`
+is `pay_at_table` or `prepay`. Where guests pay first and can, `PlaceRound` keeps
+the round `unpaid` with `Due`, what it adds to the bill by `order.Adding`.
+
+Before it, **Phase 11, Task 4f5: the gateway's webhook** (ADR-224).
 `POST /order/api/hook/{gateway}` takes a gateway's signed call as a hint to
 `Settle` now; what it says is never read. `gateway_webhook_secret` unset, it is 404.
 

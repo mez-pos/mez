@@ -296,9 +296,12 @@ type Querier interface {
 	// transaction that closes a shift or issues a correction.
 	// Moves the venue's counter on and returns the number taken.
 	NextZNumber(ctx context.Context, venueID int64) (int64, error)
-	// A charge still open for a ticket at a provider for an amount: asked for
-	// again, it is the same charge.
+	// A charge still open for a ticket's balance at a provider for an amount:
+	// asked for again, it is the same charge. A round's charge is not one.
 	OpenGatewayChargeForOrder(ctx context.Context, arg OpenGatewayChargeForOrderParams) (GatewayCharge, error)
+	// The charge still open for a round at a provider: asked for again, it is
+	// the same charge. A round asks for one amount, so there is at most one.
+	OpenGatewayChargeForRound(ctx context.Context, arg OpenGatewayChargeForRoundParams) (GatewayCharge, error)
 	// The notice staff have still to deal with on a ticket, if there is one.
 	OpenPaidNoticeForOrder(ctx context.Context, orderID int64) (OpenPaidNoticeForOrderRow, error)
 	// Every notice staff have still to deal with, oldest first, with its table
@@ -386,6 +389,8 @@ type Querier interface {
 	SetCategorySort(ctx context.Context, arg SetCategorySortParams) (int64, error)
 	SetCourseActive(ctx context.Context, arg SetCourseActiveParams) (int64, error)
 	SetCourseNumber(ctx context.Context, arg SetCourseNumberParams) (int64, error)
+	// Writes the ticket a round's charge goes on, once the paid round is on it.
+	SetGatewayChargeOrder(ctx context.Context, arg SetGatewayChargeOrderParams) (int64, error)
 	// Writes how an open charge was paid, once. Whoever is second finds it
 	// written and writes nothing.
 	SetGatewayChargePayment(ctx context.Context, arg SetGatewayChargePaymentParams) (int64, error)
@@ -513,7 +518,8 @@ type Querier interface {
 	// rather than paginated (ADR-074).
 	UnclosedOrdersForVenue(ctx context.Context, arg UnclosedOrdersForVenueParams) ([]UnclosedOrdersForVenueRow, error)
 	// Money a gateway took that no bill could, and nobody has dealt with yet:
-	// oldest first, with its table by name and its ticket by public id.
+	// oldest first, with its table by name and its ticket by public id. A
+	// round's charge that never reached a ticket has none.
 	UnresolvedGatewayCharges(ctx context.Context, arg UnresolvedGatewayChargesParams) ([]UnresolvedGatewayChargesRow, error)
 	// Orders that are not closed: a ticket open, held, being paid or reopened.
 	UnsettledOrderCount(ctx context.Context, venueID int64) (int64, error)

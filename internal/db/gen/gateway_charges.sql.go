@@ -13,23 +13,24 @@ import (
 
 const createGatewayCharge = `-- name: CreateGatewayCharge :one
 
-INSERT INTO gateway_charges (public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url,
+INSERT INTO gateway_charges (public_id, venue_id, table_id, order_id, round_public_id, gateway, gateway_id, checkout_url,
                              amount_minor, currency, status, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
 RETURNING id
 `
 
 type CreateGatewayChargeParams struct {
-	PublicID    string
-	VenueID     int64
-	TableID     int64
-	OrderID     int64
-	Gateway     string
-	GatewayID   string
-	CheckoutUrl string
-	AmountMinor int64
-	Currency    string
-	CreatedAt   time.Time
+	PublicID      string
+	VenueID       int64
+	TableID       int64
+	OrderID       sql.NullInt64
+	RoundPublicID sql.NullString
+	Gateway       string
+	GatewayID     string
+	CheckoutUrl   string
+	AmountMinor   int64
+	Currency      string
+	CreatedAt     time.Time
 }
 
 // Charges asked of guests through a payment gateway (ADR-220). See
@@ -40,6 +41,7 @@ func (q *Queries) CreateGatewayCharge(ctx context.Context, arg CreateGatewayChar
 		arg.VenueID,
 		arg.TableID,
 		arg.OrderID,
+		arg.RoundPublicID,
 		arg.Gateway,
 		arg.GatewayID,
 		arg.CheckoutUrl,
@@ -54,7 +56,7 @@ func (q *Queries) CreateGatewayCharge(ctx context.Context, arg CreateGatewayChar
 
 const gatewayChargeByGatewayID = `-- name: GatewayChargeByGatewayID :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
 FROM gateway_charges
 WHERE gateway = ? AND gateway_id = ?
 `
@@ -88,13 +90,14 @@ func (q *Queries) GatewayChargeByGatewayID(ctx context.Context, arg GatewayCharg
 		&i.Resolution,
 		&i.ResolvedAt,
 		&i.ResolvedBy,
+		&i.RoundPublicID,
 	)
 	return i, err
 }
 
 const gatewayChargeByPublicID = `-- name: GatewayChargeByPublicID :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
 FROM gateway_charges
 WHERE public_id = ?
 `
@@ -122,13 +125,14 @@ func (q *Queries) GatewayChargeByPublicID(ctx context.Context, publicID string) 
 		&i.Resolution,
 		&i.ResolvedAt,
 		&i.ResolvedBy,
+		&i.RoundPublicID,
 	)
 	return i, err
 }
 
 const gatewayChargesByStatus = `-- name: GatewayChargesByStatus :many
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
 FROM gateway_charges
 WHERE venue_id = ? AND status = ?
 ORDER BY created_at, id
@@ -172,6 +176,7 @@ func (q *Queries) GatewayChargesByStatus(ctx context.Context, arg GatewayCharges
 			&i.Resolution,
 			&i.ResolvedAt,
 			&i.ResolvedBy,
+			&i.RoundPublicID,
 		); err != nil {
 			return nil, err
 		}
@@ -188,22 +193,23 @@ func (q *Queries) GatewayChargesByStatus(ctx context.Context, arg GatewayCharges
 
 const openGatewayChargeForOrder = `-- name: OpenGatewayChargeForOrder :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
 FROM gateway_charges
-WHERE order_id = ? AND gateway = ? AND amount_minor = ? AND currency = ? AND status = 'open'
+WHERE order_id = ? AND round_public_id IS NULL AND gateway = ? AND amount_minor = ? AND currency = ?
+  AND status = 'open'
 ORDER BY created_at DESC, id DESC
 LIMIT 1
 `
 
 type OpenGatewayChargeForOrderParams struct {
-	OrderID     int64
+	OrderID     sql.NullInt64
 	Gateway     string
 	AmountMinor int64
 	Currency    string
 }
 
-// A charge still open for a ticket at a provider for an amount: asked for
-// again, it is the same charge.
+// A charge still open for a ticket's balance at a provider for an amount:
+// asked for again, it is the same charge. A round's charge is not one.
 func (q *Queries) OpenGatewayChargeForOrder(ctx context.Context, arg OpenGatewayChargeForOrderParams) (GatewayCharge, error) {
 	row := q.db.QueryRowContext(ctx, openGatewayChargeForOrder,
 		arg.OrderID,
@@ -232,6 +238,49 @@ func (q *Queries) OpenGatewayChargeForOrder(ctx context.Context, arg OpenGateway
 		&i.Resolution,
 		&i.ResolvedAt,
 		&i.ResolvedBy,
+		&i.RoundPublicID,
+	)
+	return i, err
+}
+
+const openGatewayChargeForRound = `-- name: OpenGatewayChargeForRound :one
+SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id
+FROM gateway_charges
+WHERE round_public_id = ? AND gateway = ? AND status = 'open'
+`
+
+type OpenGatewayChargeForRoundParams struct {
+	RoundPublicID sql.NullString
+	Gateway       string
+}
+
+// The charge still open for a round at a provider: asked for again, it is
+// the same charge. A round asks for one amount, so there is at most one.
+func (q *Queries) OpenGatewayChargeForRound(ctx context.Context, arg OpenGatewayChargeForRoundParams) (GatewayCharge, error) {
+	row := q.db.QueryRowContext(ctx, openGatewayChargeForRound, arg.RoundPublicID, arg.Gateway)
+	var i GatewayCharge
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.VenueID,
+		&i.TableID,
+		&i.OrderID,
+		&i.Gateway,
+		&i.GatewayID,
+		&i.CheckoutUrl,
+		&i.AmountMinor,
+		&i.Currency,
+		&i.Status,
+		&i.Method,
+		&i.Reference,
+		&i.Problem,
+		&i.CreatedAt,
+		&i.SettledAt,
+		&i.Resolution,
+		&i.ResolvedAt,
+		&i.ResolvedBy,
+		&i.RoundPublicID,
 	)
 	return i, err
 }
@@ -260,6 +309,26 @@ func (q *Queries) ResolveGatewayCharge(ctx context.Context, arg ResolveGatewayCh
 		arg.PublicID,
 		arg.VenueID,
 	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const setGatewayChargeOrder = `-- name: SetGatewayChargeOrder :execrows
+UPDATE gateway_charges
+SET order_id = ?1
+WHERE id = ?2 AND order_id IS NULL AND status = 'open'
+`
+
+type SetGatewayChargeOrderParams struct {
+	OrderID sql.NullInt64
+	ID      int64
+}
+
+// Writes the ticket a round's charge goes on, once the paid round is on it.
+func (q *Queries) SetGatewayChargeOrder(ctx context.Context, arg SetGatewayChargeOrderParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setGatewayChargeOrder, arg.OrderID, arg.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -317,11 +386,11 @@ func (q *Queries) SettleGatewayCharge(ctx context.Context, arg SettleGatewayChar
 }
 
 const unresolvedGatewayCharges = `-- name: UnresolvedGatewayCharges :many
-SELECT c.public_id, c.table_id, t.name AS table_name, o.public_id AS order_public_id, c.gateway, c.gateway_id,
-       c.amount_minor, c.currency, c.method, c.reference, c.problem, c.settled_at
+SELECT c.public_id, c.table_id, t.name AS table_name, CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id,
+       c.gateway, c.gateway_id, c.amount_minor, c.currency, c.method, c.reference, c.problem, c.settled_at
 FROM gateway_charges c
 JOIN tables t ON t.id = c.table_id
-JOIN orders o ON o.id = c.order_id
+LEFT JOIN orders o ON o.id = c.order_id
 WHERE c.venue_id = ? AND c.status = 'unapplied' AND c.resolved_at IS NULL
 ORDER BY c.settled_at, c.id
 LIMIT ?
@@ -348,7 +417,8 @@ type UnresolvedGatewayChargesRow struct {
 }
 
 // Money a gateway took that no bill could, and nobody has dealt with yet:
-// oldest first, with its table by name and its ticket by public id.
+// oldest first, with its table by name and its ticket by public id. A
+// round's charge that never reached a ticket has none.
 func (q *Queries) UnresolvedGatewayCharges(ctx context.Context, arg UnresolvedGatewayChargesParams) ([]UnresolvedGatewayChargesRow, error) {
 	rows, err := q.db.QueryContext(ctx, unresolvedGatewayCharges, arg.VenueID, arg.Limit)
 	if err != nil {

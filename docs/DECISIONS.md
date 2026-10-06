@@ -7060,3 +7060,51 @@ round adds may then differ by a paisa of rounding from what was paid; 4e5b has t
 decide what is tendered then, and say so. A held round is priced against the ticket
 as it stood, with a discount staff applied meanwhile not reaching it. Nothing ends
 an unpaid round; it stops counting after thirty minutes and is never listed.
+
+## ADR-226 - A round's charge: the round is sent first, then what was charged is tendered, and never adjusted
+2026-10 · Status: accepted. Phase 11, Task 4e5b1.
+Context: ADR-225 holds a round as a row with the amount it asks. A charge (ADR-220)
+was for a ticket's balance and named its ticket, and a held round has no ticket: the
+table may have none. STATE asked what is tendered when the bill moved between the
+pricing and the payment.
+Decision:
+  - **Task 4e5b is split in two**: 4e5b1 the services, this; 4e5b2 the guest's
+    route and wiring `CanCharge`. Paying first is still not in effect in `cmd/mez`.
+  - **A charge names its round** (`round_public_id`, migration 00044), and its
+    ticket only once the paid round is on one: `order_id` is nullable. SQLite cannot
+    take NOT NULL off a column, so the table is built again and its rows copied.
+  - **`charges.StartRound` asks for the round's own figure**, `due_minor`, fixed
+    when it was placed. The table's balance has no part in it: at a seated table
+    the round is paid for and what the waiter rang up is still owed.
+  - **One open charge to a round.** A partial unique index holds it, so two phones
+    starting at once are given the same charge. A round whose charge failed, or was
+    paid in the wrong amount, can be asked for again.
+  - **Paid, the round is sent and then tendered, as two steps.**
+    `order.SendPaidRound` opens the table's ticket if it has none (the guest's own,
+    on `qr_table`), appends the lines as stored and sends them, as `AcceptRound`
+    does, by nobody: no member of staff let it in. The ticket is then written on
+    the charge, and the tender is the one a bill's charge makes, under the same
+    key. Each step answers the same when done again, so a settle that stopped
+    between any two is finished by the next. They are not one transaction because
+    the tender is `TenderPayment` whole, with its shift, its closing of the bill
+    and its invoice, and a second copy of that inside another command is a second
+    place for a bill to go wrong.
+  - **What is tendered is what was charged, never more and never less.** If the
+    bill owes at least that, the round is paid and a paisa of difference in what
+    the lines added is left on the bill, in sight. If it owes less (it was paid
+    another way, or changed), nothing is forced: the charge is unapplied, for a
+    person, and its problem says the food has gone to the kitchen.
+  - **Money that arrives for a round that cannot go is unapplied, and says the
+    order was not sent**: the gateway took another amount, or the round is from a
+    shift that has since closed. With no shift open, or the ticket on hold or
+    printed, nothing is decided and the charge stays open to be tried again.
+  - **A round is payable only in the shift it was placed in**, as a request is
+    acceptable only in its own (ADR-211).
+Because: a guest who has paid must end with their food or with their money in
+front of a person, and the kitchen must not get an order twice or an order from
+yesterday.
+Cost: the food can go to the kitchen and the payment then not fit the bill; that
+is an unapplied charge with a bill owing, which staff settle by recording it. A
+charge that cannot be applied for a reason that never passes (the table taken out
+of service) stays open and is retried by every sweep, with only the log to say
+so. A paid ticket nobody on staff opened stays open until someone closes it.
