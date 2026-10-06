@@ -94,6 +94,9 @@ type Querier interface {
 	// The rounds at a table waiting to be paid, placed since a moment ago. One
 	// nobody paid in that time has been walked away from, and does not count.
 	CountUnpaidGuestRounds(ctx context.Context, arg CountUnpaidGuestRoundsParams) (int64, error)
+	// The orders to collect at a venue waiting to be paid, placed since a moment
+	// ago: what bounds how many a stranger with the venue's code can leave lying.
+	CountUnpaidPickupRounds(ctx context.Context, arg CountUnpaidPickupRoundsParams) (int64, error)
 	// The requests waiting at a table since the shift opened. One left over
 	// from a shift before has lapsed, and does not count. A round waiting to be
 	// paid is not a request: staff have nothing to answer.
@@ -112,6 +115,8 @@ type Querier interface {
 	CreateGatewayCharge(ctx context.Context, arg CreateGatewayChargeParams) (int64, error)
 	// A guest's rounds (ADR-210). Written only inside the transaction that
 	// decides where a round goes; see internal/service/order.
+	// table_id is 0 for an order to collect, which has no table (ADR-248): it is
+	// stored as null, and read back as 0 by every query here.
 	CreateGuestRound(ctx context.Context, arg CreateGuestRoundParams) (int64, error)
 	CreateInvoice(ctx context.Context, arg CreateInvoiceParams) (int64, error)
 	CreateItem(ctx context.Context, arg CreateItemParams) (int64, error)

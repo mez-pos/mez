@@ -2,14 +2,20 @@
 -- decides where a round goes; see internal/service/order.
 
 -- name: CreateGuestRound :one
+-- table_id is 0 for an order to collect, which has no table (ADR-248): it is
+-- stored as null, and read back as 0 by every query here.
 INSERT INTO guest_rounds (public_id, venue_id, table_id, status, order_id, lines, subtotal_minor, currency,
                           idempotency_key, fingerprint, created_at, prepay, due_minor, first_seq)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (sqlc.arg(public_id), sqlc.arg(venue_id), nullif(CAST(sqlc.arg(table_id) AS INTEGER), 0), sqlc.arg(status),
+        sqlc.arg(order_id), sqlc.arg(lines), sqlc.arg(subtotal_minor), sqlc.arg(currency),
+        sqlc.arg(idempotency_key), sqlc.arg(fingerprint), sqlc.arg(created_at), sqlc.arg(prepay), sqlc.arg(due_minor),
+        sqlc.arg(first_seq))
 RETURNING id;
 
 -- name: GuestRoundByKey :one
 -- The round a key was first sent with, as it stands now.
-SELECT id, public_id, table_id, status, order_id, lines, subtotal_minor, currency, fingerprint, prepay, due_minor
+SELECT id, public_id, CAST(coalesce(table_id, 0) AS INTEGER) AS table_id, status, order_id, lines, subtotal_minor, currency,
+       fingerprint, prepay, due_minor
 FROM guest_rounds
 WHERE venue_id = ? AND idempotency_key = ?;
 
@@ -18,25 +24,25 @@ WHERE venue_id = ? AND idempotency_key = ?;
 -- from a shift before has lapsed, and does not count. A round waiting to be
 -- paid is not a request: staff have nothing to answer.
 SELECT count(*) FROM guest_rounds
-WHERE table_id = ? AND status = 'waiting' AND prepay = 0 AND created_at >= sqlc.arg(since);
+WHERE table_id = CAST(sqlc.arg(table_id) AS INTEGER) AND status = 'waiting' AND prepay = 0 AND created_at >= sqlc.arg(since);
 
 -- name: CountUnpaidGuestRounds :one
 -- The rounds at a table waiting to be paid, placed since a moment ago. One
 -- nobody paid in that time has been walked away from, and does not count.
 SELECT count(*) FROM guest_rounds
-WHERE table_id = ? AND status = 'waiting' AND prepay = 1 AND created_at >= sqlc.arg(since);
+WHERE table_id = CAST(sqlc.arg(table_id) AS INTEGER) AND status = 'waiting' AND prepay = 1 AND created_at >= sqlc.arg(since);
 
 -- name: WaitingGuestRounds :many
 -- The requests staff have still to answer, oldest first, with each one's
 -- table by name.
-SELECT r.id, r.public_id, r.table_id, t.name AS table_name, r.lines, r.subtotal_minor, r.currency, r.created_at
+SELECT r.id, r.public_id, t.id AS table_id, t.name AS table_name, r.lines, r.subtotal_minor, r.currency, r.created_at
 FROM guest_rounds r
 JOIN tables t ON t.id = r.table_id
 WHERE r.venue_id = ? AND r.status = 'waiting' AND r.prepay = 0 AND r.created_at >= sqlc.arg(since)
 ORDER BY r.created_at, r.id;
 
 -- name: GuestRoundByPublicID :one
-SELECT r.id, r.public_id, r.venue_id, r.table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
+SELECT r.id, r.public_id, r.venue_id, CAST(coalesce(r.table_id, 0) AS INTEGER) AS table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
        r.prepay, r.due_minor, r.first_seq,
        CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id
 FROM guest_rounds r
@@ -61,3 +67,9 @@ JOIN orders o ON o.id = ot.order_id
 WHERE ot.table_id = ? AND ot.closed_at IS NULL AND o.venue_id = ?
 ORDER BY o.opened_at, o.id
 LIMIT 1;
+
+-- name: CountUnpaidPickupRounds :one
+-- The orders to collect at a venue waiting to be paid, placed since a moment
+-- ago: what bounds how many a stranger with the venue's code can leave lying.
+SELECT count(*) FROM guest_rounds
+WHERE venue_id = ? AND table_id IS NULL AND status = 'waiting' AND prepay = 1 AND created_at >= sqlc.arg(since);

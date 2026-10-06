@@ -8,12 +8,13 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4 but 4f6b (Cashfree, question 8), 5 but 5f, and 6 done. (Walks owed.)
+4 but 4f6b (Cashfree, question 8), 5 but 5f1b on, and 6 done. (Walks owed.)
 
 ## Last completed task
 
-**Phase 11, Task 6e: the venue's pickup code** (ADR-247). `pickup_codes`
-(migration 00048), in `tablecodes` and over the staff API. No screen. Task 6 done.
+**Phase 11, Task 5f1a: an order to collect, held unpaid** (ADR-248). A round may
+have no table (migration 00049); `PlacePickup` prices and holds one where a
+gateway is set. Nothing pays for one or sends one yet.
 
 ## Next task
 
@@ -21,14 +22,13 @@
 keys, then on a phone Pay online on a bill, a share from two phones, and Pay on
 an order with paying first chosen.
 
-**Phase 11, Task 5f1: ordering for pickup, in the services.** Read ADR-237,
-ADR-247, ADR-225 to ADR-227, `internal/service/order/guest.go`, `guest_prepay.go`.
-Likely larger than a session: split it first.
-- A round with no table: `guest_rounds.table_id` is NOT NULL, and a round's ticket
-  is found by its table. Find every place that assumes one before choosing how.
-- Always held unpaid, whatever the venue's mode, and only where a gateway is set.
-- Paid, it opens its own ticket on the `web` channel, with no table, and is sent.
-- A pickup code of three or four characters (docs/02-domain.md), given once paid.
+**Phase 11, Task 5f1b: paying for an order to collect, and sending it.** Read
+ADR-248, ADR-226, `internal/service/charges/charges.go` (`StartRound`, `apply`,
+`sendRound`), `internal/service/order/guest_prepay.go`, migration 00049.
+- `gateway_charges.table_id` is NOT NULL: build it again as 00044 did (the child).
+- `SendPaidRound` refuses a pickup (`ErrPickupNotSent`). Paid, it opens its own
+  ticket, channel `web`, no table, and sends. Find what assumes a ticket's table.
+- A pickup code of three or four characters, unique at the venue, given at send.
 
 ## Known broken / in progress
 

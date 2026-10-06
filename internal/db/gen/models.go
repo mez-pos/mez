@@ -120,7 +120,7 @@ type GuestRound struct {
 	ID             int64
 	PublicID       string
 	VenueID        int64
-	TableID        int64
+	TableID        sql.NullInt64
 	Status         string
 	OrderID        sql.NullInt64
 	Lines          string
@@ -134,6 +134,7 @@ type GuestRound struct {
 	Prepay         int64
 	DueMinor       sql.NullInt64
 	FirstSeq       sql.NullInt64
+	PickupCode     sql.NullString
 }
 
 type IdempotencyKey struct {

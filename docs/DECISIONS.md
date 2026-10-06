@@ -7943,3 +7943,48 @@ address and what it must never be confused with are decided here once.
 Cost: a pickup code can be made through the API today and does nothing. It has no
 limit of its own: ADR-246's are by table, and 5f has to key one for it. Two tables
 hold codes now, and "is this string a code that was ever used" asks both.
+
+## ADR-248 - An order to collect is a round with no table, always held for its payment
+2026-10 · Status: accepted. Phase 11, Task 5f1a.
+Context: ADR-237 decided ordering for pickup: by the venue's code (ADR-247), paid
+first, a ticket of its own. A guest's order is a round (ADR-210), and a round had
+a table: `guest_rounds.table_id` was NOT NULL, and a round's ticket is found by
+its table.
+Decision:
+  - **Task 5f1 is split in two**: 5f1a a round with no table and holding one
+    unpaid, this; 5f1b paying for it and sending it.
+  - **An order to collect is a round, with no table.** Not a table of its own: a
+    round already knows how to be priced, held with the amount it asks, found by
+    its key, charged for, and sent once paid. A second kind of order would be a
+    second copy of all of that, about money.
+  - **`guest_rounds` is built again** (migration 00049) so `table_id` can be
+    null, with two rules in the table itself: a round with no table is always
+    paid first, and only such a round, once sent, has a `pickup_code`.
+  - **The migration keeps every charge.** Charges refer to a round and go when it
+    does, and dropping the table deletes its rows. So the charges that name a
+    round are copied aside before and put back after, in the one transaction. A
+    test seeds a paid round's charge, an open one and a bill's, migrates, and
+    counts them. **Going back is refused while a round with no table exists**:
+    it would mean deleting an order a guest paid for.
+  - **No table reads as 0 in Go**, and is stored as null: the queries turn one
+    into the other. Every reader of a round kept its type, and a table's query,
+    `table_id = ?`, never matches a round with none.
+  - **`PlacePickup` holds the order unpaid in every venue**, whatever the venue
+    chose for its tables (ADR-225's mode is the tables'). Where guests cannot pay
+    online it is refused, `ErrPickupOff`, before anything is read.
+  - **What it asks is what a ticket opened for it alone would bill**, by the same
+    projection a table's round is priced with (`order.Adding`).
+  - **It is never a request.** Staff are asked nothing and no terminal is told.
+  - **Thirty may wait unpaid at a venue** at once, counted over the half hour an
+    unpaid round counts for. A table bounds itself; the venue's code is on a door.
+  - **A key means one order, of one kind.** A key that placed a table's round does
+    not place an order to collect.
+  - **A paid order to collect is refused by `SendPaidRound`, `ErrPickupNotSent`,
+    until 5f1b.** A table of 0 must never be looked up for a ticket: it would
+    find none and open a table's ticket with no table.
+Because: the hard part of pickup is the money, and the round already does the
+money. What was missing was only that a round might not be at a table.
+Cost: an order to collect can be placed in the services and goes no further: no
+charge can be made for it, since a charge's table is NOT NULL as well, and nothing
+sends it. No route reaches `PlacePickup`. The migration is the largest yet to
+touch money's tables and has been run on a seeded database only.

@@ -195,9 +195,15 @@ Phase 10.
   - [ ] **5f.** Ordering for pickup, and its code (ADR-237, by the owner).
     After 5e, and beside Task 6, which makes and revokes the venue's code.
     Paid first, always, so only where a gateway is set. Split in four:
-    - [ ] **5f1.** In the services: a venue's pickup code, a pickup round
-      with no table, held unpaid, and paid, a ticket of its own on the
-      `web` channel with a pickup code of three or four characters.
+    - [ ] **5f1.** In the services. The venue's code is 6e. Split in two
+      (ADR-248):
+      - [x] **5f1a.** A round may have no table (migration 00049, which
+        keeps every charge), and `PlacePickup` holds an order to collect
+        unpaid, priced and with its tax, in every venue with a gateway.
+        Nothing can pay for one or send one yet.
+      - [ ] **5f1b.** Paying for it and sending it: a charge with no table
+        (`gateway_charges.table_id`), and paid, a ticket of its own on the
+        `web` channel, sent, with a pickup code of three or four characters.
     - [ ] **5f2.** The guest's API: the menu and an order by the venue's
       code, paying for it, and tracking it with its code.
     - [ ] **5f3.** The phone: the way in with no table (`/order/p/<code>`),

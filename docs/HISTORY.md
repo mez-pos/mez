@@ -8,7 +8,10 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 6d: limits on what a table's code may ask** (ADR-246). By table:
+**Phase 11, Task 6e: the venue's pickup code** (ADR-247). `pickup_codes`
+(migration 00048), in `tablecodes` and over the staff API. No screen. Task 6 done.
+
+Before it, **Phase 11, Task 6d: limits on what a table's code may ask** (ADR-246). By table:
 reads, changes and orders, each counted apart. By address: wrong codes, and a
 ceiling a full room does not reach. Tested with the limits lowered.
 

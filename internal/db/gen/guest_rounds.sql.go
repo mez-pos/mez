@@ -13,7 +13,7 @@ import (
 
 const countUnpaidGuestRounds = `-- name: CountUnpaidGuestRounds :one
 SELECT count(*) FROM guest_rounds
-WHERE table_id = ? AND status = 'waiting' AND prepay = 1 AND created_at >= ?2
+WHERE table_id = CAST(?1 AS INTEGER) AND status = 'waiting' AND prepay = 1 AND created_at >= ?2
 `
 
 type CountUnpaidGuestRoundsParams struct {
@@ -30,9 +30,28 @@ func (q *Queries) CountUnpaidGuestRounds(ctx context.Context, arg CountUnpaidGue
 	return count, err
 }
 
+const countUnpaidPickupRounds = `-- name: CountUnpaidPickupRounds :one
+SELECT count(*) FROM guest_rounds
+WHERE venue_id = ? AND table_id IS NULL AND status = 'waiting' AND prepay = 1 AND created_at >= ?2
+`
+
+type CountUnpaidPickupRoundsParams struct {
+	VenueID int64
+	Since   time.Time
+}
+
+// The orders to collect at a venue waiting to be paid, placed since a moment
+// ago: what bounds how many a stranger with the venue's code can leave lying.
+func (q *Queries) CountUnpaidPickupRounds(ctx context.Context, arg CountUnpaidPickupRoundsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUnpaidPickupRounds, arg.VenueID, arg.Since)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countWaitingGuestRounds = `-- name: CountWaitingGuestRounds :one
 SELECT count(*) FROM guest_rounds
-WHERE table_id = ? AND status = 'waiting' AND prepay = 0 AND created_at >= ?2
+WHERE table_id = CAST(?1 AS INTEGER) AND status = 'waiting' AND prepay = 0 AND created_at >= ?2
 `
 
 type CountWaitingGuestRoundsParams struct {
@@ -54,7 +73,10 @@ const createGuestRound = `-- name: CreateGuestRound :one
 
 INSERT INTO guest_rounds (public_id, venue_id, table_id, status, order_id, lines, subtotal_minor, currency,
                           idempotency_key, fingerprint, created_at, prepay, due_minor, first_seq)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?1, ?2, nullif(CAST(?3 AS INTEGER), 0), ?4,
+        ?5, ?6, ?7, ?8,
+        ?9, ?10, ?11, ?12, ?13,
+        ?14)
 RETURNING id
 `
 
@@ -77,6 +99,8 @@ type CreateGuestRoundParams struct {
 
 // A guest's rounds (ADR-210). Written only inside the transaction that
 // decides where a round goes; see internal/service/order.
+// table_id is 0 for an order to collect, which has no table (ADR-248): it is
+// stored as null, and read back as 0 by every query here.
 func (q *Queries) CreateGuestRound(ctx context.Context, arg CreateGuestRoundParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createGuestRound,
 		arg.PublicID,
@@ -136,7 +160,8 @@ func (q *Queries) DecideGuestRound(ctx context.Context, arg DecideGuestRoundPara
 }
 
 const guestRoundByKey = `-- name: GuestRoundByKey :one
-SELECT id, public_id, table_id, status, order_id, lines, subtotal_minor, currency, fingerprint, prepay, due_minor
+SELECT id, public_id, CAST(coalesce(table_id, 0) AS INTEGER) AS table_id, status, order_id, lines, subtotal_minor, currency,
+       fingerprint, prepay, due_minor
 FROM guest_rounds
 WHERE venue_id = ? AND idempotency_key = ?
 `
@@ -181,7 +206,7 @@ func (q *Queries) GuestRoundByKey(ctx context.Context, arg GuestRoundByKeyParams
 }
 
 const guestRoundByPublicID = `-- name: GuestRoundByPublicID :one
-SELECT r.id, r.public_id, r.venue_id, r.table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
+SELECT r.id, r.public_id, r.venue_id, CAST(coalesce(r.table_id, 0) AS INTEGER) AS table_id, r.status, r.order_id, r.lines, r.subtotal_minor, r.currency, r.created_at,
        r.prepay, r.due_minor, r.first_seq,
        CAST(coalesce(o.public_id, '') AS TEXT) AS order_public_id
 FROM guest_rounds r
@@ -252,7 +277,7 @@ func (q *Queries) UnclosedOrderAtTable(ctx context.Context, arg UnclosedOrderAtT
 }
 
 const waitingGuestRounds = `-- name: WaitingGuestRounds :many
-SELECT r.id, r.public_id, r.table_id, t.name AS table_name, r.lines, r.subtotal_minor, r.currency, r.created_at
+SELECT r.id, r.public_id, t.id AS table_id, t.name AS table_name, r.lines, r.subtotal_minor, r.currency, r.created_at
 FROM guest_rounds r
 JOIN tables t ON t.id = r.table_id
 WHERE r.venue_id = ? AND r.status = 'waiting' AND r.prepay = 0 AND r.created_at >= ?2

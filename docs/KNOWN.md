@@ -10,6 +10,12 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **An order to collect** (ADR-248): in the services only, and only as far
+  as being held unpaid. Nothing can pay for one (a charge needs a table) or
+  send one (`ErrPickupNotSent`), and no route places one. Thirty may wait
+  unpaid at a venue, a figure nobody measured. Migration 00049 builds
+  `guest_rounds` again and puts back the charges that dropping it deletes:
+  tested on a seeded database, never run on the deployed one.
 - **The venue's pickup code** (ADR-247): in the services and the staff API
   only. No screen shows it and no guest route takes it: it can be made
   today through the API and leads nowhere until 5f. It has no limit of its
