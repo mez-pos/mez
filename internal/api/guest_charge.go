@@ -24,6 +24,8 @@ import (
 //	POST /order/api/t/{code}/orders/{round}/charge  start paying for a round
 //	                                                held until it is paid
 //	GET  /order/api/t/{code}/bill/charge/{id}       how either payment stands
+//	POST /order/api/t/{code}/bill/charge/{id}/let-go  give a bill's payment
+//	                                                page up (ADR-234)
 //
 // Where guests pay first (ADR-225, ADR-226) a round's charge is what sends
 // the round: paid, its lines are on the table's ticket and with the kitchen.
@@ -47,6 +49,7 @@ type Charges interface {
 	Claims(ctx context.Context, venueID, tableID int64, payer string) (charges.Claims, error)
 	StartRound(ctx context.Context, venueID, tableID int64, round, description, returnURL string) (charges.Charge, error)
 	Settle(ctx context.Context, venueID int64, publicID string) (charges.Charge, error)
+	LetGo(ctx context.Context, venueID, tableID int64, publicID string) (charges.Charge, error)
 	Charge(ctx context.Context, venueID int64, publicID string) (charges.Charge, error)
 	Waiting(ctx context.Context, venueID int64) ([]charges.UnappliedCharge, error)
 	Resolve(ctx context.Context, venueID, staffID int64, publicID string, how charges.Resolution) error
@@ -86,11 +89,16 @@ type guestChargeResponse struct {
 	Amount money.Amount   `json:"amount"`
 	URL    string         `json:"url,omitempty"`
 	Round  string         `json:"round,omitempty"`
+	// LetGo is true when the table gave this payment's page up (ADR-234).
+	// While it is open it has no url: it holds no part of the bill, and
+	// the phone is not sent to pay it. It can still turn paid, if the page
+	// was paid after all.
+	LetGo bool `json:"let_go,omitempty"`
 }
 
 func toGuestChargeResponse(c charges.Charge) guestChargeResponse {
-	out := guestChargeResponse{ID: c.PublicID, Status: c.Status, Amount: c.Amount, Round: c.Round}
-	if c.Status == charges.Open {
+	out := guestChargeResponse{ID: c.PublicID, Status: c.Status, Amount: c.Amount, Round: c.Round, LetGo: c.LetGo}
+	if c.Status == charges.Open && !c.LetGo {
 		out.URL = c.CheckoutURL
 	}
 	return out
@@ -209,6 +217,28 @@ func (s *Server) guestCharge(w http.ResponseWriter, r *http.Request) {
 		// which is what the phone is told, and it asks again.
 		s.log.Warn("a guest's charge could not be settled just now", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "charge", id, "error", err)
 		c = stored
+	}
+	writeJSON(w, s.log, http.StatusOK, toGuestChargeResponse(c))
+}
+
+// guestLetGoCharge gives up a payment page on the table's bill: it stops
+// holding its part of the bill for the guest who opened it. It answers the
+// charge as it then stands, which is paid if the page had been paid.
+func (s *Server) guestLetGoCharge(w http.ResponseWriter, r *http.Request) {
+	table, ok := s.guestTableFor(w, r)
+	if !ok {
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	c, err := s.charges.LetGo(r.Context(), table.VenueID, table.TableID, r.PathValue("id"))
+	if errors.Is(err, charges.ErrChargeNotFound) {
+		writeError(w, s.log, http.StatusNotFound, CodeChargeNotFound, "That payment is not one on this table's bill.")
+		return
+	}
+	if err != nil {
+		s.log.Error("letting go of a guest's charge failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
+		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		return
 	}
 	writeJSON(w, s.log, http.StatusOK, toGuestChargeResponse(c))
 }

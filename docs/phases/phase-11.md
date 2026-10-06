@@ -158,9 +158,9 @@ Phase 10.
       what this phone can take, an equal part for 2 to 20 people), a share
       as the body of `POST /order/api/t/{code}/bill/charge`, the phone's
       name for itself, and `bill_claimed` and `bill_moved`.
-    - [ ] **4g2b.** Giving up a page: a guest who opened a payment page and
-      came back lets go of its claim, so the table is not held for half an
-      hour. In the services and over the API.
+    - [x] **4g2b.** Giving up a page (ADR-234): `charges.LetGo` and
+      `POST /order/api/t/{code}/bill/charge/{id}/let-go`. The charge stays
+      open and payable and is no claim on the bill. Migration 00046.
     - [ ] **4g3.** The phone: Split the bill on the bill's screen, among how
       many or a figure typed, and its spec.
 

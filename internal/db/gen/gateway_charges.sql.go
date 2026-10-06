@@ -58,7 +58,7 @@ func (q *Queries) CreateGatewayCharge(ctx context.Context, arg CreateGatewayChar
 
 const gatewayChargeByGatewayID = `-- name: GatewayChargeByGatewayID :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE gateway = ? AND gateway_id = ?
 `
@@ -94,13 +94,14 @@ func (q *Queries) GatewayChargeByGatewayID(ctx context.Context, arg GatewayCharg
 		&i.ResolvedBy,
 		&i.RoundPublicID,
 		&i.Payer,
+		&i.LetGoAt,
 	)
 	return i, err
 }
 
 const gatewayChargeByPublicID = `-- name: GatewayChargeByPublicID :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE public_id = ?
 `
@@ -130,13 +131,14 @@ func (q *Queries) GatewayChargeByPublicID(ctx context.Context, publicID string) 
 		&i.ResolvedBy,
 		&i.RoundPublicID,
 		&i.Payer,
+		&i.LetGoAt,
 	)
 	return i, err
 }
 
 const gatewayChargesByStatus = `-- name: GatewayChargesByStatus :many
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE venue_id = ? AND status = ?
 ORDER BY created_at, id
@@ -182,6 +184,7 @@ func (q *Queries) GatewayChargesByStatus(ctx context.Context, arg GatewayCharges
 			&i.ResolvedBy,
 			&i.RoundPublicID,
 			&i.Payer,
+			&i.LetGoAt,
 		); err != nil {
 			return nil, err
 		}
@@ -216,10 +219,32 @@ func (q *Queries) LastPaidGatewayCharge(ctx context.Context, arg LastPaidGateway
 	return settled_at, err
 }
 
+const letGoGatewayCharge = `-- name: LetGoGatewayCharge :execrows
+UPDATE gateway_charges
+SET let_go_at = ?1
+WHERE id = ?2 AND status = 'open' AND round_public_id IS NULL AND let_go_at IS NULL
+`
+
+type LetGoGatewayChargeParams struct {
+	LetGoAt sql.NullTime
+	ID      int64
+}
+
+// Marks an open charge on a bill as given up, once: it is no longer a claim
+// on the bill (ADR-234). It stays open, since its page can still be paid. A
+// round's charge is not a claim and cannot be let go.
+func (q *Queries) LetGoGatewayCharge(ctx context.Context, arg LetGoGatewayChargeParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, letGoGatewayCharge, arg.LetGoAt, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const openClaimsOfOthers = `-- name: OpenClaimsOfOthers :one
 SELECT CAST(coalesce(sum(amount_minor), 0) AS INTEGER) AS claimed
 FROM gateway_charges
-WHERE order_id = ?1 AND round_public_id IS NULL AND status = 'open'
+WHERE order_id = ?1 AND round_public_id IS NULL AND status = 'open' AND let_go_at IS NULL
   AND (payer IS NULL OR payer <> ?2)
 `
 
@@ -240,10 +265,10 @@ func (q *Queries) OpenClaimsOfOthers(ctx context.Context, arg OpenClaimsOfOthers
 
 const openGatewayChargeForOrder = `-- name: OpenGatewayChargeForOrder :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE order_id = ? AND round_public_id IS NULL AND payer IS NULL AND gateway = ? AND amount_minor = ? AND currency = ?
-  AND status = 'open'
+  AND status = 'open' AND let_go_at IS NULL
 ORDER BY created_at DESC, id DESC
 LIMIT 1
 `
@@ -257,7 +282,8 @@ type OpenGatewayChargeForOrderParams struct {
 
 // A charge still open for the whole of what a ticket owes at a provider, for
 // an amount: asked for again, it is the same charge, whichever phone asks. A
-// round's charge is not one, and neither is a guest's share.
+// round's charge is not one, and neither is a guest's share, nor a charge
+// the table let go of.
 func (q *Queries) OpenGatewayChargeForOrder(ctx context.Context, arg OpenGatewayChargeForOrderParams) (GatewayCharge, error) {
 	row := q.db.QueryRowContext(ctx, openGatewayChargeForOrder,
 		arg.OrderID,
@@ -288,13 +314,14 @@ func (q *Queries) OpenGatewayChargeForOrder(ctx context.Context, arg OpenGateway
 		&i.ResolvedBy,
 		&i.RoundPublicID,
 		&i.Payer,
+		&i.LetGoAt,
 	)
 	return i, err
 }
 
 const openGatewayChargeForRound = `-- name: OpenGatewayChargeForRound :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE round_public_id = ? AND gateway = ? AND status = 'open'
 `
@@ -331,15 +358,17 @@ func (q *Queries) OpenGatewayChargeForRound(ctx context.Context, arg OpenGateway
 		&i.ResolvedBy,
 		&i.RoundPublicID,
 		&i.Payer,
+		&i.LetGoAt,
 	)
 	return i, err
 }
 
 const openGatewayChargeForShare = `-- name: OpenGatewayChargeForShare :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE order_id = ? AND payer = ? AND gateway = ? AND amount_minor = ? AND currency = ? AND status = 'open'
+  AND let_go_at IS NULL
 `
 
 type OpenGatewayChargeForShareParams struct {
@@ -384,6 +413,7 @@ func (q *Queries) OpenGatewayChargeForShare(ctx context.Context, arg OpenGateway
 		&i.ResolvedBy,
 		&i.RoundPublicID,
 		&i.Payer,
+		&i.LetGoAt,
 	)
 	return i, err
 }
@@ -391,7 +421,7 @@ func (q *Queries) OpenGatewayChargeForShare(ctx context.Context, arg OpenGateway
 const openSharesOnOrder = `-- name: OpenSharesOnOrder :one
 SELECT CAST(coalesce(sum(amount_minor), 0) AS INTEGER) AS claimed
 FROM gateway_charges
-WHERE order_id = ? AND round_public_id IS NULL AND payer IS NOT NULL AND status = 'open'
+WHERE order_id = ? AND round_public_id IS NULL AND payer IS NOT NULL AND status = 'open' AND let_go_at IS NULL
 `
 
 // What guests are paying of a ticket in shares, now: every share still open.

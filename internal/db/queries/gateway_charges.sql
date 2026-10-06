@@ -9,19 +9,20 @@ RETURNING id;
 
 -- name: GatewayChargeByPublicID :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE public_id = ?;
 
 -- name: OpenGatewayChargeForOrder :one
 -- A charge still open for the whole of what a ticket owes at a provider, for
 -- an amount: asked for again, it is the same charge, whichever phone asks. A
--- round's charge is not one, and neither is a guest's share.
+-- round's charge is not one, and neither is a guest's share, nor a charge
+-- the table let go of.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE order_id = ? AND round_public_id IS NULL AND payer IS NULL AND gateway = ? AND amount_minor = ? AND currency = ?
-  AND status = 'open'
+  AND status = 'open' AND let_go_at IS NULL
 ORDER BY created_at DESC, id DESC
 LIMIT 1;
 
@@ -29,7 +30,7 @@ LIMIT 1;
 -- A venue's charges in a status, oldest first: the open ones to ask the
 -- provider about, the unapplied ones a person must deal with.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE venue_id = ? AND status = ?
 ORDER BY created_at, id
@@ -76,7 +77,7 @@ WHERE public_id = sqlc.arg(public_id) AND venue_id = sqlc.arg(venue_id) AND stat
 -- name: GatewayChargeByGatewayID :one
 -- The charge a provider's notice is about, by the provider's own id.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE gateway = ? AND gateway_id = ?;
 
@@ -84,7 +85,7 @@ WHERE gateway = ? AND gateway_id = ?;
 -- The charge still open for a round at a provider: asked for again, it is
 -- the same charge. A round asks for one amount, so there is at most one.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
 WHERE round_public_id = ? AND gateway = ? AND status = 'open';
 
@@ -106,16 +107,17 @@ LIMIT 1;
 -- again, it is the same charge. Another phone's share of the same amount is
 -- another charge.
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
-       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer
+       status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id, payer, let_go_at
 FROM gateway_charges
-WHERE order_id = ? AND payer = ? AND gateway = ? AND amount_minor = ? AND currency = ? AND status = 'open';
+WHERE order_id = ? AND payer = ? AND gateway = ? AND amount_minor = ? AND currency = ? AND status = 'open'
+  AND let_go_at IS NULL;
 
 -- name: OpenSharesOnOrder :one
 -- What guests are paying of a ticket in shares, now: every share still open.
 -- A charge for the whole of what is left asks for the balance less this.
 SELECT CAST(coalesce(sum(amount_minor), 0) AS INTEGER) AS claimed
 FROM gateway_charges
-WHERE order_id = ? AND round_public_id IS NULL AND payer IS NOT NULL AND status = 'open';
+WHERE order_id = ? AND round_public_id IS NULL AND payer IS NOT NULL AND status = 'open' AND let_go_at IS NULL;
 
 -- name: OpenClaimsOfOthers :one
 -- What others are paying of a ticket, now, as one phone sees it: every open
@@ -123,5 +125,13 @@ WHERE order_id = ? AND round_public_id IS NULL AND payer IS NOT NULL AND status 
 -- balance less this.
 SELECT CAST(coalesce(sum(amount_minor), 0) AS INTEGER) AS claimed
 FROM gateway_charges
-WHERE order_id = sqlc.arg(order_id) AND round_public_id IS NULL AND status = 'open'
+WHERE order_id = sqlc.arg(order_id) AND round_public_id IS NULL AND status = 'open' AND let_go_at IS NULL
   AND (payer IS NULL OR payer <> sqlc.arg(payer));
+
+-- name: LetGoGatewayCharge :execrows
+-- Marks an open charge on a bill as given up, once: it is no longer a claim
+-- on the bill (ADR-234). It stays open, since its page can still be paid. A
+-- round's charge is not a claim and cannot be let go.
+UPDATE gateway_charges
+SET let_go_at = sqlc.arg(let_go_at)
+WHERE id = sqlc.arg(id) AND status = 'open' AND round_public_id IS NULL AND let_go_at IS NULL;

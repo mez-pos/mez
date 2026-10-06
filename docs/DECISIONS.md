@@ -7386,3 +7386,42 @@ the two sets of claims. The parts are of the bill as it stands at that read; the
 figure asked for is worked out again at the tap and can differ by the time it is
 made, and the charge's own amount is what the phone must show. Until 4g2b an
 abandoned page blocks shares, and until 4g3 nothing can ask for one.
+
+## ADR-234 - A payment page can be given up: the charge stays open, and stops being a claim
+2026-10 · Status: accepted. Phase 11, Task 4g2b.
+Context: an open page is a claim on its part of the bill until the gateway closes
+it, half an hour (ADR-232). A guest who looks at Pay online and comes back holds
+the whole bill for that long, and nobody at the table can take a share: the
+commonest way a table would arrive at splitting (ADR-233).
+Decision:
+  - **Letting go is a mark on the charge, `let_go_at` (migration 00046), and not
+    its end.** mez cannot close a page at a gateway: the interface is two
+    questions (ADR-220). The charge stays `open`, the sweep still asks about it,
+    and if its page is paid after all it settles as any charge does: on the bill
+    if the bill still owes it, unapplied for a person if not. Money is never
+    dropped because a guest tapped a button.
+  - **A charge let go is no claim.** It is left out of what others are paying, so
+    the bill's `split` and every later charge see that part as free.
+  - **It is not handed back.** Asked for again, for the whole bill or the same
+    share, the answer is a new charge, checked against the bill like any other.
+    Giving the old page back would be giving a claim back without the check.
+  - **The gateway is asked first.** A guest who paid and then tapped is told they
+    paid, and nothing is let go. If the gateway cannot be reached the charge is
+    let go all the same: letting go takes no money.
+  - **`POST /order/api/t/{code}/bill/charge/{id}/let-go`**, by the table's own
+    code, as a charge is asked about (ADR-222). It answers the charge as it then
+    stands. A charge's answer gains `let_go`, and while let go and open it has no
+    `url`: the phone is not sent to a page that holds nothing.
+  - **Only a charge on the table's bill.** A round's charge claims nothing and is
+    not found here; nor is another table's. Let go twice is let go once, and one
+    already paid or failed is answered as it is.
+  - **A charge for the rest is one charge for every phone (ADR-220), so one guest
+    letting go of it lets go for all.** If another guest was on that page paying,
+    their payment still lands if the bill owes it.
+Because: the half hour is the gateway's and cannot be shortened, so the only way to
+free the bill sooner is to stop counting a page the guest has said they left.
+Cost: a guest can give a page up and pay it anyway, or one guest can let go of a
+page another is paying; with shares then taken, the late payment is more than the
+bill owes and is an unapplied charge for staff to refund. That is the over-payment
+ADR-232 prevents, let back in only by someone saying they would not pay. The phone
+does not call this yet: 4g3.

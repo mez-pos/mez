@@ -260,6 +260,10 @@ type Querier interface {
 	LastPaidGatewayCharge(ctx context.Context, arg LastPaidGatewayChargeParams) (sql.NullTime, error)
 	// The shift's report as it now stands: the last correction, or the original.
 	LatestZReportForShift(ctx context.Context, shiftID int64) (ZReport, error)
+	// Marks an open charge on a bill as given up, once: it is no longer a claim
+	// on the bill (ADR-234). It stays open, since its page can still be paid. A
+	// round's charge is not a claim and cannot be let go.
+	LetGoGatewayCharge(ctx context.Context, arg LetGoGatewayChargeParams) (int64, error)
 	ListVenues(ctx context.Context) ([]Venue, error)
 	// The tables in service, with when each was last cleared and when the last
 	// order at it closed, joined tables included (ADR-088): what a table's turn
@@ -305,7 +309,8 @@ type Querier interface {
 	OpenClaimsOfOthers(ctx context.Context, arg OpenClaimsOfOthersParams) (int64, error)
 	// A charge still open for the whole of what a ticket owes at a provider, for
 	// an amount: asked for again, it is the same charge, whichever phone asks. A
-	// round's charge is not one, and neither is a guest's share.
+	// round's charge is not one, and neither is a guest's share, nor a charge
+	// the table let go of.
 	OpenGatewayChargeForOrder(ctx context.Context, arg OpenGatewayChargeForOrderParams) (GatewayCharge, error)
 	// The charge still open for a round at a provider: asked for again, it is
 	// the same charge. A round asks for one amount, so there is at most one.

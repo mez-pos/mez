@@ -108,6 +108,9 @@ type Charge struct {
 	Status      Status
 	// Problem is why the ticket could not take it, when Unapplied.
 	Problem string
+	// LetGo is true when the table gave the charge's page up (ADR-234): it
+	// is no claim on the bill, though it can still be paid.
+	LetGo bool
 	// Replayed is true when Start found the charge already open and asked
 	// the gateway for nothing.
 	Replayed bool
@@ -559,7 +562,7 @@ func toCharge(r gen.GatewayCharge) Charge {
 	return Charge{
 		PublicID: r.PublicID, TableID: r.TableID, OrderID: r.OrderID.Int64, Round: r.RoundPublicID.String, Payer: r.Payer.String,
 		Gateway: r.Gateway, CheckoutURL: r.CheckoutUrl,
-		Amount: money.Amount{Minor: r.AmountMinor, Currency: r.Currency}, Status: Status(r.Status), Problem: r.Problem.String,
+		Amount: money.Amount{Minor: r.AmountMinor, Currency: r.Currency}, Status: Status(r.Status), Problem: r.Problem.String, LetGo: r.LetGoAt.Valid,
 	}
 }
 

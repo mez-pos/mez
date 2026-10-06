@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4g1: a share of the bill, in the services** (ADR-232).
+**Phase 11, Task 4g2: a share over the guest API** (ADR-233). The bill answers
+`split` (the rest, what this phone can take, equal parts); a body on
+`POST .../bill/charge` is a share, by amount or among N people. No screen.
+
+Before it, **Phase 11, Task 4g1: a share of the bill, in the services** (ADR-232).
 `charges.StartShare` is a charge for part of what a table owes, for one phone. An
 open page is a claim; nothing is given past what is unclaimed. Migration 00045.
 

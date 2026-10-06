@@ -930,6 +930,7 @@ export interface GuestChargeResponse {
   amount: Money;
   url?: string;
   round?: string;
+  let_go?: boolean;
 }
 
 export interface GuestShareRequest {

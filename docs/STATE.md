@@ -8,13 +8,13 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4e, 4f1 to 4f5, 4f6a, 4f6c, 4g1 and 4g2 done. (The walks are owed.)
+4a to 4e, 4f1 to 4f5, 4f6a, 4f6c, 4g1, 4g2 and 4g2b done. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 4g2: a share over the guest API** (ADR-233). The bill answers
-`split` (the rest, what this phone can take, equal parts); a body on
-`POST .../bill/charge` is a share, by amount or among N people. No screen.
+**Phase 11, Task 4g2b: giving up a payment page** (ADR-234). `charges.LetGo` and
+`POST .../bill/charge/{id}/let-go`: the charge stays open and payable, and is no
+claim on the bill. A charge's answer says `let_go`. Migration 00046.
 
 ## Next task
 
@@ -22,14 +22,14 @@
 keys, then on a phone Pay online on a bill, and Pay on an order with paying
 first chosen. The payments card now says so itself, in the warning tone.
 
-**Phase 11, Task 4g2b: giving up a payment page.** Read ADR-232, ADR-233,
-`internal/service/charges/share.go`. A guest who looks at Pay online and comes
-back holds the whole bill for half an hour, so nobody can take a share.
-- Letting go is a mark on the charge, not its end: the page can still be paid,
-  and then it settles as any charge does (unapplied if the bill cannot take it).
-- A charge let go is no claim. Who may let go: the table, by the charge's id.
-- A charge for the rest is shared by phones: one letting go lets go for all.
-Then 4g3, the phone. 4f6b waits on question 8.
+**Phase 11, Task 4g3: splitting the bill on the phone.** Read ADR-232 to ADR-234,
+`docs/design/screens/guest-bill.md`, `docs/design/tokens.md`, and M08 in the
+reference (lines 389 to 436). `web/guest/src/`: `Bill.tsx`, `charge-logic.ts`,
+`use-charge.ts`. Budget 60 KB gzipped. If it is large, split it first.
+- The phone makes its name once and keeps it; `?phone=` on the bill.
+- Pay online asks `split.rest`. Split: among how many (`split.parts`), or a figure.
+- A waiting payment gains a way to give it up (`let-go`); `let_go` is not waiting.
+- `bill_claimed`, `bill_moved` in words. `split`, `let_go` into the spec. (4f6b: question 8.)
 
 ## Known broken / in progress
 
@@ -56,5 +56,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4e, 4f1 to 4f5, 4f6a, 4f6c, 4g1, 4g2 done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4e, 4f1 to 4f5, 4f6a, 4f6c, 4g1 to 4g2b done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs
