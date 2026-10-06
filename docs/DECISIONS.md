@@ -7174,3 +7174,31 @@ already on, and a phone is believed about nothing to do with money.
 Cost: a phone that cleared its storage has no order to pay for; the round stays
 held until it lapses, and the guest places it again. Seen at 390 wide with charges
 written into the database by hand; no phone has paid a real gateway for an order.
+
+## ADR-229 - The owner chooses when guests pay on the payments card, and is told when the choice does nothing
+2026-10 · Status: accepted. Phase 11, Task 4e5d.
+Context: `payment.mode` (ADR-225) could be set only through the API. It is in
+effect only where a gateway is configured, and a gateway is configuration and the
+environment, not a setting (ADR-221).
+Decision:
+  - **The choice is on the card that has the UPI address**, "Paid from a phone",
+    and saves with it. It could not be a card of its own: the two are one request,
+    and a request that names no address clears it. The card now always sends the
+    mode, so the rule that a save naming no mode leaves it (ADR-225) is for older
+    clients only.
+  - **Two choices, worded by when**: "When they are ready to leave" and "Before
+    the order is sent". Neither "prepay" nor "mode" is a word an owner uses.
+  - **Under them, what the chosen one does to a guest's order**, from what is
+    chosen and not what is saved, so the owner reads the consequence before
+    saving it. Paying first says the part that surprises: staff do not accept
+    the order.
+  - **Paying first with no gateway can be chosen and saved, and says in the
+    warning tone that it does nothing yet**, and that a gateway is set in the
+    venue's configuration and not on this screen. It is not greyed out: an owner
+    setting the venue up may choose it before the keys are in, and a control that
+    cannot be used explains nothing.
+Because: the one thing worse than a setting that does nothing is one that does
+nothing and looks as if it took.
+Cost: the screen cannot say how to set a gateway up beyond where; that is the
+install guide's, in phase 12. The guest's cart still does not say, before Place
+Order, that the order will have to be paid for.

@@ -1,10 +1,14 @@
 // Where the venue is paid when a guest pays from a phone: its UPI address,
-// and the name a guest's app shows (backoffice-settings.md, "Paid from a
-// phone"; ADR-215).
+// and the name a guest's app shows; and when a guest who orders from their
+// phone pays (backoffice-settings.md, "Paid from a phone"; ADR-215,
+// ADR-229).
 
 import type { PaymentSettingsRequest, PaymentSettingsResponse } from "../../../shared/api-types";
-import { Field, inputClass } from "../FormFields";
+import { cx } from "../../../shared/ui/cx";
+import { Choice, Field, inputClass } from "../FormFields";
 import {
+  PAY_MODES,
+  modeWords,
   payeeShown,
   paymentsChanged,
   paymentsFormFrom,
@@ -36,6 +40,7 @@ export function PaymentsCard({ payments, onSave, onDirty }: PaymentsCardProps) {
   });
   const { form, busy } = d;
   const set = (patch: Partial<PaymentsForm>) => d.update((f) => ({ ...f, ...patch }));
+  const mode = modeWords(form.mode, payments.can_charge);
 
   return (
     <SectionCard
@@ -97,6 +102,22 @@ export function PaymentsCard({ payments, onSave, onDirty }: PaymentsCardProps) {
       <p role="status" className="text-base text-fg-2">
         {paymentsStanding(saved, payments.currency)}
       </p>
+
+      <div className="flex flex-col gap-3 border-t border-line-soft pt-5">
+        <Choice
+          label="A guest who orders from their phone pays"
+          value={form.mode}
+          options={PAY_MODES}
+          onChange={(v) => set({ mode: v })}
+          error={d.on("mode")}
+        />
+        <p
+          role="status"
+          className={cx("text-base", mode.inert ? "rounded border border-chip-warning-border bg-chip-warning-bg p-4 text-chip-warning-fg" : "text-fg-2")}
+        >
+          {mode.text}
+        </p>
+      </div>
     </SectionCard>
   );
 }

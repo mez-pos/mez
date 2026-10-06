@@ -57,7 +57,7 @@ two across.
 - **Currency**, read only: the code and "Cannot be changed: every amount
   recorded would change what it means."
 
-Under it, a card of its own, **Paid from a phone** (ADR-215, ADR-216;
+Under it, a card of its own, **Paid from a phone** (ADR-215, ADR-216, ADR-229;
 `PaymentsCard.tsx`, `payments-logic.ts`, `use-payments.ts`): "A guest reading
 their bill on their phone can pay it by UPI, straight to your account. They
 show you the payment, and you record it on the terminal as you would one
@@ -83,6 +83,23 @@ venue's card usable. Fields one across.
   guest's bill offers no UPI, and says to pay staff or at the counter.", or
   for a venue not in rupees, "UPI pays in rupees only, and this venue trades
   in USD: a guest's bill will not offer it, whatever is entered here."
+- **A guest who orders from their phone pays**, under a rule, two choices
+  side by side: **When they are ready to leave**, the default, and **Before
+  the order is sent**. It saves with the rest of the card: the address and
+  the mode go in one request, so saving one never loses the other. Under
+  the choices, what the one chosen does, following what is chosen and not
+  what is saved:
+  - on leaving: "A guest's first order waits for a member of staff to
+    accept it on the terminal. They pay when they are ready to leave, as
+    they would with a waiter."
+  - before, with a gateway: "A guest pays online for each order as they
+    place it. Nothing reaches the kitchen until it is paid for, and a paid
+    order goes straight there: staff do not accept it first."
+  - before, with no gateway, in the warning tone: "This has no effect yet:
+    this venue has no payment gateway, so a guest cannot pay online. Orders
+    still wait for staff, and guests pay when they leave. A gateway is set
+    in the venue's configuration, not on this screen." It can still be
+    chosen and saved, and takes effect when a gateway is set.
 
 ### Tax and numbering
 

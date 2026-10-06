@@ -99,7 +99,7 @@ Phase 10.
         a payment.
       - [x] **4e4b.** The screens: "I have paid" on the phone's bill, and the
         notice on the terminal, leading to that table's payment.
-    - [ ] **4e5.** The mode, prepay or pay at the table. **After 4f**
+    - [x] **4e5.** The mode, prepay or pay at the table. **After 4f**
       (ADR-220): prepay wants a payment that confirms itself, which is a
       gateway's. In a prepay venue a round is held until its charge is paid,
       then sent with no acceptance (ADR-209). Split in four (ADR-225):
@@ -117,8 +117,8 @@ Phase 10.
           in `cmd/mez`: the mode is in effect where a gateway is set.
       - [x] **4e5c.** The phone: Place Order, pay, and back to an order sent
         (ADR-228). Seen at 390 wide in every state but a real payment.
-      - [ ] **4e5d.** The owner's choice of mode in the back office, beside
-        the UPI address, saying when it is in effect.
+      - [x] **4e5d.** The owner's choice of mode in the back office, beside
+        the UPI address, saying when it is in effect (ADR-229).
   - [ ] **4f.** The gateway adapter: one interface, with Razorpay, Cashfree
     and Stripe behind it. Split in six (ADR-220):
     - [x] **4f1.** The interface (`internal/gateway`), and the service that

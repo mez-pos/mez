@@ -11,8 +11,9 @@
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
 - **Paying first** (ADR-225 to ADR-227): in effect where a gateway is set
-  and `payment.mode` is `prepay`, which can be set only through the API until
-  4e5d. The phone pays on the order's screen (ADR-228): seen at 390 wide, the
+  and the owner chose "Before the order is sent" on the payments card
+  (ADR-229; seen at 1366 with and without a gateway, saved once, never at
+  1920 or by keyboard). The phone pays on the order's screen (ADR-228): seen at 390 wide, the
   open, failed, taken and paid states with charges written into the database
   by hand, and Pay itself as far as a gateway refusing made-up keys. **No
   round has been paid for at a real gateway, and no real phone has gone to a
