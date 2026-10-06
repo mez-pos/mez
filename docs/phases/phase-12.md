@@ -13,6 +13,11 @@ Phase 11.
   subcommands. Auto-start on boot, restart on crash. Logs to the Windows event
   log as well as the file log. Runs under an account that can reach the printer.
 
+- [x] **Task 1b - The service's own account, and restarts that back off.**
+  Added after Task 1 (ADR-264). The service runs as `NT SERVICE\mez`, not
+  LocalSystem; the data directory's ACL names that account; the restarts
+  wait 5 seconds, 30 seconds, then 5 minutes each time.
+
 - [ ] **Task 2 — Installer.**
   Inno Setup. Installs the binary, registers the service, creates a desktop
   shortcut launching Edge or Chrome with `--app=http://localhost:7777 --kiosk`,

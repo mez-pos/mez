@@ -8924,3 +8924,46 @@ start at boot, the restart after a kill and the event log entries are
 unseen; `service run` by hand, `status`, and the refusals were run against
 the real binary.
 ---
+
+## ADR-264 - The service runs as its own account, and its restarts back off
+2026-10 · Status: accepted (decided by the human). Phase 12, Task 1b. Amends
+ADR-263's "It runs as LocalSystem" and its one five-second restart, and
+ADR-259's list of who the data directory is left to.
+Decision:
+  - **The service runs as `NT SERVICE\mez`** unless `-user` names another.
+    Windows makes that account for a service by its name: no password, the
+    right to log on as a service given with it, a user's rights and no
+    more. `-user LocalSystem` is still there for whoever asks for it.
+  - **`fsperm.Restrict` always names that account**, beside SYSTEM, the
+    administrators, the process's account and the owner. Its SID is worked
+    out (S-1-5-80 and the SHA-1 of the upper-cased name in UTF-16), not
+    looked up, so it is in the ACL before the service exists and stays in
+    it when an administrator's `mez setup` rewrites the ACL. A test holds
+    the working-out to the SID Windows publishes for TrustedInstaller, and
+    another holds `fsperm.ServiceName` to `winsvc.Name`.
+  - **`mez service install` restricts the data directory and config.toml
+    again**, making the directory if there is none, so a directory an
+    earlier version left to the administrators alone is open to the
+    service at its first start. If that fails the install says so.
+  - **Restarts wait 5 seconds, 30 seconds, then 5 minutes every time**, and
+    an hour up starts the count again. The library sets one delay, so
+    `internal/winsvc` sets these through `golang.org/x/sys/windows/svc/mgr`
+    after it installs. It never gives up.
+Because: the server reads requests from strangers' phones through the
+relay. As LocalSystem a fault there is the whole computer's; as its own
+account it is the venue's data and nothing else. LocalService is shared
+with other Windows services, which would then read the database. A server
+that cannot start filled the event log at one entry every five seconds; a
+till that stops being restarted stays down until someone walks to it.
+Cost: an ACE for an account that no process holds until the service is
+installed, on every venue's data, Windows service or not. `mez.exe` under a
+user's own folders cannot be opened by the service's account, where
+LocalSystem could; `deploy.md` says to keep it in `C:\mez`. A `config.toml`
+made after install is restricted only if the service's account is allowed
+to change its ACL, and in `C:\mez` it is not: the server warns and starts.
+A printer shared from another computer is reached as this computer's
+account, as under LocalSystem. A `-user` account is still not checked.
+SHA-1 is in the code because the SID is defined by it. **Not run under the
+Service Control Manager**, as ADR-263 was not: that the account starts,
+opens the database, prints and writes the event log is unseen.
+---

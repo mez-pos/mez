@@ -48,7 +48,8 @@ func restrict(path string, dir bool) error {
 }
 
 // trustees is who keeps full control of path: SYSTEM, the administrators,
-// this process's account and path's owner, each once.
+// the Windows service's account, this process's account and path's owner,
+// each once.
 func trustees(path string) ([]*windows.SID, error) {
 	var out []*windows.SID
 	add := func(sid *windows.SID) {
@@ -66,6 +67,14 @@ func trustees(path string) ([]*windows.SID, error) {
 		}
 		add(sid)
 	}
+	// The Windows service's own account (ADR-264), named whether or not the
+	// service is installed yet: `mez setup` in an administrator's terminal
+	// must not shut out the service that starts next.
+	service, err := serviceSID(ServiceName)
+	if err != nil {
+		return nil, err
+	}
+	add(service)
 	user, err := windows.GetCurrentProcessToken().GetTokenUser()
 	if err != nil {
 		return nil, fmt.Errorf("reading this process's account: %w", err)

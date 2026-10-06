@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 5f4: orders to collect at the counter** (ADR-253). The Orders
+**Phase 12, Task 1: the Windows service** (ADR-263). `mez service
+install|uninstall|start|stop|status` over `internal/winsvc`; restart after it
+dies; warnings and errors to the event log. Not run under the Service Control
+Manager.
+
+Before it, **Phase 11, Task 5f4: orders to collect at the counter** (ADR-253). The Orders
 screen has a To collect tab, the pickup code on the row and in the panel, and
 Handed over, which closes the ticket. Task 5 is done. Not seen in a browser.
 

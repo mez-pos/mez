@@ -159,7 +159,8 @@ opened with **Run as administrator**, in that folder:
 ```
 
 It then starts with the computer, before anyone signs in, and Windows starts
-it again five seconds after it dies. `mez service status` says whether it is
+it again when it dies: after five seconds, then thirty, then every five
+minutes until it stays up. `mez service status` says whether it is
 running, `mez service stop` stops it (requests in flight finish first), and
 `mez service uninstall` removes it and leaves the data. Flags given to
 `install` are the ones the service starts with, for example
@@ -171,10 +172,15 @@ Warnings and errors go to the Windows event log as well as to
 **Application**, source **mez**. If the till does not open after a start,
 look there first: a port already in use is said in words.
 
-The service runs as LocalSystem, which reaches a printer on the LAN and a
-USB printer installed on the PC. A printer that only one Windows user can
-see (a shared printer connected under their account) needs the service to
-run as them:
+The service runs as its own account, `NT SERVICE\mez`, which Windows makes
+for it: it has no password and no rights over the rest of the computer.
+`install` gives it the data directory. It reaches a printer on the LAN and a
+USB printer installed on the PC. Keep `mez.exe` in a folder every account
+can read, such as `C:\mez`, and not under a user's own folders (Downloads,
+Desktop): the service's account cannot open those.
+
+A printer that only one Windows user can see (a shared printer connected
+under their account) needs the service to run as them:
 
 ```powershell
 $env:MEZ_SERVICE_PASSWORD = "their password"
@@ -185,6 +191,8 @@ Remove-Item Env:MEZ_SERVICE_PASSWORD
 That account must be able to write `C:\ProgramData\mez` and must hold the
 Windows right **Log on as a service** (Local Security Policy, Local
 Policies, User Rights Assignment); install checks neither.
+`-user LocalSystem` runs it as the computer's most powerful account, which
+needs neither and is not advised for a server guests' phones reach.
 
 **A till on the same PC.** A full-screen browser window with no address bar:
 

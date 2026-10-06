@@ -7,16 +7,16 @@
 
 ## Current phase
 
-**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Task 1 built. Phase 11 has
-nothing left to build (Cashfree left out, ADR-254) and owes its walks.
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 and 1b built. Phase
+11 has nothing left to build (Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 1: the Windows service** (ADR-263). `mez service
-install|uninstall|start|stop|status` over `internal/winsvc`; LocalSystem
-unless `-user`; restart five seconds after it dies; warnings and errors to
-the event log. **Not run under the Service Control Manager**: no
-administrator's terminal in the session. `docs/KNOWN.md` lists what to see.
+**Phase 12, Task 1b: the service's own account** (ADR-264). The service runs
+as `NT SERVICE\mez`, which `fsperm.Restrict` always names; install hands it
+the data directory; restarts wait 5 seconds, 30, then 5 minutes. **Neither
+Task 1 nor 1b has run under the Service Control Manager**: no administrator's
+terminal in either session. `docs/KNOWN.md` lists what to see, first.
 
 ## Next task
 
@@ -70,7 +70,6 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 5. The desktop's cash quick amounts never offer ₹500. Show it?
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
 7. `jskin.in` is for testing, `mez.ac` for production: move before codes are printed.
-8. The service runs as LocalSystem (ADR-263). Is that right, or a lesser account?
 
 ---
 

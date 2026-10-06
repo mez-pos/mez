@@ -54,7 +54,11 @@ func TestRestrictSetsTheDACL(t *testing.T) {
 		t.Error("the DACL still inherits from the parent")
 	}
 	me := currentUser(t)
-	allowed := []*windows.SID{sid(t, windows.WinLocalSystemSid), sid(t, windows.WinBuiltinAdministratorsSid), me}
+	service, err := serviceSID(ServiceName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	allowed := []*windows.SID{sid(t, windows.WinLocalSystemSid), sid(t, windows.WinBuiltinAdministratorsSid), service, me}
 	later := filepath.Join(dir, "logs")
 	if err := os.Mkdir(later, 0o750); err != nil {
 		t.Fatal(err)
@@ -82,8 +86,11 @@ func TestRestrictSetsTheDACL(t *testing.T) {
 			}
 			for _, s := range aces {
 				if !contains(allowed, s) && !s.Equals(owner(t, tt.path)) {
-					t.Errorf("%s has an ACE for %s, who is not SYSTEM, an administrator or this account", tt.path, s)
+					t.Errorf("%s has an ACE for %s, who is not SYSTEM, an administrator, the service or this account", tt.path, s)
 				}
+			}
+			if !contains(aces, service) {
+				t.Errorf("%s has no ACE for the service's account", tt.path)
 			}
 			if !contains(aces, me) {
 				t.Errorf("%s has no ACE for this account", tt.path)
@@ -183,4 +190,41 @@ func contains(list []*windows.SID, s *windows.SID) bool {
 		}
 	}
 	return false
+}
+
+// TestServiceSID: the SID is worked out the way Windows works it out. The
+// first row is one Windows publishes; the rest say the name's case does not
+// matter, as it does not to the Service Control Manager.
+func TestServiceSID(t *testing.T) {
+	tests := []struct {
+		name string
+		want string
+	}{
+		{"TrustedInstaller", "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464"},
+		{"trustedinstaller", "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := serviceSID(tt.name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.String() != tt.want {
+				t.Errorf("serviceSID(%q) = %s, want %s", tt.name, got, tt.want)
+			}
+		})
+	}
+
+	// Where Windows will say what it makes of the name, it agrees.
+	looked, _, _, err := windows.LookupSID("", `NT SERVICE\`+ServiceName)
+	if err != nil {
+		t.Skipf("Windows does not resolve the account until the service exists: %v", err)
+	}
+	worked, err := serviceSID(ServiceName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !looked.Equals(worked) {
+		t.Errorf("the account of service %s is %s, worked out as %s", ServiceName, looked, worked)
+	}
 }

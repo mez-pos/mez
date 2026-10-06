@@ -18,11 +18,23 @@ const (
 	Description = "The mez server: the till, the kitchen display and the back office for this venue."
 )
 
-// RestartDelay is how long Windows waits before starting a server that died.
-// Long enough that a server failing at once (its port taken, its disk full)
-// writes an event every few seconds and not a thousand a minute; short
-// enough that a till notices only a reconnect.
-const RestartDelay = 5 * time.Second
+// Account is the account the service runs as unless another is asked for:
+// the one Windows makes for a service by its name. It has no password, is
+// nobody else's, and holds no rights over the computer beyond a user's
+// (ADR-264).
+const Account = `NT SERVICE\` + Name
+
+// RestartDelays is how long Windows waits before starting a server that
+// died: the first time, the second, and every time after that. Quick at
+// first, so that a till notices only a reconnect; then slower, so that a
+// server that cannot start (its port taken, its disk full) writes an event
+// every five minutes and not every five seconds. It never gives up: a till
+// that stays down until someone walks to the computer is the worse failure.
+var RestartDelays = []time.Duration{5 * time.Second, 30 * time.Second, 5 * time.Minute}
+
+// RestartResetAfter is how long the server must stay up for the next death
+// to count as the first again.
+const RestartResetAfter = time.Hour
 
 // StopTimeout bounds a stop. The server drains its requests and then closes
 // its subsystems, each within ten seconds, and a stop that outlasts both has
@@ -61,7 +73,7 @@ type Options struct {
 	Arguments []string
 
 	// UserName is the account the service runs as, and Password its
-	// password. Empty is LocalSystem, which needs none (ADR-263).
+	// password. Empty is Account, which needs none.
 	UserName string
 	Password string
 }
@@ -82,20 +94,13 @@ func New(o Options) (*Service, error) {
 		Description: Description,
 		Arguments:   o.Arguments,
 		UserName:    o.UserName,
-		// The library's names for these are declared only in its Windows
-		// file, so they are spelled out; other systems ignore them.
-		Option: service.KeyValue{
-			// Started with the computer, with nobody signed in.
-			"StartType": "automatic",
-			// Started again if the process dies. Windows does this only for
-			// a process that ends without reporting that it stopped, which
-			// is what program does when the server stops on its own.
-			"OnFailure":              "restart",
-			"OnFailureDelayDuration": RestartDelay.String(),
-			// A day without a failure and the count starts again. With one
-			// action it changes nothing; it is set so the value is ours.
-			"OnFailureResetPeriod": int((24 * time.Hour).Seconds()),
-		},
+		// Started with the computer, with nobody signed in. The library
+		// declares its name for this only in its Windows file, so it is
+		// spelled out; other systems ignore it.
+		Option: service.KeyValue{"StartType": "automatic"},
+	}
+	if cfg.UserName == "" {
+		cfg.UserName = Account
 	}
 	if o.Password != "" {
 		cfg.Option["Password"] = o.Password
@@ -132,11 +137,17 @@ func (s *Service) Run() error {
 	return nil
 }
 
-// Install registers the service and its event log source. It needs an
-// administrator.
+// Install registers the service and its event log source, and tells
+// Windows to start it again when it dies. It needs an administrator.
+//
+// Windows restarts only a process that ends without reporting that it
+// stopped, which is what program does when the server stops on its own.
 func (s *Service) Install() error {
 	if err := s.svc.Install(); err != nil {
 		return fmt.Errorf("installing the service: %w", err)
+	}
+	if err := setRecovery(Name, RestartDelays, RestartResetAfter); err != nil {
+		return fmt.Errorf("the service is installed, but will not be started again if it dies: %w", err)
 	}
 	return nil
 }

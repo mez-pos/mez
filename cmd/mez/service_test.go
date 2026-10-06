@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/byjoellobo/mez/internal/fsperm"
 	"github.com/byjoellobo/mez/internal/winsvc"
 )
 
@@ -38,7 +39,8 @@ func fakeEnv(t *testing.T, ctl *fakeControl, described *winsvc.Options) serviceE
 		goos:   "windows",
 		cwd:    t.TempDir(),
 		lookup: func(string) (string, bool) { return "", false },
-		check:  func([]string) error { return nil },
+		check:  func([]string) (string, error) { return "the data directory", nil },
+		grant:  func(string) error { return nil },
 		control: func(o winsvc.Options) (serviceControl, error) {
 			if described != nil {
 				*described = o
@@ -134,22 +136,54 @@ func TestServiceInstall(t *testing.T) {
 	}
 }
 
-// TestServiceInstallWithNoAccountTakesNoPassword: LocalSystem has none, and
-// a password left in the environment by an earlier install is not sent.
-func TestServiceInstallWithNoAccountTakesNoPassword(t *testing.T) {
+// TestServiceInstallWithNoAccount: the service runs as its own account,
+// which has no password (one left in the environment by an earlier install
+// is not sent), and is handed the data directory the flags name.
+func TestServiceInstallWithNoAccount(t *testing.T) {
 	var described winsvc.Options
 	env := fakeEnv(t, &fakeControl{}, &described)
 	env.lookup = func(string) (string, bool) { return "left-over", true }
+	var granted []string
+	env.grant = func(dir string) error { granted = append(granted, dir); return nil }
 	var out strings.Builder
 
 	if err := serviceCommand([]string{"install"}, &out, env); err != nil {
 		t.Fatalf("install: %v", err)
 	}
 	if described.UserName != "" || described.Password != "" {
-		t.Errorf("account = %q, password = %q, want neither", described.UserName, described.Password)
+		t.Errorf("account = %q, password = %q, want neither: the default is the wrapper's", described.UserName, described.Password)
 	}
-	if !strings.Contains(out.String(), "running as LocalSystem") {
-		t.Errorf("printed %q, want LocalSystem named", out.String())
+	if !slices.Equal(granted, []string{"the data directory"}) {
+		t.Errorf("granted %q, want the data directory the server would use", granted)
+	}
+	if !strings.Contains(out.String(), "running as "+winsvc.Account) {
+		t.Errorf("printed %q, want the service's own account named", out.String())
+	}
+}
+
+// TestServiceInstallSaysWhenTheDataIsShut: a service that cannot open its
+// database fails every start. The person installing it is told then.
+func TestServiceInstallSaysWhenTheDataIsShut(t *testing.T) {
+	env := fakeEnv(t, &fakeControl{}, nil)
+	env.grant = func(string) error { return errors.New("setting the ACL: access is denied") }
+	var out strings.Builder
+
+	err := serviceCommand([]string{"install"}, &out, env)
+
+	if err == nil || !strings.Contains(err.Error(), "may not be able to open its data") {
+		t.Errorf("err = %v, want it to say the data may be shut", err)
+	}
+}
+
+// TestTheDataNamesTheServicesAccount: fsperm restates the service's name
+// to keep its imports to itself. If the two part, the service is shut out
+// of its own database.
+func TestTheDataNamesTheServicesAccount(t *testing.T) {
+	if fsperm.ServiceName != winsvc.Name {
+		t.Errorf("fsperm.ServiceName = %q, winsvc.Name = %q: they must be one name", fsperm.ServiceName, winsvc.Name)
+	}
+	if want := `NT SERVICE\` + winsvc.Name; winsvc.Account != want {
+		t.Errorf("winsvc.Account = %q, want %q", winsvc.Account, want)
 	}
 }
 
@@ -158,7 +192,7 @@ func TestServiceInstallWithNoAccountTakesNoPassword(t *testing.T) {
 func TestServiceInstallRefusesWhatTheServerWould(t *testing.T) {
 	ctl := &fakeControl{}
 	env := fakeEnv(t, ctl, nil)
-	env.check = func([]string) error { return errors.New("listen_addr: no port") }
+	env.check = func([]string) (string, error) { return "", errors.New("listen_addr: no port") }
 	var out strings.Builder
 
 	err := serviceCommand([]string{"install", "-listen-addr", "nowhere"}, &out, env)

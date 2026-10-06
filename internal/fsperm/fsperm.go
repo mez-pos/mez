@@ -14,12 +14,18 @@ import (
 	"os"
 )
 
+// ServiceName is the Windows service whose own account, NT SERVICE\mez, is
+// always among those Restrict leaves path to (ADR-264). It is winsvc.Name,
+// restated so that this package imports nothing of ours; a test in cmd/mez
+// holds the two together.
+const ServiceName = "mez"
+
 // Restrict leaves path to its owner. A directory keeps what is made in it
 // later to the same people.
 //
-// On Windows that is SYSTEM, the Administrators group, the account running
-// this process, and the account that owns path (the one that ran setup,
-// when the server runs as SYSTEM), each with full control, inherited by
+// On Windows that is SYSTEM, the Administrators group, the Windows service's
+// own account, the account running this process, and the account that owns
+// path (the one that ran setup), each with full control, inherited by
 // everything beneath a directory, and nothing inherited from the parent.
 // Elsewhere it is mode 0700 for a directory and 0600 for a file.
 func Restrict(path string) error {
