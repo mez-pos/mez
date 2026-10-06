@@ -92,3 +92,10 @@ WHERE round_public_id = ? AND gateway = ? AND status = 'open';
 UPDATE gateway_charges
 SET order_id = sqlc.arg(order_id)
 WHERE id = sqlc.arg(id) AND order_id IS NULL AND status = 'open';
+
+-- name: LastPaidGatewayCharge :one
+-- When a payment through a provider last landed on a bill at a venue.
+SELECT settled_at FROM gateway_charges
+WHERE venue_id = ? AND gateway = ? AND status = 'paid'
+ORDER BY settled_at DESC, id DESC
+LIMIT 1;

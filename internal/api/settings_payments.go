@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/byjoellobo/mez/internal/auth"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
@@ -30,6 +31,23 @@ type paymentSettingsResponse struct {
 	// CanCharge is whether guests can pay online here: a payment gateway
 	// is set up. Paying first is in effect only with it, whatever mode says.
 	CanCharge bool `json:"can_charge"`
+	// Online is how paying online stands, when a gateway is set up. It is
+	// read only: a gateway and its keys are the venue's configuration and
+	// not a setting (ADR-221, ADR-231). No key is ever in it.
+	Online *onlinePaymentsResponse `json:"online,omitempty"`
+}
+
+// onlinePaymentsResponse is the gateway guests pay online through, for the
+// owner to check. gateway is its name, "razorpay". webhooks is whether its
+// calls are taken, so a payment lands at once; without them it lands when
+// mez next asks. return_url is where a guest is sent back after paying, or
+// empty when the venue's address is not set. last_paid_at is when a payment
+// through it last landed on a bill, absent when none ever has.
+type onlinePaymentsResponse struct {
+	Gateway    string     `json:"gateway"`
+	Webhooks   bool       `json:"webhooks"`
+	ReturnURL  string     `json:"return_url"`
+	LastPaidAt *time.Time `json:"last_paid_at,omitempty"`
 }
 
 func (s *Server) mountPaymentSettings(mux *http.ServeMux) {
@@ -60,9 +78,25 @@ func (s *Server) writePaymentSettings(w http.ResponseWriter, r *http.Request) {
 		s.writeSettingsError(w, r, err)
 		return
 	}
-	writeJSON(w, s.log, http.StatusOK, paymentSettingsResponse{
+	out := paymentSettingsResponse{
 		paymentSettingsRequest: paymentSettingsRequest(p.PaymentsInput),
 		VenueName:              p.VenueName, Currency: p.Currency, MaxPayee: p.MaxPayee,
 		CanCharge: s.charges != nil,
-	})
+	}
+	if s.charges != nil {
+		st, err := s.charges.Standing(r.Context(), Meta(r).VenueID)
+		if err != nil {
+			s.log.Error("reading how paying online stands failed", "request_id", RequestID(r.Context()), "venue_id", Meta(r).VenueID, "error", err)
+			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+			return
+		}
+		out.Online = &onlinePaymentsResponse{Gateway: st.Gateway, Webhooks: st.Notices}
+		if s.publicURL != "" {
+			out.Online.ReturnURL = s.publicURL + s.guestMount
+		}
+		if !st.LastPaidAt.IsZero() {
+			out.Online.LastPaidAt = &st.LastPaidAt
+		}
+	}
+	writeJSON(w, s.log, http.StatusOK, out)
 }

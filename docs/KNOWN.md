@@ -10,6 +10,10 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Paying online on the payments card** (ADR-231): seen at 1366 with no
+  gateway, with one never paid through, and with a paid charge written into
+  the database by hand; never at 1920. The time is in the browser's zone.
+  Keys revoked since the last payment still show that payment.
 - **Stripe** (ADR-230): no charge has been made and no webhook received. It
   was tested against a stand-in written from Stripe's documentation, and the
   real API only as far as it refusing a made-up key. Currencies without two

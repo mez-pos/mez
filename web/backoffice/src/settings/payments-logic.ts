@@ -3,7 +3,7 @@
 // ADR-229). The server checks everything again; these checks only spare a
 // round trip.
 
-import type { PayMode, PaymentSettingsRequest, PaymentSettingsResponse } from "../../../shared/api-types";
+import type { OnlinePaymentsResponse, PayMode, PaymentSettingsRequest, PaymentSettingsResponse } from "../../../shared/api-types";
 import { problemWith, type Problem } from "./problem";
 
 export interface PaymentsForm {
@@ -96,4 +96,54 @@ export function paymentsStanding(saved: PaymentsForm, currency: string): string 
   }
   if (saved.address.trim() === "") return "No address saved: a guest's bill offers no UPI, and says to pay staff or at the counter.";
   return `A guest's bill offers "Pay by UPI" to ${saved.address.trim()}.`;
+}
+
+// Paying online, read only (ADR-231). A gateway and its keys are the
+// venue's configuration and not a setting, so the card says how it stands
+// and changes nothing.
+
+const gatewayNames: Readonly<Record<string, string>> = { razorpay: "Razorpay", stripe: "Stripe" };
+
+/** A gateway by the name its owner knows it by. One this build has no name for is said as configured. */
+export function gatewayName(gateway: string): string {
+  return gatewayNames[gateway] ?? gateway;
+}
+
+export interface OnlineWords {
+  /** Nothing is wrong, or the owner has something to do or to know. */
+  readonly tone: "good" | "warning" | "none";
+  readonly title: string;
+  readonly lines: readonly string[];
+}
+
+/**
+ * How paying online stands, for the owner. when turns the time a payment
+ * last arrived into words.
+ */
+export function onlineWords(online: OnlinePaymentsResponse | undefined, when: (at: Date) => string): OnlineWords {
+  if (online === undefined) {
+    return {
+      tone: "none",
+      title: "Guests cannot pay online",
+      lines: ["No payment gateway is set for this venue. One is set in the venue's configuration, with its keys, and not on this screen."],
+    };
+  }
+  const name = gatewayName(online.gateway);
+  const paid = online.last_paid_at === undefined ? null : new Date(online.last_paid_at);
+  const seen = paid !== null && !Number.isNaN(paid.getTime());
+  return {
+    tone: seen ? "good" : "warning",
+    title: `Guests can pay online through ${name}`,
+    lines: [
+      seen
+        ? `The last payment through it arrived ${when(paid)}.`
+        : "No payment has arrived through it yet. Before relying on it, pay a small bill yourself from a phone and see it land here.",
+      online.webhooks
+        ? `${name} tells this venue as soon as a payment is made.`
+        : `This venue asks ${name} about each payment every few seconds, so one can take a moment to show.`,
+      online.return_url === ""
+        ? "This venue's address is not set, so a guest is not brought back here after paying. It is set in the venue's configuration."
+        : `After paying, a guest is brought back to ${online.return_url}.`,
+    ],
+  };
 }

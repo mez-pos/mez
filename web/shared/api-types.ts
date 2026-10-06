@@ -936,6 +936,14 @@ export interface PaymentSettingsResponse {
   currency: string;
   max_payee: number;
   can_charge: boolean;
+  online?: OnlinePaymentsResponse;
+}
+
+export interface OnlinePaymentsResponse {
+  gateway: string;
+  webhooks: boolean;
+  return_url: string;
+  last_paid_at?: string;
 }
 
 export interface GuestRequestsResponse {

@@ -8,26 +8,27 @@
 ## Current phase
 
 **Phase 11 - Relay and guest ordering**, `docs/phases/phase-11.md`. Tasks 1 to 3,
-4a to 4e, 4f1 to 4f5 and 4f6a done. (The walks are owed.)
+4a to 4e, 4f1 to 4f5, 4f6a and 4f6c done. (The walks are owed.)
 
 ## Last completed task
 
-**Phase 11, Task 4f6a: Stripe** (ADR-230). `internal/gateway/stripe`: a charge is a
-Checkout Session, with its webhook. `gateway = stripe` needs `gateway_key_secret`
-and `public_url`. Nothing outside the adapter and the configuration changed.
+**Phase 11, Task 4f6c: the back office says how paying online stands** (ADR-231).
+The "Paid from a phone" card names the gateway, when a payment last landed through
+it, whether it calls back, and where guests return to. Read only; never a key.
 
 ## Next task
 
 **No real charge has been made yet**, at Razorpay (ADR-221) or at Stripe: test
 keys, then on a phone Pay online on a bill, and Pay on an order with paying
-first chosen. Two adapters now rest on documentation alone.
+first chosen. The payments card now says so itself, in the warning tone.
 
-**Phase 11, Task 4f6c: the back office says which gateway is set.** Read ADR-221,
-ADR-229, ADR-230, `internal/api/settings_payments.go`, `PaymentsCard.tsx`.
-- `can_charge` becomes the gateway's name on the payments answer, never a key.
-- The card says "Guests can pay online through Stripe", or that none is set and
-  where one is. Consider the time of the last charge paid, from `gateway_charges`.
-- 4f6b, Cashfree, waits on question 8 below. After 4f6c: 4g, splitting the bill.
+**Phase 11, Task 4g: splitting the bill among the guests at a table.** Read
+ADR-214, ADR-220, ADR-226, `docs/02-domain.md` on split payment,
+`docs/design/screens/guest-bill.md`. Larger than a session: split it first.
+- Decide what a share is: an amount of the balance (equal parts, or a figure the
+  guest types), not lines. The bill does not know whose phone ordered what.
+- A share is a charge for part of the balance: `charges.Start` asks for all of
+  it today. Two phones paying at once must not over-pay. 4f6b waits on question 8.
 
 ## Known broken / in progress
 
@@ -54,5 +55,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 09 - Shift, blind drawer count, Z-report, tips (built; owes its human check)
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
-- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4e, 4f1 to 4f5, 4f6a done)
+- [ ] 11 - Relay service, outbound tunnel, guest QR ordering (4a to 4e, 4f1 to 4f5, 4f6a, 4f6c done)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs

@@ -6,6 +6,7 @@ package gen
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -255,6 +256,8 @@ type Querier interface {
 	ItemsForHSN(ctx context.Context, venueID int64) ([]ItemsForHSNRow, error)
 	// Closing stock (Task 3d, ADR-114).
 	ItemsToCountAtClose(ctx context.Context, venueID int64) ([]ItemsToCountAtCloseRow, error)
+	// When a payment through a provider last landed on a bill at a venue.
+	LastPaidGatewayCharge(ctx context.Context, arg LastPaidGatewayChargeParams) (sql.NullTime, error)
 	// The shift's report as it now stands: the last correction, or the original.
 	LatestZReportForShift(ctx context.Context, shiftID int64) (ZReport, error)
 	ListVenues(ctx context.Context) ([]Venue, error)

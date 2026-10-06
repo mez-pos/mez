@@ -57,7 +57,8 @@ two across.
 - **Currency**, read only: the code and "Cannot be changed: every amount
   recorded would change what it means."
 
-Under it, a card of its own, **Paid from a phone** (ADR-215, ADR-216, ADR-229;
+Under it, a card of its own, **Paid from a phone** (ADR-215, ADR-216, ADR-229,
+ADR-231;
 `PaymentsCard.tsx`, `payments-logic.ts`, `use-payments.ts`): "A guest reading
 their bill on their phone can pay it by UPI, straight to your account. They
 show you the payment, and you record it on the terminal as you would one
@@ -83,6 +84,24 @@ venue's card usable. Fields one across.
   guest's bill offers no UPI, and says to pay staff or at the counter.", or
   for a venue not in rupees, "UPI pays in rupees only, and this venue trades
   in USD: a guest's bill will not offer it, whatever is entered here."
+- **Paying online**, a block that is read and not edited, from `online` on
+  the settings' answer. A gateway and its keys are the venue's
+  configuration, so nothing here changes them and no key is shown.
+  - no gateway, plain: "Guests cannot pay online. No payment gateway is set
+    for this venue. One is set in the venue's configuration, with its keys,
+    and not on this screen."
+  - a gateway, titled "Guests can pay online through Stripe", then three
+    lines:
+    - "The last payment through it arrived Tue, 6 Oct 2026 · 10:02 AM.", or,
+      with the whole block in the warning tone, "No payment has arrived
+      through it yet. Before relying on it, pay a small bill yourself from a
+      phone and see it land here."
+    - "Stripe tells this venue as soon as a payment is made.", or "This
+      venue asks Stripe about each payment every few seconds, so one can
+      take a moment to show."
+    - "After paying, a guest is brought back to https://cafe.example/order/.",
+      or "This venue's address is not set, so a guest is not brought back
+      here after paying. It is set in the venue's configuration."
 - **A guest who orders from their phone pays**, under a rule, two choices
   side by side: **When they are ready to leave**, the default, and **Before
   the order is sent**. It saves with the rest of the card: the address and

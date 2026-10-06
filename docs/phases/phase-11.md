@@ -145,9 +145,9 @@ Phase 10.
       - [ ] **4f6b.** Cashfree. **Waits on the owner**: its payment links
         need the payer's phone number, and mez asks a guest for nothing.
         See STATE.md's open questions.
-      - [ ] **4f6c.** The back office saying which gateway is set and whether
-        it has taken a payment. Not choosing one: the keys are configuration
-        and not the database (ADR-221), so there is nothing there to choose.
+      - [x] **4f6c.** The back office saying which gateway is set and whether
+        it has taken a payment (ADR-231). Not choosing one: the keys are
+        configuration and not the database (ADR-221).
   - [ ] **4g.** Splitting the bill among the guests at a table.
 
 - [ ] **Task 5 — Order tracking and e-receipt.**

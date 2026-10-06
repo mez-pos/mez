@@ -47,6 +47,7 @@ type Charges interface {
 	Waiting(ctx context.Context, venueID int64) ([]charges.UnappliedCharge, error)
 	Resolve(ctx context.Context, venueID, staffID int64, publicID string, how charges.Resolution) error
 	Notice(ctx context.Context, gateway string, header http.Header, body []byte) error
+	Standing(ctx context.Context, venueID int64) (charges.Standing, error)
 }
 
 // WithCharges lets guests pay online. c is nil at a venue with no gateway,

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
-import type { PaymentSettingsResponse } from "../../../shared/api-types";
+import type { OnlinePaymentsResponse, PaymentSettingsResponse } from "../../../shared/api-types";
 import {
   PAY_MODES,
+  gatewayName,
   modeWords,
+  onlineWords,
   payeeShown,
   paymentsChanged,
   paymentsFormFrom,
@@ -112,5 +114,53 @@ describe("when a guest pays", () => {
   });
   it("puts the server's refusal of a mode under the choice", () => {
     expect(paymentsProblemOf(new ApiError("invalid_setting", "Choose when guests pay.", 422, "mode")).field).toBe("mode");
+  });
+});
+
+describe("paying online, as the owner reads it", () => {
+  const when = (at: Date) => `at ${at.toISOString()}`;
+  const set = (change: Partial<OnlinePaymentsResponse> = {}): OnlinePaymentsResponse => ({
+    gateway: "stripe",
+    webhooks: true,
+    return_url: "https://cafe.example/order/",
+    last_paid_at: "2026-10-06T04:32:00Z",
+    ...change,
+  });
+
+  it("names a gateway as its owner does, and one it has no name for as configured", () => {
+    expect(gatewayName("razorpay")).toBe("Razorpay");
+    expect(gatewayName("stripe")).toBe("Stripe");
+    expect(gatewayName("cashfree")).toBe("cashfree");
+  });
+  it("says there is none, and where one is set", () => {
+    const none = onlineWords(undefined, when);
+    expect(none.tone).toBe("none");
+    expect(none.title).toBe("Guests cannot pay online");
+    expect(none.lines.join(" ")).toContain("not on this screen");
+  });
+  it("says which, when it last took a payment, and where guests come back to", () => {
+    const w = onlineWords(set(), when);
+    expect(w.tone).toBe("good");
+    expect(w.title).toBe("Guests can pay online through Stripe");
+    expect(w.lines).toEqual([
+      "The last payment through it arrived at 2026-10-06T04:32:00.000Z.",
+      "Stripe tells this venue as soon as a payment is made.",
+      "After paying, a guest is brought back to https://cafe.example/order/.",
+    ]);
+  });
+  it("warns of a gateway nobody has seen take a payment", () => {
+    const { last_paid_at: _never, ...never } = set({ gateway: "razorpay" });
+    const w = onlineWords(never, when);
+    expect(w.tone).toBe("warning");
+    expect(w.title).toContain("Razorpay");
+    expect(w.lines[0]).toContain("No payment has arrived through it yet");
+    expect(w.lines[0]).toContain("pay a small bill yourself");
+    // A time that is not one is not shown as one.
+    expect(onlineWords(set({ last_paid_at: "soon" }), when).tone).toBe("warning");
+  });
+  it("says when payments are asked about and not told, and when guests are not brought back", () => {
+    const w = onlineWords(set({ webhooks: false, return_url: "" }), when);
+    expect(w.lines[1]).toContain("asks Stripe about each payment every few seconds");
+    expect(w.lines[2]).toContain("address is not set");
   });
 });

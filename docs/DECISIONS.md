@@ -7253,3 +7253,34 @@ Cost: no Stripe charge has been made. The adapter was checked against a stand-in
 for Stripe's API written from its documentation, and the real API as far as it
 refusing a made-up key. Stripe's India accounts are by invitation, so for the
 venues mez is first for, Razorpay stays the one that matters.
+
+## ADR-231 - The back office says how paying online stands, and changes none of it
+2026-10 · Status: accepted. Phase 11, Task 4f6c.
+Context: the phase file asked for the owner "choosing a gateway in the back
+office". A gateway's keys are configuration and the environment, never the database
+(ADR-221), so the back office has no keys to choose between. What an owner did not
+have was any way to see, without reading a log, whether a gateway was set and
+whether it worked.
+Decision:
+  - **The payment settings' answer gains `online`**, present when a gateway is
+    set: its name, whether its webhooks are taken, the address a guest is sent
+    back to, and when a payment through it last landed on a bill. It has those four
+    things and no others; a test reads its keys. `can_charge` stays, for the mode.
+  - **`charges.Standing` reads it and asks the gateway nothing.** Whether the keys
+    are right is not something to find out by calling a provider every time a
+    settings page is opened. The last payment that landed is the evidence, and it
+    is evidence of the whole path: the keys, the provider, and the bill taking it.
+  - **Only a charge that is paid counts as a payment**: not one started, failed, or
+    taken and unapplied.
+  - **A gateway that has never taken a payment is shown in the warning tone**, with
+    what to do about it: pay a small bill yourself. That is the state every venue
+    is in after setting one up, and the one mez itself is in today.
+  - **The card says where each thing is set**, the venue's configuration, and does
+    not offer to set it.
+Because: an owner should be able to tell "set and proven" from "set" from "not
+set" at a glance, and the difference between the first two is exactly the test
+nobody has yet run.
+Cost: the time shown is read in the browser's zone and not the venue's, which
+differ only when the back office is opened from elsewhere. Keys that were right and
+have since been revoked still show the last payment they took; the log and the
+first refused charge say so, and this card does not.

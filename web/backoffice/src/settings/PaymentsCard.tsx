@@ -5,10 +5,12 @@
 
 import type { PaymentSettingsRequest, PaymentSettingsResponse } from "../../../shared/api-types";
 import { cx } from "../../../shared/ui/cx";
+import { clockText } from "../../../shared/venue-text";
 import { Choice, Field, inputClass } from "../FormFields";
 import {
   PAY_MODES,
   modeWords,
+  onlineWords,
   payeeShown,
   paymentsChanged,
   paymentsFormFrom,
@@ -41,6 +43,7 @@ export function PaymentsCard({ payments, onSave, onDirty }: PaymentsCardProps) {
   const { form, busy } = d;
   const set = (patch: Partial<PaymentsForm>) => d.update((f) => ({ ...f, ...patch }));
   const mode = modeWords(form.mode, payments.can_charge);
+  const online = onlineWords(payments.online, (at) => clockText(at, null));
 
   return (
     <SectionCard
@@ -102,6 +105,21 @@ export function PaymentsCard({ payments, onSave, onDirty }: PaymentsCardProps) {
       <p role="status" className="text-base text-fg-2">
         {paymentsStanding(saved, payments.currency)}
       </p>
+
+      <section
+        aria-label="Paying online"
+        className={cx(
+          "rounded border p-4",
+          online.tone === "warning" ? "border-chip-warning-border bg-chip-warning-bg text-chip-warning-fg" : "border-line bg-sunken text-fg-2",
+        )}
+      >
+        <p className={cx("text-base font-semibold", online.tone === "good" && "text-accent-text", online.tone === "none" && "text-fg")}>{online.title}</p>
+        {online.lines.map((line) => (
+          <p key={line} className="mt-1 text-base">
+            {line}
+          </p>
+        ))}
+      </section>
 
       <div className="flex flex-col gap-3 border-t border-line-soft pt-5">
         <Choice

@@ -191,6 +191,26 @@ func (q *Queries) GatewayChargesByStatus(ctx context.Context, arg GatewayCharges
 	return items, nil
 }
 
+const lastPaidGatewayCharge = `-- name: LastPaidGatewayCharge :one
+SELECT settled_at FROM gateway_charges
+WHERE venue_id = ? AND gateway = ? AND status = 'paid'
+ORDER BY settled_at DESC, id DESC
+LIMIT 1
+`
+
+type LastPaidGatewayChargeParams struct {
+	VenueID int64
+	Gateway string
+}
+
+// When a payment through a provider last landed on a bill at a venue.
+func (q *Queries) LastPaidGatewayCharge(ctx context.Context, arg LastPaidGatewayChargeParams) (sql.NullTime, error) {
+	row := q.db.QueryRowContext(ctx, lastPaidGatewayCharge, arg.VenueID, arg.Gateway)
+	var settled_at sql.NullTime
+	err := row.Scan(&settled_at)
+	return settled_at, err
+}
+
 const openGatewayChargeForOrder = `-- name: OpenGatewayChargeForOrder :one
 SELECT id, public_id, venue_id, table_id, order_id, gateway, gateway_id, checkout_url, amount_minor, currency,
        status, method, reference, problem, created_at, settled_at, resolution, resolved_at, resolved_by, round_public_id

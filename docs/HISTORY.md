@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 4e5d: the owner chooses when guests pay** (ADR-229). On the back
+**Phase 11, Task 4f6a: Stripe** (ADR-230). `internal/gateway/stripe`: a charge is a
+Checkout Session, with its webhook. `gateway = stripe` needs `gateway_key_secret`
+and `public_url`. Cashfree was left out: it needs each payer's phone number.
+
+Before it, **Phase 11, Task 4e5d: the owner chooses when guests pay** (ADR-229). On the back
 office's "Paid from a phone" card: when they are ready to leave, or before the
 order is sent. With no gateway, paying first says it does nothing yet.
 
