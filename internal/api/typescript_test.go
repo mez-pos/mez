@@ -143,7 +143,7 @@ var errorCodes = []ErrorCode{
 	CodeTableCodeUnknown,
 	CodeDishUnavailable, CodeChoicesInvalid, CodeTableNotOrdering, CodeRequestsWaiting,
 	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed, CodeNothingToPay, CodeNoticeNotFound, CodeGatewayUnavailable, CodeChargeNotFound, CodeChargeNotWaiting,
-	CodeBillClaimed, CodeBillMoved,
+	CodeBillClaimed, CodeBillMoved, CodeReceiptNotFound,
 }
 
 // generate builds the whole file.
@@ -313,7 +313,7 @@ func generate() (*ts.Generator, error) {
 		Error{}, errorBody{}, pairRequest{}, deviceResponse{}, pairResponse{},
 		newCodeRequest{}, pairingCodeResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{}, tunnelResponse{},
 		// The guest's API.
-		guestTableResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{}, guestChargeResponse{}, guestShareRequest{}, resolveChargeRequest{},
+		guestTableResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{}, guestChargeResponse{}, guestShareRequest{}, guestReceiptResponse{}, resolveChargeRequest{},
 		paymentSettingsRequest{}, paymentSettingsResponse{},
 		guestRequestsResponse{}, guestDecisionResponse{},
 		// Staff.

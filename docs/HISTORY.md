@@ -8,7 +8,11 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 11, Task 5b: tracking over the guest API** (ADR-238).
+**Phase 11, Task 5c: the order's screen follows the kitchen** (ADR-239). With the
+kitchen, being made, ready, as the kitchen does each, on the screen and the
+strip, asked at the order's own address. Seen at 390 wide in the real binary.
+
+Before it, **Phase 11, Task 5b: tracking over the guest API** (ADR-238).
 `GET /order/api/t/{code}/orders/{round}` answers a round as it stands, with
 `progress` once it is sent. Another table's code finds nothing. No screen.
 

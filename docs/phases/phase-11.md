@@ -180,8 +180,10 @@ Phase 10.
   - [x] **5c.** The phone (ADR-239): the order's screen and the strip say
     with the kitchen, being made and ready as the kitchen does each, with
     the three steps drawn, asked at the order's own address. Its spec.
-  - [ ] **5d.** The e-receipt on the server: what a guest may read of a bill
-    once it is settled, with its invoice number, and by what they ask.
+  - [x] **5d.** The e-receipt on the server (ADR-240):
+    `GET /order/api/t/{code}/receipts/{bill}`, the counter's own invoice
+    with the till's parts taken out, asked for by the table's code and the
+    bill's own id, which the open bill and a tracked order now say.
   - [ ] **5e.** The receipt on the phone, and ordering the same again.
   - [ ] **5f.** Ordering for pickup, and its code (ADR-237, by the owner).
     After 5e, and beside Task 6, which makes and revokes the venue's code.

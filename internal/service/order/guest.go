@@ -109,6 +109,9 @@ type Round struct {
 	// TrackRound fills it; it is empty for a round that is not sent, or
 	// was sent before rounds knew their lines (ADR-236).
 	Progress order.Progress
+	// Bill is the public id of the ticket a sent round is on. Only
+	// TrackRound fills it.
+	Bill string
 }
 
 // errTableChanged unwinds a round whose table gained or lost its ticket

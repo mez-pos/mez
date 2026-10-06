@@ -7618,3 +7618,47 @@ earlier round stops being followed when a later one is placed. The words for rea
 assume table service. The bundle is 44.0 KB gzipped of 60, up 0.7. Seen at 390
 wide in the real binary: one order at a seated table, started and bumped through
 the kitchen's own API, changed on the phone within its 10 seconds each time.
+
+## ADR-240 - A guest's receipt is the counter's invoice, asked for by the table's code and the bill's own id
+2026-10 · Status: accepted. Phase 11, Task 5d. Amends ADR-214.
+Context: Task 5 asks for an "e-receipt with the same invoice number as the counter
+would produce". The phone's bill is the table's open ticket (ADR-214): once it is
+settled and closed it reads "nothing open", and the table's code means whatever
+bill is open there next.
+Decision:
+  - **`GET /order/api/t/{code}/receipts/{bill}`**: by two things, the table's code
+    and the bill's own id, the order's public id. Either alone gives nothing. The
+    bill must have been at that table.
+  - **The open bill now names itself, `bill`** (amends ADR-214, which gave it no
+    ids), and so does a tracked order once sent. That is how a phone comes to hold
+    the id: it was at the table while the bill was open. The id names the bill and
+    nothing else, and without the table's code it reads nothing.
+  - **Through the table's code and not around it**, so a code turned off or
+    renewed (Task 6) ends what it could read, receipts with it.
+  - **It is the invoice, read from the invoice's own snapshot** as a reprint is
+    (ADR-078): the number, when it was issued, the seller as named then, each line
+    as billed, the tax by component, the total. Nothing is worked out again, so a
+    price or a GSTIN changed since does not change a receipt.
+  - **A bill has a receipt once it is invoiced**, which is when the payment that
+    settles it lands (docs/02-domain.md), whether or not staff have closed it.
+  - **What was paid, by method and amount, and nothing else of a payment**: no
+    reference, no card, no member of staff, no device. A voided payment is left
+    out. What a credit note has since taken off, and what was refunded, are two
+    amounts, so a receipt read after a correction does not claim the old total
+    stands alone.
+  - **Left out:** line ids, stations, courses, who rang it up, the table, comped
+    and voided lines (they are on no invoice), and every other bill.
+  - **One answer for every reason there is none**: no such bill, not this table's,
+    not settled, too old. `receipt_not_found`, 404. Asking tells a stranger nothing
+    of which.
+  - **Given for 45 days from its invoice.** Long enough to claim a meal back at a
+    month's end; after it the venue has the invoice and a guest asks the venue.
+  - **The time is sent as UTC with the venue's zone beside it**, for the phone to
+    say it in the venue's time and not its own.
+Because: a receipt that is a second rendering of the bill is a second chance for
+the two to differ. The invoice already is the document.
+Cost: anyone with a table's code and a bill's id can read that receipt for 45
+days, and both can be had by sitting at the table while the bill is open, which is
+what a paper receipt left on the table gives as well. A phone that never read the
+bill or tracked an order while it was open has no id to ask by. A credit note is
+only an amount here. Nothing on the phone uses any of it until 5e.

@@ -59,6 +59,7 @@ func (s *Server) mountGuests(mux *http.ServeMux) {
 		handle("POST "+base+"t/{code}/orders", s.guestPlaceOrder)
 		handle("GET "+base+"t/{code}/orders/{round}", s.guestTrackOrder)
 		handle("GET "+base+"t/{code}/bill", s.guestBill)
+		handle("GET "+base+"t/{code}/receipts/{bill}", s.guestReceipt)
 		handle("GET "+base+"t/{code}/bill/upi.svg", s.guestBillQR)
 		handle("POST "+base+"t/{code}/bill/paid", s.guestTellPaid)
 		if s.charges != nil {

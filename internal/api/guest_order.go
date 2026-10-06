@@ -33,6 +33,7 @@ const (
 type GuestOrders interface {
 	PlaceRound(ctx context.Context, meta svcorder.Meta, cmd svcorder.PlaceRound) (svcorder.Round, error)
 	TrackRound(ctx context.Context, venueID, tableID int64, publicID string) (svcorder.Round, error)
+	Receipt(ctx context.Context, venueID, tableID int64, bill string) (svcorder.Receipt, error)
 	TableTicket(ctx context.Context, venueID, tableID int64) (svcorder.Result, bool, error)
 	UPIAccount(ctx context.Context, venueID int64) (payment.UPIAccount, error)
 	TellPaid(ctx context.Context, venueID, tableID int64) (svcorder.PaidNotice, error)
@@ -84,6 +85,10 @@ type guestRoundResponse struct {
 	// absent from the answer to placing one, and for an order that is not
 	// sent.
 	Progress order.Progress `json:"progress,omitempty"`
+	// Bill is the id of the bill a sent order is on, which its receipt is
+	// asked for by once it is settled (ADR-240). Only the order's own
+	// route answers it.
+	Bill string `json:"bill,omitempty"`
 }
 
 func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +127,7 @@ func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
 
 func toGuestRoundResponse(round svcorder.Round) (guestRoundResponse, error) {
 	out := guestRoundResponse{
-		ID: round.PublicID, Status: round.Status, Subtotal: round.Subtotal, Progress: round.Progress,
+		ID: round.PublicID, Status: round.Status, Subtotal: round.Subtotal, Progress: round.Progress, Bill: round.Bill,
 		Lines: make([]guestRoundLineResponse, len(round.Lines)),
 	}
 	if round.Status == svcorder.RoundUnpaid {

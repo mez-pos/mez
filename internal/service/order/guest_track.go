@@ -31,6 +31,9 @@ func (s *Service) TrackRound(ctx context.Context, venueID, tableID int64, public
 	if err != nil {
 		return Round{}, err
 	}
+	if round.Status == RoundSent {
+		round.Bill = row.OrderPublicID
+	}
 	if round.Status != RoundSent || !row.FirstSeq.Valid {
 		return round, nil
 	}

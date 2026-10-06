@@ -40,7 +40,11 @@ type guestBillTaxResponse struct {
 // guestBillResponse is the table's bill. Open is false when the table has
 // no ticket: nothing ordered yet, or the last bill settled and closed.
 type guestBillResponse struct {
-	Open  bool                    `json:"open"`
+	Open bool `json:"open"`
+	// Bill is the bill's own id, while it is open: what its receipt is asked
+	// for by once it is settled (ADR-240). It names the bill and nothing
+	// else, and is of no use without the table's code.
+	Bill  string                  `json:"bill,omitempty"`
 	Lines []guestBillLineResponse `json:"lines"`
 	// Items is what the lines charged come to, before discounts and before
 	// tax when prices exclude it.
@@ -154,7 +158,7 @@ func toGuestBillResponse(res svcorder.Result) (guestBillResponse, error) {
 		return guestBillResponse{}, err
 	}
 	out := guestBillResponse{
-		Open: true, Lines: []guestBillLineResponse{}, Taxes: []guestBillTaxResponse{},
+		Open: true, Bill: res.PublicID, Lines: []guestBillLineResponse{}, Taxes: []guestBillTaxResponse{},
 		Items: t.Gross, Discounts: discounts,
 		TaxIncluded: st.TaxDetail.Pricing == tax.Inclusive,
 		Total:       t.Total, Paid: t.NetPaid, BalanceDue: t.BalanceDue,

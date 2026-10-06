@@ -144,7 +144,8 @@ export type ErrorCode =
   | 'charge_not_found'
   | 'charge_not_waiting'
   | 'bill_claimed'
-  | 'bill_moved';
+  | 'bill_moved'
+  | 'receipt_not_found';
 
 export type OrderStatus =
   | 'open'
@@ -869,6 +870,7 @@ export interface GuestRoundResponse {
   subtotal: Money;
   due?: Money;
   progress?: GuestRoundProgress;
+  bill?: string;
 }
 
 export interface GuestRoundLineResponse {
@@ -881,6 +883,7 @@ export interface GuestRoundLineResponse {
 
 export interface GuestBillResponse {
   open: boolean;
+  bill?: string;
   lines: GuestBillLineResponse[];
   items: Money;
   discounts: Money;
@@ -950,6 +953,42 @@ export interface GuestShareRequest {
 export interface MoneyInput {
   minor: number;
   currency: string;
+}
+
+export interface GuestReceiptResponse {
+  bill: string;
+  invoice_no: string;
+  issued_at: string;
+  time_zone: string;
+  seller: GuestReceiptSellerResponse;
+  lines: GuestReceiptLineResponse[];
+  items: Money;
+  discounts: Money;
+  taxes: GuestBillTaxResponse[];
+  tax_included: boolean;
+  total: Money;
+  payments: GuestReceiptPaymentResponse[];
+  credited: Money;
+  refunded: Money;
+}
+
+export interface GuestReceiptSellerResponse {
+  name: string;
+  legal_name?: string;
+  registration?: string;
+}
+
+export interface GuestReceiptLineResponse {
+  name: string;
+  qty: number;
+  choices: string[];
+  amount: Money;
+  hsn?: string;
+}
+
+export interface GuestReceiptPaymentResponse {
+  method: PaymentMethod;
+  amount: Money;
 }
 
 export interface ResolveChargeRequest {
