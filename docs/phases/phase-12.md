@@ -176,7 +176,7 @@ Phase 11.
     where a venue's owner will find it. The compose file's example says
     `wss://.../tunnel` and the README says `https://`: find out which
     mez takes and make them agree.
-  - [ ] **Task 7e - CONTRIBUTING, with the architecture.**
+  - [x] **Task 7e - CONTRIBUTING, with the architecture.**
     `CONTRIBUTING.md` checked against the repository as it now is, and
     given an overview of the architecture a newcomer can read in five
     minutes: the packages, what calls what, where an order goes from a

@@ -8,34 +8,33 @@
 ## Current phase
 
 **Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 to 6 built;
-Task 7, the documentation, is split in six (7a to 7f): 7a to 7d are
-done. Phase 11 has nothing left to build (Cashfree left out, ADR-254)
-and owes its walks.
+Task 7, the documentation, is split in six (7a to 7f): 7a to 7e are
+done, and the README (7f) is the last task of the phase. Phase 11 has
+nothing left to build (Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 7d: the relay guide** (ADR-284). The venue's side is
-`deploy.md`, "Guests ordering from their phones": the three settings
-(`relay_url`, `relay_key` and `public_url`, which no guide had named for
-it), where they go on each platform, how to check, the codes, and what
-to know. `build/relay/README.md`, for the operator, gains the key's
-form, the venue id's rule, every setting and what to back up. The
-compose file's example address was wrong (`.../tunnel`; mez adds
-`/agent` itself) and is corrected, in a comment.
+**Phase 12, Task 7e: CONTRIBUTING, with the architecture** (ADR-285).
+`CONTRIBUTING.md` gains "How it fits together": the layers and which
+way they look, an order as events, one tap followed from the till to
+the printer, generated types, the three apps. Its versions, targets,
+tree and checklist are brought up to date. `01-architecture.md` had
+facts that stopped being true (Go's version, the layout, a scheduler
+that was never built, the guests' address) and they are corrected.
 
 ## Next task
 
-**Phase 12, Task 7e: CONTRIBUTING, with the architecture.** Check
-`CONTRIBUTING.md` (287 lines) against the repository as it is: the Go
-and Node versions (go.mod says 1.25, toolchain 1.26.8), the make
-targets, "Where things are" against `internal/`, the dev loop
-(`build/dev.sh`, `make dev`). Add an overview a newcomer reads in five
-minutes: the packages and what calls what (`domain` pure, `service`
-over `db`, `api` over `service`, `device` for printers, `tunnel` and
-`relay`), and one order from a tap to a printed ticket. Link
-`01-architecture.md`, do not copy it. Then 7f the README, which still
-says the installer arrives in phase 12 and must list `hardware.md` and
-`troubleshooting.md`. **For the owner, not a
+**Phase 12, Task 7f: the README.** `make build-web`, then `make dev`
+or a demo venue on `bin/mez`, and a screenshot of the till in a browser
+at 1366 wide, with an order on it, kept in the repository (say where:
+`docs/img/`). The pitch at the top, readable in a minute by a cafe
+owner. Bring up to date: the status paragraph; "Until releases are
+published"; the "Ways to run it" table, which says the installer and
+service arrive in phase 12; Go 1.25; the documents table, adding
+`hardware.md`, `troubleshooting.md`, `KNOWN.md` and the relay's README;
+the licence section, which says the guest app ships in phase 11 and
+will carry its own `LICENSE` (it has none: ask the owner, do not
+decide). Stop the dev server before `make check`. **For the owner, not a
 task**: push a tag to try the release (`docs/releasing.md`); expect the
 first to need a second try. **Do not move Litestream past v0.5.15
 without running the tests on Windows.** Before a release,

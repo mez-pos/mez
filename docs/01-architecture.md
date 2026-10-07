@@ -34,14 +34,14 @@ a VPS are the same artifact. Windows install and self-host are not two products.
 
 | Layer | Choice |
 |---|---|
-| Server | Go 1.24+, single static binary, `CGO_ENABLED=0` |
+| Server | Go 1.25+, single static binary, `CGO_ENABLED=0` |
 | Database | SQLite, WAL mode, `modernc.org/sqlite` |
 | Queries | `sqlc` — SQL in, type-safe Go out |
 | Migrations | `goose`, embedded via `embed.FS` |
 | HTTP | stdlib `net/http` + `ServeMux` (Go 1.22 routing) |
 | Realtime | `github.com/coder/websocket` |
 | Frontend | React 18 + TypeScript + Vite + Tailwind (guest renders through `preact/compat`, ADR-064) |
-| UI shell | Edge/Chrome `--app= --kiosk` (ADR-007) |
+| UI shell | Edge/Chrome `--app=`, a kiosk if asked for (ADR-007, ADR-272) |
 | Types | Go structs → TypeScript, generated at build |
 | Printing | ESC/POS over TCP:9100; Windows RAW spooler fallback |
 | Backup | Litestream → S3 / R2 / local folder |
@@ -56,7 +56,7 @@ One process. Inside it:
 - **Hub** — fan-out of domain events to subscribed devices
 - **Print queue worker** — durable, retries, survives restart
 - **Tunnel client** — outbound connection to the relay, reconnects with backoff
-- **Scheduler** — nightly rollups, Litestream health, log rotation
+- **Backup**: Litestream, in the process, copying the database as it is written (ADR-273)
 
 No external message broker. No Redis. Goroutines and channels are enough at this
 scale, and every extra service is a support ticket from a cafe owner.
@@ -65,24 +65,30 @@ scale, and every extra service is a support ticket from a cafe owner.
 
 ```
 /cmd
-  mez/          server entrypoint
+  mez/              the server and its commands (setup, pair, restore, service ...)
   relay/            the optional cloud relay
 /internal
   config/           env + file config, sane defaults
   logging/          slog setup, rotating file log        (added: ADR-020)
   db/               sqlc output, migrations, connection setup
   domain/           PURE GO. no http, no sql. events, projections, money, tax
+  service/          application services, one package per capability
   api/              http handlers, request/response types
+  auth/             devices, pairing, staff PINs, permissions
   hub/              websocket fan-out
-  device/           escpos, drawer, printer discovery
+  device/           escpos, the print queue, printer discovery
+  backup/           Litestream as a library; restore
+  gateway/          payment gateways for guests paying online
   tunnel/           relay client
-  service/          windows service wrapper
+  relay/            the relay, and the wire format it shares with tunnel
+  winsvc/           windows service wrapper              (ADR-142)
 /web                embed.go + placeholder bundles     (ADR-025)
   terminal/         staff SPA        (React, Tailwind, shadcn ok)
   backoffice/       owner SPA        (React, Tailwind, shadcn ok)
   guest/            guest SPA        (React source on preact/compat, Tailwind, NO shadcn, <60KB gz)
+  shared/           what the three have in common, and the generated API types
 /docs
-/build              inno setup, docker, goreleaser
+/build              inno setup, docker, the systemd unit, the relay's deployment
 ```
 
 `internal/domain` must import nothing from `internal/db` or `internal/api`.
@@ -108,9 +114,9 @@ events.
 
 The relay stores nothing. On startup the venue server dials
 `wss://relay.<domain>/agent` with a venue key. The relay maps
-`venue_id → open socket`. A guest hitting `order.<domain>/t/<table>` resolves
-the venue, forwards the HTTP request as a framed message down the socket, and
-streams the response back.
+`venue_id → open socket`. A guest hitting `<venue>.<domain>/order/t/<code>`
+names the venue by its hostname (ADR-203); the relay forwards the HTTP request
+as a framed message down the socket, and streams the response back.
 
 Self-hosters can run their own relay, or point `cloudflared` at their machine
 and skip it entirely. This is deliberate — the POS must be fully functional with

@@ -10184,3 +10184,32 @@ being down, one linking the other. **Checked**: the relay's `help` and
 `relay.jskin.in/healthz` and an unknown venue's 503, on 2026-10-07.
 **Not done**: a venue connected by following the section from nothing.
 ---
+
+## ADR-285 - CONTRIBUTING carries a short account of how the code fits together
+2026-10 · Status: accepted. Phase 12, Task 7e.
+Decision:
+  - **A section, "How it fits together", in `CONTRIBUTING.md`**: one
+    diagram of the layers and which way they look; what each of
+    `domain`, `service`, `api` and `db` may and may not do; an order as
+    a list of events; one tap (two coffees, Send) followed through the
+    seven steps from the till to the printer; payment and the invoice
+    number in one transaction; generated types; the three web apps.
+  - **It follows one request and names files**, where
+    `01-architecture.md` gives the shape and the reasons. It links that
+    file and `02-domain.md` and copies neither.
+  - **The rest of `CONTRIBUTING.md` is brought up to date**: Go 1.25,
+    `make installer`, the tree (the relay, backup, gateway, tunnel,
+    winsvc, the workflows, the guides), scope no longer tied to a phase,
+    `KNOWN.md` in the checklist, and what a printing bug report should
+    carry.
+  - **`01-architecture.md` is corrected where it had stopped being
+    true**: Go's version, the repository layout (`service/` was listed
+    as the Windows service wrapper), a scheduler that was never built,
+    and the guests' address at the relay. Its reasoning is untouched.
+Because: a newcomer's first question is where a change goes, and the
+answer is the path one request takes.
+Cost: the seven steps name functions (`order.ToSend`, `printing.Plan`'s
+package) that can be renamed under them. Each step was read against
+`internal/service/order/service.go` on 2026-10-07; nothing checks it
+after that.
+---

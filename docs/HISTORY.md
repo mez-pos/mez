@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 7c: troubleshooting** (ADR-283).
+**Phase 12, Task 7d: the relay guide** (ADR-284). The venue's side in
+`deploy.md`, "Guests ordering from their phones": three settings
+(`public_url` with the two), where they go, how to check.
+`build/relay/README.md` for the operator: the key, the venue id, every
+setting, what to back up. The compose file's example address corrected.
+
+Before it, **Phase 12, Task 7c: troubleshooting** (ADR-283).
 `docs/troubleshooting.md`: the printer not found or not printing, a tablet
 that cannot reach the server, Windows's warning, guests who cannot order
 from their phones, the drawer that will not open. Each from the screen's

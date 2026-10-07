@@ -9,6 +9,7 @@ on the other side of it.
 - [Set up](#set-up)
 - [Run it while you work](#run-it-while-you-work)
 - [Where things are](#where-things-are)
+- [How it fits together](#how-it-fits-together)
 - [The rules that are never broken](#the-rules-that-are-never-broken)
 - [Writing code](#writing-code)
 - [Tests](#tests)
@@ -29,8 +30,9 @@ on the other side of it.
 - **The stack is settled**: Go, SQLite, sqlc, goose, `net/http`, React,
   TypeScript, Vite, Tailwind. If you think a choice is wrong, make the case in
   an issue rather than in a pull request that switches it.
-- **Out of scope until phase 10+ is done**: loyalty, gift cards, purchasing,
-  timesheets, memberships, delivery aggregators.
+- **Out of scope for now**: loyalty, gift cards, purchasing, timesheets,
+  memberships, delivery aggregators
+  ([`docs/00-product.md`](docs/00-product.md)).
 
 By contributing you agree that your contribution is licensed under the
 project's licence, AGPL-3.0 (see [LICENSE](LICENSE)).
@@ -41,7 +43,7 @@ You need:
 
 | Tool | Version | For |
 |---|---|---|
-| Go | 1.24 or newer | The server |
+| Go | 1.25 or newer | The server. `go.mod` names the exact toolchain, and `go` fetches it by itself |
 | Node | 22.12 or newer | The three web apps |
 | GNU Make and a POSIX shell | any | The build. On Windows: Git Bash plus GNU Make, or WSL |
 | sqlc | 1.31 | Only if you change SQL (`make generate`) |
@@ -66,6 +68,7 @@ these two.
 | `make run` | Runs the server |
 | `make dev` | Dev venue, server and the web apps with hot reload |
 | `make dist` | Release binaries for Windows, Linux and macOS |
+| `make installer` | The Windows installer, around the binary `make dist` built. Needs Inno Setup 6 |
 | `make help` | Lists everything |
 
 ## Run it while you work
@@ -112,17 +115,26 @@ one.
 ## Where things are
 
 ```
-cmd/mez/              the binary: serve, setup, pair, --test-print
+cmd/mez/              the server, and its commands: setup, pair, unlock,
+                      restore, service, table-codes, --test-print
+cmd/relay/            the optional relay, a separate small program
 internal/
   domain/             pure business rules, no IO: money, order events and
                       projection, invoice series, tax, shifts, stock, tips...
   service/            application services, one package per capability:
-                      order, menus, shift, stock, settings, reports...
+                      order, menus, shift, stock, settings, printing,
+                      reports, firstrun (the setup wizard's)...
   api/                HTTP handlers: decode, call one service method, encode
   db/                 SQLite, migrations (goose), queries (sqlc) and gen/
   auth/               devices, pairing, staff PINs, roles and permissions
   hub/                the live WebSocket stream to every device
-  device/             ESC/POS printing and the durable print queue
+  device/             escpos (the bytes), printq (the durable queue),
+                      discover (finding a printer)
+  backup/             Litestream in the binary: a folder or a bucket, restore
+  gateway/            payment gateways for guests paying online
+  tunnel/             the venue's outbound link to a relay
+  relay/              the relay itself, and the wire format the two share
+  winsvc/ fsperm/     the Windows service; who may read the data directory
   config/ logging/    settings from file, env and flags; structured logs
   codegen/            Go structs to TypeScript types
 web/
@@ -130,12 +142,106 @@ web/
   backoffice/         the owner's back office (React)
   guest/              guest ordering, Preact, 60 KB budget
   shared/             UI primitives, API client, generated api-types.ts
-build/                Dockerfile and compose
-docs/                 product, architecture, domain, conventions, ADRs, plan
+build/                Dockerfile and compose, the systemd unit, installer/
+                      (Inno Setup), relay/ (deploying one), release.sh
+.github/workflows/    ci.yml (the two gates) and release.yml (a tag)
+docs/                 product, architecture, domain, conventions, ADRs, plan,
+                      and the guides: deploy, running, hardware,
+                      troubleshooting, releasing
 ```
 
 `internal/domain` imports nothing from `db` or `api`, and a test fails the
 build if it does.
+
+## How it fits together
+
+Five minutes on the shape of the code.
+[`docs/01-architecture.md`](docs/01-architecture.md) has the reasons, and
+[`docs/02-domain.md`](docs/02-domain.md) the rules about money, orders,
+invoices and tax.
+
+**One process, one file of data.** `mez` is an HTTP server, a SQLite
+database it alone writes, and a few workers beside them. The tills, the
+kitchen screens and the back office are browsers talking to it; they hold
+no data of their own.
+
+```
+   browser (web/terminal, web/backoffice, web/guest)
+        |  JSON over HTTP                      ^  events over one WebSocket
+        v                                      |
+   internal/api        decode, check the device and the person, call one method
+        |
+        v
+   internal/service/*  one use case each, in one write transaction
+        |        \
+        v         v
+   internal/domain    internal/db            after the commit:
+   the rules, pure    SQL by hand (sqlc)     internal/hub  -> every device
+                           |
+                           v
+                        SQLite  <- internal/backup copies it elsewhere
+                           |
+                      print_jobs  -> internal/device/printq -> the printer
+```
+
+The layers only look down:
+
+- **`domain`** knows no HTTP and no SQL, and takes the time as an argument.
+  It is where a rule is written and where it is tested.
+- **`service`** loads through `db`, asks `domain`, and writes in one
+  transaction. One method is one thing a person does.
+- **`api`** turns a request into one service call and its result into JSON.
+  If a handler is deciding something, it is in the wrong place.
+- **`db`** is the only package that speaks SQL.
+
+Beside them, each started and stopped by `cmd/mez`: the **hub** (the live
+stream), the **print queue**, the **backup**, and the **tunnel** (the
+outbound link to a relay, when one is set). `cmd/relay` is a second, small
+program that shares only `internal/relay`.
+
+**An order is a list of events, never a row that is edited.** A line added,
+a ticket sent, a payment tendered: each is appended to the order's stream.
+What a screen shows is the stream folded into a state
+(`internal/domain/order`, `project.go`). To change a line you append an
+event that corrects it. This is why an order can always say how it came to
+be what it is.
+
+**One tap, followed through.** A waiter adds two coffees and presses Send:
+
+1. The till posts to `/api/v1/orders/...` with its device token, the
+   signed-in person, and an idempotency key, so that a retry over bad
+   Wi-Fi cannot send the ticket twice.
+2. `internal/api` checks the device, the person and their permission,
+   decodes the body, and calls the order service's `Send`.
+3. The service opens a write transaction, loads the order's events and
+   folds them into its state.
+4. The domain decides what follows (`order.ToSend`: which lines go to which
+   station) and answers with new events. The service folds them onto the
+   state once more, which is the domain's check that they are allowed.
+5. Still in that transaction, the events are appended and the kitchen
+   tickets are laid out as ESC/POS bytes and saved as print jobs
+   (`internal/service/printing`). Then it commits. Either all of it
+   happened or none of it did.
+6. After the commit the change goes to the hub, and every paired device
+   hears it on its WebSocket: the kitchen display shows the ticket, and
+   the other tills see the table change. A device that was offline asks
+   for what it missed when it comes back.
+7. The print queue's worker picks the job up and sends the bytes to the
+   station's printer, trying again if the printer does not answer.
+
+Payment follows the same path, with one more thing inside the transaction:
+the tender that settles the bill takes the next invoice number, so a
+number is never used without its payment or skipped.
+
+**Types cross the wire once.** The request and response structs in
+`internal/api` are turned into `web/shared/api-types.ts` by `make generate`,
+and `make check` fails if the file is out of date. A screen cannot disagree
+with the server about a field's name.
+
+**Three web apps, one shared folder.** The terminal (which is also the
+kitchen display) and the back office are React. The guest app is the same
+kind of source run on Preact, because it loads on a stranger's phone and
+has a 60 KB budget; it imports from `web/shared` only what fits.
 
 ## The rules that are never broken
 
@@ -272,7 +378,7 @@ Before asking for review, check:
 - [ ] A migration, if any, is new rather than an edit
 - [ ] `make generate` output is committed if SQL or API structs changed
 - [ ] A non-obvious choice has an ADR
-- [ ] `docs/STATE.md` notes anything left broken or untried
+- [ ] [`docs/KNOWN.md`](docs/KNOWN.md) notes anything left broken or untried
 
 ## Reporting a bug or a security issue
 
@@ -280,7 +386,9 @@ Before asking for review, check:
 the version (`version` and `commit` from `/api/v1/health`, also on the first
 line the server logs) and the
 relevant lines from `logs/mez.log` in the data directory. For a printing bug,
-add the printer model and paper width.
+add the printer's make and model, the paper width, and what the test print
+did ([`docs/hardware.md`](docs/hardware.md#try-it-before-service)): no
+printer has been tried yet, so every report is new information.
 
 **A security issue:** do not open a public issue. Report it privately through
 the repository's **Security** tab ("Report a vulnerability"), with the steps
