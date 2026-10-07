@@ -298,7 +298,7 @@ session; split one again if it is not.
   - [x] **Task 10b: Ingredients: the screen.** **Import** on Inventory,
     spec first in `backoffice-stock.md`. Reuse what `ImportModal.tsx` can
     give; make it shared only if both screens then read more simply.
-  - [ ] **Task 10c: Recipes: read the file and the server.** One row for
+  - [x] **Task 10c: Recipes: read the file and the server.** One row for
     each ingredient a dish takes: Dish, Ingredient, Amount. A dish is found
     by its name, an ingredient by its name; a dish named twice across two
     categories is a problem that says so. Decide and write down whether a

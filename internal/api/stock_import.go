@@ -78,3 +78,57 @@ func stockImportRefusal(problems int) string {
 	}
 	return fmt.Sprintf("The file has %d problems, so nothing was imported. Check it again to see them.", problems)
 }
+
+// Recipes from a spreadsheet (phase 10, Task 10c, ADR-300): the same three
+// routes, for what each dish takes from stock.
+
+// stockRecipesTemplateName is the file the recipes template is saved as.
+const stockRecipesTemplateName = "mez-recipes-template.csv"
+
+func (s *Server) mountRecipeImport(handle func(pattern string, h http.HandlerFunc)) {
+	handle("GET /api/v1/stock/recipes/import/template", s.stockRecipesTemplate)
+	handle("POST /api/v1/stock/recipes/import/preview", s.previewStockRecipes)
+	handle("POST /api/v1/stock/recipes/import", s.importStockRecipes)
+}
+
+// stockRecipesTemplate answers the file to fill in: a row for every dish on
+// sale that has no recipe.
+func (s *Server) stockRecipesTemplate(w http.ResponseWriter, r *http.Request) {
+	rows, err := s.stock.RecipesTemplate(r.Context(), Meta(r).VenueID)
+	if err != nil {
+		s.writeStockError(w, r, err)
+		return
+	}
+	s.writeCSV(w, r, stockRecipesTemplateName, export.Table{Header: domstock.RecipeColumns, Rows: rows})
+}
+
+func (s *Server) previewStockRecipes(w http.ResponseWriter, r *http.Request) {
+	data, ok := s.importFile(w, r, CodeInvalidStock)
+	if !ok {
+		return
+	}
+	plan, err := s.stock.PreviewRecipes(r.Context(), Meta(r).VenueID, data)
+	if err != nil {
+		s.writeStockError(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, s.log, http.StatusOK, plan)
+}
+
+func (s *Server) importStockRecipes(w http.ResponseWriter, r *http.Request) {
+	data, ok := s.importFile(w, r, CodeInvalidStock)
+	if !ok {
+		return
+	}
+	done, err := s.stock.ImportRecipes(r.Context(), Meta(r).VenueID, data)
+	if errors.Is(err, stock.ErrImportRefused) {
+		writeFieldError(w, s.log, http.StatusUnprocessableEntity, CodeStockImportRefused, stockImportRefusal(len(done.Problems)), "file")
+		return
+	}
+	if err != nil {
+		s.writeStockError(w, r, err)
+		return
+	}
+	writeJSON(w, s.log, http.StatusOK, done)
+}

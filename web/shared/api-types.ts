@@ -2110,6 +2110,33 @@ export interface StockImportProblem {
   message: string;
 }
 
+export interface RecipesImport {
+  to_add: RecipeImportDish[];
+  skipped: RecipeImportSkipped[];
+  blank: number;
+  problems: StockImportProblem[];
+  imported: boolean;
+}
+
+export interface RecipeImportDish {
+  item_id: number;
+  dish: string;
+  parts: RecipeImportPart[];
+}
+
+export interface RecipeImportPart {
+  row: number;
+  stock_item_id: number;
+  ingredient: string;
+  unit: StockUnit;
+  qty: number;
+}
+
+export interface RecipeImportSkipped {
+  row: number;
+  dish: string;
+}
+
 export interface ClosingStockItem {
   id: number;
   name: string;

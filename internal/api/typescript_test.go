@@ -368,6 +368,7 @@ func generate() (*ts.Generator, error) {
 		stock.Recorded{}, stock.Movement{}, movementsResponse{},
 		stock.RecipePart{}, stock.Recipe{}, stock.RecipeBook{}, recipeRequest{},
 		stock.ItemsImport{}, stock.ItemImportRow{}, stock.ImportSkipped{}, stock.ImportProblem{},
+		stock.RecipesImport{}, stock.RecipeImportDish{}, stock.RecipeImportPart{}, stock.RecipeImportSkipped{},
 		stock.ClosingItem{}, stock.ClosingResult{}, stock.ClosingSheet{}, stock.ClosingCountInput{}, closingCountRequest{},
 		stock.ClosingReport{}, stock.WasteReport{},
 		// People.

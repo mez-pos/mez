@@ -10751,3 +10751,50 @@ good file that added four ingredients with nothing on hand and left the
 one already there alone; and the same file again, which added nothing.
 The dialog typechecks, its words are tested, and it is the menu
 dialog's code with the store's types; it still owes a human's eyes.
+
+## ADR-300 - Recipes are imported a row for each ingredient, and only for a dish that has none
+2026-10 · Status: accepted. Phase 10, Task 10c.
+Decision: what each dish takes from stock can come from a CSV file:
+`GET /api/v1/stock/recipes/import/template`, `POST
+/api/v1/stock/recipes/import/preview` and `POST
+/api/v1/stock/recipes/import`, all `stock.manage`. The columns are
+**Dish**, **Ingredient** and **Amount**, a row for each ingredient a
+dish takes; a dish with three ingredients is three rows, together or
+not. The task left three things open:
+  - **A file gives a recipe; it does not set or add to one.** A dish
+    that already takes something from stock is left as it is and its
+    rows are said to be skipped, whatever they say. That is the import's
+    rule (ADR-288) and the safe reading here: a recipe decides what
+    every sale takes from the store, and a file that rewrote one would
+    change the stock figures from then on with nothing on screen to say
+    so. Changing a recipe is done where it can be seen, on the screen.
+  - **Dishes only.** What a choice takes (the milk on Oat) is set on
+    the screen. A choice's name is unique only within its group, and
+    "Regular" is a size in one group and a sugar level in another; a
+    file that named choices would need the group as well, for a part of
+    the recipes that is a handful of rows.
+  - **Two dishes of one name** (the menu allows it across categories) is
+    a problem that names the categories and sends the owner to the
+    screen. The file has no Category column: one more thing to get
+    wrong in every row, to serve a case that is rare.
+And what follows from them:
+  - **A dish is found among the dishes on sale** (it and its category in
+    use), which is what the Recipes screen lists. An ingredient is found
+    by name among the store's; a retired one is a problem.
+  - **Amount is in the ingredient's own unit**, above zero, to a
+    thousandth, read as the store's levels are (ADR-298). The file has
+    no unit column: the unit is the ingredient's, and a second place to
+    say it is a second place to say it wrong.
+  - **Part of a recipe is not a recipe.** One bad row refuses the file
+    as ever, and the dish it belongs to is kept out of the plan even
+    where its other rows are right.
+  - **The template is the work still to do**: a row for every dish on
+    sale with no recipe, in menu order, with its Ingredient and Amount
+    empty. A row left as it came (a dish and nothing else) is counted as
+    blank and is not a problem, so the owner fills in what they know and
+    gives the rest back untouched. Once every dish has a recipe the
+    template is its headings.
+Cost: a recipe given wrongly from a file cannot be corrected from a
+file; it is edited on the screen. A dish with one ingredient entered by
+hand cannot have the rest added from a file. The same ingredient twice
+in a dish is a problem, not a sum. No screen yet (10d).

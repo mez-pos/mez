@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"maps"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/service/stock"
 )
 
@@ -140,5 +142,128 @@ func TestStockImportPreviewSaysWhatIsWrong(t *testing.T) {
 	}
 	if p := plan.Problems[1]; p.Row != 5 || p.Column != "Name" {
 		t.Errorf("second problem: %+v", p)
+	}
+}
+
+// recipeTill is the stock till with a menu (an Espresso and a Latte) and a
+// store (Beans and Milk) to write recipes between.
+func recipeTill(t *testing.T) (*till, map[string]string) {
+	t.Helper()
+	w, owner := newStockTill(t)
+	ctx := context.Background()
+	if _, err := w.db.CreateMenu(ctx, 1, db.MenuSpec{
+		Stations:   []db.StationSpec{{Code: "bar", Name: "Bar"}},
+		Courses:    []db.CourseSpec{{Number: 1, Name: "Mains"}},
+		TaxClasses: []db.TaxClassSpec{{Name: "Food"}},
+		Categories: []db.CategorySpec{{Name: "Coffee", Items: []db.ItemSpec{
+			{Name: "Espresso", Price: 12000, TaxClass: "Food", Station: "bar", Course: 1},
+			{Name: "Latte", Price: 18000, TaxClass: "Food", Station: "bar", Course: 1},
+		}}},
+	}, seededAt); err != nil {
+		t.Fatal(err)
+	}
+	itemsImportOf(t, sendCSV(w, "/api/v1/stock/import", "text/csv", "Name,Counted in\nBeans,g\nMilk,ml\n", owner))
+	return w, owner
+}
+
+func recipesImportOf(t *testing.T, rec *httptest.ResponseRecorder) stock.RecipesImport {
+	t.Helper()
+	if rec.Code != http.StatusOK {
+		t.Fatalf("%d %s, want 200", rec.Code, rec.Body)
+	}
+	var out stock.RecipesImport
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+// TestRecipeImportOverHTTP: the owner gets the template, which lists the
+// dishes with no recipe, fills it in, checks it, imports it, and the recipes
+// are the ones the Recipes screen reads.
+func TestRecipeImportOverHTTP(t *testing.T) {
+	w, owner := recipeTill(t)
+
+	rec := send(w.handler, http.MethodGet, "/api/v1/stock/recipes/import/template", "", owner)
+	var file csvResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &file); err != nil || rec.Code != http.StatusOK {
+		t.Fatalf("template: %d %s (%v)", rec.Code, rec.Body, err)
+	}
+	if file.Filename != "mez-recipes-template.csv" || file.Text != byteOrderMark+"Dish,Ingredient,Amount\r\nEspresso,,\r\nLatte,,\r\n" {
+		t.Errorf("template: %q %q", file.Filename, file.Text)
+	}
+	// As it comes it is nothing wrong and nothing to do.
+	if plan := recipesImportOf(t, sendCSV(w, "/api/v1/stock/recipes/import/preview", "text/csv", file.Text, owner)); len(plan.Problems) != 0 || plan.Blank != 2 || len(plan.ToAdd) != 0 {
+		t.Errorf("the template, checked: %+v", plan)
+	}
+
+	const filled = "Dish,Ingredient,Amount\nEspresso,Beans,18\nLatte,Beans,18\nLatte,Milk,200\n"
+	rec = sendCSV(w, "/api/v1/stock/recipes/import/preview", "text/csv", filled, owner)
+	plan := recipesImportOf(t, rec)
+	if rec.Header().Get("Cache-Control") != "no-store" || plan.Imported || len(plan.ToAdd) != 2 || len(plan.ToAdd[1].Parts) != 2 {
+		t.Fatalf("preview: %+v", plan)
+	}
+	if !strings.Contains(rec.Body.String(), `"ingredient":"Milk","unit":"ml","qty":200000`) {
+		t.Errorf("the milk as sent: %s", rec.Body)
+	}
+
+	book := func() stock.RecipeBook {
+		t.Helper()
+		rec := send(w.handler, http.MethodGet, "/api/v1/stock/recipes", "", owner)
+		var out stock.RecipeBook
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatalf("%d %s: %v", rec.Code, rec.Body, err)
+		}
+		return out
+	}
+	if got := book(); len(got.Items) != 0 {
+		t.Fatalf("a preview wrote: %+v", got.Items)
+	}
+
+	if done := recipesImportOf(t, sendCSV(w, "/api/v1/stock/recipes/import", "text/csv", filled, owner)); !done.Imported || len(done.ToAdd) != 2 {
+		t.Fatalf("import: %+v", done)
+	}
+	if got := book(); len(got.Items) != 2 {
+		t.Errorf("the recipes: %+v", got.Items)
+	}
+
+	again := recipesImportOf(t, sendCSV(w, "/api/v1/stock/recipes/import", "text/csv", filled, owner))
+	if again.Imported || len(again.ToAdd) != 0 || len(again.Skipped) != 3 {
+		t.Errorf("the same file again: %+v", again)
+	}
+	// And the template now has no dish left to list.
+	rec = send(w.handler, http.MethodGet, "/api/v1/stock/recipes/import/template", "", owner)
+	if err := json.Unmarshal(rec.Body.Bytes(), &file); err != nil || file.Text != byteOrderMark+"Dish,Ingredient,Amount\r\n" {
+		t.Errorf("the template once every dish has a recipe: %q (%v)", file.Text, err)
+	}
+}
+
+func TestRecipeImportRefusals(t *testing.T) {
+	w, owner := recipeTill(t)
+	cashier := w.asStaff(w.signInAs(t, "stf_ASHA0001", "2468").Token)
+	const good = "Dish,Ingredient,Amount\nEspresso,Beans,18\n"
+
+	tests := []struct {
+		name, path, contentType, body string
+		as                            map[string]string
+		status                        int
+		code                          ErrorCode
+	}{
+		{"an ingredient the store does not have", "/api/v1/stock/recipes/import", "text/csv", good + "Latte,Oat milk,200\n", owner, http.StatusUnprocessableEntity, CodeStockImportRefused},
+		{"JSON, not a file", "/api/v1/stock/recipes/import", "application/json", `{}`, owner, http.StatusUnsupportedMediaType, CodeInvalidStock},
+		{"a cashier importing", "/api/v1/stock/recipes/import", "text/csv", good, cashier, http.StatusForbidden, CodeForbidden},
+		{"a cashier checking", "/api/v1/stock/recipes/import/preview", "text/csv", good, cashier, http.StatusForbidden, CodeForbidden},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := sendCSV(w, tt.path, tt.contentType, tt.body, tt.as)
+			if got := errorOf(t, rec); rec.Code != tt.status || got.Code != tt.code {
+				t.Errorf("%d %+v, want %d %s", rec.Code, got, tt.status, tt.code)
+			}
+		})
+	}
+	rec := send(w.handler, http.MethodGet, "/api/v1/stock/recipes", "", owner)
+	if !strings.Contains(rec.Body.String(), `"items":[]`) {
+		t.Errorf("a refusal wrote a recipe: %s", rec.Body)
 	}
 }

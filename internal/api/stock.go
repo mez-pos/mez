@@ -32,6 +32,9 @@ type Stock interface {
 	PreviewItems(ctx context.Context, venueID int64, data []byte) (stock.ItemsImport, error)
 	ImportItems(ctx context.Context, venueID int64, data []byte) (stock.ItemsImport, error)
 	ItemsTemplate(ctx context.Context, venueID int64) ([][]string, error)
+	PreviewRecipes(ctx context.Context, venueID int64, data []byte) (stock.RecipesImport, error)
+	ImportRecipes(ctx context.Context, venueID int64, data []byte) (stock.RecipesImport, error)
+	RecipesTemplate(ctx context.Context, venueID int64) ([][]string, error)
 }
 
 // WithStock mounts the stock routes. They need WithDevices and WithStaff,
@@ -102,6 +105,7 @@ func (s *Server) mountStock(mux *http.ServeMux) {
 	handle("PUT /api/v1/stock/recipes/items/{id}", s.setRecipe(s.stock.SetItemRecipe))
 	handle("PUT /api/v1/stock/recipes/modifiers/{id}", s.setRecipe(s.stock.SetModifierRecipe))
 	s.mountStockImport(handle)
+	s.mountRecipeImport(handle)
 
 	// The closing count is part of closing the shift, so it needs what the
 	// close needs (ADR-114).
