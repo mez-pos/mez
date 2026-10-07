@@ -219,15 +219,30 @@ func TestTheProbeAsksABucketCheaply(t *testing.T) {
 	}
 	t.Cleanup(func() { database.Close(ctx); engine.Close(ctx) })
 
+	// Litestream writes its first snapshot once the bucket answers, on its
+	// own clock: on a fast machine that lands before the probe's third
+	// look, on a slow one after. What must hold is that the probe's own
+	// looks write nothing: over three more looks, the objects written do
+	// not grow. The first baseline that holds still is the proof.
 	deadline := time.Now().Add(10 * time.Second)
-	for fake.count("GET bucket") < 3 {
-		if time.Now().After(deadline) {
-			t.Fatalf("the probe asked %d times, want it to keep asking", fake.count("GET bucket"))
+	waitForLooks := func(n int) {
+		for fake.count("GET bucket") < n {
+			if time.Now().After(deadline) {
+				t.Fatalf("the probe asked %d times, want it to keep asking", fake.count("GET bucket"))
+			}
+			time.Sleep(10 * time.Millisecond)
 		}
-		time.Sleep(10 * time.Millisecond)
 	}
-	if n := fake.count("PUT object"); n != 0 {
-		t.Errorf("the probe wrote %d objects, want it only to look", n)
+	waitForLooks(3)
+	for {
+		looks, wrote := fake.count("GET bucket"), fake.count("PUT object")
+		waitForLooks(looks + 3)
+		if fake.count("PUT object") == wrote {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("the probe keeps writing: %d objects after %d looks, want it only to look", fake.count("PUT object"), fake.count("GET bucket"))
+		}
 	}
 	if got := engine.Status(); got.State == backup.StateFailing {
 		t.Errorf("Status = %+v with a bucket that answers, want it not failing", got)
