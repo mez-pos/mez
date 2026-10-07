@@ -341,7 +341,7 @@ session; split one again if it is not.
     -staff stf_...`, run at the machine like `mez unlock`, which sets a
     new PIN by the rules of ADR-260 and is in the audit log. Write what was
     found in `KNOWN.md` or the ADR either way, and in `troubleshooting.md`.
-  - [ ] **Task 12b: The dev banner prints a PIN the venue may not have.**
+  - [x] **Task 12b: The dev banner prints a PIN the venue may not have.**
     `build/dev.sh` says "sign in as Priya, PIN 246813" on every run, but a
     dev venue made before ADR-260 has 1234. Print the PIN only on the run
     that sets the venue up, and on later runs say where it came from and

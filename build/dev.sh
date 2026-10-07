@@ -18,7 +18,11 @@ PORT=${DEV_PORT:-7791}
 BIN=${DEV_BIN:-bin/mez}
 ORIGIN="http://127.0.0.1:$PORT"
 
+# The owner's PIN is known only on the run that sets the venue up: a venue
+# made by an older dev.sh, or one whose PIN was changed since, has another.
+fresh=""
 if [ ! -f "$DATA/mez.db" ]; then
+	fresh=yes
 	echo "Setting up a dev venue in $DATA"
 	# Setup creates the database file before it checks anything, so a setup
 	# that fails would leave a file with no venue, which the next run would
@@ -93,7 +97,14 @@ echo ""
 echo "  server       $ORIGIN"
 echo "  terminal     http://localhost:5173   (kitchen display: /kitchen)"
 echo "  back office  http://localhost:5174/backoffice/"
-echo "  sign in as Priya, PIN 246813; the demo staff and their PINs are above on a first run"
+if [ -n "$fresh" ]; then
+	echo "  sign in as Priya, PIN 246813; the demo staff and their PINs are above"
+else
+	# Not printed: this venue was set up on an earlier run, and what its PINs
+	# are now is not something this script knows.
+	echo "  sign in with the PINs this venue was set up with"
+	echo "  forgotten one? $BIN reset-pin -data-dir $DATA   (lists who there is; add -staff stf_... for a new PIN)"
+fi
 echo ""
 
 wait
