@@ -157,7 +157,7 @@ Phase 11.
     (Tasks 2 to 6). What is stale is corrected, what is missing is added,
     and nothing is rewritten that is still true. They stop saying what a
     later phase will bring.
-  - [ ] **Task 7b - Hardware: printers and drawers.**
+  - [x] **Task 7b - Hardware: printers and drawers.**
     `docs/hardware.md`, from the print code and not from a catalogue:
     what a printer must speak, how it is reached, paper widths, how the
     drawer is opened and through what, and what is not supported. Say

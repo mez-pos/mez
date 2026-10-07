@@ -8,7 +8,14 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 6: release automation** (ADR-280).
+**Phase 12, Task 7a: the install guides, checked** (ADR-281). Task 7 split
+in six. `deploy.md` and `running.md` read against the Makefile, the
+installer, the unit, the compose file, the release script and the binary's
+`-h`, and corrected: the relay, checksums, arm64, `-data-dir` under
+systemd, the release's image, the PIN hard lock, upgrading by platform, a
+table of every command. Documentation only.
+
+Before it, **Phase 12, Task 6: release automation** (ADR-280).
 `.github/workflows/release.yml`: a tag `v*` runs `make check`, `make dist`
 (now with `linux/arm64`), the installer on a Windows runner, the image for
 amd64 and arm64 to `ghcr.io`, and a draft release with checksums and notes

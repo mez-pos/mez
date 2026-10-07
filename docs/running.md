@@ -295,6 +295,9 @@ printer is on, on the same network as this computer, and at that address.
 `-save test.bin` writes the page to a file instead, so you can send it to a
 printer shared by Windows as raw bytes (`copy /b test.bin \\THIS-PC\Printer`).
 
+[`hardware.md`](hardware.md) says what a printer and a cash drawer need to
+be, how each is connected, and what mez cannot use.
+
 ## Stopping it
 
 Ctrl+C, or `SIGTERM` from a service manager. Either way it stops accepting new

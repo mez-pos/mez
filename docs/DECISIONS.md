@@ -10081,3 +10081,37 @@ how `mez --version` was found not to exist before it was written down.
 **Not run**: the `docker run` lines against `ghcr.io`, since no release
 has been made and no image is there; the upgrade steps on Linux.
 ---
+
+## ADR-282 - The hardware page is written from the bytes, and says no printer has been tried
+2026-10 · Status: accepted. Phase 12, Task 7b.
+Decision:
+  - **`docs/hardware.md` lists what a printer must do, not which printers
+    do it.** A table of the commands mez sends and what each is for; the
+    two ways to connect; the two paper widths; what is printed where,
+    with its cut and whether the drawer opens; what the text can hold;
+    the drawer; the queue's retries; the search; what is not supported.
+    Each from `internal/device/escpos`, `printq`, `discover`,
+    `service/printers`, `service/printing` and `cmd/mez/testprint.go`.
+  - **It opens by saying no printer has been printed on.** No make or
+    model is named as working, because none has been tried (ADR-080,
+    ADR-268). The test print is offered as the way to find out, and
+    the drawer flag as the thing to check before buying.
+  - **What the drawer does not do is said as plainly as what it does.**
+    It opens on a cash receipt and a cash credit note and on nothing
+    else: no button opens it, and cash in, cash out and the count do
+    not. The pulse is `DLE DC4`, pin 2, 200 ms, with no setting.
+  - **`deploy.md` stops saying a shared printer can be reached by running
+    the service as its user.** The printers screen has refused such a
+    name since ADR-259; `-user` is described for what is left of it.
+Because: a list of models nobody printed on is a promise. A list of
+commands is a thing an owner can hold a printer's manual against, and a
+test print is a thing they can run in the shop.
+Cost: an owner cannot look their printer up. Three statements come from
+how such printers generally behave and not from this code or a test:
+that a printer with no cutter passes over the cut, that some 80mm
+printers print 42 columns, and that some printers act only on `ESC p`
+or have the real-time pulse switched off. They are worded as such. The
+page records two gaps it did not close (`KNOWN.md`, Hardware): nothing
+opens the drawer without a sale, and the pin, the pulse and the pulse
+command cannot be changed.
+---

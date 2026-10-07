@@ -10,6 +10,15 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Hardware** (ADR-282; phase 12 Task 7b; `hardware.md`). Written from
+  the print code. **No printer and no drawer has been tried**, so no
+  model is named. Left as they are and now written down: nothing opens
+  the drawer without a cash sale or a cash refund (no button, and not
+  cash in, cash out or the count); the pulse is `DLE DC4`, pin 2, 200 ms,
+  with no setting, so a printer that acts only on `ESC p` will not open
+  it; paper is 48 or 32 columns, with no setting for a 42-column printer;
+  text on paper is ASCII, and any other script prints as `?`.
+
 - **Releases** (ADR-280; phase 12 Task 6; `releasing.md`). Every
   piece run by hand on 2026-10-07: the four binaries, the installer, the
   checksums, the notes, the image for both architectures. **Not run: the

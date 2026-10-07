@@ -8,34 +8,35 @@
 ## Current phase
 
 **Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 to 6 built;
-Task 7, the documentation, is split in six (7a to 7f) and 7a is done.
-Phase 11 has nothing left to build (Cashfree left out, ADR-254) and owes
-its walks.
+Task 7, the documentation, is split in six (7a to 7f): 7a and 7b are
+done. Phase 11 has nothing left to build (Cashfree left out, ADR-254)
+and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 7a: the install guides, checked** (ADR-281).
-`deploy.md` and `running.md` read against the Makefile, the installer,
-the unit, the compose file, the release script and the binary's `-h`.
-Corrected, not rewritten: the relay, checksums, `make installer`, arm64,
-`-data-dir` under systemd, the release's image, the PIN hard lock,
-upgrading by platform, the health check, a table of every command. They
-no longer point at a later phase. Documentation only: no code changed.
+**Phase 12, Task 7b: hardware, printers and drawers** (ADR-282).
+`docs/hardware.md`, from the print code: the commands a printer must
+take, network and Windows USB, 80mm and 58mm, what prints where with its
+cut and its drawer, ASCII only on paper, the drawer's fixed pulse, the
+queue's retries, the search, what is not supported. It opens by saying
+no printer has been printed on, and names no model. `deploy.md` no
+longer says a shared printer can be used. Documentation only.
 
 ## Next task
 
-**Phase 12, Task 7b: hardware, printers and drawers.** A new
-`docs/hardware.md`, from the print code (`internal/device/escpos`,
-`printq` and `discover` beside it, `cmd/mez/testprint.go`) and not from
-a catalogue: what a printer must speak,
-how it is reached (TCP 9100; Windows' own printers), paper widths, how
-the drawer is kicked and through what, what is not supported. Say which
-printers were printed on and which are only expected to work: **ask the
-owner which printer they have**, none is named in the repository. Then
-7c troubleshooting, 7d the relay guide (the compose file's example says
-`wss://.../tunnel`, the relay's README `https://`; mez takes both
-schemes, the path is unchecked), 7e CONTRIBUTING, 7f the README, which
-still says the installer arrives in phase 12. **For the owner, not a
+**Phase 12, Task 7c: troubleshooting.** A new `docs/troubleshooting.md`
+for the five that will happen: printer not found, a device cannot reach
+the server, the SmartScreen warning, the tunnel down, the drawer will
+not kick. Each from what the person sees, in mez's own words taken from
+the code (`printq.Unreachable`, the tunnel's states in
+`internal/api/tunnel.go`, the pair screen, the installer's messages),
+then what to check in order. `hardware.md` already has the drawer's
+facts and the printer's: link, do not repeat. `running.md`'s "When it
+will not start" stays and is linked. Then 7d the relay guide (the
+compose file's example says `wss://.../tunnel`, the relay's README
+`https://`; mez takes both schemes, the path is unchecked), 7e
+CONTRIBUTING, 7f the README, which still says the installer arrives in
+phase 12. **For the owner, not a
 task**: push a tag to try the release (`docs/releasing.md`); expect the
 first to need a second try. **Do not move Litestream past v0.5.15
 without running the tests on Windows.** Before a release,

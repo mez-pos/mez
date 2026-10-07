@@ -250,8 +250,10 @@ USB printer installed on the PC. Keep `mez.exe` in a folder every account
 can read, such as `C:\mez`, and not under a user's own folders (Downloads,
 Desktop): the service's account cannot open those.
 
-A printer that only one Windows user can see (a shared printer connected
-under their account) needs the service to run as them:
+A printer shared from another computer cannot be used at all
+([`hardware.md`](hardware.md#two-ways-to-connect-one)). If a printer
+installed on this PC is one the service's account cannot open, the service
+can run as a Windows user who can:
 
 ```powershell
 $env:MEZ_SERVICE_PASSWORD = "their password"
