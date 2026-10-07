@@ -230,7 +230,10 @@ func (m *Manager) Set(ctx context.Context, cfg Config) (restartNeeded bool, err 
 	m.mu.Lock()
 	m.saved = cfg
 	m.mu.Unlock()
-	m.opts.Log.Info("the backup's destination was changed", "backup", cfg)
+	// Named field by field. The whole Config would log safely too (its
+	// LogValue leaves the secret out), but a line that cannot carry the
+	// secret is better than one that relies on not doing so.
+	m.opts.Log.Info("the backup's destination was changed", "kind", string(cfg.Kind), "destination", cfg.Destination())
 
 	switch {
 	case !started:
