@@ -10019,7 +10019,10 @@ Decision:
   - **Least privilege**: the workflow has no permissions by default; one
     job may write packages and one may write the release. The tag's name
     reaches a script through the environment, and is checked to be a
-    version.
+    version. Docker's three actions, which run in the job that may write
+    packages, are pinned to commits and not to tags, and Dependabot
+    proposes their updates monthly; GitHub's own (`actions/*`) stay on
+    their major tags, as in the CI.
   - **`docs/releasing.md`** is the procedure, for whoever makes one.
 Because: the phase is done when an owner downloads one file. Somebody
 has to be able to make that file the same way twice.

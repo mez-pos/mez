@@ -1,0 +1,11 @@
+# Keeps the actions the workflows use up to date. The third-party ones in
+# release.yml are pinned to a commit (ADR-280), and a pin that nobody moves
+# is an old version with a known hole in it by the end of the year.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore
