@@ -1,10 +1,9 @@
-// What the two dialogs that take a file share (backoffice-menu.md, "Import"
-// and "Change prices"): the button that opens the file picker, a numbered
+// What every dialog that takes a file shares (backoffice-menu.md, "Import"
+// and "Change prices"; backoffice-stock.md, "Import"): the button that opens the file picker, a numbered
 // step, and the table of what is wrong with a file.
 
 import { useId, type ReactNode } from "react";
-import type { MenuImportProblem } from "../../../shared/api-types";
-import { whereOf } from "./import-logic";
+import { whereOf, type FileProblem } from "./file-logic";
 
 const chooseClass =
   "inline-flex min-h-tap cursor-pointer items-center rounded border border-line-strong bg-raised-high px-4 text-base font-semibold focus-within:outline-2 focus-within:outline-line-focus";
@@ -51,7 +50,7 @@ const head = "px-3 pb-2 pt-2.5 text-left text-meta font-bold uppercase text-fg-m
 interface ProblemsProps {
   /** How many, in which file, and that nothing was done. */
   line: string;
-  problems: readonly MenuImportProblem[];
+  problems: readonly FileProblem[];
   onChoose: (file: File | undefined) => void;
 }
 

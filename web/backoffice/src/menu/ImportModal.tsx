@@ -9,7 +9,7 @@ import { ApiError } from "../../../shared/api";
 import type { MenuImport } from "../../../shared/api-types";
 import { Button, Modal, Money, useToast } from "../../../shared/ui";
 import { useCsvFile } from "../sales/use-csv-download";
-import { ChooseFile, Problems, Step } from "./FileParts";
+import { ChooseFile, Problems, Step } from "../files/FileParts";
 import { addLabel, addedText, asCsv, examplesIn, examplesText, fileProblem, problemsText, summaryLines, templatePath, verdictOf } from "./import-logic";
 import { problemOf } from "./menu-logic";
 import type { MenuEditorApi } from "./use-menu-editor";

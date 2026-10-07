@@ -295,7 +295,7 @@ session; split one again if it is not.
     Count at close. No opening stock from a file: stock arrives by
     Receive, so the ledger says where it came from. Preview, import and
     template routes, `stock.manage`. Tests.
-  - [ ] **Task 10b: Ingredients: the screen.** **Import** on Inventory,
+  - [x] **Task 10b: Ingredients: the screen.** **Import** on Inventory,
     spec first in `backoffice-stock.md`. Reuse what `ImportModal.tsx` can
     give; make it shared only if both screens then read more simply.
   - [ ] **Task 10c: Recipes: read the file and the server.** One row for

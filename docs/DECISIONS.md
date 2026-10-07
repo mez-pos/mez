@@ -10717,3 +10717,37 @@ column. The reader refuses an unknown column, so an "In stock" column
 copied from an old system refuses the file, with the columns it does
 take. Cost in one column for three meanings is only as clear as the
 template and the screen make it. No screen yet (10b).
+
+## ADR-299 - Import on Inventory imports what the view shows, and the file dialogs share their parts
+2026-10 · Status: accepted. Phase 10, Task 10b.
+Decision: **Import** in the Inventory screen's head, beside Stock count
+and Log wastage, opens the import of whatever the view shows:
+ingredients on Stock levels (this task), recipes on Recipes (10d). It is
+a button and not the Menu screen's Spreadsheet pill, because Inventory
+has one thing a file does on each view, not three.
+  - **The ingredients dialog is the menu import's** (ADR-291): three
+    steps, the server's answer, **Add N ingredients**. Step 2 is where
+    the three meanings of Cost are said, in the words the item form
+    uses. Each row to add shows what it is counted in, its low level and
+    its cost with its measure ("₹60.00 / l").
+  - **It says twice that nothing is in stock yet**: under the list
+    before adding, and in the toast after. An owner who imports fifty
+    ingredients and sees fifty at zero should not think it failed.
+  - **What a file dialog is made of moved to `web/backoffice/src/files/`**:
+    the file picker, the numbered step and the table of problems
+    (`FileParts.tsx`), and the checks and words that do not depend on
+    what the file is of (`file-logic.ts`). The menu's two dialogs and
+    this one use them. The three dialogs still each hold their own
+    check, add and check-again steps: they differ in what is refused
+    and what is said, and a hook that hid that would be harder to read
+    than three short components.
+Cost: three dialogs to change when the shape changes. **The dialog was
+not walked in a browser**: the test browser closed within seconds of
+opening, four times running, on 2026-10-08. Its server was walked
+instead, over HTTP against `bin/mez` and a demo venue: the template; a
+semicolon file with a kilogram, a decimal comma, a row with no name and
+a bad yes or no, answered as four problems and refused at import; a
+good file that added four ingredients with nothing on hand and left the
+one already there alone; and the same file again, which added nothing.
+The dialog typechecks, its words are tested, and it is the menu
+dialog's code with the store's types; it still owes a human's eyes.

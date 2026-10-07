@@ -20,7 +20,9 @@ Inside the frame (`backoffice-shell.md`).
 
 - **The head:** "Inventory" in the serif, and under it a line of counts:
   "55 tracked ingredients · 6 low · 1 out of stock". At the right, **Stock
-  count**, **Log wastage**, and **Add ingredient** (terracotta).
+  count**, **Log wastage**, **Import**, and **Add ingredient** (terracotta).
+  Import is of whatever the view shows: ingredients on Stock levels,
+  recipes on Recipes.
 - **Two views**, as pills: **Stock levels** and **Recipes**.
 
 ### Stock levels (D19)
@@ -67,6 +69,36 @@ The table in a card, and beside it the week's wastage.
 
 Amounts are typed in the unit with up to three decimals ("1.5", "250") and
 sent in thousandths.
+
+### Import ingredients (ADR-298, ADR-299)
+
+A modal from **Import** on Stock levels, for a store that is already
+written down somewhere. It is the menu's import (`backoffice-menu.md`,
+"Import") for ingredients: it adds them, and never changes or removes one.
+
+- **Choose a file.** Three numbered steps:
+  1. "Get the template." with **Download template**
+     (`mez-ingredients-template.csv`).
+  2. "Fill it in, one ingredient on each row, and save it as CSV UTF-8.
+     Counted in is g, ml or each. Low at is in that unit. Cost is what you
+     pay for a kilogram, a litre or one."
+  3. "Choose the file." with **Choose a file**.
+- **Something is wrong** with it: the table of Where, Column and What is
+  wrong, under "3 problems in store.csv. Nothing has been added."
+- **Ready:** "12 ingredients to add." Then, each only when it applies: "2
+  are already in the store and are left as they are."; and, in the
+  attention tint, the line about the template's examples left in the file.
+  Under them the ingredients to add, scrolling inside itself: the name
+  over "Counted in ml · low at 2,000 ml · counted at the close", and its
+  cost ("₹60.00 / l", or "Not costed").
+  - Under the list: "They are added with nothing in stock. Use Receive
+    when a delivery comes in."
+  - **Add 12 ingredients** is the primary; **Choose another file** beside
+    it.
+- **Nothing to add:** "Every ingredient in store.csv is already in the
+  store."
+- **Added:** the modal closes; a toast, "Added 12 ingredients. Receive
+  stock to put it on hand."
 
 ### Recipes
 

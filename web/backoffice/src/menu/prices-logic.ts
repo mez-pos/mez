@@ -3,7 +3,7 @@
 // turns its answer into what the modal shows.
 
 import type { MenuPriceChange, MenuPrices, Money } from "../../../shared/api-types";
-import type { Verdict } from "./import-logic";
+import { count, type Verdict } from "../files/file-logic";
 
 /** How many rows that are not on the menu are named; the rest are counted. */
 const unknownNamed = 5;
@@ -12,10 +12,6 @@ const unknownNamed = 5;
 export function priceVerdict(plan: MenuPrices): Verdict {
   if (plan.problems.length > 0) return "problems";
   return plan.changes.length > 0 ? "ready" : "nothing";
-}
-
-function count(n: number, one: string, many: string): string {
-  return `${n} ${n === 1 ? one : many}`;
 }
 
 /** How far a price moves, as an amount to draw, and which way. */

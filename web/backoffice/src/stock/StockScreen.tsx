@@ -7,7 +7,7 @@
 // Suppliers tabs are not drawn. The wastage log is the report on Items and
 // inventory. Recipes are a view of their own here (rebuild.md, rule 4).
 
-import { ClipboardListIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { ClipboardListIcon, PlusIcon, Trash2Icon, UploadIcon } from "lucide-react";
 import { useState } from "react";
 import type { StockItem, StockRecorded } from "../../../shared/api-types";
 import { formatDelta, formatQty } from "../../../shared/stock-qty";
@@ -17,6 +17,7 @@ import { useMenu } from "../../../shared/use-menu";
 import { CheckField } from "../FormFields";
 import { usePermissions } from "../shell/BackOfficeShell";
 import { HistoryModal } from "./HistoryModal";
+import { ItemsImportModal } from "./ItemsImportModal";
 import { retiredCount, summary, summaryText, tableRows } from "./levels-logic";
 import { MovementModal } from "./MovementModal";
 import { RecipesView } from "./RecipesView";
@@ -48,6 +49,7 @@ export function StockScreen() {
   const [view, setView] = useState<View>("levels");
   const [open, setOpen] = useState<Open | null>(null);
   const [showRetired, setShowRetired] = useState(false);
+  const [importing, setImporting] = useState(false);
   const items = api.items.data?.items;
   const hasActive = items?.some((it) => it.active) ?? false;
   // The week's wastage is a report: without reports.view the card is not drawn.
@@ -69,6 +71,12 @@ export function StockScreen() {
             <Trash2Icon aria-hidden="true" size={17} />
             Log wastage
           </Button>
+          {view === "levels" && (
+            <Button disabled={!items} onClick={() => setImporting(true)}>
+              <UploadIcon aria-hidden="true" size={17} />
+              Import
+            </Button>
+          )}
           <Button variant="attention" onClick={() => setOpen({ kind: "add" })}>
             <PlusIcon aria-hidden="true" size={18} />
             Add ingredient
@@ -120,6 +128,7 @@ export function StockScreen() {
       )}
       {items && view === "recipes" && !menu.data && <p className="text-base text-fg-muted">Loading the menu</p>}
 
+      {importing && <ItemsImportModal api={api} onClose={() => setImporting(false)} />}
       {open && api.items.data && (
         <Opened open={open} items={api.items.data.items} currency={api.items.data.currency} api={api} onOpen={setOpen} onClose={() => setOpen(null)} />
       )}

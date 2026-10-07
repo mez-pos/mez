@@ -9,6 +9,7 @@ import type {
   RecipeRequest,
   StockEditResponse,
   StockItemInput,
+  StockItemsImport,
   StockItemsResponse,
   StockMovementInput,
   StockRecorded,
@@ -30,6 +31,10 @@ export interface StockApi {
   record: (id: number, input: StockMovementInput) => Promise<StockRecorded>;
   setItemRecipe: (itemId: number, req: RecipeRequest) => Promise<void>;
   setModifierRecipe: (modifierId: number, req: RecipeRequest) => Promise<void>;
+  /** What a CSV file of ingredients would add. Writes nothing. */
+  previewItems: (file: Blob) => Promise<StockItemsImport>;
+  /** Adds them, with nothing in stock. `imported` is false when the file had nothing new. */
+  importItems: (file: Blob) => Promise<StockItemsImport>;
 }
 
 export function useStock(): StockApi {
@@ -66,6 +71,8 @@ export function useStock(): StockApi {
       after(store.api.put<StockEditResponse>(`/api/v1/stock/recipes/items/${itemId}`, req), [[...recipesKey]]).then(() => undefined),
     setModifierRecipe: (modifierId, req) =>
       after(store.api.put<StockEditResponse>(`/api/v1/stock/recipes/modifiers/${modifierId}`, req), [[...recipesKey]]).then(() => undefined),
+    previewItems: (file) => store.api.post<StockItemsImport>("/api/v1/stock/import/preview", file, { timeoutMs: 30_000 }),
+    importItems: (file) => after(store.api.post<StockItemsImport>("/api/v1/stock/import", file, { timeoutMs: 30_000 })),
   };
 }
 
