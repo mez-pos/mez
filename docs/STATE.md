@@ -21,7 +21,8 @@ running backup: at once on Windows, at the next start elsewhere
 and never comes out. Types generated. The database's copies are now
 under `db/<generation>/`, and the database leaves its log alone while a
 backup runs: both fix backups that restored short. Tested over HTTP
-against a real folder; **not on Linux, and no bucket through the API**.
+against a real folder, and the suite on Linux in a container with the
+race detector; **no bucket saved through the API**.
 
 ## Next task
 

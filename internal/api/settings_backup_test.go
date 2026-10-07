@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -136,9 +137,17 @@ func TestBackupSettingsOverHTTP(t *testing.T) {
 		}
 	}
 
+	// Off is saved everywhere. Whether the backup stops now depends on
+	// the system (ADR-276): at once on Windows, and elsewhere it runs on
+	// to the old destination until the restart, and the answer says so.
 	status, out, _ = call(http.MethodPut, at, `{"kind":""}`)
-	if status != http.StatusOK || out.Kind != backup.KindOff || out.Status.State != backup.StateOff || out.Folder != "" {
+	if status != http.StatusOK || out.Kind != backup.KindOff || out.Folder != "" {
 		t.Fatalf("turning it off: %d %+v", status, out)
+	}
+	if live := runtime.GOOS == "windows"; live && (out.Status.State != backup.StateOff || out.RestartNeeded) {
+		t.Errorf("turned off where a backup can be stopped: %+v, want it off now", out)
+	} else if !live && (out.Status.State == backup.StateOff || !out.RestartNeeded) {
+		t.Errorf("turned off where a backup cannot be stopped: %+v, want it running on and a restart asked for", out)
 	}
 }
 

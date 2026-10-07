@@ -9716,4 +9716,20 @@ borrowed secret and the browser that goes away mid-save were theirs.
 saved through the API; a real bucket listed by generation
 (`TestARealBucket` covers it when one is named); the screen, which is
 Task 4e.
+**Seen later the same day, on Linux** (Go 1.26.8 in a Debian and an
+Alpine container on the developer's PC, the repository as committed):
+`internal/backup`, `internal/db`, `cmd/mez`, `internal/service/settings`
+and `internal/api` all pass, the backup's three times over and its two
+closing tests a hundred; and against a real MinIO beside it, generations
+in a bucket, a 12 MB database in parts, photos, a wrong secret and the
+whole server. One test had Windows' answer written into it (turning the
+backup off stops it at once) and now expects each system's own. The
+race detector ran for the first time, over the backup, the database and
+the server: nothing in mez's code. One race inside Litestream, between
+its closing of the database and a whole copy still being written by its
+compaction goroutine, which it stops only afterwards: the copy fails
+with a read error and is made again at the next start. Not reported to
+its authors. Still not seen on Linux: a `mez pair` run beside a server
+whose backup has just been changed, which is what the restart rule is
+for.
 ---

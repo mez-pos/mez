@@ -14,8 +14,13 @@
   4d). The API and no screen yet (4e). Seen on 2026-10-07 in tests on
   Windows: a destination saved, tried and backing up at once; swapped
   while selling; refused when it cannot be written to; over HTTP as an
-  owner and a cashier. **Not seen**: Linux or Docker, where a changed
-  destination waits for a restart; a bucket saved through the API. A
+  owner and a cashier. Seen on Linux in a container later that day:
+  the backup's, database's, server's, settings' and API's tests, a real
+  MinIO, and the race detector for the first time (clean in mez; one
+  race inside Litestream as it closes, which costs a whole copy in
+  flight at shutdown and nothing else). **Not seen**: `mez pair` beside
+  a Linux server whose backup was just changed; a bucket saved through
+  the API. A
   save can take twenty seconds. The destination left behind is not
   cleaned up, and neither are old generations under `db/`: each is a
   whole copy, and nothing yet says which are old. Generations sort by
