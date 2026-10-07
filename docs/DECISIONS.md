@@ -9471,3 +9471,78 @@ now". **Not seen**: Linux at run time
 service, so neither the nightly copy nor the pruning after seven days;
 a USB drive pulled out mid-service; a network share.
 ---
+
+## ADR-274 - A bucket is the second destination, through Litestream's own S3 client
+2026-10 · Status: accepted. Phase 12, Task 4b. Adds a dependency.
+Decision:
+  - **`backup.KindS3`**, in `backup.json` as `{"kind":"s3","s3":{...}}`:
+    `bucket`, `path`, `region`, `endpoint`, `access_key_id`,
+    `secret_access_key`. One kind for Amazon's S3, R2 and every other
+    service that speaks it; R2 is an endpoint, not a kind.
+  - **Litestream's `s3` package, and with it the AWS SDK for Go v2**
+    (`aws-sdk-go-v2` and `smithy-go`, at the versions Litestream v0.5.15
+    asks for). mez calls none of it directly.
+  - **Nothing is asked of the internet to start.** Litestream looks up a
+    bucket's region as it opens when it has neither a region nor an
+    endpoint, and a venue with no internet that morning would not open.
+    So a bucket needs one or the other, and the key and secret are both
+    required: without them the SDK goes looking in the environment and
+    the user's AWS files, which a service's account has not.
+  - **The path defaults to `mez`**, never the bucket's root, and the
+    database is under `<path>/db/` as it is in a folder.
+  - **With an endpoint the bucket goes in the path of the address**
+    (path style): R2 and MinIO take it, and the other way needs a DNS
+    name for each bucket.
+  - **Plain `http://` endpoints are allowed**, for a MinIO on the LAN.
+    The secret is never sent, only signatures made with it.
+  - **The secret is kept out of what is printed**: `S3` and `Config`
+    have `String`, `GoString` and `LogValue`, a test prints them every
+    way and reads the server's log. An endpoint with a key in it is
+    refused without being repeated back.
+  - **The probe asks a bucket once a minute** (a folder, every 15
+    seconds) by listing the nightly copies, a handful of names: a
+    request that fails on a wrong address, bucket or key, about 1,440 a
+    day. Eight seconds without an answer is unreachable.
+  - **Closing is on a budget of its own**: 5 seconds for the last copy,
+    2 when the probe has already found the destination gone. The SDK
+    retries ten times with a backoff, which with no internet is minutes,
+    and the backup is last on the shutdown stack.
+  - **The first look at the database moved from Close to Start**, into
+    a goroutine. With a bucket and no internet Litestream holds its lock
+    while it asks the bucket where it had got to, and a look made in
+    Close waited behind that lock for as long as the SDK retried. Close
+    now gives the look a second and then cancels it. "Back up now"
+    waits behind the same lock, so it too runs to one side and answers
+    when its caller's time is up.
+Because: a folder on the same premises burns with them. Litestream's
+client is the one its authors test against these services, checksum
+quirks of the S3-compatibles included, and writing another would be
+writing those bugs again.
+Cost: `bin/mez` grows from 24.7 MB to 34.0 MB, the SDK being most of
+it; it was 19.5 MB before backups. Twenty more modules in `go.sum`.
+A server started with no internet captures nothing for the bucket until
+it answers, not even on this machine: Litestream will not start reading
+the log before it has heard from the bucket once, so what is sold in
+that time is copied whole when the line returns, and a disk that dies
+before then takes it. A line that drops after the start loses nothing:
+the changes wait in the data directory. A folder has no such gap. The secret is in `backup.json` in the clear, kept by the
+data directory's permissions (ADR-259). No server-side encryption
+options, no storage class, no session tokens. The SDK still reads
+`AWS_ENDPOINT_URL`, `AWS_PROFILE` and their like from the environment,
+and a venue PC that has them set for something else could be sent
+astray. A second reader went over the shutdown and the secret; an
+endpoint that did not parse could have repeated a pasted key back, and
+does not now. **Seen on 2026-10-07**: in
+tests against a stand-in S3 written for them (`s3fake_test.go`: it
+checks who signed, not the signature, and has no multipart), a restore
+from the bucket alone across a restart, a wrong key and a wrong bucket
+each read as failing with the service's own word for it, and a bucket
+that cannot be reached stops neither the start, the sales nor the stop
+and is caught up when it returns. And against a real MinIO in Docker
+(`TestARealBucket`, `TestTheServerBacksUpToARealBucket`, run when
+`MEZ_TEST_S3_BUCKET` is set): the same, a 12 MB database that went up
+in parts and came back whole, a wrong secret refused as
+SignatureDoesNotMatch, and the whole server run, stopped and restored.
+**Not seen**: Amazon's S3 or R2 themselves; HTTPS to any of them; a
+slow or dropping line; a day of service and what it costs.
+---

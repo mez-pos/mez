@@ -23,8 +23,30 @@ import (
 // its own: the database closes with the backup still holding its log, and
 // the backup closes after it with the last of what was written.
 func TestTheServerBacksUpAndStopsInOrder(t *testing.T) {
+	serverBacksUpTo(t, backup.Config{Kind: backup.KindFolder, Folder: filepath.Join(t.TempDir(), "backups")})
+}
+
+// TestTheServerBacksUpToARealBucket is the same through a bucket named in
+// the environment (see TestARealBucket in internal/backup), and skipped
+// without one.
+func TestTheServerBacksUpToARealBucket(t *testing.T) {
+	bucket := os.Getenv("MEZ_TEST_S3_BUCKET")
+	if bucket == "" {
+		t.Skip("MEZ_TEST_S3_BUCKET is not set: no real bucket to test against")
+	}
+	serverBacksUpTo(t, backup.Config{Kind: backup.KindS3, S3: backup.S3{
+		Bucket:          bucket,
+		Endpoint:        os.Getenv("MEZ_TEST_S3_ENDPOINT"),
+		Region:          os.Getenv("MEZ_TEST_S3_REGION"),
+		AccessKeyID:     os.Getenv("MEZ_TEST_S3_ACCESS_KEY_ID"),
+		SecretAccessKey: os.Getenv("MEZ_TEST_S3_SECRET_ACCESS_KEY"),
+		Path:            "mez-test/server-" + time.Now().UTC().Format("20060102-150405.000"),
+	}})
+}
+
+func serverBacksUpTo(t *testing.T, cfg backup.Config) {
+	t.Helper()
 	dataDir := t.TempDir()
-	cfg := backup.Config{Kind: backup.KindFolder, Folder: filepath.Join(t.TempDir(), "backups")}
 	raw, err := json.Marshal(cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -59,6 +81,9 @@ func TestTheServerBacksUpAndStopsInOrder(t *testing.T) {
 
 	// The order, from the server's own log.
 	lines := readLog(t, dataDir)
+	if secret := cfg.S3.SecretAccessKey; secret != "" && strings.Contains(lines, secret) {
+		t.Error("the server's log carries the bucket's secret")
+	}
 	closedDB := strings.Index(lines, `subsystem=database`)
 	closedBackup := strings.Index(lines, `subsystem=backup took`)
 	if closedDB < 0 || closedBackup < 0 || closedBackup < closedDB {

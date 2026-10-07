@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -30,6 +32,9 @@ const (
 	// KindFolder is a folder this machine can write to: a second disk, a
 	// USB drive, a share.
 	KindFolder Kind = "folder"
+	// KindS3 is a bucket: Amazon's S3, Cloudflare's R2, or anything else
+	// that speaks S3.
+	KindS3 Kind = "s3"
 )
 
 // Config is where the backup goes.
@@ -37,6 +42,81 @@ type Config struct {
 	Kind Kind `json:"kind"`
 	// Folder is the destination of a KindFolder backup, absolute.
 	Folder string `json:"folder,omitempty"`
+	// S3 is the destination of a KindS3 backup.
+	S3 S3 `json:"s3,omitzero"`
+}
+
+// defaultS3Path is where in a bucket the backup goes when no path is
+// given. Never the bucket's root: a bucket is often shared, and the
+// backup is pruned by the program that wrote it.
+const defaultS3Path = "mez"
+
+// S3 is a bucket and what it takes to write to it.
+type S3 struct {
+	// Bucket is the bucket's name.
+	Bucket string `json:"bucket"`
+	// Path is the folder inside the bucket. Empty is "mez".
+	Path string `json:"path,omitempty"`
+	// Region is the bucket's region. Amazon needs it; with an Endpoint it
+	// may be left out.
+	Region string `json:"region,omitempty"`
+	// Endpoint is the address of a service that is not Amazon's, with its
+	// scheme: for R2, https://<account>.r2.cloudflarestorage.com.
+	Endpoint string `json:"endpoint,omitempty"`
+	// AccessKeyID and SecretAccessKey are the key the bucket is written
+	// with. The secret is a secret: it is never logged and never printed.
+	AccessKeyID     string `json:"access_key_id"`
+	SecretAccessKey string `json:"secret_access_key"`
+}
+
+// prefix is the folder inside the bucket, with the default applied.
+func (s S3) prefix() string {
+	if s.Path == "" {
+		return defaultS3Path
+	}
+	return s.Path
+}
+
+// String and LogValue keep the secret out of a log line or an error that
+// prints the whole destination.
+func (s S3) String() string {
+	return fmt.Sprintf("{Bucket:%s Path:%s Region:%s Endpoint:%s AccessKeyID:%s SecretAccessKey:%s}",
+		s.Bucket, s.Path, s.Region, s.Endpoint, s.AccessKeyID, redact(s.SecretAccessKey))
+}
+
+// GoString covers %#v, which goes around String.
+func (s S3) GoString() string { return "backup.S3" + s.String() }
+
+func (s S3) LogValue() slog.Value { return slog.StringValue(s.String()) }
+
+func redact(secret string) string {
+	if secret == "" {
+		return ""
+	}
+	return "[hidden]"
+}
+
+// LogValue is what a log line says of the whole destination. Without it
+// a JSON log would write the struct out field by field, secret and all.
+func (c Config) LogValue() slog.Value {
+	return slog.GroupValue(slog.String("kind", string(c.Kind)), slog.String("destination", c.Destination()))
+}
+
+// Destination names where the backup goes, for a log line or a person:
+// the folder, or the bucket and path. Never the key.
+func (c Config) Destination() string {
+	switch c.Kind {
+	case KindFolder:
+		return c.Folder
+	case KindS3:
+		where := "s3://" + c.S3.Bucket + "/" + c.S3.prefix()
+		if c.S3.Endpoint != "" {
+			where += " at " + c.S3.Endpoint
+		}
+		return where
+	default:
+		return ""
+	}
 }
 
 // ErrInvalidConfig is a destination that cannot be used as written. What is
@@ -56,9 +136,20 @@ func (c Config) Validate(dataDir string) error {
 		if c.Folder != "" {
 			return fmt.Errorf("%w: a folder is named and the kind is not %q", ErrInvalidConfig, KindFolder)
 		}
+		if c.S3 != (S3{}) {
+			return fmt.Errorf("%w: a bucket is named and the kind is not %q", ErrInvalidConfig, KindS3)
+		}
 		return nil
 	case KindFolder:
+		if c.S3 != (S3{}) {
+			return fmt.Errorf("%w: a bucket is named and the kind is %q", ErrInvalidConfig, KindFolder)
+		}
 		return validateFolder(c.Folder, dataDir)
+	case KindS3:
+		if c.Folder != "" {
+			return fmt.Errorf("%w: a folder is named and the kind is %q", ErrInvalidConfig, KindS3)
+		}
+		return c.S3.validate()
 	default:
 		return fmt.Errorf("%w: kind %q is not one this build knows", ErrInvalidConfig, c.Kind)
 	}
@@ -85,6 +176,68 @@ func validateFolder(folder, dataDir string) error {
 		return fmt.Errorf("%w: the folder %q would put the backup in the data directory", ErrInvalidConfig, folder)
 	}
 	return nil
+}
+
+// validate checks a bucket as written. It calls nobody: a key that is
+// wrong, or a bucket that is not there, is found out by the first copy.
+func (s S3) validate() error {
+	if !validBucket(s.Bucket) {
+		return fmt.Errorf("%w: %q is not a bucket's name (3 to 63 of a-z, 0-9, dot and hyphen)", ErrInvalidConfig, s.Bucket)
+	}
+	if s.AccessKeyID == "" || s.SecretAccessKey == "" {
+		// Litestream would go looking in the environment and in the
+		// user's own AWS files, and a service's account has neither.
+		return fmt.Errorf("%w: access_key_id and secret_access_key are not both set", ErrInvalidConfig)
+	}
+	if p := s.Path; p != "" {
+		if strings.HasPrefix(p, "/") || strings.HasSuffix(p, "/") || strings.Contains(p, "//") || strings.Contains(p, "\\") {
+			return fmt.Errorf("%w: the path %q must be like venue/backups, with no slash at either end", ErrInvalidConfig, p)
+		}
+		for _, part := range strings.Split(p, "/") {
+			if part == "." || part == ".." || strings.TrimSpace(part) != part || part == "" {
+				return fmt.Errorf("%w: the path %q has a part that is not a name", ErrInvalidConfig, p)
+			}
+		}
+	}
+	if s.Endpoint == "" {
+		// Without one Litestream asks Amazon where the bucket is, as it
+		// starts, and a venue with no internet that morning would not open.
+		if s.Region == "" {
+			return fmt.Errorf("%w: a bucket at Amazon needs its region, and one elsewhere needs its endpoint", ErrInvalidConfig)
+		}
+		return nil
+	}
+	// Asked of the text, before it is parsed: an address that does not
+	// parse still has the key in it, and is not repeated back either.
+	if strings.Contains(s.Endpoint, "@") {
+		return fmt.Errorf("%w: the endpoint must not carry a key; the key goes in access_key_id and secret_access_key", ErrInvalidConfig)
+	}
+	u, err := url.Parse(s.Endpoint)
+	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.RawQuery != "" || strings.Trim(u.Path, "/") != "" {
+		return fmt.Errorf("%w: the endpoint %q must be an address like https://host, and nothing after it", ErrInvalidConfig, s.Endpoint)
+	}
+	return nil
+}
+
+// validBucket is the common rule of S3 and the services that copy it.
+func validBucket(name string) bool {
+	if len(name) < 3 || len(name) > 63 {
+		return false
+	}
+	// The start counts as a dot, so a name opens with neither mark.
+	prev := byte('.')
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		switch {
+		case c >= 'a' && c <= 'z', c >= '0' && c <= '9':
+		case c == '-' && prev != '.':
+		case c == '.' && prev != '.' && prev != '-':
+		default:
+			return false
+		}
+		prev = c
+	}
+	return prev != '.' && prev != '-'
 }
 
 // within reports whether path is dir or somewhere under it, by their names

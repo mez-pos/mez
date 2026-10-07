@@ -170,7 +170,8 @@ maintain. Prefer stdlib. Current allowed set:
 
 `modernc.org/sqlite`, `pressly/goose`, `coder/websocket`, `kardianos/service`,
 `golang.org/x/crypto` (argon2), `google/uuid` (or a hand-rolled ID package),
-`benbjohnson/litestream` (pinned, ADR-273).
+`benbjohnson/litestream` (pinned, ADR-273), and through it
+`aws/aws-sdk-go-v2` (ADR-274).
 
 ## Things that are never acceptable
 

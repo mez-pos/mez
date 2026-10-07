@@ -8,28 +8,30 @@
 ## Current phase
 
 **Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2, 3 (3a
-to 3f) and 4a built; Task 4 is split into 4a to 4f. Phase 11 has nothing
-left to build (Cashfree left out, ADR-254) and owes its walks.
+to 3f), 4a and 4b built; Task 4 is split into 4a to 4f. Phase 11 has
+nothing left to build (Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 4a: Litestream in the binary, to a folder** (ADR-273).
-`internal/backup` runs Litestream v0.5.15 as a library over `mez.db`,
-started after the migrations and closed after the database. Where to is
-`<data dir>/backup.json` (`{"kind":"folder","folder":"D:\\mez-backup"}`),
-read at start; no file is no backup. `BackUpNow`, `Status` and `Restore`
-exist in Go and nothing calls them but tests. Tested on Windows against
-real files, the whole server included; **not run on Linux, and not for a
-day**.
+**Phase 12, Task 4b: S3 and R2** (ADR-274). `backup.KindS3` in
+`backup.json`: bucket, path (default `mez`), region or endpoint, key and
+secret, through Litestream's own S3 client. No internet stops nothing:
+the start, the sales and the stop go on and the status says failing.
+Tested against a stand-in S3 and a real MinIO in Docker, the whole
+server included; **Amazon's S3 and R2 themselves were not written to**.
 
 ## Next task
 
-**Phase 12, Task 4b: S3 and R2.** A second `backup.Kind` with bucket,
-path, region, endpoint, key and secret, over Litestream's `s3` client
-(the AWS SDK is a new dependency: an ADR). Read ADR-273 first. **Do not
-move Litestream past v0.5.15 without running the tests on Windows**: 0.5.16
-and 0.5.17 copy nothing there. Then 4c photos, 4d the write path and API,
-4e the screen, 4f `mez restore` and the docs. Before a release,
+**Phase 12, Task 4c: the photos folder (ADR-110).** `<data dir>/photos/`
+copied to `photos/` beside `db/` at the destination, folder and bucket,
+only the files missing there, on the probe's clock and on "back up now";
+`Restore` brings them back. `internal/backup/destination.go` is where a
+destination's parts are; a bucket needs put, list and get of its own,
+which is the AWS SDK called directly for the first time. **Do not move
+Litestream past v0.5.15 without running the tests on Windows.** To test
+against a real bucket, set `MEZ_TEST_S3_BUCKET` and its friends
+(`TestARealBucket`). Then 4d the write path and API, 4e the screen, 4f
+`mez restore` and the docs. Before a release,
 run the Windows installer once on a spare machine: "Open mez now" opening
 the setup link (ADR-270) and the window it opens in (ADR-272) have not
 been watched since they changed. `make check` embeds

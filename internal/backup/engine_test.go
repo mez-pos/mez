@@ -331,9 +331,7 @@ func TestStatus(t *testing.T) {
 		// The drive is pulled: the folder is gone and nothing can be made
 		// where it was. Nobody sells anything, so Litestream has no reason
 		// to touch it.
-		if err := os.Rename(v.cfg.Folder, v.cfg.Folder+"-pulled"); err != nil {
-			t.Fatalf("moving the destination away: %v", err)
-		}
+		rename(t, v.cfg.Folder, v.cfg.Folder+"-pulled")
 		if err := os.WriteFile(v.cfg.Folder, []byte("not a folder"), 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -346,9 +344,7 @@ func TestStatus(t *testing.T) {
 		if err := os.Remove(v.cfg.Folder); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.Rename(v.cfg.Folder+"-pulled", v.cfg.Folder); err != nil {
-			t.Fatal(err)
-		}
+		rename(t, v.cfg.Folder+"-pulled", v.cfg.Folder)
 		waitForState(t, engine, backup.StateOK)
 	})
 
@@ -397,6 +393,23 @@ func TestStatus(t *testing.T) {
 			t.Errorf("Status five minutes on with nothing synced = %+v, want failing", got)
 		}
 	})
+}
+
+// rename moves a folder, asking until it can: Windows will not move one
+// while a file in it is open, and Litestream opens one now and then.
+func rename(t *testing.T, from, to string) {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		err := os.Rename(from, to)
+		if err == nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("moving %s: %v", from, err)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
 }
 
 // waitForState waits for the probe to notice.

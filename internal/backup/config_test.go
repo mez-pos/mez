@@ -1,10 +1,14 @@
 package backup
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -35,7 +39,7 @@ func TestValidate(t *testing.T) {
 		{name: "the data directory is under where the copies would go", cfg: Config{Kind: KindFolder, Folder: filepath.Dir(dataDirInDB)}, dataDir: filepath.Join(dataDirInDB, "venue")},
 		{name: "the root of the venue's drive", cfg: Config{Kind: KindFolder, Folder: filepath.VolumeName(dataDir) + string(filepath.Separator)}, ok: true},
 		{name: "a trailing separator", cfg: Config{Kind: KindFolder, Folder: dataDir + string(filepath.Separator)}},
-		{name: "a kind from a later build", cfg: Config{Kind: "s3"}},
+		{name: "a kind from a later build", cfg: Config{Kind: "gcs"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -51,6 +55,94 @@ func TestValidate(t *testing.T) {
 				t.Fatalf("Validate: %v, want ErrInvalidConfig", err)
 			}
 		})
+	}
+}
+
+func TestValidateABucket(t *testing.T) {
+	good := S3{Bucket: "corner-cafe", Region: "ap-south-1", AccessKeyID: "AKID", SecretAccessKey: "secret"}
+	with := func(change func(*S3)) Config {
+		s := good
+		change(&s)
+		return Config{Kind: KindS3, S3: s}
+	}
+
+	tests := []struct {
+		name string
+		cfg  Config
+		ok   bool
+	}{
+		{name: "a bucket at Amazon", cfg: with(func(*S3) {}), ok: true},
+		{name: "a bucket at R2, with no region", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "https://abc123.r2.cloudflarestorage.com" }), ok: true},
+		{name: "a MinIO on the LAN, over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://192.168.1.20:9000" }), ok: true},
+		{name: "a path", cfg: with(func(s *S3) { s.Path = "venues/corner" }), ok: true},
+		{name: "a dotted bucket", cfg: with(func(s *S3) { s.Bucket = "backups.corner.cafe" }), ok: true},
+		{name: "a bucket with hyphens together", cfg: with(func(s *S3) { s.Bucket = "corner--cafe" }), ok: true},
+
+		{name: "no bucket", cfg: with(func(s *S3) { s.Bucket = "" })},
+		{name: "a bucket in capitals", cfg: with(func(s *S3) { s.Bucket = "CornerCafe" })},
+		{name: "a bucket of two letters", cfg: with(func(s *S3) { s.Bucket = "cc" })},
+		{name: "a bucket ending in a hyphen", cfg: with(func(s *S3) { s.Bucket = "corner-" })},
+		{name: "a bucket with a slash in it", cfg: with(func(s *S3) { s.Bucket = "corner/cafe" })},
+		{name: "no key", cfg: with(func(s *S3) { s.AccessKeyID = "" })},
+		{name: "no secret", cfg: with(func(s *S3) { s.SecretAccessKey = "" })},
+		{name: "neither a region nor an endpoint", cfg: with(func(s *S3) { s.Region = "" })},
+		{name: "an endpoint with no scheme", cfg: with(func(s *S3) { s.Endpoint = "abc123.r2.cloudflarestorage.com" })},
+		{name: "an endpoint that is not http", cfg: with(func(s *S3) { s.Endpoint = "ftp://nas.local" })},
+		{name: "an endpoint with the bucket on the end", cfg: with(func(s *S3) { s.Endpoint = "https://abc123.r2.cloudflarestorage.com/corner-cafe" })},
+		{name: "an endpoint with a key in it", cfg: with(func(s *S3) { s.Endpoint = "https://AKID:secret@nas.local" })},
+		{name: "an endpoint with a key in it that does not parse", cfg: with(func(s *S3) { s.Endpoint = "https://AKID:secret@nas.local:port" })},
+		{name: "an endpoint with a key and no scheme", cfg: with(func(s *S3) { s.Endpoint = "AKID:secret@nas.local" })},
+		{name: "a bucket with two dots together", cfg: with(func(s *S3) { s.Bucket = "corner..cafe" })},
+		{name: "a bucket with a dot and a hyphen together", cfg: with(func(s *S3) { s.Bucket = "corner.-cafe" })},
+		{name: "a bucket starting with a dot", cfg: with(func(s *S3) { s.Bucket = ".corner" })},
+		{name: "a path with a leading slash", cfg: with(func(s *S3) { s.Path = "/venues" })},
+		{name: "a path with a trailing slash", cfg: with(func(s *S3) { s.Path = "venues/" })},
+		{name: "a path that climbs", cfg: with(func(s *S3) { s.Path = "venues/../other" })},
+		{name: "a path with backslashes", cfg: with(func(s *S3) { s.Path = `venues\corner` })},
+		{name: "a bucket and a folder", cfg: Config{Kind: KindS3, S3: good, Folder: filepath.Join(t.TempDir(), "b")}},
+		{name: "a folder with a bucket left in", cfg: Config{Kind: KindFolder, Folder: filepath.Join(t.TempDir(), "b"), S3: good}},
+		{name: "off with a bucket left in", cfg: Config{S3: good}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.cfg.Validate(t.TempDir())
+			if tt.ok && err != nil {
+				t.Fatalf("Validate: %v, want it accepted", err)
+			}
+			if !tt.ok && !errors.Is(err, ErrInvalidConfig) {
+				t.Fatalf("Validate: %v, want ErrInvalidConfig", err)
+			}
+			if err != nil && strings.Contains(err.Error(), good.SecretAccessKey+"@") {
+				t.Errorf("the error repeats the secret: %v", err)
+			}
+		})
+	}
+}
+
+// TestTheSecretIsNotPrinted: a destination ends up in log lines and error
+// messages, and the log is the first thing sent to whoever is helping.
+func TestTheSecretIsNotPrinted(t *testing.T) {
+	const secret = "wJalrXUtnFEMI-do-not-print"
+	cfg := Config{Kind: KindS3, S3: S3{Bucket: "corner-cafe", Endpoint: "https://r2.example", AccessKeyID: "AKID", SecretAccessKey: secret}}
+
+	var logged bytes.Buffer
+	log := slog.New(slog.NewJSONHandler(&logged, nil))
+	log.Info("config", "backup", cfg, "s3", cfg.S3, "ptr", &cfg.S3)
+
+	printed := []string{
+		fmt.Sprint(cfg), fmt.Sprintf("%v", cfg), fmt.Sprintf("%+v", cfg), fmt.Sprintf("%#v", cfg), cfg.S3.String(),
+		fmt.Sprintf("%+v", &cfg), fmt.Sprintf("%v", cfg.S3), cfg.Destination(), logged.String(),
+	}
+	for _, p := range printed {
+		if strings.Contains(p, secret) {
+			t.Errorf("the secret was printed: %s", p)
+		}
+	}
+	if !strings.Contains(fmt.Sprintf("%+v", cfg), "corner-cafe") {
+		t.Errorf("the rest of the destination should still print: %+v", cfg)
+	}
+	if got, want := cfg.Destination(), "s3://corner-cafe/mez at https://r2.example"; got != want {
+		t.Errorf("Destination = %q, want %q", got, want)
 	}
 }
 
@@ -95,6 +187,13 @@ func TestLoadConfig(t *testing.T) {
 		{name: "not JSON", file: `kind = folder`, invalid: true},
 		{name: "a misspelt key", file: `{"kind":"folder","foldr":` + quoted + `}`, invalid: true},
 		{name: "a folder that fails the checks", file: `{"kind":"folder","folder":"backups"}`, invalid: true},
+		{
+			name: "a bucket",
+			file: `{"kind":"s3","s3":{"bucket":"corner-cafe","endpoint":"https://abc.r2.cloudflarestorage.com","access_key_id":"AKID","secret_access_key":"shh"}}`,
+			want: Config{Kind: KindS3, S3: S3{Bucket: "corner-cafe", Endpoint: "https://abc.r2.cloudflarestorage.com", AccessKeyID: "AKID", SecretAccessKey: "shh"}},
+		},
+		{name: "a bucket with no key", file: `{"kind":"s3","s3":{"bucket":"corner-cafe","region":"ap-south-1"}}`, invalid: true},
+		{name: "a bucket with a misspelt key", file: `{"kind":"s3","s3":{"bucket":"corner-cafe","region":"ap-south-1","access_key":"AKID","secret_access_key":"shh"}}`, invalid: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

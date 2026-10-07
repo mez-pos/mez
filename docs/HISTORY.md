@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 3f: a QR code for the address, and addresses by name**
+**Phase 12, Task 4a: Litestream in the binary, to a folder** (ADR-273).
+`internal/backup` runs Litestream v0.5.15 as a library over `mez.db`,
+started after the migrations and closed after the database; where to is
+`<data dir>/backup.json`. `BackUpNow`, `Status` and `Restore` in Go only.
+Tested on Windows against real files, the whole server included.
+
+Before it, **Phase 12, Task 3f: a QR code for the address, and addresses by name**
 (ADR-271). `GET /api/v1/devices/addresses` answers each address with its
 adapter's name, whether it looks virtual, and a QR code for each kind of
 device; the wizard's last step draws it. The printer search starts from

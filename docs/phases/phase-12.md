@@ -99,7 +99,7 @@ Phase 11.
     now, a status (when it last reached the destination, and what went
     wrong), and a restore into a new file, tested by restoring a database
     that was being written to and comparing it. No API, no screen, no S3.
-  - [ ] **Task 4b - S3 and R2.**
+  - [x] **Task 4b - S3 and R2.**
     The second kind of destination: bucket, path, region, endpoint (R2 and
     the other S3-compatibles), key and secret. The AWS SDK comes with it.
     Tested against an S3 that answers on this machine; say plainly if no

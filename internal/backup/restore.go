@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/benbjohnson/litestream"
 )
@@ -36,15 +39,23 @@ func Restore(ctx context.Context, cfg Config, outputPath string) error {
 	if _, err := os.Stat(outputPath); err == nil {
 		return fmt.Errorf("backup: restoring to %s: %w", outputPath, ErrWouldOverwrite)
 	}
+	// The same checks a running backup gets: a bucket with no key would
+	// send the SDK looking through the environment for one.
+	if err := cfg.Validate(filepath.Dir(outputPath)); err != nil {
+		return fmt.Errorf("backup: %w", err)
+	}
 
 	// Litestream reads a folder that is not there as one with nothing in
 	// it, and "there is no backup" is the wrong thing to tell someone
 	// whose drive is not plugged in.
-	if _, err := os.Stat(cfg.Folder); err != nil {
-		return fmt.Errorf("backup: restoring from %s: %w: %w", cfg.Folder, ErrDestinationMissing, err)
+	if cfg.Kind == KindFolder {
+		if _, err := os.Stat(cfg.Folder); err != nil {
+			return fmt.Errorf("backup: restoring from %s: %w: %w", cfg.Folder, ErrDestinationMissing, err)
+		}
 	}
 
-	replica := litestream.NewReplicaWithClient(nil, newClient(cfg))
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	replica := litestream.NewReplicaWithClient(nil, newDestination(cfg, log).client)
 	opt := litestream.NewRestoreOptions()
 	opt.OutputPath = outputPath
 	// The whole of it. A restore is rare, and a restored database that is
@@ -53,9 +64,9 @@ func Restore(ctx context.Context, cfg Config, outputPath string) error {
 
 	if err := replica.Restore(ctx, opt); err != nil {
 		if errors.Is(err, litestream.ErrNoSnapshots) || errors.Is(err, litestream.ErrTxNotAvailable) {
-			return fmt.Errorf("backup: restoring from %s: %w", cfg.Folder, ErrNothingToRestore)
+			return fmt.Errorf("backup: restoring from %s: %w", cfg.Destination(), ErrNothingToRestore)
 		}
-		return fmt.Errorf("backup: restoring from %s: %w", cfg.Folder, err)
+		return fmt.Errorf("backup: restoring from %s: %w", cfg.Destination(), err)
 	}
 	return nil
 }

@@ -10,6 +10,22 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Backups to a bucket** (ADR-274; phase 12 Task 4b). Seen on
+  2026-10-07 in tests: against a stand-in S3, and against a real MinIO in
+  Docker, where a 12 MB database went up in parts and came back whole, a
+  wrong secret was refused, and the whole server ran, stopped and was
+  restored. **Not seen**: Amazon's S3; R2; HTTPS; a slow line; a month's
+  bill. A server started with no internet captures nothing
+  for the bucket until it first answers, and what was sold meanwhile
+  goes as one whole copy then: a disk that dies before that takes those
+  sales. A line that drops after the start loses nothing. (A folder has
+  no such gap, and a venue can only have one destination.) The status says
+  "starting" for up to a minute before it says failing. The secret is in
+  `backup.json` in the clear. The binary is 34 MB, from 19.5 MB before
+  backups. No encryption options, storage class or session tokens.
+  `AWS_*` variables in the server's environment are still read by the SDK
+  and can redirect it. The race detector has not run (it needs cgo).
+
 - **Backups to a folder** (ADR-273; phase 12 Task 4a). Seen on
   2026-10-07, in tests on Windows against real files: a restore from the
   folder alone holds every row, while the server runs and after it stops,
@@ -24,7 +40,7 @@
   Litestream tries again or someone backs up now. A destination given
   with a `\\?\` prefix or an 8.3 short name is not recognised as inside
   the data directory. Left out until
-  4b to 4f: S3 and R2, the photos folder, any way to set the destination
+  4c to 4f: the photos folder, any way to set the destination
   but writing `backup.json` by hand and restarting, a status anyone can
   see (a failing backup is only in the log), and `mez restore`. Litestream
   is held at v0.5.15 because 0.5.16 and 0.5.17 do not work on Windows;
