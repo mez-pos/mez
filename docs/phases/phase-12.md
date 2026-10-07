@@ -144,6 +144,50 @@ Phase 11.
   found, device cannot reach the server, SmartScreen warning, tunnel down,
   drawer will not kick.
 
+  Split on 2026-10-07, before any of it was written: most of it exists
+  already, written phase by phase, and says what was true when it was
+  written. So it is a check of four long files against the code, three
+  new pages that each need the code read first, and a screenshot that
+  needs the binary and a browser. Six sessions, not one. The README is
+  last because it links to all the others.
+
+  - [ ] **Task 7a - The install guides, checked against what was built.**
+    `deploy.md` and `running.md` read line by line against the Makefile,
+    the installer, the unit, the compose file and the release script
+    (Tasks 2 to 6). What is stale is corrected, what is missing is added,
+    and nothing is rewritten that is still true. They stop saying what a
+    later phase will bring.
+  - [ ] **Task 7b - Hardware: printers and drawers.**
+    `docs/hardware.md`, from the print code and not from a catalogue:
+    what a printer must speak, how it is reached, paper widths, how the
+    drawer is opened and through what, and what is not supported. Say
+    plainly which printers were printed on and which are only expected
+    to work.
+  - [ ] **Task 7c - Troubleshooting, the five that will happen.**
+    `docs/troubleshooting.md`: printer not found, a device cannot reach
+    the server, the SmartScreen warning, the tunnel down, the drawer
+    will not kick. Each from what the person sees, with the words mez
+    itself uses taken from the code, then what to check in order.
+    `running.md`'s "When it will not start" stays and is linked.
+  - [ ] **Task 7d - The relay guide.**
+    `build/relay/README.md` checked against `cmd/relay` and
+    `internal/tunnel`, with the venue's side of it (the two settings,
+    what the till shows, what a guest sees when it is down) written
+    where a venue's owner will find it. The compose file's example says
+    `wss://.../tunnel` and the README says `https://`: find out which
+    mez takes and make them agree.
+  - [ ] **Task 7e - CONTRIBUTING, with the architecture.**
+    `CONTRIBUTING.md` checked against the repository as it now is, and
+    given an overview of the architecture a newcomer can read in five
+    minutes: the packages, what calls what, where an order goes from a
+    tap to a printed ticket. It links to `01-architecture.md` and does
+    not copy it.
+  - [ ] **Task 7f - The README: a screenshot and sixty seconds.**
+    `make build-web`, the demo cafe, and a screenshot of the till taken
+    in a browser, kept in the repository. The pitch at the top, readable
+    in a minute by a cafe owner. The status, the ways to run it and the
+    table of documents brought up to date, the licence section included.
+
 ## Done when
 A clean Windows machine goes from downloaded installer to first printed invoice
 in under ten minutes, with no terminal window and no documentation beyond the
