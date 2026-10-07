@@ -31,7 +31,7 @@ describe("the sections", () => {
     expect(builtSectionFor("/settings/venue")?.id).toBe("venue");
     expect(builtSectionFor("/settings/tax")?.id).toBe("tax");
     expect(builtSectionFor("/settings/shifts")?.id).toBe("shifts");
-    expect(builtSectionFor("/settings/backup")).toBeNull(); // not built yet
+    expect(builtSectionFor("/settings/backup")?.id).toBe("backup");
     expect(builtSectionFor("/settings/stations")).toBeNull(); // stations and courses are in the menu
     expect(builtSectionFor("/settings/nothing")).toBeNull();
     expect(builtSectionFor("/settings")).toBeNull();

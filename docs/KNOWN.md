@@ -10,8 +10,19 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The Backups section** (ADR-277; phase 12 Task 4e;
+  `backoffice-settings.md`). Seen on 2026-10-07 in a browser against the
+  built binary, at 1366 and 1024: every state of a folder backup, the
+  refusals under their fields and at the foot, the bucket's form and a
+  bucket that does not answer, a drive replaced by an empty one refilled
+  by itself, off. **Not seen**: a real bucket saved from the screen;
+  `restart_needed` (never shown on Windows); a screen reader; night. The
+  status is up to 15 seconds behind. A reason is shown as the system
+  gave it, which on Windows is English and a long path. There is no
+  restore on the screen, by design.
+
 - **Setting the backup from the back office** (ADR-276; phase 12 Task
-  4d). The API and no screen yet (4e). Seen on 2026-10-07 in tests on
+  4d). The API; the screen is the entry above. Seen on 2026-10-07 in tests on
   Windows: a destination saved, tried and backing up at once; swapped
   while selling; refused when it cannot be written to; over HTTP as an
   owner and a cashier. Seen on Linux in a container later that day:

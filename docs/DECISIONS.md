@@ -9733,3 +9733,66 @@ its authors. Still not seen on Linux: a `mez pair` run beside a server
 whose backup has just been changed, which is what the restart rule is
 for.
 ---
+
+## ADR-277 - The Backups section is a status and a destination, and "back up now" looks before it answers
+2026-10 · Status: accepted. Phase 12, Task 4e.
+Decision:
+  - **Two cards** under Settings, Backup
+    (`web/backoffice/src/settings/BackupSection.tsx`;
+    `backoffice-settings.md`, "Backup"). **How the backup is doing** is
+    what is true now, read again every 15 seconds: a chip, a sentence,
+    the server's reason in its own words while something is wrong, the
+    saved destination, and Back up now. **Where the backup goes** is a
+    form like the other sections': nowhere, a folder, or a bucket.
+  - **The four states have a word each**: Off, Starting, Backing up, Not
+    backing up. Off is said as what it risks, not as a neutral fact.
+  - **A reason is quoted, not rewritten.** What the system or the bucket
+    said is shown as it came, in mono, under "What mez was told": the
+    words are what whoever helps will search for.
+  - **The secret's box is empty and says so.** With one saved and the
+    bucket, endpoint, region and key id as they were, "Saved. Leave empty
+    to keep it."; change any and it is asked for again, before the
+    server would refuse. Only the chosen kind's fields are sent: a secret
+    typed for a bucket the owner then moved away from does not leave the
+    browser.
+  - **A save says it is trying the destination**, and waits 40 seconds
+    for the answer where every other call waits 10. A save that runs out
+    of time is not said to have failed: it may have gone through.
+  - **Restoring is not on the screen.** It is done at the computer with
+    mez stopped (Task 4f). The design's "Download backup now" and
+    "Restore from file" were its guess at a backup not yet built.
+  - **"Back up now" looks at the destination before it says yes**
+    (`Engine.BackUpNow`). Found by walking the screen: with the drive
+    gone and nothing new to send, Litestream had nothing to do and
+    reported success, and the screen said "Everything is at the
+    destination" under a chip reading "Not backing up". It now asks the
+    destination what it holds, and what is said to be there has to be.
+  - **"Holds a copy" is any file of this generation, at any level**, not
+    only a nightly whole copy as ADR-276 had it: a backup in its first
+    minutes has none of those yet and keeps the database among its
+    changes.
+  - **A folder in a refusal is written plainly**, not Go-quoted: on
+    Windows a quoted path doubles every backslash.
+Because: an owner should be able to see, without asking anyone, whether
+the venue is backed up and where to; and a button that says yes without
+looking is worse than no button.
+Cost: the section asks the server every 15 seconds while it is open. The
+status can be up to 15 seconds behind. A bucket's probe may ask up to
+five listings where it asked one, while a generation is minutes old.
+**Seen on 2026-10-07** in a browser against the built binary, as the
+owner of a new venue, at 1366 and 1024 wide: off; a relative folder
+refused under its field before asking; a folder inside the data
+directory refused by the server under its field; a folder saved, the
+chip turning to Backing up and the time shown; Back up now; a drive
+that is not there refused at the foot with the system's reason, nothing
+changed; the bucket's form, its checks, the password box, and a bucket
+that does not answer refused after 8 seconds with "Trying the
+destination" shown meanwhile; the warning before turning it off; the
+question on leaving with a draft; the destination replaced by a file,
+the chip turning to Not backing up with the reason, and Back up now
+refusing; an empty folder put in its place and the backup refilling it
+by itself in 21 seconds, in a new generation; off again. No page wider
+than its window. **Not seen**: a real bucket saved from the screen (no
+internet service was used); `restart_needed`, which Windows never shows;
+a screen reader; the night theme.
+---

@@ -181,18 +181,18 @@ func validateFolder(folder, dataDir string) error {
 	// A service starts in system32, and a relative folder there would put a
 	// venue's backup somewhere nobody would look for it.
 	if !filepath.IsAbs(folder) {
-		return invalidf("folder", "the folder %q is not a full path", folder)
+		return invalidf("folder", "the folder %s is not a full path", folder)
 	}
 	// A backup inside the data directory is lost with it, and is deleted by
 	// whoever clears that directory to start again.
 	if within(folder, dataDir) {
-		return invalidf("folder", "the folder %q is inside the data directory, and would be lost with it", folder)
+		return invalidf("folder", "the folder %s is inside the data directory, and would be lost with it", folder)
 	}
 	// The copies go in a folder of their own inside it, and that must not
 	// be the data directory or hold it either: D:\mez as the destination
 	// of a venue kept in D:\mez\db would write the backup into the venue.
 	if copies := filepath.Join(folder, databaseDir); within(copies, dataDir) || within(dataDir, copies) {
-		return invalidf("folder", "the folder %q would put the backup in the data directory", folder)
+		return invalidf("folder", "the folder %s would put the backup in the data directory", folder)
 	}
 	return nil
 }

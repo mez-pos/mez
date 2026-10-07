@@ -6,7 +6,9 @@ phase 10 Task 6 (ADR-129 to ADR-138) and given D22's frame in the rebuild's
 Task 16i (ADR-193). `web/backoffice/src/settings/`: `SettingsScreen.tsx`,
 `SectionCard.tsx`, `VenueSection.tsx`, `TaxSection.tsx` (`TaxProfileCard`,
 `TaxClassesCard`, `NumberingCard`), `ShiftsSection.tsx` (`RulesCard`,
-`ReceiptCard`, `ReceiptPaper`), `use-section-draft.ts`, `settings-logic.ts`.
+`ReceiptCard`, `ReceiptPaper`), `BackupSection.tsx` (`BackupStatusCard`,
+`BackupCard`, phase 12 Task 4e, ADR-277), `use-section-draft.ts`,
+`settings-logic.ts`.
 Section **Settings**, `settings.edit`, keys `g v`. Stations and courses are
 the menu's (`backoffice-menu.md`).
 
@@ -31,7 +33,7 @@ beside the section open; under 1024px the rail sits above it.
     | Venue | `/settings/venue` |
     | Tax and numbering | `/settings/tax` |
     | Shift, tips and receipt | `/settings/shifts` |
-    | Backup | `/settings/backup` (phase 12; Soon) |
+    | Backup | `/settings/backup` |
 
     `/settings`, and a path that is none of these, go to Venue.
   - **On their own screens**, links out, each shown to whoever may open it:
@@ -240,6 +242,75 @@ All need `settings.edit`.
   first."
 - **Not allowed:** the frame's "That is not yours to open".
 
+### Backup
+
+Two cards (phase 12 Task 4e; ADR-273 to ADR-277). The first says how the
+backup is doing and the second where it goes. They are apart because the
+first is true now and the second is what the owner is typing.
+
+**How the backup is doing.** "A second copy of everything the venue has
+sold, kept somewhere other than this computer." Read again every 15
+seconds while the section is open.
+
+- A chip, colour and a word, and one sentence under it:
+
+  | State | Chip | Sentence |
+  |---|---|---|
+  | `off` | **Off**, neutral | "Nothing is being backed up. If this computer's disk fails, the venue's sales, menu and settings go with it." |
+  | `starting` | **Starting**, info | "Reaching the destination for the first time since mez started." |
+  | `ok` | **Backing up**, success | "Everything is at the destination, as of 14:02." (the venue's clock, from `last_synced_at`) |
+  | `failing` | **Not backing up**, danger | "The backup is not reaching its destination. Sales carry on, and are copied when it does." Then the server's reason, in a sunken box, as it came. Then "It last had everything at 14:02." when it ever did. |
+
+- **Where:** the saved destination in mono, the folder or
+  `s3://bucket/path`, when there is one.
+- **Restart owed** (`restart_needed`), a warning box: "The destination
+  below is saved and not yet in use. mez is still backing up to the one
+  from before, and changes over when it is next restarted: restart the
+  computer, or the mez service." On Windows a save takes effect at once
+  and this is never shown.
+- **Back up now**, a secondary button, at the foot. Not shown when the
+  state is `off`. While it runs it reads "Backing up" and is disabled; it
+  can take 30 seconds. Then, beside it, "Everything is at the destination."
+  or the reason it did not go, as an alert.
+
+**Where the backup goes.** "Saving tries the place first: mez writes a
+small note there, and keeps the setting only if it could." A `SectionCard`.
+
+- **Back up to**, three choices: **Nowhere**, **A folder**, **A bucket**.
+- **A folder:**
+  - **Folder**, mono. "Written in full, like D:\mez-backup or
+    \\nas\backups\cafe. On another disk, a USB drive or a network share:
+    a folder on this computer's own disk is lost with it."
+- **A bucket** (Amazon S3, Cloudflare R2, or anything that speaks S3):
+  - **Bucket**, mono. "The bucket's name."
+  - **Folder in the bucket**, mono. "Leave empty to use mez."
+  - **Endpoint**, mono. "For Cloudflare R2 and other services, their
+    address, like https://account.r2.cloudflarestorage.com. Leave empty
+    for Amazon S3."
+  - **Region**, mono. "Amazon S3 needs it, like ap-south-1. Others can
+    leave it empty."
+  - **Access key ID**, mono.
+  - **Secret access key**, a password field. The secret is never sent to
+    this screen. With one saved (`secret_set`) and the bucket, endpoint,
+    region and key id as they were, it is empty with the placeholder
+    "Saved. Leave empty to keep it." Change any of those and it must be
+    typed again: "Type the secret again: it was saved for a different
+    bucket or key."
+- **Nowhere**, with a destination saved: a warning box, "Saving this stops
+  the backup. What is already at the destination stays there."
+- **Saving:** the foot reads "Saving" and under the fields, "Trying the
+  destination. This can take up to twenty seconds."
+- **Refused:** a field written wrongly, in words under it (the server's
+  `field`: `folder`, `bucket`, `path`, `endpoint`, `region`,
+  `secret_access_key`; `kind` to the choice). A destination that could
+  not be written to (`backup_unusable`), at the foot: "mez could not
+  write there, so nothing was changed." and the destination's own reason.
+
+Left out: restoring. It is done at the computer with mez stopped
+(`mez restore`, Task 4f), not from a screen that the thing being restored
+is serving. D22's "Download backup now" and "Restore from file" are that
+design's guess at a backup that was not yet built.
+
 ## Constraints
 
 - One primary per card: **Save**. Nothing else is green.
@@ -258,8 +329,10 @@ why:
 
 - **Integrations, and Language & theme:** there are none. The kitchen's
   night theme is the display's own switch.
-- **Backup & restore** ("Download backup now", "Restore from file"): phase
-  12. The rail holds its place, as Soon.
+- **Backup & restore** ("Download backup now", "Restore from file"): the
+  Backup section is built as a destination and a status (above), not a
+  file to download: the backup is continuous and goes somewhere of the
+  owner's choosing. Restoring is not on a screen.
 - **Address, Phone and Service hours** as venue fields: they print through
   the receipt's own lines.
 - **Service charge:** not in v1.

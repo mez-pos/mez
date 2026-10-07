@@ -8,7 +8,14 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 4c: the photos folder** (ADR-275). `<data dir>/photos/`
+**Phase 12, Task 4d: the backup's write path and API** (ADR-276).
+`backup.Manager` saves a destination after trying it and swaps the running
+backup, at once on Windows and at the next start elsewhere. `GET`/`PUT
+/api/v1/settings/backup`, `POST .../now`. The database's copies moved under
+`db/<generation>/` and the database leaves its log alone while a backup
+runs: both fixed backups that restored short. Run on Linux in a container.
+
+Before it, **Phase 12, Task 4c: the photos folder** (ADR-275). `<data dir>/photos/`
 copied to `photos/` beside `db/` at the destination: only what is missing,
 on the probe's clock, on "back up now" and as the server stops.
 `backup.RestorePhotos` brings them back, each held to its hash.

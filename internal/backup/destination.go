@@ -261,29 +261,45 @@ func newBucket(cfg S3, generation string, log *slog.Logger) destination {
 	}
 }
 
-// listOne asks the destination for the nightly whole copies, of which
-// there are a handful, and reports whether there is one. For a bucket it
-// is the cheapest question that needs the address, the bucket and the key
-// all to be right; for either kind the answer is whether what was sent is
-// still there.
+// listOne asks the destination whether it holds anything of this
+// generation's, and so whether what was sent is still there.
+//
+// It asks for the nightly whole copies first, of which there are a
+// handful: for a bucket that is the cheapest question that needs the
+// address, the bucket and the key all to be right, and nearly always the
+// only one asked. A backup in its first minutes has no nightly copy yet
+// and holds the database among its changes, so those are asked for next.
+// A destination with none of either is empty.
 func listOne(ctx context.Context, client litestream.ReplicaClient) (whole bool, err error) {
 	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 	defer cancel()
-	whole, err = func() (bool, error) {
-		files, err := client.LTXFiles(ctx, litestream.SnapshotLevel, 0, false)
-		if err != nil {
-			return false, err
+	levels := []int{litestream.SnapshotLevel}
+	for _, lvl := range pace.levels {
+		levels = append(levels, lvl.Level)
+	}
+	for _, level := range levels {
+		whole, err = holdsAny(ctx, client, level)
+		if err != nil || whole {
+			break
 		}
-		found := files.Next()
-		if err := files.Err(); err != nil {
-			files.Close()
-			return false, err
-		}
-		return found, files.Close()
-	}()
+	}
 	// "context deadline exceeded" tells an owner nothing.
 	if err != nil && errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return false, fmt.Errorf("the destination did not answer in %s: is there internet? (%w)", probeTimeout, err)
 	}
 	return whole, err
+}
+
+// holdsAny reports whether the destination has a file at one level.
+func holdsAny(ctx context.Context, client litestream.ReplicaClient, level int) (bool, error) {
+	files, err := client.LTXFiles(ctx, level, 0, false)
+	if err != nil {
+		return false, err
+	}
+	found := files.Next()
+	if err := files.Err(); err != nil {
+		files.Close()
+		return false, err
+	}
+	return found, files.Close()
 }

@@ -115,7 +115,7 @@ Phase 11.
     and never comes back out. `GET` and `PUT /api/v1/settings/backup`,
     `POST /api/v1/settings/backup/now`, the status with them, generated
     types.
-  - [ ] **Task 4e - The Backups section of settings.**
+  - [x] **Task 4e - The Backups section of settings.**
     The spec first (`docs/design/screens/backoffice-settings.md`, its
     Backup row stops saying Soon). Off, a folder, or a bucket; the status
     in colour and a word; "Back up now". Walked in a browser.

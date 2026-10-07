@@ -21,7 +21,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   { id: "venue", label: "Venue", path: "/settings/venue", built: true },
   { id: "tax", label: "Tax and numbering", path: "/settings/tax", built: true },
   { id: "shifts", label: "Shift, tips and receipt", path: "/settings/shifts", built: true },
-  { id: "backup", label: "Backup", path: "/settings/backup", built: false },
+  { id: "backup", label: "Backup", path: "/settings/backup", built: true },
 ];
 
 export interface RelatedScreen {

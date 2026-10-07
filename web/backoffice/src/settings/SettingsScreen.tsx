@@ -8,7 +8,7 @@
 // of you. Its Printers & devices and Tables & QR codes are screens of their
 // own, so the rail links out to them. Integrations and Language & theme are
 // not drawn: there are none, and the kitchen's night theme is the display's
-// own switch. Backup is phase 12's.
+// own switch.
 
 import { ArmchairIcon, DatabaseIcon, MonitorSmartphoneIcon, PercentIcon, PrinterIcon, ReceiptTextIcon, StoreIcon, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState, type MouseEvent } from "react";
@@ -28,6 +28,7 @@ import {
   type SettingsSection,
   type SettingsSectionId,
 } from "./settings-logic";
+import { BackupSection } from "./BackupSection";
 import { PaymentsCard } from "./PaymentsCard";
 import { ShiftsSection } from "./ShiftsSection";
 import { TaxSection } from "./TaxSection";
@@ -97,6 +98,7 @@ function Frame({ section }: { section: SettingsSection }) {
           )}
           {section.id === "tax" && <TaxSection onDirty={reportDirty} />}
           {section.id === "shifts" && <ShiftsSection onDirty={reportDirty} />}
+          {section.id === "backup" && <BackupSection onDirty={reportDirty} />}
         </div>
       </div>
 

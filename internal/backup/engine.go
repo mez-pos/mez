@@ -413,8 +413,31 @@ func (e *Engine) BackUpNow(ctx context.Context) error {
 		e.errors.last.set(err.Error())
 		return fmt.Errorf("backup: backing up now: %w", err)
 	}
+	// Litestream is content when it has nothing new to send, and with
+	// nothing new to send it has not touched the destination: a drive
+	// pulled out on a quiet afternoon answered "back up now" with
+	// success. So the destination is looked at, and what is said to be
+	// there has to be there.
+	whole, err := e.dest.reach(ctx)
+	switch {
+	case err != nil:
+		e.unreachable.set(err.Error())
+		e.forgetPhotos()
+		return fmt.Errorf("backup: backing up now: %w", err)
+	case !whole && e.sent.Load():
+		e.errors.lost.Store(true)
+		e.sayLost()
+		return fmt.Errorf("backup: backing up now: %s", lostReason)
+	case !whole:
+		return errors.New("backup: backing up now: the destination was reached and holds no whole copy of the database yet; try again in a moment")
+	}
+	if !e.sent.Swap(true) {
+		if err := markSent(e.ldb.MetaPath(), e.cfg, e.generation); err != nil {
+			e.log.Warn("could not note that the backup has reached its destination", "error", err)
+		}
+	}
 	e.ldb.RecordSuccessfulSync()
-	// It has just been written to: whatever was wrong is over, and the
+	// It has just been seen whole: whatever was wrong is over, and the
 	// owner who asked should not wait for the probe to agree.
 	e.errors.last.clear()
 	e.unreachable.clear()

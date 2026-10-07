@@ -364,6 +364,14 @@ func TestStatus(t *testing.T) {
 		if got := engine.Status(); got.Error == "" || got.LastSyncedAt.IsZero() {
 			t.Errorf("Status = %+v, want a reason and when it last worked", got)
 		}
+		// And asking does not get a yes: there is nothing new to send, so
+		// Litestream is content, and the drive is still not there.
+		if err := engine.BackUpNow(ctx); err == nil {
+			t.Error("BackUpNow succeeded with the destination gone and nothing new to send")
+		}
+		if got := engine.Status(); got.State != backup.StateFailing {
+			t.Errorf("Status = %+v after a back up now that could not go, want failing still", got)
+		}
 
 		// And put back.
 		if err := os.Remove(v.cfg.Folder); err != nil {

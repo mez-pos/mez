@@ -8,39 +8,37 @@
 ## Current phase
 
 **Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2, 3 (3a
-to 3f) and 4a to 4d built; 4e and 4f are left of Task 4. Phase 11 has
-nothing left to build (Cashfree left out, ADR-254) and owes its walks.
+to 3f) and 4a to 4e built; 4f is left of Task 4. Phase 11 has nothing
+left to build (Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 4d: the backup's write path and API** (ADR-276).
-`backup.Manager` saves a destination after trying it, and swaps the
-running backup: at once on Windows, at the next start elsewhere
-(`restart_needed`). `GET`/`PUT /api/v1/settings/backup` and `POST
-/api/v1/settings/backup/now` under `settings.edit`; the secret goes in
-and never comes out. Types generated. The database's copies are now
-under `db/<generation>/`, and the database leaves its log alone while a
-backup runs: both fix backups that restored short. Tested over HTTP
-against a real folder, and the suite on Linux in a container with the
-race detector; **no bucket saved through the API**.
+**Phase 12, Task 4e: the Backups section of settings** (ADR-277).
+Settings, Backup: a card for how the backup is doing (a chip and a
+sentence, the reason, Back up now) and one for where it goes (nowhere, a
+folder, a bucket). Walked in a browser against the built binary at 1366
+and 1024, through every state a folder has. The walk found "back up now"
+saying yes with the drive gone; it now looks first. **No real bucket was
+saved from the screen, and `restart_needed` was not seen.**
 
 ## Next task
 
-**Phase 12, Task 4e: the Backups section of settings.** The spec first:
-`docs/design/screens/backoffice-settings.md`, whose Backup row stops
-saying Soon (`settings-logic.ts` has it `built: false`, and a test says
-so). Off, a folder, or a bucket; the status in colour and a word (`off`,
-`starting`, `ok`, `failing`, with `last_synced_at` and `error`); "Back up
-now"; `restart_needed` said plainly. The types are `BackupRequest` and
-`BackupResponse` in `web/shared/api-types.ts`; refusals are
-`invalid_setting` with a `field` named as in the request (`folder`,
-`bucket`, `path`, `region`, `endpoint`, `secret_access_key`, `kind`) and
-`backup_unusable` with the destination's own reason. A save can take
-twenty seconds. `secret_set` with an empty secret box means "kept".
-Read `docs/design/tokens.md`; walk it in a browser against `bin/mez`
-after `make build-web`. Then 4f, `mez restore` and the docs. **Do not
-move Litestream past v0.5.15 without running the tests on Windows.**
-Before a release,
+**Phase 12, Task 4f: restore, done and written down.** `mez restore`:
+from a destination (a folder, or a bucket's fields as flags or
+`backup.json`) into an empty data directory, the database
+(`backup.Restore`) and the photos (`backup.RestorePhotos`), refusing to
+write over a venue. It should list the generations at a destination and
+let one be chosen (ADR-276: they are never deleted, and sort by the
+clock), and say which it took; pruning old ones belongs here too. Then do
+it: back up a venue that has sold, restore it into another data
+directory, start mez on it, and check the invoices, the next invoice
+number and the photos. A restored venue starts a new generation by
+itself. Rewrite `deploy.md`'s Backups section from what was done;
+`running.md`, the README and `KNOWN.md` stop saying backups are phase 12.
+Say in the docs: a bucket and a server started with no internet
+(ADR-274), `AWS_*` variables, the restart on Linux. **Do not move
+Litestream past v0.5.15 without running the tests on Windows.** Before a
+release,
 run the Windows installer once on a spare machine: "Open mez now" opening
 the setup link (ADR-270) and the window it opens in (ADR-272) have not
 been watched since they changed. `make check` embeds
