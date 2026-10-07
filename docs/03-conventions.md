@@ -169,7 +169,8 @@ dependency is a thing a cafe owner's antivirus might flag and a thing you must
 maintain. Prefer stdlib. Current allowed set:
 
 `modernc.org/sqlite`, `pressly/goose`, `coder/websocket`, `kardianos/service`,
-`golang.org/x/crypto` (argon2), `google/uuid` (or a hand-rolled ID package).
+`golang.org/x/crypto` (argon2), `google/uuid` (or a hand-rolled ID package),
+`benbjohnson/litestream` (pinned, ADR-273).
 
 ## Things that are never acceptable
 

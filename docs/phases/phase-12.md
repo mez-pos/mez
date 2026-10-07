@@ -92,7 +92,7 @@ Phase 11.
   in it, a screen, and a restore that has to be done for real. Six
   sessions, not one.
 
-  - [ ] **Task 4a - Litestream in the binary, to a folder.**
+  - [x] **Task 4a - Litestream in the binary, to a folder.**
     `internal/backup` over Litestream as a library (no second program, no
     cgo): started with the server and stopped with it, replicating
     `mez.db` to a folder named in a file in the data directory. Back up

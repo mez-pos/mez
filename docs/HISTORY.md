@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 3e: the setup token** (ADR-270). `firstrun.Token` in
+**Phase 12, Task 3f: a QR code for the address, and addresses by name**
+(ADR-271). `GET /api/v1/devices/addresses` answers each address with its
+adapter's name, whether it looks virtual, and a QR code for each kind of
+device; the wizard's last step draws it. The printer search starts from
+real adapters. Walked in a browser on a PC with one real adapter.
+
+Before it, **Phase 12, Task 3e: the setup token** (ADR-270). `firstrun.Token` in
 `<data dir>/setup-token`, asked for by `POST /api/v1/setup`; `mez
 setup-link`; the installer's "Open mez now" opens the link; the wizard
 takes it from the address's fragment. The installer was compiled, not run.

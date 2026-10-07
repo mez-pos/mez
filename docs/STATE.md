@@ -7,27 +7,29 @@
 
 ## Current phase
 
-**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2 and 3 (3a
-to 3f) built. Phase 11 has nothing left to build (Cashfree left out,
-ADR-254) and owes its walks.
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2, 3 (3a
+to 3f) and 4a built; Task 4 is split into 4a to 4f. Phase 11 has nothing
+left to build (Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 3f: a QR code for the address, and addresses by name**
-(ADR-271). `GET /api/v1/devices/addresses` answers each address with its
-adapter's name, whether it looks virtual, and for each kind of device the
-address it opens and a QR code of it. The wizard's last step shows the
-code beside the address, a band for each real adapter with none guessed
-first, virtual ones small. The printer search starts from real adapters.
-Walked in a browser on a PC with one real adapter; **two real adapters,
-and a camera reading the code, were not seen**.
+**Phase 12, Task 4a: Litestream in the binary, to a folder** (ADR-273).
+`internal/backup` runs Litestream v0.5.15 as a library over `mez.db`,
+started after the migrations and closed after the database. Where to is
+`<data dir>/backup.json` (`{"kind":"folder","folder":"D:\\mez-backup"}`),
+read at start; no file is no backup. `BackUpNow`, `Status` and `Restore`
+exist in Go and nothing calls them but tests. Tested on Windows against
+real files, the whole server included; **not run on Linux, and not for a
+day**.
 
 ## Next task
 
-**Phase 12, Task 4: backups.** Litestream, a Backups section of the back
-office's settings, "back up now", and a restore that is actually done and
-verified. Read ADR-141 and ADR-110 first (phase 10's Task 6l moved here).
-It is more than one session: split it before building. Before a release,
+**Phase 12, Task 4b: S3 and R2.** A second `backup.Kind` with bucket,
+path, region, endpoint, key and secret, over Litestream's `s3` client
+(the AWS SDK is a new dependency: an ADR). Read ADR-273 first. **Do not
+move Litestream past v0.5.15 without running the tests on Windows**: 0.5.16
+and 0.5.17 copy nothing there. Then 4c photos, 4d the write path and API,
+4e the screen, 4f `mez restore` and the docs. Before a release,
 run the Windows installer once on a spare machine: "Open mez now" opening
 the setup link (ADR-270) and the window it opens in (ADR-272) have not
 been watched since they changed. `make check` embeds

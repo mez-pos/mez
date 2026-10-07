@@ -223,11 +223,28 @@ func (d *DB) Close(ctx context.Context) error {
 
 // checkpoint folds the write-ahead log back into the main database file.
 func (d *DB) checkpoint(ctx context.Context) error {
-	// A truncating checkpoint blocks until readers are done with the WAL. The
-	// caller's shutdown budget bounds the wait; failing it is not fatal, since
-	// SQLite recovers the WAL on the next open.
-	if _, err := d.write.ExecContext(ctx, "PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
+	// One connection for both statements: the timeout is per connection.
+	conn, err := d.write.Conn(ctx)
+	if err != nil {
 		return fmt.Errorf("db: checkpointing: %w", err)
+	}
+	defer conn.Close()
+
+	// A truncating checkpoint waits for whoever else has the WAL open. By
+	// now the requests have drained and the read pool is idle, so the only
+	// one left is the backup, which holds the log open on purpose, closes
+	// after this does and folds it in itself (ADR-273). Waiting out the
+	// busy timeout against it would spend half the shutdown on nothing, so
+	// this asks once and takes no for an answer.
+	if _, err := conn.ExecContext(ctx, "PRAGMA busy_timeout(0)"); err != nil {
+		return fmt.Errorf("db: checkpointing: %w", err)
+	}
+	var busy, logFrames, checkpointed int
+	if err := conn.QueryRowContext(ctx, "PRAGMA wal_checkpoint(TRUNCATE)").Scan(&busy, &logFrames, &checkpointed); err != nil {
+		return fmt.Errorf("db: checkpointing: %w", err)
+	}
+	if busy != 0 {
+		d.log.Debug("the write-ahead log is still held open, by the backup if one is running; it is folded in when the last connection closes")
 	}
 	return nil
 }

@@ -10,6 +10,27 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Backups to a folder** (ADR-273; phase 12 Task 4a). Seen on
+  2026-10-07, in tests on Windows against real files: a restore from the
+  folder alone holds every row, while the server runs and after it stops,
+  across three starts; the whole server stopped at once leaves a backup
+  that restores and migrates clean. **Not seen**: Linux at run time; a
+  day of service (the nightly whole copy, the pruning after seven days,
+  the log being folded in under a busy till); a drive pulled out and put
+  back, on real hardware (a folder moved away and back was); a network
+  share, and one that hangs rather than fails; a restore to an earlier
+  time; the race detector, which needs cgo. After a destination comes
+  back the status can say failing for up to five minutes, until
+  Litestream tries again or someone backs up now. A destination given
+  with a `\\?\` prefix or an 8.3 short name is not recognised as inside
+  the data directory. Left out until
+  4b to 4f: S3 and R2, the photos folder, any way to set the destination
+  but writing `backup.json` by hand and restarting, a status anyone can
+  see (a failing backup is only in the log), and `mez restore`. Litestream
+  is held at v0.5.15 because 0.5.16 and 0.5.17 do not work on Windows;
+  this has not been reported to its authors. Its lines in the log are
+  its own words, and a restore logs through Go's default logger.
+
 - **The installer's shortcut opened a kiosk nobody could close** (ADR-272,
   fixed on 2026-10-07). The owner installed on the developer's PC and the
   till filled the screen with no title bar: the installer started Edge

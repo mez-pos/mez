@@ -24,6 +24,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/api"
 	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/config"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/device/discover"
@@ -195,11 +196,26 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		return fmt.Errorf("listening on %s: %w", cfg.ListenAddr, err)
 	}
 
+	// Where the backup goes, read before the database is opened: a file
+	// that names a destination and cannot be read as one stops the start,
+	// as a relay that cannot be used does (ADR-019). The owner who wrote
+	// it believes the venue is being backed up.
+	backupTo, err := backup.LoadConfig(cfg.DataDir)
+	if err != nil {
+		return err
+	}
+	// On the stack under the database, so that it closes after it:
+	// Litestream's last act is to copy what the database wrote last
+	// (ADR-273). It starts further down, once there is a schema to copy.
+	var backups *backup.Engine
+	running.push("backup", func(ctx context.Context) error { return backups.Close(ctx) })
+
 	// The database opens before anything is served. A file that cannot be
 	// opened is a startup failure with a human watching, which is a far better
 	// place to find out than the first sale of the day.
+	dbPath := filepath.Join(cfg.DataDir, db.FileName)
 	database, err := db.Open(ctx, db.Options{
-		Path: filepath.Join(cfg.DataDir, db.FileName),
+		Path: dbPath,
 		Log:  log,
 	})
 	if err != nil {
@@ -211,6 +227,13 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// serving requests writes rows the next version cannot read, and this is
 	// the one moment where failing to start is the correct outcome.
 	if err := database.Migrate(ctx); err != nil {
+		return err
+	}
+
+	// A destination that cannot be reached does not stop the start, or a
+	// sale: the backup says it is failing and keeps trying.
+	backups, err = backup.Start(ctx, backup.Options{DBPath: dbPath, Config: backupTo, Log: log})
+	if err != nil {
 		return err
 	}
 

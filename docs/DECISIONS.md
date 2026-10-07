@@ -9385,3 +9385,89 @@ close, minimise and maximise, can be resized, and opens maximised;
 seen**: the installer run with the change (it compiles), so not the
 shortcut it writes nor the new box by eye; Chrome.
 ---
+
+## ADR-273 - Backups are Litestream inside the binary, at v0.5.15, told where by a file
+2026-10 · Status: accepted. Phase 12, Task 4a. Adds a dependency.
+Decision:
+  - **Litestream is linked in, not shipped beside** (`internal/backup`,
+    `github.com/benbjohnson/litestream`). Since 0.5 it reads the database
+    through `modernc.org/sqlite`, the driver mez already uses, so there is
+    no cgo and still one file to install. Only its core and its `file`
+    client are imported; the S3 client and the AWS SDK come with Task 4b.
+  - **Pinned to v0.5.15, on purpose behind.** v0.5.16 and v0.5.17 fsync
+    the directory after every file they write, which Windows refuses
+    ("Access is denied"), so on Windows they copy nothing at all. Found
+    by the first run of this package's tests. The tests are the guard:
+    an upgrade that brings it back fails `make check` on Windows.
+    Litestream says its library API is not stable; every bump is read.
+  - **The destination is in `<data dir>/backup.json`, not in the
+    database.** Three reasons: a restore must read it before there is a
+    database; a copy of the database opened on another machine must not
+    start writing into the venue's backup; and a bucket's secret kept in
+    the database would be inside every backup of it (ADR-221 kept the
+    gateway's keys out for the same reason). A file that cannot be read
+    as a destination stops the start, as a bad relay does (ADR-019). A
+    destination that cannot be reached stops nothing.
+  - **In the destination, the database is under `db/`**, so the photos
+    (Task 4c) can sit beside it.
+  - **A folder inside the data directory is refused**: it is lost with
+    the disk and deleted with the directory. So is one whose `db/` would
+    be the data directory or hold it.
+  - **The backup closes after the database.** Litestream's last act is
+    to copy what was written last, and its notes forbid closing it under
+    open connections (on Linux, closing its file handle drops the
+    process's locks). So it is pushed on the shutdown stack before the
+    database and started after the migrations.
+  - **The database's closing checkpoint no longer waits.** It truncated
+    the log with the 5 second busy timeout; Litestream holds the log
+    open on purpose, so that was 5 of the 10 seconds of every shutdown.
+    It now asks once with no timeout. Litestream's own last connection
+    folds the log in when it closes, so the file still stands alone.
+  - **The engine looks at the database as it closes**, because
+    Litestream first looks a second after starting and a server stopped
+    sooner would have copied nothing.
+  - **A failed last copy is a warning, not a failed stop**: under a
+    service a failed stop is a crash, and an unplugged drive is not one.
+    Litestream's close does not give up when the shutdown's time does,
+    so it runs in a goroutine the engine stops waiting for.
+  - **A whole copy each night, kept seven days**, with the changes
+    between them: a restore can go back a week.
+  - **Status is off, starting, ok or failing**, from three things.
+    When Litestream last reached the destination: one minute without is
+    failing. The last error it logged, which stands until a sync after
+    it: its loop tells nobody but its log, so the engine's log handler
+    listens. And a look at the destination every 15 seconds by the
+    engine itself, because Litestream counts a second with nothing to
+    send as a success and a drive pulled out on a quiet afternoon would
+    read as fine until the next sale. Status touches no disk.
+  - **Litestream's lines below a warning are kept out of the log**
+    unless the server logs at debug: it writes one a second.
+  - **Restore never writes over a file**, and runs SQLite's full
+    integrity check on what it wrote.
+Because: a venue PC is one disk under a counter. Litestream is the
+stack's settled answer, and inside the binary it needs no second
+program for an owner to install, start, or find stopped.
+Cost: `bin/mez` grows from 19.5 MB to 24.7 MB (Prometheus' client and
+protobuf come with Litestream and are not used). `go.mod` asks for Go
+1.25. `golang.org/x/crypto` and `x/sys` moved up; `modernc.org/sqlite`
+did not. Litestream keeps its working files in
+`<data dir>/.mez.db-litestream`. Until Task 4d there is no way to set
+the destination but writing the file by hand and restarting, no status
+on any screen and no restore command; until 4c the photos are not
+copied. Changing the destination while the server runs (4d) will have
+to keep to the rule about open connections. **Seen on 2026-10-07**, in
+tests on Windows against real files: a database restored from the
+folder alone holds every row written, while running and after closing,
+across three starts; the whole server run and stopped leaves a backup
+that restores and migrates clean, with the database closed before the
+backup and the stop under 3 seconds; a destination moved away while
+idle reads failing within the probe and ok again when put back. A
+review of the code by a second reader found the idle case, the close
+that could outstay its budget and the line a second, fixed here. After
+a destination comes back, Litestream may wait up to five minutes before
+trying it, and the status says failing until then or until "back up
+now". **Not seen**: Linux at run time
+(it compiles with `CGO_ENABLED=0` for amd64 and arm64); a day of
+service, so neither the nightly copy nor the pruning after seven days;
+a USB drive pulled out mid-service; a network share.
+---
