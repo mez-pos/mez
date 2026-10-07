@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -31,6 +33,12 @@ func newVenue(t *testing.T) venue {
 
 func (v venue) dbPath() string { return filepath.Join(v.dataDir, db.FileName) }
 
+// dbOptions opens the venue's database as the server does when a backup
+// may be running: the write-ahead log is the backup's to fold in.
+func (v venue) dbOptions() db.Options {
+	return db.Options{Path: v.dbPath(), LogKeptBy: func() bool { return true }}
+}
+
 // open starts the database and the backup over it in the order the server
 // does, and returns a stop that closes them in the order the server does:
 // the database first, the backup after it.
@@ -38,14 +46,14 @@ func (v venue) open(t *testing.T) (*db.DB, *backup.Engine, func()) {
 	t.Helper()
 	ctx := context.Background()
 
-	database, err := db.Open(ctx, db.Options{Path: v.dbPath()})
+	database, err := db.Open(ctx, v.dbOptions())
 	if err != nil {
 		t.Fatalf("db.Open: %v", err)
 	}
 	if err := database.Migrate(ctx); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
-	engine, err := backup.Start(ctx, backup.Options{DBPath: v.dbPath(), Config: v.cfg})
+	engine, err := backup.Start(ctx, backup.Options{DBPath: v.dbPath(), Config: v.cfg, Log: testLog(t)})
 	if err != nil {
 		t.Fatalf("backup.Start: %v", err)
 	}
@@ -65,6 +73,23 @@ func (v venue) open(t *testing.T) (*db.DB, *backup.Engine, func()) {
 	}
 	t.Cleanup(stop)
 	return database, engine, stop
+}
+
+// testLog is the backup's log for a test: nowhere, unless MEZ_TEST_LOG is
+// set, when its warnings and errors go to the test's own output. For
+// finding out why a backup did what it did.
+func testLog(t *testing.T) *slog.Logger {
+	if os.Getenv("MEZ_TEST_LOG") == "" {
+		return nil
+	}
+	return slog.New(slog.NewTextHandler(testWriter{t}, &slog.HandlerOptions{Level: slog.LevelWarn}))
+}
+
+type testWriter struct{ t *testing.T }
+
+func (w testWriter) Write(p []byte) (int, error) {
+	w.t.Log(strings.TrimSpace(string(p)))
+	return len(p), nil
 }
 
 // sell writes n rows the way a service does: through the writer, each in
@@ -210,7 +235,7 @@ func TestClosingTheDatabaseDoesNotWaitOnTheBackup(t *testing.T) {
 		t.Fatalf("removing the write-ahead log: %v", err)
 	}
 	os.Remove(v.dbPath() + "-shm")
-	reopened, err := db.Open(ctx, db.Options{Path: v.dbPath()})
+	reopened, err := db.Open(ctx, v.dbOptions())
 	if err != nil {
 		t.Fatalf("reopening without the log: %v", err)
 	}
@@ -259,7 +284,7 @@ func TestStatus(t *testing.T) {
 
 	t.Run("ok once it has reached the destination, failing once that is stale", func(t *testing.T) {
 		v := newVenue(t)
-		database, err := db.Open(ctx, db.Options{Path: v.dbPath()})
+		database, err := db.Open(ctx, v.dbOptions())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -310,7 +335,7 @@ func TestStatus(t *testing.T) {
 
 	t.Run("a destination that goes away while nothing is being sold is failing", func(t *testing.T) {
 		v := newVenue(t)
-		database, err := db.Open(ctx, db.Options{Path: v.dbPath()})
+		database, err := db.Open(ctx, v.dbOptions())
 		if err != nil {
 			t.Fatal(err)
 		}

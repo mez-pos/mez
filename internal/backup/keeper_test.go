@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -27,6 +28,7 @@ func TestTheKeeperHearsWhatTheLogDoesNotPrint(t *testing.T) {
 			keeper := &errorKeeper{
 				Handler: slog.NewTextHandler(&out, &slog.HandlerOptions{Level: tt.level}),
 				last:    new(lastError),
+				lost:    new(atomic.Bool),
 			}
 			// Through With and a group, as Litestream's loggers are made.
 			log := slog.New(keeper).With("subsystem", "backup").WithGroup("replica")

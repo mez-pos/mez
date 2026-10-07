@@ -37,6 +37,9 @@ const (
 	KindS3 Kind = "s3"
 )
 
+// Kinds is every Kind, for the API's vocabulary.
+func Kinds() []Kind { return []Kind{KindOff, KindFolder, KindS3} }
+
 // Config is where the backup goes.
 type Config struct {
 	Kind Kind `json:"kind"`
@@ -123,6 +126,22 @@ func (c Config) Destination() string {
 // wrong with it is in the message.
 var ErrInvalidConfig = errors.New("the backup destination is not usable")
 
+// InvalidConfig is an ErrInvalidConfig that knows which part is wrong, so
+// that a screen can put the reason beside the box it is about. Field is
+// the name the part has in backup.json.
+type InvalidConfig struct {
+	Field  string
+	Reason string
+}
+
+func (e *InvalidConfig) Error() string { return ErrInvalidConfig.Error() + ": " + e.Reason }
+
+func (e *InvalidConfig) Is(target error) bool { return target == ErrInvalidConfig }
+
+func invalidf(field, format string, args ...any) error {
+	return &InvalidConfig{Field: field, Reason: fmt.Sprintf(format, args...)}
+}
+
 // Enabled says whether there is anywhere to back up to.
 func (c Config) Enabled() bool { return c.Kind != KindOff }
 
@@ -134,46 +153,46 @@ func (c Config) Validate(dataDir string) error {
 	switch c.Kind {
 	case KindOff:
 		if c.Folder != "" {
-			return fmt.Errorf("%w: a folder is named and the kind is not %q", ErrInvalidConfig, KindFolder)
+			return invalidf("folder", "a folder is named and the kind is not %q", KindFolder)
 		}
 		if c.S3 != (S3{}) {
-			return fmt.Errorf("%w: a bucket is named and the kind is not %q", ErrInvalidConfig, KindS3)
+			return invalidf("bucket", "a bucket is named and the kind is not %q", KindS3)
 		}
 		return nil
 	case KindFolder:
 		if c.S3 != (S3{}) {
-			return fmt.Errorf("%w: a bucket is named and the kind is %q", ErrInvalidConfig, KindFolder)
+			return invalidf("bucket", "a bucket is named and the kind is %q", KindFolder)
 		}
 		return validateFolder(c.Folder, dataDir)
 	case KindS3:
 		if c.Folder != "" {
-			return fmt.Errorf("%w: a folder is named and the kind is %q", ErrInvalidConfig, KindS3)
+			return invalidf("folder", "a folder is named and the kind is %q", KindS3)
 		}
 		return c.S3.validate()
 	default:
-		return fmt.Errorf("%w: kind %q is not one this build knows", ErrInvalidConfig, c.Kind)
+		return invalidf("kind", "kind %q is not one this build knows", c.Kind)
 	}
 }
 
 func validateFolder(folder, dataDir string) error {
 	if strings.TrimSpace(folder) == "" {
-		return fmt.Errorf("%w: no folder is named", ErrInvalidConfig)
+		return invalidf("folder", "no folder is named")
 	}
 	// A service starts in system32, and a relative folder there would put a
 	// venue's backup somewhere nobody would look for it.
 	if !filepath.IsAbs(folder) {
-		return fmt.Errorf("%w: the folder %q is not a full path", ErrInvalidConfig, folder)
+		return invalidf("folder", "the folder %q is not a full path", folder)
 	}
 	// A backup inside the data directory is lost with it, and is deleted by
 	// whoever clears that directory to start again.
 	if within(folder, dataDir) {
-		return fmt.Errorf("%w: the folder %q is inside the data directory, and would be lost with it", ErrInvalidConfig, folder)
+		return invalidf("folder", "the folder %q is inside the data directory, and would be lost with it", folder)
 	}
 	// The copies go in a folder of their own inside it, and that must not
 	// be the data directory or hold it either: D:\mez as the destination
 	// of a venue kept in D:\mez\db would write the backup into the venue.
 	if copies := filepath.Join(folder, databaseDir); within(copies, dataDir) || within(dataDir, copies) {
-		return fmt.Errorf("%w: the folder %q would put the backup in the data directory", ErrInvalidConfig, folder)
+		return invalidf("folder", "the folder %q would put the backup in the data directory", folder)
 	}
 	return nil
 }
@@ -182,20 +201,20 @@ func validateFolder(folder, dataDir string) error {
 // wrong, or a bucket that is not there, is found out by the first copy.
 func (s S3) validate() error {
 	if !validBucket(s.Bucket) {
-		return fmt.Errorf("%w: %q is not a bucket's name (3 to 63 of a-z, 0-9, dot and hyphen)", ErrInvalidConfig, s.Bucket)
+		return invalidf("bucket", "%q is not a bucket's name (3 to 63 of a-z, 0-9, dot and hyphen)", s.Bucket)
 	}
 	if s.AccessKeyID == "" || s.SecretAccessKey == "" {
 		// Litestream would go looking in the environment and in the
 		// user's own AWS files, and a service's account has neither.
-		return fmt.Errorf("%w: access_key_id and secret_access_key are not both set", ErrInvalidConfig)
+		return invalidf("secret_access_key", "access_key_id and secret_access_key are not both set")
 	}
 	if p := s.Path; p != "" {
 		if strings.HasPrefix(p, "/") || strings.HasSuffix(p, "/") || strings.Contains(p, "//") || strings.Contains(p, "\\") {
-			return fmt.Errorf("%w: the path %q must be like venue/backups, with no slash at either end", ErrInvalidConfig, p)
+			return invalidf("path", "the path %q must be like venue/backups, with no slash at either end", p)
 		}
 		for _, part := range strings.Split(p, "/") {
 			if part == "." || part == ".." || strings.TrimSpace(part) != part || part == "" {
-				return fmt.Errorf("%w: the path %q has a part that is not a name", ErrInvalidConfig, p)
+				return invalidf("path", "the path %q has a part that is not a name", p)
 			}
 		}
 	}
@@ -203,18 +222,18 @@ func (s S3) validate() error {
 		// Without one Litestream asks Amazon where the bucket is, as it
 		// starts, and a venue with no internet that morning would not open.
 		if s.Region == "" {
-			return fmt.Errorf("%w: a bucket at Amazon needs its region, and one elsewhere needs its endpoint", ErrInvalidConfig)
+			return invalidf("region", "a bucket at Amazon needs its region, and one elsewhere needs its endpoint")
 		}
 		return nil
 	}
 	// Asked of the text, before it is parsed: an address that does not
 	// parse still has the key in it, and is not repeated back either.
 	if strings.Contains(s.Endpoint, "@") {
-		return fmt.Errorf("%w: the endpoint must not carry a key; the key goes in access_key_id and secret_access_key", ErrInvalidConfig)
+		return invalidf("endpoint", "the endpoint must not carry a key; the key goes in access_key_id and secret_access_key")
 	}
 	u, err := url.Parse(s.Endpoint)
 	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.RawQuery != "" || strings.Trim(u.Path, "/") != "" {
-		return fmt.Errorf("%w: the endpoint %q must be an address like https://host, and nothing after it", ErrInvalidConfig, s.Endpoint)
+		return invalidf("endpoint", "the endpoint %q must be an address like https://host, and nothing after it", s.Endpoint)
 	}
 	return nil
 }
@@ -278,4 +297,31 @@ func LoadConfig(dataDir string) (Config, error) {
 		return Config{}, fmt.Errorf("backup: %s: %w", path, err)
 	}
 	return cfg, nil
+}
+
+// SaveConfig keeps the destination in dataDir, for LoadConfig to find. Off
+// is no file. The file is written whole and renamed into place, readable
+// by its owner only where modes mean something: it may hold a bucket's
+// secret. On Windows the data directory's own permissions keep it
+// (ADR-259).
+func SaveConfig(dataDir string, cfg Config) error {
+	if err := cfg.Validate(dataDir); err != nil {
+		return fmt.Errorf("backup: %w", err)
+	}
+	path := filepath.Join(dataDir, ConfigFile)
+	if !cfg.Enabled() {
+		if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("backup: removing %s: %w", path, err)
+		}
+		return nil
+	}
+	raw, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return fmt.Errorf("backup: writing %s: %w", path, err)
+	}
+	// CreateTemp makes it 0600, and the rename keeps that.
+	if err := writeWhole(path, append(raw, '\n')); err != nil {
+		return fmt.Errorf("backup: writing %s: %w", path, err)
+	}
+	return nil
 }

@@ -200,24 +200,25 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// that names a destination and cannot be read as one stops the start,
 	// as a relay that cannot be used does (ADR-019). The owner who wrote
 	// it believes the venue is being backed up.
-	backupTo, err := backup.LoadConfig(cfg.DataDir)
+	dbPath := filepath.Join(cfg.DataDir, db.FileName)
+	photosDir := filepath.Join(cfg.DataDir, "photos")
+	backups, err := backup.NewManager(backup.ManagerOptions{DataDir: cfg.DataDir, DBPath: dbPath, PhotosDir: photosDir, Log: log})
 	if err != nil {
 		return err
 	}
 	// On the stack under the database, so that it closes after it:
 	// Litestream's last act is to copy what the database wrote last
 	// (ADR-273). It starts further down, once there is a schema to copy.
-	var backups *backup.Engine
-	running.push("backup", func(ctx context.Context) error { return backups.Close(ctx) })
+	running.push("backup", backups.Close)
 
 	// The database opens before anything is served. A file that cannot be
 	// opened is a startup failure with a human watching, which is a far better
 	// place to find out than the first sale of the day.
-	dbPath := filepath.Join(cfg.DataDir, db.FileName)
-	photosDir := filepath.Join(cfg.DataDir, "photos")
 	database, err := db.Open(ctx, db.Options{
 		Path: dbPath,
 		Log:  log,
+		// The log is the backup's to fold in while one runs.
+		LogKeptBy: backups.Running,
 	})
 	if err != nil {
 		return err
@@ -233,8 +234,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 
 	// A destination that cannot be reached does not stop the start, or a
 	// sale: the backup says it is failing and keeps trying.
-	backups, err = backup.Start(ctx, backup.Options{DBPath: dbPath, Config: backupTo, Log: log, PhotosDir: photosDir})
-	if err != nil {
+	if err := backups.Start(ctx); err != nil {
 		return err
 	}
 
@@ -322,7 +322,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		return err
 	}
 
-	venueSettings, err := settings.New(settings.Options{DB: database, OnChange: events.Notify})
+	venueSettings, err := settings.New(settings.Options{DB: database, OnChange: events.Notify, Backups: backups})
 	if err != nil {
 		return err
 	}

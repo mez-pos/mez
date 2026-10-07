@@ -43,6 +43,9 @@ type Options struct {
 	// OnChange is told the venue after a committed edit to the menu (a tax
 	// class), so connected devices read the menu again.
 	OnChange func(venueID int64)
+	// Backups is the venue's backup, for the Backups section. Nil is a
+	// server with none to configure.
+	Backups Backups
 }
 
 // Service is the venue settings.
@@ -50,6 +53,7 @@ type Service struct {
 	db       *db.DB
 	clock    Clock
 	onChange func(venueID int64)
+	backups  Backups
 }
 
 // New returns a Service.
@@ -63,7 +67,9 @@ func New(o Options) (*Service, error) {
 	if o.OnChange == nil {
 		o.OnChange = func(int64) {}
 	}
-	return &Service{db: o.DB, clock: o.Clock, onChange: o.OnChange}, nil
+	s := &Service{db: o.DB, clock: o.Clock, onChange: o.OnChange}
+	s.backups = o.Backups
+	return s, nil
 }
 
 // Limits on what a venue is called: labels printed on a receipt, not prose.

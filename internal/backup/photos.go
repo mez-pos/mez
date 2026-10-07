@@ -252,7 +252,7 @@ func RestorePhotos(ctx context.Context, cfg Config, dir string) (restored int, e
 			return 0, fmt.Errorf("backup: restoring photos from %s: %w: %w", cfg.Folder, ErrDestinationMissing, err)
 		}
 	}
-	store := newDestination(cfg, slog.New(slog.NewTextHandler(io.Discard, nil))).photos
+	store := newDestination(cfg, "", slog.New(slog.NewTextHandler(io.Discard, nil))).photos
 
 	listCtx, cancel := context.WithTimeout(ctx, listPhotosTimeout)
 	names, err := store.list(listCtx)

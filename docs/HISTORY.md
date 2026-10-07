@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 4b: S3 and R2** (ADR-274). `backup.KindS3` in
+**Phase 12, Task 4c: the photos folder** (ADR-275). `<data dir>/photos/`
+copied to `photos/` beside `db/` at the destination: only what is missing,
+on the probe's clock, on "back up now" and as the server stops.
+`backup.RestorePhotos` brings them back, each held to its hash.
+
+Before it, **Phase 12, Task 4b: S3 and R2** (ADR-274). `backup.KindS3` in
 `backup.json`: bucket, path, region or endpoint, key and secret, through
 Litestream's S3 client. No internet stops neither start, sales nor stop.
 Tested against a stand-in S3 and a real MinIO; not Amazon's S3 or R2.

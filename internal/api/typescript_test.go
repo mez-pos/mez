@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/codegen/ts"
 	"github.com/byjoellobo/mez/internal/domain/kitchen"
 	"github.com/byjoellobo/mez/internal/domain/menu"
@@ -138,6 +139,7 @@ var errorCodes = []ErrorCode{
 	CodeStockCounted, CodeStockCountStale,
 	CodeStaffNotFound, CodeRoleNotFound, CodeRoleInUse, CodeRoleNameTaken, CodeBeyondYou, CodeLastManager, CodeInvalidPerson,
 	CodeInvalidFilter, CodeInvalidSetting, CodeVenueNotFound,
+	CodeBackupUnusable, CodeBackupOff, CodeBackupFailed, CodeBackupUnavailable,
 	CodeTaxClassNotFound, CodeTaxClassNameTaken, CodeTaxClassInUse, CodeTicketsOpen,
 	CodeNumberingLocked, CodeNumberTaken, CodeCourseNotFound, CodeDeviceNotFound, CodeCannotRevokeSelf, CodeDeviceUnpaired,
 	CodeTableCodeUnknown, CodeGuestSessionRequired,
@@ -262,6 +264,8 @@ func generate() (*ts.Generator, error) {
 		{"DiscountKind", order.DiscountPercent, []string{string(order.DiscountPercent), string(order.DiscountAmount)}},
 		{"TaxPricing", tax.Inclusive, []string{string(tax.Inclusive), string(tax.Exclusive)}},
 		{"TunnelState", TunnelOff, asStrings(TunnelStates())},
+		{"BackupKind", backup.KindFolder, asStrings(backup.Kinds())},
+		{"BackupState", backup.StateOff, asStrings(backup.States())},
 		{"GuestRoundStatus", svcorder.RoundWaiting, asStrings(svcorder.RoundStatuses())},
 		{"GuestRoundProgress", order.ProgressSent, asStrings(order.Progresses())},
 		{"ChargeStatus", charges.Open, asStrings(charges.Statuses())},
@@ -318,6 +322,7 @@ func generate() (*ts.Generator, error) {
 		// The guest's API.
 		guestTableResponse{}, guestPickupResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{}, guestChargeResponse{}, guestShareRequest{}, guestReceiptResponse{}, resolveChargeRequest{}, tableCodesResponse{}, tableCodeQRResponse{}, tableCodeSheetResponse{}, pickupCodeQRResponse{},
 		paymentSettingsRequest{}, paymentSettingsResponse{},
+		backupRequest{}, backupBucketRequest{}, backupResponse{}, backupS3{}, backupStatus{},
 		guestRequestsResponse{}, guestDecisionResponse{},
 		// Staff.
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},

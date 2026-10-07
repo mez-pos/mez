@@ -151,7 +151,7 @@ func TestNoInternetStopsNothing(t *testing.T) {
 	v := bucketVenue(t, "http://"+addr)
 	ctx := context.Background()
 
-	database, err := db.Open(ctx, db.Options{Path: v.dbPath()})
+	database, err := db.Open(ctx, v.dbOptions())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,7 +209,7 @@ func TestTheProbeAsksABucketCheaply(t *testing.T) {
 	v := bucketVenue(t, srv.URL)
 	ctx := context.Background()
 
-	database, err := db.Open(ctx, db.Options{Path: v.dbPath()})
+	database, err := db.Open(ctx, v.dbOptions())
 	if err != nil {
 		t.Fatal(err)
 	}

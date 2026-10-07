@@ -69,7 +69,7 @@ func sameNames(a, b []string) bool {
 func startWithPhotos(t *testing.T, v venue, probe time.Duration) (*db.DB, *backup.Engine) {
 	t.Helper()
 	ctx := context.Background()
-	database, err := db.Open(ctx, db.Options{Path: v.dbPath()})
+	database, err := db.Open(ctx, v.dbOptions())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,35 +8,38 @@
 ## Current phase
 
 **Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2, 3 (3a
-to 3f), 4a, 4b and 4c built; Task 4 is split into 4a to 4f. Phase 11 has
+to 3f) and 4a to 4d built; 4e and 4f are left of Task 4. Phase 11 has
 nothing left to build (Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 4c: the photos folder** (ADR-275). `<data dir>/photos/`
-is copied to `photos/` beside `db/` at the destination, folder or bucket:
-only the files missing there, on the probe's clock, on "back up now" and
-as the server stops. `backup.RestorePhotos` brings them back, each held
-to the hash in its name. Tested to a folder, a stand-in S3 and a real
-MinIO; **not with hundreds of photos, and not from the menu screen**.
+**Phase 12, Task 4d: the backup's write path and API** (ADR-276).
+`backup.Manager` saves a destination after trying it, and swaps the
+running backup: at once on Windows, at the next start elsewhere
+(`restart_needed`). `GET`/`PUT /api/v1/settings/backup` and `POST
+/api/v1/settings/backup/now` under `settings.edit`; the secret goes in
+and never comes out. Types generated. The database's copies are now
+under `db/<generation>/`, and the database leaves its log alone while a
+backup runs: both fix backups that restored short. Tested over HTTP
+against a real folder; **not on Linux, and no bucket through the API**.
 
 ## Next task
 
-**Phase 12, Task 4d: the write path and the API.** The settings service
-reads and writes `backup.json` under `settings.edit` (written whole and
-renamed, owner-only), checks the destination can be written to before
-keeping it, and swaps the running backup without a restart. The secret
-goes in and never comes back out. `GET` and `PUT /api/v1/settings/backup`,
-`POST /api/v1/settings/backup/now`, the status with them, generated
-types. Read ADR-273 to ADR-275 first. **The hard part**: Litestream's
-notes forbid closing it under open database connections on Linux (it
-drops the process's file locks), and `main.go` holds one `*backup.Engine`
-for the shutdown stack. Decide how a new destination takes effect before
-writing the handler. `backup.Engine` has `BackUpNow` and `Status` ready.
-**Do not move Litestream past v0.5.15 without running the tests on
-Windows.** A real bucket for tests: `MEZ_TEST_S3_BUCKET` and its friends
-(`TestARealBucket`; MinIO in Docker served). Then 4e the screen, 4f
-`mez restore` and the docs. Before a release,
+**Phase 12, Task 4e: the Backups section of settings.** The spec first:
+`docs/design/screens/backoffice-settings.md`, whose Backup row stops
+saying Soon (`settings-logic.ts` has it `built: false`, and a test says
+so). Off, a folder, or a bucket; the status in colour and a word (`off`,
+`starting`, `ok`, `failing`, with `last_synced_at` and `error`); "Back up
+now"; `restart_needed` said plainly. The types are `BackupRequest` and
+`BackupResponse` in `web/shared/api-types.ts`; refusals are
+`invalid_setting` with a `field` named as in the request (`folder`,
+`bucket`, `path`, `region`, `endpoint`, `secret_access_key`, `kind`) and
+`backup_unusable` with the destination's own reason. A save can take
+twenty seconds. `secret_set` with an empty secret box means "kept".
+Read `docs/design/tokens.md`; walk it in a browser against `bin/mez`
+after `make build-web`. Then 4f, `mez restore` and the docs. **Do not
+move Litestream past v0.5.15 without running the tests on Windows.**
+Before a release,
 run the Windows installer once on a spare machine: "Open mez now" opening
 the setup link (ADR-270) and the window it opens in (ADR-272) have not
 been watched since they changed. `make check` embeds

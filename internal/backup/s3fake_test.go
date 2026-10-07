@@ -177,6 +177,11 @@ type listResult struct {
 	MaxKeys     int           `xml:"MaxKeys"`
 	IsTruncated bool          `xml:"IsTruncated"`
 	Contents    []listContent `xml:"Contents"`
+	Folders     []listFolder  `xml:"CommonPrefixes"`
+}
+
+type listFolder struct {
+	Prefix string `xml:"Prefix"`
 }
 
 type listContent struct {
@@ -195,7 +200,19 @@ func (f *fakeS3) list(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	sort.Strings(keys)
+	delimiter := r.URL.Query().Get("delimiter")
+	folders := map[string]bool{}
 	for _, k := range keys {
+		// With a delimiter, what lies beyond the next one is a "folder",
+		// named once and not listed.
+		if rest := strings.TrimPrefix(k, prefix); delimiter != "" && strings.Contains(rest, delimiter) {
+			folder := prefix + rest[:strings.Index(rest, delimiter)+len(delimiter)]
+			if !folders[folder] {
+				folders[folder] = true
+				out.Folders = append(out.Folders, listFolder{Prefix: folder})
+			}
+			continue
+		}
 		obj := f.objects[k]
 		out.Contents = append(out.Contents, listContent{Key: k, LastModified: obj.modified.Format("2006-01-02T15:04:05.000Z"), Size: len(obj.body)})
 	}

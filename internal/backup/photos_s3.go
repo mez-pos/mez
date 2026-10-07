@@ -84,6 +84,40 @@ func (b bucketPhotos) put(ctx context.Context, name string, body []byte) error {
 	return err
 }
 
+// folders names the "folders" directly under a prefix ending in a slash.
+func (b bucketPhotos) folders(ctx context.Context, prefix string) ([]string, error) {
+	var names []string
+	pages := s3.NewListObjectsV2Paginator(b.client, &s3.ListObjectsV2Input{
+		Bucket:    aws.String(b.bucket),
+		Prefix:    aws.String(prefix),
+		Delimiter: aws.String("/"),
+	})
+	for pages.HasMorePages() {
+		page, err := pages.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range page.CommonPrefixes {
+			name := strings.TrimSuffix(strings.TrimPrefix(aws.ToString(p.Prefix), prefix), "/")
+			if name != "" {
+				names = append(names, name)
+			}
+		}
+	}
+	return names, nil
+}
+
+// putNote writes a small text object at a key of the caller's choosing.
+func (b bucketPhotos) putNote(ctx context.Context, key, text string) error {
+	_, err := b.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(b.bucket),
+		Key:         aws.String(key),
+		Body:        strings.NewReader(text),
+		ContentType: aws.String("text/plain; charset=utf-8"),
+	})
+	return err
+}
+
 func (b bucketPhotos) open(ctx context.Context, name string) (io.ReadCloser, error) {
 	out, err := b.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(b.bucket),

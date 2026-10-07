@@ -121,6 +121,10 @@ export type ErrorCode =
   | 'invalid_filter'
   | 'invalid_setting'
   | 'venue_not_found'
+  | 'backup_unusable'
+  | 'backup_off'
+  | 'backup_failed'
+  | 'backup_unavailable'
   | 'tax_class_not_found'
   | 'tax_class_name_taken'
   | 'tax_class_in_use'
@@ -293,6 +297,17 @@ export type TunnelState =
   | 'refused'
   | 'replaced'
   | 'stopped';
+
+export type BackupKind =
+  | ''
+  | 'folder'
+  | 's3';
+
+export type BackupState =
+  | 'off'
+  | 'starting'
+  | 'ok'
+  | 'failing';
 
 export type GuestRoundStatus =
   | 'waiting'
@@ -1131,6 +1146,44 @@ export interface OnlinePaymentsResponse {
   webhooks: boolean;
   return_url: string;
   last_paid_at?: string;
+}
+
+export interface BackupRequest {
+  kind: string;
+  folder: string;
+  s3: BackupBucketRequest;
+}
+
+export interface BackupBucketRequest {
+  bucket: string;
+  path: string;
+  region: string;
+  endpoint: string;
+  access_key_id: string;
+  secret_access_key: string;
+}
+
+export interface BackupResponse {
+  kind: BackupKind;
+  folder: string;
+  s3: BackupS3;
+  status: BackupStatus;
+  restart_needed: boolean;
+}
+
+export interface BackupS3 {
+  bucket: string;
+  path: string;
+  region: string;
+  endpoint: string;
+  access_key_id: string;
+  secret_set: boolean;
+}
+
+export interface BackupStatus {
+  state: BackupState;
+  last_synced_at?: string;
+  error?: string;
 }
 
 export interface GuestRequestsResponse {

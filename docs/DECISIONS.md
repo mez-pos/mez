@@ -9599,3 +9599,121 @@ server, stopped as soon as it was serving, leaving its photo at a
 folder and at MinIO. **Not seen**: hundreds of photos; Amazon's S3 or
 R2; the menu screen adding a photo with the backup running.
 ---
+
+## ADR-276 - The destination is changed from the back office, and each unbroken run of backing up has a folder of its own
+2026-10 · Status: accepted. Phase 12, Task 4d. Amends ADR-273 (the
+closing checkpoint, the layout under `db/`).
+Decision, the write path:
+  - **`backup.Manager`** holds the saved destination, the running
+    backup and the changing of one for the other. `main.go` holds it
+    where it held the engine.
+  - **A destination is tried before it is kept** (`backup.Check`): it
+    is listed, then written to. What is written is `mez-backup.txt`, a
+    note saying what the folder is and not to edit it by hand, and it is
+    left there. One that cannot be written to is refused and nothing
+    changes: whoever is saving it is at the screen and can fix it now.
+  - **It takes effect at once on Windows, and anywhere when no backup
+    was running.** The old backup is stopped, which copies what it has
+    left, and the new one started.
+  - **Elsewhere, a running backup is not stopped while the server runs:
+    the new destination is saved and waits for a restart**, and the
+    answer says so (`restart_needed`). Stopping Litestream closes its
+    handle on the database file, and on every system but Windows closing
+    any handle on a file drops every lock the process holds on it. The
+    server would go on writing a database it no longer had locked, and
+    the next `mez pair` at that machine, closing as the last connection
+    it could see, could take the log out from under it. Windows locks by
+    handle and has no such rule.
+  - **`backup.json` is written by the server**: whole, renamed into
+    place, its owner's alone where modes mean something. Off is no file.
+  - **`GET` and `PUT /api/v1/settings/backup`, `POST
+    /api/v1/settings/backup/now`**, under `settings.edit`, through the
+    settings service. A part written wrongly is `invalid_setting` with
+    its field, named as in `backup.json`. New codes: `backup_unusable`
+    (422, tried and failed, with the destination's own reason),
+    `backup_off` (409), `backup_failed` (502), `backup_unavailable`
+    (404). "Back up now" is given 30 seconds.
+  - **The secret goes in and never comes back out**: an answer carries
+    `secret_set`. A save with no secret keeps the saved one only when
+    the bucket, region, endpoint and key id are all as they were;
+    otherwise the saved key would be signed for wherever the box now
+    says.
+  - **The other kind's fields are ignored**, so a screen need not clear
+    a box the owner has moved away from.
+Decision, what testing it found:
+  - **A generation.** Litestream numbers what it sends and expects the
+    destination to hold what it last sent. When that stops being true
+    (the destination changed and changed back, a new drive in the old
+    one's place, a venue restored on another machine) the numbers start
+    again, and two runs of the same numbers in one folder restored to
+    some of each: 45 rows of 60, with nothing to say so. So the
+    database's copies are under `db/<generation>/`, a folder named for
+    when the run began (`20261007T064501Z-3fa9c2`). A run that cannot
+    carry on from the one before starts a new folder and sends the whole
+    database. `Restore` takes the newest generation that has a whole
+    copy in it. Nothing deletes a generation: an owner who points a new
+    install at last year's backup, meaning to restore it later, still
+    has it.
+  - **Which generation a run carries on in** is in a file beside
+    Litestream's working folder (`.mez.db-litestream-for`): the
+    destination, the generation, and whether a whole copy has been seen
+    there. A different destination, a missing working folder or a
+    missing file is a new generation, and the working folder is cleared
+    before Litestream opens it.
+  - **The probe looks for the whole copy.** Litestream never looks again
+    at what it has sent: a drive swapped for an empty one while the
+    server runs was sent every change from then on and never the
+    database, and the status read ok. Once a whole copy has been seen,
+    not finding one is the destination having lost it. The engine says
+    so; on Windows the manager stops it and starts another, in a new
+    generation, at most once in ten minutes; elsewhere the status says
+    failing until the restart.
+  - **Not Litestream's own forgetting.** It can drop what it remembers
+    while it runs (`ResetLocalState`, its `AutoRecoverEnabled`). Doing
+    that under its own goroutines also restored short. It is stopped
+    first, always.
+  - **The database's closing checkpoint is skipped while a backup
+    runs** (`db.Options.LogKeptBy`). ADR-273 had it ask once and move
+    on. When it won the race it emptied the log before Litestream had
+    read the last of it, and the evening's last sales were missing from
+    the backup with no error anywhere: 23 stops in 200 on a busy
+    machine, none in 200 since. It was in 4a to 4c. The backup's own
+    last connection folds the log in as it closes.
+  - **"Back up now" is counted in and out**, and refused once the
+    engine is stopping: one that reached Litestream after it had closed
+    opened it again, with nobody left to close it.
+Because: an owner has no terminal and no text editor for a JSON file,
+and on Windows no way to restart a service short of the PC. And a
+backup that restores short is worse than none, because it is believed.
+Cost: on Linux and in Docker a changed destination, and a destination
+that has lost its copy, wait for a restart. A save can take twenty
+seconds. Old generations are never removed: each is a whole copy of the
+database and a week of changes, left for the owner to delete, and
+nothing yet says which are old. Generations sort by this machine's
+clock, so a clock set back a year makes the next new generation sort
+before the last. Changing the destination leaves the old one as it was.
+The swap has a moment with no backup running. A destination emptied
+while the server runs reads ok until the next look, 15 seconds for a
+folder and a minute for a bucket. On Linux, Litestream starting under
+the open database can still close its own handle if its first look
+fails (a risk it has had at every start since ADR-273, and one its
+notes do not mention). **Seen on 2026-10-07**, in tests on Windows
+against real folders: a first destination saved and backing up at once;
+a swap while selling, the old destination restoring to what it had and
+the new to everything, photos too; off; a destination that cannot be
+made, a relative folder and a bucket with no key each refused with
+nothing changed; the restart path, by telling the manager it is not on
+Windows; over HTTP as an owner and as a cashier; a drive emptied while
+running refilled with nobody asking; a destination changed and changed
+back, emptied, and Litestream's working files lost, each restoring
+whole, with Litestream's tidying hurried so that a moment is a morning.
+The whole package five times over on a loaded machine. Generations in
+a bucket against the stand-in S3 only: Docker had stopped, and the real
+MinIO of ADR-274 was not run against this. A second reader went over it: the
+closed engine opened again, the save that could hang a shutdown, the
+borrowed secret and the browser that goes away mid-save were theirs.
+**Not seen**: Linux, where the reason for the restart lives; a bucket
+saved through the API; a real bucket listed by generation
+(`TestARealBucket` covers it when one is named); the screen, which is
+Task 4e.
+---

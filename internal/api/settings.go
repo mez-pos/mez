@@ -30,6 +30,9 @@ type Settings interface {
 	CreateTaxClass(ctx context.Context, venueID int64, in settings.TaxClassInput) (int64, error)
 	UpdateTaxClass(ctx context.Context, venueID, id int64, in settings.TaxClassInput) error
 	SetTaxClassActive(ctx context.Context, venueID, id int64, active bool) error
+	Backup(ctx context.Context) (settings.Backup, error)
+	UpdateBackup(ctx context.Context, in settings.BackupInput) (settings.Backup, error)
+	BackUpNow(ctx context.Context) (settings.Backup, error)
 }
 
 // WithSettings mounts the venue settings (phase 10, Task 6a). Reading them
@@ -104,6 +107,7 @@ func (s *Server) mountSettings(mux *http.ServeMux) {
 	s.mountRulesSettings(mux)
 	s.mountReceiptSettings(mux)
 	s.mountPaymentSettings(mux)
+	s.mountBackupSettings(mux)
 }
 
 func (s *Server) readVenueName(w http.ResponseWriter, r *http.Request) {

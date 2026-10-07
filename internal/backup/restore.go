@@ -54,8 +54,31 @@ func Restore(ctx context.Context, cfg Config, outputPath string) error {
 		}
 	}
 
+	// The newest generation with a whole copy in it. One begun and never
+	// finished (the line dropped as the first copy went) has nothing to
+	// restore, and the one before it is the venue's backup still.
+	listCtx, cancel := context.WithTimeout(ctx, listPhotosTimeout)
+	found, err := generations(listCtx, cfg)
+	cancel()
+	if err != nil {
+		return fmt.Errorf("backup: restoring from %s: %w", cfg.Destination(), err)
+	}
+	for _, generation := range found {
+		err := restoreGeneration(ctx, cfg, generation, outputPath)
+		if errors.Is(err, ErrNothingToRestore) {
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("backup: restoring from %s: %w", cfg.Destination(), err)
+		}
+		return nil
+	}
+	return fmt.Errorf("backup: restoring from %s: %w", cfg.Destination(), ErrNothingToRestore)
+}
+
+func restoreGeneration(ctx context.Context, cfg Config, generation, outputPath string) error {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	replica := litestream.NewReplicaWithClient(nil, newDestination(cfg, log).client)
+	replica := litestream.NewReplicaWithClient(nil, newDestination(cfg, generation, log).client)
 	opt := litestream.NewRestoreOptions()
 	opt.OutputPath = outputPath
 	// The whole of it. A restore is rare, and a restored database that is
@@ -64,9 +87,9 @@ func Restore(ctx context.Context, cfg Config, outputPath string) error {
 
 	if err := replica.Restore(ctx, opt); err != nil {
 		if errors.Is(err, litestream.ErrNoSnapshots) || errors.Is(err, litestream.ErrTxNotAvailable) {
-			return fmt.Errorf("backup: restoring from %s: %w", cfg.Destination(), ErrNothingToRestore)
+			return ErrNothingToRestore
 		}
-		return fmt.Errorf("backup: restoring from %s: %w", cfg.Destination(), err)
+		return err
 	}
 	return nil
 }

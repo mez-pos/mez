@@ -108,7 +108,7 @@ Phase 11.
     `<data dir>/photos/` copied beside the database's backup, to a folder
     and to a bucket: files named by their hash, so only the missing ones
     go, on the same clock and on "back up now". Restore brings them back.
-  - [ ] **Task 4d - The write path and the API.**
+  - [x] **Task 4d - The write path and the API.**
     The settings service reads and writes the destination under
     `settings.edit`, checks it can be written to before keeping it, and
     restarts replication with no restart of the server. The secret goes in

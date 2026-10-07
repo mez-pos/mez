@@ -72,6 +72,12 @@ type Options struct {
 	// ProbeInterval is how often health is checked in the background. Zero is
 	// defaultProbeInterval.
 	ProbeInterval time.Duration
+
+	// LogKeptBy is asked, as the database closes, whether something else
+	// is reading the write-ahead log and will fold it into the database
+	// itself: the backup (ADR-276). When it is, Close leaves the log
+	// alone. Nil is nobody.
+	LogKeptBy func() bool
 }
 
 // DB owns the connections to one SQLite database, and the goroutine that
@@ -94,6 +100,8 @@ type DB struct {
 
 	stopProber context.CancelFunc
 	proberDone chan struct{}
+
+	logKeptBy func() bool
 
 	closeOnce sync.Once
 	closeErr  error
@@ -160,6 +168,7 @@ func Open(ctx context.Context, opts Options) (*DB, error) {
 		path:       opts.Path,
 		log:        opts.Log.With("db_path", opts.Path),
 		proberDone: make(chan struct{}),
+		logKeptBy:  opts.LogKeptBy,
 	}
 
 	// Answer once before returning, so the first request to /api/v1/health
@@ -208,7 +217,16 @@ func (d *DB) Close(ctx context.Context) error {
 		// Fold the WAL back into the database file. A venue machine is
 		// switched off at the wall most nights, and a checkpointed file is one
 		// a backup or a support engineer can copy on its own.
-		if err := d.checkpoint(ctx); err != nil {
+		//
+		// Unless the backup is reading the log. It copies what is written
+		// from the log, and a log emptied here before it has read the last
+		// of it is the evening's last sales missing from the backup, with
+		// nothing to say so. That happened, in about one stop in ten on a
+		// busy machine, until this asked. The backup closes after this
+		// does, and its own last connection folds the log in as it goes.
+		if d.logKeptBy != nil && d.logKeptBy() {
+			d.log.Debug("the write-ahead log is left for the backup to read and fold in")
+		} else if err := d.checkpoint(ctx); err != nil {
 			d.log.Warn("could not checkpoint the write-ahead log", "error", err)
 		}
 
@@ -231,11 +249,9 @@ func (d *DB) checkpoint(ctx context.Context) error {
 	defer conn.Close()
 
 	// A truncating checkpoint waits for whoever else has the WAL open. By
-	// now the requests have drained and the read pool is idle, so the only
-	// one left is the backup, which holds the log open on purpose, closes
-	// after this does and folds it in itself (ADR-273). Waiting out the
-	// busy timeout against it would spend half the shutdown on nothing, so
-	// this asks once and takes no for an answer.
+	// now the requests have drained and the read pool is idle, so nobody
+	// should, and anybody who does (a `mez pair` at this machine) is not
+	// worth half the shutdown: this asks once and takes no for an answer.
 	if _, err := conn.ExecContext(ctx, "PRAGMA busy_timeout(0)"); err != nil {
 		return fmt.Errorf("db: checkpointing: %w", err)
 	}
@@ -244,7 +260,7 @@ func (d *DB) checkpoint(ctx context.Context) error {
 		return fmt.Errorf("db: checkpointing: %w", err)
 	}
 	if busy != 0 {
-		d.log.Debug("the write-ahead log is still held open, by the backup if one is running; it is folded in when the last connection closes")
+		d.log.Debug("the write-ahead log is still held open by another connection; it is folded in when the last one closes")
 	}
 	return nil
 }

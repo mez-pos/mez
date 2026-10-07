@@ -10,6 +10,24 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Setting the backup from the back office** (ADR-276; phase 12 Task
+  4d). The API and no screen yet (4e). Seen on 2026-10-07 in tests on
+  Windows: a destination saved, tried and backing up at once; swapped
+  while selling; refused when it cannot be written to; over HTTP as an
+  owner and a cashier. **Not seen**: Linux or Docker, where a changed
+  destination waits for a restart; a bucket saved through the API. A
+  save can take twenty seconds. The destination left behind is not
+  cleaned up, and neither are old generations under `db/`: each is a
+  whole copy, and nothing yet says which are old. Generations sort by
+  this machine's clock. A drive swapped for an empty one is refilled by
+  itself on Windows, after the next look at it (15 seconds for a folder,
+  a minute for a bucket, and reading ok until then), and at the next
+  restart elsewhere. Until this task a stop could leave the last sales
+  out of the backup (about one stop in ten on a busy machine) and a
+  reused destination could restore short; both were in 4a to 4c as
+  committed. On Linux, Litestream starting under the open database can
+  still drop the process's file locks if its first look fails.
+
 - **The photos in the backup** (ADR-275; phase 12 Task 4c). Seen on
   2026-10-07 in tests: to a folder, a stand-in S3 and a real MinIO and
   back, each photo held to the hash in its name both ways; the whole
@@ -51,9 +69,8 @@
   Litestream tries again or someone backs up now. A destination given
   with a `\\?\` prefix or an 8.3 short name is not recognised as inside
   the data directory. Left out until
-  4d to 4f: any way to set the destination
-  but writing `backup.json` by hand and restarting, a status anyone can
-  see (a failing backup is only in the log), and `mez restore`. Litestream
+  4e and 4f: a screen for it (the API is there, ADR-276), and
+  `mez restore`. Litestream
   is held at v0.5.15 because 0.5.16 and 0.5.17 do not work on Windows;
   this has not been reported to its authors. Its lines in the log are
   its own words, and a restore logs through Go's default logger.

@@ -11,12 +11,18 @@ package backup
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
+	"os"
 	"path/filepath"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/benbjohnson/litestream"
@@ -47,6 +53,21 @@ const (
 	closeTidy              = time.Second
 )
 
+// pace is how fast Litestream tidies up after itself: how often the small
+// files it writes for each change are merged into bigger ones, and how
+// soon the small ones are then deleted from this machine. Litestream's
+// own, in a variable so that a test can live through a morning's worth of
+// tidying in a second.
+var pace = struct {
+	levels           litestream.CompactionLevels
+	l0Retention      time.Duration
+	l0RetentionCheck time.Duration
+}{
+	levels:           litestream.DefaultCompactionLevels,
+	l0Retention:      litestream.DefaultL0Retention,
+	l0RetentionCheck: litestream.DefaultL0RetentionCheckInterval,
+}
+
 // staleAfter is how long without reaching the destination before the
 // backup is said to be failing. Litestream reaches it every second while
 // it can, and backs off to minutes while it cannot.
@@ -68,6 +89,9 @@ const (
 	StateFailing State = "failing"
 )
 
+// States is every State, for the API's vocabulary.
+func States() []State { return []State{StateOff, StateStarting, StateOK, StateFailing} }
+
 // Status is what an owner needs to know about the backup.
 type Status struct {
 	State State
@@ -77,6 +101,10 @@ type Status struct {
 	// Error is what went wrong most recently, while it is still wrong.
 	Error string
 }
+
+// ErrStopping is asking a backup that is being stopped, for the server's
+// shutdown or to make way for another, to do something.
+var ErrStopping = errors.New("the backup is stopping")
 
 // ErrOff is asking a backup with no destination to do something.
 var ErrOff = errors.New("no backup destination is set")
@@ -104,6 +132,10 @@ type Options struct {
 	// ProbeEvery is how often the destination is looked at. Zero is the
 	// destination's own pace.
 	ProbeEvery time.Duration
+	// OnLost is told, once and on a goroutine of its own, that the
+	// destination no longer holds what was sent to it and the backup must
+	// be started again to send it all. See Engine.Lost.
+	OnLost func()
 }
 
 // Engine is a running backup, or the absence of one: with no destination
@@ -114,11 +146,12 @@ type Engine struct {
 	log     *slog.Logger
 	started time.Time
 
-	// Nil when off.
-	dest   destination
-	store  *litestream.Store
-	ldb    *litestream.DB
-	errors *errorKeeper
+	// Nil or empty when off.
+	generation string
+	dest       destination
+	store      *litestream.Store
+	ldb        *litestream.DB
+	errors     *errorKeeper
 
 	// The first look at the database, in a goroutine of its own.
 	stopLook context.CancelFunc
@@ -133,6 +166,26 @@ type Engine struct {
 	// went wrong with it.
 	photos      *photoSync
 	photosError lastError
+
+	// asked is every "back up now" in flight. Close waits for them before
+	// it stops Litestream: one that reached Litestream after it had
+	// closed would open it again, with nobody left to close it. stopAsked
+	// tells them to give up, and stopping refuses new ones.
+	askMu     sync.Mutex
+	stopping  bool
+	asked     sync.WaitGroup
+	askCtx    context.Context
+	stopAsked context.CancelFunc
+
+	// sent is whether the destination has been seen to hold a whole copy
+	// in this generation. Once it has, not finding one is the
+	// destination having lost it.
+	sent atomic.Bool
+
+	// lostOnce is the saying, once, that the destination has lost what it
+	// had, and onLost who is told.
+	lostOnce sync.Once
+	onLost   func()
 
 	closeOnce sync.Once
 }
@@ -164,16 +217,29 @@ func Start(ctx context.Context, opts Options) (*Engine, error) {
 		return e, nil
 	}
 
-	e.errors = &errorKeeper{Handler: opts.Log.Handler(), last: new(lastError)}
+	e.errors = &errorKeeper{Handler: opts.Log.Handler(), last: new(lastError), lost: new(atomic.Bool)}
 	log := slog.New(e.errors).With("subsystem", "backup")
 
+	e.onLost = opts.OnLost
+	e.askCtx, e.stopAsked = context.WithCancel(context.Background())
 	e.ldb = litestream.NewDB(opts.DBPath)
-	e.dest = newDestination(opts.Config, log)
+	// Before Litestream opens them: what it remembers of one destination
+	// is no use for another.
+	generation, sent, err := workingFilesFor(e.ldb.MetaPath(), opts.Config, opts.Clock.Now(), opts.Log)
+	if err != nil {
+		return nil, fmt.Errorf("backup: %w", err)
+	}
+	e.generation = generation
+	e.sent.Store(sent)
+	e.dest = newDestination(opts.Config, generation, log)
 	replica := litestream.NewReplicaWithClient(e.ldb, e.dest.client)
 	e.ldb.Replica = replica
 	e.dest.attach(replica)
+	e.errors.lostIn = e.ldb.MetaPath()
 
-	e.store = litestream.NewStore([]*litestream.DB{e.ldb}, litestream.DefaultCompactionLevels)
+	e.store = litestream.NewStore([]*litestream.DB{e.ldb}, pace.levels)
+	e.store.SetL0Retention(pace.l0Retention)
+	e.store.L0RetentionCheckInterval = pace.l0RetentionCheck
 	e.store.Logger = log
 	e.ldb.SetLogger(log)
 	e.store.SnapshotInterval = snapshotEvery
@@ -237,7 +303,11 @@ func (e *Engine) probeLoop(ctx context.Context, every time.Duration) {
 
 // probe asks whether the destination can be used.
 func (e *Engine) probe(ctx context.Context) {
-	if err := e.dest.reach(ctx); err != nil {
+	if e.errors.lost.Load() {
+		e.sayLost()
+	}
+	whole, err := e.dest.reach(ctx)
+	if err != nil {
 		// Being stopped mid-question is not the destination's fault.
 		if ctx.Err() == nil {
 			e.unreachable.set(err.Error())
@@ -247,6 +317,21 @@ func (e *Engine) probe(ctx context.Context) {
 		return
 	}
 	e.unreachable.clear()
+	// Litestream does not look again at what it has sent. A drive swapped
+	// for an empty one while the server runs is sent every change from
+	// then on and never the database they are changes to, and Litestream
+	// reports all well. So it is looked at here.
+	switch {
+	case whole && !e.sent.Load():
+		e.sent.Store(true)
+		if err := markSent(e.ldb.MetaPath(), e.cfg, e.generation); err != nil {
+			e.log.Warn("could not note that the backup has reached its destination", "error", err)
+		}
+	case !whole && e.sent.Load():
+		e.errors.lost.Store(true)
+		e.sayLost()
+		return
+	}
 	// The photos go on the probe's clock: a photo added to the menu is at
 	// the destination within the minute, and a quiet venue with no new
 	// photo asks the destination nothing more than the probe just did.
@@ -290,15 +375,38 @@ func (e *Engine) BackUpNow(ctx context.Context) error {
 	// In a goroutine, because Litestream takes its lock before it looks
 	// at ctx, and with a bucket and no internet that lock is held for
 	// minutes. Whoever pressed the button gets an answer when ctx says.
+	e.askMu.Lock()
+	if e.stopping {
+		e.askMu.Unlock()
+		return fmt.Errorf("backup: backing up now: %w", ErrStopping)
+	}
+	e.asked.Add(1)
+	e.askMu.Unlock()
+
+	// The caller's time, or the engine's, whichever ends first.
+	callerCtx := ctx
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	defer context.AfterFunc(e.askCtx, cancel)()
+
 	done := make(chan error, 1)
 	go func() {
+		defer e.asked.Done()
 		_, err := e.store.SyncDB(ctx, e.ldb.Path(), true)
+		if lostWorkingFile(err, e.ldb.MetaPath()) {
+			e.errors.lost.Store(true)
+			e.sayLost()
+			err = errors.New(lostReason)
+		}
 		done <- err
 	}()
 	var err error
 	select {
 	case err = <-done:
 	case <-ctx.Done():
+		if callerCtx.Err() == nil {
+			return fmt.Errorf("backup: backing up now: %w", ErrStopping)
+		}
 		err = fmt.Errorf("the destination did not answer in time: %w", ctx.Err())
 	}
 	if err != nil {
@@ -337,6 +445,8 @@ func (e *Engine) Status() Status {
 	photos, _ := e.photosError.get()
 
 	switch {
+	case e.errors.lost.Load():
+		return Status{State: StateFailing, LastSyncedAt: utcOrZero(last), Error: lostReason}
 	case gone != "":
 		return Status{State: StateFailing, LastSyncedAt: utcOrZero(last), Error: gone}
 	case stands:
@@ -376,6 +486,9 @@ func (e *Engine) Close(ctx context.Context) error {
 		// not been cut off before it could say.
 		gone, _ := e.unreachable.get()
 		e.stopProbe()
+		e.askMu.Lock()
+		e.stopping = true
+		e.askMu.Unlock()
 
 		// In a goroutine, because Litestream's close does not give up when
 		// ctx does: a write stuck on a share that has stopped answering
@@ -416,6 +529,11 @@ func (e *Engine) Close(ctx context.Context) error {
 				<-e.lookDone
 			}
 			e.stopLook()
+			// And every "back up now" still out: told to give up, and
+			// waited for, so that none comes back to a Litestream that
+			// has closed and opens it again.
+			e.stopAsked()
+			e.asked.Wait()
 			// Not returned. A drive that is unplugged at closing time is
 			// the backup failing, which the status already says, and not
 			// the server failing to stop: under a service a failed stop is
@@ -439,6 +557,130 @@ func (e *Engine) Close(ctx context.Context) error {
 		}
 	})
 	return nil
+}
+
+// lostWorkingFile reports whether err is Litestream failing to find one of
+// its own small files in its working folder.
+//
+// That is what a destination that has lost what it had looks like from
+// here: a new drive in the old one's place, a bucket emptied, a folder
+// changed for another and back. Litestream sees the destination is behind
+// and goes to send the changes since, which it tidied away long ago.
+func lostWorkingFile(err error, workingDir string) bool {
+	return workingDir != "" && errors.Is(err, fs.ErrNotExist) && strings.Contains(err.Error(), workingDir)
+}
+
+// lostReason is what Status says of a destination that has lost what it
+// had.
+const lostReason = "the destination no longer holds what was sent to it; the whole database is sent again when the backup next starts"
+
+// Running reports whether this engine is backing up: false for one that is
+// off or nil. It says nothing of whether the destination can be reached.
+func (e *Engine) Running() bool { return e != nil && e.store != nil }
+
+// Lost reports whether the destination no longer holds what was sent to
+// it, so that this backup cannot go on and another must be started in
+// its place.
+//
+// Litestream can forget where it had got to while it runs, and does for
+// some errors (its AutoRecoverEnabled), but not for this one; and doing
+// it for it, under its own goroutines, sent backups that restored short.
+// So it is done the plain way: this engine is stopped, its working files
+// removed, and a new one started, by whoever OnLost tells.
+func (e *Engine) Lost() bool {
+	return e != nil && e.store != nil && e.errors.lost.Load()
+}
+
+// sayLost marks the working files as no use to the next start, and tells
+// whoever asked to be told. Once.
+func (e *Engine) sayLost() {
+	e.lostOnce.Do(func() {
+		e.log.Warn("the destination no longer holds what was last sent to it; the backup has to be started again to send the whole database")
+		if err := forgetWorkingFiles(e.ldb.MetaPath()); err != nil {
+			e.log.Warn("could not mark the backup to start again", "error", err)
+		}
+		if e.onLost != nil {
+			go e.onLost()
+		}
+	})
+}
+
+// markerSuffix names the file, beside Litestream's working folder, that
+// says which destination and which generation the folder's contents are
+// about.
+const markerSuffix = "-for"
+
+// workingFilesFor makes Litestream's working folder fit to back up to
+// cfg, before Litestream is started on it, and names the generation to
+// back up into.
+//
+// If the folder is what the last run left for this same destination, the
+// run carries on in its generation. If it was kept for another
+// destination, or for one since found to have lost what it had, or is
+// not there at all, it is cleared and a new generation begun: Litestream
+// starts from nothing and sends the whole database.
+//
+// Nothing is lost by clearing it. It is Litestream's memory of what it
+// has sent, and the database is what is sent.
+func workingFilesFor(workingDir string, cfg Config, now time.Time, log *slog.Logger) (generation string, sent bool, err error) {
+	marker := workingDir + markerSuffix
+	want := destinationMark(cfg)
+
+	have, err := os.ReadFile(marker)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return "", false, fmt.Errorf("reading %s: %w", marker, err)
+	}
+	// Three lines: the destination, the generation, and "sent" once a
+	// whole copy has been seen there.
+	if lines := strings.Split(strings.TrimSpace(string(have)), "\n"); len(lines) >= 2 && lines[0] == want && generationName.MatchString(lines[1]) {
+		if _, statErr := os.Stat(workingDir); statErr == nil {
+			return lines[1], len(lines) > 2 && lines[2] == sentWord, nil
+		}
+	}
+
+	generation, err = newGeneration(now)
+	if err != nil {
+		return "", false, err
+	}
+	log.Info("the backup begins again with the whole database", "destination", cfg.Destination(), "generation", generation)
+	if err := os.RemoveAll(workingDir); err != nil {
+		return "", false, fmt.Errorf("clearing %s: %w", workingDir, err)
+	}
+	// Made here, so that it is there for the next start to find even if
+	// this one is stopped before Litestream has looked at the database.
+	if err := os.MkdirAll(workingDir, 0o750); err != nil {
+		return "", false, fmt.Errorf("making %s: %w", workingDir, err)
+	}
+	if err := writeWhole(marker, []byte(want+"\n"+generation+"\n")); err != nil {
+		return "", false, fmt.Errorf("writing %s: %w", marker, err)
+	}
+	return generation, false, nil
+}
+
+// sentWord is the marker's third line.
+const sentWord = "sent"
+
+// markSent notes, for the starts after this one, that the destination has
+// held a whole copy in this generation.
+func markSent(workingDir string, cfg Config, generation string) error {
+	return writeWhole(workingDir+markerSuffix, []byte(destinationMark(cfg)+"\n"+generation+"\n"+sentWord+"\n"))
+}
+
+// forgetWorkingFiles makes the next workingFilesFor clear the folder,
+// whatever the destination.
+func forgetWorkingFiles(workingDir string) error {
+	err := os.Remove(workingDir + markerSuffix)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	return err
+}
+
+// destinationMark is a destination as one line: which place, not how it
+// is got into. A new secret for the same bucket is the same place.
+func destinationMark(cfg Config) string {
+	sum := sha256.Sum256([]byte(string(cfg.Kind) + "\n" + cfg.Destination()))
+	return hex.EncodeToString(sum[:])
 }
 
 // lastError is the most recent thing that went wrong, and when.
@@ -480,6 +722,10 @@ func (l *lastError) get() (string, time.Time) {
 type errorKeeper struct {
 	slog.Handler
 	last *lastError
+	// lostIn is Litestream's working folder, and lost is set when an
+	// error says a file is missing from it. See Engine.Lost.
+	lostIn string
+	lost   *atomic.Bool
 }
 
 // Enabled hears everything from Info up whatever the server's level, so
@@ -495,6 +741,9 @@ func (k *errorKeeper) Handle(ctx context.Context, r slog.Record) error {
 		r.Attrs(func(a slog.Attr) bool {
 			if a.Key == "error" {
 				msg = a.Value.String()
+				if err, ok := a.Value.Any().(error); ok && lostWorkingFile(err, k.lostIn) {
+					k.lost.Store(true)
+				}
 				return false
 			}
 			return true
@@ -515,9 +764,9 @@ func (k *errorKeeper) Handle(ctx context.Context, r slog.Record) error {
 // the embedded methods alone would hand back the inner one, and every
 // logger made with With would stop being heard.
 func (k *errorKeeper) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &errorKeeper{Handler: k.Handler.WithAttrs(attrs), last: k.last}
+	return &errorKeeper{Handler: k.Handler.WithAttrs(attrs), last: k.last, lostIn: k.lostIn, lost: k.lost}
 }
 
 func (k *errorKeeper) WithGroup(name string) slog.Handler {
-	return &errorKeeper{Handler: k.Handler.WithGroup(name), last: k.last}
+	return &errorKeeper{Handler: k.Handler.WithGroup(name), last: k.last, lostIn: k.lostIn, lost: k.lost}
 }
