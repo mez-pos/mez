@@ -1,9 +1,9 @@
 // The Spreadsheet pill in the Menu screen's head (backoffice-menu.md, "The
-// Spreadsheet menu"): the three things a file does to a menu, each with a
+// Spreadsheet menu"): the things a file does to a menu, each with a
 // line saying what it touches. One pill, since the head has no room for
-// three and they belong together.
+// four and they belong together.
 
-import { ChevronDownIcon, DownloadIcon, FileSpreadsheetIcon, TagIcon, UploadIcon, type LucideIcon } from "lucide-react";
+import { ChevronDownIcon, DownloadIcon, FileSpreadsheetIcon, ListChecksIcon, TagIcon, UploadIcon, type LucideIcon } from "lucide-react";
 import { useDisclosure } from "../../../shared/shell/use-disclosure";
 import { cx } from "../../../shared/ui/cx";
 import { headPanel, headPill } from "../sales/RangePill";
@@ -16,6 +16,7 @@ interface SpreadsheetMenuProps {
   /** Off until the menu is read. */
   disabled: boolean;
   onImport: () => void;
+  onChoices: () => void;
   onPrices: () => void;
 }
 
@@ -27,12 +28,13 @@ interface Choice {
   run: () => void;
 }
 
-export function SpreadsheetMenu({ exported, disabled, onImport, onPrices }: SpreadsheetMenuProps) {
+export function SpreadsheetMenu({ exported, disabled, onImport, onChoices, onPrices }: SpreadsheetMenuProps) {
   const { open, toggle, box, trigger, panel, panelId, pick, leaves } = useDisclosure();
   const busy = exported.busy !== null;
   const choices: readonly Choice[] = [
     { icon: DownloadIcon, label: "Export the menu", line: "Save every item as a CSV file.", run: () => void exported.download(exportPath) },
     { icon: UploadIcon, label: "Import new items", line: "Add items from a file. Nothing already on the menu changes.", run: onImport },
+    { icon: ListChecksIcon, label: "Import choices", line: "Add groups like Size or Milk from a file. Do this before the items.", run: onChoices },
     { icon: TagIcon, label: "Change prices", line: "Give back an export with its prices edited.", run: onPrices },
   ];
 

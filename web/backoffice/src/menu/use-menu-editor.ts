@@ -5,6 +5,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  ChoicesImport,
   MenuCategoryInput,
   MenuEditResponse,
   MenuEditor,
@@ -58,6 +59,10 @@ export interface MenuEditorApi {
   previewImport: (file: Blob) => Promise<MenuImport>;
   /** Adds a CSV file's items. `imported` is false when it had nothing new. */
   importMenu: (file: Blob) => Promise<MenuImport>;
+  /** The groups of choices a CSV file would add. Writes nothing. */
+  previewChoices: (file: Blob) => Promise<ChoicesImport>;
+  /** Adds them, offered by no item. `imported` is false when the file had nothing new. */
+  importChoices: (file: Blob) => Promise<ChoicesImport>;
   /** The prices a CSV file would change. Writes nothing. */
   previewPrices: (file: Blob) => Promise<MenuPrices>;
   /** Changes them, if the menu is still at the version the preview answered. */
@@ -132,6 +137,8 @@ export function useMenuEditor(): MenuEditorApi {
     // A whole menu can take longer than a small edit over a venue's wifi.
     previewImport: (file) => store.api.post<MenuImport>("/api/v1/menu/import/preview", file, { timeoutMs: 30_000 }),
     importMenu: (file) => refreshing(() => store.api.post<MenuImport>("/api/v1/menu/import", file, { timeoutMs: 30_000 })),
+    previewChoices: (file) => store.api.post<ChoicesImport>("/api/v1/menu/choices/import/preview", file, { timeoutMs: 30_000 }),
+    importChoices: (file) => refreshing(() => store.api.post<ChoicesImport>("/api/v1/menu/choices/import", file, { timeoutMs: 30_000 })),
     previewPrices: (file) => store.api.post<MenuPrices>("/api/v1/menu/prices/preview", file, { timeoutMs: 30_000 }),
     applyPrices: (file, version) => refreshing(() => store.api.post<MenuPrices>(`/api/v1/menu/prices?version=${version}`, file, { timeoutMs: 30_000 })),
   };

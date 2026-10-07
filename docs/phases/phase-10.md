@@ -306,7 +306,7 @@ session; split one again if it is not.
     recipe (the milk on Oat) is in v1 of this or left to the screen.
   - [x] **Task 10d: Recipes: the screen.** On the Recipes view, spec first.
 
-- [ ] **Task 11 — Modifier groups in the menu import.**
+- [x] **Task 11 — Modifier groups in the menu import.**
   Left out of Task 7 on purpose: a group is choices with bounds, attached
   to items, and does not fit one row for each item. The lowest of these
   five. An ADR first on the shape (a second file of Group, Choice, Price,
@@ -325,7 +325,7 @@ session; split one again if it is not.
     groups an item offers; template, preview and import routes under
     `/api/v1/menu/choices/import`. Tests in each layer, the last of them
     choices and then items reaching the terminal's menu.
-  - [ ] **Task 11b: The screen.** Spec first. **Import choices** in the
+  - [x] **Task 11b: The screen.** Spec first. **Import choices** in the
     Spreadsheet menu, and its dialog; the items import's dialog says that
     choices come first.
 

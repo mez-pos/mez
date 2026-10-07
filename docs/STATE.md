@@ -8,41 +8,38 @@
 ## Current phase
 
 **Phase 10 - Back office**, `docs/phases/phase-10.md`. The human added
-Tasks 8 to 12 after the menu import (ADR-292). **Tasks 8, 9 and 10 are
-built**: the menu's export, prices from a file, and ingredients and
-recipes from a file (ADR-293 to ADR-301). Left: Task 11 (modifier
-groups in the import) and Task 12 (three loose ends). Everything else
-in every phase is built and owes only being seen to work.
+Tasks 8 to 12 after the menu import (ADR-292). **Tasks 8 to 11 are
+built**: the menu's export, prices from a file, ingredients and recipes
+from a file, and groups of choices from a file (ADR-293 to ADR-303).
+Left: **Task 12**, three loose ends. Everything else in every phase is
+built and owes only being seen to work.
 
 ## Last completed task
 
-**Phase 10, Task 10d: the recipes dialog** (ADR-301). **Import** on
-Inventory's Recipes view: get a template that lists every dish with no
-recipe, type an ingredient and an amount beside each, choose the file,
-read the recipes it would give, **Add N recipes**.
-`RecipesImportModal.tsx`, with its words in `stock/import-logic.ts`.
-Task 10 is done. Both Inventory dialogs were walked in a browser
-against a demo venue, and their routes over HTTP against `bin/mez`. Not
-walked: either template in a real spreadsheet, and either dialog under
-1024px.
+**Phase 10, Task 11b: the choices dialog** (ADR-303). **Import
+choices** is the fourth thing in the Menu screen's Spreadsheet pill: a
+file of Group, Fewest, Most, Choice, Price, Picked to start, shown as
+each group with what it asks and its choices, then **Add N groups**.
+The items import says choices come first, and its preview now shows
+what each new item will offer. `ChoicesImportModal.tsx`. Task 11 is
+done; it was built at the human's word before the use ADR-292 asked to
+wait for. Walked in a browser against a demo venue. Not walked: a file
+from a real spreadsheet, an item rung up on a till with imported
+groups, and the dialog under 1024px.
 
 ## Next task
 
-**Phase 10, Task 12a, before Task 11**: find out whether a venue whose
-owner forgot the PIN can get back in. `mez unlock` clears a lockout and
-sets no PIN. Read `internal/service/people` and the Staff screen for
-who may reset whose PIN (may a manager reset the owner's? may an owner
-with no session do anything at all?), and `cmd/mez/main.go` for the
-commands there are. If a venue with one owner and a forgotten PIN is
-stuck, build `mez reset-pin -staff stf_...`, run at the machine like
-`mez unlock`, by the rules of ADR-260 and written to the audit log.
-Write what was found in `troubleshooting.md` either way. Then 12b (the
-dev banner's PIN) and 12c (ask the human about the template's example
-rows).
-
-**Task 11 waits** (ADR-292): modifier groups in the import are not to
-start until Tasks 8 to 10 have been used on a real menu. It needs an
-ADR on the file's shape first.
+**Phase 10, Task 12a**: find out whether a venue whose owner forgot the
+PIN can get back in. `mez unlock` clears a lockout and sets no PIN.
+Read `internal/service/people` and the Staff screen for who may reset
+whose PIN (may a manager reset the owner's? may an owner with no
+session do anything at all?), and `cmd/mez/main.go` for the commands
+there are. If a venue with one owner and a forgotten PIN is stuck,
+build `mez reset-pin -staff stf_...`, run at the machine like `mez
+unlock`, by the rules of ADR-260 and written to the audit log. Write
+what was found in `troubleshooting.md` either way. Then 12b (the dev
+banner's PIN) and 12c (ask the human about the template's example
+rows; the choices and ingredients templates have them too now).
 
 For the owner, in the order that unblocks the most:
 1. **A printer and a drawer.** `mez --test-print <ip> -drawer`, then a

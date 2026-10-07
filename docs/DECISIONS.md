@@ -10888,3 +10888,38 @@ venue sells. Group names are not unique in the menu, so two groups
 called Toppings cannot be named by a row at all. Built without the use
 ADR-292 asked to wait for; if a real menu shows the shape wrong, this
 is the ADR to revisit.
+
+## ADR-303 - Import choices is the fourth thing in the Spreadsheet pill, and a preview shows what each item will offer
+2026-10 · Status: accepted. Phase 10, Task 11b.
+Decision: the Spreadsheet pill in the Menu screen's head (ADR-297)
+gains **Import choices**, between Import new items and Change prices,
+with the line "Add groups like Size or Milk from a file. Do this before
+the items." Its dialog is the file dialogs' shape (ADR-291, ADR-299).
+  - **Step 2 teaches Fewest and Most by two cases**: 1 and 1 for a size
+    a guest must choose, 0 and 2 for up to two extras. Those two numbers
+    are the part of a group an owner has no word for.
+  - **Each group to add is its name with what it asks beside it** in
+    the Choices view's own words (`ruleText`: "Pick 1", "Optional, up
+    to 2"), over its choices in order with what each adds or takes off
+    and "(to start)" on a default. So a required size imported as
+    optional is seen before it is added.
+  - **It says that no item offers them yet**, under the list and in the
+    toast, and both ways to change that.
+  - **The items import's dialog says choices come first**, in its
+    second step, with the form of the cell: "Size; Milk".
+  - **The items preview shows what each new item will offer**: its line
+    under the name is now "Snacks · offers Spice, Toppings". The walk
+    found the preview silent on the one thing the Choices column
+    decides. `MenuImportItem` carries `choices`, the groups' names as
+    the menu spells them, for it.
+Cost: five file dialogs repeat the check, add and check-again steps.
+Walked in a browser against a demo venue on 2026-10-08: a choices file
+with two picked to start in a pick-one group, and a group asking for
+two and offering one, listed both; corrected, it showed two groups to
+add and the demo's own Size left alone, and added them. An items file
+naming a group the menu lacks was refused with "Import the choices
+first"; naming "Spice; toppings" it added the item, whose line in the
+export read "Spice; Toppings". The demo's Latte exported "Size; Milk;
+Extras". Not walked: a choices file from a real spreadsheet, an item
+rung up on a till with its imported groups (tested on the server, as far
+as the terminal's menu), and the dialog under 1024px.

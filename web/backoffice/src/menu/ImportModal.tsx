@@ -10,7 +10,19 @@ import type { MenuImport } from "../../../shared/api-types";
 import { Button, Modal, Money, useToast } from "../../../shared/ui";
 import { useCsvFile } from "../sales/use-csv-download";
 import { ChooseFile, Problems, Step } from "../files/FileParts";
-import { addLabel, addedText, asCsv, examplesIn, examplesText, fileProblem, problemsText, summaryLines, templatePath, verdictOf } from "./import-logic";
+import {
+  addLabel,
+  addedText,
+  asCsv,
+  examplesIn,
+  examplesText,
+  fileProblem,
+  itemLine,
+  problemsText,
+  summaryLines,
+  templatePath,
+  verdictOf,
+} from "./import-logic";
 import { problemOf } from "./menu-logic";
 import type { MenuEditorApi } from "./use-menu-editor";
 
@@ -135,6 +147,9 @@ function Steps({ onChoose }: { onChoose: (file: File | undefined) => void }) {
         </Step>
         <Step n={2}>
           <p>Fill it in, one item on each row, and save it as CSV UTF-8.</p>
+          <p className="text-sm text-fg-muted">
+            To offer choices on an item, import the choices first, then name the groups in the Choices column with a semicolon between: Size; Milk.
+          </p>
         </Step>
         <Step n={3}>
           <p>Choose the file. You see what it would add before anything is added.</p>
@@ -176,7 +191,7 @@ function Result({ checked, onChoose }: { checked: Checked; onChoose: (file: File
               <li key={it.row} className="flex items-center gap-3 border-b border-line-soft px-3 py-2 last:border-b-0">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{it.name}</span>
-                  <span className="block truncate text-sm text-fg-muted">{it.category}</span>
+                  <span className="block truncate text-sm text-fg-muted">{itemLine(it)}</span>
                 </span>
                 <Money amount={it.price} className="shrink-0" />
               </li>

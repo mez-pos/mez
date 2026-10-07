@@ -53,7 +53,7 @@ func TestMenuImportOverHTTP(t *testing.T) {
 	if plan.Imported || len(plan.ToAdd) != 3 || len(plan.NewCategories) != 1 || plan.NewCategories[0] != "Drinks" || len(plan.Problems) != 0 {
 		t.Fatalf("preview: %+v", plan)
 	}
-	if !strings.Contains(rec.Body.String(), `"row":3,"category":"Food","name":"Idli","price":{"minor":8050,"currency":"INR"}`) {
+	if !strings.Contains(rec.Body.String(), `"row":3,"category":"Food","name":"Idli","price":{"minor":8050,"currency":"INR"},"choices":[]`) {
 		t.Errorf("the second row as sent: %s", rec.Body)
 	}
 	if e := m.editor(t); len(e.Items) != 0 || e.Version != before {
@@ -280,7 +280,11 @@ func TestChoicesImportOverHTTP(t *testing.T) {
 	}
 
 	// Then the items, naming the group.
-	importOf(t, m.sendFile("/api/v1/menu/import", "text/csv", "Category,Name,Price,Choices\nDrinks,Latte,180,size\n", nil))
+	added := importOf(t, m.sendFile("/api/v1/menu/import", "text/csv", "Category,Name,Price,Choices\nDrinks,Latte,180,size\n", nil))
+	// By the menu's spelling of the group, for the preview to show.
+	if len(added.ToAdd) != 1 || len(added.ToAdd[0].Choices) != 1 || added.ToAdd[0].Choices[0] != "Size" {
+		t.Errorf("what the import says the item offers: %+v", added.ToAdd)
+	}
 	e := m.editor(t)
 	if len(e.Groups) != 1 || len(e.Items) != 1 || len(e.Items[0].ModifierGroups) != 1 || e.Items[0].ModifierGroups[0] != e.Groups[0].ID {
 		t.Fatalf("the menu: groups %+v, items %+v", e.Groups, e.Items)

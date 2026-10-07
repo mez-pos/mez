@@ -8,7 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 10, Task 10a to 10c: ingredients and recipes from a file**
+**Phase 10, Task 11a: groups of choices from a file, read and imported**
+(ADR-302). `menu.ReadChoices` for a file of Group, Fewest, Most, Choice,
+Price, Picked to start, checked whole by `CleanGroup`; routes under
+`/api/v1/menu/choices/import`. The items file and the export gained a
+**Choices** column naming the groups an item offers, read for a new
+item.
+
+Before it, **Phase 10, Task 10d: the recipes dialog** (ADR-301): Import
+on Inventory's Recipes view, from a template that lists every dish with
+no recipe.
+
+Before it, **Phase 10, Task 10a to 10c: ingredients and recipes from a file**
 (ADR-298 to ADR-300). Reading a file moved to `internal/domain/sheet`,
 shared with the menu. `stock.ReadItems` (Name, Counted in, Low at, Cost,
 Count at close; no stock from a file; a kilogram is a problem) and

@@ -1965,6 +1965,7 @@ export interface MenuImportItem {
   category: string;
   name: string;
   price: Money;
+  choices: string[];
 }
 
 export interface MenuImportSkipped {

@@ -27,7 +27,8 @@ Inside the frame (`backoffice-shell.md`).
   items, categories and their choices. Changes reach every order screen at
   once." At the right, on Items: the search ("Search menu items"), a select
   of what to show (**All items**, Active, Sold out, Retired), **Spreadsheet**
-  (a menu: Export the menu, Import new items, Change prices), and **Add New
+  (a menu: Export the menu, Import new items, Import choices, Change
+  prices), and **Add New
   Item** (terracotta).
 - **Three views**, as pills under the head: **Items**, **Choices**,
   **Stations and courses**.
@@ -158,6 +159,40 @@ down somewhere. It adds items; it never changes or removes one.
   longer fits: the file is checked again and shown as it stands now, under
   "The menu changed since this file was checked. This is how it stands
   now."
+
+### Import choices (ADR-302, ADR-303)
+
+A modal from **Import choices** in the Spreadsheet menu, for groups such as
+Size, Milk or Extras. It adds groups; it never changes one that is there.
+For a new venue it comes before the items, whose file names the groups each
+item offers.
+
+- **Choose a file.** Three numbered steps:
+  1. "Get the template." with **Download template**
+     (`mez-choices-template.csv`).
+  2. "Fill it in, one choice on each row, with its group's name beside it.
+     On a group's first row say the fewest and the most a guest picks: 1
+     and 1 for a size they must choose, 0 and 2 for up to two extras. Price
+     is what the choice adds, and may be below zero. Save it as CSV UTF-8."
+  3. "Choose the file." with **Choose a file**.
+- **Something is wrong** with it: the table of Where, Column and What is
+  wrong, under "2 problems in choices.csv. Nothing has been added."
+- **Ready:** "3 groups to add." and, when it applies, "2 rows are for
+  groups already on the menu, and are left as they are." Under them the
+  groups, scrolling inside itself: the name with what it asks beside it
+  ("Pick 1", "Optional, up to 2", as the Choices view words it), and under
+  it its choices in order: "Regular (to start), Large +₹30.00, No cheese
+  −₹20.00".
+  - Under the list: "No item offers them yet. Offer a group from an item's
+    editor, or name it in the Choices column when you import items."
+  - **Add 3 groups** is the primary; **Choose another file** beside it.
+- **Nothing to add:** "Every group in choices.csv is already on the menu."
+- **Added:** the modal closes; a toast, "Added 3 groups. Offer them on
+  items from each item's editor, or when you import items."
+
+The items import (above) says in its second step: "To offer choices on an
+item, import the choices first, then name the groups in the Choices column
+with a semicolon between: Size; Milk."
 
 ### Change prices (ADR-295 to ADR-297)
 

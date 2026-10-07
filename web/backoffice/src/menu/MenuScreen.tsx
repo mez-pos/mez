@@ -18,6 +18,7 @@ import { useCsvFile } from "../sales/use-csv-download";
 import { itemState, showOptions, validScope, type ListFilter, type Scope, type Show } from "./browse-logic";
 import { CategoryFormModal } from "./CategoryPanel";
 import { CategoryRail } from "./CategoryRail";
+import { ChoicesImportModal } from "./ChoicesImportModal";
 import { emptyGroupForm, groupFormFrom, groupsChanged, usedBy } from "./group-logic";
 import { GroupFormModal } from "./GroupFormModal";
 import { GroupsView } from "./GroupsView";
@@ -57,7 +58,7 @@ export function MenuScreen() {
   const [filter, setFilter] = useState<ListFilter>({ scope: "all", search: "", show: "all", order: "menu" });
   const [open, setOpen] = useState<Open>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
-  const [filing, setFiling] = useState<"import" | "prices" | null>(null);
+  const [filing, setFiling] = useState<"import" | "choices" | "prices" | null>(null);
   const exported = useCsvFile();
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -145,7 +146,13 @@ export function MenuScreen() {
                 ))}
               </select>
             </div>
-            <SpreadsheetMenu exported={exported} disabled={!menu} onImport={() => setFiling("import")} onPrices={() => setFiling("prices")} />
+            <SpreadsheetMenu
+              exported={exported}
+              disabled={!menu}
+              onImport={() => setFiling("import")}
+              onChoices={() => setFiling("choices")}
+              onPrices={() => setFiling("prices")}
+            />
             <Button variant="attention" disabled={!menu} onClick={() => menu && addItem(menu)}>
               <PlusIcon aria-hidden="true" size={18} />
               Add New Item
@@ -286,6 +293,7 @@ export function MenuScreen() {
       )}
 
       {menu && filing === "import" && <ImportModal api={api} onClose={() => setFiling(null)} />}
+      {menu && filing === "choices" && <ChoicesImportModal api={api} onClose={() => setFiling(null)} />}
       {menu && filing === "prices" && <PricesModal api={api} exported={exported} onClose={() => setFiling(null)} />}
       {menu && editing && (
         <EditingModal menu={menu} editing={editing} api={api} onCategory={(id) => pick({ scope: id, search: "" })} onClose={() => setEditing(null)} />

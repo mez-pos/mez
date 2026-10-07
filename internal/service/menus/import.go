@@ -51,6 +51,8 @@ type ImportItem struct {
 	Category string       `json:"category"`
 	Name     string       `json:"name"`
 	Price    money.Amount `json:"price"`
+	// Choices are the names of the groups of choices it offers, in order.
+	Choices []string `json:"choices"`
 }
 
 // ImportSkipped is a row whose item is already on the menu.
@@ -71,11 +73,11 @@ type ImportProblem struct {
 // PreviewImport reads a file and answers what importing it would do. It
 // writes nothing.
 func (s *Service) PreviewImport(ctx context.Context, venueID int64, data []byte) (Import, error) {
-	plan, currency, err := s.planImport(ctx, s.db.Queries(), venueID, data)
+	plan, v, err := s.planImport(ctx, s.db.Queries(), venueID, data)
 	if err != nil {
 		return Import{}, err
 	}
-	return importOf(plan, currency), nil
+	return importOf(plan, v), nil
 }
 
 // ImportMenu adds a file's items to the menu, and the categories they need,
@@ -88,11 +90,11 @@ func (s *Service) PreviewImport(ctx context.Context, venueID int64, data []byte)
 func (s *Service) ImportMenu(ctx context.Context, venueID int64, data []byte) (Import, error) {
 	var out Import
 	err := s.edit(ctx, venueID, func(q *gen.Queries) error {
-		plan, currency, err := s.planImport(ctx, q, venueID, data)
+		plan, v, err := s.planImport(ctx, q, venueID, data)
 		if err != nil {
 			return err
 		}
-		out = importOf(plan, currency)
+		out = importOf(plan, v)
 		switch {
 		case len(plan.Problems) > 0:
 			return ErrImportRefused
@@ -113,16 +115,17 @@ func (s *Service) ImportMenu(ctx context.Context, venueID int64, data []byte) (I
 	return out, nil
 }
 
-// planImport reads the venue through q and the file against it.
-func (s *Service) planImport(ctx context.Context, q *gen.Queries, venueID int64, data []byte) (menu.ImportPlan, string, error) {
-	if len(data) > MaxImportBytes {
-		return menu.ImportPlan{}, "", &Invalid{"file", fmt.Sprintf("That file is over %d KB.", MaxImportBytes>>10)}
+// planImport reads the venue through q and the file against it, and answers
+// both: the plan names groups by id, and the venue has their names.
+func (s *Service) planImport(ctx context.Context, q *gen.Queries, venueID int64, data []byte) (menu.ImportPlan, menu.ImportVenue, error) {
+	if err := checkFileSize(data); err != nil {
+		return menu.ImportPlan{}, menu.ImportVenue{}, err
 	}
 	v, err := importVenue(ctx, q, venueID)
 	if err != nil {
-		return menu.ImportPlan{}, "", err
+		return menu.ImportPlan{}, menu.ImportVenue{}, err
 	}
-	return menu.ReadImport(data, v), v.Currency, nil
+	return menu.ReadImport(data, v), v, nil
 }
 
 // importVenue is what the venue has, as a file is read against it.
@@ -238,7 +241,11 @@ func (s *Service) writeImport(ctx context.Context, q *gen.Queries, venueID int64
 
 // importOf is a plan as the back office reads it. Every list is there, if
 // empty, so the screen need not tell none from missing.
-func importOf(plan menu.ImportPlan, currency string) Import {
+func importOf(plan menu.ImportPlan, v menu.ImportVenue) Import {
+	groups := make(map[int64]string, len(v.Groups))
+	for _, g := range v.Groups {
+		groups[g.ID] = g.Name
+	}
 	out := Import{
 		ToAdd:         make([]ImportItem, len(plan.Rows)),
 		NewCategories: append([]string{}, plan.NewCategories...),
@@ -246,7 +253,13 @@ func importOf(plan menu.ImportPlan, currency string) Import {
 		Problems:      make([]ImportProblem, len(plan.Problems)),
 	}
 	for i, r := range plan.Rows {
-		out.ToAdd[i] = ImportItem{Row: r.Row, Category: r.Category, Name: r.Name, Price: money.Amount{Minor: r.Price, Currency: currency}}
+		choices := make([]string, len(r.Groups))
+		for j, id := range r.Groups {
+			choices[j] = groups[id]
+		}
+		out.ToAdd[i] = ImportItem{
+			Row: r.Row, Category: r.Category, Name: r.Name, Price: money.Amount{Minor: r.Price, Currency: v.Currency}, Choices: choices,
+		}
 	}
 	for i, sk := range plan.Skipped {
 		out.Skipped[i] = ImportSkipped(sk)

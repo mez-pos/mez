@@ -1,8 +1,31 @@
 import { describe, expect, it } from "vitest";
-import type { MenuImport, MenuImportItem } from "../../../shared/api-types";
-import { addLabel, addedText, examplesIn, fileProblem, maxImportBytes, problemsText, summaryLines, verdictOf, whereOf } from "./import-logic";
+import type { ChoicesImport, MenuImport, MenuImportItem } from "../../../shared/api-types";
+import {
+  addGroupsLabel,
+  addLabel,
+  addedGroupsText,
+  addedText,
+  choicePrice,
+  choicesProblemsText,
+  choicesSummary,
+  choicesVerdict,
+  examplesIn,
+  itemLine,
+  fileProblem,
+  maxImportBytes,
+  problemsText,
+  summaryLines,
+  verdictOf,
+  whereOf,
+} from "./import-logic";
 
-const item = (row: number, name: string, category = "Coffee"): MenuImportItem => ({ row, name, category, price: { minor: 18000, currency: "INR" } });
+const item = (row: number, name: string, category = "Coffee", choices: string[] = []): MenuImportItem => ({
+  row,
+  name,
+  category,
+  price: { minor: 18000, currency: "INR" },
+  choices,
+});
 
 const plan = (patch: Partial<MenuImport> = {}): MenuImport => ({ to_add: [], new_categories: [], skipped: [], problems: [], imported: false, ...patch });
 
@@ -114,5 +137,79 @@ describe("whereOf", () => {
 
   it("is the file for a problem with the whole of it", () => {
     expect(whereOf({ row: 0, column: "", message: "x" })).toBe("The file");
+  });
+});
+
+const group = (name: string, choices: ChoicesImport["to_add"][number]["choices"]): ChoicesImport["to_add"][number] => ({
+  row: 2,
+  name,
+  min_select: 1,
+  max_select: 1,
+  choices,
+});
+const priced = (name: string, minor: number, start = false) => ({ name, price: { minor, currency: "INR" }, is_default: start });
+
+const choices = (patch: Partial<ChoicesImport> = {}): ChoicesImport => ({ to_add: [], skipped: [], problems: [], imported: false, ...patch });
+
+describe("choicesVerdict", () => {
+  it("is ready with a group to add and nothing wrong", () => {
+    expect(choicesVerdict(choices({ to_add: [group("Size", [priced("Regular", 0, true)])] }))).toBe("ready");
+  });
+
+  it("is problems as soon as there is one", () => {
+    expect(choicesVerdict(choices({ to_add: [group("Size", [])], problems: [{ row: 3, column: "Most", message: "x" }] }))).toBe("problems");
+  });
+
+  it("is nothing when every group is already there", () => {
+    expect(choicesVerdict(choices({ skipped: [{ row: 2, group: "Milk" }] }))).toBe("nothing");
+  });
+});
+
+describe("choicesSummary", () => {
+  it("counts the groups, agreeing in number", () => {
+    expect(choicesSummary(choices({ to_add: [group("Size", [])] }))).toEqual(["1 group to add."]);
+    expect(choicesSummary(choices({ to_add: [group("Size", []), group("Milk", [])], skipped: [{ row: 5, group: "Extras" }] }))).toEqual([
+      "2 groups to add.",
+      "1 row is for a group already on the menu, and is left as it is.",
+    ]);
+    expect(
+      choicesSummary(
+        choices({
+          to_add: [group("Size", [])],
+          skipped: [
+            { row: 5, group: "Extras" },
+            { row: 6, group: "Extras" },
+          ],
+        }),
+      ),
+    ).toEqual(["1 group to add.", "2 rows are for groups already on the menu, and are left as they are."]);
+  });
+});
+
+describe("choicePrice", () => {
+  it("is nothing for a choice that adds nothing", () => {
+    expect(choicePrice(priced("Regular", 0))).toBeNull();
+  });
+
+  it("is what it adds, or takes off", () => {
+    expect(choicePrice(priced("Large", 3000))).toEqual({ sign: "+", amount: { minor: 3000, currency: "INR" } });
+    expect(choicePrice(priced("No cheese", -2000))).toEqual({ sign: "−", amount: { minor: 2000, currency: "INR" } });
+  });
+});
+
+describe("the words for groups on the button and the toast", () => {
+  it("counts", () => {
+    expect(addGroupsLabel(choices({ to_add: [group("Size", [])] }))).toBe("Add 1 group");
+    expect(addedGroupsText(choices({ to_add: [group("Size", []), group("Milk", [])] }))).toBe(
+      "Added 2 groups. Offer them on items from each item's editor, or when you import items.",
+    );
+    expect(choicesProblemsText(choices({ problems: [{ row: 3, column: "Most", message: "x" }] }), "c.csv")).toBe("1 problem in c.csv. Nothing has been added.");
+  });
+});
+
+describe("itemLine", () => {
+  it("is the category, and the groups the item offers when it offers any", () => {
+    expect(itemLine(item(2, "Bhel", "Snacks"))).toBe("Snacks");
+    expect(itemLine(item(2, "Pav bhaji", "Snacks", ["Spice", "Toppings"]))).toBe("Snacks · offers Spice, Toppings");
   });
 });
