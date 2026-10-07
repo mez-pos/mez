@@ -17,17 +17,21 @@ Download the one for your platform, or build it:
 make dist
 ```
 
-That produces three binaries in `dist/`, none of which need anything installed
+That produces four binaries in `dist/`, none of which need anything installed
 alongside them:
 
 | File | Runs on |
 |---|---|
 | `mez_<version>_windows_amd64.exe` | Windows 10 and 11, 64-bit |
 | `mez_<version>_linux_amd64` | Linux, 64-bit |
+| `mez_<version>_linux_arm64` | A Raspberry Pi 4 or 5 |
 | `mez_<version>_darwin_arm64` | macOS, Apple silicon |
 
-Building needs Go 1.23 or newer and a shell with `sh` on the path. On Windows
-that means Git Bash or WSL, not `cmd.exe` or PowerShell.
+On Windows the installer is the easier way in, and there is a Docker image:
+[`deploy.md`](deploy.md#getting-a-binary) lists everything a release holds.
+
+Building needs Go 1.25 or newer, Node 22.12 or newer, and `make` with `sh` on
+the path. On Windows that means Git Bash or WSL, not `cmd.exe` or PowerShell.
 
 Two builds of the same commit produce byte-identical binaries, so you can check
 that what you are about to run matches the source it claims to come from.
@@ -139,16 +143,23 @@ reading `serving placeholder frontends`. `make dist` always includes them.
 
 ## Where your data lives
 
-Everything the server owns, including the database, the logs and the backups,
+Everything the server owns (the database, the menu's photos and the logs)
 sits in one directory:
 
 | Platform | Default |
 |---|---|
 | Windows | `C:\ProgramData\mez` |
 | Linux and macOS | `./data`, beside wherever you started it from |
+| Linux, under the systemd unit | `/var/lib/mez`, which the unit sets |
+| Docker | `/data` in the container, the volume `mez-data` |
 
-The server keeps that directory to itself: on Windows only administrators
-and the account that ran setup can open it, and elsewhere it is mode 0700.
+Every command that reads the venue (`setup`, `pair`, `unlock`, `restore`,
+`setup-link`, `table-codes`) looks in the same place, and takes `-data-dir`
+when the server was given one.
+
+The server keeps that directory to itself: on Windows only administrators,
+the service's own account and the account that ran setup can open it, and
+elsewhere it is mode 0700.
 
 Inside it: `mez.db` (with `mez.db-wal` and `mez.db-shm` while it runs),
 `photos/` for menu photos, and `logs/`. With a backup turned on there is
@@ -249,8 +260,11 @@ curl http://localhost:7777/api/v1/health
 
 `status` answers one question: is this process serving. The checks are reported
 separately: `db` is `ok` when the database answers and `failing` when it does
-not. `disk`, `printer` and `tunnel` read `unknown` until the subsystems that
-answer them are built (the relay in phase 11, the rest in phase 12). `commit` and `build_date` identify exactly which
+not. `tunnel` is `unknown` on a venue with no relay set, `ok` while the
+venue is connected to its relay, and `failing` while it is set and not
+connected. `disk` and `printer` always read `unknown`: nothing answers them
+yet, so look at the **Printers** screen for a printer and at the disk
+itself. `commit` and `build_date` identify exactly which
 build is running, which is the first thing to establish on a support call.
 
 ## Testing your receipt printer
@@ -309,10 +323,25 @@ because a setting that is silently dropped is a change you believe you made.
 frontends. Build them (`make build-web`) and rebuild with `make build`, or use
 `make dist`, which always includes them.
 
-## What is not here yet
+## Every command
 
-The guest QR ordering app and the relay that lets guests reach the venue
-from the internet are phase 11. The Windows installer and service and
-the setup wizard are built, and so are backups
-([`deploy.md`](deploy.md#backups)). [`STATE.md`](STATE.md) says where the build has got to and lists
-everything known to be missing or broken.
+`mez` alone starts the server. The rest are run at the machine itself, which
+is what they trust; each takes `-h`.
+
+| Command | What it does |
+|---|---|
+| `mez setup` | Makes the venue, its owner and a first pairing code, once ([above](#setting-up-once)) |
+| `mez setup-link` | Prints the address of the setup wizard, with its token, while there is no venue |
+| `mez pair` | Makes a pairing code for one more device |
+| `mez unlock -staff stf_...` | Clears the lock on a person whose PIN kept failing |
+| `mez table-codes` | Lists every table with the code a guest's phone scans, making any that are missing. The back office's Floor plan prints them |
+| `mez restore` | Brings a venue back from its backup into an empty data directory ([`deploy.md`](deploy.md#getting-a-venue-back)) |
+| `mez service install`, `uninstall`, `start`, `stop`, `status` | The Windows service ([`deploy.md`](deploy.md#windows)) |
+| `mez --test-print ADDRESS` | Prints a test page, with no venue needed ([above](#testing-your-receipt-printer)) |
+| `mez -h` | Says which build this is, on its first line, and lists the server's flags |
+
+## What is known to be missing
+
+[`KNOWN.md`](KNOWN.md) lists, screen by screen, what is broken, left out or
+has not been seen working, and [`STATE.md`](STATE.md) says where the build
+has got to.

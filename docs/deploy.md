@@ -12,7 +12,6 @@ the same binary; they differ only in what starts it and where the data lives.
 - [On a domain with HTTPS](#on-a-domain-with-https)
 - [Backups](#backups)
 - [Upgrading](#upgrading)
-- [What phase 12 adds](#what-phase-12-adds)
 
 For every setting, the log files and troubleshooting, see
 [`running.md`](running.md).
@@ -31,9 +30,11 @@ network at TCP port 9100.
 | Docker on a machine at the venue | Yes | Yes | A venue that already runs a home server or NAS |
 | A VPS or cloud host, on a domain | **No** | **No**, without a VPN to the venue | Demos, training, trying it out, a back office reached from home |
 
-Reaching guests from the internet while the server stays in the building is
-what the relay in phase 11 is for. Until then, a cloud-hosted mez is a demo,
-not a till.
+Guests ordering from their own phones do not change this. The server stays
+in the building and dials out to a relay, which is the only part on the
+internet: set `relay_url` and `relay_key` ([`running.md`](running.md#changing-the-port-and-everything-else)),
+and see [`build/relay/README.md`](../build/relay/README.md) to run a relay
+of your own. A cloud-hosted mez is a demo, not a till.
 
 ## Getting a binary
 
@@ -48,8 +49,14 @@ Each release on GitHub, under **Releases**, has these, and a
 | `mez_<version>_linux_arm64` | A Raspberry Pi 4 or 5, with `mez.service` |
 | `mez_<version>_darwin_arm64` | macOS, Apple silicon |
 
-and a Docker image, `ghcr.io/byjoellobo/mez:<version>`, with
+and a Docker image, `ghcr.io/byjoellobo/mez:<version>` (the version without
+its `v`, for amd64 and arm64; there is no `latest`), with
 `docker-compose.yml`. There is no release yet; until there is, build them.
+
+Check a download before running it. In PowerShell,
+`Get-FileHash .\mez_<version>_windows_amd64_setup.exe -Algorithm SHA256`
+and compare it with that file's line in the checksums; on Linux and macOS,
+`sha256sum -c mez_<version>_checksums.txt --ignore-missing`.
 
 From a clone (Go 1.25+, Node 22.12+, and `make` with a POSIX shell; on
 Windows, Git Bash or WSL), all of them at once:
@@ -57,6 +64,10 @@ Windows, Git Bash or WSL), all of them at once:
 ```sh
 make dist
 ```
+
+The installer is one more step, on Windows, with
+[Inno Setup 6](https://jrsoftware.org/isinfo.php): `make installer` (pass
+`ISCC=/path/to/ISCC.exe` if it is not on the path).
 
 Each one is self-contained: the three web apps and the timezone database are
 inside it, and nothing needs installing beside it.
@@ -120,7 +131,7 @@ mez setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata \
 | `-tax-pricing` | the profile's | `inclusive` or `exclusive` |
 | `-device-kind` | `terminal` | What the first pairing code pairs: `terminal`, `kitchen` or `back_office` |
 | `-device-name` | `Counter 1` | What that device is called |
-| `-demo-menu` | off | Makes a demo cafe: an 18-item menu priced in rupees, twelve tables, and a manager, cashier and cook with public PINs. Never for a venue that sells |
+| `-demo-menu` | off | Makes a demo cafe: an 18-item menu priced in rupees, twelve tables, and a manager, cashier, waiter and cook with public PINs. Never for a venue that sells |
 | `-data-dir` | the platform default | Where the database goes |
 
 It prints the owner's PIN (only once) and a pairing code that lasts ten
@@ -268,8 +279,8 @@ are then no window buttons, and Alt+F4 is how it is closed.
 ## Linux
 
 Any 64-bit distribution with systemd. A Raspberry Pi 4 or 5 is enough for a
-small venue; build with `GOARCH=arm64`. It is the same binary as on Windows:
-one file, no database server, nothing else to install.
+small venue, with `mez_<version>_linux_arm64`. It is the same program as on
+Windows: one file, no database server, nothing else to install.
 
 ```sh
 sudo useradd --system --home /var/lib/mez --create-home mez
@@ -277,7 +288,8 @@ sudo install -m 755 mez_<version>_linux_amd64 /usr/local/bin/mez
 sudo install -m 644 build/mez.service /etc/systemd/system/mez.service
 ```
 
-[`build/mez.service`](../build/mez.service) is the unit. Before starting it,
+[`build/mez.service`](../build/mez.service) is the unit; a release has it
+beside the binaries as `mez.service`. Before starting it,
 open it and set `MEZ_TIMEZONE` to the venue's own: a server's clock is often
 UTC, and the venue's day, its shift dates and its Z-reports follow this
 setting. Then make the venue and start it:
@@ -300,6 +312,11 @@ without losing them.
 
 Open port 7777 to the local network if a firewall is on (`sudo ufw allow from
 192.168.0.0/16 to any port 7777`, adjusted to your network).
+
+`mez pair`, `mez unlock` and the other commands run at the machine take the
+same `-data-dir /var/lib/mez`, as the `mez` user: `sudo -u mez
+/usr/local/bin/mez pair -data-dir /var/lib/mez -device-kind terminal`.
+Without it they look in `./data`, find no database there, and say so.
 
 Three things differ from Windows:
 
@@ -375,7 +392,24 @@ inside a container every browser is somewhere else.
 The data is in the named volume `mez-data`, and survives `down`, rebuilds
 and upgrades. `docker compose down -v` deletes it, venue and all.
 
-Without compose:
+**With the image from a release**, nothing is built and no clone is
+needed. The `docker-compose.yml` beside a release is this same file, and it
+builds from source: to use it without the source, delete its `build:` block
+(three lines) and change `image: mez:local` to
+`image: ghcr.io/byjoellobo/mez:<version>`. Or without compose:
+
+```sh
+docker volume create mez-data
+docker run --rm -v mez-data:/data ghcr.io/byjoellobo/mez:<version> setup \
+       -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata -device-kind back_office
+docker run -d --name mez --restart unless-stopped --stop-timeout 20 -p 7777:7777 \
+       -e MEZ_TIMEZONE=Asia/Kolkata -v mez-data:/data ghcr.io/byjoellobo/mez:<version>
+```
+
+No release has been made, so no image has been pulled from the registry:
+this is the image the release workflow builds, run here from a local build.
+
+Without compose, from source:
 
 ```sh
 docker build -f build/Dockerfile -t mez .
@@ -497,7 +531,9 @@ Point the domain's DNS `A` record at the server, then open
 **What protects it.** Everything but pairing, the health check and menu
 photos needs a paired device's token (the live stream included), and pairing codes
 are issued only by a signed-in manager, expire in ten minutes, and are rate
-limited. Staff PINs lock after five failures in fifteen minutes. That is
+limited. Five wrong PINs in fifteen minutes lock a person for the rest of
+that time, and the third such lock in a day holds until a manager clears it
+under **People** (or `mez unlock` at the machine). That is
 designed for a venue's own network. On the open internet, also:
 
 - always serve HTTPS, never plain HTTP;
@@ -672,18 +708,18 @@ again.
    only go forward, and an older mez is
    not built to run on a database a newer one has migrated, so the backup is
    how you go back.
-2. Stop mez, replace the binary (or `git pull` and rebuild the image), start
-   it. Migrations apply by themselves on startup.
+2. Put the new mez in place. Migrations apply by themselves when it starts.
+   - **Windows, installed:** run the newer installer over the old one. It
+     stops the service, replaces `mez.exe` and starts it again.
+   - **Windows, by hand:** `mez service stop`, replace `mez.exe`,
+     `mez service start`.
+   - **Linux:** `sudo systemctl stop mez`, `sudo install -m 755
+     mez_<version>_linux_amd64 /usr/local/bin/mez`, `sudo systemctl start
+     mez`. Install the release's `mez.service` over the old one too, then
+     `sudo systemctl daemon-reload`: set `MEZ_TIMEZONE` in it again, and
+     anything in `/etc/mez/mez.env` or a drop-in is kept.
+   - **Docker:** change the image's version (or `git pull` and build), then
+     `docker compose up -d`.
 3. Check `/api/v1/health` reports the new `version` and `"db": "ok"`.
 
 Paired devices stay paired across an upgrade.
-
-## What phase 12 adds
-
-[`phases/phase-12.md`](phases/phase-12.md) is the plan. In short: a Windows
-installer (Inno Setup) that registers the Windows service, opens the firewall
-and creates the shortcut; a setup wizard, so a new Windows venue needs no `mez setup` (built);
-backups configured in the back office (built, [above](#backups)); a systemd unit
-([`build/mez.service`](../build/mez.service), built) and an image
-published with each release; and release automation with checksums
-(written, [`releasing.md`](releasing.md); no release has been made).

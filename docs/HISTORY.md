@@ -8,7 +8,14 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 5: Docker and Linux** (ADR-279). `build/mez.service`;
+**Phase 12, Task 6: release automation** (ADR-280).
+`.github/workflows/release.yml`: a tag `v*` runs `make check`, `make dist`
+(now with `linux/arm64`), the installer on a Windows runner, the image for
+amd64 and arm64 to `ghcr.io`, and a draft release with checksums and notes
+(`build/release.sh`). `docs/releasing.md` is the procedure. Every piece run
+by hand; the workflow itself has never run.
+
+Before it, **Phase 12, Task 5: Docker and Linux** (ADR-279). `build/mez.service`;
 the image gains `/backup`; the compose file a backup's mount and a relay.
 Both run in containers. Litestream is started when its destination
 answers: started regardless it dropped the server's locks on Linux.

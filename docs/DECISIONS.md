@@ -10042,3 +10042,42 @@ and none can be from here. Inno Setup on the Windows runner, the login
 and push to `ghcr.io`, the artifacts passed between jobs and the making
 of the draft are as written, not as seen.
 ---
+
+## ADR-281 - The install guides are checked against the code, and stop pointing at later phases
+2026-10 · Status: accepted. Phase 12, Task 7a.
+Decision:
+  - **Task 7 is split in six** (7a to 7f): the guides checked, hardware,
+    troubleshooting, the relay, CONTRIBUTING, and the README last, since
+    it links to the rest. Most of the documentation existed, written as
+    each phase was built, so most of the work is finding what stopped
+    being true.
+  - **`deploy.md` and `running.md` are corrected, not rewritten.** Each
+    claim was read against the Makefile, `mez.iss`, `mez.service`, the
+    compose file, `release.sh`, the release workflow and the binary's own
+    `-h`. What changed: the relay is no longer a later phase's; the
+    release's checksums and how to check them; `make installer`; the
+    arm64 binary in place of "build it"; the commands under systemd need
+    `-data-dir`; the image from a release; the hard lock on PINs
+    (ADR-260); upgrading, platform by platform; four binaries, Go 1.25
+    and Node; the data directory under systemd and in Docker; what the
+    health check's `tunnel` now says, and that `disk` and `printer` say
+    nothing; a table of every command.
+  - **"What phase 12 adds" and "What is not here yet" are gone.** A guide
+    says what is, and `KNOWN.md` says what is not.
+  - **The compose file in a release is documented, not changed.** It
+    builds from source, so beside a release with no source it does not
+    run as it is; `deploy.md` says which lines to change, and gives the
+    `docker run` that needs none.
+Because: a guide that says "arrives in phase 12" after phase 12 is read
+as a program that is not finished, by the one reader who was about to
+install it.
+Cost: the compose file a release carries still needs editing by hand
+before it uses the release's image (`KNOWN.md`, Releases); a second
+compose file, or one that takes the image from the environment, is a
+change to what Task 5 ran and is left for the owner to ask for. The
+README still says the installer arrives in phase 12, until Task 7f.
+**Checked by running**: `bin/mez -h` and each command's `-h`, which is
+how `mez --version` was found not to exist before it was written down.
+**Not run**: the `docker run` lines against `ghcr.io`, since no release
+has been made and no image is there; the upgrade steps on Linux.
+---

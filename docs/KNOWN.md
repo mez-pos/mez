@@ -16,7 +16,11 @@
   workflow.** No tag has been pushed, so Inno Setup on the Windows
   runner, the push to `ghcr.io` and the draft release are as written.
   Nothing is signed. The image's package will start private. The notes
-  are commit subjects and want editing in the draft.
+  are commit subjects and want editing in the draft. The
+  `docker-compose.yml` a release carries builds from source: with no
+  clone beside it, its `build:` block has to go and its image be named
+  by hand (`deploy.md`, Docker; ADR-281). The `docker run` lines for the
+  release's image have not been run against `ghcr.io`.
 
 - **Linux and Docker** (ADR-279; phase 12 Task 5; `deploy.md`). Run on
   2026-10-07 in containers on Docker Desktop: `build/mez.service` under

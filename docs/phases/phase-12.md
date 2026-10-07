@@ -151,7 +151,7 @@ Phase 11.
   needs the binary and a browser. Six sessions, not one. The README is
   last because it links to all the others.
 
-  - [ ] **Task 7a - The install guides, checked against what was built.**
+  - [x] **Task 7a - The install guides, checked against what was built.**
     `deploy.md` and `running.md` read line by line against the Makefile,
     the installer, the unit, the compose file and the release script
     (Tasks 2 to 6). What is stale is corrected, what is missing is added,

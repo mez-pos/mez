@@ -8,30 +8,34 @@
 ## Current phase
 
 **Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 to 6 built;
-Task 7, the documentation, is left. Phase 11 has nothing left to build
-(Cashfree left out, ADR-254) and owes its walks.
+Task 7, the documentation, is split in six (7a to 7f) and 7a is done.
+Phase 11 has nothing left to build (Cashfree left out, ADR-254) and owes
+its walks.
 
 ## Last completed task
 
-**Phase 12, Task 6: release automation** (ADR-280).
-`.github/workflows/release.yml`: a tag `v*` runs `make check`, `make
-dist` (now with `linux/arm64`), the installer on a Windows runner, the
-image for amd64 and arm64 to `ghcr.io`, and a draft release with
-checksums and notes (`build/release.sh`). `docs/releasing.md` is the
-procedure. Every piece was run by hand on this PC. **The workflow itself
-has never run: no tag has been pushed.**
+**Phase 12, Task 7a: the install guides, checked** (ADR-281).
+`deploy.md` and `running.md` read against the Makefile, the installer,
+the unit, the compose file, the release script and the binary's `-h`.
+Corrected, not rewritten: the relay, checksums, `make installer`, arm64,
+`-data-dir` under systemd, the release's image, the PIN hard lock,
+upgrading by platform, the health check, a table of every command. They
+no longer point at a later phase. Documentation only: no code changed.
 
 ## Next task
 
-**Phase 12, Task 7: documentation.** A README with a screenshot and a
-sixty-second pitch; install guides for Windows, Docker and Linux
-(`deploy.md` has all three: check them against what Tasks 2 to 6 built
-and link, do not rewrite); hardware notes on printers and drawers; a
-self-hosted relay guide (`build/relay/README.md` exists); CONTRIBUTING
-with the architecture; troubleshooting for printer not found, device
-cannot reach the server, SmartScreen, tunnel down, drawer will not kick.
-A screenshot needs the built binary and a browser: `make build-web`
-first. It is more than one session: split it. **For the owner, not a
+**Phase 12, Task 7b: hardware, printers and drawers.** A new
+`docs/hardware.md`, from the print code (`internal/device/escpos`,
+`printq` and `discover` beside it, `cmd/mez/testprint.go`) and not from
+a catalogue: what a printer must speak,
+how it is reached (TCP 9100; Windows' own printers), paper widths, how
+the drawer is kicked and through what, what is not supported. Say which
+printers were printed on and which are only expected to work: **ask the
+owner which printer they have**, none is named in the repository. Then
+7c troubleshooting, 7d the relay guide (the compose file's example says
+`wss://.../tunnel`, the relay's README `https://`; mez takes both
+schemes, the path is unchecked), 7e CONTRIBUTING, 7f the README, which
+still says the installer arrives in phase 12. **For the owner, not a
 task**: push a tag to try the release (`docs/releasing.md`); expect the
 first to need a second try. **Do not move Litestream past v0.5.15
 without running the tests on Windows.** Before a release,
