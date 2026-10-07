@@ -108,7 +108,25 @@ func TestOpenRejectsAnUnusablePath(t *testing.T) {
 // connection and leaves every later one unguarded. Forcing several concurrent
 // connections is the only way to see the difference.
 func TestPragmasHoldOnEveryConnection(t *testing.T) {
-	d := testDB(t)
+	// A read pool of this test's own choosing, as large as the number of
+	// connections it takes at once. The default is sized from the machine,
+	// down to two, and on a machine with two processors (a CI runner for a
+	// private repository) the third connection was waited for until the
+	// test timed out.
+	const readers = 4
+	d, err := Open(context.Background(), Options{
+		Path:         filepath.Join(t.TempDir(), FileName),
+		Log:          slog.New(slog.NewTextHandler(io.Discard, nil)),
+		ReadPoolSize: readers,
+	})
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := d.Close(context.Background()); err != nil {
+			t.Errorf("Close: %v", err)
+		}
+	})
 
 	tests := []struct {
 		pragma string
@@ -140,7 +158,7 @@ func TestPragmasHoldOnEveryConnection(t *testing.T) {
 				//
 				// The writer pool is capped at one connection on purpose, so
 				// it is asked once.
-				connections := 4
+				connections := readers
 				if pool.name == "writer" {
 					connections = 1
 				}
