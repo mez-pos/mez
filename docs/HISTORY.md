@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 10, Task 7a: read and check the file** (ADR-288).
+**Phase 10, Task 7b: the import on the server** (ADR-289).
+`POST /api/v1/menu/import/preview` answers what a CSV file would add;
+`POST /api/v1/menu/import` writes it in one `db.EditMenu`, reading the
+file again inside the write. A problem is a 422 `menu_import_refused`.
+The same file twice adds nothing, so no idempotency key is stored.
+
+Before it, **Phase 10, Task 7a: read and check the file** (ADR-288).
 `internal/domain/menu/import.go`: `ReadImport(data, ImportVenue)` answers
 an `ImportPlan` and writes nothing. CSV as a spreadsheet saves it; prices
 through `money.Parse`; no guessing at a tax class, station or course;

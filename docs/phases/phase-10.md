@@ -235,7 +235,7 @@ Phase 09.
     Refused whole if any row has a problem. `menu.edit`, a limit on the
     file's size. No idempotency key is stored: the same file again adds
     nothing (ADR-289). Go tests against a temp file database.
-  - [ ] **Task 7c: The template.** A download from the server: the header
+  - [x] **Task 7c: The template.** A download from the server: the header
     row and example rows that use the venue's own category, tax class,
     station and course names, so the file imports as it comes.
   - [ ] **Task 7d: The screen.** Spec first, added to `backoffice-menu.md`.

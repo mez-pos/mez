@@ -2,6 +2,7 @@ package menus
 
 import (
 	"context"
+	"encoding/csv"
 	"errors"
 	"slices"
 	"strings"
@@ -227,5 +228,42 @@ func TestImportListsAreNeverMissing(t *testing.T) {
 	}
 	if out.ToAdd == nil || out.NewCategories == nil || out.Skipped == nil || len(out.Problems) != 1 || out.Problems[0].Row != 0 {
 		t.Errorf("an empty file: %+v", out)
+	}
+}
+
+// TestImportTemplateImportsAtItsOwnVenue: the template a venue downloads,
+// given straight back, has nothing wrong with it and adds its two examples.
+func TestImportTemplateImportsAtItsOwnVenue(t *testing.T) {
+	w := newWorld(t)
+	for _, tt := range []struct {
+		name     string
+		venue    int64
+		category string
+	}{
+		{"an empty menu", plain, "Food"},
+		// On GST, where every item needs an HSN, and with a category to name.
+		{"a menu with a category", gst, "Elsewhere"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			rows, err := w.s.ImportTemplate(context.Background(), tt.venue)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var file strings.Builder
+			cw := csv.NewWriter(&file)
+			if err := cw.WriteAll(append([][]string{menu.ImportColumns}, rows...)); err != nil {
+				t.Fatal(err)
+			}
+			out, err := w.s.PreviewImport(context.Background(), tt.venue, []byte(file.String()))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(out.Problems) != 0 || len(out.ToAdd) != 2 || out.ToAdd[0].Category != tt.category {
+				t.Errorf("the template, previewed: %+v", out)
+			}
+		})
+	}
+	if len(w.nudged) != 0 {
+		t.Errorf("nudged %v: a template is not an edit", w.nudged)
 	}
 }

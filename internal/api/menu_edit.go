@@ -45,6 +45,7 @@ type MenuEditor interface {
 	OpenPhoto(name string) (*os.File, error)
 	PreviewImport(ctx context.Context, venueID int64, data []byte) (menus.Import, error)
 	ImportMenu(ctx context.Context, venueID int64, data []byte) (menus.Import, error)
+	ImportTemplate(ctx context.Context, venueID int64) ([][]string, error)
 }
 
 // WithMenuEditor mounts the menu editor (phase 10, Task 2a). It needs

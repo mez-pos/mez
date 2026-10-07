@@ -1,6 +1,8 @@
 package menu
 
 import (
+	"bytes"
+	"encoding/csv"
 	"strings"
 	"testing"
 )
@@ -367,5 +369,104 @@ func TestImportPlanOK(t *testing.T) {
 	onlyThere := ReadImport([]byte(importHeader+"Coffee,Espresso,180,GST 5%,2106,Kitchen,Drinks,,,,\n"), importVenue())
 	if !good.OK() || bad.OK() || onlyThere.OK() {
 		t.Errorf("good %v, bad %v, nothing to add %v; want true, false, false", good.OK(), bad.OK(), onlyThere.OK())
+	}
+}
+
+// templateFile is the template as the back office downloads it: the columns
+// and the example rows, as CSV.
+func templateFile(t *testing.T, v ImportVenue) []byte {
+	t.Helper()
+	var b bytes.Buffer
+	w := csv.NewWriter(&b)
+	w.UseCRLF = true
+	if err := w.WriteAll(append([][]string{ImportColumns}, ImportTemplate(v)...)); err != nil {
+		t.Fatal(err)
+	}
+	return append([]byte(bom), b.Bytes()...)
+}
+
+func TestImportTemplateImportsAsItComes(t *testing.T) {
+	empty := ImportVenue{Currency: "INR"}
+	yen := importVenue()
+	yen.Currency = "JPY"
+	dinar := importVenue()
+	dinar.Currency = "KWD"
+	plain := importVenue()
+	plain.NeedsHSN = false
+	awkward := importVenue()
+	awkward.Categories = []ImportChoice{{ID: 1, Name: `Chai, "cutting"`, Active: true}}
+	awkward.TaxClasses = []ImportChoice{{ID: 10, Name: "GST 5%, food", Active: true}}
+	retiredFirst := importVenue()
+	retiredFirst.Stations[0].Active = false
+
+	tests := []struct {
+		name  string
+		venue ImportVenue
+		// What the rows name; 0 where the venue has nothing for them to name.
+		category, taxClass, station, course int64
+		problems                            int
+	}{
+		{"a venue with a menu", importVenue(), 1, 10, 20, 30, 0},
+		{"a venue whose invoices show no HSN", plain, 1, 10, 20, 30, 0},
+		{"a currency with no decimal places", yen, 1, 10, 20, 30, 0},
+		{"a currency with three", dinar, 1, 10, 20, 30, 0},
+		{"names with commas and quotes in them", awkward, 1, 10, 20, 30, 0},
+		{"the first station retired", retiredFirst, 1, 10, 21, 30, 0},
+		// Nothing to name: a tax class, a station and a course each, on each row.
+		{"a venue with nothing set up", empty, 0, 0, 0, 0, 6},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			plan := ReadImport(templateFile(t, tt.venue), tt.venue)
+			if len(plan.Problems) != tt.problems {
+				t.Fatalf("got %d problems, want %d: %+v", len(plan.Problems), tt.problems, plan.Problems)
+			}
+			if tt.problems > 0 {
+				return
+			}
+			if len(plan.Rows) != 2 {
+				t.Fatalf("got %d rows, want the 2 examples: %+v", len(plan.Rows), plan.Rows)
+			}
+			for _, r := range plan.Rows {
+				if r.CategoryID != tt.category || r.TaxClassID != tt.taxClass || r.StationID != tt.station || r.CourseID != tt.course {
+					t.Errorf("row %d names category %d, tax class %d, station %d, course %d; want %d, %d, %d, %d",
+						r.Row, r.CategoryID, r.TaxClassID, r.StationID, r.CourseID, tt.category, tt.taxClass, tt.station, tt.course)
+				}
+				if r.Price <= 0 || !strings.HasPrefix(r.Name, "Example: ") {
+					t.Errorf("row %d: %+v", r.Row, r)
+				}
+			}
+		})
+	}
+}
+
+func TestImportTemplateShowsEveryColumn(t *testing.T) {
+	rows := ImportTemplate(importVenue())
+	if len(rows) != 2 {
+		t.Fatalf("got %d rows", len(rows))
+	}
+	for i, row := range rows {
+		if len(row) != len(ImportColumns) {
+			t.Errorf("row %d has %d cells, want one for each of the %d columns", i, len(row), len(ImportColumns))
+		}
+	}
+	// The first row fills every cell, so the owner sees what each takes; the
+	// second leaves out what may be left out.
+	for i, cell := range rows[0] {
+		if cell == "" {
+			t.Errorf("the first example leaves %s empty", ImportColumns[i])
+		}
+	}
+	if rows[1][7] != "" || rows[1][8] != "" {
+		t.Errorf("the second example fills the optional cells: %q", rows[1])
+	}
+}
+
+func TestImportTemplateNamesACategoryForAnEmptyMenu(t *testing.T) {
+	v := importVenue()
+	v.Categories = []ImportChoice{{ID: 2, Name: "Winter specials", Active: false}}
+	plan := ReadImport(templateFile(t, v), v)
+	if len(plan.Problems) != 0 || len(plan.NewCategories) != 1 || plan.NewCategories[0] != "Food" {
+		t.Errorf("new categories %v, problems %+v", plan.NewCategories, plan.Problems)
 	}
 }

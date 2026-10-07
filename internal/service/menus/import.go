@@ -242,3 +242,14 @@ func importOf(plan menu.ImportPlan, currency string) Import {
 	}
 	return out
 }
+
+// ImportTemplate is the example rows of the file the venue fills in, under
+// menu.ImportColumns: rows that name the venue's own category, tax class,
+// station and course, so the template imports as it comes.
+func (s *Service) ImportTemplate(ctx context.Context, venueID int64) ([][]string, error) {
+	v, err := importVenue(ctx, s.db.Queries(), venueID)
+	if err != nil {
+		return nil, err
+	}
+	return menu.ImportTemplate(v), nil
+}

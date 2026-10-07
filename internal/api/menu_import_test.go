@@ -147,3 +147,46 @@ func TestMenuImportPreviewSaysWhatIsWrong(t *testing.T) {
 		t.Errorf("a spreadsheet sent as CSV: %+v", notAFile.Problems)
 	}
 }
+
+// TestMenuImportTemplateOverHTTP: the template is a CSV file to save, and
+// sent straight back it checks out, here where the venue has a category and
+// before it has one.
+func TestMenuImportTemplateOverHTTP(t *testing.T) {
+	m := newEditorTill(t)
+	template := func() csvResponse {
+		t.Helper()
+		rec := send(m.handler, http.MethodGet, "/api/v1/menu/import/template", "", m.owner)
+		if rec.Code != http.StatusOK || rec.Header().Get("Cache-Control") != "no-store" {
+			t.Fatalf("template: %d %s (cache %q)", rec.Code, rec.Body, rec.Header().Get("Cache-Control"))
+		}
+		var file csvResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &file); err != nil {
+			t.Fatal(err)
+		}
+		return file
+	}
+
+	file := template()
+	if file.Filename != "mez-menu-template.csv" || file.ContentType != "text/csv; charset=utf-8" {
+		t.Errorf("file: %q as %q", file.Filename, file.ContentType)
+	}
+	first, _, _ := strings.Cut(file.Text, "\r\n")
+	if first != byteOrderMark+"Category,Name,Price,Tax class,HSN,Station,Course,Description,Diet,Gluten free,Popular" {
+		t.Errorf("first line: %q", first)
+	}
+	plan := importOf(t, m.sendFile("/api/v1/menu/import/preview", "text/csv", file.Text, nil))
+	if len(plan.Problems) != 0 || len(plan.ToAdd) != 2 || len(plan.NewCategories) != 1 || plan.NewCategories[0] != "Food" {
+		t.Errorf("the template, checked on an empty menu: %+v", plan)
+	}
+
+	m.edit(t, http.MethodPost, "/api/v1/menu/categories", `{"name":"Tiffin"}`, http.StatusCreated)
+	plan = importOf(t, m.sendFile("/api/v1/menu/import/preview", "text/csv", template().Text, nil))
+	if len(plan.Problems) != 0 || len(plan.ToAdd) != 2 || len(plan.NewCategories) != 0 || plan.ToAdd[0].Category != "Tiffin" {
+		t.Errorf("the template, checked on a menu with a category: %+v", plan)
+	}
+
+	cashier := m.asStaff(m.signInAs(t, "stf_ASHA0001", "2468").Token)
+	if rec := send(m.handler, http.MethodGet, "/api/v1/menu/import/template", "", cashier); rec.Code != http.StatusForbidden {
+		t.Errorf("a cashier reading the template: %d, want 403", rec.Code)
+	}
+}

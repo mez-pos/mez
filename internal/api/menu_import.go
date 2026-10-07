@@ -7,6 +7,8 @@ import (
 	"mime"
 	"net/http"
 
+	"github.com/byjoellobo/mez/internal/domain/export"
+	"github.com/byjoellobo/mez/internal/domain/menu"
 	"github.com/byjoellobo/mez/internal/service/menus"
 )
 
@@ -21,8 +23,24 @@ import (
 const CodeMenuImportRefused ErrorCode = "menu_import_refused"
 
 func (s *Server) mountMenuImport(handle func(pattern string, h http.HandlerFunc)) {
+	handle("GET /api/v1/menu/import/template", s.menuImportTemplate)
 	handle("POST /api/v1/menu/import/preview", s.previewMenuImport)
 	handle("POST /api/v1/menu/import", s.importMenu)
+}
+
+// menuImportTemplateName is the file the template is saved as.
+const menuImportTemplateName = "mez-menu-template.csv"
+
+// menuImportTemplate answers the file to fill in: the columns, and example
+// rows that name what this venue has. It is a CSV as every report is one
+// (ADR-119), so the back office saves it the same way.
+func (s *Server) menuImportTemplate(w http.ResponseWriter, r *http.Request) {
+	rows, err := s.menuEditor.ImportTemplate(r.Context(), Meta(r).VenueID)
+	if err != nil {
+		s.writeMenuEditError(w, r, err)
+		return
+	}
+	s.writeCSV(w, r, menuImportTemplateName, export.Table{Header: menu.ImportColumns, Rows: rows})
 }
 
 // previewMenuImport answers what a file would add. A file full of problems

@@ -10398,3 +10398,35 @@ thousand in one transaction, and the single writer is held for that
 long. The 422 does not carry the problems: the screen asks for the
 preview again. A file that passed its preview can still be refused if
 the menu changed in between, which is the point.
+
+## ADR-290 - The import's template is made for the venue, with two example rows
+2026-10 · Status: accepted. Phase 10, Task 7c.
+Decision: `GET /api/v1/menu/import/template` (`menu.edit`) answers the
+file to fill in: the eleven columns and two example rows. The rows name
+the venue's own first category, tax class, station and course still in
+use, so the file imports as it comes and shows the owner the exact names
+their rows must use, which no fixed template could.
+  - **It is a CSV as every report is one** (ADR-119): JSON carrying the
+    filename and the text, through `writeCSV`, with the byte order mark
+    and CRLF line ends a spreadsheet wants. The back office saves it
+    with the client it already has.
+  - **The examples say they are examples.** Their names begin
+    "Example: ", so an owner who leaves them in sees them in the preview
+    before anything is added. The reader does not treat that prefix
+    specially: a rule that silently drops rows by their name is a rule
+    someone trips over.
+  - **The first row fills every cell and the second leaves the optional
+    ones empty**, so both ways of writing a row are on the sheet.
+  - **Where every item needs an HSN the examples carry 996331**, the SAC
+    code for a restaurant's service. It is an example, not advice.
+  - **The second price has decimals only where the currency has them**:
+    80.50, or 80 for a currency with no minor unit.
+  - At a venue with no category the examples go in "Food", which the
+    import would make. With no tax class, station or course those cells
+    are empty and the preview says what to add first.
+Cost: the examples are in English and are a dosa and a coffee whatever
+the venue sells. A template downloaded and then kept is stale once a
+category or tax class it names is renamed or retired; the preview says
+so by name. The example rows are written in the domain package beside
+the reader, so the two cannot drift: a test reads the template back
+through `ReadImport` for each kind of venue.

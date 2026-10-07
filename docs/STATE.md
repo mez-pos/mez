@@ -14,30 +14,33 @@ to be seen working: the walks, a release, and a printer.
 
 ## Last completed task
 
-**Phase 10, Task 7b: the import on the server** (ADR-289).
-`POST /api/v1/menu/import/preview` answers what a CSV file would add
-and writes nothing; `POST /api/v1/menu/import` writes it. Both take the
-file as the body (`text/csv`, 1 MB), need `menu.edit` and answer
-`MenuImport` (`to_add`, `new_categories`, `skipped`, `problems`,
-`imported`). The import reads the file again inside the write, against
-the menu as it is then; new categories and every item go in one
-`db.EditMenu`. A file with a problem is a 422 `menu_import_refused`.
-The same file twice adds nothing and bumps nothing, so no idempotency
-key is stored. `internal/service/menus/import.go`,
-`internal/api/menu_import.go`. Not seen from a browser: no screen yet.
+**Phase 10, Task 7c: the template** (ADR-290).
+`GET /api/v1/menu/import/template`, `menu.edit`: the eleven columns and
+two rows named "Example: ..." that use the venue's own first active
+category, tax class, station and course, so it imports as it comes. A
+`CsvResponse` like the reports' (filename `mez-menu-template.csv`), through
+`writeCSV`. `menu.ImportTemplate` in `internal/domain/menu`, read back
+through `ReadImport` by a test for each kind of venue. With 7b, the
+server half of the import is whole. Not seen from a browser: no screen.
 
 ## Next task
 
-**Phase 10, Task 7c: the template.** `GET /api/v1/menu/import/template`,
-`menu.edit`: a CSV download with `menu.ImportColumns` as the header and
-two or three example rows that name the venue's own first active
-category, tax class, station and course (read with `importVenue`), so
-the file imports as it comes into an empty menu. Write it with
-`encoding/csv` and a byte order mark, so Excel opens it as UTF-8.
-Decide what the example rows are when the venue already has those
-items (they would be skipped, which is fine). Test: the template,
-previewed against the same venue, has no problems. Then 7d (the
-screen, spec first in `backoffice-menu.md`).
+**Phase 10, Task 7d: the screen.** Spec first: add "Import" to
+`docs/design/screens/backoffice-menu.md`, then build it on the Menu
+screen. An Import button beside the screen's other actions opens a
+sheet or modal with three steps: get the template (`useCsvDownload`
+already saves a `CsvResponse`); choose a `.csv` file, sent as the body with
+`Content-Type: text/csv` to `/api/v1/menu/import/preview`; read the
+answer (`MenuImport`): how many to add, the new categories, how many
+are already there, and the problems as a table of row, column and
+message, row 0 being the file itself. Confirm is there only when
+`problems` is empty and `to_add` is not; it posts the same file to
+`/api/v1/menu/import`, and on `imported` invalidates the menu editor's
+query and says how many were added. A 422 `menu_import_refused` means
+the menu changed: preview again. Check whether the API client can send
+a non-JSON body; the photo upload does. Vitest for the logic. Walk it
+in a browser against `make dev`, with a real file saved from a
+spreadsheet. Split it if the spec and the screen do not fit a session.
 
 Apart from Task 7, for the owner, in the order that unblocks the most:
 1. **A printer and a drawer.** `mez --test-print <ip> -drawer`, then a
