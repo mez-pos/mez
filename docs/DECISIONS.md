@@ -10430,3 +10430,40 @@ category or tax class it names is renamed or retired; the preview says
 so by name. The example rows are written in the domain package beside
 the reader, so the two cannot drift: a test reads the template back
 through `ReadImport` for each kind of venue.
+
+## ADR-291 - The import is a modal on the Menu screen, and the server's answer is the screen
+2026-10 · Status: accepted. Phase 10, Task 7d.
+Decision: **Import** sits in the Menu screen's head beside Add New Item
+and opens a modal: three numbered steps (get the template, fill it in,
+choose the file), then what the server said of the file, then **Add N
+items**. The modal holds no rule of its own about a menu. It shows the
+preview's rows, categories, skips and problems as they came.
+  - **The browser's file type is thrown away.** Windows calls a `.csv`
+    an Excel file and some browsers give it no type, so the file is sent
+    as `text/csv` whatever it was called. What is checked here is only
+    what can be said without reading it: the name ends `.csv`, it is not
+    empty, it is not over the server's 1 MB.
+  - **A file with problems cannot be added in part.** The table of
+    problems has no "add the rest" beside it (ADR-288).
+  - **A template example left in the file is pointed at, not dropped.**
+    Rows named "Example: ..." are counted and a line in the attention
+    tint says to take them out unless they are wanted. The owner decides;
+    the reader still treats them as any row (ADR-290).
+  - **A refusal at Add is answered by checking again.** A 422
+    `menu_import_refused` means the menu changed since the preview, so
+    the same file is previewed once more and shown under "The menu
+    changed since this file was checked. This is how it stands now."
+  - **The same file may be chosen twice**: the input is cleared after
+    each choice, since the file is usually edited and chosen again.
+Cost: a file is uploaded twice, to check and to add. The list of items
+to add shows name, category and price, not the tax class, station or
+course each row resolved to; a wrong one is found in the editor after.
+Walked in a browser against a demo venue on 2026-10-08: the template
+downloaded with the venue's own names and a byte order mark, came
+straight back as two examples with the warning; an `.xlsx` was sent back
+to the spreadsheet; a file with semicolons, CRLF and six mistakes listed
+all six by row and column; a good one with a Devanagari name, a "₹ 40"
+and a "1,150" added four items and two categories, left an existing
+item's price alone, and added nothing the second time. Not walked: a
+file really saved by Excel or Google Sheets on this machine, and the
+modal under 1024px wide.

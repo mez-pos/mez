@@ -9,6 +9,7 @@ import type {
   MenuEditResponse,
   MenuEditor,
   MenuGroupInput,
+  MenuImport,
   MenuItemInput,
   MenuOrderRequest,
   CourseRetiredResponse,
@@ -52,6 +53,10 @@ export interface MenuEditorApi {
   orderCourses: (ids: number[]) => Promise<void>;
   retireCourse: (id: number, moveTo: number) => Promise<CourseRetiredResponse>;
   restoreCourse: (id: number) => Promise<void>;
+  /** What a CSV file would add to the menu. Writes nothing. */
+  previewImport: (file: Blob) => Promise<MenuImport>;
+  /** Adds a CSV file's items. `imported` is false when it had nothing new. */
+  importMenu: (file: Blob) => Promise<MenuImport>;
 }
 
 export function useMenuEditor(): MenuEditorApi {
@@ -119,5 +124,8 @@ export function useMenuEditor(): MenuEditorApi {
     orderCourses: (ids) => done(edit(() => store.api.put<MenuEditResponse>("/api/v1/menu/courses/order", order(ids)))),
     retireCourse: (id, moveTo) => refreshing(() => store.api.post<CourseRetiredResponse>(`/api/v1/menu/courses/${id}/retire`, to(moveTo))),
     restoreCourse: (id) => done(edit(() => store.api.post<MenuEditResponse>(`/api/v1/menu/courses/${id}/restore`))),
+    // A whole menu can take longer than a small edit over a venue's wifi.
+    previewImport: (file) => store.api.post<MenuImport>("/api/v1/menu/import/preview", file, { timeoutMs: 30_000 }),
+    importMenu: (file) => refreshing(() => store.api.post<MenuImport>("/api/v1/menu/import", file, { timeoutMs: 30_000 })),
   };
 }

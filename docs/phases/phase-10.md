@@ -210,7 +210,7 @@ Phase 09.
     the human (ADR-141): there is nothing to configure until Litestream is
     in the binary, and that task already asks for its back office screen.
 
-- [ ] **Task 7 — Import the menu from a spreadsheet.**
+- [x] **Task 7 — Import the menu from a spreadsheet.**
   Added by the human on 2026-10-08, after the plan was built (ADR-288). A
   venue with eighty items should not type them one at a time. The owner
   downloads a template, fills it in a spreadsheet, saves it as CSV and gives
@@ -238,7 +238,7 @@ Phase 09.
   - [x] **Task 7c: The template.** A download from the server: the header
     row and example rows that use the venue's own category, tax class,
     station and course names, so the file imports as it comes.
-  - [ ] **Task 7d: The screen.** Spec first, added to `backoffice-menu.md`.
+  - [x] **Task 7d: The screen.** Spec first, added to `backoffice-menu.md`.
     Import on the Menu screen: get the template, choose a file, read the
     preview (to add, new categories, already there, problems by row), confirm.
 

@@ -6,7 +6,7 @@
 // groups of choices and the stations and courses (rebuild.md, rule 4): they
 // are the two other views, as pills under the title.
 
-import { PlusIcon, SearchIcon } from "lucide-react";
+import { PlusIcon, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { EditorGroup, MenuEditor } from "../../../shared/api-types";
 import { Button, Card, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
@@ -20,6 +20,7 @@ import { CategoryRail } from "./CategoryRail";
 import { emptyGroupForm, groupFormFrom, groupsChanged, usedBy } from "./group-logic";
 import { GroupFormModal } from "./GroupFormModal";
 import { GroupsView } from "./GroupsView";
+import { ImportModal } from "./ImportModal";
 import { ItemEditor } from "./ItemEditor";
 import { ItemList } from "./ItemList";
 import type { PhotoChange } from "./ItemPhotoField";
@@ -53,6 +54,7 @@ export function MenuScreen() {
   const [filter, setFilter] = useState<ListFilter>({ scope: "all", search: "", show: "all", order: "menu" });
   const [open, setOpen] = useState<Open>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
+  const [importing, setImporting] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const made = useRef(0);
@@ -139,6 +141,10 @@ export function MenuScreen() {
                 ))}
               </select>
             </div>
+            <Button disabled={!menu} onClick={() => setImporting(true)}>
+              <UploadIcon aria-hidden="true" size={17} />
+              Import
+            </Button>
             <Button variant="attention" disabled={!menu} onClick={() => menu && addItem(menu)}>
               <PlusIcon aria-hidden="true" size={18} />
               Add New Item
@@ -278,6 +284,7 @@ export function MenuScreen() {
         </div>
       )}
 
+      {menu && importing && <ImportModal api={api} onClose={() => setImporting(false)} />}
       {menu && editing && (
         <EditingModal menu={menu} editing={editing} api={api} onCategory={(id) => pick({ scope: id, search: "" })} onClose={() => setEditing(null)} />
       )}

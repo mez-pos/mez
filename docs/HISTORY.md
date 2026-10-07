@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 10, Task 7b: the import on the server** (ADR-289).
+**Phase 10, Task 7c: the template** (ADR-290).
+`GET /api/v1/menu/import/template`: the eleven columns and two rows
+named "Example: ..." that use the venue's own first active category, tax
+class, station and course. A `CsvResponse`, through `writeCSV`.
+
+Before it, **Phase 10, Task 7b: the import on the server** (ADR-289).
 `POST /api/v1/menu/import/preview` answers what a CSV file would add;
 `POST /api/v1/menu/import` writes it in one `db.EditMenu`, reading the
 file again inside the write. A problem is a 422 `menu_import_refused`.

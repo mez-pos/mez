@@ -8,41 +8,30 @@
 ## Current phase
 
 **Phase 10 - Back office**, `docs/phases/phase-10.md`, reopened by the
-human on 2026-10-08 for **Task 7: import the menu from a spreadsheet**
-(ADR-288). Every other task in every phase is built; what those owe is
-to be seen working: the walks, a release, and a printer.
+human on 2026-10-08 for Task 7, the menu import, which is now built
+(ADR-288 to ADR-291). **Every task in every phase is built again.** What
+is left is to see it work: the walks, a release, and a printer.
 
 ## Last completed task
 
-**Phase 10, Task 7c: the template** (ADR-290).
-`GET /api/v1/menu/import/template`, `menu.edit`: the eleven columns and
-two rows named "Example: ..." that use the venue's own first active
-category, tax class, station and course, so it imports as it comes. A
-`CsvResponse` like the reports' (filename `mez-menu-template.csv`), through
-`writeCSV`. `menu.ImportTemplate` in `internal/domain/menu`, read back
-through `ReadImport` by a test for each kind of venue. With 7b, the
-server half of the import is whole. Not seen from a browser: no screen.
+**Phase 10, Task 7d: the import's screen** (ADR-291). **Import** in the
+Menu screen's head opens a modal: get the template, fill it in, choose
+the file, read what it would add or what is wrong by row and column,
+**Add N items**. `ImportModal.tsx`, `import-logic.ts` (23 tests), two
+calls on `use-menu-editor.ts`; the spec is "Import" in
+`backoffice-menu.md`. Walked in a browser against a demo venue: the
+template, an `.xlsx` turned away, a file with six mistakes, and a good
+one that added four items and two categories and nothing the second
+time. Not walked: a file really saved by Excel or Google Sheets, and the
+modal under 1024px.
 
 ## Next task
 
-**Phase 10, Task 7d: the screen.** Spec first: add "Import" to
-`docs/design/screens/backoffice-menu.md`, then build it on the Menu
-screen. An Import button beside the screen's other actions opens a
-sheet or modal with three steps: get the template (`useCsvDownload`
-already saves a `CsvResponse`); choose a `.csv` file, sent as the body with
-`Content-Type: text/csv` to `/api/v1/menu/import/preview`; read the
-answer (`MenuImport`): how many to add, the new categories, how many
-are already there, and the problems as a table of row, column and
-message, row 0 being the file itself. Confirm is there only when
-`problems` is empty and `to_add` is not; it posts the same file to
-`/api/v1/menu/import`, and on `imported` invalidates the menu editor's
-query and says how many were added. A 422 `menu_import_refused` means
-the menu changed: preview again. Check whether the API client can send
-a non-JSON body; the photo upload does. Vitest for the logic. Walk it
-in a browser against `make dev`, with a real file saved from a
-spreadsheet. Split it if the spec and the screen do not fit a session.
+**There is no next task in the plan.** Worth doing for the import, by
+hand: fill the template in Excel and in Google Sheets, save each as CSV
+and import it (`make build-web` first if walking `bin/mez`).
 
-Apart from Task 7, for the owner, in the order that unblocks the most:
+For the owner, in the order that unblocks the most:
 1. **A printer and a drawer.** `mez --test-print <ip> -drawer`, then a
    sale. Nothing has ever been printed (`hardware.md`, ADR-282).
 2. **A release.** Push a tag (`docs/releasing.md`); expect the first to

@@ -7,7 +7,8 @@ and rebuilt from D18 in the rebuild's Task 16f (ADR-190).
 `web/backoffice/src/menu/`: `MenuScreen.tsx`, `CategoryRail.tsx`,
 `ItemList.tsx`, `ItemEditor.tsx`, `ItemGroupsField.tsx`, `ItemPhotoField.tsx`,
 `GroupsView.tsx`, `GroupFormModal.tsx`, `SetupView.tsx`, `SetupModals.tsx`,
-`browse-logic.ts`, `menu-logic.ts`, `use-menu-editor.ts`. Section **Menu**,
+`ImportModal.tsx`, `browse-logic.ts`, `import-logic.ts`, `menu-logic.ts`,
+`use-menu-editor.ts`. Section **Menu**,
 path `/menu`, `menu.edit`, keys `g m`.
 
 ## Purpose
@@ -24,8 +25,8 @@ Inside the frame (`backoffice-shell.md`).
 - **The head:** "Menu Management" in the serif, and "Create and manage
   items, categories and their choices. Changes reach every order screen at
   once." At the right, on Items: the search ("Search menu items"), a select
-  of what to show (**All items**, Active, Sold out, Retired), and **Add New
-  Item** (terracotta).
+  of what to show (**All items**, Active, Sold out, Retired), **Import**,
+  and **Add New Item** (terracotta).
 - **Three views**, as pills under the head: **Items**, **Choices**,
   **Stations and courses**.
 - The screen's problem line, for a refusal that belongs to no field.
@@ -90,8 +91,47 @@ the editor drops below the other two.
   retired: "Add another before retiring it." A toast says what moved: "Bar
   retired. 10 items moved to Kitchen. Its printer now serves Kitchen."
 
+### Import (ADR-288 to ADR-291)
+
+A modal from **Import** in the head, for a menu that is already written
+down somewhere. It adds items; it never changes or removes one.
+
+- **Choose a file.** Three numbered steps, each one line:
+  1. "Get the template. It has this venue's own category, tax class,
+     station and course names in it." with **Download template**.
+  2. "Fill it in, one item on each row, and save it as CSV UTF-8."
+  3. "Choose the file." with **Choose a file** (`.csv`).
+  A file that is not a `.csv`, or is over 1 MB, is refused here with what
+  to do: "In your spreadsheet, use Save As and pick CSV UTF-8."
+- **Checking** the file: "Checking banana.csv".
+- **Something is wrong** with it: "3 problems in banana.csv. Nothing has
+  been added." and a table of **Where** ("Row 5", or "The file"),
+  **Column** and **What is wrong**, in the server's words, scrolling
+  inside itself. Then "Fix them in the file and choose it again." and
+  **Choose the file again**. There is no way to add the rows that are
+  right: a menu half of what its owner wrote is worse than none.
+- **Ready:** "42 items to add." Then, each only when it applies: "3 new
+  categories: Bakes, Drinks, Tiffin."; "5 are already on the menu and
+  are left as they are."; and, in the attention tint, "2 of these are the
+  template's examples. Take those rows out of the file unless you want
+  them on the menu." Under them the items to add, scrolling inside
+  itself: name, category, price. **Add 42 items** is the primary;
+  **Choose another file** beside it.
+- **Nothing to add:** "Every item in this file is already on the menu."
+- **Added:** the modal closes; a toast, "Added 42 items and 3
+  categories." The list shows them, each in its category after what was
+  there.
+- **The menu changed** between the check and the add, so the file no
+  longer fits: the file is checked again and shown as it stands now, under
+  "The menu changed since this file was checked. This is how it stands
+  now."
+
 ## Data
 
+- `GET /api/v1/menu/import/template`, `POST /api/v1/menu/import/preview`
+  and `POST /api/v1/menu/import` (ADR-289, ADR-290). The file is sent as
+  it is, as `text/csv`, whatever type the browser gave it: Windows calls a
+  `.csv` an Excel file.
 - `GET /api/v1/menu/editor`, key `["menu-editor"]`, read again after every
   edit and on the stream's `menu_changed`, so a second back office sees the
   first's edits.
@@ -115,6 +155,7 @@ the editor drops below the other two.
 | Sold out today, Back on sale | Marks it until the trading day turns | Every order screen learns at once |
 | Retire, Bring back (an item) | No confirm: it is one click back | |
 | Retire (a category) | Asks first: "Its 6 items come off every order screen. You can bring it back." | |
+| Import | Opens the import (above) | Nothing is added until the file is checked and **Add** is pressed |
 | Move up, Move down | Moves a row one place and saves at once | Offered on items only when the list is one category, in menu order, unfiltered |
 
 `/menu?item=<id>` opens that item in the editor as soon as the menu is read;
