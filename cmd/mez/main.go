@@ -214,6 +214,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// opened is a startup failure with a human watching, which is a far better
 	// place to find out than the first sale of the day.
 	dbPath := filepath.Join(cfg.DataDir, db.FileName)
+	photosDir := filepath.Join(cfg.DataDir, "photos")
 	database, err := db.Open(ctx, db.Options{
 		Path: dbPath,
 		Log:  log,
@@ -232,7 +233,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 
 	// A destination that cannot be reached does not stop the start, or a
 	// sale: the backup says it is failing and keeps trying.
-	backups, err = backup.Start(ctx, backup.Options{DBPath: dbPath, Config: backupTo, Log: log})
+	backups, err = backup.Start(ctx, backup.Options{DBPath: dbPath, Config: backupTo, Log: log, PhotosDir: photosDir})
 	if err != nil {
 		return err
 	}
@@ -326,7 +327,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		return err
 	}
 
-	photos, err := menus.NewPhotoStore(filepath.Join(cfg.DataDir, "photos"))
+	photos, err := menus.NewPhotoStore(photosDir)
 	if err != nil {
 		return err
 	}

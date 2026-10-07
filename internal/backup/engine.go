@@ -94,6 +94,9 @@ type Options struct {
 	DBPath string
 	// Config is where to. The zero value is nowhere.
 	Config Config
+	// PhotosDir is the menu's photos folder (ADR-110), copied beside the
+	// database. Empty copies none.
+	PhotosDir string
 	// Log receives Litestream's lines. Nil discards them.
 	Log *slog.Logger
 	// Clock is for Status. Nil is the system's.
@@ -125,6 +128,11 @@ type Engine struct {
 	stopProbe   context.CancelFunc
 	probeDone   chan struct{}
 	unreachable lastError
+
+	// The photos folder's copying, nil with none to copy, and what last
+	// went wrong with it.
+	photos      *photoSync
+	photosError lastError
 
 	closeOnce sync.Once
 }
@@ -174,6 +182,10 @@ func Start(ctx context.Context, opts Options) (*Engine, error) {
 	// no internet at closing time must still shut down promptly, and what
 	// did not go is still on disk for the next start.
 	e.store.SetShutdownSyncTimeout(0)
+
+	if opts.PhotosDir != "" {
+		e.photos = newPhotoSync(opts.PhotosDir, e.dest.photos, opts.Log)
+	}
 
 	// Open calls nobody, for a bucket too: Validate has made sure there
 	// is nothing Litestream would have to go and ask.
@@ -229,10 +241,44 @@ func (e *Engine) probe(ctx context.Context) {
 		// Being stopped mid-question is not the destination's fault.
 		if ctx.Err() == nil {
 			e.unreachable.set(err.Error())
+			// What comes back may not be what went away.
+			e.forgetPhotos()
 		}
 		return
 	}
 	e.unreachable.clear()
+	// The photos go on the probe's clock: a photo added to the menu is at
+	// the destination within the minute, and a quiet venue with no new
+	// photo asks the destination nothing more than the probe just did.
+	if err := e.copyPhotos(ctx, false); err != nil && ctx.Err() == nil {
+		e.log.Warn("the menu's photos were not all backed up", "error", err)
+	}
+}
+
+func (e *Engine) forgetPhotos() {
+	if e.photos != nil {
+		e.photos.forget()
+	}
+}
+
+// copyPhotos copies up the photos the destination lacks, and keeps what
+// went wrong for Status.
+func (e *Engine) copyPhotos(ctx context.Context, fresh bool) error {
+	if e.photos == nil {
+		return nil
+	}
+	copied, err := e.photos.sync(ctx, fresh)
+	if copied > 0 {
+		e.log.Info("backed up the menu's photos", "photos", copied)
+	}
+	if err != nil {
+		if ctx.Err() == nil {
+			e.photosError.set("photos: " + err.Error())
+		}
+		return err
+	}
+	e.photosError.clear()
+	return nil
 }
 
 // BackUpNow copies everything written so far to the destination and
@@ -264,6 +310,12 @@ func (e *Engine) BackUpNow(ctx context.Context) error {
 	// owner who asked should not wait for the probe to agree.
 	e.errors.last.clear()
 	e.unreachable.clear()
+	// And the photos, asking the destination what it holds and not
+	// trusting memory: the owner who presses this may have just changed
+	// the drive.
+	if err := e.copyPhotos(ctx, true); err != nil {
+		return fmt.Errorf("backup: backing up the photos now: %w", err)
+	}
 	return nil
 }
 
@@ -282,11 +334,17 @@ func (e *Engine) Status() Status {
 	reason, at := e.errors.last.get()
 	stands := reason != "" && (last.IsZero() || at.After(last))
 
+	photos, _ := e.photosError.get()
+
 	switch {
 	case gone != "":
 		return Status{State: StateFailing, LastSyncedAt: utcOrZero(last), Error: gone}
 	case stands:
 		return Status{State: StateFailing, LastSyncedAt: utcOrZero(last), Error: reason}
+	case photos != "":
+		// The sales are safe and the pictures are not: still failing,
+		// because "ok" would be read as everything.
+		return Status{State: StateFailing, LastSyncedAt: utcOrZero(last), Error: photos}
 	case !last.IsZero() && now.Sub(last) < staleAfter:
 		return Status{State: StateOK, LastSyncedAt: last.UTC()}
 	case last.IsZero() && now.Sub(e.started) < staleAfter:
@@ -366,6 +424,13 @@ func (e *Engine) Close(ctx context.Context) error {
 				e.log.Warn("the backup stopped without reaching its destination; what is left goes on the next start", "error", err)
 			}
 			<-e.probeDone
+			// The photos last, the database being what cannot be made
+			// again, and only to a destination that is there.
+			if gone == "" {
+				if err := e.copyPhotos(ctx, false); err != nil {
+					e.log.Warn("the menu's photos were not all backed up before stopping; the rest go on the next start", "error", err)
+				}
+			}
 		}()
 		select {
 		case <-done:

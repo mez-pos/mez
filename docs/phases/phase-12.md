@@ -104,7 +104,7 @@ Phase 11.
     the other S3-compatibles), key and secret. The AWS SDK comes with it.
     Tested against an S3 that answers on this machine; say plainly if no
     real bucket was written to.
-  - [ ] **Task 4c - The photos folder (ADR-110).**
+  - [x] **Task 4c - The photos folder (ADR-110).**
     `<data dir>/photos/` copied beside the database's backup, to a folder
     and to a bucket: files named by their hash, so only the missing ones
     go, on the same clock and on "back up now". Restore brings them back.

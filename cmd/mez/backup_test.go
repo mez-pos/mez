@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net"
@@ -52,6 +54,17 @@ func serverBacksUpTo(t *testing.T, cfg backup.Config) {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(dataDir, backup.ConfigFile), raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// A photo on the menu, named by its hash as the menu names them.
+	picture := []byte("not a picture, and nothing here looks inside one")
+	sum := sha256.Sum256(picture)
+	photo := hex.EncodeToString(sum[:]) + ".jpg"
+	if err := os.MkdirAll(filepath.Join(dataDir, "photos"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dataDir, "photos", photo), picture, 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -111,6 +124,15 @@ func serverBacksUpTo(t *testing.T, cfg backup.Config) {
 	}
 	if tables < 20 {
 		t.Errorf("the restored database has %d tables, want the whole schema", tables)
+	}
+
+	// And the photo with it (ADR-110).
+	photosBack := filepath.Join(t.TempDir(), "photos")
+	if n, err := backup.RestorePhotos(context.Background(), cfg, photosBack); err != nil || n != 1 {
+		t.Fatalf("RestorePhotos = %d, %v, want the one photo", n, err)
+	}
+	if back, err := os.ReadFile(filepath.Join(photosBack, photo)); err != nil || string(back) != string(picture) {
+		t.Errorf("the photo did not come back as it went: %v", err)
 	}
 }
 

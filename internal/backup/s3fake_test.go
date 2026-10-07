@@ -32,6 +32,9 @@ type fakeS3 struct {
 	objects map[string]fakeObject
 	// requests counts what was asked, by method and whether it named a key.
 	requests map[string]int
+	// asked is every request: its method (LIST for a listing) and the key
+	// or prefix it was about.
+	asked []string
 }
 
 type fakeObject struct {
@@ -60,6 +63,26 @@ func (f *fakeS3) keys() []string {
 	return keys
 }
 
+// plant puts an object in the bucket behind the backup's back.
+func (f *fakeS3) plant(key string, body []byte) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.objects[key] = fakeObject{body: body, meta: map[string]string{}, modified: time.Now().UTC()}
+}
+
+// countPrefix counts the requests of one method about keys under prefix.
+func (f *fakeS3) countPrefix(method, prefix string) int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	n := 0
+	for _, a := range f.asked {
+		if strings.HasPrefix(a, method+" "+prefix) {
+			n++
+		}
+	}
+	return n
+}
+
 func (f *fakeS3) count(what string) int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -80,8 +103,12 @@ func (f *fakeS3) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer f.mu.Unlock()
 	if key == "" {
 		f.requests[r.Method+" bucket"]++
+		if r.Method == http.MethodGet {
+			f.asked = append(f.asked, "LIST "+r.URL.Query().Get("prefix"))
+		}
 	} else {
 		f.requests[r.Method+" object"]++
+		f.asked = append(f.asked, r.Method+" "+key)
 	}
 
 	if !strings.Contains(r.Header.Get("Authorization"), "Credential="+f.accessKey+"/") {

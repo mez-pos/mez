@@ -10,6 +10,17 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The photos in the backup** (ADR-275; phase 12 Task 4c). Seen on
+  2026-10-07 in tests: to a folder, a stand-in S3 and a real MinIO and
+  back, each photo held to the hash in its name both ways; the whole
+  server leaving its photo behind as it stops. **Not seen**: hundreds of
+  photos; the menu screen adding one with the backup running; Amazon's
+  S3 or R2. A photo removed from the menu stays at the destination for
+  ever; one deleted from the destination by hand is sent again within ten
+  minutes. A long first copy of many photos delays the probe's next look
+  at the destination, so the status can lag by as long as the copy takes. Unreferenced photos are still never swept
+  on the venue's side (ADR-110), so they are backed up too.
+
 - **Backups to a bucket** (ADR-274; phase 12 Task 4b). Seen on
   2026-10-07 in tests: against a stand-in S3, and against a real MinIO in
   Docker, where a 12 MB database went up in parts and came back whole, a
@@ -40,7 +51,7 @@
   Litestream tries again or someone backs up now. A destination given
   with a `\\?\` prefix or an 8.3 short name is not recognised as inside
   the data directory. Left out until
-  4c to 4f: the photos folder, any way to set the destination
+  4d to 4f: any way to set the destination
   but writing `backup.json` by hand and restarting, a status anyone can
   see (a failing backup is only in the log), and `mez restore`. Litestream
   is held at v0.5.15 because 0.5.16 and 0.5.17 do not work on Windows;
@@ -704,8 +715,8 @@
   real staff id: the guest channel (phase 11) must supply one. A movement
   entered by hand after the closing drawer count records no shift (the
   closing count names its own, ADR-114).
-- Photos (ADR-110): `<data dir>/photos/` is not backed up by Litestream
-  (phase 12 must add it); unreferenced photo files are never swept; the
+- Photos (ADR-110): `<data dir>/photos/` is backed up beside the
+  database since ADR-275; unreferenced photo files are never swept; the
   guest app does not show photos yet.
 - Sold out (ADR-109): only the back office can mark it, not the till; the
   server does not refuse a sold-out item rung up (AddLine is unchecked);

@@ -327,6 +327,33 @@ func TestARealBucket(t *testing.T) {
 		}
 	})
 
+	t.Run("photos go up and come back", func(t *testing.T) {
+		withPhotos := real
+		withPhotos.Path += "-photos"
+		v := venue{dataDir: t.TempDir(), cfg: backup.Config{Kind: backup.KindS3, S3: withPhotos}}
+		names := []string{addPhoto(t, v.photosDir()), addPhoto(t, v.photosDir()), addPhoto(t, v.photosDir())}
+
+		database, engine := startWithPhotos(t, v, time.Hour)
+		sell(t, database, 1, 5)
+		if err := engine.BackUpNow(ctx); err != nil {
+			t.Fatalf("BackUpNow: %v", err)
+		}
+		if err := engine.BackUpNow(ctx); err != nil {
+			t.Fatalf("BackUpNow a second time, with nothing new: %v", err)
+		}
+		to := filepath.Join(t.TempDir(), "photos")
+		n, err := backup.RestorePhotos(ctx, v.cfg, to)
+		if err != nil || n != 3 {
+			t.Fatalf("RestorePhotos = %d, %v, want 3", n, err)
+		}
+		if got := photosIn(t, to); !sameNames(got, names) {
+			t.Errorf("restored %v, want %v", got, names)
+		}
+		if rows, _ := restored(t, v.cfg); rows != 5 {
+			t.Errorf("restored %d rows beside the photos, want 5", rows)
+		}
+	})
+
 	t.Run("a wrong secret is refused, and said", func(t *testing.T) {
 		wrong := real
 		wrong.Path += "-wrong"

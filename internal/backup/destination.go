@@ -44,6 +44,8 @@ type destination struct {
 	reach func(context.Context) error
 	// every is how often to ask.
 	every time.Duration
+	// photos is where the menu's photos go, beside the database.
+	photos photoStore
 }
 
 // databasePath is where, in a folder destination, the database's copies go.
@@ -67,8 +69,9 @@ func newFolder(cfg Config, log *slog.Logger) destination {
 		attach: func(r *litestream.Replica) { client.Replica = r },
 		// The way Litestream will use it: by making the folder if it is
 		// not there.
-		reach: func(context.Context) error { return os.MkdirAll(databasePath(cfg), 0o750) },
-		every: probeFolderEvery,
+		reach:  func(context.Context) error { return os.MkdirAll(databasePath(cfg), 0o750) },
+		every:  probeFolderEvery,
+		photos: folderPhotos{dir: filepath.Join(cfg.Folder, photosDir)},
 	}
 }
 
@@ -91,6 +94,7 @@ func newBucket(cfg S3, log *slog.Logger) destination {
 		attach: func(*litestream.Replica) {},
 		reach:  func(ctx context.Context) error { return listOne(ctx, client) },
 		every:  probeBucketEvery,
+		photos: newBucketPhotos(cfg),
 	}
 }
 

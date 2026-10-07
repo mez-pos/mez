@@ -9546,3 +9546,56 @@ SignatureDoesNotMatch, and the whole server run, stopped and restored.
 **Not seen**: Amazon's S3 or R2 themselves; HTTPS to any of them; a
 slow or dropping line; a day of service and what it costs.
 ---
+
+## ADR-275 - The photos are copied beside the database, by name
+2026-10 · Status: accepted. Phase 12, Task 4c. Closes ADR-110's cost.
+Decision:
+  - **`<data dir>/photos/` goes to `photos/` beside `db/`** at the
+    destination, a folder or a bucket (`internal/backup/photos.go`).
+    Litestream's clients carry Litestream's files only, so each kind of
+    destination says how it keeps photos: list, put, open.
+  - **Only what is missing goes.** A photo is named by the hash of its
+    bytes and never changes (ADR-110), so there is nothing to compare.
+    Each is read and held to its name before it is sent; one that fails
+    is logged and left, and the others still go.
+  - **Nothing is ever deleted at the destination**, as nothing sweeps
+    the folder on the venue's side either.
+  - **On the probe's clock** (15 seconds to a folder, a minute to a
+    bucket), on "back up now", and once more as the server stops. What
+    the destination holds is remembered between looks, for ten
+    minutes, so a quiet venue asks a bucket for its list of photos six
+    times an hour and not sixty; "back up now", any failure and a
+    destination that went away all make it ask again at once.
+  - **One photo that will not go does not hold up the rest**: all are
+    tried and the first failure is the one reported. Whoever is waiting
+    on a long copy to finish can stop waiting.
+  - **Photos that cannot be copied make the status failing**, with
+    "photos:" before the reason. The sales being safe and the pictures
+    not, "ok" would be read as everything. They never hold the database
+    back: it goes first, every time.
+  - **`backup.RestorePhotos`** brings them back into a folder: a photo
+    already there is left alone, each one fetched is held to its name
+    before it is written, and one that fails is refused while the rest
+    are restored.
+  - **mez calls the AWS SDK itself here, for the first time**
+    (`photos_s3.go`): `s3.New` from what `backup.json` says and nothing
+    else, so `AWS_*` in the environment is not read for the photos. No
+    new module: the SDK came with ADR-274.
+Because: ADR-110 put the photos outside the database and left this to
+phase 12. A venue restored without them has a menu of grey boxes.
+Cost: a photo is read whole to be hashed each time it is first sent, at
+most 512 KB. A photo deleted from the destination by hand is sent
+again within ten minutes, or at once on "back up now". A crash can
+leave a `.tmp-` file at a folder destination that nothing sweeps. A removed
+photo stays at the destination for ever. **Seen on 2026-10-07**, in
+tests on Windows: to a folder and back, with a damaged file, a
+half-written one and a stray text file left behind; a photo added
+while running going by itself; a destination whose photos folder cannot
+be made reading failing while the sales still restore; the stand-in S3
+asked for neither a second write nor a second listing while nothing
+changed, and a bucket with keys planted to climb out of the folder
+restoring only the one real photo; a real MinIO in Docker, photos up and back; and the whole
+server, stopped as soon as it was serving, leaving its photo at a
+folder and at MinIO. **Not seen**: hundreds of photos; Amazon's S3 or
+R2; the menu screen adding a photo with the backup running.
+---

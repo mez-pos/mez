@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 4a: Litestream in the binary, to a folder** (ADR-273).
+**Phase 12, Task 4b: S3 and R2** (ADR-274). `backup.KindS3` in
+`backup.json`: bucket, path, region or endpoint, key and secret, through
+Litestream's S3 client. No internet stops neither start, sales nor stop.
+Tested against a stand-in S3 and a real MinIO; not Amazon's S3 or R2.
+
+Before it, **Phase 12, Task 4a: Litestream in the binary, to a folder** (ADR-273).
 `internal/backup` runs Litestream v0.5.15 as a library over `mez.db`,
 started after the migrations and closed after the database; where to is
 `<data dir>/backup.json`. `BackUpNow`, `Status` and `Restore` in Go only.

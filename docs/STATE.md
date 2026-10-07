@@ -8,29 +8,34 @@
 ## Current phase
 
 **Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2, 3 (3a
-to 3f), 4a and 4b built; Task 4 is split into 4a to 4f. Phase 11 has
+to 3f), 4a, 4b and 4c built; Task 4 is split into 4a to 4f. Phase 11 has
 nothing left to build (Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 4b: S3 and R2** (ADR-274). `backup.KindS3` in
-`backup.json`: bucket, path (default `mez`), region or endpoint, key and
-secret, through Litestream's own S3 client. No internet stops nothing:
-the start, the sales and the stop go on and the status says failing.
-Tested against a stand-in S3 and a real MinIO in Docker, the whole
-server included; **Amazon's S3 and R2 themselves were not written to**.
+**Phase 12, Task 4c: the photos folder** (ADR-275). `<data dir>/photos/`
+is copied to `photos/` beside `db/` at the destination, folder or bucket:
+only the files missing there, on the probe's clock, on "back up now" and
+as the server stops. `backup.RestorePhotos` brings them back, each held
+to the hash in its name. Tested to a folder, a stand-in S3 and a real
+MinIO; **not with hundreds of photos, and not from the menu screen**.
 
 ## Next task
 
-**Phase 12, Task 4c: the photos folder (ADR-110).** `<data dir>/photos/`
-copied to `photos/` beside `db/` at the destination, folder and bucket,
-only the files missing there, on the probe's clock and on "back up now";
-`Restore` brings them back. `internal/backup/destination.go` is where a
-destination's parts are; a bucket needs put, list and get of its own,
-which is the AWS SDK called directly for the first time. **Do not move
-Litestream past v0.5.15 without running the tests on Windows.** To test
-against a real bucket, set `MEZ_TEST_S3_BUCKET` and its friends
-(`TestARealBucket`). Then 4d the write path and API, 4e the screen, 4f
+**Phase 12, Task 4d: the write path and the API.** The settings service
+reads and writes `backup.json` under `settings.edit` (written whole and
+renamed, owner-only), checks the destination can be written to before
+keeping it, and swaps the running backup without a restart. The secret
+goes in and never comes back out. `GET` and `PUT /api/v1/settings/backup`,
+`POST /api/v1/settings/backup/now`, the status with them, generated
+types. Read ADR-273 to ADR-275 first. **The hard part**: Litestream's
+notes forbid closing it under open database connections on Linux (it
+drops the process's file locks), and `main.go` holds one `*backup.Engine`
+for the shutdown stack. Decide how a new destination takes effect before
+writing the handler. `backup.Engine` has `BackUpNow` and `Status` ready.
+**Do not move Litestream past v0.5.15 without running the tests on
+Windows.** A real bucket for tests: `MEZ_TEST_S3_BUCKET` and its friends
+(`TestARealBucket`; MinIO in Docker served). Then 4e the screen, 4f
 `mez restore` and the docs. Before a release,
 run the Windows installer once on a spare machine: "Open mez now" opening
 the setup link (ADR-270) and the window it opens in (ADR-272) have not
