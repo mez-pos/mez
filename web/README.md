@@ -28,7 +28,8 @@ mirrors one. See `docs/03-conventions.md`.
 Node 22.12 or later. One npm workspace, one lockfile, in `web/`.
 
 ```sh
-make build-web          # typecheck, build all three, check the guest budget
+make build-web          # Prettier check, vitest, build all three, check the guest budget
+                        # (tsc and eslint run in `make check`)
 make build              # then embeds them: one binary serving all three apps
 make run                # the server on :7777, which the dev servers proxy to
 

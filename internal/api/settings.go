@@ -165,8 +165,6 @@ func (s *Server) writeSettingsError(w http.ResponseWriter, r *http.Request, err 
 	case errors.Is(err, settings.ErrNoVenue):
 		writeError(w, s.log, http.StatusNotFound, CodeVenueNotFound, "No such venue.")
 	default:
-		s.log.Error("a venue settings request failed",
-			"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "a venue settings request failed", err)
 	}
 }

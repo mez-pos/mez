@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -288,4 +290,39 @@ func field(t *testing.T, line, key string) string {
 		t.Fatalf("%s = %v, want a string", key, value)
 	}
 	return text
+}
+
+// failingWriter is a console that has gone away: every write fails.
+type failingWriter struct{}
+
+func (failingWriter) Write([]byte) (int, error) { return 0, errors.New("no console") }
+
+// TestAFailingStdoutDoesNotStopTheFile: a service started without a
+// console, or a terminal closed under a running server, must not leave
+// mez.log empty. The file is the sink a support call reads.
+func TestAFailingStdoutDoesNotStopTheFile(t *testing.T) {
+	tests := []struct {
+		name   string
+		stdout io.Writer
+	}{
+		{"a console that fails every write", failingWriter{}},
+		{"no console at all", io.Discard},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := testConfig(t)
+			log, closer, err := Setup(cfg, tt.stdout)
+			if err != nil {
+				t.Fatalf("Setup: %v", err)
+			}
+			log.Info("sold", "order_id", "A-17")
+			if err := closer.Close(); err != nil {
+				t.Fatalf("closing: %v", err)
+			}
+			if onDisk := readLog(t, cfg); !strings.Contains(onDisk, "sold") {
+				t.Errorf("log file = %q, want the line a dead stdout must not stop", onDisk)
+			}
+		})
+	}
 }

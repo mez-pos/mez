@@ -100,8 +100,7 @@ func (s *Server) guestBill(w http.ResponseWriter, r *http.Request) {
 	}
 	res, open, err := s.guestOrders.TableTicket(r.Context(), table.VenueID, table.TableID)
 	if err != nil {
-		s.log.Error("reading a table's bill for a guest failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading a table's bill for a guest failed", err, "venue_id", table.VenueID)
 		return
 	}
 	// A bill moves with every round and every payment: never from a cache.
@@ -116,8 +115,7 @@ func (s *Server) guestBill(w http.ResponseWriter, r *http.Request) {
 	}
 	bill, err := toGuestBillResponse(res)
 	if err != nil {
-		s.log.Error("adding up a table's bill for a guest failed", "request_id", RequestID(r.Context()), "order", res.PublicID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "adding up a table's bill for a guest failed", err, "order", res.PublicID)
 		return
 	}
 	bill.UPI = s.guestUPI(r, table.VenueID, table.TableName, bill.BalanceDue)

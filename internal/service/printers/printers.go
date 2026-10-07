@@ -147,7 +147,12 @@ func (s Settings) clean() (Settings, error) {
 
 // lanAddress is what a network printer's address must be, said the way the
 // printers screen says it.
-const lanAddress = "A printer's address is its IP on this network, such as 192.168.1.50, with :port after it if the port is not 9100."
+const lanAddress = "A printer's address is its IP on this network, such as 192.168.1.50, with :port after it if the port is not 9100. An address on this computer itself, or a link-local one, may only use port 9100."
+
+// printerPort is the port a printer listens on when none is given, and the
+// only one allowed on an address that is not a LAN address. The same value
+// as escpos.DefaultPort, as a string, for comparing with what was typed.
+const printerPort = "9100"
 
 // validNetworkAddress accepts an IP on this network, alone or with a port 1
 // to 65535; alone, the send adds 9100 (escpos.DefaultPort). A hostname is
@@ -155,6 +160,12 @@ const lanAddress = "A printer's address is its IP on this network, such as 192.1
 // is any address outside the private, link-local and loopback ranges: a
 // printer is on the venue's LAN, and an address anywhere else would let
 // the printers screen aim the server's sends at the internet (ADR-259).
+//
+// A private address may use any port, since some printers serve a second
+// one at 9101 or 9102. A loopback or link-local address may use only 9100:
+// on a server in a container or on a VPS, 127.0.0.1:6379 is the cache and
+// 169.254.169.254:80 is the cloud's metadata service, and the printers
+// screen must not be a way to send bytes to either.
 func validNetworkAddress(addr string) bool {
 	if addr == "" || strings.ContainsAny(addr, " /\\") {
 		return false
@@ -181,7 +192,14 @@ func validNetworkAddress(addr string) bool {
 		return false // a zone names the interface a link-local address is on
 	}
 	ip = ip.Unmap()
-	return ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLoopback()
+	switch {
+	case ip.IsPrivate():
+		return true
+	case ip.IsLinkLocalUnicast(), ip.IsLoopback():
+		return port == "" || port == printerPort
+	default:
+		return false
+	}
 }
 
 // validPort accepts 1 to 65535, written plainly.

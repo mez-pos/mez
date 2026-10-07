@@ -22,6 +22,7 @@ import {
   statusWords,
   stepIndex,
   toRequest,
+  trackedAnswer,
   withRound,
   type Placed,
 } from "./order-logic";
@@ -359,5 +360,21 @@ describe("an order to collect", () => {
     const off = "This venue is not taking orders to collect online. Order at the counter.";
     expect(refusalOf(new ApiError("pickup_off", off, 409))).toEqual({ text: off, readMenu: false });
     expect(refusalOf(new ApiError("pickup_code_unknown", "This code does not lead anywhere.", 404)).text).toBe("This code does not lead anywhere.");
+  });
+});
+
+describe("trackedAnswer", () => {
+  const placed: Placed = { key: "k1", request, at: 1_000, round: { ...round, status: "sent" }, paidFirst: false, tracked: false };
+  const later: GuestRoundResponse = { ...round, status: "sent", progress: "preparing" };
+
+  it("takes the answer when it is about the order held now", () => {
+    const next = trackedAnswer(placed, placed.round.id, later);
+    expect(next?.round.progress).toBe("preparing");
+    expect(next?.tracked).toBe(true);
+  });
+
+  it("drops an answer about an order no longer held, or none at all", () => {
+    expect(trackedAnswer(placed, "rnd_NEWER", later)).toBeNull();
+    expect(trackedAnswer(placed, null, later)).toBeNull();
   });
 });

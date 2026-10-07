@@ -1,6 +1,6 @@
 // React Query, set up the same way in every app.
 
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, type QueryKey } from "@tanstack/react-query";
 import { ApiError } from "./api";
 
 // Only a server that was not reached is worth asking again. A 4xx is an
@@ -34,4 +34,15 @@ export function createQueryClient(): QueryClient {
       },
     },
   });
+}
+
+/**
+ * Puts a command's answer in the cache in place of whatever a read still in
+ * flight would bring. The read left before the command, so what it brings
+ * is older; cancelling it first means it is dropped when it lands, rather
+ * than put back over the answer.
+ */
+export async function replaceQuery<T>(queryClient: QueryClient, queryKey: QueryKey, next: T): Promise<void> {
+  await queryClient.cancelQueries({ queryKey });
+  queryClient.setQueryData(queryKey, next);
 }

@@ -302,6 +302,8 @@ func TestNewRefusesIncompleteOptions(t *testing.T) {
 		{"no log", Options{Keys: keys}},
 		{"a rate with no burst", Options{Keys: keys, Log: log, Limit: Limit{PerMinute: 60}}},
 		{"a negative rate", Options{Keys: keys, Log: log, Limit: Limit{PerMinute: -1, Burst: 5}}},
+		{"an address rate with no burst", Options{Keys: keys, Log: log, IPLimit: Limit{PerMinute: 60}}},
+		{"a negative address burst", Options{Keys: keys, Log: log, IPLimit: Limit{PerMinute: 60, Burst: -1}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -444,11 +446,12 @@ func TestGuestRoundTrip(t *testing.T) {
 		t.Errorf("headers that should have been kept did not reach the venue: %v", h)
 	}
 
-	// One structured line for the request, naming the venue.
+	// One structured line for the request, naming the venue, with the
+	// table's code written as [code]: the code is the guest's credential.
 	f.waitFor("the access log line", func() bool {
 		for _, line := range strings.Split(f.logs.String(), "\n") {
 			var entry map[string]any
-			if json.Unmarshal([]byte(line), &entry) != nil || entry["path"] != "/v/cafe/t/a/b" {
+			if json.Unmarshal([]byte(line), &entry) != nil || entry["path"] != "/v/cafe/t/[code]/b" {
 				continue
 			}
 			return entry["venue_id"] == "cafe" && entry["request_id"] == "trace-123" &&
@@ -580,7 +583,8 @@ func TestConcurrentGuestsShareOneSocket(t *testing.T) {
 		return answer{status: http.StatusOK, body: []byte("you asked for " + ex.head.Path)}
 	})
 
-	const guests = 40
+	// Exactly the per-address cap: every one of them is from 127.0.0.1.
+	const guests = maxStreamsPerIP
 	var wg sync.WaitGroup
 	errs := make(chan error, guests)
 	for i := range guests {
@@ -1180,5 +1184,103 @@ func TestAHostnamePerVenue(t *testing.T) {
 	serve(t, f.connect("bar"), func(exchange) answer { return answer{status: http.StatusOK, body: []byte("bar")} })
 	if body := readAll(t, as("bar.jskin.in", "/t/abc")); body != "bar" {
 		t.Errorf("a second venue at its hostname answered %q", body)
+	}
+}
+
+// TestRateLimitIsPerAddress: one client spending its allowance locks out
+// that client, not the room. The venue's own bucket is left wide so the
+// refusal can only be the address's.
+func TestRateLimitIsPerAddress(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	var mu sync.Mutex
+	clock := func() time.Time {
+		mu.Lock()
+		defer mu.Unlock()
+		return now
+	}
+	f := newFixture(t, func(o *Options) {
+		o.IPLimit = Limit{PerMinute: 60, Burst: 2}
+		o.TrustProxy = true
+		o.Now = clock
+	})
+	serve(t, f.connect("cafe"), func(exchange) answer { return answer{status: http.StatusNoContent} })
+	from := func(ip string) http.Header { return http.Header{"X-Forwarded-For": {ip}} }
+
+	for i := range 2 {
+		if resp := f.do("GET", "/v/cafe/", nil, from("203.0.113.7")); resp.StatusCode != http.StatusNoContent {
+			t.Fatalf("request %d of the burst: status = %d", i+1, resp.StatusCode)
+		}
+	}
+	resp := f.do("GET", "/v/cafe/", nil, from("203.0.113.7"))
+	if resp.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("past the burst: status = %d, want 429", resp.StatusCode)
+	}
+	if retry := resp.Header.Get("Retry-After"); retry != "2" {
+		t.Errorf("Retry-After = %q, want 2", retry)
+	}
+	if code := errorCode(t, resp); code != codeRateLimited {
+		t.Errorf("code = %q", code)
+	}
+
+	// Everyone else at the venue is still served.
+	if resp := f.do("GET", "/v/cafe/", nil, from("203.0.113.8")); resp.StatusCode != http.StatusNoContent {
+		t.Errorf("another address: status = %d", resp.StatusCode)
+	}
+
+	mu.Lock()
+	now = now.Add(time.Second)
+	mu.Unlock()
+	if resp := f.do("GET", "/v/cafe/", nil, from("203.0.113.7")); resp.StatusCode != http.StatusNoContent {
+		t.Errorf("a second later: status = %d", resp.StatusCode)
+	}
+}
+
+// TestTooManyStreamsPerAddress: an address holding its cap of requests open
+// is told the venue is busy, and the one next to it is not.
+func TestTooManyStreamsPerAddress(t *testing.T) {
+	f := newFixture(t, func(o *Options) { o.TrustProxy = true })
+	serve(t, f.connect("cafe"), func(exchange) answer { return answer{status: http.StatusNoContent} })
+	for range maxStreamsPerIP {
+		if _, _, err := f.srv.ips.admit("203.0.113.7", f.srv.now()); err != nil {
+			t.Fatalf("admit: %v", err)
+		}
+	}
+	resp := f.do("GET", "/v/cafe/", nil, http.Header{"X-Forwarded-For": {"203.0.113.7"}})
+	if resp.StatusCode != http.StatusServiceUnavailable || resp.Header.Get("Retry-After") == "" {
+		t.Fatalf("status = %d, Retry-After %q; want 503 with a wait", resp.StatusCode, resp.Header.Get("Retry-After"))
+	}
+	if code := errorCode(t, resp); code != codeVenueBusy {
+		t.Errorf("code = %q", code)
+	}
+	// The refusal did not count as a stream: nothing was left open by it.
+	if resp := f.do("GET", "/v/cafe/", nil, http.Header{"X-Forwarded-For": {"203.0.113.8"}}); resp.StatusCode == http.StatusServiceUnavailable && errorCode(t, resp) == codeVenueBusy {
+		t.Error("another address was told the venue is busy")
+	}
+}
+
+// TestAccessLogMasksCodes: a table code is the guest's credential, and the
+// relay's log is read by whoever runs the relay, who is not the venue.
+func TestAccessLogMasksCodes(t *testing.T) {
+	tests := []struct {
+		name, path string
+	}{
+		{"a table", "/v/cafe/t/TBL7SECRET/menu"},
+		{"a counter", "/v/cafe/c/CTRSECRET/orders"},
+		{"a pickup", "/v/cafe/p/PICKSECRET"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := newFixture(t, nil)
+			serve(t, f.connect("cafe"), func(exchange) answer { return answer{status: http.StatusNoContent} })
+			if resp := f.do("GET", tt.path, nil, nil); resp.StatusCode != http.StatusNoContent {
+				t.Fatalf("status = %d", resp.StatusCode)
+			}
+			f.waitFor("the request to be logged", func() bool {
+				return strings.Contains(f.logs.String(), "[code]")
+			})
+			if logs := f.logs.String(); strings.Contains(logs, "SECRET") {
+				t.Errorf("the code reached the log:\n%s", logs)
+			}
+		})
 	}
 }

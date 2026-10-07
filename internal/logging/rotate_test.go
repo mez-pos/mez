@@ -253,3 +253,57 @@ func equal(t *testing.T, what, got, want string) {
 		t.Errorf("%s = %q, want %q", what, got, want)
 	}
 }
+
+// TestALostHandleIsReopened: a rotation whose reopen failed leaves the
+// writer with no file. The next write must try again rather than fail for
+// the rest of the process, while a writer that was closed on purpose stays
+// closed.
+func TestALostHandleIsReopened(t *testing.T) {
+	tests := []struct {
+		name    string
+		prepare func(t *testing.T, r *rotatingFile)
+		wantErr bool
+	}{
+		{
+			name: "a handle lost to a failed rotation is reopened",
+			prepare: func(t *testing.T, r *rotatingFile) {
+				// What rotate leaves behind when reopenAfter fails: the
+				// handle closed and dropped, the writer not closed.
+				if err := r.file.Close(); err != nil {
+					t.Fatalf("closing the handle: %v", err)
+				}
+				r.file = nil
+			},
+		},
+		{
+			name:    "a writer closed on purpose stays closed",
+			prepare: func(t *testing.T, r *rotatingFile) { _ = r.Close() },
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			r, err := newRotatingFile(dir, "test.log", 1024, 2)
+			if err != nil {
+				t.Fatalf("newRotatingFile: %v", err)
+			}
+			t.Cleanup(func() { r.Close() })
+			write(t, r, "before\n")
+			tt.prepare(t, r)
+
+			_, err = r.Write([]byte("after\n"))
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("write succeeded, want an error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("write after a lost handle: %v", err)
+			}
+			equal(t, "live log", read(t, filepath.Join(dir, "test.log")), "before\nafter\n")
+		})
+	}
+}

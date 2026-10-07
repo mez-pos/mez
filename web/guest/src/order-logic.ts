@@ -98,6 +98,16 @@ export function withRound(placed: Before, round: GuestRoundResponse, asked = fal
 }
 
 /**
+ * The order with a late answer in it, or null when the answer is not about
+ * the order the phone holds now. A question that left for one order and
+ * lands after a newer one was placed (a slow poll on 3G) must not put the
+ * old one back on the screen or into storage.
+ */
+export function trackedAnswer(asked: Placed, currentId: string | null, round: GuestRoundResponse): Placed | null {
+  return currentId === asked.round.id ? withRound(asked, round, true) : null;
+}
+
+/**
  * How long until an order is asked about again, or null when nothing more
  * is coming: it was declined or cancelled, or it was sent before orders
  * were tracked and the venue has said all it can.

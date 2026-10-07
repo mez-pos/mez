@@ -317,8 +317,6 @@ func (s *Server) writeFloorError(w http.ResponseWriter, r *http.Request, err err
 	case errors.Is(err, floor.ErrAreaInUse):
 		writeError(w, s.log, http.StatusConflict, CodeAreaInUse, "Retire or move the tables in this area first.")
 	default:
-		s.log.Error("a floor plan request failed",
-			"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "a floor plan request failed", err)
 	}
 }

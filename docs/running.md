@@ -103,8 +103,8 @@ optional. Run it as often as needed; each code lasts ten minutes and pairs one
 device. It takes `-data-dir` as the server does, and works while the server runs.
 
 A PIN that keeps failing locks the person until someone who manages staff
-clears it on the **People** screen (ADR-260). If every such person is locked,
-`mez unlock` clears one at the machine, with no sign-in, by the id the People
+clears it on the **Staff** screen (ADR-260). If every such person is locked,
+`mez unlock` clears one at the machine, with no sign-in, by the id the Staff
 screen shows:
 
 ```sh
@@ -129,17 +129,54 @@ request that is already in flight before it exits.
 Then open `http://localhost:7777` on the same machine, or
 `http://<the machine's address>:7777` from a tablet on the same network.
 
-Three addresses are served:
+Five addresses are served:
 
 | Address | What it is |
 |---|---|
-| `/` | The register, for staff |
-| `/backoffice` | Menu, reports and settings, for the owner |
+| `/` | The register (the till), for staff |
+| `/kitchen` | The kitchen display, for a screen paired as a kitchen device |
+| `/backoffice` | Menu, staff, reports and settings, for the owner |
 | `/order` | The guest ordering page, opened from a QR code |
+| `/setup` | The setup wizard, once, from the machine itself only |
+
+A pairing code is made for one kind of device and works only on that
+address: a kitchen code typed into the till is refused and says so.
 
 A binary built without the apps (no `-tags frontend`, as `go build` alone
 gives) serves a placeholder page instead, and says so at startup on the line
 reading `serving placeholder frontends`. `make dist` always includes them.
+
+## A day at the till
+
+What a service looks like once the venue is set up. Every step below was
+walked against the demo venue on 2026-10-07.
+
+1. **Open the shift.** The till asks for it before the first order: count
+   the float by denomination and press **Open shift & start selling**.
+   Anyone who may take payment can open it.
+2. **Take orders.** Tap a dish to add it; tap the dish's card for its
+   choices, course and a kitchen note. **Takeaway** is the default;
+   **Dine-in** comes from the **Tables** screen (**Seat and order**), where
+   the table then shows as Seated, Ordered, Paying or To clear on every
+   till. **Send to Kitchen** puts the lines on the kitchen display (a
+   station with a printer gets a ticket too); **Save Order** holds the
+   ticket to come back to.
+3. **Take payment.** **Pay** opens the tender screen: cash with quick
+   amounts and the change to return, card, or UPI (**Collect by UPI**, then
+   **Mark as paid** once the guest's app says so), a tip apart from the
+   bill, and **Split Bill** by item or by amount. The invoice is numbered
+   as the payment lands and the receipt goes to the print queue.
+4. **Guests' own orders.** With a table code scanned, a phone's first order
+   shows at the till as a **table request** in the top bar: **Accept and
+   send** puts it on the kitchen display and the phone sees it move from
+   "with the kitchen" to "ready".
+5. **Watch the print queue.** **Not printed N** in the top bar is what is
+   waiting for a printer; open it to retry or to see why.
+6. **Close the day.** Someone with `shift.manage` (the owner or a manager;
+   not a cashier) opens their name, top right, then **Close the shift**:
+   count the drawer, see it against what was expected, and **Close the
+   day**. The Z-report is issued and printed, and is on the back office's
+   **Z-reports** screen with the day's exports.
 
 ## Where your data lives
 
@@ -149,7 +186,7 @@ sits in one directory:
 | Platform | Default |
 |---|---|
 | Windows | `C:\ProgramData\mez` |
-| Linux and macOS | `./data`, beside wherever you started it from |
+| Linux and macOS | `./data`, in the directory you ran it from |
 | Linux, under the systemd unit | `/var/lib/mez`, which the unit sets |
 | Docker | `/data` in the container, the volume `mez-data` |
 
@@ -339,7 +376,7 @@ is what they trust; each takes `-h`.
 | Command | What it does |
 |---|---|
 | `mez setup` | Makes the venue, its owner and a first pairing code, once ([above](#setting-up-once)) |
-| `mez setup-link` | Prints the address of the setup wizard, with its token, while there is no venue |
+| `mez setup-link` | Prints the address of the setup wizard, with its token, while there is no venue; with one, the till's address |
 | `mez pair` | Makes a pairing code for one more device |
 | `mez unlock -staff stf_...` | Clears the lock on a person whose PIN kept failing |
 | `mez table-codes` | Lists every table with the code a guest's phone scans, making any that are missing. The back office's Floor plan prints them |

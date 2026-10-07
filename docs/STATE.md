@@ -14,13 +14,18 @@ release, and a printer.
 
 ## Last completed task
 
-**Phase 12, Task 7f: the README** (ADR-286). A screenshot of the
-register (`docs/img/till.png`, from `bin/mez` with the demo cafe), the
-pitch in a minute for a cafe owner, and a status that says what has not
-happened: no printer printed on, no release, no real charge, no venue.
-The ways to run it, the documents table and the licence section are
-brought up to date. `troubleshooting.md` said the till's status word is
-"Live"; on the register it is "Online", and that is corrected.
+**The audit between phases** (ADR-287, 2026-10-07). Four reviews at once
+(security, Go, TypeScript, docs against code) and a walk of the whole
+spine against the demo venue from `bin/mez`: pair, shift, cash sale,
+table to kitchen display, a guest's phone ordering and the till
+accepting, UPI, close, Z-report. No critical or high finding. Fixed: a
+cancelled read was a logged 500; invoice timestamps could run against
+their numbers; the file log died with the console; the hub's lingering
+and unbounded connections; relay logs with table codes and no per-address
+limit; printer ports on loopback; plain-http buckets off the LAN; six
+frontend races and a scroll lock; `/shift/close` by hand; fifteen doc
+mismatches, plus "A day at the till" in `running.md`. What was found
+and left is in `KNOWN.md` under the ADR.
 
 ## Next task
 

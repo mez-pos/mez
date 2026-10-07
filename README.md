@@ -125,8 +125,9 @@ drawer need to be, before you buy one.
 (it needs [Inno Setup 6](https://jrsoftware.org/isinfo.php)). Run it on the
 venue's PC: it copies mez to `C:\Program Files\mez`, sets it to start with
 Windows as a service under its own account, lets tablets on the same network
-through the firewall, puts a full-screen **mez** shortcut on the desktop and
-starts it. Removing it (Settings, Apps) asks whether to keep the venue's
+through the firewall, puts a **mez** shortcut on the desktop that opens the
+till in a window of its own (full screen only if you tick that in the
+installer) and starts it. Removing it (Settings, Apps) asks whether to keep the venue's
 data, and keeps it unless you say otherwise twice.
 
 **The installer is not signed, and Windows will warn you.** When you run it,

@@ -3,7 +3,7 @@
 // is working, and the venue's open-ticket list. The stream keeps all of it
 // current (Task 5, ADR-074).
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ApiError } from "../../../shared/api";
 import type {
@@ -25,7 +25,20 @@ import { TicketBook } from "./ticket-book";
 import { newKey, ticketMemory } from "./ticket-key";
 import { TicketQueue, type ModifyLine, type PendingLine } from "./ticket-queue";
 
+/** Every cached order, whichever id: the family orderQueryKey belongs to. */
+export const orderFamilyKey = ["order"] as const;
 export const orderQueryKey = (id: string) => ["order", id] as const;
+
+/**
+ * After a resync, what is cached is not a base the server's answer can be
+ * held against: a restored backup has orders behind what this till saw,
+ * and newer() would keep the till's copy over the truth for good. Every
+ * cached order is forgotten: the ones on screen are read again and taken
+ * as they come, the rest are read fresh when next looked at.
+ */
+export function resetOrders(queryClient: QueryClient): Promise<void> {
+  return queryClient.resetQueries({ queryKey: orderFamilyKey });
+}
 
 /**
  * The newer of two copies of an order, by last_seq. The cache only moves
@@ -160,9 +173,11 @@ export function useTicket(): Ticket {
     if (notice.kind === "menu" || notice.kind === "print" || notice.kind === "floor") return;
     // Any order's event can change the list: a new ticket on another till.
     void queryClient.invalidateQueries({ queryKey: openTicketsKey });
-    if (!orderId) return;
-    const touched = notice.kind === "resync" || notice.message.order_id === orderId;
-    if (touched) void queryClient.invalidateQueries({ queryKey: orderQueryKey(orderId) });
+    if (notice.kind === "resync") {
+      void resetOrders(queryClient);
+      return;
+    }
+    if (orderId && notice.message.order_id === orderId) void queryClient.invalidateQueries({ queryKey: orderQueryKey(orderId) });
   });
 
   const post = (suffix: string, body: unknown, on = queue, key?: string) =>

@@ -107,3 +107,21 @@ func writeError(w http.ResponseWriter, log *slog.Logger, status int, code ErrorC
 func writeFieldError(w http.ResponseWriter, log *slog.Logger, status int, code ErrorCode, message, field string) {
 	writeJSON(w, log, status, errorBody{Error: Error{Code: code, Message: message, Field: field}})
 }
+
+// internalError answers a failure that is the server's own: an ERROR line
+// with the request's thread through it, and a 500 that says no more than
+// "internal error". A client that went away before the answer (a till that
+// moved to another screen, a tab that closed) is not a failure of ours: its
+// cancelled context is noted at Debug and nothing is written, since nobody
+// is reading. Without this, every screen change mid-request was a 500 in
+// the log.
+func (s *Server) internalError(w http.ResponseWriter, r *http.Request, what string, err error, fields ...any) {
+	base := []any{"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r)}
+	base = append(base, fields...)
+	if r.Context().Err() != nil {
+		s.log.Debug(what+": the client went away first", append(base, "error", err)...)
+		return
+	}
+	s.log.Error(what, append(base, "error", err)...)
+	writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+}

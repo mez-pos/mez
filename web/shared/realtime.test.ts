@@ -317,6 +317,41 @@ describe("RealtimeConnection: losing and regaining the server", () => {
   });
 });
 
+describe("RealtimeConnection: the handshake", () => {
+  it("gives up a socket that opens but never says welcome, and tries again", () => {
+    const h = harness({ handshakeMs: 5000 });
+    h.conn.start();
+    const s = h.latest();
+    s.open();
+    vi.advanceTimersByTime(4999);
+    expect(h.conn.current().state).toBe("connecting");
+
+    vi.advanceTimersByTime(1);
+    expect(s.closed).toBe(true);
+    expect(h.conn.current().state).toBe("reconnecting");
+    vi.advanceTimersByTime(1000);
+    expect(h.sockets).toHaveLength(2);
+  });
+
+  it("gives up one that never even opens", () => {
+    const h = harness({ handshakeMs: 5000 });
+    h.conn.start();
+    vi.advanceTimersByTime(5000);
+    expect(h.conn.current().state).toBe("reconnecting");
+  });
+
+  it("does not time out a link that was welcomed in time", () => {
+    const h = harness({ handshakeMs: 5000 });
+    const s = connectAt(h, 3);
+    for (let id = 4; id < 12; id++) {
+      vi.advanceTimersByTime(1000);
+      s.receive(event(id));
+    }
+    expect(s.closed).toBe(false);
+    expect(h.conn.current().state).toBe("live");
+  });
+});
+
 describe("RealtimeConnection: heartbeat", () => {
   it("asks every interval, and a welcome in reply is not a new session", () => {
     const h = harness();

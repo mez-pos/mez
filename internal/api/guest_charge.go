@@ -193,8 +193,7 @@ func (s *Server) writeStartedCharge(w http.ResponseWriter, r *http.Request, venu
 		writeError(w, s.log, http.StatusServiceUnavailable, CodeGatewayUnavailable, "Paying online can't be reached right now. Try again, or pay a member of staff.")
 		return
 	default:
-		s.log.Error("starting a guest's charge failed", "request_id", RequestID(r.Context()), "venue_id", venueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "starting a guest's charge failed", err, "venue_id", venueID)
 		return
 	}
 	status := http.StatusCreated
@@ -222,8 +221,7 @@ func (s *Server) guestCharge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		s.log.Error("reading a guest's charge failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading a guest's charge failed", err, "venue_id", table.VenueID)
 		return
 	}
 	// A payment of the bill is the sitting's; one of a round is asked about
@@ -263,8 +261,7 @@ func (s *Server) guestLetGoCharge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		s.log.Error("letting go of a guest's charge failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "letting go of a guest's charge failed", err, "venue_id", table.VenueID)
 		return
 	}
 	writeJSON(w, s.log, http.StatusOK, toGuestChargeResponse(c))
@@ -340,8 +337,7 @@ func (s *Server) resolveCharge(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, charges.ErrNotUnapplied):
 		writeError(w, s.log, http.StatusConflict, CodeChargeNotWaiting, "That payment is not waiting to be dealt with: someone may have done it already.")
 	default:
-		s.log.Error("resolving a charge failed", "request_id", RequestID(r.Context()), "venue_id", meta.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "resolving a charge failed", err, "venue_id", meta.VenueID)
 	}
 }
 
@@ -375,8 +371,7 @@ func (s *Server) gatewayHook(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, charges.ErrNoNotices):
 		writeError(w, s.log, http.StatusNotFound, CodeNotFound, "not found")
 	default:
-		s.log.Error("taking a gateway's notice failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "taking a gateway's notice failed", err)
 	}
 }
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/domain/money"
 	"github.com/byjoellobo/mez/internal/domain/order"
@@ -141,19 +142,42 @@ type world struct {
 	server *httptest.Server
 }
 
-func newWorld(t *testing.T, opts ...func(*Options)) *world {
+// till is the device every world connects as unless a test says otherwise:
+// a terminal, which may ask for the whole stream.
+var till = Client{VenueID: 1, DeviceID: 3, Name: "Till", Kind: auth.KindTerminal}
+
+// worldOptions is what a test may change about a world.
+type worldOptions struct {
+	hub    Options
+	client Client
+}
+
+// as connects the world's socket as another device.
+func as(c Client) func(*worldOptions) {
+	return func(o *worldOptions) { o.client = c }
+}
+
+// withHub changes the hub's options.
+func withHub(fn func(*Options)) func(*worldOptions) {
+	return func(o *worldOptions) { fn(&o.hub) }
+}
+
+func newWorld(t *testing.T, opts ...func(*worldOptions)) *world {
 	t.Helper()
 	src := &source{}
-	o := Options{Source: src, PingEvery: 50 * time.Millisecond, WriteTimeout: 2 * time.Second, Batch: 3}
+	o := worldOptions{
+		hub:    Options{Source: src, PingEvery: 50 * time.Millisecond, WriteTimeout: 2 * time.Second, Batch: 3},
+		client: till,
+	}
 	for _, fn := range opts {
 		fn(&o)
 	}
-	h, err := New(o)
+	h, err := New(o.hub)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.Serve(w, r, Client{VenueID: 1, DeviceID: 3, Name: "Kitchen", Kind: "kitchen"})
+		h.Serve(w, r, o.client)
 	}))
 	t.Cleanup(func() {
 		_ = h.Close(context.Background())
@@ -614,5 +638,87 @@ func TestARevokedDeviceIsCutOff(t *testing.T) {
 	defer cancel()
 	if _, _, err := c.ws.Read(ctx); err == nil {
 		t.Error("the revoked device's socket is still open")
+	}
+}
+
+// TestADeviceCannotHoldTheHub: one device gets a handful of streams, and
+// the next is refused at the door with a policy violation, while the ones
+// it already holds carry on.
+func TestADeviceCannotHoldTheHub(t *testing.T) {
+	w := newWorld(t)
+	var held []*client
+	for range maxConnsPerDevice {
+		c := w.dial(t)
+		c.hello(ClientMessage{})
+		held = append(held, c)
+	}
+	if n := w.hub.Connections(); n != maxConnsPerDevice {
+		t.Fatalf("%d connections, want %d", n, maxConnsPerDevice)
+	}
+
+	refused := w.dial(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	_, _, err := refused.ws.Read(ctx)
+	if status := websocket.CloseStatus(err); status != websocket.StatusPolicyViolation {
+		t.Fatalf("the ninth connection read %v (close status %d), want a policy violation", err, status)
+	}
+	if n := w.hub.Connections(); n != maxConnsPerDevice {
+		t.Errorf("%d connections after the refusal, want %d still held", n, maxConnsPerDevice)
+	}
+
+	// Letting one go makes room for one more.
+	_ = held[0].ws.CloseNow()
+	waitFor(t, func() bool { return w.hub.Connections() == maxConnsPerDevice-1 })
+	again := w.dial(t)
+	again.hello(ClientMessage{})
+}
+
+// TestFromStartIsNotForTheKitchen: a terminal or back office may replay the
+// whole stream, and a kitchen display asking for it is started from the
+// latest position instead, as if it had sent no position at all.
+func TestFromStartIsNotForTheKitchen(t *testing.T) {
+	tests := []struct {
+		name     string
+		kind     auth.DeviceKind
+		wantFrom float64
+	}{
+		{"a terminal replays from the start", auth.KindTerminal, 0},
+		{"a back office replays from the start", auth.KindBackOffice, 0},
+		{"a kitchen display starts from now", auth.KindKitchen, 5},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := newWorld(t, as(Client{VenueID: 1, DeviceID: 3, Name: "Screen", Kind: tt.kind}))
+			for i := range 5 {
+				w.src.append("ord_AAAA1111", 4, order.NoteAdded{Scope: order.ScopeOrder, Text: fmt.Sprint("before ", i)})
+			}
+			c := w.dial(t)
+			welcome := c.hello(ClientMessage{FromStart: true})
+			if welcome["from_event_id"] != tt.wantFrom || welcome["latest_event_id"] != float64(5) {
+				t.Fatalf("welcome = %v, want from %v", welcome, tt.wantFrom)
+			}
+		})
+	}
+}
+
+// TestAGoneDeviceLeavesTheMapAtOnce: a device whose socket stops answering
+// is out of Connections() as soon as its stream ends, not after the close
+// handshake has waited for a peer that is not there.
+func TestAGoneDeviceLeavesTheMapAtOnce(t *testing.T) {
+	w := newWorld(t)
+	c := w.dial(t)
+	c.hello(ClientMessage{})
+	if w.hub.Connections() != 1 {
+		t.Fatalf("%d connections, want 1", w.hub.Connections())
+	}
+	// The peer is cut without a close frame, as a dead tablet is, and the
+	// hub must notice within the ping, not after a five second handshake.
+	_ = c.ws.CloseNow()
+	began := time.Now()
+	waitFor(t, func() bool { return w.hub.Connections() == 0 })
+	if took := time.Since(began); took > 2*time.Second {
+		t.Errorf("the device lingered %s after it was gone", took)
 	}
 }

@@ -35,8 +35,7 @@ func (s *Server) guestBillQR(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	res, open, err := s.guestOrders.TableTicket(r.Context(), table.VenueID, table.TableID)
 	if err != nil {
-		s.log.Error("reading a table's bill for its QR failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading a table's bill for its QR failed", err, "venue_id", table.VenueID)
 		return
 	}
 	var upi *guestUPIResponse
@@ -51,8 +50,7 @@ func (s *Server) guestBillQR(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// A link is a few hundred bytes at the very most; a code holds two
 		// thousand.
-		s.log.Error("drawing a UPI link as a QR failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "drawing a UPI link as a QR failed", err, "venue_id", table.VenueID)
 		return
 	}
 	h := w.Header()

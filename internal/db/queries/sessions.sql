@@ -40,3 +40,10 @@ WHERE s.token_hash = ?;
 UPDATE staff_sessions
 SET ended_at = ?
 WHERE id = ? AND ended_at IS NULL;
+
+-- name: PruneSignInAttempts :execrows
+-- Drops attempts older than a cutoff. The lockouts read the latest few rows
+-- only, so nothing a month old decides anything, and the table would
+-- otherwise grow by every PIN ever typed.
+DELETE FROM sign_in_attempts
+WHERE at < ?;

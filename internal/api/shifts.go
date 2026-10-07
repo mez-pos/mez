@@ -418,7 +418,5 @@ func (s *Server) writeShiftError(w http.ResponseWriter, r *http.Request, err err
 			return
 		}
 	}
-	s.log.Error("a shift request failed",
-		"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
-	writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+	s.internalError(w, r, "a shift request failed", err)
 }

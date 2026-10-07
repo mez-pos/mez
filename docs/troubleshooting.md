@@ -182,9 +182,11 @@ Check in this order. Each step rules out everything before it.
   the other way round): the code was made for another kind of device.
   Make one for this kind.
 - **"Too many tries. Wait ..."**: wait as long as it says.
-- **Device unpaired**, or **Device not recognised**, "pair it again": the
-  device was removed under **Devices**, or the server's data was replaced
-  (a restore on a new computer, a new install). Pair it again.
+- **"This device was unpaired from the back office. Pair it again to keep
+  using it."**, or **"The server no longer recognises this device. Pair it
+  again to keep using it."**: the device was removed under **Devices**, or
+  the server's data was replaced (a restore on a new computer, a new
+  install). Pair it again.
 
 ## Windows warns about the installer
 

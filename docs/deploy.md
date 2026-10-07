@@ -123,7 +123,7 @@ mez setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata \
 | `-legal-name` | the name | The registered name printed on invoices |
 | `-owner` | `Owner` | The owner's name |
 | `-owner-pin` | `MEZ_OWNER_PIN`, else drawn and printed | The owner's PIN, 6 to 8 digits; prefer the environment variable, which the shell does not remember |
-| `-timezone` | required | An IANA name such as `Asia/Kolkata` or `Europe/London`; the machine's own zone is refused |
+| `-timezone` | required, unless `MEZ_TIMEZONE` or `config.toml` already names one | An IANA name such as `Asia/Kolkata` or `Europe/London`; the machine's own zone is never used |
 | `-currency` | `INR` | ISO 4217: `INR`, `GBP`, `USD`, ... It cannot be changed later |
 | `-fy-start-month` | `4` | The month the financial year starts: 4 in India, 1 in most places |
 | `-tax-profile` | `none` | `none`, `gst_in`, `vat_uk` or `sales_tax_us` |
@@ -140,17 +140,24 @@ is one venue.
 
 `mez pair` makes another pairing code at the machine, any time after setup,
 with `-device-kind` (`terminal`, `kitchen` or `back_office`), `-device-name`
-and `-data-dir` as above. In Docker:
+(default Counter, Kitchen or Back office, by kind) and `-data-dir` as above. In Docker:
 `docker run --rm -v mez-data:/data mez pair -device-kind back_office`.
 
 Then start the server and finish in the browser:
 
 1. Open `http://localhost:7777/backoffice` and enter the pairing code.
-2. Sign in with the owner's PIN. Change it under **People**.
-3. Under **Devices**, choose **Pair a device** for each till and kitchen
-   display, and enter each code on that device at
-   `http://<server address>:7777`.
-4. Under **Settings**, check the venue, tax, invoice numbering, receipt and
+2. Sign in with the owner's PIN. Change it under **Staff** (**New PIN**
+   on your own row), and add each person who works there with **Add a
+   person**: a name, a role and a PIN.
+3. Under **Devices**, choose **Pair a device** for each till, kitchen
+   display and extra back office, and enter each code on that device. A
+   code is for one kind of device: a till opens
+   `http://<server address>:7777`, a kitchen display
+   `http://<server address>:7777/kitchen`, a back office
+   `http://<server address>:7777/backoffice`.
+4. Under **Floor plan**, make your areas and tables (**Add an area**,
+   then **Add a table**); a counter-only cafe can skip this.
+5. Under **Settings**, check the venue, tax, invoice numbering, receipt and
    shift rules. Under **Printers**, add each printer and its stations.
 
 ## Windows
@@ -530,12 +537,14 @@ server {
 Point the domain's DNS `A` record at the server, then open
 `https://pos.example.com/backoffice`.
 
-**What protects it.** Everything but pairing, the health check and menu
-photos needs a paired device's token (the live stream included), and pairing codes
+**What protects it.** Everything but pairing, the health check, menu
+photos, the setup wizard (which answers only to `localhost`) and the guest
+pages under `/order` needs a paired device's token (the live stream
+included), and pairing codes
 are issued only by a signed-in manager, expire in ten minutes, and are rate
 limited. Five wrong PINs in fifteen minutes lock a person for the rest of
 that time, and the third such lock in a day holds until a manager clears it
-under **People** (or `mez unlock` at the machine). That is
+under **Staff** (or `mez unlock` at the machine). That is
 designed for a venue's own network. On the open internet, also:
 
 - always serve HTTPS, never plain HTTP;
@@ -590,8 +599,10 @@ has every way):
   public_url = "https://my-cafe.example.com"
   ```
 
-  Every account on the computer can read a file in that folder, the key
-  with it. On a till that staff sign in to Windows on, know that.
+  mez restricts that file to administrators and its own account each
+  time it starts; between writing the file and the next start, any account
+  on the computer can read it, the key with it. Restart the service after
+  editing it.
 - **Linux, under systemd**: in `/etc/mez/mez.env`, readable only by root
   (`sudo mkdir -p /etc/mez && sudo install -m 600 /dev/null
   /etc/mez/mez.env` first):
@@ -663,7 +674,8 @@ Sign in to the back office as the owner and open **Settings**, then
 When you press **Save**, mez tries the place first. It writes a small note
 there (`mez-backup.txt`) and keeps the setting only if it could, so a
 mistyped folder or a wrong key is found out now, by you, and not on the day
-the backup is needed. This can take up to twenty seconds.
+the backup is needed. This can take up to ten seconds; **Back up now**
+waits up to thirty.
 
 The card above it says how the backup is doing: **Backing up**, with the
 time everything was last there, or **Not backing up**, with the reason.
@@ -770,7 +782,9 @@ same address as the old one. Otherwise pair them again.
 
 To restore into somewhere other than the default data directory, add
 `-data-dir`. To restore an older run than the newest, take its name from
-`-list` and add `-generation NAME`.
+`-list` and add `-generation NAME`. A bucket kept under a folder other than
+`mez` takes `-path`, and a saved `backup.json` can be handed over whole
+with `-config` instead of typing the destination again.
 
 This procedure was carried out on 2026-10-07 on Windows: a venue made three
 sales, its server was killed without warning, and it was restored from its

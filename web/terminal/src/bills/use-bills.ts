@@ -19,7 +19,7 @@ import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { failureOf } from "../register/order-messages";
 import { commandIdentity } from "./bills-logic";
 import { newKey } from "../register/ticket-key";
-import { newer, orderQueryKey } from "../register/use-ticket";
+import { newer, orderQueryKey, resetOrders } from "../register/use-ticket";
 
 export const pastBillsKey = (q: string) => ["orders", "closed", q] as const;
 
@@ -92,8 +92,8 @@ export function useBill(orderId: string): { order: OrderResponse | undefined; er
     staleTime: Infinity,
   });
   useRealtimeNotices((notice) => {
-    const touched = notice.kind === "resync" || (notice.kind === "event" && notice.message.order_id === orderId);
-    if (touched) void queryClient.invalidateQueries({ queryKey: orderQueryKey(orderId) });
+    if (notice.kind === "resync") void resetOrders(queryClient);
+    else if (notice.kind === "event" && notice.message.order_id === orderId) void queryClient.invalidateQueries({ queryKey: orderQueryKey(orderId) });
   });
 
   const post = async (suffix: string, body: unknown): Promise<CommandResponse> => {

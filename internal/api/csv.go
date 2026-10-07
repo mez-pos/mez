@@ -25,8 +25,7 @@ const byteOrderMark = "\xEF\xBB\xBF"
 func (s *Server) writeCSV(w http.ResponseWriter, r *http.Request, filename string, t export.Table) {
 	body, err := t.CSV()
 	if err != nil {
-		s.log.Error("writing a CSV failed", "request_id", RequestID(r.Context()), "filename", filename, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "writing a CSV failed", err, "filename", filename)
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")

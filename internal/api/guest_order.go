@@ -132,8 +132,7 @@ func (s *Server) guestPlaceOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := toGuestRoundResponse(round)
 	if err != nil {
-		s.log.Error("encoding a guest's order failed", "request_id", RequestID(r.Context()), "round", round.PublicID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "encoding a guest's order failed", err, "round", round.PublicID)
 		return
 	}
 	status := http.StatusCreated

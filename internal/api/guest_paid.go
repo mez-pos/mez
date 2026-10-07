@@ -59,8 +59,7 @@ func (s *Server) guestTellPaid(w http.ResponseWriter, r *http.Request) {
 		writeError(w, s.log, http.StatusConflict, CodeNothingToPay, "There is nothing to pay by UPI on this bill.")
 		return
 	case err != nil:
-		s.log.Error("taking a guest's paid notice failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "taking a guest's paid notice failed", err, "venue_id", table.VenueID)
 		return
 	}
 	status := http.StatusCreated

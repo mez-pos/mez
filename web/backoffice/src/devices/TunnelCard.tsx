@@ -30,7 +30,7 @@ export function TunnelCard() {
         <div className="flex flex-col gap-1.5" aria-live="polite">
           <p className="max-w-prose text-base text-fg-2">{tunnelLine(data, tunnel.readAt)}</p>
           {retry && <p className="text-base font-semibold">{retry}</p>}
-          {detail && <p className="text-sm break-words text-fg-muted">What it said: {detail}</p>}
+          {detail && <p className="text-sm wrap-break-word text-fg-muted">What it said: {detail}</p>}
         </div>
       )}
     </Panel>

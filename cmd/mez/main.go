@@ -63,6 +63,14 @@ const shutdownTimeout = 10 * time.Second
 // reachable through the relay, so the server is not among friends.
 const readHeaderTimeout = 10 * time.Second
 
+// idleTimeout closes a keep-alive connection that has sent nothing for two
+// minutes. Browsers hold a pool of them open and a relay holds more, and
+// without this each one is a goroutine and a file descriptor for as long as
+// the far end feels like keeping it. It is the only whole-connection timeout
+// the server sets: a read or write deadline would cut off the WebSocket
+// stream and the long downloads, which are meant to go on for hours.
+const idleTimeout = 120 * time.Second
+
 func main() {
 	// The subcommands are read before the flags: each takes its own, and
 	// the server's parser refuses a positional argument.
@@ -196,6 +204,10 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	if err != nil {
 		return fmt.Errorf("listening on %s: %w", cfg.ListenAddr, err)
 	}
+	// Every return between here and serve is a startup failure, and the port
+	// must not stay bound through it. After a clean shutdown the server has
+	// already closed it, and closing a closed listener is nothing.
+	defer func() { _ = listener.Close() }()
 
 	// Where the backup goes, read before the database is opened: a file
 	// that names a destination and cannot be read as one stops the start,
@@ -539,6 +551,7 @@ func serve(ctx context.Context, log *slog.Logger, listener net.Listener, h http.
 	srv := &http.Server{
 		Handler:           h,
 		ReadHeaderTimeout: readHeaderTimeout,
+		IdleTimeout:       idleTimeout,
 		// net/http logs its own accept and TLS errors through a *log.Logger.
 		// Routing it into slog keeps one stream instead of two.
 		ErrorLog: slog.NewLogLogger(log.Handler(), slog.LevelWarn),

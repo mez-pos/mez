@@ -272,8 +272,7 @@ func (s *Server) pickupCodeQR(w http.ResponseWriter, r *http.Request) {
 	}
 	drawn, err := qr.Encode([]byte(address + code))
 	if err != nil {
-		s.log.Error("drawing the pickup code as a QR failed", "request_id", RequestID(r.Context()), "venue_id", dev.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "drawing the pickup code as a QR failed", err, "venue_id", dev.VenueID)
 		return
 	}
 	writeJSON(w, s.log, http.StatusOK, pickupCodeQRResponse{URL: address + code, SVG: drawn.SVG(qrQuiet)})
@@ -313,8 +312,7 @@ func (s *Server) tableCodeQR(w http.ResponseWriter, r *http.Request) {
 	}
 	drawn, err := qr.Encode([]byte(address + code))
 	if err != nil {
-		s.log.Error("drawing a table's address as a QR failed", "request_id", RequestID(r.Context()), "venue_id", dev.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "drawing a table's address as a QR failed", err, "venue_id", dev.VenueID)
 		return
 	}
 	writeJSON(w, s.log, http.StatusOK, tableCodeQRResponse{TableID: id, TableName: name, URL: address + code, SVG: drawn.SVG(qrQuiet)})
@@ -363,8 +361,7 @@ func (s *Server) tableCodeSheet(w http.ResponseWriter, r *http.Request) {
 		}
 		drawn, err := qr.Encode([]byte(address + c.Code))
 		if err != nil {
-			s.log.Error("drawing a table's address as a QR failed", "request_id", RequestID(r.Context()), "venue_id", dev.VenueID, "error", err)
-			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+			s.internalError(w, r, "drawing a table's address as a QR failed", err, "venue_id", dev.VenueID)
 			return
 		}
 		out.Tables = append(out.Tables, tableCodeQRResponse{TableID: c.TableID, TableName: c.TableName, URL: address + c.Code, SVG: drawn.SVG(qrQuiet)})
@@ -379,8 +376,7 @@ func (s *Server) tableCodeSheet(w http.ResponseWriter, r *http.Request) {
 			url := s.pickupAddress() + pickup
 			drawn, err := qr.Encode([]byte(url))
 			if err != nil {
-				s.log.Error("drawing the pickup code as a QR failed", "request_id", RequestID(r.Context()), "venue_id", dev.VenueID, "error", err)
-				writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+				s.internalError(w, r, "drawing the pickup code as a QR failed", err, "venue_id", dev.VenueID)
 				return
 			}
 			out.Pickup = &pickupCodeQRResponse{URL: url, SVG: drawn.SVG(qrQuiet)}
@@ -396,6 +392,5 @@ func (s *Server) writeTableCodeError(w http.ResponseWriter, r *http.Request, err
 		writeError(w, s.log, http.StatusNotFound, CodeTableNotFound, "No such table on the floor.")
 		return
 	}
-	s.log.Error("a table code request failed", "request_id", RequestID(r.Context()), "path", s.loggedPath(r), "error", err)
-	writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+	s.internalError(w, r, "a table code request failed", err)
 }

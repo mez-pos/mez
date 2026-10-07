@@ -79,6 +79,8 @@ export interface RealtimeOptions {
   isOnline?: () => boolean;
   backoff?: Backoff;
   heartbeatMs?: number;
+  /** How long an open socket may take to say welcome before it is given up. */
+  handshakeMs?: number;
   now?: () => number;
   random?: () => number;
 }
@@ -95,6 +97,7 @@ export class RealtimeConnection {
   private handshaken = false;
   private lastHeardAt = 0;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private handshakeTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private running = false;
   private readonly listeners = new Set<Listener>();
@@ -108,6 +111,7 @@ export class RealtimeConnection {
       isOnline: () => typeof navigator === "undefined" || navigator.onLine,
       backoff: defaultBackoff,
       heartbeatMs: 15_000,
+      handshakeMs: 10_000,
       now: () => Date.now(),
       random: Math.random,
       ...options,
@@ -171,6 +175,11 @@ export class RealtimeConnection {
     }
     this.socket = socket;
     this.handshaken = false;
+    // The heartbeat only starts once welcomed. Until then this is the only
+    // clock: a socket that opens but never answers hello (a proxy holding
+    // the upgrade, a server stuck in startup) would otherwise sit at
+    // "connecting" for good, with no retry.
+    this.handshakeTimer = setTimeout(() => this.lost(), this.opts.handshakeMs);
     socket.onopen = () => this.send(this.hello());
     socket.onmessage = (ev) => this.receive(ev.data);
     socket.onclose = () => this.lost();
@@ -217,6 +226,7 @@ export class RealtimeConnection {
 
   private welcomed(welcome: WelcomeMessage): void {
     this.handshaken = true;
+    this.clearHandshake();
     this.attempt = 0;
     const from = welcome.from_event_id;
     // The server starts where asked unless it cannot: a first connection, or
@@ -328,6 +338,7 @@ export class RealtimeConnection {
 
   private teardown(): void {
     this.stopHeartbeat();
+    this.clearHandshake();
     const socket = this.socket;
     this.socket = null;
     this.handshaken = false;
@@ -338,6 +349,11 @@ export class RealtimeConnection {
     } catch {
       // already closed
     }
+  }
+
+  private clearHandshake(): void {
+    if (this.handshakeTimer !== null) clearTimeout(this.handshakeTimer);
+    this.handshakeTimer = null;
   }
 
   private clearRetry(): void {

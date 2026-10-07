@@ -34,8 +34,10 @@ const (
 // handler is also one format decision rather than two that can drift.
 //
 // The returned Closer flushes and closes the file. stdout may be nil, which
-// means os.Stdout. A Windows service has no console and must pass io.Discard:
-// a write to the stdout it was given fails, and the file is written after it.
+// means os.Stdout. A Windows service has no console and should pass
+// io.Discard; if it does not, or a console goes away under a running
+// process, the file is still written: it is the first sink, and a failing
+// stdout is swallowed rather than allowed to stop the line.
 func Setup(cfg config.Config, stdout io.Writer, opts ...Option) (*slog.Logger, io.Closer, error) {
 	if stdout == nil {
 		stdout = os.Stdout
@@ -58,11 +60,16 @@ func Setup(cfg config.Config, stdout io.Writer, opts ...Option) (*slog.Logger, i
 		ReplaceAttr: utcTime,
 	}
 
+	// io.MultiWriter stops at the first writer that fails. The file is the
+	// sink a support call reads, so it goes first, and the console is
+	// wrapped so that a process started without one (a service, a closed
+	// terminal) cannot leave mez.log empty.
+	sinks := io.MultiWriter(file, bestEffort{stdout})
 	var handler slog.Handler
 	if useJSON(cfg.LogFormat, stdout) {
-		handler = slog.NewJSONHandler(io.MultiWriter(stdout, file), handlerOpts)
+		handler = slog.NewJSONHandler(sinks, handlerOpts)
 	} else {
-		handler = slog.NewTextHandler(io.MultiWriter(stdout, file), handlerOpts)
+		handler = slog.NewTextHandler(sinks, handlerOpts)
 	}
 
 	if o.system != nil {
@@ -81,6 +88,16 @@ func Setup(cfg config.Config, stdout io.Writer, opts ...Option) (*slog.Logger, i
 	slog.SetDefault(log)
 
 	return log, file, nil
+}
+
+// bestEffort is a writer whose failures do not count. It wraps the console:
+// a dead stdout is nobody's loss, and reporting it would stop the writers
+// after it in an io.MultiWriter, the file among them.
+type bestEffort struct{ w io.Writer }
+
+func (b bestEffort) Write(p []byte) (int, error) {
+	_, _ = b.w.Write(p)
+	return len(p), nil
 }
 
 // useJSON resolves config.LogFormatAuto against the writer.

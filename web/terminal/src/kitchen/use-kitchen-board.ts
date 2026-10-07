@@ -5,6 +5,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { KitchenBoardResponse, KitchenTicketResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
+import { replaceQuery } from "../../../shared/query";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { newKey } from "../register/ticket-key";
 
@@ -43,9 +44,9 @@ export function useKitchenBoard(station: string): KitchenBoardApi {
       .post<KitchenBoardResponse>(`/api/v1/kitchen/orders/${encodeURIComponent(t.order_id)}/tickets/${t.ticket_seq}/${verb}`, undefined, {
         idempotencyKey: newKey(),
       })
-      .then((next) => {
-        queryClient.setQueryData(key, next);
-      });
+      // The answer is the board as it stands; a backstop read still in
+      // flight is older, and is dropped rather than put back over it.
+      .then((next) => replaceQuery(queryClient, key, next));
 
   return {
     data: query.data,

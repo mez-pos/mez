@@ -69,8 +69,7 @@ func (s *Server) serveIndex(w http.ResponseWriter, r *http.Request, fsys fs.FS) 
 	if err != nil {
 		// Bundles are checked for index.html at startup, so this is a bundle
 		// that changed underneath a running process.
-		s.log.Error("bundle has no index.html", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "bundle has no index.html", err)
 		return
 	}
 

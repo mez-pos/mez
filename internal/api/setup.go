@@ -122,8 +122,7 @@ func (s *Server) mountSetup(mux *http.ServeMux) {
 func (s *Server) setupStatus(w http.ResponseWriter, r *http.Request) {
 	needed, err := s.firstRun.Needed(r.Context())
 	if err != nil {
-		s.log.Error("reading whether the venue is set up failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading whether the venue is set up failed", err)
 		return
 	}
 	here := s.atThisMachine(r)
@@ -201,8 +200,7 @@ func (s *Server) runSetup(w http.ResponseWriter, r *http.Request) {
 			"The venue was created, but the code to pair this device was not. Run `mez pair` on this computer.")
 		return
 	case err != nil:
-		s.log.Error("first run failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "first run failed", err)
 		return
 	}
 	s.spendSetupToken(r)

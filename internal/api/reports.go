@@ -48,8 +48,7 @@ func (s *Server) readSales(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, reports.ErrBadRange):
 		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
 	case err != nil:
-		s.log.Error("reading the sales reports failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading the sales reports failed", err)
 	default:
 		w.Header().Set("Cache-Control", "no-store")
 		writeJSON(w, s.log, http.StatusOK, res)
@@ -66,8 +65,7 @@ func (s *Server) readItems(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, reports.ErrBadRange):
 		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
 	case err != nil:
-		s.log.Error("reading the items report failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading the items report failed", err)
 	default:
 		w.Header().Set("Cache-Control", "no-store")
 		writeJSON(w, s.log, http.StatusOK, res)
@@ -89,8 +87,7 @@ func (s *Server) readSalesCSV(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, reports.ErrBadRange):
 		writeError(w, s.log, http.StatusBadRequest, CodeInvalidFilter, err.Error())
 	case err != nil:
-		s.log.Error("reading a sales report as CSV failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading a sales report as CSV failed", err)
 	default:
 		// The range was read, so from and to are days and safe in a name.
 		s.writeCSV(w, r, "sales-"+string(sheet)+"-"+q.Get("from")+"-to-"+q.Get("to")+".csv", t)

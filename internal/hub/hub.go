@@ -39,7 +39,19 @@ const (
 	// readLimit bounds a client's messages. Everything a client sends is a
 	// short control frame.
 	readLimit = 4 << 10
+
+	// maxConnsPerDevice is how many streams one device may hold open. A
+	// tablet has one screen, and a reconnecting one leaves its dead socket
+	// behind for a moment, so a handful is plenty; a token that is being
+	// used to open hundreds is being used by something other than a
+	// register, and is refused at the door rather than allowed to hold the
+	// hub.
+	maxConnsPerDevice = 8
 )
+
+// errTooManyConns is add refusing a device that already holds
+// maxConnsPerDevice streams.
+var errTooManyConns = errors.New("hub: too many connections for this device")
 
 // Topics a client can subscribe to. Everything is published to the venue
 // topic as well, so a client that wants the lot subscribes to that alone.
@@ -190,6 +202,15 @@ func (h *Hub) add(c *conn) error {
 	if h.closed {
 		return errors.New("hub: closed")
 	}
+	held := 0
+	for other := range h.venues[c.client.VenueID] {
+		if other.client.DeviceID == c.client.DeviceID {
+			held++
+		}
+	}
+	if held >= maxConnsPerDevice {
+		return fmt.Errorf("%w: device %d holds %d", errTooManyConns, c.client.DeviceID, held)
+	}
 	if h.venues[c.client.VenueID] == nil {
 		h.venues[c.client.VenueID] = map[*conn]struct{}{}
 	}
@@ -234,10 +255,14 @@ func (h *Hub) Serve(w http.ResponseWriter, r *http.Request, client Client) {
 
 	c := &conn{hub: h, ws: ws, client: client, cut: cancel, woken: make(chan struct{}, 1), topics: map[string]struct{}{TopicVenue: {}}}
 	if err := h.add(c); err != nil {
+		if errors.Is(err, errTooManyConns) {
+			h.log.Warn("device refused: too many connections", "venue_id", client.VenueID, "device_id", client.DeviceID, "error", err)
+			_ = ws.Close(websocket.StatusPolicyViolation, "too many connections for this device")
+			return
+		}
 		_ = ws.Close(websocket.StatusGoingAway, "server is shutting down")
 		return
 	}
-	defer h.remove(c)
 	go func() {
 		select {
 		case <-h.closing:
@@ -248,6 +273,10 @@ func (h *Hub) Serve(w http.ResponseWriter, r *http.Request, client Client) {
 
 	h.log.Info("device connected", "venue_id", client.VenueID, "device_id", client.DeviceID, "device_kind", client.Kind)
 	err = c.run(ctx)
+	// Out of the venue map before the close handshake, not after it: Close
+	// waits up to five seconds for the peer's close frame, and a revoked or
+	// stalled device must not count as connected for that long.
+	h.remove(c)
 	status, reason := websocket.StatusNormalClosure, ""
 	if err != nil && !isGone(err) {
 		h.log.Warn("device disconnected", "venue_id", client.VenueID, "device_id", client.DeviceID, "error", err)

@@ -71,7 +71,7 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
         </span>
         <div className="min-w-32 flex-1">
           {/* Where it goes: what a runner reads first. */}
-          <h3 className="break-words font-serif text-total leading-tight">{whereText(t)}</h3>
+          <h3 className="wrap-break-word font-serif text-total leading-tight">{whereText(t)}</h3>
           <p className="text-lg text-fg-muted">{metaText(t)}</p>
         </div>
         {ready ? (

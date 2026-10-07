@@ -74,6 +74,12 @@ func TestValidateABucket(t *testing.T) {
 		{name: "a bucket at Amazon", cfg: with(func(*S3) {}), ok: true},
 		{name: "a bucket at R2, with no region", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "https://abc123.r2.cloudflarestorage.com" }), ok: true},
 		{name: "a MinIO on the LAN, over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://192.168.1.20:9000" }), ok: true},
+		{name: "a MinIO on this machine, over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://127.0.0.1:9000" }), ok: true},
+		{name: "a MinIO at a ULA address, over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://[fd12:3456::20]:9000" }), ok: true},
+		{name: "a NAS by its bare name, over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://nas:9000" }), ok: true},
+		{name: "localhost, over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://localhost:9000" }), ok: true},
+		{name: "a public name, over https", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "https://s3.example.com" }), ok: true},
+		{name: "a public address, over https", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "https://203.0.113.9:9000" }), ok: true},
 		{name: "a path", cfg: with(func(s *S3) { s.Path = "venues/corner" }), ok: true},
 		{name: "a dotted bucket", cfg: with(func(s *S3) { s.Bucket = "backups.corner.cafe" }), ok: true},
 		{name: "a bucket with hyphens together", cfg: with(func(s *S3) { s.Bucket = "corner--cafe" }), ok: true},
@@ -88,6 +94,11 @@ func TestValidateABucket(t *testing.T) {
 		{name: "neither a region nor an endpoint", cfg: with(func(s *S3) { s.Region = "" })},
 		{name: "an endpoint with no scheme", cfg: with(func(s *S3) { s.Endpoint = "abc123.r2.cloudflarestorage.com" })},
 		{name: "an endpoint that is not http", cfg: with(func(s *S3) { s.Endpoint = "ftp://nas.local" })},
+		{name: "a public name over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://s3.example.com" })},
+		{name: "a dotted local name over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://nas.local:9000" })},
+		{name: "a public address over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://203.0.113.9:9000" })},
+		{name: "a public IPv6 address over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://[2001:db8::9]:9000" })},
+		{name: "a name that only looks like a LAN address, over plain HTTP", cfg: with(func(s *S3) { s.Region = ""; s.Endpoint = "http://192.168.1.20.example.com" })},
 		{name: "an endpoint with the bucket on the end", cfg: with(func(s *S3) { s.Endpoint = "https://abc123.r2.cloudflarestorage.com/corner-cafe" })},
 		{name: "an endpoint with a key in it", cfg: with(func(s *S3) { s.Endpoint = "https://AKID:secret@nas.local" })},
 		{name: "an endpoint with a key in it that does not parse", cfg: with(func(s *S3) { s.Endpoint = "https://AKID:secret@nas.local:port" })},
@@ -215,6 +226,53 @@ func TestLoadConfig(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("LoadConfig = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestAPlainHTTPEndpointMustBeOnThisNetwork: the backup is the whole
+// database, and over plain HTTP to anywhere past the router it would cross
+// the internet in clear. The refusal says what to do instead.
+func TestAPlainHTTPEndpointMustBeOnThisNetwork(t *testing.T) {
+	tests := []struct {
+		endpoint string
+		ok       bool
+	}{
+		{"http://192.168.1.20:9000", true},
+		{"http://10.0.0.5", true},
+		{"http://172.16.4.4:9000", true},
+		{"http://127.0.0.1:9000", true},
+		{"http://[::1]:9000", true},
+		{"http://[fd12:3456::20]:9000", true},
+		{"http://169.254.10.20:9000", true},
+		{"http://nas:9000", true},
+		{"http://minio", true},
+		{"http://localhost:9000", true},
+		{"https://s3.example.com", true},
+		{"https://203.0.113.9:9000", true},
+
+		{"http://s3.example.com", false},
+		{"http://nas.local:9000", false},
+		{"http://203.0.113.9:9000", false},
+		{"http://8.8.8.8", false},
+		{"http://[2001:db8::9]:9000", false},
+		{"http://192.168.1.20.example.com", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.endpoint, func(t *testing.T) {
+			cfg := Config{Kind: KindS3, S3: S3{Bucket: "corner-cafe", Endpoint: tt.endpoint, AccessKeyID: "AKID", SecretAccessKey: "secret"}}
+			err := cfg.Validate(t.TempDir())
+			if tt.ok {
+				if err != nil {
+					t.Fatalf("Validate: %v, want it accepted", err)
+				}
+				return
+			}
+			want := fmt.Sprintf("the endpoint %q must be https: a plain http address is only allowed for a server on this network", tt.endpoint)
+			var inv *InvalidConfig
+			if !errors.As(err, &inv) || inv.Field != "endpoint" || inv.Reason != want {
+				t.Fatalf("Validate: %v, want an endpoint error saying %q", err, want)
 			}
 		})
 	}

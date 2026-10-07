@@ -44,6 +44,11 @@ type Options struct {
 	// Limit is each venue's request allowance. Zero means DefaultLimit.
 	Limit Limit
 
+	// IPLimit is each client address's request allowance, across every
+	// venue, so one client cannot spend a venue's Limit for everyone.
+	// Zero means DefaultIPLimit.
+	IPLimit Limit
+
 	// TrustProxy says a proxy this operator runs sits in front and sets
 	// X-Forwarded-For and X-Forwarded-Proto. Without it those headers are a
 	// guest's own claim about itself and are ignored.
@@ -73,6 +78,7 @@ type Options struct {
 type Server struct {
 	keys        *Keys
 	limit       Limit
+	ips         *ipTable
 	trustProxy  bool
 	venueDomain string
 	version     string
@@ -103,6 +109,12 @@ func New(opts Options) (*Server, error) {
 	if opts.Limit.PerMinute < 1 || opts.Limit.Burst < 1 {
 		return nil, errors.New("relay: Options.Limit needs a positive rate and burst")
 	}
+	if opts.IPLimit == (Limit{}) {
+		opts.IPLimit = DefaultIPLimit
+	}
+	if opts.IPLimit.PerMinute < 1 || opts.IPLimit.Burst < 1 {
+		return nil, errors.New("relay: Options.IPLimit needs a positive rate and burst")
+	}
 	if opts.Now == nil {
 		opts.Now = time.Now
 	}
@@ -117,6 +129,7 @@ func New(opts Options) (*Server, error) {
 		venueDomain: domain,
 		keys:        opts.Keys,
 		limit:       opts.Limit,
+		ips:         newIPTable(opts.IPLimit, opts.Now()),
 		trustProxy:  opts.TrustProxy,
 		version:     opts.Version,
 		log:         opts.Log,

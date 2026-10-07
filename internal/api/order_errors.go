@@ -165,9 +165,7 @@ func (s *Server) writeOrderError(w http.ResponseWriter, r *http.Request, err err
 			return
 		}
 	}
-	s.log.Error("an order command failed",
-		"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
-	writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+	s.internalError(w, r, "an order command failed", err)
 }
 
 // fieldOf names the event a projection refused, so a client can say which

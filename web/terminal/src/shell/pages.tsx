@@ -4,7 +4,7 @@
 // The screens themselves are rebuilt from the design in the tasks that follow;
 // these only carry them.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Redirect, useLocation } from "wouter";
 import { roleText } from "../../../shared/auth/format";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
@@ -49,10 +49,15 @@ export function PayPage({ orderId }: { orderId: string }) {
       ticket.switchTo(orderId);
     }
   }, [behind, orderId, ticket]);
+  // Whether the order named has been in front: read from the ticket as it
+  // renders, so no ref is read here. Once it has, being behind again means
+  // the ticket moved on.
+  const [wasInFront, setWasInFront] = useState(!behind);
+  if (!behind && !wasInFront) setWasInFront(true);
 
   // A waiter whose bill is closed is back at the tables, where the table is cleared.
   if (behind)
-    return asked.current ? <Redirect to={waiter ? route.waiter : route.order} replace /> : <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
+    return wasInFront ? <Redirect to={waiter ? route.waiter : route.order} replace /> : <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
   if (!ticket.order) return <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
   if (waiter) {
     const title = railTitle(ticket.order, ticket.order.service, names);
@@ -129,9 +134,14 @@ export function ShiftPage() {
 /** "/shift/close": count the drawer, explain the variance, close, and the Z-report is issued. */
 export function ShiftClosePage() {
   const { shift, setLastZ } = useTerminal();
+  const auth = useAuth();
   const [, navigate] = useLocation();
   const menu = useMenu();
   if (!shift.shift) return null; // the gate sends a closed till to /shift
+  // The menu offers the close only to someone with shift.manage; the address
+  // typed by hand must say the same, or a cashier reaches a count the server
+  // then refuses step by step (ADR-197).
+  if (auth.kind !== "signed_in" || !auth.permissions.includes("shift.manage")) return <Redirect to={route.order} replace />;
   return (
     <CloseDayScreen
       shift={shift.shift}

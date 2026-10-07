@@ -227,7 +227,7 @@ func (s *session) serve(ctx context.Context, stream uint64, in *inbound) {
 	defer func() {
 		if p := recover(); p != nil {
 			if p != http.ErrAbortHandler {
-				s.c.log.Error("tunnel: a guest request panicked", "panic", fmt.Sprint(p), "path", in.head.Path)
+				s.c.log.Error("tunnel: a guest request panicked", "panic", fmt.Sprint(p), "path", wire.MaskCodes(in.head.Path))
 			}
 			s.reset(stream, "handler failed")
 		}

@@ -40,14 +40,16 @@ var version = "dev"
 // under a process manager, where the environment is the one thing every one
 // of them can set, and a file would be the only thing it kept on disk.
 const (
-	envListen     = "RELAY_LISTEN_ADDR"  // default ":8080"
-	envSecret     = "RELAY_SECRET"       // signs venue keys; required
-	envRevoked    = "RELAY_REVOKED"      // comma-separated venue ids and key ids to refuse
-	envTrustProxy = "RELAY_TRUST_PROXY"  // "true" when the operator's own proxy sits in front
-	envDomain     = "RELAY_VENUE_DOMAIN" // gives each venue the hostname <venue>.<domain>
-	envVenueRPM   = "RELAY_VENUE_RPM"    // requests a minute each venue may receive
-	envVenueBurst = "RELAY_VENUE_BURST"  // requests each venue may receive at once
-	envLogLevel   = "RELAY_LOG_LEVEL"    // debug, info, warn or error
+	envListen     = "RELAY_LISTEN_ADDR"   // default ":8080"
+	envSecret     = "RELAY_SECRET"        // signs venue keys; required
+	envRevoked    = "RELAY_REVOKED"       // comma-separated venue ids and key ids to refuse
+	envTrustProxy = "RELAY_TRUST_PROXY"   // "true" when the operator's own proxy sits in front
+	envDomain     = "RELAY_VENUE_DOMAIN"  // gives each venue the hostname <venue>.<domain>
+	envVenueRPM   = "RELAY_VENUE_RPM"     // requests a minute each venue may receive
+	envVenueBurst = "RELAY_VENUE_BURST"   // requests each venue may receive at once
+	envIPRPM      = "RELAY_IP_PER_MINUTE" // requests a minute one client address may send
+	envIPBurst    = "RELAY_IP_BURST"      // requests one client address may send at once
+	envLogLevel   = "RELAY_LOG_LEVEL"     // debug, info, warn or error
 
 	defaultListen = ":8080"
 )
@@ -66,6 +68,8 @@ Environment:
   RELAY_VENUE_DOMAIN  serve each venue at <venue>.<this domain>, not /v/<venue>/
   RELAY_VENUE_RPM     requests a minute per venue (default 1200)
   RELAY_VENUE_BURST   requests at once per venue (default 300)
+  RELAY_IP_PER_MINUTE requests a minute per client address (default 120)
+  RELAY_IP_BURST      requests at once per client address (default 60)
   RELAY_LOG_LEVEL     debug, info, warn or error (default info)
 
 It serves plain HTTP. Put it behind something that terminates TLS.
@@ -154,7 +158,11 @@ func serve(ctx context.Context, env func(string) string, stdout io.Writer, liste
 	if err != nil {
 		return err
 	}
-	limit, err := venueLimit(env)
+	limit, err := limitFrom(env, relay.DefaultLimit, envVenueRPM, envVenueBurst)
+	if err != nil {
+		return err
+	}
+	ipLimit, err := limitFrom(env, relay.DefaultIPLimit, envIPRPM, envIPBurst)
 	if err != nil {
 		return err
 	}
@@ -166,6 +174,7 @@ func serve(ctx context.Context, env func(string) string, stdout io.Writer, liste
 	srv, err := relay.New(relay.Options{
 		Keys:        keys,
 		Limit:       limit,
+		IPLimit:     ipLimit,
 		TrustProxy:  trustProxy,
 		VenueDomain: env(envDomain),
 		Version:     version,
@@ -198,7 +207,9 @@ func serve(ctx context.Context, env func(string) string, stdout io.Writer, liste
 		"trust_proxy", trustProxy,
 		"venue_domain", env(envDomain),
 		"venue_rpm", limit.PerMinute,
-		"venue_burst", limit.Burst)
+		"venue_burst", limit.Burst,
+		"ip_rpm", ipLimit.PerMinute,
+		"ip_burst", ipLimit.Burst)
 	if listening != nil {
 		listening <- ln.Addr().String()
 	}
@@ -240,12 +251,14 @@ func utcTime(_ []string, a slog.Attr) slog.Attr {
 	return a
 }
 
-func venueLimit(env func(string) string) (relay.Limit, error) {
-	limit := relay.DefaultLimit
+// limitFrom reads a rate and a burst from the environment, starting from
+// base and keeping it wherever a setting is left empty.
+func limitFrom(env func(string) string, base relay.Limit, rpmName, burstName string) (relay.Limit, error) {
+	limit := base
 	for _, setting := range []struct {
 		name string
 		into *int
-	}{{envVenueRPM, &limit.PerMinute}, {envVenueBurst, &limit.Burst}} {
+	}{{rpmName, &limit.PerMinute}, {burstName, &limit.Burst}} {
 		raw := strings.TrimSpace(env(setting.name))
 		if raw == "" {
 			continue

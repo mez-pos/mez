@@ -89,8 +89,7 @@ func (s *Server) guestReceipt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		s.log.Error("reading a guest's receipt failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading a guest's receipt failed", err, "venue_id", table.VenueID)
 		return
 	}
 	writeJSON(w, s.log, http.StatusOK, toGuestReceiptResponse(receipt))

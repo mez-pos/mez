@@ -115,8 +115,8 @@ one.
 ## Where things are
 
 ```
-cmd/mez/              the server, and its commands: setup, pair, unlock,
-                      restore, service, table-codes, --test-print
+cmd/mez/              the server, and its commands: setup, setup-link, pair,
+                      unlock, restore, service, table-codes, --test-print
 cmd/relay/            the optional relay, a separate small program
 internal/
   domain/             pure business rules, no IO: money, order events and

@@ -30,8 +30,7 @@ func (s *Server) requirePermission(p auth.Permission, next http.Handler) http.Ha
 		}
 		held, err := s.staff.Permissions(r.Context(), session.Staff.RoleID)
 		if err != nil {
-			s.log.Error("reading permissions failed", "request_id", RequestID(r.Context()), "error", err)
-			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+			s.internalError(w, r, "reading permissions failed", err)
 			return
 		}
 		if !held.Has(p) {
@@ -83,8 +82,7 @@ func (s *Server) authorise(w http.ResponseWriter, r *http.Request, o Override, p
 		s.unauthenticated(w, CodeInvalidPIN, "that staff member or PIN is not right")
 		return auth.Staff{}, false
 	case err != nil:
-		s.log.Error("authorising failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "authorising failed", err)
 		return auth.Staff{}, false
 	}
 	return by, true

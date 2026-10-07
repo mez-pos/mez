@@ -5,6 +5,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CommandResponse, LiveFloorResponse, OrderResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
+import { replaceQuery } from "../../../shared/query";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { newKey } from "../register/ticket-key";
 import { newer, openTicketsKey, orderQueryKey } from "../register/use-ticket";
@@ -40,9 +41,9 @@ export function useLiveFloor(): LiveFloorApi {
     if (moved) void queryClient.invalidateQueries({ queryKey: liveFloorKey });
   });
 
-  const keep = (next: LiveFloorResponse) => {
-    queryClient.setQueryData(liveFloorKey, next);
-  };
+  // The answer is the floor as it stands; a read still in flight is older,
+  // and is dropped rather than put back over it.
+  const keep = (next: LiveFloorResponse) => replaceQuery(queryClient, liveFloorKey, next);
   return {
     data: query.data,
     loading: query.isPending,

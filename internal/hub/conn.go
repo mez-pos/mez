@@ -12,6 +12,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/domain/order"
 )
@@ -46,8 +47,10 @@ type ClientMessage struct {
 	// wants; a reconnecting one sends the last id it saw.
 	LastEventID int64 `json:"last_event_id,omitempty"`
 
-	// FromStart asks for the venue's whole stream. A kitchen display
-	// rebuilding itself uses it.
+	// FromStart asks for the venue's whole stream. A kitchen display is
+	// not allowed it: it rebuilds from the open tickets over HTTP and
+	// streams from now, and asking for the whole day is answered as if it
+	// had asked for the latest position.
 	FromStart bool `json:"from_start,omitempty"`
 
 	Topics []string `json:"topics,omitempty"`
@@ -188,6 +191,13 @@ func (c *conn) run(ctx context.Context) error {
 
 	from := hello.LastEventID
 	switch {
+	case hello.FromStart && c.client.Kind == auth.KindKitchen:
+		// A kitchen display rebuilding itself has the open tickets over
+		// HTTP; the whole stream is every sale of the day, which is not
+		// its business and is a venue's worth of writes per reconnect.
+		c.hub.log.Warn("a kitchen display asked for the whole stream, starting it from the latest position instead",
+			"venue_id", c.client.VenueID, "device_id", c.client.DeviceID, "stream_at", latest)
+		from = latest
 	case hello.FromStart:
 		from = 0
 	case from <= 0:

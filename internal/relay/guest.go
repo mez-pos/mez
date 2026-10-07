@@ -123,6 +123,23 @@ func venueFromHost(host, domain string) (string, bool) {
 func (s *Server) forward(w http.ResponseWriter, r *http.Request, venueID, prefix, path string) {
 	noteVenue(r, venueID)
 
+	// The client's own allowance first, before the venue's: a venue's
+	// bucket is shared by every guest in the room, and one script spending
+	// it would lock all of them out. The address's stream is counted open
+	// until this request is over, whichever way it ends.
+	release, wait, err := s.ips.admit(s.clientIP(r), s.now())
+	switch {
+	case errors.Is(err, errRateLimited):
+		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
+		s.refuse(w, r, http.StatusTooManyRequests, codeRateLimited, busyTitle, busyText)
+		return
+	case errors.Is(err, errBusy):
+		w.Header().Set("Retry-After", "5")
+		s.refuse(w, r, http.StatusServiceUnavailable, codeVenueBusy, busyTitle, busyText)
+		return
+	}
+	defer release()
+
 	a := s.agentFor(venueID)
 	if a == nil {
 		// Also the answer for a venue that does not exist: the relay has no

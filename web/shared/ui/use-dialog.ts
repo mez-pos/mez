@@ -4,6 +4,7 @@
 // Sheet are both built on this.
 
 import { useEffect, useLayoutEffect, useRef } from "react";
+import { lockScroll } from "./scroll-lock";
 
 export function useDialog(open: boolean, onClose: () => void) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -45,14 +46,10 @@ export function useDialog(open: boolean, onClose: () => void) {
   }, []);
 
   // The page behind must not scroll under a finger dragging inside a sheet.
+  // The hold is shared with every other open dialog (scroll-lock.ts).
   useEffect(() => {
     if (!open) return;
-    const root = document.documentElement;
-    const previous = root.style.overflow;
-    root.style.overflow = "hidden";
-    return () => {
-      root.style.overflow = previous;
-    };
+    return lockScroll();
   }, [open]);
 
   return ref;

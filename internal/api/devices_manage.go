@@ -210,8 +210,6 @@ func (s *Server) writeDeviceError(w http.ResponseWriter, r *http.Request, err er
 	case errors.Is(err, auth.ErrDeviceRevoked):
 		writeError(w, s.log, http.StatusConflict, CodeDeviceUnpaired, "That device has been revoked, so it cannot be renamed.")
 	default:
-		s.log.Error("a device request failed",
-			"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "a device request failed", err)
 	}
 }

@@ -76,8 +76,7 @@ func (s *Server) requireStaff(next http.Handler) http.Handler {
 			return
 		}
 		if err != nil {
-			s.log.Error("checking a staff session failed", "request_id", RequestID(r.Context()), "error", err)
-			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+			s.internalError(w, r, "checking a staff session failed", err)
 			return
 		}
 		if info := infoFrom(r.Context()); info != nil {
@@ -126,8 +125,7 @@ func (s *Server) listStaff(w http.ResponseWriter, r *http.Request) {
 	dev, _ := DeviceFrom(r.Context())
 	staff, err := s.staff.ActiveStaff(r.Context(), dev.VenueID)
 	if err != nil {
-		s.log.Error("listing staff failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "listing staff failed", err)
 		return
 	}
 	out := make([]staffResponse, len(staff))
@@ -160,8 +158,7 @@ func (s *Server) signIn(w http.ResponseWriter, r *http.Request) {
 		s.unauthenticated(w, CodeInvalidPIN, "that staff member or PIN is not right")
 		return
 	case err != nil:
-		s.log.Error("signing in failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "signing in failed", err)
 		return
 	}
 	if info := infoFrom(r.Context()); info != nil {
@@ -169,8 +166,7 @@ func (s *Server) signIn(w http.ResponseWriter, r *http.Request) {
 	}
 	res, err := s.toSessionResponse(r.Context(), in.Session)
 	if err != nil {
-		s.log.Error("reading permissions at sign-in failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading permissions at sign-in failed", err)
 		return
 	}
 	res.Token = in.Token
@@ -183,8 +179,7 @@ func (s *Server) currentSession(w http.ResponseWriter, r *http.Request) {
 	session, _ := SessionFrom(r.Context())
 	res, err := s.toSessionResponse(r.Context(), session)
 	if err != nil {
-		s.log.Error("reading permissions failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading permissions failed", err)
 		return
 	}
 	writeJSON(w, s.log, http.StatusOK, res)
@@ -207,8 +202,7 @@ func (s *Server) toSessionResponse(ctx context.Context, session auth.Session) (s
 func (s *Server) signOut(w http.ResponseWriter, r *http.Request) {
 	session, _ := SessionFrom(r.Context())
 	if err := s.staff.SignOut(r.Context(), session); err != nil {
-		s.log.Error("signing out failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "signing out failed", err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

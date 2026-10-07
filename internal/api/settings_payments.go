@@ -86,8 +86,7 @@ func (s *Server) writePaymentSettings(w http.ResponseWriter, r *http.Request) {
 	if s.charges != nil {
 		st, err := s.charges.Standing(r.Context(), Meta(r).VenueID)
 		if err != nil {
-			s.log.Error("reading how paying online stands failed", "request_id", RequestID(r.Context()), "venue_id", Meta(r).VenueID, "error", err)
-			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+			s.internalError(w, r, "reading how paying online stands failed", err, "venue_id", Meta(r).VenueID)
 			return
 		}
 		out.Online = &onlinePaymentsResponse{Gateway: st.Gateway, Webhooks: st.Notices}

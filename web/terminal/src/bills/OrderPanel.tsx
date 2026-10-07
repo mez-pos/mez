@@ -85,7 +85,7 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
       <div className="min-h-0 flex-1 overflow-y-auto p-4 xl:p-5 2xl:p-6">
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="break-words font-serif text-xl 2xl:text-total">{invoice?.invoice_no ?? order.id}</h2>
+            <h2 className="wrap-break-word font-serif text-xl 2xl:text-total">{invoice?.invoice_no ?? order.id}</h2>
             <p className="mt-1 text-sm text-fg-muted">
               {whereText(order, names, pickupCode)} · {timeText(order.closed_at ?? order.opened_at, new Date())}
             </p>

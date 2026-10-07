@@ -59,6 +59,22 @@ func (q *Queries) EndStaffSession(ctx context.Context, arg EndStaffSessionParams
 	return result.RowsAffected()
 }
 
+const pruneSignInAttempts = `-- name: PruneSignInAttempts :execrows
+DELETE FROM sign_in_attempts
+WHERE at < ?
+`
+
+// Drops attempts older than a cutoff. The lockouts read the latest few rows
+// only, so nothing a month old decides anything, and the table would
+// otherwise grow by every PIN ever typed.
+func (q *Queries) PruneSignInAttempts(ctx context.Context, at time.Time) (int64, error) {
+	result, err := q.db.ExecContext(ctx, pruneSignInAttempts, at)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const recentDeviceFailures = `-- name: RecentDeviceFailures :many
 SELECT at
 FROM sign_in_attempts

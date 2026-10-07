@@ -69,8 +69,7 @@ func (s *Server) readTrail(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, audit.ErrStaffNotFound):
 		writeFieldError(w, s.log, http.StatusNotFound, CodeStaffNotFound, "No such person.", "staff")
 	case err != nil:
-		s.log.Error("reading the audit trail failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading the audit trail failed", err)
 	default:
 		w.Header().Set("Cache-Control", "no-store")
 		writeJSON(w, s.log, http.StatusOK, page)
@@ -89,8 +88,7 @@ func (s *Server) readTrailCSV(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, audit.ErrStaffNotFound):
 		writeFieldError(w, s.log, http.StatusNotFound, CodeStaffNotFound, "No such person.", "staff")
 	case err != nil:
-		s.log.Error("reading the audit trail as CSV failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading the audit trail as CSV failed", err)
 	default:
 		// The filter was read, so from and to are days and safe in a name.
 		s.writeCSV(w, r, "audit-"+f.From+"-to-"+f.To+".csv", t)

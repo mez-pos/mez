@@ -16,6 +16,7 @@ import {
   placedStorageKey,
   refusalOf,
   toRequest,
+  trackedAnswer,
   withRound,
   type Placed,
 } from "./order-logic";
@@ -65,8 +66,13 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
   // would say the same, every few seconds, for hours. What the phone
   // remembers of it stays on the screen.
   const [gone, setGone] = useState<string | null>(null);
+  // The id of the order held now, for an answer that arrives after it was
+  // asked: a poll can take ten seconds on 3G, and a newer order may have
+  // been placed meanwhile.
+  const currentId = useRef<string | null>(placed?.round.id ?? null);
 
   const keep = (next: Placed) => {
+    currentId.current = next.round.id;
     setPlaced(next);
     // A sent order says which bill it is on: remembered for the receipt.
     keepBill(code, next.round.bill);
@@ -82,10 +88,15 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
   const every = lost ? null : askAfterMs(placed);
   const ask = () => {
     if (placed === null || lost || document.visibilityState === "hidden") return;
-    trackOrder(code, placed.round.id)
-      .then((round) => keep(withRound(placed, round, true)))
+    const asked = placed;
+    trackOrder(code, asked.round.id)
+      .then((round) => {
+        // A late answer about an order no longer held is dropped.
+        const next = trackedAnswer(asked, currentId.current, round);
+        if (next) keep(next);
+      })
       .catch((err: unknown) => {
-        if (orderGone(err)) setGone(placed.round.id);
+        if (orderGone(err) && currentId.current === asked.round.id) setGone(asked.round.id);
       });
   };
   // An order just sent has not been asked about at its own address yet:

@@ -183,8 +183,6 @@ func (s *Service) run(ctx context.Context, meta Meta, orderID int64, name string
 	if err != nil {
 		return Result{}, err
 	}
-	at := s.clock.Now().UTC()
-
 	var (
 		publicID string
 		prior    *priorResult
@@ -193,6 +191,12 @@ func (s *Service) run(ctx context.Context, meta Meta, orderID int64, name string
 	state, events, err := s.db.AppendOrder(ctx, orderID, v.Taxes, func(ctx context.Context, tx *db.OrderTx) ([]order.Event, error) {
 		// Decide can run more than once, so everything it sets is reset.
 		publicID, prior, queued = tx.PublicID, nil, 0
+		// The time is read here, inside the transaction, and not before
+		// it. The transaction is SQLite's single writer, so two settles
+		// that race take their numbers one after the other; a clock read
+		// outside it could stamp invoice N later than N+1, and at midnight
+		// put them on different days.
+		at := s.clock.Now().UTC()
 		if tx.VenueID != meta.VenueID {
 			return nil, fmt.Errorf("%w: %d", ErrOrderNotFound, orderID)
 		}

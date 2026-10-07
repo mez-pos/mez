@@ -88,8 +88,7 @@ func (s *Server) createPairingCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		s.log.Error("making a pairing code failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "making a pairing code failed", err)
 		return
 	}
 	// The code pairs a device, so it is a secret for as long as it lives.
@@ -129,8 +128,7 @@ func (s *Server) authenticateDevice(w http.ResponseWriter, r *http.Request, toke
 		s.unauthenticated(w, CodeUnauthenticated, "the device token is not valid")
 		return auth.Device{}, false
 	case err != nil:
-		s.log.Error("authenticating a device failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "authenticating a device failed", err)
 		return auth.Device{}, false
 	}
 	if info := infoFrom(r.Context()); info != nil {
@@ -190,8 +188,7 @@ func (s *Server) pairDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		s.log.Error("pairing a device failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "pairing a device failed", err)
 		return
 	}
 	// The token appears in this response and nowhere else, ever.

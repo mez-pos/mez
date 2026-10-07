@@ -149,31 +149,42 @@ function headersFor(credentials: Credentials, body: unknown, options: RequestOpt
 
 async function send<T>(fetchFn: typeof fetch, method: string, path: string, body: unknown, headers: Headers, options: RequestOptions): Promise<T> {
   const deadline = withDeadline(options.signal, options.timeoutMs ?? defaultTimeoutMs);
-  let response: Response;
   try {
-    response = await fetchFn(path, {
-      method,
-      headers,
-      signal: deadline.signal,
-      ...(body === undefined ? {} : { body: body instanceof Blob ? body : JSON.stringify(body) }),
-    });
-  } catch (err) {
-    if (options.signal?.aborted) throw err; // the caller cancelled; not a failure
-    if (deadline.timedOut()) throw new ApiError("timeout", "the server did not answer in time");
-    throw new ApiError("network", "the server could not be reached");
+    let response: Response;
+    try {
+      response = await fetchFn(path, {
+        method,
+        headers,
+        signal: deadline.signal,
+        ...(body === undefined ? {} : { body: body instanceof Blob ? body : JSON.stringify(body) }),
+      });
+    } catch (err) {
+      throw notAnswered(err, options.signal, deadline);
+    }
+    return await readResponse<T>(response, options.signal, deadline);
   } finally {
+    // Only once the body is read too. A server that sends the headers and
+    // then stalls must still time out, and a caller's cancel must still
+    // land, or a payment screen waits on it for good.
     deadline.clear();
   }
-  return readResponse<T>(response);
 }
 
-async function readResponse<T>(response: Response): Promise<T> {
+/** Why a request that got no answer failed: the caller's own cancel is passed through as it is. */
+function notAnswered(err: unknown, outer: AbortSignal | undefined, deadline: Deadline): unknown {
+  if (outer?.aborted) return err;
+  if (deadline.timedOut()) return new ApiError("timeout", "the server did not answer in time");
+  return new ApiError("network", "the server could not be reached");
+}
+
+async function readResponse<T>(response: Response, outer: AbortSignal | undefined, deadline: Deadline): Promise<T> {
   if (response.status === 204) return undefined as T;
 
   let parsed: unknown;
   try {
-    parsed = await response.json();
-  } catch {
+    parsed = await jsonWithin(response, deadline.signal);
+  } catch (err) {
+    if (outer?.aborted || deadline.timedOut()) throw notAnswered(err, outer, deadline);
     throw new ApiError("bad_response", `the server answered ${response.status} with something that was not JSON`, response.status);
   }
   if (response.ok) return parsed as T;
@@ -197,6 +208,26 @@ function isErrorBody(value: unknown): value is ApiErrorBody {
   if (typeof value !== "object" || value === null || !("error" in value)) return false;
   const error: unknown = value.error;
   return typeof error === "object" && error !== null && "code" in error && typeof error.code === "string";
+}
+
+/**
+ * The body as JSON, or a rejection the moment the signal aborts. A browser's
+ * fetch stops the read itself when its signal aborts, but the read is what
+ * the deadline has to cover, so this does not count on it.
+ */
+function jsonWithin(response: Response, signal: AbortSignal): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(new DOMException("The body was not read in time.", "AbortError"));
+    if (signal.aborted) {
+      abort();
+      return;
+    }
+    signal.addEventListener("abort", abort, { once: true });
+    response
+      .json()
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener("abort", abort));
+  });
 }
 
 interface Deadline {

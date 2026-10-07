@@ -69,7 +69,7 @@ export function BackupStatusCard({ backup, onBackUpNow }: BackupStatusCardProps)
         {standing.reason && (
           <div className="rounded border border-line bg-sunken p-4">
             <p className="text-meta font-bold uppercase text-fg-faint">What mez was told</p>
-            <p className="mt-1 break-words font-mono text-sm text-fg-2">{standing.reason}</p>
+            <p className="mt-1 wrap-break-word font-mono text-sm text-fg-2">{standing.reason}</p>
           </div>
         )}
         {standing.lastGood && <p className="text-base text-fg-2">{standing.lastGood}</p>}
@@ -103,7 +103,7 @@ export function BackupStatusCard({ backup, onBackUpNow }: BackupStatusCardProps)
             </p>
           )}
           {asked.state === "failed" && asked.at === now && (
-            <p role="alert" className="min-w-0 basis-full break-words text-sm text-danger">
+            <p role="alert" className="min-w-0 basis-full wrap-break-word text-sm text-danger">
               {asked.message}
             </p>
           )}

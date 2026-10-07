@@ -66,8 +66,7 @@ func (s *Server) readMenu(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) menuFailed(w http.ResponseWriter, r *http.Request, err error) {
-	s.log.Error("reading the menu failed", "request_id", RequestID(r.Context()), "venue_id", Meta(r).VenueID, "error", err)
-	writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+	s.internalError(w, r, "reading the menu failed", err, "venue_id", Meta(r).VenueID)
 }
 
 func menuETag(version int64) string {

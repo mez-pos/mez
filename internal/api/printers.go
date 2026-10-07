@@ -280,9 +280,7 @@ func (s *Server) writePrinterError(w http.ResponseWriter, r *http.Request, err e
 	case errors.Is(err, printers.ErrRetired):
 		writeError(w, s.log, http.StatusConflict, CodePrinterRetired, "That printer is retired. Bring it back first.")
 	default:
-		s.log.Error("a printer settings request failed",
-			"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "a printer settings request failed", err)
 	}
 }
 

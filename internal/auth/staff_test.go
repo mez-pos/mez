@@ -440,3 +440,67 @@ func TestAStaffMemberCarriesTheirRoleName(t *testing.T) {
 		t.Errorf("an override says %q (%v)", by.RoleName, err)
 	}
 }
+
+// TestOldSignInAttemptsArePruned: the attempt log is trimmed of anything
+// older than the retention, from the sign-in that records the next attempt,
+// and at most once an hour so a busy counter does not pay for it.
+func TestOldSignInAttemptsArePruned(t *testing.T) {
+	signIn := func(t *testing.T, w *staffWorld) {
+		t.Helper()
+		if _, err := w.auth.SignIn(context.Background(), w.till, "stf_ASHA0001", "2468"); err != nil {
+			t.Fatalf("SignIn: %v", err)
+		}
+	}
+	tests := []struct {
+		name string
+		run  func(t *testing.T, w *staffWorld)
+		want int // attempts left in the table
+	}{
+		{
+			name: "attempts older than the retention are dropped",
+			run: func(t *testing.T, w *staffWorld) {
+				signIn(t, w)
+				w.clock.advance(attemptRetention + 24*time.Hour)
+				signIn(t, w)
+			},
+			want: 1,
+		},
+		{
+			name: "recent attempts stay",
+			run: func(t *testing.T, w *staffWorld) {
+				signIn(t, w)
+				w.clock.advance(24 * time.Hour)
+				signIn(t, w)
+			},
+			want: 2,
+		},
+		{
+			name: "the prune runs at most once an hour",
+			run: func(t *testing.T, w *staffWorld) {
+				signIn(t, w)
+				w.clock.advance(attemptRetention + 24*time.Hour)
+				// A prune ran half an hour ago, so this sign-in does not
+				// run one and the old attempt survives it.
+				w.auth.lastPruned = w.clock.now().Add(-30 * time.Minute)
+				signIn(t, w)
+				if got := outcomes(t, w.db); len(got) != 2 {
+					t.Fatalf("%d attempts after a sign-in inside the hour, want 2: the prune ran early", len(got))
+				}
+				// Past the hour, the next one prunes.
+				w.clock.advance(31 * time.Minute)
+				signIn(t, w)
+			},
+			want: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := newStaffWorld(t)
+			tt.run(t, w)
+			if got := outcomes(t, w.db); len(got) != tt.want {
+				t.Errorf("%d attempts left, want %d", len(got), tt.want)
+			}
+		})
+	}
+}

@@ -228,8 +228,6 @@ func (s *Server) writePeopleError(w http.ResponseWriter, r *http.Request, err er
 		writeError(w, s.log, http.StatusConflict, CodeLastManager,
 			"Nobody would be left who can manage staff. Give someone else that first.")
 	default:
-		s.log.Error("a people request failed",
-			"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "a people request failed", err)
 	}
 }

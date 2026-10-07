@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/byjoellobo/mez/internal/db"
@@ -64,6 +65,16 @@ const HardLockReason = "too many failed PIN attempts"
 // DefaultSessionTTL is how long a staff session lasts: a long shift. The
 // terminal locks itself sooner; this is the backstop.
 const DefaultSessionTTL = 12 * time.Hour
+
+// The attempt log's housekeeping. The lockouts read the latest few rows
+// only, so an attempt a month old decides nothing, and the table would
+// otherwise grow by every PIN ever typed at the venue. The prune runs from
+// record, where there is always a write anyway, at most once an hour: a
+// busy counter must not pay for a DELETE on every sign-in.
+const (
+	attemptRetention = 30 * 24 * time.Hour
+	pruneEvery       = time.Hour
+)
 
 var (
 	// ErrInvalidPIN means the staff member and PIN did not sign in. An
@@ -146,6 +157,10 @@ type StaffAuth struct {
 	// dummy is the hash compared against for a staff member who does not
 	// exist or cannot sign in, so that both take as long as a wrong PIN.
 	dummy string
+
+	// pruneMu guards lastPruned, when the attempt log was last trimmed.
+	pruneMu    sync.Mutex
+	lastPruned time.Time
 }
 
 // NewStaffAuth returns a StaffAuth.
@@ -555,7 +570,36 @@ func (a *StaffAuth) record(ctx context.Context, attempt gen.RecordSignInAttemptP
 	if err != nil {
 		return fmt.Errorf("auth: recording a sign-in attempt: %w", err)
 	}
+	a.prune(ctx, attempt.At)
 	return nil
+}
+
+// prune drops attempts older than attemptRetention, at most once per
+// pruneEvery. It never fails the sign-in that ran it: the attempt is
+// recorded, and a prune that could not run is tried again in an hour.
+func (a *StaffAuth) prune(ctx context.Context, now time.Time) {
+	a.pruneMu.Lock()
+	due := now.Sub(a.lastPruned) >= pruneEvery
+	if due {
+		a.lastPruned = now
+	}
+	a.pruneMu.Unlock()
+	if !due {
+		return
+	}
+	var dropped int64
+	err := a.db.WriteTx(ctx, func(q *gen.Queries) error {
+		var err error
+		dropped, err = q.PruneSignInAttempts(ctx, now.Add(-attemptRetention))
+		return err
+	})
+	if err != nil {
+		a.log.Warn("could not prune old sign-in attempts", "error", err)
+		return
+	}
+	if dropped > 0 {
+		a.log.Info("pruned old sign-in attempts", "dropped", dropped, "older_than", now.Add(-attemptRetention))
+	}
 }
 
 // Session finds the staff session a token opens on this device. A session

@@ -10,6 +10,28 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The audit between phases** (ADR-287; 2026-10-07). Four reviews and
+  one walk against the demo venue; what they changed is in the ADR.
+  **Found and left**, for the owner: any paired terminal or back office
+  device may read the venue's whole event stream over the WebSocket with
+  no staff session (`internal/api/stream.go`), so a stolen till's device
+  token reads every payment until it is revoked under Devices; a leaked
+  relay key (`mzr_`) is believed until the relay restarts with it gone;
+  a person with `staff.manage` may reset their own PIN without the old
+  one; `-relay-key`, `-gateway-key-secret` and `-gateway-webhook-secret`
+  may still be given as flags, which a process list shows; the Windows
+  spooler send ignores its deadline, so a hung USB port holds that
+  printer's queue until the spooler answers; a guest's checkout started
+  twice in the same instant leaves one at the gateway to lapse unpaid,
+  logged; the venue's rate limits key on the client address, so behind a
+  reverse proxy every client is one address. **Walked and seen**: all
+  eleven back office screens open without a console error; the till's
+  sale, kitchen, guest, UPI and close flows above. **Not walked this
+  time**: card, split, void, refund, credit note, reprint, the Menu
+  editor's edits, Inventory, Printers with a device, the setup wizard
+  (`/setup`), the relay. The demo server logged four ERRORs in the
+  walk, all a cancelled read, which `internalError` now keeps out.
+
 - **The README** (ADR-286; phase 12 Task 7f). The screenshot
   (`docs/img/till.png`) is the register at 1366 by 900 with the demo
   menu, taken from `bin/mez` on 2026-10-07: it will go stale as the

@@ -8,6 +8,8 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/byjoellobo/mez/internal/relay/wire"
 )
 
 // headerRequestID is the correlation id, the same header the venue server
@@ -99,8 +101,11 @@ func (s *Server) accessLog(next http.Handler) http.Handler {
 				"request_id", requestIDFrom(r.Context()),
 				"method", r.Method,
 				// The path and never the query: a query is where a guest's
-				// details would be if anything put them in a URL.
-				"path", r.URL.Path,
+				// details would be if anything put them in a URL. And the
+				// path with its code masked: a table code is the guest's
+				// credential, and the venue's own log hides it (ADR-205),
+				// so the relay's must too.
+				"path", wire.MaskCodes(r.URL.Path),
 				"status", rec.statusCode(),
 				"bytes", rec.written,
 				"duration_ms", s.now().Sub(started).Milliseconds(),

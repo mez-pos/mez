@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"net/netip"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -235,7 +236,26 @@ func (s S3) validate() error {
 	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.RawQuery != "" || strings.Trim(u.Path, "/") != "" {
 		return invalidf("endpoint", "the endpoint %q must be an address like https://host, and nothing after it", s.Endpoint)
 	}
+	// The backup is the whole database: every sale, every PIN hash, every
+	// device token hash. Over plain HTTP it crosses the wire in clear, which
+	// is tolerable to a MinIO in the back room and not to anything past the
+	// router.
+	if u.Scheme == "http" && !onThisNetwork(u.Hostname()) {
+		return invalidf("endpoint", "the endpoint %q must be https: a plain http address is only allowed for a server on this network", s.Endpoint)
+	}
 	return nil
+}
+
+// onThisNetwork says whether a host can only be reached from the venue's
+// own network: a private, loopback or link-local address, or a bare name
+// with no dot in it, such as nas or minio, which only the local resolver
+// can answer.
+func onThisNetwork(host string) bool {
+	if ip, err := netip.ParseAddr(host); err == nil {
+		ip = ip.Unmap()
+		return ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast()
+	}
+	return host != "" && !strings.Contains(host, ".")
 }
 
 // validBucket is the common rule of S3 and the services that copy it.

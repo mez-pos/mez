@@ -129,6 +129,33 @@ describe("createApiClient", () => {
     expect((err as ApiError).code).toBe("timeout");
   });
 
+  // Headers at once, then a body that never ends.
+  const stalled = () => new Response(new ReadableStream({ start: () => undefined }), { status: 200, headers: { "Content-Type": "application/json" } });
+
+  it("times out a server whose body never finishes", async () => {
+    const { fetch } = fakeFetch(stalled);
+    const err = await createApiClient({ credentials: signedIn, fetch })
+      .get("/x", { timeoutMs: 20 })
+      .catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).code).toBe("timeout");
+  });
+
+  it("lets a caller cancel while the body is still being read", async () => {
+    const controller = new AbortController();
+    const { fetch } = fakeFetch(stalled);
+    const pending = createApiClient({ credentials: signedIn, fetch })
+      .get("/x", { signal: controller.signal })
+      .catch((e: unknown) => e);
+    await Promise.resolve();
+    controller.abort();
+
+    const err = await pending;
+    expect(err).not.toBeInstanceOf(ApiError);
+    expect((err as DOMException).name).toBe("AbortError");
+  });
+
   it("passes a caller's cancel through untouched", async () => {
     const controller = new AbortController();
     const { fetch } = fakeFetch(

@@ -362,8 +362,6 @@ func (s *Server) writeStockError(w http.ResponseWriter, r *http.Request, err err
 	case errors.Is(err, stock.ErrRetired):
 		writeError(w, s.log, http.StatusConflict, CodeStockItemRetired, "That stock item is retired. Bring it back first.")
 	default:
-		s.log.Error("a stock request failed",
-			"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "a stock request failed", err)
 	}
 }

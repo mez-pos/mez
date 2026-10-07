@@ -29,6 +29,9 @@ type rotatingFile struct {
 	mu   sync.Mutex
 	file *os.File
 	size int64
+	// closed is set by Close. A nil file with closed false is a handle lost
+	// to a rotation whose reopen failed, and Write tries again.
+	closed bool
 }
 
 func newRotatingFile(dir, name string, maxBytes int64, keep int) (*rotatingFile, error) {
@@ -78,8 +81,16 @@ func (r *rotatingFile) Write(p []byte) (int, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.file == nil {
+	if r.closed {
 		return 0, errors.New("write to a closed log file")
+	}
+	// A rotation that could not reopen the file left nothing to write to.
+	// Trying once more here is what keeps a full disk at 02:00 from
+	// silencing the log for the rest of the day.
+	if r.file == nil {
+		if err := r.open(); err != nil {
+			return 0, err
+		}
 	}
 
 	// The size guard is what stops a single line longer than maxBytes from
@@ -144,6 +155,10 @@ func (r *rotatingFile) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	if r.closed {
+		return nil
+	}
+	r.closed = true
 	if r.file == nil {
 		return nil
 	}

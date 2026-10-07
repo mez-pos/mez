@@ -213,8 +213,7 @@ func (s *Server) guestTableFor(w http.ResponseWriter, r *http.Request) (tablecod
 		return tablecodes.Table{}, false
 	}
 	if err != nil {
-		s.log.Error("reading a table code failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading a table code failed", err)
 		return tablecodes.Table{}, false
 	}
 	if info := infoFrom(r.Context()); info != nil {
@@ -289,8 +288,7 @@ func (s *Server) guestOpenSession(w http.ResponseWriter, r *http.Request, table 
 			return "", true
 		}
 		if !errors.Is(err, svcorder.ErrGuestSession) {
-			s.log.Error("checking a guest session failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-			writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+			s.internalError(w, r, "checking a guest session failed", err, "venue_id", table.VenueID)
 			return "", false
 		}
 	}
@@ -302,8 +300,7 @@ func (s *Server) guestOpenSession(w http.ResponseWriter, r *http.Request, table 
 	}
 	token, issued, err := s.guestOrders.OpenGuestSession(r.Context(), table.VenueID, table.TableID)
 	if err != nil {
-		s.log.Error("opening a guest session failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "opening a guest session failed", err, "venue_id", table.VenueID)
 		return "", false
 	}
 	if issued {
@@ -322,8 +319,7 @@ func (s *Server) guestSessionFor(w http.ResponseWriter, r *http.Request, table t
 		return svcorder.GuestSession{}, false
 	}
 	if err != nil {
-		s.log.Error("checking a guest session failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "checking a guest session failed", err, "venue_id", table.VenueID)
 		return svcorder.GuestSession{}, false
 	}
 	return session, true
@@ -347,8 +343,7 @@ func (s *Server) guestMenu(w http.ResponseWriter, r *http.Request) {
 func (s *Server) writeGuestMenu(w http.ResponseWriter, r *http.Request, venueID int64) {
 	m, err := s.menus.Menu(r.Context(), venueID)
 	if err != nil {
-		s.log.Error("reading the menu for a guest failed", "request_id", RequestID(r.Context()), "venue_id", venueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading the menu for a guest failed", err, "venue_id", venueID)
 		return
 	}
 	// Not the version alone: whether an item is sold out turns on the

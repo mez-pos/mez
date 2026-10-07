@@ -31,14 +31,12 @@ func (s *Server) guestTrackOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		s.log.Error("tracking a guest's order failed", "request_id", RequestID(r.Context()), "venue_id", table.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "tracking a guest's order failed", err, "venue_id", table.VenueID)
 		return
 	}
 	resp, err := toGuestRoundResponse(round)
 	if err != nil {
-		s.log.Error("encoding a guest's order failed", "request_id", RequestID(r.Context()), "round", round.PublicID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "encoding a guest's order failed", err, "round", round.PublicID)
 		return
 	}
 	writeJSON(w, s.log, http.StatusOK, resp)

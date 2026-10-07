@@ -9,7 +9,7 @@ import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { failureOf } from "../register/order-messages";
 import { newKey } from "../register/ticket-key";
-import { newer, openTicketsKey, orderQueryKey } from "../register/use-ticket";
+import { newer, openTicketsKey, orderQueryKey, resetOrders } from "../register/use-ticket";
 import { liveFloorKey } from "./use-live-floor";
 
 export interface TableOrder {
@@ -45,8 +45,8 @@ export function useTableOrder(orderId: string): TableOrder {
 
   useRealtimeNotices((notice) => {
     if (notice.kind === "menu" || notice.kind === "print" || notice.kind === "floor") return;
-    const touched = notice.kind === "resync" || notice.message.order_id === orderId;
-    if (touched) void queryClient.invalidateQueries({ queryKey: orderQueryKey(orderId) });
+    if (notice.kind === "resync") void resetOrders(queryClient);
+    else if (notice.message.order_id === orderId) void queryClient.invalidateQueries({ queryKey: orderQueryKey(orderId) });
   });
 
   const post = async (suffix: string, body?: unknown): Promise<void> => {

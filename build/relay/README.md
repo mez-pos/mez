@@ -122,12 +122,23 @@ are added there, and to `compose.yml`'s `environment:`, only to change them.
 | `RELAY_TRUST_PROXY` | `true` when your own proxy sets `X-Forwarded-For`. `compose.yml` sets it, for Caddy | `false` |
 | `RELAY_VENUE_RPM` | Requests a minute each venue may receive | 1200 |
 | `RELAY_VENUE_BURST` | Requests at once each venue may receive | 300 |
+| `RELAY_IP_PER_MINUTE` | Requests a minute one client address may send, across every venue | 120 |
+| `RELAY_IP_BURST` | Requests at once one client address may send | 60 |
 | `RELAY_LISTEN_ADDR` | Where it listens, in plain HTTP | `:8080` |
 | `RELAY_LOG_LEVEL` | `debug`, `info`, `warn` or `error` | `info` |
 
 1200 a minute is less than a full room of phones can ask for at once
 (ADR-246); a guest past it is told "A lot of people are ordering at once.
 Please try again in a few seconds." Raise it for a busy venue.
+
+The venue's allowance is shared by everyone in the room, so one client is
+also held to its own: 120 a minute and 60 at once per address, and at most
+16 requests open at a time, which is a phone opening the menu many times
+over and far less than a script. A client past it gets the same message,
+and nobody else at the venue notices. Raise the address limits only if many
+guests reach you from one address, such as a venue whose wifi puts every
+phone behind one public IP; with `RELAY_TRUST_PROXY` set, the address is
+the one your proxy reports.
 
 Set `RELAY_VENUE_DOMAIN`. A hostname for each venue is the way these files
 deploy it and the way it has been run (ADR-203); the relay's older

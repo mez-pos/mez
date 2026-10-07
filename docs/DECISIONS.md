@@ -10246,3 +10246,73 @@ Cost: the screenshot is of one screen on one day and nothing retakes
 it. The demo menu has no photos. The pitch claims what tests and a
 developer's browser support, not what a cafe has found.
 ---
+
+---
+## ADR-287 - The audit between phases: four reviews, one walk, and what they changed
+2026-10 · Status: accepted. After phase 12.
+Decision: with every task built, the whole was reviewed once by four
+readers at once (security, Go, TypeScript, the docs against the code) and
+walked end to end against a demo venue from `bin/mez`: pair a back office
+and a till, open a shift, a takeaway sale paid in cash, a table seated
+from the floor and sent to the kitchen display, a guest's phone ordering
+at a table and the till accepting it, a UPI payment, a close with a blind
+count, a Z-report. Nothing critical or high was found. What was found and
+changed:
+  - **A client that leaves mid-request is not a 500.** Every screen
+    change at the till that cut a read short was logged as ERROR and
+    answered 500. The 61 uniform sites now go through
+    `internalError`, which notes a cancelled context at Debug and
+    writes nothing, since nobody is reading.
+  - **Invoice timestamps follow invoice numbers.** The clock was read
+    before the single writer was taken, so two settles could number in
+    the opposite order to their times, and across midnight N could be
+    dated after N+1. The clock is now read inside the transaction.
+  - **The file log cannot be stopped by a dead console**: the file is
+    the first sink and stdout is best effort. A rotation whose reopen
+    failed is retried on the next write.
+  - **The hub**: a device leaves the venue map the moment its stream
+    ends, not after the close handshake; eight connections per device
+    at most; a kitchen display may not replay the venue's whole history
+    (`from_start`), since a lent kitchen tablet should not read every
+    payment.
+  - **The relay masks table codes in its log** (the venue server already
+    did, ADR-205) and limits each client address as well as each venue,
+    so one phone cannot lock a venue's guests out. Two new settings,
+    `RELAY_IP_PER_MINUTE` and `RELAY_IP_BURST`.
+  - **A printer on loopback or link-local may only be on 9100**; a
+    private address keeps any port. **A bucket over plain `http`** must
+    be on this network (a private IP or a single-label name).
+  - **`sign_in_attempts` is pruned** past thirty days, once an hour.
+  - **The server has an idle timeout** and closes its listener on an
+    early exit.
+  - **The till**: a slow guest poll cannot overwrite a newer order; a
+    `resync` empties the order cache so a restored backup is believed; a
+    response whose body stalls times out; a WebSocket that opens but
+    never says welcome is retried after ten seconds; a board refresh
+    cancels the poll it replaces; two dialogs no longer leave the page
+    unscrollable; `/shift/close` typed by hand is sent back without
+    `shift.manage` (the leftover of ADR-197).
+  - **The docs**: fifteen mismatches corrected (the shortcut is a
+    window, not full screen, unless ticked; **Staff**, not People;
+    `/kitchen` is where a kitchen display pairs; `-timezone` defers to
+    the environment; `pair`'s default names; `setup-link` with a venue;
+    `restore -path` and `-config`; the probe's ten seconds; the pairing
+    screens' exact words; what needs no device token; the release
+    workflow's first job). `running.md` gains "A day at the till", and
+    `deploy.md`'s first-run steps now say how to add staff, tables and
+    each kind of device.
+  - **Tailwind's `break-words` is written `wrap-break-word`** (its v4
+    name) in the four places it appeared.
+Because: an alpha about to be put beside a real till should have been
+read once by people who did not write it, and the cheapest hour is
+before the first cafe.
+Cost: `internalError` lost per-site wording in a few logs (the message
+is the same, the extra fields kept). The relay's per-address limit is a
+guess at a phone's rate (120 a minute, burst 60) and may need raising
+for a shared address such as a venue's own wifi NAT, which is why it is
+a setting. Not done, and written in `KNOWN.md`: the stream still sends
+every event to any terminal or back office device with no staff
+session; a leaked relay key is trusted until the relay restarts; a
+self-reset of one's own PIN asks for no old PIN; secrets may still be
+passed as flags; the Windows spooler send cannot be cancelled; a
+gateway checkout started twice at once leaves an orphan to lapse.

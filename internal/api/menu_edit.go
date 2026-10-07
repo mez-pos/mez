@@ -359,8 +359,6 @@ func (s *Server) writeMenuEditError(w http.ResponseWriter, r *http.Request, err 
 		writeError(w, s.log, http.StatusConflict, CodeMenuOrderStale,
 			"The menu changed since you opened it. Reload and put it in order again.")
 	default:
-		s.log.Error("a menu editor request failed",
-			"request_id", RequestID(r.Context()), "method", r.Method, "path", s.loggedPath(r), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "a menu editor request failed", err)
 	}
 }

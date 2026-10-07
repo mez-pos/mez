@@ -436,6 +436,10 @@ type Querier interface {
 	// Sessions at a table that expired before a moment ago: no use to anyone,
 	// and a table hands out a few every sitting.
 	PruneGuestSessions(ctx context.Context, arg PruneGuestSessionsParams) error
+	// Drops attempts older than a cutoff. The lockouts read the latest few rows
+	// only, so nothing a month old decides anything, and the table would
+	// otherwise grow by every PIN ever typed.
+	PruneSignInAttempts(ctx context.Context, at time.Time) (int64, error)
 	// The venue's receipt printer, if it has one in service.
 	ReceiptPrinter(ctx context.Context, venueID int64) (ReceiptPrinterRow, error)
 	// The device's latest failed attempts, of any staff member, newest first.

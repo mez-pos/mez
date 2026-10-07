@@ -132,8 +132,7 @@ func (s *Server) pickupVenueFor(w http.ResponseWriter, r *http.Request) (tableco
 		return tablecodes.Venue{}, false
 	}
 	if err != nil {
-		s.log.Error("reading a pickup code failed", "request_id", RequestID(r.Context()), "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading a pickup code failed", err)
 		return tablecodes.Venue{}, false
 	}
 	if info := infoFrom(r.Context()); info != nil {
@@ -243,8 +242,7 @@ func (s *Server) guestPlacePickup(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := toGuestRoundResponse(round)
 	if err != nil {
-		s.log.Error("encoding an order to collect failed", "request_id", RequestID(r.Context()), "round", round.PublicID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "encoding an order to collect failed", err, "round", round.PublicID)
 		return
 	}
 	status := http.StatusCreated
@@ -270,8 +268,7 @@ func (s *Server) guestTrackPickup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		s.log.Error("tracking an order to collect failed", "request_id", RequestID(r.Context()), "venue_id", venue.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "tracking an order to collect failed", err, "venue_id", venue.VenueID)
 		return
 	}
 	// Its ticket is not said: a receipt is asked for by a table's code
@@ -279,8 +276,7 @@ func (s *Server) guestTrackPickup(w http.ResponseWriter, r *http.Request) {
 	round.Bill = ""
 	resp, err := toGuestRoundResponse(round)
 	if err != nil {
-		s.log.Error("encoding an order to collect failed", "request_id", RequestID(r.Context()), "round", round.PublicID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "encoding an order to collect failed", err, "round", round.PublicID)
 		return
 	}
 	writeJSON(w, s.log, http.StatusOK, resp)
@@ -336,8 +332,7 @@ func (s *Server) guestPickupCharge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		s.log.Error("reading the charge of an order to collect failed", "request_id", RequestID(r.Context()), "venue_id", venue.VenueID, "error", err)
-		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
+		s.internalError(w, r, "reading the charge of an order to collect failed", err, "venue_id", venue.VenueID)
 		return
 	}
 	c, err := s.charges.Settle(r.Context(), venue.VenueID, id)

@@ -77,6 +77,8 @@ func TestRunRefuses(t *testing.T) {
 		{"a short secret", nil, map[string]string{envSecret: "short"}, "at least"},
 		{"a rate that is not a number", nil, with(envVenueRPM, "fast"), envVenueRPM},
 		{"a zero burst", nil, with(envVenueBurst, "0"), envVenueBurst},
+		{"an address rate that is not a number", nil, with(envIPRPM, "lots"), envIPRPM},
+		{"a negative address burst", nil, with(envIPBurst, "-1"), envIPBurst},
 		{"a trust setting that is not a boolean", nil, with(envTrustProxy, "maybe"), envTrustProxy},
 		{"a log level that is not one", nil, with(envLogLevel, "loud"), envLogLevel},
 		{"an address that cannot be listened on", nil, with(envListen, "not an address"), "listening"},
@@ -121,6 +123,8 @@ func TestServeAnswersHealthAndStopsCleanly(t *testing.T) {
 		envListen:     "127.0.0.1:0",
 		envVenueRPM:   "90",
 		envVenueBurst: "9",
+		envIPRPM:      "30",
+		envIPBurst:    "3",
 		envLogLevel:   "debug",
 	})
 	listening := make(chan string, 1)
@@ -164,6 +168,9 @@ func TestServeAnswersHealthAndStopsCleanly(t *testing.T) {
 	var first map[string]any
 	if err := json.Unmarshal([]byte(strings.SplitN(logs, "\n", 2)[0]), &first); err != nil {
 		t.Fatalf("the first log line is not JSON: %v\n%s", err, logs)
+	}
+	if first["ip_rpm"] != float64(30) || first["ip_burst"] != float64(3) {
+		t.Errorf("the listening line did not carry the address limits: %v", first)
 	}
 	if first["venue_rpm"] != float64(90) || first["venue_burst"] != float64(9) {
 		t.Errorf("startup line = %v, want the limits it was given", first)
