@@ -111,6 +111,25 @@ screen shows:
 ./mez unlock -staff stf_A1B2C3D4
 ```
 
+A forgotten PIN is reset on the **Staff** screen by someone who holds more
+than the person does: a manager resets a waiter's, an owner a manager's, and
+only another owner an owner's. A venue with one owner who has forgotten
+theirs has nobody to ask, so `mez reset-pin` gives a new one at the machine
+(ADR-304). Run it with nothing to see who there is and their ids, then with
+the id:
+
+```sh
+./mez reset-pin
+./mez reset-pin -staff stf_A1B2C3D4
+```
+
+It prints a new six-digit PIN, once. The person is signed out everywhere and
+any lock on them is cleared; they sign in with it and change it under Staff.
+The PIN is drawn, not typed on the command line, so it is not left in the
+shell's history. Anyone who can run commands as the account that owns the
+data directory can do this, which is the same trust `mez pair` and
+`mez unlock` rest on: keep that machine and that account to people who may.
+
 `-demo-menu` makes the venue a demo cafe for trying it out: a menu, twelve
 tables in two areas, and a person for each role (a manager, a cashier, a
 waiter and a kitchen cook) with PINs that `setup` prints. Those PINs are public, so never
@@ -190,7 +209,7 @@ sits in one directory:
 | Linux, under the systemd unit | `/var/lib/mez`, which the unit sets |
 | Docker | `/data` in the container, the volume `mez-data` |
 
-Every command that reads the venue (`setup`, `pair`, `unlock`, `restore`,
+Every command that reads the venue (`setup`, `pair`, `unlock`, `reset-pin`, `restore`,
 `setup-link`, `table-codes`) looks in the same place, and takes `-data-dir`
 when the server was given one.
 
@@ -379,6 +398,7 @@ is what they trust; each takes `-h`.
 | `mez setup-link` | Prints the address of the setup wizard, with its token, while there is no venue; with one, the till's address |
 | `mez pair` | Makes a pairing code for one more device |
 | `mez unlock -staff stf_...` | Clears the lock on a person whose PIN kept failing |
+| `mez reset-pin` | Lists who works at the venue with their ids; with `-staff stf_...`, gives that person a new PIN, shown once, and clears their lock |
 | `mez table-codes` | Lists every table with the code a guest's phone scans, making any that are missing. The back office's Floor plan prints them |
 | `mez restore` | Brings a venue back from its backup into an empty data directory ([`deploy.md`](deploy.md#getting-a-venue-back)) |
 | `mez service install`, `uninstall`, `start`, `stop`, `status` | The Windows service ([`deploy.md`](deploy.md#windows)) |

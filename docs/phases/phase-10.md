@@ -333,7 +333,7 @@ session; split one again if it is not.
   Three small things found on 2026-10-08. None depends on Tasks 8 to 11,
   and 12a should not wait for them: do it in any session with time left.
 
-  - [ ] **Task 12a: Can a venue get back in when its owner forgets the
+  - [x] **Task 12a: Can a venue get back in when its owner forgets the
     PIN?** Find out first, then build only what is missing. `mez unlock`
     clears a lockout and does not set a PIN. Check whether anyone else may
     reset the owner's PIN from Staff, and what a venue whose only owner

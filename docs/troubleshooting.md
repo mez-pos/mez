@@ -188,6 +188,49 @@ Check in this order. Each step rules out everything before it.
   the server's data was replaced (a restore on a new computer, a new
   install). Pair it again.
 
+## Someone cannot sign in
+
+### "That PIN isn't right", over and over, then nothing works
+
+A PIN that keeps failing locks the person. Someone who manages staff
+clears it on the **Staff** screen: the person shows as Locked, with
+**Unlock** beside them. If nobody who could is able to sign in either,
+run this at the computer mez runs on, with the id the Staff screen shows:
+
+```sh
+mez unlock -staff stf_A1B2C3D4
+```
+
+### They have forgotten their PIN
+
+Someone above them resets it on the **Staff** screen, under the person's
+**...**: a manager for a waiter or a cashier, an owner for a manager, and
+another owner for an owner.
+
+### The owner has forgotten theirs, and there is no other owner
+
+Nobody in the back office can reset an owner's PIN but an owner, so this is
+done at the computer mez runs on. Open a terminal there (on Windows, as an
+administrator) and list who there is:
+
+```sh
+mez reset-pin
+```
+
+It prints everyone with an id like `stf_A1B2C3D4`. Then, with the owner's:
+
+```sh
+mez reset-pin -staff stf_A1B2C3D4
+```
+
+It prints a new six-digit PIN, once. Sign in with it and change it under
+**Staff**. Their lock, if they had locked themselves trying, is cleared with
+it. If mez was started with `-data-dir`, give both commands the same one.
+
+It does not stop the server and nothing else changes. If the command says
+there is no database, it is looking in the wrong place: see
+[`running.md`](running.md), "Where the data lives".
+
 ## Windows warns about the installer
 
 The installer is not signed, because this project has no certificate. So

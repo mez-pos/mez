@@ -10923,3 +10923,46 @@ export read "Spice; Toppings". The demo's Latte exported "Size; Milk;
 Extras". Not walked: a choices file from a real spreadsheet, an item
 rung up on a till with its imported groups (tested on the server, as far
 as the terminal's menu), and the dialog under 1024px.
+
+## ADR-304 - A venue whose only owner forgot the PIN gets back in with `mez reset-pin`, at the machine
+2026-10 · Status: accepted. Phase 10, Task 12a.
+Context: the task was to find out first. What was found: in the back
+office a PIN is reset only by someone who holds strictly more than the
+person does, and an owner's only by another owner (ADR-115,
+`people.ResetPIN`). `mez unlock` clears a lock and gives nobody
+anything to type (ADR-260). So a venue with two owners is safe, and a
+venue with one owner who has forgotten the PIN could not get into its
+own back office by any means short of editing the database. Most small
+venues have one owner. The hole was real.
+Decision: `mez reset-pin`, run at the machine like `mez pair` and
+`mez unlock`.
+  - **With no `-staff` it lists who works at the venue**: id, name,
+    role, and whether each is locked or gone. The person who needs this
+    cannot open the Staff screen to find their id, and it is what the
+    lock screen shows of them and nothing more. Listing is a success,
+    not an error: it is the first step.
+  - **With `-staff stf_...` it draws a new PIN and prints it once.** It
+    is drawn here, six digits from `crypto/rand` as setup draws one, and
+    never taken as a flag: a PIN typed on a command line is in the
+    shell's history for whoever looks. Six digits is long enough for the
+    most a role may do (ADR-260), so the person's role is not read.
+  - **It clears the person's hard lock and their lockouts**, since
+    someone who forgot a PIN has usually been locked trying, and it
+    **ends their sessions**, as a reset in the back office does.
+  - **It is for anyone, not only an owner**, as `mez unlock` is. A
+    person who no longer works there is refused.
+  - **The trust is being at the machine**: whoever can run commands as
+    the account that owns the data directory. That account can already
+    read the database, pair a device and clear a lock.
+  - **Its record is the log**: a WARN line with the person's id. The
+    staff tables keep no history of their own; a reset on the Staff
+    screen leaves none either. The task said "the audit log", and there
+    is none for staff to write to. That is a gap of its own, noted here
+    and not filled.
+Cost: anyone with a shell on the till's computer as that account can
+make themselves the owner. That was already true by other means, and is
+now one command; `running.md` says so beside it. The new PIN is on the
+terminal's screen and in its scrollback. Tested: a locked-out owner is
+given a PIN that signs them in, the old one stops working, the lock and
+lockouts are cleared and every session ended. Run for real against a
+demo venue: the list, and a new PIN for a waiter.
