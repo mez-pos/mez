@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 7b: hardware, printers and drawers** (ADR-282).
+**Phase 12, Task 7c: troubleshooting** (ADR-283).
+`docs/troubleshooting.md`: the printer not found or not printing, a tablet
+that cannot reach the server, Windows's warning, guests who cannot order
+from their phones, the drawer that will not open. Each from the screen's
+own words, then what to check in order. Documentation only.
+
+Before it, **Phase 12, Task 7b: hardware, printers and drawers** (ADR-282).
 `docs/hardware.md`, from the print code: the commands a printer must take,
 network and Windows USB, 80mm and 58mm, what prints where, ASCII only on
 paper, the drawer's fixed pulse, the queue's retries. It says no printer

@@ -169,7 +169,7 @@ Phase 11.
     will not kick. Each from what the person sees, with the words mez
     itself uses taken from the code, then what to check in order.
     `running.md`'s "When it will not start" stays and is linked.
-  - [ ] **Task 7d - The relay guide.**
+  - [x] **Task 7d - The relay guide.**
     `build/relay/README.md` checked against `cmd/relay` and
     `internal/tunnel`, with the venue's side of it (the two settings,
     what the till shows, what a guest sees when it is down) written

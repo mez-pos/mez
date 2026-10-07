@@ -254,7 +254,7 @@ try failed:
 
 | It says | What it means | What to do |
 |---|---|---|
-| "Guests order at the counter. Ordering from a phone needs a relay address and key in this venue's settings file." | No relay is set. Nothing is wrong | To turn it on, set `relay_url` and `relay_key` ([`running.md`](running.md#changing-the-port-and-everything-else)) and restart mez |
+| "Guests order at the counter. Ordering from a phone needs a relay address and key in this venue's settings file." | No relay is set. Nothing is wrong | To turn it on: [`deploy.md`](deploy.md#guests-ordering-from-their-phones) |
 | "Reaching the relay. Guests cannot order from their phones until it answers." | It is connecting now | Wait a few seconds |
 | "The relay cannot be reached, so guests cannot order from their phones. The counter is not affected." | The last try failed, and another is coming | See below |
 | "The relay does not accept this venue's key..." | The key is wrong, or was turned off at the relay | Check `relay_key` was copied whole. Otherwise ask whoever runs the relay for a new one |

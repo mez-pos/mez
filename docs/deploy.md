@@ -10,6 +10,7 @@ the same binary; they differ only in what starts it and where the data lives.
 - [Linux](#linux)
 - [Docker](#docker)
 - [On a domain with HTTPS](#on-a-domain-with-https)
+- [Guests ordering from their phones](#guests-ordering-from-their-phones)
 - [Backups](#backups)
 - [Upgrading](#upgrading)
 
@@ -32,9 +33,8 @@ network at TCP port 9100.
 
 Guests ordering from their own phones do not change this. The server stays
 in the building and dials out to a relay, which is the only part on the
-internet: set `relay_url` and `relay_key` ([`running.md`](running.md#changing-the-port-and-everything-else)),
-and see [`build/relay/README.md`](../build/relay/README.md) to run a relay
-of your own. A cloud-hosted mez is a demo, not a till.
+internet: see [Guests ordering from their phones](#guests-ordering-from-their-phones).
+A cloud-hosted mez is a demo, not a till.
 
 ## Getting a binary
 
@@ -542,6 +542,103 @@ designed for a venue's own network. On the open internet, also:
 - revoke any device you no longer use, under **Devices**;
 - give staff PINs of six or more digits;
 - keep the server's OS updated, and expose only ports 80 and 443.
+
+## Guests ordering from their phones
+
+A guest scans the code on their table, sees the menu on their own phone,
+and orders; the order arrives at the till as a request for staff to accept.
+The phone has to be able to reach the server, and the server is in the
+building with no address on the internet. A **relay** gives it one: mez
+dials out to the relay and holds the connection open, and the relay passes
+each guest's request down it. Nothing at the venue is opened to the
+internet, and no port is forwarded on the router.
+
+It is optional. Without it mez calls nothing on the internet, and guests
+order at the counter.
+
+**1. Get an address and a key.** From whoever runs the relay, or run one
+yourself ([`build/relay/README.md`](../build/relay/README.md): one small
+server and a domain). You are given:
+
+- the relay's address, such as `https://relay.example.com`;
+- a key for your venue, which begins `mzr_`. It is a secret: anyone holding
+  it can answer guests in your venue's name;
+- the address guests reach your venue at, such as
+  `https://my-cafe.example.com`.
+
+**2. Give mez three settings.**
+
+| Setting | Value | For |
+|---|---|---|
+| `relay_url` | The relay's address, with nothing after the host | Where mez dials |
+| `relay_key` | The key | Who mez says it is |
+| `public_url` | The address guests reach your venue at | What is drawn into each table's code |
+
+All three are needed. Without `public_url` the link comes up but no code
+can be printed: the back office says "The venue has not said where guests
+reach it."
+
+Where they go ([`running.md`](running.md#changing-the-port-and-everything-else)
+has every way):
+
+- **Windows, installed**: a file `C:\Program Files\mez\config.toml`, made
+  in an editor opened as administrator:
+
+  ```toml
+  relay_url  = "https://relay.example.com"
+  relay_key  = "mzr_my-cafe...."
+  public_url = "https://my-cafe.example.com"
+  ```
+
+  Every account on the computer can read a file in that folder, the key
+  with it. On a till that staff sign in to Windows on, know that.
+- **Linux, under systemd**: in `/etc/mez/mez.env`, readable only by root
+  (`sudo mkdir -p /etc/mez && sudo install -m 600 /dev/null
+  /etc/mez/mez.env` first):
+
+  ```
+  MEZ_RELAY_URL=https://relay.example.com
+  MEZ_RELAY_KEY=mzr_my-cafe....
+  MEZ_PUBLIC_URL=https://my-cafe.example.com
+  ```
+
+- **Docker**: the same three names under `environment:` in
+  `build/docker-compose.yml`, where they wait commented out.
+
+**3. Restart mez**, since settings are read when it starts: `mez service
+stop` and `start`, `sudo systemctl restart mez`, or `docker compose up -d`.
+A setting that cannot be right stops mez from starting, and it says which.
+
+**4. Check it.** In the back office, **Devices**, **Ordering from phones**
+should say "Guests can order from their phones. Connected since ...". Then
+open the address guests use on a phone that is **not** on the venue's
+Wi-Fi.
+
+**5. Print the codes.** In the back office, on the **Floor plan**, each
+table has a code and there is a sheet of all of them to print and cut up.
+A code holds the address, so changing `public_url` later means printing
+them again.
+
+What to know before relying on it:
+
+- **It needs the internet, and only it does.** When the venue's internet or
+  the relay is down, a guest sees "Ordering is offline ... Please order at
+  the counter", and the counter goes on as before.
+  [`troubleshooting.md`](troubleshooting.md#guests-cannot-order-from-their-phones)
+  has what each state means and what to do.
+- **Whoever runs the relay can see what passes through it**: what guests
+  order, and from which table. It keeps none of it, but the guest's secure
+  connection ends at the relay and a second one carries it on to you. Use a
+  relay run by someone you would trust with that, or your own.
+- **One computer per key.** A second mez started with the same key takes
+  the guests from the first.
+- **A relay allows each venue 1200 requests a minute** unless its operator
+  raised it, which a full room of phones can pass (ADR-246). Guests past
+  the limit are asked to try again.
+- **Taking payment from guests' phones** is a further setting, a payment
+  gateway's keys: see `gateway` in
+  [`running.md`](running.md#changing-the-port-and-everything-else). The
+  gateway reports back to `public_url`, so it needs the relay up too.
 
 ## Backups
 

@@ -30,8 +30,12 @@ services:
       # Optional: with these left out, nothing in mez calls the internet. The
       # address and the key come from whoever runs the relay; build/relay has
       # what it takes to run your own.
-      # MEZ_RELAY_URL: wss://relay.example.com/tunnel
-      # MEZ_RELAY_KEY: the-key-you-were-given
+      # The third is the address guests reach this venue at, which each
+      # table's code is drawn from. docs/deploy.md, "Guests ordering from
+      # their phones".
+      # MEZ_RELAY_URL: https://relay.example.com
+      # MEZ_RELAY_KEY: mzr_the-key-you-were-given
+      # MEZ_PUBLIC_URL: https://my-cafe.example.com
     volumes:
       - mez-data:/data
 

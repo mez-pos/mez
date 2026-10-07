@@ -8,34 +8,34 @@
 ## Current phase
 
 **Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 to 6 built;
-Task 7, the documentation, is split in six (7a to 7f): 7a, 7b and 7c are
+Task 7, the documentation, is split in six (7a to 7f): 7a to 7d are
 done. Phase 11 has nothing left to build (Cashfree left out, ADR-254)
 and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 7c: troubleshooting** (ADR-283).
-`docs/troubleshooting.md`: the printer not found or not printing, a
-tablet that cannot reach the server, Windows's warning, guests who
-cannot order from their phones, the drawer that will not open. Each
-starts from the screen's own words, quoted from the code, then what to
-check in order. `running.md` links it; `hardware.md` no longer says the
-back office can search for a printer (only the wizard can).
-Documentation only; none of it followed at a venue.
+**Phase 12, Task 7d: the relay guide** (ADR-284). The venue's side is
+`deploy.md`, "Guests ordering from their phones": the three settings
+(`relay_url`, `relay_key` and `public_url`, which no guide had named for
+it), where they go on each platform, how to check, the codes, and what
+to know. `build/relay/README.md`, for the operator, gains the key's
+form, the venue id's rule, every setting and what to back up. The
+compose file's example address was wrong (`.../tunnel`; mez adds
+`/agent` itself) and is corrected, in a comment.
 
 ## Next task
 
-**Phase 12, Task 7d: the relay guide.** Check `build/relay/README.md`
-against `cmd/relay` and `internal/relay`, and write the venue's side
-where an owner will find it: the two settings, the key's form (the
-client wants a prefix, `keyPrefix` in `internal/tunnel/client.go`), what
-the address is, what a guest sees. `troubleshooting.md` already has the
-states and what to do: link, do not repeat. The compose file's example
-says `wss://relay.example.com/tunnel` and the README
-`https://relay.example.com`: mez takes both schemes; find out what it
-does with a path and make the two agree. Then 7e CONTRIBUTING, 7f the
-README, which still says the installer arrives in phase 12 and must
-list `hardware.md` and `troubleshooting.md`. **For the owner, not a
+**Phase 12, Task 7e: CONTRIBUTING, with the architecture.** Check
+`CONTRIBUTING.md` (287 lines) against the repository as it is: the Go
+and Node versions (go.mod says 1.25, toolchain 1.26.8), the make
+targets, "Where things are" against `internal/`, the dev loop
+(`build/dev.sh`, `make dev`). Add an overview a newcomer reads in five
+minutes: the packages and what calls what (`domain` pure, `service`
+over `db`, `api` over `service`, `device` for printers, `tunnel` and
+`relay`), and one order from a tap to a printed ticket. Link
+`01-architecture.md`, do not copy it. Then 7f the README, which still
+says the installer arrives in phase 12 and must list `hardware.md` and
+`troubleshooting.md`. **For the owner, not a
 task**: push a tag to try the release (`docs/releasing.md`); expect the
 first to need a second try. **Do not move Litestream past v0.5.15
 without running the tests on Windows.** Before a release,

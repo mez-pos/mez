@@ -10148,3 +10148,39 @@ drawer's locked key position, 12 and 24 volt drawers. **None of the five
 was reproduced**: there is no printer or drawer here, and no relay was
 taken down for it.
 ---
+
+## ADR-284 - The relay has two guides: the venue's in `deploy.md`, the operator's beside its files
+2026-10 · Status: accepted. Phase 12, Task 7d.
+Decision:
+  - **The venue's side is a section of `deploy.md`**, "Guests ordering
+    from their phones", since that is the guide an owner already has
+    open: what a relay is for, the three settings, where they go on
+    Windows, under systemd and in Docker, how to check, printing the
+    codes, and what to know before relying on it.
+  - **Three settings, not two.** `public_url` is what a table's code is
+    drawn from, and without it the link comes up and no code prints. No
+    guide named it for the relay.
+  - **It says who can read what.** Whoever runs the relay sees guests'
+    orders pass, because the guest's TLS ends there. On an installed
+    Windows venue the key is in a file every account can read.
+  - **`build/relay/README.md` stays the operator's**, and gains what the
+    code says and it did not: the key's three parts and that it cannot be
+    read back, the venue id's rule and the reserved names, a table of
+    every setting, the log's lines, backing up `.env`, and that
+    Cloudflare's ranges are written in as of a date.
+  - **The compose file's example was wrong** and is corrected:
+    `wss://relay.example.com/tunnel` would have dialled
+    `/tunnel/agent`, which the relay does not serve. mez puts `/agent`
+    on the end of whatever path `relay_url` has. `https://` and `wss://`
+    are both taken; the guides say `https://`. A comment only.
+  - **The relay's `/v/<venue>/` addresses are not described.** They are
+    served when no venue domain is set, and have not been run since
+    ADR-203 gave each venue a hostname.
+Because: the owner and the operator are usually different people, and
+each needs one page.
+Cost: `troubleshooting.md` and this section both speak of the relay
+being down, one linking the other. **Checked**: the relay's `help` and
+`issue-key`, a reserved and a malformed venue id refused, and
+`relay.jskin.in/healthz` and an unknown venue's 503, on 2026-10-07.
+**Not done**: a venue connected by following the section from nothing.
+---

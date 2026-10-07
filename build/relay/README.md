@@ -1,5 +1,9 @@
 # Deploying the relay
 
+For whoever runs a relay. A venue's owner who has been given an address and
+a key wants [`docs/deploy.md`](../../docs/deploy.md#guests-ordering-from-their-phones),
+"Guests ordering from their phones".
+
 The optional relay on one small server, behind Cloudflare, with a hostname per
 venue (`<venue>.<domain>`, ADR-203). These are the files that put the relay at
 `relay.jskin.in` (ADR-204), and they will put it anywhere else.
@@ -62,14 +66,32 @@ docker compose logs -f relay                            # who connected, each re
 docker compose ps
 ```
 
-A venue then sets, in its `config.toml` or environment:
+The venue's id is the first part of its guests' address, so it is 1 to 63
+of `a-z`, `0-9` and `-`, not starting with `-`. Names the domain needs for
+itself are refused (`relay`, `www`, `api`, `mail`, `order` and others). The
+command prints the key and nothing else:
 
-```toml
-relay_url = "https://relay.example.com"
-relay_key = "mzr_my-cafe...."
+```
+mzr_my-cafe.fdbb6a9c35fc.BfVAbIS-M7BVligd79sIBiEBKHPq6EzqkYj_aW9cpvQ
 ```
 
-and its guests reach it at `https://my-cafe.example.com/`.
+The middle part is the key's id. It is not secret, and it is what the log
+and a revocation name. The whole key is a secret: send it to the venue the
+way you would send a password. The relay keeps no list of keys, so a key
+cannot be read back later; issue another.
+
+A venue then sets three things, in its `config.toml` or environment:
+
+```toml
+relay_url  = "https://relay.example.com"
+relay_key  = "mzr_my-cafe...."
+public_url = "https://my-cafe.example.com"
+```
+
+and its guests reach it at `https://my-cafe.example.com/`. `relay_url` is
+the relay's address with nothing after the host: mez adds `/agent` itself,
+so an address ending in a path dials somewhere the relay does not answer.
+`public_url` is what the venue's table codes are drawn from.
 
 To turn a key or a venue off, add the key id (it is in the log line when the
 venue connects) or the venue id to `RELAY_REVOKED` in `.env`, comma-separated,
@@ -83,4 +105,53 @@ curl -i https://nobody.example.com/             # 503, "Ordering is offline"
 ```
 
 The second is right: a venue that is not connected and one that does not exist
-get the same answer.
+get the same answer. Both were asked of `relay.jskin.in` on 2026-10-07 and
+answered so.
+
+## Settings
+
+`deploy.sh` writes the first three into `.env`; the rest have defaults and
+are added there, and to `compose.yml`'s `environment:`, only to change them.
+`relay help` lists them.
+
+| Name | What | Default |
+|---|---|---|
+| `RELAY_SECRET` | Signs every venue's key. At least 32 characters | Required |
+| `RELAY_VENUE_DOMAIN` | Each venue is at `<venue>.<this domain>` | Empty; `deploy.sh` always sets it |
+| `RELAY_REVOKED` | Venue ids and key ids to refuse, comma-separated | None |
+| `RELAY_TRUST_PROXY` | `true` when your own proxy sets `X-Forwarded-For`. `compose.yml` sets it, for Caddy | `false` |
+| `RELAY_VENUE_RPM` | Requests a minute each venue may receive | 1200 |
+| `RELAY_VENUE_BURST` | Requests at once each venue may receive | 300 |
+| `RELAY_LISTEN_ADDR` | Where it listens, in plain HTTP | `:8080` |
+| `RELAY_LOG_LEVEL` | `debug`, `info`, `warn` or `error` | `info` |
+
+1200 a minute is less than a full room of phones can ask for at once
+(ADR-246); a guest past it is told "A lot of people are ordering at once.
+Please try again in a few seconds." Raise it for a busy venue.
+
+Set `RELAY_VENUE_DOMAIN`. A hostname for each venue is the way these files
+deploy it and the way it has been run (ADR-203); the relay's older
+`/v/<venue>/` addresses, which it serves when the domain is left out, have
+not been run with the guest app as it now is, and are not described here.
+
+## What it keeps, and what you must
+
+The relay stores nothing: no venues, no orders, no keys. A guest's request
+is passed down the venue's socket and the answer passed back. It does see
+them as they pass, since the guest's TLS ends here: say so to the venues
+you serve.
+
+- **Back up `/opt/mez-relay/.env`**, somewhere that is not this server. It
+  holds the signing secret. Lose it and every venue needs a new key, set
+  by hand at the venue.
+- **The log is the only record** of who connected: `relay: venue
+  connected`, `relay: venue disconnected`, `relay: venue connection
+  replaced` (a second computer with the same key), `relay: venue key
+  refused`, and a line a request. Docker keeps it until the container is
+  made again.
+- **Cloudflare's address ranges are written into `Caddyfile`**, as of
+  2026-10, and into your firewall. Check both against
+  [the list](https://www.cloudflare.com/ips/) now and then: a range
+  Cloudflare adds and you have not is guests turned away.
+- The relay is not part of a release: there is no image of it to pull. It
+  is built on the server by `deploy.sh`, from a clone.

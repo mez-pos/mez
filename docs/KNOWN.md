@@ -10,6 +10,16 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The relay's guides** (ADR-284; phase 12 Task 7d; `deploy.md`,
+  "Guests ordering from their phones"; `build/relay/README.md`). Checked
+  against the code, the relay's binary and two answers from
+  `relay.jskin.in`. **Not done for it**: a venue set up by following the
+  new section from nothing; the three settings through the compose file
+  or `/etc/mez/mez.env`. On an installed Windows venue the key sits in
+  `C:\Program Files\mez\config.toml`, which every account on the PC can
+  read. The relay's `/v/<venue>/` addresses (no venue domain) are left
+  undescribed: not run with the guest app as it is.
+
 - **Troubleshooting** (ADR-283; phase 12 Task 7c; `troubleshooting.md`).
   The screens' words are quoted from the code. **None of the five has
   been followed at a venue**: no printer, no drawer, no second device
