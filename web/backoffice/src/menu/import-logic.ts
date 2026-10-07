@@ -5,6 +5,8 @@
 import type { MenuImport, MenuImportProblem } from "../../../shared/api-types";
 
 export const templatePath = "/api/v1/menu/import/template";
+/** The whole menu as a file the import takes back (ADR-293). */
+export const exportPath = "/api/v1/menu/export";
 
 /** The largest file the server reads (menus.MaxImportBytes). */
 export const maxImportBytes = 1 << 20;

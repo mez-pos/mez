@@ -25,8 +25,8 @@ Inside the frame (`backoffice-shell.md`).
 - **The head:** "Menu Management" in the serif, and "Create and manage
   items, categories and their choices. Changes reach every order screen at
   once." At the right, on Items: the search ("Search menu items"), a select
-  of what to show (**All items**, Active, Sold out, Retired), **Import**,
-  and **Add New Item** (terracotta).
+  of what to show (**All items**, Active, Sold out, Retired), **Export**,
+  **Import**, and **Add New Item** (terracotta).
 - **Three views**, as pills under the head: **Items**, **Choices**,
   **Stations and courses**.
 - The screen's problem line, for a refusal that belongs to no field.
@@ -91,6 +91,23 @@ the editor drops below the other two.
   retired: "Add another before retiring it." A toast says what moved: "Bar
   retired. 10 items moved to Kitchen. Its printer now serves Kitchen."
 
+### Export (ADR-293, ADR-294)
+
+**Export** in the head, before Import, saves `mez-menu.csv`: every item on
+the menu, retired ones included, in menu order.
+
+- It is always the whole menu. The search, the select and the category
+  chosen do not narrow it: a copy that leaves out what a filter hid is not
+  a copy. Its title says so: "Save the whole menu as a CSV file".
+- While it is being read the button says **Exporting** and cannot be
+  pressed again. There is no toast when it lands: the browser shows the
+  download. A failure is a toast, "Couldn't download the file: ...".
+- The file has the import's columns and **Status**, so it opens in a
+  spreadsheet, and with rows added it can be given to **Import**, which
+  adds the new rows and leaves the rest alone.
+- It is off only while the menu is loading. A menu with no items exports
+  its headings.
+
 ### Import (ADR-288 to ADR-291)
 
 A modal from **Import** in the head, for a menu that is already written
@@ -128,6 +145,7 @@ down somewhere. It adds items; it never changes or removes one.
 
 ## Data
 
+- `GET /api/v1/menu/export` (ADR-293), saved as the reports' CSV files are.
 - `GET /api/v1/menu/import/template`, `POST /api/v1/menu/import/preview`
   and `POST /api/v1/menu/import` (ADR-289, ADR-290). The file is sent as
   it is, as `text/csv`, whatever type the browser gave it: Windows calls a
@@ -155,6 +173,7 @@ down somewhere. It adds items; it never changes or removes one.
 | Sold out today, Back on sale | Marks it until the trading day turns | Every order screen learns at once |
 | Retire, Bring back (an item) | No confirm: it is one click back | |
 | Retire (a category) | Asks first: "Its 6 items come off every order screen. You can bring it back." | |
+| Export | Saves the whole menu as `mez-menu.csv` | The filter does not narrow it |
 | Import | Opens the import (above) | Nothing is added until the file is checked and **Add** is pressed |
 | Move up, Move down | Moves a row one place and saves at once | Offered on items only when the list is one category, in menu order, unfiltered |
 

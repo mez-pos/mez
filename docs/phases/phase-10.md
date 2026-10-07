@@ -246,7 +246,7 @@ Tasks 8 to 12 were added by the human on 2026-10-08, after Task 7 was
 walked (ADR-292). They are in the order to build them. Each sub-task is one
 session; split one again if it is not.
 
-- [ ] **Task 8 — Export the menu to CSV.**
+- [x] **Task 8 — Export the menu to CSV.**
   The pair to the import: the menu as it is, in the import's own columns, so
   the file a venue downloads is a file it can give back. It is the owner's
   copy of the menu, and what Task 9 starts from.
@@ -257,7 +257,7 @@ session; split one again if it is not.
     Retired), which the import must then accept and ignore. Names are the
     venue's own, prices as the import reads them. Test: the export of a
     venue, previewed against it, has no problems and every row skipped.
-  - [ ] **Task 8b: The export on the screen.** **Export** beside Import in
+  - [x] **Task 8b: The export on the screen.** **Export** beside Import in
     the Menu screen's head, the spec first. Decide and write down whether
     it follows the screen's filter or is always the whole menu.
 

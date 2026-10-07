@@ -10528,3 +10528,27 @@ items and nothing else. A category with no items is not in the file at
 all. Status is written and never read, which an owner who types
 "Retired" on a new row will not expect; Task 9 is where a file first
 changes something that is there. The filename has no date in it.
+
+## ADR-294 - Export is a button in the Menu screen's head, and never follows the filter
+2026-10 · Status: accepted. Phase 10, Task 8b.
+Decision: **Export** sits before Import in the head of the Items view, a
+secondary button with a download icon. It saves `mez-menu.csv` through
+`useCsvFile`, the hook the reports and the import's template already
+use, so a download behaves one way everywhere: the button says
+**Exporting** and cannot be pressed twice, the browser shows the file,
+and a failure is a toast.
+  - **It is the whole menu whatever the screen shows.** The task left
+    this open. The search, the select and the category narrow the list;
+    they do not narrow the file. An export is the owner's copy of the
+    menu and the file Task 9 will edit, and one that silently left out
+    what a filter hid would be neither. The button's title says so.
+  - **No confirmation and no toast on success.** It changes nothing.
+  - It is on the Items view only, with Import, since both are about
+    items; the Choices and Stations views have no file.
+Cost: an owner who filtered to one category and wanted only that gets
+everything, and deletes rows in the spreadsheet. Walked in a browser on
+the dev venue on 2026-10-08: with the list searched down to one item
+the file held all nineteen, retired ones marked; that file with one row
+added, given to Import, offered the one row and left nineteen alone.
+Nothing was added. Not walked: the head under 1280px wide, where five
+controls now wrap.

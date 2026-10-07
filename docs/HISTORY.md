@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 10, Task 7d: the import's screen** (ADR-291). **Import** in the
+**Phase 10, Task 8a: the menu export on the server** (ADR-293).
+`GET /api/v1/menu/export`: the whole menu as `mez-menu.csv`, in the
+import's columns plus Status. `ReadImport` takes it back: it accepts
+Status unread, and skips an item already there in a retired category.
+
+Before it, **Phase 10, Task 7d: the import's screen** (ADR-291). **Import** in the
 Menu screen's head opens a modal: template, choose the file, what it
 would add or what is wrong by row and column, **Add N items**.
 `ImportModal.tsx`, `import-logic.ts`. Walked in a browser and by the

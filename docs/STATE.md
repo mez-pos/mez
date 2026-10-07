@@ -16,28 +16,27 @@ only being seen to work: the walks, a release, and a printer.
 
 ## Last completed task
 
-**Phase 10, Task 8a: the menu export on the server** (ADR-293).
-`GET /api/v1/menu/export`, `menu.edit`: the whole menu as
-`mez-menu.csv` (a `CsvResponse`), a row for each item in menu order,
-retired ones included, in the import's columns plus **Status**.
-`menu.ExportRows` in `internal/domain/menu/export.go`,
-`Service.ExportMenu` in `internal/service/menus/export.go`. The import
-takes it back: `ReadImport` accepts Status and does not read it, and an
-item already there in a retired category is skipped, not a problem. A
-test in each layer gives a venue's export to its own import. No button
-yet, so not seen from a browser.
+**Phase 10, Task 8b: the export on the screen** (ADR-294). **Export**
+before Import in the Menu screen's head saves `mez-menu.csv` through
+`useCsvFile`. It is always the whole menu, whatever the search, the
+select and the category show. Walked in a browser on the dev venue:
+searched down to one item, the file held all nineteen; with a row
+added it went back through Import as one to add and nineteen left
+alone. Task 8 is done. Not walked: the head under 1280px, where five
+controls wrap.
 
 ## Next task
 
-**Phase 10, Task 8b: the export on the screen.** Spec first, in
-`backoffice-menu.md`: **Export** beside Import in the Menu screen's
-head, a secondary button with a download icon. It is always the whole
-menu (ADR-293), so it is not turned off by the filter. `useCsvFile`
-from `sales/use-csv-download.tsx` already saves a `CsvResponse`:
-`download("/api/v1/menu/export")`, as the import's Download template
-does. Disabled while the menu is loading or a download is under way.
-Walk it in a browser against `make dev`: export, open the file, add a
-row, import it back.
+**Phase 10, Task 9: change prices from a file. An ADR first**, before
+any code, on two things the task leaves open: how a row finds its item
+(category and name, as the import does; what of two items with one
+name in one category, which the menu allows), and what a row that
+finds no item is (a problem, or left out and said so). Then **9a**:
+`internal/domain/menu`, pure, beside `ReadImport`: for each row its
+item, the price it has and the price the file gives; rows unchanged;
+rows that match nothing; problems by row and column. It reads the
+export's file (ADR-293), so its columns and its price parsing
+(`importPrice`) are the import's. Only the Price column is acted on.
 
 **Task 12a can be done first, in any session**: find out whether a
 venue whose owner forgot the PIN can get back in (`mez unlock` does not
