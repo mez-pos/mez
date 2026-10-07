@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**The audit between phases** (ADR-287, 2026-10-07). Four reviews at once
+**Phase 10, Task 7a: read and check the file** (ADR-288).
+`internal/domain/menu/import.go`: `ReadImport(data, ImportVenue)` answers
+an `ImportPlan` and writes nothing. CSV as a spreadsheet saves it; prices
+through `money.Parse`; no guessing at a tax class, station or course;
+adding only; one bad row refuses the file.
+
+Before it, **the audit between phases** (ADR-287, 2026-10-07). Four reviews at once
 (security, Go, TypeScript, docs against code) and a walk of the whole
 spine against the demo venue from `bin/mez`. No critical or high finding;
 what was fixed and what was left are under the ADR and in `KNOWN.md`.

@@ -229,11 +229,12 @@ Phase 09.
     adversarial ones included: a spreadsheet's byte order mark and
     semicolons, a currency symbol in the price, a repeated row, a retired
     category.
-  - [ ] **Task 7b: The import on the server.** A dry run that answers the
+  - [x] **Task 7b: The import on the server.** A dry run that answers the
     plan and writes nothing, and the import itself: the new categories and
     every item in one menu edit, so one version bump and one nudge, or none.
-    Refused whole if any row has a problem. `menu.edit`, an idempotency key,
-    a limit on the file's size. Go tests against a temp file database.
+    Refused whole if any row has a problem. `menu.edit`, a limit on the
+    file's size. No idempotency key is stored: the same file again adds
+    nothing (ADR-289). Go tests against a temp file database.
   - [ ] **Task 7c: The template.** A download from the server: the header
     row and example rows that use the venue's own category, tax class,
     station and course names, so the file imports as it comes.

@@ -43,6 +43,8 @@ type MenuEditor interface {
 	SetItemPhoto(ctx context.Context, venueID, id int64, data []byte) (string, error)
 	ClearItemPhoto(ctx context.Context, venueID, id int64) error
 	OpenPhoto(name string) (*os.File, error)
+	PreviewImport(ctx context.Context, venueID int64, data []byte) (menus.Import, error)
+	ImportMenu(ctx context.Context, venueID int64, data []byte) (menus.Import, error)
 }
 
 // WithMenuEditor mounts the menu editor (phase 10, Task 2a). It needs
@@ -126,6 +128,7 @@ func (s *Server) mountMenuEditor(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/menu/photos/{name}", s.servePhoto)
 
 	s.mountStationsAndCourses(handle)
+	s.mountMenuImport(handle)
 
 	handle("POST /api/v1/menu/groups", s.createGroup)
 	handle("PUT /api/v1/menu/groups/{id}", s.updateGroup)

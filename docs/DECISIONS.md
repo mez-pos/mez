@@ -10366,3 +10366,35 @@ is strict but cannot silently ignore a misspelt "Pirce". A new
 category's name is the file's first spelling of it. Two rows for one
 item in a file are a problem even when they agree. Not built yet: the
 endpoint, the template download and the screen (7b to 7d).
+
+## ADR-289 - The import is two routes that take the file, and a retry is safe without a key
+2026-10 · Status: accepted. Phase 10, Task 7b.
+Decision: `POST /api/v1/menu/import/preview` and `POST /api/v1/menu/import`,
+both `menu.edit`, both with the CSV file as the body (`text/csv`, at
+most 1 MB), as the photo route takes a JPEG. They answer the same shape
+(`MenuImport`): the rows to add with their prices, the new categories,
+the rows already there, the problems, and `imported`.
+  - **The preview is always a 200.** A file full of problems is answered
+    with the problems; that is what was asked. Only a body that is not a
+    file (wrong type, too large) is an error.
+  - **The import reads the file again, inside the write.** It does not
+    take a plan or a token from the preview. The venue is read through
+    the transaction and the file planned against that, so a menu edited
+    between the preview and the import is imported against as it is, and
+    cannot be written over from a stale plan.
+  - **One edit.** New categories, then every item, inside one
+    `db.EditMenu`: one version bump and one nudge to the terminals, or a
+    rollback. A file with any problem is a 422 `menu_import_refused` and
+    nothing is written.
+  - **No idempotency key is stored**, against the convention that every
+    mutating endpoint takes one. An import adds only what the menu does
+    not have, so the same file sent twice finds every item there, adds
+    nothing, leaves the version alone and answers 200 with
+    `imported: false`. The other menu edit routes store none either.
+Cost: the file is parsed twice, once to preview and once to import,
+which is a millisecond for a thousand rows. Each imported row is two
+statements (its place, then the insert), so a full file is about two
+thousand in one transaction, and the single writer is held for that
+long. The 422 does not carry the problems: the screen asks for the
+preview again. A file that passed its preview can still be refused if
+the menu changed in between, which is the point.

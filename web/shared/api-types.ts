@@ -104,6 +104,7 @@ export type ErrorCode =
   | 'menu_order_stale'
   | 'modifier_group_not_found'
   | 'photo_not_found'
+  | 'menu_import_refused'
   | 'stock_item_not_found'
   | 'stock_item_retired'
   | 'stock_name_taken'
@@ -1946,6 +1947,33 @@ export interface SoldOutResponse {
 export interface PhotoResponse {
   id: number;
   photo: string;
+}
+
+export interface MenuImport {
+  to_add: MenuImportItem[];
+  new_categories: string[];
+  skipped: MenuImportSkipped[];
+  problems: MenuImportProblem[];
+  imported: boolean;
+}
+
+export interface MenuImportItem {
+  row: number;
+  category: string;
+  name: string;
+  price: Money;
+}
+
+export interface MenuImportSkipped {
+  row: number;
+  category: string;
+  name: string;
+}
+
+export interface MenuImportProblem {
+  row: number;
+  column: string;
+  message: string;
 }
 
 export interface StockItemInput {

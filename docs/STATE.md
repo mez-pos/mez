@@ -14,28 +14,30 @@ to be seen working: the walks, a release, and a printer.
 
 ## Last completed task
 
-**Phase 10, Task 7a: read and check the file** (ADR-288).
-`internal/domain/menu/import.go`: `ReadImport(data, ImportVenue)`
-answers an `ImportPlan` (rows to add, new categories, rows already
-there, problems by row and column) and writes nothing. CSV as a
-spreadsheet saves it: a byte order mark, semicolons or tabs, headers in
-any case and order. Prices through `money.Parse`; a comma that does not
-group digits is a problem, not a guess. An empty tax class, station or
-course is the only active one, or a problem listing the names. Adding
-only: an item already there is skipped. 81 tests, 96% of the package.
-Nothing calls it yet.
+**Phase 10, Task 7b: the import on the server** (ADR-289).
+`POST /api/v1/menu/import/preview` answers what a CSV file would add
+and writes nothing; `POST /api/v1/menu/import` writes it. Both take the
+file as the body (`text/csv`, 1 MB), need `menu.edit` and answer
+`MenuImport` (`to_add`, `new_categories`, `skipped`, `problems`,
+`imported`). The import reads the file again inside the write, against
+the menu as it is then; new categories and every item go in one
+`db.EditMenu`. A file with a problem is a 422 `menu_import_refused`.
+The same file twice adds nothing and bumps nothing, so no idempotency
+key is stored. `internal/service/menus/import.go`,
+`internal/api/menu_import.go`. Not seen from a browser: no screen yet.
 
 ## Next task
 
-**Phase 10, Task 7b: the import on the server.** Build `ImportVenue`
-from the database in `internal/service/menus` (`Editor` already reads
-all of it; a course's `Also` is its number, a station's its code), then
-a dry run that answers the plan and an import that writes it: new
-categories and every item inside one `s.edit`, so one version bump and
-one nudge. Refuse unless `plan.OK()`. Read the file again inside the
-transaction, so a menu edited since the preview cannot be imported
-over. `menu.edit`, an idempotency key, a size limit on the body. Then
-7c (the template) and 7d (the screen, spec first).
+**Phase 10, Task 7c: the template.** `GET /api/v1/menu/import/template`,
+`menu.edit`: a CSV download with `menu.ImportColumns` as the header and
+two or three example rows that name the venue's own first active
+category, tax class, station and course (read with `importVenue`), so
+the file imports as it comes into an empty menu. Write it with
+`encoding/csv` and a byte order mark, so Excel opens it as UTF-8.
+Decide what the example rows are when the venue already has those
+items (they would be skipped, which is fine). Test: the template,
+previewed against the same venue, has no problems. Then 7d (the
+screen, spec first in `backoffice-menu.md`).
 
 Apart from Task 7, for the owner, in the order that unblocks the most:
 1. **A printer and a drawer.** `mez --test-print <ip> -drawer`, then a
