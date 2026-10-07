@@ -10,6 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The installer's shortcut opened a kiosk nobody could close** (ADR-272,
+  fixed on 2026-10-07). The owner installed on the developer's PC and the
+  till filled the screen with no title bar: the installer started Edge
+  with `--kiosk`, as ADR-265 chose. It now opens a maximised app window
+  with the usual buttons; full screen is a box in the installer, not
+  ticked. Seen: Edge started with the new arguments has a title bar and
+  its three buttons and opens maximised; with the old ones it has no
+  title bar. **Not seen**: the new installer run, so neither the shortcut
+  it writes nor the box by eye; Chrome; a machine with neither browser. A shortcut made
+  by the installer before this keeps its kiosk arguments until the new
+  installer is run over it.
+
 - **The address as a QR code, and addresses by adapter** (ADR-271; phase
   12 Task 3f). Seen on 2026-10-07 in a browser against the built binary,
   at 1366 and 1024 wide, on a PC with one real adapter and two of

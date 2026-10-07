@@ -65,7 +65,10 @@ WelcomeLabel2=This installs mez on this computer and starts it. It will start by
 FinishedLabel=mez is installed and running on this computer.%n%nThe first time, leave "Open mez now" ticked: it starts the setup of your venue, which can only be started from here. After that, open mez from its shortcut on the desktop. Other devices on this network can open it in a browser.
 
 [Tasks]
-Name: "desktopicon"; Description: "Put a mez shortcut on the desktop (opens the till full screen)"
+Name: "desktopicon"; Description: "Put a mez shortcut on the desktop"
+; Not ticked: full screen has no title bar, so no way to minimise or close it
+; but Alt+F4, and an owner who was not told that is stuck in it (ADR-272).
+Name: "fullscreen"; Description: "Open mez full screen, with no window buttons (for a computer that is only a till; Alt+F4 closes it)"; Flags: unchecked
 Name: "firewall"; Description: "Let tills, tablets and kitchen screens on this network connect"
 
 [Files]
@@ -133,17 +136,23 @@ begin
     Result := ExpandConstant('{win}\explorer.exe');
 end;
 
-// ArgsFor opens an address as an app, full screen, with no address bar.
-// Edge wants its kiosk type said; with neither browser the address alone is
-// handed to Windows.
+// ArgsFor opens an address as an app: a window of its own with no address
+// bar or tabs, and the title bar every window has, so it can be minimised,
+// resized and closed (ADR-272). It starts maximised, since it is a till.
+//
+// Full screen is the browser's kiosk mode, and only where the installer was
+// asked for it: it takes the title bar away. Edge wants its kiosk type said.
+// With neither browser the address alone is handed to Windows.
 function ArgsFor(Address: String): String;
 begin
-  if EdgePath <> '' then
+  if (EdgePath = '') and (ChromePath = '') then
+    Result := Address
+  else if not WizardIsTaskSelected('fullscreen') then
+    Result := '--app=' + Address + ' --start-maximized'
+  else if EdgePath <> '' then
     Result := '--app=' + Address + ' --kiosk --edge-kiosk-type=fullscreen'
-  else if ChromePath <> '' then
-    Result := '--app=' + Address + ' --kiosk'
   else
-    Result := Address;
+    Result := '--app=' + Address + ' --kiosk';
 end;
 
 // BrowserArgs is what the shortcut opens: the till.

@@ -29,7 +29,8 @@ office's settings, "back up now", and a restore that is actually done and
 verified. Read ADR-141 and ADR-110 first (phase 10's Task 6l moved here).
 It is more than one session: split it before building. Before a release,
 run the Windows installer once on a spare machine: "Open mez now" opening
-the setup link has not been watched (ADR-270). `make check` embeds
+the setup link (ADR-270) and the window it opens in (ADR-272) have not
+been watched since they changed. `make check` embeds
 whatever `web/*/dist` holds: run `make build-web` before walking a screen
 against `bin/mez`.
 

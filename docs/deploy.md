@@ -148,7 +148,10 @@ says what that warning does and does not mean). The installer:
   calls Private or Domain. On a network marked **Public** tablets are kept
   out: set the venue's network to Private in Windows settings;
 - puts a **mez** shortcut on the desktop and in the Start menu, which opens
-  the till full screen in Edge (or Chrome). Alt+F4 leaves it.
+  the till in a window of its own in Edge (or Chrome), maximised, with no
+  address bar. Ticking **Open mez full screen** in the installer makes it a
+  kiosk instead: no title bar and no window buttons, for a computer that
+  is only a till. Alt+F4 leaves that.
 
 Running a newer installer over an older one upgrades in place and keeps the
 data. Removing mez (Settings, Apps, mez, Uninstall) stops and removes the
@@ -243,13 +246,16 @@ Policies, User Rights Assignment); install checks neither.
 `-user LocalSystem` runs it as the computer's most powerful account, which
 needs neither and is not advised for a server guests' phones reach.
 
-**A till on the same PC.** A full-screen browser window with no address bar:
+**A till on the same PC.** A browser window of its own, with no address bar:
 
 ```powershell
-& "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --app=http://localhost:7777 --kiosk --edge-kiosk-type=fullscreen
+& "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --app=http://localhost:7777 --start-maximized
 ```
 
-Put that in a shortcut in `shell:startup` to open the till at sign-in.
+Put that in a shortcut in `shell:startup` to open the till at sign-in. For a
+computer that is only a till, `--kiosk --edge-kiosk-type=fullscreen` in place
+of `--start-maximized` fills the screen and takes the title bar away: there
+are then no window buttons, and Alt+F4 is how it is closed.
 
 ## Linux
 
@@ -455,6 +461,6 @@ Paired devices stay paired across an upgrade.
 
 [`phases/phase-12.md`](phases/phase-12.md) is the plan. In short: a Windows
 installer (Inno Setup) that registers the Windows service, opens the firewall
-and creates the kiosk shortcut; a setup wizard, so a new Windows venue needs no `mez setup` (built);
+and creates the shortcut; a setup wizard, so a new Windows venue needs no `mez setup` (built);
 Litestream backups configured in the back office; a systemd unit and image
 published with each release; and release automation with checksums.

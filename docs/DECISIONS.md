@@ -9350,3 +9350,38 @@ No independent review of this task's code. **Seen on 2026-10-07** in a
 browser against the built binary (`KNOWN.md` lists it). **Not seen**: a
 camera reading the code, and a machine with two real adapters.
 ---
+
+## ADR-272 - The shortcut opens a window, and full screen is asked for
+2026-10 · Status: accepted. Between tasks, on the owner's report. Changes
+ADR-265's shortcut.
+Context: ADR-265 made the shortcut "Edge, then Chrome, as an app in kiosk
+mode". The owner ran the installer and got a till that filled the screen
+with no title bar and no way to minimise or close it but the Windows key
+and the taskbar. Nothing on screen says Alt+F4.
+Decision:
+  - **The shortcut and "Open mez now" open `--app=<address>
+    --start-maximized`**: a window of its own with no address bar or
+    tabs, and the title bar every window has.
+  - **Full screen is a box in the installer, not ticked**: "Open mez full
+    screen, with no window buttons (for a computer that is only a till;
+    Alt+F4 closes it)". Ticked, the arguments are the kiosk ones as
+    before. The words on the box are the only place the way out is said,
+    so they say it.
+  - The docs' hand-made shortcut is the windowed one too, with the kiosk
+    arguments given as the variant.
+Because: most owners install on the computer they also do everything
+else on, at least on the first day. A program that takes the whole
+screen and offers no way out reads as broken, and was reported as a bug.
+A dedicated till is the special case and can be asked for.
+Cost: a venue that wants a locked-down till must tick a box it may not
+notice, and a staff member can close or resize the default window. An
+install made before this keeps its kiosk shortcut until the installer is
+run again. `--start-maximized` is ignored by Edge when it is already
+running with a remembered window size for the app. **Seen on 2026-10-07** on the developer's PC, by starting Edge
+with each set of arguments on a blank page in a profile of its own and
+reading the window's style: `--app --start-maximized` has a title bar,
+close, minimise and maximise, can be resized, and opens maximised;
+`--app --kiosk --edge-kiosk-type=fullscreen` has no title bar. **Not
+seen**: the installer run with the change (it compiles), so not the
+shortcut it writes nor the new box by eye; Chrome.
+---
