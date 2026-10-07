@@ -86,6 +86,8 @@ export interface RequestOptions {
   /** Reuse the same key when retrying the same action. See ADR-053. */
   idempotencyKey?: string;
   timeoutMs?: number;
+  /** Headers of this request's own, beyond the credentials: the setup token (ADR-270). */
+  headers?: Readonly<Record<string, string>>;
 }
 
 export interface ApiClient {
@@ -141,6 +143,7 @@ function headersFor(credentials: Credentials, body: unknown, options: RequestOpt
   if (body instanceof Blob) headers.set("Content-Type", body.type || "application/octet-stream");
   else if (body !== undefined) headers.set("Content-Type", "application/json");
   if (options.idempotencyKey) headers.set(headerIdempotencyKey, options.idempotencyKey);
+  for (const [name, value] of Object.entries(options.headers ?? {})) headers.set(name, value);
   return headers;
 }
 

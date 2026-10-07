@@ -65,8 +65,13 @@ The steps:
 
 ## Data
 
-- `GET /api/v1/setup`, key `["setup"]`: `{needed, here}`. No token.
-- `POST /api/v1/setup` (`SetupRequest`): makes the venue. No token.
+- The setup token (ADR-270), from the address's fragment
+  (`/setup#token=...`): taken out of the address at once, kept in
+  `sessionStorage` under `mez.setup.token` so a reload still holds it,
+  sent as `X-Setup-Token`, and forgotten when the venue exists.
+- `GET /api/v1/setup`, key `["setup", <holds a token>]`: `{needed, here,
+  unlocked}`. No device token.
+- `POST /api/v1/setup` (`SetupRequest`): makes the venue. No device token.
 - `POST /api/v1/devices/pair` with the code it answered, then
   `POST /api/v1/sessions` with the owner's id and the PIN just typed:
   through `AuthStore.pair` and `AuthStore.signIn`, so the device and the
@@ -122,6 +127,12 @@ PIN is in memory until the wizard is left.
 - **Checking:** the splash, until `GET /api/v1/setup` answers.
 - **Not needed** (a venue exists): the wizard is not shown. `/setup` goes to
   `/`, and the guard sends that on to Pair or Staff Login.
+- **Needed and here, without the setup token** (the desktop shortcut, or
+  `localhost` typed into a browser, before the venue exists): no
+  questions. "Open mez from the installer to set up", and how: run the
+  installer again and leave Open mez now ticked, or use the setup link
+  mez printed, or `mez setup-link`. Check again. The setup link opened in
+  this tab afterwards is taken without a reload.
 - **Needed, not here** (a tablet, or the computer by its LAN address): no
   questions. "This venue is not set up yet", and to open mez on the
   computer it runs on, by its shortcut or at `localhost`. Pair says the
@@ -149,8 +160,9 @@ PIN is in memory until the wizard is left.
 
 ## Constraints
 
-- Opened only at `localhost` on the server's own machine: the server
-  refuses the post from anywhere else (ADR-266).
+- Opened only at `localhost` on the server's own machine, by a browser
+  holding the setup token: the server refuses the post otherwise
+  (ADR-266, ADR-270).
 - A keyboard is assumed: a venue's name cannot be typed without one. The
   PIN fields are ordinary fields, masked, digits only, not the PIN pad.
 - Fields are 48px tall and 16px text; the buttons are `tap`.

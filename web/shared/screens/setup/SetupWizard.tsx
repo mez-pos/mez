@@ -4,7 +4,7 @@
 // where one can be made (ADR-266).
 
 import { ArrowRightIcon } from "lucide-react";
-import { useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Redirect, useLocation } from "wouter";
 import { paths } from "../../auth/route";
 import { useAuthStore } from "../../auth/use-auth";
@@ -18,6 +18,7 @@ import {
   browserTimezone,
   checkStep,
   finishSetup,
+  lockedWords,
   notStarted,
   stageWords,
   startingAnswers,
@@ -32,12 +33,25 @@ import {
   type TaxProfile,
 } from "./setup-logic";
 import { TaxesStep, VenueStep, YouStep } from "./steps";
+import { browserPage, forgetSetupToken, takeSetupToken } from "./setup-token";
 import { useSetupStatus } from "./use-setup-status";
 
 const lead = `${allSteps.length} steps. You can change everything later in Settings.`;
 
 export function SetupWizard() {
-  const status = useSetupStatus();
+  // Taken from the address once, before anything else reads it (setup-token.ts).
+  const [token, setToken] = useState(() => takeSetupToken(browserPage()));
+  // The setup link opened in a tab already on this page changes only the
+  // fragment: nothing reloads, so the token is taken when it arrives.
+  useEffect(() => {
+    const arrived = () => {
+      const next = takeSetupToken(browserPage());
+      if (next !== null) setToken(next);
+    };
+    window.addEventListener("hashchange", arrived);
+    return () => window.removeEventListener("hashchange", arrived);
+  }, []);
+  const status = useSetupStatus(token);
   // Once Create has begun the venue exists or is about to, and the server's
   // "no setup needed" is then this wizard's own doing, not a reason to leave.
   const [begun, setBegun] = useState(false);
@@ -70,11 +84,23 @@ export function SetupWizard() {
         </SetupFrame>
       );
     }
+    // On the machine, and without the token: any program on it could be (ADR-270).
+    if (!status.data.unlocked) {
+      return (
+        <SetupFrame lead="It takes a few minutes, and it starts from the installer.">
+          <Notice title="Open mez from the installer to set up" body={lockedWords}>
+            <Button variant="secondary" onClick={() => void status.refetch()}>
+              Check again
+            </Button>
+          </Notice>
+        </SetupFrame>
+      );
+    }
   }
-  return <Questions onBegin={() => setBegun(true)} />;
+  return <Questions token={token} onBegin={() => setBegun(true)} />;
 }
 
-function Questions({ onBegin }: { onBegin: () => void }) {
+function Questions({ token, onBegin }: { token: string | null; onBegin: () => void }) {
   const store = useAuthStore();
   const [, navigate] = useLocation();
   const timezones = useMemo(() => timezoneList(browserTimezone()), []);
@@ -109,7 +135,7 @@ function Questions({ onBegin }: { onBegin: () => void }) {
     setFailure(null);
     onBegin();
     const out = await finishSetup(
-      { api: store.api, pair: (code) => store.pair(code), signIn: (id, pin) => store.signIn(id, pin) },
+      { api: store.api, token, pair: (code) => store.pair(code), signIn: (id, pin) => store.signIn(id, pin) },
       answers,
       progress,
       window.location.host,
@@ -117,6 +143,8 @@ function Questions({ onBegin }: { onBegin: () => void }) {
     );
     setProgress(out.progress);
     setBusy(false);
+    // The venue exists: the token opens nothing now, and is not kept.
+    if (out.progress.made) forgetSetupToken(browserPage().storage);
     // Done: the venue exists and the owner is signed in. What is left is the printer.
     if (out.progress.stage === "done") return;
     const failed = out.failure;
@@ -232,7 +260,15 @@ function Creating({ progress, failure, busy, onRetry, onLeave, onEdit }: Creatin
   }
   const created = progress.made !== null;
   const title =
-    failure.kind === "taken" ? "Already set up" : failure.kind === "prefix" ? "Almost there" : created ? "The venue is created" : "That did not work";
+    failure.kind === "locked"
+      ? "Open mez from the installer to set up"
+      : failure.kind === "taken"
+        ? "Already set up"
+        : failure.kind === "prefix"
+          ? "Almost there"
+          : created
+            ? "The venue is created"
+            : "That did not work";
   return (
     <Notice title={title} body={failure.message} alert>
       {failure.kind === "retry" && (
@@ -240,7 +276,7 @@ function Creating({ progress, failure, busy, onRetry, onLeave, onEdit }: Creatin
           Try again
         </Button>
       )}
-      {failure.kind === "retry" && !created && <Button onClick={onEdit}>Back to the questions</Button>}
+      {(failure.kind === "retry" || failure.kind === "locked") && !created && <Button onClick={onEdit}>Back to the questions</Button>}
       {failure.kind === "retry" && progress.stage === "prefix" && <Button onClick={onLeave}>Continue without it</Button>}
       {failure.kind === "prefix" && (
         <Button variant="primary" onClick={onLeave}>

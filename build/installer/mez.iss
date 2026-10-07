@@ -62,7 +62,7 @@ SignedUninstaller=yes
 
 [Messages]
 WelcomeLabel2=This installs mez on this computer and starts it. It will start by itself each time the computer is turned on.%n%nTills, tablets and kitchen screens on the same network open it in a browser. Nothing is sent to the internet.
-FinishedLabel=mez is installed and running on this computer.%n%nOpen it from the mez shortcut on the desktop. Other devices on this network can open it in a browser.
+FinishedLabel=mez is installed and running on this computer.%n%nThe first time, leave "Open mez now" ticked: it starts the setup of your venue, which can only be started from here. After that, open mez from its shortcut on the desktop. Other devices on this network can open it in a browser.
 
 [Tasks]
 Name: "desktopicon"; Description: "Put a mez shortcut on the desktop (opens the till full screen)"
@@ -77,9 +77,11 @@ Name: "{autodesktop}\mez"; Filename: "{code:BrowserPath}"; Parameters: "{code:Br
 Name: "{autoprograms}\mez"; Filename: "{code:BrowserPath}"; Parameters: "{code:BrowserArgs}"; IconFilename: "{app}\mez.ico"; Comment: "Open the mez till"
 
 [Run]
-; The same shortcut, once, as the person who ran the installer and not as
-; the administrator it was raised to.
-Filename: "{code:BrowserPath}"; Parameters: "{code:BrowserArgs}"; Description: "Open mez now"; Flags: postinstall nowait skipifsilent runasoriginaluser
+; The same browser as the shortcut, once, as the person who ran the installer
+; and not as the administrator it was raised to. On a new machine it is opened
+; at the setup link, which carries the token that lets the venue be made
+; (ADR-270): only this installer, raised, can read it.
+Filename: "{code:BrowserPath}"; Parameters: "{code:FirstRunArgs}"; Description: "Open mez now"; Flags: postinstall nowait skipifsilent runasoriginaluser
 
 [Code]
 const
@@ -131,17 +133,23 @@ begin
     Result := ExpandConstant('{win}\explorer.exe');
 end;
 
-// BrowserArgs opens the till as an app, full screen, with no address bar.
+// ArgsFor opens an address as an app, full screen, with no address bar.
 // Edge wants its kiosk type said; with neither browser the address alone is
 // handed to Windows.
-function BrowserArgs(Param: String): String;
+function ArgsFor(Address: String): String;
 begin
   if EdgePath <> '' then
-    Result := '--app={#Url} --kiosk --edge-kiosk-type=fullscreen'
+    Result := '--app=' + Address + ' --kiosk --edge-kiosk-type=fullscreen'
   else if ChromePath <> '' then
-    Result := '--app={#Url} --kiosk'
+    Result := '--app=' + Address + ' --kiosk'
   else
-    Result := '{#Url}';
+    Result := Address;
+end;
+
+// BrowserArgs is what the shortcut opens: the till.
+function BrowserArgs(Param: String): String;
+begin
+  Result := ArgsFor('{#Url}');
 end;
 
 // Said joins what a command printed, so that a failure is shown in the
@@ -173,6 +181,40 @@ begin
   end
   else
     Output := SysErrorMessage(Code);
+end;
+
+// SetupLink asks mez.exe where to open it. On a machine with no venue yet
+// that is the setup wizard's address with the setup token in it, which is
+// kept where only an administrator can read it; otherwise it is the till's.
+// The installer does not read the token itself: `mez setup-link` is the one
+// thing that knows where it is and what it looks like. Anything but an
+// http address on localhost is not believed, and the till's is used.
+function SetupLink: String;
+var
+  Code, I: Integer;
+  Captured: TExecOutput;
+  Line: String;
+begin
+  Result := '{#Url}';
+  if not ExecAndCaptureOutput(MezExe, 'setup-link', ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, Code, Captured) then
+    Exit;
+  if Code <> 0 then
+    Exit;
+  for I := 0 to GetArrayLength(Captured.StdOut) - 1 do
+  begin
+    Line := Trim(Captured.StdOut[I]);
+    if (Pos('http://localhost', Line) = 1) and (Pos(' ', Line) = 0) and (Pos('"', Line) = 0) then
+    begin
+      Result := Line;
+      Exit;
+    end;
+  end;
+end;
+
+// FirstRunArgs is what "Open mez now" opens on the installer's last page.
+function FirstRunArgs(Param: String): String;
+begin
+  Result := ArgsFor(SetupLink);
 end;
 
 procedure Netsh(Params: String);

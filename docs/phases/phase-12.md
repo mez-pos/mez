@@ -62,6 +62,21 @@ Phase 11.
     `mez setup`; `running.md` and `deploy.md` say the wizard first. Walked in
     a browser from an empty data directory.
 
+  Two more, added on 2026-10-07 after 3d, from what 3a to 3d left open
+  and the owner chose to close before backups:
+
+  - [x] **Task 3e - The setup token.**
+    The venue can be made over HTTP only by a browser holding a token kept
+    in the data directory (ADR-270): the installer hands it over in the
+    address it opens, `mez setup-link` prints it, a server started in a
+    terminal says it. Closes `STATE.md`'s question 9.
+  - [ ] **Task 3f - A QR code for the address, and addresses by name.**
+    The wizard's last step draws the address as a QR code a tablet's
+    camera can open (`internal/domain/qr` already draws them), and names
+    each address by its network adapter, with virtual adapters last and no
+    guess between two real ones. The printer search skips virtual
+    adapters too.
+
 - [ ] **Task 4 — Backups.**
   Litestream integrated: continuous replication to S3, R2 or a local folder,
   configured in back office (this is phase 10's Task 6l, moved here,

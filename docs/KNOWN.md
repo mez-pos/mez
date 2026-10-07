@@ -10,6 +10,24 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The setup token** (ADR-270; phase 12 Task 3e). Seen on 2026-10-07
+  against the built binary: with curl, status locked without the token and
+  unlocked with it, never unlocked from the LAN address, a post refused
+  with none and with a wrong one; in a browser, `/` showing "Open mez from
+  the installer to set up", the setup link opening the questions in a
+  fresh window and in a tab already on the locked page, the token gone
+  from the address and from no request's URL, the venue made, the token
+  file deleted and the tab's copy forgotten. The installer compiles.
+  **Not seen**: the installer run, so not "Open mez now" opening the link,
+  not `mez setup-link` run by it as administrator, and not the link
+  through Edge's kiosk arguments or through Windows with neither browser;
+  the link printed to a real console; the file's ACL under the service.
+  Left out: the desktop shortcut cannot carry the token, so an owner who
+  unticks Open mez now must run the installer again or use an
+  administrator's terminal; a program running as the same Windows user as
+  the browser, or as an administrator, is not kept out and cannot be;
+  Docker and a headless server still use `mez setup`.
+
 - **The wizard's last step, and where the server is** (ADR-269; phase 12
   Task 3d). Seen on 2026-10-07 in a browser against the built binary, at
   1366 and 1024 wide: the step after the printer; this PC's LAN address
@@ -24,8 +42,7 @@
   real cards shows the one its internet leaves by first, which may not be
   the one the tablets are on; nothing checks the firewall, the screen only
   says what to look at; `mez setup` in a terminal is still the way for
-  Docker and a headless server. **The setup token of ADR-266 is not
-  built** (`STATE.md`, question 9).
+  Docker and a headless server.
 
 - **Printer discovery, and the wizard's printer step** (ADR-268; phase 12
   Task 3c). Seen on 2026-10-07 in a browser against the built binary: the
@@ -68,9 +85,9 @@
   the second attempt refused, the code pairing a device and the owner
   signing in. **Not seen**: from a browser (no screen until 3b); under the
   service's account; a real DNS rebinding or cross-site page. Left out:
-  any user or program on the server's computer, or a forwarder on it that
-  adds no header, can make the venue until the owner has (a setup token
-  would close it: `STATE.md`, question 9); Docker, a headless server and one behind a proxy cannot
+  (any user or program on the server's computer, or a forwarder on it,
+  could make the venue until the owner had: closed by the setup token,
+  ADR-270); Docker, a headless server and one behind a proxy cannot
   use it and keep `mez setup`; a reply lost after the venue is written
   leaves no code on screen (`mez pair`); no idempotency key; a US venue
   still cannot finish.

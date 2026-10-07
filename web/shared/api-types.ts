@@ -146,6 +146,7 @@ export type ErrorCode =
   | 'charge_not_found'
   | 'charge_not_waiting'
   | 'no_printer_search'
+  | 'setup_locked'
   | 'setup_not_here'
   | 'already_set_up'
   | 'invalid_setup'
@@ -787,6 +788,7 @@ export interface AddressesResponse {
 export interface SetupStatusResponse {
   needed: boolean;
   here: boolean;
+  unlocked: boolean;
 }
 
 export interface SetupRequest {

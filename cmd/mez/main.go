@@ -66,7 +66,7 @@ func main() {
 	// The subcommands are read before the flags: each takes its own, and
 	// the server's parser refuses a positional argument.
 	if len(os.Args) > 1 {
-		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "pair": runPair, "table-codes": runTableCodes, "unlock": runUnlock, "service": runService}
+		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "setup-link": runSetupLink, "pair": runPair, "table-codes": runTableCodes, "unlock": runUnlock, "service": runService}
 		if command, ok := commands[os.Args[1]]; ok {
 			if err := command(os.Args[2:], os.Stdout); err != nil {
 				if errors.Is(err, flag.ErrHelp) {
@@ -104,6 +104,7 @@ func main() {
 		// operator, not a log line.
 		if errors.Is(err, flag.ErrHelp) {
 			fmt.Fprintf(os.Stdout, "mez %s\n\nUsage:\n%s\nSubcommands:\n  setup\tcreate the venue, its owner and the first pairing code\n"+
+				"  setup-link\tprint the address that opens the setup wizard on this machine\n"+
 				"  pair\tmake another pairing code at this machine (-device-kind, -device-name)\n"+
 				"  table-codes\tlist each table's code for guest ordering, making any that are missing\n"+
 				"  service\trun as a Windows service: install, uninstall, start, stop, status\n"+
@@ -253,6 +254,20 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	if err != nil {
 		return err
 	}
+	// And what a browser must hold to use it (ADR-270): a token in the data
+	// directory, which is not every user's to read.
+	setupNeeded, err := firstRun.Needed(ctx)
+	if err != nil {
+		return err
+	}
+	setupToken, err := firstrun.OpenToken(cfg.DataDir, setupNeeded)
+	if err != nil {
+		return err
+	}
+	if setupNeeded {
+		log.Info("this machine has no venue yet: the setup wizard is open to whoever holds the setup token", "hint", "run `mez setup-link` for the address")
+		announceSetupLink(opts.stdout, cfg, setupToken)
+	}
 
 	// The print queue sends whatever is waiting, including what a crash left
 	// half printed, from the moment the server is up. It stops before the
@@ -372,6 +387,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		api.WithTunnel(func() api.TunnelStatus { return tunnelStatus(guests) }),
 		api.WithDevices(devices),
 		api.WithFirstRun(firstRun),
+		api.WithSetupToken(setupToken),
 		// Where a second device opens this server, for whoever is pairing one.
 		api.WithAddresses(func() ([]string, error) { return (&discover.Addresser{}).URLs(listener.Addr().String()) }),
 		api.WithStaff(staff),

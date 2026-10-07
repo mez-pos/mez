@@ -99,6 +99,10 @@ func useJSON(format string, w io.Writer) bool {
 	}
 }
 
+// IsTerminal reports whether w is a console a person is reading, and not a
+// file, a pipe or nothing.
+func IsTerminal(w io.Writer) bool { return isTerminal(w) }
+
 func isTerminal(w io.Writer) bool {
 	f, ok := w.(*os.File)
 	if !ok {

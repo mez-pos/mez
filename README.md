@@ -45,8 +45,11 @@ Then, on the machine that will run the venue:
 ./mez
 ```
 
-Start `mez` and open `http://localhost:7777` in a browser **on that
-machine**. A machine with no venue opens on the setup wizard: the venue's
+Start `mez` in a terminal. With no venue yet it prints a **setup link**,
+`http://localhost:7777/setup#token=...`: open it in a browser **on that
+machine** (`mez setup-link` prints it again). The link carries a token kept
+in the data directory, so that only someone who may read that directory can
+make the venue. It opens the setup wizard: the venue's
 name, currency and time zone; tax and invoice numbering; your name and a PIN;
 a receipt printer and a test page; and at the end the address and a pairing
 code for a second device. It ends with you signed in at the till. The wizard

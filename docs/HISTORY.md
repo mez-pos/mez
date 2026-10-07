@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 3c: printer discovery and a test print** (ADR-268).
+**Phase 12, Task 3d: the wizard's last screen, and the hand-off** (ADR-269).
+A fifth step, More devices: the server's LAN address and a pairing code in
+large type (`GET /api/v1/devices/addresses`). Pair and the docs stop naming
+`mez setup` first. Walked in a browser: the code paired a second origin.
+
+Before it, **Phase 12, Task 3c: printer discovery and a test print** (ADR-268).
 `internal/device/discover` searches the server's private networks for port
 9100 and lists Windows' printers; `POST /api/v1/printers/discover`; the
 wizard's fourth step. Walked against a stand-in printer on loopback.

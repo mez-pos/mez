@@ -143,7 +143,7 @@ var errorCodes = []ErrorCode{
 	CodeTableCodeUnknown, CodeGuestSessionRequired,
 	CodeDishUnavailable, CodeChoicesInvalid, CodeTableNotOrdering, CodeRequestsWaiting,
 	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed, CodeNothingToPay, CodeNoticeNotFound, CodeGatewayUnavailable, CodeChargeNotFound, CodeChargeNotWaiting,
-	CodeNoPrinterSearch, CodeSetupNotHere, CodeAlreadySetUp, CodeInvalidSetup, CodeSetupNoCode,
+	CodeNoPrinterSearch, CodeSetupLocked, CodeSetupNotHere, CodeAlreadySetUp, CodeInvalidSetup, CodeSetupNoCode,
 	CodeBillClaimed, CodeBillMoved, CodeReceiptNotFound, CodeNoPublicURL, CodeNoPickupCode, CodePickupCodeUnknown, CodePickupOff,
 }
 

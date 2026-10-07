@@ -79,6 +79,7 @@ function deps(fail: Partial<Record<string, unknown>> = {}) {
   };
   const d: SetupDeps = {
     api,
+    token: null,
     pair: (code) => step(`pair ${code}`, undefined),
     signIn: (id, pin) => step(`signIn ${id} ${pin.length} digits`, undefined),
   };
@@ -301,6 +302,7 @@ describe("failureOf", () => {
     ["a venue someone else made", "create", refusal("already_set_up", "This venue is already set up.", 409), "taken"],
     ["a venue made without its code", "create", refusal("setup_no_code", "no code", 500), "no_code"],
     ["a browser that is not at the machine", "create", refusal("setup_not_here", "not here", 403), "retry"],
+    ["a browser without the setup token", "create", refusal("setup_locked", "locked", 403), "locked"],
     ["too many tries", "create", refusal("rate_limited", "slow down", 429, null, 42_000), "retry"],
     ["a server that cannot be reached", "pair", new ApiError("timeout", "no answer"), "retry"],
     ["a code that has expired", "pair", refusal("invalid_pairing_code", "not valid", 400, "code"), "no_code"],

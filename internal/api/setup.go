@@ -27,8 +27,32 @@ func WithFirstRun(f FirstRun) Option {
 	return func(s *Server) { s.firstRun = f }
 }
 
+// SetupToken is the token a browser must hold to make the venue (ADR-270).
+// *firstrun.Token is the implementation.
+type SetupToken interface {
+	Valid(candidate string) bool
+	Spend() error
+}
+
+// WithSetupToken makes first run over HTTP ask for the setup token as well
+// as for a browser on this machine. cmd/mez always passes one; without it,
+// being on the machine is enough, which is what the tests of the rest of
+// first run are written against.
+func WithSetupToken(t SetupToken) Option {
+	return func(s *Server) { s.setupToken = t }
+}
+
+// HeaderSetupToken carries the setup token. A header and not a field of
+// the body, so that it is never part of what a form could post, and not the
+// query, so that it is never in an address or the access log.
+const HeaderSetupToken = "X-Setup-Token"
+
 // The first run error codes.
 const (
+	// CodeSetupLocked is first run asked for on this machine without the
+	// setup token, or with one that is not it.
+	CodeSetupLocked ErrorCode = "setup_locked"
+
 	// CodeSetupNotHere is first run asked for from anywhere but a browser
 	// on the server's own computer.
 	CodeSetupNotHere ErrorCode = "setup_not_here"
@@ -49,11 +73,13 @@ const (
 // server real work; a person correcting a form needs a handful.
 var setupLimit = limit{requests: 10, per: time.Minute}
 
-// setupStatusResponse says whether the venue is still to be made, and
-// whether this caller is where it can be made from.
+// setupStatusResponse says whether the venue is still to be made, whether
+// this caller is where it can be made from, and whether it holds what
+// opens it: the setup token, sent with the question.
 type setupStatusResponse struct {
-	Needed bool `json:"needed"`
-	Here   bool `json:"here"`
+	Needed   bool `json:"needed"`
+	Here     bool `json:"here"`
+	Unlocked bool `json:"unlocked"`
 }
 
 // setupRequest is the body of POST /api/v1/setup: the wizard's answers.
@@ -100,8 +126,28 @@ func (s *Server) setupStatus(w http.ResponseWriter, r *http.Request) {
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
+	here := s.atThisMachine(r)
 	w.Header().Set("Cache-Control", "no-store")
-	writeJSON(w, s.log, http.StatusOK, setupStatusResponse{Needed: needed, Here: s.atThisMachine(r)})
+	// A caller that is not here is told nothing about a token it sent: only
+	// the machine itself may ask whether one is right.
+	writeJSON(w, s.log, http.StatusOK, setupStatusResponse{Needed: needed, Here: here, Unlocked: here && s.holdsSetupToken(r)})
+}
+
+// holdsSetupToken reports whether a request carries the setup token, or
+// whether this server asks for none.
+func (s *Server) holdsSetupToken(r *http.Request) bool {
+	return s.setupToken == nil || s.setupToken.Valid(r.Header.Get(HeaderSetupToken))
+}
+
+// spendSetupToken ends the token once a venue exists.
+func (s *Server) spendSetupToken(r *http.Request) {
+	if s.setupToken == nil {
+		return
+	}
+	if err := s.setupToken.Spend(); err != nil {
+		// It opens nothing now either way: first run refuses a second venue.
+		s.log.Warn("the setup token could not be removed", "request_id", RequestID(r.Context()), "error", err)
+	}
 }
 
 // runSetup makes the venue. It is the one endpoint that writes with nobody
@@ -111,6 +157,13 @@ func (s *Server) runSetup(w http.ResponseWriter, r *http.Request) {
 	if !s.atThisMachine(r) {
 		writeError(w, s.log, http.StatusForbidden, CodeSetupNotHere,
 			"The venue is set up at the computer mez runs on. Open mez there.")
+		return
+	}
+	// On the machine is not enough: so is every other user of it, and every
+	// program (ADR-270).
+	if !s.holdsSetupToken(r) {
+		writeError(w, s.log, http.StatusForbidden, CodeSetupLocked,
+			"Open mez from the installer, or from the setup link it prints when it starts, to set this venue up.")
 		return
 	}
 	// A form on another site can post text/plain here without the browser
@@ -137,9 +190,11 @@ func (s *Server) runSetup(w http.ResponseWriter, r *http.Request) {
 		writeFieldError(w, s.log, http.StatusUnprocessableEntity, CodeInvalidSetup, invalid.Message, invalid.Field)
 		return
 	case errors.Is(err, firstrun.ErrAlreadySetUp):
+		s.spendSetupToken(r)
 		writeError(w, s.log, http.StatusConflict, CodeAlreadySetUp, "This venue is already set up.")
 		return
 	case errors.Is(err, firstrun.ErrNoCode):
+		s.spendSetupToken(r)
 		s.log.Error("first run made the venue without its pairing code",
 			"request_id", RequestID(r.Context()), "venue_id", res.VenueID, "error", err)
 		writeError(w, s.log, http.StatusInternalServerError, CodeSetupNoCode,
@@ -150,6 +205,7 @@ func (s *Server) runSetup(w http.ResponseWriter, r *http.Request) {
 		writeError(w, s.log, http.StatusInternalServerError, CodeInternal, "internal error")
 		return
 	}
+	s.spendSetupToken(r)
 	s.log.Info("the venue was set up", "request_id", RequestID(r.Context()), "venue_id", res.VenueID, "actor_id", res.OwnerID)
 
 	// The code pairs a device, so it is a secret for as long as it lives.

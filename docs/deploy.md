@@ -68,12 +68,16 @@ builds a server that serves placeholder pages instead of the apps.
 ## First run, on any platform
 
 **Where the server has a browser of its own** (a Windows till, a desktop):
-start it and open `http://localhost:7777` on that machine. With no venue it
-opens on the setup wizard, which asks what `mez setup` takes as flags, finds
+start it and open the **setup link** it prints,
+`http://localhost:7777/setup#token=...`, on that machine (the Windows
+installer opens it for you; `mez setup-link` prints it again). It opens the
+setup wizard, which asks what `mez setup` takes as flags, finds
 a receipt printer, and ends with you signed in and a pairing code for a
 second device on screen. It works only from the machine itself, at
 `localhost` (ADR-266): not from another device, not through a proxy, and not
-into a container, where a published port does not arrive from loopback.
+into a container, where a published port does not arrive from loopback. And
+it needs the token in that link (ADR-270): the plain address shows where to
+get it, and asks nothing.
 
 **Everywhere else** (Docker, a headless Linux box, a server behind a proxy),
 and for a demo cafe: setup runs once, from a terminal on the machine itself,
@@ -152,9 +156,12 @@ service and the firewall rule, then asks whether to delete the data in
 `C:\ProgramData\mez`; it is kept unless you answer Yes twice. A
 `config.toml` you put beside `mez.exe` is left where it is.
 
-When the installer finishes, **Open mez now** (or the desktop shortcut) opens
-the setup wizard: there is no venue yet, and the wizard makes it. Nothing
-needs a terminal.
+When the installer finishes, leave **Open mez now** ticked: it opens the
+setup wizard, with the token that lets the venue be made. Nothing needs a
+terminal. The desktop shortcut does not carry the token, so until the venue
+exists it shows where to get it: run the installer again (it keeps
+everything), or in a terminal opened as administrator run
+`& "C:\Program Files\mez\mez.exe" setup-link` and open what it prints.
 
 A venue can still be created from a terminal opened as administrator
 instead, before the shortcut is first opened:

@@ -7,6 +7,7 @@ import { ApiError, type ApiClient } from "../../api";
 import type { NumberingRequest, NumberingResponse, SetupRequest, SetupResponse } from "../../api-types";
 import { formatWait } from "../../auth/format";
 import { unreachableMessage } from "../../auth/messages";
+import { setupHeaders } from "./setup-token";
 
 export type TaxProfile = "none" | "gst_in" | "vat_uk" | "sales_tax_us";
 export type Pricing = "inclusive" | "exclusive";
@@ -292,6 +293,8 @@ export const notStarted: Progress = { stage: "create", made: null };
 /** What Create needs of the app: the client, and the auth store's pairing and sign-in. */
 export interface SetupDeps {
   readonly api: ApiClient;
+  /** The setup token this tab holds, or null (ADR-270). */
+  readonly token: string | null;
   pair(code: string): Promise<void>;
   signIn(staffId: string, pin: string): Promise<void>;
 }
@@ -303,8 +306,13 @@ export interface SetupDeps {
  *   taken    a venue already exists, and this wizard did not make it
  *   no_code  our venue exists but this device has no code that pairs it
  *   prefix   all done but the prefix, which the server refused
+ *   locked   this browser does not hold the setup token: trying again cannot help
  */
-export type FailureKind = "field" | "retry" | "taken" | "no_code" | "prefix";
+export type FailureKind = "field" | "retry" | "taken" | "no_code" | "prefix" | "locked";
+
+/** What to do when the wizard is open in a browser that does not hold the setup token. */
+export const lockedWords =
+  "For the venue's safety, setting up starts from the installer. Run the mez installer again and leave Open mez now ticked on its last page. If you started mez yourself, use the setup link it printed, or run mez setup-link.";
 
 export interface Failure {
   readonly kind: FailureKind;
@@ -337,7 +345,7 @@ export async function finishSetup(
   try {
     if (progress.stage === "create") {
       at(progress);
-      const made = await deps.api.post<SetupResponse>("/api/v1/setup", toRequest(answers));
+      const made = await deps.api.post<SetupResponse>("/api/v1/setup", toRequest(answers), { headers: setupHeaders(deps.token) });
       at({ stage: "pair", made });
     }
     const made = progress.made;
@@ -407,6 +415,8 @@ export function failureOf(stage: Stage, err: unknown, host: string): Failure {
           return { kind: "taken", message: "This venue has already been set up. Pair this device to use it.", field: null };
         case "setup_no_code":
           return { kind: "no_code", message: noCode, field: null };
+        case "setup_locked":
+          return { kind: "locked", message: lockedWords, field: null };
         case "setup_not_here":
           return retry("The venue is set up on the computer mez runs on. Open mez there, by its shortcut or at localhost.");
         default:

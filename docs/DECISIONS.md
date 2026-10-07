@@ -9253,3 +9253,56 @@ in a browser against the built binary (`KNOWN.md` lists it): the code on
 screen paired a second origin opened at the address on screen. **Not
 seen**: a real second device, or the service's own port.
 ---
+
+## ADR-270 - Making the venue over HTTP needs a token from the data directory
+2026-10 · Status: accepted. Phase 12, Task 3e. Completes ADR-266; the owner
+chose to build it (it was `STATE.md`'s question 9).
+Context: ADR-266 let a browser on the server's own machine make the venue.
+Its review found that "on the machine" is every Windows account, every
+program, and any forwarder on it that adds no header, from the moment the
+service starts until the owner finishes the wizard.
+Decision:
+  - **A token in the data directory.** While there is no venue the server
+    keeps 128 random bits, as hex, in `<data dir>/setup-token`. The
+    directory is the administrators' and the service account's (ADR-259,
+    ADR-264), so reading the token is what running `mez setup` there was.
+    It is kept across restarts, so a link already handed out still works;
+    a file that is not a token this wrote is replaced, never trusted; it
+    is deleted when a venue exists, however the venue came to exist.
+  - **`POST /api/v1/setup` asks for it** as `X-Setup-Token`, compared in
+    constant time, after `atThisMachine` and not instead of it: 403
+    `setup_locked` without it. `GET /api/v1/setup` gains `unlocked`, true
+    only for a caller that is here and holds it, so a caller elsewhere
+    cannot use the question to test a token.
+  - **It travels in the address's fragment**: `/setup#token=...`. A
+    browser does not send a fragment, so it is in no request line and no
+    log. The wizard takes it out of the address at once, keeps it in
+    `sessionStorage` for the tab's life, and forgets it when the venue is
+    made.
+  - **Three ways to get the link, each a proof of the same thing.** `mez
+    setup-link` prints it (it reads the file); the installer's "Open mez
+    now" runs that as the administrator it is and opens what it prints,
+    so the installer still knows nothing of its own (ADR-265); and a
+    server started in a terminal prints it, to a terminal only, never to
+    a file or a container's log.
+  - **The desktop shortcut is not changed and carries no token.** Before
+    the venue exists it lands on a screen that says to open mez from the
+    installer. After, it is the till as before.
+Because: the alternative places for the token were all worse. In the
+shortcut, every account on the PC could read it. In a per-user file, a
+second binary or a console window would be needed to fetch it on every
+launch, for something used once. The installer already runs raised at
+exactly the moment the owner is there.
+Cost: an owner who unticks "Open mez now" cannot set up from the shortcut,
+and must run the installer again or open an administrator's terminal.
+The screen says so; it is still a step the first design did not have. A
+program running as the browser's own Windows user can read the tab's
+storage, and one running as an administrator can read the file: neither
+is kept out, and neither could be. The token is a second thing to
+explain in the docs. `Unlocked` makes the status answer differ by a
+header, on the machine only. **Seen on 2026-10-07** with curl and in a
+browser against the built binary (`KNOWN.md` lists it). **Not seen**: the
+installer run, which is the path most owners will take: it compiles, and
+`mez setup-link` is tested, but "Open mez now" opening the link through
+Edge's kiosk arguments has not been watched.
+---
