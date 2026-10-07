@@ -39,6 +39,8 @@ type Import struct {
 	// Skipped are the rows left out because the menu already has that item.
 	Skipped  []ImportSkipped `json:"skipped"`
 	Problems []ImportProblem `json:"problems"`
+	// Examples is how many rows were the template's examples and left out.
+	Examples int `json:"examples"`
 	// Imported: ToAdd and NewCategories are on the menu now. False for a
 	// preview, a refusal, and an import that found nothing to add.
 	Imported bool `json:"imported"`
@@ -251,6 +253,7 @@ func importOf(plan menu.ImportPlan, v menu.ImportVenue) Import {
 		NewCategories: append([]string{}, plan.NewCategories...),
 		Skipped:       make([]ImportSkipped, len(plan.Skipped)),
 		Problems:      make([]ImportProblem, len(plan.Problems)),
+		Examples:      plan.Examples,
 	}
 	for i, r := range plan.Rows {
 		choices := make([]string, len(r.Groups))

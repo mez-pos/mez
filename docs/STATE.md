@@ -8,38 +8,33 @@
 ## Current phase
 
 **Phase 10 - Back office**, `docs/phases/phase-10.md`. The human added
-Tasks 8 to 12 after the menu import (ADR-292). **Tasks 8 to 11 are
-built**: the menu's export, prices from a file, ingredients and recipes
-from a file, and groups of choices from a file (ADR-293 to ADR-303).
-Left: **Task 12**, three loose ends. Everything else in every phase is
-built and owes only being seen to work.
+Tasks 8 to 12 after the menu import (ADR-292), and **all five are
+built** (ADR-293 to ADR-305): the menu's export, prices from a file,
+ingredients and recipes from a file, groups of choices from a file, and
+three loose ends. **Every task in every phase is built again.** What is
+left is to see it work: the walks, a release, and a printer.
 
 ## Last completed task
 
-**Phase 10, Task 11b: the choices dialog** (ADR-303). **Import
-choices** is the fourth thing in the Menu screen's Spreadsheet pill: a
-file of Group, Fewest, Most, Choice, Price, Picked to start, shown as
-each group with what it asks and its choices, then **Add N groups**.
-The items import says choices come first, and its preview now shows
-what each new item will offer. `ChoicesImportModal.tsx`. Task 11 is
-done; it was built at the human's word before the use ADR-292 asked to
-wait for. Walked in a browser against a demo venue. Not walked: a file
-from a real spreadsheet, an item rung up on a till with imported
-groups, and the dialog under 1024px.
+**Phase 10, Task 12c: a template's example rows are left out**
+(ADR-305, chosen by the human). A row named "Example: ..." is never
+imported, in the items, ingredients or choices import: `sheet.IsExample`.
+Each answer carries `examples`, and each dialog says "2 example rows
+from the template were left out." A file of only examples "has no items
+to add", not "is already on the menu". Before it in Task 12: `mez
+reset-pin` (12a, ADR-304), for a venue whose only owner forgot the PIN,
+and a dev banner that prints the owner's PIN only on the run that knows
+it (12b). Task 12 is done.
 
 ## Next task
 
-**Phase 10, Task 12a**: find out whether a venue whose owner forgot the
-PIN can get back in. `mez unlock` clears a lockout and sets no PIN.
-Read `internal/service/people` and the Staff screen for who may reset
-whose PIN (may a manager reset the owner's? may an owner with no
-session do anything at all?), and `cmd/mez/main.go` for the commands
-there are. If a venue with one owner and a forgotten PIN is stuck,
-build `mez reset-pin -staff stf_...`, run at the machine like `mez
-unlock`, by the rules of ADR-260 and written to the audit log. Write
-what was found in `troubleshooting.md` either way. Then 12b (the dev
-banner's PIN) and 12c (ask the human about the template's example
-rows; the choices and ingredients templates have them too now).
+**There is no next task in the plan.** Worth doing for the imports, by
+hand, since none of it has met a real spreadsheet: fill each template
+(items, choices, ingredients, recipes) in Excel and in Google Sheets,
+save as CSV and import it; export the menu, change prices in a
+spreadsheet and give it back. `make build-web` first if walking
+`bin/mez`. `v0.1.0-alpha.2` is tagged on the human's machine only and
+is now behind `main`: tag again before building an installer.
 
 For the owner, in the order that unblocks the most:
 1. **A printer and a drawer.** `mez --test-print <ip> -drawer`, then a

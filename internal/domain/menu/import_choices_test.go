@@ -1,8 +1,6 @@
 package menu
 
 import (
-	"bytes"
-	"encoding/csv"
 	"reflect"
 	"strings"
 	"testing"
@@ -132,14 +130,10 @@ func TestReadChoicesFilesItCannotRead(t *testing.T) {
 // TestChoicesTemplateImportsAsItComes: the template, given straight back,
 // has nothing wrong with it and adds its two example groups.
 func TestChoicesTemplateImportsAsItComes(t *testing.T) {
-	var b bytes.Buffer
-	w := csv.NewWriter(&b)
-	w.UseCRLF = true
-	if err := w.WriteAll(append([][]string{ChoiceColumns}, ChoicesTemplate()...)); err != nil {
-		t.Fatal(err)
-	}
+	// As an owner makes it theirs: the groups without the example's mark.
+	file := csvFile(t, ChoiceColumns, renamed(ChoicesTemplate(), 0))
 	for _, currency := range []string{"INR", "JPY"} {
-		plan := ReadChoices(append([]byte(bom), b.Bytes()...), ChoicesVenue{Currency: currency})
+		plan := ReadChoices(file, ChoicesVenue{Currency: currency})
 		if len(plan.Problems) != 0 || len(plan.Groups) != 2 {
 			t.Fatalf("%s: groups %+v, problems %+v", currency, plan.Groups, plan.Problems)
 		}
@@ -225,5 +219,18 @@ func TestTheExportWithChoicesGoesBackIn(t *testing.T) {
 	plan := ReadImport([]byte(file), v)
 	if len(plan.Problems) != 0 || len(plan.Skipped) != 1 || len(plan.Rows) != 1 || !reflect.DeepEqual(plan.Rows[0].Groups, []int64{41, 40}) {
 		t.Errorf("rows %+v, skipped %+v, problems %+v", plan.Rows, plan.Skipped, plan.Problems)
+	}
+}
+
+// TestExampleGroupsAreLeftOut: the template's own groups, left in a file,
+// are counted by their rows and not added.
+func TestExampleGroupsAreLeftOut(t *testing.T) {
+	asItComes := ReadChoices(csvFile(t, ChoiceColumns, ChoicesTemplate()), choosing())
+	if asItComes.Examples != 4 || len(asItComes.Groups) != 0 || len(asItComes.Problems) != 0 {
+		t.Errorf("the template as it comes: %+v", asItComes)
+	}
+	plan := ReadChoices([]byte(choicesHeader+"Size,1,1,Regular,0,\nexample: Size,x,y,,lots,maybe\n"), choosing())
+	if plan.Examples != 1 || len(plan.Problems) != 0 || len(plan.Groups) != 1 {
+		t.Errorf("examples %d, groups %+v, problems %+v", plan.Examples, plan.Groups, plan.Problems)
 	}
 }

@@ -124,7 +124,10 @@ type ImportPlan struct {
 	// names them.
 	NewCategories []string
 	Skipped       []ImportSkip
-	Problems      []ImportProblem
+	// Examples is how many rows are the template's own examples, left in
+	// the file. They are left out (ADR-305).
+	Examples int
+	Problems []ImportProblem
 }
 
 // OK reports whether the plan can be carried out: it has something to add
@@ -189,6 +192,11 @@ func itemKey(category, name string) string {
 // read reads one row into the plan: an item to add, one already there, or
 // its problems, every one of them, so the file is fixed in one pass.
 func (r *importReader) read(row int, cells map[string]string) {
+	// A template's example is not the venue's item, whatever else it says.
+	if sheet.IsExample(cells[ColName]) {
+		r.plan.Examples++
+		return
+	}
 	var problems []ImportProblem
 	problem := func(column, message string) {
 		problems = append(problems, ImportProblem{Row: row, Column: column, Message: message})

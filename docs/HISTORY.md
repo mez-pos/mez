@@ -8,7 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 10, Task 11a: groups of choices from a file, read and imported**
+**Phase 10, Task 12a and 12b** (ADR-304). `mez reset-pin`: with no
+`-staff` it lists who works at the venue; with one it draws a new
+six-digit PIN, shown once, clears the person's lock and signs them out.
+For a venue whose only owner forgot the PIN, which had no way back in.
+And `build/dev.sh` prints the owner's PIN only on the run that sets the
+venue up.
+
+Before them, **Phase 10, Task 11b: the choices dialog** (ADR-303):
+Import choices in the Menu screen's Spreadsheet pill, and the items
+preview showing what each new item will offer.
+
+Before it, **Phase 10, Task 11a: groups of choices from a file, read and imported**
 (ADR-302). `menu.ReadChoices` for a file of Group, Fewest, Most, Choice,
 Price, Picked to start, checked whole by `CleanGroup`; routes under
 `/api/v1/menu/choices/import`. The items file and the export gained a

@@ -63,7 +63,10 @@ func TestStockImportOverHTTP(t *testing.T) {
 	if file.Filename != "mez-ingredients-template.csv" || first != byteOrderMark+"Name,Counted in,Low at,Cost,Count at close" {
 		t.Errorf("template: %q, first line %q", file.Filename, first)
 	}
-	if plan := itemsImportOf(t, sendCSV(w, "/api/v1/stock/import/preview", "text/csv", file.Text, owner)); len(plan.Problems) != 0 || len(plan.ToAdd) != 3 {
+	if asItComes := itemsImportOf(t, sendCSV(w, "/api/v1/stock/import/preview", "text/csv", file.Text, owner)); asItComes.Examples != 3 || len(asItComes.ToAdd) != 0 || len(asItComes.Problems) != 0 {
+		t.Errorf("the template, checked as it comes: %+v", asItComes)
+	}
+	if plan := itemsImportOf(t, sendCSV(w, "/api/v1/stock/import/preview", "text/csv", strings.ReplaceAll(file.Text, "Example: ", ""), owner)); len(plan.Problems) != 0 || len(plan.ToAdd) != 3 {
 		t.Errorf("the template, checked: %+v", plan)
 	}
 

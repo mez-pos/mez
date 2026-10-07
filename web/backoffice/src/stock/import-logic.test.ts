@@ -8,7 +8,8 @@ import {
   ingredientLine,
   ingredientsSummary,
   ingredientsVerdict,
-  itemExamples,
+  ingredientsLeftOut,
+  ingredientsNothingText,
   recipeLine,
   recipeProblemsText,
   recipesLeftOut,
@@ -26,7 +27,7 @@ const row = (patch: Partial<StockImportRow> = {}): StockImportRow => ({
   ...patch,
 });
 
-const plan = (patch: Partial<StockItemsImport> = {}): StockItemsImport => ({ to_add: [], skipped: [], problems: [], imported: false, ...patch });
+const plan = (patch: Partial<StockItemsImport> = {}): StockItemsImport => ({ to_add: [], skipped: [], problems: [], examples: 0, imported: false, ...patch });
 
 describe("ingredientsVerdict", () => {
   it("is ready with rows to add and nothing wrong", () => {
@@ -78,9 +79,15 @@ describe("ingredientLine", () => {
   });
 });
 
-describe("itemExamples", () => {
-  it("counts the template's examples left in the file", () => {
-    expect(itemExamples(plan({ to_add: [row({ name: "Example: Milk" }), row({ name: "Milk" })] }))).toBe(1);
+describe("the template's examples, left in a file", () => {
+  it("are said to be left out, under what the file adds", () => {
+    expect(ingredientsSummary(plan({ to_add: [row()], examples: 3 }))).toEqual(["1 ingredient to add.", "3 example rows from the template were left out."]);
+    expect(ingredientsLeftOut(plan({ examples: 1 }))).toEqual(["1 example row from the template was left out."]);
+  });
+
+  it("make a file of only them one with nothing to add, not one already imported", () => {
+    expect(ingredientsNothingText(plan({ examples: 3 }), "t.csv")).toBe("t.csv has no ingredients to add.");
+    expect(ingredientsNothingText(plan({ skipped: [{ row: 2, name: "Milk" }] }), "t.csv")).toBe("Every ingredient in t.csv is already in the store.");
   });
 });
 

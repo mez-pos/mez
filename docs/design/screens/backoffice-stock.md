@@ -86,9 +86,9 @@ written down somewhere. It is the menu's import (`backoffice-menu.md`,
 - **Something is wrong** with it: the table of Where, Column and What is
   wrong, under "3 problems in store.csv. Nothing has been added."
 - **Ready:** "12 ingredients to add." Then, each only when it applies: "2
-  are already in the store and are left as they are."; and, in the
-  attention tint, the line about the template's examples left in the file.
-  Under them the ingredients to add, scrolling inside itself: the name
+  are already in the store and are left as they are."; "3 example rows
+  from the template were left out." (ADR-305). Under them the
+  ingredients to add, scrolling inside itself: the name
   over "Counted in ml · low at 2,000 ml · counted at the close", and its
   cost ("₹60.00 / l", or "Not costed").
   - Under the list: "They are added with nothing in stock. Use Receive
@@ -96,7 +96,8 @@ written down somewhere. It is the menu's import (`backoffice-menu.md`,
   - **Add 12 ingredients** is the primary; **Choose another file** beside
     it.
 - **Nothing to add:** "Every ingredient in store.csv is already in the
-  store."
+  store.", or "store.csv has no ingredients to add." for the template as
+  it came; then the same lines.
 - **Added:** the modal closes; a toast, "Added 12 ingredients. Receive
   stock to put it on hand."
 

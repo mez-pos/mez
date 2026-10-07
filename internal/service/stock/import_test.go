@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/byjoellobo/mez/internal/domain/money"
+	csvsheet "github.com/byjoellobo/mez/internal/domain/sheet"
 	"github.com/byjoellobo/mez/internal/domain/stock"
 )
 
@@ -181,7 +182,7 @@ func TestItemsTemplateImportsAtItsOwnVenue(t *testing.T) {
 		t.Fatal(err)
 	}
 	var file strings.Builder
-	if err := csv.NewWriter(&file).WriteAll(append([][]string{stock.ItemColumns}, rows...)); err != nil {
+	if err := csv.NewWriter(&file).WriteAll(append([][]string{stock.ItemColumns}, unmarked(rows)...)); err != nil {
 		t.Fatal(err)
 	}
 	out, err := f.s.PreviewItems(ctx, 1, []byte(file.String()))
@@ -201,5 +202,39 @@ func TestItemsImportListsAreNeverMissing(t *testing.T) {
 	}
 	if out.ToAdd == nil || out.Skipped == nil || len(out.Problems) != 1 || out.Problems[0].Row != 0 {
 		t.Errorf("an empty file: %+v", out)
+	}
+}
+
+// unmarked is the template's rows with real names: the example's mark taken off.
+func unmarked(rows [][]string) [][]string {
+	out := make([][]string, len(rows))
+	for i, row := range rows {
+		out[i] = append([]string{strings.TrimSpace(strings.TrimPrefix(row[0], csvsheet.ExamplePrefix))}, row[1:]...)
+	}
+	return out
+}
+
+// TestImportItemsLeavesTheTemplatesExamplesOut: the template given straight
+// back adds nothing and is nothing wrong, and says how many rows it left out.
+func TestImportItemsLeavesTheTemplatesExamplesOut(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	rows, err := f.s.ItemsTemplate(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var file strings.Builder
+	if err := csv.NewWriter(&file).WriteAll(append([][]string{stock.ItemColumns}, rows...)); err != nil {
+		t.Fatal(err)
+	}
+	out, err := f.s.ImportItems(ctx, 1, []byte(file.String()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Imported || out.Examples != 3 || len(out.ToAdd) != 0 || len(out.Problems) != 0 {
+		t.Errorf("the template, imported as it comes: %+v", out)
+	}
+	if got := f.names(t, 1); got != "" {
+		t.Errorf("an example reached the store: %s", got)
 	}
 }

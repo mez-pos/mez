@@ -3,7 +3,7 @@
 // answer into what the modal shows.
 
 import type { ChoicesImport, ChoicesImportChoice, MenuImport, MenuImportItem, Money } from "../../../shared/api-types";
-import { count, examplesAmong, type Verdict } from "../files/file-logic";
+import { count, examplesLeftOut, type Verdict } from "../files/file-logic";
 
 // The checks of any file are in files/file-logic.ts. They are passed on from
 // here so the menu's dialogs read from one place.
@@ -24,26 +24,28 @@ export function summaryLines(plan: MenuImport): string[] {
   if (plan.new_categories.length > 0) {
     lines.push(`${count(plan.new_categories.length, "new category", "new categories")}: ${plan.new_categories.join(", ")}.`);
   }
+  return [...lines, ...leftOutLines(plan)];
+}
+
+/** Why some rows add nothing: their item is already there, or they are the template's examples. */
+export function leftOutLines(plan: MenuImport): string[] {
+  const lines: string[] = [];
   const there = plan.skipped.length;
   if (there === 1) lines.push("1 is already on the menu and is left as it is.");
   if (there > 1) lines.push(`${there} are already on the menu and are left as they are.`);
+  const examples = examplesLeftOut(plan.examples);
+  if (examples) lines.push(examples);
   return lines;
+}
+
+/** What is said of a file that adds nothing. */
+export function nothingText(plan: MenuImport, filename: string): string {
+  return plan.skipped.length > 0 ? `Every item in ${filename} is already on the menu.` : `${filename} has no items to add.`;
 }
 
 /** An item to add, in a line under its name: its category, and the groups of choices it offers. */
 export function itemLine(it: MenuImportItem): string {
   return it.choices.length === 0 ? it.category : `${it.category} · offers ${it.choices.join(", ")}`;
-}
-
-/** How many of the rows to add are the template's examples, left in the file. */
-export function examplesIn(plan: MenuImport): number {
-  return examplesAmong(plan.to_add.map((it) => it.name));
-}
-
-export function examplesText(n: number): string {
-  return n === 1
-    ? "1 of these is one of the template's examples. Take that row out of the file unless you want it on the menu."
-    : `${n} of these are the template's examples. Take those rows out of the file unless you want them on the menu.`;
 }
 
 export function addLabel(plan: MenuImport): string {
@@ -71,11 +73,23 @@ export function choicesVerdict(plan: ChoicesImport): Verdict {
 
 /** What a file of choices ready to add would do, a line for each thing that applies. */
 export function choicesSummary(plan: ChoicesImport): string[] {
-  const lines = [`${count(plan.to_add.length, "group", "groups")} to add.`];
+  return [`${count(plan.to_add.length, "group", "groups")} to add.`, ...choicesLeftOut(plan)];
+}
+
+/** Why some rows of a file of choices add nothing: their group is already there, or they are the template's examples. */
+export function choicesLeftOut(plan: ChoicesImport): string[] {
+  const lines: string[] = [];
   const there = plan.skipped.length;
   if (there === 1) lines.push("1 row is for a group already on the menu, and is left as it is.");
   if (there > 1) lines.push(`${there} rows are for groups already on the menu, and are left as they are.`);
+  const examples = examplesLeftOut(plan.examples);
+  if (examples) lines.push(examples);
   return lines;
+}
+
+/** What is said of a file of choices that adds nothing. */
+export function choicesNothingText(plan: ChoicesImport, filename: string): string {
+  return plan.skipped.length > 0 ? `Every group in ${filename} is already on the menu.` : `${filename} has no groups to add.`;
 }
 
 /** How a choice's price reads beside its name: nothing, "+" and an amount, or "−" and an amount. */

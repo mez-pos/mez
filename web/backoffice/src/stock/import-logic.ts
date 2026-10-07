@@ -4,7 +4,7 @@
 
 import type { RecipeImportDish, RecipesImport, StockImportRow, StockItemsImport } from "../../../shared/api-types";
 import { formatQty } from "../../../shared/stock-qty";
-import { count, examplesAmong, type Verdict } from "../files/file-logic";
+import { count, examplesLeftOut, type Verdict } from "../files/file-logic";
 
 export const itemsTemplatePath = "/api/v1/stock/import/template";
 
@@ -15,11 +15,23 @@ export function ingredientsVerdict(plan: StockItemsImport): Verdict {
 
 /** What a file ready to add would do, a line for each thing that applies. */
 export function ingredientsSummary(plan: StockItemsImport): string[] {
-  const lines = [`${count(plan.to_add.length, "ingredient", "ingredients")} to add.`];
+  return [`${count(plan.to_add.length, "ingredient", "ingredients")} to add.`, ...ingredientsLeftOut(plan)];
+}
+
+/** Why some rows add nothing: their ingredient is already there, or they are the template's examples. */
+export function ingredientsLeftOut(plan: StockItemsImport): string[] {
+  const lines: string[] = [];
   const there = plan.skipped.length;
   if (there === 1) lines.push("1 is already in the store and is left as it is.");
   if (there > 1) lines.push(`${there} are already in the store and are left as they are.`);
+  const examples = examplesLeftOut(plan.examples);
+  if (examples) lines.push(examples);
   return lines;
+}
+
+/** What is said of a file of ingredients that adds nothing. */
+export function ingredientsNothingText(plan: StockItemsImport, filename: string): string {
+  return plan.skipped.length > 0 ? `Every ingredient in ${filename} is already in the store.` : `${filename} has no ingredients to add.`;
 }
 
 /** An ingredient to add, in a line: what it is counted in, where it is low, whether it is counted at the close. */
@@ -28,17 +40,6 @@ export function ingredientLine(r: StockImportRow): string {
   if (r.low_level > 0) parts.push(`low at ${formatQty(r.low_level, r.unit)}`);
   if (r.count_at_close) parts.push("counted at the close");
   return parts.join(" · ");
-}
-
-/** How many of the rows to add are the template's examples, left in the file. */
-export function itemExamples(plan: StockItemsImport): number {
-  return examplesAmong(plan.to_add.map((r) => r.name));
-}
-
-export function itemExamplesText(n: number): string {
-  return n === 1
-    ? "1 of these is one of the template's examples. Take that row out of the file unless you want it in the store."
-    : `${n} of these are the template's examples. Take those rows out of the file unless you want them in the store.`;
 }
 
 export function addIngredientsLabel(plan: StockItemsImport): string {

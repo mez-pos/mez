@@ -1,6 +1,9 @@
 package menu
 
-import "github.com/byjoellobo/mez/internal/domain/money"
+import (
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/sheet"
+)
 
 // exampleCategory is the category the examples go in at a venue with no
 // category to name.
@@ -37,8 +40,8 @@ func ImportTemplate(v ImportVenue) [][]string {
 		second = "80"
 	}
 	return [][]string{
-		{category, "Example: Masala dosa", "120", taxClass, hsn, station, course, "Crisp rice crepe with spiced potato", "veg", "yes", "yes", choices},
-		{category, "Example: Filter coffee", second, taxClass, hsn, station, course, "", "", "no", "no", ""},
+		{category, sheet.ExamplePrefix + " Masala dosa", "120", taxClass, hsn, station, course, "Crisp rice crepe with spiced potato", "veg", "yes", "yes", choices},
+		{category, sheet.ExamplePrefix + " Filter coffee", second, taxClass, hsn, station, course, "", "", "no", "no", ""},
 	}
 }
 

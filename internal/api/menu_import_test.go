@@ -174,13 +174,18 @@ func TestMenuImportTemplateOverHTTP(t *testing.T) {
 	if first != byteOrderMark+"Category,Name,Price,Tax class,HSN,Station,Course,Description,Diet,Gluten free,Popular,Choices" {
 		t.Errorf("first line: %q", first)
 	}
-	plan := importOf(t, m.sendFile("/api/v1/menu/import/preview", "text/csv", file.Text, nil))
+	// As it comes its rows are the template's examples: left out, and counted.
+	if asItComes := importOf(t, m.sendFile("/api/v1/menu/import/preview", "text/csv", file.Text, nil)); asItComes.Examples != 2 || len(asItComes.ToAdd) != 0 || len(asItComes.Problems) != 0 {
+		t.Errorf("the template, checked as it comes: %+v", asItComes)
+	}
+	// Made the owner's own, with the examples' mark off their names, it checks out.
+	plan := importOf(t, m.sendFile("/api/v1/menu/import/preview", "text/csv", strings.ReplaceAll(file.Text, "Example: ", ""), nil))
 	if len(plan.Problems) != 0 || len(plan.ToAdd) != 2 || len(plan.NewCategories) != 1 || plan.NewCategories[0] != "Food" {
 		t.Errorf("the template, checked on an empty menu: %+v", plan)
 	}
 
 	m.edit(t, http.MethodPost, "/api/v1/menu/categories", `{"name":"Tiffin"}`, http.StatusCreated)
-	plan = importOf(t, m.sendFile("/api/v1/menu/import/preview", "text/csv", template().Text, nil))
+	plan = importOf(t, m.sendFile("/api/v1/menu/import/preview", "text/csv", strings.ReplaceAll(template().Text, "Example: ", ""), nil))
 	if len(plan.Problems) != 0 || len(plan.ToAdd) != 2 || len(plan.NewCategories) != 0 || plan.ToAdd[0].Category != "Tiffin" {
 		t.Errorf("the template, checked on a menu with a category: %+v", plan)
 	}
@@ -256,7 +261,10 @@ func TestChoicesImportOverHTTP(t *testing.T) {
 	if file.Filename != "mez-choices-template.csv" || first != byteOrderMark+"Group,Fewest,Most,Choice,Price,Picked to start" {
 		t.Errorf("template: %q, first line %q", file.Filename, first)
 	}
-	if plan := choicesImportOf(t, m.sendFile("/api/v1/menu/choices/import/preview", "text/csv", file.Text, nil)); len(plan.Problems) != 0 || len(plan.ToAdd) != 2 {
+	if asItComes := choicesImportOf(t, m.sendFile("/api/v1/menu/choices/import/preview", "text/csv", file.Text, nil)); asItComes.Examples != 4 || len(asItComes.ToAdd) != 0 || len(asItComes.Problems) != 0 {
+		t.Errorf("the template, checked as it comes: %+v", asItComes)
+	}
+	if plan := choicesImportOf(t, m.sendFile("/api/v1/menu/choices/import/preview", "text/csv", strings.ReplaceAll(file.Text, "Example: ", ""), nil)); len(plan.Problems) != 0 || len(plan.ToAdd) != 2 {
 		t.Errorf("the template, checked: %+v", plan)
 	}
 

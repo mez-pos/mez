@@ -16,6 +16,8 @@ import {
   addedGroupsText,
   asCsv,
   choicePrice,
+  choicesLeftOut,
+  choicesNothingText,
   choicesProblemsText,
   choicesSummary,
   choicesTemplatePath,
@@ -198,7 +200,10 @@ function Result({ checked, onChoose }: { checked: Checked; onChoose: (file: File
       {verdict === "problems" && <Problems line={choicesProblemsText(plan, name)} problems={plan.problems} onChoose={onChoose} />}
       {verdict === "nothing" && (
         <>
-          <p>Every group in {name} is already on the menu.</p>
+          <p>{choicesNothingText(plan, name)}</p>
+          {choicesLeftOut(plan).map((line) => (
+            <p key={line}>{line}</p>
+          ))}
           <div>
             <ChooseFile label="Choose another file" onChoose={onChoose} />
           </div>

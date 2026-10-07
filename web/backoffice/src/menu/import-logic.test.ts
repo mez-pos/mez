@@ -6,10 +6,12 @@ import {
   addedGroupsText,
   addedText,
   choicePrice,
+  choicesNothingText,
   choicesProblemsText,
   choicesSummary,
   choicesVerdict,
-  examplesIn,
+  leftOutLines,
+  nothingText,
   itemLine,
   fileProblem,
   maxImportBytes,
@@ -27,7 +29,15 @@ const item = (row: number, name: string, category = "Coffee", choices: string[] 
   choices,
 });
 
-const plan = (patch: Partial<MenuImport> = {}): MenuImport => ({ to_add: [], new_categories: [], skipped: [], problems: [], imported: false, ...patch });
+const plan = (patch: Partial<MenuImport> = {}): MenuImport => ({
+  to_add: [],
+  new_categories: [],
+  skipped: [],
+  problems: [],
+  examples: 0,
+  imported: false,
+  ...patch,
+});
 
 describe("fileProblem", () => {
   it.each([
@@ -92,13 +102,24 @@ describe("summaryLines", () => {
   });
 });
 
-describe("examplesIn", () => {
-  it("counts the template's examples left in the file", () => {
-    expect(examplesIn(plan({ to_add: [item(2, "Example: Masala dosa"), item(3, "example: filter coffee"), item(4, "Latte")] }))).toBe(2);
+describe("the template's examples, left in a file", () => {
+  it("are said to be left out, under what the file adds", () => {
+    expect(summaryLines(plan({ to_add: [item(2, "Latte")], examples: 2 }))).toEqual(["1 item to add.", "2 example rows from the template were left out."]);
+    expect(leftOutLines(plan({ examples: 1 }))).toEqual(["1 example row from the template was left out."]);
   });
 
-  it("does not count an item that only mentions the word", () => {
-    expect(examplesIn(plan({ to_add: [item(2, "Good example cake")] }))).toBe(0);
+  it("are not said when there are none", () => {
+    expect(leftOutLines(plan())).toEqual([]);
+  });
+});
+
+describe("nothingText", () => {
+  it("says every item is there when rows were skipped for that", () => {
+    expect(nothingText(plan({ skipped: [{ row: 2, category: "Coffee", name: "Latte" }] }), "menu.csv")).toBe("Every item in menu.csv is already on the menu.");
+  });
+
+  it("does not say so of a file that is only the template", () => {
+    expect(nothingText(plan({ examples: 2 }), "mez-menu-template.csv")).toBe("mez-menu-template.csv has no items to add.");
   });
 });
 
@@ -149,7 +170,7 @@ const group = (name: string, choices: ChoicesImport["to_add"][number]["choices"]
 });
 const priced = (name: string, minor: number, start = false) => ({ name, price: { minor, currency: "INR" }, is_default: start });
 
-const choices = (patch: Partial<ChoicesImport> = {}): ChoicesImport => ({ to_add: [], skipped: [], problems: [], imported: false, ...patch });
+const choices = (patch: Partial<ChoicesImport> = {}): ChoicesImport => ({ to_add: [], skipped: [], problems: [], examples: 0, imported: false, ...patch });
 
 describe("choicesVerdict", () => {
   it("is ready with a group to add and nothing wrong", () => {
@@ -211,5 +232,16 @@ describe("itemLine", () => {
   it("is the category, and the groups the item offers when it offers any", () => {
     expect(itemLine(item(2, "Bhel", "Snacks"))).toBe("Snacks");
     expect(itemLine(item(2, "Pav bhaji", "Snacks", ["Spice", "Toppings"]))).toBe("Snacks · offers Spice, Toppings");
+  });
+});
+
+describe("the choices template's examples, left in a file", () => {
+  it("are said to be left out", () => {
+    expect(choicesSummary(choices({ to_add: [group("Size", [])], examples: 4 }))).toEqual([
+      "1 group to add.",
+      "4 example rows from the template were left out.",
+    ]);
+    expect(choicesNothingText(choices({ examples: 4 }), "t.csv")).toBe("t.csv has no groups to add.");
+    expect(choicesNothingText(choices({ skipped: [{ row: 2, group: "Milk" }] }), "t.csv")).toBe("Every group in t.csv is already on the menu.");
   });
 });

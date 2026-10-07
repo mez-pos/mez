@@ -146,12 +146,16 @@ down somewhere. It adds items; it never changes or removes one.
   right: a menu half of what its owner wrote is worse than none.
 - **Ready:** "42 items to add." Then, each only when it applies: "3 new
   categories: Bakes, Drinks, Tiffin."; "5 are already on the menu and
-  are left as they are."; and, in the attention tint, "2 of these are the
-  template's examples. Take those rows out of the file unless you want
-  them on the menu." Under them the items to add, scrolling inside
-  itself: name, category, price. **Add 42 items** is the primary;
-  **Choose another file** beside it.
-- **Nothing to add:** "Every item in this file is already on the menu."
+  are left as they are."; "2 example rows from the template were left
+  out." (a row named "Example: ..." is never imported, ADR-305). Under
+  them the items to add, scrolling inside itself: the name over its
+  category and the groups it will offer ("Snacks · offers Spice,
+  Toppings"), and its price. **Add 42 items** is the primary; **Choose
+  another file** beside it.
+- **Nothing to add:** "Every item in menu.csv is already on the menu.", or
+  for a file with none of the venue's own rows (the template as it came)
+  "menu.csv has no items to add."; then the same lines saying what was
+  left alone or left out.
 - **Added:** the modal closes; a toast, "Added 42 items and 3
   categories." The list shows them, each in its category after what was
   there.
@@ -177,8 +181,9 @@ item offers.
   3. "Choose the file." with **Choose a file**.
 - **Something is wrong** with it: the table of Where, Column and What is
   wrong, under "2 problems in choices.csv. Nothing has been added."
-- **Ready:** "3 groups to add." and, when it applies, "2 rows are for
-  groups already on the menu, and are left as they are." Under them the
+- **Ready:** "3 groups to add." and, each when it applies, "2 rows are for
+  groups already on the menu, and are left as they are." and "4 example
+  rows from the template were left out." Under them the
   groups, scrolling inside itself: the name with what it asks beside it
   ("Pick 1", "Optional, up to 2", as the Choices view words it), and under
   it its choices in order: "Regular (to start), Large +₹30.00, No cheese
@@ -186,7 +191,9 @@ item offers.
   - Under the list: "No item offers them yet. Offer a group from an item's
     editor, or name it in the Choices column when you import items."
   - **Add 3 groups** is the primary; **Choose another file** beside it.
-- **Nothing to add:** "Every group in choices.csv is already on the menu."
+- **Nothing to add:** "Every group in choices.csv is already on the menu.",
+  or "choices.csv has no groups to add." for the template as it came; then
+  the same lines.
 - **Added:** the modal closes; a toast, "Added 3 groups. Offer them on
   items from each item's editor, or when you import items."
 

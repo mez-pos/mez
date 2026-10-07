@@ -16,10 +16,10 @@ import {
   addedIngredientsText,
   ingredientLine,
   ingredientProblemsText,
+  ingredientsLeftOut,
+  ingredientsNothingText,
   ingredientsSummary,
   ingredientsVerdict,
-  itemExamples,
-  itemExamplesText,
   itemsTemplatePath,
 } from "./import-logic";
 import { costMeasures, problemOf } from "./stock-logic";
@@ -162,14 +162,16 @@ function Steps({ onChoose }: { onChoose: (file: File | undefined) => void }) {
 function Result({ checked, onChoose }: { checked: Checked; onChoose: (file: File | undefined) => void }) {
   const { plan, name, note } = checked;
   const verdict = ingredientsVerdict(plan);
-  const examples = itemExamples(plan);
   return (
     <>
       {note && <p className="rounded bg-attention-tint p-3.5">{note}</p>}
       {verdict === "problems" && <Problems line={ingredientProblemsText(plan, name)} problems={plan.problems} onChoose={onChoose} />}
       {verdict === "nothing" && (
         <>
-          <p>Every ingredient in {name} is already in the store.</p>
+          <p>{ingredientsNothingText(plan, name)}</p>
+          {ingredientsLeftOut(plan).map((line) => (
+            <p key={line}>{line}</p>
+          ))}
           <div>
             <ChooseFile label="Choose another file" onChoose={onChoose} />
           </div>
@@ -184,7 +186,6 @@ function Result({ checked, onChoose }: { checked: Checked; onChoose: (file: File
               </li>
             ))}
           </ul>
-          {examples > 0 && <p className="rounded bg-attention-tint p-3.5">{itemExamplesText(examples)}</p>}
           <ul aria-label="Ingredients to add" className="max-h-64 overflow-y-auto rounded border border-line">
             {plan.to_add.map((r) => (
               <li key={r.row} className="flex items-center gap-3 border-b border-line-soft px-3 py-2 last:border-b-0">

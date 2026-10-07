@@ -23,6 +23,8 @@ type ChoicesImport struct {
 	// that name.
 	Skipped  []ChoicesImportSkipped `json:"skipped"`
 	Problems []ImportProblem        `json:"problems"`
+	// Examples is how many rows were of the template's example groups and left out.
+	Examples int `json:"examples"`
 	// Imported: ToAdd is on the menu now, offered by no item yet. False for
 	// a preview, a refusal, and a file that had nothing new.
 	Imported bool `json:"imported"`
@@ -140,6 +142,7 @@ func choicesImportOf(plan menu.ChoicesPlan, currency string) ChoicesImport {
 		ToAdd:    make([]ChoicesImportGroup, len(plan.Groups)),
 		Skipped:  make([]ChoicesImportSkipped, len(plan.Skipped)),
 		Problems: make([]ImportProblem, len(plan.Problems)),
+		Examples: plan.Examples,
 	}
 	for i, g := range plan.Groups {
 		group := ChoicesImportGroup{

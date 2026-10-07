@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/byjoellobo/mez/internal/domain/menu"
+	csvsheet "github.com/byjoellobo/mez/internal/domain/sheet"
 )
 
 // sheet is a file as the fixture's venues would write it: one tax class,
@@ -251,7 +252,7 @@ func TestImportTemplateImportsAtItsOwnVenue(t *testing.T) {
 			}
 			var file strings.Builder
 			cw := csv.NewWriter(&file)
-			if err := cw.WriteAll(append([][]string{menu.ImportColumns}, rows...)); err != nil {
+			if err := cw.WriteAll(append([][]string{menu.ImportColumns}, unmarked(rows, 1)...)); err != nil {
 				t.Fatal(err)
 			}
 			out, err := w.s.PreviewImport(context.Background(), tt.venue, []byte(file.String()))
@@ -265,5 +266,42 @@ func TestImportTemplateImportsAtItsOwnVenue(t *testing.T) {
 	}
 	if len(w.nudged) != 0 {
 		t.Errorf("nudged %v: a template is not an edit", w.nudged)
+	}
+}
+
+// unmarked is a template's rows as an owner makes them theirs: the cell at
+// name without the example's mark, so the row is read and not left out.
+func unmarked(rows [][]string, name int) [][]string {
+	out := make([][]string, len(rows))
+	for i, row := range rows {
+		out[i] = slices.Clone(row)
+		out[i][name] = strings.TrimSpace(strings.TrimPrefix(row[name], csvsheet.ExamplePrefix))
+	}
+	return out
+}
+
+// TestImportLeavesTheTemplatesExamplesOut: the template given straight back
+// adds nothing and is nothing wrong, and says how many rows it left out.
+func TestImportLeavesTheTemplatesExamplesOut(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	rows, err := w.s.ImportTemplate(ctx, plain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var file strings.Builder
+	if err := csv.NewWriter(&file).WriteAll(append([][]string{menu.ImportColumns}, rows...)); err != nil {
+		t.Fatal(err)
+	}
+	before := w.version(t, plain)
+	out, err := w.s.ImportMenu(ctx, plain, []byte(file.String()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Imported || out.Examples != 2 || len(out.ToAdd) != 0 || len(out.Problems) != 0 || len(out.NewCategories) != 0 {
+		t.Errorf("the template, imported as it comes: %+v", out)
+	}
+	if e := w.editor(t, plain); len(e.Items) != 0 || len(e.Categories) != 0 || w.version(t, plain) != before {
+		t.Errorf("an example reached the menu: %+v %+v", e.Categories, e.Items)
 	}
 }

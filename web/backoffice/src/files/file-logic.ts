@@ -4,9 +4,6 @@
 /** The largest file the server reads (menus.MaxImportBytes, stock.MaxImportBytes). */
 export const maxImportBytes = 1 << 20;
 
-/** What a template's example rows are named with (menu.ImportTemplate, stock.ItemsTemplate). */
-const examplePrefix = "example:";
-
 const saveAsCsv = "In your spreadsheet, use Save As and pick CSV UTF-8.";
 
 /** Why a chosen file cannot be sent, or null. The server checks what is in it. */
@@ -45,7 +42,11 @@ export function whereOf(p: FileProblem): string {
   return p.row === 0 ? "The file" : `Row ${p.row}`;
 }
 
-/** How many of these names are a template's examples, left in the file. */
-export function examplesAmong(names: readonly string[]): number {
-  return names.filter((n) => n.toLowerCase().startsWith(examplePrefix)).length;
+/**
+ * The line for a template's example rows left in a file. The server leaves
+ * them out of every import and says how many (ADR-305); null for none.
+ */
+export function examplesLeftOut(n: number): string | null {
+  if (n === 0) return null;
+  return n === 1 ? "1 example row from the template was left out." : `${n} example rows from the template were left out.`;
 }

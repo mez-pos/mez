@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"encoding/csv"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
+
+	"github.com/byjoellobo/mez/internal/domain/sheet"
 )
 
 // cafe is a venue with enough on it to import against: two of everything a
@@ -384,10 +387,27 @@ func TestImportPlanOK(t *testing.T) {
 // and the example rows, as CSV.
 func templateFile(t *testing.T, v ImportVenue) []byte {
 	t.Helper()
+	return csvFile(t, ImportColumns, renamed(ImportTemplate(v), 1))
+}
+
+// renamed is a template's rows as an owner makes them theirs: the cell at
+// name without the example's mark, so the row is read and not left out.
+func renamed(rows [][]string, name int) [][]string {
+	out := make([][]string, len(rows))
+	for i, row := range rows {
+		out[i] = slices.Clone(row)
+		out[i][name] = strings.TrimSpace(strings.TrimPrefix(row[name], sheet.ExamplePrefix))
+	}
+	return out
+}
+
+// csvFile is rows under a header as a spreadsheet saves them.
+func csvFile(t *testing.T, header []string, rows [][]string) []byte {
+	t.Helper()
 	var b bytes.Buffer
 	w := csv.NewWriter(&b)
 	w.UseCRLF = true
-	if err := w.WriteAll(append([][]string{ImportColumns}, ImportTemplate(v)...)); err != nil {
+	if err := w.WriteAll(append([][]string{header}, rows...)); err != nil {
 		t.Fatal(err)
 	}
 	return append([]byte(bom), b.Bytes()...)
@@ -440,7 +460,7 @@ func TestImportTemplateImportsAsItComes(t *testing.T) {
 					t.Errorf("row %d names category %d, tax class %d, station %d, course %d; want %d, %d, %d, %d",
 						r.Row, r.CategoryID, r.TaxClassID, r.StationID, r.CourseID, tt.category, tt.taxClass, tt.station, tt.course)
 				}
-				if r.Price <= 0 || !strings.HasPrefix(r.Name, "Example: ") {
+				if r.Price <= 0 || r.Name == "" {
 					t.Errorf("row %d: %+v", r.Row, r)
 				}
 			}
@@ -476,5 +496,30 @@ func TestImportTemplateNamesACategoryForAnEmptyMenu(t *testing.T) {
 	plan := ReadImport(templateFile(t, v), v)
 	if len(plan.Problems) != 0 || len(plan.NewCategories) != 1 || plan.NewCategories[0] != "Food" {
 		t.Errorf("new categories %v, problems %+v", plan.NewCategories, plan.Problems)
+	}
+}
+
+// TestExampleRowsAreLeftOut: the template's own rows, left in a file, are
+// not the venue's items. They are counted and nothing else about them is
+// read, so they are never a problem and never on the menu.
+func TestExampleRowsAreLeftOut(t *testing.T) {
+	v := importVenue()
+	asItComes := ReadImport(csvFile(t, ImportColumns, ImportTemplate(v)), v)
+	if asItComes.Examples != 2 || len(asItComes.Rows) != 0 || len(asItComes.Problems) != 0 || len(asItComes.NewCategories) != 0 {
+		t.Errorf("the template as it comes: %+v", asItComes)
+	}
+	if asItComes.OK() {
+		t.Error("a file of only examples is OK to import")
+	}
+
+	// Among an owner's own rows, and whatever else an example says.
+	plan := ReadImport([]byte(importHeader+
+		"Coffee,Latte,180,GST 5%,2106,Kitchen,Drinks,,,,\n"+
+		"Nowhere,EXAMPLE: anything,not a price,No tax,,,,,,,\n"+
+		", example:Masala dosa ,,,,,,,,,\n"+
+		// An item that only mentions the word is the venue's own.
+		"Coffee,Good example cake,90,GST 5%,2106,Kitchen,Drinks,,,,\n"), v)
+	if plan.Examples != 2 || len(plan.Problems) != 0 || len(plan.Rows) != 2 || plan.Rows[1].Name != "Good example cake" {
+		t.Errorf("examples %d, rows %+v, problems %+v", plan.Examples, plan.Rows, plan.Problems)
 	}
 }

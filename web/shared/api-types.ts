@@ -1957,6 +1957,7 @@ export interface MenuImport {
   new_categories: string[];
   skipped: MenuImportSkipped[];
   problems: MenuImportProblem[];
+  examples: number;
   imported: boolean;
 }
 
@@ -2008,6 +2009,7 @@ export interface ChoicesImport {
   to_add: ChoicesImportGroup[];
   skipped: ChoicesImportSkipped[];
   problems: MenuImportProblem[];
+  examples: number;
   imported: boolean;
 }
 
@@ -2114,6 +2116,7 @@ export interface StockItemsImport {
   to_add: StockImportRow[];
   skipped: StockImportSkipped[];
   problems: StockImportProblem[];
+  examples: number;
   imported: boolean;
 }
 

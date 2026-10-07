@@ -10966,3 +10966,37 @@ terminal's screen and in its scrollback. Tested: a locked-out owner is
 given a PIN that signs them in, the old one stops working, the lock and
 lockouts are cleared and every session ended. Run for real against a
 demo venue: the list, and a new PIN for a waiter.
+
+## ADR-305 - A template's example rows are never imported, and the preview says how many were left out
+2026-10 · Status: accepted. Phase 10, Task 12c. Supersedes the "not dropped" of ADR-290, ADR-291 and ADR-299.
+Context: the templates for items, ingredients and choices each come with
+rows named "Example: ...". Left in a file they were imported as the
+venue's own, and the preview only pointed at them (ADR-290 held that a
+rule which drops rows by their name is a rule someone trips over). The
+human was asked on 2026-10-08 and chose to have them left out.
+Decision: a row whose name begins "Example:", whatever its case, is
+left out of an import and counted. The name is an item's Name, an
+ingredient's Name, or a choice's Group.
+  - **It is said, never silent.** Each answer carries `examples`, how
+    many rows were left out, and each dialog says so in the summary: "2
+    example rows from the template were left out." That is what answers
+    ADR-290's worry: the owner is told the rule every time it acts.
+  - **Nothing else about such a row is read**, so an example is never a
+    problem, whatever its other cells say. A template uploaded as it
+    came is nothing wrong and nothing to add.
+  - **It is one rule in one place**: `sheet.IsExample`, with
+    `sheet.ExamplePrefix`, which the three templates name their rows
+    with, so the templates and the rule cannot drift apart.
+  - **A file that adds nothing because it is only examples is not said
+    to be "already on the menu".** The dialogs say "menu.csv has no
+    items to add." and then the line about the examples.
+  - The attention-tint warning about examples is gone from the dialogs:
+    there is nothing left to warn of.
+  - Recipes and prices are not touched: the recipes template has no
+    examples, and a file of prices adds nothing.
+Cost: an item, an ingredient or a group cannot be given a name that
+begins "Example:" from a file; it still can from the screen. The
+templates' tests can no longer feed a template straight back and expect
+rows, so they take the mark off the names first, as an owner would, and
+a second test gives the template back as it came and expects it left
+out whole.

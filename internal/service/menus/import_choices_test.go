@@ -208,7 +208,7 @@ func TestChoicesThenItems(t *testing.T) {
 func TestChoicesTemplateImportsAtItsOwnVenue(t *testing.T) {
 	w := newWorld(t)
 	var file strings.Builder
-	if err := csv.NewWriter(&file).WriteAll(append([][]string{menu.ChoiceColumns}, w.s.ChoicesTemplate()...)); err != nil {
+	if err := csv.NewWriter(&file).WriteAll(append([][]string{menu.ChoiceColumns}, unmarked(w.s.ChoicesTemplate(), 0)...)); err != nil {
 		t.Fatal(err)
 	}
 	out, err := w.s.PreviewChoices(context.Background(), plain, []byte(file.String()))

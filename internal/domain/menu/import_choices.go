@@ -58,8 +58,11 @@ type GroupSkip struct {
 // ChoicesPlan is what importing a file of choices would do.
 type ChoicesPlan struct {
 	// Groups are in the order the file first names each.
-	Groups   []GroupImport
-	Skipped  []GroupSkip
+	Groups  []GroupImport
+	Skipped []GroupSkip
+	// Examples is how many rows are of the template's own example groups,
+	// left in the file. They are left out (ADR-305).
+	Examples int
 	Problems []ImportProblem
 }
 
@@ -115,6 +118,7 @@ type choicesReader struct {
 	groups   map[string]*readGroup
 	order    []string
 	skipped  []GroupSkip
+	examples int
 	problems []ImportProblem
 }
 
@@ -127,6 +131,10 @@ func (r *choicesReader) read(row int, cells map[string]string) {
 	}
 
 	name := cells[ColGroup]
+	if sheet.IsExample(name) {
+		r.examples++
+		return
+	}
 	if name == "" {
 		problem(ColGroup, "Say which group this choice is in.")
 	} else if r.have[groupKey(name)] {
@@ -207,7 +215,7 @@ func choicePrice(cell, currency string, problem sheet.Report) int64 {
 // finish checks each group whole, as the editor would on Save, and answers
 // the plan.
 func (r *choicesReader) finish() ChoicesPlan {
-	plan := ChoicesPlan{Skipped: r.skipped, Problems: r.problems}
+	plan := ChoicesPlan{Skipped: r.skipped, Examples: r.examples, Problems: r.problems}
 	for _, key := range r.order {
 		g := r.groups[key]
 		if g.bad {
@@ -260,9 +268,9 @@ func (g *readGroup) problem() *ImportProblem {
 // bounds said once and a choice picked to start, and one that is optional.
 func ChoicesTemplate() [][]string {
 	return [][]string{
-		{"Example: Size", "1", "1", "Regular", "0", "yes"},
-		{"Example: Size", "", "", "Large", "30", "no"},
-		{"Example: Extras", "0", "2", "Extra shot", "40", ""},
-		{"Example: Extras", "", "", "Vanilla syrup", "30", ""},
+		{sheet.ExamplePrefix + " Size", "1", "1", "Regular", "0", "yes"},
+		{sheet.ExamplePrefix + " Size", "", "", "Large", "30", "no"},
+		{sheet.ExamplePrefix + " Extras", "0", "2", "Extra shot", "40", ""},
+		{sheet.ExamplePrefix + " Extras", "", "", "Vanilla syrup", "30", ""},
 	}
 }

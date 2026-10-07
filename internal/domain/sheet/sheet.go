@@ -220,3 +220,15 @@ func Yes(cell string) (yes, ok bool) {
 	}
 	return false, false
 }
+
+// ExamplePrefix begins the name of every example row a template comes with.
+const ExamplePrefix = "Example:"
+
+// IsExample reports whether a name is one of a template's examples, left in
+// the file: it begins with ExamplePrefix, whatever its case. Such a row is
+// left out of an import and counted, so "Example: Masala dosa" is never an
+// item on a menu because an owner did not delete a row (ADR-305).
+func IsExample(name string) bool {
+	name = strings.TrimSpace(name)
+	return len(name) >= len(ExamplePrefix) && strings.EqualFold(name[:len(ExamplePrefix)], ExamplePrefix)
+}

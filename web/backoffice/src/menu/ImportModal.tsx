@@ -14,10 +14,10 @@ import {
   addLabel,
   addedText,
   asCsv,
-  examplesIn,
-  examplesText,
   fileProblem,
   itemLine,
+  leftOutLines,
+  nothingText,
   problemsText,
   summaryLines,
   templatePath,
@@ -163,14 +163,16 @@ function Steps({ onChoose }: { onChoose: (file: File | undefined) => void }) {
 function Result({ checked, onChoose }: { checked: Checked; onChoose: (file: File | undefined) => void }) {
   const { plan, name, note } = checked;
   const verdict = verdictOf(plan);
-  const examples = examplesIn(plan);
   return (
     <>
       {note && <p className="rounded bg-attention-tint p-3.5">{note}</p>}
       {verdict === "problems" && <Problems line={problemsText(plan, name)} problems={plan.problems} onChoose={onChoose} />}
       {verdict === "nothing" && (
         <>
-          <p>Every item in {name} is already on the menu.</p>
+          <p>{nothingText(plan, name)}</p>
+          {leftOutLines(plan).map((line) => (
+            <p key={line}>{line}</p>
+          ))}
           <div>
             <ChooseFile label="Choose another file" onChoose={onChoose} />
           </div>
@@ -185,7 +187,6 @@ function Result({ checked, onChoose }: { checked: Checked; onChoose: (file: File
               </li>
             ))}
           </ul>
-          {examples > 0 && <p className="rounded bg-attention-tint p-3.5">{examplesText(examples)}</p>}
           <ul aria-label="Items to add" className="max-h-64 overflow-y-auto rounded border border-line">
             {plan.to_add.map((it) => (
               <li key={it.row} className="flex items-center gap-3 border-b border-line-soft px-3 py-2 last:border-b-0">

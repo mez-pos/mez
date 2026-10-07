@@ -60,8 +60,11 @@ type ItemSkip struct {
 
 // ItemsPlan is what importing a file of ingredients would do.
 type ItemsPlan struct {
-	Rows     []ItemRow
-	Skipped  []ItemSkip
+	Rows    []ItemRow
+	Skipped []ItemSkip
+	// Examples is how many rows are the template's own examples, left in
+	// the file. They are left out (ADR-305).
+	Examples int
 	Problems []sheet.Problem
 }
 
@@ -114,6 +117,11 @@ func (r *itemsReader) read(row int, cells map[string]string) {
 	}
 
 	name := cells[ColName]
+	// A template's example is not the venue's ingredient, whatever else it says.
+	if sheet.IsExample(name) {
+		r.plan.Examples++
+		return
+	}
 	// Which item it is comes first: a row for one already there is left
 	// alone whatever else it says.
 	if name != "" {
@@ -242,10 +250,10 @@ func ItemsTemplate(currency string) [][]string {
 	}
 	return [][]string{
 		// 900 for a kilogram, low at half a kilogram.
-		{"Example: Coffee beans", "g", "500", cost("900", "900.00"), "no"},
+		{sheet.ExamplePrefix + " Coffee beans", "g", "500", cost("900", "900.00"), "no"},
 		// 60 for a litre, low at two litres, counted as each shift closes.
-		{"Example: Milk", "ml", "2000", cost("60", "60.00"), "yes"},
+		{sheet.ExamplePrefix + " Milk", "ml", "2000", cost("60", "60.00"), "yes"},
 		// 7.50 for one.
-		{"Example: Eggs", "each", "12", cost("8", "7.50"), ""},
+		{sheet.ExamplePrefix + " Eggs", "each", "12", cost("8", "7.50"), ""},
 	}
 }

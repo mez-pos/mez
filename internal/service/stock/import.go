@@ -34,6 +34,8 @@ type ItemsImport struct {
 	// of that name.
 	Skipped  []ImportSkipped `json:"skipped"`
 	Problems []ImportProblem `json:"problems"`
+	// Examples is how many rows were the template's examples and left out.
+	Examples int `json:"examples"`
 	// Imported: ToAdd is in the store now, with nothing on hand. False for
 	// a preview, a refusal, and an import that found nothing to add.
 	Imported bool `json:"imported"`
@@ -161,6 +163,7 @@ func itemsImportOf(plan stock.ItemsPlan, currency string) ItemsImport {
 		ToAdd:    make([]ItemImportRow, len(plan.Rows)),
 		Skipped:  make([]ImportSkipped, len(plan.Skipped)),
 		Problems: problemsOf(plan.Problems),
+		Examples: plan.Examples,
 	}
 	for i, r := range plan.Rows {
 		out.ToAdd[i] = ItemImportRow{

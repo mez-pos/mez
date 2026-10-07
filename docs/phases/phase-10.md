@@ -329,7 +329,7 @@ session; split one again if it is not.
     Spreadsheet menu, and its dialog; the items import's dialog says that
     choices come first.
 
-- [ ] **Task 12 — Loose ends from the import's walk.**
+- [x] **Task 12 — Loose ends from the import's walk.**
   Three small things found on 2026-10-08. None depends on Tasks 8 to 11,
   and 12a should not wait for them: do it in any session with time left.
 
@@ -346,7 +346,7 @@ session; split one again if it is not.
     dev venue made before ADR-260 has 1234. Print the PIN only on the run
     that sets the venue up, and on later runs say where it came from and
     that deleting the data directory makes a fresh one.
-  - [ ] **Task 12c: The template's example rows, left in a file.** They are
+  - [x] **Task 12c: The template's example rows, left in a file.** They are
     imported as items named "Example: ..." with a warning in the preview
     (ADR-290, ADR-291). The human has not said whether they should be left
     out instead. Ask; if yes, they are reported as skipped, never dropped

@@ -5,6 +5,8 @@ import (
 	"encoding/csv"
 	"strings"
 	"testing"
+
+	"github.com/byjoellobo/mez/internal/domain/sheet"
 )
 
 func store() ItemsVenue {
@@ -160,7 +162,8 @@ func TestItemsTemplateImportsAsItComes(t *testing.T) {
 			var b bytes.Buffer
 			w := csv.NewWriter(&b)
 			w.UseCRLF = true
-			if err := w.WriteAll(append([][]string{ItemColumns}, ItemsTemplate(currency)...)); err != nil {
+			// As an owner makes it theirs: the names without the example's mark.
+			if err := w.WriteAll(append([][]string{ItemColumns}, named(ItemsTemplate(currency))...)); err != nil {
 				t.Fatal(err)
 			}
 			plan := ReadItems(append([]byte("\xef\xbb\xbf"), b.Bytes()...), ItemsVenue{Currency: currency})
@@ -171,7 +174,7 @@ func TestItemsTemplateImportsAsItComes(t *testing.T) {
 				t.Errorf("units: %v %v %v", plan.Rows[0].Unit, plan.Rows[1].Unit, plan.Rows[2].Unit)
 			}
 			for _, r := range plan.Rows {
-				if r.Cost <= 0 || r.LowLevel <= 0 || !strings.HasPrefix(r.Name, "Example: ") {
+				if r.Cost <= 0 || r.LowLevel <= 0 || r.Name == "" {
 					t.Errorf("row: %+v", r)
 				}
 			}
@@ -181,5 +184,31 @@ func TestItemsTemplateImportsAsItComes(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// named is the template's rows with real names: the example's mark taken off.
+func named(rows [][]string) [][]string {
+	out := make([][]string, len(rows))
+	for i, row := range rows {
+		out[i] = append([]string{strings.TrimSpace(strings.TrimPrefix(row[0], sheet.ExamplePrefix))}, row[1:]...)
+	}
+	return out
+}
+
+// TestExampleIngredientsAreLeftOut: the template's own rows, left in a
+// file, are counted and not added, whatever else they say.
+func TestExampleIngredientsAreLeftOut(t *testing.T) {
+	var b bytes.Buffer
+	if err := csv.NewWriter(&b).WriteAll(append([][]string{ItemColumns}, ItemsTemplate("INR")...)); err != nil {
+		t.Fatal(err)
+	}
+	asItComes := ReadItems(b.Bytes(), store())
+	if asItComes.Examples != 3 || len(asItComes.Rows) != 0 || len(asItComes.Problems) != 0 || asItComes.OK() {
+		t.Errorf("the template as it comes: %+v", asItComes)
+	}
+	plan := ReadItems([]byte(itemsHeader+"Milk,ml,,,\nEXAMPLE: Rice,kg,lots,cheap,maybe\n"), store())
+	if plan.Examples != 1 || len(plan.Problems) != 0 || len(plan.Rows) != 1 {
+		t.Errorf("examples %d, rows %+v, problems %+v", plan.Examples, plan.Rows, plan.Problems)
 	}
 }
