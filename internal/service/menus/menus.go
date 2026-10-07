@@ -372,8 +372,8 @@ func (s *Service) checkItem(ctx context.Context, q *gen.Queries, venueID int64, 
 }
 
 // MaxDescriptionLength is the longest an item's description may be, in
-// characters: one line on a card.
-const MaxDescriptionLength = 140
+// characters: one line on a card. The import reads a file by the same limit.
+const MaxDescriptionLength = menu.MaxDescriptionLength
 
 // isLineBreak is a control character or a Unicode line or paragraph
 // separator. Format characters are left alone: the zero-width joiners that

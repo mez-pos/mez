@@ -10316,3 +10316,53 @@ session; a leaked relay key is trusted until the relay restarts; a
 self-reset of one's own PIN asks for no old PIN; secrets may still be
 passed as flags; the Windows spooler send cannot be cancelled; a
 gateway checkout started twice at once leaves an orphan to lapse.
+
+## ADR-288 - The menu can be imported from a spreadsheet, as CSV, adding only
+2026-10 · Status: accepted. Phase 10, Task 7, added by the human after the plan was built.
+Context: the editor adds one item at a time. A venue arriving with
+eighty items on a sheet has an afternoon of typing before its first
+sale, and that is the afternoon it decides whether to stay.
+Decision: the back office takes the menu's items from a file. The owner
+downloads a template, fills it in a spreadsheet, saves it as CSV and
+gives it back; the screen shows the plan (rows to add, categories to
+make, rows already there, every problem by row and column) and adds it
+all in one menu edit or adds nothing.
+  - **CSV, not .xlsx.** Every spreadsheet opens and saves it, the
+    standard library reads it, and the binary gains no dependency. The
+    cost is what a spreadsheet does to CSV, so the reader takes it as it
+    comes: a byte order mark, semicolons or tabs between cells (chosen
+    by the header row), either line ending, headers in any case or
+    order. A file that is not UTF-8 text is refused with the words
+    "save it as CSV UTF-8", not read as nonsense.
+  - **Adding only.** A row whose category and name are already on the
+    menu, retired or not, is left out and said so, and is not checked
+    further. Nothing is changed or removed by a file. Re-importing to
+    change prices is the feature that lets a wrong file damage a live
+    menu quietly, and it can come later with its own preview.
+  - **One bad row refuses the file.** Every problem on every row is
+    reported in one pass, so it is fixed in one. A menu half of what its
+    owner wrote is worse than none.
+  - **Items only.** Modifier groups are choices with bounds attached to
+    items, not rows, and are quick to make by hand once the items exist.
+  - **A price is read as digits.** Through `money.Parse`, never a float.
+    A currency symbol, "Rs" or the venue's code around the number is
+    dropped. `money.Parse` reads any comma as a digit grouping, which
+    would make "12,50" twelve hundred and fifty, so a comma is accepted
+    only where it groups (three digits after the last, two or three
+    between, as "1,00,000") and is otherwise a problem asking for a point.
+  - **No guessing at a tax class, station or course.** The schema has
+    no default for any of them. An empty cell means the only active one
+    when there is exactly one; with a choice to make it is a problem
+    that lists the names. A cell may give a station's code or a course's
+    number instead of its name.
+  - **The reader is in `internal/domain/menu` and reads nothing but its
+    arguments**: the file and what the venue has (`ImportVenue`). The
+    service will build that from the database and write the plan (7b).
+    `MaxDescriptionLength` moved there with it; the service's is now
+    the same constant.
+Cost: a file is at most 1000 rows. A column the import does not know
+refuses the file, so a sheet with a notes column needs it removed, which
+is strict but cannot silently ignore a misspelt "Pirce". A new
+category's name is the file's first spelling of it. Two rows for one
+item in a file are a problem even when they agree. Not built yet: the
+endpoint, the template download and the screen (7b to 7d).

@@ -210,6 +210,37 @@ Phase 09.
     the human (ADR-141): there is nothing to configure until Litestream is
     in the binary, and that task already asks for its back office screen.
 
+- [ ] **Task 7 — Import the menu from a spreadsheet.**
+  Added by the human on 2026-10-08, after the plan was built (ADR-288). A
+  venue with eighty items should not type them one at a time. The owner
+  downloads a template, fills it in a spreadsheet, saves it as CSV and gives
+  it back; the back office shows what it would add and what is wrong, row by
+  row, and adds it all at once or not at all.
+
+  CSV, not .xlsx: every spreadsheet opens and saves it and it needs no
+  dependency. Items only, one row each: modifier groups are made by hand.
+  Adding only: a row already on the menu is left as it is and said so, and
+  nothing is ever changed or removed by a file.
+
+  - [x] **Task 7a: Read and check the file.** `internal/domain/menu`, pure:
+    the columns, a file read into rows against what the venue has (its
+    categories, tax classes, stations, courses and items), and every problem
+    with its row and column. A price is read as money, never a float. Tests,
+    adversarial ones included: a spreadsheet's byte order mark and
+    semicolons, a currency symbol in the price, a repeated row, a retired
+    category.
+  - [ ] **Task 7b: The import on the server.** A dry run that answers the
+    plan and writes nothing, and the import itself: the new categories and
+    every item in one menu edit, so one version bump and one nudge, or none.
+    Refused whole if any row has a problem. `menu.edit`, an idempotency key,
+    a limit on the file's size. Go tests against a temp file database.
+  - [ ] **Task 7c: The template.** A download from the server: the header
+    row and example rows that use the venue's own category, tax class,
+    station and course names, so the file imports as it comes.
+  - [ ] **Task 7d: The screen.** Spec first, added to `backoffice-menu.md`.
+    Import on the Menu screen: get the template, choose a file, read the
+    preview (to add, new categories, already there, problems by row), confirm.
+
 ## Done when
 A new venue can be configured end to end from back office — menu, tax, printers,
 staff, settings — and trade a full day, without anyone editing a config file.

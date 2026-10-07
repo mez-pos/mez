@@ -8,7 +8,15 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 7e: CONTRIBUTING, with the architecture** (ADR-285).
+**The audit between phases** (ADR-287, 2026-10-07). Four reviews at once
+(security, Go, TypeScript, docs against code) and a walk of the whole
+spine against the demo venue from `bin/mez`. No critical or high finding;
+what was fixed and what was left are under the ADR and in `KNOWN.md`.
+After it, outside any task: the back office no longer scrolls as a page
+(a screen-reader label below the fold escaped the screen's scroll), and a
+write-off shows on "Wastage this week" at once.
+
+Before it, **Phase 12, Task 7e: CONTRIBUTING, with the architecture** (ADR-285).
 `CONTRIBUTING.md` gains "How it fits together": the layers, an order as
 events, one tap followed from the till to the printer. Its versions,
 targets and tree brought up to date; `01-architecture.md` corrected where

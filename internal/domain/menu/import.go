@@ -1,0 +1,595 @@
+package menu
+
+import (
+	"bytes"
+	"encoding/csv"
+	"errors"
+	"fmt"
+	"io"
+	"strings"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/byjoellobo/mez/internal/domain/tax"
+)
+
+// The menu from a spreadsheet (phase 10, Task 7, ADR-288): a CSV file with a
+// header row and one item on each row under it. Reading it adds nothing. It
+// answers a plan: the rows to add, the categories they need, the rows already
+// on the menu, and every problem with the row and column it is in.
+
+// The columns, by the names the template gives them. A header is matched
+// without regard to case, spaces, hyphens or underscores.
+const (
+	ColCategory    = "Category"
+	ColName        = "Name"
+	ColPrice       = "Price"
+	ColTaxClass    = "Tax class"
+	ColHSN         = "HSN"
+	ColStation     = "Station"
+	ColCourse      = "Course"
+	ColDescription = "Description"
+	ColDiet        = "Diet"
+	ColGlutenFree  = "Gluten free"
+	ColPopular     = "Popular"
+)
+
+// ImportColumns is every column, in the template's order. The first three
+// must be in the file; a file may leave any of the others out.
+var ImportColumns = []string{
+	ColCategory, ColName, ColPrice, ColTaxClass, ColHSN, ColStation, ColCourse,
+	ColDescription, ColDiet, ColGlutenFree, ColPopular,
+}
+
+var requiredColumns = []string{ColCategory, ColName, ColPrice}
+
+// MaxImportRows is the most rows one file may hold. A venue's whole menu is
+// well under it, and it bounds what one request can ask the database to do.
+const MaxImportRows = 1000
+
+// MaxDescriptionLength is the longest an item's description may be, in
+// characters: one line on a card.
+const MaxDescriptionLength = 140
+
+// ImportVenue is what a file is read against: what the venue has now.
+type ImportVenue struct {
+	Currency string
+	// NeedsHSN: the venue's tax profile prints an HSN or SAC code on every
+	// invoice line, so every item must have one.
+	NeedsHSN bool
+	// Each in the order the venue keeps them, retired ones included.
+	Categories []ImportChoice
+	TaxClasses []ImportChoice
+	Stations   []ImportChoice
+	Courses    []ImportChoice
+	// Items are every item on the menu, retired ones included.
+	Items []ImportHave
+}
+
+// ImportChoice is something a cell may name.
+type ImportChoice struct {
+	ID   int64
+	Name string
+	// Also is another thing it answers to: a station's code, a course's number.
+	Also   string
+	Active bool
+}
+
+// ImportHave is an item already on the menu, by its category's name and its own.
+type ImportHave struct {
+	Category string
+	Name     string
+}
+
+// ImportRow is one item to add.
+type ImportRow struct {
+	// Row is its row in the spreadsheet; the header is row 1.
+	Row int
+	// Category is the category's name, and CategoryID its id, or 0 for one
+	// the import has to make first.
+	Category   string
+	CategoryID int64
+	Name       string
+	// Price is in minor units of the venue's currency.
+	Price       int64
+	HSN         string
+	TaxClassID  int64
+	StationID   int64
+	CourseID    int64
+	Description string
+	Diet        Diet
+	GlutenFree  bool
+	Popular     bool
+}
+
+// ImportSkip is a row left out because the menu already has that item in
+// that category. An import adds; it never changes what is there.
+type ImportSkip struct {
+	Row      int
+	Category string
+	Name     string
+}
+
+// ImportProblem is why a row cannot be added. Row 0 is a problem with the
+// file as a whole, and has no column.
+type ImportProblem struct {
+	Row     int
+	Column  string
+	Message string
+}
+
+// ImportPlan is what importing a file would do.
+type ImportPlan struct {
+	Rows []ImportRow
+	// NewCategories are the categories to make, in the order the file first
+	// names them.
+	NewCategories []string
+	Skipped       []ImportSkip
+	Problems      []ImportProblem
+}
+
+// OK reports whether the plan can be carried out: it has something to add
+// and nothing wrong. One bad row refuses the file, so a menu is never half
+// of what its owner wrote.
+func (p ImportPlan) OK() bool { return len(p.Problems) == 0 && len(p.Rows) > 0 }
+
+// ReadImport reads a CSV file against the venue and answers what importing
+// it would do. It never fails: a file it cannot read is a plan with one
+// problem, on row 0.
+func ReadImport(data []byte, v ImportVenue) ImportPlan {
+	records, problem := importRecords(data)
+	if problem != "" {
+		return fileProblem(problem)
+	}
+	columns, problem := readHeading(records[0])
+	if problem != "" {
+		return fileProblem(problem)
+	}
+
+	r := newImportReader(v)
+	for i, record := range records[1:] {
+		cells := importCells(record, columns)
+		if len(cells) == 0 {
+			continue
+		}
+		// Counted with the empty rows, as the spreadsheet numbers them.
+		r.read(i+2, cells)
+	}
+	switch {
+	case r.seen == 0:
+		return fileProblem("The file has no rows under its headings.")
+	case r.seen > MaxImportRows:
+		return fileProblem(fmt.Sprintf("The file has %d rows. Import at most %d at a time.", r.seen, MaxImportRows))
+	}
+	return r.plan
+}
+
+func fileProblem(message string) ImportPlan {
+	return ImportPlan{Problems: []ImportProblem{{Message: message}}}
+}
+
+const notCSV = "This is not a CSV file the import can read. In your spreadsheet, save it as CSV UTF-8 and choose that file."
+
+// importRecords splits a file into rows of cells, the header first. The
+// string is what is wrong with the file, or empty.
+func importRecords(data []byte) ([][]string, string) {
+	data = bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
+	if len(bytes.TrimSpace(data)) == 0 {
+		return nil, "The file is empty."
+	}
+	// A spreadsheet's own format, or text in an encoding that is not UTF-8,
+	// would read as rows of nonsense.
+	if !utf8.Valid(data) || bytes.IndexByte(data, 0) >= 0 {
+		return nil, notCSV
+	}
+
+	reader := csv.NewReader(bytes.NewReader(data))
+	reader.Comma = importDelimiter(data)
+	reader.FieldsPerRecord = -1
+	var records [][]string
+	for {
+		record, err := reader.Read()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			line, _ := reader.FieldPos(0)
+			return nil, fmt.Sprintf("The file could not be read near line %d: a quotation mark there is not closed, or is in the middle of a cell.", line)
+		}
+		records = append(records, record)
+	}
+	if len(records) == 0 {
+		return nil, "The file is empty."
+	}
+	return records, ""
+}
+
+// importDelimiter is what separates the cells: whichever of a comma, a
+// semicolon and a tab the header row has most of. A spreadsheet set to a
+// language that writes decimals with a comma saves CSV with semicolons.
+func importDelimiter(data []byte) rune {
+	first, _, _ := bytes.Cut(data, []byte("\n"))
+	best, most := ',', bytes.Count(first, []byte(","))
+	for _, d := range []rune{';', '\t'} {
+		if n := bytes.Count(first, []byte(string(d))); n > most {
+			best, most = d, n
+		}
+	}
+	return best
+}
+
+// readHeading reads the header row into the column each position holds, or
+// "" for a position with no heading. The second string is what is wrong
+// with it, or empty.
+func readHeading(record []string) ([]string, string) {
+	known := make(map[string]string, len(ImportColumns))
+	for _, c := range ImportColumns {
+		known[foldHeading(c)] = c
+	}
+	columns := make([]string, len(record))
+	have := make(map[string]bool, len(record))
+	for i, cell := range record {
+		heading := strings.TrimSpace(cell)
+		if heading == "" {
+			continue
+		}
+		column, ok := known[foldHeading(heading)]
+		switch {
+		case !ok:
+			return nil, fmt.Sprintf("The import does not know the column %q. Its columns are %s.", heading, strings.Join(ImportColumns, ", "))
+		case have[column]:
+			return nil, fmt.Sprintf("The column %s is in the file twice.", column)
+		}
+		columns[i], have[column] = column, true
+	}
+
+	var missing []string
+	for _, c := range requiredColumns {
+		if !have[c] {
+			missing = append(missing, c)
+		}
+	}
+	switch len(missing) {
+	case 0:
+		return columns, ""
+	case 1:
+		return nil, fmt.Sprintf("The file has no %s column. The first row must be the headings from the template.", missing[0])
+	}
+	last := len(missing) - 1
+	return nil, fmt.Sprintf("The file has no %s and %s columns. The first row must be the headings from the template.",
+		strings.Join(missing[:last], ", "), missing[last])
+}
+
+// foldHeading is a heading as it is compared: "Gluten free", "gluten_free"
+// and "GLUTEN-FREE" are one column.
+func foldHeading(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) || r == '_' || r == '-' {
+			return -1
+		}
+		return unicode.ToLower(r)
+	}, s)
+}
+
+// importCells is a row as its cells by column, trimmed. It is empty for a
+// row with nothing in it.
+func importCells(record, columns []string) map[string]string {
+	cells := make(map[string]string, len(columns))
+	for i, column := range columns {
+		if column == "" || i >= len(record) {
+			continue
+		}
+		if cell := strings.TrimSpace(record[i]); cell != "" {
+			cells[column] = cell
+		}
+	}
+	return cells
+}
+
+// importReader reads rows into a plan, remembering what earlier rows named.
+type importReader struct {
+	venue ImportVenue
+	plan  ImportPlan
+	// seen is how many rows had anything in them.
+	seen int
+	// have is every item on the menu, and firstRow every item an earlier row
+	// of the file gave, each by category and name.
+	have     map[string]bool
+	firstRow map[string]int
+	// newCategory is the spelling the file first gave a category it adds.
+	newCategory map[string]string
+}
+
+func newImportReader(v ImportVenue) *importReader {
+	have := make(map[string]bool, len(v.Items))
+	for _, it := range v.Items {
+		have[itemKey(it.Category, it.Name)] = true
+	}
+	return &importReader{venue: v, have: have, firstRow: map[string]int{}, newCategory: map[string]string{}}
+}
+
+func itemKey(category, name string) string {
+	return strings.ToLower(strings.TrimSpace(category)) + "\x00" + strings.ToLower(strings.TrimSpace(name))
+}
+
+// read reads one row into the plan: an item to add, one already there, or
+// its problems, every one of them, so the file is fixed in one pass.
+func (r *importReader) read(row int, cells map[string]string) {
+	r.seen++
+	if r.seen > MaxImportRows {
+		return
+	}
+	var problems []ImportProblem
+	problem := func(column, message string) {
+		problems = append(problems, ImportProblem{Row: row, Column: column, Message: message})
+	}
+
+	out := ImportRow{Row: row}
+	out.Category, out.CategoryID = r.category(cells[ColCategory], problem)
+	out.Name = importName(ColName, cells[ColName], problem)
+
+	// Who it is comes first: a row for an item already there is left alone
+	// whatever else it says, and the same item twice is one mistake, not two.
+	if out.Category != "" && out.Name != "" {
+		key := itemKey(out.Category, out.Name)
+		if r.have[key] {
+			r.plan.Skipped = append(r.plan.Skipped, ImportSkip{Row: row, Category: out.Category, Name: out.Name})
+			return
+		}
+		if first, twice := r.firstRow[key]; twice {
+			problem(ColName, fmt.Sprintf("%s is already in this file, on row %d. Keep one of them.", out.Name, first))
+		} else {
+			r.firstRow[key] = row
+		}
+	}
+
+	out.Price = importPrice(cells[ColPrice], r.venue.Currency, problem)
+	out.TaxClassID = importChoice(ColTaxClass, "tax class", cells[ColTaxClass], r.venue.TaxClasses, problem)
+	out.HSN = importHSN(cells[ColHSN], r.venue.NeedsHSN, problem)
+	out.StationID = importChoice(ColStation, "station", cells[ColStation], r.venue.Stations, problem)
+	out.CourseID = importChoice(ColCourse, "course", cells[ColCourse], r.venue.Courses, problem)
+	out.Description = importDescription(cells[ColDescription], problem)
+	out.Diet = importDiet(cells[ColDiet], problem)
+	out.GlutenFree = importYes(ColGlutenFree, cells[ColGlutenFree], problem)
+	out.Popular = importYes(ColPopular, cells[ColPopular], problem)
+
+	if len(problems) > 0 {
+		r.plan.Problems = append(r.plan.Problems, problems...)
+		return
+	}
+	if out.CategoryID == 0 {
+		r.addCategory(out.Category)
+	}
+	r.plan.Rows = append(r.plan.Rows, out)
+}
+
+// reporter is how a cell's reader says what is wrong with it.
+type reporter func(column, message string)
+
+// category is the category a cell names: the venue's, by its own spelling
+// and id, or a new one by the spelling the file first gave it and id 0.
+func (r *importReader) category(cell string, problem reporter) (string, int64) {
+	if cell == "" {
+		problem(ColCategory, "Give it a category.")
+		return "", 0
+	}
+	for _, c := range r.venue.Categories {
+		if !strings.EqualFold(c.Name, cell) {
+			continue
+		}
+		if !c.Active {
+			problem(ColCategory, fmt.Sprintf("The category %s is retired. Bring it back in the menu first.", c.Name))
+			return "", 0
+		}
+		return c.Name, c.ID
+	}
+	name := importName(ColCategory, cell, problem)
+	if first, ok := r.newCategory[strings.ToLower(name)]; ok {
+		return first, 0
+	}
+	return name, 0
+}
+
+// addCategory notes a category the import has to make, once.
+func (r *importReader) addCategory(name string) {
+	key := strings.ToLower(name)
+	if _, ok := r.newCategory[key]; ok {
+		return
+	}
+	r.newCategory[key] = name
+	r.plan.NewCategories = append(r.plan.NewCategories, name)
+}
+
+// importName is a category's or an item's name, or "" with its problem.
+func importName(column, cell string, problem reporter) string {
+	switch {
+	case cell == "":
+		problem(column, "Give it a name.")
+	case utf8.RuneCountInString(cell) > MaxNameLength:
+		problem(column, fmt.Sprintf("Keep the name to %d characters.", MaxNameLength))
+	case strings.ContainsFunc(cell, isLineBreak):
+		problem(column, "A name is one line: take out the line break.")
+	default:
+		return cell
+	}
+	return ""
+}
+
+// isLineBreak is a control character or a Unicode line or paragraph
+// separator. Format characters are left alone: the zero-width joiners that
+// Devanagari and Malayalam need are among them.
+func isLineBreak(r rune) bool {
+	return unicode.IsControl(r) || unicode.Is(unicode.Zl, r) || unicode.Is(unicode.Zp, r)
+}
+
+// importPrice reads a price cell as minor units. It reads digits, never a
+// float: "120.5" is 12050 paise because the point is moved, not because
+// anything was multiplied.
+func importPrice(cell, currency string, problem reporter) int64 {
+	if cell == "" {
+		problem(ColPrice, "Give it a price. Type 0 for something that is free.")
+		return 0
+	}
+	number := bareNumber(cell, currency)
+	if !groupedLikeMoney(number) {
+		problem(ColPrice, fmt.Sprintf("%q: write the price with a point for the decimals, like 120.50, and no comma.", cell))
+		return 0
+	}
+	amount, err := money.Parse(number + " " + currency)
+	switch {
+	case errors.Is(err, money.ErrPrecision):
+		problem(ColPrice, fmt.Sprintf("%q: %s", cell, decimalPlaces(currency)))
+	case err != nil:
+		problem(ColPrice, fmt.Sprintf("%q is not a price. Type a number like 120 or 120.50.", cell))
+	case amount.Minor < 0:
+		problem(ColPrice, "Give a price of zero or more.")
+	default:
+		return amount.Minor
+	}
+	return 0
+}
+
+// decimalPlaces says how many decimal places a price in the currency may have.
+func decimalPlaces(currency string) string {
+	n := money.Exponent(currency)
+	if n == 0 {
+		return fmt.Sprintf("prices in %s have no decimal places.", currency)
+	}
+	return fmt.Sprintf("prices in %s have at most %d decimal places.", currency, n)
+}
+
+// bareNumber is a price cell without what a spreadsheet's currency format
+// puts around the number: a symbol, "Rs" or the venue's currency code, on
+// either side.
+func bareNumber(cell, currency string) string {
+	s := strings.TrimFunc(cell, func(r rune) bool { return unicode.IsSpace(r) || unicode.Is(unicode.Sc, r) })
+	lower := strings.ToLower(s)
+	for _, word := range []string{strings.ToLower(currency), "rs.", "rs"} {
+		if strings.HasPrefix(lower, word) {
+			s = s[len(word):]
+			break
+		}
+	}
+	if strings.HasSuffix(strings.ToLower(s), strings.ToLower(currency)) {
+		s = s[:len(s)-len(currency)]
+	}
+	return strings.TrimFunc(s, func(r rune) bool { return unicode.IsSpace(r) || unicode.Is(unicode.Sc, r) })
+}
+
+// groupedLikeMoney reports whether every comma in a number is one that
+// groups digits: "1,150" and "1,00,000", but not "12,50", which is twelve
+// and a half written the way much of the world writes it. money.Parse reads
+// any comma as a grouping, and would make that 1250.
+func groupedLikeMoney(number string) bool {
+	whole, _, _ := strings.Cut(number, ".")
+	groups := strings.Split(whole, ",")
+	if len(groups) == 1 {
+		return true
+	}
+	last := len(groups) - 1
+	for _, g := range groups[1:last] {
+		if len(g) != 2 && len(g) != 3 {
+			return false
+		}
+	}
+	return len(groups[last]) == 3
+}
+
+// importChoice is the id of the tax class, station or course a cell names,
+// by its name or what it also answers to. An empty cell is the only active
+// one there is, and a problem when there is a choice to make: a tax rate is
+// not something to guess for a whole menu.
+func importChoice(column, what, cell string, choices []ImportChoice, problem reporter) int64 {
+	var active []ImportChoice
+	for _, c := range choices {
+		if c.Active {
+			active = append(active, c)
+		}
+	}
+	names := make([]string, len(active))
+	for i, c := range active {
+		names[i] = c.Name
+	}
+	use := "Use " + strings.Join(names, ", ") + "."
+
+	if len(active) == 0 {
+		problem(column, fmt.Sprintf("This venue has no %s to use. Add one in the back office first.", what))
+		return 0
+	}
+	if cell == "" {
+		if len(active) == 1 {
+			return active[0].ID
+		}
+		problem(column, fmt.Sprintf("Say which %s. %s", what, use))
+		return 0
+	}
+	for _, c := range choices {
+		if !strings.EqualFold(c.Name, cell) && (c.Also == "" || !strings.EqualFold(c.Also, cell)) {
+			continue
+		}
+		if !c.Active {
+			problem(column, fmt.Sprintf("The %s %s is retired. %s", what, c.Name, use))
+			return 0
+		}
+		return c.ID
+	}
+	problem(column, fmt.Sprintf("There is no %s called %q. %s", what, cell, use))
+	return 0
+}
+
+// importHSN checks an HSN or SAC code: required where the venue's invoices
+// show one on every line, and well formed wherever it is given (ADR-108).
+func importHSN(cell string, needs bool, problem reporter) string {
+	switch {
+	case cell == "" && !needs:
+		return ""
+	case !tax.ValidHSN(cell) && needs:
+		problem(ColHSN, "Every item needs an HSN or SAC code of 4, 6 or 8 digits: invoices show it.")
+	case !tax.ValidHSN(cell):
+		problem(ColHSN, "An HSN or SAC code is 4, 6 or 8 digits. It is not needed here; you can leave it empty.")
+	default:
+		return cell
+	}
+	return ""
+}
+
+func importDescription(cell string, problem reporter) string {
+	switch {
+	case utf8.RuneCountInString(cell) > MaxDescriptionLength:
+		problem(ColDescription, fmt.Sprintf("Keep the description to %d characters: it is one line on the item's card.", MaxDescriptionLength))
+	case strings.ContainsFunc(cell, isLineBreak):
+		problem(ColDescription, "The description is one line: take out the line breaks.")
+	default:
+		return cell
+	}
+	return ""
+}
+
+// importDiet reads a dietary mark however it is commonly typed.
+func importDiet(cell string, problem reporter) Diet {
+	switch foldHeading(cell) {
+	case "", "none", "no":
+		return DietNone
+	case "veg", "vegetarian":
+		return DietVeg
+	case "nonveg", "nonvegetarian":
+		return DietNonVeg
+	case "vegan":
+		return DietVegan
+	}
+	problem(ColDiet, fmt.Sprintf("%q is not a mark. Type veg, non-veg or vegan, or leave it empty.", cell))
+	return DietNone
+}
+
+// importYes reads a yes or no. Empty is no.
+func importYes(column, cell string, problem reporter) bool {
+	switch strings.ToLower(cell) {
+	case "yes", "y", "true", "1":
+		return true
+	case "", "no", "n", "false", "0":
+		return false
+	}
+	problem(column, fmt.Sprintf("%q: type yes or no, or leave it empty.", cell))
+	return false
+}
