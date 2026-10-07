@@ -269,7 +269,7 @@ session; split one again if it is not.
   An ADR first on how a row finds its item (category and name, as the
   import does) and on what happens to a row that finds none.
 
-  - [ ] **Task 9a: Read the file as price changes.** `internal/domain/menu`,
+  - [x] **Task 9a: Read the file as price changes.** `internal/domain/menu`,
     pure, beside `ReadImport`: for each row its item, the price it has and
     the price the file gives; rows unchanged; rows that match nothing;
     problems by row and column. Money through `money.Parse`. Tests,
