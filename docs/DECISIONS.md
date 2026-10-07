@@ -10115,3 +10115,36 @@ page records two gaps it did not close (`KNOWN.md`, Hardware): nothing
 opens the drawer without a sale, and the pin, the pulse and the pulse
 command cannot be changed.
 ---
+
+## ADR-283 - Troubleshooting starts from the words on the screen
+2026-10 · Status: accepted. Phase 12, Task 7c.
+Decision:
+  - **`docs/troubleshooting.md` covers the five the phase names**, and
+    each begins with what the person sees, quoted as mez says it: the
+    till's status word, the Print queue's reason, the pairing screen's
+    sentence, the six sentences of "Ordering from phones", the
+    installer's three messages, the relay's "Ordering is offline". The
+    strings were read out of the code, so a search for the words on the
+    screen lands on the right section.
+  - **Then checks in an order where each rules out what came before**:
+    is mez up on its own computer, is the address right, is it the same
+    network, is the firewall letting it in. Not a list of causes.
+  - **A table first, of where to look**: the status word, the Print
+    queue, Devices, the log, the health check. The screens say little
+    about the network on purpose (ADR-259), so the log is named early.
+  - **It does not repeat `hardware.md` or `running.md`.** The drawer's
+    facts and the printer's are linked; "When it will not start" stays
+    in `running.md` and points here.
+  - **`hardware.md` is corrected**: it said the back office can search
+    for a printer. Only the setup wizard can; the endpoint has no screen
+    in the back office.
+Because: someone with a queue at the counter searches for the words in
+front of them, and wants the next thing to try, not an explanation.
+Cost: the quoted words will drift from the screens, and nothing checks
+them. Some of it is how Windows, routers and drawers generally behave
+and not what this code does or what was seen here: Smart App Control
+and policy leaving no "Run anyway", client isolation on Wi-Fi, a
+drawer's locked key position, 12 and 24 volt drawers. **None of the five
+was reproduced**: there is no printer or drawer here, and no relay was
+taken down for it.
+---

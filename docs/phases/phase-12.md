@@ -163,7 +163,7 @@ Phase 11.
     drawer is opened and through what, and what is not supported. Say
     plainly which printers were printed on and which are only expected
     to work.
-  - [ ] **Task 7c - Troubleshooting, the five that will happen.**
+  - [x] **Task 7c - Troubleshooting, the five that will happen.**
     `docs/troubleshooting.md`: printer not found, a device cannot reach
     the server, the SmartScreen warning, the tunnel down, the drawer
     will not kick. Each from what the person sees, with the words mez

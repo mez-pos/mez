@@ -8,35 +8,34 @@
 ## Current phase
 
 **Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 to 6 built;
-Task 7, the documentation, is split in six (7a to 7f): 7a and 7b are
+Task 7, the documentation, is split in six (7a to 7f): 7a, 7b and 7c are
 done. Phase 11 has nothing left to build (Cashfree left out, ADR-254)
 and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 7b: hardware, printers and drawers** (ADR-282).
-`docs/hardware.md`, from the print code: the commands a printer must
-take, network and Windows USB, 80mm and 58mm, what prints where with its
-cut and its drawer, ASCII only on paper, the drawer's fixed pulse, the
-queue's retries, the search, what is not supported. It opens by saying
-no printer has been printed on, and names no model. `deploy.md` no
-longer says a shared printer can be used. Documentation only.
+**Phase 12, Task 7c: troubleshooting** (ADR-283).
+`docs/troubleshooting.md`: the printer not found or not printing, a
+tablet that cannot reach the server, Windows's warning, guests who
+cannot order from their phones, the drawer that will not open. Each
+starts from the screen's own words, quoted from the code, then what to
+check in order. `running.md` links it; `hardware.md` no longer says the
+back office can search for a printer (only the wizard can).
+Documentation only; none of it followed at a venue.
 
 ## Next task
 
-**Phase 12, Task 7c: troubleshooting.** A new `docs/troubleshooting.md`
-for the five that will happen: printer not found, a device cannot reach
-the server, the SmartScreen warning, the tunnel down, the drawer will
-not kick. Each from what the person sees, in mez's own words taken from
-the code (`printq.Unreachable`, the tunnel's states in
-`internal/api/tunnel.go`, the pair screen, the installer's messages),
-then what to check in order. `hardware.md` already has the drawer's
-facts and the printer's: link, do not repeat. `running.md`'s "When it
-will not start" stays and is linked. Then 7d the relay guide (the
-compose file's example says `wss://.../tunnel`, the relay's README
-`https://`; mez takes both schemes, the path is unchecked), 7e
-CONTRIBUTING, 7f the README, which still says the installer arrives in
-phase 12. **For the owner, not a
+**Phase 12, Task 7d: the relay guide.** Check `build/relay/README.md`
+against `cmd/relay` and `internal/relay`, and write the venue's side
+where an owner will find it: the two settings, the key's form (the
+client wants a prefix, `keyPrefix` in `internal/tunnel/client.go`), what
+the address is, what a guest sees. `troubleshooting.md` already has the
+states and what to do: link, do not repeat. The compose file's example
+says `wss://relay.example.com/tunnel` and the README
+`https://relay.example.com`: mez takes both schemes; find out what it
+does with a path and make the two agree. Then 7e CONTRIBUTING, 7f the
+README, which still says the installer arrives in phase 12 and must
+list `hardware.md` and `troubleshooting.md`. **For the owner, not a
 task**: push a tag to try the release (`docs/releasing.md`); expect the
 first to need a second try. **Do not move Litestream past v0.5.15
 without running the tests on Windows.** Before a release,

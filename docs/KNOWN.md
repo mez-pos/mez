@@ -10,6 +10,14 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Troubleshooting** (ADR-283; phase 12 Task 7c; `troubleshooting.md`).
+  The screens' words are quoted from the code. **None of the five has
+  been followed at a venue**: no printer, no drawer, no second device
+  held back by a real firewall, no relay taken down on purpose. What it
+  says of Smart App Control, client isolation and a drawer's lock is how
+  those things generally behave, not something seen here. The back
+  office cannot search for a printer; only the setup wizard can.
+
 - **Hardware** (ADR-282; phase 12 Task 7b; `hardware.md`). Written from
   the print code. **No printer and no drawer has been tried**, so no
   model is named. Left as they are and now written down: nothing opens

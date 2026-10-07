@@ -307,6 +307,11 @@ exits regardless.
 
 ## When it will not start
 
+This is for a server that does not come up. For a printer that is not
+found, a tablet that cannot reach the server, Windows's warning about the
+installer, guests who cannot order from their phones, and a cash drawer
+that will not open, see [`troubleshooting.md`](troubleshooting.md).
+
 **`bind: address already in use`, or `Only one usage of each socket address`.**
 Something already holds port 7777, usually an older copy of mez still
 running. Stop it, or start this one on another port with `-listen-addr :7778`.

@@ -218,14 +218,17 @@ so nothing is lost when a printer is off, jammed or out of paper.
   tickets and nobody else's.
 - The screens say only **Could not reach the printer**. What the network
   said is in the server's log (`mez.log`, or the Windows event log).
+  [`troubleshooting.md`](troubleshooting.md#the-printer-is-not-found-or-will-not-print)
+  has what to check.
 - A print the printer accepted counts as printed. A network printer does
   not say whether paper came out, so mez cannot tell an empty roll or an
   open lid from a good print. Somebody looking at the printer can.
 
 ## Finding a printer on the network
 
-The setup wizard and the back office's **Printers** screen can search. The
-search tries port 9100 on every address of the networks the computer is
+The setup wizard can search for a printer. (The back office's **Printers**
+screen cannot: there a printer is added by its address or its Windows
+name.) The search tries port 9100 on every address of the networks the computer is
 on (up to four, 254 addresses each, skipping virtual adapters), and on
 Windows lists the printers installed on the computer.
 
