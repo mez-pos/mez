@@ -195,7 +195,7 @@ dist: build-web
 		echo "no $(CMD) yet: it arrives in Phase 01"; exit 1; \
 	fi
 	@rm -rf dist && mkdir -p dist
-	@set -e; for t in windows/amd64 linux/amd64 darwin/arm64; do \
+	@set -e; for t in windows/amd64 linux/amd64 linux/arm64 darwin/arm64; do \
 		os=$${t%/*}; arch=$${t#*/}; \
 		ext=""; [ "$$os" = "windows" ] && ext=".exe"; \
 		out="dist/$(BIN)_$(VERSION)_$${os}_$${arch}$$ext"; \

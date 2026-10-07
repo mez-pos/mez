@@ -1,0 +1,197 @@
+name: Release
+
+# A tag like v0.1.0, pushed, makes a release: the binaries, the Windows
+# installer, the Docker image, their checksums and the notes. The release is
+# left as a draft. A person reads it and presses Publish: see docs/releasing.md.
+on:
+  push:
+    tags: ["v*"]
+
+# Nothing by default. Each job asks for what it needs.
+permissions: {}
+
+# Two pushes of one tag would race to make one release.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: make check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The version is `git describe`, which needs the tags.
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      # The frontends first: `make check` embeds what `web/*/dist` holds, and
+      # a release is not made from a commit whose apps do not build.
+      - run: make build-web
+      - run: make check
+
+  binaries:
+    name: binaries
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      # Every platform from this one machine: no cgo (ADR-003). The same
+      # recipe anyone runs from a clone, so a release is checkable against it.
+      - run: make dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  installer:
+    name: Windows installer
+    needs: binaries
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: dist
+      # Inno Setup is on the runner's image some months and not others.
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) {
+            choco install innosetup --no-progress -y
+          }
+      # What `make installer` runs, without make: the tag is the version, and
+      # the binary is the one the job before this built. Not signed: there is
+      # no certificate (ADR-265), and the release's notes say what Windows
+      # will say about that.
+      - name: Compile
+        shell: pwsh
+        # Through the environment, not written into the script: a tag's name
+        # is text somebody chose.
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          $version = $env:VERSION
+          if ($version -notmatch '^v[0-9][0-9A-Za-z.+-]*$') { throw "not a version: $version" }
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc /Q "/DVersion=$version" "/DBinary=..\..\dist\mez_${version}_windows_amd64.exe" build\installer\mez.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path "dist\mez_${version}_windows_amd64_setup.exe")) { throw "the installer was not made" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: dist/*_setup.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  image:
+    name: Docker image
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # The version without its v, as image tags are written. No "latest":
+      # the image is pushed before anyone has read the draft release, and a
+      # venue that pulls "latest" should not be the one to find out it was
+      # wrong. A venue names the version it wants.
+      - id: tags
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "tags=ghcr.io/${GITHUB_REPOSITORY}:${version}" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "date=$(git show -s --format=%cI HEAD)" >> "$GITHUB_OUTPUT"
+      # Both architectures from this one: the Dockerfile builds on the
+      # runner's own and has Go cross-compile, so nothing runs under emulation.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: build/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            COMMIT=${{ steps.tags.outputs.commit }}
+            BUILD_DATE=${{ steps.tags.outputs.date }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.revision=${{ steps.tags.outputs.commit }}
+            org.opencontainers.image.licenses=AGPL-3.0-only
+
+  release:
+    name: draft release
+    needs: [binaries, installer, image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      # The files a Linux or Docker venue needs beside the binary.
+      - run: cp build/mez.service build/docker-compose.yml dist/
+      - run: sh build/release.sh checksums dist "${GITHUB_REF_NAME}"
+      - run: sh build/release.sh notes "${GITHUB_REF_NAME}" > notes.md
+      # A draft: nobody is told, and nothing is "latest", until a person has
+      # read it and published it. Run twice for one tag, it adds to the draft
+      # that is there and does not make a second.
+      - name: Draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          prerelease=""
+          case "${GITHUB_REF_NAME}" in *-*) prerelease="--prerelease" ;; esac
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
+            gh release edit "${GITHUB_REF_NAME}" --notes-file notes.md
+          else
+            gh release create "${GITHUB_REF_NAME}" dist/* --draft $prerelease \
+              --title "mez ${GITHUB_REF_NAME}" --notes-file notes.md
+          fi

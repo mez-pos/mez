@@ -7,31 +7,33 @@
 
 ## Current phase
 
-**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 to 5 built.
-Phase 11 has nothing left to build (Cashfree left out, ADR-254) and owes
-its walks.
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 to 6 built;
+Task 7, the documentation, is left. Phase 11 has nothing left to build
+(Cashfree left out, ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 5: Docker and Linux** (ADR-279). `build/mez.service`, a
-hardened systemd unit; the image gains `/backup` and the compose file a
-backup's mount and a relay, commented out. Both were run: the unit under
-systemd in a Debian container, the image through setup, backup, stop,
-restore and start. And a fix found on the way: Litestream is now started
-only when its destination answers, because started regardless it took
-away the server's locks on its own database on Linux whenever a bucket
-could not be reached. **Not run: arm64, or a real Linux machine.**
+**Phase 12, Task 6: release automation** (ADR-280).
+`.github/workflows/release.yml`: a tag `v*` runs `make check`, `make
+dist` (now with `linux/arm64`), the installer on a Windows runner, the
+image for amd64 and arm64 to `ghcr.io`, and a draft release with
+checksums and notes (`build/release.sh`). `docs/releasing.md` is the
+procedure. Every piece was run by hand on this PC. **The workflow itself
+has never run: no tag has been pushed.**
 
 ## Next task
 
-**Phase 12, Task 6: release automation.** GoReleaser or an Actions
-workflow: a tag makes the cross-compiled binaries, the Windows installer,
-the Docker image, checksums and a changelog. `make dist` and `make
-installer` exist (Tasks 1 and 2); `build/mez.service` and the compose
-file should ship beside the Linux binaries. The installer needs Inno
-Setup on a Windows runner. `.github/workflows/` has the CI: read it
-first. A release cannot be made from here without the owner: say what
-was run and what was only written. **Do not move Litestream past v0.5.15
+**Phase 12, Task 7: documentation.** A README with a screenshot and a
+sixty-second pitch; install guides for Windows, Docker and Linux
+(`deploy.md` has all three: check them against what Tasks 2 to 6 built
+and link, do not rewrite); hardware notes on printers and drawers; a
+self-hosted relay guide (`build/relay/README.md` exists); CONTRIBUTING
+with the architecture; troubleshooting for printer not found, device
+cannot reach the server, SmartScreen, tunnel down, drawer will not kick.
+A screenshot needs the built binary and a browser: `make build-web`
+first. It is more than one session: split it. **For the owner, not a
+task**: push a tag to try the release (`docs/releasing.md`); expect the
+first to need a second try. **Do not move Litestream past v0.5.15
 without running the tests on Windows.** Before a release,
 run the Windows installer once on a spare machine: "Open mez now" opening
 the setup link (ADR-270) and the window it opens in (ADR-272) have not

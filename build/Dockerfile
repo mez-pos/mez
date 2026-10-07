@@ -7,7 +7,9 @@
 
 # 1. The three frontends. One npm workspace, so every package.json comes first
 #    and `npm ci` is cached until a dependency changes.
-FROM node:22-alpine AS web
+#    Built on the machine doing the building whatever the image is for: what
+#    comes out is JavaScript, the same for every processor.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
 COPY web/terminal/package.json terminal/
@@ -18,7 +20,11 @@ COPY web/ ./
 RUN npm run build
 
 # 2. The server, static and without cgo (ADR-003), with the bundles embedded.
-FROM golang:1.26-alpine AS server
+#    Also on the building machine's own processor, with Go cross-compiling
+#    for the image's: an arm64 image built on an amd64 machine then runs
+#    nothing under emulation, which is the difference between a minute and
+#    half an hour.
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS server
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -27,8 +33,16 @@ COPY --from=web /src/web/terminal/dist web/terminal/dist
 COPY --from=web /src/web/backoffice/dist web/backoffice/dist
 COPY --from=web /src/web/guest/dist web/guest/dist
 ARG VERSION=docker
-RUN CGO_ENABLED=0 go build -trimpath -tags frontend \
-      -ldflags "-s -w -X main.version=${VERSION}" -o /out/mez ./cmd/mez \
+ARG COMMIT=unknown
+ARG BUILD_DATE=unknown
+# Set by BuildKit to what the image is for. Without BuildKit they are empty
+# and Go builds for the machine it is on, as it did before.
+ARG TARGETOS
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-$(go env GOOS)} GOARCH=${TARGETARCH:-$(go env GOARCH)} \
+    go build -trimpath -tags frontend \
+      -ldflags "-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}" \
+      -o /out/mez ./cmd/mez \
  && mkdir -p /out/data /out/backup
 
 # 3. Nothing but the binary. The timezone database is inside it, and it runs

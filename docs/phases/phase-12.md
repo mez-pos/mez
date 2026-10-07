@@ -132,7 +132,7 @@ Phase 11.
   optional. A systemd unit file for bare-metal Linux. Same binary, no second
   codebase.
 
-- [ ] **Task 6 — Release automation.**
+- [x] **Task 6 — Release automation.**
   GoReleaser or an equivalent Actions workflow: tag → cross-compiled binaries,
   the Windows installer, the Docker image, checksums, and a changelog.
 

@@ -9983,3 +9983,59 @@ container on Docker Desktop; a bind-mounted host folder with the wrong
 owner; the compose file's `up` (its services were run by hand with the
 same options); a relay through the compose file.
 ---
+
+## ADR-280 - A release is a tag, made by a workflow over `make dist`, and left as a draft
+2026-10 · Status: accepted. Phase 12, Task 6.
+Decision:
+  - **An Actions workflow, not GoReleaser**
+    (`.github/workflows/release.yml`). `make dist` and `make installer`
+    already say how a binary and an installer are built, reproducibly
+    (ADR-027), and a release that runs the same recipe can be checked
+    against a clone. GoReleaser would be a second description of the
+    build to keep in step with the first, and it does not make an Inno
+    Setup installer.
+  - **A tag `v*` runs it.** `make check` first, on the tagged commit;
+    then the binaries, the installer on a Windows runner, the image, and
+    a release with the files, `mez.service`, `docker-compose.yml`, the
+    checksums and the notes.
+  - **The release is a draft.** Nothing is announced until a person has
+    read it and published it. A tag with a hyphen is a pre-release.
+  - **`make dist` gains `linux/arm64`**, the Raspberry Pi the docs
+    already offer.
+  - **The image is built for amd64 and arm64 without emulation.** The
+    Dockerfile's build stages run on the building machine's own
+    processor and Go cross-compiles for the image's. It also takes the
+    commit and its date, so a container's `/api/v1/health` says what it
+    was built from.
+  - **The image is tagged with its version and never `latest`.** It is
+    the one thing pushed before the draft is read, and a venue that
+    pulls `latest` should not be the one to find out it was wrong.
+  - **Checksums and notes are a script** (`build/release.sh`), so both
+    can be run and read before a tag is pushed. The checksums are
+    `sha256sum`'s own format, sorted, over bare names. The notes are the
+    install table, what Windows will say about an unsigned installer and
+    how to check the file instead, and the commit subjects since the
+    last tag.
+  - **Least privilege**: the workflow has no permissions by default; one
+    job may write packages and one may write the release. The tag's name
+    reaches a script through the environment, and is checked to be a
+    version.
+  - **`docs/releasing.md`** is the procedure, for whoever makes one.
+Because: the phase is done when an owner downloads one file. Somebody
+has to be able to make that file the same way twice.
+Cost: nothing is signed, on Windows or macOS (ADR-265), and the notes
+have to say so every time. The notes are commit subjects, written for
+whoever builds mez and not for whoever runs a cafe; the draft is where
+they are made readable. The first release lists every commit there has
+been. No changelog file, no SBOM, no provenance attestation. The relay
+is not released. **Run on 2026-10-07, on the developer's PC**: `make
+dist` for the four platforms and `make installer` over it; the checksums
+written and checked with `sha256sum -c`, twice over the same files to
+the same result; the notes against two tags in a scratch clone, a first
+release and a second; the image built for both architectures and the
+arm64 one run under emulation, saying its version; both workflows
+through `actionlint`. **Not run: the workflow.** No tag has been pushed
+and none can be from here. Inno Setup on the Windows runner, the login
+and push to `ghcr.io`, the artifacts passed between jobs and the making
+of the draft are as written, not as seen.
+---

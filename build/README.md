@@ -11,7 +11,7 @@ Packaging and distribution inputs. Nothing here is imported by the Go module.
 | `relay.Dockerfile` | Here | The optional relay alone: one static binary with no frontends and no database, configured by `RELAY_*` variables (`relay help` lists them) |
 | `relay/` | Here | Deploying the relay to a server behind Cloudflare: a script, compose file and Caddyfile ([`relay/README.md`](relay/README.md)) |
 | `installer/mez.iss` | Here | The Windows installer (Inno Setup 6): `make dist && make installer`. `installer/mez.ico` is made from `web/shared/brand/mez-app-icon.svg` |
-| goreleaser config | Phase 12, Task 6 | Tagged releases with checksums |
+| `release.sh` | Here | A release's checksums and its notes: `sh build/release.sh notes v0.1.0`. Run by `.github/workflows/release.yml` on a tag ([`docs/releasing.md`](../docs/releasing.md)) |
 
 Build the image from the repository root, since the build needs the whole
 source tree:

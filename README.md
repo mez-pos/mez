@@ -127,7 +127,7 @@ data lives, and what to do when it will not start.
 
 ## Building from source
 
-You need Go 1.24 or newer, Node 22.12 or newer, and a shell with `sh` and
+You need Go 1.25 or newer, Node 22.12 or newer, and a shell with `sh` and
 `make` (on Windows, Git Bash with GNU Make, or WSL).
 
 ```sh
@@ -175,6 +175,7 @@ proposed.
 |---|---|
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setting up, the workflow, the rules, sending a change |
 | [`docs/deploy.md`](docs/deploy.md) | Windows, Linux, Docker, a domain with HTTPS, backups, upgrades |
+| [`docs/releasing.md`](docs/releasing.md) | Making a release, for whoever does |
 | [`docs/running.md`](docs/running.md) | Settings, data directory, logs, printer test, troubleshooting |
 | [`docs/00-product.md`](docs/00-product.md) | Scope and non-goals |
 | [`docs/01-architecture.md`](docs/01-architecture.md) | The system and why it is shaped this way |

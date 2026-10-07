@@ -37,18 +37,26 @@ not a till.
 
 ## Getting a binary
 
-Build all three platforms from a clone (Go 1.23+, Node 22.12+, and `make` with
-a POSIX shell; on Windows, Git Bash or WSL):
+Each release on GitHub, under **Releases**, has these, and a
+`mez_<version>_checksums.txt` to check them against:
+
+| File | Runs on |
+|---|---|
+| `mez_<version>_windows_amd64_setup.exe` | Windows 10 and 11, 64-bit: the installer |
+| `mez_<version>_windows_amd64.exe` | The same, without the installer |
+| `mez_<version>_linux_amd64` | Linux, 64-bit, with `mez.service` |
+| `mez_<version>_linux_arm64` | A Raspberry Pi 4 or 5, with `mez.service` |
+| `mez_<version>_darwin_arm64` | macOS, Apple silicon |
+
+and a Docker image, `ghcr.io/byjoellobo/mez:<version>`, with
+`docker-compose.yml`. There is no release yet; until there is, build them.
+
+From a clone (Go 1.25+, Node 22.12+, and `make` with a POSIX shell; on
+Windows, Git Bash or WSL), all of them at once:
 
 ```sh
 make dist
 ```
-
-| File in `dist/` | Runs on |
-|---|---|
-| `mez_<version>_windows_amd64.exe` | Windows 10 and 11, 64-bit |
-| `mez_<version>_linux_amd64` | Linux, 64-bit |
-| `mez_<version>_darwin_arm64` | macOS, Apple silicon |
 
 Each one is self-contained: the three web apps and the timezone database are
 inside it, and nothing needs installing beside it.
@@ -677,4 +685,5 @@ installer (Inno Setup) that registers the Windows service, opens the firewall
 and creates the shortcut; a setup wizard, so a new Windows venue needs no `mez setup` (built);
 backups configured in the back office (built, [above](#backups)); a systemd unit
 ([`build/mez.service`](../build/mez.service), built) and an image
-published with each release; and release automation with checksums.
+published with each release; and release automation with checksums
+(written, [`releasing.md`](releasing.md); no release has been made).

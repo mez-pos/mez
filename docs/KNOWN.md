@@ -10,6 +10,14 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Releases** (ADR-280; phase 12 Task 6; `releasing.md`). Every
+  piece run by hand on 2026-10-07: the four binaries, the installer, the
+  checksums, the notes, the image for both architectures. **Not run: the
+  workflow.** No tag has been pushed, so Inno Setup on the Windows
+  runner, the push to `ghcr.io` and the draft release are as written.
+  Nothing is signed. The image's package will start private. The notes
+  are commit subjects and want editing in the draft.
+
 - **Linux and Docker** (ADR-279; phase 12 Task 5; `deploy.md`). Run on
   2026-10-07 in containers on Docker Desktop: `build/mez.service` under
   systemd 252 on Debian 12, and the image through setup, a backup to a

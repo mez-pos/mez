@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 4f: restore, done and written down** (ADR-278).
+**Phase 12, Task 5: Docker and Linux** (ADR-279). `build/mez.service`;
+the image gains `/backup`; the compose file a backup's mount and a relay.
+Both run in containers. Litestream is started when its destination
+answers: started regardless it dropped the server's locks on Linux.
+
+Before it, **Phase 12, Task 4f: restore, done and written down** (ADR-278).
 `mez restore` brings a venue back from a folder or a bucket into a data
 directory with no venue in it; `-list` shows the generations there. Old
 generations tidy themselves a week after they were replaced. Done for real
