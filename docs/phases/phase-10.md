@@ -284,7 +284,7 @@ session; split one again if it is not.
     first, and says that open orders keep their prices. Walk it in a
     browser with a file made by Task 8.
 
-- [ ] **Task 10 — Import ingredients and recipes.**
+- [x] **Task 10 — Import ingredients and recipes.**
   Inventory has the menu's old problem: an ingredient at a time, then a
   recipe at a time. Two files, because they are two shapes. Adding only,
   CSV, one bad row refuses the file, a template made for the venue: the
@@ -304,7 +304,7 @@ session; split one again if it is not.
     categories is a problem that says so. Decide and write down whether a
     file sets a dish's whole recipe or adds to it, and whether a choice's
     recipe (the milk on Oat) is in v1 of this or left to the screen.
-  - [ ] **Task 10d: Recipes: the screen.** On the Recipes view, spec first.
+  - [x] **Task 10d: Recipes: the screen.** On the Recipes view, spec first.
 
 - [ ] **Task 11 — Modifier groups in the menu import.**
   Left out of Task 7 on purpose: a group is choices with bounds, attached

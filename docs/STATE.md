@@ -7,45 +7,42 @@
 
 ## Current phase
 
-**Phase 10 - Back office**, `docs/phases/phase-10.md`. Task 7, the menu
-import, is built and walked (ADR-288 to ADR-291). The human then added
-**Tasks 8 to 12** (ADR-292): export the menu, change prices from a
-file, import ingredients and recipes, modifier groups in the import,
-and three loose ends. Everything else in every phase is built and owes
-only being seen to work: the walks, a release, and a printer.
+**Phase 10 - Back office**, `docs/phases/phase-10.md`. The human added
+Tasks 8 to 12 after the menu import (ADR-292). **Tasks 8, 9 and 10 are
+built**: the menu's export, prices from a file, and ingredients and
+recipes from a file (ADR-293 to ADR-301). Left: Task 11 (modifier
+groups in the import) and Task 12 (three loose ends). Everything else
+in every phase is built and owes only being seen to work.
 
 ## Last completed task
 
-**Phase 10, Task 9c: prices from a file, on the screen** (ADR-297).
-Export and Import in the Menu screen's head are now one **Spreadsheet**
-pill with a third choice, **Change prices**: export, edit the Price
-column, choose the file, read a table of Item, Now, New and Change
-(largest first), **Change N prices**. `SpreadsheetMenu.tsx`,
-`PricesModal.tsx`, `prices-logic.ts`, and `FileParts.tsx` shared with
-the import. Task 9 is done. Walked in a browser on the dev venue: four
-prices changed and then put back from the untouched export. Not
-walked: the refusal when another screen edits the menu in between
-(tested on the server), and the modal under 1024px.
+**Phase 10, Task 10d: the recipes dialog** (ADR-301). **Import** on
+Inventory's Recipes view: get a template that lists every dish with no
+recipe, type an ingredient and an amount beside each, choose the file,
+read the recipes it would give, **Add N recipes**.
+`RecipesImportModal.tsx`, with its words in `stock/import-logic.ts`.
+Task 10 is done. Both Inventory dialogs were walked in a browser
+against a demo venue, and their routes over HTTP against `bin/mez`. Not
+walked: either template in a real spreadsheet, and either dialog under
+1024px.
 
 ## Next task
 
-**Phase 10, Task 10a: ingredients from a file, the reader and the
-server.** `internal/domain/stock`, pure, as `menu.ReadImport` is:
-columns Name, Counted in (g, ml, each), Low at, Cost, Count at close.
-No opening stock from a file (stock arrives by Receive). Adding only;
-one bad row refuses the file; a template made for the venue. Then
-preview, import and template routes under `stock.manage`, as ADR-289
-and ADR-290 did for the menu. Read `backoffice-stock.md` and how the
-Stock item form reads a cost for a kilogram or a litre
-(`stock-logic.ts`, `costMeasures`) before choosing the Cost column's
-unit, and write that choice in the ADR. The menu's reader has pieces
-worth sharing (`importRecords`, `readHeading`, `foldHeading`); move
-them to a small package both import only if that reads more simply
-than a second copy.
+**Phase 10, Task 12a, before Task 11**: find out whether a venue whose
+owner forgot the PIN can get back in. `mez unlock` clears a lockout and
+sets no PIN. Read `internal/service/people` and the Staff screen for
+who may reset whose PIN (may a manager reset the owner's? may an owner
+with no session do anything at all?), and `cmd/mez/main.go` for the
+commands there are. If a venue with one owner and a forgotten PIN is
+stuck, build `mez reset-pin -staff stf_...`, run at the machine like
+`mez unlock`, by the rules of ADR-260 and written to the audit log.
+Write what was found in `troubleshooting.md` either way. Then 12b (the
+dev banner's PIN) and 12c (ask the human about the template's example
+rows).
 
-**Task 12a can be done first, in any session**: find out whether a
-venue whose owner forgot the PIN can get back in (`mez unlock` does not
-set one), and build `mez reset-pin` only if it cannot.
+**Task 11 waits** (ADR-292): modifier groups in the import are not to
+start until Tasks 8 to 10 have been used on a real menu. It needs an
+ADR on the file's shape first.
 
 For the owner, in the order that unblocks the most:
 1. **A printer and a drawer.** `mez --test-print <ip> -drawer`, then a

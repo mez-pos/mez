@@ -8,7 +8,21 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 10, Task 9a and 9b: prices from a file, read and applied**
+**Phase 10, Task 10a to 10c: ingredients and recipes from a file**
+(ADR-298 to ADR-300). Reading a file moved to `internal/domain/sheet`,
+shared with the menu. `stock.ReadItems` (Name, Counted in, Low at, Cost,
+Count at close; no stock from a file; a kilogram is a problem) and
+`stock.ReadRecipes` (Dish, Ingredient, Amount; only for a dish with no
+recipe; dishes only), each with template, preview and import routes
+under `/api/v1/stock/import` and `/api/v1/stock/recipes/import`. Import
+on Inventory's Stock levels opens the ingredients dialog; the file
+dialogs' shared parts are in `web/backoffice/src/files/`.
+
+Before them, **Phase 10, Task 9c: prices from a file, on the screen**
+(ADR-297): one Spreadsheet pill in the Menu screen's head, and Change
+prices behind it with a table of Now, New and Change, largest first.
+
+Before it, **Phase 10, Task 9a and 9b: prices from a file, read and applied**
 (ADR-295, ADR-296). `menu.ReadPrices` finds a row's item by category
 and name and reads only its price; a row that is no item is left out
 and listed. `POST /api/v1/menu/prices/preview` and `POST

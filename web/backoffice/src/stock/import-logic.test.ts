@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
-import type { StockImportRow, StockItemsImport } from "../../../shared/api-types";
-import { addIngredientsLabel, addedIngredientsText, ingredientLine, ingredientsSummary, ingredientsVerdict, itemExamples } from "./import-logic";
+import type { RecipeImportDish, RecipesImport, StockImportRow, StockItemsImport } from "../../../shared/api-types";
+import {
+  addIngredientsLabel,
+  addRecipesLabel,
+  addedIngredientsText,
+  addedRecipesText,
+  ingredientLine,
+  ingredientsSummary,
+  ingredientsVerdict,
+  itemExamples,
+  recipeLine,
+  recipeProblemsText,
+  recipesLeftOut,
+  recipesSummary,
+  recipesVerdict,
+} from "./import-logic";
 
 const row = (patch: Partial<StockImportRow> = {}): StockImportRow => ({
   row: 2,
@@ -79,5 +93,66 @@ describe("the words on the button and the toast", () => {
   it("says what was added, and that none of it is in stock yet", () => {
     expect(addedIngredientsText(plan({ to_add: [row()] }))).toBe("Added 1 ingredient. Receive stock to put it on hand.");
     expect(addedIngredientsText(plan({ to_add: [row(), row({ row: 3 })] }))).toBe("Added 2 ingredients. Receive stock to put it on hand.");
+  });
+});
+
+const dish = (name: string, parts: RecipeImportDish["parts"]): RecipeImportDish => ({ item_id: 1, dish: name, parts });
+const beans = { row: 2, stock_item_id: 10, ingredient: "Coffee beans", unit: "g" as const, qty: 18_000 };
+const milk = { row: 3, stock_item_id: 11, ingredient: "Milk", unit: "ml" as const, qty: 200_500 };
+
+const recipes = (patch: Partial<RecipesImport> = {}): RecipesImport => ({ to_add: [], skipped: [], blank: 0, problems: [], imported: false, ...patch });
+
+describe("recipesVerdict", () => {
+  it("is ready with a recipe to add and nothing wrong", () => {
+    expect(recipesVerdict(recipes({ to_add: [dish("Espresso", [beans])] }))).toBe("ready");
+  });
+
+  it("is problems as soon as there is one", () => {
+    expect(recipesVerdict(recipes({ to_add: [dish("Espresso", [beans])], problems: [{ row: 4, column: "Amount", message: "x" }] }))).toBe("problems");
+  });
+
+  it("is nothing when every row was left blank or is for a dish that has one", () => {
+    expect(recipesVerdict(recipes({ blank: 12, skipped: [{ row: 2, dish: "Latte" }] }))).toBe("nothing");
+  });
+});
+
+describe("recipesSummary", () => {
+  it("counts the recipes, and leaves out what does not apply", () => {
+    expect(recipesSummary(recipes({ to_add: [dish("Espresso", [beans])] }))).toEqual(["1 recipe to add."]);
+  });
+
+  it("says why other rows gave nothing, agreeing in number", () => {
+    expect(
+      recipesSummary(recipes({ to_add: [dish("Espresso", [beans]), dish("Latte", [beans, milk])], skipped: [{ row: 5, dish: "Mocha" }], blank: 1 })),
+    ).toEqual(["2 recipes to add.", "1 row is for a dish that already has a recipe, and is left as it is.", "1 dish was left blank."]);
+    expect(
+      recipesLeftOut(
+        recipes({
+          skipped: [
+            { row: 5, dish: "Mocha" },
+            { row: 6, dish: "Mocha" },
+          ],
+          blank: 12,
+        }),
+      ),
+    ).toEqual(["2 rows are for dishes that already have a recipe, and are left as they are.", "12 dishes were left blank."]);
+  });
+});
+
+describe("recipeLine", () => {
+  it("is what one of the dish takes, each in its own unit", () => {
+    expect(recipeLine(dish("Latte", [beans, milk]))).toBe("Coffee beans 18 g, Milk 200.5 ml");
+  });
+});
+
+describe("the words for recipes on the button and the toast", () => {
+  it("counts", () => {
+    expect(addRecipesLabel(recipes({ to_add: [dish("Espresso", [beans])] }))).toBe("Add 1 recipe");
+    expect(addedRecipesText(recipes({ to_add: [dish("Espresso", [beans]), dish("Latte", [milk])] }))).toBe(
+      "Added 2 recipes. Sales from now on take this stock.",
+    );
+    expect(recipeProblemsText(recipes({ problems: [{ row: 4, column: "Amount", message: "x" }] }), "r.csv")).toBe(
+      "1 problem in r.csv. Nothing has been added.",
+    );
   });
 });

@@ -100,6 +100,34 @@ written down somewhere. It is the menu's import (`backoffice-menu.md`,
 - **Added:** the modal closes; a toast, "Added 12 ingredients. Receive
   stock to put it on hand."
 
+### Import recipes (ADR-300, ADR-301)
+
+A modal from **Import** on the Recipes view. It gives a recipe to a dish
+that has none; it never changes one that is there, and it is for dishes,
+not for choices.
+
+- **Choose a file.** Three numbered steps:
+  1. "Get the template. It lists every dish that has no recipe yet." with
+     **Download template** (`mez-recipes-template.csv`).
+  2. "Beside each dish, type an ingredient by its name on Stock levels and
+     how much one of the dish takes, in that ingredient's unit. For a
+     second ingredient, add a row with the dish's name again. Leave a dish
+     as it is to skip it. Save it as CSV UTF-8."
+  3. "Choose the file." with **Choose a file**.
+- **Something is wrong** with it: the table of Where, Column and What is
+  wrong, under "2 problems in recipes.csv. Nothing has been added."
+- **Ready:** "6 recipes to add." Then, each only when it applies: "3 rows
+  are for dishes that already have a recipe, and are left as they are.";
+  "12 dishes were left blank." Under them the recipes, scrolling inside
+  itself: the dish over what one takes ("Coffee beans 18 g, Milk 200 ml").
+  - Under the list: "Sales from now on take this stock. Sales already
+    made are not changed."
+  - **Add 6 recipes** is the primary; **Choose another file** beside it.
+- **Nothing to add:** "No dish in recipes.csv is given a recipe.", with
+  the same two lines saying why.
+- **Added:** the modal closes; a toast, "Added 6 recipes. Sales from now
+  on take this stock."
+
 ### Recipes
 
 What one of each dish, and each choice, takes from stock. The dishes are the

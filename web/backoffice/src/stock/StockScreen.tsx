@@ -20,6 +20,7 @@ import { HistoryModal } from "./HistoryModal";
 import { ItemsImportModal } from "./ItemsImportModal";
 import { retiredCount, summary, summaryText, tableRows } from "./levels-logic";
 import { MovementModal } from "./MovementModal";
+import { RecipesImportModal } from "./RecipesImportModal";
 import { RecipesView } from "./RecipesView";
 import { problemOf, type HandKind } from "./stock-logic";
 import { StockItemModal } from "./StockItemModal";
@@ -71,12 +72,11 @@ export function StockScreen() {
             <Trash2Icon aria-hidden="true" size={17} />
             Log wastage
           </Button>
-          {view === "levels" && (
-            <Button disabled={!items} onClick={() => setImporting(true)}>
-              <UploadIcon aria-hidden="true" size={17} />
-              Import
-            </Button>
-          )}
+          {/* Of whatever the view shows: ingredients on Stock levels, recipes on Recipes. */}
+          <Button disabled={!items} onClick={() => setImporting(true)}>
+            <UploadIcon aria-hidden="true" size={17} />
+            Import
+          </Button>
           <Button variant="attention" onClick={() => setOpen({ kind: "add" })}>
             <PlusIcon aria-hidden="true" size={18} />
             Add ingredient
@@ -128,7 +128,8 @@ export function StockScreen() {
       )}
       {items && view === "recipes" && !menu.data && <p className="text-base text-fg-muted">Loading the menu</p>}
 
-      {importing && <ItemsImportModal api={api} onClose={() => setImporting(false)} />}
+      {importing && view === "levels" && <ItemsImportModal api={api} onClose={() => setImporting(false)} />}
+      {importing && view === "recipes" && <RecipesImportModal api={api} onClose={() => setImporting(false)} />}
       {open && api.items.data && (
         <Opened open={open} items={api.items.data.items} currency={api.items.data.currency} api={api} onOpen={setOpen} onClose={() => setOpen(null)} />
       )}

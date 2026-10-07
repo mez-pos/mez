@@ -10798,3 +10798,39 @@ Cost: a recipe given wrongly from a file cannot be corrected from a
 file; it is edited on the screen. A dish with one ingredient entered by
 hand cannot have the rest added from a file. The same ingredient twice
 in a dish is a problem, not a sum. No screen yet (10d).
+
+## ADR-301 - The recipes dialog, and both Inventory dialogs seen in a browser
+2026-10 · Status: accepted. Phase 10, Task 10d.
+Decision: **Import** on Inventory's Recipes view opens the recipes
+dialog (ADR-299 put the button there for both views). It has the shape
+of the other three file dialogs. What is its own:
+  - **Step 2 is the whole instruction**, since a recipe file is the one
+    an owner has never seen the like of: an ingredient by its name on
+    Stock levels, how much one of the dish takes in that ingredient's
+    unit, a row with the dish's name again for a second ingredient, and
+    a dish left as it is to skip it.
+  - **Each recipe to add is the dish over what one takes**, "Coffee
+    beans 18 g, Milk 200 ml", as the Recipes view itself writes it.
+  - **Rows that gave nothing are counted and said why**: those for a
+    dish that already has a recipe, and the dishes left blank. A file
+    of only those is "No dish in recipes.csv is given a recipe." with
+    the same lines, so it is not mistaken for a file that failed.
+  - **It says what a recipe changes**: sales from now on take this
+    stock, and sales already made are not changed (ADR-112).
+  - There is no line about the template's examples: the recipes
+    template has none.
+Cost: four dialogs now repeat the check, add and check-again steps
+(ADR-299). Walked in a browser against a demo venue on 2026-10-08, the
+ingredients dialog with it, which ADR-299 could not: a store file with
+a kilogram in it listed the problem; corrected, it showed three to add
+(one a template example, called out; one already there, left alone),
+added them, and the table had Butter at 0 g, Out. A recipes file with a
+decimal comma and an unknown ingredient listed both; a good one showed
+two recipes, one row skipped and one dish blank, added them, and the
+Recipes view read "Mocha: Coffee beans 18 g, Milk 150 ml" while the
+Latte, which the file gave 999 ml of milk, kept its 200. Before that
+the recipes routes were walked over HTTP against `bin/mez`: the
+template of 21 dishes, a bad file refused, a good one, the same again
+giving nothing, and the template then at 19. Not walked: either
+template opened in a real spreadsheet, a refusal after the store
+changes between check and add, and either dialog under 1024px.

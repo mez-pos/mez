@@ -7,6 +7,7 @@ import type {
   MovementsResponse,
   RecipeBook,
   RecipeRequest,
+  RecipesImport,
   StockEditResponse,
   StockItemInput,
   StockItemsImport,
@@ -35,6 +36,10 @@ export interface StockApi {
   previewItems: (file: Blob) => Promise<StockItemsImport>;
   /** Adds them, with nothing in stock. `imported` is false when the file had nothing new. */
   importItems: (file: Blob) => Promise<StockItemsImport>;
+  /** The recipes a CSV file would give. Writes nothing. */
+  previewRecipes: (file: Blob) => Promise<RecipesImport>;
+  /** Gives them. `imported` is false when the file gave none. */
+  importRecipes: (file: Blob) => Promise<RecipesImport>;
 }
 
 export function useStock(): StockApi {
@@ -73,6 +78,8 @@ export function useStock(): StockApi {
       after(store.api.put<StockEditResponse>(`/api/v1/stock/recipes/modifiers/${modifierId}`, req), [[...recipesKey]]).then(() => undefined),
     previewItems: (file) => store.api.post<StockItemsImport>("/api/v1/stock/import/preview", file, { timeoutMs: 30_000 }),
     importItems: (file) => after(store.api.post<StockItemsImport>("/api/v1/stock/import", file, { timeoutMs: 30_000 })),
+    previewRecipes: (file) => store.api.post<RecipesImport>("/api/v1/stock/recipes/import/preview", file, { timeoutMs: 30_000 }),
+    importRecipes: (file) => after(store.api.post<RecipesImport>("/api/v1/stock/recipes/import", file, { timeoutMs: 30_000 }), [[...recipesKey]]),
   };
 }
 
