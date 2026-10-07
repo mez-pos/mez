@@ -28,13 +28,16 @@ const (
 	ColDiet        = "Diet"
 	ColGlutenFree  = "Gluten free"
 	ColPopular     = "Popular"
+	// ColChoices names the groups of choices an item offers, in the order
+	// its choice sheet shows them, with a semicolon between (ADR-302).
+	ColChoices = "Choices"
 )
 
 // ImportColumns is every column, in the template's order. The first three
 // must be in the file; a file may leave any of the others out.
 var ImportColumns = []string{
 	ColCategory, ColName, ColPrice, ColTaxClass, ColHSN, ColStation, ColCourse,
-	ColDescription, ColDiet, ColGlutenFree, ColPopular,
+	ColDescription, ColDiet, ColGlutenFree, ColPopular, ColChoices,
 }
 
 var requiredColumns = []string{ColCategory, ColName, ColPrice}
@@ -58,6 +61,8 @@ type ImportVenue struct {
 	TaxClasses []ImportChoice
 	Stations   []ImportChoice
 	Courses    []ImportChoice
+	// Groups are the groups of choices, retired ones included.
+	Groups []ImportChoice
 	// Items are every item on the menu, retired ones included.
 	Items []ImportHave
 }
@@ -96,6 +101,8 @@ type ImportRow struct {
 	Diet        Diet
 	GlutenFree  bool
 	Popular     bool
+	// Groups are the ids of the groups of choices it offers, in order.
+	Groups []int64
 }
 
 // ImportSkip is a row left out because the menu already has that item in
@@ -223,6 +230,7 @@ func (r *importReader) read(row int, cells map[string]string) {
 	out.Diet = importDiet(cells[ColDiet], problem)
 	out.GlutenFree = importYes(ColGlutenFree, cells[ColGlutenFree], problem)
 	out.Popular = importYes(ColPopular, cells[ColPopular], problem)
+	out.Groups = importGroups(cells[ColChoices], r.venue.Groups, problem)
 
 	if len(problems) > 0 {
 		r.plan.Problems = append(r.plan.Problems, problems...)
@@ -398,4 +406,44 @@ func importYes(column, cell string, problem reporter) bool {
 		problem(column, fmt.Sprintf("%q: type yes or no, or leave it empty.", cell))
 	}
 	return yes
+}
+
+// ChoicesSeparator is what stands between the groups an item offers, in a
+// Choices cell. A comma would be read as the end of the cell by half the
+// spreadsheets that save the file.
+const ChoicesSeparator = ";"
+
+// importGroups reads the groups of choices an item offers: their names with
+// a semicolon between, in the order its choice sheet shows them. Each must
+// be one group on the menu and in use. A name two groups share could mean
+// either, and is not guessed at.
+func importGroups(cell string, groups []ImportChoice, problem reporter) []int64 {
+	var ids []int64
+	seen := map[int64]bool{}
+	for _, name := range strings.Split(cell, ChoicesSeparator) {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		var found []ImportChoice
+		for _, g := range groups {
+			if strings.EqualFold(g.Name, name) {
+				found = append(found, g)
+			}
+		}
+		switch {
+		case len(found) == 0:
+			problem(ColChoices, fmt.Sprintf("There is no group of choices called %q. Import the choices first, or check the spelling.", name))
+		case len(found) > 1:
+			problem(ColChoices, fmt.Sprintf("%d groups of choices are called %s, so this could mean either. Offer it from the item's editor.", len(found), found[0].Name))
+		case !found[0].Active:
+			problem(ColChoices, fmt.Sprintf("The group of choices %s is retired. Bring it back first.", found[0].Name))
+		case seen[found[0].ID]:
+			problem(ColChoices, fmt.Sprintf("%s is in this cell twice.", found[0].Name))
+		default:
+			seen[found[0].ID] = true
+			ids = append(ids, found[0].ID)
+		}
+	}
+	return ids
 }

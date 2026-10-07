@@ -37,7 +37,10 @@ type ExportItem struct {
 	Diet        Diet
 	GlutenFree  bool
 	Popular     bool
-	Active      bool
+	// Choices are the names of the groups it offers, in order, retired
+	// groups left out: a row could not offer one.
+	Choices []string
+	Active  bool
 }
 
 // ExportRows is a row for each item, a cell for each of ExportColumns, in
@@ -47,7 +50,8 @@ func ExportRows(items []ExportItem) [][]string {
 	for i, it := range items {
 		rows[i] = []string{
 			it.Category, it.Name, exportPrice(it.Price), it.TaxClass, it.HSN, it.Station, it.Course,
-			it.Description, exportDiet(it.Diet), yesNo(it.GlutenFree), yesNo(it.Popular), exportStatus(it.Active),
+			it.Description, exportDiet(it.Diet), yesNo(it.GlutenFree), yesNo(it.Popular),
+			strings.Join(it.Choices, ChoicesSeparator+" "), exportStatus(it.Active),
 		}
 	}
 	return rows

@@ -36,9 +36,9 @@ func TestExportMenuWritesEveryItemInMenuOrder(t *testing.T) {
 
 	rows := w.export(t, plain)
 	want := [][]string{
-		{"Coffee", "Flat white", "180.00", "Food 5%", "", "Kitchen", "Mains", "", "", "no", "no", "Active"},
-		{"Coffee", "Mocha", "200.50", "Food 5%", "", "Kitchen", "Mains", "", "", "no", "no", "Retired"},
-		{"Bakes", "Lemon tart", "150.00", "Food 5%", "1905", "Kitchen", "Mains", "Sharp", "veg", "yes", "yes", "Active"},
+		{"Coffee", "Flat white", "180.00", "Food 5%", "", "Kitchen", "Mains", "", "", "no", "no", "", "Active"},
+		{"Coffee", "Mocha", "200.50", "Food 5%", "", "Kitchen", "Mains", "", "", "no", "no", "", "Retired"},
+		{"Bakes", "Lemon tart", "150.00", "Food 5%", "1905", "Kitchen", "Mains", "Sharp", "veg", "yes", "yes", "", "Active"},
 	}
 	if len(rows) != len(want) {
 		t.Fatalf("got %d rows, want %d: %q", len(rows), len(want), rows)

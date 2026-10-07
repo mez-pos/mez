@@ -171,7 +171,7 @@ func TestMenuImportTemplateOverHTTP(t *testing.T) {
 		t.Errorf("file: %q as %q", file.Filename, file.ContentType)
 	}
 	first, _, _ := strings.Cut(file.Text, "\r\n")
-	if first != byteOrderMark+"Category,Name,Price,Tax class,HSN,Station,Course,Description,Diet,Gluten free,Popular" {
+	if first != byteOrderMark+"Category,Name,Price,Tax class,HSN,Station,Course,Description,Diet,Gluten free,Popular,Choices" {
 		t.Errorf("first line: %q", first)
 	}
 	plan := importOf(t, m.sendFile("/api/v1/menu/import/preview", "text/csv", file.Text, nil))
@@ -209,10 +209,10 @@ func TestMenuExportOverHTTP(t *testing.T) {
 		t.Errorf("file: %q as %q", file.Filename, file.ContentType)
 	}
 	lines := strings.Split(strings.TrimSuffix(file.Text, "\r\n"), "\r\n")
-	if len(lines) != 4 || lines[0] != byteOrderMark+"Category,Name,Price,Tax class,HSN,Station,Course,Description,Diet,Gluten free,Popular,Status" {
+	if len(lines) != 4 || lines[0] != byteOrderMark+"Category,Name,Price,Tax class,HSN,Station,Course,Description,Diet,Gluten free,Popular,Choices,Status" {
 		t.Fatalf("lines: %q", lines)
 	}
-	if lines[2] != "Food,Idli,80.50,Food,,Kitchen,Mains,,veg,no,no,Active" {
+	if lines[2] != "Food,Idli,80.50,Food,,Kitchen,Mains,,veg,no,no,,Active" {
 		t.Errorf("the second item: %q", lines[2])
 	}
 
@@ -224,5 +224,100 @@ func TestMenuExportOverHTTP(t *testing.T) {
 	cashier := m.asStaff(m.signInAs(t, "stf_ASHA0001", "2468").Token)
 	if rec := send(m.handler, http.MethodGet, "/api/v1/menu/export", "", cashier); rec.Code != http.StatusForbidden {
 		t.Errorf("a cashier exporting the menu: %d, want 403", rec.Code)
+	}
+}
+
+const choicesFile = "Group,Fewest,Most,Choice,Price,Picked to start\nSize,1,1,Regular,0,yes\nSize,,,Large,30,\n"
+
+func choicesImportOf(t *testing.T, rec *httptest.ResponseRecorder) menus.ChoicesImport {
+	t.Helper()
+	if rec.Code != http.StatusOK {
+		t.Fatalf("%d %s, want 200", rec.Code, rec.Body)
+	}
+	var out menus.ChoicesImport
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+// TestChoicesImportOverHTTP: the owner gets the template, checks a file of
+// choices, imports it, then imports items that offer them, and the
+// terminal's menu has the item with its group.
+func TestChoicesImportOverHTTP(t *testing.T) {
+	m := newEditorTill(t)
+
+	rec := send(m.handler, http.MethodGet, "/api/v1/menu/choices/import/template", "", m.owner)
+	var file csvResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &file); err != nil || rec.Code != http.StatusOK {
+		t.Fatalf("template: %d %s (%v)", rec.Code, rec.Body, err)
+	}
+	first, _, _ := strings.Cut(file.Text, "\r\n")
+	if file.Filename != "mez-choices-template.csv" || first != byteOrderMark+"Group,Fewest,Most,Choice,Price,Picked to start" {
+		t.Errorf("template: %q, first line %q", file.Filename, first)
+	}
+	if plan := choicesImportOf(t, m.sendFile("/api/v1/menu/choices/import/preview", "text/csv", file.Text, nil)); len(plan.Problems) != 0 || len(plan.ToAdd) != 2 {
+		t.Errorf("the template, checked: %+v", plan)
+	}
+
+	rec = m.sendFile("/api/v1/menu/choices/import/preview", "text/csv", choicesFile, nil)
+	plan := choicesImportOf(t, rec)
+	if rec.Header().Get("Cache-Control") != "no-store" || plan.Imported || len(plan.ToAdd) != 1 || len(plan.ToAdd[0].Choices) != 2 {
+		t.Fatalf("preview: %+v", plan)
+	}
+	if !strings.Contains(rec.Body.String(), `"name":"Size","min_select":1,"max_select":1,"choices":[{"name":"Regular","price":{"minor":0,"currency":"INR"},"is_default":true}`) {
+		t.Errorf("the group as sent: %s", rec.Body)
+	}
+	if e := m.editor(t); len(e.Groups) != 0 {
+		t.Fatalf("a preview wrote: %+v", e.Groups)
+	}
+
+	if done := choicesImportOf(t, m.sendFile("/api/v1/menu/choices/import", "text/csv", choicesFile, nil)); !done.Imported {
+		t.Fatalf("import: %+v", done)
+	}
+	if again := choicesImportOf(t, m.sendFile("/api/v1/menu/choices/import", "text/csv", choicesFile, nil)); again.Imported || len(again.Skipped) != 2 {
+		t.Errorf("the same file again: %+v", again)
+	}
+
+	// Then the items, naming the group.
+	importOf(t, m.sendFile("/api/v1/menu/import", "text/csv", "Category,Name,Price,Choices\nDrinks,Latte,180,size\n", nil))
+	e := m.editor(t)
+	if len(e.Groups) != 1 || len(e.Items) != 1 || len(e.Items[0].ModifierGroups) != 1 || e.Items[0].ModifierGroups[0] != e.Groups[0].ID {
+		t.Fatalf("the menu: groups %+v, items %+v", e.Groups, e.Items)
+	}
+	rec = send(m.handler, http.MethodGet, "/api/v1/menu", "", m.asDevice())
+	var till menuResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &till); err != nil {
+		t.Fatal(err)
+	}
+	if len(till.Items) != 1 || len(till.Items[0].ModifierGroups) != 1 || len(till.ModifierGroups) != 1 || len(till.ModifierGroups[0].Modifiers) != 2 {
+		t.Errorf("the terminal's menu: %s", rec.Body)
+	}
+}
+
+func TestChoicesImportRefusals(t *testing.T) {
+	m := newEditorTill(t)
+	cashier := m.asStaff(m.signInAs(t, "stf_ASHA0001", "2468").Token)
+	tests := []struct {
+		name, path, contentType, body string
+		as                            map[string]string
+		status                        int
+		code                          ErrorCode
+	}{
+		{"a group that asks for more than it offers", "/api/v1/menu/choices/import", "text/csv", "Group,Fewest,Most,Choice\nSize,2,2,Regular\n", nil, http.StatusUnprocessableEntity, CodeMenuImportRefused},
+		{"JSON, not a file", "/api/v1/menu/choices/import", "application/json", `{}`, nil, http.StatusUnsupportedMediaType, CodeInvalidMenu},
+		{"a cashier importing", "/api/v1/menu/choices/import", "text/csv", choicesFile, cashier, http.StatusForbidden, CodeForbidden},
+		{"a cashier checking", "/api/v1/menu/choices/import/preview", "text/csv", choicesFile, cashier, http.StatusForbidden, CodeForbidden},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := m.sendFile(tt.path, tt.contentType, tt.body, tt.as)
+			if got := errorOf(t, rec); rec.Code != tt.status || got.Code != tt.code {
+				t.Errorf("%d %+v, want %d %s", rec.Code, got, tt.status, tt.code)
+			}
+		})
+	}
+	if e := m.editor(t); len(e.Groups) != 0 {
+		t.Errorf("a refusal wrote: %+v", e.Groups)
 	}
 }

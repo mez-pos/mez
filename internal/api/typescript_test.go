@@ -363,6 +363,7 @@ func generate() (*ts.Generator, error) {
 		groupRequest{}, menus.ModifierInput{}, menus.Group{}, menus.Modifier{}, soldOutResponse{}, photoResponse{},
 		menus.Import{}, menus.ImportItem{}, menus.ImportSkipped{}, menus.ImportProblem{},
 		menus.Prices{}, menus.PriceChange{}, menus.PriceUnknown{},
+		menus.ChoicesImport{}, menus.ChoicesImportGroup{}, menus.ChoicesImportChoice{}, menus.ChoicesImportSkipped{},
 		// Stock.
 		stockItemRequest{}, movementRequest{}, stock.Item{}, stockItemsResponse{}, stockEditResponse{},
 		stock.Recorded{}, stock.Movement{}, movementsResponse{},

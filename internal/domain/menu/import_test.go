@@ -3,6 +3,7 @@ package menu
 import (
 	"bytes"
 	"encoding/csv"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -29,6 +30,13 @@ func importVenue() ImportVenue {
 		Courses: []ImportChoice{
 			{ID: 30, Name: "Drinks", Also: "1", Active: true},
 			{ID: 31, Name: "Mains", Also: "2", Active: true},
+		},
+		Groups: []ImportChoice{
+			{ID: 40, Name: "Size", Active: true},
+			{ID: 41, Name: "Milk", Active: true},
+			{ID: 42, Name: "Old extras", Active: false},
+			{ID: 43, Name: "Toppings", Active: true},
+			{ID: 44, Name: "toppings", Active: true},
 		},
 		Items: []ImportHave{
 			{Category: "Coffee", Name: "Espresso"},
@@ -59,7 +67,7 @@ func TestReadImportAddsRows(t *testing.T) {
 		Row: 2, Category: "Coffee", CategoryID: 1, Name: "Latte", Price: 18000, HSN: "2106",
 		TaxClassID: 10, StationID: 21, CourseID: 30, Description: "Steamed milk", Diet: DietVeg, GlutenFree: true,
 	}
-	if latte != want {
+	if !reflect.DeepEqual(latte, want) {
 		t.Errorf("latte\n got %+v\nwant %+v", latte, want)
 	}
 	bread := plan.Rows[1]

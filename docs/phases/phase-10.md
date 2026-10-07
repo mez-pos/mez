@@ -315,6 +315,20 @@ session; split one again if it is not.
   read and check, the server, the template, the screen. Do not start it
   until Tasks 8 to 10 have been used on a real menu.
 
+  Started on 2026-10-08 at the human's word, before that use (ADR-302).
+  Split in two, since the reader, the template and the server were one
+  sitting:
+
+  - [x] **Task 11a: Read the file, and the server.** `menu.ReadChoices`
+    for a file of Group, Fewest, Most, Choice, Price, Picked to start; a
+    **Choices** column in the items import and in the export, naming the
+    groups an item offers; template, preview and import routes under
+    `/api/v1/menu/choices/import`. Tests in each layer, the last of them
+    choices and then items reaching the terminal's menu.
+  - [ ] **Task 11b: The screen.** Spec first. **Import choices** in the
+    Spreadsheet menu, and its dialog; the items import's dialog says that
+    choices come first.
+
 - [ ] **Task 12 — Loose ends from the import's walk.**
   Three small things found on 2026-10-08. None depends on Tasks 8 to 11,
   and 12a should not wait for them: do it in any session with time left.

@@ -2003,6 +2003,32 @@ export interface MenuPriceUnknown {
   name: string;
 }
 
+export interface ChoicesImport {
+  to_add: ChoicesImportGroup[];
+  skipped: ChoicesImportSkipped[];
+  problems: MenuImportProblem[];
+  imported: boolean;
+}
+
+export interface ChoicesImportGroup {
+  row: number;
+  name: string;
+  min_select: number;
+  max_select: number;
+  choices: ChoicesImportChoice[];
+}
+
+export interface ChoicesImportChoice {
+  name: string;
+  price: Money;
+  is_default: boolean;
+}
+
+export interface ChoicesImportSkipped {
+  row: number;
+  group: string;
+}
+
 export interface StockItemInput {
   name: string;
   unit: StockUnit;

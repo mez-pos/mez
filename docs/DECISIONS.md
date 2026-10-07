@@ -10834,3 +10834,57 @@ template of 21 dishes, a bad file refused, a good one, the same again
 giving nothing, and the template then at 19. Not walked: either
 template opened in a real spreadsheet, a refusal after the store
 changes between check and add, and either dialog under 1024px.
+
+## ADR-302 - Groups of choices are imported from a file of their own, and an item's row names the groups it offers
+2026-10 · Status: accepted. Phase 10, Task 11. Decided before its code, as the task asks.
+Context: Task 7 left modifier groups out of the import because a group
+is choices with bounds, offered by items, and is not one row for each
+item (ADR-288). ADR-292 said to wait until the other imports had met a
+real menu. The human asked for it on 2026-10-08 before that had
+happened, so its shape is decided from the editor's rules and not from
+use.
+Decision: two things, kept apart.
+  - **A file of choices**, one row for each choice: **Group**,
+    **Fewest**, **Most**, **Choice**, **Price**, **Picked to start**.
+    `GET /api/v1/menu/choices/import/template`, `POST .../preview`,
+    `POST /api/v1/menu/choices/import`, `menu.edit`, as the import's
+    routes are (ADR-289).
+      - **Fewest and Most are the group's, said once.** They are on any
+        one of its rows; other rows leave them empty, or say the same.
+        Two rows that disagree are a problem. A group that never says
+        them is a problem: there is no default, since "must choose one"
+        and "may choose one" differ only there and a file that guessed
+        would make a required size optional.
+      - **Price is what the choice adds to the line**, may be below
+        zero, and is nothing when empty.
+      - **A group is checked whole by `CleanGroup`**, the editor's own
+        rule: bounds its choices can meet, no two choices of one name,
+        no more picked to start than may be picked. What it says of a
+        form's field is put on the row and column an owner would fix.
+      - **Adding only.** A group of a name the menu has, retired or
+        not, is left alone and its rows said to be skipped. Part of a
+        group is not a group: one bad row keeps the whole group out.
+      - A group is added offered by no item.
+  - **A Choices column in the items file**, and in the menu's export:
+    the names of the groups an item offers, with a semicolon between, in
+    the order its choice sheet shows them. A comma would end the cell in
+    half the spreadsheets that save the file.
+      - It is read for a new item only, since the import adds and never
+        changes (ADR-288). An item already on the menu is offered a
+        group from its editor.
+      - Each name must be one group in use. An unknown name says to
+        import the choices first; a retired group and a name two groups
+        share are problems, not guesses.
+      - The export writes it, leaving out a retired group, so the
+        export still goes back in as nothing wrong and nothing to add
+        (ADR-293), and an owner can copy a row to make a like item.
+  - **The order for a new venue is choices, then items.** The items'
+    template names the venue's first group in its first example where
+    there is one, and leaves the cell empty where there is none.
+Cost: a group cannot be changed from a file, nor a choice added to one
+that is there. An item on the menu cannot be offered a group from a
+file. The template's examples are a Size and an Extras whatever the
+venue sells. Group names are not unique in the menu, so two groups
+called Toppings cannot be named by a row at all. Built without the use
+ADR-292 asked to wait for; if a real menu shows the shape wrong, this
+is the ADR to revisit.

@@ -121,3 +121,52 @@ func (s *Server) importFile(w http.ResponseWriter, r *http.Request, code ErrorCo
 	}
 	return data, true
 }
+
+// Groups of choices from a spreadsheet (phase 10, Task 11, ADR-302): the
+// import's three routes, for the groups an item may offer.
+
+// menuChoicesTemplateName is the file the choices template is saved as.
+const menuChoicesTemplateName = "mez-choices-template.csv"
+
+func (s *Server) mountChoicesImport(handle func(pattern string, h http.HandlerFunc)) {
+	handle("GET /api/v1/menu/choices/import/template", s.menuChoicesTemplate)
+	handle("POST /api/v1/menu/choices/import/preview", s.previewMenuChoices)
+	handle("POST /api/v1/menu/choices/import", s.importMenuChoices)
+}
+
+// menuChoicesTemplate answers the file to fill in: the columns, and two
+// example groups.
+func (s *Server) menuChoicesTemplate(w http.ResponseWriter, r *http.Request) {
+	s.writeCSV(w, r, menuChoicesTemplateName, export.Table{Header: menu.ChoiceColumns, Rows: s.menuEditor.ChoicesTemplate()})
+}
+
+func (s *Server) previewMenuChoices(w http.ResponseWriter, r *http.Request) {
+	data, ok := s.importFile(w, r, CodeInvalidMenu)
+	if !ok {
+		return
+	}
+	plan, err := s.menuEditor.PreviewChoices(r.Context(), Meta(r).VenueID, data)
+	if err != nil {
+		s.writeMenuEditError(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, s.log, http.StatusOK, plan)
+}
+
+func (s *Server) importMenuChoices(w http.ResponseWriter, r *http.Request) {
+	data, ok := s.importFile(w, r, CodeInvalidMenu)
+	if !ok {
+		return
+	}
+	done, err := s.menuEditor.ImportChoices(r.Context(), Meta(r).VenueID, data)
+	if errors.Is(err, menus.ErrImportRefused) {
+		writeFieldError(w, s.log, http.StatusUnprocessableEntity, CodeMenuImportRefused, importRefusal(len(done.Problems)), "file")
+		return
+	}
+	if err != nil {
+		s.writeMenuEditError(w, r, err)
+		return
+	}
+	writeJSON(w, s.log, http.StatusOK, done)
+}

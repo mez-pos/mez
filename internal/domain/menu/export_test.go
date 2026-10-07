@@ -25,15 +25,15 @@ func TestExportRows(t *testing.T) {
 	rows := ExportRows([]ExportItem{
 		{
 			Category: "Coffee", Name: "Flat white", Price: inr(18000), TaxClass: "GST 5%", HSN: "2106", Station: "Coffee bar", Course: "Drinks",
-			Description: "Double shot", Diet: DietVeg, GlutenFree: true, Popular: true, Active: true,
+			Description: "Double shot", Diet: DietVeg, GlutenFree: true, Popular: true, Choices: []string{"Size", "Milk"}, Active: true,
 		},
 		{Category: "Coffee", Name: "Mocha", Price: inr(12050), TaxClass: "GST 5%", Station: "Kitchen", Course: "Drinks", Diet: DietNonVeg},
 		{Category: "Coffee", Name: "Water", Price: inr(0), Diet: DietVegan, Active: true},
 	})
 	want := [][]string{
-		{"Coffee", "Flat white", "180.00", "GST 5%", "2106", "Coffee bar", "Drinks", "Double shot", "veg", "yes", "yes", "Active"},
-		{"Coffee", "Mocha", "120.50", "GST 5%", "", "Kitchen", "Drinks", "", "non-veg", "no", "no", "Retired"},
-		{"Coffee", "Water", "0.00", "", "", "", "", "", "vegan", "no", "no", "Active"},
+		{"Coffee", "Flat white", "180.00", "GST 5%", "2106", "Coffee bar", "Drinks", "Double shot", "veg", "yes", "yes", "Size; Milk", "Active"},
+		{"Coffee", "Mocha", "120.50", "GST 5%", "", "Kitchen", "Drinks", "", "non-veg", "no", "no", "", "Retired"},
+		{"Coffee", "Water", "0.00", "", "", "", "", "", "vegan", "no", "no", "", "Active"},
 	}
 	for i := range want {
 		if !slices.Equal(rows[i], want[i]) {
@@ -114,7 +114,7 @@ func TestTheExportWithARowAddedAddsOnlyThatRow(t *testing.T) {
 		{Category: "Coffee", Name: "Espresso", Price: inr(12000), TaxClass: "GST 5%", HSN: "2106", Station: "Kitchen", Course: "Drinks", Active: true},
 	}))
 	// The Status an owner types on a new row is not read: it is added, on sale.
-	file += "Coffee,Cortado,170,GST 5%,2106,Kitchen,Drinks,,,,,Retired\r\n"
+	file += "Coffee,Cortado,170,GST 5%,2106,Kitchen,Drinks,,,,,,Retired\r\n"
 	plan := ReadImport([]byte(file), v)
 	if len(plan.Problems) != 0 || len(plan.Skipped) != 1 || len(plan.Rows) != 1 || plan.Rows[0].Name != "Cortado" {
 		t.Errorf("rows %+v, skipped %+v, problems %+v", plan.Rows, plan.Skipped, plan.Problems)

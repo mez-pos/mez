@@ -47,6 +47,9 @@ type MenuEditor interface {
 	ImportMenu(ctx context.Context, venueID int64, data []byte) (menus.Import, error)
 	ImportTemplate(ctx context.Context, venueID int64) ([][]string, error)
 	ExportMenu(ctx context.Context, venueID int64) ([][]string, error)
+	PreviewChoices(ctx context.Context, venueID int64, data []byte) (menus.ChoicesImport, error)
+	ImportChoices(ctx context.Context, venueID int64, data []byte) (menus.ChoicesImport, error)
+	ChoicesTemplate() [][]string
 	PreviewPrices(ctx context.Context, venueID int64, data []byte) (menus.Prices, error)
 	ApplyPrices(ctx context.Context, venueID int64, data []byte, version int64) (menus.Prices, error)
 }
@@ -134,6 +137,7 @@ func (s *Server) mountMenuEditor(mux *http.ServeMux) {
 	s.mountStationsAndCourses(handle)
 	s.mountMenuImport(handle)
 	s.mountMenuPrices(handle)
+	s.mountChoicesImport(handle)
 
 	handle("POST /api/v1/menu/groups", s.createGroup)
 	handle("PUT /api/v1/menu/groups/{id}", s.updateGroup)

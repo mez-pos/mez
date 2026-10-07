@@ -25,6 +25,8 @@ func ImportTemplate(v ImportVenue) [][]string {
 		category = exampleCategory
 	}
 	taxClass, station, course := firstActive(v.TaxClasses), firstActive(v.Stations), firstActive(v.Courses)
+	// Empty at a venue with no groups yet: the choices are imported first.
+	choices := firstActive(v.Groups)
 	hsn := ""
 	if v.NeedsHSN {
 		hsn = exampleHSN
@@ -35,8 +37,8 @@ func ImportTemplate(v ImportVenue) [][]string {
 		second = "80"
 	}
 	return [][]string{
-		{category, "Example: Masala dosa", "120", taxClass, hsn, station, course, "Crisp rice crepe with spiced potato", "veg", "yes", "yes"},
-		{category, "Example: Filter coffee", second, taxClass, hsn, station, course, "", "", "no", "no"},
+		{category, "Example: Masala dosa", "120", taxClass, hsn, station, course, "Crisp rice crepe with spiced potato", "veg", "yes", "yes", choices},
+		{category, "Example: Filter coffee", second, taxClass, hsn, station, course, "", "", "no", "no", ""},
 	}
 }
 

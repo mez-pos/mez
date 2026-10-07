@@ -153,6 +153,13 @@ func importVenue(ctx context.Context, q *gen.Queries, venueID int64) (menu.Impor
 	for _, it := range items {
 		out.Items = append(out.Items, menu.ImportHave{Category: names[it.CategoryID], Name: it.Name})
 	}
+	groups, err := q.EditorModifierGroups(ctx, venueID)
+	if err != nil {
+		return menu.ImportVenue{}, fmt.Errorf("menus: reading the groups of choices: %w", err)
+	}
+	for _, g := range groups {
+		out.Groups = append(out.Groups, menu.ImportChoice{ID: g.ID, Name: g.Name, Active: g.Active})
+	}
 	return out, importChoices(ctx, q, venueID, &out)
 }
 
@@ -210,13 +217,20 @@ func (s *Service) writeImport(ctx context.Context, q *gen.Queries, venueID int64
 		if err != nil {
 			return fmt.Errorf("menus: next item place: %w", err)
 		}
-		if _, err := q.CreateItem(ctx, gen.CreateItemParams{
+		id, err := q.CreateItem(ctx, gen.CreateItemParams{
 			VenueID: venueID, CategoryID: category, Name: row.Name, Price: row.Price, Hsn: row.HSN,
 			TaxClassID: row.TaxClassID, StationID: row.StationID, CourseID: row.CourseID, SortOrder: next,
 			CreatedAt: now, UpdatedAt: now,
 			Description: row.Description, Diet: string(row.Diet), GlutenFree: row.GlutenFree, Popular: row.Popular,
-		}); err != nil {
+		})
+		if err != nil {
 			return fmt.Errorf("menus: importing row %d (%s): %w", row.Row, row.Name, err)
+		}
+		// The groups its row names, in the order it names them (ADR-302).
+		for i, group := range row.Groups {
+			if err := q.AttachModifierGroup(ctx, gen.AttachModifierGroupParams{VenueID: venueID, ItemID: id, GroupID: group, SortOrder: int64(i)}); err != nil {
+				return fmt.Errorf("menus: importing row %d (%s): offering its choices: %w", row.Row, row.Name, err)
+			}
 		}
 	}
 	return nil
