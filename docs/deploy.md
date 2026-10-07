@@ -260,56 +260,85 @@ are then no window buttons, and Alt+F4 is how it is closed.
 ## Linux
 
 Any 64-bit distribution with systemd. A Raspberry Pi 4 or 5 is enough for a
-small venue; build with `GOARCH=arm64`.
+small venue; build with `GOARCH=arm64`. It is the same binary as on Windows:
+one file, no database server, nothing else to install.
 
 ```sh
 sudo useradd --system --home /var/lib/mez --create-home mez
 sudo install -m 755 mez_<version>_linux_amd64 /usr/local/bin/mez
+sudo install -m 644 build/mez.service /etc/systemd/system/mez.service
+```
+
+[`build/mez.service`](../build/mez.service) is the unit. Before starting it,
+open it and set `MEZ_TIMEZONE` to the venue's own: a server's clock is often
+UTC, and the venue's day, its shift dates and its Z-reports follow this
+setting. Then make the venue and start it:
+
+```sh
 sudo -u mez /usr/local/bin/mez setup -data-dir /var/lib/mez \
      -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata \
      -device-kind back_office -device-name "Office"
-```
-
-`/etc/systemd/system/mez.service`:
-
-```ini
-[Unit]
-Description=mez point of sale
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-User=mez
-Group=mez
-Environment=MEZ_DATA_DIR=/var/lib/mez
-Environment=MEZ_TIMEZONE=Asia/Kolkata
-Environment=MEZ_LOG_FORMAT=json
-ExecStart=/usr/local/bin/mez
-Restart=on-failure
-RestartSec=5
-# mez finishes in-flight requests on SIGTERM and gives itself ten seconds.
-TimeoutStopSec=15
-NoNewPrivileges=true
-ProtectSystem=strict
-ReadWritePaths=/var/lib/mez
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```sh
 sudo systemctl daemon-reload
 sudo systemctl enable --now mez
 journalctl -u mez -f
 ```
 
+The unit runs mez as its own user, keeps everything in `/var/lib/mez`
+(closed to everyone else), starts it again if it falls over, and lets it
+write nowhere else on the machine. Other settings (a relay, a payment
+gateway) go one to a line as `MEZ_NAME=value` in `/etc/mez/mez.env`, which
+the unit reads if it is there, so that an upgrade can replace the unit
+without losing them.
+
 Open port 7777 to the local network if a firewall is on (`sudo ufw allow from
 192.168.0.0/16 to any port 7777`, adjusted to your network).
+
+Three things differ from Windows:
+
+- **A backup to a folder needs the folder named in the unit.** mez may
+  write only to its own directory. Make the folder, give it to the `mez`
+  user, and allow it:
+
+  ```sh
+  sudo mkdir -p /mnt/backup/mez && sudo chown mez:mez /mnt/backup/mez
+  sudo systemctl edit mez
+  ```
+
+  and in the editor that opens:
+
+  ```ini
+  [Service]
+  ReadWritePaths=/mnt/backup/mez
+  ```
+
+  then `sudo systemctl restart mez`, and set the folder under **Settings**,
+  **Backup**. Without it the Backup section says "Not backing up" and the
+  reason says the file system is read-only. A backup to a bucket needs none
+  of this.
+- **A changed backup destination takes effect at the next restart.** The
+  first time a backup is turned on it starts at once. Changing it to
+  somewhere else, or turning it off, is saved and waits for
+  `sudo systemctl restart mez`; the Backup section says so until then.
+- **Run `mez restore` as the `mez` user**, with the service stopped, so
+  that what it writes belongs to the service:
+
+  ```sh
+  sudo systemctl stop mez
+  sudo -u mez /usr/local/bin/mez restore -from /mnt/backup/mez -data-dir /var/lib/mez
+  sudo systemctl start mez
+  ```
+
+  [Backups](#getting-a-venue-back) has the rest.
+
+This was run on 2026-10-07 under systemd 252 on Debian 12: the unit starts
+mez, starts it again after it is killed, and stops it in well under a
+second; a backup to a folder is refused without `ReadWritePaths` and works
+with it; and a venue was restored from that folder by the commands above.
 
 ## Docker
 
 `build/Dockerfile` builds mez from source, with the three apps embedded, into
-an image of about 30 MB that holds nothing but the binary. It runs as an
+an image of about 50 MB that holds nothing but the binary. It runs as an
 unprivileged user and keeps everything in `/data`. From the repository root:
 
 ```sh
@@ -323,12 +352,17 @@ docker compose -f build/docker-compose.yml up -d
 Edit `MEZ_TIMEZONE` in `build/docker-compose.yml` first: a container's clock
 is UTC, and the venue's day, shift dates and Z-reports follow this setting.
 
+Make the venue with `setup` as above, not with the wizard in the browser:
+the wizard only answers a browser on the server's own machine, and from
+inside a container every browser is somewhere else.
+
 | Task | Command (add `-f build/docker-compose.yml`) |
 |---|---|
 | Logs | `docker compose logs -f mez` |
 | Stop | `docker compose stop` |
 | Health | `curl http://localhost:7777/api/v1/health` |
 | Printer test | `docker compose run --rm mez --test-print 192.168.1.50` |
+| Another pairing code | `docker compose run --rm mez pair -device-kind terminal` |
 
 The data is in the named volume `mez-data`, and survives `down`, rebuilds
 and upgrades. `docker compose down -v` deletes it, venue and all.
@@ -339,7 +373,7 @@ Without compose:
 docker build -f build/Dockerfile -t mez .
 docker volume create mez-data
 docker run --rm -v mez-data:/data mez setup -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata -device-kind back_office
-docker run -d --name mez --restart unless-stopped -p 7777:7777 \
+docker run -d --name mez --restart unless-stopped --stop-timeout 20 -p 7777:7777 \
        -e MEZ_TIMEZONE=Asia/Kolkata -v mez-data:/data mez
 ```
 
@@ -347,6 +381,48 @@ Printers are reached from inside the container over the ordinary network, so
 the host must be able to reach them on port 9100. On Docker Desktop for
 Windows and macOS, a printer on the LAN usually works; if it does not, run the
 container on a Linux host.
+
+### Backups in Docker
+
+A backup to a **bucket** needs nothing but the settings: turn it on under
+**Settings**, **Backup**.
+
+A backup to a **folder** needs the folder mounted into the container. The
+image has `/backup` for it. In `build/docker-compose.yml`, uncomment one of
+the two lines under "A backup to a folder":
+
+- a folder of the host's on another disk (`/mnt/usb/mez-backup:/backup`),
+  made writable by user 65532, which is who mez runs as in the container:
+  `sudo chown 65532:65532 /mnt/usb/mez-backup`;
+- or a named volume (`mez-backup:/backup`), which is on the same disk as
+  the venue and so protects against a mistake and not against the disk.
+
+Then `docker compose up -d` again, and under **Settings**, **Backup**
+choose **A folder** and enter `/backup`.
+
+As on any Linux, the first time a backup is turned on it starts at once,
+and a destination changed after that takes effect at the next
+`docker compose restart mez`.
+
+To get a venue back, stop the container and run `restore` with the new
+volume and the backup both mounted:
+
+```sh
+docker compose -f build/docker-compose.yml stop
+docker run --rm -v mez-data:/data -v /mnt/usb/mez-backup:/backup mez:local restore -from /backup
+docker compose -f build/docker-compose.yml up -d
+```
+
+`mez-data` must have no venue in it: on a new machine it does not, and on
+one that has, restore into a new volume and point the compose file at it.
+From a bucket, pass the bucket's flags and `-e
+MEZ_RESTORE_SECRET_ACCESS_KEY=...` in place of the mount.
+[Backups](#getting-a-venue-back) has the rest.
+
+This was run on 2026-10-07 with Docker 29 on Linux: the image built, a venue
+was set up in it, it backed up to a named volume mounted at `/backup`,
+stopped in half a second, was restored into a new volume by the command
+above, and started as the venue it had been.
 
 ## On a domain with HTTPS
 
@@ -479,6 +555,8 @@ for seven days, and the changes in between.
   internet is unreliable, back up to a folder.
 - **A USB drive swapped for another** is noticed within a minute and
   filled from scratch. On Linux and in Docker, restart mez after swapping.
+- **On Linux and in Docker**, a folder has to be made reachable first:
+  see [Linux](#linux) and [Backups in Docker](#backups-in-docker).
 - **Look at the Backup section now and then.** A backup that has been
   failing for a month is not a backup. The status is on that screen and
   nowhere else yet.
@@ -597,5 +675,6 @@ Paired devices stay paired across an upgrade.
 [`phases/phase-12.md`](phases/phase-12.md) is the plan. In short: a Windows
 installer (Inno Setup) that registers the Windows service, opens the firewall
 and creates the shortcut; a setup wizard, so a new Windows venue needs no `mez setup` (built);
-backups configured in the back office (built, [above](#backups)); a systemd unit and image
+backups configured in the back office (built, [above](#backups)); a systemd unit
+([`build/mez.service`](../build/mez.service), built) and an image
 published with each release; and release automation with checksums.

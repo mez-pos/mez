@@ -4,7 +4,8 @@
 #   docker compose -f build/docker-compose.yml run --rm mez setup -name "My Cafe" -owner Priya -timezone Asia/Kolkata
 #   docker compose -f build/docker-compose.yml up -d
 #
-# See docs/deploy.md for putting it behind a domain with HTTPS.
+# See docs/deploy.md: "Docker" for running it, "Backups" for the backup and
+# for getting a venue back, "On a domain with HTTPS" for putting it behind one.
 
 services:
   mez:
@@ -13,6 +14,10 @@ services:
       dockerfile: build/Dockerfile
     image: mez:local
     restart: unless-stopped
+    # mez finishes the requests in hand when it is asked to stop, and then
+    # makes the backup's last copy. Docker's ten seconds is not quite enough
+    # for both.
+    stop_grace_period: 20s
     ports:
       - "7777:7777"
     environment:
@@ -20,8 +25,30 @@ services:
       # venue's day.
       MEZ_TIMEZONE: Asia/Kolkata
       MEZ_LOG_FORMAT: json
+
+      # Guests ordering from their phones over the internet, through a relay.
+      # Optional: with these left out, nothing in mez calls the internet. The
+      # address and the key come from whoever runs the relay; build/relay has
+      # what it takes to run your own.
+      # MEZ_RELAY_URL: wss://relay.example.com/tunnel
+      # MEZ_RELAY_KEY: the-key-you-were-given
     volumes:
       - mez-data:/data
 
+      # A backup to a folder. Mount the folder at /backup, then in the back
+      # office choose Settings, Backup, A folder, and enter /backup.
+      #
+      # A folder of the host's, on another disk than Docker's. It must be
+      # writable by user 65532, which is who mez runs as in the container:
+      #   sudo chown 65532:65532 /mnt/usb/mez-backup
+      # - /mnt/usb/mez-backup:/backup
+      #
+      # Or a named volume, which is on the same disk as the venue and so
+      # protects against a mistake and not against the disk:
+      # - mez-backup:/backup
+      #
+      # A backup to a bucket needs nothing here.
+
 volumes:
   mez-data:
+  # mez-backup:

@@ -1,0 +1,72 @@
+# mez as a systemd service, on any Linux with systemd.
+#
+#   sudo useradd --system --home /var/lib/mez --create-home mez
+#   sudo install -m 755 mez /usr/local/bin/mez
+#   sudo install -m 644 mez.service /etc/systemd/system/mez.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now mez
+#
+# docs/deploy.md, "Linux", has the whole of it, setup included.
+
+[Unit]
+Description=mez point of sale
+Documentation=https://github.com/byjoellobo/mez/blob/main/docs/deploy.md
+# Not Requires. mez sells with no network at all, and must start without one:
+# this only orders it after the network when there is one to wait for.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mez
+Group=mez
+ExecStart=/usr/local/bin/mez
+
+# Everything mez owns is here: the database, the photos, the logs, and
+# backup.json once a backup is set. systemd makes it, owned by mez and closed
+# to everyone else, if it is not there.
+StateDirectory=mez
+StateDirectoryMode=0700
+Environment=MEZ_DATA_DIR=/var/lib/mez
+
+# The venue's own timezone, an IANA name. A server's clock is often UTC, and
+# the venue's day, its shift dates and its Z-reports follow this.
+Environment=MEZ_TIMEZONE=Asia/Kolkata
+# journald keeps the time and the level itself.
+Environment=MEZ_LOG_FORMAT=json
+# More settings, one to a line as MEZ_NAME=value, kept out of this file so an
+# upgrade can replace it: a relay, a payment gateway. The dash makes it
+# optional.
+EnvironmentFile=-/etc/mez/mez.env
+
+# Back up if it falls over, and not in a tight loop if it cannot start.
+Restart=on-failure
+RestartSec=5
+# mez finishes the requests in hand on SIGTERM and gives itself ten seconds,
+# the last five of them to the backup's final copy.
+TimeoutStopSec=20
+
+# It needs to listen on a port above 1024, write its own directory and reach
+# the printers and the internet. Nothing else.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+# A backup to a folder writes outside /var/lib/mez. Name the folder here, or
+# in a drop-in (`systemctl edit mez`), or ProtectSystem will refuse the write
+# and the Backup section will say "Not backing up":
+#ReadWritePaths=/mnt/backup/mez
+
+[Install]
+WantedBy=multi-user.target

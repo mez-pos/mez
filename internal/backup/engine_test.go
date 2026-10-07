@@ -438,6 +438,13 @@ func rename(t *testing.T, from, to string) {
 		if err == nil {
 			return
 		}
+		// The backup looks at its destination every few milliseconds
+		// here, and makes the folder when it is not there: between the
+		// test clearing the way and moving the folder back, it may have
+		// made an empty one. That one is cleared, and the move tried again.
+		if info, statErr := os.Stat(to); statErr == nil && info.IsDir() {
+			os.RemoveAll(to)
+		}
 		if time.Now().After(deadline) {
 			t.Fatalf("moving %s: %v", from, err)
 		}

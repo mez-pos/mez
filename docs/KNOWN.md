@@ -10,6 +10,20 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Linux and Docker** (ADR-279; phase 12 Task 5; `deploy.md`). Run on
+  2026-10-07 in containers on Docker Desktop: `build/mez.service` under
+  systemd 252 on Debian 12, and the image through setup, a backup to a
+  mounted folder, stop, restore and start. **Not run**: arm64 (it
+  compiles); a real Linux machine; the compose file's own `up`; a host
+  folder with the wrong owner; a relay through compose. The setup wizard
+  does not work in a container (every browser is elsewhere to it): use
+  `setup`. No healthcheck in the image. A backup to a folder under
+  systemd needs `ReadWritePaths`. If a destination answers and is gone a
+  moment later, or the database is held for over ten seconds just then,
+  Litestream can still close its handle on the database as it starts,
+  which on Linux drops the server's locks: once for each look at the
+  destination, where it was once a second. Narrow now, not shut.
+
 - **Restoring a venue** (ADR-278; phase 12 Task 4f; `deploy.md`,
   "Getting a venue back"). Done on 2026-10-07 on Windows with the built
   binary: three sales, the server killed, `mez restore` from the folder
@@ -57,8 +71,8 @@
   restart elsewhere. Until this task a stop could leave the last sales
   out of the backup (about one stop in ten on a busy machine) and a
   reused destination could restore short; both were in 4a to 4c as
-  committed. On Linux, Litestream starting under the open database can
-  still drop the process's file locks if its first look fails.
+  committed. The Linux file-lock hole this recorded is ADR-279's,
+  and mostly closed there.
 
 - **The photos in the backup** (ADR-275; phase 12 Task 4c). Seen on
   2026-10-07 in tests: to a folder, a stand-in S3 and a real MinIO and

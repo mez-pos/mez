@@ -49,7 +49,6 @@ const (
 const (
 	closeBudget            = 5 * time.Second
 	unreachableCloseBudget = 2 * time.Second
-	firstLookGrace         = time.Second
 	closeTidy              = time.Second
 )
 
@@ -153,9 +152,12 @@ type Engine struct {
 	ldb        *litestream.DB
 	errors     *errorKeeper
 
-	// The first look at the database, in a goroutine of its own.
-	stopLook context.CancelFunc
-	lookDone chan struct{}
+	// Whether Litestream has been started, which waits for the
+	// destination to be seen (open), and the context it runs under.
+	openMu        sync.Mutex
+	opened        bool
+	runCtx        context.Context
+	litestreamLog *slog.Logger
 
 	// The probe's goroutine, and what it last found: "" is reachable.
 	stopProbe   context.CancelFunc
@@ -244,42 +246,23 @@ func Start(ctx context.Context, opts Options) (*Engine, error) {
 	e.dest.attach(replica)
 	e.errors.lostIn = e.ldb.MetaPath()
 
-	e.store = litestream.NewStore([]*litestream.DB{e.ldb}, pace.levels)
-	e.store.SetL0Retention(pace.l0Retention)
-	e.store.L0RetentionCheckInterval = pace.l0RetentionCheck
-	e.store.Logger = log
 	e.ldb.SetLogger(log)
-	e.store.SnapshotInterval = snapshotEvery
-	e.store.SnapshotRetention = snapshotsKept
-	// One try on the way down, inside the caller's budget. A venue with
-	// no internet at closing time must still shut down promptly, and what
-	// did not go is still on disk for the next start.
-	e.store.SetShutdownSyncTimeout(0)
+	e.litestreamLog = log
+	// Litestream gives up on the database after a second of waiting for
+	// it, and what it does when it gives up as it starts is close its
+	// handle (see open). A till can hold the database for longer than
+	// that: a day's close, a big import.
+	e.ldb.BusyTimeout = litestreamBusyTimeout
 
 	if opts.PhotosDir != "" {
 		e.photos = newPhotoSync(opts.PhotosDir, e.dest.photos, opts.Log)
 	}
 
-	// Open calls nobody, for a bucket too: Validate has made sure there
-	// is nothing Litestream would have to go and ask.
-	if err := e.store.Open(ctx); err != nil {
-		return nil, fmt.Errorf("backup: starting: %w", err)
-	}
-
-	// Litestream first looks at the database a second after starting, and
-	// a server stopped sooner than that would close having copied nothing.
-	// So it is made to look now, off to one side: with a bucket and no
-	// internet the look does not come back for minutes, because Litestream
-	// asks the bucket where it had got to before it reads anything.
-	lookCtx, stopLook := context.WithCancel(context.WithoutCancel(ctx))
-	e.stopLook, e.lookDone = stopLook, make(chan struct{})
-	go func() {
-		defer close(e.lookDone)
-		if _, err := e.store.SyncDB(lookCtx, e.ldb.Path(), false); err != nil && lookCtx.Err() == nil {
-			opts.Log.Debug("the backup's first look at the database did not finish", "error", err)
-		}
-	}()
-
+	// Litestream is not started here. It is started by the first look at
+	// the destination that finds it there (see open), which for a folder
+	// is a moment from now and for a bucket with no internet is whenever
+	// the internet comes back.
+	e.runCtx = context.WithoutCancel(ctx)
 	if opts.ProbeEvery <= 0 {
 		opts.ProbeEvery = e.dest.every
 	}
@@ -289,6 +272,83 @@ func Start(ctx context.Context, opts Options) (*Engine, error) {
 
 	opts.Log.Info("backing up the database", "kind", string(opts.Config.Kind), "destination", opts.Config.Destination())
 	return e, nil
+}
+
+// open starts Litestream on the database. It is called once the
+// destination has been seen to be there, and not before (ADR-279).
+//
+// Litestream, as it starts, asks the destination where it had got to. If
+// the destination does not answer it gives up, closes its handle on the
+// database file, and tries again a second later, for as long as the
+// destination is away. On every system but Windows, closing any handle on
+// a file drops every lock the process holds on it: a venue that started
+// its day with no internet would have had the server's locks on its own
+// database taken away, over and over, with the server none the wiser, and
+// the next `mez pair` at that machine free to take the log out from under
+// it. A Litestream that is only started when the destination answers
+// does not go through that door.
+//
+// It is also why a server started with no internet captures nothing for
+// a bucket until the bucket first answers. That was so before, and was a
+// cost; now it is also the point.
+func (e *Engine) open(ctx context.Context) error {
+	e.openMu.Lock()
+	defer e.openMu.Unlock()
+	if e.opened {
+		return nil
+	}
+
+	store := litestream.NewStore([]*litestream.DB{e.ldb}, pace.levels)
+	store.SetL0Retention(pace.l0Retention)
+	store.L0RetentionCheckInterval = pace.l0RetentionCheck
+	store.Logger = e.litestreamLog
+	e.ldb.SetLogger(e.litestreamLog)
+	store.SnapshotInterval = snapshotEvery
+	store.SnapshotRetention = snapshotsKept
+	// One try on the way down, inside the caller's budget. A venue with
+	// no internet at closing time must still shut down promptly, and what
+	// did not go is still on disk for the next start.
+	store.SetShutdownSyncTimeout(0)
+
+	// Open itself calls nobody and opens nothing. It is the first look at
+	// the database that opens Litestream's handle on it and asks the
+	// destination where it had got to; so that look is made here, once,
+	// on this engine's own time and not on that of whoever happened to
+	// ask, whose patience running out part way through would be a failure
+	// like any other.
+	if err := store.Open(ctx); err != nil {
+		return fmt.Errorf("starting litestream: %w", err)
+	}
+	lookCtx, cancel := context.WithTimeout(e.runCtx, firstLookTimeout)
+	_, err := store.SyncDB(lookCtx, e.ldb.Path(), false)
+	cancel()
+	if err != nil && !errors.Is(err, litestream.ErrDBNotReady) {
+		// It did not start, and if it got as far as opening its handle it
+		// has closed it again. Left running it would do that every second.
+		// Stopped, it does it once, and is tried again at the next look.
+		stopCtx, stop := context.WithTimeout(e.runCtx, firstLookTimeout)
+		_ = store.Close(stopCtx)
+		stop()
+		return fmt.Errorf("litestream's first look at the database: %w", err)
+	}
+	e.store = store
+	e.opened = true
+	return nil
+}
+
+// firstLookTimeout bounds Litestream's first look at the database, and
+// litestreamBusyTimeout how long it waits for the database when a till has
+// it.
+const (
+	firstLookTimeout      = 30 * time.Second
+	litestreamBusyTimeout = 10 * time.Second
+)
+
+// isOpen reports whether Litestream has been started.
+func (e *Engine) isOpen() bool {
+	e.openMu.Lock()
+	defer e.openMu.Unlock()
+	return e.opened
 }
 
 // probeLoop looks at the destination now and then, so that Status can say
@@ -317,13 +377,27 @@ func (e *Engine) probe(ctx context.Context) {
 	if err != nil {
 		// Being stopped mid-question is not the destination's fault.
 		if ctx.Err() == nil {
+			// Said in the log when it starts, and not at every look after:
+			// on a server with no screen the log is the only place a
+			// backup that has stopped can be seen.
+			if was, _ := e.unreachable.get(); was == "" {
+				e.log.Warn("the backup cannot reach its destination; sales carry on and are copied when it can", "destination", e.cfg.Destination(), "error", err)
+			}
 			e.unreachable.set(err.Error())
 			// What comes back may not be what went away.
 			e.forgetPhotos()
 		}
 		return
 	}
+	if was, _ := e.unreachable.get(); was != "" {
+		e.log.Info("the backup can reach its destination again", "destination", e.cfg.Destination())
+	}
 	e.unreachable.clear()
+	if err := e.open(ctx); err != nil {
+		e.errors.last.set(err.Error())
+		e.log.Warn("the backup could not be started; it is tried again at the next look", "error", err)
+		return
+	}
 	// Litestream does not look again at what it has sent. A drive swapped
 	// for an empty one while the server runs is sent every change from
 	// then on and never the database they are changes to, and Litestream
@@ -424,7 +498,7 @@ func (e *Engine) copyPhotos(ctx context.Context, fresh bool) error {
 // BackUpNow copies everything written so far to the destination and
 // returns when it is there, or with why it is not.
 func (e *Engine) BackUpNow(ctx context.Context) error {
-	if e == nil || e.store == nil {
+	if e == nil || !e.cfg.Enabled() {
 		return ErrOff
 	}
 	// In a goroutine, because Litestream takes its lock before it looks
@@ -443,6 +517,21 @@ func (e *Engine) BackUpNow(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer context.AfterFunc(e.askCtx, cancel)()
+
+	// A backup that has not yet found its destination is looked for now:
+	// whoever asks has, as likely as not, just plugged the drive in.
+	if !e.isOpen() {
+		if _, err := e.dest.reach(ctx); err != nil {
+			e.asked.Done()
+			e.unreachable.set(err.Error())
+			return fmt.Errorf("backup: backing up now: %w", err)
+		}
+		if err := e.open(ctx); err != nil {
+			e.asked.Done()
+			e.errors.last.set(err.Error())
+			return fmt.Errorf("backup: backing up now: %w", err)
+		}
+	}
 
 	done := make(chan error, 1)
 	go func() {
@@ -506,7 +595,7 @@ func (e *Engine) BackUpNow(ctx context.Context) error {
 // Status says how the backup is doing. It touches no disk itself, so it is
 // cheap enough to ask on every page load and cannot hang on a dead share.
 func (e *Engine) Status() Status {
-	if e == nil || e.store == nil {
+	if e == nil || !e.cfg.Enabled() {
 		return Status{State: StateOff}
 	}
 	now := e.clock.Now()
@@ -554,7 +643,7 @@ func utcOrZero(t time.Time) time.Time {
 // one failed try, and what it did not take goes on the next start. The
 // error is always nil; the signature is the shutdown stack's.
 func (e *Engine) Close(ctx context.Context) error {
-	if e == nil || e.store == nil {
+	if e == nil || !e.cfg.Enabled() {
 		return nil
 	}
 	e.closeOnce.Do(func() {
@@ -588,28 +677,40 @@ func (e *Engine) Close(ctx context.Context) error {
 		done := make(chan struct{})
 		go func() {
 			defer close(done)
-			// The first look is given a moment to finish, so that a
-			// server stopped as soon as it started still leaves a copy.
-			// One still waiting on a bucket is told to stop: it holds
-			// Litestream's lock, and nothing below can run until it lets go.
-			// With the destination known gone there is nothing to give
-			// it a moment for.
-			grace := firstLookGrace
-			if gone != "" {
-				grace = 0
-			}
-			select {
-			case <-e.lookDone:
-			case <-time.After(grace):
-				e.stopLook()
-				<-e.lookDone
-			}
-			e.stopLook()
-			// And every "back up now" still out: told to give up, and
-			// waited for, so that none comes back to a Litestream that
-			// has closed and opens it again.
+			// Every "back up now" still out is told to give up, and waited
+			// for, so that none comes back to a Litestream that has closed
+			// and opens it again.
 			e.stopAsked()
 			e.asked.Wait()
+
+			// A backup that never found its destination gets one more
+			// look, unless it is already known to be away: a server
+			// stopped a moment after it started should still leave a copy.
+			// The probe is waited for first, and only here: it is the
+			// other thing that starts Litestream.
+			if !e.isOpen() {
+				<-e.probeDone
+				if gone != "" || wait.Err() != nil {
+					return
+				}
+				if _, err := e.dest.reach(ctx); err != nil {
+					e.log.Warn("the backup never reached its destination; everything goes on the next start", "error", err)
+					return
+				}
+				// Not if this is no longer being waited for: a Litestream
+				// started now would have nobody to stop it.
+				if wait.Err() != nil {
+					return
+				}
+				if err := e.open(ctx); err != nil {
+					e.log.Warn("the backup could not be started before stopping; everything goes on the next start", "error", err)
+					return
+				}
+			}
+
+			// The last copy, before anything that might not come back:
+			// the probe may be waiting on a share that has stopped
+			// answering, and the last sales are not to wait behind it.
 			// Not returned. A drive that is unplugged at closing time is
 			// the backup failing, which the status already says, and not
 			// the server failing to stop: under a service a failed stop is
@@ -653,7 +754,7 @@ const lostReason = "the destination no longer holds what was sent to it; the who
 
 // Running reports whether this engine is backing up: false for one that is
 // off or nil. It says nothing of whether the destination can be reached.
-func (e *Engine) Running() bool { return e != nil && e.store != nil }
+func (e *Engine) Running() bool { return e != nil && e.cfg.Enabled() }
 
 // Lost reports whether the destination no longer holds what was sent to
 // it, so that this backup cannot go on and another must be started in
@@ -665,7 +766,7 @@ func (e *Engine) Running() bool { return e != nil && e.store != nil }
 // So it is done the plain way: this engine is stopped, its working files
 // removed, and a new one started, by whoever OnLost tells.
 func (e *Engine) Lost() bool {
-	return e != nil && e.store != nil && e.errors.lost.Load()
+	return e != nil && e.cfg.Enabled() && e.errors.lost.Load()
 }
 
 // sayLost marks the working files as no use to the next start, and tells

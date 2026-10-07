@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 4e: the Backups section of settings** (ADR-277).
+**Phase 12, Task 4f: restore, done and written down** (ADR-278).
+`mez restore` brings a venue back from a folder or a bucket into a data
+directory with no venue in it; `-list` shows the generations there. Old
+generations tidy themselves a week after they were replaced. Done for real
+on Windows: three sales, the server killed, restored, invoice four next.
+
+Before it, **Phase 12, Task 4e: the Backups section of settings** (ADR-277).
 Settings, Backup: a card for how the backup is doing and one for where it
 goes. Walked in a browser at 1366 and 1024. "Back up now" looks at the
 destination before it answers.

@@ -29,13 +29,19 @@ COPY --from=web /src/web/guest/dist web/guest/dist
 ARG VERSION=docker
 RUN CGO_ENABLED=0 go build -trimpath -tags frontend \
       -ldflags "-s -w -X main.version=${VERSION}" -o /out/mez ./cmd/mez \
- && mkdir -p /out/data
+ && mkdir -p /out/data /out/backup
 
 # 3. Nothing but the binary. The timezone database is inside it, and it runs
 #    as an unprivileged user that owns the data directory.
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=server /out/mez /mez
 COPY --from=server --chown=65532:65532 /out/data /data
+# Somewhere to mount a backup's folder (docs/deploy.md, "Backups"). It is
+# here, owned by the user mez runs as, so that a new named volume mounted on
+# it takes that owner: a volume made over a path the image does not have is
+# root's, and mez could not write its backup there. Not a VOLUME: with
+# nothing mounted, nothing should be kept.
+COPY --from=server --chown=65532:65532 /out/backup /backup
 ENV MEZ_DATA_DIR=/data \
     MEZ_LISTEN_ADDR=:7777
 VOLUME /data

@@ -127,7 +127,7 @@ Phase 11.
     the photos. `deploy.md`'s Backups section is rewritten from what was
     done, and `running.md`, the README and `KNOWN.md` stop saying phase 12.
 
-- [ ] **Task 5 — Docker and Linux.**
+- [x] **Task 5 — Docker and Linux.**
   A small multi-stage image. `docker-compose.yml` with a volume and the relay
   optional. A systemd unit file for bare-metal Linux. Same binary, no second
   codebase.

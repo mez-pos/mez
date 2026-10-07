@@ -9891,3 +9891,95 @@ would remove last week's generation early; a photo that a menu
 item points at (the file was put in the folder by hand, and is what the
 backup copies); a venue with months of sales.
 ---
+
+## ADR-279 - Litestream is started when its destination answers, and Linux gets a unit and an image that were run
+2026-10 · Status: accepted. Phase 12, Task 5. Amends ADR-273 (when the
+backup starts) and ADR-276 (the Linux caveat it recorded).
+Decision:
+  - **Litestream is not started with the server. It is started by the
+    first look at the destination that finds it there**
+    (`Engine.open`): from the probe, from "back up now", and once more
+    as the server stops, so that one stopped a moment after it started
+    still leaves a copy.
+  - **Because of what it does when the destination is away.** As it
+    starts, Litestream asks the destination where it had got to. If
+    there is no answer it gives up, closes its handle on the database
+    file, and tries again a second later, for as long as the destination
+    is away. On every system but Windows, closing any handle on a file
+    drops every lock the process holds on that file. A venue on Linux
+    with a bucket for a backup, starting its day with no internet, had
+    the server's locks on its own database taken away, over and over,
+    with the server none the wiser, and the next `mez pair` at that
+    machine free to take the write-ahead log out from under it. It was
+    in every commit since 4b. ADR-276 recorded it as a caveat of
+    Litestream's; it was the ordinary morning of the venues mez is for.
+  - **Proven both ways**
+    (`TestTheServerKeepsItsLocksWithNoInternet`): the server is run on a
+    bucket that refuses, and another process asks SQLite for the whole
+    database. On Linux, against the engine as it was, it got it. With
+    this, it does not; and with the server stopped it does again, so
+    the asking is one that can be answered yes.
+  - **Litestream's first look at the database is made once, by `open`,
+    on the engine's own time.** It is that look, and not the starting,
+    that opens Litestream's handle and asks the destination. Made by
+    whoever first asked for a sync, it ran on their patience, and a
+    browser closed part way through was a failure like any other. If it
+    fails, Litestream is stopped again and tried at the next look at the
+    destination, in 15 seconds or a minute: left running it would close
+    its handle every second.
+  - **Litestream waits ten seconds for the database, not one.** A till
+    can hold it for longer than a second, and giving up as it starts is
+    the same closing of the handle.
+  - **On the way down the last copy goes before the probe is waited
+    for.** The probe may be waiting on a share that has stopped
+    answering, and the last sales are not to wait behind it.
+  - **`build/mez.service`**, a systemd unit: its own user,
+    `StateDirectory=mez` (so `/var/lib/mez`, 0700), restarted on
+    failure, twenty seconds to stop, an optional `/etc/mez/mez.env` for
+    settings, and hardened to write nowhere but its own directory
+    (`ProtectSystem=strict` and its neighbours; `systemd-analyze
+    security` scores it 3.6). A backup to a folder therefore needs the
+    folder named in a drop-in (`ReadWritePaths`), and the docs say so.
+  - **The image has `/backup`**, owned by the user mez runs as, so that
+    a named volume mounted there takes that owner; one mounted over a
+    path the image does not have is root's and could not be written to.
+  - **The compose file** gains `stop_grace_period: 20s`, a backup's
+    mount and a relay's two variables, each commented out. With them
+    left out, nothing in mez calls the internet.
+  - **The backup says in the log when it loses its destination and when
+    it finds it again.** On a server with no screen the log is the only
+    place a backup that has stopped can be seen.
+  - **Same binary.** Nothing in this is a second codebase: the unit and
+    the image run the file `GOOS=linux go build` makes.
+Because: "works on Linux" had meant "compiles for Linux" until Task 4d's
+run in a container, and the one thing that only ever happened on Linux
+was the thing most likely to lose a venue its day.
+Cost: with no internet at the start, Litestream is not running at all,
+so even the changes it would have kept on this machine are not kept; the
+whole database goes when the bucket first answers, as it did before.
+The status reads "starting" for up to a minute before it reads failing.
+If the destination answers the look and is gone a moment later, or
+the database is held for more than ten seconds just then, Litestream
+can still fail as it starts and close its handle, once for each look at
+the destination and not once a second: the door is narrow now, not
+shut. Shutting it is Litestream's to do, by not opening a handle it
+cannot keep. `mez.service` carries a timezone that has
+to be edited. The image is 51 MB, of which the backup's dependencies
+are about 15. No healthcheck in the image: it has no shell and no curl
+to run one with. **Run on 2026-10-07**: the unit under systemd 252 in a
+Debian 12 container (mez started, killed and started again by systemd,
+stopped in 8 ms with result success; a backup to a folder outside its
+directory did not go until `ReadWritePaths` named it; `mez restore` by
+hand as the `mez` user from that folder; a restore over the running
+venue refused). The image with Docker 29 (built at 51.3 MB; `setup`; a
+backup to a named volume at `/backup`; `docker stop` in 474 ms with exit
+0; `restore` into a new volume; the restored venue started). The
+backup's, the server's, the database's, the API's and the settings'
+tests on Linux again after the change; under the race detector the
+server's are clean and the backup's show the one race inside Litestream
+that ADR-276 recorded, a whole copy in flight as it closes. **Not
+run**: arm64, which only compiles; a real Linux machine, as against a
+container on Docker Desktop; a bind-mounted host folder with the wrong
+owner; the compose file's `up` (its services were run by hand with the
+same options); a relay through the compose file.
+---
