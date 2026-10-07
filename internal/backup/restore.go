@@ -44,14 +44,8 @@ func Restore(ctx context.Context, cfg Config, outputPath string) error {
 	if err := cfg.Validate(filepath.Dir(outputPath)); err != nil {
 		return fmt.Errorf("backup: %w", err)
 	}
-
-	// Litestream reads a folder that is not there as one with nothing in
-	// it, and "there is no backup" is the wrong thing to tell someone
-	// whose drive is not plugged in.
-	if cfg.Kind == KindFolder {
-		if _, err := os.Stat(cfg.Folder); err != nil {
-			return fmt.Errorf("backup: restoring from %s: %w: %w", cfg.Folder, ErrDestinationMissing, err)
-		}
+	if err := destinationThere(cfg); err != nil {
+		return err
 	}
 
 	// The newest generation with a whole copy in it. One begun and never

@@ -67,7 +67,7 @@ func main() {
 	// The subcommands are read before the flags: each takes its own, and
 	// the server's parser refuses a positional argument.
 	if len(os.Args) > 1 {
-		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "setup-link": runSetupLink, "pair": runPair, "table-codes": runTableCodes, "unlock": runUnlock, "service": runService}
+		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "setup-link": runSetupLink, "pair": runPair, "table-codes": runTableCodes, "unlock": runUnlock, "restore": runRestore, "service": runService}
 		if command, ok := commands[os.Args[1]]; ok {
 			if err := command(os.Args[2:], os.Stdout); err != nil {
 				if errors.Is(err, flag.ErrHelp) {
@@ -108,6 +108,7 @@ func main() {
 				"  setup-link\tprint the address that opens the setup wizard on this machine\n"+
 				"  pair\tmake another pairing code at this machine (-device-kind, -device-name)\n"+
 				"  table-codes\tlist each table's code for guest ordering, making any that are missing\n"+
+				"  restore\tbring a venue back from its backup, into a data directory with no venue in it (-from, -list)\n"+
 				"  service\trun as a Windows service: install, uninstall, start, stop, status\n"+
 				"  --test-print ADDRESS\tprint a test page on a receipt printer (-paper 58, -drawer, -save FILE)\n",
 				buildInfo().Version, config.Usage())

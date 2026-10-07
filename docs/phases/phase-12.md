@@ -77,7 +77,7 @@ Phase 11.
     guess between two real ones. The printer search skips virtual
     adapters too.
 
-- [ ] **Task 4 — Backups.**
+- [x] **Task 4 — Backups.**
   Litestream integrated: continuous replication to S3, R2 or a local folder,
   configured in back office (this is phase 10's Task 6l, moved here,
   ADR-141: a Backups section of the back office settings screen, over a
@@ -119,7 +119,7 @@ Phase 11.
     The spec first (`docs/design/screens/backoffice-settings.md`, its
     Backup row stops saying Soon). Off, a folder, or a bucket; the status
     in colour and a word; "Back up now". Walked in a browser.
-  - [ ] **Task 4f - Restore, done and written down.**
+  - [x] **Task 4f - Restore, done and written down.**
     `mez restore`: from a destination into an empty data directory, the
     database and the photos, refusing to write over a venue. Then do it:
     back up a venue that has sold, restore it on another data directory,

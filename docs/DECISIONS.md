@@ -9796,3 +9796,98 @@ than its window. **Not seen**: a real bucket saved from the screen (no
 internet service was used); `restart_needed`, which Windows never shows;
 a screen reader; the night theme.
 ---
+
+## ADR-278 - A venue is restored by a command into an empty directory, and old runs of the backup tidy themselves
+2026-10 · Status: accepted. Phase 12, Task 4f. Closes Task 4.
+Decision:
+  - **`mez restore`** (`cmd/mez/restore.go`): from a folder (`-from`), a
+    bucket (`-bucket` and its flags) or a saved `backup.json`
+    (`-config`), into a data directory with no venue in it. It restores
+    the database, has SQLite check the whole of it, restores the photos,
+    opens it as the server will, migrates it, and says whose venue it is,
+    how many invoices it holds and what the last one was.
+  - **A command and not a screen**, because the thing restored is the
+    thing a screen would be served by.
+  - **It never writes over a venue.** A database with a venue in it
+    stops it. Whether that database is worse than the backup is for a
+    person to decide, by moving it aside.
+  - **A database with no venue in it is moved aside, not refused.** A
+    new computer always has one: the installer starts the service and
+    the service makes its database. Refusing an owner for a database
+    with nothing in it would be refusing every owner. It is renamed
+    `mez.db.empty-<time>`, not deleted, and what Litestream remembered
+    of backing it up is cleared with it.
+  - **The database in the way is looked at read only.** It may be a real
+    venue's, at the wrong `-data-dir` or under an older mez: bringing its
+    schema up to date in order to refuse to touch it would be touching it.
+  - **It refuses while mez is running on the directory**, by asking
+    SQLite for the whole database, which it gives only when no other
+    connection has it. Windows would refuse the move by itself; Linux
+    would let a database be moved out from under a running server, which
+    would go on selling into a file nobody could find.
+  - **A bucket's secret is read from `MEZ_RESTORE_SECRET_ACCESS_KEY`**,
+    never a flag: a flag is in the shell's history and the list of
+    running programs.
+  - **The restored copy does not back up until told to.** No
+    `backup.json` is written. A restore made to look at last week, with
+    the venue still trading, would otherwise begin a newer generation at
+    the venue's own destination, and the next restore would take the
+    copy for the venue.
+  - **`-list` shows the generations** (ADR-276) with when each began
+    and was last written, and marks the one a restore takes: the newest
+    with anything in it. `-generation NAME` takes another. Which was
+    taken is always said, because they sort by a clock that can be wrong.
+  - **Old generations are removed by the data directory that began
+    them**, a week after they were replaced (`tidyGenerations`), looked
+    for once a day. A week because that is how far back a restore is
+    promised to reach, and for the first week of a new generation the
+    week before is in the old one. Each data directory keeps a list of
+    the generations it began (`.mez.db-litestream-made`) and removes
+    nothing else: a new install pointed at last year's backup began none
+    of what is there. This takes back ADR-276's "nothing deletes a
+    generation".
+  - **"Replaced" is judged to keep.** The order is the order they were
+    begun in, which is the order of the list, not of their names: a name
+    is a clock's reading, and a venue PC with a flat battery starts in
+    the wrong year. A generation is replaced when one begun after it is
+    first seen whole at the destination, not when that one was named;
+    and of all those begun after it, the latest such time is counted
+    from. A wrong clock in between can only put a removal off.
+  - **Litestream's lines are kept out of the command's output**, by
+    giving Go's default logger nowhere to write for the life of the
+    process: it restores through that logger and offers no other.
+  - **`deploy.md`'s Backups section is rewritten** from what was done:
+    turning it on, what is and is not backed up, what to know before
+    relying on it (a bucket and a start with no internet, a swapped
+    drive, the restart on Linux, `AWS_*`), and getting a venue back,
+    step by step with the command's real output.
+Because: the task said to restore from a backup and verify it, not to
+write that it can be done.
+Cost: a restore needs a terminal, on the day an owner least wants one.
+The summary reads every invoice to find the last. A generation begun by
+a data directory that is then lost (a dead disk) is never tidied by
+anyone: the restored venue begins its own and knows nothing of the old.
+`backup.json` and `config.toml` are not in the backup, so the gateway's
+keys and the destination have to be known some other way. **Done on
+2026-10-07, on Windows, with the built binary**: a venue was made with
+`mez setup`, given a folder to back up to, and its shift opened in a
+browser; three sales were made at the till, invoices 000001 to 000003;
+a file was put in its photos folder; the server was killed with no
+shutdown. `mez restore -list` showed one backup; `mez restore` into an
+empty directory said "Corner Cafe: 3 invoices, the last
+INV/26-27/000003" and restored the photo; a second restore over it was
+refused. mez was started on the restored directory: no setup wizard,
+the photo served, the till in the browser still paired and signed in
+with the owner's PIN, and the next sale was INV/26-27/000004. A second reader found the restore migrating a
+database it was only looking at, no check that mez was stopped, and the
+tidying trusting the order of names; all three are as above, and the
+restore's and the backup's tests then passed on Linux in a container,
+the restore's under the race detector. **Not
+done**: a restore from a bucket by the command (the engine's restore
+from MinIO is ADR-274's; the flags are tested as far as refusing); a
+restore on another computer; a restore on Linux by hand (its tests
+ran there); a clock set far ahead on the day the tidying looks, which
+would remove last week's generation early; a photo that a menu
+item points at (the file was put in the folder by hand, and is what the
+backup copies); a venue with months of sales.
+---

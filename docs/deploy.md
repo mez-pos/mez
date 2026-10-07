@@ -423,9 +423,145 @@ designed for a venue's own network. On the open internet, also:
 
 ## Backups
 
-Everything is in the data directory: `mez.db`, `photos/` and `logs/`. Back it
-up and you have backed up the venue. The database is SQLite in WAL mode, so
-copy it while mez is **stopped**, or the copy may miss the latest sales.
+mez keeps a second copy of the venue somewhere other than the venue's
+computer, and keeps it up to date by itself: each sale is at the
+destination about a second after it is made. It is off until you say where
+the copy should go.
+
+### Turn it on
+
+Sign in to the back office as the owner and open **Settings**, then
+**Backup**. Choose where the backup goes:
+
+- **A folder.** Written in full, like `D:\mez-backup` or
+  `\\nas\backups\cafe`. Use another disk, a USB drive or a network share.
+  A folder on the same disk as mez is lost with that disk.
+- **A bucket.** Amazon S3, Cloudflare R2, or anything else that speaks S3.
+  You need the bucket's name, an access key ID and its secret, and either
+  the region (Amazon) or the service's address (everyone else; for R2,
+  `https://<account>.r2.cloudflarestorage.com`).
+
+When you press **Save**, mez tries the place first. It writes a small note
+there (`mez-backup.txt`) and keeps the setting only if it could, so a
+mistyped folder or a wrong key is found out now, by you, and not on the day
+the backup is needed. This can take up to twenty seconds.
+
+The card above it says how the backup is doing: **Backing up**, with the
+time everything was last there, or **Not backing up**, with the reason.
+While it is not backing up the venue keeps selling, and what was sold is
+copied when the destination comes back.
+
+On Windows a new destination takes effect at once. On Linux and in Docker
+a destination changed while a backup is already running takes effect when
+mez is next restarted, and the screen says so.
+
+### What is backed up
+
+- The database: every order, payment, invoice, shift, the menu, the staff
+  and the settings.
+- The menu's photos.
+
+Not backed up: the logs, `config.toml`, and `backup.json` itself (which
+holds the bucket's secret). Keep a note of your payment gateway's keys and
+of where the backup goes, somewhere other than the venue's computer.
+
+A restore can go back up to a week: mez keeps a whole copy from each night
+for seven days, and the changes in between.
+
+### What to know before you rely on it
+
+- **A bucket needs the internet when mez starts.** If mez is started with
+  no internet, nothing is copied until the bucket first answers, and the
+  sales made in that time are sent together when it does. If the
+  computer's disk fails before then, those sales are gone. A connection
+  that drops after mez has started loses nothing: the changes wait on the
+  computer and go when it returns. A folder has no such gap. If your
+  internet is unreliable, back up to a folder.
+- **A USB drive swapped for another** is noticed within a minute and
+  filled from scratch. On Linux and in Docker, restart mez after swapping.
+- **Look at the Backup section now and then.** A backup that has been
+  failing for a month is not a backup. The status is on that screen and
+  nowhere else yet.
+- The destination has a folder `db/` with one folder inside it for each
+  unbroken run of backing up, and `photos/`. Do not edit, rename or delete
+  anything in them by hand. mez removes its own old runs a week after they
+  were replaced.
+- If the computer has `AWS_*` environment variables set for some other
+  program, they can change where a bucket backup goes. Unset them for mez.
+
+### Getting a venue back
+
+You need the destination (the folder, or the bucket and its key) and a
+computer with mez on it and **no venue yet** in its data directory. On a
+new computer, install mez and leave the setup wizard unfinished: a new
+install that has no venue in it is moved aside by the restore, and one
+that has a venue is never touched.
+
+1. Stop mez if it is running. On Windows, in an administrator terminal:
+   `mez service stop`. With systemd: `sudo systemctl stop mez`.
+2. See what is there:
+
+   ```sh
+   mez restore -from D:\mez-backup -list
+   ```
+
+3. Restore it:
+
+   ```sh
+   mez restore -from D:\mez-backup
+   ```
+
+   From a bucket, the secret is read from the environment so that it is
+   not left in the terminal's history:
+
+   ```sh
+   # PowerShell
+   $env:MEZ_RESTORE_SECRET_ACCESS_KEY = "the secret"
+   mez restore -bucket corner-cafe -endpoint https://ACCOUNT.r2.cloudflarestorage.com -access-key-id KEY
+
+   # Linux
+   MEZ_RESTORE_SECRET_ACCESS_KEY='the secret' mez restore -bucket corner-cafe -region ap-south-1 -access-key-id KEY
+   ```
+
+   It restores the database, checks it, restores the photos, and tells you
+   whose venue it is and what its last invoice was:
+
+   ```
+   Restoring from D:\mez-backup
+     The backup begun 7 Oct 2026 14:20, last written 7 Oct 2026 14:23
+     The database is restored and checked: C:\ProgramData\mez\mez.db
+     1 menu photos restored.
+     Corner Cafe: 3 invoices, the last INV/26-27/000003, issued 7 Oct 2026 14:22.
+   ```
+
+4. Start mez. Sign in and check the last invoices are the ones you expect
+   before selling on it. The next invoice carries on from the last.
+5. Turn the backup on again under **Settings**, **Backup**. A restored
+   venue does not back up until you do: it begins a backup of its own
+   beside the one it came from, which is left as it was.
+
+`mez restore` never writes over a venue. If there is a database in the way
+it stops and says so; move the data directory aside first if you mean to
+replace it.
+
+Tills and tablets that were paired stay paired, if the new computer has the
+same address as the old one. Otherwise pair them again.
+
+To restore into somewhere other than the default data directory, add
+`-data-dir`. To restore an older run than the newest, take its name from
+`-list` and add `-generation NAME`.
+
+This procedure was carried out on 2026-10-07 on Windows: a venue made three
+sales, its server was killed without warning, and it was restored from its
+backup folder into an empty directory. All three invoices and the photo
+were there, mez started on it, the paired till signed in, and the next sale
+was invoice four.
+
+### Copying it by hand
+
+You can still copy the data directory yourself, for a snapshot before an
+upgrade. The database is SQLite in WAL mode, so copy it while mez is
+**stopped**, or the copy may miss the latest sales.
 
 ```sh
 # Linux
@@ -440,15 +576,14 @@ docker run --rm -v mez-data:/data -v "$PWD":/backup alpine \
 docker compose -f build/docker-compose.yml start
 ```
 
-On Windows, end the `mez` task, copy `C:\ProgramData\mez`, and run it again.
-
-Do it after closing each day, and keep a copy off the machine. Continuous
-backup to S3, R2 or a folder, configured from the back office, arrives with
-Litestream in phase 12.
+On Windows, stop the service, copy `C:\ProgramData\mez`, and start it
+again.
 
 ## Upgrading
 
-1. Take a backup, as above. Migrations only go forward, and an older mez is
+1. Take a backup: check **Settings**, **Backup** says Backing up and press
+   **Back up now**, or copy the data directory by hand as above. Migrations
+   only go forward, and an older mez is
    not built to run on a database a newer one has migrated, so the backup is
    how you go back.
 2. Stop mez, replace the binary (or `git pull` and rebuild the image), start
@@ -462,5 +597,5 @@ Paired devices stay paired across an upgrade.
 [`phases/phase-12.md`](phases/phase-12.md) is the plan. In short: a Windows
 installer (Inno Setup) that registers the Windows service, opens the firewall
 and creates the shortcut; a setup wizard, so a new Windows venue needs no `mez setup` (built);
-Litestream backups configured in the back office; a systemd unit and image
+backups configured in the back office (built, [above](#backups)); a systemd unit and image
 published with each release; and release automation with checksums.

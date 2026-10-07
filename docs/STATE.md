@@ -7,38 +7,34 @@
 
 ## Current phase
 
-**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2, 3 (3a
-to 3f) and 4a to 4e built; 4f is left of Task 4. Phase 11 has nothing
-left to build (Cashfree left out, ADR-254) and owes its walks.
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 to 4 built
+(4 as 4a to 4f). Phase 11 has nothing left to build (Cashfree left out,
+ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 4e: the Backups section of settings** (ADR-277).
-Settings, Backup: a card for how the backup is doing (a chip and a
-sentence, the reason, Back up now) and one for where it goes (nowhere, a
-folder, a bucket). Walked in a browser against the built binary at 1366
-and 1024, through every state a folder has. The walk found "back up now"
-saying yes with the drive gone; it now looks first. **No real bucket was
-saved from the screen, and `restart_needed` was not seen.**
+**Phase 12, Task 4f: restore, done and written down** (ADR-278).
+`mez restore` brings a venue back from a folder or a bucket into an empty
+data directory, lists the generations there (`-list`), and never writes
+over a venue. Old generations are removed a week after they were
+replaced, by the data directory that began them. Done for real on
+Windows: three sales, the server killed, restored, and the next sale was
+invoice four. `deploy.md`'s Backups section is rewritten from it. **Not
+done: a restore from a bucket by the command, or on Linux.**
 
 ## Next task
 
-**Phase 12, Task 4f: restore, done and written down.** `mez restore`:
-from a destination (a folder, or a bucket's fields as flags or
-`backup.json`) into an empty data directory, the database
-(`backup.Restore`) and the photos (`backup.RestorePhotos`), refusing to
-write over a venue. It should list the generations at a destination and
-let one be chosen (ADR-276: they are never deleted, and sort by the
-clock), and say which it took; pruning old ones belongs here too. Then do
-it: back up a venue that has sold, restore it into another data
-directory, start mez on it, and check the invoices, the next invoice
-number and the photos. A restored venue starts a new generation by
-itself. Rewrite `deploy.md`'s Backups section from what was done;
-`running.md`, the README and `KNOWN.md` stop saying backups are phase 12.
-Say in the docs: a bucket and a server started with no internet
-(ADR-274), `AWS_*` variables, the restart on Linux. **Do not move
-Litestream past v0.5.15 without running the tests on Windows.** Before a
-release,
+**Phase 12, Task 5: Docker and Linux.** A small multi-stage image,
+`docker-compose.yml` with a volume and the relay optional, a systemd unit.
+`build/` already has a Dockerfile and compose file from phase 10: read
+them first, and `deploy.md`. Owed to Linux by Task 4 (ADR-276, KNOWN):
+a changed backup destination waits for a restart there; decide whether
+the unit and the image should say so, and whether Litestream starting
+under the open database (it can drop the process's file locks if its
+first look fails) wants a fix or a warning. `mez restore` in a container
+needs the volume and the destination both mounted: say how. **Do not
+move Litestream past v0.5.15 without running the tests on Windows.**
+Before a release,
 run the Windows installer once on a spare machine: "Open mez now" opening
 the setup link (ADR-270) and the window it opens in (ADR-272) have not
 been watched since they changed. `make check` embeds

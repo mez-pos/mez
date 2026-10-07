@@ -10,6 +10,21 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Restoring a venue** (ADR-278; phase 12 Task 4f; `deploy.md`,
+  "Getting a venue back"). Done on 2026-10-07 on Windows with the built
+  binary: three sales, the server killed, `mez restore` from the folder
+  into an empty directory, mez started on it, the paired till signed in,
+  the next sale invoice four. **Not done**: a restore from a bucket by
+  the command; on Linux by hand (its tests ran in a container); on
+  another computer; of a venue with months of
+  sales; of a photo a menu item points at (a file was put in the folder
+  by hand). `backup.json` and `config.toml` are not in the backup. A
+  generation whose data directory was lost is never tidied away. The
+  tidying counts a week by this machine's clock: one set far ahead on
+  the day it looks removes last week's generation early. The
+  restored copy's printers are whatever the old one had, and jobs not
+  printed when it died are still waiting.
+
 - **The Backups section** (ADR-277; phase 12 Task 4e;
   `backoffice-settings.md`). Seen on 2026-10-07 in a browser against the
   built binary, at 1366 and 1024: every state of a folder backup, the
@@ -33,8 +48,9 @@
   a Linux server whose backup was just changed; a bucket saved through
   the API. A
   save can take twenty seconds. The destination left behind is not
-  cleaned up, and neither are old generations under `db/`: each is a
-  whole copy, and nothing yet says which are old. Generations sort by
+  cleaned up. Old generations under `db/` are removed a week after they
+  were replaced, by the data directory that began them (ADR-278), and
+  `mez restore -list` shows them. Generations sort by
   this machine's clock. A drive swapped for an empty one is refilled by
   itself on Windows, after the next look at it (15 seconds for a folder,
   a minute for a bucket, and reading ok until then), and at the next
@@ -84,9 +100,7 @@
   back the status can say failing for up to five minutes, until
   Litestream tries again or someone backs up now. A destination given
   with a `\\?\` prefix or an 8.3 short name is not recognised as inside
-  the data directory. Left out until
-  4e and 4f: a screen for it (the API is there, ADR-276), and
-  `mez restore`. Litestream
+  the data directory. The screen is ADR-277's and `mez restore` ADR-278's. Litestream
   is held at v0.5.15 because 0.5.16 and 0.5.17 do not work on Windows;
   this has not been reported to its authors. Its lines in the log are
   its own words, and a restore logs through Go's default logger.

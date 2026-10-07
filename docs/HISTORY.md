@@ -8,7 +8,12 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 4d: the backup's write path and API** (ADR-276).
+**Phase 12, Task 4e: the Backups section of settings** (ADR-277).
+Settings, Backup: a card for how the backup is doing and one for where it
+goes. Walked in a browser at 1366 and 1024. "Back up now" looks at the
+destination before it answers.
+
+Before it, **Phase 12, Task 4d: the backup's write path and API** (ADR-276).
 `backup.Manager` saves a destination after trying it and swaps the running
 backup, at once on Windows and at the next start elsewhere. `GET`/`PUT
 /api/v1/settings/backup`, `POST .../now`. The database's copies moved under

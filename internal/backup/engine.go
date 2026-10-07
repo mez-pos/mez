@@ -182,6 +182,13 @@ type Engine struct {
 	// destination having lost it.
 	sent atomic.Bool
 
+	// tidiedAt is when old generations were last looked for, the probe's
+	// goroutine's alone, and tidying the looking that is under way.
+	tidiedAt time.Time
+	tidying  sync.WaitGroup
+	// seenOnce is the noting, once, that the destination holds a copy.
+	seenOnce sync.Once
+
 	// lostOnce is the saying, once, that the destination has lost what it
 	// had, and onLost who is told.
 	lostOnce sync.Once
@@ -323,15 +330,13 @@ func (e *Engine) probe(ctx context.Context) {
 	// reports all well. So it is looked at here.
 	switch {
 	case whole && !e.sent.Load():
-		e.sent.Store(true)
-		if err := markSent(e.ldb.MetaPath(), e.cfg, e.generation); err != nil {
-			e.log.Warn("could not note that the backup has reached its destination", "error", err)
-		}
+		e.seenWhole()
 	case !whole && e.sent.Load():
 		e.errors.lost.Store(true)
 		e.sayLost()
 		return
 	}
+	e.tidy(ctx)
 	// The photos go on the probe's clock: a photo added to the menu is at
 	// the destination within the minute, and a quiet venue with no new
 	// photo asks the destination nothing more than the probe just did.
@@ -339,6 +344,56 @@ func (e *Engine) probe(ctx context.Context) {
 		e.log.Warn("the menu's photos were not all backed up", "error", err)
 	}
 }
+
+// tidy removes, once a day at most, the generations this data directory
+// began here that were replaced more than a week ago. Only once this
+// generation has been seen whole at the destination: until then the one
+// before it is the venue's backup.
+func (e *Engine) tidy(ctx context.Context) {
+	now := e.clock.Now()
+	if !e.sent.Load() || (!e.tidiedAt.IsZero() && now.Sub(e.tidiedAt) < tidyEvery) {
+		return
+	}
+	e.tidiedAt = now
+	// To one side. Removing a folder from a share that has stopped
+	// answering does not come back when it is told to, and the probe that
+	// would say the share is gone is the one waiting. Close waits for it
+	// only as long as it waits for anything.
+	e.tidying.Add(1)
+	go func() {
+		defer e.tidying.Done()
+		ctx, cancel := context.WithTimeout(ctx, tidyTimeout)
+		defer cancel()
+		if _, err := tidyGenerations(ctx, e.ldb.MetaPath(), e.cfg, e.generation, now, e.log); err != nil && ctx.Err() == nil {
+			e.log.Warn("could not remove an old generation of the backup; it is tried again tomorrow", "error", err)
+		}
+	}()
+}
+
+// tidyTimeout bounds one tidying of old generations.
+const tidyTimeout = 5 * time.Minute
+
+// seenWhole notes, the first time, that the destination holds a copy in
+// this generation: for this engine, for the starts after it, and for the
+// tidying of the generation before.
+func (e *Engine) seenWhole() {
+	e.seenOnce.Do(func() {
+		if err := markSent(e.ldb.MetaPath(), e.cfg, e.generation); err != nil {
+			e.log.Warn("could not note that the backup has reached its destination", "error", err)
+		}
+		if err := noteSent(e.ldb.MetaPath(), destinationMark(e.cfg), e.generation, e.clock.Now()); err != nil {
+			e.log.Warn("could not note when the backup reached its destination", "error", err)
+		}
+		// Last. The tidying waits on this, and must find the time written:
+		// read a moment sooner, the list said this generation had not
+		// arrived, and the one before it was counted as replaced by the
+		// one before that.
+		e.sent.Store(true)
+	})
+}
+
+// tidyEvery is how often old generations are looked for.
+const tidyEvery = 24 * time.Hour
 
 func (e *Engine) forgetPhotos() {
 	if e.photos != nil {
@@ -431,10 +486,8 @@ func (e *Engine) BackUpNow(ctx context.Context) error {
 	case !whole:
 		return errors.New("backup: backing up now: the destination was reached and holds no whole copy of the database yet; try again in a moment")
 	}
-	if !e.sent.Swap(true) {
-		if err := markSent(e.ldb.MetaPath(), e.cfg, e.generation); err != nil {
-			e.log.Warn("could not note that the backup has reached its destination", "error", err)
-		}
+	if !e.sent.Load() {
+		e.seenWhole()
 	}
 	e.ldb.RecordSuccessfulSync()
 	// It has just been seen whole: whatever was wrong is over, and the
@@ -565,6 +618,7 @@ func (e *Engine) Close(ctx context.Context) error {
 				e.log.Warn("the backup stopped without reaching its destination; what is left goes on the next start", "error", err)
 			}
 			<-e.probeDone
+			e.tidying.Wait()
 			// The photos last, the database being what cannot be made
 			// again, and only to a destination that is there.
 			if gone == "" {
@@ -676,6 +730,13 @@ func workingFilesFor(workingDir string, cfg Config, now time.Time, log *slog.Log
 	}
 	if err := writeWhole(marker, []byte(want+"\n"+generation+"\n")); err != nil {
 		return "", false, fmt.Errorf("writing %s: %w", marker, err)
+	}
+	// So that it can be tidied away, one day, by the data directory that
+	// began it and by no other.
+	// Not a reason not to back up. A generation that is not noted is one
+	// that is never tidied away, which costs a folder and loses nothing.
+	if err := noteMade(workingDir, want, generation); err != nil {
+		log.Warn("could not note the backup's new generation; it will not be tidied away when it is old", "generation", generation, "error", err)
 	}
 	return generation, false, nil
 }

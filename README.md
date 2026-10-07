@@ -10,7 +10,7 @@ the same kitchen display, the same invoice series, the same night's Z-report.
 > **Status: alpha.** The till, kitchen display, payments, invoices, shifts,
 > Z-reports, the back office, guest QR ordering, the Windows service and the
 > Windows installer are built and tested, and so is the setup wizard a new venue
-> opens on. Automatic backups (phase 12) are not built yet. Not yet recommended for a venue's only
+> opens on, and backups to a folder or a bucket, set from the back office. Not yet recommended for a venue's only
 > till. [`docs/STATE.md`](docs/STATE.md) says exactly where the build is.
 
 ## What it does

@@ -151,9 +151,12 @@ The server keeps that directory to itself: on Windows only administrators
 and the account that ran setup can open it, and elsewhere it is mode 0700.
 
 Inside it: `mez.db` (with `mez.db-wal` and `mez.db-shm` while it runs),
-`photos/` for menu photos, and `logs/`. Back up that directory and you have
-backed up the venue; [`deploy.md`](deploy.md#backups) says how to copy it
-safely.
+`photos/` for menu photos, and `logs/`. With a backup turned on there is
+also `backup.json`, which says where it goes and may hold a bucket's
+secret, and Litestream's working files, whose names begin
+`.mez.db-litestream`; leave both alone. [`deploy.md`](deploy.md#backups)
+says how to turn the backup on, what it covers, and how to get a venue
+back with `mez restore`.
 
 Logs are in `logs/` inside it, as `mez.log`. The current file is rotated to
 `mez.log.1` once it reaches 8 MB, and five rotations are kept, so the logs
@@ -310,7 +313,6 @@ frontends. Build them (`make build-web`) and rebuild with `make build`, or use
 
 The guest QR ordering app and the relay that lets guests reach the venue
 from the internet are phase 11. The Windows installer and service and
-the setup wizard are built; Litestream backups are phase 12, and until then
-[`deploy.md`](deploy.md) shows how to run it at startup and back it up by
-hand. [`STATE.md`](STATE.md) says where the build has got to and lists
+the setup wizard are built, and so are backups
+([`deploy.md`](deploy.md#backups)). [`STATE.md`](STATE.md) says where the build has got to and lists
 everything known to be missing or broken.
