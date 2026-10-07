@@ -17,6 +17,7 @@ import { change, changeText } from "../dashboard/dashboard-logic";
 import { Nothing, Panel, ReadState } from "../dashboard/Panel";
 import { entriesText, wasteLeftOut, wastePath } from "../sales/items-logic";
 import { previousRange } from "../sales/overview-logic";
+import { wastageKey } from "./use-stock";
 
 /** How many ingredients the card lists; the report tab has the rest. */
 const rows = 5;
@@ -34,7 +35,7 @@ export function WastageCard() {
   const week = lastDays(new Date(now), 7);
   const before = previousRange(week);
   const read = (range: { from: string; to: string } | null) => ({
-    queryKey: ["wastage", range],
+    queryKey: [...wastageKey, range],
     queryFn: ({ signal }: { signal: AbortSignal }) => store.api.get<WasteReport>(wastePath(range ?? week), { signal }),
     enabled: range !== null,
     // The week before stays on the card while the next is read, when the day turns.

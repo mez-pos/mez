@@ -45,7 +45,10 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
       </header>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
         <SectionNav current={sectionForPath(path)} held={auth.permissions} />
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 xl:p-6">{children}</main>
+        {/* Positioned, so anything absolute in a screen (every sr-only label) scrolls
+            and clips with it. Left to the page, one below the fold makes the whole
+            page scroll, bar and navigation with it. */}
+        <main className="relative min-h-0 min-w-0 flex-1 overflow-y-auto p-4 xl:p-6">{children}</main>
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ import { useMenu } from "../../../shared/use-menu";
 import { changeText, type Change } from "../dashboard/dashboard-logic";
 import { Nothing, Panel, ReadState } from "../dashboard/Panel";
 import { usePermissions } from "../shell/BackOfficeShell";
-import { useStockItems } from "../stock/use-stock";
+import { useStockItems, wastageKey } from "../stock/use-stock";
 import {
   entriesText,
   itemRows,
@@ -62,7 +62,7 @@ export function ItemsScreen() {
   const csv = (sheet: ReportSheet) => button(csvPath(range, every, sheet), stale);
 
   const waste = useQuery({
-    queryKey: ["wastage", range],
+    queryKey: [...wastageKey, range],
     queryFn: ({ signal }) => store.api.get<WasteReport>(wastePath(range), { signal }),
     enabled: picked,
   });

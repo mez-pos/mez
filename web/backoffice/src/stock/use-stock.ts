@@ -17,6 +17,8 @@ import { useAuthStore } from "../../../shared/auth/use-auth";
 
 export const stockKey = ["stock"] as const;
 export const recipesKey = ["stock-recipes"] as const;
+/** The start of every wastage report's key, whichever days it covers. */
+export const wastageKey = ["wastage"] as const;
 const historyKey = (id: number) => ["stock-history", id] as const;
 
 export interface StockApi {
@@ -58,7 +60,8 @@ export function useStock(): StockApi {
     createItem: (input) => after(store.api.post<StockEditResponse>("/api/v1/stock/items", input)).then((r) => r.id),
     updateItem: (id, input) => after(store.api.put<StockEditResponse>(`/api/v1/stock/items/${id}`, input)).then(() => undefined),
     setActive: (id, active) => after(store.api.post<StockEditResponse>(`/api/v1/stock/items/${id}/${active ? "restore" : "retire"}`)).then(() => undefined),
-    record: (id, input) => after(store.api.post<StockRecorded>(`/api/v1/stock/items/${id}/movements`, input), [[...historyKey(id)]]),
+    // A write-off is on the wastage card beside the table, so that reads again too.
+    record: (id, input) => after(store.api.post<StockRecorded>(`/api/v1/stock/items/${id}/movements`, input), [[...historyKey(id)], [...wastageKey]]),
     setItemRecipe: (itemId, req) =>
       after(store.api.put<StockEditResponse>(`/api/v1/stock/recipes/items/${itemId}`, req), [[...recipesKey]]).then(() => undefined),
     setModifierRecipe: (modifierId, req) =>
