@@ -1,6 +1,10 @@
 package menu
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/byjoellobo/mez/internal/domain/sheet"
+)
 
 // Prices from a file (phase 10, Task 9, ADR-295): the menu's export with
 // its Price column edited comes back, and the prices that differ are the
@@ -68,29 +72,19 @@ func (p PricePlan) OK() bool { return len(p.Problems) == 0 && len(p.Changes) > 0
 // problem, on row 0. It takes what ReadImport takes (the export's columns,
 // as a spreadsheet saves them) and reads Category, Name and Price.
 func ReadPrices(data []byte, v PriceVenue) PricePlan {
-	records, problem := importRecords(data)
+	records, problem := sheet.Read(data)
 	if problem != "" {
 		return priceFileProblem(problem)
 	}
-	columns, problem := readHeading(records[0])
+	columns, problem := importHeadings.Read(records[0])
 	if problem != "" {
 		return priceFileProblem(problem)
 	}
 
 	r := newPriceReader(v)
-	for i, record := range records[1:] {
-		cells := importCells(record, columns)
-		if len(cells) == 0 {
-			continue
-		}
-		// Counted with the empty rows, as the spreadsheet numbers them.
-		r.read(i+2, cells)
-	}
-	switch {
-	case r.seen == 0:
-		return priceFileProblem("The file has no rows under its headings.")
-	case r.seen > MaxImportRows:
-		return priceFileProblem(fmt.Sprintf("The file has %d rows. Send at most %d at a time.", r.seen, MaxImportRows))
+	seen := sheet.Rows(records, columns, r.read)
+	if problem := sheet.CountProblem(seen, "Send"); problem != "" {
+		return priceFileProblem(problem)
 	}
 	return r.plan
 }
@@ -104,8 +98,6 @@ func priceFileProblem(message string) PricePlan {
 type priceReader struct {
 	currency string
 	plan     PricePlan
-	// seen is how many rows had anything in them.
-	seen int
 	// items is every item by category and name. The menu allows two of one
 	// name in a category, so a key may hold more than one.
 	items map[string][]PriceItem
@@ -125,10 +117,6 @@ func newPriceReader(v PriceVenue) *priceReader {
 // read reads one row into the plan: a change, a row that changes nothing,
 // one that is no item, or its problems.
 func (r *priceReader) read(row int, cells map[string]string) {
-	r.seen++
-	if r.seen > MaxImportRows {
-		return
-	}
 	var problems []ImportProblem
 	problem := func(column, message string) {
 		problems = append(problems, ImportProblem{Row: row, Column: column, Message: message})

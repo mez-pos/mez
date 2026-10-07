@@ -290,7 +290,7 @@ session; split one again if it is not.
   CSV, one bad row refuses the file, a template made for the venue: the
   import's rules (ADR-288 to ADR-291), not new ones.
 
-  - [ ] **Task 10a: Ingredients: read the file and the server.**
+  - [x] **Task 10a: Ingredients: read the file and the server.**
     `internal/domain/stock`: Name, Counted in (g, ml, each), Low at, Cost,
     Count at close. No opening stock from a file: stock arrives by
     Receive, so the ledger says where it came from. Preview, import and

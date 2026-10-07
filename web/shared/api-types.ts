@@ -114,6 +114,7 @@ export type ErrorCode =
   | 'modifier_not_found'
   | 'stock_already_counted'
   | 'stock_count_stale'
+  | 'stock_import_refused'
   | 'staff_not_found'
   | 'role_not_found'
   | 'role_in_use'
@@ -2080,6 +2081,33 @@ export interface RecipeBook {
 
 export interface RecipeRequest {
   parts: RecipePart[];
+}
+
+export interface StockItemsImport {
+  to_add: StockImportRow[];
+  skipped: StockImportSkipped[];
+  problems: StockImportProblem[];
+  imported: boolean;
+}
+
+export interface StockImportRow {
+  row: number;
+  name: string;
+  unit: StockUnit;
+  low_level: number;
+  cost: Money;
+  count_at_close: boolean;
+}
+
+export interface StockImportSkipped {
+  row: number;
+  name: string;
+}
+
+export interface StockImportProblem {
+  row: number;
+  column: string;
+  message: string;
 }
 
 export interface ClosingStockItem {

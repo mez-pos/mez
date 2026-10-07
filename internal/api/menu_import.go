@@ -61,7 +61,7 @@ func (s *Server) exportMenu(w http.ResponseWriter, r *http.Request) {
 // previewMenuImport answers what a file would add. A file full of problems
 // is still a 200: saying what is wrong with it is the answer.
 func (s *Server) previewMenuImport(w http.ResponseWriter, r *http.Request) {
-	data, ok := s.importFile(w, r)
+	data, ok := s.importFile(w, r, CodeInvalidMenu)
 	if !ok {
 		return
 	}
@@ -75,7 +75,7 @@ func (s *Server) previewMenuImport(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) importMenu(w http.ResponseWriter, r *http.Request) {
-	data, ok := s.importFile(w, r)
+	data, ok := s.importFile(w, r, CodeInvalidMenu)
 	if !ok {
 		return
 	}
@@ -99,18 +99,20 @@ func importRefusal(problems int) string {
 }
 
 // importFile reads the request's body as a CSV file of at most
-// menus.MaxImportBytes. It has answered when it returns false.
-func (s *Server) importFile(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
+// menus.MaxImportBytes, which is the stock import's limit too. code is what a
+// refusal of the body carries: the menu's or the stock's. It has answered
+// when it returns false.
+func (s *Server) importFile(w http.ResponseWriter, r *http.Request, code ErrorCode) ([]byte, bool) {
 	// A browser adds a charset; the type is what is checked.
 	if ct, _, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil || ct != "text/csv" {
-		writeFieldError(w, s.log, http.StatusUnsupportedMediaType, CodeInvalidMenu, "Send the file as text/csv.", "file")
+		writeFieldError(w, s.log, http.StatusUnsupportedMediaType, code, "Send the file as text/csv.", "file")
 		return nil, false
 	}
 	data, err := io.ReadAll(http.MaxBytesReader(w, r.Body, menus.MaxImportBytes+1))
 	var tooBig *http.MaxBytesError
 	switch {
 	case errors.As(err, &tooBig), len(data) > menus.MaxImportBytes:
-		writeFieldError(w, s.log, http.StatusRequestEntityTooLarge, CodeInvalidMenu,
+		writeFieldError(w, s.log, http.StatusRequestEntityTooLarge, code,
 			fmt.Sprintf("That file is over %d KB. Import it in parts.", menus.MaxImportBytes>>10), "file")
 		return nil, false
 	case err != nil:

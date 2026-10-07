@@ -10674,3 +10674,46 @@ the list showed them; the untouched export, given back, put all four
 back, and a third time said no price differs. Not walked: the refusal
 when another screen edits the menu in between (it is tested on the
 server), and the modal under 1024px.
+
+## ADR-298 - Ingredients are imported by the menu import's rules, from a shared reader
+2026-10 · Status: accepted. Phase 10, Task 10a.
+Decision: the store takes its stock items from a CSV file as the menu
+takes its items (ADR-288 to ADR-290): `GET /api/v1/stock/import/template`,
+`POST /api/v1/stock/import/preview` and `POST /api/v1/stock/import`, all
+`stock.manage`. Adding only; an item of a name already there, retired or
+not, is left alone and said so; one bad row refuses the file; the import
+reads the file again inside the write; the same file twice adds nothing.
+  - **The columns are Name, Counted in, Low at, Cost, Count at close.**
+    Only the first two are required.
+  - **Counted in is g, ml or each**, however commonly typed (grams,
+    pieces, pcs). **A kilogram or a litre is a problem that says to type
+    g or ml**, not a unit quietly multiplied by a thousand: the level
+    beside it would then be wrong by the same thousand, and a file
+    cannot say which the owner meant.
+  - **Cost is what the item form asks for** (ADR-124): the price of a
+    kilogram of something counted in grams, a litre of something in
+    millilitres, or one of something counted each. One column, since
+    that is how a supplier's invoice prices it. The template's three
+    examples show one of each.
+  - **Low at is in the item's own unit**, to a thousandth, read as
+    digits and never a float. A comma is taken only where it groups
+    digits, as in a price: "1,5" is refused, not read as fifteen.
+  - **A file gives an item no stock.** There is no opening quantity
+    column. Stock arrives by Receive, so the ledger says where every
+    unit came from (ADR-111); an import that set what is on hand would
+    be a movement with no kind.
+  - **The template is the same for every venue** but for how its costs
+    are written (no decimals where the currency has none): a store's
+    file names nothing the venue already has, unlike a menu's.
+  - **The reading of a file moved to `internal/domain/sheet`**, out of
+    the menu package: splitting a file into rows as a spreadsheet saves
+    it, matching headings, counting rows as the spreadsheet does, and
+    reading a cell as money or as a decimal. `menu.ReadImport` and
+    `menu.ReadPrices` use it now, with their tests unchanged and
+    passing, and `stock.ReadItems` is its third caller. Two copies of
+    the rule about decimal commas would have been one too many.
+Cost: an owner whose sheet has rice in kilograms has to convert a
+column. The reader refuses an unknown column, so an "In stock" column
+copied from an old system refuses the file, with the columns it does
+take. Cost in one column for three meanings is only as clear as the
+template and the screen make it. No screen yet (10b).

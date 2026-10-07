@@ -30,7 +30,7 @@ func (s *Server) mountMenuPrices(handle func(pattern string, h http.HandlerFunc)
 // previewMenuPrices answers what a file would change. A file full of
 // problems is still a 200: saying what is wrong with it is the answer.
 func (s *Server) previewMenuPrices(w http.ResponseWriter, r *http.Request) {
-	data, ok := s.importFile(w, r)
+	data, ok := s.importFile(w, r, CodeInvalidMenu)
 	if !ok {
 		return
 	}
@@ -52,7 +52,7 @@ func (s *Server) applyMenuPrices(w http.ResponseWriter, r *http.Request) {
 		writeFieldError(w, s.log, http.StatusBadRequest, CodeInvalidRequest, "version must be the menu version the file was checked at", "version")
 		return
 	}
-	data, ok := s.importFile(w, r)
+	data, ok := s.importFile(w, r, CodeInvalidMenu)
 	if !ok {
 		return
 	}
