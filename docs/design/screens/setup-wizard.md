@@ -2,8 +2,8 @@
 
 The first thing a new venue sees: the questions that make the venue, asked
 once, on the computer mez runs on. Built from D24 in phase 12, Task 3b
-(ADR-267), its printer step in Task 3c (ADR-268) and its last in 3d
-(ADR-269).
+(ADR-267), its printer step in Task 3c (ADR-268) and its last in 3d and
+3f (ADR-269, ADR-271).
 `web/shared/screens/setup/`: `SetupWizard.tsx`, `steps.tsx`,
 `PrinterStep.tsx`, `ReadyStep.tsx`, `SetupFrame.tsx`, `fields.tsx`,
 `setup-logic.ts`, `printer-logic.ts`, `ready-logic.ts` and
@@ -54,10 +54,15 @@ The steps:
    page is sent, **Print again** and the green **It printed**.
 5. **More devices.** "Add another device", as three numbered things to do
    on it. **1. What is it?** Another till, Kitchen display or Back office,
-   as cards. **2. On that device, open** the server's address on the LAN
-   with that app's path, in the numeral face at the display size (the
-   total size under 768px wide), on a sunken band; any other addresses the
-   computer has under it, small; and what to check if it does not open.
+   as cards. **2. On that device, scan this or open the address**: a
+   sunken band holding a QR code of the address, 132px on white, and
+   beside it the address with that app's path in the numeral face (the
+   display size from 1280px wide, the total size under). A computer on
+   more than one real network has a band for each, each headed "On
+   Wi-Fi", "On Ethernet", and a line saying to use the one the other
+   device is on: none is put first as the likely one. Virtual adapters'
+   addresses are named under the bands, small. Then what to check if it
+   does not open.
    **3. Enter this code there**: the terracotta **Show a pairing code**,
    then the code at the same size on the same band, what it is for and
    until when. The foot has **Another code** once one is shown, and the
@@ -84,9 +89,11 @@ The steps:
   `GET /api/v1/printers` again every 600ms for up to 12 seconds to read
   the test page's job. `PUT /api/v1/printers/{id}`, `/restore` and
   `/retire` where a printer is reused or replaced.
-- The last step: `GET /api/v1/devices/addresses` on arriving (`{urls}`,
-  most likely first; none where the server listens on this computer
-  alone), and `POST /api/v1/devices/codes` `{name, kind}` for each code.
+- The last step: `GET /api/v1/devices/addresses` on arriving:
+  `{addresses}`, each with its `adapter`, whether it is `virtual`, and for
+  each kind of device the `url` it opens and that address as an `svg` QR
+  code (none where the server listens on this computer alone); and
+  `POST /api/v1/devices/codes` `{name, kind}` for each code.
 
 Nothing is subscribed to. Nothing typed is kept anywhere but the page: the
 PIN is in memory until the wizard is left.
@@ -191,8 +198,8 @@ PIN is in memory until the wizard is left.
 - **Five steps, as D24 has, and they are ours:** D24's Outlet and Taxes,
   its Staff reduced to the one person who must exist, and a printer and a
   second device, which D24 does not draw.
-- **No QR code for the address.** A tablet's camera would save typing it;
-  nothing in the terminal bundle draws one yet.
+- **The QR code is the server's.** It draws the table codes already
+  (`internal/domain/qr`), so the terminal's bundle carries no encoder.
 - **"your venue", not "your restaurant":** a cafe and a bar are venues.
 - **The page scrolls.** D24 is a fixed 940 by 880 card; a 768px screen has
   no room for it.

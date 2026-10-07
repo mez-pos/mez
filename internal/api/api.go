@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/byjoellobo/mez/internal/config"
+	"github.com/byjoellobo/mez/internal/device/discover"
 )
 
 // Server holds what the handlers need and builds the routing tree once.
@@ -47,7 +48,7 @@ type Server struct {
 	exports       Exports
 	firstRun      FirstRun
 	setupToken    SetupToken
-	addresses     func() ([]string, error)
+	addresses     func() ([]discover.Address, error)
 	limiter       *limiter
 	handler       http.Handler
 }

@@ -9306,3 +9306,47 @@ installer run, which is the path most owners will take: it compiles, and
 `mez setup-link` is tested, but "Open mez now" opening the link through
 Edge's kiosk arguments has not been watched.
 ---
+
+## ADR-271 - An address is shown with its adapter's name and a QR code, and no real adapter is guessed first
+2026-10 · Status: accepted. Phase 12, Task 3f. Changes ADR-269's answer and
+ADR-268's search.
+Context: ADR-269 put the address the machine's traffic leaves by first and
+called the rest "if that does not open". On a PC with wifi and a cable
+that is a guess with an even chance of being wrong, and the owner had to
+type whichever it was into a tablet.
+Decision:
+  - **Adapters are read by name** (`net.Interfaces`), and `discover.
+    Virtual` judges a name: vEthernet, WSL, Hyper-V, VirtualBox, VMware,
+    Docker and its bridges, the VPNs, Bluetooth. It is a judgement by
+    name and is used only for order and emphasis, never to hide.
+  - **`GET /api/v1/devices/addresses` answers `{addresses}`**: each with
+    its `adapter`, `virtual`, and `apps`, one for each kind of device,
+    with the `url` that kind opens and an `svg` QR code of exactly that
+    address. Real adapters first, the one the traffic leaves by first of
+    those, virtual last. The server knows the apps' paths; the screen no
+    longer builds an address.
+  - **The screen shows every real adapter's address large, each under its
+    adapter's name, and says to use the one the other device is on.**
+    With one real adapter that is one band and no name. Virtual adapters'
+    addresses are named in a small line; with no real adapter they are
+    all there is and are shown large.
+  - **The QR code is drawn by the server**, by the encoder that draws
+    table codes, and sent as an SVG in the answer, as those are. The
+    terminal's bundle gains no encoder.
+  - **The printer search starts from real adapters**, falling back to all
+    of them when none looks real. On the developer's PC that is one
+    network searched where three were.
+Because: the server cannot know which network a tablet is on, and an
+owner can: they know whether the tablets are on the wifi. A name they
+recognise beats an order they cannot interpret. The code removes the
+typing, which is where an IP address and a port go wrong.
+Cost: virtual is a list of words and will be wrong for some adapter: a
+real one called something on the list is shown small and searched last
+only if no other real adapter exists; a virtual one not on the list gets
+a band of its own. The answer is larger (three SVGs an address). A
+camera opens the address in the device's ordinary browser. Windows'
+adapter names are in the system's language and are shown as they are.
+No independent review of this task's code. **Seen on 2026-10-07** in a
+browser against the built binary (`KNOWN.md` lists it). **Not seen**: a
+camera reading the code, and a machine with two real adapters.
+---

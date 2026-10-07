@@ -1,9 +1,9 @@
 // The wizard's last step, apart from how it is drawn (setup-wizard.md,
-// ADR-269): what a second device can be, where it opens mez, and the code
-// that pairs it.
+// ADR-269, ADR-271): what a second device can be, where it opens mez, and the
+// code that pairs it.
 
 import { ApiError, type ApiClient } from "../../api";
-import type { AddressesResponse, DeviceKind, NewCodeRequest, PairingCodeResponse } from "../../api-types";
+import type { AddressAppResponse, AddressResponse, AddressesResponse, DeviceKind, NewCodeRequest, PairingCodeResponse } from "../../api-types";
 import { unreachableMessage } from "../../auth/messages";
 
 /** A kind of device that can be paired, in the owner's words. */
@@ -13,7 +13,11 @@ export interface SecondDevice {
   readonly blurb: string;
   /** What it is called until someone renames it. */
   readonly name: string;
-  /** Where its app is, under the server's address. */
+  /**
+   * Where its app is under the server's address. The server says the whole
+   * address (`apps` of an address); this is only for telling an owner what to
+   * type after an address the server could not work out.
+   */
   readonly path: string;
 }
 
@@ -27,23 +31,50 @@ export function secondDevice(kind: string): SecondDevice {
   return secondDevices.find((d) => d.kind === kind) ?? (secondDevices[0] as SecondDevice);
 }
 
-/** The address a device of this kind opens: the server's, and its app's path. */
-export function openAt(url: string, device: SecondDevice): string {
-  return url.replace(/\/+$/, "") + device.path;
-}
-
 /** The address without its scheme, as a person types it into a browser's bar. */
 export function typed(url: string): string {
   return url.replace(/^https?:\/\//, "");
 }
 
 /** Where the server is on the venue's network. Never throws: with no answer there are none, and the screen says so. */
-export async function serverAddresses(api: ApiClient): Promise<readonly string[]> {
+export async function serverAddresses(api: ApiClient): Promise<readonly AddressResponse[]> {
   try {
-    return (await api.get<AddressesResponse>("/api/v1/devices/addresses")).urls;
+    return (await api.get<AddressesResponse>("/api/v1/devices/addresses")).addresses;
   } catch {
     return [];
   }
+}
+
+/** One place to open mez: its address for the kind of device, the code to scan, and the network it is on. */
+export interface Place {
+  readonly url: string;
+  /** The address as a QR code, an SVG, or empty when the server drew none. */
+  readonly svg: string;
+  /** The adapter's name ("Wi-Fi"), or empty. */
+  readonly adapter: string;
+}
+
+/**
+ * The places to show for a kind of device. `main` are the ones to show large:
+ * the real adapters', each as likely as the next, because which network a
+ * tablet is on is not something the server can know. `others` are virtual
+ * adapters' (a virtual machine's, a VPN's), which a tablet is unlikely to be
+ * on, shown small. With no real adapter the virtual ones are all there is.
+ */
+export function placesFor(addresses: readonly AddressResponse[], kind: string): { main: Place[]; others: Place[] } {
+  const place = (a: AddressResponse): Place | null => {
+    const app: AddressAppResponse | undefined = a.apps.find((p) => p.kind === kind);
+    return app ? { url: app.url, svg: app.svg, adapter: a.adapter } : null;
+  };
+  const of = (list: readonly AddressResponse[]) => list.map(place).filter((p): p is Place => p !== null);
+  const real = of(addresses.filter((a) => !a.virtual));
+  const virtual = of(addresses.filter((a) => a.virtual));
+  return real.length > 0 ? { main: real, others: virtual } : { main: virtual, others: [] };
+}
+
+/** An SVG as something an <img> can show. */
+export function svgSrc(svg: string): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
 /** A pairing code for one device of this kind. */

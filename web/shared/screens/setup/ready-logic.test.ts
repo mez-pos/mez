@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { ApiError, type ApiClient } from "../../api";
-import { codeError, makeCode, openAt, secondDevice, secondDevices, serverAddresses, typed, untilWords } from "./ready-logic";
+import type { AddressResponse } from "../../api-types";
+import { codeError, makeCode, placesFor, secondDevice, secondDevices, serverAddresses, svgSrc, typed, untilWords } from "./ready-logic";
+
+/** An address as the server answers it, with every app at it. */
+function address(host: string, adapter: string, virtual = false): AddressResponse {
+  const base = `http://${host}:7777`;
+  return {
+    adapter,
+    virtual,
+    apps: [
+      { kind: "terminal", url: base, svg: `<svg>${host}</svg>` },
+      { kind: "kitchen", url: `${base}/kitchen`, svg: `<svg>${host}/kitchen</svg>` },
+      { kind: "back_office", url: `${base}/backoffice/`, svg: `<svg>${host}/backoffice/</svg>` },
+    ],
+  };
+}
 
 describe("secondDevices", () => {
   it("offers a till, a kitchen display and a back office, and never a guest", () => {
@@ -12,24 +27,57 @@ describe("secondDevices", () => {
     expect(secondDevice("guest").kind).toBe("terminal");
   });
 
-  it.each([
-    ["terminal", "http://192.168.1.10:7777"],
-    ["kitchen", "http://192.168.1.10:7777/kitchen"],
-    ["back_office", "http://192.168.1.10:7777/backoffice/"],
-  ])("a %s opens %s", (kind, want) => {
-    expect(openAt("http://192.168.1.10:7777", secondDevice(kind))).toBe(want);
-    expect(openAt("http://192.168.1.10:7777/", secondDevice(kind))).toBe(want);
-  });
-
   it("writes an address as it is typed", () => {
     expect(typed("http://192.168.1.10:7777/kitchen")).toBe("192.168.1.10:7777/kitchen");
   });
 });
 
+describe("placesFor", () => {
+  const wifi = address("192.168.29.211", "Wi-Fi");
+  const cable = address("192.168.1.40", "Ethernet");
+  const wsl = address("172.25.224.1", "vEthernet (WSL)", true);
+  const vbox = address("10.0.75.1", "VirtualBox Host-Only Network", true);
+
+  it("shows the one real adapter's address large, and virtual ones small", () => {
+    const { main, others } = placesFor([wifi, wsl, vbox], "kitchen");
+    expect(main).toEqual([{ url: "http://192.168.29.211:7777/kitchen", svg: "<svg>192.168.29.211/kitchen</svg>", adapter: "Wi-Fi" }]);
+    expect(others.map((p) => p.adapter)).toEqual(["vEthernet (WSL)", "VirtualBox Host-Only Network"]);
+  });
+
+  it("shows two real adapters as equals, in the server's order", () => {
+    const { main, others } = placesFor([cable, wifi, wsl], "terminal");
+    expect(main.map((p) => [p.adapter, p.url])).toEqual([
+      ["Ethernet", "http://192.168.1.40:7777"],
+      ["Wi-Fi", "http://192.168.29.211:7777"],
+    ]);
+    expect(others).toHaveLength(1);
+  });
+
+  it("shows the virtual adapters large when they are all there is", () => {
+    const { main, others } = placesFor([wsl, vbox], "back_office");
+    expect(main.map((p) => p.url)).toEqual(["http://172.25.224.1:7777/backoffice/", "http://10.0.75.1:7777/backoffice/"]);
+    expect(others).toEqual([]);
+  });
+
+  it("has nothing to show with no addresses, or for a kind the server did not answer for", () => {
+    expect(placesFor([], "terminal")).toEqual({ main: [], others: [] });
+    expect(placesFor([wifi], "guest")).toEqual({ main: [], others: [] });
+  });
+});
+
+describe("svgSrc", () => {
+  it("is a data address an image can show, whatever is in the SVG", () => {
+    const src = svgSrc('<svg viewBox="0 0 1 1"><path d="M0 0#"/></svg>');
+    expect(src.startsWith("data:image/svg+xml;charset=utf-8,")).toBe(true);
+    expect(src).not.toMatch(/[<>"#]/);
+  });
+});
+
 describe("serverAddresses", () => {
   it("is the server's list, or none when it cannot be asked", async () => {
-    const ok = { get: async () => ({ urls: ["http://192.168.1.10:7777"] }) } as unknown as ApiClient;
-    expect(await serverAddresses(ok)).toEqual(["http://192.168.1.10:7777"]);
+    const list = [address("192.168.1.10", "Wi-Fi")];
+    const ok = { get: async () => ({ addresses: list }) } as unknown as ApiClient;
+    expect(await serverAddresses(ok)).toEqual(list);
     const down = { get: async () => Promise.reject(new ApiError("network", "unreachable")) } as unknown as ApiClient;
     expect(await serverAddresses(down)).toEqual([]);
   });

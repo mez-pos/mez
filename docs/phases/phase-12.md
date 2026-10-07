@@ -70,7 +70,7 @@ Phase 11.
     in the data directory (ADR-270): the installer hands it over in the
     address it opens, `mez setup-link` prints it, a server started in a
     terminal says it. Closes `STATE.md`'s question 9.
-  - [ ] **Task 3f - A QR code for the address, and addresses by name.**
+  - [x] **Task 3f - A QR code for the address, and addresses by name.**
     The wizard's last step draws the address as a QR code a tablet's
     camera can open (`internal/domain/qr` already draws them), and names
     each address by its network adapter, with virtual adapters last and no

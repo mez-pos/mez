@@ -54,7 +54,9 @@ type Result struct {
 // Finder searches. The zero value searches this machine's own networks and
 // its own installed printers; the fields are for tests.
 type Finder struct {
-	// Addrs lists this machine's interface addresses. Nil is net.InterfaceAddrs.
+	// Addrs lists the addresses of the adapters to search from. Nil is this
+	// machine's real adapters, or all of them when none looks real: a
+	// printer is not on a virtual machine's network (ADR-271).
 	Addrs func() ([]net.Addr, error)
 	// Dial opens a connection. Nil is a net.Dialer.
 	Dial func(ctx context.Context, network, addr string) (net.Conn, error)
@@ -73,7 +75,7 @@ func (f *Finder) Find(ctx context.Context) (Result, error) {
 
 	addrs := f.Addrs
 	if addrs == nil {
-		addrs = net.InterfaceAddrs
+		addrs = systemAddrs
 	}
 	own, err := addrs()
 	if err != nil {

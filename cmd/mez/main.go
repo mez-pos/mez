@@ -389,7 +389,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		api.WithFirstRun(firstRun),
 		api.WithSetupToken(setupToken),
 		// Where a second device opens this server, for whoever is pairing one.
-		api.WithAddresses(func() ([]string, error) { return (&discover.Addresser{}).URLs(listener.Addr().String()) }),
+		api.WithAddresses(func() ([]discover.Address, error) { return (&discover.Addresser{}).Addresses(listener.Addr().String()) }),
 		api.WithStaff(staff),
 		api.WithOrders(orders),
 		api.WithMenus(database),

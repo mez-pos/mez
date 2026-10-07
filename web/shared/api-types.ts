@@ -782,7 +782,19 @@ export interface PrinterCandidate {
 }
 
 export interface AddressesResponse {
-  urls: string[];
+  addresses: AddressResponse[];
+}
+
+export interface AddressResponse {
+  adapter: string;
+  virtual: boolean;
+  apps: AddressAppResponse[];
+}
+
+export interface AddressAppResponse {
+  kind: DeviceKind;
+  url: string;
+  svg: string;
 }
 
 export interface SetupStatusResponse {

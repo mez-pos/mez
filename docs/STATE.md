@@ -8,27 +8,30 @@
 ## Current phase
 
 **Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1, 1b, 2 and 3 (3a
-to 3e) built; 3f was added and is next. Phase 11 has nothing left to build
-(Cashfree left out, ADR-254) and owes its walks.
+to 3f) built. Phase 11 has nothing left to build (Cashfree left out,
+ADR-254) and owes its walks.
 
 ## Last completed task
 
-**Phase 12, Task 3e: the setup token** (ADR-270). `firstrun.Token`: 128
-bits in `<data dir>/setup-token` while there is no venue, asked for by
-`POST /api/v1/setup` as `X-Setup-Token`, spent when the venue exists.
-`mez setup-link` prints the wizard's address with it; the installer's
-"Open mez now" opens that; a server started in a terminal prints it. The
-wizard takes it from the address's fragment. Walked in a browser and with
-curl; **the installer was compiled, not run**.
+**Phase 12, Task 3f: a QR code for the address, and addresses by name**
+(ADR-271). `GET /api/v1/devices/addresses` answers each address with its
+adapter's name, whether it looks virtual, and for each kind of device the
+address it opens and a QR code of it. The wizard's last step shows the
+code beside the address, a band for each real adapter with none guessed
+first, virtual ones small. The printer search starts from real adapters.
+Walked in a browser on a PC with one real adapter; **two real adapters,
+and a camera reading the code, were not seen**.
 
 ## Next task
 
-**Phase 12, Task 3f: a QR code for the address, and addresses by name.**
-In the phase file. `internal/domain/qr` draws codes and `guest_qr.go`
-serves them as SVG; `discover.Addresser` and `discover.networks` are where
-adapters are read (`net.Interfaces` gives the names). Then Task 4,
-backups. `make check` embeds whatever `web/*/dist` holds: run `make
-build-web` before walking a screen against `bin/mez`.
+**Phase 12, Task 4: backups.** Litestream, a Backups section of the back
+office's settings, "back up now", and a restore that is actually done and
+verified. Read ADR-141 and ADR-110 first (phase 10's Task 6l moved here).
+It is more than one session: split it before building. Before a release,
+run the Windows installer once on a spare machine: "Open mez now" opening
+the setup link has not been watched (ADR-270). `make check` embeds
+whatever `web/*/dist` holds: run `make build-web` before walking a screen
+against `bin/mez`.
 
 Still owed from phase 11, its human check and:
 - **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay

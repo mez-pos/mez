@@ -1,18 +1,18 @@
-// The wizard's last step (setup-wizard.md, ADR-269): where a second device
-// opens mez, and a code to pair it, both in type large enough to read from
-// across a counter. The owner is signed in, so the code is the one the back
-// office's Devices screen would make.
+// The wizard's last step (setup-wizard.md, ADR-269, ADR-271): where a second
+// device opens mez, as an address in large type and a QR code for its camera,
+// and a code to pair it. The owner is signed in, so the pairing code is the
+// one the back office's Devices screen would make.
 
 import { ArrowRightIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ApiClient } from "../../api";
-import type { PairingCodeResponse } from "../../api-types";
+import type { AddressResponse, PairingCodeResponse } from "../../api-types";
 import { Button } from "../../ui";
 import { CardChoice } from "./fields";
-import { codeError, makeCode, openAt, secondDevice, secondDevices, serverAddresses, typed, untilWords } from "./ready-logic";
+import { codeError, makeCode, placesFor, secondDevice, secondDevices, serverAddresses, svgSrc, typed, untilWords, type Place } from "./ready-logic";
 
 export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void }) {
-  const [urls, setUrls] = useState<readonly string[] | null>(null);
+  const [addresses, setAddresses] = useState<readonly AddressResponse[] | null>(null);
   const [kind, setKind] = useState<string>(secondDevices[0]?.kind ?? "terminal");
   const [code, setCode] = useState<PairingCodeResponse | null>(null);
   const [busy, setBusy] = useState(false);
@@ -22,7 +22,7 @@ export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void 
   useEffect(() => {
     let live = true;
     void serverAddresses(api).then((found) => {
-      if (live) setUrls(found);
+      if (live) setAddresses(found);
     });
     return () => {
       live = false;
@@ -48,7 +48,7 @@ export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void 
     }
   };
 
-  const [first, ...others] = urls ?? [];
+  const { main, others } = placesFor(addresses ?? [], kind);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -66,31 +66,40 @@ export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void 
           min="14rem"
         />
 
-        <div className="flex flex-col gap-1.5">
-          <p className="text-base font-semibold">2. On that device, connect to this network and open</p>
-          {urls === null && <p className="text-base text-fg-2">Finding this computer&rsquo;s address</p>}
-          {urls !== null && !first && (
+        <div className="flex flex-col gap-2">
+          <p className="text-base font-semibold">2. On that device, connect to this network, then scan this or open the address</p>
+          {addresses === null && <p className="text-base text-fg-2">Finding this computer&rsquo;s address</p>}
+          {addresses !== null && main.length === 0 && (
             <p className="rounded border border-line bg-sunken px-4 py-3 text-base text-fg-2">
               mez could not tell its own address on this network. On this computer, open Windows&rsquo; network settings to find its IP address, and open that
               address on the other device, followed by :{window.location.port || "80"}
               {device.path}.
             </p>
           )}
-          {first && (
-            <>
-              <p className="break-all rounded-card bg-sunken px-5 py-4 font-mono text-total font-semibold tabular-nums text-fg-heading md:text-display">
-                {typed(openAt(first, device))}
-              </p>
-              {others.length > 0 && (
-                <p className="text-sm text-fg-muted">
-                  If that does not open, try <span className="font-mono tabular-nums">{others.map((u) => typed(openAt(u, device))).join(" or ")}</span>.
-                </p>
-              )}
-              <p className="text-sm text-fg-muted">
-                Both must be on the same network. If it still does not open, Windows may be treating this network as Public: set it to Private in Windows&rsquo;
-                network settings.
-              </p>
-            </>
+          {main.length > 1 && (
+            <p className="text-sm text-fg-2">This computer is on more than one network. Use the address for the network the other device is on.</p>
+          )}
+          {main.map((place) => (
+            <PlaceBand key={place.url} place={place} named={main.length > 1} />
+          ))}
+          {others.length > 0 && (
+            <p className="text-sm text-fg-muted">
+              This computer also has virtual network adapters (
+              {others.map((p, i) => (
+                <span key={p.url}>
+                  {i > 0 && ", "}
+                  {p.adapter ? `${p.adapter}: ` : ""}
+                  <span className="font-mono tabular-nums">{typed(p.url)}</span>
+                </span>
+              ))}
+              ). A tablet is not normally on those.
+            </p>
+          )}
+          {main.length > 0 && (
+            <p className="text-sm text-fg-muted">
+              Both must be on the same network. If it does not open, Windows may be treating this network as Public: set it to Private in Windows&rsquo; network
+              settings.
+            </p>
           )}
         </div>
 
@@ -134,6 +143,24 @@ export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void 
           Start selling
           <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
         </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One place to open mez: the code to scan beside the address to type. `named`
+ * says which network it is on, for a computer on more than one. The code sits
+ * on white whatever the surface: a camera reads dark on light.
+ */
+function PlaceBand({ place, named }: { place: Place; named: boolean }) {
+  const address = typed(place.url);
+  return (
+    <div className="flex flex-wrap items-center gap-5 rounded-card bg-sunken px-5 py-4">
+      {place.svg && <img src={svgSrc(place.svg)} alt={`QR code for ${address}`} width={132} height={132} className="size-33 shrink-0 rounded bg-white" />}
+      <div className="min-w-0 flex-1">
+        {named && place.adapter && <p className="text-meta font-bold uppercase tracking-[.16em] text-fg-muted">On {place.adapter}</p>}
+        <p className="break-all font-mono text-total font-semibold tabular-nums text-fg-heading xl:text-display">{address}</p>
       </div>
     </div>
   );

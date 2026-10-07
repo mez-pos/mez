@@ -10,6 +10,22 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The address as a QR code, and addresses by adapter** (ADR-271; phase
+  12 Task 3f). Seen on 2026-10-07 in a browser against the built binary,
+  at 1366 and 1024 wide, on a PC with one real adapter and two of
+  Hyper-V's: the code drawn beside the address and changing with the kind
+  of device; the two virtual adapters named small under it; the printer
+  search saying it searched the one real network, where before it
+  searched three. **Not seen**: a camera reading the code (it is the
+  encoder the table codes use, and the test holds it to the address); a
+  computer with two real adapters and its two bands; a machine with only
+  virtual-looking adapters; Linux adapter names in the flesh. Left out:
+  virtual is judged by the adapter's name and can be wrong either way (a
+  wrong guess moves an address to small type or searches a network late,
+  never hides one); a tablet's camera opens the address in its browser,
+  not in a kiosk; the Devices screen in the back office does not show the
+  address or the code, only the wizard does.
+
 - **The setup token** (ADR-270; phase 12 Task 3e). Seen on 2026-10-07
   against the built binary: with curl, status locked without the token and
   unlocked with it, never unlocked from the LAN address, a post refused
@@ -37,10 +53,8 @@
   Another code giving a new one; Start selling landing on Open the shift.
   **Not seen**: a real second device; a server with no address to show; a
   code that could not be made; the address with the internet down; under
-  the Windows service, where the port is 7777. Left out: no QR code for
-  the address; the address is plain HTTP (ADR-257); a machine with several
-  real cards shows the one its internet leaves by first, which may not be
-  the one the tablets are on; nothing checks the firewall, the screen only
+  the Windows service, where the port is 7777. Left out: the address is
+  plain HTTP (ADR-257); nothing checks the firewall, the screen only
   says what to look at; `mez setup` in a terminal is still the way for
   Docker and a headless server.
 
@@ -57,8 +71,8 @@
   or printed on; a found printer's row on screen; the search under the
   service's account; Continue without it retiring the printer (tested as
   logic). Left out: the search walks a /24 around each card and at most
-  four cards, so a printer elsewhere on a larger network is typed in; it
-  searches virtual adapters too (WSL, Hyper-V); IPv6; mDNS and vendor
+  four cards, so a printer elsewhere on a larger network is typed in;
+  IPv6; mDNS and vendor
   discovery; anything that tells a printer from another device with port
   9100 open; the back office's Printers screen has no search button;
   Linux and Docker list no installed printers.

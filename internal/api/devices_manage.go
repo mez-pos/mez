@@ -3,9 +3,12 @@ package api
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/device/discover"
+	"github.com/byjoellobo/mez/internal/domain/qr"
 )
 
 // The device management error codes (phase 10, Task 6k).
@@ -68,34 +71,81 @@ func (s *Server) mountDeviceManagement(mux *http.ServeMux) {
 }
 
 // WithAddresses tells the API where on the venue's network this server is
-// (ADR-269): each address a second device could open, most likely first.
-// Without it the endpoint is not mounted.
-func WithAddresses(urls func() ([]string, error)) Option {
-	return func(s *Server) { s.addresses = urls }
+// (ADR-269, ADR-271): each address a second device could open, the real
+// adapters' first. Without it the endpoint is not mounted.
+func WithAddresses(addresses func() ([]discover.Address, error)) Option {
+	return func(s *Server) { s.addresses = addresses }
 }
 
-// addressesResponse is where to point a device that is being paired: the
-// addresses this server can be opened at from the venue's network, most
-// likely first. Empty when it listens on this computer alone.
+// appPaths is where each kind of device opens its app, under the server's
+// address. The kitchen display is the terminal's bundle at its own path
+// (ADR-091); the back office is mounted at its own (web/web.go).
+var appPaths = []struct {
+	kind auth.DeviceKind
+	path string
+}{
+	{auth.KindTerminal, ""},
+	{auth.KindKitchen, "/kitchen"},
+	{auth.KindBackOffice, "/backoffice/"},
+}
+
+// addressesResponse is where to point a device that is being paired: each
+// address this server can be opened at from the venue's network, real
+// adapters first. Empty when it listens on this computer alone.
 type addressesResponse struct {
-	URLs []string `json:"urls"`
+	Addresses []addressResponse `json:"addresses"`
+}
+
+// addressResponse is one address, by the adapter it is on, and what each
+// kind of device opens there.
+type addressResponse struct {
+	// Adapter is the adapter's name as the operating system shows it, such
+	// as "Wi-Fi"; empty when it is not known.
+	Adapter string `json:"adapter"`
+	// Virtual is true for an adapter that looks like a virtual machine's or
+	// a VPN's, which a tablet is unlikely to be on.
+	Virtual bool                 `json:"virtual"`
+	Apps    []addressAppResponse `json:"apps"`
+}
+
+// addressAppResponse is the address one kind of device opens, and that
+// address as a QR code for its camera: an SVG, as the table codes are.
+type addressAppResponse struct {
+	Kind auth.DeviceKind `json:"kind"`
+	URL  string          `json:"url"`
+	SVG  string          `json:"svg"`
 }
 
 // serverAddresses answers whoever is pairing a device with where to open
 // it. It is behind device.manage with the code it goes beside.
 func (s *Server) serverAddresses(w http.ResponseWriter, r *http.Request) {
-	urls, err := s.addresses()
+	found, err := s.addresses()
 	if err != nil {
 		// The code still pairs a device; only the address must be read off
 		// the computer instead. An empty list says that.
 		s.log.Warn("reading this server's addresses failed", "request_id", RequestID(r.Context()), "error", err)
-		urls = nil
+		found = nil
 	}
-	if urls == nil {
-		urls = []string{}
+	out := addressesResponse{Addresses: make([]addressResponse, 0, len(found))}
+	for _, a := range found {
+		one := addressResponse{Adapter: a.Adapter, Virtual: a.Virtual, Apps: make([]addressAppResponse, 0, len(appPaths))}
+		base := strings.TrimSuffix(a.URL, "/")
+		for _, app := range appPaths {
+			url := base + app.path
+			code, err := qr.Encode([]byte(url))
+			if err != nil {
+				// An address is a few dozen bytes; a code holds two
+				// thousand. Without a picture the address is still typed.
+				s.log.Warn("drawing an address as a QR failed", "request_id", RequestID(r.Context()), "error", err)
+				one.Apps = append(one.Apps, addressAppResponse{Kind: app.kind, URL: url})
+				continue
+			}
+			one.Apps = append(one.Apps, addressAppResponse{Kind: app.kind, URL: url, SVG: code.SVG(qrQuiet)})
+		}
+		out.Addresses = append(out.Addresses, one)
 	}
 	w.Header().Set("Cache-Control", "no-store")
-	writeJSON(w, s.log, http.StatusOK, addressesResponse{URLs: urls})
+	writeJSON(w, s.log, http.StatusOK, out)
 }
 
 func (s *Server) listDevices(w http.ResponseWriter, r *http.Request) {
