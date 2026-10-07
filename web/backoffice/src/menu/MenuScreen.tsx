@@ -6,7 +6,7 @@
 // groups of choices and the stations and courses (rebuild.md, rule 4): they
 // are the two other views, as pills under the title.
 
-import { DownloadIcon, PlusIcon, SearchIcon, UploadIcon } from "lucide-react";
+import { PlusIcon, SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { EditorGroup, MenuEditor } from "../../../shared/api-types";
 import { Button, Card, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
@@ -22,7 +22,8 @@ import { emptyGroupForm, groupFormFrom, groupsChanged, usedBy } from "./group-lo
 import { GroupFormModal } from "./GroupFormModal";
 import { GroupsView } from "./GroupsView";
 import { ImportModal } from "./ImportModal";
-import { exportPath } from "./import-logic";
+import { PricesModal } from "./PricesModal";
+import { SpreadsheetMenu } from "./SpreadsheetMenu";
 import { ItemEditor } from "./ItemEditor";
 import { ItemList } from "./ItemList";
 import type { PhotoChange } from "./ItemPhotoField";
@@ -56,7 +57,7 @@ export function MenuScreen() {
   const [filter, setFilter] = useState<ListFilter>({ scope: "all", search: "", show: "all", order: "menu" });
   const [open, setOpen] = useState<Open>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
-  const [importing, setImporting] = useState(false);
+  const [filing, setFiling] = useState<"import" | "prices" | null>(null);
   const exported = useCsvFile();
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -144,15 +145,7 @@ export function MenuScreen() {
                 ))}
               </select>
             </div>
-            {/* Always the whole menu, whatever the search and the select show. */}
-            <Button title="Save the whole menu as a CSV file" disabled={!menu || exported.busy !== null} onClick={() => void exported.download(exportPath)}>
-              <DownloadIcon aria-hidden="true" size={17} />
-              {exported.busy ? "Exporting" : "Export"}
-            </Button>
-            <Button disabled={!menu} onClick={() => setImporting(true)}>
-              <UploadIcon aria-hidden="true" size={17} />
-              Import
-            </Button>
+            <SpreadsheetMenu exported={exported} disabled={!menu} onImport={() => setFiling("import")} onPrices={() => setFiling("prices")} />
             <Button variant="attention" disabled={!menu} onClick={() => menu && addItem(menu)}>
               <PlusIcon aria-hidden="true" size={18} />
               Add New Item
@@ -292,7 +285,8 @@ export function MenuScreen() {
         </div>
       )}
 
-      {menu && importing && <ImportModal api={api} onClose={() => setImporting(false)} />}
+      {menu && filing === "import" && <ImportModal api={api} onClose={() => setFiling(null)} />}
+      {menu && filing === "prices" && <PricesModal api={api} exported={exported} onClose={() => setFiling(null)} />}
       {menu && editing && (
         <EditingModal menu={menu} editing={editing} api={api} onCategory={(id) => pick({ scope: id, search: "" })} onClose={() => setEditing(null)} />
       )}

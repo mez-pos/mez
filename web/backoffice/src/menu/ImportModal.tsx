@@ -4,24 +4,13 @@
 // it or none.
 
 import { DownloadIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { ApiError } from "../../../shared/api";
 import type { MenuImport } from "../../../shared/api-types";
 import { Button, Modal, Money, useToast } from "../../../shared/ui";
 import { useCsvFile } from "../sales/use-csv-download";
-import {
-  addLabel,
-  addedText,
-  asCsv,
-  examplesIn,
-  examplesText,
-  fileProblem,
-  problemsText,
-  summaryLines,
-  templatePath,
-  verdictOf,
-  whereOf,
-} from "./import-logic";
+import { ChooseFile, Problems, Step } from "./FileParts";
+import { addLabel, addedText, asCsv, examplesIn, examplesText, fileProblem, problemsText, summaryLines, templatePath, verdictOf } from "./import-logic";
 import { problemOf } from "./menu-logic";
 import type { MenuEditorApi } from "./use-menu-editor";
 
@@ -131,70 +120,30 @@ export function ImportModal({ api, onClose }: ImportModalProps) {
   );
 }
 
-const chooseClass =
-  "inline-flex min-h-tap cursor-pointer items-center rounded border border-line-strong bg-raised-high px-4 text-base font-semibold focus-within:outline-2 focus-within:outline-line-focus";
-
-/** A button that opens the file picker. The same file may be chosen twice: it may have been edited since. */
-function ChooseFile({ label, onChoose }: { label: string; onChoose: (file: File | undefined) => void }) {
-  const id = useId();
-  return (
-    <label htmlFor={id} className={chooseClass}>
-      {label}
-      <input
-        id={id}
-        type="file"
-        accept=".csv,text/csv"
-        className="sr-only"
-        onChange={(e) => {
-          onChoose(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
-    </label>
-  );
-}
-
-const stepNumber = "flex size-8 shrink-0 items-center justify-center rounded-round bg-sunken font-mono text-sm font-bold tabular-nums";
-
 function Steps({ onChoose }: { onChoose: (file: File | undefined) => void }) {
   const template = useCsvFile();
   return (
     <>
       <p>Add many items at once from a spreadsheet. It adds items: it never changes or removes one that is already on the menu.</p>
       <ol className="flex flex-col gap-4">
-        <li className="flex items-start gap-3">
-          <span aria-hidden="true" className={stepNumber}>
-            1
-          </span>
-          <div className="flex min-w-0 flex-col items-start gap-2">
-            <p>Get the template. It has this venue's own category, tax class, station and course names in it.</p>
-            <Button disabled={template.busy !== null} onClick={() => void template.download(templatePath)}>
-              <DownloadIcon aria-hidden="true" size={17} />
-              {template.busy ? "Downloading" : "Download template"}
-            </Button>
-          </div>
-        </li>
-        <li className="flex items-start gap-3">
-          <span aria-hidden="true" className={stepNumber}>
-            2
-          </span>
-          <p className="pt-1">Fill it in, one item on each row, and save it as CSV UTF-8.</p>
-        </li>
-        <li className="flex items-start gap-3">
-          <span aria-hidden="true" className={stepNumber}>
-            3
-          </span>
-          <div className="flex min-w-0 flex-col items-start gap-2">
-            <p className="pt-1">Choose the file. You see what it would add before anything is added.</p>
-            <ChooseFile label="Choose a file" onChoose={onChoose} />
-          </div>
-        </li>
+        <Step n={1}>
+          <p>Get the template. It has this venue's own category, tax class, station and course names in it.</p>
+          <Button disabled={template.busy !== null} onClick={() => void template.download(templatePath)}>
+            <DownloadIcon aria-hidden="true" size={17} />
+            {template.busy ? "Downloading" : "Download template"}
+          </Button>
+        </Step>
+        <Step n={2}>
+          <p>Fill it in, one item on each row, and save it as CSV UTF-8.</p>
+        </Step>
+        <Step n={3}>
+          <p>Choose the file. You see what it would add before anything is added.</p>
+          <ChooseFile label="Choose a file" onChoose={onChoose} />
+        </Step>
       </ol>
     </>
   );
 }
-
-const head = "pb-2 text-left text-meta font-bold uppercase text-fg-muted";
 
 function Result({ checked, onChoose }: { checked: Checked; onChoose: (file: File | undefined) => void }) {
   const { plan, name, note } = checked;
@@ -203,41 +152,7 @@ function Result({ checked, onChoose }: { checked: Checked; onChoose: (file: File
   return (
     <>
       {note && <p className="rounded bg-attention-tint p-3.5">{note}</p>}
-      {verdict === "problems" && (
-        <>
-          <p className="font-semibold text-danger">{problemsText(plan, name)}</p>
-          <div className="max-h-72 overflow-y-auto rounded border border-line">
-            <table aria-label="Problems in the file" className="w-full text-base">
-              <thead className="sticky top-0 bg-raised">
-                <tr className="border-b border-line">
-                  <th scope="col" className={`${head} px-3 pt-2.5`}>
-                    Where
-                  </th>
-                  <th scope="col" className={`${head} px-3 pt-2.5`}>
-                    Column
-                  </th>
-                  <th scope="col" className={`${head} px-3 pt-2.5`}>
-                    What is wrong
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {plan.problems.map((p, i) => (
-                  <tr key={i} className="border-b border-line-soft align-top last:border-b-0">
-                    <td className="whitespace-nowrap px-3 py-2 font-mono tabular-nums">{whereOf(p)}</td>
-                    <td className="whitespace-nowrap px-3 py-2 font-semibold">{p.column}</td>
-                    <td className="px-3 py-2">{p.message}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p>Fix them in the file and choose it again.</p>
-          <div>
-            <ChooseFile label="Choose the file again" onChoose={onChoose} />
-          </div>
-        </>
-      )}
+      {verdict === "problems" && <Problems line={problemsText(plan, name)} problems={plan.problems} onChoose={onChoose} />}
       {verdict === "nothing" && (
         <>
           <p>Every item in {name} is already on the menu.</p>

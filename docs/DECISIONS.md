@@ -10631,3 +10631,46 @@ Cost: two back offices editing the menu while a third applies prices
 will see refusals until they stop. The 409 carries no plan; the screen
 checks the file again. No idempotency key is stored: the same file again
 finds every price already there and changes nothing.
+
+## ADR-297 - One Spreadsheet pill in the Menu screen's head, and the price changes behind it
+2026-10 · Status: accepted. Phase 10, Task 9c. Changes where ADR-291 and ADR-294 put their buttons.
+Decision: Export and Import were two buttons in the head beside the
+search, the select and Add New Item (ADR-291, ADR-294). A third, for
+prices, would have made six controls in a row that wraps under 1280px.
+They are now one pill, **Spreadsheet**, that opens the three: **Export
+the menu**, **Import new items**, **Change prices**, each with a line
+under it saying what it does and what it leaves alone. It is the
+disclosure the Sales reports' Export already is (`useDisclosure`,
+`headPill`), not a new kind of control.
+  - **Change prices is a modal of the import's shape**: three steps
+    (export, edit the Price column, choose the file), then the server's
+    answer, then **Change N prices**. The file picker, the numbered step
+    and the table of problems are shared by both (`FileParts.tsx`).
+  - **The preview is a table of Item, Now, New and Change, the largest
+    change first whichever way it goes.** The file is the owner's, and
+    the likeliest mistake in it is a slipped digit or an emptied cell.
+    Sorted by size, 200 turned into 2100 is the first row and not
+    somewhere on the third screen.
+  - **A new price of zero is called out**, in the attention tint: "1
+    item would be free." Zero is a price (ADR-295) and almost always a
+    slip.
+  - **Rows that are no item are named, the first five, and pointed at
+    Import new items.**
+  - **The line about open orders is under the table and in the toast**,
+    as it is where a single price is edited: they keep what they were
+    rung up at.
+  - **A refusal at Change means check again.** A 409 `menu_prices_stale`
+    or a 422 is answered by previewing the same file again and showing
+    it under "The menu changed since this file was checked", for the
+    owner to read again and press again. Nothing is applied behind that
+    notice.
+Cost: Export is now two clicks where it was one. The largest-first order
+is by amount, not by proportion, so a ₹5 tea doubled sits below a ₹900
+platter raised by ₹20. Walked in a browser on the dev venue on
+2026-10-08: an export with four prices edited (one a slipped digit, one
+to zero) and a row added previewed as four changes in that order with
+the free item and the unknown row called out; Change applied them and
+the list showed them; the untouched export, given back, put all four
+back, and a third time said no price differs. Not walked: the refusal
+when another screen edits the menu in between (it is tested on the
+server), and the modal under 1024px.

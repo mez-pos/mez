@@ -8,7 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 10, Task 8a: the menu export on the server** (ADR-293).
+**Phase 10, Task 9a and 9b: prices from a file, read and applied**
+(ADR-295, ADR-296). `menu.ReadPrices` finds a row's item by category
+and name and reads only its price; a row that is no item is left out
+and listed. `POST /api/v1/menu/prices/preview` and `POST
+/api/v1/menu/prices?version=N`: applied in one `db.EditMenu`, and
+refused 409 if the menu has moved since the preview. A test shows an
+open order keeps the price it was rung up at.
+
+Before them, **Phase 10, Task 8b: the export on the screen** (ADR-294):
+Export in the Menu screen's head, always the whole menu. It moved into
+the Spreadsheet pill in Task 9c.
+
+Before it, **Phase 10, Task 8a: the menu export on the server** (ADR-293).
 `GET /api/v1/menu/export`: the whole menu as `mez-menu.csv`, in the
 import's columns plus Status. `ReadImport` takes it back: it accepts
 Status unread, and skips an item already there in a retired category.

@@ -16,27 +16,32 @@ only being seen to work: the walks, a release, and a printer.
 
 ## Last completed task
 
-**Phase 10, Task 8b: the export on the screen** (ADR-294). **Export**
-before Import in the Menu screen's head saves `mez-menu.csv` through
-`useCsvFile`. It is always the whole menu, whatever the search, the
-select and the category show. Walked in a browser on the dev venue:
-searched down to one item, the file held all nineteen; with a row
-added it went back through Import as one to add and nineteen left
-alone. Task 8 is done. Not walked: the head under 1280px, where five
-controls wrap.
+**Phase 10, Task 9c: prices from a file, on the screen** (ADR-297).
+Export and Import in the Menu screen's head are now one **Spreadsheet**
+pill with a third choice, **Change prices**: export, edit the Price
+column, choose the file, read a table of Item, Now, New and Change
+(largest first), **Change N prices**. `SpreadsheetMenu.tsx`,
+`PricesModal.tsx`, `prices-logic.ts`, and `FileParts.tsx` shared with
+the import. Task 9 is done. Walked in a browser on the dev venue: four
+prices changed and then put back from the untouched export. Not
+walked: the refusal when another screen edits the menu in between
+(tested on the server), and the modal under 1024px.
 
 ## Next task
 
-**Phase 10, Task 9: change prices from a file. An ADR first**, before
-any code, on two things the task leaves open: how a row finds its item
-(category and name, as the import does; what of two items with one
-name in one category, which the menu allows), and what a row that
-finds no item is (a problem, or left out and said so). Then **9a**:
-`internal/domain/menu`, pure, beside `ReadImport`: for each row its
-item, the price it has and the price the file gives; rows unchanged;
-rows that match nothing; problems by row and column. It reads the
-export's file (ADR-293), so its columns and its price parsing
-(`importPrice`) are the import's. Only the Price column is acted on.
+**Phase 10, Task 10a: ingredients from a file, the reader and the
+server.** `internal/domain/stock`, pure, as `menu.ReadImport` is:
+columns Name, Counted in (g, ml, each), Low at, Cost, Count at close.
+No opening stock from a file (stock arrives by Receive). Adding only;
+one bad row refuses the file; a template made for the venue. Then
+preview, import and template routes under `stock.manage`, as ADR-289
+and ADR-290 did for the menu. Read `backoffice-stock.md` and how the
+Stock item form reads a cost for a kilogram or a litre
+(`stock-logic.ts`, `costMeasures`) before choosing the Cost column's
+unit, and write that choice in the ADR. The menu's reader has pieces
+worth sharing (`importRecords`, `readHeading`, `foldHeading`); move
+them to a small package both import only if that reads more simply
+than a second copy.
 
 **Task 12a can be done first, in any session**: find out whether a
 venue whose owner forgot the PIN can get back in (`mez unlock` does not

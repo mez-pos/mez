@@ -261,7 +261,7 @@ session; split one again if it is not.
     the Menu screen's head, the spec first. Decide and write down whether
     it follows the screen's filter or is always the whole menu.
 
-- [ ] **Task 9 — Change prices from a file.**
+- [x] **Task 9 — Change prices from a file.**
   The import adds only (ADR-288). This is the other half, and it is kept
   apart from it because it is the half that can damage a live menu: an
   exported file with its prices edited comes back and changes them. Only
@@ -279,7 +279,7 @@ session; split one again if it is not.
     (ADR-289): one menu edit, read again inside the write, refused whole on
     any problem. Open tickets keep what they were rung up at
     (`02-domain.md`, "Prices and the snapshot rule"); a test proves it.
-  - [ ] **Task 9c: The screen.** Spec first. The preview is a table of
+  - [x] **Task 9c: The screen.** Spec first. The preview is a table of
     item, old price, new price and the difference, the largest changes
     first, and says that open orders keep their prices. Walk it in a
     browser with a file made by Task 8.

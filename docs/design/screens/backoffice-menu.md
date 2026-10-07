@@ -7,7 +7,8 @@ and rebuilt from D18 in the rebuild's Task 16f (ADR-190).
 `web/backoffice/src/menu/`: `MenuScreen.tsx`, `CategoryRail.tsx`,
 `ItemList.tsx`, `ItemEditor.tsx`, `ItemGroupsField.tsx`, `ItemPhotoField.tsx`,
 `GroupsView.tsx`, `GroupFormModal.tsx`, `SetupView.tsx`, `SetupModals.tsx`,
-`ImportModal.tsx`, `browse-logic.ts`, `import-logic.ts`, `menu-logic.ts`,
+`SpreadsheetMenu.tsx`, `ImportModal.tsx`, `PricesModal.tsx`, `FileParts.tsx`,
+`browse-logic.ts`, `import-logic.ts`, `prices-logic.ts`, `menu-logic.ts`,
 `use-menu-editor.ts`. Section **Menu**,
 path `/menu`, `menu.edit`, keys `g m`.
 
@@ -25,8 +26,9 @@ Inside the frame (`backoffice-shell.md`).
 - **The head:** "Menu Management" in the serif, and "Create and manage
   items, categories and their choices. Changes reach every order screen at
   once." At the right, on Items: the search ("Search menu items"), a select
-  of what to show (**All items**, Active, Sold out, Retired), **Export**,
-  **Import**, and **Add New Item** (terracotta).
+  of what to show (**All items**, Active, Sold out, Retired), **Spreadsheet**
+  (a menu: Export the menu, Import new items, Change prices), and **Add New
+  Item** (terracotta).
 - **Three views**, as pills under the head: **Items**, **Choices**,
   **Stations and courses**.
 - The screen's problem line, for a refusal that belongs to no field.
@@ -91,16 +93,30 @@ the editor drops below the other two.
   retired: "Add another before retiring it." A toast says what moved: "Bar
   retired. 10 items moved to Kitchen. Its printer now serves Kitchen."
 
+### The Spreadsheet menu (ADR-297)
+
+One pill in the head, **Spreadsheet**, opens the three things a file does,
+each with a line under it saying what it does and does not touch:
+
+- **Export the menu**: "Save every item as a CSV file."
+- **Import new items**: "Add items from a file. Nothing already on the menu
+  changes."
+- **Change prices**: "Give back an export with its prices edited."
+
+It is one pill and not three buttons: with the search, the select and Add
+New Item the head had no room, and the three belong together. While a file
+is being saved the pill says **Exporting**.
+
 ### Export (ADR-293, ADR-294)
 
-**Export** in the head, before Import, saves `mez-menu.csv`: every item on
-the menu, retired ones included, in menu order.
+**Export the menu** saves `mez-menu.csv`: every item on the menu, retired
+ones included, in menu order.
 
 - It is always the whole menu. The search, the select and the category
   chosen do not narrow it: a copy that leaves out what a filter hid is not
   a copy. Its title says so: "Save the whole menu as a CSV file".
-- While it is being read the button says **Exporting** and cannot be
-  pressed again. There is no toast when it lands: the browser shows the
+- While it is being read the pill says **Exporting** and does not open
+  again. There is no toast when it lands: the browser shows the
   download. A failure is a toast, "Couldn't download the file: ...".
 - The file has the import's columns and **Status**, so it opens in a
   spreadsheet, and with rows added it can be given to **Import**, which
@@ -110,7 +126,7 @@ the menu, retired ones included, in menu order.
 
 ### Import (ADR-288 to ADR-291)
 
-A modal from **Import** in the head, for a menu that is already written
+A modal from **Import new items**, for a menu that is already written
 down somewhere. It adds items; it never changes or removes one.
 
 - **Choose a file.** Three numbered steps, each one line:
@@ -143,8 +159,46 @@ down somewhere. It adds items; it never changes or removes one.
   "The menu changed since this file was checked. This is how it stands
   now."
 
+### Change prices (ADR-295 to ADR-297)
+
+A modal from **Change prices**, for many prices at once. It changes prices
+and nothing else: a file never renames, moves, retires, adds or removes an
+item.
+
+- **Choose a file.** Three numbered steps:
+  1. "Export the menu." with **Export the menu**.
+  2. "Change the numbers in the Price column and save it as CSV UTF-8.
+     Leave the Category and Name as they are: that is how each row finds
+     its item."
+  3. "Choose the file. You see every price it would change before any
+     changes." with **Choose a file**.
+- **Something is wrong** with it: as the import shows it, the table of
+  Where, Column and What is wrong, under "3 problems in menu.csv. No price
+  has been changed."
+- **Ready:** "12 prices to change." Then, each only when it applies: "30
+  rows keep the price they have."; "2 rows are not on the menu and are left
+  out: Cortado, Idli. To add them, use Import new items." (the first five
+  names, then "and 3 more"); and, in the attention tint, "1 item would be
+  free." for a new price of zero.
+  - The table: **Item** (its name over its category), **Now**, **New** and
+    **Change** ("+₹10.00", "−₹5.00"), every figure tabular and
+    right-aligned, the largest change first whichever way it goes, so a
+    slipped digit is at the top. It scrolls inside itself.
+  - Under it: "Orders already open keep the prices they were rung up at.
+    The next line rung up takes the new one."
+  - **Change 12 prices** is the primary; **Choose another file** beside it.
+- **Nothing to change:** "No price in menu.csv differs from the menu."
+- **Changed:** the modal closes; a toast, "Changed 12 prices. Orders
+  already open keep theirs."
+- **The menu changed** since the file was checked, by anyone, on any
+  screen: the prices are not applied. The file is checked again and shown
+  as it stands now, under "The menu changed since this file was checked.
+  This is how it stands now.", and the owner presses again.
+
 ## Data
 
+- `POST /api/v1/menu/prices/preview` and `POST /api/v1/menu/prices?version=`
+  (ADR-296). The apply sends the `version` the preview answered.
 - `GET /api/v1/menu/export` (ADR-293), saved as the reports' CSV files are.
 - `GET /api/v1/menu/import/template`, `POST /api/v1/menu/import/preview`
   and `POST /api/v1/menu/import` (ADR-289, ADR-290). The file is sent as
@@ -173,8 +227,9 @@ down somewhere. It adds items; it never changes or removes one.
 | Sold out today, Back on sale | Marks it until the trading day turns | Every order screen learns at once |
 | Retire, Bring back (an item) | No confirm: it is one click back | |
 | Retire (a category) | Asks first: "Its 6 items come off every order screen. You can bring it back." | |
-| Export | Saves the whole menu as `mez-menu.csv` | The filter does not narrow it |
-| Import | Opens the import (above) | Nothing is added until the file is checked and **Add** is pressed |
+| Spreadsheet, Export the menu | Saves the whole menu as `mez-menu.csv` | The filter does not narrow it |
+| Spreadsheet, Import new items | Opens the import (above) | Nothing is added until the file is checked and **Add** is pressed |
+| Spreadsheet, Change prices | Opens the price changes (above) | No price changes until the file is checked and **Change** is pressed |
 | Move up, Move down | Moves a row one place and saves at once | Offered on items only when the list is one category, in menu order, unfiltered |
 
 `/menu?item=<id>` opens that item in the editor as soon as the menu is read;
