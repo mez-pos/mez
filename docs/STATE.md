@@ -7,29 +7,38 @@
 
 ## Current phase
 
-**Phase 10 - Back office**, `docs/phases/phase-10.md`, reopened by the
-human on 2026-10-08 for Task 7, the menu import, which is now built
-(ADR-288 to ADR-291). **Every task in every phase is built again.** What
-is left is to see it work: the walks, a release, and a printer.
+**Phase 10 - Back office**, `docs/phases/phase-10.md`. Task 7, the menu
+import, is built and walked (ADR-288 to ADR-291). The human then added
+**Tasks 8 to 12** (ADR-292): export the menu, change prices from a
+file, import ingredients and recipes, modifier groups in the import,
+and three loose ends. Everything else in every phase is built and owes
+only being seen to work: the walks, a release, and a printer.
 
 ## Last completed task
 
 **Phase 10, Task 7d: the import's screen** (ADR-291). **Import** in the
 Menu screen's head opens a modal: get the template, fill it in, choose
 the file, read what it would add or what is wrong by row and column,
-**Add N items**. `ImportModal.tsx`, `import-logic.ts` (23 tests), two
-calls on `use-menu-editor.ts`; the spec is "Import" in
-`backoffice-menu.md`. Walked in a browser against a demo venue: the
-template, an `.xlsx` turned away, a file with six mistakes, and a good
-one that added four items and two categories and nothing the second
-time. Not walked: a file really saved by Excel or Google Sheets, and the
-modal under 1024px.
+**Add N items**. `ImportModal.tsx`, `import-logic.ts`. Walked in a
+browser, and by the human on the dev venue. Not walked: a file really
+saved by Excel or Google Sheets, and the modal under 1024px. After it:
+`v0.1.0-alpha.2` tagged on the human's machine only (not pushed, so no
+release has run), and its installer built in `dist/`.
 
 ## Next task
 
-**There is no next task in the plan.** Worth doing for the import, by
-hand: fill the template in Excel and in Google Sheets, save each as CSV
-and import it (`make build-web` first if walking `bin/mez`).
+**Phase 10, Task 8a: the menu export on the server.** `GET
+/api/v1/menu/export`, `menu.edit`, through `writeCSV`: one row for each
+item in menu order under `menu.ImportColumns` plus a **Status** column,
+which `ReadImport` must then accept and ignore (it refuses a column it
+does not know today). Build the rows in `internal/domain/menu` beside
+`ImportTemplate`, from what `Editor` reads. Test that the export,
+previewed against its own venue, has no problems and every row
+skipped. Then 8b, the button.
+
+**Task 12a can be done first, in any session**: find out whether a
+venue whose owner forgot the PIN can get back in (`mez unlock` does not
+set one), and build `mez reset-pin` only if it cannot.
 
 For the owner, in the order that unblocks the most:
 1. **A printer and a drawer.** `mez --test-print <ip> -drawer`, then a

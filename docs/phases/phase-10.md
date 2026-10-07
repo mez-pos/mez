@@ -242,6 +242,102 @@ Phase 09.
     Import on the Menu screen: get the template, choose a file, read the
     preview (to add, new categories, already there, problems by row), confirm.
 
+Tasks 8 to 12 were added by the human on 2026-10-08, after Task 7 was
+walked (ADR-292). They are in the order to build them. Each sub-task is one
+session; split one again if it is not.
+
+- [ ] **Task 8 — Export the menu to CSV.**
+  The pair to the import: the menu as it is, in the import's own columns, so
+  the file a venue downloads is a file it can give back. It is the owner's
+  copy of the menu, and what Task 9 starts from.
+
+  - [ ] **Task 8a: The export on the server.** `GET /api/v1/menu/export`,
+    `menu.edit`, through `writeCSV`: one row for each item in menu order
+    under `menu.ImportColumns`, with one more column, **Status** (Active,
+    Retired), which the import must then accept and ignore. Names are the
+    venue's own, prices as the import reads them. Test: the export of a
+    venue, previewed against it, has no problems and every row skipped.
+  - [ ] **Task 8b: The export on the screen.** **Export** beside Import in
+    the Menu screen's head, the spec first. Decide and write down whether
+    it follows the screen's filter or is always the whole menu.
+
+- [ ] **Task 9 — Change prices from a file.**
+  The import adds only (ADR-288). This is the other half, and it is kept
+  apart from it because it is the half that can damage a live menu: an
+  exported file with its prices edited comes back and changes them. Only
+  prices, in v1: a file never renames, moves, retires or removes an item.
+  An ADR first on how a row finds its item (category and name, as the
+  import does) and on what happens to a row that finds none.
+
+  - [ ] **Task 9a: Read the file as price changes.** `internal/domain/menu`,
+    pure, beside `ReadImport`: for each row its item, the price it has and
+    the price the file gives; rows unchanged; rows that match nothing;
+    problems by row and column. Money through `money.Parse`. Tests,
+    adversarial: a price unchanged, a retired item, the same item twice,
+    a decimal comma.
+  - [ ] **Task 9b: The server.** A preview and an apply, as the import has
+    (ADR-289): one menu edit, read again inside the write, refused whole on
+    any problem. Open tickets keep what they were rung up at
+    (`02-domain.md`, "Prices and the snapshot rule"); a test proves it.
+  - [ ] **Task 9c: The screen.** Spec first. The preview is a table of
+    item, old price, new price and the difference, the largest changes
+    first, and says that open orders keep their prices. Walk it in a
+    browser with a file made by Task 8.
+
+- [ ] **Task 10 — Import ingredients and recipes.**
+  Inventory has the menu's old problem: an ingredient at a time, then a
+  recipe at a time. Two files, because they are two shapes. Adding only,
+  CSV, one bad row refuses the file, a template made for the venue: the
+  import's rules (ADR-288 to ADR-291), not new ones.
+
+  - [ ] **Task 10a: Ingredients: read the file and the server.**
+    `internal/domain/stock`: Name, Counted in (g, ml, each), Low at, Cost,
+    Count at close. No opening stock from a file: stock arrives by
+    Receive, so the ledger says where it came from. Preview, import and
+    template routes, `stock.manage`. Tests.
+  - [ ] **Task 10b: Ingredients: the screen.** **Import** on Inventory,
+    spec first in `backoffice-stock.md`. Reuse what `ImportModal.tsx` can
+    give; make it shared only if both screens then read more simply.
+  - [ ] **Task 10c: Recipes: read the file and the server.** One row for
+    each ingredient a dish takes: Dish, Ingredient, Amount. A dish is found
+    by its name, an ingredient by its name; a dish named twice across two
+    categories is a problem that says so. Decide and write down whether a
+    file sets a dish's whole recipe or adds to it, and whether a choice's
+    recipe (the milk on Oat) is in v1 of this or left to the screen.
+  - [ ] **Task 10d: Recipes: the screen.** On the Recipes view, spec first.
+
+- [ ] **Task 11 — Modifier groups in the menu import.**
+  Left out of Task 7 on purpose: a group is choices with bounds, attached
+  to items, and does not fit one row for each item. The lowest of these
+  five. An ADR first on the shape (a second file of Group, Choice, Price,
+  Picked to start, with Fewest and Most on the group's first row; and how
+  an item's row names the groups it offers), then split it as Task 7 was:
+  read and check, the server, the template, the screen. Do not start it
+  until Tasks 8 to 10 have been used on a real menu.
+
+- [ ] **Task 12 — Loose ends from the import's walk.**
+  Three small things found on 2026-10-08. None depends on Tasks 8 to 11,
+  and 12a should not wait for them: do it in any session with time left.
+
+  - [ ] **Task 12a: Can a venue get back in when its owner forgets the
+    PIN?** Find out first, then build only what is missing. `mez unlock`
+    clears a lockout and does not set a PIN. Check whether anyone else may
+    reset the owner's PIN from Staff, and what a venue whose only owner
+    has forgotten it can do. If the answer is nothing: `mez reset-pin
+    -staff stf_...`, run at the machine like `mez unlock`, which sets a
+    new PIN by the rules of ADR-260 and is in the audit log. Write what was
+    found in `KNOWN.md` or the ADR either way, and in `troubleshooting.md`.
+  - [ ] **Task 12b: The dev banner prints a PIN the venue may not have.**
+    `build/dev.sh` says "sign in as Priya, PIN 246813" on every run, but a
+    dev venue made before ADR-260 has 1234. Print the PIN only on the run
+    that sets the venue up, and on later runs say where it came from and
+    that deleting the data directory makes a fresh one.
+  - [ ] **Task 12c: The template's example rows, left in a file.** They are
+    imported as items named "Example: ..." with a warning in the preview
+    (ADR-290, ADR-291). The human has not said whether they should be left
+    out instead. Ask; if yes, they are reported as skipped, never dropped
+    in silence, and the rule is in the reader with a test.
+
 ## Done when
 A new venue can be configured end to end from back office — menu, tax, printers,
 staff, settings — and trade a full day, without anyone editing a config file.

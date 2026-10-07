@@ -10467,3 +10467,30 @@ and a "1,150" added four items and two categories, left an existing
 item's price alone, and added nothing the second time. Not walked: a
 file really saved by Excel or Google Sheets on this machine, and the
 modal under 1024px wide.
+
+## ADR-292 - Five more tasks for phase 10, from the import's walk
+2026-10 · Status: accepted. Added by the human on 2026-10-08.
+Context: with the menu import walked, the human asked what was missing
+and then for the answer to be made the next tasks.
+Decision: phase 10 gains Tasks 8 to 12, in the order to build them.
+  - **8, export the menu**, before anything else: it is small, it is
+    the owner's copy of their menu, and Task 9 cannot start without a
+    file to edit. It writes the import's own columns so the two cannot
+    drift, and a test gives the export back to the import.
+  - **9, change prices from a file**, as its own thing and not a switch
+    on the import. ADR-288 kept the import to adding because a file that
+    changes what is there can damage a live menu quietly. That is still
+    true, so the change is a separate action with a preview of old and
+    new, and it changes prices only.
+  - **10, ingredients and recipes**, by the import's rules.
+  - **11, modifier groups**, last, and not before 8 to 10 have met a
+    real menu: its shape is the least certain and the need the least
+    proven.
+  - **12, three loose ends.** One of them (12a) may be a way for a venue
+    to be locked out of its own back office, and is to be looked at
+    first, in any session, whatever task is current.
+Cost: phase 10's "done when" was met before these and is not changed by
+them; they are additions to a built phase, like Task 7. None is in the
+v1 spine (register to Z-report). They are here because typing a menu
+and an inventory in by hand is the first thing a new venue does, and
+the thing most likely to end the trial.
