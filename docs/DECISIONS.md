@@ -10494,3 +10494,37 @@ them; they are additions to a built phase, like Task 7. None is in the
 v1 spine (register to Z-report). They are here because typing a menu
 and an inventory in by hand is the first thing a new venue does, and
 the thing most likely to end the trial.
+
+## ADR-293 - The menu's export is a file its import takes back
+2026-10 · Status: accepted. Phase 10, Task 8a.
+Decision: `GET /api/v1/menu/export` (`menu.edit`) answers the whole menu
+as `mez-menu.csv`, through `writeCSV`: a row for each item, retired ones
+included, by category in the menu's order and then in each category's
+own. The columns are the import's eleven and one more, **Status**
+(Active or Retired). It is always the whole menu: a copy that leaves
+out what a filter hid is not a copy.
+  - **What an item names, it names by name**: its category, tax class,
+    station and course as the venue calls them, which is what a row of
+    the import gives.
+  - **A price is the canonical form with the code taken off**
+    (`180.00`, `1150` in a currency with no minor unit), from
+    `money.Amount.String`. No digit is worked out in the export, and a
+    test reads each back to the same minor units.
+  - **The import now takes its own export back.** Two things had to
+    give. `ReadImport` accepts a Status column and does not read it: a
+    file never retires an item or brings one back, and a new row is
+    added on sale whatever its Status says. And a row for an item
+    already there is left alone before its category is looked at, so an
+    item in a retired category is skipped, not a problem. A new item
+    still cannot go into a retired category.
+  - **The round trip is the test**, in all three layers: a venue's
+    export, given to its import, has no problems and nothing to add.
+    That holds for an item in a retired category, one whose tax class
+    is retired, one with no HSN at a venue that now needs one, a name
+    with a comma and quotes in it, and two items of one name.
+Cost: the export does not carry modifier groups, photos, the order of
+categories with no items, or which items are sold out today; it is the
+items and nothing else. A category with no items is not in the file at
+all. Status is written and never read, which an owner who types
+"Retired" on a new row will not expect; Task 9 is where a file first
+changes something that is there. The filename has no date in it.

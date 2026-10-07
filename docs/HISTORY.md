@@ -8,7 +8,14 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 10, Task 7c: the template** (ADR-290).
+**Phase 10, Task 7d: the import's screen** (ADR-291). **Import** in the
+Menu screen's head opens a modal: template, choose the file, what it
+would add or what is wrong by row and column, **Add N items**.
+`ImportModal.tsx`, `import-logic.ts`. Walked in a browser and by the
+human on the dev venue. After it, Tasks 8 to 12 were added (ADR-292),
+and `v0.1.0-alpha.2` was tagged on the human's machine only.
+
+Before it, **Phase 10, Task 7c: the template** (ADR-290).
 `GET /api/v1/menu/import/template`: the eleven columns and two rows
 named "Example: ..." that use the venue's own first active category, tax
 class, station and course. A `CsvResponse`, through `writeCSV`.

@@ -190,3 +190,39 @@ func TestMenuImportTemplateOverHTTP(t *testing.T) {
 		t.Errorf("a cashier reading the template: %d, want 403", rec.Code)
 	}
 }
+
+// TestMenuExportOverHTTP: the menu is a CSV file to save, and given back to
+// the import it has nothing wrong and nothing to add.
+func TestMenuExportOverHTTP(t *testing.T) {
+	m := newEditorTill(t)
+	importOf(t, m.sendFile("/api/v1/menu/import", "text/csv", importSheet, nil))
+
+	rec := send(m.handler, http.MethodGet, "/api/v1/menu/export", "", m.owner)
+	if rec.Code != http.StatusOK || rec.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("export: %d %s (cache %q)", rec.Code, rec.Body, rec.Header().Get("Cache-Control"))
+	}
+	var file csvResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &file); err != nil {
+		t.Fatal(err)
+	}
+	if file.Filename != "mez-menu.csv" || file.ContentType != "text/csv; charset=utf-8" {
+		t.Errorf("file: %q as %q", file.Filename, file.ContentType)
+	}
+	lines := strings.Split(strings.TrimSuffix(file.Text, "\r\n"), "\r\n")
+	if len(lines) != 4 || lines[0] != byteOrderMark+"Category,Name,Price,Tax class,HSN,Station,Course,Description,Diet,Gluten free,Popular,Status" {
+		t.Fatalf("lines: %q", lines)
+	}
+	if lines[2] != "Food,Idli,80.50,Food,,Kitchen,Mains,,veg,no,no,Active" {
+		t.Errorf("the second item: %q", lines[2])
+	}
+
+	plan := importOf(t, m.sendFile("/api/v1/menu/import/preview", "text/csv", file.Text, nil))
+	if len(plan.Problems) != 0 || len(plan.ToAdd) != 0 || len(plan.Skipped) != 3 {
+		t.Errorf("the export, checked: %+v", plan)
+	}
+
+	cashier := m.asStaff(m.signInAs(t, "stf_ASHA0001", "2468").Token)
+	if rec := send(m.handler, http.MethodGet, "/api/v1/menu/export", "", cashier); rec.Code != http.StatusForbidden {
+		t.Errorf("a cashier exporting the menu: %d, want 403", rec.Code)
+	}
+}

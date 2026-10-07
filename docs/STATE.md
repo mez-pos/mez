@@ -16,25 +16,28 @@ only being seen to work: the walks, a release, and a printer.
 
 ## Last completed task
 
-**Phase 10, Task 7d: the import's screen** (ADR-291). **Import** in the
-Menu screen's head opens a modal: get the template, fill it in, choose
-the file, read what it would add or what is wrong by row and column,
-**Add N items**. `ImportModal.tsx`, `import-logic.ts`. Walked in a
-browser, and by the human on the dev venue. Not walked: a file really
-saved by Excel or Google Sheets, and the modal under 1024px. After it:
-`v0.1.0-alpha.2` tagged on the human's machine only (not pushed, so no
-release has run), and its installer built in `dist/`.
+**Phase 10, Task 8a: the menu export on the server** (ADR-293).
+`GET /api/v1/menu/export`, `menu.edit`: the whole menu as
+`mez-menu.csv` (a `CsvResponse`), a row for each item in menu order,
+retired ones included, in the import's columns plus **Status**.
+`menu.ExportRows` in `internal/domain/menu/export.go`,
+`Service.ExportMenu` in `internal/service/menus/export.go`. The import
+takes it back: `ReadImport` accepts Status and does not read it, and an
+item already there in a retired category is skipped, not a problem. A
+test in each layer gives a venue's export to its own import. No button
+yet, so not seen from a browser.
 
 ## Next task
 
-**Phase 10, Task 8a: the menu export on the server.** `GET
-/api/v1/menu/export`, `menu.edit`, through `writeCSV`: one row for each
-item in menu order under `menu.ImportColumns` plus a **Status** column,
-which `ReadImport` must then accept and ignore (it refuses a column it
-does not know today). Build the rows in `internal/domain/menu` beside
-`ImportTemplate`, from what `Editor` reads. Test that the export,
-previewed against its own venue, has no problems and every row
-skipped. Then 8b, the button.
+**Phase 10, Task 8b: the export on the screen.** Spec first, in
+`backoffice-menu.md`: **Export** beside Import in the Menu screen's
+head, a secondary button with a download icon. It is always the whole
+menu (ADR-293), so it is not turned off by the filter. `useCsvFile`
+from `sales/use-csv-download.tsx` already saves a `CsvResponse`:
+`download("/api/v1/menu/export")`, as the import's Download template
+does. Disabled while the menu is loading or a download is under way.
+Walk it in a browser against `make dev`: export, open the file, add a
+row, import it back.
 
 **Task 12a can be done first, in any session**: find out whether a
 venue whose owner forgot the PIN can get back in (`mez unlock` does not

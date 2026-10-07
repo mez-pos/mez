@@ -227,6 +227,9 @@ func readHeading(record []string) ([]string, string) {
 	for _, c := range ImportColumns {
 		known[foldHeading(c)] = c
 	}
+	// The export's own column. It is taken and not read: a file never
+	// retires an item or brings one back.
+	known[foldHeading(ColStatus)] = ColStatus
 	columns := make([]string, len(record))
 	have := make(map[string]bool, len(record))
 	for i, cell := range record {
@@ -326,7 +329,8 @@ func (r *importReader) read(row int, cells map[string]string) {
 	}
 
 	out := ImportRow{Row: row}
-	out.Category, out.CategoryID = r.category(cells[ColCategory], problem)
+	var retired bool
+	out.Category, out.CategoryID, retired = r.category(cells[ColCategory], problem)
 	out.Name = importName(ColName, cells[ColName], problem)
 
 	// Who it is comes first: a row for an item already there is left alone
@@ -342,6 +346,13 @@ func (r *importReader) read(row int, cells map[string]string) {
 		} else {
 			r.firstRow[key] = row
 		}
+	}
+	if retired {
+		// First, where the column is, before whatever the name had wrong.
+		problems = append([]ImportProblem{{
+			Row: row, Column: ColCategory,
+			Message: fmt.Sprintf("The category %s is retired. Bring it back in the menu first.", out.Category),
+		}}, problems...)
 	}
 
 	out.Price = importPrice(cells[ColPrice], r.venue.Currency, problem)
@@ -369,26 +380,25 @@ type reporter func(column, message string)
 
 // category is the category a cell names: the venue's, by its own spelling
 // and id, or a new one by the spelling the file first gave it and id 0.
-func (r *importReader) category(cell string, problem reporter) (string, int64) {
+//
+// A retired category is answered as retired, not reported: whether that is
+// a problem depends on the row. An item already in it is left alone, as the
+// menu's own export gives it back (ADR-293); a new item cannot go into it.
+func (r *importReader) category(cell string, problem reporter) (name string, id int64, retired bool) {
 	if cell == "" {
 		problem(ColCategory, "Give it a category.")
-		return "", 0
+		return "", 0, false
 	}
 	for _, c := range r.venue.Categories {
-		if !strings.EqualFold(c.Name, cell) {
-			continue
+		if strings.EqualFold(c.Name, cell) {
+			return c.Name, c.ID, !c.Active
 		}
-		if !c.Active {
-			problem(ColCategory, fmt.Sprintf("The category %s is retired. Bring it back in the menu first.", c.Name))
-			return "", 0
-		}
-		return c.Name, c.ID
 	}
-	name := importName(ColCategory, cell, problem)
+	name = importName(ColCategory, cell, problem)
 	if first, ok := r.newCategory[strings.ToLower(name)]; ok {
-		return first, 0
+		return first, 0, false
 	}
-	return name, 0
+	return name, 0, false
 }
 
 // addCategory notes a category the import has to make, once.

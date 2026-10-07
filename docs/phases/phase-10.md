@@ -251,7 +251,7 @@ session; split one again if it is not.
   the file a venue downloads is a file it can give back. It is the owner's
   copy of the menu, and what Task 9 starts from.
 
-  - [ ] **Task 8a: The export on the server.** `GET /api/v1/menu/export`,
+  - [x] **Task 8a: The export on the server.** `GET /api/v1/menu/export`,
     `menu.edit`, through `writeCSV`: one row for each item in menu order
     under `menu.ImportColumns`, with one more column, **Status** (Active,
     Retired), which the import must then accept and ignore. Names are the

@@ -23,6 +23,7 @@ import (
 const CodeMenuImportRefused ErrorCode = "menu_import_refused"
 
 func (s *Server) mountMenuImport(handle func(pattern string, h http.HandlerFunc)) {
+	handle("GET /api/v1/menu/export", s.exportMenu)
 	handle("GET /api/v1/menu/import/template", s.menuImportTemplate)
 	handle("POST /api/v1/menu/import/preview", s.previewMenuImport)
 	handle("POST /api/v1/menu/import", s.importMenu)
@@ -41,6 +42,20 @@ func (s *Server) menuImportTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.writeCSV(w, r, menuImportTemplateName, export.Table{Header: menu.ImportColumns, Rows: rows})
+}
+
+// menuExportName is the file the menu is saved as.
+const menuExportName = "mez-menu.csv"
+
+// exportMenu answers the whole menu as a CSV file (ADR-293), in the columns
+// the import reads, so it can be given back.
+func (s *Server) exportMenu(w http.ResponseWriter, r *http.Request) {
+	rows, err := s.menuEditor.ExportMenu(r.Context(), Meta(r).VenueID)
+	if err != nil {
+		s.writeMenuEditError(w, r, err)
+		return
+	}
+	s.writeCSV(w, r, menuExportName, export.Table{Header: menu.ExportColumns, Rows: rows})
 }
 
 // previewMenuImport answers what a file would add. A file full of problems
