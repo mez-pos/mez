@@ -86,6 +86,47 @@ Phase 11.
   tested restore procedure — **actually restore from a backup and verify it**,
   do not just write the docs.
 
+  Split on 2026-10-07, before any of it was built: it is a new dependency
+  that sits on the database's write-ahead log, two kinds of destination, a
+  folder of files the database does not hold, a write path with a secret
+  in it, a screen, and a restore that has to be done for real. Six
+  sessions, not one.
+
+  - [ ] **Task 4a - Litestream in the binary, to a folder.**
+    `internal/backup` over Litestream as a library (no second program, no
+    cgo): started with the server and stopped with it, replicating
+    `mez.db` to a folder named in a file in the data directory. Back up
+    now, a status (when it last reached the destination, and what went
+    wrong), and a restore into a new file, tested by restoring a database
+    that was being written to and comparing it. No API, no screen, no S3.
+  - [ ] **Task 4b - S3 and R2.**
+    The second kind of destination: bucket, path, region, endpoint (R2 and
+    the other S3-compatibles), key and secret. The AWS SDK comes with it.
+    Tested against an S3 that answers on this machine; say plainly if no
+    real bucket was written to.
+  - [ ] **Task 4c - The photos folder (ADR-110).**
+    `<data dir>/photos/` copied beside the database's backup, to a folder
+    and to a bucket: files named by their hash, so only the missing ones
+    go, on the same clock and on "back up now". Restore brings them back.
+  - [ ] **Task 4d - The write path and the API.**
+    The settings service reads and writes the destination under
+    `settings.edit`, checks it can be written to before keeping it, and
+    restarts replication with no restart of the server. The secret goes in
+    and never comes back out. `GET` and `PUT /api/v1/settings/backup`,
+    `POST /api/v1/settings/backup/now`, the status with them, generated
+    types.
+  - [ ] **Task 4e - The Backups section of settings.**
+    The spec first (`docs/design/screens/backoffice-settings.md`, its
+    Backup row stops saying Soon). Off, a folder, or a bucket; the status
+    in colour and a word; "Back up now". Walked in a browser.
+  - [ ] **Task 4f - Restore, done and written down.**
+    `mez restore`: from a destination into an empty data directory, the
+    database and the photos, refusing to write over a venue. Then do it:
+    back up a venue that has sold, restore it on another data directory,
+    start mez on it, and check the invoices, the next invoice number and
+    the photos. `deploy.md`'s Backups section is rewritten from what was
+    done, and `running.md`, the README and `KNOWN.md` stop saying phase 12.
+
 - [ ] **Task 5 — Docker and Linux.**
   A small multi-stage image. `docker-compose.yml` with a volume and the relay
   optional. A systemd unit file for bare-metal Linux. Same binary, no second
