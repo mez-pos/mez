@@ -136,7 +136,7 @@ Phase 11.
   GoReleaser or an equivalent Actions workflow: tag → cross-compiled binaries,
   the Windows installer, the Docker image, checksums, and a changelog.
 
-- [ ] **Task 7 — Documentation.**
+- [x] **Task 7 — Documentation.**
   README with a screenshot and a sixty-second pitch. Install guides for Windows,
   Docker and Linux. Hardware compatibility notes on printers and drawers. A
   self-hosted relay guide. CONTRIBUTING with the architecture overview.
@@ -182,7 +182,7 @@ Phase 11.
     minutes: the packages, what calls what, where an order goes from a
     tap to a printed ticket. It links to `01-architecture.md` and does
     not copy it.
-  - [ ] **Task 7f - The README: a screenshot and sixty seconds.**
+  - [x] **Task 7f - The README: a screenshot and sixty seconds.**
     `make build-web`, the demo cafe, and a screenshot of the till taken
     in a browser, kept in the repository. The pitch at the top, readable
     in a minute by a cafe owner. The status, the ways to run it and the

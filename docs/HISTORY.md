@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 12, Task 7d: the relay guide** (ADR-284). The venue's side in
+**Phase 12, Task 7e: CONTRIBUTING, with the architecture** (ADR-285).
+`CONTRIBUTING.md` gains "How it fits together": the layers, an order as
+events, one tap followed from the till to the printer. Its versions,
+targets and tree brought up to date; `01-architecture.md` corrected where
+it had stopped being true.
+
+Before it, **Phase 12, Task 7d: the relay guide** (ADR-284). The venue's side in
 `deploy.md`, "Guests ordering from their phones": three settings
 (`public_url` with the two), where they go, how to check.
 `build/relay/README.md` for the operator: the key, the venue id, every

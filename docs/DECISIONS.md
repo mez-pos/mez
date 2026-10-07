@@ -10213,3 +10213,36 @@ package) that can be renamed under them. Each step was read against
 `internal/service/order/service.go` on 2026-10-07; nothing checks it
 after that.
 ---
+
+## ADR-286 - The README leads with a picture and a minute, and says what has not happened
+2026-10 · Status: accepted. Phase 12, Task 7f.
+Decision:
+  - **A screenshot under the first paragraph**: the register at 1366 by
+    900, the demo cafe's menu and a takeaway order of three lines with
+    GST and a total. Taken in a browser from `bin/mez` after `make
+    build-web`, on a demo venue made for it and thrown away. Kept as
+    `docs/img/till.png`, a PNG of about 150 KB, with alternative text.
+  - **"In a minute", written to a cafe's owner**: eight short points in
+    their terms (the internet off, one file, every screen a browser, one
+    ticket, the books, their data, guests, free), each a thing the code
+    does.
+  - **The status says what has not happened**, in the same box as what
+    is built: no printer printed on, no drawer opened, no release, no
+    real charge, no venue. "Try it beside the till you have."
+  - **Brought up to date**: the table of what it does (guests; running
+    it), the ways to run it, each with how far it has been run, the
+    platforms, the documents table with the guides first, and the
+    licence.
+  - **The licence section states what is so.** The guest app was meant
+    to be MIT and carries no licence file, so it is under the AGPL. That
+    it "will" be MIT is no longer promised; the choice is the owner's.
+  - **`troubleshooting.md` corrected**: the register's status word is
+    "Online", at the foot of the screen. "Live" is the lock screen's and
+    the kitchen's. The screenshot is how it was noticed.
+Because: a reader decides in the first screen whether this is for them,
+and an owner who installs an alpha believing it is finished is the
+worst outcome this file can cause.
+Cost: the screenshot is of one screen on one day and nothing retakes
+it. The demo menu has no photos. The pitch claims what tests and a
+developer's browser support, not what a cafe has found.
+---

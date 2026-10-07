@@ -10,6 +10,17 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The README** (ADR-286; phase 12 Task 7f). The screenshot
+  (`docs/img/till.png`) is the register at 1366 by 900 with the demo
+  menu, taken from `bin/mez` on 2026-10-07: it will go stale as the
+  screen changes, and nothing retakes it. The demo menu has no photos, so
+  it shows placeholders where a venue's would be. The guest app has no
+  licence file of its own and is under the AGPL; whether it becomes MIT
+  is the owner's to decide. **Phase 12's "done when" has not been
+  tried**: a clean Windows machine, from the downloaded installer to a
+  first printed invoice in under ten minutes. It needs a release, a
+  spare machine and a printer.
+
 - **The relay's guides** (ADR-284; phase 12 Task 7d; `deploy.md`,
   "Guests ordering from their phones"; `build/relay/README.md`). Checked
   against the code, the relay's binary and two answers from

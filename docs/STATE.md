@@ -7,42 +7,40 @@
 
 ## Current phase
 
-**Phase 12 - Ship it**, `docs/phases/phase-12.md`. Tasks 1 to 6 built;
-Task 7, the documentation, is split in six (7a to 7f): 7a to 7e are
-done, and the README (7f) is the last task of the phase. Phase 11 has
-nothing left to build (Cashfree left out, ADR-254) and owes its walks.
+**Phase 12 - Ship it**, `docs/phases/phase-12.md`. **Every task is
+built**, Task 7's six parts included. Nothing is left to build in any
+phase; what is left is to see it work: the walks each phase owes, a
+release, and a printer.
 
 ## Last completed task
 
-**Phase 12, Task 7e: CONTRIBUTING, with the architecture** (ADR-285).
-`CONTRIBUTING.md` gains "How it fits together": the layers and which
-way they look, an order as events, one tap followed from the till to
-the printer, generated types, the three apps. Its versions, targets,
-tree and checklist are brought up to date. `01-architecture.md` had
-facts that stopped being true (Go's version, the layout, a scheduler
-that was never built, the guests' address) and they are corrected.
+**Phase 12, Task 7f: the README** (ADR-286). A screenshot of the
+register (`docs/img/till.png`, from `bin/mez` with the demo cafe), the
+pitch in a minute for a cafe owner, and a status that says what has not
+happened: no printer printed on, no release, no real charge, no venue.
+The ways to run it, the documents table and the licence section are
+brought up to date. `troubleshooting.md` said the till's status word is
+"Live"; on the register it is "Online", and that is corrected.
 
 ## Next task
 
-**Phase 12, Task 7f: the README.** `make build-web`, then `make dev`
-or a demo venue on `bin/mez`, and a screenshot of the till in a browser
-at 1366 wide, with an order on it, kept in the repository (say where:
-`docs/img/`). The pitch at the top, readable in a minute by a cafe
-owner. Bring up to date: the status paragraph; "Until releases are
-published"; the "Ways to run it" table, which says the installer and
-service arrive in phase 12; Go 1.25; the documents table, adding
-`hardware.md`, `troubleshooting.md`, `KNOWN.md` and the relay's README;
-the licence section, which says the guest app ships in phase 11 and
-will carry its own `LICENSE` (it has none: ask the owner, do not
-decide). Stop the dev server before `make check`. **For the owner, not a
-task**: push a tag to try the release (`docs/releasing.md`); expect the
-first to need a second try. **Do not move Litestream past v0.5.15
-without running the tests on Windows.** Before a release,
-run the Windows installer once on a spare machine: "Open mez now" opening
-the setup link (ADR-270) and the window it opens in (ADR-272) have not
-been watched since they changed. `make check` embeds
-whatever `web/*/dist` holds: run `make build-web` before walking a screen
-against `bin/mez`.
+**There is no next task in the plan.** For the owner, in the order that
+unblocks the most:
+1. **A printer and a drawer.** `mez --test-print <ip> -drawer`, then a
+   sale. Nothing has ever been printed (`hardware.md`, ADR-282).
+2. **A release.** Push a tag (`docs/releasing.md`); expect the first to
+   need a second try. The workflow has never run.
+3. **Phase 12's "done when"**: a clean Windows machine, the downloaded
+   installer, a first printed invoice in under ten minutes. "Open mez
+   now" opening the setup link (ADR-270) and the window it opens in
+   (ADR-272) have not been watched since they changed.
+4. The human checks phases 09 to 11 owe, and the questions below.
+5. Decide the guest app's licence: the README says it was meant to be
+   MIT and is under the AGPL.
+
+**Do not move Litestream past v0.5.15 without running the tests on
+Windows.** `make check` embeds whatever `web/*/dist` holds: run `make
+build-web` before walking a screen against `bin/mez`.
 
 Still owed from phase 11, its human check and:
 - **No real charge has been made yet** (ADR-221): with test keys, on a phone, Pay
@@ -102,4 +100,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 10 - Back office: menu editor, inventory, reports (built; owes its human check)
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
-- [ ] 12 - Installer, Windows Service, Docker, Litestream, docs
+- [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)

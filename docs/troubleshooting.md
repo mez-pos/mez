@@ -19,7 +19,7 @@ been followed at a venue with a real printer on the counter.
 
 | What | Where |
 |---|---|
-| Whether this till is talking to the server | The word at the top of the till: **Live**, **Reconnecting**, **Server unreachable**, **No network** |
+| Whether this till is talking to the server | The word beside the Wi-Fi mark, along the foot of the till (on a waiter's handheld and in the back office, in the top bar): **Online**, **Reconnecting**, **Server unreachable**, **No network** |
 | What did not print, and why | **Print queue**, on the till |
 | Whether guests' phones can reach the venue | Back office, **Devices**, **Ordering from phones** |
 | The server's own account of anything | `logs/mez.log` in the data directory (`C:\ProgramData\mez\logs\mez.log` on Windows). On Windows, warnings and errors are also in Event Viewer, **Windows Logs**, **Application**, source **mez**. Under systemd, `journalctl -u mez` |
@@ -121,12 +121,12 @@ What you see depends on how far it got:
   mez screen appears.
 - On the pairing screen: "Can't reach the mez server at 192.168.1.20:7777.
   Check this device is on the venue's network."
-- On a till that was working: **Server unreachable** or **No network** at
-  the top, with a **Retry now** button. **Reconnecting** for a few seconds
-  is normal and mends itself.
+- On a till that was working: **Server unreachable** or **No network**
+  where it said **Online**, and a **Retry now** button in the top bar.
+  **Reconnecting** for a few seconds is normal and mends itself.
 
 A till needs the server, and the server needs no internet. If the venue's
-internet is down and the tills still say **Live**, nothing is wrong.
+internet is down and the tills still say **Online**, nothing is wrong.
 
 Check in this order. Each step rules out everything before it.
 

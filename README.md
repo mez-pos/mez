@@ -1,17 +1,50 @@
 # mez
 
-An open-source, self-hostable point of sale for cafes, bars and small
-restaurants. One binary on the venue's own computer. It keeps selling with no
-internet connection.
+A point of sale for cafes, bars and small restaurants that runs on the
+venue's own computer and keeps selling with no internet. Open source, one
+file to install, no subscription.
 
-**One ticket, wherever it starts.** Counter, table or kitchen: the same ticket,
-the same kitchen display, the same invoice series, the same night's Z-report.
+![The mez till: the menu on the left, a takeaway order of three lines on the right, with GST and a total of 550 rupees](docs/img/till.png)
 
-> **Status: alpha.** The till, kitchen display, payments, invoices, shifts,
-> Z-reports, the back office, guest QR ordering, the Windows service and the
-> Windows installer are built and tested, and so is the setup wizard a new venue
-> opens on, and backups to a folder or a bucket, set from the back office. Not yet recommended for a venue's only
-> till. [`docs/STATE.md`](docs/STATE.md) says exactly where the build is.
+## In a minute
+
+You run a cafe. Your till should not stop when the broadband does, should
+not bill you every month for each tablet, and should not keep your sales on
+somebody else's server.
+
+- **It works with the internet off.** mez runs on a computer behind your
+  counter. Tills, tablets and kitchen screens talk to it over your own
+  network. The internet is not involved in taking an order, sending it to
+  the kitchen, taking payment or printing the bill.
+- **One file.** On Windows, an installer; a wizard asks your venue's name,
+  your tax and a PIN, looks for your receipt printer, and leaves you signed
+  in at the till. There is no database to set up and no account to create.
+- **Every screen is a browser.** A second till, a waiter's tablet, a
+  kitchen display: open the address, type a pairing code. Nothing to
+  install on them.
+- **One ticket, wherever it starts.** Counter, table or kitchen: the same
+  ticket, the same kitchen display, the same invoice series, the same
+  night's Z-report.
+- **The books are done properly.** Gapless invoice numbers by financial
+  year, GST, VAT or sales tax, credit notes for refunds, a blind drawer
+  count and a Z-report at close, exports for your accountant.
+- **Your data is yours.** It is one folder on your computer. mez copies it,
+  as you sell, to a second disk or to cloud storage you choose, and can
+  bring the whole venue back from that copy.
+- **Guests can order from their table**, by scanning a code with their own
+  phone, if you want that. It is the one part that needs the internet, and
+  the counter carries on without it.
+- **Free, and open.** AGPL-3.0. No fee per till, per month or per sale.
+
+> **Status: alpha, and not yet proven in a cafe.** Everything in the table
+> below is built and covered by tests, and most of it has been walked
+> through in a browser by its developer. What has **not** happened yet: no receipt has been printed on a
+> real printer and no cash drawer opened by one, no release has been
+> published (you build it yourself for now), no real payment has gone
+> through a gateway, and no venue has run a service on it. Try it beside
+> the till you have; do not make it your only one yet.
+> [`docs/KNOWN.md`](docs/KNOWN.md) lists what is known to be missing or
+> unseen.
 
 ## What it does
 
@@ -25,6 +58,8 @@ the same kitchen display, the same invoice series, the same night's Z-report.
 | **Printing** | ESC/POS receipts and tickets over TCP:9100, a durable print queue, cash drawer kick |
 | **Shifts** | Open and close, blind drawer count, cash in and out, Z-report, tip pooling, Tally and CSV exports |
 | **Back office** | Menu editor with photos and sold-out, recipes and stock, staff, roles and permissions, sales reports with heatmap, audit trail, every venue setting, device pairing |
+| **Guests** | Ordering from a table's QR code on the guest's own phone, staff accepting each new phone, order tracking, ordering to collect, paying online through Razorpay or Stripe; over an optional relay |
+| **Running it** | A Windows installer and service, a setup wizard, a systemd unit, a Docker image, continuous backups to a folder or an S3 bucket, and a restore that was carried out |
 
 Everything runs on the venue's machine. Tills, tablets and kitchen screens are
 browsers on the same network. There is no cloud account, no subscription and
@@ -81,6 +116,9 @@ Check a receipt printer before service, with no setup needed:
 ./mez --test-print 192.168.1.50
 ```
 
+[`docs/hardware.md`](docs/hardware.md) says what a printer and a cash
+drawer need to be, before you buy one.
+
 ## The Windows installer, and the warning Windows shows
 
 `make dist && make installer` builds `mez_<version>_windows_amd64_setup.exe`
@@ -116,14 +154,17 @@ say so.
 
 | How | Status | Guide |
 |---|---|---|
-| **Windows**, the `.exe` on the counter PC | Works today. Installer and Windows service arrive in phase 12 | [Windows](docs/deploy.md#windows) |
-| **Linux**, bare metal with systemd | Works today | [Linux](docs/deploy.md#linux) |
-| **Docker**, with a volume for the data | Works today: `build/Dockerfile` and `build/docker-compose.yml` | [Docker](docs/deploy.md#docker) |
+| **Windows**, with the installer, as a service | Built and run on a developer's PC; not yet from a published release | [Windows](docs/deploy.md#windows) |
+| **Linux**, with systemd, a Raspberry Pi included | Run under systemd in a container; not yet on a machine of its own, and not on arm64 | [Linux](docs/deploy.md#linux) |
+| **Docker**, with a volume for the data | Run: `build/Dockerfile` and `build/docker-compose.yml` | [Docker](docs/deploy.md#docker) |
 | **On a domain** with HTTPS, behind Caddy or nginx | Works today, with trade-offs to read first | [On a domain](docs/deploy.md#on-a-domain-with-https) |
 
-[`docs/deploy.md`](docs/deploy.md) covers all four, plus backups and
-upgrades. [`docs/running.md`](docs/running.md) covers every setting, where the
-data lives, and what to do when it will not start.
+[`docs/deploy.md`](docs/deploy.md) covers all four, plus guests ordering
+from their phones, backups and upgrades.
+[`docs/running.md`](docs/running.md) covers every setting and command and
+where the data lives. When something does not work,
+[`docs/troubleshooting.md`](docs/troubleshooting.md) starts from what the
+screen says.
 
 ## Building from source
 
@@ -138,8 +179,9 @@ make check       # gofmt, go vet, Go tests, TypeScript typecheck, build bin/mez
 make dist        # release binaries with the apps embedded, in dist/
 ```
 
-`make help` lists every target. No cgo, so one machine cross-compiles for all
-three platforms, and two builds of the same commit are byte-identical.
+`make help` lists every target. No cgo, so one machine cross-compiles for
+Windows, Linux (amd64 and arm64) and macOS, and two builds of the same
+commit are byte-identical.
 
 ## How it is built
 
@@ -157,11 +199,16 @@ three platforms, and two builds of the same commit are byte-identical.
           receipt and kitchen printers, cash drawer
 ```
 
+A guest's phone, when that is turned on, reaches the same binary through a
+relay it dials out to; nothing at the venue is opened to the internet.
+
 Go with the standard library's HTTP server, SQLite through `modernc.org/sqlite`
 (pure Go), SQL written by hand and compiled with sqlc, React and TypeScript
 with Vite and Tailwind. Orders are an append-only event log; what a screen
 shows is a projection of it. Money is always integer minor units.
-[`docs/01-architecture.md`](docs/01-architecture.md) has the full picture.
+[`docs/01-architecture.md`](docs/01-architecture.md) has the full picture,
+and [CONTRIBUTING.md](CONTRIBUTING.md#how-it-fits-together) follows one
+order from a tap to a printed ticket.
 
 ## Contributing
 
@@ -173,16 +220,20 @@ proposed.
 
 | File | What it covers |
 |---|---|
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setting up, the workflow, the rules, sending a change |
-| [`docs/deploy.md`](docs/deploy.md) | Windows, Linux, Docker, a domain with HTTPS, backups, upgrades |
+| [`docs/deploy.md`](docs/deploy.md) | Installing on Windows, Linux and Docker, a domain with HTTPS, guests ordering from their phones, backups, upgrades |
+| [`docs/running.md`](docs/running.md) | Every setting and command, the data directory, logs, the printer test |
+| [`docs/hardware.md`](docs/hardware.md) | What a receipt printer and a cash drawer need to be, and what cannot be used |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md) | Printer not found, a tablet that cannot connect, Windows's warning, guest ordering down, a drawer that will not open |
+| [`build/relay/README.md`](build/relay/README.md) | Running a relay of your own |
+| [`docs/KNOWN.md`](docs/KNOWN.md) | What is broken, left out or not yet seen working |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setting up, how the code fits together, the rules, sending a change |
 | [`docs/releasing.md`](docs/releasing.md) | Making a release, for whoever does |
-| [`docs/running.md`](docs/running.md) | Settings, data directory, logs, printer test, troubleshooting |
 | [`docs/00-product.md`](docs/00-product.md) | Scope and non-goals |
 | [`docs/01-architecture.md`](docs/01-architecture.md) | The system and why it is shaped this way |
 | [`docs/02-domain.md`](docs/02-domain.md) | Money, orders, invoices and tax |
 | [`docs/03-conventions.md`](docs/03-conventions.md) | How code is written here |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | Every non-obvious decision, as numbered ADRs |
-| [`docs/STATE.md`](docs/STATE.md) | Where the build is, and what is known to be broken |
+| [`docs/STATE.md`](docs/STATE.md) | Where the build is, and what is next |
 | [`docs/phases/`](docs/phases/) | The build plan, phase by phase |
 | [`docs/design/`](docs/design/) | Design tokens and screen specs |
 | [`web/README.md`](web/README.md) | The three frontends and their dev servers |
@@ -190,10 +241,11 @@ proposed.
 
 ## Licence
 
-The server, terminal and back office are licensed under **AGPL-3.0**. See
-[LICENSE](LICENSE). If you run a modified mez for others over a network, you
-must offer them its source.
+mez is licensed under **AGPL-3.0**: the server, the terminal, the back
+office, the guest ordering app and the relay. See [LICENSE](LICENSE). If
+you run a modified mez for others over a network, you must offer them its
+source.
 
-The guest ordering app (`web/guest/`) is intended to be **MIT**, since it is
-embedded in other people's pages. It will carry its own `LICENSE` file when it
-ships in phase 11; until then it is covered by the AGPL like the rest.
+The guest ordering app (`web/guest/`) was meant to be MIT, since it is
+served to other people's phones. It carries no licence file of its own, so
+today it is covered by the AGPL like the rest.
