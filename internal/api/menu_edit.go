@@ -47,6 +47,8 @@ type MenuEditor interface {
 	ImportMenu(ctx context.Context, venueID int64, data []byte) (menus.Import, error)
 	ImportTemplate(ctx context.Context, venueID int64) ([][]string, error)
 	ExportMenu(ctx context.Context, venueID int64) ([][]string, error)
+	PreviewPrices(ctx context.Context, venueID int64, data []byte) (menus.Prices, error)
+	ApplyPrices(ctx context.Context, venueID int64, data []byte, version int64) (menus.Prices, error)
 }
 
 // WithMenuEditor mounts the menu editor (phase 10, Task 2a). It needs
@@ -131,6 +133,7 @@ func (s *Server) mountMenuEditor(mux *http.ServeMux) {
 
 	s.mountStationsAndCourses(handle)
 	s.mountMenuImport(handle)
+	s.mountMenuPrices(handle)
 
 	handle("POST /api/v1/menu/groups", s.createGroup)
 	handle("PUT /api/v1/menu/groups/{id}", s.updateGroup)

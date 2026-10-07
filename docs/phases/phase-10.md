@@ -275,7 +275,7 @@ session; split one again if it is not.
     problems by row and column. Money through `money.Parse`. Tests,
     adversarial: a price unchanged, a retired item, the same item twice,
     a decimal comma.
-  - [ ] **Task 9b: The server.** A preview and an apply, as the import has
+  - [x] **Task 9b: The server.** A preview and an apply, as the import has
     (ADR-289): one menu edit, read again inside the write, refused whole on
     any problem. Open tickets keep what they were rung up at
     (`02-domain.md`, "Prices and the snapshot rule"); a test proves it.

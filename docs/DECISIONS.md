@@ -10552,3 +10552,82 @@ the file held all nineteen, retired ones marked; that file with one row
 added, given to Import, offered the one row and left nineteen alone.
 Nothing was added. Not walked: the head under 1280px wide, where five
 controls now wrap.
+
+## ADR-295 - Prices change from a file by category and name, and only prices
+2026-10 · Status: accepted. Phase 10, Task 9. Decided before its code, as the task asks.
+Context: the import adds and never changes (ADR-288). The menu's export
+(ADR-293) is a file an owner will edit and want to give back: forty
+prices changed in a spreadsheet. That is the half that can damage a
+live menu, so it is its own action with its own rules.
+Decision: `menu.ReadPrices` reads the export's file against the menu and
+answers a plan of price changes. The questions the task left open:
+  - **A row finds its item by its category's name and its own**, without
+    regard to case, as the import decides an item is already there. The
+    file carries no ids: a spreadsheet's owner would not know what they
+    were, and a stale one would change the wrong item with no way to see
+    it. A name is what the owner reads.
+  - **Two items of one name in one category** is something the menu
+    allows. A row for that name could mean either, so it is a problem
+    that says how many there are and to change them in the menu. It is
+    not guessed at and not applied to both.
+  - **A row that is no item on the menu is left out and listed**, with
+    its row, as the file spells it. It is not a problem and does not
+    refuse the file: an export with rows added for the import is still
+    a file of prices. It is not checked further either, so its price may
+    be anything. It adds nothing; adding is the import's.
+  - **Only the price is read.** The other columns may say anything,
+    including a tax class the venue does not have. A file never renames,
+    moves, retires or removes an item, and cannot change its tax.
+  - **A retired item's price may change.** It is the price it comes
+    back at.
+  - **The same item on two rows is a problem**, even when one row gives
+    the price it has: which did the owner mean?
+  - **A row whose price is the one the item has is counted, not
+    listed.** A file that changes nothing is not OK to apply.
+  - **One bad row refuses the file**, and the reading is the import's:
+    its columns, its limit of 1000 rows, and `importPrice`, so a decimal
+    comma is refused here as it is there.
+Cost: an owner who edits a name in the spreadsheet, meaning to rename
+the item, finds the row listed as not on the menu and the old item
+unchanged; the preview is where they learn it. Prices of two items that
+share a name in a category cannot be changed from a file at all. Zero is
+a price, so a cell cleared to 0 by a slip makes the item free; the
+preview's table of old and new, largest change first (9c), is the guard.
+
+## ADR-296 - A file of prices is applied only to the menu it was checked against
+2026-10 · Status: accepted. Phase 10, Task 9b.
+Decision: `POST /api/v1/menu/prices/preview` and `POST
+/api/v1/menu/prices?version=N`, both `menu.edit`, both with the CSV file
+as the body, as the import's routes are (ADR-289). They answer
+`MenuPrices`: the menu `version` it was read at, the `changes` (item,
+old and new price), how many rows are `unchanged`, the rows `unknown` to
+the menu, the `problems`, and `applied`.
+  - **Applying names the version the preview answered, and is refused
+    if the menu has moved**: 409 `menu_prices_stale`. The import needs
+    no such thing, because adding what is not there cannot go wrong by
+    being late. A price change can: the owner agreed to a table of old
+    and new, and if someone edited the menu since, that table is not
+    what would happen. Any edit moves the version, not only a price, so
+    this refuses more than it strictly must. That is the safe side, and
+    checking again is one request.
+  - **The file is still read again inside the write**, against the menu
+    as it is, so what is written is what the file says of that menu and
+    never a list of changes a client sent.
+  - **Each change is written against the price it was planned from**
+    (`SetItemPrice ... AND price = was`), and a change that does not
+    land on exactly one row fails the whole edit. With the version check
+    and the single writer this cannot happen; it is there so that if it
+    ever does, nothing is half done.
+  - **One edit**: every change inside one `db.EditMenu`, one version
+    bump and one nudge, or a rollback. A file with any problem is a 422
+    `menu_prices_refused`. A file that changes nothing writes nothing
+    and answers 200 with `applied: false`.
+  - **An open order keeps what it was rung up at.** Nothing here reaches
+    an order: a line copied its price when it was added (`02-domain.md`,
+    "Prices and the snapshot rule"). A test rings a line up, applies a
+    file, and rings up another on the same order: the first is at the
+    old price and the second at the new.
+Cost: two back offices editing the menu while a third applies prices
+will see refusals until they stop. The 409 carries no plan; the screen
+checks the file again. No idempotency key is stored: the same file again
+finds every price already there and changes nothing.

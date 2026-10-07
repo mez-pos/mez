@@ -105,6 +105,8 @@ export type ErrorCode =
   | 'modifier_group_not_found'
   | 'photo_not_found'
   | 'menu_import_refused'
+  | 'menu_prices_refused'
+  | 'menu_prices_stale'
   | 'stock_item_not_found'
   | 'stock_item_retired'
   | 'stock_name_taken'
@@ -1974,6 +1976,30 @@ export interface MenuImportProblem {
   row: number;
   column: string;
   message: string;
+}
+
+export interface MenuPrices {
+  version: number;
+  changes: MenuPriceChange[];
+  unchanged: number;
+  unknown: MenuPriceUnknown[];
+  problems: MenuImportProblem[];
+  applied: boolean;
+}
+
+export interface MenuPriceChange {
+  row: number;
+  item_id: number;
+  category: string;
+  name: string;
+  old: Money;
+  new: Money;
+}
+
+export interface MenuPriceUnknown {
+  row: number;
+  category: string;
+  name: string;
 }
 
 export interface StockItemInput {

@@ -440,3 +440,13 @@ FROM items
 JOIN stations ON stations.venue_id = items.venue_id AND stations.id = items.station_id
 JOIN courses ON courses.venue_id = items.venue_id AND courses.id = items.course_id
 WHERE items.venue_id = ? AND items.id = ?;
+
+-- name: SetItemPrice :execrows
+--
+-- A price changed from a file (phase 10, Task 9, ADR-296). As UpdateItem: a
+-- line already rung up keeps the price it copied, and this changes only what
+-- the next line copies. `was` is the price the change was planned against:
+-- a row whose price has moved since matches nothing.
+UPDATE items
+SET price = sqlc.arg(price), updated_at = sqlc.arg(now)
+WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id) AND price = sqlc.arg(was);

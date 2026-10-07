@@ -504,6 +504,12 @@ type Querier interface {
 	// item names any more stays on disk (ADR-110).
 	SetItemPhoto(ctx context.Context, arg SetItemPhotoParams) (int64, error)
 	//
+	// A price changed from a file (phase 10, Task 9, ADR-296). As UpdateItem: a
+	// line already rung up keeps the price it copied, and this changes only what
+	// the next line copies. `was` is the price the change was planned against:
+	// a row whose price has moved since matches nothing.
+	SetItemPrice(ctx context.Context, arg SetItemPriceParams) (int64, error)
+	//
 	// NULL puts it back on sale now; a time keeps it sold out until then.
 	SetItemSoldOut(ctx context.Context, arg SetItemSoldOutParams) (int64, error)
 	SetItemSort(ctx context.Context, arg SetItemSortParams) (int64, error)

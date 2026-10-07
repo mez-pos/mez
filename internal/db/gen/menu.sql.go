@@ -1650,6 +1650,38 @@ func (q *Queries) SetItemPhoto(ctx context.Context, arg SetItemPhotoParams) (int
 	return result.RowsAffected()
 }
 
+const setItemPrice = `-- name: SetItemPrice :execrows
+UPDATE items
+SET price = ?1, updated_at = ?2
+WHERE venue_id = ?3 AND id = ?4 AND price = ?5
+`
+
+type SetItemPriceParams struct {
+	Price   int64
+	Now     time.Time
+	VenueID int64
+	ID      int64
+	Was     int64
+}
+
+// A price changed from a file (phase 10, Task 9, ADR-296). As UpdateItem: a
+// line already rung up keeps the price it copied, and this changes only what
+// the next line copies. `was` is the price the change was planned against:
+// a row whose price has moved since matches nothing.
+func (q *Queries) SetItemPrice(ctx context.Context, arg SetItemPriceParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setItemPrice,
+		arg.Price,
+		arg.Now,
+		arg.VenueID,
+		arg.ID,
+		arg.Was,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const setItemSoldOut = `-- name: SetItemSoldOut :execrows
 UPDATE items
 SET sold_out_until = ?1, updated_at = ?2
