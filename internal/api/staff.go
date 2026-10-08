@@ -82,6 +82,19 @@ func (s *Server) requireStaff(next http.Handler) http.Handler {
 		if info := infoFrom(r.Context()); info != nil {
 			info.staffID = session.Staff.ID
 		}
+		// Asked on every relayed request and not only at sign-in: a role
+		// can lose its permissions while its session is open.
+		if relayed(r) {
+			held, err := s.staff.Permissions(r.Context(), session.Staff.RoleID)
+			if err != nil {
+				s.internalError(w, r, "reading permissions for a remote request failed", err)
+				return
+			}
+			if !remoteStaff(held) {
+				s.refuseRemoteStaff(w)
+				return
+			}
+		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), staffKey, session)))
 	})
 }
@@ -168,6 +181,25 @@ func (s *Server) signIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.internalError(w, r, "reading permissions at sign-in failed", err)
 		return
+	}
+	// Through the relay only the desk signs in. The PIN was checked first,
+	// so a wrong one is counted and answered exactly as it is at the venue,
+	// and this says nothing to someone who does not hold a right one. The
+	// session just opened is closed again: its token is never sent.
+	if relayed(r) {
+		held, err := s.staff.Permissions(r.Context(), in.Session.Staff.RoleID)
+		if err != nil {
+			s.internalError(w, r, "reading permissions at a remote sign-in failed", err)
+			return
+		}
+		if !remoteStaff(held) {
+			if err := s.staff.SignOut(r.Context(), in.Session); err != nil {
+				s.internalError(w, r, "closing a refused remote session failed", err)
+				return
+			}
+			s.refuseRemoteStaff(w)
+			return
+		}
 	}
 	res.Token = in.Token
 	w.Header().Set("Cache-Control", "no-store")

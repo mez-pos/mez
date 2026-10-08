@@ -198,3 +198,14 @@ func TestRemoteNeedsRelay(t *testing.T) {
 		}
 	}
 }
+
+// TestTheRelayMarkIsOneName: the tunnel writes the mark and the API reads
+// it, and neither package may import the other, so each has the name. If
+// they ever differed, every relayed request would be taken for one from the
+// venue's own network and held to no rule at all (ADR-307, ADR-308).
+func TestTheRelayMarkIsOneName(t *testing.T) {
+	if api.HeaderVia != tunnel.HeaderVia || api.ViaRelay != tunnel.ViaRelay {
+		t.Fatalf("the API reads %q: %q, the tunnel writes %q: %q",
+			api.HeaderVia, api.ViaRelay, tunnel.HeaderVia, tunnel.ViaRelay)
+	}
+}

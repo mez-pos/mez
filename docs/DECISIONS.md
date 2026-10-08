@@ -11080,3 +11080,63 @@ Cost: **between this task and Task 3 the setting is unsafe to turn on at a real
 venue.** With it on, the whole staff API answers from outside to a paired device
 and a right PIN, payments and all. It is off by default, needs a key only the
 relay's operator can issue, and `running.md` says to leave it off; Task 3 is next.
+
+## ADR-308 - What a relayed request may reach is a list of what is allowed, checked before the routes
+2026-10 · Status: accepted. Phase 13, Task 3a. Changes ADR-306's third decision.
+Context: ADR-306 had the API refuse a relayed request by a deny list of the routes
+that move money, and named its own cost: the default for a route not on the list is
+"allowed", which is the wrong default for a money route. Building it showed two more
+things. The API has some 180 routes and the order commands are registered from a
+table, so a deny list is long and easy to leave a hole in. And some routes sit
+behind no device at all (first run, pairing, health), so a rule inside
+`requireDevice` never sees them: first run trusts a loopback caller, and a relay on
+the venue's own machine reports one.
+Decision:
+  - **One gate, in front of the mux, inside every middleware** (`remoteGate`,
+    `internal/api/remote.go`). It does nothing to a request without `X-Mez-Via`. For
+    one with it, it asks the mux which route the request would take
+    (`ServeMux.Handler`) and judges that pattern, so what is judged is what runs.
+  - **Allowed is written down; everything else is refused**, 403
+    `remote_not_allowed`, "This can only be done at the venue." Allowed is: the guest
+    app's mount; `/backoffice` and what is under it; five whole areas of the API
+    (`menu`, `stock`, `people`, `audit`, `reports`) less one route; and some sixty
+    routes named one by one, exactly as registered. A catch-all (a 405, a 404, the
+    terminal at `/`) has no method in its pattern and is refused.
+  - **What stays at the venue**: opening and changing orders, payments, voids,
+    refunds, the shift and its drawer, the tip pool, printing and printers, the
+    kitchen, guests' requests, clearing a table, first run, making a pairing code,
+    unlocking a locked PIN, and three settings: where payments go, where the backup
+    goes, how invoices are numbered. Each of those three redirects money or data, and
+    an owner changes them once.
+  - **What ADR-306 refused and this allows**: reading orders and downloading a
+    day's export files. They are reports, and reports are why an owner opens the
+    back office from home. Unpairing a device is allowed too: a lost phone should be
+    cut off from wherever the owner is.
+  - **Any value under the header counts as relayed**, and more than one. The tunnel
+    writes exactly `relay`; a request saying anything else there is not given the
+    benefit of the doubt.
+  - **The device and the person are checked where they are known.** `requireDevice`
+    refuses a relayed request from a device that is not a back office. Sign-in
+    checks the PIN first and then, relayed, the role: a cashier's right PIN is
+    answered 403 and the session just opened is closed, so a wrong PIN is still
+    counted and answered as at the venue. `requireStaff` asks again on every relayed
+    request, since a session opened at the venue must not travel and a role can
+    lose its permissions while a session is open.
+  - **Every route has a verdict, and a test that reads the source says so.**
+    `TestEveryRouteHasARemoteVerdict` collects every `"METHOD /api/v1/..."` literal
+    in the package and fails for one that is neither allowed nor in the test's own
+    list of what stays at the venue. The routes built from a table (the order
+    commands) are in neither and are refused by default, which is right for all of
+    them.
+  - **The API restates the header's name**, since it must not import the tunnel;
+    `cmd/mez` tests that the two agree.
+  - **A relayed answer says `X-Mez-Via: relay`**, so the back office can tell it is
+    away (Task 3b).
+Because: the default is now the safe one. Forgetting a route costs the owner a
+feature from home until someone notices, where under the deny list it cost a venue
+its money.
+Cost: the five areas are open by prefix, so a route added under `menu` or `people`
+is reachable from outside the day it is written. That is wanted for those five and
+is why nothing about money is filed under them; `people` holds PINs and roles, and
+whoever adds a route there should read this first. The back office still shows
+buttons for what will be refused, until Task 3b.

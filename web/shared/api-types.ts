@@ -21,6 +21,7 @@ export type ErrorCode =
   | 'sign_in_required'
   | 'rate_limited'
   | 'forbidden'
+  | 'remote_not_allowed'
   | 'order_not_found'
   | 'line_not_found'
   | 'line_not_active'

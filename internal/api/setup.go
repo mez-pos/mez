@@ -262,6 +262,11 @@ func forwarded(h http.Header) bool {
 // this machine, or a forwarder on it that adds no header, is let through:
 // the machine is trusted, as it was by `mez setup`.
 func (s *Server) atThisMachine(r *http.Request) bool {
+	// Through the relay is the opposite of here, whatever address the relay
+	// said the caller had: one run on this machine reports loopback.
+	if relayed(r) {
+		return false
+	}
 	if ip := net.ParseIP(remoteHost(r)); ip == nil || !ip.IsLoopback() {
 		return false
 	}

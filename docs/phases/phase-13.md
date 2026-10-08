@@ -47,6 +47,32 @@ Phase 11 (the relay and the tunnel) and Phase 10 (the back office).
   health is public.
 
 - [ ] **Task 3 - The API holds a remote request to the owner's rules.**
+  Split on 2026-10-08 while building it: the server's rules are one
+  session, and what the back office shows when it has no stream is another.
+
+  - [x] **Task 3a - The server's rules** (ADR-308). A gate in front of the
+    routes, acting only on `X-Mez-Via`: a relayed request reaches the guest
+    app, the back office's files, and the API routes `internal/api/remote.go`
+    names, and is answered 403 `remote_not_allowed` for anything else. It is
+    an allow list, not the deny list first written below: a new route is
+    closed to the outside until it is put in one list or the other, and
+    `TestEveryRouteHasARemoteVerdict` fails until it is. A relayed request
+    from a device that is not a back office is refused; so is a sign-in, or
+    an open session, of someone holding none of `menu.edit`,
+    `settings.edit`, `reports.view`, `stock.manage`. The access log says
+    `via=relay`. Every relayed answer carries `X-Mez-Via: relay`.
+  - [ ] **Task 3b - The back office knows it is away.** The relay carries
+    no WebSocket, so the stream never opens from outside and the status
+    pill says "Reconnecting" for ever. Read `X-Mez-Via: relay` off the
+    probe's answer (`GET /api/v1/devices/me`, `web/shared/use-realtime.tsx`):
+    a new realtime state that stops dialling, a pill that says "Away from
+    the venue", a `resync` notice when the tab regains focus so screens
+    refetch, and one plain sentence wherever a 403 `remote_not_allowed`
+    comes back ("This can only be done at the venue."). Hide what would
+    only be refused where that is cheap: payments, backup and numbering
+    forms read-only, printer actions, "Print a copy", the tip pool's save.
+
+  The task as first written, kept for what it asked:
   A middleware in `internal/api`, inside `requireDevice`, that acts only when
   `X-Mez-Via: relay` is present: the device must be a `back_office` device;
   the staff member, once signed in, must hold `menu.edit`, `settings.edit`,

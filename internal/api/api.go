@@ -162,7 +162,10 @@ func (s *Server) routes() http.Handler {
 		mux.HandleFunc("/", s.notFound)
 	}
 
-	return chain(mux, s.middleware()...)
+	// The gate is inside every middleware and outside every route: what
+	// came through the relay is judged once, here, against the route it
+	// would take (ADR-308).
+	return chain(s.remoteGate(mux), s.middleware()...)
 }
 
 // middleware is the chain, outermost first. It is a method rather than a

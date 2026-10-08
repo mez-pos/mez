@@ -109,6 +109,9 @@ func (s *Server) requireDevice(next http.Handler) http.Handler {
 		if !ok {
 			return
 		}
+		if !s.remoteDevice(w, r, dev) {
+			return
+		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), deviceKey, dev)))
 	})
 }

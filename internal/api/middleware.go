@@ -49,6 +49,9 @@ type requestInfo struct {
 	venueID  int64
 	deviceID int64
 	staffID  int64
+	// via is how the request arrived when that was not the venue's own
+	// network: "relay", or empty.
+	via string
 }
 
 // infoFrom is the holder for this request, or nil outside one.
@@ -139,6 +142,11 @@ func (s *Server) accessLog(next http.Handler) http.Handler {
 				if f.val != 0 {
 					fields = append(fields, f.key, f.val)
 				}
+			}
+			// Only when it did not come from the venue's own network, which
+			// is nearly every line: a request from outside is the one to find.
+			if info.via != "" {
+				fields = append(fields, "via", info.via)
 			}
 			s.log.Info("request", fields...)
 		}()

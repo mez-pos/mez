@@ -16,26 +16,24 @@ rules. Five tasks. Phases 00 to 12 are built; what they still owe is in
 
 ## Last completed task
 
-**Phase 13, Task 2 - The tunnel carries the back office when the venue
-says so** (ADR-307). `remote_backoffice` (`MEZ_REMOTE_BACKOFFICE`), `true`
-or `false` only, off by default. On, a relayed `/backoffice`, `/backoffice/...`
-or `/api/v1/...` passes as it is; everything else still goes under
-`/order/`. `X-Mez-Via: relay` (`tunnel.HeaderVia`, `tunnel.ViaRelay`) is on
-every relayed request and cannot arrive from outside. On with no relay, or
-on a guests-only key, mez does not start. `GET /api/v1/tunnel` has
-`back_office`. Before it, Task 1: `relay issue-key VENUE --remote`.
+**Phase 13, Task 3a - The server's rules for a relayed request** (ADR-308).
+Task 3 was split in two. `internal/api/remote.go`: a gate in front of the
+routes that acts only on `X-Mez-Via`. Relayed, a request reaches `/order/`,
+`/backoffice`, and the API routes on an allow list (areas `menu`, `stock`,
+`people`, `audit`, `reports`, and about sixty named routes); anything else
+is 403 `remote_not_allowed`. Back office devices only; only staff holding
+`menu.edit`, `settings.edit`, `reports.view` or `stock.manage`, checked at
+sign-in and on every request. `via=relay` in the access log. A new route
+needs a verdict or `TestEveryRouteHasARemoteVerdict` fails.
 
 ## Next task
 
-**Phase 13, Task 3 - The API holds a remote request to the owner's
-rules.** A middleware inside `requireDevice` that acts only on
-`X-Mez-Via: relay`: `back_office` devices only; staff must hold
-`menu.edit`, `settings.edit`, `reports.view` or `stock.manage`; a deny
-list for order, payment, kitchen, print, shift, setup and export-download
-routes; `via=relay` in the access log; and what the back office does
-without its stream, which the relay cannot carry. `internal/api` must not
-import `internal/tunnel`: the header's name is wired in from `cmd/mez`
-or restated with a test that the two agree.
+**Phase 13, Task 3b - The back office knows it is away.** Front end only.
+Read `X-Mez-Via: relay` off the probe's answer in
+`web/shared/use-realtime.tsx`; a realtime state that stops dialling the
+stream; the pill says "Away from the venue"; a `resync` notice on focus;
+a plain sentence for a 403 `remote_not_allowed`; hide or disable what
+would only be refused. The list is in the phase file.
 
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
@@ -62,11 +60,10 @@ Still owed from phase 11, its human check and:
 
 ## Known broken / in progress
 
-- **`remote_backoffice` is not safe to turn on until Phase 13 Task 3**
-  (ADR-307): with it on, the whole staff API answers through the relay to
-  a paired device and a PIN. Off by default. The live relay at
-  relay.jskin.in is not yet redeployed with Task 1 either.
-
+- **`remote_backoffice` works and is held to ADR-308, but is rough from
+  outside until Task 3b**: no stream, so the pill says "Reconnecting", and
+  buttons for what stays at the venue answer 403. Unseen on a real phone.
+  The live relay at relay.jskin.in is not redeployed with Phase 13 yet.
 - **Between phases (ADR-256 to ADR-262): the first security review and
   what the owner decided.** A till's line is priced from the menu on the
   server; a relay must be TLS; revoking a device cuts its stream; the log
