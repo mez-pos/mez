@@ -173,7 +173,7 @@ func TestTheCounterSellsWhileTheRelayIsDown(t *testing.T) {
 	)
 
 	rl := startLiveRelay(t)
-	key, err := rl.keys.Issue(rand.Reader, "cafe")
+	key, err := rl.keys.Issue(rand.Reader, "cafe", false)
 	if err != nil {
 		t.Fatal(err)
 	}

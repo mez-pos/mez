@@ -16,20 +16,24 @@ rules. Five tasks. Phases 00 to 12 are built; what they still owe is in
 
 ## Last completed task
 
-**Phase 10, Task 12c** (ADR-305). Then on 2026-10-08, by hand: the printer
-was tested at the venue and prints; the menu and inventory imports were
-walked against real spreadsheets and work. The drawer kick, the choices
-and recipes imports, the menu export and the prices round trip are still
-unwalked. The landing page brief is in `docs/marketing/landing-brief.md`;
-its screenshots are in `claude-design/shots/` (git-ignored). The product
-domain is mezpos.com.
+**Phase 13, Task 1 - A venue key that allows the back office** (ADR-306).
+`relay issue-key VENUE --remote` prints `mzr_<venue>.<id>.remote.<mac>`;
+the scope is under the mac; `Keys.Check` returns it; a plain key is
+unchanged and every key issued so far still verifies. The agent keeps
+`remote`, and `forward` answers 404 for `/backoffice` and `/api` (whole
+first segment, by path and by hostname) on a guests-only key, before
+anything is sent down the socket. `build/relay/README.md` says how. The
+live relay at relay.jskin.in has not been redeployed with this yet.
 
 ## Next task
 
-**Phase 13, Task 1 - A venue key that allows the back office.** Key scope
-`remote`, signed into the key; `Keys.Verify` returns it; the agent keeps
-it; `forward` answers 404 for `/backoffice/` and `/api/` on a guests-only
-key; `relay issue-key VENUE --remote`. Tests and `build/relay/README.md`.
+**Phase 13, Task 2 - The tunnel carries the back office when the venue
+says so.** Setting `remote_backoffice` (`MEZ_REMOTE_BACKOFFICE`, default
+false); with it on, a relayed path starting `/backoffice/` or `/api/v1/`
+passes as it is with `X-Mez-Via: relay` set by the tunnel (and stripped
+from whatever arrived); everything else still goes under `/order/`. The
+health check's `tunnel` line and the Devices status say whether remote
+is on. Tests in `internal/tunnel`; `cmd/mez/main.go` wires the setting.
 
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no

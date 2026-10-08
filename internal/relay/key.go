@@ -56,8 +56,25 @@ func NewKeys(secret string, revoked []string) (*Keys, error) {
 	return &Keys{secret: []byte(secret), revoked: set}, nil
 }
 
-// Issue draws a new key for a venue. random is crypto/rand.Reader outside tests.
-func (k *Keys) Issue(random io.Reader, venueID string) (string, error) {
+// scopeRemote is the one scope a key can carry beyond guests: the venue's
+// back office may cross the relay too (ADR-306). It is signed into the key,
+// so a venue cannot add it to a key it was given.
+const scopeRemote = "remote"
+
+// Key is what a verified key says: whose it is, which one it is, and whether
+// the venue may be reached beyond the guest app.
+type Key struct {
+	VenueID string
+	KeyID   string
+	// Remote is true for a key issued with the remote scope: the relay then
+	// forwards /backoffice/ and /api/ for this venue. For every other key
+	// those paths are answered 404 at the relay.
+	Remote bool
+}
+
+// Issue draws a new key for a venue. random is crypto/rand.Reader outside
+// tests. remote adds the scope that lets the venue's back office through.
+func (k *Keys) Issue(random io.Reader, venueID string, remote bool) (string, error) {
 	if Reserved(venueID) {
 		return "", fmt.Errorf("relay: venue id %q is reserved: it would be a hostname the relay or its operator needs", venueID)
 	}
@@ -69,40 +86,73 @@ func (k *Keys) Issue(random io.Reader, venueID string) (string, error) {
 		return "", fmt.Errorf("relay: drawing a key id: %w", err)
 	}
 	keyID := hex.EncodeToString(b[:])
-	return keyPrefix + venueID + "." + keyID + "." + k.mac(venueID, keyID), nil
+	scope := ""
+	if remote {
+		scope = scopeRemote
+	}
+	key := keyPrefix + venueID + "." + keyID + "."
+	if scope != "" {
+		key += scope + "."
+	}
+	return key + k.mac(venueID, keyID, scope), nil
 }
 
 // Verify checks a presented key and returns the venue it speaks for and the
-// key's id.
+// key's id. Check says the rest.
 func (k *Keys) Verify(key string) (venueID, keyID string, err error) {
+	c, err := k.Check(key)
+	return c.VenueID, c.KeyID, err
+}
+
+// Check verifies a presented key: "mzr_<venue>.<key id>.<mac>" is a guests-only
+// key, "mzr_<venue>.<key id>.remote.<mac>" one whose venue may have its back
+// office carried too. The mac covers the scope, so a scope written into a key
+// after it was issued fails as any other forgery does.
+func (k *Keys) Check(key string) (Key, error) {
 	body, ok := strings.CutPrefix(key, keyPrefix)
 	if !ok {
-		return "", "", ErrKeyMalformed
+		return Key{}, ErrKeyMalformed
 	}
 	parts := strings.Split(body, ".")
-	if len(parts) != 3 || !ValidVenueID(parts[0]) || len(parts[1]) != keyIDBytes*2 {
-		return "", "", ErrKeyMalformed
+	scope := ""
+	switch len(parts) {
+	case 3:
+	case 4:
+		if parts[2] != scopeRemote {
+			return Key{}, ErrKeyMalformed
+		}
+		scope = scopeRemote
+	default:
+		return Key{}, ErrKeyMalformed
 	}
-	venueID, keyID = parts[0], parts[1]
-	if !hmac.Equal([]byte(parts[2]), []byte(k.mac(venueID, keyID))) {
-		return "", "", ErrKeyInvalid
+	if !ValidVenueID(parts[0]) || len(parts[1]) != keyIDBytes*2 {
+		return Key{}, ErrKeyMalformed
+	}
+	venueID, keyID, mac := parts[0], parts[1], parts[len(parts)-1]
+	if !hmac.Equal([]byte(mac), []byte(k.mac(venueID, keyID, scope))) {
+		return Key{}, ErrKeyInvalid
 	}
 	// Checked after the mac, so the answer never says which ids are listed
 	// to someone who cannot sign.
 	if _, gone := k.revoked[venueID]; gone {
-		return "", "", ErrKeyRevoked
+		return Key{}, ErrKeyRevoked
 	}
 	if _, gone := k.revoked[keyID]; gone {
-		return "", "", ErrKeyRevoked
+		return Key{}, ErrKeyRevoked
 	}
-	return venueID, keyID, nil
+	return Key{VenueID: venueID, KeyID: keyID, Remote: scope == scopeRemote}, nil
 }
 
-func (k *Keys) mac(venueID, keyID string) string {
+func (k *Keys) mac(venueID, keyID, scope string) string {
 	h := hmac.New(sha256.New, k.secret)
 	// The label keeps this secret's macs from meaning anything elsewhere, and
-	// the newline keeps "ab"+"c" from signing the same bytes as "a"+"bc".
+	// the newline keeps "ab"+"c" from signing the same bytes as "a"+"bc". A
+	// guests-only key signs exactly what it did before the scope existed, so
+	// every key issued until now still verifies.
 	h.Write([]byte("mez-relay-key-v1\n" + venueID + "\n" + keyID))
+	if scope != "" {
+		h.Write([]byte("\n" + scope))
+	}
 	return base64.RawURLEncoding.EncodeToString(h.Sum(nil))
 }
 

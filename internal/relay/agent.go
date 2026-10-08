@@ -43,9 +43,11 @@ var (
 type agent struct {
 	venueID string
 	keyID   string
-	ws      *websocket.Conn
-	bucket  *bucket
-	log     *slog.Logger
+	// remote says the key allows the back office across the relay (ADR-306).
+	remote bool
+	ws     *websocket.Conn
+	bucket *bucket
+	log    *slog.Logger
 
 	// ctx ends when the socket does. Every guest handler on this agent
 	// watches it.
@@ -71,14 +73,15 @@ type stream struct {
 	overrun chan struct{}
 }
 
-func newAgent(venueID, keyID string, ws *websocket.Conn, lim Limit, now time.Time, log *slog.Logger) *agent {
+func newAgent(key Key, ws *websocket.Conn, lim Limit, now time.Time, log *slog.Logger) *agent {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &agent{
-		venueID: venueID,
-		keyID:   keyID,
+		venueID: key.VenueID,
+		keyID:   key.KeyID,
+		remote:  key.Remote,
 		ws:      ws,
 		bucket:  newBucket(lim, now),
-		log:     log.With("venue_id", venueID, "key_id", keyID),
+		log:     log.With("venue_id", key.VenueID, "key_id", key.KeyID),
 		ctx:     ctx,
 		cancel:  cancel,
 		streams: map[uint64]*stream{},

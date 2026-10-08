@@ -147,6 +147,13 @@ func (s *Server) forward(w http.ResponseWriter, r *http.Request, venueID, prefix
 		s.refuse(w, r, http.StatusServiceUnavailable, codeVenueOffline, offlineTitle, offlineText)
 		return
 	}
+	if staffOnly(path) && !a.remote {
+		// The back office and the staff API cross the relay only for a venue
+		// whose key says so (ADR-306). Nothing is sent down the socket: to
+		// the venue, and to whoever is asking, the path does not exist.
+		s.refuseNotFound(w, r)
+		return
+	}
 	if ok, wait := a.bucket.take(s.now()); !ok {
 		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
 		s.refuse(w, r, http.StatusTooManyRequests, codeRateLimited, busyTitle, busyText)
@@ -197,6 +204,24 @@ func (s *Server) forward(w http.ResponseWriter, r *http.Request, venueID, prefix
 	}
 
 	s.relayResponse(a, st, prefix, w, r)
+}
+
+// staffPrefixes are the paths that are the venue's own people's and not a
+// guest's: the back office bundle and the API it speaks to. A guest's app
+// lives under /order/ and asks for nothing outside it (ADR-202).
+var staffPrefixes = []string{"/backoffice", "/api"}
+
+// staffOnly reports whether path, as the guest sent it (escaped, with the
+// venue prefix already taken off), is one of the staff's. The prefix must be
+// the whole first segment: "/apiary" is not "/api".
+func staffOnly(path string) bool {
+	for _, prefix := range staffPrefixes {
+		rest, ok := strings.CutPrefix(path, prefix)
+		if ok && (rest == "" || rest[0] == '/' || rest[0] == '?') {
+			return true
+		}
+	}
+	return false
 }
 
 // requestHeader is the guest's headers as the venue should see them: nothing

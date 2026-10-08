@@ -10,7 +10,8 @@
 // fully functional either way. See ADR-008 and ADR-201.
 //
 //	relay                       serve, configured by the environment
-//	relay issue-key VENUE_ID    print a new venue key and exit
+//	relay issue-key VENUE_ID    print a new venue key and exit; --remote lets
+//	                            the venue's back office through too (ADR-306)
 //	relay version               print the version and exit
 package main
 
@@ -57,7 +58,8 @@ const (
 const usage = `relay: the optional public address for mez guest ordering
 
   relay                       serve
-  relay issue-key VENUE_ID    print a new venue key
+  relay issue-key VENUE_ID    print a new venue key; add --remote to let the
+                              venue's back office cross the relay (ADR-306)
   relay version               print the version
 
 Environment:
@@ -113,14 +115,15 @@ func run(ctx context.Context, args []string, env func(string) string, stdout io.
 		_, err := io.WriteString(stdout, usage)
 		return err
 	case "issue-key":
-		if len(args) != 2 {
-			return errors.New("usage: relay issue-key VENUE_ID")
+		venueID, remote, err := issueArgs(args[1:])
+		if err != nil {
+			return err
 		}
 		keys, err := loadKeys(env)
 		if err != nil {
 			return err
 		}
-		key, err := keys.Issue(random, args[1])
+		key, err := keys.Issue(random, venueID, remote)
 		if err != nil {
 			return err
 		}
@@ -133,6 +136,30 @@ func run(ctx context.Context, args []string, env func(string) string, stdout io.
 	default:
 		return fmt.Errorf("unknown command %q; try relay help", command)
 	}
+}
+
+// issueArgs reads "VENUE_ID" or "VENUE_ID --remote", in either order. The
+// flag is spelled out here rather than through package flag so that a venue
+// id beginning with "-" (which Issue refuses anyway) is never read as one.
+func issueArgs(args []string) (venueID string, remote bool, err error) {
+	const usage = "usage: relay issue-key VENUE_ID [--remote]"
+	for _, a := range args {
+		switch {
+		case a == "--remote" || a == "-remote":
+			if remote {
+				return "", false, errors.New(usage)
+			}
+			remote = true
+		case venueID == "":
+			venueID = a
+		default:
+			return "", false, errors.New(usage)
+		}
+	}
+	if venueID == "" {
+		return "", false, errors.New(usage)
+	}
+	return venueID, remote, nil
 }
 
 func loadKeys(env func(string) string) (*relay.Keys, error) {

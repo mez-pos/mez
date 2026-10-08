@@ -53,8 +53,19 @@ func TestIssueKeyPrintsAKeyTheRelayAccepts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if venueID, _, err := keys.Verify(key); err != nil || venueID != "cafe" {
-		t.Errorf("Verify = %q, %v", venueID, err)
+	if got, err := keys.Check(key); err != nil || got.VenueID != "cafe" || got.Remote {
+		t.Errorf("Check = %+v, %v; want a guests-only key for cafe", got, err)
+	}
+
+	// --remote, on either side of the venue id, signs the scope in.
+	for _, args := range [][]string{{"issue-key", "cafe", "--remote"}, {"issue-key", "--remote", "cafe"}} {
+		out.Reset()
+		if err := run(context.Background(), args, env, &out, rand.Reader); err != nil {
+			t.Fatalf("run(%v): %v", args, err)
+		}
+		if got, err := keys.Check(strings.TrimSpace(out.String())); err != nil || !got.Remote || got.VenueID != "cafe" {
+			t.Errorf("run(%v): Check = %+v, %v; want a remote key for cafe", args, got, err)
+		}
 	}
 }
 
@@ -72,6 +83,9 @@ func TestRunRefuses(t *testing.T) {
 		{"an unknown command", []string{"frobnicate"}, good, "unknown command"},
 		{"issue-key with no venue", []string{"issue-key"}, good, "usage"},
 		{"issue-key with a bad venue id", []string{"issue-key", "My Cafe"}, good, "venue id"},
+		{"issue-key with two venues", []string{"issue-key", "cafe", "bar"}, good, "usage"},
+		{"issue-key with --remote twice", []string{"issue-key", "cafe", "--remote", "--remote"}, good, "usage"},
+		{"issue-key with a flag it does not know", []string{"issue-key", "cafe", "--admin"}, good, "usage"},
 		{"issue-key with no secret", []string{"issue-key", "cafe"}, nil, envSecret},
 		{"serving with no secret", nil, nil, envSecret},
 		{"a short secret", nil, map[string]string{envSecret: "short"}, "at least"},

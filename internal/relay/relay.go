@@ -217,13 +217,14 @@ func (s *Server) handleAgent(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusUnauthorized, codeUnauthorized, "send the venue key as a bearer token")
 		return
 	}
-	venueID, keyID, err := s.keys.Verify(strings.TrimSpace(key))
+	claims, err := s.keys.Check(strings.TrimSpace(key))
 	if err != nil {
 		// One answer for every failure. Which it was is for the operator.
 		s.log.Warn("relay: venue key refused", "reason", err.Error(), "remote", s.clientIP(r))
 		s.writeError(w, http.StatusUnauthorized, codeUnauthorized, "venue key refused")
 		return
 	}
+	venueID := claims.VenueID
 	noteVenue(r, venueID)
 
 	ws, err := websocket.Accept(w, r, nil)
@@ -234,14 +235,14 @@ func (s *Server) handleAgent(w http.ResponseWriter, r *http.Request) {
 	}
 	ws.SetReadLimit(wire.MaxFrame)
 
-	a := newAgent(venueID, keyID, ws, s.limit, s.now(), s.log)
+	a := newAgent(claims, ws, s.limit, s.now(), s.log)
 	if !s.register(a) {
 		a.close(websocket.StatusGoingAway, "relay shutting down")
 		return
 	}
 	defer s.wg.Done()
 
-	a.log.Info("relay: venue connected", "remote", s.clientIP(r))
+	a.log.Info("relay: venue connected", "remote", s.clientIP(r), "back_office", claims.Remote)
 	connected := s.now()
 
 	// The prober is this handler's own goroutine to start and to wait for.

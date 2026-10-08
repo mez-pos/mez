@@ -22,7 +22,7 @@ func mustKeys(t *testing.T, secret string, revoked ...string) *Keys {
 
 func mustIssue(t *testing.T, keys *Keys, venueID string) string {
 	t.Helper()
-	key, err := keys.Issue(rand.Reader, venueID)
+	key, err := keys.Issue(rand.Reader, venueID, false)
 	if err != nil {
 		t.Fatalf("Issue(%q): %v", venueID, err)
 	}
@@ -54,12 +54,72 @@ func TestIssueAndVerify(t *testing.T) {
 	}
 }
 
+// TestRemoteScope: a key issued with --remote carries the scope in plain
+// sight and under the mac, and a guests-only key is exactly what it was
+// before the scope existed (ADR-306).
+func TestRemoteScope(t *testing.T) {
+	keys := mustKeys(t, testSecret)
+	plain := mustIssue(t, keys, "cafe")
+	remote, err := keys.Issue(rand.Reader, "cafe", true)
+	if err != nil {
+		t.Fatalf("Issue(remote): %v", err)
+	}
+
+	if !strings.HasPrefix(remote, "mzr_cafe.") || !strings.Contains(remote, ".remote.") {
+		t.Errorf("remote key %q does not say what it allows", remote)
+	}
+	if strings.Contains(plain, ".remote.") || len(strings.Split(plain, ".")) != 3 {
+		t.Errorf("guests-only key %q changed shape", plain)
+	}
+
+	got, err := keys.Check(remote)
+	if err != nil || !got.Remote || got.VenueID != "cafe" || len(got.KeyID) != keyIDBytes*2 {
+		t.Errorf("Check(remote) = %+v, %v", got, err)
+	}
+	if got, err := keys.Check(plain); err != nil || got.Remote {
+		t.Errorf("Check(plain) = %+v, %v; want guests only", got, err)
+	}
+	// Verify still answers for a remote key: the relay's older callers see
+	// the venue and the key id and nothing else.
+	if venueID, _, err := keys.Verify(remote); err != nil || venueID != "cafe" {
+		t.Errorf("Verify(remote) = %q, %v", venueID, err)
+	}
+
+	parts := strings.Split(strings.TrimPrefix(plain, keyPrefix), ".")
+	rparts := strings.Split(strings.TrimPrefix(remote, keyPrefix), ".")
+	tests := []struct {
+		name string
+		key  string
+		want error
+	}{
+		{"the scope written into a guests-only key", keyPrefix + parts[0] + "." + parts[1] + ".remote." + parts[2], ErrKeyInvalid},
+		{"the scope taken off a remote key", keyPrefix + rparts[0] + "." + rparts[1] + "." + rparts[3], ErrKeyInvalid},
+		{"a scope the relay does not know", keyPrefix + rparts[0] + "." + rparts[1] + ".admin." + rparts[3], ErrKeyMalformed},
+		{"the scope in the wrong place", keyPrefix + rparts[0] + ".remote." + rparts[1] + "." + rparts[3], ErrKeyMalformed},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := keys.Check(tt.key); !errors.Is(err, tt.want) {
+				t.Errorf("Check = %v, want %v", err, tt.want)
+			}
+		})
+	}
+
+	t.Run("revocation reaches a remote key too", func(t *testing.T) {
+		_, keyID, _ := keys.Verify(remote)
+		revoking := mustKeys(t, testSecret, keyID)
+		if _, err := revoking.Check(remote); !errors.Is(err, ErrKeyRevoked) {
+			t.Errorf("Check = %v, want ErrKeyRevoked", err)
+		}
+	})
+}
+
 func TestIssueRefusesBadVenueIDAndShortRandom(t *testing.T) {
 	keys := mustKeys(t, testSecret)
-	if _, err := keys.Issue(rand.Reader, "Blue Tokai"); err == nil {
+	if _, err := keys.Issue(rand.Reader, "Blue Tokai", false); err == nil {
 		t.Error("Issue accepted a venue id with a space and capitals")
 	}
-	if _, err := keys.Issue(bytes.NewReader([]byte{1, 2}), "cafe"); err == nil {
+	if _, err := keys.Issue(bytes.NewReader([]byte{1, 2}), "cafe", false); err == nil {
 		t.Error("Issue made a key from a source that ran dry")
 	}
 }

@@ -1090,7 +1090,7 @@ func TestNewRefusesAVenueDomainThatIsNotOne(t *testing.T) {
 func TestIssueRefusesAReservedName(t *testing.T) {
 	keys := mustKeys(t, testSecret)
 	for _, name := range []string{"relay", "www", "admin"} {
-		if _, err := keys.Issue(rand.Reader, name); err == nil {
+		if _, err := keys.Issue(rand.Reader, name, false); err == nil {
 			t.Errorf("Issue made a key for %q, which would be a hostname the operator needs", name)
 		}
 	}
@@ -1098,6 +1098,133 @@ func TestIssueRefusesAReservedName(t *testing.T) {
 
 // TestAHostnamePerVenue: with a venue domain set, a venue is its hostname
 // and the whole path is its own.
+func TestStaffOnly(t *testing.T) {
+	tests := []struct {
+		path string
+		want bool
+	}{
+		{"/backoffice/", true},
+		{"/backoffice", true},
+		{"/backoffice/menu?x=1", true},
+		{"/backoffice?x=1", true},
+		{"/api/v1/health", true},
+		{"/api", true},
+		{"/apiary/x", false},
+		{"/backofficer", false},
+		{"/order/api/v1/orders", false},
+		{"/t/abc", false},
+		{"/", false},
+		{"", false},
+	}
+	for _, tt := range tests {
+		if got := staffOnly(tt.path); got != tt.want {
+			t.Errorf("staffOnly(%q) = %v, want %v", tt.path, got, tt.want)
+		}
+	}
+}
+
+// TestStaffPathsCrossOnlyWithARemoteKey: the back office and the staff API
+// are refused at the relay, 404 with nothing sent to the venue, unless the
+// venue connected with a key issued --remote (ADR-306). By hostname and by
+// path alike.
+func TestStaffPathsCrossOnlyWithARemoteKey(t *testing.T) {
+	for _, mode := range []struct {
+		name   string
+		domain string
+		url    func(f *fixture, venue, path string) (string, string) // url, host
+	}{
+		{"by path", "", func(f *fixture, venue, path string) (string, string) { return f.http.URL + "/v/" + venue + path, "" }},
+		{"by hostname", "jskin.in", func(f *fixture, venue, path string) (string, string) { return f.http.URL + path, venue + ".jskin.in" }},
+	} {
+		t.Run(mode.name, func(t *testing.T) {
+			f := newFixture(t, func(o *Options) { o.VenueDomain = mode.domain })
+
+			// "cafe" is on a guests-only key, "club" on a remote one. Both
+			// answer everything they are sent, and count what they were sent.
+			var mu sync.Mutex
+			seen := map[string][]string{}
+			venue := func(id string, remote bool) {
+				key, err := f.keys.Issue(rand.Reader, id, remote)
+				if err != nil {
+					t.Fatal(err)
+				}
+				ws, _, err := f.dial(key)
+				if err != nil {
+					t.Fatalf("%s could not connect: %v", id, err)
+				}
+				f.waitFor(id+" registered", func() bool { a := f.srv.agentFor(id); return a != nil && a.ctx.Err() == nil })
+				serve(t, ws, func(ex exchange) answer {
+					mu.Lock()
+					seen[id] = append(seen[id], ex.head.Path)
+					mu.Unlock()
+					return answer{status: http.StatusOK, body: []byte(id)}
+				})
+			}
+			venue("cafe", false)
+			venue("club", true)
+
+			get := func(venueID, path string) *http.Response {
+				t.Helper()
+				u, host := mode.url(f, venueID, path)
+				req, err := http.NewRequest("GET", u, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if host != "" {
+					req.Host = host
+				}
+				req.Header.Set("Accept", "text/html")
+				resp, err := (&http.Client{Timeout: testTimeout}).Do(req)
+				if err != nil {
+					t.Fatalf("GET %s: %v", path, err)
+				}
+				t.Cleanup(func() { _ = resp.Body.Close() })
+				return resp
+			}
+
+			tests := []struct {
+				venue, path string
+				want        int
+			}{
+				{"cafe", "/backoffice/", http.StatusNotFound},
+				{"cafe", "/backoffice/menu", http.StatusNotFound},
+				{"cafe", "/api/v1/health", http.StatusNotFound},
+				{"cafe", "/api", http.StatusNotFound},
+				{"cafe", "/t/abc", http.StatusOK},
+				{"cafe", "/order/api/v1/menu", http.StatusOK},
+				{"cafe", "/apiary", http.StatusOK},
+				{"club", "/backoffice/", http.StatusOK},
+				{"club", "/api/v1/health", http.StatusOK},
+				{"club", "/t/abc", http.StatusOK},
+			}
+			for _, tt := range tests {
+				t.Run(tt.venue+tt.path, func(t *testing.T) {
+					resp := get(tt.venue, tt.path)
+					body := readAll(t, resp)
+					if resp.StatusCode != tt.want {
+						t.Fatalf("status = %d, want %d (body %q)", resp.StatusCode, tt.want, body)
+					}
+					if tt.want == http.StatusOK && body != tt.venue {
+						t.Errorf("body = %q, want the venue's own answer", body)
+					}
+				})
+			}
+
+			// What was refused never reached the venue.
+			mu.Lock()
+			defer mu.Unlock()
+			for _, p := range seen["cafe"] {
+				if staffOnly(p) {
+					t.Errorf("the guests-only venue was sent %q", p)
+				}
+			}
+			if len(seen["cafe"]) != 3 || len(seen["club"]) != 3 {
+				t.Errorf("venues saw cafe=%v club=%v", seen["cafe"], seen["club"])
+			}
+		})
+	}
+}
+
 func TestAHostnamePerVenue(t *testing.T) {
 	f := newFixture(t, func(o *Options) { o.VenueDomain = "jskin.in" })
 	ws := f.connect("cafe")

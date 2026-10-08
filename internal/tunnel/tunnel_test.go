@@ -93,7 +93,20 @@ func (r *testRelay) restart() { r.listen(r.addr) }
 
 func (r *testRelay) key(venueID string) string {
 	r.t.Helper()
-	key, err := r.keys.Issue(rand.Reader, venueID)
+	return r.keyFor(venueID, false)
+}
+
+// remoteKey is a key the relay carries /backoffice/ and /api/ for (ADR-306),
+// so a test of what the tunnel itself lets through is not answered by the
+// relay first.
+func (r *testRelay) remoteKey(venueID string) string {
+	r.t.Helper()
+	return r.keyFor(venueID, true)
+}
+
+func (r *testRelay) keyFor(venueID string, remote bool) string {
+	r.t.Helper()
+	key, err := r.keys.Issue(rand.Reader, venueID, remote)
 	if err != nil {
 		r.t.Fatal(err)
 	}
@@ -334,7 +347,10 @@ func TestGuestRequestStaysUnderTheMount(t *testing.T) {
 
 func TestGuestsReachTheGuestAppAndNothingElse(t *testing.T) {
 	r := startRelay(t)
-	c := r.venue(server(), nil)
+	// On a remote key, so that the relay forwards the staff paths and it is
+	// the tunnel's own mount rule that is proven here. On a plain key the
+	// relay answers 404 before the tunnel sees them (ADR-306).
+	c := r.venue(server(), func(o *Options) { o.Key = r.remoteKey("cafe") })
 	waitState(t, c, StateConnected)
 
 	resp, err := r.guest("POST", "/t/abc?seat=2", strings.NewReader("one dosa"))
@@ -537,7 +553,7 @@ func TestARefusedKeyIsNotHammered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wrong, err := other.Issue(rand.Reader, "cafe")
+	wrong, err := other.Issue(rand.Reader, "cafe", false)
 	if err != nil {
 		t.Fatal(err)
 	}

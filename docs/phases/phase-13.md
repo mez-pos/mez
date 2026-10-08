@@ -23,7 +23,7 @@ Phase 11 (the relay and the tunnel) and Phase 10 (the back office).
 
 ## Tasks
 
-- [ ] **Task 1 - A venue key that allows the back office.**
+- [x] **Task 1 - A venue key that allows the back office.**
   `relay issue-key VENUE_ID --remote` prints a key whose scope is signed in:
   `mzr_<venue>.<key id>.remote.<mac>`. A three-part key is what it always
   was: guests only. `Keys.Verify` returns the scope; the agent remembers it;

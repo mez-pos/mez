@@ -80,6 +80,24 @@ and a revocation name. The whole key is a secret: send it to the venue the
 way you would send a password. The relay keeps no list of keys, so a key
 cannot be read back later; issue another.
 
+A key issued with `--remote` also lets the venue's **back office** cross
+the relay, so the owner can open it from home (ADR-306):
+
+```sh
+docker compose exec -T relay /relay issue-key my-cafe --remote
+```
+
+```
+mzr_my-cafe.fdbb6a9c35fc.remote.Qm4t8p0XJ3n_c1Vb2s8dWq5kEo1yTz7Lx9RhA6uNf0M
+```
+
+The scope is signed into the key: a venue cannot add `remote` to a key it
+was given. On a venue connected with a plain key the relay answers 404 for
+`/backoffice/` and `/api/` without sending anything to the venue, so this
+is where a hosted relay's operator decides who has it. The venue still has
+to turn it on at its end (`remote_backoffice` in `docs/deploy.md`), and
+with it off a remote key changes nothing.
+
 A venue then sets three things, in its `config.toml` or environment:
 
 ```toml
