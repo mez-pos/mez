@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"net/textproto"
+	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -211,13 +213,23 @@ func (s *Server) forward(w http.ResponseWriter, r *http.Request, venueID, prefix
 // lives under /order/ and asks for nothing outside it (ADR-202).
 var staffPrefixes = []string{"/backoffice", "/api"}
 
-// staffOnly reports whether path, as the guest sent it (escaped, with the
+// staffOnly reports whether rawPath, as the guest sent it (escaped, with the
 // venue prefix already taken off), is one of the staff's. The prefix must be
 // the whole first segment: "/apiary" is not "/api".
-func staffOnly(path string) bool {
+//
+// The venue routes on the decoded, cleaned path, so that is what is compared
+// here: "/%62ackoffice/" and "/t/../backoffice/" are "/backoffice/" to the
+// venue and are refused as it. A path that cannot be decoded is refused too,
+// since nothing a guest's app sends is one.
+func staffOnly(rawPath string) bool {
+	p, _, _ := strings.Cut(rawPath, "?")
+	decoded, err := url.PathUnescape(p)
+	if err != nil {
+		return true
+	}
+	cleaned := path.Clean("/" + strings.ToLower(decoded))
 	for _, prefix := range staffPrefixes {
-		rest, ok := strings.CutPrefix(path, prefix)
-		if ok && (rest == "" || rest[0] == '/' || rest[0] == '?') {
+		if cleaned == prefix || strings.HasPrefix(cleaned, prefix+"/") {
 			return true
 		}
 	}
