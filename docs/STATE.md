@@ -35,18 +35,23 @@ refused through the relay, ADR-308); a remote session that expires after
 12 hours. Read `internal/auth` for how the lockout and session expiry
 work now before deciding their shape.
 
-**Before or beside it, the human's:** redeploy the live relay
-(`build/relay/deploy.sh`, see the memory note), issue the friend's cafe a
-`--remote` key, set `remote_backoffice = true` there, and do Task 4's walk
-on a real phone over mobile data. Nothing in Phase 13 has run on the live
-relay or a real phone.
+**Before or beside it, the human's:** deploy the relay
+(`build/relay/deploy.sh`, see the memory note). It was tried on
+2026-10-08 and stopped by the session's permissions, so the live relay at
+relay.jskin.in still runs the build of 2026-10-05 and knows no `--remote`
+key. Then `relay issue-key <the cafe's name> --remote` on the box, the key
+and `remote_backoffice = true` in the cafe's `config.toml`, and Task 4's
+walk on a real phone over mobile data. No venue was connected to the relay
+when it was looked at, so deploying interrupts nobody.
 
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
    drawer was at the venue on 2026-10-08 (`hardware.md`, ADR-282).
-2. **A release.** `v0.1.0-alpha.2` is tagged on the human's machine only
-   and is behind `main`: tag again (`docs/releasing.md`); expect the first
-   workflow run to need a second try.
+2. **A release.** `v0.1.0-alpha.4` is tagged on this machine at Task 4's
+   commit and built: `dist/` has the four binaries, the Windows installer
+   and the checksums. **The tag is not pushed**: pushing one runs the
+   release workflow, which has never run and publishes a Docker image
+   (`docs/releasing.md`). `main` is pushed.
 3. **Phase 12's "done when"**: a clean Windows machine, the downloaded
    installer, a first printed invoice in under ten minutes.
 4. The human checks phases 09 to 11 owe, and the questions below.
