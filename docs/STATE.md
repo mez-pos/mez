@@ -40,14 +40,12 @@ refused through the relay, ADR-308); a remote session that expires after
 12 hours. Read `internal/auth` for how the lockout and session expiry
 work now before deciding their shape.
 
-**Before or beside it, the human's:** deploy the relay
-(`build/relay/deploy.sh`, see the memory note). It was tried on
-2026-10-08 and stopped by the session's permissions, so the live relay at
-relay.jskin.in still runs the build of 2026-10-05 and knows no `--remote`
-key. Then `relay issue-key <the cafe's name> --remote` on the box, the key
-and `remote_backoffice = true` in the cafe's `config.toml`, and Task 4's
-walk on a real phone over mobile data. No venue was connected to the relay
-when it was looked at, so deploying interrupts nobody.
+**Before or beside it, the human's:** the live relay at relay.jskin.in was
+deployed with Phase 13 on 2026-10-08 (`v0.1.0-alpha.4`, health ok, no
+venue connected at the time). Still to do: choose the friend's cafe its
+name, `relay issue-key <name> --remote` on the box, the key and
+`remote_backoffice = true` in the cafe's `config.toml` with the new
+installer, and Task 4's walk on a real phone over mobile data.
 
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
@@ -77,8 +75,8 @@ Still owed from phase 11, its human check and:
 ## Known broken / in progress
 
 - **The back office from away is built and unseen on a real phone**
-  (ADR-306 to ADR-309). The live relay at relay.jskin.in is not redeployed
-  with Phase 13, so no `--remote` key can be issued there yet.
+  (ADR-306 to ADR-311). The live relay runs it; no venue has a `--remote`
+  key yet.
 - **Between phases (ADR-256 to ADR-262): the first security review and
   what the owner decided.** A till's line is priced from the menu on the
   server; a relay must be TLS; revoking a device cuts its stream; the log
