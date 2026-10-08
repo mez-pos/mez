@@ -322,6 +322,37 @@ func TestTunnelForTheBackOffice(t *testing.T) {
 		})
 	}
 
+	// Whether the back office crosses the relay is the venue's setting, said
+	// in every state but off, where there is no relay for it to cross
+	// (ADR-306). Health says nothing of it either way: health is public.
+	t.Run("back_office follows the setting", func(t *testing.T) {
+		for _, tt := range []struct {
+			name   string
+			status *TunnelStatus
+			want   string
+		}{
+			{"no relay", nil, `"back_office":false`},
+			{"off, whatever was reported", &TunnelStatus{State: TunnelOff, BackOffice: true}, `"back_office":false`},
+			{"connected, setting off", &TunnelStatus{State: TunnelConnected, Since: since}, `"back_office":false`},
+			{"connected, setting on", &TunnelStatus{State: TunnelConnected, Since: since, BackOffice: true}, `"back_office":true`},
+			{"waiting, setting on", &TunnelStatus{State: TunnelWaiting, Since: since, BackOffice: true}, `"back_office":true`},
+		} {
+			var opts []Option
+			if tt.status != nil {
+				opts = append(opts, WithTunnel(func() TunnelStatus { return *tt.status }))
+			}
+			r.rebuild(t, opts...)
+			rec := send(r.handler, http.MethodGet, "/api/v1/tunnel", "", owner)
+			if !strings.Contains(rec.Body.String(), tt.want) {
+				t.Errorf("%s: body = %s, want %s", tt.name, rec.Body, tt.want)
+			}
+			health := send(r.handler, http.MethodGet, "/api/v1/health", "", nil)
+			if strings.Contains(health.Body.String(), "back_office") {
+				t.Errorf("%s: health says whether the back office is open: %s", tt.name, health.Body)
+			}
+		}
+	})
+
 	t.Run("times are UTC on the wire", func(t *testing.T) {
 		r.rebuild(t, WithTunnel(func() TunnelStatus { return TunnelStatus{State: TunnelConnected, Since: since} }))
 		rec := send(r.handler, http.MethodGet, "/api/v1/tunnel", "", owner)

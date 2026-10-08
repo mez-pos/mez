@@ -16,6 +16,35 @@ import (
 // errNoSuchPath is a guest path that is not one.
 var errNoSuchPath = errors.New("tunnel: not a path a guest can ask for")
 
+// HeaderVia marks a request that came through the relay, and ViaRelay is
+// what it says. The tunnel sets it on every request it builds and removes
+// whatever arrived under that name, so on the server it is the tunnel's
+// word and nobody else's: a request from the venue's own network never
+// carries it, and one from the internet always does. The API reads it to
+// hold a relayed request to tighter rules (ADR-306).
+const (
+	HeaderVia = "X-Mez-Via"
+	ViaRelay  = "relay"
+)
+
+// The back office's two homes on the server: its bundle, and the API it
+// speaks to. With Options.BackOffice on, a relayed request for one of them
+// is passed as it is. They are written out here, and are the whole list: the
+// terminal at "/", the kitchen display and everything else the server has
+// are reached by no path the tunnel will carry (ADR-306).
+const (
+	backOfficeBundle = "/backoffice"
+	backOfficeAPI    = "/api/v1/"
+)
+
+// forBackOffice reports whether a decoded, already checked path is one of
+// the back office's. The bundle's own directory with or without its slash,
+// and anything beneath either prefix; "/backofficer" and "/api/v10/x" are
+// neither. Case matters, as it does to the server's routes.
+func forBackOffice(p string) bool {
+	return p == backOfficeBundle || strings.HasPrefix(p, backOfficeBundle+"/") || strings.HasPrefix(p, backOfficeAPI)
+}
+
 // guestRequest builds the request the server sees for a guest's frames.
 //
 // Every guest path is put under mount, unless it is there already: "/t/abc"
@@ -24,7 +53,12 @@ var errNoSuchPath = errors.New("tunnel: not a path a guest can ask for")
 // API and never will be. There is no list of what a guest may reach, to be
 // kept in step with the routes: the guest app's mount is the whole of it,
 // and what a guest needs from the server is served from under there.
-func guestRequest(ctx context.Context, head wire.RequestHead, body []byte, mount string) (*http.Request, error) {
+//
+// backOffice is the venue's remote_backoffice setting. Off, the paragraph
+// above is the whole rule. On, the two prefixes forBackOffice names are left
+// where they are, and nothing else is: the checks before it are the same,
+// so a path cannot climb or hide a separator on its way to either.
+func guestRequest(ctx context.Context, head wire.RequestHead, body []byte, mount string, backOffice bool) (*http.Request, error) {
 	u, err := url.ParseRequestURI(head.Path)
 	if err != nil || u.Host != "" || u.Scheme != "" || !climbsNowhere(u.Path) || encodesSeparator(u.RawPath) {
 		return nil, errNoSuchPath
@@ -34,7 +68,7 @@ func guestRequest(ctx context.Context, head wire.RequestHead, body []byte, mount
 	// so that the same bundle works on the venue's wifi and through the
 	// relay; putting those under the mount again would look for
 	// "/order/order/...". Either way the request lands under the mount.
-	if !strings.HasPrefix(u.Path, mount) {
+	if !strings.HasPrefix(u.Path, mount) && !(backOffice && forBackOffice(u.Path)) {
 		base := strings.TrimSuffix(mount, "/")
 		if u.RawPath != "" {
 			u.RawPath = base + u.RawPath
@@ -46,6 +80,7 @@ func guestRequest(ctx context.Context, head wire.RequestHead, body []byte, mount
 	if header == nil {
 		header = http.Header{}
 	}
+	markRelayed(header)
 	req := &http.Request{
 		Method:        head.Method,
 		URL:           u,
@@ -60,6 +95,19 @@ func guestRequest(ctx context.Context, head wire.RequestHead, body []byte, mount
 		RemoteAddr:    remoteAddr(header.Get("X-Forwarded-For")),
 	}
 	return req.WithContext(ctx), nil
+}
+
+// markRelayed says, in the request's headers, that it came through the
+// relay. The headers came off the socket as JSON, spelled however the far
+// end liked, so a copy of the mark that arrived is removed whatever its
+// case before the tunnel writes its own.
+func markRelayed(header http.Header) {
+	for name := range header {
+		if strings.EqualFold(name, HeaderVia) {
+			delete(header, name)
+		}
+	}
+	header.Set(HeaderVia, ViaRelay)
 }
 
 // climbsNowhere reports whether a path stays where it is put. One with a

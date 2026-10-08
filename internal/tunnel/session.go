@@ -233,7 +233,7 @@ func (s *session) serve(ctx context.Context, stream uint64, in *inbound) {
 		}
 	}()
 
-	req, err := guestRequest(ctx, in.head, in.body.Bytes(), s.c.mount)
+	req, err := guestRequest(ctx, in.head, in.body.Bytes(), s.c.mount, s.c.backOffice)
 	if err != nil {
 		// In the server's own error envelope, so a guest app reading the
 		// answer sees the shape it expects everywhere else.

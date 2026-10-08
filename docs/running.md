@@ -264,6 +264,7 @@ The full set of settings:
 | `venue_id` | `-venue-id` | `MEZ_VENUE_ID` | empty |
 | `relay_url` | `-relay-url` | `MEZ_RELAY_URL` | empty, so no relay |
 | `relay_key` | `-relay-key` | `MEZ_RELAY_KEY` | empty; a secret, needed when `relay_url` is set |
+| `remote_backoffice` | `-remote-backoffice` | `MEZ_REMOTE_BACKOFFICE` | `false`. `true` lets the back office be opened through the relay, away from the venue (ADR-306). Only the two words are taken. It needs `relay_url`, and a `relay_key` the relay's operator issued for it (`relay issue-key VENUE --remote`): with either missing mez does not start, and says which. **Leave it off at a real venue for now**: the rules that hold a request from outside to the owner's work, and away from payments and the till, are phase 13's next task |
 | `timezone` | `-timezone` | `MEZ_TIMEZONE` | the machine's own for the server; `setup` requires an IANA name |
 | `dev_origin` | `-dev-origin` | `MEZ_DEV_ORIGIN` | empty, so no CORS |
 | `gateway` | `-gateway` | `MEZ_GATEWAY` | empty, so no gateway; `razorpay` or `stripe` |

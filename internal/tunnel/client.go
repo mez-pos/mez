@@ -27,6 +27,12 @@ const (
 	// watching, and not as a 401 every five minutes for ever.
 	keyPrefix = "mzr_"
 
+	// keyScopeRemote is the third of four parts in a key the relay issued
+	// for a venue's back office as well as its guests (ADR-306). The word is
+	// the relay's; internal/relay is not imported for it, as it is not for
+	// keyPrefix, so the venue's binary carries none of the relay's server.
+	keyScopeRemote = "remote"
+
 	dialTimeout = 15 * time.Second
 
 	// sendTimeout bounds one write to the relay. A socket that cannot take a
@@ -89,6 +95,12 @@ type Options struct {
 	// Mount is where the guest app lives on Handler, "/order/".
 	Mount string
 
+	// BackOffice is the venue's remote_backoffice setting: the back office
+	// and its API are carried too (ADR-306). It needs a key the relay
+	// issued for it, and New refuses one that was not: the relay would
+	// answer 404 for every page, and the owner would believe it was on.
+	BackOffice bool
+
 	// Log is required.
 	Log *slog.Logger
 
@@ -109,8 +121,10 @@ type Client struct {
 	key     string
 	handler http.Handler
 	mount   string
-	log     *slog.Logger
-	now     func() time.Time
+	// backOffice is Options.BackOffice. It never changes after New.
+	backOffice bool
+	log        *slog.Logger
+	now        func() time.Time
 
 	minBackoff, maxBackoff, longBackoff, heartbeat time.Duration
 
@@ -139,6 +153,10 @@ func New(opts Options) (*Client, error) {
 		// Not the key itself: this message goes to a log.
 		return nil, fmt.Errorf("tunnel: relay_key does not look like a venue key, which starts %q", keyPrefix)
 	}
+	if opts.BackOffice && !keyAllowsBackOffice(opts.Key) {
+		// Not the key itself: this message goes to a log.
+		return nil, errors.New("tunnel: remote_backoffice is on, but relay_key is a guests-only key; the relay's operator issues one for the back office with `relay issue-key VENUE --remote`")
+	}
 	target, err := agentURL(opts.RelayURL)
 	if err != nil {
 		return nil, err
@@ -149,6 +167,7 @@ func New(opts Options) (*Client, error) {
 		key:         opts.Key,
 		handler:     opts.Handler,
 		mount:       opts.Mount,
+		backOffice:  opts.BackOffice,
 		log:         opts.Log,
 		now:         opts.Now,
 		minBackoff:  orDefault(opts.MinBackoff, defaultMinBackoff),
@@ -162,6 +181,19 @@ func New(opts Options) (*Client, error) {
 	c.ctx, c.cancel = context.WithCancel(context.Background())
 	c.status = Status{State: StateStopped, Since: c.now()}
 	return c, nil
+}
+
+// BackOffice reports whether this client carries the back office as well as
+// the guest app. It is the setting, not the state of the line.
+func (c *Client) BackOffice() bool { return c.backOffice }
+
+// keyAllowsBackOffice reads the scope out of a venue key:
+// "mzr_<venue>.<key id>.remote.<mac>". It is what the key says, not a check
+// of it: only the relay, which holds the secret, can tell a real key from a
+// written one, and it refuses the second when the venue dials.
+func keyAllowsBackOffice(key string) bool {
+	parts := strings.Split(strings.TrimPrefix(key, keyPrefix), ".")
+	return len(parts) == 4 && parts[2] == keyScopeRemote
 }
 
 func orDefault(d, fallback time.Duration) time.Duration {

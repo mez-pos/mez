@@ -32,15 +32,19 @@ Phase 11 (the relay and the tunnel) and Phase 10 (the back office).
   the billing switch and a venue cannot turn it on by itself. Tests in
   `internal/relay` and `cmd/relay`. Docs: `build/relay/README.md`.
 
-- [ ] **Task 2 - The tunnel carries the back office when the venue says so.**
+- [x] **Task 2 - The tunnel carries the back office when the venue says so.**
   A new setting `remote_backoffice` (`MEZ_REMOTE_BACKOFFICE`, default false).
   With it on, the tunnel client passes a request whose path starts
-  `/backoffice/` or `/api/v1/` through as it is, with `X-Mez-Via: relay`
-  set by the tunnel (and stripped from whatever arrived), and everything
-  else still goes under `/order/` as before. With it off, nothing changes:
-  `/backoffice/` lands at `/order/backoffice/` and is a 404, as today. The
-  health check's `tunnel` line and the Devices screen's status say whether
-  remote is on. Tests in `internal/tunnel`.
+  `/backoffice/` or `/api/v1/` through as it is, and everything else still
+  goes under `/order/` as before. With it off, nothing changes:
+  `/backoffice/` lands at `/order/backoffice/` and is a 404, as today.
+  Tests in `internal/tunnel`.
+
+  As built (ADR-307): `X-Mez-Via: relay` is set by the tunnel on **every**
+  relayed request, guests' too, and whatever arrived under that name is
+  removed. The setting on a guests-only key, or with no relay, stops the
+  start. `GET /api/v1/tunnel` says `back_office`; health does not, since
+  health is public.
 
 - [ ] **Task 3 - The API holds a remote request to the owner's rules.**
   A middleware in `internal/api`, inside `requireDevice`, that acts only when
@@ -49,9 +53,14 @@ Phase 11 (the relay and the tunnel) and Phase 10 (the back office).
   `reports.view` or `stock.manage` (a cashier or waiter is refused even with
   a right PIN); and a deny list answers 403 for the order, payment, kitchen,
   print, shift, setup and export-download routes. The access log line
-  carries `via=relay`. The stream (`/api/v1/stream`) is allowed so the back
-  office stays live. Tests prove a terminal device, a cashier and a payment
+  carries `via=relay`. Tests prove a terminal device, a cashier and a payment
   are all refused over the relay and all still work on the LAN.
+
+  The relay carries no WebSocket (ADR-201: `Upgrade` is a hop header and is
+  dropped), so `/api/v1/stream` cannot open from outside. Find what the back
+  office does without its stream (the "Online" pill, live tables on the
+  dashboard) and decide here: refuse the stream cleanly over the relay and
+  have the back office say "Away from the venue" and refetch on focus.
 
 - [ ] **Task 4 - The owner turns it on and sees where to go.**
   Devices screen, under "Ordering from phones": a "Back office from

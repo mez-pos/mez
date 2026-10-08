@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -447,6 +448,8 @@ func TestEveryKeyIsReachable(t *testing.T) {
 		keyPublicURL:        "https://cafe.example",
 
 		keyGatewayWebhookSecret: "not-a-real-webhook-secret",
+
+		keyRemoteBackoffice: "true",
 	}
 	if len(sample) != len(keys) {
 		t.Fatalf("sample covers %d keys, the package has %d: add the new one here", len(sample), len(keys))
@@ -509,6 +512,8 @@ func assertKey(t *testing.T, key, want string, cfg Config, err error) {
 		equal(t, key, cfg.PublicURL, want)
 	case keyGatewayWebhookSecret:
 		equal(t, key, cfg.GatewayWebhookSecret, want)
+	case keyRemoteBackoffice:
+		equal(t, key, cfg.RemoteBackoffice, true)
 	default:
 		t.Fatalf("key %q has no assertion: add one", key)
 	}
@@ -629,5 +634,48 @@ func TestPublicURL(t *testing.T) {
 		if (err == nil) != tt.ok || (tt.ok && cfg.PublicURL != tt.want) {
 			t.Errorf("public_url %q: got %q, %v; want %q, ok %v", tt.in, cfg.PublicURL, err, tt.want, tt.ok)
 		}
+	}
+}
+
+// TestRemoteBackofficeIsOffUnlessSaidPlainly: the back office crosses the
+// relay only for a venue that wrote true (ADR-306). Anything that is not one
+// of the two words stops the start, and nothing set at all is off.
+func TestRemoteBackofficeIsOffUnlessSaidPlainly(t *testing.T) {
+	tests := []struct {
+		value   string
+		set     bool
+		want    bool
+		wantErr bool
+	}{
+		{"", false, false, false},
+		{"false", true, false, false},
+		{"true", true, true, false},
+		{" TRUE ", true, true, false},
+		{"", true, false, false},
+		{"1", true, false, true},
+		{"yes", true, false, true},
+		{"on", true, false, true},
+		{"enabled", true, false, true},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%q set=%v", tt.value, tt.set), func(t *testing.T) {
+			env := map[string]string{}
+			if tt.set {
+				env[envPrefix+strings.ToUpper(keyRemoteBackoffice)] = tt.value
+			}
+			cfg, err := load(nil, lookupFrom(env), t.TempDir(), "linux")
+			if tt.wantErr {
+				if err == nil || !strings.Contains(err.Error(), keyRemoteBackoffice) {
+					t.Fatalf("load = %v, want an error naming %s", err, keyRemoteBackoffice)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("load: %v", err)
+			}
+			if cfg.RemoteBackoffice != tt.want {
+				t.Errorf("RemoteBackoffice = %v, want %v", cfg.RemoteBackoffice, tt.want)
+			}
+		})
 	}
 }

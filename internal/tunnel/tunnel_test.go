@@ -213,6 +213,7 @@ func TestNewRefuses(t *testing.T) {
 		{"no log", func(o *Options) { o.Log = nil }, "required"},
 		{"no key", func(o *Options) { o.Key = "" }, "relay_key is not"},
 		{"something that is not a venue key", func(o *Options) { o.Key = "hunter2-hunter2" }, "does not look like"},
+		{"the back office on a guests-only key", func(o *Options) { o.BackOffice = true }, "guests-only key"},
 		{"the root as the mount, which would be everything", func(o *Options) { o.Mount = "/" }, "mount"},
 		{"a mount that is not a directory", func(o *Options) { o.Mount = "/order" }, "mount"},
 		{"a relay url with no host", func(o *Options) { o.RelayURL = "wss://" }, "host"},
@@ -328,10 +329,15 @@ func TestGuestRequestStaysUnderTheMount(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req, err := guestRequest(context.Background(), wire.RequestHead{Method: "GET", Path: tt.path}, nil, "/order/")
+			req, err := guestRequest(context.Background(), wire.RequestHead{Method: "GET", Path: tt.path}, nil, "/order/", false)
 			if tt.wantPath == "" {
 				if err == nil {
 					t.Fatalf("accepted, as %q", req.URL.Path)
+				}
+				// A path that is refused is refused with the back office on
+				// too: the checks come before the prefixes (ADR-306).
+				if req, err := guestRequest(context.Background(), wire.RequestHead{Method: "GET", Path: tt.path}, nil, "/order/", true); err == nil {
+					t.Fatalf("accepted with the back office on, as %q", req.URL.Path)
 				}
 				return
 			}
@@ -380,6 +386,146 @@ func TestGuestsReachTheGuestAppAndNothingElse(t *testing.T) {
 		status, body := rawGuest(t, r.addr, "/v/cafe"+path)
 		if strings.Contains(body, "STAFF") || strings.Contains(body, "TERMINAL") {
 			t.Errorf("guest asking for %s got out from under the mount: %d %q", path, status, body)
+		}
+	}
+}
+
+// office is a stand-in for mez that says where each request landed and
+// whether it was marked as relayed: the guest app, the back office's bundle
+// and API, and the terminal at the root, which nothing relayed may reach.
+func office() http.Handler {
+	say := func(where string) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Saw-Via", strings.Join(r.Header.Values(HeaderVia), ","))
+			fmt.Fprintf(w, "%s: %s", where, r.URL.RequestURI())
+		}
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/order/", say("guest app"))
+	mux.HandleFunc("/backoffice/", say("back office"))
+	mux.HandleFunc("/api/v1/", say("staff api"))
+	mux.HandleFunc("/kitchen", say("THE KITCHEN"))
+	mux.HandleFunc("/", say("THE TERMINAL"))
+	return mux
+}
+
+// TestTheBackOfficeCrossesOnlyWhenTheVenueSaysSo: with remote_backoffice on,
+// the bundle and the API are passed as they are and everything else is still
+// put under the guest app's mount; with it off nothing is, on the same key
+// (ADR-306). Either way every relayed request carries the tunnel's mark.
+func TestTheBackOfficeCrossesOnlyWhenTheVenueSaysSo(t *testing.T) {
+	paths := []struct {
+		path    string
+		on, off string // where it lands
+	}{
+		{"/backoffice/", "back office: /backoffice/", "guest app: /order/backoffice/"},
+		{"/backoffice/menu?tab=items", "back office: /backoffice/menu?tab=items", "guest app: /order/backoffice/menu?tab=items"},
+		{"/backoffice/assets/app.js", "back office: /backoffice/assets/app.js", "guest app: /order/backoffice/assets/app.js"},
+		{"/api/v1/menu", "staff api: /api/v1/menu", "guest app: /order/api/v1/menu"},
+		{"/api/v1/devices/pair", "staff api: /api/v1/devices/pair", "guest app: /order/api/v1/devices/pair"},
+		// The guest app is where it always was.
+		{"/t/abc", "guest app: /order/t/abc", "guest app: /order/t/abc"},
+		{"/order/api/v1/menu", "guest app: /order/api/v1/menu", "guest app: /order/api/v1/menu"},
+		// And the rest of the server is still nowhere a relayed path leads.
+		{"/", "guest app: /order/", "guest app: /order/"},
+		{"/kitchen", "guest app: /order/kitchen", "guest app: /order/kitchen"},
+		{"/pos", "guest app: /order/pos", "guest app: /order/pos"},
+		{"/backofficer/", "guest app: /order/backofficer/", "guest app: /order/backofficer/"},
+		{"/Backoffice/", "guest app: /order/Backoffice/", "guest app: /order/Backoffice/"},
+		{"/api/v10/menu", "guest app: /order/api/v10/menu", "guest app: /order/api/v10/menu"},
+		{"/api/health", "guest app: /order/api/health", "guest app: /order/api/health"},
+	}
+	for _, mode := range []struct {
+		name string
+		on   bool
+	}{{"on", true}, {"off", false}} {
+		t.Run(mode.name, func(t *testing.T) {
+			r := startRelay(t)
+			c := r.venue(office(), func(o *Options) {
+				o.Key = r.remoteKey("cafe")
+				o.BackOffice = mode.on
+			})
+			waitState(t, c, StateConnected)
+			if c.BackOffice() != mode.on {
+				t.Errorf("BackOffice() = %v", c.BackOffice())
+			}
+
+			for _, tt := range paths {
+				want := tt.off
+				if mode.on {
+					want = tt.on
+				}
+				resp, err := r.guest("GET", tt.path, nil)
+				if err != nil {
+					t.Fatalf("GET %s: %v", tt.path, err)
+				}
+				body, _ := io.ReadAll(resp.Body)
+				_ = resp.Body.Close()
+				if string(body) != want {
+					t.Errorf("GET %s landed at %q, want %q", tt.path, body, want)
+				}
+				if via := resp.Header.Get("X-Saw-Via"); via != ViaRelay {
+					t.Errorf("GET %s: the server saw %s %q, want exactly %q", tt.path, HeaderVia, via, ViaRelay)
+				}
+			}
+
+			// Raw, because a well-behaved client tidies these before sending
+			// them. None may come out anywhere but under the mount or nowhere.
+			for _, path := range []string{
+				"/backoffice/../", "/backoffice/../kitchen", "/api/v1/../../kitchen", "/backoffice/%2e%2e/kitchen",
+				"/backoffice%2F..%2Fkitchen", "/api/v1/..%2f..%2fkitchen", "/backoffice//kitchen", "//kitchen", "/api%2Fv1%2Fmenu",
+			} {
+				status, body := rawGuest(t, r.addr, "/v/cafe"+path)
+				if strings.Contains(body, "TERMINAL") || strings.Contains(body, "KITCHEN") {
+					t.Errorf("%s reached the room: %d %q", path, status, body)
+				}
+			}
+		})
+	}
+}
+
+// TestTheMarkIsTheTunnelsOwn: whatever arrives claiming to be, or not to be,
+// from the relay is replaced. A guest cannot unmark a request, and cannot
+// mark it as something else.
+func TestTheMarkIsTheTunnelsOwn(t *testing.T) {
+	for _, sent := range []http.Header{
+		nil,
+		{"X-Mez-Via": {"lan"}},
+		{"x-mez-via": {"lan"}, "X-MEZ-VIA": {"", "relay, lan"}},
+		{"X-Mez-Via": {}},
+	} {
+		req, err := guestRequest(context.Background(), wire.RequestHead{Method: "GET", Path: "/api/v1/menu", Header: sent}, nil, "/order/", true)
+		if err != nil {
+			t.Fatalf("guestRequest: %v", err)
+		}
+		var marks []string
+		for name, values := range req.Header {
+			if strings.EqualFold(name, HeaderVia) {
+				marks = append(marks, values...)
+			}
+		}
+		if len(marks) != 1 || marks[0] != ViaRelay || req.Header.Get(HeaderVia) != ViaRelay {
+			t.Errorf("sent %v: the request carries %q", sent, marks)
+		}
+	}
+}
+
+func TestKeyAllowsBackOffice(t *testing.T) {
+	tests := []struct {
+		key  string
+		want bool
+	}{
+		{"mzr_cafe.0123456789ab.remote.sig", true},
+		{"mzr_cafe.0123456789ab.sig", false},
+		{"mzr_cafe.0123456789ab.admin.sig", false},
+		{"mzr_cafe.remote.0123456789ab.sig", false},
+		{"mzr_remote.0123456789ab.sig", false},
+		{"mzr_cafe.0123456789ab.remote.sig.more", false},
+		{"", false},
+	}
+	for _, tt := range tests {
+		if got := keyAllowsBackOffice(tt.key); got != tt.want {
+			t.Errorf("keyAllowsBackOffice(%q) = %v, want %v", tt.key, got, tt.want)
 		}
 	}
 }

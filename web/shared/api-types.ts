@@ -884,6 +884,7 @@ export interface TunnelResponse {
   since?: string;
   retry_at?: string;
   detail?: string;
+  back_office: boolean;
 }
 
 export interface GuestTableResponse {

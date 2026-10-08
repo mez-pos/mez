@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/byjoellobo/mez/internal/api"
+	"github.com/byjoellobo/mez/internal/config"
 	"github.com/byjoellobo/mez/internal/tunnel"
 	"github.com/byjoellobo/mez/web"
 )
@@ -134,8 +135,24 @@ func TestTunnelStatus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := tunnelStatus(idle); got.State != api.TunnelStopped || got.Since.IsZero() {
+	if got := tunnelStatus(idle); got.State != api.TunnelStopped || got.Since.IsZero() || got.BackOffice {
 		t.Errorf("a client not started: %+v, want stopped, with when", got)
+	}
+
+	// The setting is carried through, whatever the line is doing (ADR-306).
+	open, err := tunnel.New(tunnel.Options{
+		RelayURL:   "wss://relay.example",
+		Key:        "mzr_cafe.0123456789ab.remote.sig",
+		Handler:    http.NotFoundHandler(),
+		Mount:      web.MountGuest,
+		BackOffice: true,
+		Log:        slog.New(slog.NewTextHandler(io.Discard, nil)),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := tunnelStatus(open); !got.BackOffice {
+		t.Errorf("remote_backoffice on: %+v, want BackOffice", got)
 	}
 
 	tests := []struct {
@@ -153,6 +170,31 @@ func TestTunnelStatus(t *testing.T) {
 	for _, tt := range tests {
 		if got := translateTunnelState(tt.in); got != tt.want {
 			t.Errorf("translateTunnelState(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
+// TestRemoteNeedsRelay: asking for the back office from outside with no
+// relay to carry it stops the start, since the setting would do nothing and
+// the owner would believe it did (ADR-019, ADR-306).
+func TestRemoteNeedsRelay(t *testing.T) {
+	tests := []struct {
+		name    string
+		cfg     config.Config
+		wantErr bool
+	}{
+		{"neither", config.Config{}, false},
+		{"a relay and no remote", config.Config{RelayURL: "wss://relay.example"}, false},
+		{"both", config.Config{RelayURL: "wss://relay.example", RemoteBackoffice: true}, false},
+		{"remote and no relay", config.Config{RemoteBackoffice: true}, true},
+	}
+	for _, tt := range tests {
+		err := remoteNeedsRelay(tt.cfg)
+		if (err != nil) != tt.wantErr {
+			t.Errorf("%s: remoteNeedsRelay = %v", tt.name, err)
+		}
+		if err != nil && (!strings.Contains(err.Error(), "remote_backoffice") || !strings.Contains(err.Error(), "relay_url")) {
+			t.Errorf("%s: the error does not name both settings: %v", tt.name, err)
 		}
 	}
 }

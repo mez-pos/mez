@@ -448,6 +448,9 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		api.WithCharges(payOnline, cfg.PublicURL),
 	)
 
+	if err := remoteNeedsRelay(cfg); err != nil {
+		return err
+	}
 	if cfg.RelayEnabled() {
 		// A relay that is set but cannot be used is a setting the owner
 		// believes took, so it stops the start (ADR-019). A relay that is
@@ -458,16 +461,32 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 			Key:      cfg.RelayKey,
 			Handler:  srv.Handler(),
 			Mount:    web.MountGuest,
-			Log:      log,
+			// Off unless the venue wrote remote_backoffice = true, and
+			// refused on a key the relay did not issue for it (ADR-306).
+			BackOffice: cfg.RemoteBackoffice,
+			Log:        log,
 		})
 		if err != nil {
 			return err
+		}
+		if guests.BackOffice() {
+			log.Info("the back office is reachable through the relay", "public_url", cfg.PublicURL)
 		}
 		guests.Start()
 		running.push("tunnel", guests.Close)
 	}
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
+}
+
+// remoteNeedsRelay stops a venue that asked for the back office from
+// outside and set no relay to carry it. Without one the setting does
+// nothing, and an owner who wrote it believes it does (ADR-019).
+func remoteNeedsRelay(cfg config.Config) error {
+	if cfg.RemoteBackoffice && !cfg.RelayEnabled() {
+		return errors.New("remote_backoffice is true but relay_url is not set: the back office is reached from outside through a relay, so set relay_url and relay_key, or set remote_backoffice to false")
+	}
+	return nil
 }
 
 // tunnelStatus puts the tunnel client's status into the API's words.
@@ -482,10 +501,11 @@ func tunnelStatus(guests *tunnel.Client) api.TunnelStatus {
 	}
 	st := guests.Status()
 	return api.TunnelStatus{
-		State:   translateTunnelState(st.State),
-		Since:   st.Since,
-		RetryAt: st.RetryAt,
-		Detail:  st.LastError,
+		State:      translateTunnelState(st.State),
+		Since:      st.Since,
+		RetryAt:    st.RetryAt,
+		Detail:     st.LastError,
+		BackOffice: guests.BackOffice(),
 	}
 }
 

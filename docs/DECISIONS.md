@@ -11046,3 +11046,37 @@ the default for a route not on it is "allowed", which is the wrong default for a
 money route: Task 3's test names every money route the API has and must be updated
 when one is added. Two secrets protect the owner's remote session, a device token
 and a PIN, which is less than a bank asks and more than a cafe has ever had.
+
+## ADR-307 - The tunnel marks every relayed request, and remote_backoffice that cannot work stops the start
+2026-10 · Status: accepted. Phase 13, Task 2.
+Context: ADR-306 said the tunnel would mark a back office request that came through
+the relay. Building it raised three smaller questions: which requests carry the mark,
+what happens when the setting is on and cannot work, and where the venue says it is on.
+Decision:
+  - **`X-Mez-Via: relay` goes on every request the tunnel builds**, a guest's as much
+    as the owner's, and any header of that name that arrived, in any case, is deleted
+    first. The mark then means one thing, "this came from the internet", and its
+    absence means "this came from the venue's own network". Marking only the two
+    back office prefixes would have made the absence mean two things.
+  - **The prefixes are two constants in `internal/tunnel`**: `/backoffice` (the
+    directory, with or without its slash, and what is beneath it) and `/api/v1/`.
+    They are compared with the decoded path after the checks ADR-202 already made,
+    so a path that climbs or hides a separator is refused before either is looked
+    at. Case matters: `/Backoffice/` goes under `/order/` and is a 404 there.
+  - **`remote_backoffice = true` with no `relay_url`, or with a guests-only key,
+    stops the start** (ADR-019). The first is checked in `cmd/mez`, the second in
+    `tunnel.New`, which reads the scope out of the key's shape. Reading is not
+    verifying: a key with `remote` written into it passes here and is refused by the
+    relay, which holds the secret, when the venue dials.
+  - **The setting takes `true` or `false` and nothing else.** `1`, `yes` and `on`
+    stop the start. It opens a door, so a guess is not accepted either way.
+  - **`GET /api/v1/tunnel` gains `back_office`**, always present. Health does not
+    say it: health answers anyone, and whether a venue's back office is reachable
+    from outside is not for anyone.
+Because: Task 3's rules hang on the mark, so it is made impossible to arrive without
+and impossible to forge from outside, and the two ways the setting could be on and
+dead are both said at the start, to the person who wrote it.
+Cost: **between this task and Task 3 the setting is unsafe to turn on at a real
+venue.** With it on, the whole staff API answers from outside to a paired device
+and a right PIN, payments and all. It is off by default, needs a key only the
+relay's operator can issue, and `running.md` says to leave it off; Task 3 is next.

@@ -16,24 +16,26 @@ rules. Five tasks. Phases 00 to 12 are built; what they still owe is in
 
 ## Last completed task
 
-**Phase 13, Task 1 - A venue key that allows the back office** (ADR-306).
-`relay issue-key VENUE --remote` prints `mzr_<venue>.<id>.remote.<mac>`;
-the scope is under the mac; `Keys.Check` returns it; a plain key is
-unchanged and every key issued so far still verifies. The agent keeps
-`remote`, and `forward` answers 404 for `/backoffice` and `/api` (whole
-first segment, by path and by hostname) on a guests-only key, before
-anything is sent down the socket. `build/relay/README.md` says how. The
-live relay at relay.jskin.in has not been redeployed with this yet.
+**Phase 13, Task 2 - The tunnel carries the back office when the venue
+says so** (ADR-307). `remote_backoffice` (`MEZ_REMOTE_BACKOFFICE`), `true`
+or `false` only, off by default. On, a relayed `/backoffice`, `/backoffice/...`
+or `/api/v1/...` passes as it is; everything else still goes under
+`/order/`. `X-Mez-Via: relay` (`tunnel.HeaderVia`, `tunnel.ViaRelay`) is on
+every relayed request and cannot arrive from outside. On with no relay, or
+on a guests-only key, mez does not start. `GET /api/v1/tunnel` has
+`back_office`. Before it, Task 1: `relay issue-key VENUE --remote`.
 
 ## Next task
 
-**Phase 13, Task 2 - The tunnel carries the back office when the venue
-says so.** Setting `remote_backoffice` (`MEZ_REMOTE_BACKOFFICE`, default
-false); with it on, a relayed path starting `/backoffice/` or `/api/v1/`
-passes as it is with `X-Mez-Via: relay` set by the tunnel (and stripped
-from whatever arrived); everything else still goes under `/order/`. The
-health check's `tunnel` line and the Devices status say whether remote
-is on. Tests in `internal/tunnel`; `cmd/mez/main.go` wires the setting.
+**Phase 13, Task 3 - The API holds a remote request to the owner's
+rules.** A middleware inside `requireDevice` that acts only on
+`X-Mez-Via: relay`: `back_office` devices only; staff must hold
+`menu.edit`, `settings.edit`, `reports.view` or `stock.manage`; a deny
+list for order, payment, kitchen, print, shift, setup and export-download
+routes; `via=relay` in the access log; and what the back office does
+without its stream, which the relay cannot carry. `internal/api` must not
+import `internal/tunnel`: the header's name is wired in from `cmd/mez`
+or restated with a test that the two agree.
 
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
@@ -59,6 +61,11 @@ Still owed from phase 11, its human check and:
   Handed over. None of 5f2 to 5f4 has been seen against the real binary.
 
 ## Known broken / in progress
+
+- **`remote_backoffice` is not safe to turn on until Phase 13 Task 3**
+  (ADR-307): with it on, the whole staff API answers through the relay to
+  a paired device and a PIN. Off by default. The live relay at
+  relay.jskin.in is not yet redeployed with Task 1 either.
 
 - **Between phases (ADR-256 to ADR-262): the first security review and
   what the owner decided.** A till's line is priced from the menu on the

@@ -37,6 +37,10 @@ type TunnelStatus struct {
 	RetryAt time.Time
 	// Detail is why the last attempt ended, in the client's own words.
 	Detail string
+	// BackOffice says the venue set remote_backoffice: while the tunnel is
+	// connected, the back office can be opened through the relay (ADR-306).
+	// It is the setting, not proof that anyone can get in.
+	BackOffice bool
 }
 
 // WithTunnel supplies the relay tunnel's status, for the health endpoint and
@@ -82,12 +86,19 @@ func (s *Server) tunnelCheck() string {
 
 // tunnelResponse is GET /api/v1/tunnel. since and retry_at are absent when
 // there is none; detail is the client's own account of the last failure, for
-// whoever is helping the owner, and is absent while connected.
+// whoever is helping the owner, and is absent while connected. back_office
+// is always present: whether the venue lets its back office be opened
+// through the relay (ADR-306), which is false wherever there is no relay.
+//
+// Health does not say it. Health is read by anyone who can reach the
+// server, and whether a venue's back office answers from outside is not a
+// thing to tell them.
 type tunnelResponse struct {
-	State   TunnelState `json:"state"`
-	Since   *time.Time  `json:"since,omitempty"`
-	RetryAt *time.Time  `json:"retry_at,omitempty"`
-	Detail  string      `json:"detail,omitempty"`
+	State      TunnelState `json:"state"`
+	Since      *time.Time  `json:"since,omitempty"`
+	RetryAt    *time.Time  `json:"retry_at,omitempty"`
+	Detail     string      `json:"detail,omitempty"`
+	BackOffice bool        `json:"back_office"`
 }
 
 // mountTunnel adds the tunnel's one route. It is read by whoever manages the
@@ -104,7 +115,7 @@ func (s *Server) mountTunnel(mux *http.ServeMux) {
 
 func (s *Server) showTunnel(w http.ResponseWriter, _ *http.Request) {
 	st := s.tunnelStatus()
-	out := tunnelResponse{State: st.State}
+	out := tunnelResponse{State: st.State, BackOffice: st.BackOffice}
 	if !st.Since.IsZero() {
 		since := st.Since.UTC()
 		out.Since = &since

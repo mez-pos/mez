@@ -51,6 +51,8 @@ const (
 	keyPublicURL        = "public_url"
 
 	keyGatewayWebhookSecret = "gateway_webhook_secret"
+
+	keyRemoteBackoffice = "remote_backoffice"
 )
 
 // GatewayRazorpay is the one payment gateway this build can use. The name
@@ -92,6 +94,7 @@ var keys = []string{
 	keyGatewayKeySecret,
 	keyPublicURL,
 	keyGatewayWebhookSecret,
+	keyRemoteBackoffice,
 }
 
 var usage = map[string]string{
@@ -111,6 +114,8 @@ var usage = map[string]string{
 	keyPublicURL:        "the address guests reach this venue at, https://cafe.example; where a gateway sends them back",
 
 	keyGatewayWebhookSecret: "the secret the gateway signs its webhooks with; a secret; empty takes no webhooks",
+
+	keyRemoteBackoffice: "true lets the owner open the back office through the relay; needs relay_url and a key issued for it",
 }
 
 // Config is the resolved, validated server configuration.
@@ -183,6 +188,14 @@ type Config struct {
 	// the venue with. It is a secret, and not the API's. Empty, no call is
 	// believed and the sweep alone finds out what was paid (ADR-224).
 	GatewayWebhookSecret string
+
+	// RemoteBackoffice lets the back office, and the API it speaks to, be
+	// reached through the relay, so the owner can open it away from the
+	// venue (ADR-306). False, the default, the relay carries the guest app
+	// and nothing else. Whether a relay is set at all, and whether its key
+	// allows this, is checked where the tunnel is built, so that this key
+	// can be set alone like the others.
+	RemoteBackoffice bool
 }
 
 // GatewayEnabled reports whether a payment gateway is configured.
@@ -294,6 +307,8 @@ func defaults(lookup func(string) (string, bool), goos string) map[string]string
 		keyPublicURL:        "",
 
 		keyGatewayWebhookSecret: "",
+
+		keyRemoteBackoffice: "false",
 	}
 }
 
@@ -448,7 +463,24 @@ func build(raw map[string]string) (Config, error) {
 	if cfg.PublicURL, err = validPublicURL(raw[keyPublicURL]); err != nil {
 		return Config{}, err
 	}
+	if cfg.RemoteBackoffice, err = validSwitch(keyRemoteBackoffice, raw[keyRemoteBackoffice]); err != nil {
+		return Config{}, err
+	}
 	return cfg, nil
+}
+
+// validSwitch reads a setting that is on or off. Only the two words: "1",
+// "yes" and "on" are what someone types when guessing, and a guess that
+// loads is a door the owner does not know is open, or believes is.
+func validSwitch(key, v string) (bool, error) {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "true":
+		return true, nil
+	case "false", "":
+		return false, nil
+	default:
+		return false, fmt.Errorf("%s %q: must be true or false", key, v)
+	}
 }
 
 func validAddr(v string) (string, error) {
