@@ -7,44 +7,38 @@
 
 ## Current phase
 
-**Phase 10 - Back office**, `docs/phases/phase-10.md`. The human added
-Tasks 8 to 12 after the menu import (ADR-292), and **all five are
-built** (ADR-293 to ADR-305): the menu's export, prices from a file,
-ingredients and recipes from a file, groups of choices from a file, and
-three loose ends. **Every task in every phase is built again.** What is
-left is to see it work: the walks, a release, and a printer.
+**Phase 13 - The back office from anywhere**, `docs/phases/phase-13.md`,
+opened 2026-10-08 (ADR-306). The owner reaches the back office through
+the relay from a phone; the relay carries it only for a venue whose key
+was issued with `--remote`; the API holds a relayed request to tighter
+rules. Five tasks. Phases 00 to 12 are built; what they still owe is in
+`docs/KNOWN.md` and in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 10, Task 12c: a template's example rows are left out**
-(ADR-305, chosen by the human). A row named "Example: ..." is never
-imported, in the items, ingredients or choices import: `sheet.IsExample`.
-Each answer carries `examples`, and each dialog says "2 example rows
-from the template were left out." A file of only examples "has no items
-to add", not "is already on the menu". Before it in Task 12: `mez
-reset-pin` (12a, ADR-304), for a venue whose only owner forgot the PIN,
-and a dev banner that prints the owner's PIN only on the run that knows
-it (12b). Task 12 is done.
+**Phase 10, Task 12c** (ADR-305). Then on 2026-10-08, by hand: the printer
+was tested at the venue and prints; the menu and inventory imports were
+walked against real spreadsheets and work. The drawer kick, the choices
+and recipes imports, the menu export and the prices round trip are still
+unwalked. The landing page brief is in `docs/marketing/landing-brief.md`;
+its screenshots are in `claude-design/shots/` (git-ignored). The product
+domain is mezpos.com.
 
 ## Next task
 
-**There is no next task in the plan.** On 2026-10-08 the human walked
-the menu and inventory imports against real spreadsheets at the venue
-and both worked. Not yet walked: choices, recipes, the menu export and
-prices round trip. `make build-web` first if walking `bin/mez`.
-`v0.1.0-alpha.2` is tagged on the human's machine only and is now
-behind `main`: tag again before building an installer.
+**Phase 13, Task 1 - A venue key that allows the back office.** Key scope
+`remote`, signed into the key; `Keys.Verify` returns it; the agent keeps
+it; `forward` answers 404 for `/backoffice/` and `/api/` on a guests-only
+key; `relay issue-key VENUE --remote`. Tests and `build/relay/README.md`.
 
-For the owner, in the order that unblocks the most:
-1. **The drawer.** The printer was tested at the venue on 2026-10-08
-   and prints. There was no drawer at the venue, so `-drawer` and the
-   kick on a cash sale are still unseen (`hardware.md`, ADR-282).
-2. **A release.** Push a tag (`docs/releasing.md`); expect the first to
-   need a second try. The workflow has never run.
+Still owed from before, in the order that unblocks the most:
+1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
+   drawer was at the venue on 2026-10-08 (`hardware.md`, ADR-282).
+2. **A release.** `v0.1.0-alpha.2` is tagged on the human's machine only
+   and is behind `main`: tag again (`docs/releasing.md`); expect the first
+   workflow run to need a second try.
 3. **Phase 12's "done when"**: a clean Windows machine, the downloaded
-   installer, a first printed invoice in under ten minutes. "Open mez
-   now" opening the setup link (ADR-270) and the window it opens in
-   (ADR-272) have not been watched since they changed.
+   installer, a first printed invoice in under ten minutes.
 4. The human checks phases 09 to 11 owe, and the questions below.
 5. Decide the guest app's licence: the README says it was meant to be
    MIT and is under the AGPL.

@@ -11000,3 +11000,49 @@ templates' tests can no longer feed a template straight back and expect
 rows, so they take the mark off the names first, as an owner would, and
 a second test gives the template back as it came and expects it left
 out whole.
+
+## ADR-306 - The back office crosses the relay only when the venue's key says it may, and the API treats a relayed request as a stranger's
+2026-10 · Status: accepted. Phase 13.
+Context: ADR-202 made the relay carry one thing, the guest app at `/order/`, by
+construction: every relayed path is put under that mount, so the staff API cannot be
+reached from the internet whatever the relay forwards. The owner now wants the back
+office from home. Tailscale works today for one friend; a product needs it built in,
+and it is the natural paid feature of the hosted relay (ADR-008).
+Decision:
+  - **The relay decides whether a venue may have it, by the key.** A venue key gains
+    an optional signed scope: `mzr_<venue>.<key id>.remote.<mac>`. The mac covers
+    the scope, so it cannot be added to a key after it was issued. A three-part key
+    stays what it was. `relay issue-key VENUE --remote` prints the new kind. The
+    relay refuses `/backoffice/` and `/api/` with 404 for a venue connected with a
+    guests-only key, before anything goes down the socket. So the operator sells
+    remote access by issuing a different key, with no venue table and no billing
+    state on the relay, which stores nothing (ADR-201).
+  - **The venue decides whether to use it, by a setting.** `remote_backoffice`
+    (`MEZ_REMOTE_BACKOFFICE`), off by default. Off, the tunnel client behaves as
+    ADR-202 says and `/backoffice/` through the relay lands at `/order/backoffice/`,
+    a 404. On, a relayed request whose path begins `/backoffice/` or `/api/v1/` is
+    passed as it is and marked `X-Mez-Via: relay`; the tunnel strips any such header
+    that arrived, so the mark is the tunnel's word and nobody else's. Everything
+    else still goes under `/order/`. The terminal at `/`, the kitchen at `/kitchen`
+    and the printers are reached by no path the tunnel will carry.
+  - **The API holds a marked request to tighter rules than a LAN one.** The device
+    must be a `back_office` device, the signed-in staff member must hold one of
+    `menu.edit`, `settings.edit`, `reports.view` or `stock.manage`, and a deny list
+    refuses the routes that move money or touch the room: orders, payments, kitchen,
+    prints, shifts, setup, and export downloads. A PIN that is right is not enough
+    for a cashier from outside. The access log says `via=relay`.
+  - **Pairing is unchanged and is the second factor.** A phone is paired once with
+    a code made on the Devices screen, which lives ten minutes and works once. A
+    stolen PIN without a paired device opens nothing; a stolen phone without the
+    PIN opens nothing. Task 5 hardens what a remote PIN attempt may do.
+Because: the mount rule of ADR-202 is kept as the thing that protects the counter:
+it is extended by one explicit list of two prefixes, in the tunnel, behind a setting
+that is off, and not replaced by a list of allowed routes in the API. The relay check
+means a self-hoster running their own relay has it for free and a venue on the
+hosted relay has it when they pay, which is the open-core line ADR-008 drew.
+Cost: the back office's API surface is the staff API, so the deny list in the API is
+a list that has to be kept in step with new routes. It is kept short and tested, and
+the default for a route not on it is "allowed", which is the wrong default for a
+money route: Task 3's test names every money route the API has and must be updated
+when one is added. Two secrets protect the owner's remote session, a device token
+and a PIN, which is less than a bank asks and more than a cafe has ever had.
