@@ -121,7 +121,7 @@ export function Heatmap({ report, csv }: { report: SalesReport; csv: ReactNode }
         </Card>
       ) : (
         <Card className="flex flex-col gap-3">
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table aria-label="Bills by weekday and hour" className="border-collapse text-sm">
               <thead>
                 <tr>

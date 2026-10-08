@@ -145,7 +145,7 @@ function StaffTable({ staff, roleId, now, api, onRole, onOpen, onProblem }: Staf
   return (
     <Card padding="lg" className="min-w-0">
       {/* Under 1280px it scrolls sideways; kept tall enough there for a row's menu to open inside. */}
-      <div className="min-h-80 overflow-x-auto xl:min-h-0 xl:overflow-visible">
+      <div className="min-h-80 relative overflow-x-auto xl:min-h-0 xl:overflow-visible">
         <table aria-label="Staff" className="w-full min-w-136 text-base">
           <thead>
             <tr className="border-b border-line text-left">

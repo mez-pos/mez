@@ -1,8 +1,12 @@
 // The back office's sidebar (D12): 240px from 1280 wide and 208px under, an
 // icon and a name on every entry, the current one filled terracotta. The
 // design draws nine entries in one run; the back office has eleven, so they
-// keep their groups, each under its label (rebuild.md, rule 4). Under 768px it
-// is a wrapped row above the screen.
+// keep their groups, each under its label (rebuild.md, rule 4).
+//
+// Under 768px there is no room for a sidebar beside a screen, and laid across
+// the top it took half of a phone. There it is a drawer: closed until the
+// bar's menu button opens it, over the screen, from the left, and closed
+// again by choosing a section, by the scrim, or by Escape (ADR-311).
 
 import {
   ArmchairIcon,
@@ -38,37 +42,55 @@ const icons: Record<SectionId, LucideIcon> = {
   devices: MonitorSmartphoneIcon,
 };
 
+/** The id the bar's menu button names as what it opens. */
+export const sectionNavId = "section-nav";
+
 interface SectionNavProps {
   current: Section | null;
   held: readonly Permission[];
+  /** Under 768px: whether the drawer is open. From 768px it is always there. */
+  open: boolean;
+  onClose: () => void;
 }
 
-export function SectionNav({ current, held }: SectionNavProps) {
+export function SectionNav({ current, held, open, onClose }: SectionNavProps) {
   const groups = visibleNav(held);
   return (
-    <nav
-      aria-label="Sections"
-      className="flex shrink-0 flex-col border-b border-line bg-chrome px-3 py-4 md:w-52 md:overflow-y-auto md:border-r md:border-b-0 md:scrollbar-thin xl:w-60 xl:px-3.5"
-    >
-      {groups.map((g) => (
-        <div key={g.label ?? "top"} className="mb-1 last:mb-0">
-          {g.label && <h2 className="px-4 pb-1 pt-1.5 text-meta font-bold uppercase text-fg-faint">{g.label}</h2>}
-          <ul className="flex flex-wrap gap-0.5 md:flex-col">
-            {g.sections.map((s) => (
-              <li key={s.id}>
-                <NavEntry section={s} active={current?.id === s.id} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </nav>
+    <>
+      {/* The scrim: what is behind the drawer, and a tap on it closes. Never at 768px or over. */}
+      {open && <button type="button" aria-label="Close the menu" tabIndex={-1} onClick={onClose} className="fixed inset-0 z-30 bg-(--scrim) md:hidden" />}
+      <nav
+        id={sectionNavId}
+        aria-label="Sections"
+        className={cx(
+          "shrink-0 flex-col bg-chrome px-3 py-4 xl:px-3.5",
+          // A drawer under 768px: over the screen, the height of the page.
+          "fixed inset-y-0 left-0 z-40 w-72 max-w-[85vw] overflow-y-auto border-r border-line shadow-modal",
+          open ? "flex" : "hidden",
+          // A sidebar from there: in the page, always.
+          "md:static md:z-auto md:flex md:w-52 md:max-w-none md:shadow-none md:scrollbar-thin xl:w-60",
+        )}
+      >
+        {groups.map((g) => (
+          <div key={g.label ?? "top"} className="mb-1 last:mb-0">
+            {g.label && <h2 className="px-4 pb-1 pt-1.5 text-meta font-bold uppercase text-fg-faint">{g.label}</h2>}
+            <ul className="flex flex-col gap-0.5">
+              {g.sections.map((s) => (
+                <li key={s.id}>
+                  <NavEntry section={s} active={current?.id === s.id} onPick={onClose} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+    </>
   );
 }
 
 const entry = "flex min-h-tap items-center gap-3 whitespace-nowrap rounded px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2";
 
-function NavEntry({ section: s, active }: { section: Section; active: boolean }) {
+function NavEntry({ section: s, active, onPick }: { section: Section; active: boolean; onPick: () => void }) {
   const Icon = icons[s.id];
   if (!s.built) {
     return (
@@ -82,12 +104,14 @@ function NavEntry({ section: s, active }: { section: Section; active: boolean })
   return (
     <Link
       href={s.path}
+      onClick={onPick}
       aria-current={active ? "page" : undefined}
       className={cx(entry, active ? "bg-attention font-semibold text-attention-fg" : "text-fg hover:bg-raised-high")}
     >
       <Icon aria-hidden="true" size={19} className="shrink-0" />
       {s.label}
-      <kbd aria-label={`Keys: g then ${s.key}`} className={cx("ml-auto font-mono text-meta", !active && "text-fg-faint")}>
+      {/* The chords are a keyboard's. Under 768px it is a phone, which has none. */}
+      <kbd aria-label={`Keys: g then ${s.key}`} className={cx("ml-auto hidden font-mono text-meta md:inline", !active && "text-fg-faint")}>
         g {s.key}
       </kbd>
     </Link>

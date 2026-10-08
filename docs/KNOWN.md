@@ -771,11 +771,13 @@
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 
-- Devices on a phone (seen 2026-10-08, phase 13 Task 4): at 390px the whole
-  page scrolls sideways by the width the devices table is over, 704px in a
-  382px column. The table's own wrapper is meant to scroll and does not hold
-  it. It matters more now that an owner opens this screen on a phone from
-  away. The "Back office from anywhere" card is not the cause.
+- The back office from away, and the relay's limit for one address (seen
+  2026-10-08): thirteen page loads in half a minute passed 120 requests a
+  minute and the relay answered 429 with the guests' sentence, "A lot of
+  people are ordering at once". A person is slower than that, but coming
+  back to a tab reads every query again (ADR-309), and a venue's owner and
+  its guests on one office Wi-Fi share an address. Watch for it on the
+  real-phone walk; the relay could count a paired back office apart.
 - Devices (ADR-140): revoking a device does not close its open live stream; it
   is refused at its next connect, and every request it makes is refused at once.
   A revoked till's name in the hub is the one it connected with. Rename and

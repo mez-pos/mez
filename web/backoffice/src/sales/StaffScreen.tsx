@@ -78,7 +78,7 @@ function Performance({ report }: { report: SalesReport }) {
   const rows = staffLines(report.totals, report.names, report.roles);
   if (rows.length === 0) return <Nothing>Nobody opened a bill or took a tip in these days.</Nothing>;
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full min-w-160 text-base">
         <thead>
           <tr className="border-b border-line text-left">

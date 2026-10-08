@@ -46,7 +46,7 @@ export interface DataTableProps<T> {
 export function DataTable<T>({ columns, rows, rowKey, label, sort = null, onSortChange, pagination, loading = false, empty }: DataTableProps<T>) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-x-auto rounded-card border border-line bg-raised shadow-rest">
+      <div className="relative overflow-x-auto rounded-card border border-line bg-raised shadow-rest">
         <table aria-label={label} aria-busy={loading} className="w-full border-collapse text-base">
           <thead>
             <tr className="border-b border-line">

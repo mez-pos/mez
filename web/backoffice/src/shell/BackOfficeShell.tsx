@@ -7,8 +7,8 @@
 // a control that does nothing is not drawn (rebuild.md, rule 3).
 
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarIcon, LogOutIcon } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { CalendarIcon, LogOutIcon, MenuIcon } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import type { Permission } from "../../../shared/api-types";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
@@ -20,7 +20,7 @@ import { useAway, useRealtimeNotices } from "../../../shared/use-realtime";
 import { useVenue } from "../../../shared/use-venue";
 import { clockText } from "../../../shared/venue-text";
 import { chord, sectionForPath, type ChordState } from "./nav-logic";
-import { SectionNav } from "./SectionNav";
+import { SectionNav, sectionNavId } from "./SectionNav";
 
 /** The signed-in staff member's permissions; none while not signed in. */
 export function usePermissions(): readonly Permission[] {
@@ -32,22 +32,44 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const store = useAuthStore();
   const [path] = useLocation();
+  // Under 768px the sections are a drawer, and this is whether it is open.
+  const [navOpen, setNavOpen] = useState(false);
   useChords();
   useFreshWhenAway();
+  useEscape(navOpen, () => setNavOpen(false));
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas text-fg">
-      <header className="flex h-18 shrink-0 items-center gap-6 border-b border-line bg-chrome px-5 short:h-15 2xl:px-7">
-        <Logo className="h-9" />
-        <div className="ml-auto flex items-center gap-5 whitespace-nowrap">
-          <ConnectionWord brief className="text-sm" />
+      <header className="flex h-18 shrink-0 items-center gap-2 border-b border-line bg-chrome px-3 short:h-15 md:gap-6 md:px-5 2xl:px-7">
+        {/* Under 768px: the way to the sections, which are a drawer there. */}
+        <button
+          type="button"
+          aria-label="Menu"
+          aria-expanded={navOpen}
+          aria-controls={sectionNavId}
+          onClick={() => setNavOpen((o) => !o)}
+          className="flex size-12 shrink-0 items-center justify-center rounded outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2 md:hidden"
+        >
+          <MenuIcon aria-hidden="true" size={24} />
+        </button>
+        {/* The mark alone under 640px, where the wordmark would cost the connection its words;
+            never squeezed either way: a flex row shrinks an svg to nothing. */}
+        <Logo variant="mark" className="h-7 shrink-0 sm:hidden" />
+        <Logo className="hidden h-8 shrink-0 sm:block md:h-9" />
+        <div className="ml-auto flex min-w-0 items-center gap-2 whitespace-nowrap md:gap-5">
+          <ConnectionWord brief className="min-w-0 text-sm" />
           <VenueClock />
-          <ProfileMenu name={auth.staff.name} role={auth.staff.role} actions={[{ icon: LogOutIcon, label: "Sign out", onClick: () => void store.signOut() }]} />
+          <ProfileMenu
+            compact
+            name={auth.staff.name}
+            role={auth.staff.role}
+            actions={[{ icon: LogOutIcon, label: "Sign out", onClick: () => void store.signOut() }]}
+          />
         </div>
       </header>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
-        <SectionNav current={sectionForPath(path)} held={auth.permissions} />
+        <SectionNav current={sectionForPath(path)} held={auth.permissions} open={navOpen} onClose={() => setNavOpen(false)} />
         {/* Positioned, so anything absolute in a screen (every sr-only label) scrolls
             and clips with it. Left to the page, one below the fold makes the whole
             page scroll, bar and navigation with it. */}
@@ -70,6 +92,22 @@ function useFreshWhenAway() {
   useRealtimeNotices((notice) => {
     if (away && notice.kind === "resync") void queryClient.invalidateQueries();
   });
+}
+
+/** Escape closes what is open, while it is. */
+function useEscape(active: boolean, close: () => void) {
+  const latest = useRef(close);
+  useEffect(() => {
+    latest.current = close;
+  }, [close]);
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") latest.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [active]);
 }
 
 /** The date and time in the venue's zone, so the bar is right on a laptop set to another. */

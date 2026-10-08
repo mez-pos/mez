@@ -46,7 +46,15 @@ screen each scroll on their own.
   - **Reports:** Z-reports, Audit, Sales reports
   - **Settings:** Floor plan, Printers, Settings, Devices
   - A script line at the foot, on a screen 900px tall or more.
-  - Under 768px the sidebar is a wrapped row above the screen.
+  - **Under 768px there is no sidebar** (ADR-311). The bar has a menu
+    button at its left, 48px, and the sections are a drawer it opens: from
+    the left, 288px or 85% of the width, over the screen, with a scrim
+    behind. Choosing a section, the scrim and Escape all close it. Each
+    entry is one row, and no key chords are shown. The bar there is the
+    button, the logo's mark alone (the whole logo from 640px), the
+    connection's word, which is cut with an ellipsis before it pushes
+    anything out, and the profile as its initials, with the name and role
+    in the panel it opens.
 - **The screen** fills the rest, padded 24px.
 
 Sign-in and pairing are the terminal's screens (`terminal-lock.md`), on a

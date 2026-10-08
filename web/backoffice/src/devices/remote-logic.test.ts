@@ -46,6 +46,7 @@ describe("remoteWords", () => {
     expect(w.line).toBe("The back office can be opened away from the venue, at this address.");
     expect(w.address).toBe(url);
     expect(w.steps).toHaveLength(3);
+    expect(w.steps[0]).toMatch(/phone, tablet or computer/);
     expect(w.steps[1]).toMatch(/Pair a device/);
     expect(w.steps[1]).toMatch(/made at the venue/);
     expect(w.steps[2]).toMatch(/manages the venue/);

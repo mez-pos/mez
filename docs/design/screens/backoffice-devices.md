@@ -50,8 +50,8 @@ Inside the frame (`backoffice-shell.md`).
 
   | Case | Chip | The sentence | The list |
   |---|---|---|---|
-  | No relay | **Only at the venue**, neutral | "The back office opens only at the venue. Opening it from home needs a relay first, which is also what lets guests order from their phones." | none |
-  | A relay, and off | **Only at the venue**, neutral | "The back office opens only at the venue. It can be opened from home too: the menu, tables, stock, staff and reports, and nothing that takes money." | a key that allows it; `relay_key` and `remote_backoffice = true`; restart |
+  | No relay | **Only at the venue**, neutral | "The back office opens only at the venue. Opening it from a phone or a computer elsewhere needs a relay first, which is also what lets guests order from their phones." | none |
+  | A relay, and off | **Only at the venue**, neutral | "The back office opens only at the venue. It can be opened from a phone or a computer elsewhere too: the menu, tables, stock, staff and reports, and nothing that takes money." | a key that allows it; `relay_key` and `remote_backoffice = true`; restart |
   | On, relay reached | **Open**, success | "The back office can be opened away from the venue, at this address." | open it; pair with a code made here, as a Back office; sign in, managers only |
   | On, relay not reached | **Not reachable**, warning | "It is turned on, but the relay is not reached right now, so the address opens nothing until it is. The counter is not affected." | the same three |
   | On, no address | **Open** or **Not reachable** | "It is turned on, but this venue has not said where it is reached, so there is no address to open." | set `public_url` and restart |

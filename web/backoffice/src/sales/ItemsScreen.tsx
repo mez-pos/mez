@@ -160,7 +160,7 @@ function ItemPerformance({ report, prior, against, failed }: ItemPerformanceProp
   const note = costs.data ? costingNote(costs.data) : "";
   return (
     <div>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className="w-full min-w-184 text-base">
           <thead>
             <tr className="border-b border-line text-left">

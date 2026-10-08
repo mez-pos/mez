@@ -19,9 +19,14 @@ interface ProfileMenuProps {
   role: string;
   /** The choices, in the order they are listed. */
   actions: readonly ProfileAction[];
+  /**
+   * Under 640px the button is the initials alone, and the name and role
+   * are in the panel it opens: for a bar that is also shown on a phone.
+   */
+  compact?: boolean;
 }
 
-export function ProfileMenu({ name, role, actions }: ProfileMenuProps) {
+export function ProfileMenu({ name, role, actions, compact = false }: ProfileMenuProps) {
   const { open, toggle, box, trigger, panel, panelId, pick, leaves } = useDisclosure();
 
   return (
@@ -32,16 +37,24 @@ export function ProfileMenu({ name, role, actions }: ProfileMenuProps) {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={toggle}
-        className="flex min-h-tap items-center gap-2.5 rounded-pill pl-1 pr-3 outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+        aria-label={compact ? `${name}, ${roleText(role)}` : undefined}
+        className={cx(
+          "flex min-h-tap shrink-0 items-center gap-2.5 rounded-pill pl-1 outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2",
+          compact ? "pr-1 sm:pr-3" : "pr-3",
+        )}
       >
         <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-round bg-accent-tint text-sm font-bold text-accent">
           {initials(name) || "?"}
         </span>
-        <span className="text-left leading-tight">
+        <span className={cx("text-left leading-tight", compact && "hidden sm:block")}>
           <span className="block text-base font-bold">{name}</span>
           <span className="block text-sm text-fg-muted">{roleText(role)}</span>
         </span>
-        <ChevronDownIcon aria-hidden="true" size={16} className={cx("text-fg-muted transition-transform", open && "rotate-180")} />
+        <ChevronDownIcon
+          aria-hidden="true"
+          size={16}
+          className={cx("text-fg-muted transition-transform", open && "rotate-180", compact && "hidden sm:block")}
+        />
       </button>
       {open && (
         <div
@@ -51,6 +64,12 @@ export function ProfileMenu({ name, role, actions }: ProfileMenuProps) {
           aria-label="Your account"
           className="absolute right-0 top-full z-20 mt-2 w-64 rounded-card border border-line bg-raised p-2 shadow-card"
         >
+          {compact && (
+            <p className="border-b border-line px-4 pb-2 pt-1 leading-tight sm:hidden">
+              <span className="block text-base font-bold">{name}</span>
+              <span className="block text-sm text-fg-muted">{roleText(role)}</span>
+            </p>
+          )}
           {actions.map((a) => (
             <Item key={a.label} icon={a.icon} label={a.label} onClick={pick(a.onClick)} />
           ))}

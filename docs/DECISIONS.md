@@ -11210,3 +11210,31 @@ once. A sentence and three steps is what the owner needs once.
 Cost: turning it on means opening a file as an administrator, which is more than a
 tap. A venue on the hosted relay will be set up by whoever sells it the key, and the
 installer could ask for both; that is not built.
+
+## ADR-311 - Under 768px the back office's sections are a drawer, not a row above the screen
+2026-10 · Status: accepted. Phase 13, after Task 4. Changes ADR-182's narrow layout.
+Context: ADR-182 laid the sidebar across the top under 768px, wrapped. With eleven
+sections and their group labels that was 460px of an 844px phone, every screen began
+below the fold, the logo was squeezed to a few pixels by the flex row it sat in, and
+each entry showed a key chord to a device with no keys. Nobody had opened the back
+office on a phone until it could be opened from away (ADR-306), and then the owner
+did, first thing.
+Decision:
+  - **A drawer.** Under 768px the navigation is closed until a menu button in the
+    bar opens it: fixed, from the left, over the screen, with the scrim behind.
+    Choosing a section, the scrim and Escape close it. From 768px it is the sidebar
+    it was, and the button is not drawn.
+  - **The bar is made to fit 360px**: the button, the logo's mark (the wordmark
+    from 640px), the connection's word, the profile as initials. `ProfileMenu`
+    takes `compact`, which the terminal does not pass, so its bar is unchanged.
+  - **Key chords are not shown under 768px.** They still work with a keyboard.
+  - **A wrapper that scrolls sideways is positioned.** Twelve tables sat in an
+    `overflow-x-auto` wrapper that was not, so the absolutely placed labels only a
+    screen reader hears escaped it and made the whole page scroll sideways on a
+    phone by the table's overhang. `relative` on each wrapper holds them.
+Because: an owner away from the venue is on a phone more often than not, and the
+screen they came for should be what they see.
+Cost: one more tap to change section on a phone. The drawer is not a modal dialog:
+focus is not held inside it, so a keyboard user under 768px can tab behind it.
+Tables wider than a phone still scroll sideways inside their cards, which is how a
+table with seven columns is read at that width; none has a phone layout of its own.

@@ -12,7 +12,7 @@ const PAPER_FONT: CSSProperties = { fontFamily: 'ui-monospace, "Cascadia Mono", 
 
 export function ReceiptPaper({ preview }: { preview: ReceiptPreviewResponse }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <div
         role="img"
         aria-label={`A sample receipt, ${preview.columns} characters wide`}

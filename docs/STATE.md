@@ -26,6 +26,11 @@ through a local relay with a hostname per venue: a code made at the venue,
 a phone-sized browser paired through the relay, a price changed from 60 to
 65 and seen at the venue.
 
+After it, at the human's word on seeing it on a phone: under 768px the
+sections are a drawer behind a menu button, not a row across the top, and
+no page scrolls sideways (ADR-311). The card and `deploy.md` say phone,
+tablet or computer.
+
 ## Next task
 
 **Phase 13, Task 5 - A remote session is harder to take than a LAN one.**

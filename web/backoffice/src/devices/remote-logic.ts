@@ -40,13 +40,13 @@ export function remoteWords(t: Remote, away: boolean): RemoteWords {
   if (!t.back_office) {
     if (t.state === "off") {
       return {
-        line: "The back office opens only at the venue. Opening it from home needs a relay first, which is also what lets guests order from their phones.",
+        line: "The back office opens only at the venue. Opening it from a phone or a computer elsewhere needs a relay first, which is also what lets guests order from their phones.",
         address: null,
         steps: [],
       };
     }
     return {
-      line: "The back office opens only at the venue. It can be opened from home too: the menu, tables, stock, staff and reports, and nothing that takes money.",
+      line: "The back office opens only at the venue. It can be opened from a phone or a computer elsewhere too: the menu, tables, stock, staff and reports, and nothing that takes money.",
       address: null,
       steps: [
         "Ask whoever runs the relay for a key that allows it.",
@@ -63,7 +63,7 @@ export function remoteWords(t: Remote, away: boolean): RemoteWords {
     };
   }
   const first = [
-    "Open the address on your phone or laptop.",
+    "Open the address in a browser on your phone, tablet or computer.",
     "The first time, it asks for a pairing code. Make one here with Pair a device, as a Back office. A code is made at the venue.",
     "Sign in with your PIN. Only someone who manages the venue can.",
   ];

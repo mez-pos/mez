@@ -41,7 +41,7 @@ export function StockLevels({ rows, allRetired, onAction }: StockLevelsProps) {
   return (
     <Card padding="lg" className="min-w-0">
       {/* Under 1280px it scrolls sideways, and a scroll box clips what hangs out of it: it is kept tall enough for a row's menu to open inside. */}
-      <div className="min-h-96 overflow-x-auto xl:min-h-0 xl:overflow-visible">
+      <div className="min-h-96 relative overflow-x-auto xl:min-h-0 xl:overflow-visible">
         <table aria-label="Stock levels" className="w-full min-w-160 text-base">
           <thead>
             <tr className="border-b border-line text-left">

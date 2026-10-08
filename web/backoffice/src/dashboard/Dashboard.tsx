@@ -147,7 +147,7 @@ export function Dashboard() {
         {canSales && (
           <Panel title="Staff performance" className={wide}>
             {sales.data ? (
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
                 <StaffPerformance report={sales.data} />
               </div>
             ) : (

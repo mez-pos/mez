@@ -29,7 +29,9 @@ export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTablePro
   return (
     <Card padding="lg" className="min-w-0">
       {/* Under 1280px it scrolls sideways; kept tall enough there for a row's menu to open inside. */}
-      <div className="min-h-80 overflow-x-auto xl:min-h-0 xl:overflow-visible">
+      {/* Positioned, so the labels only a screen reader hears, which are absolute, are clipped
+          with the table and do not make the whole page scroll sideways on a phone. */}
+      <div className="min-h-80 relative overflow-x-auto xl:min-h-0 xl:overflow-visible">
         <table aria-label="Devices" className="w-full min-w-176 text-base">
           <thead>
             <tr className="border-b border-line text-left">

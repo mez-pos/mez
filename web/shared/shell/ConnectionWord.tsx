@@ -32,8 +32,9 @@ export function ConnectionWord({ brief = false, className }: ConnectionWordProps
 
   return (
     <span role="status" aria-live="polite" className={cx("inline-flex items-center gap-1.5 whitespace-nowrap font-semibold", toneClass[link.tone], className)}>
-      <Wifi aria-hidden="true" size={15} strokeWidth={2} />
-      {link.word}
+      <Wifi aria-hidden="true" size={15} strokeWidth={2} className="shrink-0" />
+      {/* In a bar with no room it is cut short with an ellipsis and never pushes its neighbours out. */}
+      <span className="min-w-0 truncate">{link.word}</span>
       {link.detail && !brief && <span className="font-normal text-fg-muted">{link.detail}</span>}
     </span>
   );

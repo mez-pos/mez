@@ -104,7 +104,7 @@ export function TableCodesCard() {
       )}
 
       {data && data.tables.length > 0 && (
-        <div className="min-h-64 overflow-x-auto xl:min-h-0 xl:overflow-visible">
+        <div className="min-h-64 relative overflow-x-auto xl:min-h-0 xl:overflow-visible">
           <table aria-label="Table codes" className="w-full min-w-160 text-base">
             <thead>
               <tr className="border-b border-line text-left">

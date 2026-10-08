@@ -654,8 +654,10 @@ What to know before relying on it:
 
 ## The back office from anywhere
 
-The owner opens the back office on their own phone or laptop, away from the
-venue: at home, before opening, to change a price or look at yesterday. It
+The owner opens the back office in a browser on their own phone, tablet or
+computer, away from the venue: at home, before opening, to change a price
+or look at yesterday. It is the same back office on each: on a computer
+with its sidebar, on a phone with the sections behind a menu button. It
 goes through the same relay that carries guests' orders, so nothing more is
 opened at the venue. It is off until you turn it on.
 
@@ -702,9 +704,10 @@ no relay, or on a key that does not allow it, and says which.
 ("Priya's phone"), choose **Back office**, **Make a code**. The code lasts
 ten minutes and works once.
 
-**4. Open the address on the phone**, on mobile data or any network. Enter
-the code, then sign in with your PIN. The phone stays paired: from then on
-it is the address and the PIN.
+**4. Open the address on the phone or the computer**, on mobile data or
+any network. Enter the code, then sign in with your PIN. It stays paired:
+from then on it is the address and the PIN. Each phone and each computer is
+paired once, with a code of its own.
 
 **A lost or sold phone:** **Devices**, its row, **Revoke**. That works from
 away as well as at the venue. To stop all of it, set `remote_backoffice =
@@ -726,6 +729,11 @@ What to know before relying on it:
 - **It needs the venue's computer on and its internet up.** With either
   down the address answers "Ordering is offline", which is the relay's one
   page for a venue it cannot reach.
+- **A relay counts requests from one address**, 120 a minute unless its
+  operator raised it (`RELAY_IP_PER_MINUTE`). The limit is set for guests,
+  and someone moving quickly between the back office's screens can pass
+  it: a screen then says to try again in a few seconds, in the words
+  written for guests ("A lot of people are ordering at once").
 - **The log says which requests came from away**: each has `via=relay`
   ([`running.md`](running.md)).
 
