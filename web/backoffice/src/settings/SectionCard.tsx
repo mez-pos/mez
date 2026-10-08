@@ -3,6 +3,7 @@
 // "How a section saves"). A section brings its fields and its own checks.
 
 import type { FormEvent, ReactNode } from "react";
+import { AtTheVenue } from "../../../shared/shell/AtTheVenue";
 import { Button, Card } from "../../../shared/ui";
 
 export interface SectionCardProps {
@@ -20,13 +21,19 @@ export interface SectionCardProps {
   onDiscard: () => void;
   /** Two fields across from 640px, as D22 lays out a venue's details; one otherwise. */
   columns?: 1 | 2;
+  /**
+   * The section can be read and not changed: the back office is open away
+   * from the venue and this is one of the things changed there (ADR-308).
+   * Every field is disabled and there is nothing to save.
+   */
+  readOnly?: boolean;
   children: ReactNode;
 }
 
-export function SectionCard({ title, description, dirty, busy, saved, error, onSave, onDiscard, columns = 1, children }: SectionCardProps) {
+export function SectionCard({ title, description, dirty, busy, saved, error, onSave, onDiscard, columns = 1, readOnly = false, children }: SectionCardProps) {
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (dirty && !busy) onSave();
+    if (dirty && !busy && !readOnly) onSave();
   };
   // One live region whose words change: a screen reader hears each in turn.
   const state = busy ? "Saving" : dirty ? "Unsaved changes" : saved ? "Saved" : "";
@@ -36,8 +43,12 @@ export function SectionCard({ title, description, dirty, busy, saved, error, onS
       <form onSubmit={submit} noValidate>
         <h2 className="font-serif text-xl">{title}</h2>
         <p className="mt-1 text-base text-fg-2">{description}</p>
-        <div className={columns === 2 ? "mt-6 grid max-w-4xl gap-5 sm:grid-cols-2" : "mt-6 flex max-w-xl flex-col gap-5"}>{children}</div>
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
+        {/* A fieldset, so that disabling it disables every field a section brings, whatever they are. */}
+        <fieldset disabled={readOnly} className={columns === 2 ? "mt-6 grid max-w-4xl gap-5 sm:grid-cols-2" : "mt-6 flex max-w-xl flex-col gap-5"}>
+          {children}
+        </fieldset>
+        {readOnly && <AtTheVenue className="mt-8 border-t border-line pt-6">This is changed at the venue.</AtTheVenue>}
+        <div hidden={readOnly} className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
           <div className="flex min-h-tap flex-col justify-center">
             <p
               role="status"

@@ -7,6 +7,7 @@ import { useState } from "react";
 import type { PrinterResponse, StationPrinterResponse } from "../../../shared/api-types";
 import { Card, StatusChip, useToast } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
+import { useAway } from "../../../shared/use-realtime";
 import { cx } from "../../../shared/ui/cx";
 import { RowMenu } from "../RowMenu";
 import { agoText, connectionText, printsText, problemOf } from "./printers-logic";
@@ -25,6 +26,8 @@ const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
 
 export function PrinterTable({ printers, stations, api, onEdit, onProblem }: PrinterTableProps) {
   const toast = useToast();
+  // Nothing in a row's menu can be done from away (ADR-308), so there is none.
+  const away = useAway();
   // "12 min ago" moves on each half minute.
   const now = new Date(useClock(30_000));
   // The printer an action is running on: its menu waits for the answer.
@@ -94,7 +97,7 @@ export function PrinterTable({ printers, stations, api, onEdit, onProblem }: Pri
                   )}
                 </td>
                 <td className="py-2">
-                  <span className="flex justify-end">
+                  <span hidden={away} className="flex justify-end">
                     <RowMenu
                       name={p.name}
                       disabled={busy === p.id}

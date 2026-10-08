@@ -35,6 +35,10 @@ export function describeConnection(status: RealtimeStatus, now: number): Connect
         detail: "pair it again",
         retryable: false,
       };
+    case "away":
+      // Not a fault and nothing to retry: the server answers. It says why
+      // nothing on the page moves by itself.
+      return { tone: "muted", word: "Away from the venue", detail: null, retryable: false };
     case "reconnecting":
       return reconnecting(status, now);
   }

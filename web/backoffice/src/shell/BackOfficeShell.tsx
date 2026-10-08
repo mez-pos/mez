@@ -6,6 +6,7 @@
 // The design's bar also draws a search and a bell. Nothing answers either, and
 // a control that does nothing is not drawn (rebuild.md, rule 3).
 
+import { useQueryClient } from "@tanstack/react-query";
 import { CalendarIcon, LogOutIcon } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { useLocation } from "wouter";
@@ -15,6 +16,7 @@ import { ConnectionWord } from "../../../shared/shell/ConnectionWord";
 import { ProfileMenu } from "../../../shared/shell/ProfileMenu";
 import { Logo } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
+import { useAway, useRealtimeNotices } from "../../../shared/use-realtime";
 import { useVenue } from "../../../shared/use-venue";
 import { clockText } from "../../../shared/venue-text";
 import { chord, sectionForPath, type ChordState } from "./nav-logic";
@@ -31,6 +33,7 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
   const store = useAuthStore();
   const [path] = useLocation();
   useChords();
+  useFreshWhenAway();
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
 
   return (
@@ -52,6 +55,21 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Away from the venue nothing tells a screen that something changed: the
+ * relay carries no stream (ADR-309). The connection says "read again" when
+ * someone comes back to the page, and here that means every query, since
+ * only four of them listen for it themselves. At the venue this does
+ * nothing: there the stream names what moved.
+ */
+function useFreshWhenAway() {
+  const away = useAway();
+  const queryClient = useQueryClient();
+  useRealtimeNotices((notice) => {
+    if (away && notice.kind === "resync") void queryClient.invalidateQueries();
+  });
 }
 
 /** The date and time in the venue's zone, so the bar is right on a laptop set to another. */

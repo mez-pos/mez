@@ -5,6 +5,7 @@
 import type { BackupRequest, BackupResponse } from "../../../shared/api-types";
 import { Choice, Field, inputClass } from "../FormFields";
 import { BACKUP_KINDS, backupChanged, backupFormFrom, backupProblem, backupProblemOf, secretKept, toBackupInput, type BackupForm } from "./backup-logic";
+import { useAway } from "../../../shared/use-realtime";
 import { SectionCard } from "./SectionCard";
 import { useSectionDraft } from "./use-section-draft";
 
@@ -20,6 +21,7 @@ const mono = `${inputClass} font-mono`;
 const verbatim = { autoComplete: "off", autoCapitalize: "none", autoCorrect: "off", spellCheck: false } as const;
 
 export function BackupCard({ backup, onSave, onDirty }: BackupCardProps) {
+  const away = useAway();
   const saved = backupFormFrom(backup);
   const secretSet = backup.s3.secret_set;
   const d = useSectionDraft({
@@ -36,6 +38,7 @@ export function BackupCard({ backup, onSave, onDirty }: BackupCardProps) {
 
   return (
     <SectionCard
+      readOnly={away}
       title="Where the backup goes"
       description="Saving tries the place first: mez writes a small note there, and keeps the setting only if it could."
       dirty={d.dirty}

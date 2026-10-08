@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ApiError, apiErrorOf, createApiClient, isUnreachable, noCredentials, retryAfter, wordsOf, type Credentials } from "./api";
+import { ApiError, apiErrorOf, cameThroughRelay, createApiClient, isUnreachable, noCredentials, retryAfter, wordsOf, type Credentials } from "./api";
 
 interface Call {
   path: string;
@@ -264,5 +264,46 @@ describe("wordsOf", () => {
     expect(wordsOf(new ApiError("bad_response", "bad gateway", 502), fallback)).toBe(fallback);
     expect(wordsOf(new Error("boom"), fallback)).toBe(fallback);
     expect(wordsOf(undefined, fallback)).toBe(fallback);
+  });
+});
+
+describe("answers through the relay", () => {
+  const relayed = (status: number, body: unknown, via: string | null) =>
+    new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...(via === null ? {} : { "X-Mez-Via": via }) } });
+
+  it("reads the mark off an answer, and only the relay's own word for it", () => {
+    expect(cameThroughRelay(relayed(200, {}, "relay"))).toBe(true);
+    expect(cameThroughRelay(relayed(200, {}, null))).toBe(false);
+    expect(cameThroughRelay(relayed(200, {}, "lan"))).toBe(false);
+    expect(cameThroughRelay(relayed(200, {}, ""))).toBe(false);
+  });
+
+  it("shows every answer to onResponse, a refusal as much as a success", async () => {
+    const seen: boolean[] = [];
+    const answers = [
+      relayed(200, { id: "d1" }, "relay"),
+      relayed(403, { error: { code: "remote_not_allowed", message: "This can only be done at the venue." } }, "relay"),
+      relayed(200, {}, null),
+    ];
+    const { fetch } = fakeFetch(() => answers.shift() ?? relayed(500, {}, null));
+    const api = createApiClient({ credentials: signedIn, fetch, onResponse: (r) => seen.push(cameThroughRelay(r)) });
+
+    await api.get("/api/v1/devices/me");
+    const refused = await api.post("/api/v1/orders", {}).catch((err: unknown) => err);
+    await api.get("/api/v1/devices/me");
+
+    expect(seen).toEqual([true, true, false]);
+    expect(refused).toBeInstanceOf(ApiError);
+    expect((refused as ApiError).code).toBe("remote_not_allowed");
+    // The server's sentence is what a screen shows: it needs none of its own.
+    expect(wordsOf(refused, "Could not save.")).toBe("This can only be done at the venue.");
+  });
+
+  it("is not shown an answer that never came", async () => {
+    const seen: Response[] = [];
+    const { fetch } = fakeFetch(() => Promise.reject(new TypeError("failed to fetch")));
+    const api = createApiClient({ credentials: signedIn, fetch, onResponse: (r) => seen.push(r) });
+    await expect(api.get("/api/v1/devices/me")).rejects.toMatchObject({ code: "network" });
+    expect(seen).toEqual([]);
   });
 });

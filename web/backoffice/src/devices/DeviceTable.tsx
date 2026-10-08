@@ -7,6 +7,7 @@ import { ChefHatIcon, LaptopIcon, MonitorIcon, SmartphoneIcon, type LucideIcon }
 import type { DeviceKind, DeviceRecordResponse } from "../../../shared/api-types";
 import { Card, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useAway } from "../../../shared/use-realtime";
 import { RowMenu } from "../RowMenu";
 import { dateText, kindWords, lastSeenText, revokedText, stateOf } from "./devices-logic";
 
@@ -23,6 +24,8 @@ const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
 const icons: Record<DeviceKind, LucideIcon> = { terminal: MonitorIcon, kitchen: ChefHatIcon, back_office: LaptopIcon, guest: SmartphoneIcon };
 
 export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTableProps) {
+  // From away a device can be unpaired, a lost phone say, and not renamed (ADR-308).
+  const away = useAway();
   return (
     <Card padding="lg" className="min-w-0">
       {/* Under 1280px it scrolls sideways; kept tall enough there for a row's menu to open inside. */}
@@ -78,13 +81,16 @@ export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTablePro
                   </td>
                   {/* The height of a row's menu, kept where there is none, so the rows are one height. */}
                   <td className="h-16 py-2">
-                    {!revoked && (
+                    {!revoked && !(away && d.this) && (
                       <span className="flex justify-end">
                         <RowMenu
                           name={d.name}
                           disabled={false}
                           up={row >= 3 && row >= devices.length - 2}
-                          actions={[{ label: "Rename", run: () => onRename(d) }, ...(d.this ? [] : [{ label: "Revoke", run: () => onRevoke(d) }])]}
+                          actions={[
+                            ...(away ? [] : [{ label: "Rename", run: () => onRename(d) }]),
+                            ...(d.this ? [] : [{ label: "Revoke", run: () => onRevoke(d) }]),
+                          ]}
                         />
                       </span>
                     )}

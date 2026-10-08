@@ -26,7 +26,8 @@ export function ConnectionWord({ brief = false, className }: ConnectionWordProps
   const { status } = useRealtime();
   const now = useClock(1000);
   const link = connectionText(status, now);
-  const reaching = status.state === "live" || status.state === "syncing" || status.state === "connecting";
+  // Away is reached too: through the relay, with no stream (ADR-309).
+  const reaching = status.state === "live" || status.state === "syncing" || status.state === "connecting" || status.state === "away";
   const Wifi = reaching ? WifiIcon : WifiOffIcon;
 
   return (

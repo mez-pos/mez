@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { BackupResponse, BackupState } from "../../../shared/api-types";
 import { Button, Card, type ChipTone } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useAway } from "../../../shared/use-realtime";
 import { clockText } from "../../../shared/venue-text";
 import { backUpNowProblem, backupStanding, destinationText } from "./backup-logic";
 
@@ -33,6 +34,8 @@ type Asked = { state: "idle" } | { state: "busy" } | { state: "done"; at: Backup
 
 export function BackupStatusCard({ backup, onBackUpNow }: BackupStatusCardProps) {
   const [asked, setAsked] = useState<Asked>({ state: "idle" });
+  // A backup is started by someone at the venue (ADR-308).
+  const away = useAway();
   const standing = backupStanding(backup.status, (at) => clockText(at, null));
   const where = destinationText(backup);
   const now = backup.status.state;
@@ -91,7 +94,7 @@ export function BackupStatusCard({ backup, onBackUpNow }: BackupStatusCardProps)
         )}
       </div>
 
-      {running && (
+      {running && !away && (
         <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-line pt-6">
           <Button disabled={asked.state === "busy"} onClick={backUpNow}>
             {asked.state === "busy" ? "Backing up" : "Back up now"}

@@ -16,24 +16,26 @@ rules. Five tasks. Phases 00 to 12 are built; what they still owe is in
 
 ## Last completed task
 
-**Phase 13, Task 3a - The server's rules for a relayed request** (ADR-308).
-Task 3 was split in two. `internal/api/remote.go`: a gate in front of the
-routes that acts only on `X-Mez-Via`. Relayed, a request reaches `/order/`,
-`/backoffice`, and the API routes on an allow list (areas `menu`, `stock`,
-`people`, `audit`, `reports`, and about sixty named routes); anything else
-is 403 `remote_not_allowed`. Back office devices only; only staff holding
-`menu.edit`, `settings.edit`, `reports.view` or `stock.manage`, checked at
-sign-in and on every request. `via=relay` in the access log. A new route
-needs a verdict or `TestEveryRouteHasARemoteVerdict` fails.
+**Phase 13, Task 3b - The back office knows it is away** (ADR-309), which
+finishes Task 3. Front end only. `RealtimeConnection` has an `away` state,
+entered when the probe's answer carries `X-Mez-Via: relay`; it stops
+dialling, and `reconnectNow()` emits `resync` in its place. `useAway()` in
+`web/shared/use-realtime.tsx`. The shell invalidates every query on a
+`resync` while away. The pill reads "Away from the venue". Payments,
+numbering and backup are read-only (`SectionCard readOnly`); printers,
+pairing and renaming a device, pooling tips, "Back up now" and "Print a
+copy" are not offered. Walked in a browser through `bin/relay` with
+`RELAY_VENUE_DOMAIN=mez.localhost`: pair, sign in, rename the venue, saved.
 
 ## Next task
 
-**Phase 13, Task 3b - The back office knows it is away.** Front end only.
-Read `X-Mez-Via: relay` off the probe's answer in
-`web/shared/use-realtime.tsx`; a realtime state that stops dialling the
-stream; the pill says "Away from the venue"; a `resync` notice on focus;
-a plain sentence for a 403 `remote_not_allowed`; hide or disable what
-would only be refused. The list is in the phase file.
+**Phase 13, Task 4 - The owner turns it on and sees where to go.** The
+Devices screen's card: whether `back_office` is on (`GET /api/v1/tunnel`),
+the address to open on a phone, and that the phone is paired once with a
+code made here. The setting is read at start, so the card says how to turn
+it on (`config.toml`, restart) and does not pretend to be a switch unless
+one is built. Docs in `deploy.md`. The back office opens only on a relay
+with a hostname per venue. Then the walk on a real phone over mobile data.
 
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
@@ -60,10 +62,9 @@ Still owed from phase 11, its human check and:
 
 ## Known broken / in progress
 
-- **`remote_backoffice` works and is held to ADR-308, but is rough from
-  outside until Task 3b**: no stream, so the pill says "Reconnecting", and
-  buttons for what stays at the venue answer 403. Unseen on a real phone.
-  The live relay at relay.jskin.in is not redeployed with Phase 13 yet.
+- **The back office from away is built and unseen on a real phone**
+  (ADR-306 to ADR-309). The live relay at relay.jskin.in is not redeployed
+  with Phase 13, so no `--remote` key can be issued there yet.
 - **Between phases (ADR-256 to ADR-262): the first security review and
   what the owner decided.** A till's line is priced from the menu on the
   server; a relay must be TLS; revoking a device cuts its stream; the log

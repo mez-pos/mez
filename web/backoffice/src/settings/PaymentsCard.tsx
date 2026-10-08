@@ -20,6 +20,7 @@ import {
   toPaymentsInput,
   type PaymentsForm,
 } from "./payments-logic";
+import { useAway } from "../../../shared/use-realtime";
 import { SectionCard } from "./SectionCard";
 import { useSectionDraft } from "./use-section-draft";
 
@@ -31,6 +32,7 @@ export interface PaymentsCardProps {
 }
 
 export function PaymentsCard({ payments, onSave, onDirty }: PaymentsCardProps) {
+  const away = useAway();
   const saved = paymentsFormFrom(payments);
   const d = useSectionDraft({
     saved,
@@ -47,6 +49,7 @@ export function PaymentsCard({ payments, onSave, onDirty }: PaymentsCardProps) {
 
   return (
     <SectionCard
+      readOnly={away}
       title="Paid from a phone"
       description="A guest reading their bill on their phone can pay it by UPI, straight to your account. They show you the payment, and you record it on the terminal as you would one made at the counter."
       dirty={d.dirty}

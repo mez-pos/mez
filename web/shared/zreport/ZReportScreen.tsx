@@ -4,6 +4,7 @@
 import { useState, type ReactNode } from "react";
 import type { ZReportResponse } from "../api-types";
 import { Button, EmptyState, InboxIcon, useToast } from "../ui";
+import { useAway } from "../use-realtime";
 import { reportProblem } from "./zreport-logic";
 import { statusOf, usePrintZReport, useZReport } from "./use-zreport";
 import { ZReportView } from "./ZReportView";
@@ -23,6 +24,8 @@ export function ZReportScreen({ number, backLabel, onBack, extraActions, footer 
   const print = usePrintZReport();
   const [printing, setPrinting] = useState(false);
   const toast = useToast();
+  // Printing is at the venue, where the printer is (ADR-308).
+  const away = useAway();
 
   const back = (
     <Button variant="ghost" onClick={onBack}>
@@ -70,9 +73,11 @@ export function ZReportScreen({ number, backLabel, onBack, extraActions, footer 
         actions={
           <>
             {extraActions?.(report.data)}
-            <Button disabled={printing} onClick={() => void copy()}>
-              Print a copy
-            </Button>
+            {!away && (
+              <Button disabled={printing} onClick={() => void copy()}>
+                Print a copy
+              </Button>
+            )}
             {back}
           </>
         }

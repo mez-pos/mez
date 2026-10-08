@@ -3,6 +3,8 @@
 // Over the list, the venue's own link to the outside: ordering from phones.
 
 import { PlusIcon } from "lucide-react";
+import { AtTheVenue } from "../../../shared/shell/AtTheVenue";
+import { useAway } from "../../../shared/use-realtime";
 import { useState } from "react";
 import type { DeviceRecordResponse } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
@@ -17,6 +19,7 @@ import { useDevices } from "./use-devices";
 type Editing = { kind: "pair" } | { kind: "rename"; device: DeviceRecordResponse } | { kind: "revoke"; device: DeviceRecordResponse };
 
 export function DevicesScreen() {
+  const away = useAway();
   const api = useDevices();
   const toast = useToast();
   // "12 min ago" and "runs out in 7 min" move on each half minute, and the time
@@ -34,10 +37,14 @@ export function DevicesScreen() {
           <h1 className="font-serif text-total">Devices</h1>
           {data && <p className="mt-1 text-base text-fg-muted">{devicesSummary(data.devices, now)}</p>}
         </div>
-        <Button variant="attention" disabled={!data} onClick={() => setEditing({ kind: "pair" })}>
-          <PlusIcon aria-hidden="true" size={18} />
-          Pair a device
-        </Button>
+        {away ? (
+          <AtTheVenue>A device is paired with a code made at the venue.</AtTheVenue>
+        ) : (
+          <Button variant="attention" disabled={!data} onClick={() => setEditing({ kind: "pair" })}>
+            <PlusIcon aria-hidden="true" size={18} />
+            Pair a device
+          </Button>
+        )}
       </div>
 
       <TunnelCard />

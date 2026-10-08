@@ -67,6 +67,15 @@ describe("describeConnection", () => {
       detail: "pair it again",
       retryable: false,
     },
+    {
+      // Through the relay there is no stream, and that is not a fault.
+      name: "away from the venue",
+      status: { state: "away" },
+      tone: "muted",
+      word: "Away from the venue",
+      detail: null,
+      retryable: false,
+    },
   ];
   for (const tt of tests) {
     it(tt.name, () => {

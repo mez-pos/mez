@@ -11140,3 +11140,44 @@ is reachable from outside the day it is written. That is wanted for those five a
 is why nothing about money is filed under them; `people` holds PINs and roles, and
 whoever adds a route there should read this first. The back office still shows
 buttons for what will be refused, until Task 3b.
+
+## ADR-309 - Away from the venue is a state of the connection, and the back office offers only what can be done from there
+2026-10 · Status: accepted. Phase 13, Task 3b.
+Context: the relay carries no WebSocket (ADR-201), so the back office opened through
+it has no stream. Left alone it said "Reconnecting, retrying in 8s" for ever, dialled
+the relay every few seconds for nothing, never refetched, and showed forms the server
+would refuse on save (ADR-308).
+Decision:
+  - **`away` is a seventh state of `RealtimeConnection`**, beside `live` and
+    `unpaired`. It is entered the way `unpaired` is: after a failed attempt, the one
+    authenticated request that explains the failure (`GET /api/v1/devices/me`) is
+    read for `X-Mez-Via: relay`, which every relayed answer carries. Away, nothing
+    is retried. `restart()`, which a new pairing calls, starts again from nothing.
+  - **The API client shows each answer to `onResponse`** before its body is read.
+    Nothing else about the client changed, and only the probe uses it. The mark is
+    read off the probe's own answer and not kept from an earlier request.
+  - **Coming back reads again.** `reconnectNow()` is called when the tab becomes
+    visible and when the browser comes online. Away, it emits the `resync` notice in
+    place of dialling, and the back office's shell answers a `resync` while away by
+    invalidating every query: only four screens listen for it themselves, and from
+    away there is no stream to name what moved. At the venue the shell does nothing.
+  - **The pill says "Away from the venue"**, muted, with the reaching icon and no
+    retry: the server answers, and nothing is wrong.
+  - **What stays at the venue is not offered.** `useAway()` is read where the thing
+    is drawn. A settings section takes `readOnly`, which disables its fields with one
+    `fieldset` and puts "This is changed at the venue." where Save was: payments,
+    numbering and backup. Adding, testing, editing and routing printers, pairing a
+    device, renaming one, pooling tips, "Back up now" and "Print a copy" are left
+    out, with one sentence in their place where there is room for one. Unpairing a
+    device is still offered, except the one in hand.
+  - **The sentence is the server's.** A refusal that gets through anyway, in the
+    moment before the page knows it is away, shows the server's own message through
+    `wordsOf`, as every other refusal does.
+Because: being away is not a fault, so it is not drawn as one or retried as one, and
+a form nobody can save is not shown as one that can.
+Cost: the page learns it is away only after the stream has failed once, a second or
+so in which the old controls are there; the server refuses them. The first attempt
+at the stream is a wasted request through the relay on every page load. A screen
+open and in view is not refreshed until the tab is left and come back to. The back
+office names its files by path from the root, so it opens through a relay that gives
+each venue a hostname and not under `/v/<venue>/` (Task 4 says so to the owner).

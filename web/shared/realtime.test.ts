@@ -478,3 +478,63 @@ describe("RealtimeConnection: the floor version", () => {
     expect(h.notices.filter((n) => n.kind === "floor")).toHaveLength(before);
   });
 });
+
+describe("RealtimeConnection: away from the venue", () => {
+  // The relay carries no WebSocket, so the socket never opens. The probe's
+  // answer came through the relay, and says so.
+  function away(): Harness {
+    const h = harness();
+    h.setProbe("away");
+    h.conn.start();
+    h.latest().drop();
+    return h;
+  }
+
+  it("stops dialling once the probe says the page is reached through the relay", async () => {
+    const h = away();
+    expect(h.conn.current().state).toBe("reconnecting");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(h.conn.current()).toEqual({ state: "away" });
+    expect(h.probes.count).toBe(1);
+
+    const opened = h.sockets.length;
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(h.sockets).toHaveLength(opened);
+    expect(h.probes.count).toBe(1);
+  });
+
+  it("has screens read again, and dials nothing, when someone comes back to the page", async () => {
+    const h = away();
+    await vi.advanceTimersByTimeAsync(0);
+    const opened = h.sockets.length;
+    expect(h.notices).toEqual([]);
+
+    h.conn.reconnectNow();
+    h.conn.reconnectNow();
+    expect(h.notices).toEqual([
+      { kind: "resync", from: 0 },
+      { kind: "resync", from: 0 },
+    ]);
+    expect(h.sockets).toHaveLength(opened);
+    expect(h.conn.current()).toEqual({ state: "away" });
+  });
+
+  it("dials again from the start when restarted, as after a new pairing", async () => {
+    const h = away();
+    await vi.advanceTimersByTimeAsync(0);
+    const opened = h.sockets.length;
+    h.setProbe("ok");
+    h.conn.restart();
+    expect(h.sockets).toHaveLength(opened + 1);
+    expect(h.conn.current().state).toBe("connecting");
+  });
+
+  it("is idle, not away, once stopped", async () => {
+    const h = away();
+    await vi.advanceTimersByTimeAsync(0);
+    h.conn.stop();
+    expect(h.conn.current()).toEqual({ state: "idle" });
+    h.conn.reconnectNow();
+    expect(h.notices).toEqual([]);
+  });
+});

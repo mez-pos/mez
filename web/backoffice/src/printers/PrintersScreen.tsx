@@ -8,6 +8,8 @@ import type { PrinterResponse } from "../../../shared/api-types";
 import { Button, Card, EmptyState, InboxIcon } from "../../../shared/ui";
 import { emptyForm, formFrom, printersSummary, problemOf, toSettings } from "./printers-logic";
 import { PrinterFormModal } from "./PrinterFormModal";
+import { AtTheVenue } from "../../../shared/shell/AtTheVenue";
+import { useAway } from "../../../shared/use-realtime";
 import { PrinterRouting } from "./PrinterRouting";
 import { PrinterTable } from "./PrinterTable";
 import { usePrinters } from "./use-printers";
@@ -15,6 +17,7 @@ import { usePrinters } from "./use-printers";
 type Editing = { kind: "add" } | { kind: "edit"; printer: PrinterResponse };
 
 export function PrintersScreen() {
+  const away = useAway();
   const api = usePrinters();
   const [editing, setEditing] = useState<Editing | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -32,10 +35,14 @@ export function PrintersScreen() {
           <h1 className="font-serif text-total">Printers</h1>
           {data && <p className="mt-1 text-base text-fg-muted">{printersSummary(data.printers)}</p>}
         </div>
-        <Button variant="attention" onClick={() => open({ kind: "add" })}>
-          <PlusIcon aria-hidden="true" size={18} />
-          Add a printer
-        </Button>
+        {away ? (
+          <AtTheVenue>Printers are added, tested and changed at the venue.</AtTheVenue>
+        ) : (
+          <Button variant="attention" onClick={() => open({ kind: "add" })}>
+            <PlusIcon aria-hidden="true" size={18} />
+            Add a printer
+          </Button>
+        )}
       </div>
 
       {problem && (

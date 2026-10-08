@@ -5,6 +5,7 @@
 import type { ReactNode } from "react";
 import type { NumberingRequest, NumberingResponse } from "../../../shared/api-types";
 import { Field, inputClass } from "../FormFields";
+import { useAway } from "../../../shared/use-realtime";
 import { SectionCard } from "./SectionCard";
 import {
   MONTHS,
@@ -29,6 +30,7 @@ export interface NumberingCardProps {
 }
 
 export function NumberingCard({ numbering: n, api, onDirty }: NumberingCardProps) {
+  const away = useAway();
   const max = n.max_rounding_step;
   const d = useSectionDraft({
     saved: numberingFormFrom(n),
@@ -52,6 +54,7 @@ export function NumberingCard({ numbering: n, api, onDirty }: NumberingCardProps
 
   return (
     <SectionCard
+      readOnly={away}
       title="Invoice numbering"
       description="How invoices and credit notes are numbered, and when the numbers start again."
       dirty={d.dirty}

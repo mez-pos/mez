@@ -3,7 +3,7 @@
 // useRealtime() and listen with useRealtimeNotices().
 
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
-import { ApiError, createApiClient, type Credentials } from "./api";
+import { ApiError, cameThroughRelay, createApiClient, type Credentials } from "./api";
 import { RealtimeConnection, streamPath, type ProbeResult, type RealtimeNotice, type RealtimeStatus } from "./realtime";
 
 const RealtimeContext = createContext<RealtimeConnection | null>(null);
@@ -16,11 +16,20 @@ export function streamURL(location: Pick<Location, "protocol" | "host"> = window
 
 /** A connection for this page, probing `/devices/me` to explain failures. */
 export function createRealtime(credentials: Credentials, topics: readonly string[] = []): RealtimeConnection {
-  const api = createApiClient({ credentials });
+  // Whether the probe's own answer came through the relay. Read off the
+  // answer and not kept from an earlier one: the same page is never both.
+  let relayed = false;
+  const api = createApiClient({
+    credentials,
+    onResponse: (response) => {
+      relayed = cameThroughRelay(response);
+    },
+  });
   const probe = async (): Promise<ProbeResult> => {
+    relayed = false;
     try {
       await api.get("/api/v1/devices/me", { timeoutMs: 4_000 });
-      return "ok";
+      return relayed ? "away" : "ok";
     } catch (err) {
       if (err instanceof ApiError && (err.code === "unauthenticated" || err.code === "device_revoked")) return err.code;
       return "unreachable";
@@ -70,6 +79,17 @@ export function useRealtime(): Realtime {
   const connection = useConnection();
   const status = useSyncExternalStore(connection.subscribe, connection.current);
   return { status, lastEventId: connection.lastEventId(), reconnectNow: () => connection.reconnectNow() };
+}
+
+/**
+ * Whether this page is being used away from the venue, through the relay.
+ * False until the connection has found out, which takes one failed attempt
+ * at the stream: a screen that hides something on this hides it a moment
+ * late, and the server refuses it either way (ADR-308).
+ */
+export function useAway(): boolean {
+  const connection = useConnection();
+  return useSyncExternalStore(connection.subscribe, () => connection.current().state === "away");
 }
 
 /** Hear every event and resync. The listener may change between renders. */

@@ -46,7 +46,7 @@ Phase 11 (the relay and the tunnel) and Phase 10 (the back office).
   start. `GET /api/v1/tunnel` says `back_office`; health does not, since
   health is public.
 
-- [ ] **Task 3 - The API holds a remote request to the owner's rules.**
+- [x] **Task 3 - The API holds a remote request to the owner's rules.**
   Split on 2026-10-08 while building it: the server's rules are one
   session, and what the back office shows when it has no stream is another.
 
@@ -61,7 +61,17 @@ Phase 11 (the relay and the tunnel) and Phase 10 (the back office).
     an open session, of someone holding none of `menu.edit`,
     `settings.edit`, `reports.view`, `stock.manage`. The access log says
     `via=relay`. Every relayed answer carries `X-Mez-Via: relay`.
-  - [ ] **Task 3b - The back office knows it is away.** The relay carries
+  - [x] **Task 3b - The back office knows it is away** (ADR-309). As
+    built: the probe's answer says it came through the relay, the
+    connection becomes `away` and stops dialling, the pill reads "Away from
+    the venue", and coming back to the tab reads every query again.
+    Payments, numbering and backup are read-only with "This is changed at
+    the venue."; printers, pairing a device, renaming one, pooling tips,
+    "Back up now" and "Print a copy" are not offered. Walked in a browser
+    through a local relay with a hostname per venue. What follows is the
+    task as it was set:
+
+    **The back office knows it is away.** The relay carries
     no WebSocket, so the stream never opens from outside and the status
     pill says "Reconnecting" for ever. Read `X-Mez-Via: relay` off the
     probe's answer (`GET /api/v1/devices/me`, `web/shared/use-realtime.tsx`):
@@ -89,6 +99,11 @@ Phase 11 (the relay and the tunnel) and Phase 10 (the back office).
   have the back office say "Away from the venue" and refetch on focus.
 
 - [ ] **Task 4 - The owner turns it on and sees where to go.**
+  Found in Task 3b: the back office's files are asked for by their own
+  path, `/backoffice/assets/...`, so it opens only on a relay that gives
+  each venue a hostname (`RELAY_VENUE_DOMAIN`), not under `/v/<venue>/`.
+  Say so in the docs, and have the card show no address on a venue whose
+  `public_url` has a path.
   Devices screen, under "Ordering from phones": a "Back office from
   anywhere" card with the switch (it writes the setting and says a restart
   is needed, like the relay settings), the address

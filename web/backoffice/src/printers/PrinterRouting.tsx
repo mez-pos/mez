@@ -2,6 +2,7 @@
 // each, saved as it is picked.
 
 import { useState } from "react";
+import { useAway } from "../../../shared/use-realtime";
 import { Link } from "wouter";
 import type { PrinterResponse, PrintersResponse } from "../../../shared/api-types";
 import { Panel } from "../dashboard/Panel";
@@ -45,12 +46,15 @@ interface AssignProps {
 
 function Assign({ label, value, printers, onChange }: AssignProps) {
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
+  // Which printer prints what is set at the venue (ADR-308).
+  const away = useAway();
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-sm font-semibold">{label}</span>
       <select
         className="min-h-tap w-full rounded border border-line-strong bg-raised px-3 text-fg outline-offset-2 outline-line-focus focus-visible:outline-2"
         value={value ?? ""}
+        disabled={away}
         onChange={(e) => {
           setMessage(null);
           onChange(e.target.value === "" ? null : Number(e.target.value))

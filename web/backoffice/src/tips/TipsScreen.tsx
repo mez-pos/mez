@@ -6,6 +6,8 @@ import { useState } from "react";
 import type { TipPoolResponse } from "../../../shared/api-types";
 import { Button, Confirm, EmptyState, InboxIcon, Meta, Money, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { AtTheVenue } from "../../../shared/shell/AtTheVenue";
+import { useAway } from "../../../shared/use-realtime";
 import { formatMoney } from "../../../shared/money";
 import { clockText } from "../../../shared/zreport/zreport-logic";
 import { membersOf, ruleWords, startingRows, tipProblem, type Row } from "./tips-logic";
@@ -18,6 +20,7 @@ interface TipsScreenProps {
 
 export function TipsScreen({ shiftId, onBack }: TipsScreenProps) {
   const { pool, staff, commit } = useTips(shiftId);
+  const away = useAway();
   const back = (
     <Button variant="ghost" onClick={onBack}>
       The Z-report
@@ -50,7 +53,13 @@ export function TipsScreen({ shiftId, onBack }: TipsScreenProps) {
         <Money amount={pool.data.total} variant="total" />
       </p>
       {pool.data.total.minor === 0 && <p className="text-base text-fg-muted">No tips were taken in this shift.</p>}
-      {pool.data.pooled ? <Pooled pool={pool.data} /> : <Choose shiftId={shiftId} pool={pool.data} staffList={staff.data} commit={commit} />}
+      {pool.data.pooled ? (
+        <Pooled pool={pool.data} />
+      ) : away ? (
+        <AtTheVenue>Tips are pooled at the venue.</AtTheVenue>
+      ) : (
+        <Choose shiftId={shiftId} pool={pool.data} staffList={staff.data} commit={commit} />
+      )}
     </div>
   );
 }

@@ -19,6 +19,10 @@
 // - A reason when it is down. A browser reports a refused handshake and an
 //   unplugged server identically, so after a failure one authenticated HTTP
 //   request tells "server unreachable" apart from "this device was unpaired".
+// - Knowing when there will never be a stream. The back office opened through
+//   the relay, away from the venue, has none: the relay carries no WebSocket
+//   (ADR-201). The same request that explains a failure says so, and the
+//   connection then stops dialling and is "away" (ADR-309).
 
 import { backoffDelay, defaultBackoff, type Backoff } from "./backoff";
 import type { ClientMessage, EventMessage, FloorChangedMessage, MenuChangedMessage, PrintChangedMessage, WelcomeMessage } from "./api-types";
@@ -39,7 +43,9 @@ export type RealtimeStatus =
   | { readonly state: "syncing"; readonly target: number } // replaying up to target
   | { readonly state: "live"; readonly since: number }
   | { readonly state: "reconnecting"; readonly attempt: number; readonly retryAt: number; readonly reason: DownReason }
-  | { readonly state: "unpaired"; readonly code: "unauthenticated" | "device_revoked" };
+  | { readonly state: "unpaired"; readonly code: "unauthenticated" | "device_revoked" }
+  /** Reached through the relay: the server answers, and there is no stream to have. */
+  | { readonly state: "away" };
 
 /**
  * What screens hear. After a `resync`, anything held from before `from` may
@@ -57,7 +63,7 @@ export type RealtimeNotice =
   | { readonly kind: "print"; readonly version: number }
   | { readonly kind: "floor"; readonly version: number };
 
-export type ProbeResult = "ok" | "unreachable" | "unauthenticated" | "device_revoked";
+export type ProbeResult = "ok" | "unreachable" | "unauthenticated" | "device_revoked" | "away";
 
 /** The part of a browser WebSocket this uses. Tests supply a fake. */
 export interface SocketLike {
@@ -154,6 +160,14 @@ export class RealtimeConnection {
   /** Skip the wait: "retry now", the network coming back, the tab reappearing. */
   reconnectNow(): void {
     if (!this.running || this.socket || this.status.state === "unpaired") return;
+    // Away, there is nothing to reconnect. The moments that would have
+    // retried are the moments someone has come back to the page, so what
+    // the screens hold is read again in its place: nothing has told them of
+    // a change since they last asked.
+    if (this.status.state === "away") {
+      this.emit({ kind: "resync", from: this.lastId });
+      return;
+    }
     this.clearRetry();
     this.connect();
   }
@@ -331,6 +345,13 @@ export class RealtimeConnection {
     if (result === "unauthenticated" || result === "device_revoked") {
       this.clearRetry();
       this.setStatus({ state: "unpaired", code: result });
+      return;
+    }
+    if (result === "away") {
+      // No retry: the next attempt would fail the same way, and the one
+      // after, each a request through the relay that the venue pays for.
+      this.clearRetry();
+      this.setStatus({ state: "away" });
       return;
     }
     this.setStatus({ ...this.status, reason: result === "ok" ? "stream_lost" : "unreachable" });

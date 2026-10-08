@@ -77,6 +77,19 @@ export function wordsOf(err: unknown, fallback: string): string {
 const headerStaffToken = "X-Staff-Token";
 const headerIdempotencyKey = "Idempotency-Key";
 
+/**
+ * An answer that came back through the relay says so in this header
+ * (internal/api's HeaderVia and ViaRelay, ADR-308). It is how the back office
+ * learns it is being used away from the venue.
+ */
+export const headerVia = "X-Mez-Via";
+export const viaRelay = "relay";
+
+/** Whether an answer came through the relay and not from the venue's own network. */
+export function cameThroughRelay(response: Pick<Response, "headers">): boolean {
+  return response.headers.get(headerVia) === viaRelay;
+}
+
 // A LAN server answers in milliseconds. Ten seconds is long enough for a slow
 // SQLite checkpoint and short enough that a till does not hang on a dead one.
 const defaultTimeoutMs = 10_000;
@@ -112,12 +125,19 @@ export interface ApiClientConfig {
   credentials: Credentials;
   fetch?: typeof fetch;
   onCredentialFailure?: (code: CredentialFailure) => void;
+  /** Shown every answer the server gave, good or bad, before its body is read: for its headers. */
+  onResponse?: (response: Response) => void;
 }
 
-export function createApiClient({ credentials, fetch: fetchFn = globalThis.fetch.bind(globalThis), onCredentialFailure }: ApiClientConfig): ApiClient {
+export function createApiClient({
+  credentials,
+  fetch: fetchFn = globalThis.fetch.bind(globalThis),
+  onCredentialFailure,
+  onResponse,
+}: ApiClientConfig): ApiClient {
   const request = async <T>(method: string, path: string, body: unknown, options: RequestOptions = {}): Promise<T> => {
     try {
-      return await send<T>(fetchFn, method, path, body, headersFor(credentials, body, options), options);
+      return await send<T>(fetchFn, method, path, body, headersFor(credentials, body, options), options, onResponse);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401 && credentialFailures.includes(err.code)) {
         onCredentialFailure?.(err.code as CredentialFailure);
@@ -147,7 +167,15 @@ function headersFor(credentials: Credentials, body: unknown, options: RequestOpt
   return headers;
 }
 
-async function send<T>(fetchFn: typeof fetch, method: string, path: string, body: unknown, headers: Headers, options: RequestOptions): Promise<T> {
+async function send<T>(
+  fetchFn: typeof fetch,
+  method: string,
+  path: string,
+  body: unknown,
+  headers: Headers,
+  options: RequestOptions,
+  onResponse?: (response: Response) => void,
+): Promise<T> {
   const deadline = withDeadline(options.signal, options.timeoutMs ?? defaultTimeoutMs);
   try {
     let response: Response;
@@ -161,6 +189,7 @@ async function send<T>(fetchFn: typeof fetch, method: string, path: string, body
     } catch (err) {
       throw notAnswered(err, options.signal, deadline);
     }
+    onResponse?.(response);
     return await readResponse<T>(response, options.signal, deadline);
   } finally {
     // Only once the body is read too. A server that sends the headers and
