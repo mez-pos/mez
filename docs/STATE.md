@@ -28,17 +28,17 @@ it (12b). Task 12 is done.
 
 ## Next task
 
-**There is no next task in the plan.** Worth doing for the imports, by
-hand, since none of it has met a real spreadsheet: fill each template
-(items, choices, ingredients, recipes) in Excel and in Google Sheets,
-save as CSV and import it; export the menu, change prices in a
-spreadsheet and give it back. `make build-web` first if walking
-`bin/mez`. `v0.1.0-alpha.2` is tagged on the human's machine only and
-is now behind `main`: tag again before building an installer.
+**There is no next task in the plan.** On 2026-10-08 the human walked
+the menu and inventory imports against real spreadsheets at the venue
+and both worked. Not yet walked: choices, recipes, the menu export and
+prices round trip. `make build-web` first if walking `bin/mez`.
+`v0.1.0-alpha.2` is tagged on the human's machine only and is now
+behind `main`: tag again before building an installer.
 
 For the owner, in the order that unblocks the most:
-1. **A printer and a drawer.** `mez --test-print <ip> -drawer`, then a
-   sale. Nothing has ever been printed (`hardware.md`, ADR-282).
+1. **The drawer.** The printer was tested at the venue on 2026-10-08
+   and prints. There was no drawer at the venue, so `-drawer` and the
+   kick on a cash sale are still unseen (`hardware.md`, ADR-282).
 2. **A release.** Push a tag (`docs/releasing.md`); expect the first to
    need a second try. The workflow has never run.
 3. **Phase 12's "done when"**: a clean Windows machine, the downloaded
