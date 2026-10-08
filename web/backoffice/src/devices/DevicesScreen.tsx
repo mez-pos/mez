@@ -12,6 +12,7 @@ import { useClock } from "../../../shared/use-clock";
 import { Panel } from "../dashboard/Panel";
 import { PairModal, RenameModal, RevokeModal } from "./DeviceModals";
 import { DeviceTable } from "./DeviceTable";
+import { RemoteCard } from "./RemoteCard";
 import { TunnelCard } from "./TunnelCard";
 import { actionProblemOf, devicesSummary, kindWords, listed, runsOutText, split } from "./devices-logic";
 import { useDevices } from "./use-devices";
@@ -48,6 +49,7 @@ export function DevicesScreen() {
       </div>
 
       <TunnelCard />
+      <RemoteCard />
 
       {api.loading && <p className="text-base text-fg-muted">Loading the devices</p>}
       {!api.loading && api.error !== null && data === undefined && (

@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/byjoellobo/mez/internal/auth"
@@ -99,6 +100,10 @@ type tunnelResponse struct {
 	RetryAt    *time.Time  `json:"retry_at,omitempty"`
 	Detail     string      `json:"detail,omitempty"`
 	BackOffice bool        `json:"back_office"`
+	// BackOfficeURL is the address to open the back office at from outside:
+	// the venue's public_url with the back office's own path. Absent unless
+	// back_office is true and there is such an address to give.
+	BackOfficeURL string `json:"back_office_url,omitempty"`
 }
 
 // mountTunnel adds the tunnel's one route. It is read by whoever manages the
@@ -113,9 +118,29 @@ func (s *Server) mountTunnel(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/tunnel", s.methodNotAllowed)
 }
 
+// backOfficeURL is where the back office is opened from outside, or empty
+// when the venue has not said where it is reached (public_url), or is
+// reached under a path. The back office asks for its files by their path
+// from the root, so it opens at a hostname of the venue's own and not under
+// a relay's /v/<venue>/ (ADR-309). An address that would not open is not
+// one to show an owner.
+func (s *Server) backOfficeURL() string {
+	if s.publicURL == "" {
+		return ""
+	}
+	u, err := url.Parse(s.publicURL)
+	if err != nil || u.Host == "" || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" {
+		return ""
+	}
+	return u.Scheme + "://" + u.Host + remoteBundle + "/"
+}
+
 func (s *Server) showTunnel(w http.ResponseWriter, _ *http.Request) {
 	st := s.tunnelStatus()
 	out := tunnelResponse{State: st.State, BackOffice: st.BackOffice}
+	if st.BackOffice {
+		out.BackOfficeURL = s.backOfficeURL()
+	}
 	if !st.Since.IsZero() {
 		since := st.Since.UTC()
 		out.Since = &since

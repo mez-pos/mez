@@ -11,6 +11,7 @@ the same binary; they differ only in what starts it and where the data lives.
 - [Docker](#docker)
 - [On a domain with HTTPS](#on-a-domain-with-https)
 - [Guests ordering from their phones](#guests-ordering-from-their-phones)
+- [The back office from anywhere](#the-back-office-from-anywhere)
 - [Backups](#backups)
 - [Upgrading](#upgrading)
 
@@ -650,6 +651,83 @@ What to know before relying on it:
   gateway's keys: see `gateway` in
   [`running.md`](running.md#changing-the-port-and-everything-else). The
   gateway reports back to `public_url`, so it needs the relay up too.
+
+## The back office from anywhere
+
+The owner opens the back office on their own phone or laptop, away from the
+venue: at home, before opening, to change a price or look at yesterday. It
+goes through the same relay that carries guests' orders, so nothing more is
+opened at the venue. It is off until you turn it on.
+
+**What can be done from away, and what cannot.** The menu and its prices,
+stock and recipes, the floor plan and its table codes, staff and their
+PINs, the reports and the day's files, the audit, and the receipt, tax and
+venue settings: all as at the venue. Nothing that takes money or works the
+room: no orders, payments, voids or refunds, no closing the day or pooling
+tips, no printing, no printers, no kitchen. Three settings are read and not
+changed: where payments go, where the backup goes, and how invoices are
+numbered. A new device is paired with a code made at the venue. The back
+office says "Away from the venue" at the top while it is used this way, and
+leaves out what it cannot do there.
+
+**Who gets in.** A device paired as a **Back office**, and on it someone
+who manages the venue: the owner, a manager. A cashier's or a waiter's PIN
+is refused from away even when it is right, and a till's or a kitchen
+display's pairing opens nothing from outside the building.
+
+**1. Get a key that allows it.** The relay's operator issues one
+([`build/relay/README.md`](../build/relay/README.md): `relay issue-key
+my-cafe --remote`). It reads `mzr_my-cafe.<id>.remote.<...>`. The key you
+have for guests' orders does not allow it, and cannot be changed into one.
+The new key replaces it and does both jobs.
+
+**2. Turn it on.** With the relay's three settings
+([above](#guests-ordering-from-their-phones)), two things change:
+
+```toml
+relay_url  = "https://relay.example.com"
+relay_key  = "mzr_my-cafe.....remote...."
+public_url = "https://my-cafe.example.com"
+remote_backoffice = true
+```
+
+or `MEZ_REMOTE_BACKOFFICE=true` with the new `MEZ_RELAY_KEY` in
+`/etc/mez/mez.env` or `build/docker-compose.yml`. Only `true` and `false`
+are taken. Restart mez. It does not start with `remote_backoffice` on and
+no relay, or on a key that does not allow it, and says which.
+
+**3. Make a code, at the venue.** In the back office, **Devices**, the card
+**Back office from anywhere** now shows the address,
+`https://my-cafe.example.com/backoffice/`. **Pair a device**, name it
+("Priya's phone"), choose **Back office**, **Make a code**. The code lasts
+ten minutes and works once.
+
+**4. Open the address on the phone**, on mobile data or any network. Enter
+the code, then sign in with your PIN. The phone stays paired: from then on
+it is the address and the PIN.
+
+**A lost or sold phone:** **Devices**, its row, **Revoke**. That works from
+away as well as at the venue. To stop all of it, set `remote_backoffice =
+false` and restart, or have the relay's operator revoke the key.
+
+What to know before relying on it:
+
+- **The relay must give the venue a hostname of its own**
+  (`https://my-cafe.example.com`, a relay run with `RELAY_VENUE_DOMAIN`).
+  On a relay that reaches venues by path (`.../v/my-cafe/`) the back office
+  does not open, and the card shows no address.
+- **Nothing moves by itself.** At the venue a screen updates as things
+  happen. From away it shows what it last read, and reads again when you
+  come back to the tab or reload.
+- **Whoever runs the relay can see what passes through it**, as with
+  guests' orders, and here that includes your PIN as you type it and
+  everything you read. Use a relay run by someone you would trust with the
+  till, or your own.
+- **It needs the venue's computer on and its internet up.** With either
+  down the address answers "Ordering is offline", which is the relay's one
+  page for a venue it cannot reach.
+- **The log says which requests came from away**: each has `via=relay`
+  ([`running.md`](running.md)).
 
 ## Backups
 

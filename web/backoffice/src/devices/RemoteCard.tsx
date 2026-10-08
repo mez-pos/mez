@@ -1,0 +1,67 @@
+// Back office from anywhere (docs/design/screens/backoffice-devices.md):
+// whether the back office can be opened away from the venue, the address to
+// open when it can, and what to do the first time. It changes nothing: the
+// setting is in the venue's settings file and read when mez starts (ADR-306).
+// It reads the same answer the card above it does, so the two agree.
+
+import { useState } from "react";
+import { useAway } from "../../../shared/use-realtime";
+import { Button, StatusChip } from "../../../shared/ui";
+import { Panel } from "../dashboard/Panel";
+import { remoteState, remoteWords } from "./remote-logic";
+import { useTunnel } from "./use-tunnel";
+
+export function RemoteCard() {
+  const tunnel = useTunnel();
+  const away = useAway();
+  const data = tunnel.data;
+  // Nothing while it loads or fails: the card above says both, about the
+  // same request, and saying it twice is one time too many.
+  if (!data) return null;
+  const words = remoteWords(data, away);
+
+  return (
+    <Panel title="Back office from anywhere" aside={<StatusChip status={{ kind: "remote", status: remoteState(data) }} />}>
+      <div className="flex flex-col gap-3">
+        <p className="max-w-prose text-base text-fg-2">{words.line}</p>
+        {words.address && <Address value={words.address} />}
+        {words.steps.length > 0 && (
+          <ol className="flex max-w-prose list-decimal flex-col gap-1 pl-5 text-base text-fg-2">
+            {words.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+/** The address, in the numeral face so each character is read as it is, with a way to copy it. */
+function Address({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    // Not every browser lets a page write to the clipboard, and a page on
+    // plain http is one that may not. The address is on screen either way.
+    void navigator.clipboard
+      ?.writeText(value)
+      .then(() => setCopied(true))
+      .catch(() => setCopied(false));
+  };
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-3">
+      {/* An address has no spaces to break at, so it breaks anywhere: on a phone it is wider than the card. */}
+      <a
+        href={value}
+        target="_blank"
+        rel="noreferrer"
+        className="max-w-full min-w-0 rounded-tight font-mono text-base font-semibold break-all text-attention-text outline-offset-2 outline-line-focus hover:underline focus-visible:outline-2"
+      >
+        {value}
+      </a>
+      <Button variant="secondary" onClick={copy}>
+        {copied ? "Copied" : "Copy"}
+      </Button>
+    </div>
+  );
+}

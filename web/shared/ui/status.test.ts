@@ -9,6 +9,7 @@ import {
   paymentStatuses,
   printStatuses,
   menuItemStates,
+  remoteStates,
   staffStates,
   stockLevels,
   tableStatuses,
@@ -29,6 +30,7 @@ const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   staff: staffStates,
   device: deviceStates,
   tunnel: tunnelStates,
+  remote: remoteStates,
 };
 
 describe("status vocabularies", () => {

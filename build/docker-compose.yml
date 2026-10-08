@@ -35,6 +35,8 @@ services:
       # their phones".
       # MEZ_RELAY_URL: https://relay.example.com
       # MEZ_RELAY_KEY: mzr_the-key-you-were-given
+      # The back office from anywhere (docs/deploy.md). Needs a key issued for it.
+      # MEZ_REMOTE_BACKOFFICE: "true"
       # MEZ_PUBLIC_URL: https://my-cafe.example.com
     volumes:
       - mez-data:/data

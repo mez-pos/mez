@@ -98,7 +98,16 @@ Phase 11 (the relay and the tunnel) and Phase 10 (the back office).
   dashboard) and decide here: refuse the stream cleanly over the relay and
   have the back office say "Away from the venue" and refetch on focus.
 
-- [ ] **Task 4 - The owner turns it on and sees where to go.**
+- [x] **Task 4 - The owner turns it on and sees where to go.**
+  As built (ADR-310): the card is not a switch. It says how it stands and
+  how to turn it on, shows the address from `back_office_url` on
+  `GET /api/v1/tunnel`, and lists the three things to do the first time.
+  `deploy.md` has "The back office from anywhere". Walked in a browser
+  through a local relay: read the card at the venue, made a code there,
+  paired a phone-sized browser through the relay, signed in, changed a
+  price, and saw it at the venue. **Still owed: the same on a real phone
+  over mobile data, against the live relay**, which has to be redeployed
+  and a `--remote` key issued first.
   Found in Task 3b: the back office's files are asked for by their own
   path, `/backoffice/assets/...`, so it opens only on a relay that gives
   each venue a hostname (`RELAY_VENUE_DOMAIN`), not under `/v/<venue>/`.

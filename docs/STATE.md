@@ -16,26 +16,30 @@ rules. Five tasks. Phases 00 to 12 are built; what they still owe is in
 
 ## Last completed task
 
-**Phase 13, Task 3b - The back office knows it is away** (ADR-309), which
-finishes Task 3. Front end only. `RealtimeConnection` has an `away` state,
-entered when the probe's answer carries `X-Mez-Via: relay`; it stops
-dialling, and `reconnectNow()` emits `resync` in its place. `useAway()` in
-`web/shared/use-realtime.tsx`. The shell invalidates every query on a
-`resync` while away. The pill reads "Away from the venue". Payments,
-numbering and backup are read-only (`SectionCard readOnly`); printers,
-pairing and renaming a device, pooling tips, "Back up now" and "Print a
-copy" are not offered. Walked in a browser through `bin/relay` with
-`RELAY_VENUE_DOMAIN=mez.localhost`: pair, sign in, rename the venue, saved.
+**Phase 13, Task 4 - The owner turns it on and sees where to go**
+(ADR-310). `GET /api/v1/tunnel` has `back_office_url`. The Devices screen
+has a "Back office from anywhere" card (`RemoteCard.tsx`,
+`remote-logic.ts`): how it stands, the address with Copy, and what to do.
+It is not a switch. `deploy.md` has the owner's section, and
+`build/docker-compose.yml` the commented setting. Walked in a browser
+through a local relay with a hostname per venue: a code made at the venue,
+a phone-sized browser paired through the relay, a price changed from 60 to
+65 and seen at the venue.
 
 ## Next task
 
-**Phase 13, Task 4 - The owner turns it on and sees where to go.** The
-Devices screen's card: whether `back_office` is on (`GET /api/v1/tunnel`),
-the address to open on a phone, and that the phone is paired once with a
-code made here. The setting is read at start, so the card says how to turn
-it on (`config.toml`, restart) and does not pretend to be a switch unless
-one is built. Docs in `deploy.md`. The back office opens only on a relay
-with a hostname per venue. Then the walk on a real phone over mobile data.
+**Phase 13, Task 5 - A remote session is harder to take than a LAN one.**
+ADR before code. Remote PIN attempts counted apart and harder (3 wrong,
+then locked until someone at the venue clears it: `unlock` is already
+refused through the relay, ADR-308); a remote session that expires after
+12 hours. Read `internal/auth` for how the lockout and session expiry
+work now before deciding their shape.
+
+**Before or beside it, the human's:** redeploy the live relay
+(`build/relay/deploy.sh`, see the memory note), issue the friend's cafe a
+`--remote` key, set `remote_backoffice = true` there, and do Task 4's walk
+on a real phone over mobile data. Nothing in Phase 13 has run on the live
+relay or a real phone.
 
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no

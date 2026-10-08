@@ -39,6 +39,28 @@ Inside the frame (`backoffice-shell.md`).
   | `replaced` | **In use elsewhere**, danger | "Another computer is connected with this venue's key, and guests reach that one. Only one can be: stop the other, or give this one a key of its own." |
   | `stopped` | **Stopped**, neutral | "The link to the relay is stopped. It starts again when mez does." |
 
+- **Back office from anywhere**, a card under that one (phase 13, Task 4,
+  ADR-310; `RemoteCard.tsx`, `remote-logic.ts`): whether the back office can
+  be opened away from the venue, and where. Its title in the serif, a chip
+  at the right, a sentence, the address when there is one (in the numeral
+  face, a link, with **Copy**), and a numbered list of what to do. It is not
+  a switch: the setting is in the settings file and read when mez starts,
+  and the card says how to turn it on. It reads the same request as the card
+  above and shows nothing while that loads or fails.
+
+  | Case | Chip | The sentence | The list |
+  |---|---|---|---|
+  | No relay | **Only at the venue**, neutral | "The back office opens only at the venue. Opening it from home needs a relay first, which is also what lets guests order from their phones." | none |
+  | A relay, and off | **Only at the venue**, neutral | "The back office opens only at the venue. It can be opened from home too: the menu, tables, stock, staff and reports, and nothing that takes money." | a key that allows it; `relay_key` and `remote_backoffice = true`; restart |
+  | On, relay reached | **Open**, success | "The back office can be opened away from the venue, at this address." | open it; pair with a code made here, as a Back office; sign in, managers only |
+  | On, relay not reached | **Not reachable**, warning | "It is turned on, but the relay is not reached right now, so the address opens nothing until it is. The counter is not affected." | the same three |
+  | On, no address | **Open** or **Not reachable** | "It is turned on, but this venue has not said where it is reached, so there is no address to open." | set `public_url` and restart |
+  | This page is the one opened from away | as above | "You are using it now: this is the back office, opened away from the venue." | none |
+
+- **Away from the venue** (ADR-309) the head has no **Pair a device** but
+  "A device is paired with a code made at the venue.", and a row's **...**
+  has Revoke and no Rename.
+
 - A line over the table for what an action was refused for.
 - **The table**, in a card: those in service first, in the order paired,
   the revoked at the foot.
@@ -83,7 +105,9 @@ Inside the frame (`backoffice-shell.md`).
   /api/v1/devices/{id}/revoke`: each answers with the list as it now stands.
 
 - `GET /api/v1/tunnel`, key `["tunnel"]`, `device.manage`: `state`, and when
-  there is one `since`, `retry_at` and `detail`. Read again every 5 seconds
+  there is one `since`, `retry_at` and `detail`; `back_office`, always, and
+  `back_office_url` when it is on and the venue's `public_url` is a hostname
+  with nothing after it. Read again every 5 seconds
   while connecting or reconnecting, every 30 once settled, and every 5
   minutes when off, which cannot change under an open page.
 

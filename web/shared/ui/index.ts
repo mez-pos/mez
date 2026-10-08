@@ -21,5 +21,5 @@ export { StatusChip, type StatusChipProps } from "./StatusChip";
 export { Timeline, type TimelineProps } from "./Timeline";
 export { ToastProvider, useToast, type ShowToast } from "./Toast";
 export { CloseIcon, InboxIcon, SearchIcon } from "./icons";
-export type { ChipStatus, ChipTone, KitchenStatus } from "./status";
+export type { ChipStatus, ChipTone, KitchenStatus, RemoteState } from "./status";
 export type { ToastTone } from "./toast-queue";

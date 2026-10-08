@@ -11181,3 +11181,32 @@ at the stream is a wasted request through the relay on every page load. A screen
 open and in view is not refreshed until the tab is left and come back to. The back
 office names its files by path from the root, so it opens through a relay that gives
 each venue a hostname and not under `/v/<venue>/` (Task 4 says so to the owner).
+
+## ADR-310 - "Back office from anywhere" is a card that says how to turn it on, not a switch
+2026-10 · Status: accepted. Phase 13, Task 4.
+Context: the phase file asked for a switch on the Devices screen that writes the
+setting and says a restart is needed. `remote_backoffice` is a setting of the
+process, read from the file, the environment or a flag when mez starts, like
+`relay_url` and `relay_key` beside it. Nothing in mez writes its own settings file,
+and on Windows that file is closed to everyone but administrators (ADR-259).
+Decision:
+  - **No switch.** The card says where it stands and, when it is off, the three
+    things that turn it on: a key that allows it, `relay_key` and
+    `remote_backoffice = true` in the settings file, restart. It is the same
+    arrangement as "Ordering from phones" above it, which also changes nothing.
+  - **The server gives the address.** `GET /api/v1/tunnel` gains `back_office_url`:
+    the venue's `public_url` with `/backoffice/`, present only when the setting is on
+    and `public_url` is a scheme and a host with nothing after. A venue reached under
+    a relay's path gets none, since the back office would not open there (ADR-309),
+    and the card then says what is missing.
+  - **The card reads the request the card above it reads**, and shows nothing while
+    that loads or fails. Its chip has a vocabulary of its own, three words: "Only at
+    the venue", "Open", "Not reachable".
+  - **Opened from away, the card says so** ("You are using it now") and lists
+    nothing to do.
+Because: a switch that writes a file the process may not write, for a setting that
+takes effect at the next start, would be a control that sometimes works and never at
+once. A sentence and three steps is what the owner needs once.
+Cost: turning it on means opening a file as an administrator, which is more than a
+tap. A venue on the hosted relay will be set up by whoever sells it the key, and the
+installer could ask for both; that is not built.

@@ -137,6 +137,19 @@ export const tunnelStates: Readonly<Record<TunnelState, ChipSpec>> = {
   stopped: { tone: "neutral", word: "Stopped" },
 };
 
+/**
+ * Whether the back office can be opened away from the venue (ADR-306). Off
+ * is how nearly every venue is, and no fault. Unreachable is on, with the
+ * relay it goes through not reached.
+ */
+export type RemoteState = "off" | "on" | "unreachable";
+
+export const remoteStates: Readonly<Record<RemoteState, ChipSpec>> = {
+  off: { tone: "neutral", word: "Only at the venue" },
+  on: { tone: "success", word: "Open" },
+  unreachable: { tone: "warning", word: "Not reachable" },
+};
+
 /** What a StatusChip is given: which vocabulary, and a value from it. */
 export type ChipStatus =
   | { readonly kind: "kitchen"; readonly status: KitchenStatus }
@@ -150,7 +163,8 @@ export type ChipStatus =
   | { readonly kind: "menu"; readonly status: MenuItemState }
   | { readonly kind: "staff"; readonly status: StaffState }
   | { readonly kind: "device"; readonly status: DeviceState }
-  | { readonly kind: "tunnel"; readonly status: TunnelState };
+  | { readonly kind: "tunnel"; readonly status: TunnelState }
+  | { readonly kind: "remote"; readonly status: RemoteState };
 
 export function chipSpec(chip: ChipStatus): ChipSpec {
   switch (chip.kind) {
@@ -178,5 +192,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
       return deviceStates[chip.status];
     case "tunnel":
       return tunnelStates[chip.status];
+    case "remote":
+      return remoteStates[chip.status];
   }
 }

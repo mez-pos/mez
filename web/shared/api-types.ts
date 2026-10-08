@@ -886,6 +886,7 @@ export interface TunnelResponse {
   retry_at?: string;
   detail?: string;
   back_office: boolean;
+  back_office_url?: string;
 }
 
 export interface GuestTableResponse {

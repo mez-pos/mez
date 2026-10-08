@@ -771,6 +771,11 @@
   the canvas: no night screen has a keypad yet. Menu table cells wrap at
   1366px (Task 7).
 
+- Devices on a phone (seen 2026-10-08, phase 13 Task 4): at 390px the whole
+  page scrolls sideways by the width the devices table is over, 704px in a
+  382px column. The table's own wrapper is meant to scroll and does not hold
+  it. It matters more now that an owner opens this screen on a phone from
+  away. The "Back office from anywhere" card is not the cause.
 - Devices (ADR-140): revoking a device does not close its open live stream; it
   is refused at its next connect, and every request it makes is refused at once.
   A revoked till's name in the hub is the one it connected with. Rename and

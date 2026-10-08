@@ -403,3 +403,49 @@ func TestTunnelIsForWhoeverManagesDevices(t *testing.T) {
 		})
 	}
 }
+
+// TestTheAddressToOpenTheBackOfficeAt: what the Devices screen shows an
+// owner to open on their phone. Only with remote_backoffice on, and only an
+// address that would open: the venue's own hostname, with nothing after it
+// (ADR-309, phase 13 Task 4).
+func TestTheAddressToOpenTheBackOfficeAt(t *testing.T) {
+	r := newRegister(t)
+	owner := r.asStaff(r.signInAs(t, "stf_PRIYA001", "2468").Token)
+	on := TunnelStatus{State: TunnelConnected, BackOffice: true}
+	off := TunnelStatus{State: TunnelConnected}
+
+	tests := []struct {
+		name      string
+		status    TunnelStatus
+		publicURL string
+		want      string // back_office_url, or empty for absent
+	}{
+		{"on, at the venue's own hostname", on, "https://cafe.mezpos.com", "https://cafe.mezpos.com/backoffice/"},
+		{"a trailing slash is the same address", on, "https://cafe.mezpos.com/", "https://cafe.mezpos.com/backoffice/"},
+		{"with a port", on, "http://cafe.mez.localhost:7811", "http://cafe.mez.localhost:7811/backoffice/"},
+		{"on, but still reconnecting: the address is the same", TunnelStatus{State: TunnelWaiting, BackOffice: true}, "https://cafe.mezpos.com", "https://cafe.mezpos.com/backoffice/"},
+		{"off: no address, whatever public_url says", off, "https://cafe.mezpos.com", ""},
+		{"on, and public_url not set", on, "", ""},
+		{"on, reached under a path, where it would not open", on, "https://relay.example.com/v/cafe", ""},
+		{"on, and public_url is not an address", on, "cafe", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r.rebuild(t, WithTunnel(func() TunnelStatus { return tt.status }), WithTableCodes(nil, tt.publicURL))
+			rec := send(r.handler, http.MethodGet, "/api/v1/tunnel", "", owner)
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status %d, body %s", rec.Code, rec.Body)
+			}
+			var got tunnelResponse
+			if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+				t.Fatal(err)
+			}
+			if got.BackOfficeURL != tt.want || got.BackOffice != tt.status.BackOffice {
+				t.Errorf("back_office %v, back_office_url %q; want %q", got.BackOffice, got.BackOfficeURL, tt.want)
+			}
+			if tt.want == "" && strings.Contains(rec.Body.String(), "back_office_url") {
+				t.Errorf("an empty address is on the wire: %s", rec.Body)
+			}
+		})
+	}
+}
