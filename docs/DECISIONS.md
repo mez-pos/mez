@@ -11288,6 +11288,13 @@ outlets in one place. A pen drive cannot do any of them, and a self-run relay do
 only the first and costs more than the subscription.
 Cost: two sign-ins exist and must be explained in one sentence each. The cloud repo
 depends on this module's exported packages, so their APIs become something to keep
-stable. A venue whose subscription lapses loses the relay, the mirror, WhatsApp and
+stable. A split was weighed on 2026-10-12 and set aside: a Cloudflare Worker with
+Better Auth and Neon for the account side, Go on the droplet for the venue side. It
+would have saved days of auth code and about ₹1,300 a month at the start, and cost a
+second runtime, a database in Singapore with a cold start, and a seam that Phase 16's
+"each venue's today" would have pulled back into Go anyway. The droplet is the single
+point of failure either way, since the relay and the mirror live there, so the Worker's
+uptime bought nothing an owner would feel. The cloud is one Go service with SQLite,
+replicated by Litestream like a venue. A venue whose subscription lapses loses the relay, the mirror, WhatsApp and
 the off-site backup; it never loses the till, the LAN back office or the local backup
 folder, and the pricing page says so in those words.
