@@ -19,7 +19,9 @@ Two repositories. **This one** holds everything the venue binary and the open
 relay do: pacing the backup, the `Entitlements` interface, pairing, the cloud
 owner's sign-in, `mez mirror`, restore from the cloud. **`mez-cloud`**,
 private, holds accounts, venues, keys, Razorpay, the account area, the admin
-area and the mirror multiplexer. A task below says which. Tasks in this repo
+area and the mirror multiplexer, in two runtimes: a Cloudflare Worker for
+the account side and Go on the droplet for the venue side (Task 8 says
+which). A task below says which repo. Tasks in this repo
 follow the session protocol; `mez-cloud` has its own STATE and phase file,
 and its first commit copies this phase's cloud tasks there.
 
@@ -129,41 +131,66 @@ and its first commit copies this phase's cloud tasks there.
   the data directory deleted, the venue back by code, a sale rung.
 
 - [ ] **Task 8 - mez Cloud, the service.** *`mez-cloud`.* Split there into
-  its own tasks; the shape is fixed here.
-  - [ ] **8a - Accounts and venues.** Postgres (managed, DigitalOcean
-    Bangalore). An account is a phone number proven by a WhatsApp or SMS
-    one-time code, with a name and an email for invoices. An account owns
-    venues; a venue has a slug, a hostname, a key id, R2 prefix, state and
-    the two dates of Task 1. Sessions are cookies, thirty days, revocable.
-  - [ ] **8b - Keys and credentials.** Relay keys minted with the same
-    `relay.Keys` this repo exports. R2 credentials per venue prefix through
+  its own tasks; the shape is fixed here. Two runtimes, chosen on
+  2026-10-12: everything a browser or Razorpay talks to about accounts is
+  TypeScript on a Cloudflare Worker (Hono, Better Auth, Drizzle) over Neon
+  Postgres in Singapore; everything that touches a venue's data is Go on
+  the DigitalOcean Bangalore droplet that the relay needs anyway. The
+  Worker never proxies the back office: after sign-in it mints the Task 5
+  assertion and sends the browser to the Go side, which verifies the
+  signature and never asks the database who the user is. Drizzle owns the
+  schema; Go only reads it. The move to one server later is a `pg_dump` and
+  running Hono under Node next to the relay; the trigger is a Neon bill
+  above ₹2,000 a month, a residency demand, or the Singapore round trip
+  showing in the account area, not a user count.
+  - [ ] **8a - Accounts and venues.** *Worker.* Better Auth with the phone
+    number, organization and admin plugins: an account is a phone number
+    proven by a one-time code sent as a WhatsApp authentication template
+    (MSG91 SMS for a number not on WhatsApp), with a name and an email for
+    invoices; an organization is the account's venues. A venue has a slug,
+    a hostname, a key id, an R2 prefix, a state and the two dates of Task
+    1. Sessions are Better Auth's, thirty days, revocable. Meta's business
+    verification starts on day one of this task; it can take weeks.
+  - [ ] **8b - Keys and credentials.** *Worker.* Relay keys minted by a
+    port of `relay.Keys`'s signing to WebCrypto, tested against this repo's
+    vectors so both sides agree. R2 credentials per venue prefix through
     Cloudflare's API tokens, rotated on re-pairing. The Ed25519 key pair for
-    Task 5, with rotation that keeps the previous public key valid a week.
-  - [ ] **8c - Razorpay.** Plans created once in the dashboard: Cloud
-    monthly, Cloud yearly, and the founder versions (ADR-313 names the
-    prices). "Subscribe" creates a Subscription with `start_at` the trial's
-    end and returns the hosted checkout. One webhook endpoint, signature
-    verified, idempotent on event id, mapping events to states by Task 1's
-    table. Payment Links for the manual lane. Test mode end to end before
+    Task 5 in a Worker secret, with rotation that keeps the previous public
+    key valid a week.
+  - [ ] **8c - Razorpay.** *Worker, REST by fetch.* Plans created once in
+    the dashboard: Cloud monthly, Cloud yearly, and the founder versions
+    (ADR-313 names the prices). "Subscribe" creates a Subscription with
+    `start_at` the trial's end and returns the hosted checkout. One webhook
+    endpoint, signature verified, idempotent on event id, mapping events to
+    states by Task 1's table; a cold database is fine because Razorpay
+    retries. Payment Links for the manual lane. Test mode end to end before
     live keys.
-  - [ ] **8d - The account area**, `app.mezpos.com`: sign in, venues, each
-    venue's state, plan, next charge, invoices, "Subscribe", "Cancel at the
-    end of the period", "Download my data" (the venue's latest replica as a
-    zip), "Delete my account" (after cancel and a thirty-day wait). Phone
-    first; it is where the owner is.
-  - [ ] **8e - The mirror multiplexer.** One process that holds `mez
-    mirror` instances for venues an owner has opened in the last hour,
-    behind the owner's cloud session: `app.mezpos.com/v/<slug>/` is the
-    live venue through the relay with the Mez-Cloud assertion while the
-    venue is connected, and the mirror when it is not, with the switch
-    made by the connection state and said on the bar.
-  - [ ] **8f - The admin area**, `admin.mezpos.com`, for the operator:
-    venues by state, revenue, failed charges, the hand-set date with a note,
-    revoke, impersonate-read a venue's state. Behind the operator's account
-    with a second factor and an IP allow list.
-  - [ ] **8g - Dunning.** WhatsApp from the cloud: seven days before a
-    charge, on failure, at day three, at suspension, on reactivation. The
-    templates are Phase 15's first approvals; until then, email.
+  - [ ] **8d - The account area**, `app.mezpos.com`. *Worker.* Sign in,
+    venues, each venue's state, plan, next charge, invoices, "Subscribe",
+    "Cancel at the end of the period", "Download my data" (the venue's
+    latest replica as a zip, fetched from R2), "Delete my account" (after
+    cancel and a thirty-day wait). Phone first; it is where the owner is.
+    Few queries per page, batched: the database is in Singapore.
+  - [ ] **8e - The venue page and the mirror**, `v.mezpos.com/<slug>/`.
+    *Go on the droplet.* Arrives with the assertion from 8d and verifies it
+    with the public key. While the venue is connected, the back office
+    through the relay as Phase 13 built it; when it is not, a `mez mirror`
+    instance over the replica, kept for venues opened in the last hour,
+    with the switch made by the connection state and said on the bar.
+  - [ ] **8f - The admin area**, `admin.mezpos.com`. *Worker, Better Auth
+    admin plugin.* Venues by state, revenue, failed charges, the hand-set
+    date with a note, revoke, impersonate-read a venue's state. Behind the
+    operator's account with a second factor and Cloudflare Access in front.
+  - [ ] **8g - Entitlement, read by Go.** *Droplet.* The relay's
+    `Entitlements` implementation reads the venue table in Neon with pgx,
+    once an hour per connected venue and on connect, cached in memory, and
+    keeps the last answer through a database outage so a Neon hiccup never
+    drops a paying venue. Phase 15's reader and the pending-bundle queue of
+    Phase 16 read the same way.
+  - [ ] **8h - Dunning.** *Worker.* WhatsApp from the Razorpay events:
+    seven days before a charge, on failure, at day three, at suspension, on
+    reactivation. The templates are approved alongside 8a's; until then,
+    email through SES.
 
 - [ ] **Task 9 - Words.** *This repo.* `deploy.md`'s owner section becomes
   "mez Cloud, or your own relay": the code, what pairing does, what stops
