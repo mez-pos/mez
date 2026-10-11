@@ -11238,3 +11238,56 @@ Cost: one more tap to change section on a phone. The drawer is not a modal dialo
 focus is not held inside it, so a keyboard user under 768px can tab behind it.
 Tables wider than a phone still scroll sideways inside their cards, which is how a
 table with seven columns is read at that width; none has a phone layout of its own.
+
+## ADR-312 - What is open, what is a service, and the two identities an owner has
+2026-10 · Status: accepted. Sets the boundary for Phases 14 to 16.
+Context: the installer gives away the whole product. Backup can be worked around with
+a pen drive; a hosted relay and QR ordering are things many venues will not use. So
+the free download closed the income path, and the question was what to hold back.
+The answer is to hold back nothing that runs at the venue, and to sell what only a
+server can do: the owner's phone at 11pm when the laptop is shut.
+Decision:
+  - **Three layers.** The till (register, kitchen, menu, staff, stock, reports,
+    invoices, printing) is AGPL, in the binary, free for ever. The relay is AGPL, in
+    this repo, documented for anyone who will run a server. mez Cloud (accounts,
+    billing, the always-on mirror, WhatsApp, multi-outlet) is a service in a private
+    repository, `mez-cloud`, that imports this module. Nothing in the binary checks a
+    licence. There is no feature flag to crack and no fork to make by removing one.
+  - **The relay decides by entitlement, not by key shape alone.** `relay` gains an
+    `Entitlements` interface: given a venue id, until when may it connect, and may the
+    back office cross. The open relay ships a static implementation read from a file
+    or the environment, which is what a self-hoster wants. mez Cloud wires one that
+    reads its database. The hourly recheck and the refusal reason are the same code
+    for both.
+  - **An owner has two identities, and each stays where it belongs.** At the venue,
+    a person is a staff member with a PIN, on a device paired by a code; that lives in
+    the venue's SQLite and never leaves it (Phases 04, 10, 13). In the cloud, an owner
+    is an account: a phone number proven by a one-time code, owning venues, each with a
+    subscription; that lives in the cloud's database and never touches the venue's.
+    They meet at exactly two points. First, pairing: a code from the account, typed
+    into the venue once, gives the venue its relay key, its backup credentials and the
+    cloud's public key. Second, the owner's phone: after a cloud sign-in, the cloud
+    signs a short assertion that the venue accepts as a sign-in by one staff member
+    created at pairing, named for the owner, who has no PIN. The cloud is an identity
+    provider for that one staff member and no other. Everyone else who crosses the
+    relay still signs in with a PIN under Phase 13's rules.
+  - **The mirror is the back office over a backup.** `mez mirror` opens the ordinary
+    back office, read-only, over a restored copy of a backup destination. A self-hoster
+    can run it against their own folder. mez Cloud runs one process that opens many
+    venues' replicas on demand, so the owner's dashboard is there when the venue PC is
+    off, marked "as of" the last replicated write. Backup stops being insurance and
+    becomes the thing an owner looks at every night.
+  - **The venue recovers from the cloud by signing in, not by holding a key.** A
+    machine that dies takes its config with it. The setup wizard's "I had mez before"
+    signs in to the account, lists its venues, restores the chosen one from its
+    replica and issues a fresh relay key; the old one is revoked. The account, being a
+    phone number, is the one thing the owner cannot lose with the laptop.
+Because: the venue's own computer does the expensive work. What is sold is reach,
+continuity and attention: the dashboard after closing, the report on WhatsApp, three
+outlets in one place. A pen drive cannot do any of them, and a self-run relay does
+only the first and costs more than the subscription.
+Cost: two sign-ins exist and must be explained in one sentence each. The cloud repo
+depends on this module's exported packages, so their APIs become something to keep
+stable. A venue whose subscription lapses loses the relay, the mirror, WhatsApp and
+the off-site backup; it never loses the till, the LAN back office or the local backup
+folder, and the pricing page says so in those words.
