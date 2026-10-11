@@ -11298,3 +11298,126 @@ uptime bought nothing an owner would feel. The cloud is one Go service with SQLi
 replicated by Litestream like a venue. A venue whose subscription lapses loses the relay, the mirror, WhatsApp and
 the off-site backup; it never loses the till, the LAN back office or the local backup
 folder, and the pricing page says so in those words.
+
+## ADR-313 - A venue's entitlement is three dates written by one function, and a Razorpay event only ever moves them through it
+2026-10 · Status: accepted. Phase 14, Task 1. Written before any cloud code. Builds on ADR-312.
+Context: ADR-312 made the relay decide by entitlement. Something has to say what
+that entitlement is, who changes it, and what a payment event does to it, before
+there is a webhook to get it wrong. A subscription has more ways to be half-paid than
+a sale does: a charge that lands hours after the period ended, a retry that succeeds
+after the failure was announced, a webhook delivered twice or out of order, an owner
+who pays cash. And the service only pays if a venue costs little to keep, so the same
+ADR fixes what a venue may cost.
+Decision:
+  - **Three dates and a word, on the venue's row in the cloud's database.**
+    `paid_until` is the end of what has been paid for or given: the owner reads it.
+    `entitled_until` is the only thing the relay reads. `backups_kept_until` is the
+    only thing the mirror, "Download my data" and restore read. `state` is the word
+    for people: the admin's lists, the Devices card, the dunning messages. All are
+    UTC instants; a day is 24 hours; they are shown in the venue's time zone.
+  - **One function writes the dates.** Given `paid_until` and whether the owner has
+    cancelled: `entitled_until = paid_until + 7 days` (the grace), or `paid_until`
+    itself after a cancel; `backups_kept_until = entitled_until + 30 days`. Nothing
+    else sets either. Grace is therefore in the date from the moment of payment, not
+    added when a charge fails: Razorpay attempts the next charge at the period's end
+    and a UPI debit can land hours later, so a relay that read `paid_until` would cut
+    off paying venues once a month for the length of a webhook's delay.
+  - **Six states, and which of them the clock makes.**
+
+    | State | Entered when | Relay | Backup uploads | Replica |
+    |---|---|---|---|---|
+    | `trial` | The venue is first paired. `paid_until` = pairing + 90 days | carries | accepted | kept |
+    | `active` | A charge, a paid link or a hand-set date puts `paid_until` in the future | carries | accepted | kept |
+    | `grace` | `paid_until` has passed, or a charge is reported failed | carries | accepted | kept |
+    | `suspended` | `entitled_until` has passed | refuses, `not_entitled` | refused | kept, frozen |
+    | `cancelled` | The owner asks, or Razorpay says the subscription was cancelled | by the date | by the date | kept |
+    | `closed` | `backups_kept_until` has passed, or the account was deleted | refuses | refused | deleted |
+
+    `grace`, `suspended` and `closed` are reached by time passing. A tick in the
+    cloud writes the word, and the reasons, with one pure function,
+    `StateAt(row, now)`; anything that shows a state calls the same function, so a
+    late tick shows nothing stale. The relay and the mirror never read the word. A
+    late tick, a lost webhook or a bug in the word cannot keep a venue on or turn
+    one off: only a date can.
+  - **A trial is ninety days from the first pairing, once per venue.** Pairing again
+    (a new key, a restored machine) does not start another. With the grace that is
+    97 days of relay before anything is asked for. "Subscribe" during a trial makes
+    a Razorpay Subscription whose `start_at` is `paid_until`, so the first charge is
+    the day the trial ends; the state stays `trial` until it is charged.
+  - **What each Razorpay event does.** Every event is one transaction: the event's
+    id is inserted (a second delivery finds it and does nothing), the row is
+    changed, and a line is appended to `entitlement_events` with the event, the old
+    and new dates and state.
+
+    | Event | State | `paid_until` |
+    |---|---|---|
+    | `subscription.charged` | `active` | the later of itself and the subscription's `current_end` |
+    | `subscription.pending` | `grace`, reason `payment_failed` | unchanged |
+    | `subscription.halted` | `grace`, reason `payment_stopped`; `suspended` if the date has passed | unchanged |
+    | `subscription.cancelled` | `cancelled` | unchanged; `entitled_until` drops to it |
+    | `payment_link.paid` | `active` | plus the months the link was made for, counted from `paid_until` if the relay still carries the venue, from now if it does not |
+    | `payment.failed` | unchanged | unchanged |
+
+    `payment.failed` only records the attempt against the venue, for the admin's
+    failed-charges list and the message to the owner. It fires for a mistyped card
+    at checkout too, and a trial venue must not fall into grace for that; a failed
+    renewal arrives as `subscription.pending`, which does the moving.
+    `subscription.completed` is treated as `halted`: a count that ran out is not
+    the owner's wish. `subscription.authenticated` records the subscription's id.
+    Every other event is stored and changes nothing.
+  - **A payment only moves a date forward, and an old failure cannot undo a newer
+    payment.** The row keeps the time of the last event that paid. A `pending`,
+    `halted` or `payment.failed` whose own time is earlier is stored and ignored,
+    which is what makes a retry that succeeded before its failure was delivered
+    come out right. A paid link whose amount is not a price below moves nothing and
+    is listed for the operator.
+  - **The manual lane is the same function.** A yearly Payment Link carries the
+    venue and the months in its notes. The admin's "set the date" takes a date and
+    a note that may not be empty, writes `paid_until` through the one function,
+    and appends who, when and why. It is how cash, a bank transfer, a goodwill
+    month and a refund are all done. No other screen edits a date.
+  - **Coming back.** A payment on a `grace`, `suspended` or `cancelled` venue makes
+    it `active` in that transaction, and the relay accepts it at its next attempt;
+    the tunnel client therefore retries a `not_entitled` close at least once a
+    minute (Task 3). A `closed` venue that pays is `active` with an empty replica
+    and no trial.
+  - **What the venue is told.** `relay.Entitlements` returns `Until`
+    (`entitled_until`), `Remote`, `State`, `PaidUntil` and `Reason`, a short code
+    from a fixed list (`trial_ended`, `payment_failed`, `payment_stopped`,
+    `cancelled`, `set_by_hand`, `closed`). The relay enforces `Until` and `Remote`
+    and passes the rest on untouched. The venue owns the sentences: "Cloud: paid
+    until 12 Nov" is `PaidUntil`, "Payment failed, 5 days left" is `Until`. A
+    self-hoster's file gives only a date, and the card says only that. On mez Cloud
+    `Remote` is true for every entitled venue: there is one plan.
+  - **Prices**, in paise in the code, before GST. Cloud: ₹999 a month, ₹9,999 a
+    year. Founder, for the first hundred venues to make a first payment: ₹699 a
+    month, ₹6,999 a year, held for as long as the venue does not reach `closed`.
+    Four plans in Razorpay, made once by hand. Setup is charged at the venue and
+    is not the cloud's business.
+  - **A venue must cost under ₹100 a month to serve**, and today's sum is ₹56
+    (`docs/marketing/cloud-unit-economics.md`): backup writes ₹24, backup storage
+    ₹1, the mirror's disk ₹9, WhatsApp ₹22, email under ₹1. With trials carried by
+    the paying, ₹73. Three rules protect it. A venue paired to mez Cloud backs up
+    no more often than every 30 seconds, whatever Task 2's floor allows on a
+    bucket of one's own: at 5 seconds the writes alone are about ₹130. A venue is
+    sent at most 100 WhatsApp messages a month (Phase 15 builds to that). A venue
+    that is `suspended` stops uploading and one that is `closed` stops being
+    stored, so what is unpaid stops costing. The gateway's 2.8% is a cost of the
+    sale, not of the venue, and is outside the ₹100.
+Because: the relay asks one question an hour and should need one comparison to
+answer it. Putting the grace, the cancel and the trial into how a date is written
+means the part that turns a cafe's ordering on and off has no state machine in it,
+and the state machine that exists is a pure function with a table to test it
+against, one case a row.
+Cost: three dates where the phase file asked for two; `paid_until` is there so the
+owner is told the day they paid to and not that day plus seven. Everyone gets the
+grace, including a trial that never subscribes and a founder paying by link.
+ADR-312 said a lapsed venue loses the mirror; it loses the mirror keeping up, and
+for thirty days the owner still sees the back office as of the last backup beside
+the notice to pay, which is the phase file's reading and the better reminder. The
+30-second rule is held by the binary's own setting and an owner who rebuilds it is
+found on the R2 bill, not by code. Whether an R2 token can be paused and resumed
+without pairing again is not known until 8b; if it cannot, a suspended venue keeps
+uploading for its thirty days and the model carries ₹25 for it. Not decided here:
+whether the prices are shown with GST or before it, and proration when a monthly
+venue moves to yearly (until it is, the yearly starts when the month ends).

@@ -8,7 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 10, Task 12a and 12b** (ADR-304). `mez reset-pin`: with no
+**Phase 13, Task 4 - The owner turns it on and sees where to go**
+(ADR-310). `GET /api/v1/tunnel` has `back_office_url`. The Devices screen
+has a "Back office from anywhere" card (`RemoteCard.tsx`,
+`remote-logic.ts`): how it stands, the address with Copy, and what to do.
+It is not a switch. `deploy.md` has the owner's section, and
+`build/docker-compose.yml` the commented setting. Walked in a browser
+through a local relay with a hostname per venue. After it, at the human's
+word on seeing it on a phone: under 768px the sections are a drawer behind
+a menu button, and no page scrolls sideways (ADR-311).
+
+Before it, **Phase 10, Task 12a and 12b** (ADR-304). `mez reset-pin`: with no
 `-staff` it lists who works at the venue; with one it draws a new
 six-digit PIN, shown once, clears the person's lock and signs them out.
 For a venue whose only owner forgot the PIN, which had no way back in.

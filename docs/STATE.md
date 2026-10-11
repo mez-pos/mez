@@ -7,38 +7,41 @@
 
 ## Current phase
 
-**Phase 13 - The back office from anywhere**, `docs/phases/phase-13.md`,
-opened 2026-10-08 (ADR-306). The owner reaches the back office through
-the relay from a phone; the relay carries it only for a venue whose key
-was issued with `--remote`; the API holds a relayed request to tighter
-rules. Five tasks. Phases 00 to 12 are built; what they still owe is in
-`docs/KNOWN.md` and in the "Still owed" list below.
+**Phase 14 - mez Cloud: the account, the pairing and the switch**,
+`docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
+ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
+both, 8 is `mez-cloud`'s. **Phase 13 is not closed**: its Task 5 (a remote
+session harder to take, ADR before code, `docs/phases/phase-13.md`) is
+unbuilt and must land before Task 5 here. Phases 00 to 12 are built; what
+they still owe is in `docs/KNOWN.md` and in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 13, Task 4 - The owner turns it on and sees where to go**
-(ADR-310). `GET /api/v1/tunnel` has `back_office_url`. The Devices screen
-has a "Back office from anywhere" card (`RemoteCard.tsx`,
-`remote-logic.ts`): how it stands, the address with Copy, and what to do.
-It is not a switch. `deploy.md` has the owner's section, and
-`build/docker-compose.yml` the commented setting. Walked in a browser
-through a local relay with a hostname per venue: a code made at the venue,
-a phone-sized browser paired through the relay, a price changed from 60 to
-65 and seen at the venue.
-
-After it, at the human's word on seeing it on a phone: under 768px the
-sections are a drawer behind a menu button, not a row across the top, and
-no page scrolls sideways (ADR-311). The card and `deploy.md` say phone,
-tablet or computer.
+**Phase 14, Task 1 - ADR-313: the entitlement states and the Razorpay
+events.** A document, no code. Three dates on the cloud's venue row,
+written by one function: `paid_until` (the owner reads), `entitled_until`
+= that + 7 days of grace (the relay reads), `backups_kept_until` = that +
+30 days (mirror, download, restore). Six states; `grace`, `suspended` and
+`closed` are made by the clock through one pure `StateAt`. The table of
+six Razorpay events, with `payment.failed` moving nothing. Prices: ₹999
+and ₹9,999, founders ₹699 and ₹6,999 for the first hundred. A venue under
+₹100 a month, so a venue on mez Cloud backs up every 30 s at the fastest.
+Task 3 in the phase file now carries `State` and `PaidUntil` and a
+once-a-minute retry after `not_entitled`.
 
 ## Next task
 
-**Phase 13, Task 5 - A remote session is harder to take than a LAN one.**
-ADR before code. Remote PIN attempts counted apart and harder (3 wrong,
-then locked until someone at the venue clears it: `unlock` is already
-refused through the relay, ADR-308); a remote session that expires after
-12 hours. Read `internal/auth` for how the lockout and session expiry
-work now before deciding their shape.
+**Phase 14, Task 2 - The backup is paced on purpose.** `backup.sync_interval`,
+default `30s`, floor `5s`, part size to match, the interval in `GET
+/api/v1/backup`, a test that counts uploads over a simulated hour, and
+`deploy.md`. ADR-313 holds a venue paired to mez Cloud to 30 s; there is
+no `[cloud]` section until Task 4, so Task 2 builds the setting and the
+floor and Task 4 applies the cloud's.
+
+**Or first, Phase 13, Task 5**, if the human would rather close Phase 13:
+remote PIN attempts counted apart (3 wrong, then locked until someone at
+the venue clears it), a remote session that expires after 12 hours. Read
+`internal/auth` before deciding their shape.
 
 **Before or beside it, the human's:** the live relay at relay.jskin.in was
 deployed with Phase 13 on 2026-10-08 (`v0.1.0-alpha.4`, health ok, no
@@ -116,6 +119,8 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 6. Older: move a data directory from before the rename and rename `nofiltr.db`.
 7. `jskin.in` is for testing, `mez.ac` for production: move before codes are printed.
 8. The firewall rule is for Private and Domain networks (ADR-265). Public too?
+9. ADR-313 took the cost paper's prices (₹999 and ₹9,999; founders ₹699 and
+   ₹6,999, first hundred). Are they right, and are they shown with GST or before it?
 
 ---
 
@@ -127,3 +132,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
+- [ ] 13 - The back office from anywhere (Tasks 1 to 4 built; Task 5 owed)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Task 1 of 9)

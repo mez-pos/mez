@@ -39,7 +39,7 @@ and its first commit copies this phase's cloud tasks there.
 
 ## Tasks
 
-- [ ] **Task 1 - ADR-313: the entitlement states and what each Razorpay
+- [x] **Task 1 - ADR-313: the entitlement states and what each Razorpay
   event does to them.** ADR before code. States: `trial`, `active`, `grace`,
   `suspended`, `cancelled`, `closed`. One column, `entitled_until`, that the
   relay reads; a second, `backups_kept_until`, that the mirror and restore
@@ -51,6 +51,9 @@ and its first commit copies this phase's cloud tasks there.
   The ADR also states the per-venue cost model it protects
   (`docs/marketing/cloud-unit-economics.md`): a venue must cost under ₹100 a
   month to serve.
+  *Done: ADR-313. It adds a third date, `paid_until`, for the owner to
+  read; puts the grace into `entitled_until` when the date is written; and
+  holds a venue paired to mez Cloud to a 30 s backup at the fastest.*
 
 - [ ] **Task 2 - The backup is paced on purpose.** *This repo.* Litestream's
   default syncs every second, which is about 1.5 million R2 writes a month
@@ -64,15 +67,18 @@ and its first commit copies this phase's cloud tasks there.
 
 - [ ] **Task 3 - The relay asks who is entitled.** *This repo.*
   `relay.Entitlements` with one method: for a venue id, `Until time.Time`,
-  `Remote bool`, `Reason string`. `StaticEntitlements` reads
+  `Remote bool`, `State string`, `PaidUntil time.Time`, `Reason string`
+  (ADR-313: the relay enforces the first two and passes the rest on).
+  `StaticEntitlements` reads
   `RELAY_ENTITLEMENTS` (a file of `venue until remote` lines) and keeps
   `RELAY_REVOKED` working as "until zero". The agent is checked when it
   connects and once an hour after; a venue past its date is closed with
   `not_entitled` and the reason, and a venue whose `Remote` turned false
   has `/backoffice/` and `/api/` answered 404 as a guests-only key is. The
-  tunnel client surfaces the close reason; `GET /api/v1/tunnel` gains
-  `cloud: {state, until, reason}` so the Devices card can say "Cloud: paid
-  until 12 Nov" or "Payment failed, 5 days left". Tests in `internal/relay`
+  tunnel client surfaces the close reason and tries again at least once a
+  minute after a `not_entitled` close; `GET /api/v1/tunnel` gains
+  `cloud: {state, paid_until, until, reason}` so the Devices card can say
+  "Cloud: paid until 12 Nov" or "Payment failed, 5 days left". Tests in `internal/relay`
   and `internal/tunnel`. `build/relay/README.md` documents the file for
   self-hosters.
 
