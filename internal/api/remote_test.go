@@ -240,6 +240,13 @@ func TestRemoteGate(t *testing.T) {
 		{"GET", "/", false},
 		{"GET", "/pos", false},
 		{"GET", "/backofficer", false},
+		// These decode to something under a bundle that is let through, and
+		// the mux, which routes on the path as sent, gives them to whatever
+		// serves "/": the till. They are judged as sent.
+		{"GET", "/backoffice%2f", false},
+		{"GET", "/backoffice%2f..%2fassets/app.js", false},
+		{"GET", "/backoffice%2Fapi/v1/health", false},
+		{"GET", "/order%2ft/abc", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.method+" "+tt.path, func(t *testing.T) {

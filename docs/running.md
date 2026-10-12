@@ -413,6 +413,7 @@ is what they trust; each takes `-h`.
 | `mez reset-pin` | Lists who works at the venue with their ids; with `-staff stf_...`, gives that person a new PIN, shown once, and clears their lock |
 | `mez table-codes` | Lists every table with the code a guest's phone scans, making any that are missing. The back office's Floor plan prints them |
 | `mez restore` | Brings a venue back from its backup into an empty data directory ([`deploy.md`](deploy.md#getting-a-venue-back)) |
+| `mez mirror` | Opens the back office over a copy of a venue's backup, to read, with the venue off ([`deploy.md`](deploy.md#reading-a-backup-without-restoring-it)) |
 | `mez service install`, `uninstall`, `start`, `stop`, `status` | The Windows service ([`deploy.md`](deploy.md#windows)) |
 | `mez --test-print ADDRESS` | Prints a test page, with no venue needed ([above](#testing-your-receipt-printer)) |
 | `mez -h` | Says which build this is, on its first line, and lists the server's flags |

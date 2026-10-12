@@ -931,6 +931,52 @@ To restore into somewhere other than the default data directory, add
 `mez` takes `-path`, and a saved `backup.json` can be handed over whole
 with `-config` instead of typing the destination again.
 
+### Reading a backup without restoring it
+
+`mez mirror` opens the back office over a copy of a backup, to read: the
+reports, the menu, the stock and the staff as they were when the backup was
+last written. The venue's computer does not need to be on, and nothing is
+restored onto anything. It runs on any computer that can reach the backup.
+
+```
+mez mirror -from D:\mez-backup
+```
+
+or a bucket, or a saved `backup.json`, exactly as `mez restore` takes them.
+It says what it has opened and how to get in:
+
+```
+A mirror of Corner Cafe, as it was at 11 Oct 2026 23:10.
+
+  Open          http://127.0.0.1:8090/backoffice/
+  Pairing code  7K3M-9QX2   (good until 23:42; start the mirror again for another)
+```
+
+Open the address in a browser on that computer, enter the code, and sign in
+with the PIN of someone who manages the venue: the PINs are the venue's own,
+as the backup holds them. The back office says "Away from the venue".
+
+What to know:
+
+- **Nothing can be changed.** Anything that would change the venue is
+  refused, in a sentence, whatever the screen offers. Nothing is printed,
+  and no guest can order from it.
+- **It is as old as the moment you started it.** It does not yet follow
+  the backup as the venue goes on selling: stop it and start it again for
+  a newer copy.
+- **It listens on its own computer only**, at `127.0.0.1:8090`, unless
+  `-listen-addr` says otherwise. Do not put one on a network you do not
+  trust: a wrong PIN typed three times locks that person in the copy and
+  not at the venue, and starting the mirror again forgets it.
+- **The copy is kept in the system's temporary folder and removed when the
+  mirror stops** (Ctrl-C). A mirror that is killed leaves it behind, and
+  the next one started says where: it is a copy of the venue's sales, so
+  remove it.
+- **The backup is only read.** A mirror writes nothing to the folder or
+  the bucket, and the venue never hears of the browser paired to it.
+- `-generation NAME` opens an older run than the newest, by its name from
+  `mez restore -list`.
+
 This procedure was carried out on 2026-10-07 on Windows: a venue made three
 sales, its server was killed without warning, and it was restored from its
 backup folder into an empty directory. All three invoices and the photo

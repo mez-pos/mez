@@ -12112,3 +12112,85 @@ venue paired, revoked and paired again collects a revoked "mez Cloud" row each
 time, as it does for any device. Seen in a browser on a venue paired against the
 stand-in, at 1366 by 768; the toast after revoking was not seen, only its words
 tested.
+
+## ADR-326 - A mirror is a copy that is never written once it is served, and what it must remember of its own is kept beside it
+2026-10 · Status: accepted. Phase 14, Task 6 (6a built here; 6b to 6d follow). Builds on ADR-312, ADR-308 and ADR-324.
+Context: `mez mirror` is the back office over a backup (ADR-312): what an owner
+looks at when the venue's computer is off, and what a self-hoster can run against
+their own folder. The phase file asks for one command that restores, keeps
+following, refuses every write, signs people in two ways and says how old it is.
+Reading what is already built found the order the pieces have to come in, and one
+thing the phase file's sentence hides.
+Decision:
+  - **Split.** 6a, built with this: the read-only server over one restore, and the
+    command that runs it. 6b: following the backup as it grows. 6c: mez Cloud's
+    sign-in on a mirror, and photos kept up with the copy. 6d: what the screens say
+    ("Mirror, as of 23:10", "Venue offline"), and the edits a mirror cannot make
+    taken off them.
+  - **A mirror is the ordinary server with one option** (`api.WithMirror`), not a
+    second server. Every request is taken as one from away, so the allow list of
+    ADR-308 decides what can be reached, with no second list to drift from it.
+    Inside that, every request that is not a read is answered 409
+    `mirror_read_only` before any handler, by the route it would have taken, as
+    the relay's gate judges. Guests' ordering is not served at all.
+  - **Four writes are let through, by name**: pairing a device, signing in,
+    signing out, and mez Cloud's sign-in. And two requests that are reads sent as
+    POST: the receipt's preview and the numbering's. A route added later is
+    refused until someone lists it.
+  - **Every answer says it is a mirror's, and as of when**: `X-Mez-Mirror`, the
+    moment of the last write the copy holds, on every response. Not a route of its
+    own: a screen learns it from whatever it last asked, and cannot be showing a
+    time older than its data.
+  - **`mez mirror -from FOLDER`** (or a bucket, or a saved `backup.json`, as
+    `mez restore` takes them) restores into a directory of its own making, checks
+    the copy, brings its schema up to this build's, serves it on this computer
+    only (`127.0.0.1:8090` unless told), and removes the directory when it stops.
+    It prints a pairing code for one back office, as `mez setup` does: a browser
+    is paired to the mirror and then signs in with a PIN from the copy's staff.
+    It needs exactly one venue in the copy.
+  - **Nothing in a mirror reaches out.** The print queue is built and never
+    started, so a ticket that was waiting when the backup was cut is not printed
+    from someone's laptop a week later. No tunnel, no backup of the copy, no
+    gateway, no stream.
+  - **What 6b has to settle, found here.** Litestream at the pinned version can
+    follow a replica into a file, rewriting it as the backup grows, and the other
+    way to follow is to restore afresh and swap. Either way a copy that is
+    followed cannot also hold what the mirror itself must remember: who paired a
+    browser to it, who is signed in, how many wrong PINs were typed. In 6a those
+    are rows in the copy, which is sound only because the copy never changes. So
+    6b moves them out: the API takes its devices and its staff sign-in through
+    two interfaces already, and a mirror can supply its own, reading people and
+    PINs from the copy and keeping devices, sessions and strikes beside it.
+  - **`-as-of` is not built.** The phase file names the flag and not what it
+    does. `-generation` picks which backup, as `restore` has it; a moment within
+    one is 6b's, where following needs the same machinery.
+  - **What a review found before the commit.** It ran some hundred and fifty
+    requests at a running mirror and watched the copy for a change: no write
+    reached a handler, no read wrote, and nothing dialled out. It found a hole in
+    the relay's gate, older than this and inherited by it: a path such as
+    `/backoffice%2f` decodes to one under the back office's, which the gate lets
+    through, while the mux routes on the path as sent and gave it to whatever
+    serves `/`, the till's bundle. Files only, no data, and through a relay as
+    well as a mirror. The gate now judges a bundle's path as sent and as decoded
+    (`under`). And a copy that could not be removed is now always said, whatever
+    else went wrong on the way out.
+Because: the allow list was written to answer "what may be done to this venue by
+someone not standing in it", and a mirror is the limiting case: nobody is standing
+in it.
+Cost: until 6d the back office on a mirror looks like one opened from away, offers
+the edits that can be made from away, and each is refused when saved, in a
+sentence. Until 6b a mirror is as old as the moment it was started. A PIN typed
+wrong three times on a mirror locks that person in the mirror's copy and not at
+the venue, and a restart forgets it: a mirror is a way to guess at PINs with no
+lock that lasts, which is why it listens on its own computer unless told
+otherwise, and why 6b's strikes must outlive a restart before a mirror is put on
+the internet. The copy holds the venue's devices and sessions as they were when the
+backup was written: a back office revoked at the venue since then still opens the
+mirror with its old token, which 6b's own devices put an end to. A mirror killed and
+not stopped leaves its copy in the temporary directory, and the next one started
+says where. The header is on every answer the gate gives and not on a CORS
+preflight, which is answered before it. Two cards read wrongly on a mirror until
+6d: the table codes answer "This can only be done at the venue", since guests are
+not served and the codes are theirs, and the backup's settings answer that there
+is none. A copy from a newer mez than the mirror's is refused at the schema,
+in the migration's words and not ones written for it.

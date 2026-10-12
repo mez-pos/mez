@@ -31,6 +31,7 @@ type Server struct {
 	publicURLNow  func() string
 	cloudPairing  CloudPairing
 	cloudSignIn   CloudSignIn
+	mirror        func() MirrorInfo
 	devices       Devices
 	staff         Staff
 	orders        Orders
@@ -171,7 +172,13 @@ func (s *Server) routes() http.Handler {
 	// The gate is inside every middleware and outside every route: what
 	// came through the relay is judged once, here, against the route it
 	// would take (ADR-308).
-	return chain(s.remoteGate(mux), s.middleware()...)
+	gate := s.remoteGate(mux)
+	if s.mirror != nil {
+		// Outside the relay's gate, which it relies on: a mirror is asked
+		// everything from away, and changes nothing (ADR-326).
+		gate = s.mirrorGate(mux, gate)
+	}
+	return chain(gate, s.middleware()...)
 }
 
 // middleware is the chain, outermost first. It is a method rather than a

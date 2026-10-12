@@ -8,7 +8,15 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 5b1 - The route, and being the cloud's device after
+**Phase 14, Task 5b2 - The People and Devices screens say what these
+are** (ADR-325), which closed Task 5. The person mez Cloud signs in as
+reads "Signs in from mez Cloud" under the name and is offered no new
+PIN; the device reads "Your mez Cloud account's way in. Nobody holds
+it", is not renamed, and its Revoke is **Shut mez Cloud's sign-in**.
+`staffActions` and `deviceActions` in the two logic files. **Walked in a
+browser** at 1366 by 768 on a venue paired against the stand-in.
+
+Before it, **Phase 14, Task 5b1 - The route, and being the cloud's device after
 it** (ADR-324). 5b was split in two. `POST /api/v1/sessions/cloud`,
 through the relay only, takes `Authorization: Mez-Cloud <assertion>` and
 answers a session and its device; the session's token is then presented

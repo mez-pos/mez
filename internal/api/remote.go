@@ -198,12 +198,11 @@ func (s *Server) remoteGate(mux *http.ServeMux) http.Handler {
 
 		// The guest app first: it is nearly every relayed request there is,
 		// and it was reachable before any of this existed (ADR-202).
-		path := r.URL.Path
-		if strings.HasPrefix(path, remoteGuest) || (s.guestMount != "" && strings.HasPrefix(path, s.guestMount)) {
+		if under(r, remoteGuest) || (s.guestMount != "" && under(r, s.guestMount)) {
 			mux.ServeHTTP(w, r)
 			return
 		}
-		if path == remoteBundle || strings.HasPrefix(path, remoteBundle+"/") {
+		if r.URL.Path == remoteBundle || under(r, remoteBundle+"/") {
 			mux.ServeHTTP(w, r)
 			return
 		}
@@ -215,6 +214,15 @@ func (s *Server) remoteGate(mux *http.ServeMux) http.Handler {
 		writeError(w, s.log, http.StatusForbidden, CodeRemoteNotAllowed,
 			"This can only be done at the venue.")
 	})
+}
+
+// under reports whether a request is for something beneath prefix, as the
+// mux will route it. The mux routes on the path as it was sent, so the path
+// is judged as sent and as decoded, and must begin with prefix both ways:
+// "/backoffice%2f" decodes to something under "/backoffice/" and is routed
+// to whatever serves "/", which is the till's own bundle.
+func under(r *http.Request, prefix string) bool {
+	return strings.HasPrefix(r.URL.Path, prefix) && strings.HasPrefix(r.URL.EscapedPath(), prefix)
 }
 
 // remoteDevice refuses a relayed request from a device that is not a back

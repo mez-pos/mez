@@ -24,6 +24,7 @@ export type ErrorCode =
   | 'remote_not_allowed'
   | 'cloud_sign_in_refused'
   | 'cloud_clock'
+  | 'mirror_read_only'
   | 'order_not_found'
   | 'line_not_found'
   | 'line_not_active'
