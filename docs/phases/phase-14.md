@@ -384,17 +384,32 @@ and its first commit copies this phase's cloud tasks there.
       of a running venue: the chip, the pill turning and turning back
       when the venue wrote, and 390px.
     - [ ] **6d2 - The edits a mirror refuses, taken off the screens.**
-      Read `docs/design/tokens.md` and `backoffice-shell.md` first.
-      `useMirror()` is read where the thing is drawn, as `useAway()` is
-      (ADR-309), and `AtTheVenue` has the sentence's shape. What ADR-309
-      took off stays off: a mirror is away too. What is left is what
-      away still allows: the menu editor (`menu/use-menu-editor.ts`, 31
-      calls), stock, people, tax, shifts, the floor plan, the general
-      settings and unpairing a device. Split it by screen if it is more
-      than a session. And two reads answer wrongly on a mirror and need
-      words of their own: the Floor plan's table codes (403, since a
-      mirror serves no guests) and Settings, Backup (404
-      `backup_unavailable`).
+      Split by screen on 2026-10-12 while building it (ADR-330). In each,
+      `useOnMirror()` (`web/shared/use-mirror.tsx`) is read where the
+      thing is drawn and `OnAMirror` (`web/shared/shell/`) is the
+      sentence in its place. `useAway()` is true on a mirror from its
+      first answer, so what ADR-309 took off is off there already.
+      - [x] **6d2a - Settings, the Floor plan and Devices.** As built
+        (ADR-330): `SectionCard` is read-only on a mirror whatever it is
+        told, which is every section that saves through it; tax classes
+        lose Add, Edit, Retire and Bring back; the floor plan loses its
+        buttons, its free cells are not buttons and nothing drags
+        (`FloorGrid`'s `readOnly`), and a table can still be chosen to
+        read; no device has a menu, and the two cards about the relay
+        are left out. The two reads are not made: Settings, Backup says
+        that what is being read is the backup, and the Floor plan says
+        nobody orders from a copy. **Walked in a browser** on a mirror:
+        no control left to press on any of them but the tabs and the
+        tables.
+      - [ ] **6d2b - Staff and Inventory.** `people/use-people.ts` (8
+        calls: people, roles, PINs, unlock) and `stock/use-stock.ts` (10:
+        items, movements, recipes, the two imports, wastage). Then look
+        at what is left on Tips, a Z-report and the dashboard's quick
+        actions ("Edit the menu" reads oddly on a copy), and Printers'
+        empty line, which still says to add one.
+      - [ ] **6d2c - The menu.** `menu/use-menu-editor.ts`, 31 calls in
+        some fifteen files: items, photos, categories, choice groups,
+        prices, sold out, the setup view and the three imports.
 
     As it was set: the bar "Mirror, as of 23:10", from `X-Mez-Mirror`;
     the connection pill "Venue offline" when that is more than two

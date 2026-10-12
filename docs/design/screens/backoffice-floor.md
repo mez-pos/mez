@@ -199,6 +199,15 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
   tables' codes.", "Can't reach the server. Check the connection and try
   again.", or "That did not work. Try again."
 
+- **On a mirror** (ADR-330): the plan is read and nothing on it is moved.
+  The sentence "This is a copy to read. Changes are made at the venue." is
+  where Add an area and Add a table were. An area has no Rename or Retire,
+  a free cell is an outline and not a button, a table does not drag, and
+  the chosen table's card and the retired tables list say what they say
+  with no buttons. "Ordering from the table" is one card that asks the
+  server nothing: "Nobody orders from a copy, so it shows no table codes.
+  They are seen, renewed and printed at the venue."
+
 ## Constraints
 
 - One primary: **Add a table**. The chosen table is shown with the focus

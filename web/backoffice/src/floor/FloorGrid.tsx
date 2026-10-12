@@ -14,6 +14,8 @@ interface FloorGridProps {
   chosen: number | null;
   /** A table is waiting for a cell to move to. */
   moving: boolean;
+  /** Tables can be chosen and nothing placed or moved: free cells are not buttons, and nothing drags. */
+  readOnly?: boolean;
   onCell: (cell: Cell) => void;
   onTable: (table: TableResponse) => void;
   onDrop: (table: TableResponse, cell: Cell | null) => void;
@@ -32,7 +34,7 @@ interface Drag {
   dragging: boolean;
 }
 
-export function FloorGrid({ cells, chosen, moving, onCell, onTable, onDrop }: FloorGridProps) {
+export function FloorGrid({ cells, chosen, moving, readOnly = false, onCell, onTable, onDrop }: FloorGridProps) {
   const [drag, setDrag] = useState<Drag | null>(null);
   // A click follows the pointerup that ended a drag; it must not also choose the table.
   const justDragged = useRef(false);
@@ -46,7 +48,7 @@ export function FloorGrid({ cells, chosen, moving, onCell, onTable, onDrop }: Fl
   };
 
   const down = (table: TableResponse) => (e: PointerEvent<HTMLButtonElement>) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || readOnly) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     setDrag({ table, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, dx: 0, dy: 0, dragging: false });
   };
@@ -74,7 +76,9 @@ export function FloorGrid({ cells, chosen, moving, onCell, onTable, onDrop }: Fl
               const dragged = drag?.dragging && t !== null && drag.table.id === t.id;
               return (
                 <div role="gridcell" key={cell.x} data-cell={`${cell.x},${cell.y}`} className="relative aspect-square min-h-14">
-                  {t === null ? (
+                  {t === null && readOnly ? (
+                    <span aria-hidden="true" className="absolute inset-0 rounded border border-dashed border-line-soft" />
+                  ) : t === null ? (
                     <button
                       type="button"
                       aria-label={moving ? `Move here: column ${cell.x + 1}, row ${cell.y + 1}` : `Place a table at column ${cell.x + 1}, row ${cell.y + 1}`}

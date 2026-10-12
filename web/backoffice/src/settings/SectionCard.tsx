@@ -4,6 +4,8 @@
 
 import type { FormEvent, ReactNode } from "react";
 import { AtTheVenue } from "../../../shared/shell/AtTheVenue";
+import { OnAMirror } from "../../../shared/shell/OnAMirror";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { Button, Card } from "../../../shared/ui";
 
 export interface SectionCardProps {
@@ -24,13 +26,28 @@ export interface SectionCardProps {
   /**
    * The section can be read and not changed: the back office is open away
    * from the venue and this is one of the things changed there (ADR-308).
-   * Every field is disabled and there is nothing to save.
+   * Every field is disabled and there is nothing to save. On a mirror every
+   * section is, whatever it is told here (ADR-330).
    */
   readOnly?: boolean;
   children: ReactNode;
 }
 
-export function SectionCard({ title, description, dirty, busy, saved, error, onSave, onDiscard, columns = 1, readOnly = false, children }: SectionCardProps) {
+export function SectionCard({
+  title,
+  description,
+  dirty,
+  busy,
+  saved,
+  error,
+  onSave,
+  onDiscard,
+  columns = 1,
+  readOnly: atTheVenue = false,
+  children,
+}: SectionCardProps) {
+  const mirror = useOnMirror();
+  const readOnly = atTheVenue || mirror;
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (dirty && !busy && !readOnly) onSave();
@@ -47,7 +64,8 @@ export function SectionCard({ title, description, dirty, busy, saved, error, onS
         <fieldset disabled={readOnly} className={columns === 2 ? "mt-6 grid max-w-4xl gap-5 sm:grid-cols-2" : "mt-6 flex max-w-xl flex-col gap-5"}>
           {children}
         </fieldset>
-        {readOnly && <AtTheVenue className="mt-8 border-t border-line pt-6">This is changed at the venue.</AtTheVenue>}
+        {mirror && <OnAMirror className="mt-8 border-t border-line pt-6" />}
+        {readOnly && !mirror && <AtTheVenue className="mt-8 border-t border-line pt-6">This is changed at the venue.</AtTheVenue>}
         <div hidden={readOnly} className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
           <div className="flex min-h-tap flex-col justify-center">
             <p

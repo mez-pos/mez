@@ -26,3 +26,13 @@ export function useMirror(): MirrorMark | null {
   const watch = useContext(MirrorContext);
   return useSyncExternalStore(watch.subscribe, watch.current);
 }
+
+/**
+ * Whether this page is on a mirror, for a screen that leaves out what a
+ * mirror refuses (ADR-330). Unlike useMirror it does not change with every
+ * answer, so a screen reading it is not drawn again each time one lands.
+ */
+export function useOnMirror(): boolean {
+  const watch = useContext(MirrorContext);
+  return useSyncExternalStore(watch.subscribe, () => watch.current() !== null);
+}

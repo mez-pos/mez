@@ -185,6 +185,11 @@ Inside the frame (`backoffice-shell.md`).
 - **Ordering from phones** loads and fails on its own: "Loading", or the
   reason with **Try again**, in its card. The list under it is not held up.
 
+- **On a mirror** (ADR-330): "This is a copy to read. Devices are paired
+  and unpaired at the venue." is where Pair a device was, no row has a
+  menu, and "Ordering from phones" and "Back office from anywhere" are
+  left out: both would be read off the mirror and said of the venue.
+
 ## Constraints
 
 - No green primary on the list; Make a code is the modal's own. Revoke is

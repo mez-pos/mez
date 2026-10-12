@@ -4,9 +4,11 @@
 
 import { useState } from "react";
 import type { AreaResponse, FloorResponse, TableResponse } from "../../../shared/api-types";
+import { OnAMirror } from "../../../shared/shell/OnAMirror";
 import { Button, Card, EmptyState, InboxIcon } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
+import { useOnMirror } from "../../../shared/use-mirror";
 import {
   areaToShow,
   cellsOf,
@@ -38,6 +40,8 @@ export function FloorScreen() {
   const api = useFloor();
   const [areaChoice, setAreaChoice] = useState<number | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
+  // A mirror shows the plan as it was and moves nothing on it (ADR-330).
+  const mirror = useOnMirror();
   const data = api.data;
   const areaId = data ? areaToShow(data, areaChoice) : null;
 
@@ -45,24 +49,33 @@ export function FloorScreen() {
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="font-serif text-total">Floor plan</h1>
-        <div className="flex flex-wrap gap-tap-gap">
-          <Button onClick={() => setEditing({ kind: "add-area" })}>Add an area</Button>
-          {areaId !== null && (
-            <Button variant="primary" onClick={() => setEditing({ kind: "add-table", form: emptyTableForm(areaId) })}>
-              Add a table
-            </Button>
-          )}
-        </div>
+        {mirror ? (
+          <OnAMirror />
+        ) : (
+          <div className="flex flex-wrap gap-tap-gap">
+            <Button onClick={() => setEditing({ kind: "add-area" })}>Add an area</Button>
+            {areaId !== null && (
+              <Button variant="primary" onClick={() => setEditing({ kind: "add-table", form: emptyTableForm(areaId) })}>
+                Add a table
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {api.loading && <p className="text-base text-fg-muted">Loading the floor plan</p>}
       {!api.loading && api.error !== null && (
         <EmptyState icon={<InboxIcon />} line={problemOf(api.error).message} action={{ label: "Try again", onClick: api.refetch }} />
       )}
-      {data && areaId === null && <EmptyState icon={<InboxIcon />} line="No areas yet. Add one for each room or terrace, then place its tables." />}
-      {data && areaId !== null && <AreaView key={areaId} data={data} areaId={areaId} api={api} onChooseArea={setAreaChoice} onEdit={setEditing} />}
-      {/* The codes guests order by: for the tables of every area, under whichever is shown. */}
-      {data && <TableCodesCard />}
+      {data && areaId === null && (
+        <EmptyState icon={<InboxIcon />} line={mirror ? "No areas yet." : "No areas yet. Add one for each room or terrace, then place its tables."} />
+      )}
+      {data && areaId !== null && (
+        <AreaView key={areaId} data={data} areaId={areaId} api={api} readOnly={mirror} onChooseArea={setAreaChoice} onEdit={setEditing} />
+      )}
+      {/* The codes guests order by: for the tables of every area, under whichever is shown.
+          A mirror serves no guests and refuses the codes (403), so there they are not asked for. */}
+      {data && (mirror ? <NoCodesOnAMirror /> : <TableCodesCard />)}
 
       {editing && data && (editing.kind === "add-table" || editing.kind === "edit-table") && (
         <TableFormModal
@@ -87,16 +100,28 @@ export function FloorScreen() {
   );
 }
 
+/** Where the table codes are, on a mirror: nobody orders from a copy. */
+function NoCodesOnAMirror() {
+  return (
+    <Card padding="lg" className="flex min-w-0 flex-col gap-3">
+      <h2 className="font-serif text-xl">Ordering from the table</h2>
+      <OnAMirror>Nobody orders from a copy, so it shows no table codes. They are seen, renewed and printed at the venue.</OnAMirror>
+    </Card>
+  );
+}
+
 interface AreaViewProps {
   data: FloorResponse;
   areaId: number;
   api: FloorApi;
+  /** The plan is shown and nothing on it is changed: a mirror. */
+  readOnly: boolean;
   onChooseArea: (id: number) => void;
   onEdit: (e: Editing) => void;
 }
 
 /** One area: its tabs, its grid, the chosen table and the retired ones. */
-function AreaView({ data, areaId, api, onChooseArea, onEdit }: AreaViewProps) {
+function AreaView({ data, areaId, api, readOnly, onChooseArea, onEdit }: AreaViewProps) {
   const [chosenId, setChosenId] = useState<number | null>(null);
   const [moving, setMoving] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -142,7 +167,7 @@ function AreaView({ data, areaId, api, onChooseArea, onEdit }: AreaViewProps) {
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-tap-gap">
+      <div hidden={readOnly} className="flex flex-wrap items-center gap-tap-gap">
         <Button disabled={busy} onClick={() => onEdit({ kind: "rename-area", area })}>
           Rename {area.name}
         </Button>
@@ -165,11 +190,14 @@ function AreaView({ data, areaId, api, onChooseArea, onEdit }: AreaViewProps) {
           </Button>
         </div>
       )}
-      {cells.every((row) => row.every((c) => c.table === null)) && area.active && <p className="text-base text-fg-muted">Tap a cell to place a table.</p>}
+      {cells.every((row) => row.every((c) => c.table === null)) && area.active && !readOnly && (
+        <p className="text-base text-fg-muted">Tap a cell to place a table.</p>
+      )}
       <FloorGrid
         cells={cells}
         chosen={chosen?.id ?? null}
         moving={moving}
+        readOnly={readOnly}
         onCell={onCell}
         onTable={(t) => {
           setMoving(false);
@@ -192,7 +220,7 @@ function AreaView({ data, areaId, api, onChooseArea, onEdit }: AreaViewProps) {
             <span className="capitalize">{chosen.shape}</span>
             <span>{placeText(data, chosen)}</span>
           </p>
-          <div className="flex flex-wrap gap-tap-gap">
+          <div hidden={readOnly} className="flex flex-wrap gap-tap-gap">
             <Button disabled={busy} onClick={() => onEdit({ kind: "edit-table", table: chosen })}>
               Edit
             </Button>
@@ -217,12 +245,16 @@ function AreaView({ data, areaId, api, onChooseArea, onEdit }: AreaViewProps) {
                 <span className="text-base text-fg-muted">
                   {t.name}, {placeText(data, t)}
                 </span>
-                <Button disabled={busy} onClick={() => run(() => api.restoreTable(t.id), `${t.name} is back.`)}>
-                  Bring back
-                </Button>
-                <Button variant="ghost" disabled={busy} onClick={() => onEdit({ kind: "edit-table", table: t })}>
-                  Edit
-                </Button>
+                {!readOnly && (
+                  <>
+                    <Button disabled={busy} onClick={() => run(() => api.restoreTable(t.id), `${t.name} is back.`)}>
+                      Bring back
+                    </Button>
+                    <Button variant="ghost" disabled={busy} onClick={() => onEdit({ kind: "edit-table", table: t })}>
+                      Edit
+                    </Button>
+                  </>
+                )}
               </li>
             ))}
           </ul>

@@ -10,37 +10,34 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6a, 6b and 6d1 are
-done (ADR-313, ADR-315 to ADR-329); 4d is `mez-cloud`'s. Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6a, 6b, 6d1 and 6d2a
+are done (ADR-313, ADR-315 to ADR-330); 4d is `mez-cloud`'s. Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 6d1 - The page knows it is on a mirror, and says so**
-(ADR-329). 6d was split in two while building it. `web/shared/mirror.ts`:
-a `MirrorWatch` reads `X-Mez-Mirror` off every answer, and `useMirror()`
-is null anywhere but on a mirror. The bar says "Mirror, as of 23:10" in
-the venue's zone (a line under the bar below 768px), and the pill says
-"Venue offline" when the copy was over two minutes old as the mirror last
-answered. A mirror in view is asked something every 20 seconds, which
-keeps it following, and every query is read again when its copy is newer.
-**Walked in a browser** on a mirror of a running venue, at 1576 and 390
-wide: the pill turned after two quiet minutes and back within 30 seconds
-of the venue writing.
+**Phase 14, Task 6d2a - Settings, the Floor plan and Devices on a mirror**
+(ADR-330). 6d2 was split by screen while building it. `useOnMirror()` is
+read where a change is drawn and `OnAMirror` is the sentence in its place:
+"This is a copy to read. Changes are made at the venue." Every settings
+section is read-only through `SectionCard`; tax classes, the floor plan
+and the device list have nothing left to press but tabs and tables. The
+two reads that answered wrongly are not made: Backup and the table codes
+each say why in a card. `useAway()` is true on a mirror from its first
+answer. **Walked in a browser** on a mirror with the venue off.
 
 ## Next task
 
-**Phase 14, Task 6d2 - The edits a mirror refuses, taken off the
-screens**: `useMirror()` read where the thing is drawn, as `useAway()` is
-(ADR-309). Some 75 calls in 14 files, the menu editor the largest: split
-by screen if it is more than a session. With it, words for the two reads
-that answer wrongly on a mirror (the Floor plan's table codes, Settings,
-Backup). To walk a mirror: `mez setup -demo-menu` into a scratch data
-directory, a `backup.json` there naming a folder, `bin/mez -data-dir`,
-then `bin/mez mirror -from <folder> -follow 5s`. **Task 6c** (mez Cloud's
-sign-in on a mirror) can wait on `mez-cloud`, the only thing to use it.
+**Phase 14, Task 6d2b - Staff and Inventory on a mirror**:
+`people/use-people.ts` and `stock/use-stock.ts`, as 6d2a did it. Then
+what is left on Tips, a Z-report, the dashboard's quick actions and
+Printers' empty line. After it **6d2c**, the menu editor. To walk a
+mirror: `mez setup -demo-menu` into a scratch data directory, a
+`backup.json` there naming a folder, `bin/mez -data-dir` for long enough
+to back up, then `bin/mez mirror -from <folder> -state-dir <dir>`.
+**Task 6c** (mez Cloud's sign-in on a mirror) can wait on `mez-cloud`.
 
 **Task 4d is `mez-cloud`'s**: that repository does not exist yet, and
 its first commit copies this phase's cloud tasks there. ADR-318 has the
@@ -154,4 +151,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6a, 6b and 6d1 of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6a, 6b, 6d1 and 6d2a of 9)

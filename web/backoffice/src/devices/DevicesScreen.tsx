@@ -4,6 +4,8 @@
 
 import { PlusIcon } from "lucide-react";
 import { AtTheVenue } from "../../../shared/shell/AtTheVenue";
+import { OnAMirror } from "../../../shared/shell/OnAMirror";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { useAway } from "../../../shared/use-realtime";
 import { useState } from "react";
 import type { DeviceRecordResponse } from "../../../shared/api-types";
@@ -21,6 +23,8 @@ type Editing = { kind: "pair" } | { kind: "rename"; device: DeviceRecordResponse
 
 export function DevicesScreen() {
   const away = useAway();
+  // A mirror lists the venue's devices as they were and unpairs none (ADR-330).
+  const mirror = useOnMirror();
   const api = useDevices();
   const toast = useToast();
   // "12 min ago" and "runs out in 7 min" move on each half minute, and the time
@@ -38,7 +42,9 @@ export function DevicesScreen() {
           <h1 className="font-serif text-total">Devices</h1>
           {data && <p className="mt-1 text-base text-fg-muted">{devicesSummary(data.devices, now)}</p>}
         </div>
-        {away ? (
+        {mirror ? (
+          <OnAMirror>This is a copy to read. Devices are paired and unpaired at the venue.</OnAMirror>
+        ) : away ? (
           <AtTheVenue>A device is paired with a code made at the venue.</AtTheVenue>
         ) : (
           <Button variant="attention" disabled={!data} onClick={() => setEditing({ kind: "pair" })}>
@@ -48,8 +54,10 @@ export function DevicesScreen() {
         )}
       </div>
 
-      <TunnelCard />
-      <RemoteCard />
+      {/* On a mirror both would be read off the mirror and said of the venue: a copy
+          has no relay of its own, and the venue may well have one. */}
+      {!mirror && <TunnelCard />}
+      {!mirror && <RemoteCard />}
 
       {api.loading && <p className="text-base text-fg-muted">Loading the devices</p>}
       {!api.loading && api.error !== null && data === undefined && (
@@ -65,7 +73,7 @@ export function DevicesScreen() {
               onRename={(device) => setEditing({ kind: "rename", device })}
               onRevoke={(device) => setEditing({ kind: "revoke", device })}
             />
-            {split(data.devices).inService.length <= 1 && (
+            {!mirror && split(data.devices).inService.length <= 1 && (
               <p className="text-base text-fg-muted">Pair a terminal, a kitchen display or another back office to start.</p>
             )}
           </div>

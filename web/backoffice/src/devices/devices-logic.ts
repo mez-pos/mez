@@ -127,10 +127,11 @@ export type DeviceAction = "rename" | "revoke";
 /**
  * A row's menu: none for a revoked device. No Revoke on the device in use;
  * no Rename from away (ADR-308), and none for mez Cloud's, which is known
- * by its name on this screen and in the guide.
+ * by its name on this screen and in the guide. None at all on a mirror, which
+ * changes nothing (ADR-330).
  */
-export function deviceActions(d: Pick<DeviceRecordResponse, "revoked_at" | "this" | "cloud">, away: boolean): DeviceAction[] {
-  if (d.revoked_at) return [];
+export function deviceActions(d: Pick<DeviceRecordResponse, "revoked_at" | "this" | "cloud">, away: boolean, mirror = false): DeviceAction[] {
+  if (d.revoked_at || mirror) return [];
   return [...(away || d.cloud ? [] : (["rename"] as const)), ...(d.this ? [] : (["revoke"] as const))];
 }
 

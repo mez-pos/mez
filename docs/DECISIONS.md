@@ -12384,3 +12384,41 @@ mirror from its first answer but waits for the stream to fail once before it is
 the mirror then lists its backup once a minute for as long as the tab is in front.
 The browser's clock is trusted against the venue's: one that is minutes fast reads
 every venue as offline.
+
+## ADR-330 - On a mirror a screen leaves out what would change the venue, and says once that it is a copy
+2026-10 · Status: accepted. Phase 14, Task 6d2a. Builds on ADR-309, ADR-326 and ADR-329.
+Context: a mirror refuses every write (ADR-326), and the screens still offered them:
+a form filled in, Save pressed, and the server's sentence in a red line. ADR-309 took
+off what cannot be done from away; what was left is everything away still allows,
+some 75 calls across the back office. Two reads also answered wrongly: Settings,
+Backup (404, the mirror has no backup of its own) and the Floor plan's table codes
+(403, a mirror serves no guests).
+Decision:
+  - **6d2 is split by screen**: 6d2a Settings, the Floor plan and Devices; 6d2b Staff
+    and Inventory; 6d2c the menu. Each is walked on a mirror before it is done.
+  - **`useOnMirror()` is read where the thing is drawn**, as `useAway()` is. It is a
+    boolean that does not change once true, so a screen reading it is not drawn again
+    with every answer, as one reading `useMirror()` would be.
+  - **One sentence, `OnAMirror`**: "This is a copy to read. Changes are made at the
+    venue." with the history icon the bar's chip has. A screen gives its own only
+    where that one would not say what is missing.
+  - **`useAway()` is true on a mirror from its first answer.** A mirror is away, and
+    the page knows it is on one before the stream has failed. What ADR-309 took off
+    is then off at once, and its second in which the old controls show is gone there.
+  - **`SectionCard` reads it for itself.** Every settings section that saves through
+    it is read-only on a mirror with no section having been touched.
+  - **A control is left out, not disabled**, except a form's fields, which are
+    disabled so what they hold can still be read. A table on the floor plan can still
+    be chosen: choosing changes nothing, and its seats and place are worth reading.
+  - **A read a mirror answers wrongly is not made.** The card says what is true in
+    its place: that what is being read is the backup, and that nobody orders from a
+    copy.
+  - **On Devices the two cards about the relay are left out.** They would be read
+    off the mirror, which has no relay, and said of the venue, which may.
+Because: a refusal after the form is filled in is the worst place to learn it, and a
+mirror's refusals are known before anything is drawn.
+Cost: a route added later is offered on a mirror until someone leaves it out; the
+server still refuses it. The device list on a mirror is the venue's devices and
+after them the browsers paired to the mirror (ADR-327), and the screen does not say
+which are which. Printers' empty line still says to add one, from away as on a
+mirror. The two relay cards were left out after the walk, and that was not walked.

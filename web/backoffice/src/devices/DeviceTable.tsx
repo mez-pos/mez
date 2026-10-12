@@ -7,6 +7,7 @@ import { ChefHatIcon, CloudIcon, LaptopIcon, MonitorIcon, SmartphoneIcon, type L
 import type { DeviceKind, DeviceRecordResponse } from "../../../shared/api-types";
 import { Card, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { useAway } from "../../../shared/use-realtime";
 import { RowMenu } from "../RowMenu";
 import { dateText, deviceActions, kindText, lastSeenText, revokedText, stateOf, type DeviceAction } from "./devices-logic";
@@ -28,6 +29,7 @@ const actionLabels: Record<DeviceAction, string> = { rename: "Rename", revoke: "
 export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTableProps) {
   // From away a device can be unpaired, a lost phone say, and not renamed (ADR-308).
   const away = useAway();
+  const mirror = useOnMirror();
   return (
     <Card padding="lg" className="min-w-0">
       {/* Under 1280px it scrolls sideways; kept tall enough there for a row's menu to open inside. */}
@@ -58,7 +60,7 @@ export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTablePro
             {devices.map((d, row) => {
               const Icon = d.cloud ? CloudIcon : icons[d.kind];
               const revoked = d.revoked_at !== undefined;
-              const actions = deviceActions(d, away);
+              const actions = deviceActions(d, away, mirror);
               return (
                 <tr key={d.id} className="border-b border-line-soft last:border-b-0">
                   <td className="py-2 pr-4">

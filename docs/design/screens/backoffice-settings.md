@@ -311,6 +311,15 @@ Left out: restoring. It is done at the computer with mez stopped
 is serving. D22's "Download backup now" and "Restore from file" are that
 design's guess at a backup that was not yet built.
 
+- **On a mirror** (ADR-330): every section is read and none is saved. A
+  section's fields are disabled, and where Discard and Save were is "This
+  is a copy to read. Changes are made at the venue." Tax classes have no
+  Add, Edit, Retire or Bring back, and the same sentence under the list.
+  Backup is one card that asks the server nothing: "What you are reading
+  is the venue's backup. The time at the top of the page is when the venue
+  last added to it.", and that where it goes and how it is doing is seen
+  and changed at the venue.
+
 ## Constraints
 
 - One primary per card: **Save**. Nothing else is green.

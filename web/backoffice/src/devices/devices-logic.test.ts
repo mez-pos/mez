@@ -181,6 +181,12 @@ describe("the device mez Cloud signs the owner in on (ADR-323)", () => {
     expect(deviceActions({ ...cloud, revoked_at: ago(HOUR) }, false)).toEqual([]);
   });
 
+  it("offers nothing on a mirror, which changes nothing", () => {
+    expect(deviceActions(cloud, true, true)).toEqual([]);
+    expect(deviceActions(device(), true, true)).toEqual([]);
+    expect(deviceActions(device(), false, true)).toEqual([]);
+  });
+
   it("leaves every other device's menu as it was", () => {
     expect(deviceActions(device(), false)).toEqual(["rename", "revoke"]);
     expect(deviceActions(device(), true)).toEqual(["revoke"]);

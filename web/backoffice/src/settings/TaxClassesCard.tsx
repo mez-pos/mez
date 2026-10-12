@@ -3,7 +3,9 @@
 
 import { useState } from "react";
 import type { TaxClassResponse } from "../../../shared/api-types";
+import { OnAMirror } from "../../../shared/shell/OnAMirror";
 import { Button, Card, EmptyState, InboxIcon } from "../../../shared/ui";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { Choice, Field, inputClass } from "../FormFields";
 import { FormModal } from "../FormModal";
 import { classFormFrom, classProblem, classProblemOf, classRateText, emptyClassForm, toClassInput, type ClassField, type ClassForm } from "./tax-logic";
@@ -16,6 +18,8 @@ export function TaxClassesCard({ classes, api }: { classes: TaxClassResponse[]; 
   const [editing, setEditing] = useState<Editing | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
+  // A mirror shows the classes and changes none (ADR-330).
+  const mirror = useOnMirror();
 
   const run = (id: number, fn: () => Promise<void>, done: string) => {
     setBusy(id);
@@ -33,12 +37,12 @@ export function TaxClassesCard({ classes, api }: { classes: TaxClassResponse[]; 
           <h2 className="font-serif text-xl">Tax classes</h2>
           <p className="mt-1 text-base text-fg-2">A rate that items share. A new rate is for lines rung up from then on: orders already open keep theirs.</p>
         </div>
-        <Button onClick={() => setEditing({ kind: "add" })}>Add a tax class</Button>
+        {!mirror && <Button onClick={() => setEditing({ kind: "add" })}>Add a tax class</Button>}
       </div>
 
       {classes.length === 0 ? (
         <div className="mt-6">
-          <EmptyState icon={<InboxIcon />} line="No tax classes yet. Items need one, so add the first." />
+          <EmptyState icon={<InboxIcon />} line={mirror ? "No tax classes yet." : "No tax classes yet. Items need one, so add the first."} />
         </div>
       ) : (
         <ul className="mt-6 flex max-w-xl flex-col divide-y divide-line-soft border-y border-line-soft">
@@ -49,7 +53,7 @@ export function TaxClassesCard({ classes, api }: { classes: TaxClassResponse[]; 
                 {!c.active && <p className="text-sm text-fg-muted">Retired</p>}
               </div>
               <p className="font-mono text-base tabular-nums">{classRateText(c)}</p>
-              <div className="flex gap-2">
+              <div hidden={mirror} className="flex gap-2">
                 <Button size="md" disabled={busy !== null} onClick={() => setEditing({ kind: "edit", cls: c })}>
                   Edit
                 </Button>
@@ -67,6 +71,7 @@ export function TaxClassesCard({ classes, api }: { classes: TaxClassResponse[]; 
           ))}
         </ul>
       )}
+      {mirror && <OnAMirror className="mt-6" />}
       {message && (
         <p role={message.error ? "alert" : "status"} className={message.error ? "mt-4 text-base text-danger" : "mt-4 text-base text-fg-2"}>
           {message.text}

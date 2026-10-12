@@ -8,7 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 6b2 - Following** (ADR-328), which closed 6b. A mirror
+**Phase 14, Task 6d1 - The page knows it is on a mirror, and says so**
+(ADR-329). 6d was split in two. `web/shared/mirror.ts`: a `MirrorWatch`
+reads `X-Mez-Mirror` off every answer, and `useMirror()` is null anywhere
+but on a mirror. The bar says "Mirror, as of 23:10" in the venue's zone (a
+line under the bar below 768px), and the pill says "Venue offline" when
+the copy was over two minutes old as the mirror last answered. A mirror in
+view is asked something every 20 seconds, which keeps it following, and
+every query is read again when its copy is newer. **Walked in a browser.**
+
+Before it, **Phase 14, Task 6b2 - Following** (ADR-328), which closed 6b. A mirror
 in use looks at its backup once a minute (`-follow`), and when the venue
 has written since, restores a new copy beside the old, opens it, and
 puts it in the old one's place between two requests, with the same

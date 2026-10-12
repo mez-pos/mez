@@ -4,6 +4,7 @@
 
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { ApiError, cameThroughRelay, createApiClient, type Credentials } from "./api";
+import { useOnMirror } from "./use-mirror";
 import { RealtimeConnection, streamPath, type ProbeResult, type RealtimeNotice, type RealtimeStatus } from "./realtime";
 
 const RealtimeContext = createContext<RealtimeConnection | null>(null);
@@ -86,10 +87,16 @@ export function useRealtime(): Realtime {
  * False until the connection has found out, which takes one failed attempt
  * at the stream: a screen that hides something on this hides it a moment
  * late, and the server refuses it either way (ADR-308).
+ *
+ * A mirror is away too, and known to be from its first answer, before the
+ * stream has been tried: what is left out from away is left out there at
+ * once (ADR-330).
  */
 export function useAway(): boolean {
   const connection = useConnection();
-  return useSyncExternalStore(connection.subscribe, () => connection.current().state === "away");
+  const mirror = useOnMirror();
+  const away = useSyncExternalStore(connection.subscribe, () => connection.current().state === "away");
+  return away || mirror;
 }
 
 /** Hear every event and resync. The listener may change between renders. */
