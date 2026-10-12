@@ -8,7 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 4b1 - A paired venue at start** (ADR-319). 4b was split
+**Phase 14, Task 4b2 - Pairing while running** (ADR-320), which closes 4b.
+`POST /api/v1/cloud/pair {code}`, for `settings.edit`, at the venue only,
+six tries a minute. `internal/service/cloudpair` refuses a venue with a
+relay in its settings file, a code that could not be one, before anything
+is sent; once mez Cloud accepts the code the pairing is kept first and
+stands, and a tunnel or a backup that failed is reported beside it
+(`restart_needed`, `backup: set | kept | failed | none`). It takes hold
+with no restart: `cmd/mez`'s `venueLink` holds the pairing, the tunnel
+and the venue's address, and the API reads each through it. A venue's own
+backup is kept. **No screen calls the route yet, and it has not been run
+in one piece from a typed code to a guest's request.**
+
+Before it, **Phase 14, Task 4b1 - A paired venue at start** (ADR-319). 4b was split
 in two. The server reads `cloud.json` before anything asks whether there
 is a relay, and takes from it the relay's address and key, the back
 office across the relay, and `public_url`. A relay in the settings file

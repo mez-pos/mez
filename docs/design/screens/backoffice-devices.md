@@ -69,6 +69,35 @@ Inside the frame (`backoffice-shell.md`).
   | On, no address | **Open** or **Not reachable** | "It is turned on, but this venue has not said where it is reached, so there is no address to open." | set `public_url` and restart |
   | This page is the one opened from away | as above | "You are using it now: this is the back office, opened away from the venue." | none |
 
+  At the card's foot, over a soft rule, **mez Cloud** (phase 14, Task 4c1,
+  ADR-321; `CloudPairModal.tsx`, `cloud-logic.ts`): a line and one
+  secondary button.
+
+  | The venue | The line | The button |
+  |---|---|---|
+  | Not paired | "With a mez Cloud account, a code from it sets all of this up, and a backup with it." | **Connect to mez Cloud** |
+  | Paired | "Paired to Priya Menon's mez Cloud account since 12 Oct 2026." | **Pair again** |
+  | Opened from away, paired | the same line | none: a code is typed at the venue |
+  | Opened from away, not paired | nothing | none |
+
+  The button opens **Connect to mez Cloud**, a modal: two sentences on what
+  pairing does ("The till works the same with or without it."), one field,
+  **Pairing code**, in the numeral face and capitals, with "From your mez
+  Cloud account, under this venue. It works once, for an hour." under it,
+  and **Cancel** and **Connect** (the modal's own primary). A code that
+  could not be one is refused under the field before anything is sent
+  ("A pairing code is 8 letters and digits, with no 0, O, 1 or I."); what
+  the server refuses is said in its words, under the field when it is
+  about the code and over it when it is not. While it works the button
+  reads **Connecting** and the hint says it can take up to twenty seconds.
+  Then the modal becomes **Connected to mez Cloud**: who the venue is now
+  paired to, a line for the backup ("A backup of the venue is now kept
+  with mez Cloud...", "Your backup is left where it was...", or that it
+  could not be started and the venue is paired all the same), "Restart mez
+  to finish" when part of it waits for a start, the address the back
+  office opens at from away, and **Done**. Both cards above have by then
+  read the server again and say what is now so.
+
 - **Away from the venue** (ADR-309) the head has no **Pair a device** but
   "A device is paired with a code made at the venue.", and a row's **...**
   has Revoke and no Rename.

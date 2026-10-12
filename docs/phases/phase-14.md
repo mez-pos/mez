@@ -191,7 +191,25 @@ and its first commit copies this phase's cloud tasks there.
     owner's name and the hostname and never a key; `paired`, the hostname
     and the owner's name in the `cloud` block of `GET /api/v1/tunnel`.
     Tests with the stand-in pairing server and a real relay.
-  - [ ] **Task 4c - The screens.** *This repo.* The setup wizard's step
+  - [ ] **Task 4c - The screens.** *This repo.* Split in two on 2026-10-12
+    (ADR-321): the Devices card works for every venue and was the way to
+    run pairing in one piece; the wizard's step is its own session.
+    - [x] **4c1 - The Devices card.** At the foot of "Back office from
+      anywhere": who the venue is paired to, and **Connect to mez Cloud**
+      (or **Pair again**), which opens a modal for the code. Walked in a
+      browser against `build/dev/pairstub` and a local relay: a code that
+      could not be one, a code the cloud refuses, the right code, the
+      tunnel connected with no restart, a guest's request through the
+      relay answered by the venue.
+    - [ ] **4c2 - The wizard's step.** "Connect to mez Cloud" in the setup
+      wizard, skippable. Read `docs/design/screens/setup-wizard.md` and
+      `web/shared/screens/setup/` first: the wizard runs before anyone is
+      signed in, and `POST /api/v1/cloud/pair` wants a signed-in owner, so
+      decide where the step goes (after the owner exists and is signed
+      in, or a route of the wizard's own behind its setup token). Reuse
+      `cloud-logic.ts` and the modal's form.
+
+    As 4c was set: The setup wizard's step
     "Connect to mez Cloud", skippable, and the same entry on the Devices
     screen's "Back office from anywhere" card for a venue set up earlier:
     eight boxes or one field for the code, what pairing does in two

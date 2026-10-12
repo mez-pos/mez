@@ -11832,3 +11832,46 @@ the service, the service with a stand-in for the cloud, and the swap of tunnels
 against a real relay, but the whole of it from a typed code to a guest's request has
 not been run in one piece: that needs a set-up venue, and is 4c's walk. A table code
 printed before pairing still carries whatever address the venue had then.
+
+## ADR-321 - Pairing is a line and a button at the foot of the card it sets up, and a stand-in cloud to walk it with
+2026-10 · Status: accepted. Phase 14, Task 4c1. Builds on ADR-320.
+Context: the route that pairs a venue had no screen, and had never been run in one
+piece. The phase file asked for two entries, the setup wizard's step and one on the
+Devices screen. The wizard runs before anyone is signed in and the route wants a
+signed-in owner, which is a decision of its own, so 4c is split and this is the
+entry every venue can use.
+Decision:
+  - **At the foot of "Back office from anywhere", not a card of its own.** That
+    card already says what a venue needs to be reached from outside and how to get
+    it by hand. Pairing is the other way to get the same thing, so it sits under
+    it, over a soft rule: one line and one secondary button. The screen keeps its
+    one primary, **Pair a device**.
+  - **Paired, the line says to whom and since when, and the button is Pair again.**
+    Pairing again is how a key is replaced, and after a restore it is how a venue
+    comes back; it is not hidden.
+  - **From away there is no button.** A code is typed at the venue, and the route
+    is refused through the relay (ADR-320). A paired venue still shows the line.
+  - **The modal refuses what it can before sending.** `cloud-logic.ts` cleans the
+    code as the server does and says what a code is when what was typed could not
+    be one. The server checks again; this only spares the owner a code spent on a
+    slip.
+  - **After it, the modal says what was done, not only that it worked**: whose
+    account, what became of the backup in each of its four outcomes, whether a
+    restart is owed, and the address the back office now opens at. The cards
+    behind it read the server again, so "Connected" and "Open" are there when it
+    closes.
+  - **While it works it says how long it may take.** A bucket that does not answer
+    holds the reply for eight seconds, found on the walk; twenty is what the
+    Backup screen already says of the same wait.
+  - **`build/dev/pairstub`**, a stand-in for mez Cloud's one route: one code, good
+    once, answered with a key minted for a relay whose secret it is given. It is
+    in the repository because there is no mez Cloud to walk a screen against, and
+    it is in no release.
+Because: an owner who is looking at how to open the back office from home is at
+the place where "or type a code" belongs.
+Cost: the walk's bucket was one that is not there, so "a backup is now kept with mez
+Cloud" and "your backup is left where it was" have been read as functions and not
+seen on a screen. Nothing on the screen says a pairing has been set aside for a
+relay in the settings file; the route refuses to pair such a venue and says why,
+and one made so by hand is told in its log. The stand-in mints a real key with a
+real secret, so it must never be pointed at a relay that is not a developer's own.
