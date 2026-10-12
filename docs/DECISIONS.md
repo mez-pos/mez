@@ -12194,3 +12194,86 @@ preflight, which is answered before it. Two cards read wrongly on a mirror until
 not served and the codes are theirs, and the backup's settings answer that there
 is none. A copy from a newer mez than the mirror's is refused at the schema,
 in the migration's words and not ones written for it.
+
+## ADR-327 - A mirror follows its backup by taking a new copy, and keeps who it has let in beside the copy, not in it
+2026-10 · Status: accepted. Phase 14, Task 6b (6b1 built here; 6b2 follows). Builds on ADR-326.
+Context: 6a left two questions for this task, and the second has to be answered
+before the first can be built. A mirror that follows its backup is one whose copy
+keeps being replaced, and in 6a the copy is where a paired browser, a session and a
+wrong PIN are written.
+Decision:
+  - **Split.** 6b1, built with this: the mirror's own state moved out of the copy.
+    6b2: following.
+  - **Following is a new copy and a swap, not Litestream's follow.** The pinned
+    Litestream can follow a replica into a file, rewriting its pages as the backup
+    grows. That file is being read by a server at the time, by a pool of
+    connections that know nothing of it; it cannot be brought up to this build's
+    schema, since the next page written would undo that; and a mirror would be
+    showing whatever a half-applied transaction looks like. A fresh restore into a
+    new directory is checked whole, migrated, opened, and then put in the old
+    one's place between two requests: a reader sees one copy or the next. It
+    costs a whole restore each time, so 6b2 looks at the destination's newest
+    write first (`backup.Generations`, a listing) and restores only when that has
+    moved.
+  - **The copy is not written after it is migrated.** No row in it records a
+    browser paired to the mirror, a session, or a PIN typed. So a copy can be
+    thrown away for the next with nothing lost.
+  - **`internal/mirror` is the mirror's door.** The API takes its devices and its
+    staff sign-in as two interfaces, and `mirror.Auth` is both. What it reads, it
+    reads from the copy through the ordinary `auth` types: who works there, what
+    a role grants, the venue's own devices for the Devices screen. What it must
+    remember is in a `mirror.Keeper`, shared by every copy the mirror ever
+    serves.
+  - **A PIN is checked against the copy and counted beside it.**
+    `auth.StaffAuth.CheckPIN` says whether a PIN is that person's, in the time a
+    wrong one takes, and writes nothing. The mirror counts.
+  - **Three wrong PINs lock that person on this mirror for a day.** Not until
+    someone clears it, as from away (ADR-314): there is nobody at a mirror who
+    could, since clearing is a change. Not five in a quarter hour either, as at
+    a till: nobody is watching. Three a day is a thousand years of a six-digit
+    PIN. A right PIN while locked reads as a wrong one. Someone locked or
+    deactivated at the venue, as the copy has it, is refused here too, and the
+    person mez Cloud signs in as has no PIN here either.
+  - **What outlasts a restart is in one file**: the browsers paired to this
+    mirror, by the hash of their token, and each person's wrong PINs and lock.
+    `<state dir>/<the venue's public id>.json`, the state directory being
+    `mez/mirror` under the user's configuration directory unless `-state-dir`
+    says otherwise, kept from other accounts as a data directory is. Deleting
+    the file unpairs every browser and lifts every lock: it is the one remedy,
+    and it takes the computer.
+  - **Sessions are kept in memory.** Twelve hours, as from away. A mirror that
+    is restarted asks for PINs again; a browser stays paired.
+  - **The venue's devices open nothing on a mirror.** Only a browser paired to
+    this mirror does. A back office revoked at the venue after the backup was
+    written no longer gets in with its old token, which 6a allowed.
+  - **A mirror's own browsers are on its Devices list**, after the venue's, so
+    that "This device" is there to be seen.
+  - **Sign-ins on a mirror are taken one at a time**, all of them, across every
+    copy it serves: a PIN is compared only once the one before it was counted, or
+    twenty guesses sent at once would all be compared before the third was written
+    down. One queue for everyone and not one a person, which made-up names could
+    grow. A request whose caller has gone leaves the queue without its turn.
+  - **A wrong PIN is counted for the person the copy finds**, not for the id as it
+    was typed, so one person has one count.
+  - **What a review found before the commit.** A state file that could not be
+    written made wrong PINs free: the count was put back, the request answered as
+    an error, and the lock never fell, so a full disk was a way to guess for ever
+    with an answer that told a wrong PIN from a right one. A count that cannot be
+    written is now kept in memory and answered as any wrong PIN, and the lock
+    falls on the third. And two mirrors running at once on one file each kept
+    their own stale reading of it and wrote over the other's: a lock set at one
+    did not hold at the other and was lost at its next write. The file is now
+    read again whenever it has changed.
+Because: the copy is the venue's and the mirror's memory is the mirror's, and
+keeping them apart is what lets either be replaced.
+Cost: two mirrors of one venue on one computer share a state file, and so each
+other's locks and paired browsers; that is the wanted answer for locks. Whether the
+file has changed is told by its time and size, so two writes inside one tick of a
+coarse file system's clock could still be missed, and two mirrors writing in the
+same instant can lose one of the writes. Someone holding a paired browser can keep
+the sign-in queue busy, at some fifty PINs a second, and so keep others waiting;
+there is no limit on sign-ins by address on a mirror. A pairing
+code is still good for ten minutes and once, and a mirror is restarted for
+another; with browsers remembered that is once a browser. A lock cannot be lifted
+from a screen. The state file names staff by their public ids and holds token
+hashes, not tokens and not PINs. Until 6b2 a mirror is still as old as its start.

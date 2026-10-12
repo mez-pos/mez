@@ -774,3 +774,59 @@ func clip(ref string) string {
 	}
 	return strings.ToValidUTF8(ref, "")
 }
+
+// PINVerdict is what CheckPIN makes of a PIN.
+type PINVerdict int
+
+const (
+	// PINNobody is a PIN for someone who cannot sign in with one whatever
+	// is typed: unknown, deactivated, hard-locked, or signed in by mez
+	// Cloud alone. It is not a guess at anyone, and is not counted as one.
+	PINNobody PINVerdict = iota
+	// PINWrong is a wrong PIN for someone who could have signed in.
+	PINWrong
+	// PINRight is that person's PIN.
+	PINRight
+)
+
+// CheckPIN says whether pin is the PIN of the staff member named, at this
+// venue, and writes nothing: no attempt is recorded, no lock is counted or
+// set, no session is opened. It is for a reader of a venue's data that has
+// no business changing it, a mirror (ADR-327), which does its own counting.
+//
+// A wrong PIN comes back with who it was wrong for, and nothing else of
+// them. Like a sign-in it takes as long whoever is named: someone who is not
+// there, or cannot sign in, is compared against a dummy hash.
+func (a *StaffAuth) CheckPIN(ctx context.Context, venueID int64, staffRef, pin string) (Staff, PINVerdict, error) {
+	row, known, err := a.findStaff(ctx, venueID, staffRef)
+	if err != nil {
+		return Staff{}, PINNobody, err
+	}
+	could := known && row.Active && !row.LockedAt.Valid && !row.Cloud
+	hash := a.dummy
+	if could {
+		hash = row.PinHash
+	}
+	if len(pin) > maxPresentedPIN {
+		pin = ""
+	}
+	match, err := verifyPIN(hash, pin)
+	if err != nil {
+		a.log.Error("a stored PIN hash cannot be read", "venue_id", venueID, "actor_id", row.ID, "error", err)
+		match = false
+	}
+	switch {
+	case !could:
+		return Staff{}, PINNobody, nil
+	case !match:
+		// Who it was a wrong PIN for, by the id the venue knows them by and
+		// not as it was typed: whoever counts wrong PINs counts them for
+		// one person however the name was spelled.
+		return Staff{ID: row.ID, PublicID: row.PublicID, VenueID: row.VenueID}, PINWrong, nil
+	}
+	who, err := a.staffOf(ctx, row)
+	if err != nil {
+		return Staff{}, PINNobody, err
+	}
+	return who, PINRight, nil
+}

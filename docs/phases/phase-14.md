@@ -331,23 +331,36 @@ and its first commit copies this phase's cloud tasks there.
     browser** on a venue backed up to a folder: paired, signed in, the
     dashboard and People read, and a change refused in the mirror's
     words.
-  - [ ] **Task 6b - Following the backup.** The copy grows newer as the
-    venue sells. **ADR first**, and it has two things to settle. How to
-    follow: Litestream v0.5.15 can follow a replica into a file
-    (`RestoreOptions.Follow`), rewriting it under the readers; the other
-    way is to restore afresh when `backup.Generations` shows a newer
-    `Last`, open it, and swap the server's database. And where the
-    mirror's own state lives, since a followed copy cannot hold it: the
-    devices paired to the mirror, who is signed in, the wrong PINs. The
-    API takes `api.Devices` and `api.Staff` as interfaces, so a mirror
-    can supply its own, reading people and PIN hashes from the copy and
-    keeping the rest beside it, in a file that outlives a restart (a
-    mirror must not be a way to guess PINs with no lasting lock before it
-    is put on a network). `MirrorInfo.AsOf` is asked on every request
-    already. Test: a sale at the venue shows on the mirror after a sync,
-    with the "as of" time moved, and a signed-in browser stays signed in
-    across it. `-as-of` (a moment within a generation) belongs here if it
-    is wanted at all.
+  - [ ] **Task 6b - Following the backup.** Split on 2026-10-12 before
+    building it (ADR-327): a copy that is followed cannot hold the
+    mirror's own state, so that moves out first.
+    - [x] **6b1 - The mirror's own door.** As built (ADR-327):
+      `internal/mirror`. A `Keeper` remembers the browsers paired to the
+      mirror and each person's wrong PINs and lock in
+      `<state dir>/<venue public id>.json` (`-state-dir`, by default
+      `mez/mirror` under the user's configuration directory), and
+      sessions in memory. `mirror.Auth` is the API's `Devices` and
+      `Staff` both, over one copy: people, roles and the venue's devices
+      are read from the copy; a PIN is judged by the new read-only
+      `auth.StaffAuth.CheckPIN` and counted by the keeper. Three wrong in
+      a row lock that person on the mirror for a day. The venue's own
+      device tokens open nothing. The copy is not written after it is
+      migrated.
+    - [ ] **6b2 - Following.** In `cmd/mez/mirror.go`: every so often
+      (`-follow 30s`, `0` for never) ask `backup.Generations` for the
+      newest write; when it is later than the copy's, restore that
+      generation and its photos into a new directory, migrate, build a
+      new `mirrorServer` over it with the same `Keeper`, and put it in
+      the old one's place between two requests: an atomic pointer to
+      `{handler, database, dir, asOf}` behind the listener, the old one
+      closed and its directory removed once the requests on it have
+      finished. `MirrorInfo.AsOf` comes from whichever is current. A
+      restore that fails leaves the old copy serving and says so in the
+      log; the "as of" time then simply grows old. Test against a venue
+      that keeps selling to a folder: a sale shows on the mirror after a
+      sync with `X-Mez-Mirror` moved, a browser signed in before it is
+      signed in after it, and no directory is left behind. `-as-of`
+      belongs here if it is wanted at all.
   - [ ] **Task 6c - mez Cloud's sign-in on a mirror, and photos kept
     up.** `POST /api/v1/sessions/cloud` is already let through the
     mirror's gate and answers 401, since no mirror is given a key. The

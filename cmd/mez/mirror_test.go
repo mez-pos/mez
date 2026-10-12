@@ -21,14 +21,14 @@ import (
 
 // startMirror runs `mez mirror` over a backup until the test ends, and
 // returns where it is serving and what it printed.
-func startMirror(t *testing.T, to backup.Config) (mirrorUp, *bytes.Buffer, func() error) {
+func startMirror(t *testing.T, to backup.Config, stateDir string) (mirrorUp, *bytes.Buffer, func() error) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	var said bytes.Buffer
 	up := make(chan mirrorUp, 1)
 	done := make(chan error, 1)
 	go func() {
-		done <- mirror(ctx, []string{"-from", to.Folder, "-listen-addr", "127.0.0.1:0"}, &said, func(m mirrorUp) { up <- m })
+		done <- serveMirror(ctx, []string{"-from", to.Folder, "-listen-addr", "127.0.0.1:0", "-state-dir", stateDir}, &said, func(m mirrorUp) { up <- m })
 	}()
 	// Stopped once, by the test or at its end, whichever comes first.
 	var once sync.Once
@@ -143,7 +143,8 @@ func TestAMirrorShowsTheVenueAndChangesNothing(t *testing.T) {
 		t.Fatalf("the backup's generations: %v, %v", generations, err)
 	}
 
-	up, said, stop := startMirror(t, to)
+	stateDir := t.TempDir()
+	up, said, stop := startMirror(t, to, stateDir)
 	base := "http://" + up.Addr
 	if !strings.Contains(said.String(), "A mirror of "+venueName) || !strings.Contains(said.String(), up.Code) {
 		t.Errorf("the mirror did not say whose it is and how to pair:\n%s", said.String())
@@ -175,7 +176,7 @@ func TestAMirrorShowsTheVenueAndChangesNothing(t *testing.T) {
 	if err := json.Unmarshal(raw, &paired); err != nil {
 		t.Fatal(err)
 	}
-	if paired.Device.Name != mirrorDeviceName || paired.Device.Kind != "back_office" {
+	if paired.Device.Name != "Mirror" || paired.Device.Kind != "back_office" {
 		t.Errorf("paired as %+v", paired.Device)
 	}
 	device := map[string]string{"Authorization": "Bearer " + paired.Token}
@@ -256,6 +257,25 @@ func TestAMirrorShowsTheVenueAndChangesNothing(t *testing.T) {
 		t.Errorf("GET /order/ on a mirror: status %d", status)
 	}
 
+	// The copy itself holds none of it: not the browser, not the sign-in,
+	// not an attempt. What the mirror let in, it remembers beside the copy.
+	copied := opened(t, up.Dir)
+	var copyDevices, copySessions, copyAttempts int
+	if err := copied.Reader().QueryRowContext(ctx, `SELECT (SELECT COUNT(*) FROM devices), (SELECT COUNT(*) FROM staff_sessions), (SELECT COUNT(*) FROM sign_in_attempts)`).Scan(&copyDevices, &copySessions, &copyAttempts); err != nil {
+		t.Fatal(err)
+	}
+	var sourceAttempts int
+	if err := source.Reader().QueryRowContext(ctx, `SELECT COUNT(*) FROM sign_in_attempts`).Scan(&sourceAttempts); err != nil {
+		t.Fatal(err)
+	}
+	if copyDevices != sourceDevices || copySessions != sourceSessions || copyAttempts != sourceAttempts {
+		t.Errorf("the copy has %d devices, %d sessions, %d attempts; the venue had %d, %d, %d: the mirror wrote to its copy",
+			copyDevices, copySessions, copyAttempts, sourceDevices, sourceSessions, sourceAttempts)
+	}
+	if err := copied.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+
 	if err := stop(); err != nil {
 		t.Fatalf("stopping the mirror: %v", err)
 	}
@@ -277,6 +297,97 @@ func TestAMirrorShowsTheVenueAndChangesNothing(t *testing.T) {
 	}
 }
 
+// TestAMirrorStartedAgainRemembers: the browser paired last time needs no
+// code, the PIN is asked for again, and a lock set by wrong PINs is still
+// there, though the copy it was set over is gone.
+func TestAMirrorStartedAgainRemembers(t *testing.T) {
+	ctx := context.Background()
+	dataDir, to, _ := backedUpVenue(t)
+	source := opened(t, dataDir)
+	var ownerID string
+	if err := source.Reader().QueryRowContext(ctx, `SELECT public_id FROM staff WHERE name = 'Priya'`).Scan(&ownerID); err != nil {
+		t.Fatal(err)
+	}
+	stateDir := t.TempDir()
+	signIn := func(base string, device map[string]string, pin string) (int, string) {
+		status, raw, _ := ask(t, http.MethodPost, base+"/api/v1/sessions", `{"staff_id":"`+ownerID+`","pin":"`+pin+`"}`, device)
+		var in struct {
+			Token string `json:"token"`
+		}
+		_ = json.Unmarshal(raw, &in)
+		return status, in.Token
+	}
+
+	first, _, stop := startMirror(t, to, stateDir)
+	base := "http://" + first.Addr
+	status, raw, _ := ask(t, http.MethodPost, base+"/api/v1/devices/pair", `{"code":"`+first.Code+`"}`, nil)
+	if status != http.StatusCreated {
+		t.Fatalf("pairing: status %d, body %s", status, raw)
+	}
+	var paired struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal(raw, &paired); err != nil {
+		t.Fatal(err)
+	}
+	device := map[string]string{"Authorization": "Bearer " + paired.Token}
+	status, session := signIn(base, device, "246813")
+	if status != http.StatusCreated {
+		t.Fatalf("signing in: status %d", status)
+	}
+	// The code is spent: a second browser does not get in on it.
+	if status, _, _ := ask(t, http.MethodPost, base+"/api/v1/devices/pair", `{"code":"`+first.Code+`"}`, nil); status != http.StatusBadRequest {
+		t.Errorf("the code a second time: status %d", status)
+	}
+	if err := stop(); err != nil {
+		t.Fatal(err)
+	}
+
+	second, said, stop := startMirror(t, to, stateDir)
+	base = "http://" + second.Addr
+	if second.Code == first.Code || second.Dir == first.Dir {
+		t.Errorf("the second mirror has the first's code or directory")
+	}
+	if !strings.Contains(said.String(), "1 browsers paired before") {
+		t.Errorf("the mirror does not say it remembers a browser:\n%s", said.String())
+	}
+	if status, raw, _ := ask(t, http.MethodGet, base+"/api/v1/devices/me", "", device); status != http.StatusOK {
+		t.Errorf("the browser paired last time: status %d, body %s", status, raw)
+	}
+	owner := map[string]string{"Authorization": "Bearer " + paired.Token, api.HeaderStaffToken: session}
+	if status, _, _ := ask(t, http.MethodGet, base+"/api/v1/sessions/current", "", owner); status != http.StatusUnauthorized {
+		t.Errorf("last time's session: status %d, want the PIN asked again", status)
+	}
+	// Three wrong PINs, and the right one reads as wrong.
+	for range 3 {
+		if status, _ := signIn(base, device, "000000"); status != http.StatusUnauthorized {
+			t.Fatalf("a wrong PIN: status %d", status)
+		}
+	}
+	if status, _ := signIn(base, device, "246813"); status != http.StatusUnauthorized {
+		t.Errorf("the right PIN after three wrong: status %d, want locked", status)
+	}
+	if err := stop(); err != nil {
+		t.Fatal(err)
+	}
+
+	third, _, stop := startMirror(t, to, stateDir)
+	if status, _ := signIn("http://"+third.Addr, device, "246813"); status != http.StatusUnauthorized {
+		t.Errorf("the right PIN on a mirror started again: status %d, want still locked", status)
+	}
+	if err := stop(); err != nil {
+		t.Fatal(err)
+	}
+	// The venue never heard of any of it.
+	var locked, attempts int
+	if err := source.Reader().QueryRowContext(ctx, `SELECT (SELECT COUNT(*) FROM staff WHERE locked_at IS NOT NULL), (SELECT COUNT(*) FROM sign_in_attempts)`).Scan(&locked, &attempts); err != nil {
+		t.Fatal(err)
+	}
+	if locked != 0 || attempts != 0 {
+		t.Errorf("the venue has %d people locked and %d attempts recorded", locked, attempts)
+	}
+}
+
 func TestMirrorRefuses(t *testing.T) {
 	empty := t.TempDir()
 	tests := []struct {
@@ -285,7 +396,7 @@ func TestMirrorRefuses(t *testing.T) {
 		says string
 	}{
 		{"nowhere to read from", nil, "say where the backup is"},
-		{"a folder with no backup in it", []string{"-from", empty, "-listen-addr", "127.0.0.1:0"}, "no backup"},
+		{"a folder with no backup in it", []string{"-from", empty, "-listen-addr", "127.0.0.1:0", "-state-dir", empty}, "no backup"},
 		{"a stray argument", []string{"-from", empty, "now"}, "unexpected argument"},
 		{"an address that is not one", []string{"-from", empty, "-listen-addr", "everywhere"}, "not host:port"},
 		// A mirror writes nowhere but a directory of its own.
@@ -296,7 +407,7 @@ func TestMirrorRefuses(t *testing.T) {
 			var said bytes.Buffer
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
-			err := mirror(ctx, tt.args, &said, func(mirrorUp) { cancel() })
+			err := serveMirror(ctx, tt.args, &said, func(mirrorUp) { cancel() })
 			if err == nil || !strings.Contains(err.Error(), tt.says) {
 				t.Errorf("err = %v, want it to say %q\n%s", err, tt.says, said.String())
 			}

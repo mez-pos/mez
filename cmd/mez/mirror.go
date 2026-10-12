@@ -22,6 +22,7 @@ import (
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/device/printq"
 	"github.com/byjoellobo/mez/internal/fsperm"
+	"github.com/byjoellobo/mez/internal/mirror"
 	"github.com/byjoellobo/mez/internal/service/audit"
 	"github.com/byjoellobo/mez/internal/service/firstrun"
 	"github.com/byjoellobo/mez/internal/service/floor"
@@ -56,14 +57,27 @@ func leftCopies(dir string) []string {
 	return found
 }
 
-// mirrorDeviceName is what the one browser a mirror's code pairs is called.
-const mirrorDeviceName = "Mirror"
-
 // mirrorOptions is everything `mez mirror` takes: where the backup is, as
 // `mez restore` takes it, and where to listen.
 type mirrorOptions struct {
 	restoreOptions
 	ListenAddr string
+	// StateDir is where the mirror keeps what it remembers between runs.
+	StateDir string
+}
+
+// stateDir is where this mirror remembers the browsers paired to it and
+// the locks wrong PINs set: as told, or mez/mirror under the user's
+// configuration directory.
+func (o mirrorOptions) stateDir() (string, error) {
+	if o.StateDir != "" {
+		return filepath.Abs(o.StateDir)
+	}
+	base, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("mirror: this account has no configuration directory to remember paired browsers in; give one with -state-dir: %w", err)
+	}
+	return filepath.Join(base, "mez", "mirror"), nil
 }
 
 // mirrorUp is a mirror that is serving: where, what a browser pairs to it
@@ -81,12 +95,12 @@ type mirrorUp struct {
 func runMirror(args []string, stdout io.Writer) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	return mirror(ctx, args, stdout, nil)
+	return serveMirror(ctx, args, stdout, nil)
 }
 
-// mirror restores, serves until ctx ends, and removes what it restored.
+// serveMirror restores, serves until ctx ends, and removes what it restored.
 // ready, when given, is told once it is serving.
-func mirror(ctx context.Context, args []string, stdout io.Writer, ready func(mirrorUp)) (err error) {
+func serveMirror(ctx context.Context, args []string, stdout io.Writer, ready func(mirrorUp)) (err error) {
 	opts, err := parseMirrorFlags(args, stdout)
 	if err != nil {
 		return err
@@ -157,8 +171,9 @@ func mirror(ctx context.Context, args []string, stdout io.Writer, ready func(mir
 	}
 	running.push("database", database.Close)
 	// The copy may be from an older mez than this one. It is brought up to
-	// this build's schema, as a restore is at its first start; it is a copy,
-	// and this is the last thing written to it but who is signed in.
+	// this build's schema, as a restore is at its first start. It is the
+	// last thing written to the copy: who is let in is kept beside it
+	// (ADR-327).
 	if err := database.Migrate(ctx); err != nil {
 		return fmt.Errorf("mirror: the copy could not be read by this version of mez: %w", err)
 	}
@@ -171,33 +186,53 @@ func mirror(ctx context.Context, args []string, stdout io.Writer, ready func(mir
 	}
 	venue := venues[0]
 
-	srv, devices, err := mirrorServer(database, photosDir, opts.ListenAddr, log, func() api.MirrorInfo {
+	// What the mirror remembers of its own, kept where a restart finds it:
+	// the browsers paired to it and the locks wrong PINs have set.
+	stateDir, err := opts.stateDir()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(stateDir, 0o700); err != nil {
+		return fmt.Errorf("mirror: making %s: %w", stateDir, err)
+	}
+	if err := fsperm.Restrict(stateDir); err != nil {
+		fmt.Fprintf(stdout, "  Could not restrict %s to its owner: %v\n", stateDir, err)
+	}
+	keeper, err := mirror.OpenKeeper(mirror.KeeperOptions{Path: filepath.Join(stateDir, venue.PublicID+".json")})
+	if err != nil {
+		return err
+	}
+
+	srv, err := mirrorServer(database, keeper, venue.ID, photosDir, opts.ListenAddr, log, func() api.MirrorInfo {
 		return api.MirrorInfo{AsOf: generation.Last}
 	})
 	if err != nil {
 		return err
 	}
-	// One browser, paired with a code as any back office is. The code is
-	// made in the copy and so is the device: neither reaches the venue.
-	code, err := devices.CreatePairingCode(ctx, auth.NewCode{VenueID: venue.ID, DeviceName: mirrorDeviceName, DeviceKind: auth.KindBackOffice})
+	// One more browser, paired with a code as any back office is. Those
+	// paired before are remembered and need none.
+	code, codeEnds, err := keeper.NewCode()
 	if err != nil {
-		return fmt.Errorf("mirror: making a pairing code: %w", err)
+		return err
 	}
+	known := len(keeper.Browsers())
 
 	addr := listener.Addr().String()
 	fmt.Fprintf(stdout, `
 A mirror of %s, as it was at %s.
 
   Open          http://%s%s
-  Pairing code  %s   (good until %s; start the mirror again for another)
+  Pairing code  %s   (for a browser not paired to this mirror before; good
+                until %s, once. Start the mirror again for another)
+  Remembered    %d browsers paired before, in %s
 
 Then sign in with a PIN of someone who manages the venue. It is a copy to
 read: nothing changed here reaches the venue, and nothing is printed.
 Ctrl-C stops it and removes the copy.
 
-`, venue.Name, localTime(generation.Last), addr, web.MountBackoffice, code.Code, code.ExpiresAt.Local().Format("15:04"))
+`, venue.Name, localTime(generation.Last), addr, web.MountBackoffice, code, codeEnds.Local().Format("15:04"), known, stateDir)
 	if ready != nil {
-		ready(mirrorUp{Addr: addr, Code: code.Code, AsOf: generation.Last, Dir: dir})
+		ready(mirrorUp{Addr: addr, Code: code, AsOf: generation.Last, Dir: dir})
 	}
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
 }
@@ -206,73 +241,83 @@ Ctrl-C stops it and removes the copy.
 // office reads, and nothing that reaches out. The print queue is built and
 // never started, so a ticket that was waiting when the backup was cut is
 // not printed from here. There is no stream, tunnel, backup or gateway.
-func mirrorServer(database *db.DB, photosDir, listenAddr string, log *slog.Logger, info func() api.MirrorInfo) (*api.Server, *auth.Devices, error) {
+//
+// Who is let in is the mirror's own affair: door reads people and their
+// PINs from the copy and remembers browsers, sessions and wrong PINs in the
+// keeper, so the copy is not written (ADR-327).
+func mirrorServer(database *db.DB, keeper *mirror.Keeper, venueID int64, photosDir, listenAddr string, log *slog.Logger, info func() api.MirrorInfo) (*api.Server, error) {
+	// These two only read here: the door asks them who works at the venue
+	// and what its devices were.
 	devices, err := auth.NewDevices(auth.DevicesOptions{DB: database, Log: log})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	staff, err := auth.NewStaffAuth(auth.StaffOptions{DB: database, Log: log})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
+	}
+	door, err := mirror.NewAuth(mirror.Options{Keeper: keeper, Staff: staff, Devices: devices, VenueID: venueID, Log: log})
+	if err != nil {
+		return nil, err
 	}
 	prints, err := printq.New(printq.Options{DB: database, Log: log})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	orders, err := svcorder.New(svcorder.Options{DB: database, Log: log, Prints: prints})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	printerSettings, err := printers.New(database, prints, nil, buildInfo().Version)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	venueSettings, err := settings.New(settings.Options{DB: database})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	photos, err := menus.NewPhotoStore(photosDir)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	menuEditor, err := menus.New(menus.Options{DB: database, Photos: photos})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	stockBook, err := svcstock.New(database, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	staffBook, err := people.New(database, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	trail, err := audit.New(database, orders)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	rangeReports, err := reports.New(database)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	floorPlan, err := floor.New(floor.Options{DB: database, Orders: orders})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	shifts, err := svcshift.New(svcshift.Options{DB: database, Prints: prints})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	bundles, err := web.Bundles()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	// Only so that the back office's first question, whether this machine
 	// still needs setting up, is answered no. The wizard's own steps are
 	// writes, and refused with the rest.
 	firstRun, err := firstrun.New(database, devices, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	cfg := config.Config{
@@ -283,9 +328,9 @@ func mirrorServer(database *db.DB, photosDir, listenAddr string, log *slog.Logge
 		api.WithMirror(info),
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
-		api.WithDevices(devices),
+		api.WithDevices(door),
 		api.WithFirstRun(firstRun),
-		api.WithStaff(staff),
+		api.WithStaff(door),
 		api.WithOrders(orders),
 		api.WithMenus(database),
 		api.WithPrints(prints),
@@ -301,7 +346,7 @@ func mirrorServer(database *db.DB, photosDir, listenAddr string, log *slog.Logge
 		// No WithGuests and no WithTableCodes: guests are not served from a
 		// copy, and the codes they scan lead to the venue, not here.
 	)
-	return srv, devices, nil
+	return srv, nil
 }
 
 // parseMirrorFlags reads the command line for mirror.
@@ -331,6 +376,7 @@ written. Nothing can be changed in it, and the venue does not need to be on.
 	set.StringVar(&o.Bucket.AccessKeyID, "access-key-id", "", "the bucket's access key id; the secret is read from "+restoreSecretEnv)
 	set.StringVar(&o.Generation, "generation", "", "show this backup and not the newest, by its name from `mez restore -list`")
 	set.StringVar(&o.ListenAddr, "listen-addr", mirrorListenAddr, "address to listen on, host:port")
+	set.StringVar(&o.StateDir, "state-dir", "", "where to remember the browsers paired to this mirror and the locks wrong PINs set (default: mez/mirror in your configuration directory)")
 	if err := set.Parse(args); err != nil {
 		return mirrorOptions{}, err
 	}

@@ -504,3 +504,70 @@ func TestOldSignInAttemptsArePruned(t *testing.T) {
 		})
 	}
 }
+
+// TestCheckPINWritesNothing: a PIN is judged for a reader of the venue's
+// data that has no business changing it (ADR-327). The verdict is the one
+// a sign-in would reach, and nothing is recorded, counted or locked.
+func TestCheckPINWritesNothing(t *testing.T) {
+	w := newStaffWorld(t)
+	ctx := context.Background()
+	gone := addStaff(t, w.db, 1, "stf_GONE0001", "Gone", "4321", "cashier")
+	if _, err := w.db.Writer().ExecContext(ctx, `UPDATE staff SET active = 0 WHERE id = ?`, gone.ID); err != nil {
+		t.Fatal(err)
+	}
+	locked := addStaff(t, w.db, 1, "stf_LOCKED01", "Locked", "4321", "cashier")
+	if _, err := w.db.Writer().ExecContext(ctx, `UPDATE staff SET locked_at = '2026-10-12 09:00:00+00:00' WHERE id = ?`, locked.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name       string
+		venue      int64
+		staff, pin string
+		want       PINVerdict
+	}{
+		{"the right PIN", 1, w.asha.PublicID, "2468", PINRight},
+		{"a wrong PIN", 1, w.asha.PublicID, "0000", PINWrong},
+		{"no PIN", 1, w.asha.PublicID, "", PINWrong},
+		{"a PIN too long to be one", 1, w.asha.PublicID, strings.Repeat("2468", 40), PINWrong},
+		{"nobody of that id", 1, "stf_NOBODY00", "2468", PINNobody},
+		{"no id", 1, "", "2468", PINNobody},
+		{"someone at another venue", 1, w.meera.PublicID, "2468", PINNobody},
+		{"asked of another venue", 2, w.asha.PublicID, "2468", PINNobody},
+		{"deactivated, with the right PIN", 1, gone.PublicID, "4321", PINNobody},
+		{"hard-locked, with the right PIN", 1, locked.PublicID, "4321", PINNobody},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Often enough to lock anyone a sign-in would.
+			for range 6 {
+				who, got, err := w.auth.CheckPIN(ctx, tt.venue, tt.staff, tt.pin)
+				if err != nil || got != tt.want {
+					t.Fatalf("verdict %d, %v; want %d", got, err, tt.want)
+				}
+				if (got == PINRight) != (who.PublicID == tt.staff && who.RoleName != "") {
+					t.Errorf("who = %+v for verdict %d", who, got)
+				}
+				// A wrong PIN says whose, and nobody says nothing.
+				if (got == PINNobody) != (who.PublicID == "") || (got == PINWrong && who.Name != "") {
+					t.Errorf("who = %+v for verdict %d", who, got)
+				}
+			}
+		})
+	}
+	if got := outcomes(t, w.db); len(got) != 0 {
+		t.Errorf("checking a PIN recorded attempts: %v", got)
+	}
+	var written int
+	if err := w.db.Reader().QueryRowContext(ctx, `SELECT (SELECT COUNT(*) FROM staff_sessions) + (SELECT COUNT(*) FROM staff_lockouts) +
+		(SELECT COUNT(*) FROM staff WHERE locked_at IS NOT NULL AND id != ?)`, locked.ID).Scan(&written); err != nil {
+		t.Fatal(err)
+	}
+	if written != 0 {
+		t.Errorf("checking a PIN wrote %d rows", written)
+	}
+	// And the sign-in it did not touch still works.
+	if _, err := w.auth.SignIn(ctx, w.till, w.asha.PublicID, "2468"); err != nil {
+		t.Errorf("signing in after thirty checked PINs: %v", err)
+	}
+}

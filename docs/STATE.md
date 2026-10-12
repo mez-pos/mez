@@ -10,31 +10,32 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5 and 6a are done
-(ADR-313, ADR-315 to ADR-326); 4d is `mez-cloud`'s. Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6a and 6b1 are done
+(ADR-313, ADR-315 to ADR-327); 4d is `mez-cloud`'s. Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 6a - A mirror over one restore** (ADR-326). Task 6 was
-split in four. `mez mirror -from FOLDER` restores a backup into a
-directory of its own, serves the back office over it on
-`127.0.0.1:8090`, prints a pairing code, and removes the copy when
-stopped. `api.WithMirror`: every request is taken as one from away, every
-write but six named is 409 `mirror_read_only` before its handler, and
-every answer says when the copy was last written (`X-Mez-Mirror`). The
-print queue is never started. **Walked in a browser.** It does not follow
-the backup yet, and the screens offer edits it refuses.
+**Phase 14, Task 6b1 - The mirror's own door** (ADR-327). 6b was split
+in two. `internal/mirror`: a `Keeper` remembers the browsers paired to a
+mirror and the locks wrong PINs set, in a file beside the copy that a
+restart finds, and sessions in memory; `mirror.Auth` is the API's
+devices and staff sign-in over one copy. A PIN is judged by the new
+read-only `auth.StaffAuth.CheckPIN`. Three wrong in a row lock that
+person on the mirror for a day. The venue's own devices open nothing on
+a mirror, and the copy is not written after it is migrated. Tested from
+the command through HTTP across three starts; not walked in a browser
+again, since no screen changed.
 
 ## Next task
 
-**Phase 14, Task 6b - Following the backup.** **ADR first**: how the copy
-is kept up (Litestream's follow into the file, or a fresh restore and a
-swap), and where the mirror's own state goes once the copy is followed
-and can no longer hold it (paired browsers, sessions, wrong PINs). The
-phase file has both questions and where the code already bends.
+**Phase 14, Task 6b2 - Following.** The copy grows newer as the venue
+sells: a fresh restore when the backup's newest write has moved, and a
+swap between two requests, with the same `Keeper` across copies. The
+phase file has the shape. Then 6c (mez Cloud's sign-in on a mirror) and
+6d (what the screens say).
 
 **Task 4d is `mez-cloud`'s**: that repository does not exist yet, and
 its first commit copies this phase's cloud tasks there. ADR-318 has the
@@ -145,4 +146,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5 and 6a of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6a and 6b1 of 9)

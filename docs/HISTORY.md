@@ -8,7 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 5b2 - The People and Devices screens say what these
+**Phase 14, Task 6a - A mirror over one restore** (ADR-326). Task 6 was
+split in four. `mez mirror -from FOLDER` restores a backup into a
+directory of its own, serves the back office over it on
+`127.0.0.1:8090`, prints a pairing code, and removes the copy when
+stopped. `api.WithMirror`: every request is taken as one from away, every
+write but six named is 409 `mirror_read_only` before its handler, and
+every answer says when the copy was last written (`X-Mez-Mirror`). The
+print queue is never started. The relay's gate now judges a bundle's path
+as sent as well as decoded. **Walked in a browser.**
+
+Before it, **Phase 14, Task 5b2 - The People and Devices screens say what these
 are** (ADR-325), which closed Task 5. The person mez Cloud signs in as
 reads "Signs in from mez Cloud" under the name and is offered no new
 PIN; the device reads "Your mez Cloud account's way in. Nobody holds

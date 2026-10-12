@@ -949,12 +949,16 @@ It says what it has opened and how to get in:
 A mirror of Corner Cafe, as it was at 11 Oct 2026 23:10.
 
   Open          http://127.0.0.1:8090/backoffice/
-  Pairing code  7K3M-9QX2   (good until 23:42; start the mirror again for another)
+  Pairing code  7K3M-9QX2   (for a browser not paired to this mirror before; good
+                until 23:42, once. Start the mirror again for another)
+  Remembered    0 browsers paired before, in C:\Users\you\AppData\Roaming\mez\mirror
 ```
 
 Open the address in a browser on that computer, enter the code, and sign in
 with the PIN of someone who manages the venue: the PINs are the venue's own,
-as the backup holds them. The back office says "Away from the venue".
+as the backup holds them. The back office says "Away from the venue". A
+browser is paired once: the next time the mirror is started it is
+remembered, and only the PIN is asked.
 
 What to know:
 
@@ -965,9 +969,20 @@ What to know:
   the backup as the venue goes on selling: stop it and start it again for
   a newer copy.
 - **It listens on its own computer only**, at `127.0.0.1:8090`, unless
-  `-listen-addr` says otherwise. Do not put one on a network you do not
-  trust: a wrong PIN typed three times locks that person in the copy and
-  not at the venue, and starting the mirror again forgets it.
+  `-listen-addr` says otherwise.
+- **Three wrong PINs in a row lock that person on the mirror for a day.**
+  Not at the venue: the venue never hears of it. While locked, the right
+  PIN reads as a wrong one, and starting the mirror again does not lift
+  it. Nothing on a screen lifts it either, since a mirror changes nothing:
+  it lifts by itself after a day.
+- **What a mirror remembers is one small file for each venue**, in
+  `mez/mirror` under your configuration directory (the mirror says where
+  when it starts; `-state-dir` puts it elsewhere): the browsers paired to
+  it and the locks. No PIN and no token is in it. Deleting the file unpairs
+  every browser and lifts every lock.
+- **The venue's own tills and back offices do not open a mirror.** Only a
+  browser paired with the mirror's own code does, so a device revoked at
+  the venue has no way in through an old backup.
 - **The copy is kept in the system's temporary folder and removed when the
   mirror stops** (Ctrl-C). A mirror that is killed leaves it behind, and
   the next one started says where: it is a copy of the venue's sales, so
