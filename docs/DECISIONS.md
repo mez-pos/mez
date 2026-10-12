@@ -11663,3 +11663,64 @@ unseen. "Not carried" is the chip's word and it is the relay's point of view; an
 owner may want "Not paid", which is true of only some of the ways to be here. With
 no account area yet there is nowhere to send an owner to pay, so the sentence says
 what happened and not what to press.
+
+## ADR-318 - A pairing is a file in the data directory, bought with one request that sends a code and nothing the venue keeps
+2026-10 · Status: accepted. Phase 14, Task 4 (4a built here; 4b to 4d follow). Builds on ADR-312.
+Context: pairing is the first of the two places an account and a venue meet (ADR-312):
+a code from the account, typed in at the venue once. The phase file had the venue write
+what comes back into a `[cloud]` section of `config.toml` and restart. Two decisions
+already made stand against that, and the task is four pieces of work across two
+repositories, one of which does not exist yet.
+Decision:
+  - **Split.** 4a, built with this: `internal/cloud`, the code, the one request, the
+    checks on its answer, the file it is kept in, and `cloud_url`. 4b: the venue uses
+    it, at start and when it is paired while running: the relay settings, the
+    backup's destination, the 30 second floor (ADR-313), `paired` in the API, and
+    the route a screen calls. 4c: the wizard's step and the Devices card's entry.
+    4d, in `mez-cloud`: issuing codes, their hour and their single use, the answer.
+  - **`cloud.json` in the data directory, not a section of the settings file.**
+    Nothing in mez writes its own settings file, and on Windows that file is the
+    administrators' (ADR-310); a service that could rewrite it could rewrite its own
+    listen address. The data directory is the server's to write, is already closed
+    to every other account (ADR-259), and already holds `backup.json` with a
+    bucket's secret for the same reasons (ADR-273). Not the database either: "I had
+    mez before" has to know which account a venue was under before there is one.
+  - **The contract, for `mez-cloud` to answer.** `POST {cloud_url}/v1/pair` with
+    `{"code", "venue": {"id", "name", "version"}}`. `venue.id` is the venue's own
+    `public_id` from its database: it is how the cloud knows a venue it has met
+    before, renamed or on a new machine, and so gives one trial a venue (ADR-313).
+    200 answers `{"venue": {"slug", "hostname"}, "relay": {"url", "key"}, "backup":
+    {"bucket", "path", "endpoint", "region", "access_key_id", "secret_access_key"},
+    "cloud": {"public_key"}, "owner": {"name"}}`. Any 4xx but 429 is a code that is
+    not accepted, whatever its body says; 429 is "try again in a minute"; anything
+    else is the cloud not being there.
+  - **A code is eight of `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`**: no 0, O, 1 or I. It is
+    cleaned as typed (case, spaces, hyphens) and one that could not be a code is
+    refused without being sent, since a code is good once and the next takes the
+    owner back to their phone.
+  - **The three ways a code fails read as one.** Mistyped, used, or older than an
+    hour: whoever is at the counter typed it, and which it was is not theirs to be
+    told. The owner makes another.
+  - **The answer is checked whole before anything is kept.** A relay address and a
+    cloud address that are https; a relay key that is for this venue's slug and was
+    issued for a back office; a bucket that `backup` would accept, with a folder of
+    the venue's own, since the key is good for that folder only and the default
+    would be everyone's; a public key that is 32 bytes; an owner's name that is a
+    name. `Pair` writes nothing: keeping it is the caller's, once it is sure.
+  - **A redirect is not followed.** The code is in the body, and a cloud that says
+    "ask over there" is not sent it there.
+  - **`cloud_url`**, `https://api.mezpos.com` unless set, held to the same rule: https,
+    or this machine for a test. Nothing is ever sent to it unless someone at the
+    venue types a code.
+  - **A pairing never prints its secrets.** `String`, `GoString` and `LogValue` say
+    whose it is and when, and neither key.
+Because: the venue's side of pairing is small enough to hold in one package with no
+server behind it, and writing the contract down here is what lets the other
+repository be built to it and not to a guess.
+Cost: two files in the data directory now hold secrets, and a copy of that directory
+is a copy of a venue's relay key and its backup's. That was true of `backup.json`
+and is what ADR-259 is for. `config` now imports `cloud`. Nothing uses a pairing yet:
+a venue with a `cloud.json` and this build behaves exactly as one without, until 4b.
+A venue with `relay_url` in its settings file and a pairing as well has two answers
+to where its relay is, and which wins is 4b's to decide. The contract is written
+before the service that answers it, so it may have to change when that is built.

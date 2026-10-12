@@ -8,7 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 3a - The relay asks who is entitled** (ADR-316). Task 3
+**Phase 14, Task 3b - The venue's half of entitlement** (ADR-317), which
+closes Task 3. The tunnel client asks for notices, reads where the venue
+stands off the relay's answer to its dial and off `Notice` frames, and
+keeps it on `Status.Standing`. Turned away with a good key (403
+`not_entitled`, or close 4003) it is `not_entitled` and asks again in
+half a minute to a minute. `GET /api/v1/tunnel` has `not_entitled` and
+`cloud: {state, paid_until, until, back_office, reason}`. Devices: the
+chip **Not carried** and its sentence, a line such as "Cloud: paid until
+12 Nov 2026." or "Cloud: payment failed, 5 days left.", and "Back office
+from anywhere" saying when the relay does not carry it. **The two cards
+were not walked in a browser**: the words are tested, the screen unseen.
+
+Before it, **Phase 14, Task 3a - The relay asks who is entitled** (ADR-316). Task 3
 was split: this is the relay's half. `relay.Entitlements` (`Until`,
 `Remote`, `State`, `PaidUntil`, `Reason`) is asked at the dial and again
 each hour and at the date. Not carried is 403 `not_entitled` at the dial

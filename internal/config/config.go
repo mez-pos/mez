@@ -25,6 +25,7 @@ import (
 	_ "time/tzdata"
 
 	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/byjoellobo/mez/internal/cloud"
 )
 
 // FileName is the configuration file Load looks for beside the binary.
@@ -57,6 +58,8 @@ const (
 	keyRemoteBackoffice = "remote_backoffice"
 
 	keyBackupSyncInterval = "backup_sync_interval"
+
+	keyCloudURL = "cloud_url"
 )
 
 // GatewayRazorpay is the one payment gateway this build can use. The name
@@ -100,6 +103,7 @@ var keys = []string{
 	keyGatewayWebhookSecret,
 	keyRemoteBackoffice,
 	keyBackupSyncInterval,
+	keyCloudURL,
 }
 
 var usage = map[string]string{
@@ -123,6 +127,8 @@ var usage = map[string]string{
 	keyRemoteBackoffice: "true lets the owner open the back office through the relay; needs relay_url and a key issued for it",
 
 	keyBackupSyncInterval: "how often the backup sends what changed, like 30s or 2m; from 5s to 10m; it is the most a dead machine can lose",
+
+	keyCloudURL: "where a pairing code is exchanged; mez Cloud's own unless you run one",
 }
 
 // Config is the resolved, validated server configuration.
@@ -210,6 +216,12 @@ type Config struct {
 	// backup goes is the owner's to change in the back office, how often a
 	// bucket is billed is whoever runs the machine's.
 	BackupSyncInterval time.Duration
+
+	// CloudURL is where a pairing code is exchanged (ADR-318): mez Cloud's
+	// API unless the venue names another. Nothing is sent there until
+	// someone at the venue types a code, and a venue that never does never
+	// calls it.
+	CloudURL string
 }
 
 // GatewayEnabled reports whether a payment gateway is configured.
@@ -325,6 +337,8 @@ func defaults(lookup func(string) (string, bool), goos string) map[string]string
 		keyRemoteBackoffice: "false",
 
 		keyBackupSyncInterval: backup.DefaultSyncInterval.String(),
+
+		keyCloudURL: cloud.DefaultURL,
 	}
 }
 
@@ -485,7 +499,25 @@ func build(raw map[string]string) (Config, error) {
 	if cfg.BackupSyncInterval, err = validSyncInterval(raw[keyBackupSyncInterval]); err != nil {
 		return Config{}, err
 	}
+	if cfg.CloudURL, err = validCloudURL(raw[keyCloudURL]); err != nil {
+		return Config{}, err
+	}
 	return cfg, nil
+}
+
+// validCloudURL reads where pairing codes are exchanged. Empty is mez
+// Cloud's own. A code is a secret for the hour it lives and what comes back
+// for it holds two that last, so the address is held to what
+// internal/cloud will send them to: https, or this machine.
+func validCloudURL(v string) (string, error) {
+	v = strings.TrimRight(strings.TrimSpace(v), "/")
+	if v == "" {
+		return cloud.DefaultURL, nil
+	}
+	if err := cloud.CheckURL(v); err != nil {
+		return "", fmt.Errorf("%s: %w", keyCloudURL, err)
+	}
+	return v, nil
 }
 
 // validSyncInterval reads how often the backup sends. A bare number is

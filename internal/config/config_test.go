@@ -452,6 +452,8 @@ func TestEveryKeyIsReachable(t *testing.T) {
 		keyRemoteBackoffice: "true",
 
 		keyBackupSyncInterval: "45s",
+
+		keyCloudURL: "https://cloud.example.com",
 	}
 	if len(sample) != len(keys) {
 		t.Fatalf("sample covers %d keys, the package has %d: add the new one here", len(sample), len(keys))
@@ -518,6 +520,8 @@ func assertKey(t *testing.T, key, want string, cfg Config, err error) {
 		equal(t, key, cfg.RemoteBackoffice, true)
 	case keyBackupSyncInterval:
 		equal(t, key, cfg.BackupSyncInterval, 45*time.Second)
+	case keyCloudURL:
+		equal(t, key, cfg.CloudURL, want)
 	default:
 		t.Fatalf("key %q has no assertion: add one", key)
 	}
@@ -726,6 +730,43 @@ func TestBackupSyncInterval(t *testing.T) {
 			}
 			if cfg.BackupSyncInterval != tt.want {
 				t.Errorf("BackupSyncInterval = %v, want %v", cfg.BackupSyncInterval, tt.want)
+			}
+		})
+	}
+}
+
+// TestCloudURL: mez Cloud's own unless said, and never an address a pairing
+// code and what it buys should not travel to (ADR-318).
+func TestCloudURL(t *testing.T) {
+	tests := []struct {
+		value   string
+		want    string
+		wantErr bool
+	}{
+		{"", "https://api.mezpos.com", false},
+		{"https://cloud.example.com", "https://cloud.example.com", false},
+		{" https://cloud.example.com/ ", "https://cloud.example.com", false},
+		{"http://localhost:8787", "http://localhost:8787", false},
+		{"http://cloud.example.com", "", true},
+		{"cloud.example.com", "", true},
+		{"https://cloud.example.com/v1", "", true},
+		{"https://user:pw@cloud.example.com", "", true},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%q", tt.value), func(t *testing.T) {
+			env := map[string]string{envPrefix + strings.ToUpper(keyCloudURL): tt.value}
+			cfg, err := load(nil, lookupFrom(env), t.TempDir(), "linux")
+			if tt.wantErr {
+				if err == nil || !strings.Contains(err.Error(), keyCloudURL) {
+					t.Fatalf("load = %v, want an error naming %s", err, keyCloudURL)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("load: %v", err)
+			}
+			if cfg.CloudURL != tt.want {
+				t.Errorf("CloudURL = %q, want %q", cfg.CloudURL, tt.want)
 			}
 		})
 	}

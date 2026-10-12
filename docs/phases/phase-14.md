@@ -131,7 +131,47 @@ and its first commit copies this phase's cloud tasks there.
   and `internal/tunnel`. `build/relay/README.md` documents the file for
   self-hosters.
 
-- [ ] **Task 4 - Pairing the venue to an account.** *Both repos.* The cloud
+- [ ] **Task 4 - Pairing the venue to an account.** *Both repos.* Split on
+  2026-10-12 before building it (ADR-318). It does not write `config.toml`:
+  a pairing is `cloud.json` in the data directory.
+
+  - [x] **Task 4a - The pairing itself.** *This repo.* `internal/cloud`:
+    `CleanCode`, `Client.Pair` (one POST to `{cloud_url}/v1/pair`, no
+    redirect followed), `Pairing.Validate`, `Load`, `Save`, `Remove`, and
+    the setting `cloud_url`. The request and the answer are written down
+    in ADR-318 for `mez-cloud` to build to. Tests against a stand-in
+    pairing server. Nothing uses a pairing yet.
+  - [ ] **Task 4b - The venue uses its pairing.** *This repo.* ADR first:
+    which wins when the settings file names a relay and there is a pairing
+    too. At start, `cmd/mez` loads `cloud.json` and from it takes the
+    relay's address and key, `public_url`, and the back office across the
+    relay; a file that cannot be read stops the start. A service in
+    `internal/service` that pairs: `cloud.Client.Pair` with the venue's
+    `public_id`, name and version, `cloud.Save`, the backup's destination
+    set to the pairing's bucket through `backup.Manager.Set`, and the
+    tunnel started or told a restart is needed, as the backup already does
+    it (ADR-276). A paired venue's backup goes no faster than 30 s whatever
+    `backup_sync_interval` says (ADR-313, ADR-315). `POST
+    /api/v1/cloud/pair` for whoever holds `settings.edit`, at the venue
+    only (put it in `staysAtTheVenue`), rate limited, answering the
+    owner's name and the hostname and never a key; `paired`, the hostname
+    and the owner's name in the `cloud` block of `GET /api/v1/tunnel`.
+    Tests with the stand-in pairing server and a real relay.
+  - [ ] **Task 4c - The screens.** *This repo.* The setup wizard's step
+    "Connect to mez Cloud", skippable, and the same entry on the Devices
+    screen's "Back office from anywhere" card for a venue set up earlier:
+    eight boxes or one field for the code, what pairing does in two
+    sentences, each refusal in the owner's words, and after it the address
+    and who it is paired to. Read `docs/design/tokens.md` and the two
+    screens' files first. Walk it in a browser against the stand-in.
+  - [ ] **Task 4d - The cloud's side.** *`mez-cloud`.* Issue an
+    eight-character code for a venue of an account, good for an hour and
+    once; answer `POST /v1/pair` as ADR-318 sets out; mint the relay key
+    and the bucket's credentials (8b); mark the venue paired and start its
+    trial, once per `venue.id` (ADR-313); a second pairing replaces the key
+    and revokes the old one. Tests on the code's life and single use.
+
+  The task as it was set: The cloud
   issues an eight-character pairing code for a venue, good for an hour. The
   setup wizard gains a step, "Connect to mez Cloud", and the Devices
   screen's "Back office from anywhere" card gains the same entry for a venue

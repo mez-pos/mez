@@ -10,42 +10,37 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3 are done (ADR-313, ADR-315 to ADR-317). Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1 to 3 and 4a are done (ADR-313, ADR-315 to ADR-318). Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 3b - The venue's half of entitlement** (ADR-317), which
-closes Task 3. The tunnel client asks for notices, reads where the venue
-stands off the relay's answer to its dial and off `Notice` frames, and
-keeps it on `Status.Standing`. Turned away with a good key (403
-`not_entitled`, or close 4003) it is `not_entitled` and asks again in
-half a minute to a minute. `GET /api/v1/tunnel` has `not_entitled` and
-`cloud: {state, paid_until, until, back_office, reason}`. Devices: the
-chip **Not carried** and its sentence, a line such as "Cloud: paid until
-12 Nov 2026." or "Cloud: payment failed, 5 days left.", and "Back office
-from anywhere" saying when the relay does not carry it. **The two cards
-were not walked in a browser**: the words are tested, the screen unseen.
+**Phase 14, Task 4a - The pairing itself** (ADR-318). Task 4 was split in
+four. `internal/cloud`: a pairing code cleaned as typed (eight of an
+alphabet with no 0, O, 1 or I), one POST to `{cloud_url}/v1/pair` with the
+venue's `public_id`, name and version, the answer checked whole, and
+`cloud.json` in the data directory to keep it, 0600, never printed with
+its secrets. `cloud_url` is the new setting. The request and the answer
+are in ADR-318 for `mez-cloud` to build to. **Nothing uses a pairing
+yet**, and it is not in `config.toml` as the phase file had it.
 
 ## Next task
 
-**Phase 14, Task 4 - Pairing the venue to an account.** *Both repos*, and
-`mez-cloud` does not exist yet. This repo's half can be built against a
-fake pairing server: the wizard's "Connect to mez Cloud" step and the
-Devices card's entry, the one POST of the code, the `[cloud]` section in
-`config.toml` with the key protected as `relay_key` is (ADR-307), the
-restart, and `paired` in the `cloud` block. It is larger than a session:
-split it first. ADR-313 says what a pairing answers with.
+**Phase 14, Task 4b - The venue uses its pairing**, as the phase file
+sets it out. ADR first: which wins when the settings file names a relay
+and there is a pairing too. Read `cmd/mez/main.go` where the tunnel and
+the backup manager are built, and `backup.Manager.Set` for how a change
+takes hold while running (ADR-276), before deciding its shape.
 
 **The live relay** needs redeploying only if entitlements are wanted on
 it: with `RELAY_ENTITLEMENTS` unset it carries every key, as before. A
 venue must run this build or later to show where it stands.
 
 **Owed by Task 2 to Task 4:** a venue paired to mez Cloud must not go
-faster than 30 s (ADR-313). Nothing enforces it yet: there is no `[cloud]`
-section to know a venue is paired.
+faster than 30 s (ADR-313). Nothing enforces it yet: it is in Task 4b's
+list, where a venue first knows it is paired.
 
 **The live relay's venues are safe to give a `--remote` key now**: the
 venue's binary must be one built from this commit or later, since the
@@ -144,4 +139,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3 of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3 and 4a of 9)
