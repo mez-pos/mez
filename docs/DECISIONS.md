@@ -12336,3 +12336,51 @@ times costs more to look at. A newer generation is taken though its last write b
 older than the copy's, as `mez restore` takes it: the time on the bar can then go
 back. A look that failed is not made again until someone next asks the mirror
 something.
+
+## ADR-329 - The page learns it is on a mirror from every answer, and judges the venue by how old the copy was when it last asked
+2026-10 · Status: accepted. Phase 14, Task 6d1. Builds on ADR-309, ADR-326 and ADR-328.
+Context: a mirror already says so on every answer (`X-Mez-Mirror`, ADR-326), and the
+back office on one already settles as `away`, since a mirror marks every request as
+relayed. Nothing on the page read the header. The task asked for "Mirror, as of
+23:10" on the bar and "Venue offline" on the pill when that is more than two minutes
+old. Task 6d also asked for every edit a mirror refuses to be taken off the screens:
+some 75 calls in 14 files.
+Decision:
+  - **6d is split in two.** 6d1 is the page knowing and saying; 6d2 is the edits
+    and the two reads that answer wrongly. 6d2 reads `useMirror()`, which 6d1 makes.
+  - **A `MirrorWatch` beside the auth store, shown every answer.** `createAppAuth`
+    makes one and gives its `heard` to the store's client as `onResponse`. It keeps
+    the newest time any answer carried and when it was last told. An answer with no
+    header changes nothing: a page is on a mirror or it is not. It is not a state of
+    the connection, as `away` is (ADR-309), because the time moves with every
+    answer and the connection sees only its probe's.
+  - **"Venue offline" is judged when the mirror last answered, not now.**
+    `heardAt - asOf` over two minutes. A page left alone asks nothing, and its copy
+    growing old on the screen says nothing of the venue.
+  - **So a mirror in view is asked something every 20 seconds**
+    (`GET /api/v1/devices/me`, the shell's `useMirrorKeptUp`), and only while the
+    tab is visible. A mirror follows its backup only when it has been asked
+    something since its last look (ADR-328): this is what asks. When the copy turns
+    out to be a newer one, every query is read again, so no screen is of an older
+    copy than the bar says.
+  - **Only once the page is `away` does the pill speak of the venue.** A mirror that
+    stops answering still says "Server unreachable" in the connection's own words.
+    While the venue is sending, the pill stays "Away from the venue", which is true.
+  - **The chip is the info tone, 24 hour, in the venue's zone**, with the day when it
+    is not today there. Under 768px it is a line under the bar: the bar there has
+    room for the connection's word and nothing more (ADR-311), and a phone with the
+    venue off is what a mirror is for.
+Because: the header is on every answer so that the time shown is never older than
+what is shown; reading it once would throw that away. And a word about the venue
+that turns by itself on an idle tab would be a word about the tab.
+Cost: **a venue that is on and has written nothing for two minutes reads "Venue
+offline"**: seen on the walk, where an idle venue wrote once a minute after starting
+and then not again. The rule is the task's; the copy cannot tell a quiet venue from
+a dead one unless the venue writes on a beat, which it does not. With the default
+30 second backup and one minute follow, a busy venue's copy is at most about 115
+seconds old when asked, under the two minutes by little. The page knows it is on a
+mirror from its first answer but waits for the stream to fail once before it is
+`away`, as ADR-309 does. A mirror in view makes three small requests a minute, and
+the mirror then lists its backup once a minute for as long as the tab is in front.
+The browser's clock is trusted against the venue's: one that is minutes fast reads
+every venue as offline.

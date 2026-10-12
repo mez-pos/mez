@@ -956,7 +956,11 @@ A mirror of Corner Cafe, as it was at 11 Oct 2026 23:10.
 
 Open the address in a browser on that computer, enter the code, and sign in
 with the PIN of someone who manages the venue: the PINs are the venue's own,
-as the backup holds them. The back office says "Away from the venue". A
+as the backup holds them. The bar says "Mirror, as of 23:10": when the
+venue last wrote something this copy holds, in the venue's time. Beside it
+is "Away from the venue" while the venue is still sending its backup, and
+"Venue offline" once the copy is more than two minutes behind: a venue that
+is switched off, has no internet, or has had a quiet few minutes. A
 browser is paired once: the next time the mirror is started it is
 remembered, and only the PIN is asked.
 

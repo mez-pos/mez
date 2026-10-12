@@ -6,8 +6,9 @@
 import { WifiIcon, WifiOffIcon } from "lucide-react";
 import { cx } from "../ui/cx";
 import { useClock } from "../use-clock";
+import { useMirror } from "../use-mirror";
 import { useRealtime } from "../use-realtime";
-import { connectionText } from "./status-logic";
+import { connectionText, venueSilent } from "./status-logic";
 
 const toneClass = {
   success: "text-success",
@@ -25,9 +26,12 @@ interface ConnectionWordProps {
 export function ConnectionWord({ brief = false, className }: ConnectionWordProps) {
   const { status } = useRealtime();
   const now = useClock(1000);
-  const link = connectionText(status, now);
-  // Away is reached too: through the relay, with no stream (ADR-309).
-  const reaching = status.state === "live" || status.state === "syncing" || status.state === "connecting" || status.state === "away";
+  const mirror = useMirror();
+  const link = connectionText(status, now, mirror);
+  // Away is reached too: through the relay, with no stream (ADR-309). A
+  // mirror whose venue has gone quiet is not: it is the venue the icon is of.
+  const reaching =
+    status.state === "live" || status.state === "syncing" || status.state === "connecting" || (status.state === "away" && !venueSilent(status, mirror));
   const Wifi = reaching ? WifiIcon : WifiOffIcon;
 
   return (

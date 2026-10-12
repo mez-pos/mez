@@ -6,6 +6,7 @@ import { createAppAuth } from "../../shared/auth/app-auth";
 import { AuthProvider } from "../../shared/auth/use-auth";
 import { createQueryClient } from "../../shared/query";
 import { ErrorBoundary, ToastProvider } from "../../shared/ui";
+import { MirrorProvider } from "../../shared/use-mirror";
 import { RealtimeProvider } from "../../shared/use-realtime";
 import { App } from "./App";
 import "./index.css";
@@ -16,7 +17,7 @@ if (!root) {
 }
 
 const queryClient = createQueryClient();
-const { store, realtime } = createAppAuth("backoffice");
+const { store, realtime, mirror } = createAppAuth("backoffice");
 
 createRoot(root).render(
   <StrictMode>
@@ -24,12 +25,14 @@ createRoot(root).render(
       <QueryClientProvider client={queryClient}>
         <RealtimeProvider connection={realtime}>
           <AuthProvider store={store} realtime={realtime}>
-            {/* The design's line icons: 1.75px strokes (tokens.md, Icons). */}
-            <LucideProvider strokeWidth={1.75}>
-              <ToastProvider>
-                <App />
-              </ToastProvider>
-            </LucideProvider>
+            <MirrorProvider watch={mirror}>
+              {/* The design's line icons: 1.75px strokes (tokens.md, Icons). */}
+              <LucideProvider strokeWidth={1.75}>
+                <ToastProvider>
+                  <App />
+                </ToastProvider>
+              </LucideProvider>
+            </MirrorProvider>
           </AuthProvider>
         </RealtimeProvider>
       </QueryClientProvider>

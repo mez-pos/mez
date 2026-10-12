@@ -367,16 +367,39 @@ and its first commit copies this phase's cloud tasks there.
     in-process (8e). The person the cloud signs in as is in the copy; the
     device is too. `mirror.Auth.CloudDevice` answers nobody today, and
     the keeper has no cloud sessions: that is where it goes.
-  - [ ] **Task 6d - What the screens say on a mirror.** Read
-    `docs/design/tokens.md` and `backoffice-shell.md` first. The bar:
-    "Mirror, as of 23:10", from `X-Mez-Mirror` (`web/shared/api.ts`
-    already reads `X-Mez-Via` the same way). The connection pill: "Venue
-    offline" when that is more than two minutes old. And every edit a
-    mirror refuses taken off the screens, as ADR-309 took off what cannot
-    be done from away: today they are offered and refused on save. Two
-    reads answer wrongly on a mirror and need words of their own: the
-    Floor plan's table codes (403, since a mirror serves no guests) and
-    Settings, Backup (404 `backup_unavailable`).
+  - [ ] **Task 6d - What the screens say on a mirror.** Split on
+    2026-10-12 while building it (ADR-329): the edits are some 75 calls
+    in 14 files, a session of their own.
+    - [x] **6d1 - The page knows it is on a mirror, and says so.** As
+      built (ADR-329): `web/shared/mirror.ts`. A `MirrorWatch` is shown
+      every answer the app's client gets and keeps `X-Mez-Mirror` off
+      it; `useMirror()` (`use-mirror.tsx`) is null anywhere but on a
+      mirror. The bar: "Mirror, as of 23:10", in the venue's zone, with
+      the day when it is not today; a line under the bar below 768px.
+      The pill: "Venue offline" when the copy was more than two minutes
+      old as the mirror last answered. On a mirror and in view the shell
+      asks `GET /api/v1/devices/me` every 20 seconds, which is what
+      keeps the mirror following (ADR-328), and reads every query again
+      when the copy is a newer one. **Walked in a browser** on a mirror
+      of a running venue: the chip, the pill turning and turning back
+      when the venue wrote, and 390px.
+    - [ ] **6d2 - The edits a mirror refuses, taken off the screens.**
+      Read `docs/design/tokens.md` and `backoffice-shell.md` first.
+      `useMirror()` is read where the thing is drawn, as `useAway()` is
+      (ADR-309), and `AtTheVenue` has the sentence's shape. What ADR-309
+      took off stays off: a mirror is away too. What is left is what
+      away still allows: the menu editor (`menu/use-menu-editor.ts`, 31
+      calls), stock, people, tax, shifts, the floor plan, the general
+      settings and unpairing a device. Split it by screen if it is more
+      than a session. And two reads answer wrongly on a mirror and need
+      words of their own: the Floor plan's table codes (403, since a
+      mirror serves no guests) and Settings, Backup (404
+      `backup_unavailable`).
+
+    As it was set: the bar "Mirror, as of 23:10", from `X-Mez-Mirror`;
+    the connection pill "Venue offline" when that is more than two
+    minutes old; and every edit a mirror refuses taken off the screens,
+    as ADR-309 took off what cannot be done from away.
 
   The task as it was set: `mez mirror -from <destination> [-as-of]` restores the latest
   replica into a temporary data directory, keeps following it, and serves

@@ -57,6 +57,8 @@ export class AuthStore {
     private readonly app: AppKind,
     private readonly store: CredentialStore,
     fetchFn?: typeof fetch,
+    /** Shown every answer, for its headers: whether it is a mirror's (mirror.ts). */
+    onResponse?: (response: Response) => void,
   ) {
     this.credentials = {
       deviceToken: () => this.store.device()?.token ?? null,
@@ -66,6 +68,7 @@ export class AuthStore {
       credentials: this.credentials,
       onCredentialFailure: (code) => this.credentialFailed(code),
       ...(fetchFn ? { fetch: fetchFn } : {}),
+      ...(onResponse ? { onResponse } : {}),
     });
   }
 

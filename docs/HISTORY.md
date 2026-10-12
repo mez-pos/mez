@@ -8,7 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 6b1 - The mirror's own door** (ADR-327). 6b was split
+**Phase 14, Task 6b2 - Following** (ADR-328), which closed 6b. A mirror
+in use looks at its backup once a minute (`-follow`), and when the venue
+has written since, restores a new copy beside the old, opens it, and
+puts it in the old one's place between two requests, with the same
+keeper: whoever is signed in stays signed in. The old copy is closed and
+removed when its requests are done. A mirror nobody is asking anything
+asks its backup nothing. `X-Mez-Mirror` is exact. Tested against a venue
+that trades again after the mirror started.
+
+Before it, **Phase 14, Task 6b1 - The mirror's own door** (ADR-327). 6b was split
 in two. `internal/mirror`: a `Keeper` remembers the browsers paired to a
 mirror and the locks wrong PINs set, in a file beside the copy that a
 restart finds, and sessions in memory; `mirror.Auth` is the API's

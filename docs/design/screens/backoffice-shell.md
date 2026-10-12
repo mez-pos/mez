@@ -37,6 +37,14 @@ screen each scroll on their own.
   ("Online", or what is wrong); the venue's date and time in a pill, to the
   second, in the venue's zone, from 1024px; the profile (initials, name,
   role), whose menu is **Sign out**; and a script line from 1536px.
+- **On a mirror** (ADR-329), the bar says so before the connection's word:
+  "Mirror, as of 23:10", an info chip with the history icon, the time on
+  the 24 hour clock in the venue's zone, with the day when it is not today
+  there ("Mirror, as of 11 Oct, 23:10"). Under 768px it is a line of its
+  own under the bar, the width of the screen. The connection's word is
+  "Away from the venue" while the copy is within two minutes of the venue,
+  and "Venue offline", in the warning colour with the no-signal icon, once
+  it is not.
 - **The sidebar, 240px, chrome:** an icon and a name on every entry, each
   48px, with its key chord at the right, faint, in the numeral face: `g m`.
   The current one is the terracotta fill. Grouped, each group under a
@@ -107,6 +115,9 @@ device paired as a back office.
 - The signed-in person and their permissions, from the auth store.
 - `GET /api/v1/venue`, for the zone the clock is read in.
 - The app's stream, for the connection word.
+- `X-Mez-Mirror` on every answer (`web/shared/mirror.ts`), for the mirror's
+  chip. On a mirror and in view, `GET /api/v1/devices/me` every 20 seconds,
+  and every query read again when the copy turns out to be a newer one.
 - The range the three report screens share is held here, above the routes
   (`ReportRangeProvider`), so the days picked on one are the days on the
   next.

@@ -10,32 +10,37 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6a and 6b are done
-(ADR-313, ADR-315 to ADR-328); 4d is `mez-cloud`'s. Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6a, 6b and 6d1 are
+done (ADR-313, ADR-315 to ADR-329); 4d is `mez-cloud`'s. Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 6b2 - Following** (ADR-328), which closes 6b. A mirror
-in use looks at its backup once a minute (`-follow`), and when the venue
-has written since, restores a new copy beside the old, opens it, and
-puts it in the old one's place between two requests, with the same
-keeper: whoever is signed in stays signed in. The old copy is closed and
-removed when its requests are done. A mirror nobody is asking anything
-asks its backup nothing. `X-Mez-Mirror` is exact. Tested against a venue
-that trades again after the mirror started; not walked in a browser,
-since no screen says anything of it yet.
+**Phase 14, Task 6d1 - The page knows it is on a mirror, and says so**
+(ADR-329). 6d was split in two while building it. `web/shared/mirror.ts`:
+a `MirrorWatch` reads `X-Mez-Mirror` off every answer, and `useMirror()`
+is null anywhere but on a mirror. The bar says "Mirror, as of 23:10" in
+the venue's zone (a line under the bar below 768px), and the pill says
+"Venue offline" when the copy was over two minutes old as the mirror last
+answered. A mirror in view is asked something every 20 seconds, which
+keeps it following, and every query is read again when its copy is newer.
+**Walked in a browser** on a mirror of a running venue, at 1576 and 390
+wide: the pill turned after two quiet minutes and back within 30 seconds
+of the venue writing.
 
 ## Next task
 
-**Phase 14, Task 6d - What the screens say on a mirror**: "Mirror, as of
-23:10" on the bar from `X-Mez-Mirror`, "Venue offline" on the pill when
-that is more than two minutes old, and the edits a mirror refuses taken
-off the screens. It is what makes 6a and 6b visible, and it is the same
-whoever signs in. **Task 6c** (mez Cloud's sign-in on a mirror) can wait
-on `mez-cloud`, which is the only thing that would use it.
+**Phase 14, Task 6d2 - The edits a mirror refuses, taken off the
+screens**: `useMirror()` read where the thing is drawn, as `useAway()` is
+(ADR-309). Some 75 calls in 14 files, the menu editor the largest: split
+by screen if it is more than a session. With it, words for the two reads
+that answer wrongly on a mirror (the Floor plan's table codes, Settings,
+Backup). To walk a mirror: `mez setup -demo-menu` into a scratch data
+directory, a `backup.json` there naming a folder, `bin/mez -data-dir`,
+then `bin/mez mirror -from <folder> -follow 5s`. **Task 6c** (mez Cloud's
+sign-in on a mirror) can wait on `mez-cloud`, the only thing to use it.
 
 **Task 4d is `mez-cloud`'s**: that repository does not exist yet, and
 its first commit copies this phase's cloud tasks there. ADR-318 has the
@@ -134,6 +139,9 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 10. After a restore, an invoice number printed in the half minute the backup had
    not yet sent is given again to the next sale (ADR-315). Is that acceptable for
    GST, or should a restore skip numbers ahead?
+11. A mirror's pill says "Venue offline" of a venue that is on and has sold
+   nothing for two minutes (ADR-329): the copy cannot tell quiet from off.
+   Should the venue write on a beat while its backup is on, or the word change?
 
 ---
 
@@ -146,4 +154,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6a and 6b of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6a, 6b and 6d1 of 9)

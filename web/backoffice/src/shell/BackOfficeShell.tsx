@@ -3,19 +3,26 @@
 // the section navigation on the left; and the `g` chords that move between
 // sections. Each screen fills the rest and scrolls inside itself.
 //
+// On a mirror (ADR-329) the bar also says so, and as of when: "Mirror, as of
+// 23:10". Under 768px, where the bar has no room for it, it is a line of its
+// own under the bar.
+//
 // The design's bar also draws a search and a bell. Nothing answers either, and
 // a control that does nothing is not drawn (rebuild.md, rule 3).
 
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarIcon, LogOutIcon, MenuIcon } from "lucide-react";
+import { CalendarIcon, HistoryIcon, LogOutIcon, MenuIcon } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import type { Permission } from "../../../shared/api-types";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
+import { askMirror, mirrorAskEveryMs, mirrorText } from "../../../shared/mirror";
 import { ConnectionWord } from "../../../shared/shell/ConnectionWord";
 import { ProfileMenu } from "../../../shared/shell/ProfileMenu";
 import { Logo } from "../../../shared/ui";
+import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
+import { useMirror } from "../../../shared/use-mirror";
 import { useAway, useRealtimeNotices } from "../../../shared/use-realtime";
 import { useVenue } from "../../../shared/use-venue";
 import { clockText } from "../../../shared/venue-text";
@@ -36,6 +43,7 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
   useChords();
   useFreshWhenAway();
+  useMirrorKeptUp();
   useEscape(navOpen, () => setNavOpen(false));
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
 
@@ -58,6 +66,7 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
         <Logo variant="mark" className="h-7 shrink-0 sm:hidden" />
         <Logo className="hidden h-8 shrink-0 sm:block md:h-9" />
         <div className="ml-auto flex min-w-0 items-center gap-2 whitespace-nowrap md:gap-5">
+          <MirrorNote className="hidden rounded-pill border px-3 py-1 md:inline-flex" />
           <ConnectionWord brief className="min-w-0 text-sm" />
           <VenueClock />
           <ProfileMenu
@@ -68,6 +77,7 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
           />
         </div>
       </header>
+      <MirrorNote className="flex shrink-0 justify-center border-b px-3 py-1.5 md:hidden" />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
         <SectionNav current={sectionForPath(path)} held={auth.permissions} open={navOpen} onClose={() => setNavOpen(false)} />
         {/* Positioned, so anything absolute in a screen (every sr-only label) scrolls
@@ -92,6 +102,57 @@ function useFreshWhenAway() {
   useRealtimeNotices((notice) => {
     if (away && notice.kind === "resync") void queryClient.invalidateQueries();
   });
+}
+
+/**
+ * A mirror follows its backup only while it is being asked things (ADR-328),
+ * and a screen left open asks nothing. So while the page is on a mirror and
+ * in view, it is asked something small now and then; and when its copy turns
+ * out to be a newer one, every query is read again, so that no screen is of
+ * an older copy than the bar says.
+ */
+function useMirrorKeptUp() {
+  const store = useAuthStore();
+  const queryClient = useQueryClient();
+  const mirror = useMirror();
+  const on = mirror !== null;
+  const asOf = mirror?.asOf ?? null;
+
+  useEffect(() => {
+    if (!on) return;
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") void askMirror(store.api);
+    }, mirrorAskEveryMs);
+    return () => clearInterval(id);
+  }, [on, store]);
+
+  const shown = useRef(asOf);
+  useEffect(() => {
+    const before = shown.current;
+    shown.current = asOf;
+    // Not the first time it is known: the screens were read from this copy.
+    if (before !== null && asOf !== null && asOf > before) void queryClient.invalidateQueries();
+  }, [asOf, queryClient]);
+}
+
+/** "Mirror, as of 23:10", in the venue's zone; nothing when this is not a mirror. */
+function MirrorNote({ className }: { className?: string }) {
+  const mirror = useMirror();
+  const venue = useVenue();
+  // The day is said when it is not today's, and today turns over.
+  const now = useClock(60_000, mirror !== null);
+  if (!mirror) return null;
+  return (
+    <span
+      className={cx(
+        "items-center gap-1.5 whitespace-nowrap border-chip-info-border bg-chip-info-bg text-sm font-semibold tabular-nums text-chip-info-fg",
+        className,
+      )}
+    >
+      <HistoryIcon aria-hidden="true" size={15} className="shrink-0" />
+      {mirrorText(mirror, now, venue?.timezone ?? null)}
+    </span>
+  );
 }
 
 /** Escape closes what is open, while it is. */
