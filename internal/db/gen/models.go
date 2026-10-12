@@ -411,6 +411,7 @@ type SignInAttempt struct {
 	StaffRef string
 	At       time.Time
 	Outcome  string
+	Via      string
 }
 
 type Staff struct {
@@ -444,6 +445,7 @@ type StaffSession struct {
 	CreatedAt time.Time
 	ExpiresAt time.Time
 	EndedAt   sql.NullTime
+	Via       string
 }
 
 type Station struct {

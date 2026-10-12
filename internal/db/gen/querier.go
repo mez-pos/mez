@@ -442,11 +442,14 @@ type Querier interface {
 	PruneSignInAttempts(ctx context.Context, at time.Time) (int64, error)
 	// The venue's receipt printer, if it has one in service.
 	ReceiptPrinter(ctx context.Context, venueID int64) (ReceiptPrinterRow, error)
-	// The device's latest failed attempts, of any staff member, newest first.
+	// The device's latest failed attempts, of any staff member, newest first,
+	// however they arrived.
 	RecentDeviceFailures(ctx context.Context, arg RecentDeviceFailuresParams) ([]time.Time, error)
 	// The staff member's latest attempts that verified a PIN, newest first:
 	// successes and wrong PINs. Refusals during a lockout are left out, or a
 	// hammering client would push the failures that caused it out of the window.
+	// Only those that arrived one way: the venue's attempts and the ones from
+	// away are counted apart (ADR-314).
 	RecentStaffVerdicts(ctx context.Context, arg RecentStaffVerdictsParams) ([]RecentStaffVerdictsRow, error)
 	// Staff sessions and sign-in attempts. internal/auth is the only caller.
 	RecordSignInAttempt(ctx context.Context, arg RecordSignInAttemptParams) error

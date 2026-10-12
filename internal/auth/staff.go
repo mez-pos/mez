@@ -62,6 +62,25 @@ const (
 // HardLockReason is what a hard lock records as its reason.
 const HardLockReason = "too many failed PIN attempts"
 
+// A sign-in from away (ADR-314). Nobody is watching a phone the way a
+// counter is watched, so a PIN tried through the relay gets no window to
+// wait out: the RemoteMaxFailures-th wrong one with no right one from away
+// between them hard-locks the person, as the third lockout in a day does at
+// the venue. The two are counted apart: via is which count an attempt joins.
+const (
+	RemoteMaxFailures = 3
+
+	// RemoteHardLockReason is what that lock records as its reason.
+	RemoteHardLockReason = "too many failed PIN attempts from away"
+
+	// RemoteSessionTTL is how long a session opened through the relay
+	// lasts, from the sign-in. It is a number of its own, not the venue's.
+	RemoteSessionTTL = 12 * time.Hour
+
+	viaVenue = ""
+	viaRelay = "relay"
+)
+
 // DefaultSessionTTL is how long a staff session lasts: a long shift. The
 // terminal locks itself sooner; this is the backstop.
 const DefaultSessionTTL = 12 * time.Hour
@@ -124,6 +143,9 @@ type Session struct {
 	Staff     Staff
 	DeviceID  int64
 	ExpiresAt time.Time
+	// Remote is whether it was opened through the relay, under the rules
+	// for a sign-in from away. A relayed request is served on no other.
+	Remote bool
 }
 
 // SignedIn is a new session and its token. The token is shown once.
@@ -244,7 +266,18 @@ func (a *StaffAuth) WithPermission(ctx context.Context, venueID int64, p Permiss
 // hash, so all three wrong answers take as long as each other and read the
 // same.
 func (a *StaffAuth) SignIn(ctx context.Context, dev Device, staffRef, pin string) (SignedIn, error) {
-	row, err := a.verify(ctx, dev, staffRef, pin, nil)
+	return a.signIn(ctx, dev, staffRef, pin, viaVenue)
+}
+
+// SignInRemote is SignIn for a request that came through the relay. A wrong
+// PIN joins the count of those from away, and the session it opens is marked
+// as opened there and lasts RemoteSessionTTL (ADR-314).
+func (a *StaffAuth) SignInRemote(ctx context.Context, dev Device, staffRef, pin string) (SignedIn, error) {
+	return a.signIn(ctx, dev, staffRef, pin, viaRelay)
+}
+
+func (a *StaffAuth) signIn(ctx context.Context, dev Device, staffRef, pin, via string) (SignedIn, error) {
+	row, err := a.verify(ctx, dev, staffRef, pin, nil, via)
 	if err != nil {
 		return SignedIn{}, err
 	}
@@ -257,15 +290,20 @@ func (a *StaffAuth) SignIn(ctx context.Context, dev Device, staffRef, pin string
 	if err != nil {
 		return SignedIn{}, err
 	}
+	ttl := a.ttl
+	if via == viaRelay {
+		ttl = RemoteSessionTTL
+	}
 	session := Session{
 		Staff:     who,
 		DeviceID:  dev.ID,
-		ExpiresAt: now.Add(a.ttl),
+		ExpiresAt: now.Add(ttl),
+		Remote:    via == viaRelay,
 	}
 	err = a.db.WriteTx(ctx, func(q *gen.Queries) error {
 		id, err := q.CreateStaffSession(ctx, gen.CreateStaffSessionParams{
 			TokenHash: hashed, VenueID: dev.VenueID, StaffID: row.ID, DeviceID: dev.ID,
-			CreatedAt: now, ExpiresAt: session.ExpiresAt,
+			CreatedAt: now, ExpiresAt: session.ExpiresAt, Via: via,
 		})
 		session.ID = id
 		return err
@@ -281,9 +319,10 @@ func (a *StaffAuth) SignIn(ctx context.Context, dev Device, staffRef, pin string
 // a reopen. The permission checked is the authoriser's, never the caller's.
 //
 // It runs the same gauntlet as a sign-in, so override attempts count toward
-// the same lockouts and are recorded in the same place.
+// the same lockouts and are recorded in the same place. It is the venue's:
+// nothing that takes an override is reachable through the relay.
 func (a *StaffAuth) Authorise(ctx context.Context, dev Device, staffRef, pin string, p Permission) (Staff, error) {
-	row, err := a.verify(ctx, dev, staffRef, pin, &p)
+	row, err := a.verify(ctx, dev, staffRef, pin, &p, viaVenue)
 	if err != nil {
 		return Staff{}, err
 	}
@@ -305,8 +344,9 @@ func (a *StaffAuth) staffOf(ctx context.Context, row gen.Staff) (Staff, error) {
 // against a dummy hash when there is nobody to compare against, and record
 // what happened. When need is set, the staff member must also hold that
 // permission, which is checked after the PIN so a manager who lacks it is
-// told apart from one who mistyped.
-func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string, need *Permission) (gen.Staff, error) {
+// told apart from one who mistyped. via is how the request arrived, and
+// decides which lock is checked and which count a wrong PIN joins.
+func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string, need *Permission, via string) (gen.Staff, error) {
 	row, known, err := a.findStaff(ctx, dev.VenueID, staffRef)
 	if err != nil {
 		return gen.Staff{}, err
@@ -322,14 +362,24 @@ func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string
 	unlock := a.locks.lock(key)
 	defer unlock()
 
+	// Read again now that the turn is ours. The attempt before this one may
+	// have hard-locked the person, and from away that lock is the only one
+	// there is: judged on the row read before the wait, every guess sent at
+	// once would be compared, and a right one would sign in past the lock.
+	if known {
+		if row, known, err = a.findStaff(ctx, dev.VenueID, staffRef); err != nil {
+			return gen.Staff{}, err
+		}
+	}
+
 	now := a.now().UTC()
 
 	attempt := gen.RecordSignInAttemptParams{
 		VenueID: dev.VenueID, DeviceID: dev.ID, StaffRef: clip(staffRef), At: now,
-		StaffID: sql.NullInt64{Int64: row.ID, Valid: known},
+		StaffID: sql.NullInt64{Int64: row.ID, Valid: known}, Via: via,
 	}
 
-	if locked, err := a.locked(ctx, dev, row.ID, known, now); err != nil || locked != nil {
+	if locked, err := a.locked(ctx, dev, row.ID, known, via, now); err != nil || locked != nil {
 		if err != nil {
 			return gen.Staff{}, err
 		}
@@ -367,9 +417,13 @@ func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string
 			return gen.Staff{}, err
 		}
 		a.log.Warn("PIN refused", "venue_id", dev.VenueID, "device_id", dev.ID, "actor_id", row.ID,
-			"outcome", outcome, "hard_locked", hardLocked)
+			"outcome", outcome, "hard_locked", hardLocked, "via", via)
 		if outcome == outcomeInvalidPIN {
-			if err := a.countLockout(ctx, dev, row, now); err != nil {
+			count := a.countLockout
+			if via == viaRelay {
+				count = a.countRemoteStrike
+			}
+			if err := count(ctx, dev, row, now); err != nil {
 				return gen.Staff{}, err
 			}
 		}
@@ -394,7 +448,7 @@ func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string
 			return gen.Staff{}, fmt.Errorf("%w: %s cannot %s", ErrForbidden, row.Name, *need)
 		}
 	}
-	a.log.Info("PIN accepted", "venue_id", dev.VenueID, "device_id", dev.ID, "actor_id", row.ID)
+	a.log.Info("PIN accepted", "venue_id", dev.VenueID, "device_id", dev.ID, "actor_id", row.ID, "via", via)
 	return row, nil
 }
 
@@ -439,8 +493,10 @@ func (a *StaffAuth) findStaff(ctx context.Context, venueID int64, ref string) (g
 	return row, true, nil
 }
 
-// locked checks the device's limit, then the staff member's.
-func (a *StaffAuth) locked(ctx context.Context, dev Device, staffID int64, known bool, now time.Time) (*LockedError, error) {
+// locked checks the device's limit, then the staff member's window. The
+// window is the venue's: from away there is none to wait out, only the hard
+// lock, which is on the staff row and is read by verify.
+func (a *StaffAuth) locked(ctx context.Context, dev Device, staffID int64, known bool, via string, now time.Time) (*LockedError, error) {
 	q := a.db.Queries()
 	failures, err := q.RecentDeviceFailures(ctx, gen.RecentDeviceFailuresParams{
 		DeviceID: dev.ID, Limit: int64(a.deviceLockout.MaxFailures),
@@ -451,7 +507,7 @@ func (a *StaffAuth) locked(ctx context.Context, dev Device, staffID int64, known
 	if wait := lockRemaining(failures, a.deviceLockout, now); wait > 0 {
 		return &LockedError{Scope: "device", RetryAfter: wait}, nil
 	}
-	if !known {
+	if !known || via == viaRelay {
 		return nil, nil
 	}
 
@@ -465,16 +521,27 @@ func (a *StaffAuth) locked(ctx context.Context, dev Device, staffID int64, known
 	return nil, nil
 }
 
-// staffLock is how long a staff member's own lock has left. A success
-// resets the count, and so does a manager clearing a hard lock: only wrong
-// PINs since the later of the two hold a lock.
+// staffLock is how long a staff member's own lock at the venue has left.
 func (a *StaffAuth) staffLock(ctx context.Context, staffID int64, now time.Time) (time.Duration, error) {
+	since, err := a.strikes(ctx, staffID, viaVenue, a.staffLockout.MaxFailures)
+	if err != nil {
+		return 0, err
+	}
+	return lockRemaining(since, a.staffLockout, now), nil
+}
+
+// strikes is a staff member's wrong PINs that still count, newest first, of
+// those that arrived one way, looking at their latest limit attempts. A
+// success resets the count, and so does a manager clearing a hard lock: only
+// wrong PINs since the later of the two are returned. Fewer than limit can
+// lock nothing, so they are returned without asking when a lock was cleared.
+func (a *StaffAuth) strikes(ctx context.Context, staffID int64, via string, limit int) ([]time.Time, error) {
 	q := a.db.Queries()
 	verdicts, err := q.RecentStaffVerdicts(ctx, gen.RecentStaffVerdictsParams{
-		StaffID: sql.NullInt64{Int64: staffID, Valid: true}, Limit: int64(a.staffLockout.MaxFailures),
+		StaffID: sql.NullInt64{Int64: staffID, Valid: true}, Via: via, Limit: int64(limit),
 	})
 	if err != nil {
-		return 0, fmt.Errorf("auth: reading sign-in attempts: %w", err)
+		return nil, fmt.Errorf("auth: reading sign-in attempts: %w", err)
 	}
 	var since []time.Time
 	for _, v := range verdicts {
@@ -483,17 +550,16 @@ func (a *StaffAuth) staffLock(ctx context.Context, staffID int64, now time.Time)
 		}
 		since = append(since, v.At)
 	}
-	wait := lockRemaining(since, a.staffLockout, now)
-	if wait == 0 {
-		return 0, nil
+	if len(since) < limit {
+		return since, nil
 	}
-	// Read only when there is a lock to lift: almost every attempt has none.
+	// Read only when there may be a lock to lift: almost every attempt has none.
 	cleared, err := q.LastStaffLockClear(ctx, staffID)
 	if errors.Is(err, sql.ErrNoRows) || (err == nil && !cleared.Valid) {
-		return wait, nil
+		return since, nil
 	}
 	if err != nil {
-		return 0, fmt.Errorf("auth: reading when a lock was cleared: %w", err)
+		return nil, fmt.Errorf("auth: reading when a lock was cleared: %w", err)
 	}
 	var after []time.Time
 	for _, at := range since {
@@ -502,7 +568,40 @@ func (a *StaffAuth) staffLock(ctx context.Context, staffID int64, now time.Time)
 		}
 		after = append(after, at)
 	}
-	return lockRemaining(after, a.staffLockout, now), nil
+	return after, nil
+}
+
+// countRemoteStrike runs after a wrong PIN through the relay for someone who
+// could have signed in. The RemoteMaxFailures-th in a row hard-locks them
+// and ends their sessions, in one transaction. It is recorded as a lockout
+// too, so that clearing the lock wipes these strikes as it does the venue's.
+func (a *StaffAuth) countRemoteStrike(ctx context.Context, dev Device, row gen.Staff, now time.Time) error {
+	since, err := a.strikes(ctx, row.ID, viaRelay, RemoteMaxFailures)
+	if err != nil || len(since) < RemoteMaxFailures {
+		return err
+	}
+	hard := false
+	err = a.db.WriteTx(ctx, func(q *gen.Queries) error {
+		if err := q.RecordStaffLockout(ctx, gen.RecordStaffLockoutParams{VenueID: row.VenueID, StaffID: row.ID, At: now}); err != nil {
+			return err
+		}
+		n, err := q.SetStaffHardLock(ctx, gen.SetStaffHardLockParams{
+			LockedAt: sql.NullTime{Time: now, Valid: true}, Reason: RemoteHardLockReason, ID: row.ID,
+		})
+		if err != nil || n == 0 {
+			return err
+		}
+		hard = true
+		return q.EndSessionsOfStaff(ctx, gen.EndSessionsOfStaffParams{Now: sql.NullTime{Time: now, Valid: true}, StaffID: row.ID})
+	})
+	if err != nil {
+		return fmt.Errorf("auth: locking after wrong PINs from away: %w", err)
+	}
+	if hard {
+		a.log.Warn("staff hard-locked until a manager clears it", "venue_id", row.VenueID, "device_id", dev.ID,
+			"staff_id", row.ID, "via", viaRelay, "reason", RemoteHardLockReason)
+	}
+	return nil
 }
 
 // countLockout runs after a wrong PIN for someone who could have signed in.
@@ -630,6 +729,7 @@ func (a *StaffAuth) Session(ctx context.Context, dev Device, token string) (Sess
 		Staff:     Staff{ID: row.StaffID, PublicID: row.StaffPublicID, VenueID: row.VenueID, Name: row.StaffName, RoleID: row.RoleID, RoleName: row.RoleName},
 		DeviceID:  row.DeviceID,
 		ExpiresAt: row.ExpiresAt.UTC(),
+		Remote:    row.Via == viaRelay,
 	}, nil
 }
 

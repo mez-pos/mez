@@ -677,6 +677,19 @@ who manages the venue: the owner, a manager. A cashier's or a waiter's PIN
 is refused from away even when it is right, and a till's or a kitchen
 display's pairing opens nothing from outside the building.
 
+**Signing in from away is stricter than at the venue.** Three wrong PINs
+from away, with no right one from away between them, lock that person
+everywhere, at the till too, and the lock does not lift by itself. Someone
+else who manages staff clears it at the venue (**People**, the person,
+**Unlock**), which cannot be done from away; a venue with nobody else runs
+`mez unlock` on its computer ([`running.md`](running.md)). Wrong PINs at
+the venue and from away are counted apart, so a fumble at the till does not
+bring this closer. A sign-in from away lasts twelve hours and then asks for
+the PIN again, and a sign-in made at the venue is not carried home: the
+same computer opened from away asks again. If someone is locked this way
+and it was not them, a paired phone is in the wrong hands: revoke it
+(below) before clearing the lock.
+
 **1. Get a key that allows it.** The relay's operator issues one
 ([`build/relay/README.md`](../build/relay/README.md): `relay issue-key
 my-cafe --remote`). It reads `mzr_my-cafe.<id>.remote.<...>`. The key you

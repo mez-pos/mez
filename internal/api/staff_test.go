@@ -447,6 +447,9 @@ func (brokenStaff) WithPermission(context.Context, int64, auth.Permission) ([]au
 func (brokenStaff) SignIn(context.Context, auth.Device, string, string) (auth.SignedIn, error) {
 	return auth.SignedIn{}, errDiskGone
 }
+func (brokenStaff) SignInRemote(context.Context, auth.Device, string, string) (auth.SignedIn, error) {
+	return auth.SignedIn{}, errDiskGone
+}
 func (brokenStaff) Session(context.Context, auth.Device, string) (auth.Session, error) {
 	return auth.Session{}, errDiskGone
 }

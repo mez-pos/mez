@@ -11421,3 +11421,71 @@ without pairing again is not known until 8b; if it cannot, a suspended venue kee
 uploading for its thirty days and the model carries ₹25 for it. Not decided here:
 whether the prices are shown with GST or before it, and proration when a monthly
 venue moves to yearly (until it is, the yearly starts when the month ends).
+
+## ADR-314 - A sign-in from away is counted in a ledger of its own, locks on the third wrong PIN, and opens a session that says where it was opened
+2026-10 · Status: accepted. Phase 13, Task 5. Written before the code.
+Context: ADR-308 let a relayed request reach sign-in, and from then on a staff PIN
+could be tried from anywhere by whoever holds a paired back office device. The rules
+it met were the counter's (ADR-260): five wrong in a quarter hour locks for the rest
+of it, the third such lock in a day locks until a manager clears it. That is fifteen
+guesses before anything lasting happens, set for a cashier who fumbles at a till
+with people watching. Nobody is watching a phone. The phase file asked for three
+things: a device that was paired properly, remote attempts counted apart and
+harder, and a remote session that ends after 12 hours.
+Decision:
+  - **The device rule is already true and gains nothing here.** A relayed request
+    is refused unless its device is a back office (ADR-308). A device becomes one
+    only by redeeming a code, and making a code is not on the remote allow list, so
+    every device that can sign in from away was paired at the venue or with a code
+    made there in the last ten minutes (`PairingCodeTTL`).
+  - **Where an attempt came from is recorded.** `sign_in_attempts.via` is `''` for
+    the venue's network and `'relay'` for the relay, and so is `staff_sessions.via`
+    (migration 00054). `auth.StaffAuth` gains `SignInRemote`; the API calls it when
+    the request is relayed and `SignIn` otherwise. Overrides stay as they are: every
+    route that takes one is refused through the relay before it is read.
+  - **Two ledgers.** The window lock and the day's count of them read only the
+    venue's attempts, as before. A remote attempt reads only remote ones. A right
+    PIN at the till does not forgive two wrong ones from away, and a wrong one at
+    the till does not bring a remote lock closer. The device's own limit, twenty in
+    a quarter hour, counts every attempt on it wherever it came from.
+  - **Three strikes from away.** The third wrong PIN through the relay with no
+    right one from away between them (`RemoteMaxFailures`) hard-locks the person:
+    the same `locked_at` ADR-260 made, with the reason "too many failed PIN
+    attempts from away", their sessions ended in the same transaction, and a
+    `staff_lockouts` row so that clearing it wipes the count as it does for the
+    other kind. There is no window: the strikes stand until a right PIN from away
+    or a clear, or until the attempt log's thirty days drop them. The lock is
+    cleared where every hard lock is: by someone else who manages staff, at the
+    venue (the unlock route is refused through the relay, ADR-308), or by `mez
+    unlock` on the machine.
+  - **The answer gives nothing away.** The third wrong PIN is answered as the
+    first was, and a right PIN after it reads as a wrong one, as ADR-260 has it.
+    Nobody outside is told that a lock fell.
+  - **An attempt reads the person again when its turn comes.** Attempts on one
+    person already wait for each other. Each now reads the staff row after the
+    wait and not before it, so twenty PINs sent at once are three guesses and
+    seventeen refusals, and a right one behind the third wrong one opens nothing.
+    At the venue the window was read after the wait already; from away the hard
+    lock is the only lock, and it was being judged on a row read before it. A
+    review found this before the commit.
+  - **A session knows where it was opened.** One opened through the relay lasts
+    `RemoteSessionTTL`, twelve hours from the sign-in and not from the last
+    request, whatever the venue's own session length becomes. A relayed request is
+    served only on a session opened through the relay: one opened at the venue
+    does not travel, and is answered `sign_in_required`, so the PIN is asked for
+    again under these rules. A session opened from away still works at the venue;
+    it was the harder one to get.
+Because: the lock that already exists is the right one. It is visible on the
+People screen, it ends the sessions, it is cleared by a person in the room, and it
+needs no second kind of locked for a manager to learn. What was missing was only
+how soon it falls for someone who is not in the room.
+Cost: a locked person is locked at the till too. Someone holding a paired back
+office phone can lock the owner out of their own venue with three taps, and a
+cashier as well, since a cashier's wrong PIN from away is counted before their role
+is looked at (it must be, or the answer would say who is a manager). The remedy is
+another manager, or `mez unlock`, and then revoking the phone; a venue with one
+owner and no second manager needs the machine. An owner who mistypes twice from
+home and gives up carries those two strikes until they next sign in from away or
+thirty days pass. Twelve hours is also today's length at the venue, so nothing is
+shorter yet; the two are now separate numbers. Phase 14's cloud sign-in opens this
+same session by another door and is not built here.

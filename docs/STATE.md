@@ -10,24 +10,25 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. **Phase 13 is not closed**: its Task 5 (a remote
-session harder to take, ADR before code, `docs/phases/phase-13.md`) is
-unbuilt and must land before Task 5 here. Phases 00 to 12 are built; what
-they still owe is in `docs/KNOWN.md` and in the "Still owed" list below.
+both, 8 is `mez-cloud`'s. Task 1 is done (ADR-313). Phase 13's five tasks
+are built and it owes its human check: the walk on a real phone below.
+Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
+in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 1 - ADR-313: the entitlement states and the Razorpay
-events.** A document, no code. Three dates on the cloud's venue row,
-written by one function: `paid_until` (the owner reads), `entitled_until`
-= that + 7 days of grace (the relay reads), `backups_kept_until` = that +
-30 days (mirror, download, restore). Six states; `grace`, `suspended` and
-`closed` are made by the clock through one pure `StateAt`. The table of
-six Razorpay events, with `payment.failed` moving nothing. Prices: ₹999
-and ₹9,999, founders ₹699 and ₹6,999 for the first hundred. A venue under
-₹100 a month, so a venue on mez Cloud backs up every 30 s at the fastest.
-Task 3 in the phase file now carries `State` and `PaidUntil` and a
-once-a-minute retry after `not_entitled`.
+**Phase 13, Task 5 - A remote session is harder to take than a LAN one**
+(ADR-314), built on 2026-10-12 at the human's word, after Phase 14's Task
+1. Where a sign-in came from is recorded (`via` on `sign_in_attempts` and
+`staff_sessions`, migration 00054). `auth.SignInRemote`: wrong PINs from
+away are counted apart from the venue's, and the third in a row
+hard-locks the person with ADR-260's lock, at the till too, until someone
+at the venue or `mez unlock` clears it. A session opened through the
+relay lasts `auth.RemoteSessionTTL` (12 h) and a relayed request is
+served on no other kind: one opened at the venue answers
+`sign_in_required` from away. Tests in `internal/auth/remote_test.go` and
+`internal/api/remote_test.go`; `deploy.md` has the owner's paragraph. No
+screen changed and none was walked.
 
 ## Next task
 
@@ -38,10 +39,9 @@ default `30s`, floor `5s`, part size to match, the interval in `GET
 no `[cloud]` section until Task 4, so Task 2 builds the setting and the
 floor and Task 4 applies the cloud's.
 
-**Or first, Phase 13, Task 5**, if the human would rather close Phase 13:
-remote PIN attempts counted apart (3 wrong, then locked until someone at
-the venue clears it), a remote session that expires after 12 hours. Read
-`internal/auth` before deciding their shape.
+**The live relay's venues are safe to give a `--remote` key now**: the
+venue's binary must be one built from this commit or later, since the
+stricter sign-in is the venue's and not the relay's.
 
 **Before or beside it, the human's:** the live relay at relay.jskin.in was
 deployed with Phase 13 on 2026-10-08 (`v0.1.0-alpha.4`, health ok, no
@@ -78,8 +78,8 @@ Still owed from phase 11, its human check and:
 ## Known broken / in progress
 
 - **The back office from away is built and unseen on a real phone**
-  (ADR-306 to ADR-311). The live relay runs it; no venue has a `--remote`
-  key yet.
+  (ADR-306 to ADR-311, ADR-314). The live relay runs it; no venue has a
+  `--remote` key yet.
 - **Between phases (ADR-256 to ADR-262): the first security review and
   what the owner decided.** A till's line is priced from the menu on the
   server; a relay must be TLS; revoking a device cuts its stream; the log
@@ -132,5 +132,5 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] Rebuild - the screens follow the mez design (built; owes the owner's walk)
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
-- [ ] 13 - The back office from anywhere (Tasks 1 to 4 built; Task 5 owed)
+- [ ] 13 - The back office from anywhere (built; owes its human check)
 - [ ] 14 - mez Cloud: the account, the pairing and the switch (Task 1 of 9)

@@ -12,8 +12,8 @@ import (
 )
 
 const createStaffSession = `-- name: CreateStaffSession :one
-INSERT INTO staff_sessions (token_hash, venue_id, staff_id, device_id, created_at, expires_at)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO staff_sessions (token_hash, venue_id, staff_id, device_id, created_at, expires_at, via)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 RETURNING id
 `
 
@@ -24,6 +24,7 @@ type CreateStaffSessionParams struct {
 	DeviceID  int64
 	CreatedAt time.Time
 	ExpiresAt time.Time
+	Via       string
 }
 
 func (q *Queries) CreateStaffSession(ctx context.Context, arg CreateStaffSessionParams) (int64, error) {
@@ -34,6 +35,7 @@ func (q *Queries) CreateStaffSession(ctx context.Context, arg CreateStaffSession
 		arg.DeviceID,
 		arg.CreatedAt,
 		arg.ExpiresAt,
+		arg.Via,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -88,7 +90,8 @@ type RecentDeviceFailuresParams struct {
 	Limit    int64
 }
 
-// The device's latest failed attempts, of any staff member, newest first.
+// The device's latest failed attempts, of any staff member, newest first,
+// however they arrived.
 func (q *Queries) RecentDeviceFailures(ctx context.Context, arg RecentDeviceFailuresParams) ([]time.Time, error) {
 	rows, err := q.db.QueryContext(ctx, recentDeviceFailures, arg.DeviceID, arg.Limit)
 	if err != nil {
@@ -115,13 +118,14 @@ func (q *Queries) RecentDeviceFailures(ctx context.Context, arg RecentDeviceFail
 const recentStaffVerdicts = `-- name: RecentStaffVerdicts :many
 SELECT at, outcome
 FROM sign_in_attempts
-WHERE staff_id = ? AND outcome IN ('success', 'invalid_pin')
+WHERE staff_id = ? AND via = ? AND outcome IN ('success', 'invalid_pin')
 ORDER BY id DESC
 LIMIT ?
 `
 
 type RecentStaffVerdictsParams struct {
 	StaffID sql.NullInt64
+	Via     string
 	Limit   int64
 }
 
@@ -133,8 +137,10 @@ type RecentStaffVerdictsRow struct {
 // The staff member's latest attempts that verified a PIN, newest first:
 // successes and wrong PINs. Refusals during a lockout are left out, or a
 // hammering client would push the failures that caused it out of the window.
+// Only those that arrived one way: the venue's attempts and the ones from
+// away are counted apart (ADR-314).
 func (q *Queries) RecentStaffVerdicts(ctx context.Context, arg RecentStaffVerdictsParams) ([]RecentStaffVerdictsRow, error) {
-	rows, err := q.db.QueryContext(ctx, recentStaffVerdicts, arg.StaffID, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, recentStaffVerdicts, arg.StaffID, arg.Via, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +164,8 @@ func (q *Queries) RecentStaffVerdicts(ctx context.Context, arg RecentStaffVerdic
 
 const recordSignInAttempt = `-- name: RecordSignInAttempt :exec
 
-INSERT INTO sign_in_attempts (venue_id, device_id, staff_id, staff_ref, at, outcome)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO sign_in_attempts (venue_id, device_id, staff_id, staff_ref, at, outcome, via)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 `
 
 type RecordSignInAttemptParams struct {
@@ -169,6 +175,7 @@ type RecordSignInAttemptParams struct {
 	StaffRef string
 	At       time.Time
 	Outcome  string
+	Via      string
 }
 
 // Staff sessions and sign-in attempts. internal/auth is the only caller.
@@ -180,13 +187,14 @@ func (q *Queries) RecordSignInAttempt(ctx context.Context, arg RecordSignInAttem
 		arg.StaffRef,
 		arg.At,
 		arg.Outcome,
+		arg.Via,
 	)
 	return err
 }
 
 const staffSessionByTokenHash = `-- name: StaffSessionByTokenHash :one
 SELECT
-    s.id, s.venue_id, s.staff_id, s.device_id, s.expires_at, s.ended_at,
+    s.id, s.venue_id, s.staff_id, s.device_id, s.expires_at, s.ended_at, s.via,
     st.public_id AS staff_public_id, st.name AS staff_name, st.role_id, r.name AS role_name, st.active AS staff_active
 FROM staff_sessions s
 JOIN staff st ON st.id = s.staff_id
@@ -201,6 +209,7 @@ type StaffSessionByTokenHashRow struct {
 	DeviceID      int64
 	ExpiresAt     time.Time
 	EndedAt       sql.NullTime
+	Via           string
 	StaffPublicID string
 	StaffName     string
 	RoleID        int64
@@ -218,6 +227,7 @@ func (q *Queries) StaffSessionByTokenHash(ctx context.Context, tokenHash string)
 		&i.DeviceID,
 		&i.ExpiresAt,
 		&i.EndedAt,
+		&i.Via,
 		&i.StaffPublicID,
 		&i.StaffName,
 		&i.RoleID,

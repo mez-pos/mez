@@ -123,7 +123,15 @@ Phase 11 (the relay and the tunnel) and Phase 10 (the back office).
   `bin/mez`: pair a phone browser over the relay, change a price, see it on
   the till.
 
-- [ ] **Task 5 - A remote session is harder to take than a LAN one.**
+- [x] **Task 5 - A remote session is harder to take than a LAN one.**
+  As built (ADR-314): the device rule was already true and gained nothing.
+  `sign_in_attempts.via` and `staff_sessions.via` (migration 00054);
+  `auth.SignInRemote`, two ledgers, the third wrong PIN from away in a row
+  hard-locks with ADR-260's lock and its own reason; a session opened
+  through the relay lasts `RemoteSessionTTL` and is the only kind a
+  relayed request is served on. `deploy.md` says so to the owner. Not
+  walked in a browser: there is no screen to it, only a refusal. The task
+  as it was set:
   Over the relay a PIN alone is not enough: a remote sign-in needs the
   device to have been paired within the venue's wifi or with a code made
   in the last ten minutes (the pairing flow already does this), the PIN

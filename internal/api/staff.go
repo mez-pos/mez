@@ -22,6 +22,7 @@ type Staff interface {
 	ActiveStaff(ctx context.Context, venueID int64) ([]auth.Staff, error)
 	WithPermission(ctx context.Context, venueID int64, p auth.Permission) ([]auth.Staff, error)
 	SignIn(ctx context.Context, dev auth.Device, staffRef, pin string) (auth.SignedIn, error)
+	SignInRemote(ctx context.Context, dev auth.Device, staffRef, pin string) (auth.SignedIn, error)
 	Session(ctx context.Context, dev auth.Device, token string) (auth.Session, error)
 	SignOut(ctx context.Context, s auth.Session) error
 	Permissions(ctx context.Context, roleID int64) (auth.PermissionSet, error)
@@ -94,6 +95,12 @@ func (s *Server) requireStaff(next http.Handler) http.Handler {
 				s.refuseRemoteStaff(w)
 				return
 			}
+			// A session opened at the venue does not travel: from away the
+			// PIN is asked for again, under the rules for there (ADR-314).
+			if !session.Remote {
+				s.unauthenticated(w, CodeSignInRequired, "sign in to do that")
+				return
+			}
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), staffKey, session)))
 	})
@@ -157,7 +164,13 @@ func (s *Server) signIn(w http.ResponseWriter, r *http.Request) {
 	}
 	dev, _ := DeviceFrom(r.Context())
 
-	in, err := s.staff.SignIn(r.Context(), dev, req.StaffID, req.PIN)
+	// From away a wrong PIN is counted apart and harder, and the session
+	// opened is one a relayed request will be served on (ADR-314).
+	signIn := s.staff.SignIn
+	if relayed(r) {
+		signIn = s.staff.SignInRemote
+	}
+	in, err := signIn(r.Context(), dev, req.StaffID, req.PIN)
 	var locked *auth.LockedError
 	switch {
 	case errors.As(err, &locked):

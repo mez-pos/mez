@@ -8,7 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 13, Task 4 - The owner turns it on and sees where to go**
+**Phase 14, Task 1 - ADR-313: the entitlement states and the Razorpay
+events.** A document, no code. Three dates on the cloud's venue row,
+written by one function: `paid_until` (the owner reads), `entitled_until`
+= that + 7 days of grace (the relay reads), `backups_kept_until` = that +
+30 days (mirror, download, restore). Six states, three made by the clock.
+The table of six Razorpay events. Prices ₹999 and ₹9,999, founders ₹699
+and ₹6,999. A venue under ₹100 a month. Task 3 in the phase file gained
+`State`, `PaidUntil` and a once-a-minute retry after `not_entitled`.
+
+Before it, **Phase 13, Task 4 - The owner turns it on and sees where to go**
 (ADR-310). `GET /api/v1/tunnel` has `back_office_url`. The Devices screen
 has a "Back office from anywhere" card (`RemoteCard.tsx`,
 `remote-logic.ts`): how it stands, the address with Copy, and what to do.

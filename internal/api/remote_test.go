@@ -364,6 +364,25 @@ func TestARelayedRequestIsHeldToTheOwnersRules(t *testing.T) {
 	}
 	asOwner := withStaff(office, owner.Token)
 
+	t.Run("the owner's session opened at the venue does not travel either", func(t *testing.T) {
+		in := signIn(office, "stf_PRIYA001", "2468")
+		if in == nil {
+			t.Fatal("sign in at the venue failed")
+		}
+		h := withStaff(office, in.Token)
+		served(t, "at the venue", "GET", "/api/v1/sessions/current", "", h, http.StatusOK)
+		rec := send(r.handler, http.MethodGet, "/api/v1/sessions/current", "", viaRelay(h))
+		if rec.Code != http.StatusUnauthorized || errorOf(t, rec).Code != CodeSignInRequired {
+			t.Errorf("through the relay: status %d, body %s; want 401 %s", rec.Code, rec.Body, CodeSignInRequired)
+		}
+	})
+
+	// How long it lasts is internal/auth's test: here the two lengths are
+	// the same number, and an assertion on it would prove nothing.
+	t.Run("a session opened from away works at the venue", func(t *testing.T) {
+		served(t, "at the venue", "GET", "/api/v1/sessions/current", "", asOwner, http.StatusOK)
+	})
+
 	t.Run("the owner signs in and does the desk's work", func(t *testing.T) {
 		served(t, "who is signed in", "GET", "/api/v1/sessions/current", "", viaRelay(asOwner), http.StatusOK)
 		served(t, "reading orders", "GET", "/api/v1/orders/today", "", asOwner, http.StatusOK)
@@ -402,6 +421,28 @@ func TestARelayedRequestIsHeldToTheOwnersRules(t *testing.T) {
 		}
 		if _, present := lines[2]["via"]; present {
 			t.Errorf("a request from the venue carries via: %v", lines[2])
+		}
+	})
+
+	// Last, since it locks the owner out (ADR-314).
+	t.Run("the third wrong PIN from away locks, and says nothing of it", func(t *testing.T) {
+		for i := range auth.RemoteMaxFailures {
+			rec := send(r.handler, http.MethodPost, "/api/v1/sessions", `{"staff_id":"stf_PRIYA001","pin":"000000"}`, viaRelay(office))
+			if rec.Code != http.StatusUnauthorized || errorOf(t, rec).Code != CodeInvalidPIN {
+				t.Fatalf("wrong PIN %d through the relay: status %d, body %s", i+1, rec.Code, rec.Body)
+			}
+		}
+		rec := send(r.handler, http.MethodPost, "/api/v1/sessions", `{"staff_id":"stf_PRIYA001","pin":"2468"}`, viaRelay(office))
+		if rec.Code != http.StatusUnauthorized || errorOf(t, rec).Code != CodeInvalidPIN {
+			t.Errorf("the right PIN through the relay, locked: status %d, body %s", rec.Code, rec.Body)
+		}
+		if signIn(office, "stf_PRIYA001", "2468") != nil {
+			t.Error("locked from away, the right PIN still signs in at the venue")
+		}
+		// The session the owner had from away went with the lock.
+		gone := send(r.handler, http.MethodGet, "/api/v1/sessions/current", "", viaRelay(asOwner))
+		if gone.Code != http.StatusUnauthorized || errorOf(t, gone).Code != CodeSignInRequired {
+			t.Errorf("the session open before the lock: status %d, body %s", gone.Code, gone.Body)
 		}
 	})
 }
