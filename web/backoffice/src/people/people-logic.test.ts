@@ -3,6 +3,10 @@ import { ApiError } from "../../../shared/api";
 import type { Permission, Person, Role } from "../../../shared/api-types";
 import {
   appliesText,
+  cloudEditNote,
+  deactivateWords,
+  sinceText,
+  staffActions,
   chosenRole,
   lockedNote,
   mayGive,
@@ -214,5 +218,54 @@ describe("a hard lock (ADR-260)", () => {
     expect(mayUnlock(locked("2026-10-03T09:48:00Z"), "a")).toBe(false);
     expect(mayUnlock(base, "b")).toBe(false);
     expect(mayUnlock(locked("2026-10-03T09:48:00Z", { active: false }), "b")).toBe(true);
+  });
+});
+
+describe("the person mez Cloud signs in as (ADR-323)", () => {
+  const priya: Person = {
+    id: "stf_1",
+    name: "Priya",
+    role_id: 1,
+    role_name: "owner",
+    active: true,
+    since: "2026-09-01T00:00:00Z",
+    locked_at: null,
+    cloud: false,
+  };
+  const account: Person = { ...priya, id: "stf_2", name: "Priya Menon", since: "2026-10-12T06:17:21Z", cloud: true };
+
+  it("is said to be that, under the name", () => {
+    expect(sinceText(account)).toBe("Signs in from mez Cloud · Since 2026-10-12");
+    expect(sinceText(priya)).toBe("Since 2026-09-01");
+  });
+
+  it("is offered no new PIN: they have none, and the server gives none", () => {
+    expect(staffActions(account, priya.id)).toEqual(["edit", "deactivate"]);
+    expect(staffActions({ ...account, active: false }, priya.id)).toEqual(["edit", "bring-back"]);
+    // Opened from mez Cloud, the row is your own: no Deactivate either.
+    expect(staffActions(account, account.id)).toEqual(["edit"]);
+  });
+
+  it("leaves everyone else's menu as it was", () => {
+    expect(staffActions(priya, "stf_9")).toEqual(["edit", "pin", "deactivate"]);
+    expect(staffActions(priya, priya.id)).toEqual(["edit", "pin"]);
+    expect(staffActions({ ...priya, locked_at: "2026-10-03T09:00:00Z" }, "stf_9")).toEqual(["unlock", "edit", "pin", "deactivate"]);
+    expect(staffActions({ ...priya, active: false }, "stf_9")).toEqual(["edit", "bring-back"]);
+  });
+
+  it("says what deactivating them shuts, before it is done", () => {
+    const words = deactivateWords(account);
+    expect(words).toContain("who your mez Cloud account signs in as");
+    expect(words).toContain("signed out now");
+    expect(words).toContain("Guests' orders and the backup are not affected");
+    expect(deactivateWords(priya)).toBe(
+      "They leave the sign-in screen and are signed out now. Their name stays on everything they did. You can bring them back.",
+    );
+  });
+
+  it("is explained over the form that edits them, and nobody else's", () => {
+    expect(cloudEditNote(account)).toContain("They have no PIN");
+    expect(cloudEditNote(priya)).toBeNull();
+    expect(cloudEditNote(null)).toBeNull();
   });
 });

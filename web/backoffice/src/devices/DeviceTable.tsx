@@ -3,13 +3,13 @@
 // under the row's "...". A revoked device stays on the list, with nothing
 // left to do to it.
 
-import { ChefHatIcon, LaptopIcon, MonitorIcon, SmartphoneIcon, type LucideIcon } from "lucide-react";
+import { ChefHatIcon, CloudIcon, LaptopIcon, MonitorIcon, SmartphoneIcon, type LucideIcon } from "lucide-react";
 import type { DeviceKind, DeviceRecordResponse } from "../../../shared/api-types";
 import { Card, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useAway } from "../../../shared/use-realtime";
 import { RowMenu } from "../RowMenu";
-import { dateText, kindWords, lastSeenText, revokedText, stateOf } from "./devices-logic";
+import { dateText, deviceActions, kindText, lastSeenText, revokedText, stateOf, type DeviceAction } from "./devices-logic";
 
 interface DeviceTableProps {
   /** In the order shown: in service, then revoked. */
@@ -22,6 +22,8 @@ interface DeviceTableProps {
 const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
 // A Record over the kinds, so a kind added in Go fails the build until it has an icon.
 const icons: Record<DeviceKind, LucideIcon> = { terminal: MonitorIcon, kitchen: ChefHatIcon, back_office: LaptopIcon, guest: SmartphoneIcon };
+// A Record over the actions, so one added in the logic fails the build until it has a label.
+const actionLabels: Record<DeviceAction, string> = { rename: "Rename", revoke: "Revoke" };
 
 export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTableProps) {
   // From away a device can be unpaired, a lost phone say, and not renamed (ADR-308).
@@ -54,8 +56,9 @@ export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTablePro
           </thead>
           <tbody>
             {devices.map((d, row) => {
-              const Icon = icons[d.kind];
+              const Icon = d.cloud ? CloudIcon : icons[d.kind];
               const revoked = d.revoked_at !== undefined;
+              const actions = deviceActions(d, away);
               return (
                 <tr key={d.id} className="border-b border-line-soft last:border-b-0">
                   <td className="py-2 pr-4">
@@ -69,7 +72,7 @@ export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTablePro
                           {d.this && <span className="text-sm font-semibold text-accent-text">This device</span>}
                         </span>
                         <span className="block text-sm text-fg-muted">
-                          {kindWords[d.kind]}
+                          {kindText(d)}
                           {revoked && `. ${revokedText(d)}`}
                           {d.this && ". You are using it: revoke it from another back office."}
                         </span>
@@ -83,16 +86,13 @@ export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTablePro
                   </td>
                   {/* The height of a row's menu, kept where there is none, so the rows are one height. */}
                   <td className="h-16 py-2">
-                    {!revoked && !(away && d.this) && (
+                    {actions.length > 0 && (
                       <span className="flex justify-end">
                         <RowMenu
                           name={d.name}
                           disabled={false}
                           up={row >= 3 && row >= devices.length - 2}
-                          actions={[
-                            ...(away ? [] : [{ label: "Rename", run: () => onRename(d) }]),
-                            ...(d.this ? [] : [{ label: "Revoke", run: () => onRevoke(d) }]),
-                          ]}
+                          actions={actions.map((action) => ({ label: actionLabels[action], run: () => (action === "rename" ? onRename(d) : onRevoke(d)) }))}
                         />
                       </span>
                     )}

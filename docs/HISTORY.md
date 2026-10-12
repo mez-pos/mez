@@ -8,7 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 5a - The assertion, the person and the sign-in**
+**Phase 14, Task 5b1 - The route, and being the cloud's device after
+it** (ADR-324). 5b was split in two. `POST /api/v1/sessions/cloud`,
+through the relay only, takes `Authorization: Mez-Cloud <assertion>` and
+answers a session and its device; the session's token is then presented
+as both the device's and the session's. `internal/service/cloudsignin`
+holds the order. Only the tunnel says a request was relayed: the server's
+own socket takes `X-Mez-Via` off. A pairing made again ends the sessions
+the last one opened. `by=cloud` in the access log, `cloud` on a person
+and a device in the API, and `build/dev/pairstub` signs an assertion.
+**Walked with curl** against a real relay, the stand-in and `bin/mez`.
+
+Before it, **Phase 14, Task 5a - The assertion, the person and the sign-in**
 (ADR-323). Task 5 was split in two. `internal/cloud/assertion.go` signs
 and checks what mez Cloud vouches with. Migration 00055 marks one staff
 row and one device row as the cloud's and keeps spent nonces. Pairing

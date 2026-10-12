@@ -14,7 +14,7 @@ import { PairModal, RenameModal, RevokeModal } from "./DeviceModals";
 import { DeviceTable } from "./DeviceTable";
 import { RemoteCard } from "./RemoteCard";
 import { TunnelCard } from "./TunnelCard";
-import { actionProblemOf, devicesSummary, kindWords, listed, runsOutText, split } from "./devices-logic";
+import { actionProblemOf, devicesSummary, kindWords, listed, revokedToast, runsOutText, split } from "./devices-logic";
 import { useDevices } from "./use-devices";
 
 type Editing = { kind: "pair" } | { kind: "rename"; device: DeviceRecordResponse } | { kind: "revoke"; device: DeviceRecordResponse };
@@ -102,7 +102,7 @@ export function DevicesScreen() {
           device={editing.device}
           onRevoke={async () => {
             await api.revoke(editing.device.id);
-            toast(`${editing.device.name} revoked.`, { tone: "success" });
+            toast(revokedToast(editing.device), { tone: "success" });
           }}
           onClose={() => setEditing(null)}
         />

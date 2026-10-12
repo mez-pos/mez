@@ -114,6 +114,19 @@ Inside the frame (`backoffice-shell.md`).
   | State | a chip: **In service**, **Quiet** (not heard from for a day), **Revoked** |
   | | **...**: Rename, and Revoke; none for a revoked device, and no Revoke on this device |
 
+- **The device called "mez Cloud"** (ADR-323, ADR-325; `cloud: true`), on
+  a venue paired to a mez Cloud account: what the owner's sign-ins from
+  their account are counted as coming from. Nobody holds it.
+  - A cloud for its mark, and under the name, in place of its kind: "Your
+    mez Cloud account's way in. Nobody holds it".
+  - Its **...** has **Revoke** and no **Rename**.
+  - **Revoke** asks in other words: "The back office can no longer be opened
+    from your mez Cloud account, and anyone signed in that way is signed out
+    at once. Guests' orders and the backup carry on. Pairing to mez Cloud
+    again, here at the venue, turns it back on." The button reads **Shut mez
+    Cloud's sign-in**, and the toast "mez Cloud's sign-in is shut."
+  - Pairing again adds a new one; the revoked one stays at the foot.
+
 - **Waiting to be paired**, a card, only when there are any: each code made
   and not yet used: the name it will have, its kind, and when it runs out.
   The code itself is not shown again.

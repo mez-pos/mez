@@ -245,7 +245,7 @@ and its first commit copies this phase's cloud tasks there.
   says `paired`. Venue-side tests with a fake pairing server; cloud-side
   tests on the code's life and single use.
 
-- [ ] **Task 5 - The owner signs in from the cloud.** *This repo, after
+- [x] **Task 5 - The owner signs in from the cloud.** *This repo, after
   Phase 13 Task 5.* Split on 2026-10-12 before building it (ADR-323): a
   session belongs to a device and the owner's browser was never paired as
   one, so there is a device to make as well as a person, and the route is
@@ -265,7 +265,7 @@ and its first commit copies this phase's cloud tasks there.
     People service and `mez reset-pin` refuse to give one, and they are
     off the sign-in tiles and out of the count of who can manage staff.
     **Nothing calls `SignInCloud` yet.**
-  - [ ] **Task 5b - The route, and what the screens say.** Split on
+  - [x] **Task 5b - The route, and what the screens say.** Split on
     2026-10-12 while building it (ADR-324): the server is one session and
     the two screens another.
     - [x] **5b1 - The route, and being the cloud's device after it.** As
@@ -287,16 +287,16 @@ and its first commit copies this phase's cloud tasks there.
       relay, a replay and another venue's assertion refused, the token
       refused on the LAN, an order refused, and the session dead the
       moment "mez Cloud" was revoked on Devices.
-    - [ ] **5b2 - The People and Devices screens say what these are.**
-      Read `docs/design/tokens.md` and the two screens' files first. On
-      People, for a person with `cloud: true`: a line under the name such
-      as "Signs in from mez Cloud", no **Reset PIN** (the server refuses
-      it with a sentence today), and what deactivating them does, said
-      before it is done. On Devices, for a device with `cloud: true`: what
-      it is in place of "Back office", no **Rename**, and **Revoke**
-      saying it shuts mez Cloud's sign-in and that pairing again brings
-      it back. Logic in the screens' `-logic.ts` files with tests. Walk
-      both in a browser on a venue paired against the stand-in.
+    - [x] **5b2 - The People and Devices screens say what these are.** As
+      built (ADR-325): on People, "Signs in from mez Cloud" under the
+      name, no **New PIN**, and Edit and Deactivate each saying what this
+      person is and what the change shuts; on Devices, a cloud for its
+      mark and "Your mez Cloud account's way in. Nobody holds it" in
+      place of its kind, no **Rename**, and Revoke as **Shut mez Cloud's
+      sign-in**. `staffActions` and `deviceActions` in the two logic
+      files, tested. **Walked in a browser** at 1366 by 768 on a venue
+      paired against the stand-in: the sign-in tiles without the person,
+      both rows, both menus, the three dialogs, and the device revoked.
 
   The task as it was set: At pairing the venue creates one staff member, kind
   `owner`, named from the account, with no PIN and the owner's permissions,

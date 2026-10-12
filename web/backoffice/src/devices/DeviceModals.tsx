@@ -7,7 +7,7 @@ import { Button, Modal } from "../../../shared/ui";
 import { Choice, Field, inputClass } from "../FormFields";
 import { FormModal } from "../FormModal";
 import type { Problem } from "../settings/problem";
-import { PAIRABLE, actionProblemOf, nameProblem, pairProblemOf, timeText, type PairField } from "./devices-logic";
+import { PAIRABLE, actionProblemOf, nameProblem, pairProblemOf, revokeWords, timeText, type PairField } from "./devices-logic";
 
 interface PairModalProps {
   /** Makes the code for a name and kind. */
@@ -186,6 +186,7 @@ interface RevokeModalProps {
 export function RevokeModal({ device, onRevoke, onClose }: RevokeModalProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const words = revokeWords(device);
   const confirm = async () => {
     setBusy(true);
     try {
@@ -206,12 +207,12 @@ export function RevokeModal({ device, onRevoke, onClose }: RevokeModalProps) {
         <>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="danger" disabled={busy} onClick={() => void confirm()}>
-            {busy ? "Revoking" : "Revoke device"}
+            {busy ? "Revoking" : words.confirm}
           </Button>
         </>
       }
     >
-      <p className="text-base">It stops working at once and shows the pairing screen. Orders it took stay as they are. To use it again it needs a new code.</p>
+      <p className="text-base">{words.body}</p>
       {error && (
         <p role="alert" className="mt-3 text-base text-danger">
           {error}

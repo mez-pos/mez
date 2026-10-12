@@ -13,6 +13,7 @@ import {
   permissionGroups,
   permissionWords,
   pinHint,
+  cloudEditNote,
   pinProblem,
   problemOf,
   roleChangePinHint,
@@ -107,6 +108,7 @@ interface StaffModalProps {
 export function StaffModal({ person, roles, held, onSave, onClose }: StaffModalProps) {
   const [form, setForm] = useState<StaffForm>(person ? staffFormFrom(person) : newStaffForm(roles, held));
   const s = useSave(onClose);
+  const cloudNote = cloudEditNote(person);
   const set = (patch: Partial<StaffForm>) => {
     setForm((f) => ({ ...f, ...patch }));
     s.setProblem(null);
@@ -122,6 +124,7 @@ export function StaffModal({ person, roles, held, onSave, onClose }: StaffModalP
 
   return (
     <Frame title={person ? `Edit ${person.name}` : "Add a person"} busy={s.busy} onSave={submit} onClose={onClose} problem={s.problem}>
+      {cloudNote && <p className="text-base text-fg-2">{cloudNote}</p>}
       <Field label="Name" error={s.on("name")}>
         {(id) => <input id={id} className={inputClass} value={form.name} maxLength={40} autoFocus onChange={(e) => set({ name: e.target.value })} />}
       </Field>
@@ -140,7 +143,7 @@ export function StaffModal({ person, roles, held, onSave, onClose }: StaffModalP
           </select>
         )}
       </Field>
-      {person && <RoleChangeHint hint={roleChangePinHint(roles, person.role_id, form.roleId)} />}
+      {person && !person.cloud && <RoleChangeHint hint={roleChangePinHint(roles, person.role_id, form.roleId)} />}
       {!person && <PinFields pin={form.pin} again={form.again} min={minPinLengthOf(roles, form.roleId)} onChange={set} on={s.on} />}
     </Frame>
   );

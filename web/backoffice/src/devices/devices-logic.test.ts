@@ -5,6 +5,10 @@ import {
   MAX_DEVICE_NAME,
   PAIRABLE,
   actionProblemOf,
+  deviceActions,
+  kindText,
+  revokeWords,
+  revokedToast,
   dateText,
   devicesSummary,
   isStale,
@@ -157,5 +161,45 @@ describe("the line under the title", () => {
       "2 in service, 1 quiet for a day or more, 1 revoked",
     );
     expect(devicesSummary([], now)).toBe("0 in service");
+  });
+});
+
+describe("the device mez Cloud signs the owner in on (ADR-323)", () => {
+  const cloud = device({ id: "dev_CLOUD001", name: "mez Cloud", kind: "back_office", cloud: true });
+
+  it("is not called a back office, which would send an owner looking for a laptop", () => {
+    expect(kindText(cloud)).toBe("Your mez Cloud account's way in. Nobody holds it");
+    expect(kindText(device({ kind: "back_office" }))).toBe("Back office");
+    expect(kindText(device())).toBe("Terminal");
+  });
+
+  it("can be revoked and not renamed", () => {
+    expect(deviceActions(cloud, false)).toEqual(["revoke"]);
+    expect(deviceActions(cloud, true)).toEqual(["revoke"]);
+    // Opened from mez Cloud, it is the device in use: nothing is offered.
+    expect(deviceActions({ ...cloud, this: true }, true)).toEqual([]);
+    expect(deviceActions({ ...cloud, revoked_at: ago(HOUR) }, false)).toEqual([]);
+  });
+
+  it("leaves every other device's menu as it was", () => {
+    expect(deviceActions(device(), false)).toEqual(["rename", "revoke"]);
+    expect(deviceActions(device(), true)).toEqual(["revoke"]);
+    expect(deviceActions(device({ this: true }), false)).toEqual(["rename"]);
+    expect(deviceActions(device({ this: true }), true)).toEqual([]);
+    expect(deviceActions(device({ revoked_at: ago(HOUR) }), false)).toEqual([]);
+  });
+
+  it("says what revoking it shuts, and what it does not", () => {
+    const words = revokeWords(cloud);
+    expect(words.confirm).toBe("Shut mez Cloud's sign-in");
+    expect(words.body).toContain("signed out at once");
+    expect(words.body).toContain("Guests' orders and the backup carry on");
+    expect(words.body).toContain("Pairing to mez Cloud again");
+    expect(revokeWords(device())).toEqual({
+      body: "It stops working at once and shows the pairing screen. Orders it took stay as they are. To use it again it needs a new code.",
+      confirm: "Revoke device",
+    });
+    expect(revokedToast(cloud)).toBe("mez Cloud's sign-in is shut.");
+    expect(revokedToast(device())).toBe("Counter 1 revoked.");
   });
 });

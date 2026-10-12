@@ -91,6 +91,27 @@ Unlocked, the right PIN works at once; if the wrong PINs were not theirs,
 give them a new one too. A role that manages staff, devices or settings
 needs a PIN of six digits or more.
 
+## The person mez Cloud signs in as (ADR-323, ADR-325)
+
+A venue paired to a mez Cloud account has one person the pairing made,
+named for the account, in the owner's role: who the account's owner is here
+when they come in from mez Cloud. `cloud: true` on the person.
+
+- Under the name: "Signs in from mez Cloud · Since 2026-10-12".
+- The row's **...** has no **New PIN**. They have none and the server gives
+  none; at a till the owner signs in as themselves.
+- **Edit** says first: "This is who your mez Cloud account signs in as. They
+  have no PIN. Pairing to mez Cloud again puts back the account's name and
+  the owner's role." Moving them to another role is allowed, and is how a
+  venue limits what its account may do from away.
+- **Deactivate** asks in other words: "This is who your mez Cloud account
+  signs in as. Deactivated, the back office can no longer be opened from
+  mez Cloud, and anyone signed in that way is signed out now. Guests' orders
+  and the backup are not affected. You can bring them back, and pairing to
+  mez Cloud again does too."
+- They are not on any sign-in screen, and are not counted when the server
+  asks whether anyone is left who can manage staff.
+
 ## Data
 
 - `GET /api/v1/people`, key `["people"]`: the staff and the roles in one

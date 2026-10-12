@@ -12081,3 +12081,34 @@ behind a reverse proxy of its own that set the mark itself would now have it
 removed; none is known to, and the tunnel is the only thing documented to set it. The stream is not carried by the
 relay, so nothing here opens it. Until 5b2 the People screen still offers the
 cloud's owner a PIN, which the server refuses with a sentence.
+
+## ADR-325 - The cloud's person and device are said to be what they are, in the rows they already have
+2026-10 · Status: accepted. Phase 14, Task 5b2. Builds on ADR-323 and ADR-324.
+Context: a paired venue gained a person on People and a device on Devices that no
+one at the venue made, shown like any other. People offered the person a new PIN,
+which the server refuses with a sentence, and Devices called the device a back
+office, which would send an owner looking for a laptop.
+Decision:
+  - **No new card, column or chip.** Each is a row among its kind, with one line
+    under the name saying what it is. A chip would have been a status, and "from
+    mez Cloud" is not one: the person is Active or Deactivated like anyone.
+  - **What cannot be done is not offered.** No New PIN for the person; no Rename
+    for the device, which this screen and the guide both know by its name.
+  - **What can be done says what it shuts before it is done**, and what it leaves
+    alone: guests' orders and the backup. Deactivating the person and revoking the
+    device are the two ways a venue stays paired and shuts its account out, and
+    an owner should not find that out afterwards. The revoke button says **Shut
+    mez Cloud's sign-in** and not "Revoke device".
+  - **Edit stays.** A venue may move its account's person to a lesser role: that
+    is its way to limit what the account does from away. The form says pairing
+    again puts the name and the role back.
+  - **Which actions a row offers is a function in each screen's logic file**
+    (`staffActions`, `deviceActions`), with the labels in a Record over the
+    actions, where before it was spread through the table's JSX and untested.
+Because: an owner meeting these two rows for the first time needs one sentence
+each, where they are looking.
+Cost: the person counts in "2 people" and in the owner role's count like anyone. A
+venue paired, revoked and paired again collects a revoked "mez Cloud" row each
+time, as it does for any device. Seen in a browser on a venue paired against the
+stand-in, at 1366 by 768; the toast after revoking was not seen, only its words
+tested.

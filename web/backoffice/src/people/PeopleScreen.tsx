@@ -19,7 +19,18 @@ import { CheckField } from "../FormFields";
 import { RowMenu } from "../RowMenu";
 import { usePermissions } from "../shell/BackOfficeShell";
 import { PinModal, RoleModal, StaffModal } from "./PeopleForms";
-import { chosenRole, lockedNote, mayUnlock, peopleSummary, problemOf, staffRows, staffStateOf } from "./people-logic";
+import {
+  chosenRole,
+  deactivateWords,
+  lockedNote,
+  peopleSummary,
+  problemOf,
+  sinceText,
+  staffActions,
+  staffRows,
+  staffStateOf,
+  type StaffAction,
+} from "./people-logic";
 import { RolePanel } from "./RolePanel";
 import { usePeople, type PeopleApi } from "./use-people";
 
@@ -127,6 +138,8 @@ interface StaffTableProps {
 }
 
 const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
+// A Record over the actions, so one added in the logic fails the build until it has a label.
+const actionLabels: Record<StaffAction, string> = { unlock: "Unlock", edit: "Edit", pin: "New PIN", deactivate: "Deactivate", "bring-back": "Bring back" };
 
 function StaffTable({ staff, roleId, now, api, onRole, onOpen, onProblem }: StaffTableProps) {
   const status = useAuth();
@@ -134,6 +147,20 @@ function StaffTable({ staff, roleId, now, api, onRole, onOpen, onProblem }: Staf
   const bringBack = (p: Person) => {
     onProblem(null);
     api.setActive(p.id, true).catch((err: unknown) => onProblem(problemOf(err).message));
+  };
+  const run = (action: StaffAction, p: Person) => {
+    switch (action) {
+      case "unlock":
+        return onOpen({ kind: "unlock", person: p });
+      case "edit":
+        return onOpen({ kind: "edit-staff", person: p });
+      case "pin":
+        return onOpen({ kind: "pin", person: p });
+      case "deactivate":
+        return onOpen({ kind: "deactivate", person: p });
+      case "bring-back":
+        return bringBack(p);
+    }
   };
   if (staff.length === 0) {
     return (
@@ -187,7 +214,7 @@ function StaffTable({ staff, roleId, now, api, onRole, onOpen, onProblem }: Staf
                           {p.name}
                           {p.id === me && <span className="font-normal text-fg-muted"> (you)</span>}
                         </strong>
-                        <span className="block font-mono text-sm tabular-nums text-fg-muted">Since {p.since.slice(0, 10)}</span>
+                        <span className="block font-mono text-sm tabular-nums text-fg-muted">{sinceText(p)}</span>
                         <span className="sr-only">{shown ? ". Their role is shown beside the table." : ". Show their role."}</span>
                       </span>
                     </button>
@@ -203,13 +230,7 @@ function StaffTable({ staff, roleId, now, api, onRole, onOpen, onProblem }: Staf
                         name={p.name}
                         disabled={false}
                         up={row >= 3 && row >= staff.length - 2}
-                        actions={[
-                          ...(mayUnlock(p, me) ? [{ label: "Unlock", run: () => onOpen({ kind: "unlock", person: p }) }] : []),
-                          { label: "Edit", run: () => onOpen({ kind: "edit-staff", person: p }) },
-                          ...(p.active ? [{ label: "New PIN", run: () => onOpen({ kind: "pin", person: p }) }] : []),
-                          ...(p.active && p.id !== me ? [{ label: "Deactivate", run: () => onOpen({ kind: "deactivate", person: p }) }] : []),
-                          ...(!p.active ? [{ label: "Bring back", run: () => bringBack(p) }] : []),
-                        ]}
+                        actions={staffActions(p, me).map((action) => ({ label: actionLabels[action], run: () => run(action, p) }))}
                       />
                     </span>
                   </td>
@@ -312,7 +333,7 @@ function DeactivateConfirm({ person, api, onClose }: { person: Person; api: Peop
           .catch((err: unknown) => setProblem(problemOf(err).message));
       }}
     >
-      <p className="text-base">They leave the sign-in screen and are signed out now. Their name stays on everything they did. You can bring them back.</p>
+      <p className="text-base">{deactivateWords(person)}</p>
       {problem && (
         <p role="alert" className="mt-3 text-base text-danger">
           {problem}

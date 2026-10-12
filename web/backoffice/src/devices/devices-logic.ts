@@ -111,3 +111,43 @@ export function nameProblem(name: string): Problem<"name"> | null {
 
 /** A failed request as words, for the line under a card's heading. */
 export const actionProblemOf = (err: unknown): string => problemWith(err, []).message;
+
+/**
+ * What a device is, under its name. The one mez Cloud signs the owner in on
+ * (ADR-323) is a back office nobody holds, and saying "Back office" of it
+ * would send an owner looking for a laptop.
+ */
+export function kindText(d: Pick<DeviceRecordResponse, "kind" | "cloud">): string {
+  return d.cloud ? "Your mez Cloud account's way in. Nobody holds it" : kindWords[d.kind];
+}
+
+/** What a row's menu can offer, in the order shown. */
+export type DeviceAction = "rename" | "revoke";
+
+/**
+ * A row's menu: none for a revoked device. No Revoke on the device in use;
+ * no Rename from away (ADR-308), and none for mez Cloud's, which is known
+ * by its name on this screen and in the guide.
+ */
+export function deviceActions(d: Pick<DeviceRecordResponse, "revoked_at" | "this" | "cloud">, away: boolean): DeviceAction[] {
+  if (d.revoked_at) return [];
+  return [...(away || d.cloud ? [] : (["rename"] as const)), ...(d.this ? [] : (["revoke"] as const))];
+}
+
+/** What revoking a device does, said before it is done, and the word on the button. */
+export function revokeWords(d: Pick<DeviceRecordResponse, "cloud">): { body: string; confirm: string } {
+  return d.cloud
+    ? {
+        body: "The back office can no longer be opened from your mez Cloud account, and anyone signed in that way is signed out at once. Guests' orders and the backup carry on. Pairing to mez Cloud again, here at the venue, turns it back on.",
+        confirm: "Shut mez Cloud's sign-in",
+      }
+    : {
+        body: "It stops working at once and shows the pairing screen. Orders it took stay as they are. To use it again it needs a new code.",
+        confirm: "Revoke device",
+      };
+}
+
+/** What is said once a device has been revoked. */
+export function revokedToast(d: Pick<DeviceRecordResponse, "name" | "cloud">): string {
+  return d.cloud ? "mez Cloud's sign-in is shut." : `${d.name} revoked.`;
+}

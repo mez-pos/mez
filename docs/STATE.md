@@ -10,33 +10,34 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5a and 5b1 are done
-(ADR-313, ADR-315 to ADR-324); 4d is `mez-cloud`'s. Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c and 5 are done
+(ADR-313, ADR-315 to ADR-325); 4d is `mez-cloud`'s. Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 5b1 - The route, and being the cloud's device after
-it** (ADR-324). 5b was split in two. `POST /api/v1/sessions/cloud`,
-through the relay only, takes `Authorization: Mez-Cloud <assertion>` and
-answers a session and its device. The session's token is then presented
-as both the device's and the session's, since the cloud's device has no
-token. `internal/service/cloudsignin` holds the order of things; the key
-is the pairing's as it stands when asked. `by=cloud` in the access log,
-`cloud` on a person and on a device in the API, and `build/dev/pairstub`
-signs an assertion at `GET /dev/assertion?venue=<public id>`. **Walked
-with curl** against a real relay, the stand-in and `bin/mez`, from a
-typed pairing code to a revoked device.
+**Phase 14, Task 5b2 - The People and Devices screens say what these
+are** (ADR-325), which closes Task 5. The person mez Cloud signs in as
+reads "Signs in from mez Cloud" under the name and is offered no new
+PIN; the device reads "Your mez Cloud account's way in. Nobody holds
+it", is not renamed, and its Revoke is **Shut mez Cloud's sign-in**.
+Deactivating the one and revoking the other each say what they shut and
+what they leave alone. **Walked in a browser** at 1366 by 768 on a venue
+paired against the stand-in. Not seen: either row from away (opened from
+mez Cloud itself), since nothing serves the back office that way until
+`mez-cloud` does (8e).
 
 ## Next task
 
-**Phase 14, Task 5b2 - The People and Devices screens say what these
-are**: a person and a device with `cloud: true` are shown as any other
-today, and People offers the cloud's owner a PIN the server refuses. The
-phase file has what each screen should say. Then **Task 6, `mez
-mirror`**.
+**Phase 14, Task 6 - `mez mirror`: the back office over a backup.**
+`mez mirror -from <destination> [-as-of]`: restore the latest replica
+into a temporary data directory, keep following it, and serve only the
+back office and the remote allow list's routes, every write answered 409
+`mirror_read_only`. It takes the Mez-Cloud sign-in of Task 5
+(`internal/service/cloudsignin`, ADR-324) and a PIN against the
+replicated staff. Likely more than one session: split it first.
 
 **Task 4d is `mez-cloud`'s**: that repository does not exist yet, and
 its first commit copies this phase's cloud tasks there. ADR-318 has the
@@ -147,4 +148,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5a and 5b1 of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c and 5 of 9)

@@ -218,3 +218,41 @@ export function lockedNote(p: Pick<Person, "locked_at">, now: Date): string | nu
 export function mayUnlock(p: Pick<Person, "id" | "locked_at">, me: string): boolean {
   return p.locked_at !== null && p.id !== me;
 }
+
+/** What a row's menu can offer, in the order shown. */
+export type StaffAction = "unlock" | "edit" | "pin" | "deactivate" | "bring-back";
+
+/**
+ * A row's menu. Nobody deactivates themselves, and the person mez Cloud
+ * signs in as has no PIN to replace (ADR-323): the server refuses one, so it
+ * is not offered.
+ */
+export function staffActions(p: Pick<Person, "id" | "active" | "locked_at" | "cloud">, me: string): StaffAction[] {
+  return [
+    ...(mayUnlock(p, me) ? (["unlock"] as const) : []),
+    "edit",
+    ...(p.active && !p.cloud ? (["pin"] as const) : []),
+    ...(p.active && p.id !== me ? (["deactivate"] as const) : []),
+    ...(!p.active ? (["bring-back"] as const) : []),
+  ];
+}
+
+/** Under a person's name: since when, and for the one mez Cloud signs in as, that first. */
+export function sinceText(p: Pick<Person, "since" | "cloud">): string {
+  const since = `Since ${p.since.slice(0, 10)}`;
+  return p.cloud ? `Signs in from mez Cloud · ${since}` : since;
+}
+
+/** What deactivating someone does, said before it is done. */
+export function deactivateWords(p: Pick<Person, "cloud">): string {
+  return p.cloud
+    ? "This is who your mez Cloud account signs in as. Deactivated, the back office can no longer be opened from mez Cloud, and anyone signed in that way is signed out now. Guests' orders and the backup are not affected. You can bring them back, and pairing to mez Cloud again does too."
+    : "They leave the sign-in screen and are signed out now. Their name stays on everything they did. You can bring them back.";
+}
+
+/** Over the form when the person edited is the one mez Cloud signs in as, or null. */
+export function cloudEditNote(p: Pick<Person, "cloud"> | null): string | null {
+  return p?.cloud
+    ? "This is who your mez Cloud account signs in as. They have no PIN. Pairing to mez Cloud again puts back the account's name and the owner's role."
+    : null;
+}
