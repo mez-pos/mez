@@ -56,6 +56,10 @@ type Pending struct {
 	// PairingCode pairs the venue to its mez Cloud account once it is up
 	// (ADR-332). Empty for a restore that came from nowhere of the cloud's.
 	PairingCode string `json:"pairing_code,omitempty"`
+	// ClaimHash is the hash of what the page that asked for the restore
+	// must show, after the start, to be told how it went (ADR-334). The
+	// claim itself is never written. Empty is nobody to tell.
+	ClaimHash string `json:"claim_hash,omitempty"`
 }
 
 // String keeps the code out of an error or a %v that prints the whole.
@@ -81,6 +85,8 @@ type StageOptions struct {
 	VenueID string
 	// PairingCode is kept for after the next start. It may be empty.
 	PairingCode string
+	// ClaimHash is kept with it, as given. It may be empty.
+	ClaimHash string
 	// Now is the clock. Nil is time.Now.
 	Now func() time.Time
 }
@@ -138,7 +144,7 @@ func Stage(ctx context.Context, o StageOptions) (Staged, error) {
 	out := Staged{VenueID: o.VenueID, VenueName: name, StagedAt: o.Now().UTC().Truncate(time.Second)}
 	out.Photos, out.PhotosErr = backup.RestorePhotos(ctx, o.From, filepath.Join(o.DataDir, photosDir))
 
-	raw, err := json.MarshalIndent(Pending{VenueID: out.VenueID, VenueName: out.VenueName, StagedAt: out.StagedAt, PairingCode: o.PairingCode}, "", "  ")
+	raw, err := json.MarshalIndent(Pending{VenueID: out.VenueID, VenueName: out.VenueName, StagedAt: out.StagedAt, PairingCode: o.PairingCode, ClaimHash: o.ClaimHash}, "", "  ")
 	if err != nil {
 		_ = clearStaged(o.DataDir)
 		return Staged{}, fmt.Errorf("restore: %w", err)

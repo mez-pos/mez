@@ -10,38 +10,38 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6, 7a and 7b1 are done
-(ADR-313, ADR-315 to ADR-333); 4d and 7e are `mez-cloud`'s. Phase 13's five
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6, 7a, 7b1 and 7b2a are done
+(ADR-313, ADR-315 to ADR-334); 4d and 7e are `mez-cloud`'s. Phase 13's five
 tasks are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 7b1 - A running server takes a restored venue**
-(ADR-333). 7b was split in two. `internal/restore` holds the checks `mez
-restore` makes (`EmptyInstall`, `NotRunning`, `MoveAside`, moved from
-`cmd/mez`) and two new steps: `Stage` restores the newest backup to
-`mez.db.restored` beside the database the server has open, checks it
-holds the venue asked for, brings back the photos and leaves
-`restore.json` (with the pairing code); `Adopt`, called by `run` once it
-holds its port and before the database is opened, moves the empty
-database aside and puts the staged one in its place. Never over a venue,
-asked at both. Tested by staging under a running server and starting it
-again. **Nothing calls `Stage` yet**, and no screen changed.
+**Phase 14, Task 7b2a - The server brings a venue back by itself**
+(ADR-334). 7b2 was split in two. `runUntilStopped` loops `run`, which
+serves under a context that can be asked to start again (`main` and `mez
+service run` both use it). `internal/service/cloudrecover`: `Service`
+signs the owner in (`Start`, `Verify`) and `Restore` takes the cloud's
+grant, makes a claim, stages the venue (`restore.Stage`, with the pairing
+code and the claim's hash) and asks for the start; `Arrival`, begun by
+the start that adopted a venue, pairs it in the background with the code
+that waited and answers `Outcome` and `DeviceCode` to whoever shows the
+claim. Tested from the sign-in to a paired venue under one server that
+restarts itself. **No route reaches any of it yet**, and no screen
+changed.
 
 ## Next task
 
-**Task 7b2 - the service, its routes, and the start.** Hold a
-`cloud.Recovery` in memory; for the venue chosen, `Grant`, then
-`restore.Stage`, then make the server start again in its own process (a
-loop around `run`). After that start, use what `restore.Adopt` returned
-(today `run` only logs it): pair through `cloudpair` with the code that
-waited, in the background, and make a device code for the browser at
-this machine. Routes at this machine only: start, verify and restore
-behind the setup token, and a status readable after the start, when the
-token is spent. The phase file has it in full. Then 7c (the screen), 7d
-("The PC died"), **Task 9**.
+**Task 7b2b - the routes.** `api.WithRecovery`, and four routes at this
+machine only: `POST /api/v1/setup/recover/start`, `/verify` and
+`/restore` behind the setup token, and `/outcome`, which takes the claim
+in a header and answers how it went and a device pairing code. Each error
+of `cloud`, `restore` and `cloudrecover` in an owner's words. `make
+generate` for the page's types. Then take `built` out of `runOptions`
+(`cmd/mez/main.go`) and send `cmd/mez/recover_test.go` through HTTP. The
+phase file has it in full. Then 7c (the screen), 7d ("The PC died"),
+**Task 9**.
 To walk recovery's requests: `RELAY_SECRET=... go run ./build/dev/pairstub
 -venue-id ven_...`; its log says the one-time code.
 
@@ -173,4 +173,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6, 7a and 7b1 of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6, 7a, 7b1 and 7b2a of 9)

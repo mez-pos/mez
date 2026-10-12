@@ -12672,3 +12672,91 @@ which 7b2 must put in an owner's words. A backup written by a newer mez than the
 installed is adopted like any other, and what the start then makes of a schema ahead
 of its own has not been looked at here; `mez restore` has the same gap. Two mez on
 one data directory are still not prevented, only noticed at this one step.
+
+## ADR-334 - The server gives itself the start a restored venue needs, and the page that asked is known afterwards by a claim
+2026-10 · Status: accepted. Phase 14, Task 7b2 (7b2a built here; 7b2b follows). Builds on ADR-320, ADR-332 and ADR-333.
+Context: ADR-333 made a restored venue something a start adopts, and left three
+things to whoever builds on it: making that start happen with nobody at the machine
+asked to, using the pairing code that waited, and telling the page that asked. The
+last has a difficulty of its own. What let the page ask was the setup token, and the
+start that adopts a venue ends the token: the computer has its venue. And the
+browser the owner is sitting at is no device of that venue's. Its devices were the
+old computer's.
+Decision:
+  - **Split.** 7b2a, built with this: the server starting again, the service
+    (`cloudrecover.Service`), and what follows the start (`cloudrecover.Arrival`),
+    tested from a sign-in to a paired venue under one server. 7b2b: the four routes
+    the wizard calls, their refusals in an owner's words, and the types the page
+    reads.
+  - **`runUntilStopped` is the server; `run` is one start of it.** A start serves
+    under a context of its own that can be ended without the process being asked to
+    stop. `run` then unwinds all it began, as it does for a stop, and says it is to
+    be entered again. Every start is a whole one, from the settings file down:
+    there is no second, shorter way up. `mez` in a terminal and `mez service run`
+    both go through it, so the Service Control Manager sees a service that never
+    stopped.
+  - **Asking is done from inside the request that staged the venue.** It returns at
+    once, and the server finishes what it is answering before it stops serving, as
+    it does a card payment (Phase 01). The answer the page reads is the last thing
+    the old start says.
+  - **A process asked to stop as it was starting again stops.**
+  - **`Service` holds one owner's sign-in, in memory.** A second sign-in takes the
+    place of the first: there is one browser at a computer with no venue. Every
+    step first asks whether the computer still has none, so nothing is asked of the
+    cloud in the name of a venue that is already here.
+  - **One restore, and once.** A second asked for while the first is coming down is
+    refused without the cloud being asked, and after a venue is staged every other
+    is refused until the start. A staging that fails leaves the sign-in as it was:
+    the cloud makes a new code with each hand-over, so the owner tries again.
+  - **Once the cloud has handed the venue over, the page going away changes
+    nothing**, as with a pairing (ADR-320): a browser closed while the backup comes
+    down must not leave the venue half brought back.
+  - **The page is given a claim, and only its hash waits.** Thirty-two random bytes,
+    made as the venue is staged, handed to the page in the answer and kept nowhere
+    else. `restore.json` carries its SHA-256. After the start, the claim is what
+    the page shows to be told anything. So what the setup token guarded before the
+    start is guarded after it, by something only that page was ever given, and a
+    copy of the data directory made in between does not hold it.
+  - **`Arrival` is the start that adopted a venue, for as long as that server
+    runs.** It pairs the venue with the code that waited through the service
+    pairing already has (ADR-320), in the background, so that a computer with no
+    internet is serving its venue at once. Once: a code the cloud saw is spent, and
+    one it never saw is good for the rest of its hour, typed in at Devices.
+  - **It is begun last, after the server is built.** Pairing dials the tunnel, and
+    the tunnel is handed the server.
+  - **The claim buys two things.** How it went: the venue, and whether it is paired,
+    being paired, or could not be. And one device pairing code, for the browser the
+    owner is at, with the name and kind the page gives. One to a claim: asked
+    again, it is the same code.
+  - **Without the claim there is nothing to tell**, and that is all a stranger
+    learns: not whether a venue was brought back here.
+  - **What a review found before the commit.** A start whose shutdown failed, a
+    database that would not close, was followed by another in the same process,
+    which would have found that database still held and come up on the empty one
+    with the wizard: now only a start that unwound cleanly is followed, and
+    otherwise the process ends with what went wrong and the next start adopts. A
+    staging could go on for ever on a line that stopped answering, holding off
+    every later try: it has half an hour. A stop waited its whole ten seconds on a
+    pairing past its exchange, which does not listen to being stopped (ADR-320),
+    leaving none for the database: it waits two. A claim was good for as long as
+    the server ran: it is good for half an hour from the start. And a restore
+    ended whatever sign-in was held when it finished, not the one it used.
+  - **Two things in `runOptions` are the tests'**: where a grant's backup is, which
+    for a test is a folder, and a look at what a start built. The second goes when
+    7b2b's routes are how a test reaches them.
+Because: a restore is the one thing here an owner does alone, late, at a computer
+they have just unpacked. Nothing in it should need them to know what a service is,
+and nothing about it should be left for whoever next opens that computer's browser.
+Cost: the arrival is in memory. If the process dies after adopting, the venue is
+back, it is not paired, the page is told nothing, and the browser is paired with
+`mez pair` at the machine: three things an owner must be told by `deploy.md` (7d).
+A start takes the port again a moment after letting it go, and something else could
+take it in between; the start then fails as any start does on a port in use. The
+claim is in the page's memory for as long as the page is open. A venue whose public
+id is not in the database a start adopted is logged and left unpaired: it cannot
+happen by `Stage`'s own check, and is not treated as if it could not. A request
+still being answered ten seconds after the start was asked for ends the process
+with "draining requests" and no start; under the Service Control Manager that is a
+service that failed, and the venue waits for the next start. A pairing that says a
+restart is needed, or that the backup could not be set, is "paired" to the page and
+the rest is in the log. Until 7b2b nothing but a test reaches any of it.

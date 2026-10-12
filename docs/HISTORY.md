@@ -8,7 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 7a - What a venue that is gone asks mez Cloud**
+**Phase 14, Task 7b1 - A running server takes a restored venue**
+(ADR-333). 7b was split in two. `internal/restore` holds the checks `mez
+restore` makes (`EmptyInstall`, `NotRunning`, `MoveAside`, moved from
+`cmd/mez`) and two new steps: `Stage` restores the newest backup to
+`mez.db.restored` beside the database the server has open, checks it
+holds the venue asked for, brings back the photos and leaves
+`restore.json` (with the pairing code); `Adopt`, called by `run` once it
+holds its port and before the database is opened, moves the empty
+database aside and puts the staged one in its place. Never over a venue,
+asked at both. Tested by staging under a running server and starting it
+again.
+
+Before it, **Phase 14, Task 7a - What a venue that is gone asks mez Cloud**
 (ADR-332). Task 7 was split in five. `internal/cloud/recover.go`: a phone
 number buys an attempt (`RecoverStart`), the six digits sent to it buy a
 `Recovery` (`RecoverVerify`: the owner, the account's venues, a session

@@ -41,6 +41,7 @@ import (
 	"github.com/byjoellobo/mez/internal/service/audit"
 	"github.com/byjoellobo/mez/internal/service/charges"
 	"github.com/byjoellobo/mez/internal/service/cloudpair"
+	"github.com/byjoellobo/mez/internal/service/cloudrecover"
 	"github.com/byjoellobo/mez/internal/service/cloudsignin"
 	"github.com/byjoellobo/mez/internal/service/firstrun"
 	"github.com/byjoellobo/mez/internal/service/floor"
@@ -106,7 +107,7 @@ func main() {
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	err := run(ctx, os.Args[1:], runOptions{stdout: os.Stdout})
+	err := runUntilStopped(ctx, os.Args[1:], runOptions{stdout: os.Stdout})
 	stop()
 	if err != nil {
 		// -h is a question, not a failure. The flag package's own output is
@@ -141,6 +142,11 @@ type runOptions struct {
 	// system is the operating system's log, the Windows event log under a
 	// service, or nil.
 	system logging.SystemLog
+
+	// source and built are the tests' (recover.go). Nil, always, in a
+	// server anyone runs.
+	source func(cloud.Grant) backup.Config
+	built  func(*cloudrecover.Service, *cloudrecover.Arrival)
 }
 
 // run is main with errors instead of exits, so every path below unwinds through
@@ -174,6 +180,11 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	restrictConfig(log, runtime.GOOS, binaryDir())
 
 	var running stack
+
+	// What the server serves under, so that it can be asked to stop serving
+	// and start again without the process being asked to stop (ADR-334).
+	serving, startAgain := restartable(ctx)
+	defer serving.stop()
 
 	// Shutdown runs on the way out of every return below, including the
 	// failures, and its errors join whatever sent us here. The log file is
@@ -561,9 +572,34 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// is stopped here all the same.
 	running.push("tunnel", link.Close)
 
+	// "I had mez before" (ADR-332 to ADR-334). Before the start that
+	// adopts a venue, the service that stages one; after it, what follows
+	// from having adopted one. The second only now: pairing dials the
+	// tunnel, and the tunnel is handed the server built above.
+	recoverer, err := cloudrecover.New(cloudrecover.Options{
+		Cloud: exchange, DataDir: cfg.DataDir, Needed: firstRun.Needed, StartAgain: startAgain, Source: opts.source, Log: log,
+	})
+	if err != nil {
+		return err
+	}
+	arrival := arrive(ctx, database, adopted, pairer.Pair, devices, log)
+	if arrival != nil {
+		running.push("arrival", arrival.Close)
+	}
+	if opts.built != nil {
+		opts.built(recoverer, arrival)
+	}
+
 	// The tunnel is handed the handler as it is. What arrives on the socket
 	// is told apart from it here.
-	return serve(ctx, log, listener, fromTheNetwork(srv.Handler()), shutdownTimeout)
+	if err := serve(serving.ctx, log, listener, fromTheNetwork(srv.Handler()), shutdownTimeout); err != nil {
+		return err
+	}
+	if serving.again(ctx) {
+		log.Info("starting again, as asked")
+		return errStartAgain
+	}
+	return nil
 }
 
 // remoteNeedsRelay stops a venue that asked for the back office from

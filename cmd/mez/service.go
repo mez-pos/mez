@@ -301,9 +301,9 @@ func serveAsService(args []string) error {
 			// fails, and the file is written after it. Started by hand
 			// there is one, and no event log.
 			if system == nil {
-				return run(ctx, args, runOptions{stdout: os.Stdout})
+				return runUntilStopped(ctx, args, runOptions{stdout: os.Stdout})
 			}
-			return run(ctx, args, runOptions{stdout: io.Discard, system: system})
+			return runUntilStopped(ctx, args, runOptions{stdout: io.Discard, system: system})
 		},
 	})
 	if err != nil {

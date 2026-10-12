@@ -474,7 +474,40 @@ and its first commit copies this phase's cloud tasks there.
       code); `Adopt`, which `run` calls once it holds its port and before
       the database is opened. Never over a venue, asked at both. Tested
       by staging under a running server and starting it again.
-    - [ ] **7b2 - The service, its routes, and the start.** A service in
+    - [ ] **7b2 - The service, its routes, and the start.** Split in two
+      on 2026-10-12 while building it (ADR-334).
+      - [x] **7b2a - The service, the start, and what follows it.**
+        `cmd/mez/recover.go`: `runUntilStopped` loops `run`, which serves
+        under a context that can be asked to start again; `main` and
+        `mez service run` both go through it.
+        `internal/service/cloudrecover`: `Service` (`Start`, `Verify`,
+        `Restore`: the grant, a claim, `restore.Stage`, then the start),
+        one restore and once; `Arrival`, begun by the start that adopted a
+        venue, pairs it in the background with the code that waited and
+        answers `Outcome` and `DeviceCode` to whoever shows the claim.
+        `restore.json` carries the claim's hash. Tested from the sign-in
+        to a paired venue under one server that restarts itself, with a
+        folder for the bucket.
+      - [ ] **7b2b - The routes.** `api.WithRecovery` for the service and
+        the arrival (as interfaces, defined in `internal/api`), and four
+        routes, at this machine only (`atThisMachine`), rate limited, JSON
+        only: `POST /api/v1/setup/recover/start` (`{phone}`, answering the
+        attempt), `.../verify` (`{attempt, code}`, answering the owner and
+        the venues with when each was last backed up) and `.../restore`
+        (`{venue_id}`, answering the venue, the photos and the claim, with
+        `Cache-Control: no-store`), all three behind the setup token; and
+        `POST /api/v1/setup/recover/outcome`, which takes the claim in a
+        header as the setup token is taken, and a device's name and kind,
+        and answers how it went and the device's pairing code. None of
+        them in `remoteRoutes`. Every error of `cloud`, `restore` and
+        `cloudrecover` to a code and a sentence an owner can act on (the
+        command's words, "-data-dir", must not reach a screen). `make
+        generate` for `web/shared/api-types.ts`. Then take `built` out of
+        `runOptions` and have `cmd/mez/recover_test.go` go through HTTP.
+        A wrong claim counts against a rate limit: it is a secret being
+        guessed at.
+
+      As 7b2 was set: A service in
       `internal/service` that holds one `cloud.Recovery` in memory (start,
       verify, list), and for a venue chosen: `Recovery.Grant`,
       `restore.Stage` with the grant's bucket and code, then asks the
