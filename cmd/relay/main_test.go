@@ -6,10 +6,14 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/coder/websocket"
 
 	"github.com/byjoellobo/mez/internal/relay"
 )
@@ -96,6 +100,8 @@ func TestRunRefuses(t *testing.T) {
 		{"a trust setting that is not a boolean", nil, with(envTrustProxy, "maybe"), envTrustProxy},
 		{"a log level that is not one", nil, with(envLogLevel, "loud"), envLogLevel},
 		{"an address that cannot be listened on", nil, with(envListen, "not an address"), "listening"},
+		{"an entitlements file that is not there", nil, with(envEntitled, filepath.Join(t.TempDir(), "nothing-here")), "entitlements"},
+		{"an entitlements file that cannot be read as one", nil, with(envEntitled, badEntitlements(t)), "line 2"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -108,6 +114,77 @@ func TestRunRefuses(t *testing.T) {
 				t.Error("the secret was printed")
 			}
 		})
+	}
+}
+
+// badEntitlements is a file whose second line is not an entitlement.
+func badEntitlements(t *testing.T) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "entitlements")
+	if err := os.WriteFile(path, []byte("my-cafe forever\ncorner whenever\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+// TestServeWithEntitlements: the relay started with a file carries the
+// venue the file names and turns away the one it does not, each with a key
+// the relay itself issued (ADR-316).
+func TestServeWithEntitlements(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	path := filepath.Join(t.TempDir(), "entitlements")
+	if err := os.WriteFile(path, []byte("# who is carried\nmy-cafe forever\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out := &lockedBuffer{}
+	vars := map[string]string{envSecret: testSecret, envListen: "127.0.0.1:0", envEntitled: path}
+	listening := make(chan string, 1)
+	stopped := make(chan error, 1)
+	go func() { stopped <- serve(ctx, envOf(vars), out, listening) }()
+	var addr string
+	select {
+	case addr = <-listening:
+	case err := <-stopped:
+		t.Fatalf("serve returned before listening: %v", err)
+	case <-time.After(10 * time.Second):
+		t.Fatal("serve never listened")
+	}
+
+	dial := func(venue string) (*http.Response, error) {
+		var key bytes.Buffer
+		if err := run(ctx, []string{"issue-key", venue}, envOf(vars), &key, rand.Reader); err != nil {
+			t.Fatalf("issue-key %s: %v", venue, err)
+		}
+		dialCtx, done := context.WithTimeout(ctx, 10*time.Second)
+		defer done()
+		ws, resp, err := websocket.Dial(dialCtx, "ws://"+addr+"/agent", &websocket.DialOptions{
+			HTTPHeader: http.Header{"Authorization": {"Bearer " + strings.TrimSpace(key.String())}},
+		})
+		if err == nil {
+			_ = ws.Close(websocket.StatusNormalClosure, "")
+		}
+		return resp, err
+	}
+	if _, err := dial("my-cafe"); err != nil {
+		t.Errorf("the venue the file names was turned away: %v", err)
+	}
+	if resp, err := dial("stranger"); err == nil || resp == nil || resp.StatusCode != http.StatusForbidden {
+		t.Errorf("a venue the file does not name: %v, %v; want 403", resp, err)
+	}
+
+	cancel()
+	select {
+	case err := <-stopped:
+		if err != nil {
+			t.Errorf("serve stopped with %v", err)
+		}
+	case <-time.After(shutdownTimeout + 5*time.Second):
+		t.Fatal("serve did not stop")
+	}
+	if logs := out.String(); !strings.Contains(logs, "entitlements read") || !strings.Contains(logs, "venue not entitled") {
+		t.Errorf("the log does not say the file was read and a venue turned away:\n%s", logs)
 	}
 }
 

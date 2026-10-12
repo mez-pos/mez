@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -43,11 +44,17 @@ var (
 type agent struct {
 	venueID string
 	keyID   string
-	// remote says the key allows the back office across the relay (ADR-306).
-	remote bool
-	ws     *websocket.Conn
-	bucket *bucket
-	log    *slog.Logger
+	// keyRemote says the key allows the back office across the relay
+	// (ADR-306), and remote that the relay carries it now: the key's word
+	// and the entitlement's together (ADR-316). The second can change while
+	// the venue stays connected.
+	keyRemote bool
+	remote    atomic.Bool
+	// notices says the venue reads Notice frames.
+	notices bool
+	ws      *websocket.Conn
+	bucket  *bucket
+	log     *slog.Logger
 
 	// ctx ends when the socket does. Every guest handler on this agent
 	// watches it.
@@ -73,19 +80,34 @@ type stream struct {
 	overrun chan struct{}
 }
 
-func newAgent(key Key, ws *websocket.Conn, lim Limit, now time.Time, log *slog.Logger) *agent {
+func newAgent(key Key, ent Entitlement, notices bool, ws *websocket.Conn, lim Limit, now time.Time, log *slog.Logger) *agent {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &agent{
-		venueID: key.VenueID,
-		keyID:   key.KeyID,
-		remote:  key.Remote,
-		ws:      ws,
-		bucket:  newBucket(lim, now),
-		log:     log.With("venue_id", key.VenueID, "key_id", key.KeyID),
-		ctx:     ctx,
-		cancel:  cancel,
-		streams: map[uint64]*stream{},
+	a := &agent{
+		venueID:   key.VenueID,
+		keyID:     key.KeyID,
+		keyRemote: key.Remote,
+		notices:   notices,
+		ws:        ws,
+		bucket:    newBucket(lim, now),
+		log:       log.With("venue_id", key.VenueID, "key_id", key.KeyID),
+		ctx:       ctx,
+		cancel:    cancel,
+		streams:   map[uint64]*stream{},
 	}
+	a.remote.Store(key.Remote && ent.Remote)
+	return a
+}
+
+// tell sends the venue where it stands, if it reads such a thing.
+func (a *agent) tell(e Entitlement) {
+	if !a.notices {
+		return
+	}
+	msg, err := wire.EncodeNotice(e.told(a.keyRemote && e.Remote))
+	if err != nil {
+		return
+	}
+	_ = a.send(msg)
 }
 
 // open starts a stream for one guest request.

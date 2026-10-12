@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 // Type says what a frame carries.
@@ -34,6 +35,7 @@ const (
 	TypeBody     Type = 3 // either way: a piece of the sender's body
 	TypeEnd      Type = 4 // either way: the sender's body is complete
 	TypeReset    Type = 5 // either way: the stream is abandoned; payload is why
+	TypeNotice   Type = 6 // relay to venue: an Entitlement, on stream 0; only to a venue that asked
 )
 
 const (
@@ -93,7 +95,7 @@ func Decode(msg []byte) (Frame, error) {
 		return Frame{}, fmt.Errorf("%w: %d bytes", ErrMalformed, len(msg))
 	}
 	t := Type(msg[0])
-	if t < TypeRequest || t > TypeReset {
+	if t < TypeRequest || t > TypeNotice {
 		return Frame{}, fmt.Errorf("%w: unknown type %d", ErrMalformed, msg[0])
 	}
 	return Frame{Type: t, Stream: binary.BigEndian.Uint64(msg[1:headerLen]), Payload: msg[headerLen:]}, nil
@@ -149,4 +151,65 @@ const (
 
 	// CloseProtocol: the venue sent something this package cannot read.
 	CloseProtocol = 4002
+
+	// CloseNotEntitled: the relay no longer carries this venue (ADR-316).
+	// The reason is a short code, Entitlement.Reason. The key is as good as
+	// it was, so this is not a refusal of the key: whoever keeps the
+	// entitlements can change their answer, and a venue comes back to ask
+	// within the minute.
+	CloseNotEntitled = 4003
 )
+
+// What the two ends say about entitlement on the dial, in headers, so that a
+// venue is told where it stands whether or not it gets in.
+const (
+	// HeaderEntitlement is on the relay's answer to a dial, let in or not:
+	// an Entitlement as JSON. A venue that does not know the header loses
+	// nothing by it.
+	HeaderEntitlement = "X-Mez-Entitlement"
+
+	// HeaderNotices is on a venue's dial, with the value "1", when it reads
+	// Notice frames. The relay sends none to a venue that did not say so: an
+	// older one takes a frame it does not know for a broken line and hangs
+	// up.
+	HeaderNotices = "X-Mez-Tunnel-Notices"
+
+	// CodeNotEntitled is the error code on the relay's answer to a dial it
+	// turns away for want of entitlement, with status 403.
+	CodeNotEntitled = "not_entitled"
+)
+
+// Entitlement is where a venue stands with the relay, as the venue is told
+// it: on the answer to its dial, and in a Notice when it changes.
+type Entitlement struct {
+	// State is the word whoever keeps the entitlements uses: "trial",
+	// "active", "grace". Absent from a relay that keeps a file.
+	State string `json:"state,omitempty"`
+	// PaidUntil is the end of what has been paid for. Absent when nobody is
+	// counting.
+	PaidUntil *time.Time `json:"paid_until,omitempty"`
+	// Until is when the relay stops carrying the venue. Absent when no date
+	// is set, and when the venue is not carried at all.
+	Until *time.Time `json:"until,omitempty"`
+	// Remote says the relay carries the back office for this venue.
+	Remote bool `json:"remote"`
+	// Reason is a short code for why the venue stands where it does.
+	Reason string `json:"reason,omitempty"`
+}
+
+// EncodeNotice lays an Entitlement out as a Notice frame.
+func EncodeNotice(e Entitlement) ([]byte, error) {
+	return EncodeHead(TypeNotice, 0, e)
+}
+
+// DecodeNotice reads the Entitlement out of a Notice frame.
+func DecodeNotice(f Frame) (Entitlement, error) {
+	var e Entitlement
+	if f.Type != TypeNotice {
+		return e, fmt.Errorf("%w: not a notice", ErrMalformed)
+	}
+	if err := json.Unmarshal(f.Payload, &e); err != nil {
+		return e, fmt.Errorf("%w: notice: %v", ErrMalformed, err)
+	}
+	return e, nil
+}

@@ -149,7 +149,7 @@ func (s *Server) forward(w http.ResponseWriter, r *http.Request, venueID, prefix
 		s.refuse(w, r, http.StatusServiceUnavailable, codeVenueOffline, offlineTitle, offlineText)
 		return
 	}
-	if staffOnly(path) && !a.remote {
+	if staffOnly(path) && !a.remote.Load() {
 		// The back office and the staff API cross the relay only for a venue
 		// whose key says so (ADR-306). Nothing is sent down the socket: to
 		// the venue, and to whoever is asking, the path does not exist.

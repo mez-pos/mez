@@ -8,7 +8,20 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 13, Task 5 - A remote session is harder to take than a LAN one**
+**Phase 14, Task 2 - The backup is paced on purpose** (ADR-315).
+`backup_sync_interval` (`-backup-sync-interval`,
+`MEZ_BACKUP_SYNC_INTERVAL`): `30s`, from `5s` to `10m`. It sets how often
+Litestream looks at the database as well as how often it sends, since it
+sends one file per look. Counting against the stand-in bucket showed
+listings were most of the bill, so the merges, Litestream's tidying and
+mez's own look at a bucket are paced too, all in
+`internal/backup/pace.go`. `status.sync_interval_seconds` is on `GET
+/api/v1/settings/backup`; no screen shows it. `TestAnHourAsksLittleOfABucket`
+holds 200 billed requests in an hour of selling and 25 in an hour of
+none (measured 183 and 16: ₹32 a month on R2, where ADR-313 assumed ₹24).
+`deploy.md`, `running.md` and the cost paper say so.
+
+Before it, **Phase 13, Task 5 - A remote session is harder to take than a LAN one**
 (ADR-314), built on 2026-10-12 at the human's word, after Phase 14's Task
 1. Where a sign-in came from is recorded (`via` on `sign_in_attempts` and
 `staff_sessions`, migration 00054). `auth.SignInRemote`: wrong PINs from

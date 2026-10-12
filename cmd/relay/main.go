@@ -44,6 +44,7 @@ const (
 	envListen     = "RELAY_LISTEN_ADDR"   // default ":8080"
 	envSecret     = "RELAY_SECRET"        // signs venue keys; required
 	envRevoked    = "RELAY_REVOKED"       // comma-separated venue ids and key ids to refuse
+	envEntitled   = "RELAY_ENTITLEMENTS"  // a file of venues, until when, and remote or guests
 	envTrustProxy = "RELAY_TRUST_PROXY"   // "true" when the operator's own proxy sits in front
 	envDomain     = "RELAY_VENUE_DOMAIN"  // gives each venue the hostname <venue>.<domain>
 	envVenueRPM   = "RELAY_VENUE_RPM"     // requests a minute each venue may receive
@@ -66,6 +67,8 @@ Environment:
   RELAY_SECRET        signs venue keys; at least 32 characters; required
   RELAY_LISTEN_ADDR   address to listen on (default :8080)
   RELAY_REVOKED       comma-separated venue ids and key ids to refuse
+  RELAY_ENTITLEMENTS  a file naming the venues carried, until when, and whether
+                      their back office crosses; without it every key is carried
   RELAY_TRUST_PROXY   true when your own proxy sets X-Forwarded-For
   RELAY_VENUE_DOMAIN  serve each venue at <venue>.<this domain>, not /v/<venue>/
   RELAY_VENUE_RPM     requests a minute per venue (default 1200)
@@ -198,14 +201,28 @@ func serve(ctx context.Context, env func(string) string, stdout io.Writer, liste
 		return err
 	}
 
+	// Which venues are carried. With no file, every venue with a key is, as
+	// it always was. A file that cannot be read stops the start: an operator
+	// who wrote one believes it is in force.
+	var entitlements relay.Entitlements
+	if path := env(envEntitled); path != "" {
+		static, err := relay.LoadStaticEntitlements(path, log)
+		if err != nil {
+			return err
+		}
+		log.Info("relay: entitlements read", "path", path, "venues", static.Len())
+		entitlements = static
+	}
+
 	srv, err := relay.New(relay.Options{
-		Keys:        keys,
-		Limit:       limit,
-		IPLimit:     ipLimit,
-		TrustProxy:  trustProxy,
-		VenueDomain: env(envDomain),
-		Version:     version,
-		Log:         log,
+		Keys:         keys,
+		Entitlements: entitlements,
+		Limit:        limit,
+		IPLimit:      ipLimit,
+		TrustProxy:   trustProxy,
+		VenueDomain:  env(envDomain),
+		Version:      version,
+		Log:          log,
 	})
 	if err != nil {
 		return err

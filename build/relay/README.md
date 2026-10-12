@@ -115,6 +115,55 @@ To turn a key or a venue off, add the key id (it is in the log line when the
 venue connects) or the venue id to `RELAY_REVOKED` in `.env`, comma-separated,
 and run `docker compose up -d`.
 
+## Who is carried, and until when
+
+A key says who a venue is. Whether the relay carries it is a second
+question, and with nothing set the answer is yes for every key, for ever:
+that is all a relay for your own venues needs.
+
+To carry some venues and not others, or to a date, name them in a file and
+point `RELAY_ENTITLEMENTS` at it. One venue to a line:
+
+```
+# venue      until        back office
+my-cafe      2026-11-12   remote
+corner-bar   forever      guests
+old-place    never
+*            forever
+```
+
+- **until** is a day, and the venue is carried through the end of it (UTC);
+  or an instant, `2026-11-12T18:30:00Z`; or `forever`; or `never`.
+- **back office** is `remote` or `guests`, and `remote` when left out.
+  `guests` answers 404 for `/backoffice/` and `/api/` whatever the venue's
+  key says. `remote` lets them cross only if the key was issued with
+  `--remote` as well: the file can take the back office away, and cannot
+  give it to a key that was not issued for it.
+- **`*`** is every venue the file does not name. Without that line, a venue
+  the file does not name is not carried, so a file with one line in it
+  turns every other venue off. Start from `* forever` and add lines above
+  it.
+- Everything after a `#` is a note to yourself.
+
+In Docker the file has to be put where the relay can read it: uncomment
+`RELAY_ENTITLEMENTS` and the `volumes:` lines under `relay:` in
+`compose.yml`, write the file as `/opt/mez-relay/entitlements`, and run
+`docker compose up -d` once.
+
+After that, **edit the file and leave the relay running.** It is read
+again the next time a venue connects, and each connected venue is asked
+about again once an hour, and at the moment its date falls if it has one.
+A venue whose date has passed is disconnected, its guests see "Ordering is
+offline", and it tries again every minute, so a date moved forward takes
+hold within a minute of the edit. A file that cannot be read stops the
+relay from starting; an edit that cannot be read is logged
+(`what was last read stands`) and changes nothing until it is mended.
+
+A venue that is turned away is told why in a word: `expired`, `never` or
+`not_listed`. Its own log has it, and so does the relay's, as
+`venue not entitled`. `RELAY_REVOKED` is as it was and comes first: a
+revoked key or venue is refused as a bad key is, before the file is read.
+
 ## Check it
 
 ```sh
@@ -137,6 +186,7 @@ are added there, and to `compose.yml`'s `environment:`, only to change them.
 | `RELAY_SECRET` | Signs every venue's key. At least 32 characters | Required |
 | `RELAY_VENUE_DOMAIN` | Each venue is at `<venue>.<this domain>` | Empty; `deploy.sh` always sets it |
 | `RELAY_REVOKED` | Venue ids and key ids to refuse, comma-separated | None |
+| `RELAY_ENTITLEMENTS` | A file naming the venues carried, until when, and whether their back office crosses ([above](#who-is-carried-and-until-when)) | None: every key is carried |
 | `RELAY_TRUST_PROXY` | `true` when your own proxy sets `X-Forwarded-For`. `compose.yml` sets it, for Caddy | `false` |
 | `RELAY_VENUE_RPM` | Requests a minute each venue may receive | 1200 |
 | `RELAY_VENUE_BURST` | Requests at once each venue may receive | 300 |

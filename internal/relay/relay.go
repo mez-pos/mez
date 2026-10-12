@@ -18,6 +18,7 @@
 package relay
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,6 +41,15 @@ const defaultHeadTimeout = 30 * time.Second
 type Options struct {
 	// Keys checks venue keys. Required.
 	Keys *Keys
+
+	// Entitlements says which venues are carried, until when, and whether
+	// their back office crosses (ADR-316). Nil carries every venue with a
+	// valid key, as a relay did before there were any.
+	Entitlements Entitlements
+
+	// EntitlementEvery is how often a connected venue is asked about again.
+	// Zero means an hour.
+	EntitlementEvery time.Duration
 
 	// Limit is each venue's request allowance. Zero means DefaultLimit.
 	Limit Limit
@@ -76,15 +86,17 @@ type Options struct {
 
 // Server is the relay. It owns every venue socket and closes them in Close.
 type Server struct {
-	keys        *Keys
-	limit       Limit
-	ips         *ipTable
-	trustProxy  bool
-	venueDomain string
-	version     string
-	log         *slog.Logger
-	now         func() time.Time
-	headTimeout time.Duration
+	keys          *Keys
+	entitled      Entitlements
+	entitledEvery time.Duration
+	limit         Limit
+	ips           *ipTable
+	trustProxy    bool
+	venueDomain   string
+	version       string
+	log           *slog.Logger
+	now           func() time.Time
+	headTimeout   time.Duration
 
 	mu     sync.Mutex
 	agents map[string]*agent
@@ -121,21 +133,29 @@ func New(opts Options) (*Server, error) {
 	if opts.HeadTimeout <= 0 {
 		opts.HeadTimeout = defaultHeadTimeout
 	}
+	if opts.Entitlements == nil {
+		opts.Entitlements = everyone{}
+	}
+	if opts.EntitlementEvery <= 0 {
+		opts.EntitlementEvery = defaultEntitlementEvery
+	}
 	domain := strings.Trim(strings.ToLower(strings.TrimSpace(opts.VenueDomain)), ".")
 	if domain != "" && !validDomain(domain) {
 		return nil, fmt.Errorf("relay: venue domain %q is not a domain name", opts.VenueDomain)
 	}
 	return &Server{
-		venueDomain: domain,
-		keys:        opts.Keys,
-		limit:       opts.Limit,
-		ips:         newIPTable(opts.IPLimit, opts.Now()),
-		trustProxy:  opts.TrustProxy,
-		version:     opts.Version,
-		log:         opts.Log,
-		now:         opts.Now,
-		headTimeout: opts.HeadTimeout,
-		agents:      map[string]*agent{},
+		venueDomain:   domain,
+		keys:          opts.Keys,
+		entitled:      opts.Entitlements,
+		entitledEvery: opts.EntitlementEvery,
+		limit:         opts.Limit,
+		ips:           newIPTable(opts.IPLimit, opts.Now()),
+		trustProxy:    opts.TrustProxy,
+		version:       opts.Version,
+		log:           opts.Log,
+		now:           opts.Now,
+		headTimeout:   opts.HeadTimeout,
+		agents:        map[string]*agent{},
 	}, nil
 }
 
@@ -227,6 +247,26 @@ func (s *Server) handleAgent(w http.ResponseWriter, r *http.Request) {
 	venueID := claims.VenueID
 	noteVenue(r, venueID)
 
+	// The key says who is asking. Whether they are carried is another
+	// question, asked of whoever keeps the entitlements (ADR-316).
+	ent, err := s.entitled.Entitled(r.Context(), venueID)
+	if err != nil {
+		// Not a refusal: a store that is down must not close a cafe.
+		s.log.Error("relay: entitlements could not be read; the venue is let in on its key",
+			"venue_id", venueID, "error", err.Error())
+		ent = Entitlement{Until: NoEnd, Remote: true}
+	}
+	if told, err := json.Marshal(ent.told(claims.Remote && ent.Remote)); err == nil {
+		w.Header().Set(wire.HeaderEntitlement, string(told))
+	}
+	if !ent.covers(s.now()) {
+		s.log.Warn("relay: venue not entitled", "venue_id", venueID, "key_id", claims.KeyID,
+			"reason", ent.reason(), "until", ent.Until, "remote", s.clientIP(r))
+		s.writeError(w, http.StatusForbidden, wire.CodeNotEntitled, ent.reason())
+		return
+	}
+	notices := r.Header.Get(wire.HeaderNotices) == "1"
+
 	ws, err := websocket.Accept(w, r, nil)
 	if err != nil {
 		// Accept has already answered the client.
@@ -235,32 +275,110 @@ func (s *Server) handleAgent(w http.ResponseWriter, r *http.Request) {
 	}
 	ws.SetReadLimit(wire.MaxFrame)
 
-	a := newAgent(claims, ws, s.limit, s.now(), s.log)
+	a := newAgent(claims, ent, notices, ws, s.limit, s.now(), s.log)
 	if !s.register(a) {
 		a.close(websocket.StatusGoingAway, "relay shutting down")
 		return
 	}
 	defer s.wg.Done()
 
-	a.log.Info("relay: venue connected", "remote", s.clientIP(r), "back_office", claims.Remote)
+	a.log.Info("relay: venue connected", "remote", s.clientIP(r), "back_office", a.remote.Load(),
+		"entitled_until", ent.Until, "state", ent.State)
 	connected := s.now()
 
-	// The prober is this handler's own goroutine to start and to wait for.
+	// The prober and the asking again are this handler's own goroutines to
+	// start and to wait for.
 	probing := make(chan struct{})
 	go func() {
 		defer close(probing)
 		a.ping()
 	}()
+	asking := make(chan struct{})
+	go func() {
+		defer close(asking)
+		s.keepEntitled(a, ent)
+	}()
 
 	readErr := a.read()
 	a.close(websocket.StatusNormalClosure, "")
 	<-probing
+	<-asking
 	s.unregister(a)
 
 	a.log.Info("relay: venue disconnected",
 		"reason", readErr.Error(),
 		"connected_s", int64(s.now().Sub(connected).Seconds()),
 		"in_flight", a.inFlight())
+}
+
+// defaultEntitlementEvery is how often a connected venue is asked about
+// again. A venue whose date has passed is off within this of it, or at the
+// date itself when the relay knew it was coming.
+const defaultEntitlementEvery = time.Hour
+
+// askTimeout bounds one asking of whoever keeps the entitlements.
+const askTimeout = 10 * time.Second
+
+// maxCloseReason is what is kept of a reason in a close frame, which holds
+// 123 bytes in all.
+const maxCloseReason = 100
+
+// keepEntitled asks about a connected venue again, every so often and at the
+// moment its date falls, until its socket ends. A venue whose date has
+// passed is told why and closed; one whose back office is no longer carried
+// stays, with those paths answered as a guests-only key's are; and one whose
+// standing changed in any way it is told about hears of it.
+func (s *Server) keepEntitled(a *agent, ent Entitlement) {
+	timer := time.NewTimer(s.entitledEvery)
+	defer timer.Stop()
+	// unanswered is the last asking having failed. The next is then a whole
+	// round away whatever the date says: nobody could be asked, and asking
+	// at once again and again is no way to find someone.
+	unanswered := false
+	for {
+		wait := s.entitledEvery
+		if left := ent.Until.Sub(s.now()); left < wait && !unanswered {
+			wait = max(left, 0)
+		}
+		timer.Reset(wait)
+		select {
+		case <-a.ctx.Done():
+			return
+		case <-timer.C:
+		}
+
+		ctx, cancel := context.WithTimeout(a.ctx, askTimeout)
+		next, err := s.entitled.Entitled(ctx, a.venueID)
+		cancel()
+		if a.ctx.Err() != nil {
+			return
+		}
+		if unanswered = err != nil; unanswered {
+			// Not a refusal, even with its date gone: a store that is down
+			// must not close a cafe. It stays as it was and is asked about
+			// again in a round.
+			a.log.Error("relay: entitlements could not be read; the venue stays as it was", "error", err.Error())
+			continue
+		}
+		if !next.covers(s.now()) {
+			a.log.Warn("relay: venue no longer entitled", "reason", next.reason(), "until", next.Until)
+			a.tell(next)
+			reason := next.reason()
+			if len(reason) > maxCloseReason {
+				reason = reason[:maxCloseReason]
+			}
+			a.close(wire.CloseNotEntitled, reason)
+			return
+		}
+		if remote := a.keyRemote && next.Remote; remote != a.remote.Load() {
+			a.remote.Store(remote)
+			a.log.Info("relay: back office across the relay changed", "back_office", remote)
+		}
+		if !next.same(ent) {
+			a.tell(next)
+		}
+		ent = next
+	}
 }
 
 // register makes a the venue's socket, displacing an older one. It reports

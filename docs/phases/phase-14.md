@@ -76,7 +76,39 @@ and its first commit copies this phase's cloud tasks there.
   lost: a cafe at 30 s loses at most half a minute of orders, and the
   invoice numbers it had given are in the events anyway.
 
-- [ ] **Task 3 - The relay asks who is entitled.** *This repo.*
+- [ ] **Task 3 - The relay asks who is entitled.** *This repo.* Split on
+  2026-10-12 while building it (ADR-316): the relay's half is one session
+  and the venue's is another.
+
+  - [x] **Task 3a - The relay's half.** `relay.Entitlements` and
+    `StaticEntitlements` (`internal/relay/entitlement.go`),
+    `RELAY_ENTITLEMENTS`. Asked at the dial (403 `not_entitled`, never the
+    401 of a bad key) and again each hour and at the date (close 4003 with
+    the reason). `Remote` turned false is 404 on the open socket. The
+    venue is told where it stands in `X-Mez-Entitlement` on the answer to
+    its dial, and in a `Notice` frame sent only to a venue that asked with
+    `X-Mez-Tunnel-Notices: 1`, since an installed venue hangs up on a frame
+    it does not know. `*` in the file is every venue not named; without it
+    they are not carried. `RELAY_REVOKED` is left to the key check. An
+    error from the store closes nobody. README and `compose.yml`.
+  - [ ] **Task 3b - The venue's half.** In `internal/tunnel`: send
+    `wire.HeaderNotices`, read `wire.HeaderEntitlement` off the dial's
+    answer (a 403 too) and `wire.TypeNotice` in `session.read`, keep what
+    was told on `Status`; a state for not entitled (403 `not_entitled` at
+    the dial, close code `wire.CloseNotEntitled` after) that tries again
+    within a minute and not in the five a refused key waits. In
+    `internal/api`: `not_entitled` in the tunnel's vocabulary and `cloud:
+    {state, paid_until, until, back_office, reason}` on `GET
+    /api/v1/tunnel`, absent when the relay said nothing. The Devices
+    screen: the ordering card's sentence for not entitled, and the cloud
+    line ("Cloud: paid until 12 Nov", "Payment failed, 5 days left") from
+    `paid_until` and `until` (read `docs/design/tokens.md` and the Devices
+    screen's file first). Tests in `internal/tunnel` against a real
+    `relay.Server` with entitlements a test changes, in `internal/api`,
+    and in the card's logic. `deploy.md` where it lists the tunnel's
+    states.
+
+  The task as it was set:
   `relay.Entitlements` with one method: for a venue id, `Until time.Time`,
   `Remote bool`, `State string`, `PaidUntil time.Time`, `Reason string`
   (ADR-313: the relay enforces the first two and passes the rest on).

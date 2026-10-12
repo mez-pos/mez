@@ -10,34 +10,34 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 and 2 are done (ADR-313, ADR-315). Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1, 2 and 3a are done (ADR-313, ADR-315, ADR-316). Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 2 - The backup is paced on purpose** (ADR-315).
-`backup_sync_interval` (`-backup-sync-interval`,
-`MEZ_BACKUP_SYNC_INTERVAL`): `30s`, from `5s` to `10m`. It sets how often
-Litestream looks at the database as well as how often it sends, since it
-sends one file per look. Counting against the stand-in bucket showed
-listings were most of the bill, so the merges, Litestream's tidying and
-mez's own look at a bucket are paced too, all in
-`internal/backup/pace.go`. `status.sync_interval_seconds` is on `GET
-/api/v1/settings/backup`; no screen shows it. `TestAnHourAsksLittleOfABucket`
-holds 200 billed requests in an hour of selling and 25 in an hour of
-none (measured 183 and 16: ₹32 a month on R2, where ADR-313 assumed ₹24).
-`deploy.md`, `running.md` and the cost paper say so.
+**Phase 14, Task 3a - The relay asks who is entitled** (ADR-316). Task 3
+was split: this is the relay's half. `relay.Entitlements` (`Until`,
+`Remote`, `State`, `PaidUntil`, `Reason`) is asked at the dial and again
+each hour and at the date. Not carried is 403 `not_entitled` at the dial
+and close code 4003 after, each with the reason. `StaticEntitlements`
+reads `RELAY_ENTITLEMENTS`, a file of `venue until [remote|guests]` with
+`*` for the rest, and reads it again when it changes. The venue is told
+where it stands in the `X-Mez-Entitlement` header and, if it asked, in a
+`Notice` frame. With no file every key is carried, as before. Nothing at
+the venue reads any of it yet.
 
 ## Next task
 
-**Phase 14, Task 3 - The relay asks who is entitled.** `relay.Entitlements`
-(`Until`, `Remote`, `State`, `PaidUntil`, `Reason`, ADR-313),
-`StaticEntitlements` from `RELAY_ENTITLEMENTS` with `RELAY_REVOKED` kept
-working, the check at connect and hourly, `not_entitled` with the reason,
-the tunnel client's retry within a minute, `cloud` on `GET
-/api/v1/tunnel`, `build/relay/README.md`.
+**Phase 14, Task 3b - The venue's half**, as the phase file sets it out:
+`internal/tunnel` asks for notices and reads the header and the frame, a
+not-entitled state that retries within a minute, `cloud` on `GET
+/api/v1/tunnel`, and the Devices screen's sentences. It is a UI task in
+part: read `docs/design/tokens.md` first.
+
+**The live relay does not need redeploying for 3a** unless entitlements
+are wanted on it: with `RELAY_ENTITLEMENTS` unset it behaves as it did.
 
 **Owed by Task 2 to Task 4:** a venue paired to mez Cloud must not go
 faster than 30 s (ADR-313). Nothing enforces it yet: there is no `[cloud]`
@@ -140,4 +140,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 and 2 of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1, 2 and 3a of 9)

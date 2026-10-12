@@ -11562,3 +11562,61 @@ and at the destination: a few hundred files of a few kilobytes. The hour in the
 test is scaled, not lived, and its bucket is a stand-in: the real figure is on the
 first month's R2 bill, and that has not been seen. `config` now imports `backup`,
 and with it Litestream, for the three numbers that bound the setting.
+
+## ADR-316 - The relay asks who is entitled when a venue connects and each hour after, and tells the venue where it stands in a header and a frame an old venue never sees
+2026-10 · Status: accepted. Phase 14, Task 3 (3a built here; 3b is the venue's half). Builds on ADR-312 and ADR-313.
+Context: until now a valid key was all a venue needed, for ever. ADR-312 said the relay
+decides by entitlement and ADR-313 said what an entitlement is. This is how the relay
+asks, what it does with the answer, and how the venue hears of it. Two things shaped
+it. Venues are already installed whose tunnel client hangs up on a frame it does not
+know, so nothing new may be sent to them. And the task is the relay, the wire, the
+venue's client, its API and a card: more than one session, so it is split.
+Decision:
+  - **`relay.Entitlements`, one method.** For a venue id: `Until`, `Remote`, `State`,
+    `PaidUntil`, `Reason`. The relay acts on the first two. A venue is carried while
+    now is before `Until`; the zero time is never and `relay.NoEnd` is for ever. The
+    back office crosses when the entitlement and the key both say so: an entitlement
+    can take it away and cannot give it to a key not issued for it (ADR-306 stands).
+  - **Asked at the dial, after the key.** A venue not carried is answered 403
+    `not_entitled` with the reason, and never registered. It is not the 401 of a bad
+    key, and must not be: a venue's client waits five minutes after a refused key,
+    and this answer can change in a minute.
+  - **Asked again while connected**, once an hour, and at the moment `Until` falls
+    when the relay knew the date. Past its date the venue is closed with code 4003
+    and the reason. A back office no longer carried turns into 404 on the socket
+    that is already open; nobody is disconnected for it.
+  - **An error is not a refusal.** If whoever keeps the entitlements cannot answer,
+    a connecting venue is let in on what its key says and a connected one stays, and
+    it is asked again in an hour. A store that is down must not close a cafe.
+  - **The venue is told where it stands, two ways.** On the answer to every dial, let
+    in or not, a header `X-Mez-Entitlement` holds `state`, `paid_until`, `until`,
+    `remote` and `reason` as JSON: a header an old venue ignores. When a connected
+    venue's standing changes, a new frame, `Notice` (type 6, stream 0), carries the
+    same, and is sent only to a venue that put `X-Mez-Tunnel-Notices: 1` on its dial.
+    A venue about to be closed is sent its notice first. An installed venue asks for
+    none and gets none.
+  - **`StaticEntitlements` is a file**, `RELAY_ENTITLEMENTS`: a venue, until when (a
+    day carried through its end, an instant, `forever`, `never`), and `remote` or
+    `guests`. `*` is every venue not named, and without it a venue not named is not
+    carried. It is read again when it has changed, at the next asking, so an edit
+    needs no restart; an edit that cannot be read leaves what was last read. With no
+    file every key is carried for ever, which is the relay as it was.
+  - **`RELAY_REVOKED` is untouched.** It is still the key check's and still comes
+    first, answered as a bad key is. The phase file had it folded into the file as
+    "until zero"; a revoked key id has no venue to hang a date on, and two places to
+    turn a venue off is one more than an operator can keep in mind.
+  - **Split.** 3a, built with this: the interface, the file, the asking, the 403, the
+    close, the notice, the README. 3b, next: the venue's client reads the header and
+    the notice and asks for them, has a state for not entitled that retries within
+    the minute, and `GET /api/v1/tunnel` and the Devices card say what was told.
+Because: the relay's part is small on purpose. It compares one date and reads one
+flag, and everything a person would want to know rides past it untouched, so mez
+Cloud can change what it calls a state without a relay being redeployed.
+Cost: a file with one line in it and no `*` turns every other venue off, which is the
+safe reading for someone selling access and a trap for someone who is not; the README
+says so first. The hour is the worst case for a venue cut off by a change the relay
+could not see coming, and for one let back in it is as long as its client waits,
+which today is under a minute by accident of its ordinary backoff and after 3b by
+design. A venue installed before 3b shows none of this on its screen: its log says
+the relay closed it and why. Entitlements are asked about one venue at a time and
+never for a guest's request, so a slow store slows a connection and not an order.

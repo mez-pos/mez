@@ -22,6 +22,12 @@ services:
       RELAY_REVOKED: ${RELAY_REVOKED:-}
       # Caddy is the proxy in front, and it tells the relay who the guest is.
       RELAY_TRUST_PROXY: "true"
+      # Which venues are carried, and until when (README.md, "Who is
+      # carried"). With these two and the volume below taken out of their
+      # comments, the file is /opt/mez-relay/entitlements on the server.
+      # RELAY_ENTITLEMENTS: /etc/mez-relay/entitlements
+    # volumes:
+    #   - ./entitlements:/etc/mez-relay/entitlements:ro
     # Reached by Caddy on the compose network and by nothing else.
     expose:
       - "8080"
