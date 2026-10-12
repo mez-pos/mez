@@ -753,9 +753,9 @@ What to know before relying on it:
 ## Backups
 
 mez keeps a second copy of the venue somewhere other than the venue's
-computer, and keeps it up to date by itself: each sale is at the
-destination about a second after it is made. It is off until you say where
-the copy should go.
+computer, and keeps it up to date by itself: every half minute it sends
+what has changed since the last time. It is off until you say where the
+copy should go.
 
 ### Turn it on
 
@@ -800,6 +800,24 @@ for seven days, and the changes in between.
 
 ### What to know before you rely on it
 
+- **What a dead computer loses is the last half minute.** The backup
+  sends what changed every 30 seconds, so if the disk fails, what was
+  sold since the last sending is not in the backup: at most half a
+  minute of orders. A bill printed in that half minute is then the only
+  record of its sale, and after a restore its invoice number is given
+  again to the next sale, because numbering carries on from what the
+  backup holds: if a customer shows you such a bill, keep a copy and
+  tell your accountant. Stopping mez properly, or shutting the computer
+  down, sends everything first and loses nothing. **Back up now** on the Backup
+  screen sends at once.
+- **The half minute can be changed**, by whoever runs the computer, with
+  `backup_sync_interval` in the settings file or
+  `MEZ_BACKUP_SYNC_INTERVAL` ([`running.md`](running.md)): from `5s` to
+  `10m`, written with its unit. Shorter loses less and asks more of the
+  destination. That matters for a bucket, which bills each request: at
+  30 seconds a busy cafe makes about 80,000 billed requests a month, a
+  few rupees on Cloudflare R2; at 5 seconds, about four times that. A
+  folder costs nothing either way, and `5s` is a fair setting for one.
 - **A bucket needs the internet when mez starts.** If mez is started with
   no internet, nothing is copied until the bucket first answers, and the
   sales made in that time are sent together when it does. If the
@@ -808,7 +826,7 @@ for seven days, and the changes in between.
   computer and go when it returns. A folder has no such gap. If your
   internet is unreliable, back up to a folder.
 - **A USB drive swapped for another** is noticed within a minute and
-  filled from scratch. On Linux and in Docker, restart mez after swapping.
+  filled from scratch. A bucket that was emptied is noticed within five. On Linux and in Docker, restart mez after swapping.
 - **On Linux and in Docker**, a folder has to be made reachable first:
   see [Linux](#linux) and [Backups in Docker](#backups-in-docker).
 - **Look at the Backup section now and then.** A backup that has been

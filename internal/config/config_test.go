@@ -450,6 +450,8 @@ func TestEveryKeyIsReachable(t *testing.T) {
 		keyGatewayWebhookSecret: "not-a-real-webhook-secret",
 
 		keyRemoteBackoffice: "true",
+
+		keyBackupSyncInterval: "45s",
 	}
 	if len(sample) != len(keys) {
 		t.Fatalf("sample covers %d keys, the package has %d: add the new one here", len(sample), len(keys))
@@ -514,6 +516,8 @@ func assertKey(t *testing.T, key, want string, cfg Config, err error) {
 		equal(t, key, cfg.GatewayWebhookSecret, want)
 	case keyRemoteBackoffice:
 		equal(t, key, cfg.RemoteBackoffice, true)
+	case keyBackupSyncInterval:
+		equal(t, key, cfg.BackupSyncInterval, 45*time.Second)
 	default:
 		t.Fatalf("key %q has no assertion: add one", key)
 	}
@@ -675,6 +679,53 @@ func TestRemoteBackofficeIsOffUnlessSaidPlainly(t *testing.T) {
 			}
 			if cfg.RemoteBackoffice != tt.want {
 				t.Errorf("RemoteBackoffice = %v, want %v", cfg.RemoteBackoffice, tt.want)
+			}
+		})
+	}
+}
+
+// TestBackupSyncInterval: half a minute unless said, a length of time with
+// its unit, and within what the backup allows (ADR-315).
+func TestBackupSyncInterval(t *testing.T) {
+	tests := []struct {
+		value   string
+		set     bool
+		want    time.Duration
+		wantErr bool
+	}{
+		{"", false, 30 * time.Second, false},
+		{"", true, 30 * time.Second, false},
+		{"30s", true, 30 * time.Second, false},
+		{" 2m ", true, 2 * time.Minute, false},
+		{"5s", true, 5 * time.Second, false},
+		{"10m", true, 10 * time.Minute, false},
+		{"1m30s", true, 90 * time.Second, false},
+		{"4s", true, 0, true},
+		{"1s", true, 0, true},
+		{"11m", true, 0, true},
+		{"30", true, 0, true},
+		{"-30s", true, 0, true},
+		{"0", true, 0, true},
+		{"soon", true, 0, true},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%q set=%v", tt.value, tt.set), func(t *testing.T) {
+			env := map[string]string{}
+			if tt.set {
+				env[envPrefix+strings.ToUpper(keyBackupSyncInterval)] = tt.value
+			}
+			cfg, err := load(nil, lookupFrom(env), t.TempDir(), "linux")
+			if tt.wantErr {
+				if err == nil || !strings.Contains(err.Error(), keyBackupSyncInterval) {
+					t.Fatalf("load = %v, want an error naming %s", err, keyBackupSyncInterval)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("load: %v", err)
+			}
+			if cfg.BackupSyncInterval != tt.want {
+				t.Errorf("BackupSyncInterval = %v, want %v", cfg.BackupSyncInterval, tt.want)
 			}
 		})
 	}

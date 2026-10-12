@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/service/settings"
@@ -58,6 +59,9 @@ func TestBackupSettingsOverHTTP(t *testing.T) {
 	if status != http.StatusOK || out.Kind != backup.KindOff || out.Status.State != backup.StateOff || out.RestartNeeded {
 		t.Fatalf("a new venue: %d %+v", status, out)
 	}
+	if out.Status.SyncIntervalSeconds != 0 {
+		t.Errorf("with no backup, sync_interval_seconds = %d, want 0", out.Status.SyncIntervalSeconds)
+	}
 	if status, _, refused := call(http.MethodPost, now, ""); status != http.StatusConflict || refused.Code != CodeBackupOff {
 		t.Errorf("back up now with nothing set: %d %+v", status, refused)
 	}
@@ -66,6 +70,11 @@ func TestBackupSettingsOverHTTP(t *testing.T) {
 	status, out, _ = call(http.MethodPut, at, `{"kind":"folder","folder":`+quote(folder)+`}`)
 	if status != http.StatusOK || out.Kind != backup.KindFolder || out.Folder != folder {
 		t.Fatalf("saving a folder: %d %+v", status, out)
+	}
+	// The pace it runs at, for whoever reads the screen to know what a
+	// dead machine would lose (ADR-315).
+	if want := int(backup.DefaultSyncInterval / time.Second); out.Status.SyncIntervalSeconds != want {
+		t.Errorf("sync_interval_seconds = %d, want the default %d", out.Status.SyncIntervalSeconds, want)
 	}
 	if _, err := os.Stat(filepath.Join(folder, "mez-backup.txt")); err != nil {
 		t.Errorf("the folder was not tried before it was kept: %v", err)
@@ -161,6 +170,9 @@ type fakeBackups struct {
 func (f *fakeBackups) Config() backup.Config { return f.cfg }
 func (f *fakeBackups) Status() backup.Status { return backup.Status{State: backup.StateOK} }
 func (f *fakeBackups) RestartNeeded() bool   { return f.restart }
+func (f *fakeBackups) SyncInterval() time.Duration {
+	return backup.DefaultSyncInterval
+}
 func (f *fakeBackups) BackUpNow(context.Context) error {
 	return nil
 }

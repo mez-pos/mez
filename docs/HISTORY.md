@@ -8,7 +8,20 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 1 - ADR-313: the entitlement states and the Razorpay
+**Phase 13, Task 5 - A remote session is harder to take than a LAN one**
+(ADR-314), built on 2026-10-12 at the human's word, after Phase 14's Task
+1. Where a sign-in came from is recorded (`via` on `sign_in_attempts` and
+`staff_sessions`, migration 00054). `auth.SignInRemote`: wrong PINs from
+away are counted apart from the venue's, and the third in a row
+hard-locks the person with ADR-260's lock, at the till too, until someone
+at the venue or `mez unlock` clears it. A session opened through the
+relay lasts `auth.RemoteSessionTTL` (12 h) and a relayed request is
+served on no other kind: one opened at the venue answers
+`sign_in_required` from away. Tests in `internal/auth/remote_test.go` and
+`internal/api/remote_test.go`; `deploy.md` has the owner's paragraph. No
+screen changed and none was walked.
+
+Before it, **Phase 14, Task 1 - ADR-313: the entitlement states and the Razorpay
 events.** A document, no code. Three dates on the cloud's venue row,
 written by one function: `paid_until` (the owner reads), `entitled_until`
 = that + 7 days of grace (the relay reads), `backups_kept_until` = that +

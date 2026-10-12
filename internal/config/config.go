@@ -23,6 +23,8 @@ import (
 	// machine and fails on the customer's. It costs about 450 KB in the binary.
 	// See ADR-017.
 	_ "time/tzdata"
+
+	"github.com/byjoellobo/mez/internal/backup"
 )
 
 // FileName is the configuration file Load looks for beside the binary.
@@ -53,6 +55,8 @@ const (
 	keyGatewayWebhookSecret = "gateway_webhook_secret"
 
 	keyRemoteBackoffice = "remote_backoffice"
+
+	keyBackupSyncInterval = "backup_sync_interval"
 )
 
 // GatewayRazorpay is the one payment gateway this build can use. The name
@@ -95,6 +99,7 @@ var keys = []string{
 	keyPublicURL,
 	keyGatewayWebhookSecret,
 	keyRemoteBackoffice,
+	keyBackupSyncInterval,
 }
 
 var usage = map[string]string{
@@ -116,6 +121,8 @@ var usage = map[string]string{
 	keyGatewayWebhookSecret: "the secret the gateway signs its webhooks with; a secret; empty takes no webhooks",
 
 	keyRemoteBackoffice: "true lets the owner open the back office through the relay; needs relay_url and a key issued for it",
+
+	keyBackupSyncInterval: "how often the backup sends what changed, like 30s or 2m; from 5s to 10m; it is the most a dead machine can lose",
 }
 
 // Config is the resolved, validated server configuration.
@@ -196,6 +203,13 @@ type Config struct {
 	// allows this, is checked where the tunnel is built, so that this key
 	// can be set alone like the others.
 	RemoteBackoffice bool
+
+	// BackupSyncInterval is how often the backup sends what changed to its
+	// destination, and so the most that is lost with the machine (ADR-315).
+	// It is a setting of the process and not of the destination: where the
+	// backup goes is the owner's to change in the back office, how often a
+	// bucket is billed is whoever runs the machine's.
+	BackupSyncInterval time.Duration
 }
 
 // GatewayEnabled reports whether a payment gateway is configured.
@@ -309,6 +323,8 @@ func defaults(lookup func(string) (string, bool), goos string) map[string]string
 		keyGatewayWebhookSecret: "",
 
 		keyRemoteBackoffice: "false",
+
+		keyBackupSyncInterval: backup.DefaultSyncInterval.String(),
 	}
 }
 
@@ -466,7 +482,29 @@ func build(raw map[string]string) (Config, error) {
 	if cfg.RemoteBackoffice, err = validSwitch(keyRemoteBackoffice, raw[keyRemoteBackoffice]); err != nil {
 		return Config{}, err
 	}
+	if cfg.BackupSyncInterval, err = validSyncInterval(raw[keyBackupSyncInterval]); err != nil {
+		return Config{}, err
+	}
 	return cfg, nil
+}
+
+// validSyncInterval reads how often the backup sends. A bare number is
+// refused and not read as seconds: 30 and 30s are told apart by nobody who
+// is guessing, and time.ParseDuration would call the first an error anyway,
+// in words about units that say less than these.
+func validSyncInterval(v string) (time.Duration, error) {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return backup.DefaultSyncInterval, nil
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return 0, fmt.Errorf("%s %q: must be a length of time with its unit, like 30s or 2m", keyBackupSyncInterval, v)
+	}
+	if err := backup.CheckSyncInterval(d); err != nil {
+		return 0, fmt.Errorf("%s %q: %w", keyBackupSyncInterval, v, err)
+	}
+	return d, nil
 }
 
 // validSwitch reads a setting that is on or off. Only the two words: "1",

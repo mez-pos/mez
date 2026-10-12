@@ -3,8 +3,8 @@
 //
 // It is Litestream, as a library inside the one binary (ADR-273): it reads
 // the database's write-ahead log and writes what changed to the
-// destination, within about a second of each sale. A venue PC that dies
-// has lost that second, not the day. With nowhere to send it, the copies
+// destination, every half minute unless the venue set another pace
+// (ADR-315). A venue PC that dies has lost that half minute, not the day. With nowhere to send it, the copies
 // wait in the data directory and go when the destination comes back:
 // a backup that cannot be reached is a status, never a reason not to sell.
 package backup
@@ -52,26 +52,6 @@ const (
 	closeTidy              = time.Second
 )
 
-// pace is how fast Litestream tidies up after itself: how often the small
-// files it writes for each change are merged into bigger ones, and how
-// soon the small ones are then deleted from this machine. Litestream's
-// own, in a variable so that a test can live through a morning's worth of
-// tidying in a second.
-var pace = struct {
-	levels           litestream.CompactionLevels
-	l0Retention      time.Duration
-	l0RetentionCheck time.Duration
-}{
-	levels:           litestream.DefaultCompactionLevels,
-	l0Retention:      litestream.DefaultL0Retention,
-	l0RetentionCheck: litestream.DefaultL0RetentionCheckInterval,
-}
-
-// staleAfter is how long without reaching the destination before the
-// backup is said to be failing. Litestream reaches it every second while
-// it can, and backs off to minutes while it cannot.
-const staleAfter = time.Minute
-
 // State is how the backup is doing, in one word.
 type State string
 
@@ -81,7 +61,7 @@ const (
 	// StateStarting is a backup that has not reached its destination yet
 	// and has not had long to.
 	StateStarting State = "starting"
-	// StateOK is a backup that reached its destination within the minute.
+	// StateOK is a backup that reached its destination when it last meant to.
 	StateOK State = "ok"
 	// StateFailing is a backup that is not reaching its destination. Sales
 	// carry on; what is not yet copied waits on this machine.
@@ -131,6 +111,10 @@ type Options struct {
 	// ProbeEvery is how often the destination is looked at. Zero is the
 	// destination's own pace.
 	ProbeEvery time.Duration
+	// SyncInterval is how often what changed is sent. Zero is
+	// DefaultSyncInterval. It is taken as given: CheckSyncInterval is for
+	// whoever reads it from a person.
+	SyncInterval time.Duration
 	// OnLost is told, once and on a goroutine of its own, that the
 	// destination no longer holds what was sent to it and the backup must
 	// be started again to send it all. See Engine.Lost.
@@ -140,10 +124,11 @@ type Options struct {
 // Engine is a running backup, or the absence of one: with no destination
 // every method still answers, so its callers need no second path.
 type Engine struct {
-	cfg     Config
-	clock   Clock
-	log     *slog.Logger
-	started time.Time
+	cfg      Config
+	clock    Clock
+	log      *slog.Logger
+	started  time.Time
+	interval time.Duration
 
 	// Nil or empty when off.
 	generation string
@@ -220,8 +205,11 @@ func Start(ctx context.Context, opts Options) (*Engine, error) {
 	if err := opts.Config.Validate(filepath.Dir(opts.DBPath)); err != nil {
 		return nil, fmt.Errorf("backup: %w", err)
 	}
+	if opts.SyncInterval <= 0 {
+		opts.SyncInterval = pace.sync
+	}
 
-	e := &Engine{cfg: opts.Config, clock: opts.Clock, log: opts.Log, started: opts.Clock.Now()}
+	e := &Engine{cfg: opts.Config, clock: opts.Clock, log: opts.Log, started: opts.Clock.Now(), interval: opts.SyncInterval}
 	if !opts.Config.Enabled() {
 		return e, nil
 	}
@@ -253,6 +241,11 @@ func Start(ctx context.Context, opts Options) (*Engine, error) {
 	// handle (see open). A till can hold the database for longer than
 	// that: a day's close, a big import.
 	e.ldb.BusyTimeout = litestreamBusyTimeout
+	// Both, or neither does anything: Litestream cuts one file each time it
+	// looks at the database and sends each file by itself, so sending every
+	// half minute what was cut every second is the same thirty requests.
+	e.ldb.MonitorInterval = e.interval
+	replica.SyncInterval = e.interval
 
 	if opts.PhotosDir != "" {
 		e.photos = newPhotoSync(opts.PhotosDir, e.dest.photos, opts.Log)
@@ -263,14 +256,16 @@ func Start(ctx context.Context, opts Options) (*Engine, error) {
 	// is a moment from now and for a bucket with no internet is whenever
 	// the internet comes back.
 	e.runCtx = context.WithoutCancel(ctx)
-	if opts.ProbeEvery <= 0 {
-		opts.ProbeEvery = e.dest.every
+	there, gone := e.dest.every, pace.probeGone
+	if opts.ProbeEvery > 0 {
+		there, gone = opts.ProbeEvery, opts.ProbeEvery
 	}
 	probeCtx, stop := context.WithCancel(context.WithoutCancel(ctx))
 	e.stopProbe, e.probeDone = stop, make(chan struct{})
-	go e.probeLoop(probeCtx, opts.ProbeEvery)
+	go e.probeLoop(probeCtx, there, gone)
 
-	opts.Log.Info("backing up the database", "kind", string(opts.Config.Kind), "destination", opts.Config.Destination())
+	opts.Log.Info("backing up the database", "kind", string(opts.Config.Kind), "destination", opts.Config.Destination(),
+		"every", e.interval.String())
 	return e, nil
 }
 
@@ -354,17 +349,25 @@ func (e *Engine) isOpen() bool {
 // probeLoop looks at the destination now and then, so that Status can say
 // it is gone without touching a disk itself: a share that has stopped
 // answering hangs this goroutine and not a page load.
-func (e *Engine) probeLoop(ctx context.Context, every time.Duration) {
+//
+// It looks every there while the destination answers and every gone while
+// it does not: a bucket bills each look it answers and none it does not.
+func (e *Engine) probeLoop(ctx context.Context, there, gone time.Duration) {
 	defer close(e.probeDone)
-	ticker := time.NewTicker(every)
-	defer ticker.Stop()
+	timer := time.NewTimer(0)
+	defer timer.Stop()
 	for {
-		e.probe(ctx)
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
+		case <-timer.C:
 		}
+		e.probe(ctx)
+		next := there
+		if was, _ := e.unreachable.get(); was != "" {
+			next = gone
+		}
+		timer.Reset(next)
 	}
 }
 
@@ -412,7 +415,7 @@ func (e *Engine) probe(ctx context.Context) {
 	}
 	e.tidy(ctx)
 	// The photos go on the probe's clock: a photo added to the menu is at
-	// the destination within the minute, and a quiet venue with no new
+	// the destination by the next look, and a quiet venue with no new
 	// photo asks the destination nothing more than the probe just did.
 	if err := e.copyPhotos(ctx, false); err != nil && ctx.Err() == nil {
 		e.log.Warn("the menu's photos were not all backed up", "error", err)
@@ -592,6 +595,15 @@ func (e *Engine) BackUpNow(ctx context.Context) error {
 	return nil
 }
 
+// SyncInterval is how often what changed is sent: the most that a machine
+// dying can lose. Zero with no backup running.
+func (e *Engine) SyncInterval() time.Duration {
+	if e == nil || !e.cfg.Enabled() {
+		return 0
+	}
+	return e.interval
+}
+
 // Status says how the backup is doing. It touches no disk itself, so it is
 // cheap enough to ask on every page load and cannot hang on a dead share.
 func (e *Engine) Status() Status {
@@ -620,9 +632,9 @@ func (e *Engine) Status() Status {
 		// The sales are safe and the pictures are not: still failing,
 		// because "ok" would be read as everything.
 		return Status{State: StateFailing, LastSyncedAt: utcOrZero(last), Error: photos}
-	case !last.IsZero() && now.Sub(last) < staleAfter:
+	case !last.IsZero() && now.Sub(last) < staleAfter(e.interval):
 		return Status{State: StateOK, LastSyncedAt: last.UTC()}
-	case last.IsZero() && now.Sub(e.started) < staleAfter:
+	case last.IsZero() && now.Sub(e.started) < staleAfter(e.interval):
 		return Status{State: StateStarting}
 	default:
 		return Status{State: StateFailing, LastSyncedAt: utcOrZero(last)}

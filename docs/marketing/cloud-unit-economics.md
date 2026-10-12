@@ -48,6 +48,19 @@ At a 30-second interval it is ₹24. The cloud build must set the sync
 interval and part size deliberately, and the first ADR of Phase 14
 should say so. A one-minute recovery point is fine for a cafe.
 
+**Measured on 2026-10-12, when the interval was built (ADR-315).** The
+writes were not the whole of it. R2 bills a listing as a Class A
+operation too, and Litestream as it comes lists the bucket 480 times an
+hour to tidy up after itself, sale or no sale, with mez's own look at the
+bucket adding 60: about 390,000 a month, another ₹154 that the paragraph
+above did not count. With the interval at 30 seconds and the tidying and
+the looking slowed to match, a test counts 183 billed requests in an hour
+of selling and 16 in an hour of none: about 82,000 a month for a cafe
+open fourteen hours, **₹32**, against the ₹24 assumed. So a venue costs
+about ₹64 a month in services and ₹83 with trials carried, not ₹56 and
+₹73. The tables below were not redone: the difference is ₹8 to ₹10 a
+venue, about one percent of the price.
+
 ## Price ₹699 a month, ₹6,999 a year (blended ₹630)
 
 | Venues | Revenue | Gateway | Variable | Infra | Tools+overhead | Infra-only profit | Margin | Staff | Profit after staff |

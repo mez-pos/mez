@@ -55,7 +55,18 @@ and its first commit copies this phase's cloud tasks there.
   read; puts the grace into `entitled_until` when the date is written; and
   holds a venue paired to mez Cloud to a 30 s backup at the fastest.*
 
-- [ ] **Task 2 - The backup is paced on purpose.** *This repo.* Litestream's
+- [x] **Task 2 - The backup is paced on purpose.** *This repo.*
+  As built (ADR-315): the setting is `backup_sync_interval`, flat like the
+  rest, `30s`, from `5s` to `10m`. Counting against a stand-in bucket
+  showed the writes were not most of the bill: Litestream's tidying lists
+  the bucket 480 times an hour and mez's own look added 60, and a listing
+  is billed as a write. So the merges, the tidying and the look are paced
+  too, in `internal/backup/pace.go`. `status.sync_interval_seconds` is on
+  `GET /api/v1/settings/backup`. The test counts 183 billed requests in
+  an hour of selling and 16 in an hour of none: ₹32 a month, not ₹24.
+  **The last sentence below is wrong**: the invoice numbers of the lost
+  half minute are lost with it and given again after a restore;
+  `deploy.md` says that. The task as it was set: Litestream's
   default syncs every second, which is about 1.5 million R2 writes a month
   for a busy cafe and ₹594 of a ₹699 subscription. A new setting,
   `backup.sync_interval`, default `30s`, floor `5s`; the part size raised to

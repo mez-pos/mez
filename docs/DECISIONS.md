@@ -11489,3 +11489,76 @@ home and gives up carries those two strikes until they next sign in from away or
 thirty days pass. Twelve hours is also today's length at the venue, so nothing is
 shorter yet; the two are now separate numbers. Phase 14's cloud sign-in opens this
 same session by another door and is not built here.
+
+## ADR-315 - The backup sends every half minute, and everything else that asks a bucket something is slowed to match
+2026-10 · Status: accepted. Phase 14, Task 2. Changes ADR-273's "within about a second".
+Context: Litestream sends each second and was written for a server beside its bucket.
+A bucket bills by the request, and the phase file counted the writes: a million and a
+half a month for a busy cafe, ₹594 of a ₹699 subscription. The task was a setting for
+how often it sends, 30 seconds by default. Built that way and counted against a
+stand-in bucket, it saved less than it should have, and the count said why. Three
+things were found that the phase file did not know:
+  - **Setting how often Litestream sends changes nothing by itself.** It cuts one
+    small file each time it looks at the database, every second, and sends each file
+    with a request of its own. Sent every 30 seconds, that is the same thirty
+    requests, later. How often it looks is the number that counts.
+  - **A listing is billed as a write, and most of the requests were listings.**
+    Litestream looks for small files it may delete every fifteen seconds, and each
+    look lists the bucket twice: 480 an hour, sale or no sale, about 345,000 a month
+    from a venue that sold nothing. mez's own look at the bucket once a minute
+    (ADR-279) added 43,000.
+  - **Its first merge was one for one.** It merges small files into bigger ones every
+    thirty seconds, which at one file every thirty seconds writes each change twice.
+Decision:
+  - **One setting, `backup_sync_interval`**, with `-backup-sync-interval` and
+    `MEZ_BACKUP_SYNC_INTERVAL`: default `30s`, from `5s` to `10m`, a length of time
+    with its unit. It sets how often Litestream looks at the database and how often
+    it sends, together. It is a setting of the process, in the settings file, and
+    not beside the destination in `backup.json`: where the backup goes is the
+    owner's to change in the back office, and how often a bucket is billed is
+    whoever runs the machine's. The name is flat like every other key; the phase
+    file's `backup.sync_interval` would have been the only table in the file.
+  - **The rest is paced in one place, `internal/backup/pace.go`, and is not a
+    setting.** Merges at five minutes, an hour and six hours, where Litestream's
+    are thirty seconds, five minutes and an hour; the same number of levels, since a
+    destination written before this has files in each. The look for small files to
+    delete once an hour, not every fifteen seconds. mez's look at a bucket every
+    five minutes while it answers and every minute while it does not, since a
+    bucket bills the looks it answers and none of the others. A folder is still
+    looked at every fifteen seconds: asking a disk is free.
+  - **Failing is judged against the pace.** A backup is said to be failing when it
+    has not reached its destination for three intervals, and never sooner than a
+    minute, where it was a minute flat.
+  - **The API says the pace**: `status.sync_interval_seconds` on
+    `GET /api/v1/settings/backup`, absent with no backup running. No screen shows
+    it yet.
+  - **Parts of sixteen megabytes, two at a time**, for the one upload big enough to
+    be sent in parts, the nightly whole copy of a large database. It is a third of
+    the requests of the SDK's five megabytes and is worth almost nothing: a few
+    hundred requests a month. It was asked for, and it is cheap.
+  - **A test holds the bill.** `TestAnHourAsksLittleOfABucket` lives through an
+    hour three hundred times fast against the stand-in bucket and counts every put
+    and every listing: at most 200 in an hour of selling, at most 25 in an hour of
+    none. Measured: 183 and 16. Fourteen hours of the one and ten of the other is
+    about 82,000 a month, ₹32 on R2. As Litestream comes, with a sale each second,
+    it is about 1.9 million and ₹750.
+Because: the number an owner can reason about is how much a dead machine loses, so
+that is the setting. The rest are costs with no such meaning to anyone, and a venue
+that could turn the fifteen seconds back on would only be buying requests.
+Cost: half a minute of sales can be lost with the disk, where it was a second. The
+phase file said the invoice numbers given in that time "are in the events anyway".
+They are not: the events are what is lost, and after a restore numbering carries on
+from what the backup holds, so a number printed in the lost half minute is given
+again to the next sale. That was true of the lost second too; it is now thirty times
+likelier to matter, and `deploy.md` says so to the owner in those words. A clean
+stop still sends everything first. ₹32 is over the ₹24 that ADR-313 and the cost
+paper assumed, so a venue costs about ₹64 a month to serve and ₹83 with trials
+carried, not ₹56 and ₹73: still under the ₹100. At `5s` a bucket is asked about four
+times as much, ₹130, which is over it; ADR-313 already holds a venue paired to mez
+Cloud to 30 seconds, and Task 4 is where that is applied. A bucket emptied behind
+mez's back is noticed within five minutes and not one, and a new menu photo reaches
+a bucket within five. Small files wait up to an hour to be deleted, on the machine
+and at the destination: a few hundred files of a few kilobytes. The hour in the
+test is scaled, not lived, and its bucket is a stand-in: the real figure is on the
+first month's R2 bill, and that has not been seen. `config` now imports `backup`,
+and with it Litestream, for the three numbers that bound the setting.

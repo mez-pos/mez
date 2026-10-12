@@ -1191,6 +1191,7 @@ export interface BackupStatus {
   state: BackupState;
   last_synced_at?: string;
   error?: string;
+  sync_interval_seconds?: number;
 }
 
 export interface GuestRequestsResponse {

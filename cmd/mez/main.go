@@ -215,7 +215,9 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// it believes the venue is being backed up.
 	dbPath := filepath.Join(cfg.DataDir, db.FileName)
 	photosDir := filepath.Join(cfg.DataDir, "photos")
-	backups, err := backup.NewManager(backup.ManagerOptions{DataDir: cfg.DataDir, DBPath: dbPath, PhotosDir: photosDir, Log: log})
+	backups, err := backup.NewManager(backup.ManagerOptions{
+		DataDir: cfg.DataDir, DBPath: dbPath, PhotosDir: photosDir, Log: log, SyncInterval: cfg.BackupSyncInterval,
+	})
 	if err != nil {
 		return err
 	}

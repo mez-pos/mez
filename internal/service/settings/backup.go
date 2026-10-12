@@ -14,6 +14,7 @@ import (
 type Backups interface {
 	Config() backup.Config
 	Status() backup.Status
+	SyncInterval() time.Duration
 	RestartNeeded() bool
 	Set(ctx context.Context, cfg backup.Config) (restartNeeded bool, err error)
 	BackUpNow(ctx context.Context) error
@@ -72,6 +73,9 @@ type Backup struct {
 	State        backup.State
 	LastSyncedAt time.Time
 	Error        string
+	// SyncInterval is how often it sends what changed. Zero with none
+	// running.
+	SyncInterval time.Duration
 	// RestartNeeded says the destination above is saved and not yet in
 	// use: the one in use is the one from before, until mez is restarted.
 	RestartNeeded bool
@@ -92,6 +96,7 @@ func (s *Service) backupNow() Backup {
 		Bucket: cfg.S3.Bucket, Path: cfg.S3.Path, Region: cfg.S3.Region, Endpoint: cfg.S3.Endpoint,
 		AccessKeyID: cfg.S3.AccessKeyID, SecretSet: cfg.S3.SecretAccessKey != "",
 		State: st.State, LastSyncedAt: st.LastSyncedAt, Error: st.Error,
+		SyncInterval:  s.backups.SyncInterval(),
 		RestartNeeded: s.backups.RestartNeeded(),
 	}
 }

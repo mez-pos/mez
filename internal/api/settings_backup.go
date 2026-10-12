@@ -54,10 +54,13 @@ type backupBucketRequest struct {
 // backupStatus is how the running backup is doing. last_synced_at is when
 // the destination last had everything, absent if it has not since the
 // server started; error is what is wrong while something is.
+// sync_interval_seconds is how often it sends what changed, and so the most
+// a dead machine can lose (ADR-315); absent with no backup running.
 type backupStatus struct {
-	State        backup.State `json:"state"`
-	LastSyncedAt *time.Time   `json:"last_synced_at,omitempty"`
-	Error        string       `json:"error,omitempty"`
+	State               backup.State `json:"state"`
+	LastSyncedAt        *time.Time   `json:"last_synced_at,omitempty"`
+	Error               string       `json:"error,omitempty"`
+	SyncIntervalSeconds int          `json:"sync_interval_seconds,omitempty"`
 }
 
 // backupResponse is the backup as saved and as running. The secret is
@@ -141,7 +144,7 @@ func (s *Server) writeBackup(w http.ResponseWriter, r *http.Request, b settings.
 			backupBucket: backupBucket{Bucket: b.Bucket, Path: b.Path, Region: b.Region, Endpoint: b.Endpoint, AccessKeyID: b.AccessKeyID},
 			SecretSet:    b.SecretSet,
 		},
-		Status:        backupStatus{State: b.State, Error: b.Error},
+		Status:        backupStatus{State: b.State, Error: b.Error, SyncIntervalSeconds: int(b.SyncInterval / time.Second)},
 		RestartNeeded: b.RestartNeeded,
 	}
 	if !b.LastSyncedAt.IsZero() {

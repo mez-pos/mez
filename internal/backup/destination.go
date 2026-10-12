@@ -24,15 +24,11 @@ import (
 // copies go in. The photos get one beside it.
 const databaseDir = "db"
 
-// How often the destination is looked at when nobody is selling.
-// Litestream only touches it when there is something to send, so a drive
-// pulled out on a quiet afternoon would otherwise read as fine until the
-// next sale. A folder is asked often because asking is free; a bucket is
-// asked once a minute, because each asking is a request someone bills.
-const (
-	probeFolderEvery = 15 * time.Second
-	probeBucketEvery = time.Minute
-)
+// The destination is also looked at when nobody is selling. Litestream only
+// touches it when there is something to send, so a drive pulled out on a
+// quiet afternoon would otherwise read as fine until the next sale. How
+// often is pace's: a folder is asked often because asking is free, a bucket
+// every few minutes because each asking is a request someone bills.
 
 // probeTimeout bounds one look at the destination. With no internet the
 // S3 client tries ten times, backing off between, which is minutes; a
@@ -225,7 +221,7 @@ func newFolder(cfg Config, generation string, log *slog.Logger) destination {
 			}
 			return listOne(ctx, client)
 		},
-		every:  probeFolderEvery,
+		every:  pace.probeFolder,
 		photos: folderPhotos{dir: filepath.Join(cfg.Folder, photosDir)},
 		check: func(context.Context) error {
 			return writeWhole(filepath.Join(cfg.Folder, noteName), []byte(noteText))
@@ -249,13 +245,14 @@ func newBucket(cfg S3, generation string, log *slog.Logger) destination {
 	// the bucket in the path. R2 and MinIO both take it; the other way
 	// needs a DNS name for each bucket, which a MinIO on the LAN has not.
 	client.ForcePathStyle = cfg.Endpoint != ""
+	client.PartSize, client.Concurrency = bucketPartSize, bucketConcurrency
 
 	photos := newBucketPhotos(cfg)
 	return destination{
 		client: client,
 		attach: func(*litestream.Replica) {},
 		reach:  func(ctx context.Context) (bool, error) { return listOne(ctx, client) },
-		every:  probeBucketEvery,
+		every:  pace.probeBucket,
 		photos: photos,
 		check:  func(ctx context.Context) error { return photos.putNote(ctx, cfg.prefix()+"/"+noteName, noteText) },
 	}

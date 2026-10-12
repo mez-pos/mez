@@ -25,6 +25,9 @@ type ManagerOptions struct {
 	// ProbeEvery is how often the destination is looked at. Zero is the
 	// destination's own pace.
 	ProbeEvery time.Duration
+	// SyncInterval is how often what changed is sent. Zero is
+	// DefaultSyncInterval.
+	SyncInterval time.Duration
 }
 
 // Manager is the venue's backup for as long as the server runs: the
@@ -99,7 +102,7 @@ func (m *Manager) Start(ctx context.Context) error {
 func (m *Manager) startEngine(ctx context.Context, cfg Config) (*Engine, error) {
 	return Start(ctx, Options{
 		DBPath: m.opts.DBPath, Config: cfg, Log: m.opts.Log, PhotosDir: m.opts.PhotosDir,
-		OnLost: m.startAgain, ProbeEvery: m.opts.ProbeEvery,
+		OnLost: m.startAgain, ProbeEvery: m.opts.ProbeEvery, SyncInterval: m.opts.SyncInterval,
 	})
 }
 
@@ -170,6 +173,12 @@ func (m *Manager) RestartNeeded() bool {
 // is the old destination's status: that is what is being copied to.
 func (m *Manager) Status() Status {
 	return m.current().Status()
+}
+
+// SyncInterval is how often the running backup sends what changed. Zero
+// with none running.
+func (m *Manager) SyncInterval() time.Duration {
+	return m.current().SyncInterval()
 }
 
 // Running reports whether a backup is running, reaching its destination

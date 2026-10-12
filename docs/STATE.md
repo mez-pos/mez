@@ -10,34 +10,38 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Task 1 is done (ADR-313). Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1 and 2 are done (ADR-313, ADR-315). Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 13, Task 5 - A remote session is harder to take than a LAN one**
-(ADR-314), built on 2026-10-12 at the human's word, after Phase 14's Task
-1. Where a sign-in came from is recorded (`via` on `sign_in_attempts` and
-`staff_sessions`, migration 00054). `auth.SignInRemote`: wrong PINs from
-away are counted apart from the venue's, and the third in a row
-hard-locks the person with ADR-260's lock, at the till too, until someone
-at the venue or `mez unlock` clears it. A session opened through the
-relay lasts `auth.RemoteSessionTTL` (12 h) and a relayed request is
-served on no other kind: one opened at the venue answers
-`sign_in_required` from away. Tests in `internal/auth/remote_test.go` and
-`internal/api/remote_test.go`; `deploy.md` has the owner's paragraph. No
-screen changed and none was walked.
+**Phase 14, Task 2 - The backup is paced on purpose** (ADR-315).
+`backup_sync_interval` (`-backup-sync-interval`,
+`MEZ_BACKUP_SYNC_INTERVAL`): `30s`, from `5s` to `10m`. It sets how often
+Litestream looks at the database as well as how often it sends, since it
+sends one file per look. Counting against the stand-in bucket showed
+listings were most of the bill, so the merges, Litestream's tidying and
+mez's own look at a bucket are paced too, all in
+`internal/backup/pace.go`. `status.sync_interval_seconds` is on `GET
+/api/v1/settings/backup`; no screen shows it. `TestAnHourAsksLittleOfABucket`
+holds 200 billed requests in an hour of selling and 25 in an hour of
+none (measured 183 and 16: ₹32 a month on R2, where ADR-313 assumed ₹24).
+`deploy.md`, `running.md` and the cost paper say so.
 
 ## Next task
 
-**Phase 14, Task 2 - The backup is paced on purpose.** `backup.sync_interval`,
-default `30s`, floor `5s`, part size to match, the interval in `GET
-/api/v1/backup`, a test that counts uploads over a simulated hour, and
-`deploy.md`. ADR-313 holds a venue paired to mez Cloud to 30 s; there is
-no `[cloud]` section until Task 4, so Task 2 builds the setting and the
-floor and Task 4 applies the cloud's.
+**Phase 14, Task 3 - The relay asks who is entitled.** `relay.Entitlements`
+(`Until`, `Remote`, `State`, `PaidUntil`, `Reason`, ADR-313),
+`StaticEntitlements` from `RELAY_ENTITLEMENTS` with `RELAY_REVOKED` kept
+working, the check at connect and hourly, `not_entitled` with the reason,
+the tunnel client's retry within a minute, `cloud` on `GET
+/api/v1/tunnel`, `build/relay/README.md`.
+
+**Owed by Task 2 to Task 4:** a venue paired to mez Cloud must not go
+faster than 30 s (ADR-313). Nothing enforces it yet: there is no `[cloud]`
+section to know a venue is paired.
 
 **The live relay's venues are safe to give a `--remote` key now**: the
 venue's binary must be one built from this commit or later, since the
@@ -121,6 +125,9 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 8. The firewall rule is for Private and Domain networks (ADR-265). Public too?
 9. ADR-313 took the cost paper's prices (₹999 and ₹9,999; founders ₹699 and
    ₹6,999, first hundred). Are they right, and are they shown with GST or before it?
+10. After a restore, an invoice number printed in the half minute the backup had
+   not yet sent is given again to the next sale (ADR-315). Is that acceptable for
+   GST, or should a restore skip numbers ahead?
 
 ---
 
@@ -133,4 +140,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Task 1 of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 and 2 of 9)
