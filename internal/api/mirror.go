@@ -18,9 +18,10 @@ const (
 	CodeMirrorReadOnly ErrorCode = "mirror_read_only"
 
 	// HeaderMirror is on every answer a mirror gives: the moment of the
-	// last write its copy holds, RFC 3339, UTC. A screen reads it off
-	// whatever it last asked, so the time it shows is never older than
-	// what it is showing.
+	// last write its copy holds, RFC 3339 to the nanosecond, UTC, so that a
+	// newer copy never carries the time of the one before. A screen reads
+	// it off whatever it last asked, so the time it shows is never older
+	// than what it is showing.
 	HeaderMirror = "X-Mez-Mirror"
 )
 
@@ -60,7 +61,7 @@ var mirrorWrites = map[string]struct{}{
 func (s *Server) mirrorGate(mux *http.ServeMux, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if at := s.mirror().AsOf; !at.IsZero() {
-			w.Header().Set(HeaderMirror, at.UTC().Format(time.RFC3339))
+			w.Header().Set(HeaderMirror, at.UTC().Format(time.RFC3339Nano))
 		} else {
 			// A mirror all the same, of a copy that cannot say how old it is.
 			w.Header().Set(HeaderMirror, "")

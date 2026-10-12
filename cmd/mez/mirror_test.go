@@ -21,14 +21,14 @@ import (
 
 // startMirror runs `mez mirror` over a backup until the test ends, and
 // returns where it is serving and what it printed.
-func startMirror(t *testing.T, to backup.Config, stateDir string) (mirrorUp, *bytes.Buffer, func() error) {
+func startMirror(t *testing.T, to backup.Config, stateDir string, more ...string) (mirrorUp, *bytes.Buffer, func() error) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	var said bytes.Buffer
 	up := make(chan mirrorUp, 1)
 	done := make(chan error, 1)
 	go func() {
-		done <- serveMirror(ctx, []string{"-from", to.Folder, "-listen-addr", "127.0.0.1:0", "-state-dir", stateDir}, &said, func(m mirrorUp) { up <- m })
+		done <- serveMirror(ctx, append([]string{"-from", to.Folder, "-listen-addr", "127.0.0.1:0", "-state-dir", stateDir}, more...), &said, func(m mirrorUp) { up <- m })
 	}()
 	// Stopped once, by the test or at its end, whichever comes first.
 	var once sync.Once
@@ -213,8 +213,8 @@ func TestAMirrorShowsTheVenueAndChangesNothing(t *testing.T) {
 	if strings.Join(got, ",") != strings.Join(staffNames, ",") {
 		t.Errorf("the mirror's staff are %v, the venue's %v", got, staffNames)
 	}
-	if at := header.Get(api.HeaderMirror); at != generations[0].Last.UTC().Format(time.RFC3339) {
-		t.Errorf("%s = %q, want when the backup was last written, %s", api.HeaderMirror, at, generations[0].Last.UTC().Format(time.RFC3339))
+	if at := header.Get(api.HeaderMirror); at != generations[0].Last.UTC().Format(time.RFC3339Nano) {
+		t.Errorf("%s = %q, want when the backup was last written, %s", api.HeaderMirror, at, generations[0].Last.UTC().Format(time.RFC3339Nano))
 	}
 	if header.Get(api.HeaderVia) != api.ViaRelay {
 		t.Errorf("the mirror's answers do not say they are from away")
@@ -388,6 +388,287 @@ func TestAMirrorStartedAgainRemembers(t *testing.T) {
 	}
 }
 
+// venueRunsAgain starts the venue's own server on its data directory and
+// stops it once its backup holds something written after since: a day's
+// trading, as far as the backup is concerned.
+func venueRunsAgain(t *testing.T, dataDir string, to backup.Config, since time.Time) time.Time {
+	t.Helper()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	// As fast as a venue may send, so the test does not wait half a minute.
+	args := append(serverArgs(t, dataDir), "-backup-sync-interval", "5s")
+	go func() { done <- run(ctx, args, runOptions{stdout: io.Discard}) }()
+
+	var last time.Time
+	deadline := time.Now().Add(90 * time.Second)
+	for {
+		if found, err := backup.Generations(context.Background(), to); err == nil && len(found) > 0 && found[0].Last.After(since) {
+			last = found[0].Last
+			break
+		}
+		select {
+		case err := <-done:
+			t.Fatalf("the venue's server stopped by itself: %v\n%s", err, readLog(t, dataDir))
+		default:
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("the venue's backup was not written again in ninety seconds:\n%s", readLog(t, dataDir))
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	cancel()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("run: %v", err)
+		}
+	case <-time.After(shutdownTimeout + 5*time.Second):
+		t.Fatal("the venue's server did not stop")
+	}
+	// What it wrote as it stopped is in the backup too.
+	if found, err := backup.Generations(context.Background(), to); err == nil && len(found) > 0 {
+		last = found[0].Last
+	}
+	return last
+}
+
+// TestAMirrorFollowsItsBackup: the venue goes on after the mirror was
+// started. The mirror shows what is newer, says it is newer, keeps whoever
+// was signed in signed in, and puts the older copy away.
+func TestAMirrorFollowsItsBackup(t *testing.T) {
+	ctx := context.Background()
+	before := len(leftCopies(os.TempDir()))
+	dataDir, to, _ := backedUpVenue(t)
+	source := opened(t, dataDir)
+	var ownerID string
+	if err := source.Reader().QueryRowContext(ctx, `SELECT public_id FROM staff WHERE name = 'Priya'`).Scan(&ownerID); err != nil {
+		t.Fatal(err)
+	}
+
+	up, said, stop := startMirror(t, to, t.TempDir(), "-follow", "1s")
+	base := "http://" + up.Addr
+	if !strings.Contains(said.String(), "looks at the backup every 1s") {
+		t.Errorf("the mirror does not say it follows:\n%s", said.String())
+	}
+	status, raw, _ := ask(t, http.MethodPost, base+"/api/v1/devices/pair", `{"code":"`+up.Code+`"}`, nil)
+	if status != http.StatusCreated {
+		t.Fatalf("pairing: status %d, body %s", status, raw)
+	}
+	var paired struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal(raw, &paired); err != nil {
+		t.Fatal(err)
+	}
+	status, raw, _ = ask(t, http.MethodPost, base+"/api/v1/sessions", `{"staff_id":"`+ownerID+`","pin":"246813"}`, map[string]string{"Authorization": "Bearer " + paired.Token})
+	if status != http.StatusCreated {
+		t.Fatalf("signing in: status %d, body %s", status, raw)
+	}
+	var in struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal(raw, &in); err != nil {
+		t.Fatal(err)
+	}
+	owner := map[string]string{"Authorization": "Bearer " + paired.Token, api.HeaderStaffToken: in.Token}
+
+	venue := func() (name string, asOf time.Time) {
+		t.Helper()
+		status, raw, header := ask(t, http.MethodGet, base+"/api/v1/venue", "", owner)
+		if status != http.StatusOK {
+			t.Fatalf("GET venue: status %d, body %s", status, raw)
+		}
+		var v struct {
+			Name string `json:"name"`
+		}
+		if err := json.Unmarshal(raw, &v); err != nil {
+			t.Fatal(err)
+		}
+		at, err := time.Parse(time.RFC3339, header.Get(api.HeaderMirror))
+		if err != nil {
+			t.Fatalf("%s = %q: %v", api.HeaderMirror, header.Get(api.HeaderMirror), err)
+		}
+		return v.Name, at
+	}
+	name, first := venue()
+	if name != "The Corner Cafe" || !first.Equal(up.AsOf) {
+		t.Fatalf("to begin with: %q as of %s; the mirror started as of %s", name, first, up.AsOf)
+	}
+
+	// The venue changes its name, and trades long enough to back that up.
+	if _, err := source.Writer().ExecContext(ctx, `UPDATE venues SET name = 'The Corner Cafe and Bakery'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := source.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+	written := venueRunsAgain(t, dataDir, to, up.AsOf)
+
+	// Someone is looking: each look at the venue's name is a request, and
+	// a mirror follows only while it is asked things.
+	deadline := time.Now().Add(60 * time.Second)
+	for {
+		name, at := venue()
+		if name == "The Corner Cafe and Bakery" {
+			if !at.After(first) || at.After(written) {
+				t.Errorf("the newer copy is as of %s; the first was %s and the backup was last written %s", at, first, written)
+			}
+			break
+		}
+		if !at.Equal(first) {
+			t.Fatalf("the time moved to %s and the name is still %q", at, name)
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("the mirror did not take up the newer backup in a minute:\n%s", said.String())
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	// Whoever was signed in still is: the same browser, the same session.
+	if status, raw, _ := ask(t, http.MethodGet, base+"/api/v1/sessions/current", "", owner); status != http.StatusOK {
+		t.Errorf("the session after the copy changed: status %d, body %s", status, raw)
+	}
+	// And nothing can be changed in the newer copy either.
+	if status, _, _ := ask(t, http.MethodPut, base+"/api/v1/settings/venue", `{"name":"Mine"}`, owner); status != http.StatusConflict {
+		t.Errorf("a change after the copy changed: status %d", status)
+	}
+	// The copy it began with is put away once nobody is being answered
+	// from it.
+	deadline = time.Now().Add(20 * time.Second)
+	for {
+		if _, err := os.Stat(up.Dir); os.IsNotExist(err) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("the first copy is still at %s", up.Dir)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	if err := stop(); err != nil {
+		t.Fatalf("stopping the mirror: %v", err)
+	}
+	if after := len(leftCopies(os.TempDir())); after != before {
+		t.Errorf("%d copies in the temporary directory, and there were %d before", after, before)
+	}
+}
+
+// TestAMirrorNobodyIsLookingAtAsksNothing: the backup moves on and nobody
+// asks the mirror anything. It makes no newer copy: a look at a bucket is
+// billed, and a mirror left open overnight should cost nothing.
+func TestAMirrorNobodyIsLookingAtAsksNothing(t *testing.T) {
+	ctx := context.Background()
+	dataDir, to, _ := backedUpVenue(t)
+	up, _, stop := startMirror(t, to, t.TempDir(), "-follow", "1s")
+
+	source := opened(t, dataDir)
+	if _, err := source.Writer().ExecContext(ctx, `UPDATE venues SET name = 'Renamed'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := source.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+	venueRunsAgain(t, dataDir, to, up.AsOf)
+
+	// Three looks' worth of time, and not one request.
+	time.Sleep(3500 * time.Millisecond)
+	if found := leftCopies(os.TempDir()); !containsOnlyOnce(found, up.Dir) {
+		t.Errorf("the copies now are %v; the mirror began with %s and nobody asked it anything", found, up.Dir)
+	}
+	// The first request is answered from what it has, as of when it began.
+	_, _, header := ask(t, http.MethodGet, "http://"+up.Addr+"/api/v1/health", "", nil)
+	if at := header.Get(api.HeaderMirror); at != up.AsOf.UTC().Format(time.RFC3339Nano) {
+		t.Errorf("%s = %q, want the time it began with, %s", api.HeaderMirror, at, up.AsOf.UTC().Format(time.RFC3339Nano))
+	}
+	if err := stop(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// containsOnlyOnce reports whether dir is among dirs and no other mirror's
+// copy from this test is: other tests' are not running beside this one.
+func containsOnlyOnce(dirs []string, dir string) bool {
+	return len(dirs) == 1 && dirs[0] == dir
+}
+
+// TestACopyThatCannotBeMadeIsPutAway: a generation that is not there, as
+// a line dropped mid-restore would leave it. The error comes back as one,
+// and the directory made for the copy is gone. While following, this is
+// what leaves the old copy serving and not the mirror dead.
+func TestACopyThatCannotBeMadeIsPutAway(t *testing.T) {
+	_, to, _ := backedUpVenue(t)
+	before := leftCopies(os.TempDir())
+	source := &mirrorSource{from: to, listenAddr: "127.0.0.1:0", log: quietLog()}
+
+	c, err := source.open(context.Background(), backup.Generation{Name: "20260101T000000Z-nothere"})
+	if err == nil || c != nil {
+		t.Fatalf("open: %+v, %v; want an error and no copy", c, err)
+	}
+	if after := leftCopies(os.TempDir()); len(after) != len(before) {
+		t.Errorf("a copy that could not be made left a directory: %v, and there were %v", after, before)
+	}
+}
+
+// TestAMirrorStopsWhateverAStalledClientDoes: a request that never
+// finishes holds neither a retiring copy nor the mirror's stopping for
+// longer than its patience, and the copy is removed all the same.
+func TestAMirrorStopsWhateverAStalledClientDoes(t *testing.T) {
+	_, to, _ := backedUpVenue(t)
+	ctx := context.Background()
+	source := &mirrorSource{from: to, listenAddr: "127.0.0.1:0", log: quietLog()}
+	generations, err := backup.Generations(ctx, to)
+	if err != nil || len(generations) == 0 {
+		t.Fatal(err)
+	}
+	first, err := source.open(ctx, generations[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := source.open(ctx, generations[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	stalled := make(chan struct{})
+	hang := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { <-stalled })
+	first.handler, second.handler = hang, hang
+	held := &mirrorHolder{current: first, log: quietLog(), patience: 300 * time.Millisecond}
+
+	// One request stalls on each copy: on the first, then the first is
+	// replaced, then on the second.
+	serveOne := func() {
+		req, _ := http.NewRequest(http.MethodGet, "/", nil)
+		go held.ServeHTTP(nil, req)
+	}
+	serveOne()
+	time.Sleep(50 * time.Millisecond)
+	if !held.swap(second) {
+		t.Fatal("swap refused")
+	}
+	serveOne()
+	time.Sleep(50 * time.Millisecond)
+
+	done := make(chan error, 1)
+	go func() { done <- held.close() }()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Errorf("close: %v", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("the mirror did not stop behind two stalled requests")
+	}
+	for _, c := range []*mirrorCopy{first, second} {
+		if _, err := os.Stat(c.dir); !os.IsNotExist(err) {
+			t.Errorf("the copy at %s is still there (%v)", c.dir, err)
+		}
+	}
+	close(stalled)
+	// And once stopping, it takes no newer copy.
+	if held.swap(first) {
+		t.Error("a stopped mirror took a copy")
+	}
+}
+
 func TestMirrorRefuses(t *testing.T) {
 	empty := t.TempDir()
 	tests := []struct {
@@ -399,6 +680,8 @@ func TestMirrorRefuses(t *testing.T) {
 		{"a folder with no backup in it", []string{"-from", empty, "-listen-addr", "127.0.0.1:0", "-state-dir", empty}, "no backup"},
 		{"a stray argument", []string{"-from", empty, "now"}, "unexpected argument"},
 		{"an address that is not one", []string{"-from", empty, "-listen-addr", "everywhere"}, "not host:port"},
+		{"following faster than a second", []string{"-from", empty, "-follow", "10ms"}, "at the least"},
+		{"following backwards", []string{"-from", empty, "-follow", "-1m"}, "at the least"},
 		// A mirror writes nowhere but a directory of its own.
 		{"a data directory", []string{"-from", empty, "-data-dir", empty}, "flag provided but not defined"},
 	}

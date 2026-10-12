@@ -8,7 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 6a - A mirror over one restore** (ADR-326). Task 6 was
+**Phase 14, Task 6b1 - The mirror's own door** (ADR-327). 6b was split
+in two. `internal/mirror`: a `Keeper` remembers the browsers paired to a
+mirror and the locks wrong PINs set, in a file beside the copy that a
+restart finds, and sessions in memory; `mirror.Auth` is the API's
+devices and staff sign-in over one copy. A PIN is judged by the read-only
+`auth.StaffAuth.CheckPIN`. Three wrong in a row lock that person on the
+mirror for a day. The venue's own devices open nothing on a mirror, and
+the copy is not written after it is migrated.
+
+Before it, **Phase 14, Task 6a - A mirror over one restore** (ADR-326). Task 6 was
 split in four. `mez mirror -from FOLDER` restores a backup into a
 directory of its own, serves the back office over it on
 `127.0.0.1:8090`, prints a pairing code, and removes the copy when

@@ -965,9 +965,13 @@ What to know:
 - **Nothing can be changed.** Anything that would change the venue is
   refused, in a sentence, whatever the screen offers. Nothing is printed,
   and no guest can order from it.
-- **It is as old as the moment you started it.** It does not yet follow
-  the backup as the venue goes on selling: stop it and start it again for
-  a newer copy.
+- **It follows the backup while you are using it.** Once a minute it
+  looks for anything the venue has backed up since, and shows it; whoever
+  is signed in stays signed in. Every screen it draws is as of a moment,
+  and that moment moves. Left open and untouched it asks the backup
+  nothing, so the first screen after a quiet spell is the old copy, and
+  the next is up to date. `-follow 5m` looks less often, `-follow 0`
+  never: the mirror then stays as it was when started.
 - **It listens on its own computer only**, at `127.0.0.1:8090`, unless
   `-listen-addr` says otherwise.
 - **Three wrong PINs in a row lock that person on the mirror for a day.**

@@ -12277,3 +12277,62 @@ code is still good for ten minutes and once, and a mirror is restarted for
 another; with browsers remembered that is once a browser. A lock cannot be lifted
 from a screen. The state file names staff by their public ids and holds token
 hashes, not tokens and not PINs. Until 6b2 a mirror is still as old as its start.
+
+## ADR-328 - A mirror looks at its backup once a minute, and only while someone is looking at the mirror
+2026-10 · Status: accepted. Phase 14, Task 6b2. Builds on ADR-327 and ADR-315.
+Context: ADR-327 chose how a mirror follows: a fresh restore, and a swap between two
+requests. What was left was when, and what becomes of the copy that is replaced.
+Decision:
+  - **Once a minute, `-follow`, a second at the least, `0` for never.** Each look
+    lists the destination, which a bucket bills as a write (ADR-315), and each
+    newer copy is a whole restore. A venue sends every half minute, so a minute
+    keeps a mirror within one sending of it without asking twice for each.
+  - **Only while it is being used.** A look is made only if a request has arrived
+    since the last one. A mirror left open in a tab overnight asks its bucket
+    nothing, and the first request of the morning is answered from what it has;
+    the look after that brings it up to date. This is what makes a mirror kept
+    for every venue opened in the last hour (8e) cost what it is used and not
+    what it is kept.
+  - **Newer is a later last write, or another generation.** The newest generation
+    that holds anything, or the one `-generation` names and no other.
+  - **A copy is served or it is not.** The newer one is restored, checked,
+    migrated and opened before it is put in place; one that fails at any of those
+    is put away and the old one goes on being served, growing older, with the
+    reason in the log. The next look tries again. A copy that turns out to hold
+    another venue is refused: the browsers and the PINs counted are the first's.
+  - **The one replaced is closed when the requests it was answering are done**, and
+    its directory removed then. A request is counted against its copy under the
+    same lock a swap takes, so none is taken up after the copy was retired.
+  - **The time on every answer is exact**, to the nanosecond, where 6a gave it to
+    the second: a venue's change within a second of the last copy has to move it,
+    or a screen would have no way to know it is looking at something newer.
+  - **Photos come with each copy**, restored beside it, so a photo added at the
+    venue is on the mirror with the copy that knows of it. That was 6c's second
+    half and is done here by the way it was built.
+  - **A copy that is being put away waits ten seconds for its requests, and no
+    longer.** A client that has stalled holds its request open as long as it likes,
+    and a copy of a venue's sales is not left on disk for it, nor a mirror left
+    unable to stop.
+  - **A newer write that could not be made into a copy is left alone for ten
+    minutes.** What the backup writes next is tried at once. A backup this build
+    cannot read, or one that now holds another venue, would otherwise be fetched
+    whole at every look for as long as anyone was looking.
+  - **What a review found before the commit.** Any copy that could not be made
+    crashed the mirror: the clean-up was handed the nil the failure returned, so
+    one dropped line while following killed the process and left its copies
+    behind. And a mirror asked to stop behind a stalled client never did. Both
+    were found by running them, and each is now a test.
+Because: a mirror is paid for by the request to a bucket, and the only request
+worth paying for is one somebody is waiting on.
+Cost: a mirror is a minute behind its backup, which is half a minute behind the
+venue. The first screen opened after a quiet spell shows the old copy, and says how
+old. Each newer copy is a whole restore, checked whole: on a large venue's database
+that is seconds of work and the whole file fetched again, each minute someone is
+looking. Two copies are on disk while one replaces the other. `-as-of`, a moment
+within a generation, is still not built, and nothing has asked for it. A look is
+not one listing but one and another for each generation the destination holds
+(`backup.Generations` asks each when it was last written), so a venue restored many
+times costs more to look at. A newer generation is taken though its last write be
+older than the copy's, as `mez restore` takes it: the time on the bar can then go
+back. A look that failed is not made again until someone next asks the mirror
+something.

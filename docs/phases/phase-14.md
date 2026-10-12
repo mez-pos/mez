@@ -331,7 +331,7 @@ and its first commit copies this phase's cloud tasks there.
     browser** on a venue backed up to a folder: paired, signed in, the
     dashboard and People read, and a change refused in the mirror's
     words.
-  - [ ] **Task 6b - Following the backup.** Split on 2026-10-12 before
+  - [x] **Task 6b - Following the backup.** Split on 2026-10-12 before
     building it (ADR-327): a copy that is followed cannot hold the
     mirror's own state, so that moves out first.
     - [x] **6b1 - The mirror's own door.** As built (ADR-327):
@@ -346,28 +346,27 @@ and its first commit copies this phase's cloud tasks there.
       a row lock that person on the mirror for a day. The venue's own
       device tokens open nothing. The copy is not written after it is
       migrated.
-    - [ ] **6b2 - Following.** In `cmd/mez/mirror.go`: every so often
-      (`-follow 30s`, `0` for never) ask `backup.Generations` for the
-      newest write; when it is later than the copy's, restore that
-      generation and its photos into a new directory, migrate, build a
-      new `mirrorServer` over it with the same `Keeper`, and put it in
-      the old one's place between two requests: an atomic pointer to
-      `{handler, database, dir, asOf}` behind the listener, the old one
-      closed and its directory removed once the requests on it have
-      finished. `MirrorInfo.AsOf` comes from whichever is current. A
-      restore that fails leaves the old copy serving and says so in the
-      log; the "as of" time then simply grows old. Test against a venue
-      that keeps selling to a folder: a sale shows on the mirror after a
-      sync with `X-Mez-Mirror` moved, a browser signed in before it is
-      signed in after it, and no directory is left behind. `-as-of`
-      belongs here if it is wanted at all.
-  - [ ] **Task 6c - mez Cloud's sign-in on a mirror, and photos kept
-    up.** `POST /api/v1/sessions/cloud` is already let through the
+    - [x] **6b2 - Following.** As built (ADR-328): in `cmd/mez/mirror.go`,
+      `mirrorSource.follow` looks at `backup.Generations` every `-follow`
+      (a minute; `0` for never), and only if a request has arrived since
+      its last look. A later last write, or another generation, is
+      restored with its photos into a new directory, migrated and opened
+      (`mirrorSource.open`), given a server with the same `Keeper`, and
+      put in the old one's place by `mirrorHolder.swap`; the old copy is
+      closed and removed once its requests are done. Whatever fails
+      leaves the old copy serving. `X-Mez-Mirror` is now to the
+      nanosecond. Tested against a venue that trades again after the
+      mirror started: the newer name shows, the time moves, the session
+      holds, the first copy's directory goes.
+  - [ ] **Task 6c - mez Cloud's sign-in on a mirror.** Photos are kept
+    up already: each copy is restored with its own (ADR-328).
+    `POST /api/v1/sessions/cloud` is already let through the
     mirror's gate and answers 401, since no mirror is given a key. The
     key is not in the backup (`cloud.json` is beside the database, not in
     it): `mez mirror -cloud-key`, or `mez-cloud` handing it over
     in-process (8e). The person the cloud signs in as is in the copy; the
-    device is too. Photos added at the venue after the mirror started.
+    device is too. `mirror.Auth.CloudDevice` answers nobody today, and
+    the keeper has no cloud sessions: that is where it goes.
   - [ ] **Task 6d - What the screens say on a mirror.** Read
     `docs/design/tokens.md` and `backoffice-shell.md` first. The bar:
     "Mirror, as of 23:10", from `X-Mez-Mirror` (`web/shared/api.ts`
