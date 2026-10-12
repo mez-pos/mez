@@ -56,7 +56,10 @@ export function PrintersScreen() {
       )}
       {data && data.printers.length === 0 && (
         <Card>
-          <EmptyState icon={<InboxIcon />} line="No printers yet. Add the receipt printer first, then one for each station that needs tickets." />
+          <EmptyState
+            icon={<InboxIcon />}
+            line={away ? "No printers yet." : "No printers yet. Add the receipt printer first, then one for each station that needs tickets."}
+          />
         </Card>
       )}
       {data && data.printers.length > 0 && (

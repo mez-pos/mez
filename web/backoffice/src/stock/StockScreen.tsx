@@ -10,10 +10,12 @@
 import { ClipboardListIcon, PlusIcon, Trash2Icon, UploadIcon } from "lucide-react";
 import { useState } from "react";
 import type { StockItem, StockRecorded } from "../../../shared/api-types";
+import { OnAMirror } from "../../../shared/shell/OnAMirror";
 import { formatDelta, formatQty } from "../../../shared/stock-qty";
 import { Button, EmptyState, InboxIcon, Modal, useToast } from "../../../shared/ui";
 import { pillClass } from "../../../shared/ui/pill";
 import { useMenu } from "../../../shared/use-menu";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { CheckField } from "../FormFields";
 import { usePermissions } from "../shell/BackOfficeShell";
 import { HistoryModal } from "./HistoryModal";
@@ -47,6 +49,8 @@ export function StockScreen() {
   const menu = useMenu();
   const toast = useToast();
   const held = usePermissions();
+  // A mirror shows the stock as the backup has it, and moves none of it (ADR-330).
+  const mirror = useOnMirror();
   const [view, setView] = useState<View>("levels");
   const [open, setOpen] = useState<Open | null>(null);
   const [showRetired, setShowRetired] = useState(false);
@@ -61,9 +65,10 @@ export function StockScreen() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-serif text-total">Inventory</h1>
-          <p className="mt-1 text-base text-fg-muted">{items ? summaryText(summary(items)) : "Reading the stock"}</p>
+          <p className="mt-1 text-base text-fg-muted">{items ? summaryText(summary(items), mirror) : "Reading the stock"}</p>
         </div>
-        <div className="flex flex-wrap gap-2.5">
+        {mirror && <OnAMirror />}
+        <div hidden={mirror} className="flex flex-wrap gap-2.5">
           <Button disabled={!hasActive} onClick={() => setOpen({ kind: "pick", move: "counted" })}>
             <ClipboardListIcon aria-hidden="true" size={17} />
             Stock count
@@ -106,6 +111,7 @@ export function StockScreen() {
             <StockLevels
               rows={tableRows(items, showRetired)}
               allRetired={items.length > 0 && !hasActive}
+              readOnly={mirror}
               onAction={(item, action) => setOpen(action.kind === "move" ? { kind: "move", item, move: action.move } : { kind: action.kind, item })}
             />
             {retiredCount(items) > 0 && (
@@ -123,7 +129,7 @@ export function StockScreen() {
       )}
       {items && view === "recipes" && menu.data && (
         <div className="max-w-6xl">
-          <RecipesView menu={menu.data} stock={items} api={api} onSaved={(name) => toast(`Saved what ${name} takes.`, { tone: "success" })} />
+          <RecipesView menu={menu.data} stock={items} api={api} readOnly={mirror} onSaved={(name) => toast(`Saved what ${name} takes.`, { tone: "success" })} />
         </div>
       )}
       {items && view === "recipes" && !menu.data && <p className="text-base text-fg-muted">Loading the menu</p>}

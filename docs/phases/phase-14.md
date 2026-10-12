@@ -401,12 +401,19 @@ and its first commit copies this phase's cloud tasks there.
         nobody orders from a copy. **Walked in a browser** on a mirror:
         no control left to press on any of them but the tabs and the
         tables.
-      - [ ] **6d2b - Staff and Inventory.** `people/use-people.ts` (8
-        calls: people, roles, PINs, unlock) and `stock/use-stock.ts` (10:
-        items, movements, recipes, the two imports, wastage). Then look
-        at what is left on Tips, a Z-report and the dashboard's quick
-        actions ("Edit the menu" reads oddly on a copy), and Printers'
-        empty line, which still says to add one.
+      - [x] **6d2b - Staff and Inventory.** As built (ADR-330): on
+        Staff no Add a role or Add staff, no row has a menu
+        (`staffActions`' third argument), and the role panel takes
+        `readOnly`: every switch and the name are disabled, and Reset,
+        Save role and Delete are the sentence. On Inventory no Stock
+        count, Log wastage, Import or Add ingredient; a row's menu is
+        History alone (`StockLevels`' `readOnly`); a recipe has no Edit.
+        Tips and a Z-report needed nothing: what they leave out from
+        away they leave out on a mirror, which is away. The dashboard's
+        shortcuts say "Menu" and "Staff" there, and the empty lines of
+        Inventory and Printers no longer say to add something.
+        **Walked in a browser** on a mirror of a venue with a received
+        ingredient and a retired one.
       - [ ] **6d2c - The menu.** `menu/use-menu-editor.ts`, 31 calls in
         some fifteen files: items, photos, categories, choice groups,
         prices, sold out, the setup view and the three imports.

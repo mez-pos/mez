@@ -10,34 +10,34 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6a, 6b, 6d1 and 6d2a
-are done (ADR-313, ADR-315 to ADR-330); 4d is `mez-cloud`'s. Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6a, 6b, 6d1, 6d2a and
+6d2b are done (ADR-313, ADR-315 to ADR-330); 4d is `mez-cloud`'s. Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 6d2a - Settings, the Floor plan and Devices on a mirror**
-(ADR-330). 6d2 was split by screen while building it. `useOnMirror()` is
-read where a change is drawn and `OnAMirror` is the sentence in its place:
-"This is a copy to read. Changes are made at the venue." Every settings
-section is read-only through `SectionCard`; tax classes, the floor plan
-and the device list have nothing left to press but tabs and tables. The
-two reads that answered wrongly are not made: Backup and the table codes
-each say why in a card. `useAway()` is true on a mirror from its first
-answer. **Walked in a browser** on a mirror with the venue off.
+**Phase 14, Task 6d2b - Staff and Inventory on a mirror** (ADR-330).
+Staff has no Add, no row menus, and a role panel whose switches are
+disabled with the sentence where Save was. Inventory has no count,
+wastage, import or add; a row's menu is History alone and a recipe has no
+Edit. Tips and a Z-report needed nothing, a mirror being away. The
+dashboard's shortcuts say "Menu" and "Staff" there, and the empty lines
+of Inventory and Printers no longer say to add something. **Walked in a
+browser** on a mirror of a venue with a received and a retired ingredient.
 
 ## Next task
 
-**Phase 14, Task 6d2b - Staff and Inventory on a mirror**:
-`people/use-people.ts` and `stock/use-stock.ts`, as 6d2a did it. Then
-what is left on Tips, a Z-report, the dashboard's quick actions and
-Printers' empty line. After it **6d2c**, the menu editor. To walk a
-mirror: `mez setup -demo-menu` into a scratch data directory, a
-`backup.json` there naming a folder, `bin/mez -data-dir` for long enough
-to back up, then `bin/mez mirror -from <folder> -state-dir <dir>`.
-**Task 6c** (mez Cloud's sign-in on a mirror) can wait on `mez-cloud`.
+**Phase 14, Task 6d2c - The menu on a mirror**, the last of 6d:
+`menu/use-menu-editor.ts`, 31 calls in some fifteen files (items, photos,
+categories, choice groups, prices, sold out, the setup view, the three
+imports), as 6d2a and 6d2b did it: `useOnMirror()` where the thing is
+drawn, `OnAMirror` in its place, a `readOnly` prop down to a part. Split
+it if it is more than a session. To walk a mirror: `mez setup -demo-menu`
+into a scratch data directory, a `backup.json` there naming a folder,
+`bin/mez -data-dir` for long enough to back up, then `bin/mez mirror
+-from <folder> -state-dir <dir>`. **Task 6c** can wait on `mez-cloud`.
 
 **Task 4d is `mez-cloud`'s**: that repository does not exist yet, and
 its first commit copies this phase's cloud tasks there. ADR-318 has the
@@ -151,4 +151,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6a, 6b, 6d1 and 6d2a of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6a, 6b, 6d1, 6d2a and 6d2b of 9)

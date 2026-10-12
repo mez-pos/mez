@@ -160,6 +160,15 @@ when they come in from mez Cloud. `cloud: true` on the person.
 - Permissions changed here reach a signed-in person at their next request
   to the server, and the screens they see at their next sign-in.
 
+## On a mirror
+
+Read and not changed (ADR-330). "This is a copy to read. Changes are made
+at the venue." is where Add a role and Add staff were, and again where the
+role panel's Reset and Save role were. No row has a menu. A person still
+picks their role, and a role's pill still shows it: its name and every
+switch are disabled, and the notes about what is not yours to give are not
+shown.
+
 ## Reference
 
 `mez Desktop Management.dc.html`, D20 Staff Roles (line 507). Left out, and

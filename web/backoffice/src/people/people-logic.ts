@@ -226,8 +226,10 @@ export type StaffAction = "unlock" | "edit" | "pin" | "deactivate" | "bring-back
  * A row's menu. Nobody deactivates themselves, and the person mez Cloud
  * signs in as has no PIN to replace (ADR-323): the server refuses one, so it
  * is not offered.
+ * None on a mirror, which changes nobody (ADR-330).
  */
-export function staffActions(p: Pick<Person, "id" | "active" | "locked_at" | "cloud">, me: string): StaffAction[] {
+export function staffActions(p: Pick<Person, "id" | "active" | "locked_at" | "cloud">, me: string, mirror = false): StaffAction[] {
+  if (mirror) return [];
   return [
     ...(mayUnlock(p, me) ? (["unlock"] as const) : []),
     "edit",

@@ -12,9 +12,11 @@ import { useState } from "react";
 import type { Person, Role } from "../../../shared/api-types";
 import { initials, roleText } from "../../../shared/auth/format";
 import { useAuth } from "../../../shared/auth/use-auth";
+import { OnAMirror } from "../../../shared/shell/OnAMirror";
 import { Button, Card, Confirm, EmptyState, InboxIcon, StatusChip, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { CheckField } from "../FormFields";
 import { RowMenu } from "../RowMenu";
 import { usePermissions } from "../shell/BackOfficeShell";
@@ -46,6 +48,8 @@ export function PeopleScreen() {
   const api = usePeople();
   const toast = useToast();
   const held = usePermissions();
+  // A mirror shows who is on the staff and what each role may do, and changes neither (ADR-330).
+  const mirror = useOnMirror();
   const [open, setOpen] = useState<Open | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [wanted, setWanted] = useState<number | null>(null);
@@ -62,15 +66,19 @@ export function PeopleScreen() {
           <h1 className="font-serif text-total">Staff &amp; roles</h1>
           <p className="mt-1 text-base text-fg-muted">{data ? peopleSummary(data.staff) : "Reading the staff"}</p>
         </div>
-        <div className="flex flex-wrap gap-2.5">
-          <Button disabled={!data} onClick={() => setOpen({ kind: "add-role" })}>
-            Add a role
-          </Button>
-          <Button variant="attention" disabled={!data} onClick={() => setOpen({ kind: "add-staff" })}>
-            <UserPlusIcon aria-hidden="true" size={18} />
-            Add staff
-          </Button>
-        </div>
+        {mirror ? (
+          <OnAMirror />
+        ) : (
+          <div className="flex flex-wrap gap-2.5">
+            <Button disabled={!data} onClick={() => setOpen({ kind: "add-role" })}>
+              Add a role
+            </Button>
+            <Button variant="attention" disabled={!data} onClick={() => setOpen({ kind: "add-staff" })}>
+              <UserPlusIcon aria-hidden="true" size={18} />
+              Add staff
+            </Button>
+          </div>
+        )}
       </div>
 
       {problem && (
@@ -90,6 +98,7 @@ export function PeopleScreen() {
               roleId={role?.id ?? null}
               now={now}
               api={api}
+              readOnly={mirror}
               onRole={setWanted}
               onOpen={setOpen}
               onProblem={setProblem}
@@ -106,6 +115,7 @@ export function PeopleScreen() {
               role={role}
               staff={data.staff}
               held={held}
+              readOnly={mirror}
               onRole={setWanted}
               onSave={async (id, input) => {
                 await api.updateRole(id, input);
@@ -132,6 +142,8 @@ interface StaffTableProps {
   /** For how long ago a lock fell. */
   now: Date;
   api: PeopleApi;
+  /** Nobody is changed: a row has no menu. */
+  readOnly: boolean;
   onRole: (id: number) => void;
   onOpen: (o: Open) => void;
   onProblem: (message: string | null) => void;
@@ -141,7 +153,7 @@ const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
 // A Record over the actions, so one added in the logic fails the build until it has a label.
 const actionLabels: Record<StaffAction, string> = { unlock: "Unlock", edit: "Edit", pin: "New PIN", deactivate: "Deactivate", "bring-back": "Bring back" };
 
-function StaffTable({ staff, roleId, now, api, onRole, onOpen, onProblem }: StaffTableProps) {
+function StaffTable({ staff, roleId, now, api, readOnly, onRole, onOpen, onProblem }: StaffTableProps) {
   const status = useAuth();
   const me = status.kind === "signed_in" ? status.staff.id : "";
   const bringBack = (p: Person) => {
@@ -194,6 +206,7 @@ function StaffTable({ staff, roleId, now, api, onRole, onOpen, onProblem }: Staf
             {staff.map((p, row) => {
               const shown = p.role_id === roleId;
               const lock = lockedNote(p, now);
+              const actions = staffActions(p, me, readOnly);
               return (
                 <tr key={p.id} className={cx("border-b border-line-soft last:border-b-0", shown && "bg-accent-tint")}>
                   <td className="py-1">
@@ -225,14 +238,16 @@ function StaffTable({ staff, roleId, now, api, onRole, onOpen, onProblem }: Staf
                     {lock && <span className="mt-1 block text-sm text-fg-muted">{lock}</span>}
                   </td>
                   <td className="py-1">
-                    <span className="flex justify-end">
-                      <RowMenu
-                        name={p.name}
-                        disabled={false}
-                        up={row >= 3 && row >= staff.length - 2}
-                        actions={staffActions(p, me).map((action) => ({ label: actionLabels[action], run: () => run(action, p) }))}
-                      />
-                    </span>
+                    {actions.length > 0 && (
+                      <span className="flex justify-end">
+                        <RowMenu
+                          name={p.name}
+                          disabled={false}
+                          up={row >= 3 && row >= staff.length - 2}
+                          actions={actions.map((action) => ({ label: actionLabels[action], run: () => run(action, p) }))}
+                        />
+                      </span>
+                    )}
                   </td>
                 </tr>
               );

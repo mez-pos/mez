@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import type { Permission, Person, Role, RoleInput } from "../../../shared/api-types";
 import { roleText } from "../../../shared/auth/format";
+import { OnAMirror } from "../../../shared/shell/OnAMirror";
 import { Button, Card } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
@@ -35,12 +36,14 @@ interface RolePanelProps {
   staff: readonly Person[];
   /** The signed-in person's own permissions: what they may give. */
   held: readonly Permission[];
+  /** The role is shown and not changed, whoever is looking: a mirror (ADR-330). */
+  readOnly?: boolean;
   onRole: (id: number) => void;
   onSave: (id: number, input: RoleInput) => Promise<void>;
   onDelete: (role: Role) => Promise<void>;
 }
 
-export function RolePanel({ roles, role, staff, held, onRole, onSave, onDelete }: RolePanelProps) {
+export function RolePanel({ roles, role, staff, held, readOnly = false, onRole, onSave, onDelete }: RolePanelProps) {
   const [form, setForm] = useState<RoleForm>(() => roleFormFrom(role));
   const [problem, setProblem] = useState<Problem | null>(null);
   const [busy, setBusy] = useState(false);
@@ -55,7 +58,7 @@ export function RolePanel({ roles, role, staff, held, onRole, onSave, onDelete }
   }, [saved]);
 
   // A role that grants what you do not hold is not yours to change (ADR-115): the server would refuse.
-  const mine = mayGive(held, role.permissions);
+  const mine = mayGive(held, role.permissions) && !readOnly;
 
   const changed = roleChanged(role, form);
   const run = (fn: () => Promise<void>) => {
@@ -84,12 +87,12 @@ export function RolePanel({ roles, role, staff, held, onRole, onSave, onDelete }
         className="mt-5 flex flex-1 flex-col"
         onSubmit={(e) => {
           e.preventDefault();
-          run(() => onSave(role.id, toRoleInput(form)));
+          if (mine) run(() => onSave(role.id, toRoleInput(form)));
         }}
       >
         <h2 className="font-serif text-xl">Permissions · {roleText(role.name)}</h2>
         <p className="mt-1 text-sm text-fg-muted">{appliesText(staff, role)}</p>
-        {!mine && (
+        {!mine && !readOnly && (
           <p className="mt-3 rounded bg-chip-warning-bg px-3 py-2.5 text-sm leading-relaxed text-chip-warning-fg">
             This role can do things you cannot, so it is not yours to change.
           </p>
@@ -135,13 +138,14 @@ export function RolePanel({ roles, role, staff, held, onRole, onSave, onDelete }
               />
             ))}
             {g.note && <p className="mt-1 rounded bg-chip-warning-bg px-3 py-2.5 text-sm leading-relaxed text-chip-warning-fg">{g.note}</p>}
-            {g.permissions.some((p) => !held.includes(p)) && (
+            {!readOnly && g.permissions.some((p) => !held.includes(p)) && (
               <p className="mt-1 text-sm text-fg-muted">You don't have the greyed ones, so you can't give them.</p>
             )}
           </fieldset>
         ))}
 
-        <div className="mt-6 flex flex-wrap gap-2.5">
+        {readOnly && <OnAMirror className="mt-6" />}
+        <div hidden={readOnly} className="mt-6 flex flex-wrap gap-2.5">
           <Button
             className="flex-1"
             disabled={busy || !changed}

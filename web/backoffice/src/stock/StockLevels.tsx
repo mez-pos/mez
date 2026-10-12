@@ -22,18 +22,26 @@ interface StockLevelsProps {
   /** Ingredients exist but none is shown: they are all retired and hidden. */
   allRetired: boolean;
   onAction: (item: StockItem, action: RowAction) => void;
+  /** Stock is read and not moved: a row's menu is its history alone. */
+  readOnly?: boolean;
 }
 
 const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
 const fills = { ok: "bg-accent", low: "bg-highlight", out: "bg-danger-fill" } as const;
 
-export function StockLevels({ rows, allRetired, onAction }: StockLevelsProps) {
+export function StockLevels({ rows, allRetired, onAction, readOnly = false }: StockLevelsProps) {
   if (rows.length === 0) {
     return (
       <Card>
         <EmptyState
           icon={<InboxIcon />}
-          line={allRetired ? "Every ingredient is retired. Tick the box below to show them." : "No ingredients yet. Add what you keep: beans, milk, batter."}
+          line={
+            allRetired
+              ? "Every ingredient is retired. Tick the box below to show them."
+              : readOnly
+                ? "No ingredients yet."
+                : "No ingredients yet. Add what you keep: beans, milk, batter."
+          }
         />
       </Card>
     );
@@ -115,7 +123,7 @@ export function StockLevels({ rows, allRetired, onAction }: StockLevelsProps) {
                         disabled={false}
                         up={row >= 3 && row >= rows.length - 3}
                         actions={[
-                          ...(it.active
+                          ...(it.active && !readOnly
                             ? [
                                 { label: "Receive", run: () => onAction(it, { kind: "move", move: "received" }) },
                                 { label: "Log wastage", run: () => onAction(it, { kind: "move", move: "wasted" }) },
@@ -123,7 +131,7 @@ export function StockLevels({ rows, allRetired, onAction }: StockLevelsProps) {
                               ]
                             : []),
                           { label: "History", run: () => onAction(it, { kind: "history" }) },
-                          { label: "Edit", run: () => onAction(it, { kind: "edit" }) },
+                          ...(readOnly ? [] : [{ label: "Edit", run: () => onAction(it, { kind: "edit" }) }]),
                         ]}
                       />
                     </span>

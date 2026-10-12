@@ -6,23 +6,25 @@ import { ChartColumnIcon, LeafIcon, PackageIcon, UsersIcon, UtensilsIcon, type L
 import { Link } from "wouter";
 import type { Permission } from "../../../shared/api-types";
 import { Card } from "../../../shared/ui";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { canOpen, section, type SectionId } from "../shell/nav-logic";
 
 // The design's first shortcut is "Add menu item"; the link opens the menu, so it says that.
-const shortcuts: readonly { id: SectionId; label: string; icon: LucideIcon }[] = [
-  { id: "menu", label: "Edit the menu", icon: UtensilsIcon },
+// `reading` is the label on a mirror, where the section opens and nothing in it is changed (ADR-330).
+const shortcuts: readonly { id: SectionId; label: string; reading?: string; icon: LucideIcon }[] = [
+  { id: "menu", label: "Edit the menu", reading: "Menu", icon: UtensilsIcon },
   { id: "stock", label: "Inventory", icon: PackageIcon },
   { id: "sales", label: "View reports", icon: ChartColumnIcon },
-  { id: "people", label: "Manage staff", icon: UsersIcon },
+  { id: "people", label: "Manage staff", reading: "Staff", icon: UsersIcon },
 ];
 
-/** The shortcuts this staff member may use. */
-export function quickActions(held: readonly Permission[]) {
-  return shortcuts.filter((a) => canOpen(section(a.id), held));
+/** The shortcuts this staff member may use, worded for reading when nothing can be changed. */
+export function quickActions(held: readonly Permission[], readOnly = false) {
+  return shortcuts.filter((a) => canOpen(section(a.id), held)).map((a) => ({ id: a.id, icon: a.icon, label: readOnly ? (a.reading ?? a.label) : a.label }));
 }
 
 export function QuickActions({ held }: { held: readonly Permission[] }) {
-  const actions = quickActions(held);
+  const actions = quickActions(held, useOnMirror());
   if (actions.length === 0) return null;
   return (
     <Card padding="lg">

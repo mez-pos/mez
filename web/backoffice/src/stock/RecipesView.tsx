@@ -21,9 +21,11 @@ interface RecipesViewProps {
   stock: readonly StockItem[];
   api: StockApi;
   onSaved: (name: string) => void;
+  /** The recipes are read and none is edited: a mirror (ADR-330). */
+  readOnly?: boolean;
 }
 
-export function RecipesView({ menu, stock, api, onSaved }: RecipesViewProps) {
+export function RecipesView({ menu, stock, api, onSaved, readOnly = false }: RecipesViewProps) {
   const [editing, setEditing] = useState<Target | null>(null);
   const byId = new Map(stock.map((s) => [s.id, s]));
   const book = api.recipes.data;
@@ -38,9 +40,11 @@ export function RecipesView({ menu, stock, api, onSaved }: RecipesViewProps) {
           <span className="font-semibold">{t.name}</span>
           <span className={cx("block", text ? "text-fg-2" : "text-fg-muted")}>{text || "Nothing"}</span>
         </span>
-        <Button aria-label={`Edit the recipe of ${t.name}`} onClick={() => setEditing(t)}>
-          Edit
-        </Button>
+        {!readOnly && (
+          <Button aria-label={`Edit the recipe of ${t.name}`} onClick={() => setEditing(t)}>
+            Edit
+          </Button>
+        )}
       </li>
     );
   };

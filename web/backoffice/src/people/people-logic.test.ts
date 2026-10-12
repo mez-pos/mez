@@ -242,6 +242,9 @@ describe("the person mez Cloud signs in as (ADR-323)", () => {
   it("is offered no new PIN: they have none, and the server gives none", () => {
     expect(staffActions(account, priya.id)).toEqual(["edit", "deactivate"]);
     expect(staffActions({ ...account, active: false }, priya.id)).toEqual(["edit", "bring-back"]);
+    // A mirror changes nobody: there is nothing to offer.
+    expect(staffActions(account, priya.id, true)).toEqual([]);
+    expect(staffActions({ ...account, active: false }, priya.id, true)).toEqual([]);
     // Opened from mez Cloud, the row is your own: no Deactivate either.
     expect(staffActions(account, account.id)).toEqual(["edit"]);
   });

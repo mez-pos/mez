@@ -8,7 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 6d1 - The page knows it is on a mirror, and says so**
+**Phase 14, Task 6d2a - Settings, the Floor plan and Devices on a mirror**
+(ADR-330). 6d2 was split by screen. `useOnMirror()` is read where a change
+is drawn and `OnAMirror` is the sentence in its place. Every settings
+section is read-only through `SectionCard`; tax classes, the floor plan
+and the device list have nothing left to press but tabs and tables. The
+two reads that answered wrongly are not made: Backup and the table codes
+each say why in a card. `useAway()` is true on a mirror from its first
+answer. **Walked in a browser.**
+
+Before it, **Phase 14, Task 6d1 - The page knows it is on a mirror, and says so**
 (ADR-329). 6d was split in two. `web/shared/mirror.ts`: a `MirrorWatch`
 reads `X-Mez-Mirror` off every answer, and `useMirror()` is null anywhere
 but on a mirror. The bar says "Mirror, as of 23:10" in the venue's zone (a

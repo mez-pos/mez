@@ -56,6 +56,10 @@ describe("the line under the title", () => {
   });
   it("words one ingredient and none", () => {
     expect(summaryText({ tracked: 1, low: 0, out: 0 })).toBe("1 tracked ingredient · 0 low · 0 out of stock");
+    // With none it says what to add, and where nothing can be added it does not.
+    expect(summaryText({ tracked: 0, low: 0, out: 0 })).toBe("No ingredients yet. Add what you keep: beans, milk, batter.");
+    expect(summaryText({ tracked: 0, low: 0, out: 0 }, true)).toBe("No ingredients yet.");
+    expect(summaryText({ tracked: 1, low: 0, out: 0 }, true)).toBe("1 tracked ingredient · 0 low · 0 out of stock");
     expect(summaryText(summary([]))).toBe("No ingredients yet. Add what you keep: beans, milk, batter.");
   });
 });

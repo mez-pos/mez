@@ -194,6 +194,14 @@ order screen's menu, read from `GET /api/v1/menu`, so a manager without
 - A new cost is for stock moved from then on: what is already in the
   history keeps the cost it had (ADR-124).
 
+## On a mirror
+
+Read and not moved (ADR-330). The sentence "This is a copy to read. Changes
+are made at the venue." is where Stock count, Log wastage, Import and Add
+ingredient were. A row's menu is History alone, for a retired ingredient
+too. A recipe is shown with no Edit. With no ingredients the lines say "No
+ingredients yet." and not what to add.
+
 ## Reference
 
 `mez Desktop Management.dc.html`, D19 Inventory (line 428). Left out, and

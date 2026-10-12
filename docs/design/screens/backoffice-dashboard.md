@@ -94,6 +94,11 @@ Nothing here changes anything.
   as down. A table to clear counts as active.
 - Holds together down to 1366 wide.
 
+## On a mirror
+
+The shortcuts "Edit the menu" and "Manage staff" say "Menu" and "Staff"
+(ADR-330): the sections open, and nothing in them is changed.
+
 ## Reference
 
 `mez Desktop KDS and Dashboard.dc.html`, D12 Dashboard (line 280). Left out,

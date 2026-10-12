@@ -12422,3 +12422,9 @@ server still refuses it. The device list on a mirror is the venue's devices and
 after them the browsers paired to the mirror (ADR-327), and the screen does not say
 which are which. Printers' empty line still says to add one, from away as on a
 mirror. The two relay cards were left out after the walk, and that was not walked.
+Added in 6d2b: **a read stays where its neighbours go.** A stock row's menu keeps
+History and loses the rest; a role can still be picked to read what it may do. And
+**a line that says what to add does not say it where nothing can be added**: the
+empty lines of Inventory and Printers, and the dashboard's "Edit the menu" and
+"Manage staff", which are "Menu" and "Staff" on a mirror. Printers' line is fixed
+from away as well.
