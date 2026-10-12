@@ -24,6 +24,17 @@ const (
 // errRefused is the relay turning the venue's key away.
 var errRefused = errors.New("the relay refused this venue's key")
 
+// errNotEntitled is the relay turning the venue away at the dial with its
+// key in order: it is not carrying this venue (ADR-316).
+var errNotEntitled = errors.New("the relay is not carrying this venue")
+
+// notEntitled reports whether a session ended, or never began, because the
+// relay is not carrying this venue: turned away at the dial, or closed with
+// the relay's code for it while connected.
+func notEntitled(err error) bool {
+	return errors.Is(err, errNotEntitled) || websocket.CloseStatus(err) == wire.CloseNotEntitled
+}
+
 // inbound is a guest request still arriving.
 type inbound struct {
 	head wire.RequestHead
@@ -55,16 +66,35 @@ func (c *Client) session() (time.Duration, error) {
 	defer cancelDial()
 
 	ws, resp, err := websocket.Dial(dialCtx, c.url, &websocket.DialOptions{
-		HTTPHeader: http.Header{"Authorization": {"Bearer " + c.key}},
+		HTTPHeader: http.Header{
+			"Authorization": {"Bearer " + c.key},
+			// This venue reads notices of where it stands, so the relay may
+			// send them (ADR-316).
+			wire.HeaderNotices: {"1"},
+		},
 		HTTPClient: &http.Client{CheckRedirect: refuseRedirect},
 	})
 	if err != nil {
 		if resp != nil && resp.StatusCode == http.StatusUnauthorized {
 			return 0, errRefused
 		}
+		// A 403 that says where the venue stands is the relay's own, and
+		// not some proxy's on the way to it.
+		if resp != nil && resp.StatusCode == http.StatusForbidden {
+			if standing := standingFrom(resp); standing != nil {
+				c.setStanding(standing)
+				if standing.Reason != "" {
+					return 0, fmt.Errorf("%w: %s", errNotEntitled, standing.Reason)
+				}
+				return 0, errNotEntitled
+			}
+		}
 		return 0, fmt.Errorf("dialling the relay: %w", err)
 	}
 	ws.SetReadLimit(wire.MaxFrame)
+	// Whatever this relay says, or nothing: what another said before it,
+	// or this one before it was changed, is not kept.
+	c.setStanding(standingFrom(resp))
 
 	c.mu.Lock()
 	c.ws = ws
@@ -131,6 +161,12 @@ func (s *session) read() error {
 			s.dispatch(f.Stream)
 		case wire.TypeReset:
 			s.abandon(f.Stream)
+		case wire.TypeNotice:
+			// Where this venue stands has changed. One that cannot be read
+			// is passed over: it is news, and not worth the line.
+			if e, err := wire.DecodeNotice(f); err == nil {
+				s.c.setStanding(standingOf(e))
+			}
 		default:
 			return fmt.Errorf("%w: the relay sent a frame only a venue sends", wire.ErrMalformed)
 		}

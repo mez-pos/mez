@@ -76,7 +76,7 @@ and its first commit copies this phase's cloud tasks there.
   lost: a cafe at 30 s loses at most half a minute of orders, and the
   invoice numbers it had given are in the events anyway.
 
-- [ ] **Task 3 - The relay asks who is entitled.** *This repo.* Split on
+- [x] **Task 3 - The relay asks who is entitled.** *This repo.* Split on
   2026-10-12 while building it (ADR-316): the relay's half is one session
   and the venue's is another.
 
@@ -91,7 +91,13 @@ and its first commit copies this phase's cloud tasks there.
     it does not know. `*` in the file is every venue not named; without it
     they are not carried. `RELAY_REVOKED` is left to the key check. An
     error from the store closes nobody. README and `compose.yml`.
-  - [ ] **Task 3b - The venue's half.** In `internal/tunnel`: send
+  - [x] **Task 3b - The venue's half.** As built (ADR-317):
+    `tunnel.Standing` on `Status`, `StateNotEntitled` with a wait of half a
+    minute to a minute, `cloud` on `GET /api/v1/tunnel`, the chip **Not
+    carried**, `cloudLine` on the ordering card, and the second card
+    saying when the relay does not carry the back office. Tested from a
+    real relay through to the API's status; the two cards were not walked
+    in a browser. As it was set: In `internal/tunnel`: send
     `wire.HeaderNotices`, read `wire.HeaderEntitlement` off the dial's
     answer (a 403 too) and `wire.TypeNotice` in `session.read`, keep what
     was told on `Status`; a state for not entitled (403 `not_entitled` at

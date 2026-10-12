@@ -18,15 +18,18 @@ const (
 	TunnelOff        TunnelState = "off"
 	TunnelConnecting TunnelState = "connecting"
 	TunnelConnected  TunnelState = "connected"
-	TunnelWaiting    TunnelState = "waiting"  // the last attempt failed; another is coming
-	TunnelRefused    TunnelState = "refused"  // the relay does not accept this venue's key
-	TunnelReplaced   TunnelState = "replaced" // another machine is connected with the same key
-	TunnelStopped    TunnelState = "stopped"
+	TunnelWaiting    TunnelState = "waiting" // the last attempt failed; another is coming
+	TunnelRefused    TunnelState = "refused" // the relay does not accept this venue's key
+	// TunnelNotEntitled: the key is good and the relay is not carrying this
+	// venue. It asks again within the minute (ADR-316).
+	TunnelNotEntitled TunnelState = "not_entitled"
+	TunnelReplaced    TunnelState = "replaced" // another machine is connected with the same key
+	TunnelStopped     TunnelState = "stopped"
 )
 
 // TunnelStates is every state, for the generated type.
 func TunnelStates() []TunnelState {
-	return []TunnelState{TunnelOff, TunnelConnecting, TunnelConnected, TunnelWaiting, TunnelRefused, TunnelReplaced, TunnelStopped}
+	return []TunnelState{TunnelOff, TunnelConnecting, TunnelConnected, TunnelWaiting, TunnelRefused, TunnelNotEntitled, TunnelReplaced, TunnelStopped}
 }
 
 // TunnelStatus is the tunnel as of now, as whatever runs it reports it.
@@ -42,6 +45,27 @@ type TunnelStatus struct {
 	// connected, the back office can be opened through the relay (ADR-306).
 	// It is the setting, not proof that anyone can get in.
 	BackOffice bool
+	// Cloud is where the relay last said this venue stands with it. Nil
+	// when it has said nothing.
+	Cloud *TunnelCloud
+}
+
+// TunnelCloud is where a venue stands with its relay, as the relay told it
+// (ADR-313, ADR-316): what has been paid for, until when it is carried,
+// and why. The words are the relay's and nothing in this server acts on
+// them; they are for the Devices screen to say.
+type TunnelCloud struct {
+	// State is "trial", "active", "grace" and the like from a relay that
+	// keeps accounts, and empty from one that keeps a file.
+	State string
+	// PaidUntil is the end of what has been paid for, Until when the relay
+	// stops carrying the venue. Either may be zero.
+	PaidUntil time.Time
+	Until     time.Time
+	// BackOffice says the relay carries the back office for this venue.
+	BackOffice bool
+	// Reason is the relay's short code for why.
+	Reason string
 }
 
 // WithTunnel supplies the relay tunnel's status, for the health endpoint and
@@ -63,7 +87,7 @@ func (s *Server) tunnelStatus() TunnelStatus {
 	switch st.State {
 	case TunnelOff:
 		return TunnelStatus{State: TunnelOff}
-	case TunnelConnecting, TunnelConnected, TunnelWaiting, TunnelRefused, TunnelReplaced, TunnelStopped:
+	case TunnelConnecting, TunnelConnected, TunnelWaiting, TunnelRefused, TunnelNotEntitled, TunnelReplaced, TunnelStopped:
 		return st
 	default:
 		st.State = TunnelStopped
@@ -104,6 +128,25 @@ type tunnelResponse struct {
 	// the venue's public_url with the back office's own path. Absent unless
 	// back_office is true and there is such an address to give.
 	BackOfficeURL string `json:"back_office_url,omitempty"`
+	// Cloud is where the relay says this venue stands with it. Absent when
+	// the relay has said nothing: one from before it had anything to say,
+	// one not yet reached, or no relay.
+	Cloud *tunnelCloud `json:"cloud,omitempty"`
+}
+
+// tunnelCloud is what the relay last told this venue about its standing
+// (ADR-316). state is the relay's word ("trial", "active", "grace",
+// "suspended", "cancelled", "closed"), absent from a relay that keeps a
+// file. paid_until is the end of what has been paid for and until is when
+// the relay stops carrying the venue; each is absent when there is none.
+// back_office is whether the relay carries the back office, which a venue
+// can have turned on and the relay not. reason is the relay's short code.
+type tunnelCloud struct {
+	State      string     `json:"state,omitempty"`
+	PaidUntil  *time.Time `json:"paid_until,omitempty"`
+	Until      *time.Time `json:"until,omitempty"`
+	BackOffice bool       `json:"back_office"`
+	Reason     string     `json:"reason,omitempty"`
 }
 
 // mountTunnel adds the tunnel's one route. It is read by whoever manages the
@@ -151,6 +194,17 @@ func (s *Server) showTunnel(w http.ResponseWriter, _ *http.Request) {
 	}
 	if st.State != TunnelConnected && st.State != TunnelOff {
 		out.Detail = st.Detail
+	}
+	if c := st.Cloud; c != nil && st.State != TunnelOff {
+		out.Cloud = &tunnelCloud{State: c.State, BackOffice: c.BackOffice, Reason: c.Reason}
+		if !c.PaidUntil.IsZero() {
+			paid := c.PaidUntil.UTC()
+			out.Cloud.PaidUntil = &paid
+		}
+		if !c.Until.IsZero() {
+			until := c.Until.UTC()
+			out.Cloud.Until = &until
+		}
 	}
 	// It changes by the second while reconnecting: never from a cache.
 	w.Header().Set("Cache-Control", "no-store")

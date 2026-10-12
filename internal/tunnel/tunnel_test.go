@@ -31,6 +31,10 @@ type testRelay struct {
 	t    *testing.T
 	addr string
 	keys *relay.Keys
+	// entitled and every are the relay's entitlements and how often it asks
+	// again. Nil carries every key, as most tests want.
+	entitled relay.Entitlements
+	every    time.Duration
 
 	mu   sync.Mutex
 	srv  *relay.Server
@@ -39,11 +43,18 @@ type testRelay struct {
 
 func startRelay(t *testing.T) *testRelay {
 	t.Helper()
+	return startRelayWith(t, nil, 0)
+}
+
+// startRelayWith is a relay that asks entitled which venues it carries, and
+// asks again every so often.
+func startRelayWith(t *testing.T, entitled relay.Entitlements, every time.Duration) *testRelay {
+	t.Helper()
 	keys, err := relay.NewKeys(testSecret, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := &testRelay{t: t, keys: keys}
+	r := &testRelay{t: t, keys: keys, entitled: entitled, every: every}
 	r.listen("127.0.0.1:0")
 	t.Cleanup(r.kill)
 	return r
@@ -64,7 +75,7 @@ func (r *testRelay) listen(addr string) {
 	if err != nil {
 		r.t.Fatalf("relay could not listen on %s: %v", addr, err)
 	}
-	srv, err := relay.New(relay.Options{Keys: r.keys, Log: quiet()})
+	srv, err := relay.New(relay.Options{Keys: r.keys, Log: quiet(), Entitlements: r.entitled, EntitlementEvery: r.every})
 	if err != nil {
 		r.t.Fatal(err)
 	}

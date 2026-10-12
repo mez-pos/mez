@@ -2,6 +2,7 @@ package tunnel
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -52,6 +53,14 @@ const (
 	// this venue's place.
 	defaultLongBackoff = 5 * time.Minute
 
+	// defaultEntitledBackoff is the longest wait after the relay says it is
+	// not carrying this venue (ADR-316). The key is good and the answer can
+	// change at any moment, when a payment lands or a file is edited, so it
+	// is asked again within the minute and never left for the five a
+	// refused key waits. Half of this is the shortest: sixty venues turned
+	// off together do not all come back in the same second.
+	defaultEntitledBackoff = time.Minute
+
 	defaultHeartbeat = 20 * time.Second
 	heartbeatTimeout = 10 * time.Second
 )
@@ -65,8 +74,11 @@ const (
 	StateConnected  State = "connected"  // guests can reach this venue
 	StateWaiting    State = "waiting"    // the last attempt failed; another is coming
 	StateRefused    State = "refused"    // the relay does not accept this venue's key
-	StateReplaced   State = "replaced"   // another machine connected with the same key
-	StateStopped    State = "stopped"    // closed, or never started
+	// StateNotEntitled: the key is good and the relay is not carrying this
+	// venue: its date has passed, or it was never given one (ADR-316).
+	StateNotEntitled State = "not_entitled"
+	StateReplaced    State = "replaced" // another machine connected with the same key
+	StateStopped     State = "stopped"  // closed, or never started
 )
 
 // Status is the tunnel as of now.
@@ -76,9 +88,59 @@ type Status struct {
 	Since time.Time
 	// LastError is why the last attempt ended, or empty.
 	LastError string
-	// RetryAt is when the next attempt is due. Zero unless waiting, refused
-	// or replaced.
+	// RetryAt is when the next attempt is due. Zero unless waiting, refused,
+	// not entitled or replaced.
 	RetryAt time.Time
+	// Standing is where the relay last said this venue stands with it. Nil
+	// when it has said nothing: a relay from before there was anything to
+	// say, or one not yet reached.
+	Standing *Standing
+}
+
+// Standing is where a venue stands with its relay, as the relay tells it
+// (ADR-313, ADR-316). The words are the relay's; nothing here acts on them.
+type Standing struct {
+	// State is "trial", "active", "grace" and the like from a relay that
+	// keeps accounts, and empty from one that keeps a file.
+	State string
+	// PaidUntil is the end of what has been paid for. Zero when nobody is
+	// counting.
+	PaidUntil time.Time
+	// Until is when the relay stops carrying the venue. Zero with no date
+	// set, and when it is not carried at all.
+	Until time.Time
+	// BackOffice says the relay carries the back office for this venue.
+	BackOffice bool
+	// Reason is the relay's short code for why.
+	Reason string
+}
+
+func standingOf(e wire.Entitlement) *Standing {
+	s := &Standing{State: e.State, BackOffice: e.Remote, Reason: e.Reason}
+	if e.PaidUntil != nil {
+		s.PaidUntil = e.PaidUntil.UTC()
+	}
+	if e.Until != nil {
+		s.Until = e.Until.UTC()
+	}
+	return s
+}
+
+// standingFrom reads what the relay said on its answer to the dial. Nothing
+// said, or something unreadable, is nothing known.
+func standingFrom(resp *http.Response) *Standing {
+	if resp == nil {
+		return nil
+	}
+	raw := resp.Header.Get(wire.HeaderEntitlement)
+	if raw == "" {
+		return nil
+	}
+	var e wire.Entitlement
+	if err := json.Unmarshal([]byte(raw), &e); err != nil {
+		return nil
+	}
+	return standingOf(e)
 }
 
 // Options configures a Client.
@@ -108,10 +170,11 @@ type Options struct {
 	Now func() time.Time
 
 	// The rest are for tests; zero means the default.
-	MinBackoff  time.Duration
-	MaxBackoff  time.Duration
-	LongBackoff time.Duration
-	Heartbeat   time.Duration
+	MinBackoff      time.Duration
+	MaxBackoff      time.Duration
+	LongBackoff     time.Duration
+	EntitledBackoff time.Duration
+	Heartbeat       time.Duration
 }
 
 // Client holds the tunnel open. It owns its goroutines: Start launches
@@ -126,7 +189,7 @@ type Client struct {
 	log        *slog.Logger
 	now        func() time.Time
 
-	minBackoff, maxBackoff, longBackoff, heartbeat time.Duration
+	minBackoff, maxBackoff, longBackoff, entitledBackoff, heartbeat time.Duration
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -136,6 +199,9 @@ type Client struct {
 	status  Status
 	ws      *websocket.Conn
 	started bool
+	// standing is what the relay last said of this venue. It outlives a
+	// state: it is still what is known while the line is down.
+	standing *Standing
 }
 
 // New checks the options and builds a client that is not yet running.
@@ -163,17 +229,18 @@ func New(opts Options) (*Client, error) {
 	}
 
 	c := &Client{
-		url:         target,
-		key:         opts.Key,
-		handler:     opts.Handler,
-		mount:       opts.Mount,
-		backOffice:  opts.BackOffice,
-		log:         opts.Log,
-		now:         opts.Now,
-		minBackoff:  orDefault(opts.MinBackoff, defaultMinBackoff),
-		maxBackoff:  orDefault(opts.MaxBackoff, defaultMaxBackoff),
-		longBackoff: orDefault(opts.LongBackoff, defaultLongBackoff),
-		heartbeat:   orDefault(opts.Heartbeat, defaultHeartbeat),
+		url:             target,
+		key:             opts.Key,
+		handler:         opts.Handler,
+		mount:           opts.Mount,
+		backOffice:      opts.BackOffice,
+		log:             opts.Log,
+		now:             opts.Now,
+		minBackoff:      orDefault(opts.MinBackoff, defaultMinBackoff),
+		maxBackoff:      orDefault(opts.MaxBackoff, defaultMaxBackoff),
+		longBackoff:     orDefault(opts.LongBackoff, defaultLongBackoff),
+		entitledBackoff: orDefault(opts.EntitledBackoff, defaultEntitledBackoff),
+		heartbeat:       orDefault(opts.Heartbeat, defaultHeartbeat),
 	}
 	if c.now == nil {
 		c.now = time.Now
@@ -286,7 +353,20 @@ func (c *Client) Close(ctx context.Context) error {
 func (c *Client) Status() Status {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.status
+	st := c.status
+	if c.standing != nil {
+		standing := *c.standing
+		st.Standing = &standing
+	}
+	return st
+}
+
+// setStanding keeps what the relay said of this venue. Nil forgets it: the
+// relay now reached says nothing.
+func (c *Client) setStanding(s *Standing) {
+	c.mu.Lock()
+	c.standing = s
+	c.mu.Unlock()
 }
 
 func (c *Client) setStatus(s Status) {
@@ -310,6 +390,11 @@ func (c *Client) run() {
 		switch {
 		case errors.Is(err, errRefused):
 			state, wait = StateRefused, c.longBackoff
+		case notEntitled(err):
+			// Not counted as a failure of the line, which it is not: the
+			// next real one starts its backoff from the bottom.
+			state = StateNotEntitled
+			wait = c.entitledBackoff/2 + time.Duration(float64(c.entitledBackoff/2)*rand.Float64())
 		case websocket.CloseStatus(err) == wire.CloseReplaced:
 			state, wait = StateReplaced, c.longBackoff
 		default:

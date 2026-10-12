@@ -2,15 +2,19 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"io"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/byjoellobo/mez/internal/api"
 	"github.com/byjoellobo/mez/internal/config"
+	"github.com/byjoellobo/mez/internal/relay"
 	"github.com/byjoellobo/mez/internal/tunnel"
 	"github.com/byjoellobo/mez/web"
 )
@@ -163,6 +167,7 @@ func TestTunnelStatus(t *testing.T) {
 		{tunnel.StateConnected, api.TunnelConnected},
 		{tunnel.StateWaiting, api.TunnelWaiting},
 		{tunnel.StateRefused, api.TunnelRefused},
+		{tunnel.StateNotEntitled, api.TunnelNotEntitled},
 		{tunnel.StateReplaced, api.TunnelReplaced},
 		{tunnel.StateStopped, api.TunnelStopped},
 		{tunnel.State("a state added later and not mapped"), api.TunnelStopped},
@@ -207,5 +212,59 @@ func TestTheRelayMarkIsOneName(t *testing.T) {
 	if api.HeaderVia != tunnel.HeaderVia || api.ViaRelay != tunnel.ViaRelay {
 		t.Fatalf("the API reads %q: %q, the tunnel writes %q: %q",
 			api.HeaderVia, api.ViaRelay, tunnel.HeaderVia, tunnel.ViaRelay)
+	}
+}
+
+// carriedTo is the relay's entitlements for one test: every venue is carried
+// until then.
+type carriedTo struct{ paid, until time.Time }
+
+func (c carriedTo) Entitled(context.Context, string) (relay.Entitlement, error) {
+	return relay.Entitlement{Until: c.until, PaidUntil: c.paid, Remote: true, State: "active"}, nil
+}
+
+// TestTunnelStatusSaysWhatTheRelayTold: from a real relay, through the real
+// client, to what the API is handed: where the venue stands (ADR-316).
+func TestTunnelStatusSaysWhatTheRelayTold(t *testing.T) {
+	const secret = "0123456789abcdef0123456789abcdef"
+	paid := time.Date(2030, 11, 12, 0, 0, 0, 0, time.UTC)
+	keys, err := relay.NewKeys(secret, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	srv, err := relay.New(relay.Options{Keys: keys, Log: quiet, Entitlements: carriedTo{paid: paid, until: paid.AddDate(0, 0, 7)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(srv.Handler())
+	t.Cleanup(func() { srv.Close(); ts.Close() })
+	key, err := keys.Issue(rand.Reader, "cafe", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client, err := tunnel.New(tunnel.Options{RelayURL: ts.URL, Key: key, Handler: http.NotFoundHandler(), Mount: web.MountGuest, Log: quiet})
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.Start()
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = client.Close(ctx)
+	})
+
+	deadline := time.Now().Add(10 * time.Second)
+	for tunnelStatus(client).Cloud == nil {
+		if time.Now().After(deadline) {
+			t.Fatalf("the relay's word never reached the status: %+v", tunnelStatus(client))
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	got := tunnelStatus(client)
+	c := got.Cloud
+	if got.State != api.TunnelConnected || c.State != "active" || !c.PaidUntil.Equal(paid) || !c.Until.Equal(paid.AddDate(0, 0, 7)) || c.BackOffice {
+		t.Errorf("status %+v, cloud %+v; want active, paid to %v, and no back office on a guests-only key", got, c, paid)
 	}
 }

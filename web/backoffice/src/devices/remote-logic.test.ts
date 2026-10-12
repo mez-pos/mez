@@ -12,9 +12,33 @@ describe("remoteState", () => {
 
   it("is on only while the relay is reached", () => {
     expect(remoteState({ state: "connected", back_office: true })).toBe("on");
-    for (const state of ["connecting", "waiting", "refused", "replaced", "stopped"] as const) {
+    for (const state of ["connecting", "waiting", "refused", "not_entitled", "replaced", "stopped"] as const) {
       expect(remoteState({ state, back_office: true })).toBe("unreachable");
     }
+  });
+});
+
+describe("a relay that does not carry the back office", () => {
+  const on = { state: "connected", back_office: true, back_office_url: url } as const;
+
+  it("is not reachable, though the venue has it on and the relay is reached", () => {
+    expect(remoteState({ ...on, cloud: { back_office: false } })).toBe("unreachable");
+    expect(remoteState({ ...on, cloud: { back_office: true } })).toBe("on");
+    // A relay that says nothing is taken at the venue's word.
+    expect(remoteState(on)).toBe("on");
+  });
+
+  it("says so, says guests are not affected, and lists nothing to do here", () => {
+    const w = remoteWords({ ...on, cloud: { back_office: false } }, false);
+    expect(w.line).toMatch(/the relay does not carry the back office for this venue/);
+    expect(w.line).toMatch(/Guests' orders are not affected\./);
+    expect(w.address).toBe(url);
+    expect(w.steps).toEqual([]);
+  });
+
+  it("says nothing of it while the relay is not reached at all", () => {
+    const w = remoteWords({ ...on, state: "waiting", cloud: { back_office: false } }, false);
+    expect(w.line).toMatch(/the relay is not reached right now/);
   });
 });
 

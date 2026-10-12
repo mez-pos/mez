@@ -300,6 +300,7 @@ export type TunnelState =
   | 'connected'
   | 'waiting'
   | 'refused'
+  | 'not_entitled'
   | 'replaced'
   | 'stopped';
 
@@ -887,6 +888,15 @@ export interface TunnelResponse {
   detail?: string;
   back_office: boolean;
   back_office_url?: string;
+  cloud?: TunnelCloud;
+}
+
+export interface TunnelCloud {
+  state?: string;
+  paid_until?: string;
+  until?: string;
+  back_office: boolean;
+  reason?: string;
 }
 
 export interface GuestTableResponse {

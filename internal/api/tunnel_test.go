@@ -294,6 +294,8 @@ func TestTunnelForTheBackOffice(t *testing.T) {
 			tunnelResponse{State: TunnelRefused, Since: utc(since), RetryAt: utc(retry), Detail: "the relay refused this venue's key"}, CheckFailing},
 		{"replaced", &TunnelStatus{State: TunnelReplaced, Since: since},
 			tunnelResponse{State: TunnelReplaced, Since: utc(since)}, CheckFailing},
+		{"not entitled says why and when next", &TunnelStatus{State: TunnelNotEntitled, Since: since, RetryAt: retry, Detail: "the relay is not carrying this venue: payment_failed"},
+			tunnelResponse{State: TunnelNotEntitled, Since: utc(since), RetryAt: utc(retry), Detail: "the relay is not carrying this venue: payment_failed"}, CheckFailing},
 		{"connecting", &TunnelStatus{State: TunnelConnecting, Since: since},
 			tunnelResponse{State: TunnelConnecting, Since: utc(since)}, CheckFailing},
 		{"a word outside the vocabulary is stopped", &TunnelStatus{State: "exploded", Since: since},
@@ -447,5 +449,57 @@ func TestTheAddressToOpenTheBackOfficeAt(t *testing.T) {
 				t.Errorf("an empty address is on the wire: %s", rec.Body)
 			}
 		})
+	}
+}
+
+// TestTunnelSaysWhereTheVenueStands: what the relay told the venue is passed
+// on as it was told, with a date that is not one left out, and nothing at
+// all when the relay said nothing (ADR-316).
+func TestTunnelSaysWhereTheVenueStands(t *testing.T) {
+	paid := time.Date(2026, 11, 12, 0, 0, 0, 0, time.FixedZone("IST", 19800))
+	until := paid.AddDate(0, 0, 7)
+	r := newRegister(t)
+	owner := r.asStaff(r.signInAs(t, "stf_PRIYA001", "2468").Token)
+	read := func(st TunnelStatus) tunnelResponse {
+		t.Helper()
+		r.rebuild(t, WithTunnel(func() TunnelStatus { return st }))
+		status, got := r.tunnel(t, owner)
+		if status != http.StatusOK {
+			t.Fatalf("status = %d", status)
+		}
+		return got
+	}
+
+	if got := read(TunnelStatus{State: TunnelConnected}); got.Cloud != nil {
+		t.Errorf("a relay that said nothing: cloud = %+v, want none", got.Cloud)
+	}
+
+	got := read(TunnelStatus{State: TunnelConnected, BackOffice: true,
+		Cloud: &TunnelCloud{State: "grace", PaidUntil: paid, Until: until, BackOffice: true, Reason: "payment_failed"}})
+	c := got.Cloud
+	if c == nil || c.State != "grace" || c.Reason != "payment_failed" || !c.BackOffice ||
+		!sameTime(c.PaidUntil, utc(paid)) || !sameTime(c.Until, utc(until)) {
+		t.Errorf("cloud = %+v", c)
+	}
+
+	// A relay that keeps a file and set no date: only whether the back
+	// office is carried.
+	got = read(TunnelStatus{State: TunnelConnected, Cloud: &TunnelCloud{}})
+	if c := got.Cloud; c == nil || c.State != "" || c.PaidUntil != nil || c.Until != nil || c.BackOffice {
+		t.Errorf("cloud with nothing known = %+v, want present and empty", c)
+	}
+	rec := send(r.handler, http.MethodGet, "/api/v1/tunnel", "", owner)
+	if body := rec.Body.String(); !strings.Contains(body, `"cloud":{"back_office":false}`) {
+		t.Errorf("on the wire: %s", body)
+	}
+
+	// Turned away: still said, since it is the reason the owner is looking.
+	got = read(TunnelStatus{State: TunnelNotEntitled, Cloud: &TunnelCloud{State: "suspended", PaidUntil: paid, Until: until, Reason: "payment_failed"}})
+	if got.State != TunnelNotEntitled || got.Cloud == nil || got.Cloud.State != "suspended" {
+		t.Errorf("not entitled: %+v, cloud %+v", got, got.Cloud)
+	}
+
+	if got := read(TunnelStatus{State: TunnelOff, Cloud: &TunnelCloud{State: "active"}}); got.Cloud != nil {
+		t.Errorf("no relay: cloud = %+v, want none", got.Cloud)
 	}
 }

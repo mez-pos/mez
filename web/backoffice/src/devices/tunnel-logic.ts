@@ -2,7 +2,7 @@
 // backoffice-devices.md, "Ordering from phones"). Pure, so each state's
 // sentence is tested without a server that is in it.
 
-import type { TunnelResponse, TunnelState } from "../../../shared/api-types";
+import type { TunnelCloud, TunnelResponse, TunnelState } from "../../../shared/api-types";
 import { dateText, timeText } from "./devices-logic";
 
 /** How often the state is read again: often while it is changing, seldom once it has settled. */
@@ -24,7 +24,7 @@ export function refreshMs(state: TunnelState | undefined): number {
  * Every state short of connected says what guests can and cannot do; the two
  * that waiting will not mend say what will.
  */
-export function tunnelLine(t: Pick<TunnelResponse, "state" | "since">, now: Date): string {
+export function tunnelLine(t: Pick<TunnelResponse, "state" | "since" | "cloud">, now: Date): string {
   switch (t.state) {
     case "off":
       return "Guests order at the counter. Ordering from a phone needs a relay address and key in this venue's settings file.";
@@ -36,10 +36,80 @@ export function tunnelLine(t: Pick<TunnelResponse, "state" | "since">, now: Date
       return "The relay cannot be reached, so guests cannot order from their phones. The counter is not affected.";
     case "refused":
       return "The relay does not accept this venue's key, so guests cannot order from their phones. Check the relay key in the settings file, or ask whoever runs the relay for a new one.";
+    case "not_entitled":
+      return `The relay is not carrying this venue, so guests cannot order from their phones. ${whyNotCarried(t.cloud?.reason)} mez asks again every minute and comes back by itself once it is. The counter is not affected.`;
     case "replaced":
       return "Another computer is connected with this venue's key, and guests reach that one. Only one can be: stop the other, or give this one a key of its own.";
     case "stopped":
       return "The link to the relay is stopped. It starts again when mez does.";
+  }
+}
+
+/**
+ * Why the relay is not carrying the venue, from the short code it gave
+ * (ADR-313, ADR-316). A code this build does not know says who to ask.
+ */
+export function whyNotCarried(reason: string | undefined): string {
+  switch (reason) {
+    case "payment_failed":
+    case "payment_stopped":
+      return "The last payment for mez Cloud did not go through.";
+    case "trial_ended":
+      return "The free trial has ended.";
+    case "cancelled":
+      return "The subscription was cancelled.";
+    case "closed":
+      return "The account this venue was under is closed.";
+    case "expired":
+      return "The date it was carried until has passed.";
+    case "never":
+    case "not_listed":
+      return "Whoever runs the relay has not turned it on for this venue.";
+    default:
+      return "Whoever runs the relay can say why.";
+  }
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** "5 days left", "1 day left", "less than a day left"; nothing with no date, or one that has passed. */
+export function daysLeft(until: string | undefined, now: Date): string | null {
+  if (!until) return null;
+  const ms = Date.parse(until) - now.getTime();
+  if (Number.isNaN(ms) || ms <= 0) return null;
+  if (ms < DAY_MS) return "less than a day left";
+  const days = Math.ceil(ms / DAY_MS);
+  return days === 1 ? "1 day left" : `${days} days left`;
+}
+
+/**
+ * Where the venue stands with its relay, in a line: what is paid for and to
+ * when, or how long is left once a payment has failed. Nothing when the
+ * relay said nothing worth a line: one that carries the venue with no date.
+ * A relay that keeps accounts gives a state and is "Cloud"; one that keeps a
+ * file gives a date at most.
+ */
+export function cloudLine(cloud: TunnelCloud | undefined, now: Date): string | null {
+  if (!cloud) return null;
+  const paid = cloud.paid_until ? dateText(cloud.paid_until) : null;
+  const until = cloud.until ? dateText(cloud.until) : null;
+  switch (cloud.state) {
+    case "trial":
+      return paid ? `Cloud: free trial until ${paid}.` : "Cloud: free trial.";
+    case "active":
+      return paid ? `Cloud: paid until ${paid}.` : "Cloud: paid.";
+    case "grace": {
+      const what = cloud.reason === "trial_ended" ? "the free trial has ended" : "payment failed";
+      const left = daysLeft(cloud.until, now);
+      return left ? `Cloud: ${what}, ${left}.` : `Cloud: ${what}.`;
+    }
+    case "cancelled":
+      return until ? `Cloud: cancelled. Carried until ${until}.` : "Cloud: cancelled.";
+    case "suspended":
+    case "closed":
+      return paid ? `Cloud: stopped. It was paid until ${paid}.` : "Cloud: stopped.";
+    default:
+      return until ? `The relay carries this venue until ${until}.` : null;
   }
 }
 

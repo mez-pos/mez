@@ -8,7 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 2 - The backup is paced on purpose** (ADR-315).
+**Phase 14, Task 3a - The relay asks who is entitled** (ADR-316). Task 3
+was split: this is the relay's half. `relay.Entitlements` (`Until`,
+`Remote`, `State`, `PaidUntil`, `Reason`) is asked at the dial and again
+each hour and at the date. Not carried is 403 `not_entitled` at the dial
+and close code 4003 after, each with the reason. `StaticEntitlements`
+reads `RELAY_ENTITLEMENTS`, a file of `venue until [remote|guests]` with
+`*` for the rest, and reads it again when it changes. The venue is told
+where it stands in the `X-Mez-Entitlement` header and, if it asked, in a
+`Notice` frame. With no file every key is carried, as before. Nothing at
+the venue reads any of it yet.
+
+Before it, **Phase 14, Task 2 - The backup is paced on purpose** (ADR-315).
 `backup_sync_interval` (`-backup-sync-interval`,
 `MEZ_BACKUP_SYNC_INTERVAL`): `30s`, from `5s` to `10m`. It sets how often
 Litestream looks at the database as well as how often it sends, since it

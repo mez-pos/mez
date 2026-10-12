@@ -36,8 +36,19 @@ Inside the frame (`backoffice-shell.md`).
   | `connected` | **Connected**, success | "Guests can order from their phones. Connected since 14:02." |
   | `waiting` | **Reconnecting**, warning | "The relay cannot be reached, so guests cannot order from their phones. The counter is not affected." |
   | `refused` | **Key refused**, danger | "The relay does not accept this venue's key, ... Check the relay key in the settings file, or ask whoever runs the relay for a new one." |
+  | `not_entitled` | **Not carried**, danger | "The relay is not carrying this venue, so guests cannot order from their phones." then why, from the relay's code ("The last payment for mez Cloud did not go through.", "The free trial has ended.", "Whoever runs the relay has not turned it on for this venue.", or "Whoever runs the relay can say why."), then "mez asks again every minute and comes back by itself once it is. The counter is not affected." |
   | `replaced` | **In use elsewhere**, danger | "Another computer is connected with this venue's key, and guests reach that one. Only one can be: stop the other, or give this one a key of its own." |
   | `stopped` | **Stopped**, neutral | "The link to the relay is stopped. It starts again when mez does." |
+
+  Under the sentence, when the relay has said where the venue stands with
+  it (phase 14, Task 3b, ADR-316; `cloudLine`), one more line in the same
+  face: "Cloud: paid until 12 Nov 2026.", "Cloud: free trial until ...",
+  "Cloud: payment failed, 5 days left." (the days are to when the relay
+  stops, not to what was paid), "Cloud: cancelled. Carried until ...",
+  "Cloud: stopped. It was paid until ...". "Cloud" is said only of a relay
+  that keeps accounts and so gives a state; one that keeps a file gives a
+  date at most, and reads "The relay carries this venue until 19 Nov
+  2026.", and nothing at all with no date.
 
 - **Back office from anywhere**, a card under that one (phase 13, Task 4,
   ADR-310; `RemoteCard.tsx`, `remote-logic.ts`): whether the back office can
@@ -54,6 +65,7 @@ Inside the frame (`backoffice-shell.md`).
   | A relay, and off | **Only at the venue**, neutral | "The back office opens only at the venue. It can be opened from a phone or a computer elsewhere too: the menu, tables, stock, staff and reports, and nothing that takes money." | a key that allows it; `relay_key` and `remote_backoffice = true`; restart |
   | On, relay reached | **Open**, success | "The back office can be opened away from the venue, at this address." | open it; pair with a code made here, as a Back office; sign in, managers only |
   | On, relay not reached | **Not reachable**, warning | "It is turned on, but the relay is not reached right now, so the address opens nothing until it is. The counter is not affected." | the same three |
+  | On, relay reached, and the relay does not carry the back office for this venue | **Not reachable**, warning | "It is turned on here, but the relay does not carry the back office for this venue, so the address opens nothing. Guests' orders are not affected. Whoever runs the relay can turn it on." | none |
   | On, no address | **Open** or **Not reachable** | "It is turned on, but this venue has not said where it is reached, so there is no address to open." | set `public_url` and restart |
   | This page is the one opened from away | as above | "You are using it now: this is the back office, opened away from the venue." | none |
 

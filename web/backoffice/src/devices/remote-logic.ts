@@ -7,15 +7,24 @@
 import type { TunnelResponse } from "../../../shared/api-types";
 import type { RemoteState } from "../../../shared/ui";
 
-type Remote = Pick<TunnelResponse, "state" | "back_office" | "back_office_url">;
+type Remote = Pick<TunnelResponse, "state" | "back_office" | "back_office_url" | "cloud">;
 
 /**
  * Where it stands: off, the usual case and no fault; on and reachable; or
  * on with the relay not reached, when the address would open nothing.
  */
-export function remoteState(t: Pick<Remote, "state" | "back_office">): RemoteState {
+export function remoteState(t: Pick<Remote, "state" | "back_office" | "cloud">): RemoteState {
   if (!t.back_office) return "off";
-  return t.state === "connected" ? "on" : "unreachable";
+  return t.state === "connected" && !notCarried(t) ? "on" : "unreachable";
+}
+
+/**
+ * The venue has it turned on and the relay says it does not carry the back
+ * office for this venue (ADR-316): the address answers "not found". A relay
+ * that said nothing is taken at the venue's word, as before.
+ */
+function notCarried(t: Pick<Remote, "cloud">): boolean {
+  return t.cloud !== undefined && !t.cloud.back_office;
 }
 
 export interface RemoteWords {
@@ -67,6 +76,13 @@ export function remoteWords(t: Remote, away: boolean): RemoteWords {
     "The first time, it asks for a pairing code. Make one here with Pair a device, as a Back office. A code is made at the venue.",
     "Sign in with your PIN. Only someone who manages the venue can.",
   ];
+  if (t.state === "connected" && notCarried(t)) {
+    return {
+      line: "It is turned on here, but the relay does not carry the back office for this venue, so the address opens nothing. Guests' orders are not affected. Whoever runs the relay can turn it on.",
+      address,
+      steps: [],
+    };
+  }
   if (t.state !== "connected") {
     return {
       line: "It is turned on, but the relay is not reached right now, so the address opens nothing until it is. The counter is not affected.",

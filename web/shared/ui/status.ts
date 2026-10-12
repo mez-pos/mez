@@ -127,12 +127,15 @@ export const deviceStates: Readonly<Record<DeviceState, ChipSpec>> = {
 // The venue's link to the relay, which is how a guest's phone reaches it.
 // Off is a venue that has not set one up, which is most of them and no
 // fault. Refused and replaced are the two that will not mend by waiting.
+// Not carried is the relay turning the venue away with its key in order: a
+// date that has passed, or a relay that was never told to carry it.
 export const tunnelStates: Readonly<Record<TunnelState, ChipSpec>> = {
   off: { tone: "neutral", word: "Not set up" },
   connecting: { tone: "info", word: "Connecting" },
   connected: { tone: "success", word: "Connected" },
   waiting: { tone: "warning", word: "Reconnecting" },
   refused: { tone: "danger", word: "Key refused" },
+  not_entitled: { tone: "danger", word: "Not carried" },
   replaced: { tone: "danger", word: "In use elsewhere" },
   stopped: { tone: "neutral", word: "Stopped" },
 };

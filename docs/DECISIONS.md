@@ -11620,3 +11620,46 @@ which today is under a minute by accident of its ordinary backoff and after 3b b
 design. A venue installed before 3b shows none of this on its screen: its log says
 the relay closed it and why. Entitlements are asked about one venue at a time and
 never for a guest's request, so a slow store slows a connection and not an order.
+
+## ADR-317 - A venue that is not carried says so, asks again within the minute, and shows what the relay told it and no more
+2026-10 · Status: accepted. Phase 14, Task 3b. The venue's half of ADR-316.
+Context: ADR-316 has the relay tell a venue where it stands. This is what the venue
+does on hearing it. The relay's words are not the venue's to judge: nothing in the
+binary checks a licence (ADR-312), so the venue reads, keeps and shows them, and the
+only thing it does differently is how soon it dials again.
+Decision:
+  - **One new state, `not_entitled`**, in the tunnel client and the API's vocabulary.
+    It is entered from a 403 at the dial that carries the relay's header, and from
+    the relay's close code while connected. A 403 without the header is somebody
+    else's and stays an ordinary failure.
+  - **It asks again in half a minute to a minute**, at random between the two, and
+    is not counted as a failure of the line: the backoff after the next real
+    failure starts from the bottom. A refused key still waits five minutes. The
+    difference is the whole point of there being two answers: a payment should
+    bring a venue back while its owner is still looking at the screen.
+  - **What was told is kept beside the state, not in it.** `Status.Standing` holds
+    the relay's last word through every state after, so a venue whose line is down
+    still shows what it was paid to. It is replaced by each new word and forgotten
+    on connecting to a relay that says nothing, so an old relay's venue does not
+    show another relay's dates.
+  - **`cloud` on `GET /api/v1/tunnel`**: `state`, `paid_until`, `until`, `back_office`
+    and `reason`, as told. Absent when nothing was. `back_office` is there, though
+    the task did not list it, because a venue can have the back office turned on
+    and the relay not carry it, and the card that says "Open" would be wrong.
+  - **The screen says "Cloud" only of a relay that gave a state.** A relay that
+    keeps a file gives a date at most, and the line is "The relay carries this venue
+    until ...", or nothing. A self-hoster is not told about a subscription they do
+    not have.
+  - **The days left are counted to when the relay stops, not to what was paid.**
+    "Payment failed, 5 days left" is `until`; `paid_until` is already behind.
+  - **A reason this build does not know is not guessed at.** "Whoever runs the
+    relay can say why." The codes can grow at the relay without a venue being wrong.
+Because: every sentence on the card is something the relay said or something the
+venue can see for itself. A venue that worked out its own standing would be a
+licence check by another name, and would be wrong the first time the two disagreed.
+Cost: the cards were not opened in a browser. Their words are tested as functions,
+from a real relay through the client to the API's status, and the screen itself is
+unseen. "Not carried" is the chip's word and it is the relay's point of view; an
+owner may want "Not paid", which is true of only some of the ways to be here. With
+no account area yet there is nowhere to send an owner to pay, so the sentence says
+what happened and not what to press.

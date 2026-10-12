@@ -502,13 +502,17 @@ func tunnelStatus(guests *tunnel.Client) api.TunnelStatus {
 		return api.TunnelStatus{State: api.TunnelOff}
 	}
 	st := guests.Status()
-	return api.TunnelStatus{
+	out := api.TunnelStatus{
 		State:      translateTunnelState(st.State),
 		Since:      st.Since,
 		RetryAt:    st.RetryAt,
 		Detail:     st.LastError,
 		BackOffice: guests.BackOffice(),
 	}
+	if s := st.Standing; s != nil {
+		out.Cloud = &api.TunnelCloud{State: s.State, PaidUntil: s.PaidUntil, Until: s.Until, BackOffice: s.BackOffice, Reason: s.Reason}
+	}
+	return out
 }
 
 func translateTunnelState(state tunnel.State) api.TunnelState {
@@ -521,6 +525,8 @@ func translateTunnelState(state tunnel.State) api.TunnelState {
 		return api.TunnelWaiting
 	case tunnel.StateRefused:
 		return api.TunnelRefused
+	case tunnel.StateNotEntitled:
+		return api.TunnelNotEntitled
 	case tunnel.StateReplaced:
 		return api.TunnelReplaced
 	default:
