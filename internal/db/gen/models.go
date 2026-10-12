@@ -28,6 +28,12 @@ type Category struct {
 	UpdatedAt time.Time
 }
 
+type CloudAssertion struct {
+	Nonce     string
+	VenueID   int64
+	ExpiresAt time.Time
+}
+
 type Course struct {
 	ID        int64
 	VenueID   int64
@@ -62,6 +68,7 @@ type Device struct {
 	LastSeenAt sql.NullTime
 	RevokedAt  sql.NullTime
 	CreatedAt  time.Time
+	Cloud      bool
 }
 
 type DrawerCount struct {
@@ -426,6 +433,7 @@ type Staff struct {
 	UpdatedAt    time.Time
 	LockedAt     sql.NullTime
 	LockedReason string
+	Cloud        bool
 }
 
 type StaffLockout struct {

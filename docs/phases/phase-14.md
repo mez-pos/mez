@@ -246,7 +246,53 @@ and its first commit copies this phase's cloud tasks there.
   tests on the code's life and single use.
 
 - [ ] **Task 5 - The owner signs in from the cloud.** *This repo, after
-  Phase 13 Task 5.* At pairing the venue creates one staff member, kind
+  Phase 13 Task 5.* Split on 2026-10-12 before building it (ADR-323): a
+  session belongs to a device and the owner's browser was never paired as
+  one, so there is a device to make as well as a person, and the route is
+  a session of its own.
+
+  - [x] **Task 5a - The assertion, the person and the sign-in.** As built
+    (ADR-323): `internal/cloud/assertion.go` (`v1.<payload>.<signature>`,
+    `SignAssertion` for `mez-cloud`, `VerifyAssertion`; the subject is the
+    word `owner`, the audience the venue's `public_id`, five minutes and a
+    minute's grace each side). Migration 00055: `staff.cloud`,
+    `devices.cloud`, `cloud_assertions`. `internal/auth/cloud.go`:
+    `PairCloudOwner` (made or restored at pairing, through
+    `cloudpair.Options.Owner`), `EnsureCloudOwner` (at start, for a venue
+    paired by an older build, never restoring), `SignInCloud` (spends the
+    nonce and opens ADR-314's session in one transaction). The person has
+    no PIN: `verify` answers any as it does for someone deactivated, the
+    People service and `mez reset-pin` refuse to give one, and they are
+    off the sign-in tiles and out of the count of who can manage staff.
+    **Nothing calls `SignInCloud` yet.**
+  - [ ] **Task 5b - The route, and being the cloud's device after it.**
+    `POST /api/v1/sessions/cloud`, through the relay only, carrying
+    `Authorization: Mez-Cloud <assertion>`: the key from the pairing in
+    use (`venueLink.inUse().Key()`, asked for each time, so a venue paired
+    again verifies with the new one), the audience the venue's
+    `public_id`, `cloud.VerifyAssertion`, then `auth.SignInCloud` with
+    `Vouched{Nonce, KeepUntil()}`. Refusals: a venue that is not paired
+    and one with nobody for the cloud to be answer alike; a spent or
+    unsigned assertion is 401; `cloud.ErrAssertionTime` is its own code,
+    saying to check the venue computer's clock. Rate limited before
+    anything is verified. **Decide first, in an ADR, how the requests
+    after it are known as the cloud's device**: it has no token, and
+    `requireDevice` wants `Authorization: Bearer <device token>`. The
+    choice weighed in 5a and not made: the session's own token presented
+    as the bearer, accepted only for a session whose `Session.Cloud` is
+    true and only on a relayed request. Add the route to `remoteRoutes`.
+    `by=cloud` beside `via=relay` in the access log, from `Session.Cloud`.
+    `cloud` on a person in `GET /api/v1/people` (the query has the
+    column) and the People screen saying "Signs in from mez Cloud" where
+    it offers a PIN; read `docs/design/tokens.md` and the People screen's
+    file first. `build/dev/pairstub` gains a route that signs an
+    assertion for a walk. `deploy.md`. Tests over HTTP: a valid assertion
+    signs in and the session it opens reads `GET /api/v1/sessions/current`
+    through the relay gate; expired, replayed, wrong-audience and
+    wrong-key ones do not; the same request not relayed is refused; a
+    venue not paired refuses the header.
+
+  The task as it was set: At pairing the venue creates one staff member, kind
   `owner`, named from the account, with no PIN and the owner's permissions,
   marked as the cloud's. A relayed request may carry `Authorization: Mez-Cloud
   <assertion>`: Ed25519-signed by the cloud, audience the venue id, subject

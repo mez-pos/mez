@@ -170,12 +170,27 @@ func TestResetPINRefusals(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// The person a pairing to mez Cloud makes (ADR-323).
+	staff, err := auth.NewStaffAuth(auth.StaffOptions{DB: d})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var venueID int64
+	if err := d.Writer().QueryRowContext(ctx, `SELECT id FROM venues`).Scan(&venueID); err != nil {
+		t.Fatal(err)
+	}
+	cloudOwner, err := staff.PairCloudOwner(ctx, venueID, "Priya Menon")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		name string
 		args []string
 		says string
 	}{
 		{"nobody of that id", []string{"-data-dir", dir, "-staff", "stf_NOBODY00"}, "no person has the id"},
+		{"the cloud's owner", []string{"-data-dir", dir, "-staff", cloudOwner.PublicID}, "signs in from mez Cloud and has no PIN"},
 		{"someone who no longer works here", []string{"-data-dir", dir, "-staff", gone}, "no longer works here"},
 		{"a stray argument", []string{"-data-dir", dir, "-staff", gone, "now"}, "unexpected argument"},
 		{"no database there", []string{"-data-dir", t.TempDir(), "-staff", gone}, "there is no database"},
@@ -193,5 +208,13 @@ func TestResetPINRefusals(t *testing.T) {
 				t.Errorf("a refusal printed a PIN:\n%s", printed.String())
 			}
 		})
+	}
+
+	var hash string
+	if err := d.Writer().QueryRowContext(ctx, `SELECT pin_hash FROM staff WHERE cloud = 1`).Scan(&hash); err != nil {
+		t.Fatal(err)
+	}
+	if hash != auth.NoPIN {
+		t.Errorf("the cloud's owner has the PIN hash %q, want none", hash)
 	}
 }

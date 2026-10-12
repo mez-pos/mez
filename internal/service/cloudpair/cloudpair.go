@@ -93,6 +93,10 @@ type Options struct {
 	// venue's address. It reports whether a restart is needed for it. Nil
 	// is a server that only reads its pairing at start.
 	Apply func(ctx context.Context, p cloud.Pairing) (restartNeeded bool, err error)
+	// Owner makes the one person mez Cloud may sign in as, named for the
+	// account, or brings them back (ADR-323). Nil is a server where the
+	// cloud signs nobody in.
+	Owner func(ctx context.Context, venueID int64, name string) error
 	Log   *slog.Logger
 }
 
@@ -155,6 +159,16 @@ func (s *Service) Pair(ctx context.Context, venueID int64, typed string) (Result
 	}
 	s.opts.Log.Info("this venue was paired to mez Cloud", "pairing", p, "venue_id", venueID)
 	out := Result{Owner: p.Owner.Name, Hostname: p.Venue.Hostname, PairedAt: p.PairedAt}
+
+	// Who the cloud may sign in as. Not being able to make them does not
+	// unpair the venue: it is reached and backed up all the same, and a
+	// paired venue with nobody is given them when mez next starts.
+	if s.opts.Owner != nil {
+		if err := s.opts.Owner(ctx, venueID, p.Owner.Name); err != nil {
+			s.opts.Log.Warn("the venue was paired, and the person mez Cloud signs in as could not be made; it is tried again when mez next starts",
+				"venue_id", venueID, "error", err)
+		}
+	}
 
 	if s.opts.Apply == nil {
 		out.RestartNeeded = true

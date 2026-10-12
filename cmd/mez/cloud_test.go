@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/byjoellobo/mez/internal/api"
+	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/config"
@@ -360,5 +361,81 @@ func TestPairingWhileRunningTakesHoldAtOnce(t *testing.T) {
 	}
 	if restart, err := link.apply(ctx, second, dial); err == nil || !restart {
 		t.Errorf("after Close: restart %v, %v", restart, err)
+	}
+}
+
+// TestAPairedVenueIsGivenItsCloudOwnerAtStart: a venue paired by a build
+// from before the cloud could sign anyone in has nobody for it to be, and
+// is given them once. A start does not bring back one who was turned off.
+func TestAPairedVenueIsGivenItsCloudOwnerAtStart(t *testing.T) {
+	ctx := context.Background()
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	dir, args := setupArgs(t)
+	runSetupIn(t, args)
+	d := opened(t, dir)
+	staff, err := auth.NewStaffAuth(auth.StaffOptions{DB: d})
+	if err != nil {
+		t.Fatal(err)
+	}
+	owners := func() (n int, name string, active bool) {
+		t.Helper()
+		rows, err := d.Reader().QueryContext(ctx, `SELECT name, active FROM staff WHERE cloud = 1`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			n++
+			if err := rows.Scan(&name, &active); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return n, name, active
+	}
+
+	// Not paired: nobody.
+	ensureCloudOwner(ctx, d, staff, nil, quiet)
+	if n, _, _ := owners(); n != 0 {
+		t.Fatalf("a venue that is not paired has %d cloud owners", n)
+	}
+
+	p := pairingTo(t, "https://relay.mezpos.com", "mzr_corner-cafe.0123456789ab.remote.c2lnbmF0dXJl")
+	ensureCloudOwner(ctx, d, staff, &p, quiet)
+	if n, name, active := owners(); n != 1 || name != p.Owner.Name || !active {
+		t.Fatalf("after a start: %d cloud owners, %q, active %v", n, name, active)
+	}
+
+	// Turned off at the venue, and started again under another name.
+	if _, err := d.Writer().ExecContext(ctx, `UPDATE staff SET active = 0 WHERE cloud = 1`); err != nil {
+		t.Fatal(err)
+	}
+	p.Owner.Name = "Somebody Else"
+	ensureCloudOwner(ctx, d, staff, &p, quiet)
+	if n, name, active := owners(); n != 1 || name == "Somebody Else" || active {
+		t.Errorf("after a second start: %d cloud owners, %q, active %v; want the one there left as found", n, name, active)
+	}
+}
+
+// TestNoVenueNoCloudOwner: a machine paired by hand before the wizard has
+// run has no venue to give anyone to, and starts all the same.
+func TestNoVenueNoCloudOwner(t *testing.T) {
+	ctx := context.Background()
+	d, err := db.Open(ctx, db.Options{Path: filepath.Join(t.TempDir(), db.FileName)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = d.Close(context.Background()) })
+	if err := d.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	staff, err := auth.NewStaffAuth(auth.StaffOptions{DB: d})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := pairingTo(t, "https://relay.mezpos.com", "mzr_corner-cafe.0123456789ab.remote.c2lnbmF0dXJl")
+	ensureCloudOwner(ctx, d, staff, &p, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	var n int
+	if err := d.Reader().QueryRowContext(ctx, `SELECT COUNT(*) FROM staff`).Scan(&n); err != nil || n != 0 {
+		t.Errorf("%d staff (err %v), want none", n, err)
 	}
 }

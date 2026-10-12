@@ -26,7 +26,8 @@ type Querier interface {
 	// The index on (venue_id, active) is what this reads down, which is why it
 	// exists. The role's name rides along for the sign-in screen. Someone
 	// hard-locked is left out, as someone deactivated is (ADR-260): their tile
-	// would only take PINs it refuses.
+	// would only take PINs it refuses. The cloud's owner has no PIN to type
+	// (ADR-323).
 	ActiveStaffForVenue(ctx context.Context, venueID int64) ([]ActiveStaffForVenueRow, error)
 	ActiveStationCount(ctx context.Context, venueID int64) (int64, error)
 	ActiveStations(ctx context.Context, venueID int64) ([]ActiveStationsRow, error)
@@ -95,6 +96,12 @@ type Querier interface {
 	// 5f2, ADR-125), by day, then shift, then item. unit_cost is the item's
 	// cost when it was counted, 0 for not known (ADR-124).
 	ClosingCountsInRange(ctx context.Context, arg ClosingCountsInRangeParams) ([]ClosingCountsInRangeRow, error)
+	// The cloud's device (ADR-323): what the sessions of the cloud's owner
+	// belong to. It has no token, so DeviceByTokenHash never finds it.
+	CloudDeviceForVenue(ctx context.Context, venueID int64) (Device, error)
+	// The cloud's owner (ADR-323): the one person a pairing makes, who has no
+	// PIN and is signed in by an assertion mez Cloud signs.
+	CloudStaffForVenue(ctx context.Context, venueID int64) (Staff, error)
 	// Whether a code was ever a venue's pickup code, live or not.
 	CodeIsAPickups(ctx context.Context, code string) (int64, error)
 	// Whether a code was ever a table's, live or not: a pickup code is never
@@ -119,6 +126,8 @@ type Querier interface {
 	CoursesForVenue(ctx context.Context, venueID int64) ([]CoursesForVenueRow, error)
 	CreateArea(ctx context.Context, arg CreateAreaParams) (int64, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (int64, error)
+	CreateCloudDevice(ctx context.Context, arg CreateCloudDeviceParams) (int64, error)
+	CreateCloudStaff(ctx context.Context, arg CreateCloudStaffParams) (int64, error)
 	CreateCourse(ctx context.Context, arg CreateCourseParams) (int64, error)
 	CreateCreditNote(ctx context.Context, arg CreateCreditNoteParams) (int64, error)
 	CreateDrawerCount(ctx context.Context, arg CreateDrawerCountParams) error
@@ -433,6 +442,9 @@ type Querier interface {
 	PrinterByID(ctx context.Context, id int64) (PrinterByIDRow, error)
 	// The venue's printers with each one's newest job, for the back office.
 	PrintersForVenue(ctx context.Context, venueID int64) ([]PrintersForVenueRow, error)
+	// An assertion past this moment is refused for its age, so its nonce no
+	// longer needs remembering.
+	PruneCloudAssertions(ctx context.Context, expiresAt time.Time) error
 	// Sessions at a table that expired before a moment ago: no use to anyone,
 	// and a table hands out a few every sitting.
 	PruneGuestSessions(ctx context.Context, arg PruneGuestSessionsParams) error
@@ -471,6 +483,10 @@ type Querier interface {
 	// Says how an unapplied charge was dealt with, once. Whoever is second
 	// writes nothing.
 	ResolveGatewayCharge(ctx context.Context, arg ResolveGatewayChargeParams) (int64, error)
+	//
+	// Pairing again brings the cloud's owner back as pairing made them: named
+	// for the account, in the role given, active.
+	RestoreCloudStaff(ctx context.Context, arg RestoreCloudStaffParams) error
 	RetireModifier(ctx context.Context, arg RetireModifierParams) (int64, error)
 	// A person's retry: a failed or dead job back to the queue with its tries
 	// restored, on the printer given (the one it had, or one set up since).
@@ -558,6 +574,10 @@ type Querier interface {
 	// the dish it went into (0 for stock taken before the dish was kept,
 	// ADR-189), as a positive amount.
 	SoldForOrder(ctx context.Context, arg SoldForOrderParams) ([]SoldForOrderRow, error)
+	// Assertions mez Cloud signed, spent here (ADR-323).
+	// One row changed is an assertion seen for the first time; none is one that
+	// has been spent already.
+	SpendCloudAssertion(ctx context.Context, arg SpendCloudAssertionParams) (int64, error)
 	StaffByPublicID(ctx context.Context, publicID string) (Staff, error)
 	StaffCountByRole(ctx context.Context, venueID int64) ([]StaffCountByRoleRow, error)
 	StaffForEdit(ctx context.Context, arg StaffForEditParams) (StaffForEditRow, error)
@@ -569,7 +589,8 @@ type Querier interface {
 	//
 	// How many active people can still manage staff. Every change to people
 	// or roles checks this inside its own transaction and is refused at zero:
-	// a venue nobody can manage cannot be repaired from the back office.
+	// a venue nobody can manage cannot be repaired from the back office. The
+	// cloud's owner is not counted: they cannot stand at the venue (ADR-323).
 	StaffManagersLeft(ctx context.Context, venueID int64) (int64, error)
 	//
 	// Everyone who has worked at the venue, inactive included: an order's

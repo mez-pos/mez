@@ -163,6 +163,11 @@ func resetStaffPIN(ctx context.Context, database *db.DB, publicID, pin string, n
 			return fmt.Errorf("reset-pin: reading %s: %w", publicID, err)
 		}
 		name = row.Name
+		// Not even from the machine: with a PIN the cloud's owner would be
+		// a way in that the account knows nothing of (ADR-323).
+		if row.Cloud {
+			return fmt.Errorf("reset-pin: %s signs in from mez Cloud and has no PIN: add them under Staff as a person of their own to give them one", row.Name)
+		}
 		if !row.Active {
 			return fmt.Errorf("reset-pin: %s no longer works here: bring them back under Staff first", row.Name)
 		}

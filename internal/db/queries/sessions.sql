@@ -33,10 +33,12 @@ RETURNING id;
 -- name: StaffSessionByTokenHash :one
 SELECT
     s.id, s.venue_id, s.staff_id, s.device_id, s.expires_at, s.ended_at, s.via,
-    st.public_id AS staff_public_id, st.name AS staff_name, st.role_id, r.name AS role_name, st.active AS staff_active
+    st.public_id AS staff_public_id, st.name AS staff_name, st.role_id, r.name AS role_name, st.active AS staff_active,
+    st.cloud AS staff_cloud, d.revoked_at AS device_revoked_at
 FROM staff_sessions s
 JOIN staff st ON st.id = s.staff_id
 JOIN roles r ON r.id = st.role_id
+JOIN devices d ON d.id = s.device_id
 WHERE s.token_hash = ?;
 
 -- name: EndStaffSession :execrows
@@ -50,3 +52,18 @@ WHERE id = ? AND ended_at IS NULL;
 -- otherwise grow by every PIN ever typed.
 DELETE FROM sign_in_attempts
 WHERE at < ?;
+
+-- Assertions mez Cloud signed, spent here (ADR-323).
+
+-- name: SpendCloudAssertion :execrows
+-- One row changed is an assertion seen for the first time; none is one that
+-- has been spent already.
+INSERT INTO cloud_assertions (nonce, venue_id, expires_at)
+VALUES (?, ?, ?)
+ON CONFLICT (nonce) DO NOTHING;
+
+-- name: PruneCloudAssertions :exec
+-- An assertion past this moment is refused for its age, so its nonce no
+-- longer needs remembering.
+DELETE FROM cloud_assertions
+WHERE expires_at <= ?;

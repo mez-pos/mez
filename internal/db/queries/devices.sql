@@ -23,12 +23,12 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
 RETURNING id;
 
 -- name: DeviceByTokenHash :one
-SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at
+SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at, cloud
 FROM devices
 WHERE token_hash = ? AND token_hash != '';
 
 -- name: DeviceByID :one
-SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at
+SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at, cloud
 FROM devices
 WHERE id = ?;
 
@@ -83,3 +83,16 @@ SELECT device_name, device_kind, created_at, expires_at
 FROM pairing_codes
 WHERE venue_id = ? AND redeemed_at IS NULL AND expires_at > ?
 ORDER BY id;
+
+-- The cloud's device (ADR-323): what the sessions of the cloud's owner
+-- belong to. It has no token, so DeviceByTokenHash never finds it.
+
+-- name: CloudDeviceForVenue :one
+SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at, cloud
+FROM devices
+WHERE venue_id = ? AND cloud = 1 AND revoked_at IS NULL;
+
+-- name: CreateCloudDevice :one
+INSERT INTO devices (public_id, venue_id, name, kind, token_hash, paired_at, created_at, cloud)
+VALUES (sqlc.arg(public_id), sqlc.arg(venue_id), sqlc.arg(name), 'back_office', '', sqlc.arg(now), sqlc.arg(now), 1)
+RETURNING id;

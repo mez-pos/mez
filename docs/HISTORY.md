@@ -8,7 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 4c1 - Pairing from the Devices screen** (ADR-321). 4c was
+**Phase 14, Task 4c2 - The wizard's mez Cloud step** (ADR-322), which
+closes 4c. The wizard has six steps: mez Cloud is the fifth, after the
+printer, when the venue exists and the owner is signed in, so it calls
+`POST /api/v1/cloud/pair` as the Devices card does and the server gained
+nothing. It can be skipped. The words both screens say are in
+`web/shared/cloud-pair.ts`. **Walked in a browser** on a venue made in
+the wizard, against `build/dev/pairstub` and a local relay: a code that
+could not be one refused under the field, the right one paired, a
+guest's request through the relay answered, then on to More devices.
+
+Before it, **Phase 14, Task 4c1 - Pairing from the Devices screen** (ADR-321). 4c was
 split in two. At the foot of "Back office from anywhere": who the venue
 is paired to, and **Connect to mez Cloud** or **Pair again**, opening a
 modal for the code (`CloudPairModal.tsx`, `cloud-logic.ts`).

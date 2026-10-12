@@ -25,12 +25,12 @@ INSERT INTO staff (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING
     id, public_id, venue_id, role_id, name, pin_hash, active,
-    created_at, updated_at, locked_at, locked_reason;
+    created_at, updated_at, locked_at, locked_reason, cloud;
 
 -- name: StaffByPublicID :one
 SELECT
     id, public_id, venue_id, role_id, name, pin_hash, active,
-    created_at, updated_at, locked_at, locked_reason
+    created_at, updated_at, locked_at, locked_reason, cloud
 FROM staff
 WHERE public_id = ?;
 
@@ -39,13 +39,14 @@ WHERE public_id = ?;
 -- The index on (venue_id, active) is what this reads down, which is why it
 -- exists. The role's name rides along for the sign-in screen. Someone
 -- hard-locked is left out, as someone deactivated is (ADR-260): their tile
--- would only take PINs it refuses.
+-- would only take PINs it refuses. The cloud's owner has no PIN to type
+-- (ADR-323).
 SELECT
     s.id, s.public_id, s.venue_id, s.role_id, r.name AS role_name, s.name, s.pin_hash, s.active,
     s.created_at, s.updated_at
 FROM staff s
 JOIN roles r ON r.id = s.role_id
-WHERE s.venue_id = ? AND s.active = 1 AND s.locked_at IS NULL
+WHERE s.venue_id = ? AND s.active = 1 AND s.locked_at IS NULL AND s.cloud = 0
 ORDER BY s.name;
 
 -- name: DeactivateStaff :exec
@@ -77,14 +78,14 @@ ORDER BY id;
 -- name: StaffForVenue :many
 --
 -- Everyone, inactive too, with their role's name.
-SELECT s.id, s.public_id, s.name, s.role_id, r.name AS role_name, s.active, s.created_at, s.locked_at
+SELECT s.id, s.public_id, s.name, s.role_id, r.name AS role_name, s.active, s.created_at, s.locked_at, s.cloud
 FROM staff s
 JOIN roles r ON r.id = s.role_id
 WHERE s.venue_id = ?
 ORDER BY s.active DESC, s.name COLLATE NOCASE, s.id;
 
 -- name: StaffForEdit :one
-SELECT id, role_id, active
+SELECT id, role_id, active, cloud
 FROM staff
 WHERE venue_id = ? AND public_id = ?;
 
@@ -139,11 +140,12 @@ GROUP BY role_id;
 --
 -- How many active people can still manage staff. Every change to people
 -- or roles checks this inside its own transaction and is refused at zero:
--- a venue nobody can manage cannot be repaired from the back office.
+-- a venue nobody can manage cannot be repaired from the back office. The
+-- cloud's owner is not counted: they cannot stand at the venue (ADR-323).
 SELECT COUNT(*) AS n
 FROM staff s
 JOIN roles r ON r.id = s.role_id
-WHERE s.venue_id = ? AND s.active = 1
+WHERE s.venue_id = ? AND s.active = 1 AND s.cloud = 0
   AND EXISTS (SELECT 1 FROM json_each(r.permissions) WHERE value = 'staff.manage');
 
 -- The hard lock (ADR-260). A lockout is recorded at the wrong PIN that locks
@@ -185,3 +187,26 @@ WHERE venue_id = sqlc.arg(venue_id) AND id = sqlc.arg(id);
 UPDATE staff_lockouts
 SET cleared_at = sqlc.arg(now)
 WHERE staff_id = sqlc.arg(staff_id) AND cleared_at IS NULL;
+
+-- The cloud's owner (ADR-323): the one person a pairing makes, who has no
+-- PIN and is signed in by an assertion mez Cloud signs.
+
+-- name: CloudStaffForVenue :one
+SELECT
+    id, public_id, venue_id, role_id, name, pin_hash, active,
+    created_at, updated_at, locked_at, locked_reason, cloud
+FROM staff
+WHERE venue_id = ? AND cloud = 1;
+
+-- name: CreateCloudStaff :one
+INSERT INTO staff (public_id, venue_id, role_id, name, pin_hash, active, created_at, updated_at, cloud)
+VALUES (sqlc.arg(public_id), sqlc.arg(venue_id), sqlc.arg(role_id), sqlc.arg(name), sqlc.arg(pin_hash), 1, sqlc.arg(now), sqlc.arg(now), 1)
+RETURNING id;
+
+-- name: RestoreCloudStaff :exec
+--
+-- Pairing again brings the cloud's owner back as pairing made them: named
+-- for the account, in the role given, active.
+UPDATE staff
+SET name = sqlc.arg(name), role_id = sqlc.arg(role_id), active = 1, updated_at = sqlc.arg(now)
+WHERE id = sqlc.arg(id) AND cloud = 1;

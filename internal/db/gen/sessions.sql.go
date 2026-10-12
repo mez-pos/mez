@@ -61,6 +61,18 @@ func (q *Queries) EndStaffSession(ctx context.Context, arg EndStaffSessionParams
 	return result.RowsAffected()
 }
 
+const pruneCloudAssertions = `-- name: PruneCloudAssertions :exec
+DELETE FROM cloud_assertions
+WHERE expires_at <= ?
+`
+
+// An assertion past this moment is refused for its age, so its nonce no
+// longer needs remembering.
+func (q *Queries) PruneCloudAssertions(ctx context.Context, expiresAt time.Time) error {
+	_, err := q.db.ExecContext(ctx, pruneCloudAssertions, expiresAt)
+	return err
+}
+
 const pruneSignInAttempts = `-- name: PruneSignInAttempts :execrows
 DELETE FROM sign_in_attempts
 WHERE at < ?
@@ -192,29 +204,57 @@ func (q *Queries) RecordSignInAttempt(ctx context.Context, arg RecordSignInAttem
 	return err
 }
 
+const spendCloudAssertion = `-- name: SpendCloudAssertion :execrows
+
+INSERT INTO cloud_assertions (nonce, venue_id, expires_at)
+VALUES (?, ?, ?)
+ON CONFLICT (nonce) DO NOTHING
+`
+
+type SpendCloudAssertionParams struct {
+	Nonce     string
+	VenueID   int64
+	ExpiresAt time.Time
+}
+
+// Assertions mez Cloud signed, spent here (ADR-323).
+// One row changed is an assertion seen for the first time; none is one that
+// has been spent already.
+func (q *Queries) SpendCloudAssertion(ctx context.Context, arg SpendCloudAssertionParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, spendCloudAssertion, arg.Nonce, arg.VenueID, arg.ExpiresAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const staffSessionByTokenHash = `-- name: StaffSessionByTokenHash :one
 SELECT
     s.id, s.venue_id, s.staff_id, s.device_id, s.expires_at, s.ended_at, s.via,
-    st.public_id AS staff_public_id, st.name AS staff_name, st.role_id, r.name AS role_name, st.active AS staff_active
+    st.public_id AS staff_public_id, st.name AS staff_name, st.role_id, r.name AS role_name, st.active AS staff_active,
+    st.cloud AS staff_cloud, d.revoked_at AS device_revoked_at
 FROM staff_sessions s
 JOIN staff st ON st.id = s.staff_id
 JOIN roles r ON r.id = st.role_id
+JOIN devices d ON d.id = s.device_id
 WHERE s.token_hash = ?
 `
 
 type StaffSessionByTokenHashRow struct {
-	ID            int64
-	VenueID       int64
-	StaffID       int64
-	DeviceID      int64
-	ExpiresAt     time.Time
-	EndedAt       sql.NullTime
-	Via           string
-	StaffPublicID string
-	StaffName     string
-	RoleID        int64
-	RoleName      string
-	StaffActive   bool
+	ID              int64
+	VenueID         int64
+	StaffID         int64
+	DeviceID        int64
+	ExpiresAt       time.Time
+	EndedAt         sql.NullTime
+	Via             string
+	StaffPublicID   string
+	StaffName       string
+	RoleID          int64
+	RoleName        string
+	StaffActive     bool
+	StaffCloud      bool
+	DeviceRevokedAt sql.NullTime
 }
 
 func (q *Queries) StaffSessionByTokenHash(ctx context.Context, tokenHash string) (StaffSessionByTokenHashRow, error) {
@@ -233,6 +273,8 @@ func (q *Queries) StaffSessionByTokenHash(ctx context.Context, tokenHash string)
 		&i.RoleID,
 		&i.RoleName,
 		&i.StaffActive,
+		&i.StaffCloud,
+		&i.DeviceRevokedAt,
 	)
 	return i, err
 }

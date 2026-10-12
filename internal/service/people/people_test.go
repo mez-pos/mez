@@ -290,6 +290,59 @@ func TestAVenueKeepsSomeoneWhoCanManageStaff(t *testing.T) {
 	}
 }
 
+// The cloud's owner is signed in by mez Cloud and nothing else (ADR-323):
+// nobody gives them a PIN, the owner included, and they are not who keeps a
+// venue managed.
+func TestTheCloudsOwnerCannotBeGivenAPIN(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	staff, err := auth.NewStaffAuth(auth.StaffOptions{DB: f.d, Now: clock{}.Now})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cloudOwner, err := staff.PairCloudOwner(ctx, f.cafe.id, "Priya Menon")
+	if err != nil {
+		t.Fatal(err)
+	}
+	priya := f.cafe.people["Priya"]
+
+	err = f.s.ResetPIN(ctx, f.cafe.id, priya.id, cloudOwner.PublicID, "246813")
+	if fieldOf(err) != "pin" || !strings.Contains(err.Error(), "mez Cloud") {
+		t.Errorf("the owner giving the cloud's owner a PIN: %v, want it refused on the PIN", err)
+	}
+	// Not by the cloud's owner either, signed in from away as themselves.
+	err = f.s.ResetPIN(ctx, f.cafe.id, cloudOwner.ID, cloudOwner.PublicID, "246813")
+	if fieldOf(err) != "pin" {
+		t.Errorf("the cloud's owner giving themselves a PIN: %v, want it refused on the PIN", err)
+	}
+	var hash string
+	if err := f.d.Reader().QueryRowContext(ctx, `SELECT pin_hash FROM staff WHERE id = ?`, cloudOwner.ID).Scan(&hash); err != nil {
+		t.Fatal(err)
+	}
+	if hash != auth.NoPIN {
+		t.Errorf("the cloud's owner has the PIN hash %q, want none", hash)
+	}
+
+	// They are on the People list, and can be turned off there.
+	if p := f.person(t, f.cafe, cloudOwner.PublicID); !p.Active || p.Name != "Priya Menon" {
+		t.Errorf("the cloud's owner on the People list: %+v", p)
+	}
+	if err := f.s.SetStaffActive(ctx, f.cafe.id, priya.id, cloudOwner.PublicID, false); err != nil {
+		t.Errorf("deactivating the cloud's owner: %v", err)
+	}
+
+	// A venue's one owner at the venue cannot be lost to the cloud's: the
+	// cloud's owner cannot stand at a till, so is not who keeps it managed.
+	solo, err := staff.PairCloudOwner(ctx, f.solo.id, "Ravi Kumar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ravi := f.solo.people["Ravi"]
+	if err := f.s.SetStaffActive(ctx, f.solo.id, solo.ID, ravi.publicID, false); err == nil {
+		t.Error("the cloud's owner deactivated the only person who manages staff at the venue")
+	}
+}
+
 func TestAResetPINSignsThePersonOut(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()

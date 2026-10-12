@@ -268,6 +268,12 @@ func (s *Service) ResetPIN(ctx context.Context, venueID, actorID int64, staffID,
 		if err != nil {
 			return err
 		}
+		// The cloud's owner is signed in by mez Cloud and by nothing else
+		// (ADR-323). A PIN would be a second way in as the owner, typed at
+		// a till, that the account knows nothing of.
+		if target.Cloud {
+			return &Invalid{Field: "pin", Message: "This person signs in from mez Cloud and has no PIN. Add them again as a person of their own to give them one."}
+		}
 		theirs, err := rolePerms(ctx, q, venueID, target.RoleID)
 		if err != nil {
 			return err

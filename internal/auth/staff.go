@@ -146,6 +146,10 @@ type Session struct {
 	// Remote is whether it was opened through the relay, under the rules
 	// for a sign-in from away. A relayed request is served on no other.
 	Remote bool
+	// Cloud is whether mez Cloud opened it, vouching for the owner
+	// (ADR-323). It is read from who the session belongs to: nobody else
+	// can open a session as the cloud's owner, who has no PIN.
+	Cloud bool
 }
 
 // SignedIn is a new session and its token. The token is shown once.
@@ -401,6 +405,12 @@ func (a *StaffAuth) verify(ctx context.Context, dev Device, staffRef, pin string
 		hash, outcome = row.PinHash, outcomeInactiveStaff
 		if row.Active && !hardLocked {
 			outcome = outcomeInvalidPIN
+		}
+		// The cloud's owner has no PIN (ADR-323). Whatever is typed is
+		// compared with the dummy and answered as it is for someone
+		// deactivated: no PIN is right, and no strike is counted.
+		if row.Cloud {
+			hash, outcome = a.dummy, outcomeInactiveStaff
 		}
 	}
 	if len(pin) > maxPresentedPIN {
@@ -702,8 +712,9 @@ func (a *StaffAuth) prune(ctx context.Context, now time.Time) {
 }
 
 // Session finds the staff session a token opens on this device. A session
-// that has ended or expired, that was opened on another device, or whose
-// staff member has since been deactivated, is no session.
+// that has ended or expired, that was opened on another device or on one
+// since revoked, or whose staff member has since been deactivated, is no
+// session.
 func (a *StaffAuth) Session(ctx context.Context, dev Device, token string) (Session, error) {
 	hash, ok := tokenHash(token, sessionTokenPrefix)
 	if !ok {
@@ -724,12 +735,19 @@ func (a *StaffAuth) Session(ctx context.Context, dev Device, token string) (Sess
 	if row.EndedAt.Valid || !a.now().Before(row.ExpiresAt) || !row.StaffActive {
 		return Session{}, ErrNoSession
 	}
+	// A revoked device's token is refused before this is reached. The
+	// cloud's device has no token to refuse (ADR-323), so revoking it is
+	// felt here: that is how an owner shuts the cloud out at once.
+	if row.DeviceRevokedAt.Valid {
+		return Session{}, ErrNoSession
+	}
 	return Session{
 		ID:        row.ID,
 		Staff:     Staff{ID: row.StaffID, PublicID: row.StaffPublicID, VenueID: row.VenueID, Name: row.StaffName, RoleID: row.RoleID, RoleName: row.RoleName},
 		DeviceID:  row.DeviceID,
 		ExpiresAt: row.ExpiresAt.UTC(),
 		Remote:    row.Via == viaRelay,
+		Cloud:     row.StaffCloud,
 	}, nil
 }
 

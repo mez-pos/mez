@@ -310,6 +310,9 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	if err != nil {
 		return err
 	}
+	// A venue paired before the cloud could sign anyone in has nobody for
+	// it to be (ADR-323).
+	ensureCloudOwner(ctx, database, staff, link.inUse(), log)
 
 	// The wizard's way to what `mez setup` does, from a browser on this
 	// machine and nowhere else (ADR-266).
@@ -434,6 +437,10 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	pairer, err := cloudpair.New(cloudpair.Options{
 		DB: database, DataDir: cfg.DataDir, Version: build.Version, Cloud: exchange, Backups: backups,
 		RelayInSettings: relayInSettings, Log: log,
+		Owner: func(ctx context.Context, venueID int64, name string) error {
+			_, err := staff.PairCloudOwner(ctx, venueID, name)
+			return err
+		},
 		Apply: func(ctx context.Context, p cloud.Pairing) (bool, error) {
 			return link.apply(ctx, p, func(p cloud.Pairing) (*tunnel.Client, error) { return dial(p.Relay.URL, p.Relay.Key, true) })
 		},

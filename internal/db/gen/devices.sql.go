@@ -11,6 +11,59 @@ import (
 	"time"
 )
 
+const cloudDeviceForVenue = `-- name: CloudDeviceForVenue :one
+
+SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at, cloud
+FROM devices
+WHERE venue_id = ? AND cloud = 1 AND revoked_at IS NULL
+`
+
+// The cloud's device (ADR-323): what the sessions of the cloud's owner
+// belong to. It has no token, so DeviceByTokenHash never finds it.
+func (q *Queries) CloudDeviceForVenue(ctx context.Context, venueID int64) (Device, error) {
+	row := q.db.QueryRowContext(ctx, cloudDeviceForVenue, venueID)
+	var i Device
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.VenueID,
+		&i.Name,
+		&i.Kind,
+		&i.TokenHash,
+		&i.PairedAt,
+		&i.LastSeenAt,
+		&i.RevokedAt,
+		&i.CreatedAt,
+		&i.Cloud,
+	)
+	return i, err
+}
+
+const createCloudDevice = `-- name: CreateCloudDevice :one
+INSERT INTO devices (public_id, venue_id, name, kind, token_hash, paired_at, created_at, cloud)
+VALUES (?1, ?2, ?3, 'back_office', '', ?4, ?4, 1)
+RETURNING id
+`
+
+type CreateCloudDeviceParams struct {
+	PublicID string
+	VenueID  int64
+	Name     string
+	Now      sql.NullTime
+}
+
+func (q *Queries) CreateCloudDevice(ctx context.Context, arg CreateCloudDeviceParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createCloudDevice,
+		arg.PublicID,
+		arg.VenueID,
+		arg.Name,
+		arg.Now,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createPairedDevice = `-- name: CreatePairedDevice :one
 INSERT INTO devices (public_id, venue_id, name, kind, token_hash, paired_at, created_at)
 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -76,7 +129,7 @@ func (q *Queries) CreatePairingCode(ctx context.Context, arg CreatePairingCodePa
 }
 
 const deviceByID = `-- name: DeviceByID :one
-SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at
+SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at, cloud
 FROM devices
 WHERE id = ?
 `
@@ -95,6 +148,7 @@ func (q *Queries) DeviceByID(ctx context.Context, id int64) (Device, error) {
 		&i.LastSeenAt,
 		&i.RevokedAt,
 		&i.CreatedAt,
+		&i.Cloud,
 	)
 	return i, err
 }
@@ -138,7 +192,7 @@ func (q *Queries) DeviceByPublicID(ctx context.Context, arg DeviceByPublicIDPara
 }
 
 const deviceByTokenHash = `-- name: DeviceByTokenHash :one
-SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at
+SELECT id, public_id, venue_id, name, kind, token_hash, paired_at, last_seen_at, revoked_at, created_at, cloud
 FROM devices
 WHERE token_hash = ? AND token_hash != ''
 `
@@ -157,6 +211,7 @@ func (q *Queries) DeviceByTokenHash(ctx context.Context, tokenHash string) (Devi
 		&i.LastSeenAt,
 		&i.RevokedAt,
 		&i.CreatedAt,
+		&i.Cloud,
 	)
 	return i, err
 }

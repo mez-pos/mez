@@ -11913,3 +11913,86 @@ to. The step adds a screen to every install, for a product most installs will no
 have bought, and one press of Skip to pass it. As on the Devices card, the walk's
 bucket was one that is not there, so the backup's other two lines have not been seen
 on this screen either.
+
+## ADR-323 - The cloud vouches for one person, who has no PIN, on a device nobody holds
+2026-10 · Status: accepted. Phase 14, Task 5 (5a built here; 5b follows). Builds on ADR-312, ADR-314 and ADR-318.
+Context: the second of the two places an account and a venue meet (ADR-312): an owner
+signed in to mez Cloud is let into their venue's back office with no PIN typed. The
+phase file gave the shape: one staff member made at pairing, an Ed25519-signed
+assertion good for five minutes and once, and the remote session of ADR-314. Writing
+it found four things the phase file had not settled. A session belongs to a device
+(`staff_sessions.device_id`), and the owner's browser at `app.mezpos.com` was never
+paired as one. The pairing's answer (ADR-318) does not tell the cloud any staff id,
+so the assertion cannot name one. `staff.pin_hash` cannot be empty. And the work is
+two sessions.
+Decision:
+  - **Split.** 5a, built with this: the assertion and its check, the person and the
+    device made at pairing, the sign-in that spends an assertion and opens a session,
+    and every place a PIN could be given to that person. 5b: the route that takes
+    `Authorization: Mez-Cloud`, how a request is known as the cloud's device after
+    it, `by=cloud` in the access log, the People screen saying who this is, a
+    stand-in that signs one for a walk, and `deploy.md`.
+  - **The assertion is three parts and no library**: `v1.<payload>.<signature>`, each
+    of the last two base64url without padding. The payload is JSON: `aud`, the
+    venue's `public_id` as it was sent at pairing; `sub`, the word `owner`; `iat` and
+    `exp`, seconds; `nonce`, 16 to 64 characters. The signature is Ed25519 over
+    `mez-cloud-assertion-v1` and a newline, then the payload as it was sent, so a
+    signature made by the same key for anything else is not one of these. The
+    signature is checked before the payload is read. It is not a JWT: there is one
+    algorithm and one issuer, and nothing to negotiate is nothing to get wrong.
+    `cloud.SignAssertion` is exported for `mez-cloud`, which imports this module.
+  - **The subject is a word, not an id.** `owner` means the one person the cloud may
+    be at this venue. The venue knows who that is; the cloud never learns a staff id
+    and could not name anyone else if it tried.
+  - **Five minutes, and a minute's grace each side.** `exp` no more than five
+    minutes after `iat`; refused a minute after `exp` and from a minute before
+    `iat`. A cafe's PC keeps worse time than a server. A refusal for the time is its
+    own error, so 5b can say "check this computer's clock" and not "refused".
+  - **The nonce is kept in the database until the assertion is dead**
+    (`cloud_assertions`, migration 00055), written in the transaction that opens the
+    session. Not in memory: a restart inside the five minutes would forget it.
+    Expired rows are dropped by the next sign-in.
+  - **The person is a staff row marked `cloud`**, one to a venue by a unique index,
+    named from the account, holding the role that grants every permission. Their
+    `pin_hash` is the word `none`, which is no hash; a PIN tried against them is
+    compared with the dummy and answered as a deactivated person's is, so nothing
+    can be guessed and no strike is counted. They are not on the sign-in tiles, are
+    not counted among the people who can manage staff (a venue whose only manager
+    could not stand at the till is not managed), and cannot be given a PIN: not by
+    the People service, and not by `mez reset-pin`.
+  - **The device is a row marked `cloud` too**: a back office called "mez Cloud",
+    with no token, so nothing can present itself as it. It is on the Devices list
+    like any other, and revoking it there is how an owner shuts the cloud's sign-in
+    without unpairing. The session it carries is opened only by an assertion.
+  - **Made at pairing, restored by pairing again.** Pairing makes both, or brings
+    them back: reactivated, renamed for the account, the role put back, a new device
+    if the old was revoked. It is done by someone at the venue who may edit
+    settings, which is who may undo it. A venue paired before this build gets them
+    at its next start, and a start never restores what someone turned off.
+    Failing to make them does not fail a pairing (ADR-320): it is logged, and tried
+    at the next start.
+  - **The session is ADR-314's**: `via = relay`, twelve hours from the sign-in. That
+    it was the cloud's is read from the person it belongs to, since nobody else can
+    open a session as them; there is no second column to disagree with the first.
+  - **What a review found before the commit, and what was done.** Revoking the
+    cloud's device stopped new sign-ins and left an open session good for the rest
+    of its twelve hours, since the device has no token to refuse: a session on a
+    revoked device is now no session, for every device. A venue clock that ran
+    fast and was put right would have forgotten a nonce that was live again: a
+    spent nonce is kept an hour past its end. The base64 decoder passed over line
+    breaks and stray bits, so one assertion had sixteen spellings and more: it is
+    decoded strictly. And a start complained of a venue with no role that grants
+    everything even when the person was already there: it looks for the person
+    first.
+Because: every rule a remote session already lives under (the allow list, the
+read-only screens, the hour-by-hour permission check) applies to this one without a
+line changed, because it is one. The cloud adds a door and no room.
+Cost: whoever holds the cloud's signing key is the owner of every paired venue's back
+office, within what the relay lets through; that is what ADR-312 chose, and money
+stays impossible through the relay. The pairing holds one public key and `mez-cloud`
+means to rotate (8b): a venue cannot learn a new key but by pairing again, so
+rotation needs a way to hand a paired venue the next key, which is not designed.
+Pairing again puts back a cloud owner a manager had deactivated. A venue with no
+role that grants everything gets no cloud owner, and is told in its log. A venue's
+clock more than six minutes wrong refuses every assertion. Until 5b there is no
+route: nothing can present an assertion, and a paired venue only gains two rows.

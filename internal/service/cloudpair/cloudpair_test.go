@@ -342,3 +342,54 @@ func TestNewRefusesIncompleteOptions(t *testing.T) {
 		}
 	}
 }
+
+// TestPairingMakesWhoTheCloudSignsInAs: the person is asked for once the
+// pairing is kept, for the venue that was paired and by the account's name;
+// never for a code that was refused; and failing to make them unpairs
+// nothing (ADR-323).
+func TestPairingMakesWhoTheCloudSignsInAs(t *testing.T) {
+	ctx := context.Background()
+	type asked struct {
+		venue int64
+		name  string
+		kept  bool
+	}
+
+	t.Run("made, after the pairing is kept", func(t *testing.T) {
+		w := newWorld(t)
+		var got []asked
+		w.opts.Owner = func(_ context.Context, venueID int64, name string) error {
+			got = append(got, asked{venueID, name, w.kept(t) != nil})
+			return nil
+		}
+		if _, err := w.service(t).Pair(ctx, 1, "ABCD2345"); err != nil {
+			t.Fatalf("Pair: %v", err)
+		}
+		if len(got) != 1 || got[0] != (asked{1, "Priya Menon", true}) {
+			t.Errorf("asked for %+v, want once, for venue 1, as Priya Menon, with the pairing kept", got)
+		}
+	})
+	t.Run("not for a code the cloud refuses", func(t *testing.T) {
+		w := newWorld(t)
+		w.cloud.err = cloud.ErrCodeRefused
+		calls := 0
+		w.opts.Owner = func(context.Context, int64, string) error { calls++; return nil }
+		if _, err := w.service(t).Pair(ctx, 1, "ABCD2345"); !errors.Is(err, cloud.ErrCodeRefused) {
+			t.Fatalf("err = %v", err)
+		}
+		if calls != 0 {
+			t.Error("someone was made for a pairing that did not happen")
+		}
+	})
+	t.Run("failing to make them unpairs nothing", func(t *testing.T) {
+		w := newWorld(t)
+		w.opts.Owner = func(context.Context, int64, string) error { return errors.New("no role grants everything") }
+		got, err := w.service(t).Pair(ctx, 1, "ABCD2345")
+		if err != nil || got.RestartNeeded || got.Backup != BackupSet {
+			t.Errorf("result %+v, %v; want paired as if nothing had gone wrong", got, err)
+		}
+		if w.kept(t) == nil || len(w.applied) != 1 {
+			t.Error("the pairing was not kept and put to use")
+		}
+	})
+}

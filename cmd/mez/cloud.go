@@ -4,13 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/byjoellobo/mez/internal/api"
+	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/config"
+	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/tunnel"
 )
 
@@ -202,4 +205,37 @@ func (l *venueLink) Close(ctx context.Context) error {
 		return nil
 	}
 	return client.Close(ctx)
+}
+
+// ensureCloudOwner gives a paired venue the person mez Cloud signs in as,
+// when it has none: a venue paired by a build from before there was such a
+// person, or one whose pairing could not make them (ADR-323). One who is
+// there is left as found, turned off included. It never stops a start: the
+// till does not need the cloud, and what went wrong is in the log.
+//
+// A pairing does not say which venue it is for, so on a machine with more
+// than one there is nobody it can safely be given to, and pairing again
+// from the venue that was meant is what makes them.
+func ensureCloudOwner(ctx context.Context, database *db.DB, staff *auth.StaffAuth, p *cloud.Pairing, log *slog.Logger) {
+	if p == nil {
+		return
+	}
+	venues, err := database.Queries().ListVenues(ctx)
+	if err != nil {
+		log.Warn("the person mez Cloud signs in as could not be looked for", "error", err)
+		return
+	}
+	switch len(venues) {
+	case 0:
+		// No venue yet: the wizard makes one, and pairing in it makes them.
+		return
+	case 1:
+	default:
+		log.Warn("this machine has more than one venue, so the person mez Cloud signs in as is not made at start; pair again from the venue that is paired", "venues", len(venues))
+		return
+	}
+	if _, err := staff.EnsureCloudOwner(ctx, venues[0].ID, p.Owner.Name); err != nil {
+		log.Warn("the person mez Cloud signs in as could not be made; the owner cannot open the back office from mez Cloud until this venue is paired again",
+			"venue_id", venues[0].ID, "error", err)
+	}
 }

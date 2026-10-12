@@ -17,7 +17,7 @@ SELECT
     s.created_at, s.updated_at
 FROM staff s
 JOIN roles r ON r.id = s.role_id
-WHERE s.venue_id = ? AND s.active = 1 AND s.locked_at IS NULL
+WHERE s.venue_id = ? AND s.active = 1 AND s.locked_at IS NULL AND s.cloud = 0
 ORDER BY s.name
 `
 
@@ -37,7 +37,8 @@ type ActiveStaffForVenueRow struct {
 // The index on (venue_id, active) is what this reads down, which is why it
 // exists. The role's name rides along for the sign-in screen. Someone
 // hard-locked is left out, as someone deactivated is (ADR-260): their tile
-// would only take PINs it refuses.
+// would only take PINs it refuses. The cloud's owner has no PIN to type
+// (ADR-323).
 func (q *Queries) ActiveStaffForVenue(ctx context.Context, venueID int64) ([]ActiveStaffForVenueRow, error) {
 	rows, err := q.db.QueryContext(ctx, activeStaffForVenue, venueID)
 	if err != nil {
@@ -108,6 +109,37 @@ func (q *Queries) ClearStaffLockouts(ctx context.Context, arg ClearStaffLockouts
 	return err
 }
 
+const cloudStaffForVenue = `-- name: CloudStaffForVenue :one
+
+SELECT
+    id, public_id, venue_id, role_id, name, pin_hash, active,
+    created_at, updated_at, locked_at, locked_reason, cloud
+FROM staff
+WHERE venue_id = ? AND cloud = 1
+`
+
+// The cloud's owner (ADR-323): the one person a pairing makes, who has no
+// PIN and is signed in by an assertion mez Cloud signs.
+func (q *Queries) CloudStaffForVenue(ctx context.Context, venueID int64) (Staff, error) {
+	row := q.db.QueryRowContext(ctx, cloudStaffForVenue, venueID)
+	var i Staff
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.VenueID,
+		&i.RoleID,
+		&i.Name,
+		&i.PinHash,
+		&i.Active,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LockedAt,
+		&i.LockedReason,
+		&i.Cloud,
+	)
+	return i, err
+}
+
 const countStaffLockoutsSince = `-- name: CountStaffLockoutsSince :one
 SELECT COUNT(*) AS n
 FROM staff_lockouts
@@ -125,6 +157,35 @@ func (q *Queries) CountStaffLockoutsSince(ctx context.Context, arg CountStaffLoc
 	var n int64
 	err := row.Scan(&n)
 	return n, err
+}
+
+const createCloudStaff = `-- name: CreateCloudStaff :one
+INSERT INTO staff (public_id, venue_id, role_id, name, pin_hash, active, created_at, updated_at, cloud)
+VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?6, 1)
+RETURNING id
+`
+
+type CreateCloudStaffParams struct {
+	PublicID string
+	VenueID  int64
+	RoleID   int64
+	Name     string
+	PinHash  string
+	Now      time.Time
+}
+
+func (q *Queries) CreateCloudStaff(ctx context.Context, arg CreateCloudStaffParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createCloudStaff,
+		arg.PublicID,
+		arg.VenueID,
+		arg.RoleID,
+		arg.Name,
+		arg.PinHash,
+		arg.Now,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const createRole = `-- name: CreateRole :one
@@ -174,7 +235,7 @@ INSERT INTO staff (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING
     id, public_id, venue_id, role_id, name, pin_hash, active,
-    created_at, updated_at, locked_at, locked_reason
+    created_at, updated_at, locked_at, locked_reason, cloud
 `
 
 type CreateStaffParams struct {
@@ -212,6 +273,7 @@ func (q *Queries) CreateStaff(ctx context.Context, arg CreateStaffParams) (Staff
 		&i.UpdatedAt,
 		&i.LockedAt,
 		&i.LockedReason,
+		&i.Cloud,
 	)
 	return i, err
 }
@@ -306,6 +368,31 @@ type RecordStaffLockoutParams struct {
 // can manage staff clears it.
 func (q *Queries) RecordStaffLockout(ctx context.Context, arg RecordStaffLockoutParams) error {
 	_, err := q.db.ExecContext(ctx, recordStaffLockout, arg.VenueID, arg.StaffID, arg.At)
+	return err
+}
+
+const restoreCloudStaff = `-- name: RestoreCloudStaff :exec
+UPDATE staff
+SET name = ?1, role_id = ?2, active = 1, updated_at = ?3
+WHERE id = ?4 AND cloud = 1
+`
+
+type RestoreCloudStaffParams struct {
+	Name   string
+	RoleID int64
+	Now    time.Time
+	ID     int64
+}
+
+// Pairing again brings the cloud's owner back as pairing made them: named
+// for the account, in the role given, active.
+func (q *Queries) RestoreCloudStaff(ctx context.Context, arg RestoreCloudStaffParams) error {
+	_, err := q.db.ExecContext(ctx, restoreCloudStaff,
+		arg.Name,
+		arg.RoleID,
+		arg.Now,
+		arg.ID,
+	)
 	return err
 }
 
@@ -463,7 +550,7 @@ func (q *Queries) SetStaffPIN(ctx context.Context, arg SetStaffPINParams) (int64
 const staffByPublicID = `-- name: StaffByPublicID :one
 SELECT
     id, public_id, venue_id, role_id, name, pin_hash, active,
-    created_at, updated_at, locked_at, locked_reason
+    created_at, updated_at, locked_at, locked_reason, cloud
 FROM staff
 WHERE public_id = ?
 `
@@ -483,6 +570,7 @@ func (q *Queries) StaffByPublicID(ctx context.Context, publicID string) (Staff, 
 		&i.UpdatedAt,
 		&i.LockedAt,
 		&i.LockedReason,
+		&i.Cloud,
 	)
 	return i, err
 }
@@ -523,7 +611,7 @@ func (q *Queries) StaffCountByRole(ctx context.Context, venueID int64) ([]StaffC
 }
 
 const staffForEdit = `-- name: StaffForEdit :one
-SELECT id, role_id, active
+SELECT id, role_id, active, cloud
 FROM staff
 WHERE venue_id = ? AND public_id = ?
 `
@@ -537,18 +625,24 @@ type StaffForEditRow struct {
 	ID     int64
 	RoleID int64
 	Active bool
+	Cloud  bool
 }
 
 func (q *Queries) StaffForEdit(ctx context.Context, arg StaffForEditParams) (StaffForEditRow, error) {
 	row := q.db.QueryRowContext(ctx, staffForEdit, arg.VenueID, arg.PublicID)
 	var i StaffForEditRow
-	err := row.Scan(&i.ID, &i.RoleID, &i.Active)
+	err := row.Scan(
+		&i.ID,
+		&i.RoleID,
+		&i.Active,
+		&i.Cloud,
+	)
 	return i, err
 }
 
 const staffForVenue = `-- name: StaffForVenue :many
 
-SELECT s.id, s.public_id, s.name, s.role_id, r.name AS role_name, s.active, s.created_at, s.locked_at
+SELECT s.id, s.public_id, s.name, s.role_id, r.name AS role_name, s.active, s.created_at, s.locked_at, s.cloud
 FROM staff s
 JOIN roles r ON r.id = s.role_id
 WHERE s.venue_id = ?
@@ -564,6 +658,7 @@ type StaffForVenueRow struct {
 	Active    bool
 	CreatedAt time.Time
 	LockedAt  sql.NullTime
+	Cloud     bool
 }
 
 // The People screen (phase 10, Task 4a, ADR-115). Every query is scoped by
@@ -588,6 +683,7 @@ func (q *Queries) StaffForVenue(ctx context.Context, venueID int64) ([]StaffForV
 			&i.Active,
 			&i.CreatedAt,
 			&i.LockedAt,
+			&i.Cloud,
 		); err != nil {
 			return nil, err
 		}
@@ -606,13 +702,14 @@ const staffManagersLeft = `-- name: StaffManagersLeft :one
 SELECT COUNT(*) AS n
 FROM staff s
 JOIN roles r ON r.id = s.role_id
-WHERE s.venue_id = ? AND s.active = 1
+WHERE s.venue_id = ? AND s.active = 1 AND s.cloud = 0
   AND EXISTS (SELECT 1 FROM json_each(r.permissions) WHERE value = 'staff.manage')
 `
 
 // How many active people can still manage staff. Every change to people
 // or roles checks this inside its own transaction and is refused at zero:
-// a venue nobody can manage cannot be repaired from the back office.
+// a venue nobody can manage cannot be repaired from the back office. The
+// cloud's owner is not counted: they cannot stand at the venue (ADR-323).
 func (q *Queries) StaffManagersLeft(ctx context.Context, venueID int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, staffManagersLeft, venueID)
 	var n int64
