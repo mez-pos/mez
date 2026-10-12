@@ -10,34 +10,36 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a, 4b and 4c1 are done (ADR-313, ADR-315 to ADR-321). Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1 to 3 and 4a to 4c are done (ADR-313, ADR-315 to ADR-322); 4d is `mez-cloud`'s. Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 4c1 - Pairing from the Devices screen** (ADR-321). 4c was
-split in two. At the foot of "Back office from anywhere": who the venue
-is paired to, and **Connect to mez Cloud** or **Pair again**, opening a
-modal for the code (`CloudPairModal.tsx`, `cloud-logic.ts`).
-`build/dev/pairstub` is a stand-in for mez Cloud's one route, for walking
-it. **Walked in a browser** against the stand-in and a local relay, which
-was also the first time pairing ran in one piece: a mistyped code refused
-before it was sent, a code the cloud refused, then the right one; the
-tunnel connected with no restart, both cards said so, and a guest's
-request through the relay was answered by the venue. The bucket in the
-walk was one that is not there, so what was seen of the backup is
-"could not be started", after eight seconds.
+**Phase 14, Task 4c2 - The wizard's mez Cloud step** (ADR-322), which
+closes 4c. The wizard has six steps: mez Cloud is the fifth, after the
+printer, when the venue exists and the owner is signed in, so it calls
+`POST /api/v1/cloud/pair` as the Devices card does and the server gained
+nothing. It can be skipped. The words both screens say are in
+`web/shared/cloud-pair.ts`. **Walked in a browser** on a venue made in
+the wizard, against `build/dev/pairstub` and a local relay: a code that
+could not be one refused under the field, the right one paired, a
+guest's request through the relay answered, then on to More devices.
 
 ## Next task
 
-**Phase 14, Task 4c2 - The wizard's step**, as the phase file sets it
-out. Decide first where it goes: the wizard runs before anyone is signed
-in, and the route wants a signed-in owner.
+**Phase 14, Task 4d - The cloud's side**, which is `mez-cloud`'s: that
+repository does not exist yet, and its first commit copies this phase's
+cloud tasks there (the phase file, "Where the code lives"). ADR-318 has
+the request and the answer `POST /v1/pair` must give.
 
-**Or Task 4d**, which is `mez-cloud`'s and needs that repository to
-exist. To walk pairing again: `RELAY_SECRET=... bin/relay`, `go run
+**In this repository, the next is Task 5 - The owner signs in from the
+cloud**: at pairing the venue makes one staff member of kind `owner`,
+named from the account, with no PIN; a relayed request may carry
+`Authorization: Mez-Cloud <assertion>`, signed with the key the pairing
+holds (`cloud.Pairing.Key`), which opens the remote session of ADR-314.
+ADR first. To walk pairing: `RELAY_SECRET=... bin/relay`, `go run
 ./build/dev/pairstub`, and `bin/mez -cloud-url http://127.0.0.1:7802`.
 
 **The live relay** needs redeploying only if entitlements are wanted on
@@ -141,4 +143,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a, 4b and 4c1 of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3 and 4a to 4c of 9)

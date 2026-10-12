@@ -11875,3 +11875,41 @@ seen on a screen. Nothing on the screen says a pairing has been set aside for a
 relay in the settings file; the route refuses to pair such a venue and says why,
 and one made so by hand is told in its log. The stand-in mints a real key with a
 real secret, so it must never be pointed at a relay that is not a developer's own.
+
+## ADR-322 - The wizard asks for a pairing code after the venue exists, as its fifth step of six
+2026-10 · Status: accepted. Phase 14, Task 4c2. Builds on ADR-320 and ADR-321.
+Context: the phase file put "Connect to mez Cloud" in the setup wizard and left open
+where. The wizard's questions run before anyone is signed in, and the route that
+pairs wants a signed-in owner. The two ways through were a route of the wizard's own
+behind its setup token, or a step after the venue is made.
+Decision:
+  - **After Create, between the printer and More devices.** By then the venue
+    exists, this device is paired and the owner is signed in (ADR-267), which is
+    exactly who may pair a venue. The step calls `POST /api/v1/cloud/pair` as the
+    Devices card does. The server gained nothing: no second way to pair, and
+    nothing that pairs on a setup token.
+  - **Before More devices, not after it.** The last step is where a second device
+    is added, and it ends in **Start selling**; a step after that would be one
+    nobody reaches. And an owner who is about to pair a laptop as a back office is
+    better off knowing first that it will open from home.
+  - **It can be skipped, and says so in its first sentence**: "If you have a mez
+    Cloud account". Most venues will not have one on the day they install, and
+    the same sentence says the till works the same without it and where to do it
+    later.
+  - **Six steps, and the head says six.** The lead after Create reads "Three things
+    more".
+  - **The words are shared.** What a code is, what a pairing did and why one was
+    refused moved to `web/shared/cloud-pair.ts`, for the wizard and the Devices
+    card to say alike. The back office keeps only what is its own: a refusal
+    placed under a field, and the line that says who a venue is paired to.
+  - **A venue restored in the wizard is not this.** "I had mez before" (Task 7) is
+    the wizard's first step and signs in to the account; this step is for a venue
+    that is new.
+Because: every other thing the wizard does after Create is done as the owner
+through the ordinary API, and pairing is one more of them.
+Cost: an owner who types their code here and whose internet is down is told so and
+can only skip; the code is still good, and the Devices card is where they come back
+to. The step adds a screen to every install, for a product most installs will not
+have bought, and one press of Skip to pass it. As on the Devices card, the walk's
+bucket was one that is not there, so the backup's other two lines have not been seen
+on this screen either.

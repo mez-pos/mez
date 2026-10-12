@@ -64,7 +64,21 @@ export type StepKey = (typeof steps)[number]["key"];
  * venue exists and the owner is signed in. Those are not questions: they act
  * through the API as they go, and each can be skipped.
  */
-export const allSteps = [...steps, { key: "printer", name: "Printer" }, { key: "ready", name: "More devices" }] as const;
+export const allSteps = [...steps, { key: "printer", name: "Printer" }, { key: "cloud", name: "mez Cloud" }, { key: "ready", name: "More devices" }] as const;
+
+/** The steps after the venue is made, in the order they are shown. */
+export const afterSteps = ["printer", "cloud", "ready"] as const;
+export type AfterStep = (typeof afterSteps)[number];
+
+/** The step after one of those, or null after the last: the wizard is then left. */
+export function nextAfter(step: AfterStep): AfterStep | null {
+  return afterSteps[afterSteps.indexOf(step) + 1] ?? null;
+}
+
+/** Where one of those is among every step, for the numbered rounds. */
+export function indexOfAfter(step: AfterStep): number {
+  return allSteps.findIndex((s) => s.key === step);
+}
 
 const fieldsOf: Readonly<Record<StepKey, readonly Field[]>> = {
   venue: ["name", "legal_name", "currency", "timezone", "device_name"],

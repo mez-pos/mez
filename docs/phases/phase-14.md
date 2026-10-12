@@ -191,7 +191,7 @@ and its first commit copies this phase's cloud tasks there.
     owner's name and the hostname and never a key; `paired`, the hostname
     and the owner's name in the `cloud` block of `GET /api/v1/tunnel`.
     Tests with the stand-in pairing server and a real relay.
-  - [ ] **Task 4c - The screens.** *This repo.* Split in two on 2026-10-12
+  - [x] **Task 4c - The screens.** *This repo.* Split in two on 2026-10-12
     (ADR-321): the Devices card works for every venue and was the way to
     run pairing in one piece; the wizard's step is its own session.
     - [x] **4c1 - The Devices card.** At the foot of "Back office from
@@ -201,7 +201,14 @@ and its first commit copies this phase's cloud tasks there.
       could not be one, a code the cloud refuses, the right code, the
       tunnel connected with no restart, a guest's request through the
       relay answered by the venue.
-    - [ ] **4c2 - The wizard's step.** "Connect to mez Cloud" in the setup
+    - [x] **4c2 - The wizard's step.** As built (ADR-322): the fifth of
+      six steps, after the printer, when the venue exists and the owner is
+      signed in, so it calls the same route with nothing new on the
+      server. Skippable. Its words are `web/shared/cloud-pair.ts`, which
+      the Devices card now uses too. Walked in a browser on a venue made
+      in the wizard: a code that could not be one, then the right one,
+      then on to More devices. As it was set: "Connect to mez Cloud" in
+      the setup
       wizard, skippable. Read `docs/design/screens/setup-wizard.md` and
       `web/shared/screens/setup/` first: the wizard runs before anyone is
       signed in, and `POST /api/v1/cloud/pair` wants a signed-in owner, so

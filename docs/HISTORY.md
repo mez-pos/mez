@@ -8,7 +8,20 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 4b2 - Pairing while running** (ADR-320), which closes 4b.
+**Phase 14, Task 4c1 - Pairing from the Devices screen** (ADR-321). 4c was
+split in two. At the foot of "Back office from anywhere": who the venue
+is paired to, and **Connect to mez Cloud** or **Pair again**, opening a
+modal for the code (`CloudPairModal.tsx`, `cloud-logic.ts`).
+`build/dev/pairstub` is a stand-in for mez Cloud's one route, for walking
+it. **Walked in a browser** against the stand-in and a local relay, which
+was also the first time pairing ran in one piece: a mistyped code refused
+before it was sent, a code the cloud refused, then the right one; the
+tunnel connected with no restart, both cards said so, and a guest's
+request through the relay was answered by the venue. The bucket in the
+walk was one that is not there, so what was seen of the backup is
+"could not be started", after eight seconds.
+
+Before it, **Phase 14, Task 4b2 - Pairing while running** (ADR-320), which closes 4b.
 `POST /api/v1/cloud/pair {code}`, for `settings.edit`, at the venue only,
 six tries a minute. `internal/service/cloudpair` refuses a venue with a
 relay in its settings file, a code that could not be one, before anything

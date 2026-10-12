@@ -10,6 +10,7 @@ import { paths } from "../../auth/route";
 import { useAuthStore } from "../../auth/use-auth";
 import { Button } from "../../ui";
 import { Splash } from "../Splash";
+import { CloudStep } from "./CloudStep";
 import { PrinterStep } from "./PrinterStep";
 import { ReadyStep } from "./ReadyStep";
 import { SetupFrame } from "./SetupFrame";
@@ -18,7 +19,9 @@ import {
   browserTimezone,
   checkStep,
   finishSetup,
+  indexOfAfter,
   lockedWords,
+  nextAfter,
   notStarted,
   stageWords,
   startingAnswers,
@@ -26,6 +29,7 @@ import {
   steps,
   timezoneList,
   withProfile,
+  type AfterStep,
   type Answers,
   type Failure,
   type Problems,
@@ -112,7 +116,7 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
   const [progress, setProgress] = useState<Progress>(notStarted);
   const [failure, setFailure] = useState<Failure | null>(null);
   // Which of the steps after Create is showing.
-  const [after, setAfter] = useState<"printer" | "ready">("printer");
+  const [after, setAfter] = useState<AfterStep>("printer");
   const [busy, setBusy] = useState(false);
 
   const current = steps[step] ?? steps[0];
@@ -174,13 +178,17 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
   const leave = () => navigate(paths.home, { replace: true });
 
   if (progress.stage === "done") {
+    // Each of these can be skipped, and the last one leaves the wizard.
+    const onward = () => {
+      const next = nextAfter(after);
+      if (next === null) leave();
+      else setAfter(next);
+    };
     return (
-      <SetupFrame
-        lead="Your venue is ready. Two things more, if you have them to hand."
-        steps={allSteps}
-        current={after === "printer" ? steps.length : steps.length + 1}
-      >
-        {after === "printer" ? <PrinterStep api={store.api} onDone={() => setAfter("ready")} /> : <ReadyStep api={store.api} onDone={leave} />}
+      <SetupFrame lead="Your venue is ready. Three things more, if you have them to hand." steps={allSteps} current={indexOfAfter(after)}>
+        {after === "printer" && <PrinterStep api={store.api} onDone={onward} />}
+        {after === "cloud" && <CloudStep api={store.api} onDone={onward} />}
+        {after === "ready" && <ReadyStep api={store.api} onDone={onward} />}
       </SetupFrame>
     );
   }

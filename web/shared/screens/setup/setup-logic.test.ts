@@ -3,12 +3,15 @@ import { ApiError, type ApiClient } from "../../api";
 import type { NumberingResponse, SetupResponse } from "../../api-types";
 import { WrongDeviceKind } from "../../auth/auth-store";
 import {
+  allSteps,
   checkStep,
   currentZoneName,
   failureOf,
   finishSetup,
   firstProblem,
   guessProfile,
+  indexOfAfter,
+  nextAfter,
   notStarted,
   startingAnswers,
   stepOf,
@@ -338,5 +341,20 @@ describe("timezoneList", () => {
     const zones = timezoneList("Asia/Calcutta");
     if (zones.length > 0) expect(zones).toContain("Asia/Calcutta");
     expect(timezoneList("")).not.toContain("");
+  });
+});
+
+describe("the steps after the venue is made", () => {
+  it("are the printer, mez Cloud and more devices, in that order, and the last leaves", () => {
+    expect(allSteps.map((s) => s.name)).toEqual(["Your venue", "Taxes and invoices", "You", "Printer", "mez Cloud", "More devices"]);
+    expect(nextAfter("printer")).toBe("cloud");
+    expect(nextAfter("cloud")).toBe("ready");
+    expect(nextAfter("ready")).toBeNull();
+  });
+
+  it("are numbered after the questions", () => {
+    expect(indexOfAfter("printer")).toBe(3);
+    expect(indexOfAfter("cloud")).toBe(4);
+    expect(indexOfAfter("ready")).toBe(5);
   });
 });

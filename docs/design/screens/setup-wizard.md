@@ -29,7 +29,7 @@ round behind the head. It scrolls as a page; nothing is fixed.
   one in hand is green with its number and its name in green; the rest are
   sunken.
 - **The card:** the step's title in the serif, a line under it, its fields,
-  and along the foot "Step 2 of 5", **Back** and the green **Continue**
+  and along the foot "Step 2 of 6", **Back** and the green **Continue**
   with its arrow (**Create the venue** on the last of the questions).
 - **Foot:** a script line, and where the wizard is being served from.
 
@@ -52,7 +52,22 @@ The steps:
    picked: **Paper**, 80mm or 58mm. Then what became of the test page. The
    foot has **Skip for now** and the green **Print a test page**; after a
    page is sent, **Print again** and the green **It printed**.
-5. **More devices.** "Add another device", as three numbered things to do
+5. **mez Cloud** (phase 14, Task 4c2, ADR-322; `CloudStep.tsx`, with its
+   words in `web/shared/cloud-pair.ts`). "Connect to mez Cloud": a line
+   saying what a code from a mez Cloud account does, that the till works
+   the same without it, and that it can be done any time later in the back
+   office under Devices. One field, **Pairing code**, in the numeral face
+   and capitals, half the card wide, with "From your mez Cloud account,
+   under this venue. It works once, for an hour." under it. The foot has
+   **Skip for now** and the green **Connect**. A code that could not be
+   one is refused under the field before anything is sent, and what the
+   server refuses is said there in its words. While it works the buttons
+   are held, the green one reads **Connecting**, and the hint says it can
+   take up to twenty seconds. Then the card is **Connected to mez Cloud**:
+   whose account, a line for the backup, "Restart mez to finish" if part
+   of it waits for a start, the address the back office opens at from
+   away, in the numeral face, and the green **Continue**.
+6. **More devices.** "Add another device", as three numbered things to do
    on it. **1. What is it?** Another till, Kitchen display or Back office,
    as cards. **2. On that device, scan this or open the address**: a
    sunken band holding a QR code of the address, 132px on white, and
@@ -89,6 +104,9 @@ The steps:
   `GET /api/v1/printers` again every 600ms for up to 12 seconds to read
   the test page's job. `PUT /api/v1/printers/{id}`, `/restore` and
   `/retire` where a printer is reused or replaced.
+- The mez Cloud step, as the signed-in owner: `POST /api/v1/cloud/pair`
+  `{code}`, once, when Connect is pressed. Nothing is asked on arriving,
+  and nothing at all if the step is skipped.
 - The last step: `GET /api/v1/devices/addresses` on arriving:
   `{addresses}`, each with its `adapter`, whether it is `virtual`, and for
   each kind of device the `url` it opens and that address as an `svg` QR
@@ -120,8 +138,9 @@ PIN is in memory until the wizard is left.
 - Picking another printer and printing again retires the one the first try
   added. **Skip for now** and **Continue without it** leave no printer
   behind: one that was added and never confirmed is retired.
-- **It printed**, and either way of leaving the printer, go to the last
-  step.
+- **It printed**, and either way of leaving the printer, go to the mez
+  Cloud step; **Skip for now** there, and **Continue** once paired, go to
+  the last.
 - **Show a pairing code** makes a code for one device of the kind chosen,
   named Counter 2, Kitchen or Office until it is renamed. Choosing another
   kind takes the code off the screen: a code pairs the kind it was made
