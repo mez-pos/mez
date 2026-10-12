@@ -28,6 +28,11 @@ type ManagerOptions struct {
 	// SyncInterval is how often what changed is sent. Zero is
 	// DefaultSyncInterval.
 	SyncInterval time.Duration
+	// SyncFloor, when set, is asked the fastest a backup to a destination
+	// may send, each time one is started. A destination somebody else pays
+	// for the requests of is not sent to as fast as one's own (ADR-315).
+	// Zero from it is no floor.
+	SyncFloor func(Config) time.Duration
 }
 
 // Manager is the venue's backup for as long as the server runs: the
@@ -102,8 +107,30 @@ func (m *Manager) Start(ctx context.Context) error {
 func (m *Manager) startEngine(ctx context.Context, cfg Config) (*Engine, error) {
 	return Start(ctx, Options{
 		DBPath: m.opts.DBPath, Config: cfg, Log: m.opts.Log, PhotosDir: m.opts.PhotosDir,
-		OnLost: m.startAgain, ProbeEvery: m.opts.ProbeEvery, SyncInterval: m.opts.SyncInterval,
+		OnLost: m.startAgain, ProbeEvery: m.opts.ProbeEvery, SyncInterval: m.syncInterval(cfg),
 	})
+}
+
+// syncInterval is the pace a backup to cfg runs at: the one asked for, or
+// the destination's floor if that is slower.
+func (m *Manager) syncInterval(cfg Config) time.Duration {
+	interval := m.opts.SyncInterval
+	if m.opts.SyncFloor == nil {
+		return interval
+	}
+	floor := m.opts.SyncFloor(cfg)
+	if floor <= 0 {
+		return interval
+	}
+	if interval <= 0 {
+		interval = DefaultSyncInterval
+	}
+	if interval < floor {
+		m.opts.Log.Info("the backup sends more slowly than it was set to: this destination is not sent to faster",
+			"set", interval.String(), "runs_at", floor.String())
+		return floor
+	}
+	return interval
 }
 
 // startAgain replaces a backup whose destination has lost what was sent

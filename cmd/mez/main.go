@@ -186,6 +186,22 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 
 	build := buildInfo()
 
+	// The venue's pairing to mez Cloud, if it has one (ADR-318). It is
+	// where the relay is and the key to it, so it is read before anything
+	// asks whether there is a relay (ADR-319).
+	pairing, err := loadPairing(cfg.DataDir)
+	if err != nil {
+		return err
+	}
+	cfg, paired := withPairing(cfg, pairing)
+	switch paired {
+	case pairingInUse:
+		log.Info("this venue is paired to mez Cloud", "pairing", *pairing, "public_url", cfg.PublicURL)
+	case pairingSetAside:
+		log.Warn("this venue is paired to mez Cloud, and relay_url is set as well: the settings are what is used, and the pairing is not. Remove relay_url and relay_key to use the pairing",
+			"pairing", *pairing)
+	}
+
 	log.Info("starting",
 		"version", build.Version,
 		"commit", build.Commit,
@@ -217,6 +233,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	photosDir := filepath.Join(cfg.DataDir, "photos")
 	backups, err := backup.NewManager(backup.ManagerOptions{
 		DataDir: cfg.DataDir, DBPath: dbPath, PhotosDir: photosDir, Log: log, SyncInterval: cfg.BackupSyncInterval,
+		SyncFloor: cloudSyncFloor(pairing),
 	})
 	if err != nil {
 		return err
@@ -424,6 +441,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
 		api.WithTunnel(func() api.TunnelStatus { return tunnelStatus(guests) }),
+		api.WithPairing(pairedTo(pairing, paired)),
 		api.WithDevices(devices),
 		api.WithFirstRun(firstRun),
 		api.WithSetupToken(setupToken),

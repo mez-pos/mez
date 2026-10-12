@@ -503,3 +503,38 @@ func TestTunnelSaysWhereTheVenueStands(t *testing.T) {
 		t.Errorf("no relay: cloud = %+v, want none", got.Cloud)
 	}
 }
+
+// TestTunnelSaysWhoTheVenueIsPairedTo: the owner's name, the hostname and
+// when, for a venue that is paired, and nothing at all for one that is not
+// (ADR-318, ADR-319). Neither key is anywhere in the answer.
+func TestTunnelSaysWhoTheVenueIsPairedTo(t *testing.T) {
+	at := time.Date(2026, 10, 12, 14, 30, 0, 0, time.FixedZone("IST", 19800))
+	r := newRegister(t)
+	owner := r.asStaff(r.signInAs(t, "stf_PRIYA001", "2468").Token)
+
+	r.rebuild(t, WithTunnel(func() TunnelStatus { return TunnelStatus{State: TunnelConnected} }))
+	if _, got := r.tunnel(t, owner); got.PairedTo != nil {
+		t.Errorf("a venue that is not paired: paired_to = %+v", got.PairedTo)
+	}
+	r.rebuild(t,
+		WithTunnel(func() TunnelStatus { return TunnelStatus{State: TunnelConnected} }),
+		WithPairing(func() (TunnelPairing, bool) { return TunnelPairing{}, false }))
+	if _, got := r.tunnel(t, owner); got.PairedTo != nil {
+		t.Errorf("a venue whose pairing is not in use: paired_to = %+v", got.PairedTo)
+	}
+
+	r.rebuild(t,
+		WithTunnel(func() TunnelStatus { return TunnelStatus{State: TunnelWaiting} }),
+		WithPairing(func() (TunnelPairing, bool) {
+			return TunnelPairing{Owner: "Priya Menon", Hostname: "corner-cafe.mezpos.com", PairedAt: at}, true
+		}))
+	_, got := r.tunnel(t, owner)
+	p := got.PairedTo
+	if p == nil || p.Owner != "Priya Menon" || p.Hostname != "corner-cafe.mezpos.com" || !p.PairedAt.Equal(at) {
+		t.Fatalf("paired_to = %+v", p)
+	}
+	rec := send(r.handler, http.MethodGet, "/api/v1/tunnel", "", owner)
+	if body := rec.Body.String(); !strings.Contains(body, `"paired_at":"2026-10-12T09:00:00Z"`) || strings.Contains(body, "mzr_") {
+		t.Errorf("on the wire: %s", body)
+	}
+}

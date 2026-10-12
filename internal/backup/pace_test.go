@@ -2,6 +2,7 @@ package backup_test
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -183,5 +184,82 @@ func TestCheckSyncInterval(t *testing.T) {
 	}
 	if backup.DefaultSyncInterval != 30*time.Second {
 		t.Errorf("the default pace is %v: deploy.md and ADR-315 say half a minute", backup.DefaultSyncInterval)
+	}
+}
+
+// TestADestinationsFloorSlowsTheBackup: the pace asked for is the pace,
+// unless the destination has a floor that is slower; and the floor is asked
+// of each destination as it is started, so a change of destination while
+// running is held to its own (ADR-315, ADR-319).
+func TestADestinationsFloorSlowsTheBackup(t *testing.T) {
+	ctx := context.Background()
+	v := newVenue(t)
+	slow := backup.Config{Kind: backup.KindFolder, Folder: filepath.Join(t.TempDir(), "someone-elses")}
+	fast := backup.Config{Kind: backup.KindFolder, Folder: filepath.Join(t.TempDir(), "our-own")}
+
+	manager, err := backup.NewManager(backup.ManagerOptions{
+		DataDir: v.dataDir, DBPath: v.dbPath(), SyncInterval: 5 * time.Second,
+		SyncFloor: func(dest backup.Config) time.Duration {
+			if dest.Folder == slow.Folder {
+				return 30 * time.Second
+			}
+			return 0
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+	manager.SwapsLive(true)
+	database, err := db.Open(ctx, v.dbOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := database.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Start(ctx); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	t.Cleanup(func() { database.Close(ctx); manager.Close(ctx) })
+
+	if got := manager.SyncInterval(); got != 0 {
+		t.Errorf("with no destination: %v, want 0", got)
+	}
+	if _, err := manager.Set(ctx, slow); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	if got := manager.SyncInterval(); got != 30*time.Second {
+		t.Errorf("to a destination with a floor of 30s, asked for 5s: runs at %v", got)
+	}
+	if _, err := manager.Set(ctx, fast); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	if got := manager.SyncInterval(); got != 5*time.Second {
+		t.Errorf("to a destination with no floor, asked for 5s: runs at %v", got)
+	}
+}
+
+// TestAFloorNeverSpeedsABackupUp: asked for a minute, with a floor of half
+// of one, it is a minute.
+func TestAFloorNeverSpeedsABackupUp(t *testing.T) {
+	ctx := context.Background()
+	v := newVenue(t)
+	manager, err := backup.NewManager(backup.ManagerOptions{
+		DataDir: v.dataDir, DBPath: v.dbPath(), SyncInterval: time.Minute,
+		SyncFloor: func(backup.Config) time.Duration { return 30 * time.Second },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	manager.SwapsLive(true)
+	if err := manager.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { manager.Close(ctx) })
+	if _, err := manager.Set(ctx, v.cfg); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	if got := manager.SyncInterval(); got != time.Minute {
+		t.Errorf("asked for a minute with a floor of 30s: runs at %v", got)
 	}
 }

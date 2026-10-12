@@ -27,6 +27,7 @@ type Server struct {
 	guestRequests GuestRequests
 	charges       Charges
 	publicURL     string
+	pairing       func() (TunnelPairing, bool)
 	devices       Devices
 	staff         Staff
 	orders        Orders

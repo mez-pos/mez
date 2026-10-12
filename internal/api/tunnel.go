@@ -68,6 +68,22 @@ type TunnelCloud struct {
 	Reason string
 }
 
+// TunnelPairing is the account this venue is paired to, and where the
+// pairing says it is reached (ADR-318). Neither key is in it.
+type TunnelPairing struct {
+	Owner    string
+	Hostname string
+	PairedAt time.Time
+}
+
+// WithPairing supplies the venue's pairing to mez Cloud, for the Devices
+// screen to say. It reports false for a venue that is not paired, or that
+// is and does not use its pairing. A function, as the tunnel's status is,
+// so that a venue paired while running is said so without a restart.
+func WithPairing(paired func() (TunnelPairing, bool)) Option {
+	return func(s *Server) { s.pairing = paired }
+}
+
 // WithTunnel supplies the relay tunnel's status, for the health endpoint and
 // the back office. It is a function and not the client so that this package
 // still knows nothing about the tunnel, and so that the answer is a read of
@@ -132,6 +148,18 @@ type tunnelResponse struct {
 	// the relay has said nothing: one from before it had anything to say,
 	// one not yet reached, or no relay.
 	Cloud *tunnelCloud `json:"cloud,omitempty"`
+	// PairedTo is the mez Cloud account this venue is paired to. Absent for
+	// a venue that is not paired, which is most of them.
+	PairedTo *tunnelPairing `json:"paired_to,omitempty"`
+}
+
+// tunnelPairing is who a venue is paired to and where that reaches it:
+// the owner's name as their account gives it, the venue's hostname, and
+// when it was paired.
+type tunnelPairing struct {
+	Owner    string    `json:"owner"`
+	Hostname string    `json:"hostname"`
+	PairedAt time.Time `json:"paired_at"`
 }
 
 // tunnelCloud is what the relay last told this venue about its standing
@@ -204,6 +232,11 @@ func (s *Server) showTunnel(w http.ResponseWriter, _ *http.Request) {
 		if !c.Until.IsZero() {
 			until := c.Until.UTC()
 			out.Cloud.Until = &until
+		}
+	}
+	if s.pairing != nil {
+		if p, ok := s.pairing(); ok {
+			out.PairedTo = &tunnelPairing{Owner: p.Owner, Hostname: p.Hostname, PairedAt: p.PairedAt.UTC()}
 		}
 	}
 	// It changes by the second while reconnecting: never from a cache.

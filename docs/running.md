@@ -225,6 +225,15 @@ secret, and Litestream's working files, whose names begin
 says how to turn the backup on, what it covers, and how to get a venue
 back with `mez restore`.
 
+A venue paired to a mez Cloud account also has `cloud.json` there
+(ADR-318, ADR-319). It holds the venue's key to the relay and the key to
+its backup's bucket, so it is as private as the database. mez reads it
+when it starts and takes from it where the relay is, that the back office
+is carried, and the venue's address; `relay_url` in the settings file, if
+it is set, is used in its place and the log says so. If the file is
+damaged mez does not start and says which file: pair the venue again, or
+delete the file to start with no pairing. The till does not need it.
+
 Logs are in `logs/` inside it, as `mez.log`. The current file is rotated to
 `mez.log.1` once it reaches 8 MB, and five rotations are kept, so the logs
 never grow past about 48 MB.

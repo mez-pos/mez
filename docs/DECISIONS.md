@@ -11724,3 +11724,56 @@ a venue with a `cloud.json` and this build behaves exactly as one without, until
 A venue with `relay_url` in its settings file and a pairing as well has two answers
 to where its relay is, and which wins is 4b's to decide. The contract is written
 before the service that answers it, so it may have to change when that is built.
+
+## ADR-319 - A paired venue takes its relay from its pairing at start, and a relay in the settings file wins whole
+2026-10 · Status: accepted. Phase 14, Task 4b1. Builds on ADR-318.
+Context: 4a made a pairing a file. This is what the server makes of that file when it
+starts. Task 4b also asked for pairing while the server runs, a route for it and the
+backup's destination set by it; that is a second session, so 4b is split in two, and
+this is the half that makes a venue with a pairing work at all.
+Decision:
+  - **Read at start, before anything asks whether there is a relay.** From the
+    pairing: the relay's address, the key, that the back office crosses, and
+    `public_url` as `https://<hostname>` unless the settings file gives one. The rest
+    of the server is not told there is such a thing as a pairing: it sees the
+    configuration it always saw.
+  - **A relay in the settings file wins, whole.** A venue with `relay_url` set and a
+    pairing as well runs on its settings, takes nothing from the pairing, and says
+    so in its log at warning, with what to remove to use the pairing. Not key by
+    key: an address from one place and a key from another is a venue that connects
+    to nothing. And not a refusal to start: the settings file is what whoever runs
+    the machine wrote, and a cafe must open.
+  - **A pairing that cannot be read stops the start**, before the database is
+    opened, naming the file and saying to pair again or delete it. It is the one
+    case here that does stop a cafe, as an unreadable `backup.json` does (ADR-273)
+    and for the same reason: the owner believes the venue is connected.
+  - **Only the server reads it.** `mez restore`, `unlock`, `reset-pin` and the rest
+    load the settings and not the pairing, so a damaged `cloud.json` cannot stand
+    between an owner and the tools that mend a venue.
+  - **The 30 second floor is the destination's, not the venue's.** The backup's
+    manager asks, each time it starts a backup, what the fastest for that
+    destination is (`ManagerOptions.SyncFloor`). `cmd/mez` answers 30 seconds for
+    the bucket and folder the pairing gave and nothing for any other. So a paired
+    venue that backs up to its own USB drive may still send every five seconds, a
+    change of destination while running is held to its own floor, and a key
+    rotated at the next pairing is still the same bucket. A floor never speeds a
+    backup up.
+  - **`paired_to` on `GET /api/v1/tunnel`**, beside `cloud` and not inside it: the
+    owner's name, the hostname and when. `cloud` is what the relay said and
+    `paired_to` is what the venue holds; a relay that says nothing leaves the first
+    absent, and folding the two together would have made "the relay carries the
+    back office" read false for every paired venue on a silent relay. Absent for a
+    venue that is not paired, and for one whose pairing is set aside.
+  - **Split.** 4b1, this. 4b2: pairing while running. A service that exchanges the
+    code, keeps the pairing, sets the backup's destination to the pairing's bucket
+    and says whether a restart is needed; `POST /api/v1/cloud/pair` at the venue
+    only; and refusing to pair, with the reason, a venue whose settings file names
+    a relay.
+Because: making the pairing look like settings at the one place settings are read
+keeps every other line of the server as it was, and the two things that did need to
+know (the floor, the name on the screen) are each one function in `cmd/mez`.
+Cost: a pairing takes hold at a start and not before. Until 4b2 there is no way to
+make one but by hand, and after it the tunnel, the table codes' address and the
+gateway's return address are all read at start, so pairing will still end with
+"restart mez" unless those are made to change while running, which is 4b2's to
+decide. A venue whose pairing is set aside is told only in its log.

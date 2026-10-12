@@ -8,7 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 3b - The venue's half of entitlement** (ADR-317), which
+**Phase 14, Task 4a - The pairing itself** (ADR-318). Task 4 was split in
+four. `internal/cloud`: a pairing code cleaned as typed (eight of an
+alphabet with no 0, O, 1 or I), one POST to `{cloud_url}/v1/pair` with the
+venue's `public_id`, name and version, the answer checked whole, and
+`cloud.json` in the data directory to keep it, 0600, never printed with
+its secrets. `cloud_url` is the new setting. The request and the answer
+are in ADR-318 for `mez-cloud` to build to. **Nothing uses a pairing
+yet**, and it is not in `config.toml` as the phase file had it.
+
+Before it, **Phase 14, Task 3b - The venue's half of entitlement** (ADR-317), which
 closes Task 3. The tunnel client asks for notices, reads where the venue
 stands off the relay's answer to its dial and off `Notice` frames, and
 keeps it on `Status.Standing`. Turned away with a good key (403

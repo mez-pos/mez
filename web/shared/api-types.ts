@@ -889,6 +889,7 @@ export interface TunnelResponse {
   back_office: boolean;
   back_office_url?: string;
   cloud?: TunnelCloud;
+  paired_to?: TunnelPairing;
 }
 
 export interface TunnelCloud {
@@ -897,6 +898,12 @@ export interface TunnelCloud {
   until?: string;
   back_office: boolean;
   reason?: string;
+}
+
+export interface TunnelPairing {
+  owner: string;
+  hostname: string;
+  paired_at: string;
 }
 
 export interface GuestTableResponse {

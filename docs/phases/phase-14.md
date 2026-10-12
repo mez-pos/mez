@@ -141,7 +141,33 @@ and its first commit copies this phase's cloud tasks there.
     the setting `cloud_url`. The request and the answer are written down
     in ADR-318 for `mez-cloud` to build to. Tests against a stand-in
     pairing server. Nothing uses a pairing yet.
-  - [ ] **Task 4b - The venue uses its pairing.** *This repo.* ADR first:
+  - [ ] **Task 4b - The venue uses its pairing.** *This repo.* Split in
+    two on 2026-10-12 while building it (ADR-319).
+    - [x] **4b1 - At start.** `cmd/mez/cloud.go`: `loadPairing`,
+      `withPairing` (the relay, its key, the back office, `public_url`; a
+      relay in the settings file wins whole and the pairing is set aside
+      with a warning), `cloudSyncFloor` through
+      `backup.ManagerOptions.SyncFloor` (30 s for the pairing's bucket and
+      for no other destination), and `paired_to: {owner, hostname,
+      paired_at}` on `GET /api/v1/tunnel`, beside `cloud` and not in it. A
+      pairing that cannot be read stops the start. Tested by starting the
+      whole server from a `cloud.json` against a real relay.
+    - [ ] **4b2 - While running.** A service in `internal/service` that
+      pairs: refuse, with the reason, a venue whose settings file names a
+      relay; `cloud.Client.Pair` with the venue's `public_id`, name and
+      version; `cloud.Save`; the backup's destination set to the
+      pairing's bucket through `backup.Manager.Set`, unless the venue
+      already backs up somewhere and has not said to move (decide which,
+      and say it in the answer); and whether a restart is needed. Decide
+      first whether the tunnel, the table codes' address and the
+      gateway's return address are made to change while running or the
+      answer is "restart mez": they are all read at start today. `POST
+      /api/v1/cloud/pair` for whoever holds `settings.edit`, at the venue
+      only (in `staysAtTheVenue`), rate limited, answering the owner's
+      name, the hostname and `restart_needed`, never a key. Tests with a
+      stand-in pairing server.
+
+    As 4b was set: ADR first:
     which wins when the settings file names a relay and there is a pairing
     too. At start, `cmd/mez` loads `cloud.json` and from it takes the
     relay's address and key, `public_url`, and the back office across the
