@@ -37,6 +37,7 @@ import (
 	"github.com/byjoellobo/mez/internal/gateway/stripe"
 	"github.com/byjoellobo/mez/internal/hub"
 	"github.com/byjoellobo/mez/internal/logging"
+	"github.com/byjoellobo/mez/internal/restore"
 	"github.com/byjoellobo/mez/internal/service/audit"
 	"github.com/byjoellobo/mez/internal/service/charges"
 	"github.com/byjoellobo/mez/internal/service/cloudpair"
@@ -233,6 +234,20 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// must not stay bound through it. After a clean shutdown the server has
 	// already closed it, and closing a closed listener is nothing.
 	defer func() { _ = listener.Close() }()
+
+	// A venue brought back by "I had mez before" waits beside the database
+	// for this moment: this process has not opened the database yet, and
+	// Adopt asks whether any other has (ADR-333). Whatever goes wrong, the
+	// start goes on with the database that is there.
+	adopted, err := restore.Adopt(ctx, cfg.DataDir, time.Now())
+	switch {
+	case err != nil && adopted == nil:
+		log.Warn("a restored venue was waiting and was not put in place", "error", err)
+	case err != nil:
+		log.Warn("a restored venue was put in place, and not tidily", "restore", *adopted, "error", err)
+	case adopted != nil:
+		log.Info("a restored venue was put in place: this start is its first on this computer", "restore", *adopted)
+	}
 
 	// Where the backup goes, read before the database is opened: a file
 	// that names a destination and cannot be read as one stops the start,

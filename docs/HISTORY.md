@@ -8,7 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 6c - mez Cloud's sign-in on a mirror** (ADR-331), which
+**Phase 14, Task 7a - What a venue that is gone asks mez Cloud**
+(ADR-332). Task 7 was split in five. `internal/cloud/recover.go`: a phone
+number buys an attempt (`RecoverStart`), the six digits sent to it buy a
+`Recovery` (`RecoverVerify`: the owner, the account's venues, a session
+held in memory), and `Recovery.Grant` buys, for one venue, a bucket key
+that only reads and an ordinary pairing code. Recovery issues no relay
+key. What cannot work is not sent, each answer is checked whole, and no
+secret prints. `build/dev/pairstub` is one account as well (`-phone`,
+`-otp`, `-venue-id`, the `-bucket` flags), walked with curl.
+
+Before it, **Phase 14, Task 6c - mez Cloud's sign-in on a mirror** (ADR-331), which
 closed Task 6. `mez mirror -cloud-key <public_key from cloud.json>` lets
 the account's owner in on the cloud's word: the mirror's door checks the
 assertion, reads who the cloud may be from the copy, remembers the nonce

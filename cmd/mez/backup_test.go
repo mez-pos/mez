@@ -17,6 +17,7 @@ import (
 	"errors"
 	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/restore"
 	"net/http"
 	"net/http/httptest"
 	"os/exec"
@@ -231,7 +232,7 @@ func TestHelperLockProbe(t *testing.T) {
 	// was never reached would otherwise read as a database nobody could
 	// take.
 	fmt.Println("lock probe: asking for " + path)
-	if err := notRunning(context.Background(), path); err == nil {
+	if err := restore.NotRunning(context.Background(), path); err == nil {
 		os.Exit(3)
 	}
 }

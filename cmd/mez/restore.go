@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"flag"
 	"fmt"
@@ -17,6 +16,7 @@ import (
 	"github.com/byjoellobo/mez/internal/config"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/fsperm"
+	"github.com/byjoellobo/mez/internal/restore"
 )
 
 // restoreSecretEnv is where `mez restore` reads a bucket's secret from.
@@ -24,9 +24,13 @@ import (
 // programs for as long as the restore takes.
 const restoreSecretEnv = "MEZ_RESTORE_SECRET_ACCESS_KEY"
 
-// ErrVenueThere is `mez restore` asked to restore into a data directory
-// that already holds a venue.
-var ErrVenueThere = errors.New("there is already a venue in that data directory")
+// ErrVenueThere and ErrStillRunning are the two refusals of a data
+// directory. They and the checks that make them are internal/restore's,
+// shared with a server that restores itself (ADR-333).
+var (
+	ErrVenueThere   = restore.ErrVenueThere
+	ErrStillRunning = restore.ErrStillRunning
+)
 
 // restoreOptions is everything `mez restore` takes.
 type restoreOptions struct {
@@ -79,7 +83,7 @@ func runRestore(args []string, stdout io.Writer) error {
 		return fmt.Errorf("restore: -data-dir %s: %w", cfg.DataDir, err)
 	}
 	dbPath := filepath.Join(cfg.DataDir, db.FileName)
-	empty, err := emptyInstall(ctx, dbPath)
+	empty, err := restore.EmptyInstall(ctx, dbPath)
 	if err != nil {
 		return err
 	}
@@ -100,10 +104,10 @@ func runRestore(args []string, stdout io.Writer) error {
 
 	aside := ""
 	if empty {
-		if err := notRunning(ctx, dbPath); err != nil {
+		if err := restore.NotRunning(ctx, dbPath); err != nil {
 			return err
 		}
-		if aside, err = moveAside(dbPath, time.Now()); err != nil {
+		if aside, err = restore.MoveAside(dbPath, time.Now()); err != nil {
 			return err
 		}
 		fmt.Fprintf(stdout, "A new install with no venue was here. Its empty database is moved to %s\n", aside)
@@ -157,109 +161,10 @@ somewhere, give this one a different folder or bucket.
 	return nil
 }
 
-// emptyInstall reports whether the database in the way is a new install's:
-// one mez made as it first started, with no venue in it. No database at
-// all is not in the way and is false; one with a venue is ErrVenueThere.
-//
-// A new computer always has one. The installer starts the service, the
-// service makes its database, and an owner who has come to restore has by
-// then been shown a setup wizard they must not finish. Refusing them for a
-// database with nothing in it would be refusing everyone.
-func emptyInstall(ctx context.Context, dbPath string) (bool, error) {
-	if _, err := os.Stat(dbPath); errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	} else if err != nil {
-		return false, fmt.Errorf("restore: %w", err)
-	}
-
-	// Read only, and nothing else. This may be a real venue's database, at
-	// the wrong -data-dir or under an older mez still running: to bring
-	// its schema up to this binary's in order to refuse to touch it would
-	// be to touch it.
-	probe, err := sql.Open("sqlite", "file:"+dbPath+"?mode=ro&_pragma=busy_timeout(2000)")
-	if err != nil {
-		return false, fmt.Errorf("restore: there is a database at %s that cannot be opened to see whether a venue is in it: %w", dbPath, err)
-	}
-	defer probe.Close()
-
-	var name string
-	err = probe.QueryRowContext(ctx, "SELECT name FROM venues ORDER BY id LIMIT 1").Scan(&name)
-	switch {
-	case err == nil:
-		return false, fmt.Errorf("restore: %w: %s holds %s. Move it aside first, or restore into another with -data-dir. A restore never writes over a venue", ErrVenueThere, dbPath, name)
-	case errors.Is(err, sql.ErrNoRows):
-		return true, nil
-	case strings.Contains(err.Error(), "no such table"):
-		// Made, and never migrated: mez was stopped as it first started.
-		return true, nil
-	default:
-		// Not known to be empty, so not treated as empty.
-		return false, fmt.Errorf("restore: there is a database at %s that cannot be read to see whether a venue is in it: %w. Move it aside first, or restore into another with -data-dir", dbPath, err)
-	}
-}
-
-// ErrStillRunning is `mez restore` into a data directory mez is running on.
-var ErrStillRunning = errors.New("mez is running on that data directory")
-
-// notRunning refuses if anything else has the database open.
-//
-// On Windows a running server holds the file and the move fails by
-// itself. Everywhere else a file can be moved out from under a program
-// that has it open: the server would go on with the old database, unseen,
-// and open the restored one through log files that are not its own.
-// SQLite will give the whole database to one connection only when no
-// other has it, so asking for that is asking whether anyone does.
-func notRunning(ctx context.Context, dbPath string) error {
-	held, err := sql.Open("sqlite", "file:"+dbPath+"?_pragma=busy_timeout(0)&_pragma=locking_mode(EXCLUSIVE)")
-	if err != nil {
-		return fmt.Errorf("restore: %w", err)
-	}
-	defer held.Close()
-	held.SetMaxOpenConns(1)
-	// A write is what takes the lock. This one changes nothing: the
-	// database is about to be moved aside, and is put back as it was.
-	if _, err := held.ExecContext(ctx, "BEGIN IMMEDIATE; ROLLBACK"); err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "locked") || strings.Contains(strings.ToLower(err.Error()), "busy") {
-			return fmt.Errorf("restore: %w: %s. Stop it first (`mez service stop`, or `systemctl stop mez`), then run this again", ErrStillRunning, filepath.Dir(dbPath))
-		}
-		return fmt.Errorf("restore: checking that mez is not running on %s: %w", filepath.Dir(dbPath), err)
-	}
-	return nil
-}
-
 // quietLog is a logger for the databases this command opens. What it
 // prints is for an owner, and "migration applied" forty times is not; what
 // goes wrong is returned and said once.
 func quietLog() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
-
-// moveAside renames a new install's empty database out of the way, and
-// clears what was that database's and would be read as the restored one's:
-// its log files, and what Litestream remembered of backing it up.
-func moveAside(dbPath string, now time.Time) (string, error) {
-	aside := dbPath + ".empty-" + now.UTC().Format("20060102T150405Z")
-	if err := os.Rename(dbPath, aside); err != nil {
-		return "", fmt.Errorf("restore: moving the empty database aside: %w. Is mez still running on this directory? Stop it first", err)
-	}
-	for _, suffix := range []string{"-wal", "-shm"} {
-		if err := os.Remove(dbPath + suffix); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return "", fmt.Errorf("restore: clearing %s: %w", dbPath+suffix, err)
-		}
-	}
-	// Litestream's working folder and the file that says which run of the
-	// backup to carry on in: both are about the database just moved. Left,
-	// a backup turned on again here would carry that run on with another
-	// database's history, and restore short. The list of runs this
-	// directory began is kept, so that they are still tidied away.
-	dir, file := filepath.Split(dbPath)
-	working := filepath.Join(dir, "."+file+"-litestream")
-	if err := os.RemoveAll(working); err != nil {
-		return "", fmt.Errorf("restore: clearing %s: %w", working, err)
-	}
-	if err := os.Remove(working + "-for"); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return "", fmt.Errorf("restore: clearing %s: %w", working+"-for", err)
-	}
-	return aside, nil
-}
 
 // destination is where to restore from, as the flags, a backup.json or
 // both say it.

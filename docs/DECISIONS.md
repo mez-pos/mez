@@ -12592,3 +12592,83 @@ that is built. Nothing uses any of it yet: 7b is the first caller. The stand-in 
 not look in its bucket and says every venue was backed up a minute ago. A number
 typed with no `+`, which is how most are typed, is refused until 7c's screen puts
 one there.
+
+## ADR-333 - A running server takes a restored venue by staging it beside its own database and adopting it at its next start
+2026-10 · Status: accepted. Phase 14, Task 7b (7b1 built here; 7b2 follows). Builds on ADR-278 and ADR-332.
+Context: "I had mez before" is a screen of the setup wizard, and the wizard is served
+by a server that has a database open: the empty one the installer's first start
+made. `mez restore` refuses a data directory mez is running on, and is right to: on
+Linux a file can be moved out from under the program that has it open. And the
+server is not built to change databases. Every service it starts holds the one it
+was given, some four hundred lines of `run`, and one that swapped it underneath them
+would be a second, rarer way for every one of them to start.
+Decision:
+  - **Split.** 7b1, built with this: the checks `mez restore` makes moved to
+    `internal/restore` for both to use, `restore.Stage`, `restore.Adopt`, and the
+    start adopting. 7b2: the service that holds a `cloud.Recovery` and stages what it
+    grants, its routes behind the setup token, the server starting again without
+    being asked to, pairing with the code that waited, and a code that pairs the
+    browser the owner is sitting at, which is no device of the restored venue's.
+  - **Staged while it runs, adopted when it starts.** `Stage` restores the newest
+    backup to `mez.db.restored`, beside the database and never over it, and the
+    server goes on serving the wizard throughout. `Adopt` is the first thing a start
+    does once it holds its port and before anything opens the database: the empty
+    database is moved aside as `mez restore` moves it, and the staged one renamed
+    into its place. There is one way a server comes up on a database, and a restored
+    venue's first start is an ordinary start.
+  - **The server starts again in its own process, and 7b2 builds that.** `run`
+    already unwinds everything it started and is entered more than once in one
+    process by its own tests. Ending the process for the service manager to start
+    again was set aside: a server started by hand in a terminal has no manager, and
+    the owner would be left at a page that never comes back.
+  - **Word is left last.** `restore.json` in the data directory says a staged
+    database is whole and checked. It is written after the restore, the integrity
+    check Litestream makes, and the check below, so a staging that stopped half way
+    leaves a file no start will touch and the next staging clears.
+  - **The backup must hold the venue that was asked for.** The staged database is
+    read as it lies, with nothing made beside it, for one venue with the public id
+    the account listed (ADR-332). Another venue's, or none, and nothing is kept; the
+    refusal does not say whose it was.
+  - **Never over a venue, asked twice.** `Stage` refuses a data directory with a
+    venue in it. `Adopt` asks again, because the ordinary wizard, or `mez restore`
+    with the server stopped, may have made one in between: that venue stands, the
+    word is removed so the code in it is not left lying, and the staged file is left
+    for a person to look at.
+  - **The pairing code waits in that file and nowhere else.** It is a secret, in a
+    directory already closed to every other account (ADR-259), for the seconds
+    between staging and the start. `Adopt` removes the file as it adopts and hands
+    the code back in memory. A `Pending` says which venue when printed and never the
+    code, and what `Stage` returns for a screen does not hold it.
+  - **Nothing that goes wrong in adopting stops the start.** Word nobody can read, a
+    staged file that is gone, a venue in the way: each is a warning in the log and a
+    server on the database that is there. Only a rename that fails leaves the word
+    for the next start to try again.
+  - **What a review found before the commit.** Adopting into a directory with no
+    database left beside the restored one whatever was beside the last: a log that
+    SQLite would replay into it, and Litestream's memory of another database. A move
+    aside cut short after its rename leaves exactly that, so what `MoveAside` clears
+    is now cleared wherever a database is put where none is. And holding the port
+    is not holding the database: a mez on another port, or one still closing, may
+    have it, so `Adopt` asks `NotRunning` as the command does, and leaves the word
+    for the next start. The file the word is written through has one name, so that
+    one cut short, which holds the code, is found and removed; and a staged file
+    that cannot be looked at is not taken for one that is gone.
+  - **The photos are brought back as it is staged**, into the photos folder itself.
+    An install with no venue has none, they are named by what is in them, and a
+    photo that cannot be fetched is said beside a venue that is staged all the same,
+    as `mez restore` says it.
+Because: the one moment a database can be changed safely is the moment nothing has
+it open, and a start already is that moment. Staging first means the slow part, the
+download, is done while the owner can still see a screen that says so.
+Cost: the venue is not there until a start, so 7b2 must make one happen and the page
+must wait through it. A code that waited is lost if the process dies between
+adopting and pairing; the venue is back all the same and is paired from the Devices
+card with a code from the account. A staged database left by a venue made in
+between is never removed by mez. `Stage` trusts its caller to run one at a time.
+Between staging and the start, a copy of the venue's sales lies beside an empty
+database, under the data directory's permissions and nothing more. `mez restore`'s
+refusals keep the words of a command ("-data-dir") and are now shared with a screen,
+which 7b2 must put in an owner's words. A backup written by a newer mez than the one
+installed is adopted like any other, and what the start then makes of a schema ahead
+of its own has not been looked at here; `mez restore` has the same gap. Two mez on
+one data directory are still not prevented, only noticed at this one step.

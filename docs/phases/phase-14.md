@@ -462,7 +462,38 @@ and its first commit copies this phase's cloud tasks there.
     requests and their answers are written down in ADR-332 for `mez-cloud`
     to build to. `Client.send` is shared with `Pair`. `build/dev/pairstub`
     is one account as well. Tests against a stand-in. Nothing calls it yet.
-  - [ ] **Task 7b - The venue restores itself and pairs.** *This repo.* ADR
+  - [ ] **Task 7b - The venue restores itself and pairs.** *This repo.*
+    Split in two on 2026-10-12 while building it (ADR-333): a restored
+    database is staged beside the server's own and adopted at its next
+    start.
+    - [x] **7b1 - Staging and adopting.** `internal/restore`:
+      `EmptyInstall`, `NotRunning` and `MoveAside` moved from
+      `cmd/mez/restore.go` for the command and the server to share;
+      `Stage` (the newest backup to `mez.db.restored`, checked to hold the
+      venue asked for, the photos, then `restore.json` with the pairing
+      code); `Adopt`, which `run` calls once it holds its port and before
+      the database is opened. Never over a venue, asked at both. Tested
+      by staging under a running server and starting it again.
+    - [ ] **7b2 - The service, its routes, and the start.** A service in
+      `internal/service` that holds one `cloud.Recovery` in memory (start,
+      verify, list), and for a venue chosen: `Recovery.Grant`,
+      `restore.Stage` with the grant's bucket and code, then asks the
+      server to start again. One at a time. `run` starts again in its own
+      process when asked (a loop around it in `main` and in
+      `serveAsService`; `run` is already entered more than once by its
+      tests). After the start, what `restore.Adopt` returned is used once:
+      pair through `cloudpair` with the code that waited, in the
+      background so that no internet does not hold the start, and make a
+      device pairing code for the browser at this machine, which is no
+      device of the restored venue's. Routes at this machine only, rate
+      limited: start, verify and restore behind the setup token; and a
+      status the page can read after the start, when that token is spent
+      (decide what it is shown on: the outcome holds a device code).
+      Refusals in an owner's words, not `mez restore`'s. Tests with
+      `pairstub`'s routes as a stand-in and a folder backup; a browser is
+      7c's.
+
+    As 7b was set: ADR
     first: the wizard is served by a server that has an empty database
     open, and `mez restore` refuses a data directory mez is running on
     (`notRunning`, `moveAside`, `backup.RestoreGeneration` in
