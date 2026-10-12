@@ -49,6 +49,11 @@ const (
 	sessionTokenPrefix = "nfms_"
 	tokenBytes         = 32
 
+	// spentMargin is how long past its end a spent assertion is still
+	// remembered, as at the venue (ADR-323): against this computer's clock
+	// having run fast and been put right.
+	spentMargin = time.Hour
+
 	// maxBrowsers bounds the browsers a mirror remembers. A code pairs one
 	// and a mirror prints one code a start, so this is never near.
 	maxBrowsers = 200
@@ -87,6 +92,9 @@ type session struct {
 	staffRef  string
 	browserID int64
 	expiresAt time.Time
+	// cloud is whether mez Cloud opened it. Its browserID is then the id of
+	// the cloud's device in the copy, which no browser paired here has.
+	cloud bool
 }
 
 // Keeper is what a mirror remembers. It is safe for use by every request
@@ -433,8 +441,97 @@ func (k *Keeper) right(staffRef string) error {
 	return k.save()
 }
 
+// errSpent is an assertion presented a second time.
+var errSpent = errors.New("mirror: that assertion has been used")
+
+// spentDir is where the assertions mez Cloud has signed in with are
+// remembered: a directory beside the file, one small file to an assertion.
+func (k *Keeper) spentDir() string { return strings.TrimSuffix(k.path, ".json") + ".spent" }
+
+// spend remembers an assertion's nonce until keepUntil, and is errSpent
+// for one remembered already (ADR-331).
+//
+// Each is a file of its own, made only if it is not there: the one step
+// that two mirrors of the same venue, or one started again, cannot both
+// take. The browsers' file would not do: it is read, changed and written
+// whole, and two processes doing that at once would both find the nonce
+// new. It is on disk before it is answered, and one that cannot be put
+// there is not accepted.
+func (k *Keeper) spend(nonce string, keepUntil time.Time) error {
+	dir := k.spentDir()
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return fmt.Errorf("mirror: making %s: %w", dir, err)
+	}
+	k.forgetSpent(dir)
+	// By its hash: a name of one case and no surprises, whatever was signed.
+	name := filepath.Join(dir, hashOf(nonce))
+	f, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if errors.Is(err, fs.ErrExist) {
+		return errSpent
+	}
+	if err != nil {
+		return fmt.Errorf("mirror: remembering an assertion: %w", err)
+	}
+	// Until when, for whoever tidies up. The file is the memory; this is
+	// only how long to keep it.
+	_, werr := f.WriteString(keepUntil.UTC().Format(time.RFC3339))
+	if cerr := f.Close(); werr == nil {
+		werr = cerr
+	}
+	if werr != nil {
+		// It stays, saying nothing of its age, and is tidied by its date.
+		return fmt.Errorf("mirror: remembering an assertion: %w", werr)
+	}
+	return nil
+}
+
+// forgetSpent removes the assertions long dead: those past the time
+// written in them and spentMargin more, and any that say no time and are a
+// day old. One that cannot be read or removed is left for the next time:
+// keeping too long harms nothing.
+func (k *Keeper) forgetSpent(dir string) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	now := k.now()
+	for _, e := range entries {
+		path := filepath.Join(dir, e.Name())
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		until, err := time.Parse(time.RFC3339, strings.TrimSpace(string(raw)))
+		if err != nil {
+			info, ierr := e.Info()
+			if ierr != nil || now.Sub(info.ModTime()) < 24*time.Hour {
+				continue
+			}
+		} else if now.Before(until.Add(spentMargin)) {
+			continue
+		}
+		_ = os.Remove(path)
+	}
+}
+
+// cloudSession is the live session a token opens, if mez Cloud opened it.
+// A PIN's session is none, whatever its token.
+func (k *Keeper) cloudSession(token string) (session, bool) {
+	if !strings.HasPrefix(token, sessionTokenPrefix) {
+		return session{}, false
+	}
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	s, ok := k.sessions[hashOf(token)]
+	if !ok || !s.cloud || !k.now().Before(s.expiresAt) {
+		return session{}, false
+	}
+	return s, true
+}
+
 // open begins a session for a person on a browser and returns its token.
-func (k *Keeper) open(staffRef string, browserID int64) (session, string, error) {
+// cloud is whether mez Cloud is opening it, on the cloud's device.
+func (k *Keeper) open(staffRef string, browserID int64, cloud bool) (session, string, error) {
 	k.mu.Lock()
 	defer k.mu.Unlock()
 	token, hash, err := k.newToken(sessionTokenPrefix)
@@ -449,7 +546,7 @@ func (k *Keeper) open(staffRef string, browserID int64) (session, string, error)
 		}
 	}
 	k.lastID++
-	s := session{id: k.lastID, staffRef: staffRef, browserID: browserID, expiresAt: now.UTC().Add(SessionTTL)}
+	s := session{id: k.lastID, staffRef: staffRef, browserID: browserID, expiresAt: now.UTC().Add(SessionTTL), cloud: cloud}
 	k.sessions[hash] = s
 	return s, token, nil
 }

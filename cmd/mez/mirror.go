@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"flag"
 	"fmt"
@@ -20,6 +21,7 @@ import (
 	"github.com/byjoellobo/mez/internal/api"
 	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/config"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/db/gen"
@@ -85,6 +87,9 @@ type mirrorOptions struct {
 	// Follow is how often a mirror in use looks at its backup for
 	// something newer. Zero is never.
 	Follow time.Duration
+	// CloudKey is mez Cloud's public key, as the venue's cloud.json has
+	// it, and nil for a mirror the cloud signs nobody in to (ADR-331).
+	CloudKey ed25519.PublicKey
 }
 
 // stateDir is where this mirror remembers the browsers paired to it and
@@ -155,7 +160,7 @@ func serveMirror(ctx context.Context, args []string, stdout io.Writer, ready fun
 	}
 
 	fmt.Fprintf(stdout, "Reading the backup at %s\n", from.Destination())
-	source := &mirrorSource{from: from, listenAddr: opts.ListenAddr, log: log}
+	source := &mirrorSource{from: from, listenAddr: opts.ListenAddr, log: log, cloudKey: opts.CloudKey}
 	first, err := source.open(ctx, generation)
 	if err != nil {
 		return err
@@ -200,6 +205,9 @@ func serveMirror(ctx context.Context, args []string, stdout io.Writer, ready fun
 	following := "It does not follow the backup: it stays as it was when started."
 	if opts.Follow > 0 {
 		following = fmt.Sprintf("While it is being used it looks at the backup every %s and shows what is newer.", opts.Follow)
+	}
+	if opts.CloudKey != nil {
+		following += "\nmez Cloud can sign the account's owner in here, with the key it was given."
 	}
 	addr := listener.Addr().String()
 	fmt.Fprintf(stdout, `
@@ -248,6 +256,9 @@ type mirrorSource struct {
 	// that holds another is not served.
 	keeper *mirror.Keeper
 	venue  string
+	// cloudKey is mez Cloud's public key, or nil: every copy's door is
+	// given it.
+	cloudKey ed25519.PublicKey
 }
 
 // mirrorCopy is one restore of the backup: a directory of the mirror's
@@ -328,7 +339,7 @@ func (c *mirrorCopy) serve(m *mirrorSource) error {
 		return fmt.Errorf("mirror: the backup now holds the venue %s, and this mirror was started on %s", c.venue.PublicID, m.venue)
 	}
 	asOf := c.asOf
-	srv, err := mirrorServer(c.database, m.keeper, c.venue.ID, filepath.Join(c.dir, "photos"), m.listenAddr, m.log,
+	srv, err := mirrorServer(c.database, m.keeper, c.venue, m.cloudKey, filepath.Join(c.dir, "photos"), m.listenAddr, m.log,
 		func() api.MirrorInfo { return api.MirrorInfo{AsOf: asOf} })
 	if err != nil {
 		return err
@@ -550,8 +561,11 @@ func (m *mirrorSource) newest(ctx context.Context, only string) (backup.Generati
 //
 // Who is let in is the mirror's own affair: door reads people and their
 // PINs from the copy and remembers browsers, sessions and wrong PINs in the
-// keeper, so the copy is not written (ADR-327).
-func mirrorServer(database *db.DB, keeper *mirror.Keeper, venueID int64, photosDir, listenAddr string, log *slog.Logger, info func() api.MirrorInfo) (*api.Server, error) {
+// keeper, so the copy is not written (ADR-327). With cloudKey, mez Cloud's
+// word lets the account's owner in too, checked and remembered by the same
+// door (ADR-331).
+func mirrorServer(database *db.DB, keeper *mirror.Keeper, venue gen.Venue, cloudKey ed25519.PublicKey, photosDir, listenAddr string, log *slog.Logger, info func() api.MirrorInfo) (*api.Server, error) {
+	venueID := venue.ID
 	// These two only read here: the door asks them who works at the venue
 	// and what its devices were.
 	devices, err := auth.NewDevices(auth.DevicesOptions{DB: database, Log: log})
@@ -562,7 +576,10 @@ func mirrorServer(database *db.DB, keeper *mirror.Keeper, venueID int64, photosD
 	if err != nil {
 		return nil, err
 	}
-	door, err := mirror.NewAuth(mirror.Options{Keeper: keeper, Staff: staff, Devices: devices, VenueID: venueID, Log: log})
+	door, err := mirror.NewAuth(mirror.Options{
+		Keeper: keeper, Staff: staff, Devices: devices, VenueID: venueID,
+		CloudKey: cloudKey, VenuePublicID: venue.PublicID, Log: log,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -637,6 +654,9 @@ func mirrorServer(database *db.DB, keeper *mirror.Keeper, venueID int64, photosD
 		api.WithDevices(door),
 		api.WithFirstRun(firstRun),
 		api.WithStaff(door),
+		// Always, key or none: with none it refuses in the one voice a
+		// venue that is not paired does.
+		api.WithCloudSignIn(door.Cloud()),
 		api.WithOrders(orders),
 		api.WithMenus(database),
 		api.WithPrints(prints),
@@ -683,6 +703,7 @@ written. Nothing can be changed in it, and the venue does not need to be on.
 	set.StringVar(&o.Generation, "generation", "", "show this backup and not the newest, by its name from `mez restore -list`")
 	set.StringVar(&o.ListenAddr, "listen-addr", mirrorListenAddr, "address to listen on, host:port")
 	set.DurationVar(&o.Follow, "follow", mirrorFollowEvery, "how often, while it is being used, to look at the backup for something newer; 0 for never")
+	cloudKey := set.String("cloud-key", "", "mez Cloud's public key, as `public_key` in the venue's cloud.json has it: lets the account's owner in on mez Cloud's word, with no PIN")
 	set.StringVar(&o.StateDir, "state-dir", "", "where to remember the browsers paired to this mirror and the locks wrong PINs set (default: mez/mirror in your configuration directory)")
 	if err := set.Parse(args); err != nil {
 		return mirrorOptions{}, err
@@ -695,6 +716,15 @@ written. Nothing can be changed in it, and the venue does not need to be on.
 	}
 	if _, _, err := net.SplitHostPort(o.ListenAddr); err != nil {
 		return mirrorOptions{}, fmt.Errorf("mirror: -listen-addr %q is not host:port", o.ListenAddr)
+	}
+	if *cloudKey != "" {
+		// Read as the pairing reads its own, so the two cannot disagree
+		// about what a key looks like.
+		key, err := cloud.Pairing{PublicKey: strings.TrimSpace(*cloudKey)}.Key()
+		if err != nil {
+			return mirrorOptions{}, fmt.Errorf("mirror: -cloud-key is not mez Cloud's public key as cloud.json has it (44 characters of base64): %w", err)
+		}
+		o.CloudKey = key
 	}
 	return o, nil
 }

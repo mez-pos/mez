@@ -991,6 +991,17 @@ What to know:
 - **The venue's own tills and back offices do not open a mirror.** Only a
   browser paired with the mirror's own code does, so a device revoked at
   the venue has no way in through an old backup.
+- **mez Cloud can let the account's owner in, if the mirror is told its
+  key.** `-cloud-key` takes the `public_key` out of the venue's
+  `cloud.json`, which is beside the venue's database and not in its
+  backup. The owner, signed in to mez Cloud, is then let in with no PIN
+  and no pairing code, to read, for twelve hours. It works only for a
+  venue that was paired to mez Cloud when the backup was written, and
+  whose owner and "mez Cloud" device had not been turned off at the venue
+  by then. Without the flag, nothing mez Cloud presents opens a mirror.
+  A public key is no secret. Beside the mirror's state file is a folder
+  ending `.spent`, holding for an hour or so the mark of each sign-in the
+  cloud has made, so that none is used twice.
 - **The copy is kept in the system's temporary folder and removed when the
   mirror stops** (Ctrl-C). A mirror that is killed leaves it behind, and
   the next one started says where: it is a copy of the venue's sales, so

@@ -326,6 +326,35 @@ func (a *StaffAuth) CloudDevice(ctx context.Context, token string) (Device, erro
 	return dev, nil
 }
 
+// CloudSeat is who mez Cloud may sign in as at a venue, and the device its
+// sessions are on, as the database has them now: ErrNoCloudOwner for a venue
+// never paired, whose cloud's owner was deactivated, or whose cloud's device
+// was revoked. It reads and writes nothing, for a mirror, which opens the
+// cloud's sessions in its own memory over a copy it may not write (ADR-331).
+func (a *StaffAuth) CloudSeat(ctx context.Context, venueID int64) (Staff, Device, error) {
+	q := a.db.Queries()
+	row, err := q.CloudStaffForVenue(ctx, venueID)
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && !row.Active) {
+		return Staff{}, Device{}, ErrNoCloudOwner
+	}
+	if err != nil {
+		return Staff{}, Device{}, fmt.Errorf("auth: finding the cloud's owner: %w", err)
+	}
+	dev, err := q.CloudDeviceForVenue(ctx, venueID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Staff{}, Device{}, ErrNoCloudOwner
+	}
+	if err != nil {
+		return Staff{}, Device{}, fmt.Errorf("auth: finding the cloud's device: %w", err)
+	}
+	role, err := q.RoleByID(ctx, row.RoleID)
+	if err != nil {
+		return Staff{}, Device{}, fmt.Errorf("auth: reading the role of staff %d: %w", row.ID, err)
+	}
+	return Staff{ID: row.ID, PublicID: row.PublicID, VenueID: venueID, Name: row.Name, RoleID: row.RoleID, RoleName: role.Name},
+		Device{ID: dev.ID, PublicID: dev.PublicID, VenueID: dev.VenueID, Name: dev.Name, Kind: DeviceKind(dev.Kind), Cloud: true}, nil
+}
+
 // EndCloudSessions ends every session mez Cloud opened on this machine. It
 // is for a start that finds the venue on no pairing: unpaired by hand, or
 // set aside for a relay of its own (ADR-319). The key those sessions were

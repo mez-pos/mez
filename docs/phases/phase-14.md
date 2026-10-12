@@ -311,7 +311,7 @@ and its first commit copies this phase's cloud tasks there.
   valid assertion signs in, an expired, replayed, wrong-audience or
   wrong-key one does not, and the staff member cannot be given a PIN.
 
-- [ ] **Task 6 - `mez mirror`: the back office over a backup.** *This
+- [x] **Task 6 - `mez mirror`: the back office over a backup.** *This
   repo.* Split on 2026-10-12 before building it (ADR-326).
 
   - [x] **Task 6a - A mirror over one restore.** As built (ADR-326):
@@ -358,15 +358,21 @@ and its first commit copies this phase's cloud tasks there.
       nanosecond. Tested against a venue that trades again after the
       mirror started: the newer name shows, the time moves, the session
       holds, the first copy's directory goes.
-  - [ ] **Task 6c - mez Cloud's sign-in on a mirror.** Photos are kept
-    up already: each copy is restored with its own (ADR-328).
-    `POST /api/v1/sessions/cloud` is already let through the
-    mirror's gate and answers 401, since no mirror is given a key. The
-    key is not in the backup (`cloud.json` is beside the database, not in
-    it): `mez mirror -cloud-key`, or `mez-cloud` handing it over
-    in-process (8e). The person the cloud signs in as is in the copy; the
-    device is too. `mirror.Auth.CloudDevice` answers nobody today, and
-    the keeper has no cloud sessions: that is where it goes.
+  - [x] **Task 6c - mez Cloud's sign-in on a mirror.** As built
+    (ADR-331): `mez mirror -cloud-key <public_key from cloud.json>`. The
+    mirror's door is the API's `CloudSignIn` (`mirror.Auth.Cloud()`): it
+    checks the assertion with that key for the venue the copy holds,
+    reads who the cloud may be and on which device from the copy
+    (`auth.StaffAuth.CloudSeat`, which writes nothing), remembers the
+    nonce as a file of its own beside the keeper's, and opens a session
+    in the keeper's memory. `mirror.Auth.CloudDevice` finds the device by that session's
+    token, and each request reads the copy again, so a later copy in
+    which the venue turned the cloud off ends it. A PIN's session is
+    never the cloud's and the cloud's device takes no PIN. Nothing is
+    written to the copy. Tested through `serveMirror` over a real
+    backup: 201, the back office read with one token as both, a change
+    409, the same assertion twice 401. No screen changed, so no browser:
+    what presents the assertion is `mez-cloud`'s (8e).
   - [x] **Task 6d - What the screens say on a mirror.** Split on
     2026-10-12 while building it (ADR-329): the edits are some 75 calls
     in 14 files, a session of their own.

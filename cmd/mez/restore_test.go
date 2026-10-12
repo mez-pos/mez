@@ -26,6 +26,13 @@ import (
 // name of a photo on its menu.
 func backedUpVenue(t *testing.T) (dataDir string, to backup.Config, photo string) {
 	t.Helper()
+	return backedUpVenueAfter(t, nil)
+}
+
+// backedUpVenueAfter is backedUpVenue with something done to the venue's
+// data directory once it is set up and before it first runs and backs up.
+func backedUpVenueAfter(t *testing.T, prepare func(dataDir string)) (dataDir string, to backup.Config, photo string) {
+	t.Helper()
 	dataDir = t.TempDir()
 	to = backup.Config{Kind: backup.KindFolder, Folder: filepath.Join(t.TempDir(), "backups")}
 
@@ -50,6 +57,9 @@ func backedUpVenue(t *testing.T) (dataDir string, to backup.Config, photo string
 	}
 	if err := os.WriteFile(filepath.Join(dataDir, backup.ConfigFile), raw, 0o600); err != nil {
 		t.Fatal(err)
+	}
+	if prepare != nil {
+		prepare(dataDir)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

@@ -12435,3 +12435,67 @@ export, a read, and the menu's search, Show and Order stay, being filters. The
 parts of the menu editor read `useOnMirror()` themselves and take no prop for it:
 there are fifteen of them and one screen above. Hints under a disabled field ("You
 can leave it empty") are still shown.
+
+## ADR-331 - On a mirror the cloud's word is checked by the mirror, with a key it is handed, and nothing of it is written to the copy
+2026-10 · Status: accepted. Phase 14, Task 6c. Builds on ADR-323, ADR-324, ADR-326 and ADR-327.
+Context: the owner signed in to mez Cloud is let into the venue's back office by an
+assertion the venue checks (ADR-323). With the venue's computer off there is no venue
+to check it, only a mirror of its backup. The venue's way cannot be used there as it
+is: it writes the nonce and the session into the database, and a mirror's copy is
+never written (ADR-326). The key the assertion is checked with is in `cloud.json`,
+beside the database and not in its backup.
+Decision:
+  - **`mez mirror -cloud-key`** takes the cloud's public key as `cloud.json` has it,
+    read by the same code that reads a pairing's. With none, a mirror answers the
+    cloud's sign-in as a venue that is not paired does: 401, in the one voice.
+  - **The mirror's door is the API's `CloudSignIn`** (`mirror.Auth.Cloud()`), in the
+    place of `cloudsignin.Service`, with its two errors. The route, its rate limit,
+    its refusals and `by=cloud` in the log are the venue's, unchanged.
+  - **Who the cloud may be is read from the copy**: the person and the device a
+    pairing made, by `auth.StaffAuth.CloudSeat`, which writes nothing. A copy of a
+    venue never paired, or whose owner deactivated the one or revoked the other
+    before the backup was written, has nobody, and the sign-in is refused. It is
+    asked before the assertion is spent.
+  - **The nonce is the Keeper's, on disk, a file to each.** Not in memory: a mirror
+    started again inside the assertion's five minutes would take it twice. And not
+    in the browsers' file, as first built: that file is read, changed and written
+    whole, and a second mirror of the same venue (ADR-327) doing the same in the
+    same few milliseconds would also find the nonce new. So each is a file of its
+    own in `<venue>.spent` beside it, named by the nonce's hash and made only if it
+    is not there, which the filesystem lets one of them do. It holds until when to
+    keep it: an hour past the assertion's end, as at the venue, and removed by a
+    later sign-in. A nonce that cannot be put there is not accepted: unlike a wrong
+    PIN's count, there is nothing to fall back on that the next process would know.
+  - **What a review found before the commit.** The nonce in the shared file, above:
+    two mirrors asked at once both took an assertion, and one whose read of the
+    file failed took it too. Both are closed by the file to each, and eight mirrors
+    asked at once is a test. It found no way round the other claims here.
+  - **The session is the Keeper's, in memory**, marked as the cloud's, on the id the
+    cloud's device has in the copy. Twelve hours, as a PIN's on a mirror.
+  - **The token is presented as both, as at the venue (ADR-324).**
+    `mirror.Auth.CloudDevice` finds the device by a session's token only if the
+    cloud opened that session. A PIN's session token is no device; the cloud's
+    session is none on a paired browser; a PIN's is none on the cloud's device; and
+    no PIN signs in on the cloud's device. Each is a test.
+  - **Each request reads the copy again.** A newer copy in which the venue
+    deactivated the cloud's owner, revoked its device, or paired again and so made
+    a new device, ends the session at the next request.
+  - **Every request at a mirror is already taken as relayed** (ADR-326), which is
+    what the route asks. A mirror has no network of the venue's to keep the cloud
+    off.
+Because: the cloud adds a door and no room (ADR-323), and that holds on a mirror: the
+session it opens is a mirror's session, read-only like every other, and the copy
+stays a copy.
+Cost: **an assertion is good once at the venue and once more at each mirror's state
+directory**, since they do not share what they have spent. Whoever could carry one
+from the one to the other inside five minutes has read it off the relay, which is
+the cloud's own. A venue that turned the cloud off after its last backup is still
+open to the cloud through a mirror of that backup: a copy knows what the venue knew
+when it was written. The key is handed over by whoever starts the mirror, and a
+wrong one fails closed. `mez-cloud` cannot yet reach any of this: it is under
+`internal/`, which another module may not import (STATE, question 12). No screen
+presents an assertion; that is 8e's, and until then this is exercised by tests alone.
+The same review read the browsers' file's sharing (ADR-327) and found it loose in two
+places that are not this task's: a read that fails is passed over, and the file is
+marked as seen after it is renamed, so one mirror can write over what another has
+just paired or locked. It is in `KNOWN.md`.

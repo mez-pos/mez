@@ -2,10 +2,14 @@ package mirror
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/cloud"
+	"github.com/byjoellobo/mez/internal/service/cloudsignin"
 )
 
 // BrowserName is what a browser paired to a mirror is called.
@@ -23,6 +27,7 @@ type Staff interface {
 	WithPermission(ctx context.Context, venueID int64, p auth.Permission) ([]auth.Staff, error)
 	Permissions(ctx context.Context, roleID int64) (auth.PermissionSet, error)
 	CheckPIN(ctx context.Context, venueID int64, staffRef, pin string) (auth.Staff, auth.PINVerdict, error)
+	CloudSeat(ctx context.Context, venueID int64) (auth.Staff, auth.Device, error)
 }
 
 // Devices is what a mirror reads of the venue's devices from its copy.
@@ -31,7 +36,8 @@ type Devices interface {
 	Roster(ctx context.Context, venueID int64) (auth.Roster, error)
 }
 
-// Options configure an Auth. All but Log are required.
+// Options configure an Auth. Keeper, Staff, Devices and VenueID are
+// required.
 type Options struct {
 	Keeper *Keeper
 	// Staff and Devices read the copy this door is over.
@@ -39,7 +45,15 @@ type Options struct {
 	Devices Devices
 	// VenueID is the one venue the copy holds.
 	VenueID int64
-	Log     *slog.Logger
+	// CloudKey is mez Cloud's public key, for a mirror that lets the
+	// account's owner in on the cloud's word (ADR-331), and VenuePublicID
+	// the venue an assertion must be for. With no key the cloud signs
+	// nobody in here. The key is not in the backup: it is beside the
+	// venue's database, not in it.
+	CloudKey      ed25519.PublicKey
+	VenuePublicID string
+	Now           func() time.Time
+	Log           *slog.Logger
 }
 
 // Auth is a mirror's door over one copy. It is the API's devices and its
@@ -52,6 +66,9 @@ type Auth struct {
 	staff   Staff
 	devices Devices
 	venueID int64
+	key     ed25519.PublicKey
+	venue   string
+	now     func() time.Time
 	log     *slog.Logger
 }
 
@@ -60,10 +77,19 @@ func NewAuth(o Options) (*Auth, error) {
 	if o.Keeper == nil || o.Staff == nil || o.Devices == nil || o.VenueID == 0 {
 		return nil, errors.New("mirror: a keeper, a copy's staff and devices, and its venue are required")
 	}
+	if len(o.CloudKey) != 0 && (len(o.CloudKey) != ed25519.PublicKeySize || o.VenuePublicID == "") {
+		return nil, errors.New("mirror: mez Cloud's key must be an Ed25519 public key, with the venue's public id beside it")
+	}
+	if o.Now == nil {
+		o.Now = time.Now
+	}
 	if o.Log == nil {
 		o.Log = slog.New(slog.DiscardHandler)
 	}
-	return &Auth{keeper: o.Keeper, staff: o.Staff, devices: o.Devices, venueID: o.VenueID, log: o.Log}, nil
+	return &Auth{
+		keeper: o.Keeper, staff: o.Staff, devices: o.Devices, venueID: o.VenueID,
+		key: o.CloudKey, venue: o.VenuePublicID, now: o.Now, log: o.Log,
+	}, nil
 }
 
 func (a *Auth) deviceOf(b Browser) auth.Device {
@@ -149,6 +175,11 @@ func (a *Auth) Permissions(ctx context.Context, roleID int64) (auth.PermissionSe
 // and a right PIN for someone locked here are all ErrInvalidPIN, and each
 // takes as long as the others.
 func (a *Auth) SignIn(ctx context.Context, dev auth.Device, staffRef, pin string) (auth.SignedIn, error) {
+	// The cloud's device is for the one person with no PIN (ADR-324). The
+	// API refuses this before it reaches here; it is refused here too.
+	if dev.Cloud {
+		return auth.SignedIn{}, auth.ErrInvalidPIN
+	}
 	release, ok := a.keeper.turn(ctx.Done())
 	if !ok {
 		return auth.SignedIn{}, ctx.Err()
@@ -190,7 +221,7 @@ func (a *Auth) SignIn(ctx context.Context, dev auth.Device, staffRef, pin string
 	if err := a.keeper.right(staffRef); err != nil {
 		a.log.Error("wrong PINs forgiven on the mirror could not be written down as forgiven", "error", err)
 	}
-	s, token, err := a.keeper.open(who.PublicID, dev.ID)
+	s, token, err := a.keeper.open(who.PublicID, dev.ID, false)
 	if err != nil {
 		return auth.SignedIn{}, err
 	}
@@ -204,7 +235,7 @@ func (a *Auth) SignInRemote(ctx context.Context, dev auth.Device, staffRef, pin 
 }
 
 func (a *Auth) sessionOf(s session, who auth.Staff) auth.Session {
-	return auth.Session{ID: s.id, Staff: who, DeviceID: s.browserID, ExpiresAt: s.expiresAt, Remote: true}
+	return auth.Session{ID: s.id, Staff: who, DeviceID: s.browserID, ExpiresAt: s.expiresAt, Remote: true, Cloud: s.cloud}
 }
 
 // Session finds the session a token opens on this browser. Who it belongs
@@ -212,8 +243,20 @@ func (a *Auth) sessionOf(s session, who auth.Staff) auth.Session {
 // locked, or moved to another role, is that from the next copy on.
 func (a *Auth) Session(ctx context.Context, dev auth.Device, token string) (auth.Session, error) {
 	s, ok := a.keeper.session(token, dev.ID)
-	if !ok {
+	// The cloud's session is carried by the cloud's device and no other,
+	// and that device carries no other session.
+	if !ok || s.cloud != dev.Cloud {
 		return auth.Session{}, auth.ErrNoSession
+	}
+	if s.cloud {
+		who, _, err := a.cloudSeat(ctx, s)
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return auth.Session{}, auth.ErrNoSession
+		}
+		if err != nil {
+			return auth.Session{}, err
+		}
+		return a.sessionOf(s, who), nil
 	}
 	// Those who can sign in: a short list, and already without the
 	// deactivated, the locked and whoever mez Cloud signs in.
@@ -242,8 +285,88 @@ func (a *Auth) Authorise(context.Context, auth.Device, string, string, auth.Perm
 	return auth.Staff{}, auth.ErrInvalidPIN
 }
 
-// CloudDevice is the device mez Cloud's sessions are on. A mirror has none
-// yet (phase 14, Task 6c).
-func (a *Auth) CloudDevice(context.Context, string) (auth.Device, error) {
-	return auth.Device{}, auth.ErrUnauthenticated
+// CloudDevice is the cloud's device, found by the token of a session mez
+// Cloud opened here (ADR-324, ADR-331): the device as the copy has it. A
+// token that is not such a session's, or whose person or device the venue
+// has since turned off, is ErrUnauthenticated.
+func (a *Auth) CloudDevice(ctx context.Context, token string) (auth.Device, error) {
+	s, ok := a.keeper.cloudSession(token)
+	if !ok {
+		return auth.Device{}, auth.ErrUnauthenticated
+	}
+	_, dev, err := a.cloudSeat(ctx, s)
+	return dev, err
+}
+
+// cloudSeat is who a cloud session belongs to and the device it is on, read
+// from the copy each time: the session stands only while the copy still has
+// that person active and that device not revoked. A later copy in which the
+// venue deactivated the one or revoked the other ends it, and so does one
+// in which pairing again made a new device.
+func (a *Auth) cloudSeat(ctx context.Context, s session) (auth.Staff, auth.Device, error) {
+	who, dev, err := a.staff.CloudSeat(ctx, a.venueID)
+	if err != nil && !errors.Is(err, auth.ErrNoCloudOwner) {
+		return auth.Staff{}, auth.Device{}, err
+	}
+	if err != nil || who.PublicID != s.staffRef || dev.ID != s.browserID {
+		a.keeper.end(s.id)
+		return auth.Staff{}, auth.Device{}, auth.ErrUnauthenticated
+	}
+	return who, dev, nil
+}
+
+// CloudDoor is how mez Cloud signs the account's owner in on a mirror. It
+// is the API's CloudSignIn, as cloudsignin.Service is at the venue.
+type CloudDoor struct{ a *Auth }
+
+// Cloud returns the door mez Cloud signs in at.
+func (a *Auth) Cloud() *CloudDoor { return &CloudDoor{a: a} }
+
+// SignIn exchanges an assertion, as presented, for a session in the
+// mirror's memory, on the cloud's device as the copy has it. The errors are
+// cloudsignin.ErrRefused and cloudsignin.ErrClock, as at the venue; which
+// refusal it was is in the log and is not said.
+//
+// It is the venue's sign-in (ADR-323) with nothing written to the copy:
+// the assertion is checked with the key this mirror was started with, its
+// nonce is remembered by the Keeper, and who the cloud may be is read.
+func (c *CloudDoor) SignIn(ctx context.Context, presented string) (cloudsignin.SignedIn, error) {
+	a := c.a
+	if len(a.key) == 0 {
+		a.log.Warn("a cloud sign-in was refused: this mirror was started with no key of mez Cloud's")
+		return cloudsignin.SignedIn{}, cloudsignin.ErrRefused
+	}
+	now := a.now()
+	vouched, err := cloud.VerifyAssertion(a.key, presented, a.venue, now)
+	if errors.Is(err, cloud.ErrAssertionTime) {
+		a.log.Warn("a cloud sign-in was refused: rightly signed and outside its time; check this computer's clock", "now", now.UTC())
+		return cloudsignin.SignedIn{}, cloudsignin.ErrClock
+	}
+	if err != nil {
+		a.log.Warn("a cloud sign-in was refused: the assertion is not mez Cloud's for this venue")
+		return cloudsignin.SignedIn{}, cloudsignin.ErrRefused
+	}
+	// Who the cloud may be is asked before the assertion is spent: one
+	// presented to a copy with nobody for it to be is not used up.
+	who, dev, err := a.staff.CloudSeat(ctx, a.venueID)
+	if errors.Is(err, auth.ErrNoCloudOwner) {
+		a.log.Warn("a cloud sign-in was refused: the copy has nobody the cloud may be")
+		return cloudsignin.SignedIn{}, cloudsignin.ErrRefused
+	}
+	if err != nil {
+		return cloudsignin.SignedIn{}, err
+	}
+	if err := a.keeper.spend(vouched.Nonce, vouched.KeepUntil()); err != nil {
+		if errors.Is(err, errSpent) {
+			a.log.Warn("a cloud sign-in was refused: the assertion has been used")
+			return cloudsignin.SignedIn{}, cloudsignin.ErrRefused
+		}
+		return cloudsignin.SignedIn{}, err
+	}
+	s, token, err := a.keeper.open(who.PublicID, dev.ID, true)
+	if err != nil {
+		return cloudsignin.SignedIn{}, err
+	}
+	a.log.Info("the owner signed in to the mirror from mez Cloud", "device_id", dev.ID, "actor_id", who.ID, "by", "cloud")
+	return cloudsignin.SignedIn{SignedIn: auth.SignedIn{Session: a.sessionOf(s, who), Token: token}, Device: dev}, nil
 }

@@ -10,6 +10,17 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Two mirrors of one venue share a state file loosely** (ADR-327, found
+  in ADR-331's review; 2026-10-12). `internal/mirror/keeper.go`: `refresh`
+  passes over a file it cannot read just then, and `save` marks the file
+  as seen after renaming it, so in the same few milliseconds one mirror
+  can write over a browser the other has just paired or a lock it has
+  just set, and may then not look again until the file next changes. A
+  lock lost this way is one more guess at a PIN, of three a day. The
+  cloud's spent assertions are not kept in that file and are not affected.
+  Not fixed: nobody runs two mirrors of one venue yet (`mez-cloud`'s 8e
+  will), and the cure is a lock on the file or a file to each thing.
+
 - **The audit between phases** (ADR-287; 2026-10-07). Four reviews and
   one walk against the demo venue; what they changed is in the ADR.
   **Found and left**, for the owner: any paired terminal or back office

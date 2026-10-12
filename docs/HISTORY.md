@@ -8,7 +8,13 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 6d2b - Staff and Inventory on a mirror** (ADR-330).
+**Phase 14, Task 6d2c - The menu on a mirror** (ADR-330), which closed
+6d2 and 6d. Each part of the menu editor reads `useOnMirror()`: nothing
+adds, renames, moves, retires or imports; an item opens to be read, its
+fields disabled and its two tabs live; Export stays, being a read.
+**Walked in a browser** on a mirror of the demo menu.
+
+Before it, **Phase 14, Task 6d2b - Staff and Inventory on a mirror** (ADR-330).
 Staff has no Add, no row menus, and a role panel whose switches are
 disabled with the sentence where Save was. Inventory has no count,
 wastage, import or add; a row's menu is History alone and a recipe has no

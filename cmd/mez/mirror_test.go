@@ -682,6 +682,7 @@ func TestMirrorRefuses(t *testing.T) {
 		{"an address that is not one", []string{"-from", empty, "-listen-addr", "everywhere"}, "not host:port"},
 		{"following faster than a second", []string{"-from", empty, "-follow", "10ms"}, "at the least"},
 		{"following backwards", []string{"-from", empty, "-follow", "-1m"}, "at the least"},
+		{"a key of the cloud's that is not one", []string{"-from", empty, "-cloud-key", "bm90IGEga2V5"}, "not mez Cloud's public key"},
 		// A mirror writes nowhere but a directory of its own.
 		{"a data directory", []string{"-from", empty, "-data-dir", empty}, "flag provided but not defined"},
 	}
