@@ -141,7 +141,7 @@ and its first commit copies this phase's cloud tasks there.
     the setting `cloud_url`. The request and the answer are written down
     in ADR-318 for `mez-cloud` to build to. Tests against a stand-in
     pairing server. Nothing uses a pairing yet.
-  - [ ] **Task 4b - The venue uses its pairing.** *This repo.* Split in
+  - [x] **Task 4b - The venue uses its pairing.** *This repo.* Split in
     two on 2026-10-12 while building it (ADR-319).
     - [x] **4b1 - At start.** `cmd/mez/cloud.go`: `loadPairing`,
       `withPairing` (the relay, its key, the back office, `public_url`; a
@@ -152,7 +152,15 @@ and its first commit copies this phase's cloud tasks there.
       paired_at}` on `GET /api/v1/tunnel`, beside `cloud` and not in it. A
       pairing that cannot be read stops the start. Tested by starting the
       whole server from a `cloud.json` against a real relay.
-    - [ ] **4b2 - While running.** A service in `internal/service` that
+    - [x] **4b2 - While running.** As built (ADR-320): no restart.
+      `internal/service/cloudpair` refuses what it can before the code is
+      sent, keeps the pairing first once it is spent, and reports a tunnel
+      or a backup that failed beside a venue that is paired. `cmd/mez`'s
+      `venueLink` holds the pairing, the tunnel and the address, and the
+      API reads each through it (`api.WithPublicURL`). The venue's own
+      backup is kept; none, or the pairing's own bucket, is set. `POST
+      /api/v1/cloud/pair`, six tries a minute. As it was set: A service in
+      `internal/service` that
       pairs: refuse, with the reason, a venue whose settings file names a
       relay; `cloud.Client.Pair` with the venue's `public_id`, name and
       version; `cloud.Save`; the backup's destination set to the

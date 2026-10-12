@@ -10,32 +10,35 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a and 4b1 are done (ADR-313, ADR-315 to ADR-319). Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a and 4b are done (ADR-313, ADR-315 to ADR-320). Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 4b1 - A paired venue at start** (ADR-319). 4b was split
-in two. The server reads `cloud.json` before anything asks whether there
-is a relay, and takes from it the relay's address and key, the back
-office across the relay, and `public_url`. A relay in the settings file
-wins whole and the pairing is set aside, with a warning in the log. A
-pairing that cannot be read stops the start. The backup to the pairing's
-bucket goes no faster than 30 s (`ManagerOptions.SyncFloor`); any other
-destination is as the setting says. `GET /api/v1/tunnel` has `paired_to`.
-Tested by starting the whole server from a pairing against a real relay.
-**There is still no way to pair but by writing the file.**
+**Phase 14, Task 4b2 - Pairing while running** (ADR-320), which closes 4b.
+`POST /api/v1/cloud/pair {code}`, for `settings.edit`, at the venue only,
+six tries a minute. `internal/service/cloudpair` refuses a venue with a
+relay in its settings file, a code that could not be one, before anything
+is sent; once mez Cloud accepts the code the pairing is kept first and
+stands, and a tunnel or a backup that failed is reported beside it
+(`restart_needed`, `backup: set | kept | failed | none`). It takes hold
+with no restart: `cmd/mez`'s `venueLink` holds the pairing, the tunnel
+and the venue's address, and the API reads each through it. A venue's own
+backup is kept. **No screen calls the route yet, and it has not been run
+in one piece from a typed code to a guest's request.**
 
 ## Next task
 
-**Phase 14, Task 4b2 - Pairing while running**, as the phase file sets it
-out: the service, `POST /api/v1/cloud/pair`, the backup's destination,
-and `restart_needed`. Decide first whether pairing ends with "restart
-mez" or the tunnel and `public_url` are made to change while running:
-`api.WithTableCodes`, `api.WithCharges` and `tunnel.New` all take them at
-start (`cmd/mez/main.go`).
+**Phase 14, Task 4c - The screens.** The setup wizard's "Connect to mez
+Cloud" step and the same entry on the Devices screen's "Back office from
+anywhere" card, calling `POST /api/v1/cloud/pair` and showing `paired_to`
+from `GET /api/v1/tunnel`. Read `docs/design/tokens.md`,
+`docs/design/screens/backoffice-devices.md` and the wizard's screen file
+first. Walk it in a browser against a stand-in pairing server and a local
+relay: it is the first time the whole of pairing runs in one piece. Each
+refusal's words are already in `internal/api/cloud_pair.go`.
 
 **The live relay** needs redeploying only if entitlements are wanted on
 it: with `RELAY_ENTITLEMENTS` unset it carries every key, as before. A
@@ -138,4 +141,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a and 4b1 of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a and 4b of 9)

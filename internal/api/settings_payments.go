@@ -90,8 +90,8 @@ func (s *Server) writePaymentSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		out.Online = &onlinePaymentsResponse{Gateway: st.Gateway, Webhooks: st.Notices}
-		if s.publicURL != "" {
-			out.Online.ReturnURL = s.publicURL + s.guestMount
+		if s.public() != "" {
+			out.Online.ReturnURL = s.public() + s.guestMount
 		}
 		if !st.LastPaidAt.IsZero() {
 			out.Online.LastPaidAt = &st.LastPaidAt

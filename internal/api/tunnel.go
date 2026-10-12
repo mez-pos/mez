@@ -196,10 +196,10 @@ func (s *Server) mountTunnel(mux *http.ServeMux) {
 // a relay's /v/<venue>/ (ADR-309). An address that would not open is not
 // one to show an owner.
 func (s *Server) backOfficeURL() string {
-	if s.publicURL == "" {
+	if s.public() == "" {
 		return ""
 	}
-	u, err := url.Parse(s.publicURL)
+	u, err := url.Parse(s.public())
 	if err != nil || u.Host == "" || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" {
 		return ""
 	}

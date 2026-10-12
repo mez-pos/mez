@@ -25,6 +25,7 @@ import (
 	"github.com/byjoellobo/mez/internal/api"
 	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/config"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/device/discover"
@@ -38,6 +39,7 @@ import (
 	"github.com/byjoellobo/mez/internal/logging"
 	"github.com/byjoellobo/mez/internal/service/audit"
 	"github.com/byjoellobo/mez/internal/service/charges"
+	"github.com/byjoellobo/mez/internal/service/cloudpair"
 	"github.com/byjoellobo/mez/internal/service/firstrun"
 	"github.com/byjoellobo/mez/internal/service/floor"
 	"github.com/byjoellobo/mez/internal/service/menus"
@@ -193,7 +195,12 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	if err != nil {
 		return err
 	}
+	// What the settings file itself says, before the pairing is laid over
+	// it: whether it names a relay decides whether the venue may be paired
+	// while it runs, and its public_url stands over any pairing's.
+	relayInSettings, settingsPublicURL := cfg.RelayEnabled(), cfg.PublicURL
 	cfg, paired := withPairing(cfg, pairing)
+	link := newVenueLink(settingsPublicURL, pairing, paired)
 	switch paired {
 	case pairingInUse:
 		log.Info("this venue is paired to mez Cloud", "pairing", *pairing, "public_url", cfg.PublicURL)
@@ -233,7 +240,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	photosDir := filepath.Join(cfg.DataDir, "photos")
 	backups, err := backup.NewManager(backup.ManagerOptions{
 		DataDir: cfg.DataDir, DBPath: dbPath, PhotosDir: photosDir, Log: log, SyncInterval: cfg.BackupSyncInterval,
-		SyncFloor: cloudSyncFloor(pairing),
+		SyncFloor: link.syncFloor,
 	})
 	if err != nil {
 		return err
@@ -400,9 +407,40 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 
 	// The tunnel serves guests by calling the server's handler, and the
 	// server reports the tunnel's health, so each needs the other. The
-	// server is built first and reads the tunnel through this, which is set
-	// before anything is served.
-	var guests *tunnel.Client
+	// server is built first and reads the tunnel through link, which holds
+	// whichever tunnel the venue has now: the one it started with, or the
+	// one a pairing made while it ran gave it (ADR-320).
+	var srv *api.Server
+	dial := func(relayURL, key string, backOffice bool) (*tunnel.Client, error) {
+		return tunnel.New(tunnel.Options{
+			RelayURL: relayURL,
+			Key:      key,
+			Handler:  srv.Handler(),
+			Mount:    web.MountGuest,
+			// Off unless the venue wrote remote_backoffice = true or is
+			// paired, and refused on a key the relay did not issue for it
+			// (ADR-306).
+			BackOffice: backOffice,
+			Log:        log,
+		})
+	}
+
+	// Pairing to a mez Cloud account from the back office. Nothing is sent
+	// to the cloud until someone types a code.
+	exchange, err := cloud.NewClient(cfg.CloudURL)
+	if err != nil {
+		return err
+	}
+	pairer, err := cloudpair.New(cloudpair.Options{
+		DB: database, DataDir: cfg.DataDir, Version: build.Version, Cloud: exchange, Backups: backups,
+		RelayInSettings: relayInSettings, Log: log,
+		Apply: func(ctx context.Context, p cloud.Pairing) (bool, error) {
+			return link.apply(ctx, p, func(p cloud.Pairing) (*tunnel.Client, error) { return dial(p.Relay.URL, p.Relay.Key, true) })
+		},
+	})
+	if err != nil {
+		return err
+	}
 
 	guestCodes, err := tablecodes.New(database, nil, nil)
 	if err != nil {
@@ -437,11 +475,13 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		log.Info("guests can pay online", "gateway", provider.Name())
 	}
 
-	srv := api.New(cfg, log, build,
+	srv = api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
-		api.WithTunnel(func() api.TunnelStatus { return tunnelStatus(guests) }),
-		api.WithPairing(pairedTo(pairing, paired)),
+		api.WithTunnel(link.status),
+		api.WithPairing(link.pairedTo),
+		api.WithPublicURL(link.publicURL),
+		api.WithCloudPairing(pairer),
 		api.WithDevices(devices),
 		api.WithFirstRun(firstRun),
 		api.WithSetupToken(setupToken),
@@ -476,25 +516,18 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		// believes took, so it stops the start (ADR-019). A relay that is
 		// merely unreachable stops nothing: Start returns at once and the
 		// counter opens whether or not the internet is there.
-		guests, err = tunnel.New(tunnel.Options{
-			RelayURL: cfg.RelayURL,
-			Key:      cfg.RelayKey,
-			Handler:  srv.Handler(),
-			Mount:    web.MountGuest,
-			// Off unless the venue wrote remote_backoffice = true, and
-			// refused on a key the relay did not issue for it (ADR-306).
-			BackOffice: cfg.RemoteBackoffice,
-			Log:        log,
-		})
+		guests, err := dial(cfg.RelayURL, cfg.RelayKey, cfg.RemoteBackoffice)
 		if err != nil {
 			return err
 		}
 		if guests.BackOffice() {
 			log.Info("the back office is reachable through the relay", "public_url", cfg.PublicURL)
 		}
-		guests.Start()
-		running.push("tunnel", guests.Close)
+		link.connect(guests)
 	}
+	// Whether or not there is a tunnel now: one may be started later, and
+	// is stopped here all the same.
+	running.push("tunnel", link.Close)
 
 	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
 }

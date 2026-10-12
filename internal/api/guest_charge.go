@@ -171,10 +171,10 @@ func (s *Server) guestStartRoundCharge(w http.ResponseWriter, r *http.Request) {
 // adds its own words to the end of the address, and the app finds its own
 // way from there.
 func (s *Server) guestReturnURL(r *http.Request) string {
-	if s.publicURL == "" {
+	if s.public() == "" {
 		return ""
 	}
-	return s.publicURL + s.guestMount + "t/" + r.PathValue("code")
+	return s.public() + s.guestMount + "t/" + r.PathValue("code")
 }
 
 // writeStartedCharge answers a charge just started, or why the gateway did

@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/byjoellobo/mez/internal/api"
 	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/config"
+	"github.com/byjoellobo/mez/internal/tunnel"
 )
 
 // pairingUse is what the server makes of the venue's pairing (ADR-319).
@@ -63,31 +67,139 @@ func withPairing(cfg config.Config, p *cloud.Pairing) (config.Config, pairingUse
 	return cfg, pairingInUse
 }
 
-// pairedTo is the pairing as the API shows it: who, where and since when,
-// and neither key.
-func pairedTo(p *cloud.Pairing, use pairingUse) func() (api.TunnelPairing, bool) {
-	return func() (api.TunnelPairing, bool) {
-		if p == nil || use != pairingInUse {
-			return api.TunnelPairing{}, false
-		}
-		return api.TunnelPairing{Owner: p.Owner.Name, Hostname: p.Venue.Hostname, PairedAt: p.PairedAt}, true
-	}
+// venueLink is the venue's way to the outside, as it stands now: its
+// pairing, the tunnel that pairing or the settings gave it, and the address
+// it is reached at. It is one thing because pairing while the server runs
+// changes all three together (ADR-320), and everything that reads one of
+// them reads it here, so nothing is left holding what was true at start.
+type venueLink struct {
+	// settingsPublicURL is public_url as the settings file gave it, which
+	// stands over a pairing's hostname for as long as the server runs.
+	settingsPublicURL string
+
+	mu      sync.Mutex
+	pairing *cloud.Pairing
+	use     pairingUse
+	client  *tunnel.Client
+	closed  bool
 }
 
-// cloudSyncFloor is the fastest a backup may send when it goes to the bucket
+func newVenueLink(settingsPublicURL string, p *cloud.Pairing, use pairingUse) *venueLink {
+	return &venueLink{settingsPublicURL: settingsPublicURL, pairing: p, use: use}
+}
+
+// inUse is the pairing the venue runs on, or nil.
+func (l *venueLink) inUse() *cloud.Pairing {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.use != pairingInUse {
+		return nil
+	}
+	return l.pairing
+}
+
+// pairedTo is the pairing as the API shows it: who, where and since when,
+// and neither key. False for a venue that is not paired, or is and does not
+// use it.
+func (l *venueLink) pairedTo() (api.TunnelPairing, bool) {
+	p := l.inUse()
+	if p == nil {
+		return api.TunnelPairing{}, false
+	}
+	return api.TunnelPairing{Owner: p.Owner.Name, Hostname: p.Venue.Hostname, PairedAt: p.PairedAt}, true
+}
+
+// publicURL is where guests reach the venue: what the settings file says,
+// or the pairing's hostname, or nowhere.
+func (l *venueLink) publicURL() string {
+	if l.settingsPublicURL != "" {
+		return l.settingsPublicURL
+	}
+	if p := l.inUse(); p != nil {
+		return p.PublicURL()
+	}
+	return ""
+}
+
+// syncFloor is the fastest a backup may send when it goes to the bucket
 // the venue's pairing gave it: mez Cloud's bucket is billed to mez Cloud,
 // and at the five seconds a venue may set for a bucket of its own the
 // requests cost more than the venue pays (ADR-313, ADR-315). Any other
 // destination, and a venue with no pairing, has no floor but the setting's.
-func cloudSyncFloor(p *cloud.Pairing) func(backup.Config) time.Duration {
-	return func(dest backup.Config) time.Duration {
-		if p == nil || dest.Kind != backup.KindS3 {
-			return 0
-		}
-		theirs, ours := dest.S3, p.Backup
-		if theirs.Bucket != ours.Bucket || theirs.Endpoint != ours.Endpoint || theirs.Path != ours.Path {
-			return 0
-		}
-		return backup.DefaultSyncInterval
+// A pairing set aside counts: the bucket is still theirs.
+func (l *venueLink) syncFloor(dest backup.Config) time.Duration {
+	l.mu.Lock()
+	p := l.pairing
+	l.mu.Unlock()
+	if p == nil || dest.Kind != backup.KindS3 {
+		return 0
 	}
+	theirs, ours := dest.S3, p.Backup
+	if theirs.Bucket != ours.Bucket || theirs.Endpoint != ours.Endpoint || theirs.Path != ours.Path {
+		return 0
+	}
+	return backup.DefaultSyncInterval
+}
+
+// status is the tunnel's, in the API's words. Off with none.
+func (l *venueLink) status() api.TunnelStatus {
+	l.mu.Lock()
+	client := l.client
+	l.mu.Unlock()
+	return tunnelStatus(client)
+}
+
+// connect makes client the venue's tunnel and starts it. It is for the
+// start, when there is no other to stop.
+func (l *venueLink) connect(client *tunnel.Client) {
+	l.mu.Lock()
+	l.client = client
+	l.mu.Unlock()
+	client.Start()
+}
+
+// swapTimeout bounds the goodbye to the tunnel a new pairing replaces.
+const swapTimeout = 10 * time.Second
+
+// apply puts a pairing that has just been kept into use: from now the
+// venue is paired to it, reached at its hostname, and connected to its
+// relay with its key. dial builds the tunnel for it. The tunnel there was,
+// from an earlier pairing, is said goodbye to first: its key has been
+// revoked, and two tunnels for one venue take each other's place for ever.
+//
+// It reports whether mez must be restarted for the pairing to take hold,
+// which it must only if the tunnel could not be built.
+func (l *venueLink) apply(ctx context.Context, p cloud.Pairing, dial func(cloud.Pairing) (*tunnel.Client, error)) (restartNeeded bool, err error) {
+	client, err := dial(p)
+	if err != nil {
+		return true, err
+	}
+	l.mu.Lock()
+	if l.closed {
+		l.mu.Unlock()
+		return true, errors.New("mez is stopping")
+	}
+	old := l.client
+	l.pairing, l.use, l.client = &p, pairingInUse, client
+	l.mu.Unlock()
+
+	if old != nil {
+		closing, cancel := context.WithTimeout(context.WithoutCancel(ctx), swapTimeout)
+		_ = old.Close(closing)
+		cancel()
+	}
+	client.Start()
+	return false, nil
+}
+
+// Close stops the tunnel, if there is one, and refuses any after it.
+func (l *venueLink) Close(ctx context.Context) error {
+	l.mu.Lock()
+	client := l.client
+	l.closed = true
+	l.mu.Unlock()
+	if client == nil {
+		return nil
+	}
+	return client.Close(ctx)
 }

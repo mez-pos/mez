@@ -125,10 +125,10 @@ func (s *Server) mountTableCodes(mux *http.ServeMux) {
 // tableAddress is where a table's code leads at the venue's public address,
 // before the code, or empty when the venue has set none.
 func (s *Server) tableAddress() string {
-	if s.publicURL == "" {
+	if s.public() == "" {
 		return ""
 	}
-	return s.publicURL + s.guestMount + "t/"
+	return s.public() + s.guestMount + "t/"
 }
 
 // pickupAddress is where the venue's pickup code leads at its public
@@ -136,10 +136,10 @@ func (s *Server) tableAddress() string {
 // a table's address with another code in it: "p" and not "t", so the app
 // knows which it was given without asking.
 func (s *Server) pickupAddress() string {
-	if s.publicURL == "" {
+	if s.public() == "" {
 		return ""
 	}
-	return s.publicURL + s.guestMount + "p/"
+	return s.public() + s.guestMount + "p/"
 }
 
 func (s *Server) writeTableCodes(w http.ResponseWriter, r *http.Request, list []tablecodes.Coded) {

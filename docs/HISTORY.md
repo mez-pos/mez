@@ -8,7 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 4a - The pairing itself** (ADR-318). Task 4 was split in
+**Phase 14, Task 4b1 - A paired venue at start** (ADR-319). 4b was split
+in two. The server reads `cloud.json` before anything asks whether there
+is a relay, and takes from it the relay's address and key, the back
+office across the relay, and `public_url`. A relay in the settings file
+wins whole and the pairing is set aside, with a warning in the log. A
+pairing that cannot be read stops the start. The backup to the pairing's
+bucket goes no faster than 30 s (`ManagerOptions.SyncFloor`); any other
+destination is as the setting says. `GET /api/v1/tunnel` has `paired_to`.
+Tested by starting the whole server from a pairing against a real relay.
+**There is still no way to pair but by writing the file.**
+
+Before it, **Phase 14, Task 4a - The pairing itself** (ADR-318). Task 4 was split in
 four. `internal/cloud`: a pairing code cleaned as typed (eight of an
 alphabet with no 0, O, 1 or I), one POST to `{cloud_url}/v1/pair` with the
 venue's `public_id`, name and version, the answer checked whole, and

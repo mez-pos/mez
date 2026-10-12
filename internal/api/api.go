@@ -28,6 +28,8 @@ type Server struct {
 	charges       Charges
 	publicURL     string
 	pairing       func() (TunnelPairing, bool)
+	publicURLNow  func() string
+	cloudPairing  CloudPairing
 	devices       Devices
 	staff         Staff
 	orders        Orders
@@ -126,6 +128,7 @@ func (s *Server) routes() http.Handler {
 	s.mountSetup(mux)
 	s.mountDevices(mux)
 	s.mountTunnel(mux)
+	s.mountCloudPairing(mux)
 	s.mountGuests(mux)
 	s.mountStaff(mux)
 	s.mountOrders(mux)

@@ -130,6 +130,12 @@ export type ErrorCode =
   | 'backup_off'
   | 'backup_failed'
   | 'backup_unavailable'
+  | 'pairing_code_invalid'
+  | 'pairing_code_refused'
+  | 'cloud_unreachable'
+  | 'relay_in_settings'
+  | 'pairing_not_kept'
+  | 'pairing_unavailable'
   | 'tax_class_not_found'
   | 'tax_class_name_taken'
   | 'tax_class_in_use'
@@ -314,6 +320,12 @@ export type BackupState =
   | 'starting'
   | 'ok'
   | 'failing';
+
+export type CloudBackupOutcome =
+  | 'set'
+  | 'kept'
+  | 'failed'
+  | 'none';
 
 export type GuestRoundStatus =
   | 'waiting'
@@ -1209,6 +1221,18 @@ export interface BackupStatus {
   last_synced_at?: string;
   error?: string;
   sync_interval_seconds?: number;
+}
+
+export interface CloudPairRequest {
+  code: string;
+}
+
+export interface CloudPairResponse {
+  owner: string;
+  hostname: string;
+  paired_at: string;
+  backup: CloudBackupOutcome;
+  restart_needed: boolean;
 }
 
 export interface GuestRequestsResponse {

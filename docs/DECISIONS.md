@@ -11777,3 +11777,58 @@ make one but by hand, and after it the tunnel, the table codes' address and the
 gateway's return address are all read at start, so pairing will still end with
 "restart mez" unless those are made to change while running, which is 4b2's to
 decide. A venue whose pairing is set aside is told only in its log.
+
+## ADR-320 - Pairing takes hold while the server runs, and once the code is spent nothing is allowed to lose the pairing
+2026-10 · Status: accepted. Phase 14, Task 4b2. Builds on ADR-318 and ADR-319.
+Context: 4b1 made a venue with a pairing work from its next start. The phase's measure
+is a venue "paired by code in under two minutes ... with nothing typed but the code",
+and an owner who has just typed a code is not going to find the Windows service and
+restart it. Three things were read once, at start: the tunnel, the address guests
+reach the venue at, and whether the venue is paired at all. And a code is good once,
+which makes the order of everything around it matter.
+Decision:
+  - **No restart.** `cmd/mez` holds the venue's way to the outside in one place,
+    `venueLink`: its pairing, its tunnel and its address. The API reads the tunnel's
+    status, who the venue is paired to and its address through it, and the backup
+    its floor, each time they are wanted, so nothing is left holding what was true
+    at start. Pairing replaces all three together.
+  - **The address became something that is asked for.** `api.WithPublicURL` supplies
+    it as a function, and every read of it in the API goes through one method. The
+    settings file's `public_url` still stands over a pairing's hostname.
+  - **A tunnel a new pairing replaces is said goodbye to before the new one dials.**
+    A venue paired again has a new key and the old one is revoked; two tunnels for
+    one venue take each other's place at the relay for ever.
+  - **Everything that can refuse does so before the code is sent.** A settings file
+    that names a relay (the pairing would be set aside, ADR-319), a code that could
+    not be one, a venue that is not there. The owner keeps their code.
+  - **Once the cloud has accepted it, the pairing is kept first, and it stands.** The
+    caller's leaving is no longer listened to: a browser closed mid-pairing must not
+    leave a key issued and never written down. A tunnel that cannot be built, or a
+    bucket that cannot be written to, is reported beside a venue that is paired,
+    as `restart_needed` or `backup: "failed"`, and never as a failure to pair. The
+    one error after the exchange is the pairing not being written down at all.
+  - **The venue's own backup is left alone.** No backup: it is set to the bucket the
+    pairing gave. Already on that bucket, which is a venue paired again: it is
+    given the new key. A folder or a bucket the owner chose: kept, and the answer
+    says `kept`. Pairing was not asked to move a backup, and an owner who wants
+    mez Cloud's can turn their own off first.
+  - **`POST /api/v1/cloud/pair`**, for `settings.edit`, at the venue only: from away
+    it would move a venue to another account on a manager's PIN alone. It answers
+    the owner's name, the hostname, when, `backup` and `restart_needed`, and neither
+    key. Each refusal says whether the code is still good. Six tries a minute from
+    one address, counted apart from pairing a device: each try that reaches the
+    cloud is a guess at somebody's code, made from this venue's address.
+  - **What mez Cloud said underneath stays in the log.** An answer that cannot be
+    used reads "update mez" on the screen, and its particulars, like the address a
+    dial failed on, are not the owner's to be shown.
+Because: the pairing is the only thing here that cannot be done twice, so it is
+treated as the thing to protect, and everything else around it as something that
+can be reported and mended.
+Cost: a venue paired again drops whatever guests' requests were in flight on the old
+tunnel, for the second it takes the new one to dial. The limit is before the sign-in
+check, as a device's pairing is, so someone on the venue's own network can use up an
+address's six tries; the address is theirs. The route is tested with a stand-in for
+the service, the service with a stand-in for the cloud, and the swap of tunnels
+against a real relay, but the whole of it from a typed code to a guest's request has
+not been run in one piece: that needs a set-up venue, and is 4c's walk. A table code
+printed before pairing still carries whatever address the venue had then.

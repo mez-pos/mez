@@ -15,11 +15,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/byjoellobo/mez/internal/api"
 	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/config"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/relay"
+	"github.com/byjoellobo/mez/internal/tunnel"
+	"github.com/byjoellobo/mez/web"
 )
 
 const pairedBucketSecret = "not-a-real-bucket-secret"
@@ -84,15 +87,33 @@ func TestWithPairing(t *testing.T) {
 
 func TestPairedTo(t *testing.T) {
 	p := pairingTo(t, "https://relay.mezpos.com", writtenKey)
-	got, ok := pairedTo(&p, pairingInUse)()
+	got, ok := newVenueLink("", &p, pairingInUse).pairedTo()
 	if !ok || got.Owner != "Priya Menon" || got.Hostname != "corner-cafe.mezpos.com" || !got.PairedAt.Equal(p.PairedAt) {
 		t.Errorf("in use: %+v, %v", got, ok)
 	}
-	if _, ok := pairedTo(&p, pairingSetAside)(); ok {
+	if _, ok := newVenueLink("", &p, pairingSetAside).pairedTo(); ok {
 		t.Error("a pairing that is set aside is shown as the venue's")
 	}
-	if _, ok := pairedTo(nil, notPaired)(); ok {
+	if _, ok := newVenueLink("", nil, notPaired).pairedTo(); ok {
 		t.Error("a venue with no pairing is shown as paired")
+	}
+}
+
+// TestTheVenuesAddress: what the settings file says, over the pairing's
+// hostname, over nothing.
+func TestTheVenuesAddress(t *testing.T) {
+	p := pairingTo(t, "https://relay.mezpos.com", writtenKey)
+	if got := newVenueLink("", nil, notPaired).publicURL(); got != "" {
+		t.Errorf("not paired, nothing set: %q", got)
+	}
+	if got := newVenueLink("", &p, pairingInUse).publicURL(); got != "https://corner-cafe.mezpos.com" {
+		t.Errorf("paired: %q", got)
+	}
+	if got := newVenueLink("https://order.cornercafe.in", &p, pairingInUse).publicURL(); got != "https://order.cornercafe.in" {
+		t.Errorf("paired, with an address of its own: %q", got)
+	}
+	if got := newVenueLink("https://cafe.example.com", &p, pairingSetAside).publicURL(); got != "https://cafe.example.com" {
+		t.Errorf("a pairing set aside: %q", got)
 	}
 }
 
@@ -101,7 +122,7 @@ func TestPairedTo(t *testing.T) {
 func TestCloudSyncFloor(t *testing.T) {
 	p := pairingTo(t, "https://relay.mezpos.com", writtenKey)
 	theirs := backup.Config{Kind: backup.KindS3, S3: p.Backup}
-	floor := cloudSyncFloor(&p)
+	floor := newVenueLink("", &p, pairingInUse).syncFloor
 	if got := floor(theirs); got != 30*time.Second {
 		t.Errorf("the cloud's bucket: %v, want 30s", got)
 	}
@@ -122,8 +143,12 @@ func TestCloudSyncFloor(t *testing.T) {
 			t.Errorf("%s: floor %v, want none", name, got)
 		}
 	}
-	if got := cloudSyncFloor(nil)(theirs); got != 0 {
+	if got := newVenueLink("", nil, notPaired).syncFloor(theirs); got != 0 {
 		t.Errorf("a venue with no pairing: floor %v, want none", got)
+	}
+	// Set aside for the relay, the bucket is still theirs.
+	if got := newVenueLink("", &p, pairingSetAside).syncFloor(theirs); got != 30*time.Second {
+		t.Errorf("a pairing set aside: floor %v, want 30s", got)
 	}
 }
 
@@ -213,5 +238,127 @@ func TestAPairingThatIsWrongStopsTheStart(t *testing.T) {
 	}
 	if _, statErr := os.Stat(filepath.Join(dataDir, db.FileName)); statErr == nil {
 		t.Error("the database was opened before the pairing was refused")
+	}
+}
+
+// TestPairingWhileRunningTakesHoldAtOnce: a venue with no relay is paired,
+// and from that moment it is reached at the relay the pairing names, says
+// who it is paired to, and has an address. Paired again, with a new key, the
+// new tunnel takes the old one's place and the venue is still reached. No
+// restart in either (ADR-320).
+func TestPairingWhileRunningTakesHoldAtOnce(t *testing.T) {
+	const secret = "0123456789abcdef0123456789abcdef"
+	keys, err := relay.NewKeys(secret, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	srv, err := relay.New(relay.Options{Keys: keys, Log: quiet})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(srv.Handler())
+	t.Cleanup(func() { srv.Close(); ts.Close() })
+	issue := func() string {
+		t.Helper()
+		key, err := keys.Issue(rand.Reader, "corner-cafe", true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return key
+	}
+
+	venue := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "the venue") })
+	dialled := 0
+	dial := func(p cloud.Pairing) (*tunnel.Client, error) {
+		dialled++
+		return tunnel.New(tunnel.Options{RelayURL: p.Relay.URL, Key: p.Relay.Key, Handler: venue, Mount: web.MountGuest, BackOffice: true, Log: quiet})
+	}
+	reached := func(what string) {
+		t.Helper()
+		deadline := time.Now().Add(20 * time.Second)
+		for {
+			resp, err := http.Get(ts.URL + "/v/corner-cafe/")
+			if err == nil {
+				_ = resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
+					return
+				}
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("%s: a guest never reached the venue through the relay", what)
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+
+	link := newVenueLink("", nil, notPaired)
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = link.Close(ctx)
+	})
+	if got := link.status(); got.State != api.TunnelOff {
+		t.Fatalf("before pairing: %+v, want off", got)
+	}
+
+	ctx := context.Background()
+	first := pairingTo(t, ts.URL, issue())
+	if restart, err := link.apply(ctx, first, dial); err != nil || restart {
+		t.Fatalf("apply: restart %v, %v", restart, err)
+	}
+	reached("paired")
+	if got, ok := link.pairedTo(); !ok || got.Hostname != "corner-cafe.mezpos.com" {
+		t.Errorf("paired to %+v, %v", got, ok)
+	}
+	if got := link.publicURL(); got != "https://corner-cafe.mezpos.com" {
+		t.Errorf("address %q", got)
+	}
+	if got := link.status(); got.State == api.TunnelOff || !got.BackOffice {
+		t.Errorf("status %+v, want a tunnel that carries the back office", got)
+	}
+	if got := link.syncFloor(backup.Config{Kind: backup.KindS3, S3: first.Backup}); got != 30*time.Second {
+		t.Errorf("the floor for the bucket just given: %v", got)
+	}
+
+	// Paired again: a new key, and the old tunnel is not left to fight it.
+	second := pairingTo(t, ts.URL, issue())
+	second.Owner.Name = "Kabir Rao"
+	if restart, err := link.apply(ctx, second, dial); err != nil || restart {
+		t.Fatalf("apply again: restart %v, %v", restart, err)
+	}
+	reached("paired again")
+	if got, _ := link.pairedTo(); got.Owner != "Kabir Rao" {
+		t.Errorf("paired to %+v, want the second", got)
+	}
+	// Still there a moment later: two tunnels on one venue would be taking
+	// each other's place.
+	time.Sleep(300 * time.Millisecond)
+	reached("a moment after pairing again")
+	if got := link.status(); got.State != api.TunnelConnected {
+		t.Errorf("status %+v, want connected", got)
+	}
+	if dialled != 2 {
+		t.Errorf("%d tunnels were built, want one for each pairing", dialled)
+	}
+
+	// A tunnel that cannot be built leaves the pairing to the next start.
+	bad := second
+	bad.Relay.Key = "hunter2"
+	if restart, err := link.apply(ctx, bad, dial); err == nil || !restart {
+		t.Errorf("a pairing whose tunnel cannot be built: restart %v, %v", restart, err)
+	}
+	if got, _ := link.pairedTo(); got.Owner != "Kabir Rao" {
+		t.Error("a pairing that could not be put to use replaced the one that is")
+	}
+
+	// And nothing is started once mez is stopping.
+	closing, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	if err := link.Close(closing); err != nil {
+		t.Fatal(err)
+	}
+	if restart, err := link.apply(ctx, second, dial); err == nil || !restart {
+		t.Errorf("after Close: restart %v, %v", restart, err)
 	}
 }

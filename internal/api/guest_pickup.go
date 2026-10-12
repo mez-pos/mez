@@ -310,10 +310,10 @@ func (s *Server) guestStartPickupCharge(w http.ResponseWriter, r *http.Request) 
 // configured address, or nowhere. As guestReturnURL, it is never taken from
 // the request.
 func (s *Server) pickupReturnURL(r *http.Request) string {
-	if s.publicURL == "" {
+	if s.public() == "" {
 		return ""
 	}
-	return s.publicURL + s.guestMount + "p/" + r.PathValue("code")
+	return s.public() + s.guestMount + "p/" + r.PathValue("code")
 }
 
 // guestPickupCharge answers how the payment for an order to collect stands,

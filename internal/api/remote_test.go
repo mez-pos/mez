@@ -78,6 +78,10 @@ var staysAtTheVenue = []string{
 	"PUT /api/v1/settings/payments",
 	"PUT /api/v1/settings/numbering",
 	"PUT /api/v1/settings/backup",
+	// Pairing to an account: the code is typed at the venue, as a device's
+	// is made there. From away it would be a way to move a venue to
+	// another account with a manager's PIN and nothing else.
+	"POST /api/v1/cloud/pair",
 	"POST /api/v1/settings/backup/now",
 	// The shift and its drawer.
 	"GET /api/v1/shift",
