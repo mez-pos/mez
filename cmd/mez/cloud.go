@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"sync"
 	"time"
 
@@ -99,6 +101,18 @@ func (l *venueLink) inUse() *cloud.Pairing {
 		return nil
 	}
 	return l.pairing
+}
+
+// cloudKey is the public key mez Cloud's assertions are checked with: the
+// one the pairing in use holds. False for a venue that is not paired, or is
+// and runs on a relay of its own, which mez Cloud does not reach it through.
+func (l *venueLink) cloudKey() (ed25519.PublicKey, bool) {
+	p := l.inUse()
+	if p == nil {
+		return nil, false
+	}
+	key, err := p.Key()
+	return key, err == nil
 }
 
 // pairedTo is the pairing as the API shows it: who, where and since when,
@@ -218,6 +232,12 @@ func (l *venueLink) Close(ctx context.Context) error {
 // from the venue that was meant is what makes them.
 func ensureCloudOwner(ctx context.Context, database *db.DB, staff *auth.StaffAuth, p *cloud.Pairing, log *slog.Logger) {
 	if p == nil {
+		// On no pairing, nobody is here on mez Cloud's word: a session left
+		// from before the venue was unpaired, or its pairing set aside, was
+		// vouched with a key this venue no longer answers to.
+		if err := staff.EndCloudSessions(ctx); err != nil {
+			log.Warn("sessions mez Cloud opened before this venue stopped using its pairing could not be ended", "error", err)
+		}
 		return
 	}
 	venues, err := database.Queries().ListVenues(ctx)
@@ -238,4 +258,18 @@ func ensureCloudOwner(ctx context.Context, database *db.DB, staff *auth.StaffAut
 		log.Warn("the person mez Cloud signs in as could not be made; the owner cannot open the back office from mez Cloud until this venue is paired again",
 			"venue_id", venues[0].ID, "error", err)
 	}
+}
+
+// fromTheNetwork is what the server's own socket serves: the handler, with
+// any claim a request makes to have come through the relay taken off first.
+// Only the tunnel says that, and it calls the handler directly (ADR-307).
+// While the mark could only narrow what a request might do, a client on the
+// venue's network setting it harmed nobody but itself. A session mez Cloud
+// opened is accepted on a relayed request alone (ADR-324), so the mark now
+// has to be true.
+func fromTheNetwork(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Header.Del(api.HeaderVia)
+		next.ServeHTTP(w, r)
+	})
 }

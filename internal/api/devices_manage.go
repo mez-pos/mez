@@ -31,6 +31,8 @@ type deviceRecordResponse struct {
 	LastSeenAt *time.Time      `json:"last_seen_at,omitempty"`
 	RevokedAt  *time.Time      `json:"revoked_at,omitempty"`
 	This       bool            `json:"this"`
+	// Cloud is the device mez Cloud signs the owner in on (ADR-323).
+	Cloud bool `json:"cloud"`
 }
 
 // waitingCodeResponse is a pairing code made and not yet used: a device on its
@@ -162,7 +164,7 @@ func (s *Server) listDevices(w http.ResponseWriter, r *http.Request) {
 	for i, d := range roster.Devices {
 		out.Devices[i] = deviceRecordResponse{
 			ID: d.PublicID, Name: d.Name, Kind: d.Kind, PairedAt: d.PairedAt, LastSeenAt: d.LastSeenAt, RevokedAt: d.RevokedAt,
-			This: d.ID == dev.ID,
+			This: d.ID == dev.ID, Cloud: d.Cloud,
 		}
 	}
 	for i, c := range roster.Waiting {

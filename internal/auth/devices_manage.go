@@ -53,6 +53,9 @@ type Record struct {
 	PairedAt   time.Time
 	LastSeenAt *time.Time // nil: not heard from since it was paired
 	RevokedAt  *time.Time
+	// Cloud is the device mez Cloud signs the owner in on (ADR-323). It has
+	// no token: revoking it is how the cloud's sign-in is shut.
+	Cloud bool
 }
 
 // Waiting is a pairing code made and not yet used: a device on its way. The
@@ -93,7 +96,7 @@ func (d *Devices) Roster(ctx context.Context, venueID int64) (Roster, error) {
 	for i, r := range rows {
 		out.Devices[i] = Record{
 			Device:   Device{ID: r.ID, PublicID: r.PublicID, VenueID: venueID, Name: r.Name, Kind: DeviceKind(r.Kind)},
-			PairedAt: r.PairedAt.Time.UTC(), LastSeenAt: timePtr(r.LastSeenAt), RevokedAt: timePtr(r.RevokedAt),
+			PairedAt: r.PairedAt.Time.UTC(), LastSeenAt: timePtr(r.LastSeenAt), RevokedAt: timePtr(r.RevokedAt), Cloud: r.Cloud,
 		}
 	}
 	for i, c := range open {

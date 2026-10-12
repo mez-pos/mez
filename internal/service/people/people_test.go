@@ -324,7 +324,10 @@ func TestTheCloudsOwnerCannotBeGivenAPIN(t *testing.T) {
 	}
 
 	// They are on the People list, and can be turned off there.
-	if p := f.person(t, f.cafe, cloudOwner.PublicID); !p.Active || p.Name != "Priya Menon" {
+	if p := f.person(t, f.cafe, priya.publicID); p.Cloud {
+		t.Error("the venue's own owner is listed as the cloud's")
+	}
+	if p := f.person(t, f.cafe, cloudOwner.PublicID); !p.Active || p.Name != "Priya Menon" || !p.Cloud {
 		t.Errorf("the cloud's owner on the People list: %+v", p)
 	}
 	if err := f.s.SetStaffActive(ctx, f.cafe.id, priya.id, cloudOwner.PublicID, false); err != nil {

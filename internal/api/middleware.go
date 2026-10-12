@@ -52,6 +52,9 @@ type requestInfo struct {
 	// via is how the request arrived when that was not the venue's own
 	// network: "relay", or empty.
 	via string
+	// by is who vouched for whoever it was, when that was not their PIN:
+	// "cloud", or empty (ADR-324).
+	by string
 }
 
 // infoFrom is the holder for this request, or nil outside one.
@@ -147,6 +150,9 @@ func (s *Server) accessLog(next http.Handler) http.Handler {
 			// is nearly every line: a request from outside is the one to find.
 			if info.via != "" {
 				fields = append(fields, "via", info.via)
+			}
+			if info.by != "" {
+				fields = append(fields, "by", info.by)
 			}
 			s.log.Info("request", fields...)
 		}()

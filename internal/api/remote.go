@@ -79,6 +79,8 @@ var remoteRoutes = map[string]struct{}{
 	"POST /api/v1/sessions":           {},
 	"GET /api/v1/sessions/current":    {},
 	"DELETE /api/v1/sessions/current": {},
+	// The owner, vouched for by mez Cloud. It is only ever from away.
+	"POST /api/v1/sessions/cloud": {},
 
 	// What every screen reads to draw itself.
 	"GET /api/v1/venue":  {},

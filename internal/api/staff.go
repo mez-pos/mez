@@ -27,6 +27,7 @@ type Staff interface {
 	SignOut(ctx context.Context, s auth.Session) error
 	Permissions(ctx context.Context, roleID int64) (auth.PermissionSet, error)
 	Authorise(ctx context.Context, dev auth.Device, staffRef, pin string, p auth.Permission) (auth.Staff, error)
+	CloudDevice(ctx context.Context, token string) (auth.Device, error)
 }
 
 // WithStaff turns on staff sign-in. It needs WithDevices: a PIN is only
@@ -82,6 +83,15 @@ func (s *Server) requireStaff(next http.Handler) http.Handler {
 		}
 		if info := infoFrom(r.Context()); info != nil {
 			info.staffID = session.Staff.ID
+			if session.Cloud {
+				info.by = ByCloud
+			}
+		}
+		// The cloud's device carries the cloud's session and no other, and
+		// the cloud's session is carried by no other device.
+		if dev.Cloud != session.Cloud {
+			s.unauthenticated(w, CodeSignInRequired, "sign in to do that")
+			return
 		}
 		// Asked on every relayed request and not only at sign-in: a role
 		// can lose its permissions while its session is open.
@@ -163,6 +173,15 @@ func (s *Server) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	dev, _ := DeviceFrom(r.Context())
+
+	// The cloud's device is for the one person mez Cloud vouches for, who
+	// has no PIN (ADR-324). A PIN typed on it would open a session that
+	// outlived the cloud's own, on a device nobody at the venue paired.
+	if dev.Cloud {
+		writeError(w, s.log, http.StatusForbidden, CodeRemoteNotAllowed,
+			"A PIN signs in on a device paired at the venue, not through mez Cloud.")
+		return
+	}
 
 	// From away a wrong PIN is counted apart and harder, and the session
 	// opened is one a relayed request will be served on (ADR-314).

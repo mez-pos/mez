@@ -115,6 +115,7 @@ var errorCodes = []ErrorCode{
 	CodeNotFound, CodeMethodNotAllowed, CodeInternal, CodeInvalidRequest,
 	CodeUnauthenticated, CodeDeviceRevoked, CodeInvalidPairingCode,
 	CodeInvalidPIN, CodeLockedOut, CodeSignInRequired, CodeRateLimited, CodeForbidden, CodeRemoteNotAllowed,
+	CodeCloudSignInRefused, CodeCloudClock,
 	CodeOrderNotFound, CodeLineNotFound, CodeLineNotActive, CodePaymentNotFound,
 	CodeModifiersMismatch, CodeLineInKitchen, CodeNeedsApproval, CodeTipNeedsApproval, CodeOrderHeld, CodeOrderNotHeld,
 	CodePaymentNotCaptured, CodeOrderClosed, CodeOrderNotClosed, CodeQtyMismatch,
@@ -338,7 +339,7 @@ func generate() (*ts.Generator, error) {
 		guestTableResponse{}, guestPickupResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{}, guestChargeResponse{}, guestShareRequest{}, guestReceiptResponse{}, resolveChargeRequest{}, tableCodesResponse{}, tableCodeQRResponse{}, tableCodeSheetResponse{}, pickupCodeQRResponse{},
 		paymentSettingsRequest{}, paymentSettingsResponse{},
 		backupRequest{}, backupBucketRequest{}, backupResponse{}, backupS3{}, backupStatus{},
-		cloudPairRequest{}, cloudPairResponse{},
+		cloudPairRequest{}, cloudPairResponse{}, cloudSessionResponse{},
 		guestRequestsResponse{}, guestDecisionResponse{},
 		// Staff.
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},

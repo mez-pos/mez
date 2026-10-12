@@ -8,7 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 4c2 - The wizard's mez Cloud step** (ADR-322), which
+**Phase 14, Task 5a - The assertion, the person and the sign-in**
+(ADR-323). Task 5 was split in two. `internal/cloud/assertion.go` signs
+and checks what mez Cloud vouches with. Migration 00055 marks one staff
+row and one device row as the cloud's and keeps spent nonces. Pairing
+makes both rows (`auth.PairCloudOwner`), a start makes them for a venue
+paired by an older build, and `auth.SignInCloud` spends an assertion
+once and opens ADR-314's twelve-hour session. The person has no PIN and
+cannot be given one. A session on a revoked device is no session.
+
+Before it, **Phase 14, Task 4c2 - The wizard's mez Cloud step** (ADR-322), which
 closes 4c. The wizard has six steps: mez Cloud is the fifth, after the
 printer, when the venue exists and the owner is signed in, so it calls
 `POST /api/v1/cloud/pair` as the Devices card does and the server gained

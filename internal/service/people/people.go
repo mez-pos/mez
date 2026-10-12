@@ -93,6 +93,9 @@ type Person struct {
 	// they cannot sign in until someone who can manage staff clears it.
 	// Null when there is none.
 	LockedAt *time.Time `json:"locked_at"`
+	// Cloud is the person mez Cloud signs in as (ADR-323): the account's
+	// owner, who has no PIN and cannot be given one.
+	Cloud bool `json:"cloud"`
 }
 
 // Role is a role with what it grants and how many active people hold it.
@@ -125,7 +128,7 @@ func (s *Service) People(ctx context.Context, venueID int64) ([]Person, error) {
 	}
 	out := make([]Person, len(rows))
 	for i, r := range rows {
-		out[i] = Person{ID: r.PublicID, Name: r.Name, RoleID: r.RoleID, RoleName: r.RoleName, Active: r.Active, Since: r.CreatedAt.UTC()}
+		out[i] = Person{ID: r.PublicID, Name: r.Name, RoleID: r.RoleID, RoleName: r.RoleName, Active: r.Active, Since: r.CreatedAt.UTC(), Cloud: r.Cloud}
 		if r.LockedAt.Valid {
 			at := r.LockedAt.Time.UTC()
 			out[i].LockedAt = &at

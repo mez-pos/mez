@@ -22,6 +22,8 @@ export type ErrorCode =
   | 'rate_limited'
   | 'forbidden'
   | 'remote_not_allowed'
+  | 'cloud_sign_in_refused'
+  | 'cloud_clock'
   | 'order_not_found'
   | 'line_not_found'
   | 'line_not_active'
@@ -876,6 +878,7 @@ export interface DeviceRecordResponse {
   last_seen_at?: string;
   revoked_at?: string;
   this: boolean;
+  cloud: boolean;
 }
 
 export interface WaitingCodeResponse {
@@ -1235,6 +1238,20 @@ export interface CloudPairResponse {
   restart_needed: boolean;
 }
 
+export interface CloudSessionResponse {
+  staff: StaffResponse;
+  permissions: Permission[];
+  expires_at: string;
+  token: string;
+  device: DeviceResponse;
+}
+
+export interface StaffResponse {
+  id: string;
+  name: string;
+  role: string;
+}
+
 export interface GuestRequestsResponse {
   requests: GuestRequestResponse[];
   paid: PaidNoticeResponse[];
@@ -1280,12 +1297,6 @@ export interface GuestDecisionResponse {
   status: GuestRoundStatus;
   table_id: number;
   order_id?: string;
-}
-
-export interface StaffResponse {
-  id: string;
-  name: string;
-  role: string;
 }
 
 export interface StaffListResponse {
@@ -2331,6 +2342,7 @@ export interface Person {
   active: boolean;
   since: string;
   locked_at: string | null;
+  cloud: boolean;
 }
 
 export interface Role {

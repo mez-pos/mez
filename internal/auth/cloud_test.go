@@ -389,6 +389,90 @@ func TestRevokingTheCloudsDeviceEndsItsSessions(t *testing.T) {
 	}
 }
 
+// TestTheCloudsDeviceIsKnownByItsSession: the device has no token, so a
+// live session of the cloud's owner is the one thing that stands for it
+// (ADR-324).
+func TestTheCloudsDeviceIsKnownByItsSession(t *testing.T) {
+	ctx := context.Background()
+	tests := []struct {
+		name  string
+		token func(t *testing.T, w *staffWorld, cloudToken string) string
+		after func(t *testing.T, w *staffWorld, owner Staff)
+		want  error
+	}{
+		{name: "the cloud's session"},
+		{name: "a PIN's session from away", want: ErrUnauthenticated,
+			token: func(t *testing.T, w *staffWorld, _ string) string {
+				in, err := w.auth.SignInRemote(ctx, w.till, w.ravi.PublicID, "1357")
+				if err != nil {
+					t.Fatal(err)
+				}
+				return in.Token
+			}},
+		{name: "nothing", want: ErrUnauthenticated, token: func(*testing.T, *staffWorld, string) string { return "" }},
+		{name: "a token of another shape", want: ErrUnauthenticated,
+			token: func(_ *testing.T, _ *staffWorld, cloudToken string) string {
+				return deviceTokenPrefix + strings.TrimPrefix(cloudToken, sessionTokenPrefix)
+			}},
+		{name: "after twelve hours", want: ErrUnauthenticated,
+			after: func(_ *testing.T, w *staffWorld, _ Staff) { w.clock.advance(RemoteSessionTTL) }},
+		{name: "the device revoked", want: ErrUnauthenticated,
+			after: func(t *testing.T, w *staffWorld, _ Staff) { w.revokeCloudDevice(t) }},
+		{name: "the owner deactivated", want: ErrUnauthenticated,
+			after: func(t *testing.T, w *staffWorld, owner Staff) { w.deactivate(t, owner.ID) }},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w, owner := cloudWorld(t)
+			in, err := w.auth.SignInCloud(ctx, 1, w.vouched(testNonce))
+			if err != nil {
+				t.Fatal(err)
+			}
+			token := in.Token
+			if tt.token != nil {
+				token = tt.token(t, w, in.Token)
+			}
+			if tt.after != nil {
+				tt.after(t, w, owner)
+			}
+			dev, err := w.auth.CloudDevice(ctx, token)
+			if !errors.Is(err, tt.want) {
+				t.Fatalf("err = %v, want %v", err, tt.want)
+			}
+			if tt.want == nil && (dev.ID != in.Session.DeviceID || dev.Name != CloudDeviceName || dev.Kind != KindBackOffice || dev.VenueID != 1) {
+				t.Errorf("device = %+v, session on device %d", dev, in.Session.DeviceID)
+			}
+		})
+	}
+
+	t.Run("signed out", func(t *testing.T) {
+		w, _ := cloudWorld(t)
+		in, err := w.auth.SignInCloud(ctx, 1, w.vouched(testNonce))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := w.auth.SignOut(ctx, in.Session); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.auth.CloudDevice(ctx, in.Token); !errors.Is(err, ErrUnauthenticated) {
+			t.Errorf("err = %v, want ErrUnauthenticated", err)
+		}
+	})
+	t.Run("it says when the device was last heard from", func(t *testing.T) {
+		w, _ := cloudWorld(t)
+		in, err := w.auth.SignInCloud(ctx, 1, w.vouched(testNonce))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.auth.CloudDevice(ctx, in.Token); err != nil {
+			t.Fatal(err)
+		}
+		if n := count(t, w, "SELECT COUNT(*) FROM devices WHERE cloud = 1 AND last_seen_at IS NOT NULL"); n != 1 {
+			t.Error("the cloud's device was used and has no last-seen time")
+		}
+	})
+}
+
 func TestCloudSignInRefuses(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -463,5 +547,52 @@ func TestNoPINIsTheCloudOwners(t *testing.T) {
 	}
 	if _, err := w.auth.SignInCloud(ctx, 1, w.vouched(testNonce)); err != nil {
 		t.Errorf("the cloud's sign-in after the guesses: %v", err)
+	}
+}
+
+// TestPairingAgainEndsWhatTheLastPairingOpened: a venue paired again may
+// be another account's, with another key. Whoever the last one let in is
+// out, though the person and the device are the same rows.
+func TestPairingAgainEndsWhatTheLastPairingOpened(t *testing.T) {
+	w, _ := cloudWorld(t)
+	ctx := context.Background()
+	in, err := w.auth.SignInCloud(ctx, 1, w.vouched(testNonce))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.auth.CloudDevice(ctx, in.Token); err != nil {
+		t.Fatalf("before pairing again: %v", err)
+	}
+	if _, err := w.auth.PairCloudOwner(ctx, 1, "Somebody Else"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.auth.CloudDevice(ctx, in.Token); !errors.Is(err, ErrUnauthenticated) {
+		t.Errorf("the last account's session after pairing again: %v, want ErrUnauthenticated", err)
+	}
+	// A start that finds the person there ends nothing.
+	again, err := w.auth.SignInCloud(ctx, 1, w.vouched("nonce-after-pairing-again"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.auth.EnsureCloudOwner(ctx, 1, "Somebody Else"); err != nil {
+		t.Fatal(err)
+	}
+	if dev, err := w.auth.CloudDevice(ctx, again.Token); err != nil || !dev.Cloud {
+		t.Errorf("after a start: %+v, %v; want the session still good", dev, err)
+	}
+
+	// A venue that stops using its pairing ends them all, and nobody else's.
+	pin, err := w.auth.SignInRemote(ctx, w.till, w.ravi.PublicID, "1357")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.auth.EndCloudSessions(ctx); err != nil {
+		t.Fatalf("EndCloudSessions: %v", err)
+	}
+	if _, err := w.auth.CloudDevice(ctx, again.Token); !errors.Is(err, ErrUnauthenticated) {
+		t.Errorf("the cloud's session after the pairing was dropped: %v, want ErrUnauthenticated", err)
+	}
+	if _, err := w.auth.Session(ctx, w.till, pin.Token); err != nil {
+		t.Errorf("a PIN's session after the pairing was dropped: %v", err)
 	}
 }

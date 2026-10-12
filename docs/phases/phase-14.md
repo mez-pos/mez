@@ -265,32 +265,38 @@ and its first commit copies this phase's cloud tasks there.
     People service and `mez reset-pin` refuse to give one, and they are
     off the sign-in tiles and out of the count of who can manage staff.
     **Nothing calls `SignInCloud` yet.**
-  - [ ] **Task 5b - The route, and being the cloud's device after it.**
-    `POST /api/v1/sessions/cloud`, through the relay only, carrying
-    `Authorization: Mez-Cloud <assertion>`: the key from the pairing in
-    use (`venueLink.inUse().Key()`, asked for each time, so a venue paired
-    again verifies with the new one), the audience the venue's
-    `public_id`, `cloud.VerifyAssertion`, then `auth.SignInCloud` with
-    `Vouched{Nonce, KeepUntil()}`. Refusals: a venue that is not paired
-    and one with nobody for the cloud to be answer alike; a spent or
-    unsigned assertion is 401; `cloud.ErrAssertionTime` is its own code,
-    saying to check the venue computer's clock. Rate limited before
-    anything is verified. **Decide first, in an ADR, how the requests
-    after it are known as the cloud's device**: it has no token, and
-    `requireDevice` wants `Authorization: Bearer <device token>`. The
-    choice weighed in 5a and not made: the session's own token presented
-    as the bearer, accepted only for a session whose `Session.Cloud` is
-    true and only on a relayed request. Add the route to `remoteRoutes`.
-    `by=cloud` beside `via=relay` in the access log, from `Session.Cloud`.
-    `cloud` on a person in `GET /api/v1/people` (the query has the
-    column) and the People screen saying "Signs in from mez Cloud" where
-    it offers a PIN; read `docs/design/tokens.md` and the People screen's
-    file first. `build/dev/pairstub` gains a route that signs an
-    assertion for a walk. `deploy.md`. Tests over HTTP: a valid assertion
-    signs in and the session it opens reads `GET /api/v1/sessions/current`
-    through the relay gate; expired, replayed, wrong-audience and
-    wrong-key ones do not; the same request not relayed is refused; a
-    venue not paired refuses the header.
+  - [ ] **Task 5b - The route, and what the screens say.** Split on
+    2026-10-12 while building it (ADR-324): the server is one session and
+    the two screens another.
+    - [x] **5b1 - The route, and being the cloud's device after it.** As
+      built (ADR-324): `POST /api/v1/sessions/cloud`, relayed only, with
+      `Authorization: Mez-Cloud <assertion>`, thirty a minute, answering
+      the session and its device. After it the session's token is
+      presented as both `Authorization: Bearer` and `X-Staff-Token`:
+      `requireDevice` asks `auth.StaffAuth.CloudDevice` first, for a
+      relayed request only. `internal/service/cloudsignin` holds the
+      order: the key of the pairing in use (`venueLink.cloudKey`), each
+      venue's `public_id` tried as the audience, then `SignInCloud`.
+      Refusals read alike (401 `cloud_sign_in_refused`) but the clock's
+      (401 `cloud_clock`); not relayed is 403. `by=cloud` in the access
+      log. `cloud` on a person in `GET /api/v1/people` and on a device in
+      `GET /api/v1/devices`. `build/dev/pairstub` answers `GET
+      /dev/assertion?venue=<public id>`. `deploy.md`, under "The back
+      office from anywhere". **Walked with curl** against a real relay,
+      the stand-in and `bin/mez`: paired by code, signed in through the
+      relay, a replay and another venue's assertion refused, the token
+      refused on the LAN, an order refused, and the session dead the
+      moment "mez Cloud" was revoked on Devices.
+    - [ ] **5b2 - The People and Devices screens say what these are.**
+      Read `docs/design/tokens.md` and the two screens' files first. On
+      People, for a person with `cloud: true`: a line under the name such
+      as "Signs in from mez Cloud", no **Reset PIN** (the server refuses
+      it with a sentence today), and what deactivating them does, said
+      before it is done. On Devices, for a device with `cloud: true`: what
+      it is in place of "Back office", no **Rename**, and **Revoke**
+      saying it shuts mez Cloud's sign-in and that pairing again brings
+      it back. Logic in the screens' `-logic.ts` files with tests. Walk
+      both in a browser on a venue paired against the stand-in.
 
   The task as it was set: At pairing the venue creates one staff member, kind
   `owner`, named from the account, with no PIN and the owner's permissions,

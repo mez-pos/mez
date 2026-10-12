@@ -60,7 +60,7 @@ ORDER BY id;
 -- Every paired device, revoked ones last: the screen lists who is in service
 -- and who was. A guest session is not a device, and a row with no pairing is
 -- not one either.
-SELECT id, public_id, name, kind, paired_at, last_seen_at, revoked_at
+SELECT id, public_id, name, kind, paired_at, last_seen_at, revoked_at, cloud
 FROM devices
 WHERE venue_id = ? AND kind != 'guest' AND paired_at IS NOT NULL
 ORDER BY (revoked_at IS NOT NULL), id;

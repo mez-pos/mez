@@ -726,6 +726,34 @@ paired once, with a code of its own.
 away as well as at the venue. To stop all of it, set `remote_backoffice =
 false` and restart, or have the relay's operator revoke the key.
 
+**A venue paired to mez Cloud** (**Devices**, **Connect to mez Cloud**)
+needs none of the four steps, and its owner types no PIN from away: they
+sign in to their mez Cloud account, and mez Cloud vouches for them to the
+venue. Pairing adds two things you will see, and neither is a mistake:
+
+- **A person named for the account, under People.** They are who the
+  account's owner is at the venue when they come in from mez Cloud. They
+  have the owner's role and no PIN, and cannot be given one, here or with
+  `mez reset-pin`: at a till the owner signs in as themselves, with their
+  own PIN. They are not on the sign-in tiles.
+- **A device called "mez Cloud", under Devices.** It is what those
+  sign-ins are counted as coming from. Nobody holds it.
+
+What can be done from away is the same list as above, and so is everything
+under "What to know" below. A sign-in lasts twelve hours.
+
+**To shut mez Cloud's sign-in and stay paired**, so guests still order and
+the backup still goes: **Devices**, the "mez Cloud" row, **Revoke**. Anyone
+signed in that way is out at once. Deactivating the person under People
+does the same. Pairing again, at the venue, puts both back.
+
+**If mez Cloud says the venue's clock is wrong**, it is: what mez Cloud
+signs is good for five minutes, and a venue computer more than a few
+minutes fast or slow refuses it. Set the computer to take its time from
+the internet.
+
+The log marks these requests `via=relay by=cloud`.
+
 What to know before relying on it:
 
 - **The relay must give the venue a hostname of its own**

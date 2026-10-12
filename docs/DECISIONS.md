@@ -11996,3 +11996,88 @@ Pairing again puts back a cloud owner a manager had deactivated. A venue with no
 role that grants everything gets no cloud owner, and is told in its log. A venue's
 clock more than six minutes wrong refuses every assertion. Until 5b there is no
 route: nothing can present an assertion, and a paired venue only gains two rows.
+
+## ADR-324 - The cloud's device is known by its session: one token, presented as both
+2026-10 · Status: accepted. Phase 14, Task 5b (5b1 built here; 5b2 follows). Builds on ADR-323.
+Context: 5a made the assertion, the person and the sign-in, and no way to present
+one. Two things were left open. Every route sits behind `requireDevice`, which wants
+a device's token, and the cloud's device was given none on purpose (ADR-323). And the
+work is the server's and two screens', which is two sessions.
+Decision:
+  - **Split.** 5b1, built with this: the route, how the requests after it are known,
+    the access log, `cloud` on a person and on a device in the API, the stand-in
+    that signs an assertion, `deploy.md`. 5b2: the People and Devices screens saying
+    what the person and the device are, and a walk in a browser.
+  - **`POST /api/v1/sessions/cloud`**, with `Authorization: Mez-Cloud <assertion>`
+    and no body, through the relay only. It answers what a sign-in answers (who,
+    what they may do, until when, the token) and the device the session is on.
+  - **After it, the session's token is presented twice**: as `Authorization: Bearer`
+    where a device's token goes, and as `X-Staff-Token` where a session's goes. A
+    bearer token that is a session's and not a device's is looked up as the
+    cloud's: it must open a live session of the cloud's owner on the cloud's
+    device, neither revoked nor deactivated, and the request must have come
+    through the relay. Everything after that is the ordinary path: the same
+    `requireStaff`, the same allow list.
+  - **Not a token for the device.** One was weighed: mint a device token at each
+    sign-in. A device has one token, so a second browser would unpair the first,
+    and a device token does not expire, so twelve hours of access would have left
+    behind a credential good until someone revoked it. The session's token dies
+    with the session, many can be open at once, and nothing durable ever leaves
+    the venue.
+  - **Why this is not a second way to be a device.** It opens one device, the one
+    with no token; only for the one person with no PIN; only on a session an
+    assertion opened. A PIN's session token presented as a bearer opens nothing.
+    At the venue it opens nothing either: the cloud has no place on the LAN.
+    Nobody signs in with a PIN on that device, and a request on it is served
+    only on the cloud's own session.
+  - **Only the tunnel says a request was relayed.** Until now the mark
+    (`X-Mez-Via`, ADR-307) could only narrow what a request might do, so a client
+    on the venue's network that set it harmed nobody but itself, and nothing took
+    it off. Here it widens: it is what lets a session's token stand for a device.
+    So the server's own socket now removes it from whatever arrives
+    (`fromTheNetwork` in `cmd/mez`); the tunnel calls the handler directly and
+    its mark stands.
+  - **A pairing made again ends what the last one opened.** It may be to another
+    account, with another key, and a session does not say whose it was. A start
+    that finds the venue on no pairing ends them too.
+  - **`internal/service/cloudsignin` holds the order of things**: the key of the
+    pairing in use, asked for each time, so a venue paired again checks with its
+    new key at once; the assertion checked against each venue's `public_id` on
+    this machine, which is nearly always one, since nothing unsigned is read to
+    find out which; then `auth.SignInCloud`.
+  - **Every refusal reads alike but one.** Not paired, nobody for the cloud to be,
+    a signature that is not the cloud's, an assertion for another venue, one spent
+    already: 401 `cloud_sign_in_refused`, and the log says which. Outside its
+    time is 401 `cloud_clock`, reached only by an assertion rightly signed for
+    this venue, because the remedy is the venue computer's clock and someone has
+    to be told. Not through the relay is 403.
+  - **Thirty a minute from one address, counted before anything is verified.** A
+    signature cannot be guessed, so this is not against guessing: it bounds what
+    an outsider can make the venue's computer spend on checking them.
+  - **`by=cloud` in the access log**, beside `via=relay`, on the sign-in and on
+    every request served on such a session.
+  - **`cloud: true`** on the person in `GET /api/v1/people` and on the device in
+    `GET /api/v1/devices`, for 5b2's screens.
+  - **`build/dev/pairstub` signs.** It keeps the key pair it hands the public half
+    of, and `GET /dev/assertion?venue=<public id>` answers an assertion for it.
+  - **What a review found before the commit.** Three of the claims above were
+    not true as first built, and each is now held by a test. The mark could be set
+    from the venue's network, so "at the venue it opens nothing" was false for
+    anyone holding a token. A right PIN sent with the cloud's token as the bearer
+    opened a session of the venue's own owner on the cloud's device, which then
+    outlived the cloud's. And a session survived the venue being paired again to
+    another account, under the new account's name. A fourth: a device revoked in
+    the instant after a sign-in left a session open whose token was never sent;
+    it is closed.
+Because: the owner's browser was never going to hold something of the venue's for
+longer than the owner is signed in to the cloud, and the session is exactly that
+long-lived thing already.
+Cost: the cloud's side must send one token under two names, which is `mez-cloud`'s
+to do once (8e). A cloud session's token is now enough alone to act as the owner
+through the relay for twelve hours, where a PIN's session needs the device's token
+too; it is 256 bits, never stored but as a hash, and ends with sign-out, with the
+device's revoking, the person's deactivating, or the venue's pairing again. A venue
+behind a reverse proxy of its own that set the mark itself would now have it
+removed; none is known to, and the tunnel is the only thing documented to set it. The stream is not carried by the
+relay, so nothing here opens it. Until 5b2 the People screen still offers the
+cloud's owner a PIN, which the server refuses with a sentence.

@@ -105,9 +105,11 @@ func (s *Server) requireDevice(next http.Handler) http.Handler {
 			s.unauthenticated(w, CodeUnauthenticated, "a device token is needed")
 			return
 		}
-		dev, ok := s.authenticateDevice(w, r, token)
+		dev, ok := s.cloudDevice(r, token)
 		if !ok {
-			return
+			if dev, ok = s.authenticateDevice(w, r, token); !ok {
+				return
+			}
 		}
 		if !s.remoteDevice(w, r, dev) {
 			return

@@ -10,41 +10,39 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c and 5a are done (ADR-313,
-ADR-315 to ADR-323); 4d is `mez-cloud`'s. Phase 13's five tasks
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5a and 5b1 are done
+(ADR-313, ADR-315 to ADR-324); 4d is `mez-cloud`'s. Phase 13's five tasks
 are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 5a - The assertion, the person and the sign-in**
-(ADR-323). Task 5 was split in two. `internal/cloud/assertion.go` signs
-and checks what mez Cloud vouches with. Migration 00055 marks one staff
-row and one device row as the cloud's and keeps spent nonces. Pairing
-makes both rows (`auth.PairCloudOwner`), a start makes them for a venue
-paired by an older build, and `auth.SignInCloud` spends an assertion
-once and opens ADR-314's twelve-hour session. The person has no PIN and
-cannot be given one. **Nothing calls `SignInCloud` yet: there is no
-route, so nothing can present an assertion.** A paired venue now shows a
-person named for the account on People and a device "mez Cloud" on
-Devices, and neither screen says what they are.
+**Phase 14, Task 5b1 - The route, and being the cloud's device after
+it** (ADR-324). 5b was split in two. `POST /api/v1/sessions/cloud`,
+through the relay only, takes `Authorization: Mez-Cloud <assertion>` and
+answers a session and its device. The session's token is then presented
+as both the device's and the session's, since the cloud's device has no
+token. `internal/service/cloudsignin` holds the order of things; the key
+is the pairing's as it stands when asked. `by=cloud` in the access log,
+`cloud` on a person and on a device in the API, and `build/dev/pairstub`
+signs an assertion at `GET /dev/assertion?venue=<public id>`. **Walked
+with curl** against a real relay, the stand-in and `bin/mez`, from a
+typed pairing code to a revoked device.
 
 ## Next task
 
-**Phase 14, Task 5b - The route, and being the cloud's device after
-it**: `POST /api/v1/sessions/cloud`, relayed only, carrying
-`Authorization: Mez-Cloud <assertion>`. The phase file has it whole.
-**ADR first**: the cloud's device has no token and `requireDevice` wants
-one, so how the requests after the sign-in are known as that device is
-undecided. Then `by=cloud` in the access log, `cloud` on a person in
-the People API and what the screen says of them, a stand-in that signs
-an assertion (`build/dev/pairstub`), and `deploy.md`.
+**Phase 14, Task 5b2 - The People and Devices screens say what these
+are**: a person and a device with `cloud: true` are shown as any other
+today, and People offers the cloud's owner a PIN the server refuses. The
+phase file has what each screen should say. Then **Task 6, `mez
+mirror`**.
 
 **Task 4d is `mez-cloud`'s**: that repository does not exist yet, and
 its first commit copies this phase's cloud tasks there. ADR-318 has the
 request and the answer `POST /v1/pair` must give, and ADR-323 the
-assertion it signs (`cloud.NewAssertion`, `cloud.SignAssertion`). To
+assertion it signs (`cloud.NewAssertion`, `cloud.SignAssertion`) and
+ADR-324 how it is presented and what is sent after. To
 walk pairing: `RELAY_SECRET=... bin/relay`, `go run
 ./build/dev/pairstub`, and `bin/mez -cloud-url http://127.0.0.1:7802`.
 
@@ -149,4 +147,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c and 5a of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5a and 5b1 of 9)

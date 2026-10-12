@@ -398,6 +398,21 @@ func TestAPairedVenueIsGivenItsCloudOwnerAtStart(t *testing.T) {
 	if n, _, _ := owners(); n != 0 {
 		t.Fatalf("a venue that is not paired has %d cloud owners", n)
 	}
+	defer func() {
+		// And a venue that was paired and is no longer: a start on no
+		// pairing ends what mez Cloud had opened.
+		if _, err := d.Writer().ExecContext(ctx, `UPDATE staff SET active = 1 WHERE cloud = 1`); err != nil {
+			t.Fatal(err)
+		}
+		in, err := staff.SignInCloud(ctx, 1, auth.Vouched{Nonce: "nonce-0123456789abcdef", KeepUntil: time.Now().Add(time.Minute)})
+		if err != nil {
+			t.Fatalf("SignInCloud: %v", err)
+		}
+		ensureCloudOwner(ctx, d, staff, nil, quiet)
+		if _, err := staff.CloudDevice(ctx, in.Token); err == nil {
+			t.Error("a session mez Cloud opened outlived the pairing at a start")
+		}
+	}()
 
 	p := pairingTo(t, "https://relay.mezpos.com", "mzr_corner-cafe.0123456789ab.remote.c2lnbmF0dXJl")
 	ensureCloudOwner(ctx, d, staff, &p, quiet)
@@ -437,5 +452,37 @@ func TestNoVenueNoCloudOwner(t *testing.T) {
 	var n int
 	if err := d.Reader().QueryRowContext(ctx, `SELECT COUNT(*) FROM staff`).Scan(&n); err != nil || n != 0 {
 		t.Errorf("%d staff (err %v), want none", n, err)
+	}
+}
+
+// TestOnlyTheTunnelSaysARequestWasRelayed: the mark is taken off whatever
+// arrives on the server's own socket, however it is spelled, so that a
+// client on the venue's network cannot say it came through the relay.
+func TestOnlyTheTunnelSaysARequestWasRelayed(t *testing.T) {
+	var saw []string
+	inner := http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) { saw = r.Header.Values(api.HeaderVia) })
+	ts := httptest.NewServer(fromTheNetwork(inner))
+	defer ts.Close()
+	for _, name := range []string{"X-Mez-Via", "x-mez-via", "X-MEZ-VIA"} {
+		req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header[name] = []string{"relay", "anything"}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
+		if len(saw) != 0 {
+			t.Errorf("sent as %s, the handler saw %v", name, saw)
+		}
+	}
+	// The tunnel calls the handler itself, and its mark stands.
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set(tunnel.HeaderVia, tunnel.ViaRelay)
+	inner.ServeHTTP(httptest.NewRecorder(), req)
+	if len(saw) != 1 {
+		t.Errorf("through the tunnel the handler saw %v", saw)
 	}
 }

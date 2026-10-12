@@ -30,6 +30,7 @@ type Server struct {
 	pairing       func() (TunnelPairing, bool)
 	publicURLNow  func() string
 	cloudPairing  CloudPairing
+	cloudSignIn   CloudSignIn
 	devices       Devices
 	staff         Staff
 	orders        Orders
@@ -131,6 +132,7 @@ func (s *Server) routes() http.Handler {
 	s.mountCloudPairing(mux)
 	s.mountGuests(mux)
 	s.mountStaff(mux)
+	s.mountCloudSignIn(mux)
 	s.mountOrders(mux)
 	s.mountGuestRequests(mux)
 	s.mountPaidNotices(mux)

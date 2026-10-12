@@ -65,7 +65,8 @@ type Vouched struct {
 // PairCloudOwner makes the cloud's owner and the cloud's device for a venue
 // that has just been paired, or brings them back as pairing makes them:
 // active, named for the account, in the role that grants everything, with a
-// new device if the last was revoked. Pairing again is how a venue undoes
+// new device if the last was revoked, and with every session the pairing
+// before this one opened ended. Pairing again is how a venue undoes
 // having turned the cloud's sign-in off.
 func (a *StaffAuth) PairCloudOwner(ctx context.Context, venueID int64, name string) (Staff, error) {
 	return a.cloudOwner(ctx, venueID, name, true)
@@ -111,6 +112,12 @@ func (a *StaffAuth) cloudOwner(ctx context.Context, venueID int64, name string, 
 		default:
 			if err := q.RestoreCloudStaff(ctx, gen.RestoreCloudStaffParams{Name: name, RoleID: role.ID, Now: now, ID: row.ID}); err != nil {
 				return fmt.Errorf("auth: restoring the cloud's owner: %w", err)
+			}
+			// A pairing made again may be to another account, with another
+			// key. Whoever the last one let in is let out: a session is the
+			// account's that opened it, and that is not written on it.
+			if err := q.EndSessionsOfStaff(ctx, gen.EndSessionsOfStaffParams{Now: sql.NullTime{Time: now, Valid: true}, StaffID: row.ID}); err != nil {
+				return fmt.Errorf("auth: ending the cloud owner's sessions: %w", err)
 			}
 			row.Name, row.RoleID = name, role.ID
 		}
@@ -279,4 +286,55 @@ func (a *StaffAuth) SignInCloud(ctx context.Context, venueID int64, v Vouched) (
 	a.log.Info("the owner signed in from mez Cloud", "venue_id", venueID, "device_id", session.DeviceID,
 		"actor_id", session.Staff.ID, "via", viaRelay, "by", "cloud")
 	return SignedIn{Session: session, Token: token}, nil
+}
+
+// CloudDevice is the cloud's device, found by the token of a session open on
+// it (ADR-324). The device has no token of its own, so this is the one way a
+// request is known to come from it. A token that is not a session's, or
+// whose session is a PIN's, has ended or expired, or belongs to a device
+// since revoked or a person since deactivated, is ErrUnauthenticated.
+//
+// It says which device, not who: the session is still checked, by Session,
+// as any other is.
+func (a *StaffAuth) CloudDevice(ctx context.Context, token string) (Device, error) {
+	hash, ok := tokenHash(token, sessionTokenPrefix)
+	if !ok {
+		return Device{}, ErrUnauthenticated
+	}
+	row, err := a.db.Queries().CloudSessionDevice(ctx, hash)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Device{}, ErrUnauthenticated
+	}
+	if err != nil {
+		return Device{}, fmt.Errorf("auth: finding the cloud's device: %w", err)
+	}
+	now := a.now().UTC()
+	if !now.Before(row.ExpiresAt) {
+		return Device{}, ErrUnauthenticated
+	}
+	dev := Device{ID: row.ID, PublicID: row.PublicID, VenueID: row.VenueID, Name: row.Name, Kind: DeviceKind(row.Kind), Cloud: true}
+	// When it was last heard from, to the minute, as a device with a token
+	// has it. A failure is logged and no more: the request is known either way.
+	if !row.LastSeenAt.Valid || now.Sub(row.LastSeenAt.Time) >= lastSeenEvery {
+		err := a.db.WriteTx(ctx, func(q *gen.Queries) error {
+			return q.TouchDevice(ctx, gen.TouchDeviceParams{LastSeenAt: sql.NullTime{Time: now, Valid: true}, ID: dev.ID})
+		})
+		if err != nil {
+			a.log.Warn("could not record when the cloud's device was last seen", "venue_id", dev.VenueID, "device_id", dev.ID, "error", err)
+		}
+	}
+	return dev, nil
+}
+
+// EndCloudSessions ends every session mez Cloud opened on this machine. It
+// is for a start that finds the venue on no pairing: unpaired by hand, or
+// set aside for a relay of its own (ADR-319). The key those sessions were
+// vouched with is no longer one this venue answers to.
+func (a *StaffAuth) EndCloudSessions(ctx context.Context) error {
+	now := sql.NullTime{Time: a.now().UTC(), Valid: true}
+	err := a.db.WriteTx(ctx, func(q *gen.Queries) error { return q.EndCloudSessions(ctx, now) })
+	if err != nil {
+		return fmt.Errorf("auth: ending the cloud's sessions: %w", err)
+	}
+	return nil
 }

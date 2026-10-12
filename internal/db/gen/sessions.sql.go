@@ -11,6 +11,46 @@ import (
 	"time"
 )
 
+const cloudSessionDevice = `-- name: CloudSessionDevice :one
+SELECT d.id, d.public_id, d.venue_id, d.name, d.kind, d.last_seen_at, s.expires_at
+FROM staff_sessions s
+JOIN staff st ON st.id = s.staff_id
+JOIN devices d ON d.id = s.device_id
+WHERE s.token_hash = ?
+  AND s.ended_at IS NULL AND s.via = 'relay'
+  AND st.cloud = 1 AND st.active = 1
+  AND d.cloud = 1 AND d.revoked_at IS NULL
+`
+
+type CloudSessionDeviceRow struct {
+	ID         int64
+	PublicID   string
+	VenueID    int64
+	Name       string
+	Kind       string
+	LastSeenAt sql.NullTime
+	ExpiresAt  time.Time
+}
+
+// The cloud's device, found by a session opened on it (ADR-324): it has no
+// token of its own. Only a session of the cloud's owner on the cloud's
+// device that has not ended, with neither revoked nor deactivated. Whether
+// it has expired is the caller's to judge, by its own clock.
+func (q *Queries) CloudSessionDevice(ctx context.Context, tokenHash string) (CloudSessionDeviceRow, error) {
+	row := q.db.QueryRowContext(ctx, cloudSessionDevice, tokenHash)
+	var i CloudSessionDeviceRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.VenueID,
+		&i.Name,
+		&i.Kind,
+		&i.LastSeenAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
 const createStaffSession = `-- name: CreateStaffSession :one
 INSERT INTO staff_sessions (token_hash, venue_id, staff_id, device_id, created_at, expires_at, via)
 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -40,6 +80,20 @@ func (q *Queries) CreateStaffSession(ctx context.Context, arg CreateStaffSession
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const endCloudSessions = `-- name: EndCloudSessions :exec
+UPDATE staff_sessions
+SET ended_at = ?1
+WHERE ended_at IS NULL
+  AND staff_id IN (SELECT id FROM staff WHERE cloud = 1)
+`
+
+// Every session mez Cloud opened, on any venue here: for a machine that no
+// longer runs on a pairing (ADR-324).
+func (q *Queries) EndCloudSessions(ctx context.Context, now sql.NullTime) error {
+	_, err := q.db.ExecContext(ctx, endCloudSessions, now)
+	return err
 }
 
 const endStaffSession = `-- name: EndStaffSession :execrows

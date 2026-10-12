@@ -457,6 +457,9 @@ func (brokenStaff) SignOut(context.Context, auth.Session) error { return errDisk
 func (brokenStaff) Permissions(context.Context, int64) (auth.PermissionSet, error) {
 	return nil, errDiskGone
 }
+func (brokenStaff) CloudDevice(context.Context, string) (auth.Device, error) {
+	return auth.Device{}, errDiskGone
+}
 func (brokenStaff) Authorise(context.Context, auth.Device, string, string, auth.Permission) (auth.Staff, error) {
 	return auth.Staff{}, errDiskGone
 }

@@ -99,6 +99,11 @@ type Querier interface {
 	// The cloud's device (ADR-323): what the sessions of the cloud's owner
 	// belong to. It has no token, so DeviceByTokenHash never finds it.
 	CloudDeviceForVenue(ctx context.Context, venueID int64) (Device, error)
+	// The cloud's device, found by a session opened on it (ADR-324): it has no
+	// token of its own. Only a session of the cloud's owner on the cloud's
+	// device that has not ended, with neither revoked nor deactivated. Whether
+	// it has expired is the caller's to judge, by its own clock.
+	CloudSessionDevice(ctx context.Context, tokenHash string) (CloudSessionDeviceRow, error)
 	// The cloud's owner (ADR-323): the one person a pairing makes, who has no
 	// PIN and is signed in by an assertion mez Cloud signs.
 	CloudStaffForVenue(ctx context.Context, venueID int64) (Staff, error)
@@ -242,6 +247,9 @@ type Querier interface {
 	// retired item can be brought back. db.DB.MenuEditor runs these in one read
 	// transaction with MenuVersion.
 	EditorStations(ctx context.Context, venueID int64) ([]EditorStationsRow, error)
+	// Every session mez Cloud opened, on any venue here: for a machine that no
+	// longer runs on a pairing (ADR-324).
+	EndCloudSessions(ctx context.Context, now sql.NullTime) error
 	// The table's code has been renewed or turned off: whoever held it, every
 	// session it gave is over.
 	EndGuestSessionsAtTable(ctx context.Context, arg EndGuestSessionsAtTableParams) error

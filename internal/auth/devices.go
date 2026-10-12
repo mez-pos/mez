@@ -73,6 +73,9 @@ type Device struct {
 	VenueID  int64
 	Name     string
 	Kind     DeviceKind
+	// Cloud is the device mez Cloud signs the owner in on, known by a
+	// session and not by a token (ADR-324). Nobody else signs in on it.
+	Cloud bool
 }
 
 // NewCode is a request for a pairing code: the venue, who is asking (0 when

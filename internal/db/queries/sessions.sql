@@ -67,3 +67,25 @@ ON CONFLICT (nonce) DO NOTHING;
 -- longer needs remembering.
 DELETE FROM cloud_assertions
 WHERE expires_at <= ?;
+
+-- name: CloudSessionDevice :one
+-- The cloud's device, found by a session opened on it (ADR-324): it has no
+-- token of its own. Only a session of the cloud's owner on the cloud's
+-- device that has not ended, with neither revoked nor deactivated. Whether
+-- it has expired is the caller's to judge, by its own clock.
+SELECT d.id, d.public_id, d.venue_id, d.name, d.kind, d.last_seen_at, s.expires_at
+FROM staff_sessions s
+JOIN staff st ON st.id = s.staff_id
+JOIN devices d ON d.id = s.device_id
+WHERE s.token_hash = ?
+  AND s.ended_at IS NULL AND s.via = 'relay'
+  AND st.cloud = 1 AND st.active = 1
+  AND d.cloud = 1 AND d.revoked_at IS NULL;
+
+-- name: EndCloudSessions :exec
+-- Every session mez Cloud opened, on any venue here: for a machine that no
+-- longer runs on a pairing (ADR-324).
+UPDATE staff_sessions
+SET ended_at = sqlc.arg(now)
+WHERE ended_at IS NULL
+  AND staff_id IN (SELECT id FROM staff WHERE cloud = 1);

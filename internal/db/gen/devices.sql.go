@@ -255,7 +255,7 @@ func (q *Queries) DeviceNamesForVenue(ctx context.Context, venueID int64) ([]Dev
 
 const devicesForVenue = `-- name: DevicesForVenue :many
 
-SELECT id, public_id, name, kind, paired_at, last_seen_at, revoked_at
+SELECT id, public_id, name, kind, paired_at, last_seen_at, revoked_at, cloud
 FROM devices
 WHERE venue_id = ? AND kind != 'guest' AND paired_at IS NOT NULL
 ORDER BY (revoked_at IS NOT NULL), id
@@ -269,6 +269,7 @@ type DevicesForVenueRow struct {
 	PairedAt   sql.NullTime
 	LastSeenAt sql.NullTime
 	RevokedAt  sql.NullTime
+	Cloud      bool
 }
 
 // The back office's devices screen (phase 10, Task 6k). Every one is scoped by
@@ -293,6 +294,7 @@ func (q *Queries) DevicesForVenue(ctx context.Context, venueID int64) ([]Devices
 			&i.PairedAt,
 			&i.LastSeenAt,
 			&i.RevokedAt,
+			&i.Cloud,
 		); err != nil {
 			return nil, err
 		}

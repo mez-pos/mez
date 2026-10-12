@@ -74,7 +74,7 @@ describe("the staff form", () => {
     expect(toPersonInput({ ...form, again: "" }, true)).toMatchObject({ problem: { field: "again" } });
   });
   it("reads a person in", () => {
-    expect(staffFormFrom({ id: "stf_1", name: "Asha", role_id: 3, role_name: "cashier", active: true, since: "x", locked_at: null })).toEqual({
+    expect(staffFormFrom({ id: "stf_1", name: "Asha", role_id: 3, role_name: "cashier", active: true, since: "x", locked_at: null, cloud: false })).toEqual({
       name: "Asha",
       roleId: 3,
       pin: "",
@@ -118,6 +118,7 @@ describe("the staff and roles screen", () => {
     active,
     since: "2026-09-01T00:00:00Z",
     locked_at: null,
+    cloud: false,
   });
   const staff = [person("a", "Priya", 1), person("b", "Kabir", 2), person("c", "Rohan", 2), person("d", "Old Sam", 2, false)];
 
@@ -192,7 +193,7 @@ describe("a PIN long enough for the role (ADR-260)", () => {
 
 describe("a hard lock (ADR-260)", () => {
   const now = new Date("2026-10-03T10:00:00Z");
-  const base: Person = { id: "a", name: "Asha", role_id: 3, role_name: "cashier", active: true, since: "2026-09-01T00:00:00Z", locked_at: null };
+  const base: Person = { id: "a", name: "Asha", role_id: 3, role_name: "cashier", active: true, since: "2026-09-01T00:00:00Z", locked_at: null, cloud: false };
   const locked = (at: string, extra: Partial<Person> = {}): Person => ({ ...base, locked_at: at, ...extra });
 
   it("puts the lock in the state chip, after a deactivation", () => {

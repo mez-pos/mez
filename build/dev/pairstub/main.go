@@ -6,6 +6,15 @@
 // relay whose secret it is given. It is a developer's tool: it keeps
 // nothing, checks nothing else, and is not built into any release.
 //
+// It also signs what mez Cloud signs to let the owner in (ADR-323, ADR-324),
+// with the key whose public half it hands out at pairing:
+//
+//	curl 'http://127.0.0.1:7802/dev/assertion?venue=ven_...'
+//
+// answers an assertion good for five minutes and once, for the venue with
+// that public id (`GET /api/v1/venue` says it). Whoever can reach this
+// address is that venue's owner, so it listens on this machine only.
+//
 //	RELAY_SECRET=... go run ./build/dev/pairstub \
 //	    -listen 127.0.0.1:7802 -relay http://127.0.0.1:7801 -venue dev-cafe -code WXYZ2345
 package main
@@ -21,7 +30,9 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
+	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/relay"
 )
 
@@ -38,10 +49,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("RELAY_SECRET: %v", err)
 	}
-	pub, _, err := ed25519.GenerateKey(rand.Reader)
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		log.Fatal(err)
 	}
+	http.HandleFunc("GET /dev/assertion", func(w http.ResponseWriter, r *http.Request) {
+		a, err := cloud.NewAssertion(r.URL.Query().Get("venue"), time.Now(), rand.Reader)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		signed, err := cloud.SignAssertion(priv, a)
+		if err != nil {
+			http.Error(w, err.Error()+"; pass ?venue=<the venue's public id>", http.StatusBadRequest)
+			return
+		}
+		log.Printf("signed an assertion for venue %s, good until %s", a.Audience, a.ExpiresAt.Format(time.TimeOnly))
+		fmt.Fprintln(w, signed)
+	})
 
 	var mu sync.Mutex
 	spent := false

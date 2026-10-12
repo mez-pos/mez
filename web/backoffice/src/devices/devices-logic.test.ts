@@ -30,6 +30,7 @@ const device = (patch: Partial<DeviceRecordResponse> = {}): DeviceRecordResponse
   kind: "terminal",
   paired_at: "2026-09-28T09:00:00Z",
   this: false,
+  cloud: false,
   ...patch,
 });
 

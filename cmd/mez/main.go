@@ -40,6 +40,7 @@ import (
 	"github.com/byjoellobo/mez/internal/service/audit"
 	"github.com/byjoellobo/mez/internal/service/charges"
 	"github.com/byjoellobo/mez/internal/service/cloudpair"
+	"github.com/byjoellobo/mez/internal/service/cloudsignin"
 	"github.com/byjoellobo/mez/internal/service/firstrun"
 	"github.com/byjoellobo/mez/internal/service/floor"
 	"github.com/byjoellobo/mez/internal/service/menus"
@@ -449,6 +450,13 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		return err
 	}
 
+	// The owner, signed in on mez Cloud's word (ADR-323, ADR-324). The key
+	// is the pairing's as it stands when it is asked for.
+	cloudIn, err := cloudsignin.New(cloudsignin.Options{DB: database, Staff: staff, Key: link.cloudKey, Log: log})
+	if err != nil {
+		return err
+	}
+
 	guestCodes, err := tablecodes.New(database, nil, nil)
 	if err != nil {
 		return err
@@ -489,6 +497,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		api.WithPairing(link.pairedTo),
 		api.WithPublicURL(link.publicURL),
 		api.WithCloudPairing(pairer),
+		api.WithCloudSignIn(cloudIn),
 		api.WithDevices(devices),
 		api.WithFirstRun(firstRun),
 		api.WithSetupToken(setupToken),
@@ -536,7 +545,9 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// is stopped here all the same.
 	running.push("tunnel", link.Close)
 
-	return serve(ctx, log, listener, srv.Handler(), shutdownTimeout)
+	// The tunnel is handed the handler as it is. What arrives on the socket
+	// is told apart from it here.
+	return serve(ctx, log, listener, fromTheNetwork(srv.Handler()), shutdownTimeout)
 }
 
 // remoteNeedsRelay stops a venue that asked for the back office from
