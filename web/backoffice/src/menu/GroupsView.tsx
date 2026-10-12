@@ -6,6 +6,7 @@ import type { EditorGroup, MenuEditor } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { groupProblemOf, ruleText, usedBy } from "./group-logic";
 import type { MenuEditorApi } from "./use-menu-editor";
 
@@ -18,6 +19,8 @@ interface GroupsViewProps {
 
 export function GroupsView({ menu, api, onEdit, onProblem }: GroupsViewProps) {
   const [busy, setBusy] = useState(false);
+  // A mirror lists the groups, which says all there is of each, and changes none (ADR-330).
+  const mirror = useOnMirror();
   const activate = (g: EditorGroup) => {
     setBusy(true);
     api
@@ -26,7 +29,7 @@ export function GroupsView({ menu, api, onEdit, onProblem }: GroupsViewProps) {
       .finally(() => setBusy(false));
   };
 
-  const columns: Column<EditorGroup>[] = [
+  const every: Column<EditorGroup>[] = [
     {
       id: "name",
       header: "Group",
@@ -75,6 +78,7 @@ export function GroupsView({ menu, api, onEdit, onProblem }: GroupsViewProps) {
       ),
     },
   ];
+  const columns = mirror ? every.filter((c) => c.id !== "actions") : every;
 
   return (
     <DataTable
@@ -82,7 +86,12 @@ export function GroupsView({ menu, api, onEdit, onProblem }: GroupsViewProps) {
       columns={columns}
       rows={menu.modifier_groups}
       rowKey={(g) => String(g.id)}
-      empty={<EmptyState icon={<InboxIcon />} line="No choices yet. Add a group, like Milk with Dairy and Oat, then offer it on items." />}
+      empty={
+        <EmptyState
+          icon={<InboxIcon />}
+          line={mirror ? "No choices yet." : "No choices yet. Add a group, like Milk with Dairy and Oat, then offer it on items."}
+        />
+      }
     />
   );
 }

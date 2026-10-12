@@ -15,6 +15,8 @@ export interface SetupCardProps {
   rows: readonly SetupRow[];
   /** An edit is out: nothing else is started meanwhile. */
   busy: boolean;
+  /** The rows are read and none is changed: a mirror (ADR-330). */
+  readOnly?: boolean;
   onAdd: () => void;
   onRename: (row: SetupRow) => void;
   onMove: (row: SetupRow, delta: -1 | 1) => void;
@@ -22,7 +24,7 @@ export interface SetupCardProps {
   onRestore: (row: SetupRow) => void;
 }
 
-export function SetupCard({ title, description, addLabel, empty, rows, busy, onAdd, onRename, onMove, onRetire, onRestore }: SetupCardProps) {
+export function SetupCard({ title, description, addLabel, empty, rows, busy, readOnly = false, onAdd, onRename, onMove, onRetire, onRestore }: SetupCardProps) {
   return (
     <Card padding="lg" className="min-w-0 md:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -30,9 +32,11 @@ export function SetupCard({ title, description, addLabel, empty, rows, busy, onA
           <h2 className="font-serif text-xl">{title}</h2>
           <p className="mt-1 text-base text-fg-2">{description}</p>
         </div>
-        <Button disabled={busy} onClick={onAdd}>
-          {addLabel}
-        </Button>
+        {!readOnly && (
+          <Button disabled={busy} onClick={onAdd}>
+            {addLabel}
+          </Button>
+        )}
       </div>
 
       {rows.length === 0 ? (
@@ -51,7 +55,7 @@ export function SetupCard({ title, description, addLabel, empty, rows, busy, onA
                   {!r.active && <span>Retired</span>}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div hidden={readOnly} className="flex flex-wrap gap-2">
                 <Button size="md" disabled={busy} onClick={() => onRename(r)}>
                   Rename
                 </Button>

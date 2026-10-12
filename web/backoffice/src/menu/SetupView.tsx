@@ -9,6 +9,7 @@ import { moved } from "./menu-logic";
 import { SetupCard } from "./SetupCard";
 import { NameModal, RetireModal } from "./SetupModals";
 import { courseRetiredText, courseRows, setupProblemOf, stationRetiredText, stationRows, type SetupKind, type SetupRow } from "./setup-logic";
+import { useOnMirror } from "../../../shared/use-mirror";
 import type { MenuEditorApi } from "./use-menu-editor";
 
 type Editing = { what: SetupKind; action: "add" } | { what: SetupKind; action: "rename"; row: SetupRow } | { what: SetupKind; action: "retire"; row: SetupRow };
@@ -23,6 +24,7 @@ export function SetupView({ menu, api, onProblem }: SetupViewProps) {
   const toast = useToast();
   const [editing, setEditing] = useState<Editing | null>(null);
   const [busy, setBusy] = useState(false);
+  const mirror = useOnMirror();
   const stations = stationRows(menu);
   const courses = courseRows(menu);
   const rowsOf = (what: SetupKind) => (what === "station" ? stations : courses);
@@ -56,9 +58,10 @@ export function SetupView({ menu, api, onProblem }: SetupViewProps) {
         title="Stations"
         description={<>Where an item is made: each station has its own kitchen display, and prints on the printer you set for it under Printers.</>}
         addLabel="Add a station"
-        empty="No stations yet. Add the first, then the items made there."
+        empty={mirror ? "No stations yet." : "No stations yet. Add the first, then the items made there."}
         rows={stations}
         busy={busy}
+        readOnly={mirror}
         onAdd={() => setEditing({ what: "station", action: "add" })}
         onRename={(row) => setEditing({ what: "station", action: "rename", row })}
         onMove={(row, delta) => move("station", row, delta)}
@@ -69,9 +72,10 @@ export function SetupView({ menu, api, onProblem }: SetupViewProps) {
         title="Courses"
         description="When an item is fired: course 1 first, then the table asks for the next. Putting courses in a new order is refused while any order is open, since orders keep the number they were rung up at."
         addLabel="Add a course"
-        empty="No courses yet. Add the first: every item sits in one."
+        empty={mirror ? "No courses yet." : "No courses yet. Add the first: every item sits in one."}
         rows={courses}
         busy={busy}
+        readOnly={mirror}
         onAdd={() => setEditing({ what: "course", action: "add" })}
         onRename={(row) => setEditing({ what: "course", action: "rename", row })}
         onMove={(row, delta) => move("course", row, delta)}

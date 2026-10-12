@@ -367,7 +367,7 @@ and its first commit copies this phase's cloud tasks there.
     in-process (8e). The person the cloud signs in as is in the copy; the
     device is too. `mirror.Auth.CloudDevice` answers nobody today, and
     the keeper has no cloud sessions: that is where it goes.
-  - [ ] **Task 6d - What the screens say on a mirror.** Split on
+  - [x] **Task 6d - What the screens say on a mirror.** Split on
     2026-10-12 while building it (ADR-329): the edits are some 75 calls
     in 14 files, a session of their own.
     - [x] **6d1 - The page knows it is on a mirror, and says so.** As
@@ -383,7 +383,7 @@ and its first commit copies this phase's cloud tasks there.
       when the copy is a newer one. **Walked in a browser** on a mirror
       of a running venue: the chip, the pill turning and turning back
       when the venue wrote, and 390px.
-    - [ ] **6d2 - The edits a mirror refuses, taken off the screens.**
+    - [x] **6d2 - The edits a mirror refuses, taken off the screens.**
       Split by screen on 2026-10-12 while building it (ADR-330). In each,
       `useOnMirror()` (`web/shared/use-mirror.tsx`) is read where the
       thing is drawn and `OnAMirror` (`web/shared/shell/`) is the
@@ -414,9 +414,17 @@ and its first commit copies this phase's cloud tasks there.
         Inventory and Printers no longer say to add something.
         **Walked in a browser** on a mirror of a venue with a received
         ingredient and a retired one.
-      - [ ] **6d2c - The menu.** `menu/use-menu-editor.ts`, 31 calls in
-        some fifteen files: items, photos, categories, choice groups,
-        prices, sold out, the setup view and the three imports.
+      - [x] **6d2c - The menu.** As built (ADR-330): each part reads
+        `useOnMirror()` for itself. No Add New Item, Add a category or
+        Add a group; a category has no Rename, move or Retire; an item's
+        row opens it and has no menu (`RowMenu`'s `hidden`); the item
+        form is "Menu item", its fields disabled in fieldsets with the
+        two tabs between them left live, and the sentence where Cancel
+        and Save were; Choices has no actions column; a station or a
+        course has no buttons. The Spreadsheet pill keeps Export, which
+        is a read, and loses the three imports. **Walked in a browser**
+        on a mirror of the demo menu: the three views, an item on both
+        tabs, and the export downloaded.
 
     As it was set: the bar "Mirror, as of 23:10", from `X-Mez-Mirror`;
     the connection pill "Venue offline" when that is more than two

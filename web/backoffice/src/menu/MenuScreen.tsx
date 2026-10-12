@@ -9,10 +9,12 @@
 import { PlusIcon, SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { EditorGroup, MenuEditor } from "../../../shared/api-types";
+import { OnAMirror } from "../../../shared/shell/OnAMirror";
 import { Button, Card, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
 import { useClock } from "../../../shared/use-clock";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { inputClass } from "../FormFields";
 import { useCsvFile } from "../sales/use-csv-download";
 import { itemState, showOptions, validScope, type ListFilter, type Scope, type Show } from "./browse-logic";
@@ -53,6 +55,8 @@ function applyPhoto(api: MenuEditorApi, id: number, change: PhotoChange): Promis
 export function MenuScreen() {
   const api = useMenuEditor();
   const toast = useToast();
+  // A mirror shows the menu as the backup has it, and changes none of it (ADR-330).
+  const mirror = useOnMirror();
   const now = new Date(useClock(60_000));
   const [view, setView] = useState<MenuView>(() => viewFromSearch(window.location.search));
   const [filter, setFilter] = useState<ListFilter>({ scope: "all", search: "", show: "all", order: "menu" });
@@ -117,7 +121,11 @@ export function MenuScreen() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-serif text-total">Menu Management</h1>
-          <p className="mt-1 text-base text-fg-muted">Create and manage items, categories and their choices. Changes reach every order screen at once.</p>
+          <p className="mt-1 text-base text-fg-muted">
+            {mirror
+              ? "The items, categories and their choices, as the venue last backed them up."
+              : "Create and manage items, categories and their choices. Changes reach every order screen at once."}
+          </p>
         </div>
         {view === "items" ? (
           <div className="flex flex-wrap items-center gap-2.5">
@@ -149,16 +157,19 @@ export function MenuScreen() {
             <SpreadsheetMenu
               exported={exported}
               disabled={!menu}
+              readOnly={mirror}
               onImport={() => setFiling("import")}
               onChoices={() => setFiling("choices")}
               onPrices={() => setFiling("prices")}
             />
-            <Button variant="attention" disabled={!menu} onClick={() => menu && addItem(menu)}>
-              <PlusIcon aria-hidden="true" size={18} />
-              Add New Item
-            </Button>
+            {!mirror && (
+              <Button variant="attention" disabled={!menu} onClick={() => menu && addItem(menu)}>
+                <PlusIcon aria-hidden="true" size={18} />
+                Add New Item
+              </Button>
+            )}
           </div>
-        ) : view === "choices" ? (
+        ) : mirror ? null : view === "choices" ? (
           <Button variant="attention" disabled={!menu} onClick={() => setEditing({ kind: "add-group" })}>
             <PlusIcon aria-hidden="true" size={18} />
             Add a group of choices
@@ -166,6 +177,7 @@ export function MenuScreen() {
         ) : null}
       </div>
 
+      {mirror && <OnAMirror />}
       <div role="group" aria-label="Show" className="flex flex-wrap gap-2">
         {(["items", "choices", "setup"] as const).map((v) => (
           <button
@@ -281,11 +293,15 @@ export function MenuScreen() {
               />
             ) : (
               <Card padding="lg">
-                <EmptyState
-                  icon={<InboxIcon />}
-                  line={menu.items.length === 0 ? "No items yet. Add the first one." : "Pick an item to edit it, or add a new one."}
-                  action={{ label: "Add New Item", onClick: () => addItem(menu) }}
-                />
+                {mirror ? (
+                  <EmptyState icon={<InboxIcon />} line={menu.items.length === 0 ? "No items yet." : "Pick an item to read it."} />
+                ) : (
+                  <EmptyState
+                    icon={<InboxIcon />}
+                    line={menu.items.length === 0 ? "No items yet. Add the first one." : "Pick an item to edit it, or add a new one."}
+                    action={{ label: "Add New Item", onClick: () => addItem(menu) }}
+                  />
+                )}
               </Card>
             )}
           </div>

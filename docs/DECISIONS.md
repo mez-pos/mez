@@ -12428,3 +12428,10 @@ History and loses the rest; a role can still be picked to read what it may do. A
 empty lines of Inventory and Printers, and the dashboard's "Edit the menu" and
 "Manage staff", which are "Menu" and "Staff" on a mirror. Printers' line is fixed
 from away as well.
+Added in 6d2c: **the item form is disabled in parts, not whole.** One fieldset
+round it would disable the two tabs that show its halves, so each run of fields is a
+fieldset of its own and the tabs sit between them. The Spreadsheet pill keeps the
+export, a read, and the menu's search, Show and Order stay, being filters. The
+parts of the menu editor read `useOnMirror()` themselves and take no prop for it:
+there are fifteen of them and one screen above. Hints under a disabled field ("You
+can leave it empty") are still shown.

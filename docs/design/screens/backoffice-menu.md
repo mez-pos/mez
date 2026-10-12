@@ -308,6 +308,24 @@ the tax settings link items still without an HSN code this way.
 - The list no longer shows an item's tax class, station, course or HSN:
   they are in the editor.
 
+## On a mirror
+
+Read and not changed (ADR-330). The line under the title is "The items,
+categories and their choices, as the venue last backed them up.", and "This
+is a copy to read. Changes are made at the venue." is over the three views.
+
+- **Items:** search, Show and Order stay: they change nothing. There is no
+  Add New Item. The Spreadsheet pill offers Export the menu alone. The
+  categories card has no "+" and the chosen category no Rename, arrows or
+  Retire. An item's row opens it and has no "...". The form's title is
+  "Menu item"; every field, the photo and the tags are disabled; Choices
+  and Kitchen and tax still switch, since each shows half the item; and
+  the sentence is where Cancel and Save were. With nothing open: "Pick an
+  item to read it."
+- **Choices:** the table without its last column.
+- **Stations and courses:** each card without Add, and each row without
+  its buttons.
+
 ## Reference
 
 `mez Desktop Management.dc.html`, D18 Menu Management (line 286). Left out,

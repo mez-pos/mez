@@ -14,6 +14,8 @@ import type { EditorItem, MenuEditor, MenuItemInput } from "../../../shared/api-
 import type { MenuItemState } from "../../../shared/ui/status";
 import { Button, Card, Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { OnAMirror } from "../../../shared/shell/OnAMirror";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { CheckField, Choice, Field, inputClass } from "../FormFields";
 import { ItemGroupsField } from "./ItemGroupsField";
 import { ItemPhotoField, type PhotoChange } from "./ItemPhotoField";
@@ -57,6 +59,9 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
   const [problem, setProblem] = useState<Problem | null>(null);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>("choices");
+  // On a mirror the item is read: its fields are disabled and nothing saves
+  // (ADR-330). The two tabs stay live, or half the item could not be read.
+  const readOnly = useOnMirror();
   const set = (patch: Partial<ItemForm>) => {
     setForm((f) => ({ ...f, ...patch }));
     setProblem(null);
@@ -92,18 +97,18 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
       aria-label={item ? `Edit ${item.name}` : "Add a menu item"}
       onSubmit={(e) => {
         e.preventDefault();
-        void save();
+        if (!readOnly) void save();
       }}
       className="grid min-w-0 grid-cols-1 items-start gap-4 min-[1700px]:grid-cols-[minmax(0,1fr)_300px]"
     >
       <Card padding="lg" className="min-w-0">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="font-serif text-xl">{item ? "Edit menu item" : "Add menu item"}</h2>
+            <h2 className="font-serif text-xl">{readOnly ? "Menu item" : item ? "Edit menu item" : "Add menu item"}</h2>
             {state && <StatusChip status={{ kind: "menu", status: state }} />}
             {state === "sold_out" && soldOutUntil && <span className="text-sm text-fg-muted">Back on sale {new Date(soldOutUntil).toLocaleString()}</span>}
           </div>
-          {item && state && (
+          {item && state && !readOnly && (
             <div className="flex flex-wrap gap-tap-gap">
               {state !== "retired" && (
                 <Button size="md" disabled={waiting} onClick={() => onSoldOut(state !== "sold_out")}>
@@ -129,7 +134,7 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
           </p>
         )}
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <fieldset disabled={readOnly} className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2">
           <Field label="Item name" error={on("name")}>
             {(id) => <input id={id} className={inputClass} value={form.name} maxLength={60} required onChange={(e) => set({ name: e.target.value })} />}
           </Field>
@@ -188,14 +193,14 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
               )}
             </Field>
           )}
-        </div>
+        </fieldset>
         {change && (
           <p role="status" className="mt-4 rounded border border-line bg-sunken px-3 py-2.5 text-sm text-fg-2">
             Orders already open keep <Money amount={change.was} />. Lines rung up after you save are <Money amount={change.now} />.
           </p>
         )}
 
-        <div className="mt-4">
+        <fieldset disabled={readOnly} className="mt-4 min-w-0">
           <Field label="Description" error={on("description")}>
             {(id) => (
               <textarea
@@ -211,7 +216,7 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
           <p className="mt-1 text-right font-mono text-sm tabular-nums text-fg-muted">
             {form.description.length} / {MAX_DESCRIPTION}
           </p>
-        </div>
+        </fieldset>
 
         {/* Two buttons that show one part or the other: plain toggles, reached by Tab like any button. */}
         <div role="group" aria-label="More about the item" className="mt-4 flex w-fit max-w-full flex-wrap gap-1 rounded-pill bg-sunken p-1">
@@ -231,7 +236,7 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
           ))}
         </div>
 
-        <div hidden={tab !== "choices"} className="mt-4">
+        <fieldset disabled={readOnly} hidden={tab !== "choices"} className="mt-4 min-w-0">
           <ItemGroupsField
             menu={menu}
             chosen={groups}
@@ -241,8 +246,8 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
             }}
             error={on("ids")}
           />
-        </div>
-        <div hidden={tab !== "kitchen"} className="mt-4 grid gap-4 sm:grid-cols-2">
+        </fieldset>
+        <fieldset disabled={readOnly} hidden={tab !== "kitchen"} className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
           <Field label="Made at" hint="Stations are set up under Stations and courses." error={on("station_id")}>
             {(id) => (
               <Select id={id} value={form.stationId} onChange={(stationId) => set({ stationId })}>
@@ -265,10 +270,10 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
               </Select>
             )}
           </Field>
-        </div>
+        </fieldset>
       </Card>
 
-      <div className="flex min-w-0 flex-col gap-4">
+      <fieldset disabled={readOnly} className="flex min-w-0 flex-col gap-4">
         <Card>
           <ItemPhotoField
             current={item?.photo ?? ""}
@@ -286,7 +291,8 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
           <CheckField label="Gluten free" checked={form.glutenFree} onChange={(glutenFree) => set({ glutenFree })} />
           <CheckField label="Popular" hint="For the Popular tab on the order screen." checked={form.popular} onChange={(popular) => set({ popular })} />
         </Card>
-        <div className="flex gap-2.5">
+        {readOnly && <OnAMirror />}
+        <div hidden={readOnly} className="flex gap-2.5">
           <Button className="flex-1" disabled={waiting} onClick={onCancel}>
             Cancel
           </Button>
@@ -294,7 +300,7 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
             {saving ? "Saving" : item ? "Save changes" : "Add item"}
           </Button>
         </div>
-      </div>
+      </fieldset>
     </form>
   );
 }

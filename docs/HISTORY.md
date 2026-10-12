@@ -8,7 +8,14 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 6d2a - Settings, the Floor plan and Devices on a mirror**
+**Phase 14, Task 6d2b - Staff and Inventory on a mirror** (ADR-330).
+Staff has no Add, no row menus, and a role panel whose switches are
+disabled with the sentence where Save was. Inventory has no count,
+wastage, import or add; a row's menu is History alone and a recipe has no
+Edit. Tips and a Z-report needed nothing, a mirror being away. The
+dashboard's shortcuts say "Menu" and "Staff" there. **Walked in a browser.**
+
+Before it, **Phase 14, Task 6d2a - Settings, the Floor plan and Devices on a mirror**
 (ADR-330). 6d2 was split by screen. `useOnMirror()` is read where a change
 is drawn and `OnAMirror` is the sentence in its place. Every settings
 section is read-only through `SectionCard`; tax classes, the floor plan

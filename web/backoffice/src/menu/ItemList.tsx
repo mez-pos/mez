@@ -9,6 +9,7 @@ import { photoUrl } from "../../../shared/menu";
 import { Card, Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { inputClass } from "../FormFields";
 import { RowMenu } from "../RowMenu";
 import { canReorder, emptyLine, itemState, listItems, listTitle, orderOptions, type ListFilter, type Order } from "./browse-logic";
@@ -28,6 +29,8 @@ interface ItemListProps {
 
 export function ItemList({ menu, filter, onOrder, openId, onOpen, api, onProblem }: ItemListProps) {
   const [busy, setBusy] = useState(false);
+  // On a mirror a row opens its item to read, and has no menu (ADR-330).
+  const mirror = useOnMirror();
   const now = new Date(useClock(60_000));
   const items = listItems(menu, filter, now);
   const run = (fn: () => Promise<void>) => {
@@ -103,6 +106,7 @@ export function ItemList({ menu, filter, onOrder, openId, onOpen, api, onProblem
                   </span>
                 </button>
                 <RowMenu
+                  hidden={mirror}
                   name={item.name}
                   disabled={busy}
                   // The list scrolls inside itself, so near its foot the menu opens upward to stay in sight.
@@ -126,7 +130,7 @@ export function ItemList({ menu, filter, onOrder, openId, onOpen, api, onProblem
           })}
         </ul>
       )}
-      {typeof filter.scope === "number" && !order && filter.search.trim() === "" && (
+      {!mirror && typeof filter.scope === "number" && !order && filter.search.trim() === "" && (
         <p className="border-t border-line-soft p-4 text-sm text-fg-muted">To move an item up or down, show every item in menu order.</p>
       )}
     </Card>

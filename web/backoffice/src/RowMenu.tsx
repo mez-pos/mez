@@ -12,11 +12,14 @@ export interface RowMenuProps {
   /** Opens above the button, not below. */
   up: boolean;
   actions: readonly { label: string; run: () => void }[];
+  /** Nothing is drawn: what the row could do cannot be done here. */
+  hidden?: boolean;
 }
 
 /** The "..." at the end of a row. */
-export function RowMenu({ name, disabled, up, actions }: RowMenuProps) {
+export function RowMenu({ name, disabled, up, actions, hidden = false }: RowMenuProps) {
   const { open, toggle, box, trigger, panel, panelId, pick, leaves } = useDisclosure();
+  if (hidden) return null;
   return (
     <div ref={box} onBlur={leaves} className="relative shrink-0">
       <button

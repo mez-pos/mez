@@ -9,6 +9,7 @@ import { useState } from "react";
 import type { MenuEditor } from "../../../shared/api-types";
 import { Button, Card, Confirm } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useOnMirror } from "../../../shared/use-mirror";
 import { scopeRows, type Scope } from "./browse-logic";
 import { moved, problemOf } from "./menu-logic";
 import type { MenuEditorApi } from "./use-menu-editor";
@@ -29,6 +30,8 @@ const icon = (scope: Scope): LucideIcon => (scope === "all" ? LayoutGridIcon : s
 export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onProblem }: CategoryRailProps) {
   const [confirmRetire, setConfirmRetire] = useState(false);
   const [busy, setBusy] = useState(false);
+  // A mirror lists the categories and changes none (ADR-330).
+  const mirror = useOnMirror();
   const rows = scopeRows(menu);
   const ids = menu.categories.map((c) => c.id);
   const chosen = typeof scope === "number" ? (menu.categories.find((c) => c.id === scope) ?? null) : null;
@@ -50,14 +53,16 @@ export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onPro
     <Card className="flex min-w-0 flex-col p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-serif text-xl">Categories</h2>
-        <button
-          type="button"
-          aria-label="Add a category"
-          onClick={onAdd}
-          className="flex size-12 items-center justify-center rounded-round border border-line-strong outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
-        >
-          <PlusIcon aria-hidden="true" size={18} />
-        </button>
+        {!mirror && (
+          <button
+            type="button"
+            aria-label="Add a category"
+            onClick={onAdd}
+            className="flex size-12 items-center justify-center rounded-round border border-line-strong outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+          >
+            <PlusIcon aria-hidden="true" size={18} />
+          </button>
+        )}
       </div>
       <ul aria-label="Categories" className="mt-3 grid gap-0.5">
         {rows.map((r) => {
@@ -84,7 +89,7 @@ export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onPro
         })}
       </ul>
 
-      {chosen && (
+      {chosen && !mirror && (
         <div role="group" aria-label={`${chosen.name}: actions`} className="mt-4 flex flex-wrap gap-tap-gap border-t border-line-soft pt-4">
           <Button size="md" disabled={busy} onClick={() => onRename(chosen.id, chosen.name)}>
             Rename

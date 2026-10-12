@@ -15,6 +15,8 @@ interface SpreadsheetMenuProps {
   exported: CsvFile;
   /** Off until the menu is read. */
   disabled: boolean;
+  /** Only what reads the menu is offered: the export. A mirror (ADR-330). */
+  readOnly?: boolean;
   onImport: () => void;
   onChoices: () => void;
   onPrices: () => void;
@@ -28,15 +30,17 @@ interface Choice {
   run: () => void;
 }
 
-export function SpreadsheetMenu({ exported, disabled, onImport, onChoices, onPrices }: SpreadsheetMenuProps) {
+export function SpreadsheetMenu({ exported, disabled, readOnly = false, onImport, onChoices, onPrices }: SpreadsheetMenuProps) {
   const { open, toggle, box, trigger, panel, panelId, pick, leaves } = useDisclosure();
   const busy = exported.busy !== null;
-  const choices: readonly Choice[] = [
+  const everything: readonly Choice[] = [
     { icon: DownloadIcon, label: "Export the menu", line: "Save every item as a CSV file.", run: () => void exported.download(exportPath) },
     { icon: UploadIcon, label: "Import new items", line: "Add items from a file. Nothing already on the menu changes.", run: onImport },
     { icon: ListChecksIcon, label: "Import choices", line: "Add groups like Size or Milk from a file. Do this before the items.", run: onChoices },
     { icon: TagIcon, label: "Change prices", line: "Give back an export with its prices edited.", run: onPrices },
   ];
+  // The export is first, and the only one that changes nothing.
+  const choices = readOnly ? everything.slice(0, 1) : everything;
 
   return (
     <div ref={box} onBlur={leaves} className="relative">
