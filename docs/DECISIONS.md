@@ -12499,3 +12499,96 @@ The same review read the browsers' file's sharing (ADR-327) and found it loose i
 places that are not this task's: a read that fails is passed over, and the file is
 marked as seen after it is renamed, so one mirror can write over what another has
 just paired or locked. It is in `KNOWN.md`.
+
+## ADR-332 - A venue that is gone is asked for by its owner's phone, in three requests that write nothing, and is paired again by an ordinary code
+2026-10 · Status: accepted. Phase 14, Task 7 (7a built here; 7b to 7e follow). Builds on ADR-312, ADR-313 and ADR-318.
+Context: "I had mez before" (ADR-312). The computer died and took the database and
+`cloud.json` with it, so the new one has nothing to be known by; the owner has their
+phone. The phase file gives the task as one line of work across both repositories and
+three layers of this one, and no ADR says what the venue asks mez Cloud or what comes
+back. As with pairing (ADR-318), the venue's side is written first and the contract
+written down, so the other repository is built to it.
+Decision:
+  - **Split.** 7a, built with this: the three requests in `internal/cloud`, the checks
+    on their answers, and the stand-in. 7b: the venue's server restores into its own
+    data directory, which `mez restore` refuses to do to a running one, with an ADR
+    first for how; the routes the wizard calls; pairing with the code after. 7c: the
+    wizard's screen. 7d: "The PC died" in `deploy.md`, tested by doing it. 7e, in
+    `mez-cloud`: the three routes, the one-time code's sending, the keys.
+  - **The venue's server asks, and not the page.** The wizard may be open on a tablet
+    across the room; a bucket's key in a page is a key in a browser's memory and its
+    history of requests. The cloud needs no CORS, and the rule that a redirect is not
+    followed stays in the one client.
+  - **`POST {cloud_url}/v1/recover/start`** with `{"phone"}`, E.164. 200 answers
+    `{"attempt"}`, an opaque name for this asking, and the cloud sends six digits to
+    the phone. **A number with no account is answered the same**, and sent nothing:
+    the route must not say whose number has a venue. 429 is "try again in a minute";
+    any other 4xx is a number the cloud cannot send to at all.
+  - **`POST /v1/recover/verify`** with `{"attempt", "code"}`. 200 answers `{"session",
+    "expires_at", "owner": {"name"}, "venues": [{"id", "name", "last_backup_at"}]}`.
+    `id` is the venue's own `public_id`, the one it paired with. `last_backup_at` is
+    absent or null for a venue the cloud holds no backup of. Any 4xx but 429 is a
+    code that is not accepted, and reads as one thing whatever the body says: wrong,
+    used, too old, or a number with no account.
+  - **`POST /v1/recover/grant`** with `Authorization: Bearer <session>` and `{"venue":
+    {"id"}}`. 200 answers `{"backup": {"bucket", "path", "endpoint", "region",
+    "access_key_id", "secret_access_key"}, "pairing_code", "expires_at"}`. 401 is a
+    session that has run out; 410 is a backup no longer kept (`backups_kept_until`,
+    ADR-313), told apart because the owner can do nothing about it by trying again;
+    429 as before; any other 4xx is a venue the cloud will not hand over.
+  - **The key that restores is not the key that backs up.** It reads the one venue's
+    folder and writes nothing, and stops within the hour. A restore abandoned half
+    way leaves nothing on a strange machine that can write to a venue's backup, and
+    the venue's own key, if its old computer is in fact still running, is untouched
+    until someone pairs.
+  - **Recovery issues no relay key. It issues a pairing code**, good once, for that
+    venue's id alone, and the restored venue pairs with it through `/v1/pair` exactly
+    as ADR-318 has it. So there stays one way a venue comes by a key, the old key is
+    revoked by the rule 4d already has, and nothing in 4b's service changes. The
+    cloud must refuse that code from any other `venue.id`.
+  - **A number is cleaned as typed and its country is not guessed.** Spaces, hyphens,
+    dots and brackets go; it must begin with `+`. There is no venue yet to say which
+    country this is, and a code sent to the wrong country's number is someone else's
+    phone ringing. The screen may offer the `+91`.
+  - **What cannot work is not sent**: a number or a code that could not be one, a
+    venue the account's list did not hold, a venue with no backup. The cloud counts
+    wrong codes, and an owner at a dead computer has few to spare.
+  - **The session is held in memory and nowhere else.** `Recovery` keeps it in a field
+    nothing outside the package reads; it and a `Grant` say who and which venue when
+    printed or logged, and no secret, by value and by pointer.
+  - **The new machine's clock is not judged by.** `expires_at` is kept for a screen to
+    show. A computer set up an hour ago may think it is 2020, and a session refused
+    here for that would be refused wrongly; the cloud's 401 is the judge.
+  - **Each answer is checked whole before any of it is handed on**: a session that
+    could go in a header as it is, fifty venues at most, ids that look like venues'
+    and are not repeated, names that are names, a bucket `backup` would accept with a
+    folder of its own, a pairing code written as one is sent.
+  - **What a review found before the commit.** A `Grant` written as JSON carried
+    both secrets, which a handler in 7b could have done by answering with one: it
+    now writes the venue and the time and nothing else. A bucket the cloud names
+    must be https, where one an owner names may be a box on their own network; its
+    fields and every name are refused control characters and the marks that turn a
+    line's reading round (joiners are kept: names in Malayalam and Kannada are
+    written with them); a refusal no longer repeats the cloud's own words; and a
+    number or a code pasted with a line's end or a messaging app's marks is cleaned
+    of them. The stricter name is a pairing's owner's too.
+  - **`Client.send`** is the one way a question is put, and `Pair` is moved onto it.
+  - **`build/dev/pairstub` is the account as well**: one phone number whose code is
+    always the same and sent nowhere, one venue, and a pairing code made good again
+    by handing the venue over. Its bucket is now named by flags, for a walk with one
+    that is there.
+Because: the phone number is the one thing an owner cannot lose with the laptop
+(ADR-312), and keeping recovery to "prove the number, choose the venue, be handed a
+read of its backup and an ordinary code" means it adds one door to the cloud and no
+second kind of key.
+Cost: **whoever holds the owner's phone number holds the venue's history.** A SIM
+taken over buys a copy of the database, with every sale and every PIN's hash in it,
+and a pairing that revokes the real venue's key. That is ADR-312's choice and not
+undone here; 7e owes it the limits (codes a day to a number, tries to a code, grants
+to a session) and a message to the account, on every grant, that a venue was handed
+over. A restored venue still asks a PIN to sell on, which is no guard on a file
+already copied. The contract is written before the service, so it may change when
+that is built. Nothing uses any of it yet: 7b is the first caller. The stand-in does
+not look in its bucket and says every venue was backed up a minute ago. A number
+typed with no `+`, which is how most are typed, is refused until 7c's screen puts
+one there.

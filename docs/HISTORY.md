@@ -8,7 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 6d2c - The menu on a mirror** (ADR-330), which closed
+**Phase 14, Task 6c - mez Cloud's sign-in on a mirror** (ADR-331), which
+closed Task 6. `mez mirror -cloud-key <public_key from cloud.json>` lets
+the account's owner in on the cloud's word: the mirror's door checks the
+assertion, reads who the cloud may be from the copy, remembers the nonce
+on disk beside its state file and keeps the session in memory. Nothing is
+written to the copy; a PIN's session is never the cloud's. Tested end to
+end through `serveMirror` over a real backup. No screen changed and
+nothing here presents an assertion from a browser: that is `mez-cloud`'s
+(8e).
+
+Before it, **Phase 14, Task 6d2c - The menu on a mirror** (ADR-330), which closed
 6d2 and 6d. Each part of the menu editor reads `useOnMirror()`: nothing
 adds, renames, moves, retires or imports; an item opens to be read, its
 fields disabled and its two tabs live; Export stays, being a read.

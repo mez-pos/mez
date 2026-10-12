@@ -449,6 +449,60 @@ and its first commit copies this phase's cloud tasks there.
   to the source, the "as of" time right after a sync.
 
 - [ ] **Task 7 - Restore from the cloud, and pair again.** *Both repos.*
+  Split on 2026-10-12 before building it (ADR-332). Recovery issues no
+  relay key: it hands over a read of the venue's backup and an ordinary
+  pairing code.
+
+  - [x] **Task 7a - What the venue asks, and the stand-in.** *This repo.*
+    `internal/cloud/recover.go`: `CleanPhone`, `CleanOTP`,
+    `Client.RecoverStart` (`POST /v1/recover/start`),
+    `Client.RecoverVerify` (`/v1/recover/verify`, answering a `Recovery`
+    that holds the session), `Recovery.Grant` (`/v1/recover/grant`,
+    answering a read-only bucket key and a pairing code). The three
+    requests and their answers are written down in ADR-332 for `mez-cloud`
+    to build to. `Client.send` is shared with `Pair`. `build/dev/pairstub`
+    is one account as well. Tests against a stand-in. Nothing calls it yet.
+  - [ ] **Task 7b - The venue restores itself and pairs.** *This repo.* ADR
+    first: the wizard is served by a server that has an empty database
+    open, and `mez restore` refuses a data directory mez is running on
+    (`notRunning`, `moveAside`, `backup.RestoreGeneration` in
+    `cmd/mez/restore.go`). Decide how a running server takes a restored
+    database (close, restore and reopen in the process; or restore beside
+    it and swap at a restart it asks the service for) and move what both
+    the command and the server need out of `cmd/mez`. Then a service in
+    `internal/service` that holds the `Recovery` in memory, restores the
+    granted venue with the grant's key, checks the restored database's
+    venue has the id that was granted, and pairs with the grant's code
+    through `cloudpair` (where the code waits, if there is a restart
+    between, is the ADR's to say; it is a secret). Routes behind the setup
+    token, at the venue only, rate limited: start, verify, restore. Never
+    over a venue: only where `emptyInstall` says there is none. Tests with
+    the stand-in and a folder or the S3 fake. **Split it again if the
+    restore and the routes are not one session.**
+  - [ ] **Task 7c - The wizard's screen.** *This repo.* "I had mez before"
+    on the first step: the phone number with `+91` offered, the six
+    digits, the account's venues with when each was last backed up (and
+    one with no backup said so and not offered), the restore's progress,
+    and what it ends on: the venue's name, its last invoice, "sign in with
+    your PIN". Each refusal in the owner's words (`ErrOTPRefused`,
+    `ErrBackupGone`, `ErrSessionOver`...). Read
+    `docs/design/screens/setup-wizard.md` and `docs/design/tokens.md`
+    first. Walk it in a browser against `pairstub` and a bucket that is
+    there.
+  - [ ] **Task 7d - "The PC died".** *This repo.* `deploy.md`'s numbered
+    procedure, tested by doing it: a venue paired and backed up, the data
+    directory deleted, the venue back by phone and code, a sale rung, a
+    tablet finding the new machine through discovery with the token it
+    held.
+  - [ ] **Task 7e - The cloud's side.** *`mez-cloud`.* The three routes as
+    ADR-332 sets them out: a one-time code sent to the account's number
+    and to no other, answered alike either way; the session; R2
+    credentials that read one venue's prefix and stop within the hour; a
+    pairing code bound to that venue's id. Limits on codes to a number,
+    tries to a code and grants to a session, and a message to the account
+    on every grant. Refuse past `backups_kept_until` with 410 (ADR-313).
+
+  The task as it was set:
   The wizard's first step gains "I had mez before". It asks for the
   account's phone number, sends the one-time code, lists the account's
   venues with the time of their last backup, and restores the chosen one

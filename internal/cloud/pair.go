@@ -81,6 +81,40 @@ func NewClient(baseURL string) (*Client, error) {
 	}, nil
 }
 
+// send posts one question to the cloud as JSON and reads its answer, one
+// byte past the most an answer may be so that the caller can tell. bearer,
+// when there is one, is a recovery's session (ADR-332).
+//
+// No answer at all is ErrUnreachable. What the answer's status means is the
+// caller's to say: it differs by what was asked.
+func (c *Client) send(ctx context.Context, path, bearer string, question any) (int, []byte, error) {
+	body, err := json.Marshal(question)
+	if err != nil {
+		return 0, nil, fmt.Errorf("cloud: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url+path, bytes.NewReader(body))
+	if err != nil {
+		return 0, nil, fmt.Errorf("cloud: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	if bearer != "" {
+		req.Header.Set("Authorization", "Bearer "+bearer)
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		// Not the error itself to the caller's screen: it names addresses.
+		return 0, nil, fmt.Errorf("%w: %v", ErrUnreachable, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxAnswer+1))
+	if err != nil {
+		return 0, nil, fmt.Errorf("%w: reading its answer: %v", ErrUnreachable, err)
+	}
+	return resp.StatusCode, raw, nil
+}
+
 // pairRequest is what the venue sends: the code, and who is asking.
 type pairRequest struct {
 	Code  string       `json:"code"`
@@ -114,37 +148,20 @@ func (c *Client) Pair(ctx context.Context, typed string, about About) (Pairing, 
 	if err != nil {
 		return Pairing{}, err
 	}
-	body, err := json.Marshal(pairRequest{Code: code, Venue: pairingVenue{ID: about.VenueID, Name: about.Name, Version: about.Version}})
+	status, raw, err := c.send(ctx, pairPath, "", pairRequest{Code: code, Venue: pairingVenue{ID: about.VenueID, Name: about.Name, Version: about.Version}})
 	if err != nil {
-		return Pairing{}, fmt.Errorf("cloud: %w", err)
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url+pairPath, bytes.NewReader(body))
-	if err != nil {
-		return Pairing{}, fmt.Errorf("cloud: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := c.http.Do(req)
-	if err != nil {
-		// Not the error itself to the caller's screen: it names addresses.
-		return Pairing{}, fmt.Errorf("%w: %v", ErrUnreachable, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxAnswer+1))
-	if err != nil {
-		return Pairing{}, fmt.Errorf("%w: reading its answer: %v", ErrUnreachable, err)
+		return Pairing{}, err
 	}
 
 	switch {
-	case resp.StatusCode == http.StatusOK:
-	case resp.StatusCode == http.StatusTooManyRequests:
+	case status == http.StatusOK:
+	case status == http.StatusTooManyRequests:
 		return Pairing{}, ErrBusy
-	case resp.StatusCode >= 400 && resp.StatusCode < 500:
+	case status >= 400 && status < 500:
 		// Whatever it says of the code, the answer here is one.
 		return Pairing{}, ErrCodeRefused
 	default:
-		return Pairing{}, fmt.Errorf("%w: it answered %d", ErrUnreachable, resp.StatusCode)
+		return Pairing{}, fmt.Errorf("%w: it answered %d", ErrUnreachable, status)
 	}
 	if len(raw) > maxAnswer {
 		return Pairing{}, invalid("mez Cloud's answer is larger than a pairing is")

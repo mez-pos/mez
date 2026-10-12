@@ -10,31 +10,38 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5 and 6 are done
-(ADR-313, ADR-315 to ADR-331); 4d is `mez-cloud`'s. Phase 13's five
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6 and 7a are done
+(ADR-313, ADR-315 to ADR-332); 4d and 7e are `mez-cloud`'s. Phase 13's five
 tasks are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 6c - mez Cloud's sign-in on a mirror** (ADR-331), which
-closes Task 6. `mez mirror -cloud-key <public_key from cloud.json>` lets
-the account's owner in on the cloud's word: the mirror's door checks the
-assertion, reads who the cloud may be from the copy, remembers the nonce
-on disk beside its state file and keeps the session in memory. Nothing is written to
-the copy; a PIN's session is never the cloud's. Tested end to end through
-`serveMirror` over a real backup. No screen changed and nothing here
-presents an assertion from a browser: that is `mez-cloud`'s (8e).
+**Phase 14, Task 7a - What a venue that is gone asks mez Cloud**
+(ADR-332). Task 7 was split in five. `internal/cloud/recover.go`: a phone
+number buys an attempt (`RecoverStart`), the six digits sent to it buy a
+`Recovery` (`RecoverVerify`: the owner, the account's venues, a session
+held in memory), and `Recovery.Grant` buys, for one venue, a bucket key
+that only reads and an ordinary pairing code. Recovery issues no relay
+key. What cannot work is not sent, each answer is checked whole, and no
+secret prints. `build/dev/pairstub` is one account as well (`-phone`,
+`-otp`, `-venue-id`, the `-bucket` flags), walked with curl. **Nothing
+calls any of it yet**, and no screen changed.
 
 ## Next task
 
-**Task 7's venue half, split before building it** (the wizard's "I had
-mez before": the account's phone number, a one-time code, the account's
-venues, a restore from R2, then pairing afresh). It needs answers from
-`mez-cloud` that no ADR fixes yet, so the first session is the ADR for
-that request and answer, as ADR-318 was for pairing, and a stand-in
-beside `build/dev/pairstub`. **Task 9** (words) is after it.
+**Task 7b - the venue restores itself and pairs.** ADR first: the wizard
+is served by a server holding an empty database open, and `mez restore`
+refuses a directory mez runs on. Decide how a running server takes a
+restored database, move what the command and the server share out of
+`cmd/mez/restore.go`, then the service (hold the `Recovery`, restore with
+the grant's key, check the restored venue's id is the one granted, pair
+with the grant's code through `cloudpair`) and its routes behind the
+setup token. The phase file has it in full and says to split it again if
+it is two sessions. Then 7c (the screen), 7d ("The PC died"), **Task 9**.
+To walk recovery's requests: `RELAY_SECRET=... go run ./build/dev/pairstub
+-venue-id ven_...`; its log says the one-time code.
 
 **A mirror killed and not stopped leaves `mez-mirror-*` in the system's
 temporary folder, and one left there fails
@@ -148,6 +155,10 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
    `internal/`, which Go lets no other module import: `cloud.SignAssertion`,
    the relay's `Entitlements`, the mirror. Move those out of `internal/`, or
    keep `mez-cloud` in this repository as a second module path?
+13. Whoever takes over the owner's SIM can restore the venue's database
+   onto their own machine and revoke the real venue's key (ADR-332, Cost).
+   Is a message to the account on every hand-over enough, or should
+   recovery ask a second thing: a wait, an email link, the owner's PIN?
 
 ---
 
@@ -160,4 +171,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5 and 6 of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6 and 7a of 9)

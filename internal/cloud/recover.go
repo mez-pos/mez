@@ -1,0 +1,476 @@
+package cloud
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"strings"
+	"time"
+	"unicode"
+
+	"github.com/byjoellobo/mez/internal/backup"
+)
+
+// Recovery is the venue's other meeting with mez Cloud that it starts
+// itself: "I had mez before" (ADR-312, ADR-332). A machine that died took
+// its database and its pairing with it, so there is nothing here to be
+// known by. The owner is known by their account instead: a phone number, and
+// a one-time code the cloud sends to it. What that buys is the list of the
+// account's venues, and for one of them a key that reads its backup and a
+// pairing code to pair the restored venue with.
+//
+// Three requests, each of which writes nothing here. Restoring and pairing
+// are the caller's.
+const (
+	recoverStartPath  = "/v1/recover/start"
+	recoverVerifyPath = "/v1/recover/verify"
+	recoverGrantPath  = "/v1/recover/grant"
+
+	// OTPLen is how long the one-time code sent to the owner's phone is.
+	OTPLen = 6
+
+	// minPhone and maxPhone are how many digits a phone number has after
+	// its plus sign, by E.164.
+	minPhone = 8
+	maxPhone = 15
+
+	// maxVenues is the most venues an account's answer may list, and
+	// maxToken the longest an attempt or a session may be. Both are far
+	// over what a cloud sends, and under what a wrong answer could.
+	maxVenues    = 50
+	maxToken     = 512
+	maxVenueName = 100
+
+	venueIDPrefix = "ven_"
+)
+
+// Why a recovery did not go on.
+var (
+	// ErrPhoneShape is a phone number that could not be one, as typed. Said
+	// before anything is sent.
+	ErrPhoneShape = errors.New("a phone number starts with + and its country code, like +91 98765 43210")
+
+	// ErrPhoneRefused is the cloud not taking the number at all. It is not
+	// "no such account": a number with no account is answered as one with,
+	// and no code arrives.
+	ErrPhoneRefused = errors.New("mez Cloud cannot send a code to that number")
+
+	// ErrOTPShape is a one-time code that could not be one, as typed.
+	ErrOTPShape = fmt.Errorf("the code sent to the phone is %d digits", OTPLen)
+
+	// ErrOTPRefused is the cloud not accepting the one-time code: wrong,
+	// used, too old, or for a number with no account. They read alike, as
+	// a pairing code's refusals do.
+	ErrOTPRefused = errors.New("mez Cloud does not accept that code: it may be mistyped, used already, or too old")
+
+	// ErrSessionOver is the sign-in having run out before a venue was
+	// chosen. The owner asks for another code.
+	ErrSessionOver = errors.New("the sign-in to mez Cloud has run out; ask for a new code")
+
+	// ErrNotListed is a venue asked for that the account's list did not
+	// hold. It is not sent.
+	ErrNotListed = errors.New("that venue is not one of this account's")
+
+	// ErrNeverBackedUp is a venue the cloud holds no backup of. It is not
+	// sent: there is nothing to hand over.
+	ErrNeverBackedUp = errors.New("mez Cloud holds no backup of that venue")
+
+	// ErrBackupGone is a venue whose backup the cloud no longer keeps: its
+	// subscription ended longer ago than backups are kept for (ADR-313).
+	ErrBackupGone = errors.New("mez Cloud no longer keeps that venue's backup")
+
+	// ErrGrantRefused is the cloud not handing a venue's backup over, for
+	// a reason it keeps.
+	ErrGrantRefused = errors.New("mez Cloud will not hand over that venue's backup")
+)
+
+// CleanPhone is a phone number as it is sent: a plus sign and its digits,
+// with the spaces, hyphens, dots and brackets a person writes one with taken
+// away. The country code is not guessed: there is no venue yet to say which
+// country this is.
+func CleanPhone(typed string) (string, error) {
+	typed = strings.TrimFunc(typed, unseen)
+	if !strings.HasPrefix(typed, "+") {
+		return "", ErrPhoneShape
+	}
+	var b strings.Builder
+	b.WriteByte('+')
+	for _, r := range typed[1:] {
+		switch {
+		case r == '-' || r == '.' || r == '(' || r == ')' || unseen(r):
+		case r >= '0' && r <= '9':
+			b.WriteRune(r)
+		default:
+			return "", ErrPhoneShape
+		}
+	}
+	// No country code begins with a zero.
+	if n := b.Len() - 1; n < minPhone || n > maxPhone || b.String()[1] == '0' {
+		return "", ErrPhoneShape
+	}
+	return b.String(), nil
+}
+
+// CleanOTP is a one-time code as it is sent: its digits, with the spaces
+// and hyphens a messaging app shows one with taken away.
+func CleanOTP(typed string) (string, error) {
+	var b strings.Builder
+	for _, r := range typed {
+		switch {
+		case r == '-' || unseen(r):
+		case r >= '0' && r <= '9':
+			b.WriteRune(r)
+		default:
+			return "", ErrOTPShape
+		}
+	}
+	if b.Len() != OTPLen {
+		return "", ErrOTPShape
+	}
+	return b.String(), nil
+}
+
+// unseen is what a paste brings with it and a person does not see: spaces
+// of every kind, a line's end, and the marks a messaging app wraps a number
+// in to say which way it reads.
+func unseen(r rune) bool { return unicode.IsSpace(r) || unicode.Is(unicode.Cf, r) }
+
+// hidden is what has no place in a name or a bucket's address: a control
+// character, or a mark that turns the reading round. Not every mark that is
+// not seen: a name in Malayalam or Kannada is written with joiners.
+func hidden(r rune) bool {
+	return unicode.IsControl(r) || (r >= '‪' && r <= '‮') || (r >= '⁦' && r <= '⁩')
+}
+
+// Attempt is one asking for a one-time code, as the cloud names it. It is
+// given back with the code. It opens nothing by itself, so it may be held
+// by the page that asked.
+type Attempt string
+
+// AccountVenue is a venue of the owner's account, as the cloud lists it.
+type AccountVenue struct {
+	// ID is the venue's own public id, the one it paired with (ADR-318) and
+	// the one the restored database will hold.
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// LastBackupAt is when the cloud last saw its backup written. Zero is
+	// a venue it holds no backup of.
+	LastBackupAt time.Time `json:"last_backup_at,omitzero"`
+}
+
+// Recovery is an owner signed in to their account from a machine with no
+// venue on it, for as long as it takes to choose one. It holds the session,
+// which is a secret: it is kept in memory, and never written or logged.
+type Recovery struct {
+	Owner  Owner
+	Venues []AccountVenue
+	// ExpiresAt is when the cloud says the session ends. It is for a screen
+	// to show and is not judged here: a new machine's clock is not yet one
+	// to judge by.
+	ExpiresAt time.Time
+
+	session string
+	client  *Client
+}
+
+// String keeps the session out of an error or a %v that prints the whole.
+// On the value and not the pointer, so that a copy is covered as well.
+func (r Recovery) String() string {
+	return fmt.Sprintf("{recovery for %s, %d venues}", r.Owner.Name, len(r.Venues))
+}
+
+// GoString covers %#v, which goes around String.
+func (r Recovery) GoString() string { return "cloud.Recovery" + r.String() }
+
+// LogValue is what a log line says of a recovery: whose, and not the session.
+func (r Recovery) LogValue() slog.Value {
+	return slog.GroupValue(slog.String("owner", r.Owner.Name), slog.Int("venues", len(r.Venues)))
+}
+
+// Grant is what the cloud hands over for one venue to be brought back: a
+// key that reads that venue's backup, and a pairing code to pair the
+// restored venue with (Client.Pair), which gives it a new relay key and
+// revokes the old. Both are secrets, and both are short-lived.
+type Grant struct {
+	Venue AccountVenue
+	// Backup is the venue's folder in the cloud's bucket, with a key that
+	// reads it and writes nothing. The key the restored venue backs up
+	// with is the one its pairing gives.
+	Backup backup.S3
+	// PairingCode is good once, as any pairing code is, and for this venue
+	// alone.
+	PairingCode string
+	// ExpiresAt is when the cloud says the key stops reading.
+	ExpiresAt time.Time
+}
+
+// String keeps the two secrets out of an error or a %v.
+func (g Grant) String() string {
+	return fmt.Sprintf("{grant for venue %s}", g.Venue.ID)
+}
+
+// GoString covers %#v.
+func (g Grant) GoString() string { return "cloud.Grant" + g.String() }
+
+// LogValue is what a log line says of a grant: which venue, and no secret.
+func (g Grant) LogValue() slog.Value {
+	return slog.GroupValue(slog.String("venue", g.Venue.ID), slog.Time("expires_at", g.ExpiresAt))
+}
+
+// MarshalJSON is a grant as it may be written anywhere: which venue and
+// until when, and neither secret. A grant is never an answer to a page. What
+// a page is told of one is the caller's to choose, field by field.
+func (g Grant) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Venue     AccountVenue `json:"venue"`
+		ExpiresAt time.Time    `json:"expires_at"`
+	}{g.Venue, g.ExpiresAt})
+}
+
+// RecoverStart asks the cloud to send a one-time code to the account's
+// phone. A number with no account is answered the same as one with, so that
+// this cannot be used to ask whose number has a venue; no code arrives.
+func (c *Client) RecoverStart(ctx context.Context, typedPhone string) (Attempt, error) {
+	phone, err := CleanPhone(typedPhone)
+	if err != nil {
+		return "", err
+	}
+	status, raw, err := c.send(ctx, recoverStartPath, "", struct {
+		Phone string `json:"phone"`
+	}{phone})
+	if err != nil {
+		return "", err
+	}
+	switch {
+	case status == http.StatusOK:
+	case status == http.StatusTooManyRequests:
+		return "", ErrBusy
+	case status >= 400 && status < 500:
+		return "", ErrPhoneRefused
+	default:
+		return "", fmt.Errorf("%w: it answered %d", ErrUnreachable, status)
+	}
+	var a struct {
+		Attempt string `json:"attempt"`
+	}
+	if err := decodeAnswer(raw, &a); err != nil {
+		return "", err
+	}
+	if !validToken(a.Attempt) {
+		return "", invalid("mez Cloud's answer names no attempt")
+	}
+	return Attempt(a.Attempt), nil
+}
+
+// verifyAnswer is what the cloud sends back for a one-time code it accepts.
+type verifyAnswer struct {
+	Session   string         `json:"session"`
+	ExpiresAt time.Time      `json:"expires_at"`
+	Owner     Owner          `json:"owner"`
+	Venues    []AccountVenue `json:"venues"`
+}
+
+// RecoverVerify gives the one-time code back and is signed in to the
+// account: who it is, and its venues. A code that could not be one is
+// refused here without being sent, since the cloud counts wrong ones.
+func (c *Client) RecoverVerify(ctx context.Context, attempt Attempt, typedOTP string) (*Recovery, error) {
+	if !validToken(string(attempt)) {
+		return nil, ErrSessionOver
+	}
+	otp, err := CleanOTP(typedOTP)
+	if err != nil {
+		return nil, err
+	}
+	status, raw, err := c.send(ctx, recoverVerifyPath, "", struct {
+		Attempt string `json:"attempt"`
+		Code    string `json:"code"`
+	}{string(attempt), otp})
+	if err != nil {
+		return nil, err
+	}
+	switch {
+	case status == http.StatusOK:
+	case status == http.StatusTooManyRequests:
+		return nil, ErrBusy
+	case status >= 400 && status < 500:
+		// Whatever it says of the code, the answer here is one.
+		return nil, ErrOTPRefused
+	default:
+		return nil, fmt.Errorf("%w: it answered %d", ErrUnreachable, status)
+	}
+	var a verifyAnswer
+	if err := decodeAnswer(raw, &a); err != nil {
+		return nil, err
+	}
+	if err := a.validate(); err != nil {
+		return nil, err
+	}
+	return &Recovery{Owner: a.Owner, Venues: a.Venues, ExpiresAt: a.ExpiresAt.UTC(), session: a.Session, client: c}, nil
+}
+
+func (a verifyAnswer) validate() error {
+	if !validToken(a.Session) {
+		return invalid("mez Cloud's answer opens no session")
+	}
+	if a.ExpiresAt.IsZero() {
+		return invalid("mez Cloud's answer does not say when the session ends")
+	}
+	if !validName(a.Owner.Name, maxOwnerName) {
+		return invalid("the owner's name is empty, or not a name")
+	}
+	if len(a.Venues) > maxVenues {
+		return invalid("mez Cloud's answer lists more venues than an account has")
+	}
+	seen := make(map[string]bool, len(a.Venues))
+	for _, v := range a.Venues {
+		if !validVenueID(v.ID) {
+			return invalid("mez Cloud's answer lists a venue with an id that is not one")
+		}
+		if seen[v.ID] {
+			return invalid("the venue %s is listed twice", v.ID)
+		}
+		seen[v.ID] = true
+		if !validName(v.Name, maxVenueName) {
+			return invalid("the venue %s has no name, or one that is not a name", v.ID)
+		}
+	}
+	return nil
+}
+
+// grantAnswer is what the cloud sends back for a venue it hands over.
+type grantAnswer struct {
+	Backup      backup.S3 `json:"backup"`
+	PairingCode string    `json:"pairing_code"`
+	ExpiresAt   time.Time `json:"expires_at"`
+}
+
+// Grant asks for what brings one of the account's venues back. A venue the
+// list did not hold, or one with no backup, is refused here without being
+// sent.
+//
+// What comes back is checked whole before it is returned, and nothing is
+// written or restored: that is the caller's.
+func (r *Recovery) Grant(ctx context.Context, venueID string) (Grant, error) {
+	if r == nil || r.client == nil || r.session == "" {
+		return Grant{}, ErrSessionOver
+	}
+	var venue AccountVenue
+	for _, v := range r.Venues {
+		if v.ID == venueID {
+			venue = v
+		}
+	}
+	if venue.ID == "" {
+		return Grant{}, ErrNotListed
+	}
+	if venue.LastBackupAt.IsZero() {
+		return Grant{}, ErrNeverBackedUp
+	}
+
+	type grantVenue struct {
+		ID string `json:"id"`
+	}
+	status, raw, err := r.client.send(ctx, recoverGrantPath, r.session, struct {
+		Venue grantVenue `json:"venue"`
+	}{grantVenue{venue.ID}})
+	if err != nil {
+		return Grant{}, err
+	}
+	switch {
+	case status == http.StatusOK:
+	case status == http.StatusUnauthorized:
+		return Grant{}, ErrSessionOver
+	case status == http.StatusGone:
+		return Grant{}, ErrBackupGone
+	case status == http.StatusTooManyRequests:
+		return Grant{}, ErrBusy
+	case status >= 400 && status < 500:
+		return Grant{}, ErrGrantRefused
+	default:
+		return Grant{}, fmt.Errorf("%w: it answered %d", ErrUnreachable, status)
+	}
+	var a grantAnswer
+	if err := decodeAnswer(raw, &a); err != nil {
+		return Grant{}, err
+	}
+	// What is wrong with it is not repeated: the words would be the cloud's,
+	// as long as it cared to make them.
+	if err := (backup.Config{Kind: backup.KindS3, S3: a.Backup}).Validate(""); err != nil {
+		return Grant{}, invalid("the backup's bucket is not one a restore could read")
+	}
+	for _, field := range []string{a.Backup.Bucket, a.Backup.Path, a.Backup.Region, a.Backup.Endpoint, a.Backup.AccessKeyID, a.Backup.SecretAccessKey} {
+		if strings.ContainsFunc(field, hidden) {
+			return Grant{}, invalid("the backup's bucket is not one a restore could read")
+		}
+	}
+	// A bucket an owner names may be a box on their own network, in the
+	// clear. One the cloud names is the cloud's, and a key is sent to it.
+	if a.Backup.Endpoint != "" {
+		if err := secureURL(a.Backup.Endpoint); err != nil {
+			return Grant{}, invalid("the backup's bucket is not at an address a key may be sent to")
+		}
+	}
+	// As at pairing: the key is for this venue's folder, so there must be
+	// one. The default would be every venue's.
+	if a.Backup.Path == "" {
+		return Grant{}, invalid("the backup's bucket has no folder for this venue")
+	}
+	code, err := CleanCode(a.PairingCode)
+	if err != nil || code != a.PairingCode {
+		return Grant{}, invalid("mez Cloud's answer holds no pairing code")
+	}
+	if a.ExpiresAt.IsZero() {
+		return Grant{}, invalid("mez Cloud's answer does not say how long the key reads for")
+	}
+	return Grant{Venue: venue, Backup: a.Backup, PairingCode: code, ExpiresAt: a.ExpiresAt.UTC()}, nil
+}
+
+// decodeAnswer reads a 200's body, which must be JSON and no larger than
+// an answer is.
+func decodeAnswer(raw []byte, into any) error {
+	if len(raw) > maxAnswer {
+		return invalid("mez Cloud's answer is larger than an answer is")
+	}
+	if err := json.Unmarshal(raw, into); err != nil {
+		return invalid("mez Cloud's answer could not be read")
+	}
+	return nil
+}
+
+// validToken is an attempt or a session as a cloud would name one: some
+// printable ASCII with no spaces, so that it goes in a header as it is.
+func validToken(s string) bool {
+	if s == "" || len(s) > maxToken {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] <= ' ' || s[i] > '~' {
+			return false
+		}
+	}
+	return true
+}
+
+// validVenueID is a venue's public id by its look: "ven_" and capitals and
+// digits. This package does not import the one that makes them.
+func validVenueID(s string) bool {
+	code, found := strings.CutPrefix(s, venueIDPrefix)
+	if !found || len(code) < 4 || len(code) > 32 {
+		return false
+	}
+	for i := 0; i < len(code); i++ {
+		if c := code[i]; (c < 'A' || c > 'Z') && (c < '0' || c > '9') {
+			return false
+		}
+	}
+	return true
+}
+
+// validName is a name a screen can show on one line: something, trimmed,
+// no longer than most, with nothing in it that is not seen.
+func validName(name string, most int) bool {
+	return strings.TrimSpace(name) != "" && name == strings.TrimSpace(name) && len(name) <= most && !strings.ContainsFunc(name, hidden)
+}

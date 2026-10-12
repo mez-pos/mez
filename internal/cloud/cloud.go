@@ -1,5 +1,6 @@
-// Package cloud is the venue's one meeting with mez Cloud that it starts
-// itself: pairing (ADR-312, ADR-318). A code from the owner's account, typed
+// Package cloud is the venue's two meetings with mez Cloud that it starts
+// itself: pairing (ADR-312, ADR-318), and asking for a venue that is gone
+// (ADR-332, recover.go). Pairing first. A code from the owner's account, typed
 // in at the venue once, is exchanged for what the venue needs to be reached
 // from outside and backed up off the premises: a relay key, a hostname, a
 // bucket's credentials, the cloud's public key and the owner's name.
@@ -194,7 +195,7 @@ func (p Pairing) Validate() error {
 	if _, err := p.Key(); err != nil {
 		return invalid("%v", err)
 	}
-	if name := p.Owner.Name; strings.TrimSpace(name) == "" || name != strings.TrimSpace(name) || len(name) > maxOwnerName || strings.ContainsAny(name, "\r\n\t") {
+	if !validName(p.Owner.Name, maxOwnerName) {
 		return invalid("the owner's name is empty, or not a name")
 	}
 	if p.PairedAt.IsZero() {
