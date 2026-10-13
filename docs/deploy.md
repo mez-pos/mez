@@ -156,7 +156,11 @@ Then start the server and finish in the browser:
    code is for one kind of device: a till opens
    `http://<server address>:7777`, a kitchen display
    `http://<server address>:7777/kitchen`, a back office
-   `http://<server address>:7777/backoffice`.
+   `http://<server address>:7777/backoffice`. **Reserve this computer's
+   address in the router** (a DHCP reservation) before pairing them: a
+   tablet keeps its pairing for the one address it was paired at, and
+   nothing finds the server for it if that address changes
+   ([what the tablets do](#what-the-tablets-do)).
 4. Under **Floor plan**, make your areas and tables (**Add an area**,
    then **Add a table**); a counter-only cafe can skip this.
 5. Under **Settings**, check the venue, tax, invoice numbering, receipt and
@@ -1240,8 +1244,9 @@ with the PIN of someone who manages the venue: the PINs are the venue's own,
 as the backup holds them. The bar says "Mirror, as of 23:10": when the
 venue last wrote something this copy holds, in the venue's time. Beside it
 is "Away from the venue" while the venue is still sending its backup, and
-"Venue offline" once the copy is more than two minutes behind: a venue that
-is switched off, has no internet, or has had a quiet few minutes. A
+"Nothing new from the venue" once the copy is more than two minutes
+behind: a venue that is switched off, has no internet, or has had a quiet
+few minutes. The copy cannot tell which. A
 browser is paired once: the next time the mirror is started it is
 remembered, and only the PIN is asked.
 

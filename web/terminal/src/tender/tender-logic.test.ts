@@ -11,6 +11,7 @@ import {
   payStep,
   payView,
   planTender,
+  quickShown,
   quickTenders,
   tenderFailure,
   tenderOutcome,
@@ -35,6 +36,17 @@ describe("quickTenders", () => {
   ];
   it.each(cases)("%s", (_name, due, currency, want) => {
     expect(quickTenders(due, currency)).toEqual(want);
+  });
+});
+
+describe("quickShown", () => {
+  const cases: [string, number[], number, number[]][] = [
+    ["room for all of them", [18000, 19000, 20000, 50000], 4, [18000, 19000, 20000, 50000]],
+    ["one too many: the exact amount and the big notes stay, the next ten goes", [20000, 21000, 25000, 30000, 50000], 4, [20000, 25000, 30000, 50000]],
+    ["nothing to show", [], 4, []],
+  ];
+  it.each(cases)("%s", (_name, quick, room, want) => {
+    expect(quickShown(quick, room)).toEqual(want);
   });
 });
 

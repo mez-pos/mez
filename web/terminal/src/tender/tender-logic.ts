@@ -26,6 +26,17 @@ export function quickTenders(due: number, currency: string): number[] {
   return [...new Set([due, ...above])];
 }
 
+/**
+ * The quick tenders a row of `room` chips shows. When there is one too many,
+ * the exact amount and the largest stay, and the smallest step above exact
+ * goes: someone paying a 200.00 bill hands over a 500 note far more often
+ * than 210.00 (ADR-342).
+ */
+export function quickShown(quick: readonly number[], room: number): number[] {
+  if (quick.length <= room) return [...quick];
+  return [...quick.slice(0, 1), ...quick.slice(quick.length - (room - 1))];
+}
+
 export const methodNames: Readonly<Record<PaymentMethod, string>> = {
   cash: "Cash",
   card: "Card",

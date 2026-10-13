@@ -84,6 +84,26 @@ export function taxNote(creditNotes: number): string | null {
   return `After ${creditNotes} ${creditNotes === 1 ? "credit note" : "credit notes"}: the tax invoiced, less the tax credited.`;
 }
 
+/**
+ * The slip's two lines under its Total when credit notes were issued in the
+ * shift: what they take off it, and the net sales left. The slip's Total is
+ * before credit notes and its tax rows are after them, and with nothing
+ * between the two the slip did not add up to the eye (ADR-342). The printout
+ * has the same two lines. Null with none.
+ */
+export function creditLines(r: { sales: { net_of_credits: Money }; credit_notes: { count: number; amount: Money } }): {
+  label: string;
+  less: Money;
+  net: Money;
+} | null {
+  if (r.credit_notes.count <= 0) return null;
+  return {
+    label: `Less credit notes (${r.credit_notes.count})`,
+    less: { ...r.credit_notes.amount, minor: -Math.abs(r.credit_notes.amount.minor) },
+    net: r.sales.net_of_credits,
+  };
+}
+
 /** The error a report screen shows, in words. */
 export function reportProblem(status: number | undefined, number?: number): string {
   if (status === 403) return "You don't have permission to see reports. Ask a manager.";

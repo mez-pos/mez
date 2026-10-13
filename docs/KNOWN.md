@@ -573,7 +573,9 @@
   one bucket an address for every limit, so a tighter limit on ordering needs its
   own. The guest app does not call the endpoint yet. Not run through the relay or
   from a phone. A table with two tickets open gives a guest's round to the older.
-- **What the walk found and left, for the owner to decide** (ADR-199):
+- **What the walk found and left, for the owner to decide** (ADR-199).
+  **All five were decided on 2026-10-13 (ADR-342) and built (ADR-343),
+  unseen in a browser.** As they were found:
   - The manager role a venue starts with has no `menu.edit`, `settings.edit` or
     `device.manage`: Arjun has no Menu pill and the back office refuses him Menu. The
     flow map says a manager has Menu and Reports. Give the default manager

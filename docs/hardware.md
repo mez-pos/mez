@@ -150,9 +150,12 @@ printer of its own or none. They are set in the back office under
 it the receipt printer and give it every station.
 
 A station with no printer gets no paper ticket: its orders are on the
-kitchen display, which needs no printer at all. The ticket is still kept,
-unprinted, and the Print queue counts it as not printed. The same goes for
-receipts at a venue with no receipt printer.
+kitchen display, which needs no printer at all. Nothing is queued for it,
+and nothing counts as not printed. A station with no printer **and** no
+kitchen display in front of it sees nothing of its orders: give it one or
+the other. A receipt is different: at a venue with no receipt printer it
+is kept, unprinted, and the Print queue counts it, to print when a
+printer is set up.
 
 ## What the text can hold
 

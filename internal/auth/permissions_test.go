@@ -65,8 +65,14 @@ func TestDefaultRoles(t *testing.T) {
 	if len(roles["owner"]) != len(Permissions()) {
 		t.Errorf("the owner has %d of %d permissions", len(roles["owner"]), len(Permissions()))
 	}
-	if slices.Contains(roles["manager"], PermSettingsEdit) || slices.Contains(roles["manager"], PermMenuEdit) {
-		t.Error("a manager can change prices or tax settings")
+	// A manager has the menu, as the flow map says, and not the venue's
+	// settings or its devices (ADR-342). Migration 00056 gives menu.edit to
+	// the managers of venues that already exist.
+	if !slices.Contains(roles["manager"], PermMenuEdit) {
+		t.Error("a manager cannot edit the menu")
+	}
+	if slices.Contains(roles["manager"], PermSettingsEdit) || slices.Contains(roles["manager"], PermDeviceManage) {
+		t.Error("a manager can change tax settings or pair devices")
 	}
 	if slices.Contains(roles["cashier"], PermLineVoid) || slices.Contains(roles["cashier"], PermDiscountGive) {
 		t.Error("a cashier can void or discount without a manager")

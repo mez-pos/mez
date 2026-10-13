@@ -9,6 +9,7 @@ import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import type { NumKey } from "../../../shared/ui/numpad-keys";
 import { AmountField } from "./AmountField";
+import { quickShown } from "./tender-logic";
 
 interface AmountCardProps {
   method: PaymentMethod;
@@ -57,7 +58,7 @@ export function AmountCard(props: AmountCardProps) {
 
       {cash ? (
         <div role="group" aria-label="Quick amounts" className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {quick.slice(0, 4).map((q) => {
+          {quickShown(quick, 4).map((q) => {
             const on = amount.minor === q;
             return (
               <button

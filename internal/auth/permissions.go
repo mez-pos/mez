@@ -175,12 +175,14 @@ type RoleTemplate struct {
 // code enforces is that the owner has everything.
 func DefaultRoles() []RoleTemplate {
 	// A manager lets through a tip over the venue's ceiling (ADR-261).
-	// Migration 00053 gives tip.approve to venues that exist.
+	// Migration 00053 gives tip.approve to venues that exist. A manager has
+	// the menu, as the flow map says: what is sold out, a price (ADR-342,
+	// migration 00056). Settings and devices stay the owner's.
 	manager := []Permission{
 		PermOrderOpen, PermOrderEdit, PermLineVoid, PermLineComp, PermDiscountGive,
 		PermPaymentTake, PermPaymentVoid, PermRefundGive, PermTipApprove, PermOrderReopen, PermInvoiceReprint, PermKitchenView, PermKitchenWork,
 		PermShiftOpen, PermShiftManage, PermCashMove,
-		PermStaffManage, PermReportsView, PermStockManage,
+		PermStaffManage, PermMenuEdit, PermReportsView, PermStockManage,
 	}
 	return []RoleTemplate{
 		{Name: "owner", Permissions: Permissions()},

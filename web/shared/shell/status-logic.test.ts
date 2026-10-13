@@ -18,8 +18,8 @@ describe("connectionText", () => {
     const fresh = { asOf: 1_000_000, heardAt: 1_030_000 };
     const stale = { asOf: 1_000_000, heardAt: 1_000_000 + 2 * 60_000 + 1 };
 
-    it("says Venue offline, as a warning with nothing to retry, once the copy has stopped growing newer", () => {
-      expect(connectionText({ state: "away" }, 0, stale)).toEqual({ tone: "warning", word: "Venue offline", detail: null, retryable: false });
+    it("says nothing new has come from the venue, as a warning with nothing to retry, once the copy has stopped growing newer", () => {
+      expect(connectionText({ state: "away" }, 0, stale)).toEqual({ tone: "warning", word: "Nothing new from the venue", detail: null, retryable: false });
       expect(venueSilent({ state: "away" }, stale)).toBe(true);
     });
     it("says Away from the venue while the venue is still sending", () => {
@@ -27,7 +27,7 @@ describe("connectionText", () => {
       expect(venueSilent({ state: "away" }, fresh)).toBe(false);
     });
     it("says it of a copy that cannot say how old it is", () => {
-      expect(connectionText({ state: "away" }, 0, { asOf: null, heardAt: 5 }).word).toBe("Venue offline");
+      expect(connectionText({ state: "away" }, 0, { asOf: null, heardAt: 5 }).word).toBe("Nothing new from the venue");
     });
     it("leaves the connection its own words until the page has settled as away", () => {
       expect(connectionText({ state: "connecting", attempt: 1 }, 0, stale).word).toBe("Connecting");

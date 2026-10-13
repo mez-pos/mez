@@ -13,14 +13,17 @@ import type { RealtimeStatus } from "../realtime";
  * server and nothing wider.
  *
  * On a mirror the server is a copy of the venue, and what is worth a word is
- * the venue: "Venue offline" once the copy has stopped growing newer (ADR-329).
+ * the venue: "Nothing new from the venue" once the copy has stopped growing
+ * newer (ADR-329). Not "offline": the copy cannot tell a venue that is off
+ * from one that has sold nothing for two minutes, and the chip beside this
+ * already says when it last heard (ADR-342).
  * Only once the page has settled as away, so a mirror that stops answering
  * still says so in the connection's own words.
  */
 export function connectionText(status: RealtimeStatus, now: number, mirror: MirrorMark | null = null): ConnectionDescription {
   const described = describeConnection(status, now);
   if (status.state === "live") return { ...described, word: "Online" };
-  if (venueSilent(status, mirror)) return { ...described, tone: "warning", word: "Venue offline" };
+  if (venueSilent(status, mirror)) return { ...described, tone: "warning", word: "Nothing new from the venue" };
   return described;
 }
 

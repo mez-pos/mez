@@ -8,19 +8,20 @@ describe("taxRows", () => {
   const inr = (minor: number) => ({ minor, currency: "INR" });
   const totals = { tax: inr(1572) } as OrderResponse["totals"];
   const component = (name: string, rate: number, minor: number) => ({ name, rate, taxable: inr(31428), amount: inr(minor) });
+  const gst = (pricing: "inclusive" | "exclusive", components = [component("CGST", 2500, 786), component("SGST", 2500, 786)]) =>
+    ({ profile: "gst_in", pricing, components, taxable: inr(31428), tax: inr(1572), total: inr(33000) }) as NonNullable<OrderResponse["tax"]>;
   it("names each tax the server worked out, with its rate", () => {
-    const tax = {
-      profile: "gst_in",
-      pricing: "inclusive",
-      components: [component("CGST", 2500, 786), component("SGST", 2500, 786)],
-      taxable: inr(31428),
-      tax: inr(1572),
-      total: inr(33000),
-    } as NonNullable<OrderResponse["tax"]>;
-    expect(taxRows({ tax, totals }, "INR")).toEqual([
+    expect(taxRows({ tax: gst("exclusive"), totals }, "INR")).toEqual([
       { label: "CGST 2.5%", amount: inr(786) },
       { label: "SGST 2.5%", amount: inr(786) },
     ]);
+  });
+  it("says a tax is in the prices already, where it is", () => {
+    expect(taxRows({ tax: gst("inclusive"), totals }, "INR")).toEqual([
+      { label: "incl. CGST 2.5%", amount: inr(786) },
+      { label: "incl. SGST 2.5%", amount: inr(786) },
+    ]);
+    expect(taxRows({ tax: gst("inclusive", []), totals }, "INR")).toEqual([{ label: "incl. Tax", amount: inr(1572) }]);
   });
   it("is one row when the server names no components", () => {
     expect(taxRows({ totals }, "INR")).toEqual([{ label: "Tax", amount: inr(1572) }]);

@@ -15,11 +15,16 @@ export interface TaxRow {
  * ("CGST 2.5%", "SGST 2.5%"), or one row, "Tax", when it names none (an order
  * with nothing on it yet, a profile with a single tax). The amounts are the
  * server's.
+ *
+ * Where prices include their tax, each row says so: "incl. CGST 2.5%". The
+ * subtotal above already holds that tax and the total below is the same
+ * figure, and rows with no word read as if they should add up (ADR-342).
  */
 export function taxRows(order: Pick<OrderResponse, "tax" | "totals"> | undefined, currency: string): TaxRow[] {
+  const within = order?.tax?.pricing === "inclusive" ? "incl. " : "";
   const components = order?.tax?.components ?? [];
-  if (components.length === 0) return [{ label: "Tax", amount: order?.totals.tax ?? { minor: 0, currency } }];
-  return components.map((c) => ({ label: `${c.name} ${rateText(c.rate)}`, amount: c.amount }));
+  if (components.length === 0) return [{ label: `${within}Tax`, amount: order?.totals.tax ?? { minor: 0, currency } }];
+  return components.map((c) => ({ label: `${within}${c.name} ${rateText(c.rate)}`, amount: c.amount }));
 }
 
 /**

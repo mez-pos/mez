@@ -15,7 +15,7 @@ import { Button, Money, NumPad, type NumKey } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { AmountField } from "../tender/AmountField";
 import { TipNote } from "../tender/TipCard";
-import { methodNames, tipFor, tipPercents, type TenderPlan } from "../tender/tender-logic";
+import { methodNames, quickShown, tipFor, tipPercents, type TenderPlan } from "../tender/tender-logic";
 import { billMethods } from "./bill-logic";
 
 const icons: Readonly<Record<PaymentMethod, LucideIcon>> = { upi: QrCodeIcon, card: CreditCardIcon, cash: BanknoteIcon, other: BanknoteIcon };
@@ -168,7 +168,7 @@ export function BillCollect(props: BillCollectProps) {
               onKey={onKey}
             />
             <div role="group" aria-label="Quick amounts" className="mt-2.5 grid grid-cols-4 gap-2">
-              {quick.slice(0, 4).map((q) => (
+              {quickShown(quick, 4).map((q) => (
                 <button
                   key={q}
                   type="button"

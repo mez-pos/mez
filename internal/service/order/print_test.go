@@ -88,32 +88,30 @@ func TestPrintJobsFromOrders(t *testing.T) {
 	must(t)(s.SendTicket(ctx, m, id, SendTicket{Station: "kitchen"}))
 	must(t)(s.SendTicket(ctx, m, id, SendTicket{Station: "bar"}))
 	got := jobs(t, d)
-	if len(got) != 2 || w.n.Load() != 2 {
-		t.Fatalf("after two sends: %d jobs, %d wakes", len(got), w.n.Load())
+	// The bar has no printer: it works from its display, and a ticket sent
+	// there queues nothing, so nothing says "not printed" of it (ADR-342).
+	if len(got) != 1 || w.n.Load() != 1 {
+		t.Fatalf("after two sends, one to a station with no printer: %d jobs, %d wakes", len(got), w.n.Load())
 	}
-	bar, kitchen := got[0], got[1] // newest first
+	kitchen := got[0]
 	if kitchen.Label != "Kitchen ticket, table 4" || kitchen.State != "queued" || kitchen.PrinterID.Int64 != 2 || kitchen.Station != "kitchen" {
 		t.Errorf("kitchen job = %+v", kitchen)
 	}
 	if p := payload(t, d, kitchen.ID); !bytes.Contains(p, []byte("1 x Masala dosa")) || !bytes.Contains(p, []byte("NOTE: no onion")) || bytes.Contains(p, []byte("Filter coffee")) {
 		t.Errorf("kitchen ticket:\n%q", p)
 	}
-	// The bar has no printer: its ticket is kept, dead, and says why.
-	if bar.State != "dead" || bar.LastError != printq.NoPrinter || bar.PrinterID.Valid || bar.Station != "bar" {
-		t.Errorf("bar job = %+v", bar)
-	}
 
 	// A refused payment queues nothing.
 	if _, err := s.TenderPayment(ctx, m, id, TenderPayment{Method: order.PaymentCash, Amount: inr(99999)}); err == nil {
 		t.Fatal("an over-tender was taken")
 	}
-	if len(jobs(t, d)) != 2 || w.n.Load() != 2 {
+	if len(jobs(t, d)) != 1 || w.n.Load() != 1 {
 		t.Fatal("a refused payment queued a job or woke the queue")
 	}
 
 	must(t)(s.TenderPayment(ctx, cashier("pay-1"), id, TenderPayment{Method: order.PaymentCash, Amount: inr(16800)}))
 	got = jobs(t, d)
-	if len(got) != 3 {
+	if len(got) != 2 {
 		t.Fatalf("after settling: %d jobs", len(got))
 	}
 	rcpt := got[0]
@@ -130,14 +128,14 @@ func TestPrintJobsFromOrders(t *testing.T) {
 	}
 	// A retry of the same payment is a replay, not a second receipt.
 	must(t)(s.TenderPayment(ctx, cashier("pay-1"), id, TenderPayment{Method: order.PaymentCash, Amount: inr(16800)}))
-	if len(jobs(t, d)) != 3 {
+	if len(jobs(t, d)) != 2 {
 		t.Error("a replayed payment queued another receipt")
 	}
 
 	must(t)(s.Close(ctx, m, id))
 	res := must(t)(s.Reprint(ctx, m, id, ReprintInvoice{InvoiceSeq: 8, Reason: "guest_copy", AuthorisedBy: 7}))
 	got = jobs(t, d)
-	if len(got) != 4 || got[0].Label != "Duplicate INV/26-27/000001" || got[0].PrinterID.Int64 != 1 {
+	if len(got) != 3 || got[0].Label != "Duplicate INV/26-27/000001" || got[0].PrinterID.Int64 != 1 {
 		t.Fatalf("after the reprint: %+v", got[0])
 	}
 	dup := payload(t, d, got[0].ID)

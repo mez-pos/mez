@@ -1,6 +1,7 @@
 // Package printing decides what an order's events print (phase 07, Task
 // 5b, ADR-081): a receipt when an invoice is issued, a DUPLICATE when one is
-// reprinted, a kitchen ticket for each ticket sent. It lays each out with
+// reprinted, a kitchen ticket for each ticket sent to a station that has a
+// printer. It lays each out with
 // escpos, finds its printer, and queues it with printq, all inside the
 // transaction that appends the events. So a job exists exactly when its
 // event does: a payment that commits has its receipt queued, and one that
@@ -54,7 +55,7 @@ func Plan(ctx context.Context, tx *gen.Queries, in Input, now time.Time) (int, e
 		case order.InvoiceReprinted:
 			j, err = duplicate(ctx, tx, in, e, pl)
 		case order.TicketSent:
-			j, err = kitchen(ctx, tx, in, e, pl)
+			j, ok, err = kitchen(ctx, tx, in, e, pl)
 		case order.CreditNoteIssued:
 			j, err = creditNote(ctx, tx, in, e, pl)
 		default:
@@ -125,10 +126,18 @@ func duplicate(ctx context.Context, tx *gen.Queries, in Input, e order.Event, pl
 	return printq.Job{}, fmt.Errorf("printing: order %d has no invoice %s to reprint", in.OrderID, pl.InvoiceNo)
 }
 
-func kitchen(ctx context.Context, tx *gen.Queries, in Input, e order.Event, pl order.TicketSent) (printq.Job, error) {
+// kitchen is the ticket a send prints, and whether it prints one at all. A
+// station with no printer works from its display: nothing is queued for it,
+// where a dead job each time made "Not printed" count every ticket a
+// display-only kitchen was sent, all day (ADR-342). A receipt is not like
+// that: with no printer it is still kept dead, because one was expected.
+func kitchen(ctx context.Context, tx *gen.Queries, in Input, e order.Event, pl order.TicketSent) (printq.Job, bool, error) {
 	route, err := printq.RouteFor(ctx, tx, in.VenueID, printjob.Kitchen, pl.Station)
 	if err != nil {
-		return printq.Job{}, err
+		return printq.Job{}, false, err
+	}
+	if route.PrinterID == 0 {
+		return printq.Job{}, false, nil
 	}
 	k := escpos.KitchenTicket{
 		Station: title(pl.Station), OrderRef: in.PublicID, Table: in.State.TableID, Covers: in.State.Covers,
@@ -158,7 +167,7 @@ func kitchen(ctx context.Context, tx *gen.Queries, in Input, e order.Event, pl o
 	}
 	label := fmt.Sprintf("%s ticket, %s", title(pl.Station), where)
 	data, layoutErr := k.Layout(paper(route))
-	return job(in, e, route, printjob.Kitchen, label, pl.Station, data, layoutErr), nil
+	return job(in, e, route, printjob.Kitchen, label, pl.Station, data, layoutErr), true, nil
 }
 
 // job is a queued job, or, when the layout failed, a dead one that says so.

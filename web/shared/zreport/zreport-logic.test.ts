@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { approvedTips, channelName, differenceWords, methodName, rateText, reportProblem, staffName, serviceName, stampText, taxNote } from "./zreport-logic";
+import {
+  approvedTips,
+  channelName,
+  creditLines,
+  differenceWords,
+  methodName,
+  rateText,
+  reportProblem,
+  staffName,
+  serviceName,
+  stampText,
+  taxNote,
+} from "./zreport-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
 
@@ -72,5 +84,19 @@ describe("the tax card's note", () => {
     expect(taxNote(0)).toBeNull();
     expect(taxNote(1)).toBe("After 1 credit note: the tax invoiced, less the tax credited.");
     expect(taxNote(3)).toBe("After 3 credit notes: the tax invoiced, less the tax credited.");
+  });
+});
+
+describe("creditLines", () => {
+  const sales = { total: inr(120000), net_of_credits: inr(101000) };
+  it("is the credit notes taken off the total, and what is left, when there were any", () => {
+    expect(creditLines({ sales, credit_notes: { count: 2, amount: inr(19000) } })).toEqual({
+      label: "Less credit notes (2)",
+      less: inr(-19000),
+      net: inr(101000),
+    });
+  });
+  it("is nothing on a shift with none", () => {
+    expect(creditLines({ sales, credit_notes: { count: 0, amount: inr(0) } })).toBeNull();
   });
 });

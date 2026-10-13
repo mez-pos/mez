@@ -158,18 +158,14 @@ them: prices shown before GST, and a restore skipping invoice numbers
 ahead. One waits on real tablets: whether the server should answer to a
 name.
 
-**Decided and not built**, each one session, in no fixed order, and after
-the next task above unless the human says otherwise (ADR-342 has each in
-full; `docs/KNOWN.md` has where each was found):
-- A manager may edit the menu by default. Read the flow map first.
-- "Not printed" leaves out tickets at a station with no printer.
-- The Z-report slip: gross, credit notes, net.
-- Tax rows say "incl." on a tax-inclusive total.
-- The desktop's cash quick amounts offer ₹500.
-- A restore skips invoice numbers ahead and audits the gap (ADR first).
-- A mirror's pill says when the venue last changed something.
-- `troubleshooting.md`: a Public network is made Private. Setup: reserve
-  this computer's address in the router.
+**Decided and not built** (ADR-342): a restore skips invoice numbers
+ahead and audits the gap. ADR first, and the accountant's word before
+it. The other seven were built on 2026-10-13 (ADR-343), **and none was
+looked at in a browser**: the "incl." tax rows on the rail, the cash row
+on a 200.00 bill, the Z-report slip after a credit note, the Menu pill
+for a manager, the mirror's pill, and a station with no printer sending
+a ticket with the Print queue left at nothing. Walk them when next at a
+screen. Migration 00056 gives `menu.edit` to existing managers.
 
 ---
 

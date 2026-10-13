@@ -43,8 +43,9 @@ screen each scroll on their own.
   there ("Mirror, as of 11 Oct, 23:10"). Under 768px it is a line of its
   own under the bar, the width of the screen. The connection's word is
   "Away from the venue" while the copy is within two minutes of the venue,
-  and "Venue offline", in the warning colour with the no-signal icon, once
-  it is not.
+  and "Nothing new from the venue", in the warning colour with the
+  no-signal icon, once it is not (ADR-342: not "offline", which a quiet
+  venue is not).
 - **The sidebar, 240px, chrome:** an icon and a name on every entry, each
   48px, with its key chord at the right, faint, in the numeral face: `g m`.
   The current one is the terracotta fill. Grouped, each group under a

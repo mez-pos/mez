@@ -11,7 +11,7 @@ import type { Money as Amount, ZReportResponse } from "../api-types";
 import { averageMoney, formatMoney } from "../money";
 import { Card } from "../ui";
 import { cx } from "../ui/cx";
-import { differenceWords, methodName, rateText, staffName, stampText } from "./zreport-logic";
+import { creditLines, differenceWords, methodName, rateText, staffName, stampText } from "./zreport-logic";
 
 interface ZPaperProps {
   z: ZReportResponse;
@@ -28,6 +28,7 @@ export function ZPaper({ z, venueName, className }: ZPaperProps) {
   const average = averageMoney(r.sales.total, r.sales.bills);
   // A report issued before guests were counted has no figure for them (ADR-184).
   const covers: unknown = r.sales.covers;
+  const credits = creditLines(r);
 
   return (
     <Card padding="lg" role="region" aria-label={`Z-report ${z.number}, in brief`} className={cx("font-mono text-sm tabular-nums", className)}>
@@ -45,6 +46,12 @@ export function ZPaper({ z, venueName, className }: ZPaperProps) {
           <Line key={`${t.name}-${t.rate}`} label={`${t.name} ${rateText(t.rate)}`} value={formatMoney(t.amount)} />
         ))}
         <Line label="Total" value={formatMoney(r.sales.total)} strong />
+        {credits && (
+          <>
+            <Line label={credits.label} value={formatMoney(credits.less)} />
+            <Line label="Net sales" value={formatMoney(credits.net)} strong />
+          </>
+        )}
         <Line label="Tips collected" value={formatMoney(r.tips)} />
       </Block>
 

@@ -13257,3 +13257,53 @@ Seven of them are code that is not written (1, 2, 3, 4, 5, 10, 11), one is a lin
 of troubleshooting (8), one a line in setup (14), and they are listed in `STATE.md`
 to be built one to a session. 13 makes recovery one step longer for every owner to
 stop a thing that has not happened to any.
+
+## ADR-343 - Seven of the answers built in one sitting, and what each turned out to be
+2026-10 · Status: accepted. Between phases, at the human's word ("clear the small ones first"). Builds on ADR-342.
+Context: ADR-342 listed eight things decided and not built, one to a session. The
+human asked for the small ones together. Seven are here. The eighth, a restore
+skipping invoice numbers ahead, is not small and waits on the accountant.
+Decision:
+  - **Cash quick amounts: one too many, and the next ten goes.** `quickTenders`
+    offers up to five and the row has room for four beside Custom, so it cut the
+    last, which is the 500 note. `quickShown` keeps the exact amount and the
+    largest, and drops the smallest step above exact. A 200.00 bill offers 200,
+    250, 300 and 500. Both rows use it, the desktop's and the waiter's: the
+    waiter's cut the same way, though the walk's note said it did not.
+  - **Tax rows say "incl." where prices include their tax.** In `taxRows`, from the
+    order's own `tax.pricing`, so the order rail and the tables' panel both say
+    it. The invoice preview already said "Taxable value" and is left.
+  - **A kitchen ticket for a station with no printer queues nothing.** Not "queued
+    and not counted": a dead job for every ticket would still fill the Print
+    queue's list all day. A receipt with no printer is still kept dead, because
+    one was expected. Decided in `printing.kitchen`, which now says whether it
+    prints at all.
+  - **The Z-report's slip on the screen has "Less credit notes (n)" and "Net
+    sales" under its Total**, when there were any. The printout already had both
+    (`escpos/zreport.go`): the walk's note was of both, and the printout was
+    cured since. `creditLines` in `zreport-logic.ts`.
+  - **The default manager has `menu.edit`.** The flow map was read
+    (`docs/phases/rebuild.md`): "Menu, Reports: manager and owner only". The role
+    was the one out of step. Migration 00056 gives it to roles named `manager` in
+    venues that exist, as 00053 did for `tip.approve`. Not `settings.edit` and not
+    `device.manage`: the map names neither.
+  - **A mirror's pill says "Nothing new from the venue"**, and no time: the chip
+    beside it already says "Mirror, as of 23:10". The warning colour stays.
+  - **The two lines of advice were mostly written already.** `troubleshooting.md`
+    had the Public network, and `deploy.md`'s by-hand Windows section the fixed
+    address. Added: reserving the address in first run's step for pairing devices,
+    with why, since ADR-338 found a pairing is kept for one address.
+Because: each was a known wrong thing with a decided cure, and a session each would
+have been seven handoffs for a day's work.
+Cost: **none of the seven was looked at in a browser.** Each is tested as logic or
+against a database; no screen was walked, so the longer pill at a narrow width, the
+slip's two new lines and the "incl." rows in the rail are unseen. An existing
+venue's managers can change prices from the next start, with no word to its owner;
+an owner who wanted that kept from them must take it away under People. A manager
+with `staff.manage` could already give out what they hold (ADR-115), and now holds
+this. A station with no printer and no kitchen display in front of it now loses
+its tickets in silence, where the pill used to say so; `hardware.md` says to give
+it one or the other. Dead kitchen jobs queued before this stay counted until they
+age out of the queue's window. The quick amounts drop the next ten even when it
+is the likelier note, which for a bill ending in 5 it may be. One sitting, seven
+changes, one commit each would have been better history than this one is.
