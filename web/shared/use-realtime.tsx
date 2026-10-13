@@ -15,13 +15,18 @@ export function streamURL(location: Pick<Location, "protocol" | "host"> = window
   return `${scheme}//${location.host}${streamPath}`;
 }
 
-/** A connection for this page, probing `/devices/me` to explain failures. */
-export function createRealtime(credentials: Credentials, topics: readonly string[] = []): RealtimeConnection {
+/**
+ * A connection for this page, probing `/devices/me` to explain failures.
+ * `onNoVenue` hears the probe answered "this computer has no venue yet": a
+ * device left on finds that out here first, with nobody touching it (ADR-339).
+ */
+export function createRealtime(credentials: Credentials, topics: readonly string[] = [], onNoVenue?: () => void): RealtimeConnection {
   // Whether the probe's own answer came through the relay. Read off the
   // answer and not kept from an earlier one: the same page is never both.
   let relayed = false;
   const api = createApiClient({
     credentials,
+    ...(onNoVenue ? { onNoVenue } : {}),
     onResponse: (response) => {
       relayed = cameThroughRelay(response);
     },

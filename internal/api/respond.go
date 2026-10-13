@@ -26,6 +26,12 @@ const (
 	// not any device's.
 	CodeUnauthenticated ErrorCode = "unauthenticated"
 
+	// CodeNoVenue is a device token shown to a computer that has no venue
+	// yet (ADR-339): a new install at the address a venue's computer had.
+	// It says nothing about the token. The device keeps what it holds and
+	// asks again; the venue may be on its way back.
+	CodeNoVenue ErrorCode = "no_venue"
+
 	// CodeDeviceRevoked is a token of a device the venue has unpaired. The
 	// device should forget its token and show the pairing screen.
 	CodeDeviceRevoked ErrorCode = "device_revoked"

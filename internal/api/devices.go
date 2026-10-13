@@ -130,7 +130,7 @@ func (s *Server) authenticateDevice(w http.ResponseWriter, r *http.Request, toke
 		s.unauthenticated(w, CodeDeviceRevoked, "this device has been unpaired; pair it again")
 		return auth.Device{}, false
 	case errors.Is(err, auth.ErrUnauthenticated):
-		s.unauthenticated(w, CodeUnauthenticated, "the device token is not valid")
+		s.unknownToken(w, r)
 		return auth.Device{}, false
 	case err != nil:
 		s.internalError(w, r, "authenticating a device failed", err)
@@ -140,6 +140,32 @@ func (s *Server) authenticateDevice(w http.ResponseWriter, r *http.Request, toke
 		info.venueID, info.deviceID = dev.VenueID, dev.ID
 	}
 	return dev, true
+}
+
+// noVenueRetry is how soon a device shown CodeNoVenue is told to ask again:
+// a restore puts a venue in place within seconds of being asked to.
+const noVenueRetry = "5"
+
+// unknownToken answers a token that is no device's. Where there is a venue
+// that is a refusal, and the device forgets the token. Where there is none
+// yet it is no judgement of the token at all (ADR-339): this may be the new
+// computer a venue is about to be brought back onto, and the token one that
+// venue's database holds. Not knowing which is not a refusal either.
+func (s *Server) unknownToken(w http.ResponseWriter, r *http.Request) {
+	if s.firstRun != nil {
+		needed, err := s.firstRun.Needed(r.Context())
+		if err != nil {
+			s.internalError(w, r, "reading whether there is a venue, for a token that is no device's, failed", err)
+			return
+		}
+		if needed {
+			w.Header().Set("Retry-After", noVenueRetry)
+			writeError(w, s.log, http.StatusServiceUnavailable, CodeNoVenue,
+				"This computer has no venue yet. This device keeps its pairing: wait for the venue to be set up or brought back.")
+			return
+		}
+	}
+	s.unauthenticated(w, CodeUnauthenticated, "the device token is not valid")
 }
 
 // bearer reads a bearer token. The scheme is case-insensitive, per RFC 9110.

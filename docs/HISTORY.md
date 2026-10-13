@@ -8,7 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 7c2 - A bucket for the stand-in, and the whole walk**
+**Phase 14, Task 7d - "The PC died"** (ADR-338). `deploy.md`, under
+Backups: what is needed, the steps, what the tablets do, what comes back
+and what is done again, and what each sentence of a page that did not
+get to "is back" means. Done on one machine against `pairstub`: a venue
+with a printer, a paired tablet and a sale, killed; a new install at the
+same address brought back by number and code; the tablet, off in
+between, on Staff Login with the token it held, invoice two rung on it.
+Two things the task took for granted were not so: nothing finds a server
+for a tablet, and a tablet left on forgot its pairing (cured by 7f). No
+code changed.
+
+Before it, **Phase 14, Task 7c2 - A bucket for the stand-in, and the whole walk**
 (ADR-337), which closed 7c. `internal/backup/s3fake` is the S3 stand-in
 the backup's tests used, moved, with a second key that only reads.
 `pairstub -bucket-fake ADDR` serves it, and the stub's account has

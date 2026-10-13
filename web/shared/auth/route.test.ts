@@ -7,6 +7,7 @@ const states: Record<string, AuthStatus> = {
   checking: { kind: "checking" },
   unpaired: { kind: "unpaired", notice: null },
   locked: { kind: "locked", device, notice: null },
+  no_venue: { kind: "no_venue", device },
   signed_in: { kind: "signed_in", device, staff: { id: "s", name: "Asha", role: "cashier" }, permissions: [], expiresAt: "x" },
 };
 
@@ -20,6 +21,9 @@ describe("routeFor", () => {
     { state: "locked", path: "/", want: "/lock" },
     { state: "locked", path: "/pair", want: "/lock" },
     { state: "locked", path: "/lock", want: null },
+    // The Gate shows its own screen over whatever path it is at.
+    { state: "no_venue", path: "/", want: null },
+    { state: "no_venue", path: "/pair", want: null },
     { state: "signed_in", path: "/pair", want: "/" },
     { state: "signed_in", path: "/lock", want: "/" },
     { state: "signed_in", path: "/", want: null },

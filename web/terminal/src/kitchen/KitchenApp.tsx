@@ -5,6 +5,7 @@
 
 import type { StationResponse } from "../../../shared/api-types";
 import { useAuth } from "../../../shared/auth/use-auth";
+import { NoVenueScreen } from "../../../shared/screens/NoVenueScreen";
 import { PairScreen } from "../../../shared/screens/PairScreen";
 import { Splash } from "../../../shared/screens/Splash";
 import { EmptyState, InboxIcon } from "../../../shared/ui";
@@ -23,6 +24,7 @@ export function KitchenApp({ station, onStation }: KitchenAppProps) {
   const status = useAuth();
   if (status.kind === "checking") return <Splash />;
   if (status.kind === "unpaired") return <PairScreen app="kitchen" />;
+  if (status.kind === "no_venue") return <NoVenueScreen />;
   return <StationBoard station={station} onStation={onStation} />;
 }
 

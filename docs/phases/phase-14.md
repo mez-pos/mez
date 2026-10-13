@@ -625,8 +625,20 @@ and its first commit copies this phase's cloud tasks there.
     pairing code bound to that venue's id. Limits on codes to a number,
     tries to a code and grants to a session, and a message to the account
     on every grant. Refuse past `backups_kept_until` with 410 (ADR-313).
-  - [ ] **Task 7f - A till keeps its pairing through a computer with no
-    venue.** *This repo.* Added on 2026-10-13 by 7d's walk (ADR-338). A
+  - [x] **Task 7f - A till keeps its pairing through a computer with no
+    venue.** *This repo.* As built (ADR-339): the server changes. A token
+    that is no device's, where there is no venue, is answered 503
+    `no_venue` (`unknownToken` in `internal/api/devices.go`, for every
+    route behind a device and for the stream), and 401 as before once
+    there is one. The till has a state for it, `no_venue`
+    (`AuthStore.venueMissing`, from any request and from the stream's
+    probe; `recheck`), and a screen, `NoVenueScreen`, which the Gate and
+    the kitchen display show over whatever path the device is at, and
+    which asks again every five seconds. Tested on both sides. Walked:
+    7d's procedure with the tablet left on and signed in, and reloaded
+    while waiting; it was back on its order screen by itself and rang a
+    sale. `deploy.md` lost its first step. As it was set: Added on
+    2026-10-13 by 7d's walk (ADR-338). A
     server with no venue answers `unauthenticated` to a device token, and
     the till forgets its device (`AuthStore.credentialFailed`, and the
     realtime probe in `web/shared/realtime.ts`). Decide in an ADR who

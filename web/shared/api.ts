@@ -121,10 +121,23 @@ export type CredentialFailure = Extract<ErrorCode, "unauthenticated" | "device_r
 
 const credentialFailures: readonly string[] = ["unauthenticated", "device_revoked", "sign_in_required"] satisfies CredentialFailure[];
 
+/**
+ * The server's answer to a device token while its computer has no venue yet
+ * (internal/api's CodeNoVenue, ADR-339). It is no judgement of the token: a
+ * venue may be on its way back onto that computer, holding it.
+ */
+const noVenue: ErrorCode = "no_venue";
+
+export function saysNoVenue(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 503 && err.code === noVenue;
+}
+
 export interface ApiClientConfig {
   credentials: Credentials;
   fetch?: typeof fetch;
   onCredentialFailure?: (code: CredentialFailure) => void;
+  /** Told when any request is answered "this computer has no venue yet". */
+  onNoVenue?: () => void;
   /** Shown every answer the server gave, good or bad, before its body is read: for its headers. */
   onResponse?: (response: Response) => void;
 }
@@ -133,6 +146,7 @@ export function createApiClient({
   credentials,
   fetch: fetchFn = globalThis.fetch.bind(globalThis),
   onCredentialFailure,
+  onNoVenue,
   onResponse,
 }: ApiClientConfig): ApiClient {
   const request = async <T>(method: string, path: string, body: unknown, options: RequestOptions = {}): Promise<T> => {
@@ -142,6 +156,7 @@ export function createApiClient({
       if (err instanceof ApiError && err.status === 401 && credentialFailures.includes(err.code)) {
         onCredentialFailure?.(err.code as CredentialFailure);
       }
+      if (saysNoVenue(err)) onNoVenue?.();
       throw err;
     }
   };

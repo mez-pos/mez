@@ -120,6 +120,99 @@ describe("AuthStore.boot", () => {
   });
 });
 
+// A new install at the address the venue's computer had, before the venue is
+// brought back (ADR-339): the token is one that venue's database holds.
+describe("AuthStore at a computer with no venue", () => {
+  const noVenue = () => json(503, { error: { code: "no_venue", message: "no venue yet" } });
+
+  it("waits, and forgets nothing, when it starts there", async () => {
+    const { auth, store } = setup(noVenue, { device: true, staff: true });
+    await auth.boot();
+    expect(auth.current()).toEqual({ kind: "no_venue", device: { ...till, name: "Old name" } });
+    expect([store.device()?.token, store.staff()?.token]).toEqual(["nfd_old", "nfs_old"]);
+  });
+
+  it("waits when any request finds it out, signed in or locked", async () => {
+    let gone = false;
+    const { auth, store } = setup((_, path) => (gone ? noVenue() : path === "/api/v1/devices/me" ? json(200, till) : refuse("sign_in_required")), {
+      device: true,
+    });
+    await auth.boot();
+    expect(auth.current().kind).toBe("locked");
+    gone = true;
+    await auth.api.get("/api/v1/staff").catch(() => undefined);
+    expect(auth.current()).toEqual({ kind: "no_venue", device: till });
+    expect(store.device()?.token).toBe("nfd_old");
+  });
+
+  it("waits when the stream's probe finds it out", async () => {
+    const { auth } = setup((_, path) => (path === "/api/v1/devices/me" ? json(200, till) : refuse("sign_in_required")), { device: true });
+    await auth.boot();
+    auth.venueMissing();
+    expect(auth.current()).toEqual({ kind: "no_venue", device: till });
+  });
+
+  it("has nothing to wait with when no device is stored", () => {
+    const { auth } = setup(noVenue);
+    auth.venueMissing();
+    expect(auth.current()).toEqual({ kind: "checking" });
+  });
+
+  it("stays waiting while there is still no venue, or no answer at all", async () => {
+    let answer: Route = noVenue;
+    const { auth, store } = setup((m, p, i) => answer(m, p, i), { device: true });
+    await auth.boot();
+    await auth.recheck();
+    expect(auth.current().kind).toBe("no_venue");
+    answer = unreachable; // the server starting again on the venue brought back
+    await auth.recheck();
+    expect(auth.current().kind).toBe("no_venue");
+    expect(store.device()?.token).toBe("nfd_old");
+  });
+
+  it("carries on with the pairing it held once the venue is there", async () => {
+    let back = false;
+    const { auth } = setup((_, path) => (!back ? noVenue() : path === "/api/v1/devices/me" ? json(200, till) : refuse("sign_in_required")), {
+      device: true,
+    });
+    await auth.boot();
+    back = true;
+    await auth.recheck();
+    expect(auth.current()).toEqual({ kind: "locked", device: till, notice: null });
+  });
+
+  it("is locked, saying why, when the venue that arrives has ended its session", async () => {
+    let back = false;
+    const { auth, store } = setup((_, path) => (!back ? noVenue() : path === "/api/v1/devices/me" ? json(200, till) : refuse("sign_in_required")), {
+      device: true,
+      staff: true,
+    });
+    await auth.boot();
+    back = true;
+    await auth.recheck();
+    expect(auth.current()).toEqual({ kind: "locked", device: till, notice: "expired" });
+    expect(store.staff()).toBeNull();
+  });
+
+  it("is unpaired after all if the venue that arrives does not know it", async () => {
+    let back = false;
+    const { auth, store } = setup(() => (back ? refuse("unauthenticated") : noVenue()), { device: true });
+    await auth.boot();
+    back = true;
+    await auth.recheck();
+    expect(auth.current()).toEqual({ kind: "unpaired", notice: "unrecognised" });
+    expect(store.device()).toBeNull();
+  });
+
+  it("does not recheck from any other state", async () => {
+    const { auth, calls } = setup((_, path) => (path === "/api/v1/devices/me" ? json(200, till) : refuse("x")), { device: true });
+    await auth.boot();
+    const before = calls.length;
+    await auth.recheck();
+    expect(calls.length).toBe(before);
+  });
+});
+
 describe("AuthStore.pair", () => {
   it("stores the device and locks, ready for a PIN", async () => {
     const { auth, store, calls } = setup(() => json(201, { device: till, token: "nfd_new" }));

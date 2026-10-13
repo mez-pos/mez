@@ -3,13 +3,15 @@
 //   checking   -> reading storage and asking the server what it still accepts
 //   unpaired   -> no device token, or the server no longer accepts it
 //   locked     -> a paired device with nobody signed in
+//   no_venue   -> a paired device whose server has no venue yet: it waits,
+//                 and keeps what it holds (ADR-339)
 //   signed_in  -> a staff member's session on this device
 //
 // Screens do not decide this; route.ts maps each state to a screen. Every
 // request made through this store's client reports a revoked device or an
 // expired session back here, so the state follows the server's word.
 
-import { ApiError, createApiClient, type ApiClient, type CredentialFailure, type Credentials } from "../api";
+import { ApiError, createApiClient, saysNoVenue, type ApiClient, type CredentialFailure, type Credentials } from "../api";
 import type { DeviceKind, DeviceResponse, PairRequest, PairResponse, Permission, SessionResponse, SignInRequest, StaffResponse } from "../api-types";
 import type { AppKind, CredentialStore, StoredDevice } from "./storage";
 
@@ -17,6 +19,7 @@ export type AuthStatus =
   | { readonly kind: "checking" }
   | { readonly kind: "unpaired"; readonly notice: "revoked" | "unrecognised" | null }
   | { readonly kind: "locked"; readonly device: DeviceResponse; readonly notice: "expired" | "signed_out" | null }
+  | { readonly kind: "no_venue"; readonly device: DeviceResponse }
   | {
       readonly kind: "signed_in";
       readonly device: DeviceResponse;
@@ -67,6 +70,7 @@ export class AuthStore {
     this.api = createApiClient({
       credentials: this.credentials,
       onCredentialFailure: (code) => this.credentialFailed(code),
+      onNoVenue: () => this.venueMissing(),
       ...(fetchFn ? { fetch: fetchFn } : {}),
       ...(onResponse ? { onResponse } : {}),
     });
@@ -98,7 +102,7 @@ export class AuthStore {
     if (!stored) return this.set({ kind: "unpaired", notice: null });
 
     const device = await this.check(() => this.api.get<DeviceResponse>("/api/v1/devices/me"), stored.device);
-    if (device === "refused") return; // credentialFailed has already moved us to unpaired
+    if (device === "refused") return; // credentialFailed or venueMissing has already moved us
     this.store.refreshDevice({ ...stored, device });
 
     const staff = this.store.staff();
@@ -107,7 +111,9 @@ export class AuthStore {
     if (session === "refused") {
       // A revoked device has already moved to unpaired. An expired session
       // has only been forgotten: nobody was signed in yet to be locked out.
-      if (this.status.kind === "checking") this.set({ kind: "locked", device, notice: "expired" });
+      // Nor was anybody after a wait for the venue: the session ended with
+      // the backup it was not in.
+      if (this.status.kind === "checking" || this.status.kind === "no_venue") this.set({ kind: "locked", device, notice: "expired" });
       return;
     }
     if (session) this.store.saveStaff({ ...staff, staff: session.staff, permissions: session.permissions, expiresAt: session.expires_at });
@@ -169,9 +175,39 @@ export class AuthStore {
     this.set({ kind: "unpaired", notice: code === "device_revoked" ? "revoked" : "unrecognised" });
   }
 
+  /**
+   * From any request, and from the realtime stream's probe: the computer this
+   * device opens has no venue yet. A new install at the old computer's
+   * address says so until the venue is brought back, and the token this
+   * device holds is in that venue's database. So nothing is forgotten, and
+   * the device waits (ADR-339).
+   */
+  venueMissing(): void {
+    const stored = this.store.device();
+    if (!stored || this.status.kind === "no_venue") return;
+    this.set({ kind: "no_venue", device: stored.device });
+  }
+
+  /**
+   * While waiting: ask again. Still no venue, or no answer (the server
+   * starting again on a venue brought back), and it goes on waiting. A venue
+   * that knows this device carries on where boot would; one that does not
+   * has already moved us to unpaired.
+   */
+  async recheck(): Promise<void> {
+    if (this.status.kind !== "no_venue") return;
+    try {
+      await this.api.get<DeviceResponse>("/api/v1/devices/me");
+    } catch {
+      return;
+    }
+    this.booting = this.checkStored();
+    return this.booting;
+  }
+
   private pairedDevice(): DeviceResponse {
     const s = this.status;
-    if (s.kind === "locked" || s.kind === "signed_in") return s.device;
+    if (s.kind === "locked" || s.kind === "signed_in" || s.kind === "no_venue") return s.device;
     const stored = this.store.device();
     if (stored) return stored.device;
     throw new Error("no paired device");
@@ -183,7 +219,7 @@ export class AuthStore {
     try {
       return await request();
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) return "refused";
+      if ((err instanceof ApiError && err.status === 401) || saysNoVenue(err)) return "refused";
       return fallback;
     }
   }

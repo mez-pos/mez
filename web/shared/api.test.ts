@@ -201,6 +201,15 @@ describe("lockouts and credential failures", () => {
     });
   }
 
+  it("says so when the computer has no venue, and does not call it a credential failure", async () => {
+    const { fetch } = fakeFetch(() => json(503, { error: { code: "no_venue", message: "no venue yet" } }));
+    const seen: string[] = [];
+    await createApiClient({ credentials: signedIn, fetch, onCredentialFailure: (c) => seen.push(c), onNoVenue: () => seen.push("no venue") })
+      .get("/x")
+      .catch(() => undefined);
+    expect(seen).toEqual(["no venue"]);
+  });
+
   it("does not report a 403, whatever its code", async () => {
     const { fetch } = fakeFetch(() => json(403, { error: { code: "unauthenticated", message: "no" } }));
     const seen: string[] = [];

@@ -13047,3 +13047,74 @@ answers was not seen, and an owner may get old receipts. The back office from aw
 was not opened after the restore. Step 1 costs a venue its tablets for ten minutes
 it was not selling in anyway, and an owner who skips it pairs them again, which
 is all "pair them again" ever cost. 7f is one more task before Task 9.
+
+## ADR-339 - A computer with no venue does not judge a device's token, and a till shown that waits with its pairing
+2026-10 · Status: accepted. Phase 14, Task 7f. Builds on ADR-148, ADR-266, ADR-267, ADR-333 and ADR-338.
+Context: 7d's walk found that a till left on through "The PC died" forgot its pairing.
+A new install at the old computer's address has no venue for some minutes. A till's
+token is nobody's there, so the server said `unauthenticated`, and a till that hears
+that forgets its device, as it must when a venue no longer knows it. When the venue
+was brought back, the token it held was in the database and no longer in the tablet.
+The phase file left it to an ADR who changes: the server, or what the till believes.
+Decision:
+  - **The server changes what it says.** A token that is no device's, on a computer
+    that has no venue, is answered 503 `no_venue` with `Retry-After: 5`, and not 401.
+    It is the truer answer: a server with no venue has no way to know whether a token
+    is good. Where there is a venue, an unknown token is 401 `unauthenticated` as
+    before, and a revoked one `device_revoked`.
+  - **One place.** `unknownToken`, called from `authenticateDevice`, which already is
+    "the one place a token is judged": every route behind `requireDevice`, and the
+    stream. Asking the till to check for a venue before believing a refusal would
+    have been two requests where one answer is enough, in every client, with a race
+    between them.
+  - **No token at all is still 401.** A browser that holds nothing has nothing to
+    keep, and the pairing screen already asks whether there is a venue (ADR-267).
+  - **Not knowing is not a refusal either.** If whether there is a venue cannot be
+    read, the answer is 500, on which no till forgets anything.
+  - **Nothing new is told.** `GET /api/v1/setup` answers `needed` to anyone already.
+    The extra question is asked only of a token that failed, and is one row.
+  - **A server built without first run** (none is, but the option allows it) answers
+    as before. A mirror has first run and a venue, so it answers as before too.
+  - **The till has a state for it, `no_venue`**, beside unpaired, locked and signed
+    in. It is entered from any request so answered and from the stream's probe, which
+    is how a till nobody is touching finds out. It holds the device, and storage is
+    not touched: the token and the staff session both stay.
+  - **`NoVenueScreen`, shown by the Gate over whatever path the device is at**, and
+    by the kitchen display, which has no Gate. "This computer has no venue yet",
+    that the device keeps its pairing, and **Check again**. The path is not changed,
+    so a till comes back to the screen it was on.
+  - **It asks again every five seconds** (`AuthStore.recheck`). Still no venue, or no
+    answer because the server is starting again on the venue it was handed (ADR-333),
+    and it goes on waiting. A venue that knows the device carries on where a start
+    would: signed in if the session is in the backup, the lock otherwise. A venue
+    that does not know it says 401, and the device is forgotten then, rightly.
+  - **What a review found before the commit.** A till whose session the restored
+    venue no longer held stayed on the waiting screen for one more asking, and lost
+    the words "your session ended": the lock was set only from `checking`, and is now
+    set from `no_venue` too. And a recheck that threw would have left **Check again**
+    dead.
+  - **Walked, on 2026-10-13, as ADR-338's walk and with the tablet left on.** A till
+    paired at `127.0.0.1:7791`, signed in, on the order screen; the venue paired to
+    the stub and backed up; the server killed; a new install at the same address.
+    Untouched, the till showed "This computer has no venue yet" within seconds, at
+    `/pos`. Reloaded: the same, with its device and its session still in storage.
+    The venue brought back from another browser. Untouched again, the till was on
+    the order screen, signed in as the owner; its pill said "Server unreachable,
+    retrying in 1s" and then "Online"; a lemon tart for cash was INV/26-27/000001.
+  - **`deploy.md`'s first step, "switch off every till", is gone**, and "what the
+    tablets do" says what a tablet left on shows.
+Because: the owner at the new computer should not have to think about the tablets at
+all, and a tablet on a counter should never be worse off for having been left on.
+Cost: the waiting screen takes the place of whatever the till was showing, so an
+order begun and not yet sent, held in the page's memory, is gone when it comes back;
+its computer had died under it. Between the venue's return and the stream's next try
+the pill says "Server unreachable": a few seconds, and untrue. An answer of
+`no_venue` that arrives late, after the venue is back, puts a working till on the
+waiting screen until its next asking, five seconds at most. A device whose server
+never gets a venue waits for ever, with no way on that screen to give its pairing
+up; a venue made there, by anyone, ends the wait with a refusal. The screen says
+"set up or brought back" to a back office opened from away, where neither can be
+done. Seen on a till only: not the back office, not a kitchen display, not at 400px.
+A successful recheck asks `devices/me` twice. `make check`'s first run of this task
+failed once in `cmd/mez`, in a test whose name was not kept, and passed on three
+runs after; `cmd/mez` was not touched.

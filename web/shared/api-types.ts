@@ -166,6 +166,7 @@ export type ErrorCode =
   | 'no_printer_search'
   | 'setup_locked'
   | 'setup_not_here'
+  | 'no_venue'
   | 'already_set_up'
   | 'invalid_setup'
   | 'setup_no_code'

@@ -15,6 +15,6 @@ export function createAppAuth(app: AppKind, topics: readonly string[] = []) {
     undefined,
     mirror.heard,
   );
-  const realtime = createRealtime(store.credentials, topics);
+  const realtime = createRealtime(store.credentials, topics, () => store.venueMissing());
   return { store, realtime, mirror };
 }

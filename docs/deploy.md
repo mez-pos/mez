@@ -923,9 +923,8 @@ it stops and says so; move the data directory aside first if you mean to
 replace it.
 
 Tills and tablets that were paired stay paired, if the new computer has the
-same address as the old one and they were switched off while it had no
-venue: see [what the tablets do](#what-the-tablets-do) below. Otherwise
-pair them again.
+same address as the old one: see [what the tablets
+do](#what-the-tablets-do) below. Otherwise pair them again.
 
 To restore into somewhere other than the default data directory, add
 `-data-dir`. To restore an older run than the newest, take its name from
@@ -942,7 +941,7 @@ a file: the venue comes back by your phone number and a code sent to it.
 A venue that backed up to a folder or a bucket of its own is brought back
 as in [Getting a venue back](#getting-a-venue-back) above. If you paired to
 mez Cloud while a backup of your own was already set, mez kept yours and
-mez Cloud has none: step 6 will say so.
+mez Cloud has none: step 5 will say so.
 
 You need:
 
@@ -952,36 +951,33 @@ You need:
 - **A computer with no venue on it.** mez never brings a venue back over
   another.
 
-1. **Switch off every till, tablet and kitchen screen**, or close mez on
-   each. Leave them off until step 9. One left on can lose its pairing:
-   see [what the tablets do](#what-the-tablets-do).
-2. **Install mez on the new computer** ([Windows](#windows)). The
+1. **Install mez on the new computer** ([Windows](#windows)). The
    installer ends by opening the setup wizard in a browser. If you closed
    it, run `mez setup-link` and open the link it prints, on that computer.
-3. On the wizard's first page, press **I had mez before**. Do not fill in
+2. On the wizard's first page, press **I had mez before**. Do not fill in
    the venue's name: that makes a new, empty venue.
-4. **Type your account's phone number**, starting with `+` and the country
+3. **Type your account's phone number**, starting with `+` and the country
    code (`+91 98765 43210`), and press **Send the code**.
-5. **Type the six digits** that arrive on that phone and press
+4. **Type the six digits** that arrive on that phone and press
    **Continue**. A code works once, for a few minutes; **Send another
    code** if it ran out.
-6. **Choose your venue.** It is listed with the time of its last backup:
+5. **Choose your venue.** It is listed with the time of its last backup:
    that is the moment the venue goes back to. A venue that says "No backup
    with mez Cloud" cannot be chosen. Give this computer's till a name (the
    old computer keeps its own name in the list of devices) and press
    **Bring it back**.
-7. **Wait, and leave the page open.** mez brings the backup down, checks
+6. **Wait, and leave the page open.** mez brings the backup down, checks
    it, and starts itself again on your venue. A small venue takes seconds;
    years of sales on a slow line take minutes. Do not reload the page and
    do not close it.
-8. The page says **"<your venue> is back"**, and that it is paired to your
+7. The page says **"<your venue> is back"**, and that it is paired to your
    mez Cloud account again, with the address the back office opens at from
    away. Press **Sign in** and use your own PIN, the one you had. Look at
    the last invoices before you sell: they should be the last ones you
    remember, less at most the [last half
    minute](#what-to-know-before-you-rely-on-it). The next invoice carries
    on from the last.
-9. **Switch the tills and tablets back on**, and read on.
+8. **Go to the tills and tablets**, and read on.
 
 #### What the tablets do
 
@@ -990,20 +986,22 @@ opens mez at, and its pairing. Nothing goes looking for the new computer.
 So it depends on the address.
 
 - **The new computer has the old one's address** (the same numbers, like
-  `192.168.1.20`, and the same port). A tablet that was off through steps
-  2 to 8 opens on Staff Login, and staff sign in with their PINs as
-  before. Nothing is paired again. To give the new computer the old
-  address, set it in the router (a reserved address) or in the computer's
-  network settings before step 9. The old address is the one in each
-  tablet's address bar.
+  `192.168.1.20`, and the same port). Nothing is paired again. A tablet
+  that was off opens on Staff Login, and staff sign in with their PINs as
+  before. A tablet that was left on said **"This computer has no venue
+  yet"** while the new computer had none, kept its pairing, and carries
+  on by itself within a few seconds of the venue being back: on the
+  screen it was on if its sign-in is still good, on Staff Login
+  otherwise. To give the new computer the old address, set it in the
+  router (a reserved address) or in the computer's network settings. The
+  old address is the one in each tablet's address bar.
 - **The new computer has another address.** Each tablet is paired again:
   in the back office, **Devices**, **Pair a device**, and on the tablet
   open the new address and enter the code. A pairing made at the old
   address is not carried to a new one, even on the same tablet.
-- **A tablet that was left on** while the new computer had mez and no
-  venue yet (steps 2 to 8) asked it, was not recognised, and forgot its
-  pairing. It shows **Pair this terminal**. Pair it again as above. Its
-  old row stays under Devices: revoke it.
+- **A tablet that shows "Pair this terminal"** at the old address was
+  paired after the last backup, or was unpaired before it. The venue that
+  came back does not know it. Pair it again as above.
 
 The old computer's own till is still in the list under **Devices**, and
 nobody holds it now. Revoke it.
@@ -1030,7 +1028,7 @@ To do again:
   your payment gateway's keys if guests paid online
   ([`running.md`](running.md)). None of it was ever in the backup.
 
-The browser on the new computer was paired as a till in step 6, under the
+The browser on the new computer was paired as a till in step 5, under the
 name you gave it. The back office opens in it with the same pairing.
 
 #### If the page did not get to "is back"
@@ -1039,11 +1037,11 @@ Bringing a venue back does not depend on the page that asked. Once mez
 Cloud has handed the backup over, mez finishes by itself, and a page that
 was closed, reloaded or lost its way only misses being told.
 
-- **"Open mez again"**, or a page you reloaded or closed during step 7.
+- **"Open mez again"**, or a page you reloaded or closed during step 6.
   The page can no longer be told how it went, and your venue may well be
   there. Open `http://localhost:7777` on the new computer. If it asks for
   a pairing code or shows Staff Login, the venue is back: go on. If it
-  shows the setup wizard, nothing was changed: start again at step 3.
+  shows the setup wizard, nothing was changed: start again at step 2.
 - **"Can't reach mez"**. mez did not answer after it started again. Check
   it is running (on Windows, `mez service status` in an administrator
   terminal, and `mez service start`), then open it as above. The venue is
@@ -1069,9 +1067,12 @@ paired tablet and one sale was killed without warning; a new install at
 the old address was brought back by phone number and code; the tablet,
 off in between, opened on Staff Login with the pairing it held and rang
 invoice two; the printer and the open shift were there; a second browser
-at another address was paired with a code from `mez pair`. A tablet left
-on in between lost its pairing, which is why step 1 is there. It has not
-been done against mez Cloud itself, nor with tablets on a real network.
+at another address was paired with a code from `mez pair`. And again the
+same day with the tablet left on and signed in: it waited on "This
+computer has no venue yet", through a reload too, and was back on its
+order screen, signed in, seconds after the venue was, and rang a sale. It
+has not been done against mez Cloud itself, nor with tablets on a real
+network.
 
 ### Reading a backup without restoring it
 
