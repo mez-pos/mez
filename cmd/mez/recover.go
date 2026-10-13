@@ -88,6 +88,27 @@ func restartable(process context.Context) (served, func()) {
 	}
 }
 
+// arrivalSlot is where the API finds what a start that adopted a venue has
+// to say. The server is built before that can be begun (pairing dials the
+// tunnel, and the tunnel is handed the server), so the API is given the
+// place and the arrival is put in it after. Empty, which is every start but
+// one, it answers as a start that adopted nothing does.
+type arrivalSlot struct {
+	arrival atomic.Pointer[cloudrecover.Arrival]
+}
+
+func (s *arrivalSlot) set(a *cloudrecover.Arrival) { s.arrival.Store(a) }
+
+// Outcome and DeviceCode are the arrival's own. A nil one refuses every
+// claim.
+func (s *arrivalSlot) Outcome(claim string) (cloudrecover.Outcome, error) {
+	return s.arrival.Load().Outcome(claim)
+}
+
+func (s *arrivalSlot) DeviceCode(ctx context.Context, claim, deviceName string, kind auth.DeviceKind) (auth.PairingCode, error) {
+	return s.arrival.Load().DeviceCode(ctx, claim, deviceName, kind)
+}
+
 // arrive begins what follows from this start having adopted a venue: its
 // pairing, and the word for the page that asked (cloudrecover.Arrival). Nil
 // is every other start. Nothing here stops a start: the venue is in place,

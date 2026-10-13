@@ -462,7 +462,7 @@ and its first commit copies this phase's cloud tasks there.
     requests and their answers are written down in ADR-332 for `mez-cloud`
     to build to. `Client.send` is shared with `Pair`. `build/dev/pairstub`
     is one account as well. Tests against a stand-in. Nothing calls it yet.
-  - [ ] **Task 7b - The venue restores itself and pairs.** *This repo.*
+  - [x] **Task 7b - The venue restores itself and pairs.** *This repo.*
     Split in two on 2026-10-12 while building it (ADR-333): a restored
     database is staged beside the server's own and adopted at its next
     start.
@@ -474,7 +474,7 @@ and its first commit copies this phase's cloud tasks there.
       code); `Adopt`, which `run` calls once it holds its port and before
       the database is opened. Never over a venue, asked at both. Tested
       by staging under a running server and starting it again.
-    - [ ] **7b2 - The service, its routes, and the start.** Split in two
+    - [x] **7b2 - The service, its routes, and the start.** Split in two
       on 2026-10-12 while building it (ADR-334).
       - [x] **7b2a - The service, the start, and what follows it.**
         `cmd/mez/recover.go`: `runUntilStopped` loops `run`, which serves
@@ -488,7 +488,18 @@ and its first commit copies this phase's cloud tasks there.
         `restore.json` carries the claim's hash. Tested from the sign-in
         to a paired venue under one server that restarts itself, with a
         folder for the bucket.
-      - [ ] **7b2b - The routes.** `api.WithRecovery` for the service and
+      - [x] **7b2b - The routes.** As built (ADR-335):
+        `internal/api/setup_recover.go`, four routes, none across the
+        relay. `start`, `verify` and `restore` behind this machine,
+        JSON and the setup token, eight a minute between them;
+        `outcome` behind this machine and the claim in
+        `X-Recover-Claim`, answering how it went and, with a
+        `device_name`, the one device code. One answer (404
+        `recover_nothing`) for every way of not holding the claim.
+        Twelve `recover_*` codes, each a sentence an owner can act on.
+        `cmd/mez` hands the API an `arrivalSlot`; `runOptions.built`
+        is gone and the whole recovery is tested as a page's requests.
+        As it was set: `api.WithRecovery` for the service and
         the arrival (as interfaces, defined in `internal/api`), and four
         routes, at this machine only (`atThisMachine`), rate limited, JSON
         only: `POST /api/v1/setup/recover/start` (`{phone}`, answering the

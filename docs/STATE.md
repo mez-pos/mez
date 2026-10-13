@@ -10,40 +10,46 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6, 7a, 7b1 and 7b2a are done
-(ADR-313, ADR-315 to ADR-334); 4d and 7e are `mez-cloud`'s. Phase 13's five
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6, 7a and 7b are done
+(ADR-313, ADR-315 to ADR-335); 4d and 7e are `mez-cloud`'s. Phase 13's five
 tasks are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 7b2a - The server brings a venue back by itself**
-(ADR-334). 7b2 was split in two. `runUntilStopped` loops `run`, which
-serves under a context that can be asked to start again (`main` and `mez
-service run` both use it). `internal/service/cloudrecover`: `Service`
-signs the owner in (`Start`, `Verify`) and `Restore` takes the cloud's
-grant, makes a claim, stages the venue (`restore.Stage`, with the pairing
-code and the claim's hash) and asks for the start; `Arrival`, begun by
-the start that adopted a venue, pairs it in the background with the code
-that waited and answers `Outcome` and `DeviceCode` to whoever shows the
-claim. Tested from the sign-in to a paired venue under one server that
-restarts itself. **No route reaches any of it yet**, and no screen
-changed.
+**Phase 14, Task 7b2b - The routes of "I had mez before"** (ADR-335),
+which closes 7b. `internal/api/setup_recover.go`: `POST
+/api/v1/setup/recover/start` (`{phone}`), `/verify` (`{attempt, code}`)
+and `/restore` (`{venue_id}`, 202 with the claim) behind what first run
+is behind (this machine, JSON, `X-Setup-Token`); `/outcome` behind this
+machine and `X-Recover-Claim`, answering `{venue_name, cloud, hostname}`
+and, when the body names a device, its `pairing_code`. None crosses the
+relay. Refusals are `recover_*` codes in an owner's words.
+`web/shared/api-types.ts` has the types. Tested as a page's requests
+against one server, from the phone number to a paired browser. **No
+screen calls it yet.**
 
 ## Next task
 
-**Task 7b2b - the routes.** `api.WithRecovery`, and four routes at this
-machine only: `POST /api/v1/setup/recover/start`, `/verify` and
-`/restore` behind the setup token, and `/outcome`, which takes the claim
-in a header and answers how it went and a device pairing code. Each error
-of `cloud`, `restore` and `cloudrecover` in an owner's words. `make
-generate` for the page's types. Then take `built` out of `runOptions`
-(`cmd/mez/main.go`) and send `cmd/mez/recover_test.go` through HTTP. The
-phase file has it in full. Then 7c (the screen), 7d ("The PC died"),
-**Task 9**.
-To walk recovery's requests: `RELAY_SECRET=... go run ./build/dev/pairstub
--venue-id ven_...`; its log says the one-time code.
+**Task 7c - the wizard's screen.** "I had mez before" on the first step
+of the setup wizard: the phone number with `+91` offered (the routes
+refuse a number with no `+`), the six digits, the account's venues with
+when each was last backed up (one with no `last_backup_at` said so and
+not offered), then `restore`, a wait through the server's start (the
+page's requests fail for a second or two: that is the start, not an
+error), then `outcome` asked every second or two with the claim (90 a
+minute at most) until `cloud` is not `pairing`, then `outcome` with
+`device_name` and `device_kind` for the code, and `POST
+/api/v1/devices/pair` with it as first run's last step does. Keep the
+claim in the page's memory only. Each `recover_*` code has its sentence
+in the answer. Read `docs/design/screens/setup-wizard.md`,
+`docs/design/tokens.md` and `web/shared/screens/setup/` first. Walk it
+in a browser: `RELAY_SECRET=... go run ./build/dev/pairstub -venue-id
+ven_...` (its log says the one-time code) and `bin/mez -cloud-url
+http://127.0.0.1:7802`; the stub's bucket must be one that is there, or
+the walk ends at `recover_backup_failed`, which is worth seeing once.
+Then 7d ("The PC died"), **Task 9**.
 
 **A mirror killed and not stopped leaves `mez-mirror-*` in the system's
 temporary folder, and one left there fails
@@ -173,4 +179,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6, 7a, 7b1 and 7b2a of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6, 7a and 7b of 9)

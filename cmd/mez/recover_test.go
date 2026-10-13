@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -17,11 +18,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/byjoellobo/mez/internal/api"
 	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/service/cloudrecover"
+	"github.com/byjoellobo/mez/internal/service/firstrun"
 )
 
 const (
@@ -99,10 +101,40 @@ func (c *accountCloud) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TestAVenueIsBroughtBackByItsOwnersPhone is "I had mez before" from the
-// sign-in to a paired venue, under one server that nobody stops or starts:
-// it stages the venue, starts itself again on it, and pairs it with the
-// code that waited (ADR-332 to ADR-334). Only the page is missing.
+// asThePage posts JSON to the server as the wizard's page does, from this
+// machine, and reads the answer. A server that is not answering, which is
+// one between two starts, is status 0.
+func asThePage(t *testing.T, addr, path string, header map[string]string, body any) (int, map[string]any) {
+	t.Helper()
+	raw, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequest(http.MethodPost, "http://"+addr+path, bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	for k, v := range header {
+		req.Header.Set(k, v)
+	}
+	resp, err := (&http.Client{Timeout: 60 * time.Second}).Do(req)
+	if err != nil {
+		return 0, nil
+	}
+	defer resp.Body.Close()
+	var out map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		t.Fatalf("POST %s: status %d, and an answer that is not JSON: %v", path, resp.StatusCode, err)
+	}
+	return resp.StatusCode, out
+}
+
+// TestAVenueIsBroughtBackByItsOwnersPhone is "I had mez before" as the
+// wizard's page does it, from the phone number to a paired venue and a
+// paired browser, against one server that nobody stops or starts: it stages
+// the venue, starts itself again on it, and pairs it with the code that
+// waited (ADR-332 to ADR-335). Only the page itself is missing.
 func TestAVenueIsBroughtBackByItsOwnersPhone(t *testing.T) {
 	old, from, photo := backedUpVenue(t)
 	venueID := venueIDIn(t, old)
@@ -117,81 +149,66 @@ func TestAVenueIsBroughtBackByItsOwnersPhone(t *testing.T) {
 
 	// The new computer: mez installed and started, and nothing set up.
 	fresh := t.TempDir()
-	type start struct {
-		service *cloudrecover.Service
-		arrival *cloudrecover.Arrival
-	}
-	starts := make(chan start, 4)
-	opts := runOptions{
-		stdout: io.Discard,
-		source: func(cloud.Grant) backup.Config { return from },
-		built:  func(s *cloudrecover.Service, a *cloudrecover.Arrival) { starts <- start{s, a} },
-	}
+	args := append(serverArgs(t, fresh), "-cloud-url", cloudSrv.URL)
+	addr := args[3] // serverArgs: -data-dir DIR -listen-addr ADDR ...
+	opts := runOptions{stdout: io.Discard, source: func(cloud.Grant) backup.Config { return from }}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	done := make(chan error, 1)
-	go func() { done <- runUntilStopped(ctx, append(serverArgs(t, fresh), "-cloud-url", cloudSrv.URL), opts) }()
+	go func() { done <- runUntilStopped(ctx, args, opts) }()
+	waitForLog(t, fresh, "listening", done)
 
-	next := func() start {
-		t.Helper()
+	token, err := firstrun.ReadToken(fresh)
+	if err != nil {
+		t.Fatalf("the new install's setup token: %v", err)
+	}
+	wizard := map[string]string{api.HeaderSetupToken: token}
+
+	// Without the token, nothing: not even a message to somebody's phone.
+	if status, _ := asThePage(t, addr, "/api/v1/setup/recover/start", nil, map[string]string{"phone": recoverPhone}); status != http.StatusForbidden {
+		t.Fatalf("start with no setup token: status %d", status)
+	}
+
+	status, started := asThePage(t, addr, "/api/v1/setup/recover/start", wizard, map[string]string{"phone": "+91 98765 43210"})
+	if status != http.StatusOK || started["attempt"] != "att_1" {
+		t.Fatalf("start: %d %v", status, started)
+	}
+	status, signedIn := asThePage(t, addr, "/api/v1/setup/recover/verify", wizard, map[string]any{"attempt": started["attempt"], "code": recoverOTP})
+	venues, _ := signedIn["venues"].([]any)
+	if status != http.StatusOK || signedIn["owner"] != "Priya Menon" || len(venues) != 1 || venues[0].(map[string]any)["id"] != venueID {
+		t.Fatalf("verify: %d %v", status, signedIn)
+	}
+	status, restored := asThePage(t, addr, "/api/v1/setup/recover/restore", wizard, map[string]string{"venue_id": venueID})
+	claim, _ := restored["claim"].(string)
+	if status != http.StatusAccepted || restored["venue_name"] != "The Corner Cafe" || restored["photos"] != float64(1) || restored["photos_incomplete"] != false || claim == "" {
+		t.Fatalf("restore: %d %v\n%s", status, restored, readLog(t, fresh))
+	}
+
+	// Nobody starts it again. It does, and the page asks until it answers.
+	claimed := map[string]string{api.HeaderRecoverClaim: claim}
+	var outcome map[string]any
+	for deadline := time.Now().Add(45 * time.Second); ; {
 		select {
-		case s := <-starts:
-			return s
 		case err := <-done:
 			t.Fatalf("the server stopped: %v\n%s", err, readLog(t, fresh))
-		case <-time.After(30 * time.Second):
-			t.Fatalf("the server never came up; its log:\n%s", readLog(t, fresh))
+		default:
 		}
-		return start{}
-	}
-	first := next()
-	if first.arrival != nil {
-		t.Fatal("a new install says a venue was brought back")
-	}
-
-	attempt, err := first.service.Start(ctx, recoverPhone)
-	if err != nil {
-		t.Fatalf("Start: %v", err)
-	}
-	accountSeen, err := first.service.Verify(ctx, attempt, recoverOTP)
-	if err != nil || len(accountSeen.Venues) != 1 || accountSeen.Venues[0].ID != venueID {
-		t.Fatalf("Verify = %+v, %v", accountSeen, err)
-	}
-	restored, err := first.service.Restore(ctx, venueID)
-	if err != nil {
-		t.Fatalf("Restore: %v\n%s", err, readLog(t, fresh))
-	}
-	if restored.VenueName != "The Corner Cafe" || restored.Photos != 1 || restored.PhotosIncomplete || restored.Claim == "" {
-		t.Errorf("restored %+v", restored)
-	}
-
-	// Nobody starts it again. It does.
-	second := next()
-	if second.arrival == nil {
-		t.Fatalf("the start after a restore adopted nothing; its log:\n%s", readLog(t, fresh))
-	}
-	if _, err := second.service.Start(ctx, recoverPhone); !errors.Is(err, cloudrecover.ErrAlreadySetUp) {
-		t.Errorf("a recovery asked of the venue that was brought back = %v, want ErrAlreadySetUp", err)
-	}
-	if _, err := second.arrival.Outcome("not-the-claim"); !errors.Is(err, cloudrecover.ErrNoClaim) {
-		t.Errorf("a stranger's Outcome = %v, want ErrNoClaim", err)
-	}
-
-	var outcome cloudrecover.Outcome
-	for deadline := time.Now().Add(30 * time.Second); ; {
-		if outcome, err = second.arrival.Outcome(restored.Claim); err != nil {
-			t.Fatalf("Outcome: %v", err)
-		}
-		if outcome.Cloud != cloudrecover.CloudPairing {
+		status, outcome = asThePage(t, addr, "/api/v1/setup/recover/outcome", claimed, map[string]string{})
+		if status == http.StatusOK && outcome["cloud"] != string(cloudrecover.CloudPairing) {
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("the venue was never paired; its log:\n%s", readLog(t, fresh))
+			t.Fatalf("the page was never told how it went: last %d %v; the log:\n%s", status, outcome, readLog(t, fresh))
 		}
-		time.Sleep(20 * time.Millisecond)
+		// At a page's pace: asking is rate limited, and the pairing waits
+		// some seconds on a bucket that is not there.
+		time.Sleep(750 * time.Millisecond)
 	}
-	if outcome.Cloud != cloudrecover.CloudPaired || outcome.Hostname != "corner-cafe.mezpos.test" || outcome.VenueID != venueID || outcome.VenueName != "The Corner Cafe" {
-		t.Errorf("the outcome is %+v; the log:\n%s", outcome, readLog(t, fresh))
+	if outcome["cloud"] != string(cloudrecover.CloudPaired) || outcome["hostname"] != "corner-cafe.mezpos.test" || outcome["venue_id"] != venueID || outcome["venue_name"] != "The Corner Cafe" {
+		t.Errorf("the outcome is %v; the log:\n%s", outcome, readLog(t, fresh))
+	}
+	if _, has := outcome["pairing_code"]; has {
+		t.Errorf("a device code was made with no device named: %v", outcome)
 	}
 	account.mu.Lock()
 	paired, codes := account.paired, account.codes
@@ -203,11 +220,30 @@ func TestAVenueIsBroughtBackByItsOwnersPhone(t *testing.T) {
 		t.Errorf("the pairing kept on the new computer: %v, %v", kept, err)
 	}
 
-	// The browser the owner is at is no device of this venue's: it is given
-	// a code, and the code pairs it.
-	code, err := second.arrival.DeviceCode(ctx, restored.Claim, "Front counter", auth.KindTerminal)
-	if err != nil || code.Code == "" {
-		t.Fatalf("DeviceCode = %+v, %v", code, err)
+	// The start that brought the venue back ended the wizard: its token
+	// opens nothing now, and the venue is not brought back twice.
+	if status, refused := asThePage(t, addr, "/api/v1/setup/recover/start", wizard, map[string]string{"phone": recoverPhone}); status != http.StatusForbidden {
+		t.Errorf("the wizard's token after the venue is back: status %d %v", status, refused)
+	}
+	// And a stranger at this machine is told nothing of it.
+	if status, _ := asThePage(t, addr, "/api/v1/setup/recover/outcome", map[string]string{api.HeaderRecoverClaim: strings.Repeat("0", 64)}, map[string]string{}); status != http.StatusNotFound {
+		t.Errorf("an outcome asked for with a claim that is not the one: status %d", status)
+	}
+
+	// The browser the owner is at is no device of this venue's. Naming it
+	// buys a code, the same one however often, and the code pairs it.
+	device := map[string]string{"device_name": "Front counter", "device_kind": "terminal"}
+	status, named := asThePage(t, addr, "/api/v1/setup/recover/outcome", claimed, device)
+	deviceCode, _ := named["pairing_code"].(string)
+	if status != http.StatusOK || deviceCode == "" || named["expires_at"] == nil {
+		t.Fatalf("the outcome with a device named: %d %v", status, named)
+	}
+	if _, again := asThePage(t, addr, "/api/v1/setup/recover/outcome", claimed, device); again["pairing_code"] != deviceCode {
+		t.Errorf("asked again, the code is %v and was %s", again["pairing_code"], deviceCode)
+	}
+	status, pairedDevice := asThePage(t, addr, "/api/v1/devices/pair", nil, map[string]string{"code": deviceCode})
+	if status != http.StatusCreated && status != http.StatusOK {
+		t.Fatalf("pairing the browser with the code it was given: %d %v", status, pairedDevice)
 	}
 
 	cancel()
@@ -231,12 +267,9 @@ func TestAVenueIsBroughtBackByItsOwnersPhone(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer d.Close(context.Background())
-	devices, err := auth.NewDevices(auth.DevicesOptions{DB: d})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if paired, err := devices.Redeem(context.Background(), code.Code); err != nil || paired.Device.Name != "Front counter" {
-		t.Errorf("redeeming the code made for the browser: %+v, %v", paired, err)
+	var counters int
+	if err := d.Reader().QueryRow("SELECT COUNT(*) FROM devices WHERE name = 'Front counter'").Scan(&counters); err != nil || counters != 1 {
+		t.Errorf("devices called Front counter in the restored venue: %d, %v", counters, err)
 	}
 
 	log := readLog(t, fresh)
@@ -245,7 +278,7 @@ func TestAVenueIsBroughtBackByItsOwnersPhone(t *testing.T) {
 			t.Errorf("the log does not say %q:\n%s", said, log)
 		}
 	}
-	for _, secret := range []string{restored.Claim, recoverCode, recoverSession, "not-a-real-read-only-secret", "not-a-real-bucket-secret", code.Code} {
+	for _, secret := range []string{claim, recoverCode, recoverSession, recoverOTP, token, "not-a-real-read-only-secret", "not-a-real-bucket-secret", deviceCode} {
 		if strings.Contains(log, secret) {
 			t.Errorf("a secret (%s) is in the log:\n%s", secret, log)
 		}

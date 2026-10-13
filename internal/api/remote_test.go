@@ -127,6 +127,11 @@ var staysAtTheVenue = []string{
 	"GET /api/v1/devices/addresses",
 	// First run, a locked PIN, and the stream the relay cannot carry.
 	"POST /api/v1/setup",
+	// And a venue brought back: at the computer it is brought back to.
+	"POST /api/v1/setup/recover/start",
+	"POST /api/v1/setup/recover/verify",
+	"POST /api/v1/setup/recover/restore",
+	"POST /api/v1/setup/recover/outcome",
 	"POST /api/v1/people/staff/{id}/unlock",
 	"GET /api/v1/stream",
 }

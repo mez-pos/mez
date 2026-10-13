@@ -12760,3 +12760,80 @@ with "draining requests" and no start; under the Service Control Manager that is
 service that failed, and the venue waits for the next start. A pairing that says a
 restart is needed, or that the backup could not be set, is "paired" to the page and
 the rest is in the log. Until 7b2b nothing but a test reaches any of it.
+
+## ADR-335 - "I had mez before" is four routes: three behind what the wizard is behind, and one behind the claim the third gave
+2026-10 · Status: accepted. Phase 14, Task 7b2b, which closes 7b. Builds on ADR-266, ADR-270, ADR-308 and ADR-332 to ADR-334.
+Context: everything a venue needs to be brought back was built and reached by
+nothing but tests. This is the door a page uses. It opens onto more than first run's
+does: a request here can have a message sent to somebody's phone, bring a venue's
+whole history down to a computer, and hand out a code that pairs a browser to it.
+Decision:
+  - **`POST /api/v1/setup/recover/start`**, `/verify` and `/restore` are behind
+    exactly what `POST /api/v1/setup` is behind (ADR-266, ADR-270): a browser on
+    this machine by all four of its signs, a body that is JSON, and the setup
+    token. A venue is brought back by whoever could have made one, and by nobody
+    else.
+  - **`POST /api/v1/setup/recover/outcome` is behind this machine and the claim.**
+    The start that adopted the venue ended the setup token; the claim (ADR-334) is
+    in `X-Recover-Claim`, a header for the reasons the token is in one. Not a `GET`:
+    with a device named it makes a code, and its answer is nobody's to cache.
+  - **One answer for every way of not holding the claim.** None, a wrong one, one
+    that ran out, the setup token offered in its place, and a server that brought
+    nothing back at all: 404 `recover_nothing`, in the same words. A program on
+    this machine cannot ask whether a venue was brought back here.
+  - **A device's code is asked for by naming the device.** The outcome with no
+    `device_name` says how it went and makes nothing, so a page may ask it every
+    second while the venue pairs. With a name and a kind it carries the one code
+    (ADR-334), the same however often it is asked.
+  - **None of the four crosses the relay.** They are not in `remoteRoutes`, so a
+    relayed request is refused before the handler (ADR-308), and each asks
+    `atThisMachine` besides. All four are written in `staysAtTheVenue`.
+  - **The three share one allowance, of their own: eight a minute.** A number, a
+    code, a mistyped code and a venue, with room to spare, and no more: each that
+    reaches mez Cloud is a message to a phone or a guess at the code in it. The
+    outcome has ninety a minute, which is a page asking every second with room for
+    another tab, and is not what keeps the claim: its length does.
+  - **Each allowance is inside its door, and not in front of it as first run's
+    is.** Every caller here has this machine's one address, so a limit in front is
+    one that any program on the machine, holding nothing, can spend for the owner.
+    Who has no setup token, or no claim, is refused and not counted; neither is
+    short enough to be found by trying.
+  - **What a review found before the commit.** The limits in front of their doors,
+    above: eight requests a minute from a program with no token shut the owner out
+    of their own recovery. And every error nobody had named read "the backup could
+    not be brought down", also while signing in, when no backup is coming down:
+    that sentence is now the restore's alone, and elsewhere such an error is said
+    as any other fault of the server's is.
+  - **Every refusal is a code and a sentence an owner at a new computer can act
+    on.** Twelve codes, `recover_*`, and `already_set_up`, `cloud_unreachable` and
+    `rate_limited` where those already said it. What the cloud, the bucket or
+    `mez restore` said underneath goes to the log and never to the page: their
+    words are a command's ("-data-dir"), or name addresses. Whatever is not known
+    by name is `recover_backup_failed`, "nothing here was changed, try again",
+    which is true of everything the service can fail at.
+  - **`202` for a restore.** The venue is brought down and not yet in place: the
+    answer is the last thing that start says, and the page then waits on the next.
+  - **The API is given a place for the arrival, and the arrival is put in it
+    after.** `api.New` is before the arrival can be begun (ADR-334), so `cmd/mez`
+    hands it `arrivalSlot`, empty until the start has adopted. Nothing is served in
+    between.
+  - **`runOptions.built` is gone.** The test that runs a whole recovery is now a
+    page's requests against one server: the token read from the data directory,
+    the claim from the answer, the device paired with the code it was given.
+Because: what guarded making a venue is the right guard for bringing one back, so
+there is nothing new to explain about who may; and the one moment that guard cannot
+cover is covered by something only the page that asked was ever told.
+Cost: the claim is in a page's memory and travels in a header on this machine's
+loopback, in the clear, as the setup token does. A page that asks faster than
+ninety times a minute is refused for the rest of that minute and learns nothing of
+a pairing that finished meanwhile; the test that found this asked twenty times a
+second. "Paired" is said only when everything pairing does is done, and with a
+bucket that does not answer that is eight seconds of "pairing". A refusal the
+service did not name reads as a backup that could not be brought down, which for a
+fault of this computer's own during a restore, a disk it cannot write, is the wrong
+sentence; the log has the right one. The wizard's ordinary step still works while
+a venue comes down, and a venue made that way stands: the one brought back is
+dropped at the start (ADR-333) and the page holding its claim is told there is
+nothing to tell. The device's name and kind are those of the first asking, and a
+later one is answered with the same code and no word that it was not taken up. `runOptions.source` stays, for want of a bucket a test can
+read. No screen calls any of it yet: that is 7c.

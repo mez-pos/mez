@@ -169,6 +169,18 @@ export type ErrorCode =
   | 'already_set_up'
   | 'invalid_setup'
   | 'setup_no_code'
+  | 'recover_phone_invalid'
+  | 'recover_phone_refused'
+  | 'recover_code_invalid'
+  | 'recover_code_refused'
+  | 'recover_signed_out'
+  | 'recover_venue_not_found'
+  | 'recover_no_backup'
+  | 'recover_backup_gone'
+  | 'recover_refused'
+  | 'recover_under_way'
+  | 'recover_backup_failed'
+  | 'recover_nothing'
   | 'bill_claimed'
   | 'bill_moved'
   | 'receipt_not_found'
@@ -328,6 +340,12 @@ export type CloudBackupOutcome =
   | 'set'
   | 'kept'
   | 'failed'
+  | 'none';
+
+export type RecoverCloudState =
+  | 'pairing'
+  | 'paired'
+  | 'not_paired'
   | 'none';
 
 export type GuestRoundStatus =
@@ -1251,6 +1269,57 @@ export interface StaffResponse {
   id: string;
   name: string;
   role: string;
+}
+
+export interface RecoverStartRequest {
+  phone: string;
+}
+
+export interface RecoverStartResponse {
+  attempt: string;
+}
+
+export interface RecoverVerifyRequest {
+  attempt: string;
+  code: string;
+}
+
+export interface RecoverVerifyResponse {
+  owner: string;
+  expires_at: string;
+  venues: RecoverVenue[];
+}
+
+export interface RecoverVenue {
+  id: string;
+  name: string;
+  last_backup_at?: string;
+}
+
+export interface RecoverRestoreRequest {
+  venue_id: string;
+}
+
+export interface RecoverRestoreResponse {
+  venue_id: string;
+  venue_name: string;
+  photos: number;
+  photos_incomplete: boolean;
+  claim: string;
+}
+
+export interface RecoverOutcomeRequest {
+  device_name?: string;
+  device_kind?: DeviceKind;
+}
+
+export interface RecoverOutcomeResponse {
+  venue_id: string;
+  venue_name: string;
+  cloud: RecoverCloudState;
+  hostname?: string;
+  pairing_code?: string;
+  expires_at?: string;
 }
 
 export interface GuestRequestsResponse {

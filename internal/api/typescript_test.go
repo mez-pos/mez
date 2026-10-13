@@ -30,6 +30,7 @@ import (
 	"github.com/byjoellobo/mez/internal/service/audit"
 	"github.com/byjoellobo/mez/internal/service/charges"
 	"github.com/byjoellobo/mez/internal/service/cloudpair"
+	"github.com/byjoellobo/mez/internal/service/cloudrecover"
 	"github.com/byjoellobo/mez/internal/service/floor"
 	"github.com/byjoellobo/mez/internal/service/menus"
 	svcorder "github.com/byjoellobo/mez/internal/service/order"
@@ -150,6 +151,9 @@ var errorCodes = []ErrorCode{
 	CodeDishUnavailable, CodeChoicesInvalid, CodeTableNotOrdering, CodeRequestsWaiting,
 	CodeRequestNotFound, CodeRequestDecided, CodeRequestLapsed, CodeNothingToPay, CodeNoticeNotFound, CodeGatewayUnavailable, CodeChargeNotFound, CodeChargeNotWaiting,
 	CodeNoPrinterSearch, CodeSetupLocked, CodeSetupNotHere, CodeAlreadySetUp, CodeInvalidSetup, CodeSetupNoCode,
+	CodeRecoverPhoneInvalid, CodeRecoverPhoneRefused, CodeRecoverCodeInvalid, CodeRecoverCodeRefused, CodeRecoverSignedOut,
+	CodeRecoverVenueNotFound, CodeRecoverNoBackup, CodeRecoverBackupGone, CodeRecoverRefused, CodeRecoverUnderWay,
+	CodeRecoverBackupFailed, CodeRecoverNothing,
 	CodeBillClaimed, CodeBillMoved, CodeReceiptNotFound, CodeNoPublicURL, CodeNoPickupCode, CodePickupCodeUnknown, CodePickupOff,
 }
 
@@ -282,6 +286,7 @@ func generate() (*ts.Generator, error) {
 		{"BackupKind", backup.KindFolder, asStrings(backup.Kinds())},
 		{"BackupState", backup.StateOff, asStrings(backup.States())},
 		{"CloudBackupOutcome", cloudpair.BackupSet, asStrings(cloudpair.BackupOutcomes())},
+		{"RecoverCloudState", cloudrecover.CloudPairing, asStrings(cloudrecover.CloudStates())},
 		{"GuestRoundStatus", svcorder.RoundWaiting, asStrings(svcorder.RoundStatuses())},
 		{"GuestRoundProgress", order.ProgressSent, asStrings(order.Progresses())},
 		{"ChargeStatus", charges.Open, asStrings(charges.Statuses())},
@@ -340,6 +345,8 @@ func generate() (*ts.Generator, error) {
 		paymentSettingsRequest{}, paymentSettingsResponse{},
 		backupRequest{}, backupBucketRequest{}, backupResponse{}, backupS3{}, backupStatus{},
 		cloudPairRequest{}, cloudPairResponse{}, cloudSessionResponse{},
+		recoverStartRequest{}, recoverStartResponse{}, recoverVerifyRequest{}, recoverVerifyResponse{}, recoverVenue{},
+		recoverRestoreRequest{}, recoverRestoreResponse{}, recoverOutcomeRequest{}, recoverOutcomeResponse{},
 		guestRequestsResponse{}, guestDecisionResponse{},
 		// Staff.
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},

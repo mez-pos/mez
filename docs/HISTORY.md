@@ -8,7 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 7b1 - A running server takes a restored venue**
+**Phase 14, Task 7b2a - The server brings a venue back by itself**
+(ADR-334). 7b2 was split in two. `runUntilStopped` loops `run`, which
+serves under a context that can be asked to start again (`main` and `mez
+service run` both use it). `internal/service/cloudrecover`: `Service`
+signs the owner in (`Start`, `Verify`) and `Restore` takes the cloud's
+grant, makes a claim, stages the venue (`restore.Stage`, with the pairing
+code and the claim's hash) and asks for the start; `Arrival`, begun by
+the start that adopted a venue, pairs it in the background with the code
+that waited and answers `Outcome` and `DeviceCode` to whoever shows the
+claim.
+
+Before it, **Phase 14, Task 7b1 - A running server takes a restored venue**
 (ADR-333). 7b was split in two. `internal/restore` holds the checks `mez
 restore` makes (`EmptyInstall`, `NotRunning`, `MoveAside`, moved from
 `cmd/mez`) and two new steps: `Stage` restores the newest backup to

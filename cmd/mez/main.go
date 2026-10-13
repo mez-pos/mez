@@ -143,10 +143,9 @@ type runOptions struct {
 	// service, or nil.
 	system logging.SystemLog
 
-	// source and built are the tests' (recover.go). Nil, always, in a
-	// server anyone runs.
+	// source is the tests': where a grant's backup is, which for them is a
+	// folder (cloudrecover.Options). Nil, always, in a server anyone runs.
 	source func(cloud.Grant) backup.Config
-	built  func(*cloudrecover.Service, *cloudrecover.Arrival)
 }
 
 // run is main with errors instead of exits, so every path below unwinds through
@@ -517,6 +516,17 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		log.Info("guests can pay online", "gateway", provider.Name())
 	}
 
+	// "I had mez before" (ADR-332 to ADR-335): the service that stages a
+	// venue for the next start to adopt, and the place for what a start
+	// that adopted one has to say, which is filled further down.
+	recoverer, err := cloudrecover.New(cloudrecover.Options{
+		Cloud: exchange, DataDir: cfg.DataDir, Needed: firstRun.Needed, StartAgain: startAgain, Source: opts.source, Log: log,
+	})
+	if err != nil {
+		return err
+	}
+	arrived := &arrivalSlot{}
+
 	srv = api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbCheck(database)),
@@ -528,6 +538,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		api.WithDevices(devices),
 		api.WithFirstRun(firstRun),
 		api.WithSetupToken(setupToken),
+		api.WithRecovery(recoverer, arrived),
 		// Where a second device opens this server, for whoever is pairing one.
 		api.WithAddresses(func() ([]discover.Address, error) { return (&discover.Addresser{}).Addresses(listener.Addr().String()) }),
 		api.WithStaff(staff),
@@ -572,22 +583,13 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// is stopped here all the same.
 	running.push("tunnel", link.Close)
 
-	// "I had mez before" (ADR-332 to ADR-334). Before the start that
-	// adopts a venue, the service that stages one; after it, what follows
-	// from having adopted one. The second only now: pairing dials the
-	// tunnel, and the tunnel is handed the server built above.
-	recoverer, err := cloudrecover.New(cloudrecover.Options{
-		Cloud: exchange, DataDir: cfg.DataDir, Needed: firstRun.Needed, StartAgain: startAgain, Source: opts.source, Log: log,
-	})
-	if err != nil {
-		return err
-	}
-	arrival := arrive(ctx, database, adopted, pairer.Pair, devices, log)
-	if arrival != nil {
+	// What follows from this start having adopted a venue (ADR-334). Only
+	// now: pairing dials the tunnel, and the tunnel is handed the server
+	// built above. Nothing is served until below, so no request finds the
+	// place for it empty that should not.
+	if arrival := arrive(ctx, database, adopted, pairer.Pair, devices, log); arrival != nil {
 		running.push("arrival", arrival.Close)
-	}
-	if opts.built != nil {
-		opts.built(recoverer, arrival)
+		arrived.set(arrival)
 	}
 
 	// The tunnel is handed the handler as it is. What arrives on the socket

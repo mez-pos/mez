@@ -52,6 +52,8 @@ type Server struct {
 	myShifts      MyShifts
 	exports       Exports
 	firstRun      FirstRun
+	recovery      Recovery
+	arrived       Arrived
 	setupToken    SetupToken
 	addresses     func() ([]discover.Address, error)
 	limiter       *limiter
@@ -128,6 +130,7 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("/api/v1/health", s.methodNotAllowed)
 
 	s.mountSetup(mux)
+	s.mountRecovery(mux)
 	s.mountDevices(mux)
 	s.mountTunnel(mux)
 	s.mountCloudPairing(mux)
