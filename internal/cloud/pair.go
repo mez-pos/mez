@@ -15,8 +15,11 @@ import (
 )
 
 const (
-	// pairPath is where a code is exchanged, under the cloud's address.
-	pairPath = "/v1/pair"
+	// PairPath is where a code is exchanged, under the cloud's address.
+	// It and the shapes below are exported for whoever answers them: the
+	// cloud is built against the same definitions the venue asks with
+	// (ADR-344).
+	PairPath = "/v1/pair"
 
 	// pairTimeout bounds the one request. The owner is standing at the
 	// counter with a code in their hand.
@@ -115,27 +118,31 @@ func (c *Client) send(ctx context.Context, path, bearer string, question any) (i
 	return resp.StatusCode, raw, nil
 }
 
-// pairRequest is what the venue sends: the code, and who is asking.
-type pairRequest struct {
+// PairRequest is what the venue sends: the code, and who is asking.
+type PairRequest struct {
 	Code  string       `json:"code"`
-	Venue pairingVenue `json:"venue"`
+	Venue PairingVenue `json:"venue"`
 }
 
-type pairingVenue struct {
+type PairingVenue struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }
 
-// pairAnswer is what the cloud sends back for a code it accepts.
-type pairAnswer struct {
+// PairAnswer is what the cloud sends back for a code it accepts.
+type PairAnswer struct {
 	Venue  Venue     `json:"venue"`
 	Relay  Relay     `json:"relay"`
 	Backup backup.S3 `json:"backup"`
-	Cloud  struct {
-		PublicKey string `json:"public_key"`
-	} `json:"cloud"`
-	Owner Owner `json:"owner"`
+	Cloud  CloudKey  `json:"cloud"`
+	Owner  Owner     `json:"owner"`
+}
+
+// CloudKey is the cloud's public key as a pairing carries it: Ed25519, in
+// standard base64. It is what the venue checks an assertion against.
+type CloudKey struct {
+	PublicKey string `json:"public_key"`
 }
 
 // Pair exchanges a code for a pairing. The code is cleaned first, and one
@@ -148,7 +155,7 @@ func (c *Client) Pair(ctx context.Context, typed string, about About) (Pairing, 
 	if err != nil {
 		return Pairing{}, err
 	}
-	status, raw, err := c.send(ctx, pairPath, "", pairRequest{Code: code, Venue: pairingVenue{ID: about.VenueID, Name: about.Name, Version: about.Version}})
+	status, raw, err := c.send(ctx, PairPath, "", PairRequest{Code: code, Venue: PairingVenue{ID: about.VenueID, Name: about.Name, Version: about.Version}})
 	if err != nil {
 		return Pairing{}, err
 	}
@@ -167,7 +174,7 @@ func (c *Client) Pair(ctx context.Context, typed string, about About) (Pairing, 
 		return Pairing{}, invalid("mez Cloud's answer is larger than a pairing is")
 	}
 
-	var a pairAnswer
+	var a PairAnswer
 	if err := json.Unmarshal(raw, &a); err != nil {
 		return Pairing{}, invalid("mez Cloud's answer could not be read")
 	}

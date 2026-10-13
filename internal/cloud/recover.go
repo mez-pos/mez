@@ -25,9 +25,9 @@ import (
 // Three requests, each of which writes nothing here. Restoring and pairing
 // are the caller's.
 const (
-	recoverStartPath  = "/v1/recover/start"
-	recoverVerifyPath = "/v1/recover/verify"
-	recoverGrantPath  = "/v1/recover/grant"
+	RecoverStartPath  = "/v1/recover/start"
+	RecoverVerifyPath = "/v1/recover/verify"
+	RecoverGrantPath  = "/v1/recover/grant"
 
 	// OTPLen is how long the one-time code sent to the owner's phone is.
 	OTPLen = 6
@@ -238,9 +238,7 @@ func (c *Client) RecoverStart(ctx context.Context, typedPhone string) (Attempt, 
 	if err != nil {
 		return "", err
 	}
-	status, raw, err := c.send(ctx, recoverStartPath, "", struct {
-		Phone string `json:"phone"`
-	}{phone})
+	status, raw, err := c.send(ctx, RecoverStartPath, "", StartRequest{Phone: phone})
 	if err != nil {
 		return "", err
 	}
@@ -253,9 +251,7 @@ func (c *Client) RecoverStart(ctx context.Context, typedPhone string) (Attempt, 
 	default:
 		return "", fmt.Errorf("%w: it answered %d", ErrUnreachable, status)
 	}
-	var a struct {
-		Attempt string `json:"attempt"`
-	}
+	var a StartAnswer
 	if err := decodeAnswer(raw, &a); err != nil {
 		return "", err
 	}
@@ -265,8 +261,37 @@ func (c *Client) RecoverStart(ctx context.Context, typedPhone string) (Attempt, 
 	return Attempt(a.Attempt), nil
 }
 
-// verifyAnswer is what the cloud sends back for a one-time code it accepts.
-type verifyAnswer struct {
+// StartRequest is what the venue sends to have a one-time code sent: the
+// account's phone number, in E.164.
+type StartRequest struct {
+	Phone string `json:"phone"`
+}
+
+// StartAnswer names the attempt the code is to be given back against. It
+// is the same for a number with an account and one without.
+type StartAnswer struct {
+	Attempt string `json:"attempt"`
+}
+
+// VerifyRequest gives the one-time code back.
+type VerifyRequest struct {
+	Attempt string `json:"attempt"`
+	Code    string `json:"code"`
+}
+
+// GrantRequest asks for one of the account's venues. The session goes in
+// the Authorization header, as a bearer token.
+type GrantRequest struct {
+	Venue GrantVenue `json:"venue"`
+}
+
+// GrantVenue names the venue asked for, by its own identifier.
+type GrantVenue struct {
+	ID string `json:"id"`
+}
+
+// VerifyAnswer is what the cloud sends back for a one-time code it accepts.
+type VerifyAnswer struct {
 	Session   string         `json:"session"`
 	ExpiresAt time.Time      `json:"expires_at"`
 	Owner     Owner          `json:"owner"`
@@ -284,10 +309,7 @@ func (c *Client) RecoverVerify(ctx context.Context, attempt Attempt, typedOTP st
 	if err != nil {
 		return nil, err
 	}
-	status, raw, err := c.send(ctx, recoverVerifyPath, "", struct {
-		Attempt string `json:"attempt"`
-		Code    string `json:"code"`
-	}{string(attempt), otp})
+	status, raw, err := c.send(ctx, RecoverVerifyPath, "", VerifyRequest{Attempt: string(attempt), Code: otp})
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +323,7 @@ func (c *Client) RecoverVerify(ctx context.Context, attempt Attempt, typedOTP st
 	default:
 		return nil, fmt.Errorf("%w: it answered %d", ErrUnreachable, status)
 	}
-	var a verifyAnswer
+	var a VerifyAnswer
 	if err := decodeAnswer(raw, &a); err != nil {
 		return nil, err
 	}
@@ -311,7 +333,7 @@ func (c *Client) RecoverVerify(ctx context.Context, attempt Attempt, typedOTP st
 	return &Recovery{Owner: a.Owner, Venues: a.Venues, ExpiresAt: a.ExpiresAt.UTC(), session: a.Session, client: c}, nil
 }
 
-func (a verifyAnswer) validate() error {
+func (a VerifyAnswer) validate() error {
 	if !validToken(a.Session) {
 		return invalid("mez Cloud's answer opens no session")
 	}
@@ -340,8 +362,8 @@ func (a verifyAnswer) validate() error {
 	return nil
 }
 
-// grantAnswer is what the cloud sends back for a venue it hands over.
-type grantAnswer struct {
+// GrantAnswer is what the cloud sends back for a venue it hands over.
+type GrantAnswer struct {
 	Backup      backup.S3 `json:"backup"`
 	PairingCode string    `json:"pairing_code"`
 	ExpiresAt   time.Time `json:"expires_at"`
@@ -370,12 +392,7 @@ func (r *Recovery) Grant(ctx context.Context, venueID string) (Grant, error) {
 		return Grant{}, ErrNeverBackedUp
 	}
 
-	type grantVenue struct {
-		ID string `json:"id"`
-	}
-	status, raw, err := r.client.send(ctx, recoverGrantPath, r.session, struct {
-		Venue grantVenue `json:"venue"`
-	}{grantVenue{venue.ID}})
+	status, raw, err := r.client.send(ctx, RecoverGrantPath, r.session, GrantRequest{Venue: GrantVenue{ID: venue.ID}})
 	if err != nil {
 		return Grant{}, err
 	}
@@ -392,7 +409,7 @@ func (r *Recovery) Grant(ctx context.Context, venueID string) (Grant, error) {
 	default:
 		return Grant{}, fmt.Errorf("%w: it answered %d", ErrUnreachable, status)
 	}
-	var a grantAnswer
+	var a GrantAnswer
 	if err := decodeAnswer(raw, &a); err != nil {
 		return Grant{}, err
 	}

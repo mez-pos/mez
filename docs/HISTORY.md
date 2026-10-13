@@ -8,7 +8,15 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 7f - A till keeps its pairing through a computer with
+**Phase 14, Task 9 - Words** (ADR-340). `deploy.md` has **mez Cloud, or
+your own relay** before the two sections it sets up, and says mez Cloud
+is not taking venues yet. The landing brief's pricing is two columns
+(₹999 and ₹9,999, the founders' price as a badge). `00-product.md`'s
+licence section is ADR-312's three layers. After it, on the same day:
+`mez-cloud` decided as a private repository (ADR-341), the open
+questions answered (ADR-342), and seven of the answers built (ADR-343).
+
+Before it, **Phase 14, Task 7f - A till keeps its pairing through a computer with
 no venue** (ADR-339). A token that is no device's, where there is no
 venue, is answered 503 `no_venue` and not 401 (`unknownToken`,
 `internal/api/devices.go`). The till has a state for it

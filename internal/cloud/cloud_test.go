@@ -226,21 +226,21 @@ func TestAPairingKeepsItsSecretsOutOfALog(t *testing.T) {
 // which is good once.
 type pairingServer struct {
 	t      *testing.T
-	answer pairAnswer
+	answer PairAnswer
 
 	mu     sync.Mutex
 	code   string
-	asked  []pairRequest
+	asked  []PairRequest
 	status int // answered instead, when not zero
 	raw    string
 }
 
 func (s *pairingServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost || r.URL.Path != pairPath {
+	if r.Method != http.MethodPost || r.URL.Path != PairPath {
 		http.NotFound(w, r)
 		return
 	}
-	var req pairRequest
+	var req PairRequest
 	body, _ := io.ReadAll(r.Body)
 	if err := json.Unmarshal(body, &req); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
@@ -302,7 +302,7 @@ func TestPair(t *testing.T) {
 	if err := Save(t.TempDir(), p); err != nil {
 		t.Errorf("what Pair returned cannot be kept: %v", err)
 	}
-	if len(s.asked) != 1 || s.asked[0].Code != "ABCD2345" || s.asked[0].Venue != (pairingVenue{ID: "ven_A1B2C3D4", Name: "Corner Cafe", Version: "v0.1.0"}) {
+	if len(s.asked) != 1 || s.asked[0].Code != "ABCD2345" || s.asked[0].Venue != (PairingVenue{ID: "ven_A1B2C3D4", Name: "Corner Cafe", Version: "v0.1.0"}) {
 		t.Errorf("the cloud was asked %+v", s.asked)
 	}
 
@@ -383,7 +383,7 @@ func TestPairRefusals(t *testing.T) {
 		other := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { elsewhere++ }))
 		defer other.Close()
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, other.URL+pairPath, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, other.URL+PairPath, http.StatusTemporaryRedirect)
 		}))
 		defer srv.Close()
 		c, err := NewClient(srv.URL)

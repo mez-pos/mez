@@ -73,8 +73,8 @@ func TestCleanOTP(t *testing.T) {
 // knows one account, by its phone, and sends its one-time code nowhere: the
 // test knows it.
 type recoveryServer struct {
-	verify verifyAnswer
-	grant  grantAnswer
+	verify VerifyAnswer
+	grant  GrantAnswer
 
 	mu     sync.Mutex
 	asked  []asked
@@ -106,17 +106,17 @@ func (s *recoveryServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch r.URL.Path {
-	case recoverStartPath:
+	case RecoverStartPath:
 		// Whoever's number it is, the answer is the same.
 		_ = json.NewEncoder(w).Encode(map[string]string{"attempt": testAttempt})
-	case recoverVerifyPath:
+	case RecoverVerifyPath:
 		if body["attempt"] != testAttempt || body["code"] != testOTP {
 			w.WriteHeader(http.StatusForbidden)
 			_, _ = io.WriteString(w, `{"error":{"code":"otp_invalid","message":"two tries left"}}`)
 			return
 		}
 		_ = json.NewEncoder(w).Encode(s.verify)
-	case recoverGrantPath:
+	case RecoverGrantPath:
 		if r.Header.Get("Authorization") != "Bearer "+testSession {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -148,7 +148,7 @@ func (s *recoveryServer) askedAt(path string) []asked {
 func newRecoveryServer(t *testing.T) (*recoveryServer, *Client) {
 	t.Helper()
 	s := &recoveryServer{
-		verify: verifyAnswer{
+		verify: VerifyAnswer{
 			Session:   testSession,
 			ExpiresAt: time.Date(2026, 10, 12, 21, 45, 0, 0, time.UTC),
 			Owner:     Owner{Name: "Priya Menon"},
@@ -157,7 +157,7 @@ func newRecoveryServer(t *testing.T) (*recoveryServer, *Client) {
 				{ID: "ven_E5F6G7H8", Name: "Corner Cafe, Indiranagar"},
 			},
 		},
-		grant: grantAnswer{
+		grant: GrantAnswer{
 			Backup: backup.S3{
 				Bucket: "mez-venues", Path: "v/corner-cafe", Endpoint: "https://acct.r2.cloudflarestorage.com",
 				AccessKeyID: "AKIDREADONLY", SecretAccessKey: testReadKey,
@@ -200,7 +200,7 @@ func TestRecover(t *testing.T) {
 	if err != nil || attempt != testAttempt {
 		t.Fatalf("RecoverStart = %q, %v", attempt, err)
 	}
-	if got := s.askedAt(recoverStartPath); len(got) != 1 || got[0].Body["phone"] != testPhone || got[0].Bearer != "" {
+	if got := s.askedAt(RecoverStartPath); len(got) != 1 || got[0].Body["phone"] != testPhone || got[0].Bearer != "" {
 		t.Errorf("the cloud was asked %+v, want the number as E.164 and nothing else", got)
 	}
 
@@ -217,7 +217,7 @@ func TestRecover(t *testing.T) {
 	if !r.Venues[1].LastBackupAt.IsZero() {
 		t.Errorf("a venue never backed up says %v", r.Venues[1].LastBackupAt)
 	}
-	if got := s.askedAt(recoverVerifyPath); len(got) != 1 || got[0].Body["attempt"] != testAttempt || got[0].Body["code"] != testOTP {
+	if got := s.askedAt(RecoverVerifyPath); len(got) != 1 || got[0].Body["attempt"] != testAttempt || got[0].Body["code"] != testOTP {
 		t.Errorf("the cloud was asked %+v", got)
 	}
 
@@ -229,7 +229,7 @@ func TestRecover(t *testing.T) {
 		g.PairingCode != "ABCD2345" || !g.ExpiresAt.Equal(s.grant.ExpiresAt) {
 		t.Errorf("granted %+v", g)
 	}
-	got := s.askedAt(recoverGrantPath)
+	got := s.askedAt(RecoverGrantPath)
 	if len(got) != 1 || got[0].Bearer != "Bearer "+testSession {
 		t.Fatalf("the cloud was asked %+v, want the session as a bearer", got)
 	}
@@ -273,7 +273,7 @@ func TestRecoverStartRefusals(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			s, c := newRecoveryServer(t)
-			s.answer(recoverStartPath, tt.status, tt.raw)
+			s.answer(RecoverStartPath, tt.status, tt.raw)
 			if _, err := c.RecoverStart(ctx, testPhone); !errors.Is(err, tt.want) {
 				t.Errorf("err = %v, want %v", err, tt.want)
 			}
@@ -314,11 +314,11 @@ func TestRecoverVerifyRefusals(t *testing.T) {
 		}
 	})
 
-	good := func() verifyAnswer {
+	good := func() VerifyAnswer {
 		s, _ := newRecoveryServer(t)
 		return s.verify
 	}
-	marshal := func(spoil func(*verifyAnswer)) string {
+	marshal := func(spoil func(*VerifyAnswer)) string {
 		a := good()
 		spoil(&a)
 		raw, err := json.Marshal(a)
@@ -327,7 +327,7 @@ func TestRecoverVerifyRefusals(t *testing.T) {
 		}
 		return string(raw)
 	}
-	manyVenues := func(a *verifyAnswer) {
+	manyVenues := func(a *VerifyAnswer) {
 		a.Venues = nil
 		for i := range maxVenues + 1 {
 			a.Venues = append(a.Venues, AccountVenue{ID: fmt.Sprintf("ven_A1B2C3%02d", i), Name: "Cafe"})
@@ -344,23 +344,23 @@ func TestRecoverVerifyRefusals(t *testing.T) {
 		{"a cloud that is broken", http.StatusInternalServerError, `oops`, ErrUnreachable},
 		{"an answer that is not JSON", http.StatusOK, `ok`, ErrInvalid},
 		{"an answer with nothing in it", http.StatusOK, `{}`, ErrInvalid},
-		{"no session", http.StatusOK, marshal(func(a *verifyAnswer) { a.Session = "" }), ErrInvalid},
-		{"a session with a space in it", http.StatusOK, marshal(func(a *verifyAnswer) { a.Session = "ses 1" }), ErrInvalid},
-		{"no time it ends", http.StatusOK, marshal(func(a *verifyAnswer) { a.ExpiresAt = time.Time{} }), ErrInvalid},
-		{"no owner", http.StatusOK, marshal(func(a *verifyAnswer) { a.Owner.Name = "" }), ErrInvalid},
-		{"an owner with a line break", http.StatusOK, marshal(func(a *verifyAnswer) { a.Owner.Name = "Priya\nadmin" }), ErrInvalid},
-		{"an owner whose name reads backwards", http.StatusOK, marshal(func(a *verifyAnswer) { a.Owner.Name = "Priya\u202enimda" }), ErrInvalid},
-		{"a venue with an escape in its name", http.StatusOK, marshal(func(a *verifyAnswer) { a.Venues[0].Name = "Cafe\x1b[31m" }), ErrInvalid},
-		{"a venue with an id that is not one", http.StatusOK, marshal(func(a *verifyAnswer) { a.Venues[0].ID = "../../etc" }), ErrInvalid},
-		{"a venue with a staff member's id", http.StatusOK, marshal(func(a *verifyAnswer) { a.Venues[0].ID = "stf_A1B2C3D4" }), ErrInvalid},
-		{"a venue listed twice", http.StatusOK, marshal(func(a *verifyAnswer) { a.Venues[1].ID = a.Venues[0].ID }), ErrInvalid},
-		{"a venue with no name", http.StatusOK, marshal(func(a *verifyAnswer) { a.Venues[0].Name = " " }), ErrInvalid},
-		{"a venue with a name far too long", http.StatusOK, marshal(func(a *verifyAnswer) { a.Venues[0].Name = strings.Repeat("a", maxVenueName+1) }), ErrInvalid},
+		{"no session", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Session = "" }), ErrInvalid},
+		{"a session with a space in it", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Session = "ses 1" }), ErrInvalid},
+		{"no time it ends", http.StatusOK, marshal(func(a *VerifyAnswer) { a.ExpiresAt = time.Time{} }), ErrInvalid},
+		{"no owner", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Owner.Name = "" }), ErrInvalid},
+		{"an owner with a line break", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Owner.Name = "Priya\nadmin" }), ErrInvalid},
+		{"an owner whose name reads backwards", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Owner.Name = "Priya\u202enimda" }), ErrInvalid},
+		{"a venue with an escape in its name", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Venues[0].Name = "Cafe\x1b[31m" }), ErrInvalid},
+		{"a venue with an id that is not one", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Venues[0].ID = "../../etc" }), ErrInvalid},
+		{"a venue with a staff member's id", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Venues[0].ID = "stf_A1B2C3D4" }), ErrInvalid},
+		{"a venue listed twice", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Venues[1].ID = a.Venues[0].ID }), ErrInvalid},
+		{"a venue with no name", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Venues[0].Name = " " }), ErrInvalid},
+		{"a venue with a name far too long", http.StatusOK, marshal(func(a *VerifyAnswer) { a.Venues[0].Name = strings.Repeat("a", maxVenueName+1) }), ErrInvalid},
 		{"more venues than an account has", http.StatusOK, marshal(manyVenues), ErrInvalid},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			s, c := newRecoveryServer(t)
-			s.answer(recoverVerifyPath, tt.status, tt.raw)
+			s.answer(RecoverVerifyPath, tt.status, tt.raw)
 			r, err := c.RecoverVerify(ctx, testAttempt, testOTP)
 			if r != nil || !errors.Is(err, tt.want) {
 				t.Errorf("RecoverVerify = %v, %v; want %v", r, err, tt.want)
@@ -373,7 +373,7 @@ func TestRecoverVerifyRefusals(t *testing.T) {
 
 	t.Run("a name written with joiners is a name", func(t *testing.T) {
 		s, c := newRecoveryServer(t)
-		s.answer(recoverVerifyPath, http.StatusOK, marshal(func(a *verifyAnswer) {
+		s.answer(RecoverVerifyPath, http.StatusOK, marshal(func(a *VerifyAnswer) {
 			a.Owner.Name, a.Venues[0].Name = "അവൻ‍ നായർ", "ಕಾಫಿ‌ಮನೆ"
 		}))
 		r, err := c.RecoverVerify(ctx, testAttempt, testOTP)
@@ -383,7 +383,7 @@ func TestRecoverVerifyRefusals(t *testing.T) {
 	})
 	t.Run("an account with no venues is still an account", func(t *testing.T) {
 		s, c := newRecoveryServer(t)
-		s.answer(recoverVerifyPath, http.StatusOK, marshal(func(a *verifyAnswer) { a.Venues = nil }))
+		s.answer(RecoverVerifyPath, http.StatusOK, marshal(func(a *VerifyAnswer) { a.Venues = nil }))
 		r, err := c.RecoverVerify(ctx, testAttempt, testOTP)
 		if err != nil || r == nil || len(r.Venues) != 0 {
 			t.Errorf("RecoverVerify = %v, %v", r, err)
@@ -391,7 +391,7 @@ func TestRecoverVerifyRefusals(t *testing.T) {
 	})
 	t.Run("a venue whose last backup is null was never backed up", func(t *testing.T) {
 		s, c := newRecoveryServer(t)
-		s.answer(recoverVerifyPath, http.StatusOK, `{"session":"`+testSession+`","expires_at":"2026-10-12T21:45:00Z","owner":{"name":"Priya Menon"},
+		s.answer(RecoverVerifyPath, http.StatusOK, `{"session":"`+testSession+`","expires_at":"2026-10-12T21:45:00Z","owner":{"name":"Priya Menon"},
 			"venues":[{"id":"ven_A1B2C3D4","name":"Corner Cafe","last_backup_at":null}]}`)
 		r, err := c.RecoverVerify(ctx, testAttempt, testOTP)
 		if err != nil || len(r.Venues) != 1 || !r.Venues[0].LastBackupAt.IsZero() {
@@ -412,7 +412,7 @@ func TestGrantRefusals(t *testing.T) {
 				t.Errorf("Grant(%q) = %v, want ErrNotListed", id, err)
 			}
 		}
-		if got := s.askedAt(recoverGrantPath); len(got) != 0 {
+		if got := s.askedAt(RecoverGrantPath); len(got) != 0 {
 			t.Errorf("the cloud was asked %+v", got)
 		}
 	})
@@ -421,7 +421,7 @@ func TestGrantRefusals(t *testing.T) {
 		if _, err := signedIn(t, c).Grant(ctx, "ven_E5F6G7H8"); !errors.Is(err, ErrNeverBackedUp) {
 			t.Errorf("err = %v, want ErrNeverBackedUp", err)
 		}
-		if got := s.askedAt(recoverGrantPath); len(got) != 0 {
+		if got := s.askedAt(RecoverGrantPath); len(got) != 0 {
 			t.Errorf("the cloud was asked %+v", got)
 		}
 	})
@@ -435,7 +435,7 @@ func TestGrantRefusals(t *testing.T) {
 		}
 	})
 
-	marshal := func(spoil func(*grantAnswer)) string {
+	marshal := func(spoil func(*GrantAnswer)) string {
 		s, _ := newRecoveryServer(t)
 		a := s.grant
 		spoil(&a)
@@ -466,23 +466,23 @@ func TestGrantRefusals(t *testing.T) {
 		{"a cloud that is broken", http.StatusInternalServerError, `oops`, ErrUnreachable},
 		{"an answer that is not JSON", http.StatusOK, `ok`, ErrInvalid},
 		{"an answer with nothing in it", http.StatusOK, `{}`, ErrInvalid},
-		{"no bucket", http.StatusOK, marshal(func(a *grantAnswer) { a.Backup.Bucket = "" }), ErrInvalid},
-		{"no bucket secret", http.StatusOK, marshal(func(a *grantAnswer) { a.Backup.SecretAccessKey = "" }), ErrInvalid},
-		{"a bucket with no folder", http.StatusOK, marshal(func(a *grantAnswer) { a.Backup.Path = "" }), ErrInvalid},
-		{"a bucket in the clear", http.StatusOK, marshal(func(a *grantAnswer) { a.Backup.Endpoint = "http://storage.example.com" }), ErrInvalid},
-		{"a bucket in the clear on the venue's own network", http.StatusOK, marshal(func(a *grantAnswer) { a.Backup.Endpoint = "http://192.168.1.20:9000" }), ErrInvalid},
-		{"a bucket with a path after its address", http.StatusOK, marshal(func(a *grantAnswer) { a.Backup.Endpoint = "https://storage.example.com/elsewhere" }), ErrInvalid},
-		{"a folder with a line break in it", http.StatusOK, marshal(func(a *grantAnswer) { a.Backup.Path = "v/corner-cafe\nx" }), ErrInvalid},
-		{"a key id with an escape in it", http.StatusOK, marshal(func(a *grantAnswer) { a.Backup.AccessKeyID = "AKID\x1b[31m" }), ErrInvalid},
-		{"no pairing code", http.StatusOK, marshal(func(a *grantAnswer) { a.PairingCode = "" }), ErrInvalid},
-		{"a pairing code that is not one", http.StatusOK, marshal(func(a *grantAnswer) { a.PairingCode = "ABCD234O" }), ErrInvalid},
-		{"a pairing code not written as one is sent", http.StatusOK, marshal(func(a *grantAnswer) { a.PairingCode = "abcd-2345" }), ErrInvalid},
-		{"no time the key stops", http.StatusOK, marshal(func(a *grantAnswer) { a.ExpiresAt = time.Time{} }), ErrInvalid},
+		{"no bucket", http.StatusOK, marshal(func(a *GrantAnswer) { a.Backup.Bucket = "" }), ErrInvalid},
+		{"no bucket secret", http.StatusOK, marshal(func(a *GrantAnswer) { a.Backup.SecretAccessKey = "" }), ErrInvalid},
+		{"a bucket with no folder", http.StatusOK, marshal(func(a *GrantAnswer) { a.Backup.Path = "" }), ErrInvalid},
+		{"a bucket in the clear", http.StatusOK, marshal(func(a *GrantAnswer) { a.Backup.Endpoint = "http://storage.example.com" }), ErrInvalid},
+		{"a bucket in the clear on the venue's own network", http.StatusOK, marshal(func(a *GrantAnswer) { a.Backup.Endpoint = "http://192.168.1.20:9000" }), ErrInvalid},
+		{"a bucket with a path after its address", http.StatusOK, marshal(func(a *GrantAnswer) { a.Backup.Endpoint = "https://storage.example.com/elsewhere" }), ErrInvalid},
+		{"a folder with a line break in it", http.StatusOK, marshal(func(a *GrantAnswer) { a.Backup.Path = "v/corner-cafe\nx" }), ErrInvalid},
+		{"a key id with an escape in it", http.StatusOK, marshal(func(a *GrantAnswer) { a.Backup.AccessKeyID = "AKID\x1b[31m" }), ErrInvalid},
+		{"no pairing code", http.StatusOK, marshal(func(a *GrantAnswer) { a.PairingCode = "" }), ErrInvalid},
+		{"a pairing code that is not one", http.StatusOK, marshal(func(a *GrantAnswer) { a.PairingCode = "ABCD234O" }), ErrInvalid},
+		{"a pairing code not written as one is sent", http.StatusOK, marshal(func(a *GrantAnswer) { a.PairingCode = "abcd-2345" }), ErrInvalid},
+		{"no time the key stops", http.StatusOK, marshal(func(a *GrantAnswer) { a.ExpiresAt = time.Time{} }), ErrInvalid},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			s, c := newRecoveryServer(t)
 			r := signedIn(t, c)
-			s.answer(recoverGrantPath, tt.status, tt.raw)
+			s.answer(RecoverGrantPath, tt.status, tt.raw)
 			g, err := r.Grant(ctx, "ven_A1B2C3D4")
 			if !errors.Is(err, tt.want) {
 				t.Errorf("err = %v, want %v", err, tt.want)
@@ -502,7 +502,7 @@ func TestGrantRefusals(t *testing.T) {
 	t.Run("the good answer, written by hand, is taken", func(t *testing.T) {
 		s, c := newRecoveryServer(t)
 		r := signedIn(t, c)
-		s.answer(recoverGrantPath, http.StatusOK, marshal(func(*grantAnswer) {}))
+		s.answer(RecoverGrantPath, http.StatusOK, marshal(func(*GrantAnswer) {}))
 		if g, err := r.Grant(ctx, "ven_A1B2C3D4"); err != nil || g.Backup.SecretAccessKey != testReadKey {
 			t.Errorf("Grant = %+v, %v", g, err)
 		}
@@ -514,7 +514,7 @@ func TestGrantRefusals(t *testing.T) {
 		_, c := newRecoveryServer(t)
 		r := signedIn(t, c)
 		redirect := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			http.Redirect(w, req, other.URL+recoverGrantPath, http.StatusTemporaryRedirect)
+			http.Redirect(w, req, other.URL+RecoverGrantPath, http.StatusTemporaryRedirect)
 		}))
 		defer redirect.Close()
 		r.client.url = redirect.URL

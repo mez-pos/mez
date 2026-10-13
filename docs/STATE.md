@@ -12,39 +12,40 @@
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
 both, 8 is `mez-cloud`'s. Every task that is this repo's is done: 1 to 3,
 4a to 4c, 5, 6, 7a to 7d, 7f and 9 (ADR-313, ADR-315 to ADR-340). 4d, 7e
-and 8 are `mez-cloud`'s, a private repository that is empty (ADR-341). Phase 13's five
+and 8 are `mez-cloud`'s, a private repository with a skeleton (ADR-344). Phase 13's five
 tasks are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 9 - Words** (ADR-340). `deploy.md` has **mez Cloud, or
-your own relay** before the two sections it sets up: the two ways side
-by side, the code, what pairing does, the Devices card line by line,
-what stops when a subscription lapses and what never does. It says mez
-Cloud is not taking venues yet. `docs/marketing/landing-brief.md`'s
-pricing is two columns (₹999 and ₹9,999, the founders' ₹699 and ₹6,999
-as a badge) with the lapse said as a promise. `00-product.md`'s licence
-section is ADR-312's three layers. Words only: nothing was run.
+**The door, and `mez-cloud`'s first commit** (ADR-344). `cloudkit/` is
+this module's one public package: names for the wire's shapes, the
+assertion, the relay and its keys, handed out to `mez-cloud` and to
+nobody here. The shapes of `/v1/pair` and `/v1/recover/*` are exported
+from `internal/cloud` and used by its own client. `cloudkit_test.go`
+plays the cloud against the venue's real client. `mez-cloud`
+(`I:\mez-cloud`, two commits, private, not pushed) builds against it
+and has its own `CLAUDE.md`, STATE and phase file. Before it, seven of
+the answered questions were built (ADR-343) and none seen in a browser.
 
 ## Next task
 
-**The door, and `mez-cloud`'s first commit** (ADR-341: the human chose a
-private repository of its own, created empty at
-`github.com/byjoellobo/mez-cloud`, cloned at `I:\mez-cloud`). Two
-halves, one session if it holds, else split. **Here:** a package outside
-`internal/` that hands `mez-cloud` what 4d, 7e and 8 call and no more:
-`cloud.NewAssertion` and `SignAssertion` (ADR-323, ADR-324), the relay
-with `Entitlements` (ADR-316), the mirror (ADR-325 on), and the request
-and answer shapes of `/v1/pair` (ADR-318) and `/v1/recover/*`
-(ADR-332). Read those ADRs for what is needed before choosing its
-name and shape; write an ADR. **There:** `go.mod` requiring this module,
-a `CLAUDE.md` and `docs/STATE.md` of its own after this repository's
-pattern, and `docs/phases/phase-14.md` holding Tasks 4d, 7e and 8 copied
-from here. It builds and does nothing yet. Then 8a, 8b, 4d, 7e. When the
-service opens, take "**mez Cloud is not taking venues yet**" out of
-`deploy.md`.
+**Nothing in this repository is next by itself.** Phase 14's work is now
+in `mez-cloud`: open that repository and follow its `docs/STATE.md`
+(Task 8a, to be split first). This repository is touched again when:
+- `mez-cloud` needs a shape cloudkit does not have: add it here first,
+  with an ADR, then use it there (its `CLAUDE.md` says so);
+- Task 8e there begins, by moving the mirror out of `cmd/mez`'s
+  `package main` to where cloudkit can hand it out;
+- 7e there is built: the wizard's wait for the email link (ADR-342);
+- the service opens: take "**mez Cloud is not taking venues yet**" out
+  of `deploy.md`;
+- this module is tagged with cloudkit in it, so that `mez-cloud`'s
+  `go.mod` can name the tag and drop its `replace`. Tagging and pushing
+  are the human's.
+Here, by itself: the walk of ADR-343's seven changes (below), and a
+restore that skips invoice numbers ahead, which waits on the accountant.
 **To walk "The PC died" on one machine:** `RELAY_SECRET=<48 hex>
 bin/pairstub.exe -listen 127.0.0.1:7812 -bucket-fake 127.0.0.1:7813`
 (build it with `go build -o bin/pairstub.exe ./build/dev/pairstub`);

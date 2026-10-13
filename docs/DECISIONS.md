@@ -13307,3 +13307,75 @@ it one or the other. Dead kitchen jobs queued before this stay counted until the
 age out of the queue's window. The quick amounts drop the next ten even when it
 is the likelier note, which for a bill ending in 5 it may be. One sitting, seven
 changes, one commit each would have been better history than this one is.
+
+## ADR-344 - The door is one package of names, `cloudkit`, and the wire's shapes are exported so that both ends are built from one definition
+2026-10 · Status: accepted. Between phases; the first task after ADR-341. Builds on ADR-312, ADR-316, ADR-318, ADR-323, ADR-324, ADR-332 and ADR-341.
+Context: ADR-341 put `mez-cloud` in a repository of its own and said this module
+would open "a thin door" for it, its contents to be decided by the task that built
+it. What the cloud needs is on its side of four conversations: answering a pairing,
+answering a recovery, signing an assertion, and running the relay with entitlements
+of its own. The requests and answers of the first two were unexported structs, and
+in places anonymous ones, inside the venue's client.
+Decision:
+  - **`github.com/byjoellobo/mez/cloudkit`, one package, outside `internal/`.** It
+    is type aliases, constants and function values that name what is under
+    `internal/cloud`, `internal/relay` and `internal/backup`, and one function,
+    `CleanCode`. No logic lives there. An alias to a type in `internal/` is usable
+    from another module, methods and all; that is the whole mechanism.
+  - **The wire's shapes are exported from `internal/cloud` and used by its own
+    client**: `PairPath`, `PairRequest`, `PairingVenue`, `PairAnswer`, `CloudKey`,
+    the three recovery paths, `StartRequest` and `StartAnswer`, `VerifyRequest` and
+    `VerifyAnswer`, `GrantRequest`, `GrantVenue` and `GrantAnswer`. The venue asks
+    with the struct the cloud decodes into, and decodes into the struct the cloud
+    answers with. They cannot come to disagree by a typo in a field's name. A
+    rename and three anonymous structs named; no behaviour changed, and the
+    package's tests pass as they were.
+  - **What is handed out**: those shapes, `CodeLen`, `OTPLen` and `CleanCode`; the
+    venue's, relay's, owner's and account venue's shapes; a bucket, as `Bucket`
+    (`backup.S3`); `Assertion`, `NewAssertion`, `SignAssertion`, the scheme and
+    the life, and `VerifyAssertion` for the cloud's tests; the relay as
+    `RelayServer`, `RelayOptions`, `NewRelay`, `Keys`, `NewKeys`, `Key`,
+    `Entitlements`, `Entitlement`, `NoEnd` and the two questions about a venue's
+    name.
+  - **What is not**: the venue's client (`cloud.Client`), the pairing file, the
+    static entitlements file, anything of the database or the API. The cloud has
+    no use for them, and each would be a promise.
+  - **Not the mirror, yet.** It is in `cmd/mez`, `package main`, which nothing can
+    import. Handing it out means moving it first, and that is where `mez-cloud`'s
+    8e begins, in this repository.
+  - **Tested as the cloud would use it.** `cloudkit_test.go` plays mez Cloud with
+    cloudkit and the standard library alone, and the venue with its real client: a
+    code exchanged for a pairing whose key checks on the relay; an assertion
+    signed and accepted, and refused by another venue; the three requests of a
+    recovery to a bucket and a code; a relay made with entitlements of the test's
+    own.
+  - **And from outside.** `mez-cloud`'s first commit (`dd559fb` there) has a
+    `go.mod` that requires this module, a command that builds, and a test that
+    mints a key, signs an assertion and composes a pairing answer through
+    cloudkit. It passes. That is the proof the door opens; nothing inside this
+    module could give it.
+  - **`mez-cloud` replaces this module with `../nofiltr-pos`** until this is
+    tagged with cloudkit in it. Nothing was pushed, here or there.
+  - **`mez-cloud` begins with its own `CLAUDE.md`, STATE, decisions file and phase
+    file**, after this repository's pattern: Tasks 8a to 8i, 4d and 7e copied
+    from `phase-14.md`, in the order they can be built. Its rule for the door is
+    that a shape is never redefined there: if cloudkit lacks it, the task is here
+    first.
+Because: a wire with one definition is the thing two repositories most easily
+lose, and the cheapest moment to keep it is before the second one has written a
+line.
+Cost: this module has an API for the first time, and its tests are the only thing
+that will say when it breaks; `mez-cloud`'s are in another repository and do not
+run in `make check`. cloudkit imports `internal/backup` for one struct, and with
+it Litestream and SQLite come into whatever imports cloudkit: the cloud wants
+both anyway, and a program that wanted only the assertion would not thank us.
+Function values (`var NewRelay = relay.New`) can be reassigned by whoever imports
+them, which a wrapper would prevent and aliases to five more signatures would
+cost. The names are the internal ones with `Relay` put before four of them, so
+two names now exist for each thing. `pairstub` still builds its answers its own
+way, with the internal packages: it was not moved onto the door, so the stand-in
+and the door are two descriptions of the cloud until someone makes them one.
+mez-cloud imports AGPL code into a private service: that is the copyright
+holder's to do with their own code, and stops being simple the day this
+repository takes a contribution from anyone else without an agreement that
+covers it.
