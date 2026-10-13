@@ -12,7 +12,7 @@
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
 both, 8 is `mez-cloud`'s. Every task that is this repo's is done: 1 to 3,
 4a to 4c, 5, 6, 7a to 7d, 7f and 9 (ADR-313, ADR-315 to ADR-340). 4d, 7e
-and 8 are `mez-cloud`'s, which does not exist yet. Phase 13's five
+and 8 are `mez-cloud`'s, a private repository that is empty (ADR-341). Phase 13's five
 tasks are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
@@ -30,18 +30,21 @@ section is ADR-312's three layers. Words only: nothing was run.
 
 ## Next task
 
-**Nothing in this repository is next until the human answers question
-12.** Every task of Phase 14 that is this repo's is done. What is left
-is `mez-cloud`'s: 4d (the cloud's side of pairing), 7e (of recovery) and
-8 (the service), and they wait on where `mez-cloud` lives: a second
-module in this repository, or a repository of its own with what it
-needs moved out of `internal/` (question 12 below). A session asked to
-build one of them should say so and stop, or, if the human has
-answered, begin with the skeleton and copy the phase's cloud tasks
-there. When the service opens, take "**mez Cloud is not taking venues
-yet**" out of `deploy.md`. Otherwise the work is the human's checks
-below: phases 09 to 13 each owe one, and Phase 14's "done when" needs
-the service.
+**The door, and `mez-cloud`'s first commit** (ADR-341: the human chose a
+private repository of its own, created empty at
+`github.com/byjoellobo/mez-cloud`, cloned at `I:\mez-cloud`). Two
+halves, one session if it holds, else split. **Here:** a package outside
+`internal/` that hands `mez-cloud` what 4d, 7e and 8 call and no more:
+`cloud.NewAssertion` and `SignAssertion` (ADR-323, ADR-324), the relay
+with `Entitlements` (ADR-316), the mirror (ADR-325 on), and the request
+and answer shapes of `/v1/pair` (ADR-318) and `/v1/recover/*`
+(ADR-332). Read those ADRs for what is needed before choosing its
+name and shape; write an ADR. **There:** `go.mod` requiring this module,
+a `CLAUDE.md` and `docs/STATE.md` of its own after this repository's
+pattern, and `docs/phases/phase-14.md` holding Tasks 4d, 7e and 8 copied
+from here. It builds and does nothing yet. Then 8a, 8b, 4d, 7e. When the
+service opens, take "**mez Cloud is not taking venues yet**" out of
+`deploy.md`.
 **To walk "The PC died" on one machine:** `RELAY_SECRET=<48 hex>
 bin/pairstub.exe -listen 127.0.0.1:7812 -bucket-fake 127.0.0.1:7813`
 (build it with `go build -o bin/pairstub.exe ./build/dev/pairstub`);
@@ -164,10 +167,8 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 11. A mirror's pill says "Venue offline" of a venue that is on and has sold
    nothing for two minutes (ADR-329): the copy cannot tell quiet from off.
    Should the venue write on a beat while its backup is on, or the word change?
-12. `mez-cloud` is to import this module (Task 8), and what it needs is under
-   `internal/`, which Go lets no other module import: `cloud.SignAssertion`,
-   the relay's `Entitlements`, the mirror. Move those out of `internal/`, or
-   keep `mez-cloud` in this repository as a second module path?
+12. Answered 2026-10-13 (ADR-341): `mez-cloud` is a private repository of its
+   own, and this module opens a thin door for it.
 13. Whoever takes over the owner's SIM can restore the venue's database
    onto their own machine and revoke the real venue's key (ADR-332, Cost).
    Is a message to the account on every hand-over enough, or should
