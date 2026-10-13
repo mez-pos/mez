@@ -247,6 +247,6 @@ office, the guest ordering app and the relay. See [LICENSE](LICENSE). If
 you run a modified mez for others over a network, you must offer them its
 source.
 
-The guest ordering app (`web/guest/`) was meant to be MIT, since it is
-served to other people's phones. It carries no licence file of its own, so
-today it is covered by the AGPL like the rest.
+The guest ordering app (`web/guest/`) is under the AGPL like the rest
+(ADR-342). It is served by the venue to its guests' phones, and is not
+made to be put into other people's pages.

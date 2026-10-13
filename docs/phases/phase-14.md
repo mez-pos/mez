@@ -625,6 +625,10 @@ and its first commit copies this phase's cloud tasks there.
     pairing code bound to that venue's id. Limits on codes to a number,
     tries to a code and grants to a session, and a message to the account
     on every grant. Refuse past `backups_kept_until` with 410 (ADR-313).
+    **And a second step before a grant (ADR-342): a link sent to the
+    account's email, opened by the owner.** What the venue's wizard shows
+    while it waits for that is this repository's, and a task of its own
+    when this is built.
   - [x] **Task 7f - A till keeps its pairing through a computer with no
     venue.** *This repo.* As built (ADR-339): the server changes. A token
     that is no device's, where there is no venue, is answered 503

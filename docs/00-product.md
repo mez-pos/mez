@@ -94,7 +94,5 @@ Three layers, and what is sold is none of what runs at the venue
   back office on its own network or its own backup.
 
 The AGPL keeps a hosted fork contributing back. The guest ordering app
-(`web/guest/`) was meant to be MIT, since it is served to other people's
-phones; it carries no licence file of its own, so today it is under the
-AGPL like the rest. That is the human's to decide (`STATE.md`, "Still
-owed").
+(`web/guest/`) is under it like the rest (ADR-342): it is served by the
+venue and is not made to be put into other people's pages.

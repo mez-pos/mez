@@ -101,8 +101,9 @@ Still owed from before, in the order that unblocks the most:
 3. **Phase 12's "done when"**: a clean Windows machine, the downloaded
    installer, a first printed invoice in under ten minutes.
 4. The human checks phases 09 to 11 owe, and the questions below.
-5. Decide the guest app's licence: the README says it was meant to be
-   MIT and is under the AGPL.
+5. The product's domain: the human buys `mezpos.com` later, and the relay
+   moves to it before any venue that sells prints its table codes
+   (ADR-342). `jskin.in` until then.
 
 **Do not move Litestream past v0.5.15 without running the tests on
 Windows.** `make check` embeds whatever `web/*/dist` holds: run `make
@@ -150,32 +151,25 @@ Still owed from phase 11, its human check and:
 
 ## Open questions for the human
 
-From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
-1. The default manager cannot edit the menu, against the flow map. Which gives way?
-2. "Not printed" counts kitchen tickets at a station with no printer. Should it?
-3. The Z-report slip mixes before and after credit notes. Add a credit-note line?
-4. Tax-inclusive totals read as if the rows add up. Say "incl." on the tax rows?
-5. The desktop's cash quick amounts never offer ₹500. Show it?
-6. Older: move a data directory from before the rename and rename `nofiltr.db`.
-7. `jskin.in` is for testing, `mez.ac` for production: move before codes are printed.
-8. The firewall rule is for Private and Domain networks (ADR-265). Public too?
-9. ADR-313 took the cost paper's prices (₹999 and ₹9,999; founders ₹699 and
-   ₹6,999, first hundred). Are they right, and are they shown with GST or before it?
-10. After a restore, an invoice number printed in the half minute the backup had
-   not yet sent is given again to the next sale (ADR-315). Is that acceptable for
-   GST, or should a restore skip numbers ahead?
-11. A mirror's pill says "Venue offline" of a venue that is on and has sold
-   nothing for two minutes (ADR-329): the copy cannot tell quiet from off.
-   Should the venue write on a beat while its backup is on, or the word change?
-12. Answered 2026-10-13 (ADR-341): `mez-cloud` is a private repository of its
-   own, and this module opens a thin door for it.
-13. Whoever takes over the owner's SIM can restore the venue's database
-   onto their own machine and revoke the real venue's key (ADR-332, Cost).
-   Is a message to the account on every hand-over enough, or should
-   recovery ask a second thing: a wait, an email link, the owner's PIN?
-14. Nothing finds a server for a tablet (ADR-338): a new computer at another
-   address means every tablet is paired again. Is "give it the old address"
-   enough for an owner, or should the server answer to a name (`mez.local`)?
+None is open. The fourteen that stood here were answered on 2026-10-13
+(ADR-341 for where `mez-cloud` lives, ADR-342 for the rest). Two answers
+wait on the human's accountant before anything is published or built on
+them: prices shown before GST, and a restore skipping invoice numbers
+ahead. One waits on real tablets: whether the server should answer to a
+name.
+
+**Decided and not built**, each one session, in no fixed order, and after
+the next task above unless the human says otherwise (ADR-342 has each in
+full; `docs/KNOWN.md` has where each was found):
+- A manager may edit the menu by default. Read the flow map first.
+- "Not printed" leaves out tickets at a station with no printer.
+- The Z-report slip: gross, credit notes, net.
+- Tax rows say "incl." on a tax-inclusive total.
+- The desktop's cash quick amounts offer ₹500.
+- A restore skips invoice numbers ahead and audits the gap (ADR first).
+- A mirror's pill says when the venue last changed something.
+- `troubleshooting.md`: a Public network is made Private. Setup: reserve
+  this computer's address in the router.
 
 ---
 

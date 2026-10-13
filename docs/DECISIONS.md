@@ -13195,3 +13195,65 @@ Cost: two repositories to keep in step, and a tagged or pinned version of this
 module for `mez-cloud` to build against. `mez-cloud` cannot be tested in this
 repository's `make check`. The first session there has nothing to follow: no
 `CLAUDE.md`, no phase file, no STATE.
+
+## ADR-342 - The open questions are answered: thirteen decisions by the human on 2026-10-13
+2026-10 · Status: accepted, by the human on 2026-10-13, on the session's recommendations. Builds on ADR-199, ADR-265, ADR-313, ADR-315, ADR-329, ADR-332 and ADR-338.
+Context: `STATE.md` carried fourteen questions for the human, some since the walk of
+ADR-199, and one item under "Still owed", the guest app's licence. Question 12 was
+answered by ADR-341. The human was given a recommendation and a reason for each of
+the rest and agreed with all, with one change, to question 7.
+Decision, by the question's number in `STATE.md` as it stood:
+  - **1. A manager may edit the menu.** The default role gains it; an owner can take
+    it away. In a small cafe the manager marks what is sold out and corrects a
+    price. Decided without the flow map read again: the task that builds it reads
+    it, and says so if the map means something this misses.
+  - **2. "Not printed" does not count a ticket at a station with no printer.** That
+    station is on the display by design, and a count that can never be zero is not
+    read.
+  - **3. The Z-report slip gains a credit-note line**: gross, credit notes, net.
+  - **4. Tax rows on a tax-inclusive total say "incl."**
+  - **5. The desktop's cash quick amounts offer ₹500.**
+  - **6. A data directory from before the rename is moved by hand.** No code: no
+    venue ran under the old name, only the human's own machines.
+  - **7. The relay stays on `jskin.in` while this is testing.** The human buys the
+    product's domain later. `mezpos.com` is the name chosen (2026-10-08); `mez.ac`
+    in the old question was stale. The constraint stands and is the reason this
+    is a question at all: a printed table code holds the address, so the move is
+    made before any venue that sells prints its codes.
+  - **8. The firewall rule stays off Public networks.** `troubleshooting.md` gains a
+    line: tablets that cannot reach the till, on a network Windows calls Public,
+    are cured by making that network Private.
+  - **9. Prices are shown before GST**, with "+ 18% GST" beside them from the day the
+    business is registered for it, and stay ₹999 and ₹9,999 (founders ₹699 and
+    ₹6,999). **To be confirmed with the human's accountant before the pricing page
+    is published**: whether GST may be charged at all yet is theirs to say.
+  - **10. A restore skips invoice numbers ahead**, and writes the gap to the audit.
+    A gap can be explained with a note; two sales with one number cannot. How far
+    it skips, and whether by a gap or a mark in the series, is the building
+    task's ADR. **To be confirmed with the accountant**, as 9.
+  - **11. A mirror whose copy is behind says when the venue last changed
+    something, and not "Venue offline".** No beat is written by the venue: a write
+    every interval, all day, is the cost ADR-315 was written to avoid.
+  - **13. Recovery asks a second thing: a link sent to the account's email.** And a
+    message to the account on every hand-over, as before. Not the owner's PIN,
+    which the cloud never holds and so cannot check; not a wait, which falls on an
+    owner with a dead computer and a queue. It is `mez-cloud`'s, in 7e, and 8a's
+    account already has an email. What the venue's wizard shows while the link is
+    unopened is this repository's, and is a task when 7e is built.
+  - **14. A tablet finds the new computer by its address, and there is no
+    `mez.local` yet.** Setup tells the owner to reserve the computer's address in
+    the router. A name is looked at again once it has been tried on real Android
+    tablets, where it is believed not to resolve reliably and has not been tried.
+  - **The guest app stays under the AGPL.** It is served by the venue and not put
+    into other people's pages, which was the reason for MIT. The README and
+    `00-product.md` no longer say it was meant to be otherwise.
+Because: questions that sit in the handoff file are read at the start of every
+session and decided by none. Most of these were small, and waiting cost more than
+any answer could.
+Cost: fourteen answers in one sitting, on recommendations made without rereading
+each screen. Three lean on something not checked: 9 and 10 on an accountant, 14 on
+tablets nobody has tried. 1 was called "lower confidence" when it was recommended.
+Seven of them are code that is not written (1, 2, 3, 4, 5, 10, 11), one is a line
+of troubleshooting (8), one a line in setup (14), and they are listed in `STATE.md`
+to be built one to a session. 13 makes recovery one step longer for every owner to
+stop a thing that has not happened to any.
