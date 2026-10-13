@@ -8,7 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 7b2b - The routes of "I had mez before"** (ADR-335),
+**Phase 14, Task 7c1 - The screen of "I had mez before"** (ADR-336). 7c
+was split in two. `web/shared/screens/setup/recover-logic.ts` has the
+checks, the four requests, every sentence, `awaitVenue`, which waits
+through the server's start, and `pairThisBrowser`; `RecoverFlow.tsx`
+draws it; the wizard's first step has a band, **I had mez before**. Four
+steps: Your number, The code, Your venue, Bring it back. Logic tested
+(33). **Walked in a browser** at 1366 and 400 wide against `pairstub` as
+far as a restore that fails for want of a bucket.
+
+Before it, **Phase 14, Task 7b2b - The routes of "I had mez before"** (ADR-335),
 which closed 7b. `internal/api/setup_recover.go`: `POST
 /api/v1/setup/recover/start` (`{phone}`), `/verify` (`{attempt, code}`)
 and `/restore` (`{venue_id}`, 202 with the claim) behind what first run

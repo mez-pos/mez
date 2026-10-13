@@ -296,10 +296,10 @@ func TestABucketOfSomeoneElsesKeys(t *testing.T) {
 	}
 
 	huge := strings.Repeat("cd", 32) + ".jpg"
-	fake.plant("mez/photos/../../escape.jpg", []byte("x"))
-	fake.plant("mez/photos/sub/"+good, []byte("x"))
-	fake.plant("mez/photos/notes.txt", []byte("x"))
-	fake.plant("mez/photos/"+huge, make([]byte, 3<<20))
+	fake.Plant("mez/photos/../../escape.jpg", []byte("x"))
+	fake.Plant("mez/photos/sub/"+good, []byte("x"))
+	fake.Plant("mez/photos/notes.txt", []byte("x"))
+	fake.Plant("mez/photos/"+huge, make([]byte, 3<<20))
 
 	parent := t.TempDir()
 	to := filepath.Join(parent, "venue", "photos")
@@ -345,7 +345,7 @@ func TestPhotosGoToABucketAndComeBack(t *testing.T) {
 
 	photoKeys := func() []string {
 		var names []string
-		for _, k := range fake.keys() {
+		for _, k := range fake.Keys() {
 			if name, ok := strings.CutPrefix(k, "mez/photos/"); ok {
 				names = append(names, name)
 			}
@@ -358,15 +358,15 @@ func TestPhotosGoToABucketAndComeBack(t *testing.T) {
 
 	// Left alone, the probe ticks many times and sends nothing: a photo
 	// is written to a bucket once.
-	puts := fake.countPrefix("PUT", "mez/photos/")
+	puts := fake.CountPrefix("PUT", "mez/photos/")
 	time.Sleep(300 * time.Millisecond)
-	if again := fake.countPrefix("PUT", "mez/photos/"); again != puts {
+	if again := fake.CountPrefix("PUT", "mez/photos/"); again != puts {
 		t.Errorf("photos were written %d more times with nothing new", again-puts)
 	}
 	// Nor is the bucket asked for its list of photos on every tick.
-	lists := fake.countPrefix("LIST", "mez/photos/")
+	lists := fake.CountPrefix("LIST", "mez/photos/")
 	time.Sleep(300 * time.Millisecond)
-	if again := fake.countPrefix("LIST", "mez/photos/"); again != lists {
+	if again := fake.CountPrefix("LIST", "mez/photos/"); again != lists {
 		t.Errorf("the photos were listed %d more times with nothing new", again-lists)
 	}
 

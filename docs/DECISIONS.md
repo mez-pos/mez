@@ -12920,3 +12920,58 @@ starts again all the same and the page, with no claim, is shown the venue list a
 a refusal; the venue is there when mez is opened again. The venues are radio
 buttons a keyboard reaches one tab at a time and not by arrow keys, as the
 wizard's other card choices are.
+
+## ADR-337 - The stand-in cloud is its own bucket, and "I had mez before" was walked from a venue that backed up to it
+2026-10 · Status: accepted. Phase 14, Task 7c2, which closes 7c. Builds on ADR-321, ADR-332 and ADR-336.
+Context: ADR-336 built a screen whose reason for being, the minute after a restore is
+asked for, could not be seen: the stand-in named a bucket that was not there. The S3
+stand-in the backup's tests use was in a test file, where nothing but those tests
+could reach it.
+Decision:
+  - **`internal/backup/s3fake`**, the same stand-in, moved and not rewritten: its
+    tests' names for it are an alias. It is in no release, and nothing outside
+    tests and `build/dev` imports it.
+  - **A second key that reads and does not write** (`WithReader`): GET and HEAD, and
+    403 for the rest. It is what mez Cloud is to mint for a restore (ADR-332), and
+    having it in the stand-in means the claim "the key that restores cannot write"
+    is something a test and a walk both exercise, not a sentence.
+  - **`pairstub -bucket-fake ADDR`** serves that bucket and names it: with the
+    writing key in what pairing answers, with the reading key in what a hand-over
+    answers. In memory, and gone when the stub stops.
+  - **The stub's account has whichever venue last paired with it.** Its id and name
+    are taken from the pairing, so a walk types none. `-venue-id` is what it lists
+    until one has.
+  - **`runOptions.source` and `cloudrecover.Options.Source` are gone.** They let a
+    test restore from a folder for want of a bucket. The test now backs a venue up
+    to the stand-in, restores it with the reading key, and checks the bucket holds
+    exactly what it held before. No hook of the tests' is left in the server.
+  - **The walk, on 2026-10-13, on Windows, in one browser.** A venue made with `mez
+    setup -demo-menu` and paired to the stub from its API, so that it backed up to
+    the stub's bucket; its server killed; a new install on another port, so the
+    browser came to it with nothing kept. **I had mez before**, the number, the
+    code, the venue (listed by the name it paired under), the till named, **Bring
+    it back**. The backup was down and checked in 80 milliseconds; the server
+    started again by itself; the page's first asking found nothing listening, its
+    second, a second and a half on, was answered; the browser was paired; the last
+    card said the venue was paired again, with its address. **Sign in** showed
+    Staff Login with the venue's own staff. The owner's old PIN signed in. The shift
+    panel named the terminal as it had just been named. A shift was opened, a lemon
+    tart rung for cash, and the invoice was INV/26-27/000001. The stub's log shows
+    the same venue id paired twice; the new directory has its pairing, its backup
+    set to the bucket and begun afresh, the empty database moved aside, and no word
+    of the restore; neither code is in the server's log.
+  - **Nothing in 7c1's screen needed changing.** The two cards that wait were on
+    the screen for under two seconds between them.
+Because: a stand-in that can hold a backup makes "The PC died" something a person
+does on one machine in five minutes, which is what 7d has to write down and what
+whoever changes this next will want to do before they trust it.
+Cost: **three things on the phase's list were not seen.** A reload while the page
+waits: the wait was a second and a half and could not be caught by hand. The last
+card while the venue is still "pairing": with a bucket that answers, it was paired
+before the page first asked. And the last card at 400px. The first two are tested
+as logic (ADR-336) and the layout is the venue step's, which was seen at 400px. The
+venue here was eighteen dishes and no sales: nothing was learned about a backup of
+a year's trading on a slow line, which is the case the waiting cards are for. The
+stand-in checks who signed a request and not the signature, has no multipart
+upload, and so says nothing about a real bucket's refusals. The walk's first venue
+was paired through its API and not its Devices card, which ADR-321 walked.

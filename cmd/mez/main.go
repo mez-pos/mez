@@ -142,10 +142,6 @@ type runOptions struct {
 	// system is the operating system's log, the Windows event log under a
 	// service, or nil.
 	system logging.SystemLog
-
-	// source is the tests': where a grant's backup is, which for them is a
-	// folder (cloudrecover.Options). Nil, always, in a server anyone runs.
-	source func(cloud.Grant) backup.Config
 }
 
 // run is main with errors instead of exits, so every path below unwinds through
@@ -520,7 +516,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// venue for the next start to adopt, and the place for what a start
 	// that adopted one has to say, which is filled further down.
 	recoverer, err := cloudrecover.New(cloudrecover.Options{
-		Cloud: exchange, DataDir: cfg.DataDir, Needed: firstRun.Needed, StartAgain: startAgain, Source: opts.source, Log: log,
+		Cloud: exchange, DataDir: cfg.DataDir, Needed: firstRun.Needed, StartAgain: startAgain, Log: log,
 	})
 	if err != nil {
 		return err

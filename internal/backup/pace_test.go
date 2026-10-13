@@ -13,7 +13,7 @@ import (
 // billed counts what a bucket has been asked that is billed as a write: every
 // object put and every listing. Reading an object and deleting one are
 // billed as reads or not at all.
-func billed(f *fakeS3) int { return f.count("PUT object") + f.count("GET bucket") }
+func billed(f *fakeS3) int { return f.Count("PUT object") + f.Count("GET bucket") }
 
 // TestAnHourAsksLittleOfABucket lives through an hour at the default pace
 // and counts what the bucket was asked, selling the whole hour and then not
@@ -63,7 +63,7 @@ func TestAnHourAsksLittleOfABucket(t *testing.T) {
 			// the start's, not the hour's.
 			sell(t, database, 0, 1)
 			time.Sleep(fast(20 * time.Minute))
-			if fake.count("PUT object") == 0 {
+			if fake.Count("PUT object") == 0 {
 				t.Fatal("nothing reached the bucket before the hour began")
 			}
 

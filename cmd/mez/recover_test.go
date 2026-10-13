@@ -20,6 +20,7 @@ import (
 
 	"github.com/byjoellobo/mez/internal/api"
 	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/byjoellobo/mez/internal/backup/s3fake"
 	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/service/cloudrecover"
@@ -38,6 +39,9 @@ const (
 type accountCloud struct {
 	venueID string
 	pub     string
+	// bucket is where the venue's backup is, as a restore is told it: with
+	// the key that only reads.
+	bucket backup.S3
 
 	mu     sync.Mutex
 	paired []string // the venue ids that paired, in order
@@ -71,12 +75,10 @@ func (c *accountCloud) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		// A bucket that the test's source turns into the folder the venue
-		// was backed up to: there is no S3 here to read.
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"backup": map[string]string{
-				"bucket": "mez-venues", "path": "v/corner-cafe", "endpoint": "https://acct.r2.cloudflarestorage.com",
-				"access_key_id": "AKIDREADONLY", "secret_access_key": "not-a-real-read-only-secret",
+				"bucket": c.bucket.Bucket, "path": c.bucket.Path, "endpoint": c.bucket.Endpoint,
+				"access_key_id": c.bucket.AccessKeyID, "secret_access_key": c.bucket.SecretAccessKey,
 			},
 			"pairing_code": recoverCode, "expires_at": "2026-10-12T22:30:00Z",
 		})
@@ -136,14 +138,36 @@ func asThePage(t *testing.T, addr, path string, header map[string]string, body a
 // the venue, starts itself again on it, and pairs it with the code that
 // waited (ADR-332 to ADR-335). Only the page itself is missing.
 func TestAVenueIsBroughtBackByItsOwnersPhone(t *testing.T) {
-	old, from, photo := backedUpVenue(t)
+	// The venue's bucket, with the two keys mez Cloud mints to it: the
+	// venue's own, and one that only reads, for a restore (ADR-332).
+	held := s3fake.New("mez-venues", "AKIDWRITE").WithReader("AKIDREADONLY")
+	bucketSrv := httptest.NewServer(held)
+	defer bucketSrv.Close()
+	in := backup.S3{Bucket: "mez-venues", Path: "v/corner-cafe", Endpoint: bucketSrv.URL, AccessKeyID: "AKIDWRITE", SecretAccessKey: "not-a-real-bucket-secret"}
+	// The old computer, which backed up there until it died.
+	old, _, photo := backedUpVenueAfter(t, func(dataDir string) {
+		raw, err := json.Marshal(backup.Config{Kind: backup.KindS3, S3: in})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dataDir, backup.ConfigFile), raw, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	})
 	venueID := venueIDIn(t, old)
+	if held.CountPrefix("PUT", "v/corner-cafe/") == 0 {
+		t.Fatalf("the old computer backed nothing up to its bucket: it holds %v", held.Keys())
+	}
+	written := strings.Join(held.Keys(), "\n")
+	readsBefore := held.Count("GET object")
 
 	pub, _, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		t.Fatal(err)
 	}
-	account := &accountCloud{venueID: venueID, pub: base64.StdEncoding.EncodeToString(pub)}
+	reads := in
+	reads.AccessKeyID, reads.SecretAccessKey = "AKIDREADONLY", "not-a-real-read-only-secret"
+	account := &accountCloud{venueID: venueID, pub: base64.StdEncoding.EncodeToString(pub), bucket: reads}
 	cloudSrv := httptest.NewServer(account)
 	defer cloudSrv.Close()
 
@@ -151,7 +175,7 @@ func TestAVenueIsBroughtBackByItsOwnersPhone(t *testing.T) {
 	fresh := t.TempDir()
 	args := append(serverArgs(t, fresh), "-cloud-url", cloudSrv.URL)
 	addr := args[3] // serverArgs: -data-dir DIR -listen-addr ADDR ...
-	opts := runOptions{stdout: io.Discard, source: func(cloud.Grant) backup.Config { return from }}
+	opts := runOptions{stdout: io.Discard}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	done := make(chan error, 1)
@@ -182,6 +206,13 @@ func TestAVenueIsBroughtBackByItsOwnersPhone(t *testing.T) {
 	claim, _ := restored["claim"].(string)
 	if status != http.StatusAccepted || restored["venue_name"] != "The Corner Cafe" || restored["photos"] != float64(1) || restored["photos_incomplete"] != false || claim == "" {
 		t.Fatalf("restore: %d %v\n%s", status, restored, readLog(t, fresh))
+	}
+	// Brought down with the key that only reads: the bucket is as it was.
+	if now := strings.Join(held.Keys(), "\n"); now != written {
+		t.Errorf("the restore changed what the bucket holds:\n%s\nand it held:\n%s", now, written)
+	}
+	if held.Count("GET object") == readsBefore {
+		t.Error("the venue was brought back and nothing was read from its bucket")
 	}
 
 	// Nobody starts it again. It does, and the page asks until it answers.

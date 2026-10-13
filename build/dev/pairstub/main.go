@@ -17,16 +17,21 @@
 // address is that venue's owner, so it listens on this machine only.
 //
 // And it is one account, for "I had mez before": the phone number of
-// -phone, whose one-time code is always -otp and is sent nowhere, owning the
-// one venue of -venue-id. Handing that venue over makes the pairing code
-// good once more. The bucket it names, at pairing and at recovery alike, is
-// the one of the -bucket flags: point them at a bucket that is there to walk
-// a backup and a restore, and leave them to see what each says of one that
-// is not.
+// -phone, whose one-time code is always -otp and is sent nowhere, owning one
+// venue: the one that last paired with it, or the one of -venue-id until
+// one has. Handing that venue over makes the pairing code good once more.
 //
-//	RELAY_SECRET=... go run ./build/dev/pairstub \
-//	    -listen 127.0.0.1:7802 -relay http://127.0.0.1:7801 -venue dev-cafe -code WXYZ2345 \
-//	    -phone +919876500000 -otp 123456 -venue-id ven_...
+// With -bucket-fake it is the bucket too (internal/backup/s3fake), in
+// memory, on an address of its own: a venue paired to it backs up there, and
+// one brought back is restored from there with a key that only reads. That
+// is the whole of "The PC died" on one machine: set a venue up and pair it,
+// let it back up, move its data directory away, start mez on an empty one,
+// and bring the venue back. Without it the bucket named is the one of the
+// -bucket flags, which by default is not there: what pairing and a restore
+// each say of that is worth seeing once.
+//
+//	RELAY_SECRET=... go run ./build/dev/pairstub -bucket-fake 127.0.0.1:7803
+//	bin/mez -data-dir <scratch> -cloud-url http://127.0.0.1:7802
 package main
 
 import (
@@ -38,12 +43,14 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/byjoellobo/mez/internal/backup/s3fake"
 	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/relay"
 )
@@ -59,13 +66,18 @@ type stub struct {
 	priv ed25519.PrivateKey
 
 	relayURL, venue, domain, code, owner string
-	phone, otp, venueID, venueName       string
-	bucket                               map[string]string
+	phone, otp                           string
+	// bucket is what a paired venue is told to back up to, and readBucket
+	// what one being brought back is told to restore from: the same place,
+	// and with -bucket-fake a key that cannot write to it.
+	bucket, readBucket map[string]string
 
-	mu      sync.Mutex
-	spent   bool
-	attempt string // the last one asked for with the account's number
-	session string
+	mu sync.Mutex
+	// venueID and venueName are the account's one venue.
+	venueID, venueName string
+	spent              bool
+	attempt            string // the last one asked for with the account's number
+	session            string
 }
 
 func main() {
@@ -78,8 +90,9 @@ func main() {
 	flag.StringVar(&s.owner, "owner", "Priya Menon", "the account's name")
 	flag.StringVar(&s.phone, "phone", "+919876500000", "the account's phone number, for \"I had mez before\"")
 	flag.StringVar(&s.otp, "otp", "123456", "the one-time code that number is always \"sent\"")
-	flag.StringVar(&s.venueID, "venue-id", "", "the public id of the venue the account lists (GET /api/v1/venue says it); none lists no venue")
+	flag.StringVar(&s.venueID, "venue-id", "", "the public id of the venue the account lists until one pairs; none lists no venue until then")
 	flag.StringVar(&s.venueName, "venue-name", "Dev Cafe", "that venue's name in the account's list")
+	fake := flag.String("bucket-fake", "", "serve a bucket in memory on this address (127.0.0.1:7803, say) and name it, in place of the -bucket flags' one")
 	bucket := flag.String("bucket", "mez-dev", "the bucket a paired venue backs up to and a recovered one restores from")
 	bucketPath := flag.String("bucket-path", "", "the venue's folder in it (default v/<venue>)")
 	// A bucket that is not there, unless told: the walk shows what pairing
@@ -98,6 +111,22 @@ func main() {
 	s.bucket = map[string]string{
 		"bucket": *bucket, "path": *bucketPath, "endpoint": *bucketEndpoint,
 		"access_key_id": *bucketKeyID, "secret_access_key": secret,
+	}
+	s.readBucket = s.bucket
+	if *fake != "" {
+		// It takes anyone's word for which key they hold, so it is this
+		// machine's alone, like the rest of this.
+		if host, _, err := net.SplitHostPort(*fake); err != nil || net.ParseIP(host) == nil || !net.ParseIP(host).IsLoopback() {
+			log.Fatalf("-bucket-fake %s: it must be an address on this machine, like 127.0.0.1:7803", *fake)
+		}
+		// Two keys to the one bucket, as mez Cloud will mint them: the
+		// venue's writes, and a restore's only reads (ADR-332).
+		const writer, reader = "dev-writer", "dev-reader"
+		s.bucket = map[string]string{"bucket": *bucket, "path": *bucketPath, "endpoint": "http://" + *fake, "access_key_id": writer, "secret_access_key": secret}
+		s.readBucket = map[string]string{"bucket": *bucket, "path": *bucketPath, "endpoint": "http://" + *fake, "access_key_id": reader, "secret_access_key": secret}
+		held := s3fake.New(*bucket, writer).WithReader(reader)
+		go func() { log.Fatal(http.ListenAndServe(*fake, held)) }()
+		log.Printf("pairstub: a bucket in memory at http://%s, forgotten when this stops", *fake)
 	}
 
 	var err error
@@ -146,6 +175,10 @@ func (s *stub) pair(w http.ResponseWriter, r *http.Request) {
 	good := req.Code == s.code && !s.spent
 	if good {
 		s.spent = true
+		// The venue that pairs is the account's venue from here on.
+		if req.Venue.ID != "" {
+			s.venueID, s.venueName = req.Venue.ID, req.Venue.Name
+		}
 	}
 	s.mu.Unlock()
 	if !good {
@@ -205,6 +238,7 @@ func (s *stub) recoverVerify(w http.ResponseWriter, r *http.Request) {
 		s.attempt, s.session = "", "ses_"+token()
 		session = s.session
 	}
+	venueID, venueName := s.venueID, s.venueName
 	s.mu.Unlock()
 	if !good {
 		log.Printf("refused one-time code %q", req.Code)
@@ -212,9 +246,9 @@ func (s *stub) recoverVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	venues := []map[string]any{}
-	if s.venueID != "" {
+	if venueID != "" {
 		// When it was last backed up is not looked for: a minute ago, always.
-		venues = append(venues, map[string]any{"id": s.venueID, "name": s.venueName, "last_backup_at": time.Now().Add(-time.Minute).UTC().Format(time.RFC3339)})
+		venues = append(venues, map[string]any{"id": venueID, "name": venueName, "last_backup_at": time.Now().Add(-time.Minute).UTC().Format(time.RFC3339)})
 	}
 	log.Printf("%s signed in to recover; %d venue(s) listed", s.owner, len(venues))
 	answer(w, map[string]any{
@@ -235,7 +269,8 @@ func (s *stub) recoverGrant(w http.ResponseWriter, r *http.Request) {
 	bearer, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 	s.mu.Lock()
 	signedIn := s.session != "" && bearer == s.session
-	if signedIn && req.Venue.ID == s.venueID {
+	theirs := req.Venue.ID != "" && req.Venue.ID == s.venueID
+	if signedIn && theirs {
 		// The venue is to be paired afresh: its code is good once more.
 		s.spent = false
 	}
@@ -243,12 +278,12 @@ func (s *stub) recoverGrant(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case !signedIn:
 		refuse(w, http.StatusUnauthorized, "session_invalid")
-	case req.Venue.ID != s.venueID:
+	case !theirs:
 		refuse(w, http.StatusNotFound, "venue_not_found")
 	default:
 		log.Printf("handed over venue %s: its bucket, and the pairing code %s, good once more", req.Venue.ID, s.code)
 		answer(w, map[string]any{
-			"backup": s.bucket, "pairing_code": s.code,
+			"backup": s.readBucket, "pairing_code": s.code,
 			"expires_at": time.Now().Add(time.Hour).UTC().Format(time.RFC3339),
 		})
 	}

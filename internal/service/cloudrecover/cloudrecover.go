@@ -59,10 +59,7 @@ type Options struct {
 	StartAgain func()
 	// Stage stages a backup. Nil is restore.Stage.
 	Stage func(ctx context.Context, o restore.StageOptions) (restore.Staged, error)
-	// Source says where a grant's backup is. Nil is the bucket it names;
-	// a test has a folder.
-	Source func(g cloud.Grant) backup.Config
-	Log    *slog.Logger
+	Log   *slog.Logger
 }
 
 // Service is the half of a recovery before the start.
@@ -84,9 +81,6 @@ func New(o Options) (*Service, error) {
 	}
 	if o.Stage == nil {
 		o.Stage = restore.Stage
-	}
-	if o.Source == nil {
-		o.Source = func(g cloud.Grant) backup.Config { return backup.Config{Kind: backup.KindS3, S3: g.Backup} }
 	}
 	if o.Log == nil {
 		o.Log = slog.New(slog.DiscardHandler)
@@ -199,7 +193,7 @@ func (s *Service) Restore(ctx context.Context, venueID string) (Restored, error)
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), stageTimeout)
 	defer cancel()
 	staged, err := s.opts.Stage(ctx, restore.StageOptions{
-		DataDir: s.opts.DataDir, From: s.opts.Source(grant), VenueID: grant.Venue.ID,
+		DataDir: s.opts.DataDir, From: backup.Config{Kind: backup.KindS3, S3: grant.Backup}, VenueID: grant.Venue.ID,
 		PairingCode: grant.PairingCode, ClaimHash: HashClaim(claim),
 	})
 	if err != nil {

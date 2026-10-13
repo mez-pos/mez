@@ -554,7 +554,7 @@ and its first commit copies this phase's cloud tasks there.
     over a venue: only where `emptyInstall` says there is none. Tests with
     the stand-in and a folder or the S3 fake. **Split it again if the
     restore and the routes are not one session.**
-  - [ ] **Task 7c - The wizard's screen.** *This repo.* Split in two on
+  - [x] **Task 7c - The wizard's screen.** *This repo.* Split in two on
     2026-10-13 while building it (ADR-336): the stand-in has no bucket, so
     a walk cannot get past the restore.
     - [x] **7c1 - The screen.** `web/shared/screens/setup/`:
@@ -567,7 +567,16 @@ and its first commit copies this phase's cloud tasks there.
       the venue is back, this browser paired, and how its pairing to the
       account went). Walked in a browser against `pairstub` as far as the
       restore, which fails for want of a bucket and says so.
-    - [ ] **7c2 - A bucket for the stand-in, and the whole walk.** Move
+    - [x] **7c2 - A bucket for the stand-in, and the whole walk.** As
+      built (ADR-337): `internal/backup/s3fake`, with a second key that
+      only reads; `pairstub -bucket-fake ADDR`, and the stub's account
+      has whichever venue last paired; `runOptions.source` and
+      `cloudrecover.Options.Source` gone, the test restoring from the
+      stand-in with the reading key. Walked from a venue that backed
+      up to the stub, through the server's start, to Sign in with the
+      old PIN and a sale. Not seen: a reload during the wait, the last
+      card while still "pairing", the last card at 400px. Nothing in
+      7c1's screen needed changing. As it was set: Move
       the S3 stand-in from `internal/backup/s3fake_test.go` to a package
       tests and `pairstub` can both use (`internal/backup/s3fake`, say:
       it needs no `testing.T` but in its constructor), and give

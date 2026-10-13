@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/byjoellobo/mez/internal/backup/s3fake"
 	"github.com/byjoellobo/mez/internal/db"
 )
 
@@ -63,7 +64,7 @@ func TestABucketHoldsWhatWasWritten(t *testing.T) {
 
 	// Everything under mez/db/, so the photos can go beside it and a
 	// shared bucket is not written to at its root.
-	keys := fake.keys()
+	keys := fake.Keys()
 	if len(keys) == 0 {
 		t.Fatal("the bucket is empty")
 	}
@@ -84,7 +85,7 @@ func TestABucketPathOfTheOwnersChoosing(t *testing.T) {
 	if err := engine.BackUpNow(context.Background()); err != nil {
 		t.Fatalf("BackUpNow: %v", err)
 	}
-	for _, k := range fake.keys() {
+	for _, k := range fake.Keys() {
 		if !strings.HasPrefix(k, "venues/corner/db/") {
 			t.Errorf("wrote %q, want everything under venues/corner/db/", k)
 		}
@@ -186,7 +187,7 @@ func TestNoInternetStopsNothing(t *testing.T) {
 	}
 
 	// The line comes back, at the same address.
-	fake := &fakeS3{bucket: testBucket, accessKey: testKey, objects: map[string]fakeObject{}, requests: map[string]int{}}
+	fake := s3fake.New(testBucket, testKey)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		t.Skipf("could not take %s back to stand in for the bucket: %v", addr, err)
@@ -226,22 +227,22 @@ func TestTheProbeAsksABucketCheaply(t *testing.T) {
 	// not grow. The first baseline that holds still is the proof.
 	deadline := time.Now().Add(10 * time.Second)
 	waitForLooks := func(n int) {
-		for fake.count("GET bucket") < n {
+		for fake.Count("GET bucket") < n {
 			if time.Now().After(deadline) {
-				t.Fatalf("the probe asked %d times, want it to keep asking", fake.count("GET bucket"))
+				t.Fatalf("the probe asked %d times, want it to keep asking", fake.Count("GET bucket"))
 			}
 			time.Sleep(10 * time.Millisecond)
 		}
 	}
 	waitForLooks(3)
 	for {
-		looks, wrote := fake.count("GET bucket"), fake.count("PUT object")
+		looks, wrote := fake.Count("GET bucket"), fake.Count("PUT object")
 		waitForLooks(looks + 3)
-		if fake.count("PUT object") == wrote {
+		if fake.Count("PUT object") == wrote {
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("the probe keeps writing: %d objects after %d looks, want it only to look", fake.count("PUT object"), fake.count("GET bucket"))
+			t.Fatalf("the probe keeps writing: %d objects after %d looks, want it only to look", fake.Count("PUT object"), fake.Count("GET bucket"))
 		}
 	}
 	if got := engine.Status(); got.State == backup.StateFailing {
