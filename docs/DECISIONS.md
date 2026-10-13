@@ -13171,3 +13171,27 @@ ADR-318 and not from a screen, since there is none. The back office from away
 `mez-cloud`'s 8d and 8e. The brief's prices are ADR-313's and wait on question 9
 with them. Nothing here was tested: it is words, checked against the code's own
 sentences and the ADRs, and against nothing running.
+
+## ADR-341 - mez-cloud is a private repository of its own, and this module opens a thin door for it
+2026-10 · Status: accepted, by the human on 2026-10-13. Answers question 12. Builds on ADR-312.
+Context: `mez-cloud` needs `cloud.SignAssertion`, the relay with its `Entitlements`, and
+the mirror. All are under `internal/`, which Go lets no other module import. The two
+ways out were a second module inside this repository, or a repository of its own with
+what it needs reachable from outside `internal/`.
+Decision:
+  - **A private repository, `github.com/byjoellobo/mez-cloud`**, created empty on
+    2026-10-13 and cloned at `I:\mez-cloud`. ADR-312 said the service is private;
+    this repository is public and AGPL, so a module inside it would have published
+    the accounts, the billing and the admin area.
+  - **This module gains a package outside `internal/` that hands out what the cloud
+    needs, and no more.** A package of this module may import its own `internal/`
+    packages, so the code stays where it is and only a door is added. What is in
+    it is decided by the task that builds it, from what 4d, 7e and 8 call.
+  - **That door is an API to keep.** A change to it is a change to another
+    repository, made in the same sitting or not at all.
+Because: the one thing an owner pays for should not be something a competitor
+clones with the till.
+Cost: two repositories to keep in step, and a tagged or pinned version of this
+module for `mez-cloud` to build against. `mez-cloud` cannot be tested in this
+repository's `make check`. The first session there has nothing to follow: no
+`CLAUDE.md`, no phase file, no STATE.
