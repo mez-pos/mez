@@ -724,7 +724,16 @@ and its first commit copies this phase's cloud tasks there.
     is the one point of failure for every paid feature, so this is where the
     uptime effort goes.
 
-- [ ] **Task 9 - Words.** *This repo.* `deploy.md`'s owner section becomes
+- [x] **Task 9 - Words.** *This repo.* As built (ADR-340): `deploy.md`
+  has **mez Cloud, or your own relay** before the two sections it sets
+  up: the two ways side by side, the code and where it is typed, what
+  pairing does, the Devices card's line by line, what stops when a
+  subscription lapses and what never does, and a pointer to "The PC
+  died" (7d). It says mez Cloud is not taking venues yet. The landing
+  brief's pricing is two columns, ₹999 and ₹9,999, the founders' price
+  as a badge, and the lapse said as a promise. `00-product.md`'s licence
+  section is ADR-312's three layers. As it was set: `deploy.md`'s owner
+  section becomes
   "mez Cloud, or your own relay": the code, what pairing does, what stops
   when a subscription lapses and what never does, "The PC died". The
   landing brief's pricing column rewritten per

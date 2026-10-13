@@ -8,7 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 7d - "The PC died"** (ADR-338). `deploy.md`, under
+**Phase 14, Task 7f - A till keeps its pairing through a computer with
+no venue** (ADR-339). A token that is no device's, where there is no
+venue, is answered 503 `no_venue` and not 401 (`unknownToken`,
+`internal/api/devices.go`). The till has a state for it
+(`AuthStore.venueMissing` and `recheck`) and a screen, `NoVenueScreen`,
+shown by the Gate and the kitchen display over whatever path it is at,
+asking again every five seconds. Walked: 7d's procedure with the tablet
+left on and signed in, reloaded while waiting; back on its order screen
+by itself, a sale rung. `deploy.md` lost its first step.
+
+Before it, **Phase 14, Task 7d - "The PC died"** (ADR-338). `deploy.md`, under
 Backups: what is needed, the steps, what the tablets do, what comes back
 and what is done again, and what each sentence of a page that did not
 get to "is back" means. Done on one machine against `pairstub`: a venue

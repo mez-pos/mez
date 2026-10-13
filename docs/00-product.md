@@ -76,8 +76,25 @@ rewrite. Do not build them.
 
 ## Licensing
 
-Server: AGPL-3.0 — keeps hosted forks contributing back and protects the
-relay business model. Guest ordering app: MIT — it is embedded in other
-people's pages and should be frictionless.
+Three layers, and what is sold is none of what runs at the venue
+(ADR-312):
 
-> Confirm with the human before Phase 00 Task 1.
+- **The till is AGPL-3.0, in the binary, free for ever**: the register,
+  the kitchen display, the menu, staff, stock, reports, invoices and
+  printing. Nothing in the binary checks a licence, so there is no
+  feature to unlock and none to crack.
+- **The relay is AGPL-3.0, in this repository**, documented for anyone
+  who will run a server. It decides who it carries by an entitlement: a
+  file for a self-hoster.
+- **mez Cloud is a service**, in a private repository that imports this
+  module: accounts, billing, the hosted relay, the off-site backup and
+  the back office over it when the venue's computer is off. It sells
+  reach and continuity, which only a server that is always on can give.
+  A venue whose subscription lapses loses those and never the till, the
+  back office on its own network or its own backup.
+
+The AGPL keeps a hosted fork contributing back. The guest ordering app
+(`web/guest/`) was meant to be MIT, since it is served to other people's
+phones; it carries no licence file of its own, so today it is under the
+AGPL like the rest. That is the human's to decide (`STATE.md`, "Still
+owed").

@@ -10,6 +10,7 @@ the same binary; they differ only in what starts it and where the data lives.
 - [Linux](#linux)
 - [Docker](#docker)
 - [On a domain with HTTPS](#on-a-domain-with-https)
+- [mez Cloud, or your own relay](#mez-cloud-or-your-own-relay)
 - [Guests ordering from their phones](#guests-ordering-from-their-phones)
 - [The back office from anywhere](#the-back-office-from-anywhere)
 - [Backups](#backups)
@@ -553,6 +554,139 @@ designed for a venue's own network. On the open internet, also:
 - give staff PINs of six or more digits;
 - keep the server's OS updated, and expose only ports 80 and 443.
 
+## mez Cloud, or your own relay
+
+Everything at the venue works with nothing but the venue's own computer:
+the till, the kitchen screen, printing, invoices, the back office on the
+venue's network. Three things need a server that is always on and has an
+address on the internet: guests ordering from their phones, the back
+office from away, and a backup that is not in the building. There are two
+ways to get them, and mez is the same program either way. Nothing in it
+checks a licence.
+
+| | mez Cloud | Your own relay |
+|---|---|---|
+| What you do | Type one code, once | Run a small server, or use one someone runs; three settings |
+| Guests order from their phones | Yes | Yes |
+| The back office from away | Yes, signed in by your mez Cloud account | Yes, with a key that allows it and a PIN |
+| Backup away from the venue | Kept by mez Cloud, set by the code | To a folder or a bucket of your own |
+| A computer that died | Back by your phone number: [The PC died](#the-pc-died) | From your own backup: [Getting a venue back](#getting-a-venue-back) |
+| Costs | A subscription, after a free trial | The server, and your time |
+
+**mez Cloud is not taking venues yet.** The venue's side of it is built
+and is what this section describes; the service is being built. Your own
+relay works today.
+
+### With mez Cloud: the code
+
+You make a mez Cloud account with your phone number, add your venue to it,
+and it shows a **pairing code** under that venue: eight letters and
+digits, with no 0, O, 1 or I. It works once, for an hour.
+
+Type it at the venue, in either place:
+
+- **In the setup wizard**, at its fifth step, **mez Cloud**. The step can
+  be skipped and done later.
+- **In the back office**, under **Devices**, at the foot of the card
+  **Back office from anywhere**: **Connect to mez Cloud**. Only someone
+  who can change the venue's settings can.
+
+The computer needs the internet for that minute. It says "Connecting, and
+starting the backup", which can take up to twenty seconds, and then that
+the venue is paired to your account. Nothing is restarted, unless it says
+"Restart mez to finish".
+
+### What pairing does
+
+- **Guests can order from their phones**, at the address mez Cloud gave
+  the venue. Print the table codes from the **Floor plan**, as in
+  [Guests ordering from their phones](#guests-ordering-from-their-phones),
+  step 5. Steps 1 to 3 there are what the code has done for you.
+- **The back office opens from away**, for you, by signing in to your mez
+  Cloud account. No PIN is typed from away. Under **People** there is now
+  a person named for the account, and under **Devices** a device called
+  "mez Cloud": see [The back office from
+  anywhere](#the-back-office-from-anywhere) for what they are.
+- **A backup is kept with mez Cloud**, sent every half minute. If the
+  venue already backed up to a folder or a bucket of its own, that is
+  left where it was, mez Cloud has no copy, and the screen says so: to
+  move it, turn the backup off under **Settings**, **Backup** and pair
+  again.
+- **A file, `cloud.json`, is written beside the database.** It holds the
+  venue's key to the relay. It is not in the backup, and it is not
+  needed to get the venue back.
+
+A venue that has a relay written in its settings file (`relay_url`) goes
+on using that one, whole, and takes nothing from the pairing; its log says
+so when it starts. Remove `relay_url`, `relay_key` and `public_url` from
+the file to use mez Cloud's.
+
+### Where it stands
+
+Under **Devices**, the card **Ordering from phones** says in one line
+where the venue stands:
+
+| The line | What it means |
+|---|---|
+| "Cloud: free trial until 10 Jan 2027." | Ninety days from the day the venue was first paired. Once for a venue: pairing again does not start another |
+| "Cloud: paid until 12 Nov 2026." | Paid, to that day |
+| "Cloud: payment failed, 5 days left." or "Cloud: the free trial has ended, 5 days left." | The day paid to has passed. Everything still works for seven days from it |
+| "Cloud: cancelled. Carried until 12 Nov 2026." | You cancelled. It works to the day already paid for, with no seven days after |
+| "Cloud: stopped. It was paid until 12 Nov 2026." | The seven days are over. See below |
+
+### What stops when the subscription lapses, and what never does
+
+**Never stops**, paid or not, paired or not:
+
+- The till: orders, the kitchen screen, payments, invoices, printing, the
+  cash drawer, shifts and the Z-report.
+- The back office on the venue's own network, and every till, tablet and
+  kitchen screen paired there.
+- Everything the venue has ever sold, in the database on its computer,
+  and the day's files and exports made from it.
+- A backup to a folder or a bucket of your own, `mez restore` and `mez
+  mirror` from it.
+
+**Stops** when the line says "Cloud: stopped":
+
+- **Guests ordering from their phones.** A guest who scans a table's code
+  sees "Ordering is offline ... Please order at the counter".
+- **The back office from away.**
+- **The backup to mez Cloud.** Nothing new is taken. **The venue then has
+  no backup at all**, unless you set one: **Settings**, **Backup**, a
+  folder on another disk. Do that the day the line changes.
+- What mez Cloud holds, the backup as it last was, is kept for **thirty
+  days** more. In them the venue can still be brought back from it and
+  read from away as of that last backup. After them it is deleted.
+
+**Coming back** needs nothing done at the venue. Once a payment is made,
+mez, which asks every minute, is carried again within a minute or so: the
+same address, the same table codes, the same pairing. The backup begins
+again with it. A venue that comes back after its thirty days starts a new
+backup from nothing, with no second free trial.
+
+Each venue is paid for by itself. A second outlet is a second venue under
+the same account, with its own code.
+
+### With your own relay
+
+The relay is in this repository and is as open as the rest:
+[`build/relay/README.md`](../build/relay/README.md) sets one up on a small
+server with a domain. Then:
+
+- [Guests ordering from their phones](#guests-ordering-from-their-phones)
+  for the three settings.
+- [The back office from anywhere](#the-back-office-from-anywhere) for a
+  key that allows it.
+- [Backups](#backups) for a folder or a bucket, and
+  [`mez mirror`](#reading-a-backup-without-restoring-it) to read the back
+  office from a backup when the venue's computer is off.
+
+Whoever runs the relay says which venues it carries and until when, in a
+file (`RELAY_ENTITLEMENTS`, in the relay's README). A venue past its date
+is told on the same card that the relay is not carrying it, and comes
+back by itself when the file says it is.
+
 ## Guests ordering from their phones
 
 A guest scans the code on their table, sees the menu on their own phone,
@@ -565,6 +699,10 @@ internet, and no port is forwarded on the router.
 
 It is optional. Without it mez calls nothing on the internet, and guests
 order at the counter.
+
+A venue paired to mez Cloud has all of this from its pairing code: [mez
+Cloud, or your own relay](#mez-cloud-or-your-own-relay). Go to step 4.
+The steps below are for a relay of your own.
 
 **1. Get an address and a key.** From whoever runs the relay, or run one
 yourself ([`build/relay/README.md`](../build/relay/README.md): one small

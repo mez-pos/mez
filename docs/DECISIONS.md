@@ -13118,3 +13118,56 @@ done. Seen on a till only: not the back office, not a kitchen display, not at 40
 A successful recheck asks `devices/me` twice. `make check`'s first run of this task
 failed once in `cmd/mez`, in a test whose name was not kept, and passed on three
 runs after; `cmd/mez` was not touched.
+
+## ADR-340 - The words for mez Cloud are written before the service is open, say so, and promise only what the venue's side already does
+2026-10 · Status: accepted. Phase 14, Task 9. Builds on ADR-312, ADR-313, ADR-316 to ADR-322 and ADR-338.
+Context: Task 9 is three documents: `deploy.md`'s section for an owner choosing between
+mez Cloud and a relay of their own, the landing brief's pricing, and `00-product.md`'s
+licence section. The venue's side of mez Cloud is built and walked against a stand-in.
+The service is not: `mez-cloud` does not exist yet (Tasks 4d, 7e and 8).
+Decision:
+  - **`deploy.md` gains one section, "mez Cloud, or your own relay", in front of the
+    two it sets up**, and those two stay as the procedures for a relay of one's own,
+    with a line sending a paired venue past the steps the code has done. The task
+    said the owner section "becomes" this; nothing an owner on their own relay
+    follows today was moved or reworded.
+  - **It says, in bold, that mez Cloud is not taking venues yet.** A page that
+    describes a service as if it could be bought is the first thing a cafe owner
+    would act on. The sentence comes out when the service opens.
+  - **Every line of the Devices card is quoted as the screen writes it**
+    (`cloudLine` in `web/backoffice/src/devices/tunnel-logic.ts`), with what it
+    means beside it, so that an owner matches a sentence and does not interpret one.
+  - **"What stops, and what never does" leads with what never does.** It is the
+    promise ADR-312 said the pricing page makes in those words, and the list an
+    owner afraid of a subscription reads first.
+  - **A lapsed venue is told it has no backup at all.** Its backup went to mez
+    Cloud, and a suspended venue's uploads are refused (ADR-313). The page says to
+    set a folder the day the line changes. This is the one consequence of lapsing
+    that costs a cafe its history and that no screen says yet.
+  - **No price is in `deploy.md`.** Prices are the pricing page's, and whether they
+    are shown with GST is still open (ADR-313, question 9). The ninety days, the
+    seven and the thirty are there: they are how the venue behaves.
+  - **The landing brief's pricing is two columns, not three.** ADR-313: there is one
+    plan. "Cloud Plus", WhatsApp support and multiple venues as a tier are gone;
+    the brief tells the designer not to draw them until they are built. The list
+    price is ₹999 and ₹9,999; ₹699 and ₹6,999 is a badge for the first hundred
+    venues, as `cloud-unit-economics.md` recommends, and the page's only urgency.
+  - **The address in the brief is `yourcafe.mezpos.com`**, the domain chosen on
+    2026-10-08, and not `mez.app`.
+  - **What mez Cloud "includes" in the brief is what Phase 14 builds**: the hosted
+    relay and address, the back office from away by account, the backup, and
+    recovery by phone number. Not the mirror by name, not WhatsApp reports.
+  - **`00-product.md`'s licence section is ADR-312's three layers**, and the note
+    "confirm with the human before Phase 00" is gone, eleven phases on. The guest
+    app's licence is said as the README says it: meant to be MIT, under the AGPL
+    today, the human's to decide.
+Because: these are the pages an owner and a designer act on without asking anyone,
+so they may run ahead of the service only where they say that they do.
+Cost: a section of `deploy.md` describes a thing nobody can use yet, and has one
+sentence to remove on the day they can. The account's side of pairing ("you make a
+mez Cloud account, add your venue, it shows a code") is written from ADR-312 and
+ADR-318 and not from a screen, since there is none. The back office from away
+"signed in by your account" and "read from away as of that last backup" lean on
+`mez-cloud`'s 8d and 8e. The brief's prices are ADR-313's and wait on question 9
+with them. Nothing here was tested: it is words, checked against the code's own
+sentences and the ADRs, and against nothing running.

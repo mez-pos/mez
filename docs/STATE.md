@@ -10,36 +10,38 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6, 7a to 7d and 7f are
-done (ADR-313, ADR-315 to ADR-339); 4d and 7e are `mez-cloud`'s. Phase 13's five
+both, 8 is `mez-cloud`'s. Every task that is this repo's is done: 1 to 3,
+4a to 4c, 5, 6, 7a to 7d, 7f and 9 (ADR-313, ADR-315 to ADR-340). 4d, 7e
+and 8 are `mez-cloud`'s, which does not exist yet. Phase 13's five
 tasks are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 7f - A till keeps its pairing through a computer with
-no venue** (ADR-339). A token that is no device's, where there is no
-venue, is answered 503 `no_venue` and not 401 (`unknownToken`,
-`internal/api/devices.go`). The till has a state for it
-(`AuthStore.venueMissing` and `recheck`) and a screen, `NoVenueScreen`,
-shown by the Gate and the kitchen display over whatever path it is at,
-asking again every five seconds. **Walked**: 7d's procedure with the
-tablet left on and signed in, reloaded while waiting; back on its order
-screen by itself, a sale rung. `deploy.md` lost its first step. Not
-seen: the waiting screen on the back office, a kitchen display, 400px.
+**Phase 14, Task 9 - Words** (ADR-340). `deploy.md` has **mez Cloud, or
+your own relay** before the two sections it sets up: the two ways side
+by side, the code, what pairing does, the Devices card line by line,
+what stops when a subscription lapses and what never does. It says mez
+Cloud is not taking venues yet. `docs/marketing/landing-brief.md`'s
+pricing is two columns (₹999 and ₹9,999, the founders' ₹699 and ₹6,999
+as a badge) with the lapse said as a promise. `00-product.md`'s licence
+section is ADR-312's three layers. Words only: nothing was run.
 
 ## Next task
 
-**Task 9 - Words.** `deploy.md`'s owner section becomes "mez Cloud, or
-your own relay": the code, what pairing does, what stops when a
-subscription lapses and what never does (ADR-313), and "The PC died",
-which is written (ADR-338) and is to be pointed at and not written
-again. The landing brief's pricing column per
-`docs/marketing/cloud-unit-economics.md`. `00-product.md`'s licence
-section cites ADR-312. It is three documents: split it if one session
-does not hold them. After it, this repo's part of Phase 14 is done but
-for what `mez-cloud` owes (4d, 7e, 8), which waits on question 12.
+**Nothing in this repository is next until the human answers question
+12.** Every task of Phase 14 that is this repo's is done. What is left
+is `mez-cloud`'s: 4d (the cloud's side of pairing), 7e (of recovery) and
+8 (the service), and they wait on where `mez-cloud` lives: a second
+module in this repository, or a repository of its own with what it
+needs moved out of `internal/` (question 12 below). A session asked to
+build one of them should say so and stop, or, if the human has
+answered, begin with the skeleton and copy the phase's cloud tasks
+there. When the service opens, take "**mez Cloud is not taking venues
+yet**" out of `deploy.md`. Otherwise the work is the human's checks
+below: phases 09 to 13 each owe one, and Phase 14's "done when" needs
+the service.
 **To walk "The PC died" on one machine:** `RELAY_SECRET=<48 hex>
 bin/pairstub.exe -listen 127.0.0.1:7812 -bucket-fake 127.0.0.1:7813`
 (build it with `go build -o bin/pairstub.exe ./build/dev/pairstub`);
@@ -185,4 +187,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6, 7a to 7d and 7f of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (this repo's tasks are done; 4d, 7e and 8 are `mez-cloud`'s)

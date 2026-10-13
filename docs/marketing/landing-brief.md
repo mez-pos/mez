@@ -16,7 +16,11 @@ on Cloudflare Pages, or a Figma-style design I can hand to a developer.
 The product runs as one small program on the venue's own computer. The
 till keeps selling with no internet. Guests can order from a QR code on
 the table. The code is open source (AGPL) and free to self-host; we sell
-a paid "Cloud" plan around it.
+one paid plan around it, "mez Cloud": the things only an always-on server
+can do. Nothing in the program is locked.
+
+The numbers in this brief come from `docs/marketing/cloud-unit-economics.md`
+and ADR-312 and ADR-313 in `docs/DECISIONS.md`. Change them there first.
 
 ## Audience
 
@@ -122,24 +126,44 @@ Rules:
 5. **Guest ordering, as a story.** Dark "espresso night" section. A
    simple diagram, left to right: guest's phone, our relay in the cloud,
    the computer in your cafe, the kitchen screen. Caption: "The relay
-   only passes guest orders through. Nothing on your network is opened
-   to the internet, and the relay keeps nothing." Phone screenshot
+   only passes orders through. Nothing on your network is opened to the
+   internet, and the relay keeps nothing." Phone screenshot
    placeholder of the guest menu.
 
-6. **Pricing.** Three columns on parchment, the middle one raised as
-   the recommended plan.
+6. **Pricing.** Two columns on parchment, mez Cloud raised as the
+   recommended one. There is one paid plan, not tiers.
 
-   | | Self-hosted | Cloud | Cloud Plus |
-   |---|---|---|---|
-   | Price | Free forever | 699 rupees a month, or 6,999 a year | 1,499 rupees a month |
-   | For | You run everything yourself | One venue that wants it handled | Venues that want a person on call |
-   | Includes | Every feature. Run your own relay from the docs | Hosted relay and `yourcafe.mez.app` address, QR ordering, off-site backup, remote back office from your phone, update alerts, email support | Everything in Cloud, plus WhatsApp support, help setting up printers and the payment gateway, multiple venues |
-   | Button | Download (green outline) | Start free for 3 months (green) | Talk to us (terracotta outline) |
+   | | Self-hosted | mez Cloud |
+   |---|---|---|
+   | Price | Free forever | 999 rupees a month, or 9,999 a year |
+   | For | You run everything yourself | A venue that wants it handled |
+   | Includes | Every feature of the till, the kitchen screen and the back office. Run your own relay and backup from the docs | Everything in Self-hosted, and: QR ordering at `yourcafe.mezpos.com` with nothing to set up, the back office on your phone from anywhere, a backup kept away from the shop every half minute, and your venue back on a new computer by your phone number if the old one dies |
+   | Setting up | The docs | One code, typed once |
+   | Button | Download (green outline) | Start free for 3 months (green) |
 
-   Under the table, one line: "Setup at your venue, including printer,
-   drawer and table QR sheets: 2,500 to 5,000 rupees once." And:
-   "Prices are per venue, not per device." [Adjust prices if I change
-   them.]
+   Beside or under the mez Cloud price, a terracotta-tint badge, the one
+   piece of urgency on the page and a true one: "Founding venues: 699 a
+   month or 6,999 a year, for the first 100 venues, held for as long as
+   you stay."
+
+   Under the table, in this order:
+   - "Three months free. No card to start. Then seven days' grace if a
+     payment fails."
+   - A two-line box, set like a promise and not like small print. Left,
+     "If you stop paying, you lose": QR ordering from phones, the back
+     office from away, the off-site backup. Right, "You never lose": the
+     till, the kitchen screen, printing and invoices, the back office in
+     your shop, and your data on your own computer. Then: "Your backup is
+     kept thirty days after, so you can still take it with you."
+   - "Prices are per venue, not per device. A second outlet is a second
+     venue on the same account."
+   - "Setup at your venue, including printer, drawer and table QR sheets:
+     2,500 to 5,000 rupees once."
+   - [Say here whether prices include GST or are before it. Not decided:
+     ADR-313.]
+
+   Do not show a third column, a "Plus" plan, WhatsApp reports or
+   multi-outlet dashboards: they are not built. [Add them when they are.]
 
 7. **Switching is a spreadsheet.** Short section. Heading: "Bring
    your menu in ten minutes." Copy: download the template, fill it in
@@ -160,8 +184,9 @@ Rules:
     placeholder of the counter. [I will provide the quote.]
 
 11. **Final call.** Heading: "Try it on the laptop you already have."
-    Green "Download for Windows", terracotta text link "or get Cloud".
-    Muted line: "Installs in under ten minutes. No card needed."
+    Green "Download for Windows", terracotta text link "or start mez
+    Cloud free". Muted line: "Installs in under ten minutes. No card
+    needed."
 
 12. **Footer.** Logo, Docs, GitHub, Pricing, Privacy, Contact on
     WhatsApp [number], "Made in India".
