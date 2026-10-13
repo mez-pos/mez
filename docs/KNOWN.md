@@ -10,6 +10,23 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **A till left on forgets its pairing when the computer it opens has
+  no venue yet** (ADR-338, found walking "The PC died"; 2026-10-13). A
+  new install at the old computer's address answers `unauthenticated` to
+  a device token it has never seen, and `AuthStore.credentialFailed`
+  (`web/shared/auth/auth-store.ts`) forgets the device on that answer, as
+  it must for a token the venue no longer knows. The realtime probe
+  (`web/shared/realtime.ts`) takes the same road, so a tablet need not be
+  touched to lose it. Once the venue is brought back the token is in its
+  database again and the tablet no longer has it. `deploy.md` tells the
+  owner to switch tablets off first; Task 7f is the cure. The same
+  happens around `mez restore` if the new install is left running with
+  no venue while tablets are on. **And nothing finds a server for a
+  till**: Phase 12's discovery is of printers and of this server's own
+  addresses for the pairing card (`internal/device/discover`). A pairing
+  is kept by the browser for one address (`localStorage`), so a new
+  computer at another address means every tablet is paired again.
+
 - **Two mirrors of one venue share a state file loosely** (ADR-327, found
   in ADR-331's review; 2026-10-12). `internal/mirror/keeper.go`: `refresh`
   passes over a file it cannot read just then, and `save` marks the file

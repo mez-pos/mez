@@ -600,7 +600,20 @@ and its first commit copies this phase's cloud tasks there.
     `docs/design/screens/setup-wizard.md` and `docs/design/tokens.md`
     first. Walk it in a browser against `pairstub` and a bucket that is
     there.
-  - [ ] **Task 7d - "The PC died".** *This repo.* `deploy.md`'s numbered
+  - [x] **Task 7d - "The PC died".** *This repo.* As built (ADR-338):
+    `deploy.md`, under Backups, **The PC died**: what is needed, nine
+    steps, what the tablets do, what comes back and what is done again,
+    and what each sentence of a page that did not get to "is back" means.
+    Done on one machine against `pairstub`: a venue with a printer, a
+    paired tablet and a sale, killed; a new install at the same address
+    brought back by number and code; the tablet, off in between, on Staff
+    Login with the token it held, and invoice two rung on it; the printer
+    and the open shift there; another address paired with `mez pair`.
+    **Two things the task took for granted are not so.** Nothing finds a
+    server for a tablet: Phase 12's discovery is of printers and of the
+    server's own addresses, and a pairing is kept for one address. And a
+    tablet left on while the new computer has no venue forgets its
+    pairing: 7f. As it was set: `deploy.md`'s numbered
     procedure, tested by doing it: a venue paired and backed up, the data
     directory deleted, the venue back by phone and code, a sale rung, a
     tablet finding the new machine through discovery with the token it
@@ -612,6 +625,19 @@ and its first commit copies this phase's cloud tasks there.
     pairing code bound to that venue's id. Limits on codes to a number,
     tries to a code and grants to a session, and a message to the account
     on every grant. Refuse past `backups_kept_until` with 410 (ADR-313).
+  - [ ] **Task 7f - A till keeps its pairing through a computer with no
+    venue.** *This repo.* Added on 2026-10-13 by 7d's walk (ADR-338). A
+    server with no venue answers `unauthenticated` to a device token, and
+    the till forgets its device (`AuthStore.credentialFailed`, and the
+    realtime probe in `web/shared/realtime.ts`). Decide in an ADR who
+    changes: the server says something else while it has no venue (a
+    code of its own, on `devices/me`, the stream and every route behind a
+    device), or the till asks whether the computer has a venue, as the
+    wizard's page does, before believing a refusal. Either way a till at a computer with no venue shows a
+    screen that says so and keeps what it holds, and a token a venue
+    does not know is still forgotten. Tests on both sides. Then walk
+    7d's procedure with the tablet left on, and take step 1 and "A
+    tablet that was left on" out of `deploy.md` if it holds.
 
   The task as it was set:
   The wizard's first step gains "I had mez before". It asks for the

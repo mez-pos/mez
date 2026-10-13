@@ -12975,3 +12975,75 @@ a year's trading on a slow line, which is the case the waiting cards are for. Th
 stand-in checks who signed a request and not the signature, has no multipart
 upload, and so says nothing about a real bucket's refusals. The walk's first venue
 was paired through its API and not its Devices card, which ADR-321 walked.
+
+## ADR-338 - "The PC died" is written from doing it, and says what a tablet really does: it keeps its pairing only at the old address, and only if it was off
+2026-10 · Status: accepted. Phase 14, Task 7d. Builds on ADR-148, ADR-269, ADR-315 and ADR-332 to ADR-337.
+Context: the phase file set 7d as a procedure "tested by doing it", ending with "a
+tablet finding the new machine through discovery with the token it held", and the
+handoff said of that: to be tried and not assumed. It was tried.
+Decision:
+  - **The procedure is in `deploy.md` under Backups, as "The PC died"**, beside
+    "Getting a venue back", which stays the procedure for a backup of the owner's
+    own. Nine steps for an owner, with the screen's own words for every button and
+    every sentence that can end the page, so that what they read is what they see.
+  - **Nothing finds a server for a tablet, and the page says so.** Phase 12's
+    discovery (ADR-268, ADR-269) looks for printers and lists the server's own
+    addresses for whoever is pairing a device. A till is a browser at an address,
+    and its token is in that address's `localStorage`. So: the old address, and the
+    tablet opens on Staff Login; another address, and it is paired again. The owner
+    is told to give the new computer the old address, and where to read it (each
+    tablet's address bar).
+  - **Step 1 is "switch the tablets off", because one left on loses its pairing.**
+    A new install has no venue for some minutes at least. In them it answers
+    `unauthenticated` to a device token, and the till forgets its device on that
+    answer, by a reload or by its stream's own probe. When the venue is back, the
+    token it wanted is in the database and no longer in the tablet. Seen in the
+    first walk; the second was made with the tablet off in between, and it held.
+  - **That is a fault and is not fixed here.** It is a change to what a server with
+    no venue says, or to what a till believes, on both sides and with tests: Task
+    7f, added to the phase. Until then the page's first step is the cure, and the
+    page says what a tablet that was left on shows and what to do.
+  - **What ADR-334 owed an owner is one part of the page**, by the sentence the
+    screen shows: "Open mez again" (the venue may well be there, and how to tell),
+    "Can't reach mez", this till not paired (`mez pair`), not paired to the account
+    (Devices, **Connect to mez Cloud**), and no code on the phone.
+  - **"Not paired to the account" is said to mean "not backing up".** A venue
+    brought back has no `backup.json`: it was never in the backup. Pairing is what
+    sets the cloud's backup again, so a venue that came back and did not pair is
+    selling with no second copy, and the page says to pair it the same day.
+  - **The backup is said to be on again by itself**, against `mez restore`, where it
+    is not until the owner sets it: the two procedures differ there and an owner
+    who has read both should not go looking for a switch.
+  - **The page ends by saying what was done and what was not**, as "Getting a venue
+    back" does.
+  - **The walk, on 2026-10-13, on Windows, one machine, `pairstub` with its bucket.**
+    A venue from `mez setup -demo-menu`; a till paired in one browser profile at
+    `127.0.0.1:7791`; a printer added; paired to the stub; a lemon tart for cash,
+    INV/26-27/000001; forty-five seconds; the server killed. A new data directory
+    served at the same address. The till's page reloaded: sent to the wizard's
+    refusal, its device gone from `localStorage`. Begun again: the old server
+    started, the tablet paired with a code from `mez pair`, left on a blank page,
+    the server killed after a backup. The new install again; in another profile, at
+    `localhost:7791`, **I had mez before**, the number, the code, the venue with
+    its last backup's time, the till named, **Bring it back**, "Corner Cafe is
+    back" and paired again. The tablet's profile opened at `127.0.0.1:7791`: Staff
+    Login; the owner's PIN; the register with the shift open and the old bill on
+    it; a new order, INV/26-27/000002. The printer in the list; four devices, the
+    old computer's among them; `backup.json` and `cloud.json` new, the empty
+    database moved aside. At `localhost:7791` in the tablet's profile: Pair this
+    terminal, and a code from `mez pair` paired it.
+Because: an owner reads this page once, on the worst day the venue has had. It has
+to be true in the one place the phase file was hopeful, and it is better that the
+page asks for a switch to be turned off than that it promises something a tablet
+on the counter will not do.
+Cost: **two addresses on one machine are not two computers on a network.** No real
+tablet was used, no router, no address that changed by itself; the advice to reserve
+the old address is reasoned and not done. The cloud was the stand-in: no message
+reached a phone. The venue was two sales. A printer "installed in Windows" on the
+old computer is said to need installing on the new one, from how such a printer is
+named and not from trying it. The receipt that had not printed came back as "Not
+printed 1"; whether it prints by itself on the new computer when the printer
+answers was not seen, and an owner may get old receipts. The back office from away
+was not opened after the restore. Step 1 costs a venue its tablets for ten minutes
+it was not selling in anyway, and an owner who skips it pairs them again, which
+is all "pair them again" ever cost. 7f is one more task before Task 9.

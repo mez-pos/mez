@@ -10,50 +10,53 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6 and 7a to 7c are done
-(ADR-313, ADR-315 to ADR-337); 4d and 7e are `mez-cloud`'s. Phase 13's five
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6 and 7a to 7d are done
+(ADR-313, ADR-315 to ADR-338); 7f is open, added by 7d; 4d and 7e are
+`mez-cloud`'s. Phase 13's five
 tasks are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 7c2 - A bucket for the stand-in, and the whole walk**
-(ADR-337), which closes 7c. `internal/backup/s3fake` is the S3 stand-in
-the backup's tests used, moved, with a second key that only reads.
-`pairstub -bucket-fake ADDR` serves it, and the stub's account has
-whichever venue last paired. `runOptions.source` is gone. **Walked in a
-browser**: a venue that backed up to the stub, its server killed, a new
-install, **I had mez before** through the server's own start to the last
-card, Sign in with the old PIN, a shift opened, a sale rung
-(INV/26-27/000001). Nothing in the screen needed changing. Not seen: a
-reload during the wait, the last card while "pairing", that card at
-400px.
+**Phase 14, Task 7d - "The PC died"** (ADR-338). `deploy.md`, under
+Backups: what is needed, nine steps, what the tablets do, what comes back
+and what is done again, and what each sentence of a page that did not
+get to "is back" means. **Done on one machine** against `pairstub`: a
+venue with a printer, a paired tablet and a sale, killed; a new install
+at the same address brought back by number and code; the tablet, off in
+between, on Staff Login with the token it held, invoice two rung on it;
+the printer and the open shift there; another address paired with `mez
+pair`. **Two things the task took for granted are not so**: nothing
+finds a server for a tablet (a pairing is kept for one address), and a
+tablet left on while the new computer has no venue forgets its pairing.
+No code changed. Not done: against mez Cloud itself, or with real
+tablets on a network.
 
 ## Next task
 
-**Task 7d - "The PC died".** `deploy.md`'s numbered procedure, for an
-owner: what they need (the phone their mez Cloud account is under, and
-the internet), install mez on the new computer, **I had mez before**,
-and what they will see; then what is not brought back and must be done
-again (printers are in the database and come back; the tablets find the
-new computer by discovery and hold their tokens, which is to be tried
-and not assumed; a backup of their own is not set, mez Cloud's is). And
-the three things ADR-334 owes an owner: if the page says it cannot be
-told, the venue may still be there; `mez pair` for a browser that was
-not paired; pairing again from Devices if it says not paired. It is
-"tested by doing it", and the doing is below. Then **Task 9** (words).
-**To do it on one machine:** `RELAY_SECRET=<48 hex> bin/pairstub.exe
+**Task 7f - A till keeps its pairing through a computer with no venue.**
+A server with no venue answers `unauthenticated` to a device token, and
+the till forgets its device on that answer: `AuthStore.credentialFailed`
+in `web/shared/auth/auth-store.ts`, reached from any request and from
+the realtime probe (`web/shared/realtime.ts`, `ProbeResult`). ADR first:
+the server says something of its own while it has no venue, or the till
+asks whether there is a venue before believing a refusal. A token a
+venue does not know must still be forgotten. Tests on both sides, then
+7d's walk with the tablet left on, and `deploy.md`'s step 1 and "A
+tablet that was left on" come out if it holds. Then **Task 9** (words).
+**To do the walk on one machine:** `RELAY_SECRET=<48 hex> bin/pairstub.exe
 -listen 127.0.0.1:7812 -bucket-fake 127.0.0.1:7813` (build it with `go
-build -o bin/pairstub.exe ./build/dev/pairstub`); `bin/mez setup
--data-dir OLD -name ... -owner Priya -owner-pin 246813 -demo-menu`;
-`bin/mez -data-dir OLD -listen-addr 127.0.0.1:7791 -cloud-url
-http://127.0.0.1:7812`; pair it with the code WXYZ2345 (Devices card,
-or `POST /api/v1/cloud/pair`); wait 45 seconds for the backup; kill it;
-`bin/mez -data-dir NEW -listen-addr 127.0.0.1:7792 -cloud-url
-http://127.0.0.1:7812`; open `localhost:7792/setup#token=<NEW/setup-token>`.
-The account is +919876500000 and its code 123456. Another port, so the
-browser comes with nothing kept. Run `make build-web` first.
+build -o bin/pairstub.exe ./build/dev/pairstub`); `MEZ_OWNER_PIN=246813
+bin/mez setup -data-dir OLD -name ... -owner Priya -timezone Asia/Kolkata
+-demo-menu`; `bin/mez -data-dir OLD -listen-addr 127.0.0.1:7791
+-cloud-url http://127.0.0.1:7812`; the tablet is a browser profile at
+`127.0.0.1:7791`, paired with setup's code; pair the venue with the code
+WXYZ2345 (`POST /api/v1/cloud/pair`); wait 45 seconds; kill it; `bin/mez
+-data-dir NEW` with the same two flags, so the same address; the wizard
+in another profile at `localhost:7791/setup#token=<NEW/setup-token>`,
+which is another origin and holds nothing. The account is +919876500000
+and its code 123456. Run `make build-web` first.
 
 **A mirror killed and not stopped leaves `mez-mirror-*` in the system's
 temporary folder, and one left there fails
@@ -171,6 +174,9 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
    onto their own machine and revoke the real venue's key (ADR-332, Cost).
    Is a message to the account on every hand-over enough, or should
    recovery ask a second thing: a wait, an email link, the owner's PIN?
+14. Nothing finds a server for a tablet (ADR-338): a new computer at another
+   address means every tablet is paired again. Is "give it the old address"
+   enough for an owner, or should the server answer to a name (`mez.local`)?
 
 ---
 
@@ -183,4 +189,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6 and 7a to 7c of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6 and 7a to 7d of 9)

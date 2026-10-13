@@ -8,7 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 7c1 - The screen of "I had mez before"** (ADR-336). 7c
+**Phase 14, Task 7c2 - A bucket for the stand-in, and the whole walk**
+(ADR-337), which closed 7c. `internal/backup/s3fake` is the S3 stand-in
+the backup's tests used, moved, with a second key that only reads.
+`pairstub -bucket-fake ADDR` serves it, and the stub's account has
+whichever venue last paired. `runOptions.source` is gone. **Walked in a
+browser**: a venue that backed up to the stub, its server killed, a new
+install, **I had mez before** through the server's own start to the last
+card, Sign in with the old PIN, a shift opened, a sale rung
+(INV/26-27/000001). Nothing in the screen needed changing. Not seen: a
+reload during the wait, the last card while "pairing", that card at
+400px.
+
+Before it, **Phase 14, Task 7c1 - The screen of "I had mez before"** (ADR-336). 7c
 was split in two. `web/shared/screens/setup/recover-logic.ts` has the
 checks, the four requests, every sentence, `awaitVenue`, which waits
 through the server's start, and `pairThisBrowser`; `RecoverFlow.tsx`
