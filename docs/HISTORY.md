@@ -8,7 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 7b2a - The server brings a venue back by itself**
+**Phase 14, Task 7b2b - The routes of "I had mez before"** (ADR-335),
+which closed 7b. `internal/api/setup_recover.go`: `POST
+/api/v1/setup/recover/start` (`{phone}`), `/verify` (`{attempt, code}`)
+and `/restore` (`{venue_id}`, 202 with the claim) behind what first run
+is behind (this machine, JSON, `X-Setup-Token`); `/outcome` behind this
+machine and `X-Recover-Claim`, answering `{venue_name, cloud, hostname}`
+and, when the body names a device, its `pairing_code`. None crosses the
+relay. Refusals are `recover_*` codes in an owner's words. Tested as a
+page's requests against one server, from the phone number to a paired
+browser.
+
+Before it, **Phase 14, Task 7b2a - The server brings a venue back by itself**
 (ADR-334). 7b2 was split in two. `runUntilStopped` loops `run`, which
 serves under a context that can be asked to start again (`main` and `mez
 service run` both use it). `internal/service/cloudrecover`: `Service`

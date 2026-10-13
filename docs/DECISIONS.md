@@ -12837,3 +12837,86 @@ dropped at the start (ADR-333) and the page holding its claim is told there is
 nothing to tell. The device's name and kind are those of the first asking, and a
 later one is answered with the same code and no word that it was not taken up. `runOptions.source` stays, for want of a bucket a test can
 read. No screen calls any of it yet: that is 7c.
+
+## ADR-336 - "I had mez before" is the wizard's other way through: four steps of its own, entered from the first, and it waits through the server's start
+2026-10 · Status: accepted. Phase 14, Task 7c (7c1 built here; 7c2 follows). Builds on ADR-267, ADR-322 and ADR-332 to ADR-335.
+Context: the four routes exist and no screen calls them. The phase file put "I had mez
+before" on the wizard's first step. What the screen has to get right is not the three
+forms. It is the minute after the third: the server it is talking to stops, another
+starts in its place, and for a moment the old one is still the one that answers.
+Decision:
+  - **Split.** 7c1, built with this: the screen, its words and its waiting, tested as
+    logic and walked in a browser as far as a stand-in with no bucket goes: the
+    number, the code, the venues, and a restore that fails. 7c2: a bucket the
+    stand-in can serve, so the walk goes through the start to a paired browser.
+  - **Entered from the first step, by a band and not a step.** Above "Venue name": one
+    sentence saying who it is for, and **I had mez before** as a ghost button. Not a
+    choice the owner must make before anything else: nearly every owner at this
+    screen is new, and a fork as the first question would be put to all of them.
+  - **Then its own four steps, in the wizard's frame**: Your number, The code, Your
+    venue, Bring it back. The six of first run are not shown beside them: none of
+    them will be asked. **Set up a new venue instead** is on every form, and goes
+    back to the first question with nothing lost but what was typed here.
+  - **The number field begins "+91 ".** The server refuses a number with no country
+    code and will not guess one (ADR-332); the screen offers India's and does not
+    assume it. What is offered and left as it is is "no number typed".
+  - **What cannot work is said before it is sent**, as a pairing code is (ADR-318):
+    a number with no plus or too few digits, a code that is not six digits. Each
+    costs a message to a phone or one of a few tries.
+  - **The server's sentence is the one shown.** ADR-335 made each refusal an owner's
+    words, so the page adds its own only where the server said nothing (not
+    reached, no answer in time) or said it for a page it is not ("setup_locked").
+    Under the number or the code when the refusal names one; on the card otherwise.
+  - **A venue with no backup is listed, said so, and cannot be chosen.** An owner who
+    looks for their second outlet and does not find it would think the account
+    wrong. The only venue that can be brought back is already chosen.
+  - **The till's name is asked with the venue.** This browser becomes a device of
+    the venue, and the device is named once (ADR-334): after the start is too late
+    to ask without making the owner wait twice.
+  - **The claim is in a ref.** Not in state that a devtool shows, not in storage, not
+    in the address. A reload loses it, and the page then cannot be told how it
+    went; the venue is there all the same, and the sentence says how to go on.
+  - **Waiting is logic, with the clock handed in** (`awaitVenue`). "Nothing to tell"
+    is "not yet" for twenty seconds, because the start that staged the venue says
+    exactly that while it is still up. No answer at all is the start itself. Ninety
+    seconds of either and the page says which it was: told nothing, or heard
+    nothing. Asked every second and a half, which is under the server's ninety a
+    minute, and slower when the server says so.
+  - **The browser is paired before the card says the venue is back**, with the code
+    the claim buys, through `AuthStore.pair` as first run pairs. If that cannot be
+    done the card still says the venue is back, and that this till needs a code
+    from `mez pair`.
+  - **The last card does not wait on the cloud.** The venue's pairing to its account
+    is one line that changes: being paired, paired with the address the back
+    office opens at, or not paired and how to. It is asked about for forty-five
+    seconds more and then said to be worth a look later.
+  - **What a review found before the commit.** The wizard takes its whole page away
+    when its check of the server fails, until a venue is being made; a backup takes
+    minutes to come down, a check made on coming back to the tab could fail in
+    them, and the flow would have gone with the claim in it. Entering the flow now
+    holds the wizard open as Create does. A card that replaced a form left the
+    focus on nothing, and a screen reader with it: each such card's heading takes
+    the focus as it arrives. The browser's code was asked for once, and one slip
+    sent an owner to `mez pair` with a claim still good for half an hour: it is
+    asked for three times (`pairThisBrowser`), and never again once the claim is
+    no claim or the code will not pair. And a wait the server asks for is never
+    longer than the page has left before it gives up.
+  - **It ends at the lock.** **Sign in** goes to `/`, where a paired browser with
+    nobody signed in is shown Staff Login. The owner's PIN is the one they had: this
+    screen never sees it.
+Because: an owner here has lost a computer and has a queue. The screen should ask
+for the least, say plainly what is happening while they can do nothing, and never
+leave them at a page that has stopped without a sentence on it.
+Cost: **the minute this screen exists for has not been seen in a browser.** The
+stand-in's bucket is not there, so a walk ends at "the backup could not be brought
+down"; from the restore's answer on, the screen is tested as logic and the server
+as requests (ADR-335), and the two have not met. 7c2 is that. The times are this
+computer's, in its own zone, until there is a venue to say otherwise. A reload
+between the restore and the last card leaves an owner to work out from one sentence
+whether their venue is back. The head of the page still says "Let's set up your
+venue". There is no component test: the wizard has none, and its logic files carry
+what is tested. If the restore's answer is lost on its way to the page, the server
+starts again all the same and the page, with no claim, is shown the venue list and
+a refusal; the venue is there when mez is opened again. The venues are radio
+buttons a keyboard reaches one tab at a time and not by arrow keys, as the
+wizard's other card choices are.

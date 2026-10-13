@@ -7,7 +7,8 @@ once, on the computer mez runs on. Built from D24 in phase 12, Task 3b
 `web/shared/screens/setup/`: `SetupWizard.tsx`, `steps.tsx`,
 `PrinterStep.tsx`, `ReadyStep.tsx`, `SetupFrame.tsx`, `fields.tsx`,
 `setup-logic.ts`, `printer-logic.ts`, `ready-logic.ts` and
-`use-setup-status.ts`.
+`use-setup-status.ts`; and, for a venue brought back (phase 14, Task 7c,
+ADR-336), `RecoverFlow.tsx` and `recover-logic.ts`.
 It is the terminal's, at `/setup`, outside the guard.
 
 ## Purpose
@@ -83,6 +84,40 @@ The steps:
    until when. The foot has **Another code** once one is shown, and the
    green **Start selling**.
 
+### I had mez before
+
+The wizard's other way through, for an owner whose venue was on another
+computer and paired to mez Cloud. It is entered from step 1: a sunken
+band above "Venue name" with one sentence and the ghost **I had mez
+before**. It then has four steps of its own in the same frame, and the
+six above are not shown. **Set up a new venue instead** is on each form
+and goes back to step 1.
+
+1. **Your number.** "Bring your venue back", what comes back and that the
+   account's phone is needed. One field, **Phone number of your mez Cloud
+   account**, in the numeral face, beginning "+91 ". The green **Send the
+   code**.
+2. **The code.** "Enter the code": that a code is on its way to that
+   number if it has an account. One field, **Code from your phone**, six
+   digits in the numeral face. **Change the number**, **Send another
+   code**, and the green **Continue**.
+3. **Your venue.** The owner's name and what bringing a venue back does.
+   The account's venues, each a card with its name and "Last backed up 12
+   Oct 2026, 21:32" in this computer's time; the one chosen has the green
+   border and tint. A venue with no backup is listed, says so, and cannot
+   be chosen. The only one that can be is chosen already. Under them
+   **What this till is called**. The green **Bring it back**. An account
+   with nothing to bring back says so, and has only the way back.
+4. **Bring it back.** Three cards in turn, the first two with nothing to
+   press. "Bringing Corner Cafe back": downloading and checking, a few
+   minutes on a slow line, leave the page open. "Corner Cafe is here":
+   mez is starting again, a few seconds. "Corner Cafe is back": what is
+   on this computer now; a line for photos that did not come, if any; a
+   line for its pairing to the account, which changes from being paired
+   to paired, with the address the back office opens at in the numeral
+   face, or to not paired and how to; "Sign in with your PIN, as you did
+   before"; and the green **Sign in**.
+
 ## Data
 
 - The setup token (ADR-270), from the address's fragment
@@ -112,6 +147,16 @@ The steps:
   each kind of device the `url` it opens and that address as an `svg` QR
   code (none where the server listens on this computer alone); and
   `POST /api/v1/devices/codes` `{name, kind}` for each code.
+
+- **I had mez before**, with the setup token: `POST
+  /api/v1/setup/recover/start` `{phone}`, `/verify` `{attempt, code}`
+  and `/restore` `{venue_id}`, the last allowed thirty-one minutes. Then,
+  with the claim the restore answered in `X-Recover-Claim` and no token:
+  `POST /api/v1/setup/recover/outcome` `{}` every second and a half
+  until it answers, once more with `{device_name, device_kind}` for the
+  code this browser pairs with (`AuthStore.pair`), and again every
+  second and a half for up to forty-five seconds while `cloud` is
+  `pairing`. The claim is held in the page's memory and nowhere else.
 
 Nothing is subscribed to. Nothing typed is kept anywhere but the page: the
 PIN is in memory until the wizard is left.
@@ -147,6 +192,19 @@ PIN is in memory until the wizard is left.
   for. No code is made until asked for, because it lasts ten minutes.
 - **Start selling** goes to `/`, where the owner is signed in and lands as
   an owner does.
+- **Send the code** and **Continue** (I had mez before) check what was
+  typed first: a number needs its plus and country code, a code its six
+  digits. What the server refuses is said in its words, under the field
+  it names or at the head of the card.
+- **Bring it back** needs a venue chosen and a name for the till. If the
+  backup cannot be brought down the venue step is shown again with why,
+  and nothing on the computer was changed. A sign-in that ran out goes
+  back to the number.
+- While mez starts again the page asks how it went and takes no answer,
+  and "nothing to tell" for the first twenty seconds, as the start. When
+  the venue is back it pairs this browser and shows the last card.
+- **Sign in** goes to `/`, which shows Staff Login: the owner's PIN is
+  the one the venue had.
 
 ## States
 
@@ -183,6 +241,15 @@ PIN is in memory until the wizard is left.
   could not read its own): says to find the computer's IP address in
   Windows and gives the port and path to put after it.
 - **A code that could not be made** says why under the button.
+- **Brought back, and this browser could not be paired:** the last card
+  says the venue is back and that this till needs a code from `mez pair`
+  on this computer; its button is **Open mez**.
+- **Told nothing** (the claim ran out, the page was reloaded, or a venue
+  was made here meanwhile): "Open mez again", with what to do if the
+  venue is there and if it asks to pair. **Heard nothing** for ninety
+  seconds: "Can't reach mez", to check it is running and open it again.
+- **A venue is already here** when the restore is asked for: "Already set
+  up", and **Open mez**.
 
 ## Constraints
 
@@ -192,6 +259,11 @@ PIN is in memory until the wizard is left.
 - A keyboard is assumed: a venue's name cannot be typed without one. The
   PIN fields are ordinary fields, masked, digits only, not the PIN pad.
 - Fields are 48px tall and 16px text; the buttons are `tap`.
+- Bringing a venue back needs the internet, for the account and the
+  backup. Nothing else in the wizard does.
+- Reloading while a venue is being brought back loses the claim: the
+  venue is put in place all the same, and the page that comes up is the
+  lock or Pair.
 - Leaving or reloading the page before Create loses what was typed.
   Reloading after it leaves a venue: the device pairs with a new code.
   Reloading on the printer step or the last lands on the till; printers

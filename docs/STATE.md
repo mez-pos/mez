@@ -10,46 +10,40 @@
 **Phase 14 - mez Cloud: the account, the pairing and the switch**,
 `docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
 ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6, 7a and 7b are done
-(ADR-313, ADR-315 to ADR-335); 4d and 7e are `mez-cloud`'s. Phase 13's five
+both, 8 is `mez-cloud`'s. Tasks 1 to 3, 4a to 4c, 5, 6, 7a, 7b and 7c1 are done
+(ADR-313, ADR-315 to ADR-336); 4d and 7e are `mez-cloud`'s. Phase 13's five
 tasks are built and it owes its human check: the walk on a real phone below.
 Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
 in the "Still owed" list below.
 
 ## Last completed task
 
-**Phase 14, Task 7b2b - The routes of "I had mez before"** (ADR-335),
-which closes 7b. `internal/api/setup_recover.go`: `POST
-/api/v1/setup/recover/start` (`{phone}`), `/verify` (`{attempt, code}`)
-and `/restore` (`{venue_id}`, 202 with the claim) behind what first run
-is behind (this machine, JSON, `X-Setup-Token`); `/outcome` behind this
-machine and `X-Recover-Claim`, answering `{venue_name, cloud, hostname}`
-and, when the body names a device, its `pairing_code`. None crosses the
-relay. Refusals are `recover_*` codes in an owner's words.
-`web/shared/api-types.ts` has the types. Tested as a page's requests
-against one server, from the phone number to a paired browser. **No
-screen calls it yet.**
+**Phase 14, Task 7c1 - The screen of "I had mez before"** (ADR-336). 7c
+was split in two. `web/shared/screens/setup/recover-logic.ts` has the
+checks, the four requests, every sentence and `awaitVenue`, which waits
+through the server's start; `RecoverFlow.tsx` draws it; the wizard's
+first step has a band, **I had mez before**. Four steps: Your number,
+The code, Your venue, Bring it back. Logic tested (33). **Walked in a
+browser** at 1366 and 400 wide against `pairstub`: a number with no
+plus, a wrong code, the right one, the venue, and a restore that fails
+because the stub's bucket is not there, said in an owner's words with
+the data directory untouched. **From the restore's answer on, nothing
+has been seen in a browser.**
 
 ## Next task
 
-**Task 7c - the wizard's screen.** "I had mez before" on the first step
-of the setup wizard: the phone number with `+91` offered (the routes
-refuse a number with no `+`), the six digits, the account's venues with
-when each was last backed up (one with no `last_backup_at` said so and
-not offered), then `restore`, a wait through the server's start (the
-page's requests fail for a second or two: that is the start, not an
-error), then `outcome` asked every second or two with the claim (90 a
-minute at most) until `cloud` is not `pairing`, then `outcome` with
-`device_name` and `device_kind` for the code, and `POST
-/api/v1/devices/pair` with it as first run's last step does. Keep the
-claim in the page's memory only. Each `recover_*` code has its sentence
-in the answer. Read `docs/design/screens/setup-wizard.md`,
-`docs/design/tokens.md` and `web/shared/screens/setup/` first. Walk it
-in a browser: `RELAY_SECRET=... go run ./build/dev/pairstub -venue-id
-ven_...` (its log says the one-time code) and `bin/mez -cloud-url
-http://127.0.0.1:7802`; the stub's bucket must be one that is there, or
-the walk ends at `recover_backup_failed`, which is worth seeing once.
-Then 7d ("The PC died"), **Task 9**.
+**Task 7c2 - a bucket for the stand-in, and the whole walk.** Move the S3
+stand-in out of `internal/backup/s3fake_test.go` into a package
+`pairstub` can use, give `pairstub` `-bucket-fake`, and walk "I had mez
+before" from a venue that really backed up to it: through the server's
+start to the last card, Sign in, a sale. The phase file lists what to
+look at. Fix what the walk finds in 7c1's screen. Then 7d ("The PC
+died"), **Task 9**.
+To walk as far as it goes today: `RELAY_SECRET=... go run
+./build/dev/pairstub -venue-id ven_A1B2C3D4` (the account is
++919876500000, its code 123456), `bin/mez -data-dir <scratch>
+-cloud-url http://127.0.0.1:7802`, and `bin/mez setup-link -data-dir
+<scratch>` for the address (put the port mez listens on in it).
 
 **A mirror killed and not stopped leaves `mez-mirror-*` in the system's
 temporary folder, and one left there fails
@@ -179,4 +173,4 @@ From the walk (ADR-199; each in full at the top of `docs/KNOWN.md`):
 - [ ] 11 - Relay service, outbound tunnel, guest QR ordering (built; owes its human check)
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
-- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6, 7a and 7b of 9)
+- [ ] 14 - mez Cloud: the account, the pairing and the switch (Tasks 1 to 3, 4a to 4c, 5, 6, 7a, 7b and 7c1 of 9)

@@ -13,6 +13,8 @@ import { Splash } from "../Splash";
 import { CloudStep } from "./CloudStep";
 import { PrinterStep } from "./PrinterStep";
 import { ReadyStep } from "./ReadyStep";
+import { RecoverFlow } from "./RecoverFlow";
+import { recoverStepIndex, recoverSteps, type RecoverStepKey } from "./recover-logic";
 import { SetupFrame } from "./SetupFrame";
 import {
   allSteps,
@@ -118,6 +120,8 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
   // Which of the steps after Create is showing.
   const [after, setAfter] = useState<AfterStep>("printer");
   const [busy, setBusy] = useState(false);
+  // The other way through: a venue this owner had before, brought back (RecoverFlow).
+  const [recovering, setRecovering] = useState<RecoverStepKey | null>(null);
 
   const current = steps[step] ?? steps[0];
   const last = step === steps.length - 1;
@@ -193,6 +197,31 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
     );
   }
 
+  if (recovering !== null) {
+    return (
+      <SetupFrame
+        lead="Bring your venue back from mez Cloud, onto this computer. Four steps, and nothing here is changed until its backup is down and checked."
+        steps={recoverSteps}
+        current={recoverStepIndex(recovering)}
+      >
+        <RecoverFlow
+          api={store.api}
+          token={token}
+          pair={(code) => store.pair(code)}
+          onStep={setRecovering}
+          onBegun={() => {
+            // The venue is on its way in: the server's "no setup needed" is now
+            // this page's doing, and the token opens nothing more.
+            onBegin();
+            forgetSetupToken(browserPage().storage);
+          }}
+          onNewVenue={() => setRecovering(null)}
+          onLeave={leave}
+        />
+      </SetupFrame>
+    );
+  }
+
   if (busy || created || failure) {
     return (
       <SetupFrame lead={lead} steps={allSteps} current={steps.length - 1}>
@@ -207,6 +236,25 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
       <form onSubmit={submit} noValidate className="flex flex-1 flex-col">
         <h2 className="font-serif text-xl">{current.name}</h2>
         <p className="mt-1 text-sm text-fg-muted">{blurbs[current.key]}</p>
+        {step === 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-card bg-sunken px-4 py-3">
+            <p className="min-w-56 flex-1 text-sm text-fg-2">
+              Had this venue on another computer, paired to mez Cloud? Bring it back with its menu, staff and sales, and skip these questions.
+            </p>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => {
+                // Held open from here: a venue's backup takes minutes to come down, and the
+                // wizard must not be taken away over a status check that failed meanwhile.
+                onBegin();
+                setRecovering("phone");
+              }}
+            >
+              I had mez before
+            </Button>
+          </div>
+        )}
         <div className="mt-5">
           {current.key === "venue" && <VenueStep {...stepProps} timezones={timezones} />}
           {current.key === "taxes" && <TaxesStep {...stepProps} onProfile={chooseProfile} />}

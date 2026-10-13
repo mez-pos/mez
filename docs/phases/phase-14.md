@@ -554,7 +554,34 @@ and its first commit copies this phase's cloud tasks there.
     over a venue: only where `emptyInstall` says there is none. Tests with
     the stand-in and a folder or the S3 fake. **Split it again if the
     restore and the routes are not one session.**
-  - [ ] **Task 7c - The wizard's screen.** *This repo.* "I had mez before"
+  - [ ] **Task 7c - The wizard's screen.** *This repo.* Split in two on
+    2026-10-13 while building it (ADR-336): the stand-in has no bucket, so
+    a walk cannot get past the restore.
+    - [x] **7c1 - The screen.** `web/shared/screens/setup/`:
+      `recover-logic.ts` (the checks, the four requests, every sentence,
+      and `awaitVenue`, which waits through the server's start),
+      `RecoverFlow.tsx`, and a band on the wizard's first step, **I had
+      mez before**. Four steps of its own: Your number (begins "+91 "),
+      The code, Your venue (one with no backup listed and not offered;
+      the till's name), Bring it back (downloading, starting again, then
+      the venue is back, this browser paired, and how its pairing to the
+      account went). Walked in a browser against `pairstub` as far as the
+      restore, which fails for want of a bucket and says so.
+    - [ ] **7c2 - A bucket for the stand-in, and the whole walk.** Move
+      the S3 stand-in from `internal/backup/s3fake_test.go` to a package
+      tests and `pairstub` can both use (`internal/backup/s3fake`, say:
+      it needs no `testing.T` but in its constructor), and give
+      `pairstub` `-bucket-fake`, which serves it on a port of its own and
+      names it in what pairing and the grant hand out. Then walk it: a
+      venue set up and paired to the stub so that it backs up there, its
+      data directory moved away, a new one started, **I had mez before**
+      to the last card, Sign in with the owner's PIN, a sale rung. Look
+      at: the two waiting cards and how long each shows; the last card
+      while the cloud is "pairing" and after; a reload during the wait;
+      400px wide. `cmd/mez`'s `runOptions.source` can go if the test can
+      use the same stand-in. Fix what the walk finds in 7c1's screen.
+
+    As 7c was set: "I had mez before"
     on the first step: the phone number with `+91` offered, the six
     digits, the account's venues with when each was last backed up (and
     one with no backup said so and not offered), the restore's progress,
