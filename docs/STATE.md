@@ -32,7 +32,7 @@ grant's waiting (202) and held (423) answers.
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 8c4 there, with 7e, 8g and 8c1 to 8c3 done). This repository is touched again when:
+(Task 8d there, with 7e, 8g and 8c done). This repository is touched again when:
 - `mez-cloud` needs a shape cloudkit does not have: add it here first,
   with an ADR, then use it there (its `CLAUDE.md` says so);
 - Task 8e there begins, by moving the mirror out of `cmd/mez`'s
