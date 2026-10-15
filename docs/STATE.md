@@ -32,7 +32,7 @@ grant's waiting (202) and held (423) answers.
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 8d5c2 there; 7e, 8g, 8c, 8d1 to 8d4, 8d5a, 8d5b and 8d5c1 are done). This repository is touched again when:
+(Task 8d5c3 there; 7e, 8g, 8c, 8d1 to 8d4, 8d5a, 8d5b, 8d5c1 and 8d5c2 are done). This repository is touched again when:
 - **a change to `web/shared`** is a change to `mez-cloud`'s account area too:
   its bundle reads mez's tokens, preset, fonts, `ui/Button`, `ui/Card`,
   `ui/Logo`, `ui/Money`, `ui/StatusChip` (its `cloud` vocabulary, ADR-351),
