@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log/slog"
 	"net"
@@ -76,6 +77,22 @@ func CleanCode(typed string) (string, error) {
 		return "", ErrCodeShape
 	}
 	return b.String(), nil
+}
+
+// NewCode draws a pairing code, as mez Cloud issues one (ADR-346). The
+// venue's binary never calls it: it is here so that the alphabet a code is
+// drawn from and the one CleanCode takes are one definition. The alphabet is
+// 32 characters, so the low five bits of a byte choose one with no bias.
+func NewCode(entropy io.Reader) (string, error) {
+	var raw [CodeLen]byte
+	if _, err := io.ReadFull(entropy, raw[:]); err != nil {
+		return "", fmt.Errorf("cloud: drawing a pairing code: %w", err)
+	}
+	code := make([]byte, CodeLen)
+	for i, b := range raw {
+		code[i] = codeAlphabet[int(b)%len(codeAlphabet)]
+	}
+	return string(code), nil
 }
 
 // Pairing is what mez Cloud gave this venue when it was paired. It holds two

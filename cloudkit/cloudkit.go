@@ -21,6 +21,8 @@
 package cloudkit
 
 import (
+	"io"
+
 	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/relay"
@@ -62,6 +64,10 @@ type (
 // its spaces and dashes gone and its letters raised. The cloud cleans the
 // code it is sent the same way the venue cleaned it before sending.
 func CleanCode(typed string) (string, error) { return cloud.CleanCode(typed) }
+
+// NewCode draws a pairing code from the alphabet CleanCode takes, with no
+// bias (ADR-346).
+func NewCode(entropy io.Reader) (string, error) { return cloud.NewCode(entropy) }
 
 // Recovery: three requests (ADR-332). A number with no account is answered
 // as one with. The session a VerifyAnswer carries is the bearer token of the

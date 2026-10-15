@@ -414,3 +414,27 @@ func TestNewClientRefusesAnAddressAKeyShouldNotTravelTo(t *testing.T) {
 		}
 	}
 }
+
+// ADR-346: every code drawn is one CleanCode takes as it is, and the
+// alphabet is drawn from evenly enough to see each character.
+func TestNewCode(t *testing.T) {
+	seen := map[rune]int{}
+	for i := 0; i < 2000; i++ {
+		code, err := NewCode(rand.Reader)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if clean, err := CleanCode(code); err != nil || clean != code {
+			t.Fatalf("NewCode drew %q, which CleanCode makes %q, %v", code, clean, err)
+		}
+		for _, r := range code {
+			seen[r]++
+		}
+	}
+	if len(seen) != len(codeAlphabet) {
+		t.Errorf("%d of the alphabet's %d characters were drawn", len(seen), len(codeAlphabet))
+	}
+	if _, err := NewCode(strings.NewReader("short")); err == nil {
+		t.Error("a code was drawn from too little entropy")
+	}
+}

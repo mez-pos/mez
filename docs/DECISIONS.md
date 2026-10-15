@@ -13461,3 +13461,20 @@ re-signing with the old key: it rotates forward again. There is no overlap: from
 first assertion presented with a link, a venue that took it refuses the key before,
 so `mez-cloud` cannot roll a rotation out to some of its instances and not others. `VerifyAssertion` returns
 three values now, and `mez-cloud`'s one call to it changed with this.
+
+## ADR-346 - A pairing code is drawn by the module that defines its alphabet, and cloudkit hands out the drawing
+2026-10 · Status: accepted. `mez-cloud`'s Task 4d1. Builds on ADR-318 and ADR-344.
+Context: `mez-cloud` issues the eight-character codes a venue types to pair (ADR-318).
+The alphabet a code is made of was this module's alone and unexported, `CleanCode`
+refused anything outside it, and `mez-cloud` may not redefine a shape of the wire
+(its `CLAUDE.md`, ADR-344). Writing the 32 characters out again there would be two
+definitions that could drift, and a code drawn from a letter the venue refuses would
+be a code nobody could type.
+Decision: `cloud.NewCode(entropy)` draws `CodeLen` characters of the alphabet, one
+byte each, the low five bits choosing (32 characters, so every one is as likely),
+and cloudkit hands it out as `NewCode`. The venue's binary never calls it. A test
+holds that every code drawn is one `CleanCode` takes unchanged, and that the whole
+alphabet is drawn.
+Because: the alphabet stays one constant in one place, and the side that draws codes
+and the side that reads them cannot come to disagree.
+Cost: one more function in cloudkit, and cloudkit now imports `io`.
