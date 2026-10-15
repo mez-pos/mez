@@ -13,7 +13,8 @@
 //
 // What is not here yet: the mirror (ADR-325 on). It is in package main, and
 // handing it out means moving it first, which is the task that builds the
-// cloud's mirror.
+// cloud's mirror. A backup's restore is here (ADR-352): an owner's download
+// of their venue's data is one.
 //
 // Nothing in this module imports cloudkit but its own test. The venue's
 // binary carries none of the relay's server (internal/cloud's rule), and
@@ -21,6 +22,7 @@
 package cloudkit
 
 import (
+	"context"
 	"io"
 
 	"github.com/byjoellobo/mez/internal/backup"
@@ -213,3 +215,27 @@ const (
 
 // MinRelaySecretLen is the least a relay's signing secret may be.
 const MinRelaySecretLen = relay.MinSecretLen
+
+// A venue's backup, read back by the cloud for its owner (ADR-352): the
+// newest whole copy in its bucket restored to a new database file and
+// checked whole, as mez's own restore does it, and its menu's photos beside
+// it. The bucket is read and nothing in it is changed.
+var (
+	// ErrNothingToRestore is a bucket with no whole copy in it.
+	ErrNothingToRestore = backup.ErrNothingToRestore
+	// ErrWouldOverwrite is a restore asked to write where a file already
+	// is. A restore never writes over one.
+	ErrWouldOverwrite = backup.ErrWouldOverwrite
+)
+
+// RestoreBackup writes the newest state of the backup in a bucket to a new
+// database file at outputPath, and checks it whole before returning.
+func RestoreBackup(ctx context.Context, b Bucket, outputPath string) error {
+	return backup.Restore(ctx, backup.Config{Kind: backup.KindS3, S3: b}, outputPath)
+}
+
+// RestorePhotos copies the menu's photos backed up in a bucket into dir,
+// and says how many it copied.
+func RestorePhotos(ctx context.Context, b Bucket, dir string) (int, error) {
+	return backup.RestorePhotos(ctx, backup.Config{Kind: backup.KindS3, S3: b}, dir)
+}

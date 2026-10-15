@@ -13616,3 +13616,26 @@ Decision:
 Because: the account area is mez's design system used elsewhere, and its words for a
 venue's standing belong with mez's other words.
 Cost: a state ADR-313 gains is added here by hand; nothing generated fails first.
+
+## ADR-352 - cloudkit hands out mez's own restore of a backup and its photos from a bucket, so the cloud gives an owner their venue's data as a database mez opens
+2026-10 · Status: accepted. Phase 14, `mez-cloud`'s Task 8d5a. Builds on ADR-276, ADR-318 and ADR-344.
+Context: `mez-cloud`'s account area owes an owner "Download my data": their venue's latest
+backup. A venue's folder in its bucket is Litestream's generations (`db/<generation>/`)
+and the menu's photos (`photos/`): nothing an owner can open, and only this repository's
+restore turns it into a database. The cloud reaches this module through cloudkit alone,
+and cloudkit handed out no restore.
+Decision:
+  - **`cloudkit.RestoreBackup(ctx, Bucket, outputPath)`** is `backup.Restore` over the
+    bucket: the newest generation with a whole copy in it, restored to a new file and
+    checked whole (`IntegrityCheckFull`), never over a file that is there.
+    **`cloudkit.RestorePhotos(ctx, Bucket, dir)`** is `backup.RestorePhotos`. With them,
+    `ErrNothingToRestore` and `ErrWouldOverwrite`, by their own names.
+  - Nothing else of the backup is handed out: not its generations, not a restore to a
+    time. What an owner downloads is what a new computer would be given.
+  - A test backs a venue up to the stand-in bucket with the venue's own engine and reads
+    it back through the door alone, as the cloud will.
+Because: there is one restore, and it is this repository's; a second written in the cloud
+would be a second reading of Litestream's layout, free to disagree with the first.
+Cost: the cloud's binary carries Litestream and the AWS SDK for S3, as the venue's does.
+A restore reads the whole of the newest generation, which is the cloud's time and R2's
+reads, once a download.
