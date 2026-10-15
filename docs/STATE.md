@@ -35,7 +35,7 @@ signs with a second key. Not walked in a browser.
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 8b3b, the key pair and its rotation). This repository is touched again when:
+(Task 4d, the cloud's side of pairing). This repository is touched again when:
 - `mez-cloud` needs a shape cloudkit does not have: add it here first,
   with an ADR, then use it there (its `CLAUDE.md` says so);
 - Task 8e there begins, by moving the mirror out of `cmd/mez`'s
