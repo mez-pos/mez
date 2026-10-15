@@ -70,6 +70,13 @@ const (
 	CodeRecoverBackupGone ErrorCode = "recover_backup_gone"
 	// CodeRecoverRefused is mez Cloud not handing the venue over.
 	CodeRecoverRefused ErrorCode = "recover_refused"
+	// CodeRecoverAwaitingLink is mez Cloud waiting on the link it sent to
+	// the account's email (ADR-348). Asked again once it is opened, the
+	// venue is brought back.
+	CodeRecoverAwaitingLink ErrorCode = "recover_awaiting_link"
+	// CodeRecoverHeld is the account's recoveries held for now: for a week
+	// after its email changed, or until it has one (ADR-348).
+	CodeRecoverHeld ErrorCode = "recover_held"
 	// CodeRecoverUnderWay is a second restore beside one that is running,
 	// or after one that is about to take hold.
 	CodeRecoverUnderWay ErrorCode = "recover_under_way"
@@ -342,6 +349,35 @@ func (s *Server) recoverOutcome(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, s.log, http.StatusOK, out)
 }
 
+// awaitingLinkMessage says where the link went, as mez Cloud showed the
+// address, which is masked.
+func awaitingLinkMessage(err error) string {
+	to := "your mez Cloud account's email"
+	if link := (*cloud.LinkSent)(nil); errors.As(err, &link) {
+		to = link.Email
+	}
+	return "mez Cloud has sent a link to " + to + ". Open it, on your phone or anywhere, then come back here and choose your venue again."
+}
+
+// heldMessage says why recovery is held and until when. The date is in
+// this computer's own time zone, which a new machine usually has right
+// even when its clock is not yet trusted (ADR-332).
+func heldMessage(err error) string {
+	held := (*cloud.Held)(nil)
+	if !errors.As(err, &held) {
+		held = &cloud.Held{}
+	}
+	switch {
+	case held.Reason == cloud.HoldEmailChanged && !held.Until.IsZero():
+		return "mez Cloud is holding this account's venues until " + held.Until.Local().Format("2 January 2006 at 15:04") +
+			", because its email address was set or changed in the last week. If you did not change it, write to mez Cloud's support from your old address."
+	case held.Reason == cloud.HoldNoEmail:
+		return "Your mez Cloud account has no email address, and a venue is handed over only after a link sent to one is opened. Add one in your mez Cloud account: a venue can be brought back a week after."
+	default:
+		return "mez Cloud is holding this account's venues for now. Look at your mez Cloud account, or write to support."
+	}
+}
+
 // recoverError says why a venue was not brought back, in words an owner at
 // a new computer can act on. What the cloud, the backup or `mez restore`
 // said underneath stays in the log: their words are a command's.
@@ -373,6 +409,10 @@ func (s *Server) recoverError(w http.ResponseWriter, r *http.Request, what strin
 	case errors.Is(err, cloud.ErrBackupGone):
 		writeError(w, s.log, http.StatusGone, CodeRecoverBackupGone,
 			"mez Cloud no longer keeps that venue's backup: its subscription ended too long ago. If you kept a backup of your own, it can be restored from that.")
+	case errors.Is(err, cloud.ErrAwaitingLink):
+		writeError(w, s.log, http.StatusConflict, CodeRecoverAwaitingLink, awaitingLinkMessage(err))
+	case errors.Is(err, cloud.ErrRecoveryHeld):
+		writeError(w, s.log, http.StatusConflict, CodeRecoverHeld, heldMessage(err))
 	case errors.Is(err, cloud.ErrGrantRefused):
 		writeError(w, s.log, http.StatusConflict, CodeRecoverRefused,
 			"mez Cloud will not hand that venue over. Look at the venue in your mez Cloud account, or write to support.")

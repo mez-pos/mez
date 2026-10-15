@@ -87,7 +87,18 @@ type stub struct {
 	spent              bool
 	attempt            string // the last one asked for with the account's number
 	session            string
+
+	// linkAfter is how long after the first grant a session asks the link
+	// to the account's email counts as opened, and linkSent when that was:
+	// zero asks no link. held answers every grant as held for a changed
+	// email (ADR-348).
+	linkAfter time.Duration
+	linkSent  time.Time
+	held      bool
 }
+
+// linkTo is the account's email as a waiting grant shows it.
+const linkTo = "p***@example.net"
 
 func main() {
 	listen := flag.String("listen", "127.0.0.1:7802", "address to listen on")
@@ -101,6 +112,8 @@ func main() {
 	flag.StringVar(&s.otp, "otp", "123456", "the one-time code that number is always \"sent\"")
 	flag.StringVar(&s.venueID, "venue-id", "", "the public id of the venue the account lists until one pairs; none lists no venue until then")
 	flag.StringVar(&s.venueName, "venue-name", "Dev Cafe", "that venue's name in the account's list")
+	flag.DurationVar(&s.linkAfter, "link-after", 0, "answer a session's grants as waiting on a link to the account's email until this long after the first (30s, say); none asks no link (ADR-348)")
+	flag.BoolVar(&s.held, "held", false, "answer every grant as held for a week, as for an account whose email has just changed (ADR-348)")
 	rotated := flag.Bool("rotated", false, "sign assertions with a second key, handed on from the one given at pairing by a link (ADR-345)")
 	fake := flag.String("bucket-fake", "", "serve a bucket in memory on this address (127.0.0.1:7803, say) and name it, in place of the -bucket flags' one")
 	bucket := flag.String("bucket", "mez-dev", "the bucket a paired venue backs up to and a recovered one restores from")
@@ -257,7 +270,7 @@ func (s *stub) recoverVerify(w http.ResponseWriter, r *http.Request) {
 	session := ""
 	if good {
 		// An attempt is good once, and a new sign-in ends the one before.
-		s.attempt, s.session = "", "ses_"+token()
+		s.attempt, s.session, s.linkSent = "", "ses_"+token(), time.Time{}
 		session = s.session
 	}
 	venueID, venueName := s.venueID, s.venueName
@@ -289,10 +302,20 @@ func (s *stub) recoverGrant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	bearer, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	now := time.Now().UTC()
 	s.mu.Lock()
 	signedIn := s.session != "" && bearer == s.session
 	theirs := req.Venue.ID != "" && req.Venue.ID == s.venueID
-	if signedIn && theirs {
+	waiting := false
+	if signedIn && theirs && !s.held && s.linkAfter > 0 {
+		if s.linkSent.IsZero() {
+			s.linkSent = now
+			log.Printf("a link was sent to %s for venue %s; it counts as opened in %s", linkTo, req.Venue.ID, s.linkAfter)
+		}
+		waiting = now.Before(s.linkSent.Add(s.linkAfter))
+	}
+	sent := s.linkSent
+	if signedIn && theirs && !s.held && !waiting {
 		// The venue is to be paired afresh: its code is good once more.
 		s.spent = false
 	}
@@ -302,6 +325,18 @@ func (s *stub) recoverGrant(w http.ResponseWriter, r *http.Request) {
 		refuse(w, http.StatusUnauthorized, "session_invalid")
 	case !theirs:
 		refuse(w, http.StatusNotFound, "venue_not_found")
+	case s.held:
+		log.Printf("held a grant of venue %s: the account's email changed", req.Venue.ID)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(cloud.StatusHeld)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"error": map[string]string{"code": "recovery_held"},
+			"hold":  cloud.Hold{Reason: cloud.HoldEmailChanged, Until: now.Add(7 * 24 * time.Hour)},
+		})
+	case waiting:
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(cloud.StatusAwaitingLink)
+		_ = json.NewEncoder(w).Encode(cloud.GrantWaiting{Link: cloud.EmailLink{Email: linkTo, SentAt: sent}})
 	default:
 		log.Printf("handed over venue %s: its bucket, and the pairing code %s, good once more", req.Venue.ID, s.code)
 		answer(w, map[string]any{

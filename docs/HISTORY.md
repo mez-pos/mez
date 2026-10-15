@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**`mez-cloud`'s Task 8b3a - the chain, here** (ADR-345). The cloud's
+signing key can now be rotated without pairing again, as the human chose
+on 2026-10-15: a key link (`k1.<key>.<signature>`) is the next public key
+signed by the one before, and an assertion is presented as
+`<assertion>~<link>~...`. The venue walks the links from the key its
+pairing holds, checks the assertion with the newest key it reaches, and
+once the sign-in is done keeps that key in `cloud.json` (by compare and
+swap, under pairing's lock) and then in memory. `internal/cloud/keychain.go`;
+`VerifyAssertion` returns the key that signed; cloudkit hands out
+`SignKeyLink`, `PresentAssertion` and `MaxKeyChain`; `pairstub -rotated`
+signs with a second key. Not walked in a browser.
+
 **The door, and `mez-cloud`'s first commit** (ADR-344). `cloudkit/` is
 this module's one public package: names for the wire's shapes, the
 assertion, the relay and its keys, handed out to `mez-cloud` and to

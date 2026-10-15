@@ -103,6 +103,29 @@ type (
 	AccountVenue = cloud.AccountVenue
 )
 
+// A grant that is neither given nor refused (ADR-348): StatusAwaitingLink
+// with a GrantWaiting while the link sent to the account's email is
+// unopened, and StatusHeld with a GrantHeld, beside the error envelope,
+// while the account's recoveries are held. The cloud decides them in this
+// order: 410 for a backup no longer kept, then the hold, then the link.
+const (
+	StatusAwaitingLink = cloud.StatusAwaitingLink
+	StatusHeld         = cloud.StatusHeld
+	// HoldEmailChanged is the email set or changed under a week ago, and
+	// its Until is required; HoldNoEmail is an account with none, and has
+	// no Until.
+	HoldEmailChanged = cloud.HoldEmailChanged
+	HoldNoEmail      = cloud.HoldNoEmail
+)
+
+type (
+	GrantWaiting = cloud.GrantWaiting
+	EmailLink    = cloud.EmailLink
+	GrantHeld    = cloud.GrantHeld
+	Hold         = cloud.Hold
+	HoldReason   = cloud.HoldReason
+)
+
 // The assertion: what the cloud signs for an owner it has signed in, and a
 // venue accepts as a sign-in by the one person made at pairing (ADR-323,
 // ADR-324). It is presented as "Authorization: <AssertionScheme> <signed>".

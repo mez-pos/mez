@@ -13498,3 +13498,56 @@ includes what the venue will accept.
 Cost: the cloud's check uses `DefaultURL` for the venue's cloud address, which a venue
 set to another (a test, a stand-in) does not; that part of the check is the venue's
 own setting and not the answer's.
+
+## ADR-348 - A grant waits on the email's link with a 202 and is held with a 423, and both are read apart from a refusal
+2026-10 · Status: accepted. `mez-cloud`'s Task 7e3a, built here. Builds on ADR-332, ADR-342 and ADR-344; `mez-cloud`'s C-019.
+Context: the human chose a second step before a venue is handed over (ADR-342, 13): a
+link sent to the account's email, opened by the owner. And a change of that email holds
+recovery for a week (`mez-cloud`'s C-006 and C-019), so that whoever takes over an owner's
+SIM and puts their own address on the account waits while the owner is told. ADR-332's
+grant had two answers, a hand-over or a refusal, and the venue read every 4xx it did not
+name as "will not hand over". Neither new state is that: one passes when the owner opens
+a mail, and one when a date comes. The wire is this repository's to define (ADR-344).
+Decision:
+  - **Waiting on the link is `202 Accepted`** (`cloud.StatusAwaitingLink`) with
+    `{"link": {"email", "sent_at"}}`. `email` is the address as the cloud shows it,
+    masked (`p***@example.net`). Nothing is wrong and nothing is refused: the same grant
+    asked again once the link is opened is answered 200. The session stays good, and
+    its hour is still the limit: a link opened after it ends opens nothing, and the
+    owner signs in again.
+  - **Held is `423 Locked`** (`cloud.StatusHeld`) with `{"hold": {"reason", "until"}}`
+    beside the error envelope every refusal has. `email_changed` must say `until`;
+    `no_email` (an account named before an email was required) has none, since its
+    week starts when one is set, and one sent is ignored. A reason is small letters,
+    digits, `_` and `-`; one this version does not know is still read as a hold, so the
+    cloud may add one without every venue calling it a broken answer. The envelope is
+    the cloud's habit and not read: the venue reads `hold`.
+    It is told apart from a refusal as 410 is (ADR-332): asking again changes nothing,
+    and the owner is told the date.
+  - **The cloud decides them in one order**: 401 and the venue's own refusals first,
+    then 410 for a backup no longer kept, then the hold, then the link, then the
+    hand-over. So no link is mailed while the account is held, and an owner whose
+    backup is gone is not sent to their inbox for nothing.
+  - **The venue reads them as errors of their own**: `*cloud.LinkSent`, which is
+    `ErrAwaitingLink`, and `*cloud.Held`, which is `ErrRecoveryHeld`, each checked whole
+    (an address with something either side of an @, on one line, nothing unseen; a
+    reason that is a name; a time where one is owed) and refused as `ErrInvalid`
+    otherwise. Neither is `ErrGrantRefused`.
+  - **The venue's restore route says them in words** (`recover_awaiting_link`,
+    `recover_held`, 409), with where the link went and until when, in this computer's
+    time zone. The wizard shows them as it shows any refusal; a screen that waits on
+    the link and asks again by itself is this repository's next task for 7e, as
+    ADR-342 had it.
+  - **cloudkit hands out the two statuses, the reasons and the bodies' types**, and
+    names the order. `pairstub -link-after 30s` answers a session's grants as waiting
+    until that long after the first; `pairstub -held` holds every grant.
+Because: the two states pass by themselves, so a venue that read them as refusals would
+send the owner to support for a mail they had not yet opened.
+Cost: a 202 to a request that writes, and a 423 from WebDAV, are both read here by
+agreement and not by what a proxy would make of them. A venue built before this reads
+a 202 as a cloud it cannot reach and a 423 as a refusal; none has been given to anyone.
+Until the wizard asks again by itself, an owner opens the link and chooses the venue
+again by hand. The date is shown in the computer's zone, which a server in a container
+has as UTC. A date in the past, or a year away, is shown as the cloud sent it: the
+new machine's clock is not the judge (ADR-332). The address shown is held to what a
+name is held to (one line, nothing unseen), not to the shape of an address.

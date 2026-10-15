@@ -19,28 +19,30 @@ in the "Still owed" list below.
 
 ## Last completed task
 
-**`mez-cloud`'s Task 8b3a - the chain, here** (ADR-345). The cloud's
-signing key can now be rotated without pairing again, as the human chose
-on 2026-10-15: a key link (`k1.<key>.<signature>`) is the next public key
-signed by the one before, and an assertion is presented as
-`<assertion>~<link>~...`. The venue walks the links from the key its
-pairing holds, checks the assertion with the newest key it reaches, and
-once the sign-in is done keeps that key in `cloud.json` (by compare and
-swap, under pairing's lock) and then in memory. `internal/cloud/keychain.go`;
-`VerifyAssertion` returns the key that signed; cloudkit hands out
-`SignKeyLink`, `PresentAssertion` and `MaxKeyChain`; `pairstub -rotated`
-signs with a second key. Not walked in a browser.
+**`mez-cloud`'s Task 7e3a - the shape, here** (ADR-348). A grant now
+has two answers that are neither a hand-over nor a refusal: `202` with
+`{"link": {"email", "sent_at"}}` while the link sent to the account's
+email is unopened, and `423` with `{"hold": {"reason", "until"}}` while
+recovery is held (`email_changed` for a week, `no_email` until one is
+set). The client reads them as `*cloud.LinkSent` and `*cloud.Held`,
+checked whole; cloudkit hands out the statuses, reasons and bodies, and
+the order the cloud decides in (410, hold, link); the restore route says
+them as `recover_awaiting_link` and `recover_held`, 409, in words.
+`pairstub -link-after 30s` and `pairstub -held` walk each (walked by
+curl, not in the wizard).
 
 ## Next task
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 7e, the cloud's side of "I had mez before"). This repository is touched again when:
+(Task 7e3b, the link and the gate on the cloud's side). This repository is touched again when:
 - `mez-cloud` needs a shape cloudkit does not have: add it here first,
   with an ADR, then use it there (its `CLAUDE.md` says so);
 - Task 8e there begins, by moving the mirror out of `cmd/mez`'s
   `package main` to where cloudkit can hand it out;
-- 7e there is built: the wizard's wait for the email link (ADR-342);
+- 7e there is built: the wizard's wait for the email link (ADR-342):
+  ADR-348 has the shape, and until then the wizard shows its words as a
+  refusal and the owner chooses the venue again by hand;
 - the service opens: take "**mez Cloud is not taking venues yet**" out
   of `deploy.md`;
 - this module is tagged with cloudkit in it, so that `mez-cloud`'s

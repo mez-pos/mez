@@ -85,7 +85,96 @@ var (
 	// ErrGrantRefused is the cloud not handing a venue's backup over, for
 	// a reason it keeps.
 	ErrGrantRefused = errors.New("mez Cloud will not hand over that venue's backup")
+
+	// ErrAwaitingLink is a grant waiting on the link the cloud has sent to
+	// the account's email (ADR-342, ADR-348). Nothing is wrong: asked
+	// again once the link is opened, the venue is handed over. A *LinkSent
+	// says where it went.
+	ErrAwaitingLink = errors.New("mez Cloud has sent a link to the account's email, and hands the venue over once it is opened")
+
+	// ErrRecoveryHeld is the account's recoveries held for now, which
+	// asking again does not change (ADR-348). A *Held says why and until
+	// when.
+	ErrRecoveryHeld = errors.New("mez Cloud is holding this account's recoveries for now")
 )
+
+// The statuses a grant is answered with when it is not refused and not
+// given: the cloud answers with these and the venue reads them (ADR-348).
+const (
+	// StatusAwaitingLink is a grant waiting on the link: GrantWaiting.
+	StatusAwaitingLink = http.StatusAccepted
+	// StatusHeld is the account's recoveries held: GrantHeld, beside the
+	// error a refusal carries.
+	StatusHeld = http.StatusLocked
+)
+
+// HoldReason says why an account's recoveries are held. A reason this
+// version does not know is kept as it came and read as held.
+type HoldReason string
+
+const (
+	// HoldEmailChanged is the account's email set or changed less than a
+	// week ago. The hold ends at Until.
+	HoldEmailChanged HoldReason = "email_changed"
+	// HoldNoEmail is an account with no email for a link to go to. It
+	// ends a week after one is set, and has no Until yet.
+	HoldNoEmail HoldReason = "no_email"
+)
+
+// maxEmail is the longest an address may be, by the mail standards, and
+// maxHoldReason far over any reason's name.
+const (
+	maxEmail      = 254
+	maxHoldReason = 40
+)
+
+// GrantWaiting is the body of a StatusAwaitingLink: where the link went,
+// as the cloud chose to show it (masked, m***@example.net), and when.
+type GrantWaiting struct {
+	Link EmailLink `json:"link"`
+}
+
+// EmailLink is a link sent to the account's email.
+type EmailLink struct {
+	Email  string    `json:"email"`
+	SentAt time.Time `json:"sent_at"`
+}
+
+// GrantHeld is what a StatusHeld carries, beside the error envelope every
+// refusal has.
+type GrantHeld struct {
+	Hold Hold `json:"hold"`
+}
+
+// Hold is why an account's recoveries are held, and until when. Until is
+// absent for a hold with no end yet.
+type Hold struct {
+	Reason HoldReason `json:"reason"`
+	Until  time.Time  `json:"until,omitzero"`
+}
+
+// LinkSent is a grant waiting on the link: errors.Is(err, ErrAwaitingLink)
+// and errors.As(err, &linkSent) both find it.
+type LinkSent struct {
+	// Email is the address as the cloud shows it, masked.
+	Email  string
+	SentAt time.Time
+}
+
+func (e *LinkSent) Error() string { return ErrAwaitingLink.Error() }
+func (e *LinkSent) Unwrap() error { return ErrAwaitingLink }
+
+// Held is the account's recoveries held: errors.Is(err, ErrRecoveryHeld)
+// and errors.As(err, &held) both find it.
+type Held struct {
+	Reason HoldReason
+	// Until is when the cloud says the hold ends, to be shown. Zero is a
+	// hold with no end yet.
+	Until time.Time
+}
+
+func (e *Held) Error() string { return ErrRecoveryHeld.Error() }
+func (e *Held) Unwrap() error { return ErrRecoveryHeld }
 
 // CleanPhone is a phone number as it is sent: a plus sign and its digits,
 // with the spaces, hyphens, dots and brackets a person writes one with taken
@@ -375,6 +464,11 @@ type GrantAnswer struct {
 //
 // What comes back is checked whole before it is returned, and nothing is
 // written or restored: that is the caller's.
+//
+// Two answers are neither a grant nor a refusal (ADR-348): a *LinkSent,
+// while the link sent to the account's email is unopened, and a *Held,
+// while the account's recoveries are held. The session stays good through
+// both, and the first ends by asking again once the link is opened.
 func (r *Recovery) Grant(ctx context.Context, venueID string) (Grant, error) {
 	if r == nil || r.client == nil || r.session == "" {
 		return Grant{}, ErrSessionOver
@@ -398,6 +492,10 @@ func (r *Recovery) Grant(ctx context.Context, venueID string) (Grant, error) {
 	}
 	switch {
 	case status == http.StatusOK:
+	case status == StatusAwaitingLink:
+		return Grant{}, readWaiting(raw)
+	case status == StatusHeld:
+		return Grant{}, readHeld(raw)
 	case status == http.StatusUnauthorized:
 		return Grant{}, ErrSessionOver
 	case status == http.StatusGone:
@@ -443,6 +541,62 @@ func (r *Recovery) Grant(ctx context.Context, venueID string) (Grant, error) {
 		return Grant{}, invalid("mez Cloud's answer does not say how long the key reads for")
 	}
 	return Grant{Venue: venue, Backup: a.Backup, PairingCode: code, ExpiresAt: a.ExpiresAt.UTC()}, nil
+}
+
+// readWaiting is a grant waiting on the link, read from its body. An
+// address that could not be shown on a screen is an answer not understood.
+func readWaiting(raw []byte) error {
+	var a GrantWaiting
+	if err := decodeAnswer(raw, &a); err != nil {
+		return err
+	}
+	if !validShownEmail(a.Link.Email) {
+		return invalid("mez Cloud's answer does not say where the link went")
+	}
+	if a.Link.SentAt.IsZero() {
+		return invalid("mez Cloud's answer does not say when the link was sent")
+	}
+	return &LinkSent{Email: a.Link.Email, SentAt: a.Link.SentAt.UTC()}
+}
+
+// readHeld is an account's recoveries held, read from the body that comes
+// with the error. A reason this version does not know is still a hold: it
+// is kept, and a screen says less about it. A hold for a changed email
+// must say when it ends, since that is what the owner is told.
+func readHeld(raw []byte) error {
+	var a GrantHeld
+	if err := decodeAnswer(raw, &a); err != nil {
+		return err
+	}
+	if !validHoldReason(a.Hold.Reason) {
+		return invalid("mez Cloud's answer does not say why recovery is held")
+	}
+	if a.Hold.Reason == HoldEmailChanged && a.Hold.Until.IsZero() {
+		return invalid("mez Cloud's answer does not say when the hold ends")
+	}
+	return &Held{Reason: a.Hold.Reason, Until: a.Hold.Until.UTC()}
+}
+
+// validShownEmail is an address as the cloud shows one, masked or not:
+// something before an @ and something after, on one line, nothing unseen.
+func validShownEmail(s string) bool {
+	at := strings.LastIndexByte(s, '@')
+	return at > 0 && at < len(s)-1 && len(s) <= maxEmail &&
+		!strings.ContainsFunc(s, unseen) && !strings.ContainsFunc(s, hidden)
+}
+
+// validHoldReason is a reason's name: small letters, digits, underscores
+// and hyphens, so that one the cloud adds later is still read as a hold.
+func validHoldReason(r HoldReason) bool {
+	if r == "" || len(r) > maxHoldReason {
+		return false
+	}
+	for i := 0; i < len(r); i++ {
+		if c := r[i]; (c < 'a' || c > 'z') && (c < '0' || c > '9') && c != '_' && c != '-' {
+			return false
+		}
+	}
+	return true
 }
 
 // decodeAnswer reads a 200's body, which must be JSON and no larger than

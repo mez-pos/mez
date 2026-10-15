@@ -179,6 +179,8 @@ export type ErrorCode =
   | 'recover_no_backup'
   | 'recover_backup_gone'
   | 'recover_refused'
+  | 'recover_awaiting_link'
+  | 'recover_held'
   | 'recover_under_way'
   | 'recover_backup_failed'
   | 'recover_nothing'

@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -42,8 +43,11 @@ func read(t *testing.T, r *http.Request, into any) {
 	}
 }
 
-func write(w http.ResponseWriter, body any) {
+func write(w http.ResponseWriter, body any) { writeStatus(w, http.StatusOK, body) }
+
+func writeStatus(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(body)
 }
 
@@ -166,11 +170,13 @@ func TestACloudBuiltOnTheDoorPairsAVenue(t *testing.T) {
 
 // TestACloudBuiltOnTheDoorHandsAVenueBack: the three requests of a recovery,
 // answered from these types, take the venue's client from a phone number to a
-// bucket it can read and a code it can pair with.
+// bucket it can read and a code it can pair with. The grant is held first,
+// then waits on the link, and is given at the third asking (ADR-348).
 func TestACloudBuiltOnTheDoorHandsAVenueBack(t *testing.T) {
 	const session = "ses_0123456789abcdef"
 	until := time.Now().Add(time.Hour).UTC().Truncate(time.Second)
 	backedUp := time.Now().Add(-time.Minute).UTC().Truncate(time.Second)
+	grants := 0
 
 	c := venueClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -199,7 +205,14 @@ func TestACloudBuiltOnTheDoorHandsAVenueBack(t *testing.T) {
 				http.Error(w, "{}", http.StatusUnauthorized)
 				return
 			}
-			write(w, cloudkit.GrantAnswer{Backup: bucket("v/" + slug), PairingCode: "ABCD2345", ExpiresAt: until})
+			switch grants++; grants {
+			case 1:
+				writeStatus(w, cloudkit.StatusHeld, cloudkit.GrantHeld{Hold: cloudkit.Hold{Reason: cloudkit.HoldEmailChanged, Until: until}})
+			case 2:
+				writeStatus(w, cloudkit.StatusAwaitingLink, cloudkit.GrantWaiting{Link: cloudkit.EmailLink{Email: "p***@example.net", SentAt: backedUp}})
+			default:
+				write(w, cloudkit.GrantAnswer{Backup: bucket("v/" + slug), PairingCode: "ABCD2345", ExpiresAt: until})
+			}
 		default:
 			http.NotFound(w, r)
 		}
@@ -216,6 +229,14 @@ func TestACloudBuiltOnTheDoorHandsAVenueBack(t *testing.T) {
 	}
 	if len(rec.Venues) != 1 || rec.Venues[0].ID != venueID || !rec.Venues[0].LastBackupAt.Equal(backedUp) {
 		t.Errorf("the venue lists %+v", rec.Venues)
+	}
+	var held *cloud.Held
+	if _, err := rec.Grant(ctx, venueID); !errors.As(err, &held) || held.Reason != cloudkit.HoldEmailChanged || !held.Until.Equal(until) {
+		t.Fatalf("the venue does not read the cloud's hold: %v, %+v", err, held)
+	}
+	var link *cloud.LinkSent
+	if _, err := rec.Grant(ctx, venueID); !errors.As(err, &link) || link.Email != "p***@example.net" || !link.SentAt.Equal(backedUp) {
+		t.Fatalf("the venue does not read the cloud's link: %v, %+v", err, link)
 	}
 	grant, err := rec.Grant(ctx, venueID)
 	if err != nil {

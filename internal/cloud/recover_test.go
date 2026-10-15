@@ -527,6 +527,93 @@ func TestGrantRefusals(t *testing.T) {
 	})
 }
 
+// TestAGrantWaitsOnTheLinkAndOnAHold: the two answers that are neither a
+// grant nor a refusal (ADR-348), read from bodies written by hand, as a
+// cloud in another repository writes them: the names are the contract.
+func TestAGrantWaitsOnTheLinkAndOnAHold(t *testing.T) {
+	ctx := context.Background()
+	sent := time.Date(2026, 10, 15, 7, 40, 0, 0, time.UTC)
+	until := time.Date(2026, 10, 22, 7, 40, 0, 0, time.UTC)
+	ask := func(t *testing.T, status int, raw string) error {
+		t.Helper()
+		s, c := newRecoveryServer(t)
+		r := signedIn(t, c)
+		s.answer(RecoverGrantPath, status, raw)
+		g, err := r.Grant(ctx, "ven_A1B2C3D4")
+		if g.PairingCode != "" || g.Backup.SecretAccessKey != "" {
+			t.Errorf("an answer that is not a grant handed something over: %+v", g)
+		}
+		return err
+	}
+
+	t.Run("a link sent, and where", func(t *testing.T) {
+		err := ask(t, StatusAwaitingLink, `{"link":{"email":"p***@example.net","sent_at":"2026-10-15T13:10:00+05:30"}}`)
+		var link *LinkSent
+		if !errors.Is(err, ErrAwaitingLink) || !errors.As(err, &link) {
+			t.Fatalf("err = %v, want a *LinkSent", err)
+		}
+		if link.Email != "p***@example.net" || !link.SentAt.Equal(sent) || link.SentAt.Location() != time.UTC {
+			t.Errorf("link = %+v", link)
+		}
+		if errors.Is(err, ErrGrantRefused) || errors.Is(err, ErrRecoveryHeld) {
+			t.Errorf("waiting on a link reads as a refusal: %v", err)
+		}
+	})
+	t.Run("held for a changed email, until when", func(t *testing.T) {
+		err := ask(t, StatusHeld, `{"error":{"code":"recovery_held","message":"held"},"hold":{"reason":"email_changed","until":"2026-10-22T07:40:00Z"}}`)
+		var held *Held
+		if !errors.Is(err, ErrRecoveryHeld) || !errors.As(err, &held) {
+			t.Fatalf("err = %v, want a *Held", err)
+		}
+		if held.Reason != HoldEmailChanged || !held.Until.Equal(until) {
+			t.Errorf("held = %+v", held)
+		}
+	})
+	t.Run("held for no email, with no end yet", func(t *testing.T) {
+		var held *Held
+		if err := ask(t, StatusHeld, `{"hold":{"reason":"no_email"}}`); !errors.As(err, &held) || held.Reason != HoldNoEmail || !held.Until.IsZero() {
+			t.Errorf("err = %v, held = %+v", err, held)
+		}
+	})
+	t.Run("held for a reason this version does not know", func(t *testing.T) {
+		var held *Held
+		if err := ask(t, StatusHeld, `{"hold":{"reason":"kyc-2_review"}}`); !errors.As(err, &held) || held.Reason != "kyc-2_review" {
+			t.Errorf("err = %v, held = %+v", err, held)
+		}
+	})
+
+	for _, tt := range []struct {
+		name   string
+		status int
+		raw    string
+	}{
+		{"a link with nothing in it", StatusAwaitingLink, `{}`},
+		{"a link that is not JSON", StatusAwaitingLink, `sent`},
+		{"a link to no address", StatusAwaitingLink, `{"link":{"email":"","sent_at":"2026-10-15T07:40:00Z"}}`},
+		{"a link to something that is not an address", StatusAwaitingLink, `{"link":{"email":"priya","sent_at":"2026-10-15T07:40:00Z"}}`},
+		{"a link to an address with nothing after the @", StatusAwaitingLink, `{"link":{"email":"priya@","sent_at":"2026-10-15T07:40:00Z"}}`},
+		{"a link to an address on two lines", StatusAwaitingLink, `{"link":{"email":"p***@example.net\nclick here","sent_at":"2026-10-15T07:40:00Z"}}`},
+		{"a link to an address that reads backwards", StatusAwaitingLink, `{"link":{"email":"p***@example.net\u202e","sent_at":"2026-10-15T07:40:00Z"}}`},
+		{"a link with no time it was sent", StatusAwaitingLink, `{"link":{"email":"p***@example.net"}}`},
+		{"a link to an address longer than one is", StatusAwaitingLink, `{"link":{"email":"p@` + strings.Repeat("e", 260) + `.net","sent_at":"2026-10-15T07:40:00Z"}}`},
+		{"a hold with nothing in it", StatusHeld, `{"error":{"code":"recovery_held"}}`},
+		{"a hold that is not JSON", StatusHeld, `held`},
+		{"a hold for a changed email with no end", StatusHeld, `{"hold":{"reason":"email_changed"}}`},
+		{"a hold whose reason is a sentence", StatusHeld, `{"hold":{"reason":"Your account is held"}}`},
+		{"a hold whose reason is too long to be a name", StatusHeld, `{"hold":{"reason":"` + strings.Repeat("held_", 9) + `"}}`},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ask(t, tt.status, tt.raw)
+			if !errors.Is(err, ErrInvalid) {
+				t.Errorf("err = %v, want ErrInvalid", err)
+			}
+			if errors.Is(err, ErrAwaitingLink) || errors.Is(err, ErrRecoveryHeld) {
+				t.Errorf("an answer not understood was taken as one: %v", err)
+			}
+		})
+	}
+}
+
 // TestARecoveryKeepsItsSecretsOutOfALog: however it or its grant is printed.
 func TestARecoveryKeepsItsSecretsOutOfALog(t *testing.T) {
 	_, c := newRecoveryServer(t)
