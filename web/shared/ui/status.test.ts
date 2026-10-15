@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   chipSpec,
+  cloudStates,
   dayStatuses,
   deviceStates,
   kitchenStatuses,
@@ -31,6 +32,7 @@ const all: Record<string, Readonly<Record<string, ChipSpec>>> = {
   device: deviceStates,
   tunnel: tunnelStates,
   remote: remoteStates,
+  cloud: cloudStates,
 };
 
 describe("status vocabularies", () => {

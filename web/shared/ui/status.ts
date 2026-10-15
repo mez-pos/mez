@@ -153,6 +153,24 @@ export const remoteStates: Readonly<Record<RemoteState, ChipSpec>> = {
   unreachable: { tone: "warning", word: "Not reachable" },
 };
 
+/**
+ * Where a venue stands with mez Cloud (ADR-313, ADR-351), as its owner's
+ * account area shows it: the same words as the Devices card's cloud line.
+ * New is a venue added and never paired. Cancelled is still carried to the
+ * day paid to, and no alarm; stopped is the relay turning it away.
+ */
+export type CloudState = "new" | "trial" | "active" | "grace" | "suspended" | "cancelled" | "closed";
+
+export const cloudStates: Readonly<Record<CloudState, ChipSpec>> = {
+  new: { tone: "neutral", word: "Not paired yet" },
+  trial: { tone: "info", word: "Free trial" },
+  active: { tone: "success", word: "Paid" },
+  grace: { tone: "warning", word: "Payment due" },
+  suspended: { tone: "danger", word: "Stopped" },
+  cancelled: { tone: "neutral", word: "Cancelled" },
+  closed: { tone: "neutral", word: "Closed" },
+};
+
 /** What a StatusChip is given: which vocabulary, and a value from it. */
 export type ChipStatus =
   | { readonly kind: "kitchen"; readonly status: KitchenStatus }
@@ -167,7 +185,8 @@ export type ChipStatus =
   | { readonly kind: "staff"; readonly status: StaffState }
   | { readonly kind: "device"; readonly status: DeviceState }
   | { readonly kind: "tunnel"; readonly status: TunnelState }
-  | { readonly kind: "remote"; readonly status: RemoteState };
+  | { readonly kind: "remote"; readonly status: RemoteState }
+  | { readonly kind: "cloud"; readonly status: CloudState };
 
 export function chipSpec(chip: ChipStatus): ChipSpec {
   switch (chip.kind) {
@@ -197,5 +216,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
       return tunnelStates[chip.status];
     case "remote":
       return remoteStates[chip.status];
+    case "cloud":
+      return cloudStates[chip.status];
   }
 }

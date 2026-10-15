@@ -13596,3 +13596,23 @@ Cost: one read lock on every dial. A key revoked is taken until the operator cal
 so how current the list is, is the operator's (`mez-cloud` reads it after every pairing
 and on a short round). A venue listed while connected keeps serving its guests until it
 next dials, which with a dead line or a restart is soon, and with a good one may be days.
+
+## ADR-351 - A venue's standing with mez Cloud is a status of its own, so the cloud's account area shows it in the chip every mez screen uses
+2026-10 · Status: accepted. Phase 14, `mez-cloud`'s Task 8d3. Builds on ADR-313 and ADR-316.
+Context: `mez-cloud`'s account area is built of this repository's `web/shared` (its C-031),
+and lists an owner's venues with where each stands: ADR-313's six states, and its own
+seventh, a venue added and never paired. A `StatusChip` takes a status from a vocabulary
+in `ui/status.ts`, never free text, so that no screen invents a word in a colour nobody
+agreed on.
+Decision:
+  - **`cloud`, a vocabulary in `ui/status.ts`**: `new` "Not paired yet" (neutral), `trial`
+    "Free trial" (info), `active` "Paid" (success), `grace` "Payment due" (warning),
+    `suspended` "Stopped" (danger), `cancelled` "Cancelled" (neutral), `closed` "Closed"
+    (neutral). The words are the Devices card's cloud line's (`tunnel-logic.ts`), so an
+    owner reads the same word at the venue and away from it. Cancelled is no alarm: the
+    venue is carried to the day it paid to.
+  - The type is written here and not generated: the venue never receives `new`, and the
+    word in the relay's header is a string (ADR-316).
+Because: the account area is mez's design system used elsewhere, and its words for a
+venue's standing belong with mez's other words.
+Cost: a state ADR-313 gains is added here by hand; nothing generated fails first.
