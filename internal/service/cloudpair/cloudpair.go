@@ -10,6 +10,7 @@ package cloudpair
 
 import (
 	"context"
+	"crypto/ed25519"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -211,4 +212,36 @@ func (s *Service) backUp(ctx context.Context, p cloud.Pairing) (restartNeeded bo
 		return restart, BackupFailed
 	}
 	return restart, BackupSet
+}
+
+// LearnKey keeps next as the cloud's public key in the pairing kept on
+// disk, in place of held: the cloud's next key, which a sign-in's links led
+// to from held (ADR-345). It reports whether it was kept.
+//
+// It takes the lock a pairing holds, and keeps next only if the file still
+// holds held. A venue paired again in the meantime has the new pairing's
+// key, which nothing here may overwrite; a venue unpaired has no file, and
+// gets none back. While a pairing is under way it keeps nothing and does
+// not wait: the pairing may take seconds, a sign-in is waiting on this,
+// and the key is learned again at the next one.
+func (s *Service) LearnKey(held, next ed25519.PublicKey) (bool, error) {
+	if !s.mu.TryLock() {
+		return false, nil
+	}
+	defer s.mu.Unlock()
+
+	p, err := cloud.Load(s.opts.DataDir)
+	if err != nil {
+		return false, fmt.Errorf("cloudpair: reading the pairing: %w", err)
+	}
+	if p == nil {
+		return false, nil
+	}
+	if key, err := p.Key(); err != nil || !key.Equal(held) {
+		return false, nil
+	}
+	if err := cloud.Save(s.opts.DataDir, p.WithKey(next)); err != nil {
+		return false, fmt.Errorf("cloudpair: keeping the cloud's new key: %w", err)
+	}
+	return true, nil
 }

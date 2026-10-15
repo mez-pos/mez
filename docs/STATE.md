@@ -19,21 +19,23 @@ in the "Still owed" list below.
 
 ## Last completed task
 
-**The door, and `mez-cloud`'s first commit** (ADR-344). `cloudkit/` is
-this module's one public package: names for the wire's shapes, the
-assertion, the relay and its keys, handed out to `mez-cloud` and to
-nobody here. The shapes of `/v1/pair` and `/v1/recover/*` are exported
-from `internal/cloud` and used by its own client. `cloudkit_test.go`
-plays the cloud against the venue's real client. `mez-cloud`
-(`I:\mez-cloud`, two commits, private, not pushed) builds against it
-and has its own `CLAUDE.md`, STATE and phase file. Before it, seven of
-the answered questions were built (ADR-343) and none seen in a browser.
+**`mez-cloud`'s Task 8b3a - the chain, here** (ADR-345). The cloud's
+signing key can now be rotated without pairing again, as the human chose
+on 2026-10-15: a key link (`k1.<key>.<signature>`) is the next public key
+signed by the one before, and an assertion is presented as
+`<assertion>~<link>~...`. The venue walks the links from the key its
+pairing holds, checks the assertion with the newest key it reaches, and
+once the sign-in is done keeps that key in `cloud.json` (by compare and
+swap, under pairing's lock) and then in memory. `internal/cloud/keychain.go`;
+`VerifyAssertion` returns the key that signed; cloudkit hands out
+`SignKeyLink`, `PresentAssertion` and `MaxKeyChain`; `pairstub -rotated`
+signs with a second key. Not walked in a browser.
 
 ## Next task
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 8a, to be split first). This repository is touched again when:
+(Task 8b3b, the key pair and its rotation). This repository is touched again when:
 - `mez-cloud` needs a shape cloudkit does not have: add it here first,
   with an ADR, then use it there (its `CLAUDE.md` says so);
 - Task 8e there begins, by moving the mirror out of `cmd/mez`'s
@@ -44,7 +46,9 @@ in `mez-cloud`: open that repository and follow its `docs/STATE.md`
 - this module is tagged with cloudkit in it, so that `mez-cloud`'s
   `go.mod` can name the tag and drop its `replace`. Tagging and pushing
   are the human's.
-Here, by itself: the walk of ADR-343's seven changes (below), and a
+Here, by itself: the walk of ADR-343's seven changes (below), a
+rotation walked with `pairstub -rotated` (pair, sign in from away with
+`GET /dev/assertion`, see `public_key` in `cloud.json` change), and a
 restore that skips invoice numbers ahead, which waits on the accountant.
 **To walk "The PC died" on one machine:** `RELAY_SECRET=<48 hex>
 bin/pairstub.exe -listen 127.0.0.1:7812 -bucket-fake 127.0.0.1:7813`

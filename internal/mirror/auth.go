@@ -329,7 +329,10 @@ func (a *Auth) Cloud() *CloudDoor { return &CloudDoor{a: a} }
 //
 // It is the venue's sign-in (ADR-323) with nothing written to the copy:
 // the assertion is checked with the key this mirror was started with, its
-// nonce is remembered by the Keeper, and who the cloud may be is read.
+// nonce is remembered by the Keeper, and who the cloud may be is read. A
+// newer key the assertion's links lead to is used and not kept: the
+// mirror's key is the one it was started with, and the links are presented
+// again with every assertion (ADR-345).
 func (c *CloudDoor) SignIn(ctx context.Context, presented string) (cloudsignin.SignedIn, error) {
 	a := c.a
 	if len(a.key) == 0 {
@@ -337,7 +340,7 @@ func (c *CloudDoor) SignIn(ctx context.Context, presented string) (cloudsignin.S
 		return cloudsignin.SignedIn{}, cloudsignin.ErrRefused
 	}
 	now := a.now()
-	vouched, err := cloud.VerifyAssertion(a.key, presented, a.venue, now)
+	vouched, _, err := cloud.VerifyAssertion(a.key, presented, a.venue, now)
 	if errors.Is(err, cloud.ErrAssertionTime) {
 		a.log.Warn("a cloud sign-in was refused: rightly signed and outside its time; check this computer's clock", "now", now.UTC())
 		return cloudsignin.SignedIn{}, cloudsignin.ErrClock

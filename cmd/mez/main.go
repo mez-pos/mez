@@ -8,6 +8,7 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"flag"
 	"fmt"
@@ -473,8 +474,18 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	}
 
 	// The owner, signed in on mez Cloud's word (ADR-323, ADR-324). The key
-	// is the pairing's as it stands when it is asked for.
-	cloudIn, err := cloudsignin.New(cloudsignin.Options{DB: database, Staff: staff, Key: link.cloudKey, Log: log})
+	// is the pairing's as it stands when it is asked for, and the cloud's
+	// next is kept in the file and then in memory (ADR-345).
+	cloudIn, err := cloudsignin.New(cloudsignin.Options{
+		DB: database, Staff: staff, Key: link.cloudKey, Log: log,
+		Learn: func(_ context.Context, held, next ed25519.PublicKey) (bool, error) {
+			kept, err := pairer.LearnKey(held, next)
+			if err == nil && kept {
+				link.learnKey(held, next)
+			}
+			return kept, err
+		},
+	})
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
-**Phase 14, Task 9 - Words** (ADR-340). `deploy.md` has **mez Cloud, or
+**The door, and `mez-cloud`'s first commit** (ADR-344). `cloudkit/` is
+this module's one public package: names for the wire's shapes, the
+assertion, the relay and its keys, handed out to `mez-cloud` and to
+nobody here. The shapes of `/v1/pair` and `/v1/recover/*` are exported
+from `internal/cloud` and used by its own client. `cloudkit_test.go`
+plays the cloud against the venue's real client. `mez-cloud`
+(`I:\mez-cloud`, two commits, private, not pushed) builds against it
+and has its own `CLAUDE.md`, STATE and phase file. Before it, seven of
+the answered questions were built (ADR-343) and none seen in a browser.
+
+Before it, **Phase 14, Task 9 - Words** (ADR-340). `deploy.md` has **mez Cloud, or
 your own relay** before the two sections it sets up, and says mez Cloud
 is not taking venues yet. The landing brief's pricing is two columns
 (₹999 and ₹9,999, the founders' price as a badge). `00-product.md`'s

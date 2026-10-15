@@ -115,6 +115,22 @@ func (l *venueLink) cloudKey() (ed25519.PublicKey, bool) {
 	return key, err == nil
 }
 
+// learnKey puts the cloud's next key in the pairing in use, if that
+// pairing still holds held (ADR-345). The file is cloudpair's, which wrote
+// it first; this is the copy in memory the next sign-in is checked with.
+func (l *venueLink) learnKey(held, next ed25519.PublicKey) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.pairing == nil {
+		return
+	}
+	if key, err := l.pairing.Key(); err != nil || !key.Equal(held) {
+		return
+	}
+	p := l.pairing.WithKey(next)
+	l.pairing = &p
+}
+
 // pairedTo is the pairing as the API shows it: who, where and since when,
 // and neither key. False for a venue that is not paired, or is and does not
 // use it.

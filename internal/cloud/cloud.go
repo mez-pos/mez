@@ -128,6 +128,14 @@ func (p Pairing) Key() (ed25519.PublicKey, error) {
 	return ed25519.PublicKey(raw), nil
 }
 
+// WithKey is the pairing holding key as the cloud's public key in place of
+// the one it holds: the cloud's next, which the venue was led to by links
+// its own key signed (ADR-345). The pairing is otherwise as it was.
+func (p Pairing) WithKey(key ed25519.PublicKey) Pairing {
+	p.PublicKey = base64.StdEncoding.EncodeToString(key)
+	return p
+}
+
 // LogValue is what a log line says of a pairing: who and where, and neither
 // secret.
 func (p Pairing) LogValue() slog.Value {

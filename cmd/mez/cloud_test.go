@@ -486,3 +486,43 @@ func TestOnlyTheTunnelSaysARequestWasRelayed(t *testing.T) {
 		t.Errorf("through the tunnel the handler saw %v", saw)
 	}
 }
+
+// ADR-345: the copy of the pairing a sign-in is checked with takes the
+// cloud's next key only while it still holds the key that led there.
+func TestLearnKey(t *testing.T) {
+	newKey := func(t *testing.T) ed25519.PublicKey {
+		t.Helper()
+		pub, _, err := ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return pub
+	}
+
+	p := pairingTo(t, "https://relay.mezpos.com", writtenKey)
+	held, err := p.Key()
+	if err != nil {
+		t.Fatal(err)
+	}
+	was := p.PublicKey
+	next := newKey(t)
+	link := newVenueLink("", &p, pairingInUse)
+
+	link.learnKey(newKey(t), next)
+	if got, _ := link.cloudKey(); !got.Equal(held) {
+		t.Error("a key nobody held was replaced")
+	}
+	link.learnKey(held, next)
+	if got, ok := link.cloudKey(); !ok || !got.Equal(next) {
+		t.Error("the new key was not taken")
+	}
+	if p.PublicKey != was {
+		t.Error("the pairing the link was made with was changed in place")
+	}
+	if to, ok := link.pairedTo(); !ok || to.Hostname != p.Venue.Hostname || to.Owner != p.Owner.Name {
+		t.Errorf("more than the key changed: %+v", to)
+	}
+
+	// Nothing paired: nothing to learn, and nothing goes wrong.
+	newVenueLink("", nil, notPaired).learnKey(held, next)
+}

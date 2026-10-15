@@ -16,6 +16,11 @@
 // that public id (`GET /api/v1/venue` says it). Whoever can reach this
 // address is that venue's owner, so it listens on this machine only.
 //
+// With -rotated it has rotated its key (ADR-345): it hands out the first
+// key at pairing and signs with a second, presenting the link from one to
+// the other. The venue's first sign-in from away puts the second key in
+// its cloud.json.
+//
 // And it is one account, for "I had mez before": the phone number of
 // -phone, whose one-time code is always -otp and is sent nowhere, owning one
 // venue: the one that last paired with it, or the one of -venue-id until
@@ -64,6 +69,10 @@ type stub struct {
 	keys *relay.Keys
 	pub  ed25519.PublicKey
 	priv ed25519.PrivateKey
+	// signer signs assertions and chain is presented with them: priv and
+	// none, or with -rotated a second key and the link to it.
+	signer ed25519.PrivateKey
+	chain  []string
 
 	relayURL, venue, domain, code, owner string
 	phone, otp                           string
@@ -92,6 +101,7 @@ func main() {
 	flag.StringVar(&s.otp, "otp", "123456", "the one-time code that number is always \"sent\"")
 	flag.StringVar(&s.venueID, "venue-id", "", "the public id of the venue the account lists until one pairs; none lists no venue until then")
 	flag.StringVar(&s.venueName, "venue-name", "Dev Cafe", "that venue's name in the account's list")
+	rotated := flag.Bool("rotated", false, "sign assertions with a second key, handed on from the one given at pairing by a link (ADR-345)")
 	fake := flag.String("bucket-fake", "", "serve a bucket in memory on this address (127.0.0.1:7803, say) and name it, in place of the -bucket flags' one")
 	bucket := flag.String("bucket", "mez-dev", "the bucket a paired venue backs up to and a recovered one restores from")
 	bucketPath := flag.String("bucket-path", "", "the venue's folder in it (default v/<venue>)")
@@ -136,6 +146,18 @@ func main() {
 	if s.pub, s.priv, err = ed25519.GenerateKey(rand.Reader); err != nil {
 		log.Fatal(err)
 	}
+	s.signer = s.priv
+	if *rotated {
+		next, priv, err := ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			log.Fatal(err)
+		}
+		link, err := cloud.SignKeyLink(s.priv, next)
+		if err != nil {
+			log.Fatal(err)
+		}
+		s.signer, s.chain = priv, []string{link}
+	}
 
 	http.HandleFunc("GET /dev/assertion", s.assertion)
 	http.HandleFunc("POST /v1/pair", s.pair)
@@ -152,13 +174,13 @@ func (s *stub) assertion(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	signed, err := cloud.SignAssertion(s.priv, a)
+	signed, err := cloud.SignAssertion(s.signer, a)
 	if err != nil {
 		http.Error(w, err.Error()+"; pass ?venue=<the venue's public id>", http.StatusBadRequest)
 		return
 	}
-	log.Printf("signed an assertion for venue %s, good until %s", a.Audience, a.ExpiresAt.Format(time.TimeOnly))
-	fmt.Fprintln(w, signed)
+	log.Printf("signed an assertion for venue %s, good until %s, with %d links", a.Audience, a.ExpiresAt.Format(time.TimeOnly), len(s.chain))
+	fmt.Fprintln(w, cloud.PresentAssertion(signed, s.chain...))
 }
 
 func (s *stub) pair(w http.ResponseWriter, r *http.Request) {

@@ -128,26 +128,52 @@ func SignAssertion(key ed25519.PrivateKey, a Assertion) (string, error) {
 	return assertionVersion + "." + payload + "." + base64.RawURLEncoding.EncodeToString(sig), nil
 }
 
-// VerifyAssertion checks an assertion as presented: that key signed it, that
-// it is for the venue with this public id and for the owner, and that now is
-// inside the time it is good for. The errors are ErrAssertion and
-// ErrAssertionTime.
+// VerifyAssertion checks an assertion as presented: that it was signed by
+// key, or by the newest key the links presented with it lead to from key
+// (ADR-345); that it is for the venue with this public id and for the
+// owner; and that now is inside the time it is good for. The errors are
+// ErrAssertion and ErrAssertionTime.
+//
+// It returns the key that signed it. One that is not key is the cloud's
+// next, vouched for by key, and the venue keeps it once the sign-in is
+// done.
 //
 // It does not know whether the assertion has been presented before. The
 // caller spends the Nonce, and keeps it until KeepUntil.
-func VerifyAssertion(key ed25519.PublicKey, presented, venuePublicID string, now time.Time) (Assertion, error) {
-	if len(key) != ed25519.PublicKeySize || venuePublicID == "" || len(presented) > maxAssertion {
-		return Assertion{}, ErrAssertion
-	}
-	parts := strings.Split(presented, ".")
-	if len(parts) != 3 || parts[0] != assertionVersion {
-		return Assertion{}, ErrAssertion
+func VerifyAssertion(key ed25519.PublicKey, presented, venuePublicID string, now time.Time) (Assertion, ed25519.PublicKey, error) {
+	if len(key) != ed25519.PublicKeySize || venuePublicID == "" || len(presented) > maxPresented {
+		return Assertion{}, nil, ErrAssertion
 	}
 	// Strictly: the decoder otherwise passes over a line break and over
 	// stray bits in the last character, and one assertion would have many
 	// spellings. Nothing here tells them apart but the nonce, and whatever
 	// is one day keyed on the text as presented should not have to know.
 	if strings.ContainsAny(presented, "\r\n") {
+		return Assertion{}, nil, ErrAssertion
+	}
+	signed, chain, chained := strings.Cut(presented, chainSeparator)
+	signer := key
+	if chained {
+		var err error
+		if signer, err = followChain(key, strings.Split(chain, chainSeparator)); err != nil {
+			return Assertion{}, nil, err
+		}
+	}
+	a, err := verifySigned(signer, signed, venuePublicID, now)
+	if err != nil {
+		return Assertion{}, nil, err
+	}
+	return a, signer, nil
+}
+
+// verifySigned checks an assertion alone, with the one key that must have
+// signed it.
+func verifySigned(key ed25519.PublicKey, presented, venuePublicID string, now time.Time) (Assertion, error) {
+	if len(presented) > maxAssertion {
+		return Assertion{}, ErrAssertion
+	}
+	parts := strings.Split(presented, ".")
+	if len(parts) != 3 || parts[0] != assertionVersion {
 		return Assertion{}, ErrAssertion
 	}
 	sig, err := assertionEncoding.DecodeString(parts[2])

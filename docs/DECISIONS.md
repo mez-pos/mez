@@ -13379,3 +13379,85 @@ mez-cloud imports AGPL code into a private service: that is the copyright
 holder's to do with their own code, and stops being simple the day this
 repository takes a contribution from anyone else without an agreement that
 covers it.
+
+## ADR-345 - A venue learns the cloud's next key from a chain presented with the assertion, each key signed by the one before
+2026-10 · Status: accepted. Phase 14, Task 8b3a (`mez-cloud`'s 8b3, split in two). Builds on ADR-318, ADR-323 and ADR-344.
+Context: `mez-cloud` means to rotate the key that signs assertions (its Task 8b3), and
+ADR-323 named the gap: a paired venue holds one public key, in `cloud.json`, handed
+to it once by the pairing's answer, and could learn another only by pairing again.
+The phase file had pictured the old key kept good for a week, which supposes a way
+for a venue to be told the new one. There was none. A venue never asks the cloud
+anything unless someone types a code (ADR-318), and an assertion arrives through the
+relay when the owner comes in from away. The human chose on 2026-10-15, from three
+ways (a chain carried with the assertion; the venue fetching the cloud's keys over
+HTTPS daily; pairing again as the only rotation), the first.
+Decision:
+  - **A key link** is the next public key signed once by the key before it:
+    `k1.<key>.<signature>`, both base64url with no padding, strictly decoded, 133
+    characters and no other length. The signature is Ed25519 over
+    `mez-cloud-key-v1` and a newline, then the key as written, so neither an
+    assertion's signature nor anything else the key signs can be one.
+    `cloud.SignKeyLink`, exported by cloudkit, makes one; the venue's binary never does.
+  - **Presented with the assertion, in the same header**: `Authorization: Mez-Cloud
+    <assertion>~<link>~<link>`, oldest link first (`cloud.PresentAssertion`). `~` is
+    in neither alphabet and is allowed in the header's token. An assertion with no
+    links is one exactly as before, so nothing already built changes.
+  - **The venue walks the links from the key it holds.** Links before the first one
+    its key signed are passed over: they are for a venue that holds an older key.
+    From that one on, each link must be signed by the key the one before handed on,
+    or the whole is refused: nothing out of order, repeated or foreign in the middle
+    of a walk. The assertion must be signed by the key the walk ends at, and by no
+    earlier one: the cloud signs with its newest key, so a venue has one key to
+    check with and not a list. A link that is not a link at all refuses the whole
+    presentation, as a malformed assertion does. At most `MaxKeyChain`, sixteen,
+    links: a venue further behind than that pairs again.
+  - **`VerifyAssertion` returns the key that signed**, and the venue keeps it once
+    the sign-in service has opened the session: written to `cloud.json` and then
+    put in the copy of the pairing in memory. A sign-in the service refuses (a bad
+    signature, the time, a spent nonce, nobody to be) keeps nothing, even with good
+    links. Not keeping it (a full disk) does not fail the sign-in; the next one is
+    led there again.
+  - **Kept under pairing's lock, by compare and swap.** `cloudpair.LearnKey` reads
+    the file and writes the new key only if the file still holds the key the walk
+    began at. A venue paired again in the meantime keeps its new pairing; a venue
+    unpaired gets no file back. The copy in memory follows the same rule. While a
+    pairing is under way the lock is not waited for (`TryLock`): a pairing holds it
+    through the cloud's answer, the tunnel and the backup, the owner's sign-in from
+    away is waiting, and skipping costs one more walk next time.
+  - **Once learned, the old key signs nothing here.** There is no week: a venue
+    holding the new key walks from it, and a link or assertion signed by the old
+    one is passed over or refused. The week the phase file pictured is the cloud's
+    to keep or not, by which key it signs with, and with a chain it needs none.
+  - **The mirror uses a newer key and keeps none.** It was started with a key from
+    `cloud.json`, and the links come again with every assertion.
+  - **What a review found before the commit, and what was done.** One medium: a
+    sign-in waited on the pairing lock, so a pairing at the till could stall the
+    owner's sign-in from away past the relay's patience, with a session opened and
+    its token never delivered; it no longer waits. The walk passed over a stranger's
+    link anywhere, so one assertion had many spellings and links worked out of
+    order; it passes over nothing once begun. `Learn` could not say it kept nothing,
+    and the log said a key was learned when a race had made it moot; it says so now.
+    Left as written: the API refuses a cloud owner whose role lost its remote
+    permissions after the service has opened the session, so that refusal does keep
+    the key (it was vouched for all the same); the chain is walked again for each
+    venue on a machine with more than one; and a pairing that re-issued the very key
+    a sign-in had just learned from could leave memory one key ahead of the file
+    until the next start, which a cloud that has rotated does not do.
+  - **`pairstub -rotated`** hands out one key at pairing and signs with a second,
+    with the link, so a walk can watch `cloud.json` change on the first sign-in.
+Because: a link is one signature made once, at rotation, by a key the venue already
+trusts, and it travels the one road the cloud already has to the venue, at the moment
+it is needed. Nothing new is asked of the venue, nothing is sent from it, and ADR-318's
+"nothing is sent unless someone types a code" still holds. A venue that is never
+signed into from away never learns the key, and does not need to until it is.
+Cost: rotation answers hygiene, not theft. Whoever steals a key can sign links of
+their own from it, and reach first any venue that still holds it; after a theft, the
+cloud rotates and every venue it does not reach before the thief must pair again,
+and `mez-cloud` cannot tell which those are. The cloud keeps every link it has made
+for as long as a venue might hold the key it starts from, and sends them all: up to
+sixteen links, about two kilobytes on a header the relay allows thirty-two. A venue
+that walks to a key keeps it, so a cloud that rotated by mistake cannot go back by
+re-signing with the old key: it rotates forward again. There is no overlap: from the
+first assertion presented with a link, a venue that took it refuses the key before,
+so `mez-cloud` cannot roll a rotation out to some of its instances and not others. `VerifyAssertion` returns
+three values now, and `mez-cloud`'s one call to it changed with this.

@@ -233,7 +233,7 @@ func TestAnAssertionOpensOneSessionOnAMirror(t *testing.T) {
 	if _, err := c.door.Cloud().SignIn(ctx, fresh); err != nil {
 		t.Fatalf("a new assertion: %v", err)
 	}
-	a, err := cloud.VerifyAssertion(c.public(), fresh, venuePublicID, c.clock.now())
+	a, _, err := cloud.VerifyAssertion(c.public(), fresh, venuePublicID, c.clock.now())
 	if err != nil {
 		t.Fatal(err)
 	}

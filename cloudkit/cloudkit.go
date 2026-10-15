@@ -105,8 +105,25 @@ var (
 	NewAssertion = cloud.NewAssertion
 	// SignAssertion signs it with the cloud's private key.
 	SignAssertion = cloud.SignAssertion
-	// VerifyAssertion is the venue's check, for the cloud's own tests.
+	// VerifyAssertion is the venue's check, for the cloud's own tests. It
+	// returns the key that signed: the one held, or the newest the links
+	// led to from it, which the venue then keeps.
 	VerifyAssertion = cloud.VerifyAssertion
+)
+
+// Rotation (ADR-345). A venue learns the cloud's next key from links: each
+// new public key signed once by the one before it. An assertion is
+// signed with the newest key and presented with the links from the oldest
+// key a venue may still hold, oldest first, at most MaxKeyChain of them.
+const MaxKeyChain = cloud.MaxKeyChain
+
+var (
+	// SignKeyLink is the link that hands on the next key, signed with the
+	// key before it. It is made once, when the key is rotated, and kept.
+	SignKeyLink = cloud.SignKeyLink
+	// PresentAssertion is a signed assertion with its links, as it goes in
+	// "Authorization: <AssertionScheme> <presented>".
+	PresentAssertion = cloud.PresentAssertion
 )
 
 // The relay, to run in the cloud's own process with entitlements read from

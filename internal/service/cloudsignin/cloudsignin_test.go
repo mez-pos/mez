@@ -243,3 +243,136 @@ func TestNewRefusesIncompleteOptions(t *testing.T) {
 		}
 	}
 }
+
+// learned is one call to Learn.
+type learned struct{ held, next ed25519.PublicKey }
+
+// learning rebuilds the world's service with a Learn that keeps the key as
+// a pairing would, and records each call. fail makes it fail instead.
+func (w *world) learning(t *testing.T, fail error) *[]learned {
+	t.Helper()
+	var calls []learned
+	svc, err := New(Options{
+		DB: w.db, Staff: w.staff, Now: func() time.Time { return w.now },
+		Key: func() (ed25519.PublicKey, bool) { return w.key, w.paired },
+		Learn: func(_ context.Context, held, next ed25519.PublicKey) (bool, error) {
+			calls = append(calls, learned{held, next})
+			if fail != nil {
+				return false, fail
+			}
+			if !held.Equal(w.key) {
+				return false, nil
+			}
+			w.key = next
+			return true, nil
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.svc = svc
+	return &calls
+}
+
+// rotate gives the cloud a new key and returns the link that hands it on.
+func (w *world) rotate(t *testing.T) (ed25519.PrivateKey, string) {
+	t.Helper()
+	next, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	link, err := cloud.SignKeyLink(w.priv, next)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return priv, link
+}
+
+// ADR-345: the cloud rotates, and the venue learns its next key from the
+// first sign-in after, and from then on is not led there again.
+func TestARotatedKeyIsLearnedOnceTheSignInIsDone(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	calls := w.learning(t, nil)
+	held := w.key
+
+	// Before the rotation: nothing to learn.
+	if _, err := w.svc.SignIn(ctx, signed(t, w.priv, "ven_PAIRED01", at)); err != nil {
+		t.Fatalf("before the rotation: %v", err)
+	}
+	if len(*calls) != 0 {
+		t.Fatalf("Learn was called %d times with nothing new", len(*calls))
+	}
+
+	newest, link := w.rotate(t)
+	if _, err := w.svc.SignIn(ctx, cloud.PresentAssertion(signed(t, newest, "ven_PAIRED01", at), link)); err != nil {
+		t.Fatalf("after the rotation: %v", err)
+	}
+	if len(*calls) != 1 || !(*calls)[0].held.Equal(held) || !(*calls)[0].next.Equal(newest.Public().(ed25519.PublicKey)) {
+		t.Fatalf("Learn calls = %d, want one from the held key to the newest", len(*calls))
+	}
+
+	// The venue now holds the newest key: it needs no link, and the key it
+	// held before signs nothing here any more.
+	if _, err := w.svc.SignIn(ctx, signed(t, newest, "ven_PAIRED01", at)); err != nil {
+		t.Errorf("the newest key alone: %v", err)
+	}
+	if _, err := w.svc.SignIn(ctx, signed(t, w.priv, "ven_PAIRED01", at)); !errors.Is(err, ErrRefused) {
+		t.Errorf("the key before the rotation: %v, want ErrRefused", err)
+	}
+	if len(*calls) != 1 {
+		t.Errorf("Learn was called %d times, want once", len(*calls))
+	}
+}
+
+// A sign-in that is refused learns nothing, even when its links are good.
+func TestARefusedSignInLearnsNothing(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	calls := w.learning(t, nil)
+	newest, link := w.rotate(t)
+
+	// The other venue has nobody the cloud may be.
+	if _, err := w.svc.SignIn(ctx, cloud.PresentAssertion(signed(t, newest, "ven_OTHER001", at), link)); !errors.Is(err, ErrRefused) {
+		t.Fatalf("a venue with no cloud owner: %v, want ErrRefused", err)
+	}
+	// Out of its time.
+	if _, err := w.svc.SignIn(ctx, cloud.PresentAssertion(signed(t, newest, "ven_PAIRED01", at.Add(-time.Hour)), link)); !errors.Is(err, ErrClock) {
+		t.Fatalf("an old assertion: %v, want ErrClock", err)
+	}
+	if len(*calls) != 0 {
+		t.Errorf("Learn was called %d times by refused sign-ins", len(*calls))
+	}
+
+	// Spent: the first sign-in learns the key and a replay of the same
+	// presentation, links and all, is refused and calls nothing.
+	presented := cloud.PresentAssertion(signed(t, newest, "ven_PAIRED01", at), link)
+	if _, err := w.svc.SignIn(ctx, presented); err != nil {
+		t.Fatalf("the first sign-in: %v", err)
+	}
+	w.key = w.priv.Public().(ed25519.PublicKey) // as if it had not been kept
+	if _, err := w.svc.SignIn(ctx, presented); !errors.Is(err, ErrRefused) {
+		t.Fatalf("a replay: %v, want ErrRefused", err)
+	}
+	if len(*calls) != 1 {
+		t.Errorf("Learn was called %d times, want once, by the first sign-in only", len(*calls))
+	}
+}
+
+// Keeping the key is not part of signing in: a venue that cannot write it
+// lets the owner in, and is led there again next time.
+func TestAKeyThatCannotBeKeptDoesNotStopTheSignIn(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	calls := w.learning(t, errors.New("the disk is full"))
+	newest, link := w.rotate(t)
+
+	for i := 0; i < 2; i++ {
+		if _, err := w.svc.SignIn(ctx, cloud.PresentAssertion(signed(t, newest, "ven_PAIRED01", at), link)); err != nil {
+			t.Fatalf("sign-in %d: %v", i+1, err)
+		}
+	}
+	if len(*calls) != 2 {
+		t.Errorf("Learn was called %d times, want each time", len(*calls))
+	}
+}

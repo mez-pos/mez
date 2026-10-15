@@ -132,12 +132,35 @@ func TestACloudBuiltOnTheDoorPairsAVenue(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the pairing's key: %v", err)
 	}
-	got, err := cloud.VerifyAssertion(held, signed, venueID, now)
+	got, _, err := cloud.VerifyAssertion(held, signed, venueID, now)
 	if err != nil || got.Subject != cloudkit.SubjectOwner || got.Nonce != a.Nonce {
 		t.Errorf("the venue makes %+v, %v of what the cloud signed", got, err)
 	}
-	if _, err := cloud.VerifyAssertion(held, signed, "ven_SOMEONE1", now); err == nil {
+	if _, _, err := cloud.VerifyAssertion(held, signed, "ven_SOMEONE1", now); err == nil {
 		t.Error("an assertion for one venue was accepted by another")
+	}
+
+	// The cloud rotates its key (ADR-345): the new key is handed on by a
+	// link the old one signs, and an assertion the new key signs, presented
+	// with that link, is accepted by a venue that holds only the old one,
+	// which is told the key it should hold from then on.
+	nextPublic, nextPrivate, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	link, err := cloudkit.SignKeyLink(private, nextPublic)
+	if err != nil {
+		t.Fatalf("SignKeyLink: %v", err)
+	}
+	if a, err = cloudkit.NewAssertion(venueID, now, rand.Reader); err != nil {
+		t.Fatal(err)
+	}
+	if signed, err = cloudkit.SignAssertion(nextPrivate, a); err != nil {
+		t.Fatal(err)
+	}
+	got, signer, err := cloud.VerifyAssertion(held, cloudkit.PresentAssertion(signed, link), venueID, now)
+	if err != nil || got.Nonce != a.Nonce || !signer.Equal(nextPublic) {
+		t.Errorf("after a rotation the venue makes %+v, %v, and is told to hold the new key: %v", got, err, signer.Equal(nextPublic))
 	}
 }
 

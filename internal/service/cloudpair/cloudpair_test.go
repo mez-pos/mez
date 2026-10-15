@@ -393,3 +393,110 @@ func TestPairingMakesWhoTheCloudSignsInAs(t *testing.T) {
 		}
 	})
 }
+
+// ADR-345: the cloud's next key replaces the one the kept pairing holds,
+// and only that one. A pairing made since, or none, is left as it is.
+func TestLearnKey(t *testing.T) {
+	newKey := func(t *testing.T) ed25519.PublicKey {
+		t.Helper()
+		pub, _, err := ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return pub
+	}
+
+	t.Run("the pairing holds the key it was led from", func(t *testing.T) {
+		w := newWorld(t)
+		was := w.cloud.give
+		if err := cloud.Save(w.dir, was); err != nil {
+			t.Fatal(err)
+		}
+		held, _ := was.Key()
+		next := newKey(t)
+		kept, err := w.service(t).LearnKey(held, next)
+		if err != nil || !kept {
+			t.Fatalf("LearnKey = %v, %v", kept, err)
+		}
+		now := w.kept(t)
+		if key, _ := now.Key(); !key.Equal(next) {
+			t.Error("the file does not hold the new key")
+		}
+		if want := was.WithKey(next); now.Relay != want.Relay || now.Backup != want.Backup || now.Venue != want.Venue ||
+			now.Owner != want.Owner || !now.PairedAt.Equal(want.PairedAt) || now.CloudURL != want.CloudURL {
+			t.Errorf("more than the key changed: %+v", now)
+		}
+	})
+
+	t.Run("the venue was paired again since", func(t *testing.T) {
+		w := newWorld(t)
+		held, _ := w.cloud.give.Key()
+		again := pairing(t)
+		if err := cloud.Save(w.dir, again); err != nil {
+			t.Fatal(err)
+		}
+		kept, err := w.service(t).LearnKey(held, newKey(t))
+		if err != nil || kept {
+			t.Fatalf("LearnKey = %v, %v; want not kept", kept, err)
+		}
+		if w.kept(t).PublicKey != again.PublicKey {
+			t.Error("the pairing made since lost its key")
+		}
+	})
+
+	t.Run("the venue is not paired", func(t *testing.T) {
+		w := newWorld(t)
+		held, _ := w.cloud.give.Key()
+		kept, err := w.service(t).LearnKey(held, newKey(t))
+		if err != nil || kept {
+			t.Fatalf("LearnKey = %v, %v; want not kept", kept, err)
+		}
+		if p := w.kept(t); p != nil {
+			t.Errorf("a pairing was written where there was none: %v", p)
+		}
+	})
+}
+
+// A sign-in is waiting on LearnKey, so it does not wait for a pairing:
+// it keeps nothing and says so, and the key is learned next time.
+func TestLearnKeyDoesNotWaitForAPairing(t *testing.T) {
+	w := newWorld(t)
+	if err := cloud.Save(w.dir, w.cloud.give); err != nil {
+		t.Fatal(err)
+	}
+	held, _ := w.cloud.give.Key()
+	next, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := w.service(t)
+	s.mu.Lock() // a pairing under way
+	kept, err := s.LearnKey(held, next)
+	s.mu.Unlock()
+	if err != nil || kept {
+		t.Fatalf("LearnKey during a pairing = %v, %v; want not kept", kept, err)
+	}
+	if key, _ := w.kept(t).Key(); !key.Equal(held) {
+		t.Error("the file changed during a pairing")
+	}
+}
+
+// A cloud.json that cannot be read is an error, and is left as it is.
+func TestLearnKeyLeavesAFileItCannotReadAlone(t *testing.T) {
+	w := newWorld(t)
+	path := filepath.Join(w.dir, cloud.File)
+	if err := os.WriteFile(path, []byte("{not json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	held, _ := w.cloud.give.Key()
+	next, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if kept, err := w.service(t).LearnKey(held, next); err == nil || kept {
+		t.Fatalf("LearnKey = %v, %v; want an error", kept, err)
+	}
+	if raw, _ := os.ReadFile(path); string(raw) != "{not json" {
+		t.Errorf("the file was rewritten: %q", raw)
+	}
+}

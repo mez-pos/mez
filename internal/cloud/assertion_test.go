@@ -48,7 +48,7 @@ func TestAssertionRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SignAssertion: %v", err)
 	}
-	got, err := VerifyAssertion(pub, signed, assertedVenue, assertedAt.Add(time.Minute))
+	got, _, err := VerifyAssertion(pub, signed, assertedVenue, assertedAt.Add(time.Minute))
 	if err != nil {
 		t.Fatalf("VerifyAssertion: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestVerifyAssertionTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := VerifyAssertion(pub, signed, assertedVenue, tt.now)
+			_, _, err := VerifyAssertion(pub, signed, assertedVenue, tt.now)
 			if !errors.Is(err, tt.want) {
 				t.Errorf("err = %v, want %v", err, tt.want)
 			}
@@ -145,7 +145,7 @@ func TestVerifyAssertionRefuses(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := VerifyAssertion(pub, tt.presented, tt.venue, assertedAt.Add(time.Second))
+			_, _, err := VerifyAssertion(pub, tt.presented, tt.venue, assertedAt.Add(time.Second))
 			if !errors.Is(err, ErrAssertion) {
 				t.Errorf("err = %v, want ErrAssertion", err)
 			}
@@ -153,7 +153,7 @@ func TestVerifyAssertionRefuses(t *testing.T) {
 	}
 
 	t.Run("a key that is not one", func(t *testing.T) {
-		if _, err := VerifyAssertion(pub[:8], good, assertedVenue, assertedAt); !errors.Is(err, ErrAssertion) {
+		if _, _, err := VerifyAssertion(pub[:8], good, assertedVenue, assertedAt); !errors.Is(err, ErrAssertion) {
 			t.Errorf("err = %v, want ErrAssertion", err)
 		}
 	})

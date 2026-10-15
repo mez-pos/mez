@@ -49,8 +49,15 @@ type Options struct {
 	// false for a venue that is not paired. It is asked each time, so a
 	// venue paired again checks with its new key from that moment.
 	Key func() (ed25519.PublicKey, bool)
-	Now func() time.Time
-	Log *slog.Logger
+	// Learn keeps next in the pairing in place of held: the cloud's next
+	// key, which an assertion's links led to from held (ADR-345), and
+	// reports whether it did. It is called once a sign-in with that
+	// assertion is done, and only when the key that signed it is not held.
+	// It keeps nothing if the pairing no longer holds held. Nil keeps
+	// nothing, and the links are followed from held each time.
+	Learn func(ctx context.Context, held, next ed25519.PublicKey) (bool, error)
+	Now   func() time.Time
+	Log   *slog.Logger
 }
 
 // Service signs the owner in from mez Cloud.
@@ -99,10 +106,11 @@ func (s *Service) SignIn(ctx context.Context, presented string) (SignedIn, error
 	var (
 		venueID int64
 		vouched cloud.Assertion
+		signer  ed25519.PublicKey
 		found   bool
 	)
 	for _, v := range venues {
-		a, err := cloud.VerifyAssertion(key, presented, v.PublicID, now)
+		a, by, err := cloud.VerifyAssertion(key, presented, v.PublicID, now)
 		// For this venue and rightly signed, but out of its time: that is
 		// the answer, whatever the venues after it would say.
 		if errors.Is(err, cloud.ErrAssertionTime) {
@@ -111,7 +119,7 @@ func (s *Service) SignIn(ctx context.Context, presented string) (SignedIn, error
 			return SignedIn{}, ErrClock
 		}
 		if err == nil {
-			venueID, vouched, found = v.ID, a, true
+			venueID, vouched, signer, found = v.ID, a, by, true
 			break
 		}
 	}
@@ -140,5 +148,22 @@ func (s *Service) SignIn(ctx context.Context, presented string) (SignedIn, error
 		}
 		return SignedIn{}, fmt.Errorf("cloudsignin: finding the device of a session just opened: %w", err)
 	}
+	s.learn(ctx, key, signer)
 	return SignedIn{SignedIn: in, Device: dev}, nil
+}
+
+// learn keeps the key that signed an assertion just accepted, when it is
+// not the one held. Not keeping it costs nothing but the links being
+// followed again at the next sign-in, so it never fails one.
+func (s *Service) learn(ctx context.Context, held, signer ed25519.PublicKey) {
+	if s.opts.Learn == nil || signer.Equal(held) {
+		return
+	}
+	kept, err := s.opts.Learn(context.WithoutCancel(ctx), held, signer)
+	switch {
+	case err != nil:
+		s.opts.Log.Warn("mez Cloud's new key could not be kept; it is learned again at the next sign-in from mez Cloud", "error", err)
+	case kept:
+		s.opts.Log.Info("this venue now checks mez Cloud's sign-ins with its new key")
+	}
 }
