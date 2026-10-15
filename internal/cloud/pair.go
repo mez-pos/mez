@@ -145,6 +145,22 @@ type CloudKey struct {
 	PublicKey string `json:"public_key"`
 }
 
+// CheckPairAnswer is the venue's check of an answer to a pairing, whole, as
+// Pair makes it (ADR-347). mez Cloud asks it of an answer before it commits
+// the pairing that made it: the venue checks only after the code is spent,
+// and an answer it refuses would be a code and a key spent on nothing.
+func CheckPairAnswer(a PairAnswer) error {
+	p := Pairing{
+		PairedAt: time.Now().UTC().Truncate(time.Second), CloudURL: DefaultURL,
+		Venue: a.Venue, Relay: a.Relay, Backup: a.Backup, PublicKey: a.Cloud.PublicKey, Owner: a.Owner,
+	}
+	return p.Validate()
+}
+
+// ValidVenuePublicID says whether s could be a venue's public id as a venue
+// sends it at pairing (ADR-347).
+func ValidVenuePublicID(s string) bool { return validVenueID(s) }
+
 // Pair exchanges a code for a pairing. The code is cleaned first, and one
 // that could not be a code is refused here without being sent.
 //

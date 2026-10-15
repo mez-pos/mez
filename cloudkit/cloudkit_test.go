@@ -273,3 +273,45 @@ func TestARelayIsMadeThroughTheDoor(t *testing.T) {
 		t.Errorf("AssertionScheme = %q", cloudkit.AssertionScheme)
 	}
 }
+
+// TestTheCloudChecksItsAnswerAsTheVenueWill (ADR-347): an answer the venue
+// would take passes CheckPairAnswer, and one it would refuse does not, so
+// the cloud can roll a pairing back before the code is spent on it.
+func TestTheCloudChecksItsAnswerAsTheVenueWill(t *testing.T) {
+	keys, err := cloudkit.NewKeys(relaySecret, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	key, err := keys.Issue(rand.Reader, slug, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	public, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	good := cloudkit.PairAnswer{
+		Venue:  cloudkit.Venue{Slug: slug, Hostname: slug + ".mezpos.com"},
+		Relay:  cloudkit.Relay{URL: "https://relay.mezpos.com", Key: key},
+		Backup: bucket("v/" + slug),
+		Cloud:  cloudkit.CloudKey{PublicKey: base64.StdEncoding.EncodeToString(public)},
+		Owner:  cloudkit.Owner{Name: "Priya Menon"},
+	}
+	if err := cloudkit.CheckPairAnswer(good); err != nil {
+		t.Fatalf("a good answer: %v", err)
+	}
+	unnamed, other := good, good
+	unnamed.Owner.Name = ""
+	other.Venue.Slug = "another-cafe"
+	for name, a := range map[string]cloudkit.PairAnswer{"an owner with no name": unnamed, "a key for another venue": other} {
+		if err := cloudkit.CheckPairAnswer(a); err == nil {
+			t.Errorf("%s: taken", name)
+		}
+	}
+
+	for id, want := range map[string]bool{"ven_A1B2C3D4": true, "ven_a1b2": false, "ven_ABC": false, "venue_A1B2": false, "": false} {
+		if got := cloudkit.ValidVenuePublicID(id); got != want {
+			t.Errorf("ValidVenuePublicID(%q) = %v", id, got)
+		}
+	}
+}

@@ -65,6 +65,16 @@ type (
 // code it is sent the same way the venue cleaned it before sending.
 func CleanCode(typed string) (string, error) { return cloud.CleanCode(typed) }
 
+// CheckPairAnswer is the venue's own check of a pairing's answer, whole
+// (ADR-347). An answer it refuses is one the venue would refuse after the
+// code was spent: ask it before committing the pairing.
+func CheckPairAnswer(a PairAnswer) error { return cloud.CheckPairAnswer(a) }
+
+// ValidVenuePublicID says whether a venue's id, as a pairing sends it, could
+// be one: "ven_" and capitals and digits (ADR-347). It is not ValidVenueID,
+// which is a slug on the relay.
+func ValidVenuePublicID(s string) bool { return cloud.ValidVenuePublicID(s) }
+
 // NewCode draws a pairing code from the alphabet CleanCode takes, with no
 // bias (ADR-346).
 func NewCode(entropy io.Reader) (string, error) { return cloud.NewCode(entropy) }

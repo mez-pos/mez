@@ -13478,3 +13478,23 @@ alphabet is drawn.
 Because: the alphabet stays one constant in one place, and the side that draws codes
 and the side that reads them cannot come to disagree.
 Cost: one more function in cloudkit, and cloudkit now imports `io`.
+
+## ADR-347 - The cloud checks its pairing answer with the venue's own check before it commits
+2026-10 · Status: accepted. `mez-cloud`'s Task 4d2. Builds on ADR-318, ADR-344 and ADR-346.
+Context: the venue checks a pairing's answer whole, and only after mez Cloud has spent
+the code, issued a relay key and handed out a bucket's credential (ADR-318). An answer
+the venue refuses (an owner's name it will not show, a key for another slug, a bucket
+with no folder) is a code and a key spent on nothing, and the owner back at their
+phone. The cloud also reads the venue's id from the request, and the rule for what one
+looks like was unexported here.
+Decision: `cloud.CheckPairAnswer(answer)` is the venue's `Pairing.Validate` over an
+answer, with the time and the cloud's address the venue would add; cloudkit hands it
+out, and `mez-cloud` asks it inside the transaction that pairs, rolling back on any
+refusal. `cloud.ValidVenuePublicID` is the venue's rule for its own id ("ven_" and four
+to thirty-two capitals and digits), handed out as `cloudkit.ValidVenuePublicID`, a name
+kept apart from `ValidVenueID`, which is a slug on the relay.
+Because: the two ends of a pairing are built from one definition (ADR-344), and that
+includes what the venue will accept.
+Cost: the cloud's check uses `DefaultURL` for the venue's cloud address, which a venue
+set to another (a test, a stand-in) does not; that part of the check is the venue's
+own setting and not the answer's.
