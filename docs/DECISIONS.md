@@ -13569,3 +13569,30 @@ includes what the venue will take.
 Cost: none here: the venue checks exactly what it checked before, through a function
 of its own name. The key made at Cloudflare before that transaction is not undone by
 the rollback; it stops by itself within the hour (`mez-cloud`'s C-021).
+
+## ADR-350 - A relay's revoked keys can be replaced while it runs, for an operator that revokes as venues pair again
+2026-10 · Status: accepted. Phase 14, `mez-cloud`'s Task 8g2. Builds on ADR-008 and ADR-316.
+Context: `relay.Keys` took its revoked ids once, when it was made, and `cmd/relay` reads
+`RELAY_REVOKED` at start, which is right for a relay whose operator revokes by hand and
+restarts. `mez-cloud` runs the relay in its own process (ADR-312) and revokes a venue's
+key every time the venue pairs again (its C-011): a recovered venue's new computer pairs,
+and the dead one's key is revoked. Made once, its relay would go on taking the old key
+until it restarted, and an old computer still switched on would take the venue's guests
+back from the new one each time it dialled. Making the relay again to change the list
+would drop every venue connected to it.
+Decision:
+  - **`(*Keys).SetRevoked(ids)`** replaces the revoked ids whole, under a lock that every
+    check reads under. A key is checked when a venue dials, so the list as it stands
+    then is the one that counts.
+  - **A venue already connected is not cut** by being listed. Its key was good when it
+    dialled. For the case that matters, the new computer's dial displaces the old one's
+    socket (the newest connection wins) and the old one's next dial is refused. A venue
+    to be turned off whatever its key is the entitlement's to refuse (ADR-316), within
+    the hour.
+  - **Nothing changes for `cmd/relay`**: it reads its list at start and never calls this.
+Because: the list is the one thing about keys that changes, and a relay that cannot be
+told of a change without being made again is one that cannot be run by a service.
+Cost: one read lock on every dial. A key revoked is taken until the operator calls this,
+so how current the list is, is the operator's (`mez-cloud` reads it after every pairing
+and on a short round). A venue listed while connected keeps serving its guests until it
+next dials, which with a dead line or a restart is soon, and with a good one may be days.

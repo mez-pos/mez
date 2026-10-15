@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 )
 
 // keyPrefix says what a venue key is when it turns up in a support ticket or
@@ -37,7 +38,9 @@ var (
 // under the relay's one secret. Whoever holds the secret can issue a key, and
 // the relay can check one, with no table of venues anywhere.
 type Keys struct {
-	secret  []byte
+	secret []byte
+
+	mu      sync.RWMutex
 	revoked map[string]struct{}
 }
 
@@ -47,13 +50,31 @@ func NewKeys(secret string, revoked []string) (*Keys, error) {
 	if len(secret) < MinSecretLen {
 		return nil, fmt.Errorf("relay: secret is %d characters; it must be at least %d", len(secret), MinSecretLen)
 	}
+	return &Keys{secret: []byte(secret), revoked: revokedSet(revoked)}, nil
+}
+
+// SetRevoked replaces the ids refused, whole, for every check from now on
+// (ADR-350). It is for a relay whose operator revokes keys while it runs, as
+// mez Cloud does when a venue pairs again: a relay built once and handed a
+// list once would take the old computer's key until it was built again. A
+// venue already connected stays connected; its key is checked at its next
+// dial.
+func (k *Keys) SetRevoked(revoked []string) {
+	set := revokedSet(revoked)
+	k.mu.Lock()
+	k.revoked = set
+	k.mu.Unlock()
+}
+
+// revokedSet is a list of revoked ids as a set, blanks left out.
+func revokedSet(revoked []string) map[string]struct{} {
 	set := make(map[string]struct{}, len(revoked))
 	for _, r := range revoked {
 		if r = strings.TrimSpace(r); r != "" {
 			set[r] = struct{}{}
 		}
 	}
-	return &Keys{secret: []byte(secret), revoked: set}, nil
+	return set
 }
 
 // scopeRemote is the one scope a key can carry beyond guests: the venue's
@@ -134,10 +155,11 @@ func (k *Keys) Check(key string) (Key, error) {
 	}
 	// Checked after the mac, so the answer never says which ids are listed
 	// to someone who cannot sign.
-	if _, gone := k.revoked[venueID]; gone {
-		return Key{}, ErrKeyRevoked
-	}
-	if _, gone := k.revoked[keyID]; gone {
+	k.mu.RLock()
+	_, venueGone := k.revoked[venueID]
+	_, keyGone := k.revoked[keyID]
+	k.mu.RUnlock()
+	if venueGone || keyGone {
 		return Key{}, ErrKeyRevoked
 	}
 	return Key{VenueID: venueID, KeyID: keyID, Remote: scope == scopeRemote}, nil

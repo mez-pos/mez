@@ -250,3 +250,54 @@ func TestBucket(t *testing.T) {
 		t.Error("a backwards clock produced a token")
 	}
 }
+
+// TestSetRevokedReplacesTheList (ADR-350): a key revoked while the relay
+// runs is refused at its next check, a revocation lifted is taken again,
+// and checks made while the list is replaced see one list or the other.
+func TestSetRevokedReplacesTheList(t *testing.T) {
+	keys := mustKeys(t, testSecret)
+	old := mustIssue(t, keys, "cafe")
+	_, oldID, err := keys.Verify(old)
+	if err != nil {
+		t.Fatalf("Verify: %v", err)
+	}
+
+	keys.SetRevoked([]string{" " + oldID + " ", ""})
+	if _, _, err := keys.Verify(old); !errors.Is(err, ErrKeyRevoked) {
+		t.Errorf("after revoking: Verify = %v, want ErrKeyRevoked", err)
+	}
+	newer := mustIssue(t, keys, "cafe")
+	if _, _, err := keys.Verify(newer); err != nil {
+		t.Errorf("the venue's newer key: Verify = %v", err)
+	}
+
+	keys.SetRevoked([]string{"cafe"})
+	for _, key := range []string{old, newer} {
+		if _, _, err := keys.Verify(key); !errors.Is(err, ErrKeyRevoked) {
+			t.Errorf("with the venue listed: Verify = %v, want ErrKeyRevoked", err)
+		}
+	}
+
+	keys.SetRevoked(nil)
+	if _, _, err := keys.Verify(old); err != nil {
+		t.Errorf("after the list was emptied: Verify = %v", err)
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for i := range 200 {
+			if i%2 == 0 {
+				keys.SetRevoked([]string{oldID})
+			} else {
+				keys.SetRevoked(nil)
+			}
+		}
+	}()
+	for range 200 {
+		if _, _, err := keys.Verify(old); err != nil && !errors.Is(err, ErrKeyRevoked) {
+			t.Fatalf("a check while the list was replaced: %v", err)
+		}
+	}
+	<-done
+}
