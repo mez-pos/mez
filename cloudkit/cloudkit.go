@@ -203,5 +203,13 @@ var (
 	NoEnd = relay.NoEnd
 )
 
+// The reasons a relay gives of itself (ADR-316), which a venue knows the
+// words for: a date that has passed with no reason given, and a venue
+// nobody has turned on.
+const (
+	ReasonExpired   = relay.ReasonExpired
+	ReasonNotListed = relay.ReasonNotListed
+)
+
 // MinRelaySecretLen is the least a relay's signing secret may be.
 const MinRelaySecretLen = relay.MinSecretLen
