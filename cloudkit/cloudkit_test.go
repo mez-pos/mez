@@ -247,6 +247,29 @@ func TestACloudBuiltOnTheDoorHandsAVenueBack(t *testing.T) {
 	}
 }
 
+// TestTheCloudChecksAHandOverAsTheVenueWill: the venue's check of a grant's
+// answer, handed out so the cloud asks it before spending the owner's link
+// (ADR-349).
+func TestTheCloudChecksAHandOverAsTheVenueWill(t *testing.T) {
+	until := time.Now().Add(time.Hour).UTC()
+	good := cloudkit.GrantAnswer{Backup: bucket("v/" + slug), PairingCode: "ABCD2345", ExpiresAt: until}
+	if err := cloudkit.CheckGrantAnswer(good); err != nil {
+		t.Fatalf("a good hand-over is refused: %v", err)
+	}
+	for name, spoil := range map[string]func(*cloudkit.GrantAnswer){
+		"no folder":           func(a *cloudkit.GrantAnswer) { a.Backup.Path = "" },
+		"no secret":           func(a *cloudkit.GrantAnswer) { a.Backup.SecretAccessKey = "" },
+		"a code in lowercase": func(a *cloudkit.GrantAnswer) { a.PairingCode = "abcd2345" },
+		"no end":              func(a *cloudkit.GrantAnswer) { a.ExpiresAt = time.Time{} },
+	} {
+		a := good
+		spoil(&a)
+		if err := cloudkit.CheckGrantAnswer(a); !errors.Is(err, cloud.ErrInvalid) {
+			t.Errorf("%s: err = %v, want ErrInvalid", name, err)
+		}
+	}
+}
+
 // carriedUntil is a cloud's entitlements: one venue, to a date.
 type carriedUntil struct {
 	venue string

@@ -13551,3 +13551,21 @@ again by hand. The date is shown in the computer's zone, which a server in a con
 has as UTC. A date in the past, or a year away, is shown as the cloud sent it: the
 new machine's clock is not the judge (ADR-332). The address shown is held to what a
 name is held to (one line, nothing unseen), not to the shape of an address.
+
+## ADR-349 - The cloud checks a hand-over's answer with the venue's own check before it commits
+2026-10 · Status: accepted. `mez-cloud`'s Task 7e4b. Builds on ADR-332, ADR-344 and ADR-347.
+Context: a hand-over spends what an owner cannot get back in a minute: the link they
+opened in their mail (`mez-cloud`'s C-020), a key that reads the venue's bucket for an
+hour, and a pairing code that ends the one open before it. The venue checks the
+answer whole (ADR-332) only after all of that is spent. An answer it refuses (a
+bucket with no folder, a code not written as one is sent) would send the owner back to
+their phone and their inbox for a fault of the cloud's. ADR-347 met the same thing at
+pairing.
+Decision: the checks `Recovery.Grant` made of a `GrantAnswer` are `cloud.CheckGrantAnswer`,
+which `Grant` calls and cloudkit hands out as `cloudkit.CheckGrantAnswer`. `mez-cloud`
+asks it inside the transaction that spends the link, and rolls back on a refusal.
+Because: the two ends of a hand-over are built from one definition (ADR-344), and that
+includes what the venue will take.
+Cost: none here: the venue checks exactly what it checked before, through a function
+of its own name. The key made at Cloudflare before that transaction is not undone by
+the rollback; it stops by itself within the hour (`mez-cloud`'s C-021).

@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**`mez-cloud`'s Task 7e3a - the shape, here** (ADR-348). A grant now
+has two answers that are neither a hand-over nor a refusal: `202` with
+`{"link": {"email", "sent_at"}}` while the link sent to the account's
+email is unopened, and `423` with `{"hold": {"reason", "until"}}` while
+recovery is held (`email_changed` for a week, `no_email` until one is
+set). The client reads them as `*cloud.LinkSent` and `*cloud.Held`,
+checked whole; cloudkit hands out the statuses, reasons and bodies, and
+the order the cloud decides in (410, hold, link); the restore route says
+them as `recover_awaiting_link` and `recover_held`, 409, in words.
+`pairstub -link-after 30s` and `pairstub -held` walk each (walked by
+curl, not in the wizard).
+
 **`mez-cloud`'s Task 8b3a - the chain, here** (ADR-345). The cloud's
 signing key can now be rotated without pairing again, as the human chose
 on 2026-10-15: a key link (`k1.<key>.<signature>`) is the next public key

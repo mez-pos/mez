@@ -19,23 +19,20 @@ in the "Still owed" list below.
 
 ## Last completed task
 
-**`mez-cloud`'s Task 7e3a - the shape, here** (ADR-348). A grant now
-has two answers that are neither a hand-over nor a refusal: `202` with
-`{"link": {"email", "sent_at"}}` while the link sent to the account's
-email is unopened, and `423` with `{"hold": {"reason", "until"}}` while
-recovery is held (`email_changed` for a week, `no_email` until one is
-set). The client reads them as `*cloud.LinkSent` and `*cloud.Held`,
-checked whole; cloudkit hands out the statuses, reasons and bodies, and
-the order the cloud decides in (410, hold, link); the restore route says
-them as `recover_awaiting_link` and `recover_held`, 409, in words.
-`pairstub -link-after 30s` and `pairstub -held` walk each (walked by
-curl, not in the wizard).
+**`mez-cloud`'s Task 7e4b, its part here** (ADR-349). The checks the
+venue's client made of a hand-over's answer are `cloud.CheckGrantAnswer`,
+handed out as `cloudkit.CheckGrantAnswer`, so that the cloud asks it
+before it spends the owner's opened link and commits the hand-over, as
+it does at pairing (ADR-347). With it `mez-cloud`'s Task 7e is done
+(its C-022): a hand-over gives a key that reads for an hour and a
+pairing code for the venue's id alone. Before it, 7e3a (ADR-348): the
+grant's waiting (202) and held (423) answers.
 
 ## Next task
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 7e3b, the link and the gate on the cloud's side). This repository is touched again when:
+(Task 8g there, with 7e done). This repository is touched again when:
 - `mez-cloud` needs a shape cloudkit does not have: add it here first,
   with an ADR, then use it there (its `CLAUDE.md` says so);
 - Task 8e there begins, by moving the mirror out of `cmd/mez`'s

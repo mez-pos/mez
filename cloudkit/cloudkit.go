@@ -103,6 +103,11 @@ type (
 	AccountVenue = cloud.AccountVenue
 )
 
+// CheckGrantAnswer is the venue's own check of a hand-over's answer, whole
+// (ADR-349). Ask it before committing the hand-over: an answer it refuses is
+// one the venue would refuse after the owner's link was spent.
+func CheckGrantAnswer(a GrantAnswer) error { return cloud.CheckGrantAnswer(a) }
+
 // A grant that is neither given nor refused (ADR-348): StatusAwaitingLink
 // with a GrantWaiting while the link sent to the account's email is
 // unopened, and StatusHeld with a GrantHeld, beside the error envelope,

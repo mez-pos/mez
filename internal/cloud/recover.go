@@ -511,36 +511,47 @@ func (r *Recovery) Grant(ctx context.Context, venueID string) (Grant, error) {
 	if err := decodeAnswer(raw, &a); err != nil {
 		return Grant{}, err
 	}
+	if err := CheckGrantAnswer(a); err != nil {
+		return Grant{}, err
+	}
+	return Grant{Venue: venue, Backup: a.Backup, PairingCode: a.PairingCode, ExpiresAt: a.ExpiresAt.UTC()}, nil
+}
+
+// CheckGrantAnswer is the venue's own check of a hand-over's answer, whole
+// (ADR-349). An answer it refuses is ErrInvalid, and is one the venue would
+// refuse after the cloud had spent the owner's link and made a key: the
+// cloud asks it before it commits the hand-over.
+func CheckGrantAnswer(a GrantAnswer) error {
 	// What is wrong with it is not repeated: the words would be the cloud's,
 	// as long as it cared to make them.
 	if err := (backup.Config{Kind: backup.KindS3, S3: a.Backup}).Validate(""); err != nil {
-		return Grant{}, invalid("the backup's bucket is not one a restore could read")
+		return invalid("the backup's bucket is not one a restore could read")
 	}
 	for _, field := range []string{a.Backup.Bucket, a.Backup.Path, a.Backup.Region, a.Backup.Endpoint, a.Backup.AccessKeyID, a.Backup.SecretAccessKey} {
 		if strings.ContainsFunc(field, hidden) {
-			return Grant{}, invalid("the backup's bucket is not one a restore could read")
+			return invalid("the backup's bucket is not one a restore could read")
 		}
 	}
 	// A bucket an owner names may be a box on their own network, in the
 	// clear. One the cloud names is the cloud's, and a key is sent to it.
 	if a.Backup.Endpoint != "" {
 		if err := secureURL(a.Backup.Endpoint); err != nil {
-			return Grant{}, invalid("the backup's bucket is not at an address a key may be sent to")
+			return invalid("the backup's bucket is not at an address a key may be sent to")
 		}
 	}
 	// As at pairing: the key is for this venue's folder, so there must be
 	// one. The default would be every venue's.
 	if a.Backup.Path == "" {
-		return Grant{}, invalid("the backup's bucket has no folder for this venue")
+		return invalid("the backup's bucket has no folder for this venue")
 	}
 	code, err := CleanCode(a.PairingCode)
 	if err != nil || code != a.PairingCode {
-		return Grant{}, invalid("mez Cloud's answer holds no pairing code")
+		return invalid("mez Cloud's answer holds no pairing code")
 	}
 	if a.ExpiresAt.IsZero() {
-		return Grant{}, invalid("mez Cloud's answer does not say how long the key reads for")
+		return invalid("mez Cloud's answer does not say how long the key reads for")
 	}
-	return Grant{Venue: venue, Backup: a.Backup, PairingCode: code, ExpiresAt: a.ExpiresAt.UTC()}, nil
+	return nil
 }
 
 // readWaiting is a grant waiting on the link, read from its body. An
