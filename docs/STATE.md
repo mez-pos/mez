@@ -34,7 +34,7 @@ assertion through the door alone. The health check's mapping is
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 8e4 there, the venue page, which may want a base path in mez's bundle; 7e, 8g, 8c, 8d and 8e1 to 8e3 are done). This repository is touched again when:
+(Task 8e4b there, the mirror at the venue's hostname; 7e, 8g, 8c, 8d, 8e1 to 8e3 and 8e4a are done). This repository is touched again when:
 - **a change to `web/shared`** is a change to `mez-cloud`'s account area too:
   its bundle reads mez's tokens, preset, fonts, `ui/Button`, `ui/Card`,
   `ui/Logo`, `ui/Money`, `ui/StatusChip` (its `cloud` vocabulary, ADR-351),
@@ -42,10 +42,10 @@ in `mez-cloud`: open that repository and follow its `docs/STATE.md`
   from this checkout (its C-031), and its build breaks if they do;
 - `mez-cloud` needs a shape cloudkit does not have: add it here first,
   with an ADR, then use it there (its `CLAUDE.md` says so);
-- 8e4 there settles where the back office is served from on the
-  cloud's venue page, which may want a base path in mez's bundle (its
-  phase file says so); and the cloud's build must embed mez's bundles
-  (`-tags frontend`) for a mirror there to show a screen (ADR-353);
+- the back office is handed a session in its fragment (ADR-355): a
+  change to `web/shared/auth` is a change to what the cloud hands it;
+  and the cloud's build must embed mez's bundles (`-tags frontend`)
+  for a mirror there to show a screen (ADR-353);
 - 7e there is built: the wizard's wait for the email link (ADR-342):
   ADR-348 has the shape, and until then the wizard shows its words as a
   refusal and the owner chooses the venue again by hand;

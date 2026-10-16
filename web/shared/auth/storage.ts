@@ -18,6 +18,20 @@ export interface StoredDevice {
   readonly device: DeviceResponse;
 }
 
+/**
+ * A session mez Cloud handed this tab (ADR-355): one token for the device and
+ * the session both (ADR-324), and where to go once it ends. The device and
+ * who is signed in are filled in once the server has said them.
+ */
+export interface StoredCloud {
+  readonly token: string;
+  readonly back: string | null;
+  readonly device?: DeviceResponse;
+  readonly staff?: StaffResponse;
+  readonly permissions?: readonly Permission[];
+  readonly expiresAt?: string;
+}
+
 export interface StoredStaff {
   readonly token: string;
   readonly staff: StaffResponse;
@@ -42,6 +56,10 @@ export interface CredentialStore {
   saveStaff(value: StoredStaff): void;
   forgetDevice(): void;
   forgetStaff(): void;
+  /** The session mez Cloud handed this tab, if one is in use. */
+  cloud(): StoredCloud | null;
+  /** Keeps a handed session for this tab, in place of whatever else is used, until it ends. */
+  takeCloud(value: { readonly token: string; readonly back: string | null }): void;
 }
 
 /**
@@ -63,20 +81,49 @@ export function credentialStore(app: AppKind, durable: KeyValue | null, session:
   const sharing = () => shared !== null && read(durable, own.device, isStoredDevice) === null && read(durable, shared.device, isStoredDevice) !== null;
   /** The keys in use: the shared device's while sharing, else the app's own. */
   const slot = () => (sharing() && shared ? shared : own);
+  // A session mez Cloud handed: this tab's alone, so it ends with the tab and
+  // never takes the place of a pairing this browser keeps (ADR-355). While it
+  // is here it is the device and the session both.
+  const cloudKey = `mez.${app}.cloud`;
+  const cloud = () => read(session, cloudKey, isStoredCloud);
   return {
-    device: () => read(durable, own.device, isStoredDevice) ?? (shared ? read(durable, shared.device, isStoredDevice) : null),
-    staff: () => read(session, slot().staff, isStoredStaff),
-    // Pairing is the app's own, whatever it was sharing before.
-    saveDevice: (value) => write(durable, own.device, value),
-    refreshDevice: (value) => write(durable, slot().device, value),
-    saveStaff: (value) => write(session, slot().staff, value),
+    device: () => {
+      const c = cloud();
+      if (c) return c.device ? { token: c.token, device: c.device } : null;
+      return read(durable, own.device, isStoredDevice) ?? (shared ? read(durable, shared.device, isStoredDevice) : null);
+    },
+    staff: () => {
+      const c = cloud();
+      if (c) return c.staff && c.expiresAt ? { token: c.token, staff: c.staff, permissions: c.permissions ?? [], expiresAt: c.expiresAt } : null;
+      return read(session, slot().staff, isStoredStaff);
+    },
+    // Pairing is the app's own, whatever it was sharing or was handed before.
+    saveDevice: (value) => {
+      remove(session, cloudKey);
+      write(durable, own.device, value);
+    },
+    refreshDevice: (value) => {
+      const c = cloud();
+      if (c) return write(session, cloudKey, { ...c, device: value.device });
+      write(durable, slot().device, value);
+    },
+    saveStaff: (value) => {
+      const c = cloud();
+      // The handed token is the session's; who it is and until when are what change.
+      if (c) return write(session, cloudKey, { ...c, staff: value.staff, permissions: value.permissions, expiresAt: value.expiresAt });
+      write(session, slot().staff, value);
+    },
     forgetDevice: () => {
+      if (cloud()) return remove(session, cloudKey);
       const keys = slot();
       remove(durable, keys.device);
       // The session went with the device it belonged to, whichever is asked for next.
       remove(session, keys.staff);
     },
-    forgetStaff: () => remove(session, slot().staff),
+    // One token is both: a handed session that ends takes its device with it.
+    forgetStaff: () => (cloud() ? remove(session, cloudKey) : remove(session, slot().staff)),
+    cloud,
+    takeCloud: (value) => write(session, cloudKey, { token: value.token, back: value.back }),
   };
 }
 
@@ -127,6 +174,15 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "obj
 
 function isStoredDevice(v: unknown): v is StoredDevice {
   return isObject(v) && typeof v.token === "string" && isObject(v.device) && typeof v.device.id === "string" && typeof v.device.name === "string";
+}
+
+function isStoredCloud(v: unknown): v is StoredCloud {
+  if (!isObject(v) || typeof v.token !== "string" || !(v.back === null || typeof v.back === "string")) return false;
+  if (v.device !== undefined && !(isObject(v.device) && typeof v.device.id === "string" && typeof v.device.name === "string")) return false;
+  if (v.staff !== undefined && !(isObject(v.staff) && typeof v.staff.id === "string" && typeof v.staff.role === "string")) return false;
+  const perms = v.permissions;
+  if (perms !== undefined && !(Array.isArray(perms) && perms.every((p) => typeof p === "string"))) return false;
+  return v.expiresAt === undefined || typeof v.expiresAt === "string";
 }
 
 function isStoredStaff(v: unknown): v is StoredStaff {

@@ -8,6 +8,7 @@
 import { useState, type FormEvent } from "react";
 import { Redirect } from "wouter";
 import { formatPairingCode, isCompletePairingCode } from "../auth/format";
+import type { AuthStatus } from "../auth/auth-store";
 import { pairingError } from "../auth/messages";
 import type { AppKind } from "../auth/storage";
 import { useAuth, useAuthStore } from "../auth/use-auth";
@@ -18,10 +19,16 @@ import { Splash } from "./Splash";
 
 const appNames: Record<AppKind, string> = { terminal: "terminal", backoffice: "back office", kitchen: "kitchen display" };
 
-const notices = {
+type Notice = NonNullable<Extract<AuthStatus, { kind: "unpaired" }>["notice"]>;
+
+const notices: Record<Notice, string> = {
   revoked: "This device was unpaired from the back office. Pair it again to keep using it.",
   unrecognised: "The server no longer recognises this device. Pair it again to keep using it.",
-} as const;
+  // A session mez Cloud handed this tab (ADR-355): opened again from there,
+  // not by pairing, which is for the venue's own devices.
+  cloud_ended: "The back office you opened from mez Cloud has closed. Open it again from mez Cloud.",
+  cloud_signed_out: "You signed out of the back office you opened from mez Cloud.",
+};
 
 export function PairScreen({ app }: { app: AppKind }) {
   const setup = useSetupStatus();
@@ -79,6 +86,7 @@ function PairForm({ app }: { app: AppKind }) {
   const [busy, setBusy] = useState(false);
   const host = window.location.host;
   const notice = status.kind === "unpaired" && status.notice ? notices[status.notice] : null;
+  const back = status.kind === "unpaired" ? (status.back ?? null) : null;
   const ready = isCompletePairingCode(code) && !busy;
 
   const submit = async (event: FormEvent) => {
@@ -109,6 +117,14 @@ function PairForm({ app }: { app: AppKind }) {
         {notice && (
           <p role="status" className="rounded border border-chip-warning-border bg-chip-warning-bg px-4 py-3 text-base text-chip-warning-fg">
             {notice}
+            {back && (
+              <>
+                {" "}
+                <a href={back} className="font-semibold underline underline-offset-2">
+                  Back to mez Cloud
+                </a>
+              </>
+            )}
           </p>
         )}
 

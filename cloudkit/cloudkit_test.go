@@ -359,3 +359,24 @@ func TestTheCloudChecksItsAnswerAsTheVenueWill(t *testing.T) {
 		}
 	}
 }
+
+// TestTheBackOfficesPathsAreTheRelays: the cloud routes a venue's hostname
+// by the relay's own judgement, decoded and cleaned as the venue routes.
+func TestTheBackOfficesPathsAreTheRelays(t *testing.T) {
+	for path, staff := range map[string]bool{
+		"/backoffice/":            true,
+		"/backoffice":             true,
+		"/api/v1/reports/daily":   true,
+		"/%62ackoffice/":          true,
+		"/order/../api/v1/people": true,
+		"/BACKOFFICE/menu":        true,
+		"/order/t/T3":             false,
+		"/apiary":                 false,
+		"/":                       false,
+		"/assets/app.js":          false,
+	} {
+		if got := cloudkit.StaffPath(path); got != staff {
+			t.Errorf("StaffPath(%q) = %v, want %v", path, got, staff)
+		}
+	}
+}

@@ -213,6 +213,11 @@ func (s *Server) forward(w http.ResponseWriter, r *http.Request, venueID, prefix
 // lives under /order/ and asks for nothing outside it (ADR-202).
 var staffPrefixes = []string{"/backoffice", "/api"}
 
+// StaffPath is staffOnly for whoever serves a venue's hostname beside the
+// relay, so that what it gives the back office and what the relay keeps
+// from guests are the one judgement (ADR-355).
+func StaffPath(rawPath string) bool { return staffOnly(rawPath) }
+
 // staffOnly reports whether rawPath, as the guest sent it (escaped, with the
 // venue prefix already taken off), is one of the staff's. The prefix must be
 // the whole first segment: "/apiary" is not "/api".

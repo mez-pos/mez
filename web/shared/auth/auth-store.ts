@@ -1,7 +1,8 @@
 // Who this device is and who is signed in on it, as one state machine.
 //
 //   checking   -> reading storage and asking the server what it still accepts
-//   unpaired   -> no device token, or the server no longer accepts it
+//   unpaired   -> no device token, or the server no longer accepts it; or a
+//                 session mez Cloud handed this tab has ended (ADR-355)
 //   locked     -> a paired device with nobody signed in
 //   no_venue   -> a paired device whose server has no venue yet: it waits,
 //                 and keeps what it holds (ADR-339)
@@ -17,7 +18,12 @@ import type { AppKind, CredentialStore, StoredDevice } from "./storage";
 
 export type AuthStatus =
   | { readonly kind: "checking" }
-  | { readonly kind: "unpaired"; readonly notice: "revoked" | "unrecognised" | null }
+  | {
+      readonly kind: "unpaired";
+      readonly notice: "revoked" | "unrecognised" | "cloud_ended" | "cloud_signed_out" | null;
+      /** Where to open the back office again, for a session mez Cloud handed. */
+      readonly back?: string | null;
+    }
   | { readonly kind: "locked"; readonly device: DeviceResponse; readonly notice: "expired" | "signed_out" | null }
   | { readonly kind: "no_venue"; readonly device: DeviceResponse }
   | {
@@ -51,6 +57,13 @@ type Listener = () => void;
 
 export class AuthStore {
   private status: AuthStatus = { kind: "checking" };
+  /**
+   * This tab ran on a session mez Cloud handed. Once that ends, nothing may
+   * fall back to, or forget, the pairing the browser keeps: a refusal still
+   * in flight for the handed token is that session's, not the pairing's
+   * (ADR-355). Pairing in the tab clears it.
+   */
+  private handed = false;
   private booting: Promise<void> | null = null;
   private readonly listeners = new Set<Listener>();
   readonly credentials: Credentials;
@@ -64,8 +77,10 @@ export class AuthStore {
     onResponse?: (response: Response) => void,
   ) {
     this.credentials = {
-      deviceToken: () => this.store.device()?.token ?? null,
-      staffToken: () => this.store.staff()?.token ?? null,
+      // A handed session's token is presented as both from the start, before
+      // the server has said which device and person it is (ADR-324).
+      deviceToken: () => this.store.cloud()?.token ?? (this.handed ? null : (this.store.device()?.token ?? null)),
+      staffToken: () => this.store.cloud()?.token ?? (this.handed ? null : (this.store.staff()?.token ?? null)),
     };
     this.api = createApiClient({
       credentials: this.credentials,
@@ -98,6 +113,7 @@ export class AuthStore {
   }
 
   private async checkStored(): Promise<void> {
+    if (this.store.cloud()) return this.checkCloud();
     const stored = this.store.device();
     if (!stored) return this.set({ kind: "unpaired", notice: null });
 
@@ -126,6 +142,52 @@ export class AuthStore {
     });
   }
 
+  /**
+   * A session mez Cloud handed this tab: the server says which device and
+   * who it is, or that it has ended. One that was never confirmed and cannot
+   * be is not trusted, as a stored pairing would be: it was handed a moment
+   * ago, by a server that answered.
+   */
+  private async checkCloud(): Promise<void> {
+    const handed = this.store.cloud();
+    if (!handed) return;
+    this.handed = true;
+    const device = await this.check(() => this.api.get<DeviceResponse>("/api/v1/devices/me"), handed.device ?? null);
+    // A refusal credentialFailed did not hear of is the end of it too.
+    if (device === "refused") return this.endUnlessMoved();
+    if (!device) return this.cloudEnded("cloud_ended");
+    this.store.refreshDevice({ token: handed.token, device });
+
+    const session = await this.check(() => this.api.get<SessionResponse>("/api/v1/sessions/current"), null);
+    if (session === "refused") return this.endUnlessMoved();
+    const staff = session?.staff ?? handed.staff;
+    const expiresAt = session?.expires_at ?? handed.expiresAt;
+    if (!staff || !expiresAt) return this.cloudEnded("cloud_ended");
+    const permissions = session?.permissions ?? handed.permissions ?? [];
+    this.store.saveStaff({ token: handed.token, staff, permissions, expiresAt });
+    this.set({ kind: "signed_in", device, staff, permissions, expiresAt });
+  }
+
+  private endUnlessMoved(): void {
+    if (this.status.kind === "checking" && this.store.cloud()) this.cloudEnded("cloud_ended");
+  }
+
+  /**
+   * A handed session over: forgotten, and the way back kept for the screen.
+   * Once, whatever else reports its end after: the first word stands. The
+   * way back is offered only for a session the server once confirmed, so a
+   * link with a made-up token cannot put one on this screen.
+   */
+  private cloudEnded(notice: "cloud_ended" | "cloud_signed_out"): void {
+    this.handed = true;
+    const s = this.status;
+    if (s.kind === "unpaired" && (s.notice === "cloud_ended" || s.notice === "cloud_signed_out")) return;
+    const handed = this.store.cloud();
+    const back = handed?.device ? handed.back : null;
+    if (handed) this.store.forgetDevice();
+    this.set({ kind: "unpaired", notice, back });
+  }
+
   /** Redeem a pairing code. Throws ApiError or WrongDeviceKind for the screen to explain. */
   async pair(code: string): Promise<void> {
     const body: PairRequest = { code };
@@ -135,6 +197,7 @@ export class AuthStore {
 
     const stored: StoredDevice = { token: paired.token, device: paired.device };
     this.store.saveDevice(stored);
+    this.handed = false;
     this.store.forgetStaff();
     this.set({ kind: "locked", device: paired.device, notice: null });
   }
@@ -152,19 +215,23 @@ export class AuthStore {
 
   /** Lock the screen. Ends the session on the server if it can; locks either way. */
   async signOut(): Promise<void> {
-    const device = this.pairedDevice();
+    const handed = this.store.cloud() !== null;
+    const device = handed ? null : this.pairedDevice();
     try {
       await this.api.del("/api/v1/sessions/current");
     } catch {
       // Unreachable or already gone. Forgetting the token here is what locks
       // this screen, and the server lets the session expire on its own.
     }
+    // A handed session is the device too: there is no lock screen to go to.
+    if (!device) return this.cloudEnded("cloud_signed_out");
     this.store.forgetStaff();
     this.set({ kind: "locked", device, notice: "signed_out" });
   }
 
   /** From any request, and from the realtime stream: the server's word on our credentials. */
   credentialFailed(code: CredentialFailure): void {
+    if (this.store.cloud() || this.handed) return this.cloudEnded("cloud_ended");
     if (code === "sign_in_required") {
       this.store.forgetStaff();
       if (this.status.kind === "signed_in") this.set({ kind: "locked", device: this.status.device, notice: "expired" });

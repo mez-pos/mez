@@ -211,6 +211,11 @@ var (
 	ReservedVenueID = relay.Reserved
 	// NoEnd is the Until of a venue carried with no date set.
 	NoEnd = relay.NoEnd
+	// StaffPath says whether a path, escaped as a request carries it, is
+	// the back office's or its API's, as the relay judges it: what a venue
+	// keeps from guests, and what the cloud serves from a venue's mirror at
+	// the venue's hostname while the venue is not connected (ADR-355).
+	StaffPath = relay.StaffPath
 )
 
 // The reasons a relay gives of itself (ADR-316), which a venue knows the

@@ -13724,3 +13724,78 @@ Decision:
 Because: the cloud's choice between the venue and its mirror is the relay's knowledge,
 and the relay is in its process.
 Cost: an exported method on the relay that the relay's own binary does not call.
+
+## ADR-355 - The back office from mez Cloud is always at the venue's own hostname, and takes the session the cloud hands it in its address's fragment, for the tab alone
+2026-10 · Status: accepted. Phase 14, `mez-cloud`'s Task 8e4a. Builds on ADR-148, ADR-203, ADR-306, ADR-324, ADR-326, ADR-353 and ADR-354.
+Context: `mez-cloud`'s venue page opens an owner's back office: at the venue through the
+relay while it is connected (its C-041), at the venue's mirror while it is not (its
+C-040). Both sign-ins happen in the cloud's process, and what comes back is a token that
+stands for the device and the session both (ADR-324). Two things were missing: a place
+for a mirror's back office, which is a handler in the cloud with no hostname of its own,
+while this bundle is built for `/backoffice/` with its API at `/api/v1/` on its own
+host; and any way for the bundle to be given a session it did not open itself.
+Decision:
+  - **Always the venue's own hostname**, `<slug>.<venue domain>/backoffice/`. While the
+    venue is connected, the relay serves it, as ADR-306 has it. While it is not, the
+    cloud serves the venue's mirror at that same hostname, for the back office's paths
+    alone; guests there are still told ordering is offline. No second name or
+    certificate, one address for the owner, the switch made where requests are routed,
+    and said by the bar this bundle already shows a mirror's answers with (ADR-326).
+    Weighed: the account area's own host under `/v/<slug>/`, which would put the back
+    office in the account area's origin and needs a base path built into this bundle;
+    and a second name a venue for its mirror, which needs a name, a certificate and a
+    second origin the owner moves between.
+  - **`cloudkit.StaffPath`** is the relay's own judgement of which paths are the back
+    office's (`/backoffice` and `/api`, decoded and cleaned as the venue routes), so the
+    cloud's routing and the relay's refusal to guests cannot disagree.
+  - **The session is handed in the fragment**: `/backoffice/#cloud=<token>&back=<url>`.
+    A fragment is sent to no server and is in no access log. The bundle takes it before
+    anything else, and takes it out of the address at once (`history.replaceState`), so
+    it is not in the history, a bookmark or a screenshot; a fragment that names `cloud`
+    with a token that is not one is taken out too, and nothing kept. A token is taken
+    only in mez's shape, a short prefix and 43 characters of base64url.
+  - **For the tab alone, and never over a pairing.** It is kept in sessionStorage
+    (`mez.backoffice.cloud`), so it ends with the tab, and while it is there it is the
+    device and the session both; the browser's own pairing, its own or the terminal's
+    it shares (ADR-148), is left as it was, and is what the tab uses once the handed
+    session ends. Pairing in that tab with a code ends the handed session.
+  - **Confirmed before it is used**: the server is asked which device and who it is, as
+    a stored pairing is. Unlike a stored pairing, one the server cannot be asked about
+    is not trusted: it was handed a moment ago by a server that answered.
+  - **Its end says so, with the way back.** A refusal, an expiry or signing out ends it:
+    forgotten, and the pairing screen says the back office opened from mez Cloud has
+    closed, with "Back to mez Cloud". Signing out has no lock screen to go to: the
+    device was the session. `back` is taken only when it is https on the venues' own
+    domain, this page's hostname less its first label (`app.mezpos.com` from
+    `corner-cafe.mezpos.com`), never an address by number, or between loopback names
+    on a developer's machine; and it is offered only for a session the server
+    confirmed at least once.
+  - **Ended is ended, for the tab.** Once a handed session ends, the first word on it
+    stands, and nothing in that tab falls back to the browser's own pairing or forgets
+    it, until the tab pairs with a code or is reloaded.
+  - **A switch is a new session.** The venue's token opens nothing at its mirror, nor
+    the mirror's at the venue: when a venue comes back or goes away under an open back
+    office, its next request is refused, the screen says the session has closed, and
+    "Back to mez Cloud" opens it again where it now is.
+  - **What a review found before the commit.** A refusal still in flight when a handed
+    session ended (the back office asks several things at once, and its stream) reached
+    the ordinary path, which forgets the pairing the browser keeps, and its own or the
+    terminal's went: the store now remembers it ran a handed session. `back` was any
+    name on the page's last two labels, so a link with a made-up token to any venue's
+    page, refused at once, showed a trusted "Back to mez Cloud" to any page on the
+    venues' domain, and on a self-hoster's `pos.co.in` to all of `co.in`: it is now the
+    venues' own domain, and only for a session once confirmed. And a sign-out that met
+    the session already gone wrote its notice twice and lost the way back.
+Because: the back office already lives at the venue's hostname from away, and already
+says when it is a mirror; giving the mirror that hostname changes nothing a screen does.
+Cost: whoever holds a link with a token in it opens that back office until the session
+ends, as whoever holds a session token always could; the cloud hands the link to the
+owner's own browser and nowhere else. The venue's hostname is the guests' origin too, as
+it is for the back office from away (ADR-306). An owner who has the back office open as
+the venue comes back or goes away is sent through mez Cloud again. A browser that refuses
+sessionStorage keeps nothing it is handed, and the owner sees the pairing screen. A link
+with a made-up token closes a tab's back office until it is reloaded, as any link to a
+page that signs out would. Where the cloud serves a mirror at the venue's hostname it
+must send the headers the venue's own server sends with the bundle (its CSP and
+`Referrer-Policy: no-referrer`, `internal/api/static.go`): the mirror is mez's own
+server, so it does.
