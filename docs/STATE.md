@@ -34,7 +34,7 @@ assertion through the door alone. The health check's mapping is
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 8e4b there, the mirror at the venue's hostname; 7e, 8g, 8c, 8d, 8e1 to 8e3 and 8e4a are done). This repository is touched again when:
+(Task 8e4c there, the route that opens the back office; 7e, 8g, 8c, 8d, 8e1 to 8e3, 8e4a and 8e4b are done). This repository is touched again when:
 - **a change to `web/shared`** is a change to `mez-cloud`'s account area too:
   its bundle reads mez's tokens, preset, fonts, `ui/Button`, `ui/Card`,
   `ui/Logo`, `ui/Money`, `ui/StatusChip` (its `cloud` vocabulary, ADR-351),
