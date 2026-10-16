@@ -13805,3 +13805,25 @@ page that signs out would. Where the cloud serves a mirror at the venue's hostna
 must send the headers the venue's own server sends with the bundle (its CSP and
 `Referrer-Policy: no-referrer`, `internal/api/static.go`): the mirror is mez's own
 server, so it does.
+
+## ADR-356 - A mirror is in use when someone it let in uses it, and not when anyone asks it something
+2026-10 · Status: accepted. Phase 14, `mez-cloud`'s Task 8e4b. Builds on ADR-327, ADR-353 and ADR-355.
+Context: a mirror follows its backup while it is being asked things (ADR-327), and
+`mez-cloud` closes one an hour after it was last asked anything (its C-040). Both read
+`Asked`, the time of the last request from anyone. That was sound while a mirror listened
+on its owner's own computer. ADR-355 puts a mirror at the venue's public hostname, where
+anyone can ask for `/backoffice/` in a loop: the mirror would never be closed, would hold
+one of the cloud's few places, and would read its bucket every minute and restore the
+whole venue at each backup, all for a stranger's requests.
+Decision:
+  - **`Keeper.Used`, and `Mirror.Used`**: the last time a browser paired to the mirror,
+    or a session it let in (a PIN's or the cloud's), was found good. Every request that
+    is let in is one of those; a request for the bundle, the health check, a token that
+    is not one, is not.
+  - **Following looks at the bucket only after use**, not after any request.
+  - **`Asked` stays**, the time of any request, for what wants it; `mez-cloud` closes a
+    mirror on `Used`.
+Because: what a mirror spends on its bucket, and the place it holds, should be spent on
+whoever it let in.
+Cost: the bundle's first load before signing in does not count; the sign-in that follows
+does. A paired browser that sits open and polls keeps its mirror in use, as it should.

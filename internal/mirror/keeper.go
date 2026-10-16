@@ -125,6 +125,10 @@ type Keeper struct {
 	unsaved map[string]struct{}
 
 	sessions map[string]session // by token hash
+	// used is when a browser paired to this mirror, or a session it let in,
+	// was last found good: the last request someone it let in made, which is
+	// what keeps a mirror in use (ADR-356). A request anyone can send is not.
+	used     time.Time
 	lastID   int64
 	codeHash string
 	codeEnds time.Time
@@ -369,6 +373,7 @@ func (k *Keeper) browser(token string) (Browser, bool) {
 	for i, b := range k.kept.Browsers {
 		if b.TokenHash == hash {
 			k.kept.Browsers[i].LastSeenAt = k.now().UTC().Truncate(time.Minute)
+			k.used = k.now()
 			return k.kept.Browsers[i], true
 		}
 	}
@@ -526,6 +531,7 @@ func (k *Keeper) cloudSession(token string) (session, bool) {
 	if !ok || !s.cloud || !k.now().Before(s.expiresAt) {
 		return session{}, false
 	}
+	k.used = k.now()
 	return s, true
 }
 
@@ -562,7 +568,16 @@ func (k *Keeper) session(token string, browserID int64) (session, bool) {
 	if !ok || s.browserID != browserID || !k.now().Before(s.expiresAt) {
 		return session{}, false
 	}
+	k.used = k.now()
 	return s, true
+}
+
+// Used is when a request was last made by a browser paired to this mirror
+// or on a session it let in, and zero if none has been (ADR-356).
+func (k *Keeper) Used() time.Time {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	return k.used
 }
 
 // end closes a session by its id.

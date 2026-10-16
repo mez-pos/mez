@@ -182,12 +182,17 @@ func (m *Mirror) AsOf() time.Time { return m.held.copy().asOf }
 // Dir is the directory the copy being served is in.
 func (m *Mirror) Dir() string { return m.held.copy().dir }
 
-// Asked is when a request last arrived, and zero if none has: a mirror
-// nobody has asked anything for a while can be closed.
+// Asked is when a request last arrived, from anyone, and zero if none has.
 func (m *Mirror) Asked() time.Time {
 	_, _, asked := m.held.state()
 	return asked
 }
+
+// Used is when a request was last made by a browser paired to this mirror
+// or on a session it let in, and zero if none has been: what says a mirror
+// is in use, since anyone can send a request and only someone let in can
+// use one (ADR-356). A mirror nobody has used for a while can be closed.
+func (m *Mirror) Used() time.Time { return m.keeper.Used() }
 
 // Follow keeps the mirror up with its backup until ctx ends, looking every
 // so often while it is being asked things (ADR-327). An every of zero or
@@ -487,8 +492,10 @@ func waited(wg *sync.WaitGroup, patience time.Duration) bool {
 // often it asks the destination when it was last written, and when that is
 // later than the copy being served, restores afresh and swaps (ADR-327).
 //
-// It asks only while the mirror is being used. Asking is a request to a
-// bucket, and a restore is many; a mirror left open overnight makes none.
+// It asks only while the mirror is being used: by someone it let in, not by
+// whoever sends it a request (ADR-356). Asking is a request to a bucket, and
+// a restore is many; a mirror left open overnight makes none, and one being
+// asked for its pages by a stranger makes none either.
 // Whatever goes wrong leaves the copy being served where it is, growing
 // older, and is said in the log: the next look tries again.
 func (s *source) follow(ctx context.Context, held *holder, every time.Duration) {
@@ -507,8 +514,8 @@ func (s *source) follow(ctx context.Context, held *holder, every time.Duration) 
 			return
 		case <-tick.C:
 		}
-		generation, asOf, asked := held.state()
-		if !asked.After(looked) {
+		generation, asOf, _ := held.state()
+		if !s.keeper.Used().After(looked) {
 			continue
 		}
 		looked = time.Now()

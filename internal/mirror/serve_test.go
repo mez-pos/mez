@@ -2,6 +2,7 @@ package mirror
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -269,5 +270,66 @@ func TestAMirrorStopsWhateverAStalledClientDoes(t *testing.T) {
 	// And once stopping, it takes no newer copy.
 	if held.swap(first) {
 		t.Error("a stopped mirror took a copy")
+	}
+}
+
+// TestOnlySomeoneLetInUsesAMirror: requests anyone can send are asking it
+// things and are not using it; a browser paired to it is (ADR-356).
+func TestOnlySomeoneLetInUsesAMirror(t *testing.T) {
+	ctx := context.Background()
+	m, err := Open(ctx, OpenOptions{From: backedUp(t), StateDir: t.TempDir(), CopyDir: t.TempDir()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = m.Close() })
+	srv := httptest.NewServer(m)
+	t.Cleanup(srv.Close)
+	send := func(method, path, body, bearer string) (int, []byte) {
+		t.Helper()
+		req, err := http.NewRequest(method, srv.URL+path, strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if body != "" {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		if bearer != "" {
+			req.Header.Set("Authorization", "Bearer "+bearer)
+		}
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		raw, _ := io.ReadAll(res.Body)
+		return res.StatusCode, raw
+	}
+	for _, path := range []string{"/backoffice/", "/api/v1/health", "/api/v1/devices/me"} {
+		send(http.MethodGet, path, "", "")
+	}
+	send(http.MethodGet, "/api/v1/devices/me", "", "nfm_"+strings.Repeat("A", 43))
+	if m.Asked().IsZero() {
+		t.Fatal("Asked() is zero after requests")
+	}
+	if !m.Used().IsZero() {
+		t.Fatalf("Used() = %v after requests nobody let in made", m.Used())
+	}
+
+	code, _, err := m.Keeper().NewCode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	status, raw := send(http.MethodPost, "/api/v1/devices/pair", `{"code":"`+code+`"}`, "")
+	var paired struct {
+		Token string `json:"token"`
+	}
+	if status != http.StatusOK && status != http.StatusCreated || json.Unmarshal(raw, &paired) != nil || paired.Token == "" {
+		t.Fatalf("pairing: %d %s", status, raw)
+	}
+	if status, raw := send(http.MethodGet, "/api/v1/devices/me", "", paired.Token); status != http.StatusOK {
+		t.Fatalf("a paired browser: %d %s", status, raw)
+	}
+	if m.Used().IsZero() {
+		t.Error("Used() is zero after a paired browser's request")
 	}
 }
