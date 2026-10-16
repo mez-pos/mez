@@ -50,6 +50,14 @@ describe("safeBack", () => {
     ["another site under that suffix", "https://evil.co.in/", { protocol: "https:", hostname: "corner.pos.co.in" }, null],
     ["loopback on a developer's machine", "http://127.0.0.1:5180/v/corner-cafe/", local, "http://127.0.0.1:5180/v/corner-cafe/"],
     ["the world from a developer's machine", "https://app.mezpos.com/", local, null],
+    [
+      "a developer's venue under localhost, back to the account area on 127.0.0.1",
+      "http://127.0.0.1:8088/v/blue-tokai",
+      { protocol: "http:", hostname: "blue-tokai.mez.localhost" },
+      "http://127.0.0.1:8088/v/blue-tokai",
+    ],
+    ["the world from a venue under localhost", "https://evil.example/", { protocol: "http:", hostname: "blue-tokai.mez.localhost" }, null],
+    ["a name that only ends like localhost", "http://evil-localhost.example/", { protocol: "http:", hostname: "blue-tokai.mez.localhost" }, null],
   ])("%s", (_name, raw, here, want) => {
     expect(safeBack(raw, here)).toBe(want);
   });

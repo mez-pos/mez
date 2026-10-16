@@ -28,11 +28,14 @@ export function takeHandoff(
   history: Pick<History, "replaceState" | "state">,
   credentials: Pick<CredentialStore, "takeCloud">,
 ): boolean {
-  if (!new URLSearchParams(location.hash.replace(/^#/, "")).has("cloud")) return false;
+  // Read before the address is changed: location is live, and its hash is
+  // gone the moment the address is replaced.
+  const hash = location.hash;
+  if (!new URLSearchParams(hash.replace(/^#/, "")).has("cloud")) return false;
   // Out of the address whether or not it is one: what looks like a token
   // is not left in the bar.
   history.replaceState(history.state, "", location.pathname + location.search);
-  const handed = readHandoff(location.hash, location);
+  const handed = readHandoff(hash, location);
   if (!handed) return false;
   credentials.takeCloud(handed);
   return true;

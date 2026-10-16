@@ -13844,3 +13844,25 @@ Decision:
 Because: a mirror that answers its API and shows "not built in" for its screens is a
 broken service that looks like a running one, and the cloud should say so as it starts.
 Cost: none here.
+
+## ADR-358 - What mez Cloud's walk of the back office from away found here
+2026-10 · Status: accepted. Phase 14, `mez-cloud`'s Task 8e4d2c. Builds on ADR-355.
+Context: `mez-cloud`'s walk of 8e ran this repository's binary and bundles against a
+development start on its stand-in for R2 (its C-046): a venue set up and paired by its
+own API, its back office opened from the cloud through its socket, the venue stopped and
+opened again at its mirror, signed out, and the venue started again under an open mirror.
+Two things here did not hold.
+Decision:
+  - **The handed session is read before the address is changed.** `takeHandoff` took
+    the fragment out of the address, then read `location.hash` to keep it: `location` is
+    live, so it read nothing, kept nothing, and the back office opened on its pairing
+    screen with no word of why. Its test handed it a plain object, which the replacing
+    did not change. It now reads the fragment first, and the test's location and history
+    are one live pair, as a browser's are; the test fails on the old code.
+  - **A name under `localhost` is this machine**, as `localhost` and the loopback
+    addresses already were, for whether "Back to mez Cloud" may be followed over plain
+    HTTP: a browser never asks anyone to resolve one (RFC 6761). A developer's venues are
+    at names under it, `<slug>.mez.localhost`, since a venue's name needs a hostname of
+    its own and a hosts file is not for a walk.
+Because: the walk is what a handed session is for, and the first one found it unkept.
+Cost: none here. The walk's own record is `mez-cloud`'s C-047.

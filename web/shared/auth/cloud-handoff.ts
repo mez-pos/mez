@@ -20,7 +20,17 @@ export interface CloudHandoff {
 /** A session token as mez makes them: a short prefix and 256 bits. */
 const tokenShape = /^[a-z]{3,5}_[A-Za-z0-9_-]{43}$/;
 
-const loopback = new Set(["localhost", "127.0.0.1", "[::1]"]);
+const loopbackAddresses = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/**
+ * A name that is this machine: a loopback address, or localhost or any name
+ * under it, which a browser never asks anyone to resolve (RFC 6761). A
+ * developer's venues are at names under it (mez Cloud's walk, ADR-355).
+ */
+function loopback(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/\.$/, "");
+  return loopbackAddresses.has(h) || h.endsWith(".localhost");
+}
 
 /** Where this page is, as much of it as the checks need. */
 export interface Here {
@@ -50,9 +60,8 @@ export function safeBack(raw: string | null, here: Here): string | null {
     return null;
   }
   if (url.username || url.password) return null;
-  const hereLocal = loopback.has(here.hostname);
-  if (hereLocal) {
-    return (url.protocol === "http:" || url.protocol === "https:") && loopback.has(url.hostname) ? url.href : null;
+  if (loopback(here.hostname)) {
+    return (url.protocol === "http:" || url.protocol === "https:") && loopback(url.hostname) ? url.href : null;
   }
   if (url.protocol !== "https:" || here.protocol !== "https:" || numeric(url.hostname)) return null;
   const domain = venuesDomain(here.hostname);

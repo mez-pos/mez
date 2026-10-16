@@ -152,10 +152,20 @@ describe("a session mez Cloud handed", () => {
 });
 
 describe("takeHandoff", () => {
-  const at = (hash: string) => ({ hash, pathname: "/backoffice/reports", search: "?day=today", protocol: "https:", hostname: "corner-cafe.mezpos.com" });
+  // A location and a history as a browser's are: one live object, whose hash
+  // is gone once the address is replaced.
+  let live = { hash: "", pathname: "/backoffice/reports", search: "?day=today", protocol: "https:", hostname: "corner-cafe.mezpos.com" };
+  const at = (hash: string) => {
+    live = { ...live, hash };
+    return live;
+  };
   const history = () => {
     const replaced: string[] = [];
-    return { replaced, h: { state: null, replaceState: (_s: unknown, _t: string, url?: string | URL | null) => void replaced.push(String(url)) } };
+    const replaceState = (_s: unknown, _t: string, url?: string | URL | null) => {
+      replaced.push(String(url));
+      live.hash = "";
+    };
+    return { replaced, h: { state: null, replaceState } };
   };
 
   it("keeps the session and takes it out of the address", () => {
