@@ -22,6 +22,7 @@ package cloudkit
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"crypto/ed25519"
@@ -272,12 +273,16 @@ const (
 	MirrorDirPrefix = mirror.DirPrefix
 )
 
-// MirrorOptions are what a mirror is opened with. Bucket and StateDir are
-// required.
+// MirrorOptions are what a mirror is opened with. Bucket, Venue and
+// StateDir are required.
 type MirrorOptions struct {
 	// Bucket is where the venue's backup is. It is only read: the reading
 	// key is enough.
 	Bucket Bucket
+	// Venue is the venue's public id, as it paired. A backup is written by
+	// the venue, so the id in it is the venue's word: a copy that holds
+	// another is refused, and the state file is named by this one.
+	Venue string
 	// StateDir is where the mirror remembers the browsers paired to it,
 	// the assertions it has taken and the locks wrong PINs set, in a file
 	// named by the venue's public id. Made if it is not there.
@@ -300,8 +305,11 @@ type MirrorOptions struct {
 // up to this build's schema and opens it as a mirror. It holds exactly one
 // venue or it is refused, and nothing is left behind when it fails.
 func OpenMirror(ctx context.Context, o MirrorOptions) (*Mirror, error) {
+	if !cloud.ValidVenuePublicID(o.Venue) {
+		return nil, fmt.Errorf("cloudkit: a mirror is opened for a venue by its public id, and %q is not one", o.Venue)
+	}
 	return mirror.Open(ctx, mirror.OpenOptions{
-		From:     backup.Config{Kind: backup.KindS3, S3: o.Bucket},
+		From: backup.Config{Kind: backup.KindS3, S3: o.Bucket}, Venue: o.Venue,
 		StateDir: o.StateDir, CopyDir: o.CopyDir, CloudKey: o.CloudKey,
 		Build: o.Build, Log: o.Log, Patience: o.Patience,
 	})

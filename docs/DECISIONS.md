@@ -13670,8 +13670,8 @@ Decision:
     the one place to know both `internal/db`'s words and `internal/api`'s, and the
     mirror's server needs it now too. Still one place.
   - **cloudkit hands out the mirror over a bucket**: `OpenMirror(ctx, MirrorOptions)`,
-    with the bucket, the state and copy directories, the cloud's key, the build and a
-    log, and `Mirror`, `MirrorVenue`, `BuildInfo`, `HeaderMirror` and `MirrorDirPrefix`
+    with the bucket, the venue's public id as it paired, the state and copy
+    directories, the cloud's key, the build and a log, and `Mirror`, `MirrorVenue`, `BuildInfo`, `HeaderMirror` and `MirrorDirPrefix`
     by their names. Not a generation, and not a folder: the cloud's mirror is of the
     newest backup in the venue's bucket, as its download is (ADR-352).
   - A test in cloudkit backs a paired venue up to the stand-in bucket, opens a mirror
@@ -13685,7 +13685,14 @@ Decision:
     the copy being put away, and is now 503; a second `Close` while the first was
     removing the copy answered at once, and now waits and answers the same; `Close`
     held the mirror's lock while a database closed; `Follow` with no interval panicked,
-    and now returns; and the patience given was not the database's.
+    and now returns; and the patience given was not the database's. And one a security
+    review found after it: the state file was named by the venue's id as the copy has
+    it, and a backup is written by whoever holds its key, so a venue that wrote an id
+    such as `../x` into its own database had the cloud write outside the state
+    directory, or into another venue's file. The id is now checked as a venue's id
+    before it is a path, and cloudkit requires the id the cloud paired and refuses a
+    copy that holds another. `mez mirror` names none, and takes the venue in the owner's
+    own backup as before.
 Because: there is one mirror, and the cloud serving a second would be a second answer to
 "what may be done to a venue nobody is standing in", free to disagree with ADR-326's.
 Cost: the cloud's binary carries the whole back office's server and every service under

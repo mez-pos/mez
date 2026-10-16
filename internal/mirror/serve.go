@@ -15,6 +15,7 @@ import (
 	"github.com/byjoellobo/mez/internal/api"
 	"github.com/byjoellobo/mez/internal/auth"
 	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/config"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/db/gen"
@@ -56,6 +57,12 @@ type OpenOptions struct {
 	// Generation names the backup to show and follow, as `mez restore
 	// -list` names it. Empty is the newest that holds anything.
 	Generation string
+	// Venue is the public id of the venue the caller expects the backup
+	// to hold, and a copy that holds another is refused. Empty takes
+	// whichever venue the first copy holds, as `mez mirror` does with a
+	// backup of the owner's own. A caller that serves backups it did not
+	// write itself names it: the copy's id is the backup's word only.
+	Venue string
 	// StateDir is where the mirror remembers the browsers paired to it and
 	// the locks wrong PINs set, in a file named by the venue's public id.
 	// It is made if it is not there, and kept from other accounts.
@@ -117,6 +124,16 @@ func Open(ctx context.Context, o OpenOptions) (_ *Mirror, err error) {
 			err = errors.Join(err, first.close())
 		}
 	}()
+
+	// The venue's id names the state file, and it is read from the copy:
+	// a backup is written by whoever holds its key, so it is checked as an
+	// id before it is a path, and against the one expected when there is.
+	if !cloud.ValidVenuePublicID(first.venue.PublicID) {
+		return nil, fmt.Errorf("mirror: the backup's venue has the id %q, which no venue has", first.venue.PublicID)
+	}
+	if o.Venue != "" && first.venue.PublicID != o.Venue {
+		return nil, fmt.Errorf("mirror: the backup holds the venue %s, and %s was expected", first.venue.PublicID, o.Venue)
+	}
 
 	// What the mirror remembers of its own, kept where a restart finds it.
 	// It is the same through every copy this mirror serves.

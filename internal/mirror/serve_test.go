@@ -171,6 +171,7 @@ func TestOpenRefuses(t *testing.T) {
 	}{
 		{"no state directory", OpenOptions{From: to}, nil, "state directory is required"},
 		{"a folder with no backup in it", OpenOptions{From: empty, StateDir: t.TempDir()}, backup.ErrNothingToRestore, ""},
+		{"a backup of another venue than expected", OpenOptions{From: to, StateDir: t.TempDir(), Venue: "ven_SOMEONE1"}, nil, "ven_SOMEONE1 was expected"},
 		{"a backup named and not there", OpenOptions{From: to, StateDir: t.TempDir(), Generation: "20260101T000000Z-nothere"}, backup.ErrNothingToRestore, ""},
 	}
 	for _, tt := range tests {

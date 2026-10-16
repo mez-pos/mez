@@ -136,7 +136,7 @@ func TestTheCloudOpensAMirrorThroughTheDoor(t *testing.T) {
 	copies := t.TempDir()
 
 	m, err := cloudkit.OpenMirror(ctx, cloudkit.MirrorOptions{
-		Bucket: b, StateDir: filepath.Join(t.TempDir(), "mirrors"), CopyDir: copies,
+		Bucket: b, Venue: mirroredVenue, StateDir: filepath.Join(t.TempDir(), "mirrors"), CopyDir: copies,
 		CloudKey: pub, Build: cloudkit.BuildInfo{Version: "test"},
 	})
 	if err != nil {
@@ -187,13 +187,38 @@ func TestTheCloudOpensAMirrorThroughTheDoor(t *testing.T) {
 	}
 }
 
+// TestAMirrorOfAnotherVenueIsRefused: a bucket's backup is written by the
+// venue that holds its key, so the venue in it is its word, and a mirror is
+// only of the venue the cloud paired. Nothing is left either way.
+func TestAMirrorOfAnotherVenueIsRefused(t *testing.T) {
+	b := pairedVenueInBucket(t)
+	for name, venue := range map[string]string{
+		"another venue":    "ven_SOMEONE1",
+		"no venue named":   "",
+		"not a venue's id": "../ven_CORNER01",
+	} {
+		t.Run(name, func(t *testing.T) {
+			copies, state := t.TempDir(), t.TempDir()
+			m, err := cloudkit.OpenMirror(context.Background(), cloudkit.MirrorOptions{Bucket: b, Venue: venue, StateDir: state, CopyDir: copies})
+			if err == nil || m != nil {
+				t.Fatalf("OpenMirror for %q: %v, %v; want it refused", venue, m, err)
+			}
+			for _, dir := range []string{copies, state} {
+				if left, _ := os.ReadDir(dir); len(left) != 0 {
+					t.Errorf("a refused mirror left %d entries in %s", len(left), dir)
+				}
+			}
+		})
+	}
+}
+
 // TestAMirrorOfAnEmptyBucketIsRefused: a venue paired and never backed up.
 func TestAMirrorOfAnEmptyBucketIsRefused(t *testing.T) {
 	srv := httptest.NewServer(s3fake.New(restoreBucket, restoreKey))
 	t.Cleanup(srv.Close)
 	b := cloudkit.Bucket{Bucket: restoreBucket, Path: "v/" + slug, Endpoint: srv.URL, AccessKeyID: restoreKey, SecretAccessKey: restoreSecret}
 	copies := t.TempDir()
-	m, err := cloudkit.OpenMirror(context.Background(), cloudkit.MirrorOptions{Bucket: b, StateDir: t.TempDir(), CopyDir: copies})
+	m, err := cloudkit.OpenMirror(context.Background(), cloudkit.MirrorOptions{Bucket: b, Venue: mirroredVenue, StateDir: t.TempDir(), CopyDir: copies})
 	if err == nil || m != nil {
 		t.Fatalf("OpenMirror: %v, %v; want it refused", m, err)
 	}
