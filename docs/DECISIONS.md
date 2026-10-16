@@ -13793,7 +13793,13 @@ ends, as whoever holds a session token always could; the cloud hands the link to
 owner's own browser and nowhere else. The venue's hostname is the guests' origin too, as
 it is for the back office from away (ADR-306). An owner who has the back office open as
 the venue comes back or goes away is sent through mez Cloud again. A browser that refuses
-sessionStorage keeps nothing it is handed, and the owner sees the pairing screen. A link
+sessionStorage keeps nothing it is handed, and the owner sees the pairing screen. `back`
+is any name on the venues' domain and not the account area's exact address, which the
+bundle is not told and the cloud may set elsewhere: so a venue's owner can make a link
+that, on their own venue's hostname and with a session of their own venue's, ends with
+"Back to mez Cloud" leading to another name there. That page is theirs already, through
+their venue's socket, and could show such a link itself; on anyone else's hostname they
+have no session the server confirms, so no link is shown. A link
 with a made-up token closes a tab's back office until it is reloaded, as any link to a
 page that signs out would. Where the cloud serves a mirror at the venue's hostname it
 must send the headers the venue's own server sends with the bundle (its CSP and
