@@ -219,6 +219,19 @@ func (s *Server) agentFor(venueID string) *agent {
 	return s.agents[venueID]
 }
 
+// Connected says whether the venue holds a socket to this relay now, and
+// whether its back office crosses that socket: the venue's key and its
+// entitlement both say so (ADR-306, ADR-316). It is what the relay knows
+// this moment: a socket can end as soon as this returns, and a request
+// sent after is answered as any other is (ADR-354).
+func (s *Server) Connected(venueID string) (connected, backOffice bool) {
+	a := s.agentFor(venueID)
+	if a == nil || a.ctx.Err() != nil {
+		return false, false
+	}
+	return true, a.remote.Load()
+}
+
 // healthResponse is what GET /healthz answers. It says the process is up and
 // what it is, and nothing about who is connected: the endpoint is public.
 type healthResponse struct {

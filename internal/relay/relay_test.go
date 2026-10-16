@@ -1420,3 +1420,38 @@ func TestAccessLogMasksCodes(t *testing.T) {
 		})
 	}
 }
+
+// TestConnectedSaysWhatTheRelayHoldsNow: no socket is not connected; a
+// guests-only key's socket is connected with no back office; a remote key's
+// carries it; and a socket gone is not connected.
+func TestConnectedSaysWhatTheRelayHoldsNow(t *testing.T) {
+	f := newFixture(t, nil)
+	if connected, backOffice := f.srv.Connected("cafe"); connected || backOffice {
+		t.Errorf("before any socket: %v, %v", connected, backOffice)
+	}
+	guests := f.connect("cafe")
+	if connected, backOffice := f.srv.Connected("cafe"); !connected || backOffice {
+		t.Errorf("a guests-only key: connected %v, back office %v; want connected and no back office", connected, backOffice)
+	}
+
+	key, err := f.keys.Issue(rand.Reader, "club", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	remote, _, err := f.dial(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.waitFor("club registered", func() bool { connected, _ := f.srv.Connected("club"); return connected })
+	if _, backOffice := f.srv.Connected("club"); !backOffice {
+		t.Error("a remote key's socket does not carry the back office")
+	}
+
+	_ = guests.Close(websocket.StatusNormalClosure, "")
+	_ = remote.Close(websocket.StatusNormalClosure, "")
+	f.waitFor("both gone", func() bool {
+		cafe, _ := f.srv.Connected("cafe")
+		club, _ := f.srv.Connected("club")
+		return !cafe && !club
+	})
+}

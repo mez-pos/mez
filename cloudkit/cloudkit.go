@@ -181,7 +181,9 @@ var (
 // The relay, to run in the cloud's own process with entitlements read from
 // its database (ADR-312, ADR-316).
 type (
-	// RelayServer is a relay. Its Handler is mounted; Close ends it.
+	// RelayServer is a relay. Its Handler is mounted; Close ends it;
+	// Connected says whether a venue holds a socket to it now, and whether
+	// its back office crosses that socket (ADR-354).
 	RelayServer = relay.Server
 	// RelayOptions are what one is made with.
 	RelayOptions = relay.Options

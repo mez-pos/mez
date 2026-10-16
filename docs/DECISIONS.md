@@ -13702,3 +13702,25 @@ cloud's build must build mez's bundles too before 8e4 shows one. Litestream logs
 Go's default logger, which `mez mirror` quiets for its terminal and the cloud must decide
 for itself. Two mirrors of one venue in one process share a state file, as two on one
 computer do (ADR-327); the cloud keeps one a venue.
+
+## ADR-354 - A relay says whether a venue is connected now and whether its back office crosses, so the cloud chooses the venue or its mirror before it asks
+2026-10 · Status: accepted. Phase 14, `mez-cloud`'s Task 8e3. Builds on ADR-306, ADR-316 and ADR-353.
+Context: `mez-cloud`'s venue page shows an owner their venue's back office through the
+relay while the venue is connected, and its mirror while it is not (ADR-353). The relay
+runs in the cloud's own process and knew which venues held a socket, and said so to
+nobody: a request to a venue that is not connected is answered 503 `venue_offline`, which
+is the cloud finding out by spending a request, the relay's allowance for its address,
+and an assertion. It also could not tell a venue that is off from one connected with a
+key that keeps its back office home.
+Decision:
+  - **`relay.Server.Connected(venueID) (connected, backOffice bool)`**: a socket is held
+    now and not ending, and its back office crosses it, which is the venue's key's scope
+    and its entitlement both (ADR-306, ADR-316), as the relay judges a request.
+    cloudkit's `RelayServer` is the relay's own type, so it is there by its name.
+  - **What the relay knows this moment, and no more.** A socket can end as the answer is
+    read; a request sent after is answered as any other is, `venue_offline` included.
+    Not "last seen": the relay keeps nothing once a socket ends, and `mez-cloud`'s 8d3
+    still waits on that.
+Because: the cloud's choice between the venue and its mirror is the relay's knowledge,
+and the relay is in its process.
+Cost: an exported method on the relay that the relay's own binary does not call.
