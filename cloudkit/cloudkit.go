@@ -34,6 +34,7 @@ import (
 	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/mirror"
 	"github.com/byjoellobo/mez/internal/relay"
+	"github.com/byjoellobo/mez/web"
 )
 
 // Pairing: POST PairPath, a PairRequest, answered with a PairAnswer
@@ -279,6 +280,13 @@ const (
 	// process that was killed, and is a copy of a venue's sales.
 	MirrorDirPrefix = mirror.DirPrefix
 )
+
+// MirrorScreens says whether this binary holds mez's own screens for a
+// mirror to show: the back office's bundle, embedded by building with
+// `-tags frontend` once mez's `web/*/dist` is built. Without them a mirror
+// answers its API and shows a page saying the screens are not built in
+// (ADR-357). The tag is the build's, so one binary's every package agrees.
+func MirrorScreens() bool { return !web.Placeholder() }
 
 // MirrorOptions are what a mirror is opened with. Bucket, Venue and
 // StateDir are required.

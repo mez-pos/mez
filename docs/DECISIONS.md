@@ -13827,3 +13827,20 @@ Because: what a mirror spends on its bucket, and the place it holds, should be s
 whoever it let in.
 Cost: the bundle's first load before signing in does not count; the sign-in that follows
 does. A paired browser that sits open and polls keeps its mirror in use, as it should.
+
+## ADR-357 - cloudkit says whether a binary holds mez's screens, since the cloud's mirrors show them
+2026-10 · Status: accepted. Phase 14, `mez-cloud`'s Task 8e4d2a. Builds on ADR-025 and ADR-353.
+Context: a mirror the cloud serves (ADR-353) shows the back office's bundle from this
+module's `web` package: the real screens when built with `-tags frontend` and
+`web/*/dist`, a stand-in page saying so when not (ADR-025). `mez-cloud` builds its own
+account area with the same tag, so the two are embedded together or not at all, and a
+`mez-cloud` built with the tag and without this checkout's bundles does not compile. The
+cloud had no way to ask which it holds, and imports nothing of this module but cloudkit.
+Decision:
+  - **`cloudkit.MirrorScreens()`**: whether this binary holds the real screens,
+    `!web.Placeholder()`. The tag is the build's, so every package of one binary agrees.
+  - The tag keeps its name: it means "the screens are built in" in both repositories,
+    and two would be a build that holds one and not the other, which no one wants.
+Because: a mirror that answers its API and shows "not built in" for its screens is a
+broken service that looks like a running one, and the cloud should say so as it starts.
+Cost: none here.

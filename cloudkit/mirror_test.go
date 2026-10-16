@@ -20,6 +20,7 @@ import (
 	"github.com/byjoellobo/mez/internal/backup/s3fake"
 	"github.com/byjoellobo/mez/internal/db"
 	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/byjoellobo/mez/web"
 )
 
 const mirroredVenue = "ven_CORNER01"
@@ -227,5 +228,13 @@ func TestAMirrorOfAnEmptyBucketIsRefused(t *testing.T) {
 	}
 	if left, _ := os.ReadDir(copies); len(left) != 0 {
 		t.Errorf("a refused mirror left %d entries", len(left))
+	}
+}
+
+// TestTheMirrorsScreensAreSaidAsBuilt: the cloud asks this, and not mez's
+// web package, whether a mirror would show mez's screens or its stand-in.
+func TestTheMirrorsScreensAreSaidAsBuilt(t *testing.T) {
+	if got, want := cloudkit.MirrorScreens(), !web.Placeholder(); got != want {
+		t.Errorf("MirrorScreens() = %v, and this build's bundles are placeholders: %v", got, !want)
 	}
 }
