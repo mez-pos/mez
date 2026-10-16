@@ -1,4 +1,4 @@
-package main
+package dbhealth
 
 import (
 	"context"
@@ -22,7 +22,7 @@ func TestDBCheckMapsOntoTheAPIVocabulary(t *testing.T) {
 	}
 	t.Cleanup(func() { database.Close(context.Background()) })
 
-	check := dbCheck(database)
+	check := Check(database)
 
 	// Open probes once, so a database that just opened is already ok.
 	if got := check(); got != api.CheckOK {
@@ -52,8 +52,8 @@ func TestDBCheckTranslatesEveryStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := translateDBStatus(tt.from); got != tt.want {
-				t.Errorf("translateDBStatus(%q) = %q, want %q", tt.from, got, tt.want)
+			if got := translate(tt.from); got != tt.want {
+				t.Errorf("translate(%q) = %q, want %q", tt.from, got, tt.want)
 			}
 		})
 	}

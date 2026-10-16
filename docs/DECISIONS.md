@@ -13639,3 +13639,59 @@ would be a second reading of Litestream's layout, free to disagree with the firs
 Cost: the cloud's binary carries Litestream and the AWS SDK for S3, as the venue's does.
 A restore reads the whole of the newest generation, which is the cloud's time and R2's
 reads, once a download.
+
+## ADR-353 - The mirror is internal/mirror's, opened on a backup and served as a handler, so cloudkit hands out the same mirror `mez mirror` runs
+2026-10 · Status: accepted. Phase 14, `mez-cloud`'s Task 8e1. Builds on ADR-326, ADR-327, ADR-331 and ADR-344.
+Context: `mez-cloud`'s venue page shows an owner the back office over their venue's
+backup when the venue is off (ADR-312). That is `mez mirror`, and it was in `cmd/mez`'s
+`package main`: the copy, the swap between copies, the following and the server over
+each copy, with the command's flags and words round them. Nothing outside mez can import
+a `main`. The cloud also wants what the command never did: many mirrors in one process,
+each opened when an owner first asks and closed when nobody has asked for a while.
+Decision:
+  - **The mirror moves to `internal/mirror`**, beside its door (ADR-327), and not to a
+    package of its own: the door and the Keeper are what a copy is served with, and a
+    mirror is the two with a copy under them. `mirror.Open(ctx, OpenOptions)` restores,
+    checks, migrates and opens the first copy and the Keeper; the `Mirror` it answers is
+    an `http.Handler`, and whoever opens one owns the listener or the route it is
+    mounted on. `Follow(ctx, every)` follows while it is asked things; `Close` removes
+    every copy it made, and a second `Close` does nothing.
+  - **What a caller needs to keep many is read off it**: `Asked`, when a request last
+    arrived and zero before any, so an idle one can be closed; `Venue`, `AsOf`, `Dir`,
+    `Keeper` and `StatePath`.
+  - **Copies go where the caller says** (`CopyDir`), the system's temporary directory
+    unless told, in directories named `mirror.DirPrefix`. The cloud keeps them under its
+    own data directory, where one left by a killed process is its own to remove.
+  - **`mez mirror` is the command round it**, and says what it said: it still chooses
+    the generation itself first, for the words that point at `mez restore -list`, and
+    binds its port before anything is fetched. The state directory is now made before
+    the first copy is restored, not after; a mirror that cannot have one fails sooner.
+  - **The health check's mapping moves to `internal/dbhealth`**: it was main's alone, as
+    the one place to know both `internal/db`'s words and `internal/api`'s, and the
+    mirror's server needs it now too. Still one place.
+  - **cloudkit hands out the mirror over a bucket**: `OpenMirror(ctx, MirrorOptions)`,
+    with the bucket, the state and copy directories, the cloud's key, the build and a
+    log, and `Mirror`, `MirrorVenue`, `BuildInfo`, `HeaderMirror` and `MirrorDirPrefix`
+    by their names. Not a generation, and not a folder: the cloud's mirror is of the
+    newest backup in the venue's bucket, as its download is (ADR-352).
+  - A test in cloudkit backs a paired venue up to the stand-in bucket, opens a mirror
+    on it through the door alone, lets the owner in on an assertion the test signs,
+    reads People, is refused a change, and finds no copy left once it is closed.
+  - **What a review found before the commit.** The command handed the mirror the
+    generation it had chosen to start on, so a mirror told nothing followed that one and
+    never the next a venue began: it now hands on the flag, and the mirror chooses. What
+    a caller holding many would meet, and `mez mirror` never did, since it stops
+    listening before it closes: a request that arrived after `Close` was answered from
+    the copy being put away, and is now 503; a second `Close` while the first was
+    removing the copy answered at once, and now waits and answers the same; `Close`
+    held the mirror's lock while a database closed; `Follow` with no interval panicked,
+    and now returns; and the patience given was not the database's.
+Because: there is one mirror, and the cloud serving a second would be a second answer to
+"what may be done to a venue nobody is standing in", free to disagree with ADR-326's.
+Cost: the cloud's binary carries the whole back office's server and every service under
+it, and `web`'s bundles: built without `-tags frontend` and mez's `web/*/dist`, a mirror
+in the cloud answers the API and serves the stand-in page for the screens, so the
+cloud's build must build mez's bundles too before 8e4 shows one. Litestream logs through
+Go's default logger, which `mez mirror` quiets for its terminal and the cloud must decide
+for itself. Two mirrors of one venue in one process share a state file, as two on one
+computer do (ADR-327); the cloud keeps one a venue.

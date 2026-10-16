@@ -63,6 +63,30 @@ func newWorld(t *testing.T) *world {
 	if err := d.Migrate(ctx); err != nil {
 		t.Fatal(err)
 	}
+	seed(t, d)
+	devices, err := auth.NewDevices(auth.DevicesOptions{DB: d})
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := devices.CreatePairingCode(ctx, auth.NewCode{VenueID: 1, DeviceName: "Counter 1", DeviceKind: auth.KindBackOffice})
+	if err != nil {
+		t.Fatal(err)
+	}
+	paired, err := devices.Redeem(ctx, code.Code)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := &world{db: d, clock: &clock{t: start}, path: filepath.Join(t.TempDir(), "state", "ven_MIRROR01.json"), till: paired.Token}
+	w.reopen(t)
+	return w
+}
+
+// seed makes the venue newWorld describes in d: Priya, Asha and Kabir, and
+// the roles they hold.
+func seed(t *testing.T, d *db.DB) {
+	t.Helper()
+	ctx := context.Background()
 	everything := auth.PermissionSet{}
 	for _, p := range auth.Permissions() {
 		everything[p] = struct{}{}
@@ -107,22 +131,6 @@ func newWorld(t *testing.T) *world {
 	if err != nil {
 		t.Fatal(err)
 	}
-	devices, err := auth.NewDevices(auth.DevicesOptions{DB: d})
-	if err != nil {
-		t.Fatal(err)
-	}
-	code, err := devices.CreatePairingCode(ctx, auth.NewCode{VenueID: 1, DeviceName: "Counter 1", DeviceKind: auth.KindBackOffice})
-	if err != nil {
-		t.Fatal(err)
-	}
-	paired, err := devices.Redeem(ctx, code.Code)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	w := &world{db: d, clock: &clock{t: start}, path: filepath.Join(t.TempDir(), "state", "ven_MIRROR01.json"), till: paired.Token}
-	w.reopen(t)
-	return w
 }
 
 // reopen is the mirror started again: a new Keeper over the same file, and

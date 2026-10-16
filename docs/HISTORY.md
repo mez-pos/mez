@@ -8,6 +8,14 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**`mez-cloud`'s Task 7e4b, its part here** (ADR-349). The checks the
+venue's client made of a hand-over's answer are `cloud.CheckGrantAnswer`,
+handed out as `cloudkit.CheckGrantAnswer`, so that the cloud asks it
+before it spends the owner's opened link and commits the hand-over, as
+it does at pairing (ADR-347). With it `mez-cloud`'s Task 7e is done
+(its C-022): a hand-over gives a key that reads for an hour and a
+pairing code for the venue's id alone.
+
 **`mez-cloud`'s Task 7e3a - the shape, here** (ADR-348). A grant now
 has two answers that are neither a hand-over nor a refusal: `202` with
 `{"link": {"email", "sent_at"}}` while the link sent to the account's

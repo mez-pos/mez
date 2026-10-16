@@ -29,6 +29,7 @@ import (
 	"github.com/byjoellobo/mez/internal/cloud"
 	"github.com/byjoellobo/mez/internal/config"
 	"github.com/byjoellobo/mez/internal/db"
+	"github.com/byjoellobo/mez/internal/dbhealth"
 	"github.com/byjoellobo/mez/internal/device/discover"
 	"github.com/byjoellobo/mez/internal/device/escpos"
 	"github.com/byjoellobo/mez/internal/device/printq"
@@ -536,7 +537,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 
 	srv = api.New(cfg, log, build,
 		api.WithStatic(bundles),
-		api.WithDBCheck(dbCheck(database)),
+		api.WithDBCheck(dbhealth.Check(database)),
 		api.WithTunnel(link.status),
 		api.WithPairing(link.pairedTo),
 		api.WithPublicURL(link.publicURL),
@@ -674,30 +675,6 @@ func publisher(events *hub.Hub) svcorder.Publisher {
 	return svcorder.PublisherFunc(func(_ context.Context, c svcorder.Change) {
 		events.Notify(c.VenueID)
 	})
-}
-
-// dbCheck adapts the database's health to the vocabulary /api/v1/health
-// publishes.
-//
-// The two packages use the same three words, and this is the one place allowed
-// to know both, so the mapping is written out rather than left to the strings
-// happening to match. internal/db must not import internal/api, and
-// internal/api must not import internal/db.
-func dbCheck(database *db.DB) func() string {
-	return func() string { return translateDBStatus(database.Health().Status) }
-}
-
-// translateDBStatus is the mapping itself, split out so it can be tested
-// against every status without a database to produce them.
-func translateDBStatus(status string) string {
-	switch status {
-	case db.StatusOK:
-		return api.CheckOK
-	case db.StatusFailing:
-		return api.CheckFailing
-	default:
-		return api.CheckUnknown
-	}
 }
 
 // serve runs the HTTP server until ctx is cancelled, then stops accepting and

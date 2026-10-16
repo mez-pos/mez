@@ -11,10 +11,9 @@
 // It is an API, and the only one this module has. A change here is a change
 // to another repository, to be made in the same sitting or not made.
 //
-// What is not here yet: the mirror (ADR-325 on). It is in package main, and
-// handing it out means moving it first, which is the task that builds the
-// cloud's mirror. A backup's restore is here (ADR-352): an owner's download
-// of their venue's data is one.
+// A backup's restore is here (ADR-352): an owner's download of their
+// venue's data is one. So is the mirror (ADR-353): the back office over a
+// copy of a venue's backup, which the cloud serves when the venue is off.
 //
 // Nothing in this module imports cloudkit but its own test. The venue's
 // binary carries none of the relay's server (internal/cloud's rule), and
@@ -25,8 +24,14 @@ import (
 	"context"
 	"io"
 
+	"crypto/ed25519"
+	"log/slog"
+	"time"
+
+	"github.com/byjoellobo/mez/internal/api"
 	"github.com/byjoellobo/mez/internal/backup"
 	"github.com/byjoellobo/mez/internal/cloud"
+	"github.com/byjoellobo/mez/internal/mirror"
 	"github.com/byjoellobo/mez/internal/relay"
 )
 
@@ -238,4 +243,66 @@ func RestoreBackup(ctx context.Context, b Bucket, outputPath string) error {
 // and says how many it copied.
 func RestorePhotos(ctx context.Context, b Bucket, dir string) (int, error) {
 	return backup.RestorePhotos(ctx, backup.Config{Kind: backup.KindS3, S3: b}, dir)
+}
+
+// The mirror (ADR-326, ADR-327, ADR-353): the back office over a copy of a
+// venue's backup, to read, as `mez mirror` serves it. A Mirror is an
+// http.Handler that answers as the venue's back office would, refuses every
+// change before any handler, and says on every answer, in HeaderMirror,
+// how old its copy is. Let people in by pairing a browser with a code from
+// its Keeper and a PIN from the copy, or, with CloudKey, by an assertion
+// presented as at the venue (ADR-331).
+type (
+	// Mirror is one venue's mirror. Follow keeps it up with its bucket
+	// while it is asked things; Close removes every copy it made.
+	Mirror = mirror.Mirror
+	// MirrorVenue is the venue in a mirror's copy.
+	MirrorVenue = mirror.Venue
+	// BuildInfo is what a mirror says of itself at /api/v1/health.
+	BuildInfo = api.BuildInfo
+)
+
+const (
+	// HeaderMirror is on every answer a mirror gives: the moment of the
+	// last write its copy holds, RFC 3339 in UTC.
+	HeaderMirror = api.HeaderMirror
+	// MirrorDirPrefix begins the name of every directory a mirror makes in
+	// its CopyDir. One there that no open mirror holds was left by a
+	// process that was killed, and is a copy of a venue's sales.
+	MirrorDirPrefix = mirror.DirPrefix
+)
+
+// MirrorOptions are what a mirror is opened with. Bucket and StateDir are
+// required.
+type MirrorOptions struct {
+	// Bucket is where the venue's backup is. It is only read: the reading
+	// key is enough.
+	Bucket Bucket
+	// StateDir is where the mirror remembers the browsers paired to it,
+	// the assertions it has taken and the locks wrong PINs set, in a file
+	// named by the venue's public id. Made if it is not there.
+	StateDir string
+	// CopyDir is where each copy is restored. Empty is the system's
+	// temporary directory.
+	CopyDir string
+	// CloudKey is the cloud's public key, for the owner let in by an
+	// assertion; nil lets nobody in that way.
+	CloudKey ed25519.PublicKey
+	Build    BuildInfo
+	// Log is told what goes wrong while the mirror serves and follows.
+	Log *slog.Logger
+	// Patience is how long a copy being put away waits for a request still
+	// being answered from it. Zero is ten seconds.
+	Patience time.Duration
+}
+
+// OpenMirror restores the newest copy in the bucket, checks it, brings it
+// up to this build's schema and opens it as a mirror. It holds exactly one
+// venue or it is refused, and nothing is left behind when it fails.
+func OpenMirror(ctx context.Context, o MirrorOptions) (*Mirror, error) {
+	return mirror.Open(ctx, mirror.OpenOptions{
+		From:     backup.Config{Kind: backup.KindS3, S3: o.Bucket},
+		StateDir: o.StateDir, CopyDir: o.CopyDir, CloudKey: o.CloudKey,
+		Build: o.Build, Log: o.Log, Patience: o.Patience,
+	})
 }

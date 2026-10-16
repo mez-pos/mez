@@ -19,20 +19,22 @@ in the "Still owed" list below.
 
 ## Last completed task
 
-**`mez-cloud`'s Task 7e4b, its part here** (ADR-349). The checks the
-venue's client made of a hand-over's answer are `cloud.CheckGrantAnswer`,
-handed out as `cloudkit.CheckGrantAnswer`, so that the cloud asks it
-before it spends the owner's opened link and commits the hand-over, as
-it does at pairing (ADR-347). With it `mez-cloud`'s Task 7e is done
-(its C-022): a hand-over gives a key that reads for an hour and a
-pairing code for the venue's id alone. Before it, 7e3a (ADR-348): the
-grant's waiting (202) and held (423) answers.
+**`mez-cloud`'s Task 8e1, its part here** (ADR-353). The mirror is
+`internal/mirror`'s now, not `cmd/mez`'s `package main`: `mirror.Open`
+restores a backup into a directory the caller names, and the `Mirror`
+it answers is an `http.Handler` that follows its backup while it is
+asked things and removes every copy it made when closed. `mez mirror`
+is the command round it and says what it said. cloudkit hands it out
+over a bucket (`OpenMirror`), tested by letting the owner in on an
+assertion through the door alone. The health check's mapping is
+`internal/dbhealth`'s, shared by both servers. Before it, 7e4b
+(ADR-349): the cloud checks a hand-over's answer with the venue's check.
 
 ## Next task
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 8e there, which begins here by moving the mirror; 7e, 8g, 8c and 8d are done). This repository is touched again when:
+(Task 8e2 there, the cloud's own mirrors on cloudkit's; 7e, 8g, 8c, 8d and 8e1 are done). This repository is touched again when:
 - **a change to `web/shared`** is a change to `mez-cloud`'s account area too:
   its bundle reads mez's tokens, preset, fonts, `ui/Button`, `ui/Card`,
   `ui/Logo`, `ui/Money`, `ui/StatusChip` (its `cloud` vocabulary, ADR-351),
@@ -40,8 +42,10 @@ in `mez-cloud`: open that repository and follow its `docs/STATE.md`
   from this checkout (its C-031), and its build breaks if they do;
 - `mez-cloud` needs a shape cloudkit does not have: add it here first,
   with an ADR, then use it there (its `CLAUDE.md` says so);
-- Task 8e there begins, by moving the mirror out of `cmd/mez`'s
-  `package main` to where cloudkit can hand it out;
+- 8e4 there settles where the back office is served from on the
+  cloud's venue page, which may want a base path in mez's bundle (its
+  phase file says so); and the cloud's build must embed mez's bundles
+  (`-tags frontend`) for a mirror there to show a screen (ADR-353);
 - 7e there is built: the wizard's wait for the email link (ADR-342):
   ADR-348 has the shape, and until then the wizard shows its words as a
   refusal and the owner chooses the venue again by hand;
