@@ -1475,3 +1475,16 @@ func TestDisconnectTellsAVenueItsKeyIsOff(t *testing.T) {
 		t.Error("a venue not connected was disconnected")
 	}
 }
+
+// A venue whose socket is already closing is not disconnected again: its
+// close is spent.
+func TestDisconnectPassesOverAVenueAlreadyClosing(t *testing.T) {
+	f := newFixture(t, nil)
+	f.connect("cafe")
+	a := f.srv.agentFor("cafe")
+	go a.close(websocket.StatusGoingAway, "going")
+	f.waitFor("the socket to be closing", func() bool { return a.ctx.Err() != nil })
+	if f.srv.Disconnect("cafe", "key_revoked") {
+		t.Error("a socket already closing was disconnected")
+	}
+}

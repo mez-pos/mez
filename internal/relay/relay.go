@@ -240,11 +240,14 @@ func (s *Server) Connected(venueID string) (connected, backOffice bool) {
 // does not wait for the venue to answer the close.
 func (s *Server) Disconnect(venueID, reason string) bool {
 	if len(reason) > maxCloseReason {
-		reason = reason[:maxCloseReason]
+		// Cut on a character's edge: a close frame's reason is UTF-8.
+		reason = strings.ToValidUTF8(reason[:maxCloseReason], "")
 	}
 	s.mu.Lock()
 	a := s.agents[venueID]
-	if a == nil || s.closed {
+	// One already closing (replaced, or its line gone) is not closed again:
+	// its close is spent, and CloseRevoked would never be sent.
+	if a == nil || s.closed || a.ctx.Err() != nil {
 		s.mu.Unlock()
 		return false
 	}

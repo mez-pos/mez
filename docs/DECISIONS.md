@@ -13887,5 +13887,12 @@ Decision:
     code as any other close, dials back, and is refused there: the same end, a dial later.
 Because: turning a key off is meant to stop it now, and the one socket it holds is the one
 thing the revoked list could not reach.
+  - **The Devices card says what to do.** "Refused" told an owner to check the settings
+    file, which a venue paired to mez Cloud has no key in to check: one paired to it
+    (`paired_to`) is told to pair again with a new code from the owner's account.
+  - **A review found, before the cloud's commit**: a socket already closing (replaced, or
+    its line gone) was reported closed, with its close spent and 4004 never sent: it is
+    passed over. A reason is cut on a character's edge. The tunnel's two refusals are one
+    case.
 Cost: none for a venue whose key stays good. The cloud's own record, and the order it does
 the two in, is its C-053.

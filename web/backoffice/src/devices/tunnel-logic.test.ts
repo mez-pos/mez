@@ -28,6 +28,9 @@ describe("tunnelLine", () => {
 
   it("says what to do for the two states waiting will not mend", () => {
     expect(tunnelLine({ state: "refused" }, now)).toMatch(/Check the relay key/);
+    // A venue paired to mez Cloud whose key is refused pairs again (ADR-359).
+    const paired = { owner: "Priya", hostname: "blue-tokai.mezpos.com", paired_at: "2026-10-15T04:00:00Z" };
+    expect(tunnelLine({ state: "refused", paired_to: paired }, now)).toMatch(/Pair this computer again with a new code/);
     expect(tunnelLine({ state: "replaced" }, now)).toMatch(/stop the other, or give this one a key of its own/);
   });
 
