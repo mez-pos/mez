@@ -397,6 +397,10 @@ func (c *Client) run() {
 			wait = c.entitledBackoff/2 + time.Duration(float64(c.entitledBackoff/2)*rand.Float64())
 		case websocket.CloseStatus(err) == wire.CloseReplaced:
 			state, wait = StateReplaced, c.longBackoff
+		case websocket.CloseStatus(err) == wire.CloseRevoked:
+			// The key was turned off while connected (ADR-359): its dial
+			// back would be refused, so it is refused now, and waits long.
+			state, wait = StateRefused, c.longBackoff
 		default:
 			if connectedFor >= stableAfter {
 				failures = 0

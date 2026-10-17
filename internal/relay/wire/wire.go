@@ -158,6 +158,12 @@ const (
 	// entitlements can change their answer, and a venue comes back to ask
 	// within the minute.
 	CloseNotEntitled = 4003
+
+	// CloseRevoked: the venue's key was turned off while it was connected
+	// (ADR-359). A revoked key is otherwise checked only at the next dial
+	// (relay.Keys.SetRevoked), so an operator who turns one off closes the
+	// socket too. The venue's dial back is refused: it pairs again.
+	CloseRevoked = 4004
 )
 
 // What the two ends say about entitlement on the dial, in headers, so that a

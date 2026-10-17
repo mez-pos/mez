@@ -725,6 +725,27 @@ func TestARefusedKeyIsNotHammered(t *testing.T) {
 	}
 }
 
+// TestAKeyTurnedOffWhileConnectedIsRefused (ADR-359): a relay that turns a
+// connected venue's key off and closes it leaves the venue refused, waiting
+// long, and not dialling back at once.
+func TestAKeyTurnedOffWhileConnectedIsRefused(t *testing.T) {
+	r := startRelay(t)
+	c := r.venue(server(), nil)
+	waitState(t, c, StateConnected)
+
+	r.mu.Lock()
+	srv := r.srv
+	r.mu.Unlock()
+	r.keys.SetRevoked([]string{"cafe"})
+	if !srv.Disconnect("cafe", "key_revoked") {
+		t.Fatal("the venue was not connected")
+	}
+	s := waitState(t, c, StateRefused)
+	if wait := s.RetryAt.Sub(s.Since); wait < 30*time.Minute {
+		t.Errorf("a key turned off is retried in %v, want the long wait", wait)
+	}
+}
+
 func TestAnotherMachineWithTheSameKey(t *testing.T) {
 	r := startRelay(t)
 	first := r.venue(server(), nil)

@@ -232,6 +232,32 @@ func (s *Server) Connected(venueID string) (connected, backOffice bool) {
 	return true, a.remote.Load()
 }
 
+// Disconnect closes the venue's socket, if it holds one, with
+// wire.CloseRevoked: for an operator who turns a venue's key off while it is
+// connected (ADR-359), since a revoked key is checked only at the next dial.
+// The caller hands the relay the revoked id first (Keys.SetRevoked), so the
+// venue's dial back is refused. It reports whether a socket was closed, and
+// does not wait for the venue to answer the close.
+func (s *Server) Disconnect(venueID, reason string) bool {
+	if len(reason) > maxCloseReason {
+		reason = reason[:maxCloseReason]
+	}
+	s.mu.Lock()
+	a := s.agents[venueID]
+	if a == nil || s.closed {
+		s.mu.Unlock()
+		return false
+	}
+	s.wg.Add(1)
+	s.mu.Unlock()
+	a.log.Warn("relay: venue disconnected, its key turned off", "reason", reason)
+	go func() {
+		defer s.wg.Done()
+		a.close(wire.CloseRevoked, reason)
+	}()
+	return true
+}
+
 // healthResponse is what GET /healthz answers. It says the process is up and
 // what it is, and nothing about who is connected: the endpoint is public.
 type healthResponse struct {

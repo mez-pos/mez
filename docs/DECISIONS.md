@@ -13866,3 +13866,26 @@ Decision:
     its own and a hosts file is not for a walk.
 Because: the walk is what a handed session is for, and the first one found it unkept.
 Cost: none here. The walk's own record is `mez-cloud`'s C-047.
+
+## ADR-359 - The relay closes a venue whose key is turned off while it is connected, with a code of its own, and the venue stands as refused
+2026-10 · Status: accepted. Phase 14, `mez-cloud`'s Task 8f5b. Builds on ADR-316, ADR-350.
+Context: ADR-350 lets a relay's operator turn keys off while it runs (`Keys.SetRevoked`),
+and says a venue already connected stays connected: its key is checked at its next dial.
+That was enough for a pairing again, where the old computer's key goes and the new one
+dials in. It is not enough for `mez-cloud`'s operator turning a key off on purpose, for a
+computer stolen or a name used to pass as someone else: the socket that key holds goes on
+serving guests and the back office until it next drops, which on a good line is days.
+Decision:
+  - **`relay.Server.Disconnect(venueID, reason)`** closes the venue's socket if it holds
+    one, without waiting for its answer, and says whether it did. It is the relay's
+    operator's: the caller hands the relay the revoked id first, so the venue's dial back
+    is refused. cloudkit's `RelayServer` is this type, so `mez-cloud` has it.
+  - **A close code of its own, `wire.CloseRevoked` (4004)**: the key was turned off while
+    connected. The tunnel client stands as refused at once and waits its long backoff, as
+    for a key refused at the dial, rather than dialling back to be told: the Devices card
+    says the key is refused and the venue pairs again. A venue on an older build reads the
+    code as any other close, dials back, and is refused there: the same end, a dial later.
+Because: turning a key off is meant to stop it now, and the one socket it holds is the one
+thing the revoked list could not reach.
+Cost: none for a venue whose key stays good. The cloud's own record, and the order it does
+the two in, is its C-053.

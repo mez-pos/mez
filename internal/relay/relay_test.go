@@ -1455,3 +1455,23 @@ func TestConnectedSaysWhatTheRelayHoldsNow(t *testing.T) {
 		return !cafe && !club
 	})
 }
+
+// TestDisconnectTellsAVenueItsKeyIsOff (ADR-359): a venue connected when its
+// key is turned off is closed with CloseRevoked, and one not connected is
+// not there to close.
+func TestDisconnectTellsAVenueItsKeyIsOff(t *testing.T) {
+	f := newFixture(t, nil)
+	ws := f.connect("cafe")
+	if !f.srv.Disconnect("cafe", "key_revoked") {
+		t.Fatal("a connected venue was not disconnected")
+	}
+	_, err := readFrame(ws)
+	if got := websocket.CloseStatus(err); got != wire.CloseRevoked {
+		t.Errorf("closed with %d (%v), want %d", got, err, wire.CloseRevoked)
+	}
+	_ = ws.Close(websocket.StatusNormalClosure, "")
+	f.waitFor("the venue to be gone", func() bool { return f.srv.agentFor("cafe") == nil })
+	if f.srv.Disconnect("cafe", "key_revoked") || f.srv.Disconnect("nobody", "key_revoked") {
+		t.Error("a venue not connected was disconnected")
+	}
+}
