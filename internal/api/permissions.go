@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/auth"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // HeaderIdempotencyKey is honoured on every mutating endpoint.

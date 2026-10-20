@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/device/discover"
-	"github.com/byjoellobo/mez/internal/device/printq"
-	"github.com/byjoellobo/mez/internal/service/printers"
+	"github.com/mez-pos/mez/internal/device/discover"
+	"github.com/mez-pos/mez/internal/device/printq"
+	"github.com/mez-pos/mez/internal/service/printers"
 )
 
 // fixedFinder answers every search with the same result.

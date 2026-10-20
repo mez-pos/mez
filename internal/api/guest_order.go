@@ -5,12 +5,12 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/payment"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/payment"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // A guest places an order (phase 11, Task 4a, ADR-210):

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // demoMenuCurrency is the currency the demo menu is priced in. Its prices

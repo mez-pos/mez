@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/device/discover"
-	"github.com/byjoellobo/mez/internal/domain/qr"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/device/discover"
+	"github.com/mez-pos/mez/internal/domain/qr"
 )
 
 // The device management error codes (phase 10, Task 6k).

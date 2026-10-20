@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/service/menus"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/service/menus"
 )
 
 // editorTill is the till with a menu editor and the ids an item can name.

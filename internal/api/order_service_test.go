@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // TestServiceTypeOverHTTP: an order is opened as dine-in, takeaway or

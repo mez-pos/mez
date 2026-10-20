@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // tillMenu is the menu a register test's till rings from: a Menus that a

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/byjoellobo/mez/internal/domain/sheet"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // The menu from a spreadsheet (phase 10, Task 7, ADR-288): a CSV file with a

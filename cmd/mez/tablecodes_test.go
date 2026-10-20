@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/service/tablecodes"
+	"github.com/mez-pos/mez/internal/service/tablecodes"
 )
 
 // codeLine is one table as the command prints it: its name, its code, and

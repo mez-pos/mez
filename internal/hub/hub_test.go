@@ -14,10 +14,10 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 var at = time.Date(2026, 9, 18, 4, 30, 0, 0, time.UTC)

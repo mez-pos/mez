@@ -3,7 +3,7 @@ package order
 import (
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/kitchen"
+	"github.com/mez-pos/mez/internal/domain/kitchen"
 )
 
 // figures is the money of an order in paise, for comparing a whole Totals at

@@ -8,12 +8,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // guest is a phone at venue 1: nobody, on no device.

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/device/escpos"
 )
 
 func TestSplitLines(t *testing.T) {

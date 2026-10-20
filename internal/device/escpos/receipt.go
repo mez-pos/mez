@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // Receipt is a customer's copy of an invoice, from the invoice's own

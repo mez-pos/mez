@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // printed is a byte stream as paper: its lines of text, each with the width

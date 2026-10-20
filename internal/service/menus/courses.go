@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 var (

@@ -8,8 +8,8 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/gateway"
-	"github.com/byjoellobo/mez/internal/service/settings"
+	"github.com/mez-pos/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/service/settings"
 )
 
 // onlineWorld is chargeWorld with the settings mounted and the owner

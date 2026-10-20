@@ -10,12 +10,12 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/gateway"
-	"github.com/byjoellobo/mez/internal/gateway/gatewaytest"
-	"github.com/byjoellobo/mez/internal/service/charges"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway/gatewaytest"
+	"github.com/mez-pos/mez/internal/service/charges"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // chargeWorld is orderingWorld at a venue with a payment gateway, a fake

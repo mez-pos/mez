@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/kitchen"
+	"github.com/mez-pos/mez/internal/domain/kitchen"
 )
 
 // A ticket at its station (phase 08, Task 4, ADR-090). A ticket.sent puts

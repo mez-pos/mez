@@ -12,9 +12,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/fsperm"
-	"github.com/byjoellobo/mez/internal/winsvc"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/fsperm"
+	"github.com/mez-pos/mez/internal/winsvc"
 )
 
 // servicePasswordEnv carries the password of the account named by -user. It

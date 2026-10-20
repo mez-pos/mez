@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 var at = time.Date(2026, 10, 12, 9, 0, 0, 0, time.UTC)

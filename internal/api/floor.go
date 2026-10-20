@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/domain/table"
-	"github.com/byjoellobo/mez/internal/service/floor"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/domain/table"
+	"github.com/mez-pos/mez/internal/service/floor"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // Floor is what the API needs from the floor plan. *floor.Service is the

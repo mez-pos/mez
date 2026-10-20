@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/device/escpos"
 )
 
 func TestIsTestPrint(t *testing.T) {

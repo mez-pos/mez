@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/money"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // "I have paid" (phase 11, Task 4e4, ADR-218):

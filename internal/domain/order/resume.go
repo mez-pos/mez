@@ -3,7 +3,7 @@ package order
 import (
 	"slices"
 
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // ProjectionVersion names the rules Project folds by and the shape of State.

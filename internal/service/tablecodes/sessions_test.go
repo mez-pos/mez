@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 // seedSession writes a guest session at a table of venue 1, bound to no

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/device/escpos"
 )
 
 // isTestPrint reports whether the command line asks for a test print:

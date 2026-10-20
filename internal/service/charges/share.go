@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // A share is a guest paying part of the table's bill (phase 11, Task 4g1,

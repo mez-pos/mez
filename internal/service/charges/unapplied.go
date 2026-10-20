@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // Unapplied charges, in front of a person (phase 11, Task 4f4, ADR-223).

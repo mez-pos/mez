@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/service/settings"
+	"github.com/mez-pos/mez/internal/service/settings"
 )
 
 // TestPaymentSettingsOverHTTP: the owner reads where the venue is paid,

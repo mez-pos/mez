@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/service/tablecodes"
+	"github.com/mez-pos/mez/internal/service/tablecodes"
 )
 
 func TestRequestIDIsAlwaysPresent(t *testing.T) {

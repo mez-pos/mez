@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 func TestSampleReceiptLaysOutUnderEveryProfile(t *testing.T) {

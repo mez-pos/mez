@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/device/printq"
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/device/printq"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // waker counts wakes.

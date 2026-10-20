@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // Money reads a cell as an amount of the currency, in minor units. It reads

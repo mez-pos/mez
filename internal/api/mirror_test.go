@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/auth"
 )
 
 var mirroredAt = time.Date(2026, 10, 11, 17, 40, 0, 0, time.UTC)

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/domain/stock"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // menuOf gives a venue one item, Latte, with a Milk group of Dairy: its

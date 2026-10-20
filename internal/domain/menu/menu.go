@@ -7,8 +7,8 @@ package menu
 import (
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // Menu is everything a terminal sells, as one document at one version.

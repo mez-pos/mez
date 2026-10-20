@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/service/firstrun"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/service/firstrun"
 )
 
 // lockedServer is a new install as cmd/mez builds it: first run over HTTP,

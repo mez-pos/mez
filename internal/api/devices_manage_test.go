@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/auth"
 )
 
 // pairAnother pairs one more device at venue 1 and returns its token and id.

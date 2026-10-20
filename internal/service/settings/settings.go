@@ -13,9 +13,9 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // ErrNoVenue means the venue does not exist.

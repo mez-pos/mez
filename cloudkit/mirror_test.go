@@ -14,13 +14,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/cloudkit"
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/backup/s3fake"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/web"
+	"github.com/mez-pos/mez/cloudkit"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/backup/s3fake"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/web"
 )
 
 const mirroredVenue = "ven_CORNER01"

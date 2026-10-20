@@ -10,7 +10,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/byjoellobo/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway"
 )
 
 // unappliedWorld is chargeWorld with staff signed in at the terminal, and

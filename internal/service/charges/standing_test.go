@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/gateway"
-	"github.com/byjoellobo/mez/internal/gateway/gatewaytest"
+	"github.com/mez-pos/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway/gatewaytest"
 )
 
 // TestStandingNamesTheGatewayAndWhenItLastTookAPayment: nothing has been

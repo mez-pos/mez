@@ -24,9 +24,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/restore"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/restore"
 )
 
 var (

@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/relay/wire"
+	"github.com/mez-pos/mez/internal/relay/wire"
 )
 
 // headerRequestID is the correlation id, the same header the venue server

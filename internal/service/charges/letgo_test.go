@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway"
 )
 
 func (w *world) letGo(t *testing.T, c Charge) Charge {

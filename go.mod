@@ -1,4 +1,4 @@
-module github.com/byjoellobo/mez
+module github.com/mez-pos/mez
 
 go 1.25.0
 

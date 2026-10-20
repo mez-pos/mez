@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/gateway"
-	"github.com/byjoellobo/mez/internal/service/charges"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/service/charges"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // A guest pays online (phase 11, Task 4f3, ADR-222):

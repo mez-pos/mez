@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/service/firstrun"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/service/firstrun"
 )
 
 var linkShape = regexp.MustCompile(`^http://localhost:7777/setup#token=[0-9a-f]{32}\n$`)

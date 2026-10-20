@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway"
 )
 
 // teller is a gateway.Notified for tests: a notice is the gateway's when

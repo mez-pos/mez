@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // billed counts what a bucket has been asked that is billed as a write: every

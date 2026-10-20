@@ -13,8 +13,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 // ErrUnknown is a code that leads nowhere: never made, revoked, or for a

@@ -7,9 +7,9 @@ import (
 	"slices"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // ErrReceiptNotFound means there is no receipt to give for what was asked: no

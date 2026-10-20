@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 func choice(name string, price int64, isDefault bool) ModifierInput {

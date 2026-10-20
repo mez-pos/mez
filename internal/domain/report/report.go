@@ -14,10 +14,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/domain/zreport"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/domain/zreport"
 )
 
 // Every is how long one point of sales over time covers.

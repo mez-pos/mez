@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 var addingAt = time.Date(2026, 10, 6, 6, 0, 0, 0, time.UTC)

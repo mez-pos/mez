@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/invoice"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/invoice"
+	"github.com/mez-pos/mez/internal/domain/money"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // ErrNumberingLocked refuses a change of financial year start once a number

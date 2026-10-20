@@ -1,8 +1,8 @@
 package order
 
 import (
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/stock"
 )
 
 // closes reports whether a command's events close the order: the moment

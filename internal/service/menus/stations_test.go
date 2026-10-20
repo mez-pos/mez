@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 // station makes an active station of the venue through the service.

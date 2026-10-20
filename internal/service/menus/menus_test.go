@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
-	svcshift "github.com/byjoellobo/mez/internal/service/shift"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/money"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
+	svcshift "github.com/mez-pos/mez/internal/service/shift"
 )
 
 var now = time.Date(2026, 9, 30, 6, 30, 0, 0, time.UTC)

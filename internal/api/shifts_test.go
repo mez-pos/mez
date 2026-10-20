@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
-	svcshift "github.com/byjoellobo/mez/internal/service/shift"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
+	svcshift "github.com/mez-pos/mez/internal/service/shift"
 )
 
 // seededClock stops at seededAt: 10:00 on 18 September in Kolkata.

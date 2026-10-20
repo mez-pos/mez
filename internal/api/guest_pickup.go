@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/service/charges"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
-	"github.com/byjoellobo/mez/internal/service/tablecodes"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/service/charges"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/service/tablecodes"
 )
 
 // A guest orders to collect (phase 11, Task 5f2, ADR-250):

@@ -13,10 +13,10 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/hub"
-	"github.com/byjoellobo/mez/internal/service/floor"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/hub"
+	"github.com/mez-pos/mez/internal/service/floor"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // The dine-in loop across devices, on the real stack (phase 08, Task 5,

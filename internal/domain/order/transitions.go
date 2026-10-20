@@ -1,6 +1,6 @@
 package order
 
-import "github.com/byjoellobo/mez/internal/domain/fsm"
+import "github.com/mez-pos/mez/internal/domain/fsm"
 
 // The order and payment lifecycles from docs/02-domain.md, as transition
 // tables. Project checks every status change it derives against them, so the

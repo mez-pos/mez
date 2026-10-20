@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/export"
-	"github.com/byjoellobo/mez/internal/service/stock"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/export"
+	"github.com/mez-pos/mez/internal/service/stock"
 )
 
 // Stock is what the API needs from the venue's stock (phase 10, Task 3a).

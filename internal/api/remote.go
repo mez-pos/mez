@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/auth"
 )
 
 // A request that came through the relay carries this header, set by the

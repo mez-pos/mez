@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // TestATipOverTheCeilingNeedsAManagerOverHTTP: a payment's tip over the

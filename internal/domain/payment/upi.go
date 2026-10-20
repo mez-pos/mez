@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // A UPI pay link (phase 11, Task 4e1, ADR-215). UPI is India's bank-to-bank

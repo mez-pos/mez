@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/fsperm"
-	"github.com/byjoellobo/mez/internal/winsvc"
+	"github.com/mez-pos/mez/internal/fsperm"
+	"github.com/mez-pos/mez/internal/winsvc"
 )
 
 // fakeControl stands in for the Service Control Manager.

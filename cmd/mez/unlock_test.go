@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/auth"
 )
 
 // TestUnlockClearsAHardLock: a person locked by too many wrong PINs can be

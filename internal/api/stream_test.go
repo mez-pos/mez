@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/hub"
+	"github.com/mez-pos/mez/internal/hub"
 )
 
 // servedStream records what the hub was handed.

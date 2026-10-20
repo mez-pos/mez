@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 // ErrStationNotFound means the station is not this venue's.

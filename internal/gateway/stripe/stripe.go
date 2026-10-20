@@ -35,8 +35,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/gateway"
 )
 
 // Name is how this provider is named in configuration and on a charge.

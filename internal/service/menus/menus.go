@@ -20,14 +20,14 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/domain/tax"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
-	svcshift "github.com/byjoellobo/mez/internal/service/shift"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/domain/tax"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
+	svcshift "github.com/mez-pos/mez/internal/service/shift"
 )
 
 // The refusals. The API maps them to codes; Invalid carries the field.

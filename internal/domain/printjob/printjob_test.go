@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/fsm"
+	"github.com/mez-pos/mez/internal/domain/fsm"
 )
 
 func TestTransitions(t *testing.T) {

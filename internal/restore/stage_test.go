@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // What stages a real backup and adopts it under a server is tested where

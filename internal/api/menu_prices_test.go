@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/service/menus"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/service/menus"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // pricedTill is the editor's till with a menu on it: Dosa at 140.00 and

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 var kds = Meta{VenueID: 1, DeviceID: 9}

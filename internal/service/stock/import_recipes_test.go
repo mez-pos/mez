@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/domain/stock"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // cafeMenu gives a venue a menu to write recipes for: Bakes first with a

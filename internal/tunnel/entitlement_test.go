@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/relay"
-	"github.com/byjoellobo/mez/internal/relay/wire"
+	"github.com/mez-pos/mez/internal/relay"
+	"github.com/mez-pos/mez/internal/relay/wire"
 )
 
 // book is the relay's entitlements, which a test changes while a venue is

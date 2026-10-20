@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // TestAPaidOrderToCollectIsSentOnATicketOfItsOwn: once paid it is a ticket

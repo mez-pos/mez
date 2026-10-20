@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/sheet"
 )
 
 // cafe is a venue with enough on it to import against: two of everything a

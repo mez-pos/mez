@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // managed is a venue whose backup is run by a Manager, the way the server

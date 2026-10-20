@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/web"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/web"
 )
 
 // viaRelay marks a request's headers the way the tunnel does.

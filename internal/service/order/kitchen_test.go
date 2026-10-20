@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/kitchen"
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/kitchen"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 type laterClock struct{ at time.Time }

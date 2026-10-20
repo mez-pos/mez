@@ -173,7 +173,7 @@ You need Go 1.25 or newer, Node 22.12 or newer, and a shell with `sh` and
 `make` (on Windows, Git Bash with GNU Make, or WSL).
 
 ```sh
-git clone https://github.com/byjoellobo/mez.git
+git clone https://github.com/mez-pos/mez.git
 cd mez
 make build-web   # format check, tests and production builds of the three apps
 make check       # gofmt, go vet, Go tests, TypeScript typecheck, build bin/mez

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // runPairIn runs the command and returns what it printed.

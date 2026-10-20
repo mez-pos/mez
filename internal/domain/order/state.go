@@ -3,9 +3,9 @@ package order
 import (
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/kitchen"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/kitchen"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // Status is where an order is in its life, derived from its events.

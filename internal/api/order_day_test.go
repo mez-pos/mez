@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // TestDayOrdersOverHTTP: the day's list has the open ticket and the settled

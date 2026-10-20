@@ -10,7 +10,7 @@
 
 [Unit]
 Description=mez point of sale
-Documentation=https://github.com/byjoellobo/mez/blob/main/docs/deploy.md
+Documentation=https://github.com/mez-pos/mez/blob/main/docs/deploy.md
 # Not Requires. mez sells with no network at all, and must start without one:
 # this only orders it after the network when there is one to wait for.
 After=network-online.target

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/domain/stock"
 )
 
 // shift opens (or, closed, adds a closed) shift at a venue and returns its id.

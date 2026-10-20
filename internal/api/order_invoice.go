@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/order"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // The invoice error codes (phase 07, Task 3).

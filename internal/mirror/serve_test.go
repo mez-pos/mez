@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/api"
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/api"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // backedUp is the venue seed makes, backed up by the venue's own backup

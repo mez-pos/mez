@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/invoice"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/invoice"
 )
 
 // InvoiceAllocator is the database's invoice.Allocator: a counter row per

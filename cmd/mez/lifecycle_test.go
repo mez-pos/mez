@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/api"
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/relay"
-	"github.com/byjoellobo/mez/internal/tunnel"
-	"github.com/byjoellobo/mez/web"
+	"github.com/mez-pos/mez/internal/api"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/relay"
+	"github.com/mez-pos/mez/internal/tunnel"
+	"github.com/mez-pos/mez/web"
 )
 
 // TestShutdownRunsInReverse is the whole contract. The logger is opened first

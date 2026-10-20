@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // ErrGroupNotFound is a modifier group that is not this venue's.

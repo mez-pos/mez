@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/device/discover"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/device/discover"
 )
 
 // Server holds what the handlers need and builds the routing tree once.

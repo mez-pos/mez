@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/stock"
 )
 
 // The closing count's refusals (ADR-114).

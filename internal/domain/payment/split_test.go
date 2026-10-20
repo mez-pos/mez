@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 func inr(minor int64) money.Amount { return money.Amount{Minor: minor, Currency: "INR"} }

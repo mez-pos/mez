@@ -3,7 +3,7 @@ package tax
 import (
 	"fmt"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // RateScale is 100%, as a Rate.

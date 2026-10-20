@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/logging"
-	"github.com/byjoellobo/mez/internal/service/firstrun"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/logging"
+	"github.com/mez-pos/mez/internal/service/firstrun"
 )
 
 // generatedPINDigits is how long a PIN this command draws is. Six rather

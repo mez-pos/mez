@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 // LetGo gives up a payment page a guest at the table opened (phase 11, Task

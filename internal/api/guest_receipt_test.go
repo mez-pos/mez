@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 func (o *orderingWorld) receipt(code, bill string) *httptest.ResponseRecorder {

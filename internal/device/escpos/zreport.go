@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // ZReport is the end-of-day summary a shift close prints. Phase 09 works out

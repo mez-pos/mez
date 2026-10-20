@@ -7,9 +7,9 @@ import (
 	"io"
 	"net"
 
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/logging"
-	"github.com/byjoellobo/mez/internal/service/firstrun"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/logging"
+	"github.com/mez-pos/mez/internal/service/firstrun"
 )
 
 // runSetupLink is `mez setup-link`: the address that opens mez in a browser

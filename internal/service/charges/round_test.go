@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/gateway"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/gateway"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // roundLines is a dosa and a coffee: 160.00, and 168.00 with its 5%.

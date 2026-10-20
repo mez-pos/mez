@@ -3,7 +3,7 @@ package menu
 import (
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // The menu as a file (phase 10, Task 8, ADR-293): every item on a row, in

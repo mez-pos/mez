@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/printjob"
+	"github.com/mez-pos/mez/internal/domain/printjob"
 )
 
 // TestSpoolerNoSuchPrinter: a printer name this computer does not have is

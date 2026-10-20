@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/config"
+	"github.com/mez-pos/mez/internal/config"
 )
 
 // TestRestrictWarnsAndGoesOn: a path that cannot be restricted is a Warn

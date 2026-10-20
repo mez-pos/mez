@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/zreport"
-	svcshift "github.com/byjoellobo/mez/internal/service/shift"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/zreport"
+	svcshift "github.com/mez-pos/mez/internal/service/shift"
 )
 
 // ZReports is what the API needs of the venue's Z-reports (ADR-098).

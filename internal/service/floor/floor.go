@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // The refusals. The API maps them to codes; those that are about a field

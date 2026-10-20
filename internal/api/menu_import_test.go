@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/service/menus"
+	"github.com/mez-pos/mez/internal/service/menus"
 )
 
 // The fixture's venue has one tax class, one station and one course, and

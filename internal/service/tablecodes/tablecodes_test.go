@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 var seededAt = time.Date(2026, 10, 5, 4, 30, 0, 0, time.UTC)

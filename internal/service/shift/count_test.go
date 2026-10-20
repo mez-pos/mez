@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // till sells through the real order service at venue 1.

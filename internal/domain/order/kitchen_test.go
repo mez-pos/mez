@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/fsm"
-	"github.com/byjoellobo/mez/internal/domain/kitchen"
+	"github.com/mez-pos/mez/internal/domain/fsm"
+	"github.com/mez-pos/mez/internal/domain/kitchen"
 )
 
 func TestBumpAndRecall(t *testing.T) {

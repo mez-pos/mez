@@ -3,7 +3,7 @@ package menu
 import (
 	"fmt"
 
-	"github.com/byjoellobo/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/sheet"
 )
 
 // Prices from a file (phase 10, Task 9, ADR-295): the menu's export with

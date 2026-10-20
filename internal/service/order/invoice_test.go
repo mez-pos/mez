@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // TestInvoiceReadAndReprint: an invoice reads back as issued, and a reprint

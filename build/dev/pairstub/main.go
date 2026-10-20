@@ -55,9 +55,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup/s3fake"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/relay"
+	"github.com/mez-pos/mez/internal/backup/s3fake"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/relay"
 )
 
 // bucketSecretEnv is where the bucket's secret is read from, as `mez

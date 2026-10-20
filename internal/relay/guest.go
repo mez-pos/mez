@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/relay/wire"
+	"github.com/mez-pos/mez/internal/relay/wire"
 )
 
 const (

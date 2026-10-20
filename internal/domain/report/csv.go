@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/export"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/zreport"
+	"github.com/mez-pos/mez/internal/domain/export"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/zreport"
 )
 
 // Sheet is one of a range's reports as a table: what a CSV download holds

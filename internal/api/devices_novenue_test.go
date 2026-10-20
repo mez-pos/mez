@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/auth"
 )
 
 // TestATokenAtAComputerWithNoVenueIsNotRefused is the till left on through

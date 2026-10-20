@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/domain/qr"
+	"github.com/mez-pos/mez/internal/domain/qr"
 )
 
 // The UPI payment of a table's bill as a QR code (phase 11, Task 4e3,

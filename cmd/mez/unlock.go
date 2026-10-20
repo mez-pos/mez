@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/logging"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/logging"
 )
 
 // ErrNotLocked is `mez unlock` asked to clear a lock that is not there.

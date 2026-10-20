@@ -9,8 +9,8 @@
 package dbhealth
 
 import (
-	"github.com/byjoellobo/mez/internal/api"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/api"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // Check is the database's health in the API's words, as api.WithDBCheck

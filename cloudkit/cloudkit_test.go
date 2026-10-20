@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/cloudkit"
-	"github.com/byjoellobo/mez/internal/cloud"
+	"github.com/mez-pos/mez/cloudkit"
+	"github.com/mez-pos/mez/internal/cloud"
 )
 
 // The cloud in these tests is written with cloudkit and the standard library

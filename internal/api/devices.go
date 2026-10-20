@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/auth"
 )
 
 // Devices is what the API needs from device authentication.

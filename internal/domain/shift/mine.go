@@ -6,8 +6,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // Mine is what one person did in a shift: the summary a waiter reads at

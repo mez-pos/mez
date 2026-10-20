@@ -18,9 +18,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // ErrRelayInSettings is a venue whose settings file names a relay of its

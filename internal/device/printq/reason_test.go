@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/printjob"
+	"github.com/mez-pos/mez/internal/domain/printjob"
 )
 
 // TestReason: what the queue screen is told about a failed send. A dial

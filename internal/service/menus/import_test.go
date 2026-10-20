@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	csvsheet "github.com/byjoellobo/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	csvsheet "github.com/mez-pos/mez/internal/domain/sheet"
 )
 
 // sheet is a file as the fixture's venues would write it: one tax class,

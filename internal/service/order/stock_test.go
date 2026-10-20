@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/stock"
-	"github.com/byjoellobo/mez/internal/domain/tax"
-	svcstock "github.com/byjoellobo/mez/internal/service/stock"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/domain/tax"
+	svcstock "github.com/mez-pos/mez/internal/service/stock"
 )
 
 // pantry is the order service over a menu with recipes: a dosa takes 150 g

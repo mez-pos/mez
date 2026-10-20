@@ -64,10 +64,10 @@ notes() {
 | Windows 10 or 11 | \`mez_${v}_windows_amd64_setup.exe\`, the installer |
 | Linux, 64-bit | \`mez_${v}_linux_amd64\`, with \`mez.service\` |
 | A Raspberry Pi 4 or 5 | \`mez_${v}_linux_arm64\`, with \`mez.service\` |
-| Docker | \`docker pull ghcr.io/byjoellobo/mez:${v#v}\`, with \`docker-compose.yml\` |
+| Docker | \`docker pull ghcr.io/mez-pos/mez:${v#v}\`, with \`docker-compose.yml\` |
 | macOS, Apple silicon | \`mez_${v}_darwin_arm64\` |
 
-[docs/deploy.md](https://github.com/byjoellobo/mez/blob/${v}/docs/deploy.md) says what to do with each.
+[docs/deploy.md](https://github.com/mez-pos/mez/blob/${v}/docs/deploy.md) says what to do with each.
 
 **Windows will warn you about the installer.** It is not signed, so
 SmartScreen says "Windows protected your PC". Choose **More info**, then

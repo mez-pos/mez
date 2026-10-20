@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/tax"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/tax"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // ErrOpenOrders refuses a change of tax profile while a ticket is open: its

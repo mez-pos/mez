@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/backup"
 )
 
 // session runs the venue for a moment: start, sell n rows from from, stop.

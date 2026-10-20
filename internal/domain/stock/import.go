@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/sheet"
 )
 
 // Ingredients from a spreadsheet (phase 10, Task 10a, ADR-298): a CSV file

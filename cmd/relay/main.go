@@ -31,7 +31,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/relay"
+	"github.com/mez-pos/mez/internal/relay"
 )
 
 // version is stamped at build time with -ldflags "-X main.version=...".

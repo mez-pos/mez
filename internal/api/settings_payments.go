@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
-	"github.com/byjoellobo/mez/internal/service/settings"
+	"github.com/mez-pos/mez/internal/auth"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/service/settings"
 )
 
 // paymentSettingsRequest is where the venue is paid when a guest pays from

@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/logging"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/logging"
 )
 
 // ErrNoVenue means there is no venue to pair a device to: setup has not run.

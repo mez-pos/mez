@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/config"
+	"github.com/mez-pos/mez/internal/config"
 )
 
 // TestSetupWritesToBothSinks: the developer watching the terminal and the

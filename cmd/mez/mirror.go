@@ -16,9 +16,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/mirror"
-	"github.com/byjoellobo/mez/web"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/mirror"
+	"github.com/mez-pos/mez/web"
 )
 
 // mirrorListenAddr is where a mirror listens unless told: this computer

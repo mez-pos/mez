@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/service/cloudpair"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/service/cloudpair"
 )
 
 // fakePairing answers a pairing as it is told to, and remembers the asking.

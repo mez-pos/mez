@@ -3,8 +3,8 @@ package zreport
 import (
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/shift"
 )
 
 // Tips are tallied by who took the payment (the staff report's Tips column,

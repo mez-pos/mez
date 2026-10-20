@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db"
-	domstock "github.com/byjoellobo/mez/internal/domain/stock"
-	"github.com/byjoellobo/mez/internal/service/stock"
+	"github.com/mez-pos/mez/internal/db"
+	domstock "github.com/mez-pos/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/service/stock"
 )
 
 func newStockTill(t *testing.T) (*till, map[string]string) {

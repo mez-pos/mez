@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/gateway"
-	"github.com/byjoellobo/mez/internal/gateway/gatewaytest"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway/gatewaytest"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 var now = time.Date(2026, 9, 18, 4, 30, 0, 0, time.UTC)

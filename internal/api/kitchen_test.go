@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/kitchen"
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/kitchen"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // TestKitchenOverHTTP: a kitchen display, with no one signed in, reads its

@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/service/menus"
+	"github.com/mez-pos/mez/internal/service/menus"
 )
 
 type (

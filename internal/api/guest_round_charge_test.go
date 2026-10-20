@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/gateway"
-	"github.com/byjoellobo/mez/internal/gateway/gatewaytest"
-	"github.com/byjoellobo/mez/internal/service/charges"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway/gatewaytest"
+	"github.com/mez-pos/mez/internal/service/charges"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // prepayWorld is a venue where guests pay first, and can: the setting says

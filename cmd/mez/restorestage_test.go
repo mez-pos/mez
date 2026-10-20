@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/restore"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/restore"
 )
 
 const stagedCode = "ABCD2345"

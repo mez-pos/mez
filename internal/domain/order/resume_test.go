@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // reopenedStream settles, invoices, closes, reopens and settles again, so a

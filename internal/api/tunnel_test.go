@@ -13,9 +13,9 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/relay"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
-	"github.com/byjoellobo/mez/internal/tunnel"
+	"github.com/mez-pos/mez/internal/relay"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/tunnel"
 )
 
 // The relay and the counter, on the real stack (phase 11, Task 2, ADR-202):

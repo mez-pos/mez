@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	csvsheet "github.com/byjoellobo/mez/internal/domain/sheet"
-	"github.com/byjoellobo/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/money"
+	csvsheet "github.com/mez-pos/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/stock"
 )
 
 // Ingredients from a spreadsheet (phase 10, Task 10a, ADR-298).

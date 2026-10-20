@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/tax"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/tax"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // A guest's receipt (phase 11, Task 5d, ADR-240):

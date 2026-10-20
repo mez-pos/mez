@@ -6,8 +6,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/byjoellobo/mez/internal/domain/payment"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/domain/payment"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // PaymentsInput is where the venue is paid when a guest pays from a phone

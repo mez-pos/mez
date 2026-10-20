@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // TestEngineInvariants is the engine's contract as a property, over random

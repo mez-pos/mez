@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/auth"
 )
 
 // TunnelState is where the venue's link to the relay stands. It is a

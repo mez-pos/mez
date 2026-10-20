@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/fsperm"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/fsperm"
 )
 
 // restrict leaves path to the people who run the server (ADR-259) and says

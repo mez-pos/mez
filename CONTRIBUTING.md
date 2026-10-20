@@ -49,7 +49,7 @@ You need:
 | sqlc | 1.31 | Only if you change SQL (`make generate`) |
 
 ```sh
-git clone https://github.com/byjoellobo/mez.git
+git clone https://github.com/mez-pos/mez.git
 cd mez
 make check        # gofmt, go vet, Go tests, TypeScript typecheck, build bin/mez
 make build-web    # Prettier check, vitest, production builds, guest size budget

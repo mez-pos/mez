@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/service/settings"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/service/settings"
 )
 
 // Settings is what the API needs from the venue settings.

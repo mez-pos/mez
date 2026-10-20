@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/payment"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/payment"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // gstCafe is a Bengaluru cafe (Karnataka, state 29).

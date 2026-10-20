@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 var menuNow = time.Date(2026, 9, 23, 9, 0, 0, 0, time.UTC)

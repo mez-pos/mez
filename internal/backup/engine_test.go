@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // venue is a data directory with a migrated database in it, the way the

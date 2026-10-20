@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 // Sign-in outcomes, as sign_in_attempts records them.

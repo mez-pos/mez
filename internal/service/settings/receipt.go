@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/device/escpos"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
-	"github.com/byjoellobo/mez/internal/service/printing"
+	"github.com/mez-pos/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/domain/order"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/service/printing"
 )
 
 // ReceiptInput is what a venue adds to its receipts and credit notes beyond

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 // A venue's pickup code (phase 11, Task 6e, ADR-237, ADR-247) leads to the

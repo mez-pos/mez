@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/service/reports"
+	"github.com/mez-pos/mez/internal/service/reports"
 )
 
 func TestASalesReportAsCSV(t *testing.T) {

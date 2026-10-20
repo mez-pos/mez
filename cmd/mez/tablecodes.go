@@ -9,11 +9,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/logging"
-	"github.com/byjoellobo/mez/internal/service/tablecodes"
-	"github.com/byjoellobo/mez/web"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/logging"
+	"github.com/mez-pos/mez/internal/service/tablecodes"
+	"github.com/mez-pos/mez/web"
 )
 
 // runTableCodes is `mez table-codes`: every table on the floor with the code

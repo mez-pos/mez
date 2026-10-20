@@ -5,9 +5,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/domain/kitchen"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/kitchen"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // Project folds an order's events into its current state.

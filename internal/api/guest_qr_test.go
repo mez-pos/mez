@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/qr"
-	"github.com/byjoellobo/mez/internal/service/settings"
+	"github.com/mez-pos/mez/internal/domain/qr"
+	"github.com/mez-pos/mez/internal/service/settings"
 )
 
 // TestGuestBillQR: the picture is the bill's own UPI link, for the same

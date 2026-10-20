@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway"
 )
 
 // Stripe's webhooks (phase 11, Task 4f6a, ADR-230; the hook is ADR-224's).

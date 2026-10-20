@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/service/people"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/service/people"
 )
 
 func newPeopleTill(t *testing.T) (*till, map[string]string) {

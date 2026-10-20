@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/gateway"
-	"github.com/byjoellobo/mez/internal/service/charges"
+	"github.com/mez-pos/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/service/charges"
 )
 
 func decodeSheet(t *testing.T, o *orderingWorld, owner map[string]string) tableCodeSheetResponse {

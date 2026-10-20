@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // pairedVenueBackedUp is a venue paired to mez Cloud before its backup was

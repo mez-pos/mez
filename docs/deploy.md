@@ -51,7 +51,7 @@ Each release on GitHub, under **Releases**, has these, and a
 | `mez_<version>_linux_arm64` | A Raspberry Pi 4 or 5, with `mez.service` |
 | `mez_<version>_darwin_arm64` | macOS, Apple silicon |
 
-and a Docker image, `ghcr.io/byjoellobo/mez:<version>` (the version without
+and a Docker image, `ghcr.io/mez-pos/mez:<version>` (the version without
 its `v`, for amd64 and arm64; there is no `latest`), with
 `docker-compose.yml`. There is no release yet; until there is, build them.
 
@@ -411,14 +411,14 @@ and upgrades. `docker compose down -v` deletes it, venue and all.
 needed. The `docker-compose.yml` beside a release is this same file, and it
 builds from source: to use it without the source, delete its `build:` block
 (three lines) and change `image: mez:local` to
-`image: ghcr.io/byjoellobo/mez:<version>`. Or without compose:
+`image: ghcr.io/mez-pos/mez:<version>`. Or without compose:
 
 ```sh
 docker volume create mez-data
-docker run --rm -v mez-data:/data ghcr.io/byjoellobo/mez:<version> setup \
+docker run --rm -v mez-data:/data ghcr.io/mez-pos/mez:<version> setup \
        -name "Filter Coffee House" -owner Priya -timezone Asia/Kolkata -device-kind back_office
 docker run -d --name mez --restart unless-stopped --stop-timeout 20 -p 7777:7777 \
-       -e MEZ_TIMEZONE=Asia/Kolkata -v mez-data:/data ghcr.io/byjoellobo/mez:<version>
+       -e MEZ_TIMEZONE=Asia/Kolkata -v mez-data:/data ghcr.io/mez-pos/mez:<version>
 ```
 
 No release has been made, so no image has been pulled from the registry:

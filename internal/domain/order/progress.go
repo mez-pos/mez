@@ -3,7 +3,7 @@ package order
 import (
 	"slices"
 
-	"github.com/byjoellobo/mez/internal/domain/kitchen"
+	"github.com/mez-pos/mez/internal/domain/kitchen"
 )
 
 // Progress is how far some lines of an order have come in the kitchen, as a

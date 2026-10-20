@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // The tip ceiling (ADR-261). A tip is kept apart from the bill and paid out

@@ -3,7 +3,7 @@ package shift
 import (
 	"errors"
 
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // ErrNoOpenShift refuses an order event that must belong to a shift when

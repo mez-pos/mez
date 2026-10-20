@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // Groups of choices from a spreadsheet (phase 10, Task 11, ADR-302).

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 // Standing is how paying online stands at a venue, for its owner to read

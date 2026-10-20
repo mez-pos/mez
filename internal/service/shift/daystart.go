@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // SettingDayStart is the venue setting for when the trading day begins, local

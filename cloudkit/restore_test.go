@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/byjoellobo/mez/cloudkit"
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/backup/s3fake"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/cloudkit"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/backup/s3fake"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // The venue below is the venue's own backup, internal/backup, writing to a

@@ -18,13 +18,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/api"
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/backup/s3fake"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/service/cloudrecover"
-	"github.com/byjoellobo/mez/internal/service/firstrun"
+	"github.com/mez-pos/mez/internal/api"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/backup/s3fake"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/service/cloudrecover"
+	"github.com/mez-pos/mez/internal/service/firstrun"
 )
 
 const (

@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/backup/s3fake"
+	"github.com/mez-pos/mez/internal/backup/s3fake"
 )
 
 // fakeS3 is the stand-in bucket these tests back up to (internal/backup/s3fake).

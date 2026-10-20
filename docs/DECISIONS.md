@@ -3589,7 +3589,7 @@ close counted stock are listed, and the section says so.
 2026-10 · Status: accepted
 Decision: Nofiltr POS becomes **mez**, written lower case as its wordmark
 is. The rename is whole, not a display name over an old core:
-  - Binary `mez`, `cmd/mez`, module `github.com/byjoellobo/mez`.
+  - Binary `mez`, `cmd/mez`, module `github.com/mez-pos/mez`.
   - Environment `MEZ_*`; database `mez.db`; log `mez.log`; the default
     data directory ends in `mez`.
   - Browser storage keys `mez.<app>.*` and the stream's subprotocol
@@ -13179,7 +13179,7 @@ the mirror. All are under `internal/`, which Go lets no other module import. The
 ways out were a second module inside this repository, or a repository of its own with
 what it needs reachable from outside `internal/`.
 Decision:
-  - **A private repository, `github.com/byjoellobo/mez-cloud`**, created empty on
+  - **A private repository, `github.com/mez-pos/mez-cloud`**, created empty on
     2026-10-13 and cloned at `I:\mez-cloud`. ADR-312 said the service is private;
     this repository is public and AGPL, so a module inside it would have published
     the accounts, the billing and the admin area.
@@ -13317,7 +13317,7 @@ answering a recovery, signing an assertion, and running the relay with entitleme
 of its own. The requests and answers of the first two were unexported structs, and
 in places anonymous ones, inside the venue's client.
 Decision:
-  - **`github.com/byjoellobo/mez/cloudkit`, one package, outside `internal/`.** It
+  - **`github.com/mez-pos/mez/cloudkit`, one package, outside `internal/`.** It
     is type aliases, constants and function values that name what is under
     `internal/cloud`, `internal/relay` and `internal/backup`, and one function,
     `CleanCode`. No logic lives there. An alias to a type in `internal/` is usable

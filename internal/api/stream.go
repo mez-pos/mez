@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/hub"
+	"github.com/mez-pos/mez/internal/hub"
 )
 
 // tokenProtocolPrefix is how a browser sends its device token. The

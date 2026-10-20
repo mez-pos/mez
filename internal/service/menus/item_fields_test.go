@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/menu"
 )
 
 // TestItemCardFieldsAreSavedAndRead: what the editor saves is what the

@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/device/printq"
-	"github.com/byjoellobo/mez/internal/domain/printjob"
-	"github.com/byjoellobo/mez/internal/service/printers"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/device/printq"
+	"github.com/mez-pos/mez/internal/domain/printjob"
+	"github.com/mez-pos/mez/internal/service/printers"
 )
 
 // TestPrintersOverHTTP: the owner adds, routes, tests and retires

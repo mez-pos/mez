@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // symbols are the currency marks a receipt's total carries, in ASCII.

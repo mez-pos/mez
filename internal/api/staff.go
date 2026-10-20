@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/auth"
 )
 
 // HeaderStaffToken carries the staff session token. It is a header of its

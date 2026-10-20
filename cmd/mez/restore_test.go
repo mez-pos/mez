@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // backedUpVenue makes a venue the way an owner does (`mez setup`), runs the

@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/export"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	svcshift "github.com/byjoellobo/mez/internal/service/shift"
+	"github.com/mez-pos/mez/internal/domain/export"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	svcshift "github.com/mez-pos/mez/internal/service/shift"
 )
 
 // kindWords is each kind as the file says it.

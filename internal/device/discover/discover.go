@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/device/escpos"
 )
 
 // The search is sized for a cafe's network: one /24 a card, a few hundred

@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/service/printing"
-	svcstock "github.com/byjoellobo/mez/internal/service/stock"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/service/printing"
+	svcstock "github.com/mez-pos/mez/internal/service/stock"
 )
 
 var (

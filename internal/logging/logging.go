@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/byjoellobo/mez/internal/config"
+	"github.com/mez-pos/mez/internal/config"
 )
 
 // Rotation policy for the file log. These are constants rather than settings

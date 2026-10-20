@@ -16,9 +16,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 var (

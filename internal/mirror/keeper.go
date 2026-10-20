@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/id"
+	"github.com/mez-pos/mez/internal/domain/id"
 )
 
 const (

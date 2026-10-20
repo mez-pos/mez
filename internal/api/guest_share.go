@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/service/charges"
-	"github.com/byjoellobo/mez/internal/service/tablecodes"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/service/charges"
+	"github.com/mez-pos/mez/internal/service/tablecodes"
 )
 
 // Guests split a bill (phase 11, Task 4g2, ADR-233). A share is an amount of

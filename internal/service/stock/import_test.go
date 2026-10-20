@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	csvsheet "github.com/byjoellobo/mez/internal/domain/sheet"
-	"github.com/byjoellobo/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/domain/money"
+	csvsheet "github.com/mez-pos/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/stock"
 )
 
 const ingredients = "Name,Counted in,Low at,Cost,Count at close\n" +

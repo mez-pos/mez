@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/service/stock"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/service/stock"
 )
 
 const ingredientSheet = "Name,Counted in,Low at,Cost,Count at close\nMilk,ml,2000,60,yes\nEggs,each,12,7.50,\n"

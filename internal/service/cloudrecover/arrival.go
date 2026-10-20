@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/restore"
-	"github.com/byjoellobo/mez/internal/service/cloudpair"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/restore"
+	"github.com/mez-pos/mez/internal/service/cloudpair"
 )
 
 // ErrNoClaim is an outcome asked for with a claim that is not the one this

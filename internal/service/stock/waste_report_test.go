@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/domain/stock"
 )
 
 // clockAt is a clock stopped at an instant.

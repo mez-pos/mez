@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/service/settings"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/service/settings"
 )
 
 // TestBackupSettingsOverHTTP is the owner in the Backups section, against

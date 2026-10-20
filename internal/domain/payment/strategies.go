@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // Evenly splits the bill n ways. The largest remainder method decides who

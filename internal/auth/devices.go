@@ -10,9 +10,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/id"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/id"
 )
 
 // PairingCodeTTL is how long a pairing code works. Long enough to walk from

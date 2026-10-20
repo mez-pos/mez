@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/id"
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/id"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // "I have paid" (phase 11, Task 4e4, ADR-218). A guest who paid the venue

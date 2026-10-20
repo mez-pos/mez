@@ -16,7 +16,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // ErrUnavailable means the gateway could not be asked: no network, a

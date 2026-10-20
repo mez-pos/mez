@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/domain/export"
-	domstock "github.com/byjoellobo/mez/internal/domain/stock"
-	"github.com/byjoellobo/mez/internal/service/stock"
+	"github.com/mez-pos/mez/internal/domain/export"
+	domstock "github.com/mez-pos/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/service/stock"
 )
 
 // Ingredients from a spreadsheet (phase 10, Task 10a, ADR-298): the menu

@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/service/menus"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/service/menus"
 )
 
 // MenuEditor is what the API needs from the back office's menu editor.

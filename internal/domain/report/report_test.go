@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/domain/tax"
-	"github.com/byjoellobo/mez/internal/domain/zreport"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/zreport"
 )
 
 func inr(minor int64) money.Amount { return money.Amount{Minor: minor, Currency: "INR"} }

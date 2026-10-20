@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/service/cloudsignin"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/service/cloudsignin"
 )
 
 // BrowserName is what a browser paired to a mirror is called.

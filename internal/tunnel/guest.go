@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/relay/wire"
+	"github.com/mez-pos/mez/internal/relay/wire"
 )
 
 // errNoSuchPath is a guest path that is not one.

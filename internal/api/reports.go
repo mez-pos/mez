@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/export"
-	"github.com/byjoellobo/mez/internal/domain/report"
-	"github.com/byjoellobo/mez/internal/service/reports"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/export"
+	"github.com/mez-pos/mez/internal/domain/report"
+	"github.com/mez-pos/mez/internal/service/reports"
 )
 
 // Reports is what the API needs from the range reports (phase 10, Task 5a,

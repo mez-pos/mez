@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/domain/shift"
 )
 
 // MyShift is what one person did in the open shift (T08).

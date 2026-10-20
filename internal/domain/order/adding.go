@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // Adding is what a ticket's total would rise by if lines were added to it:

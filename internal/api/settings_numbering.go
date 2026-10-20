@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/service/settings"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/service/settings"
 )
 
 type numberingRequest struct {

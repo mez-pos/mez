@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway"
 )
 
 func TestSweepAllAsksNobodyWithNothingOpen(t *testing.T) {

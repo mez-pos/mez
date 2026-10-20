@@ -13,16 +13,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/export"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/report"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/domain/zreport"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
-	svcshift "github.com/byjoellobo/mez/internal/service/shift"
-	svcstock "github.com/byjoellobo/mez/internal/service/stock"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/export"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/report"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/domain/zreport"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
+	svcshift "github.com/mez-pos/mez/internal/service/shift"
+	svcstock "github.com/mez-pos/mez/internal/service/stock"
 )
 
 // ErrBadRange is a range the reports cannot be read over.

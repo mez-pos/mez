@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/sheet"
 )
 
 // Recipes from a spreadsheet (phase 10, Task 10c, ADR-300): a CSV file with

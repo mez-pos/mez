@@ -8,13 +8,13 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/byjoellobo/mez/internal/device/escpos"
-	"github.com/byjoellobo/mez/internal/domain/invoice"
-	"github.com/byjoellobo/mez/internal/domain/shift"
-	"github.com/byjoellobo/mez/internal/domain/tips"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
-	"github.com/byjoellobo/mez/internal/service/printing"
-	svcshift "github.com/byjoellobo/mez/internal/service/shift"
+	"github.com/mez-pos/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/domain/invoice"
+	"github.com/mez-pos/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/domain/tips"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/service/printing"
+	svcshift "github.com/mez-pos/mez/internal/service/shift"
 )
 
 // key is one setting the venue can hold: its name in the settings table, what

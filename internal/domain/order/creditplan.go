@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // CreditRequest is what a credit note should take off the bill: whole units

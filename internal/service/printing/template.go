@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/device/escpos"
 )
 
 // The venue settings behind a receipt's template (phase 10, Task 6f,

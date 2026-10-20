@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/auth"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // TestAPairingCodeNeedsThePermission is the back office endpoint 3a left

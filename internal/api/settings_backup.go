@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/service/settings"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/service/settings"
 )
 
 // The backup settings error codes.

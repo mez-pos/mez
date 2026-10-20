@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // The handlers that move money or settle the order, and the checks the

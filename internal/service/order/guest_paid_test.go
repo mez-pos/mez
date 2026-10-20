@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // takeUPI gives venue 1 a UPI address, without which there is nothing a

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/printjob"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/printjob"
 )
 
 // The refusals of a person's retry or cancel. The API maps them to codes.

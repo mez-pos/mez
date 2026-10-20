@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/payment"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/payment"
 )
 
 // ErrSplitAfterPayment refuses a split by item or by guest once money has

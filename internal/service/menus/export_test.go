@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/menu"
 )
 
 func (w *world) export(t *testing.T, venue int64) [][]string {

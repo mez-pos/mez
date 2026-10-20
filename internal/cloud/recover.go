@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/backup"
 )
 
 // Recovery is the venue's other meeting with mez Cloud that it starts

@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/api"
-	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/api"
+	"github.com/mez-pos/mez/internal/backup"
 )
 
 // startMirror runs `mez mirror` over a backup until the test ends, and

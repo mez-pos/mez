@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway"
 )
 
 // Razorpay's webhooks (phase 11, Task 4f5, ADR-224). Razorpay calls the

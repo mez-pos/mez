@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/sheet"
 )
 
 func store() ItemsVenue {

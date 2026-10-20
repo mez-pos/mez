@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // TestAnOrderOpensOnlyAtATableInService: a table the venue has, in service;

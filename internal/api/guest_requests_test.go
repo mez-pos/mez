@@ -9,7 +9,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // requestsWorld is orderingWorld with a member of staff signed in at the

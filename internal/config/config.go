@@ -24,8 +24,8 @@ import (
 	// See ADR-017.
 	_ "time/tzdata"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/cloud"
 )
 
 // FileName is the configuration file Load looks for beside the binary.

@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/device/escpos"
-	"github.com/byjoellobo/mez/internal/device/printq"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/printjob"
-	"github.com/byjoellobo/mez/internal/domain/zreport"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/device/printq"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/printjob"
+	"github.com/mez-pos/mez/internal/domain/zreport"
 )
 
 // PrintQueue is the print queue as the shift needs it: woken after a

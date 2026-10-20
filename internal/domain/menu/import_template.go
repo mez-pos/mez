@@ -1,8 +1,8 @@
 package menu
 
 import (
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/sheet"
 )
 
 // exampleCategory is the category the examples go in at a venue with no

@@ -10,7 +10,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/byjoellobo/mez/internal/relay/wire"
+	"github.com/mez-pos/mez/internal/relay/wire"
 )
 
 const (

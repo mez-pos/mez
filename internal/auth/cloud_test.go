@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/db/gen"
 )
 
 const testNonce = "nonce-0123456789abcdef"

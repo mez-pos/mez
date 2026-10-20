@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/config"
+	"github.com/mez-pos/mez/internal/config"
 )
 
 // TestNewGateway: a gateway set with its keys is built; one set without

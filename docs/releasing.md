@@ -43,7 +43,7 @@ marked a pre-release.
 | make check | Nothing. It runs `make build-web` and `make check`, and stops the release if either fails. |
 | binaries | `make dist`: Windows, Linux amd64 and arm64, macOS arm64 |
 | Windows installer | `mez_<version>_windows_amd64_setup.exe`, on a Windows runner with Inno Setup |
-| Docker image | `ghcr.io/byjoellobo/mez:<version>` for amd64 and arm64. Pushed at once. |
+| Docker image | `ghcr.io/mez-pos/mez:<version>` for amd64 and arm64. Pushed at once. |
 | draft release | The files above, `mez.service`, `docker-compose.yml`, `mez_<version>_checksums.txt`, and the notes |
 
 The image is the one thing that is public before you publish: it is pushed

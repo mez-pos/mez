@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/byjoellobo/mez/internal/domain/printjob"
+	"github.com/mez-pos/mez/internal/domain/printjob"
 )
 
 // The Windows print spooler, called directly: winspool.drv's RAW printing

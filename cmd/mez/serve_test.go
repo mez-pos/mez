@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/api"
-	"github.com/byjoellobo/mez/internal/config"
+	"github.com/mez-pos/mez/internal/api"
+	"github.com/mez-pos/mez/internal/config"
 )
 
 // TestServeFinishesInFlightRequests is the test this task exists for. Cancelling

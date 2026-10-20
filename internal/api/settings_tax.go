@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/tax"
-	"github.com/byjoellobo/mez/internal/service/settings"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/service/settings"
 )
 
 // The tax settings error codes (phase 10, Task 6b).

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/domain/sheet"
+	"github.com/mez-pos/mez/internal/domain/sheet"
 )
 
 // Groups of choices from a spreadsheet (phase 10, Task 11, ADR-302): a CSV

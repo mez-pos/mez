@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/printjob"
-	"github.com/byjoellobo/mez/internal/service/printers"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/printjob"
+	"github.com/mez-pos/mez/internal/service/printers"
 )
 
 // Printers is what the API needs from the printer settings.

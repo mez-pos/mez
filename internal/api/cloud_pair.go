@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/service/cloudpair"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/service/cloudpair"
 )
 
 // Why a venue was not paired to mez Cloud (ADR-318, ADR-320).

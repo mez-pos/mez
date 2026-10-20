@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/order"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/domain/order"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // A tip a manager let through over the venue's ceiling is in the trail, worth

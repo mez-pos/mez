@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 func exportFile(t *testing.T, items []ExportItem) []byte {

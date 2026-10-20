@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/fsm"
+	"github.com/mez-pos/mez/internal/domain/fsm"
 )
 
 // Status is where a shift is in its life.

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway"
 )
 
 const hookSecret = "whsec-that-must-never-be-seen"

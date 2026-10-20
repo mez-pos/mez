@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // componentsFunc is a profile's one decision per line: which components tax

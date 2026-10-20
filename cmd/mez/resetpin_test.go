@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/auth"
 )
 
 // resetPINPrinted is the PIN `mez reset-pin` printed: six digits on a line of

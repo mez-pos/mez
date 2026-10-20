@@ -6,11 +6,11 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/tax"
-	"github.com/byjoellobo/mez/internal/service/menus"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/service/menus"
 )
 
 const gstin = "29ABCDE1234F1Z5"

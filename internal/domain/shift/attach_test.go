@@ -3,7 +3,7 @@ package shift
 import (
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/order"
 )
 
 // Every event type is decided here, by name, so a new type fails this test

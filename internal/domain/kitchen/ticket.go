@@ -11,7 +11,7 @@
 //	ready -> fired     recalled: bumped by mistake, back on the screen
 package kitchen
 
-import "github.com/byjoellobo/mez/internal/domain/fsm"
+import "github.com/mez-pos/mez/internal/domain/fsm"
 
 // TicketStatus is where a ticket is at its station.
 type TicketStatus string

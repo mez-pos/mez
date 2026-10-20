@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/payment"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/domain/payment"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 func TestPaymentsOfANewVenueAreUnset(t *testing.T) {

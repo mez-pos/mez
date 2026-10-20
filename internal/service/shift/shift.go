@@ -17,10 +17,10 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/id"
-	"github.com/byjoellobo/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/id"
+	"github.com/mez-pos/mez/internal/domain/shift"
 )
 
 // The refusals. The API maps them to codes.

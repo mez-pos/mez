@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/service/settings"
+	"github.com/mez-pos/mez/internal/service/settings"
 )
 
 // TestVenueSettingsOverHTTP: the owner reads and renames the venue, a bad

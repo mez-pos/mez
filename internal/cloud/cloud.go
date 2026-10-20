@@ -30,7 +30,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/backup"
 )
 
 // File is where a pairing is kept, in the data directory.

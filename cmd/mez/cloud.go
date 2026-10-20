@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/api"
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/tunnel"
+	"github.com/mez-pos/mez/internal/api"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/tunnel"
 )
 
 // pairingUse is what the server makes of the venue's pairing (ADR-319).

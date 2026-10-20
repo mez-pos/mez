@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/config"
+	"github.com/mez-pos/mez/internal/config"
 )
 
 // TestRouting covers the shape of every answer this API can currently give. The

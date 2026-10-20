@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/byjoellobo/mez/internal/service/menus"
+	"github.com/mez-pos/mez/internal/service/menus"
 )
 
 // Prices from a file (phase 10, Task 9b, ADR-296). Both routes take the CSV

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // A guest asks how their order stands (phase 11, Task 5b, ADR-238):

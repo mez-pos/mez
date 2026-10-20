@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/restore"
-	"github.com/byjoellobo/mez/internal/service/cloudpair"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/restore"
+	"github.com/mez-pos/mez/internal/service/cloudpair"
 )
 
 const (

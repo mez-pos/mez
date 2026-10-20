@@ -15,7 +15,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"github.com/byjoellobo/mez/internal/relay"
+	"github.com/mez-pos/mez/internal/relay"
 )
 
 const testSecret = "0123456789abcdef0123456789abcdef"

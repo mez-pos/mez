@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/backup/s3fake"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/backup/s3fake"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 const (

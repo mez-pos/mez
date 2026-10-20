@@ -31,8 +31,8 @@ AppName=mez
 AppVersion={#Version}
 AppVerName=mez {#Version}
 AppPublisher=mez
-AppPublisherURL=https://github.com/byjoellobo/mez
-AppSupportURL=https://github.com/byjoellobo/mez/issues
+AppPublisherURL=https://github.com/mez-pos/mez
+AppSupportURL=https://github.com/mez-pos/mez/issues
 DefaultDirName={autopf}\mez
 ; No questions an owner cannot answer: the folder and the Start menu group
 ; are decided.

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/tax"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/tax"
 )
 
 // Credit notes (phase 07, Task 6a, ADR-083). When money goes back to a guest

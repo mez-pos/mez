@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/fsm"
-	"github.com/byjoellobo/mez/internal/domain/fsm/fsmtest"
+	"github.com/mez-pos/mez/internal/domain/fsm"
+	"github.com/mez-pos/mez/internal/domain/fsm/fsmtest"
 )
 
 // Restated from docs/02-domain.md and ADR-047, not copied from table.go.

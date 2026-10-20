@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/device/escpos"
 )
 
 // Candidate is something a search found that the venue could add as a

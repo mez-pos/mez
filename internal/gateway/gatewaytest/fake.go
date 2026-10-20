@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/gateway"
 )
 
 // Fake is a gateway.Gateway held in memory.

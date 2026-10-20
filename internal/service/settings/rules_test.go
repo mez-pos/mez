@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/db/gen"
-	svcshift "github.com/byjoellobo/mez/internal/service/shift"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/db/gen"
+	svcshift "github.com/mez-pos/mez/internal/service/shift"
 )
 
 // stockRules is what a venue that has set none of them reads as.

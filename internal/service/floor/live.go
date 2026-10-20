@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/table"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/table"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // LiveTable is a table in service and where it is in its turn.

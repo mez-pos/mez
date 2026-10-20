@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/service/floor"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/service/floor"
 )
 
 // TestDemoVenueHasEveryRole: a screen built for a role is tried by signing in

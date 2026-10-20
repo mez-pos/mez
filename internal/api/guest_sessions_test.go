@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // A guest's phone and its session for the sitting (ADR-262). The phones in

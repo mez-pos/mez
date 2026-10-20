@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/money"
 )
 
 // The ceiling is the payment's share at the venue's percent, rounded up to

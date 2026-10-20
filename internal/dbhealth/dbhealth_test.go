@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/api"
-	"github.com/byjoellobo/mez/internal/db"
+	"github.com/mez-pos/mez/internal/api"
+	"github.com/mez-pos/mez/internal/db"
 )
 
 // TestDBCheckMapsOntoTheAPIVocabulary is the seam between two packages that

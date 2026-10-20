@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/relay/wire"
+	"github.com/mez-pos/mez/internal/relay/wire"
 )
 
 // Entitlement is whether the relay carries a venue, until when, and how far

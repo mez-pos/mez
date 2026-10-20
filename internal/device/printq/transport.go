@@ -3,7 +3,7 @@ package printq
 import (
 	"context"
 
-	"github.com/byjoellobo/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/device/escpos"
 )
 
 // Transport sends a job's bytes to a printer at address, whose meaning is

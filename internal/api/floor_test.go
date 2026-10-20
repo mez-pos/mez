@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/order"
-	"github.com/byjoellobo/mez/internal/domain/table"
-	"github.com/byjoellobo/mez/internal/service/floor"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/table"
+	"github.com/mez-pos/mez/internal/service/floor"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // TestFloorOverHTTP: the owner lays out areas and tables, moves one, and

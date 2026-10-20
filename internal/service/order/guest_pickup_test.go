@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/shift"
 )
 
 func (g guestMenu) pickup() PlacePickup {

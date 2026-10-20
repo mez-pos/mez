@@ -4,7 +4,7 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/api"
+	"github.com/mez-pos/mez/internal/api"
 )
 
 // Stamped at build time with -ldflags "-X main.version=...". See the Makefile.

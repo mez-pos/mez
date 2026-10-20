@@ -6,11 +6,11 @@ import (
 	"log/slog"
 	"sync/atomic"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/restore"
-	"github.com/byjoellobo/mez/internal/service/cloudpair"
-	"github.com/byjoellobo/mez/internal/service/cloudrecover"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/restore"
+	"github.com/mez-pos/mez/internal/service/cloudpair"
+	"github.com/mez-pos/mez/internal/service/cloudrecover"
 )
 
 // errStartAgain is run returning because it was asked to start again, and

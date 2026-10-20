@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/service/people"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/service/people"
 )
 
 // People is what the API needs from staff and roles (phase 10, Task 4a).

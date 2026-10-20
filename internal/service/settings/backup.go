@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/backup"
 )
 
 // Backups is what the settings need from the venue's backup (phase 12,

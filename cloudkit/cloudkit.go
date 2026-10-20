@@ -29,12 +29,12 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/api"
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/mirror"
-	"github.com/byjoellobo/mez/internal/relay"
-	"github.com/byjoellobo/mez/web"
+	"github.com/mez-pos/mez/internal/api"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/mirror"
+	"github.com/mez-pos/mez/internal/relay"
+	"github.com/mez-pos/mez/web"
 )
 
 // Pairing: POST PairPath, a PairRequest, answered with a PairAnswer

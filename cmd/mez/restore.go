@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/config"
-	"github.com/byjoellobo/mez/internal/db"
-	"github.com/byjoellobo/mez/internal/fsperm"
-	"github.com/byjoellobo/mez/internal/restore"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/config"
+	"github.com/mez-pos/mez/internal/db"
+	"github.com/mez-pos/mez/internal/fsperm"
+	"github.com/mez-pos/mez/internal/restore"
 )
 
 // restoreSecretEnv is where `mez restore` reads a bucket's secret from.

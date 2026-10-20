@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/backup"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/restore"
-	"github.com/byjoellobo/mez/internal/service/cloudrecover"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/backup"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/restore"
+	"github.com/mez-pos/mez/internal/service/cloudrecover"
 )
 
 // "I had mez before", over HTTP (ADR-332 to ADR-335): the wizard's way to

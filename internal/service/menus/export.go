@@ -4,7 +4,7 @@ import (
 	"context"
 	"slices"
 
-	"github.com/byjoellobo/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/domain/menu"
 )
 
 // ExportMenu is the venue's menu as the rows of a file (phase 10, Task 8a,

@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/domain/qr"
-	"github.com/byjoellobo/mez/internal/service/tablecodes"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/qr"
+	"github.com/mez-pos/mez/internal/service/tablecodes"
 )
 
 // The codes on a venue's tables, for whoever runs the venue (phase 11, Task

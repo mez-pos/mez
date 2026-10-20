@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/stock"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/stock"
 )
 
 // Recipes from a spreadsheet (phase 10, Task 10c, ADR-300).

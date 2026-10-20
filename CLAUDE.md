@@ -1,7 +1,7 @@
 # mez — Agent Instructions
 
 > Product name: **mez**. Binary: `mez`.
-> Go module path: `github.com/byjoellobo/mez` (set in `go.mod`).
+> Go module path: `github.com/mez-pos/mez` (set in `go.mod`).
 
 You are building an open-source, self-hostable Point of Sale system for cafes,
 bars and small restaurants. It runs as a single binary on the venue's own

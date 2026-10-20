@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/auth"
-	"github.com/byjoellobo/mez/internal/cloud"
-	"github.com/byjoellobo/mez/internal/service/cloudsignin"
+	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/cloud"
+	"github.com/mez-pos/mez/internal/service/cloudsignin"
 )
 
 const cloudRoute = "/api/v1/sessions/cloud"

@@ -10,9 +10,9 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/byjoellobo/mez/internal/gateway"
-	"github.com/byjoellobo/mez/internal/gateway/gatewaytest"
-	"github.com/byjoellobo/mez/internal/service/charges"
+	"github.com/mez-pos/mez/internal/gateway"
+	"github.com/mez-pos/mez/internal/gateway/gatewaytest"
+	"github.com/mez-pos/mez/internal/service/charges"
 )
 
 // hookTeller is a gateway.Notified for the API's tests: a call is the

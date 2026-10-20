@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	svcorder "github.com/byjoellobo/mez/internal/service/order"
+	"github.com/mez-pos/mez/internal/domain/money"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 )
 
 // The split error codes (phase 07, Task 2).

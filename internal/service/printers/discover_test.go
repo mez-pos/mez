@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/byjoellobo/mez/internal/device/discover"
+	"github.com/mez-pos/mez/internal/device/discover"
 )
 
 // finder answers a search with what it was given.

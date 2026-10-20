@@ -12,7 +12,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/domain/fsm"
+	"github.com/mez-pos/mez/internal/domain/fsm"
 )
 
 // State is where a job is. The string is what print_jobs.state stores.

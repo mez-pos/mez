@@ -7,9 +7,9 @@ import (
 	"mime"
 	"net/http"
 
-	"github.com/byjoellobo/mez/internal/domain/export"
-	"github.com/byjoellobo/mez/internal/domain/menu"
-	"github.com/byjoellobo/mez/internal/service/menus"
+	"github.com/mez-pos/mez/internal/domain/export"
+	"github.com/mez-pos/mez/internal/domain/menu"
+	"github.com/mez-pos/mez/internal/service/menus"
 )
 
 // The menu from a spreadsheet (phase 10, Task 7b, ADR-288). Both routes take

@@ -3,8 +3,8 @@ package report
 import (
 	"math/big"
 
-	"github.com/byjoellobo/mez/internal/domain/money"
-	"github.com/byjoellobo/mez/internal/domain/zreport"
+	"github.com/mez-pos/mez/internal/domain/money"
+	"github.com/mez-pos/mez/internal/domain/zreport"
 )
 
 // Costing is how much of a dish's cost the ledger knows over a range.

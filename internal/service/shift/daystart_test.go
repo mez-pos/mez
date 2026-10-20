@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/byjoellobo/mez/internal/db/gen"
-	"github.com/byjoellobo/mez/internal/domain/shift"
+	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/shift"
 )
 
 // ahead of the default: 04:30 in Kolkata on the 28th, a half hour after the
