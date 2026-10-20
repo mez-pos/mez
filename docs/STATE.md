@@ -34,7 +34,7 @@ assertion through the door alone. The health check's mapping is
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 8i3a there, its deploy scripts through `sudo` for its Contabo box; 7e, 8g, 8c, 8d, 8e, 8f, 8h1, 8h2, 8i1 and 8i2 are done). This repository is touched again when:
+(Task 8i3b there, the first deploy to its Contabo box, which waits on the human's R2, Cloudflare and mezpos.com; 7e, 8g, 8c, 8d, 8e, 8f, 8h1, 8h2, 8i1, 8i2 and 8i3a are done). This repository is touched again when:
 - **a change to `web/shared`** is a change to `mez-cloud`'s account area too:
   its bundle reads mez's tokens, preset, fonts, `ui/Button`, `ui/Card`,
   `ui/Logo`, `ui/Money`, `ui/StatusChip` (its `cloud` vocabulary, ADR-351),
