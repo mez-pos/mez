@@ -4,6 +4,15 @@ Written 2026-10-11. Prices checked that day; INR at 88 to the dollar; GST
 18% added where a vendor charges it. Change the numbers in "Assumptions"
 and redo the arithmetic; the tables below were produced from them.
 
+> **2026-10-20: the box is a Contabo Cloud VPS 4 in India, not a
+> DigitalOcean droplet** (mez-cloud's C-062): 4 vCPU, 8 GB, 100 GB SSD, with
+> the India region and the Auto Backup add-on at extra cost. The tables
+> below still price an 8 GB droplet ($48 a month, backups at 20% more) and
+> a DigitalOcean volume for each venue's hot replica. Both are now lower:
+> the box's share of the fixed cost is the Contabo invoice, and the hot
+> replicas live on the VPS's own disk until it fills, so the ₹9 a venue is
+> inside that invoice. Redo the arithmetic with the invoice's figures.
+
 ## The short version
 
 - Running one venue on mez Cloud costs about **₹56 a month** in services
@@ -25,7 +34,7 @@ and redo the arithmetic; the tables below were produced from them.
 | Messages per venue per month | 100 | 30 close-of-day reports, about 60 alerts, weekly summaries, a second recipient at some venues |
 | R2 storage | $0.015 per GB-month, 1 GB per venue | Cloudflare R2 rate card |
 | R2 Class A operations | $4.50 per million; 60,000 per venue per month | Litestream syncing every 30 s across a 14-hour day plus compaction |
-| Hot-replica block storage | $0.10 per GB-month, 1 GB per venue | DigitalOcean volumes |
+| Hot-replica block storage | $0.10 per GB-month, 1 GB per venue | DigitalOcean volumes (the estimate; on the Contabo VPS, its own 100 GB disk) |
 | Email | $0.10 per 1,000, 10 per venue | Amazon SES |
 | Trial overhead | 1.3x variable cost | Three free months means roughly 0.3 unpaid venues per paying one at steady state |
 | Payment collection | 2.8% of revenue | Razorpay 2% + GST on the fee, applied to a GST-inclusive invoice |
@@ -34,10 +43,11 @@ and redo the arithmetic; the tables below were produced from them.
 | Support hire | ₹25,000 a month | From 300 venues |
 | Engineer hire | ₹90,000 a month | From 1,000 venues |
 
-Infrastructure is DigitalOcean Bangalore: 4 GB $24, 8 GB $48, 16 GB $96,
-managed Postgres $15 and $60, load balancer $12, backups at 20% of the
-droplet. Hetzner has no Indian region; Singapore is about the same price
-with less transfer included.
+Infrastructure was estimated on DigitalOcean Bangalore: 4 GB $24, 8 GB $48,
+16 GB $96, managed Postgres $15 and $60, load balancer $12, backups at 20%
+of the droplet. Hetzner has no Indian region; Singapore is about the same
+price with less transfer included. The box bought is a Contabo Cloud VPS 4
+in India (above).
 
 ## The one number that can ruin this
 
@@ -100,7 +110,7 @@ pay for the founder's day at the venue and should not be waived.
 
 | Need | Use | Why | Not |
 |---|---|---|---|
-| Relay + cloud compute | DigitalOcean Bangalore | Indian region, flat pricing, 4 TB transfer included, snapshots | Hetzner (no India), AWS Mumbai (about 3x for the same box), Hostinger KVM (cheapest, but weaker API and support) |
+| Relay + cloud compute | Contabo Cloud VPS 4, India (since 2026-10-20, mez-cloud's C-062) | Indian region, the lowest price for 8 GB, a network firewall before the box, daily off-box backups as an add-on | DigitalOcean Bangalore (the first choice: better support and snapshots, several times the price), Hetzner (no India), AWS Mumbai (about 3x for the same box), Hostinger KVM (weaker API and support) |
 | Edge, DNS, TLS, DDoS | Cloudflare free plan | Already in use for the relay; wildcard venue subdomains | Paid plans until a real need |
 | Backup object storage | Cloudflare R2 | No egress fee, S3 API Litestream already speaks, 10 GB and 1M ops free | AWS S3 (egress), Backblaze B2 (cheaper storage, but ops and egress add up with Litestream) |
 | WhatsApp | Meta Cloud API direct for the first hundreds of venues; Gupshup self-serve if the approval path is a problem | Direct has no platform fee; Gupshup adds $0.001 a message and handles onboarding | AiSensy, Interakt, Wati: ₹1,000 to ₹3,800 a month platform fees and a per-message markup aimed at marketing blasts |

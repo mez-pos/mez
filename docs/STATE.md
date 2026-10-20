@@ -34,7 +34,7 @@ assertion through the door alone. The health check's mapping is
 
 **Nothing in this repository is next by itself.** Phase 14's work is now
 in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(Task 8h there, dunning; 7e, 8g, 8c, 8d, 8e and 8f are done, 8e and 8f walked end to end on this machine). This repository is touched again when:
+(Task 8i3a there, its deploy scripts through `sudo` for its Contabo box; 7e, 8g, 8c, 8d, 8e, 8f, 8h1, 8h2, 8i1 and 8i2 are done). This repository is touched again when:
 - **a change to `web/shared`** is a change to `mez-cloud`'s account area too:
   its bundle reads mez's tokens, preset, fonts, `ui/Button`, `ui/Card`,
   `ui/Logo`, `ui/Money`, `ui/StatusChip` (its `cloud` vocabulary, ADR-351),
@@ -106,11 +106,15 @@ installer, and Task 4's walk on a real phone over mobile data.
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
    drawer was at the venue on 2026-10-08 (`hardware.md`, ADR-282).
-2. **A release.** `v0.1.0-alpha.4` is tagged on this machine at Task 4's
-   commit and built: `dist/` has the four binaries, the Windows installer
-   and the checksums. **The tag is not pushed**: pushing one runs the
-   release workflow, which has never run and publishes a Docker image
-   (`docs/releasing.md`). `main` is pushed.
+2. **A release.** `v0.1.0-alpha.4` is tagged at Task 4's commit and built:
+   `dist/` has the four binaries, the Windows installer and the checksums.
+   **The repository is github.com/mez-pos/mez since 2026-10-20**, private,
+   its history rewritten (every commit id changed). Its tags were pushed
+   there that day, which started the release workflow three times; all
+   three were cancelled before anything was published, and **the Release
+   workflow is disabled** in that repository until a release is decided
+   (`gh workflow enable Release -R mez-pos/mez`). Pushing a tag publishes a
+   Docker image and a release (`docs/releasing.md`). `main` is pushed.
 3. **Phase 12's "done when"**: a clean Windows machine, the downloaded
    installer, a first printed invoice in under ten minutes.
 4. The human checks phases 09 to 11 owe, and the questions below.
