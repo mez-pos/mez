@@ -62,7 +62,7 @@ jobs:
       # Every platform from this one machine: no cgo (ADR-003). The same
       # recipe anyone runs from a clone, so a release is checkable against it.
       - run: make dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: binaries
           path: dist/
@@ -106,7 +106,7 @@ jobs:
           & $iscc /Q "/DVersion=$version" "/DBinary=..\..\dist\mez_${version}_windows_amd64.exe" build\installer\mez.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path "dist\mez_${version}_windows_amd64_setup.exe")) { throw "the installer was not made" }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer
           path: dist/*_setup.exe
