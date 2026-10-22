@@ -173,7 +173,7 @@ func (m *Mirror) StatePath() string { return m.statePath }
 // Venue is the venue in the copy being served.
 func (m *Mirror) Venue() Venue {
 	c := m.held.copy()
-	return Venue{PublicID: c.venue.PublicID, Name: c.venue.Name}
+	return Venue{PublicID: c.venue.PublicID, Name: c.venue.Name, Timezone: c.venue.Timezone}
 }
 
 // AsOf is when the venue last wrote something the copy being served holds.
@@ -217,6 +217,8 @@ func (m *Mirror) Close() error { return m.held.close() }
 type Venue struct {
 	PublicID string
 	Name     string
+	// Timezone is the venue's, an IANA name: what its times are read in.
+	Timezone string
 }
 
 // source is where a mirror's copies come from: the backup, and what every

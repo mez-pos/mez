@@ -81,7 +81,7 @@ func OpenReplica(ctx context.Context, o ReplicaOptions) (_ *Replica, err error) 
 
 // Venue is the venue in the copy.
 func (r *Replica) Venue() Venue {
-	return Venue{PublicID: r.current.venue.PublicID, Name: r.current.venue.Name}
+	return Venue{PublicID: r.current.venue.PublicID, Name: r.current.venue.Name, Timezone: r.current.venue.Timezone}
 }
 
 // AsOf is when the venue last wrote something the copy holds.

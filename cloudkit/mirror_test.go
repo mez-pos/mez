@@ -143,7 +143,7 @@ func TestTheCloudOpensAMirrorThroughTheDoor(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenMirror: %v", err)
 	}
-	if got := m.Venue(); got != (cloudkit.MirrorVenue{PublicID: mirroredVenue, Name: "The Corner Cafe"}) {
+	if got := m.Venue(); got != (cloudkit.MirrorVenue{PublicID: mirroredVenue, Name: "The Corner Cafe", Timezone: "Asia/Kolkata"}) {
 		t.Errorf("Venue() = %+v", got)
 	}
 	srv := httptest.NewServer(m)

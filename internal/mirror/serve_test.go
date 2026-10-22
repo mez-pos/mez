@@ -84,7 +84,7 @@ func TestAMirrorIsOpenedServedAndPutAway(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	if got := m.Venue(); got != (Venue{PublicID: "ven_MIRROR01", Name: "Cafe"}) {
+	if got := m.Venue(); got != (Venue{PublicID: "ven_MIRROR01", Name: "Cafe", Timezone: "Asia/Kolkata"}) {
 		t.Errorf("Venue() = %+v", got)
 	}
 	if got, want := m.StatePath(), filepath.Join(state, "ven_MIRROR01.json"); got != want {
