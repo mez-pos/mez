@@ -13896,3 +13896,114 @@ thing the revoked list could not reach.
     case.
 Cost: none for a venue whose key stays good. The cloud's own record, and the order it does
 the two in, is its C-053.
+
+## ADR-360 - The owner's WhatsApp: what is sent, when, to whom, and never
+2026-10 · Status: accepted. Phase 15, Task 1. Builds on ADR-094, ADR-152, ADR-261,
+ADR-313, ADR-332, ADR-342. (Phase 15's file called this ADR-314; that number was
+spent on the back office from away, so it is 360.)
+Context: Phase 15 sends an owner one WhatsApp message at close and a message when
+something they would want to know happens, read from the replica mez Cloud already
+has. ADR-313 promised a venue costs under ₹100 a month to serve and is sent at most
+about a hundred messages in it. Nothing is decided yet about which messages, their
+figures, who gets them, or what stops a venue with a bad day from sending three
+hundred. Meta's utility templates set a shape of their own: a template's lines are
+fixed, each slot is one parameter, and a parameter holds no line break. A message
+cannot drop a row because it is zero.
+Decision:
+  - **The close-of-day message is the Z-report, in thirteen fixed lines, and nothing
+    is recomputed.** It is sent when a `z_reports` row appears in the replica, one
+    message per row: a corrected Z-report (`corrects_id` set) sends a second message
+    headed "corrected", naming the number it corrects. The shift closing without a
+    report sends nothing; the report is what carries the figures. Every figure is read
+    from the row's `body`, which is what the slip printed (ADR-094), so the message and
+    the printed Z-report cannot disagree. The lines, in order, each a parameter:
+    1. the venue's name, the trading day and the Z-report number ("Z-report 212, Tue 21 Oct");
+    2. the shift: opened at, closed at, and who closed it (`shifts.closed_by`, the
+       staff member's name from the replica), in the venue's timezone;
+    3. sales: `Sales.Total`, the bills and the covers ("₹24,310 · 86 bills · 142 guests");
+    4. cash: `Payments[cash].Net`;
+    5. UPI: `Payments[upi].Net`;
+    6. card: `Payments[card].Net`;
+    7. other: `Payments[other].Net`;
+    8. the drawer: the closing count's total and the variance, over or short, from the
+       close's reconciliation ("counted ₹8,450, short ₹120"), or "no count" where the
+       close stored none;
+    9. voids and comps: `Voids` and `Comps`, count and amount;
+    10. discounts: `Discounts`, count and amount;
+    11. credit notes and refunds: `CreditNotes` and `Refunds`, count and amount;
+    12. tips owed to staff: `Tips`;
+    13. the invoices: `Invoices.Count`, first to last.
+    A figure of zero reads "none". Money renders as the slip renders it, in the
+    venue's currency. A `Balance.Difference` that is not zero adds its one sentence
+    to line 3's slot ("₹1,200 of it for bills from another day"), since a parameter
+    may hold a sentence and the difference is the one figure an owner would otherwise
+    read as a mistake. The message ends with the account area's link to the venue's
+    reports. Not in it: items, categories, staff figures, tax lines, channels. Those
+    are the back office's and the accountant's.
+  - **Six alerts, one template.** An alert is "{venue}: {what} at {time}. {detail}.
+    {link}". Each kind, its trigger, its threshold and its default:
+    | Kind | Trigger, read from | Threshold | Default |
+    |---|---|---|---|
+    | void or refund over the line | `line.voided`, `line.comped` at the line's gross; `refund.issued` at its amount; `credit_note.issued` at its total | ₹500 | on |
+    | discount by a cashier | `discount.applied` whose actor's role lacks `shift.manage` | any amount; a floor the owner may raise | off |
+    | shift still open | the summary's open shift, past the day's closing hour | two hours | on |
+    | venue not heard from | no summary inside the day's opening hours | three hours | on |
+    | printer failing | a printer in the summary whose last success is older than its last failure | one hour | on |
+    | backup failing | the summary's last backup sync | one hour | on |
+    The first two are events (Task 3) and measure one event each: three voids of ₹200
+    send nothing, and the close-of-day's voids line is where their sum is seen. Each
+    names the staff member who did it and who authorised it, from the event. "Cashier"
+    is a role without `shift.manage`, the permission that closes a day (ADR-152), and
+    not a role's name, which the owner may change. A cashier starts without
+    `discount.give`, so this alert fires only at a venue whose owner handed it out,
+    which is why it is off. The last four are the clock's (Task 5), from the health
+    summary the venue sends every five minutes (Task 4). Each is an episode: one
+    message when its hour of patience runs out, one when it ends ("back", "closed",
+    "printing again", "backed up"), and nothing in between.
+  - **Opening hours are the venue's setting, not the cloud's.** A per-weekday
+    opening and closing hour in the venue's timezone, set in the venue's Settings and
+    carried in Task 4's summary. Until they are set, "shift still open" and "not heard
+    from" do not fire, and the account area says so under each. A venue closed on a
+    weekday has no hours that day and the two alerts stay quiet.
+  - **Quiet hours hold alerts; they never hold the close.** Default 00:00 to 07:00
+    in the venue's timezone, the owner's to move or turn off. The close-of-day message
+    and "shift still open" are exempt: the first is what the owner asked for at close,
+    the second's hour is the owner's own closing time. The rest, and every "back", are
+    held and sent as one message when quiet hours end ("Overnight: backup failing from
+    02:10, backed up 03:40"). An episode that began and ended inside quiet hours is
+    one line of that message, not two.
+  - **Once per event, kept with the delivery.** The cloud writes a row per message
+    before sending it, keyed on the venue and the thing that caused it: an
+    `order_events.id`, a `z_reports.id`, or an episode's kind and start. A key seen
+    is not sent again, whatever the reader's cursor says after a restart (Task 3), and
+    the webhook's delivery status is written to the same row (Task 2).
+  - **Twelve alerts a trading day, then one more.** Counted per venue per trading day,
+    the day beginning at the venue's day start (04:00, `shift.DefaultDayStart`). The
+    thirteenth alert is replaced by "More alerts today. See app.mezpos.com" and
+    nothing else is sent until the next day; what was not sent is still recorded and
+    shown in the account area, with the day marked as capped. The close-of-day message
+    is not an alert: it is never counted and never replaced. A quiet-hours digest is
+    one alert.
+  - **To the account's phone, and up to two more.** The owner's number is the
+    account's (ADR-332). The owner adds up to two recipients in the account area, each
+    confirmed by a code sent to that number before anything else is, and removes them
+    there. A recipient who replies STOP to any message is removed on the webhook and
+    the owner sees it in the account area. Every recipient gets what the owner chose:
+    there are no per-recipient choices.
+  - **Never.** Nothing the owner did not turn on: a venue with no cloud has no
+    messages, and one that is `suspended` or `closed` (ADR-313) sends none. Nothing
+    that is marketing, a nudge or a tip. Nothing about the subscription on this channel
+    except ADR-313's own five (renewal due, charge failed, suspended, reactivated, the
+    code), which are the account's and not this phase's. No guest's name, number or
+    table code. No PIN, no price list, no item. No message to a number that did not
+    confirm. No message in a language the venue did not choose: English until the
+    venue has a language setting.
+Because: an owner reads this on a phone in the ten seconds after close, so the shape
+must be the same every night, the figures the slip's, and the alerts few enough that
+each one is read. The cap bounds the worst day at about ₹2 in messages and a bad
+month at ₹60, inside ADR-313's hundred, and a venue that hits it twelve times has a
+problem the owner wants told about once, not twelve times.
+Cost: an owner whose closing count is skipped sees "no count" every night, which is
+the message doing its job. Four fixed payment lines mean a venue taking only cash
+reads "none" three times. Opening hours are one more setting at the venue, in this
+repository, before two of the six alerts can fire.

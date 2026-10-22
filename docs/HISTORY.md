@@ -8,6 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**`mez-cloud`'s Task 8e1, its part here** (ADR-353). The mirror is
+`internal/mirror`'s now, not `cmd/mez`'s `package main`: `mirror.Open`
+restores a backup into a directory the caller names, and the `Mirror`
+it answers is an `http.Handler` that follows its backup while it is
+asked things and removes every copy it made when closed. `mez mirror`
+is the command round it and says what it said. cloudkit hands it out
+over a bucket (`OpenMirror`), tested by letting the owner in on an
+assertion through the door alone. The health check's mapping is
+`internal/dbhealth`'s, shared by both servers. Before it, 7e4b
+(ADR-349): the cloud checks a hand-over's answer with the venue's check.
+
 **`mez-cloud`'s Task 7e4b, its part here** (ADR-349). The checks the
 venue's client made of a hand-over's answer are `cloud.CheckGrantAnswer`,
 handed out as `cloudkit.CheckGrantAnswer`, so that the cloud asks it

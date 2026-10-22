@@ -7,34 +7,47 @@
 
 ## Current phase
 
-**Phase 14 - mez Cloud: the account, the pairing and the switch**,
-`docs/phases/phase-14.md`, opened 2026-10-12 at the human's word (ADR-312,
-ADR-313). Nine tasks; Tasks 2, 3, 5, 6 and 9 are this repo's, 4 and 7 are
-both, 8 is `mez-cloud`'s. Every task that is this repo's is done: 1 to 3,
-4a to 4c, 5, 6, 7a to 7d, 7f and 9 (ADR-313, ADR-315 to ADR-340). 4d, 7e
-and 8 are `mez-cloud`'s, a private repository with a skeleton (ADR-344). Phase 13's five
-tasks are built and it owes its human check: the walk on a real phone below.
-Phases 00 to 12 are built; what they still owe is in `docs/KNOWN.md` and
-in the "Still owed" list below.
+**Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
+2026-10-22. Seven tasks; Task 1 (the ADR) and Task 4 (the health summary
+over the relay connection) are this repo's, Task 7 is words in both, and
+Tasks 2, 3, 5 and 6 are `mez-cloud`'s. Phase 14's tasks that were this
+repo's are all done (ADR-313, ADR-315 to ADR-359); its 4d, 7e and 8 are
+`mez-cloud`'s and live there. Phase 13's five tasks are built and it owes
+its human check: the walk on a real phone below. Phases 00 to 12 are
+built; what they still owe is in `docs/KNOWN.md` and in the "Still owed"
+list below.
 
 ## Last completed task
 
-**`mez-cloud`'s Task 8e1, its part here** (ADR-353). The mirror is
-`internal/mirror`'s now, not `cmd/mez`'s `package main`: `mirror.Open`
-restores a backup into a directory the caller names, and the `Mirror`
-it answers is an `http.Handler` that follows its backup while it is
-asked things and removes every copy it made when closed. `mez mirror`
-is the command round it and says what it said. cloudkit hands it out
-over a bucket (`OpenMirror`), tested by letting the owner in on an
-assertion through the door alone. The health check's mapping is
-`internal/dbhealth`'s, shared by both servers. Before it, 7e4b
-(ADR-349): the cloud checks a hand-over's answer with the venue's check.
+**Phase 15, Task 1: ADR-360, the owner's WhatsApp** (ADR-360; the
+phase file had said ADR-314, a number already spent). The close-of-day
+message is thirteen fixed lines read from the `z_reports` row, never
+recomputed, one message per row and a second for a correction. Six
+alerts on one template, with trigger, threshold and default each: void
+or refund over ₹500 (on), discount by a role without `shift.manage`
+(off), shift open two hours past closing (on), venue not heard from for
+three hours inside opening hours (on), printer or backup failing for an
+hour (on). Opening hours are a venue setting this repo does not have
+yet; until set, the two alerts that need them stay quiet. Quiet hours
+00:00 to 07:00 hold alerts into one digest and never hold the close.
+Once per event, keyed on the row that caused it. Twelve alerts a trading
+day, then one "more at app.mezpos.com". The owner's number plus two
+confirmed recipients; STOP removes one. Nothing marketing, no guest data.
 
 ## Next task
 
-**Nothing in this repository is next by itself.** Phase 14's work is now
-in `mez-cloud`: open that repository and follow its `docs/STATE.md`
-(mez Cloud runs on its Contabo box since 2026-10-21, rebuilt and restored there; what is left there, 8i3b2b and 8h3, waits on a sender of codes, WhatsApp or SMS, which is the human's to set up). This repository is touched again when:
+**Task 4 - the venue's health, in one line, over the connection it has**
+(`docs/phases/phase-15.md`), this repo's. The tunnel agent sends a JSON
+summary to the relay every five minutes and on change: printers' last
+success and failure, backup state and last sync, the open shift and when
+it opened, and the venue's opening hours. ADR-360 makes opening hours a
+per-weekday setting at the venue, which does not exist yet: add it with
+Task 4 (settings, migration, the Settings screen's field), since the
+summary carries it. Tasks 2 and 3 are `mez-cloud`'s and do not wait on
+it. Phase 14's remainder is in `mez-cloud`: follow its `docs/STATE.md`
+(mez Cloud runs on its Contabo box since 2026-10-21; 8i3b2b and 8h3
+there wait on a sender of codes, WhatsApp or SMS, the human's to set
+up). This repository is also touched when:
 - **a change to `web/shared`** is a change to `mez-cloud`'s account area too:
   its bundle reads mez's tokens, preset, fonts, `ui/Button`, `ui/Card`,
   `ui/Logo`, `ui/Money`, `ui/StatusChip` (its `cloud` vocabulary, ADR-351),
@@ -196,3 +209,4 @@ screen. Migration 00056 gives `menu.edit` to existing managers.
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
 - [ ] 14 - mez Cloud: the account, the pairing and the switch (this repo's tasks are done; 4d, 7e and 8 are `mez-cloud`'s)
+- [ ] 15 - The owner's WhatsApp (Task 1, ADR-360, done; Task 4 is this repo's next; 2, 3, 5 and 6 are `mez-cloud`'s)

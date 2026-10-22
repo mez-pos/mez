@@ -31,8 +31,9 @@ into the venue.
 
 ## Tasks
 
-- [ ] **Task 1 - ADR-314: what is sent, when, to whom, and never.** ADR
-  before code. The close-of-day message's fields and their order, read from
+- [x] **Task 1 - ADR-360: what is sent, when, to whom, and never.** ADR
+  before code. (Written as ADR-360 on 2026-10-22; ADR-314 was already
+  the back office from away's.) The close-of-day message's fields and their order, read from
   the Z-report the venue already produces. Each alert, its trigger, its
   default threshold, and whether it is on by default (close-of-day: on;
   void over ₹500: on; shift open past closing plus two hours: on; venue
