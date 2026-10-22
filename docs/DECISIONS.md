@@ -14072,3 +14072,51 @@ Cost: a frame of under a kilobyte every five minutes, about 150 KB a day a venue
 four reads a minute of the venue's own database. A relay that is not a sink pays nothing.
 `mez-cloud`'s entitlements must grow a method and a table before Task 5 has anything to
 read; until then the relay there asks for no health and the summaries are not made.
+
+## ADR-362 - mez Cloud reads a venue for the owner's messages through a replica of its own, the mirror's copy without its door, and the close-of-day figures are read off the Z-report's stored body
+2026-10 · Status: accepted. Phase 15, Task 3a. Builds on ADR-327, ADR-353, ADR-360, ADR-361.
+Context: Phase 15's Task 3 is `mez-cloud`'s reader: for each entitled venue, a cursor over
+what the venue has written, and the close-of-day message from each Z-report. It reads
+mez through cloudkit alone and defines no shape of mez's schema itself (its `CLAUDE.md`),
+so what it reads, and how it follows a venue, is mez's to hand out. The mirror (ADR-327)
+already follows a backup: a fresh restore when the bucket's newest write has moved,
+swapped in under a server, with a door, a keeper and the menu's photos. The reader needs
+the copy and the following, and none of the rest: no one asks it anything, it reads a
+handful of rows and moves on, and it does so for every venue, not the one an owner is
+looking at.
+Decision:
+  - **Task 3 is split.** 3a, this, in mez: the replica and the close-of-day figures.
+    3b, in `mez-cloud`: the reader itself, a cursor a venue, the message made from the
+    figures, and the ledger that sends nothing twice. 3c, both: the watched events (a
+    void, a comp, a refund, a credit note, a discount) with their amounts, read in mez
+    and thresholded in the cloud (ADR-360).
+  - **`mirror.Replica` is a mirror less its door, its server and its photos.** The same
+    `source`, the same copy (restored, checked, migrated to this build's schema, holding
+    one venue), the same refusal memory for a write that could not be made into a copy.
+    `OpenReplica` takes the newest; `Refresh` looks at the bucket and, when its newest
+    write is later than the copy's, restores afresh and puts the old copy away at once,
+    since nobody is being answered from it; `Close` puts the copy away. A replica is one
+    goroutine's: the caller reads, then refreshes, then reads again. A copy that holds
+    another venue is refused at open and at refresh, as a mirror's is.
+  - **The figures come off the Z-report's body.** `closeofday.Since(q, venue, afterID,
+    limit)` reads the venue's `z_reports` rows past a row id, oldest first, and takes
+    every figure ADR-360's thirteen lines name from the stored document, which is what
+    the slip printed: nothing is recomputed, and a body that cannot be read is an error
+    naming the report, not a message made up around it. A correction is a row of its own
+    after the one it corrects, carrying the number it corrects. The cursor is the row id:
+    a reader keeps the last it saw.
+  - **cloudkit hands out** `Replica`, `ReplicaOptions`, `OpenReplica` (by the venue's
+    public id, over its bucket with the reading key), `CloseOfDay`, `CloseTally`, and
+    `MoneyText`, which renders an amount as the slip does (a lakh as `1,00,000.00`),
+    without the symbol a slip's total carries. Every amount in a `CloseOfDay` is `int64`
+    minor units with its currency beside it.
+  - **When the cloud refreshes is the cloud's.** A refresh that finds a newer write is a
+    whole restore (ADR-327), so the reader should not refresh every venue every minute.
+    The venue's health summary (ADR-361) says when its shift closed: a refresh then, and
+    a slow poll otherwise, is the intended use, and 3b decides the numbers.
+Because: the reader must not reach into the venue, and a copy of its backup is the one
+thing the cloud already has leave to read. Taking the mirror's copy and leaving its door
+means one restore path, one check, one swap, tested once.
+Cost: a second kind of copy on the box's disk, one a venue the reader follows, beside the
+mirrors'. `z_reports` gains a query. A Z-report written by a build before ADR-360 reads
+the same: every field was already in the body.

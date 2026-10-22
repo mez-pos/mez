@@ -58,7 +58,18 @@ into the venue.
   exports. Voids, refunds and discounts go through Task 1's thresholds.
   The cursor is stored per venue so a restart sends nothing twice. Tests
   on a replica built from a fixture venue: one message per close, none on
-  a replay.
+  a replay. Split on 2026-10-22 (ADR-362); `mez-cloud`'s
+  `docs/phases/phase-15.md` has the cloud's parts:
+  - [x] **3a - The replica and the figures.** *This repo.*
+    `cloudkit.OpenReplica` follows a venue's bucket as a mirror does,
+    without the door, the server or the photos; `Replica.Closes` reads
+    ADR-360's thirteen lines' figures off each Z-report past a cursor
+    (`internal/service/closeofday`); `cloudkit.MoneyText` renders as the
+    slip does.
+  - [ ] **3b - The reader and the close-of-day message.** *`mez-cloud`.*
+  - [ ] **3c - Voids, refunds and discounts.** *This repo, then
+    `mez-cloud`:* the watched events past a cursor with their amounts, who
+    did it and who authorised it, through cloudkit; the thresholds there.
 
 - [x] **Task 4 - The venue's health, in one line, over the connection it
   has.** *This repo.* (ADR-361, 2026-10-22.) The tunnel agent sends a small JSON summary to the

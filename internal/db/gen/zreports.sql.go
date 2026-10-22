@@ -176,6 +176,62 @@ func (q *Queries) ZReportByNumber(ctx context.Context, arg ZReportByNumberParams
 	return i, err
 }
 
+const zReportsAfter = `-- name: ZReportsAfter :many
+SELECT id, number, corrects_id, reason, body, generated_at
+FROM z_reports
+WHERE venue_id = ?1 AND id > ?2
+ORDER BY id
+LIMIT ?3
+`
+
+type ZReportsAfterParams struct {
+	VenueID  int64
+	AfterID  int64
+	PageSize int64
+}
+
+type ZReportsAfterRow struct {
+	ID          int64
+	Number      int64
+	CorrectsID  sql.NullInt64
+	Reason      string
+	Body        string
+	GeneratedAt time.Time
+}
+
+// The venue's reports in the order they were issued, past an id: the
+// cursor mez Cloud's reader keeps over a replica (ADR-362). A correction
+// is a row of its own, after the one it corrects.
+func (q *Queries) ZReportsAfter(ctx context.Context, arg ZReportsAfterParams) ([]ZReportsAfterRow, error) {
+	rows, err := q.db.QueryContext(ctx, zReportsAfter, arg.VenueID, arg.AfterID, arg.PageSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ZReportsAfterRow{}
+	for rows.Next() {
+		var i ZReportsAfterRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Number,
+			&i.CorrectsID,
+			&i.Reason,
+			&i.Body,
+			&i.GeneratedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const zReportsBefore = `-- name: ZReportsBefore :many
 SELECT z.number, z.shift_id, s.public_id AS shift_public_id, s.trading_day, z.corrects_id, z.reason, z.generated_at,
        CAST(json_extract(z.body, '$.report.sales.total.minor') AS INTEGER) AS sales_total_minor

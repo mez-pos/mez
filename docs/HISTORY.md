@@ -8,6 +8,20 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 15, Task 4: the venue's health over the relay connection**
+(ADR-361), in three parts. 4a: `wire.TypeHealth` and `wire.Health`; a
+relay that reads them says `X-Mez-Tunnel-Health: 1` on the dial's
+answer; `relay.HealthSink`, which an `Entitlements` may also be, gets
+each venue's newest summary on the venue's own goroutine; cloudkit hands
+it out. 4b: opening hours are the setting `venue.opening_hours`
+(`internal/domain/hours`, a JSON week, `mon` to `sun`, a close before
+the open is the next morning), on the Rules API as `opening_hours` and
+on the Shifts card as **Open on**, a row per weekday. 4c:
+`internal/service/health` composes the summary (printers' last success
+and failure from `PrintOutcomesForVenue`, the backup's status, the open
+shift, the hours); the tunnel sends it on connecting, within a minute of
+a change and every five minutes, to a relay that asked. Wired in `main`.
+
 **Phase 15, Task 1: ADR-360, the owner's WhatsApp** (ADR-360; the
 phase file had said ADR-314, a number already spent). The close-of-day
 message is thirteen fixed lines read from the `z_reports` row, never

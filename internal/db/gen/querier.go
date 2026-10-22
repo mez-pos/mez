@@ -723,6 +723,10 @@ type Querier interface {
 	WastedBetween(ctx context.Context, arg WastedBetweenParams) ([]WastedBetweenRow, error)
 	ZReportByID(ctx context.Context, id int64) (ZReport, error)
 	ZReportByNumber(ctx context.Context, arg ZReportByNumberParams) (ZReport, error)
+	// The venue's reports in the order they were issued, past an id: the
+	// cursor mez Cloud's reader keeps over a replica (ADR-362). A correction
+	// is a row of its own, after the one it corrects.
+	ZReportsAfter(ctx context.Context, arg ZReportsAfterParams) ([]ZReportsAfterRow, error)
 	// A page of the venue's reports, newest first, below a number: the
 	// cursor is the last number of the page before.
 	ZReportsBefore(ctx context.Context, arg ZReportsBeforeParams) ([]ZReportsBeforeRow, error)

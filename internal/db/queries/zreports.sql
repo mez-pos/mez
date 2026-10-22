@@ -41,6 +41,16 @@ WHERE z.venue_id = sqlc.arg(venue_id) AND z.number < sqlc.arg(before)
 ORDER BY z.number DESC
 LIMIT sqlc.arg(page_size);
 
+-- name: ZReportsAfter :many
+-- The venue's reports in the order they were issued, past an id: the
+-- cursor mez Cloud's reader keeps over a replica (ADR-362). A correction
+-- is a row of its own, after the one it corrects.
+SELECT id, number, corrects_id, reason, body, generated_at
+FROM z_reports
+WHERE venue_id = sqlc.arg(venue_id) AND id > sqlc.arg(after_id)
+ORDER BY id
+LIMIT sqlc.arg(page_size);
+
 -- name: ItemCategoriesForVenue :many
 -- Every item's category, retired ones included: a report names what was
 -- sold, even if it is off the menu now.

@@ -110,7 +110,7 @@ func Open(ctx context.Context, o OpenOptions) (_ *Mirror, err error) {
 	if o.Patience <= 0 {
 		o.Patience = DefaultPatience
 	}
-	src := &source{from: o.From, copyDir: o.CopyDir, log: o.Log, cloudKey: o.CloudKey, build: o.Build, patience: o.Patience}
+	src := &source{from: o.From, copyDir: o.CopyDir, log: o.Log, cloudKey: o.CloudKey, build: o.Build, patience: o.Patience, photos: true}
 	generation, err := src.newest(ctx, o.Generation)
 	if err != nil {
 		return nil, fmt.Errorf("mirror: %w", err)
@@ -228,6 +228,9 @@ type source struct {
 	build   api.BuildInfo
 	// patience is how long a copy's database is given to close.
 	patience time.Duration
+	// photos says each copy brings the menu's photos with it: a mirror
+	// shows them, a replica read for figures has no use for them.
+	photos bool
 	// only is the generation the mirror was told to show, or empty.
 	only string
 	// keeper is the mirror's own memory, shared by every copy. venue is
@@ -284,10 +287,12 @@ func (s *source) open(ctx context.Context, generation backup.Generation) (_ *mir
 	if err := backup.RestoreGeneration(ctx, s.from, generation.Name, dbPath); err != nil {
 		return nil, fmt.Errorf("mirror: %w", err)
 	}
-	if _, err := backup.RestorePhotos(ctx, s.from, filepath.Join(dir, "photos")); err != nil {
-		// The numbers are what a mirror is for. A menu without its pictures
-		// is still a menu.
-		s.log.Warn("not all the menu photos could be read from the backup", "error", err)
+	if s.photos {
+		if _, err := backup.RestorePhotos(ctx, s.from, filepath.Join(dir, "photos")); err != nil {
+			// The numbers are what a mirror is for. A menu without its
+			// pictures is still a menu.
+			s.log.Warn("not all the menu photos could be read from the backup", "error", err)
+		}
 	}
 
 	c.database, err = db.Open(ctx, db.Options{Path: dbPath, Log: s.log})
