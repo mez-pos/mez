@@ -36,7 +36,12 @@ const (
 	TypeEnd      Type = 4 // either way: the sender's body is complete
 	TypeReset    Type = 5 // either way: the stream is abandoned; payload is why
 	TypeNotice   Type = 6 // relay to venue: an Entitlement, on stream 0; only to a venue that asked
+	TypeHealth   Type = 7 // venue to relay: a Health, on stream 0; only to a relay that asked (ADR-361)
 )
+
+// lastType is the highest type this build reads. A frame past it is not
+// this protocol, or a newer one than this end speaks.
+const lastType = TypeHealth
 
 const (
 	headerLen = 9
@@ -95,7 +100,7 @@ func Decode(msg []byte) (Frame, error) {
 		return Frame{}, fmt.Errorf("%w: %d bytes", ErrMalformed, len(msg))
 	}
 	t := Type(msg[0])
-	if t < TypeRequest || t > TypeNotice {
+	if t < TypeRequest || t > lastType {
 		return Frame{}, fmt.Errorf("%w: unknown type %d", ErrMalformed, msg[0])
 	}
 	return Frame{Type: t, Stream: binary.BigEndian.Uint64(msg[1:headerLen]), Payload: msg[headerLen:]}, nil
@@ -183,7 +188,94 @@ const (
 	// CodeNotEntitled is the error code on the relay's answer to a dial it
 	// turns away for want of entitlement, with status 403.
 	CodeNotEntitled = "not_entitled"
+
+	// HeaderHealth is on the relay's answer to a dial it lets in, with the
+	// value "1", when it reads Health frames (ADR-361). A venue sends none
+	// to a relay that did not say so: an older one takes a frame it does
+	// not know for a broken line and hangs up.
+	HeaderHealth = "X-Mez-Tunnel-Health"
 )
+
+// Health is what a venue says of its own health, on stream 0, to a relay
+// that said it reads it (ADR-361). It is read from the venue's own records
+// and settings, never asked of anything outside the venue; the cloud's
+// clock alerts are drawn from it (Phase 15). Nothing in it is a guest's.
+type Health struct {
+	// At is the venue's clock when the summary was made, UTC.
+	At time.Time `json:"at"`
+	// Timezone is the venue's, an IANA name, which Hours is read in.
+	Timezone string `json:"timezone"`
+	// Printers is each printer the venue has, active or not.
+	Printers []PrinterHealth `json:"printers"`
+	Backup   BackupHealth    `json:"backup"`
+	// Shift is the shift now open, or nil when none is.
+	Shift *ShiftHealth `json:"shift,omitempty"`
+	// Hours is when the venue is open, by weekday ("mon" to "sun"), as the
+	// owner set them (ADR-360). A day not named is a day it is closed. Nil
+	// when the venue has not set them, which the cloud reads as "unknown",
+	// not "never open".
+	Hours map[string]DayHours `json:"hours,omitempty"`
+}
+
+// PrinterHealth is one printer: when it last took a job, and when one last
+// failed on it. A printer whose failure is newer than its success is one
+// that is not printing.
+type PrinterHealth struct {
+	Name   string `json:"name"`
+	Active bool   `json:"active"`
+	// LastSuccess is when a job was last printed whole, UTC. Nil if none
+	// has been.
+	LastSuccess *time.Time `json:"last_success,omitempty"`
+	// LastFailure is when a job last failed or died on it, UTC. Nil if
+	// none has.
+	LastFailure *time.Time `json:"last_failure,omitempty"`
+	// Error is the newest failure's words, when there is one.
+	Error string `json:"error,omitempty"`
+}
+
+// BackupHealth is the venue's backup as the venue sees it.
+type BackupHealth struct {
+	// State is "off", "starting", "ok" or "failing" (internal/backup).
+	State string `json:"state"`
+	// LastSyncedAt is when the destination last had everything, UTC. Nil
+	// if it has not since the server started.
+	LastSyncedAt *time.Time `json:"last_synced_at,omitempty"`
+	// Error is what is wrong, while it is.
+	Error string `json:"error,omitempty"`
+}
+
+// ShiftHealth is the open shift: enough to say "still open since".
+type ShiftHealth struct {
+	// ID is the shift's public id.
+	ID         string    `json:"id"`
+	TradingDay string    `json:"trading_day"`
+	OpenedAt   time.Time `json:"opened_at"`
+}
+
+// DayHours is one weekday's opening and closing, "09:00" and "23:00" in
+// the venue's timezone. A close at or before the open is the next day's:
+// "17:00" to "02:00" is a bar.
+type DayHours struct {
+	Open  string `json:"open"`
+	Close string `json:"close"`
+}
+
+// EncodeHealth lays a Health out as a Health frame.
+func EncodeHealth(h Health) ([]byte, error) {
+	return EncodeHead(TypeHealth, 0, h)
+}
+
+// DecodeHealth reads the Health out of a Health frame.
+func DecodeHealth(f Frame) (Health, error) {
+	var h Health
+	if f.Type != TypeHealth {
+		return h, fmt.Errorf("%w: not a health frame", ErrMalformed)
+	}
+	if err := json.Unmarshal(f.Payload, &h); err != nil {
+		return h, fmt.Errorf("%w: health: %v", ErrMalformed, err)
+	}
+	return h, nil
+}
 
 // Entitlement is where a venue stands with the relay, as the venue is told
 // it: on the answer to its dial, and in a Notice when it changes.

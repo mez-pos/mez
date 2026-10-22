@@ -86,8 +86,11 @@ type Options struct {
 
 // Server is the relay. It owns every venue socket and closes them in Close.
 type Server struct {
-	keys          *Keys
-	entitled      Entitlements
+	keys     *Keys
+	entitled Entitlements
+	// health is entitled when it is also a HealthSink (ADR-361), else nil:
+	// venues are then not asked for health and any sent is dropped.
+	health        HealthSink
 	entitledEvery time.Duration
 	limit         Limit
 	ips           *ipTable
@@ -143,10 +146,12 @@ func New(opts Options) (*Server, error) {
 	if domain != "" && !validDomain(domain) {
 		return nil, fmt.Errorf("relay: venue domain %q is not a domain name", opts.VenueDomain)
 	}
+	health, _ := opts.Entitlements.(HealthSink)
 	return &Server{
 		venueDomain:   domain,
 		keys:          opts.Keys,
 		entitled:      opts.Entitlements,
+		health:        health,
 		entitledEvery: opts.EntitlementEvery,
 		limit:         opts.Limit,
 		ips:           newIPTable(opts.IPLimit, opts.Now()),
@@ -308,6 +313,12 @@ func (s *Server) handleAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	notices := r.Header.Get(wire.HeaderNotices) == "1"
+	if s.health != nil {
+		// This relay reads what the venue says of its health, so the venue
+		// may send it (ADR-361). One that does not know the header sends
+		// nothing, as before.
+		w.Header().Set(wire.HeaderHealth, "1")
+	}
 
 	ws, err := websocket.Accept(w, r, nil)
 	if err != nil {
@@ -318,6 +329,9 @@ func (s *Server) handleAgent(w http.ResponseWriter, r *http.Request) {
 	ws.SetReadLimit(wire.MaxFrame)
 
 	a := newAgent(claims, ent, notices, ws, s.limit, s.now(), s.log)
+	if s.health != nil {
+		a.health = make(chan wire.Health, 1)
+	}
 	if !s.register(a) {
 		a.close(websocket.StatusGoingAway, "relay shutting down")
 		return
@@ -340,11 +354,19 @@ func (s *Server) handleAgent(w http.ResponseWriter, r *http.Request) {
 		defer close(asking)
 		s.keepEntitled(a, ent)
 	}()
+	pouring := make(chan struct{})
+	go func() {
+		defer close(pouring)
+		if s.health != nil {
+			s.pour(a)
+		}
+	}()
 
 	readErr := a.read()
 	a.close(websocket.StatusNormalClosure, "")
 	<-probing
 	<-asking
+	<-pouring
 	s.unregister(a)
 
 	a.log.Info("relay: venue disconnected",

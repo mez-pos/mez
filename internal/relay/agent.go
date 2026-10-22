@@ -65,6 +65,10 @@ type agent struct {
 	streams map[uint64]*stream
 	nextID  uint64
 
+	// health holds the newest summary the venue sent and the sink has not
+	// taken (ADR-361). Nil when the relay has no sink and asked for none.
+	health chan wire.Health
+
 	closeOnce sync.Once
 }
 
@@ -188,6 +192,11 @@ func (a *agent) read() error {
 			// tunnel client.
 			a.close(wire.CloseProtocol, "unreadable frame")
 			return wire.ErrMalformed
+		}
+		if f.Type == wire.TypeHealth {
+			// The venue's own news, for the sink, and no guest's.
+			a.took(f)
+			continue
 		}
 		a.deliver(f)
 	}

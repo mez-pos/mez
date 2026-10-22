@@ -67,7 +67,22 @@ into the venue.
   opened, the venue's opening hours as set. `relay.Entitlements`'s cloud
   implementation receives it; the static one drops it. No new route and
   nothing new reachable from outside. Tests in `internal/tunnel` on the
-  summary's contents and cadence.
+  summary's contents and cadence. Split on 2026-10-22:
+  - [x] **4a - The frame and the sink.** `wire.TypeHealth` and `wire.Health`;
+    the relay says on the dial's answer that it reads them, as the venue
+    says it reads notices; `relay.HealthSink`, which an `Entitlements`
+    may also be, receives one; a relay whose entitlements are not a sink
+    does not ask for them and drops any sent. cloudkit hands the sink and
+    the summary out. Tests in `internal/relay`.
+  - [ ] **4b - Opening hours.** ADR-360's per-weekday setting at the venue:
+    `internal/domain/hours`, the `opening_hours` key, the Rules API and
+    the field on the Shifts card. Tests on the parsing and the check.
+  - [ ] **4c - The summary, sent.** `internal/service/health` composes it
+    from the printers' outcomes, the backup's status, the open shift and
+    the hours; the tunnel sends it on connecting, every five minutes, and
+    within a minute of a change, to a relay that asked. Wired in `main`.
+    Tests in `internal/tunnel` on cadence and in `internal/service/health`
+    on contents.
 
 - [ ] **Task 5 - The clock alerts.** *`mez-cloud`.* From Task 4's
   summaries: shift still open past closing, venue not heard from inside

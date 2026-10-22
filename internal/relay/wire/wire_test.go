@@ -48,7 +48,7 @@ func TestDecodeRefusesMalformed(t *testing.T) {
 		{"empty", nil},
 		{"shorter than a header", []byte{byte(TypeBody), 0, 0}},
 		{"type zero", make([]byte, headerLen)},
-		{"type past the last", append([]byte{byte(TypeNotice) + 1}, make([]byte, 8)...)},
+		{"type past the last", append([]byte{byte(lastType) + 1}, make([]byte, 8)...)},
 		{"over the frame limit", append([]byte{byte(TypeBody)}, make([]byte, MaxFrame)...)},
 	}
 	for _, tt := range tests {
