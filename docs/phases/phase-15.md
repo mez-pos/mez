@@ -70,6 +70,9 @@ into the venue.
   - [ ] **3c - Voids, refunds and discounts.** *This repo, then
     `mez-cloud`:* the watched events past a cursor with their amounts, who
     did it and who authorised it, through cloudkit; the thresholds there.
+    - [x] This repo's part (ADR-363, 2026-10-22): `internal/service/watched`,
+      `Replica.Watched`, `Replica.LastEventID`, cloudkit's `WatchedEvent`.
+    - [ ] `mez-cloud`'s: the thresholds, the alert and the day's cap.
 
 - [x] **Task 4 - The venue's health, in one line, over the connection it
   has.** *This repo.* (ADR-361, 2026-10-22.) The tunnel agent sends a small JSON summary to the

@@ -8,6 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 15, Task 3a: the replica and the close-of-day figures**
+(ADR-362), mez's part of `mez-cloud`'s reader. `mirror.Replica` is a
+mirror less its door, its server and its photos: `OpenReplica` restores
+the newest copy, `Refresh` takes a newer write and puts the old copy
+away at once, `Close` puts it away; one goroutine's.
+`internal/service/closeofday.Since` reads ADR-360's thirteen lines'
+figures off each `z_reports` body past a row id (`ZReportsAfter`),
+nothing recomputed, a correction a row of its own. cloudkit hands out
+`Replica`, `ReplicaOptions`, `OpenReplica`, `CloseOfDay`, `CloseTally`
+and `MoneyText`, the slip's rendering without its symbol.
+
 **Phase 15, Task 4: the venue's health over the relay connection**
 (ADR-361), in three parts. 4a: `wire.TypeHealth` and `wire.Health`; a
 relay that reads them says `X-Mez-Tunnel-Health: 1` on the dial's

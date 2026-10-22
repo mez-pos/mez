@@ -9,6 +9,7 @@ import (
 
 	"github.com/mez-pos/mez/internal/backup"
 	"github.com/mez-pos/mez/internal/service/closeofday"
+	"github.com/mez-pos/mez/internal/service/watched"
 )
 
 // ReplicaOptions configure a Replica. From is required.
@@ -136,6 +137,31 @@ func (r *Replica) Closes(ctx context.Context, afterID, limit int64) ([]closeofda
 		return nil, ErrReplicaClosed
 	}
 	return closeofday.Since(ctx, r.current.database.Queries(), r.current.venue.ID, afterID, limit)
+}
+
+// Watched is the events the owner may be told about (ADR-360) after the
+// one with id afterID in the venue's stream, oldest first, from at most
+// limit events read, with the id of the last event read, watched or not:
+// the cursor moves past every event looked at. A last of 0 is a stream
+// read to its end.
+func (r *Replica) Watched(ctx context.Context, afterID, limit int64) ([]watched.Event, int64, error) {
+	if r.closed {
+		return nil, 0, ErrReplicaClosed
+	}
+	return watched.Since(ctx, r.current.database, r.current.venue.ID, afterID, limit)
+}
+
+// LastEventID is the id of the last event in the venue's stream, and 0
+// with none: where a reader that starts from now sets its cursor.
+func (r *Replica) LastEventID(ctx context.Context) (int64, error) {
+	if r.closed {
+		return 0, ErrReplicaClosed
+	}
+	last, err := r.current.database.Queries().VenueLastEventID(ctx, r.current.venue.ID)
+	if err != nil {
+		return 0, fmt.Errorf("mirror: reading the last event: %w", err)
+	}
+	return last, nil
 }
 
 // Close puts the copy away. A directory that could not be removed is said

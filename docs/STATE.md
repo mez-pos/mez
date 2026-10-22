@@ -19,34 +19,29 @@ list below.
 
 ## Last completed task
 
-**Phase 15, Task 3a: the replica and the close-of-day figures**
-(ADR-362), mez's part of `mez-cloud`'s reader. `mirror.Replica` is a
-mirror less its door, its server and its photos: `OpenReplica` restores
-the newest copy, `Refresh` takes a newer write and puts the old copy
-away at once, `Close` puts it away; one goroutine's.
-`internal/service/closeofday.Since` reads ADR-360's thirteen lines'
-figures off each `z_reports` body past a row id (`ZReportsAfter`),
-nothing recomputed, a correction a row of its own. cloudkit hands out
-`Replica`, `ReplicaOptions`, `OpenReplica`, `CloseOfDay`, `CloseTally`
-and `MoneyText`, the slip's rendering without its symbol. Before it,
-Task 4 (ADR-361): the health summary over the relay connection, with the
-Shifts card's **Open on** rows **not yet looked at in a browser**
-(`KNOWN.md`).
+**Phase 15, Task 3c, this repo's part: the watched events** (ADR-363).
+`internal/service/watched.Since` reads the venue's event stream past an
+id and answers the voids, comps, refunds, credit notes and discounts in
+it, each worth what the order's projection says (as the audit trail
+values them), with the actor and the authoriser by name and whether
+their role holds `shift.manage`, the table and the line; and the id of
+the last event read, so the cursor moves past every event. cloudkit
+hands out `Replica.Watched`, `Replica.LastEventID`, `WatchedEvent`,
+`WatchedPerson` and the kinds; a mirror's and a replica's `Venue` now
+carries its timezone (for 3b). Before it, 3a (ADR-362): the replica
+and the close-of-day figures.
 
 ## Next task
 
-**`mez-cloud`'s Task 3b, the reader and the close-of-day message**: open
-that repository and follow its `docs/STATE.md` and
-`docs/phases/phase-15.md`. This repository's next is **3c**, the watched
-events (a void, a comp, a refund, a credit note, a discount) past a
-cursor with their amounts, who did it and who authorised it, through
-cloudkit; it does not wait on 3b. Tasks 2, 5 and 6 are `mez-cloud`'s,
-and 7 waits on a real close-of-day message. Here, when next at a screen:
-walk the Shifts card's **Open on** rows (tick a day, set 17:00 to 02:00,
-see "next morning", save, reload). Phase 14's remainder is in
-`mez-cloud` too (mez Cloud runs on its Contabo box since 2026-10-21;
-8i3b2b and 8h3 there wait on a sender of codes, the human's to set up).
-This repository is also touched when:
+**Nothing in this repository is next by itself.** Phase 15's Tasks 2,
+3c's cloud half, 5 and 6 are `mez-cloud`'s: open that repository and
+follow its `docs/STATE.md`. Task 7, the words, waits on a real
+close-of-day message. Here, when next at a screen: walk the Shifts
+card's **Open on** rows (tick a day, set 17:00 to 02:00, see "next
+morning", save, reload), **not yet looked at in a browser** (`KNOWN.md`).
+Phase 14's remainder is in `mez-cloud` too (mez Cloud runs on its
+Contabo box since 2026-10-21; 8i3b2b and 8h3 there wait on a sender of
+codes, the human's to set up). This repository is also touched when:
 - **a change to `web/shared`** is a change to `mez-cloud`'s account area too:
   its bundle reads mez's tokens, preset, fonts, `ui/Button`, `ui/Card`,
   `ui/Logo`, `ui/Money`, `ui/StatusChip` (its `cloud` vocabulary, ADR-351),

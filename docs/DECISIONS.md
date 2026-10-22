@@ -14120,3 +14120,36 @@ means one restore path, one check, one swap, tested once.
 Cost: a second kind of copy on the box's disk, one a venue the reader follows, beside the
 mirrors'. `z_reports` gains a query. A Z-report written by a build before ADR-360 reads
 the same: every field was already in the body.
+
+## ADR-363 - The events an owner is told about are read off a replica past a cursor in the venue's stream, each worth what the order's projection says
+2026-10 · Status: accepted. Phase 15, Task 3c (mez's part). Builds on ADR-117, ADR-360, ADR-362.
+Context: ADR-360's two event alerts, a void or refund over the line and a discount by a
+cashier, need each such event with what it was worth, who did it and who let it through.
+A `line.voided` carries a line id and no amount; a `discount.applied` carries a percent
+or an amount and no worth; what each came to is the order projection's to say, and the
+audit trail already says it that way (ADR-117). `mez-cloud` reads a venue through
+cloudkit alone (ADR-362) and may not restate the projection.
+Decision:
+  - **`watched.Since(db, venue, afterID, limit)`** reads the venue's event stream past
+    an id, as the hub does (`VenueEventsAfter`), and answers the watched events among
+    them: `line.voided` and `line.comped` at the line's gross, `discount.applied` at the
+    discount's value, `refund.issued` at its amount, `credit_note.issued` at its total,
+    each from the order's projection, as `internal/service/audit` values them. With them
+    it answers the id of the last event read, watched or not, so the cursor moves past
+    every event looked at; 0 is a stream read to its end.
+  - **Who is a name and a yes or no.** `Person{Name, Manager}`: the staff table's name
+    for the actor and for `authorised_by`, and whether their role holds `shift.manage`,
+    which is what ADR-360 means by "not a cashier". Someone the table does not have (a
+    guest's own order, an id since removed) is the zero Person.
+  - **Where and what.** The order's public id, its table by name, and for a line the
+    item and quantity. The reason recorded, or its code.
+  - **An amount is as the order stands now**, not as it stood at the event: a venue's
+    replica is read minutes after, and an order discount whose lines were all voided
+    since reads as nothing, as the audit trail reads it.
+  - **cloudkit hands out** `Replica.Watched`, `Replica.LastEventID` (where a reader
+    that starts from now sets its cursor, without reading the stream), `WatchedEvent`,
+    `WatchedPerson`, the kinds, and `WatchedLimit`.
+Because: one valuation of a void, in the projection, read by the till's audit trail and
+the cloud's alerts alike; and a cursor that is the stream's own id, as the hub's is.
+Cost: each watched event projects its order once per asking, as the audit trail does;
+a round reads at most five hundred events at a time.

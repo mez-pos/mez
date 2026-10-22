@@ -12,7 +12,34 @@ import (
 	"github.com/mez-pos/mez/internal/domain/money"
 	"github.com/mez-pos/mez/internal/mirror"
 	"github.com/mez-pos/mez/internal/service/closeofday"
+	"github.com/mez-pos/mez/internal/service/watched"
 )
+
+// The events an owner may be told about (ADR-360; Phase 15, Task 3c),
+// read off a replica past a cursor in the venue's event stream
+// (Replica.Watched): what each was worth as the order's projection says,
+// who did it, and who let it through.
+type (
+	// WatchedEvent is one such event. Its ID is the cursor.
+	WatchedEvent = watched.Event
+	// WatchedKind is what happened.
+	WatchedKind = watched.Kind
+	// WatchedPerson is who: their name, and whether their role closes a
+	// day (shift.manage), which is what "not a cashier" means.
+	WatchedPerson = watched.Person
+)
+
+// The kinds of watched event.
+const (
+	WatchedVoid       = watched.Void
+	WatchedComp       = watched.Comp
+	WatchedRefund     = watched.Refund
+	WatchedCreditNote = watched.CreditNote
+	WatchedDiscount   = watched.Discount
+)
+
+// WatchedLimit is the most events Replica.Watched reads at one asking.
+const WatchedLimit = watched.DefaultLimit
 
 // A venue's replica, read for its figures (ADR-362; Phase 15, Task 3):
 // the newest copy in its bucket, brought up to the bucket's newest write

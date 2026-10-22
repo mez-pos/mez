@@ -141,6 +141,12 @@ func TestAReplicaFollowsItsBackupAndIsPutAway(t *testing.T) {
 	if changed, err := r.Refresh(ctx); err != nil || changed {
 		t.Fatalf("Refresh with nothing new = %v, %v", changed, err)
 	}
+	if events, last, err := r.Watched(ctx, 0, 0); err != nil || len(events) != 0 || last != 0 {
+		t.Fatalf("Watched of a venue with no events = %v, %d, %v", events, last, err)
+	}
+	if last, err := r.LastEventID(ctx); err != nil || last != 0 {
+		t.Fatalf("LastEventID of a venue with no events = %d, %v", last, err)
+	}
 	// Photos are not what a replica is for, and are not fetched.
 	if _, err := os.Stat(filepath.Join(r.current.dir, "photos")); !errors.Is(err, os.ErrNotExist) {
 		t.Errorf("the copy has photos beside it: %v", err)
