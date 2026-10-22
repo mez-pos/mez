@@ -114,6 +114,23 @@ UPDATE print_jobs
 SET state = 'dead', last_error = sqlc.arg(reason), updated_at = sqlc.arg(now)
 WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id) AND state IN ('queued', 'failed');
 
+-- name: PrintOutcomesForVenue :many
+-- Each printer's newest job printed whole, and its newest that failed or
+-- died, for the venue's health summary (ADR-361): at most two rows a
+-- printer. A job still queued or printing says nothing yet.
+SELECT j.printer_id, j.state, j.last_error, j.updated_at, j.done_at
+FROM print_jobs j
+WHERE j.id IN (
+    SELECT max(k.id) FROM print_jobs k
+    WHERE k.venue_id = sqlc.arg(venue_id) AND k.printer_id IS NOT NULL AND k.state = 'done'
+    GROUP BY k.printer_id
+    UNION
+    SELECT max(k.id) FROM print_jobs k
+    WHERE k.venue_id = sqlc.arg(venue_id) AND k.printer_id IS NOT NULL AND k.state IN ('failed', 'dead')
+    GROUP BY k.printer_id
+)
+ORDER BY j.id;
+
 -- name: PrintersForVenue :many
 -- The venue's printers with each one's newest job, for the back office.
 SELECT p.id, p.name, p.transport, p.address, p.paper_mm, p.active, p.is_receipt,

@@ -162,6 +162,13 @@ Two cards, each saving on its own.
 - **Shifts, tips and orders.**
   - **The trading day starts at**, a time. "Sales before this time belong
     to the day before." A shift keeps the day it opened under.
+  - **Open on** (ADR-360, ADR-361): a row per weekday, Monday first, each
+    a tick and two time fields, opens at and closes at. A day left unticked
+    is a closed day; a ticked one starts at 09:00 to 23:00. A closing time
+    before the opening time is the next morning, and the row says "next
+    morning". The hint says the till does nothing with these and that mez
+    Cloud reads them for its alerts. A day ticked without both times, or
+    with the two the same, is refused naming the day.
   - **A drawer may be out by (INR)**: "Over or short by more than this,
     closing the shift needs a reason. 0 asks for a reason on any
     difference."

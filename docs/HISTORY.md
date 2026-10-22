@@ -8,6 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 15, Task 1: ADR-360, the owner's WhatsApp** (ADR-360; the
+phase file had said ADR-314, a number already spent). The close-of-day
+message is thirteen fixed lines read from the `z_reports` row, never
+recomputed, one message per row and a second for a correction. Six
+alerts on one template, with trigger, threshold and default each: void
+or refund over ₹500 (on), discount by a role without `shift.manage`
+(off), shift open two hours past closing (on), venue not heard from for
+three hours inside opening hours (on), printer or backup failing for an
+hour (on). Quiet hours 00:00 to 07:00 hold alerts into one digest and
+never hold the close. Once per event, keyed on the row that caused it.
+Twelve alerts a trading day, then one "more at app.mezpos.com". The
+owner's number plus two confirmed recipients; STOP removes one.
+
 **`mez-cloud`'s Task 8e1, its part here** (ADR-353). The mirror is
 `internal/mirror`'s now, not `cmd/mez`'s `package main`: `mirror.Open`
 restores a backup into a directory the caller names, and the `Mirror`

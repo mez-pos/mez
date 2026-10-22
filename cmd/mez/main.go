@@ -47,6 +47,7 @@ import (
 	"github.com/mez-pos/mez/internal/service/cloudsignin"
 	"github.com/mez-pos/mez/internal/service/firstrun"
 	"github.com/mez-pos/mez/internal/service/floor"
+	"github.com/mez-pos/mez/internal/service/health"
 	"github.com/mez-pos/mez/internal/service/menus"
 	svcorder "github.com/mez-pos/mez/internal/service/order"
 	"github.com/mez-pos/mez/internal/service/people"
@@ -439,6 +440,12 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// whichever tunnel the venue has now: the one it started with, or the
 	// one a pairing made while it ran gave it (ADR-320).
 	var srv *api.Server
+	// What the venue says of its own health, to a relay that asks for it
+	// (ADR-361): read from its records, never from its printers.
+	venueHealth, err := health.New(health.Options{DB: database, Backups: backups})
+	if err != nil {
+		return err
+	}
 	dial := func(relayURL, key string, backOffice bool) (*tunnel.Client, error) {
 		return tunnel.New(tunnel.Options{
 			RelayURL: relayURL,
@@ -450,6 +457,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 			// (ADR-306).
 			BackOffice: backOffice,
 			Log:        log,
+			Health:     venueHealth.Summary,
 		})
 	}
 

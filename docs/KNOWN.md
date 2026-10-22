@@ -814,6 +814,11 @@
   and the toast says whether it did. A kitchen display set to a retired station
   still shows its board and is set to another by hand (ADR-134). Ordering is by
   arrows, not drag.
+- Shift, tips and receipt screen, **Open on** (ADR-360, ADR-361; phase 15
+  Task 4b): built 2026-10-22 and **not seen in a browser**: the seven rows,
+  a tick starting a day at 09:00 to 23:00, "next morning" on 17:00 to
+  02:00, the refusal naming the day, a save and a reload. The rows wrap at
+  a narrow width and were not checked at 1024.
 - Shift, tips and receipt screen (ADR-138): the receipt preview is of a made-up
   bill and shows no credit note; it was checked against the layout, not a
   printer. A tip weight for a renamed or removed role is not shown and drops at

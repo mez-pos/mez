@@ -126,6 +126,14 @@ func (c *Client) session() (time.Duration, error) {
 		defer c.wg.Done()
 		s.heartbeat()
 	}()
+	if c.health != nil && resp.Header.Get(wire.HeaderHealth) == "1" {
+		// This relay reads what the venue says of its health (ADR-361).
+		c.wg.Add(1)
+		go func() {
+			defer c.wg.Done()
+			s.report()
+		}()
+	}
 
 	err = s.read()
 	// Whatever was being served has nobody to answer now.

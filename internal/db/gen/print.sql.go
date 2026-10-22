@@ -419,6 +419,61 @@ func (q *Queries) PrintJobsForVenue(ctx context.Context, arg PrintJobsForVenuePa
 	return items, nil
 }
 
+const printOutcomesForVenue = `-- name: PrintOutcomesForVenue :many
+SELECT j.printer_id, j.state, j.last_error, j.updated_at, j.done_at
+FROM print_jobs j
+WHERE j.id IN (
+    SELECT max(k.id) FROM print_jobs k
+    WHERE k.venue_id = ?1 AND k.printer_id IS NOT NULL AND k.state = 'done'
+    GROUP BY k.printer_id
+    UNION
+    SELECT max(k.id) FROM print_jobs k
+    WHERE k.venue_id = ?1 AND k.printer_id IS NOT NULL AND k.state IN ('failed', 'dead')
+    GROUP BY k.printer_id
+)
+ORDER BY j.id
+`
+
+type PrintOutcomesForVenueRow struct {
+	PrinterID sql.NullInt64
+	State     string
+	LastError string
+	UpdatedAt time.Time
+	DoneAt    sql.NullTime
+}
+
+// Each printer's newest job printed whole, and its newest that failed or
+// died, for the venue's health summary (ADR-361): at most two rows a
+// printer. A job still queued or printing says nothing yet.
+func (q *Queries) PrintOutcomesForVenue(ctx context.Context, venueID int64) ([]PrintOutcomesForVenueRow, error) {
+	rows, err := q.db.QueryContext(ctx, printOutcomesForVenue, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PrintOutcomesForVenueRow{}
+	for rows.Next() {
+		var i PrintOutcomesForVenueRow
+		if err := rows.Scan(
+			&i.PrinterID,
+			&i.State,
+			&i.LastError,
+			&i.UpdatedAt,
+			&i.DoneAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const printVersion = `-- name: PrintVersion :one
 SELECT CAST(coalesce((SELECT version FROM print_versions WHERE venue_id = ?), 0) AS INTEGER) AS version
 `

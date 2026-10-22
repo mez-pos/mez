@@ -446,6 +446,10 @@ type Querier interface {
 	// The queue as staff see it: every job not yet printed, and what printed
 	// since the given time, newest first. Payloads stay behind.
 	PrintJobsForVenue(ctx context.Context, arg PrintJobsForVenueParams) ([]PrintJobsForVenueRow, error)
+	// Each printer's newest job printed whole, and its newest that failed or
+	// died, for the venue's health summary (ADR-361): at most two rows a
+	// printer. A job still queued or printing says nothing yet.
+	PrintOutcomesForVenue(ctx context.Context, venueID int64) ([]PrintOutcomesForVenueRow, error)
 	PrintVersion(ctx context.Context, venueID int64) (int64, error)
 	PrinterByID(ctx context.Context, id int64) (PrinterByIDRow, error)
 	// The venue's printers with each one's newest job, for the back office.

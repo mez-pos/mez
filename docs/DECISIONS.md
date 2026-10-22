@@ -14007,3 +14007,68 @@ Cost: an owner whose closing count is skipped sees "no count" every night, which
 the message doing its job. Four fixed payment lines mean a venue taking only cash
 reads "none" three times. Opening hours are one more setting at the venue, in this
 repository, before two of the six alerts can fire.
+
+## ADR-361 - A venue's health is one frame on the relay connection it already holds, sent to a relay that asked for it, and its opening hours are a setting of its own
+2026-10 · Status: accepted. Phase 15, Task 4. Builds on ADR-316, ADR-359, ADR-360.
+Context: ADR-360's clock alerts need to know, from the cloud, whether a printer or the
+backup is failing, whether a shift is still open, and when the venue means to be open.
+None of that is in the replica the cloud already follows: a printer's state is a row the
+venue writes, but the cloud reading it there is the cloud reaching into the venue, and the
+backup's own state cannot be in the backup. Phase 15 said: a small summary over the
+relay connection, no new route, nothing new reachable from outside. The relay has one
+frame already that goes the other way only to a venue that asked (the Notice, ADR-316),
+and a relay that gets a frame it does not know hangs up.
+Decision:
+  - **A seventh frame, `wire.TypeHealth`, venue to relay, on stream 0, carrying a
+    `wire.Health` as JSON.** The relay says it reads them with `X-Mez-Tunnel-Health: 1`
+    on its answer to the dial, as the venue says it reads notices on the dial itself; a
+    venue sends health only to a relay that said so, and a relay without a sink does not
+    say so. An older relay is sent nothing, an older venue sends nothing, and neither
+    knows the other is new.
+  - **What is in it, and from where.** The venue's clock and timezone; each printer's
+    name, whether it is active, when a job was last printed whole, when one last failed
+    or died on it, and the newest failure's words while no success is newer; the backup's
+    state, last sync and error as `internal/backup` reports them; the open shift's public
+    id, trading day and opening time; and the opening hours as set. Every field is read
+    from the venue's own records (`internal/service/health`): nothing is asked of a
+    printer, a bucket or the internet to make it, so making it costs four reads and the
+    summary says what the venue last saw, which is what an alert should say too. Nothing
+    of a guest's is in it, and no figure of the day's trade: those are the replica's.
+  - **The printers' outcomes are one query**, `PrintOutcomesForVenue`: each printer's
+    newest job in `done` and its newest in `failed` or `dead`, two rows a printer at most.
+    A printer whose failure is newer than its success is one that is not printing, which
+    is the cloud's rule (ADR-360), not the venue's.
+  - **The cadence is on connecting, within a minute of a change, and every five minutes
+    regardless.** The tunnel reads the summary every minute and sends it when its
+    fingerprint, the JSON less the clock, differs from the last sent, or when five minutes
+    have passed since. The unchanged repeat is the heartbeat the cloud's "not heard from"
+    rests on: a relay hearing nothing for an hour knows the venue is gone, not quiet. A
+    summary that cannot be read is logged and read again next minute; nothing wrong is
+    sent. A relay that restarts is told again on the new connection.
+  - **The relay's side is `relay.HealthSink`**, `VenueHealth(ctx, venueID, health)
+    error`, which an `Entitlements` may also be: the relay asserts it at `New`, and that
+    is what makes it ask. Each venue's socket keeps one summary waiting, the newest in
+    place of one not taken, and hands them to the sink one at a time on its own
+    goroutine with the asking timeout: a slow sink loses the middle, never the latest,
+    and never holds the socket's reading. The sink's error is logged. A health frame
+    that cannot be read is passed over, not a reason to hang up: it is news, the next is
+    minutes away. cloudkit hands out the sink and the summary's types, so `mez-cloud`'s
+    entitlements become the sink in its Task 5 without a shape of their own.
+  - **Opening hours are the setting `venue.opening_hours`**, a JSON week keyed `mon` to
+    `sun`, each day `{"open":"09:00","close":"23:00"}`, in the venue's timezone
+    (`internal/domain/hours`). A day not named is one the venue is closed; a close before
+    the open is the next morning, so a bar is `17:00` to `02:00`; a close equal to the
+    open is refused, since a day open round the clock is not one a venue can set. The
+    same hours always store as the same text, days in order. Unset is "not known", and
+    the summary carries none; the cloud reads that as "no clock alert that needs them"
+    (ADR-360), not as "never open". The owner sets them on the Shifts card as **Open
+    on**, a row per weekday with a tick and two time fields; the till reads nothing from
+    them.
+Because: the venue computes nothing new and the cloud reaches into nothing. The one
+socket the venue holds outward is the one place a summary can go without a port, a route
+or a token, and the frame protocol was built to grow at its end (ADR-202). Five minutes
+is slow enough to cost nothing and fast enough for alerts with an hour of patience.
+Cost: a frame of under a kilobyte every five minutes, about 150 KB a day a venue, and
+four reads a minute of the venue's own database. A relay that is not a sink pays nothing.
+`mez-cloud`'s entitlements must grow a method and a table before Task 5 has anything to
+read; until then the relay there asks for no health and the summaries are not made.

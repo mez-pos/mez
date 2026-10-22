@@ -19,35 +19,33 @@ list below.
 
 ## Last completed task
 
-**Phase 15, Task 1: ADR-360, the owner's WhatsApp** (ADR-360; the
-phase file had said ADR-314, a number already spent). The close-of-day
-message is thirteen fixed lines read from the `z_reports` row, never
-recomputed, one message per row and a second for a correction. Six
-alerts on one template, with trigger, threshold and default each: void
-or refund over ₹500 (on), discount by a role without `shift.manage`
-(off), shift open two hours past closing (on), venue not heard from for
-three hours inside opening hours (on), printer or backup failing for an
-hour (on). Opening hours are a venue setting this repo does not have
-yet; until set, the two alerts that need them stay quiet. Quiet hours
-00:00 to 07:00 hold alerts into one digest and never hold the close.
-Once per event, keyed on the row that caused it. Twelve alerts a trading
-day, then one "more at app.mezpos.com". The owner's number plus two
-confirmed recipients; STOP removes one. Nothing marketing, no guest data.
+**Phase 15, Task 4: the venue's health over the relay connection**
+(ADR-361), in three parts. 4a: `wire.TypeHealth` and `wire.Health`; a
+relay that reads them says `X-Mez-Tunnel-Health: 1` on the dial's
+answer; `relay.HealthSink`, which an `Entitlements` may also be, gets
+each venue's newest summary on the venue's own goroutine; cloudkit hands
+it out. 4b: opening hours are the setting `venue.opening_hours`
+(`internal/domain/hours`, a JSON week, `mon` to `sun`, a close before
+the open is the next morning), on the Rules API as `opening_hours` and
+on the Shifts card as **Open on**, a row per weekday. 4c:
+`internal/service/health` composes the summary (printers' last success
+and failure from `PrintOutcomesForVenue`, the backup's status, the open
+shift, the hours); the tunnel sends it on connecting, within a minute of
+a change and every five minutes, to a relay that asked. Wired in `main`.
+**The Open on rows were not looked at in a browser** (`KNOWN.md`).
 
 ## Next task
 
-**Task 4 - the venue's health, in one line, over the connection it has**
-(`docs/phases/phase-15.md`), this repo's. The tunnel agent sends a JSON
-summary to the relay every five minutes and on change: printers' last
-success and failure, backup state and last sync, the open shift and when
-it opened, and the venue's opening hours. ADR-360 makes opening hours a
-per-weekday setting at the venue, which does not exist yet: add it with
-Task 4 (settings, migration, the Settings screen's field), since the
-summary carries it. Tasks 2 and 3 are `mez-cloud`'s and do not wait on
-it. Phase 14's remainder is in `mez-cloud`: follow its `docs/STATE.md`
-(mez Cloud runs on its Contabo box since 2026-10-21; 8i3b2b and 8h3
-there wait on a sender of codes, WhatsApp or SMS, the human's to set
-up). This repository is also touched when:
+**Nothing in this repository is next by itself.** Phase 15's Tasks 2, 3,
+5 and 6 are `mez-cloud`'s; its entitlements become a `HealthSink`
+(cloudkit's) in its Task 5, and until then its relay asks for no health.
+Task 7, the words, waits on a real close-of-day message from Task 3.
+Here, when next at a screen: walk the Shifts card's **Open on** rows
+(tick a day, set 17:00 to 02:00, see "next morning", save, reload). Phase
+14's remainder is in `mez-cloud`: follow its `docs/STATE.md` (mez Cloud
+runs on its Contabo box since 2026-10-21; 8i3b2b and 8h3 there wait on a
+sender of codes, WhatsApp or SMS, the human's to set up). This
+repository is also touched when:
 - **a change to `web/shared`** is a change to `mez-cloud`'s account area too:
   its bundle reads mez's tokens, preset, fonts, `ui/Button`, `ui/Card`,
   `ui/Logo`, `ui/Money`, `ui/StatusChip` (its `cloud` vocabulary, ADR-351),
@@ -209,4 +207,4 @@ screen. Migration 00056 gives `menu.edit` to existing managers.
 - [ ] 12 - Installer, Windows Service, Docker, Litestream, docs (built; owes its human check)
 - [ ] 13 - The back office from anywhere (built; owes its human check)
 - [ ] 14 - mez Cloud: the account, the pairing and the switch (this repo's tasks are done; 4d, 7e and 8 are `mez-cloud`'s)
-- [ ] 15 - The owner's WhatsApp (Task 1, ADR-360, done; Task 4 is this repo's next; 2, 3, 5 and 6 are `mez-cloud`'s)
+- [ ] 15 - The owner's WhatsApp (Tasks 1 and 4, this repo's, done: ADR-360, ADR-361; 2, 3, 5 and 6 are `mez-cloud`'s; 7 waits on them)

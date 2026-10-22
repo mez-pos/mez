@@ -63,6 +63,16 @@ const (
 
 	defaultHeartbeat = 20 * time.Second
 	heartbeatTimeout = 10 * time.Second
+
+	// defaultHealthEvery is how often the venue's health is sent to a relay
+	// that asked for it whether or not it changed, and defaultHealthPoll
+	// how often it is read to see whether it has (ADR-361). The cloud's
+	// alerts have an hour of patience, so a change is news within the
+	// minute and a summary unchanged for five says the venue is still
+	// there.
+	defaultHealthEvery = 5 * time.Minute
+	defaultHealthPoll  = time.Minute
+	healthTimeout      = 10 * time.Second
 )
 
 // State is where the tunnel is. It is a vocabulary the back office shows.
@@ -169,12 +179,21 @@ type Options struct {
 	// Now is the clock. Nil means time.Now.
 	Now func() time.Time
 
+	// Health, when set, is what the venue says of its own health (ADR-361),
+	// read on connecting and every HealthPoll after, and sent to a relay
+	// that said on the dial that it reads it: at once, when it has changed,
+	// and every HealthEvery whether or not it has. A relay that did not
+	// ask is sent nothing and Health is not called. Nil sends nothing.
+	Health func(ctx context.Context) (wire.Health, error)
+
 	// The rest are for tests; zero means the default.
 	MinBackoff      time.Duration
 	MaxBackoff      time.Duration
 	LongBackoff     time.Duration
 	EntitledBackoff time.Duration
 	Heartbeat       time.Duration
+	HealthEvery     time.Duration
+	HealthPoll      time.Duration
 }
 
 // Client holds the tunnel open. It owns its goroutines: Start launches
@@ -188,8 +207,10 @@ type Client struct {
 	backOffice bool
 	log        *slog.Logger
 	now        func() time.Time
+	health     func(ctx context.Context) (wire.Health, error)
 
 	minBackoff, maxBackoff, longBackoff, entitledBackoff, heartbeat time.Duration
+	healthEvery, healthPoll                                         time.Duration
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -236,11 +257,14 @@ func New(opts Options) (*Client, error) {
 		backOffice:      opts.BackOffice,
 		log:             opts.Log,
 		now:             opts.Now,
+		health:          opts.Health,
 		minBackoff:      orDefault(opts.MinBackoff, defaultMinBackoff),
 		maxBackoff:      orDefault(opts.MaxBackoff, defaultMaxBackoff),
 		longBackoff:     orDefault(opts.LongBackoff, defaultLongBackoff),
 		entitledBackoff: orDefault(opts.EntitledBackoff, defaultEntitledBackoff),
 		heartbeat:       orDefault(opts.Heartbeat, defaultHeartbeat),
+		healthEvery:     orDefault(opts.HealthEvery, defaultHealthEvery),
+		healthPoll:      orDefault(opts.HealthPoll, defaultHealthPoll),
 	}
 	if c.now == nil {
 		c.now = time.Now

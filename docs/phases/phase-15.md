@@ -60,8 +60,8 @@ into the venue.
   on a replica built from a fixture venue: one message per close, none on
   a replay.
 
-- [ ] **Task 4 - The venue's health, in one line, over the connection it
-  has.** *This repo.* The tunnel agent sends a small JSON summary to the
+- [x] **Task 4 - The venue's health, in one line, over the connection it
+  has.** *This repo.* (ADR-361, 2026-10-22.) The tunnel agent sends a small JSON summary to the
   relay every five minutes and on change: printers (each one's last
   success), backup state and last sync, the open shift's id and when it
   opened, the venue's opening hours as set. `relay.Entitlements`'s cloud
@@ -77,7 +77,7 @@ into the venue.
   - [x] **4b - Opening hours.** ADR-360's per-weekday setting at the venue:
     `internal/domain/hours`, the `opening_hours` key, the Rules API and
     the field on the Shifts card. Tests on the parsing and the check.
-  - [ ] **4c - The summary, sent.** `internal/service/health` composes it
+  - [x] **4c - The summary, sent.** `internal/service/health` composes it
     from the printers' outcomes, the backup's status, the open shift and
     the hours; the tunnel sends it on connecting, every five minutes, and
     within a minute of a change, to a relay that asked. Wired in `main`.
