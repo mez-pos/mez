@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/mez-pos/mez/internal/auth"
+	"github.com/mez-pos/mez/internal/domain/hours"
 	"github.com/mez-pos/mez/internal/service/settings"
 )
 
@@ -11,7 +12,9 @@ import (
 // hour time like "04:00"; variance_threshold is minor units; tip_role_weights
 // is keyed by role name. tips_max_percent is the tip ceiling (ADR-261), 0 to
 // 1000, 0 asking for a manager on every tip; left out, it is the default,
-// and an answer always carries it.
+// and an answer always carries it. opening_hours is keyed by weekday, "mon"
+// to "sun", each an open and a close like "09:00" and "23:00" (ADR-360); a
+// day left out is a closed one, and {} is not set.
 type rulesRequest struct {
 	DayStart          string           `json:"day_start"`
 	VarianceThreshold int64            `json:"variance_threshold"`
@@ -19,6 +22,7 @@ type rulesRequest struct {
 	TipRoleWeights    map[string]int64 `json:"tip_role_weights"`
 	TicketLateMinutes int              `json:"ticket_late_minutes"`
 	TipsMaxPercent    *int             `json:"tips_max_percent,omitempty"`
+	OpeningHours      hours.Week       `json:"opening_hours"`
 }
 
 // rulesResponse is the rules as they stand. minor_per_major is how many minor

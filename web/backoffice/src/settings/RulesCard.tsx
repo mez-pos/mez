@@ -3,6 +3,7 @@
 
 import type { RulesRequest, RulesResponse } from "../../../shared/api-types";
 import { Choice, Field, inputClass } from "../FormFields";
+import { WEEKDAYS, isOvernight, openDay, type DayForm, type Weekday } from "./hours-logic";
 import {
   MAX_LATE_MINUTES,
   MAX_TIP_MAX_PERCENT,
@@ -37,6 +38,7 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
   });
   const { form, busy } = d;
   const set = (patch: Partial<typeof form>) => d.update((f) => ({ ...f, ...patch }));
+  const setDay = (key: Weekday, day: DayForm) => d.update((f) => ({ ...f, hours: { ...f.hours, [key]: day } }));
 
   return (
     <SectionCard
@@ -69,6 +71,56 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
           />
         )}
       </Field>
+
+      <fieldset className="flex flex-col gap-2" disabled={busy}>
+        <legend className="text-base font-semibold">Open on</legend>
+        <ul className="flex flex-col gap-2">
+          {WEEKDAYS.map(({ key, label }) => {
+            const day = form.hours[key];
+            return (
+              <li key={key} className="flex flex-wrap items-center gap-3">
+                <label className="flex min-h-tap w-36 cursor-pointer items-center gap-3 text-base">
+                  <input
+                    type="checkbox"
+                    className="size-6 shrink-0 accent-accent"
+                    checked={!day.closed}
+                    onChange={(e) => setDay(key, e.target.checked ? openDay(day) : { ...day, closed: true })}
+                  />
+                  {label}
+                </label>
+                <input
+                  type="time"
+                  aria-label={`${label} opens at`}
+                  className={`${inputClass} max-w-32 font-mono`}
+                  value={day.open}
+                  disabled={day.closed}
+                  onChange={(e) => setDay(key, { ...day, open: e.target.value })}
+                />
+                <span className="text-base text-fg-muted">to</span>
+                <input
+                  type="time"
+                  aria-label={`${label} closes at`}
+                  className={`${inputClass} max-w-32 font-mono`}
+                  value={day.close}
+                  disabled={day.closed}
+                  onChange={(e) => setDay(key, { ...day, close: e.target.value })}
+                />
+                {!day.closed && isOvernight(day) && <span className="text-sm text-fg-muted">next morning</span>}
+              </li>
+            );
+          })}
+        </ul>
+        <p className="text-sm text-fg-muted">
+          A day left unticked is a day the venue is closed. A closing time before the opening time is the next morning: 17:00 to 02:00. The till
+          does nothing with these; mez Cloud reads them for its alerts, a shift still open after closing and the venue not heard from while it
+          should be open.
+        </p>
+        {d.on("opening_hours") && (
+          <p role="alert" className="text-sm text-danger">
+            {d.on("opening_hours")}
+          </p>
+        )}
+      </fieldset>
 
       <Field
         label={`A drawer may be out by (${rules.currency})`}

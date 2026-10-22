@@ -1876,6 +1876,12 @@ export interface RulesRequest {
   tip_role_weights: Record<string, number>;
   ticket_late_minutes: number;
   tips_max_percent?: number;
+  opening_hours: Record<string, Day>;
+}
+
+export interface Day {
+  open: string;
+  close: string;
 }
 
 export interface RulesResponse {
@@ -1885,6 +1891,7 @@ export interface RulesResponse {
   tip_role_weights: Record<string, number>;
   ticket_late_minutes: number;
   tips_max_percent?: number;
+  opening_hours: Record<string, Day>;
   currency: string;
   minor_per_major: number;
   roles: string[];

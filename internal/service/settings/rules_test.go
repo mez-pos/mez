@@ -9,6 +9,7 @@ import (
 
 	"github.com/mez-pos/mez/internal/db"
 	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/hours"
 	svcshift "github.com/mez-pos/mez/internal/service/shift"
 )
 
@@ -16,7 +17,7 @@ import (
 func stockRules() RulesInput {
 	return RulesInput{
 		DayStart: "04:00", VarianceThreshold: 0, TipRule: "even", TipRoleWeights: map[string]int64{}, TicketLateMinutes: 20,
-		TipsMaxPercent: percent(50),
+		TipsMaxPercent: percent(50), OpeningHours: hours.Week{},
 	}
 }
 
@@ -97,6 +98,7 @@ func TestUpdateRulesSavesAndReadsBack(t *testing.T) {
 		TipRoleWeights: map[string]int64{"Manager": 3, "Cashier": 1}, TicketLateMinutes: 12,
 		// No tip at all without a manager: 0 is a ceiling, not "unset".
 		TipsMaxPercent: percent(0),
+		OpeningHours:   hours.Week{"mon": {Open: "09:00", Close: "23:00"}, "sat": {Open: "17:00", Close: "02:00"}},
 	}
 	if err := s.UpdateRules(ctx, 1, in); err != nil {
 		t.Fatal(err)
@@ -123,7 +125,8 @@ func TestUpdateRulesSavesAndReadsBack(t *testing.T) {
 	wantStored := map[string]string{
 		"shift.day_start": "05:30", "shift.variance_threshold_minor": "5000", "tips.rule": "role_weight",
 		"tips.role_weights": `{"Cashier":1,"Manager":3}`, "terminal.ticket_late_minutes": "12",
-		"tips.max_percent": "0",
+		"tips.max_percent":    "0",
+		"venue.opening_hours": `{"mon":{"open":"09:00","close":"23:00"},"sat":{"open":"17:00","close":"02:00"}}`,
 	}
 	if !maps.Equal(stored, wantStored) {
 		t.Fatalf("stored %v, want %v", stored, wantStored)

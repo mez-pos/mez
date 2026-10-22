@@ -2,6 +2,7 @@ package settings
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/mez-pos/mez/internal/device/escpos"
+	"github.com/mez-pos/mez/internal/domain/hours"
 	"github.com/mez-pos/mez/internal/domain/invoice"
 	"github.com/mez-pos/mez/internal/domain/shift"
 	"github.com/mez-pos/mez/internal/domain/tips"
@@ -43,6 +45,7 @@ var keys = []key{
 	{Name: svcorder.SettingCreditPrefix, Check: prefix},
 	{Name: svcorder.SettingTicketLateMinutes, Default: strconv.Itoa(svcorder.DefaultLateMinutes), Check: wholeNumber(1, 600, "minutes")},
 	{Name: svcshift.SettingDayStart, Default: shift.FormatDayStart(shift.DefaultDayStart), Check: timeOfDay},
+	{Name: svcshift.SettingOpeningHours, Check: openingHours},
 	{Name: svcshift.SettingVarianceThreshold, Default: strconv.FormatInt(svcshift.DefaultVarianceThreshold, 10), Check: wholeNumber(0, 1_000_000_00, "minor units")},
 	{Name: svcshift.SettingTipRule, Default: string(tips.Even), Check: tipRule},
 	{Name: svcshift.SettingTipRoleWeights, Check: roleWeights},
@@ -64,6 +67,21 @@ func find(name string) (key, bool) {
 		return key{}, false
 	}
 	return keys[i], true
+}
+
+// openingHours accepts a week of opening hours as hours.Parse reads it
+// (ADR-360), and says what is wrong in the words the owner is shown.
+func openingHours(v string) string {
+	_, err := hours.Parse(v)
+	var e *hours.Error
+	switch {
+	case err == nil:
+		return ""
+	case errors.As(err, &e):
+		return e.Message
+	default:
+		return "The hours are not written as a week of opening and closing times."
+	}
 }
 
 func oneOf(allowed ...string) func(string) string {

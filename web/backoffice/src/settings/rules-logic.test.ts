@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
 import type { RulesResponse } from "../../../shared/api-types";
+import { hoursFormFrom } from "./hours-logic";
 import { DEFAULT_TIP_MAX_PERCENT, TIP_RULES, rulesChanged, rulesFormFrom, rulesProblem, rulesProblemOf, toRulesInput, type RulesForm } from "./rules-logic";
 
 const saved: RulesResponse = {
@@ -10,6 +11,7 @@ const saved: RulesResponse = {
   tip_role_weights: {},
   ticket_late_minutes: 20,
   tips_max_percent: 50,
+  opening_hours: {},
   currency: "INR",
   minor_per_major: 100,
   roles: ["cashier", "manager", "owner"],
@@ -27,6 +29,7 @@ describe("the rules form", () => {
       weights: { cashier: "", manager: "", owner: "" },
       tipMax: "50",
       lateMinutes: "20",
+      hours: hoursFormFrom({}),
     });
     expect(rulesFormFrom({ ...saved, variance_threshold: 5050 }).variance).toBe("50.50");
   });
@@ -56,6 +59,18 @@ describe("the rules form", () => {
       tip_role_weights: { cashier: 1, manager: 3 },
       tips_max_percent: 0,
       ticket_late_minutes: 15,
+      opening_hours: {},
+    });
+  });
+  it("carries the opening hours both ways, and a change to them is a change", () => {
+    const f = rulesFormFrom({ ...saved, opening_hours: { mon: { open: "09:00", close: "23:00" } } });
+    expect(f.hours.mon).toEqual({ closed: false, open: "09:00", close: "23:00" });
+    expect(toRulesInput(f, per).opening_hours).toEqual({ mon: { open: "09:00", close: "23:00" } });
+    const sunToo = { ...f, hours: { ...f.hours, sun: { closed: false, open: "10:00", close: "22:00" } } };
+    expect(rulesChanged(sunToo, f, per)).toBe(true);
+    expect(rulesProblem({ ...f, hours: { ...f.hours, mon: { closed: false, open: "", close: "23:00" } } }, per)).toEqual({
+      field: "opening_hours",
+      message: "Give Monday an opening time, like 09:00.",
     });
   });
 

@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/hours"
 	"github.com/mez-pos/mez/internal/domain/shift"
 	"github.com/mez-pos/mez/internal/domain/tips"
 	svcorder "github.com/mez-pos/mez/internal/service/order"
@@ -42,6 +43,11 @@ type RulesInput struct {
 	// tip. Left out, it takes the default, as an empty DayStart does: 0 is a
 	// ceiling, so it cannot also mean "not given".
 	TipsMaxPercent *int `json:"tips_max_percent,omitempty"`
+	// OpeningHours is when the venue is open, by weekday, "mon" to "sun"
+	// (ADR-360). A day not in it is a day the venue is closed; empty is not
+	// set. The till does nothing with them: mez Cloud's alerts read them
+	// from the venue's health summary (ADR-361).
+	OpeningHours hours.Week `json:"opening_hours"`
 }
 
 // Rules is the rules as they stand, and what the screen needs to edit them.
@@ -83,7 +89,7 @@ func (s *Service) Rules(ctx context.Context, venueID int64) (Rules, error) {
 	var out Rules
 	out.Currency = v.Currency
 	out.MinorPerMajor = maxRoundingStep(v.Currency)
-	var raw struct{ dayStart, variance, rule, weights, late, tipMax string }
+	var raw struct{ dayStart, variance, rule, weights, late, tipMax, opening string }
 	for _, f := range []struct {
 		into *string
 		name string
@@ -91,6 +97,7 @@ func (s *Service) Rules(ctx context.Context, venueID int64) (Rules, error) {
 		{&raw.dayStart, svcshift.SettingDayStart}, {&raw.variance, svcshift.SettingVarianceThreshold},
 		{&raw.rule, svcshift.SettingTipRule}, {&raw.weights, svcshift.SettingTipRoleWeights},
 		{&raw.late, svcorder.SettingTicketLateMinutes}, {&raw.tipMax, svcorder.SettingTipMaxPercent},
+		{&raw.opening, svcshift.SettingOpeningHours},
 	} {
 		if *f.into, err = value(f.name); err != nil {
 			return Rules{}, err
@@ -107,6 +114,12 @@ func (s *Service) Rules(ctx context.Context, venueID int64) (Rules, error) {
 		if err := json.Unmarshal([]byte(raw.weights), &out.TipRoleWeights); err != nil {
 			return Rules{}, fmt.Errorf("venue %d's tip role weights: %w", venueID, err)
 		}
+	}
+	// The check above has passed the text, so this cannot fail. Never nil:
+	// the screen reads it as an object, and a venue with none set is {}.
+	out.OpeningHours, _ = hours.Parse(raw.opening)
+	if out.OpeningHours == nil {
+		out.OpeningHours = hours.Week{}
 	}
 	if out.Roles, err = roleNames(ctx, q, venueID); err != nil {
 		return Rules{}, err
@@ -183,8 +196,19 @@ func cleanRules(in RulesInput, roles []string) (map[string]string, error) {
 		weights = string(body)
 	}
 
+	opening, err := in.OpeningHours.Format()
+	if err != nil {
+		var e *hours.Error
+		msg := "The hours are not written as a week of opening and closing times."
+		if errors.As(err, &e) {
+			msg = e.Message
+		}
+		return nil, &Invalid{"opening_hours", msg}
+	}
+
 	checks := []struct{ field, key, value string }{
 		{"day_start", svcshift.SettingDayStart, in.DayStart},
+		{"opening_hours", svcshift.SettingOpeningHours, opening},
 		{"variance_threshold", svcshift.SettingVarianceThreshold, strconv.FormatInt(in.VarianceThreshold, 10)},
 		{"tip_rule", svcshift.SettingTipRule, in.TipRule},
 		{"tip_role_weights", svcshift.SettingTipRoleWeights, weights},
@@ -220,6 +244,7 @@ func cleanRules(in RulesInput, roles []string) (map[string]string, error) {
 		svcshift.SettingVarianceThreshold: ifNot(strconv.FormatInt(in.VarianceThreshold, 10), strconv.FormatInt(svcshift.DefaultVarianceThreshold, 10)),
 		svcshift.SettingTipRule:           ifNot(in.TipRule, string(tips.Even)),
 		svcshift.SettingTipRoleWeights:    weights,
+		svcshift.SettingOpeningHours:      opening,
 		svcorder.SettingTicketLateMinutes: ifNot(strconv.Itoa(in.TicketLateMinutes), strconv.Itoa(svcorder.DefaultLateMinutes)),
 		svcorder.SettingTipMaxPercent:     ifNot(tipMax, strconv.Itoa(svcorder.DefaultTipMaxPercent)),
 	}, nil

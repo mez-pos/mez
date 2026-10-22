@@ -74,7 +74,7 @@ into the venue.
     may also be, receives one; a relay whose entitlements are not a sink
     does not ask for them and drops any sent. cloudkit hands the sink and
     the summary out. Tests in `internal/relay`.
-  - [ ] **4b - Opening hours.** ADR-360's per-weekday setting at the venue:
+  - [x] **4b - Opening hours.** ADR-360's per-weekday setting at the venue:
     `internal/domain/hours`, the `opening_hours` key, the Rules API and
     the field on the Shifts card. Tests on the parsing and the check.
   - [ ] **4c - The summary, sent.** `internal/service/health` composes it

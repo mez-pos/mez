@@ -5,6 +5,7 @@
 // role it knows; what is checked here costs nothing. No React in this file.
 
 import type { RulesRequest, RulesResponse } from "../../../shared/api-types";
+import { hoursFormFrom, hoursProblem, toHoursInput, type HoursForm } from "./hours-logic";
 import { majorText, parseMajor } from "./money-text";
 import { problemWith, type Problem } from "./problem";
 
@@ -38,6 +39,8 @@ export interface RulesForm {
   /** A whole percent, as typed: "50". "0" asks for a manager on every tip. */
   tipMax: string;
   lateMinutes: string;
+  /** When the venue is open, a row per weekday (ADR-360). */
+  hours: HoursForm;
 }
 
 const tipRuleIds: readonly string[] = TIP_RULES.map((r) => r.value);
@@ -57,6 +60,7 @@ export function rulesFormFrom(r: RulesResponse): RulesForm {
     weights,
     tipMax: String(r.tips_max_percent ?? DEFAULT_TIP_MAX_PERCENT),
     lateMinutes: String(r.ticket_late_minutes),
+    hours: hoursFormFrom(r.opening_hours),
   };
 }
 
@@ -78,6 +82,7 @@ export function toRulesInput(f: RulesForm, perMajor: number): RulesRequest {
     tip_role_weights: givenWeights(f),
     tips_max_percent: Number(f.tipMax.trim()),
     ticket_late_minutes: Number(f.lateMinutes.trim()),
+    opening_hours: toHoursInput(f.hours),
   };
 }
 
@@ -91,12 +96,28 @@ export function rulesChanged(draft: RulesForm, saved: RulesForm, perMajor: numbe
       givenWeights(f),
       f.tipMax.trim(),
       f.lateMinutes.trim(),
+      toHoursInput(f.hours),
     ]);
   return norm(draft) !== norm(saved);
 }
 
-export type RulesField = "day_start" | "variance_threshold" | "tip_rule" | "tip_role_weights" | "tips_max_percent" | "ticket_late_minutes";
-const rulesFields: readonly RulesField[] = ["day_start", "variance_threshold", "tip_rule", "tip_role_weights", "tips_max_percent", "ticket_late_minutes"];
+export type RulesField =
+  | "day_start"
+  | "opening_hours"
+  | "variance_threshold"
+  | "tip_rule"
+  | "tip_role_weights"
+  | "tips_max_percent"
+  | "ticket_late_minutes";
+const rulesFields: readonly RulesField[] = [
+  "day_start",
+  "opening_hours",
+  "variance_threshold",
+  "tip_rule",
+  "tip_role_weights",
+  "tips_max_percent",
+  "ticket_late_minutes",
+];
 
 export const rulesProblemOf = (err: unknown): Problem<RulesField> => problemWith(err, rulesFields);
 
@@ -105,6 +126,8 @@ export function rulesProblem(f: RulesForm, perMajor: number): Problem<RulesField
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(f.dayStart.trim())) {
     return { field: "day_start", message: "Choose when the trading day starts, like 04:00." };
   }
+  const hours = hoursProblem(f.hours);
+  if (hours) return { field: "opening_hours", message: hours };
   const variance = parseMajor(f.variance, perMajor);
   if (variance === null || variance > MAX_VARIANCE_MINOR) {
     return { field: "variance_threshold", message: `Enter an amount from 0 to ${majorText(MAX_VARIANCE_MINOR, perMajor)}.` };
