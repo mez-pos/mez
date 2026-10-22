@@ -19,17 +19,15 @@ list below.
 
 ## Last completed task
 
-**Phase 15, Task 3c, this repo's part: the watched events** (ADR-363).
-`internal/service/watched.Since` reads the venue's event stream past an
-id and answers the voids, comps, refunds, credit notes and discounts in
-it, each worth what the order's projection says (as the audit trail
-values them), with the actor and the authoriser by name and whether
-their role holds `shift.manage`, the table and the line; and the id of
-the last event read, so the cursor moves past every event. cloudkit
-hands out `Replica.Watched`, `Replica.LastEventID`, `WatchedEvent`,
-`WatchedPerson` and the kinds; a mirror's and a replica's `Venue` now
-carries its timezone (for 3b). Before it, 3a (ADR-362): the replica
-and the close-of-day figures.
+**Phase 15, Task 6d, this repo's part: the last report at the venue**
+(ADR-364). `wire.Entitlement` and `relay.Entitlement` carry
+`last_report` and `messages_url`, `told` passes them and `same` counts
+them, so a report going out is a Notice to the venue; the tunnel keeps
+them on its Standing, the API says them in the `cloud` block (the link
+only if https, `safeLink`), and the Devices card says "Last report:
+yesterday 23:04." with **Change what is sent** under the paired line.
+**Not looked at in a browser.** Before it, 3c (ADR-363): the watched
+events.
 
 ## Next task
 

@@ -649,7 +649,10 @@ func tunnelStatus(guests *tunnel.Client) api.TunnelStatus {
 		BackOffice: guests.BackOffice(),
 	}
 	if s := st.Standing; s != nil {
-		out.Cloud = &api.TunnelCloud{State: s.State, PaidUntil: s.PaidUntil, Until: s.Until, BackOffice: s.BackOffice, Reason: s.Reason}
+		out.Cloud = &api.TunnelCloud{
+			State: s.State, PaidUntil: s.PaidUntil, Until: s.Until, BackOffice: s.BackOffice, Reason: s.Reason,
+			LastReport: s.LastReport, MessagesURL: s.MessagesURL,
+		}
 	}
 	return out
 }

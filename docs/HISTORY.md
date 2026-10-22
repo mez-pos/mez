@@ -8,6 +8,15 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 15, Task 3c, this repo's part: the watched events** (ADR-363).
+`internal/service/watched.Since` reads the venue's event stream past an
+id and answers the voids, comps, refunds, credit notes and discounts in
+it, each worth what the order's projection says (as the audit trail
+values them), with the actor and the authoriser by name and whether
+their role holds `shift.manage`, the table and the line; and the id of
+the last event read. cloudkit hands out `Replica.Watched`,
+`Replica.LastEventID`, `WatchedEvent`, `WatchedPerson` and the kinds.
+
 **Phase 15, Task 3a: the replica and the close-of-day figures**
 (ADR-362), mez's part of `mez-cloud`'s reader. `mirror.Replica` is a
 mirror less its door, its server and its photos: `OpenReplica` restores

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
-import { cloudProblemOf, codeProblem, pairedLine } from "./cloud-logic";
+import { cloudProblemOf, codeProblem, lastReportLine, pairedLine } from "./cloud-logic";
 
 describe("codeProblem", () => {
   it("asks for a code when none is typed", () => {
@@ -39,5 +39,22 @@ describe("pairedLine", () => {
 
   it("gives a name that ends in s the apostrophe alone", () => {
     expect(pairedLine({ owner: "Chris", paired_at })).toBe("Paired to Chris' mez Cloud account since 12 Oct 2026.");
+  });
+});
+
+describe("lastReportLine", () => {
+  const now = new Date(2026, 9, 22, 10, 0);
+  const at = (d: Date) => d.toISOString();
+  it("says today, yesterday, or the date", () => {
+    expect(lastReportLine({ last_report: at(new Date(2026, 9, 22, 0, 30)) }, now)).toBe("Last report: today 00:30.");
+    expect(lastReportLine({ last_report: at(new Date(2026, 9, 21, 23, 4)) }, now)).toBe("Last report: yesterday 23:04.");
+    expect(lastReportLine({ last_report: at(new Date(2026, 9, 12, 23, 4)) }, now)).toBe("Last report: 12 Oct 2026, 23:04.");
+  });
+  it("says none has gone when the cloud sends messages and none went yet", () => {
+    expect(lastReportLine({ messages_url: "https://app.mezpos.com/v/cafe" }, now)).toBe("No close-of-day report has gone yet.");
+  });
+  it("says nothing when the cloud said nothing of reports", () => {
+    expect(lastReportLine({}, now)).toBeNull();
+    expect(lastReportLine(undefined, now)).toBeNull();
   });
 });

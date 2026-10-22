@@ -108,7 +108,10 @@ into the venue.
   per venue: each message kind on or off, its threshold, quiet hours, up to
   two more recipients each confirmed by code. The venue's Devices card in
   this repo shows "Last report: yesterday 23:04" from the `cloud` block,
-  read-only, with the link to change it.
+  read-only, with the link to change it. Split in `mez-cloud` on
+  2026-10-22 (6a to 6d); this repo's part, 6d's, done (ADR-364): the
+  relay's word carries `last_report` and `messages_url`, and the Devices
+  card says them.
 
 - [ ] **Task 7 - Words.** The pricing page's first bullet becomes the
   close-of-day message with a real one as the picture. `deploy.md`'s cloud

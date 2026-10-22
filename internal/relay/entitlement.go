@@ -35,6 +35,11 @@ type Entitlement struct {
 	// Reason is a short code for why the venue stands where it does. It is
 	// what a venue that is turned away is told.
 	Reason string
+	// LastReport is when the venue's last close-of-day message went, and
+	// MessagesURL where its owner changes what is sent (ADR-364). Words
+	// for the venue's Devices screen; zero and empty from a file.
+	LastReport  time.Time
+	MessagesURL string
 }
 
 // NoEnd is the Until of a venue that is carried with no date set.
@@ -64,13 +69,18 @@ func (e Entitlement) reason() string {
 // same reports whether two entitlements would be told to a venue alike.
 func (e Entitlement) same(o Entitlement) bool {
 	return e.Until.Equal(o.Until) && e.PaidUntil.Equal(o.PaidUntil) &&
-		e.Remote == o.Remote && e.State == o.State && e.Reason == o.Reason
+		e.Remote == o.Remote && e.State == o.State && e.Reason == o.Reason &&
+		e.LastReport.Equal(o.LastReport) && e.MessagesURL == o.MessagesURL
 }
 
 // told is the entitlement as the venue is told it. remote is what the relay
 // will in fact carry: the entitlement's word and the key's together.
 func (e Entitlement) told(remote bool) wire.Entitlement {
-	out := wire.Entitlement{State: e.State, Remote: remote, Reason: e.Reason}
+	out := wire.Entitlement{State: e.State, Remote: remote, Reason: e.Reason, MessagesURL: e.MessagesURL}
+	if !e.LastReport.IsZero() {
+		last := e.LastReport.UTC()
+		out.LastReport = &last
+	}
 	if !e.Until.IsZero() && e.Until.Before(NoEnd) {
 		until := e.Until.UTC()
 		out.Until = &until

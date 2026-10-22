@@ -442,3 +442,31 @@ func TestEntitlementAsTold(t *testing.T) {
 		t.Errorf("on the wire: %s, %v", raw, err)
 	}
 }
+
+// TestTheLastReportIsToldAndIsAChange: the last close-of-day message and
+// where to change what is sent are told the venue (ADR-364), and either
+// moving is news to send it.
+func TestTheLastReportIsToldAndIsAChange(t *testing.T) {
+	last := time.Date(2026, 10, 21, 17, 34, 0, 0, time.FixedZone("IST", 19800))
+	e := Entitlement{Until: NoEnd, Remote: true, LastReport: last, MessagesURL: "https://app.mezpos.com/v/cafe"}
+	told := e.told(true)
+	if told.LastReport == nil || !told.LastReport.Equal(last) || told.LastReport.Location() != time.UTC || told.MessagesURL != "https://app.mezpos.com/v/cafe" {
+		t.Errorf("told %+v", told)
+	}
+	later := e
+	later.LastReport = last.Add(24 * time.Hour)
+	if e.same(later) {
+		t.Error("a later report is not news")
+	}
+	moved := e
+	moved.MessagesURL = "https://app.mezpos.com/v/other"
+	if e.same(moved) {
+		t.Error("another address is not news")
+	}
+	if !e.same(e) {
+		t.Error("the same is news")
+	}
+	if got := (Entitlement{Until: NoEnd}).told(false); got.LastReport != nil || got.MessagesURL != "" {
+		t.Errorf("nothing to tell told as %+v", got)
+	}
+}

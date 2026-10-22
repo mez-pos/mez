@@ -935,6 +935,8 @@ export interface TunnelCloud {
   until?: string;
   back_office: boolean;
   reason?: string;
+  last_report?: string;
+  messages_url?: string;
 }
 
 export interface TunnelPairing {

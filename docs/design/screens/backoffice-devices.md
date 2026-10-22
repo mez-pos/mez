@@ -80,6 +80,14 @@ Inside the frame (`backoffice-shell.md`).
   | Opened from away, paired | the same line | none: a code is typed at the venue |
   | Opened from away, not paired | nothing | none |
 
+  Under it, for a paired venue whose cloud sends the owner's WhatsApp
+  (phase 15, Task 6d, ADR-364), one line and a link, read only, at the
+  venue and from away alike: "Last report: yesterday 23:04." ("today",
+  "yesterday", or the date with the time), or "No close-of-day report has
+  gone yet."; and **Change what is sent**, which opens the venue's page in
+  the mez Cloud account area in a new tab. A relay that says nothing of
+  reports shows neither. The link is shown only when it is https.
+
   The button opens **Connect to mez Cloud**, a modal: two sentences on what
   pairing does ("The till works the same with or without it."), one field,
   **Pairing code**, in the numeral face and capitals, with "From your mez

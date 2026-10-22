@@ -14153,3 +14153,32 @@ Because: one valuation of a void, in the projection, read by the till's audit tr
 the cloud's alerts alike; and a cursor that is the stream's own id, as the hub's is.
 Cost: each watched event projects its order once per asking, as the audit trail does;
 a round reads at most five hundred events at a time.
+
+## ADR-364 - The relay's word to a venue carries its last close-of-day report and where its owner changes what is sent, and the Devices card says both, read only
+2026-10 · Status: accepted. Phase 15, Task 6d (mez's part). Builds on ADR-316, ADR-321, ADR-360.
+Context: Phase 15's Task 6 asks the venue's Devices card to show "Last report: yesterday
+23:04" from the `cloud` block, read-only, with the link to change it. The venue computes
+nothing of the owner's messages and holds none of them: the cloud sends them. The one
+thing the cloud already tells the venue, on the dial and in a Notice whenever it changes,
+is where it stands (`wire.Entitlement`, ADR-316). The venue does not know the account
+area's address for itself: it knows its relay and its pairing.
+Decision:
+  - **Two more fields on the Entitlement**, both optional on the wire: `last_report`,
+    when the venue's last close-of-day message went to its owner, and `messages_url`,
+    where the owner changes what is sent, the venue's page in the cloud's account area.
+    `relay.Entitlement` carries them, `told` passes them, and `same` counts them, so a
+    report going out is a Notice to the connected venue within the relay's next asking
+    (a minute on mez Cloud). A relay of the venue's own, with a file, says neither.
+  - **The tunnel keeps them on its Standing, and the API says them in the `cloud`
+    block** as `last_report` and `messages_url`. A link from the relay is shown only if
+    it is https, with a host, no user and no fragment (`safeLink`): the relay is trusted
+    with a venue's guests, not with what its owner clicks.
+  - **The Devices card says it under the paired line**, at the venue and from away: "Last
+    report: today 00:30.", "yesterday 23:04.", or the date and time; "No close-of-day
+    report has gone yet." when the cloud sends messages and none has gone; nothing when
+    it said nothing of reports. **Change what is sent** opens the link in a new tab. Read
+    only: nothing about the messages is set at the venue.
+Because: the cloud has the fact and the venue has the screen, and the relay's word is the
+channel already open between them, kept in step every minute.
+Cost: two fields on a frame that is sent when it changes. A venue on a build before this
+reads neither and shows nothing.

@@ -123,10 +123,18 @@ type Standing struct {
 	BackOffice bool
 	// Reason is the relay's short code for why.
 	Reason string
+	// LastReport is when the venue's last close-of-day message went to its
+	// owner, and MessagesURL where they change what is sent (ADR-364).
+	// Zero and empty when the relay said nothing of either.
+	LastReport  time.Time
+	MessagesURL string
 }
 
 func standingOf(e wire.Entitlement) *Standing {
-	s := &Standing{State: e.State, BackOffice: e.Remote, Reason: e.Reason}
+	s := &Standing{State: e.State, BackOffice: e.Remote, Reason: e.Reason, MessagesURL: e.MessagesURL}
+	if e.LastReport != nil {
+		s.LastReport = e.LastReport.UTC()
+	}
 	if e.PaidUntil != nil {
 		s.PaidUntil = e.PaidUntil.UTC()
 	}

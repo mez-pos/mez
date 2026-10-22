@@ -538,3 +538,32 @@ func TestTunnelSaysWhoTheVenueIsPairedTo(t *testing.T) {
 		t.Errorf("on the wire: %s", body)
 	}
 }
+
+// TestTunnelSaysTheLastReport: when the last close-of-day message went, and
+// where to change what is sent, but only an https address (ADR-364).
+func TestTunnelSaysTheLastReport(t *testing.T) {
+	last := time.Date(2026, 10, 21, 23, 4, 0, 0, time.FixedZone("IST", 19800))
+	r := newRegister(t)
+	owner := r.asStaff(r.signInAs(t, "stf_PRIYA001", "2468").Token)
+	read := func(c TunnelCloud) *tunnelCloud {
+		t.Helper()
+		r.rebuild(t, WithTunnel(func() TunnelStatus { return TunnelStatus{State: TunnelConnected, Cloud: &c} }))
+		status, got := r.tunnel(t, owner)
+		if status != http.StatusOK || got.Cloud == nil {
+			t.Fatalf("status = %d, cloud %+v", status, got.Cloud)
+		}
+		return got.Cloud
+	}
+	c := read(TunnelCloud{LastReport: last, MessagesURL: "https://app.mezpos.com/v/cafe"})
+	if !sameTime(c.LastReport, utc(last)) || c.MessagesURL != "https://app.mezpos.com/v/cafe" {
+		t.Errorf("cloud = %+v", c)
+	}
+	if c := read(TunnelCloud{}); c.LastReport != nil || c.MessagesURL != "" {
+		t.Errorf("nothing said: %+v", c)
+	}
+	for _, bad := range []string{"javascript:alert(1)", "http://app.mezpos.com/v/cafe", "https://user@app.mezpos.com/", "https://app.mezpos.com/#x", "/v/cafe", "https://"} {
+		if c := read(TunnelCloud{MessagesURL: bad}); c.MessagesURL != "" {
+			t.Errorf("%q shown as %q", bad, c.MessagesURL)
+		}
+	}
+}

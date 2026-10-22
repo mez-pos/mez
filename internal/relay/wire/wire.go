@@ -293,6 +293,14 @@ type Entitlement struct {
 	Remote bool `json:"remote"`
 	// Reason is a short code for why the venue stands where it does.
 	Reason string `json:"reason,omitempty"`
+	// LastReport is when the venue's last close-of-day message went to its
+	// owner (ADR-364). Absent when none has, and from a relay that sends
+	// none.
+	LastReport *time.Time `json:"last_report,omitempty"`
+	// MessagesURL is where the owner changes what they are sent about this
+	// venue: the venue's page in the cloud's account area. Absent from a
+	// relay that sends nothing. The venue shows it only if it is https.
+	MessagesURL string `json:"messages_url,omitempty"`
 }
 
 // EncodeNotice lays an Entitlement out as a Notice frame.

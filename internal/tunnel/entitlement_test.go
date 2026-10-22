@@ -187,3 +187,18 @@ func TestARelayThatSaysNothing(t *testing.T) {
 		t.Errorf("a relay that carries every key told a guests-only venue %+v", told)
 	}
 }
+
+// TestTheVenueIsToldItsLastReport: on connecting and when it changes
+// (ADR-364).
+func TestTheVenueIsToldItsLastReport(t *testing.T) {
+	last := time.Date(2026, 10, 21, 17, 34, 0, 0, time.UTC)
+	b := &book{}
+	b.set("cafe", relay.Entitlement{Until: relay.NoEnd, Remote: true, LastReport: last, MessagesURL: "https://app.mezpos.com/v/cafe"})
+	r := startRelayWith(t, b, 20*time.Millisecond)
+	c := r.venue(server(), nil)
+	waitStanding(t, c, "the last report", func(s Standing) bool {
+		return s.LastReport.Equal(last) && s.MessagesURL == "https://app.mezpos.com/v/cafe"
+	})
+	b.set("cafe", relay.Entitlement{Until: relay.NoEnd, Remote: true, LastReport: last.Add(24 * time.Hour), MessagesURL: "https://app.mezpos.com/v/cafe"})
+	waitStanding(t, c, "the next report", func(s Standing) bool { return s.LastReport.Equal(last.Add(24 * time.Hour)) })
+}

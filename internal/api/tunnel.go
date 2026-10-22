@@ -66,6 +66,10 @@ type TunnelCloud struct {
 	BackOffice bool
 	// Reason is the relay's short code for why.
 	Reason string
+	// LastReport is when the venue's last close-of-day message went to its
+	// owner, and MessagesURL where they change what is sent (ADR-364).
+	LastReport  time.Time
+	MessagesURL string
 }
 
 // TunnelPairing is the account this venue is paired to, and where the
@@ -169,12 +173,29 @@ type tunnelPairing struct {
 // the relay stops carrying the venue; each is absent when there is none.
 // back_office is whether the relay carries the back office, which a venue
 // can have turned on and the relay not. reason is the relay's short code.
+//
+// last_report is when the venue's last close-of-day message went to its
+// owner, and messages_url where they change what is sent, the cloud's own
+// https address; each absent when the relay said nothing of it (ADR-364).
 type tunnelCloud struct {
-	State      string     `json:"state,omitempty"`
-	PaidUntil  *time.Time `json:"paid_until,omitempty"`
-	Until      *time.Time `json:"until,omitempty"`
-	BackOffice bool       `json:"back_office"`
-	Reason     string     `json:"reason,omitempty"`
+	State       string     `json:"state,omitempty"`
+	PaidUntil   *time.Time `json:"paid_until,omitempty"`
+	Until       *time.Time `json:"until,omitempty"`
+	BackOffice  bool       `json:"back_office"`
+	Reason      string     `json:"reason,omitempty"`
+	LastReport  *time.Time `json:"last_report,omitempty"`
+	MessagesURL string     `json:"messages_url,omitempty"`
+}
+
+// safeLink is a relay's link as the Devices screen may show it: https, with
+// a host and nothing a page could be fooled by, or nothing. The relay is
+// trusted with a venue's guests, not with what its owner clicks.
+func safeLink(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" || len(raw) > 512 {
+		return ""
+	}
+	return u.String()
 }
 
 // mountTunnel adds the tunnel's one route. It is read by whoever manages the
@@ -224,7 +245,11 @@ func (s *Server) showTunnel(w http.ResponseWriter, _ *http.Request) {
 		out.Detail = st.Detail
 	}
 	if c := st.Cloud; c != nil && st.State != TunnelOff {
-		out.Cloud = &tunnelCloud{State: c.State, BackOffice: c.BackOffice, Reason: c.Reason}
+		out.Cloud = &tunnelCloud{State: c.State, BackOffice: c.BackOffice, Reason: c.Reason, MessagesURL: safeLink(c.MessagesURL)}
+		if !c.LastReport.IsZero() {
+			last := c.LastReport.UTC()
+			out.Cloud.LastReport = &last
+		}
 		if !c.PaidUntil.IsZero() {
 			paid := c.PaidUntil.UTC()
 			out.Cloud.PaidUntil = &paid

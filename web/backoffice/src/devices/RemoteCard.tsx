@@ -11,7 +11,7 @@ import { useAway } from "../../../shared/use-realtime";
 import { Button, StatusChip } from "../../../shared/ui";
 import { Panel } from "../dashboard/Panel";
 import { CloudPairModal } from "./CloudPairModal";
-import { pairedLine } from "./cloud-logic";
+import { lastReportLine, pairedLine } from "./cloud-logic";
 import { remoteState, remoteWords } from "./remote-logic";
 import { useTunnel } from "./use-tunnel";
 
@@ -49,6 +49,23 @@ export function RemoteCard() {
               <Button variant="secondary" onClick={() => setPairing(true)}>
                 {data.paired_to ? "Pair again" : "Connect to mez Cloud"}
               </Button>
+            )}
+          </div>
+        )}
+        {/* The owner's WhatsApp, read only: what is sent is changed in the
+            account area, which is where the link goes (ADR-364). */}
+        {data.paired_to && lastReportLine(data.cloud, new Date()) && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="max-w-prose text-base text-fg-2">{lastReportLine(data.cloud, new Date())}</p>
+            {data.cloud?.messages_url && (
+              <a
+                href={data.cloud.messages_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-tap items-center rounded-tight text-base font-semibold text-attention-text underline-offset-2 outline-offset-2 outline-line-focus hover:underline focus-visible:outline-2"
+              >
+                Change what is sent
+              </a>
             )}
           </div>
         )}
