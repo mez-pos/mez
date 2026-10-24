@@ -63,10 +63,32 @@ type newCodeRequest struct {
 	Kind auth.DeviceKind `json:"kind"`
 }
 
-// pairingCodeResponse is a code to read out to whoever is pairing.
+// pairingCodeResponse is a code to read out to whoever is pairing, and
+// where the new device opens mez to type it (ADR-367).
 type pairingCodeResponse struct {
 	Code      string    `json:"code"`
 	ExpiresAt time.Time `json:"expires_at"`
+	// Open is each address on the venue's network at which a device of
+	// this kind opens mez, the real adapters' first, with a QR code that
+	// carries the pairing code as well, so a camera pairs it in one go.
+	// Empty when the server knows of no address a second device can reach,
+	// or was built without one: then the address is read off the computer.
+	Open []pairingPlaceResponse `json:"open"`
+}
+
+// pairingPlaceResponse is one place a device being paired can open mez.
+type pairingPlaceResponse struct {
+	// Adapter is the adapter's name as the operating system shows it, such
+	// as "Wi-Fi"; empty when it is not known.
+	Adapter string `json:"adapter"`
+	// Virtual is true for an adapter that looks like a virtual machine's or
+	// a VPN's, which a tablet is unlikely to be on.
+	Virtual bool `json:"virtual"`
+	// URL is the address to type into the device's browser.
+	URL string `json:"url"`
+	// SVG is a QR code of the address with the pairing code in its
+	// fragment, which the pairing screen reads; empty when none was drawn.
+	SVG string `json:"svg"`
 }
 
 // createPairingCode makes a code for one new device.
@@ -93,7 +115,10 @@ func (s *Server) createPairingCode(w http.ResponseWriter, r *http.Request) {
 	}
 	// The code pairs a device, so it is a secret for as long as it lives.
 	w.Header().Set("Cache-Control", "no-store")
-	writeJSON(w, s.log, http.StatusCreated, pairingCodeResponse{Code: code.Code, ExpiresAt: code.ExpiresAt.UTC()})
+	writeJSON(w, s.log, http.StatusCreated, pairingCodeResponse{
+		Code: code.Code, ExpiresAt: code.ExpiresAt.UTC(),
+		Open: s.pairingPlaces(r, req.Kind, code.Code),
+	})
 }
 
 // requireDevice admits a request carrying a paired, unrevoked device's token

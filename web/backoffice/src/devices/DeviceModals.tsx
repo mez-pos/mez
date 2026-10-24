@@ -2,12 +2,34 @@
 // and be shown its code, rename one, and confirm unpairing one.
 
 import { useState } from "react";
-import type { DeviceKind, DeviceRecordResponse, PairingCodeResponse } from "../../../shared/api-types";
+import type { DeviceKind, DeviceRecordResponse, PairingCodeResponse, PairingPlaceResponse } from "../../../shared/api-types";
 import { Button, Modal } from "../../../shared/ui";
 import { Choice, Field, inputClass } from "../FormFields";
 import { FormModal } from "../FormModal";
 import type { Problem } from "../settings/problem";
-import { PAIRABLE, actionProblemOf, nameProblem, pairProblemOf, revokeWords, timeText, type PairField } from "./devices-logic";
+import { PAIRABLE, actionProblemOf, nameProblem, pairProblemOf, pairingPlaces, revokeWords, timeText, typedAddress, type PairField } from "./devices-logic";
+
+/** An SVG as something an <img> can show. */
+const svgSrc = (svg: string): string => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+
+/**
+ * One place to open mez on the new device (ADR-367): the QR code to scan, which
+ * carries the pairing code as well, beside the address to type. `named` says
+ * which network it is on, for a computer on more than one. The code sits on
+ * white whatever the surface: a camera reads dark on light.
+ */
+function PlaceBand({ place, named }: { place: PairingPlaceResponse; named: boolean }) {
+  const address = typedAddress(place.url);
+  return (
+    <div className="flex flex-wrap items-center gap-5 rounded-card bg-sunken px-5 py-4" data-testid="pairing-place">
+      {place.svg && <img src={svgSrc(place.svg)} alt={`QR code for ${address}`} width={132} height={132} className="size-33 shrink-0 rounded bg-white" />}
+      <div className="min-w-0 flex-1">
+        {named && place.adapter && <p className="text-meta font-bold uppercase tracking-[.16em] text-fg-muted">On {place.adapter}</p>}
+        <p className="break-all font-mono text-lg font-semibold tabular-nums text-heading">{address}</p>
+      </div>
+    </div>
+  );
+}
 
 interface PairModalProps {
   /** Makes the code for a name and kind. */
@@ -40,26 +62,60 @@ export function PairModal({ onPair, onClose }: PairModalProps) {
   const on = (field: PairField) => (problem?.field === field ? problem.message : null);
 
   if (code) {
+    const { main, others } = pairingPlaces(code.open);
     return (
       <Modal
         open
         onClose={onClose}
         title={`Pair ${name.trim()}`}
+        size={main.length > 0 ? "md" : "sm"}
         footer={
           <Button variant="primary" onClick={onClose}>
             Done
           </Button>
         }
       >
-        <div className="flex flex-col items-center gap-4 py-2 text-center">
-          <p
-            aria-label={`Pairing code ${code.code.replace("-", " ")}`}
-            className="font-mono text-display tracking-widest text-heading"
-            data-testid="pairing-code"
-          >
-            {code.code}
-          </p>
-          <p className="text-base">Enter this on the new device. It works once and runs out at {timeText(code.expires_at)}.</p>
+        <div className="flex flex-col gap-5 py-2">
+          {main.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-base">On the new device, scan this with its camera, or open the address in its browser. Both must be on this network.</p>
+              {main.map((place) => (
+                <PlaceBand key={place.url} place={place} named={main.length > 1} />
+              ))}
+              {others.length > 0 && (
+                <p className="text-meta text-fg-muted">
+                  Also at{" "}
+                  {others.map((p, i) => (
+                    <span key={p.url}>
+                      {i > 0 && ", "}
+                      <span className="font-mono tabular-nums">{typedAddress(p.url)}</span>
+                      {p.adapter && ` (${p.adapter})`}
+                    </span>
+                  ))}
+                  , which other devices are unlikely to reach.
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-base">
+              On the new device, open this computer&apos;s address in a browser, with <span className="font-mono tabular-nums">:7777</span> on the end. mez
+              could not tell this computer&apos;s address on the network; Settings, Network on this computer shows it.
+            </p>
+          )}
+          <div className="flex flex-col items-center gap-2 text-center">
+            <p className="text-meta font-bold uppercase tracking-[.16em] text-fg-muted">Pairing code</p>
+            <p
+              aria-label={`Pairing code ${code.code.replace("-", " ")}`}
+              className="font-mono text-display tracking-widest text-heading"
+              data-testid="pairing-code"
+            >
+              {code.code}
+            </p>
+            <p className="text-base">
+              {main.length > 0 ? "Scanned, it is typed in by itself; opened by address, type it in." : "Type it in on the pairing screen."} It works once and
+              runs out at {timeText(code.expires_at)}.
+            </p>
+          </div>
         </div>
       </Modal>
     );

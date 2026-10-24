@@ -890,6 +890,14 @@ export interface NewCodeRequest {
 export interface PairingCodeResponse {
   code: string;
   expires_at: string;
+  open: PairingPlaceResponse[];
+}
+
+export interface PairingPlaceResponse {
+  adapter: string;
+  virtual: boolean;
+  url: string;
+  svg: string;
 }
 
 export interface DeviceRecordResponse {

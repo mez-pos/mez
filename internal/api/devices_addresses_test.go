@@ -117,3 +117,61 @@ func TestServerAddressesRefusals(t *testing.T) {
 		t.Errorf("a server with no addresses answered %d", status)
 	}
 }
+
+// TestAPairingCodeSaysWhereToOpenMez: the code comes with each address a
+// device of its kind opens mez at, real adapters first, and a QR code of
+// that address with the code in its fragment, so a camera pairs it in one
+// go (ADR-367). The address to type carries no code.
+func TestAPairingCodeSaysWhereToOpenMez(t *testing.T) {
+	w := newTill(t)
+	w.rebuild(t, WithAddresses(func() ([]discover.Address, error) {
+		return []discover.Address{
+			{URL: "http://192.168.1.10:7777", Adapter: "Wi-Fi"},
+			{URL: "http://172.25.224.1:7777/", Adapter: "vEthernet (WSL)", Virtual: true},
+		}, nil
+	}))
+	owner := w.asStaff(w.signInAs(t, "stf_PRIYA001", "2468").Token)
+	tests := []struct {
+		kind    string
+		wantURL string
+		wantQR  string
+	}{
+		{"terminal", "http://192.168.1.10:7777", "http://192.168.1.10:7777/#code="},
+		{"kitchen", "http://192.168.1.10:7777/kitchen", "http://192.168.1.10:7777/kitchen#code="},
+		{"back_office", "http://192.168.1.10:7777/backoffice/", "http://192.168.1.10:7777/backoffice/#code="},
+	}
+	for _, tt := range tests {
+		t.Run(tt.kind, func(t *testing.T) {
+			rec := send(w.handler, http.MethodPost, "/api/v1/devices/codes", `{"name":"Second","kind":"`+tt.kind+`"}`, owner)
+			if rec.Code != http.StatusCreated {
+				t.Fatalf("a code: %d %s", rec.Code, rec.Body)
+			}
+			var out pairingCodeResponse
+			if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+				t.Fatal(err)
+			}
+			if len(out.Open) != 2 || out.Open[0].Adapter != "Wi-Fi" || out.Open[0].Virtual || !out.Open[1].Virtual {
+				t.Fatalf("open = %+v", out.Open)
+			}
+			if out.Open[0].URL != tt.wantURL {
+				t.Errorf("url = %q, want %q", out.Open[0].URL, tt.wantURL)
+			}
+			drawn, err := qr.Encode([]byte(tt.wantQR + out.Code))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if out.Open[0].SVG != drawn.SVG(qrQuiet) {
+				t.Errorf("the QR is not of %q", tt.wantQR+out.Code)
+			}
+		})
+	}
+
+	// Without addresses to give, the code still comes, and says nothing of
+	// where to open it.
+	w.rebuild(t, WithAddresses(func() ([]discover.Address, error) { return nil, errors.New("no adapters") }))
+	rec := send(w.handler, http.MethodPost, "/api/v1/devices/codes", `{"name":"Third","kind":"terminal"}`, owner)
+	var out pairingCodeResponse
+	if rec.Code != http.StatusCreated || json.Unmarshal(rec.Body.Bytes(), &out) != nil || out.Code == "" || len(out.Open) != 0 {
+		t.Fatalf("without addresses: %d %s", rec.Code, rec.Body)
+	}
+}

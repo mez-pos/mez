@@ -17,6 +17,8 @@ import {
   lastSeenText,
   nameProblem,
   pairProblemOf,
+  pairingPlaces,
+  typedAddress,
   revokedText,
   runsOutText,
   split,
@@ -207,5 +209,30 @@ describe("the device mez Cloud signs the owner in on (ADR-323)", () => {
     });
     expect(revokedToast(cloud)).toBe("mez Cloud's sign-in is shut.");
     expect(revokedToast(device())).toBe("Counter 1 revoked.");
+  });
+});
+
+describe("pairingPlaces", () => {
+  const wifi = { adapter: "Wi-Fi", virtual: false, url: "http://192.168.1.10:7777", svg: "<svg/>" };
+  const wsl = { adapter: "vEthernet (WSL)", virtual: true, url: "http://172.25.224.1:7777", svg: "<svg/>" };
+
+  it("shows the real adapters large and the virtual ones small", () => {
+    expect(pairingPlaces([wsl, wifi])).toEqual({ main: [wifi], others: [wsl] });
+  });
+
+  it("shows the virtual ones large when they are all there is", () => {
+    expect(pairingPlaces([wsl])).toEqual({ main: [wsl], others: [] });
+  });
+
+  it("has nothing to show for a code that came with no address", () => {
+    expect(pairingPlaces([])).toEqual({ main: [], others: [] });
+    expect(pairingPlaces(undefined)).toEqual({ main: [], others: [] });
+  });
+});
+
+describe("typedAddress", () => {
+  it("drops the scheme and keeps the rest", () => {
+    expect(typedAddress("http://192.168.1.10:7777/kitchen")).toBe("192.168.1.10:7777/kitchen");
+    expect(typedAddress("https://mez.example/backoffice/")).toBe("mez.example/backoffice/");
   });
 });

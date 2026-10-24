@@ -5,11 +5,12 @@
 // the server's own machine goes to the setup wizard, and anything else is told
 // where the wizard is (ADR-267).
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Redirect } from "wouter";
 import { formatPairingCode, isCompletePairingCode } from "../auth/format";
 import type { AuthStatus } from "../auth/auth-store";
 import { pairingError } from "../auth/messages";
+import { linkedCode } from "../auth/pairing-link";
 import type { AppKind } from "../auth/storage";
 import { useAuth, useAuthStore } from "../auth/use-auth";
 import { Button, Logo, Meta } from "../ui";
@@ -81,7 +82,10 @@ function NotSetUp({ here, onCheck }: { here: boolean; onCheck: () => void }) {
 function PairForm({ app }: { app: AppKind }) {
   const status = useAuth();
   const store = useAuthStore();
-  const [code, setCode] = useState("");
+  // A device opened from the QR code beside a pairing code arrives with the
+  // code in its address (ADR-367): it is typed in and tried at once, and a
+  // refusal is shown over it as if it had been typed.
+  const [code, setCode] = useState(() => linkedCode() ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const host = window.location.host;
@@ -89,18 +93,30 @@ function PairForm({ app }: { app: AppKind }) {
   const back = status.kind === "unpaired" ? (status.back ?? null) : null;
   const ready = isCompletePairingCode(code) && !busy;
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!ready) return;
+  const pair = async (attempt: string) => {
     setBusy(true);
     setError(null);
     try {
-      await store.pair(code);
+      await store.pair(attempt);
     } catch (err) {
       setError(pairingError(err, host));
       setBusy(false);
     }
   };
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (ready) void pair(code);
+  };
+
+  // Once, as the form appears: the scanned code is good once itself.
+  const scanned = useRef(linkedCode());
+  useEffect(() => {
+    const attempt = scanned.current;
+    scanned.current = null;
+    if (attempt !== null) void pair(attempt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on the first draw only
+  }, []);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-canvas p-6 text-fg">

@@ -145,10 +145,21 @@ Inside the frame (`backoffice-shell.md`).
 
 - **Pair a device:** **Name** ("What the device will be called: Counter 1,
   Pass, Office."); **What it is**, Terminal, Kitchen display or Back office;
-  **Make a code**. The code replaces the form: large, in the numeral face,
-  in the groups it is read in (`7K3M-9QX2`), with "Enter this on the new
-  device. It works once and runs out at 17:42." Closing the modal does not
-  cancel the code.
+  **Make a code**. The code replaces the form (ADR-367). First, where to
+  open mez on the new device: "On the new device, scan this with its
+  camera, or open the address in its browser. Both must be on this
+  network.", then a band for each address on a real adapter (the QR code,
+  on white, 132px, and the address in the numeral face without its scheme,
+  `192.168.1.10:7777/kitchen`; "On Wi-Fi" over it when there is more than
+  one), and "Also at ..." small for virtual adapters' addresses. When the
+  server knows no address: "On the new device, open this computer's
+  address in a browser, with :7777 on the end..." Under that, **Pairing
+  code** and the code, large, in the numeral face, in the groups it is read
+  in (`7K3M-9QX2`), with "Scanned, it is typed in by itself; opened by
+  address, type it in. It works once and runs out at 17:42." The QR code
+  is the address with `#code=7K3M-9QX2` on it: the pairing screen reads the
+  code out of the address, types it in and tries it. Closing the modal
+  does not cancel the code.
 - **Rename:** one field. "Its label on every screen and in the history. It
   keeps working."
 - **Revoke** asks first: "It stops working at once and shows the pairing
@@ -161,8 +172,11 @@ Inside the frame (`backoffice-shell.md`).
   paired_at, last_seen_at, revoked_at, this) and `waiting[]` (name, kind,
   expires_at). Read again every 30 seconds, since a device is "last seen" at
   most once a minute, and after every change.
-- `POST /api/v1/devices/codes` `{name, kind}`: answers `{code, expires_at}`,
-  the one time the code is shown. Only its hash is kept.
+- `POST /api/v1/devices/codes` `{name, kind}`: answers `{code, expires_at,
+  open[]}`, the one time the code is shown; `open` is each address a device
+  of that kind opens mez at (`adapter`, `virtual`, `url`, `svg`: the QR code
+  of the address with the code in its fragment), real adapters first, and
+  empty when the server knows none (ADR-367). Only the code's hash is kept.
 - `POST /api/v1/devices/{id}/rename` `{name}` and `POST
   /api/v1/devices/{id}/revoke`: each answers with the list as it now stands.
 

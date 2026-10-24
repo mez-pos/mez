@@ -2,7 +2,7 @@
 // device is described, who is in service and who was, and how a refusal reads.
 // No React in this file, so all of it is tested directly.
 
-import type { DeviceKind, DeviceRecordResponse } from "../../../shared/api-types";
+import type { DeviceKind, DeviceRecordResponse, PairingPlaceResponse } from "../../../shared/api-types";
 import type { DeviceState } from "../../../shared/ui/status";
 import { agoText } from "../printers/printers-logic";
 import { problemWith, type Problem } from "../settings/problem";
@@ -88,6 +88,28 @@ export function runsOutText(expiresAt: string, now: Date): string {
   if (ms <= 0) return "has run out";
   const minutes = Math.ceil(ms / 60000);
   return ms < 60000 ? "runs out in under a minute" : `runs out in ${minutes} min`;
+}
+
+/**
+ * Where the new device opens mez, from what came with its code (ADR-367).
+ * `main` are the real adapters' addresses, shown large with their QR codes:
+ * which network a tablet is on is not something the server can know, so each
+ * is as likely as the next. `others` are virtual adapters' (a virtual
+ * machine's, a VPN's), which a tablet is unlikely to be on, shown small. With
+ * no real adapter the virtual ones are all there is.
+ */
+export function pairingPlaces(open: readonly PairingPlaceResponse[] | undefined): {
+  main: readonly PairingPlaceResponse[];
+  others: readonly PairingPlaceResponse[];
+} {
+  const all = open ?? [];
+  const real = all.filter((p) => !p.virtual);
+  return real.length > 0 ? { main: real, others: all.filter((p) => p.virtual) } : { main: all, others: [] };
+}
+
+/** The address without its scheme, as a person types it into a browser's bar. */
+export function typedAddress(url: string): string {
+  return url.replace(/^https?:\/\//, "");
 }
 
 /** A time of day, "17:42", for when a code stops working. */

@@ -118,6 +118,56 @@ type addressAppResponse struct {
 	SVG  string          `json:"svg"`
 }
 
+// appPath is where a kind of device opens its app under the server's
+// address, or "" for a kind that has none.
+func appPath(kind auth.DeviceKind) (string, bool) {
+	for _, app := range appPaths {
+		if app.kind == kind {
+			return app.path, true
+		}
+	}
+	return "", false
+}
+
+// pairingPlaces is where a device of kind opens mez to redeem code: each
+// address this server has on the venue's network, the real adapters' first,
+// as a QR code that carries the code in the address's fragment (ADR-367).
+// The fragment never reaches a server: the pairing screen reads it and
+// types the code in. Nil when the server was built without its addresses,
+// and empty when it knows none a second device can reach; either way the
+// code is still typed by hand.
+func (s *Server) pairingPlaces(r *http.Request, kind auth.DeviceKind, code string) []pairingPlaceResponse {
+	if s.addresses == nil {
+		return nil
+	}
+	path, ok := appPath(kind)
+	if !ok {
+		return nil
+	}
+	found, err := s.addresses()
+	if err != nil {
+		s.log.Warn("reading this server's addresses failed", "request_id", RequestID(r.Context()), "error", err)
+		return []pairingPlaceResponse{}
+	}
+	out := make([]pairingPlaceResponse, 0, len(found))
+	for _, a := range found {
+		url := strings.TrimSuffix(a.URL, "/") + path
+		scan := url
+		if path == "" {
+			scan += "/"
+		}
+		scan += "#code=" + code
+		place := pairingPlaceResponse{Adapter: a.Adapter, Virtual: a.Virtual, URL: url}
+		if drawn, err := qr.Encode([]byte(scan)); err != nil {
+			s.log.Warn("drawing a pairing address as a QR failed", "request_id", RequestID(r.Context()), "error", err)
+		} else {
+			place.SVG = drawn.SVG(qrQuiet)
+		}
+		out = append(out, place)
+	}
+	return out
+}
+
 // serverAddresses answers whoever is pairing a device with where to open
 // it. It is behind device.manage with the code it goes beside.
 func (s *Server) serverAddresses(w http.ResponseWriter, r *http.Request) {
