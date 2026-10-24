@@ -9,7 +9,8 @@ import { cx } from "./cx";
 export interface EmptyStateProps {
   icon: ReactNode;
   line: string;
-  action?: { label: string; onClick: () => void };
+  /** What to do about it: a button, or a link to another page (the back office, another bundle). */
+  action?: { label: string; onClick: () => void } | { label: string; href: string };
   className?: string;
 }
 
@@ -20,7 +21,18 @@ export function EmptyState({ icon, line, action, className }: EmptyStateProps) {
         {icon}
       </div>
       <p className="max-w-md font-serif text-lg">{line}</p>
-      {action && <Button onClick={action.onClick}>{action.label}</Button>}
+      {action &&
+        ("href" in action ? (
+          // A plain link, drawn as the button: the page it leads to is another bundle.
+          <a
+            href={action.href}
+            className="inline-flex min-h-tap items-center justify-center rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold text-fg outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+          >
+            {action.label}
+          </a>
+        ) : (
+          <Button onClick={action.onClick}>{action.label}</Button>
+        ))}
     </div>
   );
 }

@@ -7,7 +7,9 @@
 import { useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import type { LiveTableResponse } from "../../../shared/api-types";
+import { useAuth } from "../../../shared/auth/use-auth";
 import { Button, EmptyState, InboxIcon } from "../../../shared/ui";
+import { backOffice } from "../shell/nav-logic";
 import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { failureOf, wordsOf } from "../register/order-messages";
@@ -34,6 +36,8 @@ import { TablePanel } from "./TablePanel";
 import { TablesSidebar, type TablesView } from "./TablesSidebar";
 
 export function TablesScreen() {
+  const auth = useAuth();
+  const floorHref = auth.kind === "signed_in" && auth.permissions.includes("settings.edit") ? backOffice.floor : null;
   const { floor, ticket, names, wanting } = useTerminal();
   const [, navigate] = useLocation();
   const [view, setView] = useState<TablesView>("plan");
@@ -105,7 +109,15 @@ export function TablesScreen() {
   const body = () => {
     if (floor.loading) return <p className="py-12 text-center text-base text-fg-muted">Loading the floor</p>;
     if (!data) return <EmptyState icon={<InboxIcon />} line={failureOf(floor.error)} action={{ label: "Try again", onClick: floor.refetch }} />;
-    if (tables.length === 0) return <EmptyState icon={<InboxIcon />} line="No tables yet. Lay out the floor in the back office." />;
+    if (tables.length === 0) {
+      return (
+        <EmptyState
+          icon={<InboxIcon />}
+          line={floorHref ? "No tables yet." : "No tables yet. A manager lays out the floor in the back office, under Floor plan."}
+          {...(floorHref ? { action: { label: "Lay out the floor", href: floorHref } } : {})}
+        />
+      );
+    }
     const shared = { data, areas, now, names, picked, onTap: tap, wanting };
     return view === "plan" ? <FloorPlan {...shared} /> : <TableList {...shared} />;
   };

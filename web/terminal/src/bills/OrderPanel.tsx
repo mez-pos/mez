@@ -197,9 +197,12 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
           </Button>
         )}
         {collecting && (
-          <Button variant="primary" size="charge" disabled={owed || handing} onClick={handOver}>
-            {handing ? "Handing over" : "Handed over"}
-          </Button>
+          <>
+            <Button variant="primary" size="charge" disabled={owed || handing} onClick={handOver}>
+              {handing ? "Handing over" : "Handed over"}
+            </Button>
+            {owed && <p className="text-center text-sm text-fg-muted">Take payment first: Pay, then Handed over.</p>}
+          </>
         )}
         {!closed && order.status !== "reopened" && (
           <div className="flex gap-2.5">

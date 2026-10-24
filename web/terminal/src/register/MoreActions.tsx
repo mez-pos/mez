@@ -20,7 +20,13 @@ export interface MoreActionsProps {
   onFire: (course: number) => void;
   onPastBills: () => void;
   /** The way to the bill (T05), for a rail with no Pay button: the waiter's. */
-  pay?: { readonly label: string; readonly blocked: boolean; readonly onPay: () => void };
+  pay?: {
+    readonly label: string;
+    readonly blocked: boolean;
+    /** Why it is blocked, shown under it. */
+    reason?: string | null;
+    readonly onPay: () => void;
+  };
 }
 
 export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onOrders, onHistory, onDiscount, onFire, onPastBills, pay }: MoreActionsProps) {
@@ -49,10 +55,30 @@ export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onO
           aria-label="More actions"
           className="absolute right-0 top-full z-20 mt-2 w-64 rounded-card border border-line bg-raised p-2 shadow-card"
         >
-          {pay && <ActionItem icon={WalletIcon} label={pay.label} disabled={pay.blocked} onClick={pick(pay.onPay)} />}
+          {pay && (
+            <ActionItem
+              icon={WalletIcon}
+              label={pay.label}
+              disabled={pay.blocked}
+              hint={pay.blocked ? (pay.reason ?? undefined) : undefined}
+              onClick={pick(pay.onPay)}
+            />
+          )}
           <ActionItem icon={ListOrderedIcon} label="Orders" detail={String(orderCount)} onClick={pick(onOrders)} />
-          <ActionItem icon={ClockIcon} label="Order history" disabled={!hasOrder} onClick={pick(onHistory)} />
-          <ActionItem icon={PercentIcon} label="Discount the order" disabled={!canDiscount} onClick={pick(onDiscount)} />
+          <ActionItem
+            icon={ClockIcon}
+            label="Order history"
+            disabled={!hasOrder}
+            hint={hasOrder ? undefined : "Nothing on the order yet."}
+            onClick={pick(onHistory)}
+          />
+          <ActionItem
+            icon={PercentIcon}
+            label="Discount the order"
+            disabled={!canDiscount}
+            hint={canDiscount ? undefined : "Needs an open order with something on it."}
+            onClick={pick(onDiscount)}
+          />
           {nextCourse !== null && <ActionItem icon={FlameIcon} label={`Fire course ${nextCourse}`} onClick={pick(() => onFire(nextCourse))} />}
           <ActionItem icon={ReceiptTextIcon} label="Past bills" onClick={pick(onPastBills)} />
         </div>
@@ -67,12 +93,15 @@ export function ActionItem({
   label,
   detail,
   disabled,
+  hint,
   onClick,
 }: {
   icon: LucideIcon;
   label: string;
   detail?: string;
   disabled?: boolean;
+  /** Why it is disabled, in a line under the label: a greyed-out row with no reason is a dead end. */
+  hint?: string | undefined;
   onClick: () => void;
 }) {
   return (
@@ -80,10 +109,13 @@ export function ActionItem({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="flex min-h-tap w-full items-center gap-3 rounded px-4 text-left text-base outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2 disabled:opacity-40 disabled:hover:bg-transparent"
+      className="flex min-h-tap w-full items-center gap-3 rounded px-4 py-2 text-left text-base outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2 disabled:hover:bg-transparent"
     >
-      <Icon aria-hidden="true" size={18} />
-      <span className="flex-1">{label}</span>
+      <Icon aria-hidden="true" size={18} className={disabled ? "opacity-40" : undefined} />
+      <span className="flex-1">
+        <span className={disabled ? "block opacity-40" : "block"}>{label}</span>
+        {disabled && hint && <span className="block text-sm text-fg-muted">{hint}</span>}
+      </span>
       {detail && <span className="font-mono text-sm tabular-nums text-fg-muted">{detail}</span>}
     </button>
   );

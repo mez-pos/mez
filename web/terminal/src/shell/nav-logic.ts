@@ -18,7 +18,7 @@ export interface NavItem {
 }
 
 /** The back office's own pages that the pills open. */
-export const backOffice = { menu: "/backoffice/menu", reports: "/backoffice/sales" } as const;
+export const backOffice = { menu: "/backoffice/menu", reports: "/backoffice/sales", floor: "/backoffice/floor" } as const;
 
 export function navItems(permissions: readonly Permission[]): NavItem[] {
   const items: NavItem[] = [

@@ -11,7 +11,7 @@
 // a control that does nothing is not drawn (rebuild.md, rule 3).
 
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarIcon, HistoryIcon, LogOutIcon, MenuIcon } from "lucide-react";
+import { CalendarIcon, HistoryIcon, LogOutIcon, MenuIcon, MonitorIcon } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import type { Permission } from "../../../shared/api-types";
@@ -26,7 +26,7 @@ import { useMirror } from "../../../shared/use-mirror";
 import { useAway, useRealtimeNotices } from "../../../shared/use-realtime";
 import { useVenue } from "../../../shared/use-venue";
 import { clockText } from "../../../shared/venue-text";
-import { chord, sectionForPath, type ChordState } from "./nav-logic";
+import { chord, sectionForPath, tillPath, type ChordState } from "./nav-logic";
 import { SectionNav, sectionNavId } from "./SectionNav";
 
 /** The signed-in staff member's permissions; none while not signed in. */
@@ -46,6 +46,7 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
   useMirrorKeptUp();
   useEscape(navOpen, () => setNavOpen(false));
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
+  const till = tillPath(auth.device);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas text-fg">
@@ -69,11 +70,26 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
           <MirrorNote className="hidden rounded-pill border px-3 py-1 md:inline-flex" />
           <ConnectionWord brief className="min-w-0 text-sm" />
           <VenueClock />
+          {/* Opened from the till, the way back to it: a plain link, since the
+              terminal is another bundle. Only where there is a till to go to. */}
+          {till && (
+            <a
+              href={till}
+              className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong bg-raised px-4 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+            >
+              <MonitorIcon aria-hidden="true" size={18} />
+              <span className="hidden sm:inline">Till</span>
+              <span className="sr-only sm:hidden">Back to the till</span>
+            </a>
+          )}
           <ProfileMenu
             compact
             name={auth.staff.name}
             role={auth.staff.role}
-            actions={[{ icon: LogOutIcon, label: "Sign out", onClick: () => void store.signOut() }]}
+            actions={[
+              ...(till ? [{ icon: MonitorIcon, label: "Back to the till", onClick: () => window.location.assign(till) }] : []),
+              { icon: LogOutIcon, label: "Sign out", onClick: () => void store.signOut() },
+            ]}
           />
         </div>
       </header>

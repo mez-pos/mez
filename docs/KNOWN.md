@@ -51,6 +51,18 @@
     `OpenOrder` checks the shift before the idempotency key, so a replay
     after the shift closed answers `ErrNoOpenShift`; the venue's series
     and taxes are read before an order command's transaction.
+  - **Ways out still owed** (the review behind ADR-371): the open-orders
+    sheet says "Loading orders" for ever when its read fails (the query's
+    error is not passed to it); the sign-in screen pages four profiles at a
+    time with a forward-only More; the back office Tips page's Back is the
+    browser's history, so from a direct link it leaves the app; the
+    kitchen's station picker has no "back to the board" once a station had
+    been chosen; the lock screen's "Add staff in the back office" has no
+    link, since nobody is signed in to carry one. ADR-371's eleven fixes
+    are **not seen in a browser**: walk a count of the drawer with a
+    cashier signed in on another till (the "Closing the day" screen), Enter
+    after tapping a tile on the sign-in screen, and the Till pill in the
+    back office opened from the till's Menu.
   - On the till: the waiter's bill holds an unsettled share in memory
     only (the pay screen keeps it across a reload, ADR-368); `start`,
     `bump`, `recall`, `discount`, `send` and `hold` take a fresh key per

@@ -9,6 +9,7 @@ import type { Override, StaffResponse } from "../../../shared/api-types";
 import { useAuth } from "../../../shared/auth/use-auth";
 import { minPin, PinDots } from "../../../shared/screens/PinDots";
 import { applyPinKey, Button, Modal, NumPad, Sheet, type NumKey } from "../../../shared/ui";
+import { keyFromKeyboard } from "../../../shared/ui/numpad-keys";
 import { cx } from "../../../shared/ui/cx";
 import { useStaffList } from "../../../shared/use-staff-list";
 import { approvalFailure } from "./order-messages";
@@ -53,6 +54,30 @@ export function ApprovalSheet({ title, action, children, ready, problem, onSubmi
       setBusy(false);
     }
   };
+
+  // A keyboard types the PIN wherever the focus is, as the sign-in screen
+  // does, and Enter approves: the pad's own listener heard only a focused
+  // pad, which a tap on the approver's name is not.
+  useEffect(() => {
+    if (step !== "who" || !approver) return;
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.defaultPrevented || event.target instanceof HTMLInputElement || busy) return;
+      if (event.key === "Enter") {
+        if (pin.length < minPin) return;
+        event.preventDefault();
+        void submit();
+        return;
+      }
+      const k = keyFromKeyboard(event.key);
+      if (k) {
+        event.preventDefault();
+        setPin((p) => applyPinKey(p, k));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- submit is rebuilt each render; the state it reads is listed
+  }, [step, approver, pin, busy]);
 
   const footer =
     step === "what" ? (

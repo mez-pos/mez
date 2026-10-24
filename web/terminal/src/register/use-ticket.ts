@@ -56,6 +56,10 @@ export interface Ticket {
   orderId: string | null;
   pending: readonly PendingLine[];
   loading: boolean;
+  /** Why the order in front could not be read, or null. */
+  error: unknown;
+  /** Reads the order in front again. */
+  refetch: () => void;
   /** How the ticket in front opens, or opened: counter or table, covers. */
   opening: OpenOrder;
   /** Every unclosed ticket at the venue, oldest first; undefined until read. */
@@ -192,6 +196,8 @@ export function useTicket(): Ticket {
     orderId,
     pending: state.pending,
     loading: orderId !== null && order.isPending,
+    error: orderId !== null ? order.error : null,
+    refetch: () => void order.refetch(),
     opening: queue.opening,
     open: open.data,
     ringUp: (command, note) => queue.ringUp(command, note),

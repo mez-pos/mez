@@ -19,8 +19,11 @@ list below.
 
 ## Last completed task
 
-**The venue PC's three complaints and a stability audit, 2026-10-24**
-(ADR-366 to ADR-370), outside the phase plan at the human's word. The
+**The venue PC's three complaints, a stability audit, and the dead ends,
+2026-10-24** (ADR-366 to ADR-371), outside the phase plan at the human's
+word. ADR-371: the back office opened from the till leads back to it
+(the Till pill), a till that cannot close the day is told so instead of
+being bounced between two redirects, and nine smaller ways out. The
 shortcut now runs `mez open`, which starts or waits for the service and
 then opens the till; every user may start the service; a double-clicked
 `mez.exe` opens the till where the service is installed; the firewall

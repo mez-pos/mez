@@ -129,6 +129,18 @@ export const NAV: readonly NavGroup[] = [
 const ALL: readonly Section[] = NAV.flatMap((g) => g.sections);
 
 /** The section with this id. Every id is in NAV, so this always finds one. */
+/**
+ * Where the till is from this back office, or null when there is none to go
+ * back to. The back office shares the terminal's pairing when it is opened on
+ * the till itself (ADR-148): the owner came from the till's Menu or Reports
+ * pill, and the way back is the terminal at the root. On a device paired as
+ * a back office (the office laptop) the root is a pairing screen for a
+ * terminal, which is nowhere to send anyone.
+ */
+export function tillPath(device: { readonly kind: string }): string | null {
+  return device.kind === "terminal" ? "/" : null;
+}
+
 export function section(id: SectionId): Section {
   const s = ALL.find((x) => x.id === id);
   if (!s) throw new Error(`no section ${id}`);

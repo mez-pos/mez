@@ -142,7 +142,12 @@ bar and the sidebar. Left out, and why:
 - **Search in the bar, with Ctrl + K, and the bell:** nothing answers
   either.
 - **Orders and Tables in the sidebar:** they are the terminal's screens,
-  another app with its own pairing.
+  another app with its own pairing. But opened on the till itself (the
+  back office shares the terminal's pairing there, ADR-148, and the till's
+  Menu and Reports pills lead here), the bar has a **Till** pill before the
+  profile, and the profile's panel **Back to the till**, both a plain link
+  to the terminal at the root. Neither is drawn on a device paired as a
+  back office, where the root would be a terminal's pairing screen.
 - **Customers:** out of v1.
 
 Changed: the design draws nine entries in one run. The back office has

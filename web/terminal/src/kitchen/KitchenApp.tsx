@@ -4,6 +4,7 @@
 // the choice. It runs from the terminal's bundle at /kitchen (ADR-091).
 
 import type { StationResponse } from "../../../shared/api-types";
+import { LockIcon } from "lucide-react";
 import { useAuth } from "../../../shared/auth/use-auth";
 import { NoVenueScreen } from "../../../shared/screens/NoVenueScreen";
 import { PairScreen } from "../../../shared/screens/PairScreen";
@@ -47,7 +48,9 @@ export function StationBoard({ station, onStation, signedIn }: StationBoardProps
       {menu.isError && !menu.data && (
         <EmptyState icon={<InboxIcon />} line="Can't reach the mez server." action={{ label: "Try again", onClick: () => void menu.refetch() }} />
       )}
-      {menu.data && stations.length === 0 && <p className="text-kitchen text-fg-muted">This venue has no stations yet. Add them with the menu.</p>}
+      {menu.data && stations.length === 0 && (
+        <p className="text-kitchen text-fg-muted">This venue has no stations yet. Add them in the back office, under Menu.</p>
+      )}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
         {stations.map((s: StationResponse) => (
           <button
@@ -60,6 +63,20 @@ export function StationBoard({ station, onStation, signedIn }: StationBoardProps
           </button>
         ))}
       </div>
+      {signedIn && (
+        // A cook who is signed in and cannot choose (no stations, the server
+        // not reached) must still be able to lock the screen.
+        <div className="mt-auto flex justify-end">
+          <button
+            type="button"
+            onClick={signedIn.onLock}
+            className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+          >
+            <LockIcon aria-hidden="true" size={18} />
+            Lock
+          </button>
+        </div>
+      )}
     </main>
   );
 }

@@ -18,9 +18,15 @@ const icons: Record<NavId, LucideIcon> = {
 interface NavPillsProps {
   items: readonly NavItem[];
   active: NavId | null;
+  /**
+   * Asked before an external link is followed: the back office is another
+   * bundle, and a page load drops whatever the till holds in memory. False
+   * keeps the person here.
+   */
+  mayLeave?: () => boolean;
 }
 
-export function NavPills({ items, active }: NavPillsProps) {
+export function NavPills({ items, active, mayLeave }: NavPillsProps) {
   return (
     <nav aria-label="Main" className="flex gap-1.5">
       {items.map((item) => {
@@ -37,7 +43,14 @@ export function NavPills({ items, active }: NavPillsProps) {
           </>
         );
         return item.external ? (
-          <a key={item.id} href={item.href} className={shape}>
+          <a
+            key={item.id}
+            href={item.href}
+            className={shape}
+            onClick={(event) => {
+              if (mayLeave && !mayLeave()) event.preventDefault();
+            }}
+          >
             {body}
           </a>
         ) : (

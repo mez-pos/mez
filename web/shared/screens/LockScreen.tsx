@@ -117,6 +117,10 @@ export function LockScreen() {
   }, [key, submit]);
 
   const choose = (member: StaffResponse) => {
+    // The tile keeps the focus of the tap; Enter would then be its click,
+    // choosing again and wiping the PIN just typed. Off the tile, Enter
+    // signs in.
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     setSelectedId(member.id);
     setPage(pageOf(people ?? [], member.id));
     setPin("");

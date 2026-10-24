@@ -10,14 +10,15 @@ import { roleText } from "../../../shared/auth/format";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { useMenu } from "../../../shared/use-menu";
 import { useVenue } from "../../../shared/use-venue";
-import { useToast } from "../../../shared/ui";
+import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
 import { ZReportScreen } from "../../../shared/zreport/ZReportScreen";
 import { OrdersScreen } from "../bills/OrdersScreen";
-import { wordsOf } from "../register/order-messages";
+import { failureOf, wordsOf } from "../register/order-messages";
 import { railTitle } from "../register/rail-logic";
 import { CloseDayScreen } from "../shift/CloseDayScreen";
 import { OpenShiftScreen } from "../shift/OpenShiftScreen";
 import { soldOutNames, soldOutNotice } from "../shift/open-shift-logic";
+import { ShiftClosing } from "../shift/ShiftClosing";
 import { ShiftNotOpen } from "../shift/ShiftNotOpen";
 import { PayScreen } from "../tender/PayScreen";
 import { WaiterBill } from "../waiter/WaiterBill";
@@ -60,7 +61,17 @@ export function PayPage({ orderId }: { orderId: string }) {
   // A waiter whose bill is closed is back at the tables, where the table is cleared.
   if (behind)
     return wasInFront ? <Redirect to={waiter ? route.waiter : route.order} replace /> : <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
-  if (!ticket.order) return <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
+  if (!ticket.order) {
+    if (ticket.loading || ticket.error === null) return <p className="m-auto text-base text-fg-muted">Opening the bill</p>;
+    // The read failed: say so, with the way to try again and the way out.
+    // Without them the only way off this screen was Lock.
+    return (
+      <div className="m-auto flex flex-col items-center gap-4">
+        <EmptyState icon={<InboxIcon />} line={failureOf(ticket.error)} action={{ label: "Try again", onClick: ticket.refetch }} />
+        <Button onClick={() => navigate(waiter ? route.waiter : route.order)}>{waiter ? "Back to the tables" : "Back to the order"}</Button>
+      </div>
+    );
+  }
   if (waiter) {
     const title = railTitle(ticket.order, ticket.order.service, names);
     return <WaiterBill order={ticket.order} ticket={ticket} title={title} onClosed={() => navigate(route.waiter)} />;
@@ -146,13 +157,27 @@ export function ShiftPage() {
 export function ShiftClosePage() {
   const { shift, setLastZ } = useTerminal();
   const auth = useAuth();
+  const store = useAuthStore();
   const [, navigate] = useLocation();
   const menu = useMenu();
+  const venue = useVenue();
   if (!shift.shift) return null; // the gate sends a closed till to /shift
+  if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
   // The menu offers the close only to someone with shift.manage; the address
   // typed by hand must say the same, or a cashier reaches a count the server
-  // then refuses step by step (ADR-197).
-  if (auth.kind !== "signed_in" || !auth.permissions.includes("shift.manage")) return <Redirect to={route.order} replace />;
+  // then refuses step by step (ADR-197). Once the drawer is counted the gate
+  // sends every till here, so a cashier is told the day is closing and given
+  // Lock: sent back to the order screen, the gate would send them here again,
+  // for ever.
+  if (!auth.permissions.includes("shift.manage")) {
+    if (!shift.shift.counted) return <Redirect to={route.order} replace />;
+    const details = [
+      ...(venue ? [{ label: "Outlet", value: venue.name }] : []),
+      { label: "Terminal", value: auth.device.name },
+      { label: roleText(auth.staff.role), value: auth.staff.name },
+    ];
+    return <ShiftClosing details={details} onLock={() => void store.signOut()} />;
+  }
   return (
     <CloseDayScreen
       shift={shift.shift}

@@ -135,9 +135,10 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
               </div>
 
               {day.isError && (
-                <p role="alert" className="px-3 py-6 text-base text-danger">
-                  {failureOf(day.error)}
-                </p>
+                <div role="alert" className="flex flex-wrap items-center gap-4 px-3 py-6">
+                  <p className="text-base text-danger">{failureOf(day.error)}</p>
+                  <Button onClick={() => void day.refetch()}>Try again</Button>
+                </div>
               )}
 
               <ol aria-label="Today's orders">

@@ -15,6 +15,8 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import type { LineResponse, MenuItemResponse } from "../../../shared/api-types";
 import { indexMenu, isSoldOut } from "../../../shared/menu";
+import { useAuth } from "../../../shared/auth/use-auth";
+import { backOffice } from "../shell/nav-logic";
 import { EmptyState, InboxIcon, SearchField, SearchIcon, useToast } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
 import { useMenu } from "../../../shared/use-menu";
@@ -47,6 +49,7 @@ import { TicketPanels, type Panel } from "./TicketPanels";
 import { TicketsSheet } from "./TicketsSheet";
 
 export function OrderScreen() {
+  const auth = useAuth();
   const menu = useMenu();
   const { ticket, names } = useTerminal();
   const [, navigate] = useLocation();
@@ -165,6 +168,7 @@ export function OrderScreen() {
         <MenuHeader title={title} filter={diet} onFilter={setDiet} searchKey={searchKey} onSearch={setQuery} searchElsewhere={waiter} />
         <div className="min-h-0 flex-1 overflow-y-auto pb-4 pt-4 2xl:pb-6 2xl:pt-5">
           <MenuBody
+            addHref={auth.kind === "signed_in" && auth.permissions.includes("menu.edit") ? backOffice.menu : null}
             state={menu.isPending ? "loading" : menu.isError && !menu.data ? "error" : "ready"}
             empty={items.length === 0}
             shown={shown.length}
@@ -293,15 +297,25 @@ interface MenuBodyProps {
   onRetry: () => void;
   onClearSearch: () => void;
   onClearFilter: () => void;
+  /** Where the menu is edited, for someone who may; null for everyone else. */
+  addHref: string | null;
   children: ReactNode;
 }
 
-function MenuBody({ state, empty, shown, searching, filtering, query, onRetry, onClearSearch, onClearFilter, children }: MenuBodyProps) {
+function MenuBody({ state, empty, shown, searching, filtering, query, onRetry, onClearSearch, onClearFilter, addHref, children }: MenuBodyProps) {
   if (state === "loading") return <p className="py-12 text-center text-base text-fg-muted">Loading the menu</p>;
   if (state === "error") {
     return <EmptyState icon={<InboxIcon />} line="Can't reach the mez server to load the menu." action={{ label: "Try again", onClick: onRetry }} />;
   }
-  if (empty) return <EmptyState icon={<InboxIcon />} line="No items on the menu yet. Add them in the back office." />;
+  if (empty) {
+    return (
+      <EmptyState
+        icon={<InboxIcon />}
+        line={addHref ? "No items on the menu yet." : "No items on the menu yet. A manager adds them in the back office, under Menu."}
+        {...(addHref ? { action: { label: "Add items to the menu", href: addHref } } : {})}
+      />
+    );
+  }
   if (shown === 0 && filtering) {
     return <EmptyState icon={<SearchIcon />} line="Nothing here matches the filters." action={{ label: "Clear filters", onClick: onClearFilter }} />;
   }

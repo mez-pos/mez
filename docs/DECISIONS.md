@@ -14332,3 +14332,42 @@ the backup's last copy and the print queue's record lost.
 Cost: a request still running five seconds into a stop is cut off; the gateway's sweeper
 already covers a charge caught there. Not done: `SERVICE_CONTROL_PRESHUTDOWN` and a wait
 hint, which the service library has no door for (`KNOWN.md`).
+
+## ADR-371 - No screen without a way out: the back office leads back to the till, and eleven dead ends are closed
+2026-10 · Status: accepted. Found by the human on 2026-10-24 (the back office) and by a review of every screen for the rest.
+Context: an owner on the till opened Menu or Reports, which lead to the back office in the
+same tab, and found no way back: the back office bar had only Sign out, and the design left
+"Orders and Tables" out of its sidebar as another app's. A review of the till, the waiter's
+and the kitchen's screens for the same shape of problem found eleven more, the worst of them
+at closing time: once the drawer was counted, the shift gate sent every till to the close
+page, and the close page sent anyone without `shift.manage` back to the order screen, which
+the gate answered again, for ever. Also: Enter on the sign-in screen wiped the PIN when the
+focus was still on the tile just tapped; the kitchen's station picker had no Lock; a waiter's
+bill that failed to read said "Opening the bill" for ever; the waiter's Bill and pay, Order
+history and Discount were greyed out with no reason; Menu and Reports threw away lines still
+being added without asking; empty states said "add them in the back office" to the one person
+who could, with no link; Handed over was disabled with no word that payment comes first; the
+Orders screen showed an error and no Try again; the approval PIN pad ignored a keyboard until
+tapped; and the open-shift screen's "Cancel" signed the person out.
+Decision: **the back office bar has a Till pill and the profile panel Back to the till**,
+both a plain link to the terminal at the root, drawn only when the back office runs on the
+till's own pairing (`tillPath`: the device's kind is `terminal`); on a device paired as a
+back office the root would be a pairing screen, and nothing is drawn. **A till that cannot
+close the day is told so** (`ShiftClosing`: "The drawer has been counted", a manager is
+closing the day, Lock) instead of being bounced. Choosing a tile on the sign-in screen takes
+the focus off it, so Enter signs in. The station picker has Lock for a cook signed in. A bill
+that will not read says why, with Try again and Back (`Ticket.error`, `Ticket.refetch`). A
+greyed-out action in More Actions says why under its label (`ActionItem.hint`, the charge
+block's own words). Menu and Reports ask before leaving with lines still being added
+(`NavPills.mayLeave`). An empty state can carry a link (`EmptyState.action.href`): the
+register's to Menu for `menu.edit`, the floor's and the waiter's to Floor plan for
+`settings.edit`; without the permission the words say who does it and where. Handed over
+says "Take payment first" while money is owed. The Orders screen has Try again. The approval
+step types from the keyboard and Enter approves. "Cancel" on the open-shift screen reads
+Lock, which is what it does.
+Because: a till is used by people who did not build it, under a queue; a screen with no way
+out, or a button with no reason, is a stopped till and a phone call.
+Cost: more words on a few screens. Not done, in `KNOWN.md`: the open-orders sheet still says
+"Loading orders" for ever when its read fails; the sign-in screen pages four profiles at a
+time, forward only; the Tips page's Back is the browser's history; the station picker has no
+"back to the board" when a station had been chosen.

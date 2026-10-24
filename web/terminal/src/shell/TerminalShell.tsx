@@ -42,7 +42,7 @@ export function TerminalShell({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const store = useAuthStore();
   const [path, navigate] = useLocation();
-  const { shift, guests } = useTerminal();
+  const { shift, guests, ticket } = useTerminal();
   const venue = useVenue();
   const version = useServerVersion();
   const queue = usePrintJobs();
@@ -86,7 +86,16 @@ export function TerminalShell({ children }: { children: ReactNode }) {
         ) : waiter && path.startsWith("/pay/") ? null : waiter ? ( // The bill carries its own way back (T05).
           <WaiterNav active={activeWaiterNav(path)} onPrintQueue={() => setPrintOpen(true)} />
         ) : (
-          <NavPills items={navItems(auth.permissions)} active={activeNav(path)} />
+          <NavPills
+            items={navItems(auth.permissions)}
+            active={activeNav(path)}
+            // Lines still being added, or refused and waiting, live in memory
+            // alone: a page load to the back office would drop them unsaid.
+            mayLeave={() =>
+              ticket.pending.length === 0 ||
+              window.confirm(`${ticket.pending.length} item(s) are still being added to the order and would be lost. Leave anyway?`)
+            }
+          />
         )}
         <div className="ml-auto flex items-center gap-5 whitespace-nowrap">
           {waiter && <ConnectionWord brief className="text-sm" />}

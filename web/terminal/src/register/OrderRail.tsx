@@ -127,7 +127,9 @@ export function OrderRail(props: OrderRailProps) {
           onDiscount={onDiscount}
           onFire={(course) => ticket.fire(course).catch(onFail(`Couldn't fire course ${course}`))}
           onPastBills={onPastBills}
-          {...(waiter ? { pay: { label: chargeLabel === "Pay" ? "Bill and pay" : chargeLabel, blocked: chargeBlock !== null, onPay } } : {})}
+          {...(waiter
+            ? { pay: { label: chargeLabel === "Pay" ? "Bill and pay" : chargeLabel, blocked: chargeBlock !== null, reason: chargeBlock, onPay } }
+            : {})}
         />
       </header>
 

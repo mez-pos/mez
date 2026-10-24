@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Permission } from "../../../shared/api-types";
-import { CHORD_WINDOW_MS, NAV, canOpen, chord, section, sectionForPath, visibleNav, type KeyInput } from "./nav-logic";
+import { CHORD_WINDOW_MS, NAV, canOpen, chord, section, sectionForPath, tillPath, visibleNav, type KeyInput } from "./nav-logic";
 
 const owner: Permission[] = ["menu.edit", "staff.manage", "reports.view", "settings.edit", "device.manage", "stock.manage"];
 const manager: Permission[] = ["staff.manage", "reports.view", "shift.manage"];
@@ -111,4 +111,15 @@ describe("chord", () => {
       expect(run(tt.keys, tt.held)).toEqual(tt.want);
     });
   }
+});
+
+describe("tillPath", () => {
+  it("leads back to the till when the back office runs on the till's own pairing", () => {
+    expect(tillPath({ kind: "terminal" })).toBe("/");
+  });
+
+  it("has nowhere to send a device paired as a back office or a kitchen", () => {
+    expect(tillPath({ kind: "back_office" })).toBeNull();
+    expect(tillPath({ kind: "kitchen" })).toBeNull();
+  });
 });

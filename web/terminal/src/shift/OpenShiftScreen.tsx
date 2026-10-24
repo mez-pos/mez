@@ -7,7 +7,7 @@
 // close (the count is blind, ADR-094), a note for the manager, the shift's
 // window, who else is on the floor, the low-stock count, and the artwork.
 
-import { UnlockIcon } from "lucide-react";
+import { LockIcon, UnlockIcon } from "lucide-react";
 import { useState } from "react";
 import { formatMoney } from "../../../shared/money";
 import { Button, Card, useToast } from "../../../shared/ui";
@@ -77,7 +77,8 @@ export function OpenShiftScreen({ currency, open, details, soldOut, menuHref, la
           )}
           <div className="mt-6 flex flex-col gap-3.5 sm:flex-row">
             <Button size="charge" className="sm:w-48" disabled={busy} onClick={onCancel}>
-              Cancel
+              <LockIcon aria-hidden="true" size={19} />
+              Lock
             </Button>
             <Button variant="primary" size="charge" className="flex-1" disabled={busy || float === null} onClick={() => void submit()}>
               <UnlockIcon aria-hidden="true" size={19} />
