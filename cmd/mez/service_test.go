@@ -289,3 +289,26 @@ func TestInstallArgs(t *testing.T) {
 		})
 	}
 }
+
+// TestServiceInstallLetsUsersStartIt: install asks for the right that lets
+// the shortcut start a stopped service without an administrator (ADR-366),
+// and a refusal is a note on the way out, not a failed install.
+func TestServiceInstallLetsUsersStartIt(t *testing.T) {
+	ctl := &fakeControl{status: winsvc.StatusNotInstalled}
+	env := fakeEnv(t, ctl, nil)
+	allowed := 0
+	env.allow = func() error {
+		allowed++
+		return nil
+	}
+	var out strings.Builder
+	if err := serviceCommand([]string{"install"}, &out, env); err != nil || allowed != 1 || strings.Contains(out.String(), "Note:") {
+		t.Fatalf("err = %v, allowed %d, out = %q", err, allowed, out.String())
+	}
+
+	env.allow = func() error { return errors.New("sc.exe is not on this computer") }
+	out.Reset()
+	if err := serviceCommand([]string{"install"}, &out, env); err != nil || !strings.Contains(out.String(), "Note: users other than administrators") {
+		t.Fatalf("err = %v, out = %q", err, out.String())
+	}
+}

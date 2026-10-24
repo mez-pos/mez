@@ -176,14 +176,22 @@ says what that warning does and does not mean). The installer:
 
 - copies `mez.exe` to `C:\Program Files\mez`;
 - registers the service (below), running as `NT SERVICE\mez`, and starts it;
-- adds a firewall rule named `mez` for the program, on networks Windows
-  calls Private or Domain. On a network marked **Public** tablets are kept
-  out: set the venue's network to Private in Windows settings;
-- puts a **mez** shortcut on the desktop and in the Start menu, which opens
-  the till in a window of its own in Edge (or Chrome), maximised, with no
-  address bar. Ticking **Open mez full screen** in the installer makes it a
+- adds a firewall rule named `mez` for the program, on every kind of
+  network, Public included: a venue's wifi is often one Windows was never
+  told about (ADR-366);
+- puts a **mez** shortcut on the desktop and in the Start menu, which runs
+  `mez open` (ADR-366): if the server answers, the till opens in a window
+  of its own in Edge (or Chrome), maximised, with no address bar; if it
+  does not, the service is started, or waited for while it starts after
+  the computer was turned on, and the till opens once it answers. Only
+  when that cannot be done does a box say why. Every signed-in user may
+  start the service this way; stopping it still takes an administrator.
+  Ticking **Open mez full screen** in the installer makes the window a
   kiosk instead: no title bar and no window buttons, for a computer that
   is only a till. Alt+F4 leaves that.
+  Double-clicking `mez.exe` itself does the same as the shortcut on a
+  computer where the service is installed; where it is not, it runs the
+  server in that window, and says that closing the window stops it.
 
 Running a newer installer over an older one upgrades in place and keeps the
 data. Removing mez (Settings, Apps, mez, Uninstall) stops and removes the
@@ -286,10 +294,13 @@ needs neither and is not advised for a server guests' phones reach.
 & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --app=http://localhost:7777 --start-maximized
 ```
 
-Put that in a shortcut in `shell:startup` to open the till at sign-in. For a
-computer that is only a till, `--kiosk --edge-kiosk-type=fullscreen` in place
-of `--start-maximized` fills the screen and takes the title bar away: there
-are then no window buttons, and Alt+F4 is how it is closed.
+Better, `& "C:\Program Files\mez\mez.exe" open`, which finds the browser
+itself and starts or waits for the service first (ADR-366): put that in a
+shortcut in `shell:startup` to open the till at sign-in. For a computer
+that is only a till, `open -fullscreen` (or, with the browser directly,
+`--kiosk --edge-kiosk-type=fullscreen` in place of `--start-maximized`)
+fills the screen and takes the title bar away: there are then no window
+buttons, and Alt+F4 is how it is closed.
 
 ## Linux
 

@@ -283,6 +283,36 @@ After the installer runs, it may say one of three things itself:
 For all three: Event Viewer, **Windows Logs**, **Application**, source
 **mez** says in words why.
 
+## The shortcut after the computer was turned on
+
+The desktop shortcut runs `mez open` (ADR-366). It asks the server whether
+it is up; if not, it starts the mez service, or waits for one that Windows
+is still starting, for up to 45 seconds, and opens the till once it
+answers. Right after a restart that can take a few seconds: wait for the
+window rather than clicking again.
+
+If a box appears instead, it says which of these it is:
+
+- **"not set up to start with Windows"**: the service is not installed. Run
+  the installer again; it keeps the data. Until then `mez.exe` runs only
+  while the window it was started in stays open, and closing that window
+  stops it.
+- **"did not start"**, with the reason: Event Viewer, as above, has more.
+  The usual causes are the port taken by another program, or a disk that
+  is full.
+- **"needs an administrator's leave"**: the service is stopped and this
+  user may not start it. The shortcut offers the usual Windows prompt; say
+  Yes. The installer gives every user the right to start it, so this means
+  the install was done another way.
+- **"not answering"**: the service is running but nothing answers at
+  `localhost:7777`. If `listen_addr` in `config.toml` names another port,
+  open that address instead.
+
+If a black console window with mez's log in it is open on the till, mez
+was started by hand and not by the service, and closing the window stops
+it. Close it on purpose: the service, if installed, takes the port back
+within a few seconds, and the shortcut then opens the till as usual.
+
 ## Guests cannot order from their phones
 
 Guests reach the venue through a relay on the internet, which the server

@@ -5,10 +5,10 @@
 ;   ISCC /DVersion=1.0.0 /DBinary=..\..\dist\mez_1.0.0_windows_amd64.exe mez.iss
 ;
 ; It copies mez.exe, registers it as a Windows service under its own
-; account (ADR-264), lets the LAN through the firewall, puts a full-screen
-; shortcut on the desktop and starts the server. Everything that touches the
-; service is done by mez.exe itself, so the installer and a terminal cannot
-; disagree about how a service is installed.
+; account (ADR-264), lets the LAN through the firewall, puts a shortcut on
+; the desktop that runs `mez open` (ADR-366) and starts the server.
+; Everything that touches the service is done by mez.exe itself, so the
+; installer and a terminal cannot disagree about how a service is installed.
 
 #ifndef Version
   #define Version "dev"
@@ -76,8 +76,13 @@ Source: "{#Binary}"; DestDir: "{app}"; DestName: "mez.exe"; Flags: ignoreversion
 Source: "mez.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autodesktop}\mez"; Filename: "{code:BrowserPath}"; Parameters: "{code:BrowserArgs}"; IconFilename: "{app}\mez.ico"; Comment: "Open the mez till"; Tasks: desktopicon
-Name: "{autoprograms}\mez"; Filename: "{code:BrowserPath}"; Parameters: "{code:BrowserArgs}"; IconFilename: "{app}\mez.ico"; Comment: "Open the mez till"
+; The shortcuts run `mez open` (ADR-366), not the browser: it starts the
+; service if it is stopped, waits for the server to answer, and only then
+; opens the till, so a shortcut clicked right after the computer is turned
+; on does not land on a browser's error page. Minimised, because the console
+; it is given is let go of at once.
+Name: "{autodesktop}\mez"; Filename: "{app}\mez.exe"; Parameters: "{code:OpenArgs}"; WorkingDir: "{app}"; IconFilename: "{app}\mez.ico"; Comment: "Open the mez till"; Flags: runminimized; Tasks: desktopicon
+Name: "{autoprograms}\mez"; Filename: "{app}\mez.exe"; Parameters: "{code:OpenArgs}"; WorkingDir: "{app}"; IconFilename: "{app}\mez.ico"; Comment: "Open the mez till"; Flags: runminimized
 
 [Run]
 ; The same browser as the shortcut, once, as the person who ran the installer
@@ -155,10 +160,15 @@ begin
     Result := '--app=' + Address + ' --kiosk';
 end;
 
-// BrowserArgs is what the shortcut opens: the till.
-function BrowserArgs(Param: String): String;
+// OpenArgs is what the shortcut runs: `mez open`, full screen where the
+// installer was asked for it. mez.exe finds the browser itself, in the
+// order BrowserPath does.
+function OpenArgs(Param: String): String;
 begin
-  Result := ArgsFor('{#Url}');
+  if WizardIsTaskSelected('fullscreen') then
+    Result := 'open -fullscreen'
+  else
+    Result := 'open';
 end;
 
 // Said joins what a command printed, so that a failure is shown in the
@@ -296,10 +306,12 @@ begin
   if WizardIsTaskSelected('firewall') then
   begin
     // By program and not by port, so a port changed in config.toml is
-    // still let through. Private and domain networks only: on a network
-    // Windows calls Public, other devices are kept out.
+    // still let through. On every profile (ADR-366): a venue's wifi is
+    // often one Windows was told was Public, or never asked about, and
+    // the tills and tablets on it were kept out with no word of why. The
+    // owner ticked "let devices on this network connect"; this is that.
     Netsh('delete rule name="{#FirewallRule}"');
-    Netsh('add rule name="{#FirewallRule}" dir=in action=allow protocol=TCP profile=private,domain program="' + MezExe + '"');
+    Netsh('add rule name="{#FirewallRule}" dir=in action=allow protocol=TCP profile=any program="' + MezExe + '"');
   end;
 
   WizardForm.StatusLabel.Caption := 'Starting mez...';

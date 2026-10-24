@@ -63,6 +63,9 @@ type serviceEnv struct {
 	grant func(dataDir string) error
 	// control describes the service to the manager without touching it.
 	control func(winsvc.Options) (serviceControl, error)
+	// allow lets every user start the installed service, for the desktop
+	// shortcut (ADR-366). Nil in tests that do not care.
+	allow func() error
 	// serve is the service itself: what the manager starts.
 	serve func(args []string) error
 }
@@ -84,6 +87,7 @@ func runService(args []string, stdout io.Writer) error {
 		},
 		grant:   grantService,
 		control: func(o winsvc.Options) (serviceControl, error) { return winsvc.New(o) },
+		allow:   winsvc.AllowStartByUsers,
 		serve:   serveAsService,
 	})
 }
@@ -159,6 +163,14 @@ func installService(args []string, stdout io.Writer, env serviceEnv) error {
 	// first start, where an administrator's `mez setup` has already been.
 	if err := env.grant(dataDir); err != nil {
 		return fmt.Errorf("service install: the service is installed, but may not be able to open its data: %w", err)
+	}
+	// The person at the till is not an administrator, and the shortcut
+	// starts a stopped service for them (ADR-366). Refused, the service
+	// still works: the shortcut asks for an administrator instead.
+	if env.allow != nil {
+		if err := env.allow(); err != nil {
+			fmt.Fprintf(stdout, "  Note: users other than administrators will not be able to start it from the shortcut: %v\n", err)
+		}
 	}
 
 	account := winsvc.Account

@@ -64,7 +64,13 @@ import (
 // shutdownTimeout bounds the whole shutdown, not one subsystem of it. Ten
 // seconds is long enough to finish a card payment that is already talking to a
 // terminal, and short enough that a Windows Service restart does not look hung.
-const shutdownTimeout = 10 * time.Second
+// The requests in flight get the first half to drain (drainTimeout) and the
+// subsystems the rest, so the two together are the ten and not twice it.
+const (
+	shutdownTimeout = 10 * time.Second
+	drainTimeout    = shutdownTimeout / 2
+	closeTimeout    = shutdownTimeout - drainTimeout
+)
 
 // readHeaderTimeout keeps a half-open connection from holding a goroutine
 // forever. The register is on a venue's own LAN, but the guest ordering page is
@@ -83,8 +89,13 @@ func main() {
 	// The subcommands are read before the flags: each takes its own, and
 	// the server's parser refuses a positional argument.
 	if len(os.Args) > 1 {
-		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "setup-link": runSetupLink, "pair": runPair, "table-codes": runTableCodes, "unlock": runUnlock, "reset-pin": runResetPIN, "restore": runRestore, "mirror": runMirror, "service": runService}
+		commands := map[string]func([]string, io.Writer) error{"setup": runSetup, "setup-link": runSetupLink, "pair": runPair, "table-codes": runTableCodes, "unlock": runUnlock, "reset-pin": runResetPIN, "restore": runRestore, "mirror": runMirror, "service": runService, "open": runOpen}
 		if command, ok := commands[os.Args[1]]; ok {
+			if os.Args[1] == "open" {
+				// From a shortcut there is nobody at the console it was
+				// given, and a black box over the till is not wanted.
+				hideOwnConsole()
+			}
 			if err := command(os.Args[2:], os.Stdout); err != nil {
 				if errors.Is(err, flag.ErrHelp) {
 					return
@@ -107,6 +118,17 @@ func main() {
 			os.Exit(1)
 		}
 		return
+	}
+
+	// Double-clicked on a computer where mez is the Windows service, this
+	// is someone wanting the till, not a second server (ADR-366).
+	if len(os.Args) == 1 {
+		if handled, err := doubleClicked(os.Stdout); handled {
+			if err != nil {
+				os.Exit(1)
+			}
+			return
+		}
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -190,7 +212,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// the stack it was closed first, and "subsystem closed" went to a
 	// closed file.
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), closeTimeout)
 		defer cancel()
 		err = errors.Join(err, running.shutdown(ctx, log))
 		if cerr := logFile.Close(); cerr != nil {
@@ -235,9 +257,11 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// Bind before announcing anything. A port already in use is the single most
 	// likely startup failure on a machine that has the old version still
 	// running, and it belongs here, at the top, not inside a goroutine.
-	listener, err := net.Listen("tcp", cfg.ListenAddr)
+	// An address of this computer's that it does not have yet, under a
+	// service started before the network is, is waited for (ADR-366).
+	listener, err := bindPatiently(ctx, log, cfg.ListenAddr, listenPatience, listenPause)
 	if err != nil {
-		return fmt.Errorf("listening on %s: %w", cfg.ListenAddr, err)
+		return err
 	}
 	// Every return between here and serve is a startup failure, and the port
 	// must not stay bound through it. After a clean shutdown the server has
@@ -610,7 +634,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 
 	// The tunnel is handed the handler as it is. What arrives on the socket
 	// is told apart from it here.
-	if err := serve(serving.ctx, log, listener, fromTheNetwork(srv.Handler()), shutdownTimeout); err != nil {
+	if err := serve(serving.ctx, log, listener, fromTheNetwork(srv.Handler()), drainTimeout); err != nil {
 		return err
 	}
 	if serving.again(ctx) {
