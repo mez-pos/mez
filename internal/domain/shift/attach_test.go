@@ -17,6 +17,7 @@ func TestWhichEventsNeedAShift(t *testing.T) {
 		order.TypeLineVoided:        true,
 		order.TypeLineComped:        true,
 		order.TypeDiscountApplied:   true,
+		order.TypeDiscountRemoved:   true,
 		order.TypeNoteAdded:         true,
 		order.TypeCourseFired:       true,
 		order.TypeTicketSent:        true,

@@ -29,7 +29,13 @@ func openDB(t *testing.T) *db.DB {
 	}
 	if _, err := d.Writer().ExecContext(ctx,
 		`INSERT INTO venues (id, public_id, name, legal_name, currency, timezone, tax_profile, tax_registration_id, financial_year_start_month, cash_rounding_step_minor, created_at, updated_at)
-		 VALUES (1, 'ven_T', 'Test', 'Test', 'INR', 'Asia/Kolkata', 'none', '', 4, 0, ?, ?)`, now, now); err != nil {
+		 VALUES (1, 'ven_T', 'Test', 'Test', 'INR', 'Asia/Kolkata', 'none', '', 4, 100, ?, ?)`, now, now); err != nil {
+		t.Fatal(err)
+	}
+	// A key names the order its command was for.
+	if _, err := d.Writer().ExecContext(ctx,
+		`INSERT INTO orders (id, public_id, venue_id, channel, status, last_seq, opened_at, updated_at)
+		 VALUES (1, 'ord_T', 1, 'counter', 'open', 1, ?, ?)`, now, now); err != nil {
 		t.Fatal(err)
 	}
 	return d
@@ -39,7 +45,7 @@ func keyAt(t *testing.T, d *db.DB, key string, at time.Time) {
 	t.Helper()
 	err := d.WriteTx(context.Background(), func(q *gen.Queries) error {
 		return q.SaveIdempotencyKey(context.Background(), gen.SaveIdempotencyKeyParams{
-			VenueID: 1, Key: key, Fingerprint: "fp", OrderID: 0, FirstSeq: 1, LastSeq: 1, CreatedAt: at,
+			VenueID: 1, Key: key, Fingerprint: "fp", OrderID: 1, FirstSeq: 1, LastSeq: 1, CreatedAt: at,
 		})
 	})
 	if err != nil {
