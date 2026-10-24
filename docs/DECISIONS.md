@@ -14182,3 +14182,16 @@ Because: the cloud has the fact and the venue has the screen, and the relay's wo
 channel already open between them, kept in step every minute.
 Cost: two fields on a frame that is sent when it changes. A venue on a build before this
 reads neither and shows nothing.
+
+## ADR-365 - The owner's alerts are capped by the month as well as the day, to keep ADR-313's hundred
+2026-10 · Status: accepted, at the human's word on 2026-10-24. Phase 15. Amends ADR-360; keeps ADR-313.
+Context: ADR-313 promised a venue at most about a hundred WhatsApp messages a month; ADR-360
+capped alerts at twelve a day and nothing more, which allows over a thousand a month to three
+numbers at a venue in trouble every day.
+Decision: besides the day's twelve, **a hundred alerts a venue a month of trading days**,
+counted by cause and not by number; past it the rest are kept for the account area and not
+sent, and one message says they start again on the first of next month. The close of day is
+not an alert and is never capped. The "more today" template becomes `more_alerts`, with a
+third slot for "tomorrow" or "on 1 November". The cloud's C-073 has the counting.
+Because: the promise is about a month's cost, and only a month's ceiling keeps it.
+Cost: none for a typical venue, which sends well under a hundred alerts a month.
