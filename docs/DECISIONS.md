@@ -14371,3 +14371,38 @@ Cost: more words on a few screens. Not done, in `KNOWN.md`: the open-orders shee
 "Loading orders" for ever when its read fails; the sign-in screen pages four profiles at a
 time, forward only; the Tips page's Back is the browser's history; the station picker has no
 "back to the board" when a station had been chosen.
+
+## ADR-372 - A paid bill rolls when the party orders again; the close projects the day once; the database and the event log stop growing by habit
+2026-10 · Status: accepted, at the human's word on 2026-10-24. Answers three of the owed items in `KNOWN.md` from the audit.
+Context: where guests pay first, a round paid in full invoiced the ticket and left it open at
+the table, and the party's next round was refused with "the bill is invoiced" until staff
+closed it by hand; the same for a bill paid online in full. Closing the shift read and
+projected every order of the day three times over (the ledger's cash sales, the Z-report,
+the exports) inside the one writer transaction, with every till queued behind it. The
+idempotency keys were never pruned and travelled in every backup; the rate limiter's map
+only ever grew; the event log took a warning per tunnel redial while offline, one per tablet
+that slept, and one a second from a print queue that could not read its jobs.
+Decision:
+  - **A ticket paid in full and invoiced rolls when the party's next round arrives**
+    (`rollSettledTicket`): the round's phone has a session, the table's ticket is invoiced
+    with nothing owed and not on hold, so it is closed under a system key of its own
+    (`roll:<ticket>`, refused from a client) and the round goes on as a table's first order
+    does: held for its payment where guests pay first, waiting for staff otherwise. The
+    guest's tracking reads a closed ticket's events as before. A ticket still owed, on
+    hold, or a round from a phone with no session (refused anyway) leaves it alone. The
+    ticket is **not** closed at the moment of payment: the guest's bill page shows the paid
+    round until they order again, and the floor shows the party seated.
+  - **The close of a shift reads the day's streams and the venue's taxes once** and hands
+    them to the ledger (`loadWith`), the Z-report (`documentFrom`) and the exports
+    (`writeExportsFrom`). The reads elsewhere are unchanged.
+  - **Housekeeping** (`internal/service/tidy`): at start and once a day, idempotency keys
+    older than thirty days are deleted; a retry comes within minutes. The rate limiter,
+    full of live windows, evicts the oldest down to its cap. The hub counts a timeout, a
+    reset and a closed line as the device leaving, not a warning; the tunnel warns on the
+    first failure after a connection and says the redials at Info; the print queue says an
+    unreadable table once a minute.
+Because: a party that paid should be able to order again without a waiter; the close of the
+day is the one moment every till is busy at once; a database and a log that grow for ever
+are a venue's problem in its third year, when nobody remembers why.
+Cost: a ticket that rolls is two bills for one party, which the floor's history shows as
+two; a venue that wants one bill a table keeps paying at the end instead.

@@ -163,12 +163,6 @@ func TestAnUnpaidRoundIsRefused(t *testing.T) {
 			opened := must(t)(w.s.Open(ctx, cashier(""), OpenOrder{Channel: order.ChannelCounter, TableID: 4}))
 			must(t)(w.s.Hold(ctx, cashier(""), opened.OrderID))
 		}, ErrTableBusy},
-		{"onto a bill already invoiced", func(t *testing.T, w *prepayWorld) {
-			ctx := context.Background()
-			opened := must(t)(w.s.Open(ctx, cashier(""), OpenOrder{Channel: order.ChannelCounter, TableID: 4}))
-			must(t)(w.s.AddLine(ctx, cashier(""), opened.OrderID, coffee(1)))
-			must(t)(w.s.TenderPayment(ctx, cashier(""), opened.OrderID, TenderPayment{Method: order.PaymentCash, Amount: inr(4200)}))
-		}, ErrTableBusy},
 		{"past the unpaid rounds a table may have", func(t *testing.T, w *prepayWorld) {
 			for i := range maxWaitingRounds {
 				if _, err := party(t, w.s).PlaceRound(context.Background(), guest("u"+string(rune('a'+i))), w.g.twoOatAndABrownie(4)); err != nil {

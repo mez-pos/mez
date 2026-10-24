@@ -158,9 +158,15 @@ func (q *Queue) loop(ctx context.Context) {
 	defer close(q.loopDone)
 	ticker := time.NewTicker(q.poll)
 	defer ticker.Stop()
+	var lastSaid time.Time
 	for {
 		if err := q.dispatch(ctx); err != nil && ctx.Err() == nil {
-			q.log.Error("print queue: reading due jobs", "error", err)
+			// Once a minute and not once a second: a database that stays
+			// unreadable says the same thing at every poll.
+			if now := q.clock.Now(); now.Sub(lastSaid) >= time.Minute {
+				q.log.Error("print queue: reading due jobs", "error", err)
+				lastSaid = now
+			}
 		}
 		select {
 		case <-ctx.Done():

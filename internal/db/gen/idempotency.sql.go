@@ -39,6 +39,22 @@ func (q *Queries) IdempotencyKey(ctx context.Context, arg IdempotencyKeyParams) 
 	return i, err
 }
 
+const pruneIdempotencyKeys = `-- name: PruneIdempotencyKeys :execrows
+DELETE FROM idempotency_keys
+WHERE created_at < ?
+`
+
+// Keys older than a cut-off. A key is for a retry of the same command
+// minutes later, not months; kept for ever the table grows by every command
+// the venue ever took, and travels in every backup (internal/service/tidy).
+func (q *Queries) PruneIdempotencyKeys(ctx context.Context, createdAt time.Time) (int64, error) {
+	result, err := q.db.ExecContext(ctx, pruneIdempotencyKeys, createdAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const saveIdempotencyKey = `-- name: SaveIdempotencyKey :exec
 INSERT INTO idempotency_keys (venue_id, key, fingerprint, order_id, first_seq, last_seq, created_at)
 VALUES (?, ?, ?, ?, ?, ?, ?)

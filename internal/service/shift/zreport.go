@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mez-pos/mez/internal/domain/order"
 	"time"
 
 	"github.com/mez-pos/mez/internal/db/gen"
@@ -85,9 +86,6 @@ type ZSummary struct {
 
 // document builds a closed shift's report from its orders, now.
 func document(ctx context.Context, q *gen.Queries, venueID int64, sh Shift, currency string, by int64, at time.Time) (ZDocument, error) {
-	if sh.Closing == nil {
-		return ZDocument{}, fmt.Errorf("%w: shift %s", ErrNotCounted, sh.PublicID)
-	}
 	taxes, err := svcorder.VenueTaxes(ctx, q, venueID)
 	if err != nil {
 		return ZDocument{}, err
@@ -95,6 +93,15 @@ func document(ctx context.Context, q *gen.Queries, venueID int64, sh Shift, curr
 	orders, err := stampedOrders(ctx, q, sh.ID)
 	if err != nil {
 		return ZDocument{}, err
+	}
+	return documentFrom(ctx, q, venueID, sh, currency, by, at, taxes, orders)
+}
+
+// documentFrom is document over the venue's taxes and the shift's orders
+// already read (ADR-372).
+func documentFrom(ctx context.Context, q *gen.Queries, venueID int64, sh Shift, currency string, by int64, at time.Time, taxes order.Taxes, orders [][]shift.StampedEvent) (ZDocument, error) {
+	if sh.Closing == nil {
+		return ZDocument{}, fmt.Errorf("%w: shift %s", ErrNotCounted, sh.PublicID)
 	}
 	categories, err := itemCategories(ctx, q, venueID)
 	if err != nil {

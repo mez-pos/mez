@@ -13,6 +13,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	svcorder "github.com/mez-pos/mez/internal/service/order"
 	"strings"
 	"time"
 	"unicode"
@@ -252,7 +253,19 @@ func (s *Service) Close(ctx context.Context, meta Meta, shiftID int64) (Shift, e
 		if err != nil {
 			return err
 		}
-		sh, err := load(ctx, q, row, v.currency)
+		// The day's streams and the venue's taxes, read once here and
+		// handed to the ledger, the Z-report and the exports (ADR-372):
+		// each read and projected the whole day again, inside the one
+		// writer transaction every till was queued behind.
+		orders, err := stampedOrders(ctx, q, row.ID)
+		if err != nil {
+			return err
+		}
+		taxes, err := svcorder.VenueTaxes(ctx, q, meta.VenueID)
+		if err != nil {
+			return err
+		}
+		sh, err := loadWith(ctx, q, row, v.currency, orders)
 		if err != nil {
 			return err
 		}
@@ -272,14 +285,14 @@ func (s *Service) Close(ctx context.Context, meta Meta, shiftID int64) (Shift, e
 		// The Z-report is issued with the close, or neither happens: no
 		// closed shift is ever without its report (ADR-098).
 		sh.Status, sh.ClosedBy, sh.ClosedAt = shift.StatusClosed, meta.ActorID, now
-		doc, err := document(ctx, q, meta.VenueID, sh, v.currency, meta.ActorID, now)
+		doc, err := documentFrom(ctx, q, meta.VenueID, sh, v.currency, meta.ActorID, now, taxes, orders)
 		if err != nil {
 			return err
 		}
 		if _, err := issue(ctx, q, meta.VenueID, row.ID, nil, "", &doc); err != nil {
 			return err
 		}
-		if err := writeExports(ctx, q, meta.VenueID, sh, v, now); err != nil {
+		if err := writeExportsFrom(ctx, q, meta.VenueID, sh, v, now, taxes, orders); err != nil {
 			return err
 		}
 		return queueZ(ctx, q, meta.VenueID, meta.DeviceID, v, doc, false, now)

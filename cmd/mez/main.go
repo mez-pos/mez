@@ -57,6 +57,7 @@ import (
 	svcshift "github.com/mez-pos/mez/internal/service/shift"
 	svcstock "github.com/mez-pos/mez/internal/service/stock"
 	"github.com/mez-pos/mez/internal/service/tablecodes"
+	"github.com/mez-pos/mez/internal/service/tidy"
 	"github.com/mez-pos/mez/internal/tunnel"
 	"github.com/mez-pos/mez/web"
 )
@@ -407,6 +408,17 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	if err != nil {
 		return err
 	}
+
+	// The housekeeping: what the database sheds once a day (ADR-372). It
+	// stops with the rest, before the database closes.
+	tidier, err := tidy.New(tidy.Options{DB: database, Log: log})
+	if err != nil {
+		return err
+	}
+	if err := tidier.Start(ctx); err != nil {
+		return err
+	}
+	running.push("housekeeping", tidier.Close)
 
 	// It can look for printers: its own LAN and this computer (ADR-268).
 	printerSettings, err := printers.New(database, prints, nil, build.Version, printers.WithFinder(&discover.Finder{}))

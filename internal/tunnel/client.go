@@ -451,7 +451,15 @@ func (c *Client) run() {
 			failures++
 		}
 
-		c.log.Warn("tunnel: not connected",
+		// A venue with no internet is the usual state, not news (ADR-372):
+		// the first failure after a connection is a warning, the redials
+		// after it are information, so the event log is not a line a
+		// minute for every offline day.
+		level := slog.LevelInfo
+		if failures <= 1 || state != StateWaiting {
+			level = slog.LevelWarn
+		}
+		c.log.Log(c.ctx, level, "tunnel: not connected",
 			"state", string(state), "error", err.Error(), "retry_in_ms", wait.Milliseconds())
 		c.setStatus(Status{State: state, LastError: err.Error(), RetryAt: c.now().Add(wait)})
 

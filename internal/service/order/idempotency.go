@@ -61,6 +61,10 @@ const (
 	// ChargeKeyPrefix begins the key a gateway charge's tender is appended
 	// under; the rest is the charge's public id.
 	ChargeKeyPrefix = "charge:"
+	// RollKeyPrefix begins the key under which a table's ticket, paid in
+	// full and invoiced, is closed to make way for the party's next round
+	// (ADR-372). The ticket's own public id follows, so it happens once.
+	RollKeyPrefix = "roll:"
 	// PickupTicketKeyPrefix begins the key an order to collect is opened
 	// under; the rest is the round's public id.
 	PickupTicketKeyPrefix = "pickup-ticket:"
@@ -88,7 +92,7 @@ func CheckClientIdempotencyKey(key string) error {
 			return fmt.Errorf("%w: it has a character that is not printable ASCII", ErrReservedIdempotencyKey)
 		}
 	}
-	if strings.HasPrefix(key, ChargeKeyPrefix) || strings.HasPrefix(key, PickupTicketKeyPrefix) {
+	if strings.HasPrefix(key, ChargeKeyPrefix) || strings.HasPrefix(key, PickupTicketKeyPrefix) || strings.HasPrefix(key, RollKeyPrefix) {
 		return fmt.Errorf("%w: that prefix is the system's", ErrReservedIdempotencyKey)
 	}
 	return nil

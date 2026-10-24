@@ -460,6 +460,11 @@ type Querier interface {
 	// Sessions at a table that expired before a moment ago: no use to anyone,
 	// and a table hands out a few every sitting.
 	PruneGuestSessions(ctx context.Context, arg PruneGuestSessionsParams) error
+	//
+	// Keys older than a cut-off. A key is for a retry of the same command
+	// minutes later, not months; kept for ever the table grows by every command
+	// the venue ever took, and travels in every backup (internal/service/tidy).
+	PruneIdempotencyKeys(ctx context.Context, createdAt time.Time) (int64, error)
 	// Drops attempts older than a cutoff. The lockouts read the latest few rows
 	// only, so nothing a month old decides anything, and the table would
 	// otherwise grow by every PIN ever typed.

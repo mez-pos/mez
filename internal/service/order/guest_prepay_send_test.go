@@ -210,3 +210,52 @@ func TestOnlyAHeldRoundIsPaidFor(t *testing.T) {
 		t.Errorf("sending a request as paid: %v", err)
 	}
 }
+
+// TestAPaidTicketRollsWhenThePartyOrdersAgain: where guests pay first, a
+// round paid in full is a bill paid in full, invoiced. The party's next round
+// does not meet "the bill is invoiced": the paid ticket is closed and the
+// round starts a fresh one at the table (ADR-372). A waiter's ticket still
+// owed is left alone.
+func TestAPaidTicketRollsWhenThePartyOrdersAgain(t *testing.T) {
+	w := newPrepayWorld(t, true, PayFirst)
+	ctx := context.Background()
+	first := w.hold(t, "k1", 4)
+	sent, err := w.s.SendPaidRound(ctx, 1, first.PublicID)
+	if err != nil || sent.OrderID == 0 {
+		t.Fatalf("sending the paid round: %+v, %v", sent, err)
+	}
+	// The gateway's tender, as charges records it: the bill is settled and invoiced.
+	paid := must(t)(w.s.TenderPayment(ctx, Meta{VenueID: 1, IdempotencyKey: ChargeKeyPrefix + "c1"}, sent.OrderID, TenderPayment{Method: order.PaymentUPI, Amount: first.Due}))
+	if !paid.State.Invoiced || !paid.State.Totals.BalanceDue.IsZero() || paid.State.Status == order.StatusClosed {
+		t.Fatalf("after paying: invoiced %v, owing %v, %s", paid.State.Invoiced, paid.State.Totals.BalanceDue, paid.State.Status)
+	}
+
+	// The next round holds for its payment, with the old ticket closed.
+	second, err := party(t, w.s).PlaceRound(ctx, guest("k2"), w.g.twoOatAndABrownie(4))
+	if err != nil || second.Status != RoundUnpaid || second.OrderID != 0 {
+		t.Fatalf("the next round: %+v, %v", second, err)
+	}
+	if old := must(t)(w.s.Order(ctx, 1, sent.OrderID)); old.State.Status != order.StatusClosed {
+		t.Fatalf("the paid ticket is %s, want closed", old.State.Status)
+	}
+	// Paid, it opens a fresh ticket at the table, with the new round alone on it.
+	next, err := w.s.SendPaidRound(ctx, 1, second.PublicID)
+	if err != nil || next.OrderID == 0 || next.OrderID == sent.OrderID {
+		t.Fatalf("the next round's ticket: %+v, %v", next, err)
+	}
+	if res, open, err := w.s.TableTicket(ctx, 1, 4); err != nil || !open || res.OrderID != next.OrderID || len(res.State.Lines) != len(second.Lines) {
+		t.Fatalf("the table's ticket: open %v, order %d, %v", open, res.OrderID, err)
+	}
+
+	// A ticket still owed is not rolled: the round waits to be paid and
+	// goes on it, as before.
+	opened := must(t)(w.s.Open(ctx, cashier(""), OpenOrder{Channel: order.ChannelCounter, TableID: 5, Covers: 2}))
+	must(t)(w.s.AddLine(ctx, cashier(""), opened.OrderID, dosa(1)))
+	third, err := party(t, w.s).PlaceRound(ctx, guest("k3"), w.g.twoOatAndABrownie(5))
+	if err != nil || third.Status != RoundUnpaid {
+		t.Fatalf("a round at a table still owed: %+v, %v", third, err)
+	}
+	if still := must(t)(w.s.Order(ctx, 1, opened.OrderID)); still.State.Status == order.StatusClosed {
+		t.Fatal("a ticket still owed was closed")
+	}
+}

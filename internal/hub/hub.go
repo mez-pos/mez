@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/coder/websocket"
@@ -296,9 +298,19 @@ func (h *Hub) Serve(w http.ResponseWriter, r *http.Request, client Client) {
 	_ = ws.Close(status, reason)
 }
 
-// isGone reports whether an error is just the other end leaving.
+// isGone reports whether an error is just the other end leaving: a close,
+// a line that was cut, or a tablet that went to sleep and stopped answering
+// pings. None of them is the server's to worry about, and each of them
+// happens many times a day at a venue, so none is a warning.
 func isGone(err error) bool {
-	if errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) {
+		return true
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+	if errors.Is(err, syscall.ECONNRESET) || errors.Is(err, syscall.EPIPE) {
 		return true
 	}
 	switch websocket.CloseStatus(err) {

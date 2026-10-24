@@ -107,6 +107,14 @@ func (s *Service) ByID(ctx context.Context, venueID, shiftID int64) (Shift, erro
 // load reads a shift whole, through q: the read pool, or the transaction
 // about to write to it.
 func load(ctx context.Context, q *gen.Queries, row gen.Shift, currency string) (Shift, error) {
+	return loadWith(ctx, q, row, currency, nil)
+}
+
+// loadWith is load with the shift's orders already read, when the caller has
+// them: the close of a shift reads the day's streams once and hands them to
+// everything that needs them (ADR-372), where each used to read them again.
+// Nil reads them here.
+func loadWith(ctx context.Context, q *gen.Queries, row gen.Shift, currency string, orders [][]shift.StampedEvent) (Shift, error) {
 	out := Shift{
 		ID: row.ID, PublicID: row.PublicID, Status: shift.Status(row.Status), TradingDay: row.TradingDay,
 		OpenedBy: row.OpenedBy, OpenedAt: row.OpenedAt.UTC(), ClosedBy: row.ClosedBy,
@@ -121,7 +129,12 @@ func load(ctx context.Context, q *gen.Queries, row gen.Shift, currency string) (
 	if err != nil {
 		return Shift{}, err
 	}
-	if out.Sales, err = cashSales(ctx, q, row.ID, currency); err != nil {
+	if orders == nil {
+		if orders, err = stampedOrders(ctx, q, row.ID); err != nil {
+			return Shift{}, err
+		}
+	}
+	if out.Sales, err = cashSalesFrom(row.ID, currency, orders); err != nil {
 		return Shift{}, err
 	}
 	if out.Closing != nil {
@@ -215,6 +228,11 @@ func cashSales(ctx context.Context, q *gen.Queries, shiftID int64, currency stri
 	if err != nil {
 		return shift.CashSales{}, err
 	}
+	return cashSalesFrom(shiftID, currency, orders)
+}
+
+// cashSalesFrom is cashSales over orders already read.
+func cashSalesFrom(shiftID int64, currency string, orders [][]shift.StampedEvent) (shift.CashSales, error) {
 	sales, err := shift.CashFromOrders(currency, shiftID, orders)
 	if err != nil {
 		return shift.CashSales{}, fmt.Errorf("shift %d's cash sales: %w", shiftID, err)

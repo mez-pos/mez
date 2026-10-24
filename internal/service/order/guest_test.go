@@ -294,13 +294,6 @@ func TestARoundIsRefused(t *testing.T) {
 			must(t)(s.Hold(context.Background(), cashier(""), open(t, s).OrderID))
 			return guest("k"), g.twoOatAndABrownie(4)
 		}, ErrTableBusy},
-		{"onto a bill already invoiced", func(t *testing.T, s *Service, _ *db.DB, g guestMenu) (Meta, PlaceRound) {
-			ctx := context.Background()
-			id := open(t, s).OrderID
-			must(t)(s.AddLine(ctx, cashier(""), id, coffee(1)))
-			must(t)(s.TenderPayment(ctx, cashier(""), id, TenderPayment{Method: order.PaymentCash, Amount: inr(4200)}))
-			return guest("k"), g.twoOatAndABrownie(4)
-		}, ErrTableBusy},
 		{"past the requests a table may have waiting", func(t *testing.T, s *Service, _ *db.DB, g guestMenu) (Meta, PlaceRound) {
 			for i := range maxWaitingRounds {
 				if _, err := party(t, s).PlaceRound(context.Background(), guest("w"+string(rune('a'+i))), g.twoOatAndABrownie(4)); err != nil {
@@ -363,5 +356,29 @@ func TestARoundAtAnotherTableIsItsOwn(t *testing.T) {
 	}
 	if round.Status != RoundWaiting {
 		t.Errorf("round at table 5 = %+v, want a request", round)
+	}
+}
+
+// TestAPaidBillRollsWhenTheGuestsOrderAgain: a bill paid in full and
+// invoiced is done. A round from a phone at that table does not meet "the
+// bill is invoiced": the ticket is closed and the round is the table's next
+// first order, waiting for staff as a first order does (ADR-372).
+func TestAPaidBillRollsWhenTheGuestsOrderAgain(t *testing.T) {
+	s, d, _ := newService(t)
+	g := seedGuestMenu(t, d)
+	ctx := context.Background()
+	id := open(t, s).OrderID
+	must(t)(s.AddLine(ctx, cashier(""), id, coffee(1)))
+	must(t)(s.TenderPayment(ctx, cashier(""), id, TenderPayment{Method: order.PaymentCash, Amount: inr(4200)}))
+
+	round, err := party(t, s).PlaceRound(ctx, guest("k"), g.twoOatAndABrownie(4))
+	if err != nil || round.Status != RoundWaiting || round.OrderID != 0 {
+		t.Fatalf("the round after the bill was paid: %+v, %v", round, err)
+	}
+	if paid := must(t)(s.Order(ctx, 1, id)); paid.State.Status != order.StatusClosed || !paid.State.Invoiced {
+		t.Fatalf("the paid bill is %s, invoiced %v; want closed", paid.State.Status, paid.State.Invoiced)
+	}
+	if _, open, err := s.TableTicket(ctx, 1, 4); err != nil || open {
+		t.Fatalf("the table still has a ticket: %v, %v", open, err)
 	}
 }

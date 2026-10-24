@@ -254,6 +254,26 @@ func (s *Service) writeRound(ctx context.Context, meta Meta, v venue, draft roun
 		return Round{}, err
 	}
 	hasTicket := err == nil
+	if hasTicket && draft.session.ID != 0 {
+		// A ticket paid in full and invoiced is a bill that is done: the
+		// party ordering again starts a fresh one, as they would have had
+		// staff closed it (ADR-372). Left as it was, the round was refused
+		// as "the bill is invoiced" until staff did. Only for a phone with
+		// a session, which is a round that goes somewhere: one without is
+		// refused below whatever the ticket, and must not close it.
+		rolled, err := s.rollSettledTicket(ctx, meta.VenueID, orderID)
+		if err != nil {
+			return Round{}, err
+		}
+		if rolled {
+			hasTicket = false
+			// The phone's session was the closed ticket's; at a table with
+			// no ticket it stands as the landing's, free to order.
+			if draft.session.OrderID == orderID {
+				draft.session.OrderID = 0
+			}
+		}
+	}
 	if !hasTicket && (draft.session.ID == 0 || draft.session.OrderID != 0) {
 		// No session, or one bound to a ticket that has closed since it
 		// was checked: the phone asks the landing for one. A table that is
@@ -281,6 +301,34 @@ func (s *Service) writeRound(ctx context.Context, meta Meta, v venue, draft roun
 	}
 	round.Status = RoundWaiting
 	return round, s.requestRound(ctx, meta, draft, publicID, hasTicket)
+}
+
+// rollSettledTicket closes the ticket at a table if it is paid in full and
+// invoiced, and reports whether it did (ADR-372). A bill still owed, or not
+// yet invoiced, is the table's ticket as before. The close is the system's,
+// under a key of the ticket's own, so two rounds arriving together close it
+// once; a ticket closed meanwhile by staff is already rolled.
+func (s *Service) rollSettledTicket(ctx context.Context, venueID, orderID int64) (bool, error) {
+	res, err := s.Order(ctx, venueID, orderID)
+	if errors.Is(err, ErrOrderNotFound) {
+		return true, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	st := res.State
+	if st.Status == order.StatusClosed {
+		return true, nil
+	}
+	if !st.Invoiced || !st.Totals.BalanceDue.IsZero() || st.Status == order.StatusHeld {
+		return false, nil
+	}
+	meta := Meta{VenueID: venueID, IdempotencyKey: RollKeyPrefix + res.PublicID}
+	if _, err := s.Close(ctx, meta, orderID); err != nil && !errors.Is(err, order.ErrOrderClosed) {
+		return false, fmt.Errorf("closing the paid ticket %s for the next round: %w", res.PublicID, err)
+	}
+	s.log.Info("a paid ticket was closed to make way for the party's next round", "venue_id", venueID, "order_id", orderID)
+	return true, nil
 }
 
 // requestRound keeps a round as a request: at a table with no ticket open,

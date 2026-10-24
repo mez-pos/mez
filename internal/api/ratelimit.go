@@ -3,6 +3,7 @@ package api
 import (
 	"math"
 	"net/http"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -94,15 +95,29 @@ func (l *limiter) wait(key string, lim limit) time.Duration {
 }
 
 // prune drops windows that have turned over, each judged by its own
-// length. It runs under the lock, and only when the map is full. It is a
-// best effort and not a bound: a map full of live windows stays full, and
-// the new key is added anyway, because refusing a till over memory the
-// process has plenty of would be the worse failure.
+// length, and then, if the map is still full of live windows, the oldest of
+// them down to the cap: a key evicted early is a client that may make a few
+// more requests than its limit, which is the lesser harm against a map that
+// grows with every address that ever asked. It runs under the lock, and
+// only when the map is full. The new key is added after it either way,
+// because refusing a till over memory the process has plenty of would be
+// the worse failure.
 func (l *limiter) prune(now time.Time) {
 	for key, w := range l.windows {
 		if now.Sub(w.started) >= w.per {
 			delete(l.windows, key)
 		}
+	}
+	if len(l.windows) < maxLimiterKeys {
+		return
+	}
+	keys := make([]string, 0, len(l.windows))
+	for key := range l.windows {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool { return l.windows[keys[i]].started.Before(l.windows[keys[j]].started) })
+	for _, key := range keys[:len(keys)-maxLimiterKeys+1] {
+		delete(l.windows, key)
 	}
 }
 

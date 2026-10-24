@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/mez-pos/mez/internal/domain/order"
+	"github.com/mez-pos/mez/internal/domain/shift"
 	"strings"
 	"time"
 
@@ -57,6 +59,12 @@ func writeExports(ctx context.Context, q *gen.Queries, venueID int64, sh Shift, 
 	if err != nil {
 		return err
 	}
+	return writeExportsFrom(ctx, q, venueID, sh, v, now, taxes, orders)
+}
+
+// writeExportsFrom is writeExports over the venue's taxes and the shift's
+// orders already read (ADR-372).
+func writeExportsFrom(ctx context.Context, q *gen.Queries, venueID int64, sh Shift, v venue, now time.Time, taxes order.Taxes, orders [][]shift.StampedEvent) error {
 	files, err := export.Build(export.Input{ShiftID: sh.ID, Currency: v.currency, Taxes: taxes, Location: v.location, Orders: orders})
 	if err != nil {
 		return fmt.Errorf("the exports for %s: %w", sh.PublicID, err)
