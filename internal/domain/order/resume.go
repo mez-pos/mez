@@ -14,7 +14,7 @@ import (
 // the same events: a new field, a changed rule, a changed rounding. Leaving it
 // alone after such a change serves stale snapshots until they happen to be
 // retaken, which is the one way a snapshot can disagree with its events.
-const ProjectionVersion = 8
+const ProjectionVersion = 9
 
 // Resume carries a projection on from a State that Project or Resume
 // returned, folding in the events after it. It is the same fold with the same
@@ -29,6 +29,14 @@ const ProjectionVersion = 8
 func Resume(from State, events []Event, taxes Taxes) (State, error) {
 	if from.LastSeq == 0 {
 		return Project(events, taxes)
+	}
+	// The taxes the order opened under stand over the venue's (ADR-374).
+	if from.Taxes != nil {
+		frozen, err := from.Taxes.Taxes()
+		if err != nil {
+			return State{}, err
+		}
+		taxes = frozen
 	}
 	p := projector{
 		taxes:    taxes,
@@ -53,6 +61,7 @@ func Resume(from State, events []Event, taxes Taxes) (State, error) {
 // to its original.
 func (s State) clone() State {
 	c := s
+	c.Taxes = s.Taxes.clone()
 	c.Lines = slices.Clone(s.Lines)
 	for i := range c.Lines {
 		c.Lines[i].Modifiers = slices.Clone(s.Lines[i].Modifiers)

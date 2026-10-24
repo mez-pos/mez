@@ -97,6 +97,11 @@ type OrderOpened struct {
 	TableID  int64       `json:"table_id,omitempty"` // 0 for an order with no table
 	Covers   int64       `json:"covers"`
 	OpenedBy int64       `json:"opened_by"`
+	// Taxes is how the venue was taxed as the order opened (ADR-374): the
+	// order is projected under these for the rest of its life. Nil on an
+	// order opened before the field existed, which is projected under the
+	// venue's taxes as they are now.
+	Taxes *TaxSnapshot `json:"taxes,omitempty"`
 }
 
 // Modifier is one modifier on a line, snapshotted when the line was added.

@@ -91,10 +91,13 @@ var ErrVenueConfig = errors.New("venue is not configured to sell")
 
 // venue is everything a command needs to know about where it is being sold.
 type venue struct {
-	ID        int64
-	Currency  string
-	Location  *time.Location
-	Taxes     order.Taxes
+	ID       int64
+	Currency string
+	Location *time.Location
+	Taxes    order.Taxes
+	// TaxCode is the profile's stored code, which an order opening records
+	// with its taxes (ADR-374).
+	TaxCode   string
 	Series    invoice.Series
 	Credits   invoice.Series // the credit note series
 	LateAfter time.Duration
@@ -157,7 +160,7 @@ func venueFrom(row gen.Venue, settings map[string]string) (venue, error) {
 		return venue{}, err
 	}
 	return venue{
-		ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, Series: series, Credits: credits,
+		ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, TaxCode: row.TaxProfile, Series: series, Credits: credits,
 		LateAfter: lateAfter(settings[SettingTicketLateMinutes]),
 		Seller:    sellerFor(row, settings),
 		PayMode:   payModeOf(settings[SettingPayMode]),

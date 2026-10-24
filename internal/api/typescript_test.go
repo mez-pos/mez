@@ -353,7 +353,7 @@ func generate() (*ts.Generator, error) {
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},
 		// Orders: what is sent.
 		Override{}, amount{}, openOrderRequest{}, addLineRequest{}, changeQtyRequest{},
-		modifyLineRequest{}, voidLineRequest{}, discountRequest{}, removeDiscountRequest{}, addNoteRequest{}, sendTicketRequest{},
+		modifyLineRequest{}, voidLineRequest{}, discountRequest{}, removeDiscountRequest{}, order.TaxSnapshot{}, addNoteRequest{}, sendTicketRequest{},
 		tenderRequest{}, voidPaymentRequest{}, refundRequest{}, reopenRequest{}, splitRequest{},
 		// Orders: what comes back.
 		lineResponse{}, noteResponse{}, ticketResponse{}, tenderResponse{},

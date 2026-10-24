@@ -73,6 +73,12 @@ type State struct {
 	// second invoice.issued, and what Resume needs to carry a projection on.
 	Invoiced bool
 
+	// Taxes is how the order is taxed, as its order.opened recorded
+	// (ADR-374), so that a projection carried on from this State uses them
+	// and not the venue's of the moment. Nil on an order opened before it
+	// was recorded.
+	Taxes *TaxSnapshot
+
 	Lines        []Line     // in the order they were added
 	Discounts    []Discount // line and order discounts, in the order applied
 	Notes        []Note

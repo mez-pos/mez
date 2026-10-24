@@ -58,7 +58,7 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 
 | Type | Payload |
 |---|---|
-| `order.opened` | channel, service (dine_in, takeaway, delivery), table, covers, opened_by |
+| `order.opened` | channel, service (dine_in, takeaway, delivery), table, covers, opened_by, taxes: how the venue was taxed as it opened, which the order is projected under for good (ADR-374) |
 | `line.added` | item_id, qty, unit_price, modifiers[], course, station |
 | `line.qty_changed` | line_id, from, to: only before the line reaches the kitchen |
 | `line.modified` | line_id, from[], to[]: modifiers, only before the line reaches the kitchen |

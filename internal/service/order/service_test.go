@@ -662,3 +662,41 @@ func TestSendRoutesEachStationItsOwn(t *testing.T) {
 		t.Errorf("a second Send: %v", err)
 	}
 }
+
+// TestAnOpenOrderIsNotRepricedByATaxChange (ADR-374): the venue changes
+// whether prices include tax while a ticket is open. The ticket keeps the
+// total it was sold at; the next ticket opens under the new rule.
+func TestAnOpenOrderIsNotRepricedByATaxChange(t *testing.T) {
+	s, d, _ := newService(t)
+	ctx := context.Background()
+	before := open(t, s)
+	before = must(t)(s.AddLine(ctx, cashier(""), before.OrderID, coffee(1)))
+	was := before.State.Totals.Total
+
+	// The fixture is GST exclusive; inclusive is the other way round.
+	err := d.WriteTx(ctx, func(q *gen.Queries) error {
+		return q.SetSetting(ctx, gen.SetSettingParams{VenueID: 1, Key: SettingTaxPricing, Value: "inclusive", UpdatedAt: now})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	again := must(t)(s.Order(ctx, 1, before.OrderID))
+	if again.State.Totals.Total != was {
+		t.Fatalf("the open ticket was re-priced: was %v, now %v", was, again.State.Totals.Total)
+	}
+	// Rebuilt from its events alone, the same.
+	rebuilt, err := d.RebuildOrder(ctx, before.OrderID, order.Taxes{})
+	if err != nil || rebuilt.Totals.Total != was {
+		t.Fatalf("rebuilt from events: %v, total %v, want %v", err, rebuilt.Totals.Total, was)
+	}
+
+	after := open(t, s)
+	after = must(t)(s.AddLine(ctx, cashier(""), after.OrderID, coffee(1)))
+	if after.State.Totals.Total == was {
+		t.Fatalf("a ticket opened after the change still totals %v", was)
+	}
+	if after.State.Taxes == nil || after.State.Taxes.Pricing != "inclusive" || before.State.Taxes == nil || before.State.Taxes.Pricing != "exclusive" {
+		t.Fatalf("taxes recorded: before %+v, after %+v", before.State.Taxes, after.State.Taxes)
+	}
+}

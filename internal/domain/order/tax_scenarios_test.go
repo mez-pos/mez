@@ -287,3 +287,52 @@ func TestASplitByItemSettlesATaxedBill(t *testing.T) {
 		t.Errorf("tips %d, paid %d, total %d: tips must stay out of the bill", s.Totals.Tips.Minor, s.Totals.Paid.Minor, s.Totals.Total.Minor)
 	}
 }
+
+// TestAnOrderKeepsTheTaxesItOpenedUnder (ADR-374): an order.opened that
+// carries the venue's taxes is projected under them whatever Project is
+// handed, and so is a projection carried on from its State; one without
+// them, from before the field, is projected under what Project is handed.
+func TestAnOrderKeepsTheTaxesItOpenedUnder(t *testing.T) {
+	frozen := SnapshotTaxes(tax.CodeGST, gst)
+	withTaxes := opened()
+	withTaxes.Taxes = frozen
+	events := stream(withTaxes, dish("Flat white", 1, 22000), pay(PaymentCard, 23100), closed)
+
+	// Handed no taxes at all, the order is still GST exclusive: 220.00 and
+	// 5% on top.
+	s, err := Project(events, untaxed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Totals.Tax != inr(1100) || s.Totals.Total != inr(23100) || s.Taxes == nil || s.Taxes.Profile != tax.CodeGST {
+		t.Fatalf("under frozen GST: tax %v, total %v, taxes %+v", s.Totals.Tax, s.Totals.Total, s.Taxes)
+	}
+	// Handed the venue's taxes changed to inclusive, the same.
+	inclusive := gstCafe(tax.Inclusive)
+	if s2, err := Project(events, inclusive); err != nil || s2.Totals.Total != inr(23100) {
+		t.Fatalf("under the venue's changed taxes: %v, total %v", err, s2.Totals.Total)
+	}
+	// Carried on from its State with the changed taxes: still its own.
+	half, err := Project(events[:2], inclusive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rest, err := Resume(half, events[2:], inclusive)
+	if err != nil || rest.Totals.Total != inr(23100) || rest.Status != StatusClosed {
+		t.Fatalf("resumed under changed taxes: %v, %+v", err, rest.Totals)
+	}
+
+	// Without a snapshot, as every order before this was, the venue's
+	// taxes of the moment apply, as before.
+	plain := stream(opened(), dish("Flat white", 1, 22000))
+	if s3, err := Project(plain, inclusive); err != nil || s3.Totals.Total != inr(22000) || s3.Taxes != nil {
+		t.Fatalf("an order from before the snapshot: %v, total %v, taxes %+v", err, s3.Totals.Total, s3.Taxes)
+	}
+
+	// A snapshot naming a profile this build does not know is refused.
+	odd := opened()
+	odd.Taxes = &TaxSnapshot{Profile: "moon_tax", Currency: "INR", Pricing: tax.Exclusive}
+	if _, err := Project(stream(odd), untaxed); !errors.Is(err, ErrTaxConfig) {
+		t.Fatalf("an unknown profile: %v, want %v", err, ErrTaxConfig)
+	}
+}

@@ -108,6 +108,9 @@ func (s *Service) Open(ctx context.Context, meta Meta, cmd OpenOrder) (Result, e
 	at := s.clock.Now().UTC()
 	opened := order.NewEvent(1, at, meta.ActorID, meta.DeviceID, order.OrderOpened{
 		Channel: cmd.Channel, Currency: v.Currency, Service: service, TableID: cmd.TableID, Covers: cmd.Covers, OpenedBy: meta.ActorID,
+		// The venue's taxes as they are now, which are this order's for
+		// good (ADR-374).
+		Taxes: order.SnapshotTaxes(v.TaxCode, v.Taxes),
 	})
 
 	for range maxPublicIDDraws {

@@ -14429,3 +14429,27 @@ Because: the one way out of a mistake must not be to pay for it; an event that u
 keeps the append-only rule, where editing the discount would not.
 Cost: one more event type in every list of them; a till on a build before this does not
 know the event and shows the order without the discount, which is what it is.
+
+## ADR-374 - An order carries the taxes it opened under
+2026-10 · Status: accepted, at the human's word on 2026-10-24. Supersedes ADR-369's refusal of a pricing change while tickets are open; keeps ADR-087's for the profile.
+Context: every order was projected under the venue's taxes as they are now. A setting
+changed with tickets open re-priced every one of them and refused the tenders already
+on them (ADR-369 found the result: every till and every kitchen screen blank). ADR-369
+refused such a change while tickets were open, which stopped the harm but not the cause,
+and an owner who had to change pricing mid-day had to settle the floor first.
+Decision: `order.opened` carries **`taxes`**, a `TaxSnapshot` (`order.SnapshotTaxes`): the
+profile by its stored code (`tax.ProfileByCode`, the codes now the tax package's),
+currency, pricing, GSTIN, state code, place of supply, VAT number, the US jurisdiction.
+The projection takes them as the order's from that event on, whatever `Project` or `Resume`
+is handed, and `State.Taxes` keeps them so a projection carried on from a stored snapshot
+does the same (`ProjectionVersion` 9). An order opened before the field has none and is
+projected under the venue's taxes of the moment, as before. The service records them from
+the venue as it opens the order. `UpdateTax` now lets pricing and rates change with
+tickets open; a change of profile is still held back (ADR-087), since the invoices still to
+be issued name it. A snapshot naming a profile this build does not know refuses the order
+as `ErrTaxConfig`: an order from a newer build.
+Because: what a guest was sold at is a fact of the sale, not of the settings; the Z-report
+and the credit notes read the same events and now agree with the invoice whatever changed
+since.
+Cost: a few hundred bytes on every order's first event. The venue's taxes are still read
+on every command for the invoice's seller block and for an order from before the field.

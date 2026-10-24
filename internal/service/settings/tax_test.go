@@ -168,17 +168,18 @@ func TestChangingProfileNeedsNoOpenTickets(t *testing.T) {
 	if err := s.UpdateTax(ctx, 1, TaxInput{Profile: "gst_in", RegistrationID: "29ZZZZZ9999Z1Z9", Pricing: before.Pricing}); err != nil {
 		t.Fatalf("a correction with a ticket open: %v", err)
 	}
-	// Whether prices include tax changes every open ticket's total, and
-	// the tenders already on them (ADR-369): held back as the profile is.
+	// Whether prices include tax may change with tickets open: each order
+	// carries the taxes it opened under (ADR-374), so nothing open is
+	// re-priced.
 	other := "exclusive"
 	if before.Pricing == "exclusive" {
 		other = "inclusive"
 	}
-	if err := s.UpdateTax(ctx, 1, TaxInput{Profile: "gst_in", RegistrationID: "29ZZZZZ9999Z1Z9", Pricing: other}); !errors.Is(err, ErrOpenOrders) {
+	if err := s.UpdateTax(ctx, 1, TaxInput{Profile: "gst_in", RegistrationID: "29ZZZZZ9999Z1Z9", Pricing: other}); err != nil {
 		t.Fatalf("a pricing change with a ticket open: %v", err)
 	}
-	if got, _ := s.Tax(ctx, 1); got.Pricing != before.Pricing {
-		t.Fatalf("the refused pricing was kept: %+v", got)
+	if got, _ := s.Tax(ctx, 1); got.Pricing != other {
+		t.Fatalf("the pricing change was not kept: %+v", got)
 	}
 
 	// Closed tickets do not hold it back.

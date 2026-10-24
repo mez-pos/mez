@@ -546,6 +546,23 @@ export interface OrderOpened {
   table_id?: number;
   covers: number;
   opened_by: number;
+  taxes?: TaxSnapshot;
+}
+
+export interface TaxSnapshot {
+  profile: string;
+  currency: string;
+  pricing: TaxPricing;
+  gstin?: string;
+  state_code?: string;
+  place_of_supply?: string;
+  vat_number?: string;
+  jurisdiction?: Component[];
+}
+
+export interface Component {
+  name: string;
+  rate: number;
 }
 
 export interface LineAdded {

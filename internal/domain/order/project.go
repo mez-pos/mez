@@ -178,6 +178,15 @@ func (p *projector) open(e Event, pl OrderOpened) error {
 	case service != ServiceDineIn && pl.TableID != 0:
 		return invalid("a %s order has no table", service)
 	}
+	// The taxes the order opened under are the order's from here on
+	// (ADR-374); without them, the venue's as handed to Project.
+	if pl.Taxes != nil {
+		taxes, err := pl.Taxes.Taxes()
+		if err != nil {
+			return err
+		}
+		p.taxes = taxes
+	}
 	if p.taxes.Profile != nil && p.taxes.Venue.Currency != pl.Currency {
 		return fmt.Errorf("%w: the venue is taxed in %q, the order is in %q", ErrTaxConfig, p.taxes.Venue.Currency, pl.Currency)
 	}
@@ -190,6 +199,7 @@ func (p *projector) open(e Event, pl OrderOpened) error {
 		Covers:   pl.Covers,
 		OpenedBy: pl.OpenedBy,
 		OpenedAt: e.At.UTC(),
+		Taxes:    pl.Taxes.clone(),
 	}
 	return nil
 }
