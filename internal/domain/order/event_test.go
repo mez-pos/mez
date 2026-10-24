@@ -70,6 +70,7 @@ func samplePayloads() []Payload {
 		OrderClosed{ClosedBy: 11},
 		OrderReopened{Reason: "tip entered wrong", AuthorisedBy: 3},
 		DiscountApplied{Scope: ScopeOrder, Kind: DiscountAmount, Amount: &fiftyOff, Reason: "loyalty"},
+		DiscountRemoved{Seq: 7, Reason: "entered_in_error", AuthorisedBy: 3},
 	}
 }
 
@@ -108,8 +109,9 @@ func TestSamplesCoverEveryType(t *testing.T) {
 	// 16 since line.modified (ADR-071), 18 since order.held and resumed (ADR-074),
 	// 19 since invoice.reprinted (ADR-078), 20 since credit_note.issued (ADR-083),
 	// 23 since the table moves (ADR-088), 25 since bump and recall (ADR-090),
-	// 26 since a ticket is started (ADR-175).
-	if got, want := len(Types()), 26; got != want {
+	// 26 since a ticket is started (ADR-175), 27 since a discount can be
+	// removed (ADR-373).
+	if got, want := len(Types()), 27; got != want {
 		t.Errorf("Types() has %d types, docs/02-domain.md lists %d", got, want)
 	}
 }

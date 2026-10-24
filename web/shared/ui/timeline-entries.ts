@@ -131,6 +131,8 @@ function describe(event: OrderEvent, ctx: Context): Described {
       };
     case "discount.applied":
       return discount(event.payload, line);
+    case "discount.removed":
+      return { title: "Discount removed", detail: event.payload.reason ? humanise(event.payload.reason) : null };
     case "note.added":
       return { title: event.payload.line_id ? `Note on ${line(event.payload.line_id)}` : "Note on the order", detail: event.payload.text };
     case "course.fired":

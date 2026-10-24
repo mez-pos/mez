@@ -35,6 +35,14 @@ export const reprintReasons: readonly Reason[] = [
   { code: "accounts", label: "For the accounts" },
 ];
 
+/** Why a discount is taken off again (ADR-373). */
+export const removalReasons: readonly Reason[] = [
+  { code: "entered_in_error", label: "Entered in error" },
+  { code: "wrong_amount", label: "Wrong amount" },
+  { code: "not_eligible", label: "Not eligible" },
+  { code: "manager_call", label: "Manager's call" },
+];
+
 export const discountReasons: readonly Reason[] = [
   { code: "regular", label: "Regular" },
   { code: "staff", label: "Staff" },

@@ -516,3 +516,49 @@ func TestACompedLineCanStillGoToTheKitchen(t *testing.T) {
 		t.Errorf("line = %+v, want comped and sent", l)
 	}
 }
+
+// TestARemovedDiscountNoLongerCounts (ADR-373): an order discount larger
+// than what is left refuses the void that would leave it so, which trapped
+// the order; removing the discount opens the way, and the discount stays
+// listed as removed, worth nothing. Removing it twice, or a seq that is no
+// discount, is refused.
+func TestARemovedDiscountNoLongerCounts(t *testing.T) {
+	twoHundred := inr(20000)
+	base := []Payload{opened(),
+		coffee(1), // 2: 220.00
+		coffee(1), // 3: 220.00
+		DiscountApplied{Scope: ScopeOrder, Kind: DiscountAmount, Amount: &twoHundred, Reason: "promotion"}, // 4
+	}
+	// Voiding one line leaves 220.00 under a 200.00 discount: fine. Voiding
+	// both leaves nothing under it: refused, and the order is stuck.
+	if _, err := Project(stream(append(base, void(2), void(3))...), untaxed); !errors.Is(err, ErrDiscountExceedsValue) {
+		t.Fatalf("voiding everything under an amount discount: %v, want %v", err, ErrDiscountExceedsValue)
+	}
+
+	s := mustProject(t, append(base, DiscountRemoved{Seq: 4, Reason: "entered_in_error", AuthorisedBy: 3}, void(2), void(3))...)
+	if d := s.Discounts[0]; !d.Removed || !d.Value.IsZero() {
+		t.Errorf("the removed discount = %+v, want removed and worth nothing", d)
+	}
+	if s.Totals.OrderDiscounts != inr(0) || s.Totals.Total != inr(0) || s.Totals.Voided != inr(44000) {
+		t.Errorf("totals = %+v", s.Totals)
+	}
+
+	// Removed with a line still on the order, the total goes back up.
+	s = mustProject(t, append(base, DiscountRemoved{Seq: 4, Reason: "entered_in_error"})...)
+	if s.Totals.Total != inr(44000) || s.Totals.OrderDiscounts != inr(0) {
+		t.Errorf("after removing the discount: %+v", s.Totals)
+	}
+
+	for _, tt := range []struct {
+		name string
+		then []Payload
+	}{
+		{"twice", []Payload{DiscountRemoved{Seq: 4}, DiscountRemoved{Seq: 4}}},
+		{"a seq that is a line", []Payload{DiscountRemoved{Seq: 2}}},
+		{"a seq that is nothing", []Payload{DiscountRemoved{Seq: 99}}},
+	} {
+		if _, err := Project(stream(append(base, tt.then...)...), untaxed); !errors.Is(err, ErrInvalidPayload) {
+			t.Errorf("removing %s: %v, want %v", tt.name, err, ErrInvalidPayload)
+		}
+	}
+}

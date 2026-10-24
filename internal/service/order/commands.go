@@ -37,11 +37,13 @@ type (
 	VoidLine      order.LineVoided
 	CompLine      order.LineComped
 	ApplyDiscount order.DiscountApplied
-	AddNote       order.NoteAdded
-	FireCourse    order.CourseFired
-	VoidPayment   order.PaymentVoided
-	Refund        order.RefundIssued
-	Reopen        order.OrderReopened
+	// RemoveDiscount takes a discount off again (ADR-373).
+	RemoveDiscount order.DiscountRemoved
+	AddNote        order.NoteAdded
+	FireCourse     order.CourseFired
+	VoidPayment    order.PaymentVoided
+	Refund         order.RefundIssued
+	Reopen         order.OrderReopened
 )
 
 // OpenOrder opens an order. The currency is the venue's and the opener is
@@ -232,6 +234,13 @@ func (s *Service) CompLine(ctx context.Context, meta Meta, orderID int64, cmd Co
 // ApplyDiscount discounts a line or the order.
 func (s *Service) ApplyDiscount(ctx context.Context, meta Meta, orderID int64, cmd ApplyDiscount) (Result, error) {
 	return s.run(ctx, meta, orderID, "apply_discount", cmd, one(order.DiscountApplied(cmd)))
+}
+
+// RemoveDiscount takes a discount off the order again (ADR-373). The
+// projection refuses a seq that is no discount of this order, one removed
+// already, and an order that no longer takes changes to what was sold.
+func (s *Service) RemoveDiscount(ctx context.Context, meta Meta, orderID int64, cmd RemoveDiscount) (Result, error) {
+	return s.run(ctx, meta, orderID, "remove_discount", cmd, one(order.DiscountRemoved(cmd)))
 }
 
 // AddNote adds a note to a line or the order.

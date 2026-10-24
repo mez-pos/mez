@@ -200,6 +200,7 @@ export function OrderScreen() {
         onVoidLine={(line) => setPanel({ kind: "void", lineId: line.id })}
         onNote={() => setPanel({ kind: "note" })}
         onDiscount={() => setPanel({ kind: "discount", lineId: null })}
+        onRemoveDiscount={(d) => setPanel({ kind: "remove_discount", seq: d.seq })}
         onOrders={() => setOrdersOpen(true)}
         onHistory={() => setHistoryOpen(true)}
         onPastBills={() => navigate(route.orders)}

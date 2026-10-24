@@ -227,12 +227,17 @@ func toOrderResponse(res svcorder.Result) orderResponse {
 	for i, in := range s.Invoices {
 		out.Invoices[i] = invoiceResponse{Seq: in.Seq, InvoiceNo: in.InvoiceNo, Series: in.Series, Reprints: in.Reprints}
 	}
-	out.Discounts = make([]discountResponse, len(s.Discounts))
-	for i, d := range s.Discounts {
-		out.Discounts[i] = discountResponse{
+	// A discount removed (ADR-373) is history, which the timeline shows;
+	// the order as it stands has no such discount.
+	out.Discounts = make([]discountResponse, 0, len(s.Discounts))
+	for _, d := range s.Discounts {
+		if d.Removed {
+			continue
+		}
+		out.Discounts = append(out.Discounts, discountResponse{
 			Seq: d.Seq, Scope: d.Scope, LineID: d.LineID, Kind: d.Kind,
 			Reason: d.Reason, Value: d.Value,
-		}
+		})
 	}
 	out.Tax = toTaxResponse(s.TaxDetail)
 	return out

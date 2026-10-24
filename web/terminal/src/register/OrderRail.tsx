@@ -25,7 +25,7 @@ import { ServiceControl } from "./ServiceControl";
 import { readyLines, sendPlan as planFor } from "./send-logic";
 import { chargeBlock as blockFor, chargeLabel as labelFor } from "../tender/tender-logic";
 import type { Ticket } from "./use-ticket";
-import type { ServiceType } from "../../../shared/api-types";
+import type { DiscountResponse, ServiceType } from "../../../shared/api-types";
 
 interface OrderRailProps {
   ticket: Ticket;
@@ -37,6 +37,8 @@ interface OrderRailProps {
   onVoidLine: (line: LineResponse) => void;
   onNote: () => void;
   onDiscount: () => void;
+  /** Takes an order discount off (ADR-373). */
+  onRemoveDiscount?: (discount: DiscountResponse) => void;
   onOrders: () => void;
   onHistory: () => void;
   onPastBills: () => void;
@@ -200,6 +202,7 @@ export function OrderRail(props: OrderRailProps) {
       )}
 
       <RailFooter
+        {...(props.onRemoveDiscount ? { onRemoveDiscount: props.onRemoveDiscount } : {})}
         order={order}
         currency={currency}
         sendPlan={plan}

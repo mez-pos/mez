@@ -106,6 +106,8 @@ func (p *projector) apply(e Event) error {
 		return p.endLine(pl.LineID, LineStatusComped, pl.ReasonCode, pl.AuthorisedBy)
 	case DiscountApplied:
 		return p.discount(e, pl)
+	case DiscountRemoved:
+		return p.removeDiscount(pl)
 	case NoteAdded:
 		return p.note(e, pl)
 	case CourseFired:
@@ -332,6 +334,27 @@ func (p *projector) discount(e Event, pl DiscountApplied) error {
 	}
 	p.s.Discounts = append(p.s.Discounts, d)
 	return nil
+}
+
+// removeDiscount marks the discount at pl.Seq removed (ADR-373). It must be
+// a discount of this order, not removed already, and the order must still
+// take changes to what was sold, as applying one needs.
+func (p *projector) removeDiscount(pl DiscountRemoved) error {
+	for i := range p.s.Discounts {
+		d := &p.s.Discounts[i]
+		if d.Seq != pl.Seq {
+			continue
+		}
+		if d.Removed {
+			return invalid("the discount at seq %d was removed already", pl.Seq)
+		}
+		if err := p.checkScope(d.Scope, d.LineID, false); err != nil {
+			return err
+		}
+		d.Removed = true
+		return nil
+	}
+	return invalid("no discount at seq %d", pl.Seq)
 }
 
 func (p *projector) note(e Event, pl NoteAdded) error {

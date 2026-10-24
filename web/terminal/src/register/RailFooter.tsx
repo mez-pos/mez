@@ -8,7 +8,7 @@
 // there, and the bill (T05) is reached from the rail's "...", as Bill and pay.
 
 import { ArrowRightIcon, BookmarkIcon, SendIcon } from "lucide-react";
-import type { OrderResponse } from "../../../shared/api-types";
+import type { DiscountResponse, OrderResponse } from "../../../shared/api-types";
 import { Button, Money } from "../../../shared/ui";
 import { OrderTotals } from "./OrderTotals";
 import { amountOwed } from "./rail-logic";
@@ -27,9 +27,12 @@ interface RailFooterProps {
   onSave: () => void;
   onPay: () => void;
   waiter?: boolean;
+  /** Takes an order discount off (ADR-373). */
+  onRemoveDiscount?: (discount: DiscountResponse) => void;
 }
 
-export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel, onSend, onSave, onPay, waiter = false }: RailFooterProps) {
+export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel, onSend, onSave, onPay, waiter = false, onRemoveDiscount }: RailFooterProps) {
+  const totalsProps = { order, currency, ...(onRemoveDiscount ? { onRemoveDiscount } : {}) };
   const live = order?.lines.some((l) => l.status === "active") ?? false;
   const held = order?.status === "held";
   const owed = amountOwed(order?.totals, currency);
@@ -38,7 +41,7 @@ export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel
   if (waiter) {
     return (
       <footer className="border-t border-line px-4 pb-4 pt-3 2xl:px-5 2xl:pb-5 2xl:pt-4">
-        <OrderTotals order={order} currency={currency} />
+        <OrderTotals {...totalsProps} />
         <div className="mt-3 flex gap-3 2xl:mt-4">
           <Button size="charge" className="shrink-0 px-4 2xl:w-32 2xl:px-7" disabled={order?.status !== "open"} onClick={onSave}>
             <BookmarkIcon aria-hidden="true" size={17} />
@@ -61,7 +64,7 @@ export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel
           {sendLabel(sendPlan)}
         </Button>
       )}
-      <OrderTotals order={order} currency={currency} />
+      <OrderTotals {...totalsProps} />
       <div className="mt-3 flex gap-3 2xl:mt-4">
         <Button size="charge" className="shrink-0 px-4 2xl:w-32 2xl:px-7" disabled={order?.status !== "open"} onClick={onSave}>
           Save Order

@@ -256,6 +256,22 @@ func TestTheRestOfTheCommands(t *testing.T) {
 	if len(res.Order.Discounts) != 1 || res.Order.Discounts[0].Value.Minor != 1000 {
 		t.Errorf("discounts = %+v", res.Order.Discounts)
 	}
+	// Taken off again (ADR-373): a manager's, and the order shows no
+	// discount; given once more for the rest of the walk.
+	seq := res.Order.Discounts[0].Seq
+	res = r.ok(t, http.MethodPost, fmt.Sprintf("/api/v1/orders/%s/discounts/%d/remove", id, seq),
+		`{`+r.override()+`,"reason":"entered_in_error"}`)
+	if len(res.Order.Discounts) != 0 || res.Order.Totals.OrderDiscounts.Minor != 0 {
+		t.Errorf("after removing the discount: %+v, %+v", res.Order.Discounts, res.Order.Totals)
+	}
+	if status, _, apiErr := r.call(t, http.MethodPost, fmt.Sprintf("/api/v1/orders/%s/discounts/%d/remove", id, seq), `{`+r.override()+`}`); status < 400 {
+		t.Errorf("removing it twice: %d %+v", status, apiErr)
+	}
+	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/discounts",
+		`{`+r.override()+`,"scope":"order","kind":"pct","basis_points":1000,"reason":"regular"}`)
+	if len(res.Order.Discounts) != 1 || res.Order.Discounts[0].Value.Minor != 1000 {
+		t.Errorf("discounts given again = %+v", res.Order.Discounts)
+	}
 	res = r.ok(t, http.MethodPost, "/api/v1/orders/"+id+"/notes", `{"scope":"line","line_id":2,"text":"no chilli"}`)
 	if len(res.Order.Notes) != 1 {
 		t.Errorf("notes = %+v", res.Order.Notes)

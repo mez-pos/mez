@@ -72,7 +72,7 @@ func (p *projector) lineFigures() error {
 			return err
 		}
 		d.Value = p.zero()
-		if l.Status != LineStatusActive {
+		if l.Status != LineStatusActive || d.Removed {
 			continue
 		}
 		if d.Value, err = discountValue(*d, l.Gross); err != nil {
@@ -163,6 +163,10 @@ func (p *projector) orderDiscounts(base money.Amount) (money.Amount, error) {
 	for i := range p.s.Discounts {
 		d := &p.s.Discounts[i]
 		if d.Scope != ScopeOrder {
+			continue
+		}
+		if d.Removed {
+			d.Value = p.zero()
 			continue
 		}
 		v, err := discountValue(*d, base)

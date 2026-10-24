@@ -65,6 +65,7 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 | `line.voided` | line_id, reason_code, authorised_by |
 | `line.comped` | line_id, reason_code, authorised_by |
 | `discount.applied` | scope (line/order), kind (pct/amount), value, reason |
+| `discount.removed` | seq of the discount, reason, authorised_by: the discount stays in the stream and takes nothing off from here on (ADR-373) |
 | `note.added` | scope, text |
 | `course.fired` | course number |
 | `ticket.sent` | station, line_ids[] |

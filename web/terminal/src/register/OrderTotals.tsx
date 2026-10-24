@@ -2,6 +2,7 @@
 // total under it. Every figure is the server's projection, never arithmetic
 // done here. The order rail and the tables screen's panel both show it.
 
+import { XIcon } from "lucide-react";
 import type { DiscountResponse, Money as Amount, OrderResponse } from "../../../shared/api-types";
 import { Money } from "../../../shared/ui";
 import { humanise } from "../../../shared/ui/timeline-entries";
@@ -10,12 +11,14 @@ import { amountOwed, taxRows } from "./rail-logic";
 interface OrderTotalsProps {
   order: OrderResponse | undefined;
   currency: string;
+  /** Offers to take an order discount off (ADR-373); absent where the totals are only read. */
+  onRemoveDiscount?: (discount: DiscountResponse) => void;
 }
 
 const negate = (a: Amount): Amount => ({ ...a, minor: -a.minor });
 const discountLabel = (d: DiscountResponse): string => humanise(d.reason) ?? d.reason;
 
-export function OrderTotals({ order, currency }: OrderTotalsProps) {
+export function OrderTotals({ order, currency, onRemoveDiscount }: OrderTotalsProps) {
   const totals = order?.totals;
   const zero: Amount = { minor: 0, currency };
   const orderDiscounts = order?.discounts.filter((d) => d.scope === "order") ?? [];
@@ -27,7 +30,13 @@ export function OrderTotals({ order, currency }: OrderTotalsProps) {
         {totals && (totals.line_discounts.minor > 0 || totals.order_discounts.minor > 0) && <TotalRow label="Items" amount={totals.gross} />}
         {totals && totals.line_discounts.minor > 0 && <TotalRow label="Line discounts" amount={negate(totals.line_discounts)} tone="danger" />}
         {orderDiscounts.map((d) => (
-          <TotalRow key={d.seq} label={`Discount · ${discountLabel(d)}`} amount={negate(d.value)} tone="danger" />
+          <TotalRow
+            key={d.seq}
+            label={`Discount · ${discountLabel(d)}`}
+            amount={negate(d.value)}
+            tone="danger"
+            {...(onRemoveDiscount && order?.status === "open" ? { onRemove: () => onRemoveDiscount(d) } : {})}
+          />
         ))}
         <TotalRow label="Subtotal" amount={totals?.subtotal ?? zero} />
         {taxRows(order, currency).map((row) => (
@@ -43,10 +52,20 @@ export function OrderTotals({ order, currency }: OrderTotalsProps) {
   );
 }
 
-function TotalRow({ label, amount, tone = "default" }: { label: string; amount: Amount; tone?: "default" | "danger" }) {
+function TotalRow({ label, amount, tone = "default", onRemove }: { label: string; amount: Amount; tone?: "default" | "danger"; onRemove?: () => void }) {
   return (
-    <div className="flex justify-between text-fg-2">
-      <span>{label}</span>
+    <div className="flex items-center justify-between gap-2 text-fg-2">
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {onRemove && (
+        <button
+          type="button"
+          aria-label={`Remove ${label}`}
+          onClick={onRemove}
+          className="flex size-tap shrink-0 items-center justify-center rounded-round outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+        >
+          <XIcon aria-hidden="true" size={16} />
+        </button>
+      )}
       <Money amount={amount} tone={tone} />
     </div>
   );

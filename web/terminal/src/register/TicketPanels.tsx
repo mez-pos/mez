@@ -5,6 +5,7 @@
 
 import type { LineResponse, OrderResponse } from "../../../shared/api-types";
 import { DiscountSheet } from "./DiscountSheet";
+import { RemoveDiscountSheet } from "./RemoveDiscountSheet";
 import { LineSheet, type LineAction } from "./LineSheet";
 import { NoteSheet } from "./NoteSheet";
 import type { Ticket } from "./use-ticket";
@@ -14,6 +15,7 @@ export type Panel =
   | { readonly kind: "line"; readonly lineId: number }
   | { readonly kind: "void" | "comp"; readonly lineId: number }
   | { readonly kind: "discount"; readonly lineId: number | null }
+  | { readonly kind: "remove_discount"; readonly seq: number }
   | { readonly kind: "note" };
 
 interface TicketPanelsProps {
@@ -84,6 +86,11 @@ export function TicketPanels({ panel, onPanel, ticket, hasChoices, onModify }: T
           onClose={close}
         />
       );
+    }
+    case "remove_discount": {
+      const discount = order.discounts.find((d) => d.seq === panel.seq);
+      if (!discount) return null; // gone already: another till removed it
+      return <RemoveDiscountSheet discount={discount} onSubmit={(reason, approval) => ticket.removeDiscount(discount.seq, reason, approval)} onClose={close} />;
     }
     case "note":
       return <NoteSheet onSave={(text) => ticket.addNote({ scope: "order", text })} onClose={close} />;

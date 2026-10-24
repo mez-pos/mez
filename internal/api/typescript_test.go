@@ -89,6 +89,7 @@ var eventTypes = []struct {
 	{order.TypeLineVoided, order.LineVoided{}, "LineVoided"},
 	{order.TypeLineComped, order.LineComped{}, "LineComped"},
 	{order.TypeDiscountApplied, order.DiscountApplied{}, "DiscountApplied"},
+	{order.TypeDiscountRemoved, order.DiscountRemoved{}, "DiscountRemoved"},
 	{order.TypeNoteAdded, order.NoteAdded{}, "NoteAdded"},
 	{order.TypeCourseFired, order.CourseFired{}, "CourseFired"},
 	{order.TypeTicketSent, order.TicketSent{}, "TicketSent"},
@@ -352,7 +353,7 @@ func generate() (*ts.Generator, error) {
 		staffResponse{}, staffListResponse{}, signInRequest{}, sessionResponse{},
 		// Orders: what is sent.
 		Override{}, amount{}, openOrderRequest{}, addLineRequest{}, changeQtyRequest{},
-		modifyLineRequest{}, voidLineRequest{}, discountRequest{}, addNoteRequest{}, sendTicketRequest{},
+		modifyLineRequest{}, voidLineRequest{}, discountRequest{}, removeDiscountRequest{}, addNoteRequest{}, sendTicketRequest{},
 		tenderRequest{}, voidPaymentRequest{}, refundRequest{}, reopenRequest{}, splitRequest{},
 		// Orders: what comes back.
 		lineResponse{}, noteResponse{}, ticketResponse{}, tenderResponse{},

@@ -43,6 +43,7 @@ type Orders interface {
 	RemoveLine(ctx context.Context, meta svcorder.Meta, orderID, lineID int64) (svcorder.Result, error)
 	CompLine(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.CompLine) (svcorder.Result, error)
 	ApplyDiscount(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.ApplyDiscount) (svcorder.Result, error)
+	RemoveDiscount(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.RemoveDiscount) (svcorder.Result, error)
 	AddNote(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.AddNote) (svcorder.Result, error)
 	FireCourse(ctx context.Context, meta svcorder.Meta, orderID int64, cmd svcorder.FireCourse) (svcorder.Result, error)
 	Send(ctx context.Context, meta svcorder.Meta, orderID int64) (svcorder.Result, error)
@@ -132,6 +133,7 @@ func (s *Server) mountOrders(mux *http.ServeMux) {
 	post("/api/v1/orders/{id}/lines/{line}/void", auth.PermOrderOpen, s.voidLine)
 	post("/api/v1/orders/{id}/lines/{line}/comp", auth.PermOrderOpen, s.compLine)
 	post("/api/v1/orders/{id}/discounts", auth.PermOrderOpen, s.applyDiscount)
+	post("/api/v1/orders/{id}/discounts/{seq}/remove", auth.PermOrderOpen, s.removeDiscount)
 	post("/api/v1/orders/{id}/payments/{payment}/void", auth.PermOrderOpen, s.voidPayment)
 	post("/api/v1/orders/{id}/refunds", auth.PermOrderOpen, s.refund)
 	post("/api/v1/orders/{id}/reopen", auth.PermOrderOpen, s.reopenOrder)
@@ -191,6 +193,13 @@ type discountRequest struct {
 	BasisPoints int32              `json:"basis_points,omitempty"`
 	Amount      *amount            `json:"amount,omitempty"`
 	Reason      string             `json:"reason"`
+}
+
+// removeDiscountRequest is the body of POST /orders/{id}/discounts/{seq}/remove:
+// why the discount goes, and the manager's approval (ADR-373).
+type removeDiscountRequest struct {
+	Override
+	Reason string `json:"reason,omitempty"`
 }
 
 // amount mirrors money.Amount for a request body, so a discount can leave
@@ -516,6 +525,25 @@ func (s *Server) applyDiscount(w http.ResponseWriter, r *http.Request) {
 			cmd.Amount = &value
 		}
 		return s.orders.ApplyDiscount(r.Context(), meta, orderID, cmd)
+	})
+}
+
+func (s *Server) removeDiscount(w http.ResponseWriter, r *http.Request) {
+	s.command(w, r, func(orderID int64, meta svcorder.Meta) (svcorder.Result, error) {
+		seq, ok := s.pathID(w, r, "seq")
+		if !ok {
+			return svcorder.Result{}, errAnswered
+		}
+		var req removeDiscountRequest
+		if !s.decode(w, r, &req) {
+			return svcorder.Result{}, errAnswered
+		}
+		// Taking a discount off is the same permission as giving one.
+		by, ok := s.authorise(w, r, req.Override, auth.PermDiscountGive)
+		if !ok {
+			return svcorder.Result{}, errAnswered
+		}
+		return s.orders.RemoveDiscount(r.Context(), meta, orderID, svcorder.RemoveDiscount{Seq: seq, Reason: req.Reason, AuthorisedBy: by.ID})
 	})
 }
 

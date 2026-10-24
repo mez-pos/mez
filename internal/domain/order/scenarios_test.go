@@ -293,6 +293,30 @@ var scenarios = []struct {
 		},
 	},
 	{
+		// ADR-373: a 200.00 discount on a 220.00 order, then the guest takes
+		// one item back. Voiding it would leave the discount worth more
+		// than the bill, so the discount comes off first, and the bill is
+		// what was sold: one coffee, paid in full.
+		name: "a discount taken off again frees the order",
+		payloads: []Payload{
+			opened(),
+			coffee(1),                 // 2: 220.00
+			coffee(1),                 // 3: 220.00
+			off(ScopeOrder, 0, 20000), // 4: 200.00 off
+			DiscountRemoved{Seq: 4, Reason: "entered_in_error", AuthorisedBy: 3},
+			void(3),
+			pay(PaymentCash, 22000),
+			closed,
+		},
+		want:   figures{gross: 22000, orderDisc: 0, total: 22000, paid: 22000, voided: 22000},
+		status: StatusClosed,
+		check: func(t *testing.T, s State) {
+			if len(s.Discounts) != 1 || !s.Discounts[0].Removed || !s.Discounts[0].Value.IsZero() {
+				t.Errorf("discounts = %+v, want the one, removed and worth nothing", s.Discounts)
+			}
+		},
+	},
+	{
 		name: "quantity changes carry a percentage discount",
 		payloads: []Payload{
 			opened(),

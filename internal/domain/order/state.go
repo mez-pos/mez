@@ -145,7 +145,10 @@ type Discount struct {
 	ActorID     int64
 	// AuthorisedBy is who let it through; zero when not recorded (ADR-117).
 	AuthorisedBy int64
-	Value        money.Amount // zero when its line is no longer active
+	Value        money.Amount // zero when its line is no longer active, or once removed
+	// Removed is true once a discount.removed named it (ADR-373): it stays
+	// listed, for the history, and takes nothing off.
+	Removed bool
 }
 
 // Note is free text on a line or the order.

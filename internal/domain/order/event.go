@@ -20,6 +20,7 @@ const (
 	TypeLineVoided       Type = "line.voided"
 	TypeLineComped       Type = "line.comped"
 	TypeDiscountApplied  Type = "discount.applied"
+	TypeDiscountRemoved  Type = "discount.removed"
 	TypeNoteAdded        Type = "note.added"
 	TypeCourseFired      Type = "course.fired"
 	TypeTicketSent       Type = "ticket.sent"
@@ -63,6 +64,7 @@ var decoders = map[Type]func(json.RawMessage) (Payload, error){
 	TypeLineVoided:       decodeAs[LineVoided],
 	TypeLineComped:       decodeAs[LineComped],
 	TypeDiscountApplied:  decodeAs[DiscountApplied],
+	TypeDiscountRemoved:  decodeAs[DiscountRemoved],
 	TypeNoteAdded:        decodeAs[NoteAdded],
 	TypeCourseFired:      decodeAs[CourseFired],
 	TypeTicketSent:       decodeAs[TicketSent],

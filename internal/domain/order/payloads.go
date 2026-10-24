@@ -187,6 +187,20 @@ type DiscountApplied struct {
 	AuthorisedBy int64 `json:"authorised_by,omitempty"`
 }
 
+// DiscountRemoved takes a discount off again (ADR-373): the one applied at
+// Seq. The discount stays in the stream and in the order's history; from
+// here on it takes nothing off. Without it a discount larger than what was
+// left trapped the order: a line under it could not be voided or comped,
+// and the only way out was to pay. Like giving one, taking one off is a
+// manager's: AuthorisedBy is who let it through.
+type DiscountRemoved struct {
+	Seq    int64  `json:"seq"`
+	Reason string `json:"reason,omitempty"`
+	// AuthorisedBy is the staff member whose permission or PIN let it
+	// through (ADR-117).
+	AuthorisedBy int64 `json:"authorised_by,omitempty"`
+}
+
 // NoteAdded attaches free text to a line or the order: "no onions", "birthday
 // at table 4".
 type NoteAdded struct {
@@ -336,6 +350,7 @@ func (LineModified) EventType() Type     { return TypeLineModified }
 func (LineVoided) EventType() Type       { return TypeLineVoided }
 func (LineComped) EventType() Type       { return TypeLineComped }
 func (DiscountApplied) EventType() Type  { return TypeDiscountApplied }
+func (DiscountRemoved) EventType() Type  { return TypeDiscountRemoved }
 func (NoteAdded) EventType() Type        { return TypeNoteAdded }
 func (CourseFired) EventType() Type      { return TypeCourseFired }
 func (TicketSent) EventType() Type       { return TypeTicketSent }

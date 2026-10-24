@@ -3,7 +3,6 @@ package api
 import (
 	"math"
 	"net/http"
-	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -64,6 +63,18 @@ func (l *limiter) allow(key string, lim limit) (bool, time.Duration) {
 		if len(l.windows) >= maxLimiterKeys {
 			l.prune(now)
 		}
+		if w == nil && len(l.windows) >= maxLimiterKeys {
+			// Full of live windows: the newcomers share one, under the
+			// same limit, until some turn over.
+			key = overflowKey
+			if w = l.windows[key]; w != nil && now.Sub(w.started) < lim.per {
+				if w.count < lim.requests {
+					w.count++
+					return true, 0
+				}
+				return false, w.started.Add(lim.per).Sub(now)
+			}
+		}
 		l.windows[key] = &window{started: now, per: lim.per, count: 1}
 		return true, 0
 	}
@@ -95,31 +106,23 @@ func (l *limiter) wait(key string, lim limit) time.Duration {
 }
 
 // prune drops windows that have turned over, each judged by its own
-// length, and then, if the map is still full of live windows, the oldest of
-// them down to the cap: a key evicted early is a client that may make a few
-// more requests than its limit, which is the lesser harm against a map that
-// grows with every address that ever asked. It runs under the lock, and
-// only when the map is full. The new key is added after it either way,
-// because refusing a till over memory the process has plenty of would be
-// the worse failure.
+// length. It runs under the lock, and only when the map is full. A map
+// still full of live windows after it stays full: the new keys then share
+// one overflow window (see allow), and nobody's own window is evicted,
+// since a flood of addresses that could push a till's window out would be
+// a way past its limit.
 func (l *limiter) prune(now time.Time) {
 	for key, w := range l.windows {
 		if now.Sub(w.started) >= w.per {
 			delete(l.windows, key)
 		}
 	}
-	if len(l.windows) < maxLimiterKeys {
-		return
-	}
-	keys := make([]string, 0, len(l.windows))
-	for key := range l.windows {
-		keys = append(keys, key)
-	}
-	sort.Slice(keys, func(i, j int) bool { return l.windows[keys[i]].started.Before(l.windows[keys[j]].started) })
-	for _, key := range keys[:len(keys)-maxLimiterKeys+1] {
-		delete(l.windows, key)
-	}
 }
+
+// overflowKey is the one window every new key shares while the map is full
+// of live windows: they are limited together, strictly, rather than the map
+// growing with every address that ever asked.
+const overflowKey = "overflow|"
 
 // rateLimit wraps a handler with a limit per remote address. The key is the
 // limit's and the address's together, so two limits on one address count

@@ -470,6 +470,7 @@ export type OrderEventType =
   | 'line.voided'
   | 'line.comped'
   | 'discount.applied'
+  | 'discount.removed'
   | 'note.added'
   | 'course.fired'
   | 'ticket.sent'
@@ -597,6 +598,12 @@ export interface DiscountApplied {
   basis_points?: number;
   amount?: Money;
   reason: string;
+  authorised_by?: number;
+}
+
+export interface DiscountRemoved {
+  seq: number;
+  reason?: string;
   authorised_by?: number;
 }
 
@@ -782,6 +789,7 @@ export type OrderEvent =
   | OrderEventOf<'line.voided', LineVoided>
   | OrderEventOf<'line.comped', LineComped>
   | OrderEventOf<'discount.applied', DiscountApplied>
+  | OrderEventOf<'discount.removed', DiscountRemoved>
   | OrderEventOf<'note.added', NoteAdded>
   | OrderEventOf<'course.fired', CourseFired>
   | OrderEventOf<'ticket.sent', TicketSent>
@@ -1448,6 +1456,12 @@ export interface DiscountRequest {
   basis_points?: number;
   amount?: MoneyInput;
   reason: string;
+}
+
+export interface RemoveDiscountRequest {
+  authorised_by: string;
+  pin: string;
+  reason?: string;
 }
 
 export interface AddNote {

@@ -90,6 +90,8 @@ export interface Ticket {
   voidLine: (lineId: number, reasonCode: string, approval: Override) => Promise<void>;
   compLine: (lineId: number, reasonCode: string, approval: Override) => Promise<void>;
   discount: (request: DiscountRequest) => Promise<void>;
+  /** Takes a discount off again, with a manager's approval (ADR-373). */
+  removeDiscount: (seq: number, reason: string, approval: Override) => Promise<void>;
   /**
    * Takes a payment. The key is the caller's, kept across retries of the
    * same tender, so a lost answer cannot charge twice (terminal-tender.md).
@@ -220,6 +222,7 @@ export function useTicket(): Ticket {
     voidLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/void`, { ...approval, reason_code: reasonCode }),
     compLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/comp`, { ...approval, reason_code: reasonCode }),
     discount: (request) => post("/discounts", request),
+    removeDiscount: (seq, reason, approval) => post(`/discounts/${seq}/remove`, { ...approval, reason }),
     tender: (payment, key) => post("/payments", payment, queue, key),
     reread: async () => {
       const read = await order.refetch({ throwOnError: true });

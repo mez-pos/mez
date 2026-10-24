@@ -14406,3 +14406,26 @@ day is the one moment every till is busy at once; a database and a log that grow
 are a venue's problem in its third year, when nobody remembers why.
 Cost: a ticket that rolls is two bills for one party, which the floor's history shows as
 two; a venue that wants one bill a table keeps paying at the end instead.
+
+## ADR-373 - A discount can be taken off again: `discount.removed`
+2026-10 · Status: accepted, at the human's word on 2026-10-24. Answers an owed item in `KNOWN.md` from the audit.
+Context: a fixed-amount order discount larger than what was left trapped the order: voiding
+or comping a line under it was refused ("order is worth 0, discounted 8000"), there was no
+event that took a discount off, and the only way out was to pay. A cancelled order then
+stayed unclosed, and its table never freed.
+Decision: a new event, **`discount.removed`** (`seq` of the discount, `reason`,
+`authorised_by`), the twenty-seventh. The discount stays in the stream and in the order's
+history, listed as `Removed` and worth nothing from then on; the projection refuses a seq
+that is no discount of the order, one removed already, and an order that no longer takes
+changes to what was sold (invoiced, on hold, closed), as applying one is refused. The
+service has `RemoveDiscount`; the API `POST /api/v1/orders/{id}/discounts/{seq}/remove`
+with a reason and the manager's approval, under the same permission as giving one
+(`discount.give`); the order's answer lists only the discounts that stand. On the till, each
+order discount in the totals has a cross while the order is open, which opens **Remove
+discount**: the discount, why it goes (entered in error, wrong amount, not eligible,
+manager's call), the approval. Line discounts are removable through the API and not yet from
+a screen: voiding the line zeroes them already.
+Because: the one way out of a mistake must not be to pay for it; an event that undoes
+keeps the append-only rule, where editing the discount would not.
+Cost: one more event type in every list of them; a till on a build before this does not
+know the event and shows the order without the discount, which is what it is.
