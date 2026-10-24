@@ -549,6 +549,13 @@ func TestARemovedDiscountNoLongerCounts(t *testing.T) {
 		t.Errorf("after removing the discount: %+v", s.Totals)
 	}
 
+	// Invoiced, the bill does not change: removing a discount is refused as
+	// giving one is, until a reopen.
+	invoiced := append(base, pay(PaymentCash, 24000), InvoiceIssued{InvoiceNo: "INV-1", Series: "INV"})
+	if _, err := Project(stream(append(invoiced, DiscountRemoved{Seq: 4})...), untaxed); !errors.Is(err, ErrOrderInvoiced) {
+		t.Errorf("removing a discount from an invoiced bill: %v, want %v", err, ErrOrderInvoiced)
+	}
+
 	for _, tt := range []struct {
 		name string
 		then []Payload

@@ -66,7 +66,7 @@ func (l *limiter) allow(key string, lim limit) (bool, time.Duration) {
 		if w == nil && len(l.windows) >= maxLimiterKeys {
 			// Full of live windows: the newcomers share one, under the
 			// same limit, until some turn over.
-			key = overflowKey
+			key = overflowFor(lim)
 			if w = l.windows[key]; w != nil && now.Sub(w.started) < lim.per {
 				if w.count < lim.requests {
 					w.count++
@@ -99,6 +99,10 @@ func (l *limiter) wait(key string, lim limit) time.Duration {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	w := l.windows[key]
+	if w == nil && len(l.windows) >= maxLimiterKeys {
+		// A newcomer to a full map would be counted in the overflow window.
+		w = l.windows[overflowFor(lim)]
+	}
 	if w == nil || now.Sub(w.started) >= lim.per || w.count < lim.requests {
 		return 0
 	}
@@ -119,10 +123,13 @@ func (l *limiter) prune(now time.Time) {
 	}
 }
 
-// overflowKey is the one window every new key shares while the map is full
-// of live windows: they are limited together, strictly, rather than the map
-// growing with every address that ever asked.
-const overflowKey = "overflow|"
+// overflowFor is the one window every new key under lim shares while the map
+// is full of live windows: they are limited together, strictly, rather than
+// the map growing with every address that ever asked. One per limit, so two
+// limits with different windows do not reset or count for each other.
+func overflowFor(lim limit) string {
+	return "overflow|" + strconv.Itoa(lim.requests) + "|" + lim.per.String()
+}
 
 // rateLimit wraps a handler with a limit per remote address. The key is the
 // limit's and the address's together, so two limits on one address count

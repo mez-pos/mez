@@ -439,7 +439,7 @@ func needReason(reason string, authorisedBy int64) error {
 // Payments, refunds, notes and the kitchen's events do not change the bill.
 func changesBill(t Type) bool {
 	switch t {
-	case TypeLineAdded, TypeLineQtyChanged, TypeLineModified, TypeLineVoided, TypeLineComped, TypeDiscountApplied:
+	case TypeLineAdded, TypeLineQtyChanged, TypeLineModified, TypeLineVoided, TypeLineComped, TypeDiscountApplied, TypeDiscountRemoved:
 		return true
 	}
 	return false
