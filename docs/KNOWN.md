@@ -10,6 +10,58 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The 2026-10-24 stability audit and the venue PC's three complaints**
+  (ADR-366 to ADR-370). Built, tested in Go and vitest, **not yet seen on a
+  venue PC or in a browser**: the human walks, on the installed PC, a
+  restart and the shortcut (the till opens by itself within a minute;
+  `mez service status` says running), the shortcut with the service
+  stopped (`mez service stop` as administrator, then the shortcut, with no
+  prompt), `mez.exe` double-clicked (the till, not a console), Pair a
+  device (the address and QR code beside the code; a phone scanning it
+  lands paired), and a tablet on a wifi Windows calls Public reaching the
+  till. Owed from the audits, in the order a venue would feel them:
+  - **Prepaid rounds and any exact-balance tender invoice the ticket and
+    leave it open**, and the next guest round or waiter line is refused
+    with "the bill is invoiced" until staff close it. The shape wanted:
+    close the ticket after a gateway tender settles it, so the next round
+    opens a fresh one, or issue the invoice only at close (ADR-083).
+  - **A fixed-amount order discount larger than what is left traps the
+    order**: voiding or comping a line is refused ("order is worth 0,
+    discounted 8000"), there is no event that removes a discount, and the
+    table never frees. Wanted: a `discount.removed` event, or clamping.
+  - **Freezing the tax context into `order.opened`** so a setting changed
+    under an open order cannot re-price it; until then ADR-369 refuses
+    the change while tickets are open.
+  - **Shift close and count replay every order of the day several times
+    inside the one writer transaction**, and every till queues behind it
+    for hundreds of milliseconds to seconds at a busy venue. Wanted: one
+    projection reused, and the cash totals kept incrementally.
+  - **The Windows service stop has no wait hint and no `PRESHUTDOWN`**:
+    Windows allows a service about five seconds at shutdown and mez takes
+    up to ten (ADR-370). Wanted: `x/sys/windows/svc` directly in `winsvc`,
+    with `StopPending` checkpoints and a raised preshutdown timeout.
+  - A print job left `printing` by a send whose outcome could not be
+    recorded after three tries waits for a restart; a periodic requeue of
+    stale `printing` jobs with no live send is wanted. The spooler call
+    given up on after 45 seconds runs on in its goroutine.
+  - `idempotency_keys` and the rate limiter's map are never pruned; the
+    event log gets a Warn per tunnel redial while offline and per tablet
+    that sleeps; the HTTP server sets no read or write timeout beyond the
+    header's; `CashRoundingStep` is saved and never applied to a bill;
+    `OpenOrder` checks the shift before the idempotency key, so a replay
+    after the shift closed answers `ErrNoOpenShift`; the venue's series
+    and taxes are read before an order command's transaction.
+  - On the till: the waiter's bill holds an unsettled share in memory
+    only (the pay screen keeps it across a reload, ADR-368); `start`,
+    `bump`, `recall`, `discount`, `send` and `hold` take a fresh key per
+    tap, so a retry after a lost answer is a second command, which the
+    projection refuses where it matters; `pair` sends no idempotency key,
+    so a code consumed with its answer lost needs a new code; one
+    `ErrorBoundary` at the root takes the whole till down on a render
+    error; `PayPage` shows "Opening the bill" with no retry if the read
+    fails; the open-shift sold-out card and a few screens still not seen
+    by eye.
+
 - **Nothing finds a server for a till** (ADR-338, found walking "The PC
   died"; 2026-10-13). Phase 12's discovery is of printers and of this
   server's own addresses for the pairing card
@@ -337,8 +389,12 @@
   terminal still reading the database; Uninstall asking about the data
   twice, keeping it on No and deleting it on Yes, Yes. Not built: a check
   that a `-user` account can write the data directory or log on as a
-  service; a firewall rule for a network marked Public; a shortcut that
-  follows a changed port; signing (no certificate).
+  service; signing (no certificate). Built since by ADR-366 and owed a
+  walk: the firewall rule for every profile, the shortcut that starts the
+  service and follows `listen_addr` from `config.toml`. **Seen by the human
+  on 2026-10-24 on a venue PC**: after a restart the shortcut opened a
+  browser on an error page, and `mez.exe` double-clicked ran in a console
+  that stopped mez when closed, which ADR-366 answers.
 
 - **Security, left for the owner** (ADR-257, the first review): five things
   the review found that change what the product does, and so were not changed

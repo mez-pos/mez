@@ -200,11 +200,16 @@ function PendingRow({ line, onRetry, onDrop }: PendingRowProps) {
       {failed && (
         <>
           <p className="mt-2 text-sm text-danger">{line.error}</p>
+          {line.uncertain && (
+            <p className="mt-1 text-sm text-fg-2">It may already be on the order. Retry sends the same line again, once; it is never added twice.</p>
+          )}
           <div className="mt-2 flex gap-tap-gap">
             <Button onClick={() => onRetry(line.key)}>Retry</Button>
-            <Button variant="ghost" onClick={() => onDrop(line.key)}>
-              Remove
-            </Button>
+            {!line.uncertain && (
+              <Button variant="ghost" onClick={() => onDrop(line.key)}>
+                Remove
+              </Button>
+            )}
           </div>
         </>
       )}

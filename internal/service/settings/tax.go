@@ -261,7 +261,14 @@ func (s *Service) UpdateTax(ctx context.Context, venueID int64, in TaxInput) err
 		if err != nil {
 			return fmt.Errorf("reading venue %d: %w", venueID, err)
 		}
-		if v.TaxProfile != in.Profile {
+		// Every order is projected under the venue's taxes as they are now
+		// (ADR-369): a change to anything that changes a total, the
+		// profile, whether prices include tax, or the rates, would re-price
+		// every open ticket and refuse the tenders already on them. So the
+		// same door as the profile's: not while tickets are open. A GSTIN
+		// corrected under the same profile changes no total and is let
+		// through.
+		if v.TaxProfile != in.Profile || s.taxTotalsChange(ctx, q, venueID, in.Profile, keys) {
 			open, err := q.UnsettledOrderCount(ctx, venueID)
 			if err != nil {
 				return fmt.Errorf("counting the open tickets of venue %d: %w", venueID, err)
@@ -287,4 +294,34 @@ func (s *Service) UpdateTax(ctx context.Context, venueID int64, in TaxInput) err
 		}
 		return nil
 	})
+}
+
+// taxTotalsChange reports whether the keys about to be saved change what an
+// order comes to under profile: whether prices include tax, or the rates
+// (the US jurisdiction). A read that fails says yes: refusing a change while
+// tickets are open is the safe mistake.
+func (s *Service) taxTotalsChange(ctx context.Context, q *gen.Queries, venueID int64, profile string, keys map[string]string) bool {
+	rows, err := q.SettingsForVenue(ctx, venueID)
+	if err != nil {
+		return true
+	}
+	stored := make(map[string]string, len(rows))
+	for _, r := range rows {
+		stored[r.Key] = r.Value
+	}
+	// An empty pricing is the profile's usual, so two spellings of the
+	// same thing are not a change.
+	usual := func(pricing string) string {
+		if pricing == "" {
+			if profile == ProfileSales {
+				return Exclusive
+			}
+			return Inclusive
+		}
+		return pricing
+	}
+	if usual(stored[svcorder.SettingTaxPricing]) != usual(keys[svcorder.SettingTaxPricing]) {
+		return true
+	}
+	return stored[svcorder.SettingTaxJurisdiction] != keys[svcorder.SettingTaxJurisdiction]
 }

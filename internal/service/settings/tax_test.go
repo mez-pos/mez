@@ -162,9 +162,23 @@ func TestChangingProfileNeedsNoOpenTickets(t *testing.T) {
 		t.Fatalf("the refused change was kept: %+v", got)
 	}
 
-	// Correcting the GSTIN under the same profile is not a change of regime.
-	if err := s.UpdateTax(ctx, 1, TaxInput{Profile: "gst_in", RegistrationID: "29ZZZZZ9999Z1Z9", Pricing: "exclusive"}); err != nil {
+	// Correcting the GSTIN under the same profile changes no total, and is
+	// not held back.
+	before, _ := s.Tax(ctx, 1)
+	if err := s.UpdateTax(ctx, 1, TaxInput{Profile: "gst_in", RegistrationID: "29ZZZZZ9999Z1Z9", Pricing: before.Pricing}); err != nil {
 		t.Fatalf("a correction with a ticket open: %v", err)
+	}
+	// Whether prices include tax changes every open ticket's total, and
+	// the tenders already on them (ADR-369): held back as the profile is.
+	other := "exclusive"
+	if before.Pricing == "exclusive" {
+		other = "inclusive"
+	}
+	if err := s.UpdateTax(ctx, 1, TaxInput{Profile: "gst_in", RegistrationID: "29ZZZZZ9999Z1Z9", Pricing: other}); !errors.Is(err, ErrOpenOrders) {
+		t.Fatalf("a pricing change with a ticket open: %v", err)
+	}
+	if got, _ := s.Tax(ctx, 1); got.Pricing != before.Pricing {
+		t.Fatalf("the refused pricing was kept: %+v", got)
 	}
 
 	// Closed tickets do not hold it back.

@@ -111,9 +111,8 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
           })}
         </ul>
         <p className="text-sm text-fg-muted">
-          A day left unticked is a day the venue is closed. A closing time before the opening time is the next morning: 17:00 to 02:00. The till
-          does nothing with these; mez Cloud reads them for its alerts, a shift still open after closing and the venue not heard from while it
-          should be open.
+          A day left unticked is a day the venue is closed. A closing time before the opening time is the next morning: 17:00 to 02:00. The till does nothing
+          with these; mez Cloud reads them for its alerts, a shift still open after closing and the venue not heard from while it should be open.
         </p>
         {d.on("opening_hours") && (
           <p role="alert" className="text-sm text-danger">

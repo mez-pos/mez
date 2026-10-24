@@ -101,14 +101,7 @@ export function rulesChanged(draft: RulesForm, saved: RulesForm, perMajor: numbe
   return norm(draft) !== norm(saved);
 }
 
-export type RulesField =
-  | "day_start"
-  | "opening_hours"
-  | "variance_threshold"
-  | "tip_rule"
-  | "tip_role_weights"
-  | "tips_max_percent"
-  | "ticket_late_minutes";
+export type RulesField = "day_start" | "opening_hours" | "variance_threshold" | "tip_rule" | "tip_role_weights" | "tips_max_percent" | "ticket_late_minutes";
 const rulesFields: readonly RulesField[] = [
   "day_start",
   "opening_hours",

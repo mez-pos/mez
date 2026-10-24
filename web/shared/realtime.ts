@@ -85,6 +85,8 @@ export interface RealtimeOptions {
   isOnline?: () => boolean;
   backoff?: Backoff;
   heartbeatMs?: number;
+  /** How long the stream must stay up for the count of failures to start again. Default 5 s. */
+  settledAfterMs?: number;
   /** How long an open socket may take to say welcome before it is given up. */
   handshakeMs?: number;
   now?: () => number;
@@ -93,6 +95,12 @@ export interface RealtimeOptions {
 
 type Listener = () => void;
 type NoticeListener = (notice: RealtimeNotice) => void;
+
+/** A listener's own failure, said where a developer looks and nowhere else. */
+function reportListener(err: unknown): void {
+  // eslint-disable-next-line no-console -- the one place a listener's throw is heard
+  console.error("a realtime listener threw", err);
+}
 
 export class RealtimeConnection {
   private status: RealtimeStatus = { state: "idle" };
@@ -105,6 +113,8 @@ export class RealtimeConnection {
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private handshakeTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  /** Runs once the stream has stayed up long enough to forget past failures. */
+  private settleTimer: ReturnType<typeof setTimeout> | null = null;
   private running = false;
   private readonly listeners = new Set<Listener>();
   private readonly noticeListeners = new Set<NoticeListener>();
@@ -117,6 +127,7 @@ export class RealtimeConnection {
       isOnline: () => typeof navigator === "undefined" || navigator.onLine,
       backoff: defaultBackoff,
       heartbeatMs: 15_000,
+      settledAfterMs: 5_000,
       handshakeMs: 10_000,
       now: () => Date.now(),
       random: Math.random,
@@ -159,7 +170,18 @@ export class RealtimeConnection {
 
   /** Skip the wait: "retry now", the network coming back, the tab reappearing. */
   reconnectNow(): void {
-    if (!this.running || this.socket || this.status.state === "unpaired") return;
+    if (!this.running || this.status.state === "unpaired") return;
+    if (this.socket) {
+      // A socket that has heard nothing for a heartbeat may be half dead:
+      // the wifi dropped and came back under it, and the browser has not
+      // noticed. Waiting for the heartbeat to say so takes two intervals
+      // more; the network coming back is the moment to ask again.
+      if (this.handshaken && this.opts.now() - this.lastHeardAt > this.opts.heartbeatMs) {
+        this.teardown();
+        this.connect();
+      }
+      return;
+    }
     // Away, there is nothing to reconnect. The moments that would have
     // retried are the moments someone has come back to the page, so what
     // the screens hold is read again in its place: nothing has told them of
@@ -241,7 +263,15 @@ export class RealtimeConnection {
   private welcomed(welcome: WelcomeMessage): void {
     this.handshaken = true;
     this.clearHandshake();
-    this.attempt = 0;
+    // The count of failures starts again only once the stream has stayed
+    // up a while: a server that welcomes and then drops the socket each
+    // time would otherwise be dialled every quarter second for as long as
+    // it did.
+    this.clearSettle();
+    this.settleTimer = setTimeout(() => {
+      this.settleTimer = null;
+      this.attempt = 0;
+    }, this.opts.settledAfterMs);
     const from = welcome.from_event_id;
     // The server starts where asked unless it cannot: a first connection, or
     // a position ahead of its stream (a restored backup). Either way, what
@@ -357,9 +387,15 @@ export class RealtimeConnection {
     this.setStatus({ ...this.status, reason: result === "ok" ? "stream_lost" : "unreachable" });
   }
 
+  private clearSettle(): void {
+    if (this.settleTimer !== null) clearTimeout(this.settleTimer);
+    this.settleTimer = null;
+  }
+
   private teardown(): void {
     this.stopHeartbeat();
     this.clearHandshake();
+    this.clearSettle();
     const socket = this.socket;
     this.socket = null;
     this.handshaken = false;
@@ -384,11 +420,26 @@ export class RealtimeConnection {
 
   private setStatus(next: RealtimeStatus): void {
     this.status = next;
-    for (const listener of this.listeners) listener();
+    for (const listener of this.listeners) {
+      try {
+        listener();
+      } catch (err) {
+        reportListener(err);
+      }
+    }
   }
 
+  // One listener that throws must not keep the rest from hearing, nor the
+  // welcome from finishing: the status would stay "connecting" over a stream
+  // that is up.
   private emit(notice: RealtimeNotice): void {
-    for (const listener of this.noticeListeners) listener(notice);
+    for (const listener of this.noticeListeners) {
+      try {
+        listener(notice);
+      } catch (err) {
+        reportListener(err);
+      }
+    }
   }
 }
 

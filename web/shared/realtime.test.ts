@@ -77,6 +77,7 @@ function harness(overrides: Partial<RealtimeOptions> = {}): Harness {
     isOnline: () => online,
     backoff: { baseMs: 1000, capMs: 8000 },
     heartbeatMs: 1000,
+    settledAfterMs: 1500,
     random: () => 0,
     ...overrides,
   });
@@ -215,8 +216,31 @@ describe("RealtimeConnection: losing and regaining the server", () => {
     const s = h.latest();
     s.open();
     s.receive(welcome(1, 1));
+    // Welcomed and dropped at once: a server that flaps is not dialled
+    // every quarter second, so the count carries on.
     s.drop();
+    expect(h.conn.current()).toMatchObject({ state: "reconnecting", attempt: 3 });
+
+    vi.advanceTimersByTime(2000);
+    const again = h.latest();
+    again.open();
+    again.receive(welcome(1, 1));
+    // Up long enough to count as mended: the next drop is a first.
+    vi.advanceTimersByTime(1500);
+    again.drop();
     expect(h.conn.current()).toMatchObject({ state: "reconnecting", attempt: 1 });
+  });
+
+  it("replaces a socket that has gone quiet when the network comes back", () => {
+    const h = harness();
+    const s = connectAt(h, 1);
+    // A heartbeat went out and nothing came back yet: the socket may be
+    // half dead under a wifi that dropped and returned.
+    vi.advanceTimersByTime(1500);
+    h.conn.reconnectNow();
+    expect(h.sockets).toHaveLength(2);
+    expect(s.closed).toBe(true);
+    expect(h.conn.current()).toEqual({ state: "connecting", attempt: 1 });
   });
 
   it("treats a socket that cannot even be created as a failed attempt", () => {

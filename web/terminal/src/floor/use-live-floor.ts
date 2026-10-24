@@ -34,7 +34,10 @@ export function useLiveFloor(): LiveFloorApi {
   const query = useQuery({
     queryKey: liveFloorKey,
     queryFn: ({ signal }) => store.api.get<LiveFloorResponse>("/api/v1/floor/live", { signal }),
+    // Fresh until the stream says a table moved, while this screen is up;
+    // read again when it comes back, since nobody heard the stream for it.
     staleTime: Infinity,
+    refetchOnMount: "always",
   });
   useRealtimeNotices((notice) => {
     const moved = notice.kind === "floor" || notice.kind === "resync" || (notice.kind === "event" && (notice.message.table_id ?? 0) > 0);

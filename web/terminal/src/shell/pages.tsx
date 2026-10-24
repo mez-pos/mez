@@ -10,8 +10,10 @@ import { roleText } from "../../../shared/auth/format";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { useMenu } from "../../../shared/use-menu";
 import { useVenue } from "../../../shared/use-venue";
+import { useToast } from "../../../shared/ui";
 import { ZReportScreen } from "../../../shared/zreport/ZReportScreen";
 import { OrdersScreen } from "../bills/OrdersScreen";
+import { wordsOf } from "../register/order-messages";
 import { railTitle } from "../register/rail-logic";
 import { CloseDayScreen } from "../shift/CloseDayScreen";
 import { OpenShiftScreen } from "../shift/OpenShiftScreen";
@@ -70,6 +72,7 @@ export function PayPage({ orderId }: { orderId: string }) {
 export function OrdersPage({ orderId }: { orderId: string | null }) {
   const { ticket, names } = useTerminal();
   const [, navigate] = useLocation();
+  const toast = useToast();
   return (
     <OrdersScreen
       selectedId={orderId}
@@ -78,9 +81,17 @@ export function OrdersPage({ orderId }: { orderId: string | null }) {
       onSelect={(id) => navigate(route.bill(id), { replace: orderId !== null })}
       onNewOrder={() => navigate(route.order)}
       onOpenOrder={(order) => {
-        // A held order is resumed, as the orders sheet does.
-        if (order.status === "held") void ticket.resume(order.id);
-        else ticket.switchTo(order.id);
+        // A held order is resumed, as the orders sheet does; one the server
+        // will not give back stays here with the reason, rather than the
+        // register opening on an order that was never resumed.
+        if (order.status === "held") {
+          ticket.resume(order.id).then(
+            () => navigate(route.order),
+            (err: unknown) => toast(wordsOf(err), { tone: "warning" }),
+          );
+          return;
+        }
+        ticket.switchTo(order.id);
         navigate(route.order);
       }}
       onPay={(order) => {

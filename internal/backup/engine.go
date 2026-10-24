@@ -658,6 +658,7 @@ func (e *Engine) Close(ctx context.Context) error {
 	if e == nil || !e.cfg.Enabled() {
 		return nil
 	}
+	var left error
 	e.closeOnce.Do(func() {
 		// Asked before the probe is stopped, so that one in flight has
 		// not been cut off before it could say.
@@ -744,9 +745,12 @@ func (e *Engine) Close(ctx context.Context) error {
 		case <-done:
 		case <-wait.Done():
 			e.log.Warn("the backup did not stop in time and is left behind; what it had not copied goes on the next start")
+			left = errors.New("backup: did not stop in time and is left behind")
 		}
 	})
-	return nil
+	// Said to the caller as well: a server that starts again in this same
+	// process (ADR-334) must not start a second copier over the first.
+	return left
 }
 
 // lostWorkingFile reports whether err is Litestream failing to find one of

@@ -225,6 +225,34 @@ func (q *Queue) changed(venueID int64) {
 }
 
 // send makes one attempt and records how it went.
+// finishWithRetries records a send's outcome, trying again on a writer that
+// is busy: a job left printing because its outcome was not written blocks
+// every later job for its printer until the next start, so a moment's wait
+// is worth more than the moment.
+func (q *Queue) finishWithRetries(ctx context.Context, venueID, jobID int64, out printjob.Outcome) error {
+	var err error
+	for attempt := 0; attempt < finishAttempts; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return err
+			case <-time.After(finishPause):
+			}
+		}
+		if err = q.finish(ctx, venueID, jobID, out); err == nil {
+			return nil
+		}
+	}
+	return err
+}
+
+// finishAttempts and finishPause are how often, and how far apart, a send's
+// outcome is tried to be recorded.
+const (
+	finishAttempts = 3
+	finishPause    = 700 * time.Millisecond
+)
+
 func (q *Queue) send(ctx context.Context, job gen.DuePrintJobsRow) {
 	attempt := int(job.Attempts) + 1 // claiming counted it
 	err := q.transmit(ctx, job)
@@ -239,8 +267,11 @@ func (q *Queue) send(ctx context.Context, job gen.DuePrintJobsRow) {
 	if err != nil {
 		out.Error = Reason(err) // the detail goes to the log below, not to the screens
 	}
-	if err := q.finish(record, job.VenueID, job.ID, out); err != nil {
-		q.log.Error("print queue: recording a send", "job_id", job.ID, "error", err)
+	if err := q.finishWithRetries(record, job.VenueID, job.ID, out); err != nil {
+		// Left printing, which nothing puts back until the next start: the
+		// printer stops until then. Said at Error, which reaches the event
+		// log, since someone must restart mez to mend it.
+		q.log.Error("print queue: recording a send failed; this printer's jobs wait for a restart", "job_id", job.ID, "printer", job.PrinterName, "error", err)
 		return
 	}
 	q.changed(job.VenueID)

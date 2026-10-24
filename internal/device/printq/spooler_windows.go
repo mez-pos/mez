@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/mez-pos/mez/internal/domain/printjob"
@@ -40,6 +41,15 @@ type docInfo1 struct {
 	datatype   *uint16
 }
 
+// spoolerTimeout is how long the spooler is given to take a job. A spooler
+// that is stuck, or a printer set to print directly that is off, holds a
+// Win32 call open for ever; the queue must not hang on it, nor the stop.
+const spoolerTimeout = 45 * time.Second
+
+// sendSpooler hands data to the Windows spooler for printer, giving up on a
+// spooler that does not answer. The call itself cannot be cancelled, so a
+// call given up on runs out on its own goroutine, and the job is tried
+// again later as any failed send is.
 func sendSpooler(ctx context.Context, printer string, data []byte) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -47,6 +57,20 @@ func sendSpooler(ctx context.Context, printer string, data []byte) error {
 	if len(data) == 0 {
 		return errors.New("spooler: nothing to print")
 	}
+	result := make(chan error, 1)
+	go func() { result <- spool(printer, data) }()
+	select {
+	case err := <-result:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(spoolerTimeout):
+		return fmt.Errorf("spooler: %q did not take the job within %s", printer, spoolerTimeout)
+	}
+}
+
+// spool is the Win32 conversation with the spooler, start to end.
+func spool(printer string, data []byte) error {
 	if err := winspool.Load(); err != nil {
 		return fmt.Errorf("spooler: loading winspool.drv: %v: %w", err, printjob.ErrPermanent)
 	}

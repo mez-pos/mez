@@ -129,7 +129,7 @@ describe("TicketQueue", () => {
     server.failWith(unreachable());
     const key = q.ringUp(line("Latte"));
     await q.settled();
-    expect(q.current().pending).toEqual([{ key, command: line("Latte"), status: "failed", error: "Not sent: the server can't be reached." }]);
+    expect(q.current().pending).toEqual([{ key, command: line("Latte"), status: "failed", error: "Not sent: the server can't be reached.", uncertain: true }]);
 
     q.retry(key);
     expect(q.current().pending[0]?.status).toBe("adding");
@@ -171,11 +171,26 @@ describe("TicketQueue", () => {
     expect(q.current().pending).toHaveLength(1);
     await q.settled();
 
-    server.failWith(unreachable());
+    server.failWith(new ApiError("forbidden", "role cashier lacks order.open", 403));
     const refused = q.ringUp(line("Upma"));
     await q.settled();
     q.remove(refused);
     expect(q.current().pending).toEqual([]);
+  });
+
+  it("keeps a line whose answer was lost: the server may have it, and only a retry under the same key is safe", async () => {
+    const server = fakeServer();
+    const { q } = queue(server, "ord_1");
+    server.failWith(unreachable());
+    const lost = q.ringUp(line("Upma"));
+    await q.settled();
+    expect(q.current().pending[0]).toMatchObject({ status: "failed", uncertain: true });
+    q.remove(lost);
+    expect(q.current().pending).toHaveLength(1);
+    q.retry(lost);
+    await q.settled();
+    expect(q.current().pending).toEqual([]);
+    expect(server.calls).toEqual([`add ord_1 Upma ${lost}`, `add ord_1 Upma ${lost}`]);
   });
 
   it("hands every answer to the cache", async () => {

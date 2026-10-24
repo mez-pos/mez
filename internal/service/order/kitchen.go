@@ -194,11 +194,15 @@ func (s *Service) coming(ctx context.Context, q *gen.Queries, v venue, venueID i
 	if err != nil {
 		return fmt.Errorf("listing the open orders of venue %d: %w", venueID, err)
 	}
-	for _, r := range rows {
+	for _, r := range oldestFirst(rows) {
 		state, ok := orders[r.ID]
 		if !ok {
 			if state, err = s.db.LoadOrder(ctx, r.ID, v.Taxes); err != nil {
-				return err
+				// One order that will not project must not blank every
+				// station's board: it is said and left out, as the open
+				// orders list leaves it out.
+				s.log.Error("an open order could not be read and is left off the board", "venue_id", venueID, "order_id", r.ID, "error", err)
+				continue
 			}
 			orders[r.ID] = state
 		}

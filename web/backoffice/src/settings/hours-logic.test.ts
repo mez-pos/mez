@@ -24,7 +24,11 @@ describe("the opening hours form", () => {
     expect(openDay({ closed: true, open: "08:00", close: "20:00" })).toEqual({ closed: false, open: "08:00", close: "20:00" });
   });
   it("sends only the open days, trimmed, and nothing for a week with none", () => {
-    const f: HoursForm = { ...hoursFormFrom({}), tue: { closed: false, open: " 10:00", close: "22:00 " }, wed: { closed: true, open: "10:00", close: "22:00" } };
+    const f: HoursForm = {
+      ...hoursFormFrom({}),
+      tue: { closed: false, open: " 10:00", close: "22:00 " },
+      wed: { closed: true, open: "10:00", close: "22:00" },
+    };
     expect(toHoursInput(f)).toEqual({ tue: { open: "10:00", close: "22:00" } });
     expect(toHoursInput(hoursFormFrom({}))).toEqual({});
   });

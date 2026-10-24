@@ -8,6 +8,7 @@
 // key too, kept until an order exists.
 
 import { failureOf } from "./order-messages";
+import { tenderFailure } from "../tender/tender-logic";
 import type { AddLine, AddNote, CommandResponse, LineModifier, OpenOrder, OrderResponse } from "../../../shared/api-types";
 
 export interface PendingLine {
@@ -18,6 +19,12 @@ export interface PendingLine {
   readonly note?: { readonly text: string; readonly key: string };
   /** Why the server refused it, or why it could not be asked. */
   readonly error?: string;
+  /**
+   * A failed line whose answer was lost rather than refused: the server may
+   * have added it. Only Retry, which replays it under the same key, is safe;
+   * removing it and ringing it up again would be a second line.
+   */
+  readonly uncertain?: boolean;
 }
 
 export interface TicketState {
@@ -97,10 +104,10 @@ export class TicketQueue {
     this.enqueue(key);
   }
 
-  /** Forgets a refused line. One still being sent cannot be taken back here. */
+  /** Forgets a refused line. One still being sent, or one the server may have, cannot be taken back here. */
   remove(key: string): void {
     const line = this.state.pending.find((p) => p.key === key);
-    if (!line || line.status !== "failed") return;
+    if (!line || line.status !== "failed" || line.uncertain) return;
     this.update({ pending: this.state.pending.filter((p) => p.key !== key) });
   }
 
@@ -171,7 +178,10 @@ export class TicketQueue {
       orderId = await this.ensureOrder();
       res = await this.opts.commands.addLine(orderId, line.command, key);
     } catch (err) {
-      this.replace(key, { ...line, status: "failed", error: failureOf(err) });
+      // A refusal is the server's word; a lost answer (no reach, a timeout,
+      // a relay's 502) is not, and the line may be on the order already.
+      const uncertain = tenderFailure(err) === "uncertain";
+      this.replace(key, { ...line, status: "failed", error: failureOf(err), ...(uncertain ? { uncertain } : {}) });
       return;
     }
     this.opts.onOrder(res.order);

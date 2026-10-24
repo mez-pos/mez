@@ -660,9 +660,11 @@ type Querier interface {
 	// there is more than one: where a guest's round goes.
 	UnclosedOrderAtTable(ctx context.Context, arg UnclosedOrderAtTableParams) (int64, error)
 	//
-	// The tickets a till can switch between: everything not closed, oldest
-	// first. It is a working set, tens of orders, not history, so it is capped
-	// rather than paginated (ADR-074).
+	// The tickets a till can switch between: everything not closed. It is a
+	// working set, tens of orders, not history, so it is capped rather than
+	// paginated (ADR-074). Newest first, so that what the cap drops is the
+	// oldest tabs nobody closed and never the table being served; the service
+	// turns them oldest first for the screens.
 	UnclosedOrdersForVenue(ctx context.Context, arg UnclosedOrdersForVenueParams) ([]UnclosedOrdersForVenueRow, error)
 	// Money a gateway took that no bill could, and nobody has dealt with yet:
 	// oldest first, with its table by name and its ticket by public id. A

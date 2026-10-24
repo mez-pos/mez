@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 // rotatingFile is an io.WriteCloser that keeps a log from growing without
@@ -20,6 +21,9 @@ import (
 // It is hand-written for the same reason as the TOML reader: a rotating file is
 // about eighty lines of standard library, and every dependency is a thing a
 // cafe owner's antivirus can object to. See ADR-021.
+// rotateRetryAfter is how long a failed rotation waits before another try.
+const rotateRetryAfter = time.Minute
+
 type rotatingFile struct {
 	dir      string
 	name     string
@@ -29,6 +33,11 @@ type rotatingFile struct {
 	mu   sync.Mutex
 	file *os.File
 	size int64
+	// retryRotateAt is when a failed rotation may be tried again. Every
+	// line meanwhile is written to the oversized file: a locked or a full
+	// disk does not mend in the time between two lines, and trying on each
+	// holds the log's lock through a close, a rename and an open.
+	retryRotateAt time.Time
 	// closed is set by Close. A nil file with closed false is a handle lost
 	// to a rotation whose reopen failed, and Write tries again.
 	closed bool
@@ -96,8 +105,10 @@ func (r *rotatingFile) Write(p []byte) (int, error) {
 	// The size guard is what stops a single line longer than maxBytes from
 	// rotating forever: an empty file always accepts the write.
 	rotateErr := error(nil)
-	if r.size > 0 && r.size+int64(len(p)) > r.maxBytes {
-		rotateErr = r.rotate()
+	if r.size > 0 && r.size+int64(len(p)) > r.maxBytes && !time.Now().Before(r.retryRotateAt) {
+		if rotateErr = r.rotate(); rotateErr != nil {
+			r.retryRotateAt = time.Now().Add(rotateRetryAfter)
+		}
 	}
 
 	n, err := r.file.Write(p)

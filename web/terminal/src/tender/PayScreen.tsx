@@ -16,11 +16,12 @@
 // The server checks the ceiling and the PIN again, and when it asks for an
 // approval the till did not know it needed, the sheet opens then.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Money as Amount, OrderResponse, Override, PaymentMethod, SplitResponse, TenderRequest } from "../../../shared/api-types";
 import { Button, Money, NumPad, applyAmountKey, type NumKey } from "../../../shared/ui";
 import { ArrowRightIcon } from "lucide-react";
 import { useVenue } from "../../../shared/use-venue";
+import { clearUnsettled, loadUnsettled, saveUnsettled } from "./unsettled-store";
 import { TicketPanels, type Panel } from "../register/TicketPanels";
 import { newKey } from "../register/ticket-key";
 import type { Ticket } from "../register/use-ticket";
@@ -82,6 +83,18 @@ interface Unsettled {
   sent: Sent;
 }
 
+/** What is kept across a reload while a payment's answer is lost (ADR-368): the payment, and the key that replays rather than repeats it. */
+interface Held {
+  attempt: Attempt | null;
+  unsettled: Unsettled;
+}
+
+function isHeld(value: unknown): value is Held {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Partial<Held>;
+  return typeof v.unsettled === "object" && v.unsettled !== null && Array.isArray(v.unsettled.before) && typeof v.unsettled.sent === "object";
+}
+
 /** A split in use: the server's shares, which are paid, and which is next. */
 interface SplitInUse {
   split: SplitResponse;
@@ -102,9 +115,20 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
   const [field, setField] = useState<Field>("amount");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState<Attempt | null>(null);
-  // A payment that may have been recorded holds the screen until the order says.
-  const [unsettled, setUnsettled] = useState<Unsettled | null>(null);
+  // A payment that may have been recorded holds the screen until the order
+  // says, across a reload or a lock as well (ADR-368): what was held for
+  // this order is taken up again, and asked about below.
+  const [held] = useState(() => loadUnsettled(order.id, isHeld));
+  const [attempt, setAttempt] = useState<Attempt | null>(held?.attempt ?? null);
+  const [unsettled, setUnsettled] = useState<Unsettled | null>(held?.unsettled ?? null);
+  const holdUnsettled = (u: Unsettled, kept: Attempt | null) => {
+    setUnsettled(u);
+    saveUnsettled<Held>(order.id, { attempt: kept, unsettled: u });
+  };
+  const releaseUnsettled = () => {
+    setUnsettled(null);
+    clearUnsettled(order.id);
+  };
   const [checking, setChecking] = useState(false);
   const [lastChange, setLastChange] = useState<number | null>(null);
   const [splitting, setSplitting] = useState(false);
@@ -185,12 +209,18 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
     setEntered(applyAmountKey(from, k, cash ? padCeiling : target));
   };
 
+  // Taken up from before a reload: the order is asked at once.
+  useEffect(() => {
+    if (held) void check(held.unsettled);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, as the screen appears
+  }, []);
+
   /** A payment the server has: the bill and the split move on. */
   const recorded = (sent: Sent) => {
     const { body } = sent;
     const byCash = body.method === "cash";
     setAttempt(null);
-    setUnsettled(null);
+    releaseUnsettled();
     setWaiting(null);
     // Money that leaves some owed is confirmed here; the paid panel says the rest.
     if (body.amount.minor < sent.due) {
@@ -231,7 +261,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
         recorded(u.sent);
       } else {
         // Not there: the failure stands, and another method may be tried.
-        setUnsettled(null);
+        releaseUnsettled();
       }
     } catch {
       // Still not reached: the card says so and offers Check again.
@@ -290,7 +320,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
       }
       if (kept) {
         const u = { before, sent };
-        setUnsettled(u);
+        holdUnsettled(u, kept);
         void check(u);
       }
     } finally {
@@ -321,7 +351,9 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
       <PaySummary
         order={order}
         title={title}
-        busy={busy}
+        // Back is held while a payment's answer is out: leaving would lose
+        // the question, and the next Charge would be a second payment.
+        busy={busy || unsettled !== null}
         onDiscount={open ? () => setPanel({ kind: "discount", lineId: null }) : null}
         onNote={open ? () => setPanel({ kind: "note" }) : null}
         onBack={onBack}

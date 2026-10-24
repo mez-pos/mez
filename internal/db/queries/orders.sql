@@ -87,13 +87,15 @@ WHERE o.venue_id = ?;
 
 -- name: UnclosedOrdersForVenue :many
 --
--- The tickets a till can switch between: everything not closed, oldest
--- first. It is a working set, tens of orders, not history, so it is capped
--- rather than paginated (ADR-074).
+-- The tickets a till can switch between: everything not closed. It is a
+-- working set, tens of orders, not history, so it is capped rather than
+-- paginated (ADR-074). Newest first, so that what the cap drops is the
+-- oldest tabs nobody closed and never the table being served; the service
+-- turns them oldest first for the screens.
 SELECT id, public_id
 FROM orders
 WHERE venue_id = ? AND status != 'closed'
-ORDER BY opened_at, id
+ORDER BY opened_at DESC, id DESC
 LIMIT ?;
 
 -- name: ClosedOrdersForVenue :many

@@ -25,7 +25,11 @@ export function useMenu(): UseQueryResult<MenuResponse> {
   return useQuery({
     queryKey: menuQueryKey,
     queryFn: ({ signal }) => store.api.get<MenuResponse>(menuPath, { signal }),
-    // Fresh until the stream says otherwise.
+    // Fresh until the stream says otherwise. A menu notice is heard only
+    // while a screen with the menu is up, so a screen coming back reads it
+    // again: a price changed while the till was on Tables must not be
+    // charged at the old one. The server's ETag makes the read cheap.
     staleTime: Infinity,
+    refetchOnMount: "always",
   });
 }

@@ -272,11 +272,22 @@ func (h *Hub) Serve(w http.ResponseWriter, r *http.Request, client Client) {
 	}()
 
 	h.log.Info("device connected", "venue_id", client.VenueID, "device_id", client.DeviceID, "device_kind", client.Kind)
+	// Whatever ends the stream, a panic in it included, the connection
+	// leaves the venue map and the socket is closed: one left behind would
+	// count against the device's connections and be woken for ever.
+	removed := false
+	defer func() {
+		if !removed {
+			h.remove(c)
+			_ = ws.Close(websocket.StatusInternalError, "stream failed")
+		}
+	}()
 	err = c.run(ctx)
 	// Out of the venue map before the close handshake, not after it: Close
 	// waits up to five seconds for the peer's close frame, and a revoked or
 	// stalled device must not count as connected for that long.
 	h.remove(c)
+	removed = true
 	status, reason := websocket.StatusNormalClosure, ""
 	if err != nil && !isGone(err) {
 		h.log.Warn("device disconnected", "venue_id", client.VenueID, "device_id", client.DeviceID, "error", err)

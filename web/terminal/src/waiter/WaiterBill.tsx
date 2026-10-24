@@ -283,13 +283,25 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
     <div className="flex min-w-0 flex-1 justify-center overflow-hidden px-5 py-4">
       <section aria-label="Settle bill" className="flex w-165 max-w-full flex-col overflow-hidden rounded-sheet border border-line bg-canvas shadow-modal">
         <header className="flex min-h-18 shrink-0 items-center gap-3.5 border-b border-line bg-chrome px-5">
-          <Link
-            href={back.href}
-            aria-label={back.label}
-            className="flex size-tap shrink-0 items-center justify-center rounded-round bg-sunken outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
-          >
-            <ArrowLeftIcon aria-hidden="true" size={20} />
-          </Link>
+          {unsettled ? (
+            // Held while a payment's answer is out: leaving would lose the
+            // question, and the next payment would be a second one.
+            <span
+              aria-label={back.label}
+              aria-disabled="true"
+              className="flex size-tap shrink-0 items-center justify-center rounded-round bg-sunken opacity-40"
+            >
+              <ArrowLeftIcon aria-hidden="true" size={20} />
+            </span>
+          ) : (
+            <Link
+              href={back.href}
+              aria-label={back.label}
+              className="flex size-tap shrink-0 items-center justify-center rounded-round bg-sunken outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+            >
+              <ArrowLeftIcon aria-hidden="true" size={20} />
+            </Link>
+          )}
           <h1 className="min-w-0 truncate font-serif text-xl">Settle bill · {title}</h1>
           <Money amount={order.totals.total} variant="heading" className="ml-auto shrink-0" />
         </header>

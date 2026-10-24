@@ -361,8 +361,20 @@ func (c *Client) Close(ctx context.Context) error {
 	c.mu.Unlock()
 	if ws != nil {
 		// A goodbye the relay can tell from a dropped line. It unblocks the
-		// read, which is how the session ends.
-		_ = ws.Close(websocket.StatusNormalClosure, "venue shutting down")
+		// read, which is how the session ends. On a line that is half dead
+		// the handshake waits up to ten seconds for a frame that never
+		// comes, which is the whole shutdown; past ctx the socket is torn
+		// down instead, and the relay sees a drop, as it would have anyway.
+		closed := make(chan struct{})
+		go func() {
+			defer close(closed)
+			_ = ws.Close(websocket.StatusNormalClosure, "venue shutting down")
+		}()
+		select {
+		case <-closed:
+		case <-ctx.Done():
+			_ = ws.CloseNow()
+		}
 	}
 
 	done := make(chan struct{})

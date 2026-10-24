@@ -152,14 +152,18 @@ export function useTicket(): Ticket {
       return newer(queryClient.getQueryData<OrderResponse>(orderQueryKey(read.id)), read);
     },
     enabled: orderId !== null,
-    // Fresh until a command answers or the stream says it moved.
+    // Fresh until a command answers or the stream says it moved, while a
+    // screen is listening; one coming back (from the lock screen, from
+    // Tables) reads again, since the stream was heard by nobody meanwhile.
     staleTime: Infinity,
+    refetchOnMount: "always",
   });
 
   const open = useQuery({
     queryKey: openTicketsKey,
     queryFn: ({ signal }) => store.api.get<OpenTicketsResponse>("/api/v1/orders", { signal }),
     staleTime: Infinity,
+    refetchOnMount: "always",
   });
 
   // A remembered order the server no longer has (a fresh database, another

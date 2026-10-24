@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"sort"
 	"sync"
 	"time"
 
@@ -313,7 +314,9 @@ func (s *Service) Order(ctx context.Context, venueID, orderID int64) (Result, er
 }
 
 // maxOpenTickets caps the open-ticket list. A venue with more than this
-// many orders open at once has a problem the list will not solve.
+// many orders open at once has a problem the list will not solve; the ones
+// kept are the newest, which are the ones being served (the oldest are
+// tabs nobody closed), and the floor is told of every table in SQL.
 const maxOpenTickets = 200
 
 // OpenTickets is every order at a venue that is not closed, and how long
@@ -335,14 +338,28 @@ func (s *Service) OpenOrders(ctx context.Context, venueID int64) (OpenTickets, e
 		return OpenTickets{}, fmt.Errorf("listing the open orders of venue %d: %w", venueID, err)
 	}
 	out := OpenTickets{Orders: make([]Result, 0, len(rows)), LateAfter: v.LateAfter}
-	for _, r := range rows {
+	for _, r := range oldestFirst(rows) {
 		state, err := s.db.LoadOrder(ctx, r.ID, v.Taxes)
 		if err != nil {
-			return OpenTickets{}, err
+			// One order that will not project (a tax setting changed under
+			// it, a stream damaged) must not take every other ticket off
+			// every till with it. It is said, loudly, and left out.
+			s.log.Error("an open order could not be read and is left off the list", "venue_id", venueID, "order_id", r.ID, "error", err)
+			continue
 		}
 		out.Orders = append(out.Orders, Result{OrderID: r.ID, PublicID: r.PublicID, State: state})
 	}
 	return out, nil
+}
+
+// oldestFirst puts the newest-first rows the query answers, so that a cap
+// keeps the orders being served, into the order the tills show: oldest
+// first (ADR-074). Ids rise with time.
+func oldestFirst(rows []gen.UnclosedOrdersForVenueRow) []gen.UnclosedOrdersForVenueRow {
+	out := make([]gen.UnclosedOrdersForVenueRow, len(rows))
+	copy(out, rows)
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
 }
 
 // History is an order's events and the names they need: every staff member

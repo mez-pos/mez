@@ -14195,3 +14195,140 @@ not an alert and is never capped. The "more today" template becomes `more_alerts
 third slot for "tomorrow" or "on 1 November". The cloud's C-073 has the counting.
 Because: the promise is about a month's cost, and only a month's ceiling keeps it.
 Cost: none for a typical venue, which sends well under a hundred alerts a month.
+
+## ADR-366 - The shortcut runs `mez open`, which starts the service and waits; a double-click is a till, not a second server
+2026-10 · Status: accepted. Found by the human on 2026-10-24 on an installed venue PC.
+Context: after a restart the desktop shortcut opened a browser on "localhost refused to connect".
+The shortcut was the browser itself, pointed at the address: a service still starting, or
+one that had not come up, got a browser's error page and no way on. Then `mez.exe` was
+double-clicked in its folder, which ran a second server in a console window; closing the
+window stopped it, and nothing said the window was what kept it up. KNOWN.md had "the PC
+restarted and mez up before sign-in" as never seen. The firewall rule covered private and
+domain networks only, and a venue's wifi is often one Windows calls Public.
+Decision:
+  - **`mez open`** (`cmd/mez/open.go`): asks the server for its health at the local address;
+    answered, it opens the till as an app window (Edge, then Chrome, then whatever Windows
+    opens an address with; `-fullscreen` is the kiosk). Not answered: on Windows it asks the
+    Service Control Manager; **a stopped service is started**, a service still starting is
+    waited for, up to 45 seconds (`-wait`), polling every half second; then the till opens.
+    Only when none of that can be done is a box shown, in words: not installed (run the
+    installer), did not start (the error, and where Event Viewer says more), not answering
+    (the port may have been changed in `config.toml`). The console it was given is let go
+    of at once, so no black box sits over the till.
+  - **The installer's shortcuts run `mez.exe open`** (`-fullscreen` when that task was
+    ticked), minimised. "Open mez now" on the last page still opens the browser itself,
+    since only the raised installer may read the setup token (ADR-270).
+  - **Every user may start the service.** `mez service install` adds the start and query
+    rights for Authenticated Users to the service's security descriptor (`sc sdshow`,
+    `sc sdset`; `winsvc.AllowStartByUsers`), so the shortcut needs no administrator. Refused,
+    the install still succeeds and says so; `mez open` then asks for an administrator's
+    leave (a UAC prompt) and goes on if given it.
+  - **`mez` double-clicked** (its console is its own: `GetConsoleProcessList` says one
+    process) **on a computer where the service is installed opens the till** as the shortcut
+    does, rather than failing to take the port. Where it is not installed, the server runs
+    as before, and prints "Keep this window open: closing it stops mez. To have mez start by
+    itself with Windows and stay up, run the mez installer."
+  - **The firewall rule is for every profile** (`profile=any`): the owner ticked "let devices
+    on this network connect", and a network Windows was never told about is the usual case.
+  - **A listen address this computer does not have yet is waited for** (`bindPatiently`): a
+    service starts before the network is up, and `listen_addr = 192.168.1.10:7777` cannot be
+    bound until DHCP has given the address. Two minutes, two seconds apart, one Warn in the
+    event log; a port that is taken is still refused at once. `:7777` needs no network.
+Because: a till that is down after a power cut until someone with the right knowledge comes
+is the failure this product exists to avoid; the shortcut is the one thing the owner knows
+to click, so it must do everything that can be done.
+Cost: a shortcut that starts the service takes a few seconds longer the first time after a
+boot. Start rights for every signed-in user: a stop still needs an administrator. Not seen
+on a venue PC yet: the human walks it (`KNOWN.md`).
+
+## ADR-367 - A pairing code comes with where to open mez, and a QR code that pairs on a scan
+2026-10 · Status: accepted. Found by the human on 2026-10-24.
+Context: Pair a device showed the code and nothing else. The person at the tablet had to
+know the PC's address on the network, which the setup wizard's last step shows (ADR-269,
+ADR-271) and nothing after it did: a dead end for an owner adding a second till a week
+later.
+Decision: `POST /api/v1/devices/codes` answers `open[]` beside the code: for the kind asked
+for, each address this server has on the venue's network (`adapter`, `virtual`, `url`), the
+real adapters' first, with `svg`, a QR code of the address with `#code=XXXX-XXXX` on it.
+The modal shows each real address large with its QR code ("On the new device, scan this
+with its camera, or open the address in its browser"), the virtual ones small, and the code
+under them. A device opened from the QR code lands on the pairing screen with the code
+typed in and tried at once (`shared/auth/pairing-link.ts`, read as the bundle loads, since
+the route guard rewrites the address before the form is drawn; the hash is taken out of
+the address bar). The fragment never reaches a server. A server built without its
+addresses, or that knows none, still answers the code; the modal then says to read the
+computer's address off it.
+Because: pairing is the one thing every venue does more than once, and it must not need a
+developer.
+Cost: a QR code carrying a secret good once for ten minutes, shown where the owner already
+sees the secret.
+
+## ADR-368 - A payment whose answer was lost is kept until the order says; a line whose answer was lost can only be retried
+2026-10 · Status: accepted. From the 2026-10-24 audit of the terminal.
+Context: the pay screen already reuses the idempotency key of a payment whose answer was
+lost and holds the screen until the order is read again. But that was held in memory:
+Back was live once the request had failed, and a reload, a lock or a slipped tap lost the
+question, after which the next Charge was a new payment under a new key. The same for a
+rung-up line: a timeout showed "Not sent" with Remove beside Retry, and Remove then ringing
+it up again made a second line.
+Decision: what the pay screen holds for an order (the attempt and the unsettled payment) is
+kept in `sessionStorage` by order (`tender/unsettled-store.ts`) until the order answers; a
+screen opening on that order takes it up and asks at once. Back to Order is held while the
+answer is out, on the till and on the waiter's bill. A line whose failure was not a refusal
+(no reach, a timeout, a relay's 502) is marked `uncertain`: it says it may already be on the
+order, and offers Retry alone, which replays under the same key. Also from the audit: the
+order, menu, floor and open-tickets queries read again when a screen comes back
+(`refetchOnMount: "always"`), since the stream is heard only by a mounted screen; a held
+order that cannot be resumed says why instead of a lost rejection; the stream replaces a
+socket that has gone quiet when the network comes back, counts failures on across a server
+that welcomes and drops, and a listener that throws does not stop the welcome.
+Because: charging a guest twice is the one failure a till cannot be forgiven, and these
+were the ways left to do it.
+Cost: a reload mid-payment shows the payment card still waiting, which is the truth.
+
+## ADR-369 - A tax setting that changes totals is refused while tickets are open; an order that will not project is left off, not fatal; the open-ticket cap keeps the newest
+2026-10 · Status: accepted. From the 2026-10-24 audit of the order paths. Extends the rule for the profile.
+Context: every order is projected under the venue's taxes as they are now. Changing the
+profile with tickets open was refused for that reason, but flipping prices between
+including and excluding tax, or the US rates, was not, and the audit showed the result:
+every invoiced or settling order stops projecting ("tender exceeds the balance due"), and
+since the open-orders list and every station's board fail on the first such order, every
+till's Tables screen and every kitchen display went blank, and the shift could not close,
+until the setting was flipped back. Separately, the open-orders query was capped at 200
+oldest first, so at a venue with 200 tabs nobody closed the newest tickets, the ones being
+served, fell off the list, the floor and the boards.
+Decision: `UpdateTax` refuses, with `ErrOpenOrders`, any change to the profile, to whether
+prices include tax, or to the jurisdiction's rates while an unsettled order exists; a GSTIN
+corrected under the same profile changes no total and is let through. `OpenOrders` and the
+kitchen's `coming` log an order that will not project at Error, with its id, and leave it
+out, rather than failing the venue. `UnclosedOrdersForVenue` answers newest first under its
+cap and the service turns them oldest first for the screens, so what a cap drops is the
+oldest tabs and never the table being served.
+Because: a setting an owner can flip at seven in the evening must not take down every
+screen in the venue, and a long-forgotten tab must not hide tonight's table.
+Cost: an owner who must change pricing mid-day closes or settles the open tickets first; the
+screen says so. The better shape, freezing the tax context into `order.opened`, is owed
+(`KNOWN.md`).
+
+## ADR-370 - The server's stop fits its ten seconds, and its queues do not hang on one stuck thing
+2026-10 · Status: accepted. From the 2026-10-24 audit of the server.
+Context: the drain of requests and the closing of subsystems each had the whole ten seconds,
+so the worst case was twenty, and Windows gives a service five at shutdown before killing it.
+The tunnel's goodbye to the relay could wait ten seconds on a half-dead line, first in the
+order of closing. A Windows spooler that never answered held a print goroutine, that
+printer's queue and the stop. A send whose outcome could not be recorded left its job
+printing, and that printer silent, until the next start. A failed log rotation was tried
+again on every line, holding the log's lock. The hub left a connection in its venue map if
+the stream panicked. A backup engine left behind on a timed-out close reported success, and
+a restart in the same process (ADR-334) would have started a second copier over it.
+Decision: the drain gets five seconds and the closes the other five; the tunnel's goodbye
+is raced against the close's deadline and the socket torn down past it; the spooler is given
+45 seconds and a call past it is abandoned to its own goroutine and the job retried as a
+failed send; a send's outcome is recorded with three tries 700 ms apart; a failed rotation
+waits a minute before another try; the hub removes and closes a connection on every way out
+of its stream; `Engine.Close` returns an error when it leaves the engine behind.
+Because: a stop that outlasts what Windows allows is a kill, and a kill at closing time is
+the backup's last copy and the print queue's record lost.
+Cost: a request still running five seconds into a stop is cut off; the gateway's sweeper
+already covers a charge caught there. Not done: `SERVICE_CONTROL_PRESHUTDOWN` and a wait
+hint, which the service library has no door for (`KNOWN.md`).

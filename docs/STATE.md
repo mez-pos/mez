@@ -19,19 +19,27 @@ list below.
 
 ## Last completed task
 
-**Phase 15, Task 6d, this repo's part: the last report at the venue**
-(ADR-364). `wire.Entitlement` and `relay.Entitlement` carry
-`last_report` and `messages_url`, `told` passes them and `same` counts
-them, so a report going out is a Notice to the venue; the tunnel keeps
-them on its Standing, the API says them in the `cloud` block (the link
-only if https, `safeLink`), and the Devices card says "Last report:
-yesterday 23:04." with **Change what is sent** under the paired line.
-**Not looked at in a browser.** Before it, 3c (ADR-363): the watched
-events.
+**The venue PC's three complaints and a stability audit, 2026-10-24**
+(ADR-366 to ADR-370), outside the phase plan at the human's word. The
+shortcut now runs `mez open`, which starts or waits for the service and
+then opens the till; every user may start the service; a double-clicked
+`mez.exe` opens the till where the service is installed; the firewall
+rule is for every profile; a `listen_addr` the computer does not have yet
+is waited for. Pair a device shows each address with a QR code that lands
+the device paired. Three audits (orders and money, server and queues, the
+terminal) found no critical defect; the high and medium ones are fixed
+(ADR-368 to ADR-370) and the rest are listed at the top of `KNOWN.md`.
+**None of it seen on a venue PC or in a browser yet**: the walk is the
+first item in `KNOWN.md`. Before it, Phase 15 Task 6d (ADR-364), the
+last report at the venue, **not looked at in a browser** either.
 
 ## Next task
 
-**Nothing in this repository is next by itself.** Phase 15's Tasks 2,
+**The human's walk of ADR-366 and ADR-367 on the venue PC** (the first
+item in `KNOWN.md`): build `make dist` and `make installer`, install over
+the old one, restart the PC, click the shortcut. Then, in code, the first
+owed item there: a prepaid round that settles the ticket closes it.
+Otherwise **nothing in this repository is next by itself.** Phase 15's Tasks 2,
 3c's cloud half, 5 and 6 are `mez-cloud`'s: open that repository and
 follow its `docs/STATE.md`. Task 7, the words, waits on a real
 close-of-day message. Here, when next at a screen: walk the Shifts
