@@ -114,27 +114,18 @@ func New(o Options) (*Service, error) {
 
 // Interactive reports whether this process was started by a person and not
 // by the Service Control Manager.
-func Interactive() bool { return service.Interactive() }
+func Interactive() bool { return interactive() }
 
 // Run hands the process to the Service Control Manager and returns when the
 // service has been stopped. Started by a person, it runs the server until
-// Ctrl-C instead.
+// Ctrl-C instead. The manager is driven directly (ADR-375): while the
+// server stops it hears a checkpoint a second, and it accepts the
+// pre-shutdown notice, so a stop at shutdown is given its time.
 func (s *Service) Run() error {
 	if s.prog.run == nil {
 		return errors.New("running the service: no server was given")
 	}
-	// The wrapper's own lines: the event log under the manager, the
-	// terminal otherwise. A server with no log to write to still serves.
-	if log, err := s.svc.Logger(nil); err == nil {
-		s.prog.log = log
-	}
-	if !Interactive() {
-		s.prog.system = s.prog.log
-	}
-	if err := s.svc.Run(); err != nil {
-		return fmt.Errorf("running the service: %w", err)
-	}
-	return nil
+	return s.run()
 }
 
 // Install registers the service and its event log source, and tells
@@ -148,6 +139,11 @@ func (s *Service) Install() error {
 	}
 	if err := setRecovery(Name, RestartDelays, RestartResetAfter); err != nil {
 		return fmt.Errorf("the service is installed, but will not be started again if it dies: %w", err)
+	}
+	// At shutdown Windows gives a service a few seconds unless told
+	// otherwise; the server's stop is ten (ADR-375).
+	if err := setPreshutdown(Name, PreshutdownTimeout); err != nil {
+		return fmt.Errorf("the service is installed, but may be cut off at shutdown: %w", err)
 	}
 	return nil
 }

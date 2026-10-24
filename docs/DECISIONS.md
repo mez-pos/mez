@@ -14453,3 +14453,23 @@ and the credit notes read the same events and now agree with the invoice whateve
 since.
 Cost: a few hundred bytes on every order's first event. The venue's taxes are still read
 on every command for the invoice's seller block and for an order from before the field.
+
+## ADR-375 - The Windows service is driven directly: checkpoints while it stops, and a minute at shutdown
+2026-10 · Status: accepted, at the human's word on 2026-10-24. Completes ADR-370.
+Context: the service library's run loop sent one StopPending with no wait hint and no
+checkpoint, and accepted neither the pre-shutdown notice nor a longer shutdown time, so at
+shutdown Windows gave mez the default few seconds and then killed it mid-stop: the
+backup's last copy and the print queue's record lost at closing time (ADR-370).
+Decision: `winsvc` keeps the library for installing, removing, starting and stopping the
+service, and **drives the Service Control Manager itself for the run** (`x/sys/windows/svc`):
+the handler reports StartPending, starts the server, reports Running accepting Stop,
+Shutdown and **PreShutdown**, and on any of the three reports StopPending with a thirty
+second wait hint and **a checkpoint every second** until the server's own stop returns. At
+install the service's **PreshutdownTimeout is set to sixty seconds** (`ChangeServiceConfig2`,
+which the library has no door for). The wrapper's lines go to the event log under the
+service's name as before, with one event id per severity; started in a terminal, to stderr,
+until Ctrl-C.
+Because: a stop the manager can see going on is not a hang to it, and a minute at shutdown
+is what the server's ten seconds plus a slow backup copy need.
+Cost: two files of Windows-only code where the library did it in one; the install touches
+one more setting an administrator could change by hand.

@@ -19,38 +19,31 @@
   prompt), `mez.exe` double-clicked (the till, not a console), Pair a
   device (the address and QR code beside the code; a phone scanning it
   lands paired), and a tablet on a wifi Windows calls Public reaching the
-  till. Owed from the audits, in the order a venue would feel them:
-  - **Prepaid rounds and any exact-balance tender invoice the ticket and
-    leave it open**, and the next guest round or waiter line is refused
-    with "the bill is invoiced" until staff close it. The shape wanted:
-    close the ticket after a gateway tender settles it, so the next round
-    opens a fresh one, or issue the invoice only at close (ADR-083).
-  - **A fixed-amount order discount larger than what is left traps the
-    order**: voiding or comping a line is refused ("order is worth 0,
-    discounted 8000"), there is no event that removes a discount, and the
-    table never frees. Wanted: a `discount.removed` event, or clamping.
-  - **Freezing the tax context into `order.opened`** so a setting changed
-    under an open order cannot re-price it; until then ADR-369 refuses
-    the change while tickets are open.
-  - **Shift close and count replay every order of the day several times
-    inside the one writer transaction**, and every till queues behind it
-    for hundreds of milliseconds to seconds at a busy venue. Wanted: one
-    projection reused, and the cash totals kept incrementally.
-  - **The Windows service stop has no wait hint and no `PRESHUTDOWN`**:
-    Windows allows a service about five seconds at shutdown and mez takes
-    up to ten (ADR-370). Wanted: `x/sys/windows/svc` directly in `winsvc`,
-    with `StopPending` checkpoints and a raised preshutdown timeout.
+  till. **Done on 2026-10-25 at the human's word** (ADR-372 to ADR-375,
+  none seen in a browser or on a venue PC): a paid, invoiced ticket rolls
+  when the party orders again; `discount.removed`, with a cross on the
+  till's order discounts; an order carries the taxes it opened under; the
+  shift close projects the day once; the Windows service reports
+  checkpoints while it stops and has a minute at shutdown; idempotency keys
+  pruned daily, the rate limiter capped, the event log quieter. To walk: a
+  prepaid table ordering twice (the second round's ticket is new, the
+  first closed); a 200 discount on a 440 bill, void one line (refused),
+  remove the discount with a PIN, void it (allowed); flip prices to
+  inclusive with a ticket open and see its total unchanged while a new
+  ticket's differs; `shutdown /s` on the venue PC with the event log's
+  "mez stopped." after it. Still owed from the audits:
   - A print job left `printing` by a send whose outcome could not be
     recorded after three tries waits for a restart; a periodic requeue of
     stale `printing` jobs with no live send is wanted. The spooler call
     given up on after 45 seconds runs on in its goroutine.
-  - `idempotency_keys` and the rate limiter's map are never pruned; the
-    event log gets a Warn per tunnel redial while offline and per tablet
-    that sleeps; the HTTP server sets no read or write timeout beyond the
-    header's; `CashRoundingStep` is saved and never applied to a bill;
-    `OpenOrder` checks the shift before the idempotency key, so a replay
-    after the shift closed answers `ErrNoOpenShift`; the venue's series
-    and taxes are read before an order command's transaction.
+  - The HTTP server sets no read or write timeout beyond the header's;
+    `CashRoundingStep` is saved and never applied to a bill; `OpenOrder`
+    checks the shift before the idempotency key, so a replay after the
+    shift closed answers `ErrNoOpenShift`; the venue's series is read
+    before an order command's transaction; the shift's cash totals are
+    still a full replay on every read of the shift (`ByID`, `Current`),
+    off the read pool. A staff line added to a paid, invoiced ticket at a
+    table is still refused: only a guest's round rolls it (ADR-372).
   - **Ways out still owed** (the review behind ADR-371): the open-orders
     sheet says "Loading orders" for ever when its read fails (the query's
     error is not passed to it); the sign-in screen pages four profiles at a
