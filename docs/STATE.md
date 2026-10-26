@@ -51,8 +51,9 @@ last report at the venue, **not looked at in a browser** either.
 
 **The human's walk of ADR-366 and ADR-367 on the venue PC** (the first
 item in `KNOWN.md`): build `make dist` and `make installer`, install over
-the old one, restart the PC, click the shortcut. Then, in code, the first
-owed item there: a prepaid round that settles the ticket closes it.
+the old one, restart the PC, click the shortcut, then the walks ADR-372 to
+ADR-379 list there. Every item the audits owed in code is built (ADR-372
+to ADR-379); what remains in `KNOWN.md` is small and waits on a walk.
 Otherwise **nothing in this repository is next by itself.** Phase 15's Tasks 2,
 3c's cloud half, 5 and 6 are `mez-cloud`'s: open that repository and
 follow its `docs/STATE.md`. Task 7, the words, waits on a real
@@ -199,8 +200,8 @@ None is open. The fourteen that stood here were answered on 2026-10-13
 (ADR-341 for where `mez-cloud` lives, ADR-342 for the rest). Two answers
 wait on the human's accountant before anything is published or built on
 them: prices shown before GST, and a restore skipping invoice numbers
-ahead. One waits on real tablets: whether the server should answer to a
-name.
+ahead. The one that waited on real tablets, whether the server should
+answer to a name, is built: `mez.local` (ADR-379), to be seen on a phone.
 
 **Decided and not built** (ADR-342): a restore skips invoice numbers
 ahead and audits the gap. ADR first, and the accountant's word before
