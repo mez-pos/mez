@@ -521,6 +521,25 @@ func TestCashRoundsOnceAtTheEnd(t *testing.T) {
 		}
 	}
 
+	// Cash short of the rounded amount by any other sum writes nothing off:
+	// 101.49 rounds to 101.50, and 101.01 in cash leaves 48 paise due.
+	short := opened()
+	short.CashRoundingStep = 50
+	s = mustProject(t, short, item("Vada", 1, 10149), pay(PaymentCash, 10101))
+	if s.Totals.BalanceDue != inr(48) || !s.Totals.Rounding.IsZero() || s.Status != StatusSettling {
+		t.Errorf("cash short by 48: due %v, rounding %v, %s", s.Totals.BalanceDue, s.Totals.Rounding, s.Status)
+	}
+	// And card finishing a bill that cash started is never rounded.
+	s = mustProject(t, short, item("Vada", 1, 10149), pay(PaymentCash, 5000), pay(PaymentCard, 5149))
+	if !s.Totals.BalanceDue.IsZero() || !s.Totals.Rounding.IsZero() {
+		t.Errorf("cash then card to the paisa: due %v, rounding %v", s.Totals.BalanceDue, s.Totals.Rounding)
+	}
+	// Cash finishing what card started rounds what cash owed.
+	s = mustProject(t, short, item("Vada", 1, 10149), pay(PaymentCard, 5000), pay(PaymentCash, 5150))
+	if !s.Totals.BalanceDue.IsZero() || s.Totals.Rounding != inr(1) {
+		t.Errorf("card then rounded cash: due %v, rounding %v", s.Totals.BalanceDue, s.Totals.Rounding)
+	}
+
 	// No step: nothing changes.
 	plain := mustProject(t, opened(), item("Vada", 1, 10125))
 	if plain.Totals.CashDue != inr(10125) || !plain.Totals.Rounding.IsZero() {

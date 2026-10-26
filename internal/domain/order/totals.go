@@ -161,22 +161,49 @@ func (p *projector) orderFigures() (Totals, error) {
 
 // roundCash applies the venue's cash rounding, once, at the end (ADR-377):
 // CashDue is what cash pays now, the balance rounded to the step; and once
-// a cash tender has settled the bill to within a step, the difference is
-// Rounding and the balance is nothing. A bill settled by card or UPI, which
-// pay to the paisa, is never rounded.
+// the cash on the bill is exactly what cash owed rounded to the step, the
+// difference is Rounding and the balance is nothing. Only then: a cash
+// tender short of that by any other amount leaves the shortfall due, so
+// nothing is written off that the rule did not round. A bill settled by
+// card or UPI, which pay to the paisa, is never rounded.
 func (p *projector) roundCash(t Totals) (Totals, error) {
 	t.CashDue, t.Rounding = t.BalanceDue, p.zero()
 	step := p.s.CashRoundingStep
 	if step <= 1 {
 		return t, nil
 	}
-	if t.BalanceDue.Minor != 0 && t.BalanceDue.Minor > -step && t.BalanceDue.Minor < step && p.cashTendered() {
-		rounding, err := p.zero().Sub(t.BalanceDue)
+	cashNet, err := p.cashNet()
+	if err != nil {
+		return Totals{}, err
+	}
+	if cashNet.Minor > 0 {
+		// What cash owed: the bill less the credits and what the other
+		// methods paid net. Cash that paid exactly that, rounded, settles.
+		otherNet, err := t.NetPaid.Sub(cashNet)
 		if err != nil {
 			return Totals{}, err
 		}
-		t.Rounding, t.BalanceDue, t.CashDue = rounding, p.zero(), p.zero()
-		return t, nil
+		owedToCash, err := t.Total.Sub(t.Credited)
+		if err != nil {
+			return Totals{}, err
+		}
+		if owedToCash, err = owedToCash.Sub(otherNet); err != nil {
+			return Totals{}, err
+		}
+		if owedToCash.Minor > 0 {
+			rounded, err := owedToCash.RoundToNearest(step)
+			if err != nil {
+				return Totals{}, err
+			}
+			if cashNet.Minor == rounded.Minor && rounded.Minor != owedToCash.Minor {
+				rounding, err := cashNet.Sub(owedToCash)
+				if err != nil {
+					return Totals{}, err
+				}
+				t.Rounding, t.BalanceDue, t.CashDue = rounding, p.zero(), p.zero()
+				return t, nil
+			}
+		}
 	}
 	if t.BalanceDue.Minor > 0 {
 		rounded, err := t.BalanceDue.RoundToNearest(step)
@@ -188,14 +215,30 @@ func (p *projector) roundCash(t Totals) (Totals, error) {
 	return t, nil
 }
 
-// cashTendered reports whether a cash tender stands on the order.
-func (p *projector) cashTendered() bool {
+// cashNet is what the cash tenders standing on the bill paid, less what was
+// refunded against them.
+func (p *projector) cashNet() (money.Amount, error) {
+	net := p.zero()
+	cash := map[int64]bool{}
+	var err error
 	for _, tn := range p.s.Tenders {
-		if tn.Method == PaymentCash && tn.Status == PaymentStatusCaptured {
-			return true
+		if tn.Method != PaymentCash || tn.Status == PaymentStatusVoided {
+			continue
+		}
+		cash[tn.ID] = true
+		if net, err = net.Add(tn.Amount); err != nil {
+			return money.Amount{}, err
 		}
 	}
-	return false
+	for _, r := range p.s.Refunds {
+		if !cash[r.AgainstPaymentID] {
+			continue
+		}
+		if net, err = net.Sub(r.Amount); err != nil {
+			return money.Amount{}, err
+		}
+	}
+	return net, nil
 }
 
 // orderDiscounts values every order discount against base, the order after

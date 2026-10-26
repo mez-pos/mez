@@ -14517,9 +14517,12 @@ the paisa. Indian coins stop at fifty paise in practice, and a UK till rounds th
 Decision: `order.opened` carries **`cash_rounding_step`** from the venue as the order opens,
 as it carries the taxes (ADR-374). The projection computes **`CashDue`**, the balance
 rounded to the step half to even (`money.RoundToNearest`), beside `BalanceDue`; a cash
-tender may pay up to `CashDue` where card and UPI pay to the paisa; once a cash tender has
-settled the bill to within a step, the difference is **`Rounding`** and the balance is
-nothing. The service treats a cash tender of `CashDue` as settling, and the invoice's
+tender may pay up to `CashDue` where card and UPI pay to the paisa; once the cash on the
+bill, net of refunds against it, is exactly what cash owed (the total less credits and
+what other methods paid) rounded to the step, the difference is **`Rounding`** and the
+balance is nothing. Only then: cash short by any other sum leaves the shortfall due, so a
+tender a few paise under never settles a bill by the rounding's back door, and a bill that
+card finishes to the paisa is never rounded. The service treats a cash tender of `CashDue` as settling, and the invoice's
 prices carry the rounding, so total plus rounding is what was paid. The API's totals say
 `cash_due` and `rounding`; the till's cash tile pays `cash_due` for a whole bill (a split
 share is paid as it is), and the totals show a "Cash rounding" row when it is not zero.
