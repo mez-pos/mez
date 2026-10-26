@@ -193,6 +193,13 @@ says what that warning does and does not mean). The installer:
   computer where the service is installed; where it is not, it runs the
   server in that window, and says that closing the window stops it.
 
+While it runs, the server also answers for the name **`mez.local`** on the
+venue's network (ADR-379): an iPhone, iPad, Mac, Windows PC or newer Android
+tablet opens `http://mez.local:7777` whatever address the router gave the
+computer, and a device paired at that name keeps its pairing when the
+address changes. Older Android tablets use the address the pairing screen
+shows, and its QR code.
+
 Running a newer installer over an older one upgrades in place and keeps the
 data. Removing mez (Settings, Apps, mez, Uninstall) stops and removes the
 service and the firewall rule, then asks whether to delete the data in

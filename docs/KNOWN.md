@@ -31,41 +31,31 @@
   remove the discount with a PIN, void it (allowed); flip prices to
   inclusive with a ticket open and see its total unchanged while a new
   ticket's differs; `shutdown /s` on the venue PC with the event log's
-  "mez stopped." after it. Still owed from the audits:
-  - A print job left `printing` by a send whose outcome could not be
-    recorded after three tries waits for a restart; a periodic requeue of
-    stale `printing` jobs with no live send is wanted. The spooler call
-    given up on after 45 seconds runs on in its goroutine.
-  - The HTTP server sets no read or write timeout beyond the header's;
-    `CashRoundingStep` is saved and never applied to a bill; `OpenOrder`
-    checks the shift before the idempotency key, so a replay after the
-    shift closed answers `ErrNoOpenShift`; the venue's series is read
-    before an order command's transaction; the shift's cash totals are
-    still a full replay on every read of the shift (`ByID`, `Current`),
-    off the read pool. A staff line added to a paid, invoiced ticket at a
-    table is still refused: only a guest's round rolls it (ADR-372).
-  - **Ways out still owed** (the review behind ADR-371): the open-orders
-    sheet says "Loading orders" for ever when its read fails (the query's
-    error is not passed to it); the sign-in screen pages four profiles at a
-    time with a forward-only More; the back office Tips page's Back is the
-    browser's history, so from a direct link it leaves the app; the
-    kitchen's station picker has no "back to the board" once a station had
-    been chosen; the lock screen's "Add staff in the back office" has no
-    link, since nobody is signed in to carry one. ADR-371's eleven fixes
-    are **not seen in a browser**: walk a count of the drawer with a
-    cashier signed in on another till (the "Closing the day" screen), Enter
-    after tapping a tile on the sign-in screen, and the Till pill in the
-    back office opened from the till's Menu.
-  - On the till: the waiter's bill holds an unsettled share in memory
-    only (the pay screen keeps it across a reload, ADR-368); `start`,
-    `bump`, `recall`, `discount`, `send` and `hold` take a fresh key per
-    tap, so a retry after a lost answer is a second command, which the
-    projection refuses where it matters; `pair` sends no idempotency key,
-    so a code consumed with its answer lost needs a new code; one
-    `ErrorBoundary` at the root takes the whole till down on a render
-    error; `PayPage` shows "Opening the bill" with no retry if the read
-    fails; the open-shift sold-out card and a few screens still not seen
-    by eye.
+  "mez stopped." after it. **Done on 2026-10-26 at the human's word**
+  (ADR-376 to ADR-379, none seen in a browser or on a venue PC): a stuck
+  print job requeues itself; a waiter's new ticket at a paid table rolls
+  it; the waiter's bill keeps a lost payment across a reload; retries
+  replay under the same key on the till and the kitchen; the orders sheet
+  says when its read failed; cash rounds once, at the end, to the venue's
+  step; a shift's cash sales are kept as they happen; the server answers
+  for `mez.local`; a body is read under a deadline; an open's replay is
+  answered before the shift is asked; the sign-in screen has Back; Tips'
+  Back stays in the app; the station picker leads back to its board. To
+  walk: set cash rounding to 50 under Settings, ring up 101.25 and see the
+  cash tile ask 101.00 or 101.50 and the invoice say the rounding; open
+  `http://mez.local:7777` on a phone on the venue wifi; let a kitchen
+  printer go off, print, and see the job come back after two minutes;
+  ADR-371's eleven fixes as well (a count of the drawer with a cashier on
+  another till, Enter after a tile, the Till pill). Still owed:
+  - The printed receipt's layout does not show the cash rounding row
+    (ADR-377); its figures add up through the tender line.
+  - `pair` sends no idempotency key, so a code consumed with its answer
+    lost needs a new code; one `ErrorBoundary` at the root takes the whole
+    till down on a render error; the lock screen's "Add staff in the back
+    office" has no link, since nobody is signed in to carry one; the
+    open-shift sold-out card and a few screens still not seen by eye.
+  - Android before 12 does not resolve `mez.local`; those tablets use the
+    address and the QR code (ADR-379).
 
 - **Nothing finds a server for a till** (ADR-338, found walking "The PC
   died"; 2026-10-13). Phase 12's discovery is of printers and of this

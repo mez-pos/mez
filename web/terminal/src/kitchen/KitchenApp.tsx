@@ -4,7 +4,7 @@
 // the choice. It runs from the terminal's bundle at /kitchen (ADR-091).
 
 import type { StationResponse } from "../../../shared/api-types";
-import { LockIcon } from "lucide-react";
+import { ArrowLeftIcon, LockIcon } from "lucide-react";
 import { useAuth } from "../../../shared/auth/use-auth";
 import { NoVenueScreen } from "../../../shared/screens/NoVenueScreen";
 import { PairScreen } from "../../../shared/screens/PairScreen";
@@ -39,11 +39,33 @@ export function StationBoard({ station, onStation, signedIn }: StationBoardProps
   const menu = useMenu();
   const stations = menu.data?.stations ?? [];
   const chosen = stations.find((s) => s.code === station);
-  if (chosen) return <KitchenBoard station={chosen} onChangeStation={() => onStation(null)} signedIn={signedIn} />;
+  if (chosen) {
+    return (
+      <KitchenBoard
+        station={chosen}
+        onChangeStation={() => {
+          rememberStation(chosen.code);
+          onStation(null);
+        }}
+        signedIn={signedIn}
+      />
+    );
+  }
+  const previous = stations.find((s) => s.code === lastStation());
 
   return (
     <main className="flex min-h-screen flex-col gap-8 bg-canvas px-8 py-10 text-fg">
       <h1 className="font-serif text-display">Which station is this?</h1>
+      {previous && (
+        <button
+          type="button"
+          onClick={() => onStation(previous.code)}
+          className="inline-flex min-h-tap w-fit items-center gap-2 rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+        >
+          <ArrowLeftIcon aria-hidden="true" size={18} />
+          Back to {previous.name}
+        </button>
+      )}
       {menu.isPending && <p className="text-kitchen text-fg-muted">Loading the stations</p>}
       {menu.isError && !menu.data && (
         <EmptyState icon={<InboxIcon />} line="Can't reach the mez server." action={{ label: "Try again", onClick: () => void menu.refetch() }} />
@@ -79,4 +101,24 @@ export function StationBoard({ station, onStation, signedIn }: StationBoardProps
       )}
     </main>
   );
+}
+
+// The station a display left by "Change station", for the picker to offer a
+// way back: the page reloads between the two, so it is kept for the tab.
+const lastStationKey = "mez.kitchen.last_station";
+
+function rememberStation(code: string): void {
+  try {
+    sessionStorage.setItem(lastStationKey, code);
+  } catch {
+    // refused storage: no way back is offered
+  }
+}
+
+function lastStation(): string | null {
+  try {
+    return sessionStorage.getItem(lastStationKey);
+  } catch {
+    return null;
+  }
 }

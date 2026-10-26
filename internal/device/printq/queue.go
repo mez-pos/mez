@@ -66,7 +66,15 @@ type Queue struct {
 	mu       sync.Mutex
 	started  bool
 	closed   bool
+	// inFlight is every job this process is sending now, so that the sweep
+	// for stuck jobs (ADR-376) never requeues one that is still going.
+	inFlight map[int64]struct{}
 }
+
+// stuckAfter is how long a job may sit in printing before the sweep takes
+// it back: longer than any send, the spooler's 45 seconds included, so a
+// slow printer is never printed on twice by it.
+const stuckAfter = 2 * time.Minute
 
 // New builds a queue. It does not start the worker.
 func New(o Options) (*Queue, error) {
@@ -74,7 +82,7 @@ func New(o Options) (*Queue, error) {
 		return nil, errors.New("printq: no database")
 	}
 	q := &Queue{
-		db: o.DB, log: o.Log, clock: o.Clock, transports: o.Transports,
+		db: o.DB, log: o.Log, clock: o.Clock, transports: o.Transports, inFlight: map[int64]struct{}{},
 		poll: o.Poll, sendTimeout: o.SendTimeout, onChange: o.OnChange, wake: make(chan struct{}, 1),
 	}
 	if q.log == nil {
@@ -160,6 +168,9 @@ func (q *Queue) loop(ctx context.Context) {
 	defer ticker.Stop()
 	var lastSaid time.Time
 	for {
+		if err := q.requeueStuck(ctx); err != nil && ctx.Err() == nil {
+			q.log.Warn("print queue: looking for stuck jobs", "error", err)
+		}
 		if err := q.dispatch(ctx); err != nil && ctx.Err() == nil {
 			// Once a minute and not once a second: a database that stays
 			// unreadable says the same thing at every poll.
@@ -193,8 +204,10 @@ func (q *Queue) dispatch(ctx context.Context) error {
 			continue
 		}
 		q.sends.Add(1)
+		q.flying(job.ID, true)
 		go func() {
 			defer q.sends.Done()
+			defer q.flying(job.ID, false)
 			q.send(ctx, job)
 		}()
 	}
@@ -329,6 +342,55 @@ func (q *Queue) finish(ctx context.Context, venueID, id int64, out printjob.Outc
 		}
 		return tx.BumpPrintVersion(ctx, venueID)
 	})
+}
+
+// flying marks a job as being sent by this process, or not any more.
+func (q *Queue) flying(id int64, on bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if on {
+		q.inFlight[id] = struct{}{}
+	} else {
+		delete(q.inFlight, id)
+	}
+}
+
+// requeueStuck puts back any job marked printing for longer than any send
+// takes that this process is not sending (ADR-376): a send whose outcome
+// could not be recorded, or one from a process that died without the start
+// having run since. Left, it would hold every later job for its printer
+// until a restart. Each is said once, at Warn.
+func (q *Queue) requeueStuck(ctx context.Context) error {
+	before := q.clock.Now().UTC().Add(-stuckAfter)
+	stuck, err := q.db.Queries().StuckPrintingJobs(ctx, before)
+	if err != nil {
+		return fmt.Errorf("printq: reading stuck jobs: %w", err)
+	}
+	for _, job := range stuck {
+		q.mu.Lock()
+		_, live := q.inFlight[job.ID]
+		q.mu.Unlock()
+		if live {
+			continue
+		}
+		var n int64
+		err := q.db.WriteTx(ctx, func(tx *gen.Queries) error {
+			var err error
+			n, err = tx.RequeueStuckPrintJob(ctx, gen.RequeueStuckPrintJobParams{Now: q.clock.Now().UTC(), ID: job.ID})
+			if err != nil || n == 0 {
+				return err
+			}
+			return tx.BumpPrintVersion(ctx, job.VenueID)
+		})
+		if err != nil {
+			return fmt.Errorf("printq: requeueing stuck job %d: %w", job.ID, err)
+		}
+		if n == 1 {
+			q.log.Warn("print job was stuck in printing and is queued again", "job_id", job.ID, "venue_id", job.VenueID)
+			q.changed(job.VenueID)
+		}
+	}
+	return nil
 }
 
 func (q *Queue) requeueStale(ctx context.Context) (int64, error) {

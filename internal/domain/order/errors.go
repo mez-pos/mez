@@ -132,9 +132,9 @@ var (
 	ErrAlreadyInvoiced = errors.New("order is already invoiced")
 
 	// ErrOrderInvoiced means the bill was changed after its invoice was
-	// issued. The invoice is what was sold; a change needs a reopen first,
-	// and then the next settlement is its own invoice.
-	ErrOrderInvoiced = errors.New("the bill is invoiced: reopen it to change it")
+	// issued. The invoice is what was sold, and stays so (ADR-083): more
+	// is sold on a new ticket, and money back is a credit note.
+	ErrOrderInvoiced = errors.New("the bill is invoiced: start a new ticket for more, or a credit note for money back")
 
 	// ErrInvoiceNotFound means an event named an invoice number this order
 	// was never issued.

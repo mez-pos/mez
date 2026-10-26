@@ -144,9 +144,15 @@ type totalsResponse struct {
 	NetPaid        money.Amount `json:"net_paid"`
 	Credited       money.Amount `json:"credited"`
 	BalanceDue     money.Amount `json:"balance_due"`
-	Tips           money.Amount `json:"tips"`
-	Voided         money.Amount `json:"voided"`
-	Comped         money.Amount `json:"comped"`
+	// CashDue is what cash pays now: the balance rounded to the venue's
+	// step (ADR-377); Rounding what rounding added or took off once cash
+	// settled the bill. In the order Totals has them: the one is converted
+	// to the other.
+	CashDue  money.Amount `json:"cash_due"`
+	Rounding money.Amount `json:"rounding"`
+	Tips     money.Amount `json:"tips"`
+	Voided   money.Amount `json:"voided"`
+	Comped   money.Amount `json:"comped"`
 }
 
 // taxResponse is the rate-wise summary a receipt prints. It is absent for an

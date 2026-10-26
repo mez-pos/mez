@@ -176,7 +176,9 @@ Inside the frame (`backoffice-shell.md`).
   open[]}`, the one time the code is shown; `open` is each address a device
   of that kind opens mez at (`adapter`, `virtual`, `url`, `svg`: the QR code
   of the address with the code in its fragment), real adapters first, and
-  empty when the server knows none (ADR-367). Only the code's hash is kept.
+  empty when the server knows none (ADR-367); `named_url` is the kind's
+  address by the server's network name, `mez.local` (ADR-379), or absent.
+  Only the code's hash is kept.
 - `POST /api/v1/devices/{id}/rename` `{name}` and `POST
   /api/v1/devices/{id}/revoke`: each answers with the list as it now stands.
 

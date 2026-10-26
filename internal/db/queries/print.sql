@@ -173,3 +173,18 @@ WHERE id = sqlc.arg(id) AND venue_id = sqlc.arg(venue_id) AND active = 1;
 -- name: SetStationPrinter :execrows
 UPDATE stations SET printer_id = sqlc.narg(printer_id), updated_at = sqlc.arg(now)
 WHERE venue_id = sqlc.arg(venue_id) AND code = sqlc.arg(code) AND active = 1;
+
+-- name: StuckPrintingJobs :many
+-- Jobs marked printing for longer than any send takes (ADR-376). One this
+-- process is still sending is not stuck; the queue knows which those are
+-- and leaves them.
+SELECT id, venue_id
+FROM print_jobs
+WHERE state = 'printing' AND updated_at < sqlc.arg(before);
+
+-- name: RequeueStuckPrintJob :execrows
+-- One stuck job back to queued, if it is still printing.
+UPDATE print_jobs
+SET state = 'queued', next_attempt_at = sqlc.arg(now), updated_at = sqlc.arg(now),
+    last_error = 'the send did not finish and nothing recorded it; tried again'
+WHERE id = sqlc.arg(id) AND state = 'printing';

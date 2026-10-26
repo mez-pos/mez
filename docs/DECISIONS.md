@@ -14473,3 +14473,94 @@ Because: a stop the manager can see going on is not a hang to it, and a minute a
 is what the server's ten seconds plus a slow backup copy need.
 Cost: two files of Windows-only code where the library did it in one; the install touches
 one more setting an administrator could change by hand.
+
+## ADR-376 - The audit's remaining ways out: a stuck print job frees itself, a paid table takes a waiter's new ticket, the waiter's bill keeps a lost payment, retries replay, and six small doors
+2026-10 · Status: accepted, at the human's word on 2026-10-26. Answers the owed items in `KNOWN.md` from the audits, with ADR-377 to ADR-379.
+Decision:
+  - **A stuck print job goes back to the queue** (`requeueStuck`): every poll, a job marked
+    printing for longer than two minutes (longer than any send, the spooler's 45 seconds
+    included) that this process is not sending goes back to queued and is said at Warn.
+    Jobs in flight are known to the queue (`inFlight`), so a slow printer is never printed
+    on twice by it. Before this, a send whose outcome could not be recorded held its
+    printer until a restart.
+  - **A waiter's new ticket at a paid table rolls the paid one** (`Open` with a table whose
+    ticket is paid in full and invoiced closes it first, as a guest's round does, ADR-372).
+    The error on an invoiced bill now reads "start a new ticket for more, or a credit note
+    for money back": a reopen never did take new lines (ADR-083).
+  - **The waiter's bill keeps a lost-answer payment across a reload** in the pay screen's
+    store (ADR-368), and asks the order at once when it comes back.
+  - **A command whose answer was lost is replayed under its key** on the next identical
+    attempt: the register's send, hold, fire, discount and the rest (`post` in
+    `use-ticket`), and the kitchen's start, bump and recall. A refusal or a success lets the
+    key go; a fresh intent is a fresh key, as before.
+  - **The open-orders sheet** says when its read failed, with Try again, instead of
+    "Loading orders" for ever.
+  - **A body is read under a thirty second deadline** (`decodeJSON`, `SetReadDeadline`), so a
+    client that trickles a body cannot hold a handler.
+  - **A replay of an open under its key is answered before the shift is asked for**
+    (`NewOrder.Before`), so a retry after the shift closed gets the original answer and not
+    "no shift open".
+  - **The venue is read again inside a command's transaction**, so the invoice series and
+    the seller an invoice names are the venue's as of the write.
+  - **The sign-in screen has a Back tile** beside More once past the first page; **the Tips
+    page's Back** goes to Z-reports, not the browser's history; **the kitchen's station
+    picker** offers "Back to <station>" after Change station.
+Because: each was a place a venue would stop and phone someone; none needed a design
+decision beyond what the surrounding code already did.
+Cost: a job requeued at two minutes may print twice on a printer that took longer, which
+the queue's own timeouts make rare.
+
+## ADR-377 - Cash rounds once, at the end, to the venue's step
+2026-10 · Status: accepted, at the human's word on 2026-10-26. Applies docs/02-domain.md's rule, which `CashRoundingStep` was saved for and nothing used.
+Context: the owner could set cash rounding to fifty paise and every bill still asked for
+the paisa. Indian coins stop at fifty paise in practice, and a UK till rounds the same way.
+Decision: `order.opened` carries **`cash_rounding_step`** from the venue as the order opens,
+as it carries the taxes (ADR-374). The projection computes **`CashDue`**, the balance
+rounded to the step half to even (`money.RoundToNearest`), beside `BalanceDue`; a cash
+tender may pay up to `CashDue` where card and UPI pay to the paisa; once a cash tender has
+settled the bill to within a step, the difference is **`Rounding`** and the balance is
+nothing. The service treats a cash tender of `CashDue` as settling, and the invoice's
+prices carry the rounding, so total plus rounding is what was paid. The API's totals say
+`cash_due` and `rounding`; the till's cash tile pays `cash_due` for a whole bill (a split
+share is paid as it is), and the totals show a "Cash rounding" row when it is not zero.
+`ProjectionVersion` 10.
+Because: rounding is money and belongs in the projection, once, where the invoice, the
+Z-report and the drawer all read it; card and UPI pay exact amounts, so only cash rounds.
+Cost: the printed receipt's layout does not yet show the rounding row; the figures on it
+still add up through the tender line. Owed in `KNOWN.md`.
+
+## ADR-378 - A shift's cash sales are kept as they happen
+2026-10 · Status: accepted, at the human's word on 2026-10-26.
+Context: reading a shift (the lock screen's shift bar, `Current`, `ByID`) replayed every
+order of the day to find three numbers: cash taken, cash handed back, cash refunded. A busy
+venue would feel it by evening on every sign-in.
+Decision: a table **`shift_cash`** (migration 00057): each cash tender, void of a cash
+tender and refund against one adds to its shift's row in the transaction that writes the
+event (`recordShiftCash`, the same counting as `shift.CashFromOrders`). Reading a shift uses
+the row when there is one; a shift from before the row, or with no cash yet, replays as
+before. The close still replays the day once (ADR-372) and compares: a disagreement is said
+at Error and the replay stands.
+Because: the running figures are an optimisation and the events are the truth; keeping
+both, and checking them against each other at the one moment the replay is done anyway, is
+what keeps a drawer from being blamed for a bug.
+Cost: one row per shift, and one more write per cash event, inside a transaction that was
+already writing.
+
+## ADR-379 - The server answers for mez.local
+2026-10 · Status: accepted, at the human's word on 2026-10-26. Answers the open question of ADR-338.
+Context: a tablet is a browser at an address, and a replacement PC, or a router handing out
+a new address, meant pairing every device again. A browser cannot discover a server on the
+network; what it can do, on an iPhone, iPad, Mac, Windows and newer Android, is resolve a
+`.local` name.
+Decision: the server answers for **`mez.local`** over multicast DNS while it serves
+(`internal/device/announce`, pion/mdns, pure Go), binding 5353 shared so Windows's own
+resolver and Bonjour do not keep it out; a machine that refuses the socket serves without a
+name and says so once. The pairing code's answer carries **`named_url`**, the kind's address
+by name, and the modal says "By name, on an iPhone, iPad, Mac or Windows PC: mez.local:7777.
+The name stays the same when the computer's address changes." A device paired at
+`mez.local` keeps its pairing across an address change, which is the case ADR-338 found
+had no answer.
+Because: a name is the one thing a browser can follow; discovery proper would need an app.
+Cost: two venues' PCs on one network would both answer for the name; a venue with two mez
+servers is not a case this product has. Android before 12 does not resolve the name and
+uses the address and QR as before.

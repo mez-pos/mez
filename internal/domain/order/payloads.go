@@ -102,6 +102,10 @@ type OrderOpened struct {
 	// order opened before the field existed, which is projected under the
 	// venue's taxes as they are now.
 	Taxes *TaxSnapshot `json:"taxes,omitempty"`
+	// CashRoundingStep is the venue's cash rounding as the order opened, in
+	// minor units (ADR-377): 50 settles cash to the nearest fifty paise. Zero
+	// or one is no rounding. It rides with the order as the taxes do.
+	CashRoundingStep int64 `json:"cash_rounding_step,omitempty"`
 }
 
 // Modifier is one modifier on a line, snapshotted when the line was added.
@@ -280,6 +284,10 @@ type InvoicePrices struct {
 	Taxable        money.Amount `json:"taxable"`
 	Tax            money.Amount `json:"tax"`
 	Total          money.Amount `json:"total"`
+	// Rounding is what cash rounding added to or took off the total as the
+	// bill was settled in cash (ADR-377); zero otherwise. Total plus
+	// Rounding is what was paid.
+	Rounding money.Amount `json:"rounding,omitempty"`
 }
 
 // InvoiceSeller is the venue as the invoice names it, at issue.

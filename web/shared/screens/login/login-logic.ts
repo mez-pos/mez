@@ -12,6 +12,8 @@ export interface TilePage<T> {
   hasMore: boolean;
   /** Which page (from 0) More goes to: the next, or round to the first. */
   next: number;
+  /** Which page Back goes to: the one before, or null on the first. */
+  prev: number | null;
   /** The page shown, kept in range when the list shrank under it. */
   page: number;
   /** How many pages there are. */
@@ -25,6 +27,7 @@ export function tilePage<T>(people: readonly T[], page: number, size = tilesPerP
     shown: people.slice(at * size, at * size + size),
     hasMore: pages > 1,
     next: (at + 1) % pages,
+    prev: at > 0 ? at - 1 : null,
     page: at,
     pages,
   };

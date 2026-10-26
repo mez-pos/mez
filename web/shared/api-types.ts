@@ -547,6 +547,7 @@ export interface OrderOpened {
   covers: number;
   opened_by: number;
   taxes?: TaxSnapshot;
+  cash_rounding_step?: number;
 }
 
 export interface TaxSnapshot {
@@ -671,6 +672,7 @@ export interface InvoicePrices {
   taxable: Money;
   tax: Money;
   total: Money;
+  rounding?: Money;
 }
 
 export interface InvoiceSeller {
@@ -916,6 +918,7 @@ export interface PairingCodeResponse {
   code: string;
   expires_at: string;
   open: PairingPlaceResponse[];
+  named_url?: string;
 }
 
 export interface PairingPlaceResponse {
@@ -1624,6 +1627,8 @@ export interface TotalsResponse {
   net_paid: Money;
   credited: Money;
   balance_due: Money;
+  cash_due: Money;
+  rounding: Money;
   tips: Money;
   voided: Money;
   comped: Money;

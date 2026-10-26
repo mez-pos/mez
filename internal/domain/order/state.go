@@ -78,6 +78,9 @@ type State struct {
 	// and not the venue's of the moment. Nil on an order opened before it
 	// was recorded.
 	Taxes *TaxSnapshot
+	// CashRoundingStep is the venue's cash rounding as the order opened
+	// (ADR-377); zero or one is none.
+	CashRoundingStep int64
 
 	Lines        []Line     // in the order they were added
 	Discounts    []Discount // line and order discounts, in the order applied
@@ -246,7 +249,15 @@ type Totals struct {
 	NetPaid        money.Amount
 	Credited       money.Amount
 	BalanceDue     money.Amount
-	Tips           money.Amount
-	Voided         money.Amount
-	Comped         money.Amount
+	// CashDue is the balance as cash settles it: rounded to the order's cash
+	// rounding step, half to even (ADR-377). The same as BalanceDue with no
+	// rounding, or with nothing owed.
+	CashDue money.Amount
+	// Rounding is what cash rounding added to or took off the bill once a
+	// cash tender settled it: positive when the guest paid over the total.
+	// Zero until then, and zero on a bill settled by card or UPI.
+	Rounding money.Amount
+	Tips     money.Amount
+	Voided   money.Amount
+	Comped   money.Amount
 }

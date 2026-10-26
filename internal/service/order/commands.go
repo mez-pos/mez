@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mez-pos/mez/internal/db/gen"
 	"time"
 
 	"github.com/mez-pos/mez/internal/db"
@@ -105,12 +106,24 @@ func (s *Service) Open(ctx context.Context, meta Meta, cmd OpenOrder) (Result, e
 	if err != nil {
 		return Result{}, err
 	}
+	// A new ticket at a table whose ticket is paid in full and invoiced
+	// closes that one first (ADR-372, ADR-376): the party is ordering
+	// again, by a waiter this time, and the bill that is done gives way.
+	if cmd.TableID != 0 {
+		if orderID, err := s.ticketOf(ctx, s.db.Queries(), meta.VenueID, cmd.TableID); err == nil {
+			if _, err := s.rollSettledTicket(ctx, meta.VenueID, orderID); err != nil {
+				return Result{}, err
+			}
+		} else if !isNoRows(err) {
+			return Result{}, err
+		}
+	}
 	at := s.clock.Now().UTC()
 	opened := order.NewEvent(1, at, meta.ActorID, meta.DeviceID, order.OrderOpened{
 		Channel: cmd.Channel, Currency: v.Currency, Service: service, TableID: cmd.TableID, Covers: cmd.Covers, OpenedBy: meta.ActorID,
 		// The venue's taxes as they are now, which are this order's for
 		// good (ADR-374).
-		Taxes: order.SnapshotTaxes(v.TaxCode, v.Taxes),
+		Taxes: order.SnapshotTaxes(v.TaxCode, v.Taxes), CashRoundingStep: v.CashStep,
 	})
 
 	for range maxPublicIDDraws {
@@ -123,8 +136,11 @@ func (s *Service) Open(ctx context.Context, meta Meta, cmd OpenOrder) (Result, e
 			PublicID: publicID,
 			VenueID:  meta.VenueID,
 			Opened:   opened,
-			Within: func(ctx context.Context, tx *db.OrderTx) error {
-				p, err := findPrior(ctx, tx.Queries(), meta, fp)
+			// The key first, before the shift: a retry of an open whose
+			// answer was lost is answered from its key even after the
+			// shift closed.
+			Before: func(ctx context.Context, q *gen.Queries) error {
+				p, err := findPrior(ctx, q, meta, fp)
 				if err != nil {
 					return err
 				}
@@ -132,6 +148,9 @@ func (s *Service) Open(ctx context.Context, meta Meta, cmd OpenOrder) (Result, e
 					prior = p
 					return errReplay
 				}
+				return nil
+			},
+			Within: func(ctx context.Context, tx *db.OrderTx) error {
 				if err := tableInService(ctx, tx.Queries(), meta.VenueID, cmd.TableID); err != nil {
 					return err
 				}
@@ -315,10 +334,13 @@ func (s *Service) TenderPayment(ctx context.Context, meta Meta, orderID int64, c
 			Method: cmd.Method, Amount: cmd.Amount, Tip: tip, Reference: cmd.Reference, TenderedBy: meta.ActorID,
 			AuthorisedBy: cmd.AuthorisedBy,
 		}
-		if !settles(tx.State, cmd.Amount) {
+		if !settles(tx.State, cmd.Method, cmd.Amount) {
 			return []order.Payload{tendered}, nil
 		}
-		inv, err := issueInvoice(ctx, tx, v, at)
+		// Cash settling at the rounded balance: the invoice says the
+		// rounding, which the projection records with the tender (ADR-377).
+		rounding := money.Amount{Currency: cmd.Amount.Currency, Minor: cmd.Amount.Minor - tx.State.Totals.BalanceDue.Minor}
+		inv, err := issueInvoiceRounded(ctx, tx, v, at, rounding)
 		if err != nil {
 			return nil, err
 		}
@@ -348,9 +370,16 @@ func checkTip(tip, amount money.Amount, percent, authorisedBy int64) error {
 // zero with no invoice yet for this settlement. A tender the projection will
 // refuse (over the balance, the wrong currency) does not settle: it fails
 // on its own, before any number is allocated.
-func settles(st order.State, amount money.Amount) bool {
+func settles(st order.State, method order.PaymentMethod, amount money.Amount) bool {
 	due := st.Totals.BalanceDue
-	return !st.Invoiced && !st.Totals.Total.IsZero() && amount.Currency == due.Currency && amount.Minor == due.Minor
+	if st.Invoiced || st.Totals.Total.IsZero() || amount.Currency != due.Currency {
+		return false
+	}
+	if amount.Minor == due.Minor {
+		return true
+	}
+	// Cash settles at the balance rounded to the venue's step (ADR-377).
+	return method == order.PaymentCash && st.Totals.CashDue.Minor > 0 && amount.Minor == st.Totals.CashDue.Minor
 }
 
 // VoidPayment voids a tender.
@@ -411,6 +440,19 @@ func (s *Service) Reopen(ctx context.Context, meta Meta, orderID int64, cmd Reop
 // issueInvoice allocates a number and records it, inside tx. The domain
 // refuses the event if the bill is not settled or already invoiced, and the
 // rollback then returns the number: no gap either way.
+// issueInvoiceRounded is issueInvoice with the cash rounding the settling
+// tender carries (ADR-377), so the invoice says what was paid.
+func issueInvoiceRounded(ctx context.Context, tx *db.OrderTx, v venue, at time.Time, rounding money.Amount) (order.InvoiceIssued, error) {
+	inv, err := issueInvoice(ctx, tx, v, at)
+	if err != nil {
+		return order.InvoiceIssued{}, err
+	}
+	if rounding.Minor != 0 && inv.Prices != nil {
+		inv.Prices.Rounding = rounding
+	}
+	return inv, nil
+}
+
 func issueInvoice(ctx context.Context, tx *db.OrderTx, v venue, at time.Time) (order.InvoiceIssued, error) {
 	issued, err := invoice.Issue(ctx, tx.Invoices(), v.Series, tx.VenueID, at, v.Location)
 	if err != nil {

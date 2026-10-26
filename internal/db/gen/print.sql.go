@@ -619,6 +619,27 @@ func (q *Queries) RequeueStalePrintJobs(ctx context.Context, now time.Time) (int
 	return result.RowsAffected()
 }
 
+const requeueStuckPrintJob = `-- name: RequeueStuckPrintJob :execrows
+UPDATE print_jobs
+SET state = 'queued', next_attempt_at = ?1, updated_at = ?1,
+    last_error = 'the send did not finish and nothing recorded it; tried again'
+WHERE id = ?2 AND state = 'printing'
+`
+
+type RequeueStuckPrintJobParams struct {
+	Now time.Time
+	ID  int64
+}
+
+// One stuck job back to queued, if it is still printing.
+func (q *Queries) RequeueStuckPrintJob(ctx context.Context, arg RequeueStuckPrintJobParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, requeueStuckPrintJob, arg.Now, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const retryPrintJob = `-- name: RetryPrintJob :execrows
 UPDATE print_jobs
 SET state = 'queued', attempts = 0, printer_id = ?1, next_attempt_at = ?2,
@@ -750,6 +771,43 @@ func (q *Queries) StationsWithPrinters(ctx context.Context, venueID int64) ([]St
 	for rows.Next() {
 		var i StationsWithPrintersRow
 		if err := rows.Scan(&i.Code, &i.Name, &i.PrinterID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const stuckPrintingJobs = `-- name: StuckPrintingJobs :many
+SELECT id, venue_id
+FROM print_jobs
+WHERE state = 'printing' AND updated_at < ?1
+`
+
+type StuckPrintingJobsRow struct {
+	ID      int64
+	VenueID int64
+}
+
+// Jobs marked printing for longer than any send takes (ADR-376). One this
+// process is still sending is not stuck; the queue knows which those are
+// and leaves them.
+func (q *Queries) StuckPrintingJobs(ctx context.Context, before time.Time) ([]StuckPrintingJobsRow, error) {
+	rows, err := q.db.QueryContext(ctx, stuckPrintingJobs, before)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StuckPrintingJobsRow{}
+	for rows.Next() {
+		var i StuckPrintingJobsRow
+		if err := rows.Scan(&i.ID, &i.VenueID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

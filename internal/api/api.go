@@ -56,8 +56,10 @@ type Server struct {
 	arrived       Arrived
 	setupToken    SetupToken
 	addresses     func() ([]discover.Address, error)
-	limiter       *limiter
-	handler       http.Handler
+	// namedAddress is the server's address by its network name, or "" (ADR-379).
+	namedAddress func() string
+	limiter      *limiter
+	handler      http.Handler
 }
 
 // Option adjusts a Server at construction.

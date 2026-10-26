@@ -129,13 +129,30 @@ func loadWith(ctx context.Context, q *gen.Queries, row gen.Shift, currency strin
 	if err != nil {
 		return Shift{}, err
 	}
-	if orders == nil {
-		if orders, err = stampedOrders(ctx, q, row.ID); err != nil {
-			return Shift{}, err
+	// The running figures first (ADR-378): a shift with any cash on it has
+	// a row, kept as each cash event was written. Handed the day's orders,
+	// or with no row (no cash yet, or a shift from before the row existed),
+	// the day is replayed as before.
+	replay := orders != nil
+	if !replay {
+		if cached, err := q.ShiftCash(ctx, row.ID); err == nil {
+			out.Sales = shift.CashSales{
+				Taken: money.Amount{Minor: cached.TakenMinor, Currency: cached.Currency}, Voided: money.Amount{Minor: cached.VoidedMinor, Currency: cached.Currency},
+				Refunded: money.Amount{Minor: cached.RefundedMinor, Currency: cached.Currency},
+			}
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			return Shift{}, fmt.Errorf("reading shift %d's cash: %w", row.ID, err)
+		} else {
+			if orders, err = stampedOrders(ctx, q, row.ID); err != nil {
+				return Shift{}, err
+			}
+			replay = true
 		}
 	}
-	if out.Sales, err = cashSalesFrom(row.ID, currency, orders); err != nil {
-		return Shift{}, err
+	if replay {
+		if out.Sales, err = cashSalesFrom(row.ID, currency, orders); err != nil {
+			return Shift{}, err
+		}
 	}
 	if out.Closing != nil {
 		out.Expected = out.Closing.Reconciliation.Expected

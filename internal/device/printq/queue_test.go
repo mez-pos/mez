@@ -428,3 +428,40 @@ func TestRetryCancelAndList(t *testing.T) {
 		t.Errorf("list later = %+v", list)
 	}
 }
+
+// TestAStuckJobGoesBackToTheQueue (ADR-376): a job marked printing for
+// longer than any send takes, with no send of this process behind it, is
+// queued again on the next pass, so one lost outcome does not stop its
+// printer until a restart. One still being sent is left alone, and one
+// marked printing only a moment ago as well.
+func TestAStuckJobGoesBackToTheQueue(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	stuck := f.add(t, 1, "stuck")
+	fresh := f.add(t, 2, "fresh")
+	live := f.add(t, 2, "live")
+	long := f.clock.Now().Add(-stuckAfter - time.Minute)
+	for _, c := range []struct {
+		id int64
+		at time.Time
+	}{{stuck, long}, {fresh, f.clock.Now()}, {live, long}} {
+		if _, err := f.db.Writer().ExecContext(ctx, `UPDATE print_jobs SET state = 'printing', updated_at = ? WHERE id = ?`, c.at, c.id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	f.q.flying(live, true)
+	defer f.q.flying(live, false)
+
+	if err := f.q.requeueStuck(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.job(t, stuck); got.State != "queued" {
+		t.Errorf("the stuck job is %s, want queued", got.State)
+	}
+	if got := f.job(t, fresh); got.State != "printing" {
+		t.Errorf("a job printing for a moment is %s, want printing", got.State)
+	}
+	if got := f.job(t, live); got.State != "printing" {
+		t.Errorf("a job this process is sending is %s, want printing", got.State)
+	}
+}

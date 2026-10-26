@@ -7,6 +7,7 @@ import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { Splash } from "../../shared/screens/Splash";
 import { DevicesScreen } from "./devices/DevicesScreen";
+import { section } from "./shell/nav-logic";
 import { FloorScreen } from "./floor/FloorScreen";
 import { MenuScreen } from "./menu/MenuScreen";
 import { PrintersScreen } from "./printers/PrintersScreen";
@@ -163,6 +164,9 @@ function ReportRoute({ number }: { number: number }) {
 
 /** A shift's tips by the id in its path. */
 function TipsRoute({ id }: { id: number }) {
+  const [, navigate] = useLocation();
   if (!Number.isSafeInteger(id) || id < 1) return <Redirect to="/reports" replace />;
-  return <TipsScreen shiftId={id} onBack={() => window.history.back()} />;
+  // The Z-reports section, where the shift is: the browser's history from a
+  // direct link would leave the app.
+  return <TipsScreen shiftId={id} onBack={() => navigate(section("zreports").path)} />;
 }

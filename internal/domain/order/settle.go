@@ -21,7 +21,13 @@ func (p *projector) tender(e Event, pl PaymentTendered) error {
 	if err := p.checkPrice("tip", pl.Tip); err != nil {
 		return err
 	}
-	if due := p.s.Totals.BalanceDue; pl.Amount.Minor > due.Minor {
+	// Cash may pay the balance as rounded to the venue's step (ADR-377);
+	// card and UPI pay to the paisa.
+	due := p.s.Totals.BalanceDue
+	if pl.Method == PaymentCash && p.s.Totals.CashDue.Minor > due.Minor {
+		due = p.s.Totals.CashDue
+	}
+	if pl.Amount.Minor > due.Minor {
 		return fmt.Errorf("%w: tendered %d, balance due %d", ErrOverTender, pl.Amount.Minor, due.Minor)
 	}
 	p.s.Tenders = append(p.s.Tenders, Tender{

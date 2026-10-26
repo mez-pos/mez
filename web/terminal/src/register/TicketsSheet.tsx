@@ -8,10 +8,14 @@ import { useClock } from "../../../shared/use-clock";
 import type { OpenOrder, OpenTicketsResponse, TicketSummary } from "../../../shared/api-types";
 import { Button, Money, Sheet, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { failureOf } from "./order-messages";
 import { elapsed, ticketLabel } from "./ticket-time";
 
 interface TicketsSheetProps {
   open: OpenTicketsResponse | undefined;
+  /** Why the open tickets could not be read, with the way to try again. */
+  openError?: unknown;
+  onRetryOpen?: () => void;
   /** The order in front, to mark it. */
   currentId: string | null;
   /** Table names by id, from the floor. */
@@ -25,7 +29,7 @@ interface TicketsSheetProps {
   onClose: () => void;
 }
 
-export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBills, onFloor, onClose }: TicketsSheetProps) {
+export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBills, onFloor, onClose, openError, onRetryOpen }: TicketsSheetProps) {
   const now = useClock(15_000);
   const [error, setError] = useState<string | null>(null);
   const lateAfter = open?.late_after_minutes ?? 20;
@@ -52,7 +56,13 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
             {error}
           </p>
         )}
-        {!open && <p className="text-sm text-fg-muted">Loading orders</p>}
+        {!open && !openError && <p className="text-sm text-fg-muted">Loading orders</p>}
+        {!open && openError !== undefined && openError !== null && (
+          <div role="alert" className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-danger">{failureOf(openError)}</p>
+            {onRetryOpen && <Button onClick={onRetryOpen}>Try again</Button>}
+          </div>
+        )}
         {open && open.orders.length === 0 && <p className="text-base text-fg-muted">No open orders.</p>}
         {open && open.orders.length > 0 && (
           <ul className="flex flex-col gap-tap-gap">

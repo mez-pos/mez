@@ -190,6 +190,14 @@ func (s *Service) run(ctx context.Context, meta Meta, orderID int64, name string
 		queued   int
 	)
 	state, events, err := s.db.AppendOrder(ctx, orderID, v.Taxes, func(ctx context.Context, tx *db.OrderTx) ([]order.Event, error) {
+		// The venue again, inside the transaction: the invoice series and
+		// the seller an invoice issued here names must be the venue's as
+		// of this write, not of a moment before it.
+		if inside, err := loadVenue(ctx, tx.Queries(), meta.VenueID); err == nil {
+			v = inside
+		} else {
+			return nil, err
+		}
 		// Decide can run more than once, so everything it sets is reset.
 		publicID, prior, queued = tx.PublicID, nil, 0
 		// The time is read here, inside the transaction, and not before

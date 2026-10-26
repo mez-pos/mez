@@ -3,7 +3,7 @@
 // More for the rest. The design draws photographs; nobody has one yet, so the
 // initials are the avatar.
 
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { StaffResponse } from "../../api-types";
 import { initials, roleText } from "../../auth/format";
 import { cx } from "../../ui/cx";
@@ -46,6 +46,23 @@ export function ProfileTiles({ people, selectedId, page, onChoose, onPage }: Pro
           </li>
         );
       })}
+      {view.prev !== null && (
+        // Back a page, for a team of more than two pages: More alone went
+        // round the whole way to reach the page before.
+        <li>
+          <button
+            type="button"
+            onClick={() => onPage(view.prev ?? 0)}
+            aria-label={`Previous profiles, page ${view.page} of ${view.pages}`}
+            className="flex w-20 flex-col items-center pt-3 text-center outline-offset-4 outline-line-focus focus-visible:outline-2 2xl:w-25 2xl:pt-6"
+          >
+            <span className="flex size-14 items-center justify-center rounded-round border border-line-strong bg-raised hover:bg-raised-high">
+              <ChevronLeftIcon aria-hidden="true" size={24} strokeWidth={2} />
+            </span>
+            <span className="mt-2.5 text-sm text-fg-muted">Back</span>
+          </button>
+        </li>
+      )}
       {view.hasMore && (
         <li>
           <button

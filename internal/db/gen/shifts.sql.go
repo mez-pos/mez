@@ -11,6 +11,39 @@ import (
 	"time"
 )
 
+const addShiftCash = `-- name: AddShiftCash :exec
+INSERT INTO shift_cash (shift_id, currency, taken_minor, voided_minor, refunded_minor, updated_at)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+ON CONFLICT (shift_id) DO UPDATE SET
+    taken_minor    = taken_minor + excluded.taken_minor,
+    voided_minor   = voided_minor + excluded.voided_minor,
+    refunded_minor = refunded_minor + excluded.refunded_minor,
+    updated_at     = excluded.updated_at
+`
+
+type AddShiftCashParams struct {
+	ShiftID       int64
+	Currency      string
+	TakenMinor    int64
+	VoidedMinor   int64
+	RefundedMinor int64
+	UpdatedAt     time.Time
+}
+
+// A cash event's effect on its shift's drawer, added to the running figures
+// (ADR-378). The first event makes the row.
+func (q *Queries) AddShiftCash(ctx context.Context, arg AddShiftCashParams) error {
+	_, err := q.db.ExecContext(ctx, addShiftCash,
+		arg.ShiftID,
+		arg.Currency,
+		arg.TakenMinor,
+		arg.VoidedMinor,
+		arg.RefundedMinor,
+		arg.UpdatedAt,
+	)
+	return err
+}
+
 const appendShiftEvent = `-- name: AppendShiftEvent :one
 INSERT INTO shift_events (shift_id, type, amount, reason, actor_id, authorised_by, device_id, idempotency_key, at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -436,6 +469,27 @@ func (q *Queries) ShiftByID(ctx context.Context, id int64) (Shift, error) {
 		&i.OpenedAt,
 		&i.ClosedBy,
 		&i.ClosedAt,
+	)
+	return i, err
+}
+
+const shiftCash = `-- name: ShiftCash :one
+SELECT shift_id, currency, taken_minor, voided_minor, refunded_minor, updated_at
+FROM shift_cash
+WHERE shift_id = ?
+`
+
+// The running cash figures of a shift, if any cash event has touched it.
+func (q *Queries) ShiftCash(ctx context.Context, shiftID int64) (ShiftCash, error) {
+	row := q.db.QueryRowContext(ctx, shiftCash, shiftID)
+	var i ShiftCash
+	err := row.Scan(
+		&i.ShiftID,
+		&i.Currency,
+		&i.TakenMinor,
+		&i.VoidedMinor,
+		&i.RefundedMinor,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

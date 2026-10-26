@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mez-pos/mez/internal/domain/shift"
 	"reflect"
 	"strings"
 	"sync"
@@ -700,5 +701,54 @@ func TestAfterAppend(t *testing.T) {
 	})
 	if err != nil || int64(len(got)) != state.LastSeq {
 		t.Errorf("Events in the transaction: %d, %v; want %d", len(got), err, state.LastSeq)
+	}
+}
+
+// TestCashEventsKeepTheShiftsDrawerFigures (ADR-378): a cash tender, its
+// void and a refund against another each add to the shift's running cash
+// as they are written; a card tender adds nothing; the figures agree with
+// the replay shift.CashFromOrders makes of the same events.
+func TestCashEventsKeepTheShiftsDrawerFigures(t *testing.T) {
+	d := migratedDB(t)
+	ctx := context.Background()
+	seedTradingVenue(t, d)
+	orderID := openTestOrder(t, d, "ord_CASH0001", untaxed)
+	mustAppend(t, d, orderID, untaxed, emit(dish(1), dish(2)))                                                                                  // 100.01 + 100.02
+	mustAppend(t, d, orderID, untaxed, emit(order.PaymentTendered{Method: order.PaymentCash, Amount: inr(5000), Tip: inr(500), TenderedBy: 1})) // 4
+	mustAppend(t, d, orderID, untaxed, emit(order.PaymentTendered{Method: order.PaymentCard, Amount: inr(3000), Tip: inr(0), TenderedBy: 1}))   // 5
+	mustAppend(t, d, orderID, untaxed, emit(order.PaymentTendered{Method: order.PaymentCash, Amount: inr(12003), Tip: inr(0), TenderedBy: 1}))  // 6, settles
+	mustAppend(t, d, orderID, untaxed, emit(order.PaymentVoided{PaymentID: 4, Reason: "wrong drawer", AuthorisedBy: 1}))
+	// A dish taken back leaves the guest owed money, some of which goes back in cash.
+	mustAppend(t, d, orderID, untaxed, emit(order.LineVoided{LineID: 3, ReasonCode: "wrong_item", AuthorisedBy: 1}))
+	mustAppend(t, d, orderID, untaxed, emit(order.RefundIssued{Amount: inr(2000), AgainstPaymentID: 6, Reason: "cold"}))
+
+	row, err := d.Queries().ShiftCash(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Taken: 50.00 + 5.00 tip, then 120.03. Voided: the first, 55.00. Refunded: 20.00.
+	if row.TakenMinor != 5500+12003 || row.VoidedMinor != 5500 || row.RefundedMinor != 2000 || row.Currency != "INR" {
+		t.Fatalf("shift cash = %+v", row)
+	}
+
+	// The same as a replay of the shift's events says.
+	rows, err := d.Queries().OrderEventsTouchingShift(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stamped []shift.StampedEvent
+	for _, r := range rows {
+		p, err := order.DecodePayload(order.Type(r.Type), json.RawMessage(r.Payload))
+		if err != nil {
+			t.Fatal(err)
+		}
+		stamped = append(stamped, shift.StampedEvent{Event: order.Event{Seq: r.Seq, Type: order.Type(r.Type), Payload: p}, ShiftID: r.ShiftID})
+	}
+	replayed, err := shift.CashFromOrders("INR", 1, [][]shift.StampedEvent{stamped})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if replayed.Taken.Minor != row.TakenMinor || replayed.Voided.Minor != row.VoidedMinor || replayed.Refunded.Minor != row.RefundedMinor {
+		t.Fatalf("replay says %+v, the running figures %+v", replayed, row)
 	}
 }

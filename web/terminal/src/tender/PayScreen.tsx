@@ -160,10 +160,11 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
   const step = payStep(paid, splitting);
   const stale = inUse !== null && splitStale(inUse.split, inUse.paid, due);
   const share = inUse && inUse.current !== null && !stale ? inUse.split.shares[inUse.current] : undefined;
-  // A share is paid whole: card and UPI take exactly it, cash at least it.
-  const target = share ? share.amount.minor : due;
-  const whole = share !== undefined;
   const cash = method === "cash";
+  // A share is paid whole: card and UPI take exactly it, cash at least it.
+  // The whole bill in cash is the balance as the venue rounds cash (ADR-377).
+  const target = share ? share.amount.minor : cash && order.totals.cash_due.minor > 0 ? order.totals.cash_due.minor : due;
+  const whole = share !== undefined;
   const amountShown = entered === null || (whole && !cash) ? target : cash ? entered : Math.min(entered, target);
   const plan = stale
     ? { amount: 0, change: 0, charge: 0, problem: "Split the bill again before taking payment." }

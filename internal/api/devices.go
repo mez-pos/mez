@@ -74,6 +74,10 @@ type pairingCodeResponse struct {
 	// Empty when the server knows of no address a second device can reach,
 	// or was built without one: then the address is read off the computer.
 	Open []pairingPlaceResponse `json:"open"`
+	// NamedURL is where a device that resolves .local names opens mez
+	// (ADR-379): the server's name on the network and the kind's path.
+	// Empty when the server is not answering for a name.
+	NamedURL string `json:"named_url,omitempty"`
 }
 
 // pairingPlaceResponse is one place a device being paired can open mez.
@@ -117,7 +121,8 @@ func (s *Server) createPairingCode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, s.log, http.StatusCreated, pairingCodeResponse{
 		Code: code.Code, ExpiresAt: code.ExpiresAt.UTC(),
-		Open: s.pairingPlaces(r, req.Kind, code.Code),
+		Open:     s.pairingPlaces(r, req.Kind, code.Code),
+		NamedURL: s.namedURLFor(req.Kind),
 	})
 }
 

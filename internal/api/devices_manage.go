@@ -72,6 +72,30 @@ func (s *Server) mountDeviceManagement(mux *http.ServeMux) {
 	}
 }
 
+// WithNamedAddress tells the API the address the server answers for by
+// name on the venue's network (ADR-379), "http://mez.local:7777", or "" when
+// it is not announcing one. Read when asked, since the announcer may have
+// failed to start.
+func WithNamedAddress(named func() string) Option {
+	return func(s *Server) { s.namedAddress = named }
+}
+
+// namedURLFor is the named address with the kind's path, or "".
+func (s *Server) namedURLFor(kind auth.DeviceKind) string {
+	if s.namedAddress == nil {
+		return ""
+	}
+	base := strings.TrimSuffix(s.namedAddress(), "/")
+	if base == "" {
+		return ""
+	}
+	path, ok := appPath(kind)
+	if !ok {
+		return ""
+	}
+	return base + path
+}
+
 // WithAddresses tells the API where on the venue's network this server is
 // (ADR-269, ADR-271): each address a second device could open, the real
 // adapters' first. Without it the endpoint is not mounted.

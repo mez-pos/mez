@@ -10,8 +10,10 @@ require (
 	github.com/benbjohnson/litestream v0.5.15
 	github.com/coder/websocket v1.8.15
 	github.com/kardianos/service v1.3.0
+	github.com/pion/mdns/v2 v2.2.2
 	github.com/pressly/goose/v3 v3.26.0
 	golang.org/x/crypto v0.52.0
+	golang.org/x/net v0.55.0
 	golang.org/x/sys v0.45.0
 	modernc.org/sqlite v1.46.1
 )
@@ -51,6 +53,7 @@ require (
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
+	github.com/pion/logging v0.2.4 // indirect
 	github.com/prometheus/client_golang v1.17.0 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.45.0 // indirect

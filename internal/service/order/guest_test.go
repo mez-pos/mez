@@ -382,3 +382,33 @@ func TestAPaidBillRollsWhenTheGuestsOrderAgain(t *testing.T) {
 		t.Fatalf("the table still has a ticket: %v, %v", open, err)
 	}
 }
+
+// TestAWaiterStartingANewTicketAtAPaidTableRollsIt (ADR-376): the table's
+// ticket is paid in full and invoiced; a waiter opening a new ticket there
+// closes it and starts fresh, as a guest's round does. A ticket still owed
+// is left as it is, and the new one opens beside it as before.
+func TestAWaiterStartingANewTicketAtAPaidTableRollsIt(t *testing.T) {
+	s, _, _ := newService(t)
+	ctx := context.Background()
+	paid := open(t, s).OrderID
+	must(t)(s.AddLine(ctx, cashier(""), paid, coffee(1)))
+	must(t)(s.TenderPayment(ctx, cashier(""), paid, TenderPayment{Method: order.PaymentCash, Amount: inr(4200)}))
+
+	next := open(t, s)
+	if next.OrderID == paid {
+		t.Fatal("the new ticket is the paid one")
+	}
+	if old := must(t)(s.Order(ctx, 1, paid)); old.State.Status != order.StatusClosed {
+		t.Fatalf("the paid ticket is %s, want closed", old.State.Status)
+	}
+	if res, open, err := s.TableTicket(ctx, 1, 4); err != nil || !open || res.OrderID != next.OrderID {
+		t.Fatalf("the table's ticket: open %v, %d, %v; want the new one", open, res.OrderID, err)
+	}
+
+	owed := must(t)(s.Open(ctx, cashier(""), OpenOrder{Channel: order.ChannelCounter, TableID: 5, Covers: 2}))
+	must(t)(s.AddLine(ctx, cashier(""), owed.OrderID, coffee(1)))
+	must(t)(s.Open(ctx, cashier(""), OpenOrder{Channel: order.ChannelCounter, TableID: 5, Covers: 1}))
+	if still := must(t)(s.Order(ctx, 1, owed.OrderID)); still.State.Status == order.StatusClosed {
+		t.Fatal("a ticket still owed was closed by a new one at its table")
+	}
+}

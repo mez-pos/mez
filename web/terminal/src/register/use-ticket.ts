@@ -4,6 +4,7 @@
 // current (Task 5, ADR-074).
 
 import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { tenderFailure } from "../tender/tender-logic";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ApiError } from "../../../shared/api";
 import type {
@@ -60,6 +61,10 @@ export interface Ticket {
   error: unknown;
   /** Reads the order in front again. */
   refetch: () => void;
+  /** Why the open tickets could not be read, or null. */
+  openError: unknown;
+  /** Reads the open tickets again. */
+  refetchOpen: () => void;
   /** How the ticket in front opens, or opened: counter or table, covers. */
   opening: OpenOrder;
   /** Every unclosed ticket at the venue, oldest first; undefined until read. */
@@ -190,8 +195,23 @@ export function useTicket(): Ticket {
     if (orderId && notice.message.order_id === orderId) void queryClient.invalidateQueries({ queryKey: orderQueryKey(orderId) });
   });
 
-  const post = (suffix: string, body: unknown, on = queue, key?: string) =>
-    on.run((id, sent) => store.api.post<CommandResponse>(`/api/v1/orders/${encodeURIComponent(id)}${suffix}`, body, { idempotencyKey: sent }), key);
+  // A command whose answer was lost (no reach, a timeout, a relay's 502)
+  // may have been applied. The next identical command, the same suffix and
+  // body on the same order, goes out under the same key, so it is a replay
+  // and never a second command; a refusal or a success lets the key go.
+  const lostKeys = useRef(new Map<string, string>());
+  const post = async (suffix: string, body: unknown, on = queue, key?: string): Promise<void> => {
+    const slot = `${orderId ?? ""}|${suffix}|${JSON.stringify(body ?? null)}`;
+    const sent = key ?? lostKeys.current.get(slot) ?? newKey();
+    try {
+      await on.run((id, k) => store.api.post<CommandResponse>(`/api/v1/orders/${encodeURIComponent(id)}${suffix}`, body, { idempotencyKey: k }), sent);
+      lostKeys.current.delete(slot);
+    } catch (err) {
+      if (tenderFailure(err) === "uncertain") lostKeys.current.set(slot, sent);
+      else lostKeys.current.delete(slot);
+      throw err;
+    }
+  };
 
   return {
     order: orderId ? order.data : undefined,
@@ -202,6 +222,8 @@ export function useTicket(): Ticket {
     refetch: () => void order.refetch(),
     opening: queue.opening,
     open: open.data,
+    openError: open.error,
+    refetchOpen: () => void open.refetch(),
     ringUp: (command, note) => queue.ringUp(command, note),
     retry: (key) => queue.retry(key),
     remove: (key) => queue.remove(key),

@@ -20,7 +20,7 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ArrowLeftIcon, ArrowRightIcon, CircleCheckIcon, PrinterIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import type { Money as Amount, OrderResponse, Override, PaymentMethod, SplitResponse, TenderRequest } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
@@ -45,6 +45,7 @@ import {
   type Attempt,
 } from "../tender/tender-logic";
 import { TipApprovalSheet } from "../tender/TipApprovalSheet";
+import { clearUnsettled, loadUnsettled, saveUnsettled } from "../tender/unsettled-store";
 import { closeBlock, eachShare, shareName, shareRows, tablePays, type PaidShares } from "./bill-logic";
 import { BillCollect } from "./BillCollect";
 import { BillShares } from "./BillShares";
@@ -78,6 +79,18 @@ interface Unsettled {
   change: number | null;
 }
 
+/** What is kept across a reload while a payment's answer is lost (ADR-368, ADR-376): the payment and the key that replays it. */
+interface Held {
+  attempt: Attempt | null;
+  unsettled: Unsettled;
+}
+
+function isHeld(value: unknown): value is Held {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Partial<Held>;
+  return typeof v.unsettled === "object" && v.unsettled !== null && Array.isArray(v.unsettled.before) && typeof v.unsettled.body === "object";
+}
+
 /** The most the keypad types for cash: ₹10 crore, far past any bill. */
 const padCeiling = 1_000_000_000;
 
@@ -100,9 +113,20 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState<Attempt | null>(null);
-  // A payment that may have been recorded holds the share until the order says.
-  const [unsettled, setUnsettled] = useState<Unsettled | null>(null);
+  // A payment that may have been recorded holds the share until the order
+  // says, across a reload as well (ADR-376): what was held for this order
+  // is taken up again and asked about below.
+  const [held] = useState(() => loadUnsettled(order.id, isHeld));
+  const [attempt, setAttempt] = useState<Attempt | null>(held?.attempt ?? null);
+  const [unsettled, setUnsettled] = useState<Unsettled | null>(held?.unsettled ?? null);
+  const holdUnsettled = (u: Unsettled, kept: Attempt | null) => {
+    setUnsettled(u);
+    saveUnsettled<Held>(order.id, { attempt: kept, unsettled: u });
+  };
+  const releaseUnsettled = () => {
+    releaseUnsettled();
+    clearUnsettled(order.id);
+  };
   const [checking, setChecking] = useState(false);
   const [change, setChange] = useState<number | null>(null);
   const [reprinting, setReprinting] = useState(false);
@@ -161,7 +185,7 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
     setPaid((p) => new Map(p).set(u.payer, u.body.method));
     setPicked(null);
     setChange(u.change);
-    setUnsettled(null);
+    releaseUnsettled();
     setAsked(null);
     fresh();
     toast(`${methodNames[u.body.method]} payment recorded · ${u.from}`);
@@ -174,7 +198,7 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
       const read = await ticket.reread();
       // Not there: the failure stands, and another method may be tried.
       if (tenderOutcome(u.before, u.body, read) === "recorded") recorded(u);
-      else setUnsettled(null);
+      else releaseUnsettled();
     } catch {
       // Still not reached: the share says so and offers Check again.
     } finally {
@@ -187,6 +211,12 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
    * given. A refusal of the approval itself rejects, for the approval sheet
    * to say; anything else is said on the share, as always.
    */
+  // Taken up from before a reload: the order is asked at once.
+  useEffect(() => {
+    if (held) void check(held.unsettled);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, as the screen appears
+  }, []);
+
   const send = async (override: Override | null = null) => {
     if (!split || collecting === null || plan.problem || busy || unsettled) return;
     const ref = reference.trim();
@@ -222,7 +252,7 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
         setApproving(true);
       }
       if (kept) {
-        setUnsettled(sent);
+        holdUnsettled(sent, kept);
         void check(sent);
       }
     } finally {

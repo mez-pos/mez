@@ -1,6 +1,7 @@
 package order
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/mez-pos/mez/internal/domain/kitchen"
@@ -476,5 +477,53 @@ func TestScenariosCoverEveryType(t *testing.T) {
 	}
 	if len(scenarios) < 10 {
 		t.Errorf("%d scenarios; phase 03 asks for at least ten", len(scenarios))
+	}
+}
+
+// TestCashRoundsOnceAtTheEnd (ADR-377): with a step of fifty paise, cash
+// pays the balance rounded to it, the difference is Rounding, and the bill
+// is settled; card pays to the paisa and is never rounded; a bill with no
+// step is as it always was.
+func TestCashRoundsOnceAtTheEnd(t *testing.T) {
+	rounding := opened()
+	rounding.CashRoundingStep = 50
+	base := []Payload{rounding, item("Vada", 1, 10125)} // 101.25
+
+	s := mustProject(t, base...)
+	wantCash, err := inr(10125).RoundToNearest(50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Totals.BalanceDue != inr(10125) || s.Totals.CashDue != wantCash || !s.Totals.Rounding.IsZero() {
+		t.Fatalf("before paying: due %v, cash due %v, rounding %v", s.Totals.BalanceDue, s.Totals.CashDue, s.Totals.Rounding)
+	}
+
+	// Cash pays the rounded amount: settled, with the difference as rounding.
+	s = mustProject(t, append(base, pay(PaymentCash, wantCash.Minor))...)
+	if !s.Totals.BalanceDue.IsZero() || s.Totals.Rounding.Minor != wantCash.Minor-10125 || s.Status != StatusSettling {
+		t.Fatalf("cash of %v: due %v, rounding %v, %s", wantCash, s.Totals.BalanceDue, s.Totals.Rounding, s.Status)
+	}
+	// What was paid is the total plus the rounding.
+	if paid := s.Totals.Paid.Minor; paid != s.Totals.Total.Minor+s.Totals.Rounding.Minor {
+		t.Errorf("paid %d, total %d, rounding %d", paid, s.Totals.Total.Minor, s.Totals.Rounding.Minor)
+	}
+
+	// Cash of the exact balance is still taken, and rounds nothing.
+	s = mustProject(t, append(base, pay(PaymentCash, 10125))...)
+	if !s.Totals.BalanceDue.IsZero() || !s.Totals.Rounding.IsZero() {
+		t.Errorf("exact cash: due %v, rounding %v", s.Totals.BalanceDue, s.Totals.Rounding)
+	}
+
+	// Card may not pay the rounded amount when it is over the balance.
+	if wantCash.Minor > 10125 {
+		if _, err := Project(stream(append(base, pay(PaymentCard, wantCash.Minor))...), untaxed); !errors.Is(err, ErrOverTender) {
+			t.Errorf("card over the balance: %v, want %v", err, ErrOverTender)
+		}
+	}
+
+	// No step: nothing changes.
+	plain := mustProject(t, opened(), item("Vada", 1, 10125))
+	if plain.Totals.CashDue != inr(10125) || !plain.Totals.Rounding.IsZero() {
+		t.Errorf("no step: cash due %v, rounding %v", plain.Totals.CashDue, plain.Totals.Rounding)
 	}
 }

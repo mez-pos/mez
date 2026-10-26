@@ -20,6 +20,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -30,6 +31,7 @@ import (
 	"github.com/mez-pos/mez/internal/config"
 	"github.com/mez-pos/mez/internal/db"
 	"github.com/mez-pos/mez/internal/dbhealth"
+	"github.com/mez-pos/mez/internal/device/announce"
 	"github.com/mez-pos/mez/internal/device/discover"
 	"github.com/mez-pos/mez/internal/device/escpos"
 	"github.com/mez-pos/mez/internal/device/printq"
@@ -269,6 +271,22 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	// already closed it, and closing a closed listener is nothing.
 	defer func() { _ = listener.Close() }()
 
+	// The server's name on the venue's network (ADR-379), answered for as
+	// long as it serves. A machine that refuses the multicast socket serves
+	// without one, and the pairing screen shows the addresses alone.
+	announcer := announce.New(log)
+	named := func() string { return "" }
+	if err := announcer.Start(ctx); err != nil {
+		log.Warn("the server has no name on the network; devices open it by address", "error", err)
+	} else {
+		running.push("announcer", announcer.Close)
+		if _, port, err := net.SplitHostPort(listener.Addr().String()); err == nil {
+			if n, err := strconv.Atoi(port); err == nil {
+				named = func() string { return announce.URL(n) }
+			}
+		}
+	}
+
 	// A venue brought back by "I had mez before" waits beside the database
 	// for this moment: this process has not opened the database yet, and
 	// Adopt asks whether any other has (ADR-333). Whatever goes wrong, the
@@ -465,7 +483,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		return err
 	}
 
-	shifts, err := svcshift.New(svcshift.Options{DB: database, Prints: prints, OnChange: events.Notify})
+	shifts, err := svcshift.New(svcshift.Options{DB: database, Log: log, Prints: prints, OnChange: events.Notify})
 	if err != nil {
 		return err
 	}
@@ -593,6 +611,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		api.WithRecovery(recoverer, arrived),
 		// Where a second device opens this server, for whoever is pairing one.
 		api.WithAddresses(func() ([]discover.Address, error) { return (&discover.Addresser{}).Addresses(listener.Addr().String()) }),
+		api.WithNamedAddress(named),
 		api.WithStaff(staff),
 		api.WithOrders(orders),
 		api.WithMenus(database),

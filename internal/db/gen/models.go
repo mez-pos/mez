@@ -397,6 +397,15 @@ type Shift struct {
 	ClosedAt   sql.NullTime
 }
 
+type ShiftCash struct {
+	ShiftID       int64
+	Currency      string
+	TakenMinor    int64
+	VoidedMinor   int64
+	RefundedMinor int64
+	UpdatedAt     time.Time
+}
+
 type ShiftEvent struct {
 	ID             int64
 	ShiftID        int64

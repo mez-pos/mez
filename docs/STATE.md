@@ -20,8 +20,13 @@ list below.
 ## Last completed task
 
 **The venue PC's three complaints, a stability audit, the dead ends, and
-the audit's six owed fixes, 2026-10-24 and 25** (ADR-366 to ADR-375),
-outside the phase plan at the human's word. ADR-372 to ADR-375, done
+every owed fix from the audits, 2026-10-24 to 26** (ADR-366 to ADR-379),
+outside the phase plan at the human's word. ADR-376 to ADR-379 (the
+26th): a stuck print job frees itself, a paid table takes a waiter's new
+ticket, the waiter's bill keeps a lost payment, retries replay under one
+key, six small doors; cash rounds once at the end to the venue's step;
+a shift's cash is kept as it happens; the server answers for
+`mez.local`. ADR-372 to ADR-375, done
 at the human's "go ahead": a paid ticket rolls when the party orders
 again, `discount.removed`, an order carries the taxes it opened under,
 the shift close projects the day once, the Windows service reports

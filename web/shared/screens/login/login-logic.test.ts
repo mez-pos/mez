@@ -32,7 +32,7 @@ describe("tilePage", () => {
   });
 
   it("has an empty page for nobody", () => {
-    expect(tilePage([], 0)).toEqual({ shown: [], hasMore: false, next: 0, page: 0, pages: 1 });
+    expect(tilePage([], 0)).toEqual({ shown: [], hasMore: false, next: 0, prev: null, page: 0, pages: 1 });
   });
 });
 
@@ -45,5 +45,14 @@ describe("pageOf", () => {
   });
   it("says the first page for someone who is not there", () => {
     expect(pageOf(people(9), "stf_nobody")).toBe(0);
+  });
+});
+
+describe("tilePage's Back", () => {
+  it("offers the page before, and none on the first", () => {
+    const people = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
+    expect(tilePage(people, 0).prev).toBeNull();
+    expect(tilePage(people, 1).prev).toBe(0);
+    expect(tilePage(people, 2).prev).toBe(1);
   });
 });

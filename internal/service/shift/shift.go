@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	svcorder "github.com/mez-pos/mez/internal/service/order"
+	"log/slog"
 	"strings"
 	"time"
 	"unicode"
@@ -52,6 +53,8 @@ func (systemClock) Now() time.Time { return time.Now() }
 type Options struct {
 	DB    *db.DB
 	Clock Clock
+	// Log takes the service's own lines; nil is the default logger.
+	Log *slog.Logger
 	// OnChange is told a venue's shift changed, after it is committed.
 	OnChange func(venueID int64)
 	// Prints, when set, is woken after a Z-report is queued to print.
@@ -63,6 +66,7 @@ type Options struct {
 type Service struct {
 	db       *db.DB
 	clock    Clock
+	log      *slog.Logger
 	onChange func(venueID int64)
 	prints   PrintQueue
 }
@@ -78,7 +82,11 @@ func New(o Options) (*Service, error) {
 	if o.OnChange == nil {
 		o.OnChange = func(int64) {}
 	}
-	return &Service{db: o.DB, clock: o.Clock, onChange: o.OnChange, prints: o.Prints}, nil
+	log := o.Log
+	if log == nil {
+		log = slog.Default()
+	}
+	return &Service{log: log, db: o.DB, clock: o.Clock, onChange: o.OnChange, prints: o.Prints}, nil
 }
 
 // Meta is who is doing it, where, and the request's idempotency key.
@@ -269,6 +277,10 @@ func (s *Service) Close(ctx context.Context, meta Meta, shiftID int64) (Shift, e
 		if err != nil {
 			return err
 		}
+		// The replay is the truth the Z-report is built on; the running
+		// figures (ADR-378) are what the day's reads showed. Apart, it is
+		// said, loudly, since the drawer's expected cash was shown wrong.
+		s.checkRunningCash(ctx, q, row.ID, sh.Sales)
 		if err := sh.ReadyToClose(); err != nil {
 			return err
 		}
@@ -316,4 +328,27 @@ func shiftAt(ctx context.Context, q *gen.Queries, venueID, shiftID int64) (gen.S
 		return gen.Shift{}, fmt.Errorf("reading shift %d: %w", shiftID, err)
 	}
 	return row, nil
+}
+
+// checkRunningCash compares the day's replayed cash sales with the running
+// figures kept as the events were written (ADR-378), and says at Error
+// when they disagree: the replay stands, and the difference is a bug to
+// find, not a drawer to blame.
+func (s *Service) checkRunningCash(ctx context.Context, q *gen.Queries, shiftID int64, replayed shift.CashSales) {
+	cached, err := q.ShiftCash(ctx, shiftID)
+	if errors.Is(err, sql.ErrNoRows) {
+		if !replayed.Taken.IsZero() || !replayed.Voided.IsZero() || !replayed.Refunded.IsZero() {
+			s.log.Error("shift cash: the replay has cash and the running figures have none", "shift_id", shiftID, "replayed", replayed)
+		}
+		return
+	}
+	if err != nil {
+		s.log.Warn("shift cash: reading the running figures", "shift_id", shiftID, "error", err)
+		return
+	}
+	if cached.TakenMinor != replayed.Taken.Minor || cached.VoidedMinor != replayed.Voided.Minor || cached.RefundedMinor != replayed.Refunded.Minor {
+		s.log.Error("shift cash: the running figures disagree with the replay; the replay stands",
+			"shift_id", shiftID, "running_taken", cached.TakenMinor, "running_voided", cached.VoidedMinor, "running_refunded", cached.RefundedMinor,
+			"replayed", replayed)
+	}
 }

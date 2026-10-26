@@ -700,3 +700,41 @@ func TestAnOpenOrderIsNotRepricedByATaxChange(t *testing.T) {
 		t.Fatalf("taxes recorded: before %+v, after %+v", before.State.Taxes, after.State.Taxes)
 	}
 }
+
+// TestCashSettlesAtTheRoundedBalance (ADR-377): a venue rounding cash to
+// fifty paise. The order says what cash pays now; a cash tender of that
+// settles and invoices the bill, with the rounding on the invoice; a card
+// tender of the exact balance still does.
+func TestCashSettlesAtTheRoundedBalance(t *testing.T) {
+	s, d, _ := newService(t)
+	ctx := context.Background()
+	if _, err := d.Writer().ExecContext(ctx, `UPDATE venues SET cash_rounding_step_minor = 50 WHERE id = 1`); err != nil {
+		t.Fatal(err)
+	}
+	res := open(t, s)
+	res = must(t)(s.AddLine(ctx, cashier(""), res.OrderID, coffee(1)))
+	due := res.State.Totals.BalanceDue
+	want, err := due.RoundToNearest(50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.State.Totals.CashDue != want {
+		t.Fatalf("cash due %v, want %v for a balance of %v", res.State.Totals.CashDue, want, due)
+	}
+	if want == due {
+		t.Skipf("the fixture's balance %v is already on the step", due)
+	}
+	paid := must(t)(s.TenderPayment(ctx, cashier(""), res.OrderID, TenderPayment{Method: order.PaymentCash, Amount: want}))
+	if !paid.State.Invoiced || !paid.State.Totals.BalanceDue.IsZero() || paid.State.Totals.Rounding.Minor != want.Minor-due.Minor {
+		t.Fatalf("after cash of %v: invoiced %v, due %v, rounding %v", want, paid.State.Invoiced, paid.State.Totals.BalanceDue, paid.State.Totals.Rounding)
+	}
+	var issued *order.InvoiceIssued
+	for _, e := range paid.Events {
+		if p, ok := e.Payload.(order.InvoiceIssued); ok {
+			issued = &p
+		}
+	}
+	if issued == nil || issued.Prices == nil || issued.Prices.Rounding.Minor != want.Minor-due.Minor {
+		t.Fatalf("the invoice's rounding: %+v", issued)
+	}
+}

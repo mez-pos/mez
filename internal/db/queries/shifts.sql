@@ -109,3 +109,20 @@ SELECT e.id, e.shift_id, e.kind, e.filename, e.body, e.created_at, s.venue_id
 FROM exports e
 JOIN shifts s ON s.id = e.shift_id
 WHERE e.id = ?;
+
+-- name: AddShiftCash :exec
+-- A cash event's effect on its shift's drawer, added to the running figures
+-- (ADR-378). The first event makes the row.
+INSERT INTO shift_cash (shift_id, currency, taken_minor, voided_minor, refunded_minor, updated_at)
+VALUES (sqlc.arg(shift_id), sqlc.arg(currency), sqlc.arg(taken_minor), sqlc.arg(voided_minor), sqlc.arg(refunded_minor), sqlc.arg(updated_at))
+ON CONFLICT (shift_id) DO UPDATE SET
+    taken_minor    = taken_minor + excluded.taken_minor,
+    voided_minor   = voided_minor + excluded.voided_minor,
+    refunded_minor = refunded_minor + excluded.refunded_minor,
+    updated_at     = excluded.updated_at;
+
+-- name: ShiftCash :one
+-- The running cash figures of a shift, if any cash event has touched it.
+SELECT shift_id, currency, taken_minor, voided_minor, refunded_minor, updated_at
+FROM shift_cash
+WHERE shift_id = ?;

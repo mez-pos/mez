@@ -219,6 +219,8 @@ export function OrderScreen() {
       {ordersOpen && (
         <TicketsSheet
           open={ticket.open}
+          openError={ticket.openError}
+          onRetryOpen={ticket.refetchOpen}
           currentId={ticket.orderId}
           names={names}
           onPick={(t) => {

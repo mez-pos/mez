@@ -97,7 +97,9 @@ type venue struct {
 	Taxes    order.Taxes
 	// TaxCode is the profile's stored code, which an order opening records
 	// with its taxes (ADR-374).
-	TaxCode   string
+	TaxCode string
+	// CashStep is the venue's cash rounding step in minor units (ADR-377).
+	CashStep  int64
 	Series    invoice.Series
 	Credits   invoice.Series // the credit note series
 	LateAfter time.Duration
@@ -160,7 +162,8 @@ func venueFrom(row gen.Venue, settings map[string]string) (venue, error) {
 		return venue{}, err
 	}
 	return venue{
-		ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, TaxCode: row.TaxProfile, Series: series, Credits: credits,
+		ID: row.ID, Currency: row.Currency, Location: loc, Taxes: taxes, TaxCode: row.TaxProfile, CashStep: row.CashRoundingStepMinor,
+		Series: series, Credits: credits,
 		LateAfter: lateAfter(settings[SettingTicketLateMinutes]),
 		Seller:    sellerFor(row, settings),
 		PayMode:   payModeOf(settings[SettingPayMode]),

@@ -200,6 +200,8 @@ func (p *projector) open(e Event, pl OrderOpened) error {
 		OpenedBy: pl.OpenedBy,
 		OpenedAt: e.At.UTC(),
 		Taxes:    pl.Taxes.clone(),
+
+		CashRoundingStep: pl.CashRoundingStep,
 	}
 	return nil
 }

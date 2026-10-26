@@ -153,7 +153,49 @@ func (p *projector) orderFigures() (Totals, error) {
 		t.Credited = sum.add(t.Credited, c.Total)
 	}
 	t.BalanceDue = sum.sub(sum.sub(t.Total, t.Credited), t.NetPaid)
-	return t, sum.err
+	if sum.err != nil {
+		return Totals{}, sum.err
+	}
+	return p.roundCash(t)
+}
+
+// roundCash applies the venue's cash rounding, once, at the end (ADR-377):
+// CashDue is what cash pays now, the balance rounded to the step; and once
+// a cash tender has settled the bill to within a step, the difference is
+// Rounding and the balance is nothing. A bill settled by card or UPI, which
+// pay to the paisa, is never rounded.
+func (p *projector) roundCash(t Totals) (Totals, error) {
+	t.CashDue, t.Rounding = t.BalanceDue, p.zero()
+	step := p.s.CashRoundingStep
+	if step <= 1 {
+		return t, nil
+	}
+	if t.BalanceDue.Minor != 0 && t.BalanceDue.Minor > -step && t.BalanceDue.Minor < step && p.cashTendered() {
+		rounding, err := p.zero().Sub(t.BalanceDue)
+		if err != nil {
+			return Totals{}, err
+		}
+		t.Rounding, t.BalanceDue, t.CashDue = rounding, p.zero(), p.zero()
+		return t, nil
+	}
+	if t.BalanceDue.Minor > 0 {
+		rounded, err := t.BalanceDue.RoundToNearest(step)
+		if err != nil {
+			return Totals{}, err
+		}
+		t.CashDue = rounded
+	}
+	return t, nil
+}
+
+// cashTendered reports whether a cash tender stands on the order.
+func (p *projector) cashTendered() bool {
+	for _, tn := range p.s.Tenders {
+		if tn.Method == PaymentCash && tn.Status == PaymentStatusCaptured {
+			return true
+		}
+	}
+	return false
 }
 
 // orderDiscounts values every order discount against base, the order after

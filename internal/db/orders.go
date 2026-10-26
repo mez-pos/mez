@@ -60,6 +60,10 @@ type NewOrder struct {
 	// Within, if set, runs inside the opening transaction once the order and
 	// its first event are written. An error from it rolls the order back.
 	Within func(ctx context.Context, tx *OrderTx) error
+	// Before, if set, runs first in the transaction, before the shift is
+	// asked for: a replay of an open under its key is answered from the
+	// key whether or not a shift is open now.
+	Before func(ctx context.Context, q *gen.Queries) error
 }
 
 // OpenOrder writes a new order and its first event in one transaction and
@@ -78,6 +82,11 @@ func (d *DB) OpenOrder(ctx context.Context, n NewOrder, taxes order.Taxes) (int6
 
 	var orderID int64
 	err = d.WriteTx(ctx, func(q *gen.Queries) error {
+		if n.Before != nil {
+			if err := n.Before(ctx, q); err != nil {
+				return err
+			}
+		}
 		shiftID, err := shiftFor(ctx, q, n.VenueID, []order.Event{first})
 		if err != nil {
 			return err
@@ -263,6 +272,9 @@ func (d *DB) appendOnce(ctx context.Context, q *gen.Queries, orderID int64, taxe
 		return order.State{}, nil, err
 	}
 	if err := appendEvents(ctx, q, orderID, shiftID, events); err != nil {
+		return order.State{}, nil, err
+	}
+	if err := recordShiftCash(ctx, q, shiftID, next, events); err != nil {
 		return order.State{}, nil, err
 	}
 	moved, err := q.UpdateOrderIndex(ctx, gen.UpdateOrderIndexParams{
@@ -577,4 +589,54 @@ func syncTickets(ctx context.Context, q *gen.Queries, orderID, venueID int64, pr
 		}
 	}
 	return nil
+}
+
+// recordShiftCash adds what the events just appended did to the drawer to
+// their shift's running cash figures (ADR-378): a cash tender takes its
+// amount and tip, a void of a cash tender hands them back, a refund against
+// one is refunded. The same counting as shift.CashFromOrders, done as the
+// event is written, so reading a shift's cash need not replay the day. With
+// no shift open nothing is recorded, as nothing is counted.
+func recordShiftCash(ctx context.Context, q *gen.Queries, shiftID int64, next order.State, events []order.Event) error {
+	if shiftID == 0 {
+		return nil
+	}
+	var taken, voided, refunded int64
+	for _, e := range events {
+		switch p := e.Payload.(type) {
+		case order.PaymentTendered:
+			if p.Method == order.PaymentCash {
+				taken += p.Amount.Minor + p.Tip.Minor
+			}
+		case order.PaymentVoided:
+			if t, ok := tenderIn(next, p.PaymentID); ok && t.Method == order.PaymentCash {
+				voided += t.Amount.Minor + t.Tip.Minor
+			}
+		case order.RefundIssued:
+			if t, ok := tenderIn(next, p.AgainstPaymentID); ok && t.Method == order.PaymentCash {
+				refunded += p.Amount.Minor
+			}
+		}
+	}
+	if taken == 0 && voided == 0 && refunded == 0 {
+		return nil
+	}
+	err := q.AddShiftCash(ctx, gen.AddShiftCashParams{
+		ShiftID: shiftID, Currency: next.Currency, TakenMinor: taken, VoidedMinor: voided, RefundedMinor: refunded,
+		UpdatedAt: next.UpdatedAt,
+	})
+	if err != nil {
+		return fmt.Errorf("recording shift %d's cash: %w", shiftID, err)
+	}
+	return nil
+}
+
+// tenderIn finds a tender of the state by its id.
+func tenderIn(st order.State, id int64) (order.Tender, bool) {
+	for _, t := range st.Tenders {
+		if t.ID == id {
+			return t, true
+		}
+	}
+	return order.Tender{}, false
 }

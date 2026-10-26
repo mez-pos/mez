@@ -34,6 +34,9 @@ type Querier interface {
 	AddItemRecipePart(ctx context.Context, arg AddItemRecipePartParams) error
 	AddModifierRecipePart(ctx context.Context, arg AddModifierRecipePartParams) error
 	AddOrderTable(ctx context.Context, arg AddOrderTableParams) error
+	// A cash event's effect on its shift's drawer, added to the running figures
+	// (ADR-378). The first event makes the row.
+	AddShiftCash(ctx context.Context, arg AddShiftCashParams) error
 	AppendOrderEvent(ctx context.Context, arg AppendOrderEventParams) error
 	AppendShiftEvent(ctx context.Context, arg AppendShiftEventParams) (int64, error)
 	AreaByID(ctx context.Context, id int64) (AreaByIDRow, error)
@@ -497,6 +500,8 @@ type Querier interface {
 	// On start, jobs a crash left printing go back to queued. Whether their
 	// bytes reached the printer is unknown; printing twice beats never.
 	RequeueStalePrintJobs(ctx context.Context, now time.Time) (int64, error)
+	// One stuck job back to queued, if it is still printing.
+	RequeueStuckPrintJob(ctx context.Context, arg RequeueStuckPrintJobParams) (int64, error)
 	// Says how an unapplied charge was dealt with, once. Whoever is second
 	// writes nothing.
 	ResolveGatewayCharge(ctx context.Context, arg ResolveGatewayChargeParams) (int64, error)
@@ -576,6 +581,8 @@ type Querier interface {
 	// be closed.
 	SettleGatewayCharge(ctx context.Context, arg SettleGatewayChargeParams) (int64, error)
 	ShiftByID(ctx context.Context, id int64) (Shift, error)
+	// The running cash figures of a shift, if any cash event has touched it.
+	ShiftCash(ctx context.Context, shiftID int64) (ShiftCash, error)
 	ShiftEventByKey(ctx context.Context, arg ShiftEventByKeyParams) (ShiftEventByKeyRow, error)
 	ShiftEvents(ctx context.Context, shiftID int64) ([]ShiftEventsRow, error)
 	// Which shift each of an order's events was recorded in, by seq.
@@ -643,6 +650,10 @@ type Querier interface {
 	// before, or 0 for the first page.
 	StockMovementsForItem(ctx context.Context, arg StockMovementsForItemParams) ([]StockMovementsForItemRow, error)
 	StockOnHand(ctx context.Context, arg StockOnHandParams) (int64, error)
+	// Jobs marked printing for longer than any send takes (ADR-376). One this
+	// process is still sending is not stuck; the queue knows which those are
+	// and leaves them.
+	StuckPrintingJobs(ctx context.Context, before time.Time) ([]StuckPrintingJobsRow, error)
 	// What a guest's code leads to. A revoked code, and a code for a table that
 	// has been taken off the floor, lead nowhere.
 	TableByCode(ctx context.Context, code string) (TableByCodeRow, error)

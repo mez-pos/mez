@@ -42,6 +42,7 @@ export function OrderTotals({ order, currency, onRemoveDiscount }: OrderTotalsPr
         {taxRows(order, currency).map((row) => (
           <TotalRow key={row.label} label={row.label} amount={row.amount} />
         ))}
+        {totals && totals.rounding.minor !== 0 && <TotalRow label="Cash rounding" amount={totals.rounding} />}
         {totals && paid && <TotalRow label="Paid" amount={negate(totals.net_paid)} />}
       </div>
       <div className="mt-3 flex items-baseline justify-between border-t border-line-strong pt-3">

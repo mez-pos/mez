@@ -82,6 +82,12 @@ export function PairModal({ onPair, onClose }: PairModalProps) {
               {main.map((place) => (
                 <PlaceBand key={place.url} place={place} named={main.length > 1} />
               ))}
+              {code.named_url && (
+                <p className="text-meta text-fg-muted">
+                  By name, on an iPhone, iPad, Mac or Windows PC: <span className="font-mono tabular-nums">{typedAddress(code.named_url)}</span>. The name stays
+                  the same when the computer&apos;s address changes.
+                </p>
+              )}
               {others.length > 0 && (
                 <p className="text-meta text-fg-muted">
                   Also at{" "}
