@@ -50,9 +50,18 @@ last report at the venue, **not looked at in a browser** either.
 ## Next task
 
 **The human's walk of ADR-366 and ADR-367 on the venue PC** (the first
-item in `KNOWN.md`): build `make dist` and `make installer`, install over
-the old one, restart the PC, click the shortcut, then the walks ADR-372 to
-ADR-379 list there. Every item the audits owed in code is built (ADR-372
+item in `KNOWN.md`): the installer
+`dist/mez_v0.2.0-beta.1_windows_amd64_setup.exe` is built (ADR-380, the
+beta tag, 2026-10-26, local and not pushed). Install it over the old one
+(no uninstall: `C:\ProgramData\mez` and `config.toml` are kept), take
+`relay_url`, `relay_key` and `public_url` out of
+`C:\Program Files\mez\config.toml` so the venue leaves relay.jskin.in,
+restart the PC, click the shortcut, then pair the venue to mez Cloud with
+a code from app.mezpos.com (the venue `nofiltr`, so
+`nofiltr.mezpos.com`; Devices, **Connect to mez Cloud**), then the walks
+ADR-372 to ADR-379 list there. mez Cloud's box runs its 8i3b2b build:
+pairing, backup and the back office from away work; Phase 15's messages
+are built there and not deployed. Every item the audits owed in code is built (ADR-372
 to ADR-379); what remains in `KNOWN.md` is small and waits on a walk.
 Otherwise **nothing in this repository is next by itself.** Phase 15's Tasks 2,
 3c's cloud half, 5 and 6 are `mez-cloud`'s: open that repository and
@@ -134,8 +143,10 @@ installer, and Task 4's walk on a real phone over mobile data.
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
    drawer was at the venue on 2026-10-08 (`hardware.md`, ADR-282).
-2. **A release.** `v0.1.0-alpha.4` is tagged at Task 4's commit and built:
-   `dist/` has the four binaries, the Windows installer and the checksums.
+2. **A release.** `v0.2.0-beta.1` is tagged locally at ADR-380's commit
+   (2026-10-26, **not pushed**) and built: `dist/` has the four binaries
+   and the Windows installer. `v0.1.0-alpha.4` (2026-10-08) is the last
+   tag pushed.
    **The repository is github.com/mez-pos/mez since 2026-10-20**, private,
    its history rewritten (every commit id changed). Its tags were pushed
    there that day, which started the release workflow three times; all
@@ -146,9 +157,10 @@ Still owed from before, in the order that unblocks the most:
 3. **Phase 12's "done when"**: a clean Windows machine, the downloaded
    installer, a first printed invoice in under ten minutes.
 4. The human checks phases 09 to 11 owe, and the questions below.
-5. The product's domain: the human buys `mezpos.com` later, and the relay
-   moves to it before any venue that sells prints its table codes
-   (ADR-342). `jskin.in` until then.
+5. The product's domain is `mezpos.com` (ADR-313): mez Cloud's relay
+   answers for `*.mezpos.com` since 2026-10-21. `relay.jskin.in` is the
+   human's own relay from Phase 13, kept until the venue is paired to mez
+   Cloud and its table codes reprinted (ADR-342); then it can go.
 
 **Do not move Litestream past v0.5.15 without running the tests on
 Windows.** `make check` embeds whatever `web/*/dist` holds: run `make

@@ -14567,3 +14567,30 @@ Because: a name is the one thing a browser can follow; discovery proper would ne
 Cost: two venues' PCs on one network would both answer for the name; a venue with two mez
 servers is not a case this product has. Android before 12 does not resolve the name and
 uses the address and QR as before.
+
+## ADR-380 - The product is a beta: v0.2.0-beta.1, tagged for the venue's walk
+2026-10 · Status: accepted, at the human's word on 2026-10-26. Follows ADR-265 (the installer) and `docs/releasing.md`.
+Context: the four tags so far are `v0.1.0-alpha.1` to `v0.1.0-alpha.4` (2026-10-07 and 08),
+cut when the spine sold through a relay of the human's own and Phases 09 to 13 were new. Since
+then: mez Cloud's pairing and the switch (Phase 14, ADR-313 to ADR-359), the owner's messages
+on the venue's side (Phase 15, ADR-360 to ADR-364), three audits with no critical defect and
+every high and medium one fixed (ADR-366 to ADR-379), some 2,300 tests. The human asked what
+to call it before installing it at the venue again, this time paired to mez Cloud at
+`nofiltr.mezpos.com`.
+Decision: **a beta**, `v0.2.0-beta.1`. The minor number moves because the product a venue
+installs is not the alpha's: it pairs by a code, backs up to mez Cloud, rounds cash to the
+venue's step and answers for `mez.local`. The stage is beta because the v1 spine (register,
+order, kitchen, payment, invoice, Z-report) is built end to end and tested in Go and vitest,
+and **not yet proven by a real day's selling**: ADR-366 to ADR-379 have not been seen on a
+venue PC; mez Cloud sends its codes through a test sender to the operator's numbers alone
+(C-066) and is not open to the public; no accountant has agreed a month of its invoices. A
+beta is what a venue the human can stand beside runs; an alpha was what only the human ran.
+It becomes `v1.0.0` when a venue has sold through it for a month with its Z-reports and
+invoices agreed, mez Cloud takes a stranger's sign-up (MSG91 or WhatsApp), and the installer
+is signed (ADR-265). The tag is made locally and **not pushed**: pushing a tag runs the
+Release workflow, disabled in mez-pos/mez until a release is decided (`docs/releasing.md`).
+`make dist` and `make installer` read the version from the tag, so the installer is
+`mez_v0.2.0-beta.1_windows_amd64_setup.exe` and `mez version` says the same.
+Because: a name on the installer tells the cafe's staff and the next session what they are
+looking at; "alpha.4" on a build with a cloud in it would have said the wrong thing.
+Cost: none in code. The next beta is `v0.2.0-beta.2`, after the walk's fixes.
